@@ -10029,8 +10029,26 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
     if (field->decorators() && !field->decorators()->empty()) {
       DecoratorEmitter de(this);
       if (!field->hasAccessor()) {
+        if (!emitDupAt((hasHeritage || isStatic) ? 4 : 3)) {
+          
+          
+          
+          return false;
+        }
         if (!de.emitApplyDecoratorsToFieldDefinition(
                 &field->name(), field->decorators(), field->isStatic())) {
+          
+          
+          
+          return false;
+        }
+        if (!emit1(JSOp::Swap)) {
+          
+          
+          
+          return false;
+        }
+        if (!emitPopN(1)) {
           
           
           
@@ -10051,6 +10069,7 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
             return false;
           }
           if (!emitTree(&accessorSetterNode->method())) {
+            
             
             
             
@@ -10101,8 +10120,36 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
           };
         }
 
+        if (!emitDupAt((hasHeritage || isStatic) ? 6 : 5)) {
+          
+          
+          
+          return false;
+        }
+
+        if (!emitUnpickN(2)) {
+          
+          
+          
+          return false;
+        }
+
         if (!de.emitApplyDecoratorsToAccessorDefinition(
                 &field->name(), field->decorators(), field->isStatic())) {
+          
+          
+          
+          return false;
+        }
+
+        if (!emitPickN(3)) {
+          
+          
+          
+          return false;
+        }
+
+        if (!emitPopN(1)) {
           
           
           
@@ -10118,16 +10165,16 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
 
         if (!IsPrivateInstanceAccessor(accessorGetterNode)) {
           if (!isStatic) {
-            if (!emitPickN(hasHeritage ? 6 : 5)) {
+            if (!emitDupAt(hasHeritage ? 6 : 5)) {
               
               return false;
             }
           } else {
-            if (!emitPickN(6)) {
+            if (!emitDupAt(6)) {
               
               return false;
             }
-            if (!emitPickN(6)) {
+            if (!emitDupAt(6)) {
               
               return false;
             }
@@ -10224,16 +10271,12 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
           }
 
           if (!isStatic) {
-            if (!emitUnpickN(hasHeritage ? 4 : 3)) {
+            if (!emitPopN(1)) {
               
               return false;
             }
           } else {
-            if (!emitUnpickN(4)) {
-              
-              return false;
-            }
-            if (!emitUnpickN(4)) {
+            if (!emitPopN(2)) {
               
               return false;
             }
@@ -11806,6 +11849,9 @@ bool BytecodeEmitter::emitClass(
   
   Maybe<LexicalScopeEmitter> lse;
   FunctionNode* ctor;
+#ifdef ENABLE_DECORATORS
+  bool extraInitializersPresent = false;
+#endif
   if (constructor->is<LexicalScopeNode>()) {
     LexicalScopeNode* constructorScope = &constructor->as<LexicalScopeNode>();
 
@@ -11855,6 +11901,22 @@ bool BytecodeEmitter::emitClass(
                   dot_instanceExtraInitializers_())) {
         return false;
       }
+
+      DecoratorEmitter de(this);
+      if (!de.emitCreateAddInitializerFunction(
+              classNode->addInitializerFunction(),
+              TaggedParserAtomIndex::WellKnown::
+                  dot_instanceExtraInitializers_())) {
+        
+        return false;
+      }
+
+      if (!emitUnpickN(isDerived ? 2 : 1)) {
+        
+        return false;
+      }
+
+      extraInitializersPresent = true;
 #endif
 
       
@@ -11902,6 +11964,21 @@ bool BytecodeEmitter::emitClass(
     return false;
   }
 
+#ifdef ENABLE_DECORATORS
+  if (!extraInitializersPresent) {
+    
+    
+    
+    if (!emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
+    if (!emitUnpickN(2)) {
+      
+    }
+  }
+#endif
+
   if (!emitCreateMemberInitializers(ce, classMembers, FieldPlacement::Static
 #ifdef ENABLE_DECORATORS
                                     ,
@@ -11919,6 +11996,17 @@ bool BytecodeEmitter::emitClass(
     
     return false;
   }
+
+#ifdef ENABLE_DECORATORS
+  if (!emitPickN(2)) {
+    
+    return false;
+  }
+  if (!emitPopN(1)) {
+    
+    return false;
+  }
+#endif
 
   if (!ce.emitBinding()) {
     

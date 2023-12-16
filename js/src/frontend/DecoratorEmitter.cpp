@@ -211,8 +211,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
       return false;
     }
 
-    
-    if (!bce_->emit1(JSOp::Undefined)) {
+    if (!bce_->emitDupAt(2)) {
       
       return false;
     }
@@ -253,6 +252,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
     }
 
     
+
     if (!bce_->emitCheckIsCallable()) {
       
       return false;
@@ -396,8 +396,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
       return false;
     }
 
-    
-    if (!bce_->emit1(JSOp::Undefined)) {
+    if (!bce_->emitDupAt(5)) {
       
       return false;
     }
