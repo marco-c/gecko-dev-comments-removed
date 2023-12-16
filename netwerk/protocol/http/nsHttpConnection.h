@@ -362,6 +362,9 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   nsCOMPtr<nsISocketTransport> mSocketTransport;
 
+  
+  
+  
   bool mForWebSocket{false};
 
   std::function<void()> mContinueHandshakeDone{nullptr};
