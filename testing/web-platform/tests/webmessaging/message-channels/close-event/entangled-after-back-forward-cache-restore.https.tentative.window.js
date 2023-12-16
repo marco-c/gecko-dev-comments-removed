@@ -12,8 +12,8 @@ promise_test(async t => {
   const scope =
       '/html/browsers/browsing-the-web/remote-context-helper/resources'
   const workerUrl =
-      `resources/service-worker.js?pipe=header(Service-Worker-Allowed,${
-          scope})`;
+      `/html/browsers/browsing-the-web/back-forward-cache/resources/` +
+      `service-worker.js?pipe=header(Service-Worker-Allowed,${scope})`;
   const registration =
       await service_worker_unregister_and_register(t, workerUrl, scope);
   t.add_cleanup(_ => registration.unregister());
