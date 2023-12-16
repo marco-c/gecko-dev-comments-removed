@@ -909,8 +909,15 @@ nsresult AutoRangeArray::ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
   }
 
   EditorDOMPoint startPoint(aRange.StartRef()), endPoint(aRange.EndRef());
-  AutoRangeArray::UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
-      startPoint, endPoint, aEditingHost);
+
+  
+  
+  
+  if (aEditSubAction != EditSubAction::eMergeBlockContents) {
+    AutoRangeArray::
+        UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
+            startPoint, endPoint, aEditingHost);
+  }
 
   
   

@@ -6717,6 +6717,14 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
               *backwardScanFromStartResult.ElementPtr())) {
         break;
       }
+      
+      
+      if (StaticPrefs::editor_block_inline_check_use_computed_style() &&
+          backwardScanFromStartResult.ContentIsElement() &&
+          HTMLEditUtils::IsFlexOrGridItem(
+              *backwardScanFromStartResult.ElementPtr())) {
+        break;
+      }
       rangeToDelete.SetStart(
           backwardScanFromStartResult.PointAtContent<EditorRawDOMPoint>());
     }
@@ -6774,6 +6782,14 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
             forwardScanFromEndResult.GetContent() ==
                 maybeNonEditableBlockElement ||
             forwardScanFromEndResult.GetContent() == editingHost) {
+          break;
+        }
+        
+        
+        if (StaticPrefs::editor_block_inline_check_use_computed_style() &&
+            forwardScanFromEndResult.ContentIsElement() &&
+            HTMLEditUtils::IsFlexOrGridItem(
+                *forwardScanFromEndResult.ElementPtr())) {
           break;
         }
         rangeToDelete.SetEnd(

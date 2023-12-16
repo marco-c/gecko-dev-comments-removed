@@ -40,6 +40,7 @@
 #include "nsError.h"             
 #include "nsGkAtoms.h"           
 #include "nsHTMLTags.h"
+#include "nsIFrameInlines.h"     
 #include "nsLiteralString.h"     
 #include "nsNameSpaceManager.h"  
 #include "nsPrintfCString.h"     
@@ -297,6 +298,11 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
   
   return styleDisplay->IsInlineOutsideStyle() ||
          styleDisplay->IsRubyDisplayType();
+}
+
+bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
+  nsIFrame* frame = aElement.GetPrimaryFrame();
+  return frame && frame->IsFlexOrGridItem();
 }
 
 bool HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(

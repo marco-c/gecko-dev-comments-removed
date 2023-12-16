@@ -211,6 +211,12 @@ class HTMLEditUtils final {
 
 
 
+  [[nodiscard]] static bool IsFlexOrGridItem(const Element& aElement);
+
+  
+
+
+
 
   static bool IsRemovableInlineStyleElement(Element& aElement);
 
