@@ -189,9 +189,6 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
   }
 
   
-  constexpr int32_t referenceISOYear = 1972;
-
-  
   if (item.isObject()) {
     Rooted<JSObject*> itemObj(cx, &item.toObject());
 
@@ -202,7 +199,6 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
 
     
     Rooted<CalendarValue> calendar(cx);
-    bool calendarAbsent = false;
     if (!::ToTemporalCalendarForMonthDay<PlainDateObject, PlainDateTimeObject,
                                          PlainYearMonthObject,
                                          ZonedDateTimeObject>(cx, itemObj,
@@ -216,9 +212,6 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
                        &calendarLike)) {
         return nullptr;
       }
-
-      
-      calendarAbsent = calendarLike.isUndefined();
 
       
       if (!ToTemporalCalendarWithISODefault(cx, calendarLike, &calendar)) {
@@ -240,33 +233,6 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
                                 PrepareTemporalFields(cx, itemObj, fieldNames));
     if (!fields) {
       return nullptr;
-    }
-
-    
-    Rooted<Value> month(cx);
-    if (!GetProperty(cx, fields, fields, cx->names().month, &month)) {
-      return nullptr;
-    }
-
-    
-    Rooted<Value> monthCode(cx);
-    if (!GetProperty(cx, fields, fields, cx->names().monthCode, &monthCode)) {
-      return nullptr;
-    }
-
-    
-    Rooted<Value> year(cx);
-    if (!GetProperty(cx, fields, fields, cx->names().year, &year)) {
-      return nullptr;
-    }
-
-    
-    if (calendarAbsent && !month.isUndefined() && monthCode.isUndefined() &&
-        year.isUndefined()) {
-      year.setInt32(referenceISOYear);
-      if (!DefineDataProperty(cx, fields, cx->names().year, year)) {
-        return nullptr;
-      }
     }
 
     
@@ -312,6 +278,13 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
 
   
   if (!hasYear) {
+    
+    MOZ_ASSERT(calendar.isString() &&
+               EqualStrings(calendar.toString(), cx->names().iso8601));
+
+    
+    constexpr int32_t referenceISOYear = 1972;
+
     
     return CreateTemporalMonthDay(
         cx, {referenceISOYear, result.month, result.day}, calendar);
