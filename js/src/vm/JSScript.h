@@ -2138,10 +2138,6 @@ class JSScript : public js::BaseScript {
 
   
   
-  js::gc::AllocSite* createAllocSite();
-
-  
-  
   class AutoDelazify;
   friend class AutoDelazify;
 

@@ -124,6 +124,8 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
         depth_(depth),
         bytecodeSize_(bytecodeSize) {}
 
+  ~ICScript();
+
   bool isInlined() const { return depth_ > 0; }
 
   void initICEntries(JSContext* cx, JSScript* script);
@@ -190,6 +192,10 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   void setActive() { active_ = true; }
   void resetActive() { active_ = false; }
 
+  gc::AllocSite* createAllocSite(JSScript* outerScript);
+
+  void prepareForDestruction(Zone* zone);
+
   void trace(JSTracer* trc);
   bool traceWeak(JSTracer* trc);
 
@@ -213,6 +219,11 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
   
   js::UniquePtr<Vector<CallSite>> inlinedChildren_;
+
+  
+  static constexpr size_t AllocSiteChunkSize = 256;
+  LifoAlloc allocSitesSpace_{AllocSiteChunkSize};
+  Vector<gc::AllocSite*, 0, SystemAllocPolicy> allocSites_;
 
   
   
@@ -350,11 +361,6 @@ class alignas(uintptr_t) JitScript final
 #endif
 
   
-  static constexpr size_t AllocSiteChunkSize = 256;
-  LifoAlloc allocSitesSpace_{AllocSiteChunkSize};
-  Vector<gc::AllocSite*, 0, SystemAllocPolicy> allocSites_;
-
-  
   
   uint32_t warmUpCountAtLastICStub_ = 0;
 
@@ -416,14 +422,7 @@ class alignas(uintptr_t) JitScript final
   void prepareForDestruction(Zone* zone);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* data,
-                              size_t* allocSites) const {
-    *data += mallocSizeOf(this);
-
-    
-    
-    *allocSites += allocSitesSpace_.sizeOfExcludingThis(mallocSizeOf);
-    *allocSites += allocSites_.sizeOfExcludingThis(mallocSizeOf);
-  }
+                              size_t* allocSites) const;
 
   ICEntry& icEntry(size_t index) { return icScript_.icEntry(index); }
 
@@ -453,8 +452,6 @@ class alignas(uintptr_t) JitScript final
   EnvironmentObject* templateEnvironment() const { return templateEnv_.ref(); }
 
   bool usesEnvironmentChain() const { return *usesEnvironmentChain_; }
-
-  gc::AllocSite* createAllocSite(JSScript* script);
 
   bool resetAllocSites(bool resetNurserySites, bool resetPretenuredSites);
 
