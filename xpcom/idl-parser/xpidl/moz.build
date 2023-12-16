@@ -5,7 +5,7 @@
 
 
 PYTHON_UNITTEST_MANIFESTS += [
-    "python.ini",
+    "python.toml",
 ]
 
 GeneratedFile("xpidl.stub", script="header.py", entry_point="main")
