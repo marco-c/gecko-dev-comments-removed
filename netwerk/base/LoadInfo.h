@@ -305,6 +305,32 @@ class LoadInfo final : public nsILoadInfo {
   Maybe<mozilla::dom::ClientInfo> mClientInfo;
   UniquePtr<mozilla::dom::ClientSource> mReservedClientSource;
   Maybe<mozilla::dom::ClientInfo> mReservedClientInfo;
+
+
+#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
+ public:
+  class StackTrace {
+   public:
+    static const size_t kMaxFrames = 24;
+
+    
+    size_t mLength;
+
+    
+    const void* mPcs[kMaxFrames];
+
+   public:
+    void Fill();
+
+   private:
+    static void StackWalkCallback(uint32_t aFrameNumber, void* aPc, void* aSp,
+                                  void* aClosure);
+  };
+
+ private:
+  StackTrace mReservedClientInfoEmplaceTrace;
+#endif  
+
   Maybe<mozilla::dom::ClientInfo> mInitialClientInfo;
   Maybe<mozilla::dom::ServiceWorkerDescriptor> mController;
   RefPtr<mozilla::dom::PerformanceStorage> mPerformanceStorage;
