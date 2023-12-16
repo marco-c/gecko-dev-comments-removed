@@ -58,45 +58,6 @@ nsresult SetDefaultBrowserUserChoice(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult SetDefaultBrowserUserChoiceAsync(
-    const wchar_t* aAumi,
-    const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>(),
-    std::function<void(nsresult)> completionCallback = [](nsresult nv) {});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 nsresult SetDefaultExtensionHandlersUserChoice(
     const wchar_t* aAumi, const nsTArray<nsString>& aFileExtensions);
 

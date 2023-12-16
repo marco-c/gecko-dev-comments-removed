@@ -10,6 +10,7 @@
 
 #include "ErrorList.h"  
 #include "mozilla/UniquePtr.h"
+#include "nsString.h"
 
 
 
@@ -59,6 +60,14 @@ CheckUserChoiceHashResult CheckUserChoiceHash(const wchar_t* aExt,
 
 
 mozilla::UniquePtr<wchar_t[]> GetAssociationKeyPath(const wchar_t* aExt);
+
+
+
+
+
+
+
+nsresult AppendAssociationKeyPath(const wchar_t* aExt, nsString& output);
 
 
 
