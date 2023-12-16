@@ -1634,7 +1634,6 @@ bool js::temporal::BalanceTimeDuration(JSContext* cx, const Duration& duration,
 static bool BalancePossiblyInfiniteTimeDurationRelative(
     JSContext* cx, const Duration& duration, TemporalUnit largestUnit,
     Handle<Wrapped<ZonedDateTimeObject*>> relativeTo, TimeDuration* result) {
-  
   auto* unwrappedRelativeTo = relativeTo.unwrap(cx);
   if (!unwrappedRelativeTo) {
     return false;
@@ -1650,21 +1649,33 @@ static bool BalancePossiblyInfiniteTimeDurationRelative(
     return false;
   }
 
+  
+  auto intermediateNs = epochInstant;
+
+  
+  if (duration.days != 0) {
+    
+    const auto& startInstant = epochInstant;
+
+    
+    PlainDateTime startDateTime;
+    if (!GetPlainDateTimeFor(cx, timeZone, startInstant, &startDateTime)) {
+      return false;
+    }
+
+    
+
+    
+    Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
+    if (!AddDaysToZonedDateTime(cx, startInstant, startDateTime, timeZone,
+                                isoCalendar, duration.days, &intermediateNs)) {
+      return false;
+    }
+  }
+
+  
   Instant endNs;
-  if (!AddZonedDateTime(cx, epochInstant, timeZone, calendar,
-                        {
-                            0,
-                            0,
-                            0,
-                            duration.days,
-                            duration.hours,
-                            duration.minutes,
-                            duration.seconds,
-                            duration.milliseconds,
-                            duration.microseconds,
-                            duration.nanoseconds,
-                        },
-                        &endNs)) {
+  if (!AddInstant(cx, intermediateNs, duration.time(), &endNs)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(endNs));
