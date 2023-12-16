@@ -19,7 +19,6 @@ from operator import itemgetter
 UNSUPPORTED_FEATURES = set(
     [
         "tail-call-optimization",
-        "Intl.Segmenter",  
         "Intl.Locale-info",  
         "Intl.DurationFormat",  
         "Atomics.waitAsync",  
@@ -41,6 +40,7 @@ FEATURE_CHECK_NEEDED = {
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "symbols-as-weakmap-keys": "!(this.hasOwnProperty('getBuildConfiguration')&&!getBuildConfiguration('release_or_beta'))",
+    "Intl.Segmenter": "!Intl.Segmenter",  
 }
 RELEASE_OR_BETA = set([])
 SHELL_OPTIONS = {
