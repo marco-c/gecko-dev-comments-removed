@@ -957,7 +957,10 @@ bool js::temporal::NanosecondsToDays(
   MOZ_ASSERT(std::abs(balanceResult.days) <= epochDays);
 
   
-  double days = balanceResult.days;
+  
+  
+  
+  int64_t days = int64_t(balanceResult.days);
 
   
   PlainDateTimeAndInstant relativeResult;
@@ -970,13 +973,9 @@ bool js::temporal::NanosecondsToDays(
   MOZ_ASSERT(IsValidEpochInstant(relativeResult.instant));
 
   
-  
-  int64_t daysToSubtract = 0;
-
-  
   if (sign > 0) {
     
-    while (days > double(daysToSubtract) && relativeResult.instant > endNs) {
+    while (days > 0 && relativeResult.instant > endNs) {
       
       
       if (!CheckForInterrupt(cx)) {
@@ -984,33 +983,26 @@ bool js::temporal::NanosecondsToDays(
       }
 
       
-      daysToSubtract += 1;
+      days -= 1;
 
       
-      double durationDays = days - double(daysToSubtract);
-      if (!::AddDaysToZonedDateTime(
-              cx, startNs, startDateTime, timeZone, calendar, durationDays,
-              TemporalOverflow::Constrain, &relativeResult)) {
+      if (!::AddDaysToZonedDateTime(cx, startNs, startDateTime, timeZone,
+                                    calendar, days, TemporalOverflow::Constrain,
+                                    &relativeResult)) {
         return false;
       }
       MOZ_ASSERT(IsValidISODateTime(relativeResult.dateTime));
       MOZ_ASSERT(IsValidEpochInstant(relativeResult.instant));
     }
 
-    MOZ_ASSERT_IF(days > double(daysToSubtract),
-                  relativeResult.instant <= endNs);
+    MOZ_ASSERT_IF(days > 0, relativeResult.instant <= endNs);
   }
 
-  MOZ_ASSERT_IF(days == double(daysToSubtract),
-                relativeResult.instant == startNs);
+  MOZ_ASSERT_IF(days == 0, relativeResult.instant == startNs);
 
   
   auto ns = endNs - relativeResult.instant;
   MOZ_ASSERT(IsValidInstantSpan(ns));
-
-  
-  
-  int64_t daysToAdd = -daysToSubtract;
 
   
   InstantSpan dayLengthNs{};
@@ -1081,7 +1073,7 @@ bool js::temporal::NanosecondsToDays(
       relativeResult = oneDayFarther;
 
       
-      daysToAdd += sign;
+      days += sign;
     } else {
       
       break;
@@ -1089,50 +1081,19 @@ bool js::temporal::NanosecondsToDays(
   }
 
   
-  if (sign > 0) {
-    bool totalDaysIsNegative;
-    if (int64_t daysInt; mozilla::NumberEqualsInt64(days, &daysInt)) {
-      
-      
-      totalDaysIsNegative = daysInt < 0
-                                ? (daysToAdd < 0 || daysInt + daysToAdd < 0)
-                                : (daysToAdd < 0 && daysInt + daysToAdd < 0);
-    } else {
-      
-      
-      totalDaysIsNegative = days < 0;
-    }
-
-    if (totalDaysIsNegative) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TEMPORAL_ZONED_DATE_TIME_INCORRECT_SIGN,
-                                "days");
-      return false;
-    }
+  if (days < 0 && sign > 0) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_ZONED_DATE_TIME_INCORRECT_SIGN,
+                              "days");
+    return false;
   }
 
   
-  if (sign < 0) {
-    
-    MOZ_ASSERT(daysToAdd <= 0);
-
-    bool totalDaysIsPositive;
-    if (int64_t daysInt; mozilla::NumberEqualsInt64(days, &daysInt)) {
-      
-      
-      totalDaysIsPositive = daysInt > 0 && daysInt + daysToAdd > 0;
-    } else {
-      
-      
-      totalDaysIsPositive = days > 0;
-    }
-
-    if (totalDaysIsPositive) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TEMPORAL_ZONED_DATE_TIME_INCORRECT_SIGN,
-                                "days");
-      return false;
-    }
+  if (days > 0 && sign < 0) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_ZONED_DATE_TIME_INCORRECT_SIGN,
+                              "days");
+    return false;
   }
 
   MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
@@ -1163,34 +1124,7 @@ bool js::temporal::NanosecondsToDays(
   MOZ_ASSERT(ns.abs() < dayLengthNs.abs());
 
   
-  int64_t daysInt;
-  if (mozilla::NumberEqualsInt64(days, &daysInt)) {
-    auto daysChecked = mozilla::CheckedInt64(daysInt) + daysToAdd;
-    if (daysChecked.isValid()) {
-      result.set(
-          NanosecondsAndDays::from(daysChecked.value(), ns, dayLengthNs.abs()));
-      return true;
-    }
-  }
-
-  
-
-  Rooted<BigInt*> daysBigInt(cx, BigInt::createFromDouble(cx, days));
-  if (!daysBigInt) {
-    return false;
-  }
-
-  Rooted<BigInt*> daysToAddBigInt(cx, BigInt::createFromInt64(cx, daysToAdd));
-  if (!daysToAddBigInt) {
-    return false;
-  }
-
-  daysBigInt = BigInt::add(cx, daysBigInt, daysToAddBigInt);
-  if (!daysBigInt) {
-    return false;
-  }
-
-  result.set(NanosecondsAndDays::from(daysBigInt, ns, dayLengthNs.abs()));
+  result.set(NanosecondsAndDays::from(days, ns, dayLengthNs.abs()));
   return true;
 }
 
