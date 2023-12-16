@@ -461,8 +461,8 @@ Context::QuotaInitRunnable::Run() {
       mInitAction->CompleteOnInitiatingThread(mResult);
 
       mContext->OnQuotaInit(mResult, mDirectoryMetadata,
-                            mDirectoryLock.forget(),
-                            mCipherKeyManager.forget());
+                            std::move(mDirectoryLock),
+                            std::move(mCipherKeyManager));
 
       mState = STATE_COMPLETE;
 
@@ -1031,26 +1031,12 @@ void Context::DispatchAction(SafeRefPtr<Action> aAction, bool aDoomData) {
 
 void Context::OnQuotaInit(
     nsresult aRv, const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata,
-    already_AddRefed<DirectoryLock> aDirectoryLock,
-    already_AddRefed<CipherKeyManager> aCipherKeyManager) {
+    RefPtr<DirectoryLock> aDirectoryLock,
+    RefPtr<CipherKeyManager> aCipherKeyManager) {
   NS_ASSERT_OWNINGTHREAD(Context);
 
   MOZ_DIAGNOSTIC_ASSERT(mInitRunnable);
   mInitRunnable = nullptr;
-
-  if (aDirectoryMetadata) {
-    mDirectoryMetadata.emplace(*aDirectoryMetadata);
-
-    MOZ_DIAGNOSTIC_ASSERT(!mCipherKeyManager);
-    mCipherKeyManager = aCipherKeyManager;
-
-    MOZ_DIAGNOSTIC_ASSERT_IF(mDirectoryMetadata->mIsPrivate, mCipherKeyManager);
-  }
-
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mDirectoryLock);
-  mDirectoryLock = aDirectoryLock;
 
   
   
@@ -1069,6 +1055,20 @@ void Context::OnQuotaInit(
     
     return;
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(!mDirectoryMetadata);
+  mDirectoryMetadata = aDirectoryMetadata;
+  MOZ_DIAGNOSTIC_ASSERT(mDirectoryMetadata);
+
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mDirectoryLock);
+  mDirectoryLock = std::move(aDirectoryLock);
+  MOZ_DIAGNOSTIC_ASSERT(mDirectoryLock);
+
+  MOZ_DIAGNOSTIC_ASSERT(!mCipherKeyManager);
+  mCipherKeyManager = std::move(aCipherKeyManager);
+  MOZ_DIAGNOSTIC_ASSERT_IF(mDirectoryMetadata->mIsPrivate, mCipherKeyManager);
 
   MOZ_DIAGNOSTIC_ASSERT(mState == STATE_CONTEXT_INIT);
   mState = STATE_CONTEXT_READY;
