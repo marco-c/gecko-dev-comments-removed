@@ -498,6 +498,13 @@ class alignas(uintptr_t) JitScript final
                         IonScript* ionScript);
   void setIonScriptImpl(JSScript* script, IonScript* ionScript);
 
+  
+  
+  template <typename F>
+  void forEachICScript(const F& f);
+  template <typename F>
+  void forEachICScript(const F& f) const;
+
  public:
   
   bool hasIonScript() const {
