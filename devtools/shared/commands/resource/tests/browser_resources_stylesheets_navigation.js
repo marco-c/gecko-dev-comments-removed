@@ -249,9 +249,6 @@ function sortResourcesByExpectedOrder(resources) {
 
 
 async function assertResource(resource, expected) {
-  const styleSheetsFront = await resource.targetFront.getFront("stylesheets");
-  const styleText = (
-    await styleSheetsFront.getText(resource.resourceId)
-  ).str.trim();
+  const styleText = (await getStyleSheetResourceText(resource)).trim();
   is(styleText, expected.styleText, "Style text is correct");
 }
