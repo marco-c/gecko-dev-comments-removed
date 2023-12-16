@@ -835,6 +835,13 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   [[nodiscard]] bool emitStoreMemberInitializer();
   [[nodiscard]] bool emitMemberInitializersEnd();
 
+#ifdef ENABLE_DECORATORS
+  
+  
+  [[nodiscard]] bool prepareForExtraInitializers(
+      TaggedParserAtomIndex initializers);
+#endif
+
   [[nodiscard]] bool emitBinding();
 
 #ifdef ENABLE_DECORATORS

@@ -18,8 +18,6 @@
 using namespace js;
 using namespace js::frontend;
 
-using mozilla::Maybe;
-
 PropertyEmitter::PropertyEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
 bool PropertyEmitter::prepareForProtoValue(uint32_t keyPos) {
@@ -809,6 +807,37 @@ bool ClassEmitter::emitMemberInitializersEnd() {
 #endif
   return true;
 }
+
+#ifdef ENABLE_DECORATORS
+bool ClassEmitter::prepareForExtraInitializers(
+    TaggedParserAtomIndex initializers) {
+  
+  
+  MOZ_ASSERT(
+      initializers ==
+      TaggedParserAtomIndex::WellKnown::dot_instanceExtraInitializers_());
+
+  NameOpEmitter noe(bce_, initializers, NameOpEmitter::Kind::Initialize);
+  if (!noe.prepareForRhs()) {
+    return false;
+  }
+
+  
+  
+  if (!bce_->emitUint32Operand(JSOp::NewArray, 0)) {
+    
+    return false;
+  }
+
+  if (!noe.emitAssignment()) {
+    
+    return false;
+  }
+
+  return bce_->emit1(JSOp::Pop);
+  
+}
+#endif
 
 bool ClassEmitter::emitBinding() {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
