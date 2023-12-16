@@ -2365,11 +2365,10 @@ void ReflowInput::InitConstraints(
       }
 
       nsIFrame* alignCB = mFrame->GetParent();
-      if (alignCB->IsTableWrapperFrame() && alignCB->GetParent()) {
-        
-        
-        if (alignCB->GetParent()->IsGridContainerFrame()) {
-          alignCB = alignCB->GetParent();
+      if (alignCB->IsTableWrapperFrame()) {
+        nsIFrame* alignCBParent = alignCB->GetParent();
+        if (alignCBParent && alignCBParent->IsGridContainerFrame()) {
+          alignCB = alignCBParent;
         }
       }
       if (alignCB->IsGridContainerFrame()) {
