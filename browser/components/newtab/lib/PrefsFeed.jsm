@@ -174,17 +174,6 @@ class PrefsFeed {
     });
 
     
-    
-    let placeholderPrefValue = Services.prefs.getStringPref(
-      "browser.urlbar.placeholderName",
-      ""
-    );
-    values["urlbar.placeholderName"] = placeholderPrefValue;
-    this._prefMap.set("urlbar.placeholderName", {
-      value: placeholderPrefValue,
-    });
-
-    
     values.featureConfig = lazy.NimbusFeatures.newtab.getAllVariables() || {};
     values.pocketConfig =
       lazy.NimbusFeatures.pocketNewtab.getAllVariables() || {};

@@ -10717,8 +10717,6 @@ const NEWTAB_DARK_THEME = {
 
 
 
-function Search_extends() { Search_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Search_extends.apply(this, arguments); }
-
 
 
 
@@ -10829,31 +10827,6 @@ class _Search extends (external_React_default()).PureComponent {
     }
   }
 
-  getDefaultEngineName() {
-    
-    return this.props.Prefs.values["urlbar.placeholderName"];
-  }
-
-  getHandoffInputL10nAttributes() {
-    let defaultEngineName = this.getDefaultEngineName();
-    return defaultEngineName ? {
-      "data-l10n-id": "newtab-search-box-handoff-input",
-      "data-l10n-args": `{"engine": "${defaultEngineName}"}`
-    } : {
-      "data-l10n-id": "newtab-search-box-handoff-input-no-engine"
-    };
-  }
-
-  getHandoffTextL10nAttributes() {
-    let defaultEngineName = this.getDefaultEngineName();
-    return defaultEngineName ? {
-      "data-l10n-id": "newtab-search-box-handoff-text",
-      "data-l10n-args": `{"engine": "${defaultEngineName}"}`
-    } : {
-      "data-l10n-id": "newtab-search-box-handoff-text-no-engine"
-    };
-  }
-
   onSearchHandoffButtonMount(button) {
     
     this._searchHandoffButton = button;
@@ -10890,15 +10863,14 @@ class _Search extends (external_React_default()).PureComponent {
       onClick: this.onSearchClick
     })), this.props.handoffEnabled && external_React_default().createElement("div", {
       className: "search-inner-wrapper"
-    }, external_React_default().createElement("button", Search_extends({
-      className: "search-handoff-button"
-    }, this.getHandoffInputL10nAttributes(), {
+    }, external_React_default().createElement("button", {
+      className: "search-handoff-button",
       ref: this.onSearchHandoffButtonMount,
       onClick: this.onSearchHandoffClick,
       tabIndex: "-1"
-    }), external_React_default().createElement("div", Search_extends({
+    }, external_React_default().createElement("div", {
       className: "fake-textbox"
-    }, this.getHandoffTextL10nAttributes())), external_React_default().createElement("input", {
+    }), external_React_default().createElement("input", {
       type: "search",
       className: "fake-editable",
       tabIndex: "-1",
