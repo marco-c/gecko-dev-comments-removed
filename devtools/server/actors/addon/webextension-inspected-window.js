@@ -103,6 +103,50 @@ function logAccessDeniedWarning(window, callerInfo, extensionPolicy) {
   Services.console.logMessage(error);
 }
 
+function extensionAllowedToInspectPrincipal(extensionPolicy, principal) {
+  if (principal.isNullPrincipal) {
+    
+    
+    
+    
+    
+    principal = principal.precursorPrincipal;
+    if (!principal) {
+      
+      return true;
+    }
+  }
+  if (!principal.isContentPrincipal) {
+    return false;
+  }
+  const principalURI = principal.URI;
+  if (principalURI.schemeIs("https") || principalURI.schemeIs("http")) {
+    if (WebExtensionPolicy.isRestrictedURI(principalURI)) {
+      return false;
+    }
+    if (extensionPolicy.quarantinedFromURI(principalURI)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  if (principalURI.schemeIs("moz-extension")) {
+    
+    
+    
+    
+    
+    return extensionPolicy.id === principal.addonId;
+  }
+
+  if (principalURI.schemeIs("file")) {
+    return true;
+  }
+
+  return false;
+}
+
 class CustomizedReload {
   constructor(params) {
     this.docShell = params.targetActor.window.docShell;
@@ -508,57 +552,22 @@ class WebExtensionInspectedWindowActor extends Actor {
       });
     }
 
-    
-    
-    const logEvalDenied = () => {
-      logAccessDeniedWarning(window, callerInfo, extensionPolicy);
-    };
-
-    if (isSystemPrincipalWindow(window)) {
-      logEvalDenied();
-
+    if (
+      !extensionAllowedToInspectPrincipal(
+        extensionPolicy,
+        window.document.nodePrincipal
+      )
+    ) {
       
+      
+      logAccessDeniedWarning(window, callerInfo, extensionPolicy);
+
       
       
       return createExceptionInfoResult({
         description: "Inspector protocol error: %s",
         details: [
-          "This target has a system principal. inspectedWindow.eval denied.",
-        ],
-      });
-    }
-
-    const docPrincipalURI = window.document.nodePrincipal.URI;
-
-    
-    
-    
-    
-    if (
-      WebExtensionPolicy.isRestrictedURI(docPrincipalURI) ||
-      docPrincipalURI.schemeIs("about")
-    ) {
-      logEvalDenied();
-
-      return createExceptionInfoResult({
-        description: "Inspector protocol error: %s %s",
-        details: [
           "This extension is not allowed on the current inspected window origin",
-          docPrincipalURI.spec,
-        ],
-      });
-    }
-
-    const windowAddonId = window.document.nodePrincipal.addonId;
-
-    if (windowAddonId && extensionPolicy.id !== windowAddonId) {
-      logEvalDenied();
-
-      return createExceptionInfoResult({
-        description: "Inspector protocol error: %s on %s",
-        details: [
-          "This extension is not allowed to access this extension page.",
-          window.document.location.origin,
         ],
       });
     }
