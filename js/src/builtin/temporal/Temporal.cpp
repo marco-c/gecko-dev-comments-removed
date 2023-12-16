@@ -1509,49 +1509,6 @@ bool js::temporal::GetMethod(JSContext* cx, Handle<JSObject*> object,
                              Handle<PropertyName*> name,
                              MutableHandle<Value> result) {
   
-  
-  
-  
-  
-  
-
-  
-  if (!GetProperty(cx, object, object, name, result)) {
-    return false;
-  }
-
-  
-  if (result.isNullOrUndefined()) {
-    return true;
-  }
-
-  
-  if (!IsCallable(result)) {
-    if (auto chars = StringToNewUTF8CharsZ(cx, *name)) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_PROPERTY_NOT_CALLABLE, chars.get());
-    }
-    return false;
-  }
-
-  
-  return true;
-}
-
-
-
-
-bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
-                                    Handle<PropertyName*> name,
-                                    MutableHandle<Value> result) {
-  
-  
-  
-  
-  
-  
-
-  
   if (!GetProperty(cx, object, object, name, result)) {
     return false;
   }
@@ -1572,16 +1529,9 @@ bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
 
 
 
-bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
-                                    Handle<PropertyName*> name,
-                                    MutableHandle<JSObject*> result) {
-  
-  
-  
-  
-  
-  
-
+bool js::temporal::GetMethod(JSContext* cx, Handle<JSObject*> object,
+                             Handle<PropertyName*> name,
+                             MutableHandle<JSObject*> result) {
   
   Rooted<Value> value(cx);
   if (!GetProperty(cx, object, object, name, &value)) {

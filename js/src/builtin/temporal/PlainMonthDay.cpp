@@ -198,14 +198,14 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
     }
 
     
-    Rooted<CalendarValue> calendar(cx);
+    Rooted<CalendarValue> calendarValue(cx);
     if (!::ToTemporalCalendarForMonthDay<PlainDateObject, PlainDateTimeObject,
                                          PlainYearMonthObject,
                                          ZonedDateTimeObject>(cx, itemObj,
-                                                              &calendar)) {
+                                                              &calendarValue)) {
       return nullptr;
     }
-    if (!calendar) {
+    if (!calendarValue) {
       
       Rooted<Value> calendarLike(cx);
       if (!GetProperty(cx, itemObj, itemObj, cx->names().calendar,
@@ -214,9 +214,20 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
       }
 
       
-      if (!ToTemporalCalendarWithISODefault(cx, calendarLike, &calendar)) {
+      if (!ToTemporalCalendarWithISODefault(cx, calendarLike, &calendarValue)) {
         return nullptr;
       }
+    }
+
+    
+    Rooted<CalendarRecord> calendar(cx);
+    if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                     {
+                                         CalendarMethod::Fields,
+                                         CalendarMethod::MonthDayFromFields,
+                                     },
+                                     &calendar)) {
+      return nullptr;
     }
 
     
@@ -261,9 +272,9 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
   }
 
   
-  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
+  Rooted<CalendarValue> calendarValue(cx, CalendarValue(cx->names().iso8601));
   if (calendarString) {
-    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+    if (!ToBuiltinCalendar(cx, calendarString, &calendarValue)) {
       return nullptr;
     }
   }
@@ -279,21 +290,33 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
   
   if (!hasYear) {
     
-    MOZ_ASSERT(calendar.isString() &&
-               EqualStrings(calendar.toString(), cx->names().iso8601));
+    MOZ_ASSERT(calendarValue.isString() &&
+               EqualStrings(calendarValue.toString(), cx->names().iso8601));
 
     
     constexpr int32_t referenceISOYear = 1972;
 
     
     return CreateTemporalMonthDay(
-        cx, {referenceISOYear, result.month, result.day}, calendar);
+        cx, {referenceISOYear, result.month, result.day}, calendarValue);
   }
 
   
   Rooted<PlainMonthDayObject*> obj(
-      cx, CreateTemporalMonthDay(cx, result, calendar));
+      cx, CreateTemporalMonthDay(cx, result, calendarValue));
   if (!obj) {
+    return nullptr;
+  }
+
+  
+
+  
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::MonthDayFromFields,
+                                   },
+                                   &calendar)) {
     return nullptr;
   }
 
@@ -500,6 +523,7 @@ static bool PlainMonthDay_day(JSContext* cx, unsigned argc, Value* vp) {
 static bool PlainMonthDay_with(JSContext* cx, const CallArgs& args) {
   Rooted<PlainMonthDayObject*> monthDay(
       cx, &args.thisv().toObject().as<PlainMonthDayObject>());
+  Rooted<CalendarValue> calendarValue(cx, monthDay->calendar());
 
   
   Rooted<JSObject*> temporalMonthDayLike(
@@ -530,7 +554,16 @@ static bool PlainMonthDay_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarValue> calendar(cx, monthDay->calendar());
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::Fields,
+                                       CalendarMethod::MergeFields,
+                                       CalendarMethod::MonthDayFromFields,
+                                   },
+                                   &calendar)) {
+    return false;
+  }
 
   
   JS::RootedVector<PropertyKey> fieldNames(cx);
@@ -742,7 +775,17 @@ static bool PlainMonthDay_toPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarValue> calendar(cx, monthDay->calendar());
+  Rooted<CalendarValue> calendarValue(cx, monthDay->calendar());
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::DateFromFields,
+                                       CalendarMethod::Fields,
+                                       CalendarMethod::MergeFields,
+                                   },
+                                   &calendar)) {
+    return false;
+  }
 
   
   JS::RootedVector<PropertyKey> receiverFieldNames(cx);

@@ -102,6 +102,20 @@ void js::temporal::CalendarValue::trace(JSTracer* trc) {
   TraceRoot(trc, &value_, "CalendarValue::value");
 }
 
+void js::temporal::CalendarRecord::trace(JSTracer* trc) {
+  receiver_.trace(trc);
+  TraceNullableRoot(trc, &dateAdd_, "CalendarRecord::dateAdd");
+  TraceNullableRoot(trc, &dateFromFields_, "CalendarRecord::dateFromFields");
+  TraceNullableRoot(trc, &dateUntil_, "CalendarRecord::dateUntil");
+  TraceNullableRoot(trc, &day_, "CalendarRecord::day");
+  TraceNullableRoot(trc, &fields_, "CalendarRecord::fields");
+  TraceNullableRoot(trc, &mergeFields_, "CalendarRecord::mergeFields");
+  TraceNullableRoot(trc, &monthDayFromFields_,
+                    "CalendarRecord::monthDayFromFields");
+  TraceNullableRoot(trc, &yearMonthFromFields_,
+                    "CalendarRecord::yearMonthFromFields");
+}
+
 bool js::temporal::WrapCalendarValue(JSContext* cx,
                                      JS::MutableHandle<JS::Value> calendar) {
   MOZ_ASSERT(calendar.isString() || calendar.isObject());
@@ -842,6 +856,139 @@ JSObject* js::temporal::ToTemporalCalendarObject(
   return CreateTemporalCalendar(cx, calendarId);
 }
 
+
+
+
+bool js::temporal::CreateCalendarMethodsRecord(
+    JSContext* cx, Handle<CalendarValue> calendar,
+    mozilla::EnumSet<CalendarMethod> methods,
+    MutableHandle<CalendarRecord> result) {
+  
+  result.set(CalendarRecord{calendar});
+
+  
+  if (calendar.isString()) {
+#ifdef DEBUG
+    
+    result.get().lookedUpBuiltin() += methods;
+#endif
+    return true;
+  }
+
+  
+  for (auto method : methods) {
+    if (!CalendarMethodsRecordLookup(cx, result, method)) {
+      return false;
+    }
+  }
+
+  
+  return true;
+}
+
+
+
+
+bool js::temporal::CalendarMethodsRecordLookup(
+    JSContext* cx, MutableHandle<CalendarRecord> calendar,
+    CalendarMethod methodName) {
+  
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+    
+    MOZ_ASSERT(!calendar.get().lookedUpBuiltin().contains(methodName));
+
+    
+#ifdef DEBUG
+    
+    calendar.get().lookedUpBuiltin() += methodName;
+#endif
+
+    
+    return true;
+  }
+
+  
+  MOZ_ASSERT(!CalendarMethodsRecordHasLookedUp(calendar, methodName));
+
+  
+  Rooted<JSObject*> object(cx, calendar.receiver().toObject());
+  switch (methodName) {
+    
+    case CalendarMethod::DateAdd:
+      return GetMethod(cx, object, cx->names().dateAdd, calendar.dateAdd());
+
+      
+    case CalendarMethod::DateFromFields:
+      return GetMethod(cx, object, cx->names().dateFromFields,
+                       calendar.dateFromFields());
+
+      
+    case CalendarMethod::DateUntil:
+      return GetMethod(cx, object, cx->names().dateUntil, calendar.dateUntil());
+
+      
+    case CalendarMethod::Day:
+      return GetMethod(cx, object, cx->names().day, calendar.day());
+
+      
+    case CalendarMethod::Fields:
+      return GetMethod(cx, object, cx->names().fields, calendar.fields());
+
+      
+    case CalendarMethod::MergeFields:
+      return GetMethod(cx, object, cx->names().mergeFields,
+                       calendar.mergeFields());
+
+      
+    case CalendarMethod::MonthDayFromFields:
+      return GetMethod(cx, object, cx->names().monthDayFromFields,
+                       calendar.monthDayFromFields());
+
+      
+    case CalendarMethod::YearMonthFromFields:
+      return GetMethod(cx, object, cx->names().yearMonthFromFields,
+                       calendar.yearMonthFromFields());
+  }
+
+  MOZ_CRASH("invalid calendar method");
+}
+
+
+
+
+bool js::temporal::CalendarMethodsRecordHasLookedUp(
+    const CalendarRecord& calendar, CalendarMethod methodName) {
+  
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+#ifdef DEBUG
+    return calendar.lookedUpBuiltin().contains(methodName);
+#else
+    return true;
+#endif
+  }
+
+  
+  switch (methodName) {
+    case CalendarMethod::DateAdd:
+      return calendar.dateAdd();
+    case CalendarMethod::DateFromFields:
+      return calendar.dateFromFields();
+    case CalendarMethod::DateUntil:
+      return calendar.dateUntil();
+    case CalendarMethod::Day:
+      return calendar.day();
+    case CalendarMethod::Fields:
+      return calendar.fields();
+    case CalendarMethod::MergeFields:
+      return calendar.mergeFields();
+    case CalendarMethod::MonthDayFromFields:
+      return calendar.monthDayFromFields();
+    case CalendarMethod::YearMonthFromFields:
+      return calendar.yearMonthFromFields();
+  }
+  MOZ_CRASH("invalid calendar method");
+}
+
 static bool ToCalendarField(JSContext* cx, JSLinearString* linear,
                             CalendarField* result) {
   if (StringEqualsLiteral(linear, "year")) {
@@ -944,9 +1091,12 @@ static bool IsSorted(std::initializer_list<CalendarField> fieldNames) {
 
 
 bool js::temporal::CalendarFields(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     std::initializer_list<CalendarField> fieldNames,
     MutableHandle<CalendarFieldNames> result) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::Fields));
+
   
   MOZ_ASSERT(IsSorted(fieldNames));
 
@@ -956,22 +1106,19 @@ bool js::temporal::CalendarFields(
              fieldNames.end());
 
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     
 
     
-    MOZ_ASSERT(IsISO8601Calendar(calendar.toString()));
+    MOZ_ASSERT(IsISO8601Calendar(calendar.receiver().toString()));
     return BuiltinCalendarFields(cx, fieldNames, result.get());
 
     
   }
 
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fields(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().fields, &fields)) {
-    return false;
-  }
+  Rooted<JSObject*> calendarObj(cx, calendar.receiver().toObject());
+  auto fields = calendar.fields();
+  MOZ_ASSERT(fields);
 
   
   if (calendarObj->is<CalendarObject>() &&
@@ -991,6 +1138,8 @@ bool js::temporal::CalendarFields(
     }
   }
 
+  
+
   auto* array = NewDenseFullyAllocatedArray(cx, fieldNames.size());
   if (!array) {
     return false;
@@ -1002,8 +1151,9 @@ bool js::temporal::CalendarFields(
     array->initDenseElement(i, StringValue(name));
   }
 
+  Rooted<Value> fieldsFn(cx, ObjectValue(*fields));
   Rooted<Value> fieldsArray(cx, ObjectValue(*array));
-  if (!Call(cx, fields, calendarObj, fieldsArray, &fieldsArray)) {
+  if (!Call(cx, fieldsFn, calendarObj, fieldsArray, &fieldsArray)) {
     return false;
   }
 
@@ -1087,7 +1237,7 @@ static bool CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().year, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().year, &fn)) {
     return false;
   }
 
@@ -1176,7 +1326,7 @@ static bool CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().month, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().month, &fn)) {
     return false;
   }
 
@@ -1270,7 +1420,7 @@ static bool CalendarMonthCode(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().monthCode, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().monthCode, &fn)) {
     return false;
   }
 
@@ -1374,26 +1524,28 @@ static bool Calendar_day(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-static bool CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
+static bool CalendarDay(JSContext* cx, Handle<CalendarRecord> calendar,
                         Handle<JSObject*> dateLike, const PlainDate& date,
                         MutableHandle<Value> result) {
+  MOZ_ASSERT(CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::Day));
+
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+    return BuiltinCalendarDay(date, result);
+  }
+
+  Rooted<JSObject*> calendarObj(cx, calendar.receiver().toObject());
+  auto day = calendar.day();
+  MOZ_ASSERT(day);
+
+  
+  if (calendarObj->is<CalendarObject>() &&
+      IsNativeFunction(day, Calendar_day)) {
     return BuiltinCalendarDay(date, result);
   }
 
   
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().day, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() && IsNativeFunction(fn, Calendar_day)) {
-    return BuiltinCalendarDay(date, result);
-  }
-
+  Rooted<Value> fn(cx, ObjectValue(*day));
   Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
   if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
     return false;
@@ -1409,7 +1561,16 @@ static bool CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
 bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
                                Handle<PlainDateObject*> dateLike,
                                MutableHandle<Value> result) {
-  return CalendarDay(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+  Rooted<CalendarRecord> calendarRec(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendar,
+                                   {
+                                       CalendarMethod::Day,
+                                   },
+                                   &calendarRec)) {
+    return false;
+  }
+
+  return CalendarDay(cx, calendarRec, dateLike, ToPlainDate(dateLike), result);
 }
 
 
@@ -1418,7 +1579,16 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
 bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
                                Handle<PlainDateTimeObject*> dateLike,
                                MutableHandle<Value> result) {
-  return CalendarDay(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+  Rooted<CalendarRecord> calendarRec(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendar,
+                                   {
+                                       CalendarMethod::Day,
+                                   },
+                                   &calendarRec)) {
+    return false;
+  }
+
+  return CalendarDay(cx, calendarRec, dateLike, ToPlainDate(dateLike), result);
 }
 
 
@@ -1427,16 +1597,26 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
 bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
                                Handle<PlainMonthDayObject*> dateLike,
                                MutableHandle<Value> result) {
-  return CalendarDay(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+  Rooted<CalendarRecord> calendarRec(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendar,
+                                   {
+                                       CalendarMethod::Day,
+                                   },
+                                   &calendarRec)) {
+    return false;
+  }
+
+  return CalendarDay(cx, calendarRec, dateLike, ToPlainDate(dateLike), result);
 }
 
 
 
 
-bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
+bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarRecord> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
-  Rooted<PlainDateObject*> dateLike(cx, CreateTemporalDate(cx, date, calendar));
+  Rooted<PlainDateObject*> dateLike(
+      cx, CreateTemporalDate(cx, date, calendar.receiver()));
   if (!dateLike) {
     return false;
   }
@@ -1447,11 +1627,11 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
 
 
 
-bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
+bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarRecord> calendar,
                                const PlainDateTime& dateTime,
                                MutableHandle<Value> result) {
   Rooted<PlainDateTimeObject*> dateLike(
-      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+      cx, CreateTemporalDateTime(cx, dateTime, calendar.receiver()));
   if (!dateLike) {
     return false;
   }
@@ -1487,7 +1667,7 @@ static bool CalendarDayOfWeek(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dayOfWeek, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().dayOfWeek, &fn)) {
     return false;
   }
 
@@ -1572,7 +1752,7 @@ static bool CalendarDayOfYear(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dayOfYear, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().dayOfYear, &fn)) {
     return false;
   }
 
@@ -1658,7 +1838,7 @@ static bool CalendarWeekOfYear(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().weekOfYear, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().weekOfYear, &fn)) {
     return false;
   }
 
@@ -1744,7 +1924,7 @@ static bool CalendarYearOfWeek(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().yearOfWeek, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().yearOfWeek, &fn)) {
     return false;
   }
 
@@ -1830,7 +2010,7 @@ static bool CalendarDaysInWeek(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().daysInWeek, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().daysInWeek, &fn)) {
     return false;
   }
 
@@ -1916,7 +2096,7 @@ static bool CalendarDaysInMonth(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().daysInMonth, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().daysInMonth, &fn)) {
     return false;
   }
 
@@ -2013,7 +2193,7 @@ static bool CalendarDaysInYear(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().daysInYear, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().daysInYear, &fn)) {
     return false;
   }
 
@@ -2110,7 +2290,7 @@ static bool CalendarMonthsInYear(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().monthsInYear, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().monthsInYear, &fn)) {
     return false;
   }
 
@@ -2207,7 +2387,7 @@ static bool CalendarInLeapYear(JSContext* cx, Handle<CalendarValue> calendar,
   
   Rooted<JSObject*> calendarObj(cx, calendar.toObject());
   Rooted<Value> fn(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().inLeapYear, &fn)) {
+  if (!GetMethod(cx, calendarObj, cx->names().inLeapYear, &fn)) {
     return false;
   }
 
@@ -2467,22 +2647,21 @@ static bool Calendar_dateFromFields(JSContext* cx, unsigned argc, Value* vp);
 
 
 static Wrapped<PlainDateObject*> CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
     Handle<PlainObject*> maybeOptions) {
+  MOZ_ASSERT(CalendarMethodsRecordHasLookedUp(calendar,
+                                              CalendarMethod::DateFromFields));
+
   
 
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     return BuiltinCalendarDateFromFields(cx, fields, maybeOptions);
   }
 
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateFromFields(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateFromFields,
-                        &dateFromFields)) {
-    return nullptr;
-  }
+  Rooted<JSObject*> calendarObj(cx, calendar.receiver().toObject());
+  auto dateFromFields = calendar.dateFromFields();
+  MOZ_ASSERT(dateFromFields);
 
   
   if (calendarObj->is<CalendarObject>() &&
@@ -2491,6 +2670,8 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
   }
 
   
+
+  Rooted<Value> dateFromFieldsFn(cx, ObjectValue(*dateFromFields));
   Rooted<Value> thisv(cx, ObjectValue(*calendarObj));
   Rooted<Value> rval(cx);
 
@@ -2502,7 +2683,7 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
     args[1].setUndefined();
   }
 
-  if (!Call(cx, dateFromFields, thisv, args, &rval)) {
+  if (!Call(cx, dateFromFieldsFn, thisv, args, &rval)) {
     return nullptr;
   }
 
@@ -2521,7 +2702,7 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<PlainObject*> fields) {
   
   return ::CalendarDateFromFields(cx, calendar, fields, nullptr);
@@ -2531,7 +2712,7 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> options) {
   
   return ::CalendarDateFromFields(cx, calendar, fields, options);
@@ -2666,22 +2847,21 @@ static bool Calendar_yearMonthFromFields(JSContext* cx, unsigned argc,
 
 
 static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
     Handle<PlainObject*> maybeOptions) {
+  MOZ_ASSERT(CalendarMethodsRecordHasLookedUp(
+      calendar, CalendarMethod::YearMonthFromFields));
+
   
 
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     return BuiltinCalendarYearMonthFromFields(cx, fields, maybeOptions);
   }
 
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> yearMonthFromFields(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().yearMonthFromFields,
-                        &yearMonthFromFields)) {
-    return nullptr;
-  }
+  Rooted<JSObject*> calendarObj(cx, calendar.receiver().toObject());
+  auto yearMonthFromFields = calendar.yearMonthFromFields();
+  MOZ_ASSERT(yearMonthFromFields);
 
   
   if (calendarObj->is<CalendarObject>() &&
@@ -2689,6 +2869,9 @@ static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
     return BuiltinCalendarYearMonthFromFields(cx, fields, maybeOptions);
   }
 
+  
+
+  Rooted<Value> yearMonthFromFieldsFn(cx, ObjectValue(*yearMonthFromFields));
   Rooted<Value> thisv(cx, ObjectValue(*calendarObj));
   Rooted<Value> rval(cx);
 
@@ -2700,7 +2883,7 @@ static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
     args[1].setUndefined();
   }
 
-  if (!Call(cx, yearMonthFromFields, thisv, args, &rval)) {
+  if (!Call(cx, yearMonthFromFieldsFn, thisv, args, &rval)) {
     return nullptr;
   }
 
@@ -2720,7 +2903,7 @@ static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<PlainObject*> fields) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, nullptr);
@@ -2730,7 +2913,7 @@ Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<PlainYearMonthObject*> fields) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, nullptr);
@@ -2740,7 +2923,7 @@ Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> options) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, options);
@@ -2829,22 +3012,21 @@ static bool Calendar_monthDayFromFields(JSContext* cx, unsigned argc,
 
 
 static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<JSObject*> fields,
     Handle<PlainObject*> maybeOptions) {
+  MOZ_ASSERT(CalendarMethodsRecordHasLookedUp(
+      calendar, CalendarMethod::MonthDayFromFields));
+
   
 
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     return BuiltinCalendarMonthDayFromFields(cx, fields, maybeOptions);
   }
 
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> monthDayFromFields(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().monthDayFromFields,
-                        &monthDayFromFields)) {
-    return nullptr;
-  }
+  Rooted<JSObject*> calendarObj(cx, calendar.receiver().toObject());
+  auto monthDayFromFields = calendar.monthDayFromFields();
+  MOZ_ASSERT(monthDayFromFields);
 
   
   if (calendarObj->is<CalendarObject>() &&
@@ -2852,6 +3034,9 @@ static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
     return BuiltinCalendarMonthDayFromFields(cx, fields, maybeOptions);
   }
 
+  
+
+  Rooted<Value> monthDayFromFieldsFn(cx, ObjectValue(*monthDayFromFields));
   Rooted<Value> thisv(cx, ObjectValue(*calendarObj));
   Rooted<Value> rval(cx);
 
@@ -2863,7 +3048,7 @@ static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
     args[1].setUndefined();
   }
 
-  if (!Call(cx, monthDayFromFields, thisv, args, &rval)) {
+  if (!Call(cx, monthDayFromFieldsFn, thisv, args, &rval)) {
     return nullptr;
   }
 
@@ -2882,7 +3067,7 @@ static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<PlainObject*> fields) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
@@ -2892,7 +3077,7 @@ Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<PlainMonthDayObject*> fields) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
@@ -2902,7 +3087,7 @@ Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> options) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, options);
@@ -3102,23 +3287,22 @@ static bool Calendar_mergeFields(JSContext* cx, unsigned argc, Value* vp);
 
 
 JSObject* js::temporal::CalendarMergeFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> additionalFields) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::MergeFields));
+
   MOZ_ASSERT(IsPlainDataObject(fields));
   MOZ_ASSERT(IsPlainDataObject(additionalFields));
 
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     return BuiltinCalendarMergeFields(cx, fields, additionalFields);
   }
 
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> mergeFields(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().mergeFields,
-                        &mergeFields)) {
-    return nullptr;
-  }
+  Rooted<JSObject*> calendarObj(cx, calendar.receiver().toObject());
+  auto mergeFields = calendar.mergeFields();
+  MOZ_ASSERT(mergeFields);
 
   
   if (calendarObj->is<CalendarObject>() &&
@@ -3126,6 +3310,9 @@ JSObject* js::temporal::CalendarMergeFields(
     return BuiltinCalendarMergeFields(cx, fields, additionalFields);
   }
 
+  
+
+  Rooted<Value> mergeFieldsFn(cx, ObjectValue(*mergeFields));
   Rooted<Value> thisv(cx, ObjectValue(*calendarObj));
   Rooted<Value> result(cx);
 
@@ -3133,7 +3320,7 @@ JSObject* js::temporal::CalendarMergeFields(
   args[0].setObject(*fields);
   args[1].setObject(*additionalFields);
 
-  if (!Call(cx, mergeFields, thisv, args, &result)) {
+  if (!Call(cx, mergeFieldsFn, thisv, args, &result)) {
     return nullptr;
   }
 
@@ -3247,21 +3434,17 @@ static bool BuiltinCalendarAdd(JSContext* cx,
 
 
 static Wrapped<PlainDateObject*> CalendarDateAddSlow(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
-    Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options,
-    Handle<Value> dateAdd) {
-  
-  
-
-  if (!IsCallable(dateAdd)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_PROPERTY_NOT_CALLABLE, "dateAdd");
-    return nullptr;
-  }
+    Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
-  Rooted<Value> thisv(cx, ObjectValue(*calendar));
+
+  
+  Rooted<JS::Value> dateAdd(cx, ObjectValue(*calendar.dateAdd()));
+  Rooted<Value> thisv(cx, ObjectValue(*calendar.receiver().toObject()));
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<3> args(cx);
@@ -3276,6 +3459,9 @@ static Wrapped<PlainDateObject*> CalendarDateAddSlow(
   if (!Call(cx, dateAdd, thisv, args, &rval)) {
     return nullptr;
   }
+
+  
+  MOZ_ASSERT(!CalendarMethodsRecordIsBuiltin(calendar));
 
   
   if (!rval.isObject() || !rval.toObject().canUnwrapAs<PlainDateObject>()) {
@@ -3294,59 +3480,100 @@ static bool Calendar_dateAdd(JSContext* cx, unsigned argc, Value* vp);
 
 
 static Wrapped<PlainDateObject*> CalendarDateAdd(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date, const Duration& duration,
-    Handle<JSObject*> options, Handle<Value> dateAdd) {
+    Handle<JSObject*> options) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
-  if (calendar->is<CalendarObject>() &&
+
+  
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+    return BuiltinCalendarAdd(cx, date, duration, options);
+  }
+
+  auto dateAdd = calendar.dateAdd();
+  MOZ_ASSERT(dateAdd);
+
+  
+  if (calendar.receiver().toObject()->is<CalendarObject>() &&
       IsNativeFunction(dateAdd, Calendar_dateAdd)) {
     return BuiltinCalendarAdd(cx, date, duration, options);
   }
 
+  
   Rooted<DurationObject*> durationObj(cx, CreateTemporalDuration(cx, duration));
   if (!durationObj) {
     return nullptr;
   }
-  return CalendarDateAddSlow(cx, calendar, date, durationObj, options, dateAdd);
+  return CalendarDateAddSlow(cx, calendar, date, durationObj, options);
 }
 
 
 
 
 static Wrapped<PlainDateObject*> CalendarDateAdd(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
-    Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options,
-    Handle<Value> dateAdd) {
+    Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
-  if (calendar->is<CalendarObject>() &&
+
+  
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+    return BuiltinCalendarAdd(cx, date, duration, options);
+  }
+
+  auto dateAdd = calendar.dateAdd();
+  MOZ_ASSERT(dateAdd);
+
+  
+  if (calendar.receiver().toObject()->is<CalendarObject>() &&
       IsNativeFunction(dateAdd, Calendar_dateAdd)) {
     return BuiltinCalendarAdd(cx, date, duration, options);
   }
 
-  return CalendarDateAddSlow(cx, calendar, date, duration, options, dateAdd);
+  
+  return CalendarDateAddSlow(cx, calendar, date, duration, options);
 }
 
 
 
 
-static bool CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
+static bool CalendarDateAdd(JSContext* cx, Handle<CalendarRecord> calendar,
                             Handle<Wrapped<PlainDateObject*>> date,
                             const Duration& duration, Handle<JSObject*> options,
-                            Handle<Value> dateAdd, PlainDate* result) {
+                            PlainDate* result) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
-  if (calendar->is<CalendarObject>() &&
+
+  
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+    return BuiltinCalendarAdd(cx, date, duration, options, result);
+  }
+
+  auto dateAdd = calendar.dateAdd();
+  MOZ_ASSERT(dateAdd);
+
+  
+  if (calendar.receiver().toObject()->is<CalendarObject>() &&
       IsNativeFunction(dateAdd, Calendar_dateAdd)) {
     return BuiltinCalendarAdd(cx, date, duration, options, result);
   }
+
+  
 
   Rooted<DurationObject*> durationObj(cx, CreateTemporalDuration(cx, duration));
   if (!durationObj) {
     return false;
   }
 
-  auto obj =
-      CalendarDateAddSlow(cx, calendar, date, durationObj, options, dateAdd);
+  auto obj = CalendarDateAddSlow(cx, calendar, date, durationObj, options);
   if (!obj) {
     return false;
   }
@@ -3358,19 +3585,32 @@ static bool CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-static bool CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
+static bool CalendarDateAdd(JSContext* cx, Handle<CalendarRecord> calendar,
                             const PlainDate& date, const Duration& duration,
-                            Handle<JSObject*> options, Handle<Value> dateAdd,
-                            PlainDate* result) {
+                            Handle<JSObject*> options, PlainDate* result) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
-  if (calendar->is<CalendarObject>() &&
+
+  
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+    return BuiltinCalendarAdd(cx, date, duration, options, result);
+  }
+
+  auto dateAdd = calendar.dateAdd();
+  MOZ_ASSERT(dateAdd);
+
+  
+  if (calendar.receiver().toObject()->is<CalendarObject>() &&
       IsNativeFunction(dateAdd, Calendar_dateAdd)) {
     return BuiltinCalendarAdd(cx, date, duration, options, result);
   }
 
-  Rooted<CalendarValue> calendarValue(cx, CalendarValue(calendar));
-  Rooted<PlainDateObject*> dateObj(cx,
-                                   CreateTemporalDate(cx, date, calendarValue));
+  
+
+  Rooted<PlainDateObject*> dateObj(
+      cx, CreateTemporalDate(cx, date, calendar.receiver()));
   if (!dateObj) {
     return false;
   }
@@ -3380,8 +3620,7 @@ static bool CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
     return false;
   }
 
-  auto obj =
-      CalendarDateAddSlow(cx, calendar, dateObj, durationObj, options, dateAdd);
+  auto obj = CalendarDateAddSlow(cx, calendar, dateObj, durationObj, options);
   if (!obj) {
     return false;
   }
@@ -3394,91 +3633,60 @@ static bool CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date, const Duration& duration,
     Handle<JSObject*> options) {
   
 
   
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
-    return nullptr;
-  }
-
-  
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd);
+  return ::CalendarDateAdd(cx, calendar, date, duration, options);
 }
 
 
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<CalendarValue> calendar,
-    Handle<Wrapped<PlainDateObject*>> date, const Duration& duration,
-    Handle<Value> dateAdd) {
+    JSContext* cx, Handle<CalendarRecord> calendar,
+    Handle<Wrapped<PlainDateObject*>> date, const Duration& duration) {
   
   Handle<JSObject*> options = nullptr;
 
   
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd);
+  return ::CalendarDateAdd(cx, calendar, date, duration, options);
 }
 
 
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<CalendarValue> calendar,
-    Handle<Wrapped<PlainDateObject*>> date, const Duration& duration,
-    Handle<JSObject*> options, Handle<Value> dateAdd) {
-  
-
-  
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd);
-}
-
-
-
-
-Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<CalendarValue> calendar,
+    JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
-    Handle<Wrapped<DurationObject*>> duration, Handle<Value> dateAdd) {
+    Handle<Wrapped<DurationObject*>> duration) {
   
   Handle<JSObject*> options = nullptr;
 
   
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options);
-  }
+  return ::CalendarDateAdd(cx, calendar, date, duration, options);
+}
+
+
+
+
+Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
+    JSContext* cx, Handle<CalendarRecord> calendar,
+    Handle<Wrapped<PlainDateObject*>> date,
+    Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options) {
+  
 
   
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd);
+  return ::CalendarDateAdd(cx, calendar, date, duration, options);
 }
 
 
 
 
 bool js::temporal::CalendarDateAdd(JSContext* cx,
-                                   Handle<CalendarValue> calendar,
+                                   Handle<CalendarRecord> calendar,
                                    const PlainDate& date,
                                    const Duration& duration,
                                    PlainDate* result) {
@@ -3486,67 +3694,34 @@ bool js::temporal::CalendarDateAdd(JSContext* cx,
   Handle<JSObject*> options = nullptr;
 
   
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
-    return false;
-  }
-
-  
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd,
-                           result);
+  return ::CalendarDateAdd(cx, calendar, date, duration, options, result);
 }
 
 
 
 
 bool js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<CalendarValue> calendar, const PlainDate& date,
+    JSContext* cx, Handle<CalendarRecord> calendar, const PlainDate& date,
     const Duration& duration, Handle<JSObject*> options, PlainDate* result) {
   
 
   
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
-    return false;
-  }
-
-  
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd,
-                           result);
+  return ::CalendarDateAdd(cx, calendar, date, duration, options, result);
 }
 
 
 
 
 bool js::temporal::CalendarDateAdd(JSContext* cx,
-                                   Handle<CalendarValue> calendar,
+                                   Handle<CalendarRecord> calendar,
                                    Handle<Wrapped<PlainDateObject*>> date,
                                    const Duration& duration,
-                                   Handle<Value> dateAdd, PlainDate* result) {
+                                   PlainDate* result) {
   
   Handle<JSObject*> options = nullptr;
 
   
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd,
-                           result);
+  return ::CalendarDateAdd(cx, calendar, date, duration, options, result);
 }
 
 
@@ -3614,24 +3789,17 @@ static bool BuiltinCalendarDateUntil(JSContext* cx,
   return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
 }
 
-static bool CalendarDateUntilSlow(JSContext* cx, Handle<JSObject*> calendar,
+static bool CalendarDateUntilSlow(JSContext* cx,
+                                  Handle<CalendarRecord> calendar,
                                   Handle<Wrapped<PlainDateObject*>> one,
                                   Handle<Wrapped<PlainDateObject*>> two,
-                                  Handle<JSObject*> options,
-                                  Handle<Value> dateUntil, Duration* result) {
-  
-  
+                                  Handle<JSObject*> options, Duration* result) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
   
-
-  if (!IsCallable(dateUntil)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_PROPERTY_NOT_CALLABLE, "dateUntil");
-    return false;
-  }
-
-  
-  Rooted<Value> thisv(cx, ObjectValue(*calendar));
+  Rooted<JS::Value> dateUntil(cx, ObjectValue(*calendar.dateUntil()));
+  Rooted<Value> thisv(cx, ObjectValue(*calendar.receiver().toObject()));
   Rooted<Value> rval(cx);
 
   FixedInvokeArgs<3> args(cx);
@@ -3642,6 +3810,9 @@ static bool CalendarDateUntilSlow(JSContext* cx, Handle<JSObject*> calendar,
   if (!Call(cx, dateUntil, thisv, args, &rval)) {
     return false;
   }
+
+  
+  MOZ_ASSERT(!CalendarMethodsRecordIsBuiltin(calendar));
 
   
   if (!rval.isObject() || !rval.toObject().canUnwrapAs<DurationObject>()) {
@@ -3660,50 +3831,56 @@ static bool Calendar_dateUntil(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-static bool CalendarDateUntil(JSContext* cx, Handle<CalendarValue> calendar,
-                              Handle<Wrapped<PlainDateObject*>> one,
-                              Handle<Wrapped<PlainDateObject*>> two,
-                              Handle<JSObject*> options,
-                              Handle<Value> dateUntil, Duration* result) {
+bool js::temporal::CalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarRecord> calendar,
+                                     Handle<Wrapped<PlainDateObject*>> one,
+                                     Handle<Wrapped<PlainDateObject*>> two,
+                                     Handle<PlainObject*> options,
+                                     Duration* result) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
+
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     return BuiltinCalendarDateUntil(cx, one, two, options, result);
   }
 
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+  auto dateUntil = calendar.dateUntil();
+  MOZ_ASSERT(dateUntil);
 
   
-  if (calendarObj->is<CalendarObject>() &&
+  if (calendar.receiver().toObject()->is<CalendarObject>() &&
       IsNativeFunction(dateUntil, Calendar_dateUntil)) {
     return BuiltinCalendarDateUntil(cx, one, two, options, result);
   }
 
   
-  return CalendarDateUntilSlow(cx, calendarObj, one, two, options, dateUntil,
-                               result);
+  return CalendarDateUntilSlow(cx, calendar, one, two, options, result);
 }
 
 
 
 
 bool js::temporal::CalendarDateUntil(JSContext* cx,
-                                     Handle<CalendarValue> calendar,
+                                     Handle<CalendarRecord> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
                                      TemporalUnit largestUnit,
-                                     Handle<Value> dateUntil,
                                      Duration* result) {
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
   MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
 
   
-  if (calendar.isString()) {
+  if (CalendarMethodsRecordIsBuiltin(calendar)) {
     return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
   }
 
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+  auto dateUntil = calendar.dateUntil();
+  MOZ_ASSERT(dateUntil);
 
   
-  if (calendarObj->is<CalendarObject>() &&
+  if (calendar.receiver().toObject()->is<CalendarObject>() &&
       IsNativeFunction(dateUntil, Calendar_dateUntil)) {
     return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
   }
@@ -3719,61 +3896,7 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
   }
 
   
-  return CalendarDateUntilSlow(cx, calendarObj, one, two, untilOptions,
-                               dateUntil, result);
-}
-
-
-
-
-bool js::temporal::CalendarDateUntil(JSContext* cx,
-                                     Handle<CalendarValue> calendar,
-                                     Handle<Wrapped<PlainDateObject*>> one,
-                                     Handle<Wrapped<PlainDateObject*>> two,
-                                     Handle<PlainObject*> options,
-                                     Duration* result) {
-  
-  if (calendar.isString()) {
-    return BuiltinCalendarDateUntil(cx, one, two, options, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateUntil(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateUntil, &dateUntil)) {
-    return false;
-  }
-
-  
-  return CalendarDateUntil(cx, calendar, one, two, options, dateUntil, result);
-}
-
-
-
-
-bool js::temporal::CalendarDateUntil(JSContext* cx,
-                                     Handle<CalendarValue> calendar,
-                                     Handle<Wrapped<PlainDateObject*>> one,
-                                     Handle<Wrapped<PlainDateObject*>> two,
-                                     TemporalUnit largestUnit,
-                                     Duration* result) {
-  MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
-
-  
-  if (calendar.isString()) {
-    return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateUntil(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateUntil, &dateUntil)) {
-    return false;
-  }
-
-  
-  return CalendarDateUntil(cx, calendar, one, two, largestUnit, dateUntil,
-                           result);
+  return CalendarDateUntilSlow(cx, calendar, one, two, untilOptions, result);
 }
 
 

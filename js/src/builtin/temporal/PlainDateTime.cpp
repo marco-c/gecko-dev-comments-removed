@@ -432,9 +432,13 @@ bool js::temporal::CreateTemporalDateTime(
 
 
 bool js::temporal::InterpretTemporalDateTimeFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> options, PlainDateTime* result) {
   
+
+  
+  MOZ_ASSERT(CalendarMethodsRecordHasLookedUp(calendar,
+                                              CalendarMethod::DateFromFields));
 
   
   TimeRecord timeResult;
@@ -483,7 +487,7 @@ bool js::temporal::InterpretTemporalDateTimeFields(
 
 
 bool js::temporal::InterpretTemporalDateTimeFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarRecord> calendar, Handle<PlainObject*> fields,
     PlainDateTime* result) {
   
   
@@ -573,8 +577,19 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
     }
 
     
+    Rooted<CalendarRecord> calendarRec(cx);
+    if (!CreateCalendarMethodsRecord(cx, calendar,
+                                     {
+                                         CalendarMethod::DateFromFields,
+                                         CalendarMethod::Fields,
+                                     },
+                                     &calendarRec)) {
+      return nullptr;
+    }
+
+    
     JS::RootedVector<PropertyKey> fieldNames(cx);
-    if (!CalendarFields(cx, calendar,
+    if (!CalendarFields(cx, calendarRec,
                         {CalendarField::Day, CalendarField::Month,
                          CalendarField::MonthCode, CalendarField::Year},
                         &fieldNames)) {
@@ -603,12 +618,12 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
 
     
     if (maybeResolvedOptions) {
-      if (!InterpretTemporalDateTimeFields(cx, calendar, fields,
+      if (!InterpretTemporalDateTimeFields(cx, calendarRec, fields,
                                            maybeResolvedOptions, &result)) {
         return nullptr;
       }
     } else {
-      if (!InterpretTemporalDateTimeFields(cx, calendar, fields, &result)) {
+      if (!InterpretTemporalDateTimeFields(cx, calendarRec, fields, &result)) {
         return nullptr;
       }
     }
@@ -680,17 +695,24 @@ bool js::temporal::ToTemporalDateTime(JSContext* cx, Handle<Value> item,
 
 
 
-static bool ToTemporalDateTime(JSContext* cx, Handle<Value> item,
-                               PlainDateTime* result,
-                               MutableHandle<CalendarValue> calendar) {
-  auto* obj = ::ToTemporalDateTime(cx, item, nullptr).unwrapOrNull();
+static bool ToTemporalDateTime(
+    JSContext* cx, Handle<Value> item,
+    MutableHandle<PlainDateTimeWithCalendar> result) {
+  HandleObject options = nullptr;
+
+  auto* obj = ::ToTemporalDateTime(cx, item, options).unwrapOrNull();
   if (!obj) {
     return false;
   }
 
-  *result = ToPlainDateTime(obj);
-  calendar.set(obj->calendar());
-  return calendar.wrap(cx);
+  auto dateTime = ToPlainDateTime(obj);
+  Rooted<CalendarValue> calendar(cx, obj->calendar());
+  if (!calendar.wrap(cx)) {
+    return false;
+  }
+
+  result.set(PlainDateTimeWithCalendar{dateTime, calendar});
+  return true;
 }
 
 
@@ -716,7 +738,7 @@ static int32_t CompareISODateTime(const PlainDateTime& one,
 
 
 static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
-                        Handle<CalendarValue> calendar,
+                        Handle<CalendarRecord> calendar,
                         const Duration& duration, Handle<JSObject*> options,
                         PlainDateTime* result) {
   MOZ_ASSERT(IsValidDuration(duration));
@@ -757,7 +779,7 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
 
 static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
                                   const PlainDateTime& two,
-                                  Handle<CalendarValue> calendar,
+                                  Handle<CalendarRecord> calendar,
                                   TemporalUnit largestUnit,
                                   Handle<PlainObject*> maybeOptions,
                                   Duration* result) {
@@ -766,6 +788,11 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   MOZ_ASSERT(IsValidISODateTime(two));
   MOZ_ASSERT(ISODateTimeWithinLimits(one));
   MOZ_ASSERT(ISODateTimeWithinLimits(two));
+
+  
+  MOZ_ASSERT_IF(
+      one.date != two.date && largestUnit < TemporalUnit::Day,
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
   
   auto timeDifference = DifferenceTime(one.time, two.time);
@@ -808,15 +835,17 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
   MOZ_ASSERT(ISODateTimeWithinLimits(adjustedDate));
 
   
+
+  
   Rooted<PlainDateObject*> date1(
-      cx, CreateTemporalDate(cx, adjustedDate, calendar));
+      cx, CreateTemporalDate(cx, adjustedDate, calendar.receiver()));
   if (!date1) {
     return false;
   }
 
   
-  Rooted<PlainDateObject*> date2(cx,
-                                 CreateTemporalDate(cx, two.date, calendar));
+  Rooted<PlainDateObject*> date2(
+      cx, CreateTemporalDate(cx, two.date, calendar.receiver()));
   if (!date2) {
     return false;
   }
@@ -894,7 +923,7 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
 bool js::temporal::DifferenceISODateTime(JSContext* cx,
                                          const PlainDateTime& one,
                                          const PlainDateTime& two,
-                                         Handle<CalendarValue> calendar,
+                                         Handle<CalendarRecord> calendar,
                                          TemporalUnit largestUnit,
                                          Duration* result) {
   return ::DifferenceISODateTime(cx, one, two, calendar, largestUnit, nullptr,
@@ -907,7 +936,7 @@ bool js::temporal::DifferenceISODateTime(JSContext* cx,
 
 bool js::temporal::DifferenceISODateTime(
     JSContext* cx, const PlainDateTime& one, const PlainDateTime& two,
-    Handle<CalendarValue> calendar, TemporalUnit largestUnit,
+    Handle<CalendarRecord> calendar, TemporalUnit largestUnit,
     Handle<PlainObject*> options, Duration* result) {
   return ::DifferenceISODateTime(cx, one, two, calendar, largestUnit, options,
                                  result);
@@ -946,21 +975,19 @@ static PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
 static bool DifferenceTemporalPlainDateTime(JSContext* cx,
                                             TemporalDifference operation,
                                             const CallArgs& args) {
-  Rooted<PlainDateTimeObject*> dateTime(
+  Rooted<PlainDateTimeWithCalendar> dateTime(
       cx, &args.thisv().toObject().as<PlainDateTimeObject>());
-  Rooted<CalendarValue> calendar(cx, dateTime->calendar());
 
   
 
   
-  PlainDateTime other;
-  Rooted<CalendarValue> otherCalendar(cx);
-  if (!::ToTemporalDateTime(cx, args.get(0), &other, &otherCalendar)) {
+  Rooted<PlainDateTimeWithCalendar> other(cx);
+  if (!::ToTemporalDateTime(cx, args.get(0), &other)) {
     return false;
   }
 
   
-  if (!CalendarEqualsOrThrow(cx, calendar, otherCalendar)) {
+  if (!CalendarEqualsOrThrow(cx, dateTime.calendar(), other.calendar())) {
     return false;
   }
 
@@ -997,7 +1024,10 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
-  if (ToPlainDateTime(dateTime) == other) {
+  bool datePartsIdentical = dateTime.date() == other.date();
+
+  
+  if (datePartsIdentical && dateTime.time() == other.time()) {
     auto* obj = CreateTemporalDuration(cx, {});
     if (!obj) {
       return false;
@@ -1008,8 +1038,37 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(), {}, &calendar)) {
+    return false;
+  }
+
+  
+  if (settings.smallestUnit <= TemporalUnit::Week) {
+    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
+      return false;
+    }
+  }
+
+  
+  bool largestUnitIsCalendarUnit = settings.largestUnit <= TemporalUnit::Week;
+
+  
+  bool largestUnitRequiresDateUntilLookup =
+      !datePartsIdentical && largestUnitIsCalendarUnit;
+
+  
+  if (largestUnitRequiresDateUntilLookup ||
+      settings.smallestUnit == TemporalUnit::Year) {
+    if (!CalendarMethodsRecordLookup(cx, &calendar,
+                                     CalendarMethod::DateUntil)) {
+      return false;
+    }
+  }
+
+  
   Duration diff;
-  if (!::DifferenceISODateTime(cx, ToPlainDateTime(dateTime), other, calendar,
+  if (!::DifferenceISODateTime(cx, dateTime, other, calendar,
                                settings.largestUnit, resolvedOptions, &diff)) {
     return false;
   }
@@ -1032,7 +1091,7 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
 
   
   Rooted<PlainDateObject*> relativeTo(
-      cx, CreateTemporalDate(cx, ToPlainDate(dateTime), calendar));
+      cx, CreateTemporalDate(cx, dateTime.date(), dateTime.calendar()));
   if (!relativeTo) {
     return false;
   }
@@ -1041,7 +1100,7 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   Duration roundResult;
   if (!temporal::RoundDuration(cx, diff, settings.roundingIncrement,
                                settings.smallestUnit, settings.roundingMode,
-                               relativeTo, &roundResult)) {
+                               relativeTo, calendar, &roundResult)) {
     return false;
   }
 
@@ -1079,9 +1138,8 @@ enum class PlainDateTimeDuration { Add, Subtract };
 
 static bool AddDurationToOrSubtractDurationFromPlainDateTime(
     JSContext* cx, PlainDateTimeDuration operation, const CallArgs& args) {
-  auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
-  auto dateTime = ToPlainDateTime(temporalDateTime);
-  Rooted<CalendarValue> calendar(cx, temporalDateTime->calendar());
+  Rooted<PlainDateTimeWithCalendar> dateTime(
+      cx, &args.thisv().toObject().as<PlainDateTimeObject>());
 
   
 
@@ -1105,6 +1163,20 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
   }
 
   
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(), {}, &calendar)) {
+    return false;
+  }
+
+  
+  if (duration.years != 0 || duration.months != 0 || duration.weeks != 0) {
+    
+    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
+      return false;
+    }
+  }
+
+  
   if (operation == PlainDateTimeDuration::Subtract) {
     duration = duration.negate();
   }
@@ -1118,7 +1190,7 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
   MOZ_ASSERT(IsValidISODateTime(result));
 
   
-  auto* obj = CreateTemporalDateTime(cx, result, calendar);
+  auto* obj = CreateTemporalDateTime(cx, result, dateTime.calendar());
   if (!obj) {
     return false;
   }
@@ -1779,7 +1851,17 @@ static bool PlainDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarValue> calendar(cx, dateTime->calendar());
+  Rooted<CalendarValue> calendarValue(cx, dateTime->calendar());
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::DateFromFields,
+                                       CalendarMethod::Fields,
+                                       CalendarMethod::MergeFields,
+                                   },
+                                   &calendar)) {
+    return false;
+  }
 
   
   JS::RootedVector<PropertyKey> fieldNames(cx);
@@ -1866,7 +1948,7 @@ static bool PlainDateTime_with(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsValidISODateTime(result));
 
   
-  auto* obj = CreateTemporalDateTime(cx, result, calendar);
+  auto* obj = CreateTemporalDateTime(cx, result, calendar.receiver());
   if (!obj) {
     return false;
   }
@@ -2187,15 +2269,14 @@ static bool PlainDateTime_equals(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, temporalDateTime->calendar());
 
   
-  PlainDateTime other;
-  Rooted<CalendarValue> otherCalendar(cx);
-  if (!::ToTemporalDateTime(cx, args.get(0), &other, &otherCalendar)) {
+  Rooted<PlainDateTimeWithCalendar> other(cx);
+  if (!::ToTemporalDateTime(cx, args.get(0), &other)) {
     return false;
   }
 
   
-  bool equals = dateTime == other;
-  if (equals && !CalendarEquals(cx, calendar, otherCalendar, &equals)) {
+  bool equals = dateTime == other.dateTime();
+  if (equals && !CalendarEquals(cx, calendar, other.calendar(), &equals)) {
     return false;
   }
 
@@ -2570,9 +2651,18 @@ static bool PlainDateTime_toPlainYearMonth(JSContext* cx,
                                            const CallArgs& args) {
   Rooted<PlainDateTimeObject*> dateTime(
       cx, &args.thisv().toObject().as<PlainDateTimeObject>());
+  Rooted<CalendarValue> calendarValue(cx, dateTime->calendar());
 
   
-  Rooted<CalendarValue> calendar(cx, dateTime->calendar());
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::Fields,
+                                       CalendarMethod::YearMonthFromFields,
+                                   },
+                                   &calendar)) {
+    return false;
+  }
 
   
   JS::RootedVector<PropertyKey> fieldNames(cx);
@@ -2616,9 +2706,18 @@ static bool PlainDateTime_toPlainYearMonth(JSContext* cx, unsigned argc,
 static bool PlainDateTime_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
   Rooted<PlainDateTimeObject*> dateTime(
       cx, &args.thisv().toObject().as<PlainDateTimeObject>());
+  Rooted<CalendarValue> calendarValue(cx, dateTime->calendar());
 
   
-  Rooted<CalendarValue> calendar(cx, dateTime->calendar());
+  Rooted<CalendarRecord> calendar(cx);
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::Fields,
+                                       CalendarMethod::MonthDayFromFields,
+                                   },
+                                   &calendar)) {
+    return false;
+  }
 
   
   JS::RootedVector<PropertyKey> fieldNames(cx);
