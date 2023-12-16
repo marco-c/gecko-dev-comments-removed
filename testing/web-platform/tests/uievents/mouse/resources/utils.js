@@ -12,6 +12,14 @@ function getEvent(event_type, target) {
 }
 
 
+function addTestScopedListener(target, type, listener, test) {
+  target.addEventListener(type, listener);
+  test.add_cleanup(() => {
+    target.removeEventListener(type, listener);
+  });
+}
+
+
 
 
 function getMessageData(message_data_type, source) {
