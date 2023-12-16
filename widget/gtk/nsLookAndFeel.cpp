@@ -530,13 +530,17 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::Background:    
     case ColorID::Window:
     case ColorID::Windowframe:
-    case ColorID::MozDialog:
     case ColorID::MozCombobox:
       aColor = mWindow.mBg;
       break;
     case ColorID::Windowtext:
-    case ColorID::MozDialogtext:
       aColor = mWindow.mFg;
+      break;
+    case ColorID::MozDialog:
+      aColor = mDialog.mBg;
+      break;
+    case ColorID::MozDialogtext:
+      aColor = mDialog.mFg;
       break;
     case ColorID::IMESelectedRawTextBackground:
     case ColorID::IMESelectedConvertedTextBackground:
@@ -692,14 +696,14 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       
     case ColorID::Threedhighlight:
       
-      aColor = mFrameOuterLightBorder;
+      aColor = mThreeDHighlight;
       break;
 
     case ColorID::Buttonshadow:
       
     case ColorID::Threedshadow:
       
-      aColor = mFrameInnerDarkBorder;
+      aColor = mThreeDShadow;
       break;
     case ColorID::Buttonborder:
       aColor = mButtonBorder;
@@ -1305,10 +1309,69 @@ bool nsLookAndFeel::ConfigureAltTheme() {
   return false;
 }
 
+
+
+void nsLookAndFeel::MaybeApplyAdwaitaOverrides() {
+  auto& dark = mSystemTheme.mIsDark ? mSystemTheme : mAltTheme;
+  auto& light = mSystemTheme.mIsDark ? mAltTheme : mSystemTheme;
+
+  
+  
+  
+  if (dark.mFamily == ThemeFamily::Adwaita) {
+    dark.mAccent = {NS_RGB(0x35, 0x84, 0xe4), NS_RGB(0xff, 0xff, 0xff)};
+    dark.mSelectedText = dark.mAccent;
+  }
+
+  if (light.mFamily == ThemeFamily::Adwaita) {
+    light.mAccent = {NS_RGB(0x35, 0x84, 0xe4), NS_RGB(0xff, 0xff, 0xff)};
+    light.mSelectedText = light.mAccent;
+  }
+
+  if (!StaticPrefs::widget_gtk_libadwaita_colors_enabled()) {
+    return;
+  }
+
+  if (light.mFamily == ThemeFamily::Adwaita ||
+      light.mFamily == ThemeFamily::Yaru) {
+    
+    light.mWindow =
+        light.mDialog = {NS_RGB(0xfa, 0xfa, 0xfa), NS_RGB(0x32, 0x32, 0x32)};
+    light.mField = {NS_RGB(0xff, 0xff, 0xff), NS_RGB(0x32, 0x32, 0x32)};
+
+    
+    
+    
+    
+    light.mSidebar = light.mHeaderBar =
+        light.mTitlebar = {NS_RGB(0xeb, 0xeb, 0xeb), NS_RGB(0x2f, 0x2f, 0x2f)};
+    light.mHeaderBarInactive = light.mTitlebarInactive = {
+        NS_RGB(0xf2, 0xf2, 0xf2), NS_RGB(0x98, 0x98, 0x98)};
+    light.mThreeDShadow = NS_RGB(0xe0, 0xe0, 0xe0);
+    light.mSidebarBorder = NS_RGBA(0, 0, 0, 18);
+  }
+
+  if (dark.mFamily == ThemeFamily::Adwaita ||
+      dark.mFamily == ThemeFamily::Yaru) {
+    dark.mWindow = {NS_RGB(0x24, 0x24, 0x24), NS_RGB(0xff, 0xff, 0xff)};
+    dark.mDialog = {NS_RGB(0x38, 0x38, 0x38), NS_RGB(0xff, 0xff, 0xff)};
+    dark.mField = {NS_RGB(0x3a, 0x3a, 0x3a), NS_RGB(0xff, 0xff, 0xff)};
+    dark.mSidebar = dark.mHeaderBar =
+        dark.mTitlebar = {NS_RGB(0x30, 0x30, 0x30), NS_RGB(0xff, 0xff, 0xff)};
+    dark.mHeaderBarInactive = dark.mTitlebarInactive = {
+        NS_RGB(0x24, 0x24, 0x24), NS_RGB(0x92, 0x92, 0x92)};
+    
+    dark.mThreeDShadow = NS_RGB(0x1f, 0x1f, 0x1f);
+    dark.mSidebarBorder = NS_RGBA(0, 0, 0, 92);
+  }
+}
+
 void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
   const bool fellBackToDefaultTheme = !ConfigureAltTheme();
 
   mAltTheme.Init();
+
+  MaybeApplyAdwaitaOverrides();
 
   
   
@@ -1327,20 +1390,6 @@ void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
     if (StaticPrefs::widget_gtk_alt_theme_accent()) {
       mAltTheme.mAccent = mSystemTheme.mAccent;
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mSystemTheme.mFamily == ThemeFamily::Adwaita) {
-    auto& dark = mSystemTheme.mIsDark ? mSystemTheme : mAltTheme;
-    auto& light = mSystemTheme.mIsDark ? mAltTheme : mSystemTheme;
-    dark.mAccent = light.mAccent;
   }
 
   
@@ -1843,9 +1892,7 @@ void nsLookAndFeel::PerThemeData::Init() {
 
   
   style = GetStyleContext(MOZ_GTK_WINDOW);
-
-  mWindow.mFg = GetTextColor(style);
-  mWindow.mBg = GetBackgroundColor(style, mWindow.mFg);
+  mWindow = mDialog = GetColorPair(style);
 
   gtk_style_context_get_border_color(style, GTK_STATE_FLAG_NORMAL, &color);
   mMozWindowActiveBorder = GDK_RGBA_TO_NS_RGBA(color);
@@ -2106,12 +2153,12 @@ void nsLookAndFeel::PerThemeData::Init() {
   
   style = GetStyleContext(MOZ_GTK_FRAME_BORDER);
   bool themeUsesColors =
-      GetBorderColors(style, &mFrameOuterLightBorder, &mFrameInnerDarkBorder);
+      GetBorderColors(style, &mThreeDHighlight, &mThreeDShadow);
   if (!themeUsesColors) {
     style = GetStyleContext(MOZ_GTK_FRAME);
-    GetBorderColors(style, &mFrameOuterLightBorder, &mFrameInnerDarkBorder);
+    GetBorderColors(style, &mThreeDHighlight, &mThreeDShadow);
   }
-  mSidebarBorder = mFrameInnerDarkBorder;
+  mSidebarBorder = mThreeDShadow;
 
   
   gboolean supports_menubar_drag = FALSE;

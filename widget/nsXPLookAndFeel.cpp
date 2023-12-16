@@ -501,6 +501,8 @@ static constexpr struct {
     {"browser.display.os-zoom-behavior"_ns,
      widget::ThemeChangeKind::StyleAndLayout},
     
+    {"widget.gtk.libadwaita-colors.enabled"_ns, widget::ThemeChangeKind::Style},
+    
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
     {"browser.theme.content-theme"_ns},
