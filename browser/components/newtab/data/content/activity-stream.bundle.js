@@ -891,10 +891,10 @@ class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent
       className: "helpLink"
     }, external_React_default().createElement("span", {
       className: "icon icon-small-spacer icon-info"
-    }), " ", external_React_default().createElement("span", null, "Need help using these tools? Check out our", " ", external_React_default().createElement("a", {
+    }), " ", external_React_default().createElement("span", null, "Need to access the ASRouter Admin dev tools?", " ", external_React_default().createElement("a", {
       target: "blank",
-      href: "https://firefox-source-docs.mozilla.org/browser/components/newtab/content-src/asrouter/docs/debugging-docs.html"
-    }, "documentation"))), external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h2", null, "Discovery Stream"), external_React_default().createElement(DiscoveryStreamAdminUI, {
+      href: "about:asrouter"
+    }, "Click here"))), external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement(DiscoveryStreamAdminUI, {
       state: {
         DiscoveryStream: this.props.DiscoveryStream,
         Personalization: this.props.Personalization
