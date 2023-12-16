@@ -931,7 +931,8 @@ static bool TimeZone_getOffsetNanosecondsFor(JSContext* cx, unsigned argc,
 
 bool js::temporal::GetOffsetNanosecondsFor(
     JSContext* cx, Handle<TimeZoneValue> timeZone,
-    Handle<Wrapped<InstantObject*>> instant, int64_t* offsetNanoseconds) {
+    Handle<Wrapped<InstantObject*>> instant,
+    Handle<Value> getOffsetNanosecondsFor, int64_t* offsetNanoseconds) {
   
   if (timeZone.isString()) {
     auto* unwrapped = instant.unwrap(cx);
@@ -944,14 +945,9 @@ bool js::temporal::GetOffsetNanosecondsFor(
   }
 
   
-  Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
-  Rooted<Value> getOffsetNanosecondsFor(cx);
-  if (!GetMethodForCall(cx, timeZoneObj, cx->names().getOffsetNanosecondsFor,
-                        &getOffsetNanosecondsFor)) {
-    return false;
-  }
 
   
+  Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
   if (timeZoneObj->is<TimeZoneObject>() &&
       IsNativeFunction(getOffsetNanosecondsFor,
                        TimeZone_getOffsetNanosecondsFor)) {
@@ -973,10 +969,30 @@ bool js::temporal::GetOffsetNanosecondsFor(
 
 
 
-bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
-                                           Handle<TimeZoneValue> timeZone,
-                                           const Instant& instant,
-                                           int64_t* offsetNanoseconds) {
+bool js::temporal::GetOffsetNanosecondsFor(
+    JSContext* cx, Handle<TimeZoneValue> timeZone,
+    Handle<Wrapped<InstantObject*>> instant, int64_t* offsetNanoseconds) {
+  
+  Rooted<Value> getOffsetNanosecondsFor(cx);
+  if (timeZone.isObject()) {
+    Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
+    if (!GetMethodForCall(cx, timeZoneObj, cx->names().getOffsetNanosecondsFor,
+                          &getOffsetNanosecondsFor)) {
+      return false;
+    }
+  }
+
+  
+  return GetOffsetNanosecondsFor(cx, timeZone, instant, getOffsetNanosecondsFor,
+                                 offsetNanoseconds);
+}
+
+
+
+
+bool js::temporal::GetOffsetNanosecondsFor(
+    JSContext* cx, Handle<TimeZoneValue> timeZone, const Instant& instant,
+    Handle<Value> getOffsetNanosecondsFor, int64_t* offsetNanoseconds) {
   
   if (timeZone.isString()) {
     return BuiltinGetOffsetNanosecondsFor(cx, timeZone.toString(), instant,
@@ -984,14 +1000,9 @@ bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
   }
 
   
-  Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
-  Rooted<Value> getOffsetNanosecondsFor(cx);
-  if (!GetMethodForCall(cx, timeZoneObj, cx->names().getOffsetNanosecondsFor,
-                        &getOffsetNanosecondsFor)) {
-    return false;
-  }
 
   
+  Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
   if (timeZoneObj->is<TimeZoneObject>() &&
       IsNativeFunction(getOffsetNanosecondsFor,
                        TimeZone_getOffsetNanosecondsFor)) {
@@ -1006,6 +1017,28 @@ bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
   }
   return ::GetOffsetNanosecondsFor(cx, timeZoneObj, obj,
                                    getOffsetNanosecondsFor, offsetNanoseconds);
+}
+
+
+
+
+bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
+                                           Handle<TimeZoneValue> timeZone,
+                                           const Instant& instant,
+                                           int64_t* offsetNanoseconds) {
+  
+  Rooted<Value> getOffsetNanosecondsFor(cx);
+  if (timeZone.isObject()) {
+    Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
+    if (!GetMethodForCall(cx, timeZoneObj, cx->names().getOffsetNanosecondsFor,
+                          &getOffsetNanosecondsFor)) {
+      return false;
+    }
+  }
+
+  
+  return GetOffsetNanosecondsFor(cx, timeZone, instant, getOffsetNanosecondsFor,
+                                 offsetNanoseconds);
 }
 
 
@@ -1745,15 +1778,29 @@ bool js::temporal::DisambiguatePossibleInstants(
   }
 
   
+  Rooted<Value> getOffsetNanosecondsFor(cx);
+
+  
+  if (timeZone.isObject()) {
+    Rooted<JSObject*> timeZoneObj(cx, timeZone.toObject());
+    if (!GetMethodForCall(cx, timeZoneObj, cx->names().getOffsetNanosecondsFor,
+                          &getOffsetNanosecondsFor)) {
+      return false;
+    }
+  }
+
+  
   int64_t offsetBefore;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, dayBefore, &offsetBefore)) {
+  if (!GetOffsetNanosecondsFor(cx, timeZone, dayBefore, getOffsetNanosecondsFor,
+                               &offsetBefore)) {
     return false;
   }
   MOZ_ASSERT(std::abs(offsetBefore) < ToNanoseconds(TemporalUnit::Day));
 
   
   int64_t offsetAfter;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, dayAfter, &offsetAfter)) {
+  if (!GetOffsetNanosecondsFor(cx, timeZone, dayAfter, getOffsetNanosecondsFor,
+                               &offsetAfter)) {
     return false;
   }
   MOZ_ASSERT(std::abs(offsetAfter) < ToNanoseconds(TemporalUnit::Day));

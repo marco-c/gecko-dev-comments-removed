@@ -372,7 +372,23 @@ bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 
 bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
+                             JS::Handle<Wrapped<InstantObject*>> instant,
+                             JS::Handle<JS::Value> getOffsetNanosecondsFor,
+                             int64_t* offsetNanoseconds);
+
+
+
+
+bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              const Instant& instant,
+                             int64_t* offsetNanoseconds);
+
+
+
+
+bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
+                             const Instant& instant,
+                             JS::Handle<JS::Value> getOffsetNanosecondsFor,
                              int64_t* offsetNanoseconds);
 
 using InstantVector = JS::StackGCVector<Wrapped<InstantObject*>>;
