@@ -70,7 +70,14 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       return false;
     }
 
+    
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
+
     if (!emitCallDecoratorForElement(kind, key, isStatic, decorator)) {
+      
       return false;
     }
 
@@ -201,6 +208,12 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
     ParseNode* decorator = *it;
     
     if (!emitDecorationState()) {
+      return false;
+    }
+
+    
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
       return false;
     }
 
@@ -384,6 +397,12 @@ bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
     }
 
     
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
+
+    
     
     if (!emitCallDecoratorForElement(Kind::Accessor, key, isStatic,
                                      decorator)) {
@@ -522,6 +541,12 @@ bool DecoratorEmitter::emitApplyDecoratorsToClassDefinition(
 
     
     
+    
+    
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
     if (!emitCreateDecoratorContextObject(Kind::Class, key, false,
                                           decorator->pn_pos)) {
       
@@ -840,6 +865,8 @@ bool DecoratorEmitter::emitCallDecoratorForElement(Kind kind, ParseNode* key,
   
   
   
+  
+  
   CallOrNewEmitter cone(bce_, JSOp::Call,
                         CallOrNewEmitter::ArgumentsKind::Other,
                         ValueUsage::WantValue);
@@ -866,7 +893,7 @@ bool DecoratorEmitter::emitCallDecoratorForElement(Kind kind, ParseNode* key,
     
     
     
-    if (!bce_->emitDupAt(2)) {
+    if (!bce_->emitDupAt(3)) {
       
       return false;
     }
@@ -876,13 +903,17 @@ bool DecoratorEmitter::emitCallDecoratorForElement(Kind kind, ParseNode* key,
     
     
     MOZ_ASSERT(kind == Kind::Accessor);
-    if (!bce_->emitPickN(2)) {
+    if (!bce_->emitPickN(3)) {
       
       return false;
     }
   }
   
   
+  if (!bce_->emitPickN(3)) {
+    
+    return false;
+  }
   if (!emitCreateDecoratorContextObject(kind, key, isStatic,
                                         decorator->pn_pos)) {
     
@@ -1066,6 +1097,9 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
                                                         bool isStatic,
                                                         TokenPos pos) {
   
+  
+
+  
   ObjectEmitter oe(bce_);
   size_t propertyCount = kind == Kind::Class ? 3 : 6;
   if (!oe.emitObject(propertyCount)) {
@@ -1217,8 +1251,7 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
     return false;
   }
 
-  
-  if (!bce_->emit1(JSOp::Undefined)) {
+  if (!bce_->emitPickN(1)) {
     
     return false;
   }
