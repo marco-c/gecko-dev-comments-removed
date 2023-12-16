@@ -61,6 +61,9 @@ function createPanelReloadTest(recordName, toolId) {
     
     
     await testScript(toolbox);
+    
+    
+    await testScript(toolbox);
 
     await startRecordingAllocations({
       alsoRecordContentProcess: true,
