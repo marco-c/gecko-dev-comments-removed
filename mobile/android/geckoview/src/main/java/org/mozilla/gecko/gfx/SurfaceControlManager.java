@@ -34,7 +34,8 @@ public class SurfaceControlManager {
 
   private static final SurfaceControlManager sInstance = new SurfaceControlManager();
 
-  private WeakHashMap<SurfaceControl, SurfaceControl> mChildSurfaceControls = new WeakHashMap<>();
+  private final WeakHashMap<SurfaceControl, SurfaceControl> mChildSurfaceControls =
+      new WeakHashMap<>();
 
   @WrapForJNI
   public static SurfaceControlManager getInstance() {
@@ -68,10 +69,12 @@ public class SurfaceControlManager {
       mChildSurfaceControls.put(parent, child);
     }
 
-    new SurfaceControl.Transaction()
-        .setVisibility(child, true)
-        .setBufferSize(child, width, height)
-        .apply();
+    final SurfaceControl.Transaction transaction =
+        new SurfaceControl.Transaction()
+            .setVisibility(child, true)
+            .setBufferSize(child, width, height);
+    transaction.apply();
+    transaction.close();
 
     return new Surface(child);
   }
@@ -97,7 +100,10 @@ public class SurfaceControlManager {
       
       
       
-      
+      final SurfaceControl.Transaction transaction =
+          new SurfaceControl.Transaction().reparent(child, null);
+      transaction.apply();
+      transaction.close();
       child.release();
     }
     mChildSurfaceControls.clear();
