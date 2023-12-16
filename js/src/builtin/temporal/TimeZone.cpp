@@ -1659,38 +1659,12 @@ bool js::temporal::GetPossibleInstantsFor(
 
 
 
-
-static bool AddDateTime(JSContext* cx,
-                        Handle<PlainDateTimeWithCalendar> dateTimeWithCalendar,
-                        int64_t nanoseconds, PlainDateTime* result) {
+static auto AddTime(const PlainTime& time, int64_t nanoseconds) {
+  MOZ_ASSERT(IsValidTime(time));
   MOZ_ASSERT(std::abs(nanoseconds) <= 2 * ToNanoseconds(TemporalUnit::Day));
 
-  const auto& dateTime = ToPlainDateTime(dateTimeWithCalendar);
-  auto& [date, time] = dateTime;
-
   
-  MOZ_ASSERT(IsValidISODateTime(dateTime));
-  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
-
-  
-  auto timeResult = BalanceTime(time, nanoseconds);
-
-  
-  const auto& datePart = date;
-
-  
-  Duration dateDuration = {0, 0, 0, double(timeResult.days)};
-
-  
-  PlainDate addedDate;
-  if (!CalendarDateAdd(cx, dateTimeWithCalendar.calendar(), datePart,
-                       dateDuration, &addedDate)) {
-    return false;
-  }
-
-  
-  *result = {addedDate, timeResult.time};
-  return true;
+  return BalanceTime(time, nanoseconds);
 }
 
 
@@ -1747,7 +1721,8 @@ bool js::temporal::DisambiguatePossibleInstants(
       InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day));
 
   
-  auto epochNanoseconds = GetUTCEpochNanoseconds(ToPlainDateTime(dateTime));
+  const auto& [date, time] = ToPlainDateTime(dateTime);
+  auto epochNanoseconds = GetUTCEpochNanoseconds({date, time});
 
   
   auto dayBefore = epochNanoseconds - oneDay;
@@ -1789,8 +1764,14 @@ bool js::temporal::DisambiguatePossibleInstants(
   
   if (disambiguation == TemporalDisambiguation::Earlier) {
     
-    PlainDateTime earlier;
-    if (!AddDateTime(cx, dateTime, -nanoseconds, &earlier)) {
+    auto earlierTime = ::AddTime(time, -nanoseconds);
+    MOZ_ASSERT(std::abs(earlierTime.days) <= 2,
+               "subtracting nanoseconds is at most two days");
+
+    
+    PlainDate earlierDate;
+    if (!AddISODate(cx, date, {0, 0, 0, double(earlierTime.days)},
+                    TemporalOverflow::Constrain, &earlierDate)) {
       return false;
     }
 
@@ -1798,11 +1779,9 @@ bool js::temporal::DisambiguatePossibleInstants(
     
 
     
-    Rooted<PlainDateTimeWithCalendar> earlierDateTime(cx);
-    if (!CreateTemporalDateTime(cx, earlier, dateTime.calendar(),
-                                &earlierDateTime)) {
-      return false;
-    }
+    Rooted<PlainDateTimeWithCalendar> earlierDateTime(
+        cx, PlainDateTimeWithCalendar{{earlierDate, earlierTime.time},
+                                      dateTime.calendar()});
 
     
     Rooted<InstantVector> earlierInstants(cx, InstantVector(cx));
@@ -1828,16 +1807,21 @@ bool js::temporal::DisambiguatePossibleInstants(
              disambiguation == TemporalDisambiguation::Later);
 
   
-  PlainDateTime later;
-  if (!AddDateTime(cx, dateTime, nanoseconds, &later)) {
+  auto laterTime = ::AddTime(time, nanoseconds);
+  MOZ_ASSERT(std::abs(laterTime.days) <= 2,
+             "adding nanoseconds is at most two days");
+
+  
+  PlainDate laterDate;
+  if (!AddISODate(cx, date, {0, 0, 0, double(laterTime.days)},
+                  TemporalOverflow::Constrain, &laterDate)) {
     return false;
   }
 
   
-  Rooted<PlainDateTimeWithCalendar> laterDateTime(cx);
-  if (!CreateTemporalDateTime(cx, later, dateTime.calendar(), &laterDateTime)) {
-    return false;
-  }
+  Rooted<PlainDateTimeWithCalendar> laterDateTime(
+      cx, PlainDateTimeWithCalendar{{laterDate, laterTime.time},
+                                    dateTime.calendar()});
 
   
   Rooted<InstantVector> laterInstants(cx, InstantVector(cx));

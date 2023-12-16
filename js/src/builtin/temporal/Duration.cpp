@@ -4832,9 +4832,6 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   
   
 
-  
-  
-
   double truncatedDays;
   if (!TruncateDays(cx, nanosAndDays, days, monthsWeeksInDays,
                     &truncatedDays)) {
@@ -4842,16 +4839,21 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   }
 
   
-  Rooted<DurationObject*> wholeDaysDuration(
-      cx, CreateTemporalDuration(cx, {0, 0, 0, truncatedDays}));
-  if (!wholeDaysDuration) {
+  
+  MOZ_ASSERT(IsInteger(truncatedDays));
+
+  
+  PlainDate isoResult;
+  if (!AddISODate(cx, yearsLaterDate, {0, 0, 0, truncatedDays},
+                  TemporalOverflow::Constrain, &isoResult)) {
     return false;
   }
 
   
-  Rooted<Wrapped<PlainDateObject*>> wholeDaysLater(
-      cx,
-      CalendarDateAdd(cx, calendar, newRelativeTo, wholeDaysDuration, dateAdd));
+
+  
+  Rooted<PlainDateObject*> wholeDaysLater(
+      cx, CreateTemporalDate(cx, isoResult, calendar));
   if (!wholeDaysLater) {
     return false;
   }
