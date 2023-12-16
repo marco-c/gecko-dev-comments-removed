@@ -5,6 +5,7 @@
 
 
 #include "ScheduledTask.h"
+#include "ScheduledTaskRemove.h"
 
 #include <string>
 #include <time.h>
@@ -23,19 +24,13 @@
 
 #include "DefaultBrowser.h"
 
-#ifdef IMPL_LIBXUL
-#  include "mozilla/ErrorResult.h"
-#  include "mozilla/intl/Localization.h"
-#  include "nsString.h"
-#  include "nsTArray.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/intl/Localization.h"
+#include "nsString.h"
+#include "nsTArray.h"
 using mozilla::intl::Localization;
-#endif
 
 namespace mozilla::default_agent {
-
-const wchar_t* kTaskVendor = L"" MOZ_APP_VENDOR;
-
-const wchar_t* kTaskName = L"" MOZ_APP_DISPLAYNAME " Default Browser Agent ";
 
 
 
@@ -51,11 +46,6 @@ const size_t kTimeStrMaxLen = 20;
     return hr;            \
   }
 
-struct SysFreeStringDeleter {
-  void operator()(BSTR aPtr) { ::SysFreeString(aPtr); }
-};
-using BStrPtr = mozilla::UniquePtr<OLECHAR, SysFreeStringDeleter>;
-
 bool GetTaskDescription(mozilla::UniquePtr<wchar_t[]>& description) {
   mozilla::UniquePtr<wchar_t[]> installPath;
   bool success = GetInstallDirectory(installPath);
@@ -63,7 +53,6 @@ bool GetTaskDescription(mozilla::UniquePtr<wchar_t[]>& description) {
     LOG_ERROR_MESSAGE(L"Failed to get install directory");
     return false;
   }
-#ifdef IMPL_LIBXUL
   nsTArray<nsCString> resIds = {"branding/brand.ftl"_ns,
                                 "browser/backgroundtasks/defaultagent.ftl"_ns};
   RefPtr<Localization> l10n = Localization::Create(resIds, true);
@@ -78,7 +67,6 @@ bool GetTaskDescription(mozilla::UniquePtr<wchar_t[]>& description) {
   NS_ConvertUTF8toUTF16 daTaskDescW(daTaskDesc);
   description = mozilla::MakeUnique<wchar_t[]>(daTaskDescW.Length() + 1);
   wcsncpy(description.get(), daTaskDescW.get(), daTaskDescW.Length() + 1);
-#endif
   return true;
 }
 
@@ -335,107 +323,6 @@ HRESULT UpdateTask(const wchar_t* uniqueToken) {
   BStrPtr startTime(startTimeBstr);
 
   return RegisterTask(uniqueToken, startTime.get());
-}
-
-bool EndsWith(const wchar_t* string, const wchar_t* suffix) {
-  size_t string_len = wcslen(string);
-  size_t suffix_len = wcslen(suffix);
-  if (suffix_len > string_len) {
-    return false;
-  }
-  const wchar_t* substring = string + string_len - suffix_len;
-  return wcscmp(substring, suffix) == 0;
-}
-
-HRESULT RemoveTasks(const wchar_t* uniqueToken, WhichTasks tasksToRemove) {
-  if (!uniqueToken || wcslen(uniqueToken) == 0) {
-    return E_INVALIDARG;
-  }
-
-  RefPtr<ITaskService> scheduler;
-  HRESULT hr = S_OK;
-  ENSURE(CoCreateInstance(CLSID_TaskScheduler, nullptr, CLSCTX_INPROC_SERVER,
-                          IID_ITaskService, getter_AddRefs(scheduler)));
-
-  ENSURE(scheduler->Connect(VARIANT{}, VARIANT{}, VARIANT{}, VARIANT{}));
-
-  RefPtr<ITaskFolder> taskFolder;
-  BStrPtr folderBStr(SysAllocString(kTaskVendor));
-
-  hr = scheduler->GetFolder(folderBStr.get(), getter_AddRefs(taskFolder));
-  if (FAILED(hr)) {
-    if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
-      
-      
-      return S_OK;
-    } else {
-      return hr;
-    }
-  }
-
-  RefPtr<IRegisteredTaskCollection> tasksInFolder;
-  ENSURE(taskFolder->GetTasks(TASK_ENUM_HIDDEN, getter_AddRefs(tasksInFolder)));
-
-  LONG numTasks = 0;
-  ENSURE(tasksInFolder->get_Count(&numTasks));
-
-  std::wstring WdbaTaskName(kTaskName);
-  WdbaTaskName += uniqueToken;
-
-  
-  
-  
-  
-  HRESULT deleteResult = S_OK;
-  
-  bool tasksSkipped = false;
-
-  for (LONG i = 0; i < numTasks; ++i) {
-    RefPtr<IRegisteredTask> task;
-    
-    hr = tasksInFolder->get_Item(_variant_t(i + 1), getter_AddRefs(task));
-    if (FAILED(hr)) {
-      deleteResult = hr;
-      continue;
-    }
-
-    BSTR taskName;
-    hr = task->get_Name(&taskName);
-    if (FAILED(hr)) {
-      deleteResult = hr;
-      continue;
-    }
-    
-    BStrPtr uniqueTaskName(taskName);
-
-    if (tasksToRemove == WhichTasks::WdbaTaskOnly) {
-      if (WdbaTaskName.compare(taskName) != 0) {
-        tasksSkipped = true;
-        continue;
-      }
-    } else {  
-      if (!EndsWith(taskName, uniqueToken)) {
-        tasksSkipped = true;
-        continue;
-      }
-    }
-
-    hr = taskFolder->DeleteTask(taskName, 0 );
-    if (FAILED(hr)) {
-      deleteResult = hr;
-    }
-  }
-
-  
-  if (!tasksSkipped && SUCCEEDED(deleteResult)) {
-    RefPtr<ITaskFolder> rootFolder;
-    BStrPtr rootFolderBStr = BStrPtr(SysAllocString(L"\\"));
-    ENSURE(
-        scheduler->GetFolder(rootFolderBStr.get(), getter_AddRefs(rootFolder)));
-    ENSURE(rootFolder->DeleteFolder(folderBStr.get(), 0));
-  }
-
-  return deleteResult;
 }
 
 }  
