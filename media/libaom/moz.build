@@ -73,8 +73,7 @@ else:
 
 AllowCompilerWarnings()
 
-FINAL_LIBRARY = 'gkcodecs'
-NoVisibilityFlags()
+FINAL_LIBRARY = 'gkmedias'
 
 if CONFIG['OS_TARGET'] == 'Android':
     
@@ -94,8 +93,6 @@ for f in SOURCES:
         SOURCES[f].flags += ['-mavx']
     elif f.endswith('avx2.c'):
         SOURCES[f].flags += ['-mavx2']
-
-SOURCES += [ 'build_config.c' ]
 
 
 CFLAGS += [

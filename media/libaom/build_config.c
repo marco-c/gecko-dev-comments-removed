@@ -1,8 +1,0 @@
-
-
-
-
-
-
-
-const char *aom_codec_build_config(void) {return "It's a good config.";}
