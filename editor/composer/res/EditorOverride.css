@@ -1,28 +1,28 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 *|* {
   -moz-user-modify: read-write;
 }
 
+/* Styles to alter look of things in the Editor content window
+ *  that should NOT be removed when we display in completely WYSIWYG
+ *  "Browser Preview" mode.
+ *  Anything that should change, like appearance of table borders
+ *  and Named Anchors, should be placed in EditorContent.css instead of here.
+*/
 
-
-
-
-
-
-
-
+/* Primary cursor is text I-beam */
 
 ::-moz-canvas, a:link {
   cursor: text;
 }
 
-
-
-
-
+/* Use default arrow over objects with size that
+   are selected when clicked on.
+   Override the browser's pointer cursor over links
+*/
 
 img, img[usemap], area,
 object, object[usemap],
@@ -36,31 +36,29 @@ a:visited, a:active {
   cursor: text;
 }
 
-
+/* Prevent clicking on links from going to link */
 a:link img, a:visited img {
   -moz-user-input: none;
 }
 
-
-
-
+/* We suppress user/author's prefs for link underline,
+   so we must set explicitly. This isn't good!
+*/
 a:link {
   color: -moz-hyperlinktext;
 }
 
-
-
+/* Allow double-clicks on these widgets to open properties dialogs
+   XXX except when the widget has disabled attribute */
 input, button, textarea {
   user-select: all !important;
   -moz-user-input: auto !important;
-  -moz-user-focus: none !important;
 }
 
-
+/* XXX Still need a better way of blocking other events to these widgets */
 select, input[disabled], input[type="checkbox"], input[type="radio"], input[type="file"] {
   user-select: all !important;
   -moz-user-input: none !important;
-  -moz-user-focus: none !important;
 }
 
 input[type="hidden"] {
@@ -85,7 +83,7 @@ option {
   -moz-user-input: none !important;
 }
 
-
+/* the following rules are for Image Resizing */
 
 span[\_moz_anonclass="mozResizer"] {
   width: 5px;
@@ -94,10 +92,10 @@ span[\_moz_anonclass="mozResizer"] {
   border: 1px black solid;
   background-color: white;
   user-select: none;
-  z-index: 2147483646; 
+  z-index: 2147483646; /* max value -1 for this property */
 }
 
-
+/* we can't use :active below */
 span[\_moz_anonclass="mozResizer"][\_moz_activated],
 span[\_moz_anonclass="mozResizer"]:hover {
   background-color: black;
@@ -144,7 +142,7 @@ img[\_moz_anonclass="mozResizingShadow"] {
   user-select: none;
   opacity: 0.5;
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
 }
 
 span[\_moz_anonclass="mozResizingInfo"] {
@@ -155,7 +153,7 @@ span[\_moz_anonclass="mozResizingInfo"] {
   border: ridge 2px #d0d0d0;
   padding: 2px;
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
 }
 
 img[\_moz_resizing] {
@@ -164,7 +162,7 @@ img[\_moz_resizing] {
 
 *[\_moz_abspos] {
   outline: silver ridge 2px;
-  z-index: 2147483645 !important; 
+  z-index: 2147483645 !important; /* max value -2 for this property */
 }
 *[\_moz_abspos="white"] {
   background-color: white !important;
@@ -184,14 +182,14 @@ span[\_moz_anonclass="mozGrabber"] {
   background-position: center center;
   user-select: none;
   cursor: move;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
 }
 
-
+/* INLINE TABLE EDITING */
 
 a[\_moz_anonclass="mozTableAddColumnBefore"] {
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
   text-decoration: none !important;
   border: none 0px !important;
   width: 4px;
@@ -200,7 +198,6 @@ a[\_moz_anonclass="mozTableAddColumnBefore"] {
   background-repeat: no-repeat;
   background-position: center center;
   user-select: none !important;
-  -moz-user-focus: none !important;
 }
 
 a[\_moz_anonclass="mozTableAddColumnBefore"]:hover {
@@ -213,7 +210,7 @@ a[\_moz_anonclass="mozTableAddColumnBefore"]:active {
 
 a[\_moz_anonclass="mozTableAddColumnAfter"] {
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
   text-decoration: none !important;
   border: none 0px !important;
   width: 4px;
@@ -222,7 +219,6 @@ a[\_moz_anonclass="mozTableAddColumnAfter"] {
   background-repeat: no-repeat;
   background-position: center center;
   user-select: none !important;
-  -moz-user-focus: none !important;
 }
 
 a[\_moz_anonclass="mozTableAddColumnAfter"]:hover {
@@ -235,7 +231,7 @@ a[\_moz_anonclass="mozTableAddColumnAfter"]:active {
 
 a[\_moz_anonclass="mozTableRemoveColumn"] {
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
   text-decoration: none !important;
   border: none 0px !important;
   width: 8px;
@@ -244,7 +240,6 @@ a[\_moz_anonclass="mozTableRemoveColumn"] {
   background-repeat: no-repeat;
   background-position: center center;
   user-select: none !important;
-  -moz-user-focus: none !important;
 }
 
 a[\_moz_anonclass="mozTableRemoveColumn"]:hover {
@@ -257,7 +252,7 @@ a[\_moz_anonclass="mozTableRemoveColumn"]:active {
 
 a[\_moz_anonclass="mozTableAddRowBefore"] {
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
   text-decoration: none !important;
   border: none 0px !important;
   width: 8px;
@@ -266,7 +261,6 @@ a[\_moz_anonclass="mozTableAddRowBefore"] {
   background-repeat: no-repeat;
   background-position: center center;
   user-select: none !important;
-  -moz-user-focus: none !important;
 }
 
 a[\_moz_anonclass="mozTableAddRowBefore"]:hover {
@@ -279,7 +273,7 @@ a[\_moz_anonclass="mozTableAddRowBefore"]:active {
 
 a[\_moz_anonclass="mozTableAddRowAfter"] {
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
   text-decoration: none !important;
   border: none 0px !important;
   width: 8px;
@@ -288,7 +282,6 @@ a[\_moz_anonclass="mozTableAddRowAfter"] {
   background-repeat: no-repeat;
   background-position: center center;
   user-select: none !important;
-  -moz-user-focus: none !important;
 }
 
 a[\_moz_anonclass="mozTableAddRowAfter"]:hover {
@@ -301,7 +294,7 @@ a[\_moz_anonclass="mozTableAddRowAfter"]:active {
 
 a[\_moz_anonclass="mozTableRemoveRow"] {
   position: absolute;
-  z-index: 2147483647; 
+  z-index: 2147483647; /* max value for this property */
   text-decoration: none !important;
   border: none 0px !important;
   width: 8px;
@@ -310,7 +303,6 @@ a[\_moz_anonclass="mozTableRemoveRow"] {
   background-repeat: no-repeat;
   background-position: center center;
   user-select: none !important;
-  -moz-user-focus: none !important;
 }
 
 a[\_moz_anonclass="mozTableRemoveRow"]:hover {
