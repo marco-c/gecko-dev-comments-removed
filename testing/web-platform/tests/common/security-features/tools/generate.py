@@ -321,7 +321,7 @@ def generate_test_source_files(spec_directory, test_helper_filenames,
     
     html_template = "test.%s.html.template" % target
 
-    artifact_order = test_expansion_schema.keys()
+    artifact_order = list(test_expansion_schema.keys())
     artifact_order.remove('expansion')
 
     excluded_selection_pattern = ''
