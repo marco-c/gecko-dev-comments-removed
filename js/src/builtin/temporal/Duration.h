@@ -144,7 +144,8 @@ bool BalanceTimeDuration(JSContext* cx, const InstantSpan& nanoseconds,
 bool AdjustRoundedDurationDays(
     JSContext* cx, const Duration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
-    JS::Handle<Wrapped<ZonedDateTimeObject*>> relativeTo, Duration* result);
+    JS::Handle<Wrapped<ZonedDateTimeObject*>> relativeTo,
+    const PlainDateTime& precalculatedPlainDateTime, Duration* result);
 
 
 
@@ -173,6 +174,7 @@ bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
 bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
                    TemporalUnit unit, TemporalRoundingMode roundingMode,
                    JS::Handle<ZonedDateTimeObject*> zonedRelativeTo,
+                   const PlainDateTime& precalculatedPlainDateTime,
                    Duration* result);
 
 

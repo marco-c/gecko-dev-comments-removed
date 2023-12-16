@@ -130,7 +130,9 @@ bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
                              const Instant& ns2,
                              JS::Handle<TimeZoneValue> timeZone,
                              JS::Handle<CalendarValue> calendar,
-                             TemporalUnit largestUnit, Duration* result);
+                             TemporalUnit largestUnit,
+                             const PlainDateTime& precalculatedPlainDateTime,
+                             Duration* result);
 
 struct NanosecondsAndDays final {
   JS::BigInt* days = nullptr;
@@ -157,9 +159,20 @@ struct NanosecondsAndDays final {
 
 
 
+
 bool NanosecondsToDays(
     JSContext* cx, const InstantSpan& nanoseconds,
     JS::Handle<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo,
+    JS::MutableHandle<NanosecondsAndDays> result);
+
+
+
+
+
+bool NanosecondsToDays(
+    JSContext* cx, const InstantSpan& nanoseconds,
+    JS::Handle<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo,
+    const PlainDateTime& precalculatedPlainDateTime,
     JS::MutableHandle<NanosecondsAndDays> result);
 
 enum class OffsetBehaviour { Option, Exact, Wall };

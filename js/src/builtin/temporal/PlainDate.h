@@ -91,12 +91,6 @@ bool ThrowIfInvalidISODate(JSContext* cx, double year, double month,
 
 
 
-PlainDateObject* ToTemporalDate(JSContext* cx,
-                                JS::Handle<Wrapped<ZonedDateTimeObject*>> item);
-
-
-
-
 bool ToTemporalDate(JSContext* cx, JS::Handle<JS::Value> item,
                     PlainDate* result);
 
