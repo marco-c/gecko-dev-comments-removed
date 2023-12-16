@@ -102,7 +102,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     }
 
     
-    if (!emitCheckIsCallable()) {
+    if (!bce_->emitCheckIsCallable()) {
       
       return false;
     }
@@ -238,7 +238,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
     }
 
     
-    if (!emitCheckIsCallable()) {
+    if (!bce_->emitCheckIsCallable()) {
       
       return false;
     }
@@ -562,7 +562,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToClassDefinition(
 
     
     
-    if (!emitCheckIsCallable()) {
+    if (!bce_->emitCheckIsCallable()) {
       
       return false;
     }
@@ -917,27 +917,6 @@ bool DecoratorEmitter::emitCheckIsUndefined() {
   
 }
 
-bool DecoratorEmitter::emitCheckIsCallable() {
-  
-  
-  
-  if (!bce_->emitAtomOp(JSOp::GetIntrinsic,
-                        TaggedParserAtomIndex::WellKnown::IsCallable())) {
-    
-    return false;
-  }
-  if (!bce_->emit1(JSOp::Undefined)) {
-    
-    return false;
-  }
-  if (!bce_->emitDupAt(2)) {
-    
-    return false;
-  }
-  return bce_->emitCall(JSOp::Call, 1);
-  
-}
-
 bool DecoratorEmitter::emitCreateAddInitializerFunction() {
   
   ObjectEmitter oe(bce_);
@@ -1165,7 +1144,7 @@ bool DecoratorEmitter::emitHandleNewValueField(TaggedParserAtomIndex atom,
   if (!ifCallable.emitElseIf(mozilla::Nothing())) {
     return false;
   }
-  if (!emitCheckIsCallable()) {
+  if (!bce_->emitCheckIsCallable()) {
     
     
     return false;

@@ -2496,6 +2496,29 @@ BytecodeEmitter::createImmutableScriptData() {
       bytecodeSection().tryNoteList().span());
 }
 
+#ifdef ENABLE_DECORATORS
+bool BytecodeEmitter::emitCheckIsCallable() {
+  
+  
+  
+  if (!emitAtomOp(JSOp::GetIntrinsic,
+                  TaggedParserAtomIndex::WellKnown::IsCallable())) {
+    
+    return false;
+  }
+  if (!emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+  if (!emitDupAt(2)) {
+    
+    return false;
+  }
+  return emitCall(JSOp::Call, 1);
+  
+}
+#endif
+
 bool BytecodeEmitter::getNslots(uint32_t* nslots) {
   uint64_t nslots64 =
       maxFixedSlots + static_cast<uint64_t>(bytecodeSection().maxStackDepth());
