@@ -82,12 +82,7 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex,
 
 } 
 
-static
-__attribute__((naked))
-
-
-__attribute__((no_instrument_function))
-void SharedStub(void)
+static MOZ_NAKED void SharedStub(void)
 {
     __asm {
         push ebp            
@@ -113,7 +108,7 @@ void SharedStub(void)
 
 
 #define STUB_ENTRY(n) \
-__attribute__((naked)) nsresult __stdcall nsXPTCStubBase::Stub##n() \
+MOZ_NAKED nsresult __stdcall nsXPTCStubBase::Stub##n() \
 { __asm mov ecx, n __asm jmp SharedStub }
 
 #define SENTINEL_ENTRY(n) \

@@ -1740,12 +1740,7 @@ class AutoMappedView final {
 
 
 
-
-
-
-MOZ_NEVER_INLINE __attribute__((no_profile_instrument_function))
-__attribute__((naked)) inline void
-CheckStack(uint32_t size) {
+MOZ_NEVER_INLINE MOZ_NAKED inline void CheckStack(uint32_t size) {
   asm volatile(
       "mov %ecx, %eax;"
 #  if defined(__MINGW32__)

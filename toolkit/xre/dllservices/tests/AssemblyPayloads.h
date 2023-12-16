@@ -11,6 +11,8 @@
 #ifndef mozilla_AssemblyPayloads_h
 #define mozilla_AssemblyPayloads_h
 
+#include "mozilla/Attributes.h"
+
 #include <cstdint>
 
 #define PADDING_256_NOP                                              \
@@ -37,7 +39,7 @@ extern "C" {
 #  if defined(_M_X64)
 constexpr uintptr_t JumpDestination = 0x7fff00000000;
 
-__declspec(dllexport) __attribute__((naked)) void MovPushRet() {
+__declspec(dllexport) MOZ_NAKED void MovPushRet() {
   asm volatile(
       "mov %0, %%rax;"
       "push %%rax;"
@@ -46,7 +48,7 @@ __declspec(dllexport) __attribute__((naked)) void MovPushRet() {
       : "i"(JumpDestination));
 }
 
-__declspec(dllexport) __attribute__((naked)) void MovRaxJump() {
+__declspec(dllexport) MOZ_NAKED void MovRaxJump() {
   asm volatile(
       "mov %0, %%rax;"
       "jmpq *%%rax;"
@@ -54,7 +56,7 @@ __declspec(dllexport) __attribute__((naked)) void MovRaxJump() {
       : "i"(JumpDestination));
 }
 
-__declspec(dllexport) __attribute__((naked)) void DoubleJump() {
+__declspec(dllexport) MOZ_NAKED void DoubleJump() {
   asm volatile(
       "jmp label1;"
 
@@ -71,7 +73,7 @@ __declspec(dllexport) __attribute__((naked)) void DoubleJump() {
       : "i"(JumpDestination));
 }
 
-__declspec(dllexport) __attribute__((naked)) void NearJump() {
+__declspec(dllexport) MOZ_NAKED void NearJump() {
   asm volatile(
       "jae label3;"
       "je  label3;"
@@ -90,7 +92,7 @@ __declspec(dllexport) __attribute__((naked)) void NearJump() {
       : "i"(JumpDestination));
 }
 
-__declspec(dllexport) __attribute__((naked)) void OpcodeFF() {
+__declspec(dllexport) MOZ_NAKED void OpcodeFF() {
   
   
   asm volatile(
@@ -102,14 +104,14 @@ __declspec(dllexport) __attribute__((naked)) void OpcodeFF() {
       "int $3;int $3;int $3;int $3;");
 }
 
-__declspec(dllexport) __attribute__((naked)) void IndirectCall() {
+__declspec(dllexport) MOZ_NAKED void IndirectCall() {
   asm volatile(
       "call *(%rip);"  
       "nop;nop;nop;nop;nop;nop;nop;nop;"
       "ret;");
 }
 
-__declspec(dllexport) __attribute__((naked)) void MovImm64() {
+__declspec(dllexport) MOZ_NAKED void MovImm64() {
   asm volatile(
       "mov $0x1234567812345678, %r10;"
       "nop;nop;nop");
@@ -118,7 +120,7 @@ __declspec(dllexport) __attribute__((naked)) void MovImm64() {
 #    if !defined(MOZ_CODE_COVERAGE)
 
 
-__attribute__((naked)) void DetouredCallCode(uintptr_t aCallee) {
+MOZ_NAKED void DetouredCallCode(uintptr_t aCallee) {
   asm volatile(
       "subq $0x28, %rsp;"
       "testq %rcx, %rcx;"
@@ -147,7 +149,7 @@ extern decltype(&DetouredCallCode) gDetouredCall;
 
 
 
-__attribute__((naked)) __declspec(dllexport noinline) void DetouredCallJumper(
+MOZ_NAKED __declspec(dllexport noinline) void DetouredCallJumper(
     uintptr_t aCallee) {
   
   
@@ -160,7 +162,7 @@ __attribute__((naked)) __declspec(dllexport noinline) void DetouredCallJumper(
 #  elif defined(_M_IX86)
 constexpr uintptr_t JumpDestination = 0x7fff0000;
 
-__declspec(dllexport) __attribute__((naked)) void PushRet() {
+__declspec(dllexport) MOZ_NAKED void PushRet() {
   asm volatile(
       "push %0;"
       "ret;"
@@ -168,7 +170,7 @@ __declspec(dllexport) __attribute__((naked)) void PushRet() {
       : "i"(JumpDestination));
 }
 
-__declspec(dllexport) __attribute__((naked)) void MovEaxJump() {
+__declspec(dllexport) MOZ_NAKED void MovEaxJump() {
   asm volatile(
       "mov %0, %%eax;"
       "jmp *%%eax;"
@@ -176,20 +178,20 @@ __declspec(dllexport) __attribute__((naked)) void MovEaxJump() {
       : "i"(JumpDestination));
 }
 
-__declspec(dllexport) __attribute__((naked)) void Opcode83() {
+__declspec(dllexport) MOZ_NAKED void Opcode83() {
   asm volatile(
       "xor $0x42, %eax;"
       "cmpl $1, 0xc(%ebp);");
 }
 
-__declspec(dllexport) __attribute__((naked)) void LockPrefix() {
+__declspec(dllexport) MOZ_NAKED void LockPrefix() {
   
   asm volatile(
       "push $0x7c;"
       "lock push $0x7c;");
 }
 
-__declspec(dllexport) __attribute__((naked)) void LooksLikeLockPrefix() {
+__declspec(dllexport) MOZ_NAKED void LooksLikeLockPrefix() {
   
   
   
@@ -204,7 +206,7 @@ __declspec(dllexport) __attribute__((naked)) void LooksLikeLockPrefix() {
       "push $0x0000f0cc;");
 }
 
-__declspec(dllexport) __attribute__((naked)) void DoubleJump() {
+__declspec(dllexport) MOZ_NAKED void DoubleJump() {
   asm volatile(
       "jmp label1;"
 
@@ -223,7 +225,7 @@ __declspec(dllexport) __attribute__((naked)) void DoubleJump() {
 #  endif
 
 #  if !defined(_M_ARM64)
-__declspec(dllexport) __attribute__((naked)) void UnsupportedOp() {
+__declspec(dllexport) MOZ_NAKED void UnsupportedOp() {
   asm volatile(
       "ud2;"
       "nop;nop;nop;nop;nop;nop;nop;nop;"
@@ -232,7 +234,7 @@ __declspec(dllexport) __attribute__((naked)) void UnsupportedOp() {
 
 
 
-__declspec(dllexport) __attribute__((naked)) void SpareBytesAfterDetour() {
+__declspec(dllexport) MOZ_NAKED void SpareBytesAfterDetour() {
   asm volatile(
       "incl %eax;"                
       "mov $0x01234567, %eax;"    
@@ -246,8 +248,7 @@ __declspec(dllexport) __attribute__((naked)) void SpareBytesAfterDetour() {
 
 
 
-__declspec(dllexport)
-    __attribute__((naked)) void SpareBytesAfterDetourFor10BytePatch() {
+__declspec(dllexport) MOZ_NAKED void SpareBytesAfterDetourFor10BytePatch() {
   asm volatile(
       "incl %eax;"                
       "mov $0x01234567, %ecx;"    
