@@ -393,11 +393,12 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
       AVRational{.num = static_cast<int>(mConfig.mFramerate), .den = 1};
 #endif
   mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
-  
-  
-  
-  
-  
+  if (mConfig.mUsage == MediaDataEncoder::Usage::Realtime) {
+    mLib->av_opt_set(mCodecContext->priv_data, "deadline", "realtime", 0);
+    
+    
+    mLib->av_opt_set(mCodecContext->priv_data, "lag-in-frames", "0", 0);
+  }
   
   
   
