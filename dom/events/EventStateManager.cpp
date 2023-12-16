@@ -4571,6 +4571,13 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
                                             aMouseEvent->mWidget,
                                             WidgetMouseEvent::eReal);
   }
+
+  
+  
+  
+  newEvent->mFlags.mIsSynthesizedForTests =
+      aMouseEvent->mFlags.mIsSynthesizedForTests;
+
   newEvent->mRelatedTarget = aRelatedTarget;
   newEvent->mRefPoint = aMouseEvent->mRefPoint;
   newEvent->mModifiers = aMouseEvent->mModifiers;

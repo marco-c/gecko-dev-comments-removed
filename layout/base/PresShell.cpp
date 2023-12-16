@@ -5844,6 +5844,16 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   NS_ASSERTION(view->GetWidget(), "view should have a widget here");
   WidgetMouseEvent event(true, eMouseMove, view->GetWidget(),
                          WidgetMouseEvent::eSynthesized);
+
+  
+  
+  
+  
+  
+  
+  event.mFlags.mIsSynthesizedForTests =
+      mMouseLocationWasSetBySynthesizedMouseEventForTests;
+
   event.mRefPoint =
       LayoutDeviceIntPoint::FromAppUnitsToNearest(refpoint, viewAPD);
   event.mButtons = PresShell::sMouseButtons;
@@ -6891,12 +6901,31 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
   
   
   
-  if (aGUIEvent->mMessage == eMouseMove &&
-      aGUIEvent->CameFromAnotherProcess() && XRE_IsContentProcess() &&
+  
+  
+  if (aGUIEvent->CameFromAnotherProcess() && XRE_IsContentProcess() &&
       !aGUIEvent->mFlags.mIsSynthesizedForTests &&
-      MouseLocationWasSetBySynthesizedMouseEventForTests() &&
-      aGUIEvent->AsMouseEvent()->mReason == WidgetMouseEvent::eSynthesized) {
-    return NS_OK;
+      MouseLocationWasSetBySynthesizedMouseEventForTests()) {
+    switch (aGUIEvent->mMessage) {
+      
+      
+      case eMouseMove:
+      
+      
+      
+      
+      case eMouseExitFromWidget:
+      
+      
+      
+      case eMouseEnterIntoWidget:
+        if (!aGUIEvent->AsMouseEvent()->IsReal()) {
+          return NS_OK;
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   
