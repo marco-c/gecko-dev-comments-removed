@@ -317,21 +317,9 @@ class MozperftestGatherer(FrameworkGatherer):
     Gatherer for the Mozperftest framework.
     """
 
-    def get_manifests(self):
-        """
-        Returns a list of manifests defined for mozperftest. This handles
-        the temporary situation of having both `ini`, and `toml` manifests
-        defined in-tree.
-
-        :return list: A list containing all the valid mozperftest manifests.
-        """
-        paths = list(pathlib.Path(self.workspace_dir).rglob("perftest.ini"))
-        paths += list(pathlib.Path(self.workspace_dir).rglob("perftest.toml"))
-        return paths
-
     def get_test_list(self):
         """
-        Returns a dictionary containing the tests that are in perftest.ini manifest.
+        Returns a dictionary containing the tests that are in perftest.toml manifest.
 
         :return dict: A dictionary with the following structure: {
                 "suite_name": {
@@ -340,7 +328,7 @@ class MozperftestGatherer(FrameworkGatherer):
                 },
             }
         """
-        for path in self.get_manifests():
+        for path in list(pathlib.Path(self.workspace_dir).rglob("perftest.toml")):
             if "obj-" in str(path):
                 continue
             suite_name = str(path.parent).replace(str(self.workspace_dir), "")
