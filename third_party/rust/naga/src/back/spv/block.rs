@@ -1473,20 +1473,14 @@ impl<'w> BlockContext<'w> {
                     if let crate::Expression::GlobalVariable(var_handle) =
                         self.ir_function.expressions[base]
                     {
-                        let gvar: &crate::GlobalVariable =
-                            &self.ir_module.global_variables[var_handle];
-                        match gvar.space {
-                            crate::AddressSpace::Storage { .. } | crate::AddressSpace::Uniform => {
-                                if let crate::TypeInner::BindingArray { .. } =
-                                    self.ir_module.types[gvar.ty].inner
-                                {
-                                    is_non_uniform_binding_array = self.fun_info[index]
-                                        .uniformity
-                                        .non_uniform_result
-                                        .is_some();
-                                }
-                            }
-                            _ => {}
+                        
+                        
+                        let gvar = &self.ir_module.global_variables[var_handle];
+                        if let crate::TypeInner::BindingArray { .. } =
+                            self.ir_module.types[gvar.ty].inner
+                        {
+                            is_non_uniform_binding_array =
+                                self.fun_info[index].uniformity.non_uniform_result.is_some();
                         }
                     }
 

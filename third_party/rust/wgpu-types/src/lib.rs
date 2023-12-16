@@ -2835,6 +2835,18 @@ impl Serialize for TextureFormat {
     }
 }
 
+impl TextureAspect {
+    
+    pub fn from_plane(plane: u32) -> Option<Self> {
+        Some(match plane {
+            0 => Self::Plane0,
+            1 => Self::Plane1,
+            2 => Self::Plane2,
+            _ => return None,
+        })
+    }
+}
+
 impl TextureFormat {
     
     
@@ -2852,7 +2864,10 @@ impl TextureFormat {
             ) => Some(Self::Stencil8),
             (Self::Depth24PlusStencil8, TextureAspect::DepthOnly) => Some(Self::Depth24Plus),
             (Self::Depth32FloatStencil8, TextureAspect::DepthOnly) => Some(Self::Depth32Float),
-            (format, TextureAspect::All) => Some(format),
+            (Self::NV12, TextureAspect::Plane0) => Some(Self::R8Unorm),
+            (Self::NV12, TextureAspect::Plane1) => Some(Self::Rg8Unorm),
+            
+            (format, TextureAspect::All) if !format.is_multi_planar_format() => Some(format),
             _ => None,
         }
     }
@@ -2894,7 +2909,15 @@ impl TextureFormat {
 
     
     pub fn is_multi_planar_format(&self) -> bool {
-        matches!(*self, Self::NV12)
+        self.planes().is_some()
+    }
+
+    
+    pub fn planes(&self) -> Option<u32> {
+        match *self {
+            Self::NV12 => Some(2),
+            _ => None,
+        }
     }
 
     
@@ -2919,6 +2942,14 @@ impl TextureFormat {
         match *self {
             Self::Stencil8 | Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => true,
             _ => false,
+        }
+    }
+
+    
+    pub fn size_multiple_requirement(&self) -> (u32, u32) {
+        match *self {
+            Self::NV12 => (2, 2),
+            _ => self.block_dimensions(),
         }
     }
 
@@ -2975,9 +3006,8 @@ impl TextureFormat {
             | Self::Depth24Plus
             | Self::Depth24PlusStencil8
             | Self::Depth32Float
-            | Self::Depth32FloatStencil8 => (1, 1),
-
-            Self::NV12 => (2, 2),
+            | Self::Depth32FloatStencil8
+            | Self::NV12 => (1, 1),
 
             Self::Bc1RgbaUnorm
             | Self::Bc1RgbaUnormSrgb
@@ -3263,6 +3293,7 @@ impl TextureFormat {
         device_features: Option<Features>,
     ) -> Option<TextureSampleType> {
         let float = TextureSampleType::Float { filterable: true };
+        let unfilterable_float = TextureSampleType::Float { filterable: false };
         let float32_sample_type = TextureSampleType::Float {
             filterable: device_features
                 .unwrap_or(Features::empty())
@@ -3314,12 +3345,17 @@ impl TextureFormat {
             Self::Stencil8 => Some(uint),
             Self::Depth16Unorm | Self::Depth24Plus | Self::Depth32Float => Some(depth),
             Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => match aspect {
-                None | Some(TextureAspect::All) => None,
                 Some(TextureAspect::DepthOnly) => Some(depth),
                 Some(TextureAspect::StencilOnly) => Some(uint),
+                _ => None,
             },
 
-            Self::NV12 => None,
+            Self::NV12 => match aspect {
+                Some(TextureAspect::Plane0) | Some(TextureAspect::Plane1) => {
+                    Some(unfilterable_float)
+                }
+                _ => None,
+            },
 
             Self::R16Unorm
             | Self::R16Snorm
@@ -3371,11 +3407,13 @@ impl TextureFormat {
     
     
     
+    
     #[deprecated(since = "0.19.0", note = "Use `block_copy_size` instead.")]
     pub fn block_size(&self, aspect: Option<TextureAspect>) -> Option<u32> {
         self.block_copy_size(aspect)
     }
 
+    
     
     
     
@@ -3427,17 +3465,21 @@ impl TextureFormat {
             Self::Depth32Float => Some(4),
             Self::Depth24Plus => None,
             Self::Depth24PlusStencil8 => match aspect {
-                None | Some(TextureAspect::All) => None,
                 Some(TextureAspect::DepthOnly) => None,
                 Some(TextureAspect::StencilOnly) => Some(1),
+                _ => None,
             },
             Self::Depth32FloatStencil8 => match aspect {
-                None | Some(TextureAspect::All) => None,
                 Some(TextureAspect::DepthOnly) => Some(4),
                 Some(TextureAspect::StencilOnly) => Some(1),
+                _ => None,
             },
 
-            Self::NV12 => None,
+            Self::NV12 => match aspect {
+                Some(TextureAspect::Plane0) => Some(1),
+                Some(TextureAspect::Plane1) => Some(2),
+                _ => None,
+            },
 
             Self::Bc1RgbaUnorm | Self::Bc1RgbaUnormSrgb | Self::Bc4RUnorm | Self::Bc4RSnorm => {
                 Some(8)
@@ -3526,11 +3568,15 @@ impl TextureFormat {
             Self::Stencil8 | Self::Depth16Unorm | Self::Depth24Plus | Self::Depth32Float => 1,
 
             Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => match aspect {
-                TextureAspect::All => 2,
                 TextureAspect::DepthOnly | TextureAspect::StencilOnly => 1,
+                _ => 2,
             },
 
-            Self::NV12 => 3,
+            Self::NV12 => match aspect {
+                TextureAspect::Plane0 => 1,
+                TextureAspect::Plane1 => 2,
+                _ => 3,
+            },
 
             Self::Bc4RUnorm | Self::Bc4RSnorm => 1,
             Self::Bc5RgUnorm | Self::Bc5RgSnorm => 2,
@@ -5228,7 +5274,7 @@ pub enum TextureDimension {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -5253,12 +5299,18 @@ impl Origin2d {
     }
 }
 
+impl std::fmt::Debug for Origin2d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        (self.x, self.y).fmt(f)
+    }
+}
+
 
 
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -5290,12 +5342,18 @@ impl Default for Origin3d {
     }
 }
 
+impl std::fmt::Debug for Origin3d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        (self.x, self.y, self.z).fmt(f)
+    }
+}
+
 
 
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -5307,6 +5365,12 @@ pub struct Extent3d {
     
     #[cfg_attr(feature = "serde", serde(default = "default_depth"))]
     pub depth_or_array_layers: u32,
+}
+
+impl std::fmt::Debug for Extent3d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        (self.width, self.height, self.depth_or_array_layers).fmt(f)
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -5633,6 +5697,12 @@ pub enum TextureAspect {
     StencilOnly,
     
     DepthOnly,
+    
+    Plane0,
+    
+    Plane1,
+    
+    Plane2,
 }
 
 
