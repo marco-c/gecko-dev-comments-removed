@@ -73,10 +73,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     ThemeFamily mFamily{0};
 
     
-    
-    bool mCompatibleWithHTMLLightColors = false;
-
-    
     nsString mDefaultFontName;
     nsString mButtonFontName;
     nsString mFieldFontName;
