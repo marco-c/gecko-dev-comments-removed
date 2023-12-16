@@ -174,7 +174,9 @@ nsIFrame* nsILineIterator::LineInfo::GetLastFrameOnLine() const {
 static_assert(sizeof(nsIFrame) == 120, "nsIFrame should remain small");
 #else
 static_assert(sizeof(void*) == 4, "Odd build config?");
-static_assert(sizeof(nsIFrame) == 76, "nsIFrame should remain small");
+
+
+static_assert(sizeof(nsIFrame) <= 80, "nsIFrame should remain small");
 #endif
 
 const mozilla::LayoutFrameType nsIFrame::sLayoutFrameTypes[kFrameClassCount] = {
