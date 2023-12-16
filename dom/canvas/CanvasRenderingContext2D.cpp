@@ -64,7 +64,6 @@
 #include "nsIMemoryReporter.h"
 #include "nsStyleUtil.h"
 #include "CanvasImageCache.h"
-#include "DrawTargetWebgl.h"
 
 #include <algorithm>
 
@@ -1357,6 +1356,7 @@ bool CanvasRenderingContext2D::CopyBufferProvider(
   }
 
   aTarget.CopySurface(snapshot, aCopyRect, IntPoint());
+
   aOld.ReturnSnapshot(snapshot.forget());
   return true;
 }
@@ -1651,13 +1651,22 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
   if (!mAllowAcceleration || GetEffectiveWillReadFrequently()) {
     return false;
   }
-  aOutDT = DrawTargetWebgl::Create(GetSize(), GetSurfaceFormat());
-  if (!aOutDT) {
+
+  if (!mCanvasElement) {
     return false;
   }
-
-  aOutProvider = new PersistentBufferProviderAccelerated(aOutDT);
-  return true;
+  WindowRenderer* renderer = WindowRendererFromCanvasElement(mCanvasElement);
+  if (!renderer) {
+    return false;
+  }
+  aOutProvider = PersistentBufferProviderAccelerated::Create(
+      GetSize(), GetSurfaceFormat(), renderer->AsKnowsCompositor());
+  if (!aOutProvider) {
+    return false;
+  }
+  aOutDT = aOutProvider->BorrowDrawTarget(IntRect());
+  MOZ_ASSERT(aOutDT);
+  return !!aOutDT;
 }
 
 bool CanvasRenderingContext2D::TrySharedTarget(
@@ -5981,16 +5990,14 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
   
-  
-  
-  bool usePlaceholder = false;
+  CanvasUtils::ImageExtraction permission =
+      CanvasUtils::ImageExtraction::Unrestricted;
   if (mCanvasElement) {
-    nsCOMPtr<Document> ownerDoc = mCanvasElement->OwnerDoc();
-    usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(ownerDoc, aCx,
-                                                            aSubjectPrincipal);
+    permission = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
+                                                    aSubjectPrincipal);
   } else if (mOffscreenCanvas) {
-    usePlaceholder = mOffscreenCanvas->ShouldResistFingerprinting(
-        RFPTarget::CanvasImageExtractionPrompt);
+    permission = CanvasUtils::ImageExtractionResult(mOffscreenCanvas, aCx,
+                                                    aSubjectPrincipal);
   }
 
   
@@ -5999,10 +6006,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   
   
   
-  bool needRandomizePixels = false;
-  if (!usePlaceholder &&
-      ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    needRandomizePixels = true;
+  if (permission == CanvasUtils::ImageExtraction::Randomize) {
     if (readback) {
       readback = CreateDataSourceSurfaceByCloning(readback);
     }
@@ -6015,12 +6019,12 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
 
   do {
     uint8_t* randomData;
-    if (usePlaceholder) {
+    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
       
       
       
       randomData = TryToGenerateRandomDataForPlaceholderCanvasData();
-    } else if (needRandomizePixels) {
+    } else if (permission == CanvasUtils::ImageExtraction::Randomize) {
       
       
       
@@ -6036,7 +6040,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
     MOZ_ASSERT(!isShared);  
 
-    if (usePlaceholder) {
+    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
       FillPlaceholderCanvas(randomData, len.value(), data);
       break;
     }

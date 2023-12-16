@@ -63,6 +63,19 @@ bool IsOffscreenCanvasEnabled(JSContext* aCx, JSObject* aObj);
 bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
                               nsIPrincipal& aPrincipal);
 
+enum class ImageExtraction {
+  Unrestricted,
+  Placeholder,
+  Randomize,
+};
+
+
+
+ImageExtraction ImageExtractionResult(dom::HTMLCanvasElement* aCanvasElement,
+                                      JSContext* aCx, nsIPrincipal& aPrincipal);
+ImageExtraction ImageExtractionResult(dom::OffscreenCanvas* aOffscreenCanvas,
+                                      JSContext* aCx, nsIPrincipal& aPrincipal);
+
 
 
 

@@ -48,6 +48,16 @@
 
 using namespace mozilla::gfx;
 
+static bool IsUnrestrictedPrincipal(nsIPrincipal& aPrincipal) {
+  
+  if (aPrincipal.IsSystemPrincipal()) {
+    return true;
+  }
+
+  
+  return aPrincipal.GetIsAddonOrExpandedAddonPrincipal();
+}
+
 namespace mozilla::CanvasUtils {
 
 bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
@@ -104,13 +114,7 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   }
 
   
-  if (aPrincipal.IsSystemPrincipal()) {
-    return true;
-  }
-
-  
-  auto* principal = BasePrincipal::Cast(&aPrincipal);
-  if (principal->AddonPolicy() || principal->ContentScriptAddonPolicy()) {
+  if (IsUnrestrictedPrincipal(aPrincipal)) {
     return true;
   }
 
@@ -176,7 +180,7 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   
   uint32_t permission;
   rv = permissionManager->TestPermissionFromPrincipal(
-      principal, PERMISSION_CANVAS_EXTRACT_DATA, &permission);
+      &aPrincipal, PERMISSION_CANVAS_EXTRACT_DATA, &permission);
   NS_ENSURE_SUCCESS(rv, false);
   switch (permission) {
     case nsIPermissionManager::ALLOW_ACTION:
@@ -238,7 +242,7 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   
   nsPIDOMWindowOuter* win = aDocument->GetWindow();
   nsAutoCString origin;
-  rv = principal->GetOrigin(origin);
+  rv = aPrincipal.GetOrigin(origin);
   NS_ENSURE_SUCCESS(rv, false);
 
   if (XRE_IsContentProcess()) {
@@ -260,6 +264,45 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
 
   
   return false;
+}
+
+ImageExtraction ImageExtractionResult(dom::HTMLCanvasElement* aCanvasElement,
+                                      JSContext* aCx,
+                                      nsIPrincipal& aPrincipal) {
+  if (IsUnrestrictedPrincipal(aPrincipal)) {
+    return ImageExtraction::Unrestricted;
+  }
+
+  nsCOMPtr<dom::Document> ownerDoc = aCanvasElement->OwnerDoc();
+  if (!IsImageExtractionAllowed(ownerDoc, aCx, aPrincipal)) {
+    return ImageExtraction::Placeholder;
+  }
+
+  if (ownerDoc->ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
+    return ImageExtraction::Randomize;
+  }
+
+  return ImageExtraction::Unrestricted;
+}
+
+ImageExtraction ImageExtractionResult(dom::OffscreenCanvas* aOffscreenCanvas,
+                                      JSContext* aCx,
+                                      nsIPrincipal& aPrincipal) {
+  if (IsUnrestrictedPrincipal(aPrincipal)) {
+    return ImageExtraction::Unrestricted;
+  }
+
+  if (aOffscreenCanvas->ShouldResistFingerprinting(
+          RFPTarget::CanvasImageExtractionPrompt)) {
+    return ImageExtraction::Placeholder;
+  }
+
+  if (aOffscreenCanvas->ShouldResistFingerprinting(
+          RFPTarget::CanvasRandomization)) {
+    return ImageExtraction::Randomize;
+  }
+
+  return ImageExtraction::Unrestricted;
 }
 
 bool GetCanvasContextType(const nsAString& str,
