@@ -614,6 +614,13 @@ void nsSliderFrame::Reflow(nsPresContext* aPresContext,
     thumbPos.y = NSToCoordRound(pos * mRatio);
   }
 
+  
+  
+  
+  nscoord appUnitsPerPixel = PresContext()->AppUnitsPerDevPixel();
+  thumbPos =
+      ToAppUnits(thumbPos.ToNearestPixels(appUnitsPerPixel), appUnitsPerPixel);
+
   const LogicalPoint logicalPos(wm, thumbPos, availSize);
   
   
