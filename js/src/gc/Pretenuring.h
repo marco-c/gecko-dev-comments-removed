@@ -73,6 +73,13 @@ class AllocSite {
   AllocSite* nextNurseryAllocated = nullptr;
 
   
+  
+  
+  
+  static constexpr uint32_t InvalidPCOffset = UINT32_MAX;
+  uint32_t pcOffset_ = InvalidPCOffset;
+
+  
   uint32_t nurseryAllocCount = 0;
 
   
@@ -108,10 +115,12 @@ class AllocSite {
   }
 
   
-  AllocSite(JS::Zone* zone, JSScript* script, JS::TraceKind kind)
+  AllocSite(JS::Zone* zone, JSScript* script, uint32_t pcOffset,
+            JS::TraceKind kind)
       : AllocSite(zone, kind) {
     MOZ_ASSERT(script != WasmScript);
     setScript(script);
+    pcOffset_ = pcOffset;
   }
 
   void initUnknownSite(JS::Zone* zone, JS::TraceKind kind) {
@@ -147,6 +156,12 @@ class AllocSite {
   JSScript* script() const {
     MOZ_ASSERT(hasScript());
     return reinterpret_cast<JSScript*>(rawScript());
+  }
+
+  uint32_t pcOffset() const {
+    MOZ_ASSERT(hasScript());
+    MOZ_ASSERT(pcOffset_ != InvalidPCOffset);
+    return pcOffset_;
   }
 
   
