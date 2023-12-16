@@ -59,6 +59,7 @@ interface nsIContentAnalysisResponse : nsISupports
 
 
 
+
   void acknowledge(in nsIContentAnalysisAcknowledgement aCaa);
 };
 
@@ -188,16 +189,33 @@ interface nsIContentAnalysis : nsISupports
 
 
 
+
+
+
+
+
   [implicit_jscontext]
-  Promise analyzeContentRequest(in nsIContentAnalysisRequest aCar);
+  Promise analyzeContentRequest(in nsIContentAnalysisRequest aCar, in bool aAutoAcknowledge);
 
   
 
 
 
-  void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in nsIContentAnalysisCallback callback);
+
+
+
+
+
+
+
+
+
+  void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in bool aAutoAcknowledge, in nsIContentAnalysisCallback callback);
 
   
+
+
+
 
 
 
