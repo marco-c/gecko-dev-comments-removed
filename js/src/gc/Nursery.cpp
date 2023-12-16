@@ -1467,10 +1467,6 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   clear();
   endProfile(ProfileKey::ClearNursery);
 
-  startProfile(ProfileKey::ClearStoreBuffer);
-  gc->storeBuffer().clear();
-  endProfile(ProfileKey::ClearStoreBuffer);
-
   
   
   startProfile(ProfileKey::PurgeStringToAtomCache);
@@ -1497,7 +1493,19 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
         runtime()->mainContextFromOwnThread());
 
     
-    StoreBuffer& sb = gc->storeBuffer();
+
+    
+    
+    StoreBuffer sb(runtime());
+    {
+      AutoEnterOOMUnsafeRegion oomUnsafe;
+      if (!sb.enable()) {
+        oomUnsafe.crash("Nursery::traceRoots");
+      }
+    }
+    std::swap(sb, gc->storeBuffer());
+    MOZ_ASSERT(gc->storeBuffer().isEnabled());
+    MOZ_ASSERT(gc->storeBuffer().isEmpty());
 
     
     
@@ -1531,6 +1539,8 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
     gc->traceRuntimeForMinorGC(&mover, session);
     endProfile(ProfileKey::MarkRuntime);
   }
+
+  MOZ_ASSERT(gc->storeBuffer().isEmpty());
 
   startProfile(ProfileKey::MarkDebugger);
   {
