@@ -485,18 +485,41 @@ interface nsIEditor  : nsISupports
 
 
 
-  [can_run_script]
+
+
+
+
+
+
+
+
+
+
+
+
+  [optional_argc, can_run_script]
   void insertNode(in Node node,
                   in Node parent,
-                  in unsigned long aPosition);
+                  in unsigned long aPosition,
+                  [optional] in boolean aPreserveSelection);
 
 
   
 
 
 
-  [can_run_script]
-  void deleteNode(in Node child);
+
+
+
+
+
+
+
+
+
+
+  [optional_argc, can_run_script]
+  void deleteNode(in Node child, [optional] in boolean aPreserveSelection);
 
 
 
