@@ -203,7 +203,12 @@ void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
   }
 
   
-  if (IsCombobox() && !OpenInParentProcess()) {
+#if !defined(ANDROID)
+  if (!IsCombobox()) {
+    return;
+  }
+#endif
+  if (!OpenInParentProcess()) {
     RefPtr<Document> doc = OwnerDoc();
     nsContentUtils::DispatchChromeEvent(doc, this, u"mozshowdropdown"_ns,
                                         CanBubble::eYes, Cancelable::eNo);
