@@ -998,6 +998,12 @@ class Document : public nsINode,
 
 
 
+  bool IsEverInitialDocument() const { return mIsEverInitialDocumentInWindow; }
+
+  
+
+
+
   void SetIsInitialDocument(bool aIsInitialDocument);
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
@@ -4554,6 +4560,11 @@ class Document : public nsINode,
   
   
   bool mIsInitialDocumentInWindow : 1;
+
+  
+  
+  
+  bool mIsEverInitialDocumentInWindow : 1;
 
   bool mIgnoreDocGroupMismatches : 1;
 
