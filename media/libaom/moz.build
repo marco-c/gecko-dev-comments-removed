@@ -73,7 +73,8 @@ else:
 
 AllowCompilerWarnings()
 
-FINAL_LIBRARY = 'gkmedias'
+FINAL_LIBRARY = 'gkcodecs'
+NoVisibilityFlags()
 
 if CONFIG['OS_TARGET'] == 'Android':
     
