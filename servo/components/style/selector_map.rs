@@ -35,6 +35,9 @@ impl Default for PrecomputedHasher {
 }
 
 
+pub type RelevantAttributes = thin_vec::ThinVec<LocalName>;
+
+
 
 
 
@@ -129,8 +132,6 @@ pub struct SelectorMap<T: 'static> {
     
     pub other: SmallVec<[T; 1]>,
     
-    bucket_attributes: bool,
-    
     pub count: usize,
 }
 
@@ -153,17 +154,8 @@ impl<T> SelectorMap<T> {
             namespace_hash: HashMap::default(),
             rare_pseudo_classes: SmallVec::new(),
             other: SmallVec::new(),
-            bucket_attributes: true,
             count: 0,
         }
-    }
-
-    
-    
-    pub fn new_without_attribute_bucketing() -> Self {
-        let mut ret = Self::new();
-        ret.bucket_attributes = false;
-        ret
     }
 
     
@@ -262,21 +254,19 @@ impl SelectorMap<Rule> {
             }
         });
 
-        if self.bucket_attributes {
-            rule_hash_target.each_attr_name(|name| {
-                if let Some(rules) = self.attribute_hash.get(name) {
-                    SelectorMap::get_matching_rules(
-                        element,
-                        rules,
-                        matching_rules_list,
-                        matching_context,
-                        cascade_level,
-                        cascade_data,
-                        stylist,
-                    )
-                }
-            });
-        }
+        rule_hash_target.each_attr_name(|name| {
+            if let Some(rules) = self.attribute_hash.get(name) {
+                SelectorMap::get_matching_rules(
+                    element,
+                    rules,
+                    matching_rules_list,
+                    matching_context,
+                    cascade_level,
+                    cascade_data,
+                    stylist,
+                )
+            }
+        });
 
         if let Some(rules) = self.local_name_hash.get(rule_hash_target.local_name()) {
             SelectorMap::get_matching_rules(
@@ -435,7 +425,6 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             let bucket = find_bucket(
                 entry.selector(),
                 &mut disjoint_buckets,
-                self.bucket_attributes,
             );
 
             
@@ -481,12 +470,24 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
     
     
     
-    pub fn lookup<'a, E, F>(&'a self, element: E, quirks_mode: QuirksMode, f: F) -> bool
+    pub fn lookup<'a, E, F>(
+        &'a self,
+        element: E,
+        quirks_mode: QuirksMode,
+        relevant_attributes: Option<&mut RelevantAttributes>,
+        f: F,
+    ) -> bool
     where
         E: TElement,
         F: FnMut(&'a T) -> bool,
     {
-        self.lookup_with_state(element, element.state(), quirks_mode, f)
+        self.lookup_with_state(
+            element,
+            element.state(),
+            quirks_mode,
+            relevant_attributes,
+            f,
+        )
     }
 
     #[inline]
@@ -495,6 +496,7 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
         element: E,
         element_state: ElementState,
         quirks_mode: QuirksMode,
+        mut relevant_attributes: Option<&mut RelevantAttributes>,
         mut f: F,
     ) -> bool
     where
@@ -538,24 +540,25 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             return false;
         }
 
-        if self.bucket_attributes {
-            element.each_attr_name(|name| {
-                if done {
-                    return;
+        element.each_attr_name(|name| {
+            if done {
+                return;
+            }
+            if let Some(v) = self.attribute_hash.get(name) {
+                if let Some(ref mut relevant_attributes) = relevant_attributes {
+                    relevant_attributes.push(name.clone());
                 }
-                if let Some(v) = self.attribute_hash.get(name) {
-                    for entry in v.iter() {
-                        if !f(&entry) {
-                            done = true;
-                            return;
-                        }
+                for entry in v.iter() {
+                    if !f(&entry) {
+                        done = true;
+                        return;
                     }
                 }
-            });
-
-            if done {
-                return false;
             }
+        });
+
+        if done {
+            return false;
         }
 
         if let Some(v) = self.local_name_hash.get(element.local_name()) {
@@ -617,6 +620,7 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             element,
             element.state() | additional_states,
             quirks_mode,
+             None,
             |entry| f(entry),
         ) {
             return false;
@@ -697,13 +701,12 @@ type DisjointBuckets<'a> = SmallVec<[Bucket<'a>; 5]>;
 fn specific_bucket_for<'a>(
     component: &'a Component<SelectorImpl>,
     disjoint_buckets: &mut DisjointBuckets<'a>,
-    bucket_attributes: bool,
 ) -> Bucket<'a> {
     match *component {
         Component::Root => Bucket::Root,
         Component::ID(ref id) => Bucket::ID(id),
         Component::Class(ref class) => Bucket::Class(class),
-        Component::AttributeInNoNamespace { ref local_name, .. } if bucket_attributes => {
+        Component::AttributeInNoNamespace { ref local_name, .. } => {
             Bucket::Attribute {
                 name: local_name,
                 lower_name: local_name,
@@ -712,11 +715,11 @@ fn specific_bucket_for<'a>(
         Component::AttributeInNoNamespaceExists {
             ref local_name,
             ref local_name_lower,
-        } if bucket_attributes => Bucket::Attribute {
+        } => Bucket::Attribute {
             name: local_name,
             lower_name: local_name_lower,
         },
-        Component::AttributeOther(ref selector) if bucket_attributes => Bucket::Attribute {
+        Component::AttributeOther(ref selector) => Bucket::Attribute {
             name: &selector.local_name,
             lower_name: &selector.local_name_lower,
         },
@@ -746,17 +749,17 @@ fn specific_bucket_for<'a>(
         
         
         Component::Slotted(ref selector) => {
-            find_bucket(selector.iter(), disjoint_buckets, bucket_attributes)
+            find_bucket(selector.iter(), disjoint_buckets)
         },
         Component::Host(Some(ref selector)) => {
-            find_bucket(selector.iter(), disjoint_buckets, bucket_attributes)
+            find_bucket(selector.iter(), disjoint_buckets)
         },
         Component::Is(ref list) | Component::Where(ref list) => {
             if list.len() == 1 {
-                find_bucket(list.slice()[0].iter(), disjoint_buckets, bucket_attributes)
+                find_bucket(list.slice()[0].iter(), disjoint_buckets)
             } else {
                 for selector in list.slice() {
-                    let bucket = find_bucket(selector.iter(), disjoint_buckets, bucket_attributes);
+                    let bucket = find_bucket(selector.iter(), disjoint_buckets);
                     disjoint_buckets.push(bucket);
                 }
                 Bucket::Universal
@@ -782,13 +785,12 @@ fn specific_bucket_for<'a>(
 fn find_bucket<'a>(
     mut iter: SelectorIter<'a, SelectorImpl>,
     disjoint_buckets: &mut DisjointBuckets<'a>,
-    bucket_attributes: bool,
 ) -> Bucket<'a> {
     let mut current_bucket = Bucket::Universal;
 
     loop {
         for ss in &mut iter {
-            let new_bucket = specific_bucket_for(ss, disjoint_buckets, bucket_attributes);
+            let new_bucket = specific_bucket_for(ss, disjoint_buckets);
             
             
             if new_bucket.more_or_equally_specific_than(&current_bucket) {

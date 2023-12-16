@@ -139,11 +139,6 @@ where
 
     let for_candidate = candidate.revalidation_match_results(stylist, bloom, selector_caches);
 
-    
-    
-    
-    debug_assert_eq!(for_element.len(), for_candidate.len());
-
     for_element == for_candidate
 }
 

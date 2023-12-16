@@ -29,6 +29,7 @@ use crate::properties_and_values::registry::{
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_collector::RuleCollector;
 use crate::rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
+use crate::sharing::RevalidationResult;
 use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet, SelectorMap, SelectorMapEntry};
 use crate::selector_parser::{PerPseudoElementMap, PseudoElement, SelectorImpl, SnapshotMap};
 use crate::shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
@@ -66,7 +67,6 @@ use selectors::parser::{
 };
 use selectors::visitor::{SelectorListKind, SelectorVisitor};
 use servo_arc::{Arc, ArcBorrow};
-use smallbitvec::SmallBitVec;
 use smallvec::SmallVec;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
@@ -1471,7 +1471,7 @@ impl Stylist {
         bloom: Option<&BloomFilter>,
         selector_caches: &mut SelectorCaches,
         needs_selector_flags: NeedsSelectorFlags,
-    ) -> SmallBitVec
+    ) -> RevalidationResult
     where
         E: TElement,
     {
@@ -1491,7 +1491,9 @@ impl Stylist {
         
         
         
-        let mut results = SmallBitVec::new();
+        let mut result = RevalidationResult::default();
+        let mut relevant_attributes = &mut result.relevant_attributes;
+        let selectors_matched = &mut result.selectors_matched;
 
         let matches_document_rules =
             element.each_applicable_non_document_style_rule_data(|data, host| {
@@ -1499,8 +1501,9 @@ impl Stylist {
                     data.selectors_for_cache_revalidation.lookup(
                         element,
                         self.quirks_mode,
+                        Some(&mut relevant_attributes),
                         |selector_and_hashes| {
-                            results.push(matches_selector(
+                            selectors_matched.push(matches_selector(
                                 &selector_and_hashes.selector,
                                 selector_and_hashes.selector_offset,
                                 Some(&selector_and_hashes.hashes),
@@ -1521,8 +1524,9 @@ impl Stylist {
             data.selectors_for_cache_revalidation.lookup(
                 element,
                 self.quirks_mode,
+                Some(&mut relevant_attributes),
                 |selector_and_hashes| {
-                    results.push(matches_selector(
+                    selectors_matched.push(matches_selector(
                         &selector_and_hashes.selector,
                         selector_and_hashes.selector_offset,
                         Some(&selector_and_hashes.hashes),
@@ -1534,7 +1538,7 @@ impl Stylist {
             );
         }
 
-        results
+        result
     }
 
     
@@ -2470,15 +2474,7 @@ impl CascadeData {
             state_dependencies: ElementState::empty(),
             document_state_dependencies: DocumentState::empty(),
             mapped_ids: PrecomputedHashSet::default(),
-            
-            
-            
-            
-            
-            
-            
-            
-            selectors_for_cache_revalidation: SelectorMap::new_without_attribute_bucketing(),
+            selectors_for_cache_revalidation: SelectorMap::new(),
             animations: Default::default(),
             custom_property_registrations: Default::default(),
             layer_id: Default::default(),

@@ -71,6 +71,7 @@ use crate::context::{SharedStyleContext, StyleContext};
 use crate::dom::{SendElement, TElement};
 use crate::properties::ComputedValues;
 use crate::rule_tree::StrongRuleNode;
+use crate::selector_map::RelevantAttributes;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles};
 use crate::stylist::Stylist;
 use crate::values::AtomIdent;
@@ -119,6 +120,44 @@ impl OpaqueComputedValues {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Default)]
+pub struct RevalidationResult {
+    
+    
+    pub selectors_matched: SmallBitVec,
+    
+    pub relevant_attributes: RelevantAttributes,
+}
+
+impl PartialEq for RevalidationResult {
+    fn eq(&self, other: &Self) -> bool {
+        if self.relevant_attributes != other.relevant_attributes {
+            return false;
+        }
+
+        
+        
+        
+        debug_assert_eq!(self.selectors_matched.len(), other.selectors_matched.len());
+        self.selectors_matched == other.selectors_matched
+    }
+}
+
+
+
 #[derive(Debug, Default)]
 pub struct ValidationData {
     
@@ -141,7 +180,7 @@ pub struct ValidationData {
 
     
     
-    revalidation_match_results: Option<SmallBitVec>,
+    revalidation_match_results: Option<RevalidationResult>,
 }
 
 impl ValidationData {
@@ -230,7 +269,7 @@ impl ValidationData {
         selector_caches: &mut SelectorCaches,
         bloom_known_valid: bool,
         needs_selector_flags: NeedsSelectorFlags,
-    ) -> &SmallBitVec
+    ) -> &RevalidationResult
     where
         E: TElement,
     {
@@ -320,7 +359,7 @@ impl<E: TElement> StyleSharingCandidate<E> {
         stylist: &Stylist,
         bloom: &StyleBloom<E>,
         selector_caches: &mut SelectorCaches,
-    ) -> &SmallBitVec {
+    ) -> &RevalidationResult {
         self.validation_data.revalidation_match_results(
             self.element,
             stylist,
@@ -386,7 +425,7 @@ impl<E: TElement> StyleSharingTarget<E> {
         stylist: &Stylist,
         bloom: &StyleBloom<E>,
         selector_caches: &mut SelectorCaches,
-    ) -> &SmallBitVec {
+    ) -> &RevalidationResult {
         
         
         
