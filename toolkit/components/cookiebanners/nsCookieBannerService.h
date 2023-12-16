@@ -139,15 +139,15 @@ class nsCookieBannerService final : public nsIObserver,
   
   typedef struct ExecutedData {
     ExecutedData()
-        : hasExecutedInTop(false),
-          hasExecutedInFrame(false),
-          hasExecutedInTopPrivate(false),
-          hasExecutedInFramePrivate(false) {}
+        : countExecutedInTop(0),
+          countExecutedInFrame(0),
+          countExecutedInTopPrivate(0),
+          countExecutedInFramePrivate(0) {}
 
-    bool hasExecutedInTop;
-    bool hasExecutedInFrame;
-    bool hasExecutedInTopPrivate;
-    bool hasExecutedInFramePrivate;
+    uint8_t countExecutedInTop;
+    uint8_t countExecutedInFrame;
+    uint8_t countExecutedInTopPrivate;
+    uint8_t countExecutedInFramePrivate;
   } ExecutedData;
 
   
