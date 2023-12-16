@@ -670,7 +670,7 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
 
   
   Rooted<Wrapped<PlainDateObject*>> addedDate(
-      cx, CalendarDateAdd(cx, calendar, date, durationToAdd, options, dateAdd));
+      cx, AddDate(cx, calendar, date, durationToAdd, options, dateAdd));
   if (!addedDate) {
     return false;
   }

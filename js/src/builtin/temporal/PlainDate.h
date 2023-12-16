@@ -62,6 +62,7 @@ inline PlainDate ToPlainDate(const PlainDateObject* date) {
 
 enum class TemporalOverflow;
 enum class TemporalUnit;
+class DurationObject;
 class ZonedDateTimeObject;
 
 #ifdef DEBUG
@@ -135,6 +136,67 @@ bool RegulateISODate(JSContext* cx, double year, double month, double day,
 
 bool AddISODate(JSContext* cx, const PlainDate& date, const Duration& duration,
                 TemporalOverflow overflow, PlainDate* result);
+
+
+
+
+Wrapped<PlainDateObject*> AddDate(JSContext* cx,
+                                  JS::Handle<CalendarValue> calendar,
+                                  JS::Handle<Wrapped<PlainDateObject*>> date,
+                                  const Duration& duration,
+                                  JS::Handle<JSObject*> options);
+
+
+
+
+Wrapped<PlainDateObject*> AddDate(JSContext* cx,
+                                  JS::Handle<CalendarValue> calendar,
+                                  JS::Handle<Wrapped<PlainDateObject*>> date,
+                                  const Duration& duration,
+                                  JS::Handle<JS::Value> dateAdd);
+
+
+
+
+Wrapped<PlainDateObject*> AddDate(JSContext* cx,
+                                  JS::Handle<CalendarValue> calendar,
+                                  JS::Handle<Wrapped<PlainDateObject*>> date,
+                                  const Duration& duration,
+                                  JS::Handle<JSObject*> options,
+                                  JS::Handle<JS::Value> dateAdd);
+
+
+
+
+Wrapped<PlainDateObject*> AddDate(
+    JSContext* cx, JS::Handle<CalendarValue> calendar,
+    JS::Handle<Wrapped<PlainDateObject*>> date,
+    JS::Handle<Wrapped<DurationObject*>> durationObj,
+    JS::Handle<JS::Value> dateAdd);
+
+
+
+
+Wrapped<PlainDateObject*> AddDate(
+    JSContext* cx, JS::Handle<CalendarValue> calendar,
+    JS::Handle<Wrapped<PlainDateObject*>> date,
+    JS::Handle<Wrapped<DurationObject*>> durationObj,
+    JS::Handle<JSObject*> options);
+
+
+
+
+bool AddDate(JSContext* cx, JS::Handle<CalendarValue> calendar,
+             const PlainDate& date, const Duration& duration,
+             JS::Handle<JSObject*> options, PlainDate* result);
+
+
+
+
+bool AddDate(JSContext* cx, JS::Handle<CalendarValue> calendar,
+             JS::Handle<Wrapped<PlainDateObject*>> date,
+             const Duration& duration, JS::Handle<JS::Value> dateAdd,
+             PlainDate* result);
 
 
 

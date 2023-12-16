@@ -650,7 +650,7 @@ static bool MoveRelativeDate(
   auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
 
   
-  auto newDate = CalendarDateAdd(cx, calendar, relativeTo, duration, dateAdd);
+  auto newDate = AddDate(cx, calendar, relativeTo, duration, dateAdd);
   if (!newDate) {
     return false;
   }
@@ -683,7 +683,7 @@ static bool MoveRelativeDate(
   auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
 
   
-  auto newDate = CalendarDateAdd(cx, calendar, relativeTo, duration, dateAdd);
+  auto newDate = AddDate(cx, calendar, relativeTo, duration, dateAdd);
   if (!newDate) {
     return false;
   }
@@ -2811,8 +2811,18 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   auto dateDuration2 = two.date();
 
   
+  bool calendarUnitsPresent = true;
+
+  
+  if (dateDuration1.years == 0 && dateDuration1.months == 0 &&
+      dateDuration1.weeks == 0 && dateDuration2.years == 0 &&
+      dateDuration2.months == 0 && dateDuration2.weeks == 0) {
+    calendarUnitsPresent = false;
+  }
+
+  
   Rooted<Value> dateAdd(cx);
-  if (calendar.isObject()) {
+  if (calendarUnitsPresent && calendar.isObject()) {
     Rooted<JSObject*> calendarObj(cx, calendar.toObject());
     if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
       return false;
@@ -2821,15 +2831,14 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
 
   
   Rooted<Wrapped<PlainDateObject*>> intermediate(
-      cx,
-      CalendarDateAdd(cx, calendar, plainRelativeTo, dateDuration1, dateAdd));
+      cx, AddDate(cx, calendar, plainRelativeTo, dateDuration1, dateAdd));
   if (!intermediate) {
     return false;
   }
 
   
   Rooted<Wrapped<PlainDateObject*>> end(
-      cx, CalendarDateAdd(cx, calendar, intermediate, dateDuration2, dateAdd));
+      cx, AddDate(cx, calendar, intermediate, dateDuration2, dateAdd));
   if (!end) {
     return false;
   }
@@ -4784,7 +4793,7 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
 
   
   auto yearsLater =
-      CalendarDateAdd(cx, calendar, dateRelativeTo, yearsDuration, dateAdd);
+      AddDate(cx, calendar, dateRelativeTo, yearsDuration, dateAdd);
   if (!yearsLater) {
     return false;
   }
@@ -4798,8 +4807,8 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
 
   
   PlainDate yearsMonthsWeeksLater;
-  if (!CalendarDateAdd(cx, calendar, dateRelativeTo, yearsMonthsWeeks, dateAdd,
-                       &yearsMonthsWeeksLater)) {
+  if (!AddDate(cx, calendar, dateRelativeTo, yearsMonthsWeeks, dateAdd,
+               &yearsMonthsWeeksLater)) {
     return false;
   }
 
@@ -5169,7 +5178,7 @@ static bool RoundDurationMonth(
 
   
   auto yearsMonthsLater =
-      CalendarDateAdd(cx, calendar, dateRelativeTo, yearsMonths, dateAdd);
+      AddDate(cx, calendar, dateRelativeTo, yearsMonths, dateAdd);
   if (!yearsMonthsLater) {
     return false;
   }
@@ -5183,8 +5192,8 @@ static bool RoundDurationMonth(
 
   
   PlainDate yearsMonthsWeeksLater;
-  if (!CalendarDateAdd(cx, calendar, dateRelativeTo, yearsMonthsWeeks, dateAdd,
-                       &yearsMonthsWeeksLater)) {
+  if (!AddDate(cx, calendar, dateRelativeTo, yearsMonthsWeeks, dateAdd,
+               &yearsMonthsWeeksLater)) {
     return false;
   }
 
