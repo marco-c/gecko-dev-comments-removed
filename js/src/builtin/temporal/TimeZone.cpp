@@ -1813,12 +1813,10 @@ bool js::temporal::DisambiguatePossibleInstants(
     }
 
     
-    
-
-    
+    Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
     Rooted<PlainDateTimeWithCalendar> earlierDateTime(
-        cx, PlainDateTimeWithCalendar{{earlierDate, earlierTime.time},
-                                      dateTime.calendar()});
+        cx,
+        PlainDateTimeWithCalendar{{earlierDate, earlierTime.time}, calendar});
 
     
     Rooted<InstantVector> earlierInstants(cx, InstantVector(cx));
@@ -1856,9 +1854,9 @@ bool js::temporal::DisambiguatePossibleInstants(
   }
 
   
+  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
   Rooted<PlainDateTimeWithCalendar> laterDateTime(
-      cx, PlainDateTimeWithCalendar{{laterDate, laterTime.time},
-                                    dateTime.calendar()});
+      cx, PlainDateTimeWithCalendar{{laterDate, laterTime.time}, calendar});
 
   
   Rooted<InstantVector> laterInstants(cx, InstantVector(cx));

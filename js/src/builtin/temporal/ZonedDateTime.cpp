@@ -703,6 +703,8 @@ static bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
   }
 
   
+
+  
   PlainDateTime temporalDateTime;
   if (dateTime) {
     
@@ -725,8 +727,6 @@ static bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
         return false;
       }
     }
-
-    
 
     
     Instant intermediate;
@@ -843,9 +843,6 @@ static bool NanosecondsToDays(
   MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
 
   
-  static constexpr int32_t epochDays = 200'000'000;
-
-  
   if (nanoseconds == InstantSpan{}) {
     result.set(NanosecondsAndDays::from(
         int64_t(0), InstantSpan{},
@@ -891,90 +888,22 @@ static bool NanosecondsToDays(
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   
-  auto timeDifference = DifferenceTime(startDateTime.time, endDateTime.time);
-  MOZ_ASSERT(timeDifference.days == 0);
+  
+  
+  
+  int64_t days = DaysUntil(startDateTime.date, endDateTime.date);
 
   
-  int32_t timeSign = DurationSign(timeDifference.toDuration());
+  int32_t timeSign = CompareTemporalTime(startDateTime.time, endDateTime.time);
 
   
-
-  
-  int32_t dateSign = CompareISODate(endDateTime.date, startDateTime.date);
-
-  
-  auto adjustedDate = startDateTime.date;
-
-  
-  if (timeSign == -dateSign) {
-    
-    adjustedDate =
-        BalanceISODate(startDateTime.date.year, startDateTime.date.month,
-                       startDateTime.date.day - timeSign);
-
-    
-    Duration timeToBalance = {
-        0,
-        0,
-        0,
-        double(-timeSign),
-        timeDifference.hours,
-        timeDifference.minutes,
-        timeDifference.seconds,
-        timeDifference.milliseconds,
-        timeDifference.microseconds,
-        timeDifference.nanoseconds,
-    };
-    if (!BalanceTimeDuration(cx, timeToBalance, TemporalUnit::Day,
-                             &timeDifference)) {
-      return false;
-    }
+  if (days > 0 && timeSign > 0) {
+    days -= 1;
+  } else if (days < 0 && timeSign < 0) {
+    days += 1;
   }
-
-  
-
-  
-  int32_t daysUntil = DaysUntil(adjustedDate, endDateTime.date);
-
-  
-  Duration daysToBalance = {
-      0,
-      0,
-      0,
-      double(daysUntil),
-      timeDifference.hours,
-      timeDifference.minutes,
-      timeDifference.seconds,
-      timeDifference.milliseconds,
-      timeDifference.microseconds,
-      timeDifference.nanoseconds,
-  };
-  TimeDuration balanceResult;
-  if (!BalanceTimeDuration(cx, daysToBalance, TemporalUnit::Day,
-                           &balanceResult)) {
-    return false;
-  }
-  MOZ_ASSERT(std::abs(balanceResult.days) <= epochDays);
-
-  
-  
-  
-  
-  int64_t days = int64_t(balanceResult.days);
 
   
   PlainDateTimeAndInstant relativeResult;
@@ -1479,16 +1408,6 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
-  bool roundingGranularityIsNoop =
-      settings.smallestUnit == TemporalUnit::Nanosecond &&
-      settings.roundingIncrement == Increment{1};
-
-  
-  
-
-  
-
-  
   PlainDateTime precalculatedPlainDateTime;
   if (!GetPlainDateTimeFor(cx, timeZone, epochInstant,
                            &precalculatedPlainDateTime)) {
@@ -1504,6 +1423,11 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
           &difference)) {
     return false;
   }
+
+  
+  bool roundingGranularityIsNoop =
+      settings.smallestUnit == TemporalUnit::Nanosecond &&
+      settings.roundingIncrement == Increment{1};
 
   
   if (roundingGranularityIsNoop) {

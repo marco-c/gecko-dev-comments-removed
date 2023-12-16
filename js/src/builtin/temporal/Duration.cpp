@@ -1663,8 +1663,6 @@ static bool BalancePossiblyInfiniteTimeDurationRelative(
     }
 
     
-
-    
     Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
     if (!AddDaysToZonedDateTime(cx, startInstant, *precalculatedPlainDateTime,
                                 timeZone, isoCalendar, duration.days,
@@ -1685,13 +1683,14 @@ static bool BalancePossiblyInfiniteTimeDurationRelative(
   MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
 
   
-  
-  
+  if (nanoseconds == InstantSpan{}) {
+    *result = {};
+    return true;
+  }
 
   
   double days = 0;
-  if (TemporalUnit::Year <= largestUnit && largestUnit <= TemporalUnit::Day &&
-      nanoseconds != InstantSpan{}) {
+  if (TemporalUnit::Year <= largestUnit && largestUnit <= TemporalUnit::Day) {
     
     if (!precalculatedPlainDateTime) {
       if (!GetPlainDateTimeFor(cx, timeZone, startInstant, &startDateTime)) {
@@ -2180,12 +2179,6 @@ static bool UnbalanceDateDurationRelative(
     return CreateDateDurationRecord(cx, 0, 0, weeks, days + double(daysToAdd),
                                     result);
   }
-
-  
-  
-
-  
-  
 
   
   MOZ_ASSERT(years != 0 || months != 0 || weeks != 0);
@@ -2996,19 +2989,6 @@ static bool AddDuration(
 
 static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
                         Handle<ZonedDateTime> zonedRelativeTo,
-                        const PlainDateTime& precalculatedPlainDateTime,
-                        Duration* result) {
-  return AddDuration(cx, one, two, zonedRelativeTo,
-                     mozilla::SomeRef(precalculatedPlainDateTime), result);
-}
-
-
-
-
-
-
-static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
-                        Handle<ZonedDateTime> zonedRelativeTo,
                         Duration* result) {
   return AddDuration(cx, one, two, zonedRelativeTo, mozilla::Nothing(), result);
 }
@@ -3128,8 +3108,8 @@ static bool AdjustRoundedDurationDaysSlow(
     JSContext* cx, const Duration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
     Handle<ZonedDateTime> zonedRelativeTo,
-    const PlainDateTime& precalculatedPlainDateTime, InstantSpan dayLength,
-    Duration* result) {
+    mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime,
+    InstantSpan dayLength, Duration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT(IsValidInstantSpan(dayLength));
 
@@ -3210,11 +3190,12 @@ static bool AdjustRoundedDurationDaysSlow(
 
 
 
-bool js::temporal::AdjustRoundedDurationDays(
+static bool AdjustRoundedDurationDays(
     JSContext* cx, const Duration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
     Handle<ZonedDateTime> zonedRelativeTo,
-    const PlainDateTime& precalculatedPlainDateTime, Duration* result) {
+    mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime,
+    Duration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
 
   
@@ -3228,6 +3209,9 @@ bool js::temporal::AdjustRoundedDurationDays(
   MOZ_ASSERT(increment < MaximumTemporalDurationRoundingIncrement(unit));
 
   
+  MOZ_ASSERT(precalculatedPlainDateTime);
+
+  
   
   
   int32_t direction = DurationSign(duration.time());
@@ -3239,7 +3223,7 @@ bool js::temporal::AdjustRoundedDurationDays(
   
   Instant dayStart;
   if (!AddZonedDateTime(cx, nanoseconds, timeZone, calendar, duration.date(),
-                        precalculatedPlainDateTime, &dayStart)) {
+                        *precalculatedPlainDateTime, &dayStart)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(dayStart));
@@ -3300,9 +3284,6 @@ bool js::temporal::AdjustRoundedDurationDays(
   }
 
   
-  
-
-  
   Duration roundedTimeDuration;
   if (!RoundDuration(cx, oneDayLess, unit, increment, roundingMode,
                      &roundedTimeDuration)) {
@@ -3359,6 +3340,21 @@ bool js::temporal::AdjustRoundedDurationDays(
       adjustedTimeDuration.microseconds, adjustedTimeDuration.nanoseconds,
   };
   return ThrowIfInvalidDuration(cx, *result);
+}
+
+
+
+
+
+
+bool js::temporal::AdjustRoundedDurationDays(
+    JSContext* cx, const Duration& duration, Increment increment,
+    TemporalUnit unit, TemporalRoundingMode roundingMode,
+    Handle<ZonedDateTime> zonedRelativeTo,
+    const PlainDateTime& precalculatedPlainDateTime, Duration* result) {
+  return ::AdjustRoundedDurationDays(
+      cx, duration, increment, unit, roundingMode, zonedRelativeTo,
+      mozilla::SomeRef(precalculatedPlainDateTime), result);
 }
 
 static bool BigIntToStringBuilder(JSContext* cx, Handle<BigInt*> num,
@@ -4932,8 +4928,6 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
                   TemporalOverflow::Constrain, &isoResult)) {
     return false;
   }
-
-  
 
   
   Rooted<PlainDateObject*> wholeDaysLater(
@@ -7211,12 +7205,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   mozilla::Maybe<const PlainDateTime&> precalculatedPlainDateTime{};
 
   
-
-  
   bool plainDateTimeOrRelativeToWillBeUsed =
       !roundingGranularityIsNoop || largestUnit <= TemporalUnit::Day ||
-      smallestUnit <= TemporalUnit::Day || calendarUnitsPresent ||
-      duration.days != 0;
+      calendarUnitsPresent || duration.days != 0;
 
   
   PlainDateTime relativeToDateTime;
@@ -7279,18 +7270,13 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   TimeDuration balanceResult;
   if (zonedRelativeTo) {
     
-    
-
-    
-    if (!roundingGranularityIsNoop) {
-      Duration adjustResult;
-      if (!AdjustRoundedDurationDays(
-              cx, roundResult, roundingIncrement, smallestUnit, roundingMode,
-              zonedRelativeTo, *precalculatedPlainDateTime, &adjustResult)) {
-        return false;
-      }
-      roundResult = adjustResult;
+    Duration adjustResult;
+    if (!AdjustRoundedDurationDays(cx, roundResult, roundingIncrement,
+                                   smallestUnit, roundingMode, zonedRelativeTo,
+                                   precalculatedPlainDateTime, &adjustResult)) {
+      return false;
     }
+    roundResult = adjustResult;
 
     
     if (!BalanceTimeDurationRelative(

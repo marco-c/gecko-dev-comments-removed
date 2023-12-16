@@ -623,8 +623,6 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
     }
 
     
-
-    
     Rooted<PlainDateWithCalendar> endOfMonth(cx);
     if (!CreateTemporalDate(cx, endOfMonthISO, calendar, &endOfMonth)) {
       return false;
