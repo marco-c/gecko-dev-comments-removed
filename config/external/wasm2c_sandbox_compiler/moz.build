@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "Security: RLBox")
+
 LOCAL_INCLUDES += [
     "/third_party/picosha2/",
     "/third_party/wasm2c/include/",

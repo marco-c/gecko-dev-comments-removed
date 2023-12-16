@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "Security: RLBox")
+
 EXPORTS.mozilla.rlbox += [
     "/third_party/rlbox/include/rlbox.hpp",
     "/third_party/rlbox/include/rlbox_app_pointer.hpp",
