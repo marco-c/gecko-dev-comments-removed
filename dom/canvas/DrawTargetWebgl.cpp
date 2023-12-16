@@ -16,25 +16,13 @@
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/HelpersSkia.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PathSkia.h"
 #include "mozilla/gfx/Swizzle.h"
-#include "mozilla/layers/CanvasRenderer.h"
-#include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
-#include "mozilla/layers/RemoteTextureMap.h"
 #include "skia/include/core/SkPixmap.h"
-#include "nsContentUtils.h"
 
-#include "GLContext.h"
-#include "WebGLContext.h"
+#include "ClientWebGLContext.h"
 #include "WebGLChild.h"
-#include "WebGLBuffer.h"
-#include "WebGLFramebuffer.h"
-#include "WebGLProgram.h"
-#include "WebGLShader.h"
-#include "WebGLTexture.h"
-#include "WebGLVertexArray.h"
 
 #include "gfxPlatform.h"
 
@@ -164,11 +152,11 @@ bool TexturePacker::Remove(const IntRect& aBounds) {
 }
 
 BackingTexture::BackingTexture(const IntSize& aSize, SurfaceFormat aFormat,
-                               const RefPtr<WebGLTexture>& aTexture)
+                               const RefPtr<WebGLTextureJS>& aTexture)
     : mSize(aSize), mFormat(aFormat), mTexture(aTexture) {}
 
 SharedTexture::SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
-                             const RefPtr<WebGLTexture>& aTexture)
+                             const RefPtr<WebGLTextureJS>& aTexture)
     : BackingTexture(aSize, aFormat, aTexture),
       mPacker(IntRect(IntPoint(0, 0), aSize)) {}
 
@@ -199,12 +187,14 @@ bool SharedTexture::Free(const SharedTextureHandle& aHandle) {
 
 StandaloneTexture::StandaloneTexture(const IntSize& aSize,
                                      SurfaceFormat aFormat,
-                                     const RefPtr<WebGLTexture>& aTexture)
+                                     const RefPtr<WebGLTextureJS>& aTexture)
     : BackingTexture(aSize, aFormat, aTexture) {}
 
-DrawTargetWebgl::DrawTargetWebgl() = default;
+static Atomic<int64_t> sDrawTargetWebglCount(0);
 
-inline void SharedContextWebgl::ClearLastTexture(bool aFullClear) {
+DrawTargetWebgl::DrawTargetWebgl() { sDrawTargetWebglCount++; }
+
+inline void DrawTargetWebgl::SharedContext::ClearLastTexture(bool aFullClear) {
   mLastTexture = nullptr;
   if (aFullClear) {
     mLastClipMask = nullptr;
@@ -238,30 +228,42 @@ void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite, bool aNeedHandle) {
 }
 
 DrawTargetWebgl::~DrawTargetWebgl() {
+  sDrawTargetWebglCount--;
   ClearSnapshot(false);
   if (mSharedContext) {
     if (mShmem.IsWritable()) {
       
       mSkia->DetachAllSnapshots();
-      if (mShmemAllocator && mShmemAllocator->CanSend()) {
-        mShmemAllocator->DeallocShmem(mShmem);
+      
+      mSharedContext->WaitForShmem(this);
+      auto* child = mSharedContext->mWebgl->GetChild();
+      if (child && child->CanSend()) {
+        child->DeallocShmem(mShmem);
       }
     }
     mSharedContext->ClearLastTexture(true);
-    mClipMask = nullptr;
-    mFramebuffer = nullptr;
-    mTex = nullptr;
-    mSharedContext->mDrawTargetCount--;
+    if (mClipMask) {
+      mSharedContext->mWebgl->DeleteTexture(mClipMask);
+    }
+    if (mFramebuffer) {
+      mSharedContext->mWebgl->DeleteFramebuffer(mFramebuffer);
+    }
+    if (mTex) {
+      mSharedContext->mWebgl->DeleteTexture(mTex);
+    }
+    mSharedContext->mWebgl->Flush(false);
   }
 }
 
-SharedContextWebgl::SharedContextWebgl() = default;
+DrawTargetWebgl::SharedContext::SharedContext() = default;
 
-SharedContextWebgl::~SharedContextWebgl() {
+DrawTargetWebgl::SharedContext::~SharedContext() {
+  if (sSharedContext.init() && sSharedContext.get() == this) {
+    sSharedContext.set(nullptr);
+  }
   
   if (mWebgl) {
-    ExitTlsScope();
-    mWebgl->ActiveTexture(0);
+    mWebgl->ActiveTexture(LOCAL_GL_TEXTURE0);
   }
   if (mWGRPathBuilder) {
     WGR::wgr_builder_release(mWGRPathBuilder);
@@ -272,33 +274,8 @@ SharedContextWebgl::~SharedContextWebgl() {
   UnlinkGlyphCaches();
 }
 
-gl::GLContext* SharedContextWebgl::GetGLContext() {
-  return mWebgl ? mWebgl->GL() : nullptr;
-}
 
-void SharedContextWebgl::EnterTlsScope() {
-  if (mTlsScope.isSome()) {
-    return;
-  }
-  if (gl::GLContext* gl = GetGLContext()) {
-    mTlsScope = Some(gl->mUseTLSIsCurrent);
-    gl::GLContext::InvalidateCurrentContext();
-    gl->mUseTLSIsCurrent = true;
-  }
-}
-
-void SharedContextWebgl::ExitTlsScope() {
-  if (mTlsScope.isNothing()) {
-    return;
-  }
-  if (gl::GLContext* gl = GetGLContext()) {
-    gl->mUseTLSIsCurrent = mTlsScope.value();
-  }
-  mTlsScope = Nothing();
-}
-
-
-inline void SharedContextWebgl::UnlinkSurfaceTexture(
+inline void DrawTargetWebgl::SharedContext::UnlinkSurfaceTexture(
     const RefPtr<TextureHandle>& aHandle) {
   if (SourceSurface* surface = aHandle->GetSurface()) {
     
@@ -311,7 +288,7 @@ inline void SharedContextWebgl::UnlinkSurfaceTexture(
 }
 
 
-void SharedContextWebgl::UnlinkSurfaceTextures() {
+void DrawTargetWebgl::SharedContext::UnlinkSurfaceTextures() {
   for (RefPtr<TextureHandle> handle = mTextureHandles.getFirst(); handle;
        handle = handle->getNext()) {
     UnlinkSurfaceTexture(handle);
@@ -319,7 +296,7 @@ void SharedContextWebgl::UnlinkSurfaceTextures() {
 }
 
 
-void SharedContextWebgl::UnlinkGlyphCaches() {
+void DrawTargetWebgl::SharedContext::UnlinkGlyphCaches() {
   GlyphCache* cache = mGlyphCaches.getFirst();
   while (cache) {
     ScaledFont* font = cache->GetFont();
@@ -330,10 +307,12 @@ void SharedContextWebgl::UnlinkGlyphCaches() {
   }
 }
 
-void SharedContextWebgl::OnMemoryPressure() { mShouldClearCaches = true; }
+void DrawTargetWebgl::SharedContext::OnMemoryPressure() {
+  mShouldClearCaches = true;
+}
 
 
-void SharedContextWebgl::ClearAllTextures() {
+void DrawTargetWebgl::SharedContext::ClearAllTextures() {
   while (!mTextureHandles.isEmpty()) {
     PruneTextureHandle(mTextureHandles.popLast());
     --mNumTextureHandles;
@@ -342,7 +321,7 @@ void SharedContextWebgl::ClearAllTextures() {
 
 
 
-void SharedContextWebgl::ClearEmptyTextureMemory() {
+void DrawTargetWebgl::SharedContext::ClearEmptyTextureMemory() {
   for (auto pos = mSharedTextures.begin(); pos != mSharedTextures.end();) {
     if (!(*pos)->HasAllocatedHandles()) {
       RefPtr<SharedTexture> shared = *pos;
@@ -350,6 +329,7 @@ void SharedContextWebgl::ClearEmptyTextureMemory() {
       mEmptyTextureMemory -= usedBytes;
       mTotalTextureMemory -= usedBytes;
       pos = mSharedTextures.erase(pos);
+      mWebgl->DeleteTexture(shared->GetWebGLTexture());
     } else {
       ++pos;
     }
@@ -359,7 +339,7 @@ void SharedContextWebgl::ClearEmptyTextureMemory() {
 
 
 
-void SharedContextWebgl::ClearCachesIfNecessary() {
+void DrawTargetWebgl::SharedContext::ClearCachesIfNecessary() {
   if (!mShouldClearCaches.exchange(false)) {
     return;
   }
@@ -372,23 +352,47 @@ void SharedContextWebgl::ClearCachesIfNecessary() {
 }
 
 
+static Atomic<bool> sContextInitError(false);
 
-bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
-                           ipc::IProtocol* aShmemAllocator,
-                           const RefPtr<SharedContextWebgl>& aSharedContext) {
+MOZ_THREAD_LOCAL(DrawTargetWebgl::SharedContext*)
+DrawTargetWebgl::sSharedContext;
+
+RefPtr<DrawTargetWebgl::SharedContext> DrawTargetWebgl::sMainSharedContext;
+
+
+
+bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
   MOZ_ASSERT(format == SurfaceFormat::B8G8R8A8 ||
              format == SurfaceFormat::B8G8R8X8);
 
   mSize = size;
   mFormat = format;
 
-  if (!aSharedContext || aSharedContext->IsContextLost() ||
-      aSharedContext->mDrawTargetCount >=
-          StaticPrefs::gfx_canvas_accelerated_max_draw_target_count()) {
+  if (!sSharedContext.init()) {
     return false;
   }
-  mSharedContext = aSharedContext;
-  mSharedContext->mDrawTargetCount++;
+
+  DrawTargetWebgl::SharedContext* sharedContext = sSharedContext.get();
+  if (!sharedContext || sharedContext->IsContextLost()) {
+    mSharedContext = new DrawTargetWebgl::SharedContext;
+    if (!mSharedContext->Initialize()) {
+      mSharedContext = nullptr;
+      return false;
+    }
+
+    sSharedContext.set(mSharedContext.get());
+
+    if (NS_IsMainThread()) {
+      
+      
+      if (!sMainSharedContext) {
+        ClearOnShutdown(&sMainSharedContext);
+      }
+      sMainSharedContext = mSharedContext;
+    }
+  } else {
+    mSharedContext = sharedContext;
+  }
 
   if (size_t(std::max(size.width, size.height)) >
       mSharedContext->mMaxTextureSize) {
@@ -399,15 +403,14 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
     return false;
   }
 
-  mShmemAllocator = aShmemAllocator;
-  if (mShmemAllocator && mShmemAllocator->CanSend()) {
+  auto* child = mSharedContext->mWebgl->GetChild();
+  if (child && child->CanSend()) {
     size_t byteSize = layers::ImageDataSerializer::ComputeRGBBufferSize(
         mSize, SurfaceFormat::B8G8R8A8);
     if (byteSize) {
-      (void)mShmemAllocator->AllocUnsafeShmem(byteSize, &mShmem);
+      (void)child->AllocUnsafeShmem(byteSize, &mShmem);
     }
   }
-
   mSkia = new DrawTargetSkia;
   if (mShmem.IsWritable()) {
     auto stride = layers::ImageDataSerializer::ComputeRGBStride(
@@ -439,39 +442,18 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
   return true;
 }
 
-
-static Atomic<bool> sContextInitError(false);
-
-already_AddRefed<SharedContextWebgl> SharedContextWebgl::Create() {
-  
-  if (sContextInitError) {
-    return nullptr;
-  }
-  RefPtr<SharedContextWebgl> sharedContext = new SharedContextWebgl;
-  if (!sharedContext->Initialize()) {
-    return nullptr;
-  }
-  return sharedContext.forget();
-}
-
-bool SharedContextWebgl::Initialize() {
+bool DrawTargetWebgl::SharedContext::Initialize() {
   WebGLContextOptions options = {};
   options.alpha = true;
   options.depth = false;
   options.stencil = false;
   options.antialias = false;
   options.preserveDrawingBuffer = true;
-  options.failIfMajorPerformanceCaveat = false;
+  options.failIfMajorPerformanceCaveat = true;
 
-  const bool resistFingerprinting = nsContentUtils::ShouldResistFingerprinting(
-      "Fallback", RFPTarget::WebGLRenderCapability);
-  const auto initDesc =
-      webgl::InitContextDesc{ true, resistFingerprinting,
-                              {1, 1}, options,  0};
-
-  webgl::InitContextResult initResult;
-  mWebgl = WebGLContext::Create(nullptr, initDesc, &initResult);
-  if (!mWebgl) {
+  mWebgl = new ClientWebGLContext(true);
+  mWebgl->SetContextOptions(options);
+  if (mWebgl->SetDimensions(1, 1) != NS_OK) {
     
     sContextInitError = true;
     mWebgl = nullptr;
@@ -482,10 +464,10 @@ bool SharedContextWebgl::Initialize() {
     return false;
   }
 
-  mMaxTextureSize = initResult.limits.maxTex2dSize;
+  mMaxTextureSize = mWebgl->Limits().maxTex2dSize;
 
   if (kIsMacOS) {
-    mRasterizationTruncates = initResult.vendor == gl::GLVendor::ATI;
+    mRasterizationTruncates = mWebgl->Vendor() == gl::GLVendor::ATI;
   }
 
   CachePrefs();
@@ -502,13 +484,8 @@ bool SharedContextWebgl::Initialize() {
   return true;
 }
 
-inline void SharedContextWebgl::BlendFunc(GLenum aSrcFactor,
-                                          GLenum aDstFactor) {
-  mWebgl->BlendFuncSeparate({}, aSrcFactor, aDstFactor, aSrcFactor, aDstFactor);
-}
-
-void SharedContextWebgl::SetBlendState(CompositionOp aOp,
-                                       const Maybe<DeviceColor>& aColor) {
+void DrawTargetWebgl::SharedContext::SetBlendState(
+    CompositionOp aOp, const Maybe<DeviceColor>& aColor) {
   if (aOp == mLastCompositionOp && mLastBlendColor == aColor) {
     return;
   }
@@ -527,16 +504,17 @@ void SharedContextWebgl::SetBlendState(CompositionOp aOp,
       if (aColor) {
         
         mWebgl->BlendColor(aColor->b, aColor->g, aColor->r, 1.0f);
-        BlendFunc(LOCAL_GL_CONSTANT_COLOR, LOCAL_GL_ONE_MINUS_SRC_COLOR);
+        mWebgl->BlendFunc(LOCAL_GL_CONSTANT_COLOR,
+                          LOCAL_GL_ONE_MINUS_SRC_COLOR);
       } else {
-        BlendFunc(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+        mWebgl->BlendFunc(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
       }
       break;
     case CompositionOp::OP_ADD:
-      BlendFunc(LOCAL_GL_ONE, LOCAL_GL_ONE);
+      mWebgl->BlendFunc(LOCAL_GL_ONE, LOCAL_GL_ONE);
       break;
     case CompositionOp::OP_ATOP:
-      BlendFunc(LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+      mWebgl->BlendFunc(LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
       break;
     case CompositionOp::OP_SOURCE:
       if (aColor) {
@@ -546,7 +524,8 @@ void SharedContextWebgl::SetBlendState(CompositionOp aOp,
         
         
         mWebgl->BlendColor(aColor->b, aColor->g, aColor->r, aColor->a);
-        BlendFunc(LOCAL_GL_CONSTANT_COLOR, LOCAL_GL_ONE_MINUS_SRC_COLOR);
+        mWebgl->BlendFunc(LOCAL_GL_CONSTANT_COLOR,
+                          LOCAL_GL_ONE_MINUS_SRC_COLOR);
       } else {
         enabled = false;
       }
@@ -555,7 +534,7 @@ void SharedContextWebgl::SetBlendState(CompositionOp aOp,
       
       
       mWebgl->BlendFuncSeparate(
-          {}, LOCAL_GL_ZERO, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
+          LOCAL_GL_ZERO, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
           IsOpaque(mCurrentTarget->GetFormat()) ? LOCAL_GL_ONE : LOCAL_GL_ZERO,
           LOCAL_GL_ONE_MINUS_SRC_ALPHA);
       break;
@@ -564,11 +543,15 @@ void SharedContextWebgl::SetBlendState(CompositionOp aOp,
       break;
   }
 
-  mWebgl->SetEnabled(LOCAL_GL_BLEND, {}, enabled);
+  if (enabled) {
+    mWebgl->Enable(LOCAL_GL_BLEND);
+  } else {
+    mWebgl->Disable(LOCAL_GL_BLEND);
+  }
 }
 
 
-bool SharedContextWebgl::SetTarget(DrawTargetWebgl* aDT) {
+bool DrawTargetWebgl::SharedContext::SetTarget(DrawTargetWebgl* aDT) {
   if (!mWebgl || mWebgl->IsContextLost()) {
     return false;
   }
@@ -584,7 +567,7 @@ bool SharedContextWebgl::SetTarget(DrawTargetWebgl* aDT) {
 }
 
 
-void SharedContextWebgl::SetClipRect(const Rect& aClipRect) {
+void DrawTargetWebgl::SharedContext::SetClipRect(const Rect& aClipRect) {
   
   if (!mClipAARect.IsEqualEdges(aClipRect)) {
     mClipAARect = aClipRect;
@@ -593,20 +576,21 @@ void SharedContextWebgl::SetClipRect(const Rect& aClipRect) {
   }
 }
 
-bool SharedContextWebgl::SetClipMask(const RefPtr<WebGLTexture>& aTex) {
+bool DrawTargetWebgl::SharedContext::SetClipMask(
+    const RefPtr<WebGLTextureJS>& aTex) {
   if (mLastClipMask != aTex) {
     if (!mWebgl) {
       return false;
     }
-    mWebgl->ActiveTexture(1);
+    mWebgl->ActiveTexture(LOCAL_GL_TEXTURE1);
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, aTex);
-    mWebgl->ActiveTexture(0);
+    mWebgl->ActiveTexture(LOCAL_GL_TEXTURE0);
     mLastClipMask = aTex;
   }
   return true;
 }
 
-bool SharedContextWebgl::SetNoClipMask() {
+bool DrawTargetWebgl::SharedContext::SetNoClipMask() {
   if (mNoClipMask) {
     return SetClipMask(mNoClipMask);
   }
@@ -617,17 +601,17 @@ bool SharedContextWebgl::SetNoClipMask() {
   if (!mNoClipMask) {
     return false;
   }
-  mWebgl->ActiveTexture(1);
+  mWebgl->ActiveTexture(LOCAL_GL_TEXTURE1);
   mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mNoClipMask);
   static const uint8_t solidMask[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-  mWebgl->TexImage(
+  mWebgl->RawTexImage(
       0, LOCAL_GL_RGBA8, {0, 0, 0}, {LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE},
       {LOCAL_GL_TEXTURE_2D,
        {1, 1, 1},
        gfxAlphaType::NonPremult,
        Some(RawBuffer(Range<const uint8_t>(solidMask, sizeof(solidMask))))});
   InitTexParameters(mNoClipMask, false);
-  mWebgl->ActiveTexture(0);
+  mWebgl->ActiveTexture(LOCAL_GL_TEXTURE0);
   mLastClipMask = mNoClipMask;
   return true;
 }
@@ -671,7 +655,7 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
     
     return false;
   }
-  RefPtr<WebGLContext> webgl = mSharedContext->mWebgl;
+  RefPtr<ClientWebGLContext> webgl = mSharedContext->mWebgl;
   if (!webgl) {
     return false;
   }
@@ -715,7 +699,7 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   dt->SetTransform(Matrix::Translation(-mClipBounds.TopLeft()));
   dt->FillRect(Rect(mClipBounds), ColorPattern(DeviceColor(1, 1, 1, 1)));
   
-  webgl->ActiveTexture(1);
+  webgl->ActiveTexture(LOCAL_GL_TEXTURE1);
   webgl->BindTexture(LOCAL_GL_TEXTURE_2D, mClipMask);
   if (init) {
     mSharedContext->InitTexParameters(mClipMask, false);
@@ -734,7 +718,7 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   mSharedContext->UploadSurface(data, SurfaceFormat::A8,
                                 IntRect(IntPoint(), mClipBounds.Size()),
                                 mClipBounds.TopLeft(), init);
-  webgl->ActiveTexture(0);
+  webgl->ActiveTexture(LOCAL_GL_TEXTURE0);
   
   
   mSharedContext->mLastClipMask = mClipMask;
@@ -802,7 +786,7 @@ bool DrawTargetWebgl::PrepareContext(bool aClipped) {
   return mSharedContext->SetTarget(this);
 }
 
-bool SharedContextWebgl::IsContextLost() const {
+bool DrawTargetWebgl::SharedContext::IsContextLost() const {
   return !mWebgl || mWebgl->IsContextLost();
 }
 
@@ -811,13 +795,24 @@ bool DrawTargetWebgl::IsValid() const {
   return mSharedContext && !mSharedContext->IsContextLost();
 }
 
-bool DrawTargetWebgl::CanCreate(const IntSize& aSize, SurfaceFormat aFormat) {
+already_AddRefed<DrawTargetWebgl> DrawTargetWebgl::Create(
+    const IntSize& aSize, SurfaceFormat aFormat) {
   if (!gfxVars::UseAcceleratedCanvas2D()) {
-    return false;
+    return nullptr;
+  }
+
+  int64_t count = sDrawTargetWebglCount;
+  if (count > StaticPrefs::gfx_canvas_accelerated_max_draw_target_count()) {
+    return nullptr;
+  }
+
+  
+  if (sContextInitError) {
+    return nullptr;
   }
 
   if (!Factory::AllowedSurfaceSize(aSize)) {
-    return false;
+    return nullptr;
   }
 
   
@@ -825,12 +820,12 @@ bool DrawTargetWebgl::CanCreate(const IntSize& aSize, SurfaceFormat aFormat) {
   
   static const int32_t kMinDimension = 16;
   if (std::min(aSize.width, aSize.height) < kMinDimension) {
-    return false;
+    return nullptr;
   }
 
   int32_t minSize = StaticPrefs::gfx_canvas_accelerated_min_size();
   if (aSize.width * aSize.height < minSize * minSize) {
-    return false;
+    return nullptr;
   }
 
   
@@ -840,7 +835,7 @@ bool DrawTargetWebgl::CanCreate(const IntSize& aSize, SurfaceFormat aFormat) {
   int32_t maxSize = StaticPrefs::gfx_canvas_accelerated_max_size();
   if (maxSize > 0) {
     if (std::max(aSize.width, aSize.height) > maxSize) {
-      return false;
+      return nullptr;
     }
   } else if (maxSize < 0) {
     
@@ -850,25 +845,12 @@ bool DrawTargetWebgl::CanCreate(const IntSize& aSize, SurfaceFormat aFormat) {
     IntSize screenSize = gfxPlatform::GetPlatform()->GetScreenSize();
     if (aSize.width * aSize.height >
         std::max(screenSize.width * screenSize.height, kScreenPixels)) {
-      return false;
+      return nullptr;
     }
   }
 
-  return true;
-}
-
-already_AddRefed<DrawTargetWebgl> DrawTargetWebgl::Create(
-    const IntSize& aSize, SurfaceFormat aFormat,
-    ipc::IProtocol* aShmemAllocator,
-    const RefPtr<SharedContextWebgl>& aSharedContext) {
-  
-  if (!CanCreate(aSize, aFormat)) {
-    return nullptr;
-  }
-
   RefPtr<DrawTargetWebgl> dt = new DrawTargetWebgl;
-  if (!dt->Init(aSize, aFormat, aShmemAllocator, aSharedContext) ||
-      !dt->IsValid()) {
+  if (!dt->Init(aSize, aFormat) || !dt->IsValid()) {
     return nullptr;
   }
 
@@ -896,8 +878,8 @@ void* DrawTargetWebgl::GetNativeSurface(NativeSurfaceType aType) {
 
 
 
-already_AddRefed<TextureHandle> SharedContextWebgl::WrapSnapshot(
-    const IntSize& aSize, SurfaceFormat aFormat, RefPtr<WebGLTexture> aTex) {
+already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::WrapSnapshot(
+    const IntSize& aSize, SurfaceFormat aFormat, RefPtr<WebGLTextureJS> aTex) {
   
   size_t usedBytes = BackingTexture::UsedBytes(aFormat, aSize);
   PruneTextureMemory(usedBytes, false);
@@ -912,25 +894,25 @@ already_AddRefed<TextureHandle> SharedContextWebgl::WrapSnapshot(
   return handle.forget();
 }
 
-void SharedContextWebgl::SetTexFilter(WebGLTexture* aTex, bool aFilter) {
-  mWebgl->TexParameter_base(
-      LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MAG_FILTER,
-      FloatOrInt(aFilter ? LOCAL_GL_LINEAR : LOCAL_GL_NEAREST));
-  mWebgl->TexParameter_base(
-      LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
-      FloatOrInt(aFilter ? LOCAL_GL_LINEAR : LOCAL_GL_NEAREST));
+void DrawTargetWebgl::SharedContext::SetTexFilter(WebGLTextureJS* aTex,
+                                                  bool aFilter) {
+  mWebgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MAG_FILTER,
+                        aFilter ? LOCAL_GL_LINEAR : LOCAL_GL_NEAREST);
+  mWebgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
+                        aFilter ? LOCAL_GL_LINEAR : LOCAL_GL_NEAREST);
 }
 
-void SharedContextWebgl::InitTexParameters(WebGLTexture* aTex, bool aFilter) {
-  mWebgl->TexParameter_base(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_S,
-                            FloatOrInt(LOCAL_GL_CLAMP_TO_EDGE));
-  mWebgl->TexParameter_base(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_T,
-                            FloatOrInt(LOCAL_GL_CLAMP_TO_EDGE));
+void DrawTargetWebgl::SharedContext::InitTexParameters(WebGLTextureJS* aTex,
+                                                       bool aFilter) {
+  mWebgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_S,
+                        LOCAL_GL_CLAMP_TO_EDGE);
+  mWebgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_T,
+                        LOCAL_GL_CLAMP_TO_EDGE);
   SetTexFilter(aTex, aFilter);
 }
 
 
-already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
+already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::CopySnapshot(
     const IntRect& aRect, TextureHandle* aHandle) {
   if (!mWebgl || mWebgl->IsContextLost()) {
     return nullptr;
@@ -938,7 +920,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
 
   
   
-  RefPtr<WebGLTexture> tex = mWebgl->CreateTexture();
+  RefPtr<WebGLTextureJS> tex = mWebgl->CreateTexture();
   if (!tex) {
     return nullptr;
   }
@@ -950,21 +932,19 @@ already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
       mScratchFramebuffer = mWebgl->CreateFramebuffer();
     }
     mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mScratchFramebuffer);
-
-    webgl::FbAttachInfo attachInfo;
-    attachInfo.tex = aHandle->GetBackingTexture()->GetWebGLTexture();
-    mWebgl->FramebufferAttach(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                              LOCAL_GL_TEXTURE_2D, attachInfo);
+    mWebgl->FramebufferTexture2D(
+        LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0, LOCAL_GL_TEXTURE_2D,
+        aHandle->GetBackingTexture()->GetWebGLTexture(), 0);
   }
 
   
   mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex);
-  mWebgl->TexStorage(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8,
-                     {uint32_t(aRect.width), uint32_t(aRect.height), 1});
+  mWebgl->TexStorage2D(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8, aRect.width,
+                       aRect.height);
   InitTexParameters(tex);
   
-  mWebgl->CopyTexImage(LOCAL_GL_TEXTURE_2D, 0, 0, {0, 0, 0}, {aRect.x, aRect.y},
-                       {uint32_t(aRect.width), uint32_t(aRect.height)});
+  mWebgl->CopyTexSubImage2D(LOCAL_GL_TEXTURE_2D, 0, 0, 0, aRect.x, aRect.y,
+                            aRect.width, aRect.height);
   ClearLastTexture();
 
   SurfaceFormat format =
@@ -1004,18 +984,14 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::CopySnapshot(
   return mSharedContext->CopySnapshot(aRect);
 }
 
-void DrawTargetWebgl::PrepareData() {
+
+
+already_AddRefed<SourceSurface> DrawTargetWebgl::GetDataSnapshot() {
   if (!mSkiaValid) {
     ReadIntoSkia();
   } else if (mSkiaLayer) {
     FlattenSkia();
   }
-}
-
-
-
-already_AddRefed<SourceSurface> DrawTargetWebgl::GetDataSnapshot() {
-  PrepareData();
   return mSkia->Snapshot(mFormat);
 }
 
@@ -1049,9 +1025,11 @@ already_AddRefed<SourceSurface> DrawTargetWebgl::GetOptimizedSnapshot(
 
 
 
-bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
-                                  SurfaceFormat aFormat, const IntRect& aBounds,
-                                  TextureHandle* aHandle) {
+bool DrawTargetWebgl::SharedContext::ReadInto(uint8_t* aDstData,
+                                              int32_t aDstStride,
+                                              SurfaceFormat aFormat,
+                                              const IntRect& aBounds,
+                                              TextureHandle* aHandle) {
   MOZ_ASSERT(aFormat == SurfaceFormat::B8G8R8A8 ||
              aFormat == SurfaceFormat::B8G8R8X8);
 
@@ -1062,10 +1040,9 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
       mScratchFramebuffer = mWebgl->CreateFramebuffer();
     }
     mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mScratchFramebuffer);
-    webgl::FbAttachInfo attachInfo;
-    attachInfo.tex = aHandle->GetBackingTexture()->GetWebGLTexture();
-    mWebgl->FramebufferAttach(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                              LOCAL_GL_TEXTURE_2D, attachInfo);
+    mWebgl->FramebufferTexture2D(
+        LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0, LOCAL_GL_TEXTURE_2D,
+        aHandle->GetBackingTexture()->GetWebGLTexture(), 0);
   } else if (mCurrentTarget && mCurrentTarget->mIsClear) {
     
     
@@ -1078,19 +1055,26 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
   desc.srcOffset = *ivec2::From(aBounds);
   desc.size = *uvec2::FromSize(aBounds);
   desc.packState.rowLength = aDstStride / 4;
-  Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
-  mWebgl->ReadPixelsInto(desc, range);
+
+  bool success = false;
+  if (mCurrentTarget && mCurrentTarget->mShmem.IsWritable() &&
+      aDstData == mCurrentTarget->mShmem.get<uint8_t>()) {
+    success = mWebgl->DoReadPixels(desc, mCurrentTarget->mShmem);
+  } else {
+    Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
+    success = mWebgl->DoReadPixels(desc, range);
+  }
 
   
   if (aHandle && mCurrentTarget) {
     mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCurrentTarget->mFramebuffer);
   }
 
-  return true;
+  return success;
 }
 
-already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
-    TextureHandle* aHandle) {
+already_AddRefed<DataSourceSurface>
+DrawTargetWebgl::SharedContext::ReadSnapshot(TextureHandle* aHandle) {
   
   
   SurfaceFormat format = SurfaceFormat::UNKNOWN;
@@ -1185,14 +1169,15 @@ static const float kRectVertexData[12] = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
 
 
-void SharedContextWebgl::ResetPathVertexBuffer(bool aChanged) {
+void DrawTargetWebgl::SharedContext::ResetPathVertexBuffer(bool aChanged) {
   mWebgl->BindBuffer(LOCAL_GL_ARRAY_BUFFER, mPathVertexBuffer.get());
-  mWebgl->BufferData(
-      LOCAL_GL_ARRAY_BUFFER,
-      std::max(size_t(mPathVertexCapacity), sizeof(kRectVertexData)), nullptr,
+  mWebgl->RawBufferData(
+      LOCAL_GL_ARRAY_BUFFER, nullptr,
+      std::max(size_t(mPathVertexCapacity), sizeof(kRectVertexData)),
       LOCAL_GL_DYNAMIC_DRAW);
-  mWebgl->BufferSubData(LOCAL_GL_ARRAY_BUFFER, 0, sizeof(kRectVertexData),
-                        (const uint8_t*)kRectVertexData);
+  mWebgl->RawBufferSubData(LOCAL_GL_ARRAY_BUFFER, 0,
+                           (const uint8_t*)kRectVertexData,
+                           sizeof(kRectVertexData));
   mPathVertexOffset = sizeof(kRectVertexData);
   if (aChanged) {
     mWGROutputBuffer.reset(
@@ -1205,7 +1190,7 @@ void SharedContextWebgl::ResetPathVertexBuffer(bool aChanged) {
 
 
 
-bool SharedContextWebgl::CreateShaders() {
+bool DrawTargetWebgl::SharedContext::CreateShaders() {
   if (!mPathVertexArray) {
     mPathVertexArray = mWebgl->CreateVertexArray();
   }
@@ -1214,12 +1199,7 @@ bool SharedContextWebgl::CreateShaders() {
     mWebgl->BindVertexArray(mPathVertexArray.get());
     ResetPathVertexBuffer();
     mWebgl->EnableVertexAttribArray(0);
-
-    webgl::VertAttribPointerDesc attribDesc;
-    attribDesc.channels = 3;
-    attribDesc.type = LOCAL_GL_FLOAT;
-    attribDesc.normalized = false;
-    mWebgl->VertexAttribPointer(0, attribDesc);
+    mWebgl->VertexAttribPointer(0, 3, LOCAL_GL_FLOAT, LOCAL_GL_FALSE, 0, 0);
   }
   if (!mSolidProgram) {
     
@@ -1230,7 +1210,7 @@ bool SharedContextWebgl::CreateShaders() {
     
     
     auto vsSource =
-        "attribute vec3 a_vertex;\n"
+        u"attribute vec3 a_vertex;\n"
         "uniform vec2 u_transform[3];\n"
         "uniform vec2 u_viewport;\n"
         "uniform vec4 u_clipbounds;\n"
@@ -1255,9 +1235,9 @@ bool SharedContextWebgl::CreateShaders() {
         "                     u_clipbounds.zw - vertex);\n"
         "   v_dist = vec4(extrude, 1.0 - extrude) * scale.xyxy + 1.5 - u_aa;\n"
         "   v_alpha = a_vertex.z;\n"
-        "}\n";
+        "}\n"_ns;
     auto fsSource =
-        "precision mediump float;\n"
+        u"precision mediump float;\n"
         "uniform vec4 u_color;\n"
         "uniform sampler2D u_clipmask;\n"
         "varying highp vec2 v_cliptc;\n"
@@ -1270,14 +1250,14 @@ bool SharedContextWebgl::CreateShaders() {
         "   dist.xy = min(dist.xy, dist.zw);\n"
         "   float aa = v_alpha * clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
         "   gl_FragColor = clip * aa * u_color;\n"
-        "}\n";
-    RefPtr<WebGLShader> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
+        "}\n"_ns;
+    RefPtr<WebGLShaderJS> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
     mWebgl->ShaderSource(*vsId, vsSource);
     mWebgl->CompileShader(*vsId);
     if (!mWebgl->GetCompileResult(*vsId).success) {
       return false;
     }
-    RefPtr<WebGLShader> fsId = mWebgl->CreateShader(LOCAL_GL_FRAGMENT_SHADER);
+    RefPtr<WebGLShaderJS> fsId = mWebgl->CreateShader(LOCAL_GL_FRAGMENT_SHADER);
     mWebgl->ShaderSource(*fsId, fsSource);
     mWebgl->CompileShader(*fsId);
     if (!mWebgl->GetCompileResult(*fsId).success) {
@@ -1286,29 +1266,36 @@ bool SharedContextWebgl::CreateShaders() {
     mSolidProgram = mWebgl->CreateProgram();
     mWebgl->AttachShader(*mSolidProgram, *vsId);
     mWebgl->AttachShader(*mSolidProgram, *fsId);
-    mWebgl->BindAttribLocation(*mSolidProgram, 0, "a_vertex");
+    mWebgl->BindAttribLocation(*mSolidProgram, 0, u"a_vertex"_ns);
     mWebgl->LinkProgram(*mSolidProgram);
     if (!mWebgl->GetLinkResult(*mSolidProgram).success) {
       return false;
     }
-    mSolidProgramViewport = GetUniformLocation(mSolidProgram, "u_viewport");
-    mSolidProgramAA = GetUniformLocation(mSolidProgram, "u_aa");
-    mSolidProgramTransform = GetUniformLocation(mSolidProgram, "u_transform");
-    mSolidProgramColor = GetUniformLocation(mSolidProgram, "u_color");
-    mSolidProgramClipMask = GetUniformLocation(mSolidProgram, "u_clipmask");
-    mSolidProgramClipBounds = GetUniformLocation(mSolidProgram, "u_clipbounds");
+    mSolidProgramViewport =
+        mWebgl->GetUniformLocation(*mSolidProgram, u"u_viewport"_ns);
+    mSolidProgramAA = mWebgl->GetUniformLocation(*mSolidProgram, u"u_aa"_ns);
+    mSolidProgramTransform =
+        mWebgl->GetUniformLocation(*mSolidProgram, u"u_transform"_ns);
+    mSolidProgramColor =
+        mWebgl->GetUniformLocation(*mSolidProgram, u"u_color"_ns);
+    mSolidProgramClipMask =
+        mWebgl->GetUniformLocation(*mSolidProgram, u"u_clipmask"_ns);
+    mSolidProgramClipBounds =
+        mWebgl->GetUniformLocation(*mSolidProgram, u"u_clipbounds"_ns);
     if (!mSolidProgramViewport || !mSolidProgramAA || !mSolidProgramTransform ||
         !mSolidProgramColor || !mSolidProgramClipMask ||
         !mSolidProgramClipBounds) {
       return false;
     }
     mWebgl->UseProgram(mSolidProgram);
-    UniformData(LOCAL_GL_INT, mSolidProgramClipMask, Array<int32_t, 1>{1});
+    int32_t clipMaskData = 1;
+    mWebgl->UniformData(LOCAL_GL_INT, mSolidProgramClipMask, false,
+                        {(const uint8_t*)&clipMaskData, sizeof(clipMaskData)});
   }
 
   if (!mImageProgram) {
     auto vsSource =
-        "attribute vec3 a_vertex;\n"
+        u"attribute vec3 a_vertex;\n"
         "uniform vec2 u_viewport;\n"
         "uniform vec4 u_clipbounds;\n"
         "uniform float u_aa;\n"
@@ -1338,9 +1325,9 @@ bool SharedContextWebgl::CreateShaders() {
         "                u_texmatrix[2];\n"
         "   v_dist = vec4(extrude, 1.0 - extrude) * scale.xyxy + 1.5 - u_aa;\n"
         "   v_alpha = a_vertex.z;\n"
-        "}\n";
+        "}\n"_ns;
     auto fsSource =
-        "precision mediump float;\n"
+        u"precision mediump float;\n"
         "uniform vec4 u_texbounds;\n"
         "uniform vec4 u_color;\n"
         "uniform float u_swizzle;\n"
@@ -1361,14 +1348,14 @@ bool SharedContextWebgl::CreateShaders() {
         "   float aa = v_alpha * clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
         "   gl_FragColor = clip * aa * u_color *\n"
         "                  mix(image, image.rrrr, u_swizzle);\n"
-        "}\n";
-    RefPtr<WebGLShader> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
+        "}\n"_ns;
+    RefPtr<WebGLShaderJS> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
     mWebgl->ShaderSource(*vsId, vsSource);
     mWebgl->CompileShader(*vsId);
     if (!mWebgl->GetCompileResult(*vsId).success) {
       return false;
     }
-    RefPtr<WebGLShader> fsId = mWebgl->CreateShader(LOCAL_GL_FRAGMENT_SHADER);
+    RefPtr<WebGLShaderJS> fsId = mWebgl->CreateShader(LOCAL_GL_FRAGMENT_SHADER);
     mWebgl->ShaderSource(*fsId, fsSource);
     mWebgl->CompileShader(*fsId);
     if (!mWebgl->GetCompileResult(*fsId).success) {
@@ -1377,21 +1364,30 @@ bool SharedContextWebgl::CreateShaders() {
     mImageProgram = mWebgl->CreateProgram();
     mWebgl->AttachShader(*mImageProgram, *vsId);
     mWebgl->AttachShader(*mImageProgram, *fsId);
-    mWebgl->BindAttribLocation(*mImageProgram, 0, "a_vertex");
+    mWebgl->BindAttribLocation(*mImageProgram, 0, u"a_vertex"_ns);
     mWebgl->LinkProgram(*mImageProgram);
     if (!mWebgl->GetLinkResult(*mImageProgram).success) {
       return false;
     }
-    mImageProgramViewport = GetUniformLocation(mImageProgram, "u_viewport");
-    mImageProgramAA = GetUniformLocation(mImageProgram, "u_aa");
-    mImageProgramTransform = GetUniformLocation(mImageProgram, "u_transform");
-    mImageProgramTexMatrix = GetUniformLocation(mImageProgram, "u_texmatrix");
-    mImageProgramTexBounds = GetUniformLocation(mImageProgram, "u_texbounds");
-    mImageProgramSwizzle = GetUniformLocation(mImageProgram, "u_swizzle");
-    mImageProgramColor = GetUniformLocation(mImageProgram, "u_color");
-    mImageProgramSampler = GetUniformLocation(mImageProgram, "u_sampler");
-    mImageProgramClipMask = GetUniformLocation(mImageProgram, "u_clipmask");
-    mImageProgramClipBounds = GetUniformLocation(mImageProgram, "u_clipbounds");
+    mImageProgramViewport =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_viewport"_ns);
+    mImageProgramAA = mWebgl->GetUniformLocation(*mImageProgram, u"u_aa"_ns);
+    mImageProgramTransform =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_transform"_ns);
+    mImageProgramTexMatrix =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_texmatrix"_ns);
+    mImageProgramTexBounds =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_texbounds"_ns);
+    mImageProgramSwizzle =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_swizzle"_ns);
+    mImageProgramColor =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_color"_ns);
+    mImageProgramSampler =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_sampler"_ns);
+    mImageProgramClipMask =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_clipmask"_ns);
+    mImageProgramClipBounds =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_clipbounds"_ns);
     if (!mImageProgramViewport || !mImageProgramAA || !mImageProgramTransform ||
         !mImageProgramTexMatrix || !mImageProgramTexBounds ||
         !mImageProgramSwizzle || !mImageProgramColor || !mImageProgramSampler ||
@@ -1399,13 +1395,17 @@ bool SharedContextWebgl::CreateShaders() {
       return false;
     }
     mWebgl->UseProgram(mImageProgram);
-    UniformData(LOCAL_GL_INT, mImageProgramSampler, Array<int32_t, 1>{0});
-    UniformData(LOCAL_GL_INT, mImageProgramClipMask, Array<int32_t, 1>{1});
+    int32_t samplerData = 0;
+    mWebgl->UniformData(LOCAL_GL_INT, mImageProgramSampler, false,
+                        {(const uint8_t*)&samplerData, sizeof(samplerData)});
+    int32_t clipMaskData = 1;
+    mWebgl->UniformData(LOCAL_GL_INT, mImageProgramClipMask, false,
+                        {(const uint8_t*)&clipMaskData, sizeof(clipMaskData)});
   }
   return true;
 }
 
-void SharedContextWebgl::EnableScissor(const IntRect& aRect) {
+void DrawTargetWebgl::SharedContext::EnableScissor(const IntRect& aRect) {
   
   if (!mLastScissor.IsEqualEdges(aRect)) {
     mLastScissor = aRect;
@@ -1413,14 +1413,14 @@ void SharedContextWebgl::EnableScissor(const IntRect& aRect) {
   }
   if (!mScissorEnabled) {
     mScissorEnabled = true;
-    mWebgl->SetEnabled(LOCAL_GL_SCISSOR_TEST, {}, true);
+    mWebgl->Enable(LOCAL_GL_SCISSOR_TEST);
   }
 }
 
-void SharedContextWebgl::DisableScissor() {
+void DrawTargetWebgl::SharedContext::DisableScissor() {
   if (mScissorEnabled) {
     mScissorEnabled = false;
-    mWebgl->SetEnabled(LOCAL_GL_SCISSOR_TEST, {}, false);
+    mWebgl->Disable(LOCAL_GL_SCISSOR_TEST);
   }
 }
 
@@ -1490,21 +1490,20 @@ static inline DeviceColor PremultiplyColor(const DeviceColor& aColor,
 
 
 bool DrawTargetWebgl::CreateFramebuffer() {
-  RefPtr<WebGLContext> webgl = mSharedContext->mWebgl;
+  RefPtr<ClientWebGLContext> webgl = mSharedContext->mWebgl;
   if (!mFramebuffer) {
     mFramebuffer = webgl->CreateFramebuffer();
   }
   if (!mTex) {
     mTex = webgl->CreateTexture();
     webgl->BindTexture(LOCAL_GL_TEXTURE_2D, mTex);
-    webgl->TexStorage(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8,
-                      {uint32_t(mSize.width), uint32_t(mSize.height), 1});
+    webgl->TexStorage2D(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8, mSize.width,
+                        mSize.height);
     mSharedContext->InitTexParameters(mTex);
     webgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mFramebuffer);
-    webgl::FbAttachInfo attachInfo;
-    attachInfo.tex = mTex;
-    webgl->FramebufferAttach(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                             LOCAL_GL_TEXTURE_2D, attachInfo);
+    webgl->FramebufferTexture2D(LOCAL_GL_FRAMEBUFFER,
+                                LOCAL_GL_COLOR_ATTACHMENT0, LOCAL_GL_TEXTURE_2D,
+                                mTex, 0);
     webgl->Viewport(0, 0, mSize.width, mSize.height);
     mSharedContext->DisableScissor();
     DeviceColor color = PremultiplyColor(GetClearPattern().mColor);
@@ -1647,7 +1646,7 @@ static inline bool SupportsDrawOptions(const DrawOptions& aOptions) {
 }
 
 
-bool SharedContextWebgl::SupportsPattern(const Pattern& aPattern) {
+bool DrawTargetWebgl::SharedContext::SupportsPattern(const Pattern& aPattern) {
   switch (aPattern.GetType()) {
     case PatternType::COLOR:
       return true;
@@ -1799,7 +1798,8 @@ void DrawTargetWebgl::DrawRectFallback(const Rect& aRect,
   }
 }
 
-inline already_AddRefed<WebGLTexture> SharedContextWebgl::GetCompatibleSnapshot(
+inline already_AddRefed<WebGLTextureJS>
+DrawTargetWebgl::SharedContext::GetCompatibleSnapshot(
     SourceSurface* aSurface) const {
   if (aSurface->GetType() == SurfaceType::WEBGL) {
     RefPtr<SourceSurfaceWebgl> webglSurf =
@@ -1824,17 +1824,15 @@ inline already_AddRefed<WebGLTexture> SharedContextWebgl::GetCompatibleSnapshot(
   return nullptr;
 }
 
-inline bool SharedContextWebgl::IsCompatibleSurface(
+inline bool DrawTargetWebgl::SharedContext::IsCompatibleSurface(
     SourceSurface* aSurface) const {
-  return bool(RefPtr<WebGLTexture>(GetCompatibleSnapshot(aSurface)));
+  return bool(RefPtr<WebGLTextureJS>(GetCompatibleSnapshot(aSurface)));
 }
 
-bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
-                                       SurfaceFormat aFormat,
-                                       const IntRect& aSrcRect,
-                                       const IntPoint& aDstOffset, bool aInit,
-                                       bool aZero,
-                                       const RefPtr<WebGLTexture>& aTex) {
+bool DrawTargetWebgl::SharedContext::UploadSurface(
+    DataSourceSurface* aData, SurfaceFormat aFormat, const IntRect& aSrcRect,
+    const IntPoint& aDstOffset, bool aInit, bool aZero,
+    const RefPtr<WebGLTextureJS>& aTex) {
   webgl::TexUnpackBlobDesc texDesc = {
       LOCAL_GL_TEXTURE_2D,
       {uint32_t(aSrcRect.width), uint32_t(aSrcRect.height), 1}};
@@ -1848,13 +1846,25 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     }
     int32_t stride = map.GetStride();
     int32_t bpp = BytesPerPixel(aFormat);
-    
-    
-    Range<const uint8_t> range(
-        map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
-        std::max(aSrcRect.height - 1, 0) * size_t(stride) +
-            aSrcRect.width * bpp);
-    texDesc.cpuData = Some(RawBuffer(range));
+    if (mCurrentTarget && mCurrentTarget->mShmem.IsWritable() &&
+        map.GetData() == mCurrentTarget->mShmem.get<uint8_t>()) {
+      texDesc.sd = Some(layers::SurfaceDescriptorBuffer(
+          layers::RGBDescriptor(mCurrentTarget->mSize, SurfaceFormat::R8G8B8A8),
+          mCurrentTarget->mShmem));
+      texDesc.structuredSrcSize =
+          uvec2::From(stride / bpp, mCurrentTarget->mSize.height);
+      texDesc.unpacking.skipPixels = aSrcRect.x;
+      texDesc.unpacking.skipRows = aSrcRect.y;
+      mWaitForShmem = true;
+    } else {
+      
+      
+      Range<const uint8_t> range(
+          map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
+          std::max(aSrcRect.height - 1, 0) * size_t(stride) +
+              aSrcRect.width * bpp);
+      texDesc.cpuData = Some(RawBuffer(range));
+    }
     
     
     
@@ -1873,8 +1883,8 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
       mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mZeroBuffer);
       
       
-      mWebgl->BufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER, size, nullptr,
-                         LOCAL_GL_STATIC_DRAW);
+      mWebgl->RawBufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER, nullptr, size,
+                            LOCAL_GL_STATIC_DRAW);
     } else {
       mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mZeroBuffer);
     }
@@ -1893,9 +1903,9 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
   if (aTex) {
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, aTex);
   }
-  mWebgl->TexImage(0, aInit ? intFormat : 0,
-                   {uint32_t(aDstOffset.x), uint32_t(aDstOffset.y), 0}, texPI,
-                   texDesc);
+  mWebgl->RawTexImage(0, aInit ? intFormat : 0,
+                      {uint32_t(aDstOffset.x), uint32_t(aDstOffset.y), 0},
+                      texPI, std::move(texDesc));
   if (aTex) {
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mLastTexture);
   }
@@ -1907,9 +1917,11 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
 
 
 
-already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
-    SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared,
-    bool aRenderable) {
+already_AddRefed<TextureHandle>
+DrawTargetWebgl::SharedContext::AllocateTextureHandle(SurfaceFormat aFormat,
+                                                      const IntSize& aSize,
+                                                      bool aAllowShared,
+                                                      bool aRenderable) {
   RefPtr<TextureHandle> handle;
   
   
@@ -1942,7 +1954,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
     
     
     if (!handle) {
-      if (RefPtr<WebGLTexture> tex = mWebgl->CreateTexture()) {
+      if (RefPtr<WebGLTextureJS> tex = mWebgl->CreateTexture()) {
         RefPtr<SharedTexture> shared =
             new SharedTexture(IntSize(pageSize, pageSize), aFormat, tex);
         if (aRenderable) {
@@ -1956,7 +1968,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
   } else {
     
     
-    if (RefPtr<WebGLTexture> tex = mWebgl->CreateTexture()) {
+    if (RefPtr<WebGLTextureJS> tex = mWebgl->CreateTexture()) {
       RefPtr<StandaloneTexture> standalone =
           new StandaloneTexture(aSize, aFormat, tex);
       if (aRenderable) {
@@ -2007,85 +2019,19 @@ static inline Maybe<IntRect> IsAlignedRect(bool aTransformed,
   return Nothing();
 }
 
-Maybe<uint32_t> SharedContextWebgl::GetUniformLocation(
-    const RefPtr<WebGLProgram>& aProg, const std::string& aName) const {
-  if (!aProg || !aProg->LinkInfo()) {
-    return Nothing();
-  }
-
-  for (const auto& activeUniform : aProg->LinkInfo()->active.activeUniforms) {
-    if (activeUniform.block_index != -1) continue;
-
-    auto locName = activeUniform.name;
-    const auto indexed = webgl::ParseIndexed(locName);
-    if (indexed) {
-      locName = indexed->name;
-    }
-
-    const auto baseLength = locName.size();
-    for (const auto& pair : activeUniform.locByIndex) {
-      if (indexed) {
-        locName.erase(baseLength);  
-        locName += '[';
-        locName += std::to_string(pair.first);
-        locName += ']';
-      }
-      if (locName == aName || locName == aName + "[0]") {
-        return Some(pair.second);
-      }
-    }
-  }
-
-  return Nothing();
-}
-
-template <class T>
-struct IsUniformDataValT : std::false_type {};
-template <>
-struct IsUniformDataValT<webgl::UniformDataVal> : std::true_type {};
-template <>
-struct IsUniformDataValT<float> : std::true_type {};
-template <>
-struct IsUniformDataValT<int32_t> : std::true_type {};
-template <>
-struct IsUniformDataValT<uint32_t> : std::true_type {};
-
-template <typename T, typename = std::enable_if_t<IsUniformDataValT<T>::value>>
-inline Range<const webgl::UniformDataVal> AsUniformDataVal(
-    const Range<const T>& data) {
-  return {data.begin().template ReinterpretCast<const webgl::UniformDataVal>(),
-          data.end().template ReinterpretCast<const webgl::UniformDataVal>()};
-}
-
 template <class T, size_t N>
-inline void SharedContextWebgl::UniformData(GLenum aFuncElemType,
-                                            const Maybe<uint32_t>& aLoc,
-                                            const Array<T, N>& aData) {
-  
-  
-  mWebgl->UniformData(*aLoc, false,
-                      AsUniformDataVal(Range<const T>(Span<const T>(aData))));
-}
-
-template <class T, size_t N>
-void SharedContextWebgl::MaybeUniformData(GLenum aFuncElemType,
-                                          const Maybe<uint32_t>& aLoc,
-                                          const Array<T, N>& aData,
-                                          Maybe<Array<T, N>>& aCached) {
+void DrawTargetWebgl::SharedContext::MaybeUniformData(
+    GLenum aFuncElemType, const WebGLUniformLocationJS* const aLoc,
+    const Array<T, N>& aData, Maybe<Array<T, N>>& aCached) {
   if (aCached.isNothing() || !(*aCached == aData)) {
     aCached = Some(aData);
-    UniformData(aFuncElemType, aLoc, aData);
+    Span<const uint8_t> bytes = AsBytes(Span(aData));
+    
+    
+    mWebgl->UniformData(aFuncElemType, aLoc, false, bytes);
   }
 }
 
-inline void SharedContextWebgl::DrawQuad() {
-  mWebgl->DrawArraysInstanced(LOCAL_GL_TRIANGLE_FAN, 0, 4, 1);
-}
-
-void SharedContextWebgl::DrawTriangles(const PathVertexRange& aRange) {
-  mWebgl->DrawArraysInstanced(LOCAL_GL_TRIANGLES, GLint(aRange.mOffset),
-                              GLsizei(aRange.mLength), 1);
-}
 
 
 
@@ -2095,13 +2041,11 @@ void SharedContextWebgl::DrawTriangles(const PathVertexRange& aRange) {
 
 
 
-
-bool SharedContextWebgl::DrawRectAccel(
+bool DrawTargetWebgl::SharedContext::DrawRectAccel(
     const Rect& aRect, const Pattern& aPattern, const DrawOptions& aOptions,
     Maybe<DeviceColor> aMaskColor, RefPtr<TextureHandle>* aHandle,
     bool aTransformed, bool aClipped, bool aAccelOnly, bool aForceUpdate,
-    const StrokeOptions* aStrokeOptions, const PathVertexRange* aVertexRange,
-    const Matrix* aRectXform) {
+    const StrokeOptions* aStrokeOptions, const PathVertexRange* aVertexRange) {
   
   if (aRect.IsEmpty() || mClipRect.IsEmpty()) {
     return true;
@@ -2122,20 +2066,14 @@ bool SharedContextWebgl::DrawRectAccel(
     return false;
   }
 
-  const Matrix& currentTransform = mCurrentTarget->GetTransform();
-  
-  
-  Matrix rectXform = currentTransform;
-  if (aRectXform) {
-    rectXform *= *aRectXform;
-  }
+  const Matrix& currentTransform = GetTransform();
 
   if (aOptions.mCompositionOp == CompositionOp::OP_SOURCE && aTransformed &&
       aClipped &&
-      (HasClipMask() || !rectXform.PreservesAxisAlignedRectangles() ||
-       !rectXform.TransformBounds(aRect).Contains(Rect(mClipAARect)) ||
+      (HasClipMask() || !currentTransform.PreservesAxisAlignedRectangles() ||
+       !currentTransform.TransformBounds(aRect).Contains(Rect(mClipAARect)) ||
        (aPattern.GetType() == PatternType::SURFACE &&
-        !IsAlignedRect(aTransformed, rectXform, aRect)))) {
+        !IsAlignedRect(aTransformed, currentTransform, aRect)))) {
     
     return DrawRectAccel(Rect(mClipRect), ColorPattern(DeviceColor(0, 0, 0, 0)),
                          DrawOptions(1.0f, CompositionOp::OP_SOURCE,
@@ -2145,8 +2083,8 @@ bool SharedContextWebgl::DrawRectAccel(
                          DrawOptions(aOptions.mAlpha, CompositionOp::OP_ADD,
                                      aOptions.mAntialiasMode),
                          aMaskColor, aHandle, aTransformed, aClipped,
-                         aAccelOnly, aForceUpdate, aStrokeOptions, aVertexRange,
-                         aRectXform);
+                         aAccelOnly, aForceUpdate, aStrokeOptions,
+                         aVertexRange);
   }
   if (aOptions.mCompositionOp == CompositionOp::OP_CLEAR &&
       aPattern.GetType() == PatternType::SURFACE && !aMaskColor) {
@@ -2154,8 +2092,7 @@ bool SharedContextWebgl::DrawRectAccel(
     
     return DrawRectAccel(aRect, ColorPattern(DeviceColor(1, 1, 1, 1)), aOptions,
                          Nothing(), aHandle, aTransformed, aClipped, aAccelOnly,
-                         aForceUpdate, aStrokeOptions, aVertexRange,
-                         aRectXform);
+                         aForceUpdate, aStrokeOptions, aVertexRange);
   }
 
   
@@ -2186,7 +2123,7 @@ bool SharedContextWebgl::DrawRectAccel(
         
         
         if (Maybe<IntRect> intRect =
-                IsAlignedRect(aTransformed, rectXform, aRect)) {
+                IsAlignedRect(aTransformed, currentTransform, aRect)) {
           
           
           if (intRect->Area() >=
@@ -2244,7 +2181,7 @@ bool SharedContextWebgl::DrawRectAccel(
       Array<float, 4> colorData = {color.b, color.g, color.r, color.a};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
-        xform *= rectXform;
+        xform *= currentTransform;
       }
       Array<float, 6> xformData = {xform._11, xform._12, xform._21,
                                    xform._22, xform._31, xform._32};
@@ -2258,10 +2195,11 @@ bool SharedContextWebgl::DrawRectAccel(
       if (aVertexRange) {
         
         
-        DrawTriangles(*aVertexRange);
+        mWebgl->DrawArrays(LOCAL_GL_TRIANGLES, GLint(aVertexRange->mOffset),
+                           GLsizei(aVertexRange->mLength));
       } else {
         
-        DrawQuad();
+        mWebgl->DrawArrays(LOCAL_GL_TRIANGLE_FAN, 0, 4);
       }
       success = true;
       break;
@@ -2316,13 +2254,8 @@ bool SharedContextWebgl::DrawRectAccel(
       if (!invMatrix.Invert()) {
         break;
       }
-      if (aRectXform) {
-        
-        
-        invMatrix.PreMultiply(*aRectXform);
-      }
 
-      RefPtr<WebGLTexture> tex;
+      RefPtr<WebGLTextureJS> tex;
       IntRect bounds;
       IntSize backingSize;
       RefPtr<DataSourceSurface> data;
@@ -2417,7 +2350,7 @@ bool SharedContextWebgl::DrawRectAccel(
       Array<float, 1> swizzleData = {format == SurfaceFormat::A8 ? 1.0f : 0.0f};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
-        xform *= rectXform;
+        xform *= currentTransform;
       }
       Array<float, 6> xformData = {xform._11, xform._12, xform._21,
                                    xform._22, xform._31, xform._32};
@@ -2502,10 +2435,11 @@ bool SharedContextWebgl::DrawRectAccel(
       if (aVertexRange) {
         
         
-        DrawTriangles(*aVertexRange);
+        mWebgl->DrawArrays(LOCAL_GL_TRIANGLES, GLint(aVertexRange->mOffset),
+                           GLsizei(aVertexRange->mLength));
       } else {
         
-        DrawQuad();
+        mWebgl->DrawArrays(LOCAL_GL_TRIANGLE_FAN, 0, 4);
       }
 
       
@@ -2521,11 +2455,12 @@ bool SharedContextWebgl::DrawRectAccel(
                    << (int)aPattern.GetType();
       break;
   }
+  
 
   return success;
 }
 
-bool SharedContextWebgl::RemoveSharedTexture(
+bool DrawTargetWebgl::SharedContext::RemoveSharedTexture(
     const RefPtr<SharedTexture>& aTexture) {
   auto pos =
       std::find(mSharedTextures.begin(), mSharedTextures.end(), aTexture);
@@ -2544,11 +2479,12 @@ bool SharedContextWebgl::RemoveSharedTexture(
     mTotalTextureMemory -= usedBytes;
     mSharedTextures.erase(pos);
     ClearLastTexture();
+    mWebgl->DeleteTexture(aTexture->GetWebGLTexture());
   }
   return true;
 }
 
-void SharedTextureHandle::Cleanup(SharedContextWebgl& aContext) {
+void SharedTextureHandle::Cleanup(DrawTargetWebgl::SharedContext& aContext) {
   mTexture->Free(*this);
 
   
@@ -2558,7 +2494,7 @@ void SharedTextureHandle::Cleanup(SharedContextWebgl& aContext) {
   }
 }
 
-bool SharedContextWebgl::RemoveStandaloneTexture(
+bool DrawTargetWebgl::SharedContext::RemoveStandaloneTexture(
     const RefPtr<StandaloneTexture>& aTexture) {
   auto pos = std::find(mStandaloneTextures.begin(), mStandaloneTextures.end(),
                        aTexture);
@@ -2568,15 +2504,16 @@ bool SharedContextWebgl::RemoveStandaloneTexture(
   mTotalTextureMemory -= aTexture->UsedBytes();
   mStandaloneTextures.erase(pos);
   ClearLastTexture();
+  mWebgl->DeleteTexture(aTexture->GetWebGLTexture());
   return true;
 }
 
-void StandaloneTexture::Cleanup(SharedContextWebgl& aContext) {
+void StandaloneTexture::Cleanup(DrawTargetWebgl::SharedContext& aContext) {
   aContext.RemoveStandaloneTexture(this);
 }
 
 
-void SharedContextWebgl::PruneTextureHandle(
+void DrawTargetWebgl::SharedContext::PruneTextureHandle(
     const RefPtr<TextureHandle>& aHandle) {
   
   aHandle->Invalidate();
@@ -2595,7 +2532,8 @@ void SharedContextWebgl::PruneTextureHandle(
 
 
 
-bool SharedContextWebgl::PruneTextureMemory(size_t aMargin, bool aPruneUnused) {
+bool DrawTargetWebgl::SharedContext::PruneTextureMemory(size_t aMargin,
+                                                        bool aPruneUnused) {
   
   size_t maxBytes = StaticPrefs::gfx_canvas_accelerated_cache_size() << 20;
   maxBytes -= std::min(maxBytes, aMargin);
@@ -2799,12 +2737,6 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   }
 
   DrawPath(aPath, aPattern, aOptions);
-}
-
-void DrawTargetWebgl::FillCircle(const Point& aOrigin, float aRadius,
-                                 const Pattern& aPattern,
-                                 const DrawOptions& aOptions) {
-  DrawCircle(aOrigin, aRadius, aPattern, aOptions);
 }
 
 QuantizedPath::QuantizedPath(const WGR::Path& aPath) : mPath(aPath) {}
@@ -3121,7 +3053,7 @@ static inline AAStrokeMode SupportsAAStroke(const Pattern& aPattern,
 
 
 
-already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
+already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::DrawStrokeMask(
     const PathVertexRange& aVertexRange, const IntSize& aSize) {
   
   RefPtr<TextureHandle> handle =
@@ -3136,9 +3068,8 @@ already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
     
     
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, backing->GetWebGLTexture());
-    mWebgl->TexStorage(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_R8,
-                       {uint32_t(backing->GetSize().width),
-                        uint32_t(backing->GetSize().height), 1});
+    mWebgl->TexStorage2D(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_R8,
+                         backing->GetSize().width, backing->GetSize().height);
     InitTexParameters(backing->GetWebGLTexture());
     ClearLastTexture();
   }
@@ -3149,10 +3080,9 @@ already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
     mScratchFramebuffer = mWebgl->CreateFramebuffer();
   }
   mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mScratchFramebuffer);
-  webgl::FbAttachInfo attachInfo;
-  attachInfo.tex = backing->GetWebGLTexture();
-  mWebgl->FramebufferAttach(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                            LOCAL_GL_TEXTURE_2D, attachInfo);
+  mWebgl->FramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
+                               LOCAL_GL_TEXTURE_2D, backing->GetWebGLTexture(),
+                               0);
   mWebgl->Viewport(texBounds.x, texBounds.y, texBounds.width, texBounds.height);
   if (!backing->IsInitialized()) {
     backing->MarkInitialized();
@@ -3194,11 +3124,12 @@ already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
                    mSolidProgramUniformState.mTransform);
 
   
-  RefPtr<WebGLTexture> prevClipMask = mLastClipMask;
+  RefPtr<WebGLTextureJS> prevClipMask = mLastClipMask;
   SetNoClipMask();
 
   
-  DrawTriangles(aVertexRange);
+  mWebgl->DrawArrays(LOCAL_GL_TRIANGLES, GLint(aVertexRange.mOffset),
+                     GLsizei(aVertexRange.mLength));
 
   
   mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCurrentTarget->mFramebuffer);
@@ -3210,22 +3141,15 @@ already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
   return handle.forget();
 }
 
-bool SharedContextWebgl::DrawPathAccel(
+bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     const Path* aPath, const Pattern& aPattern, const DrawOptions& aOptions,
     const StrokeOptions* aStrokeOptions, bool aAllowStrokeAlpha,
-    const ShadowOptions* aShadow, bool aCacheable, const Matrix* aPathXform) {
+    const ShadowOptions* aShadow, bool aCacheable) {
   
   
   const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
-  const Matrix& currentTransform = mCurrentTarget->GetTransform();
-  Matrix pathXform = currentTransform;
-  
-  
-  
-  if (aPathXform) {
-    pathXform.PreMultiply(*aPathXform);
-  }
-  Rect bounds = pathSkia->GetFastBounds(pathXform, aStrokeOptions);
+  const Matrix& currentTransform = GetTransform();
+  Rect bounds = pathSkia->GetFastBounds(currentTransform, aStrokeOptions);
   
   if (bounds.IsEmpty()) {
     return true;
@@ -3273,7 +3197,7 @@ bool SharedContextWebgl::DrawPathAccel(
     
     
     Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-        mWGRPathBuilder, pathSkia->GetPath(), quantBounds, pathXform);
+        mWGRPathBuilder, pathSkia->GetPath(), quantBounds, currentTransform);
     if (!qp) {
       return false;
     }
@@ -3369,13 +3293,13 @@ bool SharedContextWebgl::DrawPathAccel(
           cullRect = Some(invRect);
         }
         SkPath fillPath;
-        if (pathSkia->GetFillPath(*aStrokeOptions, pathXform, fillPath,
+        if (pathSkia->GetFillPath(*aStrokeOptions, currentTransform, fillPath,
                                   cullRect)) {
           
           
           
           if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-                  mWGRPathBuilder, fillPath, quantBounds, pathXform)) {
+                  mWGRPathBuilder, fillPath, quantBounds, currentTransform)) {
             wgrVB = GeneratePathVertexBuffer(
                 *qp, IntRect(-intBounds.TopLeft(), mViewportSize),
                 mRasterizationTruncates, outputBuffer, outputBufferCapacity);
@@ -3415,9 +3339,9 @@ bool SharedContextWebgl::DrawPathAccel(
         
         
         
-        mWebgl->BufferSubData(LOCAL_GL_ARRAY_BUFFER, mPathVertexOffset,
-                              vertexBytes, vbData,
-                               true);
+        mWebgl->RawBufferSubData(LOCAL_GL_ARRAY_BUFFER, mPathVertexOffset,
+                                 vbData, vertexBytes,
+                                  true);
         mPathVertexOffset += vertexBytes;
         if (wgrVB) {
           WGR::wgr_vertex_buffer_release(wgrVB.ref());
@@ -3493,6 +3417,7 @@ bool SharedContextWebgl::DrawPathAccel(
       
       offset += aShadow->mOffset;
     }
+    pathDT->SetTransform(currentTransform * Matrix::Translation(offset));
     DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
                             aOptions.mAntialiasMode);
     static const ColorPattern maskPattern(DeviceColor(1.0f, 1.0f, 1.0f, 1.0f));
@@ -3500,26 +3425,10 @@ bool SharedContextWebgl::DrawPathAccel(
     
     
     DrawTargetWebgl* oldTarget = mCurrentTarget;
-    {
-      RefPtr<const Path> path;
-      if (color || !aPathXform) {
-        
-        
-        path = aPath;
-        pathDT->SetTransform(pathXform * Matrix::Translation(offset));
-      } else {
-        
-        
-        RefPtr<PathBuilder> builder =
-            aPath->TransformedCopyToBuilder(*aPathXform);
-        path = builder->Finish();
-        pathDT->SetTransform(currentTransform * Matrix::Translation(offset));
-      }
-      if (aStrokeOptions) {
-        pathDT->Stroke(path, cachePattern, *aStrokeOptions, drawOptions);
-      } else {
-        pathDT->Fill(path, cachePattern, drawOptions);
-      }
+    if (aStrokeOptions) {
+      pathDT->Stroke(aPath, cachePattern, *aStrokeOptions, drawOptions);
+    } else {
+      pathDT->Fill(aPath, cachePattern, drawOptions);
     }
     if (aShadow && aShadow->mSigma > 0.0f) {
       
@@ -3582,34 +3491,6 @@ void DrawTargetWebgl::DrawPath(const Path* aPath, const Pattern& aPattern,
     mSkia->Stroke(aPath, aPattern, *aStrokeOptions, aOptions);
   } else {
     mSkia->Fill(aPath, aPattern, aOptions);
-  }
-}
-
-
-
-void DrawTargetWebgl::DrawCircle(const Point& aOrigin, float aRadius,
-                                 const Pattern& aPattern,
-                                 const DrawOptions& aOptions,
-                                 const StrokeOptions* aStrokeOptions) {
-  if (ShouldAccelPath(aOptions, aStrokeOptions)) {
-    
-    if (!mUnitCirclePath) {
-      mUnitCirclePath = MakePathForCircle(*this, Point(0, 0), 1);
-    }
-    
-    Matrix circleXform(aRadius, 0, 0, aRadius, aOrigin.x, aOrigin.y);
-    if (mSharedContext->DrawPathAccel(mUnitCirclePath, aPattern, aOptions,
-                                      aStrokeOptions, true, nullptr, true,
-                                      &circleXform)) {
-      return;
-    }
-  }
-
-  MarkSkiaChanged(aOptions);
-  if (aStrokeOptions) {
-    mSkia->StrokeCircle(aOrigin, aRadius, aPattern, *aStrokeOptions, aOptions);
-  } else {
-    mSkia->FillCircle(aOrigin, aRadius, aPattern, aOptions);
   }
 }
 
@@ -3818,10 +3699,10 @@ bool DrawTargetWebgl::StrokeLineAccel(const Point& aStart, const Point& aEnd,
     }
     Matrix lineXform(dirX.x, dirX.y, dirY.x, dirY.y, start.x - 0.5f * dirY.x,
                      start.y - 0.5f * dirY.y);
-    if (PrepareContext() &&
-        mSharedContext->DrawRectAccel(Rect(0, 0, 1, 1), aPattern, aOptions,
-                                      Nothing(), nullptr, true, true, true,
-                                      false, nullptr, nullptr, &lineXform)) {
+    AutoRestoreTransform restore(this);
+    ConcatTransform(lineXform);
+    if (DrawRect(Rect(0, 0, 1, 1), aPattern, aOptions, Nothing(), nullptr, true,
+                 true, true)) {
       return true;
     }
   }
@@ -3886,13 +3767,6 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
   }
 
   DrawPath(aPath, aPattern, aOptions, &aStrokeOptions, allowStrokeAlpha);
-}
-
-void DrawTargetWebgl::StrokeCircle(const Point& aOrigin, float aRadius,
-                                   const Pattern& aPattern,
-                                   const StrokeOptions& aStrokeOptions,
-                                   const DrawOptions& aOptions) {
-  DrawCircle(aOrigin, aRadius, aPattern, aOptions, &aStrokeOptions);
 }
 
 bool DrawTargetWebgl::ShouldUseSubpixelAA(ScaledFont* aFont,
@@ -4169,12 +4043,10 @@ static bool CheckForColorGlyphs(const RefPtr<SourceSurface>& aSurface) {
 
 
 
-bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
-                                         const GlyphBuffer& aBuffer,
-                                         const Pattern& aPattern,
-                                         const DrawOptions& aOptions,
-                                         const StrokeOptions* aStrokeOptions,
-                                         bool aUseSubpixelAA) {
+bool DrawTargetWebgl::SharedContext::DrawGlyphsAccel(
+    ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
+    const DrawOptions& aOptions, const StrokeOptions* aStrokeOptions,
+    bool aUseSubpixelAA) {
   
   
   
@@ -4212,7 +4084,7 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
   
   
   
-  const Matrix& currentTransform = mCurrentTarget->GetTransform();
+  const Matrix& currentTransform = GetTransform();
   IntPoint quantizeScale = QuantizeScale(aFont, currentTransform);
   Matrix quantizeTransform = currentTransform;
   quantizeTransform.PostScale(quantizeScale.x, quantizeScale.y);
@@ -4408,8 +4280,24 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   mSkia->FillGlyphs(aFont, aBuffer, aPattern, aOptions);
 }
 
+void DrawTargetWebgl::SharedContext::WaitForShmem(DrawTargetWebgl* aTarget) {
+  if (mWaitForShmem) {
+    
+    
+    
+    (void)mWebgl->GetError();
+    mWaitForShmem = false;
+    
+    
+    if (aTarget) {
+      aTarget->mProfile.OnReadback();
+    }
+  }
+}
+
 void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
   if (SupportsLayering(aOptions)) {
+    WaitForShmem();
     if (!mSkiaValid) {
       
       mSkiaValid = true;
@@ -4598,7 +4486,7 @@ bool DrawTargetWebgl::UsageProfile::RequiresRefresh() const {
   return mFailedFrames > failRatio * mFrameCount;
 }
 
-void SharedContextWebgl::CachePrefs() {
+void DrawTargetWebgl::SharedContext::CachePrefs() {
   uint32_t capacity = StaticPrefs::gfx_canvas_accelerated_gpu_path_size() << 20;
   if (capacity != mPathVertexCapacity) {
     mPathVertexCapacity = capacity;
@@ -4663,9 +4551,10 @@ void DrawTargetWebgl::EndFrame() {
   mNeedsPresent = true;
 }
 
-void DrawTargetWebgl::CopyToSwapChain(layers::RemoteTextureId aId,
-                                      layers::RemoteTextureOwnerId aOwnerId,
-                                      base::ProcessId aPid) {
+Maybe<layers::SurfaceDescriptor> DrawTargetWebgl::GetFrontBuffer() {
+  
+  
+  
   if (mNeedsPresent) {
     mNeedsPresent = false;
     if (mWebglValid || FlushFromSkia()) {
@@ -4676,15 +4565,13 @@ void DrawTargetWebgl::CopyToSwapChain(layers::RemoteTextureId aId,
       
       options.forceAsyncPresent =
           StaticPrefs::gfx_canvas_accelerated_async_present();
-      options.remoteTextureId = aId;
-      options.remoteTextureOwnerId = aOwnerId;
-      const RefPtr<layers::ImageBridgeChild> imageBridge =
-          layers::ImageBridgeChild::GetSingleton();
-      auto texType = layers::TexTypeForWebgl(imageBridge);
-      mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, texType, options,
-                                              aPid);
+      mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, options);
     }
   }
+  if (mWebglValid) {
+    return mSharedContext->mWebgl->GetFrontBuffer(mFramebuffer);
+  }
+  return Nothing();
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(

@@ -312,7 +312,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   mutable FuncScope* mFuncScope = nullptr;
 
  public:
-  static RefPtr<WebGLContext> Create(HostWebGLContext*,
+  static RefPtr<WebGLContext> Create(HostWebGLContext&,
                                      const webgl::InitContextDesc&,
                                      webgl::InitContextResult* out);
 
@@ -320,7 +320,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   void FinishInit();
 
  protected:
-  WebGLContext(HostWebGLContext*, const webgl::InitContextDesc&);
+  WebGLContext(HostWebGLContext&, const webgl::InitContextDesc&);
   virtual ~WebGLContext();
 
   RefPtr<layers::CompositableHost> mCompositableHost;
@@ -452,8 +452,6 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   static const char* ErrorName(GLenum error);
 
-  void JsWarning(const std::string& text) const;
-
   
 
 
@@ -500,8 +498,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   
   void CopyToSwapChain(
       WebGLFramebuffer*, layers::TextureType,
-      const webgl::SwapChainOptions& options = webgl::SwapChainOptions(),
-      base::ProcessId pid = base::kInvalidProcessId);
+      const webgl::SwapChainOptions& options = webgl::SwapChainOptions());
   
   
   
@@ -1262,8 +1259,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   bool PushRemoteTexture(WebGLFramebuffer*, gl::SwapChain&,
                          std::shared_ptr<gl::SharedSurface>,
-                         const webgl::SwapChainOptions& options,
-                         base::ProcessId pid = base::kInvalidProcessId);
+                         const webgl::SwapChainOptions& options);
 
   
 

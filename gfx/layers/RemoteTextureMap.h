@@ -213,8 +213,7 @@ class RemoteTextureMap {
   
   bool GetRemoteTextureForDisplayList(
       RemoteTextureHostWrapper* aTextureHostWrapper,
-      std::function<void(const RemoteTextureInfo&)>&& aReadyCallback,
-      bool aWaitForRemoteTextureOwner = false);
+      std::function<void(const RemoteTextureInfo&)>&& aReadyCallback);
 
   
   wr::MaybeExternalImageId GetExternalImageIdOfRemoteTexture(
@@ -298,7 +297,6 @@ class RemoteTextureMap {
     std::deque<UniquePtr<TextureDataHolder>> mWaitingTextureDataHolders;
     
     std::deque<UniquePtr<TextureDataHolder>> mUsingTextureDataHolders;
-    std::deque<UniquePtr<TextureDataHolder>> mReleasingTextureDataHolders;
     
     std::deque<UniquePtr<RenderingReadyCallbackHolder>>
         mRenderingReadyCallbackHolders;
