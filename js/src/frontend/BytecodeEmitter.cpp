@@ -11823,6 +11823,17 @@ bool BytecodeEmitter::emitClass(
         return false;
       }
 
+#ifdef ENABLE_DECORATORS
+      
+      
+      
+      if (!ce.prepareForExtraInitializers(
+              TaggedParserAtomIndex::WellKnown::
+                  dot_instanceExtraInitializers_())) {
+        return false;
+      }
+#endif
+
       
       if (!emitCreateMemberInitializers(ce, classMembers,
                                         FieldPlacement::Instance
