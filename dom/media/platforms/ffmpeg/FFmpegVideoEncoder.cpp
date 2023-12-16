@@ -804,7 +804,6 @@ FFmpegVideoEncoder<LIBAV_VER>::DrainWithModernAPIs() {
   
   
   
-  
   if (int ret = mLib->avcodec_send_frame(mCodecContext, nullptr); ret < 0) {
     if (ret == AVERROR_EOF) {
       
@@ -853,7 +852,15 @@ FFmpegVideoEncoder<LIBAV_VER>::DrainWithModernAPIs() {
   }
 
   FFMPEGV_LOG("get %zu encoded data", output.Length());
-  return EncodePromise::CreateAndResolve(std::move(output), __func__);
+
+  
+  
+  
+  ShutdownInternal();
+  MediaResult r = InitInternal();
+  return NS_FAILED(r)
+             ? EncodePromise::CreateAndReject(r, __func__)
+             : EncodePromise::CreateAndResolve(std::move(output), __func__);
 }
 #endif
 
