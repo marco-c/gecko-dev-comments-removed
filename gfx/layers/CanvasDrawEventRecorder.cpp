@@ -43,6 +43,7 @@ CanvasDrawEventRecorder::CanvasDrawEventRecorder() {
 }
 
 bool CanvasDrawEventRecorder::Init(TextureType aTextureType,
+                                   gfx::BackendType aBackendType,
                                    UniquePtr<Helpers> aHelpers) {
   mHelpers = std::move(aHelpers);
 
@@ -91,7 +92,8 @@ bool CanvasDrawEventRecorder::Init(TextureType aTextureType,
     return false;
   }
 
-  if (!mHelpers->InitTranslator(aTextureType, std::move(header->handle),
+  if (!mHelpers->InitTranslator(aTextureType, aBackendType,
+                                std::move(header->handle),
                                 std::move(bufferHandles), mDefaultBufferSize,
                                 std::move(readerSem), std::move(writerSem),
                                  false)) {
@@ -153,6 +155,12 @@ void CanvasDrawEventRecorder::WriteInternalEvent(EventType aEventType) {
 
 gfx::ContiguousBuffer& CanvasDrawEventRecorder::GetContiguousBuffer(
     size_t aSize) {
+  if (!mCurrentBuffer.IsValid()) {
+    
+    MOZ_ASSERT(mHeader->writerState == State::Failed);
+    return mCurrentBuffer;
+  }
+
   
   
 
