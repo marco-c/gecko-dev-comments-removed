@@ -13,24 +13,26 @@ interface nsIContentAnalysisAcknowledgement : nsISupports
   
   
   
-  
-  const unsigned long SUCCESS = 1;
-  
-  const unsigned long INVALID_RESPONSE = 2;
-  
-  const unsigned long TOO_LATE = 3;
+  cenum Result: 32 {
+    eSuccess = 1, 
+    eInvalidResponse = 2, 
+    eTooLate = 3, 
+  };
 
-  readonly attribute unsigned long result;
+  readonly attribute nsIContentAnalysisAcknowledgement_Result result;
 
   
   
-  const unsigned long ACTION_UNSPECIFIED = 0;
-  const unsigned long ALLOW = 1;
-  const unsigned long REPORT_ONLY = 2;
-  const unsigned long WARN = 3;
-  const unsigned long BLOCK = 4;
+  
+  cenum FinalAction : 32 {
+    eUnspecified = 0,
+    eAllow = 1,
+    eReportOnly = 2,
+    eWarn = 3,
+    eBlock = 4,
+  };
 
-  readonly attribute unsigned long finalAction;
+  readonly attribute nsIContentAnalysisAcknowledgement_FinalAction finalAction;
 };
 
 [scriptable, builtinclass, uuid(89088c61-15f6-4ace-a880-a1b5ea47ca66)]
@@ -39,16 +41,17 @@ interface nsIContentAnalysisResponse : nsISupports
   
   
   
-  const unsigned long ACTION_UNSPECIFIED = 0;
-  const unsigned long REPORT_ONLY = 1;
-  const unsigned long WARN = 2;
-  const unsigned long BLOCK = 3;
+  cenum Action : 32 {
+    eUnspecified = 0,
+    eReportOnly = 1,
+    eWarn = 2,
+    eBlock = 3,
+    
+    eAllow = 1000,
+    eCanceled = 1001,
+  };
 
-  
-  const unsigned long ALLOW = 1000;
-  const unsigned long CANCELED = 1001;
-
-  [infallible] readonly attribute unsigned long action;
+  [infallible] readonly attribute nsIContentAnalysisResponse_Action action;
   [infallible] readonly attribute boolean shouldAllowContent;
 
   
@@ -102,20 +105,23 @@ interface nsIContentAnalysisRequest : nsISupports
   
   
   
-  const unsigned long ANALYSIS_CONNECTOR_UNSPECIFIED = 0;
-  const unsigned long FILE_DOWNLOADED = 1;
-  const unsigned long FILE_ATTACHED = 2;
-  const unsigned long BULK_DATA_ENTRY = 3;
-  const unsigned long PRINT = 4;
-  const unsigned long FILE_TRANSFER = 5;
-
-  readonly attribute unsigned long analysisType;
+  cenum AnalysisType : 32 {
+    eUnspecified = 0,
+    eFileDownloaded = 1,
+    eFileAttached = 2,
+    eBulkDataEntry = 3,
+    ePrint = 4,
+    eFileTransfer = 5,
+  };
+  readonly attribute nsIContentAnalysisRequest_AnalysisType analysisType;
 
   
-  const unsigned long OPERATION_CUSTOMDISPLAYSTRING = 0;
-  const unsigned long OPERATION_CLIPBOARD = 1;
-  const unsigned long OPERATION_DROPPEDTEXT = 2;
-  readonly attribute unsigned long operationTypeForDisplay;
+  cenum OperationType : 32 {
+    eCustomDisplayString = 0,
+    eClipboard = 1,
+    eDroppedText = 2,
+  };
+  readonly attribute nsIContentAnalysisRequest_OperationType operationTypeForDisplay;
   readonly attribute AString operationDisplayString;
 
   
