@@ -291,7 +291,7 @@ class ICCacheIRStub final : public ICStub {
   void trace(JSTracer* trc);
   bool traceWeak(JSTracer* trc);
 
-  ICCacheIRStub* clone(JSContext* cx, ICStubSpace& newSpace);
+  ICCacheIRStub* clone(JSRuntime* rt, ICStubSpace& newSpace);
 
   
   bool makesGCCalls() const;

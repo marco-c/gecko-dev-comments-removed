@@ -502,7 +502,8 @@ void BaselineStackBuilder::setNextCallee(
     JSFunction* nextCallee, TrialInliningState trialInliningState) {
   nextCallee_ = nextCallee;
 
-  if (trialInliningState == TrialInliningState::Inlined) {
+  if (trialInliningState == TrialInliningState::Inlined &&
+      !iter_.ionScript()->purgedICScripts()) {
     
     const uint32_t pcOff = script_->pcToOffset(pc_);
     icScript_ = icScript_->findInlinedChild(pcOff);
@@ -511,8 +512,15 @@ void BaselineStackBuilder::setNextCallee(
     
     
     
+    
+    
     icScript_ = nextCallee->nonLazyScript()->jitScript()->icScript();
   }
+
+  
+  JSScript* calleeScript = nextCallee->nonLazyScript();
+  MOZ_RELEASE_ASSERT(icScript_->numICEntries() == calleeScript->numICEntries());
+  MOZ_RELEASE_ASSERT(icScript_->bytecodeSize() == calleeScript->length());
 }
 
 bool BaselineStackBuilder::done() {

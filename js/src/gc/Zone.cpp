@@ -456,7 +456,9 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
         
         
-        jitScript->purgeStubs(script);
+        
+        jitScript->purgeInactiveICScripts();
+        jitScript->purgeStubs(script, newStubSpace);
 
         if (options.resetNurseryAllocSites ||
             options.resetPretenuredAllocSites) {

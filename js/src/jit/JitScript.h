@@ -103,6 +103,15 @@ static IonScript* const IonCompilingScriptPtr =
 
 
 
+
+
+
+
+
+
+
+
+
 class alignas(uintptr_t) ICScript final : public TrailingArray {
  public:
   ICScript(uint32_t warmUpCount, Offset fallbackStubsOffset, Offset endOffset,
@@ -173,7 +182,9 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   void removeInlinedChild(uint32_t pcOffset);
   bool hasInlinedChild(uint32_t pcOffset);
 
-  void purgeStubs(Zone* zone);
+  void purgeStubs(Zone* zone, ICStubSpace& newStubSpace);
+
+  void purgeInactiveICScripts();
 
   bool active() const { return active_; }
   void setActive() { active_ = true; }
@@ -429,7 +440,9 @@ class alignas(uintptr_t) JitScript final
 
   void trace(JSTracer* trc);
   void traceWeak(JSTracer* trc);
-  void purgeStubs(JSScript* script);
+  void purgeStubs(JSScript* script, ICStubSpace& newStubSpace);
+
+  void purgeInactiveICScripts();
 
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset) {
     return icScript_.icEntryFromPCOffset(pcOffset);

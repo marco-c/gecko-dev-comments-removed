@@ -108,6 +108,11 @@ class alignas(8) IonScript final : public TrailingArray {
 
   
   
+  
+  bool purgedICScripts_ = false;
+
+  
+  
   uint32_t localSlotsSize_ = 0;
 
   
@@ -354,6 +359,9 @@ class alignas(8) IonScript final : public TrailingArray {
   bool hasProfilingInstrumentation() const {
     return hasProfilingInstrumentation_;
   }
+
+  bool purgedICScripts() const { return purgedICScripts_; }
+  void notePurgedICScripts() { purgedICScripts_ = true; }
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this);

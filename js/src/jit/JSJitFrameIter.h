@@ -441,6 +441,8 @@ class SnapshotIterator {
   }
   inline BailoutKind bailoutKind() const { return snapshot_.bailoutKind(); }
 
+  IonScript* ionScript() const { return ionScript_; }
+
  public:
   
   
