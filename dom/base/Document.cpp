@@ -18689,10 +18689,6 @@ nsIPrincipal* Document::GetPrincipalForPrefBasedHacks() const {
 void Document::SetIsInitialDocument(bool aIsInitialDocument) {
   mIsInitialDocumentInWindow = aIsInitialDocument;
 
-  if (aIsInitialDocument && !mIsEverInitialDocumentInWindow) {
-    mIsEverInitialDocumentInWindow = aIsInitialDocument;
-  }
-
   
   
   if (auto* wgc = GetWindowGlobalChild()) {
