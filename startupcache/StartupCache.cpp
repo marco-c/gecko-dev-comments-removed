@@ -268,8 +268,6 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
   MOZ_ASSERT(NS_IsMainThread(), "Can only load startup cache on main thread");
   if (gIgnoreDiskCache) return Err(NS_ERROR_FAILURE);
 
-  mTableLock.AssertCurrentThreadOwns();
-
   MOZ_TRY(mCacheData.init(mFile));
   auto size = mCacheData.size();
   if (CanPrefetchMemory()) {
@@ -400,6 +398,14 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     if (!mCacheData.initialized()) {
       return NS_ERROR_NOT_AVAILABLE;
     }
+    
+    
+    
+    
+    
+    
+    
+    
 
     size_t totalRead = 0;
     size_t totalWritten = 0;
