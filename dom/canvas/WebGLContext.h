@@ -500,7 +500,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   
   void CopyToSwapChain(
       WebGLFramebuffer*, layers::TextureType,
-      const webgl::SwapChainOptions& options = webgl::SwapChainOptions());
+      const webgl::SwapChainOptions& options = webgl::SwapChainOptions(),
+      base::ProcessId pid = base::kInvalidProcessId);
   
   
   
@@ -1261,7 +1262,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   bool PushRemoteTexture(WebGLFramebuffer*, gl::SwapChain&,
                          std::shared_ptr<gl::SharedSurface>,
-                         const webgl::SwapChainOptions& options);
+                         const webgl::SwapChainOptions& options,
+                         base::ProcessId pid = base::kInvalidProcessId);
 
   
 
