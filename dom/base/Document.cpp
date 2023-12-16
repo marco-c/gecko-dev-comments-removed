@@ -9670,17 +9670,6 @@ Document* Document::Open(const Optional<nsAString>& ,
 
   
   
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp = callerDoc->GetCsp();
-  if (csp) {
-    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
-    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
-    mCSP = cspToInherit;
-  }
-
-  
-  
   SetUseCounter(eUseCounter_custom_DocumentOpen);
 
   
