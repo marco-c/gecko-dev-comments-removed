@@ -1207,8 +1207,7 @@ static bool PlainYearMonth_equals(JSContext* cx, const CallArgs& args) {
 
   
   bool equals = false;
-  if (date.year == other.year && date.month == other.month &&
-      date.day == other.day) {
+  if (date == other) {
     if (!CalendarEquals(cx, calendar, otherCalendar, &equals)) {
       return false;
     }
