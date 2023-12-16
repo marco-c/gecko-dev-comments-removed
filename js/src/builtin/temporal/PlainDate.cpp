@@ -2339,25 +2339,17 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<PlainDateTimeObject*> temporalDateTime(cx);
-  if (temporalTime.isUndefined()) {
-    
-    temporalDateTime = CreateTemporalDateTime(cx, {date, {}}, calendar);
-    if (!temporalDateTime) {
-      return false;
-    }
-  } else {
-    
-    PlainTime time;
+  PlainTime time = {};
+  if (!temporalTime.isUndefined()) {
     if (!ToTemporalTime(cx, temporalTime, &time)) {
       return false;
     }
+  }
 
-    
-    temporalDateTime = CreateTemporalDateTime(cx, {date, time}, calendar);
-    if (!temporalDateTime) {
-      return false;
-    }
+  
+  Rooted<PlainDateTimeWithCalendar> temporalDateTime(cx);
+  if (!CreateTemporalDateTime(cx, {date, time}, calendar, &temporalDateTime)) {
+    return false;
   }
 
   
