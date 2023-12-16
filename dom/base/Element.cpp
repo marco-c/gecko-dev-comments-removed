@@ -702,21 +702,30 @@ bool Element::CheckVisibility(const CheckVisibilityOptions& aOptions) {
     return false;
   }
 
-  if (f->IsHiddenByContentVisibilityOnAnyAncestor(
-          nsIFrame::IncludeContentVisibility::Hidden)) {
+  EnumSet includeContentVisibility = {
+      nsIFrame::IncludeContentVisibility::Hidden};
+  if (aOptions.mContentVisibilityAuto) {
+    includeContentVisibility += nsIFrame::IncludeContentVisibility::Auto;
+  }
+  
+  if (f->IsHiddenByContentVisibilityOnAnyAncestor(includeContentVisibility)) {
+    
+    
     
     
     return false;
   }
 
-  if (aOptions.mCheckOpacity && f->Style()->IsInOpacityZeroSubtree()) {
+  if ((aOptions.mOpacityProperty || aOptions.mCheckOpacity) &&
+      f->Style()->IsInOpacityZeroSubtree()) {
     
     
     
     return false;
   }
 
-  if (aOptions.mCheckVisibilityCSS && !f->StyleVisibility()->IsVisible()) {
+  if ((aOptions.mVisibilityProperty || aOptions.mCheckVisibilityCSS) &&
+      !f->StyleVisibility()->IsVisible()) {
     
     
     return false;
