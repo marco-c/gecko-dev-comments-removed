@@ -34,6 +34,11 @@ let { Preferences } = ChromeUtils.importESModule(
 add_setup(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
 
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.new-webcompat-reporter.enabled", false]],
+  });
+
   registerCleanupFunction(() => {
     
     Services.prefs.clearUserPref(TP_PREF);
