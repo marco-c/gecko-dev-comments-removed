@@ -1,5 +1,5 @@
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
 <!DOCTYPE html>
 <meta charset="utf-8">
 <style>
@@ -28,6 +28,9 @@
   }
   #circle {
     clip-path: circle(25% at 30% 40%);
+  }
+  #circle-without-position {
+    clip-path: circle(25%);
   }
   #ellipse {
     clip-path: ellipse(40% 30% at 25% 30%) content-box;
@@ -80,6 +83,7 @@
 </style>
 <div class="wrapper" id="polygon"></div>
 <div class="wrapper" id="circle"></div>
+<div class="wrapper" id="circle-without-position"></div>
 <div class="wrapper" id="ellipse"></div>
 <div class="wrapper" id="ellipse-padding-box"></div>
 <div class="wrapper" id="inset"></div>
