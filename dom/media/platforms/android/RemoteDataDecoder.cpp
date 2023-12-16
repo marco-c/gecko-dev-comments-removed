@@ -67,17 +67,6 @@ class RenderOrReleaseOutput {
   java::Sample::GlobalRef mSample;
 };
 
-static bool areSmpte432ColorPrimariesBuggy() {
-  if (jni::GetAPIVersion() >= 34) {
-    const auto socManufacturer =
-        java::sdk::Build::SOC_MANUFACTURER()->ToString();
-    if (socManufacturer.EqualsASCII("Google")) {
-      return true;
-    }
-  }
-  return false;
-}
-
 class RemoteVideoDecoder final : public RemoteDataDecoder {
  public:
   
@@ -413,16 +402,9 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
     }
 
     if (ok && (size > 0 || presentationTimeUs >= 0)) {
-      
-      
-      
-      static bool isSmpte432Buggy = areSmpte432ColorPrimariesBuggy();
-      bool forceBT709ColorSpace = isSmpte432Buggy && mColorSpace == Some(10);
-
       RefPtr<layers::Image> img = new layers::SurfaceTextureImage(
           mSurfaceHandle, inputInfo.mImageSize, false ,
-          gl::OriginPos::BottomLeft, mConfig.HasAlpha(), forceBT709ColorSpace,
-          mTransformOverride);
+          gl::OriginPos::BottomLeft, mConfig.HasAlpha(), mTransformOverride);
       img->AsSurfaceTextureImage()->RegisterSetCurrentCallback(
           std::move(releaseSample));
 

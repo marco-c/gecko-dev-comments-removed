@@ -117,10 +117,6 @@ pub enum ImageBufferKind {
     
     
     TextureExternal = 2,
-    
-    
-    
-    TextureExternalBT709 = 3,
 }
 
 

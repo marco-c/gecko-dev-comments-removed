@@ -126,8 +126,6 @@ pub fn test_shaders() {
     }
     
     flags.remove(ShaderFeatureFlags::ADVANCED_BLEND_EQUATION);
-    
-    flags.remove(ShaderFeatureFlags::TEXTURE_EXTERNAL_BT709);
 
     for (shader, configs) in get_shader_features(flags) {
         for config in configs {
