@@ -2,41 +2,18 @@
 
 {% import "macros.rs" as rs %}
 
+::uniffi::setup_scaffolding!("{{ ci.namespace() }}");
 
-
-
-
-
-
-
-#[doc(hidden)]
-pub struct UniFfiTag;
-
-#[allow(clippy::missing_safety_doc, missing_docs)]
-#[doc(hidden)]
-#[no_mangle]
-pub extern "C" fn {{ ci.ffi_uniffi_contract_version().name() }}() -> u32 {
-    {{ ci.uniffi_contract_version() }}
-}
-
-{%- include "namespace_metadata.rs" %}
-
-
-
-
-
-uniffi::assert_compatible_version!("{{ uniffi_version }}"); 
+{% include "UdlMetadata.rs" %}
 
 {% for ty in ci.iter_types() %}
 {%- match ty %}
-{%- when Type::Map with (k, v) -%}
+{%- when Type::Map { key_type: k, value_type: v } -%}
 {# Next comment MUST be after the line to be in the compiler output #}
 uniffi::deps::static_assertions::assert_impl_all!({{ k|type_rs }}: ::std::cmp::Eq, ::std::hash::Hash); 
 {%- else %}
 {%- endmatch %}
 {% endfor %}
-
-{% include "RustBuffer.rs" %}
 
 {% for e in ci.enum_definitions() %}
 {% if ci.is_name_used_as_error(e.name()) %}
@@ -73,8 +50,3 @@ uniffi::deps::static_assertions::assert_impl_all!({{ k|type_rs }}: ::std::cmp::E
 
 
 {% include "Checksums.rs" %}
-
-
-{% include "ReexportUniFFIScaffolding.rs" %}
-
-{%- import "macros.rs" as rs -%}

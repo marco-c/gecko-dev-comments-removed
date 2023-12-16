@@ -32,7 +32,7 @@ typedef struct RustBuffer
 typedef int32_t (*ForeignCallback)(uint64_t, int32_t, const uint8_t *_Nonnull, int32_t, RustBuffer *_Nonnull);
 
 
-typedef void (*UniFfiRustTaskCallback)(const void * _Nullable);
+typedef void (*UniFfiRustTaskCallback)(const void * _Nullable, int8_t);
 
 
 
@@ -41,7 +41,7 @@ typedef void (*UniFfiRustTaskCallback)(const void * _Nullable);
 
 
 
-typedef void (*UniFfiForeignExecutorCallback)(size_t, uint32_t, UniFfiRustTaskCallback _Nullable, const void * _Nullable);
+typedef int8_t (*UniFfiForeignExecutorCallback)(size_t, uint32_t, UniFfiRustTaskCallback _Nullable, const void * _Nullable);
 
 typedef struct ForeignBytes
 {
@@ -60,9 +60,7 @@ typedef struct RustCallStatus {
 #endif 
 
 
-{%- for ffi_type in ci.iter_future_callback_params() %}
-typedef void (*UniFfiFutureCallback{{ ffi_type|ffi_canonical_name }})(const void * _Nonnull, {{ ffi_type|header_ffi_type_name }}, RustCallStatus);
-{%- endfor %}
+typedef void (*UniFfiRustFutureContinuation)(void * _Nonnull, int8_t);
 
 
 {%- for func in ci.iter_ffi_function_definitions() %}

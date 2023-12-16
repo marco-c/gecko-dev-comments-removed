@@ -1,5 +1,5 @@
 
-class FfiConverterPrimitive:
+class _UniffiConverterPrimitive:
     @classmethod
     def check(cls, value):
         return value
@@ -18,9 +18,9 @@ class FfiConverterPrimitive:
 
     @classmethod
     def write(cls, value, buf):
-        cls.writeUnchecked(cls.check(value), buf)
+        cls.write_unchecked(cls.check(value), buf)
 
-class FfiConverterPrimitiveInt(FfiConverterPrimitive):
+class _UniffiConverterPrimitiveInt(_UniffiConverterPrimitive):
     @classmethod
     def check(cls, value):
         try:
@@ -33,7 +33,7 @@ class FfiConverterPrimitiveInt(FfiConverterPrimitive):
             raise ValueError("{} requires {} <= value < {}".format(cls.CLASS_NAME, cls.VALUE_MIN, cls.VALUE_MAX))
         return super().check(value)
 
-class FfiConverterPrimitiveFloat(FfiConverterPrimitive):
+class _UniffiConverterPrimitiveFloat(_UniffiConverterPrimitive):
     @classmethod
     def check(cls, value):
         try:
@@ -46,14 +46,14 @@ class FfiConverterPrimitiveFloat(FfiConverterPrimitive):
 
 
 
-class FfiConverterRustBuffer:
+class _UniffiConverterRustBuffer:
     @classmethod
     def lift(cls, rbuf):
-        with rbuf.consumeWithStream() as stream:
+        with rbuf.consume_with_stream() as stream:
             return cls.read(stream)
 
     @classmethod
     def lower(cls, value):
-        with RustBuffer.allocWithBuilder() as builder:
+        with _UniffiRustBuffer.alloc_with_builder() as builder:
             cls.write(value, builder)
             return builder.finalize()

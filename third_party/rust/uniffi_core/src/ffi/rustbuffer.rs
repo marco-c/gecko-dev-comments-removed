@@ -49,6 +49,7 @@ use crate::ffi::{rust_call, ForeignBytes, RustCallStatus};
 
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct RustBuffer {
     
     
@@ -59,6 +60,11 @@ pub struct RustBuffer {
     
     data: *mut u8,
 }
+
+
+
+
+unsafe impl Send for RustBuffer {}
 
 impl RustBuffer {
     
@@ -207,11 +213,21 @@ impl Default for RustBuffer {
 
 
 
+#[cfg(feature = "extern-rustbuffer")]
 #[no_mangle]
 pub extern "C" fn uniffi_rustbuffer_alloc(
     size: i32,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
+    _uniffi_rustbuffer_alloc(size, call_status)
+}
+
+#[cfg(not(feature = "extern-rustbuffer"))]
+pub fn uniffi_rustbuffer_alloc(size: i32, call_status: &mut RustCallStatus) -> RustBuffer {
+    _uniffi_rustbuffer_alloc(size, call_status)
+}
+
+fn _uniffi_rustbuffer_alloc(size: i32, call_status: &mut RustCallStatus) -> RustBuffer {
     rust_call(call_status, || {
         Ok(RustBuffer::new_with_size(size.max(0) as usize))
     })
@@ -225,8 +241,24 @@ pub extern "C" fn uniffi_rustbuffer_alloc(
 
 
 
+#[cfg(feature = "extern-rustbuffer")]
 #[no_mangle]
-pub unsafe extern "C" fn uniffi_rustbuffer_from_bytes(
+pub extern "C" fn uniffi_rustbuffer_from_bytes(
+    bytes: ForeignBytes,
+    call_status: &mut RustCallStatus,
+) -> RustBuffer {
+    _uniffi_rustbuffer_from_bytes(bytes, call_status)
+}
+
+#[cfg(not(feature = "extern-rustbuffer"))]
+pub fn uniffi_rustbuffer_from_bytes(
+    bytes: ForeignBytes,
+    call_status: &mut RustCallStatus,
+) -> RustBuffer {
+    _uniffi_rustbuffer_from_bytes(bytes, call_status)
+}
+
+fn _uniffi_rustbuffer_from_bytes(
     bytes: ForeignBytes,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
@@ -242,8 +274,18 @@ pub unsafe extern "C" fn uniffi_rustbuffer_from_bytes(
 
 
 
+#[cfg(feature = "extern-rustbuffer")]
 #[no_mangle]
-pub unsafe extern "C" fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
+pub extern "C" fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
+    _uniffi_rustbuffer_free(buf, call_status)
+}
+
+#[cfg(not(feature = "extern-rustbuffer"))]
+pub fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
+    _uniffi_rustbuffer_free(buf, call_status)
+}
+
+fn _uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
     rust_call(call_status, || {
         RustBuffer::destroy(buf);
         Ok(())
@@ -265,8 +307,26 @@ pub unsafe extern "C" fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &m
 
 
 
+#[cfg(feature = "extern-rustbuffer")]
 #[no_mangle]
-pub unsafe extern "C" fn uniffi_rustbuffer_reserve(
+pub extern "C" fn uniffi_rustbuffer_reserve(
+    buf: RustBuffer,
+    additional: i32,
+    call_status: &mut RustCallStatus,
+) -> RustBuffer {
+    _uniffi_rustbuffer_reserve(buf, additional, call_status)
+}
+
+#[cfg(not(feature = "extern-rustbuffer"))]
+pub fn uniffi_rustbuffer_reserve(
+    buf: RustBuffer,
+    additional: i32,
+    call_status: &mut RustCallStatus,
+) -> RustBuffer {
+    _uniffi_rustbuffer_reserve(buf, additional, call_status)
+}
+
+fn _uniffi_rustbuffer_reserve(
     buf: RustBuffer,
     additional: i32,
     call_status: &mut RustCallStatus,

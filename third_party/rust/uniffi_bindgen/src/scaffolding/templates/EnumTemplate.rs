@@ -7,7 +7,7 @@
 
 #}
 
-#[::uniffi::ffi_converter_enum(tag = crate::UniFfiTag)]
+#[::uniffi::derive_enum_for_udl]
 enum r#{{ e.name() }} {
     {%- for variant in e.variants() %}
     r#{{ variant.name() }} {

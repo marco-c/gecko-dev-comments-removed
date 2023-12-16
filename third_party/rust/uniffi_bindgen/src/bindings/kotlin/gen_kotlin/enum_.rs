@@ -2,7 +2,9 @@
 
 
 
-use crate::backend::{CodeType, Literal};
+use super::CodeType;
+use crate::backend::Literal;
+use crate::ComponentInterface;
 
 #[derive(Debug)]
 pub struct EnumCodeType {
@@ -16,19 +18,19 @@ impl EnumCodeType {
 }
 
 impl CodeType for EnumCodeType {
-    fn type_label(&self) -> String {
-        super::KotlinCodeOracle.class_name(&self.id)
+    fn type_label(&self, ci: &ComponentInterface) -> String {
+        super::KotlinCodeOracle.class_name(ci, &self.id)
     }
 
     fn canonical_name(&self) -> String {
         format!("Type{}", self.id)
     }
 
-    fn literal(&self, literal: &Literal) -> String {
+    fn literal(&self, literal: &Literal, ci: &ComponentInterface) -> String {
         if let Literal::Enum(v, _) = literal {
             format!(
                 "{}.{}",
-                self.type_label(),
+                self.type_label(ci),
                 super::KotlinCodeOracle.enum_variant_name(v)
             )
         } else {

@@ -16,7 +16,23 @@ use std::env;
 
 
 
+
+
+
 pub fn generate_scaffolding(udl_file: impl AsRef<Utf8Path>) -> Result<()> {
+    let udl_file = udl_file.as_ref();
+    println!("cargo:rerun-if-changed={udl_file}");
+    println!("cargo:rerun-if-env-changed=UNIFFI_TESTS_DISABLE_EXTENSIONS");
+    let out_dir = env::var("OUT_DIR").context("$OUT_DIR missing?!")?;
+    uniffi_bindgen::generate_component_scaffolding(udl_file, Some(out_dir.as_ref()), false)
+}
+
+
+
+pub fn generate_scaffolding_for_crate(
+    udl_file: impl AsRef<Utf8Path>,
+    crate_name: &str,
+) -> Result<()> {
     let udl_file = udl_file.as_ref();
 
     println!("cargo:rerun-if-changed={udl_file}");
@@ -27,5 +43,10 @@ pub fn generate_scaffolding(udl_file: impl AsRef<Utf8Path>) -> Result<()> {
     
     
     let out_dir = env::var("OUT_DIR").context("$OUT_DIR missing?!")?;
-    uniffi_bindgen::generate_component_scaffolding(udl_file, Some(out_dir.as_ref()), false)
+    uniffi_bindgen::generate_component_scaffolding_for_crate(
+        udl_file,
+        crate_name,
+        Some(out_dir.as_ref()),
+        false,
+    )
 }

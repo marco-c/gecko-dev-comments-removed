@@ -4,11 +4,11 @@ Timestamp = datetime.datetime
 
 
 
-class FfiConverterTimestamp(FfiConverterRustBuffer):
+class _UniffiConverterTimestamp(_UniffiConverterRustBuffer):
     @staticmethod
     def read(buf):
-        seconds = buf.readI64()
-        microseconds = buf.readU32() / 1000
+        seconds = buf.read_i64()
+        microseconds = buf.read_u32() / 1000
         
         
         
@@ -28,5 +28,5 @@ class FfiConverterTimestamp(FfiConverterRustBuffer):
 
         seconds = delta.seconds + delta.days * 24 * 3600
         nanoseconds = delta.microseconds * 1000
-        buf.writeI64(sign * seconds)
-        buf.writeU32(nanoseconds)
+        buf.write_i64(sign * seconds)
+        buf.write_u32(nanoseconds)

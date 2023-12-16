@@ -1,19 +1,15 @@
-{#
-
-
-
-
-#}
-#[doc(hidden)]
-#[no_mangle]
-#[allow(clippy::let_unit_value,clippy::unit_arg)] 
-pub extern "C" fn r#{{ func.ffi_func().name() }}(
-    {% call rs::arg_list_ffi_decl(func.ffi_func()) %}
-) {% call rs::return_signature(func) %} {
-    
-    
-    uniffi::deps::log::debug!("{{ func.ffi_func().name() }}");
-    uniffi::rust_call(call_status, || {{ func|return_ffi_converter }}::lower_return(
-            {% call rs::to_rs_call(func) %}){% if func.throws() %}.map_err(Into::into){% endif %}
-    )
+#[::uniffi::export_for_udl]
+pub fn r#{{ func.name() }}(
+    {%- for arg in func.arguments() %}
+    r#{{ arg.name() }}: {% if arg.by_ref() %}&{% endif %}{{ arg.as_type().borrow()|type_rs }},
+    {%- endfor %}
+)
+{%- match (func.return_type(), func.throws_type()) %}
+{%- when (Some(return_type), None) %} -> {{ return_type|type_rs }}
+{%- when (Some(return_type), Some(error_type)) %} -> ::std::result::Result::<{{ return_type|type_rs }}, {{ error_type|type_rs }}>
+{%- when (None, Some(error_type)) %} -> ::std::result::Result::<(), {{ error_type|type_rs }}>
+{%- when (None, None) %}
+{%- endmatch %}
+{
+    unreachable!()
 }

@@ -2,7 +2,8 @@
 
 
 
-use crate::backend::{CodeType, Literal};
+use super::CodeType;
+use crate::backend::Literal;
 use crate::interface::Radix;
 use paste::paste;
 
