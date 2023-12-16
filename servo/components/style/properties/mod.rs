@@ -6,6 +6,7 @@
 
 pub mod cascade;
 pub mod declaration_block;
+pub mod property_declaration;
 
 
 
@@ -25,3 +26,4 @@ pub mod generated {
 pub use self::cascade::*;
 pub use self::declaration_block::*;
 pub use self::generated::*;
+pub use self::property_declaration::*;
