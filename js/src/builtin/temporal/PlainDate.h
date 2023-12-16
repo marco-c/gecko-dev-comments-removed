@@ -207,6 +207,22 @@ DateDuration DifferenceISODate(const PlainDate& start, const PlainDate& end,
 
 
 
+bool DifferenceDate(JSContext* cx, JS::Handle<CalendarValue> calendar,
+                    JS::Handle<Wrapped<PlainDateObject*>> one,
+                    JS::Handle<Wrapped<PlainDateObject*>> two,
+                    JS::Handle<PlainObject*> options, Duration* result);
+
+
+
+
+bool DifferenceDate(JSContext* cx, JS::Handle<CalendarValue> calendar,
+                    JS::Handle<Wrapped<PlainDateObject*>> one,
+                    JS::Handle<Wrapped<PlainDateObject*>> two,
+                    TemporalUnit largestUnit, Duration* result);
+
+
+
+
 int32_t CompareISODate(const PlainDate& one, const PlainDate& two);
 
 

@@ -822,6 +822,9 @@ bool js::temporal::NanosecondsToDays(
   MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
 
   
+  static constexpr int32_t epochDays = 200'000'000;
+
+  
   if (nanoseconds == InstantSpan{}) {
     result.set(NanosecondsAndDays::from(
         int64_t(0), InstantSpan{},
@@ -874,14 +877,87 @@ bool js::temporal::NanosecondsToDays(
   }
 
   
-  Duration dateDifference;
-  if (!DifferenceISODateTime(cx, startDateTime, endDateTime, calendar,
-                             TemporalUnit::Day, &dateDifference)) {
-    return false;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  auto timeDifference = DifferenceTime(startDateTime.time, endDateTime.time);
+  MOZ_ASSERT(timeDifference.days == 0);
+
+  
+  int32_t timeSign = DurationSign(timeDifference.toDuration());
+
+  
+
+  
+  int32_t dateSign = CompareISODate(endDateTime.date, startDateTime.date);
+
+  
+  auto adjustedDate = startDateTime.date;
+
+  
+  if (timeSign == -dateSign) {
+    
+    adjustedDate =
+        BalanceISODate(startDateTime.date.year, startDateTime.date.month,
+                       startDateTime.date.day - timeSign);
+
+    
+    Duration timeToBalance = {
+        0,
+        0,
+        0,
+        double(-timeSign),
+        timeDifference.hours,
+        timeDifference.minutes,
+        timeDifference.seconds,
+        timeDifference.milliseconds,
+        timeDifference.microseconds,
+        timeDifference.nanoseconds,
+    };
+    if (!BalanceTimeDuration(cx, timeToBalance, TemporalUnit::Day,
+                             &timeDifference)) {
+      return false;
+    }
   }
 
   
-  double days = dateDifference.days;
+
+  
+  int32_t daysUntil = DaysUntil(adjustedDate, endDateTime.date);
+
+  
+  Duration daysToBalance = {
+      0,
+      0,
+      0,
+      double(daysUntil),
+      timeDifference.hours,
+      timeDifference.minutes,
+      timeDifference.seconds,
+      timeDifference.milliseconds,
+      timeDifference.microseconds,
+      timeDifference.nanoseconds,
+  };
+  TimeDuration balanceResult;
+  if (!BalanceTimeDuration(cx, daysToBalance, TemporalUnit::Day,
+                           &balanceResult)) {
+    return false;
+  }
+  MOZ_ASSERT(std::abs(balanceResult.days) <= epochDays);
+
+  
+  double days = balanceResult.days;
 
   
   PlainDateTimeAndInstant relativeResult;

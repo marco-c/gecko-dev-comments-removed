@@ -846,14 +846,14 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
     }
 
     
-    if (!CalendarDateUntil(cx, calendar, date1, date2, untilOptions,
-                           &dateDifference)) {
+    if (!DifferenceDate(cx, calendar, date1, date2, untilOptions,
+                        &dateDifference)) {
       return false;
     }
   } else {
     
-    if (!CalendarDateUntil(cx, calendar, date1, date2, dateLargestUnit,
-                           &dateDifference)) {
+    if (!DifferenceDate(cx, calendar, date1, date2, dateLargestUnit,
+                        &dateDifference)) {
       return false;
     }
   }
