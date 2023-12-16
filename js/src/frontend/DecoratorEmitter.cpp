@@ -812,6 +812,12 @@ bool DecoratorEmitter::emitInitializeFieldOrAccessor() {
 
 bool DecoratorEmitter::emitCallExtraInitializers(
     TaggedParserAtomIndex extraInitializers) {
+  
+  
+  MOZ_ASSERT(
+      extraInitializers ==
+      TaggedParserAtomIndex::WellKnown::dot_instanceExtraInitializers_());
+
   if (!bce_->emitGetName(extraInitializers)) {
     
     return false;
@@ -834,9 +840,6 @@ bool DecoratorEmitter::emitCallExtraInitializers(
   }
 
   InternalWhileEmitter wh(bce_);
-  
-  
-  
   if (!wh.emitCond()) {
     
     return false;
