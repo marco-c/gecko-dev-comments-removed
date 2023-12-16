@@ -846,6 +846,19 @@ nsresult nsContentUtils::Init() {
   if (XRE_IsParentProcess()) {
     AsyncPrecreateStringBundles();
 
+#if defined(MOZ_WIDGET_ANDROID)
+    
+    
+    
+    nsresult rv = NS_DispatchToCurrentThreadQueue(
+        NS_NewRunnableFunction(
+            "AndroidUseCounterPingSubmitter",
+            []() { glean_pings::UseCounters.Submit("idle_startup"_ns); }),
+        EventQueuePriority::Idle);
+    
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+#endif  
+
     RunOnShutdown(
         [&] { glean_pings::UseCounters.Submit("app_shutdown_confirmed"_ns); },
         ShutdownPhase::AppShutdownConfirmed);
