@@ -19,19 +19,17 @@
 namespace js {
 namespace gc {
 
-class StoreBuffer;
-
-JS_PUBLIC_API void LockStoreBuffer(StoreBuffer* sb);
-JS_PUBLIC_API void UnlockStoreBuffer(StoreBuffer* sb);
+JS_PUBLIC_API void LockStoreBuffer(JSRuntime* runtime);
+JS_PUBLIC_API void UnlockStoreBuffer(JSRuntime* runtim);
 
 class AutoLockStoreBuffer {
-  StoreBuffer* sb;
+  JSRuntime* runtime;
 
  public:
-  explicit AutoLockStoreBuffer(StoreBuffer* sb) : sb(sb) {
-    LockStoreBuffer(sb);
+  explicit AutoLockStoreBuffer(JSRuntime* runtime) : runtime(runtime) {
+    LockStoreBuffer(runtime);
   }
-  ~AutoLockStoreBuffer() { UnlockStoreBuffer(sb); }
+  ~AutoLockStoreBuffer() { UnlockStoreBuffer(runtime); }
 };
 
 }  
@@ -50,17 +48,22 @@ JS_PUBLIC_API void RegisterWeakCache(JSRuntime* rt,
 }  
 
 namespace detail {
+
 class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
   WeakCacheBase() = delete;
   explicit WeakCacheBase(const WeakCacheBase&) = delete;
 
  public:
-  explicit WeakCacheBase(Zone* zone) { shadow::RegisterWeakCache(zone, this); }
+  enum NeedsLock : bool { LockStoreBuffer = true, DontLockStoreBuffer = false };
+
+  explicit WeakCacheBase(JS::Zone* zone) {
+    shadow::RegisterWeakCache(zone, this);
+  }
   explicit WeakCacheBase(JSRuntime* rt) { shadow::RegisterWeakCache(rt, this); }
   WeakCacheBase(WeakCacheBase&& other) = default;
   virtual ~WeakCacheBase() = default;
 
-  virtual size_t traceWeak(JSTracer* trc, js::gc::StoreBuffer* sbToLock) = 0;
+  virtual size_t traceWeak(JSTracer* trc, NeedsLock needLock) = 0;
 
   
   virtual bool empty() = 0;
@@ -76,6 +79,7 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
     return false;
   }
 };
+
 }  
 
 
@@ -100,13 +104,13 @@ class WeakCache : protected detail::WeakCacheBase,
   const T& get() const { return cache; }
   T& get() { return cache; }
 
-  size_t traceWeak(JSTracer* trc, js::gc::StoreBuffer* sbToLock) override {
+  size_t traceWeak(JSTracer* trc, NeedsLock needsLock) override {
     
     
     
     mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
-    if (sbToLock) {
-      lock.emplace(sbToLock);
+    if (needsLock) {
+      lock.emplace(trc->runtime());
     }
 
     GCPolicy<T>::traceWeak(trc, &cache);

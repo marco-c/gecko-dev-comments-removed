@@ -394,7 +394,7 @@ class WeakCache<
 
   bool empty() override { return map.empty(); }
 
-  size_t traceWeak(JSTracer* trc, js::gc::StoreBuffer* sbToLock) override {
+  size_t traceWeak(JSTracer* trc, NeedsLock needsLock) override {
     size_t steps = map.count();
 
     
@@ -405,8 +405,8 @@ class WeakCache<
     
     
     mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
-    if (sbToLock) {
-      lock.emplace(sbToLock);
+    if (needsLock) {
+      lock.emplace(trc->runtime());
     }
     e.reset();
 
@@ -594,7 +594,7 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
   explicit WeakCache(JSRuntime* rt, Args&&... args)
       : WeakCacheBase(rt), set(std::forward<Args>(args)...) {}
 
-  size_t traceWeak(JSTracer* trc, js::gc::StoreBuffer* sbToLock) override {
+  size_t traceWeak(JSTracer* trc, NeedsLock needsLock) override {
     size_t steps = set.count();
 
     
@@ -607,8 +607,8 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
     
     
     mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
-    if (sbToLock) {
-      lock.emplace(sbToLock);
+    if (needsLock) {
+      lock.emplace(trc->runtime());
     }
     e.reset();
 
