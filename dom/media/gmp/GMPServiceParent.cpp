@@ -1174,7 +1174,7 @@ void GeckoMediaPluginServiceParent::RemoveOnGMPThread(
       mMainThread->Dispatch(task.forget());
     }
   }
-}
+}  
 
 
 static void Dummy(RefPtr<GMPParent> aOnDeathsDoor) {
@@ -1645,7 +1645,9 @@ void GeckoMediaPluginServiceParent::ClearNodeIdAndPlugin(
   }
 
   
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   KillPlugins(mPlugins, mMutex, NodeFilter(nodeIDsToClear));
+  MOZ_POP_THREAD_SAFETY
 
   
   path = CloneAndAppend(aPluginStorageDir, u"storage"_ns);
@@ -1878,7 +1880,9 @@ void GeckoMediaPluginServiceParent::ClearStorage() {
   GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
 
   
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   KillPlugins(mPlugins, mMutex, &IsNodeIdValid);
+  MOZ_POP_THREAD_SAFETY
 
   nsCOMPtr<nsIFile> path;  
   nsresult rv = GetStorageDir(getter_AddRefs(path));
