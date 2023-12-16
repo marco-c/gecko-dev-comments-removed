@@ -38,8 +38,10 @@ async function runSelectRawURL(href, resolve_to_config = false) {
   return await sharedStorage.selectURL(
       'test-url-selection-operation', [{url: href,
           reportingMetadata: {
-            'reserved.top_navigation_start': BEACON_URL,
-            'reserved.top_navigation_commit': BEACON_URL,
+            'reserved.top_navigation_start': BEACON_URL +
+                "?type=reserved.top_navigation_start",
+            'reserved.top_navigation_commit': BEACON_URL +
+                "?type=reserved.top_navigation_commit",
           }}], {
         data: {'mockResult': 0},
         resolveToConfig: resolve_to_config,
@@ -498,9 +500,11 @@ async function nextValueFromServer(key) {
 }
 
 
-async function readAutomaticBeaconDataFromServer(expected_body) {
+
+async function readAutomaticBeaconDataFromServer(event_type, expected_body) {
   let serverURL = `${BEACON_URL}`;
   const response = await fetch(serverURL + "?" + new URLSearchParams({
+    type: event_type,
     expected_body: expected_body,
   }));
   if (!response.ok)
@@ -516,11 +520,13 @@ async function readAutomaticBeaconDataFromServer(expected_body) {
 
 
 
-async function nextAutomaticBeacon(expected_body) {
+
+
+async function nextAutomaticBeacon(event_type, expected_body) {
   while (true) {
     
     const { status, value } =
-        await readAutomaticBeaconDataFromServer(expected_body);
+        await readAutomaticBeaconDataFromServer(event_type, expected_body);
     if (!status) {
       
       await new Promise(resolve => setTimeout(resolve, 20));
