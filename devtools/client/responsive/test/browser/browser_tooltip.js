@@ -11,11 +11,8 @@ const TEST_URL = `data:text/html;charset=utf-8,${TEST_CONTENT}`;
 addRDMTask(TEST_URL, async ({ ui }) => {
   
   
-  info("Disable non test mouse event");
-  window.windowUtils.disableNonTestMouseEvents(true);
-  registerCleanupFunction(() => {
-    window.windowUtils.disableNonTestMouseEvents(false);
-  });
+  
+  await pushPref("test.events.async.enabled", true);
 
   info("Create a promise which waits until the tooltip will be shown");
   const tooltip = ui.browserWindow.gBrowser.ownerDocument.getElementById(
@@ -27,6 +24,55 @@ addRDMTask(TEST_URL, async ({ ui }) => {
   info("Show a tooltip");
   await spawnViewportTask(ui, {}, async () => {
     const target = content.document.querySelector("h1");
+
+    
+    info("Waiting for initial mousemove");
+    {
+      
+      
+      
+      
+      
+      
+      let mouseMoveFired = false;
+      content.document.addEventListener(
+        "mousemove",
+        event => {
+          isnot(
+            event.target,
+            target,
+            "The first mousemove should be fired outside the target"
+          );
+          mouseMoveFired = true;
+        },
+        {
+          once: true,
+        }
+      );
+      while (!mouseMoveFired) {
+        await EventUtils.synthesizeMouse(
+          target,
+          -2,
+          -2,
+          { type: "mousemove" },
+          content
+        );
+        await EventUtils.synthesizeMouse(
+          target,
+          -1,
+          -1,
+          { type: "mousemove" },
+          content
+        );
+        
+        await new Promise(resolve =>
+          content.window.requestAnimationFrame(() =>
+            content.window.requestAnimationFrame(resolve)
+          )
+        );
+      }
+    }
+
     const eventLogger = event =>
       info(
         `${event.type}: path=[${event.composedPath()}], outerHTML=${
@@ -36,14 +82,6 @@ addRDMTask(TEST_URL, async ({ ui }) => {
     target.addEventListener("mouseover", eventLogger);
     target.addEventListener("mouseout", eventLogger);
     content.document.addEventListener("mousemove", eventLogger);
-    
-    await EventUtils.synthesizeMouse(
-      target,
-      -1,
-      -1,
-      { type: "mousemove", isSynthesized: false },
-      content
-    );
     
     await EventUtils.synthesizeMouse(
       target,
