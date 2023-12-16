@@ -99,10 +99,14 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
     nsMenuBarX::sNativeEventTarget = [[NativeMenuItemTarget alloc] init];
   }
 
+  bool shouldShowServices = false;
   if (mContent->IsElement()) {
     mContent->AsElement()->GetAttr(nsGkAtoms::label, mLabel);
+
+    shouldShowServices =
+        mContent->AsElement()->HasAttr(nsGkAtoms::showservicesmenu);
   }
-  mNativeMenu = CreateMenuWithGeckoString(mLabel);
+  mNativeMenu = CreateMenuWithGeckoString(mLabel, shouldShowServices);
 
   
   
@@ -838,7 +842,8 @@ nsresult nsMenuX::GetEnabled(bool* aIsEnabled) {
   return NS_OK;
 }
 
-GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& aMenuTitle) {
+GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& aMenuTitle,
+                                                bool aShowServices) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   NSString* title = [NSString stringWithCharacters:(UniChar*)aMenuTitle.get()
@@ -849,6 +854,10 @@ GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& aMenuTitle) {
   
   
   myMenu.autoenablesItems = NO;
+
+  
+  
+  myMenu.allowsContextMenuPlugIns = aShowServices;
 
   
   
