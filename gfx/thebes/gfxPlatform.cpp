@@ -1189,7 +1189,8 @@ bool gfxPlatform::IsHeadless() {
 
 
 bool gfxPlatform::UseRemoteCanvas() {
-  return XRE_IsContentProcess() && gfx::gfxVars::RemoteCanvasEnabled();
+  return XRE_IsContentProcess() && (gfx::gfxVars::RemoteCanvasEnabled() ||
+                                    gfx::gfxVars::UseAcceleratedCanvas2D());
 }
 
 
@@ -3248,6 +3249,12 @@ static void AcceleratedCanvas2DPrefChangeCallback(const char*, void*) {
     feature.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 
+  if (StaticPrefs::gfx_canvas_remote_worker_threads_AtStartup() != 0) {
+    feature.ForceDisable(FeatureStatus::Failed,
+                         "Disabled with non-zero canvas worker threads",
+                         "FEATURE_FAILURE_DISABLE_BY_CANVAS_WORKER_THREADS"_ns);
+  }
+
   gfxVars::SetUseAcceleratedCanvas2D(feature.IsEnabled());
 }
 
@@ -3865,13 +3872,18 @@ void gfxPlatform::DisableGPUProcess() {
 }
 
  void gfxPlatform::DisableRemoteCanvas() {
-  if (!gfxVars::RemoteCanvasEnabled()) {
-    return;
+  if (gfxVars::RemoteCanvasEnabled()) {
+    gfxConfig::ForceDisable(Feature::REMOTE_CANVAS, FeatureStatus::Failed,
+                            "Disabled by runtime error",
+                            "FEATURE_REMOTE_CANVAS_RUNTIME_ERROR"_ns);
+    gfxVars::SetRemoteCanvasEnabled(false);
   }
-  gfxConfig::ForceDisable(Feature::REMOTE_CANVAS, FeatureStatus::Failed,
-                          "Disabled by runtime error",
-                          "FEATURE_REMOTE_CANVAS_RUNTIME_ERROR"_ns);
-  gfxVars::SetRemoteCanvasEnabled(false);
+  if (gfxVars::UseAcceleratedCanvas2D()) {
+    gfxConfig::ForceDisable(Feature::ACCELERATED_CANVAS2D,
+                            FeatureStatus::Failed, "Disabled by runtime error",
+                            "FEATURE_ACCELERATED_CANVAS2D_RUNTIME_ERROR"_ns);
+    gfxVars::SetUseAcceleratedCanvas2D(false);
+  }
 }
 
 void gfxPlatform::ImportCachedContentDeviceData() {
