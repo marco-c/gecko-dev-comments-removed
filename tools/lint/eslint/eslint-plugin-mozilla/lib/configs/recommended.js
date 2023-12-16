@@ -53,7 +53,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.mjs", "**/*.jsm"],
+      files: ["**/*.mjs", "**/*.jsm", "**/?(*.)worker.?(m)js"],
       rules: {
         
         
@@ -115,7 +115,12 @@ module.exports = {
         browser: false,
         worker: true,
       },
-      files: ["**/*.worker.js", "**/*.worker.mjs"],
+      files: [
+        
+        
+        
+        "**/?(*.)worker.?(m)js",
+      ],
     },
   ],
 
