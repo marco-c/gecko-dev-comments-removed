@@ -2896,11 +2896,11 @@ static bool ZonedDateTime_withPlainDate(JSContext* cx, const CallArgs& args) {
   Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
 
   
-  PlainDate date;
-  Rooted<CalendarValue> plainDateCalendar(cx);
-  if (!ToTemporalDate(cx, args.get(0), &date, &plainDateCalendar)) {
+  Rooted<PlainDateWithCalendar> plainDate(cx);
+  if (!ToTemporalDate(cx, args.get(0), &plainDate)) {
     return false;
   }
+  auto date = plainDate.date();
 
   
   PlainDateTime plainDateTime;
@@ -2909,7 +2909,7 @@ static bool ZonedDateTime_withPlainDate(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (!ConsolidateCalendars(cx, calendar, plainDateCalendar, &calendar)) {
+  if (!ConsolidateCalendars(cx, calendar, plainDate.calendar(), &calendar)) {
     return false;
   }
 
@@ -3283,15 +3283,11 @@ static bool ZonedDateTime_equals(JSContext* cx, const CallArgs& args) {
 
   
   bool equals = epochNanoseconds == otherEpochNanoseconds;
-  if (equals) {
-    if (!TimeZoneEquals(cx, timeZone, otherTimeZone, &equals)) {
-      return false;
-    }
+  if (equals && !TimeZoneEquals(cx, timeZone, otherTimeZone, &equals)) {
+    return false;
   }
-  if (equals) {
-    if (!CalendarEquals(cx, calendar, otherCalendar, &equals)) {
-      return false;
-    }
+  if (equals && !CalendarEquals(cx, calendar, otherCalendar, &equals)) {
+    return false;
   }
 
   args.rval().setBoolean(equals);

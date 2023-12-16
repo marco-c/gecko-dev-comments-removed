@@ -1434,6 +1434,20 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
 
 
 bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
+                               const PlainDate& date,
+                               MutableHandle<Value> result) {
+  Rooted<PlainDateObject*> dateLike(cx, CreateTemporalDate(cx, date, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDay(cx, calendar, dateLike, date, result);
+}
+
+
+
+
+bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDateTime& dateTime,
                                MutableHandle<Value> result) {
   Rooted<PlainDateTimeObject*> dateLike(

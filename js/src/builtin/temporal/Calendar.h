@@ -419,6 +419,12 @@ bool CalendarDay(JSContext* cx, JS::Handle<CalendarValue> calendar,
 
 
 bool CalendarDay(JSContext* cx, JS::Handle<CalendarValue> calendar,
+                 const PlainDate& date, JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDay(JSContext* cx, JS::Handle<CalendarValue> calendar,
                  const PlainDateTime& dateTime,
                  JS::MutableHandle<JS::Value> result);
 
