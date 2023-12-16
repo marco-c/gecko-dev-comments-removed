@@ -3056,8 +3056,8 @@ SourceMediaTrack::~SourceMediaTrack() = default;
 
 void MediaInputPort::Init() {
   mGraph->AssertOnGraphThreadOrNotRunning();
-  LOG(LogLevel::Debug, ("%p: Adding MediaInputPort %p (from %p to %p)",
-                        mSource->GraphImpl(), this, mSource, mDest));
+  LOG(LogLevel::Debug, ("%p: Adding MediaInputPort %p (from %p to %p)", mGraph,
+                        this, mSource, mDest));
   
   if (mSource) {
     mSource->AddConsumer(this);
