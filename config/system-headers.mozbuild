@@ -1025,6 +1025,9 @@ system_headers = [
     "vpx/vpx_frame_buffer.h",
     "vpx/vpx_image.h",
     "vpx_mem/vpx_mem.h",
+    "aom/aom_image.h",
+    "aom/aomdx.h",
+    "aom/aom_decoder.h",
 ]
 
 if CONFIG["MOZ_X11"]:
@@ -1356,7 +1359,7 @@ if CONFIG["OS_TARGET"] in ("Android", "Linux", "FreeBSD"):
         "sys/auxv.h",
     ]
 
-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["CPU_ARCH"].startswith("mips"):
+if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"].startswith("mips"):
     system_headers += [
         "sys/cachectl.h",
     ]
