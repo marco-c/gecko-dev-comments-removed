@@ -372,7 +372,7 @@ struct DifferenceSettings final {
 
 
 bool GetDifferenceSettings(JSContext* cx, TemporalDifference operation,
-                           JS::Handle<JSObject*> options,
+                           JS::Handle<PlainObject*> options,
                            TemporalUnitGroup unitGroup,
                            TemporalUnit smallestAllowedUnit,
                            TemporalUnit fallbackSmallestUnit,
@@ -384,7 +384,7 @@ bool GetDifferenceSettings(JSContext* cx, TemporalDifference operation,
 
 
 inline bool GetDifferenceSettings(JSContext* cx, TemporalDifference operation,
-                                  JS::Handle<JSObject*> options,
+                                  JS::Handle<PlainObject*> options,
                                   TemporalUnitGroup unitGroup,
                                   TemporalUnit fallbackSmallestUnit,
                                   TemporalUnit smallestLargestDefaultUnit,

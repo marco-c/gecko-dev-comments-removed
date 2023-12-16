@@ -2454,7 +2454,7 @@ static bool Calendar_dateFromFields(JSContext* cx, unsigned argc, Value* vp);
 
 static Wrapped<PlainDateObject*> CalendarDateFromFields(
     JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    Handle<JSObject*> maybeOptions) {
+    Handle<PlainObject*> maybeOptions) {
   
 
   
@@ -2507,7 +2507,8 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields) {
+    JSContext* cx, Handle<CalendarValue> calendar,
+    Handle<PlainObject*> fields) {
   
   return ::CalendarDateFromFields(cx, calendar, fields, nullptr);
 }
@@ -2516,8 +2517,8 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    Handle<JSObject*> options) {
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    Handle<PlainObject*> options) {
   
   return ::CalendarDateFromFields(cx, calendar, fields, options);
 }
@@ -2652,7 +2653,7 @@ static bool Calendar_yearMonthFromFields(JSContext* cx, unsigned argc,
 
 static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
     JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    Handle<JSObject*> maybeOptions) {
+    Handle<PlainObject*> maybeOptions) {
   
 
   
@@ -2705,7 +2706,8 @@ static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields) {
+    JSContext* cx, Handle<CalendarValue> calendar,
+    Handle<PlainObject*> fields) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, nullptr);
 }
@@ -2714,8 +2716,18 @@ Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    Handle<JSObject*> options) {
+    JSContext* cx, Handle<CalendarValue> calendar,
+    Handle<PlainYearMonthObject*> fields) {
+  
+  return ::CalendarYearMonthFromFields(cx, calendar, fields, nullptr);
+}
+
+
+
+
+Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    Handle<PlainObject*> options) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, options);
 }
@@ -2804,7 +2816,7 @@ static bool Calendar_monthDayFromFields(JSContext* cx, unsigned argc,
 
 static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
     JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    Handle<JSObject*> maybeOptions) {
+    Handle<PlainObject*> maybeOptions) {
   
 
   
@@ -2856,7 +2868,8 @@ static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields) {
+    JSContext* cx, Handle<CalendarValue> calendar,
+    Handle<PlainObject*> fields) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
 }
@@ -2865,8 +2878,18 @@ Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
-    Handle<JSObject*> options) {
+    JSContext* cx, Handle<CalendarValue> calendar,
+    Handle<PlainMonthDayObject*> fields) {
+  
+  return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
+}
+
+
+
+
+Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
+    Handle<PlainObject*> options) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, options);
 }
@@ -3423,31 +3446,6 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
 Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
     JSContext* cx, Handle<CalendarValue> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
-    Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options) {
-  
-
-  
-  if (calendar.isString()) {
-    return BuiltinCalendarAdd(cx, date, duration, options);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
-    return nullptr;
-  }
-
-  
-  return ::CalendarDateAdd(cx, calendarObj, date, duration, options, dateAdd);
-}
-
-
-
-
-Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<CalendarValue> calendar,
-    Handle<Wrapped<PlainDateObject*>> date,
     Handle<Wrapped<DurationObject*>> duration, Handle<Value> dateAdd) {
   
   Handle<JSObject*> options = nullptr;
@@ -3696,7 +3694,7 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
     return BuiltinCalendarDateUntil(cx, one, two, largestUnit, result);
   }
 
-  Rooted<JSObject*> untilOptions(cx, NewPlainObjectWithProto(cx, nullptr));
+  Rooted<PlainObject*> untilOptions(cx, NewPlainObjectWithProto(cx, nullptr));
   if (!untilOptions) {
     return false;
   }
@@ -3718,7 +3716,7 @@ bool js::temporal::CalendarDateUntil(JSContext* cx,
                                      Handle<CalendarValue> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
-                                     Handle<JSObject*> options,
+                                     Handle<PlainObject*> options,
                                      Duration* result) {
   
   if (calendar.isString()) {
