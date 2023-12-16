@@ -4,7 +4,7 @@
 
 async function prepareForBucketTest(test) {
   
-  assert_equals('', (await navigator.storageBuckets.keys()).join());
+  assert_equals((await navigator.storageBuckets.keys()).join(), '');
   
   test.add_cleanup(async function() {
     const keys = await navigator.storageBuckets.keys();
