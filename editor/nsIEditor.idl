@@ -318,24 +318,6 @@ interface nsIEditor  : nsISupports
 
   
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void setShouldTxnSetSelection(in boolean should);
-
-  
-
   
 
 
