@@ -200,6 +200,18 @@ public class ContentBlocking {
 
 
 
+      public @NonNull Builder emailTrackerBlockingPrivateMode(final boolean enabled) {
+        getSettings().setEmailTrackerBlockingPrivateBrowsing(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+
 
 
       public @NonNull Builder strictSocialTrackingProtection(final boolean enabled) {
@@ -399,6 +411,10 @@ public class ContentBlocking {
 
      final Pref<Boolean> mEtb =
         new Pref<Boolean>("privacy.trackingprotection.emailtracking.enabled", false);
+
+     final Pref<Boolean> mEtbPrivateBrowsing =
+        new Pref<Boolean>("privacy.trackingprotection.emailtracking.pbmode.enabled", false);
+
      final Pref<String> mEtbList =
         new Pref<String>(
             "urlclassifier.features.emailtracking.blocklistTables",
@@ -820,6 +836,26 @@ public class ContentBlocking {
 
     public @NonNull Settings setCookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
       mCbhGlobalRulesSubFramesEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public @NonNull Boolean getEmailTrackerBlockingPrivateBrowsingEnabled() {
+      return mEtbPrivateBrowsing.get();
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setEmailTrackerBlockingPrivateBrowsing(final boolean enabled) {
+      mEtbPrivateBrowsing.commit(enabled);
       return this;
     }
 
