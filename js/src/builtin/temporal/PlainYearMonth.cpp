@@ -334,9 +334,11 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   if (!otherYearMonth) {
     return false;
   }
+  auto* unwrappedOtherYearMonth = &otherYearMonth.unwrap();
+  auto otherYearMonthDate = ToPlainDate(unwrappedOtherYearMonth);
 
   Rooted<Wrapped<PlainYearMonthObject*>> other(cx, otherYearMonth);
-  Rooted<CalendarValue> otherCalendar(cx, otherYearMonth.unwrap().calendar());
+  Rooted<CalendarValue> otherCalendar(cx, unwrappedOtherYearMonth->calendar());
   if (!otherCalendar.wrap(cx)) {
     return false;
   }
@@ -350,8 +352,8 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  Rooted<PlainObject*> resolvedOptions(cx);
   DifferenceSettings settings;
+  Rooted<PlainObject*> resolvedOptions(cx);
   if (args.hasDefined(1)) {
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
@@ -372,14 +374,6 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
                                &settings)) {
       return false;
     }
-
-    
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
   } else {
     
     settings = {
@@ -388,8 +382,27 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
         TemporalRoundingMode::Trunc,
         Increment{1},
     };
+  }
 
-    
+  
+  if (ToPlainDate(yearMonth) == otherYearMonthDate) {
+    auto* obj = CreateTemporalDuration(cx, {});
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
+  }
+
+  
+  if (resolvedOptions) {
+    Rooted<Value> largestUnitValue(
+        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
+    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
+                            largestUnitValue)) {
+      return false;
+    }
   }
 
   

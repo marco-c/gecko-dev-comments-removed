@@ -1406,9 +1406,11 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   if (!wrappedOther) {
     return false;
   }
-  Rooted<Wrapped<PlainDateObject*>> other(cx, wrappedOther);
+  auto* unwrappedOther = &wrappedOther.unwrap();
+  auto otherDate = ToPlainDate(unwrappedOther);
 
-  Rooted<CalendarValue> otherCalendar(cx, wrappedOther.unwrap().calendar());
+  Rooted<Wrapped<PlainDateObject*>> other(cx, wrappedOther);
+  Rooted<CalendarValue> otherCalendar(cx, unwrappedOther->calendar());
   if (!otherCalendar.wrap(cx)) {
     return false;
   }
@@ -1420,7 +1422,7 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
 
   
   DifferenceSettings settings;
-  Duration duration;
+  Rooted<PlainObject*> resolvedOptions(cx);
   if (args.hasDefined(1)) {
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
@@ -1429,8 +1431,7 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx,
-                                         SnapshotOwnProperties(cx, options));
+    resolvedOptions = SnapshotOwnProperties(cx, options);
     if (!resolvedOptions) {
       return false;
     }
@@ -1443,20 +1444,15 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     }
 
     
+    
+
+    
     Rooted<Value> largestUnitValue(
         cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
     if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
                             largestUnitValue)) {
       return false;
     }
-
-    
-    Duration result;
-    if (!CalendarDateUntil(cx, calendar, temporalDate, other, resolvedOptions,
-                           &result)) {
-      return false;
-    }
-    duration = result.date();
   } else {
     
     settings = {
@@ -1465,8 +1461,29 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
         TemporalRoundingMode::Trunc,
         Increment{1},
     };
+  }
 
-    
+  
+  if (ToPlainDate(temporalDate) == otherDate) {
+    auto* obj = CreateTemporalDuration(cx, {});
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
+  }
+
+  
+  Duration duration;
+  if (resolvedOptions) {
+    Duration result;
+    if (!CalendarDateUntil(cx, calendar, temporalDate, other, resolvedOptions,
+                           &result)) {
+      return false;
+    }
+    duration = result.date();
+  } else {
     Duration result;
     if (!CalendarDateUntil(cx, calendar, temporalDate, other,
                            settings.largestUnit, &result)) {

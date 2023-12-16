@@ -966,7 +966,7 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
 
   
   DifferenceSettings settings;
-  Duration diff;
+  Rooted<PlainObject*> resolvedOptions(cx);
   if (args.hasDefined(1)) {
     Rooted<JSObject*> options(
         cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
@@ -975,8 +975,7 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx,
-                                         SnapshotOwnProperties(cx, options));
+    resolvedOptions = SnapshotOwnProperties(cx, options);
     if (!resolvedOptions) {
       return false;
     }
@@ -987,13 +986,6 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
             TemporalUnit::Nanosecond, TemporalUnit::Day, &settings)) {
       return false;
     }
-
-    
-    if (!::DifferenceISODateTime(cx, ToPlainDateTime(dateTime), other, calendar,
-                                 settings.largestUnit, resolvedOptions,
-                                 &diff)) {
-      return false;
-    }
   } else {
     
     settings = {
@@ -1002,12 +994,24 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
         TemporalRoundingMode::Trunc,
         Increment{1},
     };
+  }
 
-    
-    if (!::DifferenceISODateTime(cx, ToPlainDateTime(dateTime), other, calendar,
-                                 settings.largestUnit, nullptr, &diff)) {
+  
+  if (ToPlainDateTime(dateTime) == other) {
+    auto* obj = CreateTemporalDuration(cx, {});
+    if (!obj) {
       return false;
     }
+
+    args.rval().setObject(*obj);
+    return true;
+  }
+
+  
+  Duration diff;
+  if (!::DifferenceISODateTime(cx, ToPlainDateTime(dateTime), other, calendar,
+                               settings.largestUnit, resolvedOptions, &diff)) {
+    return false;
   }
 
   

@@ -1418,6 +1418,17 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
+  if (epochInstant == otherInstant) {
+    auto* obj = CreateTemporalDuration(cx, {});
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
+  }
+
+  
   Duration difference;
   if (resolvedOptions) {
     if (!::DifferenceZonedDateTime(cx, epochInstant, otherInstant, timeZone,
