@@ -163,6 +163,7 @@ typedef enum {
 
 } cubeb_log_level;
 
+
 typedef enum {
   CHANNEL_UNKNOWN = 0,
   CHANNEL_FRONT_LEFT = 1 << 0,
@@ -184,6 +185,9 @@ typedef enum {
   CHANNEL_TOP_BACK_CENTER = 1 << 16,
   CHANNEL_TOP_BACK_RIGHT = 1 << 17
 } cubeb_channel;
+
+
+
 
 typedef uint32_t cubeb_channel_layout;
 
