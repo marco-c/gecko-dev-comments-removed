@@ -536,6 +536,19 @@ namespace xsimd
 
 
 
+    template <class T, class A>
+    inline batch<T, A> compress(batch<T, A> const& x, batch_bool<T, A> const& mask) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::compress<A>(x, mask, A {});
+    }
+
+    
+
+
+
+
+
 
     template <class A, class T>
     inline complex_batch_type_t<batch<T, A>> conj(batch<T, A> const& z) noexcept
@@ -703,6 +716,19 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return kernel::exp2<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+    template <class T, class A>
+    inline batch<T, A> expand(batch<T, A> const& x, batch_bool<T, A> const& mask) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::expand<A>(x, mask, A {});
     }
 
     
