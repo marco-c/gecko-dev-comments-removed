@@ -63,6 +63,7 @@ included_inclnames_to_ignore = set(
         "frontend/smoosh_generated.h",  
         "gc/StatsPhasesGenerated.h",  
         "gc/StatsPhasesGenerated.inc",  
+        "jit/ABIFunctionTypeGenerated.h",  
         "jit/AtomicOperationsGenerated.h",  
         "jit/CacheIROpsGenerated.h",  
         "jit/LIROpsGenerated.h",  
@@ -73,6 +74,9 @@ included_inclnames_to_ignore = set(
         "fdlibm.h",  
         "FuzzerDefs.h",  
         "FuzzingInterface.h",  
+        "ICU4XGraphemeClusterSegmenter.h",  
+        "ICU4XSentenceSegmenter.h",  
+        "ICU4XWordSegmenter.h",  
         "mozmemory.h",  
         "pratom.h",  
         "prcvar.h",  
@@ -93,7 +97,7 @@ included_inclnames_to_ignore = set(
         "unicode/unistr.h",  
         "unicode/utypes.h",  
         "vtune/VTuneWrapper.h",  
-        "wasm/WasmIntrinsicGenerated.h",  
+        "wasm/WasmBuiltinModuleGenerated.h",  
         "zydis/ZydisAPI.h",  
     ]
 )
