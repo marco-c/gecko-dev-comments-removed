@@ -11,10 +11,9 @@ add_setup(async function () {
   await clickTestSetup();
 
   
-  
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["cookiebanners.bannerClicking.maxTriesPerSiteAndSession", 1],
+      ["cookiebanners.bannerClicking.executeOnce", true],
       ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_REJECT],
     ],
   });
@@ -26,7 +25,7 @@ add_setup(async function () {
 
 
 
-add_task(async function testStopExecuteAfterOneAttempt() {
+add_task(async function testExecuteOnce() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_REJECT],
@@ -34,7 +33,6 @@ add_task(async function testStopExecuteAfterOneAttempt() {
         "cookiebanners.service.mode.privateBrowsing",
         Ci.nsICookieBannerService.MODE_REJECT,
       ],
-      ["cookiebanners.bannerClicking.maxTriesPerSiteAndSession", 1],
     ],
   });
 
@@ -117,95 +115,10 @@ add_task(async function testStopExecuteAfterOneAttempt() {
 });
 
 
-
-add_task(async function testStopExecuteAfterSeveralAttempts() {
+add_task(async function testForgetAboutSiteWithExecuteOnce() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_REJECT],
-      [
-        "cookiebanners.service.mode.privateBrowsing",
-        Ci.nsICookieBannerService.MODE_REJECT,
-      ],
-      ["cookiebanners.bannerClicking.maxTriesPerSiteAndSession", 2],
-    ],
-  });
-
-  insertTestClickRules();
-
-  
-  await openPageAndVerify({
-    win: window,
-    domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
-    visible: false,
-    expected: "OptOut",
-  });
-
-  
-  await openPageAndVerify({
-    win: window,
-    domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
-    visible: false,
-    expected: "OptOut",
-  });
-
-  
-  
-  await openPageAndVerify({
-    win: window,
-    domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
-    visible: true,
-    expected: "NoClick",
-  });
-
-  
-  let pbmWindow = await BrowserTestUtils.openNewBrowserWindow({
-    private: true,
-  });
-
-  
-  await openPageAndVerify({
-    win: pbmWindow,
-    domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
-    visible: false,
-    expected: "OptOut",
-  });
-
-  
-  await openPageAndVerify({
-    win: pbmWindow,
-    domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
-    visible: false,
-    expected: "OptOut",
-  });
-
-  
-  
-  await openPageAndVerify({
-    win: pbmWindow,
-    domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
-    visible: true,
-    expected: "NoClick",
-  });
-
-  await BrowserTestUtils.closeWindow(pbmWindow);
-
-  
-  Services.cookieBanners.removeAllExecutedRecords(false);
-  Services.cookieBanners.removeAllExecutedRecords(true);
-});
-
-
-add_task(async function testForgetAboutSiteWithStopExecuteAfterOneAttempt() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_REJECT],
-      ["cookiebanners.bannerClicking.maxTriesPerSiteAndSession", 1],
     ],
   });
 
@@ -249,11 +162,10 @@ add_task(async function testForgetAboutSiteWithStopExecuteAfterOneAttempt() {
 });
 
 
-add_task(async function testClearDataServiceWithStopExecuteAfterOneAttempt() {
+add_task(async function testClearDataServiceWithExecuteOnce() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_REJECT],
-      ["cookiebanners.bannerClicking.maxTriesPerSiteAndSession", 1],
     ],
   });
 
