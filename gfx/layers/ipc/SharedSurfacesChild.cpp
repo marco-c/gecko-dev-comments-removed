@@ -5,7 +5,6 @@
 
 
 #include "SharedSurfacesChild.h"
-#include "SharedSurfacesParent.h"
 #include "CompositorManagerChild.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
@@ -13,6 +12,7 @@
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/PresShell.h"
@@ -58,10 +58,9 @@ void SharedSurfacesChild::ImageKeyData::MergeDirtyRect(
   }
 }
 
-SharedSurfacesChild::SharedUserData::SharedUserData(
-    const wr::ExternalImageId& aId)
+SharedSurfacesChild::SharedUserData::SharedUserData()
     : Runnable("SharedSurfacesChild::SharedUserData"),
-      mId(aId),
+      mId({}),
       mShared(false) {}
 
 SharedSurfacesChild::SharedUserData::~SharedUserData() {
@@ -187,17 +186,18 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   SharedUserData* data =
       static_cast<SharedUserData*>(aSurface->GetUserData(&sSharedKey));
   if (!data) {
-    data =
-        MakeAndAddRef<SharedUserData>(manager->GetNextExternalImageId()).take();
+    data = MakeAndAddRef<SharedUserData>().take();
     aSurface->AddUserData(&sSharedKey, data, SharedUserData::Destroy);
-  } else if (!manager->OwnsExternalImageId(data->Id())) {
-    
-    
-    data->SetId(manager->GetNextExternalImageId());
   } else if (data->IsShared()) {
+    if (manager->OwnsExternalImageId(data->Id())) {
+      
+      *aUserData = data;
+      return NS_OK;
+    }
+
     
-    *aUserData = data;
-    return NS_OK;
+    
+    data->ClearShared();
   }
 
   
@@ -211,8 +211,8 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   
   
   if (manager->SameProcess()) {
-    SharedSurfacesParent::AddSameProcess(data->Id(), aSurface);
-    data->MarkShared();
+    data->MarkShared(manager->GetNextExternalImageId());
+    CompositorManagerParent::AddSharedSurface(data->Id(), aSurface);
     *aUserData = data;
     return NS_OK;
   }
@@ -244,7 +244,7 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
       format == SurfaceFormat::B8G8R8X8 || format == SurfaceFormat::B8G8R8A8,
       "bad format");
 
-  data->MarkShared();
+  data->MarkShared(manager->GetNextExternalImageId());
   manager->SendAddSharedSurface(
       data->Id(),
       SurfaceDescriptorShared(aSurface->GetSize(), aSurface->Stride(), format,
