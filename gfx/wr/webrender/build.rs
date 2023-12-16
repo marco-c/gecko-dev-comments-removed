@@ -150,6 +150,8 @@ fn write_optimized_shaders(
         ) {
             flags.remove(ShaderFeatureFlags::TEXTURE_EXTERNAL_ESSL1);
         }
+        
+        flags.remove(ShaderFeatureFlags::TEXTURE_EXTERNAL_BT709);
         flags.remove(ShaderFeatureFlags::DITHERING);
 
         for (shader_name, configs) in get_shader_features(flags) {
