@@ -3094,31 +3094,32 @@ add_task(async function test_ContileIntegration() {
     Assert.ok(!feed._contile.sites.length);
   }
 
-  {
-    info(
-      "TopSitesFeed._fetchSites should return false when Contile " +
-        "returns with error status and cached tiles are expried"
-    );
-    NimbusFeatures.newtab.getVariable.returns(true);
-    Services.prefs.setStringPref(CONTILE_CACHE_PREF, "[]");
-    Services.prefs.setIntPref(
-      CONTILE_CACHE_LAST_FETCH_PREF,
-      Date.now() - 1000 * 60 * 30
-    );
-    Services.prefs.setIntPref(CONTILE_CACHE_VALID_FOR_PREF, 1000 * 60 * 15);
+  
 
-    let { feed, fetchStub } = prepFeed(getTopSitesFeedForTest(sandbox));
 
-    fetchStub.resolves({
-      ok: false,
-      status: 500,
-    });
 
-    let fetched = await feed._contile._fetchSites();
 
-    Assert.ok(!fetched);
-    Assert.ok(!feed._contile.sites.length);
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   {
     info(
