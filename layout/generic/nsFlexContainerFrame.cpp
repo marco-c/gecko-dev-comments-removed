@@ -4971,7 +4971,7 @@ void nsFlexContainerFrame::CalculatePackingSpace(
 
 ComputedFlexContainerInfo*
 nsFlexContainerFrame::CreateOrClearFlexContainerInfo() {
-  if (!ShouldGenerateComputedInfo()) {
+  if (!HasAnyStateBits(NS_STATE_FLEX_COMPUTED_INFO)) {
     return nullptr;
   }
 
@@ -5126,36 +5126,36 @@ nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(
   };
 
   nsFlexContainerFrame* flexFrame = GetFlexContainerFrame(aFrame);
-  if (flexFrame) {
-    
-    bool reflowNeeded = !flexFrame->HasProperty(FlexContainerInfo());
-
-    if (reflowNeeded) {
-      
-      
-      AutoWeakFrame weakFrameRef(aFrame);
-
-      RefPtr<mozilla::PresShell> presShell = flexFrame->PresShell();
-      flexFrame->SetShouldGenerateComputedInfo(true);
-      presShell->FrameNeedsReflow(flexFrame, IntrinsicDirty::None,
-                                  NS_FRAME_IS_DIRTY);
-      presShell->FlushPendingNotifications(FlushType::Layout);
-
-      
-      
-      
-      if (!weakFrameRef.IsAlive()) {
-        return nullptr;
-      }
-
-      flexFrame = GetFlexContainerFrame(weakFrameRef.GetFrame());
-
-      NS_WARNING_ASSERTION(
-          !flexFrame || flexFrame->HasProperty(FlexContainerInfo()),
-          "The state bit should've made our forced-reflow "
-          "generate a FlexContainerInfo object");
-    }
+  if (!flexFrame) {
+    return nullptr;
   }
+  
+  if (flexFrame->HasProperty(FlexContainerInfo())) {
+    return flexFrame;
+  }
+  
+  
+  AutoWeakFrame weakFrameRef(aFrame);
+
+  RefPtr<mozilla::PresShell> presShell = flexFrame->PresShell();
+  flexFrame->AddStateBits(NS_STATE_FLEX_COMPUTED_INFO);
+  presShell->FrameNeedsReflow(flexFrame, IntrinsicDirty::None,
+                              NS_FRAME_IS_DIRTY);
+  presShell->FlushPendingNotifications(FlushType::Layout);
+
+  
+  
+  
+  if (!weakFrameRef.IsAlive()) {
+    return nullptr;
+  }
+
+  flexFrame = GetFlexContainerFrame(weakFrameRef.GetFrame());
+
+  NS_WARNING_ASSERTION(
+      !flexFrame || flexFrame->HasProperty(FlexContainerInfo()),
+      "The state bit should've made our forced-reflow "
+      "generate a FlexContainerInfo object");
   return flexFrame;
 }
 
@@ -5233,9 +5233,8 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
   
   
   if (aContainerInfo) {
-    MOZ_ASSERT(ShouldGenerateComputedInfo(),
-               "We should only have the info struct if "
-               "ShouldGenerateComputedInfo() is true!");
+    MOZ_ASSERT(HasAnyStateBits(NS_STATE_FLEX_COMPUTED_INFO),
+               "We should only have the info struct if we should generate it");
 
     if (!aStruts.IsEmpty()) {
       

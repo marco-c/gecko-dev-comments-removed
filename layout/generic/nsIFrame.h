@@ -661,8 +661,7 @@ class nsIFrame : public nsQueryFrame {
         mHasPaddingChange(false),
         mInScrollAnchorChain(false),
         mHasColumnSpanSiblings(false),
-        mDescendantMayDependOnItsStaticPosition(false),
-        mShouldGenerateComputedInfo(false) {
+        mDescendantMayDependOnItsStaticPosition(false) {
     MOZ_ASSERT(mComputedStyle);
     MOZ_ASSERT(mPresContext);
     mozilla::PodZero(&mOverflow);
@@ -4316,17 +4315,6 @@ class nsIFrame : public nsQueryFrame {
                                     const nsStyleEffects* aEffects,
                                     const nsSize& aSize) const;
 
-  struct Focusable {
-    bool mFocusable = false;
-    
-    
-    
-    
-    int32_t mTabIndex = -1;
-
-    explicit operator bool() const { return mFocusable; }
-  };
-
   
 
 
@@ -4926,13 +4914,6 @@ class nsIFrame : public nsQueryFrame {
     mDescendantMayDependOnItsStaticPosition = aValue;
   }
 
-  bool ShouldGenerateComputedInfo() const {
-    return mShouldGenerateComputedInfo;
-  }
-  void SetShouldGenerateComputedInfo(bool aValue) {
-    mShouldGenerateComputedInfo = aValue;
-  }
-
   
 
 
@@ -5210,13 +5191,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mDescendantMayDependOnItsStaticPosition : 1;
-
-  
-
-
-
-
-  bool mShouldGenerateComputedInfo : 1;
 
  protected:
   
