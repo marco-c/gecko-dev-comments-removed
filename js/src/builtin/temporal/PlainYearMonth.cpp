@@ -396,16 +396,6 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
-  if (resolvedOptions) {
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
-  }
-
-  
   JS::RootedVector<PropertyKey> fieldNames(cx);
   if (!CalendarFields(cx, calendar,
                       {CalendarField::MonthCode, CalendarField::Year},
@@ -456,11 +446,21 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   
   Duration result;
   if (resolvedOptions) {
+    
+    Rooted<Value> largestUnitValue(
+        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
+    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
+                            largestUnitValue)) {
+      return false;
+    }
+
+    
     if (!CalendarDateUntil(cx, calendar, thisDate, otherDate, resolvedOptions,
                            &result)) {
       return false;
     }
   } else {
+    
     if (!CalendarDateUntil(cx, calendar, thisDate, otherDate,
                            settings.largestUnit, &result)) {
       return false;

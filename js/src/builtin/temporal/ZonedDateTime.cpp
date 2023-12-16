@@ -1341,14 +1341,6 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
             TemporalUnit::Nanosecond, TemporalUnit::Hour, &settings)) {
       return false;
     }
-
-    
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
   } else {
     
     settings = {
@@ -1357,8 +1349,6 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
         TemporalRoundingMode::Trunc,
         Increment{1},
     };
-
-    
   }
 
   
@@ -1412,6 +1402,16 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   if (!GetPlainDateTimeFor(cx, timeZone, epochInstant,
                            &precalculatedPlainDateTime)) {
     return false;
+  }
+
+  
+  if (resolvedOptions) {
+    Rooted<Value> largestUnitValue(
+        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
+    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
+                            largestUnitValue)) {
+      return false;
+    }
   }
 
   

@@ -1537,17 +1537,6 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
                                TemporalUnit::Day, &settings)) {
       return false;
     }
-
-    
-    
-
-    
-    Rooted<Value> largestUnitValue(
-        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
-    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
-                            largestUnitValue)) {
-      return false;
-    }
   } else {
     
     settings = {
@@ -1572,6 +1561,15 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   
   Duration duration;
   if (resolvedOptions) {
+    
+    Rooted<Value> largestUnitValue(
+        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
+    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
+                            largestUnitValue)) {
+      return false;
+    }
+
+    
     Duration result;
     if (!DifferenceDate(cx, calendar, temporalDate, other, resolvedOptions,
                         &result)) {
@@ -1579,6 +1577,7 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     }
     duration = result.date();
   } else {
+    
     Duration result;
     if (!DifferenceDate(cx, calendar, temporalDate, other, settings.largestUnit,
                         &result)) {
