@@ -57,7 +57,6 @@ COLD unsigned dav1d_get_cpu_flags_x86(void) {
     if (cpu.max_leaf >= 1) {
         CpuidRegisters r;
         dav1d_cpu_cpuid(&r, 1, 0);
-        const unsigned model  = ((r.eax >> 4) & 0x0f) + ((r.eax >> 12) & 0xf0);
         const unsigned family = ((r.eax >> 8) & 0x0f) + ((r.eax >> 20) & 0xff);
 
         if (X(r.edx, 0x06008000))  {
@@ -87,9 +86,7 @@ COLD unsigned dav1d_get_cpu_flags_x86(void) {
         }
 #endif
         if (!memcmp(cpu.vendor, "AuthenticAMD", sizeof(cpu.vendor))) {
-            if ((flags & DAV1D_X86_CPU_FLAG_AVX2) && (family < 0x19 ||
-                (family == 0x19 && (model < 0x10 || (model >= 0x20 && model < 0x60)))))
-            {
+            if ((flags & DAV1D_X86_CPU_FLAG_AVX2) && family <= 0x19) {
                 
                 flags |= DAV1D_X86_CPU_FLAG_SLOW_GATHER;
             }
