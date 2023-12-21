@@ -296,7 +296,6 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
 
 int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
   if (rtcp_sender_.Sending() != sending) {
-    
     rtcp_sender_.SetSendingStatus(GetFeedbackState(), sending);
   }
   return 0;
