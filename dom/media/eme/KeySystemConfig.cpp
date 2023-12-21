@@ -30,17 +30,17 @@ namespace mozilla {
 
 
 bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
-  
-  if (IsWidevineKeySystem(aKeySystem) || IsClearkeyKeySystem(aKeySystem)) {
-    return HaveGMPFor(nsCString(CHROMIUM_CDM_API),
-                      {NS_ConvertUTF16toUTF8(aKeySystem)});
-  }
-
 #ifdef MOZ_WIDGET_ANDROID
   
   if (mozilla::java::MediaDrmProxy::IsSchemeSupported(
           NS_ConvertUTF16toUTF8(aKeySystem))) {
     return true;
+  }
+#else
+  
+  if (IsWidevineKeySystem(aKeySystem) || IsClearkeyKeySystem(aKeySystem)) {
+    return HaveGMPFor(nsCString(CHROMIUM_CDM_API),
+                      {NS_ConvertUTF16toUTF8(aKeySystem)});
   }
 #endif
 
