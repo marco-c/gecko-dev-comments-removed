@@ -147,11 +147,14 @@ RemoteLazyInputStreamThread::IsOnCurrentThread(bool* aRetval) {
 NS_IMETHODIMP
 RemoteLazyInputStreamThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                                       uint32_t aFlags) {
+  nsCOMPtr<nsIRunnable> runnable(aRunnable);
+
   if (RLISThreadIsInOrBeyondShutdown()) {
+    
+    (void)runnable.forget();
+
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
-
-  nsCOMPtr<nsIRunnable> runnable(aRunnable);
 
   StaticMutexAutoLock lock(gRemoteLazyThreadMutex);
 
