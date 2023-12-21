@@ -22,6 +22,7 @@
 #include "net/dcsctp/packet/chunk/sack_chunk.h"
 #include "net/dcsctp/packet/data.h"
 #include "net/dcsctp/public/types.h"
+#include "rtc_base/containers/flat_set.h"
 
 namespace dcsctp {
 
@@ -158,6 +159,10 @@ class OutstandingData {
   
   void ResetSequenceNumbers(UnwrappedTSN next_tsn,
                             UnwrappedTSN last_cumulative_tsn);
+
+  
+  
+  void BeginResetStreams();
 
  private:
   
@@ -345,6 +350,10 @@ class OutstandingData {
   std::set<UnwrappedTSN> to_be_fast_retransmitted_;
   
   std::set<UnwrappedTSN> to_be_retransmitted_;
+  
+  
+  
+  webrtc::flat_set<UnwrappedTSN> stream_reset_breakpoint_tsns_;
 };
 }  
 #endif  
