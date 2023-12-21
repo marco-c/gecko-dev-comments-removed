@@ -1903,6 +1903,11 @@ size_t js::Nursery::targetSize(JS::GCOptions options, JS::GCReason reason) {
   double dutyGrowth = dutyFactor / DutyFactorGoal;
   double growthFactor = std::max(promotionGrowth, dutyGrowth);
 
+#ifndef DEBUG
+  
+  
+  
+  
   
   
   static const double MaxTimeGoalMs = 4.0;
@@ -1910,6 +1915,7 @@ size_t js::Nursery::targetSize(JS::GCOptions options, JS::GCReason reason) {
     double timeGrowth = MaxTimeGoalMs / collectorTime.ToMilliseconds();
     growthFactor = std::min(growthFactor, timeGrowth);
   }
+#endif
 
   
   
