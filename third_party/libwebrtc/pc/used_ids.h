@@ -96,6 +96,16 @@ class UsedPayloadTypes : public UsedIds<Codec> {
       : UsedIds<Codec>(kFirstDynamicPayloadTypeLowerRange,
                        kLastDynamicPayloadTypeUpperRange) {}
 
+  
+  
+  static bool IsIdValid(Codec codec, bool rtcp_mux) {
+    if (rtcp_mux && (codec.id > kLastDynamicPayloadTypeLowerRange &&
+                     codec.id < kFirstDynamicPayloadTypeUpperRange)) {
+      return false;
+    }
+    return codec.id >= 0 && codec.id <= kLastDynamicPayloadTypeUpperRange;
+  }
+
  protected:
   bool IsIdUsed(int new_id) override {
     
