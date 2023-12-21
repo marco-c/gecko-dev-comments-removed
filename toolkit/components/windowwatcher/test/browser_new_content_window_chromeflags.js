@@ -37,10 +37,6 @@ const DISALLOWED = {
   
   
   
-  popup: {
-    flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_POPUP,
-    defaults_to: false,
-  },
   alwaysLowered: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_LOWERED,
     defaults_to: false,
