@@ -464,7 +464,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
 
   PresShell* GetPresShell() final;
-  void Initialize() override;
+  nsresult Initialize() override;
   NS_IMETHOD SetDimensions(int32_t aWidth, int32_t aHeight) override;
   NS_IMETHOD InitializeWithDrawTarget(
       nsIDocShell* aShell, NotNull<gfx::DrawTarget*> aTarget) override;
@@ -565,7 +565,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   virtual UniquePtr<uint8_t[]> GetImageBuffer(
       int32_t* out_format, gfx::IntSize* out_imageSize) override;
 
-  virtual void OnShutdown();
+  void OnShutdown();
 
   
 
@@ -831,11 +831,13 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   
   
   bool mWillReadFrequently = false;
+  
+  bool mHasShutdown = false;
 
   RefPtr<CanvasShutdownObserver> mShutdownObserver;
-  virtual void AddShutdownObserver();
-  virtual void RemoveShutdownObserver();
-  virtual bool AlreadyShutDown() const { return !mShutdownObserver; }
+  bool AddShutdownObserver();
+  void RemoveShutdownObserver();
+  bool AlreadyShutDown() const { return mHasShutdown; }
 
   
 

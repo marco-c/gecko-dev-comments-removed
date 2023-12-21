@@ -5,6 +5,8 @@
 
 
 #include "CanvasManagerChild.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/gfx/2D.h"
@@ -32,13 +34,19 @@ CanvasManagerChild::CanvasManagerChild(uint32_t aId) : mId(aId) {}
 CanvasManagerChild::~CanvasManagerChild() = default;
 
 void CanvasManagerChild::ActorDestroy(ActorDestroyReason aReason) {
+  DestroyInternal();
   if (sLocalManager.get() == this) {
     sLocalManager.set(nullptr);
   }
   mWorkerRef = nullptr;
 }
 
-void CanvasManagerChild::Destroy() {
+void CanvasManagerChild::DestroyInternal() {
+  std::set<CanvasRenderingContext2D*> activeCanvas = std::move(mActiveCanvas);
+  for (const auto& i : activeCanvas) {
+    i->OnShutdown();
+  }
+
   if (mActiveResourceTracker) {
     mActiveResourceTracker->AgeAllGenerations();
     mActiveResourceTracker.reset();
@@ -48,6 +56,10 @@ void CanvasManagerChild::Destroy() {
     mCanvasChild->Destroy();
     mCanvasChild = nullptr;
   }
+}
+
+void CanvasManagerChild::Destroy() {
+  DestroyInternal();
 
   
   
@@ -115,11 +127,21 @@ void CanvasManagerChild::Destroy() {
     
     
     
-    manager->mWorkerRef = IPCWorkerRef::Create(
+    RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
         worker, "CanvasManager", [manager]() { manager->Destroy(); });
-    if (NS_WARN_IF(!manager->mWorkerRef)) {
+    if (NS_WARN_IF(!workerRef)) {
       return nullptr;
     }
+
+    manager->mWorkerRef = new ThreadSafeWorkerRef(workerRef);
+  } else if (NS_IsMainThread()) {
+    if (NS_WARN_IF(
+            AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed))) {
+      return nullptr;
+    }
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Can only be used on main or DOM worker threads!");
+    return nullptr;
   }
 
   if (NS_WARN_IF(!childEndpoint.Bind(manager))) {
@@ -143,6 +165,24 @@ void CanvasManagerChild::Destroy() {
   manager->SendInitialize(manager->Id());
   sLocalManager.set(manager);
   return manager;
+}
+
+ CanvasManagerChild* CanvasManagerChild::MaybeGet() {
+  if (!sLocalManager.initialized()) {
+    return nullptr;
+  }
+
+  return sLocalManager.get();
+}
+
+void CanvasManagerChild::AddShutdownObserver(
+    dom::CanvasRenderingContext2D* aCanvas) {
+  mActiveCanvas.insert(aCanvas);
+}
+
+void CanvasManagerChild::RemoveShutdownObserver(
+    dom::CanvasRenderingContext2D* aCanvas) {
+  mActiveCanvas.erase(aCanvas);
 }
 
 void CanvasManagerChild::EndCanvasTransaction() {

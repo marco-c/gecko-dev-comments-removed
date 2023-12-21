@@ -535,6 +535,9 @@ HTMLCanvasElement::CreateContext(CanvasContextType aContextType) {
   
   RefPtr<nsICanvasRenderingContextInternal> ret =
       CreateContextHelper(aContextType, GetCompositorBackendType());
+  if (NS_WARN_IF(!ret)) {
+    return nullptr;
+  }
 
   
   if (aContextType == CanvasContextType::WebGL1 ||
