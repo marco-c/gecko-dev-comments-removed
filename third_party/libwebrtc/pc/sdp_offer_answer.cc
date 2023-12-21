@@ -3619,11 +3619,7 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
 
   
   error = ValidateBundledRtpHeaderExtensions(*sdesc->description());
-  RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.ValidBundledExtensionIds",
-                        error.ok());
-  
-  if (!error.ok() && !pc_->trials().IsDisabled(
-                         "WebRTC-PreventBundleHeaderExtensionIdCollision")) {
+  if (!error.ok()) {
     return error;
   }
 
