@@ -162,14 +162,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
       gfx::GradientStop* aRawStops, uint32_t aNumStops,
       gfx::ExtendMode aExtendMode) final;
 
-  
-
-
-
-
-
-  TextureData* LookupTextureData(int64_t aTextureId);
-
   void CheckpointReached();
 
   void PauseTranslation();
@@ -359,6 +351,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
     UniquePtr<TextureData> mTextureData;
     RefPtr<gfx::DrawTarget> mDrawTarget;
     RemoteTextureOwnerId mRemoteTextureOwnerId;
+    bool mTextureLocked = false;
     bool mNotifiedRequiresRefresh = false;
     
     int32_t mLocked = 1;
