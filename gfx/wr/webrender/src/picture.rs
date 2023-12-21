@@ -2482,7 +2482,8 @@ impl TileCacheInstance {
             }
             CompositorSurfaceKind::Underlay => {
                 
-                if prim_clip_chain.needs_mask && self.backdrop.kind.is_none() {
+                
+                if prim_clip_chain.needs_mask && (self.backdrop.kind.is_none() || !self.underlays.is_empty()) {
                     return SurfacePromotionResult::Failed;
                 }
             }
@@ -3720,7 +3721,7 @@ impl TileCacheInstance {
         }
 
         
-        for underlay in &mut self.underlays {
+        for underlay in self.underlays.iter_mut().rev() {
             underlay.z_id = state.composite_state.z_generator.next();
         }
 
