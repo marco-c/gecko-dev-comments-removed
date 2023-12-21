@@ -718,7 +718,6 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
   
   WritingMode wm = aOuterRI.GetWritingMode();
   Maybe<StyleCaptionSide> captionSide = GetCaptionSide();
-  WritingMode captionWM = wm;  
   const nscoord contentBoxISize = aOuterRI.ComputedSize(wm).ISize(wm);
 
   MOZ_ASSERT(mCaptionFrames.NotEmpty() == captionSide.isSome());
@@ -742,7 +741,6 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
         innerRI->ComputedSizeWithBorderPadding(wm).ISize(wm);
     CreateReflowInputForCaption(aPresContext, mCaptionFrames.FirstChild(),
                                 aOuterRI, captionRI, innerBorderISize);
-    captionWM = captionRI->GetWritingMode();
   }
 
   
