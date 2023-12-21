@@ -112,5 +112,6 @@ function isProbablyReaderable(doc, options = {}) {
 }
 
 if (typeof module === "object") {
+  
   module.exports = isProbablyReaderable;
 }

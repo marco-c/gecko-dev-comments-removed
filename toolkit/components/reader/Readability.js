@@ -61,6 +61,7 @@ function Readability(doc, options) {
     return el.innerHTML;
   };
   this._disableJSONLD = !!options.disableJSONLD;
+  this._allowedVideoRegex = options.allowedVideoRegex || this.REGEXPS.videos;
 
   
   this._flags = this.FLAG_STRIP_UNLIKELYS |
@@ -80,12 +81,7 @@ function Readability(doc, options) {
       return `<${node.localName} ${attrPairs}>`;
     };
     this.log = function () {
-      if (typeof dump !== "undefined") {
-        var msg = Array.prototype.map.call(arguments, function(x) {
-          return (x && x.nodeName) ? logNode(x) : x;
-        }).join(" ");
-        dump("Reader: (Readability) " + msg + "\n");
-      } else if (typeof console !== "undefined") {
+      if (typeof console !== "undefined") {
         let args = Array.from(arguments, arg => {
           if (arg && arg.nodeType == this.ELEMENT_NODE) {
             return logNode(arg);
@@ -94,6 +90,12 @@ function Readability(doc, options) {
         });
         args.unshift("Reader: (Readability)");
         console.log.apply(console, args);
+      } else if (typeof dump !== "undefined") {
+        
+        var msg = Array.prototype.map.call(arguments, function(x) {
+          return (x && x.nodeName) ? logNode(x) : x;
+        }).join(" ");
+        dump("Reader: (Readability) " + msg + "\n");
       }
     };
   } else {
@@ -147,6 +149,9 @@ Readability.prototype = {
     hashUrl: /^#.+/,
     srcsetUrl: /(\S+)(\s+[\d.]+[xw])?(\s*(?:,|$))/g,
     b64DataUrl: /^data:\s*([^\s;,]+)\s*;\s*base64\s*,/i,
+    
+    
+    commas: /\u002C|\u060C|\uFE50|\uFE10|\uFE11|\u2E41|\u2E34|\u2E32|\uFF0C/g,
     
     jsonLdArticleTypes: /^Article|AdvertiserContentArticle|NewsArticle|AnalysisNewsArticle|AskPublicNewsArticle|BackgroundNewsArticle|OpinionNewsArticle|ReportageNewsArticle|ReviewNewsArticle|Report|SatiricalArticle|ScholarlyArticle|MedicalScholarlyArticle|SocialMediaPosting|BlogPosting|LiveBlogPosting|DiscussionForumPosting|TechArticle|APIReference$/
   },
@@ -917,6 +922,12 @@ Readability.prototype = {
         }
 
         
+        if (node.getAttribute("aria-modal") == "true" && node.getAttribute("role") == "dialog") {
+          node = this._removeAndGetNext(node);
+          continue;
+        }
+
+        
         if (this._checkByline(node, matchString)) {
           node = this._removeAndGetNext(node);
           continue;
@@ -1030,7 +1041,7 @@ Readability.prototype = {
         contentScore += 1;
 
         
-        contentScore += innerText.split(",").length;
+        contentScore += innerText.split(this.REGEXPS.commas).length;
 
         
         contentScore += Math.min(Math.floor(innerText.length / 100), 3);
@@ -1444,6 +1455,9 @@ Readability.prototype = {
           ) {
             metadata.siteName = parsed.publisher.name.trim();
           }
+          if (typeof parsed.datePublished === "string") {
+            metadata.datePublished = parsed.datePublished.trim();
+          }
           return;
         } catch (err) {
           this.log(err.message);
@@ -1467,7 +1481,7 @@ Readability.prototype = {
     var metaElements = this._doc.getElementsByTagName("meta");
 
     
-    var propertyPattern = /\s*(dc|dcterm|og|twitter)\s*:\s*(author|creator|description|title|site_name)\s*/gi;
+    var propertyPattern = /\s*(article|dc|dcterm|og|twitter)\s*:\s*(author|creator|description|published_time|title|site_name)\s*/gi;
 
     
     var namePattern = /^\s*(?:(dc|dcterm|og|twitter|weibo:(article|webpage))\s*[\.:]\s*)?(author|creator|description|title|site_name)\s*$/i;
@@ -1539,11 +1553,16 @@ Readability.prototype = {
                         values["og:site_name"];
 
     
+    metadata.publishedTime = jsonld.datePublished ||
+      values["article:published_time"] || null;
+
+    
     
     metadata.title = this._unescapeHtmlEntities(metadata.title);
     metadata.byline = this._unescapeHtmlEntities(metadata.byline);
     metadata.excerpt = this._unescapeHtmlEntities(metadata.excerpt);
     metadata.siteName = this._unescapeHtmlEntities(metadata.siteName);
+    metadata.publishedTime = this._unescapeHtmlEntities(metadata.publishedTime);
 
     return metadata;
   },
@@ -1649,12 +1668,7 @@ Readability.prototype = {
 
 
   _removeScripts: function(doc) {
-    this._removeNodes(this._getAllNodesWithTag(doc, ["script"]), function(scriptNode) {
-      scriptNode.nodeValue = "";
-      scriptNode.removeAttribute("src");
-      return true;
-    });
-    this._removeNodes(this._getAllNodesWithTag(doc, ["noscript"]));
+    this._removeNodes(this._getAllNodesWithTag(doc, ["script", "noscript"]));
   },
 
   
@@ -1844,13 +1858,13 @@ Readability.prototype = {
       if (isEmbed) {
         
         for (var i = 0; i < element.attributes.length; i++) {
-          if (this.REGEXPS.videos.test(element.attributes[i].value)) {
+          if (this._allowedVideoRegex.test(element.attributes[i].value)) {
             return false;
           }
         }
 
         
-        if (element.tagName === "object" && this.REGEXPS.videos.test(element.innerHTML)) {
+        if (element.tagName === "object" && this._allowedVideoRegex.test(element.innerHTML)) {
           return false;
         }
       }
@@ -2119,13 +2133,13 @@ Readability.prototype = {
         for (var i = 0; i < embeds.length; i++) {
           
           for (var j = 0; j < embeds[i].attributes.length; j++) {
-            if (this.REGEXPS.videos.test(embeds[i].attributes[j].value)) {
+            if (this._allowedVideoRegex.test(embeds[i].attributes[j].value)) {
               return false;
             }
           }
 
           
-          if (embeds[i].tagName === "object" && this.REGEXPS.videos.test(embeds[i].innerHTML)) {
+          if (embeds[i].tagName === "object" && this._allowedVideoRegex.test(embeds[i].innerHTML)) {
             return false;
           }
 
@@ -2143,6 +2157,21 @@ Readability.prototype = {
           (!isList && weight < 25 && linkDensity > 0.2) ||
           (weight >= 25 && linkDensity > 0.5) ||
           ((embedCount === 1 && contentLength < 75) || embedCount > 1);
+        
+        if (isList && haveToRemove) {
+          for (var x = 0; x < node.children.length; x++) {
+            let child = node.children[x];
+            
+            if (child.children.length > 1) {
+              return haveToRemove;
+            }
+          }
+          let li_count = node.getElementsByTagName("li").length;
+          
+          if (img == li_count) {
+            return false;
+          }
+        }
         return haveToRemove;
       }
       return false;
@@ -2212,6 +2241,7 @@ Readability.prototype = {
   _isProbablyVisible: function(node) {
     
     return (!node.style || node.style.display != "none")
+      && (!node.style || node.style.visibility != "hidden")
       && !node.hasAttribute("hidden")
       
       && (!node.hasAttribute("aria-hidden") || node.getAttribute("aria-hidden") != "true" || (node.className && node.className.indexOf && node.className.indexOf("fallback-image") !== -1));
@@ -2280,11 +2310,13 @@ Readability.prototype = {
       textContent: textContent,
       length: textContent.length,
       excerpt: metadata.excerpt,
-      siteName: metadata.siteName || this._articleSiteName
+      siteName: metadata.siteName || this._articleSiteName,
+      publishedTime: metadata.publishedTime
     };
   }
 };
 
 if (typeof module === "object") {
+  
   module.exports = Readability;
 }
