@@ -222,6 +222,17 @@ SECStatus SSLInt_ShiftDtlsTimers(PRFileDesc *fd, PRIntervalTime shift) {
   return SECSuccess;
 }
 
+
+SECStatus SSLInt_SendImmediateACK(PRFileDesc *fd) {
+  sslSocket *ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+  PORT_Assert(IS_DTLS(ss));
+  dtls13_SendAck(ss);
+  return SECSuccess;
+}
+
 #define CHECK_SECRET(secret)                  \
   if (ss->ssl3.hs.secret) {                   \
     fprintf(stderr, "%s != NULL\n", #secret); \
@@ -398,7 +409,7 @@ SECStatus SSLInt_AdvanceWriteSeqNum(PRFileDesc *fd, PRUint64 to) {
       pk11ctxt->ivGen = CKG_GENERATE_COUNTER;
     }
     
-    if (IS_DTLS(ss)) {
+    if (IS_DTLS_1_OR_12(ss)) {
       pk11ctxt->ivFixedBits += 2 * BPB;
     }
   }
@@ -407,6 +418,50 @@ SECStatus SSLInt_AdvanceWriteSeqNum(PRFileDesc *fd, PRUint64 to) {
   pk11ctxt->ivCounter = to;
 
   ssl_ReleaseSpecWriteLock(ss);
+  return SECSuccess;
+}
+
+
+
+
+
+
+SECStatus SSLInt_AdvanceWriteEpochNum(PRFileDesc *fd, PRUint64 to) {
+  sslSocket *ss;
+  ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+  
+  
+  PRUint64 max_epoch = UINT16_MAX;
+  if (to > max_epoch) {
+    PORT_SetError(SEC_ERROR_INVALID_ARGS);
+    return SECFailure;
+  }
+
+  ssl_GetSpecWriteLock(ss);
+  ss->ssl3.cwSpec->epoch = to;
+  ssl_ReleaseSpecWriteLock(ss);
+  return SECSuccess;
+}
+
+SECStatus SSLInt_AdvanceReadEpochNum(PRFileDesc *fd, PRUint64 to) {
+  sslSocket *ss;
+  ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+
+  PRUint64 max_epoch = UINT16_MAX;
+  if (to > max_epoch) {
+    PORT_SetError(SEC_ERROR_INVALID_ARGS);
+    return SECFailure;
+  }
+
+  ssl_GetSpecReadLock(ss);
+  ss->ssl3.crSpec->epoch = to;
+  ssl_ReleaseSpecReadLock(ss);
   return SECSuccess;
 }
 

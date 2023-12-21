@@ -724,8 +724,13 @@ typedef struct SSL3HandshakeStateStr {
     dtlsTimer *rtTimer;        
     dtlsTimer *ackTimer;       
     dtlsTimer *hdTimer;        
-    PRUint32 rtRetries;        
-    SECItem srvVirtName;       
+
+    
+    PRBool isKeyUpdateInProgress; 
+    PRBool allowPreviousEpoch;    
+
+    PRUint32 rtRetries;  
+    SECItem srvVirtName; 
 
 
 
@@ -787,7 +792,19 @@ typedef struct SSL3HandshakeStateStr {
     tls13ClientGrease *grease;
 
     
+
+
+
+    PRBool keyUpdateDeferred;
+    tls13KeyUpdateRequest deferredKeyUpdateRequest;
+    
+    PRUint64 dtlsHandhakeKeyUpdateMessage;
+
+    
     sslExtensionBuilder *chExtensionPermutation;
+
+    
+    sslBuffer dtls13ClientMessageBuffer;
 } SSL3HandshakeState;
 
 #define SSL_ASSERT_HASHES_EMPTY(ss)                                  \
@@ -819,11 +836,6 @@ struct ssl3StateStr {
     
 
     PRBool peerRequestedKeyUpdate;
-
-    
-
-    PRBool keyUpdateDeferred;
-    tls13KeyUpdateRequest deferredKeyUpdateRequest;
 
     
 
@@ -872,6 +884,8 @@ struct ssl3StateStr {
 
 #define DTLS_MAX_MTU 1500U
 #define IS_DTLS(ss) (ss->protocolVariant == ssl_variant_datagram)
+#define IS_DTLS_1_OR_12(ss) (IS_DTLS(ss) && ss->version < SSL_LIBRARY_VERSION_TLS_1_3)
+#define IS_DTLS_13_OR_ABOVE(ss) (IS_DTLS(ss) && ss->version >= SSL_LIBRARY_VERSION_TLS_1_3)
 
 typedef struct {
     

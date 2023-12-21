@@ -746,6 +746,30 @@ class TlsRecordLastByteDamager : public TlsRecordFilter {
 
 
 
+class TLSRecordSaveAndDropNext : public TlsRecordFilter {
+ public:
+  TLSRecordSaveAndDropNext(const std::shared_ptr<TlsAgent>& a)
+      : TlsRecordFilter(a), replaced_(false), data_(0) {}
+
+  DataBuffer ReturnRecorded() { return data_; }
+
+ protected:
+  PacketFilter::Action Filter(const DataBuffer& input, DataBuffer* output) {
+    if (!replaced_) {
+      data_ = input;
+      replaced_ = true;
+      return DROP;
+    }
+    return KEEP;
+  }
+
+ private:
+  bool replaced_;
+  DataBuffer data_;
+};
+
+
+
 class SelectiveDropFilter : public PacketFilter {
  public:
   SelectiveDropFilter(uint32_t pattern) : pattern_(pattern), counter_(0) {}

@@ -1731,10 +1731,10 @@ ssl3_BuildRecordPseudoHeader(DTLSEpoch epoch,
                              SSL3ProtocolVersion version,
                              PRBool isDTLS,
                              int length,
-                             sslBuffer *buf)
+                             sslBuffer *buf, SSL3ProtocolVersion v)
 {
     SECStatus rv;
-    if (isDTLS) {
+    if (isDTLS && v < SSL_LIBRARY_VERSION_TLS_1_3) {
         rv = sslBuffer_AppendNumber(buf, epoch, 2);
         if (rv != SECSuccess) {
             return SECFailure;
@@ -2140,11 +2140,10 @@ ssl3_MACEncryptRecord(ssl3CipherSpec *cwSpec,
         rv = sslBuffer_Skip(wrBuf, len, NULL);
         PORT_Assert(rv == SECSuccess); 
     }
-
     rv = ssl3_BuildRecordPseudoHeader(
         cwSpec->epoch, cwSpec->nextSeqNum, ct,
         cwSpec->version >= SSL_LIBRARY_VERSION_TLS_1_0, cwSpec->recordVersion,
-        isDTLS, contentLen, &pseudoHeader);
+        isDTLS, contentLen, &pseudoHeader, cwSpec->version);
     PORT_Assert(rv == SECSuccess);
     if (cwSpec->cipherDef->type == type_aead) {
         const unsigned int nonceLen = cwSpec->cipherDef->explicit_nonce_size;
@@ -2171,7 +2170,7 @@ ssl3_MACEncryptRecord(ssl3CipherSpec *cwSpec,
             ivOffset = ivLen;
             gen = CKG_GENERATE_COUNTER;
         }
-        ivOffset = tls13_SetupAeadIv(isDTLS, ivOut, cwSpec->keyMaterial.iv,
+        ivOffset = tls13_SetupAeadIv(isDTLS, cwSpec->version, ivOut, cwSpec->keyMaterial.iv,
                                      ivOffset, ivLen, cwSpec->epoch);
         rv = tls13_AEAD(cwSpec->cipherContext,
                         PR_FALSE,
@@ -2344,7 +2343,6 @@ ssl_ProtectRecord(sslSocket *ss, ssl3CipherSpec *cwSpec, SSLContentType ct,
     PORT_Assert(cwSpec->cipherDef->max_records <= RECORD_SEQ_MAX);
 
     if (cwSpec->nextSeqNum >= cwSpec->cipherDef->max_records) {
-        PORT_Assert(cwSpec->version < SSL_LIBRARY_VERSION_TLS_1_3);
         SSL_TRC(3, ("%d: SSL[-]: write sequence number at limit 0x%0llx",
                     SSL_GETPID(), cwSpec->nextSeqNum));
         PORT_SetError(SSL_ERROR_TOO_MANY_RECORDS);
@@ -4062,9 +4060,15 @@ ssl3_UpdatePostHandshakeHashes(sslSocket *ss, const unsigned char *b, unsigned i
     return rv;
 }
 
+
+
+
+
+
 SECStatus
-ssl3_AppendHandshakeHeader(sslSocket *ss, SSLHandshakeType t, PRUint32 length)
+ssl3_AppendHandshakeHeaderAndStashSeqNum(sslSocket *ss, SSLHandshakeType t, PRUint32 length, PRUint64 *sendMessageSeqOut)
 {
+    PORT_Assert(t != ssl_hs_client_hello);
     SECStatus rv;
 
     
@@ -4093,26 +4097,47 @@ ssl3_AppendHandshakeHeader(sslSocket *ss, SSLHandshakeType t, PRUint32 length)
     if (IS_DTLS(ss)) {
         
 
-        rv = ssl3_AppendHandshakeNumber(ss, ss->ssl3.hs.sendMessageSeq, 2);
+
+
+
+        PRBool suppressHash = ss->version == SSL_LIBRARY_VERSION_TLS_1_3 ? PR_TRUE : PR_FALSE;
+
+        
+
+        rv = ssl3_AppendHandshakeNumberSuppressHash(ss, ss->ssl3.hs.sendMessageSeq, 2, suppressHash);
         if (rv != SECSuccess) {
             return rv; 
+        }
+        
+
+        if (sendMessageSeqOut != NULL) {
+            *sendMessageSeqOut = ss->ssl3.hs.sendMessageSeq;
         }
         ss->ssl3.hs.sendMessageSeq++;
 
         
-        rv = ssl3_AppendHandshakeNumber(ss, 0, 3);
+        rv = ssl3_AppendHandshakeNumberSuppressHash(ss, 0, 3, suppressHash);
         if (rv != SECSuccess) {
             return rv; 
         }
 
         
-        rv = ssl3_AppendHandshakeNumber(ss, length, 3);
+        rv = ssl3_AppendHandshakeNumberSuppressHash(ss, length, 3, suppressHash);
         if (rv != SECSuccess) {
             return rv; 
         }
     }
 
     return rv; 
+}
+
+
+
+
+SECStatus
+ssl3_AppendHandshakeHeader(sslSocket *ss, SSLHandshakeType t, PRUint32 length)
+{
+    return ssl3_AppendHandshakeHeaderAndStashSeqNum(ss, t, length, NULL);
 }
 
 
@@ -5599,8 +5624,27 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
                 goto loser;
             }
         }
-        rv = ssl3_AppendHandshake(ss, chBuf.buf, chBuf.len);
+
+        
+
+
+        if (IS_DTLS(ss) && ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3) {
+            rv = ssl3_AppendHandshakeSuppressHash(ss, chBuf.buf, chBuf.len);
+            if (rv != SECSuccess) {
+                goto loser; 
+            }
+            if (!ss->firstHsDone) {
+                PORT_Assert(ss->ssl3.hs.dtls13ClientMessageBuffer.len == 0);
+                sslBuffer_Clear(&ss->ssl3.hs.dtls13ClientMessageBuffer);
+                
+                rv = sslBuffer_Append(&ss->ssl3.hs.dtls13ClientMessageBuffer, chBuf.buf, chBuf.len);
+            }
+        } else {
+            rv = ssl3_AppendHandshake(ss, chBuf.buf, chBuf.len);
+        }
+
     } else {
+        PORT_Assert(!IS_DTLS(ss));
         rv = tls13_ConstructClientHelloWithEch(ss, sid, !requestingResume, &chBuf, &extensionBuf);
         if (rv != SECSuccess) {
             goto loser; 
@@ -7062,6 +7106,17 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         goto loser;
     }
 
+    
+
+
+
+
+
+    rv = ssl3_MaybeUpdateHashWithSavedRecord(ss);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+
     PORT_Assert(!SSL_ALL_VERSIONS_DISABLED(&ss->vrange));
     
     if (ss->vrange.min > ss->version || ss->vrange.max < ss->version) {
@@ -7116,12 +7171,7 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         goto alert_loser;
     }
 
-    if (ss->opt.enableHelloDowngradeCheck
-#ifdef DTLS_1_3_DRAFT_VERSION
-        
-        && !IS_DTLS(ss)
-#endif
-    ) {
+    if (ss->opt.enableHelloDowngradeCheck) {
         rv = ssl_CheckServerRandom(ss);
         if (rv != SECSuccess) {
             desc = illegal_parameter;
@@ -8803,11 +8853,6 @@ ssl_GenerateServerRandom(sslSocket *ss)
     if (ss->version == ss->vrange.max) {
         return SECSuccess;
     }
-#ifdef DTLS_1_3_DRAFT_VERSION
-    if (IS_DTLS(ss)) {
-        return SECSuccess;
-    }
-#endif
 
     
 
@@ -12478,7 +12523,7 @@ ssl_HashHandshakeMessageInt(sslSocket *ss, SSLHandshakeType ct,
         return rv; 
 
     
-    if (IS_DTLS(ss)) {
+    if (IS_DTLS_1_OR_12(ss)) {
         
         dtlsData[0] = MSB(dtlsSeq);
         dtlsData[1] = LSB(dtlsSeq);
@@ -13187,7 +13232,7 @@ ssl3_UnprotectRecord(sslSocket *ss,
 
         rv = ssl3_BuildRecordPseudoHeader(
             spec->epoch, cText->seqNum,
-            rType, isTLS, rVersion, IS_DTLS(ss), decryptedLen, &header);
+            rType, isTLS, rVersion, IS_DTLS(ss), decryptedLen, &header, spec->version);
         PORT_Assert(rv == SECSuccess);
 
         
@@ -13256,7 +13301,7 @@ ssl3_UnprotectRecord(sslSocket *ss,
         rv = ssl3_BuildRecordPseudoHeader(
             spec->epoch, cText->seqNum,
             rType, isTLS, rVersion, IS_DTLS(ss),
-            plaintext->len - spec->macDef->mac_size, &header);
+            plaintext->len - spec->macDef->mac_size, &header, spec->version);
         PORT_Assert(rv == SECSuccess);
         if (cipher_def->type == type_block) {
             rv = ssl3_ComputeRecordMACConstantTime(
@@ -13387,7 +13432,7 @@ ssl3_GetCipherSpec(sslSocket *ss, SSL3Ciphertext *cText)
     if (!IS_DTLS(ss)) {
         return crSpec;
     }
-    epoch = dtls_ReadEpoch(crSpec, cText->hdr);
+    epoch = dtls_ReadEpoch(crSpec->version, crSpec->epoch, cText->hdr);
     if (crSpec->epoch == epoch) {
         return crSpec;
     }
@@ -13399,8 +13444,8 @@ ssl3_GetCipherSpec(sslSocket *ss, SSL3Ciphertext *cText)
             return newSpec;
         }
     }
-    SSL_TRC(10, ("%d: DTLS[%d]: Couldn't find cipherspec from epoch %d",
-                 SSL_GETPID(), ss->fd, epoch));
+    SSL_TRC(10, ("%d: DTLS[%d]: %s couldn't find cipherspec from epoch %d",
+                 SSL_GETPID(), ss->fd, SSL_ROLE(ss), epoch));
     return NULL;
 }
 
@@ -13603,6 +13648,7 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
 
 
 
+
         if ((IS_DTLS(ss) && !dtls13_AeadLimitReached(spec)) ||
             (!IS_DTLS(ss) && ss->sec.isServer &&
              ss->ssl3.hs.zeroRttIgnore == ssl_0rtt_ignore_trial)) {
@@ -13643,9 +13689,27 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
     
 
 
+
+    
+
+
     if (outOfOrderSpec) {
         PORT_Assert(IS_DTLS(ss) && ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
-        return dtls13_HandleOutOfEpochRecord(ss, spec, rType, plaintext);
+        ssl_GetSSL3HandshakeLock(ss);
+        if (ss->ssl3.hs.allowPreviousEpoch && spec->epoch == ss->ssl3.crSpec->epoch - 1) {
+            SSL_TRC(30, ("%d: DTLS13[%d]: Out of order message %d is accepted",
+                         SSL_GETPID(), ss->fd, spec->epoch));
+            ssl_ReleaseSSL3HandshakeLock(ss);
+        } else {
+            ssl_ReleaseSSL3HandshakeLock(ss);
+            return dtls13_HandleOutOfEpochRecord(ss, spec, rType, plaintext);
+        }
+    } else {
+        ssl_GetSSL3HandshakeLock(ss);
+        
+
+        ss->ssl3.hs.allowPreviousEpoch = PR_FALSE;
+        ssl_ReleaseSSL3HandshakeLock(ss);
     }
 
     
@@ -14107,6 +14171,9 @@ ssl3_DestroySSL3Info(sslSocket *ss)
     }
     if (ss->ssl3.hs.echInnerMessages.buf) {
         sslBuffer_Clear(&ss->ssl3.hs.echInnerMessages);
+    }
+    if (ss->ssl3.hs.dtls13ClientMessageBuffer.buf) {
+        sslBuffer_Clear(&ss->ssl3.hs.dtls13ClientMessageBuffer);
     }
 
     

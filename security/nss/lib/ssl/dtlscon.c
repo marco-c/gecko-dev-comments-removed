@@ -495,7 +495,6 @@ dtls_HandleHandshake(sslSocket *ss, DTLSEpoch epoch, sslSequenceNumber seqNum,
     if (rv != SECSuccess) {
         goto loser;
     }
-
     rv = dtls13_SetupAcks(ss);
 
 loser:
@@ -577,8 +576,9 @@ dtls_FlushHandshakeMessages(sslSocket *ss, PRInt32 flags)
     PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
 
     rv = dtls_StageHandshakeMessage(ss);
-    if (rv != SECSuccess)
+    if (rv != SECSuccess) {
         return rv;
+    }
 
     if (!(flags & ssl_SEND_FLAG_FORCE_INTO_BUFFER)) {
         rv = dtls_TransmitMessageFlight(ss);
@@ -836,7 +836,6 @@ dtls_TransmitMessageFlight(sslSocket *ss)
         msg_p = PR_NEXT_LINK(msg_p);
 
         
-
 
 
 
@@ -1336,39 +1335,19 @@ dtls_IsDtls13Ciphertext(SSL3ProtocolVersion version, PRUint8 firstOctet)
 }
 
 DTLSEpoch
-dtls_ReadEpoch(const ssl3CipherSpec *crSpec, const PRUint8 *hdr)
+dtls_ReadEpoch(const SSL3ProtocolVersion version, const DTLSEpoch specEpoch, const PRUint8 *hdr)
 {
-    DTLSEpoch epoch;
-    DTLSEpoch maxEpoch;
-    DTLSEpoch partial;
-
-    if (dtls_IsLongHeader(crSpec->version, hdr[0])) {
+    if (dtls_IsLongHeader(version, hdr[0])) {
         return ((DTLSEpoch)hdr[3] << 8) | hdr[4];
     }
 
+    DTLSEpoch epoch = (specEpoch & ~3) | (hdr[0] & 3);
     
 
-
-
-
-    if (dtls_IsDtls13Ciphertext(crSpec->version, hdr[0])) {
-        
-        
-        return crSpec->epoch - ((hdr[0] ^ crSpec->epoch) & 0x3);
-    }
-
-    
-    PORT_Assert(hdr[0] == ssl_ct_application_data);
-
-    
-
-
-    partial = hdr[1] >> 6;
-    maxEpoch = PR_MAX(crSpec->epoch, 3);
-    epoch = (maxEpoch & 0xfffc) | partial;
-    if (partial > (maxEpoch & 0x03)) {
+    if (epoch > specEpoch && epoch > 4) {
         epoch -= 4;
     }
+
     return epoch;
 }
 
