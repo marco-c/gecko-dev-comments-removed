@@ -663,10 +663,6 @@ class nsWindow final : public nsBaseWidget {
   
   
   
-  bool mIsWaylandPanelWindow : 1;
-  
-  
-  
   bool mIsChildWindow : 1;
   bool mAlwaysOnTop : 1;
   bool mNoAutoHide : 1;
