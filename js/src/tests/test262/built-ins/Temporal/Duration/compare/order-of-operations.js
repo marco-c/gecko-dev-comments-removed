@@ -86,7 +86,7 @@ Temporal.Duration.compare(
 assert.compareArray(actual, expected, "order of operations");
 actual.splice(0); 
 
-const expectedOpsForPlainRelativeTo = expected.concat([
+const baseExpectedOpsWithRelativeTo = expected.concat([
   
   "get options.relativeTo.calendar",
   "has options.relativeTo.calendar.dateAdd",
@@ -110,7 +110,6 @@ const expectedOpsForPlainRelativeTo = expected.concat([
   "has options.relativeTo.calendar.year",
   "has options.relativeTo.calendar.yearMonthFromFields",
   "has options.relativeTo.calendar.yearOfWeek",
-  
   "get options.relativeTo.calendar.dateFromFields",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
@@ -118,6 +117,10 @@ const expectedOpsForPlainRelativeTo = expected.concat([
   "get options.relativeTo.day.valueOf",
   "call options.relativeTo.day.valueOf",
   "get options.relativeTo.hour",
+]);
+
+const expectedOpsForPlainRelativeTo = baseExpectedOpsWithRelativeTo.concat([
+  
   "get options.relativeTo.microsecond",
   "get options.relativeTo.millisecond",
   "get options.relativeTo.minute",
@@ -135,6 +138,8 @@ const expectedOpsForPlainRelativeTo = expected.concat([
   "get options.relativeTo.year.valueOf",
   "call options.relativeTo.year.valueOf",
   "call options.relativeTo.calendar.dateFromFields",
+  
+  "get options.relativeTo.calendar.dateAdd",
 ]);
 
 const plainRelativeTo = TemporalHelpers.propertyBagObserver(actual, {
@@ -177,13 +182,6 @@ actual.splice(0);
 
 const expectedOpsForPlainDayBalancing = expectedOpsForPlainRelativeTo.concat(
   [
-    "get options.relativeTo.calendar.dateAdd",
-    
-    "call options.relativeTo.calendar.dateAdd",  
-    "call options.relativeTo.calendar.dateAdd",  
-    "call options.relativeTo.calendar.dateAdd",  
-    
-    "call options.relativeTo.calendar.dateAdd",  
     "call options.relativeTo.calendar.dateAdd",  
     "call options.relativeTo.calendar.dateAdd",  
   ]
@@ -196,37 +194,8 @@ Temporal.Duration.compare(
 assert.compareArray(actual, expectedOpsForPlainDayBalancing, "order of operations with PlainDate relativeTo and calendar units");
 actual.splice(0); 
 
-const expectedOpsForZonedRelativeTo = expected.concat([
+const expectedOpsForZonedRelativeTo = baseExpectedOpsWithRelativeTo.concat([
   
-  "get options.relativeTo.calendar",
-  "has options.relativeTo.calendar.dateAdd",
-  "has options.relativeTo.calendar.dateFromFields",
-  "has options.relativeTo.calendar.dateUntil",
-  "has options.relativeTo.calendar.day",
-  "has options.relativeTo.calendar.dayOfWeek",
-  "has options.relativeTo.calendar.dayOfYear",
-  "has options.relativeTo.calendar.daysInMonth",
-  "has options.relativeTo.calendar.daysInWeek",
-  "has options.relativeTo.calendar.daysInYear",
-  "has options.relativeTo.calendar.fields",
-  "has options.relativeTo.calendar.id",
-  "has options.relativeTo.calendar.inLeapYear",
-  "has options.relativeTo.calendar.mergeFields",
-  "has options.relativeTo.calendar.month",
-  "has options.relativeTo.calendar.monthCode",
-  "has options.relativeTo.calendar.monthDayFromFields",
-  "has options.relativeTo.calendar.monthsInYear",
-  "has options.relativeTo.calendar.weekOfYear",
-  "has options.relativeTo.calendar.year",
-  "has options.relativeTo.calendar.yearMonthFromFields",
-  "has options.relativeTo.calendar.yearOfWeek",
-  "get options.relativeTo.calendar.dateFromFields",
-  "get options.relativeTo.calendar.fields",
-  "call options.relativeTo.calendar.fields",
-  "get options.relativeTo.day",
-  "get options.relativeTo.day.valueOf",
-  "call options.relativeTo.day.valueOf",
-  "get options.relativeTo.hour",
   "get options.relativeTo.hour.valueOf",
   "call options.relativeTo.hour.valueOf",
   "get options.relativeTo.microsecond",
@@ -265,6 +234,8 @@ const expectedOpsForZonedRelativeTo = expected.concat([
   "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",
 ]);
 
 const zonedRelativeTo = TemporalHelpers.propertyBagObserver(actual, {
@@ -324,7 +295,6 @@ Temporal.Duration.compare(
 assert.compareArray(
   actual,
   expectedOpsForZonedRelativeTo.concat([
-    "get options.relativeTo.calendar.dateAdd",
     "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
     
     "call options.relativeTo.calendar.dateAdd",

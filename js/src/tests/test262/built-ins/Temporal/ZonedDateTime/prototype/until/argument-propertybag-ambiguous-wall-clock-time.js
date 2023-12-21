@@ -61,6 +61,7 @@ const expected = [
   
   "call calendar.dateFromFields",
   
+  "get timeZone.getOffsetNanosecondsFor",
   "get timeZone.getPossibleInstantsFor",
   
   "call timeZone.getPossibleInstantsFor",
@@ -68,7 +69,6 @@ const expected = [
 
 const expectedSpringForward = expected.concat([
   
-  "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getPossibleInstantsFor",

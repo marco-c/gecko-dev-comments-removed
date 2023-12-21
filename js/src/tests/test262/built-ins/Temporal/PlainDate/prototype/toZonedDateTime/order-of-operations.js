@@ -36,7 +36,9 @@ const expected = [
   "get item.plainTime.second.valueOf",
   "call item.plainTime.second.valueOf",
   
+  "get item.timeZone.getOffsetNanosecondsFor",
   "get item.timeZone.getPossibleInstantsFor",
+  
   "call item.timeZone.getPossibleInstantsFor",
 ];
 
@@ -87,7 +89,6 @@ actual.splice(0);
 
 springForwardInstance.toZonedDateTime(item);
 assert.compareArray(actual, expected.concat([
-  "get item.timeZone.getOffsetNanosecondsFor",
   "call item.timeZone.getOffsetNanosecondsFor",
   "call item.timeZone.getOffsetNanosecondsFor",
   "call item.timeZone.getPossibleInstantsFor",

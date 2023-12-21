@@ -60,6 +60,7 @@ const expectedOne = [
   
   "call one.calendar.dateFromFields",
   
+  "get one.timeZone.getOffsetNanosecondsFor",
   "get one.timeZone.getPossibleInstantsFor",
   
   "call one.timeZone.getPossibleInstantsFor",
@@ -100,6 +101,7 @@ const expectedTwo = [
   
   "call two.calendar.dateFromFields",
   
+  "get two.timeZone.getOffsetNanosecondsFor",
   "get two.timeZone.getPossibleInstantsFor",
   
   "call two.timeZone.getPossibleInstantsFor",
@@ -112,13 +114,11 @@ Temporal.ZonedDateTime.compare(
 
 const expectedSpringForward = expectedOne.concat([
   
-  "get one.timeZone.getOffsetNanosecondsFor",
   "call one.timeZone.getOffsetNanosecondsFor",
   "call one.timeZone.getOffsetNanosecondsFor",
   "call one.timeZone.getPossibleInstantsFor",
 ], expectedTwo, [
   
-  "get two.timeZone.getOffsetNanosecondsFor",
   "call two.timeZone.getOffsetNanosecondsFor",
   "call two.timeZone.getOffsetNanosecondsFor",
   "call two.timeZone.getPossibleInstantsFor",

@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const invalidFirstDayOfWeekOptions = [
+  "",
+  "m",
+  "mo",
+  "monday",
+  true,
+  false,
+  null,
+];
+for (const firstDayOfWeek of invalidFirstDayOfWeekOptions) {
+  assert.throws(RangeError, function() {
+    new Intl.Locale('en', {firstDayOfWeek});
+  }, `new Intl.Locale("en", {firstDayOfWeek: "${firstDayOfWeek}"}) throws RangeError`);
+}
+
+reportCompare(0, 0);

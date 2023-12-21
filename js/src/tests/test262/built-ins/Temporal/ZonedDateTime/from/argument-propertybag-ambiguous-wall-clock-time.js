@@ -54,6 +54,9 @@ const expected = [
   "has timeZone.id",
   
   "call calendar.dateFromFields",
+  
+  "get timeZone.getOffsetNanosecondsFor",
+  "get timeZone.getPossibleInstantsFor",
 ];
 
 Temporal.ZonedDateTime.from(
@@ -69,11 +72,8 @@ Temporal.ZonedDateTime.from(
 );
 assert.compareArray(actual, expected.concat([
   
-  "get timeZone.getPossibleInstantsFor",
-  
   "call timeZone.getPossibleInstantsFor",
   
-  "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getPossibleInstantsFor",
@@ -86,11 +86,8 @@ Temporal.ZonedDateTime.from(
 );
 assert.compareArray(actual, expected.concat([
   
-  "get timeZone.getPossibleInstantsFor",
-  
   "call timeZone.getPossibleInstantsFor",
   
-  "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getPossibleInstantsFor",
@@ -110,8 +107,6 @@ Temporal.ZonedDateTime.from(
 );
 assert.compareArray(actual, expected.concat([
   
-  "get timeZone.getPossibleInstantsFor",
-  
   "call timeZone.getPossibleInstantsFor",
 ]), "order of operations converting property bag at repeated wall-clock time with offset: ignore");
 actual.splice(0); 
@@ -122,10 +117,7 @@ Temporal.ZonedDateTime.from(
 );
 assert.compareArray(actual, expected.concat([
   
-  "get timeZone.getPossibleInstantsFor",
-  
   "call timeZone.getPossibleInstantsFor",
-  "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
 ]), "order of operations converting property bag at repeated wall-clock time with offset: prefer");
@@ -137,10 +129,7 @@ Temporal.ZonedDateTime.from(
 );
 assert.compareArray(actual, expected.concat([
   
-  "get timeZone.getPossibleInstantsFor",
-  
   "call timeZone.getPossibleInstantsFor",
-  "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
 ]), "order of operations converting property bag at repeated wall-clock time with offset: reject");

@@ -44,6 +44,7 @@ const expected = [
   
   "get this.calendar.dateAdd",
   "get this.calendar.dateFromFields",
+  "get this.calendar.day",
   "get this.calendar.fields",
   "get this.calendar.yearMonthFromFields",
   
@@ -130,7 +131,9 @@ const noCalendarExpected = [
   "get fields.weeks",
   "get fields.years",
   
+  "get this.calendar.dateAdd",
   "get this.calendar.dateFromFields",
+  "get this.calendar.day",
   "get this.calendar.fields",
   "get this.calendar.yearMonthFromFields",
   

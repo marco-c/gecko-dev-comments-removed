@@ -124,28 +124,7 @@ actual.splice(0);
 
 
 instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "months", roundingIncrement: 1 }));
-assert.compareArray(actual, expectedMinimal.concat([
-  
-  "get this.calendar.dateFromFields",
-  "get this.calendar.dateUntil",
-  "get this.calendar.fields",
-  
-  "call this.calendar.fields",
-  
-  "get this.calendar.monthCode",
-  "call this.calendar.monthCode",
-  "get this.calendar.year",
-  "call this.calendar.year",
-  "call this.calendar.dateFromFields",
-  
-  "get other.calendar.monthCode",
-  "call other.calendar.monthCode",
-  "get other.calendar.year",
-  "call other.calendar.year",
-  "call this.calendar.dateFromFields",
-  
-  "call this.calendar.dateUntil",
-]), "order of operations with no rounding");
+assert.compareArray(actual, expected, "order of operations with no rounding");
 actual.splice(0); 
 
 
@@ -162,11 +141,16 @@ actual.splice(0);
 
 
 const expectedOpsForYearRounding = expected.concat([
+  
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateUntil",  
   "call this.calendar.dateAdd",    
-]);  
+  
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "years" }));
 assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with smallestUnit = years");
 actual.splice(0); 
@@ -182,17 +166,26 @@ const expectedOpsForYearRoundingSameMonth = expected.concat([
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
-]);  
+  
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.since(otherYearMonthPropertyBagSameMonth, createOptionsObserver({ smallestUnit: "years" }));
-assert.compareArray(actual, expectedOpsForYearRoundingSameMonth, "order of operations with smallestUnit = years");
+assert.compareArray(actual, expectedOpsForYearRoundingSameMonth, "order of operations with smallestUnit = years and no excess months");
 actual.splice(0); 
 
 
 const expectedOpsForMonthRounding = expected.concat([
+  
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
-]);  
+  
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "months", roundingIncrement: 2 }));
 assert.compareArray(actual, expectedOpsForMonthRounding, "order of operations with smallestUnit = months");
 

@@ -44,11 +44,6 @@
 
 
 
-
-
-
-
-
 const duration = new Temporal.Duration(0, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
 TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
@@ -58,30 +53,8 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
   },
   {
     years: ["year"],
-    months: [],
-    weeks: [],
-    days: [],
-    hours: [],
-    minutes: [],
-    seconds: [],
-    milliseconds: [],
-    microseconds: [],
-    nanoseconds: []
-  }
-);
-
-
-
-TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
-  (calendar, unit) => {
-    const duration = new Temporal.Duration(5, 1);
-    const relativeTo = new Temporal.PlainDateTime(2000, 5, 2, 0, 0, 0, 0, 0, 0, calendar);
-    duration.total({ unit, relativeTo });
-  },
-  {
-    years: ["year"],
-    months: ["month", "month", "month", "month", "month"],
-    weeks: [],
+    months: ["month"],
+    weeks: ["week"],
     days: [],
     hours: [],
     minutes: [],

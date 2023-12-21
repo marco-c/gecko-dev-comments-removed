@@ -130,6 +130,7 @@ actual.splice(0);
 instance.until(otherDateTimePropertyBag, createOptionsObserver({ largestUnit: "years" }));
 assert.compareArray(actual, expected.concat([
   
+  "get this.calendar.dateAdd",
   "get this.calendar.dateUntil",
   
   "call this.calendar.dateUntil",
@@ -167,7 +168,11 @@ const expectedOpsForYearRounding = expected.concat([
   "call this.calendar.dateAdd",    
   "call this.calendar.dateUntil",  
   "call this.calendar.dateAdd",    
-]);  
+  
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.until(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "years" }));
 assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with smallestUnit = years");
 actual.splice(0); 
@@ -196,7 +201,11 @@ const expectedOpsForYearRoundingSameMonth = expected.concat([
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
-]);  
+  
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.until(otherDatePropertyBagSameMonth, createOptionsObserver({ smallestUnit: "years" }));
 assert.compareArray(actual, expectedOpsForYearRoundingSameMonth, "order of operations with smallestUnit = years and no excess months/weeks");
 actual.splice(0); 
@@ -211,8 +220,12 @@ const expectedOpsForMonthRounding = expected.concat([
   
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil",  
   "call this.calendar.dateAdd",    
-]);  
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.until(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "months" }));
 assert.compareArray(actual, expectedOpsForMonthRounding, "order of operations with smallestUnit = years");
 actual.splice(0); 
@@ -225,8 +238,12 @@ const expectedOpsForWeekRounding = expected.concat([
   
   "call this.calendar.dateUntil",
   
-  "call this.calendar.dateAdd",  
-]);  
+  "call this.calendar.dateUntil",  
+  "call this.calendar.dateAdd",    
+  
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateUntil"   
+]);
 instance.until(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "weeks" }));
 assert.compareArray(actual, expectedOpsForWeekRounding, "order of operations with smallestUnit = weeks");
 

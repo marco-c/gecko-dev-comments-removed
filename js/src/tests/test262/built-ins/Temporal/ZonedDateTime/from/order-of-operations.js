@@ -93,9 +93,10 @@ const expected = [
   "call options.overflow.toString",
   "call item.calendar.dateFromFields",
   
-  "get item.timeZone.getPossibleInstantsFor",
-  "call item.timeZone.getPossibleInstantsFor",
   "get item.timeZone.getOffsetNanosecondsFor",
+  "get item.timeZone.getPossibleInstantsFor",
+  
+  "call item.timeZone.getPossibleInstantsFor",
   "call item.timeZone.getOffsetNanosecondsFor",
 ];
 const actual = [];

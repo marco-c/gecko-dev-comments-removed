@@ -76,9 +76,9 @@ const expected = [
   
   "call one.calendar.dateFromFields",
   
+  "get one.timeZone.getOffsetNanosecondsFor",
   "get one.timeZone.getPossibleInstantsFor",
   "call one.timeZone.getPossibleInstantsFor",
-  "get one.timeZone.getOffsetNanosecondsFor",
   "call one.timeZone.getOffsetNanosecondsFor",
   
   "get two.calendar",
@@ -147,9 +147,9 @@ const expected = [
   
   "call two.calendar.dateFromFields",
   
+  "get two.timeZone.getOffsetNanosecondsFor",
   "get two.timeZone.getPossibleInstantsFor",
   "call two.timeZone.getPossibleInstantsFor",
-  "get two.timeZone.getOffsetNanosecondsFor",
   "call two.timeZone.getOffsetNanosecondsFor",
 ];
 const actual = [];

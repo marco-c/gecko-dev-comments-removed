@@ -9,7 +9,7 @@
 
 
 
-verifyProperty(Atomics, 'add', {
+verifyProperty(Atomics, 'isLockFree', {
   enumerable: false,
   writable: true,
   configurable: true,

@@ -76,9 +76,10 @@ const expected = [
   
   "call other.calendar.dateFromFields",
   
-  "get other.timeZone.getPossibleInstantsFor",
-  "call other.timeZone.getPossibleInstantsFor",
   "get other.timeZone.getOffsetNanosecondsFor",
+  "get other.timeZone.getPossibleInstantsFor",
+  
+  "call other.timeZone.getPossibleInstantsFor",
   "call other.timeZone.getOffsetNanosecondsFor",
   
   "get this.timeZone.id",

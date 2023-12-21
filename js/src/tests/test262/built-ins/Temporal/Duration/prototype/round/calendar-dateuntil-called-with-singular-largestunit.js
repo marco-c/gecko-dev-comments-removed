@@ -80,11 +80,6 @@
 
 
 
-
-
-
-
-
 const durations = [
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 86399_999_999_999],
   [0, 1, 0, 0, 0, 0, 0, 0, 0, 86399_999_999_999],
@@ -105,9 +100,9 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     duration.round({ largestUnit, roundingIncrement: 2, roundingMode: 'ceil', relativeTo });
   },
   {
-    years: ["year", "month"],
-    months: ["month"],
-    weeks: ["week"],
+    years: ["year", "year"],
+    months: ["month", "month"],
+    weeks: ["week", "week"],
     days: [],
     hours: [],
     minutes: [],
@@ -128,9 +123,9 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     duration.round({ largestUnit, relativeTo });
   },
   {
-    years: ["month", "month", "month", "month", "month", "month"],
-    months: ["month", "month", "month", "month", "month"],
-    weeks: [],
+    years: ["year"],
+    months: ["month", "month"],
+    weeks: ["week"],
     days: [],
     hours: [],
     minutes: [],
@@ -153,8 +148,8 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     duration.round({ largestUnit, smallestUnit: largestUnit, relativeTo });
   }, {
     years: ["year"],
-    months: [],
-    weeks: [],
+    months: ["month"],
+    weeks: ["week", "week"],
     days: []
   }
 );

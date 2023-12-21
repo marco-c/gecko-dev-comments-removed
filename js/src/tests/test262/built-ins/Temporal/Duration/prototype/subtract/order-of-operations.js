@@ -93,7 +93,6 @@ const expectedOpsForPlainRelativeTo = expected.concat([
   "has options.relativeTo.calendar.year",
   "has options.relativeTo.calendar.yearMonthFromFields",
   "has options.relativeTo.calendar.yearOfWeek",
-  
   "get options.relativeTo.calendar.dateFromFields",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
@@ -232,6 +231,9 @@ const expectedOpsForPlainRelativeToNoCalendarOperations = [
   "call options.relativeTo.year.valueOf",
   
   "call options.relativeTo.calendar.dateFromFields",
+  
+  "get options.relativeTo.calendar.dateAdd",
+  "get options.relativeTo.calendar.dateUntil",
 ];
 
 const noCalendarInstance = new Temporal.Duration(0, 0, 0, 4, 5, 6, 7, 987, 654, 321);
@@ -274,7 +276,6 @@ const expectedOpsForZonedRelativeTo = expected.concat([
   "has options.relativeTo.calendar.year",
   "has options.relativeTo.calendar.yearMonthFromFields",
   "has options.relativeTo.calendar.yearOfWeek",
-  
   "get options.relativeTo.calendar.dateFromFields",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
@@ -420,7 +421,6 @@ const expectedOpsForZonedRelativeToNoDaysOperations = [
   "has options.relativeTo.calendar.year",
   "has options.relativeTo.calendar.yearMonthFromFields",
   "has options.relativeTo.calendar.yearOfWeek",
-  
   "get options.relativeTo.calendar.dateFromFields",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
@@ -470,6 +470,9 @@ const expectedOpsForZonedRelativeToNoDaysOperations = [
   "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",
+  "get options.relativeTo.calendar.dateUntil",
 ];
 
 const noDaysInstance = new Temporal.Duration(0, 0, 0, 0, 5, 6, 7, 987, 654, 321);
