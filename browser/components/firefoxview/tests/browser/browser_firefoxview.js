@@ -2,14 +2,22 @@
 
 
 add_task(async function about_firefoxview_smoke_test() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.firefox-view-next", false]],
+  });
+
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
 
     
     ok(
-      document.querySelector("fxview-category-navigation"),
-      "fxview-category-navigation element exists"
+      document.getElementById("tab-pickup-container"),
+      "tab-pickup-container element exists"
     );
-    ok(document.querySelector("named-deck"), "named-deck element exists");
+    ok(
+      document.getElementById("recently-closed-tabs-container"),
+      "recently-closed-tabs-container element exists"
+    );
   });
+  await SpecialPowers.popPrefEnv();
 });
