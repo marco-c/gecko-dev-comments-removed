@@ -165,17 +165,31 @@ static nscoord ResolveToDefiniteSize(const StyleTrackBreadth& aBreadth,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 static nscoord SynthesizeBaselineFromBorderBox(BaselineSharingGroup aGroup,
                                                WritingMode aWM,
+                                               LogicalAxis aAxis,
                                                nscoord aBorderBoxSize) {
+  const bool useAlphabeticBaseline =
+      (aAxis == eLogicalAxisInline) ? true : aWM.IsAlphabeticalBaseline();
+
   if (aGroup == BaselineSharingGroup::First) {
-    return aWM.IsAlphabeticalBaseline() ? aBorderBoxSize : aBorderBoxSize / 2;
+    return useAlphabeticBaseline ? aBorderBoxSize : aBorderBoxSize / 2;
   }
   MOZ_ASSERT(aGroup == BaselineSharingGroup::Last);
   
-  return aWM.IsAlphabeticalBaseline()
-             ? 0
-             : (aBorderBoxSize / 2) + (aBorderBoxSize % 2);
+  return useAlphabeticBaseline ? 0
+                               : (aBorderBoxSize / 2) + (aBorderBoxSize % 2);
 }
 
 
@@ -9590,7 +9604,7 @@ nscoord nsGridContainerFrame::SynthesizeBaseline(
     WritingMode aCBWM) {
   if (MOZ_UNLIKELY(!aGridOrderItem.mItem)) {
     
-    return ::SynthesizeBaselineFromBorderBox(aGroup, aCBWM, aCBSize);
+    return ::SynthesizeBaselineFromBorderBox(aGroup, aCBWM, aAxis, aCBSize);
   }
   auto GetBBaseline = [](BaselineSharingGroup aGroup, WritingMode aWM,
                          const nsIFrame* aFrame, nscoord* aBaseline) {
@@ -9602,6 +9616,7 @@ nscoord nsGridContainerFrame::SynthesizeBaseline(
   nsGridContainerFrame* grid = do_QueryFrame(child);
   auto childWM = child->GetWritingMode();
   bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
+  const LogicalAxis childAxis = isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
   nscoord baseline;
   nscoord start;
   nscoord size;
@@ -9612,6 +9627,15 @@ nscoord nsGridContainerFrame::SynthesizeBaseline(
       baseline = isOrthogonal ? grid->GetIBaseline(aGroup)
                               : grid->GetBBaseline(aGroup);
     } else if (!isOrthogonal && aGridOrderItem.mIsInEdgeTrack) {
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(childAxis == eLogicalAxisBlock, "unexpected childAxis");
       baseline = child
                      ->GetNaturalBaselineBOffset(childWM, aGroup,
                                                  BaselineExportContext::Other)
@@ -9620,7 +9644,8 @@ nscoord nsGridContainerFrame::SynthesizeBaseline(
                            child, childWM, aGroup);
                      });
     } else {
-      baseline = ::SynthesizeBaselineFromBorderBox(aGroup, childWM, size);
+      baseline =
+          ::SynthesizeBaselineFromBorderBox(aGroup, childWM, childAxis, size);
     }
   } else {
     start = child->GetLogicalNormalPosition(aCBWM, aCBPhysicalSize).I(aCBWM);
@@ -9634,7 +9659,8 @@ nscoord nsGridContainerFrame::SynthesizeBaseline(
         baseline = size - baseline;  
       }
     } else {
-      baseline = ::SynthesizeBaselineFromBorderBox(aGroup, childWM, size);
+      baseline =
+          ::SynthesizeBaselineFromBorderBox(aGroup, childWM, childAxis, size);
     }
   }
   return aGroup == BaselineSharingGroup::First
@@ -9653,7 +9679,7 @@ void nsGridContainerFrame::CalculateBaselines(
   if (!(aBaselineSet & BaselineSet::eFirst)) {
     mBaseline[axis][BaselineSharingGroup::First] =
         ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::First, aWM,
-                                          aCBSize);
+                                          axis, aCBSize);
   } else if (firstBaseline == NS_INTRINSIC_ISIZE_UNKNOWN) {
     FindItemInGridOrderResult gridOrderFirstItem = FindFirstItemInGridOrder(
         *aIter, *aGridItems,
@@ -9679,7 +9705,7 @@ void nsGridContainerFrame::CalculateBaselines(
   auto lastBaseline = aTracks.mBaseline[BaselineSharingGroup::Last];
   if (!(aBaselineSet & BaselineSet::eLast)) {
     mBaseline[axis][BaselineSharingGroup::Last] =
-        ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::Last, aWM,
+        ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::Last, aWM, axis,
                                           aCBSize);
   } else if (lastBaseline == NS_INTRINSIC_ISIZE_UNKNOWN) {
     
