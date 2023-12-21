@@ -277,6 +277,8 @@ END_TEST(testGCRootedHashMap)
 
 
 BEGIN_TEST_WITH_ATTRIBUTES(testUnrootedGCHashMap, JS_EXPECT_HAZARDS) {
+  AutoLeaveZeal noZeal(cx);
+
   MyHashMap map(cx, 15);
 
   for (size_t i = 0; i < 10; ++i) {
