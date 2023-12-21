@@ -18,7 +18,12 @@
 #include "modules/video_capture/video_capture_defines.h"
 #include "video/render/incoming_video_stream.h"
 
+class WebrtcLogSinkHandle;
 class nsIThread;
+
+namespace mozilla {
+class VideoCaptureFactory;
+}
 
 namespace mozilla::camera {
 
@@ -52,8 +57,9 @@ class CamerasParent final : public PCamerasParent,
                             private webrtc::VideoInputFeedBack {
  public:
   using ShutdownMozPromise = media::ShutdownBlockingTicket::ShutdownMozPromise;
-  using CameraAccessRequestPromise =
-      MozPromise<nsresult, nsresult,  false>;
+
+  using CameraAccessRequestPromise = MozPromise<CamerasAccessStatus, void_t,
+                                                 false>;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
       CamerasParent, mPBackgroundEventTarget)
@@ -74,7 +80,8 @@ class CamerasParent final : public PCamerasParent,
 
 
 
-  static RefPtr<CameraAccessRequestPromise> RequestCameraAccess();
+  static RefPtr<CameraAccessRequestPromise> RequestCameraAccess(
+      bool aAllowPermissionRequest);
 
   
   mozilla::ipc::IPCResult RecvPCamerasConstructor();
@@ -155,6 +162,10 @@ class CamerasParent final : public PCamerasParent,
   const RefPtr<VideoEngineArray> mEngines;
 
   
+  
+  const RefPtr<VideoCaptureFactory> mVideoCaptureFactory;
+
+  
   ShmemPool mShmemPool;
 
   
@@ -165,6 +176,10 @@ class CamerasParent final : public PCamerasParent,
 
   std::map<nsCString, std::map<uint32_t, webrtc::VideoCaptureCapability>>
       mAllCandidateCapabilities;
+
+  
+  
+  nsMainThreadPtrHandle<WebrtcLogSinkHandle> mLogHandle;
 };
 
 }  
