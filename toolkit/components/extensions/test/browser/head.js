@@ -74,6 +74,15 @@ function waitForTransition(element, propertyName) {
   );
 }
 
+function getToolboxBackgroundColor() {
+  let toolbox = document.getElementById("navigator-toolbox");
+  
+  toolbox.style.transitionProperty = "none";
+  let color = window.getComputedStyle(toolbox).backgroundColor;
+  toolbox.style.transitionProperty = "";
+  return color;
+}
+
 function testBorderColor(element, expected) {
   let computedStyle = window.getComputedStyle(element);
   Assert.equal(
