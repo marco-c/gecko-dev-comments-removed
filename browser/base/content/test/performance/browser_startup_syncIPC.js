@@ -118,7 +118,7 @@ const startupPhases = {
       name: "PAPZInputBridge::Msg_ProcessUnhandledEvent",
       condition: WIN,
       ignoreIfUnused: true, 
-      maxCount: 1,
+      maxCount: 2,
     },
     {
       name: "PGPU::Msg_GetDeviceStatus",
