@@ -164,6 +164,9 @@ function test_part1() {
   
   
   
+  
+  
+  
   ok(
     gSSService.isSecureURI(
       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test")
@@ -175,7 +178,7 @@ function test_part1() {
     )
   );
   ok(
-    !gSSService.isSecureURI(
+    gSSService.isSecureURI(
       Services.io.newURI(
         "https://another.subdomain.includesubdomains.preloaded.test"
       )

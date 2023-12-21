@@ -849,14 +849,10 @@ nsresult nsSiteSecurityService::RemoveWithMigration(
 
 
 
-
-
-
-nsresult nsSiteSecurityService::HostHasHSTSEntry(
+nsresult nsSiteSecurityService::HostMatchesHSTSEntry(
     const nsAutoCString& aHost, bool aRequireIncludeSubdomains,
-    const OriginAttributes& aOriginAttributes, bool& aHostHasHSTSEntry,
-    bool* aResult) {
-  aHostHasHSTSEntry = false;
+    const OriginAttributes& aOriginAttributes, bool& aHostMatchesHSTSEntry) {
+  aHostMatchesHSTSEntry = false;
   
   
   
@@ -885,10 +881,9 @@ nsresult nsSiteSecurityService::HostHasHSTSEntry(
       if (!expired) {
         SSSLOG(("Entry for %s is not expired", aHost.get()));
         if (siteState.mHSTSState == SecurityPropertySet) {
-          *aResult = aRequireIncludeSubdomains
-                         ? siteState.mHSTSIncludeSubdomains
-                         : true;
-          aHostHasHSTSEntry = true;
+          aHostMatchesHSTSEntry = aRequireIncludeSubdomains
+                                      ? siteState.mHSTSIncludeSubdomains
+                                      : true;
           return NS_OK;
         }
       }
@@ -915,8 +910,8 @@ nsresult nsSiteSecurityService::HostHasHSTSEntry(
   
   if (checkPreloadList && GetPreloadStatus(aHost, &includeSubdomains)) {
     SSSLOG(("%s is a preloaded HSTS host", aHost.get()));
-    *aResult = aRequireIncludeSubdomains ? includeSubdomains : true;
-    aHostHasHSTSEntry = true;
+    aHostMatchesHSTSEntry =
+        aRequireIncludeSubdomains ? includeSubdomains : true;
   }
 
   return NS_OK;
@@ -926,8 +921,6 @@ nsresult nsSiteSecurityService::IsSecureHost(
     const nsACString& aHost, const OriginAttributes& aOriginAttributes,
     bool* aResult) {
   NS_ENSURE_ARG(aResult);
-
-  
   *aResult = false;
 
   
@@ -940,48 +933,54 @@ nsresult nsSiteSecurityService::IsSecureHost(
       PublicKeyPinningService::CanonicalizeHostname(flatHost.get()));
 
   
-  bool hostHasHSTSEntry = false;
-  nsresult rv = HostHasHSTSEntry(host, false, aOriginAttributes,
-                                 hostHasHSTSEntry, aResult);
+  bool hostMatchesHSTSEntry = false;
+  nsresult rv = HostMatchesHSTSEntry(host, false, aOriginAttributes,
+                                     hostMatchesHSTSEntry);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  if (hostHasHSTSEntry) {
+  if (hostMatchesHSTSEntry) {
+    *aResult = true;
     return NS_OK;
   }
 
-  SSSLOG(("no HSTS data for %s found, walking up domain", host.get()));
-  const char* subdomain;
+  SSSLOG(("%s not congruent match for any known HSTS host", host.get()));
+  const char* superdomain;
 
   uint32_t offset = 0;
   for (offset = host.FindChar('.', offset) + 1; offset > 0;
        offset = host.FindChar('.', offset) + 1) {
-    subdomain = host.get() + offset;
+    superdomain = host.get() + offset;
 
     
-    if (strlen(subdomain) < 1) {
+    if (strlen(superdomain) < 1) {
       break;
     }
 
     
     
     
-    nsAutoCString subdomainString(subdomain);
-
-    hostHasHSTSEntry = false;
-    rv = HostHasHSTSEntry(subdomainString, true, aOriginAttributes,
-                          hostHasHSTSEntry, aResult);
+    nsAutoCString superdomainString(superdomain);
+    hostMatchesHSTSEntry = false;
+    rv = HostMatchesHSTSEntry(superdomainString, true, aOriginAttributes,
+                              hostMatchesHSTSEntry);
     if (NS_FAILED(rv)) {
       return rv;
     }
-    if (hostHasHSTSEntry) {
-      break;
+    if (hostMatchesHSTSEntry) {
+      *aResult = true;
+      return NS_OK;
     }
 
-    SSSLOG(("no HSTS data for %s found, walking up domain", subdomain));
+    SSSLOG(
+        ("superdomain %s not known HSTS host (or includeSubdomains not set), "
+         "walking up domain",
+         superdomain));
   }
 
   
+  
+  *aResult = false;
   return NS_OK;
 }
 
