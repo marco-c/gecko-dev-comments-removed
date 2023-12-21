@@ -20,6 +20,11 @@ const { tracerSpec } = require("resource://devtools/shared/specs/tracer.js");
 const { throttle } = require("resource://devtools/shared/throttle.js");
 
 const {
+  makeDebuggeeValue,
+  createValueGripForTarget,
+} = require("devtools/server/actors/object/utils");
+
+const {
   TYPES,
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
@@ -85,8 +90,18 @@ class TracerActor extends Actor {
     return false;
   }
 
-  startTracing(logMethod = LOG_METHODS.STDOUT) {
-    this.#startTracing({ logMethod });
+  
+
+
+
+
+
+
+
+
+
+  startTracing(logMethod = LOG_METHODS.STDOUT, options = {}) {
+    this.#startTracing({ ...options, logMethod });
   }
 
   #startTracing(options) {
@@ -109,11 +124,14 @@ class TracerActor extends Actor {
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
     };
     addTracingListener(this.tracingListener);
+    this.traceValues = !!options.traceValues;
     startTracing({
       global: this.targetActor.window || this.targetActor.workerGlobal,
       prefix: options.prefix || "",
       
       traceDOMEvents: true,
+      
+      traceValues: !!options.traceValues,
     });
   }
 
@@ -238,6 +256,22 @@ class TracerActor extends Actor {
         });
       }
 
+      let args = undefined;
+      
+      
+      if (this.traceValues) {
+        args = [];
+        for (let arg of frame.arguments) {
+          
+          if (arg?.unsafeDereference) {
+            arg = arg.unsafeDereference();
+          }
+          
+          const dbgObj = makeDebuggeeValue(this.targetActor, arg);
+          args.push(createValueGripForTarget(this.targetActor, dbgObj));
+        }
+      }
+
       
       this.throttledTraces.push({
         resourceType: JSTRACER_TRACE,
@@ -251,6 +285,7 @@ class TracerActor extends Actor {
         lineNumber,
         columnNumber: columnNumber - columnBase,
         sourceId: script.source.id,
+        args,
       });
       this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {

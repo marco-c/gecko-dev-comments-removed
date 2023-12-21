@@ -12,7 +12,7 @@ webconsole-commands-usage-block =
 
   Start blocking network requests
 
-    It accepts only one URLSTRING argument, an unquoted string which will be used to block all requests whose URL includes this string.
+    It accepts only one URL_STRING argument, an unquoted string which will be used to block all requests whose URL includes this string.
     Use :unblock or the Network Monitor request blocking sidebar to undo this.
 
 # Usage string for :unblock command
@@ -24,12 +24,13 @@ webconsole-commands-usage-unblock =
     It accepts only one argument, the exact same string previously passed to :block.
 
 # Usage string for :trace command
-webconsole-commands-usage-trace =
+webconsole-commands-usage-trace2 =
   :trace
 
   Toggles the JavaScript tracer
 
     It supports the following arguments:
       --logMethod to be set to ‘console’ for logging to the web console (the default), or ‘stdout’ for logging to the standard output,
+      --values Optional flag to be passed to log function call arguments as well as returned values (when returned frames are enabled).
       --prefix Optional string which will be logged in front of all the trace logs,
       --help or --usage to show this message.
