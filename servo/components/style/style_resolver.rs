@@ -223,7 +223,11 @@ where
         
         let may_reuse = self.element.matches_user_and_content_rules() &&
             parent_style.is_some() &&
-            inputs.rules.is_some();
+            inputs.rules.is_some() &&
+            
+            
+            
+            !inputs.flags.contains(ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR);
 
         if may_reuse {
             let cached = self.context.thread_local.sharing_cache.lookup_by_rules(
