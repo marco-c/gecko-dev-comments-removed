@@ -4,6 +4,7 @@ if (typeof classifierHelper == "undefined") {
 
 const CLASSIFIER_COMMON_URL = SimpleTest.getTestFileURL("classifierCommon.js");
 var gScript = SpecialPowers.loadChromeScript(CLASSIFIER_COMMON_URL);
+var gOriginalGetHashURL;
 
 const PREFS = {
   PROVIDER_LISTS: "browser.safebrowsing.provider.mozilla.lists",
@@ -48,6 +49,9 @@ classifierHelper.allowCompletion = async function (lists, url) {
     pref = pref.replace(list, list + "-backup");
     await SpecialPowers.setCharPref(PREFS.DISALLOW_COMPLETIONS, pref);
   }
+
+  
+  gOriginalGetHashURL = SpecialPowers.getCharPref(PREFS.PROVIDER_GETHASHURL);
 
   
   await SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
@@ -121,6 +125,17 @@ classifierHelper.reloadDatabase = function () {
   });
 };
 
+classifierHelper.getTables = function () {
+  return new Promise(resolve => {
+    gScript.addMessageListener("GetTableSuccess", function handler(tables) {
+      gScript.removeMessageListener("GetTableSuccess", handler);
+      resolve(tables);
+    });
+
+    gScript.sendAsyncMessage("doGetTables");
+  });
+};
+
 classifierHelper._update = function (testUpdate, onsuccess, onerror) {
   
   classifierHelper._updates.push({
@@ -173,9 +188,11 @@ classifierHelper._setup = function () {
 
 classifierHelper._cleanup = function () {
   
-  for (var pref in PREFS) {
-    SpecialPowers.clearUserPref(pref);
-  }
+  Object.values(PREFS).map(pref => SpecialPowers.clearUserPref(pref));
+
+  
+  
+  SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, gOriginalGetHashURL);
 
   if (!classifierHelper._updatesToCleanup) {
     return Promise.resolve();
