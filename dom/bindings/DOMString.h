@@ -138,21 +138,6 @@ class MOZ_STACK_CLASS DOMString {
     return mLength;
   }
 
-  bool HasAtom() const {
-    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
-    MOZ_ASSERT(mState > State::Null,
-               "Caller should have checked IsNull() and IsEmpty() first");
-    return mState == State::UnownedAtom;
-  }
-
-  
-  
-  nsDynamicAtom* Atom() const {
-    MOZ_ASSERT(HasAtom(), "Don't ask for the atom if we don't have it");
-    MOZ_ASSERT(mAtom, "We better have an atom if we claim to");
-    return mAtom;
-  }
-
   
   
   
@@ -200,7 +185,6 @@ class MOZ_STACK_CLASS DOMString {
   void SetKnownLiveAtom(nsAtom* aAtom, NullHandling aNullHandling) {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
-    MOZ_ASSERT(!mAtom, "Setting atom twice?");
     MOZ_ASSERT(aAtom || aNullHandling != eNullNotExpected);
     if (aNullHandling == eNullNotExpected || aAtom) {
       if (aAtom->IsStatic()) {
@@ -209,8 +193,8 @@ class MOZ_STACK_CLASS DOMString {
         SetLiteralInternal(aAtom->AsStatic()->GetUTF16String(),
                            aAtom->GetLength());
       } else {
-        mAtom = aAtom->AsDynamic();
-        mState = State::UnownedAtom;
+        SetKnownLiveStringBuffer(aAtom->AsDynamic()->StringBuffer(),
+                                 aAtom->GetLength());
       }
     } else if (aNullHandling == eTreatNullAsNull) {
       SetNull();
@@ -259,8 +243,6 @@ class MOZ_STACK_CLASS DOMString {
       }
     } else if (HasLiteral()) {
       aString.AssignLiteral(Literal(), LiteralLength());
-    } else if (HasAtom()) {
-      mAtom->ToString(aString);
     } else {
       aString = AsAString();
     }
@@ -292,11 +274,8 @@ class MOZ_STACK_CLASS DOMString {
     
     
 
-    String,       
-    Literal,      
-    UnownedAtom,  
-    
-    
+    String,               
+    Literal,              
     OwnedStringBuffer,    
     UnownedStringBuffer,  
     
@@ -314,11 +293,6 @@ class MOZ_STACK_CLASS DOMString {
         "assertions") mStringBuffer;
     
     const char16_t* mLiteral;
-    
-    nsDynamicAtom* MOZ_UNSAFE_REF(
-        "The ways in which this can be safe are "
-        "documented above and enforced through "
-        "assertions") mAtom;
   };
 
   
