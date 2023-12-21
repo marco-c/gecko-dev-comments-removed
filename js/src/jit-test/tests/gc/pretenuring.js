@@ -34,9 +34,17 @@ for (let i = 1; i < 500000; i++) {
 }
 gc();
 assertEq(nurseryStringsEnabled(), false);
-
-
-
 a = undefined;
+
+
+
+
 gc();
+assertEq(nurseryStringsEnabled(), false);
+let initGCNumber = gcparam('majorGCNumber');
+while (!nurseryStringsEnabled() && gcparam('majorGCNumber') < initGCNumber + 3) {
+  for (let i = 1; i < 100000; i++) {
+    a = i.toString();
+  }
+}
 assertEq(nurseryStringsEnabled(), true);

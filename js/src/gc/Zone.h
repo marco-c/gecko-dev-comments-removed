@@ -195,10 +195,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<void*> data;
 
   
-  js::MainThreadOrGCTaskData<size_t> markedStrings;
-  js::MainThreadOrGCTaskData<size_t> finalizedStrings;
-
-  
   
   
   
