@@ -2503,17 +2503,6 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObj,
 
 
 
-
-bool InterfaceHasInstance(JSContext* cx, unsigned argc, JS::Value* vp);
-
-bool InterfaceHasInstance(JSContext* cx, int prototypeID, int depth,
-                          JS::Handle<JSObject*> instance, bool* bp);
-
-
-bool InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp);
-
-
-
 bool ReportLenientThisUnwrappingFailure(JSContext* cx, JSObject* obj);
 
 

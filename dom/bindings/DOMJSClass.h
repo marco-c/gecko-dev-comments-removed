@@ -594,7 +594,7 @@ struct DOMIfaceJSClass : public DOMIfaceAndProtoJSClass {
   
   
   
-  bool wantsInterfaceHasInstance;
+  bool wantsInterfaceIsInstance;
 
   
   
