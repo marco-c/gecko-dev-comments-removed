@@ -22,7 +22,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/NullPrincipal.h"
-#include "mozilla/StackWalk.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozIThirdPartyUtil.h"
@@ -50,23 +49,6 @@
 using namespace mozilla::dom;
 
 namespace mozilla::net {
-
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
- void LoadInfo::StackTrace::StackWalkCallback(uint32_t aFrameNumber,
-                                                          void* aPc, void* aSp,
-                                                          void* aClosure) {
-  StackTrace* st = (StackTrace*)aClosure;
-  MOZ_ASSERT(st->mLength < kMaxFrames);
-  st->mPcs[st->mLength] = aPc;
-  st->mLength++;
-  MOZ_ASSERT(st->mLength == aFrameNumber);
-}
-
-void LoadInfo::StackTrace::Fill() {
-  mLength = 0;
-  MozStackWalk(StackWalkCallback, nullptr, kMaxFrames, this);
-}
-#endif  
 
 static nsCString CurrentRemoteType() {
   MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsContentProcess());
@@ -791,11 +773,6 @@ LoadInfo::LoadInfo(
       mHasInjectedCookieForCookieBannerHandling(
           aHasInjectedCookieForCookieBannerHandling),
       mWasSchemelessInput(aWasSchemelessInput) {
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
-  if (mReservedClientInfo.isSome()) {
-    mReservedClientInfoEmplaceTrace.Fill();
-  }
-#endif  
   
   MOZ_ASSERT(mLoadingPrincipal ||
              aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT);
@@ -2149,15 +2126,6 @@ UniquePtr<ClientSource> LoadInfo::TakeReservedClientSource() {
   return std::move(mReservedClientSource);
 }
 
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
-[[clang::optnone]] MOZ_NEVER_INLINE static void CrashWithEmplaceTrace(
-    const LoadInfo::StackTrace& aEmplaceStackTrace) {
-  
-  LoadInfo::StackTrace emplaceStackTrace [[maybe_unused]]{aEmplaceStackTrace};
-  MOZ_CRASH("mReservedClientInfo already set, emplace stack trace available");
-}
-#endif  
-
 void LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo) {
   MOZ_DIAGNOSTIC_ASSERT(mInitialClientInfo.isNothing());
   
@@ -2166,16 +2134,10 @@ void LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo) {
     if (mReservedClientInfo.ref() == aClientInfo) {
       return;
     }
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
-    CrashWithEmplaceTrace(mReservedClientInfoEmplaceTrace);
-#endif  
     MOZ_DIAGNOSTIC_ASSERT(false, "mReservedClientInfo already set");
     mReservedClientInfo.reset();
   }
   mReservedClientInfo.emplace(aClientInfo);
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
-  mReservedClientInfoEmplaceTrace.Fill();
-#endif  
 }
 
 void LoadInfo::OverrideReservedClientInfoInParent(
@@ -2186,9 +2148,6 @@ void LoadInfo::OverrideReservedClientInfoInParent(
   mInitialClientInfo.reset();
   mReservedClientInfo.reset();
   mReservedClientInfo.emplace(aClientInfo);
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN) && defined(_M_X64)
-  mReservedClientInfoEmplaceTrace.Fill();
-#endif  
 }
 
 const Maybe<ClientInfo>& LoadInfo::GetReservedClientInfo() {
