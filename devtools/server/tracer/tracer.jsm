@@ -93,6 +93,9 @@ const customLazy = {
 
 
 
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -120,15 +123,40 @@ class JavaScriptTracer {
           : dump;
     }
 
+    this.traceDOMEvents = !!options.traceDOMEvents;
+    this.traceValues = !!options.traceValues;
+
+    if (options.traceOnNextInteraction) {
+      this.abortController = new AbortController();
+      const listener = () => {
+        this.abortController.abort();
+        
+        if (this.dbg) {
+          this.#startTracing();
+        }
+      };
+      const eventOptions = {
+        signal: this.abortController.signal,
+        capture: true,
+      };
+      
+      const eventHandler = this.tracedGlobal.docShell.chromeEventHandler;
+      eventHandler.addEventListener("mousedown", listener, eventOptions);
+      eventHandler.addEventListener("keydown", listener, eventOptions);
+    } else {
+      this.#startTracing();
+    }
+
+    
+    this.notifyToggle(true);
+  }
+
+  #startTracing() {
     this.dbg.onEnterFrame = this.onEnterFrame;
 
-    this.traceDOMEvents = !!options.traceDOMEvents;
     if (this.traceDOMEvents) {
       this.startTracingDOMEvents();
     }
-    this.traceValues = !!options.traceValues;
-
-    this.notifyToggle(true);
   }
 
   startTracingDOMEvents() {
@@ -141,9 +169,11 @@ class JavaScriptTracer {
   }
 
   stopTracingDOMEvents() {
-    this.debuggerNotificationObserver.removeListener(this.eventListener);
-    this.debuggerNotificationObserver.disconnect(this.tracedGlobal);
-    this.debuggerNotificationObserver = null;
+    if (this.debuggerNotificationObserver) {
+      this.debuggerNotificationObserver.removeListener(this.eventListener);
+      this.debuggerNotificationObserver.disconnect(this.tracedGlobal);
+      this.debuggerNotificationObserver = null;
+    }
     this.currentDOMEvent = null;
   }
 
@@ -186,6 +216,10 @@ class JavaScriptTracer {
     this.dbg = null;
     this.depth = 0;
     this.options = null;
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
 
     if (this.traceDOMEvents) {
       this.stopTracingDOMEvents();

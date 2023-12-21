@@ -132,6 +132,8 @@ class TracerActor extends Actor {
       traceDOMEvents: true,
       
       traceValues: !!options.traceValues,
+      
+      traceOnNextInteraction: !!options.traceOnNextInteraction,
     });
   }
 
