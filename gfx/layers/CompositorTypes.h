@@ -13,6 +13,7 @@
 #include "LayersTypes.h"  
 #include "nsXULAppAPI.h"  
 #include "mozilla/gfx/Types.h"
+#include "mozilla/layers/SyncObject.h"
 #include "mozilla/EnumSet.h"
 
 #include "mozilla/TypedEnumBits.h"
@@ -96,9 +97,11 @@ enum class TextureFlags : uint32_t {
   DUMMY_TEXTURE = 1 << 22,
   
   SOFTWARE_DECODED_VIDEO = 1 << 23,
+  
+  DATA_SELF_DELETING = 1 << 24,
 
   
-  ALL_BITS = (1 << 24) - 1,
+  ALL_BITS = (1 << 25) - 1,
   
   DEFAULT = NO_FLAGS
 };
@@ -145,12 +148,6 @@ enum class CompositableType : uint8_t {
   COUNT
 };
 
-#ifdef XP_WIN
-typedef void* SyncHandle;
-#else
-typedef uintptr_t SyncHandle;
-#endif  
-
 
 
 
@@ -178,7 +175,7 @@ struct TextureFactoryIdentifier {
       bool aCompositorUseDComp = false, bool aUseCompositorWnd = false,
       bool aSupportsTextureBlitting = false,
       bool aSupportsPartialUploads = false, bool aSupportsComponentAlpha = true,
-      bool aSupportsD3D11NV12 = false, SyncHandle aSyncHandle = 0)
+      bool aSupportsD3D11NV12 = false, SyncHandle aSyncHandle = {})
       : mParentBackend(aLayersBackend),
         mWebRenderBackend(WebRenderBackend::HARDWARE),
         mWebRenderCompositor(WebRenderCompositor::DRAW),
@@ -201,7 +198,7 @@ struct TextureFactoryIdentifier {
       bool aCompositorUseDComp = false, bool aUseCompositorWnd = false,
       bool aSupportsTextureBlitting = false,
       bool aSupportsPartialUploads = false, bool aSupportsComponentAlpha = true,
-      bool aSupportsD3D11NV12 = false, SyncHandle aSyncHandle = 0)
+      bool aSupportsD3D11NV12 = false, SyncHandle aSyncHandle = {})
       : mParentBackend(LayersBackend::LAYERS_WR),
         mWebRenderBackend(aWebRenderBackend),
         mWebRenderCompositor(aWebRenderCompositor),
