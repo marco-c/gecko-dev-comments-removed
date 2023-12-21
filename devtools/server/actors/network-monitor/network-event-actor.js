@@ -579,9 +579,7 @@ class NetworkEventActor extends Actor {
 
 
 
-
-
-  addEventTimings(total, timings, offsets, serverTimings) {
+  addEventTimings(total, timings, offsets) {
     
     if (this.isDestroyed()) {
       return;
@@ -590,10 +588,6 @@ class NetworkEventActor extends Actor {
     this._totalTime = total;
     this._timings = timings;
     this._offsets = offsets;
-
-    if (serverTimings) {
-      this._serverTimings = serverTimings;
-    }
 
     this._onEventUpdate("eventTimings", { totalTime: total });
   }
@@ -608,9 +602,10 @@ class NetworkEventActor extends Actor {
 
 
   addServerTimings(serverTimings) {
-    if (serverTimings) {
-      this._serverTimings = serverTimings;
+    if (!serverTimings || this.isDestroyed()) {
+      return;
     }
+    this._serverTimings = serverTimings;
   }
 
   _createLongStringActor(string) {

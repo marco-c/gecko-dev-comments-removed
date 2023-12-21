@@ -165,6 +165,7 @@ class NetworkEventContentWatcher {
         {} ,
         {} 
       );
+      actor.addServerTimings({});
       actor.addResponseContent(
         {
           mimeType: channel.contentType,
