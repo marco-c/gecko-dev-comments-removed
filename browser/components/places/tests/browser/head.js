@@ -131,6 +131,17 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
   var rect = aTree.getCoordsForCellItem(rowID, aTree.columns[0], "text");
   var x = rect.x + rect.width / 2;
   var y = rect.y + rect.height / 2;
+  if (aTree.id == "bookmarks-view" || aTree.id == "historyTree") {
+    
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({
+      labelRule: false,
+    });
+  }
   
   EventUtils.synthesizeMouse(
     aTree.body,
@@ -139,6 +150,7 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
     aOptions || {},
     aTree.ownerGlobal
   );
+  AccessibilityUtils.resetEnv();
 }
 
 
