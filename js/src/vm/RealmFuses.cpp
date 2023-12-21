@@ -45,6 +45,24 @@ int32_t js::RealmFuses::offsetOfFuseWordRelativeToRealm(
   return base_offset + fuse_offset + fuseWordOffset;
 }
 
+const char* js::RealmFuses::fuseNames[] = {
+#define FUSE(Name, LowerName) #LowerName,
+    FOR_EACH_REALM_FUSE(FUSE)
+#undef FUSE
+};
+
+
+
+
+
+
+
+const char* js::RealmFuses::getFuseName(RealmFuses::FuseIndex index) {
+  uint8_t rawIndex = uint8_t(index);
+  MOZ_ASSERT(rawIndex > 0 && index < RealmFuses::FuseIndex::LastFuseIndex);
+  return fuseNames[rawIndex];
+}
+
 bool js::OptimizeGetIteratorFuse::checkInvariant(JSContext* cx) {
   
   
