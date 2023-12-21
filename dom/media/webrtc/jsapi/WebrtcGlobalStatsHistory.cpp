@@ -3,11 +3,9 @@
 
 
 #include "WebrtcGlobalStatsHistory.h"
-#include <memory>
 
 #include "domstubs.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"  
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPrefs_media.h"
