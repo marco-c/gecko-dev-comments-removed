@@ -540,10 +540,10 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-
-  void ClearMovedAccessibles() {
+  void ClearMutationData() {
     mMovedAccessibles.Clear();
     mInsertedAccessibles.Clear();
+    mRemovedNodes.Clear();
   }
 
   
@@ -808,6 +808,9 @@ class DocAccessible : public HyperTextAccessible,
   
   
   nsTHashSet<RefPtr<LocalAccessible>> mInsertedAccessibles;
+  
+  
+  nsTHashSet<nsIContent*> mRemovedNodes;
 };
 
 inline DocAccessible* LocalAccessible::AsDoc() {

@@ -1016,9 +1016,6 @@ void DocAccessible::ContentRemoved(nsIContent* aChildNode,
     logging::MsgEnd();
   }
 #endif
-  
-  
-  
   ContentRemoved(aChildNode);
 }
 
@@ -2176,6 +2173,10 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
 }
 
 void DocAccessible::ContentRemoved(nsIContent* aContentNode) {
+  if (!mRemovedNodes.EnsureInserted(aContentNode)) {
+    return;
+  }
+
   
   LocalAccessible* acc = GetAccessible(aContentNode);
   if (acc) {
