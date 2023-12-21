@@ -20,7 +20,6 @@
 #include "mozilla/layers/PImageBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsRegion.h"  
 #include "mozilla/gfx/Rect.h"
@@ -155,8 +154,6 @@ class ImageBridgeChild final : public PImageBridgeChild,
   void BeginTransaction();
   void EndTransaction();
 
-  FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator() override;
-
   
 
 
@@ -207,11 +204,6 @@ class ImageBridgeChild final : public PImageBridgeChild,
 
   void FlushAllImages(ImageClient* aClient, ImageContainer* aContainer);
 
-  
-
-
-  void FlushEvents();
-
   bool IPCOpen() const override { return mCanSend; }
 
  private:
@@ -229,8 +221,6 @@ class ImageBridgeChild final : public PImageBridgeChild,
 
   void FlushAllImagesSync(SynchronousTask* aTask, ImageClient* aClient,
                           ImageContainer* aContainer);
-
-  void FlushEventsSync(SynchronousTask* aTask);
 
   void ProxyAllocShmemNow(SynchronousTask* aTask, size_t aSize,
                           mozilla::ipc::Shmem* aShmem, bool aUnsafe,
@@ -352,9 +342,8 @@ class ImageBridgeChild final : public PImageBridgeChild,
   uint32_t mNamespace;
 
   CompositableTransaction* mTxn;
-  UniquePtr<FixedSizeSmallShmemSectionAllocator> mSectionAllocator;
 
-  mozilla::Atomic<bool> mCanSend;
+  bool mCanSend;
   mozilla::Atomic<bool> mDestroyed;
 
   

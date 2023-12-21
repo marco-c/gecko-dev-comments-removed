@@ -39,6 +39,7 @@ using mozilla::dom::BrowserChild;
 
 class IAPZCTreeManager;
 class APZCTreeManagerChild;
+class CanvasChild;
 class CompositorBridgeParent;
 class CompositorManagerChild;
 class CompositorOptions;
@@ -99,6 +100,8 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
       LayersBackend aLayersBackend, TextureFlags aFlags,
       const dom::ContentParentId& aContentId, uint64_t aSerial,
       wr::MaybeExternalImageId& aExternalImageId) override;
+
+  already_AddRefed<CanvasChild> GetCanvasChild() final;
 
   void EndCanvasTransaction();
 
@@ -246,6 +249,8 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   
   nsTArray<RefPtr<TextureClient>> mTextureClientsForAsyncPaint;
+
+  RefPtr<CanvasChild> mCanvasChild;
 };
 
 }  

@@ -13,7 +13,6 @@
 #include "mozilla/gfx/DrawTargetWebgl.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
-#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/BufferTexture.h"
@@ -649,15 +648,9 @@ bool CanvasTranslator::CheckForFreshCanvasDevice(int aLineNumber) {
     NotifyDeviceChanged();
   }
 
-  RefPtr<Runnable> runnable =
-      NS_NewRunnableFunction("CanvasTranslator NotifyDeviceReset", []() {
-        if (XRE_IsGPUProcess()) {
-          gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
-        } else {
-          gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(
-               false);
-        }
-      });
+  RefPtr<Runnable> runnable = NS_NewRunnableFunction(
+      "CanvasTranslator NotifyDeviceReset",
+      []() { gfx::GPUParent::GetSingleton()->NotifyDeviceReset(); });
 
   
   

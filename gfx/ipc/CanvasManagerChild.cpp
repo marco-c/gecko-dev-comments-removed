@@ -5,14 +5,11 @@
 
 
 #include "CanvasManagerChild.h"
-#include "mozilla/AppShutdown.h"
-#include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/layers/ActiveResource.h"
 #include "mozilla/layers/CanvasChild.h"
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/webgpu/WebGPUChild.h"
@@ -34,32 +31,17 @@ CanvasManagerChild::CanvasManagerChild(uint32_t aId) : mId(aId) {}
 CanvasManagerChild::~CanvasManagerChild() = default;
 
 void CanvasManagerChild::ActorDestroy(ActorDestroyReason aReason) {
-  DestroyInternal();
   if (sLocalManager.get() == this) {
     sLocalManager.set(nullptr);
   }
   mWorkerRef = nullptr;
 }
 
-void CanvasManagerChild::DestroyInternal() {
-  std::set<CanvasRenderingContext2D*> activeCanvas = std::move(mActiveCanvas);
-  for (const auto& i : activeCanvas) {
-    i->OnShutdown();
-  }
-
-  if (mActiveResourceTracker) {
-    mActiveResourceTracker->AgeAllGenerations();
-    mActiveResourceTracker.reset();
-  }
-
+void CanvasManagerChild::Destroy() {
   if (mCanvasChild) {
     mCanvasChild->Destroy();
     mCanvasChild = nullptr;
   }
-}
-
-void CanvasManagerChild::Destroy() {
-  DestroyInternal();
 
   
   
@@ -127,21 +109,11 @@ void CanvasManagerChild::Destroy() {
     
     
     
-    RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
+    manager->mWorkerRef = IPCWorkerRef::Create(
         worker, "CanvasManager", [manager]() { manager->Destroy(); });
-    if (NS_WARN_IF(!workerRef)) {
+    if (NS_WARN_IF(!manager->mWorkerRef)) {
       return nullptr;
     }
-
-    manager->mWorkerRef = new ThreadSafeWorkerRef(workerRef);
-  } else if (NS_IsMainThread()) {
-    if (NS_WARN_IF(
-            AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed))) {
-      return nullptr;
-    }
-  } else {
-    MOZ_ASSERT_UNREACHABLE("Can only be used on main or DOM worker threads!");
-    return nullptr;
   }
 
   if (NS_WARN_IF(!childEndpoint.Bind(manager))) {
@@ -165,24 +137,6 @@ void CanvasManagerChild::Destroy() {
   manager->SendInitialize(manager->Id());
   sLocalManager.set(manager);
   return manager;
-}
-
- CanvasManagerChild* CanvasManagerChild::MaybeGet() {
-  if (!sLocalManager.initialized()) {
-    return nullptr;
-  }
-
-  return sLocalManager.get();
-}
-
-void CanvasManagerChild::AddShutdownObserver(
-    dom::CanvasRenderingContext2D* aCanvas) {
-  mActiveCanvas.insert(aCanvas);
-}
-
-void CanvasManagerChild::RemoveShutdownObserver(
-    dom::CanvasRenderingContext2D* aCanvas) {
-  mActiveCanvas.erase(aCanvas);
 }
 
 void CanvasManagerChild::EndCanvasTransaction() {
@@ -214,8 +168,6 @@ void CanvasManagerChild::DeactivateCanvas() {
 void CanvasManagerChild::BlockCanvas() { mBlocked = true; }
 
 RefPtr<layers::CanvasChild> CanvasManagerChild::GetCanvasChild() {
-  MOZ_ASSERT(gfxPlatform::UseRemoteCanvas());
-
   if (mBlocked) {
     return nullptr;
   }
@@ -226,12 +178,10 @@ RefPtr<layers::CanvasChild> CanvasManagerChild::GetCanvasChild() {
   }
 
   if (!mCanvasChild) {
-    auto canvasChild = MakeRefPtr<layers::CanvasChild>(mWorkerRef);
-    if (NS_WARN_IF(!SendPCanvasConstructor(canvasChild))) {
-      canvasChild->Destroy();
-      return nullptr;
+    mCanvasChild = MakeAndAddRef<layers::CanvasChild>();
+    if (!SendPCanvasConstructor(mCanvasChild)) {
+      mCanvasChild = nullptr;
     }
-    mCanvasChild = std::move(canvasChild);
   }
 
   return mCanvasChild;
@@ -246,14 +196,6 @@ RefPtr<webgpu::WebGPUChild> CanvasManagerChild::GetWebGPUChild() {
   }
 
   return mWebGPUChild;
-}
-
-layers::ActiveResourceTracker* CanvasManagerChild::GetActiveResourceTracker() {
-  if (!mActiveResourceTracker) {
-    mActiveResourceTracker = MakeUnique<ActiveResourceTracker>(
-        1000, "CanvasManagerChild", GetCurrentSerialEventTarget());
-  }
-  return mActiveResourceTracker.get();
 }
 
 already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
