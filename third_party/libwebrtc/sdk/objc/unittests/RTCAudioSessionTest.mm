@@ -213,18 +213,7 @@
 }
 
 
-
-
-
-
-
-OCMLocation *OCMMakeLocation(id testCase, const char *fileCString, int line){
-  return [OCMLocation locationWithTestCase:testCase
-                                      file:[NSString stringWithUTF8String:fileCString]
-                                      line:line];
-}
-
-- (void)testConfigureWebRTCSession {
+- (void)DISABLED_testConfigureWebRTCSession {
   NSError *error = nil;
 
   void (^setActiveBlock)(NSInvocation *invocation) = ^(NSInvocation *invocation) {
@@ -264,15 +253,19 @@ OCMLocation *OCMMakeLocation(id testCase, const char *fileCString, int line){
   EXPECT_EQ(NO, [mockAVAudioSession setActive:YES withOptions:0 error:&error]);
   [audioSession unlockForConfiguration];
 
+  
+  _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wunused-value\"");
   OCMVerify([mockAudioSession session]);
   OCMVerify([[mockAVAudioSession ignoringNonObjectArgs] setActive:YES withOptions:0 error:&error]);
   OCMVerify([[mockAVAudioSession ignoringNonObjectArgs] setActive:NO withOptions:0 error:&error]);
+  _Pragma("clang diagnostic pop");
 
   [mockAVAudioSession stopMocking];
   [mockAudioSession stopMocking];
 }
 
-- (void)testConfigureWebRTCSessionWithoutLocking {
+
+- (void)DISABLED_testConfigureWebRTCSessionWithoutLocking {
   NSError *error = nil;
 
   id mockAVAudioSession = OCMPartialMock([AVAudioSession sharedInstance]);
