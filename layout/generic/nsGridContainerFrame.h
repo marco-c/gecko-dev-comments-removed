@@ -453,9 +453,6 @@ class nsGridContainerFrame final : public nsContainerFrame,
 
   nsFrameState ComputeSelfSubgridMasonryBits() const;
 
-  
-  bool WillHaveAtLeastOneTrackInAxis(LogicalAxis aAxis) const;
-
  private:
   
   struct Fragmentainer {

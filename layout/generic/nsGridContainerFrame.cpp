@@ -9317,26 +9317,27 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
 
   
   
-  const nsIFrame* outerFrame = this;
+
+  
+  
+  
+  
   
   auto* parent = GetParent();
   while (parent && parent->GetContent() == GetContent()) {
     
     
     
+    
     if (ShouldInhibitSubgridDueToIFC(parent)) {
       return bits;
     }
-    outerFrame = parent;
     parent = parent->GetParent();
   }
-  const nsGridContainerFrame* gridParent = do_QueryFrame(parent);
-  if (gridParent) {
+  const nsGridContainerFrame* parentGrid = do_QueryFrame(parent);
+  if (parentGrid) {
     bool isOrthogonal =
         GetWritingMode().IsOrthogonalTo(parent->GetWritingMode());
-    
-    bool isOutOfFlow =
-        outerFrame->StyleDisplay()->IsAbsolutelyPositionedStyle();
     bool isColSubgrid = pos->mGridTemplateColumns.IsSubgrid();
     
     
@@ -9346,15 +9347,6 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
       isColSubgrid = false;
       if (!HasAnyStateBits(NS_STATE_GRID_IS_ROW_MASONRY)) {
         bits |= NS_STATE_GRID_IS_COL_MASONRY;
-      }
-    }
-    
-    
-    
-    if (isColSubgrid && isOutOfFlow) {
-      auto parentAxis = isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline;
-      if (!gridParent->WillHaveAtLeastOneTrackInAxis(parentAxis)) {
-        isColSubgrid = false;
       }
     }
     if (isColSubgrid) {
@@ -9370,46 +9362,11 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
         bits |= NS_STATE_GRID_IS_ROW_MASONRY;
       }
     }
-    if (isRowSubgrid && isOutOfFlow) {
-      auto parentAxis = isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock;
-      if (!gridParent->WillHaveAtLeastOneTrackInAxis(parentAxis)) {
-        isRowSubgrid = false;
-      }
-    }
     if (isRowSubgrid) {
       bits |= NS_STATE_GRID_IS_ROW_SUBGRID;
     }
   }
   return bits;
-}
-
-bool nsGridContainerFrame::WillHaveAtLeastOneTrackInAxis(
-    LogicalAxis aAxis) const {
-  if (IsSubgrid(aAxis)) {
-    
-    
-    return true;
-  }
-  if (IsMasonry(aAxis)) {
-    return false;
-  }
-  const auto* pos = StylePosition();
-  const auto& gridTemplate = aAxis == eLogicalAxisBlock
-                                 ? pos->mGridTemplateRows
-                                 : pos->mGridTemplateColumns;
-  if (gridTemplate.IsTrackList()) {
-    return true;
-  }
-  for (nsIFrame* child : PrincipalChildList()) {
-    if (!child->IsPlaceholderFrame()) {
-      
-      return true;
-    }
-  }
-  if (!pos->mGridTemplateAreas.IsNone()) {
-    return true;
-  }
-  return false;
 }
 
 void nsGridContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -9967,8 +9924,10 @@ bool nsGridContainerFrame::ShouldInhibitSubgridDueToIFC(
   
   
   
+  
   const auto* display = aFrame->StyleDisplay();
-  return display->IsContainLayout() || display->IsContainPaint();
+  return display->IsAbsolutelyPositionedStyle() || display->IsContainLayout() ||
+         display->IsContainPaint();
 }
 
 nsGridContainerFrame* nsGridContainerFrame::GetGridContainerFrame(
