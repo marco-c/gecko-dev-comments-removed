@@ -62,8 +62,8 @@ bool nsTransitionManager::UpdateTransitions(dom::Element* aElement,
 
 
 template <typename T>
-static void ExpandTransitionProperty(
-    const StyleTransitionProperty& aProperty, T aHandler) {
+static void ExpandTransitionProperty(const StyleTransitionProperty& aProperty,
+                                     T aHandler) {
   switch (aProperty.tag) {
     case StyleTransitionProperty::Tag::Unsupported:
       break;
