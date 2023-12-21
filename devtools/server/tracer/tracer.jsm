@@ -87,6 +87,12 @@ const customLazy = {
 
 
 
+
+
+
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -103,12 +109,24 @@ class JavaScriptTracer {
     this.depth = 0;
     this.prefix = options.prefix ? `${options.prefix}: ` : "";
 
+    this.loggingMethod = options.loggingMethod;
+    if (!this.loggingMethod) {
+      
+      
+      this.loggingMethod =
+        globalThis.constructor.name == "WorkerDebuggerGlobalScope"
+          ? 
+            dump.bind(globalThis)
+          : dump;
+    }
+
     this.dbg.onEnterFrame = this.onEnterFrame;
 
     this.traceDOMEvents = !!options.traceDOMEvents;
     if (this.traceDOMEvents) {
       this.startTracingDOMEvents();
     }
+    this.traceValues = !!options.traceValues;
 
     this.notifyToggle(true);
   }
@@ -222,9 +240,9 @@ class JavaScriptTracer {
     }
     if (shouldLogToStdout) {
       if (state) {
-        dump(this.prefix + "Start tracing JavaScript\n");
+        this.loggingMethod(this.prefix + "Start tracing JavaScript\n");
       } else {
-        dump(this.prefix + "Stop tracing JavaScript\n");
+        this.loggingMethod(this.prefix + "Stop tracing JavaScript\n");
       }
     }
   }
@@ -241,7 +259,7 @@ class JavaScriptTracer {
       }
     }
     if (shouldLogToStdout) {
-      dump(
+      this.loggingMethod(
         this.prefix +
           "Looks like an infinite recursion? We stopped the JavaScript tracer, but code may still be running!\n"
       );
@@ -300,7 +318,9 @@ class JavaScriptTracer {
         
         
         if (this.currentDOMEvent && this.depth == 0) {
-          dump(this.prefix + padding + this.currentDOMEvent + "\n");
+          this.loggingMethod(
+            this.prefix + padding + this.currentDOMEvent + "\n"
+          );
         }
 
         
@@ -311,11 +331,38 @@ class JavaScriptTracer {
         
         const urlLink = `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
 
-        const message = `${padding}[${
+        let message = `${padding}[${
           frame.implementation
         }]—> ${urlLink} - ${formatDisplayName(frame)}`;
 
-        dump(this.prefix + message + "\n");
+        
+        
+        
+        
+        if (this.traceValues && frame.arguments) {
+          message += "(";
+          for (let i = 0, l = frame.arguments.length; i < l; i++) {
+            const arg = frame.arguments[i];
+            
+            if (arg?.unsafeDereference) {
+              
+              if (arg.isClassConstructor) {
+                message += "class " + arg.name;
+              } else {
+                message += objectToString(arg.unsafeDereference());
+              }
+            } else {
+              message += primitiveToString(arg);
+            }
+
+            if (i < l - 1) {
+              message += ", ";
+            }
+          }
+          message += ")";
+        }
+
+        this.loggingMethod(this.prefix + message + "\n");
       }
 
       this.depth++;
@@ -326,6 +373,55 @@ class JavaScriptTracer {
       console.error("Exception while tracing javascript", e);
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+function objectToString(obj) {
+  if (Element.isInstance(obj)) {
+    let message = `<${obj.tagName}`;
+    if (obj.id) {
+      message += ` #${obj.id}`;
+    }
+    if (obj.className) {
+      message += ` .${obj.className}`;
+    }
+    message += ">";
+    return message;
+  } else if (Array.isArray(obj)) {
+    return `Array(${obj.length})`;
+  } else if (Event.isInstance(obj)) {
+    return `Event(${obj.type}) target=${objectToString(obj.target)}`;
+  } else if (typeof obj === "function") {
+    return `function ${obj.name || "anonymous"}()`;
+  }
+  return obj;
+}
+
+function primitiveToString(value) {
+  const type = typeof value;
+  if (type === "string") {
+    
+    return JSON.stringify(value);
+  } else if (value === 0 && 1 / value === -Infinity) {
+    
+    return "-0";
+  } else if (type === "bigint") {
+    return `BigInt(${value})`;
+  } else if (value && typeof value.toString === "function") {
+    
+    return value.toString();
+  }
+
+  
+  return value;
 }
 
 

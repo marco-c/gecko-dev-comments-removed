@@ -43,18 +43,19 @@ add_task(async function () {
   
   msg = await evaluateExpressionInConsole(
     hud,
-    ":trace --logMethod console --prefix foo",
+    ":trace --logMethod console --prefix foo --values",
     "console-api"
   );
   is(msg.textContent.trim(), "Started tracing to Web Console");
 
   info("Trigger some code to log some traces");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
-    content.wrappedJSObject.main();
+    content.wrappedJSObject.main("arg", 2);
   });
 
+  
   await waitFor(
-    () => !!findTracerMessages(hud, `foo: interpreter⟶λ main`).length
+    () => !!findTracerMessages(hud, `foo: interpreter⟶λ main("arg", 2)`).length
   );
 
   info("Test toggling the tracer OFF");
