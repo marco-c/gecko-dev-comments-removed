@@ -45,40 +45,9 @@ struct PacketOptions {
 
 class Transport {
  public:
-  
-  
-  
-  
-  
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
   virtual bool SendRtp(rtc::ArrayView<const uint8_t> packet,
-                       const PacketOptions& options) {
-    return SendRtp(packet.data(), packet.size(), options);
-  }
-  virtual bool SendRtcp(rtc::ArrayView<const uint8_t> packet) {
-    return SendRtcp(packet.data(), packet.size());
-  }
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-  
-  [[deprecated("Use ArrayView version")]] virtual bool
-  SendRtp(const uint8_t* packet, size_t length, const PacketOptions& options) {
-    return SendRtp(rtc::MakeArrayView(packet, length), options);
-  }
-  [[deprecated("Use ArrayView version")]] virtual bool SendRtcp(
-      const uint8_t* packet,
-      size_t length) {
-    return SendRtcp(rtc::MakeArrayView(packet, length));
-  }
+                       const PacketOptions& options) = 0;
+  virtual bool SendRtcp(rtc::ArrayView<const uint8_t> packet) = 0;
 
  protected:
   virtual ~Transport() {}
