@@ -31,7 +31,7 @@ namespace mozilla::dom {
 MediaKeySystemAccessManager::PendingRequest::PendingRequest(
     DetailedPromise* aPromise, const nsAString& aKeySystem,
     const Sequence<MediaKeySystemConfiguration>& aConfigs)
-    : MediaKeySystemAccessRequest(aKeySystem, aConfigs), mPromise(aPromise) {
+    : mPromise(aPromise), mKeySystem(aKeySystem), mConfigs(aConfigs) {
   MOZ_COUNT_CTOR(MediaKeySystemAccessManager::PendingRequest);
 }
 
@@ -405,7 +405,7 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
 
   nsAutoCString message;
   MediaKeySystemStatus status =
-      MediaKeySystemAccess::GetKeySystemStatus(*aRequest, message);
+      MediaKeySystemAccess::GetKeySystemStatus(aRequest->mKeySystem, message);
 
   nsPrintfCString msg(
       "MediaKeySystemAccess::GetKeySystemStatus(%s) "
@@ -414,15 +414,10 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
       nsCString(MediaKeySystemStatusValues::GetString(status)).get(),
       message.get());
   LogToBrowserConsole(NS_ConvertUTF8toUTF16(msg));
-  EME_LOG("%s", msg.get());
 
   
   if (status == MediaKeySystemStatus::Cdm_not_installed &&
-      (IsWidevineKeySystem(aRequest->mKeySystem)
-#ifdef MOZ_WMF_CDM
-       || IsWidevineExperimentKeySystemAndSupported(aRequest->mKeySystem)
-#endif
-           )) {
+      IsWidevineKeySystem(aRequest->mKeySystem)) {
     
     
     
@@ -444,25 +439,13 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
       return;
     }
 
-    nsString keySystem = aRequest->mKeySystem;
-#ifdef MOZ_WMF_CDM
-    
-    
-    
-    if (CheckIfHarewareDRMConfigExists(aRequest->mConfigs)) {
-      keySystem = NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName);
-    }
-#endif
+    const nsString keySystem = aRequest->mKeySystem;
     if (AwaitInstall(std::move(aRequest))) {
       
-      EME_LOG("Await %s for installation",
-              NS_ConvertUTF16toUTF8(keySystem).get());
       MediaKeySystemAccess::NotifyObservers(mWindow, keySystem, status);
     } else {
       
       
-      EME_LOG("Failed to await %s for installation",
-              NS_ConvertUTF16toUTF8(keySystem).get());
       diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(), keySystem,
                                             false, __func__);
     }
@@ -472,8 +455,6 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
     
     
     
-    EME_LOG("Notify CDM failure for %s and reject the promise",
-            NS_ConvertUTF16toUTF8(aRequest->mKeySystem).get());
     MediaKeySystemAccess::NotifyObservers(mWindow, aRequest->mKeySystem,
                                           status);
     aRequest->RejectPromiseWithNotSupportedError(message);
@@ -616,7 +597,7 @@ nsresult MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
     for (size_t i = mPendingInstallRequests.Length(); i-- > 0;) {
       nsAutoCString message;
       MediaKeySystemStatus status = MediaKeySystemAccess::GetKeySystemStatus(
-          *mPendingInstallRequests[i], message);
+          mPendingInstallRequests[i]->mKeySystem, message);
       if (status == MediaKeySystemStatus::Cdm_not_installed) {
         
         continue;

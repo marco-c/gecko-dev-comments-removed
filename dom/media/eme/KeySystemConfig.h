@@ -121,7 +121,6 @@ struct KeySystemConfig {
     nsTArray<EMECodecString> mCodecsDecrypted;
   };
 
-  
   static bool Supports(const nsAString& aKeySystem);
   static bool CreateKeySystemConfigs(const nsAString& aKeySystem,
                                      nsTArray<KeySystemConfig>& aOutConfigs);

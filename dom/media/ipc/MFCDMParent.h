@@ -144,15 +144,9 @@ class MFCDMParent final : public PMFCDMParent {
 };
 
 
-class MFCDMService {
+class MFCDMCapabilities {
  public:
-  
   static void GetAllKeySystemsCapabilities(dom::Promise* aPromise);
-
-  
-  
-  
-  static void UpdateWidevineL1Path(nsIFile* aFile);
 
  private:
   static RefPtr<GenericNonExclusivePromise> LaunchMFCDMProcessIfNeeded(
