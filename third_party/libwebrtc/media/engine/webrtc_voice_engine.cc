@@ -1871,6 +1871,8 @@ webrtc::RTCError WebRtcVoiceSendChannel::SetRtpSendParameters(
 
     absl::optional<cricket::Codec> send_codec = GetSendCodec();
     
+    
+    
     if (parameters.encodings[0].codec && send_codec &&
         !send_codec->MatchesRtpCodec(*parameters.encodings[0].codec)) {
       RTC_LOG(LS_VERBOSE) << "Trying to change codec to "
@@ -1880,7 +1882,13 @@ webrtc::RTCError WebRtcVoiceSendChannel::SetRtpSendParameters(
             return negotiated_codec.MatchesRtpCodec(
                 *parameters.encodings[0].codec);
           });
-      RTC_DCHECK(matched_codec != send_codecs_.end());
+
+      if (matched_codec == send_codecs_.end()) {
+        return webrtc::InvokeSetParametersCallback(
+            callback, webrtc::RTCError(
+                          webrtc::RTCErrorType::INVALID_MODIFICATION,
+                          "Attempted to use an unsupported codec for layer 0"));
+      }
 
       SetSendCodecs(send_codecs_, *matched_codec);
     }
