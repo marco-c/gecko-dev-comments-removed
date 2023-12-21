@@ -6,8 +6,10 @@
 
 #include "FFmpegVideoEncoder.h"
 
+#include "BufferReader.h"
 #include "FFmpegLog.h"
 #include "FFmpegRuntimeLinker.h"
+#include "H264.h"
 #include "ImageContainer.h"
 #include "libavutil/error.h"
 #include "libavutil/pixfmt.h"
@@ -963,14 +965,6 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
   
 
   
-  
-  
-  
-  
-  
-  
-
-  
   auto data = MakeRefPtr<MediaRawData>();
   UniquePtr<MediaRawDataWriter> writer(data->CreateWriter());
   if (!writer->Append(aPacket->data, static_cast<size_t>(aPacket->size))) {
@@ -987,7 +981,77 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
                                     static_cast<int64_t>(mConfig.mFramerate));
   data->mTimecode =
       media::TimeUnit(aPacket->dts, static_cast<int64_t>(mConfig.mFramerate));
+
+  if (auto r = GetExtraData(aPacket); r.isOk()) {
+    data->mExtraData = r.unwrap();
+  }
+
   return data;
+}
+
+Result<already_AddRefed<MediaByteBuffer>, nsresult>
+FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
+  MOZ_ASSERT(aPacket);
+
+  
+  
+  if (mCodecID != AV_CODEC_ID_H264 || !mConfig.mCodecSpecific ||
+      !mConfig.mCodecSpecific->is<H264Specific>() ||
+      mConfig.mCodecSpecific->as<H264Specific>().mFormat !=
+          H264BitStreamFormat::AVC ||
+      !(aPacket->flags & AV_PKT_FLAG_KEY)) {
+    return Err(NS_ERROR_NOT_AVAILABLE);
+  }
+
+  bool useGlobalHeader =
+#if LIBAVCODEC_VERSION_MAJOR >= 57
+      mCodecContext->flags & AV_CODEC_FLAG_GLOBAL_HEADER;
+#else
+      false;
+#endif
+
+  Span<const uint8_t> buf;
+  if (useGlobalHeader) {
+    buf =
+        Span<const uint8_t>(mCodecContext->extradata,
+                            static_cast<size_t>(mCodecContext->extradata_size));
+  } else {
+    buf =
+        Span<const uint8_t>(aPacket->data, static_cast<size_t>(aPacket->size));
+  }
+  if (buf.empty()) {
+    FFMPEGV_LOG("fail to get H264 AVCC header in key frame!");
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+
+  BufferReader reader(buf);
+
+  
+  uint32_t spsSize;
+  MOZ_TRY_VAR(spsSize, reader.ReadU32());
+  Span<const uint8_t> spsData;
+  MOZ_TRY_VAR(spsData,
+              reader.ReadSpan<const uint8_t>(static_cast<size_t>(spsSize)));
+
+  
+  uint32_t ppsSize;
+  MOZ_TRY_VAR(ppsSize, reader.ReadU32());
+  Span<const uint8_t> ppsData;
+  MOZ_TRY_VAR(ppsData,
+              reader.ReadSpan<const uint8_t>(static_cast<size_t>(ppsSize)));
+
+  
+  
+  if (spsData.Length() < 4) {
+    return Err(NS_ERROR_NOT_AVAILABLE);
+  }
+
+  
+  auto extraData = MakeRefPtr<MediaByteBuffer>();
+  H264::WriteExtraData(extraData, spsData[1], spsData[2], spsData[3], spsData,
+                       ppsData);
+  MOZ_ASSERT(extraData);
+  return extraData.forget();
 }
 
 void FFmpegVideoEncoder<LIBAV_VER>::ForceEnablingFFmpegDebugLogs() {
