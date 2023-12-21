@@ -1364,8 +1364,6 @@ fn get_channel_count(
         
         
         
-        
-        
         streams.retain(|stream| {
             let terminal_type = get_stream_terminal_type(*stream);
             if terminal_type.is_err() {
@@ -1377,15 +1375,34 @@ fn get_channel_count(
                 kAudioStreamTerminalTypeMicrophone
                 | kAudioStreamTerminalTypeHeadsetMicrophone
                 | kAudioStreamTerminalTypeReceiverMicrophone => true,
-                t if t > INPUT_UNDEFINED && t < OUTPUT_UNDEFINED => true,
-                t if t > BIDIRECTIONAL_UNDEFINED && t < TELEPHONY_UNDEFINED => true,
-                t if t > TELEPHONY_UNDEFINED && t < EXTERNAL_UNDEFINED => true,
-                t => {
+                t if [
+                    kAudioStreamTerminalTypeSpeaker,
+                    kAudioStreamTerminalTypeHeadphones,
+                    kAudioStreamTerminalTypeLFESpeaker,
+                    kAudioStreamTerminalTypeReceiverSpeaker,
+                ]
+                .contains(&t) =>
+                {
                     cubeb_log!(
-                        "Unexpected TerminalType {:06X} for input stream. Ignoring its channels.",
+                        "Output TerminalType {:#06X} for input stream. Ignoring its channels.",
                         t
                     );
                     false
+                }
+                INPUT_UNDEFINED => {
+                    cubeb_log!(
+                        "INPUT_UNDEFINED TerminalType for input stream. Ignoring its channels."
+                    );
+                    false
+                }
+                
+                t if (INPUT_MICROPHONE..OUTPUT_UNDEFINED).contains(&t) => true,
+                t if (OUTPUT_UNDEFINED..BIDIRECTIONAL_UNDEFINED).contains(&t) => false,
+                t if (BIDIRECTIONAL_UNDEFINED..TELEPHONY_UNDEFINED).contains(&t) => true,
+                t if (TELEPHONY_UNDEFINED..EXTERNAL_UNDEFINED).contains(&t) => true,
+                t => {
+                    cubeb_log!("Unknown TerminalType {:#06X} for input stream.", t);
+                    true
                 }
             }
         });
