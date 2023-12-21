@@ -15,6 +15,10 @@ from ipdl.ast import priorityList
 import ipdl.builtin as builtin
 from ipdl.util import hash_str
 
+
+
+import geckoprocesstypes
+
 _DELETE_MSG = "__delete__"
 
 
@@ -981,6 +985,13 @@ class GatherDecls(TcheckVisitor):
 
             p = tu.protocol
 
+            proc_options = [
+                "any",
+                "anychild",  
+                "anydom",  
+                "compositor",  
+            ] + [p.proc_typename for p in geckoprocesstypes.process_types]
+
             self.checkAttributes(
                 p.attributes,
                 {
@@ -989,6 +1000,8 @@ class GatherDecls(TcheckVisitor):
                     "NeedsOtherPid": None,
                     "ChildImpl": ("virtual", StringLiteral),
                     "ParentImpl": ("virtual", StringLiteral),
+                    "ChildProc": proc_options,
+                    "ParentProc": proc_options,
                 },
             )
 
@@ -1275,8 +1288,12 @@ class GatherDecls(TcheckVisitor):
         if not p.decl.type.isToplevel() and p.decl.type.needsotherpid:
             self.error(p.loc, "[NeedsOtherPid] only applies to toplevel protocols")
 
-        if p.decl.type.isToplevel() and not p.decl.type.isRefcounted():
-            self.error(p.loc, "Toplevel protocols cannot be [ManualDealloc]")
+        if p.decl.type.isToplevel():
+            if not p.decl.type.isRefcounted():
+                self.error(p.loc, "Toplevel protocols cannot be [ManualDealloc]")
+
+            if "ChildProc" not in p.attributes:
+                self.error(p.loc, "Toplevel protocols must specify [ChildProc]")
 
         
         

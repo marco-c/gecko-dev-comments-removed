@@ -3,9 +3,10 @@
 
 include protocol compressCtorManagee;
 
+[ChildProc=any]
 intr protocol compressCtor {
     manages compressCtorManagee;
 
 parent:
-    async compressCtorManagee() compress;
+    [Compress] async compressCtorManagee();
 };

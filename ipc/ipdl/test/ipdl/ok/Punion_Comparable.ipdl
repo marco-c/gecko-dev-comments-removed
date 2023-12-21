@@ -1,8 +1,9 @@
-comparable union Basic {
+[Comparable] union Basic {
     int;
     double;
 };
 
+[ChildProc=any]
 sync protocol Punion_Comparable {
 
 parent:

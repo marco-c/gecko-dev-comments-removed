@@ -1,4 +1,5 @@
+[ChildProc=any]
 intr protocol PMessageTainted {
 child:
-    async foo() tainted;
+    [Tainted] async foo();
 };

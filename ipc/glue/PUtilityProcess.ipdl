@@ -45,7 +45,8 @@ namespace ipc {
 
 
 
-[NeedsOtherPid] protocol PUtilityProcess
+[NeedsOtherPid, ChildProc=Utility]
+protocol PUtilityProcess
 {
 parent:
   async InitCrashReporter(NativeThreadId threadId);

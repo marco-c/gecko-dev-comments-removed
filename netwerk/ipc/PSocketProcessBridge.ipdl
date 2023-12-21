@@ -23,7 +23,7 @@ namespace net {
 
 
 
-[NeedsOtherPid]
+[NeedsOtherPid, ParentProc=Socket, ChildProc=Content]
 sync protocol PSocketProcessBridge
 {
 parent:
