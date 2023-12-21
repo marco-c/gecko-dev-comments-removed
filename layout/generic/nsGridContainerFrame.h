@@ -258,6 +258,15 @@ class nsGridContainerFrame final : public nsContainerFrame,
     return HasAnyStateBits(NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM |
                            NS_STATE_GRID_HAS_COL_SUBGRID_ITEM);
   }
+  
+
+
+
+
+
+
+
+  bool GridItemShouldStretch(const nsIFrame* aChild, LogicalAxis aAxis) const;
 
   
 
