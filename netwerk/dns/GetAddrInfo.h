@@ -16,6 +16,8 @@
 #include "nsTArray.h"
 #include "prio.h"
 #include "mozilla/net/DNS.h"
+#include "nsIDNSByTypeRecord.h"
+#include "mozilla/Logging.h"
 
 #if defined(XP_WIN)
 #  define DNSQUERY_AVAILABLE 1
@@ -26,6 +28,7 @@
 namespace mozilla {
 namespace net {
 
+extern LazyLogModule gGetAddrInfoLog;
 class AddrInfo;
 
 
@@ -62,6 +65,19 @@ nsresult GetAddrInfoInit();
 
 
 nsresult GetAddrInfoShutdown();
+
+
+
+
+
+nsresult ResolveHTTPSRecord(const nsACString& aHost, uint16_t aFlags,
+                            TypeRecordResultType& aResult, uint32_t& aTTL);
+
+
+
+
+nsresult ResolveHTTPSRecordImpl(const nsACString& aHost, uint16_t aFlags,
+                                TypeRecordResultType& aResult, uint32_t& aTTL);
 
 class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
   NS_DECL_THREADSAFE_ISUPPORTS

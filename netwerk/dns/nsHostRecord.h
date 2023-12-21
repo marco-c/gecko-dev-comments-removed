@@ -228,6 +228,23 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   
   bool mNativeSuccess = false;
+
+  
+  mozilla::TimeStamp mNativeStart;
+  mozilla::TimeDuration mNativeDuration;
+
+  
+  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields, 8, (
+    
+    
+    (uint16_t, Native, 1),
+    (uint16_t, NativeUsed, 1),
+    
+    (uint16_t, UsingAnyThread, 1),
+    (uint16_t, GetTtl, 1),
+    (uint16_t, ResolveAgain, 1)
+  ))
+  
 };
 
 
@@ -322,24 +339,7 @@ class AddrHostRecord final : public nsHostRecord {
   void ResolveComplete() override;
 
   
-  mozilla::TimeStamp mNativeStart;
-  mozilla::TimeDuration mNativeDuration;
-
-  
   mozilla::Atomic<DNSResolverType> mResolverType{DNSResolverType::Native};
-
-  
-  MOZ_ATOMIC_BITFIELDS(mAtomicBitfields, 8, (
-    
-    
-    (uint16_t, Native, 1),
-    (uint16_t, NativeUsed, 1),
-    
-    (uint16_t, UsingAnyThread, 1),
-    (uint16_t, GetTtl, 1),
-    (uint16_t, ResolveAgain, 1)
-  ))
-  
 
   
   
@@ -413,4 +413,4 @@ static inline bool IsLowPriority(nsIDNSService::DNSFlags flags) {
   return flags & nsHostRecord::DNS_PRIORITY_LOW;
 }
 
-#endif  
+#endif

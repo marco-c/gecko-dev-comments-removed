@@ -50,8 +50,8 @@ class HostRecordQueue final {
   
   
   
-  already_AddRefed<AddrHostRecord> Dequeue(bool aHighQOnly,
-                                           const MutexAutoLock& aProofOfLock);
+  already_AddRefed<nsHostRecord> Dequeue(bool aHighQOnly,
+                                         const MutexAutoLock& aProofOfLock);
   
   
   void ClearAll(const std::function<void(nsHostRecord*)>& aCallback,
