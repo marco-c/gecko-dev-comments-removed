@@ -508,15 +508,16 @@ var gIdentityHandler = {
 
 
   _getHttpsOnlyPermission() {
-    if (
-      !gBrowser.currentURI.schemeIs("http") &&
-      !gBrowser.currentURI.schemeIs("https")
-    ) {
+    let uri = gBrowser.currentURI;
+    if (uri instanceof Ci.nsINestedURI) {
+      uri = uri.QueryInterface(Ci.nsINestedURI).innermostURI;
+    }
+    if (!uri.schemeIs("http") && !uri.schemeIs("https")) {
       return -1;
     }
-    const httpURI = gBrowser.currentURI.mutate().setScheme("http").finalize();
+    uri = uri.mutate().setScheme("http").finalize();
     const principal = Services.scriptSecurityManager.createContentPrincipal(
-      httpURI,
+      uri,
       gBrowser.contentPrincipal.originAttributes
     );
     const { state } = SitePermissions.getForPrincipal(
@@ -561,7 +562,11 @@ var gIdentityHandler = {
     
     
     
-    const newURI = gBrowser.currentURI.mutate().setScheme("http").finalize();
+    let newURI = gBrowser.currentURI;
+    if (newURI instanceof Ci.nsINestedURI) {
+      newURI = newURI.QueryInterface(Ci.nsINestedURI).innermostURI;
+    }
+    newURI = newURI.mutate().setScheme("http").finalize();
     const principal = Services.scriptSecurityManager.createContentPrincipal(
       newURI,
       gBrowser.contentPrincipal.originAttributes
@@ -1172,8 +1177,8 @@ var gIdentityHandler = {
   },
 
   setURI(uri) {
-    if (uri.schemeIs("view-source")) {
-      uri = Services.io.newURI(uri.spec.replace(/^view-source:/i, ""));
+    if (uri instanceof Ci.nsINestedURI) {
+      uri = uri.QueryInterface(Ci.nsINestedURI).innermostURI;
     }
     this._uri = uri;
 
@@ -1184,7 +1189,7 @@ var gIdentityHandler = {
       this._uriHasHost = false;
     }
 
-    if (uri.schemeIs("about")) {
+    if (uri.schemeIs("about") || uri.schemeIs("moz-safe-about")) {
       let module = E10SUtils.getAboutModule(uri);
       if (module) {
         let flags = module.getURIFlags(uri);
@@ -1196,24 +1201,7 @@ var gIdentityHandler = {
       this._isSecureInternalUI = false;
     }
     this._pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
-
-    
-    
-    this._isURILoadedFromFile = false;
-    let chanOptions = { uri: this._uri, loadUsingSystemPrincipal: true };
-    let resolvedURI;
-    try {
-      resolvedURI = NetUtil.newChannel(chanOptions).URI;
-      if (resolvedURI.schemeIs("jar")) {
-        
-        
-        resolvedURI = NetUtil.newURI(resolvedURI.pathQueryRef);
-      }
-      
-      this._isURILoadedFromFile = resolvedURI.schemeIs("file");
-    } catch (ex) {
-      
-    }
+    this._isURILoadedFromFile = uri.schemeIs("file");
   },
 
   
