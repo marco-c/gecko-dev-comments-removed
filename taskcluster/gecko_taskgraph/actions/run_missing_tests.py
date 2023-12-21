@@ -30,19 +30,20 @@ def run_missing_tests(parameters, graph_config, input, task_group_id, task_id):
     decision_task_id, full_task_graph, label_to_taskid, _ = fetch_graph_and_labels(
         parameters, graph_config
     )
-    parameters_writable = dict(parameters)
-    parameters_writable["backstop"] = True
     target_tasks = get_artifact(decision_task_id, "public/target-tasks.json")
 
     
     
     
-    
     to_run = []
+    already_run = 0
     for label in target_tasks:
         task = full_task_graph.tasks[label]
         if task.kind != "test":
             continue  
+        if label in label_to_taskid:
+            already_run += 1
+            continue
         to_run.append(label)
 
     create_tasks(
@@ -52,9 +53,10 @@ def run_missing_tests(parameters, graph_config, input, task_group_id, task_id):
         label_to_taskid,
         parameters,
         decision_task_id,
-        "all",
     )
 
     logger.info(
-        f"The action created {len(to_run)} test tasks"
+        "Out of {} test tasks, {} already existed and the action created {}".format(
+            already_run + len(to_run), already_run, len(to_run)
+        )
     )
