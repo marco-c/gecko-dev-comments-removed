@@ -1649,6 +1649,10 @@ bool Gecko_ComputeBoolPrefMediaQuery(nsAtom* aPref) {
   
   static StaticAutoPtr<nsTHashMap<RefPtr<nsAtom>, bool>> sRegisteredPrefs;
   if (!sRegisteredPrefs) {
+    if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal)) {
+      
+      return false;
+    }
     sRegisteredPrefs = new nsTHashMap<RefPtr<nsAtom>, bool>();
     ClearOnShutdown(&sRegisteredPrefs);
   }
