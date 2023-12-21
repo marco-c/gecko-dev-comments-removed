@@ -476,16 +476,6 @@ AppWindow::GetLiveResizeListeners() {
   return listeners;
 }
 
-NS_IMETHODIMP AppWindow::AddChildWindow(nsIAppWindow* aChild) {
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP AppWindow::RemoveChildWindow(nsIAppWindow* aChild) {
-  
-  return NS_OK;
-}
-
 NS_IMETHODIMP AppWindow::ShowModal() {
   AUTO_PROFILER_LABEL("AppWindow::ShowModal", OTHER);
 
@@ -577,11 +567,9 @@ NS_IMETHODIMP AppWindow::Destroy() {
   nsCOMPtr<nsIAppShellService> appShell(
       do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
   NS_ASSERTION(appShell, "Couldn't get appShell... xpcom shutdown?");
-  if (appShell)
+  if (appShell) {
     appShell->UnregisterTopLevelWindow(static_cast<nsIAppWindow*>(this));
-
-  nsCOMPtr<nsIAppWindow> parentWindow(do_QueryReferent(mParentWindow));
-  if (parentWindow) parentWindow->RemoveChildWindow(this);
+  }
 
   
   
