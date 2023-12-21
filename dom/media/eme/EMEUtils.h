@@ -93,6 +93,11 @@ void MFCDMCapabilitiesIPDLToKeySystemConfig(
 
 bool DoesKeySystemSupportClearLead(const nsAString& aKeySystem);
 
+
+
+bool CheckIfHarewareDRMConfigExists(
+    const nsTArray<dom::MediaKeySystemConfiguration>& aConfigs);
+
 }  
 
 #endif  
