@@ -182,16 +182,6 @@ enum class StyleOrient : uint8_t {
 };
 
 
-
-namespace dom {
-enum class PlaybackDirection : uint8_t;
-enum class FillMode : uint8_t;
-}  
-
-
-enum class StyleAnimationPlayState : uint8_t { Running, Paused };
-
-
 enum class StyleImageLayerAttachment : uint8_t { Scroll, Fixed, Local };
 
 

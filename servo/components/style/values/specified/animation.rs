@@ -105,7 +105,7 @@ impl TransitionProperty {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum AnimationIterationCount {
     
     Number(NonNegativeNumber),
@@ -174,9 +174,51 @@ impl Parse for AnimationName {
 }
 
 
+#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[repr(u8)]
+#[allow(missing_docs)]
+pub enum AnimationDirection {
+    Normal,
+    Reverse,
+    Alternate,
+    AlternateReverse,
+}
+
+
+#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[repr(u8)]
+#[allow(missing_docs)]
+pub enum AnimationPlayState {
+    Running,
+    Paused,
+}
+
+
+#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[repr(u8)]
+#[allow(missing_docs)]
+pub enum AnimationFillMode {
+    None,
+    Forwards,
+    Backwards,
+    Both,
+}
+
+
+#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[repr(u8)]
+#[allow(missing_docs)]
+pub enum AnimationComposition {
+    Replace,
+    Add,
+    Accumulate,
+}
+
+
 
 
 #[derive(
+    Copy,
     Clone,
     Debug,
     Eq,
@@ -221,6 +263,7 @@ impl Default for Scroller {
 
 
 #[derive(
+    Copy,
     Clone,
     Debug,
     Eq,
@@ -263,6 +306,7 @@ impl Default for ScrollAxis {
 
 
 #[derive(
+    Copy,
     Clone,
     Debug,
     MallocSizeOf,

@@ -318,6 +318,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   RefPtr<CSSAnimation> oldAnim =
       PopExistingAnimation(animationName, aCollection);
 
+  const auto composition = StyleToDom(aStyle.GetAnimationComposition(animIdx));
   if (oldAnim) {
     
     
@@ -329,12 +330,11 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->GetOverriddenProperties(), aBuilder, timeline,
-        aStyle.GetAnimationComposition(animIdx));
+        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition);
     return oldAnim.forget();
   }
 
-  KeyframeEffectParams effectOptions(aStyle.GetAnimationComposition(animIdx));
+  KeyframeEffectParams effectOptions(composition);
   RefPtr<KeyframeEffect> effect = new dom::CSSAnimationKeyframeEffect(
       aPresContext->Document(),
       OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoType),
