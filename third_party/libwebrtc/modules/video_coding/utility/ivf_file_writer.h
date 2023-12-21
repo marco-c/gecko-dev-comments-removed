@@ -16,6 +16,7 @@
 
 #include <memory>
 
+#include "absl/strings/string_view.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_codec_type.h"
 #include "rtc_base/numerics/sequence_number_unwrapper.h"
@@ -30,6 +31,8 @@ class IvfFileWriter {
   
   
   static std::unique_ptr<IvfFileWriter> Wrap(FileWrapper file,
+                                             size_t byte_limit);
+  static std::unique_ptr<IvfFileWriter> Wrap(absl::string_view filename,
                                              size_t byte_limit);
   ~IvfFileWriter();
 
