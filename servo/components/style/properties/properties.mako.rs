@@ -1039,12 +1039,6 @@ impl LonghandIdSet {
     }
 
     #[inline]
-    fn animatable() -> &'static Self {
-        ${static_longhand_id_set("ANIMATABLE", lambda p: p.animatable)}
-        &ANIMATABLE
-    }
-
-    #[inline]
     fn discrete_animatable() -> &'static Self {
         ${static_longhand_id_set("DISCRETE_ANIMATABLE", lambda p: p.animation_value_type == "discrete")}
         &DISCRETE_ANIMATABLE
@@ -1448,7 +1442,7 @@ impl LonghandId {
     
     #[inline]
     pub fn is_animatable(self) -> bool {
-        LonghandIdSet::animatable().contains(self)
+        NonCustomPropertyId::from(self).is_animatable()
     }
 
     
@@ -1987,6 +1981,22 @@ impl PropertyId {
     }
 
     
+    pub fn is_animatable(&self) -> bool {
+        match self {
+            Self::NonCustom(id) => id.is_animatable(),
+            Self::Custom(..) => true,
+        }
+    }
+
+    
+    pub fn is_transitionable(&self) -> bool {
+        match self {
+            Self::NonCustom(id) => id.is_transitionable(),
+            Self::Custom(..) => true,
+        }
+    }
+
+    
     
     
     
@@ -2092,18 +2102,13 @@ impl PropertyId {
 
     
     #[cfg(feature = "gecko")]
-    #[allow(non_upper_case_globals)]
     #[inline]
-    pub fn from_gecko_animated_property_id(property: &structs::AnimatedPropertyID) -> Result<Self, ()> {
-        Ok(if property.mID == nsCSSPropertyID::eCSSPropertyExtra_variable {
-            if property.mCustomName.mRawPtr.is_null() {
-                return Err(());
-            }
-            PropertyId::Custom(unsafe {
-                Atom::from_raw(property.mCustomName.mRawPtr)
-            })
+    pub fn from_gecko_animated_property_id(property: &structs::AnimatedPropertyID) -> Option<Self> {
+        Some(if property.mID == nsCSSPropertyID::eCSSPropertyExtra_variable {
+            debug_assert!(!property.mCustomName.mRawPtr.is_null());
+            Self::Custom(unsafe { Atom::from_raw(property.mCustomName.mRawPtr) })
         } else {
-            NonCustomPropertyId::from_nscsspropertyid(property.mID)?.to_property_id()
+            Self::NonCustom(NonCustomPropertyId::from_nscsspropertyid(property.mID)?)
         })
     }
 
@@ -2425,10 +2430,7 @@ impl PropertyDeclaration {
 
     
     pub fn is_animatable(&self) -> bool {
-        match self.id() {
-            PropertyDeclarationId::Longhand(id) => id.is_animatable(),
-            PropertyDeclarationId::Custom(..) => false,
-        }
+        self.id().is_animatable()
     }
 
     

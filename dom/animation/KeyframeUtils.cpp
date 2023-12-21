@@ -72,10 +72,8 @@ struct PropertyValuesPair {
 
 
 struct AdditionalProperty {
-  AdditionalProperty() : mProperty(eCSSProperty_UNKNOWN), mJsidIndex() {}
-
   AnimatedPropertyID mProperty;
-  size_t mJsidIndex;  
+  size_t mJsidIndex = 0;  
 
   struct PropertyComparator {
     bool Equals(const AdditionalProperty& aLhs,
@@ -572,20 +570,16 @@ static bool GetPropertyValuesPairs(JSContext* aCx,
           propName, CSSEnabledState::ForAllContent);
     }
 
-    AnimatedPropertyID* property;
-    if (propertyID == eCSSPropertyExtra_variable) {
-      
-      
-      property = new AnimatedPropertyID(
-          NS_Atomize(Substring(propName, 2, propName.Length() - 2)));
-    } else {
-      property = new AnimatedPropertyID(propertyID);
-    }
+    
+    
+    AnimatedPropertyID property =
+        propertyID == eCSSPropertyExtra_variable
+            ? AnimatedPropertyID(
+                  NS_Atomize(Substring(propName, 2, propName.Length() - 2)))
+            : AnimatedPropertyID(propertyID);
 
-    if (KeyframeUtils::IsAnimatableProperty(*property)) {
-      AdditionalProperty* p = properties.AppendElement();
-      p->mProperty = *property;
-      p->mJsidIndex = i;
+    if (KeyframeUtils::IsAnimatableProperty(property)) {
+      properties.AppendElement(AdditionalProperty{std::move(property), i});
     }
   }
 

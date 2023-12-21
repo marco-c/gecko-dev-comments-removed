@@ -4,7 +4,7 @@
 
 
 
-use super::{LonghandId, NonCustomPropertyId, PropertyFlags, PropertyId, ShorthandId};
+use super::{LonghandId, PropertyFlags, PropertyId, ShorthandId};
 use crate::custom_properties::Name;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID, RefPtr};
@@ -36,15 +36,6 @@ impl OwnedPropertyDeclarationId {
 
     
     #[inline]
-    pub fn is_animatable(&self) -> bool {
-        match self {
-            Self::Longhand(id) => id.is_animatable(),
-            Self::Custom(_) => true,
-        }
-    }
-
-    
-    #[inline]
     pub fn as_borrowed(&self) -> PropertyDeclarationId {
         match self {
             Self::Longhand(id) => PropertyDeclarationId::Longhand(*id),
@@ -53,32 +44,14 @@ impl OwnedPropertyDeclarationId {
     }
 
     
-    #[inline]
-    pub fn is_transitionable(&self) -> bool {
-        match self {
-            Self::Longhand(longhand) => NonCustomPropertyId::from(*longhand).is_transitionable(),
-            
-            Self::Custom(_) => false,
-        }
-    }
-
-    
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn from_gecko_animated_property_id(property: &AnimatedPropertyID) -> Result<Self, ()> {
+    pub fn from_gecko_animated_property_id(property: &AnimatedPropertyID) -> Option<Self> {
         if property.mID == nsCSSPropertyID::eCSSPropertyExtra_variable {
-            if property.mCustomName.mRawPtr.is_null() {
-                Err(())
-            } else {
-                Ok(Self::Custom(unsafe {
-                    Atom::from_raw(property.mCustomName.mRawPtr)
-                }))
-            }
-        } else if let Ok(longhand) = LonghandId::from_nscsspropertyid(property.mID) {
-            Ok(Self::Longhand(longhand))
-        } else {
-            Err(())
+            debug_assert!(!property.mCustomName.mRawPtr.is_null());
+            return Some(Self::Custom(unsafe { Atom::from_raw(property.mCustomName.mRawPtr) }));
         }
+        LonghandId::from_nscsspropertyid(property.mID).map(Self::Longhand)
     }
 }
 
@@ -188,10 +161,8 @@ impl<'a> PropertyDeclarationId<'a> {
     #[inline]
     pub fn to_physical(&self, wm: WritingMode) -> Self {
         match self {
-            PropertyDeclarationId::Longhand(id) => {
-                PropertyDeclarationId::Longhand(id.to_physical(wm))
-            },
-            PropertyDeclarationId::Custom(_) => self.clone(),
+            Self::Longhand(id) => Self::Longhand(id.to_physical(wm)),
+            Self::Custom(_) => self.clone(),
         }
     }
 
@@ -199,8 +170,8 @@ impl<'a> PropertyDeclarationId<'a> {
     #[inline]
     pub fn is_animatable(&self) -> bool {
         match self {
-            PropertyDeclarationId::Longhand(id) => id.is_animatable(),
-            PropertyDeclarationId::Custom(_) => true,
+            Self::Longhand(id) => id.is_animatable(),
+            Self::Custom(_) => true,
         }
     }
 

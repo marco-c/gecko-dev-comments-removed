@@ -1297,12 +1297,10 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
       if (propertyValue.mServoDeclarationBlock) {
         Servo_DeclarationBlock_SerializeOneValue(
             propertyValue.mServoDeclarationBlock, &propertyValue.mProperty,
-            &stringValue, computedStyle, nullptr, rawData);
-      } else {
-        if (auto* value = mBaseValues.GetWeak(propertyValue.mProperty)) {
-          Servo_AnimationValue_Serialize(value, &propertyValue.mProperty,
-                                         rawData, &stringValue);
-        }
+            &stringValue, computedStyle, rawData);
+      } else if (auto* value = mBaseValues.GetWeak(propertyValue.mProperty)) {
+        Servo_AnimationValue_Serialize(value, &propertyValue.mProperty, rawData,
+                                       &stringValue);
       }
 
       
@@ -1314,12 +1312,10 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
       
       const char* name = nullptr;
       nsAutoCString customName;
-      nsAutoCString identifier;
       switch (propertyValue.mProperty.mID) {
         case nsCSSPropertyID::eCSSPropertyExtra_variable:
           customName.Append("--");
-          propertyValue.mProperty.mCustomName->ToUTF8String(identifier);
-          customName.Append(identifier);
+          customName.Append(nsAtomCString(propertyValue.mProperty.mCustomName));
           name = customName.get();
           break;
         case nsCSSPropertyID::eCSSProperty_offset:
