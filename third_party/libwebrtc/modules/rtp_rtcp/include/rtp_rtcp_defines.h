@@ -415,17 +415,6 @@ class BitrateStatisticsObserver {
 };
 
 
-class SendSideDelayObserver {
- public:
-  virtual ~SendSideDelayObserver() {}
-  virtual void SendSideDelayUpdated(int avg_delay_ms,
-                                    int max_delay_ms,
-                                    uint32_t ssrc) = 0;
-};
-
-
-
-
 
 class SendPacketObserver {
  public:
