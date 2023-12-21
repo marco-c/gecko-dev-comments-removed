@@ -13,38 +13,7 @@
 
 #include <objidl.h>
 
-namespace mozilla {
-namespace mscom {
-namespace detail {
-
-class MOZ_HEAP_CLASS GlobalInterfaceTableCookie final {
- public:
-  GlobalInterfaceTableCookie(IUnknown* aObject, REFIID aIid,
-                             HRESULT& aOutHResult);
-
-  bool IsValid() const { return !!mCookie; }
-  HRESULT GetInterface(REFIID aIid, void** aOutInterface) const;
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GlobalInterfaceTableCookie)
-
-  GlobalInterfaceTableCookie(const GlobalInterfaceTableCookie&) = delete;
-  GlobalInterfaceTableCookie(GlobalInterfaceTableCookie&&) = delete;
-
-  GlobalInterfaceTableCookie& operator=(const GlobalInterfaceTableCookie&) =
-      delete;
-  GlobalInterfaceTableCookie& operator=(GlobalInterfaceTableCookie&&) = delete;
-
- private:
-  ~GlobalInterfaceTableCookie();
-
- private:
-  DWORD mCookie;
-
- private:
-  static IGlobalInterfaceTable* ObtainGit();
-};
-
-}  
+namespace mozilla::mscom {
 
 
 
@@ -76,13 +45,11 @@ class AgileReference final {
   AgileReference(REFIID aIid, IUnknown* aObject);
 
   AgileReference(const AgileReference& aOther) = default;
-  AgileReference(AgileReference&& aOther);
+  AgileReference(AgileReference&& aOther) noexcept;
 
   ~AgileReference();
 
-  explicit operator bool() const {
-    return mAgileRef || (mGitCookie && mGitCookie->IsValid());
-  }
+  explicit operator bool() const { return !!mAgileRef; }
 
   HRESULT GetHResult() const { return mHResult; }
 
@@ -100,7 +67,7 @@ class AgileReference final {
   HRESULT Resolve(REFIID aIid, void** aOutInterface) const;
 
   AgileReference& operator=(const AgileReference& aOther);
-  AgileReference& operator=(AgileReference&& aOther);
+  AgileReference& operator=(AgileReference&& aOther) noexcept;
 
   AgileReference& operator=(decltype(nullptr)) {
     Clear();
@@ -114,13 +81,14 @@ class AgileReference final {
   void AssignInternal(IUnknown* aObject);
 
  private:
+  
   IID mIid;
   RefPtr<IAgileReference> mAgileRef;
-  RefPtr<detail::GlobalInterfaceTableCookie> mGitCookie;
+  
+  
   HRESULT mHResult;
 };
 
-}  
 }  
 
 template <typename T>
