@@ -5,7 +5,7 @@
 "use strict";
 
 const {
-  TYPES: { JSTRACER_STATE },
+  TYPES: { TRACING_STATE },
 } = require("resource://devtools/server/actors/resources/index.js");
 
 
@@ -54,7 +54,7 @@ class TracingStateWatcher {
     const logMethod = tracerActor?.getLogMethod();
     this.onAvailable([
       {
-        resourceType: JSTRACER_STATE,
+        resourceType: TRACING_STATE,
         enabled,
         logMethod,
         profile:

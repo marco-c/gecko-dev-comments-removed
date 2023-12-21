@@ -20,15 +20,9 @@ const { tracerSpec } = require("resource://devtools/shared/specs/tracer.js");
 const { throttle } = require("resource://devtools/shared/throttle.js");
 
 const {
-  makeDebuggeeValue,
-  createValueGripForTarget,
-} = require("devtools/server/actors/object/utils");
-
-const {
   TYPES,
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
-const { JSTRACER_TRACE } = TYPES;
 
 loader.lazyRequireGetter(
   this,
@@ -45,6 +39,19 @@ const LOG_METHODS = {
 exports.LOG_METHODS = LOG_METHODS;
 const VALID_LOG_METHODS = Object.values(LOG_METHODS);
 
+const CONSOLE_ARGS_STYLES = [
+  "color: var(--theme-toolbarbutton-checked-hover-background)",
+  "padding-inline: 4px; margin-inline: 2px; background-color: var(--theme-toolbarbutton-checked-hover-background); color: var(--theme-toolbarbutton-checked-hover-color);",
+  "",
+  "color: var(--theme-highlight-blue); margin-inline: 2px;",
+];
+const CONSOLE_ARGS_STYLES_WITH_PREFIX = ["", ...CONSOLE_ARGS_STYLES];
+
+const DOM_EVENT_CONSOLE_ARGS_STYLES = [
+  "color: var(--theme-toolbarbutton-checked-hover-background)",
+  "padding-inline: 4px; margin-inline: 2px; background-color: var(--toolbarbutton-checked-background); color: var(--toolbarbutton-checked-color);",
+];
+
 const CONSOLE_THROTTLING_DELAY = 250;
 
 class TracerActor extends Actor {
@@ -53,9 +60,14 @@ class TracerActor extends Actor {
     this.targetActor = targetActor;
     this.sourcesManager = this.targetActor.sourcesManager;
 
-    this.throttledTraces = [];
-    this.throttleEmitTraces = throttle(
-      this.flushTraces.bind(this),
+    
+    this.isChromeContext = /conn\d+\.parentProcessTarget\d+/.test(
+      this.targetActor.actorID
+    );
+
+    this.throttledConsoleMessages = [];
+    this.throttleLogMessages = throttle(
+      this.flushConsoleMessages.bind(this),
       CONSOLE_THROTTLING_DELAY
     );
 
@@ -90,18 +102,8 @@ class TracerActor extends Actor {
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
-
-  startTracing(logMethod = LOG_METHODS.STDOUT, options = {}) {
-    this.#startTracing({ ...options, logMethod });
+  startTracing(logMethod = LOG_METHODS.STDOUT) {
+    this.#startTracing({ logMethod });
   }
 
   #startTracing(options) {
@@ -124,14 +126,11 @@ class TracerActor extends Actor {
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
     };
     addTracingListener(this.tracingListener);
-    this.traceValues = !!options.traceValues;
     startTracing({
       global: this.targetActor.window || this.targetActor.workerGlobal,
       prefix: options.prefix || "",
       
       traceDOMEvents: true,
-      
-      traceValues: !!options.traceValues,
     });
   }
 
@@ -166,7 +165,6 @@ class TracerActor extends Actor {
     }
     if (this.logMethod == LOG_METHODS.PROFILER) {
       this.geckoProfileCollector.stop();
-      return true;
     }
     const consoleMessageWatcher = getResourceWatcher(
       this.targetActor,
@@ -182,8 +180,8 @@ class TracerActor extends Actor {
       {
         arguments: [message],
         styles: [],
-        level: "error",
-        chromeContext: false,
+        level: "logTrace",
+        chromeContext: this.isChromeContext,
         timeStamp: ChromeUtils.dateNow(),
       },
     ]);
@@ -246,48 +244,43 @@ class TracerActor extends Actor {
       
       
       if (currentDOMEvent && depth == 0) {
-        
-        this.throttledTraces.push({
-          resourceType: JSTRACER_TRACE,
-          prefix,
-          timeStamp: ChromeUtils.dateNow(),
+        const DOMEventArgs = [prefix + "—", currentDOMEvent];
 
-          eventName: currentDOMEvent,
+        
+        this.throttledConsoleMessages.push({
+          arguments: DOMEventArgs,
+          styles: DOM_EVENT_CONSOLE_ARGS_STYLES,
+          level: "logTrace",
+          chromeContext: this.isChromeContext,
+          timeStamp: ChromeUtils.dateNow(),
         });
       }
 
-      let args = undefined;
+      const args = [
+        "—".repeat(depth + 1),
+        frame.implementation,
+        "⟶",
+        formatedDisplayName,
+      ];
       
-      
-      if (this.traceValues) {
-        args = [];
-        for (let arg of frame.arguments) {
-          
-          if (arg?.unsafeDereference) {
-            arg = arg.unsafeDereference();
-          }
-          
-          const dbgObj = makeDebuggeeValue(this.targetActor, arg);
-          args.push(createValueGripForTarget(this.targetActor, dbgObj));
-        }
+      if (prefix) {
+        args.unshift(prefix);
       }
 
       
-      this.throttledTraces.push({
-        resourceType: JSTRACER_TRACE,
-        prefix,
-        timeStamp: ChromeUtils.dateNow(),
-
-        depth,
-        implementation: frame.implementation,
-        displayName: formatedDisplayName,
+      this.throttledConsoleMessages.push({
         filename: url,
         lineNumber,
         columnNumber: columnNumber - columnBase,
+        arguments: args,
+        
+        styles: prefix ? CONSOLE_ARGS_STYLES_WITH_PREFIX : CONSOLE_ARGS_STYLES,
+        level: "logTrace",
+        chromeContext: this.isChromeContext,
         sourceId: script.source.id,
-        args,
+        timeStamp: ChromeUtils.dateNow(),
       });
-      this.throttleEmitTraces();
+      this.throttleLogMessages();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
       this.geckoProfileCollector.addSample(
         {
@@ -309,16 +302,19 @@ class TracerActor extends Actor {
 
 
 
-  flushTraces() {
-    const traceWatcher = getResourceWatcher(this.targetActor, JSTRACER_TRACE);
+  flushConsoleMessages() {
+    const consoleMessageWatcher = getResourceWatcher(
+      this.targetActor,
+      TYPES.CONSOLE_MESSAGE
+    );
     
-    if (!traceWatcher) {
+    if (!consoleMessageWatcher) {
       return;
     }
-    const traces = this.throttledTraces;
-    this.throttledTraces = [];
+    const messages = this.throttledConsoleMessages;
+    this.throttledConsoleMessages = [];
 
-    traceWatcher.emitTraces(traces);
+    consoleMessageWatcher.emitMessages(messages);
   }
 }
 exports.TracerActor = TracerActor;
