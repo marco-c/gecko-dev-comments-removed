@@ -40,22 +40,17 @@ this.search = class extends ExtensionAPI {
           let defaultEngine = await Services.search.getDefault();
           return Promise.all(
             visibleEngines.map(async engine => {
-              let favIconUrl;
-              if (engine.iconURI) {
-                
-                
-                
-                
-                if (
-                  engine.iconURI.schemeIs("moz-extension") &&
-                  engine.iconURI.host !== context.extension.uuid
-                ) {
-                  favIconUrl = await ExtensionUtils.makeDataURI(
-                    engine.iconURI.spec
-                  );
-                } else {
-                  favIconUrl = engine.iconURI.spec;
-                }
+              let favIconUrl = engine.getIconURL();
+              
+              
+              
+              
+              if (
+                favIconUrl &&
+                favIconUrl.startsWith("moz-extension:") &&
+                !favIconUrl.startsWith(context.extension.baseURL)
+              ) {
+                favIconUrl = await ExtensionUtils.makeDataURI(favIconUrl);
               }
 
               return {

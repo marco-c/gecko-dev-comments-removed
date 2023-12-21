@@ -1500,7 +1500,7 @@ add_tasks_with_rust(async function tabToSearch() {
       
       makeSearchResult(context, {
         engineName: Services.search.defaultEngine.name,
-        engineIconUri: Services.search.defaultEngine.iconURI?.spec,
+        engineIconUri: Services.search.defaultEngine.getIconURL(),
         heuristic: true,
       }),
       
@@ -1586,7 +1586,7 @@ add_tasks_with_rust(async function position() {
       
       makeSearchResult(context, {
         engineName: Services.search.defaultEngine.name,
-        engineIconUri: Services.search.defaultEngine.iconURI?.spec,
+        engineIconUri: Services.search.defaultEngine.getIconURL(),
         heuristic: true,
       }),
       

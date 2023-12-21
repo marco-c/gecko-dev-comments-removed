@@ -232,9 +232,9 @@
         }
       }
 
-      let uri = engine.iconURI;
+      let uri = engine.getIconURL();
       if (uri) {
-        this.setAttribute("src", uri.spec);
+        this.setAttribute("src", uri);
       } else {
         
         
