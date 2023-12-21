@@ -4,12 +4,14 @@
 
 
 
-use super::{LonghandId, PropertyId, ShorthandId};
+use super::{LonghandId, NonCustomPropertyId, PropertyId, ShorthandId};
 use crate::custom_properties::Name;
 #[cfg(feature = "gecko")]
-use crate::gecko_bindings::structs::nsCSSPropertyID;
+use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID};
 use crate::logical_geometry::WritingMode;
 use crate::values::serialize_atom_name;
+#[cfg(feature = "gecko")]
+use crate::Atom;
 use std::{
     borrow::Cow,
     fmt::{self, Write},
@@ -34,10 +36,49 @@ impl OwnedPropertyDeclarationId {
 
     
     #[inline]
+    pub fn is_animatable(&self) -> bool {
+        match self {
+            Self::Longhand(id) => id.is_animatable(),
+            
+            Self::Custom(_) => false,
+        }
+    }
+
+    
+    #[inline]
     pub fn as_borrowed(&self) -> PropertyDeclarationId {
         match self {
-            OwnedPropertyDeclarationId::Longhand(id) => PropertyDeclarationId::Longhand(*id),
-            OwnedPropertyDeclarationId::Custom(name) => PropertyDeclarationId::Custom(name),
+            Self::Longhand(id) => PropertyDeclarationId::Longhand(*id),
+            Self::Custom(name) => PropertyDeclarationId::Custom(name),
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_transitionable(&self) -> bool {
+        match self {
+            Self::Longhand(longhand) => NonCustomPropertyId::from(*longhand).is_transitionable(),
+            
+            Self::Custom(_) => false,
+        }
+    }
+
+    
+    #[cfg(feature = "gecko")]
+    #[inline]
+    pub fn from_gecko_animated_property_id(property: &AnimatedPropertyID) -> Result<Self, ()> {
+        if property.mID == nsCSSPropertyID::eCSSPropertyExtra_variable {
+            if property.mCustomName.mRawPtr.is_null() {
+                Err(())
+            } else {
+                Ok(Self::Custom(unsafe {
+                    Atom::from_raw(property.mCustomName.mRawPtr)
+                }))
+            }
+        } else if let Ok(longhand) = LonghandId::from_nscsspropertyid(property.mID) {
+            Ok(Self::Longhand(longhand))
+        } else {
+            Err(())
         }
     }
 }
@@ -60,7 +101,7 @@ impl<'a> ToCss for PropertyDeclarationId<'a> {
     {
         match *self {
             PropertyDeclarationId::Longhand(id) => dest.write_str(id.name()),
-            PropertyDeclarationId::Custom(ref name) => {
+            PropertyDeclarationId::Custom(name) => {
                 dest.write_str("--")?;
                 serialize_atom_name(name, dest)
             },
@@ -153,6 +194,16 @@ impl<'a> PropertyDeclarationId<'a> {
             PropertyDeclarationId::Longhand(id) => id.is_animatable(),
             
             PropertyDeclarationId::Custom(_) => false,
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_discrete_animatable(&self) -> bool {
+        match self {
+            Self::Longhand(longhand) => longhand.is_discrete_animatable(),
+            
+            Self::Custom(_) => false,
         }
     }
 

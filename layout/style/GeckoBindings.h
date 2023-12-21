@@ -261,8 +261,10 @@ double Gecko_GetPositionInSegment(const mozilla::AnimationPropertySegment*,
 
 
 
+
 const mozilla::StyleAnimationValue* Gecko_AnimationGetBaseStyle(
-    const RawServoAnimationValueTable* aBaseStyles, nsCSSPropertyID aProperty);
+    const RawServoAnimationValueTable* aBaseStyles,
+    const mozilla::AnimatedPropertyID* aProperty);
 
 void Gecko_StyleTransition_SetUnsupportedProperty(
     mozilla::StyleTransition* aTransition, nsAtom* aAtom);

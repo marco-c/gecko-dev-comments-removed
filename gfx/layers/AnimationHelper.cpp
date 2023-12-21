@@ -19,9 +19,10 @@
 #include "mozilla/dom/Nullable.h"             
 #include "mozilla/layers/APZSampler.h"        
 #include "mozilla/layers/CompositorThread.h"  
-#include "mozilla/LayerAnimationInfo.h"       
-#include "mozilla/Maybe.h"                    
-#include "mozilla/MotionPathUtils.h"          
+#include "mozilla/AnimatedPropertyID.h"
+#include "mozilla/LayerAnimationInfo.h"  
+#include "mozilla/Maybe.h"               
+#include "mozilla/MotionPathUtils.h"     
 #include "mozilla/ServoBindings.h"  
 #include "mozilla/StyleAnimationValue.h"  
 #include "nsCSSPropertyID.h"              
@@ -626,8 +627,9 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
 
   for (const auto& value : aValues) {
     MOZ_ASSERT(value);
-    nsCSSPropertyID id = Servo_AnimationValue_GetPropertyId(value);
-    switch (id) {
+    AnimatedPropertyID property(eCSSProperty_UNKNOWN);
+    Servo_AnimationValue_GetPropertyId(value, &property);
+    switch (property.mID) {
       case eCSSProperty_transform:
         MOZ_ASSERT(!transform);
         transform = Servo_AnimationValue_GetTransform(value);
