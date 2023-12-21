@@ -67,7 +67,7 @@ class DocumentChannel : public nsIIdentChannel {
   static already_AddRefed<DocumentChannel> CreateForDocument(
       nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
       nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks,
-      uint32_t aCacheKey, bool aUriModified, bool aIsXFOError);
+      uint32_t aCacheKey, bool aUriModified, bool aIsEmbeddingBlockedError);
   static already_AddRefed<DocumentChannel> CreateForObject(
       nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
       nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks);
@@ -77,7 +77,7 @@ class DocumentChannel : public nsIIdentChannel {
  protected:
   DocumentChannel(nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
                   nsLoadFlags aLoadFlags, uint32_t aCacheKey, bool aUriModified,
-                  bool aIsXFOError);
+                  bool aIsEmbeddingBlockedError);
 
   void ShutdownListeners(nsresult aStatusCode);
   virtual void DeleteIPDL() {}
@@ -108,7 +108,8 @@ class DocumentChannel : public nsIIdentChannel {
   bool mUriModified = false;
   
   
-  bool mIsXFOError = false;
+  
+  bool mIsEmbeddingBlockedError = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentChannel, DOCUMENT_CHANNEL_IID)
