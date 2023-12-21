@@ -9294,14 +9294,6 @@ void nsGridContainerFrame::UpdateSubgridFrameState() {
 }
 
 nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
-  
-  
-  
-  
-  const auto* display = StyleDisplay();
-  const bool inhibitSubgrid =
-      display->IsContainLayout() || display->IsContainPaint();
-
   nsFrameState bits = nsFrameState(0);
   const auto* pos = StylePosition();
 
@@ -9310,6 +9302,18 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
     bits |= NS_STATE_GRID_IS_ROW_MASONRY;
   } else if (pos->mGridTemplateColumns.IsMasonry()) {
     bits |= NS_STATE_GRID_IS_COL_MASONRY;
+  }
+
+  
+  
+
+  
+  
+  
+  
+  const auto* display = StyleDisplay();
+  if (display->IsContainLayout() || display->IsContainPaint()) {
+    return bits;
   }
 
   
@@ -9335,8 +9339,7 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
     
     bool isOutOfFlow =
         outerFrame->StyleDisplay()->IsAbsolutelyPositionedStyle();
-    bool isColSubgrid =
-        pos->mGridTemplateColumns.IsSubgrid() && !inhibitSubgrid;
+    bool isColSubgrid = pos->mGridTemplateColumns.IsSubgrid();
     
     
     if (isColSubgrid &&
@@ -9360,7 +9363,7 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
       bits |= NS_STATE_GRID_IS_COL_SUBGRID;
     }
 
-    bool isRowSubgrid = pos->mGridTemplateRows.IsSubgrid() && !inhibitSubgrid;
+    bool isRowSubgrid = pos->mGridTemplateRows.IsSubgrid();
     if (isRowSubgrid &&
         parent->HasAnyStateBits(isOrthogonal ? NS_STATE_GRID_IS_COL_MASONRY
                                              : NS_STATE_GRID_IS_ROW_MASONRY)) {
