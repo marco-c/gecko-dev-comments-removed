@@ -285,14 +285,50 @@ TEST(RtpPacketizerH264Test, StapARespectsFirstPacketReduction) {
                           0, 2, nalus[2][0], nalus[2][1]));
 }
 
+TEST(RtpPacketizerH264Test, StapARespectsSinglePacketReduction) {
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 1000;
+  
+  
+  
+  limits.first_packet_reduction_len = 4;
+  limits.last_packet_reduction_len = 0;
+  limits.single_packet_reduction_len = 8;
+  
+  
+  rtc::Buffer first_nalus[] = {GenerateNalUnit(2),
+                               GenerateNalUnit(2),
+                               GenerateNalUnit(981)};
+  rtc::Buffer first_frame = CreateFrame(first_nalus);
+
+  RtpPacketizerH264 first_packetizer(first_frame, limits,
+                                     H264PacketizationMode::NonInterleaved);
+  std::vector<RtpPacketToSend> packets = FetchAllPackets(&first_packetizer);
+
+  
+  ASSERT_THAT(packets, SizeIs(1));
+  EXPECT_EQ(packets[0].payload_size(), 992u);
+
+  
+  
+  rtc::Buffer second_nalus[] = {GenerateNalUnit(2),
+                                GenerateNalUnit(2),
+                                GenerateNalUnit(982)};
+  rtc::Buffer second_frame = CreateFrame(second_nalus);
+  RtpPacketizerH264 second_packetizer(second_frame, limits,
+                                      H264PacketizationMode::NonInterleaved);
+  packets = FetchAllPackets(&second_packetizer);
+  ASSERT_THAT(packets, SizeIs(2));
+}
+
 TEST(RtpPacketizerH264Test, StapARespectsLastPacketReduction) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 1000;
   limits.last_packet_reduction_len = 100;
+  const size_t kFirstFragmentSize = 1000;
   const size_t kLastFragmentSize =
-      limits.max_payload_len - limits.last_packet_reduction_len;
-  rtc::Buffer nalus[] = {GenerateNalUnit(2),
-                         GenerateNalUnit(2),
+      limits.max_payload_len - limits.last_packet_reduction_len + 1;
+  rtc::Buffer nalus[] = {GenerateNalUnit(kFirstFragmentSize),
                          GenerateNalUnit(kLastFragmentSize)};
   rtc::Buffer frame = CreateFrame(nalus);
 
@@ -300,14 +336,13 @@ TEST(RtpPacketizerH264Test, StapARespectsLastPacketReduction) {
                                H264PacketizationMode::NonInterleaved);
   std::vector<RtpPacketToSend> packets = FetchAllPackets(&packetizer);
 
-  ASSERT_THAT(packets, SizeIs(2));
+  ASSERT_THAT(packets, SizeIs(3));
   
-  EXPECT_THAT(packets[0].payload(),
-              ElementsAre(kStapA,                          
-                          0, 2, nalus[0][0], nalus[0][1],  
-                          0, 2, nalus[1][0], nalus[1][1]));
+  EXPECT_THAT(packets[0].payload()[0], kSlice);
   
-  EXPECT_THAT(packets[1].payload(), ElementsAreArray(nalus[2]));
+  
+  EXPECT_THAT(packets[1].payload()[0], kFuA);
+  EXPECT_THAT(packets[2].payload()[0], kFuA);
 }
 
 TEST(RtpPacketizerH264Test, TooSmallForStapAHeaders) {
