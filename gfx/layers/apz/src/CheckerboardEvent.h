@@ -106,7 +106,8 @@ class CheckerboardEvent final {
 
   void LogInfo(RendertraceProperty aProperty, const TimeStamp& aTimestamp,
                const CSSRect& aRect, const std::string& aExtraInfo,
-               const MonitorAutoLock& aProofOfLock);
+               const MonitorAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mRendertraceLock);
 
   
 
@@ -198,18 +199,19 @@ class CheckerboardEvent final {
 
 
 
-  mutable Monitor mRendertraceLock MOZ_UNANNOTATED;
+  mutable Monitor mRendertraceLock;
   
 
 
 
 
-  PropertyBuffer mBufferedProperties[sRendertracePropertyCount];
+  PropertyBuffer mBufferedProperties[sRendertracePropertyCount] MOZ_GUARDED_BY(
+      mRendertraceLock);
   
 
 
 
-  std::ostringstream mRendertraceInfo;
+  std::ostringstream mRendertraceInfo MOZ_GUARDED_BY(mRendertraceLock);
 };
 
 }  

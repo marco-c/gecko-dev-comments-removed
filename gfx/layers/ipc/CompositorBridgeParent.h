@@ -11,10 +11,11 @@
 #include <unordered_map>
 #include "mozilla/Assertions.h"  
 #include "mozilla/Maybe.h"
-#include "mozilla/Monitor.h"    
-#include "mozilla/RefPtr.h"     
-#include "mozilla/TimeStamp.h"  
-#include "mozilla/gfx/Point.h"  
+#include "mozilla/Monitor.h"        
+#include "mozilla/RefPtr.h"         
+#include "mozilla/StaticMonitor.h"  
+#include "mozilla/TimeStamp.h"      
+#include "mozilla/gfx/Point.h"      
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/layers/CompositorController.h"
@@ -450,7 +451,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
   
   void AllocateAPZCTreeManagerParent(
-      const MonitorAutoLock& aProofOfLayerTreeStateLock,
+      const StaticMonitorAutoLock& aProofOfLayerTreeStateLock,
       const LayersId& aLayersId, LayerTreeState& aLayerTreeStateToUpdate);
 
   PAPZParent* AllocPAPZParent(const LayersId& aLayersId) override;
@@ -550,7 +551,14 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void PauseComposition();
   bool ResumeComposition();
   bool ResumeCompositionAndResize(int x, int y, int width, int height);
-  bool IsPaused() { return mPaused; }
+  bool IsPaused();
+
+  typedef std::map<LayersId, CompositorBridgeParent::LayerTreeState>
+      LayerTreeMap;
+
+  static StaticMonitor sIndirectLayerTreesLock;
+  static LayerTreeMap sIndirectLayerTrees
+      MOZ_GUARDED_BY(sIndirectLayerTreesLock);
 
  protected:
   
