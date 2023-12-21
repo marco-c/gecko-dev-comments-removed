@@ -355,7 +355,12 @@ class Bootstrapper(object):
 
     def bootstrap(self, settings):
         state_dir = Path(get_state_dir())
-        check_for_hgrc_state_dir_mismatch(state_dir)
+
+        hg = to_optional_path(which("hg"))
+        hg_installed = bool(hg)
+
+        if hg_installed:
+            check_for_hgrc_state_dir_mismatch(state_dir)
 
         if self.choice is None:
             applications = APPLICATIONS
@@ -404,8 +409,6 @@ class Bootstrapper(object):
 
         self.instance.state_dir = state_dir
 
-        hg = to_optional_path(which("hg"))
-
         
         
         (checkout_type, checkout_root) = current_firefox_checkout(
@@ -433,7 +436,6 @@ class Bootstrapper(object):
 
         
         
-        hg_installed = bool(hg)
         if checkout_type == "hg":
             hg_installed, hg_modern = self.instance.ensure_mercurial_modern()
 
