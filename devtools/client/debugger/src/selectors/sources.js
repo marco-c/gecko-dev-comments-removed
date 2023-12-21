@@ -11,6 +11,7 @@ import { isFulfilled } from "../utils/async-value";
 
 import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { prefs } from "../utils/prefs";
+import { UNDEFINED_LOCATION, NO_LOCATION } from "../reducers/sources";
 
 import {
   hasSourceActor,
@@ -108,6 +109,58 @@ export function getSourceCount(state) {
 
 export function getSelectedLocation(state) {
   return state.sources.selectedLocation;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function getSelectedMappedSource(state) {
+  const selectedLocation = getSelectedLocation(state);
+  if (!selectedLocation) {
+    return null;
+  }
+
+  
+  if (selectedLocation.source.isPrettyPrinted) {
+    return null;
+  }
+
+  
+  
+  if (
+    !selectedLocation.source.isOriginal &&
+    isSourceActorWithSourceMap(state, selectedLocation.sourceActor.id)
+  ) {
+    const { selectedOriginalLocation } = state.sources;
+    
+    
+    if (
+      selectedOriginalLocation &&
+      selectedOriginalLocation != UNDEFINED_LOCATION &&
+      selectedOriginalLocation != NO_LOCATION
+    ) {
+      return selectedOriginalLocation.source;
+    }
+    return null;
+  }
+
+  const mappedSource = getGeneratedSource(state, selectedLocation.source);
+  
+  
+  
+  if (mappedSource == selectedLocation.source) {
+    return null;
+  }
+  return mappedSource || null;
 }
 
 export const getSelectedSource = createSelector(

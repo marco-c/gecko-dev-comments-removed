@@ -56,17 +56,22 @@ export async function getGeneratedLocation(location, thunkArgs) {
 
 
 
+
+
+
+
 export async function getOriginalLocation(
   location,
   thunkArgs,
-  waitForSource = false
+  { waitForSource = false, looseSearch = false } = {}
 ) {
   if (location.source.isOriginal) {
     return location;
   }
   const { getState, sourceMapLoader } = thunkArgs;
   const originalLocation = await sourceMapLoader.getOriginalLocation(
-    debuggerToSourceMapLocation(location)
+    debuggerToSourceMapLocation(location),
+    { looseSearch }
   );
   if (!originalLocation) {
     return location;

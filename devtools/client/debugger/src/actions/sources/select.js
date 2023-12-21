@@ -17,7 +17,10 @@ import { setBreakableLines } from ".";
 import { prefs } from "../../utils/prefs";
 import { isMinified } from "../../utils/source";
 import { createLocation } from "../../utils/location";
-import { getRelatedMapLocation } from "../../utils/source-maps";
+import {
+  getRelatedMapLocation,
+  getOriginalLocation,
+} from "../../utils/source-maps";
 
 import {
   getSource,
@@ -32,6 +35,7 @@ import {
   hasSource,
   hasSourceActor,
   hasPrettyTab,
+  isSourceActorWithSourceMap,
 } from "../../selectors";
 
 
@@ -230,6 +234,32 @@ export function selectLocation(location, { keepContext = true } = {}) {
 
     
     dispatch(setInScopeLines());
+
+    
+    
+    
+    if (
+      !location.source.isOriginal &&
+      isSourceActorWithSourceMap(getState(), sourceActor.id)
+    ) {
+      let originalLocation = await getOriginalLocation(location, thunkArgs, {
+        looseSearch: true,
+      });
+      
+      
+      
+      
+      
+      
+      if (originalLocation.source === location.source) {
+        originalLocation = null;
+      }
+      dispatch({
+        type: "SET_ORIGINAL_SELECTED_LOCATION",
+        location,
+        originalLocation,
+      });
+    }
   };
 }
 

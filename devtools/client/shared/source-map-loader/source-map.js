@@ -255,16 +255,50 @@ async function getOriginalLocations(breakpointPositions, sourceId) {
   return breakpointPositions;
 }
 
-function getOriginalLocationSync(map, location) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getOriginalLocationSync(map, location, { looseSearch = false } = {}) {
   
-  const {
-    source: sourceUrl,
-    line,
-    column,
-  } = map.originalPositionFor({
+  let match = map.originalPositionFor({
     line: location.line,
     column: location.column == null ? 0 : location.column,
   });
+
+  
+  if (match.sourceUrl == null && looseSearch) {
+    let line = location.line;
+    
+    
+    let firstLineChecked = (location.column || 0) !== 0;
+
+    
+    while (match.sourceUrl === null && line < location.line + 10) {
+      if (firstLineChecked) {
+        line++;
+      } else {
+        firstLineChecked = true;
+      }
+      match = map.originalPositionFor({
+        line,
+        column: 0,
+        bias: SourceMapConsumer.LEAST_UPPER_BOUND,
+      });
+    }
+  }
+
+  const { source: sourceUrl, line, column } = match;
 
   if (sourceUrl == null) {
     
@@ -279,7 +313,17 @@ function getOriginalLocationSync(map, location) {
   };
 }
 
-async function getOriginalLocation(location) {
+
+
+
+
+
+
+
+
+
+
+async function getOriginalLocation(location, options) {
   if (!isGeneratedId(location.sourceId)) {
     return null;
   }
@@ -289,7 +333,7 @@ async function getOriginalLocation(location) {
     return null;
   }
 
-  return getOriginalLocationSync(map, location);
+  return getOriginalLocationSync(map, location, options);
 }
 
 async function getOriginalSourceText(originalSourceId) {

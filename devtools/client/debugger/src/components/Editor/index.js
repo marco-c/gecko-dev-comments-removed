@@ -445,21 +445,19 @@ class Editor extends PureComponent {
   onCursorChange = event => {
     const { line, ch } = event.doc.getCursor();
     this.props.selectLocation(
-      createLocation(
-        {
-          source: this.props.selectedSource,
-          
-          
-          
-          line: line + 1,
-          column: ch,
-        },
-        {
-          
-          
-          keepContext: false,
-        }
-      )
+      createLocation({
+        source: this.props.selectedSource,
+        
+        
+        
+        line: line + 1,
+        column: ch,
+      }),
+      {
+        
+        
+        keepContext: false,
+      }
     );
   };
 

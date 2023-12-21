@@ -41,7 +41,9 @@ async function updateFrameLocationAndDisplayName(frame, thunkArgs) {
     return frame;
   }
 
-  const location = await getOriginalLocation(frame.location, thunkArgs, true);
+  const location = await getOriginalLocation(frame.location, thunkArgs, {
+    waitForSource: true,
+  });
   
   if (location == frame.location) {
     return frame;
