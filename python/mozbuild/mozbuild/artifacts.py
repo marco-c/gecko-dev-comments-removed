@@ -280,7 +280,7 @@ class ArtifactJob(object):
                     added_entry = True
                     break
 
-                if filename.endswith(".ini"):
+                if filename.endswith(".toml"):
                     
                     
                     self.log(
@@ -343,7 +343,7 @@ class ArtifactJob(object):
                         added_entry = True
                         break
 
-                    if filename.endswith(".ini"):
+                    if filename.endswith(".toml"):
                         
                         
                         self.log(
