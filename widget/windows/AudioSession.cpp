@@ -255,14 +255,19 @@ void AudioSession::StopInternal(const MutexAutoLock& aProofOfLock,
   
   
   
-  mscom::AgileReference agileAsc(mAudioSessionControl);
+  const IID IID_IAudioSessionControl = __uuidof(IAudioSessionControl);
+  auto agileAsc = MakeUnique<mozilla::mscom::AgileReference>(
+      IID_IAudioSessionControl, mAudioSessionControl);
   mAudioSessionControl = nullptr;
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "FreeAudioSession",
-      [agileAsc = std::move(agileAsc), shouldRestart]() mutable {
+      "FreeAudioSession", [agileAsc = std::move(agileAsc),
+                           IID_IAudioSessionControl, shouldRestart] {
+        RefPtr<IAudioSessionControl> toDelete;
+        [[maybe_unused]] HRESULT hr = agileAsc->Resolve(
+            IID_IAudioSessionControl, getter_AddRefs(toDelete));
+        MOZ_ASSERT(SUCCEEDED(hr));
         
         
-        agileAsc = nullptr;
         if (shouldRestart) {
           NS_DispatchBackgroundTask(
               NS_NewCancelableRunnableFunction("RestartAudioSession", [] {

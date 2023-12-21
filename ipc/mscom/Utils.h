@@ -73,6 +73,29 @@ long CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
 constexpr size_t kGuidRegFormatCharLenInclNul = 39;
 
 #if defined(MOZILLA_INTERNAL_API)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsClassThreadAwareInprocServer(REFCLSID aClsid);
+
 void GUIDToString(REFGUID aGuid, nsAString& aOutString);
 
 
