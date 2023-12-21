@@ -15,6 +15,8 @@
 #include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
+#include "mozilla/AnimatedPropertyID.h"
+#include "mozilla/AnimatedPropertyIDSet.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationPropertySegment.h"
 #include "mozilla/AnimationTarget.h"
@@ -55,7 +57,7 @@ struct AnimationPropertyDetails;
 }  
 
 struct AnimationProperty {
-  nsCSSPropertyID mProperty = eCSSProperty_UNKNOWN;
+  AnimatedPropertyID mProperty;
 
   
   
@@ -74,7 +76,7 @@ struct AnimationProperty {
 
   
   
-  AnimationProperty() = default;
+  AnimationProperty() : mProperty(eCSSProperty_UNKNOWN){};
   AnimationProperty(const AnimationProperty& aOther)
       : mProperty(aOther.mProperty), mSegments(aOther.mSegments.Clone()) {}
   AnimationProperty& operator=(const AnimationProperty& aOther) {
@@ -199,7 +201,7 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
-  nsCSSPropertyIDSet GetPropertySet() const;
+  AnimatedPropertyIDSet GetPropertySet() const;
 
   
   
@@ -325,13 +327,13 @@ class KeyframeEffect : public AnimationEffect {
   
   bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
 
-  AnimationValue BaseStyle(nsCSSPropertyID aProperty) const {
+  AnimationValue BaseStyle(const AnimatedPropertyID& aProperty) const {
     AnimationValue result;
     bool hasProperty = false;
     
     
     
-    result.mServo = mBaseValues.GetWeak(aProperty, &hasProperty);
+    result.mServo = mBaseValues.GetWeak(aProperty.mID, &hasProperty);
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }

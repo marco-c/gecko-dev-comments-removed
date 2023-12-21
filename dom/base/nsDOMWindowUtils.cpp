@@ -3206,6 +3206,7 @@ nsDOMWindowUtils::GetUnanimatedComputedStyle(Element* aElement,
       nsCSSProps::IsShorthand(propertyID)) {
     return NS_ERROR_INVALID_ARG;
   }
+  
 
   switch (aFlushType) {
     case FLUSH_NONE:
