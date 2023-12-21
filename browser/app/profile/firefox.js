@@ -1695,6 +1695,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.recentSaves.enabled", f
 pref("browser.newtabpage.activity-stream.discoverystream.editorsPicksHeader.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.spoc-positions", "1,5,7,11,18,20");
 pref("browser.newtabpage.activity-stream.discoverystream.spoc-topsites-positions", "2");
+
+
+pref("browser.newtabpage.activity-stream.discoverystream.contile-topsites-positions", "0,1");
 pref("browser.newtabpage.activity-stream.discoverystream.widget-positions", "");
 
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
