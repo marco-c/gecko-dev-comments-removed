@@ -66,8 +66,9 @@ static nsIFrame* CheckForTrailingTextFrameRecursive(nsIFrame* aFrame,
   }
 
   for (nsIFrame* f : aFrame->PrincipalChildList()) {
-    nsIFrame* r = CheckForTrailingTextFrameRecursive(f, aStopAtFrame);
-    if (r) return r;
+    if (nsIFrame* r = CheckForTrailingTextFrameRecursive(f, aStopAtFrame)) {
+      return r;
+    }
   }
   return nullptr;
 }
@@ -86,7 +87,8 @@ static nsLineBox* FindContainingLine(nsIFrame* aFrame) {
   return nullptr;
 }
 
-static void AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset) {
+static void AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset,
+                                       bool aEditableOnly) {
   nsLineBox* line = FindContainingLine(*aFrame);
   if (!line) {
     return;
@@ -98,14 +100,21 @@ static void AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset) {
     if (r == *aFrame) {
       return;
     }
-    if (r) {
-      
-      
-      MOZ_ASSERT(r->IsTextFrame(), "Expected text frame");
-      *aFrame = r;
-      *aOffset = (static_cast<nsTextFrame*>(r))->GetContentEnd();
+    if (!r) {
+      continue;
+    }
+    
+    
+    
+    if (aEditableOnly && !r->GetContent()->IsEditable()) {
       return;
     }
+    
+    
+    MOZ_ASSERT(r->IsTextFrame(), "Expected text frame");
+    *aFrame = r;
+    *aOffset = (static_cast<nsTextFrame*>(r))->GetContentEnd();
+    return;
   }
 }
 
@@ -424,7 +433,7 @@ nsIFrame* nsCaret::GetFrameAndOffset(const Selection* aSelection,
 
   return nsCaret::GetCaretFrameForNodeOffset(
       frameSelection, contentNode, focusOffset, frameSelection->GetHint(),
-      bidiLevel, aUnadjustedFrame, aFrameOffset);
+      bidiLevel, ForceEditableRegion::No, aUnadjustedFrame, aFrameOffset);
 }
 
 
@@ -681,13 +690,11 @@ void nsCaret::StopBlinking() {
   }
 }
 
-nsIFrame* nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
-                                              nsIContent* aContentNode,
-                                              int32_t aOffset,
-                                              CaretAssociationHint aFrameHint,
-                                              BidiEmbeddingLevel aBidiLevel,
-                                              nsIFrame** aReturnUnadjustedFrame,
-                                              int32_t* aReturnOffset) {
+nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
+    nsFrameSelection* aFrameSelection, nsIContent* aContentNode,
+    int32_t aOffset, CaretAssociationHint aFrameHint,
+    BidiEmbeddingLevel aBidiLevel, ForceEditableRegion aForceEditableRegion,
+    nsIFrame** aReturnUnadjustedFrame, int32_t* aReturnOffset) {
   if (!aFrameSelection) {
     return nullptr;
   }
@@ -701,6 +708,9 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
       presShell->GetDocument() != aContentNode->GetComposedDoc()) {
     return nullptr;
   }
+
+  MOZ_ASSERT_IF(aForceEditableRegion == ForceEditableRegion::Yes,
+                aContentNode->IsEditable());
 
   nsIFrame* theFrame = nullptr;
   int32_t theFrameOffset = 0;
@@ -722,7 +732,9 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
     
     
     
-    AdjustCaretFrameForLineEnd(&theFrame, &theFrameOffset);
+    AdjustCaretFrameForLineEnd(
+        &theFrame, &theFrameOffset,
+        aForceEditableRegion == ForceEditableRegion::Yes);
   }
 
   
