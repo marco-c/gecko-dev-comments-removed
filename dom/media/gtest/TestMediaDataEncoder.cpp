@@ -38,9 +38,10 @@
 using namespace mozilla;
 
 static gfx::IntSize kImageSize(WIDTH, HEIGHT);
-const H264Specific kH264SpecificAnnexB(H264_PROFILE_BASE,
+
+const H264Specific kH264SpecificAnnexB(H264_PROFILE_BASE, H264_LEVEL_3,
                                        H264BitStreamFormat::ANNEXB);
-const H264Specific kH264SpecificAVCC(H264_PROFILE_BASE,
+const H264Specific kH264SpecificAVCC(H264_PROFILE_BASE, H264_LEVEL_3,
                                      H264BitStreamFormat::AVC);
 
 class MediaDataEncoderTest : public testing::Test {
