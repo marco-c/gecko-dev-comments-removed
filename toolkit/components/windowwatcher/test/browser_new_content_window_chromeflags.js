@@ -1,14 +1,14 @@
+/**
+ * Tests that chromeFlags are set properly on windows that are
+ * being opened from content.
+ */
 
-
-
-
-
-
-
-
-
-
-
+// The following are not allowed from web content.
+//
+// <feature string>: {
+//   flag: <associated nsIWebBrowserChrome flag>,
+//   defaults_to: <what this feature defaults to normally>
+// }
 const DISALLOWED = {
   location: {
     flag: Ci.nsIWebBrowserChrome.CHROME_LOCATIONBAR,
@@ -30,19 +30,23 @@ const DISALLOWED = {
     flag: Ci.nsIWebBrowserChrome.CHROME_NON_PRIVATE_WINDOW,
     defaults_to: false,
   },
-  
-  
-  
-  
-  
-  
-  
+  // "all":
+  //   checked manually, since this is an aggregate
+  //   flag.
+  //
+  // "remote":
+  //   checked manually, since its default value will
+  //   depend on whether or not e10s is enabled by default.
+  popup: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_POPUP,
+    defaults_to: false,
+  },
   alwaysLowered: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_LOWERED,
     defaults_to: false,
   },
   "z-lock": {
-    flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_LOWERED, 
+    flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_LOWERED, // Renamed to alwaysLowered
     defaults_to: false,
   },
   alwaysRaised: {
@@ -91,35 +95,35 @@ const DISALLOWED = {
   },
 };
 
-
-
-
+// This magic value of 2 means that by default, when content tries
+// to open a new window, it'll actually open in a new window instead
+// of a new tab.
 Services.prefs.setIntPref("browser.link.open_newwindow", 2);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("browser.link.open_newwindow");
 });
 
-
-
-
-
-
-
-
-
+/**
+ * Given some nsIDOMWindow for a window running in the parent process,
+ * asynchronously return the nsIWebBrowserChrome chrome flags for the
+ * associated content window.
+ *
+ * @param win (nsIDOMWindow)
+ * @returns int
+ */
 function getContentChromeFlags(win) {
   let b = win.gBrowser.selectedBrowser;
   return SpecialPowers.spawn(b, [], async function () {
-    
-    
+    // Content scripts provide docShell as a global.
+    /* global docShell */
     docShell.QueryInterface(Ci.nsIInterfaceRequestor);
     try {
-      
+      // This will throw if we're not a remote browser.
       return docShell
         .getInterface(Ci.nsIBrowserChild)
         .QueryInterface(Ci.nsIWebBrowserChrome).chromeFlags;
     } catch (e) {
-      
+      // This must be a non-remote browser...
       return docShell.treeOwner.QueryInterface(
         Ci.nsIWebBrowserChrome
       ).chromeFlags;
@@ -127,27 +131,27 @@ function getContentChromeFlags(win) {
   });
 }
 
-
-
-
-
-
-
-
+/**
+ * For some chromeFlags, ensures that flags in the DISALLOWED
+ * group were not modified.
+ *
+ * @param chromeFlags (int)
+ *        Some chromeFlags to check.
+ */
 function assertContentFlags(chromeFlags, isPopup) {
   for (let feature in DISALLOWED) {
     let flag = DISALLOWED[feature].flag;
     Assert.ok(flag, "Expected flag to be a non-zeroish value");
     if (DISALLOWED[feature].defaults_to) {
-      
-      
+      // The feature is supposed to default to true, so it should
+      // stay true.
       Assert.ok(
         chromeFlags & flag,
         `Expected feature ${feature} to be unchanged`
       );
     } else {
-      
-      
+      // The feature is supposed to default to false, so it should
+      // stay false.
       Assert.ok(
         !(chromeFlags & flag),
         `Expected feature ${feature} to be unchanged`
@@ -156,14 +160,14 @@ function assertContentFlags(chromeFlags, isPopup) {
   }
 }
 
-
-
-
-
-
+/**
+ * Opens a window from content using window.open with the
+ * features computed from DISALLOWED. The computed feature string attempts to
+ * flip every feature away from their default.
+ */
 add_task(async function test_disallowed_flags() {
-  
-  
+  // Construct a features string that flips all DISALLOWED features
+  // to not be their defaults.
   const DISALLOWED_STRING = Object.keys(DISALLOWED)
     .map(feature => {
       let toValue = DISALLOWED[feature].defaults_to ? "no" : "yes";
@@ -200,8 +204,8 @@ add_task(async function test_disallowed_flags() {
         );
       }
 
-      
-      
+      // Confusingly, chromeFlags also exist in the content process
+      // as part of the BrowserChild, so we have to check those too.
       let contentChromeFlags = await getContentChromeFlags(win);
       assertContentFlags(contentChromeFlags);
 
@@ -221,8 +225,8 @@ add_task(async function test_disallowed_flags() {
     }
   );
 
-  
-  
+  // We check "all" manually, since that's an aggregate flag
+  // and doesn't fit nicely into the ALLOWED / DISALLOWED scheme
   newWinPromise = BrowserTestUtils.waitForNewWindow();
 
   await BrowserTestUtils.withNewTab(
@@ -243,10 +247,10 @@ add_task(async function test_disallowed_flags() {
   );
 });
 
-
-
-
-
+/**
+ * Opens a window with some chrome flags specified, which should not affect
+ * scrollbars flag which defaults to true when not disabled explicitly.
+ */
 add_task(async function test_scrollbars_flag() {
   const SCRIPT = 'window.open("about:blank", "_blank", "toolbar=0");';
   const SCRIPT_PAGE = `data:text/html,<script>${SCRIPT}</script>`;

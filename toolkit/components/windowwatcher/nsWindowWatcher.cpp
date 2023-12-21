@@ -1963,19 +1963,25 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
     chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
   }
 
-  
-
-
-
-
-
-
-  
-  if (!aFeatures.Exists("titlebar")) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_TITLEBAR;
+  if (aFeatures.GetBoolWithDefault("popup", false, &presenceFlag)) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_POPUP;
   }
-  if (!aFeatures.Exists("close")) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_CLOSE;
+
+  
+
+
+
+
+
+
+  
+  if (!(chromeFlags & nsIWebBrowserChrome::CHROME_WINDOW_POPUP)) {
+    if (!aFeatures.Exists("titlebar")) {
+      chromeFlags |= nsIWebBrowserChrome::CHROME_TITLEBAR;
+    }
+    if (!aFeatures.Exists("close")) {
+      chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_CLOSE;
+    }
   }
 
   if (aDialog && !aFeatures.IsEmpty() && !presenceFlag) {

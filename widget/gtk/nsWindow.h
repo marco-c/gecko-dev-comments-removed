@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:expandtab:shiftwidth=2:tabstop=2:
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef __nsWindow_h__
 #define __nsWindow_h__
@@ -76,7 +76,7 @@ extern mozilla::LazyLogModule gWidgetVsync;
 #  define LOG_POPUP(...)
 #  define LOG_ENABLED() false
 
-#endif 
+#endif /* MOZ_LOGGING */
 
 #if defined(MOZ_WAYLAND) && !defined(MOZ_X11)
 typedef uintptr_t Window;
@@ -113,8 +113,8 @@ class CurrentX11TimeGetter;
 
 namespace widget {
 class Screen;
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
 
 class nsWindow final : public nsBaseWidget {
  public:
@@ -133,14 +133,14 @@ class nsWindow final : public nsBaseWidget {
   nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
                          nsEventStatus& aStatus) override;
 
-  
+  // called when we are destroyed
   void OnDestroy() override;
 
-  
+  // called to check and see if a widget's dimensions are sane
   bool AreBoundsSane(void);
 
-  
-  using nsBaseWidget::Create;  
+  // nsIWidget
+  using nsBaseWidget::Create;  // for Create signature not overridden here
   [[nodiscard]] nsresult Create(nsIWidget* aParent,
                                 nsNativeWidget aNativeParent,
                                 const LayoutDeviceIntRect& aRect,
@@ -179,13 +179,13 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint GetClientOffset() override { return mClientOffset; }
   LayoutDeviceIntPoint GetScreenEdgeSlop() override;
 
-  
-  
-  
-  
-  
-  
-  
+  // Recomputes the client offset according to our current window position.
+  // If aNotify is true, NotifyWindowMoved will be called on client offset
+  // changes.
+  //
+  // NOTE(emilio): It seems that as long any change here update either the size
+  // or the position of the window, we should be doing fine without notifying,
+  // but this is done to preserve existing behavior.
   void RecomputeClientOffset(bool aNotify);
 
   void SetCursor(const Cursor&) override;
@@ -208,14 +208,14 @@ class nsWindow final : public nsBaseWidget {
   nsresult MakeFullScreen(bool aFullScreen) override;
   void HideWindowChrome(bool aShouldHide) override;
 
-  
-
-
-
+  /**
+   * GetLastUserInputTime returns a timestamp for the most recent user input
+   * event.  This is intended for pointer grab requests (including drags).
+   */
   static guint32 GetLastUserInputTime();
 
-  
-  
+  // utility method, -1 if no change should be made, otherwise returns a
+  // value that can be passed to gdk_window_set_decorations
   gint ConvertBorderStyles(BorderStyle aStyle);
 
   mozilla::widget::IMContextWrapper* GetIMContext() const { return mIMContext; }
@@ -223,7 +223,7 @@ class nsWindow final : public nsBaseWidget {
   bool DispatchCommandEvent(nsAtom* aCommand);
   bool DispatchContentCommandEvent(mozilla::EventMessage aMsg);
 
-  
+  // event callbacks
   gboolean OnExposeEvent(cairo_t* cr);
   gboolean OnConfigureEvent(GtkWidget* aWidget, GdkEventConfigure* aEvent);
   void OnMap();
@@ -312,7 +312,7 @@ class nsWindow final : public nsBaseWidget {
       const mozilla::WidgetKeyboardEvent& aEvent,
       nsTArray<mozilla::CommandInt>& aCommands) override;
 
-  
+  // These methods are for toplevel windows only.
   void ResizeTransparencyBitmap();
   void ApplyTransparencyBitmap();
   void ClearTransparencyBitmap();
@@ -373,18 +373,18 @@ class nsWindow final : public nsBaseWidget {
   void UpdateWindowDraggingRegion(
       const LayoutDeviceIntRegion& aRegion) override;
 
-  
+  // HiDPI scale conversion
   gint GdkCeiledScaleFactor();
   double FractionalScaleFactor();
 
-  
+  // To GDK
   gint DevicePixelsToGdkCoordRoundUp(int);
   gint DevicePixelsToGdkCoordRoundDown(int);
   GdkPoint DevicePixelsToGdkPointRoundDown(const LayoutDeviceIntPoint&);
   GdkRectangle DevicePixelsToGdkSizeRoundUp(const LayoutDeviceIntSize&);
   GdkRectangle DevicePixelsToGdkRectRoundOut(const LayoutDeviceIntRect&);
 
-  
+  // From GDK
   int GdkCoordToDevicePixels(gint);
   LayoutDeviceIntPoint GdkPointToDevicePixels(const GdkPoint&);
   LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble aX, gdouble aY);
@@ -396,14 +396,14 @@ class nsWindow final : public nsBaseWidget {
   nsresult GetSystemFont(nsCString& aFontName) override;
 
   typedef enum {
-    GTK_DECORATION_SYSTEM,  
-    GTK_DECORATION_CLIENT,  
-    GTK_DECORATION_NONE,    
+    GTK_DECORATION_SYSTEM,  // CSD including shadows
+    GTK_DECORATION_CLIENT,  // CSD without shadows
+    GTK_DECORATION_NONE,    // WM does not support CSD at all
   } GtkWindowDecoration;
-  
-
-
-
+  /**
+   * Get the support of Client Side Decoration by checking the desktop
+   * environment.
+   */
   static GtkWindowDecoration GetSystemGtkWindowDecoration();
 
   static bool GetTopLevelWindowActiveState(nsIFrame* aFrame);
@@ -416,7 +416,7 @@ class nsWindow final : public nsBaseWidget {
   static nsWindow* GetFocusedWindow();
 
 #ifdef MOZ_WAYLAND
-  
+  // Use xdg-activation protocol to transfer focus from gFocusWindow to aWindow.
   static void TransferFocusToWaylandWindow(nsWindow* aWindow);
   void FocusWaylandWindow(const char* aTokenID);
 
@@ -438,22 +438,22 @@ class nsWindow final : public nsBaseWidget {
 #endif
 
   typedef enum {
-    
+    // WebRender compositor is enabled
     COMPOSITOR_ENABLED,
-    
-    
+    // WebRender compositor is paused as we're repainting whole window and
+    // we're waiting for content process to update page content.
     COMPOSITOR_PAUSED_FLICKERING
   } WindowCompositorState;
 
-  
+  // Pause compositor to avoid rendering artifacts from content process.
   void ResumeCompositorImpl();
   void ResumeCompositorFlickering();
   void ResumeCompositorFromCompositorThread();
   void PauseCompositorFlickering();
   bool IsWaitingForCompositorResume();
 
-  
-  
+  // Force hide this window, remove compositor etc. to avoid
+  // rendering queue blocking (see Bug 1782948).
   void ClearRenderingQueue();
 
   bool ApplyEnterLeaveMutterWorkaround();
@@ -465,7 +465,7 @@ class nsWindow final : public nsBaseWidget {
  protected:
   virtual ~nsWindow();
 
-  
+  // event handling code
   void DispatchActivateEvent(void);
   void DispatchDeactivateEvent(void);
   void MaybeDispatchResized();
@@ -523,9 +523,9 @@ class nsWindow final : public nsBaseWidget {
                  LayoutDeviceIntSize aSize);
   void NativeMoveResizeWaylandPopup(bool aMove, bool aResize);
 
-  
-  
-  
+  // Returns a window edge if the given point (in device pixels) is within a
+  // resizer region of the window.
+  // Only used when drawing decorations client side.
   mozilla::Maybe<GdkWindowEdge> CheckResizerEdge(const LayoutDeviceIntPoint&);
 
   GtkTextDirection GetTextDirection();
@@ -547,14 +547,14 @@ class nsWindow final : public nsBaseWidget {
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
   mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState{
       COMPOSITOR_ENABLED};
-  
-  
+  // This is used in COMPOSITOR_PAUSED_FLICKERING mode only to resume compositor
+  // in some reasonable time when page content is not updated.
   guint mCompositorPauseTimeoutID = 0;
 
-  
+  // The actual size mode that's in effect.
   nsSizeMode mSizeMode = nsSizeMode_Normal;
-  
-  
+  // The last size mode we've requested. This might not match mSizeMode if
+  // there's a request to change the size mode in progress.
   nsSizeMode mLastSizeModeRequest = nsSizeMode_Normal;
   nsSizeMode mLastSizeModeBeforeFullscreen = nsSizeMode_Normal;
 
@@ -563,94 +563,94 @@ class nsWindow final : public nsBaseWidget {
   mozilla::Maybe<GtkOrientation> mAspectResizer;
   LayoutDeviceIntPoint mLastResizePoint;
 
-  
-  
-  
-  
-  
+  // The size requested, which might not be reflected in mBounds.  Used in
+  // WaylandPopupSetDirectPosition() to remember intended size for popup
+  // positioning, in LockAspect() to remember the intended aspect ratio, and
+  // to remember a size requested while waiting for moved-to-rect when
+  // OnSizeAllocate() might change mBounds.Size().
   LayoutDeviceIntSize mLastSizeRequest;
   LayoutDeviceIntPoint mClientOffset;
-  
+  // Indicates a new size that still needs to be dispatched.
   LayoutDeviceIntSize mNeedsDispatchSize = LayoutDeviceIntSize(-1, -1);
 
-  
+  // This field omits duplicate scroll events caused by GNOME bug 726878.
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
   mozilla::ScreenCoord mLastPinchEventSpan;
 
   struct TouchpadPinchGestureState {
-    
+    // Focus point of the PHASE_BEGIN event
     ScreenPoint mBeginFocus;
 
-    
+    // Focus point of the most recent PHASE_UPDATE event
     ScreenPoint mCurrentFocus;
   };
 
-  
+  // Used for handling touchpad pinch gestures
   ScreenPoint mCurrentTouchpadFocus;
 
-  
+  // Used for synthesizing touchpad pinch gestures
   TouchpadPinchGestureState mCurrentSynthesizedTouchpadPinch;
 
-  
+  // Used for synthesizing touchpad pan gestures
   struct TouchpadPanGestureState {
     mozilla::Maybe<TouchpadGesturePhase> mTouchpadGesturePhase;
     uint64_t mSavedObserver = 0;
   };
 
-  
+  // Used for synthesizing touchpad pan gestures
   TouchpadPanGestureState mCurrentSynthesizedTouchpadPan;
 
-  
+  // for touch event handling
   nsRefPtrHashtable<nsPtrHashKey<GdkEventSequence>, mozilla::dom::Touch>
       mTouches;
 
-  
-  
+  // Upper bound on pending ConfigureNotify events to be dispatched to the
+  // window. See bug 1225044.
   unsigned int mPendingConfigures = 0;
 
-  
-  
+  // Window titlebar rendering mode, GTK_DECORATION_NONE if it's disabled
+  // for this window.
   GtkWindowDecoration mGtkWindowDecoration = GTK_DECORATION_NONE;
 
-  
+  // Draggable titlebar region maintained by UpdateWindowDraggingRegion
   LayoutDeviceIntRegion mDraggableRegion;
 
-  
+  // The cursor cache
   static GdkCursor* gsGtkCursorCache[eCursorCount];
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // If true, draw our own window titlebar.
+  //
+  // Needs to be atomic because GetTitlebarRect() gets called from non-main
+  // threads.
+  //
+  // FIXME(emilio): GetTitlebarRect() reads other things that TSAN doesn't
+  // catch because mDrawInTitlebar is false on automation ~always. We should
+  // probably make GetTitlebarRect() simpler / properly thread-safe.
   mozilla::Atomic<bool, mozilla::Relaxed> mDrawInTitlebar{false};
 
   mozilla::Mutex mDestroyMutex;
 
-  
+  // Has this widget been destroyed yet?
   bool mIsDestroyed : 1;
-  
-  
+  // mIsShown tracks requested visible status from browser perspective, i.e.
+  // if the window should be visible or now.
   bool mIsShown : 1;
-  
-  
-  
-  
-  
+  // mNeedsShow is set when browser requested to show this window but we failed
+  // to do so for some reason (wrong window size for instance).
+  // In such case we set mIsShown = true and mNeedsShow = true to indicate
+  // that the window is not actually visible but we report to browser that
+  // it is visible (mIsShown == true).
   bool mNeedsShow : 1;
-  
-  
+  // This track real window visibility from OS perspective.
+  // It's set by OnMap/OnUnrealize which is based on Gtk events.
   bool mIsMapped : 1;
-  
+  // is this widget enabled?
   bool mEnabled : 1;
-  
+  // has the native window for this been created yet?
   bool mCreated : 1;
-  
+  // whether we handle touch event
   bool mHandleTouchEvent : 1;
-  
+  // true if this is a drag and drop feedback popup
   bool mIsDragPopup : 1;
   bool mCompositedScreen : 1;
   bool mIsAccelerated : 1;
@@ -658,106 +658,110 @@ class nsWindow final : public nsBaseWidget {
   bool mHasMappedToplevel : 1;
   bool mRetryPointerGrab : 1;
   bool mPanInProgress : 1;
-  
+  // Draw titlebar with :backdrop css state (inactive/unfocused).
   bool mTitlebarBackdropState : 1;
-  
-  
-  
+  // It's undecorated popup utility window, without resizers/titlebar,
+  // movable by mouse. Used on Wayland for popups without
+  // parent (for instance WebRTC sharing indicator, notifications).
+  bool mIsWaylandPanelWindow : 1;
+  // It's child window, i.e. window which is nested in parent window.
+  // This is obsoleted and should not be used.
+  // We use GdkWindow hierarchy for such windows.
   bool mIsChildWindow : 1;
   bool mAlwaysOnTop : 1;
   bool mNoAutoHide : 1;
   bool mIsTransparent : 1;
-  
+  // We can expect at least one size-allocate event after early resizes.
   bool mHasReceivedSizeAllocate : 1;
   bool mWidgetCursorLocked : 1;
   bool mUndecorated : 1;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*  Gkt creates popup in two incarnations - wl_subsurface and xdg_popup.
+   *  Kind of popup is choosen before GdkWindow is mapped so we can change
+   *  it only when GdkWindow is hidden.
+   *
+   *  Relevant Gtk code is at gdkwindow-wayland.c
+   *  in should_map_as_popup() and should_map_as_subsurface()
+   *
+   *  wl_subsurface:
+   *    - can't be positioned by move-to-rect
+   *    - can stand outside popup widget hierarchy (has toplevel as parent)
+   *    - don't have child popup widgets
+   *
+   *  xdg_popup:
+   *    - can be positioned by move-to-rect
+   *    - aligned in popup widget hierarchy, first one is attached to toplevel
+   *    - has child (popup) widgets
+   *
+   *  Thus we need to map Firefox popup type to desired Gtk one:
+   *
+   *  wl_subsurface:
+   *    - pernament panels
+   *
+   *  xdg_popup:
+   *    - menus
+   *    - autohide popups (hamburger menu)
+   *    - extension popups
+   *    - tooltips
+   *
+   *  We set mPopupTrackInHierarchy = false for pernament panels which
+   *  are always mapped to toplevel and painted as wl_surfaces.
+   */
   bool mPopupTrackInHierarchy : 1;
   bool mPopupTrackInHierarchyConfigured : 1;
 
-  
-
-
-
+  /* On X11 Gtk tends to ignore window position requests when gtk_window
+   * is hidden. Save the position requests at mPopupPosition and apply
+   * when the widget is shown.
+   */
   bool mHiddenPopupPositioned : 1;
 
-  
-  
+  // The transparency bitmap is used instead of ARGB visual for toplevel
+  // window to draw titlebar.
   bool mTransparencyBitmapForTitlebar : 1;
 
-  
-  
+  // True when we're on compositing window manager and this
+  // window is using visual with alpha channel.
   bool mHasAlphaVisual : 1;
 
-  
+  // When popup is anchored, mPopupPosition is relative to its parent popup.
   bool mPopupAnchored : 1;
 
-  
+  // When popup is context menu.
   bool mPopupContextMenu : 1;
 
-  
-  
+  // Indicates that this popup matches layout setup so we can use parent popup
+  // coordinates reliably.
   bool mPopupMatchesLayout : 1;
 
-  
-
-
+  /*  Indicates that popup setup was changed and
+   *  we need to recalculate popup coordinates.
+   */
   bool mPopupChanged : 1;
 
-  
+  // Popup is hidden only as a part of hierarchy tree update.
   bool mPopupTemporaryHidden : 1;
 
-  
+  // Popup is going to be closed and removed.
   bool mPopupClosed : 1;
 
-  
+  // Popup is positioned by gdk_window_move_to_rect()
   bool mPopupUseMoveToRect : 1;
 
-  
-
-
-
-
-
+  /* mWaitingForMoveToRectCallback is set when move-to-rect is called
+   * and we're waiting for move-to-rect callback.
+   *
+   * If another position/resize request comes between move-to-rect call and
+   * move-to-rect callback we set mMovedAfterMoveToRect/mResizedAfterMoveToRect.
+   */
   bool mWaitingForMoveToRectCallback : 1;
   bool mMovedAfterMoveToRect : 1;
   bool mResizedAfterMoveToRect : 1;
 
-  
-  
-  
-  
+  // Params used for popup placemend by GdkWindowMoveToRect.
+  // When popup is only resized and not positioned,
+  // we need to reuse last GdkWindowMoveToRect params to avoid
+  // popup movement.
   struct WaylandPopupMoveToRectParams {
     LayoutDeviceIntRect mAnchorRect = {0, 0, 0, 0};
     GdkGravity mAnchorRectType = GDK_GRAVITY_NORTH_WEST;
@@ -769,23 +773,23 @@ class nsWindow final : public nsBaseWidget {
 
   WaylandPopupMoveToRectParams mPopupMoveToRectParams;
 
-  
+  // Whether we've configured default clear color already.
   bool mConfiguredClearColor : 1;
-  
-  
+  // Whether we've received a non-blank paint in which case we can reset the
+  // clear color to transparent.
   bool mGotNonBlankPaint : 1;
 
-  
+  // Whether we need to retry capturing the mouse because we' re not mapped yet.
   bool mNeedsToRetryCapturingMouse : 1;
 
-  
-  
-  
+  // This bitmap tracks which pixels are transparent. We don't support
+  // full translucency at this time; each pixel is either fully opaque
+  // or fully transparent.
   gchar* mTransparencyBitmap = nullptr;
   int32_t mTransparencyBitmapWidth = 0;
   int32_t mTransparencyBitmapHeight = 0;
 
-  
+  // all of our DND stuff
   void InitDragEvent(mozilla::WidgetDragEvent& aEvent);
 
   float mLastMotionPressure = 0.0f;
@@ -796,16 +800,16 @@ class nsWindow final : public nsBaseWidget {
 
   void DispatchMissedButtonReleases(GdkEventCrossing* aGdkEvent);
 
-  
-  
-  
+  // When window widget gets mapped/unmapped we need to configure
+  // underlying GdkWindow properly. Otherwise we'll end up with
+  // rendering to released window.
   void ConfigureGdkWindow();
   void ReleaseGdkWindow();
   void ConfigureCompositor();
 
   bool IsAlwaysUndecoratedWindow() const;
 
-  
+  // nsBaseWidget
   WindowRenderer* GetWindowRenderer() override;
   void DidGetNonBlankPaint() override;
 
@@ -823,14 +827,14 @@ class nsWindow final : public nsBaseWidget {
 
   void ApplySizeConstraints();
 
-  
+  // Wayland Popup section
   GdkPoint WaylandGetParentPosition();
   bool WaylandPopupConfigure();
   bool WaylandPopupIsAnchored();
   bool WaylandPopupIsMenu();
   bool WaylandPopupIsContextMenu();
   bool WaylandPopupIsPermanent();
-  
+  // First popup means it's attached directly to toplevel window
   bool WaylandPopupIsFirst();
   bool IsWidgetOverflowWindow();
   void RemovePopupFromHierarchyList();
@@ -887,41 +891,41 @@ class nsWindow final : public nsBaseWidget {
            mWindowType == WindowType::Dialog;
   }
 
-  
-  
-  
+  // mPopupPosition is the original popup position/size from layout, set by
+  // nsWindow::Move() or nsWindow::Resize().
+  // Popup position is relative to main (toplevel) window.
   GdkPoint mPopupPosition{};
 
-  
-  
+  // mRelativePopupPosition is popup position calculated against
+  // recent popup parent window.
   GdkPoint mRelativePopupPosition{};
 
-  
-  
+  // Toplevel window (first element) of linked list of Wayland popups. It's null
+  // if we're the toplevel.
   RefPtr<nsWindow> mWaylandToplevel;
 
-  
+  // Next/Previous popups in Wayland popup hierarchy.
   RefPtr<nsWindow> mWaylandPopupNext;
   RefPtr<nsWindow> mWaylandPopupPrev;
 
-  
-  
-  
+  // When popup is resized by Gtk by move-to-rect callback,
+  // we store final popup size here. Then we use mMoveToRectPopupSize size
+  // in following popup operations unless mLayoutPopupSizeCleared is set.
   LayoutDeviceIntSize mMoveToRectPopupSize;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * |mIMContext| takes all IME related stuff.
+   *
+   * This is owned by the top-level nsWindow or the topmost child
+   * nsWindow embedded in a non-Gecko widget.
+   *
+   * The instance is created when the top level widget is created.  And when
+   * the widget is destroyed, it's released.  All child windows refer its
+   * ancestor widget's instance.  So, one set of IM contexts is created for
+   * all windows in a hierarchy.  If the children are released after the top
+   * level window is released, the children still have a valid pointer,
+   * however, IME doesn't work at that time.
+   */
   RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
 #ifdef MOZ_X11
@@ -934,46 +938,46 @@ class nsWindow final : public nsBaseWidget {
 #ifdef ACCESSIBILITY
   RefPtr<mozilla::a11y::LocalAccessible> mRootAccessible;
 
-  
-
-
+  /**
+   * Request to create the accessible for this window if it is top level.
+   */
   void CreateRootAccessible();
 
-  
-
-
-
-
+  /**
+   * Dispatch accessible event for the top level window accessible.
+   *
+   * @param  aEventType  [in] the accessible event type to dispatch
+   */
   void DispatchEventToRootAccessible(uint32_t aEventType);
 
-  
-
-
-
+  /**
+   * Dispatch accessible window activate event for the top level window
+   * accessible.
+   */
   void DispatchActivateEventAccessible();
 
-  
-
-
-
+  /**
+   * Dispatch accessible window deactivate event for the top level window
+   * accessible.
+   */
   void DispatchDeactivateEventAccessible();
 
-  
-
-
-
+  /**
+   * Dispatch accessible window maximize event for the top level window
+   * accessible.
+   */
   void DispatchMaximizeEventAccessible();
 
-  
-
-
-
+  /**
+   * Dispatch accessible window minize event for the top level window
+   * accessible.
+   */
   void DispatchMinimizeEventAccessible();
 
-  
-
-
-
+  /**
+   * Dispatch accessible window restore event for the top level window
+   * accessible.
+   */
   void DispatchRestoreEventAccessible();
 #endif
 
@@ -997,8 +1001,8 @@ class nsWindow final : public nsBaseWidget {
   zwp_locked_pointer_v1* mLockedPointer = nullptr;
   zwp_relative_pointer_v1* mRelativePointer = nullptr;
 #endif
-  
-  
+  // An activation token from our environment (see handling of the
+  // XDG_ACTIVATION_TOKEN/DESKTOP_STARTUP_ID) env vars.
   nsCString mWindowActivationTokenFromEnv;
   mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
   GdkDragContext* mSourceDragContext = nullptr;
@@ -1006,9 +1010,9 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRect mLastLoggedBoundSize;
   int mLastLoggedScale = -1;
 #endif
-  
-  
+  // Running in kiosk mode and requested to stay on specified monitor.
+  // If monitor is removed minimize the window.
   mozilla::Maybe<int> mKioskMonitor;
 };
 
-#endif 
+#endif /* __nsWindow_h__ */
