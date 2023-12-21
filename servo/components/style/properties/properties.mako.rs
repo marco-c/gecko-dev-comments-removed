@@ -929,7 +929,7 @@ impl LogicalMappingData {
 
 impl LonghandId {
     
-    pub fn shorthands(&self) -> NonCustomPropertyIterator<ShorthandId> {
+    pub fn shorthands(self) -> NonCustomPropertyIterator<ShorthandId> {
         
         
         
@@ -966,21 +966,19 @@ impl LonghandId {
         %>
 
         
+        static MAP: [&'static [ShorthandId]; property_counts::LONGHANDS] = [
         % for property in data.longhands:
-            static ${property.ident.upper()}: &'static [ShorthandId] = &[
+            &[
                 % for shorthand in longhand_to_shorthand_map.get(property.ident, []):
                     ShorthandId::${shorthand},
                 % endfor
-            ];
+            ],
         % endfor
+        ];
 
         NonCustomPropertyIterator {
-            filter: NonCustomPropertyId::from(*self).enabled_for_all_content(),
-            iter: match *self {
-                % for property in data.longhands:
-                    LonghandId::${property.camel_case} => ${property.ident.upper()},
-                % endfor
-            }.iter(),
+            filter: NonCustomPropertyId::from(self).enabled_for_all_content(),
+            iter: MAP[self as usize].iter(),
         }
     }
 
@@ -1069,21 +1067,19 @@ pub enum ShorthandId {
 
 impl ShorthandId {
     
-    pub fn longhands(&self) -> NonCustomPropertyIterator<LonghandId> {
+    pub fn longhands(self) -> NonCustomPropertyIterator<LonghandId> {
+        static MAP: [&'static [LonghandId]; property_counts::SHORTHANDS] = [
         % for property in data.shorthands:
-            static ${property.ident.upper()}: &'static [LonghandId] = &[
+            &[
                 % for sub in property.sub_properties:
                     LonghandId::${sub.camel_case},
                 % endfor
-            ];
+            ],
         % endfor
+        ];
         NonCustomPropertyIterator {
-            filter: NonCustomPropertyId::from(*self).enabled_for_all_content(),
-            iter: match *self {
-                % for property in data.shorthands:
-                    ShorthandId::${property.camel_case} => ${property.ident.upper()},
-                % endfor
-            }.iter()
+            filter: NonCustomPropertyId::from(self).enabled_for_all_content(),
+            iter: MAP[self as usize].iter(),
         }
     }
 
