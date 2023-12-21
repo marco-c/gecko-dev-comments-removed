@@ -400,26 +400,6 @@ VideoContentDescription* GetFirstVideoContentDescription(
 SctpDataContentDescription* GetFirstSctpDataContentDescription(
     SessionDescription* sdesc);
 
-
-void GetSupportedAudioSdesCryptoSuites(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedVideoSdesCryptoSuites(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedDataSdesCryptoSuites(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedAudioSdesCryptoSuiteNames(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<std::string>* crypto_suite_names);
-void GetSupportedVideoSdesCryptoSuiteNames(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<std::string>* crypto_suite_names);
-void GetSupportedDataSdesCryptoSuiteNames(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<std::string>* crypto_suite_names);
-
 }  
 
 #endif  
