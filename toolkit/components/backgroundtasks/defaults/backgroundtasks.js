@@ -2,6 +2,8 @@
 
 
 
+#filter substitution;
+
 
 
 
@@ -45,3 +47,10 @@ pref("security.nocertdb", true);
 
 
 pref("preferences.allow.omt-write", false);
+
+
+#ifdef NIGHTLY_BUILD
+pref("app.update.background.automaticRestartEnabled", true);
+#else
+pref("app.update.background.automaticRestartEnabled", false);
+#endif
