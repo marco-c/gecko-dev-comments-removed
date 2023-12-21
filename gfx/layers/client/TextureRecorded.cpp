@@ -51,8 +51,18 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
     return false;
   }
 
+  RemoteTextureId obsoleteRemoteTextureId;
   if (mRemoteTextureOwnerId.IsValid()) {
+    
+    
+    
+    
+    
+    if (!mUsedRemoteTexture) {
+      obsoleteRemoteTextureId = mLastRemoteTextureId;
+    }
     mLastRemoteTextureId = RemoteTextureId::GetNext();
+    mUsedRemoteTexture = false;
   }
 
   if (!mDT) {
@@ -70,8 +80,8 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
     return true;
   }
 
-  mCanvasChild->RecordEvent(
-      RecordedTextureLock(mTextureId, aMode, mLastRemoteTextureId));
+  mCanvasChild->RecordEvent(RecordedTextureLock(
+      mTextureId, aMode, mLastRemoteTextureId, obsoleteRemoteTextureId));
   if (aMode & OpenMode::OPEN_WRITE) {
     mCanvasChild->OnTextureWriteLock();
   }
@@ -143,6 +153,8 @@ bool RecordedTextureData::Serialize(SurfaceDescriptor& aDescriptor) {
   if (mRemoteTextureOwnerId.IsValid()) {
     aDescriptor = SurfaceDescriptorRemoteTexture(mLastRemoteTextureId,
                                                  mRemoteTextureOwnerId);
+    
+    mUsedRemoteTexture = true;
   } else {
     aDescriptor = SurfaceDescriptorRecorded(mTextureId);
   }
