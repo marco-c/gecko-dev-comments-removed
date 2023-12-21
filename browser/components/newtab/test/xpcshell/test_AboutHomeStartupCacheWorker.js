@@ -108,7 +108,6 @@ add_setup(async function () {
     "browser.newtabpage.activity-stream.telemetry.structuredIngestion",
     false
   );
-  Services.prefs.setBoolPref("browser.ping-centre.telemetry", false);
 
   
   await SearchTestUtils.installSearchExtension(

@@ -3857,10 +3857,6 @@ async function checkSearch({ name, searchString, expectedResults }) {
   
   
   
-  
-  
-  
-  context.isPrivate = true;
   if (UrlbarProviderQuickSuggest._resultFromLastQuery) {
     UrlbarProviderQuickSuggest._resultFromLastQuery.isVisible = true;
   }

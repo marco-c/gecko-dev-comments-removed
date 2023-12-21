@@ -1951,10 +1951,6 @@ pref("toolkit.telemetry.updatePing.enabled", true);
 pref("toolkit.telemetry.bhrPing.enabled", true);
 
 
-pref("browser.ping-centre.telemetry", true);
-pref("browser.ping-centre.log", false);
-
-
 pref("media.gmp-provider.enabled", true);
 
 
