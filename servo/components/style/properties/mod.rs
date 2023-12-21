@@ -191,8 +191,18 @@ impl fmt::Debug for PropertyDeclaration {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, ToComputedValue, ToResolvedValue, ToShmem, MallocSizeOf)]
 pub struct NonCustomPropertyId(u16);
+
+impl ToCss for NonCustomPropertyId {
+    #[inline]
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        dest.write_str(self.name())
+    }
+}
 
 impl NonCustomPropertyId {
     
