@@ -42,7 +42,7 @@ add_task(async function test_query_node_tags_property() {
 
   
   tagssvc.tagURI(bookmarkURI, ["bar"]);
-  Assert.equal(node.tags, "bar, foo");
+  Assert.equal(node.tags, "bar,foo");
 
   
   tagssvc.untagURI(bookmarkURI, null);

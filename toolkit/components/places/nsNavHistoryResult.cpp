@@ -369,25 +369,12 @@ nsNavHistoryResultNode::GetParentResult(nsINavHistoryResult** aResult) {
 }
 
 void nsNavHistoryResultNode::SetTags(const nsAString& aTags) {
-  mTags.SetIsVoid(true);
   if (aTags.IsVoid()) {
+    mTags.SetIsVoid(true);
     return;
   }
 
-  
-  
-  
-  
-  
-  nsTArray<nsCString> tags;
-  ParseString(NS_ConvertUTF16toUTF8(aTags), ',', tags);
-  tags.Sort();
-  for (nsTArray<nsCString>::index_type i = 0; i < tags.Length(); ++i) {
-    AppendUTF8toUTF16(tags[i], mTags);
-    if (i < tags.Length() - 1) {
-      mTags.AppendLiteral(", ");
-    }
-  }
+  mTags.Assign(aTags);
 }
 
 NS_IMETHODIMP
