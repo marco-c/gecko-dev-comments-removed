@@ -902,7 +902,15 @@ previewers.Object = [
 
     let url;
     if (isWindow && rawObj.location) {
-      url = rawObj.location.href;
+      try {
+        url = rawObj.location.href;
+      } catch(e) {
+        
+        
+        
+        
+        url = rawObj.browsingContext?.embedderElement?.src || "Restricted";
+      }
     } else if (rawObj.href) {
       url = rawObj.href;
     } else {
