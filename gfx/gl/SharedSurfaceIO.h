@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 4; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef SHARED_SURFACEIO_H_
 #define SHARED_SURFACEIO_H_
@@ -33,7 +33,7 @@ class SharedSurface_IOSurface final : public SharedSurface {
   virtual void LockProdImpl() override {}
   virtual void UnlockProdImpl() override {}
 
-  virtual void ProducerAcquireImpl() override {}
+  virtual bool ProducerAcquireImpl() override { return true; }
   virtual void ProducerReleaseImpl() override;
 
   virtual bool NeedsIndirectReads() const override { return true; }
@@ -57,8 +57,8 @@ class SurfaceFactory_IOSurface : public SurfaceFactory {
   }
 };
 
-}  // namespace gl
+}  
 
-} /* namespace mozilla */
+} 
 
-#endif /* SHARED_SURFACEIO_H_ */
+#endif 
