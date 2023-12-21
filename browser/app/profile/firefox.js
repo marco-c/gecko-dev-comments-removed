@@ -2347,7 +2347,11 @@ pref("browser.suppress_first_window_animation", true);
 pref("extensions.screenshots.disabled", false);
 
 
-pref("screenshots.browser.component.enabled", false);
+#ifdef NIGHTLY_BUILD
+  pref("screenshots.browser.component.enabled", true);
+#else
+  pref("screenshots.browser.component.enabled", false);
+#endif
 
 
 pref("doh-rollout.clearModeOnShutdown", false);
