@@ -127,8 +127,7 @@ bool WindowCapturerMac::FocusOnSelectedSource() {
   
   
   bool result =
-      [[NSRunningApplication runningApplicationWithProcessIdentifier: pid]
-          activateWithOptions: NSApplicationActivateIgnoringOtherApps];
+      [[NSRunningApplication runningApplicationWithProcessIdentifier:pid] activateWithOptions:0];
 
   CFRelease(window_id_array);
   CFRelease(window_array);
