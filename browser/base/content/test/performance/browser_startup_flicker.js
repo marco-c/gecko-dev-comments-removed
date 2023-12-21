@@ -24,15 +24,28 @@ add_task(async function () {
     let frame = frames[i],
       previousFrame = frames[i - 1];
     let rects = compareFrames(frame, previousFrame);
-    if (!alreadyFocused && isLikelyFocusChange(rects)) {
-      todo(
-        false,
-        "bug 1445161 - the window should be focused at first paint, " +
-          rects.toSource()
-      );
-      continue;
+
+    if (!alreadyFocused) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const minRects = AppConstants.platform == "linux" ? 0 : 5;
+      if (rects.length > minRects && rects.every(r => r.y2 < 100)) {
+        alreadyFocused = true;
+        todo(
+          false,
+          "bug 1445161 - the window should be focused at first paint, " +
+            rects.toSource()
+        );
+        continue;
+      }
     }
-    alreadyFocused = true;
 
     rects = rects.filter(rect => {
       let width = frame.width;

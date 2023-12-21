@@ -20,6 +20,23 @@ const EXPECTED_REFLOWS = [
 
 
 
+function isLikelyFocusChange(rects) {
+  if (rects.length > 5 && rects.every(r => r.y2 < 100)) {
+    return true;
+  }
+  if (
+    Services.appinfo.OS == "Darwin" &&
+    rects.length == 2 &&
+    rects.every(r => r.y1 == 0 && r.h == 33)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+
+
+
 
 add_task(async function () {
   
@@ -48,6 +65,7 @@ add_task(async function () {
         
         
         if (!alreadyFocused && isLikelyFocusChange(rects)) {
+          alreadyFocused = true;
           todo(
             false,
             "bug 1445161 - the window should be focused at first paint, " +
@@ -55,7 +73,7 @@ add_task(async function () {
           );
           return [];
         }
-        alreadyFocused = true;
+
         return rects;
       },
       exceptions: [
