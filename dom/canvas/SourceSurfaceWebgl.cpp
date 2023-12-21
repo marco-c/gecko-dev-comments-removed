@@ -17,7 +17,7 @@ SourceSurfaceWebgl::SourceSurfaceWebgl(DrawTargetWebgl* aDT)
 
 SourceSurfaceWebgl::SourceSurfaceWebgl(
     const RefPtr<TextureHandle>& aHandle,
-    const RefPtr<DrawTargetWebgl::SharedContext>& aSharedContext)
+    const RefPtr<SharedContextWebgl>& aSharedContext)
     : mFormat(aHandle->GetFormat()),
       mSize(aHandle->GetSize()),
       mSharedContext(aSharedContext),
@@ -117,8 +117,7 @@ void SourceSurfaceWebgl::GiveTexture(RefPtr<TextureHandle> aHandle) {
 
 
 
-void SourceSurfaceWebgl::OnUnlinkTexture(
-    DrawTargetWebgl::SharedContext* aContext) {
+void SourceSurfaceWebgl::OnUnlinkTexture(SharedContextWebgl* aContext) {
   
   
   MOZ_ASSERT(!mDT);
@@ -142,7 +141,7 @@ already_AddRefed<SourceSurface> SourceSurfaceWebgl::ExtractSubrect(
     return nullptr;
   }
   RefPtr<TextureHandle> subHandle;
-  RefPtr<DrawTargetWebgl::SharedContext> sharedContext;
+  RefPtr<SharedContextWebgl> sharedContext;
   if (mDT) {
     
     
