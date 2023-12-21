@@ -16,7 +16,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TEST_CHUNK_SIZE = 100;
 
-add_task(async function init() {
+add_setup(async () => {
   
   Assert.equal(
     typeof SuggestionsMap.chunkSize,

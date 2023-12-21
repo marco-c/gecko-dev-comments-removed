@@ -10,7 +10,7 @@
 
 let testEngine;
 
-add_task(async function init() {
+add_setup(async () => {
   
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   

@@ -39,7 +39,7 @@ const DEFAULT_PREFS = {
 
 const TEST_OVERRIDES = undefined;
 
-add_task(async function init() {
+add_setup(async () => {
   await UrlbarTestUtils.initNimbusFeature();
 });
 

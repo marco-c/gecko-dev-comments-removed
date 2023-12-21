@@ -9,7 +9,7 @@
 const TEST_ENGINE_NAME = "test autofill aliases";
 const TEST_ENGINE_ALIAS = "@autofilltest";
 
-add_task(async function init() {
+add_setup(async () => {
   
   await SearchTestUtils.installSearchExtension({
     name: TEST_ENGINE_NAME,

@@ -7,7 +7,7 @@
 
 
 
-add_task(async function test_setup() {
+add_setup(async () => {
   CustomizableUI.addWidgetToArea("home-button", "nav-bar");
   await SpecialPowers.pushPrefEnv({
     set: [["browser.tabs.searchclipboardfor.middleclick", false]],
