@@ -1,87 +1,87 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ */
+
+/*
+Based partially on original code from nICEr and nrappkit.
+
+nICEr copyright:
+
+Copyright (c) 2007, Adobe Systems, Incorporated
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+* Neither the name of Adobe Systems, Network Resonance nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+nrappkit copyright:
+
+   Copyright (C) 2001-2003, Network Resonance, Inc.
+   Copyright (C) 2006, Network Resonance, Inc.
+   All Rights Reserved
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
+
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+   3. Neither the name of Network Resonance, Inc. nor the name of any
+      contributors to this software may be used to endorse or promote
+      products derived from this software without specific prior written
+      permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
+
+
+   ekr@rtfm.com  Thu Dec 20 20:14:49 2001
+*/
+
+// Original author: bcampen@mozilla.com [:bwc]
 
 extern "C" {
-#include "stun_msg.h"  
+#include "stun_msg.h"  // for NR_STUN_MAX_MESSAGE_SIZE
 #include "async_wait.h"
 #include "async_timer.h"
 #include "nr_socket.h"
@@ -109,8 +109,8 @@ static int test_nat_socket_create(void* obj, nr_transport_addr* addr,
   _status = 0;
 
   {
-    
-    
+    // We will release this reference in destroy(), not exactly the normal
+    // ownership model, but it is what it is.
     NrSocketBase* dummy = sock.forget().take();
     (void)dummy;
   }
@@ -129,7 +129,7 @@ static int test_nat_socket_factory_destroy(void** obj) {
 static nr_socket_factory_vtbl test_nat_socket_factory_vtbl = {
     test_nat_socket_create, test_nat_socket_factory_destroy};
 
-
+/* static */
 TestNat::NatBehavior TestNat::ToNatBehavior(const std::string& type) {
   if (type.empty() || !type.compare("ENDPOINT_INDEPENDENT")) {
     return TestNat::ENDPOINT_INDEPENDENT;
@@ -208,7 +208,7 @@ RefPtr<NrSocketBase> TestNrSocket::create_external_socket(
   int r;
   nr_transport_addr nat_external_addr;
 
-  
+  // Open the socket on an arbitrary port, on the same address.
   if ((r = nr_transport_addr_copy(&nat_external_addr,
                                   &internal_socket_->my_addr()))) {
     r_log(LOG_GENERIC, LOG_CRIT, "%s: Failure in nr_transport_addr_copy: %d",
@@ -315,7 +315,7 @@ int TestNrSocket::sendto(const void* msg, size_t len, int flags,
     return 0;
   }
 
-  
+  /* TODO: improve the functionality of this in bug 1253657 */
   if (!nat_->enabled_ || nat_->is_an_internal_tuple(*to)) {
     if (nat_->delay_stun_resp_ms_ && nr_is_stun_response_message(buf, len)) {
       NR_ASYNC_TIMER_SET(
@@ -333,12 +333,12 @@ int TestNrSocket::sendto(const void* msg, size_t len, int flags,
     return nat_->error_code_for_drop_;
   }
 
-  
+  // Choose our port mapping based on our most selective criteria
   PortMapping* port_mapping = get_port_mapping(
       *to, std::max(nat_->filtering_type_, nat_->mapping_type_));
 
   if (!port_mapping) {
-    
+    // See if we have already made the external socket we need to use.
     PortMapping* similar_port_mapping =
         get_port_mapping(*to, nat_->mapping_type_);
     RefPtr<NrSocketBase> external_socket;
@@ -357,15 +357,15 @@ int TestNrSocket::sendto(const void* msg, size_t len, int flags,
     port_mappings_.push_back(port_mapping);
 
     if (poll_flags() & PR_POLL_READ) {
-      
-      
+      // Make sure the new port mapping is ready to receive traffic if the
+      // TestNrSocket is already waiting.
       port_mapping->async_wait(NR_ASYNC_WAIT_READ, socket_readable_callback,
                                this, (char*)__FUNCTION__, __LINE__);
     }
   }
 
-  
-  
+  // We probably don't want to propagate the flags, since this is a simulated
+  // external IP address.
   return port_mapping->sendto(msg, len, *to);
 }
 
@@ -386,7 +386,7 @@ int TestNrSocket::recvfrom(void* buf, size_t maxlen, size_t* len, int flags,
   bool ingress_allowed = false;
 
   if (readable_socket_) {
-    
+    // If any of the external sockets got data, see if it will be passed through
     r = readable_socket_->recvfrom(buf, maxlen, len, 0, from);
     const nr_transport_addr to = readable_socket_->my_addr();
     readable_socket_ = nullptr;
@@ -403,13 +403,13 @@ int TestNrSocket::recvfrom(void* buf, size_t maxlen, size_t* len, int flags,
       }
     }
   } else {
-    
-    
-    
+    // If no external socket has data, see if there's any data that was sent
+    // directly to the TestNrSocket, and eat it if it isn't supposed to get
+    // through.
     r = internal_socket_->recvfrom(buf, maxlen, len, flags, from);
     if (!r) {
-      
-      
+      // We do not use allow_ingress() here because that only handles traffic
+      // landing on an external port.
       ingress_allowed = (!nat_->enabled_ || nat_->is_an_internal_tuple(*from));
       if (!ingress_allowed) {
         r_log(LOG_GENERIC, LOG_INFO,
@@ -423,12 +423,12 @@ int TestNrSocket::recvfrom(void* buf, size_t maxlen, size_t* len, int flags,
     }
   }
 
-  
-  
-  
-  
-  
-  
+  // Kinda bad that we are forced to give the app a readable callback and then
+  // say "Oh, never mind...", but the alternative is to totally decouple the
+  // callbacks from STS and the callbacks the app sets. On the bright side, this
+  // speeds up unit tests where we are verifying that ingress is forbidden,
+  // since they'll get a readable callback and then an error, instead of having
+  // to wait for a timeout.
   if (!ingress_allowed) {
     *len = 0;
     r = R_WOULDBLOCK;
@@ -440,27 +440,27 @@ int TestNrSocket::recvfrom(void* buf, size_t maxlen, size_t* len, int flags,
 bool TestNrSocket::allow_ingress(const nr_transport_addr& to,
                                  const nr_transport_addr& from,
                                  PortMapping** port_mapping_used) const {
-  
+  // This is only called for traffic arriving at a port mapping
   MOZ_ASSERT(nat_->enabled_);
   MOZ_ASSERT(!nat_->is_an_internal_tuple(from));
 
-  
+  // Find the port mapping (if any) that this packet landed on
   *port_mapping_used = nullptr;
   for (PortMapping* port_mapping : port_mappings_) {
     if (!nr_transport_addr_cmp(&to, &port_mapping->external_socket_->my_addr(),
-                               NR_TRANSPORT_ADDR_CMP_MODE_ALL)) {
+                               NR_TRANSPORT_ADDR_CMP_MODE_ALL) &&
+        !is_port_mapping_stale(*port_mapping)) {
       *port_mapping_used = port_mapping;
-      
-      
-      
+      // TODO: Bug 1857149
+      // Adding a break here causes test failures, but we would not expect to
+      // find more than one matching mapping at a time.
     }
   }
 
-  if (NS_WARN_IF(!(*port_mapping_used))) {
-    MOZ_ASSERT(false);
+  if (!(*port_mapping_used)) {
     r_log(LOG_GENERIC, LOG_INFO,
           "TestNrSocket %s denying ingress from %s: "
-          "No port mapping for this local port! What?",
+          "No non-stale port mapping for this local port.",
           internal_socket_->my_addr().as_string, from.as_string);
     return false;
   }
@@ -469,14 +469,6 @@ bool TestNrSocket::allow_ingress(const nr_transport_addr& to,
     r_log(LOG_GENERIC, LOG_INFO,
           "TestNrSocket %s denying ingress from %s: "
           "Filtered (no port mapping for source)",
-          internal_socket_->my_addr().as_string, from.as_string);
-    return false;
-  }
-
-  if (is_port_mapping_stale(**port_mapping_used)) {
-    r_log(LOG_GENERIC, LOG_INFO,
-          "TestNrSocket %s denying ingress from %s: "
-          "Stale port mapping",
           internal_socket_->my_addr().as_string, from.as_string);
     return false;
   }
@@ -502,13 +494,13 @@ int TestNrSocket::connect(const nr_transport_addr* addr) {
   }
 
   if (maybe_get_redirect_targets(addr).isSome()) {
-    
-    
-    
+    // If we are simulating STUN redirects for |addr|, we need to pretend that
+    // the TCP connection worked, since |addr| probably does not actually point
+    // at something that exists.
     connect_fake_stun_address_.reset(new nr_transport_addr);
     nr_transport_addr_copy(connect_fake_stun_address_.get(), addr);
 
-    
+    // We dispatch this, otherwise nICEr can trip over its shoelaces
     GetCurrentSerialEventTarget()->Dispatch(
         NS_NewRunnableFunction("Async writeable callback for TestNrSocket",
                                [this, self = RefPtr<TestNrSocket>(this)] {
@@ -521,11 +513,11 @@ int TestNrSocket::connect(const nr_transport_addr* addr) {
   }
 
   if (!nat_->enabled_ ||
-      addr->protocol == IPPROTO_UDP  
-                                     
-                                     
+      addr->protocol == IPPROTO_UDP  // Horrible hack to allow default address
+                                     // discovery to work. Only works because
+                                     // we don't normally connect on UDP.
       || nat_->is_an_internal_tuple(*addr)) {
-    
+    // This will set connect_invoked_
     return internal_socket_->connect(addr);
   }
 
@@ -564,7 +556,7 @@ int TestNrSocket::write(const void* msg, size_t len, size_t* written) {
   }
 
   if (nat_->block_stun_ && nr_is_stun_message(buf, len)) {
-    
+    // Should cause this socket to be abandoned
     r_log(LOG_GENERIC, LOG_DEBUG,
           "TestNrSocket %s dropping outgoing TCP "
           "because it is configured to drop STUN",
@@ -578,7 +570,7 @@ int TestNrSocket::write(const void* msg, size_t len, size_t* written) {
   }
 
   if (nat_->block_tcp_ && !tls_) {
-    
+    // Should cause this socket to be abandoned
     r_log(LOG_GENERIC, LOG_DEBUG,
           "TestNrSocket %s dropping outgoing TCP "
           "because it is configured to drop TCP",
@@ -587,7 +579,7 @@ int TestNrSocket::write(const void* msg, size_t len, size_t* written) {
   }
 
   if (nat_->block_tls_ && tls_) {
-    
+    // Should cause this socket to be abandoned
     r_log(LOG_GENERIC, LOG_DEBUG,
           "TestNrSocket %s dropping outgoing TLS "
           "because it is configured to drop TLS",
@@ -596,7 +588,7 @@ int TestNrSocket::write(const void* msg, size_t len, size_t* written) {
   }
 
   if (port_mappings_.empty()) {
-    
+    // The no-nat case, just pass call through.
     r_log(LOG_GENERIC, LOG_DEBUG, "TestNrSocket %s writing",
           my_addr().as_string);
 
@@ -610,7 +602,7 @@ int TestNrSocket::write(const void* msg, size_t len, size_t* written) {
           my_addr().as_string);
     return R_INTERNAL;
   }
-  
+  // This is TCP only
   MOZ_ASSERT(port_mappings_.size() == 1);
   r_log(LOG_GENERIC, LOG_DEBUG, "PortMapping %s -> %s writing",
         port_mappings_.front()->external_socket_->my_addr().as_string,
@@ -632,7 +624,7 @@ int TestNrSocket::read(void* buf, size_t maxlen, size_t* len) {
     *len = std::min(maxlen, packet.buffer_->len());
     memcpy(buf, packet.buffer_->data(), *len);
     if (*len != packet.buffer_->len()) {
-      
+      // Put remaining bytes in new packet, at the front.
       read_buffer_.emplace_front(packet.buffer_->data() + *len,
                                  packet.buffer_->len() - *len,
                                  packet.remote_address_);
@@ -666,18 +658,18 @@ int TestNrSocket::read(void* buf, size_t maxlen, size_t* len) {
   }
 
   if (nat_->block_tcp_ && !tls_) {
-    
+    // Should cause this socket to be abandoned
     return R_INTERNAL;
   }
 
   if (nat_->block_tls_ && tls_) {
-    
+    // Should cause this socket to be abandoned
     return R_INTERNAL;
   }
 
   UCHAR* cbuf = static_cast<UCHAR*>(const_cast<void*>(buf));
   if (nat_->block_stun_ && nr_is_stun_message(cbuf, *len)) {
-    
+    // Should cause this socket to be abandoned
     return R_INTERNAL;
   }
 
@@ -699,18 +691,18 @@ int TestNrSocket::async_wait(int how, NR_async_cb cb, void* cb_arg,
       return 0;
     }
 
-    
+    // Make sure we're waiting on the socket for the internal address
     r = internal_socket_->async_wait(how, socket_readable_callback, this,
                                      function, line);
   } else {
     if (connect_fake_stun_address_) {
-      
-      
+      // Fake TCP connection case; register the callback on this socket, not
+      // a real one.
       return NrSocketBase::async_wait(how, cb, cb_arg, function, line);
     }
 
-    
-    
+    // For write, just use the readiness of the internal socket, since we queue
+    // everything for the port mappings.
     r = internal_socket_->async_wait(how, cb, cb_arg, function, line);
   }
 
@@ -723,22 +715,22 @@ int TestNrSocket::async_wait(int how, NR_async_cb cb, void* cb_arg,
   }
 
   if (is_tcp_connection_behind_nat()) {
-    
+    // Bypass all port-mapping related logic
     return 0;
   }
 
   if (internal_socket_->my_addr().protocol == IPPROTO_TCP) {
-    
-    
+    // For a TCP connection through a simulated NAT, these signals are
+    // just passed through.
     MOZ_ASSERT(port_mappings_.size() == 1);
 
     return port_mappings_.front()->async_wait(
         how, port_mapping_tcp_passthrough_callback, this, function, line);
   }
   if (how == NR_ASYNC_WAIT_READ) {
-    
+    // For UDP port mappings, we decouple the writeable callbacks
     for (PortMapping* port_mapping : port_mappings_) {
-      
+      // Be ready to receive traffic on our port mappings
       r = port_mapping->async_wait(how, socket_readable_callback, this,
                                    function, line);
       if (r) {
@@ -769,7 +761,7 @@ int TestNrSocket::cancel(int how) {
     return NrSocketBase::cancel(how);
   }
 
-  
+  // Writable callbacks are decoupled except for the TCP case
   if (how == NR_ASYNC_WAIT_READ ||
       internal_socket_->my_addr().protocol == IPPROTO_TCP) {
     cancel_port_mapping_async_wait(how);
@@ -800,6 +792,12 @@ bool TestNrSocket::is_port_mapping_stale(
   PRIntervalTime now = PR_IntervalNow();
   PRIntervalTime elapsed_ticks = now - port_mapping.last_used_;
   uint32_t idle_duration = PR_IntervalToMilliseconds(elapsed_ticks);
+  r_log(LOG_GENERIC, LOG_INFO,
+        "TestNrSocket %s port mapping %s -> %s last used %u",
+        internal_socket_->my_addr().as_string,
+        port_mapping.external_socket_->my_addr().as_string,
+        port_mapping.remote_address_.as_string,
+        static_cast<unsigned>(idle_duration));
   return idle_duration > nat_->mapping_timeout_;
 }
 
@@ -856,7 +854,7 @@ void TestNrSocket::write_to_port_mapping(NrSocketBase* external_socket) {
   int r = 0;
   for (PortMapping* port_mapping : port_mappings_) {
     if (port_mapping->external_socket_ == external_socket) {
-      
+      // If the send succeeds, or if there was nothing to send, we keep going
       r = port_mapping->send_from_queue();
       if (r) {
         break;
@@ -865,7 +863,7 @@ void TestNrSocket::write_to_port_mapping(NrSocketBase* external_socket) {
   }
 
   if (r == R_WOULDBLOCK) {
-    
+    // Re-register for writeable callbacks, since we still have stuff to send
     NR_ASYNC_WAIT(external_socket, NR_ASYNC_WAIT_WRITE,
                   &TestNrSocket::port_mapping_writeable_callback, this);
   }
@@ -898,7 +896,7 @@ TestNrSocket::PortMapping* TestNrSocket::get_port_mapping(
   return nullptr;
 }
 
-
+/* static */
 bool TestNrSocket::port_mapping_matches(const PortMapping& port_mapping,
                                         const nr_transport_addr& remote_addr,
                                         TestNat::NatBehavior filter) {
@@ -1068,10 +1066,10 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
 
   nr_transport_addr response_from;
   if (nr_transport_addr_is_wildcard(to)) {
-    
-    
-    
-    
+    // |to| points to an FQDN, and nICEr is delegating DNS lookup to us; we
+    // aren't _actually_ going to do that though, so we select a bogus address
+    // for the response to come from. TEST-NET is a fairly reasonable thing to
+    // use for this.
     int port = 0;
     if (nr_transport_addr_get_port(to, &port)) {
       MOZ_CRASH();
@@ -1098,7 +1096,7 @@ bool TestNrSocket::maybe_send_fake_response(const void* msg, size_t len,
 
   read_buffer_.emplace_back(response->buffer, response->length, response_from);
 
-  
+  // We dispatch this, otherwise nICEr can trip over its shoelaces
   r_log(LOG_GENERIC, LOG_DEBUG,
         "TestNrSocket %p scheduling callback for redirect response", this);
   GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
@@ -1120,7 +1118,7 @@ Maybe<nsTArray<nsCString>> TestNrSocket::maybe_get_redirect_targets(
     const nr_transport_addr* to) const {
   Maybe<nsTArray<nsCString>> result;
 
-  
+  // 256 is overkill, but it hardly matters
   char addrstring[256];
   if (nr_transport_addr_get_addrstring(to, addrstring, 256)) {
     MOZ_CRASH("nr_transport_addr_get_addrstring failed!");
@@ -1136,4 +1134,4 @@ Maybe<nsTArray<nsCString>> TestNrSocket::maybe_get_redirect_targets(
   return result;
 }
 
-}  
+}  // namespace mozilla
