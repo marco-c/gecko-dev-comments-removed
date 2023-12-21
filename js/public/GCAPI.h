@@ -322,15 +322,6 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_PRETENURE_THRESHOLD = 28,
-
-  
-
-
-
-
-
-
   JSGC_NURSERY_FREE_THRESHOLD_FOR_IDLE_COLLECTION_PERCENT = 30,
 
   
@@ -410,19 +401,6 @@ typedef enum JSGCParamKey {
 
 
   JSGC_HELPER_THREAD_COUNT = 41,
-
-  
-
-
-
-
-  JSGC_PRETENURE_STRING_THRESHOLD = 42,
-
-  
-
-
-
-  JSGC_STOP_PRETENURE_STRING_THRESHOLD = 43,
 
   
 
