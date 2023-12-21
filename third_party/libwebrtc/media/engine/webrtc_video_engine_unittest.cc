@@ -722,16 +722,17 @@ TEST_F(WebRtcVideoEngineTest, RtxCodecAddedForH264Codec) {
   
   
   EXPECT_TRUE(HasRtxCodec(
-      codecs, FindMatchingCodec(
+      codecs, FindMatchingVideoCodec(
                   codecs, cricket::CreateVideoCodec(h264_constrained_baseline))
                   ->id));
   EXPECT_TRUE(HasRtxCodec(
-      codecs, FindMatchingCodec(
+      codecs, FindMatchingVideoCodec(
                   codecs, cricket::CreateVideoCodec(h264_constrained_high))
                   ->id));
   EXPECT_TRUE(HasRtxCodec(
       codecs,
-      FindMatchingCodec(codecs, cricket::CreateVideoCodec(h264_high))->id));
+      FindMatchingVideoCodec(codecs, cricket::CreateVideoCodec(h264_high))
+          ->id));
 }
 
 #if defined(RTC_ENABLE_VP9)
