@@ -1530,6 +1530,33 @@ TEST_P(LossBasedBweV2Test, BackOffToAckedRateIfNotInAlr) {
       acked_rate);
 }
 
+TEST_P(LossBasedBweV2Test, NotReadyToUseInStartPhase) {
+  ExplicitKeyValueConfig key_value_config(
+      "WebRTC-Bwe-LossBasedBweV2/"
+      "Enabled:true,UseInStartPhase:true/");
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+  
+  
+  EXPECT_FALSE(loss_based_bandwidth_estimator.ReadyToUseInStartPhase());
+}
+
+TEST_P(LossBasedBweV2Test,
+       ReadyToUseInStartPhase) {
+  ExplicitKeyValueConfig key_value_config(
+      "WebRTC-Bwe-LossBasedBweV2/"
+      "Enabled:true,ObservationDurationLowerBound:200ms,UseInStartPhase:true/");
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+  std::vector<PacketResult> enough_feedback =
+      CreatePacketResultsWithReceivedPackets(
+          Timestamp::Zero());
+
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback, DataRate::KilobitsPerSec(600),
+      BandwidthUsage::kBwNormal,
+      absl::nullopt, false);
+  EXPECT_TRUE(loss_based_bandwidth_estimator.ReadyToUseInStartPhase());
+}
+
 INSTANTIATE_TEST_SUITE_P(LossBasedBweV2Tests,
                          LossBasedBweV2Test,
                          ::testing::Bool());

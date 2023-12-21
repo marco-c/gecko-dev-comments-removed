@@ -58,10 +58,12 @@ class LossBasedBweV2 {
   bool IsReady() const;
 
   
+  bool ReadyToUseInStartPhase() const;
+
+  
   Result GetLossBasedResult() const;
 
   void SetAcknowledgedBitrate(DataRate acknowledged_bitrate);
-  void SetBandwidthEstimate(DataRate bandwidth_estimate);
   void SetMinMaxBitrate(DataRate min_bitrate, DataRate max_bitrate);
   void UpdateBandwidthEstimate(
       rtc::ArrayView<const PacketResult> packet_results,
@@ -69,6 +71,9 @@ class LossBasedBweV2 {
       BandwidthUsage delay_detector_state,
       absl::optional<DataRate> probe_bitrate,
       bool in_alr);
+
+  
+  void SetBandwidthEstimate(DataRate bandwidth_estimate);
 
  private:
   struct ChannelParameters {
@@ -114,6 +119,7 @@ class LossBasedBweV2 {
     bool probe_integration_enabled = false;
     TimeDelta probe_expiration = TimeDelta::Zero();
     bool not_use_acked_rate_in_alr = false;
+    bool use_in_start_phase = false;
   };
 
   struct Derivatives {
