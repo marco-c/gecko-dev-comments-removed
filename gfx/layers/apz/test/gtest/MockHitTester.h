@@ -9,6 +9,7 @@
 
 #include "apz/src/IAPZHitTester.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/layers/LayersTypes.h"
 
 #include <queue>
 
@@ -27,6 +28,11 @@ class MockHitTester final : public IAPZHitTester {
   
   void QueueHitResult(ScrollableLayerGuid::ViewID aScrollId,
                       gfx::CompositorHitTestInfo aHitInfo);
+
+  
+  
+  void QueueScrollbarThumbHitResult(ScrollableLayerGuid::ViewID aScrollId,
+                                    ScrollDirection aDirection);
 
  private:
   std::queue<HitTestResult> mQueuedResults;

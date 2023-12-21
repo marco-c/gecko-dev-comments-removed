@@ -1047,7 +1047,10 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(
   }
   APZC_LOG("%p set scroll offset to %s from scrollbar drag\n", this,
            ToString(scrollOffset).c_str());
-  SetVisualScrollOffset(scrollOffset);
+  
+  
+  
+  ClampAndSetVisualScrollOffset(scrollOffset);
   ScheduleCompositeAndMaybeRepaint();
 
   return nsEventStatus_eConsumeNoDefault;

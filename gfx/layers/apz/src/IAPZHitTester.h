@@ -72,6 +72,7 @@ class IAPZHitTester {
   
   
   
+  RecursiveMutex& GetTreeLock();
   LayersId GetRootLayersId() const;
   HitTestingTreeNode* GetRootNode() const;
   HitTestingTreeNode* FindRootNodeForLayersId(LayersId aLayersId) const;

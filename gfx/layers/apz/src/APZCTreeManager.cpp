@@ -1489,6 +1489,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(
         FlushRepaintsToClearScreenToGeckoTransform();
       }
 
+      
       state.mHit = GetTargetAPZC(mouseInput.mOrigin);
       bool hitScrollbar = (bool)state.mHit.mScrollbarNode;
 
