@@ -44,7 +44,6 @@ class SendDelayStats : public SendPacketObserver {
   
   bool OnSentPacket(int packet_id, Timestamp time);
 
- protected:
   
   
   void OnSendPacket(uint16_t packet_id,
