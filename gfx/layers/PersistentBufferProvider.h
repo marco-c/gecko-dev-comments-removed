@@ -9,7 +9,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/RefPtr.h"      
-#include "mozilla/layers/KnowsCompositor.h"
+#include "mozilla/layers/ActiveResource.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/RefCounted.h"
@@ -28,6 +28,7 @@ class DrawTarget;
 
 namespace layers {
 
+class KnowsCompositor;
 struct RemoteTextureOwnerId;
 class TextureClient;
 
