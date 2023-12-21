@@ -187,6 +187,11 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
     }
   }
 
+
+
+
+
+#if !defined(WEBRTC_MOZILLA_BUILD)
   
   
   
@@ -198,6 +203,7 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
           &session3))) {
     session3->put_IsBorderRequired(false);
   }
+#endif
 
   allow_zero_hertz_ = options.allow_wgc_zero_hertz();
 
