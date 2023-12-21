@@ -40,25 +40,6 @@ class gfxAlphaRecovery {
 
   static bool RecoverAlphaSSE2(gfxImageSurface* blackSurface,
                                const gfxImageSurface* whiteSurface);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static mozilla::gfx::IntRect AlignRectForSubimageRecovery(
-      const mozilla::gfx::IntRect& aRect, gfxImageSurface* aSurface);
-#else
-  static mozilla::gfx::IntRect AlignRectForSubimageRecovery(
-      const mozilla::gfx::IntRect& aRect, gfxImageSurface*) {
-    return aRect;
-  }
 #endif
 
   
