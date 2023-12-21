@@ -3252,33 +3252,22 @@ bool nsDocumentViewer::ShouldAttachToTopLevel() {
     return false;
   }
 
-  if (!mContainer) {
-    return false;
-  }
-
   
   if (nsIWidget::UsePuppetWidgets()) {
     return true;
   }
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
-    defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
-  if (!mPresContext) {
-    return false;
-  }
-
   
-  
-  auto winType = mParentWidget->GetWindowType();
-  if ((winType == widget::WindowType::TopLevel ||
-       winType == widget::WindowType::Dialog ||
-       winType == widget::WindowType::Invisible) &&
-      mPresContext->IsChrome()) {
-    return true;
-  }
-#endif
-
+#ifdef XP_MACOSX
   return false;
+#else
+#  ifdef DEBUG
+  nsIWidgetListener* parentListener = mParentWidget->GetWidgetListener();
+  MOZ_ASSERT(!parentListener || !parentListener->GetView(),
+             "Expect a top level widget");
+#  endif
+  return true;
+#endif
 }
 
 

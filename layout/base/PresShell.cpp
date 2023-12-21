@@ -11607,14 +11607,6 @@ void PresShell::SyncWindowProperties(bool aSync) {
     windowWidget->SetTransparencyMode(mode);
     windowWidget->SetWindowShadowStyle(shadow);
 
-    nsCOMPtr<nsIWidget> viewWidget = view->GetWidget();
-    if (viewWidget != windowWidget) {
-      
-      
-      
-      viewWidget->SetTransparencyMode(mode);
-    }
-
     
     if (auto scheme = pc->GetOverriddenOrEmbedderColorScheme()) {
       windowWidget->SetColorScheme(scheme);
