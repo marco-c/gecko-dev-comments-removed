@@ -1477,7 +1477,7 @@ static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
   
   
   if (!aCheckOnly) {
-    aCheckOnly = !IsCurrentAppPinnedToTaskbarSync(aAppUserModelId);
+    aCheckOnly = IsCurrentAppPinnedToTaskbarSync(aAppUserModelId);
   }
   const bool pinType = true;  
   return ManageShortcutTaskbarPins(aCheckOnly, pinType, aShortcutPath);
