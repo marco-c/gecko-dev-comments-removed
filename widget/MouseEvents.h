@@ -383,7 +383,9 @@ class WidgetDragEvent : public WidgetMouseEvent {
 
  protected:
   WidgetDragEvent()
-      : mUserCancelled(false), mDefaultPreventedOnContent(false) {}
+      : mUserCancelled(false),
+        mDefaultPreventedOnContent(false),
+        mInHTMLEditorEventListener(false) {}
 
  public:
   virtual WidgetDragEvent* AsDragEvent() override { return this; }
@@ -425,6 +427,8 @@ class WidgetDragEvent : public WidgetMouseEvent {
     
     mUserCancelled = false;
     mDefaultPreventedOnContent = aEvent.mDefaultPreventedOnContent;
+    
+    mInHTMLEditorEventListener = false;
   }
 
   
