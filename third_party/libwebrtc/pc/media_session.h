@@ -144,11 +144,6 @@ class MediaSessionDescriptionFactory {
   
   
   
-  
-  MediaSessionDescriptionFactory(const TransportDescriptionFactory* factory,
-                                 rtc::UniqueRandomIdGenerator* ssrc_generator);
-  
-  
   MediaSessionDescriptionFactory(cricket::MediaEngineInterface* media_engine,
                                  bool rtx_enabled,
                                  rtc::UniqueRandomIdGenerator* ssrc_generator,
