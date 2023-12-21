@@ -2,7 +2,7 @@
 
 
 
-from six.moves.urllib.parse import urlunsplit
+from urllib.parse import urlunsplit
 
 product_ftp_map = {
     "fennec": "mobile",
