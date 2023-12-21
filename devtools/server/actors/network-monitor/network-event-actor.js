@@ -402,6 +402,7 @@ class NetworkEventActor extends Actor {
       totalTime: this._totalTime,
       offsets: this._offsets,
       serverTimings: this._serverTimings,
+      serviceWorkerTimings: this._serviceWorkerTimings,
     };
   }
 
@@ -606,6 +607,22 @@ class NetworkEventActor extends Actor {
       return;
     }
     this._serverTimings = serverTimings;
+  }
+
+  
+
+
+
+
+
+
+
+
+  addServiceWorkerTimings(serviceWorkerTimings) {
+    if (!serviceWorkerTimings || this.isDestroyed()) {
+      return;
+    }
+    this._serviceWorkerTimings = serviceWorkerTimings;
   }
 
   _createLongStringActor(string) {
