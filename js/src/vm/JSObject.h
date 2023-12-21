@@ -203,6 +203,13 @@ class JSObject
     return setFlag(cx, obj, js::ObjectFlag::GenerationCountedGlobal);
   }
 
+  bool hasFuseProperty() const {
+    return hasFlag(js::ObjectFlag::HasFuseProperty);
+  }
+  static bool setHasFuseProperty(JSContext* cx, JS::HandleObject obj) {
+    return setFlag(cx, obj, js::ObjectFlag::HasFuseProperty);
+  }
+
   
   
   
