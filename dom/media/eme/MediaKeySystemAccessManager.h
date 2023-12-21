@@ -85,6 +85,18 @@ class TestGMPVideoDecoder;
 
 
 
+struct MediaKeySystemAccessRequest {
+  MediaKeySystemAccessRequest(
+      const nsAString& aKeySystem,
+      const Sequence<MediaKeySystemConfiguration>& aConfigs)
+      : mKeySystem(aKeySystem), mConfigs(aConfigs) {}
+  virtual ~MediaKeySystemAccessRequest() = default;
+  
+  const nsString mKeySystem;
+  
+  const Sequence<MediaKeySystemConfiguration> mConfigs;
+};
+
 class MediaKeySystemAccessManager final : public nsIObserver, public nsINamed {
  public:
   explicit MediaKeySystemAccessManager(nsPIDOMWindowInner* aWindow);
@@ -104,7 +116,7 @@ class MediaKeySystemAccessManager final : public nsIObserver, public nsINamed {
  private:
   
   
-  struct PendingRequest {
+  struct PendingRequest : public MediaKeySystemAccessRequest {
     enum class RequestType { Initial, Subsequent };
 
     PendingRequest(DetailedPromise* aPromise, const nsAString& aKeySystem,
@@ -113,10 +125,6 @@ class MediaKeySystemAccessManager final : public nsIObserver, public nsINamed {
 
     
     RefPtr<DetailedPromise> mPromise;
-    
-    const nsString mKeySystem;
-    
-    const Sequence<MediaKeySystemConfiguration> mConfigs;
 
     
     

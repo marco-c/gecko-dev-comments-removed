@@ -30,25 +30,33 @@ namespace mozilla {
 
 
 bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
-  nsCString api = nsLiteralCString(CHROMIUM_CDM_API);
-  nsCString name = NS_ConvertUTF16toUTF8(aKeySystem);
-
-  if (HaveGMPFor(api, {name})) {
-    return true;
+  
+  if (IsWidevineKeySystem(aKeySystem) || IsClearkeyKeySystem(aKeySystem)) {
+    return HaveGMPFor(nsCString(CHROMIUM_CDM_API),
+                      {NS_ConvertUTF16toUTF8(aKeySystem)});
   }
+
 #ifdef MOZ_WIDGET_ANDROID
   
-  if (mozilla::java::MediaDrmProxy::IsSchemeSupported(name)) {
+  if (mozilla::java::MediaDrmProxy::IsSchemeSupported(
+          NS_ConvertUTF16toUTF8(aKeySystem))) {
     return true;
   }
 #endif
+
 #if MOZ_WMF_CDM
-  if ((IsPlayReadyKeySystemAndSupported(aKeySystem) ||
-       IsWidevineExperimentKeySystemAndSupported(aKeySystem)) &&
+  
+  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem)) {
+    return HaveGMPFor(nsCString(kWidevineExperimentAPIName),
+                      {nsCString(kWidevineExperimentKeySystemName)});
+  }
+
+  if ((IsPlayReadyKeySystemAndSupported(aKeySystem)) &&
       WMFCDMImpl::Supports(aKeySystem)) {
     return true;
   }
 #endif
+
   return false;
 }
 
