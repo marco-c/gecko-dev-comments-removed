@@ -73,69 +73,7 @@ class MOZ_STACK_CLASS EnsureMTA final {
     SyncDispatch(std::move(runnable), aOpt);
   }
 
-  using CreateInstanceAgileRefPromise =
-      MozPromise<AgileReference, HRESULT, false>;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static RefPtr<CreateInstanceAgileRefPromise> CreateInstance(REFCLSID aClsid,
-                                                              REFIID aIid);
-
  private:
-  static RefPtr<CreateInstanceAgileRefPromise> CreateInstanceInternal(
-      REFCLSID aClsid, REFIID aIid);
-
   static nsCOMPtr<nsIThread> GetPersistentMTAThread();
 
   static void SyncDispatch(nsCOMPtr<nsIRunnable>&& aRunnable, Option aOpt);
