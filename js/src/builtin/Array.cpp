@@ -5153,12 +5153,7 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
 
   RootedId id(cx, PropertyKey::Symbol(cx->wellKnownSymbols().unscopables));
   value.setObject(*unscopables);
-  if (!DefineDataProperty(cx, proto, id, value, JSPROP_READONLY)) {
-    return false;
-  }
-
-  
-  return JSObject::setHasFuseProperty(cx, proto);
+  return DefineDataProperty(cx, proto, id, value, JSPROP_READONLY);
 }
 
 static const JSClassOps ArrayObjectClassOps = {

@@ -46,7 +46,6 @@
 #include "vm/PromiseObject.h"  
 #include "vm/Realm.h"
 #include "vm/StringObject.h"
-#include "vm/Watchtower.h"
 #include "vm/WrapperObject.h"
 #ifdef ENABLE_RECORD_TUPLE
 #  include "vm/RecordType.h"
@@ -469,8 +468,6 @@ void JS::detail::SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
   } else {
     
     
-    MOZ_ASSERT(
-        !Watchtower::watchesPropertyModification(&obj->as<NativeObject>()));
     obj->as<NativeObject>().setSlot(slot, value);
   }
 }

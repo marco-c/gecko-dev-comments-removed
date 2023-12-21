@@ -4167,10 +4167,6 @@ static bool CanAttachNativeSetSlot(JSOp op, JSObject* obj, PropertyKey id,
     return false;
   }
 
-  if (Watchtower::watchesPropertyModification(&obj->as<NativeObject>())) {
-    return false;
-  }
-
   *prop = LookupShapeForSetSlot(op, &obj->as<NativeObject>(), id);
   return prop->isSome();
 }
@@ -13560,28 +13556,20 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   writer.guardShape(objId, obj->shape());
   writer.guardArrayIsPacked(objId);
 
-  if (!cx_->options().enableDestructuringFuse()) {
-    
-    ObjOperandId arrProtoId = writer.loadObject(arrProto);
-    ObjOperandId iterId = writer.loadObject(iterFun);
-    writer.guardShape(arrProtoId, arrProto->shape());
-    writer.guardDynamicSlotIsSpecificObject(arrProtoId, iterId,
-                                            arrProtoIterSlot);
+  
+  ObjOperandId arrProtoId = writer.loadObject(arrProto);
+  ObjOperandId iterId = writer.loadObject(iterFun);
+  writer.guardShape(arrProtoId, arrProto->shape());
+  writer.guardDynamicSlotIsSpecificObject(arrProtoId, iterId, arrProtoIterSlot);
 
-    
-    ObjOperandId iterProtoId = writer.loadObject(arrayIteratorProto);
-    ObjOperandId nextId = writer.loadObject(nextFun);
-    writer.guardShape(iterProtoId, arrayIteratorProto->shape());
-    writer.guardDynamicSlotIsSpecificObject(iterProtoId, nextId, slot);
+  
+  ObjOperandId iterProtoId = writer.loadObject(arrayIteratorProto);
+  ObjOperandId nextId = writer.loadObject(nextFun);
+  writer.guardShape(iterProtoId, arrayIteratorProto->shape());
+  writer.guardDynamicSlotIsSpecificObject(iterProtoId, nextId, slot);
 
-    
-    ShapeGuardProtoChain(writer, arrayIteratorProto, iterProtoId);
-  } else {
-    
-    
-    
-    writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
-  }
+  
+  ShapeGuardProtoChain(writer, arrayIteratorProto, iterProtoId);
 
   writer.loadBooleanResult(true);
   writer.returnFromIC();

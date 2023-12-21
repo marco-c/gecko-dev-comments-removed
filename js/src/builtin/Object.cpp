@@ -843,11 +843,6 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
   }
 
   
-  if (Watchtower::watchesPropertyModification(obj)) {
-    return false;
-  }
-
-  
   
   
   while (true) {

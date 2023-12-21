@@ -6451,24 +6451,6 @@ MDefinition::AliasType MGuardShape::mightAlias(const MDefinition* store) const {
   return MInstruction::mightAlias(store);
 }
 
-bool MGuardFuse::congruentTo(const MDefinition* ins) const {
-  if (!ins->isGuardFuse()) {
-    return false;
-  }
-  if (fuseIndex() != ins->toGuardFuse()->fuseIndex()) {
-    return false;
-  }
-  return congruentIfOperandsEqual(ins);
-}
-
-AliasSet MGuardFuse::getAliasSet() const {
-  
-  
-  return AliasSet::Load(AliasSet::ObjectFields | AliasSet::DynamicSlot |
-                        AliasSet::FixedSlot |
-                        AliasSet::GlobalGenerationCounter);
-}
-
 AliasSet MGuardMultipleShapes::getAliasSet() const {
   
   
