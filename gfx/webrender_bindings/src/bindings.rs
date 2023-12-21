@@ -2052,7 +2052,7 @@ pub extern "C" fn wr_resource_updates_add_blob_image(
     
     
     
-    const TILE_COUNT_LIMIT: i32 = 8192;
+    const TILE_COUNT_LIMIT: i64 = 8192;
     const TILE_SIZE_LIMIT: u16 = 2048;
     let mut adjusted = tile_size;
     
@@ -2060,7 +2060,8 @@ pub extern "C" fn wr_resource_updates_add_blob_image(
     
     
     while adjusted < TILE_SIZE_LIMIT
-        && ((descriptor.height / adjusted as i32 + 1) * (descriptor.width / adjusted as i32 + 1)) > TILE_COUNT_LIMIT
+        && ((descriptor.height / adjusted as i32 + 1) as i64 * (descriptor.width / adjusted as i32 + 1) as i64)
+            > TILE_COUNT_LIMIT
     {
         adjusted = adjusted * 2;
     }
