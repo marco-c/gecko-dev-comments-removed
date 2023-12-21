@@ -106,18 +106,22 @@ TEST(AimdRateControlTest, DefaultPeriodUntilFirstOveruse) {
   EXPECT_NE(aimd_rate_control.GetExpectedBandwidthPeriod(), kDefaultPeriod);
 }
 
-TEST(AimdRateControlTest, ExpectedPeriodAfter20kbpsDropAnd5kbpsIncrease) {
+TEST(AimdRateControlTest, ExpectedPeriodAfterTypicalDrop) {
   AimdRateControl aimd_rate_control(ExplicitKeyValueConfig(""));
-  constexpr DataRate kInitialBitrate = DataRate::BitsPerSec(110'000);
+  
+  
+  
+  
+  constexpr DataRate kInitialBitrate = DataRate::BitsPerSec(264'000);
+  constexpr DataRate kUpdatedBitrate = DataRate::BitsPerSec(216'000);
+  const DataRate kAckedBitrate =
+      (kUpdatedBitrate + DataRate::BitsPerSec(5'000)) / kFractionAfterOveruse;
   Timestamp now = kInitialTime;
   aimd_rate_control.SetEstimate(kInitialBitrate, now);
   now += TimeDelta::Millis(100);
-  
-  
-  const DataRate kAckedBitrate =
-      (kInitialBitrate - DataRate::BitsPerSec(20'000)) / kFractionAfterOveruse;
   aimd_rate_control.Update({BandwidthUsage::kBwOverusing, kAckedBitrate}, now);
-  EXPECT_EQ(aimd_rate_control.GetNearMaxIncreaseRateBpsPerSecond(), 5'000);
+  EXPECT_EQ(aimd_rate_control.LatestEstimate(), kUpdatedBitrate);
+  EXPECT_EQ(aimd_rate_control.GetNearMaxIncreaseRateBpsPerSecond(), 12'000);
   EXPECT_EQ(aimd_rate_control.GetExpectedBandwidthPeriod(),
             TimeDelta::Seconds(4));
 }
