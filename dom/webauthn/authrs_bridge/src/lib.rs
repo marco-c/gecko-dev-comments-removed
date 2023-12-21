@@ -1161,25 +1161,31 @@ impl AuthrsService {
         self.do_get_assertion(None, guard)
     }
 
+    
+    
+    fn clear_transaction(&self, tid: u64) -> bool {
+        let mut guard = self.transaction.lock().unwrap();
+        let Some(state) = guard.as_ref() else {
+            return true; 
+        };
+        if state.tid != tid {
+            
+            
+            return false;
+        }
+        
+        
+        
+        let _ = state.promise.reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+        *guard = None;
+        true
+    }
+
     xpcom_method!(cancel => Cancel(aTransactionId: u64));
     fn cancel(&self, tid: u64) -> Result<(), nsresult> {
-        {
-            let mut guard = self.transaction.lock().unwrap();
-            let Some(state) = guard.as_ref() else {
-                return Ok(());
-            };
-            if state.tid != tid {
-                
-                
-                return Ok(());
-            }
-            
-            
-            
-            state.promise.reject(NS_ERROR_DOM_NOT_ALLOWED_ERR)?;
-            *guard = None;
-        } 
-        self.usb_token_manager.lock().unwrap().cancel();
+        if self.clear_transaction(tid) {
+            self.usb_token_manager.lock().unwrap().cancel();
+        }
         Ok(())
     }
 
