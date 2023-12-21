@@ -857,11 +857,7 @@ child:
 
 
 
-    
-    async PasteTransferable(IPCTransferableData aTransferableData,
-                            bool aIsPrivateData,
-                            nullable nsIPrincipal aRequestingPrincipal,
-                            nsContentPolicyType aContentPolicyType);
+    async PasteTransferable(IPCTransferable aTransferable);
 
     async LoadRemoteScript(nsString aURL, bool aRunInGlobalScope);
 
