@@ -643,9 +643,9 @@ class TestRecursiveMakeBackend(BackendTester):
 
         tests_dir = mozpath.join(env.topobjdir, "_tests")
         m_master = mozpath.join(
-            tests_dir, "testing", "mochitest", "tests", "mochitest.ini"
+            tests_dir, "testing", "mochitest", "tests", "mochitest.toml"
         )
-        x_master = mozpath.join(tests_dir, "xpcshell", "xpcshell.ini")
+        x_master = mozpath.join(tests_dir, "xpcshell", "xpcshell.toml")
         self.assertTrue(os.path.exists(m_master))
         self.assertTrue(os.path.exists(x_master))
 
@@ -655,8 +655,8 @@ class TestRecursiveMakeBackend(BackendTester):
             [
                 "# THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT MODIFY BY HAND.",
                 "",
-                "[include:dir1/xpcshell.ini]",
-                "[include:xpcshell.ini]",
+                '["include:dir1/xpcshell.toml"]',
+                '["include:xpcshell.toml"]',
             ],
         )
 
