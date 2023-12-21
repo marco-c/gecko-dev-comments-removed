@@ -76,7 +76,14 @@ export function setInScopeLines() {
     const { location } = visibleFrame;
     const sourceTextContent = getSourceTextContent(getState(), location);
 
-    if (hasInScopeLines(getState(), location) || !sourceTextContent) {
+    
+    
+    
+    if (
+      hasInScopeLines(getState(), location) ||
+      !sourceTextContent ||
+      !isFulfilled(sourceTextContent)
+    ) {
       return;
     }
 

@@ -259,3 +259,39 @@ function waitForSearchState(dbg) {
   const cm = getCM(dbg);
   return waitFor(() => cm.state.search);
 }
+
+
+
+
+function assertCursorPosition(dbg, expectedLine, expectedColumn, message) {
+  const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
+  if (!cursorPosition) {
+    ok(false, message + " (no cursor displayed)");
+  }
+  
+  
+  const match = cursorPosition.innerText.match(/\((\d+), (\d+)\)/);
+  if (!match) {
+    ok(
+      false,
+      message + ` (wrong cursor content : '${cursorPosition.innerText}')`
+    );
+  }
+  const [_, line, column] = match;
+  is(parseInt(line, 10), expectedLine, message + " (line)");
+  is(parseInt(column, 10), expectedColumn, message + " (column)");
+}
+
+async function waitForCursorPosition(dbg, expectedLine) {
+  return waitFor(() => {
+    const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
+    if (!cursorPosition) {
+      return false;
+    }
+    const { innerText } = cursorPosition;
+    
+    
+    const line = innerText.substring(1, innerText.indexOf(","));
+    return parseInt(line, 10) == expectedLine;
+  });
+}

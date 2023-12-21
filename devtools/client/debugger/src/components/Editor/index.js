@@ -203,6 +203,7 @@ class Editor extends PureComponent {
       });
 
     codeMirror.on("gutterClick", this.onGutterClick);
+    codeMirror.on("cursorActivity", this.onCursorChange);
 
     const codeMirrorWrapper = codeMirror.getWrapperElement();
     
@@ -436,6 +437,31 @@ class Editor extends PureComponent {
 
     this.props.showEditorContextMenu(event, editor, location);
   }
+
+  
+
+
+
+  onCursorChange = event => {
+    const { line, ch } = event.doc.getCursor();
+    this.props.selectLocation(
+      createLocation(
+        {
+          source: this.props.selectedSource,
+          
+          
+          
+          line: line + 1,
+          column: ch,
+        },
+        {
+          
+          
+          keepContext: false,
+        }
+      )
+    );
+  };
 
   onGutterClick = (cm, line, gutter, ev) => {
     const {
@@ -763,6 +789,7 @@ const mapDispatchToProps = dispatch => ({
       closeTab: actions.closeTab,
       showEditorContextMenu: actions.showEditorContextMenu,
       showEditorGutterContextMenu: actions.showEditorGutterContextMenu,
+      selectLocation: actions.selectLocation,
     },
     dispatch
   ),

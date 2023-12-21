@@ -189,7 +189,17 @@ export function selectLocation(location, { keepContext = true } = {}) {
 
     await dispatch(loadSourceText(source, sourceActor));
 
+    
+    if (getSelectedLocation(getState()) != location) {
+      return;
+    }
+
     await dispatch(setBreakableLines(location));
+
+    
+    if (getSelectedLocation(getState()) != location) {
+      return;
+    }
 
     const loadedSource = getSource(getState(), source.id);
 
@@ -212,6 +222,12 @@ export function selectLocation(location, { keepContext = true } = {}) {
     }
 
     await dispatch(setSymbols(location));
+
+    
+    if (getSelectedLocation(getState()) != location) {
+      return;
+    }
+
     
     dispatch(setInScopeLines());
   };
