@@ -147,6 +147,13 @@ class PageAction {
       );
     }
 
+    if (recommendation.content.active_text_color) {
+      this.container.style.setProperty(
+        "--cfr-active-text-color",
+        recommendation.content.active_text_color
+      );
+    }
+
     
     
     
@@ -806,8 +813,11 @@ class PageAction {
     }
   }
 
-  _getVisibleElement(id) {
-    const element = id && this.window.document.getElementById(id);
+  _getVisibleElement(idOrEl) {
+    const element =
+      typeof idOrEl === "string"
+        ? idOrEl && this.window.document.getElementById(idOrEl)
+        : idOrEl;
     if (!element) {
       return null; 
     }
@@ -821,7 +831,7 @@ class PageAction {
       
       return null;
     }
-    let widget = lazy.CustomizableUI.getWidget(id);
+    let widget = lazy.CustomizableUI.getWidget(idOrEl);
     if (
       widget &&
       (this.window.CustomizationHandler.isCustomizing() ||
@@ -847,7 +857,8 @@ class PageAction {
     browser.cfrpopupnotificationanchor =
       this._getVisibleElement(content.anchor_id) ||
       this._getVisibleElement(content.alt_anchor_id) ||
-      this.container;
+      this._getVisibleElement(this.button) ||
+      this._getVisibleElement(this.container);
 
     await this._renderPopup(message, browser);
   }
