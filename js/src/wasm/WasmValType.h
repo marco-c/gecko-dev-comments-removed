@@ -93,15 +93,13 @@ union PackedTypeCode {
     
     
     
-    
-    int64_t w = int64_t(typeDef);
-    w <<= (64 - TypeDefBits);
-    w >>= (64 - TypeDefBits);
-    MOZ_ASSERT(w == int64_t(typeDef));
+    static_assert(sizeof(int64_t) == sizeof(uintptr_t));
+    uint64_t w = (uint64_t)(uintptr_t)typeDef;
+    MOZ_ASSERT((w >> TypeDefBits) == 0);
 #endif
     PackedTypeCode ptc = {};
     ptc.typeCode_ = PackedRepr(tc);
-    ptc.typeDef_ = (uintptr_t)typeDef;
+    ptc.typeDef_ = (uint64_t)(uintptr_t)typeDef;
     ptc.nullable_ = isNullable;
     return ptc;
   }
@@ -112,11 +110,11 @@ union PackedTypeCode {
 
   static PackedTypeCode pack(TypeCode tc) { return pack(tc, nullptr, false); }
 
-  bool isValid() const { return typeCode_ != NoTypeCode; }
+  constexpr bool isValid() const { return typeCode_ != NoTypeCode; }
 
   PackedRepr bits() const { return bits_; }
 
-  TypeCode typeCode() const {
+  constexpr TypeCode typeCode() const {
     MOZ_ASSERT(isValid());
     return TypeCode(typeCode_);
   }
@@ -134,7 +132,7 @@ union PackedTypeCode {
   
   
   
-  TypeCode typeCodeAbstracted() const {
+  constexpr TypeCode typeCodeAbstracted() const {
     TypeCode tc = typeCode();
     return tc < LowestPrimitiveTypeCode ? AbstractReferenceTypeCode : tc;
   }
@@ -149,17 +147,10 @@ union PackedTypeCode {
 
   const TypeDef* typeDef() const {
     MOZ_ASSERT(isValid());
-#if defined(JS_64BIT)
     
-    static_assert(sizeof(int64_t) == sizeof(uintptr_t));
-    int64_t w = int64_t(typeDef_);
-    w <<= (64 - TypeDefBits);
-    w >>= (64 - TypeDefBits);
-    return (const TypeDef*)(uintptr_t)w;
-#else
+    
     
     return (const TypeDef*)(uintptr_t)typeDef_;
-#endif
   }
 
   bool isNullable() const {
@@ -634,6 +625,11 @@ class PackedType : public T {
   inline void AddRef() const;
   inline void Release() const;
 
+  static constexpr PackedType i32() { return PackedType(PackedType::I32); }
+  static constexpr PackedType f32() { return PackedType(PackedType::F32); }
+  static constexpr PackedType i64() { return PackedType(PackedType::I64); }
+  static constexpr PackedType f64() { return PackedType(PackedType::F64); }
+
   static PackedType fromMIRType(jit::MIRType mty) {
     switch (mty) {
       case jit::MIRType::Int32:
@@ -830,7 +826,7 @@ class PackedType : public T {
   
   
   
-  jit::MIRType toMIRType() const {
+  constexpr jit::MIRType toMIRType() const {
     switch (tc_.typeCodeAbstracted()) {
       case TypeCode::I32:
         return jit::MIRType::Int32;
