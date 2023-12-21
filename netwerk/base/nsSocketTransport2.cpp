@@ -689,8 +689,8 @@ nsSocketOutputStream::AsyncWait(nsIOutputStreamCallback* callback,
 nsSocketTransport::nsSocketTransport()
     : mFD(this),
       mSocketTransportService(gSocketTransportService),
-      mInput(this),
-      mOutput(this) {
+      mInput(new nsSocketInputStream(this)),
+      mOutput(new nsSocketOutputStream(this)) {
   SOCKET_LOG(("creating nsSocketTransport @%p\n", this));
 
   mTimeouts[TIMEOUT_CONNECT] = UINT16_MAX;     
@@ -925,10 +925,10 @@ void nsSocketTransport::SendStatus(nsresult status) {
     sink = mEventSink;
     switch (status) {
       case NS_NET_STATUS_SENDING_TO:
-        progress = mOutput.ByteCount();
+        progress = mOutput->ByteCount(lock);
         break;
       case NS_NET_STATUS_RECEIVING_FROM:
-        progress = mInput.ByteCount();
+        progress = mInput->ByteCount(lock);
         break;
       default:
         progress = 0;
@@ -1803,7 +1803,7 @@ void nsSocketTransport::OnMsgInputClosed(nsresult reason) {
         NS_BASE_STREAM_CLOSED;  
   } else {
     if (mState == STATE_TRANSFERRING) mPollFlags &= ~PR_POLL_READ;
-    mInput.OnSocketReady(reason);
+    mInput->OnSocketReady(reason);
   }
 }
 
@@ -1824,7 +1824,7 @@ void nsSocketTransport::OnMsgOutputClosed(nsresult reason) {
         NS_BASE_STREAM_CLOSED;  
   } else {
     if (mState == STATE_TRANSFERRING) mPollFlags &= ~PR_POLL_WRITE;
-    mOutput.OnSocketReady(reason);
+    mOutput->OnSocketReady(reason);
   }
 }
 
@@ -1964,8 +1964,8 @@ void nsSocketTransport::OnSocketEvent(uint32_t type, nsresult status,
     
     
     
-    mInput.OnSocketReady(mCondition);
-    mOutput.OnSocketReady(mCondition);
+    mInput->OnSocketReady(mCondition);
+    mOutput->OnSocketReady(mCondition);
     return;
   }
 
@@ -2088,6 +2088,10 @@ void nsSocketTransport::OnSocketEvent(uint32_t type, nsresult status,
   }
 }
 
+uint64_t nsSocketTransport::ByteCountReceived() { return mInput->ByteCount(); }
+
+uint64_t nsSocketTransport::ByteCountSent() { return mOutput->ByteCount(); }
+
 
 
 
@@ -2108,14 +2112,14 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
       
       
       mPollFlags &= ~PR_POLL_WRITE;
-      mOutput.OnSocketReady(NS_OK);
+      mOutput->OnSocketReady(NS_OK);
     }
     
     if ((mPollFlags & PR_POLL_READ) && (outFlags & ~PR_POLL_WRITE)) {
       
       
       mPollFlags &= ~PR_POLL_READ;
-      mInput.OnSocketReady(NS_OK);
+      mInput->OnSocketReady(NS_OK);
     }
     
     {
@@ -2250,8 +2254,8 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
     
     
     
-    mInput.OnSocketReady(mCondition);
-    mOutput.OnSocketReady(mCondition);
+    mInput->OnSocketReady(mCondition);
+    mOutput->OnSocketReady(mCondition);
     if (gIOService->IsNetTearingDown()) {
       if (mInputCopyContext) {
         NS_CancelAsyncCopy(mInputCopyContext, mCondition);
@@ -2263,7 +2267,7 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
   }
 
   if (mCondition == NS_ERROR_NET_RESET && mDNSRecord &&
-      mOutput.ByteCount() == 0) {
+      mOutput->ByteCount() == 0) {
     
     
     mDNSRecord->ReportUnusable(SocketPort());
@@ -2331,7 +2335,7 @@ nsSocketTransport::OpenInputStream(uint32_t flags, uint32_t segsize,
   SOCKET_LOG(
       ("nsSocketTransport::OpenInputStream [this=%p flags=%x]\n", this, flags));
 
-  NS_ENSURE_TRUE(!mInput.IsReferenced(), NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(!mInput->IsReferenced(), NS_ERROR_UNEXPECTED);
 
   nsresult rv;
   nsCOMPtr<nsIAsyncInputStream> pipeIn;
@@ -2351,14 +2355,14 @@ nsSocketTransport::OpenInputStream(uint32_t flags, uint32_t segsize,
                 true, segsize, segcount);
 
     
-    rv = NS_AsyncCopy(&mInput, pipeOut, mSocketTransportService,
+    rv = NS_AsyncCopy(mInput.get(), pipeOut, mSocketTransportService,
                       NS_ASYNCCOPY_VIA_WRITESEGMENTS, segsize, nullptr, nullptr,
                       true, true, getter_AddRefs(inputCopyContext));
     if (NS_FAILED(rv)) return rv;
 
     result = pipeIn;
   } else {
-    result = &mInput;
+    result = mInput.get();
   }
 
   
@@ -2384,7 +2388,7 @@ nsSocketTransport::OpenOutputStream(uint32_t flags, uint32_t segsize,
   SOCKET_LOG(("nsSocketTransport::OpenOutputStream [this=%p flags=%x]\n", this,
               flags));
 
-  NS_ENSURE_TRUE(!mOutput.IsReferenced(), NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(!mOutput->IsReferenced(), NS_ERROR_UNEXPECTED);
 
   nsresult rv;
   nsCOMPtr<nsIAsyncOutputStream> pipeOut;
@@ -2403,14 +2407,14 @@ nsSocketTransport::OpenOutputStream(uint32_t flags, uint32_t segsize,
                 !openBlocking, segsize, segcount);
 
     
-    rv = NS_AsyncCopy(pipeIn, &mOutput, mSocketTransportService,
+    rv = NS_AsyncCopy(pipeIn, mOutput.get(), mSocketTransportService,
                       NS_ASYNCCOPY_VIA_READSEGMENTS, segsize, nullptr, nullptr,
                       true, true, getter_AddRefs(outputCopyContext));
     if (NS_FAILED(rv)) return rv;
 
     result = pipeOut;
   } else {
-    result = &mOutput;
+    result = mOutput.get();
   }
 
   
@@ -2437,8 +2441,8 @@ nsSocketTransport::Close(nsresult reason) {
 
   mDoNotRetryToConnect = true;
 
-  mInput.CloseWithStatus(reason);
-  mOutput.CloseWithStatus(reason);
+  mInput->CloseWithStatus(reason);
+  mOutput->CloseWithStatus(reason);
   return NS_OK;
 }
 
