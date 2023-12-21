@@ -227,4 +227,10 @@ interface nsIContentAnalysis : nsISupports
 
 
   void cancelContentAnalysisRequest(in ACString aRequestToken);
+
+  
+
+
+
+  void respondToWarnDialog(in ACString aRequestToken, in bool aAllowContent);
 };
