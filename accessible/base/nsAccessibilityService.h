@@ -183,6 +183,12 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
+  void PopovertargetMaybeChanged(mozilla::PresShell* aPresShell,
+                                 nsIContent* aContent);
+
+  
+
+
   void ComboboxOptionMaybeChanged(mozilla::PresShell*,
                                   nsIContent* aMutatingNode);
 

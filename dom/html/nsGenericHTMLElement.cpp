@@ -93,6 +93,10 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ElementInternals.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -2286,6 +2290,8 @@ void nsGenericHTMLElement::Click(CallerType aCallerType) {
 
 bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                            int32_t* aTabIndex) {
+  MOZ_ASSERT(aIsFocusable);
+  MOZ_ASSERT(aTabIndex);
   if (ShadowRoot* root = GetShadowRoot()) {
     if (root->DelegatesFocus()) {
       *aIsFocusable = false;
@@ -2293,23 +2299,17 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     }
   }
 
-  Document* doc = GetComposedDoc();
-  if (!doc || IsInDesignMode()) {
+  if (!IsInComposedDoc() || IsInDesignMode()) {
     
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-
+    *aTabIndex = -1;
     *aIsFocusable = false;
-
     return true;
   }
 
-  int32_t tabIndex = TabIndex();
+  *aTabIndex = TabIndex();
   bool disabled = false;
   bool disallowOverridingFocusability = true;
   Maybe<int32_t> attrVal = GetTabIndexAttrValue();
-
   if (IsEditingHost()) {
     
     disallowOverridingFocusability = true;
@@ -2319,7 +2319,7 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     if (attrVal.isNothing()) {
       
       
-      tabIndex = 0;
+      *aTabIndex = 0;
     }
   } else {
     disallowOverridingFocusability = false;
@@ -2327,18 +2327,13 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     
     disabled = IsDisabled();
     if (disabled) {
-      tabIndex = -1;
+      *aTabIndex = -1;
     }
   }
 
-  if (aTabIndex) {
-    *aTabIndex = tabIndex;
-  }
-
   
   
-  *aIsFocusable = (tabIndex >= 0 || (!disabled && attrVal.isSome()));
-
+  *aIsFocusable = (*aTabIndex >= 0 || (!disabled && attrVal.isSome()));
   return disallowOverridingFocusability;
 }
 
@@ -2862,14 +2857,28 @@ void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction() {
 
   bool canHide = action == PopoverTargetAction::Hide ||
                  action == PopoverTargetAction::Toggle;
+  bool shouldHide = canHide && target->IsPopoverOpen();
   bool canShow = action == PopoverTargetAction::Show ||
                  action == PopoverTargetAction::Toggle;
+  bool shouldShow = canShow && !target->IsPopoverOpen();
 
-  if (canHide && target->IsPopoverOpen()) {
+  if (shouldHide) {
     target->HidePopover(IgnoreErrors());
-  } else if (canShow && !target->IsPopoverOpen()) {
+  } else if (shouldShow) {
     target->ShowPopoverInternal(this, IgnoreErrors());
   }
+#ifdef ACCESSIBILITY
+  
+  if (shouldHide || shouldShow) {
+    if (RefPtr<Document> doc = GetComposedDoc()) {
+      if (PresShell* presShell = doc->GetPresShell()) {
+        if (nsAccessibilityService* accService = GetAccService()) {
+          accService->PopovertargetMaybeChanged(presShell, this);
+        }
+      }
+    }
+  }
+#endif
 }
 
 void nsGenericHTMLFormControlElementWithState::GetInvokeAction(
