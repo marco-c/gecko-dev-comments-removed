@@ -1282,6 +1282,11 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
                                   DefaultHandling defaultHandling);
 
   struct ClassInitializedMembers {
+#ifdef ENABLE_DECORATORS
+    
+    bool hasInstanceDecorators = false;
+#endif
+
     
     size_t instanceFields = 0;
 

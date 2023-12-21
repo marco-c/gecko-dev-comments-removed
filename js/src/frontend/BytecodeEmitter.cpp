@@ -11899,8 +11899,7 @@ bool BytecodeEmitter::emitClass(
 
 #ifdef ENABLE_DECORATORS
       
-      
-      
+
       if (!ce.prepareForExtraInitializers(
               TaggedParserAtomIndex::WellKnown::
                   dot_instanceExtraInitializers_())) {
@@ -11908,20 +11907,21 @@ bool BytecodeEmitter::emitClass(
       }
 
       DecoratorEmitter de(this);
-      if (!de.emitCreateAddInitializerFunction(
-              classNode->addInitializerFunction(),
-              TaggedParserAtomIndex::WellKnown::
-                  dot_instanceExtraInitializers_())) {
-        
-        return false;
-      }
+      if (classNode->addInitializerFunction()) {
+        if (!de.emitCreateAddInitializerFunction(
+                classNode->addInitializerFunction(),
+                TaggedParserAtomIndex::WellKnown::
+                    dot_instanceExtraInitializers_())) {
+          
+          return false;
+        }
+        if (!emitUnpickN(isDerived ? 2 : 1)) {
+          
+          return false;
+        }
 
-      if (!emitUnpickN(isDerived ? 2 : 1)) {
-        
-        return false;
+        extraInitializersPresent = true;
       }
-
-      extraInitializersPresent = true;
 #endif
 
       
