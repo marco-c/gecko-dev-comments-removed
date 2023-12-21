@@ -322,6 +322,22 @@ this.AccessibilityUtils = (function () {
 
 
 
+  function isInaccessibleXulTreecol(node) {
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const listheader = node.flattenedTreeParentNode;
+    if (listheader.tagName !== "listheader" || node.tagName !== "treecol") {
+      return false;
+    }
+    return true;
+  }
+
+  
+
+
+
+
   function shouldIgnoreTabIndex(node) {
     if (!XULElement.isInstance(node)) {
       return false;
@@ -717,6 +733,9 @@ this.AccessibilityUtils = (function () {
       
       const acc = findInteractiveAccessible(node);
       if (!acc) {
+        if (isInaccessibleXulTreecol(node)) {
+          return;
+        }
         if (gEnv.mustHaveAccessibleRule) {
           a11yFail("Node is not accessible via accessibility API", {
             DOMNode: node,
