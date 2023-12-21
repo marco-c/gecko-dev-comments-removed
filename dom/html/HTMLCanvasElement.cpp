@@ -535,6 +535,9 @@ HTMLCanvasElement::CreateContext(CanvasContextType aContextType) {
   
   RefPtr<nsICanvasRenderingContextInternal> ret =
       CreateContextHelper(aContextType, GetCompositorBackendType());
+  if (NS_WARN_IF(!ret)) {
+    return nullptr;
+  }
 
   
   if (aContextType == CanvasContextType::WebGL1 ||
@@ -817,7 +820,6 @@ class CanvasCaptureTrackSource : public MediaStreamTrackSource {
 
   void Stop() override {
     if (!mCaptureStream) {
-      NS_ERROR("No stream");
       return;
     }
 
