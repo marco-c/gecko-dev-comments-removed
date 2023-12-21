@@ -40,6 +40,10 @@
 class AudioDeviceInfo;
 class nsIPrefBranch;
 
+#ifdef MOZ_WEBRTC
+class WebrtcLogSinkHandle;
+#endif
+
 namespace mozilla {
 class MediaEngine;
 class MediaEngineSource;
@@ -83,10 +87,16 @@ class MediaDevice final {
 
   enum class OsPromptable { No, Yes };
 
+  
+
+
+  enum class IsPlaceholder { No, Yes };
+
   MediaDevice(MediaEngine* aEngine, dom::MediaSourceEnum aMediaSource,
               const nsString& aRawName, const nsString& aRawID,
               const nsString& aRawGroupID, IsScary aIsScary,
-              const OsPromptable canRequestOsLevelPrompt);
+              const OsPromptable canRequestOsLevelPrompt,
+              const IsPlaceholder aIsPlaceholder = IsPlaceholder::No);
 
   MediaDevice(MediaEngine* aEngine,
               const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
@@ -108,6 +118,7 @@ class MediaDevice final {
   const bool mScary;
   const bool mCanRequestOsLevelPrompt;
   const bool mIsFake;
+  const bool mIsPlaceholder;
   const nsString mType;
   const nsString mRawID;
   const nsString mRawGroupID;
@@ -358,6 +369,7 @@ class MediaManager final : public nsIMediaManagerService,
 
   void RemoveMediaDevicesCallback(uint64_t aWindowID);
   void DeviceListChanged();
+  void EnsureNoPlaceholdersInDeviceCache();
   void InvalidateDeviceCache();
   void HandleDeviceListChanged();
 
@@ -382,6 +394,9 @@ class MediaManager final : public nsIMediaManagerService,
   nsRefPtrHashtable<nsStringHashKey, GetUserMediaTask> mActiveCallbacks;
   nsClassHashtable<nsUint64HashKey, nsTArray<nsString>> mCallIds;
   nsTArray<RefPtr<dom::GetUserMediaRequest>> mPendingGUMRequest;
+#ifdef MOZ_WEBRTC
+  RefPtr<WebrtcLogSinkHandle> mLogHandle;
+#endif
   
   
   RefPtr<media::Refcountable<nsTArray<MozPromiseHolder<ConstDeviceSetPromise>>>>
