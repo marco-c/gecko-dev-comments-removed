@@ -23,6 +23,7 @@ const {
   TYPES,
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
+const { JSTRACER_TRACE } = TYPES;
 
 loader.lazyRequireGetter(
   this,
@@ -39,19 +40,6 @@ const LOG_METHODS = {
 exports.LOG_METHODS = LOG_METHODS;
 const VALID_LOG_METHODS = Object.values(LOG_METHODS);
 
-const CONSOLE_ARGS_STYLES = [
-  "color: var(--theme-toolbarbutton-checked-hover-background)",
-  "padding-inline: 4px; margin-inline: 2px; background-color: var(--theme-toolbarbutton-checked-hover-background); color: var(--theme-toolbarbutton-checked-hover-color);",
-  "",
-  "color: var(--theme-highlight-blue); margin-inline: 2px;",
-];
-const CONSOLE_ARGS_STYLES_WITH_PREFIX = ["", ...CONSOLE_ARGS_STYLES];
-
-const DOM_EVENT_CONSOLE_ARGS_STYLES = [
-  "color: var(--theme-toolbarbutton-checked-hover-background)",
-  "padding-inline: 4px; margin-inline: 2px; background-color: var(--toolbarbutton-checked-background); color: var(--toolbarbutton-checked-color);",
-];
-
 const CONSOLE_THROTTLING_DELAY = 250;
 
 class TracerActor extends Actor {
@@ -60,14 +48,9 @@ class TracerActor extends Actor {
     this.targetActor = targetActor;
     this.sourcesManager = this.targetActor.sourcesManager;
 
-    
-    this.isChromeContext = /conn\d+\.parentProcessTarget\d+/.test(
-      this.targetActor.actorID
-    );
-
-    this.throttledConsoleMessages = [];
-    this.throttleLogMessages = throttle(
-      this.flushConsoleMessages.bind(this),
+    this.throttledTraces = [];
+    this.throttleEmitTraces = throttle(
+      this.flushTraces.bind(this),
       CONSOLE_THROTTLING_DELAY
     );
 
@@ -165,6 +148,7 @@ class TracerActor extends Actor {
     }
     if (this.logMethod == LOG_METHODS.PROFILER) {
       this.geckoProfileCollector.stop();
+      return true;
     }
     const consoleMessageWatcher = getResourceWatcher(
       this.targetActor,
@@ -180,8 +164,8 @@ class TracerActor extends Actor {
       {
         arguments: [message],
         styles: [],
-        level: "logTrace",
-        chromeContext: this.isChromeContext,
+        level: "error",
+        chromeContext: false,
         timeStamp: ChromeUtils.dateNow(),
       },
     ]);
@@ -244,43 +228,31 @@ class TracerActor extends Actor {
       
       
       if (currentDOMEvent && depth == 0) {
-        const DOMEventArgs = [prefix + "—", currentDOMEvent];
-
         
-        this.throttledConsoleMessages.push({
-          arguments: DOMEventArgs,
-          styles: DOM_EVENT_CONSOLE_ARGS_STYLES,
-          level: "logTrace",
-          chromeContext: this.isChromeContext,
+        this.throttledTraces.push({
+          resourceType: JSTRACER_TRACE,
+          prefix,
           timeStamp: ChromeUtils.dateNow(),
+
+          eventName: currentDOMEvent,
         });
       }
 
-      const args = [
-        "—".repeat(depth + 1),
-        frame.implementation,
-        "⟶",
-        formatedDisplayName,
-      ];
       
-      if (prefix) {
-        args.unshift(prefix);
-      }
+      this.throttledTraces.push({
+        resourceType: JSTRACER_TRACE,
+        prefix,
+        timeStamp: ChromeUtils.dateNow(),
 
-      
-      this.throttledConsoleMessages.push({
+        depth,
+        implementation: frame.implementation,
+        displayName: formatedDisplayName,
         filename: url,
         lineNumber,
         columnNumber: columnNumber - columnBase,
-        arguments: args,
-        
-        styles: prefix ? CONSOLE_ARGS_STYLES_WITH_PREFIX : CONSOLE_ARGS_STYLES,
-        level: "logTrace",
-        chromeContext: this.isChromeContext,
         sourceId: script.source.id,
-        timeStamp: ChromeUtils.dateNow(),
       });
-      this.throttleLogMessages();
+      this.throttleEmitTraces();
     } else if (this.logMethod == LOG_METHODS.PROFILER) {
       this.geckoProfileCollector.addSample(
         {
@@ -302,19 +274,16 @@ class TracerActor extends Actor {
 
 
 
-  flushConsoleMessages() {
-    const consoleMessageWatcher = getResourceWatcher(
-      this.targetActor,
-      TYPES.CONSOLE_MESSAGE
-    );
+  flushTraces() {
+    const traceWatcher = getResourceWatcher(this.targetActor, JSTRACER_TRACE);
     
-    if (!consoleMessageWatcher) {
+    if (!traceWatcher) {
       return;
     }
-    const messages = this.throttledConsoleMessages;
-    this.throttledConsoleMessages = [];
+    const traces = this.throttledTraces;
+    this.throttledTraces = [];
 
-    consoleMessageWatcher.emitMessages(messages);
+    traceWatcher.emitTraces(traces);
   }
 }
 exports.TracerActor = TracerActor;

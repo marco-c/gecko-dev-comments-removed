@@ -1,0 +1,43 @@
+
+
+
+
+"use strict";
+
+class JSTraceWatcher {
+  
+
+
+
+
+
+
+
+
+
+  async watch(targetActor, { onAvailable }) {
+    this.#onAvailable = onAvailable;
+  }
+
+  #onAvailable;
+
+  
+
+
+  destroy() {
+    
+    
+    
+  }
+
+  
+
+
+
+
+  emitTraces(traces) {
+    this.#onAvailable(traces);
+  }
+}
+
+module.exports = JSTraceWatcher;

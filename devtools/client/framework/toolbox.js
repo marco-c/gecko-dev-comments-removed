@@ -926,7 +926,7 @@ Toolbox.prototype = {
           false
         )
       ) {
-        watchedResources.push(this.resourceCommand.TYPES.TRACING_STATE);
+        watchedResources.push(this.resourceCommand.TYPES.JSTRACER_STATE);
       }
 
       if (!this.isBrowserToolbox) {
@@ -4744,7 +4744,7 @@ Toolbox.prototype = {
       if (resourceType == TYPES.THREAD_STATE) {
         this._onThreadStateChanged(resource);
       }
-      if (resourceType == TYPES.TRACING_STATE) {
+      if (resourceType == TYPES.JSTRACER_STATE) {
         this._onTracingStateChanged(resource);
       }
     }
