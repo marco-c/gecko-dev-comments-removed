@@ -11,6 +11,7 @@
 
 
 
+
 setup(() => {
   assert_true(window.isSecureContext);
 });
