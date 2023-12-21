@@ -1248,13 +1248,14 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
     }
 
-    
-    
-    
-    
     if (aName == nsGkAtoms::value) {
+      
+      
+      
       if (!mValueChanged && GetValueMode() == VALUE_MODE_VALUE) {
         SetDefaultValueAsValue();
+      } else if (GetValueMode() == VALUE_MODE_DEFAULT && HasDirAuto()) {
+        SetDirectionFromValue(aNotify);
       }
       
       
@@ -5896,10 +5897,7 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
 
 void HTMLInputElement::SetDirectionFromValue(bool aNotify,
                                              const nsAString* aKnownValue) {
-  
-  
-  
-  if (!IsSingleLineTextControl(true)) {
+  if (!IsAutoDirectionalityAssociated()) {
     return;
   }
   nsAutoString value;
@@ -6066,7 +6064,7 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
   }
 
   
-  if (DoesDirnameApply()) {
+  if (IsAutoDirectionalityAssociated()) {
     return SubmitDirnameDir(aFormData);
   }
 
