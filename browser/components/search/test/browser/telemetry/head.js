@@ -10,6 +10,8 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchSERPTelemetryUtils: "resource:///modules/SearchSERPTelemetry.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  SERPCategorizationRecorder: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
 });
 
@@ -175,6 +177,8 @@ async function assertSearchSourcesTelemetry(
 }
 
 function resetTelemetry() {
+  
+  fakeTelemetryStorage = [];
   searchCounts.clear();
   Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
@@ -350,6 +354,73 @@ function assertSERPTelemetry(expectedEvents) {
     totalExpectedrecordedAbandonments,
     "Recorded and expected abandonment counts match."
   );
+}
+
+
+let categorizationSandbox;
+let fakeTelemetryStorage = [];
+add_setup(function () {
+  categorizationSandbox = sinon.createSandbox();
+  categorizationSandbox
+    .stub(SERPCategorizationRecorder, "recordCategorizationTelemetry")
+    .callsFake(input => {
+      fakeTelemetryStorage.push(input);
+    });
+
+  registerCleanupFunction(() => {
+    categorizationSandbox.restore();
+    fakeTelemetryStorage = [];
+  });
+});
+
+function assertCategorizationValues(expectedResults) {
+  
+  let actualResults = [...fakeTelemetryStorage];
+
+  Assert.equal(
+    expectedResults.length,
+    actualResults.length,
+    "Should have the correct number of categorization impressions."
+  );
+
+  if (!expectedResults.length) {
+    return;
+  }
+
+  
+  
+  
+  let keys = new Set();
+  for (let expected of expectedResults) {
+    for (let key in expected) {
+      keys.add(key);
+    }
+  }
+  for (let actual of actualResults) {
+    for (let key in actual) {
+      keys.add(key);
+    }
+  }
+  keys = Array.from(keys);
+
+  for (let index = 0; index < expectedResults.length; ++index) {
+    info(`Checking categorization at index: ${index}`);
+    let expected = expectedResults[index];
+    let actual = actualResults[index];
+    for (let key of keys) {
+      
+      
+      
+      if (actual[key] != null && typeof actual[key] !== "string") {
+        actual[key] = actual[key].toString();
+      }
+      Assert.equal(
+        actual[key],
+        expected[key],
+        `Actual and expected values for ${key} should match.`
+      );
+    }
+  }
 }
 
 function waitForPageWithAdImpressions() {
