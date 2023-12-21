@@ -33,6 +33,70 @@ ALL_AXES = [(axis, False) for axis in PHYSICAL_AXES] + [
 SYSTEM_FONT_LONGHANDS = """font_family font_size font_style
                            font_stretch font_weight""".split()
 
+PRIORITARY_PROPERTIES = set(
+    [
+        
+        
+        "writing-mode",
+        "direction",
+        "text-orientation",
+        
+        
+        
+        
+        
+        
+        "-x-text-scale",
+        
+        "-x-lang",
+        
+        
+        "-moz-min-font-size-ratio",
+        
+        "math-depth",
+        
+        
+        "font-size",
+        "font-size-adjust",
+        "font-weight",
+        "font-stretch",
+        "font-style",
+        "font-family",
+        
+        "color-scheme",
+        
+        "forced-color-adjust",
+        
+        "zoom",
+        
+        "line-height",
+    ]
+)
+
+VISITED_DEPENDENT_PROPERTIES = set(
+    [
+        "column-rule-color",
+        "text-emphasis-color",
+        "-webkit-text-fill-color",
+        "-webkit-text-stroke-color",
+        "text-decoration-color",
+        "fill",
+        "stroke",
+        "caret-color",
+        "background-color",
+        "border-top-color",
+        "border-right-color",
+        "border-bottom-color",
+        "border-left-color",
+        "border-block-start-color",
+        "border-inline-end-color",
+        "border-block-end-color",
+        "border-inline-start-color",
+        "outline-color",
+        "color",
+    ]
+)
+
 
 STYLE_RULE = 1 << 0
 PAGE_RULE = 1 << 1
@@ -280,6 +344,12 @@ class Property(object):
 
     def enabled_in_content(self):
         return self.enabled_in == "content"
+
+    def is_visited_dependent(self):
+        return self.name in VISITED_DEPENDENT_PROPERTIES
+
+    def is_prioritary(self):
+        return self.name in PRIORITARY_PROPERTIES
 
     def nscsspropertyid(self):
         return "nsCSSPropertyID::eCSSProperty_" + self.ident
