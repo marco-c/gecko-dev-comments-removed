@@ -10,15 +10,19 @@
 %>
 
 #[cfg(feature = "gecko")] use crate::gecko_bindings::structs::nsCSSPropertyID;
-use crate::properties::{CSSWideKeyword, PropertyDeclaration, NonCustomPropertyIterator};
-use crate::properties::longhands;
-use crate::properties::longhands::visibility::computed_value::T as Visibility;
-use crate::properties::longhands::content_visibility::computed_value::T as ContentVisibility;
-use crate::properties::LonghandId;
+use crate::properties::{
+    longhands::{
+        self, content_visibility::computed_value::T as ContentVisibility,
+        visibility::computed_value::T as Visibility,
+    },
+    CSSWideKeyword, LonghandId, NonCustomPropertyIterator, PropertyDeclaration,
+    PropertyDeclarationId,
+};
 use std::ptr;
 use std::mem;
 use fxhash::FxHashMap;
 use super::ComputedValues;
+use crate::properties::property_declaration::OwnedPropertyDeclarationId;
 use crate::values::animated::{Animate, Procedure, ToAnimatedValue, ToAnimatedZero};
 use crate::values::animated::effects::AnimatedFilter;
 #[cfg(feature = "gecko")] use crate::values::computed::TransitionProperty;
@@ -58,7 +62,7 @@ impl From<nsCSSPropertyID> for TransitionProperty {
 
 
 
-pub type AnimationValueMap = FxHashMap<LonghandId, AnimationValue>;
+pub type AnimationValueMap = FxHashMap<OwnedPropertyDeclarationId, AnimationValue>;
 
 
 
@@ -184,7 +188,7 @@ impl PartialEq for AnimationValue {
 impl AnimationValue {
     
     #[inline]
-    pub fn id(&self) -> LonghandId {
+    pub fn id(&self) -> PropertyDeclarationId {
         let id = unsafe { *(self as *const _ as *const LonghandId) };
         debug_assert_eq!(id, match *self {
             % for prop in data.longhands:
@@ -195,7 +199,7 @@ impl AnimationValue {
             % endif
             % endfor
         });
-        id
+        PropertyDeclarationId::Longhand(id)
     }
 
     
@@ -388,9 +392,15 @@ impl AnimationValue {
 
     
     pub fn from_computed_values(
-        property: LonghandId,
+        property: PropertyDeclarationId,
         style: &ComputedValues,
     ) -> Option<Self> {
+        let property = match property {
+            PropertyDeclarationId::Longhand(id) => id,
+            
+            PropertyDeclarationId::Custom(_) => return None,
+        };
+
         let property = property.to_physical(style.writing_mode);
         Some(match property {
             % for prop in data.longhands:

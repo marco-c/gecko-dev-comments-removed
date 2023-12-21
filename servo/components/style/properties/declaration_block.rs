@@ -12,6 +12,7 @@ use super::generated::{
     SourcePropertyDeclaration, SourcePropertyDeclarationDrain, SubpropertiesVec,
 };
 use super::property_declaration::PropertyDeclarationId;
+use super::LonghandIdSetIterator;
 use crate::applicable_declarations::CascadePriority;
 use crate::context::QuirksMode;
 use crate::custom_properties::{self, ComputedCustomProperties, CustomPropertiesBuilder};
@@ -114,14 +115,16 @@ impl Importance {
     }
 }
 
-#[derive(Clone, ToShmem, Default, MallocSizeOf)]
-struct PropertyDeclarationIdSet {
+
+#[derive(Clone, Debug, ToShmem, Default, MallocSizeOf)]
+pub struct PropertyDeclarationIdSet {
     longhands: LonghandIdSet,
     custom: PrecomputedHashSet<custom_properties::Name>,
 }
 
 impl PropertyDeclarationIdSet {
-    fn insert(&mut self, id: PropertyDeclarationId) -> bool {
+    
+    pub fn insert(&mut self, id: PropertyDeclarationId) -> bool {
         match id {
             PropertyDeclarationId::Longhand(id) => {
                 if self.longhands.contains(id) {
@@ -130,18 +133,20 @@ impl PropertyDeclarationIdSet {
                 self.longhands.insert(id);
                 return true;
             },
-            PropertyDeclarationId::Custom(name) => self.custom.insert(name.clone()),
+            PropertyDeclarationId::Custom(name) => self.custom.insert((*name).clone()),
         }
     }
 
-    fn contains(&self, id: PropertyDeclarationId) -> bool {
+    
+    pub fn contains(&self, id: PropertyDeclarationId) -> bool {
         match id {
             PropertyDeclarationId::Longhand(id) => self.longhands.contains(id),
             PropertyDeclarationId::Custom(name) => self.custom.contains(name),
         }
     }
 
-    fn remove(&mut self, id: PropertyDeclarationId) {
+    
+    pub fn remove(&mut self, id: PropertyDeclarationId) {
         match id {
             PropertyDeclarationId::Longhand(id) => self.longhands.remove(id),
             PropertyDeclarationId::Custom(name) => {
@@ -150,9 +155,58 @@ impl PropertyDeclarationIdSet {
         }
     }
 
-    fn clear(&mut self) {
+    
+    pub fn clear(&mut self) {
         self.longhands.clear();
         self.custom.clear();
+    }
+
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.longhands.is_empty() && self.custom.is_empty()
+    }
+    
+    #[inline]
+    pub fn contains_any_reset(&self) -> bool {
+        self.longhands.contains_any_reset()
+    }
+
+    
+    #[inline]
+    pub fn contains_all(&self, longhands: &LonghandIdSet) -> bool {
+        self.longhands.contains_all(longhands)
+    }
+
+    
+    pub fn iter(&self) -> PropertyDeclarationIdSetIterator {
+        PropertyDeclarationIdSetIterator {
+            longhands: self.longhands.iter(),
+            custom: self.custom.iter(),
+        }
+    }
+}
+
+
+pub struct PropertyDeclarationIdSetIterator<'a> {
+    longhands: LonghandIdSetIterator<'a>,
+    custom: std::collections::hash_set::Iter<'a, custom_properties::Name>,
+}
+
+impl<'a> Iterator for PropertyDeclarationIdSetIterator<'a> {
+    type Item = PropertyDeclarationId<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        
+        
+        
+        match self.longhands.next() {
+            Some(id) => Some(PropertyDeclarationId::Longhand(id)),
+            None => match self.custom.next() {
+                Some(a) => Some(PropertyDeclarationId::Custom(a)),
+                None => None,
+            },
+        }
     }
 }
 
@@ -385,8 +439,8 @@ impl PropertyDeclarationBlock {
     
     
     #[inline]
-    pub fn longhands(&self) -> &LonghandIdSet {
-        &self.property_ids.longhands
+    pub fn property_ids(&self) -> &PropertyDeclarationIdSet {
+        &self.property_ids
     }
 
     
@@ -398,7 +452,7 @@ impl PropertyDeclarationBlock {
     
     #[inline]
     pub fn contains_any_reset(&self) -> bool {
-        self.property_ids.longhands.contains_any_reset()
+        self.property_ids.contains_any_reset()
     }
 
     
@@ -921,7 +975,7 @@ impl PropertyDeclarationBlock {
         let mut property_ids = PropertyDeclarationIdSet::default();
 
         for (property, animation_value) in animation_value_map.iter() {
-            property_ids.longhands.insert(*property);
+            property_ids.insert(property.as_borrowed());
             declarations.push(animation_value.uncompute());
         }
 
@@ -1048,7 +1102,7 @@ impl PropertyDeclarationBlock {
                 
                 
                 
-                if !self.property_ids.longhands.contains_all(&longhands) {
+                if !self.property_ids.contains_all(&longhands) {
                     continue;
                 }
 

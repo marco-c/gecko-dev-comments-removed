@@ -6,12 +6,41 @@
 
 use super::{LonghandId, PropertyId, ShorthandId};
 use crate::custom_properties::Name;
+#[cfg(feature = "gecko")]
+use crate::gecko_bindings::structs::nsCSSPropertyID;
+use crate::logical_geometry::WritingMode;
 use crate::values::serialize_atom_name;
 use std::{
     borrow::Cow,
     fmt::{self, Write},
 };
 use style_traits::{CssWriter, ToCss};
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum OwnedPropertyDeclarationId {
+    
+    Longhand(LonghandId),
+    
+    Custom(Name),
+}
+
+impl OwnedPropertyDeclarationId {
+    
+    #[inline]
+    pub fn is_logical(&self) -> bool {
+        self.as_borrowed().is_logical()
+    }
+
+    
+    #[inline]
+    pub fn as_borrowed(&self) -> PropertyDeclarationId {
+        match self {
+            OwnedPropertyDeclarationId::Longhand(id) => PropertyDeclarationId::Longhand(*id),
+            OwnedPropertyDeclarationId::Custom(name) => PropertyDeclarationId::Custom(name),
+        }
+    }
+}
 
 
 
@@ -40,6 +69,16 @@ impl<'a> ToCss for PropertyDeclarationId<'a> {
 }
 
 impl<'a> PropertyDeclarationId<'a> {
+    
+    pub fn to_owned(&self) -> OwnedPropertyDeclarationId {
+        match self {
+            PropertyDeclarationId::Longhand(id) => OwnedPropertyDeclarationId::Longhand(*id),
+            PropertyDeclarationId::Custom(name) => {
+                OwnedPropertyDeclarationId::Custom((*name).clone())
+            },
+        }
+    }
+
     
     
     pub fn is_or_is_longhand_of(&self, other: &PropertyId) -> bool {
@@ -81,6 +120,50 @@ impl<'a> PropertyDeclarationId<'a> {
         match *self {
             PropertyDeclarationId::Longhand(id) => Some(id),
             _ => None,
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_logical(&self) -> bool {
+        match self {
+            PropertyDeclarationId::Longhand(id) => id.is_logical(),
+            PropertyDeclarationId::Custom(_) => false,
+        }
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn to_physical(&self, wm: WritingMode) -> Self {
+        match self {
+            PropertyDeclarationId::Longhand(id) => {
+                PropertyDeclarationId::Longhand(id.to_physical(wm))
+            },
+            PropertyDeclarationId::Custom(_) => self.clone(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_animatable(&self) -> bool {
+        match self {
+            PropertyDeclarationId::Longhand(id) => id.is_animatable(),
+            
+            PropertyDeclarationId::Custom(_) => false,
+        }
+    }
+
+    
+    
+    #[cfg(feature = "gecko")]
+    #[inline]
+    pub fn to_nscsspropertyid(self) -> nsCSSPropertyID {
+        match self {
+            PropertyDeclarationId::Longhand(id) => id.to_nscsspropertyid(),
+            PropertyDeclarationId::Custom(_) => nsCSSPropertyID::eCSSPropertyExtra_variable,
         }
     }
 }
