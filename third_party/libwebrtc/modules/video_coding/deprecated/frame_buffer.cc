@@ -81,7 +81,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
   if (kStateEmpty == _state) {
     
     
-    SetTimestamp(packet.timestamp);
+    SetRtpTimestamp(packet.timestamp);
     
     ntp_time_ms_ = packet.ntp_time_ms_;
     _codec = packet.codec();

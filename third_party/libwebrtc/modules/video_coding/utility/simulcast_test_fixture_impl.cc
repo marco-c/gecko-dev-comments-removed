@@ -101,7 +101,7 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
       temporal_layer_[encoded_image.SimulcastIndex().value_or(0)] =
           codec_specific_info->codecSpecific.H264.temporal_idx;
     }
-    return Result(Result::OK, encoded_image.Timestamp());
+    return Result(Result::OK, encoded_image.RtpTimestamp());
   }
   
   void GetLastEncodedFrameInfo(int* temporal_layer,

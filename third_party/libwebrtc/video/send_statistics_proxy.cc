@@ -271,7 +271,7 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
   
   if (!encoded_frames_.empty()) {
     uint32_t oldest_timestamp = encoded_frames_.begin()->first;
-    if (ForwardDiff(oldest_timestamp, encoded_frame.Timestamp()) >
+    if (ForwardDiff(oldest_timestamp, encoded_frame.RtpTimestamp()) >
         kMaxEncodedFrameTimestampDiff) {
       
       
@@ -279,11 +279,11 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
     }
   }
 
-  auto it = encoded_frames_.find(encoded_frame.Timestamp());
+  auto it = encoded_frames_.find(encoded_frame.RtpTimestamp());
   if (it == encoded_frames_.end()) {
     
     encoded_frames_.insert(
-        std::make_pair(encoded_frame.Timestamp(),
+        std::make_pair(encoded_frame.RtpTimestamp(),
                        Frame(now_ms, encoded_frame._encodedWidth,
                              encoded_frame._encodedHeight, simulcast_idx)));
     sent_fps_counter_.Add(1);

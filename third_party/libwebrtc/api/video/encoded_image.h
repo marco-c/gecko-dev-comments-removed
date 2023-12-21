@@ -80,16 +80,19 @@ class RTC_EXPORT EncodedImage {
   EncodedImage& operator=(const EncodedImage&);
 
   
-  
-  void SetTimestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
+  void SetRtpTimestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
+  uint32_t RtpTimestamp() const { return timestamp_rtp_; }
 
   
-  uint32_t Timestamp() const { return timestamp_rtp_; }
+  void SetTimestamp(uint32_t timestamp) { SetRtpTimestamp(timestamp); }
+  uint32_t Timestamp() const { return RtpTimestamp(); }
 
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);
 
+  
   webrtc::Timestamp CaptureTime() const;
 
+  
   int64_t NtpTimeMs() const { return ntp_time_ms_; }
 
   

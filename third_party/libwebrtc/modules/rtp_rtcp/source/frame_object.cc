@@ -51,7 +51,7 @@ RtpFrameObject::RtpFrameObject(
   
   CopyCodecSpecific(&rtp_video_header_);
   _payloadType = payload_type;
-  SetTimestamp(rtp_timestamp);
+  SetRtpTimestamp(rtp_timestamp);
   ntp_time_ms_ = ntp_time_ms;
   _frameType = rtp_video_header_.frame_type;
 

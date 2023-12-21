@@ -49,7 +49,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest, InjectExtractDiscardFalse) {
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
 
   EncodedImageExtractionResult out =
       injector.ExtractData(injector.InjectData(512, false, source));
@@ -68,7 +68,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest, InjectExtractDiscardTrue) {
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
 
   EncodedImageExtractionResult out =
       injector.ExtractData(injector.InjectData(512, true, source));
@@ -85,7 +85,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest,
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
 
   EncodedImage intermediate = injector.InjectData(512, false, source);
   intermediate.SetSpatialIndex(2);
@@ -110,7 +110,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest,
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
 
   EncodedImage intermediate = injector.InjectData(512, false, source);
   intermediate.SetSpatialIndex(2);
@@ -138,15 +138,15 @@ TEST(SingleProcessEncodedImageDataInjectorTest, Inject3Extract3) {
   
   EncodedImage source1 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source1.SetTimestamp(123456710);
+  source1.SetRtpTimestamp(123456710);
   
   EncodedImage source2 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 11);
-  source2.SetTimestamp(123456720);
+  source2.SetRtpTimestamp(123456720);
   
   EncodedImage source3 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 21);
-  source3.SetTimestamp(123456720);
+  source3.SetRtpTimestamp(123456720);
 
   EncodedImage intermediate1 = injector.InjectData(510, false, source1);
   EncodedImage intermediate2 = injector.InjectData(520, true, source2);
@@ -183,13 +183,13 @@ TEST(SingleProcessEncodedImageDataInjectorTest, InjectExtractFromConcatenated) {
 
   EncodedImage source1 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source1.SetTimestamp(123456710);
+  source1.SetRtpTimestamp(123456710);
   EncodedImage source2 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 11);
-  source2.SetTimestamp(123456710);
+  source2.SetRtpTimestamp(123456710);
   EncodedImage source3 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 21);
-  source3.SetTimestamp(123456710);
+  source3.SetRtpTimestamp(123456710);
 
   
   EncodedImage intermediate1 = injector.InjectData(512, false, source1);
@@ -235,13 +235,13 @@ TEST(SingleProcessEncodedImageDataInjector,
 
   EncodedImage source1 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source1.SetTimestamp(123456710);
+  source1.SetRtpTimestamp(123456710);
   EncodedImage source2 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 11);
-  source2.SetTimestamp(123456710);
+  source2.SetRtpTimestamp(123456710);
   EncodedImage source3 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 21);
-  source3.SetTimestamp(123456710);
+  source3.SetRtpTimestamp(123456710);
 
   
   EncodedImage intermediate1 = injector.InjectData(512, true, source1);
@@ -282,7 +282,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest, InjectOnceExtractTwice) {
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
 
   EncodedImageExtractionResult out = injector.ExtractData(
       injector.InjectData(512, false, source));
@@ -310,7 +310,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest, Add1stReceiverAfterStart) {
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
   EncodedImage modified_image = injector.InjectData(
       512, false, source);
 
@@ -332,7 +332,7 @@ TEST(SingleProcessEncodedImageDataInjectorTest, Add3rdReceiverAfterStart) {
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
   EncodedImage modified_image = injector.InjectData(
       512, false, source);
   injector.ExtractData(modified_image);
@@ -357,10 +357,10 @@ TEST(SingleProcessEncodedImageDataInjectorTest,
 
   EncodedImage source1 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source1.SetTimestamp(10);
+  source1.SetRtpTimestamp(10);
   EncodedImage source2 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source2.SetTimestamp(20);
+  source2.SetRtpTimestamp(20);
 
   EncodedImage modified_image1 = injector.InjectData(
       512, false, source1);
@@ -399,7 +399,7 @@ TEST(SingleProcessEncodedImageDataInjectorTestDeathTest,
 
   EncodedImage source =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source.SetTimestamp(123456789);
+  source.SetRtpTimestamp(123456789);
 
   EncodedImage modified =
       injector.InjectData(512, false, source);
@@ -417,10 +417,10 @@ TEST(SingleProcessEncodedImageDataInjectorTestDeathTest,
 
   EncodedImage source1 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source1.SetTimestamp(10);
+  source1.SetRtpTimestamp(10);
   EncodedImage source2 =
       CreateEncodedImageOfSizeNFilledWithValuesFromX(10, 1);
-  source2.SetTimestamp(20);
+  source2.SetRtpTimestamp(20);
 
   EncodedImage modified_image1 = injector.InjectData(
       512, false, source1);
