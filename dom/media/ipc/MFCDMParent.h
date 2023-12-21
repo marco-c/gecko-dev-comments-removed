@@ -144,8 +144,9 @@ class MFCDMParent final : public PMFCDMParent {
 };
 
 
-class MFCDMCapabilities {
+class MFCDMService {
  public:
+  
   static void GetAllKeySystemsCapabilities(dom::Promise* aPromise);
 
  private:
