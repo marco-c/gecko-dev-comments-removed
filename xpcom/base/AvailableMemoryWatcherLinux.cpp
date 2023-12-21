@@ -120,26 +120,22 @@ void nsAvailableMemoryWatcher::StopPolling(const MutexAutoLock&)
 
 bool nsAvailableMemoryWatcher::IsMemoryLow() {
   MemoryInfo memInfo{0, 0};
-  bool aResult = false;
-
   nsresult rv = ReadMemoryFile(kMeminfoPath, memInfo);
 
-  if (NS_FAILED(rv) || memInfo.memAvailable == 0) {
+  if (NS_FAILED(rv) || (memInfo.memAvailable == 0) || (memInfo.memTotal == 0)) {
     
     
-    return aResult;
+    
+    return false;
   }
+
   unsigned long memoryAsPercentage =
       (memInfo.memAvailable * 100) / memInfo.memTotal;
 
-  if (memoryAsPercentage <=
-          StaticPrefs::browser_low_commit_space_threshold_percent() ||
-      memInfo.memAvailable <
-          StaticPrefs::browser_low_commit_space_threshold_mb() * 1024) {
-    aResult = true;
-  }
-
-  return aResult;
+  return memoryAsPercentage <=
+             StaticPrefs::browser_low_commit_space_threshold_percent() ||
+         memInfo.memAvailable <
+             StaticPrefs::browser_low_commit_space_threshold_mb() * 1024;
 }
 
 void nsAvailableMemoryWatcher::ShutDown() {
