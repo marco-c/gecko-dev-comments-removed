@@ -94,29 +94,6 @@ MsaaDocAccessible::get_accParent(
        (nsWinUtils::IsWindowEmulationStarted() &&
         nsCoreUtils::IsTopLevelContentDocInProcess(docAcc->DocumentNode())))) {
     HWND hwnd = static_cast<HWND>(docAcc->GetNativeWindow());
-    if (hwnd && !docAcc->ParentDocument()) {
-      nsIFrame* frame = docAcc->GetFrame();
-      if (frame) {
-        nsIWidget* widget = frame->GetNearestWidget();
-        if (widget->GetWindowType() == widget::WindowType::Child &&
-            !widget->GetParent()) {
-          
-          
-          
-          
-          
-          
-          
-          
-          HWND parentHwnd = ::GetParent(hwnd);
-          if (parentHwnd) {
-            MOZ_ASSERT(::GetWindowLongW(parentHwnd, GWL_STYLE) & WS_POPUP,
-                       "Parent HWND should be a popup!");
-            hwnd = parentHwnd;
-          }
-        }
-      }
-    }
     if (hwnd &&
         SUCCEEDED(::CreateStdAccessibleObject(
             hwnd, OBJID_WINDOW, IID_IAccessible, (void**)ppdispParent))) {
