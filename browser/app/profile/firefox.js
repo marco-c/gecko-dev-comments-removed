@@ -1320,10 +1320,6 @@ pref("places.frecency.origins.alternative.featureGate", false);
 
 pref("places.forgetThisSite.clearByBaseDomain", true);
 
-#ifdef NIGHTLY_BUILD
-pref("places.experimental.useSingleQueueTransactionManager", true);
-#endif
-
 
 pref("browser.places.speculativeConnect.enabled", true);
 
