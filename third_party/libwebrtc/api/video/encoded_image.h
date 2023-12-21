@@ -84,8 +84,10 @@ class RTC_EXPORT EncodedImage {
   uint32_t RtpTimestamp() const { return timestamp_rtp_; }
 
   
-  void SetTimestamp(uint32_t timestamp) { SetRtpTimestamp(timestamp); }
-  uint32_t Timestamp() const { return RtpTimestamp(); }
+  [[deprecated]] void SetTimestamp(uint32_t timestamp) {
+    SetRtpTimestamp(timestamp);
+  }
+  [[deprecated]] uint32_t Timestamp() const { return RtpTimestamp(); }
 
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);
 
