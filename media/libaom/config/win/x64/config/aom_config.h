@@ -1,13 +1,13 @@
-/*
- * Copyright (c) 2023, Alliance for Open Media. All rights reserved
- *
- * This source code is subject to the terms of the BSD 2 Clause License and
- * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
- * was not distributed with this source code in the LICENSE file, you can
- * obtain it at www.aomedia.org/license/software. If the Alliance for Open
- * Media Patent License 1.0 was not distributed with this source code in the
- * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
- */
+
+
+
+
+
+
+
+
+
+
 #ifndef AOM_CONFIG_H_
 #define AOM_CONFIG_H_
 
@@ -20,7 +20,7 @@
 #define CONFIG_ACCOUNTING 0
 #define CONFIG_ANALYZER 0
 #define CONFIG_AV1_DECODER 1
-#define CONFIG_AV1_ENCODER 1
+#define CONFIG_AV1_ENCODER 0
 #define CONFIG_BIG_ENDIAN 0
 #define CONFIG_BITSTREAM_DEBUG 0
 #define CONFIG_COEFFICIENT_RANGE_CHECKING 0
@@ -79,4 +79,4 @@
 #define INCLUDE_INSTALL_DIR INSTALLDIR/include
 #define INLINE inline
 #define LIB_INSTALL_DIR INSTALLDIR/lib
-#endif /* AOM_CONFIG_H_ */
+#endif 
