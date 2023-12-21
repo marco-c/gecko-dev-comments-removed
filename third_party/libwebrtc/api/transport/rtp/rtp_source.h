@@ -57,12 +57,11 @@ class RtpSource {
         rtp_timestamp_(rtp_timestamp) {}
 
   
-  
-  RtpSource(int64_t timestamp_ms,
-            uint32_t source_id,
-            RtpSourceType source_type,
-            uint32_t rtp_timestamp,
-            const RtpSource::Extensions& extensions)
+  [[deprecated]] RtpSource(int64_t timestamp_ms,
+                           uint32_t source_id,
+                           RtpSourceType source_type,
+                           uint32_t rtp_timestamp,
+                           const RtpSource::Extensions& extensions)
       : timestamp_(Timestamp::Millis(timestamp_ms)),
         source_id_(source_id),
         source_type_(source_type),
@@ -76,8 +75,7 @@ class RtpSource {
   Timestamp timestamp() const { return timestamp_; }
 
   
-  
-  int64_t timestamp_ms() const { return timestamp_.ms(); }
+  [[deprecated]] int64_t timestamp_ms() const { return timestamp_.ms(); }
   [[deprecated]] void update_timestamp_ms(int64_t timestamp_ms) {
     RTC_DCHECK_LE(timestamp_.ms(), timestamp_ms);
     timestamp_ = Timestamp::Millis(timestamp_ms);
