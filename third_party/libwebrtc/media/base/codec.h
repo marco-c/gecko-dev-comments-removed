@@ -216,7 +216,13 @@ bool HasRrtr(const Codec& codec);
 bool HasTransportCc(const Codec& codec);
 
 
+
 const VideoCodec* FindMatchingCodec(
+    const std::vector<VideoCodec>& supported_codecs,
+    const VideoCodec& codec);
+
+
+std::vector<const VideoCodec*> FindAllMatchingCodecs(
     const std::vector<VideoCodec>& supported_codecs,
     const VideoCodec& codec);
 
