@@ -174,8 +174,23 @@ impl PropertyDeclarationIdSet {
 
     
     #[inline]
-    pub fn contains_all(&self, longhands: &LonghandIdSet) -> bool {
+    pub fn contains_all_longhands(&self, longhands: &LonghandIdSet) -> bool {
         self.longhands.contains_all(longhands)
+    }
+
+    
+    #[inline]
+    pub fn contains_all(&self, properties: &PropertyDeclarationIdSet) -> bool {
+        if !self.longhands.contains_all(&properties.longhands) {
+            return false;
+        }
+        if properties.custom.len() > self.custom.len() {
+            return false;
+        }
+        properties
+            .custom
+            .iter()
+            .all(|item| self.custom.contains(item))
     }
 
     
@@ -1102,7 +1117,7 @@ impl PropertyDeclarationBlock {
                 
                 
                 
-                if !self.property_ids.contains_all(&longhands) {
+                if !self.property_ids.contains_all_longhands(&longhands) {
                     continue;
                 }
 

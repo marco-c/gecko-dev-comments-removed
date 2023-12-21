@@ -4,10 +4,10 @@
 
 
 
-use super::{LonghandId, NonCustomPropertyId, PropertyId, ShorthandId};
+use super::{LonghandId, NonCustomPropertyId, PropertyFlags, PropertyId, ShorthandId};
 use crate::custom_properties::Name;
 #[cfg(feature = "gecko")]
-use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID};
+use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID, RefPtr};
 use crate::logical_geometry::WritingMode;
 use crate::values::serialize_atom_name;
 #[cfg(feature = "gecko")]
@@ -39,8 +39,7 @@ impl OwnedPropertyDeclarationId {
     pub fn is_animatable(&self) -> bool {
         match self {
             Self::Longhand(id) => id.is_animatable(),
-            
-            Self::Custom(_) => false,
+            Self::Custom(_) => true,
         }
     }
 
@@ -110,6 +109,15 @@ impl<'a> ToCss for PropertyDeclarationId<'a> {
 }
 
 impl<'a> PropertyDeclarationId<'a> {
+    
+    #[inline(always)]
+    pub fn flags(&self) -> PropertyFlags {
+        match self {
+            Self::Longhand(id) => id.flags(),
+            Self::Custom(_) => PropertyFlags::empty(),
+        }
+    }
+
     
     pub fn to_owned(&self) -> OwnedPropertyDeclarationId {
         match self {
@@ -192,8 +200,7 @@ impl<'a> PropertyDeclarationId<'a> {
     pub fn is_animatable(&self) -> bool {
         match self {
             PropertyDeclarationId::Longhand(id) => id.is_animatable(),
-            
-            PropertyDeclarationId::Custom(_) => false,
+            PropertyDeclarationId::Custom(_) => true,
         }
     }
 
@@ -203,7 +210,7 @@ impl<'a> PropertyDeclarationId<'a> {
         match self {
             Self::Longhand(longhand) => longhand.is_discrete_animatable(),
             
-            Self::Custom(_) => false,
+            Self::Custom(_) => true,
         }
     }
 
@@ -215,6 +222,26 @@ impl<'a> PropertyDeclarationId<'a> {
         match self {
             PropertyDeclarationId::Longhand(id) => id.to_nscsspropertyid(),
             PropertyDeclarationId::Custom(_) => nsCSSPropertyID::eCSSPropertyExtra_variable,
+        }
+    }
+
+    
+    #[cfg(feature = "gecko")]
+    #[inline]
+    pub fn to_gecko_animated_property_id(&self) -> AnimatedPropertyID {
+        match self {
+            Self::Longhand(id) => AnimatedPropertyID {
+                mID: id.to_nscsspropertyid(),
+                mCustomName: RefPtr::null(),
+            },
+            Self::Custom(name) => {
+                let mut property_id = AnimatedPropertyID {
+                    mID: nsCSSPropertyID::eCSSPropertyExtra_variable,
+                    mCustomName: RefPtr::null(),
+                };
+                property_id.mCustomName.mRawPtr = (*name).clone().into_addrefed();
+                property_id
+            },
         }
     }
 }

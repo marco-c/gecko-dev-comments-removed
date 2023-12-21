@@ -450,7 +450,8 @@ mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
 
 
 mozilla::PropertyValuePair* Gecko_AppendPropertyValuePair(
-    nsTArray<mozilla::PropertyValuePair>*, nsCSSPropertyID aProperty);
+    nsTArray<mozilla::PropertyValuePair>*,
+    const mozilla::AnimatedPropertyID* aProperty);
 
 void Gecko_ResetFilters(nsStyleEffects* effects, size_t new_len);
 

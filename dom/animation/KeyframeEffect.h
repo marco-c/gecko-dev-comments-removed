@@ -333,7 +333,7 @@ class KeyframeEffect : public AnimationEffect {
     
     
     
-    result.mServo = mBaseValues.GetWeak(aProperty.mID, &hasProperty);
+    result.mServo = mBaseValues.GetWeak(aProperty, &hasProperty);
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }
@@ -455,7 +455,8 @@ class KeyframeEffect : public AnimationEffect {
   
   
   using BaseValuesHashmap =
-      nsRefPtrHashtable<nsUint32HashKey, StyleAnimationValue>;
+      nsRefPtrHashtable<nsGenericHashKey<AnimatedPropertyID>,
+                        StyleAnimationValue>;
   BaseValuesHashmap mBaseValues;
 
  private:
