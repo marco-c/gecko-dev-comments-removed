@@ -5,6 +5,7 @@
 #ifndef nsTableWrapperFrame_h__
 #define nsTableWrapperFrame_h__
 
+#include "LayoutConstants.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "nscore.h"
@@ -202,6 +203,15 @@ class nsTableWrapperFrame : public nsContainerFrame {
                       const mozilla::LogicalSize& aInnerSize,
                       mozilla::LogicalPoint& aOrigin,
                       mozilla::WritingMode aWM) const;
+
+  
+  
+  
+  
+  
+  
+  
+  mozilla::ComputeSizeFlags CreateComputeSizeFlagsForChild() const;
 
   
   

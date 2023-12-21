@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>Reference: stretching table items that has a caption with 'normal' and/or 'stretch' and min/max-size, with Automatic Minimum Size clamping</title>
@@ -32,7 +32,6 @@ table {
   background: lightgrey;
 }
 caption { border: 1px dashed blue; }
-caption { justify-self: stretch; } /* XXX: Workaround bug 1350037. */
 x { display:block; width:16px; height:16px; }
 t { display:block; width:6px; height:6px; }
 
@@ -79,7 +78,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r"><table cellpadding=0 cellspacing=0 class="wfill an"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r"><table cellpadding=0 cellspacing=0 class="an mxw2"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--min-height:20px--></pre>
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="wfill mh20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="mh20 mxw10"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="end mh20 w8" style="margin-top:0"><caption><x></x></caption><td><t></t></td></table></div>
@@ -90,7 +89,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="wfill mh20" style="margin-top:0"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="wfill mh20" style="margin-top:0"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--min-height:0--></pre>
 <div class="grid r r26"><table cellpadding=0 cellspacing=0 class="wfill mh0"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r26"><table cellpadding=0 cellspacing=0 class="mh0 mxw10"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r26"><table cellpadding=0 cellspacing=0 class="sa mh0"><caption><x></x></caption><td><t></t></td></table></div>
@@ -100,7 +99,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r r26"><table cellpadding=0 cellspacing=0 class="wfill as mh0" style="margin-top:0"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r26"><table cellpadding=0 cellspacing=0 class="wfill an mh0" style="margin-top:0"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!----></pre>
 
 <div class="grid"><table cellpadding=0 cellspacing=0 class="hfill"><caption class="w6"><x></x></caption><td><t></t></td></table></div>
 <div class="grid"><table cellpadding=0 cellspacing=0 class="hfill mxw2"><caption class="w6"><x></x></caption><td><t></t></td></table></div>
@@ -115,7 +114,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid"><table cellpadding=0 cellspacing=0 class="an"><caption class="w6"><x></x></caption><td><t></t></td></table></div>
 <div class="grid"><table cellpadding=0 cellspacing=0 class="an mxw2"><caption class="w6"><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--min-width:20px--></pre>
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="hfill mw20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="mw20 mxh10"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="mw20" style="margin-top:6px"><caption><x></x></caption><td><t></t></td></table></div>
@@ -129,7 +128,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="an mw20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="an h8 mw20 mxh10"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--min-width:0--></pre>
 <div class="grid c18"><table cellpadding=0 cellspacing=0 class="hfill mw0"><caption><x></x></caption><td class="w20"><t></t></td></table></div>
 <div class="grid c18"><table cellpadding=0 cellspacing=0 class="mw0 mxh10"><caption><x></x></caption><td class="w20"><t></t></td></table></div>
 <div class="grid c18"><table cellpadding=0 cellspacing=0 class="mw0" style="margin-top:6px"><caption><x></x></caption><td><t></t></td></table></div>
@@ -143,7 +142,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid c18"><table cellpadding=0 cellspacing=0 class="mw0" style="margin-top:6px"><caption><x></x></caption><td class="w20"><t></t></td></table></div>
 <div class="grid c18"><table cellpadding=0 cellspacing=0 class="mw0" style="margin-top:6px"><caption><x></x></caption><td class="w20"><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--width:20px--></pre>
 
 <div class="grid r"><table cellpadding=0 cellspacing=0 class="w20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r"><table cellpadding=0 cellspacing=0 class="h8 w20 mxh10"><caption><x></x></caption><td><t></t></td></table></div>
@@ -154,7 +153,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r"><table cellpadding=0 cellspacing=0 class="an w20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r"><table cellpadding=0 cellspacing=0 class="an w20 mxh2"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--width:20px--></pre>
 
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="an w20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="an w20"><caption><x></x></caption><td><t></t></td></table></div>
@@ -169,7 +168,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="an w20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r32"><table cellpadding=0 cellspacing=0 class="h8 an w20 mxh10"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--height:20px--></pre>
 
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="wfill h20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="h20 mxw10"><caption><x></x></caption><td><t></t></td></table></div>
@@ -180,7 +179,7 @@ t { display:block; width:6px; height:6px; }
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="wfill h20"><caption><x></x></caption><td><t></t></td></table></div>
 <div class="grid r r2"><table cellpadding=0 cellspacing=0 class="h20 mxw10"><caption><x></x></caption><td><t></t></td></table></div>
 
-<pre></pre>
+<pre><!--height:20px--></pre>
 
 <div class="grid r38"><table cellpadding=0 cellspacing=0 class="h20"><caption class="w6"><x></x></caption><td><t></t></td></table></div>
 <div class="grid r38"><table cellpadding=0 cellspacing=0 class="h20 mxw2"><caption class="w6"><x></x></caption><td><t></t></td></table></div>
