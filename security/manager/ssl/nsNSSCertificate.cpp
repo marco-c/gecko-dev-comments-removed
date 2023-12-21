@@ -136,22 +136,6 @@ nsresult nsNSSCertificate::GetCertType(uint32_t* aCertType) {
 }
 
 NS_IMETHODIMP
-nsNSSCertificate::GetIsBuiltInRoot(bool* aIsBuiltInRoot) {
-  NS_ENSURE_ARG(aIsBuiltInRoot);
-
-  pkix::Input certInput;
-  pkix::Result rv = certInput.Init(mDER.Elements(), mDER.Length());
-  if (rv != pkix::Result::Success) {
-    return NS_ERROR_FAILURE;
-  }
-  rv = IsCertBuiltInRoot(certInput, *aIsBuiltInRoot);
-  if (rv != pkix::Result::Success) {
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsNSSCertificate::GetDbKey(nsACString& aDbKey) {
   static_assert(sizeof(uint64_t) == 8, "type size consistency check");
   static_assert(sizeof(uint32_t) == 4, "type size consistency check");
@@ -210,12 +194,6 @@ nsNSSCertificate::GetDisplayName(nsAString& aDisplayName) {
   UniquePORTString organizationalUnitName(CERT_GetOrgUnitName(&cert->subject));
   UniquePORTString organizationName(CERT_GetOrgName(&cert->subject));
 
-  bool isBuiltInRoot;
-  nsresult rv = GetIsBuiltInRoot(&isBuiltInRoot);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   
   
   
@@ -228,16 +206,15 @@ nsNSSCertificate::GetDisplayName(nsAString& aDisplayName) {
   
   
   nsAutoCString builtInRootNickname;
-  if (isBuiltInRoot) {
-    nsAutoCString fullNickname(cert->nickname);
-    int32_t index = fullNickname.Find(":");
-    if (index != kNotFound) {
-      
-      
-      
-      builtInRootNickname =
-          Substring(fullNickname, AssertedCast<uint32_t>(index + 1));
-    }
+  nsAutoCString fullNickname(cert->nickname);
+  static const nsLiteralCString kBuiltinObjectTokenPrefix =
+      "Builtin Object Token:"_ns;
+  if (StringBeginsWith(fullNickname, kBuiltinObjectTokenPrefix)) {
+    
+    
+    
+    builtInRootNickname =
+        Substring(fullNickname, kBuiltinObjectTokenPrefix.Length());
   }
   const char* nameOptions[] = {builtInRootNickname.get(),
                                commonName.get(),
