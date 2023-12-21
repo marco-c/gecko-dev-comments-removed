@@ -151,6 +151,7 @@ class RenderCompositorANGLE : public RenderCompositor {
   bool mFullRender = false;
   
   bool mDisablingNativeCompositor = false;
+  bool mFirstPresent = true;
 };
 
 }  
