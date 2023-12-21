@@ -9311,8 +9311,7 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
   
   
   
-  const auto* display = StyleDisplay();
-  if (display->IsContainLayout() || display->IsContainPaint()) {
+  if (ShouldInhibitSubgridDueToIFC(this)) {
     return bits;
   }
 
@@ -9325,8 +9324,7 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
     
     
     
-    const auto* parentDisplay = parent->StyleDisplay();
-    if (parentDisplay->IsContainLayout() || parentDisplay->IsContainPaint()) {
+    if (ShouldInhibitSubgridDueToIFC(parent)) {
       return bits;
     }
     outerFrame = parent;
@@ -9961,6 +9959,16 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
                              : pos->UsedAlignSelf(Style())._0;
   return alignment == StyleAlignFlags::NORMAL ||
          alignment == StyleAlignFlags::STRETCH;
+}
+
+bool nsGridContainerFrame::ShouldInhibitSubgridDueToIFC(
+    const nsIFrame* aFrame) {
+  
+  
+  
+  
+  const auto* display = aFrame->StyleDisplay();
+  return display->IsContainLayout() || display->IsContainPaint();
 }
 
 nsGridContainerFrame* nsGridContainerFrame::GetGridContainerFrame(

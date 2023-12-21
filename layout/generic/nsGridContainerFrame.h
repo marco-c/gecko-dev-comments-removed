@@ -272,6 +272,19 @@ class nsGridContainerFrame final : public nsContainerFrame,
 
 
 
+
+
+
+
+
+
+
+  static bool ShouldInhibitSubgridDueToIFC(const nsIFrame* aFrame);
+
+  
+
+
+
   static nsGridContainerFrame* GetGridContainerFrame(nsIFrame* aFrame);
 
   
