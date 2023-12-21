@@ -57,9 +57,6 @@ const { AppUiTestDelegate, AppUiTestInternals } = ChromeUtils.importESModule(
 const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
-const { ClientEnvironmentBase } = ChromeUtils.importESModule(
-  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
-);
 
 ChromeUtils.defineESModuleGetters(this, {
   Management: "resource://gre/modules/Extension.sys.mjs",
@@ -984,22 +981,6 @@ async function getIncognitoWindow(url = "about:privatebrowsing") {
   let details = await data;
   await windowWatcher.unload();
   return { win, details };
-}
-
-
-
-
-
-
-
-
-
-function backgroundColorSetOnRoot() {
-  const os = ClientEnvironmentBase.os;
-  if (!os.isWindows) {
-    return false;
-  }
-  return os.windowsVersion < 10;
 }
 
 function getScreenAt(left, top, width, height) {

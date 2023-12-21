@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { ClientEnvironmentBase } = ChromeUtils.importESModule(
-  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
-);
-
 const BACKGROUND =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0" +
   "DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
@@ -104,22 +100,6 @@ function testBorderColor(element, expected) {
 
 function loadTestSubscript(filePath) {
   Services.scriptloader.loadSubScript(new URL(filePath, gTestPath).href, this);
-}
-
-
-
-
-
-
-
-
-
-function backgroundColorSetOnRoot() {
-  const os = ClientEnvironmentBase.os;
-  if (!os.isWindows) {
-    return false;
-  }
-  return os.windowsVersion < 10;
 }
 
 
