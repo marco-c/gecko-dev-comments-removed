@@ -16,6 +16,7 @@
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/HelpersSkia.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PathSkia.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/layers/CanvasRenderer.h"
@@ -2101,7 +2102,8 @@ bool SharedContextWebgl::DrawRectAccel(
     const Rect& aRect, const Pattern& aPattern, const DrawOptions& aOptions,
     Maybe<DeviceColor> aMaskColor, RefPtr<TextureHandle>* aHandle,
     bool aTransformed, bool aClipped, bool aAccelOnly, bool aForceUpdate,
-    const StrokeOptions* aStrokeOptions, const PathVertexRange* aVertexRange) {
+    const StrokeOptions* aStrokeOptions, const PathVertexRange* aVertexRange,
+    const Matrix* aRectXform) {
   
   if (aRect.IsEmpty() || mClipRect.IsEmpty()) {
     return true;
@@ -2123,13 +2125,19 @@ bool SharedContextWebgl::DrawRectAccel(
   }
 
   const Matrix& currentTransform = mCurrentTarget->GetTransform();
+  
+  
+  Matrix rectXform = currentTransform;
+  if (aRectXform) {
+    rectXform.PreMultiply(*aRectXform);
+  }
 
   if (aOptions.mCompositionOp == CompositionOp::OP_SOURCE && aTransformed &&
       aClipped &&
-      (HasClipMask() || !currentTransform.PreservesAxisAlignedRectangles() ||
-       !currentTransform.TransformBounds(aRect).Contains(Rect(mClipAARect)) ||
+      (HasClipMask() || !rectXform.PreservesAxisAlignedRectangles() ||
+       !rectXform.TransformBounds(aRect).Contains(Rect(mClipAARect)) ||
        (aPattern.GetType() == PatternType::SURFACE &&
-        !IsAlignedRect(aTransformed, currentTransform, aRect)))) {
+        !IsAlignedRect(aTransformed, rectXform, aRect)))) {
     
     return DrawRectAccel(Rect(mClipRect), ColorPattern(DeviceColor(0, 0, 0, 0)),
                          DrawOptions(1.0f, CompositionOp::OP_SOURCE,
@@ -2139,8 +2147,8 @@ bool SharedContextWebgl::DrawRectAccel(
                          DrawOptions(aOptions.mAlpha, CompositionOp::OP_ADD,
                                      aOptions.mAntialiasMode),
                          aMaskColor, aHandle, aTransformed, aClipped,
-                         aAccelOnly, aForceUpdate, aStrokeOptions,
-                         aVertexRange);
+                         aAccelOnly, aForceUpdate, aStrokeOptions, aVertexRange,
+                         aRectXform);
   }
   if (aOptions.mCompositionOp == CompositionOp::OP_CLEAR &&
       aPattern.GetType() == PatternType::SURFACE && !aMaskColor) {
@@ -2148,7 +2156,8 @@ bool SharedContextWebgl::DrawRectAccel(
     
     return DrawRectAccel(aRect, ColorPattern(DeviceColor(1, 1, 1, 1)), aOptions,
                          Nothing(), aHandle, aTransformed, aClipped, aAccelOnly,
-                         aForceUpdate, aStrokeOptions, aVertexRange);
+                         aForceUpdate, aStrokeOptions, aVertexRange,
+                         aRectXform);
   }
 
   
@@ -2179,7 +2188,7 @@ bool SharedContextWebgl::DrawRectAccel(
         
         
         if (Maybe<IntRect> intRect =
-                IsAlignedRect(aTransformed, currentTransform, aRect)) {
+                IsAlignedRect(aTransformed, rectXform, aRect)) {
           
           
           if (intRect->Area() >=
@@ -2237,7 +2246,7 @@ bool SharedContextWebgl::DrawRectAccel(
       Array<float, 4> colorData = {color.b, color.g, color.r, color.a};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
-        xform *= currentTransform;
+        xform *= rectXform;
       }
       Array<float, 6> xformData = {xform._11, xform._12, xform._21,
                                    xform._22, xform._31, xform._32};
@@ -2308,6 +2317,11 @@ bool SharedContextWebgl::DrawRectAccel(
       }
       if (!invMatrix.Invert()) {
         break;
+      }
+      if (aRectXform) {
+        
+        
+        invMatrix.PreMultiply(*aRectXform);
       }
 
       RefPtr<WebGLTexture> tex;
@@ -2405,7 +2419,7 @@ bool SharedContextWebgl::DrawRectAccel(
       Array<float, 1> swizzleData = {format == SurfaceFormat::A8 ? 1.0f : 0.0f};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
-        xform *= currentTransform;
+        xform *= rectXform;
       }
       Array<float, 6> xformData = {xform._11, xform._12, xform._21,
                                    xform._22, xform._31, xform._32};
@@ -2787,6 +2801,12 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   }
 
   DrawPath(aPath, aPattern, aOptions);
+}
+
+void DrawTargetWebgl::FillCircle(const Point& aOrigin, float aRadius,
+                                 const Pattern& aPattern,
+                                 const DrawOptions& aOptions) {
+  DrawCircle(aOrigin, aRadius, aPattern, aOptions);
 }
 
 QuantizedPath::QuantizedPath(const WGR::Path& aPath) : mPath(aPath) {}
@@ -3195,12 +3215,19 @@ already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
 bool SharedContextWebgl::DrawPathAccel(
     const Path* aPath, const Pattern& aPattern, const DrawOptions& aOptions,
     const StrokeOptions* aStrokeOptions, bool aAllowStrokeAlpha,
-    const ShadowOptions* aShadow, bool aCacheable) {
+    const ShadowOptions* aShadow, bool aCacheable, const Matrix* aPathXform) {
   
   
   const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
   const Matrix& currentTransform = mCurrentTarget->GetTransform();
-  Rect bounds = pathSkia->GetFastBounds(currentTransform, aStrokeOptions);
+  Matrix pathXform = currentTransform;
+  
+  
+  
+  if (aPathXform) {
+    pathXform.PreMultiply(*aPathXform);
+  }
+  Rect bounds = pathSkia->GetFastBounds(pathXform, aStrokeOptions);
   
   if (bounds.IsEmpty()) {
     return true;
@@ -3248,7 +3275,7 @@ bool SharedContextWebgl::DrawPathAccel(
     
     
     Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-        mWGRPathBuilder, pathSkia->GetPath(), quantBounds, currentTransform);
+        mWGRPathBuilder, pathSkia->GetPath(), quantBounds, pathXform);
     if (!qp) {
       return false;
     }
@@ -3344,13 +3371,13 @@ bool SharedContextWebgl::DrawPathAccel(
           cullRect = Some(invRect);
         }
         SkPath fillPath;
-        if (pathSkia->GetFillPath(*aStrokeOptions, currentTransform, fillPath,
+        if (pathSkia->GetFillPath(*aStrokeOptions, pathXform, fillPath,
                                   cullRect)) {
           
           
           
           if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-                  mWGRPathBuilder, fillPath, quantBounds, currentTransform)) {
+                  mWGRPathBuilder, fillPath, quantBounds, pathXform)) {
             wgrVB = GeneratePathVertexBuffer(
                 *qp, IntRect(-intBounds.TopLeft(), mViewportSize),
                 mRasterizationTruncates, outputBuffer, outputBufferCapacity);
@@ -3468,7 +3495,6 @@ bool SharedContextWebgl::DrawPathAccel(
       
       offset += aShadow->mOffset;
     }
-    pathDT->SetTransform(currentTransform * Matrix::Translation(offset));
     DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
                             aOptions.mAntialiasMode);
     static const ColorPattern maskPattern(DeviceColor(1.0f, 1.0f, 1.0f, 1.0f));
@@ -3476,10 +3502,26 @@ bool SharedContextWebgl::DrawPathAccel(
     
     
     DrawTargetWebgl* oldTarget = mCurrentTarget;
-    if (aStrokeOptions) {
-      pathDT->Stroke(aPath, cachePattern, *aStrokeOptions, drawOptions);
-    } else {
-      pathDT->Fill(aPath, cachePattern, drawOptions);
+    {
+      RefPtr<const Path> path;
+      if (color || !aPathXform) {
+        
+        
+        path = aPath;
+        pathDT->SetTransform(pathXform * Matrix::Translation(offset));
+      } else {
+        
+        
+        RefPtr<PathBuilder> builder =
+            aPath->TransformedCopyToBuilder(*aPathXform);
+        path = builder->Finish();
+        pathDT->SetTransform(currentTransform * Matrix::Translation(offset));
+      }
+      if (aStrokeOptions) {
+        pathDT->Stroke(path, cachePattern, *aStrokeOptions, drawOptions);
+      } else {
+        pathDT->Fill(path, cachePattern, drawOptions);
+      }
     }
     if (aShadow && aShadow->mSigma > 0.0f) {
       
@@ -3542,6 +3584,34 @@ void DrawTargetWebgl::DrawPath(const Path* aPath, const Pattern& aPattern,
     mSkia->Stroke(aPath, aPattern, *aStrokeOptions, aOptions);
   } else {
     mSkia->Fill(aPath, aPattern, aOptions);
+  }
+}
+
+
+
+void DrawTargetWebgl::DrawCircle(const Point& aOrigin, float aRadius,
+                                 const Pattern& aPattern,
+                                 const DrawOptions& aOptions,
+                                 const StrokeOptions* aStrokeOptions) {
+  if (ShouldAccelPath(aOptions, aStrokeOptions)) {
+    
+    if (!mUnitCirclePath) {
+      mUnitCirclePath = MakePathForCircle(*this, Point(0, 0), 1);
+    }
+    
+    Matrix circleXform(aRadius, 0, 0, aRadius, aOrigin.x, aOrigin.y);
+    if (mSharedContext->DrawPathAccel(mUnitCirclePath, aPattern, aOptions,
+                                      aStrokeOptions, true, nullptr, true,
+                                      &circleXform)) {
+      return;
+    }
+  }
+
+  MarkSkiaChanged(aOptions);
+  if (aStrokeOptions) {
+    mSkia->StrokeCircle(aOrigin, aRadius, aPattern, *aStrokeOptions, aOptions);
+  } else {
+    mSkia->FillCircle(aOrigin, aRadius, aPattern, aOptions);
   }
 }
 
@@ -3750,10 +3820,10 @@ bool DrawTargetWebgl::StrokeLineAccel(const Point& aStart, const Point& aEnd,
     }
     Matrix lineXform(dirX.x, dirX.y, dirY.x, dirY.y, start.x - 0.5f * dirY.x,
                      start.y - 0.5f * dirY.y);
-    AutoRestoreTransform restore(this);
-    ConcatTransform(lineXform);
-    if (DrawRect(Rect(0, 0, 1, 1), aPattern, aOptions, Nothing(), nullptr, true,
-                 true, true)) {
+    if (PrepareContext() &&
+        mSharedContext->DrawRectAccel(Rect(0, 0, 1, 1), aPattern, aOptions,
+                                      Nothing(), nullptr, true, true, true,
+                                      false, nullptr, nullptr, &lineXform)) {
       return true;
     }
   }
@@ -3818,6 +3888,13 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
   }
 
   DrawPath(aPath, aPattern, aOptions, &aStrokeOptions, allowStrokeAlpha);
+}
+
+void DrawTargetWebgl::StrokeCircle(const Point& aOrigin, float aRadius,
+                                   const Pattern& aPattern,
+                                   const StrokeOptions& aStrokeOptions,
+                                   const DrawOptions& aOptions) {
+  DrawCircle(aOrigin, aRadius, aPattern, aOptions, &aStrokeOptions);
 }
 
 bool DrawTargetWebgl::ShouldUseSubpixelAA(ScaledFont* aFont,
