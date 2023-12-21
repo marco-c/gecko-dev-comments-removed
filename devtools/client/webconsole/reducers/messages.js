@@ -1436,7 +1436,9 @@ function passSearchFilters(message, filters) {
     
     isTextInNotes(matchStr, message.notes) ||
     
-    isTextInPrefix(matchStr, message.prefix);
+    isTextInPrefix(matchStr, message.prefix) ||
+    
+    isTextInDisplayName(matchStr, message.displayName);
 
   return matched ? !exclude : exclude;
 }
@@ -1561,6 +1563,13 @@ function isTextInMessageText(matchStr, messageText) {
   }
 
   return true;
+}
+
+
+
+
+function isTextInDisplayName(matchStr, displayName) {
+  return displayName && matchStr(displayName);
 }
 
 
