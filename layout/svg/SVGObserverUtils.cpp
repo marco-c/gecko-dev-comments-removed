@@ -98,6 +98,40 @@ class URLAndReferrerInfoHashKey : public PLDHashEntryHdr {
   RefPtr<const URLAndReferrerInfo> mKey;
 };
 
+
+
+
+
+
+
+
+
+
+static already_AddRefed<nsIURI> GetBaseURLForLocalRef(nsIContent* content,
+                                                      nsIURI* aURI) {
+  MOZ_ASSERT(content);
+
+  
+  
+  
+  
+  
+  
+  if (SVGUseElement* use = content->GetContainingSVGUseShadowHost()) {
+    if (nsIURI* originalURI = use->GetSourceDocURI()) {
+      bool isEqualsExceptRef = false;
+      aURI->EqualsExceptRef(originalURI, &isEqualsExceptRef);
+      if (isEqualsExceptRef) {
+        return do_AddRef(originalURI);
+      }
+    }
+  }
+
+  
+  
+  return do_AddRef(content->OwnerDoc()->GetDocumentURI());
+}
+
 static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
     nsIFrame* aFrame, const StyleComputedImageUrl& aURL) {
   MOZ_ASSERT(aFrame);
@@ -105,7 +139,7 @@ static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
   nsCOMPtr<nsIURI> uri = aURL.GetURI();
 
   if (aURL.IsLocalRef()) {
-    uri = SVGObserverUtils::GetBaseURLForLocalRef(aFrame->GetContent(), uri);
+    uri = GetBaseURLForLocalRef(aFrame->GetContent(), uri);
     uri = aURL.ResolveLocalRef(uri);
   }
 
@@ -113,14 +147,11 @@ static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
     return nullptr;
   }
 
-  RefPtr<URLAndReferrerInfo> info =
-      new URLAndReferrerInfo(uri, aURL.ExtraData());
-  return info.forget();
+  return do_AddRef(new URLAndReferrerInfo(uri, aURL.ExtraData()));
 }
 
 static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
-    nsIContent* aContent, const nsAString& aURL,
-    nsIReferrerInfo* aReferrerInfo) {
+    nsIContent* aContent, const nsAString& aURL) {
   
   
   
@@ -148,15 +179,12 @@ static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
     return nullptr;
   }
 
-  RefPtr<URLAndReferrerInfo> info = new URLAndReferrerInfo(uri, aReferrerInfo);
-  return info.forget();
-}
+  
+  
+  nsIReferrerInfo* referrerInfo =
+      aContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
 
-static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
-    nsIFrame* aFrame, const nsAString& aURL, nsIReferrerInfo* aReferrerInfo) {
-  MOZ_ASSERT(aFrame);
-
-  return ResolveURLUsingLocalRef(aFrame->GetContent(), aURL, aReferrerInfo);
+  return do_AddRef(new URLAndReferrerInfo(uri, referrerInfo));
 }
 
 class SVGFilterObserverList;
@@ -1542,12 +1570,7 @@ SVGGeometryElement* SVGObserverUtils::GetAndObserveTextPathsPath(
       return nullptr;  
     }
 
-    
-    
-    nsIReferrerInfo* referrerInfo =
-        content->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-    RefPtr<URLAndReferrerInfo> target =
-        ResolveURLUsingLocalRef(aTextPathFrame, href, referrerInfo);
+    RefPtr<URLAndReferrerInfo> target = ResolveURLUsingLocalRef(content, href);
 
     property =
         GetEffectProperty(target, aTextPathFrame, HrefAsTextPathProperty());
@@ -1569,12 +1592,8 @@ SVGGeometryElement* SVGObserverUtils::GetAndObserveMPathsPath(
       return nullptr;  
     }
 
-    nsIReferrerInfo* referrerInfo =
-        aSVGMPathElement->OwnerDoc()
-            ->ReferrerInfoForInternalCSSAndSVGResources();
-
     RefPtr<URLAndReferrerInfo> target =
-        ResolveURLUsingLocalRef(aSVGMPathElement, href, referrerInfo);
+        ResolveURLUsingLocalRef(aSVGMPathElement, href);
 
     aSVGMPathElement->mMPathObserver =
         new SVGMPathObserver(target, aSVGMPathElement);
@@ -1622,28 +1641,10 @@ nsIFrame* SVGObserverUtils::GetAndObserveTemplate(
       return nullptr;  
     }
 
-    
-    nsIContent* content = aFrame->GetContent();
+    RefPtr<URLAndReferrerInfo> info =
+        ResolveURLUsingLocalRef(aFrame->GetContent(), href);
 
-    nsCOMPtr<nsIURI> baseURI = content->GetBaseURI();
-    if (nsContentUtils::IsLocalRefURL(href)) {
-      baseURI = GetBaseURLForLocalRef(content, baseURI);
-    }
-    nsCOMPtr<nsIURI> targetURI;
-    nsContentUtils::NewURIWithDocumentCharset(
-        getter_AddRefs(targetURI), href, content->GetUncomposedDoc(), baseURI);
-    if (!targetURI) {
-      return nullptr;
-    }
-
-    
-    
-    nsIReferrerInfo* referrerInfo =
-        content->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-    RefPtr<URLAndReferrerInfo> target =
-        new URLAndReferrerInfo(targetURI, referrerInfo);
-
-    observer = GetEffectProperty(target, aFrame, HrefToTemplateProperty());
+    observer = GetEffectProperty(info, aFrame, HrefToTemplateProperty());
   }
 
   return observer ? observer->GetAndObserveReferencedFrame() : nullptr;
@@ -1866,31 +1867,6 @@ void SVGObserverUtils::InvalidateDirectRenderingObservers(
   if (auto* element = Element::FromNodeOrNull(aFrame->GetContent())) {
     InvalidateDirectRenderingObservers(element, aFlags);
   }
-}
-
-already_AddRefed<nsIURI> SVGObserverUtils::GetBaseURLForLocalRef(
-    nsIContent* content, nsIURI* aDocURI) {
-  MOZ_ASSERT(content);
-
-  
-  
-  
-  
-  
-  
-  if (SVGUseElement* use = content->GetContainingSVGUseShadowHost()) {
-    if (nsIURI* originalURI = use->GetSourceDocURI()) {
-      bool isEqualsExceptRef = false;
-      aDocURI->EqualsExceptRef(originalURI, &isEqualsExceptRef);
-      if (isEqualsExceptRef) {
-        return do_AddRef(originalURI);
-      }
-    }
-  }
-
-  
-  
-  return do_AddRef(content->OwnerDoc()->GetDocumentURI());
 }
 
 }  

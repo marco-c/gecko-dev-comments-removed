@@ -432,18 +432,6 @@ class SVGObserverUtils {
 
 
   static Element* GetAndObserveBackgroundClip(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-
-
-  static already_AddRefed<nsIURI> GetBaseURLForLocalRef(nsIContent* aContent,
-                                                        nsIURI* aDocURI);
 };
 
 }  
