@@ -69,6 +69,9 @@ public class TranslationsController {
     private static final String SET_SPECIFIED_SITE_SETTINGS_EVENT =
         "GeckoView:Translations:SetNeverTranslateSpecifiedSite";
 
+    private static final String GET_TRANSLATE_PAIR_DOWNLOAD_SIZE =
+        "GeckoView:Translations:GetTranslateDownloadSize";
+
     
 
 
@@ -187,14 +190,22 @@ public class TranslationsController {
 
 
 
-
     @AnyThread
     public static @NonNull GeckoResult<Long> checkPairDownloadSize(
         @NonNull final String fromLanguage, @NonNull final String toLanguage) {
-      final GeckoResult<Long> result = new GeckoResult<>();
-      result.completeExceptionally(
-          new UnsupportedOperationException("Will be implemented in Bug 1854691."));
-      return result;
+      if (DEBUG) {
+        Log.d(LOGTAG, "Requesting information on the language pair download size.");
+      }
+      final GeckoBundle bundle = new GeckoBundle(2);
+      bundle.putString("fromLanguage", fromLanguage);
+      bundle.putString("toLanguage", toLanguage);
+
+      return EventDispatcher.getInstance()
+          .queryBundle(GET_TRANSLATE_PAIR_DOWNLOAD_SIZE, bundle)
+          .map(
+              resultBundle -> {
+                return resultBundle.getLong("bytes", 0L);
+              });
     }
 
     
@@ -718,8 +729,6 @@ public class TranslationsController {
 
 
 
-
-
     @AnyThread
     public @NonNull GeckoResult<Void> translate(
         @NonNull final String fromLanguage,
@@ -735,20 +744,32 @@ public class TranslationsController {
                 + " options: "
                 + options);
       }
-      final GeckoBundle bundle = new GeckoBundle(2);
-      bundle.putString("fromLanguage", fromLanguage);
-      bundle.putString("toLanguage", toLanguage);
-      
-      return mSession
-          .getEventDispatcher()
-          .queryVoid(TRANSLATE_EVENT, bundle)
-          .map(
-              result -> result,
-              exception ->
-                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE));
+
+      if (options != null && options.downloadModel == false) {
+        final var translateResult = new GeckoResult<Void>();
+        TranslationsController.RuntimeTranslation.checkPairDownloadSize(fromLanguage, toLanguage)
+            .then(
+                (GeckoResult.OnValueListener<Long, Void>)
+                    downloadBytes -> {
+                      if (downloadBytes > 0) {
+                        translateResult.completeExceptionally(
+                            new TranslationsException(
+                                TranslationsException.ERROR_MODEL_DOWNLOAD_REQUIRED));
+                      } else {
+                        
+                        translateResult.completeFrom(this.baseTranslate(fromLanguage, toLanguage));
+                      }
+                      return null;
+                    });
+        return translateResult;
+      }
+
+      return this.baseTranslate(fromLanguage, toLanguage);
     }
 
     
+
+
 
 
 
@@ -761,6 +782,32 @@ public class TranslationsController {
         @NonNull final TranslationPair translationPair,
         @Nullable final TranslationOptions options) {
       return translate(translationPair.fromLanguage, translationPair.toLanguage, options);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    private @NonNull GeckoResult<Void> baseTranslate(
+        @NonNull final String fromLanguage, @NonNull final String toLanguage) {
+
+      final GeckoBundle bundle = new GeckoBundle(2);
+      bundle.putString("fromLanguage", fromLanguage);
+      bundle.putString("toLanguage", toLanguage);
+      return mSession
+          .getEventDispatcher()
+          .queryVoid(TRANSLATE_EVENT, bundle)
+          .map(
+              result -> result,
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE));
     }
 
     
@@ -815,7 +862,6 @@ public class TranslationsController {
     }
 
     
-
 
 
 
@@ -1281,6 +1327,9 @@ public class TranslationsController {
     public static final int ERROR_MODEL_LANGUAGE_REQUIRED = -10;
 
     
+    public static final int ERROR_MODEL_DOWNLOAD_REQUIRED = -11;
+
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         value = {
@@ -1294,6 +1343,7 @@ public class TranslationsController {
           ERROR_MODEL_COULD_NOT_DELETE,
           ERROR_MODEL_COULD_NOT_DOWNLOAD,
           ERROR_MODEL_LANGUAGE_REQUIRED,
+          ERROR_MODEL_DOWNLOAD_REQUIRED
         })
     public @interface Code {}
 

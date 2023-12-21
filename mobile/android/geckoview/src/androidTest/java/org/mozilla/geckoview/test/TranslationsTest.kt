@@ -31,6 +31,7 @@ import org.mozilla.geckoview.TranslationsController.SessionTranslation.Translati
 import org.mozilla.geckoview.TranslationsController.TranslationsException
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_COULD_NOT_DELETE
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_COULD_NOT_DOWNLOAD
+import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_DOWNLOAD_REQUIRED
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_LANGUAGE_REQUIRED
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 
@@ -148,12 +149,62 @@ class TranslationsTest : BaseSessionTest() {
     fun simpleTranslateTest() {
         mainSession.loadTestPath(TRANSLATIONS_EN)
         mainSession.waitForPageStop()
+        
         val translate = sessionRule.session.sessionTranslation!!.translate("en", "es", null)
         try {
             sessionRule.waitForResult(translate)
-            assertTrue("Translate should complete", true)
+            assertTrue("Translate should complete.", true)
         } catch (e: Exception) {
             assertTrue("Should not have an exception while translating.", false)
+        }
+
+        
+        var options = TranslationOptions.Builder().downloadModel(true).build()
+        val translateOptions = sessionRule.session.sessionTranslation!!.translate("en", "es", options)
+        try {
+            sessionRule.waitForResult(translateOptions)
+            assertTrue("Translate should complete with options.", true)
+        } catch (e: Exception) {
+            assertTrue("Should not have an exception while translating with options.", false)
+        }
+
+        
+        val longLanguageTag = sessionRule.session.sessionTranslation!!.translate("EN", "ES", null)
+        try {
+            sessionRule.waitForResult(longLanguageTag)
+            assertTrue("Translate should complete with longer language tag.", true)
+        } catch (e: Exception) {
+            assertTrue("Should not have an exception while translating with a longer language tag.", false)
+        }
+    }
+
+    @Test
+    fun simpleTranslateFailureTest() {
+        
+        mainSession.loadTestPath(TRANSLATIONS_EN)
+        mainSession.waitForPageStop()
+
+        
+        if (!sessionRule.env.isAutomation) {
+            val allDeleteAttempt = ModelManagementOptions.Builder()
+                .operation(DELETE)
+                .operationLevel(ALL)
+                .build()
+            sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(allDeleteAttempt))
+        }
+
+        var options = TranslationOptions.Builder().downloadModel(false).build()
+        val translate = sessionRule.session.sessionTranslation!!.translate("en", "es", options)
+        try {
+            sessionRule.waitForResult(translate)
+            assertTrue("Translate should not complete", false)
+        } catch (e: RuntimeException) {
+            
+            val te = e.cause as TranslationsException
+            assertTrue(
+                "Correctly rejected performing a download for a translation.",
+                te.code == ERROR_MODEL_DOWNLOAD_REQUIRED,
+            )
         }
     }
 
@@ -194,6 +245,21 @@ class TranslationsTest : BaseSessionTest() {
         try {
             sessionRule.waitForResult(translate)
             assertTrue("Should be able to translate.", true)
+        } catch (e: Exception) {
+            assertTrue("Should not have an exception.", false)
+        }
+    }
+
+    @Test
+    fun checkPairDownloadSizeTest() {
+        
+        val size = RuntimeTranslation.checkPairDownloadSize("es", "en")
+        try {
+            val result = sessionRule.waitForResult(size)
+            assertTrue("Should return a download size.", true)
+            if (sessionRule.env.isAutomation) {
+                assertTrue("Received mocked value of 1234567.", result == 1234567L)
+            }
         } catch (e: Exception) {
             assertTrue("Should not have an exception.", false)
         }
