@@ -80,7 +80,12 @@ enum class ObjectFlag : uint16_t {
   
   
   
-  NeedsProxyGetSetResultValidation = 1 << 13
+  NeedsProxyGetSetResultValidation = 1 << 13,
+
+  
+  
+  HasFuseProperty = 1 << 14,
+
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;
