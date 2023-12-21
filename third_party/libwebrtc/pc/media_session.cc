@@ -2341,7 +2341,14 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
     
     if (current_content && !current_content->rejected &&
         current_content->name == media_description_options.mid) {
-      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
+      if (!IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO)) {
+        
+        
+        RTC_LOG(LS_ERROR) << "Media type for content with mid='"
+                          << current_content->name
+                          << "' does not match previous type.";
+        return false;
+      }
       const AudioContentDescription* acd =
           current_content->media_description()->as_audio();
       for (const AudioCodec& codec : acd->codecs()) {
@@ -2434,7 +2441,15 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     
     if (current_content && !current_content->rejected &&
         current_content->name == media_description_options.mid) {
-      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
+      if (!IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO)) {
+        
+        
+        RTC_LOG(LS_ERROR) << "Media type for content with mid='"
+                          << current_content->name
+                          << "' does not match previous type.";
+        return false;
+      }
+
       const VideoContentDescription* vcd =
           current_content->media_description()->as_video();
       for (const VideoCodec& codec : vcd->codecs()) {
@@ -2645,7 +2660,13 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     
     if (current_content && !current_content->rejected &&
         current_content->name == media_description_options.mid) {
-      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
+      if (!IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO)) {
+        
+        RTC_LOG(LS_ERROR) << "Media type for content with mid='"
+                          << current_content->name
+                          << "' does not match previous type.";
+        return false;
+      }
       const AudioContentDescription* acd =
           current_content->media_description()->as_audio();
       for (const AudioCodec& codec : acd->codecs()) {
@@ -2770,7 +2791,13 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     
     if (current_content && !current_content->rejected &&
         current_content->name == media_description_options.mid) {
-      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
+      if (!IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO)) {
+        
+        RTC_LOG(LS_ERROR) << "Media type for content with mid='"
+                          << current_content->name
+                          << "' does not match previous type.";
+        return false;
+      }
       const VideoContentDescription* vcd =
           current_content->media_description()->as_video();
       for (const VideoCodec& codec : vcd->codecs()) {
