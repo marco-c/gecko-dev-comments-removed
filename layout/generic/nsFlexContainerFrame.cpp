@@ -6070,6 +6070,11 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     if (!aReflowInput.IsInFragmentedContext()) {
       return false;
     }
+    if (aItem.Frame()->IsReplaced()) {
+      
+      
+      return false;
+    }
     if (aItem.HasAspectRatio()) {
       
       
