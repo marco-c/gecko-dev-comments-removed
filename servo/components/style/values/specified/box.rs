@@ -1649,6 +1649,12 @@ pub enum Appearance {
     MozMacHelpButton,
 
     
+    
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozMacUnifiedToolbarWindow,
+
+    
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozWindowButtonBox,
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
