@@ -8,8 +8,8 @@
 
 
 
-#ifndef PC_SDP_SERIALIZER_H_
-#define PC_SDP_SERIALIZER_H_
+#ifndef PC_SIMULCAST_SDP_SERIALIZER_H_
+#define PC_SIMULCAST_SDP_SERIALIZER_H_
 
 #include <string>
 
@@ -33,7 +33,7 @@ namespace webrtc {
 
 
 
-class SdpSerializer {
+class SimulcastSdpSerializer {
  public:
   
   
