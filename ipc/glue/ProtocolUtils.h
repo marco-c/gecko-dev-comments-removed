@@ -309,13 +309,17 @@ class IProtocol : public HasResultCodes {
 
   
   
-  virtual void ActorAlloc() = 0;
+  virtual void ActorAlloc() {}
 
   
   
   
   
-  virtual void ActorDealloc() = 0;
+  virtual void ActorDealloc() {
+    if (Manager()) {
+      Manager()->DeallocManagee(mProtocolId, this);
+    }
+  }
 
   static const int32_t kNullActorId = 0;
   static const int32_t kFreedActorId = 1;

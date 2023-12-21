@@ -16,7 +16,7 @@ namespace gfx {
 
 
 
-[NeedsOtherPid, ParentProc=GPU, ChildProc=Parent]
+[NeedsOtherPid]
 sync protocol PVsyncBridge
 {
 parent:

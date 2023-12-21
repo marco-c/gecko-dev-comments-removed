@@ -21,7 +21,7 @@ namespace layers {
 
 
 
-[NeedsOtherPid, ParentProc=compositor, ChildProc=any]
+[NeedsOtherPid]
 sync protocol PVideoBridge
 {
   manages PTexture;

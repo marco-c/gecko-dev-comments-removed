@@ -59,7 +59,7 @@ union CompositorBridgeOptions {
 
 
 
-[NeedsOtherPid, ParentProc=compositor, ChildProc=anydom]
+[NeedsOtherPid]
 sync protocol PCompositorManager
 {
   manages PCompositorBridge;
