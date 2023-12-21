@@ -1,3 +1,5 @@
+from pathlib import Path
+
 
 
 
@@ -30,9 +32,10 @@ def main(request, response):
     elif error != b"no-allow-fledge":
         response.headers.set(b"Ad-Auction-Allowed", b"true")
 
-    body = b''
     if error == b"no-body":
-        return body
+        return b''
+
+    body = (Path(__file__).parent.resolve() / 'worklet-helpers.js').read_text().encode("ASCII")
     if error != b"no-generateBid":
         
         bid = (request.GET.first(b"bid", None) or b"9").decode("ASCII")
