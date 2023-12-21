@@ -863,10 +863,6 @@ void ContentAnalysis::DoAnalyzeRequest(
           
           
           
-          
-          
-          
-          
           auto acknowledgement = MakeRefPtr<ContentAnalysisAcknowledgement>(
               nsIContentAnalysisAcknowledgement::Result::eTooLate,
               nsIContentAnalysisAcknowledgement::FinalAction::eBlock);
@@ -944,37 +940,26 @@ ContentAnalysis::AnalyzeContentRequestCallback(
 
 NS_IMETHODIMP
 ContentAnalysis::CancelContentAnalysisRequest(const nsACString& aRequestToken) {
-  NS_DispatchToMainThread(NS_NewCancelableRunnableFunction(
-      "CancelContentAnalysisRequest",
-      [requestToken = nsCString{aRequestToken}]() {
-        RefPtr<ContentAnalysis> self = GetContentAnalysisFromService();
-        if (!self) {
-          
-          return;
-        }
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCString requestToken(aRequestToken);
 
-        auto callbackMap = self->mCallbackMap.Lock();
-        auto entry = callbackMap->Lookup(requestToken);
-        LOGD("Content analysis cancelling request %s", requestToken.get());
-        
-        if (entry && !entry->Canceled()) {
-          RefPtr<ContentAnalysisResponse> cancelResponse =
-              ContentAnalysisResponse::FromAction(
-                  nsIContentAnalysisResponse::Action::eCanceled, requestToken);
-          cancelResponse->SetOwner(self);
-          nsMainThreadPtrHandle<nsIContentAnalysisCallback> callbackHolder =
-              entry->TakeCallbackHolder();
-          entry->SetCanceled();
-          
-          MOZ_ASSERT(callbackHolder);
-          if (callbackHolder) {
-            callbackHolder->ContentResult(cancelResponse.get());
-          }
-        } else {
-          LOGD("Content analysis request not found when trying to cancel %s",
-               requestToken.get());
-        }
-      }));
+  auto callbackMap = mCallbackMap.Lock();
+  auto entry = callbackMap->Lookup(requestToken);
+  LOGD("Content analysis cancelling request %s", requestToken.get());
+  
+  if (entry && !entry->Canceled()) {
+    nsMainThreadPtrHandle<nsIContentAnalysisCallback> callbackHolder =
+        entry->TakeCallbackHolder();
+    entry->SetCanceled();
+    
+    MOZ_ASSERT(callbackHolder);
+    if (callbackHolder) {
+      callbackHolder->Error(NS_ERROR_ABORT);
+    }
+  } else {
+    LOGD("Content analysis request not found when trying to cancel %s",
+         requestToken.get());
+  }
   return NS_OK;
 }
 

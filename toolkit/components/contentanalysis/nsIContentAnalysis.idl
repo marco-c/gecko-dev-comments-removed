@@ -216,6 +216,7 @@ interface nsIContentAnalysis : nsISupports
 
 
 
+
   void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in bool aAutoAcknowledge, in nsIContentAnalysisCallback callback);
 
   
