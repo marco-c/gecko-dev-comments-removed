@@ -160,6 +160,22 @@ class AboutWelcomeTelemetry {
     if (event_context?.source) {
       Glean.messagingSystem.eventSource.set(event_context.source);
     }
+    if (event_context?.screen_family) {
+      Glean.messagingSystem.eventScreenFamily.set(event_context.screen_family);
+    }
+    
+    
+    if (Number.isInteger(event_context?.screen_index)) {
+      Glean.messagingSystem.eventScreenIndex.set(event_context.screen_index);
+    }
+    if (event_context?.screen_id) {
+      Glean.messagingSystem.eventScreenId.set(event_context.screen_id);
+    }
+    if (event_context?.screen_initials) {
+      Glean.messagingSystem.eventScreenInitials.set(
+        event_context.screen_initials
+      );
+    }
 
     
     if (event_context) {
