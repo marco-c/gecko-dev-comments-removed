@@ -149,6 +149,11 @@ class MFCDMService {
   
   static void GetAllKeySystemsCapabilities(dom::Promise* aPromise);
 
+  
+  
+  
+  static void UpdateWidevineL1Path(nsIFile* aFile);
+
  private:
   static RefPtr<GenericNonExclusivePromise> LaunchMFCDMProcessIfNeeded(
       ipc::SandboxingKind aSandbox);
