@@ -199,6 +199,12 @@ class AllocSite {
     return std::max(nurseryAllocCount, nurseryTenuredCount);
   }
 
+  
+  enum SiteResult { NoChange, WasPretenured, WasPretenuredAndInvalidated };
+  SiteResult processSite(GCRuntime* gc, bool reportInfo,
+                         size_t reportThreshold);
+  void processCatchAllSite(bool reportInfo, size_t reportThreshold);
+
   void updateStateOnMinorGC(double promotionRate);
 
   
@@ -350,12 +356,7 @@ class PretenuringNursery {
   void* addressOfAllocatedSites() { return &allocatedSites; }
 
  private:
-  void processSite(GCRuntime* gc, AllocSite* site, size_t& sitesActive,
-                   size_t& sitesPretenured, size_t& sitesInvalidated,
-                   bool reportInfo, size_t reportThreshold);
-  void processCatchAllSite(AllocSite* site, bool reportInfo,
-                           size_t reportThreshold);
-  void updateAllocCounts(AllocSite* site);
+  void updateTotalAllocCounts(AllocSite* site);
 };
 
 }  
