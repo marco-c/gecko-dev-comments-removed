@@ -110,6 +110,8 @@ rtclog2::FrameDecodedEvents::Codec ConvertToProtoFormat(VideoCodecType codec) {
     case VideoCodecType::kVideoCodecMultiplex:
       
       return rtclog2::FrameDecodedEvents::CODEC_UNKNOWN;
+    case VideoCodecType::kVideoCodecH265:
+      return rtclog2::FrameDecodedEvents::CODEC_H265;
   }
   RTC_DCHECK_NOTREACHED();
   return rtclog2::FrameDecodedEvents::CODEC_UNKNOWN;

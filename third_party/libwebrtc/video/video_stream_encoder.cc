@@ -135,7 +135,9 @@ bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
         return true;
       }
       break;
-
+    case kVideoCodecH265:
+      
+      [[fallthrough]];
     default:
       break;
   }
@@ -1351,6 +1353,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     
     num_layers = codec.simulcastStream[0].numberOfTemporalLayers;
   } else {
+    
     num_layers = 1;
   }
 

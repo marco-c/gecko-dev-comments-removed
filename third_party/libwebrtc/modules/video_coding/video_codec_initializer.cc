@@ -344,6 +344,9 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
                     kMaxTemporalStreams);
       break;
     }
+    case kVideoCodecH265:
+      
+      break;
     default:
       
       RTC_DCHECK(!config.encoder_specific_settings)

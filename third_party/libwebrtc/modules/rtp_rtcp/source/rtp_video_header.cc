@@ -59,6 +59,9 @@ VideoFrameMetadata RTPVideoHeader::GetAsMetadata() const {
       metadata.SetRTPVideoHeaderCodecSpecifics(
           absl::get<RTPVideoHeaderH264>(video_type_header));
       break;
+    case VideoCodecType::kVideoCodecH265:
+      
+      break;
     default:
       
       break;

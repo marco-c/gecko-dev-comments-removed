@@ -295,7 +295,9 @@ class TestVideoEncoderFactoryWrapper final {
           RTC_LOG(LS_WARNING) << "Failed to configure svc bitrates for av1.";
         }
         break;
-
+      case kVideoCodecH265:
+        
+        break;
       default:
         RTC_CHECK_NOTREACHED();
         break;
