@@ -61,6 +61,7 @@
 #include "mozJSModuleLoader.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "nsDocShell.h"
 #include "nsIException.h"
 #include "VsyncSource.h"
 
@@ -1895,13 +1896,28 @@ bool ChromeUtils::ShouldResistFingerprinting(
       MOZ_CRASH("Unhandled JSRFPTarget enum value");
   }
 
+  bool isPBM = false;
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  if (global) {
+    nsPIDOMWindowInner* win = global->GetAsInnerWindow();
+    if (win) {
+      nsIDocShell* docshell = win->GetDocShell();
+      if (docshell) {
+        nsDocShell::Cast(docshell)->GetUsePrivateBrowsing(&isPBM);
+      }
+    }
+  }
+
   Maybe<RFPTarget> overriddenFingerprintingSettings;
   if (!aOverriddenFingerprintingSettings.IsNull()) {
     overriddenFingerprintingSettings.emplace(
         RFPTarget(aOverriddenFingerprintingSettings.Value()));
   }
 
-  return nsRFPService::IsRFPEnabledFor(target,
+  
+  
+  
+  return nsRFPService::IsRFPEnabledFor(isPBM, target,
                                        overriddenFingerprintingSettings);
 }
 

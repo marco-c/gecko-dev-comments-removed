@@ -2820,6 +2820,8 @@ void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
   nsCOMPtr<nsIPrincipal> principal;
   nsCOMPtr<nsIPrincipal> partitionedPrincipal;
   if (aChannel) {
+    mIsInPrivateBrowsing = NS_UsePrivateBrowsing(aChannel);
+
     
     
     
@@ -2948,6 +2950,20 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   mChromeXHRDocBaseURI = nullptr;
 
   if (aLoadGroup) {
+    nsCOMPtr<nsIInterfaceRequestor> callbacks;
+    aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
+    if (callbacks) {
+      nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(callbacks);
+      if (loadContext) {
+        
+        
+        
+        
+        
+        mIsInPrivateBrowsing = loadContext->UsePrivateBrowsing();
+      }
+    }
+
     mDocumentLoadGroup = do_GetWeakReference(aLoadGroup);
     
     
@@ -16317,7 +16333,7 @@ bool Document::RecomputeResistFingerprinting() {
 
 bool Document::ShouldResistFingerprinting(RFPTarget aTarget) const {
   return mShouldResistFingerprinting &&
-         nsRFPService::IsRFPEnabledFor(aTarget,
+         nsRFPService::IsRFPEnabledFor(this->IsInPrivateBrowsing(), aTarget,
                                        mOverriddenFingerprintingSettings);
 }
 
@@ -16353,6 +16369,8 @@ void Document::RecordFontFingerprinting() {
 
   nsRFPService::MaybeReportFontFingerprinter(GetChannel(), originNoSuffix);
 }
+
+bool Document::IsInPrivateBrowsing() const { return mIsInPrivateBrowsing; }
 
 WindowContext* Document::GetWindowContextForPageUseCounters() const {
   if (mDisplayDocument) {

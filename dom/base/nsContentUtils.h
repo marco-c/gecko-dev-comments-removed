@@ -350,7 +350,8 @@ class nsContentUtils {
 
   
   
-  static bool ShouldResistFingerprinting(RFPTarget aTarget);
+  static bool ShouldResistFingerprinting(bool aIsPrivateMode,
+                                         RFPTarget aTarget);
   static bool ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject,
                                          RFPTarget aTarget);
   
@@ -1088,7 +1089,7 @@ class nsContentUtils {
   
 
 
-  static bool IsInPrivateBrowsing(Document* aDoc);
+  static bool IsInPrivateBrowsing(const Document* aDoc);
 
   
 

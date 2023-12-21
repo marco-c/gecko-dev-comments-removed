@@ -288,6 +288,10 @@ interface nsIScriptSecurityManager : nsISupports
 
     const unsigned long DEFAULT_USER_CONTEXT_ID = 0;
 
+    
+
+
+
     const unsigned long DEFAULT_PRIVATE_BROWSING_ID = 0;
 
     
