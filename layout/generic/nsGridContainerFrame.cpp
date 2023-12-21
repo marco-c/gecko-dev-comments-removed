@@ -7484,33 +7484,10 @@ void nsGridContainerFrame::ReflowInFlowChild(
   ReflowOutput childSize(childRI);
   const nsSize dummyContainerSize;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  LogicalPoint childPos(childWM);
-  if (MOZ_LIKELY(childWM == wm)) {
-    
-    
-    childPos = cb.Origin(wm);
-  }
-  ReflowChild(aChild, pc, childSize, childRI, childWM, childPos,
+  ReflowChild(aChild, pc, childSize, childRI, childWM, LogicalPoint(childWM),
               dummyContainerSize, ReflowChildFlags::Default, aStatus);
-  if (MOZ_UNLIKELY(childWM != wm)) {
-    
-    
-    
-    childPos = cb.Origin(wm).ConvertTo(
-        childWM, wm, aContainerSize - childSize.PhysicalSize());
-  }
+  LogicalPoint childPos = cb.Origin(wm).ConvertTo(
+      childWM, wm, aContainerSize - childSize.PhysicalSize());
   
   if (MOZ_LIKELY(isGridItem)) {
     LogicalSize size = childSize.Size(childWM);  
