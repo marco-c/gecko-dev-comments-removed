@@ -48,11 +48,9 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
 
   
   
-  
-  
-  
+  double highRateMultiplier = nsRefreshDriver::HighRateMultiplier();
   TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(
-      nsRefreshDriver::IsInHighRateMode() ? 1 : StaticPrefs::idle_period_min());
+      std::max(highRateMultiplier * StaticPrefs::idle_period_min(), 1.0));
   bool busySoon = currentGuess.IsNull() ||
                   (now >= (currentGuess - minIdlePeriod)) ||
                   currentGuess < mLastIdleDeadline;
@@ -60,8 +58,9 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
   
   if (!busySoon && XRE_IsContentProcess() &&
       mozilla::dom::Document::HasRecentlyStartedForegroundLoads()) {
-    TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(
-        StaticPrefs::idle_period_during_page_load_min());
+    TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(std::max(
+        highRateMultiplier * StaticPrefs::idle_period_during_page_load_min(),
+        1.0));
     busySoon = (now >= (currentGuess - minIdlePeriod));
   }
 

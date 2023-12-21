@@ -326,7 +326,9 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
 
-  static bool IsInHighRateMode();
+
+
+  static double HighRateMultiplier();
 
   bool IsInRefresh() { return mInRefresh; }
 

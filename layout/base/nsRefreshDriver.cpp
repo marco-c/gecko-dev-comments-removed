@@ -143,6 +143,8 @@ namespace mozilla {
 
 static TimeStamp sMostRecentHighRateVsync;
 
+static TimeDuration sMostRecentHighRate;
+
 
 
 
@@ -233,12 +235,12 @@ class RefreshDriverTimer {
     TimeStamp mostRecentRefresh = MostRecentRefresh();
     TimeDuration refreshPeriod = GetTimerRate();
     TimeStamp idleEnd = mostRecentRefresh + refreshPeriod;
-    bool inHighRateMode = nsRefreshDriver::IsInHighRateMode();
+    double highRateMultiplier = nsRefreshDriver::HighRateMultiplier();
 
     
     
     
-    if (!inHighRateMode &&
+    if (highRateMultiplier == 1.0 &&
         (idleEnd +
              refreshPeriod *
                  StaticPrefs::layout_idle_period_required_quiescent_frames() <
@@ -249,10 +251,9 @@ class RefreshDriverTimer {
     
     
     
-    idleEnd =
-        idleEnd -
-        TimeDuration::FromMilliseconds(
-            inHighRateMode ? 0 : StaticPrefs::layout_idle_period_time_limit());
+    idleEnd = idleEnd - TimeDuration::FromMilliseconds(
+                            highRateMultiplier *
+                            StaticPrefs::layout_idle_period_time_limit());
     return idleEnd < aDefault ? idleEnd : aDefault;
   }
 
@@ -837,9 +838,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           ContentChild::GetPerformanceHintTarget(rate));
     }
 
-    if (TimeDuration::FromMilliseconds(nsRefreshDriver::DefaultInterval() / 2) >
+    if (TimeDuration::FromMilliseconds(nsRefreshDriver::DefaultInterval()) >
         rate) {
       sMostRecentHighRateVsync = tickStart;
+      sMostRecentHighRate = rate;
     }
 
     
@@ -1257,7 +1259,7 @@ int32_t nsRefreshDriver::DefaultInterval() {
 }
 
 
-bool nsRefreshDriver::IsInHighRateMode() {
+double nsRefreshDriver::HighRateMultiplier() {
   
   
   bool inHighRateMode =
@@ -1269,8 +1271,11 @@ bool nsRefreshDriver::IsInHighRateMode() {
   if (!inHighRateMode) {
     
     sMostRecentHighRateVsync = TimeStamp();
+    sMostRecentHighRate = TimeDuration();
+    return 1.0;
   }
-  return inHighRateMode;
+
+  return sMostRecentHighRate.ToMilliseconds() / DefaultInterval();
 }
 
 
