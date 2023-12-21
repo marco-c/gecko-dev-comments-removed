@@ -9,12 +9,21 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
+#include "mozilla/Unused.h"
+#include "nsDebug.h"
 #include "nsISupportsImpl.h"
 
 #include <objidl.h>
 
 namespace mozilla::mscom {
 
+namespace detail {
+
+HRESULT AgileReference_CreateImpl(RefPtr<IAgileReference>&, REFIID, IUnknown*);
+HRESULT AgileReference_ResolveImpl(RefPtr<IAgileReference> const&, REFIID,
+                                   void**);
+}  
 
 
 
@@ -34,69 +43,100 @@ namespace mozilla::mscom {
 
 
 
+
+template <typename InterfaceT>
 class AgileReference final {
+  static_assert(
+      std::is_base_of_v<IUnknown, InterfaceT>,
+      "template parameter of AgileReference must be a COM interface type");
+
  public:
-  AgileReference();
-
-  template <typename InterfaceT>
-  explicit AgileReference(RefPtr<InterfaceT>& aObject)
-      : AgileReference(__uuidof(InterfaceT), aObject) {}
-
-  AgileReference(REFIID aIid, IUnknown* aObject);
+  AgileReference() = default;
+  ~AgileReference() = default;
 
   AgileReference(const AgileReference& aOther) = default;
-  AgileReference(AgileReference&& aOther) noexcept;
+  AgileReference(AgileReference&& aOther) noexcept = default;
 
-  ~AgileReference();
+  AgileReference& operator=(const AgileReference& aOther) = default;
+  AgileReference& operator=(AgileReference&& aOther) noexcept = default;
 
-  explicit operator bool() const { return !!mAgileRef; }
-
-  HRESULT GetHResult() const { return mHResult; }
-
-  template <typename T>
-  void Assign(const RefPtr<T>& aOther) {
-    Assign(__uuidof(T), aOther);
-  }
-
-  
-  
-  
-  HRESULT ResolveRaw(REFIID aIid, void** aOutInterface) const;
-
-  template <typename Interface>
-  HRESULT Resolve(RefPtr<Interface>& aOutInterface) const {
-    return this->ResolveRaw(__uuidof(Interface), getter_AddRefs(aOutInterface));
-  }
-
-  template <typename T>
-  RefPtr<T> Resolve() {
-    RefPtr<T> p;
-    Resolve<T>(p);
-    return p;
-  }
-
-  AgileReference& operator=(const AgileReference& aOther);
-  AgileReference& operator=(AgileReference&& aOther) noexcept;
-
-  AgileReference& operator=(decltype(nullptr)) {
-    Clear();
+  AgileReference& operator=(std::nullptr_t) {
+    mAgileRef = nullptr;
     return *this;
   }
 
-  void Clear();
-
- private:
-  void Assign(REFIID aIid, IUnknown* aObject);
-  void AssignInternal(IUnknown* aObject);
-
- private:
   
-  IID mIid;
+  
+  
+  
+  explicit AgileReference(InterfaceT* aObject) {
+    HRESULT const hr = detail::AgileReference_CreateImpl(
+        mAgileRef, __uuidof(InterfaceT), aObject);
+    Unused << NS_WARN_IF(FAILED(hr));
+  }
+  explicit AgileReference(RefPtr<InterfaceT> const& aObject)
+      : AgileReference(aObject.get()) {}
+
+  
+  
+  
+  
+  
+  static Result<AgileReference<InterfaceT>, HRESULT> Create(
+      RefPtr<InterfaceT> const& aObject) {
+    AgileReference ret;
+    HRESULT const hr = detail::AgileReference_CreateImpl(
+        ret.mAgileRef, __uuidof(InterfaceT), aObject.get());
+    if (FAILED(hr)) {
+      return Err(hr);
+    }
+    return ret;
+  }
+
+  explicit operator bool() const { return !!mAgileRef; }
+
+  
+  RefPtr<InterfaceT> Resolve() const {
+    auto res = ResolveAs<InterfaceT>();
+    if (res.isErr()) return nullptr;
+    return res.unwrap();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename OtherInterface = InterfaceT>
+  Result<RefPtr<OtherInterface>, HRESULT> ResolveAs() const {
+    RefPtr<OtherInterface> p;
+    auto const hr = ResolveRaw(__uuidof(OtherInterface), getter_AddRefs(p));
+    if (FAILED(hr)) {
+      return Err(hr);
+    }
+    return p;
+  }
+
+  
+  
+  HRESULT ResolveRaw(REFIID aIid, void** aOutInterface) const {
+    return detail::AgileReference_ResolveImpl(mAgileRef, aIid, aOutInterface);
+  }
+
+ private:
   RefPtr<IAgileReference> mAgileRef;
-  
-  
-  HRESULT mHResult;
 };
+
+
+
+template <typename InterfaceT>
+inline Result<AgileReference<InterfaceT>, HRESULT> MakeAgileReference(
+    RefPtr<InterfaceT> const& aObj) {
+  return AgileReference<InterfaceT>::Create(aObj);
+}
 
 }  
 
