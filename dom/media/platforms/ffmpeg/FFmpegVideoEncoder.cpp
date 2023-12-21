@@ -393,6 +393,16 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
 
   FFMPEGV_LOG("InitInternal");
 
+  if (mCodecID == AV_CODEC_ID_H264) {
+    
+    if (!mConfig.mCodecSpecific ||
+        !mConfig.mCodecSpecific->is<H264Specific>()) {
+      return MediaResult(
+          NS_ERROR_DOM_MEDIA_FATAL_ERR,
+          RESULT_DETAIL("Unable to get H264 necessary encoding info"));
+    }
+  }
+
   AVCodec* codec = mLib->avcodec_find_encoder(mCodecID);
   if (!codec) {
     FFMPEGV_LOG("failed to find ffmpeg encoder for codec id %d", mCodecID);
@@ -469,13 +479,21 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
       MOZ_ASSERT(!level->mString.IsEmpty());
       mLib->av_opt_set(mCodecContext->priv_data, "level", level->mString.get(),
                        0);
+
+      
+      if (specific.mFormat == H264BitStreamFormat::AVC) {
+        mLib->av_opt_set(mCodecContext->priv_data, "x264-params", "annexb=0",
+                         0);
+        
+        
+        
+      } else {
+        
+        mLib->av_opt_set(mCodecContext->priv_data, "x264-params", "annexb=1",
+                         0);
+      }
     }
   }
-  
-  
-  
-  
-  
   
   
   
@@ -942,6 +960,14 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   MOZ_ASSERT(aPacket);
 
+  
+
+  
+  
+  
+  
+  
+  
   
 
   
