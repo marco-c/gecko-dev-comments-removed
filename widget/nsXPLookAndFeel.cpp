@@ -735,6 +735,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::Windowtext:  
     case ColorID::MozDialogtext:
+    case ColorID::MozSidebartext:
     case ColorID::Fieldtext:
     case ColorID::Buttontext:  
                                
@@ -753,6 +754,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::Buttonshadow:
     case ColorID::Threedshadow:
+    case ColorID::MozSidebarborder:
     case ColorID::Threedlightshadow:
     case ColorID::Buttonborder:  
                                  
@@ -767,6 +769,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
                                  
       color = NS_RGB(0, 221, 255);
       break;
+    case ColorID::MozSidebar:
     case ColorID::Field:
     case ColorID::Buttonface:  
     case ColorID::MozColheader:
