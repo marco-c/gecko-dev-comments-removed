@@ -171,14 +171,16 @@ add_task(async function testTabEvents() {
       highlightTab(tabIds[2]),
     ]);
 
-    await Promise.all([
-      openWindow(["http://example.com"]),
-      openWindow(["http://example.com", "http://example.org"]),
-      openWindow([
-        "http://example.com",
-        "http://example.org",
-        "http://example.net",
-      ]),
+    
+    
+    
+    
+    await openWindow(["http://example.com"]);
+    await openWindow(["http://example.com", "http://example.org"]);
+    await openWindow([
+      "http://example.com",
+      "http://example.org",
+      "http://example.net",
     ]);
 
     browser.test.assertEq(

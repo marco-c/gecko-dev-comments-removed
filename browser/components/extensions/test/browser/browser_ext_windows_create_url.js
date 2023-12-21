@@ -164,11 +164,22 @@ add_task(async function testWindowCreate() {
       }
     }
     try {
-      
-      const results = await Promise.allSettled(
-        TEST_SETS.map(t => create({ url: t.url }))
-      );
-      
+      let promises = [];
+      for (let testSet of TEST_SETS) {
+        try {
+          let testPromise = create({ url: testSet.url });
+          promises.push(testPromise);
+          
+          
+          
+          
+          await testPromise;
+        } catch (e) {
+          
+          
+        }
+      }
+      const results = await Promise.allSettled(promises);
       await Promise.all(
         TEST_SETS.map((t, i) => checkCreateResult(results[i], t))
       );
