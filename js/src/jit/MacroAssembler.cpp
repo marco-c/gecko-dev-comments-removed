@@ -641,12 +641,11 @@ void MacroAssembler::bumpPointerAllocate(Register result, Register temp,
     storePtr(ImmWord(headerWord),
              Address(result, -js::Nursery::nurseryCellHeaderSize()));
 
-    
-    
-    
-    
-    if (traceKind == JS::TraceKind::String ||
+    if (traceKind != JS::TraceKind::Object ||
         runtime()->geckoProfiler().enabled()) {
+      
+      
+      
       uint32_t* countAddress = site->nurseryAllocCountAddress();
       CheckedInt<int32_t> counterOffset =
           (CheckedInt<uintptr_t>(uintptr_t(countAddress)) -

@@ -561,16 +561,6 @@ struct StringStats {
   uint64_t deduplicatedBytes = 0;
 
   
-  uint64_t liveNurseryStrings = 0;
-
-  
-  uint64_t tenuredStrings = 0;
-
-  
-  
-  
-
-  
   
   
   uint64_t tenuredBytes = 0;
@@ -579,20 +569,15 @@ struct StringStats {
     deduplicatedStrings += other.deduplicatedStrings;
     deduplicatedChars += other.deduplicatedChars;
     deduplicatedBytes += other.deduplicatedBytes;
-    liveNurseryStrings += other.liveNurseryStrings;
-    tenuredStrings += other.tenuredStrings;
     tenuredBytes += other.tenuredBytes;
     return *this;
   }
 
   void noteTenured(size_t mallocBytes) {
-    liveNurseryStrings++;
-    tenuredStrings++;
     tenuredBytes += mallocBytes;
   }
 
   void noteDeduplicated(size_t numChars, size_t mallocBytes) {
-    liveNurseryStrings++;
     deduplicatedStrings++;
     deduplicatedChars += numChars;
     deduplicatedBytes += mallocBytes;

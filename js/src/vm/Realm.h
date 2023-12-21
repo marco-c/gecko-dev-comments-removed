@@ -404,6 +404,9 @@ class JS::Realm : public JS::shadow::Realm {
   
   uint16_t numStacksCapturedForThrow_ = 0;
 
+  
+  uint16_t numAllocSitesPretenured = 0;
+
 #ifdef DEBUG
   bool firedOnNewGlobalObject = false;
 #endif
