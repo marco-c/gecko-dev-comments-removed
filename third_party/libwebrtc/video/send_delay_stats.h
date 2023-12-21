@@ -32,10 +32,10 @@ namespace webrtc {
 
 
 
-class SendDelayStats : public SendPacketObserver {
+class SendDelayStats {
  public:
   explicit SendDelayStats(Clock* clock);
-  ~SendDelayStats() override;
+  ~SendDelayStats();
 
   
   
@@ -45,10 +45,7 @@ class SendDelayStats : public SendPacketObserver {
   bool OnSentPacket(int packet_id, Timestamp time);
 
   
-  
-  void OnSendPacket(uint16_t packet_id,
-                    Timestamp capture_time,
-                    uint32_t ssrc) override;
+  void OnSendPacket(uint16_t packet_id, Timestamp capture_time, uint32_t ssrc);
 
  private:
   
