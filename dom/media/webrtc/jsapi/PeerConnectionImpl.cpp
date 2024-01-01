@@ -2947,6 +2947,12 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           }
         }
 
+        auto oldIceCredentials = mJsepSession->GetLocalIceCredentials();
+        auto newIceCredentials =
+            mUncommittedJsepSession->GetLocalIceCredentials();
+
+        bool iceRestartDetected = (oldIceCredentials != newIceCredentials);
+
         mJsepSession = std::move(mUncommittedJsepSession);
 
         auto newSignalingState = GetSignalingState();
@@ -2977,7 +2983,7 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           
           
           
-          if (mJsepSession->IsIceRestarting()) {
+          if (iceRestartDetected) {
             ResetStunAddrsForIceRestart();
           }
           EnsureTransports(*mJsepSession);
