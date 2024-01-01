@@ -55,6 +55,11 @@ static bool IsUnrestrictedPrincipal(nsIPrincipal& aPrincipal) {
   }
 
   
+  if (aPrincipal.SchemeIs("chrome") || aPrincipal.SchemeIs("resource")) {
+    return true;
+  }
+
+  
   return aPrincipal.GetIsAddonOrExpandedAddonPrincipal();
 }
 
@@ -125,13 +130,6 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
 
   
   if (docURI->SchemeIs("file")) {
-    return true;
-  }
-
-  
-  JS::AutoFilename scriptFile;
-  if (JS::DescribeScriptedCaller(aCx, &scriptFile) && scriptFile.get() &&
-      strcmp(scriptFile.get(), "resource://pdf.js/build/pdf.js") == 0) {
     return true;
   }
 
