@@ -1348,7 +1348,7 @@ class AutoClearFramePropsArray {
 };
 
 void RetainedDisplayListBuilder::ClearFramesWithProps() {
-  AutoClearFramePropsArray modifiedFrames;
+  AutoClearFramePropsArray modifiedFrames(Data()->GetModifiedFrameCount());
   AutoClearFramePropsArray framesWithProps;
   GetModifiedAndFramesWithProps(&modifiedFrames.Frames(),
                                 &framesWithProps.Frames());
@@ -1579,7 +1579,7 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   
   
   
-  AutoClearFramePropsArray modifiedFrames(64);
+  AutoClearFramePropsArray modifiedFrames(Data()->GetModifiedFrameCount());
   AutoClearFramePropsArray framesWithProps(64);
   GetModifiedAndFramesWithProps(&modifiedFrames.Frames(),
                                 &framesWithProps.Frames());

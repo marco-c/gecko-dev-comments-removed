@@ -76,6 +76,8 @@ struct RetainedDisplayListData {
     return mModifiedFrameCount >= mModifiedFrameLimit;
   }
 
+  bool GetModifiedFrameCount() { return mModifiedFrameCount; }
+
   
 
 
