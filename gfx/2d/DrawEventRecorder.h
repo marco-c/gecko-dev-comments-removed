@@ -11,6 +11,7 @@
 #include "RecordedEvent.h"
 #include "RecordingTypes.h"
 
+#include <deque>
 #include <functional>
 #include <vector>
 
@@ -159,11 +160,6 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
   bool WantsExternalFonts() const { return mExternalFonts; }
 
-  void TakeExternalSurfaces(std::vector<RefPtr<SourceSurface>>& aSurfaces) {
-    NS_ASSERT_OWNINGTHREAD(DrawEventRecorderPrivate);
-    aSurfaces = std::move(mExternalSurfaces);
-  }
-
   virtual void StoreSourceSurfaceRecording(SourceSurface* aSurface,
                                            const char* aReason);
 
@@ -177,6 +173,18 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
   virtual void AddDependentSurface(uint64_t aDependencyId) {
     MOZ_CRASH("GFX: AddDependentSurface");
+  }
+
+  struct ExternalSurfaceEntry {
+    RefPtr<SourceSurface> mSurface;
+    int64_t mEventCount = -1;
+  };
+
+  using ExternalSurfacesHolder = std::deque<ExternalSurfaceEntry>;
+
+  void TakeExternalSurfaces(ExternalSurfacesHolder& aSurfaces) {
+    NS_ASSERT_OWNINGTHREAD(DrawEventRecorderPrivate);
+    aSurfaces = std::move(mExternalSurfaces);
   }
 
  protected:
@@ -220,7 +228,8 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   
   
   nsTHashMap<void*, ThreadSafeWeakPtr<SourceSurface>> mStoredSurfaces;
-  std::vector<RefPtr<SourceSurface>> mExternalSurfaces;
+
+  ExternalSurfacesHolder mExternalSurfaces;
   bool mExternalFonts;
 };
 

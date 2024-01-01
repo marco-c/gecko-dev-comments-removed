@@ -289,17 +289,17 @@ Maybe<BlobImageKeyData> BlobSurfaceProvider::RecordDrawing(
     return Nothing();
   }
 
-  std::vector<RefPtr<SourceSurface>> externalSurfaces;
+  DrawEventRecorderPrivate::ExternalSurfacesHolder externalSurfaces;
   recorder->TakeExternalSurfaces(externalSurfaces);
 
-  for (auto& surface : externalSurfaces) {
+  for (auto& entry : externalSurfaces) {
     
     
     
     
     wr::ImageKey key = {};
-    DebugOnly<nsresult> rv =
-        SharedSurfacesChild::Share(surface, rootManager, aResources, key);
+    DebugOnly<nsresult> rv = SharedSurfacesChild::Share(
+        entry.mSurface, rootManager, aResources, key);
     MOZ_ASSERT(rv.value != NS_ERROR_NOT_IMPLEMENTED);
   }
 

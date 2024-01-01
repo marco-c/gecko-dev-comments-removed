@@ -108,7 +108,7 @@ struct BlobItemData {
   
   
   
-  std::vector<RefPtr<SourceSurface>> mExternalSurfaces;
+  DrawEventRecorderPrivate::ExternalSurfacesHolder mExternalSurfaces;
 
   BlobItemData(DIGroup* aGroup, nsDisplayItem* aItem)
       : mInvisible(false), mUsed(false), mGroup(aGroup) {
@@ -183,18 +183,18 @@ static void DestroyBlobGroupDataProperty(nsTArray<BlobItemData*>* aArray) {
 
 static void TakeExternalSurfaces(
     WebRenderDrawEventRecorder* aRecorder,
-    std::vector<RefPtr<SourceSurface>>& aExternalSurfaces,
+    DrawEventRecorderPrivate::ExternalSurfacesHolder& aExternalSurfaces,
     RenderRootStateManager* aManager, wr::IpcResourceUpdateQueue& aResources) {
   aRecorder->TakeExternalSurfaces(aExternalSurfaces);
 
-  for (auto& surface : aExternalSurfaces) {
+  for (auto& entry : aExternalSurfaces) {
     
     
     
     
     wr::ImageKey key;
     DebugOnly<nsresult> rv =
-        SharedSurfacesChild::Share(surface, aManager, aResources, key);
+        SharedSurfacesChild::Share(entry.mSurface, aManager, aResources, key);
     MOZ_ASSERT(rv.value != NS_ERROR_NOT_IMPLEMENTED);
   }
 }

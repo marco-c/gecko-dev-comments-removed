@@ -238,33 +238,6 @@ void CanvasChild::Destroy() {
   }
 }
 
-void CanvasChild::OnTextureWriteLock() {
-  NS_ASSERT_OWNINGTHREAD(CanvasChild);
-
-  mHasOutstandingWriteLock = true;
-  mLastWriteLockCheckpoint = mRecorder->CreateCheckpoint();
-}
-
-void CanvasChild::OnTextureForwarded() {
-  NS_ASSERT_OWNINGTHREAD(CanvasChild);
-
-  if (mHasOutstandingWriteLock) {
-    mRecorder->RecordEvent(RecordedCanvasFlush());
-    if (!mRecorder->WaitForCheckpoint(mLastWriteLockCheckpoint)) {
-      gfxWarning() << "Timed out waiting for last write lock to be processed.";
-    }
-
-    mHasOutstandingWriteLock = false;
-  }
-
-  
-  
-  
-  
-  
-  mRecorder->TakeExternalSurfaces(mLastTransactionExternalSurfaces);
-}
-
 bool CanvasChild::EnsureBeginTransaction() {
   NS_ASSERT_OWNINGTHREAD(CanvasChild);
 

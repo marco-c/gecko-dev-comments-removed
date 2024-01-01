@@ -202,8 +202,14 @@ class TextureHandle : public RefCounted<TextureHandle>,
   bool IsValid() const { return mValid; }
   void Invalidate() { mValid = false; }
 
-  void SetSurface(SourceSurface* aSurface) { mSurface = aSurface; }
-  SourceSurface* GetSurface() const { return mSurface; }
+  void ClearSurface() { mSurface = nullptr; }
+  void SetSurface(const RefPtr<SourceSurface>& aSurface) {
+    mSurface = aSurface;
+  }
+  already_AddRefed<SourceSurface> GetSurface() const {
+    RefPtr<SourceSurface> surface(mSurface);
+    return surface.forget();
+  }
 
   float GetSigma() const { return mSigma; }
   void SetSigma(float aSigma) { mSigma = aSigma; }
@@ -222,14 +228,14 @@ class TextureHandle : public RefCounted<TextureHandle>,
 
   
   bool IsUsed() const {
-    return mSurface || (mCacheEntry && mCacheEntry->IsValid());
+    return !mSurface.IsDead() || (mCacheEntry && mCacheEntry->IsValid());
   }
 
  private:
   bool mValid = true;
   
   
-  SourceSurface* mSurface = nullptr;
+  ThreadSafeWeakPtr<SourceSurface> mSurface;
   
   
   float mSigma = -1.0f;

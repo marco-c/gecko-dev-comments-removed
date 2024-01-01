@@ -28,7 +28,7 @@ SourceSurfaceWebgl::SourceSurfaceWebgl(
 SourceSurfaceWebgl::~SourceSurfaceWebgl() {
   if (mHandle) {
     
-    mHandle->SetSurface(nullptr);
+    mHandle->ClearSurface();
   }
 }
 
