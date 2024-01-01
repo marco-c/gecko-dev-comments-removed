@@ -109,10 +109,15 @@ class AsyncImagePipelineManager final {
                                 const wr::MixBlendMode& aMixBlendMode);
   void ApplyAsyncImagesOfImageBridge(wr::TransactionBuilder& aSceneBuilderTxn,
                                      wr::TransactionBuilder& aFastTxn);
+  void ApplyAsyncImageForPipeline(
+      const wr::PipelineId& aPipelineId, wr::TransactionBuilder& aTxn,
+      wr::TransactionBuilder& aTxnForImageBridge,
+      AsyncImagePipelineOps* aPendingOps,
+      RemoteTextureInfoList* aPendingRemoteTextures);
+
   void ApplyAsyncImageForPipeline(const wr::PipelineId& aPipelineId,
-                                  wr::TransactionBuilder& aTxn,
-                                  wr::TransactionBuilder& aTxnForImageBridge,
-                                  RemoteTextureInfoList* aList);
+                                  TextureHost* aTexture,
+                                  wr::TransactionBuilder& aTxn);
 
   void SetEmptyDisplayList(const wr::PipelineId& aPipelineId,
                            wr::TransactionBuilder& aTxn,
@@ -219,14 +224,14 @@ class AsyncImagePipelineManager final {
   void ApplyAsyncImageForPipeline(const wr::Epoch& aEpoch,
                                   const wr::PipelineId& aPipelineId,
                                   AsyncImagePipeline* aPipeline,
+                                  TextureHost* aTexture,
                                   wr::TransactionBuilder& aSceneBuilderTxn,
-                                  wr::TransactionBuilder& aMaybeFastTxn,
-                                  RemoteTextureInfoList* aList);
+                                  wr::TransactionBuilder& aMaybeFastTxn);
   Maybe<TextureHost::ResourceUpdateOp> UpdateImageKeys(
       const wr::Epoch& aEpoch, const wr::PipelineId& aPipelineId,
-      AsyncImagePipeline* aPipeline, nsTArray<wr::ImageKey>& aKeys,
-      wr::TransactionBuilder& aSceneBuilderTxn,
-      wr::TransactionBuilder& aMaybeFastTxn, RemoteTextureInfoList* aList);
+      AsyncImagePipeline* aPipeline, TextureHost* aTexture,
+      nsTArray<wr::ImageKey>& aKeys, wr::TransactionBuilder& aSceneBuilderTxn,
+      wr::TransactionBuilder& aMaybeFastTxn);
   Maybe<TextureHost::ResourceUpdateOp> UpdateWithoutExternalImage(
       TextureHost* aTexture, wr::ImageKey aKey, TextureHost::ResourceUpdateOp,
       wr::TransactionBuilder& aTxn);
