@@ -1373,8 +1373,8 @@ nsresult nsSocketTransportService::DoPollIteration(TimeDuration* pollDuration) {
   }
 
   now = PR_IntervalNow();
-  TimeStamp startTime;
 #ifdef MOZ_GECKO_PROFILER
+  TimeStamp startTime;
   bool profiling = profiler_thread_is_being_profiled_for_markers();
   if (profiling) {
     startTime = TimeStamp::Now();
@@ -1831,8 +1831,8 @@ void nsSocketTransportService::StartPollWatchdog() {
         
         
         
-        MOZ_ASSERT(gIOService->IsNetTearingDown());
-        if (self->mPolling && !self->mPollRepairTimer) {
+        if (gIOService->IsNetTearingDown() && self->mPolling &&
+            !self->mPollRepairTimer) {
           NS_NewTimerWithObserver(getter_AddRefs(self->mPollRepairTimer), self,
                                   REPAIR_POLLABLE_EVENT_TIME,
                                   nsITimer::TYPE_REPEATING_SLACK);
