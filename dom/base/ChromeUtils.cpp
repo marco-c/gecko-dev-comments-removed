@@ -10,6 +10,7 @@
 #include "js/CallAndConstruct.h"  
 #include "js/ColumnNumber.h"  
 #include "js/CharacterEncoding.h"
+#include "js/Date.h"                
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
@@ -364,6 +365,15 @@ bool ChromeUtils::IsDOMObject(GlobalObject& aGlobal, JS::Handle<JSObject*> aObj,
   }
 
   return mozilla::dom::IsDOMObject(obj);
+}
+
+
+bool ChromeUtils::IsISOStyleDate(GlobalObject& aGlobal,
+                                 const nsACString& aStr) {
+  
+  
+  return JS::IsISOStyleDate(aGlobal.Context(),
+                            JS::Latin1Chars(aStr.Data(), aStr.Length()));
 }
 
 

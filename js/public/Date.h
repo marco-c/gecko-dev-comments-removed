@@ -32,8 +32,9 @@
 #include "mozilla/FloatingPoint.h"  
 #include "mozilla/MathAlgorithms.h"  
 
-#include "js/Conversions.h"   
-#include "js/RealmOptions.h"  
+#include "js/CharacterEncoding.h"  
+#include "js/Conversions.h"        
+#include "js/RealmOptions.h"       
 #include "js/TypeDecls.h"
 #include "js/Value.h"  
 
@@ -212,6 +213,9 @@ GetReduceMicrosecondTimePrecisionCallback();
 
 
 JS_PUBLIC_API void SetTimeResolutionUsec(uint32_t resolution, bool jitter);
+
+
+JS_PUBLIC_API bool IsISOStyleDate(JSContext* cx, const JS::Latin1Chars& str);
 
 }  
 
