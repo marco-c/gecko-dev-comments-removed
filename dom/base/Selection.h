@@ -16,6 +16,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/Highlight.h"
 #include "mozilla/dom/StyledRange.h"
+#include "mozilla/intl/Bidi.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsDirection.h"
 #include "nsISelectionController.h"
@@ -256,8 +257,18 @@ class Selection final : public nsSupportsWeakReference,
   void AdjustAnchorFocusForMultiRange(nsDirection aDirection);
 
   nsIFrame* GetPrimaryFrameForAnchorNode() const;
-  nsIFrame* GetPrimaryFrameForFocusNode(bool aVisual,
-                                        int32_t* aOffsetUsed = nullptr) const;
+
+  struct MOZ_STACK_CLASS PrimaryFrameData final {
+    
+    nsIFrame* mFrame = nullptr;
+    
+    
+    uint32_t mOffsetInFrameContent = 0;
+    
+    
+    CaretAssociationHint mHint{0};  
+  };
+  PrimaryFrameData GetPrimaryFrameForCaretAtFocusNode(bool aVisual) const;
 
   UniquePtr<SelectionDetails> LookUpSelection(
       nsIContent* aContent, uint32_t aContentOffset, uint32_t aContentLength,
@@ -727,16 +738,10 @@ class Selection final : public nsSupportsWeakReference,
                                                          Document* aDocument,
                                                          ErrorResult&);
 
-  struct MOZ_STACK_CLASS PrimaryFrameData final {
-    
-    nsIFrame* mFrame = nullptr;
-    
-    
-    uint32_t mOffsetInFrameContent = 0;
-    
-    
-    CaretAssociationHint mHint{0};
-  };
+  static PrimaryFrameData GetPrimaryFrameForCaret(
+      nsIContent* aContent, uint32_t aOffset, bool aVisual,
+      CaretAssociationHint aHint, intl::BidiEmbeddingLevel aCaretBidiLevel);
+
   
   
   
