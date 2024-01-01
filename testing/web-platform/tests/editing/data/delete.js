@@ -3095,4 +3095,10 @@ var browserTests = [
     "<p><span contenteditable=\"false\">abc</span></p>",
     [true],
     {}],
+
+["<p>{}<span contenteditable=false>ab</span></p>",
+    [["delete",""]],
+    "<p><span contenteditable=\"false\">ab</span></p>",
+    [true],
+    {}],
 ]
