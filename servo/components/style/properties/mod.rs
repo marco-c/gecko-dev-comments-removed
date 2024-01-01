@@ -31,11 +31,11 @@ use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID, RefPtr
 use crate::logical_geometry::WritingMode;
 use crate::parser::ParserContext;
 use crate::str::CssString;
-use crate::stylesheets::Origin;
+use crate::stylesheets::{Origin, UrlExtraData};
 use crate::stylist::Stylist;
 use crate::values::{computed, serialize_atom_name};
 use arrayvec::{ArrayVec, Drain as ArrayVecDrain};
-use cssparser::{Parser, ParserInput};
+use cssparser::{Parser, ParserInput, TokenSerializationType};
 use fxhash::FxHashMap;
 use servo_arc::Arc;
 use std::{
@@ -712,7 +712,7 @@ impl PropertyDeclaration {
                 if s != shorthand {
                     return None;
                 }
-                Some(&*declaration.value.variable_value.css)
+                Some(&*declaration.value.css)
             },
             _ => None,
         }
@@ -793,9 +793,9 @@ impl PropertyDeclaration {
             PropertyId::Custom(property_name) => {
                 let value = match input.try_parse(CSSWideKeyword::parse) {
                     Ok(keyword) => CustomDeclarationValue::CSSWideKeyword(keyword),
-                    Err(()) => CustomDeclarationValue::Value(Arc::new(
-                        custom_properties::VariableValue::parse(input, &context.url_data)?,
-                    )),
+                    Err(()) => CustomDeclarationValue::Value(
+                        crate::custom_properties::SpecifiedValue::parse(input, &context.url_data)?,
+                    ),
                 };
                 declarations.push(PropertyDeclaration::Custom(CustomDeclaration {
                     name: property_name,
@@ -820,12 +820,14 @@ impl PropertyDeclaration {
                             return Err(err);
                         }
                         input.reset(&start);
-                        let variable_value =
-                            custom_properties::VariableValue::parse(input, &context.url_data)?;
+                        let (first_token_type, css) =
+                            crate::custom_properties::parse_non_custom_with_var(input)?;
                         Ok(PropertyDeclaration::WithVariables(VariableDeclaration {
                             id: longhand_id,
                             value: Arc::new(UnparsedValue {
-                                variable_value,
+                                css: css.into_owned(),
+                                first_token_type,
+                                url_data: context.url_data.clone(),
                                 from_shorthand: None,
                             }),
                         }))
@@ -856,10 +858,12 @@ impl PropertyDeclaration {
                             }
 
                             input.reset(&start);
-                            let variable_value =
-                                custom_properties::VariableValue::parse(input, &context.url_data)?;
+                            let (first_token_type, css) =
+                                crate::custom_properties::parse_non_custom_with_var(input)?;
                             let unparsed = Arc::new(UnparsedValue {
-                                variable_value,
+                                css: css.into_owned(),
+                                first_token_type,
+                                url_data: context.url_data.clone(),
                                 from_shorthand: Some(shorthand_id),
                             });
                             if shorthand_id == ShorthandId::All {
@@ -1310,7 +1314,11 @@ pub struct SourcePropertyDeclarationDrain<'a> {
 #[derive(Debug, Eq, PartialEq, ToShmem)]
 pub struct UnparsedValue {
     
-    variable_value: custom_properties::VariableValue,
+    css: String,
+    
+    first_token_type: TokenSerializationType,
+    
+    url_data: UrlExtraData,
     
     from_shorthand: Option<ShorthandId>,
 }
@@ -1322,7 +1330,7 @@ impl ToCss for UnparsedValue {
     {
         
         if self.from_shorthand.is_none() {
-            self.variable_value.to_css(dest)?;
+            dest.write_str(&*self.css)?;
         }
         Ok(())
     }
@@ -1367,8 +1375,10 @@ impl UnparsedValue {
         }
 
         let css = match custom_properties::substitute(
-            &self.variable_value,
+            &self.css,
+            self.first_token_type,
             custom_properties,
+            &self.url_data,
             stylist,
             computed_context,
         ) {
@@ -1388,7 +1398,7 @@ impl UnparsedValue {
         
         let context = ParserContext::new(
             Origin::Author,
-            &self.variable_value.url_data,
+            &self.url_data,
             None,
             ParsingMode::DEFAULT,
             computed_context.quirks_mode,
