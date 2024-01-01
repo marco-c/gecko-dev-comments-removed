@@ -508,4 +508,28 @@ RefPtr<TaskQueue> GetWebCodecsEncoderTaskQueue() {
       GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
       "WebCodecs encoding", false);
 }
+
+VideoColorSpaceInit FallbackColorSpaceForVideoContent() {
+  
+  
+  
+  
+  VideoColorSpaceInit colorSpace;
+  colorSpace.mFullRange = false;
+  colorSpace.mMatrix = VideoMatrixCoefficients::Bt709;
+  colorSpace.mTransfer = VideoTransferCharacteristics::Bt709;
+  colorSpace.mPrimaries = VideoColorPrimaries::Bt709;
+  return colorSpace;
+}
+VideoColorSpaceInit FallbackColorSpaceForWebContent() {
+  
+  
+  
+  VideoColorSpaceInit colorSpace;
+  colorSpace.mFullRange = true;
+  colorSpace.mMatrix = VideoMatrixCoefficients::Rgb;
+  colorSpace.mTransfer = VideoTransferCharacteristics::Iec61966_2_1;
+  colorSpace.mPrimaries = VideoColorPrimaries::Bt709;
+  return colorSpace;
+}
 };  
