@@ -358,6 +358,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "VideoDecoder", nightly: true },
   
+  { name: "VideoEncoder", nightly: true },
+  
   { name: "VideoFrame", insecureContext: true, nightly: true },
   
   { name: "WebGL2RenderingContext", insecureContext: true },
