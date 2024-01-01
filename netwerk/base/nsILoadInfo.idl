@@ -468,12 +468,12 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+
   const unsigned long HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED = (1 << 1);
 
   
-
-
-
 
 
 
