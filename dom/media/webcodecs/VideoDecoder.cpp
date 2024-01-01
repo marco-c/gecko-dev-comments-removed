@@ -501,9 +501,39 @@ static VideoColorSpaceInternal GuessColorSpace(layers::Image* aImage) {
     if (layers::NVImage* image = aImage->AsNVImage()) {
       return GuessColorSpace(image->GetData());
     }
-    
     if (layers::GPUVideoImage* image = aImage->AsGPUVideoImage()) {
-      return VideoColorSpaceInternal(FallbackColorSpaceForWebContent());
+      VideoColorSpaceInternal colorSpace;
+      colorSpace.mFullRange =
+          Some(image->GetColorRange() != gfx::ColorRange::LIMITED);
+      colorSpace.mMatrix = ToMatrixCoefficients(image->GetYUVColorSpace());
+      colorSpace.mPrimaries = ToPrimaries(image->GetColorPrimaries());
+      colorSpace.mTransfer =
+          ToTransferCharacteristics(image->GetTransferFunction());
+      
+      
+      
+      
+      if (!colorSpace.mPrimaries) {
+        if (colorSpace.mMatrix.isSome()) {
+          switch (colorSpace.mMatrix.value()) {
+            case VideoMatrixCoefficients::Rgb:
+            case VideoMatrixCoefficients::Bt709:
+              colorSpace.mPrimaries = Some(VideoColorPrimaries::Bt709);
+              break;
+            case VideoMatrixCoefficients::Bt470bg:
+            case VideoMatrixCoefficients::Smpte170m:
+              colorSpace.mPrimaries = Some(VideoColorPrimaries::Bt470bg);
+              break;
+            case VideoMatrixCoefficients::Bt2020_ncl:
+              colorSpace.mPrimaries = Some(VideoColorPrimaries::Bt2020);
+              break;
+            case VideoMatrixCoefficients::EndGuard_:
+              MOZ_ASSERT_UNREACHABLE("bad enum value");
+              break;
+          };
+        }
+      }
+      return colorSpace;
     }
 #ifdef XP_MACOSX
     
