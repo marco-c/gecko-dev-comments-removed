@@ -165,6 +165,27 @@ static nsCString MakeErrorString(const FFmpegLibWrapper* aLib, int aErrNum) {
   return nsCString(errStr);
 }
 
+
+
+static AVCodec* FindEncoderWithPreference(const FFmpegLibWrapper* aLib,
+                                          AVCodecID aCodecId) {
+  MOZ_ASSERT(aLib);
+
+  AVCodec* codec = nullptr;
+
+  
+  if (aCodecId == AV_CODEC_ID_H264) {
+    codec = aLib->avcodec_find_encoder_by_name("libx264");
+    if (codec) {
+      FFMPEGV_LOG("Prefer libx264 for h264 codec");
+      return codec;
+    }
+  }
+
+  FFMPEGV_LOG("Fallback to other h264 library. Fingers crossed");
+  return aLib->avcodec_find_encoder(aCodecId);
+}
+
 template <>
 AVCodecID GetFFmpegEncoderCodecId<LIBAV_VER>(CodecType aCodec) {
 #if LIBAVCODEC_VERSION_MAJOR >= 58
@@ -379,7 +400,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
     }
   }
 
-  AVCodec* codec = mLib->avcodec_find_encoder(mCodecID);
+  AVCodec* codec = FindEncoderWithPreference(mLib, mCodecID);
   if (!codec) {
     FFMPEGV_LOG("failed to find ffmpeg encoder for codec id %d", mCodecID);
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
