@@ -184,6 +184,8 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
   const gfx::IntRect& NativeVisibleRect() const { return mVisibleRect; }
   already_AddRefed<layers::Image> GetImage() const;
 
+  nsCString ToString() const;
+
  public:
   
   class Format final {
