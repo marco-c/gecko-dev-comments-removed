@@ -296,6 +296,18 @@ LoadInfo::LoadInfo(
       }
     }
 
+    if (!loadContext) {
+      
+      
+      
+      
+      nsCOMPtr<nsIChannel> channel = aLoadingContext->OwnerDoc()->GetChannel();
+      if (channel) {
+        mOriginAttributes.SyncAttributesWithPrivateBrowsing(
+            NS_UsePrivateBrowsing(channel));
+      }
+    }
+
     
     
     
