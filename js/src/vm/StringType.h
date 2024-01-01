@@ -190,6 +190,8 @@ bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 
 class JSString : public js::gc::CellWithLengthAndFlags {
  protected:
+  using Base = js::gc::CellWithLengthAndFlags;
+
   static const size_t NUM_INLINE_CHARS_LATIN1 =
       2 * sizeof(void*) / sizeof(JS::Latin1Char);
   static const size_t NUM_INLINE_CHARS_TWO_BYTE =
@@ -1199,6 +1201,8 @@ class JSThinInlineString : public JSInlineString {
   JSThinInlineString() = default;
 
  public:
+  static constexpr size_t InlineBytes = NUM_INLINE_CHARS_LATIN1;
+
   static const size_t MAX_LENGTH_LATIN1 = NUM_INLINE_CHARS_LATIN1;
   static const size_t MAX_LENGTH_TWO_BYTE = NUM_INLINE_CHARS_TWO_BYTE;
 
@@ -1414,10 +1418,23 @@ class ThinInlineAtom : public NormalAtom {
   static constexpr size_t MAX_LENGTH_LATIN1 = NUM_INLINE_CHARS_LATIN1;
   static constexpr size_t MAX_LENGTH_TWO_BYTE = NUM_INLINE_CHARS_TWO_BYTE;
 
+#ifdef JS_64BIT
+  
+  static constexpr bool EverInstantiated = false;
+#else
+  static constexpr bool EverInstantiated = true;
+#endif
+
  protected:
   
+#ifdef JS_64BIT
+  ThinInlineAtom(size_t length, JS::Latin1Char** chars,
+                 js::HashNumber hash) = delete;
+  ThinInlineAtom(size_t length, char16_t** chars, js::HashNumber hash) = delete;
+#else
   ThinInlineAtom(size_t length, JS::Latin1Char** chars, js::HashNumber hash);
   ThinInlineAtom(size_t length, char16_t** chars, js::HashNumber hash);
+#endif
 
  public:
   template <typename CharT>
@@ -1430,16 +1447,31 @@ class ThinInlineAtom : public NormalAtom {
   }
 };
 
+
+
 class FatInlineAtom : public JSAtom {
   friend class gc::CellAllocator;
 
+ public:
+  
+  
+  static constexpr size_t HashBytes =
+      js::RoundUp(sizeof(HashNumber), js::gc::CellAlignBytes);
+
+  
+  
+  static constexpr size_t InlineBytes =
+      sizeof(JSFatInlineString) - sizeof(JSString::Base) - HashBytes;
+
+  static constexpr size_t ExtensionBytes =
+      InlineBytes - JSThinInlineString::InlineBytes;
+
   static constexpr size_t MAX_LENGTH_LATIN1 =
-      JSFatInlineString::MAX_LENGTH_LATIN1;
-  static constexpr size_t MAX_LENGTH_TWO_BYTE =
-      JSFatInlineString::MAX_LENGTH_TWO_BYTE;
+      InlineBytes / sizeof(JS::Latin1Char);
+  static constexpr size_t MAX_LENGTH_TWO_BYTE = InlineBytes / sizeof(char16_t);
 
  protected:  
-  char inlineStorage_[sizeof(JSFatInlineString) - sizeof(JSAtom)];
+  char inlineStorage_[ExtensionBytes];
   HashNumber hash_;
 
   
@@ -1459,14 +1491,20 @@ class FatInlineAtom : public JSAtom {
 
   template <typename CharT>
   static bool lengthFits(size_t length) {
-    return JSFatInlineString::lengthFits<CharT>(length);
+    return length * sizeof(CharT) <= InlineBytes;
   }
 };
 
-static_assert(
-    sizeof(FatInlineAtom) == sizeof(JSFatInlineString) + sizeof(uint64_t),
-    "FatInlineAtom must have size of a fat inline string + HashNumber, "
-    "aligned to gc::CellAlignBytes");
+static_assert(sizeof(FatInlineAtom) ==
+                  js::RoundUp(sizeof(JSThinInlineString) +
+                                  FatInlineAtom::ExtensionBytes +
+                                  sizeof(HashNumber),
+                              gc::CellAlignBytes),
+              "FatInlineAtom must have size of a thin inline string + "
+              "extension bytes if any + HashNumber, "
+              "aligned to gc::CellAlignBytes");
+static_assert(sizeof(FatInlineAtom) == sizeof(JSFatInlineString),
+              "FatInlineAtom must be the same size as a fat inline string");
 
 
 

@@ -126,8 +126,12 @@ JS::ubi::Node::Size JS::ubi::Concrete<JSString>::size(
   JSString& str = get();
   size_t size;
   if (str.isAtom()) {
-    size =
-        str.isFatInline() ? sizeof(js::FatInlineAtom) : sizeof(js::NormalAtom);
+    if (str.isInline()) {
+      size = str.isFatInline() ? sizeof(js::FatInlineAtom)
+                               : sizeof(js::ThinInlineAtom);
+    } else {
+      size = sizeof(js::NormalAtom);
+    }
   } else {
     size = str.isFatInline() ? sizeof(JSFatInlineString) : sizeof(JSString);
   }
@@ -1823,7 +1827,7 @@ JSAtom* NewAtomCopyNDontDeflateValidLength(JSContext* cx, const CharT* s,
     MOZ_ASSERT(!CanStoreCharsAsLatin1(s, n));
   }
 
-  if (js::FatInlineAtom::lengthFits<CharT>(n)) {
+  if (JSAtom::lengthFitsInline<CharT>(n)) {
     return NewInlineAtom(cx, s, n, hash);
   }
 
@@ -2121,7 +2125,8 @@ static const RepresentativeExternalString RepresentativeExternalStringCallbacks;
 template <typename CheckString, typename CharT>
 static bool FillWithRepresentatives(JSContext* cx, Handle<ArrayObject*> array,
                                     uint32_t* index, const CharT* chars,
-                                    size_t len, size_t fatInlineMaxLength,
+                                    size_t len, size_t inlineStringMaxLength,
+                                    size_t inlineAtomMaxLength,
                                     const CheckString& check, gc::Heap heap) {
   auto AppendString = [&check](JSContext* cx, Handle<ArrayObject*> array,
                                uint32_t* index, HandleString s) {
@@ -2131,7 +2136,8 @@ static bool FillWithRepresentatives(JSContext* cx, Handle<ArrayObject*> array,
     return JS_DefineElement(cx, array, (*index)++, val, 0);
   };
 
-  MOZ_ASSERT(len > fatInlineMaxLength);
+  MOZ_ASSERT(len > inlineStringMaxLength);
+  MOZ_ASSERT(len > inlineAtomMaxLength);
 
   
   RootedString atom1(cx, AtomizeChars(cx, chars, len));
@@ -2149,12 +2155,13 @@ static bool FillWithRepresentatives(JSContext* cx, Handle<ArrayObject*> array,
   MOZ_ASSERT(atom2->isInline());
 
   
-  RootedString atom3(cx, AtomizeChars(cx, chars, fatInlineMaxLength));
+  RootedString atom3(cx, AtomizeChars(cx, chars, inlineAtomMaxLength));
   if (!atom3 || !AppendString(cx, array, index, atom3)) {
     return false;
   }
   MOZ_ASSERT(atom3->isAtom());
-  MOZ_ASSERT(atom3->isFatInline());
+  MOZ_ASSERT_IF(inlineStringMaxLength < inlineAtomMaxLength,
+                atom3->isFatInline());
 
   
   RootedString linear1(cx, NewStringCopyN<CanGC>(cx, chars, len, heap));
@@ -2173,7 +2180,7 @@ static bool FillWithRepresentatives(JSContext* cx, Handle<ArrayObject*> array,
 
   
   RootedString linear3(
-      cx, NewStringCopyN<CanGC>(cx, chars, fatInlineMaxLength, heap));
+      cx, NewStringCopyN<CanGC>(cx, chars, inlineStringMaxLength, heap));
   if (!linear3 || !AppendString(cx, array, index, linear3)) {
     return false;
   }
@@ -2248,7 +2255,8 @@ static bool FillWithRepresentatives(JSContext* cx, Handle<ArrayObject*> array,
   MOZ_ASSERT(atom2->isAtom());
   MOZ_ASSERT(atom3->isAtom());
   MOZ_ASSERT(atom2->isInline());
-  MOZ_ASSERT(atom3->isFatInline());
+  MOZ_ASSERT_IF(inlineStringMaxLength < inlineAtomMaxLength,
+                atom3->isFatInline());
 
   MOZ_ASSERT(linear1->isLinear());
   MOZ_ASSERT(linear2->isLinear());
@@ -2285,24 +2293,28 @@ bool JSString::fillWithRepresentatives(JSContext* cx,
   if (!FillWithRepresentatives(cx, array, &index, twoByteChars,
                                std::size(twoByteChars) - 1,
                                JSFatInlineString::MAX_LENGTH_TWO_BYTE,
+                               js::FatInlineAtom::MAX_LENGTH_TWO_BYTE,
                                CheckTwoByte, gc::Heap::Tenured)) {
     return false;
   }
   if (!FillWithRepresentatives(cx, array, &index, latin1Chars,
                                std::size(latin1Chars) - 1,
                                JSFatInlineString::MAX_LENGTH_LATIN1,
+                               js::FatInlineAtom::MAX_LENGTH_LATIN1,
                                CheckLatin1, gc::Heap::Tenured)) {
     return false;
   }
   if (!FillWithRepresentatives(cx, array, &index, twoByteChars,
                                std::size(twoByteChars) - 1,
                                JSFatInlineString::MAX_LENGTH_TWO_BYTE,
+                               js::FatInlineAtom::MAX_LENGTH_TWO_BYTE,
                                CheckTwoByte, gc::Heap::Default)) {
     return false;
   }
   if (!FillWithRepresentatives(cx, array, &index, latin1Chars,
                                std::size(latin1Chars) - 1,
                                JSFatInlineString::MAX_LENGTH_LATIN1,
+                               js::FatInlineAtom::MAX_LENGTH_LATIN1,
                                CheckLatin1, gc::Heap::Default)) {
     return false;
   }
