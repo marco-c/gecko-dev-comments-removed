@@ -3226,14 +3226,13 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
         domSelection && domSelection->GetAncestorLimiter()
             ? domSelection->GetAncestorLimiter()->GetPrimaryFrame()
             : nullptr;
-    RefPtr<nsFrameIterator> frameIterator = nsFrameIterator::Create(
-        presContext, startFrame, nsFrameIterator::Type::Leaf,
-        false,  
-        false,  
-        true,   
-        false,  
-        limiter);
-    MOZ_ASSERT(frameIterator);
+    nsFrameIterator frameIterator(presContext, startFrame,
+                                  nsFrameIterator::Type::Leaf,
+                                  false,  
+                                  false,  
+                                  true,   
+                                  false,  
+                                  limiter);
 
     nsIFrame* newCaretFrame = nullptr;
     nsIContent* newCaretContent = start;
@@ -3242,8 +3241,8 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
       
       
       
-      frameIterator->Next();
-      newCaretFrame = frameIterator->CurrentItem();
+      frameIterator.Next();
+      newCaretFrame = frameIterator.CurrentItem();
       if (!newCaretFrame) {
         break;
       }
@@ -4194,17 +4193,16 @@ nsresult nsFocusManager::GetNextTabbableContent(
       getNextFrame = false;
     }
 
-    RefPtr<nsFrameIterator> frameIterator;
+    Maybe<nsFrameIterator> frameIterator;
     if (frame) {
       
       
       
-      frameIterator = nsFrameIterator::Create(
-          presContext, frame, nsFrameIterator::Type::PreOrder,
-          false,                  
-          false,                  
-          true,                   
-          aForDocumentNavigation  
+      frameIterator.emplace(presContext, frame, nsFrameIterator::Type::PreOrder,
+                            false,                  
+                            false,                  
+                            true,                   
+                            aForDocumentNavigation  
       );
       MOZ_ASSERT(frameIterator);
 

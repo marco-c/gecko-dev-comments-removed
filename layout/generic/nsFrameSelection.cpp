@@ -1024,18 +1024,19 @@ nsresult nsFrameSelection::GetFrameFromLevel(
       mozilla::intl::BidiEmbeddingLevel::LTR();
   nsIFrame* foundFrame = aFrameIn;
 
-  RefPtr<nsFrameIterator> frameIterator = nsFrameIterator::Create(
-      mPresShell->GetPresContext(), aFrameIn, nsFrameIterator::Type::Leaf,
-      false,  
-      false,  
-      false,  
-      false   
+  nsFrameIterator frameIterator(mPresShell->GetPresContext(), aFrameIn,
+                                nsFrameIterator::Type::Leaf,
+                                false,  
+                                false,  
+                                false,  
+                                false   
   );
-  MOZ_ASSERT(frameIterator);
   do {
     *aFrameOut = foundFrame;
-    foundFrame = frameIterator->Traverse(aDirection == eDirNext);
-    if (!foundFrame) return NS_ERROR_FAILURE;
+    foundFrame = frameIterator.Traverse(aDirection == eDirNext);
+    if (!foundFrame) {
+      return NS_ERROR_FAILURE;
+    }
     foundLevel = foundFrame->GetEmbeddingLevel();
 
   } while (foundLevel > aBidiLevel);
