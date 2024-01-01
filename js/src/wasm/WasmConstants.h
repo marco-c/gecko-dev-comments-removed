@@ -101,6 +101,9 @@ enum class TypeCode {
   ArrayRef = 0x6a,  
 
   
+  ExnRef = 0x69,  
+
+  
   NullAnyRef = 0x71,  
 
   
@@ -265,6 +268,7 @@ enum class Op {
   Catch = 0x07,
   Throw = 0x08,
   Rethrow = 0x09,
+  ThrowRef = 0x0a,
   End = 0x0b,
   Br = 0x0c,
   BrIf = 0x0d,
@@ -287,6 +291,9 @@ enum class Op {
   Drop = 0x1a,
   SelectNumeric = 0x1b,
   SelectTyped = 0x1c,
+
+  
+  TryTable = 0x1f,
 
   
   LocalGet = 0x20,
@@ -1141,6 +1148,7 @@ static_assert(uint64_t(MaxArrayPayloadBytes) <
 
 
 
+static const unsigned MaxTryTableCatches = 10000;
 static const unsigned MaxBrTableElems = 1000000;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 
