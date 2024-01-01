@@ -7,6 +7,7 @@
 #include "builtin/TupleObject.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"  
 
 #include "jsapi.h"
 
@@ -18,6 +19,7 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+using mozilla::Maybe;
 
 
 
