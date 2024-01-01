@@ -2293,6 +2293,8 @@ static bool EvaluateDynamicImportOptions(
   return true;
 }
 
+
+
 JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                        HandleValue specifierArg,
                                        HandleValue optionsArg) {
@@ -2331,9 +2333,6 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
     return promise;
   }
 
-  RootedValue referencingPrivate(cx, script->sourceObject()->getPrivate());
-  cx->runtime()->addRefScriptPrivate(referencingPrivate);
-
   Rooted<JSAtom*> specifierAtom(cx, AtomizeString(cx, specifier));
   if (!specifierAtom) {
     if (!RejectPromiseWithPendingError(cx, promise)) {
@@ -2359,9 +2358,8 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
     return promise;
   }
 
+  RootedValue referencingPrivate(cx, script->sourceObject()->getPrivate());
   if (!importHook(cx, referencingPrivate, moduleRequest, promise)) {
-    cx->runtime()->releaseScriptPrivate(referencingPrivate);
-
     
     
     if (!cx->isExceptionPending() ||
@@ -2432,6 +2430,9 @@ static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(resolvedModuleParams->length() == 2);
   RootedValue referencingPrivate(cx, resolvedModuleParams->get(0));
 
+  auto releasePrivate = mozilla::MakeScopeExit(
+      [&] { cx->runtime()->releaseScriptPrivate(referencingPrivate); });
+
   Rooted<JSAtom*> specifier(
       cx, AtomizeString(cx, resolvedModuleParams->get(1).toString()));
   if (!specifier) {
@@ -2439,9 +2440,6 @@ static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
-
-  auto releasePrivate = mozilla::MakeScopeExit(
-      [&] { cx->runtime()->releaseScriptPrivate(referencingPrivate); });
 
   RootedObject moduleRequest(
       cx, ModuleRequestObject::create(cx, specifier, nullptr));
@@ -2493,11 +2491,20 @@ static bool OnRejectedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   return PromiseObject::reject(cx, promise, error);
 };
 
-bool FinishDynamicModuleImport_impl(JSContext* cx,
-                                    HandleObject evaluationPromise,
-                                    HandleValue referencingPrivate,
-                                    HandleObject moduleRequest,
-                                    HandleObject promiseArg) {
+bool js::FinishDynamicModuleImport(JSContext* cx,
+                                   HandleObject evaluationPromise,
+                                   HandleValue referencingPrivate,
+                                   HandleObject moduleRequest,
+                                   HandleObject promiseArg) {
+  
+  
+  
+
+  if (!evaluationPromise || !moduleRequest) {
+    Handle<PromiseObject*> promise = promiseArg.as<PromiseObject>();
+    return RejectPromiseWithPendingError(cx, promise);
+  }
+
   Rooted<ListObject*> resolutionArgs(cx, ListObject::create(cx));
   if (!resolutionArgs || !resolutionArgs->append(cx, referencingPrivate)) {
     return false;
@@ -2524,31 +2531,13 @@ bool FinishDynamicModuleImport_impl(JSContext* cx,
     return false;
   }
 
-  return JS::AddPromiseReactionsIgnoringUnhandledRejection(
-      cx, evaluationPromise, onResolved, onRejected);
-}
+  cx->runtime()->addRefScriptPrivate(referencingPrivate);
 
-bool js::FinishDynamicModuleImport(JSContext* cx,
-                                   HandleObject evaluationPromise,
-                                   HandleValue referencingPrivate,
-                                   HandleObject moduleRequest,
-                                   HandleObject promiseArg) {
-  
-  
-  
-  auto releasePrivate = mozilla::MakeScopeExit(
-      [&] { cx->runtime()->releaseScriptPrivate(referencingPrivate); });
-
-  if (!evaluationPromise || !moduleRequest) {
-    Handle<PromiseObject*> promise = promiseArg.as<PromiseObject>();
-    return RejectPromiseWithPendingError(cx, promise);
-  }
-
-  if (!FinishDynamicModuleImport_impl(cx, evaluationPromise, referencingPrivate,
-                                      moduleRequest, promiseArg)) {
+  if (!JS::AddPromiseReactionsIgnoringUnhandledRejection(
+          cx, evaluationPromise, onResolved, onRejected)) {
+    cx->runtime()->releaseScriptPrivate(referencingPrivate);
     return false;
   }
 
-  releasePrivate.release();
   return true;
 }
