@@ -282,6 +282,10 @@ OpKind wasm::Classify(OpBytes op) {
       return OpKind::Rethrow;
     case Op::Try:
       return OpKind::Try;
+    case Op::ThrowRef:
+      return OpKind::ThrowRef;
+    case Op::TryTable:
+      return OpKind::TryTable;
     case Op::MemorySize:
       return OpKind::MemorySize;
     case Op::MemoryGrow:
@@ -805,8 +809,8 @@ OpKind wasm::Classify(OpBytes op) {
           return OpKind::OldCallDirect;
         case MozOp::OldCallIndirect:
           return OpKind::OldCallIndirect;
-        case MozOp::Intrinsic:
-          return OpKind::Intrinsic;
+        case MozOp::CallBuiltinModuleFunc:
+          return OpKind::CallBuiltinModuleFunc;
       }
       break;
     }
