@@ -135,6 +135,7 @@ interface nsIContentAnalysisRequest : nsISupports
   readonly attribute AString url;
 
   
+  
   readonly attribute ACString sha256Digest;
 
   
