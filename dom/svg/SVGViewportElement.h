@@ -31,16 +31,6 @@ class SVGAnimatedRect;
 class SVGViewElement;
 class SVGViewportElement;
 
-class svgFloatSize {
- public:
-  svgFloatSize(float aWidth, float aHeight) : width(aWidth), height(aHeight) {}
-  bool operator!=(const svgFloatSize& rhs) {
-    return width != rhs.width || height != rhs.height;
-  }
-  float width;
-  float height;
-};
-
 class SVGViewportElement : public SVGGraphicsElement {
   friend class mozilla::SVGOuterSVGFrame;
   friend class mozilla::SVGViewportFrame;
@@ -114,14 +104,9 @@ class SVGViewportElement : public SVGGraphicsElement {
 
   gfx::Matrix GetViewBoxTransform() const;
 
-  svgFloatSize GetViewportSize() const {
-    return svgFloatSize(mViewportWidth, mViewportHeight);
-  }
+  gfx::Size GetViewportSize() const { return mViewportSize; }
 
-  void SetViewportSize(const svgFloatSize& aSize) {
-    mViewportWidth = aSize.width;
-    mViewportHeight = aSize.height;
-  }
+  void SetViewportSize(const gfx::Size& aSize) { mViewportSize = aSize; }
 
   
 
@@ -189,7 +174,7 @@ class SVGViewportElement : public SVGGraphicsElement {
   
   
   
-  float mViewportWidth, mViewportHeight;
+  gfx::Size mViewportSize;
 
   bool mHasChildrenOnlyTransform;
 };

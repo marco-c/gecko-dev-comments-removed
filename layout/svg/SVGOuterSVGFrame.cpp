@@ -356,14 +356,12 @@ void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
   
   
 
-  svgFloatSize newViewportSize(
+  gfx::Size newViewportSize(
       nsPresContext::AppUnitsToFloatCSSPixels(aReflowInput.ComputedWidth()),
       nsPresContext::AppUnitsToFloatCSSPixels(aReflowInput.ComputedHeight()));
 
-  svgFloatSize oldViewportSize = svgElem->GetViewportSize();
-
   uint32_t changeBits = 0;
-  if (newViewportSize != oldViewportSize) {
+  if (newViewportSize != svgElem->GetViewportSize()) {
     
     
     

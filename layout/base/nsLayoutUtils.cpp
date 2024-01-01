@@ -9596,7 +9596,7 @@ nsRect nsLayoutUtils::ComputeSVGOriginBox(SVGViewportElement* aElement) {
 
   
   
-  svgFloatSize viewportSize = aElement->GetViewportSize();
+  auto viewportSize = aElement->GetViewportSize();
   return nsRect(0, 0, nsPresContext::CSSPixelsToAppUnits(viewportSize.width),
                 nsPresContext::CSSPixelsToAppUnits(viewportSize.height));
 }
