@@ -490,11 +490,13 @@ NS_IMETHODIMP AppWindow::ShowModal() {
   nsCOMPtr<nsIAppWindow> tempRef = this;
 
 #ifdef USE_NATIVE_MENUS
-  
-  
-  
-  
-  widget::NativeMenuSupport::CreateNativeMenuBar(mWindow, nullptr);
+  if (!gfxPlatform::IsHeadless()) {
+    
+    
+    
+    
+    widget::NativeMenuSupport::CreateNativeMenuBar(mWindow, nullptr);
+  }
 #endif
 
   window->SetModal(true);
