@@ -453,11 +453,18 @@ add_task(async function testTracingOnNextInteraction() {
     "The tracer did not log the function call before trigerring the click event"
   );
 
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "body",
     {},
     gBrowser.selectedBrowser
   );
+  AccessibilityUtils.resetEnv();
 
   await hasConsoleMessage(dbg, "λ onmousedown");
   await hasConsoleMessage(dbg, "λ onclick");
