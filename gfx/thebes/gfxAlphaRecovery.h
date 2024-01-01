@@ -6,6 +6,7 @@
 #ifndef _GFXALPHARECOVERY_H_
 #define _GFXALPHARECOVERY_H_
 
+#include "mozilla/SSE.h"
 #include "gfxTypes.h"
 #include "mozilla/gfx/Rect.h"
 
@@ -32,12 +33,33 @@ class gfxAlphaRecovery {
   static bool RecoverAlpha(gfxImageSurface* blackSurface,
                            const gfxImageSurface* whiteSurface);
 
+#ifdef MOZILLA_MAY_SUPPORT_SSE2
   
 
 
-  template <class Arch>
-  static bool RecoverAlphaGeneric(gfxImageSurface* blackSurface,
-                                  const gfxImageSurface* whiteSurface);
+
+  static bool RecoverAlphaSSE2(gfxImageSurface* blackSurface,
+                               const gfxImageSurface* whiteSurface);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static mozilla::gfx::IntRect AlignRectForSubimageRecovery(
+      const mozilla::gfx::IntRect& aRect, gfxImageSurface* aSurface);
+#else
+  static mozilla::gfx::IntRect AlignRectForSubimageRecovery(
+      const mozilla::gfx::IntRect& aRect, gfxImageSurface*) {
+    return aRect;
+  }
+#endif
 
   
   
