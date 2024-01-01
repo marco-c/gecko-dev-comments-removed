@@ -398,7 +398,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
   }
 
   
-  mCodecContext->pix_fmt = AV_PIX_FMT_YUV420P;
+  mCodecContext->pix_fmt = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
   mCodecContext->bit_rate =
       static_cast<ffmpeg::FFmpegBitRate>(mConfig.mBitrate);
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
@@ -659,7 +659,7 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
 
   
   
-  mFrame->format = AV_PIX_FMT_YUV420P;
+  mFrame->format = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
   mFrame->width = static_cast<int>(aSample->mImage->GetSize().width);
   mFrame->height = static_cast<int>(aSample->mImage->GetSize().height);
 
