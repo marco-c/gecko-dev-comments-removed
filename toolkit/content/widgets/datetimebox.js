@@ -331,12 +331,6 @@ this.DateTimeBoxWidget = class {
     field.textContent = placeholder;
     this.l10n.setAttributes(field, aL10nId);
 
-    field.setAttribute("readonly", this.mInputElement.readOnly);
-    field.setAttribute("disabled", this.mInputElement.disabled);
-    
-    field.disabled = this.mInputElement.disabled;
-    field.readOnly = this.mInputElement.readOnly;
-
     
     
     
@@ -432,11 +426,7 @@ this.DateTimeBoxWidget = class {
   }
 
   setFieldTabIndexAttribute(field) {
-    if (this.mInputElement.disabled) {
-      field.removeAttribute("tabindex");
-    } else {
-      field.tabIndex = this.mInputElement.tabIndex;
-    }
+    field.tabIndex = this.mInputElement.tabIndex;
   }
 
   updateEditAttributes() {
@@ -447,23 +437,8 @@ this.DateTimeBoxWidget = class {
     for (let child of editRoot.querySelectorAll(
       ":scope > span.datetime-edit-field"
     )) {
-      
-      
-      
-      child.setAttribute("disabled", this.mInputElement.disabled);
-      child.setAttribute("readonly", this.mInputElement.readOnly);
-
-      
-      child.disabled = this.mInputElement.disabled;
-      child.readOnly = this.mInputElement.readOnly;
-
       this.setFieldTabIndexAttribute(child);
     }
-
-    this.mCalendarButton.hidden =
-      this.mInputElement.disabled ||
-      this.mInputElement.readOnly ||
-      this.mInputElement.type === "time";
   }
 
   isEmpty(aValue) {
@@ -506,11 +481,11 @@ this.DateTimeBoxWidget = class {
   }
 
   isDisabled() {
-    return this.mInputElement.hasAttribute("disabled");
+    return this.mInputElement.matches(":disabled");
   }
 
   isReadonly() {
-    return this.mInputElement.hasAttribute("readonly");
+    return this.mInputElement.matches(":read-only");
   }
 
   isEditable() {
