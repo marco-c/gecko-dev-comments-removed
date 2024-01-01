@@ -24,6 +24,7 @@ class SVGAnimatedPathSegList;
 namespace dom {
 
 class DOMSVGPathSeg;
+class SVGPathElement;
 
 
 
@@ -108,7 +109,7 @@ class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
 
 
   static already_AddRefed<DOMSVGPathSegList> GetDOMWrapper(
-      void* aList, dom::SVGElement* aElement, bool aIsAnimValList);
+      void* aList, dom::SVGPathElement* aElement);
 
   
 

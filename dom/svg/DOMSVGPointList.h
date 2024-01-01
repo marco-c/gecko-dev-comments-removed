@@ -32,6 +32,7 @@ namespace dom {
 
 class DOMSVGPoint;
 class SVGElement;
+class SVGPolyElement;
 
 
 
@@ -123,7 +124,7 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
 
   static already_AddRefed<DOMSVGPointList> GetDOMWrapper(
-      void* aList, dom::SVGElement* aElement, bool aIsAnimValList);
+      void* aList, dom::SVGPolyElement* aElement);
 
   
 
