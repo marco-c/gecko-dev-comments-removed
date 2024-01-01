@@ -4,7 +4,7 @@
 
 
 
-#ifdef ANDROID
+#ifdef XP_LINUX
 
 #  include "mozilla/TaggedAnonymousMemory.h"
 

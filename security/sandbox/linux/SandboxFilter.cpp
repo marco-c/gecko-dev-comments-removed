@@ -68,6 +68,14 @@ using namespace sandbox::bpf_dsl;
 #endif
 
 
+#ifndef PR_SET_VMA
+#  define PR_SET_VMA 0x53564d41
+#endif
+#ifndef PR_SET_VMA_ANON_NAME
+#  define PR_SET_VMA_ANON_NAME 0
+#endif
+
+
 
 #define O_LARGEFILE_REAL 00100000
 
@@ -712,11 +720,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
   }
 
   virtual ResultExpr PrctlPolicy() const {
-    
-    
-    
     Arg<int> op(0);
+    Arg<int> arg2(1);
     return Switch(op)
+        .CASES((PR_SET_VMA),  
+               If(arg2 == PR_SET_VMA_ANON_NAME, Allow()).Else(InvalidSyscall()))
         .CASES((PR_GET_SECCOMP,   
                 PR_SET_NAME,      
                 PR_SET_DUMPABLE,  
@@ -2002,7 +2010,10 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
 
   ResultExpr PrctlPolicy() const override {
     Arg<int> op(0);
+    Arg<int> arg2(1);
     return Switch(op)
+        .CASES((PR_SET_VMA),  
+               If(arg2 == PR_SET_VMA_ANON_NAME, Allow()).Else(InvalidSyscall()))
         .CASES((PR_SET_NAME,      
                 PR_SET_DUMPABLE,  
                 PR_SET_PTRACER),  
@@ -2093,7 +2104,10 @@ class UtilitySandboxPolicy : public SandboxPolicyCommon {
 
   ResultExpr PrctlPolicy() const override {
     Arg<int> op(0);
+    Arg<int> arg2(1);
     return Switch(op)
+        .CASES((PR_SET_VMA),  
+               If(arg2 == PR_SET_VMA_ANON_NAME, Allow()).Else(InvalidSyscall()))
         .CASES((PR_SET_NAME,        
                 PR_SET_DUMPABLE,    
                 PR_SET_PTRACER,     

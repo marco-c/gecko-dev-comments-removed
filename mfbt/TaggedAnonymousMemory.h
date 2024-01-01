@@ -28,7 +28,6 @@
 
 
 
-
 #ifndef mozilla_TaggedAnonymousMemory_h
 #define mozilla_TaggedAnonymousMemory_h
 
@@ -43,7 +42,7 @@
 
 #  include "mozilla/Types.h"
 
-#  ifdef ANDROID
+#  ifdef XP_LINUX
 
 #    ifdef __cplusplus
 extern "C" {
