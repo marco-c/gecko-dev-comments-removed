@@ -380,7 +380,7 @@ pub mod platform {
 
 #[cfg(target_os = "macos")]
 pub mod platform {
-    use crate::path::{find_binary, is_binary};
+    use crate::path::{find_binary, is_app_bundle, is_binary};
     use dirs;
     use plist::Value;
     use std::path::PathBuf;
@@ -411,25 +411,16 @@ pub mod platform {
     
     
     pub fn firefox_default_path() -> Option<PathBuf> {
-        if let Some(path) = find_binary("firefox-bin") {
+        if let Some(path) = find_binary("firefox") {
             return Some(path);
         }
 
         let home = dirs::home_dir();
         for &(prefix_home, trial_path) in [
-            (
-                false,
-                "/Applications/Firefox.app/Contents/MacOS/firefox-bin",
-            ),
-            (true, "Applications/Firefox.app/Contents/MacOS/firefox-bin"),
-            (
-                false,
-                "/Applications/Firefox Nightly.app/Contents/MacOS/firefox-bin",
-            ),
-            (
-                true,
-                "Applications/Firefox Nightly.app/Contents/MacOS/firefox-bin",
-            ),
+            (false, "/Applications/Firefox.app"),
+            (true, "Applications/Firefox.app"),
+            (false, "/Applications/Firefox Nightly.app"),
+            (true, "Applications/Firefox Nightly.app"),
         ]
         .iter()
         {
@@ -438,7 +429,8 @@ pub mod platform {
                 (None, true) => continue,
                 (_, false) => PathBuf::from(trial_path),
             };
-            if is_binary(&path) {
+
+            if is_binary(&path) || is_app_bundle(&path) {
                 return Some(path);
             }
         }
