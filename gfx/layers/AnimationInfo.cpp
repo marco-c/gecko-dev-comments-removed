@@ -544,7 +544,7 @@ GroupAnimationsByProperty(const nsTArray<RefPtr<dom::Animation>>& aAnimations,
     MOZ_ASSERT(effect);
     for (const AnimationProperty& property : effect->Properties()) {
       
-      if (!aPropertySet.HasProperty(property.mProperty.mID)) {
+      if (!aPropertySet.HasProperty(property.mProperty)) {
         continue;
       }
 
@@ -579,7 +579,8 @@ bool AnimationInfo::AddAnimationsForProperty(
     MOZ_ASSERT(keyframeEffect,
                "A playing animation should have a keyframe effect");
     const AnimationProperty* property =
-        keyframeEffect->GetEffectiveAnimationOfProperty(aProperty, *aEffects);
+        keyframeEffect->GetEffectiveAnimationOfProperty(
+            AnimatedPropertyID(aProperty), *aEffects);
     if (!property) {
       continue;
     }

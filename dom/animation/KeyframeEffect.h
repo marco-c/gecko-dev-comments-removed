@@ -222,12 +222,12 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty,
+  bool HasEffectiveAnimationOfProperty(const AnimatedPropertyID& aProperty,
                                        const EffectSet& aEffect) const {
     return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
   }
   const AnimationProperty* GetEffectiveAnimationOfProperty(
-      nsCSSPropertyID aProperty, const EffectSet& aEffect) const;
+      const AnimatedPropertyID&, const EffectSet&) const;
 
   
   
