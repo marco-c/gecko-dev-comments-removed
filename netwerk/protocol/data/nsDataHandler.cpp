@@ -201,7 +201,7 @@ nsresult nsDataHandler::ParsePathWithoutRef(const nsACString& aPath,
   
   
   if (mozilla::UniquePtr<CMimeType> parsed = CMimeType::Parse(mimeType)) {
-    parsed->GetFullType(aContentType);
+    parsed->GetEssence(aContentType);
     if (aContentCharset) {
       parsed->GetParameterValue(kCharset, *aContentCharset);
     }

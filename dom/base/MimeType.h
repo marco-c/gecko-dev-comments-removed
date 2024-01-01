@@ -33,6 +33,9 @@ class TMimeType final {
     ParameterValue() : mRequiresQuoting(false) {}
   };
 
+  static nsTArray<nsTDependentSubstring<char_type>> SplitMimetype(
+      const nsTSubstring<char_type>& aMimeType);
+
   bool mIsBase64{false};
   nsTString<char_type> mType;
   nsTString<char_type> mSubtype;
@@ -48,10 +51,18 @@ class TMimeType final {
   static mozilla::UniquePtr<TMimeType<char_type>> Parse(
       const nsTSubstring<char_type>& aStr);
 
+  
+  
+  
+  
+  static bool Parse(const nsTSubstring<char_type>& aMimeType,
+                    nsTSubstring<char_type>& aOutEssence,
+                    nsTSubstring<char_type>& aOutCharset);
+
   void Serialize(nsTSubstring<char_type>& aStr) const;
 
   
-  void GetFullType(nsTSubstring<char_type>& aStr) const;
+  void GetEssence(nsTSubstring<char_type>& aOutput) const;
 
   bool IsBase64() const { return mIsBase64; }
 
@@ -64,9 +75,10 @@ class TMimeType final {
   
   
   
+  
   bool GetParameterValue(const nsTSubstring<char_type>& aName,
-                         nsTSubstring<char_type>& aOutput,
-                         bool aAppend = false) const;
+                         nsTSubstring<char_type>& aOutput, bool aAppend = false,
+                         bool aWithQuotes = true) const;
 
   
   
