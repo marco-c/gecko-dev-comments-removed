@@ -21,6 +21,13 @@ pub extern "C" fn qcms_profile_sRGB() -> *mut Profile {
     Box::into_raw(profile)
 }
 
+#[no_mangle]
+pub extern "C" fn qcms_profile_displayP3() -> *mut Profile {
+    let profile = Profile::new_displayP3();
+    Box::into_raw(profile)
+}
+
+
 
 
 
