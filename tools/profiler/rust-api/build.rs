@@ -10,7 +10,7 @@
 #[macro_use]
 extern crate lazy_static;
 
-use bindgen::{Builder, CargoCallbacks, CodegenConfig};
+use bindgen::{Builder, CodegenConfig};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -97,7 +97,7 @@ fn generate_bindings() {
         .raw_line("pub use self::root::*;")
         
         
-        .parse_callbacks(Box::new(CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         
         .generate()
         
