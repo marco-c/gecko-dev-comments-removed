@@ -9,6 +9,7 @@
 #include <windows.foundation.h>
 
 #include "gfxUtils.h"
+#include "gfxPlatform.h"
 #include "imgIContainer.h"
 #include "imgIRequest.h"
 #include "json/json.h"
@@ -294,6 +295,18 @@ void ToastNotificationHandler::UnregisterHandler() {
 nsresult ToastNotificationHandler::InitAlertAsync(
     nsIAlertNotification* aAlert) {
   MOZ_TRY(InitWindowsTag());
+
+#ifdef MOZ_BACKGROUNDTASKS
+  nsAutoString imageUrl;
+  if (BackgroundTasks::IsBackgroundTaskMode() &&
+      NS_SUCCEEDED(aAlert->GetImageURL(imageUrl)) && !imageUrl.IsEmpty()) {
+    
+    
+    
+    
+    Unused << NS_WARN_IF(!gfxPlatform::GetPlatform());
+  }
+#endif
 
   return aAlert->LoadImage( 0, this,  nullptr,
                            getter_AddRefs(mImageRequest));
