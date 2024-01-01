@@ -411,6 +411,8 @@ namespace xsimd
             using type = detail::rvv_bool_simd_register<T>;
         };
     } 
+#else
+    using rvv = detail::rvv<0xFFFFFFFF>;
 #endif
 } 
 
