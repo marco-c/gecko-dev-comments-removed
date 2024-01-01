@@ -26,9 +26,7 @@ bool AndroidEncoderModule::SupportsCodec(CodecType aCodec) const {
 }
 
 bool AndroidEncoderModule::Supports(const EncoderConfig& aConfig) const {
-  
-  if (aConfig.mCodec == CodecType::H264 &&
-      (aConfig.mSize.width == 0 || aConfig.mSize.height == 0)) {
+  if (!CanLikelyEncode(aConfig)) {
     return false;
   }
   return SupportsCodec(aConfig.mCodec);

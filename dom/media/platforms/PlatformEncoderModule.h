@@ -372,6 +372,12 @@ struct EncoderConfigurationChangeList {
   ~EncoderConfigurationChangeList() = default;
 };
 
+
+
+
+
+bool CanLikelyEncode(const EncoderConfig& aConfig);
+
 }  
 
 #endif 
