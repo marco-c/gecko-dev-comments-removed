@@ -39,6 +39,13 @@ const customLazy = {
     if (globalThis.Debugger) {
       return globalThis.Debugger;
     }
+    
+    
+    
+    
+    if (typeof isWorker == "boolean") {
+      return require("Debugger");
+    }
     const { addDebuggerToGlobal } = ChromeUtils.importESModule(
       "resource://gre/modules/jsdebugger.sys.mjs"
     );
@@ -126,7 +133,8 @@ class JavaScriptTracer {
     this.traceDOMEvents = !!options.traceDOMEvents;
     this.traceValues = !!options.traceValues;
 
-    if (options.traceOnNextInteraction) {
+    
+    if (options.traceOnNextInteraction && typeof isWorker !== "boolean") {
       this.abortController = new AbortController();
       const listener = () => {
         this.abortController.abort();
@@ -196,7 +204,17 @@ class JavaScriptTracer {
     if (notification.phase == "pre") {
       
       if (notification.type == "domEvent") {
-        this.currentDOMEvent = `DOM(${notification.event.type})`;
+        let { type } = notification.event;
+        if (!type) {
+          
+          
+          
+          type = this.dbg
+            .makeGlobalObjectReference(notification.global)
+            .makeDebuggeeValue(notification.event)
+            .getProperty("type").return;
+        }
+        this.currentDOMEvent = `DOM(${type})`;
       } else {
         this.currentDOMEvent = notification.type;
       }

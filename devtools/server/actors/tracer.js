@@ -54,10 +54,10 @@ class TracerActor extends Actor {
     this.sourcesManager = this.targetActor.sourcesManager;
 
     this.throttledTraces = [];
-    this.throttleEmitTraces = throttle(
-      this.flushTraces.bind(this),
-      CONSOLE_THROTTLING_DELAY
-    );
+    
+    this.throttleEmitTraces = isWorker
+      ? this.flushTraces.bind(this)
+      : throttle(this.flushTraces.bind(this), CONSOLE_THROTTLING_DELAY);
 
     this.geckoProfileCollector = new GeckoProfileCollector();
   }

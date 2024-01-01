@@ -135,6 +135,63 @@ add_task(async function () {
   await waitForSelectedSource(dbg, "main.js");
   await waitForSelectedLocation(dbg, 4, 2);
   ok(true, "The selected source and location is on the original file");
+
+  await dbg.toolbox.closeToolbox();
+});
+
+add_task(async function testTracingWorker() {
+  
+  await pushPref("dom.worker.console.dispatch_events_to_main_thread", false);
+
+  const dbg = await initDebugger("doc-scripts.html");
+
+  info("Instantiate a worker");
+  const { targetCommand } = dbg.toolbox.commands;
+  let onAvailable;
+  const onNewTarget = new Promise(resolve => {
+    onAvailable = ({ targetFront }) => {
+      resolve(targetFront);
+    };
+  });
+  await targetCommand.watchTargets({
+    types: [targetCommand.TYPES.FRAME],
+    onAvailable,
+  });
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
+    content.worker = new content.Worker("simple-worker.js");
+  });
+  info("Wait for the worker target");
+  const workerTarget = await onNewTarget;
+
+  await waitFor(
+    () => findAllElements(dbg, "threadsPaneItems").length == 2,
+    "Wait for the two threads to be displayed in the thread pane"
+  );
+  const threadsEl = findAllElements(dbg, "threadsPaneItems");
+  is(threadsEl.length, 2, "There are two threads in the thread panel");
+
+  info("Enable tracing on all threads");
+  await clickElement(dbg, "trace");
+  info("Wait for tracing to be enabled for the worker");
+  await waitForState(dbg, state => {
+    return dbg.selectors.getIsThreadCurrentlyTracing(
+      workerTarget.threadFront.actorID
+    );
+  });
+
+  
+  await hasConsoleMessage(dbg, "setIntervalCallback");
+  await hasConsoleMessage(dbg, "λ timer");
+
+  
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
+    content.worker.postMessage("foo");
+  });
+
+  await hasConsoleMessage(dbg, "DOM(message)");
+  await hasConsoleMessage(dbg, "λ onmessage");
+
+  await dbg.toolbox.closeToolbox();
 });
 
 add_task(async function testPersitentLogMethod() {
