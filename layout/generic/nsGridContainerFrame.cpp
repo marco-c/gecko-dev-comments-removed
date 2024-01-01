@@ -4135,7 +4135,16 @@ int32_t nsGridContainerFrame::Grid::ResolveLine(
       line = edgeLine + aNth;
     }
   }
-  return clamped(line, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return line;
 }
 
 nsGridContainerFrame::Grid::LinePair
@@ -4248,13 +4257,39 @@ nsGridContainerFrame::LineRange nsGridContainerFrame::Grid::ResolveLineRange(
     r.second = std::min(r.second, aNameMap.mClampMaxLine - 1);
   } else {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    r.first = clamped(r.first, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
+    r.second =
+        clamped(r.second, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
+
+    
+    
     if (r.first > r.second) {
       std::swap(r.first, r.second);
     } else if (r.first == r.second) {
+      
+      
+      
+      
       if (MOZ_UNLIKELY(r.first == aNameMap.mClampMaxLine)) {
         r.first = aNameMap.mClampMaxLine - 1;
       }
-      r.second = r.first + 1;  
+      r.second = r.first + 1;
     }
   }
   return LineRange(r.first, r.second);
