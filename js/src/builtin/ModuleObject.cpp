@@ -2419,28 +2419,115 @@ bool js::OnModuleEvaluationFailure(JSContext* cx,
 
 
 
+
+class DynamicImportContextObject : public NativeObject {
+ public:
+  enum { ReferencingPrivateSlot = 0, SpecifierSlot, SlotCount };
+
+  static const JSClass class_;
+  static const JSClassOps classOps_;
+
+  [[nodiscard]] static DynamicImportContextObject* create(
+      JSContext* cx, Handle<Value> referencingPrivate,
+      Handle<JSString*> specifier);
+
+  Value referencingPrivate() const;
+  JSString* specifier() const;
+
+  static void clearReferencingPrivate(JSRuntime* runtime,
+                                      DynamicImportContextObject* ic);
+
+  static void finalize(JS::GCContext* gcx, JSObject* obj);
+};
+
+
+const JSClass DynamicImportContextObject::class_ = {
+    "DynamicImportContextObject",
+    JSCLASS_HAS_RESERVED_SLOTS(DynamicImportContextObject::SlotCount) |
+        JSCLASS_SLOT0_IS_NSISUPPORTS | JSCLASS_FOREGROUND_FINALIZE,
+    &DynamicImportContextObject::classOps_};
+static_assert(DynamicImportContextObject::ReferencingPrivateSlot == 0);
+
+
+const JSClassOps DynamicImportContextObject::classOps_ = {
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    DynamicImportContextObject::finalize,  
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+};
+
+
+DynamicImportContextObject* DynamicImportContextObject::create(
+    JSContext* cx, Handle<Value> referencingPrivate,
+    Handle<JSString*> specifier) {
+  Rooted<DynamicImportContextObject*> self(
+      cx, NewObjectWithGivenProto<DynamicImportContextObject>(cx, nullptr));
+  if (!self) {
+    return nullptr;
+  }
+
+  cx->runtime()->addRefScriptPrivate(referencingPrivate);
+
+  self->initReservedSlot(ReferencingPrivateSlot, referencingPrivate);
+  self->initReservedSlot(SpecifierSlot, StringValue(specifier));
+  return self;
+}
+
+Value DynamicImportContextObject::referencingPrivate() const {
+  return getReservedSlot(ReferencingPrivateSlot);
+}
+
+JSString* DynamicImportContextObject::specifier() const {
+  Value value = getReservedSlot(SpecifierSlot);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+
+  return value.toString();
+}
+
+
+void DynamicImportContextObject::finalize(JS::GCContext* gcx, JSObject* obj) {
+  auto* context = &obj->as<DynamicImportContextObject>();
+  clearReferencingPrivate(gcx->runtime(), context);
+}
+
+
+void DynamicImportContextObject::clearReferencingPrivate(
+    JSRuntime* runtime, DynamicImportContextObject* context) {
+  Value value = context->referencingPrivate();
+  if (!value.isUndefined()) {
+    context->setReservedSlot(ReferencingPrivateSlot, UndefinedValue());
+    runtime->releaseScriptPrivate(value);
+  }
+}
+
+
+
 static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.get(0).isUndefined());
 
-  
-  
-  Rooted<ListObject*> resolvedModuleParams(cx,
-                                           ExtraFromHandler<ListObject>(args));
-  MOZ_ASSERT(resolvedModuleParams->length() == 2);
-  RootedValue referencingPrivate(cx, resolvedModuleParams->get(0));
+  Rooted<DynamicImportContextObject*> context(
+      cx, ExtraFromHandler<DynamicImportContextObject>(args));
+  auto clearRef = mozilla::MakeScopeExit([&] {
+    DynamicImportContextObject::clearReferencingPrivate(cx->runtime(), context);
+  });
 
-  auto releasePrivate = mozilla::MakeScopeExit(
-      [&] { cx->runtime()->releaseScriptPrivate(referencingPrivate); });
+  RootedValue referencingPrivate(cx, context->referencingPrivate());
 
-  Rooted<JSAtom*> specifier(
-      cx, AtomizeString(cx, resolvedModuleParams->get(1).toString()));
+  Rooted<JSAtom*> specifier(cx, AtomizeString(cx, context->specifier()));
   if (!specifier) {
     return false;
   }
 
   Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
-
   RootedObject moduleRequest(
       cx, ModuleRequestObject::create(cx, specifier, nullptr));
   if (!moduleRequest) {
@@ -2449,7 +2536,6 @@ static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
 
   RootedObject result(
       cx, CallModuleResolveHook(cx, referencingPrivate, moduleRequest));
-
   if (!result) {
     return RejectPromiseWithPendingError(cx, promise);
   }
@@ -2481,11 +2567,14 @@ static bool OnRejectedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   HandleValue error = args.get(0);
 
-  RootedValue referencingPrivate(cx, ExtraValueFromHandler(args));
-  Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
+  Rooted<DynamicImportContextObject*> context(
+      cx, ExtraFromHandler<DynamicImportContextObject>(args));
+  auto clearRef = mozilla::MakeScopeExit([&] {
+    DynamicImportContextObject::clearReferencingPrivate(cx->runtime(), context);
+  });
 
-  auto releasePrivate = mozilla::MakeScopeExit(
-      [&] { cx->runtime()->releaseScriptPrivate(referencingPrivate); });
+  RootedValue referencingPrivate(cx, context->referencingPrivate());
+  Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
 
   args.rval().setUndefined();
   return PromiseObject::reject(cx, promise, error);
@@ -2495,47 +2584,41 @@ bool js::FinishDynamicModuleImport(JSContext* cx,
                                    HandleObject evaluationPromise,
                                    HandleValue referencingPrivate,
                                    HandleObject moduleRequest,
-                                   HandleObject promiseArg) {
+                                   HandleObject promise) {
   
   
   
 
   if (!evaluationPromise || !moduleRequest) {
-    Handle<PromiseObject*> promise = promiseArg.as<PromiseObject>();
-    return RejectPromiseWithPendingError(cx, promise);
+    return RejectPromiseWithPendingError(cx, promise.as<PromiseObject>());
   }
 
-  Rooted<ListObject*> resolutionArgs(cx, ListObject::create(cx));
-  if (!resolutionArgs || !resolutionArgs->append(cx, referencingPrivate)) {
+  Rooted<JSString*> specifier(
+      cx, moduleRequest->as<ModuleRequestObject>().specifier());
+  Rooted<DynamicImportContextObject*> context(
+      cx,
+      DynamicImportContextObject::create(cx, referencingPrivate, specifier));
+  if (!context) {
     return false;
   }
-  Rooted<Value> stringValue(
-      cx, StringValue(moduleRequest->as<ModuleRequestObject>().specifier()));
-  if (!resolutionArgs->append(cx, stringValue)) {
-    return false;
-  }
 
-  Rooted<Value> resolutionArgsValue(cx, ObjectValue(*resolutionArgs));
-
+  Rooted<Value> contextValue(cx, ObjectValue(*context));
   RootedFunction onResolved(
-      cx, NewHandlerWithExtraValue(cx, OnResolvedDynamicModule, promiseArg,
-                                   resolutionArgsValue));
+      cx, NewHandlerWithExtraValue(cx, OnResolvedDynamicModule, promise,
+                                   contextValue));
   if (!onResolved) {
     return false;
   }
 
   RootedFunction onRejected(
-      cx, NewHandlerWithExtraValue(cx, OnRejectedDynamicModule, promiseArg,
-                                   referencingPrivate));
+      cx, NewHandlerWithExtraValue(cx, OnRejectedDynamicModule, promise,
+                                   contextValue));
   if (!onRejected) {
     return false;
   }
 
-  cx->runtime()->addRefScriptPrivate(referencingPrivate);
-
   if (!JS::AddPromiseReactionsIgnoringUnhandledRejection(
           cx, evaluationPromise, onResolved, onRejected)) {
-    cx->runtime()->releaseScriptPrivate(referencingPrivate);
     return false;
   }
 
