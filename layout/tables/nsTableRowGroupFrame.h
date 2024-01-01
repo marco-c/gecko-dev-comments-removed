@@ -153,15 +153,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
-
-
-  void GetContinuousBCBorderWidth(mozilla::WritingMode aWM,
-                                  mozilla::LogicalMargin& aBorder);
-
-  
-
-
-
   void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
                                   BCPixelSize aPixelValue);
   
@@ -395,11 +386,4 @@ inline void nsTableRowGroupFrame::SetHasStyleBSize(bool aValue) {
   }
 }
 
-inline void nsTableRowGroupFrame::GetContinuousBCBorderWidth(
-    mozilla::WritingMode aWM, mozilla::LogicalMargin& aBorder) {
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
-  aBorder.IEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mIEndContBorderWidth);
-  aBorder.BEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mBEndContBorderWidth);
-  aBorder.IStart(aWM) = BC_BORDER_END_HALF_COORD(d2a, mIStartContBorderWidth);
-}
 #endif

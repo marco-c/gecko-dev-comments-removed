@@ -180,14 +180,6 @@ class nsTableColGroupFrame final : public nsContainerFrame {
 
 
 
-
-
-  void GetContinuousBCBorderWidth(mozilla::WritingMode aWM,
-                                  mozilla::LogicalMargin& aBorder);
-  
-
-
-
   void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
                                   BCPixelSize aPixelValue);
 

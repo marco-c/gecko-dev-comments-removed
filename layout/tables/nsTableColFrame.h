@@ -95,16 +95,6 @@ class nsTableColFrame final : public nsSplittableFrame {
 
 
 
-
-
-
-
-  nscoord GetContinuousBCBorderWidth(mozilla::WritingMode aWM,
-                                     mozilla::LogicalMargin& aBorder);
-  
-
-
-
   void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
                                   BCPixelSize aPixelValue);
 #ifdef DEBUG
@@ -302,15 +292,6 @@ inline int32_t nsTableColFrame::GetColIndex() const { return mColIndex; }
 
 inline void nsTableColFrame::SetColIndex(int32_t aColIndex) {
   mColIndex = aColIndex;
-}
-
-inline nscoord nsTableColFrame::GetContinuousBCBorderWidth(
-    mozilla::WritingMode aWM, mozilla::LogicalMargin& aBorder) {
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
-  aBorder.BStart(aWM) = BC_BORDER_END_HALF_COORD(d2a, mBStartContBorderWidth);
-  aBorder.IEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mIEndContBorderWidth);
-  aBorder.BEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mBEndContBorderWidth);
-  return BC_BORDER_END_HALF_COORD(d2a, mIEndContBorderWidth);
 }
 
 #endif

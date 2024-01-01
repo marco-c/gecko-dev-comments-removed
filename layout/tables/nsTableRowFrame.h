@@ -227,19 +227,6 @@ class nsTableRowFrame : public nsContainerFrame {
 
 
 
-
-
-  void GetContinuousBCBorderWidth(mozilla::WritingMode aWM,
-                                  mozilla::LogicalMargin& aBorder);
-
-  
-
-
-  nscoord GetOuterBStartContBCBorderWidth();
-  
-
-
-
   void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
                                   BCPixelSize aPixelValue);
 
@@ -404,19 +391,6 @@ inline mozilla::LogicalMargin nsTableRowFrame::GetBCBorderWidth(
   return mozilla::LogicalMargin(
       aWM, presContext->DevPixelsToAppUnits(mBStartBorderWidth), 0,
       presContext->DevPixelsToAppUnits(mBEndBorderWidth), 0);
-}
-
-inline void nsTableRowFrame::GetContinuousBCBorderWidth(
-    mozilla::WritingMode aWM, mozilla::LogicalMargin& aBorder) {
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
-  aBorder.IEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mIStartContBorderWidth);
-  aBorder.BStart(aWM) = BC_BORDER_END_HALF_COORD(d2a, mBStartContBorderWidth);
-  aBorder.IStart(aWM) = BC_BORDER_END_HALF_COORD(d2a, mIEndContBorderWidth);
-}
-
-inline nscoord nsTableRowFrame::GetOuterBStartContBCBorderWidth() {
-  int32_t aPixelsToTwips = mozilla::AppUnitsPerCSSPixel();
-  return BC_BORDER_START_HALF_COORD(aPixelsToTwips, mBStartContBorderWidth);
 }
 
 #endif
