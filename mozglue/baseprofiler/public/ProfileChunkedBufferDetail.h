@@ -386,8 +386,9 @@ class InChunkPointer {
     }
     
     pointer += entrySize - 1;
-    MOZ_ASSERT(!IsNull(), "ShouldPointAtValidBlock - past end of buffer");
-    return !IsNull();
+    MOZ_ASSERT(!pointer.IsNull(),
+               "ShouldPointAtValidBlock - past end of buffer");
+    return !pointer.IsNull();
   }
 
   const ProfileBufferChunk* mChunk;
