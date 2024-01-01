@@ -63,15 +63,14 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
   
   
   
-  for (auto it = dec_vecs.begin(); it != dec_vecs.end(); it++) {
-    ParseNode* decorator = *it;
+  for (auto decorator : dec_vecs) {
     
     if (!emitDecorationState()) {
       return false;
     }
 
     
-    if (!bce_->emit1(JSOp::Undefined)) {
+    if (!bce_->emitDupAt(1)) {
       
       return false;
     }
@@ -157,6 +156,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
   }
 
   return true;
+  
 }
 
 bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
