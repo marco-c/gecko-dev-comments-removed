@@ -691,6 +691,7 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
 
   
   AVPacket* pkt = mLib->av_packet_alloc();
+
   if (!pkt) {
     FFMPEGV_LOG("failed to allocate packet");
     return EncodePromise::CreateAndReject(
@@ -698,6 +699,9 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
                     RESULT_DETAIL("Unable to allocate packet")),
         __func__);
   }
+
+  auto freePacket =
+   MakeScopeExit( [this, &pkt] { mLib->av_packet_free(&pkt); } );
 
   
 
@@ -768,6 +772,8 @@ FFmpegVideoEncoder<LIBAV_VER>::DrainWithModernAPIs() {
                     RESULT_DETAIL("Unable to allocate packet")),
         __func__);
   }
+  auto freePacket =
+   MakeScopeExit( [this, &pkt] { mLib->av_packet_free(&pkt); } );
 
   
   
