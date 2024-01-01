@@ -70,12 +70,14 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorController.h"  
 #include "mozilla/layers/DirectionUtils.h"  
-#include "mozilla/layers/APZPublicUtils.h"  
-#include "mozilla/mozalloc.h"               
-#include "mozilla/Unused.h"                 
-#include "nsAlgorithm.h"                    
-#include "nsCOMPtr.h"                       
-#include "nsDebug.h"                        
+#include "mozilla/layers/APZPublicUtils.h"   
+#include "mozilla/webrender/WebRenderAPI.h"  
+#include "mozilla/mozalloc.h"                
+#include "mozilla/Unused.h"                  
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "nsAlgorithm.h"  
+#include "nsCOMPtr.h"     
+#include "nsDebug.h"      
 #include "nsLayoutUtils.h"
 #include "nsMathUtils.h"  
 #include "nsPoint.h"      
@@ -5931,6 +5933,30 @@ GeckoViewMetrics AsyncPanZoomController::GetGeckoViewMetrics() const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   return GeckoViewMetrics{GetEffectiveScrollOffset(eForCompositing, lock),
                           GetEffectiveZoom(eForCompositing, lock)};
+}
+
+wr::MinimapData AsyncPanZoomController::GetMinimapData() const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  wr::MinimapData result;
+  result.is_root_content = IsRootContent();
+  
+  
+  
+  CSSRect visualViewport = GetCurrentAsyncVisualViewport(eForCompositing);
+  result.visual_viewport = wr::ToLayoutRect(visualViewport.ToUnknownRect());
+  CSSRect layoutViewport = GetEffectiveLayoutViewport(eForCompositing, lock);
+  result.layout_viewport = wr::ToLayoutRect(layoutViewport.ToUnknownRect());
+  result.scrollable_rect =
+      wr::ToLayoutRect(Metrics().GetScrollableRect().ToUnknownRect());
+  
+  
+  CSSRect displayPort = mLastContentPaintMetrics.GetDisplayPort() +
+                        mLastContentPaintMetrics.GetLayoutScrollOffset();
+  result.displayport = wr::ToLayoutRect(displayPort.ToUnknownRect());
+  
+  
+  
+  return result;
 }
 
 bool AsyncPanZoomController::UpdateRootFrameMetricsIfChanged(

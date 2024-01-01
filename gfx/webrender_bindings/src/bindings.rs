@@ -2019,6 +2019,21 @@ pub extern "C" fn wr_transaction_set_is_transform_async_zooming(
 }
 
 #[no_mangle]
+pub extern "C" fn wr_transaction_add_minimap_data(
+  txn: &mut Transaction,
+  pipeline_id: WrPipelineId,
+  scroll_id: u64,
+  minimap_data: MinimapData
+) {
+  
+  
+  
+  
+  let scroll_id = ExternalScrollId(scroll_id, pipeline_id);
+  txn.set_minimap_data(scroll_id, minimap_data);
+}
+
+#[no_mangle]
 pub extern "C" fn wr_transaction_set_quality_settings(txn: &mut Transaction, force_subpixel_aa_where_possible: bool) {
     txn.set_quality_settings(QualitySettings {
         force_subpixel_aa_where_possible,

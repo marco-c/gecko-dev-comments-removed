@@ -46,6 +46,7 @@ class SharedMemoryBasic;
 }  
 
 namespace wr {
+struct MinimapData;
 struct SampledScrollOffset;
 }  
 
@@ -598,6 +599,8 @@ class AsyncPanZoomController {
 
 
   GeckoViewMetrics GetGeckoViewMetrics() const;
+
+  wr::MinimapData GetMinimapData() const;
 
   
   

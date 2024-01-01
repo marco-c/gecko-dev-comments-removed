@@ -22,6 +22,7 @@
 #include "mozilla/dom/Touch.h"              
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/LoggingConstants.h"
+#include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/gfxVars.h"            
 #include "mozilla/gfx/GPUParent.h"          
 #include "mozilla/gfx/Logging.h"            
@@ -34,6 +35,7 @@
 #include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/DoubleTapToZoom.h"         
 #include "mozilla/layers/MatrixMessage.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"
@@ -46,6 +48,7 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/EventStateManager.h"  
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsDebug.h"                 
 #include "nsPoint.h"                 
 #include "nsThreadUtils.h"           
@@ -764,8 +767,8 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
   nsTArray<wr::WrTransformProperty> transforms;
 
   
-  for (const auto& mapping : mApzcMap) {
-    AsyncPanZoomController* apzc = mapping.second.apzc;
+  for (const auto& [_, mapData] : mApzcMap) {
+    AsyncPanZoomController* apzc = mapData.apzc;
 
     if (Maybe<CompositionPayload> payload = apzc->NotifyScrollSampling()) {
       if (wrBridgeParent && aVsyncId) {
@@ -789,6 +792,8 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
       }
     }
 
+    wr::LayoutTransform zoomForMinimap =
+        wr::ToLayoutTransform(gfx::Matrix4x4());
     if (Maybe<uint64_t> zoomAnimationId = apzc->GetZoomAnimationId()) {
       
       MOZ_ASSERT(apzc->IsRootContent());
@@ -800,12 +805,17 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
           AsyncPanZoomController::eForCompositing,
           AsyncTransformComponents{AsyncTransformComponent::eVisual});
 
-      transforms.AppendElement(wr::ToWrTransformProperty(
+      wr::WrTransformProperty zoomTransform = wr::ToWrTransformProperty(
           *zoomAnimationId, LayoutDeviceToParentLayerMatrix4x4::Scaling(
                                 zoom.scale, zoom.scale, 1.0f) *
                                 AsyncTransformComponentMatrix::Translation(
-                                    asyncVisualTransform.mTranslation)));
+                                    asyncVisualTransform.mTranslation));
 
+      
+      
+      zoomForMinimap = zoomTransform.value;
+
+      transforms.AppendElement(zoomTransform);
       aTxn.UpdateIsTransformAsyncZooming(*zoomAnimationId,
                                          apzc->IsAsyncZooming());
     }
@@ -814,6 +824,40 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
         apzc->GetSampledScrollOffsets();
     aTxn.UpdateScrollPosition(wr::AsPipelineId(apzc->GetGuid().mLayersId),
                               apzc->GetGuid().mScrollId, sampledOffsets);
+
+    if (StaticPrefs::apz_minimap_enabled()) {
+      wr::MinimapData minimapData = apzc->GetMinimapData();
+      minimapData.zoom_transform = zoomForMinimap;
+      
+      
+      ScrollableLayerGuid enclosingRootContentId;
+      ApzcMapData currentEntry = mapData;
+      AsyncPanZoomController* current = currentEntry.apzc;
+      while (current) {
+        if (current->IsRootContent()) {
+          enclosingRootContentId = current->GetGuid();
+          break;
+        }
+        
+        
+        
+        
+        if (auto parentGuid = currentEntry.parent) {
+          auto iter = mApzcMap.find(*parentGuid);
+          if (iter != mApzcMap.end()) {
+            currentEntry = iter->second;
+            current = currentEntry.apzc;
+            continue;
+          }
+        }
+        break;
+      }
+      minimapData.root_content_pipeline_id =
+          wr::AsPipelineId(enclosingRootContentId.mLayersId);
+      minimapData.root_content_scroll_id = enclosingRootContentId.mScrollId;
+      aTxn.AddMinimapData(wr::AsPipelineId(apzc->GetGuid().mLayersId),
+                          apzc->GetGuid().mScrollId, minimapData);
+    }
 
 #if defined(MOZ_WIDGET_ANDROID)
     
