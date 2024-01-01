@@ -8,6 +8,8 @@ import { ExtensionUtils } from "resource://gre/modules/ExtensionUtils.sys.mjs";
 
 import { ExtensionParent } from "resource://gre/modules/ExtensionParent.sys.mjs";
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const { StartupCache } = ExtensionParent;
 
 const lazy = {};
@@ -16,6 +18,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "matchAboutBlankDefaultFalse",
+  "extensions.scripting.matchAboutBlankDefaultFalse",
+  false
+);
 
 class Store {
   async _init() {
@@ -42,7 +51,7 @@ class Store {
    * Returns all the stored scripts for a given extension (ID).
    *
    * @param {string} extensionId An extension ID
-   * @returns {Array} An array of scripts
+   * @returns {Promise<Array>} An array of scripts
    */
   async getAll(extensionId) {
     await this.lazyInit();
@@ -110,7 +119,7 @@ class Store {
    * ```
    *
    * @param {string} extensionId An extension ID
-   * @returns {Array} An array of key/script pairs
+   * @returns {Promise<Array>} An array of key/script pairs
    */
   async getByExtensionId(extensionId) {
     await this.lazyInit();
@@ -179,7 +188,11 @@ export const makeInternalContentScript = (
       cssPaths,
       excludeMatches: options.excludeMatches,
       jsPaths,
-      matchAboutBlank: true,
+      // TODO(Bug 1853411): revert the short-term workaround special casing
+      // webcompat extension id once it is not necessary anymore.
+      matchAboutBlank: lazy.matchAboutBlankDefaultFalse
+        ? false // If the hidden pref is set, then forcefully set matchAboutBlank to false
+        : extension.id !== "webcompat@mozilla.org",
       matches: options.matches,
       originAttributesPatterns: null,
       persistAcrossSessions: options.persistAcrossSessions,
