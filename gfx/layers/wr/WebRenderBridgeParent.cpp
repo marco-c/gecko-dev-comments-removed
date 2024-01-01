@@ -1431,7 +1431,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
   
   
   wr::TransactionBuilder txnForImageBridge(mApi->GetRootAPI());
-  wr::AutoTransactionSender sender(mApi, &txnForImageBridge);
+  wr::AutoTransactionSender sender(mApi->GetRootAPI(), &txnForImageBridge);
 
   bool success = true;
   for (nsTArray<WebRenderParentCommand>::index_type i = 0;
