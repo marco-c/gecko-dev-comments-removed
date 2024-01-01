@@ -174,7 +174,7 @@ already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
       EncoderConfig(aCodec, gfx::IntSize{aWidth, aHeight}, aUsage, aPixelFormat,
                     aPixelFormat, FRAME_RATE ,
                     KEYFRAME_INTERVAL ,
-                    BIT_RATE , BIT_RATE_MODE, pref, aSpecific),
+                    BIT_RATE , BIT_RATE_MODE, pref, MediaDataEncoder::ScalabilityMode::None, aSpecific),
       taskQueue);
 
   return e.forget();
