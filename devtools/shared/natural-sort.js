@@ -22,47 +22,6 @@ const endsWithNullRx = /\0$/;
 const whitespaceRx = /\s+/g;
 const startsWithZeroRx = /^0/;
 const versionRx = /^([\w-]+-)?\d+\.\d+\.\d+$/;
-const numericDateRx = /^\d+[- /]\d+[- /]\d+$/;
-
-
-const dateKeywords = [
-  "mon",
-  "tues",
-  "wed",
-  "thur",
-  "fri",
-  "sat",
-  "sun",
-
-  "jan",
-  "feb",
-  "mar",
-  "apr",
-  "may",
-  "jun",
-  "jul",
-  "aug",
-  "sep",
-  "oct",
-  "nov",
-  "dec",
-];
-
-
-
-
-
-
-
-function tryParseDate(str) {
-  const lowerCaseStr = str.toLowerCase();
-  return (
-    !versionRx.test(str) &&
-    (numericDateRx.test(str) ||
-      dateKeywords.some(s => lowerCaseStr.includes(s))) &&
-    Date.parse(str)
-  );
-}
 
 
 
@@ -106,8 +65,10 @@ function naturalSort(a = "", b = "", sessionString, insensitive = false) {
     .split("\0");
 
   
-  const aHexOrDate = parseInt(a.match(hexRx), 16) || tryParseDate(a);
-  const bHexOrDate = parseInt(b.match(hexRx), 16) || tryParseDate(b);
+  const aHexOrDate =
+    parseInt(a.match(hexRx), 16) || (!versionRx.test(a) && Date.parse(a));
+  const bHexOrDate =
+    parseInt(b.match(hexRx), 16) || (!versionRx.test(b) && Date.parse(b));
 
   if (
     (aHexOrDate || bHexOrDate) &&

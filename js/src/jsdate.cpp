@@ -1407,16 +1407,6 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
 
     if (IsMonthName(s + start, index - start, &mon)) {
       seenMonthName = true;
-      
-      
-      if (IsAsciiDigit(s[index])) {
-        break;
-      }
-    } else {
-      
-      if (IsAsciiDigit(s[index]) && IsAsciiAlpha(s[index - 1])) {
-        return false;
-      }
     }
   }
 
@@ -1688,48 +1678,46 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         continue;
       }
 
-      
-      
-      
-      
-      int tryMonth;
-      if (IsMonthName(s + start, index - start, &tryMonth)) {
-        if (seenMonthName) {
-          
-          mon = tryMonth;
-          prevc = 0;
-          continue;
-        }
-
-        seenMonthName = true;
-
-        if (mon < 0) {
-          mon = tryMonth;
-        } else if (mday < 0) {
-          mday = mon;
-          mon = tryMonth;
-        } else if (year < 0) {
-          if (mday > 0) {
-            
-            
-            
-            
-            year = mday;
-            mday = mon;
-          } else {
-            year = mon;
-          }
-          mon = tryMonth;
-        } else {
-          return false;
-        }
-
-        prevc = 0;
-        continue;
-      }
-
       size_t k = std::size(keywords);
       while (k-- > 0) {
+        
+        
+        
+        
+        int tryMonth;
+        if (IsMonthName(s + start, index - start, &tryMonth)) {
+          if (seenMonthName) {
+            
+            mon = tryMonth;
+            break;
+          }
+
+          seenMonthName = true;
+
+          if (mon < 0) {
+            mon = tryMonth;
+          } else if (mday < 0) {
+            mday = mon;
+            mon = tryMonth;
+          } else if (year < 0) {
+            if (mday > 0) {
+              
+              
+              
+              
+              year = mday;
+              mday = mon;
+            } else {
+              year = mon;
+            }
+            mon = tryMonth;
+          } else {
+            return false;
+          }
+
+          break;
+        }
+
         const CharsAndAction& keyword = keywords[k];
 
         
@@ -1778,26 +1766,6 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
 
     
     return false;
-  }
-
-  
-  
-  
-  if (mon != -1 && year < 0 && mday < 0) {
-    
-    if (mon >= 13 && mon <= 31) {
-      return false;
-    }
-
-    mday = 1;
-    if (mon >= 1 && mon <= 12) {
-      
-      
-      year = 2001;
-    } else {
-      year = FixupNonFullYear(mon);
-      mon = 1;
-    }
   }
 
   if (year < 0 || mon < 0 || mday < 0) {
