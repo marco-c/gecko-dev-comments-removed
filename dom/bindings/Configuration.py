@@ -387,6 +387,7 @@ class Configuration(DescriptorProvider):
                 ignoredAttributes = {
                     "BindingTemplate",
                     "BindingAlias",
+                    "ChromeOnly",
                     "Pure",
                     "Pref",
                     "Func",

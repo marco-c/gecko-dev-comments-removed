@@ -23,9 +23,6 @@ def generate(output, idlFilename, dataFile):
     propsData = runpy.run_path(dataFile)["data"]
     props = ""
     for p in propsData.values():
-        if "Internal" in p.flags:
-            continue
-
         
         if "Style" not in p.rules:
             continue
@@ -46,6 +43,7 @@ def generate(output, idlFilename, dataFile):
         ]
 
         if p.pref != "":
+            assert "Internal" not in p.flags
             
             
             if p.method == "BackdropFilter":
@@ -54,6 +52,10 @@ def generate(output, idlFilename, dataFile):
             
             elif p.method not in ["MozTransform", "MozTransformOrigin"]:
                 extendedAttrs.append('Pref="%s"' % p.pref)
+        elif "EnabledInUASheetsAndChrome" in p.flags:
+            extendedAttrs.append("ChromeOnly")
+        elif "Internal" in p.flags:
+            continue
 
         def add_extra_accessors(p):
             prop = p.method
