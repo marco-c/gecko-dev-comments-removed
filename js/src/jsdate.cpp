@@ -1398,13 +1398,23 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
       }
     }
 
+    if (index >= length) {
+      return false;
+    }
+
     if (IsMonthName(s + start, index - start, &mon)) {
       seenMonthName = true;
+      
+      
+      if (IsAsciiDigit(s[index])) {
+        break;
+      }
+    } else {
+      
+      if (IsAsciiDigit(s[index]) && IsAsciiAlpha(s[index - 1])) {
+        return false;
+      }
     }
-  }
-
-  if (index >= length) {
-    return false;
   }
 
   int year = -1;
@@ -1761,6 +1771,26 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
 
     
     return false;
+  }
+
+  
+  
+  
+  if (mon != -1 && year < 0 && mday < 0) {
+    
+    if (mon >= 13 && mon <= 31) {
+      return false;
+    }
+
+    mday = 1;
+    if (mon >= 1 && mon <= 12) {
+      
+      
+      year = 2001;
+    } else {
+      year = FixupNonFullYear(mon);
+      mon = 1;
+    }
   }
 
   if (year < 0 || mon < 0 || mday < 0) {
