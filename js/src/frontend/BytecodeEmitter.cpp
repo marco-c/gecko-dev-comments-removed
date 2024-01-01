@@ -9387,11 +9387,42 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
               break;
           }
 
+          if (!method.isStatic()) {
+            bool hasKeyOnStack = key->isKind(ParseNodeKind::NumberExpr) ||
+                                 key->isKind(ParseNodeKind::ComputedName);
+            if (!emitDupAt(hasKeyOnStack ? 4 : 3)) {
+              
+              return false;
+            }
+          } else {
+            
+            
+            if (!emit1(JSOp::Undefined)) {
+              
+              return false;
+            }
+          }
+
+          if (!emit1(JSOp::Swap)) {
+            
+            return false;
+          }
+
           
           
           DecoratorEmitter de(this);
           if (!de.emitApplyDecoratorsToElementDefinition(
                   kind, key, method.decorators(), method.isStatic())) {
+            
+            return false;
+          }
+
+          if (!emit1(JSOp::Swap)) {
+            
+            return false;
+          }
+
+          if (!emitPopN(1)) {
             
             return false;
           }
@@ -11872,6 +11903,38 @@ bool BytecodeEmitter::emitClass(
         GetScopeDataTrailingNames(constructorScope->scopeBindings())[1]
             .name() ==
         TaggedParserAtomIndex::WellKnown::dot_instanceExtraInitializers_());
+
+    
+    
+    lse.emplace(this);
+    if (!lse->emitScope(ScopeKind::Lexical,
+                        constructorScope->scopeBindings())) {
+      return false;
+    }
+
+    
+    if (!ce.prepareForExtraInitializers(TaggedParserAtomIndex::WellKnown::
+                                            dot_instanceExtraInitializers_())) {
+      return false;
+    }
+
+    if (classNode->addInitializerFunction()) {
+      DecoratorEmitter de(this);
+      if (!de.emitCreateAddInitializerFunction(
+              classNode->addInitializerFunction(),
+              TaggedParserAtomIndex::WellKnown::
+                  dot_instanceExtraInitializers_())) {
+        
+        return false;
+      }
+
+      if (!emitUnpickN(isDerived ? 2 : 1)) {
+        
+        return false;
+      }
+
+      extraInitializersPresent = true;
+    }
 #else
     
     MOZ_ASSERT(constructorScope->scopeBindings()->length == 1);
@@ -11891,39 +11954,13 @@ bool BytecodeEmitter::emitClass(
         std::any_of(classMembers->contents().begin(),
                     classMembers->contents().end(), needsInitializer);
     if (needsInitializers) {
+#ifndef ENABLE_DECORATORS
       lse.emplace(this);
       if (!lse->emitScope(ScopeKind::Lexical,
                           constructorScope->scopeBindings())) {
         return false;
       }
-
-#ifdef ENABLE_DECORATORS
-      
-
-      if (!ce.prepareForExtraInitializers(
-              TaggedParserAtomIndex::WellKnown::
-                  dot_instanceExtraInitializers_())) {
-        return false;
-      }
-
-      DecoratorEmitter de(this);
-      if (classNode->addInitializerFunction()) {
-        if (!de.emitCreateAddInitializerFunction(
-                classNode->addInitializerFunction(),
-                TaggedParserAtomIndex::WellKnown::
-                    dot_instanceExtraInitializers_())) {
-          
-          return false;
-        }
-        if (!emitUnpickN(isDerived ? 2 : 1)) {
-          
-          return false;
-        }
-
-        extraInitializersPresent = true;
-      }
 #endif
-
       
       if (!emitCreateMemberInitializers(ce, classMembers,
                                         FieldPlacement::Instance
@@ -11970,17 +12007,13 @@ bool BytecodeEmitter::emitClass(
   }
 
 #ifdef ENABLE_DECORATORS
-  if (!extraInitializersPresent) {
+  
+  if (!emit1(JSOp::Undefined)) {
     
+    return false;
+  }
+  if (!emitUnpickN(2)) {
     
-    
-    if (!emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-    if (!emitUnpickN(2)) {
-      
-    }
   }
 #endif
 
@@ -11993,6 +12026,17 @@ bool BytecodeEmitter::emitClass(
     return false;
   }
 
+#ifdef ENABLE_DECORATORS
+  if (!emitPickN(2)) {
+    
+    return false;
+  }
+  if (!emitPopN(1)) {
+    
+    return false;
+  }
+#endif
+
   if (!emitCreateFieldKeys(classMembers, FieldPlacement::Static)) {
     return false;
   }
@@ -12003,13 +12047,15 @@ bool BytecodeEmitter::emitClass(
   }
 
 #ifdef ENABLE_DECORATORS
-  if (!emitPickN(2)) {
-    
-    return false;
-  }
-  if (!emitPopN(1)) {
-    
-    return false;
+  if (extraInitializersPresent) {
+    if (!emitPickN(2)) {
+      
+      return false;
+    }
+    if (!emitPopN(1)) {
+      
+      return false;
+    }
   }
 #endif
 
