@@ -19,6 +19,7 @@
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 #include "nsPrintfCString.h"
+#include "ImageToI420.h"
 
 
 
@@ -415,17 +416,6 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
 
   ForceEnablingFFmpegDebugLogs();
 
-  ffmpeg::FFmpegPixelFormat fmt =
-      ffmpeg::ToSupportedFFmpegPixelFormat(mConfig.mSourcePixelFormat);
-  if (fmt == ffmpeg::FFMPEG_PIX_FMT_NONE) {
-    FFMPEGV_LOG(
-        "%s is unsupported format",
-        dom::ImageBitmapFormatValues::GetString(mConfig.mSourcePixelFormat)
-            .data());
-    return MediaResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
-                       RESULT_DETAIL("Pixel format is not supported"));
-  }
-
   MOZ_ASSERT(!mCodecContext);
   if (!(mCodecContext = mLib->avcodec_alloc_context3(codec))) {
     FFMPEGV_LOG("failed to allocate ffmpeg context for codec %s", codec->name);
@@ -434,7 +424,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
   }
 
   
-  mCodecContext->pix_fmt = fmt;
+  mCodecContext->pix_fmt = AV_PIX_FMT_YUV420P;
   mCodecContext->bit_rate =
       static_cast<ffmpeg::FFmpegBitRate>(mConfig.mBitrate);
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
@@ -608,25 +598,6 @@ void FFmpegVideoEncoder<LIBAV_VER>::DestroyFrame() {
 
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-
-static bool CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
-                      const gfx::IntSize& aSize, int32_t aStride) {
-  int32_t height = aSize.height;
-  int32_t width = aSize.width;
-
-  MOZ_RELEASE_ASSERT(width <= aStride);
-
-  CheckedInt<size_t> size(height);
-  size *= aStride;
-
-  if (!size.isValid()) {
-    return false;
-  }
-
-  PodCopy(aDst, aSrc, size.value());
-  return true;
-}
-
 RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
     LIBAV_VER>::EncodeWithModernAPIs(RefPtr<const VideoData> aSample) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
@@ -673,8 +644,7 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
 
   
   
-  
-  mFrame->format = imgFmt;
+  mFrame->format = AV_PIX_FMT_YUV420P;
   mFrame->width = static_cast<int>(aSample->mImage->GetSize().width);
   mFrame->height = static_cast<int>(aSample->mImage->GetSize().height);
 
@@ -698,118 +668,15 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
         __func__);
   }
 
-  
-  if (aSample->mImage->AsPlanarYCbCrImage()) {
-    const layers::PlanarYCbCrData* data =
-        aSample->mImage->AsPlanarYCbCrImage()->GetData();
-    if (!data) {
-      FFMPEGV_LOG("No data in YCbCr image");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_ILLEGAL_INPUT,
-                      RESULT_DETAIL("Unable to get image data")),
-          __func__);
-    }
-
-    uint8_t* yPlane = mFrame->data[0];
-    uint8_t* uPlane = mFrame->data[1];
-    uint8_t* vPlane = mFrame->data[2];
-    
-
-    
-
-    
-    
-    if (!CopyPlane(yPlane, data->mYChannel, data->YDataSize(),
-                   data->mYStride) ||
-        !CopyPlane(uPlane, data->mCbChannel, data->CbCrDataSize(),
-                   data->mCbCrStride) ||
-        !CopyPlane(vPlane, data->mCrChannel, data->CbCrDataSize(),
-                   data->mCbCrStride)) {
-      FFMPEGV_LOG("Input YCbCr image is too big");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
-                      RESULT_DETAIL("Input image is too big")),
-          __func__);
-    }
-  } else if (aSample->mImage->AsNVImage()) {
-    const layers::PlanarYCbCrData* data =
-        aSample->mImage->AsNVImage()->GetData();
-    if (!data) {
-      FFMPEGV_LOG("No data in NV image");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_ILLEGAL_INPUT,
-                      RESULT_DETAIL("Input image is too big")),
-          __func__);
-    }
-
-    uint8_t* yPlane = mFrame->data[0];
-    uint8_t* uvPlane = mFrame->data[1];
-
-    
-    
-    if (!CopyPlane(yPlane, data->mYChannel, data->YDataSize(),
-                   data->mYStride) ||
-        !CopyPlane(uvPlane, data->mCbChannel, data->CbCrDataSize(),
-                   data->mCbCrStride)) {
-      FFMPEGV_LOG("Input NV image is too big");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
-                      RESULT_DETAIL("Input image is too big")),
-          __func__);
-    }
-  } else {
-    RefPtr<gfx::SourceSurface> surface = aSample->mImage->GetAsSourceSurface();
-    if (!surface) {
-      FFMPEGV_LOG("failed to get source surface of the image");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_NOT_AVAILABLE,
-                      RESULT_DETAIL("Unable to get source surface ")),
-          __func__);
-    }
-
-    RefPtr<gfx::DataSourceSurface> dataSurface = surface->GetDataSurface();
-    if (!dataSurface) {
-      FFMPEGV_LOG("failed to get data source surface of the image");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_NOT_AVAILABLE,
-                      RESULT_DETAIL("Unable to get data source surface ")),
-          __func__);
-    }
-
-    const gfx::SurfaceFormat format = dataSurface->GetFormat();
-    if (format != gfx::SurfaceFormat::R8G8B8A8 &&
-        format != gfx::SurfaceFormat::R8G8B8X8 &&
-        format != gfx::SurfaceFormat::B8G8R8A8 &&
-        format != gfx::SurfaceFormat::B8G8R8X8 &&
-        format != gfx::SurfaceFormat::R8G8B8 &&
-        format != gfx::SurfaceFormat::B8G8R8) {
-      FFMPEGV_LOG("surface format is unsupported");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
-                      RESULT_DETAIL("Unsupported surface format")),
-          __func__);
-    }
-
-    gfx::DataSourceSurface::ScopedMap map(dataSurface,
-                                          gfx::DataSourceSurface::READ);
-    if (!map.IsMapped()) {
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_NOT_AVAILABLE,
-                      RESULT_DETAIL("Unable to read image data")),
-          __func__);
-    }
-
-    
-    
-    uint8_t* buf = mFrame->data[0];
-    if (!CopyPlane(buf, map.GetData(), dataSurface->GetSize(),
-                   map.GetStride())) {
-      FFMPEGV_LOG("Input RGB-type image is too big");
-      return EncodePromise::CreateAndReject(
-          MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
-                      RESULT_DETAIL("Input RGB-type image is too big")),
-          __func__);
-    }
+  nsresult rv = ConvertToI420(
+      aSample->mImage, mFrame->data[0], mFrame->linesize[0], mFrame->data[1],
+      mFrame->linesize[1], mFrame->data[2], mFrame->linesize[2]);
+  if (NS_FAILED(rv)) {
+    FFMPEGV_LOG("Conversion error!");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_ILLEGAL_INPUT,
+                    RESULT_DETAIL("libyuv conversion error")),
+        __func__);
   }
 
   FFMPEGV_LOG(
