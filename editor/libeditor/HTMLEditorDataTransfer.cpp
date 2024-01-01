@@ -991,7 +991,9 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
           
           
           if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer()) &&
-              HTMLEditUtils::IsEmptyNode(*pointToInsert.GetContainer())) {
+              HTMLEditUtils::IsEmptyNode(
+                  *pointToInsert.GetContainer(),
+                  {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
             NS_WARNING_ASSERTION(pointToInsert.GetContainerParent(),
                                  "Insertion point is out of the DOM tree");
             if (pointToInsert.GetContainerParent()) {
@@ -3582,17 +3584,19 @@ void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
       isEmptyNodeShouldNotInserted = HTMLEditUtils::IsEmptyNode(
           *child,
           {
-           
-           
-           
-           EmptyCheckOption::TreatListItemAsVisible,
-           
-           
-           
-           
-           
-           
-           EmptyCheckOption::IgnoreEditableState});
+              
+              
+              
+              
+              EmptyCheckOption::TreatListItemAsVisible,
+              
+              
+              
+              
+              
+              
+              
+          });
     }
     
     

@@ -4594,7 +4594,8 @@ bool HTMLEditor::IsEmptyCell(dom::Element* aCell) {
 
   
   return HTMLEditUtils::IsEmptyNode(
-      *cellChild, {EmptyCheckOption::TreatSingleBRElementAsVisible});
+      *cellChild, {EmptyCheckOption::TreatSingleBRElementAsVisible,
+                   EmptyCheckOption::TreatNonEditableContentAsInvisible});
 }
 
 }  

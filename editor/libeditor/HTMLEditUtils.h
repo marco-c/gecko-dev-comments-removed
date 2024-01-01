@@ -610,7 +610,7 @@ class HTMLEditUtils final {
     TreatSingleBRElementAsVisible,
     TreatListItemAsVisible,
     TreatTableCellAsVisible,
-    IgnoreEditableState,  
+    TreatNonEditableContentAsInvisible,
     SafeToAskLayout,
   };
   using EmptyCheckOptions = EnumSet<EmptyCheckOption, uint32_t>;
@@ -660,7 +660,7 @@ class HTMLEditUtils final {
         if (foundListItem) {
           return false;  
         }
-        if (!IsEmptyNode(*child, {EmptyCheckOption::IgnoreEditableState})) {
+        if (!IsEmptyNode(*child, {})) {
           return false;  
         }
         foundListItem = true;
@@ -745,7 +745,9 @@ class HTMLEditUtils final {
         continue;
       }
       if (!HTMLEditUtils::IsEmptyInlineContainer(
-              content, {EmptyCheckOption::TreatSingleBRElementAsVisible},
+              content,
+              {EmptyCheckOption::TreatSingleBRElementAsVisible,
+               EmptyCheckOption::TreatNonEditableContentAsInvisible},
               aBlockInlineCheck)) {
         return false;
       }
