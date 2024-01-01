@@ -164,7 +164,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   Document* parentDoc = mWorkerRef->Private()->GetDocument();
 
   
-  loadContext->mRequest->SetTextSource();
+  loadContext->mRequest->SetTextSource(loadContext);
 
   
   

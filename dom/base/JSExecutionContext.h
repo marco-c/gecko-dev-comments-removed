@@ -141,8 +141,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   nsresult Compile(const nsAString& aScript);
 
   
-  nsresult Decode(mozilla::Vector<uint8_t>& aBytecodeBuf,
-                  size_t aBytecodeIndex);
+  nsresult Decode(const JS::TranscodeRange& aBytecodeBuf);
 
   
   JSScript* GetScript();
