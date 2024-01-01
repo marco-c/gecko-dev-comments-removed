@@ -87,6 +87,8 @@ class nsHTMLButtonControlFrame : public nsContainerFrame,
   nsHTMLButtonControlFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                            nsIFrame::ClassID aID);
 
+  virtual bool IsInput() { return false; }
+
   
   
   
