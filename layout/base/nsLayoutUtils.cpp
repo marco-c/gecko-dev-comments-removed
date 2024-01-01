@@ -5184,7 +5184,12 @@ nscoord nsLayoutUtils::MinSizeContributionForAxis(
   nscoord minSize;
   nscoord* fixedMinSize = nullptr;
   if (size.IsAuto()) {
-    if (aFrame->StyleDisplay()->mOverflowX == StyleOverflow::Visible) {
+    if (aFrame->StyleDisplay()->IsScrollableOverflow()) {
+      
+      
+      minSize = 0;
+      fixedMinSize = &minSize;
+    } else {
       size = aAxis == eAxisHorizontal ? stylePos->mWidth : stylePos->mHeight;
       
       
@@ -5202,10 +5207,6 @@ nscoord nsLayoutUtils::MinSizeContributionForAxis(
         fixedMinSize = &minSize;
       }
       
-    } else {
-      
-      minSize = 0;
-      fixedMinSize = &minSize;
     }
   } else if (GetAbsoluteCoord(size, minSize)) {
     fixedMinSize = &minSize;

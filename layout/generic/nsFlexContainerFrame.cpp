@@ -2306,6 +2306,9 @@ bool FlexItem::IsMinSizeAutoResolutionNeeded() const {
   
   
   
+  
+  
+  
   const auto& mainMinSize =
       Frame()->StylePosition()->MinSize(MainAxis(), ContainingBlockWM());
 

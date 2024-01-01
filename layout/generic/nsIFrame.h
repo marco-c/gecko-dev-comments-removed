@@ -4591,6 +4591,14 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
+  bool IsScrollContainer() const {
+    const bool result = IsScrollFrame() || IsListControlFrame();
+    MOZ_ASSERT(result == !!GetAsScrollContainer());
+    return result;
+  }
+  nsIScrollableFrame* GetAsScrollContainer() const;
+
+  
 
 
   bool IsRenderingObserverContainer() const {
