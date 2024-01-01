@@ -7,116 +7,35 @@
 #ifndef NSFRAMETRAVERSAL_H
 #define NSFRAMETRAVERSAL_H
 
-#include <cstdint>
 #include "mozilla/Attributes.h"
+#include "nsIFrameTraversal.h"
 
 class nsIFrame;
-class nsPresContext;
 
-class MOZ_STACK_CLASS nsFrameIterator final {
+nsresult NS_NewFrameTraversal(nsIFrameEnumerator** aEnumerator,
+                              nsPresContext* aPresContext, nsIFrame* aStart,
+                              nsIteratorType aType, bool aVisual,
+                              bool aLockInScrollView, bool aFollowOOFs,
+                              bool aSkipPopupChecks,
+                              nsIFrame* aLimiter = nullptr);
+
+nsresult NS_CreateFrameTraversal(nsIFrameTraversal** aResult);
+
+class nsFrameTraversal final : public nsIFrameTraversal {
  public:
-  void First();
-  void Next();
-  nsIFrame* CurrentItem();
-  bool IsDone();
+  nsFrameTraversal();
 
-  void Last();
-  void Prev();
+  NS_DECL_ISUPPORTS
 
-  inline nsIFrame* Traverse(bool aForward) {
-    if (aForward) {
-      Next();
-    } else {
-      Prev();
-    }
-    return CurrentItem();
-  };
-
-  enum class Type : uint8_t {
-    
-    Leaf,
-    
-    PreOrder,
-    
-    PostOrder,
-  };
-  nsFrameIterator(nsPresContext* aPresContext, nsIFrame* aStart, Type aType,
-                  bool aVisual, bool aLockInScrollView, bool aFollowOOFs,
-                  bool aSkipPopupChecks, nsIFrame* aLimiter = nullptr);
-  ~nsFrameIterator() = default;
+  NS_IMETHOD NewFrameTraversal(nsIFrameEnumerator** aEnumerator,
+                               nsPresContext* aPresContext, nsIFrame* aStart,
+                               int32_t aType, bool aVisual,
+                               bool aLockInScrollView, bool aFollowOOFs,
+                               bool aSkipPopupChecks,
+                               nsIFrame* aLimiter = nullptr) override;
 
  protected:
-  void SetCurrent(nsIFrame* aFrame) { mCurrent = aFrame; }
-  nsIFrame* GetCurrent() { return mCurrent; }
-  nsIFrame* GetStart() { return mStart; }
-  nsIFrame* GetLast() { return mLast; }
-  void SetLast(nsIFrame* aFrame) { mLast = aFrame; }
-  int8_t GetOffEdge() { return mOffEdge; }
-  void SetOffEdge(int8_t aOffEdge) { mOffEdge = aOffEdge; }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsIFrame* GetParentFrame(nsIFrame* aFrame);
-  
-  nsIFrame* GetParentFrameNotPopup(nsIFrame* aFrame);
-
-  nsIFrame* GetFirstChild(nsIFrame* aFrame);
-  nsIFrame* GetLastChild(nsIFrame* aFrame);
-
-  nsIFrame* GetNextSibling(nsIFrame* aFrame);
-  nsIFrame* GetPrevSibling(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-  nsIFrame* GetFirstChildInner(nsIFrame* aFrame);
-  nsIFrame* GetLastChildInner(nsIFrame* aFrame);
-
-  nsIFrame* GetNextSiblingInner(nsIFrame* aFrame);
-  nsIFrame* GetPrevSiblingInner(nsIFrame* aFrame);
-
-  
-
-
-
-  nsIFrame* GetPlaceholderFrame(nsIFrame* aFrame);
-  bool IsPopupFrame(nsIFrame* aFrame);
-
-  bool IsInvokerOpenPopoverFrame(nsIFrame* aFrame);
-
-  nsPresContext* const mPresContext;
-  const bool mLockScroll;
-  const bool mFollowOOFs;
-  const bool mSkipPopupChecks;
-  const bool mVisual;
-  const Type mType;
-
- private:
-  nsIFrame* const mStart;
-  nsIFrame* mCurrent;
-  nsIFrame* mLast;  
-  nsIFrame* mLimiter;
-  int8_t mOffEdge;  
+  virtual ~nsFrameTraversal();
 };
 
 #endif  
