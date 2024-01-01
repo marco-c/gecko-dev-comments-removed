@@ -3220,19 +3220,20 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
       text && text->TextDataLength() == domRange->StartOffset() &&
       domSelection->IsCollapsed()) {
     nsIFrame* startFrame = start->GetPrimaryFrame();
+    MOZ_ASSERT(startFrame);
     
-    RefPtr<nsFrameIterator> frameIterator;
     nsIFrame* limiter =
         domSelection && domSelection->GetAncestorLimiter()
             ? domSelection->GetAncestorLimiter()->GetPrimaryFrame()
             : nullptr;
-    MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameIterator), presContext,
-                                 startFrame, eLeaf,
-                                 false,  
-                                 false,  
-                                 true,   
-                                 false,  
-                                 limiter));
+    RefPtr<nsFrameIterator> frameIterator = nsFrameIterator::Create(
+        presContext, startFrame, nsFrameIterator::Type::Leaf,
+        false,  
+        false,  
+        true,   
+        false,  
+        limiter);
+    MOZ_ASSERT(frameIterator);
 
     nsIFrame* newCaretFrame = nullptr;
     nsIContent* newCaretContent = start;
@@ -4198,14 +4199,14 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       
-      nsresult rv = NS_NewFrameTraversal(
-          getter_AddRefs(frameIterator), presContext, frame, ePreOrder,
+      frameIterator = nsFrameIterator::Create(
+          presContext, frame, nsFrameIterator::Type::PreOrder,
           false,                  
           false,                  
           true,                   
           aForDocumentNavigation  
       );
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_ASSERT(frameIterator);
 
       if (iterStartContent == aRootContent) {
         if (!aForward) {
