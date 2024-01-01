@@ -2147,6 +2147,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
   AutoTArray<OwningNonNull<Element>, 24> arrayOfParents;
   for (Element* element :
        aPointToSplit.GetContainer()->InclusiveAncestorsOfType<Element>()) {
+    
     if (HTMLEditUtils::IsBlockElement(
             *element, BlockInlineCheck::UseComputedDisplayOutsideStyle) ||
         !element->GetParent() ||
@@ -2286,7 +2287,9 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
       continue;
     }
     
-    result = unwrappedSplitNodeResult.ToHandledResult();
+    if (!result.DidSplit() || unwrappedSplitNodeResult.DidSplit()) {
+      result = unwrappedSplitNodeResult.ToHandledResult();
+    }
     MOZ_ASSERT(result.Handled());
   }
 
