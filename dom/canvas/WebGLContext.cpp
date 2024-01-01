@@ -1152,8 +1152,7 @@ bool WebGLContext::PushRemoteTexture(WebGLFramebuffer* fb,
     swapChain.SetDestroyedCallback(destroyedCallback);
     mRemoteTextureOwner->RegisterTextureOwner(
         ownerId,
-         gfx::gfxVars::WebglOopAsyncPresentForceSync(),
-         !!fb);
+         gfx::gfxVars::WebglOopAsyncPresentForceSync());
   }
 
   MOZ_ASSERT(fb || surf);
