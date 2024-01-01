@@ -153,12 +153,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
-  void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
-                                  BCPixelSize aPixelValue);
-  
-
-
-
 
 
 
@@ -346,12 +340,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
   void GetNextRowSibling(nsIFrame** aRowFrame);
 
   void UndoContinuedRow(nsPresContext* aPresContext, nsTableRowFrame* aRow);
-
- private:
-  
-  BCPixelSize mIEndContBorderWidth = 0;
-  BCPixelSize mBEndContBorderWidth = 0;
-  BCPixelSize mIStartContBorderWidth = 0;
 
  public:
   bool IsRepeatable() const;

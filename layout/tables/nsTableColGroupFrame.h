@@ -176,13 +176,6 @@ class nsTableColGroupFrame final : public nsContainerFrame {
   static void ResetColIndices(nsIFrame* aFirstColGroup, int32_t aFirstColIndex,
                               nsIFrame* aStartColFrame = nullptr);
 
-  
-
-
-
-  void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
-                                  BCPixelSize aPixelValue);
-
   void InvalidateFrame(uint32_t aDisplayItemKey = 0,
                        bool aRebuildDisplayItems = true) override;
   void InvalidateFrameWithRect(const nsRect& aRect,
@@ -201,10 +194,6 @@ class nsTableColGroupFrame final : public nsContainerFrame {
   int32_t mColCount;
   
   int32_t mStartColIndex;
-
-  
-  BCPixelSize mBStartContBorderWidth;
-  BCPixelSize mBEndContBorderWidth;
 };
 
 inline nsTableColGroupFrame::nsTableColGroupFrame(ComputedStyle* aStyle,

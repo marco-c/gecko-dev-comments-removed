@@ -223,13 +223,6 @@ class nsTableRowFrame : public nsContainerFrame {
   void SetBEndBCBorderWidth(BCPixelSize aWidth) { mBEndBorderWidth = aWidth; }
   mozilla::LogicalMargin GetBCBorderWidth(mozilla::WritingMode aWM);
 
-  
-
-
-
-  void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
-                                  BCPixelSize aPixelValue);
-
   void InvalidateFrame(uint32_t aDisplayItemKey = 0,
                        bool aRebuildDisplayItems = true) override;
   void InvalidateFrameWithRect(const nsRect& aRect,
@@ -296,9 +289,6 @@ class nsTableRowFrame : public nsContainerFrame {
   
   BCPixelSize mBStartBorderWidth = 0;
   BCPixelSize mBEndBorderWidth = 0;
-  BCPixelSize mIEndContBorderWidth = 0;
-  BCPixelSize mBStartContBorderWidth = 0;
-  BCPixelSize mIStartContBorderWidth = 0;
 
   
 
