@@ -268,6 +268,19 @@ class Selection final : public nsSupportsWeakReference,
     
     CaretAssociationHint mHint{0};  
   };
+
+  
+
+
+
+  static PrimaryFrameData GetPrimaryFrameForCaret(
+      nsIContent* aContent, uint32_t aOffset, bool aVisual,
+      CaretAssociationHint aHint, intl::BidiEmbeddingLevel aCaretBidiLevel);
+
+  
+
+
+
   PrimaryFrameData GetPrimaryFrameForCaretAtFocusNode(bool aVisual) const;
 
   UniquePtr<SelectionDetails> LookUpSelection(
@@ -737,10 +750,6 @@ class Selection final : public nsSupportsWeakReference,
   void AddRangeAndSelectFramesAndNotifyListenersInternal(nsRange& aRange,
                                                          Document* aDocument,
                                                          ErrorResult&);
-
-  static PrimaryFrameData GetPrimaryFrameForCaret(
-      nsIContent* aContent, uint32_t aOffset, bool aVisual,
-      CaretAssociationHint aHint, intl::BidiEmbeddingLevel aCaretBidiLevel);
 
   
   

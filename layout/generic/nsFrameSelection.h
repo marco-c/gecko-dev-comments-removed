@@ -910,10 +910,24 @@ class nsFrameSelection final {
 
 
 
+
   mozilla::Result<mozilla::PeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
       nsDirection aDirection, bool aContinueSelection,
       const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
       const nsPoint& aDesiredCaretPos) const;
+
+  
+
+
+
+
+  static mozilla::Result<mozilla::PeekOffsetStruct, nsresult>
+  PeekOffsetForCaretMove(nsIContent* aContent, uint32_t aOffset,
+                         nsDirection aDirection, CaretAssociationHint aHint,
+                         mozilla::intl::BidiEmbeddingLevel aCaretBidiLevel,
+                         const nsSelectionAmount aAmount,
+                         const nsPoint& aDesiredCaretPos,
+                         mozilla::PeekOffsetOptions aOptions);
 
   
 
