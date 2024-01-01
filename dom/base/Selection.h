@@ -16,6 +16,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/Highlight.h"
 #include "mozilla/dom/StyledRange.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsDirection.h"
 #include "nsISelectionController.h"
 #include "nsISelectionListener.h"
@@ -43,6 +44,7 @@ class AccessibleCaretEventHub;
 class ErrorResult;
 class HTMLEditor;
 class PostContentIterator;
+enum class CaretAssociationHint;
 enum class TableSelectionMode : uint32_t;
 struct AutoPrepareFocusRange;
 namespace dom {
@@ -725,13 +727,22 @@ class Selection final : public nsSupportsWeakReference,
                                                          Document* aDocument,
                                                          ErrorResult&);
 
+  struct MOZ_STACK_CLASS PrimaryFrameData final {
+    
+    nsIFrame* mFrame = nullptr;
+    
+    
+    uint32_t mOffsetInFrameContent = 0;
+    
+    
+    CaretAssociationHint mHint{0};
+  };
   
   
   
-  nsIFrame* GetPrimaryOrCaretFrameForNodeOffset(nsIContent* aContent,
-                                                uint32_t aOffset,
-                                                int32_t* aOffsetUsed,
-                                                bool aVisual) const;
+  static PrimaryFrameData GetPrimaryOrCaretFrameForNodeOffset(
+      nsIContent* aContent, uint32_t aOffset, bool aVisual,
+      CaretAssociationHint aHint, intl::BidiEmbeddingLevel aCaretBidiLevel);
 
   
   nsresult GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
