@@ -69,8 +69,6 @@ already_AddRefed<ModuleLoadRequest> ComponentModuleLoader::CreateStaticImport(
       dom::SRIMetadata(), aParent->mURI, context, false, 
       false,                                             
       this, aParent->mVisitedSet, aParent->GetRootModule());
-
-  request->NoCacheEntryFound();
   return request.forget();
 }
 
