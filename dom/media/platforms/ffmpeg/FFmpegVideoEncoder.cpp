@@ -215,6 +215,9 @@ AVCodecID GetFFmpegEncoderCodecId<LIBAV_VER>(CodecType aCodec) {
   }
 #  endif
 
+  if (aCodec == CodecType::AV1) {
+    return AV_CODEC_ID_AV1;
+  }
 #endif
   return AV_CODEC_ID_NONE;
 }
@@ -548,6 +551,10 @@ int FFmpegVideoEncoder<LIBAV_VER>::OpenCodecContext(const AVCodec* aCodec,
   MOZ_ASSERT(mCodecContext);
 
   StaticMutexAutoLock mon(sMutex);
+  
+  
+  
+  mCodecContext->strict_std_compliance = -2;
   return mLib->avcodec_open2(mCodecContext, aCodec, aOptions);
 }
 
