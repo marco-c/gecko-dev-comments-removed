@@ -53,38 +53,28 @@ static uintptr_t GetPageMask() {
 
 }  
 
-int MozTaggedMemoryIsSupported(void) {
-  static int supported = -1;
-
-  if (supported == -1) {
-    
-    
-    supported = mozilla::TagAnonymousMemoryAligned(nullptr, 0, nullptr) == 0;
-  }
-  return supported;
-}
-
 void MozTagAnonymousMemory(const void* aPtr, size_t aLength, const char* aTag) {
-  if (MozTaggedMemoryIsSupported()) {
-    
-    
-    
-    
-    
-    uintptr_t addr = reinterpret_cast<uintptr_t>(aPtr);
-    uintptr_t end = addr + aLength;
-    uintptr_t addrRounded = addr & mozilla::GetPageMask();
-    const void* ptrRounded = reinterpret_cast<const void*>(addrRounded);
+  
+  
+  
+  
+  
+  uintptr_t addr = reinterpret_cast<uintptr_t>(aPtr);
+  uintptr_t end = addr + aLength;
+  uintptr_t addrRounded = addr & mozilla::GetPageMask();
+  const void* ptrRounded = reinterpret_cast<const void*>(addrRounded);
 
-    mozilla::TagAnonymousMemoryAligned(ptrRounded, end - addrRounded, aTag);
-  }
+  
+  
+  mozilla::TagAnonymousMemoryAligned(ptrRounded, end - addrRounded, aTag);
 }
 
 void* MozTaggedAnonymousMmap(void* aAddr, size_t aLength, int aProt, int aFlags,
                              int aFd, off_t aOffset, const char* aTag) {
   void* mapped = mmap(aAddr, aLength, aProt, aFlags, aFd, aOffset);
-  if (MozTaggedMemoryIsSupported() &&
-      (aFlags & MAP_ANONYMOUS) == MAP_ANONYMOUS && mapped != MAP_FAILED) {
+  if ((aFlags & MAP_ANONYMOUS) == MAP_ANONYMOUS && mapped != MAP_FAILED) {
+    
+    
     mozilla::TagAnonymousMemoryAligned(mapped, aLength, aTag);
   }
   return mapped;
