@@ -185,6 +185,9 @@ bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 
 
 
+
+
+
 class JSString : public js::gc::CellWithLengthAndFlags {
  protected:
   static const size_t NUM_INLINE_CHARS_LATIN1 =
@@ -282,6 +285,17 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
 
   
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1376,9 +1390,7 @@ class NormalAtom : public JSAtom {
   HashNumber hash_;
 
   
-  explicit NormalAtom(size_t length, JS::Latin1Char** chars,
-                      js::HashNumber hash);
-  explicit NormalAtom(size_t length, char16_t** chars, js::HashNumber hash);
+  explicit NormalAtom(js::HashNumber hash) : hash_(hash) {}
 
   
   NormalAtom(const char16_t* chars, size_t length, js::HashNumber hash);
@@ -1394,6 +1406,29 @@ class NormalAtom : public JSAtom {
 static_assert(sizeof(NormalAtom) == sizeof(JSString) + sizeof(uint64_t),
               "NormalAtom must have size of a string + HashNumber, "
               "aligned to gc::CellAlignBytes");
+
+class ThinInlineAtom : public NormalAtom {
+  friend class gc::CellAllocator;
+
+ public:
+  static constexpr size_t MAX_LENGTH_LATIN1 = NUM_INLINE_CHARS_LATIN1;
+  static constexpr size_t MAX_LENGTH_TWO_BYTE = NUM_INLINE_CHARS_TWO_BYTE;
+
+ protected:
+  
+  ThinInlineAtom(size_t length, JS::Latin1Char** chars, js::HashNumber hash);
+  ThinInlineAtom(size_t length, char16_t** chars, js::HashNumber hash);
+
+ public:
+  template <typename CharT>
+  static bool lengthFits(size_t length) {
+    if constexpr (sizeof(CharT) == sizeof(JS::Latin1Char)) {
+      return length <= MAX_LENGTH_LATIN1;
+    } else {
+      return length <= MAX_LENGTH_TWO_BYTE;
+    }
+  }
+};
 
 class FatInlineAtom : public JSAtom {
   friend class gc::CellAllocator;
@@ -1415,6 +1450,11 @@ class FatInlineAtom : public JSAtom {
 
   static constexpr size_t offsetOfHash() {
     return offsetof(FatInlineAtom, hash_);
+  }
+
+  template <typename CharT>
+  static bool lengthFits(size_t length) {
+    return JSFatInlineString::lengthFits<CharT>(length);
   }
 };
 
