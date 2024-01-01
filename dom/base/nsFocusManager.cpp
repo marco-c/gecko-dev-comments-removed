@@ -3221,12 +3221,12 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
       domSelection->IsCollapsed()) {
     nsIFrame* startFrame = start->GetPrimaryFrame();
     
-    nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+    RefPtr<nsFrameIterator> frameIterator;
     nsIFrame* limiter =
         domSelection && domSelection->GetAncestorLimiter()
             ? domSelection->GetAncestorLimiter()->GetPrimaryFrame()
             : nullptr;
-    MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameTraversal), presContext,
+    MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameIterator), presContext,
                                  startFrame, eLeaf,
                                  false,  
                                  false,  
@@ -3241,8 +3241,8 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
       
       
       
-      frameTraversal->Next();
-      newCaretFrame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+      frameIterator->Next();
+      newCaretFrame = frameIterator->CurrentItem();
       if (!newCaretFrame) {
         break;
       }
@@ -4193,13 +4193,13 @@ nsresult nsFocusManager::GetNextTabbableContent(
       getNextFrame = false;
     }
 
-    nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+    RefPtr<nsFrameIterator> frameIterator;
     if (frame) {
       
       
       
       nsresult rv = NS_NewFrameTraversal(
-          getter_AddRefs(frameTraversal), presContext, frame, ePreOrder,
+          getter_AddRefs(frameIterator), presContext, frame, ePreOrder,
           false,                  
           false,                  
           true,                   
@@ -4209,18 +4209,18 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
       if (iterStartContent == aRootContent) {
         if (!aForward) {
-          frameTraversal->Last();
+          frameIterator->Last();
         } else if (aRootContent->IsFocusableWithoutStyle()) {
-          frameTraversal->Next();
+          frameIterator->Next();
         }
-        frame = frameTraversal->CurrentItem();
+        frame = frameIterator->CurrentItem();
       } else if (getNextFrame &&
                  (!iterStartContent ||
                   !iterStartContent->IsHTMLElement(nsGkAtoms::area))) {
         
         
         
-        frame = frameTraversal->Traverse(aForward);
+        frame = frameIterator->Traverse(aForward);
       }
     }
 
@@ -4242,11 +4242,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
         
         do {
           if (aForward) {
-            frameTraversal->Next();
+            frameIterator->Next();
           } else {
-            frameTraversal->Prev();
+            frameIterator->Prev();
           }
-          frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+          frame = frameIterator->CurrentItem();
           
           
         } while (frame && frame->GetPrevContinuation());
@@ -4506,11 +4506,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       do {
         if (aForward) {
-          frameTraversal->Next();
+          frameIterator->Next();
         } else {
-          frameTraversal->Prev();
+          frameIterator->Prev();
         }
-        frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+        frame = frameIterator->CurrentItem();
       } while (frame && frame->GetPrevContinuation());
     }
 
