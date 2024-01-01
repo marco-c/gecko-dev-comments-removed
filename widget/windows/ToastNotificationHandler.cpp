@@ -442,6 +442,22 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
 
     success = SetAttribute(image, HStringReference(L"src"), mImageUri);
     NS_ENSURE_TRUE(success, nullptr);
+
+    switch (mImagePlacement) {
+      case ImagePlacement::eHero:
+        success =
+            SetAttribute(image, HStringReference(L"placement"), u"hero"_ns);
+        NS_ENSURE_TRUE(success, nullptr);
+        break;
+      case ImagePlacement::eIcon:
+        success = SetAttribute(image, HStringReference(L"placement"),
+                               u"appLogoOverride"_ns);
+        NS_ENSURE_TRUE(success, nullptr);
+        break;
+      case ImagePlacement::eInline:
+        
+        break;
+    }
   }
 
   ComPtr<IXmlNodeList> toastTextElements;
@@ -504,6 +520,7 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
   MOZ_LOG(sWASLog, LogLevel::Debug,
           ("launchArg: '%s'", NS_ConvertUTF16toUTF8(launchArg).get()));
 
+  
   
   
   if (mIsSystemPrincipal) {
