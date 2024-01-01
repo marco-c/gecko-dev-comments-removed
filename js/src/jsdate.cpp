@@ -1688,46 +1688,48 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         continue;
       }
 
-      size_t k = std::size(keywords);
-      while (k-- > 0) {
-        
-        
-        
-        
-        int tryMonth;
-        if (IsMonthName(s + start, index - start, &tryMonth)) {
-          if (seenMonthName) {
-            
-            mon = tryMonth;
-            break;
-          }
-
-          seenMonthName = true;
-
-          if (mon < 0) {
-            mon = tryMonth;
-          } else if (mday < 0) {
-            mday = mon;
-            mon = tryMonth;
-          } else if (year < 0) {
-            if (mday > 0) {
-              
-              
-              
-              
-              year = mday;
-              mday = mon;
-            } else {
-              year = mon;
-            }
-            mon = tryMonth;
-          } else {
-            return false;
-          }
-
-          break;
+      
+      
+      
+      
+      int tryMonth;
+      if (IsMonthName(s + start, index - start, &tryMonth)) {
+        if (seenMonthName) {
+          
+          mon = tryMonth;
+          prevc = 0;
+          continue;
         }
 
+        seenMonthName = true;
+
+        if (mon < 0) {
+          mon = tryMonth;
+        } else if (mday < 0) {
+          mday = mon;
+          mon = tryMonth;
+        } else if (year < 0) {
+          if (mday > 0) {
+            
+            
+            
+            
+            year = mday;
+            mday = mon;
+          } else {
+            year = mon;
+          }
+          mon = tryMonth;
+        } else {
+          return false;
+        }
+
+        prevc = 0;
+        continue;
+      }
+
+      size_t k = std::size(keywords);
+      while (k-- > 0) {
         const CharsAndAction& keyword = keywords[k];
 
         
