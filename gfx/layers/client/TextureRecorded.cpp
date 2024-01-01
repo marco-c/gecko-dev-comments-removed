@@ -51,19 +51,22 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
     return false;
   }
 
-  RemoteTextureId obsoleteRemoteTextureId;
-  if (mRemoteTextureOwnerId.IsValid()) {
-    
-    
-    
-    
-    
-    if (!mUsedRemoteTexture) {
-      obsoleteRemoteTextureId = mLastRemoteTextureId;
-    }
-    mLastRemoteTextureId = RemoteTextureId::GetNext();
-    mUsedRemoteTexture = false;
+  if (!mRemoteTextureOwnerId.IsValid()) {
+    MOZ_ASSERT(false);
+    return false;
   }
+
+  
+  
+  
+  
+  
+  RemoteTextureId obsoleteRemoteTextureId;
+  if (!mUsedRemoteTexture) {
+    obsoleteRemoteTextureId = mLastRemoteTextureId;
+  }
+  mLastRemoteTextureId = RemoteTextureId::GetNext();
+  mUsedRemoteTexture = false;
 
   if (!mDT) {
     mTextureId = sNextRecordedTextureId++;
@@ -150,14 +153,14 @@ void RecordedTextureData::ReturnSnapshot(
 void RecordedTextureData::Deallocate(LayersIPCChannel* aAllocator) {}
 
 bool RecordedTextureData::Serialize(SurfaceDescriptor& aDescriptor) {
-  if (mRemoteTextureOwnerId.IsValid()) {
-    aDescriptor = SurfaceDescriptorRemoteTexture(mLastRemoteTextureId,
-                                                 mRemoteTextureOwnerId);
-    
-    mUsedRemoteTexture = true;
-  } else {
-    aDescriptor = SurfaceDescriptorRecorded(mTextureId);
+  if (!mRemoteTextureOwnerId.IsValid() || !mLastRemoteTextureId.IsValid()) {
+    MOZ_ASSERT_UNREACHABLE("Missing remote texture ids!");
+    return false;
   }
+  aDescriptor = SurfaceDescriptorRemoteTexture(mLastRemoteTextureId,
+                                               mRemoteTextureOwnerId);
+  
+  mUsedRemoteTexture = true;
   return true;
 }
 
