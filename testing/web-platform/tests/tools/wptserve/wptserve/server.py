@@ -534,7 +534,7 @@ class Http2WebTestRequestHandler(BaseWebTestRequestHandler):
         dispatcher = request._dispatcher
         try:
             dispatcher.transfer_data(request)
-        except (StreamClosedError, ProtocolError):
+        except StreamClosedError:
             
             
             queue.put(None)
@@ -546,7 +546,7 @@ class Http2WebTestRequestHandler(BaseWebTestRequestHandler):
                 connection.end_stream(stream_id)
                 data = connection.data_to_send()
                 stream_handler.request.sendall(data)
-            except (StreamClosedError, ProtocolError):  
+            except StreamClosedError:  
                 pass
         queue.put(None)
 
