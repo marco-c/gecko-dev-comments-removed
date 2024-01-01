@@ -557,7 +557,7 @@ nsresult CacheLoadHandler::DataReceivedFromCache(
   nsresult rv;
 
   
-  loadContext->mRequest->SetTextSource(loadContext);
+  loadContext->mRequest->SetTextSource();
 
   rv = mDecoder->DecodeRawData(loadContext->mRequest, aString, aStringLen,
                                 true);
