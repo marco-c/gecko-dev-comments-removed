@@ -253,12 +253,6 @@ var allowlist = [
   {
     file: "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
   },
-  
-  
-  
-  {
-    file: "resource://app/localization/en-US/browser/backgroundtasks/defaultagent.ftl",
-  },
 
   
   {
@@ -290,12 +284,22 @@ var allowlist = [
   { file: "chrome://browser/content/screenshots/download-white.svg" },
 ];
 
-if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
+if (AppConstants.platform != "win") {
   
   
   
   
-  allowlist.push({ file: "chrome://fxr/content/fxrui.html" });
+  allowlist.push({
+    file: "resource://app/localization/en-US/browser/backgroundtasks/defaultagent.ftl",
+  });
+
+  if (AppConstants.NIGHTLY_BUILD) {
+    
+    
+    
+    
+    allowlist.push({ file: "chrome://fxr/content/fxrui.html" });
+  }
 }
 
 if (AppConstants.platform == "android") {
