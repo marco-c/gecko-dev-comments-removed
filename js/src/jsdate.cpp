@@ -1093,6 +1093,23 @@ bool IsPrefixOfKeyword(const CharT* s, size_t len, const char* keyword) {
   return len == 0;
 }
 
+template <typename CharT>
+bool MatchesKeyword(const CharT* s, size_t len, const char* keyword) {
+  while (len > 0) {
+    MOZ_ASSERT(IsAsciiAlpha(*s));
+    MOZ_ASSERT(IsAsciiLowercaseAlpha(*keyword));
+
+    if (unicode::ToLowerCase(static_cast<Latin1Char>(*s)) != *keyword) {
+      return false;
+    }
+
+    ++s, ++keyword;
+    --len;
+  }
+
+  return *keyword == '\0';
+}
+
 static constexpr const char* const month_prefixes[] = {
     "jan", "feb", "mar", "apr", "may", "jun",
     "jul", "aug", "sep", "oct", "nov", "dec",
@@ -1318,19 +1335,15 @@ struct CharsAndAction {
   int action;
 };
 
+static constexpr const char* const days_of_week[] = {
+    "monday", "tuesday",  "wednesday", "thursday",
+    "friday", "saturday", "sunday"};
+
 static constexpr CharsAndAction keywords[] = {
     
   
   { "am", -1 },
   { "pm", -2 },
-  
-  { "monday", 0 },
-  { "tuesday", 0 },
-  { "wednesday", 0 },
-  { "thursday", 0 },
-  { "friday", 0 },
-  { "saturday", 0 },
-  { "sunday", 0 },
   
   { "gmt", 10000 + 0 },
   { "z", 10000 + 0 },
@@ -1650,6 +1663,21 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         return false;
       }
 
+      
+      
+      bool isLateWeekday = false;
+      for (const char* weekday : days_of_week) {
+        if (IsPrefixOfKeyword(s + start, index - start, weekday)) {
+          isLateWeekday = true;
+          seenLateWeekday = true;
+          break;
+        }
+      }
+      if (isLateWeekday) {
+        prevc = 0;
+        continue;
+      }
+
       size_t k = std::size(keywords);
       while (k-- > 0) {
         
@@ -1693,19 +1721,11 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         const CharsAndAction& keyword = keywords[k];
 
         
-        
-        if (!IsPrefixOfKeyword(s + start, index - start, keyword.chars)) {
+        if (!MatchesKeyword(s + start, index - start, keyword.chars)) {
           continue;
         }
 
         int action = keyword.action;
-
-        
-        
-        if (action == 0) {
-          seenLateWeekday = true;
-          break;
-        }
 
         if (action == 10000) {
           seenGmtAbbr = true;
