@@ -259,7 +259,7 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
 bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
                             uint8_t& aLevel, uint8_t& aBitDepth,
                             uint8_t& aChromaSubsampling,
-                            VideoColorSpace& aColorSpace);
+                            mozilla::VideoColorSpace& aColorSpace);
 
 
 
@@ -268,7 +268,7 @@ bool ExtractAV1CodecDetails(const nsAString& aCodec, uint8_t& aProfile,
                             uint8_t& aLevel, uint8_t& aTier, uint8_t& aBitDepth,
                             bool& aMonochrome, bool& aSubsamplingX,
                             bool& aSubsamplingY, uint8_t& aChromaSamplePosition,
-                            VideoColorSpace& aColorSpace);
+                            mozilla::VideoColorSpace& aColorSpace);
 
 
 
