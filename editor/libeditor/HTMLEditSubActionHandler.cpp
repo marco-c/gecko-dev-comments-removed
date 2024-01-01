@@ -2087,8 +2087,7 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
   RefPtr<Element> insertedPaddingBRElement;
   if (HTMLEditUtils::IsEmptyBlockElement(
           *editableBlockElement,
-          {EmptyCheckOption::TreatSingleBRElementAsVisible,
-           EmptyCheckOption::TreatNonEditableContentAsInvisible},
+          {EmptyCheckOption::TreatSingleBRElementAsVisible},
           BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
     Result<CreateElementResult, nsresult> insertBRElementResult =
         InsertBRElement(WithTransaction::Yes,
@@ -8606,9 +8605,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitParagraphWithTransaction(
         }
 
         if (!HTMLEditUtils::IsEmptyNode(
-                aElement,
-                {EmptyCheckOption::TreatSingleBRElementAsVisible,
-                 EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
+                aElement, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
           return NS_OK;
         }
 
@@ -8640,9 +8637,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitParagraphWithTransaction(
     return Err(rv);
   }
 
-  if (HTMLEditUtils::IsEmptyNode(
-          *rightDivOrParagraphElement,
-          {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
+  if (HTMLEditUtils::IsEmptyNode(*rightDivOrParagraphElement)) {
     
     
     
@@ -10519,10 +10514,12 @@ nsresult HTMLEditor::RemoveEmptyNodesIn(const EditorDOMRange& aRange) {
         
         HTMLEditUtils::EmptyCheckOptions options{
             EmptyCheckOption::TreatListItemAsVisible,
-            EmptyCheckOption::TreatTableCellAsVisible,
-            EmptyCheckOption::TreatNonEditableContentAsInvisible};
+            EmptyCheckOption::TreatTableCellAsVisible};
         if (!isMailCite) {
           options += EmptyCheckOption::TreatSingleBRElementAsVisible;
+        } else {
+          
+          options += EmptyCheckOption::TreatNonEditableContentAsInvisible;
         }
         if (!HTMLEditUtils::IsEmptyNode(*content, options)) {
           return false;
