@@ -6121,15 +6121,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(this);
 
-  
-  
-  
-  rv = mRequestHead.SetHeader(
-      nsHttp::User_Agent,
-      gHttpHandler->UserAgent(nsContentUtils::ShouldResistFingerprinting(
-          this, RFPTarget::HttpUserAgent)));
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-
   if (WaitingForTailUnblock()) {
     
     
