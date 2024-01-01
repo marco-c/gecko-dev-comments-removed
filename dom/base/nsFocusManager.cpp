@@ -3221,12 +3221,12 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
       domSelection->IsCollapsed()) {
     nsIFrame* startFrame = start->GetPrimaryFrame();
     
-    nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+    RefPtr<nsFrameIterator> frameIterator;
     nsIFrame* limiter =
         domSelection && domSelection->GetAncestorLimiter()
             ? domSelection->GetAncestorLimiter()->GetPrimaryFrame()
             : nullptr;
-    MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameTraversal), presContext,
+    MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameIterator), presContext,
                                  startFrame, eLeaf,
                                  false,  
                                  false,  
@@ -3241,8 +3241,8 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
       
       
       
-      frameTraversal->Next();
-      newCaretFrame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+      frameIterator->Next();
+      newCaretFrame = frameIterator->CurrentItem();
       if (!newCaretFrame) {
         break;
       }
@@ -3377,13 +3377,9 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   int32_t tabIndex = forward ? 1 : 0;
   if (startContent) {
     nsIFrame* frame = startContent->GetPrimaryFrame();
-    if (startContent->IsHTMLElement(nsGkAtoms::area)) {
-      startContent->IsFocusable(&tabIndex);
-    } else if (frame) {
-      tabIndex = frame->IsFocusable().mTabIndex;
-    } else {
-      startContent->IsFocusable(&tabIndex);
-    }
+    tabIndex = (frame && !startContent->IsHTMLElement(nsGkAtoms::area))
+                   ? frame->IsFocusable().mTabIndex
+                   : startContent->IsFocusableWithoutStyle().mTabIndex;
 
     
     
@@ -4038,7 +4034,7 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
     } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
       tabIndex = frame->IsFocusable().mTabIndex;
     } else {
-      startContent->IsFocusable(&tabIndex);
+      tabIndex = startContent->IsFocusableWithoutStyle().mTabIndex;
     }
     nsIContent* contentToFocus = GetNextTabbableContentInScope(
         owner, startContent, aOriginalStartContent, aForward, tabIndex,
@@ -4197,13 +4193,13 @@ nsresult nsFocusManager::GetNextTabbableContent(
       getNextFrame = false;
     }
 
-    nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+    RefPtr<nsFrameIterator> frameIterator;
     if (frame) {
       
       
       
       nsresult rv = NS_NewFrameTraversal(
-          getter_AddRefs(frameTraversal), presContext, frame, ePreOrder,
+          getter_AddRefs(frameIterator), presContext, frame, ePreOrder,
           false,                  
           false,                  
           true,                   
@@ -4213,18 +4209,18 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
       if (iterStartContent == aRootContent) {
         if (!aForward) {
-          frameTraversal->Last();
-        } else if (aRootContent->IsFocusable()) {
-          frameTraversal->Next();
+          frameIterator->Last();
+        } else if (aRootContent->IsFocusableWithoutStyle()) {
+          frameIterator->Next();
         }
-        frame = frameTraversal->CurrentItem();
+        frame = frameIterator->CurrentItem();
       } else if (getNextFrame &&
                  (!iterStartContent ||
                   !iterStartContent->IsHTMLElement(nsGkAtoms::area))) {
         
         
         
-        frame = frameTraversal->Traverse(aForward);
+        frame = frameIterator->Traverse(aForward);
       }
     }
 
@@ -4246,11 +4242,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
         
         do {
           if (aForward) {
-            frameTraversal->Next();
+            frameIterator->Next();
           } else {
-            frameTraversal->Prev();
+            frameIterator->Prev();
           }
-          frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+          frame = frameIterator->CurrentItem();
           
           
         } while (frame && frame->GetPrevContinuation());
@@ -4282,11 +4278,12 @@ nsresult nsFocusManager::GetNextTabbableContent(
                 return rv;
               }
             }
-          } else {
-            if (invokerContent && invokerContent->IsFocusable()) {
-              invokerContent.forget(aResultContent);
-              return NS_OK;
-            }
+          } else if (invokerContent &&
+                     invokerContent->IsFocusableWithoutStyle()) {
+            
+            
+            invokerContent.forget(aResultContent);
+            return NS_OK;
           }
         }
       }
@@ -4509,11 +4506,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       do {
         if (aForward) {
-          frameTraversal->Next();
+          frameIterator->Next();
         } else {
-          frameTraversal->Prev();
+          frameIterator->Prev();
         }
-        frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+        frame = frameIterator->CurrentItem();
       } while (frame && frame->GetPrevContinuation());
     }
 
@@ -4619,11 +4616,11 @@ nsIContent* nsFocusManager::GetNextTabbableMapArea(bool aForward,
     
     Maybe<uint32_t> indexOfStartContent =
         mapContent->ComputeIndexOf(aStartContent);
-    int32_t tabIndex;
     nsIContent* scanStartContent;
+    Focusable focusable;
     if (indexOfStartContent.isNothing() ||
-        (aStartContent->IsFocusable(&tabIndex) &&
-         tabIndex != aCurrentTabIndex)) {
+        ((focusable = aStartContent->IsFocusableWithoutStyle()) &&
+         focusable.mTabIndex != aCurrentTabIndex)) {
       
       
       
@@ -4638,7 +4635,8 @@ nsIContent* nsFocusManager::GetNextTabbableMapArea(bool aForward,
     for (nsCOMPtr<nsIContent> areaContent = scanStartContent; areaContent;
          areaContent = aForward ? areaContent->GetNextSibling()
                                 : areaContent->GetPreviousSibling()) {
-      if (areaContent->IsFocusable(&tabIndex) && tabIndex == aCurrentTabIndex) {
+      focusable = areaContent->IsFocusableWithoutStyle();
+      if (focusable && focusable.mTabIndex == aCurrentTabIndex) {
         return areaContent;
       }
     }
@@ -5459,7 +5457,8 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
     
     
     
-    return frame->IsVisibleConsideringAncestors() && aTarget->IsFocusable()
+    return frame->IsVisibleConsideringAncestors() &&
+                   aTarget->IsFocusableWithoutStyle()
                ? aTarget
                : nullptr;
   }
