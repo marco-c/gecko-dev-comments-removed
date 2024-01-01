@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_MEDIAMANAGER_H
 #define MOZILLA_MEDIAMANAGER_H
@@ -58,7 +58,7 @@ struct MediaTrackConstraintSet;
 struct MediaTrackSettings;
 enum class CallerType : uint32_t;
 enum class MediaDeviceKind : uint8_t;
-}  
+}  // namespace dom
 
 namespace ipc {
 class PrincipalInfo;
@@ -69,27 +69,27 @@ class GetUserMediaWindowListener;
 class MediaManager;
 class DeviceListener;
 
-
-
-
-
+/**
+ * Device info that is independent of any Window.
+ * MediaDevices can be shared, unlike LocalMediaDevices.
+ */
 class MediaDevice final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDevice)
 
-  
-
-
+  /**
+   * Whether source device does end-run around cross origin restrictions.
+   */
   enum class IsScary { No, Yes };
 
-  
-
-
+  /**
+   * Whether source device can use OS level selection prompt
+   */
   enum class OsPromptable { No, Yes };
 
-  
-
-
+  /**
+   * Whether source device is just a placeholder
+   */
   enum class IsPlaceholder { No, Yes };
 
   MediaDevice(MediaEngine* aEngine, dom::MediaSourceEnum aMediaSource,
@@ -125,13 +125,13 @@ class MediaDevice final {
   const nsString mRawName;
 };
 
-
-
-
-
-
-
-
+/**
+ * Device info that is specific to a particular Window.  If the device is a
+ * source device, then a single corresponding MediaEngineSource is provided,
+ * which can provide a maximum of one capture stream.  LocalMediaDevices are
+ * not shared, but APIs returning LocalMediaDevices return a new object each
+ * call.
+ */
 class LocalMediaDevice final : public nsIMediaDevice {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -160,7 +160,7 @@ class LocalMediaDevice final : public nsIMediaDevice {
   void GetSettings(dom::MediaTrackSettings& aOutSettings);
   MediaEngineSource* Source();
   const TrackingId& GetTrackingId() const;
-  
+  // Returns null if not a physical audio device.
   AudioDeviceInfo* GetAudioDeviceInfo() const {
     return mRawDevice->mAudioDeviceInfo;
   }
@@ -205,20 +205,20 @@ class MediaManager final : public nsIMediaManagerService,
  public:
   static already_AddRefed<MediaManager> GetInstance();
 
-  
-  
-  
+  // NOTE: never NS_DispatchAndSpinEventLoopUntilComplete to the MediaManager
+  // thread from the MainThread, as we NS_DispatchAndSpinEventLoopUntilComplete
+  // to MainThread from MediaManager thread.
   static MediaManager* Get();
   static MediaManager* GetIfExists();
   static void Dispatch(already_AddRefed<Runnable> task);
 
-  
-
-
-
-
-
-
+  /**
+   * Posts an async operation to the media manager thread.
+   * FunctionType must be a function that takes a `MozPromiseHolder&`.
+   *
+   * The returned promise is resolved or rejected by aFunction on the media
+   * manager thread.
+   */
   template <typename MozPromiseType, typename FunctionType>
   static RefPtr<MozPromiseType> Dispatch(const char* aName,
                                          FunctionType&& aFunction);
@@ -238,9 +238,9 @@ class MediaManager final : public nsIMediaManagerService,
 
   media::Parent<media::NonE10s>* GetNonE10sParent();
 
-  
-  
-  
+  // If the window has not been destroyed, then return the
+  // GetUserMediaWindowListener for this window.
+  // If the window has been destroyed, then return null.
   RefPtr<GetUserMediaWindowListener> GetOrMakeWindowListener(
       nsPIDOMWindowInner* aWindow);
   WindowTable* GetActiveWindows() {
@@ -300,9 +300,9 @@ class MediaManager final : public nsIMediaManagerService,
       nsPIDOMWindowInner* aWindow, const dom::AudioOutputOptions& aOptions,
       dom::CallerType aCallerType);
 
-  
-  
-  
+  // Return the list of microphone, camera, and speaker devices.
+  // MediaDeviceSets provided on promise resolution are shared between
+  // callers and so cannot be modified.
   RefPtr<ConstDeviceSetPromise> GetPhysicalDevices();
 
   void OnNavigation(uint64_t aWindowID);
@@ -322,15 +322,15 @@ class MediaManager final : public nsIMediaManagerService,
   static nsresult GenerateUUID(nsAString& aResult);
 
  public:
-  
-
-
-
-
-
-
-
-
+  /**
+   * This function tries to guess the group id for a video device in aDevices
+   * based on the device name. If the name of only one audio device in aAudios
+   * contains the name of the video device, then, this video device will take
+   * the group id of the audio device. Since this is a guess we try to minimize
+   * the probability of false positive. If we fail to find a correlation we
+   * leave the video group id untouched. In that case the group id will be the
+   * video device name.
+   */
   static void GuessVideoDeviceGroupIDs(MediaDeviceSet& aDevices,
                                        const MediaDeviceSet& aAudios);
 
@@ -341,13 +341,50 @@ class MediaManager final : public nsIMediaManagerService,
     ForceFakes,
   };
   using EnumerationFlags = EnumSet<EnumerationFlag>;
-  RefPtr<LocalDeviceSetPromise> EnumerateDevicesImpl(
-      nsPIDOMWindowInner* aWindow, dom::MediaSourceEnum aVideoInputType,
-      dom::MediaSourceEnum aAudioInputType, EnumerationFlags aFlags);
 
-  RefPtr<DeviceSetPromise> EnumerateRawDevices(
+  enum class DeviceType { Real, Fake };
+
+  struct DeviceEnumerationParams {
+    DeviceEnumerationParams(dom::MediaSourceEnum aInputType, DeviceType aType,
+                            nsAutoCString aForcedDeviceName);
+    dom::MediaSourceEnum mInputType;
+    DeviceType mType;
+    nsAutoCString mForcedDeviceName;
+  };
+
+  struct VideoDeviceEnumerationParams : public DeviceEnumerationParams {
+    VideoDeviceEnumerationParams(dom::MediaSourceEnum aInputType,
+                                 DeviceType aType,
+                                 nsAutoCString aForcedDeviceName,
+                                 nsAutoCString aForcedMicrophoneName);
+
+    // The by-pref forced microphone device name, used for groupId correlation
+    // of camera devices.
+    nsAutoCString mForcedMicrophoneName;
+  };
+
+  struct EnumerationParams {
+    EnumerationParams(EnumerationFlags aFlags,
+                      Maybe<VideoDeviceEnumerationParams> aVideo,
+                      Maybe<DeviceEnumerationParams> aAudio);
+    bool HasFakeCams() const;
+    bool HasFakeMics() const;
+    bool RealDeviceRequested() const;
+    dom::MediaSourceEnum VideoInputType() const;
+    dom::MediaSourceEnum AudioInputType() const;
+    EnumerationFlags mFlags;
+    Maybe<VideoDeviceEnumerationParams> mVideo;
+    Maybe<DeviceEnumerationParams> mAudio;
+  };
+
+  static EnumerationParams CreateEnumerationParams(
       dom::MediaSourceEnum aVideoInputType,
       dom::MediaSourceEnum aAudioInputType, EnumerationFlags aFlags);
+
+  RefPtr<LocalDeviceSetPromise> EnumerateDevicesImpl(
+      nsPIDOMWindowInner* aWindow, EnumerationParams aParams);
+
+  RefPtr<DeviceSetPromise> EnumerateRawDevices(EnumerationParams aParams);
 
   RefPtr<LocalDeviceSetPromise> SelectSettings(
       const dom::MediaStreamConstraints& aConstraints,
@@ -359,7 +396,7 @@ class MediaManager final : public nsIMediaManagerService,
                    bool* aVal);
   void GetPrefs(nsIPrefBranch* aBranch, const char* aData);
 
-  
+  // Make private because we want only one instance of this class
   explicit MediaManager(already_AddRefed<TaskQueue> aMediaThread);
 
   ~MediaManager() = default;
@@ -373,23 +410,23 @@ class MediaManager final : public nsIMediaManagerService,
   void InvalidateDeviceCache();
   void HandleDeviceListChanged();
 
-  
-  
+  // Returns the number of incomplete tasks associated with this window,
+  // including the newly added task.
   size_t AddTaskAndGetCount(uint64_t aWindowID, const nsAString& aCallID,
                             RefPtr<GetUserMediaTask> aTask);
-  
+  // Finds the task corresponding to aCallID and removes it from tracking.
   RefPtr<GetUserMediaTask> TakeGetUserMediaTask(const nsAString& aCallID);
-  
-  
+  // Intended for use with "media.navigator.permission.disabled" to bypass the
+  // permission prompt and use the first appropriate device.
   void NotifyAllowed(const nsString& aCallID,
                      const LocalMediaDeviceSet& aDevices);
 
-  
+  // Media thread only
   MediaEngine* GetBackend();
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf);
 
-  
+  // ONLY access from MainThread so we don't need to lock
   WindowTable mActiveWindows;
   nsRefPtrHashtable<nsStringHashKey, GetUserMediaTask> mActiveCallbacks;
   nsClassHashtable<nsUint64HashKey, nsTArray<nsString>> mCallIds;
@@ -397,8 +434,8 @@ class MediaManager final : public nsIMediaManagerService,
 #ifdef MOZ_WEBRTC
   RefPtr<WebrtcLogSinkHandle> mLogHandle;
 #endif
-  
-  
+  // non-null if a device enumeration is in progress and was started after the
+  // last device-change invalidation
   RefPtr<media::Refcountable<nsTArray<MozPromiseHolder<ConstDeviceSetPromise>>>>
       mPendingDevicesPromises;
   RefPtr<MediaDeviceSetRefCnt> mPhysicalDevices;
@@ -408,21 +445,21 @@ class MediaManager final : public nsIMediaManagerService,
   bool mMicrophonesMuted = false;
 
  public:
-  
+  // Always exists
   const RefPtr<TaskQueue> mMediaThread;
 
  private:
   nsCOMPtr<nsIAsyncShutdownBlocker> mShutdownBlocker;
 
-  
+  // ONLY accessed from MediaManagerThread
   RefPtr<MediaEngine> mBackend;
 
-  
-  
-  
+  // Accessed only on main thread and mMediaThread.
+  // Set before mMediaThread is created, and cleared on main thread after last
+  // mMediaThread task is run.
   static StaticRefPtr<MediaManager> sSingleton;
 
-  
+  // Connect/Disconnect on media thread only
   MediaEventListener mDeviceListChangeListener;
 
   MediaEventProducer<void> mDeviceListChangeEvent;
@@ -431,6 +468,6 @@ class MediaManager final : public nsIMediaManagerService,
   RefPtr<media::Parent<media::NonE10s>> mNonE10sParent;
 };
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // MOZILLA_MEDIAMANAGER_H
