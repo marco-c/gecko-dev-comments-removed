@@ -24,6 +24,7 @@ enum class StackCaptureOptions {
 
 }
 
+#include "BaseProfileJSONWriter.h"
 #include "BaseProfilingCategory.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfileChunkedBuffer.h"
@@ -684,6 +685,19 @@ class JSONWriter;
 
 class MarkerSchema {
  public:
+  
+  
+  
+  enum class InputType {
+    Uint64,
+    Uint32,
+    Boolean,
+    CString,
+    String,
+    TimeStamp,
+    TimeDuration
+  };
+
   enum class Location : unsigned {
     MarkerChart,
     MarkerTable,
@@ -752,6 +766,34 @@ class MarkerSchema {
     
     
     Decimal
+  };
+
+  
+  
+  
+  
+  enum class ETWMarkerGroup : uint64_t {
+    Generic = 1,
+    UserMarkers = 1 << 1,
+    Memory = 1 << 2,
+    Scheduling = 1 << 3
+  };
+
+  
+  enum class PayloadFlags : uint32_t { None = 0, Searchable = 1 };
+
+  
+  struct PayloadField {
+    
+    const char* Key;
+    
+    InputType InputTy;
+    
+    const char* Label = nullptr;
+    
+    Format Fmt = Format::String;
+    
+    PayloadFlags Flags = PayloadFlags::None;
   };
 
   enum class Searchable { NotSearchable, Searchable };

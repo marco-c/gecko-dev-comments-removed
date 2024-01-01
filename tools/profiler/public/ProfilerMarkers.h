@@ -36,6 +36,8 @@
 #include "mozilla/ProfilerMarkersDetail.h"
 #include "mozilla/ProfilerLabels.h"
 #include "nsJSUtils.h"  
+#include "nsString.h"
+#include "ETWTools.h"
 
 class nsIDocShell;
 
@@ -123,14 +125,25 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
 }
 #endif
 
+
+[[nodiscard]] inline bool profiler_thread_is_being_gecko_profiled_for_markers(
+    const ProfilerThreadId& aThreadId) {
+  return profiler_thread_is_being_profiled(aThreadId,
+                                           ThreadProfilingFeatures::Markers);
+}
+
+
+
 [[nodiscard]] inline bool profiler_thread_is_being_profiled_for_markers() {
-  return profiler_thread_is_being_profiled(ThreadProfilingFeatures::Markers);
+  return profiler_thread_is_being_profiled(ThreadProfilingFeatures::Markers) ||
+         profiler_is_etw_collecting_markers();
 }
 
 [[nodiscard]] inline bool profiler_thread_is_being_profiled_for_markers(
     const ProfilerThreadId& aThreadId) {
   return profiler_thread_is_being_profiled(aThreadId,
-                                           ThreadProfilingFeatures::Markers);
+                                           ThreadProfilingFeatures::Markers) ||
+         profiler_is_etw_collecting_markers();
 }
 
 
@@ -149,7 +162,12 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
 #ifndef MOZ_GECKO_PROFILER
   return {};
 #else
-  if (!profiler_thread_is_being_profiled_for_markers(
+#  ifndef RUST_BINDGEN
+  
+  ETW::EmitETWMarker(aName, aCategory, aOptions, aMarkerType,
+                     aPayloadArguments...);
+#  endif
+  if (!profiler_thread_is_being_gecko_profiled_for_markers(
           aOptions.ThreadId().ThreadId())) {
     return {};
   }
@@ -179,9 +197,10 @@ inline mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
 
 
 
+
 #define profiler_add_marker(...)               \
   do {                                         \
-    if (profiler_is_active_and_unpaused()) {   \
+    if (profiler_is_collecting_markers()) {    \
       ::profiler_add_marker_impl(__VA_ARGS__); \
     }                                          \
   } while (false)
@@ -369,4 +388,122 @@ extern template mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
     const mozilla::ProfilerString8View&);
 #endif  
 
+namespace mozilla {
+
+namespace detail {
+
+template <typename PayloadType>
+static void StreamPayload(baseprofiler::SpliceableJSONWriter& aWriter,
+                          const Span<const char> aKey,
+                          const PayloadType& aPayload) {
+  aWriter.StringProperty(aKey, aPayload);
+}
+
+template <typename PayloadType>
+inline void StreamPayload(baseprofiler::SpliceableJSONWriter& aWriter,
+                          const Span<const char> aKey,
+                          const Maybe<PayloadType>& aPayload) {
+  if (aPayload.isSome()) {
+    StreamPayload(aWriter, aKey, *aPayload);
+  } else {
+    aWriter.NullProperty(aKey);
+  }
+}
+
+template <>
+inline void StreamPayload<bool>(baseprofiler::SpliceableJSONWriter& aWriter,
+                                const Span<const char> aKey,
+                                const bool& aPayload) {
+  aWriter.BoolProperty(aKey, aPayload);
+}
+
+template <>
+inline void StreamPayload<ProfilerString16View>(
+    baseprofiler::SpliceableJSONWriter& aWriter, const Span<const char> aKey,
+    const ProfilerString16View& aPayload) {
+  aWriter.StringProperty(aKey, NS_ConvertUTF16toUTF8(aPayload));
+}
+
+template <>
+inline void StreamPayload<ProfilerString8View>(
+    baseprofiler::SpliceableJSONWriter& aWriter, const Span<const char> aKey,
+    const ProfilerString8View& aPayload) {
+  aWriter.StringProperty(aKey, aPayload);
+}
+}  
+
+
+
+
+
+
+template <typename T>
+struct BaseMarkerType {
+  static constexpr const char* AllLabels = nullptr;
+  static constexpr const char* ChartLabel = nullptr;
+  static constexpr const char* TableLabel = nullptr;
+  static constexpr const char* TooltipLabel = nullptr;
+
+  static constexpr MarkerSchema::ETWMarkerGroup Group =
+      MarkerSchema::ETWMarkerGroup::Generic;
+
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{T::Locations, std::size(T::Locations)};
+    if (T::AllLabels) {
+      schema.SetAllLabels(T::AllLabels);
+    }
+    if (T::ChartLabel) {
+      schema.SetChartLabel(T::ChartLabel);
+    }
+    if (T::TableLabel) {
+      schema.SetTableLabel(T::TableLabel);
+    }
+    if (T::TooltipLabel) {
+      schema.SetTooltipLabel(T::TooltipLabel);
+    }
+    for (const MS::PayloadField field : T::PayloadFields) {
+      if (field.Label) {
+        if (uint32_t(field.Flags) & uint32_t(MS::PayloadFlags::Searchable)) {
+          schema.AddKeyLabelFormatSearchable(field.Key, field.Label, field.Fmt,
+                                             MS::Searchable::Searchable);
+        } else {
+          schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt);
+        }
+      } else {
+        if (uint32_t(field.Flags) & uint32_t(MS::PayloadFlags::Searchable)) {
+          schema.AddKeyFormatSearchable(field.Key, field.Fmt,
+                                        MS::Searchable::Searchable);
+        } else {
+          schema.AddKeyFormat(field.Key, field.Fmt);
+        }
+      }
+    }
+    if (T::Description) {
+      schema.AddStaticLabelValue("Description", T::Description);
+    }
+    return schema;
+  }
+
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan(T::Name);
+  }
+
+  
+  
+  
+  
+  
+  template <typename... PayloadArguments>
+  static void StreamJSONMarkerDataImpl(
+      baseprofiler::SpliceableJSONWriter& aWriter,
+      const PayloadArguments&... aPayloadArguments) {
+    size_t i = 0;
+    (detail::StreamPayload(aWriter, MakeStringSpan(T::PayloadFields[i++].Key),
+                           aPayloadArguments),
+     ...);
+  }
+};
+
+}  
 #endif  

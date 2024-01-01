@@ -267,6 +267,8 @@ void Await() {
       }));
 }
 
+
+#undef Yield
 void Yield() { eventInProgress = false; }
 
 }  
