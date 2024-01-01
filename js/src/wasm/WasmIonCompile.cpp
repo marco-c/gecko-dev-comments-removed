@@ -63,33 +63,18 @@ using DefVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 using ControlInstructionVector =
     Vector<MControlInstruction*, 8, SystemAllocPolicy>;
 
-struct TryControl {
-  
-  ControlInstructionVector landingPadPatches;
-  
-  TryTableCatchVector catches;
-  
-  bool inBody;
-
-  TryControl() : inBody(false) {}
-
-  
-  void reset() {
-    landingPadPatches.clearAndFree();
-    catches.clearAndFree();
-    inBody = false;
-  }
-};
-using UniqueTryControl = UniquePtr<TryControl>;
-using VectorUniqueTryControl = Vector<UniqueTryControl, 2, SystemAllocPolicy>;
-
 struct Control {
   MBasicBlock* block;
-  UniqueTryControl tryControl;
+  
+  
+  ControlInstructionVector tryPadPatches;
 
-  Control() : block(nullptr), tryControl(nullptr) {}
-  Control(Control&&) = default;
-  Control(const Control&) = delete;
+  Control() : block(nullptr) {}
+
+  explicit Control(MBasicBlock* block) : block(block) {}
+
+ public:
+  void setBlock(MBasicBlock* newBlock) { block = newBlock; }
 };
 
 
@@ -255,10 +240,6 @@ class FunctionCompiler {
   uint32_t loopDepth_;
   uint32_t blockDepth_;
   ControlFlowPatchVectorVector blockPatches_;
-  
-  
-  
-  ControlInstructionVector bodyDelegatePadPatches_;
 
   
   MWasmParameter* instancePointer_;
@@ -266,9 +247,6 @@ class FunctionCompiler {
 
   
   wasm::TryNoteVector& tryNotes_;
-
-  
-  VectorUniqueTryControl tryControlCache_;
 
  public:
   FunctionCompiler(const ModuleEnvironment& moduleEnv, Decoder& decoder,
@@ -304,24 +282,6 @@ class FunctionCompiler {
   BytecodeOffset bytecodeOffset() const { return iter_.bytecodeOffset(); }
   BytecodeOffset bytecodeIfNotAsmJS() const {
     return moduleEnv_.isAsmJS() ? BytecodeOffset() : iter_.bytecodeOffset();
-  }
-
-  
-  [[nodiscard]] UniqueTryControl newTryControl() {
-    if (tryControlCache_.empty()) {
-      return UniqueTryControl(js_new<TryControl>());
-    }
-    UniqueTryControl tryControl = std::move(tryControlCache_.back());
-    tryControlCache_.popBack();
-    return tryControl;
-  }
-
-  
-  void freeTryControl(UniqueTryControl&& tryControl) {
-    
-    tryControl->reset();
-    
-    (void)tryControlCache_.append(std::move(tryControl));
   }
 
   [[nodiscard]] bool init() {
@@ -2399,19 +2359,16 @@ class FunctionCompiler {
     }
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
-    MInstruction* ins;
-    ins = MWasmCallUncatchable::NewBuiltinInstanceMethodCall(
+    auto* ins = MWasmCallUncatchable::NewBuiltinInstanceMethodCall(
         alloc(), desc, builtin.identity, builtin.failureMode, call.instanceArg_,
         call.regArgs_, StackArgAreaSizeUnaligned(builtin));
     if (!ins) {
       return false;
     }
+
     curBlock_->add(ins);
 
-    if (!def) {
-      return true;
-    }
-    return collectUnaryCallResult(builtin.retType, def);
+    return def ? collectUnaryCallResult(builtin.retType, def) : true;
   }
 
 #ifdef ENABLE_WASM_FUNCTION_REFERENCES
@@ -2759,20 +2716,11 @@ class FunctionCompiler {
         continue;
       }
       Control& control = iter().controlItem(depth);
-      if (!control.tryControl) {
-        continue;
-      }
-      for (MControlInstruction* patch : control.tryControl->landingPadPatches) {
+      for (MControlInstruction* patch : control.tryPadPatches) {
         MBasicBlock* block = patch->block();
         if (block->loopDepth() >= loopEntry->loopDepth()) {
           fixupRedundantPhis(block);
         }
-      }
-    }
-    for (MControlInstruction* patch : bodyDelegatePadPatches_) {
-      MBasicBlock* block = patch->block();
-      if (block->loopDepth() >= loopEntry->loopDepth()) {
-        fixupRedundantPhis(block);
       }
     }
 
@@ -2989,16 +2937,8 @@ class FunctionCompiler {
 
   
 
-  bool inTryBlockFrom(uint32_t fromRelativeDepth, uint32_t* relativeDepth) {
-    return iter().controlFindInnermostFrom(
-        [](LabelKind kind, const Control& control) {
-          return control.tryControl != nullptr && control.tryControl->inBody;
-        },
-        fromRelativeDepth, relativeDepth);
-  }
-
   bool inTryBlock(uint32_t* relativeDepth) {
-    return inTryBlockFrom(0, relativeDepth);
+    return iter().controlFindInnermost(LabelKind::Try, relativeDepth);
   }
 
   bool inTryCode() {
@@ -3054,8 +2994,9 @@ class FunctionCompiler {
 
   [[nodiscard]] bool addPadPatch(MControlInstruction* ins,
                                  size_t relativeTryDepth) {
-    Control& control = iter().controlItem(relativeTryDepth);
-    return control.tryControl->landingPadPatches.emplaceBack(ins);
+    Control& tryControl = iter().controlItem(relativeTryDepth);
+    ControlInstructionVector& padPatches = tryControl.tryPadPatches;
+    return padPatches.emplaceBack(ins);
   }
 
   [[nodiscard]] bool endWithPadPatch(uint32_t relativeTryDepth) {
@@ -3071,20 +3012,15 @@ class FunctionCompiler {
     }
 
     
-    ControlInstructionVector* targetPatches;
     uint32_t targetRelativeDepth;
-    if (inTryBlockFrom(relativeDepth, &targetRelativeDepth)) {
-      targetPatches = &iter()
-                           .controlItem(targetRelativeDepth)
-                           .tryControl->landingPadPatches;
-    } else {
+    if (!iter().controlFindInnermostFrom(LabelKind::Try, relativeDepth,
+                                         &targetRelativeDepth)) {
       MOZ_ASSERT(relativeDepth <= blockDepth_ - 1);
-      targetPatches = &bodyDelegatePadPatches_;
+      targetRelativeDepth = blockDepth_ - 1;
     }
-
     
     for (MControlInstruction* ins : patches) {
-      if (!targetPatches->emplaceBack(ins)) {
+      if (!addPadPatch(ins, targetRelativeDepth)) {
         return false;
       }
     }
@@ -3131,14 +3067,14 @@ class FunctionCompiler {
 
   
   
-  
-  [[nodiscard]] bool createTryLandingPadIfNeeded(
-      ControlInstructionVector& landingPadPatches, MBasicBlock** landingPad) {
+  [[nodiscard]] bool createTryLandingPadIfNeeded(Control& control,
+                                                 MBasicBlock** landingPad) {
     
     
     
     
-    if (landingPadPatches.empty()) {
+    ControlInstructionVector& patches = control.tryPadPatches;
+    if (patches.empty()) {
       *landingPad = nullptr;
       return true;
     }
@@ -3146,14 +3082,14 @@ class FunctionCompiler {
     
     
     
-    MControlInstruction* ins = landingPadPatches[0];
+    MControlInstruction* ins = patches[0];
     MBasicBlock* pred = ins->block();
     if (!newBlock(pred, landingPad)) {
       return false;
     }
     ins->replaceSuccessor(0, *landingPad);
-    for (size_t i = 1; i < landingPadPatches.length(); i++) {
-      ins = landingPadPatches[i];
+    for (size_t i = 1; i < patches.length(); i++) {
+      ins = patches[i];
       pred = ins->block();
       if (!(*landingPad)->addPredecessor(alloc(), pred)) {
         return false;
@@ -3162,129 +3098,20 @@ class FunctionCompiler {
     }
 
     
-    if (!setupLandingPadSlots(landingPad)) {
+    if (!setupLandingPadSlots(*landingPad)) {
       return false;
     }
 
     
-    landingPadPatches.clear();
-    return true;
-  }
-
-  [[nodiscard]] bool createTryTableLandingPad(TryControl* tryControl) {
-    MBasicBlock* landingPad;
-    if (!createTryLandingPadIfNeeded(tryControl->landingPadPatches,
-                                     &landingPad)) {
-      return false;
-    }
-
-    
-    
-    if (!landingPad) {
-      return true;
-    }
-
-    MBasicBlock* originalBlock = curBlock_;
-    curBlock_ = landingPad;
-
-    bool hadCatchAll = false;
-    for (const TryTableCatch& tryTableCatch : tryControl->catches) {
-      MOZ_ASSERT(numPushed(curBlock_) == 2);
-
-      
-      if (tryTableCatch.tagIndex == CatchAllIndex) {
-        
-        
-        curBlock_->pop();
-        MDefinition* exception = curBlock_->pop();
-
-        
-        DefVector values;
-        if (tryTableCatch.captureExnRef && !values.append(exception)) {
-          return false;
-        }
-
-        
-        if (!br(tryTableCatch.labelRelativeDepth, values)) {
-          return false;
-        }
-
-        
-        
-        hadCatchAll = true;
-        break;
-      }
-
-      
-      
-      
-      MBasicBlock* catchBlock = nullptr;
-      MBasicBlock* fallthroughBlock = nullptr;
-      if (!newBlock(curBlock_, &catchBlock) ||
-          !newBlock(curBlock_, &fallthroughBlock)) {
-        return false;
-      }
-
-      
-      
-      MDefinition* exceptionTag = curBlock_->pop();
-      MDefinition* exception = curBlock_->pop();
-
-      
-      
-      MDefinition* catchTag = loadTag(tryTableCatch.tagIndex);
-      MDefinition* matchesCatchTag = compare(exceptionTag, catchTag, JSOp::Eq,
-                                             MCompare::Compare_WasmAnyRef);
-      curBlock_->end(
-          MTest::New(alloc(), matchesCatchTag, catchBlock, fallthroughBlock));
-
-      
-      
-      curBlock_ = catchBlock;
-
-      
-      
-      curBlock_->pop();
-      exception = curBlock_->pop();
-      MOZ_ASSERT(numPushed(curBlock_) == 0);
-
-      
-      DefVector values;
-      if (!loadExceptionValues(exception, tryTableCatch.tagIndex, &values)) {
-        return false;
-      }
-      if (tryTableCatch.captureExnRef && !values.append(exception)) {
-        return false;
-      }
-
-      if (!br(tryTableCatch.labelRelativeDepth, values)) {
-        return false;
-      }
-
-      curBlock_ = fallthroughBlock;
-    }
-
-    
-    if (!hadCatchAll) {
-      MOZ_ASSERT(numPushed(curBlock_) == 2);
-      MDefinition* tag = curBlock_->pop();
-      MDefinition* exception = curBlock_->pop();
-      MOZ_ASSERT(numPushed(curBlock_) == 0);
-
-      if (!throwFrom(exception, tag)) {
-        return false;
-      }
-    }
-
-    curBlock_ = originalBlock;
+    patches.clear();
     return true;
   }
 
   
   
-  [[nodiscard]] bool setupLandingPadSlots(MBasicBlock** landingPad) {
+  [[nodiscard]] bool setupLandingPadSlots(MBasicBlock* landingPad) {
     MBasicBlock* prevBlock = curBlock_;
-    curBlock_ = *landingPad;
+    curBlock_ = landingPad;
 
     
     MInstruction* exception;
@@ -3299,37 +3126,18 @@ class FunctionCompiler {
 
     
     
-    if (!curBlock_->ensureHasSlots(2)) {
+    if (!landingPad->ensureHasSlots(2)) {
       return false;
     }
-    curBlock_->push(exception);
-    curBlock_->push(tag);
-    *landingPad = curBlock_;
+    landingPad->push(exception);
+    landingPad->push(tag);
 
     curBlock_ = prevBlock;
     return true;
   }
 
-  [[nodiscard]] bool startTry() {
-    Control& control = iter().controlItem();
-    control.block = curBlock_;
-    control.tryControl = newTryControl();
-    if (!control.tryControl) {
-      return false;
-    }
-    control.tryControl->inBody = true;
-    return startBlock();
-  }
-
-  [[nodiscard]] bool startTryTable(TryTableCatchVector&& catches) {
-    Control& control = iter().controlItem();
-    control.block = curBlock_;
-    control.tryControl = newTryControl();
-    if (!control.tryControl) {
-      return false;
-    }
-    control.tryControl->inBody = true;
-    control.tryControl->catches = std::move(catches);
+  [[nodiscard]] bool startTry(MBasicBlock** curBlock) {
+    *curBlock = curBlock_;
     return startBlock();
   }
 
@@ -3355,11 +3163,8 @@ class FunctionCompiler {
 
   
   
-  [[nodiscard]] bool switchToCatch(Control& control, LabelKind fromKind,
+  [[nodiscard]] bool switchToCatch(Control& control, const LabelKind& fromKind,
                                    uint32_t tagIndex) {
-    
-    control.tryControl->inBody = false;
-
     
     
     
@@ -3379,8 +3184,7 @@ class FunctionCompiler {
     
     if (fromKind == LabelKind::Try) {
       MBasicBlock* padBlock = nullptr;
-      if (!createTryLandingPadIfNeeded(control.tryControl->landingPadPatches,
-                                       &padBlock)) {
+      if (!createTryLandingPadIfNeeded(control, &padBlock)) {
         return false;
       }
       
@@ -3449,7 +3253,7 @@ class FunctionCompiler {
     
     
     curBlock_->pop();
-    exception = curBlock_->pop();
+    curBlock_->pop();
 
     
     DefVector values;
@@ -3506,14 +3310,12 @@ class FunctionCompiler {
         
         
         uint32_t relativeDepth = 1;
-        if (!delegatePadPatches(control.tryControl->landingPadPatches,
-                                relativeDepth)) {
+        if (!delegatePadPatches(control.tryPadPatches, relativeDepth)) {
           return false;
         }
         break;
       }
       case LabelKind::Catch: {
-        MOZ_ASSERT(!control.tryControl->inBody);
         
         
         MBasicBlock* padBlock = control.block;
@@ -3529,11 +3331,9 @@ class FunctionCompiler {
         }
         break;
       }
-      case LabelKind::CatchAll: {
-        MOZ_ASSERT(!control.tryControl->inBody);
+      case LabelKind::CatchAll:
         
         break;
-      }
       default:
         MOZ_CRASH();
     }
@@ -3542,21 +3342,10 @@ class FunctionCompiler {
     return finishBlock(defs);
   }
 
-  [[nodiscard]] bool finishTryTable(Control& control, DefVector* defs) {
-    
-    control.tryControl->inBody = false;
-    
-    if (!createTryTableLandingPad(control.tryControl.get())) {
-      return false;
-    }
-    
-    return finishBlock(defs);
-  }
-
   [[nodiscard]] bool emitBodyDelegateThrowPad(Control& control) {
     
     MBasicBlock* padBlock;
-    if (!createTryLandingPadIfNeeded(bodyDelegatePadPatches_, &padBlock)) {
+    if (!createTryLandingPadIfNeeded(control, &padBlock)) {
       return false;
     }
 
@@ -3647,27 +3436,6 @@ class FunctionCompiler {
 
     
     return throwFrom(exception, tag);
-  }
-
-  [[nodiscard]] bool emitThrowRef(MDefinition* exnRef) {
-    if (inDeadCode()) {
-      return true;
-    }
-
-    
-    if (!refAsNonNull(exnRef)) {
-      return false;
-    }
-
-    
-    
-    if (!emitInstanceCall1(readBytecodeOffset(), SASigThrowException, exnRef)) {
-      return false;
-    }
-    unreachableTrap();
-
-    curBlock_ = nullptr;
-    return true;
   }
 
   [[nodiscard]] bool throwFrom(MDefinition* exn, MDefinition* tag) {
@@ -4980,7 +4748,7 @@ static bool EmitLoop(FunctionCompiler& f) {
 
   f.addInterruptCheck();
 
-  f.iter().controlItem().block = loopHeader;
+  f.iter().controlItem().setBlock(loopHeader);
   return true;
 }
 
@@ -4996,7 +4764,7 @@ static bool EmitIf(FunctionCompiler& f) {
     return false;
   }
 
-  f.iter().controlItem().block = elseBlock;
+  f.iter().controlItem().setBlock(elseBlock);
   return true;
 }
 
@@ -5037,7 +4805,6 @@ static bool EmitEnd(FunctionCompiler& f) {
   DefVector postJoinDefs;
   switch (kind) {
     case LabelKind::Body:
-      MOZ_ASSERT(!control.tryControl);
       if (!f.emitBodyDelegateThrowPad(control)) {
         return false;
       }
@@ -5051,21 +4818,18 @@ static bool EmitEnd(FunctionCompiler& f) {
       MOZ_ASSERT(f.iter().controlStackEmpty());
       return f.iter().endFunction(f.iter().end());
     case LabelKind::Block:
-      MOZ_ASSERT(!control.tryControl);
       if (!f.finishBlock(&postJoinDefs)) {
         return false;
       }
       f.iter().popEnd();
       break;
     case LabelKind::Loop:
-      MOZ_ASSERT(!control.tryControl);
       if (!f.closeLoop(block, &postJoinDefs)) {
         return false;
       }
       f.iter().popEnd();
       break;
     case LabelKind::Then: {
-      MOZ_ASSERT(!control.tryControl);
       
       
       if (!f.switchToElse(block, &block)) {
@@ -5083,7 +4847,6 @@ static bool EmitEnd(FunctionCompiler& f) {
       break;
     }
     case LabelKind::Else:
-      MOZ_ASSERT(!control.tryControl);
       if (!f.joinIfElse(block, &postJoinDefs)) {
         return false;
       }
@@ -5092,19 +4855,9 @@ static bool EmitEnd(FunctionCompiler& f) {
     case LabelKind::Try:
     case LabelKind::Catch:
     case LabelKind::CatchAll:
-      MOZ_ASSERT(control.tryControl);
       if (!f.finishTryCatch(kind, control, &postJoinDefs)) {
         return false;
       }
-      f.freeTryControl(std::move(control.tryControl));
-      f.iter().popEnd();
-      break;
-    case LabelKind::TryTable:
-      MOZ_ASSERT(control.tryControl);
-      if (!f.finishTryTable(control, &postJoinDefs)) {
-        return false;
-      }
-      f.freeTryControl(std::move(control.tryControl));
       f.iter().popEnd();
       break;
   }
@@ -5191,7 +4944,13 @@ static bool EmitTry(FunctionCompiler& f) {
     return false;
   }
 
-  return f.startTry();
+  MBasicBlock* curBlock = nullptr;
+  if (!f.startTry(&curBlock)) {
+    return false;
+  }
+
+  f.iter().controlItem().setBlock(curBlock);
+  return true;
 }
 
 static bool EmitCatch(FunctionCompiler& f) {
@@ -5233,16 +4992,6 @@ static bool EmitCatchAll(FunctionCompiler& f) {
   return f.switchToCatch(f.iter().controlItem(), kind, CatchAllIndex);
 }
 
-static bool EmitTryTable(FunctionCompiler& f) {
-  ResultType params;
-  TryTableCatchVector catches;
-  if (!f.iter().readTryTable(&params, &catches)) {
-    return false;
-  }
-
-  return f.startTryTable(std::move(catches));
-}
-
 static bool EmitDelegate(FunctionCompiler& f) {
   uint32_t relativeDepth;
   ResultType resultType;
@@ -5253,18 +5002,15 @@ static bool EmitDelegate(FunctionCompiler& f) {
 
   Control& control = f.iter().controlItem();
   MBasicBlock* block = control.block;
-  MOZ_ASSERT(control.tryControl);
 
   
   
   if (block) {
-    ControlInstructionVector& delegatePadPatches =
-        control.tryControl->landingPadPatches;
+    ControlInstructionVector& delegatePadPatches = control.tryPadPatches;
     if (!f.delegatePadPatches(delegatePadPatches, relativeDepth)) {
       return false;
     }
   }
-  f.freeTryControl(std::move(control.tryControl));
   f.iter().popDelegate();
 
   
@@ -5291,15 +5037,6 @@ static bool EmitThrow(FunctionCompiler& f) {
   }
 
   return f.emitThrow(tagIndex, argValues);
-}
-
-static bool EmitThrowRef(FunctionCompiler& f) {
-  MDefinition* exnRef;
-  if (!f.iter().readThrowRef(&exnRef)) {
-    return false;
-  }
-
-  return f.emitThrowRef(exnRef);
 }
 
 static bool EmitRethrow(FunctionCompiler& f) {
@@ -8071,16 +7808,6 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
           return f.iter().unrecognizedOpcode(&op);
         }
         CHECK(EmitRethrow(f));
-      case uint16_t(Op::ThrowRef):
-        if (!f.moduleEnv().exnrefEnabled()) {
-          return f.iter().unrecognizedOpcode(&op);
-        }
-        CHECK(EmitThrowRef(f));
-      case uint16_t(Op::TryTable):
-        if (!f.moduleEnv().exnrefEnabled()) {
-          return f.iter().unrecognizedOpcode(&op);
-        }
-        CHECK(EmitTryTable(f));
       case uint16_t(Op::Br):
         CHECK(EmitBr(f));
       case uint16_t(Op::BrIf):

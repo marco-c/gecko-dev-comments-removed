@@ -25,20 +25,6 @@ namespace wasm {
 static const uint32_t CatchAllIndex = UINT32_MAX;
 static_assert(CatchAllIndex > MaxTags);
 
-struct TryTableCatch {
-  
-  uint32_t tagIndex;
-  
-  uint32_t labelRelativeDepth;
-  
-  
-  bool captureExnRef;
-  
-  
-  ValTypeVector labelType;
-};
-using TryTableCatchVector = Vector<TryTableCatch, 1, SystemAllocPolicy>;
-
 }  
 }  
 
