@@ -790,8 +790,8 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
   
   
   
+  MOZ_ASSERT(nsLayoutUtils::AsyncPanZoomEnabled(aScrollFrame));
   if (!aBuilder->HaveScrollableDisplayPort() &&
-      nsLayoutUtils::AsyncPanZoomEnabled(aScrollFrame) &&
       aScrollFrameAsScrollable->WantAsyncScroll()) {
     bool haveDisplayPort = HasNonMinimalNonZeroDisplayPort(content);
     
