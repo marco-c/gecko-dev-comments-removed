@@ -67,6 +67,17 @@ interface nsIWinTaskSchedulerService : nsISupports
 
 
 
+
+  AString getCurrentUserSid();
+
+  
+
+
+
+
+
+
+
   void deleteTask(in wstring aFolderName, in wstring aTaskName);
 
   
