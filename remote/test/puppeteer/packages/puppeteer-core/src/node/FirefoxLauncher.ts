@@ -45,6 +45,28 @@ export class FirefoxLauncher extends ProductLauncher {
   constructor(puppeteer: PuppeteerNode) {
     super(puppeteer, 'firefox');
   }
+
+  static getPreferences(
+    extraPrefsFirefox?: Record<string, unknown>,
+    protocol?: 'cdp' | 'webDriverBiDi'
+  ): Record<string, unknown> {
+    return {
+      ...extraPrefsFirefox,
+      ...(protocol === 'webDriverBiDi'
+        ? {}
+        : {
+            
+            'fission.bfcacheInParent': false,
+          }),
+      
+      
+      
+      
+      
+      'fission.webContentIsolationStrategy': 0,
+    };
+  }
+
   
 
 
@@ -113,7 +135,10 @@ export class FirefoxLauncher extends ProductLauncher {
 
     await createProfile(SupportedBrowsers.FIREFOX, {
       path: userDataDir,
-      preferences: extraPrefsFirefox,
+      preferences: FirefoxLauncher.getPreferences(
+        extraPrefsFirefox,
+        options.protocol
+      ),
     });
 
     let firefoxExecutable: string;

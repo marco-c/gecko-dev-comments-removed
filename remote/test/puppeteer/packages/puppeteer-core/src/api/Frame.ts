@@ -807,6 +807,17 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
   
 
 
+  async setFrameContent(content: string): Promise<void> {
+    return await this.evaluate(html => {
+      document.open();
+      document.write(html);
+      document.close();
+    }, content);
+  }
+
+  
+
+
 
 
 

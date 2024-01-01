@@ -282,14 +282,6 @@ export interface ScreenshotOptions {
 
 
   captureBeyondViewport?: boolean;
-  
-
-
-
-
-
-
-  allowViewportExpansion?: boolean;
 }
 
 
@@ -546,7 +538,6 @@ export function setDefaultScreenshotOptions(options: ScreenshotOptions): void {
   options.omitBackground ??= false;
   options.encoding ??= 'binary';
   options.captureBeyondViewport ??= true;
-  options.allowViewportExpansion ??= options.captureBeyondViewport;
 }
 
 /**
@@ -988,9 +979,12 @@ export abstract class Page extends EventEmitter<PageEvents> {
   /**
    * The method runs `document.querySelectorAll` within the page. If no elements
    * match the selector, the return value resolves to `[]`.
-   * @remarks
-   * Shortcut for {@link Frame.$$ | Page.mainFrame().$$(selector) }.
+   *
    * @param selector - A `selector` to query page for
+   *
+   * @remarks
+   *
+   * Shortcut for {@link Frame.$$ | Page.mainFrame().$$(selector) }.
    */
   async $$<Selector extends string>(
     selector: Selector
@@ -1486,8 +1480,10 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
   /**
    * The page's URL.
-   * @remarks Shortcut for
-   * {@link Frame.url | page.mainFrame().url()}.
+   *
+   * @remarks
+   *
+   * Shortcut for {@link Frame.url | page.mainFrame().url()}.
    */
   url(): string {
     return this.mainFrame().url();
@@ -1505,7 +1501,9 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param html - HTML markup to assign to the page.
    * @param options - Parameters that has some properties.
+   *
    * @remarks
+   *
    * The parameter `options` might have the following options.
    *
    * - `timeout` : Maximum time in milliseconds for resources to load, defaults
@@ -1534,6 +1532,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    * Navigates the page to the given `url`.
    *
    * @remarks
+   *
    * Navigation to `about:blank` or navigation to the same URL with a different
    * hash will succeed and return `null`.
    *
@@ -1594,6 +1593,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    * ```
    *
    * @remarks
+   *
    * Usage of the
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/History_API | History API}
    * to change the URL is considered a navigation.
@@ -1830,7 +1830,6 @@ export abstract class Page extends EventEmitter<PageEvents> {
    * This method is a shortcut for calling two methods:
    * {@link Page.setUserAgent} and {@link Page.setViewport}.
    *
-   * @remarks
    * This method will resize the page. A lot of websites don't expect phones to
    * change size, so you should emulate before navigating to the page.
    *
@@ -2056,47 +2055,18 @@ export abstract class Page extends EventEmitter<PageEvents> {
    *
    * @param viewport -
    * @remarks
-   * Argument viewport have following properties:
-   *
-   * - `width`: page width in pixels. required
-   *
-   * - `height`: page height in pixels. required
-   *
-   * - `deviceScaleFactor`: Specify device scale factor (can be thought of as
-   *   DPR). Defaults to `1`.
-   *
-   * - `isMobile`: Whether the meta viewport tag is taken into account. Defaults
-   *   to `false`.
-   *
-   * - `hasTouch`: Specifies if viewport supports touch events. Defaults to `false`
-   *
-   * - `isLandScape`: Specifies if viewport is in landscape mode. Defaults to false.
-   *
    * NOTE: in certain cases, setting viewport will reload the page in order to
    * set the isMobile or hasTouch properties.
    */
   abstract setViewport(viewport: Viewport): Promise<void>;
 
   /**
-   * Current page viewport settings.
+   * Returns the current page viewport settings without checking the actual page
+   * viewport.
    *
-   * @returns
-   *
-   * - `width`: page's width in pixels
-   *
-   * - `height`: page's height in pixels
-   *
-   * - `deviceScaleFactor`: Specify device scale factor (can be though of as
-   *   dpr). Defaults to `1`.
-   *
-   * - `isMobile`: Whether the meta viewport tag is taken into account. Defaults
-   *   to `false`.
-   *
-   * - `hasTouch`: Specifies if viewport supports touch events. Defaults to
-   *   `false`.
-   *
-   * - `isLandScape`: Specifies if viewport is in landscape mode. Defaults to
-   *   `false`.
+   * This is either the viewport set with the previous {@link Page.setViewport}
+   * call or the default viewport set via
+   * {@link BrowserConnectOptions.defaultViewport}.
    */
   abstract viewport(): Viewport | null;
 
@@ -2237,13 +2207,6 @@ export abstract class Page extends EventEmitter<PageEvents> {
   /**
    * Captures a screencast of this {@link Page | page}.
    *
-   * @remarks
-   *
-   * All recordings will be {@link https://www.webmproject.org/ | WebM} format using
-   * the {@link https://www.webmproject.org/vp9/ | VP9} video codec. The FPS is 30.
-   *
-   * You must have {@link https://ffmpeg.org/ | ffmpeg} installed on your system.
-   *
    * @example
    * Recording a {@link Page | page}:
    *
@@ -2273,6 +2236,13 @@ export abstract class Page extends EventEmitter<PageEvents> {
    * @param options - Configures screencast behavior.
    *
    * @experimental
+   *
+   * @remarks
+   *
+   * All recordings will be {@link https://www.webmproject.org/ | WebM} format using
+   * the {@link https://www.webmproject.org/vp9/ | VP9} video codec. The FPS is 30.
+   *
+   * You must have {@link https://ffmpeg.org/ | ffmpeg} installed on your system.
    */
   async screencast(
     options: Readonly<ScreencastOptions> = {}
@@ -2470,10 +2440,6 @@ export abstract class Page extends EventEmitter<PageEvents> {
         );
       }
     }
-    assert(
-      !options.clip || !options.fullPage,
-      "'clip' and 'fullPage' are exclusive"
-    );
     if (options.clip) {
       if (options.clip.width <= 0) {
         throw new Error("'width' in 'clip' must be positive.");
@@ -2485,33 +2451,45 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
     setDefaultScreenshotOptions(options);
 
-    options.clip =
-      options.clip && roundRectangle(normalizeRectangle(options.clip));
-
     await using stack = new AsyncDisposableStack();
-    if (options.allowViewportExpansion || options.captureBeyondViewport) {
+    if (options.clip) {
       if (options.fullPage) {
-        const dimensions = await this.mainFrame()
-          .isolatedRealm()
-          .evaluate(() => {
-            const {scrollHeight, scrollWidth} = document.documentElement;
-            const {height: viewportHeight, width: viewportWidth} =
-              window.visualViewport!;
-            return {
-              height: Math.max(scrollHeight, viewportHeight),
-              width: Math.max(scrollWidth, viewportWidth),
-            };
+        throw new Error("'clip' and 'fullPage' are mutually exclusive");
+      }
+
+      options.clip = roundRectangle(normalizeRectangle(options.clip));
+    } else {
+      if (options.fullPage) {
+        
+        
+        
+        if (!options.captureBeyondViewport) {
+          const scrollDimensions = await this.mainFrame()
+            .isolatedRealm()
+            .evaluate(() => {
+              const element = document.documentElement;
+              return {
+                width: element.scrollWidth,
+                height: element.scrollHeight,
+              };
+            });
+          const viewport = this.viewport();
+          await this.setViewport({
+            ...viewport,
+            ...scrollDimensions,
           });
-        options.clip = {...dimensions, x: 0, y: 0};
-        stack.use(
-          await this._createTemporaryViewportContainingBox(options.clip)
-        );
-      } else if (options.clip && !options.captureBeyondViewport) {
-        stack.use(
-          options.clip &&
-            (await this._createTemporaryViewportContainingBox(options.clip))
-        );
-      } else if (!options.clip) {
+          stack.defer(async () => {
+            if (viewport) {
+              await this.setViewport(viewport).catch(debugError);
+            } else {
+              await this.setViewport({
+                width: 0,
+                height: 0,
+              }).catch(debugError);
+            }
+          });
+        }
+      } else {
         options.captureBeyondViewport = false;
       }
     }
@@ -2529,61 +2507,6 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
   abstract _screenshot(options: Readonly<ScreenshotOptions>): Promise<string>;
-
-  
-
-
-  async _createTemporaryViewportContainingBox(
-    clip: ScreenshotClip
-  ): Promise<AsyncDisposable> {
-    const viewport = await this.mainFrame()
-      .isolatedRealm()
-      .evaluate(() => {
-        return {
-          pageLeft: window.visualViewport!.pageLeft,
-          pageTop: window.visualViewport!.pageTop,
-          width: window.visualViewport!.width,
-          height: window.visualViewport!.height,
-        };
-      });
-    await using stack = new AsyncDisposableStack();
-    if (clip.x < viewport.pageLeft || clip.y < viewport.pageTop) {
-      await this.evaluate(
-        (left, top) => {
-          window.scroll({left, top, behavior: 'instant'});
-        },
-        Math.floor(clip.x),
-        Math.floor(clip.y)
-      );
-      stack.defer(async () => {
-        await this.evaluate(
-          (left, top) => {
-            window.scroll({left, top, behavior: 'instant'});
-          },
-          viewport.pageLeft,
-          viewport.pageTop
-        ).catch(debugError);
-      });
-    }
-    if (
-      clip.width + clip.x > viewport.width ||
-      clip.height + clip.y > viewport.height
-    ) {
-      const originalViewport = this.viewport() ?? {
-        width: 0,
-        height: 0,
-      };
-      
-      await this.setViewport({
-        width: Math.max(viewport.width, Math.ceil(clip.width + clip.x)),
-        height: Math.max(viewport.height, Math.ceil(clip.height + clip.y)),
-      });
-      stack.defer(async () => {
-        await this.setViewport(originalViewport).catch(debugError);
-      });
-    }
-    return stack.move();
-  }
 
   
 
@@ -2639,34 +2562,36 @@ export abstract class Page extends EventEmitter<PageEvents> {
     };
   }
 
-  /**
-   * Generates a PDF of the page with the `print` CSS media type.
-   * @remarks
-   *
-   * To generate a PDF with the `screen` media type, call
-   * {@link Page.emulateMediaType | `page.emulateMediaType('screen')`} before
-   * calling `page.pdf()`.
-   *
-   * By default, `page.pdf()` generates a pdf with modified colors for printing.
-   * Use the
-   * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/-webkit-print-color-adjust | `-webkit-print-color-adjust`}
-   * property to force rendering of exact colors.
-   *
-   * @param options - options for generating the PDF.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   abstract createPDFStream(options?: PDFOptions): Promise<Readable>;
 
-  /**
-   * {@inheritDoc Page.createPDFStream}
-   */
+  
+
+
   abstract pdf(options?: PDFOptions): Promise<Buffer>;
 
-  /**
-   * The page's title
-   *
-   * @remarks
-   * Shortcut for {@link Frame.title | page.mainFrame().title()}.
-   */
+  
+
+
+
+
+
+
   async title(): Promise<string> {
     return await this.mainFrame().title();
   }
@@ -2709,6 +2634,9 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
+
+
   click(selector: string, options?: Readonly<ClickOptions>): Promise<void> {
     return this.mainFrame().click(selector, options);
   }
@@ -2726,11 +2654,15 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
+
   focus(selector: string): Promise<void> {
     return this.mainFrame().focus(selector);
   }
 
   
+
+
 
 
 
@@ -2772,6 +2704,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
   select(selector: string, ...values: string[]): Promise<string[]> {
     return this.mainFrame().select(selector, ...values);
   }
@@ -2789,12 +2722,12 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
   tap(selector: string): Promise<void> {
     return this.mainFrame().tap(selector);
   }
 
   
-
 
 
 
@@ -2845,11 +2778,13 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
+
   waitForTimeout(milliseconds: number): Promise<void> {
     return this.mainFrame().waitForTimeout(milliseconds);
   }
 
   
+
 
 
 

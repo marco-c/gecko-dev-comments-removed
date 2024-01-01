@@ -27,6 +27,7 @@ import {
   fromEvent,
   type Observable,
 } from '../../third_party/rxjs/rxjs.js';
+import type {ProtocolType} from '../common/ConnectOptions.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {debugError} from '../common/util.js';
 import {timeout} from '../common/util.js';
@@ -400,6 +401,7 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
+
   abstract userAgent(): Promise<string>;
 
   
@@ -412,7 +414,7 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
-  abstract disconnect(): void;
+  abstract disconnect(): Promise<void>;
 
   
 
@@ -441,5 +443,5 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
   
 
 
-  abstract get protocol(): 'cdp' | 'webDriverBiDi';
+  abstract get protocol(): ProtocolType;
 }

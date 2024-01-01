@@ -225,7 +225,6 @@ export interface MouseOptions {
 
 
 
-
   clickCount?: number;
 }
 

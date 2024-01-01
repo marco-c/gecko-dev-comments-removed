@@ -25,6 +25,11 @@ import type {Viewport} from './Viewport.js';
 
 
 
+export type ProtocolType = 'cdp' | 'webDriverBiDi';
+
+
+
+
 
 
 export interface BrowserConnectOptions {
@@ -34,6 +39,8 @@ export interface BrowserConnectOptions {
 
   ignoreHTTPSErrors?: boolean;
   
+
+
 
 
   defaultViewport?: Viewport | null;
@@ -50,11 +57,12 @@ export interface BrowserConnectOptions {
 
 
   _isPageTarget?: IsPageTargetCallback;
+
   
 
 
 
-  protocol?: 'cdp' | 'webDriverBiDi';
+  protocol?: ProtocolType;
   
 
 

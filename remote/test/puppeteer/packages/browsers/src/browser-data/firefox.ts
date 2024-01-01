@@ -130,7 +130,6 @@ function defaultProfilePreferences(
     'browser.safebrowsing.blockedURIs.enabled': false,
     'browser.safebrowsing.downloads.enabled': false,
     'browser.safebrowsing.malware.enabled': false,
-    'browser.safebrowsing.passwords.enabled': false,
     'browser.safebrowsing.phishing.enabled': false,
 
     
@@ -220,12 +219,6 @@ function defaultProfilePreferences(
 
     
     'extensions.webservice.discoverURL': `http://${server}/dummy/discoveryURL`,
-
-    
-    'fission.bfcacheInParent': false,
-
-    
-    'fission.webContentIsolationStrategy': 0,
 
     
     'focusmanager.testmode': true,
