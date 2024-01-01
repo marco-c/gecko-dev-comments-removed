@@ -197,7 +197,7 @@ pub trait ProfilerMarker: Serialize + DeserializeOwned {
     
     
     
-    fn marker_type_display() -> schema::MarkerSchema;
+    fn marker_type_display() -> MarkerSchema;
     
     
     fn stream_json_marker_data(&self, json_writer: &mut JSONWriter);
@@ -270,7 +270,7 @@ impl ProfilerMarker for Tracing {
     
     
     
-    fn marker_type_display() -> schema::MarkerSchema {
+    fn marker_type_display() -> MarkerSchema {
         use crate::marker::schema::*;
         let mut schema = MarkerSchema::new(&[
             Location::MarkerChart,
