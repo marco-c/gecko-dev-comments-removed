@@ -548,7 +548,7 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessConfigureMessage(
 
                ConfigureMessage* msg =
                    self->mProcessingMessage->AsConfigureMessage();
-               LOG("%s %p, DecodeAgent #%d %s has been %s. now unblocks "
+               LOG("%s %p, DecoderAgent #%d %s has been %s. now unblocks "
                    "message-queue-processing",
                    DecoderType::Name.get(), self.get(), id,
                    msg->ToString().get(),
@@ -561,7 +561,7 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessConfigureMessage(
                  
                  
                  const MediaResult& error = aResult.RejectValue();
-                 LOGE("%s %p, DecodeAgent #%d failed to configure: %s",
+                 LOGE("%s %p, DecoderAgent #%d failed to configure: %s",
                       DecoderType::Name.get(), self.get(), id,
                       error.Description().get());
 
@@ -646,7 +646,7 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessDecodeMessage(
 
                    DecodeMessage* msg =
                        self->mProcessingMessage->AsDecodeMessage();
-                   LOGV("%s %p, DecodeAgent #%d %s has been %s",
+                   LOGV("%s %p, DecoderAgent #%d %s has been %s",
                         DecoderType::Name.get(), self.get(), id,
                         msg->ToString().get(),
                         aResult.IsResolve() ? "resolved" : "rejected");
@@ -660,7 +660,7 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessDecodeMessage(
                      
                      
                      const MediaResult& error = aResult.RejectValue();
-                     LOGE("%s %p, DecodeAgent #%d %s failed: %s",
+                     LOGE("%s %p, DecoderAgent #%d %s failed: %s",
                           DecoderType::Name.get(), self.get(), id, msgStr.get(),
                           error.Description().get());
                      self->QueueATask(
@@ -739,7 +739,7 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessFlushMessage(
 
                    FlushMessage* msg =
                        self->mProcessingMessage->AsFlushMessage();
-                   LOG("%s %p, DecodeAgent #%d %s has been %s",
+                   LOG("%s %p, DecoderAgent #%d %s has been %s",
                        DecoderType::Name.get(), self.get(), id,
                        msg->ToString().get(),
                        aResult.IsResolve() ? "resolved" : "rejected");
@@ -754,7 +754,7 @@ MessageProcessedResult DecoderTemplate<DecoderType>::ProcessFlushMessage(
                    
                    if (aResult.IsReject()) {
                      const MediaResult& error = aResult.RejectValue();
-                     LOGE("%s %p, DecodeAgent #%d failed to flush: %s",
+                     LOGE("%s %p, DecoderAgent #%d failed to flush: %s",
                           DecoderType::Name.get(), self.get(), id,
                           error.Description().get());
                      RefPtr<Promise> promise = msg->TakePromise();
@@ -864,7 +864,7 @@ bool DecoderTemplate<DecoderType>::CreateDecoderAgent(
   
   nsAutoString uniqueName;
   uniqueName.AppendPrintf(
-      "Blocker for DecodeAgent #%d (codec: %s) @ %p", mAgent->mId,
+      "Blocker for DecoderAgent #%d (codec: %s) @ %p", mAgent->mId,
       NS_ConvertUTF16toUTF8(mActiveConfig->mCodec).get(), mAgent.get());
 
   mShutdownBlocker = media::ShutdownBlockingTicket::Create(
@@ -881,19 +881,19 @@ bool DecoderTemplate<DecoderType>::CreateDecoderAgent(
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr{this}, id = mAgent->mId,
        ref = mWorkerRef](bool ) MOZ_CAN_RUN_SCRIPT {
-        LOG("%s %p gets xpcom-will-shutdown notification for DecodeAgent #%d",
+        LOG("%s %p gets xpcom-will-shutdown notification for DecoderAgent #%d",
             DecoderType::Name.get(), self.get(), id);
         Unused << self->ResetInternal(NS_ERROR_DOM_ABORT_ERR);
       },
       [self = RefPtr{this}, id = mAgent->mId,
        ref = mWorkerRef](bool ) {
         LOG("%s %p removes shutdown-blocker #%d before getting any "
-            "notification. DecodeAgent #%d should have been dropped",
+            "notification. DecoderAgent #%d should have been dropped",
             DecoderType::Name.get(), self.get(), id, id);
         MOZ_ASSERT(!self->mAgent || self->mAgent->mId != id);
       });
 
-  LOG("%s %p creates DecodeAgent #%d @ %p and its shutdown-blocker",
+  LOG("%s %p creates DecoderAgent #%d @ %p and its shutdown-blocker",
       DecoderType::Name.get(), this, mAgent->mId, mAgent.get());
 
   resetOnFailure.release();
@@ -905,7 +905,7 @@ void DecoderTemplate<DecoderType>::DestroyDecoderAgentIfAny() {
   AssertIsOnOwningThread();
 
   if (!mAgent) {
-    LOG("%s %p has no DecodeAgent to destroy", DecoderType::Name.get(), this);
+    LOG("%s %p has no DecoderAgent to destroy", DecoderType::Name.get(), this);
     return;
   }
 
@@ -913,7 +913,7 @@ void DecoderTemplate<DecoderType>::DestroyDecoderAgentIfAny() {
   MOZ_ASSERT(mShutdownBlocker);
   MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerRef);
 
-  LOG("%s %p destroys DecodeAgent #%d @ %p", DecoderType::Name.get(), this,
+  LOG("%s %p destroys DecoderAgent #%d @ %p", DecoderType::Name.get(), this,
       mAgent->mId, mAgent.get());
   mActiveConfig = nullptr;
   RefPtr<DecoderAgent> agent = std::move(mAgent);
