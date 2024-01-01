@@ -103,7 +103,6 @@ const char* gInaccessibleProperties[] = {
     "-moz-min-font-size-ratio",           
     "-moz-box-collapse",                  
     "-moz-subtree-hidden-only-visually",  
-    "-moz-user-focus",                    
     "-moz-window-input-region-margin",    
     "-moz-window-opacity",                
     "-moz-window-transform",              
