@@ -83,10 +83,6 @@ add_setup(async function () {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.log", true]],
-  });
-
   
   await db.clear();
   info("Create record with attachment.");

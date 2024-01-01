@@ -49,10 +49,8 @@ add_setup(async function () {
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
-  Services.prefs.setBoolPref("browser.search.log", true);
 
   registerCleanupFunction(async () => {
-    Services.prefs.clearUserPref("browser.search.log");
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     Services.telemetry.canRecordExtended = oldCanRecord;
     resetTelemetry();
