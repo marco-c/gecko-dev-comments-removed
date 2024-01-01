@@ -3074,4 +3074,15 @@ var browserTests = [
     "<div style=\"display:grid\"><span>abc</span><span><br></span></div>",
     [true],
     {}],
+
+["<b>X[]<span contenteditable=false>abc</span></b><i>def</i>",
+    [["delete",""]],
+    "<b><span contenteditable=\"false\">abc</span></b><i>def</i>",
+    [true],
+    {}],
+["<b><span contenteditable=false>abc</span>X[]</b><i>def</i>",
+    [["delete",""]],
+    "<b><span contenteditable=\"false\">abc</span></b><i>def</i>",
+    [true],
+    {}],
 ]
