@@ -307,6 +307,14 @@ void EncoderTemplate<EncoderType>::OutputEncodedData(
 
   RefPtr<typename EncoderType::OutputCallbackType> cb(mOutputCallback);
   for (auto& data : aData) {
+    
+    
+    
+    
+    
+    if (!mActiveConfig) {
+      return;
+    }
     RefPtr<typename EncoderType::OutputType> encodedData =
         EncodedDataToOutputType(GetParentObject(), data);
     typename EncoderType::MetadataType metadata;
