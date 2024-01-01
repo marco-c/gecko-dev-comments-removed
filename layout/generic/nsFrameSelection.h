@@ -485,21 +485,6 @@ class nsFrameSelection final {
 
   bool IsValidSelectionPoint(nsINode* aNode) const;
 
-  static bool AdjustFrameForLineStart(nsIFrame*& aFrame, int32_t& aFrameOffset);
-
-  
-
-
-
-
-
-
-
-
-  static nsIFrame* GetFrameForNodeOffset(nsIContent* aNode, int32_t aOffset,
-                                         CaretAssociationHint aHint,
-                                         int32_t* aReturnOffset);
-
   
 
 
@@ -740,24 +725,6 @@ class nsFrameSelection final {
   nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
                                              uint32_t aContentOffset,
                                              bool aJumpLines) const;
-  static nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
-                                                    uint32_t aContentOffset,
-                                                    CaretAssociationHint aHint,
-                                                    bool aJumpLines);
-
-  
-
-
-
-
-
-
-
-
-
-  static mozilla::Result<nsIFrame*, nsresult> GetFrameFromLevel(
-      nsIFrame* aFrameIn, nsDirection aDirection,
-      mozilla::intl::BidiEmbeddingLevel aBidiLevel);
 
   
 
@@ -921,47 +888,11 @@ class nsFrameSelection final {
 
 
 
-  static mozilla::Result<mozilla::PeekOffsetStruct, nsresult>
-  PeekOffsetForCaretMove(nsIContent* aContent, uint32_t aOffset,
-                         nsDirection aDirection, CaretAssociationHint aHint,
-                         mozilla::intl::BidiEmbeddingLevel aCaretBidiLevel,
-                         const nsSelectionAmount aAmount,
-                         const nsPoint& aDesiredCaretPos,
-                         mozilla::PeekOffsetOptions aOptions);
-
-  
-
-
-
-
   template <typename RangeType>
   MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
   CreateRangeExtendedToSomewhere(nsDirection aDirection,
                                  const nsSelectionAmount aAmount,
                                  CaretMovementStyle aMovementStyle);
-
-  
-
-
-
-
-
-  static mozilla::Result<bool, nsresult> IsIntraLineCaretMove(
-      nsSelectionAmount aAmount) {
-    switch (aAmount) {
-      case eSelectCharacter:
-      case eSelectCluster:
-      case eSelectWord:
-      case eSelectWordNoSpace:
-      case eSelectBeginLine:
-      case eSelectEndLine:
-        return true;
-      case eSelectLine:
-        return false;
-      default:
-        return mozilla::Err(NS_ERROR_FAILURE);
-    }
-  }
 
   void InvalidateDesiredCaretPos();  
                                      
