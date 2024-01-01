@@ -49,7 +49,6 @@
 #include <algorithm>
 #include <stdio.h>
 
-#include "CaretAssociationHint.h"
 #include "FrameProperties.h"
 #include "LayoutConstants.h"
 #include "mozilla/AspectRatio.h"
@@ -127,6 +126,7 @@ struct CharacterDataChangeInfo;
 
 namespace mozilla {
 
+enum class CaretAssociationHint;
 enum class PeekOffsetOption : uint16_t;
 enum class PseudoStyleType : uint8_t;
 enum class TableSelectionMode : uint32_t;
@@ -2234,10 +2234,7 @@ class nsIFrame : public nsQueryFrame {
   
   
   struct MOZ_STACK_CLASS ContentOffsets {
-    ContentOffsets()
-        : offset(0),
-          secondaryOffset(0),
-          associate(mozilla::CARET_ASSOCIATE_BEFORE) {}
+    ContentOffsets() = default;
     bool IsNull() { return !content; }
     
     
@@ -2245,12 +2242,12 @@ class nsIFrame : public nsQueryFrame {
     int32_t EndOffset() { return std::max(offset, secondaryOffset); }
 
     nsCOMPtr<nsIContent> content;
-    int32_t offset;
-    int32_t secondaryOffset;
+    int32_t offset = 0;
+    int32_t secondaryOffset = 0;
     
     
     
-    mozilla::CaretAssociationHint associate;
+    mozilla::CaretAssociationHint associate{0};  
   };
   enum {
     IGNORE_SELECTION_STYLE = 0x01,

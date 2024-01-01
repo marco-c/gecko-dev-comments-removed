@@ -4,8 +4,8 @@
 
 
 
-#ifndef CaretAssociationHint_h___
-#define CaretAssociationHint_h___
+#ifndef mozilla_CaretAssociationHint_h
+#define mozilla_CaretAssociationHint_h
 
 namespace mozilla {
 
@@ -14,7 +14,7 @@ namespace mozilla {
 
 
 
-enum CaretAssociationHint { CARET_ASSOCIATE_BEFORE, CARET_ASSOCIATE_AFTER };
+enum class CaretAssociationHint { Before, After };
 
 }  
 
