@@ -14,9 +14,9 @@ from urllib.request import urlopen
 from mozpack.macpkg import Pbzx, uncpio, unxar
 
 
-def unpack_sdk(url, sha256, extract_prefix, out_dir="."):
+def unpack_sdk(url, sha512, extract_prefix, out_dir="."):
     with tempfile.TemporaryFile() as pkg:
-        hash = hashlib.sha256()
+        hash = hashlib.sha512()
         for attempt in range(3):
             if attempt != 0:
                 print(f"Failed to download from {url}. Retrying", file=sys.stderr)
@@ -30,10 +30,10 @@ def unpack_sdk(url, sha256, extract_prefix, out_dir="."):
                     hash.update(buf)
                     pkg.write(buf)
             digest = hash.hexdigest()
-            if digest == sha256:
+            if digest == sha512:
                 break
         else:
-            raise Exception(f"(actual) {digest} != (expected) {sha256}")
+            raise Exception(f"(actual) {digest} != (expected) {sha512}")
 
         pkg.seek(0, os.SEEK_SET)
 
