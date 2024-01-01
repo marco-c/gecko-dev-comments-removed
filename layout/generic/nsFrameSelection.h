@@ -740,6 +740,10 @@ class nsFrameSelection final {
   nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
                                              uint32_t aContentOffset,
                                              bool aJumpLines) const;
+  static nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
+                                                    uint32_t aContentOffset,
+                                                    CaretAssociationHint aHint,
+                                                    bool aJumpLines);
 
   
 
@@ -751,10 +755,9 @@ class nsFrameSelection final {
 
 
 
-
-  nsresult GetFrameFromLevel(nsIFrame* aFrameIn, nsDirection aDirection,
-                             mozilla::intl::BidiEmbeddingLevel aBidiLevel,
-                             nsIFrame** aFrameOut) const;
+  static mozilla::Result<nsIFrame*, nsresult> GetFrameFromLevel(
+      nsIFrame* aFrameIn, nsDirection aDirection,
+      mozilla::intl::BidiEmbeddingLevel aBidiLevel);
 
   
 
@@ -852,11 +855,6 @@ class nsFrameSelection final {
 
 
   void BidiLevelFromClick(nsIContent* aNewFocus, uint32_t aContentOffset);
-
-  static nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
-                                                    uint32_t aContentOffset,
-                                                    CaretAssociationHint aHint,
-                                                    bool aJumpLines);
 
   
 
