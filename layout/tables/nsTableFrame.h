@@ -268,12 +268,6 @@ class nsTableFrame : public nsContainerFrame {
       mozilla::Maybe<mozilla::LogicalMargin>& aBorder,
       mozilla::Maybe<mozilla::LogicalMargin>& aPadding) const;
 
-  
-
-
-
-  nsMargin GetDeflationForBackground(nsPresContext* aPresContext) const;
-
   friend class nsDelayedCalcBCBorders;
 
   void AddBCDamageArea(const mozilla::TableArea& aValue);
