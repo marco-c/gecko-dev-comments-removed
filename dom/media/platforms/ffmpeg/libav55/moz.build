@@ -1,14 +1,16 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 UNIFIED_SOURCES += [
     '../FFmpegAudioDecoder.cpp',
     '../FFmpegDataDecoder.cpp',
     '../FFmpegDecoderModule.cpp',
+    '../FFmpegEncoderModule.cpp',
     '../FFmpegVideoDecoder.cpp',
+    '../FFmpegVideoEncoder.cpp',
 ]
 LOCAL_INCLUDES += [
     '..',
@@ -27,3 +29,7 @@ if CONFIG['CC_TYPE'] == 'gcc':
   ]
 
 FINAL_LIBRARY = 'xul'
+
+LOCAL_INCLUDES += [
+  "/media/libyuv/libyuv/include",
+]
