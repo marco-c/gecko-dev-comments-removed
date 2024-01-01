@@ -45,7 +45,10 @@ NotificationActivities MaybeShowNotification(
 
 std::string GetStringForNotificationType(NotificationType type);
 std::string GetStringForNotificationShown(NotificationShown shown);
+NotificationShown GetNotificationShownFromString(const nsAString& shown);
 std::string GetStringForNotificationAction(NotificationAction action);
+NotificationAction GetNotificationActionFromString(const nsAString& action);
+
 
 
 
