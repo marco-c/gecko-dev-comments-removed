@@ -29,4 +29,13 @@ module.exports = {
     "jsdoc/require-yields": "error",
     "jsdoc/require-yields-check": "error",
   },
+  settings: {
+    jsdoc: {
+      
+      
+      
+      
+      mode: "typescript",
+    },
+  },
 };

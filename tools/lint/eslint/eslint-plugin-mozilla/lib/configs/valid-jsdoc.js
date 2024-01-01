@@ -22,4 +22,13 @@ module.exports = {
     "jsdoc/require-returns-type": "error",
     "jsdoc/valid-types": "error",
   },
+  settings: {
+    jsdoc: {
+      
+      
+      
+      
+      mode: "typescript",
+    },
+  },
 };
