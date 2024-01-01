@@ -57,7 +57,21 @@ module.exports = {
     ],
 
     
-    "no-use-before-define": "error",
+    "no-use-before-define": [
+      "error",
+      {
+        allowNamedExports: true,
+        classes: true,
+        
+        
+        functions: false,
+        
+        
+        
+        
+        variables: false,
+      },
+    ],
 
     
     
