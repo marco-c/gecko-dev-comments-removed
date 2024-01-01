@@ -7,6 +7,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StackWalk.h"
 #ifdef XP_WIN
@@ -106,6 +107,9 @@ class FrameSkipper {
 #    error Too old imagehlp.h
 #  endif
 
+
+
+
 CRITICAL_SECTION gDbgHelpCS;
 
 #  if defined(_M_AMD64) || defined(_M_ARM64)
@@ -182,16 +186,78 @@ static void PrintError(const char* aPrefix) {
   LocalFree(lpMsgBuf);
 }
 
-static bool EnsureDbgHelpInitialized() {
-  static bool sInitialized = []() {
+enum class DbgHelpInitFlags : bool {
+  BasicInit,
+  WithSymbolSupport,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] static bool InitializeDbgHelp(
+    DbgHelpInitFlags aInitFlags = DbgHelpInitFlags::BasicInit) {
+  
+  
+  static Atomic<DWORD> sInitializationThreadId{0};
+  DWORD currentThreadId = ::GetCurrentThreadId();
+
+  
+  
+  if (!currentThreadId) {
+    return false;
+  }
+
+  if (sInitializationThreadId == currentThreadId) {
     
-    
+    return false;
+  }
+
+  static const bool sHasInitializedDbgHelp = [currentThreadId]() {
+    sInitializationThreadId = currentThreadId;
+
     ::InitializeCriticalSection(&gDbgHelpCS);
-    auto success = static_cast<bool>(::LoadLibraryW(L"dbghelp.dll"));
-    MOZ_ASSERT(success);
-    return success;
+    bool dbgHelpLoaded = static_cast<bool>(::LoadLibraryW(L"dbghelp.dll"));
+
+    MOZ_ASSERT(dbgHelpLoaded);
+    sInitializationThreadId = 0;
+    return dbgHelpLoaded;
   }();
-  return sInitialized;
+
+  
+  
+  if (aInitFlags == DbgHelpInitFlags::BasicInit || !sHasInitializedDbgHelp) {
+    return sHasInitializedDbgHelp;
+  }
+
+  static const bool sHasInitializedSymbols = [currentThreadId]() {
+    sInitializationThreadId = currentThreadId;
+
+    EnterCriticalSection(&gDbgHelpCS);
+    SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
+    bool symbolsInitialized = SymInitialize(GetCurrentProcess(), nullptr, TRUE);
+    
+    LeaveCriticalSection(&gDbgHelpCS);
+
+    if (!symbolsInitialized) {
+      PrintError("SymInitialize");
+    }
+
+    MOZ_ASSERT(symbolsInitialized);
+    sInitializationThreadId = 0;
+    return symbolsInitialized;
+  }();
+
+  return sHasInitializedSymbols;
 }
 
 
@@ -256,7 +322,7 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
                                  void* aClosure, HANDLE aThread,
                                  CONTEXT* aContext) {
 #  if defined(_M_IX86)
-  if (!EnsureDbgHelpInitialized()) {
+  if (!InitializeDbgHelp()) {
     return;
   }
 #  endif
@@ -552,28 +618,6 @@ BOOL SymGetModuleInfoEspecial64(HANDLE aProcess, DWORD64 aAddr,
   return retval;
 }
 
-static bool EnsureSymInitialized() {
-  static bool sInitialized = []() {
-    if (!EnsureDbgHelpInitialized()) {
-      return false;
-    }
-
-    EnterCriticalSection(&gDbgHelpCS);
-    SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
-    bool success = SymInitialize(GetCurrentProcess(), nullptr, TRUE);
-    
-    LeaveCriticalSection(&gDbgHelpCS);
-
-    if (!success) {
-      PrintError("SymInitialize");
-    }
-
-    MOZ_ASSERT(success);
-    return success;
-  }();
-  return sInitialized;
-}
-
 MFBT_API bool MozDescribeCodeAddress(void* aPC,
                                      MozCodeAddressDetails* aDetails) {
   aDetails->library[0] = '\0';
@@ -583,7 +627,7 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
   aDetails->function[0] = '\0';
   aDetails->foffset = 0;
 
-  if (!EnsureSymInitialized()) {
+  if (!InitializeDbgHelp(DbgHelpInitFlags::WithSymbolSupport)) {
     return false;
   }
 
