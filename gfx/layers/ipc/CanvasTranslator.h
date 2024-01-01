@@ -352,7 +352,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
     UniquePtr<TextureData> mTextureData;
     RefPtr<gfx::DrawTarget> mDrawTarget;
     RemoteTextureOwnerId mRemoteTextureOwnerId;
-    bool mTextureLocked = false;
     bool mNotifiedRequiresRefresh = false;
     
     int32_t mLocked = 1;
