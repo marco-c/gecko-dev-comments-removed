@@ -55,9 +55,10 @@ inTimeZone("MST", () => {
 
     
     
-    "2022-02-29": new Date(2022, Month.March, 1),
-    "2022-02-30": new Date(2022, Month.March, 2),
-    "2022-02-31": new Date(2022, Month.March, 3),
+    
+    "2022-02-29": new Date(2022, Month.February, 28, 17),
+    "2022-02-30": new Date(2022, Month.March, 1, 17),
+    "2022-02-31": new Date(2022, Month.March, 2, 17),
 
     
     "19999-9-1MST": new Date(19999, Month.September, 1),
