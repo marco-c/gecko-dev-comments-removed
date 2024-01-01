@@ -789,6 +789,14 @@ void CanvasTranslator::RemoveTexture(int64_t aTextureId) {
   if (result == mTextureInfo.end() || --result->second.mLocked > 0) {
     return;
   }
+  if (mRemoteTextureOwner) {
+    
+    
+    RemoteTextureOwnerId owner = result->second.mRemoteTextureOwnerId;
+    if (owner.IsValid()) {
+      mRemoteTextureOwner->UnregisterTextureOwner(owner);
+    }
+  }
   mTextureInfo.erase(result);
 }
 
