@@ -490,6 +490,7 @@ class MockObjectRegistry {
   
   ~MockObjectRegistry() {
     if (!GMOCK_FLAG_GET(catch_leaked_mocks)) return;
+    internal::MutexLock l(&internal::g_gmock_mutex);
 
     int leaked_count = 0;
     for (StateMap::const_iterator it = states_.begin(); it != states_.end();

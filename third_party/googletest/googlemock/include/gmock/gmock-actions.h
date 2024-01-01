@@ -135,6 +135,7 @@
 #endif
 
 #include <algorithm>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <string>
@@ -1746,6 +1747,13 @@ struct ThrowAction {
     return [copy](Args...) -> R { throw copy; };
   }
 };
+struct RethrowAction {
+  std::exception_ptr exception;
+  template <typename R, typename... Args>
+  operator Action<R(Args...)>() const {  
+    return [ex = exception](Args...) -> R { std::rethrow_exception(ex); };
+  }
+};
 #endif  
 
 }  
@@ -2062,12 +2070,22 @@ internal::ReturnPointeeAction<Ptr> ReturnPointee(Ptr pointer) {
   return {pointer};
 }
 
-
-
 #if GTEST_HAS_EXCEPTIONS
+
+
+
+
 template <typename T>
-internal::ThrowAction<typename std::decay<T>::type> Throw(T&& exception) {
+typename std::enable_if<
+    !std::is_base_of<std::exception_ptr, typename std::decay<T>::type>::value,
+    internal::ThrowAction<typename std::decay<T>::type>>::type
+Throw(T&& exception) {
   return {std::forward<T>(exception)};
+}
+
+
+inline internal::RethrowAction Rethrow(std::exception_ptr exception) {
+  return {std::move(exception)};
 }
 #endif  
 
