@@ -684,9 +684,10 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
       dom::ImageBitmapFormatValues::GetString(imageUtils.GetFormat()).data());
 
   
-  
-  
-  mFrame->pts = aSample->mTime.ToTicksAtRate(mConfig.mFramerate);
+  mFrame->pts = aSample->mTime.ToMicroseconds();
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+  mFrame->time_base = {1, USECS_PER_S};
+#endif
 
   
   AVPacket* pkt = mLib->av_packet_alloc();
@@ -853,18 +854,9 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
 
   data->mKeyframe = (aPacket->flags & AV_PKT_FLAG_KEY) != 0;
   
-  
-  data->mTime =
-      media::TimeUnit(aPacket->pts, static_cast<int64_t>(mConfig.mFramerate));
-  data->mDuration = media::TimeUnit(aPacket->duration,
-                                    static_cast<int64_t>(mConfig.mFramerate));
-  data->mTimecode =
-      media::TimeUnit(aPacket->dts, static_cast<int64_t>(mConfig.mFramerate));
-
-  if (auto r = GetExtraData(aPacket); r.isOk()) {
-    data->mExtraData = r.unwrap();
-  }
-
+  data->mTime = media::TimeUnit::FromMicroseconds(aPacket->pts);
+  data->mDuration = media::TimeUnit::FromMicroseconds(aPacket->duration);
+  data->mTimecode = media::TimeUnit::FromMicroseconds(aPacket->dts);
   return data;
 }
 
