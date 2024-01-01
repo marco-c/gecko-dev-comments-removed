@@ -12,7 +12,6 @@
 #include <map>
 #include <memory>
 #include <queue>
-#include <stack>
 #include <unordered_set>
 #include <utility>
 
@@ -323,7 +322,7 @@ class RemoteTextureMap {
     
     
     std::deque<CompositableTextureHostRef> mReleasingRenderedTextureHosts;
-    std::stack<UniquePtr<TextureData>> mRecycledTextures;
+    std::queue<UniquePtr<TextureData>> mRecycledTextures;
     std::queue<UniquePtr<SharedResourceWrapper>> mRecycledSharedTextures;
   };
 
