@@ -153,35 +153,43 @@ exports.shortSource = function (sheet) {
     );
   }
 
+  let name = sheet.href;
+
   
   const dataUrl = sheet.href.trim().match(/^data:.*?,((?:.|\r|\n)*)$/);
   if (dataUrl) {
-    return dataUrl[1].length > MAX_DATA_URL_LENGTH
-      ? `${dataUrl[1].substr(0, MAX_DATA_URL_LENGTH - 1)}…`
-      : dataUrl[1];
+    name =
+      dataUrl[1].length > MAX_DATA_URL_LENGTH
+        ? `${dataUrl[1].substr(0, MAX_DATA_URL_LENGTH - 1)}…`
+        : dataUrl[1];
+  } else {
+    
+    let url = {};
+    try {
+      url = new URL(sheet.href);
+    } catch (ex) {
+      
+    }
+
+    if (url.pathname) {
+      const index = url.pathname.lastIndexOf("/");
+      if (index !== -1 && index < url.pathname.length) {
+        name = url.pathname.slice(index + 1);
+      } else {
+        name = url.pathname;
+      }
+    } else if (url.query) {
+      name = url.query;
+    }
   }
 
-  
-  let url = {};
   try {
-    url = new URL(sheet.href);
-  } catch (ex) {
+    name = decodeURIComponent(name);
+  } catch (e) {
     
   }
 
-  if (url.pathname) {
-    const index = url.pathname.lastIndexOf("/");
-    if (index !== -1 && index < url.pathname.length) {
-      return url.pathname.slice(index + 1);
-    }
-    return url.pathname;
-  }
-
-  if (url.query) {
-    return url.query;
-  }
-
-  return sheet.href;
+  return name;
 };
 
 
