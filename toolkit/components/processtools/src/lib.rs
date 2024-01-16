@@ -25,19 +25,6 @@ pub unsafe extern "C" fn new_process_tools_service(result: *mut *const nsIProces
     RefPtr::new(service.coerce::<nsIProcessToolsService>()).forget(&mut *result);
 }
 
-#[cfg(target_os = "windows")]
-use std::ffi::c_void;
-
-
-
-
-
-#[cfg(target_os = "windows")]
-pub unsafe extern "system" fn crash_illegal_instruction(_arg: *mut c_void) -> u32 {
-    std::ptr::null_mut::<u32>().write(1);
-    0
-}
-
 
 
 
@@ -106,6 +93,25 @@ impl ProcessToolsService {
 
     #[cfg(target_os = "windows")]
     pub fn crash(&self, pid: u64) -> Result<(), nsresult> {
+        let ntdll = unsafe {
+            winapi::um::libloaderapi::GetModuleHandleA(
+                 std::mem::transmute(b"ntdll.dll\0".as_ptr()),
+            )
+        };
+        if ntdll.is_null() {
+            return Err(NS_ERROR_NOT_AVAILABLE);
+        }
+
+        let dbg_break_point = unsafe {
+            winapi::um::libloaderapi::GetProcAddress(
+                 ntdll,
+                 std::mem::transmute(b"DbgBreakPoint\0".as_ptr()),
+            )
+        };
+        if dbg_break_point.is_null() {
+            return Err(NS_ERROR_NOT_AVAILABLE);
+        }
+
         let target_proc = unsafe {
             winapi::um::processthreadsapi::OpenProcess(
                 
@@ -126,7 +132,7 @@ impl ProcessToolsService {
                  target_proc,
                  std::ptr::null_mut(),
                  0,
-                 Some(crash_illegal_instruction),
+                 Some(std::mem::transmute(dbg_break_point)),
                  std::ptr::null_mut(),
                  0,
                  std::ptr::null_mut(),
