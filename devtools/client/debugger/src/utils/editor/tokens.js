@@ -11,7 +11,18 @@ function _isInvalidTarget(target) {
   const cursorPos = target.getBoundingClientRect();
 
   
-  const invalidType = ["cm-atom", ""].includes(target.className);
+  
+  
+  
+  
+  const invalidType = [
+    "",
+    "cm-atom",
+    "cm-number",
+    "cm-operator",
+    "cm-string",
+    "cm-tag",
+  ].includes(target.className);
 
   
   const invalidToken =
@@ -20,7 +31,7 @@ function _isInvalidTarget(target) {
   
   const invalidTarget =
     (target.parentElement &&
-      !target.parentElement.closest(".CodeMirror-line")) ||
+      !target.parentElement.closest(".CodeMirror-line, .CodeMirror-widget")) ||
     cursorPos.top == 0;
 
   const invalidClasses = ["editor-mount"];
