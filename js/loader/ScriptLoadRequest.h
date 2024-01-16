@@ -7,24 +7,18 @@
 #ifndef js_loader_ScriptLoadRequest_h
 #define js_loader_ScriptLoadRequest_h
 
-#include "js/AllocPolicy.h"
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/CORSMode.h"
 #include "mozilla/dom/SRIMetadata.h"
-#include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MaybeOneOf.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Utf8.h"  
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
-#include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "LoadedScript.h"
@@ -49,8 +43,6 @@ class ComponentLoadContext;
 
 namespace JS {
 namespace loader {
-
-using Utf8Unit = mozilla::Utf8Unit;
 
 class LoadContextBase;
 class ModuleLoadRequest;
@@ -85,9 +77,9 @@ class ScriptLoadRequestList;
 
 
 
-class ScriptLoadRequest
-    : public nsISupports,
-      private mozilla::LinkedListElement<ScriptLoadRequest> {
+class ScriptLoadRequest : public nsISupports,
+                          private mozilla::LinkedListElement<ScriptLoadRequest>,
+                          public LoadedScriptDelegate<ScriptLoadRequest> {
   using super = LinkedListElement<ScriptLoadRequest>;
 
   
@@ -111,17 +103,8 @@ class ScriptLoadRequest
   using super::getNext;
   using super::isInList;
 
-  template <typename T>
-  using VariantType = mozilla::VariantType<T>;
-
-  template <typename... Ts>
-  using Variant = mozilla::Variant<Ts...>;
-
   template <typename T, typename D = JS::DeletePolicy<T>>
   using UniquePtr = mozilla::UniquePtr<T, D>;
-
-  using MaybeSourceText =
-      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
@@ -149,7 +132,6 @@ class ScriptLoadRequest
   
   
   
-  
   bool IsCheckingCache() const { return mState == State::CheckingCache; }
 
   
@@ -167,71 +149,6 @@ class ScriptLoadRequest
   
   bool IsFinished() const {
     return mState == State::Ready || mState == State::Canceled;
-  }
-
-  
-  enum class DataType : uint8_t { eUnknown, eTextSource, eBytecode };
-
-  bool IsUnknownDataType() const { return mDataType == DataType::eUnknown; }
-  bool IsTextSource() const { return mDataType == DataType::eTextSource; }
-  bool IsSource() const { return IsTextSource(); }
-
-  void SetUnknownDataType() {
-    mDataType = DataType::eUnknown;
-    mScriptData.reset();
-  }
-
-  void SetTextSource(LoadContextBase* aMaybeLoadContext) {
-    MOZ_ASSERT(IsUnknownDataType());
-    mDataType = DataType::eTextSource;
-    mScriptData.emplace(VariantType<ScriptTextBuffer<Utf8Unit>>());
-  }
-
-  
-  
-  
-  template <typename Unit>
-  using ScriptTextBuffer = mozilla::Vector<Unit, 0, js::MallocAllocPolicy>;
-
-  bool IsUTF16Text() const {
-    return mScriptData->is<ScriptTextBuffer<char16_t>>();
-  }
-  bool IsUTF8Text() const {
-    return mScriptData->is<ScriptTextBuffer<Utf8Unit>>();
-  }
-
-  template <typename Unit>
-  const ScriptTextBuffer<Unit>& ScriptText() const {
-    MOZ_ASSERT(IsTextSource());
-    return mScriptData->as<ScriptTextBuffer<Unit>>();
-  }
-  template <typename Unit>
-  ScriptTextBuffer<Unit>& ScriptText() {
-    MOZ_ASSERT(IsTextSource());
-    return mScriptData->as<ScriptTextBuffer<Unit>>();
-  }
-
-  size_t ScriptTextLength() const {
-    MOZ_ASSERT(IsTextSource());
-    return IsUTF16Text() ? ScriptText<char16_t>().length()
-                         : ScriptText<Utf8Unit>().length();
-  }
-
-  
-  
-  nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource,
-                           LoadContextBase* aLoadContext);
-
-  void ClearScriptText() {
-    MOZ_ASSERT(IsTextSource());
-    return IsUTF16Text() ? ScriptText<char16_t>().clearAndFree()
-                         : ScriptText<Utf8Unit>().clearAndFree();
-  }
-
-  size_t ReceivedScriptTextLength() const { return mReceivedScriptTextLength; }
-
-  void SetReceivedScriptTextLength(size_t aLength) {
-    mReceivedScriptTextLength = aLength;
   }
 
   mozilla::dom::RequestPriority FetchPriority() const {
@@ -256,8 +173,6 @@ class ScriptLoadRequest
     return mFetchOptions->mTriggeringPrincipal;
   }
 
-  void ClearScriptSource();
-
   
   
   
@@ -268,40 +183,6 @@ class ScriptLoadRequest
   void MarkForBytecodeEncoding(JSScript* aScript);
 
   bool IsMarkedForBytecodeEncoding() const;
-
-  bool IsBytecode() const { return mDataType == DataType::eBytecode; }
-
-  void SetBytecode();
-
-  JS::TranscodeBuffer& SRIAndBytecode() {
-    
-    
-    
-    MOZ_ASSERT(IsBytecode() || IsSource());
-    return mScriptBytecode;
-  }
-
-  JS::TranscodeRange Bytecode() const {
-    MOZ_ASSERT(IsBytecode());
-    const auto& bytecode = mScriptBytecode;
-    auto offset = mBytecodeOffset;
-    return JS::TranscodeRange(bytecode.begin() + offset,
-                              bytecode.length() - offset);
-  }
-
-  size_t GetSRILength() const {
-    MOZ_ASSERT(IsBytecode() || IsSource());
-    return mBytecodeOffset;
-  }
-  void SetSRILength(size_t sriLength) {
-    MOZ_ASSERT(IsBytecode() || IsSource());
-    mBytecodeOffset = JS::AlignTranscodingBytecodeOffset(sriLength);
-  }
-
-  void DropBytecode() {
-    MOZ_ASSERT(IsBytecode() || IsSource());
-    mScriptBytecode.clearAndFree();
-  }
 
   mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
 
@@ -319,12 +200,14 @@ class ScriptLoadRequest
 
   mozilla::dom::WorkletLoadContext* GetWorkletLoadContext();
 
+  const LoadedScript* getLoadedScript() const { return mLoadedScript.get(); }
+  LoadedScript* getLoadedScript() { return mLoadedScript.get(); }
+
   const ScriptKind mKind;  
                            
 
   State mState;           
   bool mFetchSourceOnly;  
-  DataType mDataType;     
 
   
   
@@ -334,21 +217,6 @@ class ScriptLoadRequest
   const nsCOMPtr<nsIURI> mReferrer;
   mozilla::Maybe<nsString>
       mSourceMapURL;  
-
-  
-  mozilla::Maybe<
-      Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
-      mScriptData;
-
-  
-  
-  size_t mReceivedScriptTextLength;
-
-  
-  
-  
-  mozilla::Vector<uint8_t> mScriptBytecode;
-  uint32_t mBytecodeOffset;  
 
   const nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
