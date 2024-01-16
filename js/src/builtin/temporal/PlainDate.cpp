@@ -1012,6 +1012,10 @@ Wrapped<PlainDateObject*> js::temporal::AddDate(
     Handle<Wrapped<PlainDateObject*>> date, const Duration& duration,
     Handle<JSObject*> options) {
   
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
+  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
@@ -1028,6 +1032,10 @@ Wrapped<PlainDateObject*> js::temporal::AddDate(
 Wrapped<PlainDateObject*> js::temporal::AddDate(
     JSContext* cx, Handle<CalendarRecord> calendar,
     Handle<Wrapped<PlainDateObject*>> date, const Duration& duration) {
+  
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
 
   
@@ -1051,6 +1059,10 @@ Wrapped<PlainDateObject*> js::temporal::AddDate(
     return nullptr;
   }
   auto duration = ToDuration(unwrappedDuration);
+
+  
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
 
@@ -1077,6 +1089,10 @@ Wrapped<PlainDateObject*> js::temporal::AddDate(
   auto duration = ToDuration(unwrappedDuration);
 
   
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
+  
 
   
   if (HasYearsMonthsOrWeeks(duration)) {
@@ -1093,6 +1109,10 @@ Wrapped<PlainDateObject*> js::temporal::AddDate(
 bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                            const PlainDate& date, const Duration& duration,
                            Handle<JSObject*> options, PlainDate* result) {
+  
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
 
   
@@ -1111,6 +1131,10 @@ bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
 bool js::temporal::AddDate(JSContext* cx, Handle<CalendarRecord> calendar,
                            Handle<Wrapped<PlainDateObject*>> date,
                            const Duration& duration, PlainDate* result) {
+  
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
+
   
 
   
@@ -1543,36 +1567,13 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue, {}, &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::DateAdd,
+                                       CalendarMethod::DateUntil,
+                                   },
+                                   &calendar)) {
     return false;
-  }
-
-  
-  bool roundingGranularityIsNoop = settings.smallestUnit == TemporalUnit::Day &&
-                                   settings.roundingIncrement == Increment{1};
-
-  
-  bool largestUnitIsCalendarUnit = settings.largestUnit <= TemporalUnit::Week;
-
-  
-  bool roundingRequiresDateAddLookup =
-      !roundingGranularityIsNoop && largestUnitIsCalendarUnit;
-
-  
-  if (settings.smallestUnit <= TemporalUnit::Week ||
-      roundingRequiresDateAddLookup) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
-  }
-
-  
-  if (largestUnitIsCalendarUnit ||
-      settings.smallestUnit == TemporalUnit::Year) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar,
-                                     CalendarMethod::DateUntil)) {
-      return false;
-    }
   }
 
   
@@ -1602,6 +1603,10 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     }
     duration = result.date();
   }
+
+  
+  bool roundingGranularityIsNoop = settings.smallestUnit == TemporalUnit::Day &&
+                                   settings.roundingIncrement == Increment{1};
 
   
   if (!roundingGranularityIsNoop) {
@@ -2367,21 +2372,12 @@ static bool PlainDate_add(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue, {}, &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::DateAdd,
+                                   },
+                                   &calendar)) {
     return false;
-  }
-
-  
-  auto* unwrappedDuration = duration.unwrap(cx);
-  if (!unwrappedDuration) {
-    return false;
-  }
-  auto d = ToDuration(unwrappedDuration);
-
-  if (d.years != 0 || d.months != 0 || d.weeks != 0) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
   }
 
   
@@ -2433,15 +2429,12 @@ static bool PlainDate_subtract(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue, {}, &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::DateAdd,
+                                   },
+                                   &calendar)) {
     return false;
-  }
-
-  
-  if (duration.years != 0 || duration.months != 0 || duration.weeks != 0) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
   }
 
   

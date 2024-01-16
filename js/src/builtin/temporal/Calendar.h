@@ -138,7 +138,7 @@ class CalendarRecord {
   JSObject* yearMonthFromFields_ = nullptr;
 
 #ifdef DEBUG
-  mozilla::EnumSet<CalendarMethod> lookedUpBuiltin_{};
+  mozilla::EnumSet<CalendarMethod> lookedUp_{};
 #endif
 
  public:
@@ -161,8 +161,8 @@ class CalendarRecord {
   auto* yearMonthFromFields() const { return yearMonthFromFields_; }
 
 #ifdef DEBUG
-  auto& lookedUpBuiltin() const { return lookedUpBuiltin_; }
-  auto& lookedUpBuiltin() { return lookedUpBuiltin_; }
+  auto& lookedUp() const { return lookedUp_; }
+  auto& lookedUp() { return lookedUp_; }
 #endif
 
   
@@ -792,23 +792,22 @@ bool CreateCalendarMethodsRecord(JSContext* cx,
                                  mozilla::EnumSet<CalendarMethod> methods,
                                  JS::MutableHandle<CalendarRecord> result);
 
+#ifdef DEBUG
 
 
 
-bool CalendarMethodsRecordLookup(JSContext* cx,
-                                 JS::MutableHandle<CalendarRecord> calendar,
-                                 CalendarMethod methodName);
-
-
-
-
-bool CalendarMethodsRecordHasLookedUp(const CalendarRecord& calendar,
-                                      CalendarMethod methodName);
+inline bool CalendarMethodsRecordHasLookedUp(const CalendarRecord& calendar,
+                                             CalendarMethod methodName) {
+  
+  return calendar.lookedUp().contains(methodName);
+}
+#endif
 
 
 
 
 inline bool CalendarMethodsRecordIsBuiltin(const CalendarRecord& calendar) {
+  
   return calendar.receiver().isString();
 }
 

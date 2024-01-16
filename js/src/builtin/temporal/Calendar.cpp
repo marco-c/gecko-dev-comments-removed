@@ -859,56 +859,10 @@ JSObject* js::temporal::ToTemporalCalendarObject(
 
 
 
-bool js::temporal::CreateCalendarMethodsRecord(
-    JSContext* cx, Handle<CalendarValue> calendar,
-    mozilla::EnumSet<CalendarMethod> methods,
-    MutableHandle<CalendarRecord> result) {
+static bool CalendarMethodsRecordLookup(JSContext* cx,
+                                        MutableHandle<CalendarRecord> calendar,
+                                        CalendarMethod methodName) {
   
-  result.set(CalendarRecord{calendar});
-
-  
-  if (calendar.isString()) {
-#ifdef DEBUG
-    
-    result.get().lookedUpBuiltin() += methods;
-#endif
-    return true;
-  }
-
-  
-  for (auto method : methods) {
-    if (!CalendarMethodsRecordLookup(cx, result, method)) {
-      return false;
-    }
-  }
-
-  
-  return true;
-}
-
-
-
-
-bool js::temporal::CalendarMethodsRecordLookup(
-    JSContext* cx, MutableHandle<CalendarRecord> calendar,
-    CalendarMethod methodName) {
-  
-  if (CalendarMethodsRecordIsBuiltin(calendar)) {
-    
-    MOZ_ASSERT(!calendar.get().lookedUpBuiltin().contains(methodName));
-
-    
-#ifdef DEBUG
-    
-    calendar.get().lookedUpBuiltin() += methodName;
-#endif
-
-    
-    return true;
-  }
-
-  
-  MOZ_ASSERT(!CalendarMethodsRecordHasLookedUp(calendar, methodName));
 
   
   Rooted<JSObject*> object(cx, calendar.receiver().toObject());
@@ -956,37 +910,34 @@ bool js::temporal::CalendarMethodsRecordLookup(
 
 
 
-bool js::temporal::CalendarMethodsRecordHasLookedUp(
-    const CalendarRecord& calendar, CalendarMethod methodName) {
+bool js::temporal::CreateCalendarMethodsRecord(
+    JSContext* cx, Handle<CalendarValue> calendar,
+    mozilla::EnumSet<CalendarMethod> methods,
+    MutableHandle<CalendarRecord> result) {
+  MOZ_ASSERT(!methods.isEmpty());
+
   
-  if (CalendarMethodsRecordIsBuiltin(calendar)) {
+  result.set(CalendarRecord{calendar});
+
 #ifdef DEBUG
-    return calendar.lookedUpBuiltin().contains(methodName);
-#else
-    return true;
+  
+  result.get().lookedUp() += methods;
 #endif
+
+  
+  if (calendar.isString()) {
+    return true;
   }
 
   
-  switch (methodName) {
-    case CalendarMethod::DateAdd:
-      return calendar.dateAdd();
-    case CalendarMethod::DateFromFields:
-      return calendar.dateFromFields();
-    case CalendarMethod::DateUntil:
-      return calendar.dateUntil();
-    case CalendarMethod::Day:
-      return calendar.day();
-    case CalendarMethod::Fields:
-      return calendar.fields();
-    case CalendarMethod::MergeFields:
-      return calendar.mergeFields();
-    case CalendarMethod::MonthDayFromFields:
-      return calendar.monthDayFromFields();
-    case CalendarMethod::YearMonthFromFields:
-      return calendar.yearMonthFromFields();
+  for (auto method : methods) {
+    if (!CalendarMethodsRecordLookup(cx, result, method)) {
+      return false;
+    }
   }
-  MOZ_CRASH("invalid calendar method");
+
+  
+  return true;
 }
 
 static bool ToCalendarField(JSContext* cx, JSLinearString* linear,

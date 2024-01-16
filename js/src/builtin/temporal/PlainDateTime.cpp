@@ -1039,41 +1039,13 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(), {}, &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(),
+                                   {
+                                       CalendarMethod::DateAdd,
+                                       CalendarMethod::DateUntil,
+                                   },
+                                   &calendar)) {
     return false;
-  }
-
-  
-  bool roundingGranularityIsNoop =
-      settings.smallestUnit == TemporalUnit::Nanosecond &&
-      settings.roundingIncrement == Increment{1};
-
-  
-  bool largestUnitIsCalendarUnit = settings.largestUnit <= TemporalUnit::Week;
-
-  
-  bool roundingRequiresDateAddLookup =
-      !roundingGranularityIsNoop && largestUnitIsCalendarUnit;
-
-  
-  if (settings.smallestUnit <= TemporalUnit::Week ||
-      roundingRequiresDateAddLookup) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
-  }
-
-  
-  bool largestUnitRequiresDateUntilLookup =
-      !datePartsIdentical && largestUnitIsCalendarUnit;
-
-  
-  if (largestUnitRequiresDateUntilLookup ||
-      settings.smallestUnit == TemporalUnit::Year) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar,
-                                     CalendarMethod::DateUntil)) {
-      return false;
-    }
   }
 
   
@@ -1082,6 +1054,11 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
                                settings.largestUnit, resolvedOptions, &diff)) {
     return false;
   }
+
+  
+  bool roundingGranularityIsNoop =
+      settings.smallestUnit == TemporalUnit::Nanosecond &&
+      settings.roundingIncrement == Increment{1};
 
   
   if (roundingGranularityIsNoop) {
@@ -1187,16 +1164,12 @@ static bool AddDurationToOrSubtractDurationFromPlainDateTime(
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(), {}, &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, dateTime.calendar(),
+                                   {
+                                       CalendarMethod::DateAdd,
+                                   },
+                                   &calendar)) {
     return false;
-  }
-
-  
-  if (duration.years != 0 || duration.months != 0 || duration.weeks != 0) {
-    
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
   }
 
   

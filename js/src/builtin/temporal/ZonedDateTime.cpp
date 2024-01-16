@@ -1597,17 +1597,12 @@ static bool AddDurationToOrSubtractDurationFromZonedDateTime(
 
   
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, zonedDateTime.calendar(), {},
+  if (!CreateCalendarMethodsRecord(cx, zonedDateTime.calendar(),
+                                   {
+                                       CalendarMethod::DateAdd,
+                                   },
                                    &calendar)) {
     return false;
-  }
-
-  
-  if (duration.years != 0 || duration.months != 0 || duration.weeks != 0) {
-    
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
   }
 
   

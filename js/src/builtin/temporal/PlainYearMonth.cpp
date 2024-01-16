@@ -420,36 +420,18 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   }
 
   
+  
 
   
   Rooted<CalendarRecord> calendarRec(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendar, {}, &calendarRec)) {
-    return false;
-  }
-
-  
-  if (settings.smallestUnit != TemporalUnit::Month ||
-      settings.roundingIncrement != Increment{1}) {
-    if (!CalendarMethodsRecordLookup(cx, &calendarRec,
-                                     CalendarMethod::DateAdd)) {
-      return false;
-    }
-  }
-
-  
-  if (!CalendarMethodsRecordLookup(cx, &calendarRec,
-                                   CalendarMethod::DateFromFields)) {
-    return false;
-  }
-
-  
-  if (!CalendarMethodsRecordLookup(cx, &calendarRec,
-                                   CalendarMethod::DateUntil)) {
-    return false;
-  }
-
-  
-  if (!CalendarMethodsRecordLookup(cx, &calendarRec, CalendarMethod::Fields)) {
+  if (!CreateCalendarMethodsRecord(cx, calendar,
+                                   {
+                                       CalendarMethod::DateAdd,
+                                       CalendarMethod::DateFromFields,
+                                       CalendarMethod::DateUntil,
+                                       CalendarMethod::Fields,
+                                   },
+                                   &calendarRec)) {
     return false;
   }
 
@@ -599,41 +581,17 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   
   Rooted<CalendarValue> calendarValue(cx, yearMonth->calendar());
   Rooted<CalendarRecord> calendar(cx);
-  if (!CreateCalendarMethodsRecord(cx, calendarValue, {}, &calendar)) {
+  if (!CreateCalendarMethodsRecord(cx, calendarValue,
+                                   {
+                                       CalendarMethod::DateAdd,
+                                       CalendarMethod::DateFromFields,
+                                       CalendarMethod::Day,
+                                       CalendarMethod::Fields,
+                                       CalendarMethod::YearMonthFromFields,
+                                   },
+                                   &calendar)) {
     return false;
   };
-
-  
-  if (sign < 0 || duration.years != 0 || duration.months != 0 ||
-      duration.weeks != 0) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
-      return false;
-    }
-  }
-
-  
-  if (!CalendarMethodsRecordLookup(cx, &calendar,
-                                   CalendarMethod::DateFromFields)) {
-    return false;
-  }
-
-  
-  if (sign < 0) {
-    if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::Day)) {
-      return false;
-    }
-  }
-
-  
-  if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::Fields)) {
-    return false;
-  }
-
-  
-  if (!CalendarMethodsRecordLookup(cx, &calendar,
-                                   CalendarMethod::YearMonthFromFields)) {
-    return false;
-  }
 
   
   JS::RootedVector<PropertyKey> fieldNames(cx);
