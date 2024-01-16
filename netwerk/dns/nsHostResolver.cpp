@@ -235,7 +235,8 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   
   
   
-  sNativeHTTPSSupported = mozilla::IsWin11OrLater();
+  sNativeHTTPSSupported = StaticPrefs::network_dns_native_https_query_win10() ||
+                          mozilla::IsWin11OrLater();
 #elif defined(MOZ_WIDGET_ANDROID)
   
   sNativeHTTPSSupported = jni::GetAPIVersion() >= 29;
