@@ -137,9 +137,7 @@ class MessageRequestHolder {
   ~MessageRequestHolder() = default;
 
   MozPromiseRequestHolder<T>& Request() { return mRequest; }
-  void Disconnect() {
-    mRequest.DisconnectIfExists();
-  }
+  void Disconnect() { mRequest.DisconnectIfExists(); }
   void Complete() { mRequest.Complete(); }
   bool Exists() const { return mRequest.Exists(); }
 
@@ -158,33 +156,37 @@ bool IsOnMacOS();
 
 
 
-
 template <typename T, typename Phantom>
-class StrongTypedef
-{
-  public:
-    explicit StrongTypedef(T const& value) : mValue(value) {}
-    explicit StrongTypedef(T&& value) : mValue(std::move(value)) {}
-    T& get() { return mValue; }
-    T const& get() const {return mValue; }
-private:
-    T mValue;
+class StrongTypedef {
+ public:
+  explicit StrongTypedef(T const& value) : mValue(value) {}
+  explicit StrongTypedef(T&& value) : mValue(std::move(value)) {}
+  T& get() { return mValue; }
+  T const& get() const { return mValue; }
+
+ private:
+  T mValue;
 };
 
 using CodecChange = StrongTypedef<nsString, struct CodecChangeTypeWebCodecs>;
-using DimensionsChange = StrongTypedef<gfx::IntSize, struct DimensionsChangeTypeWebCodecs>;
-using DisplayDimensionsChange = StrongTypedef<Maybe<gfx::IntSize>, struct DisplayDimensionsChangeTypeWebCodecs>;
-using BitrateChange = StrongTypedef<Maybe<uint32_t>, struct BitrateChangeTypeWebCodecs>;
+using DimensionsChange =
+    StrongTypedef<gfx::IntSize, struct DimensionsChangeTypeWebCodecs>;
+using DisplayDimensionsChange =
+    StrongTypedef<Maybe<gfx::IntSize>,
+                  struct DisplayDimensionsChangeTypeWebCodecs>;
+using BitrateChange =
+    StrongTypedef<Maybe<uint32_t>, struct BitrateChangeTypeWebCodecs>;
 using FramerateChange =
     StrongTypedef<Maybe<double>, struct FramerateChangeTypeWebCodecs>;
 using HardwareAccelerationChange =
     StrongTypedef<dom::HardwareAcceleration,
                   struct HardwareAccelerationChangeTypeWebCodecs>;
-using AlphaChange = StrongTypedef<dom::AlphaOption, struct AlphaChangeTypeWebCodecs>;
+using AlphaChange =
+    StrongTypedef<dom::AlphaOption, struct AlphaChangeTypeWebCodecs>;
 using ScalabilityModeChange =
     StrongTypedef<Maybe<nsString>, struct ScalabilityModeChangeTypeWebCodecs>;
-using BitrateModeChange =
-    StrongTypedef<dom::VideoEncoderBitrateMode, struct BitrateModeChangeTypeWebCodecs>;
+using BitrateModeChange = StrongTypedef<dom::VideoEncoderBitrateMode,
+                                        struct BitrateModeChangeTypeWebCodecs>;
 using LatencyModeChange =
     StrongTypedef<dom::LatencyMode, struct LatencyModeTypeChangeTypeWebCodecs>;
 using ContentHintChange =
@@ -198,10 +200,8 @@ using WebCodecsEncoderConfigurationItem =
 
 struct WebCodecsConfigurationChangeList {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebCodecsConfigurationChangeList)
-  bool Empty() const {
-    return mChanges.IsEmpty();
-  }
-  template<typename T>
+  bool Empty() const { return mChanges.IsEmpty(); }
+  template <typename T>
   void Push(const T& aItem) {
     mChanges.AppendElement(aItem);
   }
@@ -215,11 +215,13 @@ struct WebCodecsConfigurationChangeList {
   nsString ToString() const;
 
   nsTArray<WebCodecsEncoderConfigurationItem> mChanges;
+
  private:
   ~WebCodecsConfigurationChangeList() = default;
 };
 
-nsCString ColorSpaceInitToString(const dom::VideoColorSpaceInit& aColorSpaceInit);
+nsCString ColorSpaceInitToString(
+    const dom::VideoColorSpaceInit& aColorSpaceInit);
 
 RefPtr<TaskQueue> GetWebCodecsEncoderTaskQueue();
 VideoColorSpaceInit FallbackColorSpaceForVideoContent();
@@ -229,7 +231,7 @@ Maybe<CodecType> CodecStringToCodecType(const nsAString& aCodecString);
 
 nsString ConfigToString(const VideoDecoderConfig& aConfig);
 
-} 
+}  
 
 }  
 

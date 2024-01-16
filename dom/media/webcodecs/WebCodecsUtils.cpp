@@ -405,19 +405,24 @@ nsString WebCodecsConfigurationChangeList::ToString() const {
 }
 
 using CodecChange = StrongTypedef<nsString, struct CodecChangeTypeWebCodecs>;
-using DimensionsChange = StrongTypedef<gfx::IntSize, struct DimensionsChangeTypeWebCodecs>;
-using DisplayDimensionsChange = StrongTypedef<Maybe<gfx::IntSize>, struct DisplayDimensionsChangeTypeWebCodecs>;
-using BitrateChange = StrongTypedef<Maybe<uint32_t>, struct BitrateChangeTypeWebCodecs>;
+using DimensionsChange =
+    StrongTypedef<gfx::IntSize, struct DimensionsChangeTypeWebCodecs>;
+using DisplayDimensionsChange =
+    StrongTypedef<Maybe<gfx::IntSize>,
+                  struct DisplayDimensionsChangeTypeWebCodecs>;
+using BitrateChange =
+    StrongTypedef<Maybe<uint32_t>, struct BitrateChangeTypeWebCodecs>;
 using FramerateChange =
     StrongTypedef<Maybe<double>, struct FramerateChangeTypeWebCodecs>;
 using HardwareAccelerationChange =
     StrongTypedef<dom::HardwareAcceleration,
                   struct HardwareAccelerationChangeTypeWebCodecs>;
-using AlphaChange = StrongTypedef<dom::AlphaOption, struct AlphaChangeTypeWebCodecs>;
+using AlphaChange =
+    StrongTypedef<dom::AlphaOption, struct AlphaChangeTypeWebCodecs>;
 using ScalabilityModeChange =
     StrongTypedef<Maybe<nsString>, struct ScalabilityModeChangeTypeWebCodecs>;
-using BitrateModeChange =
-    StrongTypedef<dom::VideoEncoderBitrateMode, struct BitrateModeChangeTypeWebCodecs>;
+using BitrateModeChange = StrongTypedef<dom::VideoEncoderBitrateMode,
+                                        struct BitrateModeChangeTypeWebCodecs>;
 using LatencyModeChange =
     StrongTypedef<dom::LatencyMode, struct LatencyModeTypeChangeTypeWebCodecs>;
 using ContentHintChange =
@@ -425,10 +430,8 @@ using ContentHintChange =
 
 bool WebCodecsConfigurationChangeList::CanAttemptReconfigure() const {
   for (const auto& change : mChanges) {
-    if (change.is<CodecChange>() ||
-        change.is<HardwareAccelerationChange>() ||
-        change.is<AlphaChange>() ||
-        change.is<ScalabilityModeChange>()) {
+    if (change.is<CodecChange>() || change.is<HardwareAccelerationChange>() ||
+        change.is<AlphaChange>() || change.is<ScalabilityModeChange>()) {
       return false;
     }
   }
@@ -443,16 +446,19 @@ WebCodecsConfigurationChangeList::ToPEMChangeList() const {
     if (change.is<dom::DimensionsChange>()) {
       rv->Push(mozilla::DimensionsChange(change.as<DimensionsChange>().get()));
     } else if (change.is<dom::DisplayDimensionsChange>()) {
-      rv->Push(mozilla::DisplayDimensionsChange(change.as<DisplayDimensionsChange>().get()));
+      rv->Push(mozilla::DisplayDimensionsChange(
+          change.as<DisplayDimensionsChange>().get()));
     } else if (change.is<dom::BitrateChange>()) {
       rv->Push(mozilla::BitrateChange(change.as<BitrateChange>().get()));
     } else if (change.is<FramerateChange>()) {
       rv->Push(mozilla::FramerateChange(change.as<FramerateChange>().get()));
     } else if (change.is<dom::BitrateModeChange>()) {
       MediaDataEncoder::BitrateMode mode;
-      if (change.as<dom::BitrateModeChange>().get() == dom::VideoEncoderBitrateMode::Constant) {
+      if (change.as<dom::BitrateModeChange>().get() ==
+          dom::VideoEncoderBitrateMode::Constant) {
         mode = MediaDataEncoder::BitrateMode::Constant;
-      } else if (change.as<BitrateModeChange>().get() == dom::VideoEncoderBitrateMode::Variable) {
+      } else if (change.as<BitrateModeChange>().get() ==
+                 dom::VideoEncoderBitrateMode::Variable) {
         mode = MediaDataEncoder::BitrateMode::Variable;
       } else {
         
@@ -468,7 +474,8 @@ WebCodecsConfigurationChangeList::ToPEMChangeList() const {
       }
       rv->Push(UsageChange(usage));
     } else if (change.is<ContentHintChange>()) {
-      rv->Push(mozilla::ContentHintChange(change.as<ContentHintChange>().get()));
+      rv->Push(
+          mozilla::ContentHintChange(change.as<ContentHintChange>().get()));
     }
   }
   return rv.forget();
@@ -515,6 +522,7 @@ VideoColorSpaceInit FallbackColorSpaceForVideoContent() {
   
   
   
+  
   VideoColorSpaceInit colorSpace;
   colorSpace.mFullRange = false;
   colorSpace.mMatrix = VideoMatrixCoefficients::Bt709;
@@ -523,6 +531,7 @@ VideoColorSpaceInit FallbackColorSpaceForVideoContent() {
   return colorSpace;
 }
 VideoColorSpaceInit FallbackColorSpaceForWebContent() {
+  
   
   
   
