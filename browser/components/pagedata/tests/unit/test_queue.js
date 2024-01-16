@@ -3,7 +3,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   PageDataService: "resource:///modules/pagedata/PageDataService.sys.mjs",
-  PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
 
@@ -60,7 +60,7 @@ add_task(async function test_queueOrder() {
     return Promise.reject(new Error("Unknown url"));
   };
 
-  let { promise: completePromise, resolve } = PromiseUtils.defer();
+  let { promise: completePromise, resolve } = Promise.withResolvers();
 
   let results = [];
   let listener = (_, pageData) => {
@@ -99,7 +99,7 @@ add_task(async function test_queueLimit() {
 
   let requests = [];
   PageDataService.fetchPageData = url => {
-    let { promise, resolve, reject } = PromiseUtils.defer();
+    let { promise, resolve, reject } = Promise.withResolvers();
     requests.push({ url, resolve, reject });
 
     return promise;
@@ -124,8 +124,7 @@ add_task(async function test_queueLimit() {
   PageDataService.queueFetch("https://www.mozilla.org/10");
   PageDataService.queueFetch("https://www.mozilla.org/11");
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -145,8 +144,7 @@ add_task(async function test_queueLimit() {
     data: {},
   });
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -160,8 +158,7 @@ add_task(async function test_queueLimit() {
 
   requests[3].reject(new Error("Fail"));
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -177,8 +174,7 @@ add_task(async function test_queueLimit() {
   
   Services.prefs.setIntPref("browser.pagedata.maxBackgroundFetches", 5);
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -196,8 +192,7 @@ add_task(async function test_queueLimit() {
   
   Services.prefs.setIntPref("browser.pagedata.maxBackgroundFetches", 3);
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -227,8 +222,7 @@ add_task(async function test_queueLimit() {
     data: {},
   });
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -246,8 +240,7 @@ add_task(async function test_queueLimit() {
   
   requests[4].resolve(null);
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -266,8 +259,7 @@ add_task(async function test_queueLimit() {
   
   Services.prefs.setIntPref("browser.pagedata.maxBackgroundFetches", 0);
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -317,8 +309,7 @@ add_task(async function test_queueLimit() {
     data: {},
   });
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -362,7 +353,7 @@ add_task(async function test_idle() {
 
   let requests = [];
   PageDataService.fetchPageData = url => {
-    let { promise, resolve, reject } = PromiseUtils.defer();
+    let { promise, resolve, reject } = Promise.withResolvers();
     requests.push({ url, resolve, reject });
 
     return promise;
@@ -383,8 +374,7 @@ add_task(async function test_idle() {
   PageDataService.queueFetch("https://www.mozilla.org/6");
   PageDataService.queueFetch("https://www.mozilla.org/7");
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   
   Assert.deepEqual(
@@ -395,8 +385,7 @@ add_task(async function test_idle() {
   
   PageDataService.observe(null, "idle", null);
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -415,8 +404,7 @@ add_task(async function test_idle() {
     data: {},
   });
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -447,8 +435,7 @@ add_task(async function test_idle() {
     data: {},
   });
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -463,8 +450,7 @@ add_task(async function test_idle() {
   
   PageDataService.observe(null, "idle", null);
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
@@ -495,8 +481,7 @@ add_task(async function test_idle() {
     data: {},
   });
 
-  
-  await Promise.resolve();
+  await TestUtils.waitForTick();
 
   Assert.deepEqual(
     requests.map(r => r.url),
