@@ -60,6 +60,10 @@
 #  include "sandbox/linux/system_headers/linux_ucontext.h"
 #endif
 
+#ifndef SECCOMP_FILTER_FLAG_SPEC_ALLOW
+#  define SECCOMP_FILTER_FLAG_SPEC_ALLOW (1UL << 2)
+#endif
+
 #ifdef MOZ_ASAN
 
 
@@ -228,8 +232,45 @@ static void InstallSigSysHandler(void) {
   }
 
   if (aUseTSync) {
-    if (syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER,
-                SECCOMP_FILTER_FLAG_TSYNC, aProg) != 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    static const bool kSpecAllow = !PR_GetEnv("MOZ_SANDBOX_NO_SPEC_ALLOW");
+
+    const auto setSeccomp = [aProg](int aFlags) -> long {
+      return syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER,
+                     SECCOMP_FILTER_FLAG_TSYNC | aFlags, aProg);
+    };
+
+    long rv;
+    if (kSpecAllow) {
+      rv = setSeccomp(SECCOMP_FILTER_FLAG_SPEC_ALLOW);
+    } else {
+      rv = -1;
+      errno = EINVAL;
+    }
+    if (rv != 0 && errno == EINVAL) {
+      rv = setSeccomp(0);
+    }
+    if (rv != 0) {
       SANDBOX_LOG_ERRNO("thread-synchronized seccomp failed");
       MOZ_CRASH("seccomp+tsync failed, but kernel supports tsync");
     }
