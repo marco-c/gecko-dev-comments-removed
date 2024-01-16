@@ -347,14 +347,13 @@ class Scopes extends PureComponent {
 const mapStateToProps = state => {
   
   const selectedFrame = getSelectedFrame(state, getCurrentThread(state));
+  if (!selectedFrame) {
+    return {};
+  }
   const why = getPauseReason(state, selectedFrame.thread);
   const expandedScopes = getLastExpandedScopes(state, selectedFrame.thread);
   const isPaused = getIsCurrentThreadPaused(state);
   const selectedSource = getSelectedSource(state);
-
-  if (!selectedFrame) {
-    return {};
-  }
 
   let originalFrameScopes;
   let generatedFrameScopes;
