@@ -719,7 +719,8 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
         }
 
         
-        cpi->this_frame_target -= (cpi->this_frame_target * percent_low) / 200;
+        cpi->this_frame_target -=
+            (int)(((int64_t)cpi->this_frame_target * percent_low) / 200);
 
         
 

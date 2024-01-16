@@ -12,7 +12,7 @@
 #define VPX_VPX_VPX_INTEGER_H_
 
 
-#include <stddef.h>
+#include <stddef.h>  
 
 #if defined(_MSC_VER)
 #define VPX_FORCE_INLINE __forceinline
@@ -34,7 +34,7 @@
 #endif
 #endif  
 
-#include <inttypes.h>
-#include <stdint.h>
+#include <inttypes.h>  
+#include <stdint.h>    
 
 #endif  

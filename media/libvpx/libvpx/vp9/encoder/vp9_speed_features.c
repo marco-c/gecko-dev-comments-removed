@@ -859,6 +859,11 @@ static void set_rt_speed_feature_framesize_independent(
   
   if (speed <= 3 && cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
     cpi->oxcf.aq_mode = 0;
+  
+  
+  
+  if (cpi->oxcf.mode != cpi->deadline_mode_previous_frame)
+    sf->nonrd_keyframe = 1;
 }
 
 void vp9_set_speed_features_framesize_dependent(VP9_COMP *cpi, int speed) {

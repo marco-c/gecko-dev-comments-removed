@@ -921,6 +921,9 @@ typedef struct VP9_COMP {
                     
                     
 
+  int last_coded_width;
+  int last_coded_height;
+
   int use_svc;
 
   SVC svc;
@@ -1037,6 +1040,13 @@ typedef struct VP9_COMP {
 
   int fixed_qp_onepass;
 
+  
+  
+  MODE deadline_mode_previous_frame;
+
+  
+  int disable_scene_detection_rtc_ratectrl;
+
 #if CONFIG_COLLECT_COMPONENT_TIMING
   
 
@@ -1052,6 +1062,8 @@ typedef struct VP9_COMP {
 
   uint64_t frame_component_time[kTimingComponents];
 #endif
+  
+  int tpl_with_external_rc;
 } VP9_COMP;
 
 #if CONFIG_RATE_CTRL
@@ -1374,6 +1386,14 @@ void vp9_get_ref_frame_info(FRAME_UPDATE_TYPE update_type, int ref_frame_flags,
                             int *ref_frame_valid_list);
 
 void vp9_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv);
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                             YV12_BUFFER_CONFIG *dst, int bd);
+#else
+void vp9_scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                             YV12_BUFFER_CONFIG *dst);
+#endif  
 
 YV12_BUFFER_CONFIG *vp9_svc_twostage_scale(
     VP9_COMMON *cm, YV12_BUFFER_CONFIG *unscaled, YV12_BUFFER_CONFIG *scaled,

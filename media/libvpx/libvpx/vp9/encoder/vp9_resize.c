@@ -360,6 +360,12 @@ static int get_down2_steps(int in_length, int out_length) {
   while ((proj_in_length = get_down2_length(in_length, 1)) >= out_length) {
     ++steps;
     in_length = proj_in_length;
+    if (in_length == 1) {
+      
+      
+      
+      break;
+    }
   }
   return steps;
 }

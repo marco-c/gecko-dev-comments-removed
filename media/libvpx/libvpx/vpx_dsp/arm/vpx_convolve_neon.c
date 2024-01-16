@@ -12,6 +12,7 @@
 
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/vpx_dsp_common.h"
+#include "vpx_dsp/vpx_filter.h"
 #include "vpx_ports/mem.h"
 
 void vpx_convolve8_neon(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
@@ -23,9 +24,11 @@ void vpx_convolve8_neon(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
 
   uint8_t temp[64 * 72];
 
+  const int vert_filter_taps = vpx_get_filter_taps(filter[y0_q4]) <= 4 ? 4 : 8;
   
-  
-  const int intermediate_height = h + 8;
+
+  const int intermediate_height = h + vert_filter_taps;
+  const ptrdiff_t border_offset = vert_filter_taps / 2 - 1;
 
   assert(y_step_q4 == 16);
   assert(x_step_q4 == 16);
@@ -34,13 +37,13 @@ void vpx_convolve8_neon(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
 
 
 
-  vpx_convolve8_horiz_neon(src - src_stride * 3, src_stride, temp, w, filter,
-                           x0_q4, x_step_q4, y0_q4, y_step_q4, w,
+  vpx_convolve8_horiz_neon(src - src_stride * border_offset, src_stride, temp,
+                           w, filter, x0_q4, x_step_q4, y0_q4, y_step_q4, w,
                            intermediate_height);
 
   
-  vpx_convolve8_vert_neon(temp + w * 3, w, dst, dst_stride, filter, x0_q4,
-                          x_step_q4, y0_q4, y_step_q4, w, h);
+  vpx_convolve8_vert_neon(temp + w * border_offset, w, dst, dst_stride, filter,
+                          x0_q4, x_step_q4, y0_q4, y_step_q4, w, h);
 }
 
 void vpx_convolve8_avg_neon(const uint8_t *src, ptrdiff_t src_stride,
