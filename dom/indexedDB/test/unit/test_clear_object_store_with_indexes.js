@@ -3,6 +3,28 @@
 
 
 
+const isInChaosMode = () => {
+  return !!parseInt(Services.env.get("MOZ_CHAOSMODE"), 16);
+};
+
+
+const getDataBlockSize = () => {
+  if (mozinfo.os == "android") {
+    
+    if (mozinfo.verify) {
+      return 54; 
+    }
+
+    return 3333;
+  }
+
+  if (isInChaosMode()) {
+    return 333;
+  }
+
+  return 33333;
+};
+
 
 async function testSteps() {
   const name = this.window ? window.location.pathname : "Splendid Test";
@@ -25,11 +47,13 @@ async function testSteps() {
     .transaction(["testObjectStore"], "readwrite")
     .objectStore("testObjectStore");
 
-  const segment = 33333;
-  const lastIndex = 3 * segment;
+  const dataBlock = getDataBlockSize();
+  const lastIndex = 3 * dataBlock;
+
+  info("We will now add " + lastIndex + " blobs to our object store");
 
   const addSegment = async (from, dataValue) => {
-    for (let i = from; i <= from + segment - 1; ++i) {
+    for (let i = from; i <= from + dataBlock - 1; ++i) {
       await objectStore.add({
         id: i,
         indexA: i,
@@ -57,10 +81,10 @@ async function testSteps() {
   await addSegment(1, dataValueBegin);
 
   const dataValueMiddle = getBlob(expectedMiddle);
-  await addSegment(segment + 1, dataValueMiddle);
+  await addSegment(dataBlock + 1, dataValueMiddle);
 
   const dataValueEnd = getBlob(expectedEnd);
-  await addSegment(2 * segment + 1, dataValueEnd);
+  await addSegment(2 * dataBlock + 1, dataValueEnd);
 
   
   await new Promise((res, rej) => {
@@ -91,10 +115,8 @@ async function testSteps() {
 
 
 
-
-    const android = mozinfo.os == "android";
     const minutes = 60 * 1000;
-    const performance_regression_cutoff = (android ? 6 : 1) * minutes;
+    const performance_regression_cutoff = 1 * minutes;
     do_timeout(performance_regression_cutoff, () => {
       if (!isDone) {
         rej(Error("Performance regression detected"));
