@@ -35,34 +35,23 @@ namespace js::temporal {
     } while (false)
 #endif
 
-struct InstantSpan;
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-struct Instant final {
-  
+template <typename Derived>
+struct SecondsAndNanoseconds {
   
   int64_t seconds = 0;
 
   
   int32_t nanoseconds = 0;
 
-  bool operator==(const Instant& other) const {
+  constexpr bool operator==(const SecondsAndNanoseconds& other) const {
     return seconds == other.seconds && nanoseconds == other.nanoseconds;
   }
 
-  bool operator<(const Instant& other) const {
+  constexpr bool operator<(const SecondsAndNanoseconds& other) const {
     
     
     JS_ASSUME(nanoseconds >= 0);
@@ -72,182 +61,31 @@ struct Instant final {
   }
 
   
-  bool operator!=(const Instant& other) const { return !(*this == other); }
-  bool operator>(const Instant& other) const { return other < *this; }
-  bool operator<=(const Instant& other) const { return !(other < *this); }
-  bool operator>=(const Instant& other) const { return !(*this < other); }
-
-  inline Instant& operator+=(const InstantSpan& other);
-  inline Instant& operator-=(const InstantSpan& other);
-
-  inline Instant operator+(const InstantSpan& other) const;
-  inline Instant operator-(const InstantSpan& other) const;
-
-  inline InstantSpan operator-(const Instant& other) const;
-
-  
-
-
-
-  int64_t toSeconds() const {
-    int64_t sec = seconds;
-    int64_t nanos = nanoseconds;
-    if (sec < 0 && nanos > 0) {
-      sec += 1;
-    }
-    return sec;
+  constexpr bool operator!=(const SecondsAndNanoseconds& other) const {
+    return !(*this == other);
+  }
+  constexpr bool operator>(const SecondsAndNanoseconds& other) const {
+    return other < *this;
+  }
+  constexpr bool operator<=(const SecondsAndNanoseconds& other) const {
+    return !(other < *this);
+  }
+  constexpr bool operator>=(const SecondsAndNanoseconds& other) const {
+    return !(*this < other);
   }
 
-  
-
-
-
-  int64_t toMilliseconds() const {
-    int64_t sec = seconds;
-    int64_t nanos = nanoseconds;
-    if (sec < 0 && nanos > 0) {
-      sec += 1;
-      nanos -= 1'000'000'000;
-    }
-    return (sec * 1'000) + (nanos / 1'000'000);
-  }
-
-  
-
-
-
-  int64_t toMicroseconds() const {
-    int64_t sec = seconds;
-    int64_t nanos = nanoseconds;
-    if (sec < 0 && nanos > 0) {
-      sec += 1;
-      nanos -= 1'000'000'000;
-    }
-    return (sec * 1'000'000) + (nanos / 1'000);
-  }
-
-  
-
-
-
-
-
-  mozilla::CheckedInt64 toNanoseconds() const {
-    mozilla::CheckedInt64 nanos = seconds;
-    nanos *= ToNanoseconds(TemporalUnit::Second);
-    nanos += nanoseconds;
-    return nanos;
-  }
-
-  
-
-
-
-  int64_t floorToMicroseconds() const {
-    return (seconds * 1'000'000) + (nanoseconds / 1'000);
-  }
-
-  
-
-
-
-  int64_t floorToMilliseconds() const {
-    return (seconds * 1'000) + (nanoseconds / 1'000'000);
-  }
-
-  
-
-
-
-  int64_t ceilToMilliseconds() const {
-    return floorToMilliseconds() + int64_t(nanoseconds % 1'000'000 != 0);
-  }
-
-  
-
-
-  static constexpr Instant fromSeconds(int64_t seconds) { return {seconds, 0}; }
-
-  
-
-
-  static constexpr Instant fromMilliseconds(int64_t milliseconds) {
-    int64_t seconds = milliseconds / 1'000;
-    int32_t millis = milliseconds % 1'000;
-    if (millis < 0) {
-      seconds -= 1;
-      millis += 1'000;
-    }
-    return {seconds, millis * 1'000'000};
-  }
-
-  
-
-
-  static constexpr Instant fromMicroseconds(int64_t microseconds) {
-    int64_t seconds = microseconds / 1'000'000;
-    int32_t micros = microseconds % 1'000'000;
-    if (micros < 0) {
-      seconds -= 1;
-      micros += 1'000'000;
-    }
-    return {seconds, micros * 1'000};
-  }
-
-  
-
-
-  static constexpr Instant fromNanoseconds(int64_t nanoseconds) {
-    int64_t seconds = nanoseconds / 1'000'000'000;
-    int32_t nanos = nanoseconds % 1'000'000'000;
-    if (nanos < 0) {
-      seconds -= 1;
-      nanos += 1'000'000'000;
-    }
-    return {seconds, nanos};
-  }
-};
-
-
-
-
-
-struct InstantSpan final {
-  
-  
-  int64_t seconds = 0;
-
-  
-  int32_t nanoseconds = 0;
-
-  bool operator==(const InstantSpan& other) const {
-    return seconds == other.seconds && nanoseconds == other.nanoseconds;
-  }
-
-  bool operator<(const InstantSpan& other) const {
-    
-    
-    JS_ASSUME(nanoseconds >= 0);
-    JS_ASSUME(other.nanoseconds >= 0);
-    return (seconds < other.seconds) ||
-           (seconds == other.seconds && nanoseconds < other.nanoseconds);
-  }
-
-  
-  bool operator!=(const InstantSpan& other) const { return !(*this == other); }
-  bool operator>(const InstantSpan& other) const { return other < *this; }
-  bool operator<=(const InstantSpan& other) const { return !(other < *this); }
-  bool operator>=(const InstantSpan& other) const { return !(*this < other); }
-
-  InstantSpan& operator+=(const InstantSpan& other) {
+ protected:
+  template <typename T, typename U, class R = Derived>
+  static constexpr R add(const SecondsAndNanoseconds<T>& self,
+                         const SecondsAndNanoseconds<U>& other) {
     
     
     
 
-    mozilla::CheckedInt64 secs = seconds;
+    mozilla::CheckedInt64 secs = self.seconds;
     secs += other.seconds;
 
-    mozilla::CheckedInt32 nanos = nanoseconds;
+    mozilla::CheckedInt32 nanos = self.nanoseconds;
     nanos += other.nanoseconds;
 
     if (nanos.value() >= 1'000'000'000) {
@@ -256,20 +94,20 @@ struct InstantSpan final {
     }
     MOZ_ASSERT(0 <= nanos.value() && nanos.value() < 1'000'000'000);
 
-    seconds = secs.value();
-    nanoseconds = nanos.value();
-    return *this;
+    return {secs.value(), nanos.value()};
   }
 
-  InstantSpan& operator-=(const InstantSpan& other) {
+  template <class T, class U, class R = Derived>
+  static constexpr R subtract(const SecondsAndNanoseconds<T>& self,
+                              const SecondsAndNanoseconds<U>& other) {
     
     
     
 
-    mozilla::CheckedInt64 secs = seconds;
+    mozilla::CheckedInt64 secs = self.seconds;
     secs -= other.seconds;
 
-    mozilla::CheckedInt32 nanos = nanoseconds;
+    mozilla::CheckedInt32 nanos = self.nanoseconds;
     nanos -= other.nanoseconds;
 
     if (nanos.value() < 0) {
@@ -278,27 +116,18 @@ struct InstantSpan final {
     }
     MOZ_ASSERT(0 <= nanos.value() && nanos.value() < 1'000'000'000);
 
-    seconds = secs.value();
-    nanoseconds = nanos.value();
-    return *this;
+    return {secs.value(), nanos.value()};
   }
 
-  InstantSpan operator+(const InstantSpan& other) const {
-    auto result = *this;
-    result += other;
-    return result;
+  static constexpr Derived negate(const Derived& self) {
+    return subtract(Derived{}, self);
   }
 
-  InstantSpan operator-(const InstantSpan& other) const {
-    auto result = *this;
-    result -= other;
-    return result;
-  }
-
+ public:
   
 
 
-  InstantSpan abs() const {
+  constexpr Derived abs() const {
     int64_t sec = seconds;
     int32_t nanos = nanoseconds;
     if (sec < 0) {
@@ -315,10 +144,48 @@ struct InstantSpan final {
   
 
 
+  constexpr int64_t toSeconds() const {
+    int64_t sec = seconds;
+    int32_t nanos = nanoseconds;
+    if (sec < 0 && nanos > 0) {
+      sec += 1;
+    }
+    return sec;
+  }
+
+  
+
+
+  constexpr int64_t toMilliseconds() const {
+    int64_t sec = seconds;
+    int32_t nanos = nanoseconds;
+    if (sec < 0 && nanos > 0) {
+      sec += 1;
+      nanos -= 1'000'000'000;
+    }
+    return (sec * 1'000) + (nanos / 1'000'000);
+  }
+
+  
+
+
+  constexpr int64_t toMicroseconds() const {
+    int64_t sec = seconds;
+    int32_t nanos = nanoseconds;
+    if (sec < 0 && nanos > 0) {
+      sec += 1;
+      nanos -= 1'000'000'000;
+    }
+    return (sec * 1'000'000) + (nanos / 1'000);
+  }
+
+  
 
 
 
-  mozilla::CheckedInt64 toNanoseconds() const {
+
+
+  constexpr mozilla::CheckedInt64 toNanoseconds() const {
     mozilla::CheckedInt64 nanos = seconds;
     nanos *= ToNanoseconds(TemporalUnit::Second);
     nanos += nanoseconds;
@@ -328,14 +195,19 @@ struct InstantSpan final {
   
 
 
-  static constexpr InstantSpan fromMinutes(int64_t minutes) {
+  static constexpr Derived fromMinutes(int64_t minutes) {
     return {minutes * 60, 0};
   }
 
   
 
 
-  static constexpr InstantSpan fromMilliseconds(int64_t milliseconds) {
+  static constexpr Derived fromSeconds(int64_t seconds) { return {seconds, 0}; }
+
+  
+
+
+  static constexpr Derived fromMilliseconds(int64_t milliseconds) {
     int64_t seconds = milliseconds / 1'000;
     int32_t millis = milliseconds % 1'000;
     if (millis < 0) {
@@ -348,7 +220,20 @@ struct InstantSpan final {
   
 
 
-  static constexpr InstantSpan fromNanoseconds(int64_t nanoseconds) {
+  static constexpr Derived fromMicroseconds(int64_t microseconds) {
+    int64_t seconds = microseconds / 1'000'000;
+    int32_t micros = microseconds % 1'000'000;
+    if (micros < 0) {
+      seconds -= 1;
+      micros += 1'000'000;
+    }
+    return {seconds, micros * 1'000};
+  }
+
+  
+
+
+  static constexpr Derived fromNanoseconds(int64_t nanoseconds) {
     int64_t seconds = nanoseconds / 1'000'000'000;
     int32_t nanos = nanoseconds % 1'000'000'000;
     if (nanos < 0) {
@@ -359,69 +244,126 @@ struct InstantSpan final {
   }
 };
 
-Instant& Instant::operator+=(const InstantSpan& other) {
-  
-  
-  
-
-  mozilla::CheckedInt64 secs = seconds;
-  secs += other.seconds;
-
-  mozilla::CheckedInt32 nanos = nanoseconds;
-  nanos += other.nanoseconds;
-
-  if (nanos.value() >= 1'000'000'000) {
-    secs += 1;
-    nanos -= 1'000'000'000;
-  }
-  MOZ_ASSERT(0 <= nanos.value() && nanos.value() < 1'000'000'000);
-
-  seconds = secs.value();
-  nanoseconds = nanos.value();
-  return *this;
-}
-
-Instant& Instant::operator-=(const InstantSpan& other) {
-  
-  
-  
-
-  mozilla::CheckedInt64 secs = seconds;
-  secs -= other.seconds;
-
-  mozilla::CheckedInt32 nanos = nanoseconds;
-  nanos -= other.nanoseconds;
-
-  if (nanos.value() < 0) {
-    secs -= 1;
-    nanos += 1'000'000'000;
-  }
-  MOZ_ASSERT(0 <= nanos.value() && nanos.value() < 1'000'000'000);
-
-  seconds = secs.value();
-  nanoseconds = nanos.value();
-  return *this;
-}
-
-Instant Instant::operator+(const InstantSpan& other) const {
-  auto result = *this;
-  result += other;
-  return result;
-}
-
-Instant Instant::operator-(const InstantSpan& other) const {
-  auto result = *this;
-  result -= other;
-  return result;
-}
-
-InstantSpan Instant::operator-(const Instant& other) const {
-  InstantSpan result{seconds, nanoseconds};
-  result -= InstantSpan{other.seconds, other.nanoseconds};
-  return result;
-}
-
 #undef JS_ASSUME
+
+
+
+
+
+struct InstantSpan final : SecondsAndNanoseconds<InstantSpan> {
+  constexpr InstantSpan& operator+=(const InstantSpan& other) {
+    *this = add(*this, other);
+    return *this;
+  }
+
+  constexpr InstantSpan& operator-=(const InstantSpan& other) {
+    *this = subtract(*this, other);
+    return *this;
+  }
+
+  constexpr InstantSpan operator+(const InstantSpan& other) const {
+    return add(*this, other);
+  }
+
+  constexpr InstantSpan operator-(const InstantSpan& other) const {
+    return subtract(*this, other);
+  }
+
+  constexpr InstantSpan operator-() const { return negate(*this); }
+
+  
+
+
+  static constexpr InstantSpan max() {
+    
+    constexpr int64_t seconds = 2 * 8'640'000'000'000;
+    constexpr int64_t nanos = 0;
+    return {seconds, nanos};
+  }
+
+  
+
+
+  static constexpr InstantSpan min() { return -max(); }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct Instant final : SecondsAndNanoseconds<Instant> {
+  constexpr Instant& operator+=(const InstantSpan& other) {
+    *this = add(*this, other);
+    return *this;
+  }
+
+  constexpr Instant& operator-=(const InstantSpan& other) {
+    *this = subtract(*this, other);
+    return *this;
+  }
+
+  constexpr Instant operator+(const InstantSpan& other) const {
+    return add(*this, other);
+  }
+
+  constexpr Instant operator-(const InstantSpan& other) const {
+    return subtract(*this, other);
+  }
+
+  constexpr InstantSpan operator-(const Instant& other) const {
+    return subtract<Instant, Instant, InstantSpan>(*this, other);
+  }
+
+  constexpr Instant operator-() const { return negate(*this); }
+
+  
+
+
+
+  constexpr int64_t floorToMicroseconds() const {
+    return (seconds * 1'000'000) + (nanoseconds / 1'000);
+  }
+
+  
+
+
+
+  constexpr int64_t floorToMilliseconds() const {
+    return (seconds * 1'000) + (nanoseconds / 1'000'000);
+  }
+
+  
+
+
+
+  constexpr int64_t ceilToMilliseconds() const {
+    return floorToMilliseconds() + int64_t(nanoseconds % 1'000'000 != 0);
+  }
+
+  
+
+
+  static constexpr Instant max() {
+    
+    constexpr int64_t seconds = 8'640'000'000'000;
+    constexpr int64_t nanos = 0;
+    return {seconds, nanos};
+  }
+
+  
+
+
+  static constexpr Instant min() { return -max(); }
+};
 
 
 
