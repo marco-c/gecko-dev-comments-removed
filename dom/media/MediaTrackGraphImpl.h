@@ -202,7 +202,15 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     AppendMessage(WrapUnique(new MediaTrack::ControlMessageWithNoShutdown(
         std::forward<Function>(aFunction))));
   }
+  
 
+  void RegisterAudioOutput(MediaTrack* aTrack, void* aKey);
+  void UnregisterAudioOutput(MediaTrack* aTrack, void* aKey);
+
+  void SetAudioOutputVolume(MediaTrack* aTrack, void* aKey, float aVolume);
+  
+
+  void UpdateAudioOutput(MediaTrack* aTrack);
   
 
 
@@ -413,22 +421,16 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   TrackTime GraphTimeToTrackTimeWithBlocking(const MediaTrack* aTrack,
                                              GraphTime aTime) const;
 
+ private:
   
 
 
 
-  struct TrackAndKey {
-    MediaTrack* mTrack;
-    void* mKey;
-  };
-  struct TrackKeyAndVolume {
-    MediaTrack* mTrack;
-    void* mKey;
-    float mVolume;
-  };
-  TrackTime PlayAudio(const TrackKeyAndVolume& aTkv, GraphTime aPlayedTime,
+  struct TrackAndVolume;
+  TrackTime PlayAudio(const TrackAndVolume& aOutput, GraphTime aPlayedTime,
                       uint32_t aOutputChannelCount);
 
+ public:
   
 
 
@@ -446,12 +448,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   virtual void CloseAudioInput(DeviceInputTrack* aTrack) override;
 
-  
-
-  void RegisterAudioOutput(MediaTrack* aTrack, void* aKey);
-  void UnregisterAudioOutput(MediaTrack* aTrack, void* aKey);
   void UnregisterAllAudioOutputs(MediaTrack* aTrack);
-  void SetAudioOutputVolume(MediaTrack* aTrack, void* aKey, float aVolume);
 
   
 
@@ -989,11 +986,40 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   nsTArray<WindowAndTrack> mWindowCaptureTracks;
+
   
 
 
 
-  nsTArray<TrackKeyAndVolume> mAudioOutputs;
+
+
+  struct TrackAndKey {
+    MOZ_UNSAFE_REF("struct exists only if track exists") MediaTrack* mTrack;
+    void* mKey;
+  };
+  struct TrackKeyAndVolume {
+    MOZ_UNSAFE_REF("struct exists only if track exists")
+    MediaTrack* const mTrack;
+    void* const mKey;
+    float mVolume;
+
+    bool operator==(const TrackAndKey& aTrackAndKey) const {
+      return mTrack == aTrackAndKey.mTrack && mKey == aTrackAndKey.mKey;
+    }
+  };
+  nsTArray<TrackKeyAndVolume> mAudioOutputParams;
+  
+
+
+
+  struct TrackAndVolume {
+    MOZ_UNSAFE_REF("struct exists only if track exists")
+    MediaTrack* const mTrack;
+    float mVolume;
+
+    bool operator==(const MediaTrack* aTrack) const { return mTrack == aTrack; }
+  };
+  nsTArray<TrackAndVolume> mAudioOutputs;
 
   
 
@@ -1054,17 +1080,5 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 };
 
 }  
-
-template <>
-class nsDefaultComparator<mozilla::MediaTrackGraphImpl::TrackKeyAndVolume,
-                          mozilla::MediaTrackGraphImpl::TrackAndKey> {
- public:
-  bool Equals(
-      const mozilla::MediaTrackGraphImpl::TrackKeyAndVolume& aElement,
-      const mozilla::MediaTrackGraphImpl::TrackAndKey& aTrackAndKey) const {
-    return aElement.mTrack == aTrackAndKey.mTrack &&
-           aElement.mKey == aTrackAndKey.mKey;
-  }
-};
 
 #endif 
