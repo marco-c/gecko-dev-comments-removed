@@ -126,6 +126,7 @@ class JitRuntime {
   
   
   MainThreadData<js::UniquePtr<uint8_t>> ionOsrTempData_{nullptr};
+  MainThreadData<uint32_t> ionOsrTempDataSize_{0};
 
   
   

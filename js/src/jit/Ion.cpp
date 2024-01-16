@@ -309,14 +309,34 @@ void JitRuntime::ionLazyLinkListAdd(JSRuntime* rt, jit::IonCompileTask* task) {
 }
 
 uint8_t* JitRuntime::allocateIonOsrTempData(size_t size) {
+  MOZ_ASSERT(size > 0);
+
+  uint8_t* prevBuffer = ionOsrTempData_.ref().get();
+  size_t prevSize = ionOsrTempDataSize_.ref();
+  MOZ_ASSERT((prevSize > 0) == !!prevBuffer);
+
   
+  if (prevSize >= size) {
+    return prevBuffer;
+  }
+
   
-  freeIonOsrTempData();
-  ionOsrTempData_.ref().reset(static_cast<uint8_t*>(js_malloc(size)));
-  return ionOsrTempData_.ref().get();
+  uint8_t* buffer = js_pod_realloc<uint8_t>(prevBuffer, prevSize, size);
+  if (!buffer) {
+    
+    return nullptr;
+  }
+  
+  (void)ionOsrTempData_.ref().release();
+  ionOsrTempData_.ref().reset(buffer);
+  ionOsrTempDataSize_ = size;
+  return buffer;
 }
 
-void JitRuntime::freeIonOsrTempData() { ionOsrTempData_.ref().reset(); }
+void JitRuntime::freeIonOsrTempData() {
+  ionOsrTempData_.ref().reset();
+  ionOsrTempDataSize_ = 0;
+}
 
 template <typename T>
 static T PopNextBitmaskValue(uint32_t* bitmask) {
