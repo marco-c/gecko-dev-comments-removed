@@ -137,6 +137,52 @@ class RemoteTextureRecycleBin final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+class RemoteTextureTxnScheduler final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteTextureTxnScheduler)
+
+  void NotifyTxn(RemoteTextureTxnId aTxnId);
+
+ private:
+  friend class RemoteTextureMap;
+
+  RemoteTextureTxnScheduler(base::ProcessId aForPid, RemoteTextureTxnType aType)
+      : mForPid(aForPid), mType(aType) {}
+  ~RemoteTextureTxnScheduler();
+
+  bool WaitForTxn(const MonitorAutoLock& aProofOfLock,
+                  RemoteTextureOwnerId aOwnerId, RemoteTextureTxnId aTxnId);
+
+  struct Wait {
+    RemoteTextureOwnerId mOwnerId;
+    RemoteTextureTxnId mTxnId;
+
+    friend bool operator<(RemoteTextureTxnId aTxnId, const Wait& aWait) {
+      return aTxnId < aWait.mTxnId;
+    }
+  };
+
+  base::ProcessId mForPid = base::kInvalidProcessId;
+  RemoteTextureTxnType mType = 0;
+  RemoteTextureTxnId mLastTxnId = 0;
+  std::deque<Wait> mWaits;
+};
+
+
+
+
 class RemoteTextureOwnerClient final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteTextureOwnerClient)
@@ -233,7 +279,7 @@ class RemoteTextureMap {
   void RegisterTextureOwner(
       const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
       const RefPtr<RemoteTextureRecycleBin>& aRecycleBin = nullptr);
-  void UnregisterTextureOwner(const RemoteTextureOwnerId aOwnerIds,
+  void UnregisterTextureOwner(const RemoteTextureOwnerId aOwnerId,
                               const base::ProcessId aForPid);
   void UnregisterTextureOwners(
       const std::unordered_set<RemoteTextureOwnerId,
@@ -261,6 +307,10 @@ class RemoteTextureMap {
       RemoteTextureHostWrapper* aTextureHostWrapper,
       std::function<void(const RemoteTextureInfo&)>&& aReadyCallback,
       bool aWaitForRemoteTextureOwner = false);
+
+  bool WaitForTxn(const RemoteTextureOwnerId aOwnerId,
+                  const base::ProcessId aForPid, RemoteTextureTxnType aTxnType,
+                  RemoteTextureTxnId aTxnId);
 
   void ReleaseRemoteTextureHost(RemoteTextureHostWrapper* aTextureHostWrapper);
 
@@ -305,7 +355,19 @@ class RemoteTextureMap {
   static RefPtr<TextureHost> CreateRemoteTexture(TextureData* aTextureData,
                                                  TextureFlags aTextureFlags);
 
+  already_AddRefed<RemoteTextureTxnScheduler> RegisterTxnScheduler(
+      base::ProcessId aForPid, RemoteTextureTxnType aType);
+
+  template <typename P>
+  already_AddRefed<RemoteTextureTxnScheduler> RegisterTxnScheduler(
+      P* aProtocol) {
+    return RegisterTxnScheduler(aProtocol->OtherPid(),
+                                aProtocol->ToplevelProtocol()->GetProtocolId());
+  }
+
  protected:
+  friend class RemoteTextureTxnScheduler;
+
   
   struct TextureDataHolder {
     TextureDataHolder(const RemoteTextureId aTextureId,
@@ -337,6 +399,11 @@ class RemoteTextureMap {
 
   struct TextureOwner {
     bool mIsContextLost = false;
+    
+    bool mWaitForTxn = false;
+    
+    RefPtr<nsISerialEventTarget> mDeferUnregister;
+
     
     
     std::deque<UniquePtr<TextureDataHolder>> mWaitingTextureDataHolders;
@@ -371,14 +438,22 @@ class RemoteTextureMap {
                      RemoteTextureMap::TextureOwner* aOwner,
                      const RemoteTextureId aTextureId);
 
-  std::vector<std::function<void(const RemoteTextureInfo&)>>
-  GetRenderingReadyCallbacks(const MonitorAutoLock& aProofOfLock,
-                             RemoteTextureMap::TextureOwner* aOwner,
-                             const RemoteTextureId aTextureId);
+  UniquePtr<TextureOwner> UnregisterTextureOwner(
+      const MonitorAutoLock& aProofOfLock, const RemoteTextureOwnerId aOwnerId,
+      const base::ProcessId aForPid,
+      std::vector<RefPtr<TextureHost>>& aReleasingTextures,
+      std::vector<std::function<void(const RemoteTextureInfo&)>>&
+          aRenderingReadyCallbacks);
 
-  std::vector<std::function<void(const RemoteTextureInfo&)>>
-  GetAllRenderingReadyCallbacks(const MonitorAutoLock& aProofOfLock,
-                                RemoteTextureMap::TextureOwner* aOwner);
+  void GetRenderingReadyCallbacks(
+      const MonitorAutoLock& aProofOfLock,
+      RemoteTextureMap::TextureOwner* aOwner, const RemoteTextureId aTextureId,
+      std::vector<std::function<void(const RemoteTextureInfo&)>>& aFunctions);
+
+  void GetAllRenderingReadyCallbacks(
+      const MonitorAutoLock& aProofOfLock,
+      RemoteTextureMap::TextureOwner* aOwner,
+      std::vector<std::function<void(const RemoteTextureInfo&)>>& aFunctions);
 
   void KeepTextureDataAliveForTextureHostIfNecessary(
       const MonitorAutoLock& aProofOfLock,
@@ -391,6 +466,13 @@ class RemoteTextureMap {
   RemoteTextureMap::TextureOwner* GetTextureOwner(
       const MonitorAutoLock& aProofOfLock, const RemoteTextureOwnerId aOwnerId,
       const base::ProcessId aForPid);
+
+  void NotifyTxn(const MonitorAutoLock& aProofOfLock,
+                 const RemoteTextureOwnerId aOwnerId,
+                 const base::ProcessId aForPid);
+
+  void UnregisterTxnScheduler(base::ProcessId aForPid,
+                              RemoteTextureTxnType aType);
 
   Monitor mMonitor MOZ_UNANNOTATED;
 
@@ -405,6 +487,10 @@ class RemoteTextureMap {
   std::map<std::pair<base::ProcessId, RemoteTextureOwnerId>,
            RefPtr<CompositableHost>>
       mRemoteTexturePushListeners;
+
+  std::map<std::pair<base::ProcessId, RemoteTextureTxnType>,
+           RemoteTextureTxnScheduler*>
+      mTxnSchedulers;
 
   static StaticAutoPtr<RemoteTextureMap> sInstance;
 };

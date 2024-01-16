@@ -47,6 +47,7 @@ class WebRenderLayerManager;
 class TextureClient;
 class TextureClientPool;
 struct FrameMetrics;
+struct FwdTransactionCounter;
 
 class CompositorBridgeChild final : public PCompositorBridgeChild,
                                     public TextureForwarder {
@@ -134,8 +135,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   static void ShutDown();
 
-  void UpdateFwdTransactionId() { ++mFwdTransactionId; }
-  uint64_t GetFwdTransactionId() { return mFwdTransactionId; }
+  FwdTransactionCounter& GetFwdTransactionCounter();
 
   
 
@@ -223,13 +223,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   bool mActorDestroyed;
 
   bool mPaused;
-
-  
-
-
-
-
-  uint64_t mFwdTransactionId;
 
   
 
