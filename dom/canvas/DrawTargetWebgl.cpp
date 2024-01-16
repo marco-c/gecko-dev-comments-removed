@@ -220,12 +220,10 @@ void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite, bool aNeedHandle) {
     return;
   }
   mSharedContext->ClearLastTexture();
-  if (mSnapshot->hasOneRef() || mSnapshot->GetType() != SurfaceType::WEBGL) {
-    mSnapshot = nullptr;
+  RefPtr<SourceSurfaceWebgl> snapshot = mSnapshot.forget();
+  if (snapshot->hasOneRef()) {
     return;
   }
-  RefPtr<SourceSurfaceWebgl> snapshot =
-      mSnapshot.forget().downcast<SourceSurfaceWebgl>();
   if (aCopyOnWrite) {
     
     
@@ -1006,6 +1004,10 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::CopySnapshot(
   return mSharedContext->CopySnapshot(aRect);
 }
 
+bool DrawTargetWebgl::HasDataSnapshot() const {
+  return (mSkiaValid && !mSkiaLayer) || (mSnapshot && mSnapshot->HasReadData());
+}
+
 void DrawTargetWebgl::PrepareData() {
   if (!mSkiaValid) {
     ReadIntoSkia();
@@ -1160,6 +1162,64 @@ bool DrawTargetWebgl::MarkChanged() {
   mSkiaValid = false;
   mIsClear = false;
   return true;
+}
+
+void DrawTargetWebgl::MarkSkiaChanged(bool aOverwrite) {
+  if (aOverwrite) {
+    mSkiaValid = true;
+    mSkiaLayer = false;
+  } else if (!mSkiaValid) {
+    if (ReadIntoSkia()) {
+      
+      mProfile.OnFallback();
+    }
+  } else if (mSkiaLayer) {
+    FlattenSkia();
+  }
+  mWebglValid = false;
+  mIsClear = false;
+}
+
+
+
+
+static inline bool SupportsLayering(const DrawOptions& aOptions) {
+  switch (aOptions.mCompositionOp) {
+    case CompositionOp::OP_OVER:
+      
+      return true;
+    default:
+      return false;
+  }
+}
+
+void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
+  if (SupportsLayering(aOptions)) {
+    if (!mSkiaValid) {
+      
+      mSkiaValid = true;
+      if (mWebglValid) {
+        mProfile.OnLayer();
+        mSkiaLayer = true;
+        mSkiaLayerClear = mIsClear;
+        mSkia->DetachAllSnapshots();
+        if (mSkiaLayerClear) {
+          
+          
+          mSkiaNoClip->FillRect(Rect(mSkiaNoClip->GetRect()), GetClearPattern(),
+                                DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+        } else {
+          mSkiaNoClip->ClearRect(Rect(mSkiaNoClip->GetRect()));
+        }
+      }
+    }
+    
+    mWebglValid = false;
+    mIsClear = false;
+  } else {
+    
+    MarkSkiaChanged();
+  }
 }
 
 bool DrawTargetWebgl::LockBits(uint8_t** aData, IntSize* aSize,
@@ -1634,6 +1694,22 @@ bool DrawTargetWebgl::RemoveAllClips() {
   return true;
 }
 
+void DrawTargetWebgl::CopyToFallback(DrawTarget* aDT) {
+  if (RefPtr<SourceSurface> snapshot = Snapshot()) {
+    aDT->CopySurface(snapshot, snapshot->GetRect(), gfx::IntPoint(0, 0));
+  }
+  aDT->RemoveAllClips();
+  for (auto& clipStack : mClipStack) {
+    aDT->SetTransform(clipStack.mTransform);
+    if (clipStack.mPath) {
+      aDT->PushClip(clipStack.mPath);
+    } else {
+      aDT->PushClipRect(clipStack.mRect);
+    }
+  }
+  aDT->SetTransform(GetTransform());
+}
+
 
 static inline bool SupportsDrawOptions(const DrawOptions& aOptions) {
   switch (aOptions.mCompositionOp) {
@@ -1684,19 +1760,6 @@ bool SharedContextWebgl::SupportsPattern(const Pattern& aPattern) {
     }
     default:
       
-      return false;
-  }
-}
-
-
-
-
-static inline bool SupportsLayering(const DrawOptions& aOptions) {
-  switch (aOptions.mCompositionOp) {
-    case CompositionOp::OP_OVER:
-      
-      return true;
-    default:
       return false;
   }
 }
@@ -4408,40 +4471,12 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   mSkia->FillGlyphs(aFont, aBuffer, aPattern, aOptions);
 }
 
-void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
-  if (SupportsLayering(aOptions)) {
-    if (!mSkiaValid) {
-      
-      mSkiaValid = true;
-      if (mWebglValid) {
-        mProfile.OnLayer();
-        mSkiaLayer = true;
-        mSkiaLayerClear = mIsClear;
-        mSkia->DetachAllSnapshots();
-        if (mSkiaLayerClear) {
-          
-          
-          mSkiaNoClip->FillRect(Rect(mSkiaNoClip->GetRect()), GetClearPattern(),
-                                DrawOptions(1.0f, CompositionOp::OP_SOURCE));
-        } else {
-          mSkiaNoClip->ClearRect(Rect(mSkiaNoClip->GetRect()));
-        }
-      }
-    }
-    
-    mWebglValid = false;
-    mIsClear = false;
-  } else {
-    
-    MarkSkiaChanged();
-  }
-}
 
-
-void DrawTargetWebgl::ReadIntoSkia() {
+bool DrawTargetWebgl::ReadIntoSkia() {
   if (mSkiaValid) {
-    return;
+    return false;
   }
+  bool didReadback = false;
   if (mWebglValid) {
     uint8_t* data = nullptr;
     IntSize size;
@@ -4463,13 +4498,13 @@ void DrawTargetWebgl::ReadIntoSkia() {
         
         mSkia->CopySurface(snapshot, GetRect(), IntPoint(0, 0));
       }
-      
-      mProfile.OnFallback();
+      didReadback = true;
     }
   }
   mSkiaValid = true;
   
   mSkiaLayer = false;
+  return didReadback;
 }
 
 

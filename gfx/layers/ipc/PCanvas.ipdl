@@ -57,6 +57,11 @@ parent:
 
   async SetDataSurfaceBuffer(Handle aBufferHandle, uint64_t aBufferSize);
 
+  
+
+
+  async ClearCachedResources();
+
   async __delete__();
 
 child:
