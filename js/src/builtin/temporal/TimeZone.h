@@ -87,6 +87,16 @@ class BuiltinTimeZoneObject : public TimeZoneObjectMaybeBuiltin {
   static const JSClassOps classOps_;
 };
 
+} 
+
+template <>
+inline bool JSObject::is<js::temporal::TimeZoneObjectMaybeBuiltin>() const {
+  return is<js::temporal::TimeZoneObject>() ||
+         is<js::temporal::BuiltinTimeZoneObject>();
+}
+
+namespace js::temporal {
+
 
 
 
@@ -181,6 +191,13 @@ class TimeZoneValue final {
   
 
 
+  bool isTimeZoneObjectMaybeBuiltin() const {
+    return object_ && object_->is<TimeZoneObjectMaybeBuiltin>();
+  }
+
+  
+
+
   auto* toString() const {
     MOZ_ASSERT(isString());
     return &object_->as<BuiltinTimeZoneObject>();
@@ -192,6 +209,14 @@ class TimeZoneValue final {
   JSObject* toObject() const {
     MOZ_ASSERT(isObject());
     return object_;
+  }
+
+  
+
+
+  auto* toTimeZoneObjectMaybeBuiltin() const {
+    MOZ_ASSERT(isTimeZoneObjectMaybeBuiltin());
+    return &object_->as<TimeZoneObjectMaybeBuiltin>();
   }
 
   
@@ -229,6 +254,8 @@ enum class TimeZoneMethod {
 
 class TimeZoneRecord {
   TimeZoneValue receiver_;
+
+  
   JSObject* getOffsetNanosecondsFor_ = nullptr;
   JSObject* getPossibleInstantsFor_ = nullptr;
 
@@ -498,12 +525,6 @@ bool WrapTimeZoneValueObject(JSContext* cx,
 
 } 
 
-template <>
-inline bool JSObject::is<js::temporal::TimeZoneObjectMaybeBuiltin>() const {
-  return is<js::temporal::TimeZoneObject>() ||
-         is<js::temporal::BuiltinTimeZoneObject>();
-}
-
 namespace js {
 
 template <typename Wrapper>
@@ -528,6 +549,13 @@ class WrappedPtrOperations<temporal::TimeZoneValue, Wrapper> {
   JS::Handle<JSObject*> toObject() const {
     MOZ_ASSERT(container().isObject());
     return JS::Handle<JSObject*>::fromMarkedLocation(container().address());
+  }
+
+  JS::Handle<temporal::TimeZoneObjectMaybeBuiltin*>
+  toTimeZoneObjectMaybeBuiltin() const {
+    MOZ_ASSERT(container().isTimeZoneObjectMaybeBuiltin());
+    auto h = JS::Handle<JSObject*>::fromMarkedLocation(container().address());
+    return h.template as<temporal::TimeZoneObjectMaybeBuiltin>();
   }
 
   JS::Value toValue() const { return container().toValue(); }

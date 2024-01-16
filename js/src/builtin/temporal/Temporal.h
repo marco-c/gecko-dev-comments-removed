@@ -331,13 +331,6 @@ bool GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
 
 
 
-bool GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
-               JS::Handle<PropertyName*> name,
-               JS::MutableHandle<JSObject*> result);
-
-
-
-
 JSObject* GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
                     JS::Handle<PropertyName*> name);
 
