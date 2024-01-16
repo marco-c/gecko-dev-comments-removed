@@ -1,7 +1,3 @@
-ChromeUtils.defineESModuleGetters(this, {
-  PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
-});
-
 
 
 
@@ -17,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 function promiseTabLoadEvent(tab, url) {
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   info("Wait tab event: load");
 
   function handle(loadedUrl) {

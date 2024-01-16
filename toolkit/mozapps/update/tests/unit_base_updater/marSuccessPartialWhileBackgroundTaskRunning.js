@@ -17,10 +17,6 @@ const do_backgroundtask = BackgroundTasksTestUtils.do_backgroundtask.bind(
   BackgroundTasksTestUtils
 );
 
-const { PromiseUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PromiseUtils.sys.mjs"
-);
-
 async function run_test() {
   
   
@@ -80,7 +76,7 @@ async function run_test() {
   
   
   
-  let taskStarted = PromiseUtils.defer();
+  let taskStarted = Promise.withResolvers();
   let p = do_backgroundtask("wait", {
     onStdoutLine: (line, proc) => {
       

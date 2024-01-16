@@ -237,7 +237,7 @@ async function showZeroPrefix() {
 
 
 function waitForQueryFinished() {
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   let listener = {
     onQueryFinished: () => deferred.resolve(),
   };

@@ -94,7 +94,7 @@ add_task(async function test_shutdown_clients() {
   info("Now shutdown Sqlite.sys.mjs synchronously");
   Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
   
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   let conn = Sqlite.openConnection({
     path: PathUtils.join(PathUtils.profileDir, "test_shutdown.sqlite"),
     testDelayedOpenPromise: deferred.promise,

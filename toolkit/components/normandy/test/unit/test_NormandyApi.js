@@ -1,10 +1,6 @@
 
 "use strict";
 
-const { PromiseUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PromiseUtils.sys.mjs"
-);
-
 
 load("utils.js");
 
@@ -202,7 +198,7 @@ decorate_task(
     await fetch(serverUrl);
 
     
-    const cookieExpectedDeferred = PromiseUtils.defer();
+    const cookieExpectedDeferred = Promise.withResolvers();
     function cookieExpectedObserver(aSubject, aTopic, aData) {
       equal(
         aTopic,
@@ -226,7 +222,7 @@ decorate_task(
     await cookieExpectedDeferred.promise;
 
     
-    const cookieNotExpectedDeferred = PromiseUtils.defer();
+    const cookieNotExpectedDeferred = Promise.withResolvers();
     function cookieNotExpectedObserver(aSubject, aTopic, aData) {
       equal(
         aTopic,

@@ -255,7 +255,7 @@ add_task(async function test_prefWatchPolicies() {
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
 
   
   Assert.strictEqual(
@@ -322,7 +322,7 @@ add_task(async function test_prefWatch_prefReset() {
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "testWatchPrefs_reset",
     deferred.resolve
@@ -493,7 +493,7 @@ add_task(async function test_addonsWatch_NotInterestingChange() {
   const DICT_ID = "tel-dict@tests.mozilla.org";
 
   let receivedNotification = false;
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener("testNotInteresting", () => {
     Assert.ok(
       !receivedNotification,
@@ -627,7 +627,7 @@ add_task(async function test_addons() {
     quarantineIgnoredByApp: true,
   };
 
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_WebExtension",
     (reason, data) => {
@@ -740,7 +740,7 @@ add_task(async function test_signedAddon() {
     quarantineIgnoredByApp: false,
   };
 
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_signedAddon",
     deferred.resolve
@@ -772,7 +772,7 @@ add_task(async function test_signedAddon() {
 
   
   
-  deferred = PromiseUtils.defer();
+  deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_quarantineIgnoreByUser_changed",
     deferred.resolve
@@ -802,7 +802,7 @@ add_task(async function test_addonsFieldsLimit() {
   const ADDON_ID = "tel-longfields-webext@tests.mozilla.org";
 
   
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_longFieldsAddon",
     deferred.resolve
@@ -983,7 +983,7 @@ add_task(
 
     
     await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
-    let deferred = PromiseUtils.defer();
+    let deferred = Promise.withResolvers();
     TelemetryEnvironment.registerChangeListener(
       "testDefaultBrowser_pref",
       deferred.resolve
@@ -1079,7 +1079,7 @@ add_task(async function test_experimentsAPI() {
   );
 
   
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_experimentsAPI",
     (reason, env) => {
@@ -1104,7 +1104,7 @@ add_task(async function test_experimentsAPI() {
   TelemetryEnvironment.unregisterChangeListener("test_experimentsAPI");
 
   
-  deferred = PromiseUtils.defer();
+  deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_experimentsAPI2",
     (reason, env) => {
@@ -1146,7 +1146,7 @@ add_task(async function test_experimentsAPI() {
 
   
   
-  deferred = PromiseUtils.defer();
+  deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "test_experimentsAPI4",
     (reason, env) => {
@@ -1202,7 +1202,7 @@ add_task(async function test_experimentsAPI_limits() {
   );
 
   
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener("test_experimentsAPI", () =>
     deferred.resolve()
   );

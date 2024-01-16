@@ -702,7 +702,7 @@ add_task(async function test_empty_progress_tryToKeepPartialData() {
 add_task(async function test_empty_noprogress() {
   let sourcePath = "/test_empty_noprogress.txt";
   let sourceUrl = httpUrl("test_empty_noprogress.txt");
-  let deferRequestReceived = PromiseUtils.defer();
+  let deferRequestReceived = Promise.withResolvers();
 
   
   function cleanup() {
@@ -831,7 +831,7 @@ add_task(async function test_cancel_midway() {
   }
 
   
-  let deferCancel = PromiseUtils.defer();
+  let deferCancel = Promise.withResolvers();
   let onchange = function () {
     if (!download.stopped && !download.canceled && download.progress == 50) {
       
@@ -1016,7 +1016,7 @@ add_task(async function test_cancel_midway_restart_tryToKeepPartialData() {
 
   
   
-  let deferMidway = PromiseUtils.defer();
+  let deferMidway = Promise.withResolvers();
   download.onchange = function () {
     if (
       !download.stopped &&

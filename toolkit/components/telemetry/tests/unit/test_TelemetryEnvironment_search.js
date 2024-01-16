@@ -182,7 +182,7 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
   });
 
   
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "testWatch_SearchDefault",
     deferred.resolve
@@ -333,7 +333,7 @@ add_task(async function test_defaultSearchEngine() {
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   TelemetryEnvironment.registerChangeListener(
     "testSearchEngine_pref",
     deferred.resolve
