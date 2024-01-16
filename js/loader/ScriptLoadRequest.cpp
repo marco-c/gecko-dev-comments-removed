@@ -195,7 +195,8 @@ bool ScriptLoadRequest::IsMarkedForBytecodeEncoding() const {
 }
 
 nsresult ScriptLoadRequest::GetScriptSource(JSContext* aCx,
-                                            MaybeSourceText* aMaybeSource) {
+                                            MaybeSourceText* aMaybeSource,
+                                            LoadContextBase* aLoadContext) {
   
   if (HasScriptLoadContext() && GetScriptLoadContext()->mIsInline) {
     nsAutoString inlineData;

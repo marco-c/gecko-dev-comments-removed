@@ -209,7 +209,7 @@ NS_IMETHODIMP FetchCompleteRunnable::RunOnWorkletThread() {
   MOZ_ASSERT(request);
 
   
-  request->SetTextSource();
+  request->SetTextSource(request->mLoadContext.get());
 
   nsresult rv;
   if (mScriptBuffer) {

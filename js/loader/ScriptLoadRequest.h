@@ -180,7 +180,7 @@ class ScriptLoadRequest
     mScriptData.reset();
   }
 
-  void SetTextSource() {
+  void SetTextSource(LoadContextBase* aMaybeLoadContext) {
     MOZ_ASSERT(IsUnknownDataType());
     mDataType = DataType::eTextSource;
     mScriptData.emplace(VariantType<ScriptTextBuffer<Utf8Unit>>());
@@ -218,7 +218,8 @@ class ScriptLoadRequest
 
   
   
-  nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource);
+  nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource,
+                           LoadContextBase* aLoadContext);
 
   void ClearScriptText() {
     MOZ_ASSERT(IsTextSource());
