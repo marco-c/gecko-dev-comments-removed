@@ -329,9 +329,9 @@ struct GfxDriverInfo {
   
   int32_t mFeature;
   
-  static constexpr int32_t allFeatures = 0;
+  static constexpr int32_t allFeatures = -1;
   
-  static constexpr int32_t optionalFeatures = -1;
+  static constexpr int32_t optionalFeatures = -2;
 
   
   int32_t mFeatureStatus;

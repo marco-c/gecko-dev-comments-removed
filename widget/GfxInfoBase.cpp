@@ -549,13 +549,19 @@ static int32_t BlocklistFeatureToGfxFeature(const nsAString& aFeature) {
   if (aFeature.EqualsLiteral("ACCELERATED_CANVAS2D")) {
     return nsIGfxInfo::FEATURE_ACCELERATED_CANVAS2D;
   }
+  if (aFeature.EqualsLiteral("ALL")) {
+    return GfxDriverInfo::allFeatures;
+  }
+  if (aFeature.EqualsLiteral("OPTIONAL")) {
+    return GfxDriverInfo::optionalFeatures;
+  }
 
   
   
   
   
   
-  return -1;
+  return 0;
 }
 
 static int32_t BlocklistFeatureStatusToGfxFeatureStatus(
@@ -686,7 +692,7 @@ static bool BlocklistEntryToDriverInfo(const nsACString& aBlocklistEntry,
       aDriverInfo.mDriverVendor = dataValue;
     } else if (key.EqualsLiteral("feature")) {
       aDriverInfo.mFeature = BlocklistFeatureToGfxFeature(dataValue);
-      if (aDriverInfo.mFeature < 0) {
+      if (aDriverInfo.mFeature == 0) {
         
         gfxWarning() << "Unrecognized feature " << value.get();
         return false;
