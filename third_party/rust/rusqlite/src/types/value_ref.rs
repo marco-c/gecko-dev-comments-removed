@@ -37,7 +37,6 @@ impl ValueRef<'_> {
 impl<'a> ValueRef<'a> {
     
     
-    
     #[inline]
     pub fn as_i64(&self) -> FromSqlResult<i64> {
         match *self {
@@ -46,7 +45,6 @@ impl<'a> ValueRef<'a> {
         }
     }
 
-    
     
     
     
@@ -61,7 +59,6 @@ impl<'a> ValueRef<'a> {
 
     
     
-    
     #[inline]
     pub fn as_f64(&self) -> FromSqlResult<f64> {
         match *self {
@@ -70,7 +67,6 @@ impl<'a> ValueRef<'a> {
         }
     }
 
-    
     
     
     
@@ -98,7 +94,6 @@ impl<'a> ValueRef<'a> {
     
     
     
-    
     #[inline]
     pub fn as_str_or_null(&self) -> FromSqlResult<Option<&'a str>> {
         match *self {
@@ -120,7 +115,6 @@ impl<'a> ValueRef<'a> {
         }
     }
 
-    
     
     
     
@@ -158,6 +152,7 @@ impl<'a> ValueRef<'a> {
 
 impl From<ValueRef<'_>> for Value {
     #[inline]
+    #[track_caller]
     fn from(borrowed: ValueRef<'_>) -> Value {
         match borrowed {
             ValueRef::Null => Value::Null,

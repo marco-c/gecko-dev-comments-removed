@@ -257,6 +257,7 @@ impl<'stmt> Row<'stmt> {
     
     
     
+    #[track_caller]
     pub fn get_unwrap<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get(idx).unwrap()
     }
@@ -277,6 +278,7 @@ impl<'stmt> Row<'stmt> {
     
     
     
+    #[track_caller]
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = idx.idx(self.stmt)?;
         let value = self.stmt.value_ref(idx);
@@ -335,6 +337,7 @@ impl<'stmt> Row<'stmt> {
     
     
     
+    #[track_caller]
     pub fn get_ref_unwrap<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
         self.get_ref(idx).unwrap()
     }

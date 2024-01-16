@@ -1,11 +1,11 @@
 
 
 
-use rusqlite::ffi;
-use rusqlite::Connection;
-
+#[cfg(not(feature = "loadable_extension"))]
 #[test]
 fn test_error_when_singlethread_mode() {
+    use rusqlite::ffi;
+    use rusqlite::Connection;
     
     unsafe {
         

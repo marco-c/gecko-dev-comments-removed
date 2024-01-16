@@ -9,6 +9,12 @@ use std::ptr::NonNull;
 
 
 
+pub(crate) fn alloc(s: &str) -> *mut c_char {
+    SqliteMallocString::from_str(s).into_raw()
+}
+
+
+
 
 
 
@@ -100,7 +106,6 @@ impl SqliteMallocString {
     
     
     pub(crate) fn from_str(s: &str) -> Self {
-        use std::convert::TryFrom;
         let s = if s.as_bytes().contains(&0) {
             std::borrow::Cow::Owned(make_nonnull(s))
         } else {

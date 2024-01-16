@@ -3,12 +3,16 @@ use std::str;
 use crate::{Error, Result, Statement};
 
 
+#[cfg(feature = "column_decltype")]
+#[cfg_attr(docsrs, doc(cfg(feature = "column_decltype")))]
 #[derive(Debug)]
 pub struct Column<'stmt> {
     name: &'stmt str,
     decl_type: Option<&'stmt str>,
 }
 
+#[cfg(feature = "column_decltype")]
+#[cfg_attr(docsrs, doc(cfg(feature = "column_decltype")))]
 impl Column<'_> {
     
     #[inline]
@@ -78,6 +82,8 @@ impl Statement<'_> {
         self.column_name(col).expect("Column out of bounds")
     }
 
+    
+    
     
     
     
@@ -203,7 +209,7 @@ mod test {
                 assert_eq!(ty, Type::Integer);
             }
             e => {
-                panic!("Unexpected error type: {:?}", e);
+                panic!("Unexpected error type: {e:?}");
             }
         }
         match row.get::<_, String>("y").unwrap_err() {
@@ -213,7 +219,7 @@ mod test {
                 assert_eq!(ty, Type::Null);
             }
             e => {
-                panic!("Unexpected error type: {:?}", e);
+                panic!("Unexpected error type: {e:?}");
             }
         }
         Ok(())
