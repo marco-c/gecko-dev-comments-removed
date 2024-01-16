@@ -176,6 +176,7 @@ add_task(async function test_single_window() {
   
   triggerInfoBar(10 * 1000);
   await alertShownPromise;
+  await promiseNextTick();
 
   Assert.equal(
     gNotificationBox.allNotifications.length,
