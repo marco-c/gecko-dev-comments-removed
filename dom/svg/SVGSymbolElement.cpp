@@ -29,6 +29,20 @@ SVGSymbolElement::SVGSymbolElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : SVGSymbolElementBase(std::move(aNodeInfo)) {}
 
+Focusable SVGSymbolElement::IsFocusableWithoutStyle(bool aWithMouse) {
+  if (!CouldBeRendered()) {
+    return {};
+  }
+  return SVGSymbolElementBase::IsFocusableWithoutStyle(aWithMouse);
+}
+
+bool SVGSymbolElement::CouldBeRendered() const {
+  
+  
+  auto* shadowRoot = ShadowRoot::FromNodeOrNull(GetParentNode());
+  return shadowRoot && shadowRoot->Host()->IsSVGElement(nsGkAtoms::use);
+}
+
 
 
 
