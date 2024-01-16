@@ -64,3 +64,43 @@ async function testAddonsDisplay(showHidden) {
 
   await removeTab(tab);
 }
+
+
+
+function setupThisFirefoxMock() {
+  const runtimeClientFactoryMock = createRuntimeClientFactoryMock();
+  const thisFirefoxClient = createThisFirefoxClientMock();
+  runtimeClientFactoryMock.createClientForRuntime = runtime => {
+    const {
+      RUNTIMES,
+    } = require("resource://devtools/client/aboutdebugging/src/constants.js");
+    if (runtime.id === RUNTIMES.THIS_FIREFOX) {
+      return thisFirefoxClient;
+    }
+    throw new Error("Unexpected runtime id " + runtime.id);
+  };
+
+  info("Enable mocks");
+  enableRuntimeClientFactoryMock(runtimeClientFactoryMock);
+  registerCleanupFunction(() => {
+    disableRuntimeClientFactoryMock();
+  });
+
+  return thisFirefoxClient;
+}
+
+
+
+function createAddonData({ id, name, isSystem, hidden }) {
+  return {
+    actor: `actorid-${id}`,
+    hidden,
+    iconURL: `moz-extension://${id}/icon-url.png`,
+    id,
+    manifestURL: `moz-extension://${id}/manifest-url.json`,
+    name,
+    isSystem,
+    temporarilyInstalled: false,
+    debuggable: true,
+  };
+}
