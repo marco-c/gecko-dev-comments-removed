@@ -378,7 +378,7 @@ class RemoteTextureMap {
     
     
     
-    CompositableTextureHostRef mAsyncRemoteTextureHost;
+    CompositableTextureHostRef mRemoteTextureHost;
     bool mReadyCheckSuppressed = false;
   };
 
