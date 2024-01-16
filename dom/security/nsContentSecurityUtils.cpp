@@ -1626,7 +1626,6 @@ long nsContentSecurityUtils::ClassifyDownload(
   nsMixedContentBlocker::ShouldLoad(false,  
                                     contentLocation,   
                                     secCheckLoadInfo,  
-                                    aMimeTypeGuess,    
                                     false,             
                                     &decission         
   );

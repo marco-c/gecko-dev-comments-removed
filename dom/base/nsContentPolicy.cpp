@@ -63,7 +63,6 @@ nsContentPolicy::~nsContentPolicy() = default;
 inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
                                              nsIURI* contentLocation,
                                              nsILoadInfo* loadInfo,
-                                             const nsACString& mimeType,
                                              int16_t* decision) {
   nsCOMPtr<nsISupports> requestingContext = loadInfo->GetLoadingContext();
   
@@ -105,8 +104,7 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
   int32_t count = entries.Count();
   for (int32_t i = 0; i < count; i++) {
     
-    rv = (entries[i]->*policyMethod)(contentLocation, loadInfo, mimeType,
-                                     decision);
+    rv = (entries[i]->*policyMethod)(contentLocation, loadInfo, decision);
 
     if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
       
@@ -141,11 +139,11 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
 
 NS_IMETHODIMP
 nsContentPolicy::ShouldLoad(nsIURI* contentLocation, nsILoadInfo* loadInfo,
-                            const nsACString& mimeType, int16_t* decision) {
+                            int16_t* decision) {
   
   MOZ_ASSERT(contentLocation, "Must provide request location");
   nsresult rv = CheckPolicy(&nsIContentPolicy::ShouldLoad, contentLocation,
-                            loadInfo, mimeType, decision);
+                            loadInfo, decision);
   LOG_CHECK("ShouldLoad");
 
   return rv;
@@ -153,9 +151,9 @@ nsContentPolicy::ShouldLoad(nsIURI* contentLocation, nsILoadInfo* loadInfo,
 
 NS_IMETHODIMP
 nsContentPolicy::ShouldProcess(nsIURI* contentLocation, nsILoadInfo* loadInfo,
-                               const nsACString& mimeType, int16_t* decision) {
+                               int16_t* decision) {
   nsresult rv = CheckPolicy(&nsIContentPolicy::ShouldProcess, contentLocation,
-                            loadInfo, mimeType, decision);
+                            loadInfo, decision);
   LOG_CHECK("ShouldProcess");
 
   return rv;

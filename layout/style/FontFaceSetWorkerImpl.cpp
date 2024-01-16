@@ -322,10 +322,9 @@ bool FontFaceSetWorkerImpl::IsFontLoadAllowed(const gfxFontFaceSrc& aSrc) {
       nsIContentPolicy::TYPE_FONT);
 
   int16_t shouldLoad = nsIContentPolicy::ACCEPT;
-  nsresult rv = NS_CheckContentLoadPolicy(aSrc.mURI->get(), secCheckLoadInfo,
-                                          ""_ns,  
-                                          &shouldLoad,
-                                          nsContentUtils::GetContentPolicy());
+  nsresult rv =
+      NS_CheckContentLoadPolicy(aSrc.mURI->get(), secCheckLoadInfo, &shouldLoad,
+                                nsContentUtils::GetContentPolicy());
 
   return NS_SUCCEEDED(rv) && NS_CP_ACCEPTED(shouldLoad);
 }

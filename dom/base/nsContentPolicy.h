@@ -34,8 +34,7 @@ class nsContentPolicy : public nsIContentPolicy {
   
   
   nsresult CheckPolicy(CPMethod policyMethod, nsIURI* aURI,
-                       nsILoadInfo* aLoadInfo, const nsACString& mimeGuess,
-                       int16_t* decision);
+                       nsILoadInfo* aLoadInfo, int16_t* decision);
 };
 
 nsresult NS_NewContentPolicy(nsIContentPolicy** aResult);

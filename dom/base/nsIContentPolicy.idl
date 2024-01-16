@@ -47,19 +47,6 @@ interface nsIContentPolicy : nsISupports
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     TYPE_OTHER = 1,
 
     
@@ -544,15 +531,8 @@ interface nsIContentPolicy : nsISupports
 
 
 
-
-
-
-
-
-
   short shouldLoad(in nsIURI      aContentLocation,
-                   in nsILoadInfo aLoadInfo,
-                   in ACString    aMimeTypeGuess);
+                   in nsILoadInfo aLoadInfo);
 
   
 
@@ -572,14 +552,8 @@ interface nsIContentPolicy : nsISupports
 
 
 
-
-
-
-
-
   short shouldProcess(in nsIURI      aContentLocation,
-                      in nsILoadInfo aLoadInfo,
-                      in ACString    aMimeType);
+                      in nsILoadInfo aLoadInfo);
 };
 
 typedef nsIContentPolicy_nsContentPolicyType nsContentPolicyType;

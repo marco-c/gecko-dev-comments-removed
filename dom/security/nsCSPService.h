@@ -30,7 +30,6 @@ class CSPService : public nsIContentPolicy, public nsIChannelEventSink {
   
   
   static nsresult ConsultCSP(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
-                             const nsACString& aMimeTypeGuess,
                              int16_t* aDecision);
 
   
