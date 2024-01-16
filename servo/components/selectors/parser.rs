@@ -1585,6 +1585,12 @@ impl NthSelectorData {
 
     
     #[inline]
+    pub fn is_simple_edge(&self) -> bool {
+        self.a == 0 && self.b == 1 && !self.ty.is_of_type()
+    }
+
+    
+    #[inline]
     fn write_start<W: fmt::Write>(&self, dest: &mut W) -> fmt::Result {
         dest.write_str(match self.ty {
             NthType::Child if self.is_function => ":nth-child(",
