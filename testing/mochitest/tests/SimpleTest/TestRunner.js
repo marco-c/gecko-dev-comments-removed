@@ -218,7 +218,10 @@ TestRunner._checkForHangs = function () {
 
       
       
-      if (++TestRunner._numTimeouts >= TestRunner.maxTimeouts) {
+      if (
+        ++TestRunner._numTimeouts >= TestRunner.maxTimeouts ||
+        TestRunner.runUntilFailure
+      ) {
         TestRunner._haltTests = true;
 
         TestRunner.currentTestURL = "(SimpleTest/TestRunner.js)";
