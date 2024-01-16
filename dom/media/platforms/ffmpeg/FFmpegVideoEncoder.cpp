@@ -566,7 +566,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
     }
   }
   
-  nsCString codecSpecificLog;
+  nsAutoCString codecSpecificLog;
   if (mConfig.mCodecSpecific) {
     if (mConfig.mCodecSpecific->is<H264Specific>()) {
       
