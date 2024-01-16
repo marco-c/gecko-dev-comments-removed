@@ -372,6 +372,25 @@
 
 
 
+        get_window_rect: function(context=null) {
+            return window.test_driver_internal.get_window_rect(context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1080,6 +1099,10 @@
 
         async set_window_rect(rect, context=null) {
             throw new Error("set_window_rect() is not implemented by testdriver-vendor.js");
+        },
+
+        async get_window_rect(context=null) {
+            throw new Error("get_window_rect() is not implemented by testdriver-vendor.js");
         },
 
         async action_sequence(actions, context=null) {
