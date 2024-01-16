@@ -138,8 +138,6 @@ user_pref("identity.fxaccounts.auth.uri", "https://{server}/fxa-dummy/");
 user_pref("identity.fxaccounts.remote.root", "https://{server}/");
 
 user_pref("layout.css.report_errors", true);
-
-user_pref("layout.spammy_warnings.enabled", false);
 user_pref("media.cache_size", 1000);
 user_pref("media.dormant-on-pause-timeout-ms", 0); 
 
