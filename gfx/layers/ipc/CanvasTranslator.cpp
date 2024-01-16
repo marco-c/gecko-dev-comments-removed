@@ -990,18 +990,12 @@ void CanvasTranslator::PauseTranslation() {
 }
 
 already_AddRefed<gfx::GradientStops> CanvasTranslator::GetOrCreateGradientStops(
-    gfx::GradientStop* aRawStops, uint32_t aNumStops,
-    gfx::ExtendMode aExtendMode) {
+    gfx::DrawTarget* aDrawTarget, gfx::GradientStop* aRawStops,
+    uint32_t aNumStops, gfx::ExtendMode aExtendMode) {
+  MOZ_ASSERT(aDrawTarget);
   nsTArray<gfx::GradientStop> rawStopArray(aRawStops, aNumStops);
-  RefPtr<DrawTarget> drawTarget = GetReferenceDrawTarget();
-  if (!drawTarget) {
-    
-    
-    return nullptr;
-  }
-
   return gfx::gfxGradientCache::GetOrCreateGradientStops(
-      drawTarget, rawStopArray, aExtendMode);
+      aDrawTarget, rawStopArray, aExtendMode);
 }
 
 gfx::DataSourceSurface* CanvasTranslator::LookupDataSurface(

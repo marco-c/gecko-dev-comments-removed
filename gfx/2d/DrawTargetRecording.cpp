@@ -483,7 +483,7 @@ already_AddRefed<FilterNode> DrawTargetRecording::CreateFilter(
     FilterType aType) {
   RefPtr<FilterNode> retNode = new FilterNodeRecording(mRecorder);
 
-  mRecorder->RecordEvent(RecordedFilterNodeCreation(retNode, aType));
+  mRecorder->RecordEvent(RecordedFilterNodeCreation(this, retNode, aType));
 
   return retNode.forget();
 }
@@ -659,7 +659,7 @@ already_AddRefed<DrawTarget> DrawTargetRecording::CreateSimilarDrawTarget(
     similarDT =
         new DrawTargetRecording(this, IntRect(IntPoint(0, 0), aSize), aFormat);
     mRecorder->RecordEvent(
-        RecordedCreateSimilarDrawTarget(similarDT.get(), aSize, aFormat));
+        RecordedCreateSimilarDrawTarget(this, similarDT.get(), aSize, aFormat));
   } else if (XRE_IsContentProcess()) {
     
     
@@ -717,8 +717,8 @@ already_AddRefed<GradientStops> DrawTargetRecording::CreateGradientStops(
     GradientStop* aStops, uint32_t aNumStops, ExtendMode aExtendMode) const {
   RefPtr<GradientStops> retStops = new GradientStopsRecording(mRecorder);
 
-  mRecorder->RecordEvent(
-      RecordedGradientStopsCreation(retStops, aStops, aNumStops, aExtendMode));
+  mRecorder->RecordEvent(RecordedGradientStopsCreation(this, retStops, aStops,
+                                                       aNumStops, aExtendMode));
 
   return retStops.forget();
 }
@@ -751,7 +751,7 @@ already_AddRefed<PathRecording> DrawTargetRecording::EnsurePathStored(
   
   
   
-  mRecorder->RecordEvent(RecordedPathCreation(pathRecording.get()));
+  mRecorder->RecordEvent(RecordedPathCreation(this, pathRecording.get()));
   pathRecording->mStoredRecorders.push_back(mRecorder);
 
   return pathRecording.forget();
