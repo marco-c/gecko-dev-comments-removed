@@ -811,12 +811,6 @@ pref("print.print_edge_bottom", 0);
 #endif
 
 
-
-
-pref("editor.join_split_direction.force_use_traditional_direction", "");
-pref("editor.join_split_direction.force_use_compatible_direction", "");
-
-
 pref("dom.beforeunload_timeout_ms",         1000);
 pref("dom.disable_window_flip",             false);
 pref("dom.disable_window_move_resize",      false);
