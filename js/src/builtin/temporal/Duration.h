@@ -145,6 +145,7 @@ bool BalanceTimeDuration(JSContext* cx, const InstantSpan& nanoseconds,
 
 bool BalanceDateDurationRelative(
     JSContext* cx, const Duration& duration, TemporalUnit largestUnit,
+    TemporalUnit smallestUnit,
     JS::Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
     JS::Handle<CalendarRecord> calendar, DateDuration* result);
 

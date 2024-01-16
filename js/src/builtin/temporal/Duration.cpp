@@ -1853,14 +1853,6 @@ static bool CreateDateDurationRecord(JSContext* cx, double years, double months,
   return true;
 }
 
-static double IsSafeInteger(double num) {
-  MOZ_ASSERT(js::IsInteger(num) || std::isinf(num));
-
-  constexpr double maxSafeInteger = DOUBLE_INTEGRAL_PRECISION_LIMIT - 1;
-  constexpr double minSafeInteger = -maxSafeInteger;
-  return minSafeInteger <= num && num <= maxSafeInteger;
-}
-
 static bool UnbalanceDateDurationRelativeHasEffect(const Duration& duration,
                                                    TemporalUnit largestUnit) {
   MOZ_ASSERT(largestUnit != TemporalUnit::Auto);
@@ -2053,100 +2045,17 @@ static bool UnbalanceDateDurationRelative(JSContext* cx,
   return false;
 }
 
-static bool BalanceDateDurationRelativeYearSlow(
-    JSContext* cx, const Duration& duration, int32_t sign,
-    Handle<Wrapped<PlainDateObject*>> relativeTo,
-    Handle<CalendarRecord> calendar, Handle<DurationObject*> oneYear,
-    uint32_t yearsToAdd, uint32_t monthsToAdd, double oneYearMonthsNumber,
-    DateDuration* result) {
-  MOZ_ASSERT(sign == -1 || sign == 1);
-
-  Rooted<BigInt*> months(cx, BigInt::createFromDouble(cx, duration.months));
-  if (!months) {
-    return false;
-  }
-
-  if (monthsToAdd) {
-    Rooted<BigInt*> toAdd(cx, BigInt::createFromInt64(cx, monthsToAdd));
-    if (!toAdd) {
-      return false;
-    }
-
-    if (sign < 0) {
-      toAdd = BigInt::neg(cx, toAdd);
-      if (!toAdd) {
-        return false;
-      }
-    }
-
-    months = BigInt::add(cx, months, toAdd);
-    if (!months) {
-      return false;
-    }
-  }
-
-  Rooted<BigInt*> oneYearMonths(
-      cx, BigInt::createFromDouble(cx, oneYearMonthsNumber));
-  if (!oneYearMonths) {
-    return false;
-  }
-
-  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
-  Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, relativeTo.get());
-  while (BigInt::absoluteCompare(months, oneYearMonths) >= 0) {
-    
-    months = BigInt::sub(cx, months, oneYearMonths);
-    if (!months) {
-      return false;
-    }
-
-    
-    yearsToAdd += 1;
-
-    
-    dateRelativeTo = newRelativeTo;
-
-    
-    newRelativeTo = CalendarDateAdd(cx, calendar, dateRelativeTo, oneYear);
-    if (!newRelativeTo) {
-      return false;
-    }
-
-    
-    Duration untilResult;
-    if (!CalendarDateUntil(cx, calendar, dateRelativeTo, newRelativeTo,
-                           TemporalUnit::Month, &untilResult)) {
-      return false;
-    }
-
-    
-    oneYearMonths = BigInt::createFromDouble(cx, untilResult.months);
-    if (!oneYearMonths) {
-      return false;
-    }
-  }
-
-  
-  double years = duration.years + double(yearsToAdd) * sign;
-
-  
-  *result = CreateDateDurationRecord(years, BigInt::numberValue(months),
-                                     duration.weeks, duration.days);
-  return true;
-}
-
 
 
 
 
 static bool BalanceDateDurationRelative(
     JSContext* cx, const Duration& duration, TemporalUnit largestUnit,
+    TemporalUnit smallestUnit,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
     Handle<CalendarRecord> calendar, DateDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  static constexpr int32_t epochDays = 200'000'000;
+  MOZ_ASSERT(largestUnit <= smallestUnit);
 
   double years = duration.years;
   double months = duration.months;
@@ -2180,301 +2089,124 @@ static bool BalanceDateDurationRelative(
   }
 
   
-  int32_t sign = DurationSign({years, months, weeks, days});
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
-  MOZ_ASSERT(sign != 0);
+  MOZ_ASSERT(
+      CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
   
-  Rooted<DurationObject*> oneYear(cx,
-                                  CreateTemporalDuration(cx, {double(sign)}));
-  if (!oneYear) {
-    return false;
-  }
 
-  
-  Rooted<DurationObject*> oneMonth(
-      cx, CreateTemporalDuration(cx, {0, double(sign)}));
-  if (!oneMonth) {
-    return false;
-  }
+  auto untilAddedDate = [&](const Duration& duration, Duration* untilResult) {
+    Rooted<Wrapped<PlainDateObject*>> later(
+        cx, AddDate(cx, calendar, plainRelativeTo, duration));
+    if (!later) {
+      return false;
+    }
 
-  
-  Rooted<DurationObject*> oneWeek(
-      cx, CreateTemporalDuration(cx, {0, 0, double(sign)}));
-  if (!oneWeek) {
-    return false;
-  }
+    return CalendarDateUntil(cx, calendar, plainRelativeTo, later, largestUnit,
+                             untilResult);
+  };
 
   
   if (largestUnit == TemporalUnit::Year) {
     
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-    
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
-
-    
-    if (MOZ_UNLIKELY(std::abs(days) >= epochDays * 2)) {
+    if (smallestUnit == TemporalUnit::Week) {
       
-      return MoveRelativeDateLoop(cx, calendar, plainRelativeTo, oneYear);
-    }
-
-    
-    int32_t intDays = int32_t(days);
-
-    
-    Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
-    int32_t oneYearDays;
-    if (!MoveRelativeDate(cx, calendar, plainRelativeTo, oneYear,
-                          &newRelativeTo, &oneYearDays)) {
-      return false;
-    }
-
-    
-    int32_t daysToSubtract = 0;
-
-    
-    
-    
-    uint32_t yearsToAdd = 0;
-
-    
-    Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, plainRelativeTo.get());
-    while (std::abs(intDays - daysToSubtract) >= std::abs(oneYearDays)) {
-      
-      daysToSubtract += oneYearDays;
-      MOZ_ASSERT(std::abs(daysToSubtract) <= epochDays);
+      MOZ_ASSERT(days == 0);
 
       
-      yearsToAdd += 1;
-
-      
-      dateRelativeTo = newRelativeTo;
-
-      
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneYear,
-                            &newRelativeTo, &oneYearDays)) {
-        return false;
-      }
-    }
-
-    
-    int32_t oneMonthDays;
-    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth,
-                          &newRelativeTo, &oneMonthDays)) {
-      return false;
-    }
-
-    
-    
-    
-    uint32_t monthsToAdd = 0;
-
-    
-    while (std::abs(intDays - daysToSubtract) >= std::abs(oneMonthDays)) {
-      
-      daysToSubtract += oneMonthDays;
-      MOZ_ASSERT(std::abs(daysToSubtract) <= epochDays);
-
-      
-      monthsToAdd += 1;
-
-      
-      dateRelativeTo = newRelativeTo;
-
-      
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth,
-                            &newRelativeTo, &oneMonthDays)) {
-        return false;
-      }
-    }
-
-    
-    days = double(intDays - daysToSubtract);
-
-    
-    newRelativeTo = CalendarDateAdd(cx, calendar, dateRelativeTo, oneYear);
-    if (!newRelativeTo) {
-      return false;
-    }
-
-    
-    Duration untilResult;
-    if (!CalendarDateUntil(cx, calendar, dateRelativeTo, newRelativeTo,
-                           TemporalUnit::Month, &untilResult)) {
-      return false;
-    }
-
-    
-    double oneYearMonths = untilResult.months;
-
-    if (MOZ_UNLIKELY(!IsSafeInteger(months + double(monthsToAdd) * sign))) {
-      return BalanceDateDurationRelativeYearSlow(
-          cx, {years, months, weeks, days}, sign, newRelativeTo, calendar,
-          oneYear, yearsToAdd, monthsToAdd, oneYearMonths, result);
-    }
-
-    months += double(monthsToAdd) * sign;
-
-    
-    while (std::abs(months) >= std::abs(oneYearMonths)) {
-      if (MOZ_UNLIKELY(!IsSafeInteger(months - oneYearMonths))) {
-        
-        constexpr uint32_t zeroMonthsToAdd = 0;
-
-        return BalanceDateDurationRelativeYearSlow(
-            cx, {years, months, weeks, days}, sign, newRelativeTo, calendar,
-            oneYear, yearsToAdd, zeroMonthsToAdd, oneYearMonths, result);
-      }
-
-      
-      months -= oneYearMonths;
-
-      
-      yearsToAdd += 1;
-
-      
-      dateRelativeTo = newRelativeTo;
-
-      
-      newRelativeTo = CalendarDateAdd(cx, calendar, dateRelativeTo, oneYear);
-      if (!newRelativeTo) {
-        return false;
-      }
+      auto yearsMonthsDuration = Duration{years, months};
 
       
       Duration untilResult;
-      if (!CalendarDateUntil(cx, calendar, dateRelativeTo, newRelativeTo,
-                             TemporalUnit::Month, &untilResult)) {
+      if (!untilAddedDate(yearsMonthsDuration, &untilResult)) {
         return false;
       }
 
       
-      oneYearMonths = untilResult.months;
-    }
 
-    
-    years += double(yearsToAdd) * sign;
-  } else if (largestUnit == TemporalUnit::Month) {
-    
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-    
-    if (MOZ_UNLIKELY(std::abs(days) >= epochDays * 2)) {
       
-      return MoveRelativeDateLoop(cx, calendar, plainRelativeTo, oneMonth);
+      *result = CreateDateDurationRecord(untilResult.years, untilResult.months,
+                                         weeks, 0);
+      return true;
     }
 
     
-    int32_t intDays = int32_t(days);
+    auto yearsMonthsWeeksDaysDuration = Duration{years, months, weeks, days};
 
     
-    Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
-    int32_t oneMonthDays;
-    if (!MoveRelativeDate(cx, calendar, plainRelativeTo, oneMonth,
-                          &newRelativeTo, &oneMonthDays)) {
+    Duration untilResult;
+    if (!untilAddedDate(yearsMonthsWeeksDaysDuration, &untilResult)) {
       return false;
     }
 
     
-    int32_t daysToSubtract = 0;
+    
 
     
-    
-    
-    uint32_t monthsToAdd = 0;
-
-    
-    Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
-    while (std::abs(intDays - daysToSubtract) >= std::abs(oneMonthDays)) {
-      
-      daysToSubtract += oneMonthDays;
-      MOZ_ASSERT(std::abs(daysToSubtract) <= epochDays);
-
-      
-      monthsToAdd += 1;
-
-      
-      dateRelativeTo = newRelativeTo;
-
-      
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth,
-                            &newRelativeTo, &oneMonthDays)) {
-        return false;
-      }
-    }
-
-    
-    days = double(intDays - daysToSubtract);
-
-    
-    months += double(monthsToAdd) * sign;
-  } else {
-    
-    MOZ_ASSERT(largestUnit == TemporalUnit::Week);
-
-    
-    MOZ_ASSERT(
-        CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
-
-    
-    if (MOZ_UNLIKELY(std::abs(days) >= epochDays * 2)) {
-      
-      return MoveRelativeDateLoop(cx, calendar, plainRelativeTo, oneWeek);
-    }
-
-    
-    int32_t intDays = int32_t(days);
-
-    
-    Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
-    int32_t oneWeekDays;
-    if (!MoveRelativeDate(cx, calendar, plainRelativeTo, oneWeek,
-                          &newRelativeTo, &oneWeekDays)) {
-      return false;
-    }
-
-    
-    int32_t daysToSubtract = 0;
-
-    
-    
-    
-    uint32_t weeksToAdd = 0;
-
-    
-    Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
-    while (std::abs(intDays - daysToSubtract) >= std::abs(oneWeekDays)) {
-      
-      daysToSubtract += oneWeekDays;
-      MOZ_ASSERT(std::abs(daysToSubtract) <= epochDays);
-
-      
-      weeksToAdd += 1;
-
-      
-      dateRelativeTo = newRelativeTo;
-
-      
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneWeek,
-                            &newRelativeTo, &oneWeekDays)) {
-        return false;
-      }
-    }
-
-    
-    days = double(intDays - daysToSubtract);
-
-    
-    weeks += double(weeksToAdd) * sign;
+    *result = CreateDateDurationRecord(untilResult.years, untilResult.months,
+                                       untilResult.weeks, untilResult.days);
+    return true;
   }
 
   
-  *result = CreateDateDurationRecord(years, months, weeks, days);
+  if (largestUnit == TemporalUnit::Month) {
+    
+    MOZ_ASSERT(years == 0);
+
+    
+    if (smallestUnit == TemporalUnit::Week) {
+      
+      MOZ_ASSERT(days == 0);
+
+      
+      *result = CreateDateDurationRecord(0, months, weeks, 0);
+      return true;
+    }
+
+    
+    auto monthsWeeksDaysDuration = Duration{0, months, weeks, days};
+
+    
+    Duration untilResult;
+    if (!untilAddedDate(monthsWeeksDaysDuration, &untilResult)) {
+      return false;
+    }
+
+    
+    
+
+    
+    *result = CreateDateDurationRecord(0, untilResult.months, untilResult.weeks,
+                                       untilResult.days);
+    return true;
+  }
+
+  
+  MOZ_ASSERT(largestUnit == TemporalUnit::Week);
+
+  
+  MOZ_ASSERT(years == 0);
+
+  
+  MOZ_ASSERT(months == 0);
+
+  
+  auto weeksDaysDuration = Duration{0, 0, weeks, days};
+
+  
+  Duration untilResult;
+  if (!untilAddedDate(weeksDaysDuration, &untilResult)) {
+    return false;
+  }
+
+  
+  
+
+  
+  *result = CreateDateDurationRecord(0, 0, untilResult.weeks, untilResult.days);
   return true;
 }
 
@@ -2484,12 +2216,13 @@ static bool BalanceDateDurationRelative(
 
 bool js::temporal::BalanceDateDurationRelative(
     JSContext* cx, const Duration& duration, TemporalUnit largestUnit,
+    TemporalUnit smallestUnit,
     Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
     Handle<CalendarRecord> calendar, DateDuration* result) {
   MOZ_ASSERT(plainRelativeTo);
   MOZ_ASSERT(calendar.receiver());
 
-  return ::BalanceDateDurationRelative(cx, duration, largestUnit,
+  return ::BalanceDateDurationRelative(cx, duration, largestUnit, smallestUnit,
                                        plainRelativeTo, calendar, result);
 }
 
@@ -7138,7 +6871,8 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   };
   DateDuration result;
   if (!::BalanceDateDurationRelative(cx, balanceInput, largestUnit,
-                                     plainRelativeTo, calendar, &result)) {
+                                     smallestUnit, plainRelativeTo, calendar,
+                                     &result)) {
     return false;
   }
 
