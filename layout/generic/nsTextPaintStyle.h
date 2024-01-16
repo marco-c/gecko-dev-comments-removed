@@ -134,14 +134,13 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   
   
   struct nsSelectionStyle {
-    bool mInit;
     nscolor mTextColor;
     nscolor mBGColor;
     nscolor mUnderlineColor;
     StyleTextDecorationStyle mUnderlineStyle;
     float mUnderlineRelativeSize;
   };
-  nsSelectionStyle mSelectionStyle[5];
+  mozilla::Maybe<nsSelectionStyle> mSelectionStyle[5];
 
   
   void InitCommonColors();
