@@ -469,8 +469,6 @@ void JS::detail::SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
   } else {
     
     
-    MOZ_ASSERT(
-        !Watchtower::watchesPropertyModification(&obj->as<NativeObject>()));
     obj->as<NativeObject>().setSlot(slot, value);
   }
 }

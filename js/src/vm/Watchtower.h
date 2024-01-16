@@ -105,6 +105,8 @@ class Watchtower {
     return watchPropertyChangeSlow(cx, obj, id, flags);
   }
 
+  
+  
   template <AllowGC allowGC>
   static bool watchPropertyModification(
       JSContext* cx,
