@@ -387,6 +387,50 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+
+
+
+  function isUnlabeledUrlBarCombobox(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const ariaRoles = getAriaRoles(accessible);
+    
+    const isMozInputBox =
+      node.tagName == "moz-input-box" &&
+      node.classList.contains("urlbar-input-box");
+    const isSearchbar = node.tagName == "searchbar" && node.id == "searchbar";
+    return (isMozInputBox || isSearchbar) && ariaRoles.includes("combobox");
+  }
+
+  
+
+
+
+
+
+
+  function isUnlabeledUrlBarOption(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const ariaRoles = getAriaRoles(accessible);
+    return (
+      node.tagName == "span" &&
+      ariaRoles.includes("option") &&
+      node.classList.contains("urlbarView-row-inner")
+    );
+  }
+
+  
+
+
+
+
   function shouldIgnoreTabIndex(node) {
     if (!XULElement.isInstance(node)) {
       return false;
@@ -590,6 +634,12 @@ this.AccessibilityUtils = (function () {
 
   function assertLabelled(accessible, allowRecurse = true) {
     const { DOMNode } = accessible;
+    if (
+      isUnlabeledUrlBarCombobox(accessible) ||
+      isUnlabeledUrlBarOption(accessible)
+    ) {
+      return;
+    }
     let name = accessible.name;
     if (!name) {
       
