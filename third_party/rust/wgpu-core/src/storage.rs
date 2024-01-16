@@ -131,6 +131,12 @@ where
         result
     }
 
+    
+    
+    pub(crate) fn get_owned(&self, id: I) -> Result<Arc<T>, InvalidId> {
+        Ok(Arc::clone(self.get(id)?))
+    }
+
     pub(crate) fn label_for_invalid_id(&self, id: I) -> &str {
         let (index, _, _) = id.unzip();
         match self.map.get(index as usize) {

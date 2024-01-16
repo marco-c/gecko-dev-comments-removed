@@ -95,7 +95,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.193")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.194")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -122,7 +122,6 @@
     
     clippy::cast_lossless,
     clippy::module_name_repetitions,
-    clippy::option_if_let_else,
     clippy::single_match_else,
     clippy::type_complexity,
     clippy::use_self,

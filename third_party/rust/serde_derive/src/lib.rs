@@ -13,7 +13,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.193")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.194")]
 
 #![allow(
     
@@ -50,7 +50,6 @@
     clippy::match_wildcard_for_single_variants,
     clippy::module_name_repetitions,
     clippy::must_use_candidate,
-    clippy::option_if_let_else,
     clippy::similar_names,
     clippy::single_match_else,
     clippy::struct_excessive_bools,

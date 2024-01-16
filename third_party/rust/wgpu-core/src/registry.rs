@@ -80,12 +80,21 @@ impl<I: id::TypedId + Copy, T: Resource<I>> FutureId<'_, I, T> {
         Arc::new(value)
     }
 
+    
+    
+    
     pub fn assign(self, value: T) -> (I, Arc<T>) {
         let mut data = self.data.write();
         data.insert(self.id, self.init(value));
         (self.id, data.get(self.id).unwrap().clone())
     }
 
+    
+    
+    
+    
+    
+    
     pub fn assign_existing(self, value: &Arc<T>) -> I {
         let mut data = self.data.write();
         debug_assert!(!data.contains(self.id));
@@ -125,7 +134,7 @@ impl<I: id::TypedId, T: Resource<I>> Registry<I, T> {
         self.read().try_get(id).map(|o| o.cloned())
     }
     pub(crate) fn get(&self, id: I) -> Result<Arc<T>, InvalidId> {
-        self.read().get(id).map(|v| v.clone())
+        self.read().get_owned(id)
     }
     pub(crate) fn read<'a>(&'a self) -> RwLockReadGuard<'a, Storage<T, I>> {
         self.storage.read()
