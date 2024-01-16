@@ -91,8 +91,11 @@ async function testSteps() {
 
 
 
-    const wait_a_minute = 60000;
-    do_timeout(wait_a_minute, () => {
+
+    const android = mozinfo.os == "android";
+    const minutes = 60 * 1000;
+    const performance_regression_cutoff = (android ? 6 : 1) * minutes;
+    do_timeout(performance_regression_cutoff, () => {
       if (!isDone) {
         rej(Error("Performance regression detected"));
       }
