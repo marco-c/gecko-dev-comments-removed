@@ -251,4 +251,33 @@ bool NonVoidLatin1StringToJsval(JSContext* cx, const nsACString& str,
   return true;
 }
 
+bool NonVoidUTF8StringToJsval(JSContext* cx, nsACString& str,
+                              MutableHandleValue rval) {
+  nsStringBuffer* sharedBuffer;
+  if (!XPCStringConvert::UTF8ToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    
+    str.ForgetSharedBuffer();
+  }
+  return true;
+}
+
+bool NonVoidUTF8StringToJsval(JSContext* cx, const nsACString& str,
+                              MutableHandleValue rval) {
+  nsStringBuffer* sharedBuffer;
+  if (!XPCStringConvert::UTF8ToJSVal(cx, str, &sharedBuffer, rval)) {
+    return false;
+  }
+
+  if (sharedBuffer) {
+    
+    sharedBuffer->AddRef();
+  }
+  return true;
+}
+
 }  
