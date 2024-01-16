@@ -170,7 +170,8 @@ nsresult EnsureFileSystemDirectory(
   quota::QuotaManager* quotaManager = quota::QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureTemporaryStorageIsInitialized()));
+  QM_TRY(MOZ_TO_RESULT(
+      quotaManager->EnsureTemporaryStorageIsInitializedInternal()));
 
   QM_TRY_INSPECT(const auto& fileSystemDirectory,
                  quotaManager
@@ -216,7 +217,7 @@ Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(
 Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
     const quota::OriginMetadata& aOriginMetadata,
     const int64_t aDirectoryLockId) {
-  MOZ_ASSERT(aDirectoryLockId >= 0);
+  MOZ_ASSERT(aDirectoryLockId >= -1);
 
   QM_TRY_UNWRAP(nsCOMPtr<nsIFile> databaseFile,
                 GetDatabaseFile(aOriginMetadata));
@@ -237,12 +238,20 @@ Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
                      nsCOMPtr<nsIURIMutator>, fileHandler, NewFileURIMutator,
                      databaseFile)));
 
-  nsCString directoryLockIdClause = "&directoryLockId="_ns;
-  directoryLockIdClause.AppendInt(aDirectoryLockId);
+  
+  
+  
+  
+  
+  const auto directoryLockIdClause =
+      aDirectoryLockId >= 0
+          ? "&directoryLockId="_ns + IntToCString(aDirectoryLockId)
+          : EmptyCString();
 
   nsCOMPtr<nsIFileURL> result;
-  QM_TRY(QM_TO_RESULT(
-      NS_MutateURI(mutator).SetQuery(directoryLockIdClause).Finalize(result)));
+  QM_TRY(QM_TO_RESULT(NS_MutateURI(mutator)
+                          .SetQuery("cache=private"_ns + directoryLockIdClause)
+                          .Finalize(result)));
 
   return result;
 }
