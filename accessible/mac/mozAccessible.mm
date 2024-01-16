@@ -875,7 +875,7 @@ struct RoleDescrComparator {
     
     NSArray* children = [self moxChildren];
     MOZ_ASSERT([children count] == 1 && children[0],
-               "A11yUtil event recieved, but no announcement found?");
+               "A11yUtil event received, but no announcement found?");
 
     mozAccessible* announcement = children[0];
     NSString* key;

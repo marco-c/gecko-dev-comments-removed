@@ -165,7 +165,7 @@ function waitForEvent(eventType, matchCriteria, message) {
           Services.obs.removeObserver(this, "accessible-event");
           ok(
             true,
-            `${message ? message + ": " : ""}Recieved ${eventTypeToString(
+            `${message ? message + ": " : ""}Received ${eventTypeToString(
               eventType
             )} event`
           );
