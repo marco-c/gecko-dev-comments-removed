@@ -1,5 +1,3 @@
-
-
 function hasOwnProp(o, p) {
     return Object.prototype.hasOwnProperty.call(o, p);
 }

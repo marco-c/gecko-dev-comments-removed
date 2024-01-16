@@ -1,5 +1,3 @@
-
-
 setJitCompilerOption("ic.force-megamorphic", 1);
 
 function objectWithHops(hops) {
