@@ -3596,20 +3596,12 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   
   
   
+  
+  
+  
   nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
   if (cspToInherit) {
-    bool allowsNavigateTo = false;
-    rv = cspToInherit->GetAllowsNavigateTo(
-        mDocumentURI, loadInfo->GetIsFormSubmission(),
-        !loadInfo->RedirectChain().IsEmpty(), 
-        true,                                 
-        &allowsNavigateTo);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!allowsNavigateTo) {
-      aChannel->Cancel(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
-      return NS_OK;
-    }
+    cspToInherit->EnsureIPCPoliciesRead();
   }
 
   rv = InitCSP(aChannel);
