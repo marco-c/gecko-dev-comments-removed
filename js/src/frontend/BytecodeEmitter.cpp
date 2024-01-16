@@ -47,6 +47,7 @@
 #include "frontend/NameOpEmitter.h"        
 #include "frontend/ObjectEmitter.h"  
 #include "frontend/OptionalEmitter.h"  
+#include "frontend/ParseContext.h"     
 #include "frontend/ParseNode.h"   
 #include "frontend/Parser.h"      
 #include "frontend/ParserAtom.h"  
@@ -2163,6 +2164,14 @@ bool BytecodeEmitter::allocateResumeIndexRange(
 }
 
 bool BytecodeEmitter::emitYieldOp(JSOp op) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(innermostEmitterScopeNoCheck()->frameSlotEnd() <=
+             ParseContext::Scope::FixedSlotLimit);
+
   if (op == JSOp::FinalYieldRval) {
     return emit1(JSOp::FinalYieldRval);
   }

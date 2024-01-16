@@ -269,6 +269,11 @@ class ParseContext : public Nestable<ParseContext> {
     
     
     
+    
+    
+    
+    
+    
     static constexpr uint32_t FixedSlotLimit = 256;
 
     
