@@ -723,20 +723,16 @@ void nsCocoaWindow::Destroy() {
   }
   nsBaseWidget::OnDestroy();
 
-  if (mInFullScreenMode) {
+  if (mInFullScreenMode && !mInNativeFullScreenMode) {
     
-    
-    
-    
-    
-    
-    
-    if (mInNativeFullScreenMode) {
-      DestroyNativeWindow();
-    } else if (mWindow) {
-      nsCocoaUtils::HideOSChromeOnScreen(false);
-    }
+    nsCocoaUtils::HideOSChromeOnScreen(false);
   }
+
+  
+  
+  
+  
+  DestroyNativeWindow();
 }
 
 nsIWidget* nsCocoaWindow::GetSheetWindowParent(void) {
