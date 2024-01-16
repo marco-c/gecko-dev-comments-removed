@@ -7,6 +7,8 @@
 #ifndef jit_ABIFunctionList_inl_h
 #define jit_ABIFunctionList_inl_h
 
+#include "mozilla/SIMD.h"  
+
 #include "jslibmath.h"  
 #include "jsmath.h"     
                         
@@ -182,7 +184,11 @@ namespace jit {
   _(js::RegExpPrototypeOptimizableRaw)                                \
   _(js::SetIteratorObject::next)                                      \
   _(js::StringToNumberPure)                                           \
-  _(js::TypeOfObject)
+  _(js::TypeOfObject)                                                 \
+  _(mozilla::SIMD::memchr16)                                          \
+  _(mozilla::SIMD::memchr2x16)                                        \
+  _(mozilla::SIMD::memchr2x8)                                         \
+  _(mozilla::SIMD::memchr8)
 
 
 
