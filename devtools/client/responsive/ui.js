@@ -266,7 +266,7 @@ class ResponsiveUI {
     
     
     const isTabDestroyed =
-      !this.tab.linkedBrowser || this.responsiveFront.isDestroyed();
+      !this.tab.linkedBrowser || this.responsiveFront?.isDestroyed();
     const isWindowClosing = options?.reason === "unload" || isTabDestroyed;
     const isTabContentDestroying =
       isWindowClosing || options?.reason === "TabClose";

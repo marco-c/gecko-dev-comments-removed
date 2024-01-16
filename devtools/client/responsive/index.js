@@ -73,6 +73,9 @@ const bootstrap = {
   destroy() {
     window.removeEventListener("unload", this.destroy, { once: true });
 
+    
+    ReactDOM.unmountComponentAtNode(this._root);
+
     this.store = null;
 
     this.telemetry.toolClosed("responsive", this);
