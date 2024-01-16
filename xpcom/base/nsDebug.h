@@ -12,6 +12,7 @@
 
 #include "nsXPCOM.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/glue/Debug.h"
 #include "mozilla/DbgMacro.h"
 #include "mozilla/Likely.h"
 #include <stdarg.h>
@@ -324,61 +325,6 @@ inline void MOZ_PretendNoReturn() MOZ_PRETEND_NORETURN_FOR_STATIC_ANALYSIS {}
 void NS_ABORT_OOM(size_t aSize);
 #else
 inline void NS_ABORT_OOM(size_t) { MOZ_CRASH(); }
-#endif
-
-
-
-
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-
-
-
-
-
-
-
-
-void printf_stderr(const char* aFmt, ...) MOZ_FORMAT_PRINTF(1, 2);
-
-
-
-
-void vprintf_stderr(const char* aFmt, va_list aArgs) MOZ_FORMAT_PRINTF(1, 0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void fprintf_stderr(FILE* aFile, const char* aFmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-
-
-
-
-
-
-
-void print_stderr(std::stringstream& aStr);
-void fprint_stderr(FILE* aFile, std::stringstream& aStr);
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif 
