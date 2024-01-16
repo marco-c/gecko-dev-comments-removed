@@ -217,20 +217,6 @@ def ensure_dir_exists(
 with open(os.path.join(DIR.scripts, "variants", args.variant)) as fh:
     variant = json.load(fh)
 
-if args.variant == "nonunified":
-    
-    
-    for dirpath, dirnames, filenames in os.walk(DIR.js_src):
-        if "moz.build" in filenames:
-            in_place = ["-i"]
-            if platform.system() == "Darwin":
-                in_place.append("")
-            subprocess.check_call(
-                ["sed"]
-                + in_place
-                + ["s/UNIFIED_SOURCES/SOURCES/", os.path.join(dirpath, "moz.build")]
-            )
-
 CONFIGURE_ARGS = variant["configure-args"]
 
 compiler = variant.get("compiler")
