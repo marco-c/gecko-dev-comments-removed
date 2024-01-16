@@ -211,6 +211,12 @@ class ScriptLoadRequest
                          : ScriptText<Utf8Unit>().clearAndFree();
   }
 
+  size_t ReceivedScriptTextLength() const { return mReceivedScriptTextLength; }
+
+  void SetReceivedScriptTextLength(size_t aLength) {
+    mReceivedScriptTextLength = aLength;
+  }
+
   mozilla::dom::RequestPriority FetchPriority() const {
     return mFetchOptions->mFetchPriority;
   }
@@ -312,7 +318,7 @@ class ScriptLoadRequest
 
   
   
-  size_t mScriptTextLength;
+  size_t mReceivedScriptTextLength;
 
   
   
