@@ -37,6 +37,12 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
     return true;
   }
 #else
+#  ifdef MOZ_WMF_CDM
+  
+  if (StaticPrefs::media_eme_wmf_use_mock_cdm_for_external_cdms()) {
+    return true;
+  }
+#  endif
   
   if (IsWidevineKeySystem(aKeySystem) || IsClearkeyKeySystem(aKeySystem)) {
     return HaveGMPFor(nsCString(CHROMIUM_CDM_API),
