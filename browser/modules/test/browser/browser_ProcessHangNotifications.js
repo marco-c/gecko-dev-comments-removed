@@ -183,7 +183,7 @@ add_task(async function waitForScriptTest() {
   });
 
   
-  notification.currentNotification.closeButtonEl.click();
+  notification.currentNotification.closeButton.click();
 
   
   Services.obs.notifyObservers(hangReport, "process-hang-report");
