@@ -12,7 +12,6 @@ var {
   getStack,
   callFunctionWithAsyncStack,
 } = require("resource://devtools/shared/platform/stack.js");
-const defer = require("resource://devtools/shared/defer.js");
 
 
 
@@ -290,7 +289,7 @@ class Front extends Pool {
 
 
   request(packet) {
-    const deferred = defer();
+    const deferred = Promise.withResolvers();
     
     const { to, type } = packet;
     this._requests.push({
