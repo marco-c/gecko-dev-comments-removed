@@ -53,8 +53,14 @@ add_task(async function test_paste_button_position() {
 
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     const coordsOfClickInContentRelativeToScreenInDevicePixels =
       await promiseClickContentToTriggerClipboardRead(browser, false);
+    AccessibilityUtils.resetEnv();
     info(
       "coordsOfClickInContentRelativeToScreenInDevicePixels: " +
         coordsOfClickInContentRelativeToScreenInDevicePixels.x +
@@ -112,7 +118,13 @@ add_task(async function test_accepting_paste_button() {
 
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     await promiseClickContentToTriggerClipboardRead(browser, false);
+    AccessibilityUtils.resetEnv();
     await pasteButtonIsShown;
     const pasteButtonIsHidden = promisePasteButtonIsHidden();
     const mutatedReadResultFromContentElement =
@@ -132,7 +144,13 @@ add_task(async function test_accepting_paste_button() {
 add_task(async function test_dismissing_paste_button() {
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     await promiseClickContentToTriggerClipboardRead(browser, false);
+    AccessibilityUtils.resetEnv();
     await pasteButtonIsShown;
     const pasteButtonIsHidden = promisePasteButtonIsHidden();
     const mutatedReadResultFromContentElement =
@@ -158,7 +176,13 @@ add_task(
       kContentFileUrl,
       async function (browser) {
         const pasteButtonIsShown = promisePasteButtonIsShown();
+        
+        
+        
+        
+        AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
         await promiseClickContentToTriggerClipboardRead(browser, true);
+        AccessibilityUtils.resetEnv();
         await pasteButtonIsShown;
         const mutatedReadResultFromContentElement =
           promiseMutatedReadResultFromContentElement(browser);
@@ -187,7 +211,13 @@ add_task(async function test_new_user_activation_shows_paste_button_again() {
     for (let i = 0; i < 2; ++i) {
       const pasteButtonIsShown = promisePasteButtonIsShown();
       
+      
+      
+      
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+      
       await promiseClickContentToTriggerClipboardRead(browser, false);
+      AccessibilityUtils.resetEnv();
       await pasteButtonIsShown;
 
       const pasteButtonIsHidden = promisePasteButtonIsHidden();
