@@ -365,9 +365,6 @@ pref("media.peerconnection.dtls.version.min", 771);
 pref("media.getusermedia.audiocapture.enabled", false);
 
 
-pref("media.webvtt.pseudo.enabled", true);
-
-
 pref("media.webvtt.debug.logging", false);
 
 
