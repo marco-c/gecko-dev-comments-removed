@@ -8,6 +8,7 @@
 #define js_Printer_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/glue/Debug.h"
 #include "mozilla/Range.h"
 
 #include <stdarg.h>
@@ -274,6 +275,7 @@ class JS_PUBLIC_API StringPrinter : public GenericPrinter {
 
   
   
+  
   virtual void put(const char* s, size_t len) final;
   using GenericPrinter::put;  
 
@@ -339,7 +341,21 @@ class JS_PUBLIC_API Fprinter final : public GenericPrinter {
 
   
   
-  virtual void put(const char* s, size_t len) override;
+  
+  void put(const char* s, size_t len) override;
+  using GenericPrinter::put;  
+};
+
+
+
+class SEprinter final : public GenericPrinter {
+ public:
+  constexpr SEprinter() {}
+
+  
+  virtual void put(const char* s, size_t len) override {
+    printf_stderr("%.*s", int(len), s);
+  }
   using GenericPrinter::put;  
 };
 
@@ -373,7 +389,6 @@ class JS_PUBLIC_API LSprinter final : public GenericPrinter {
   
   void clear();
 
-  
   
   virtual void put(const char* s, size_t len) override;
   using GenericPrinter::put;  
