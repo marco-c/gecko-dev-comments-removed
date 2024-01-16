@@ -259,35 +259,7 @@ void PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow,
 
 void PostMessageEvent::DispatchToTargetThread(ErrorResult& aError) {
   nsCOMPtr<nsIRunnable> event = this;
-  
-  
-  if (DocGroup::TryToLoadIframesInBackground()) {
-    RefPtr<nsIDocShell> docShell = mTargetWindow->GetDocShell();
-    RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
-
-    
-    
-    
-    if (dShell) {
-      if (!dShell->TreatAsBackgroundLoad()) {
-        BrowsingContext* bc = mTargetWindow->GetBrowsingContext();
-        bc = bc ? bc->Top() : nullptr;
-        if (bc && bc->IsLoading()) {
-          
-          
-          aError = bc->Group()->QueuePostMessageEvent(event.forget());
-          return;
-        }
-      } else if (mTargetWindow->GetExtantDoc() &&
-                 mTargetWindow->GetExtantDoc()->GetReadyStateEnum() <
-                     Document::READYSTATE_COMPLETE) {
-        mozilla::dom::DocGroup* docGroup = mTargetWindow->GetDocGroup();
-        aError = docGroup->QueueIframePostMessages(event.forget(),
-                                                   dShell->GetOuterWindowID());
-        return;
-      }
-    }
-  } else if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled()) {
+  if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled()) {
     BrowsingContext* bc = mTargetWindow->GetBrowsingContext();
     bc = bc ? bc->Top() : nullptr;
     if (bc && bc->IsLoading()) {

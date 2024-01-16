@@ -2681,15 +2681,6 @@ void nsGlobalWindowOuter::DetachFromDocShell(bool aIsBeingDiscarded) {
   
   
 
-  if (mDoc && DocGroup::TryToLoadIframesInBackground()) {
-    DocGroup* docGroup = GetDocGroup();
-    RefPtr<nsIDocShell> docShell = GetDocShell();
-    RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
-    if (dShell) {
-      docGroup->TryFlushIframePostMessages(dShell->GetOuterWindowID());
-    }
-  }
-
   
   
   

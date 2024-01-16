@@ -121,18 +121,6 @@ class nsDocLoader : public nsIDocumentLoader,
 
   void SetDocumentOpenedButNotLoaded() { mDocumentOpenedButNotLoaded = true; }
 
-  bool TreatAsBackgroundLoad();
-
-  void SetFakeOnLoadDispatched() { mHasFakeOnLoadDispatched = true; };
-
-  bool HasFakeOnLoadDispatched() { return mHasFakeOnLoadDispatched; };
-
-  void ResetToFirstLoad() {
-    mHasFakeOnLoadDispatched = false;
-    mIsReadyToHandlePostMessage = false;
-    mTreatAsBackgroundLoad = false;
-  };
-
   uint32_t ChildCount() const { return mChildList.Length(); }
 
   
@@ -333,12 +321,7 @@ class nsDocLoader : public nsIDocumentLoader,
 
   bool mIsFlushingLayout;
 
-  bool mTreatAsBackgroundLoad;
-
  private:
-  bool mHasFakeOnLoadDispatched;
-
-  bool mIsReadyToHandlePostMessage;
   
 
 
