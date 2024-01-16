@@ -243,10 +243,8 @@ Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
   
   
   
-  const auto directoryLockIdClause =
-      aDirectoryLockId >= 0
-          ? "&directoryLockId="_ns + IntToCString(aDirectoryLockId)
-          : EmptyCString();
+  const nsCString directoryLockIdClause =
+      "&directoryLockId="_ns + IntToCString(aDirectoryLockId);
 
   nsCOMPtr<nsIFileURL> result;
   QM_TRY(QM_TO_RESULT(NS_MutateURI(mutator)
