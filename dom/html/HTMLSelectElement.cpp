@@ -379,7 +379,13 @@ nsresult HTMLSelectElement::RemoveOptionsFromList(nsIContent* aOptions,
       if (mSelectedIndex < (aListIndex + numRemoved)) {
         
         
-        FindSelectedIndex(aListIndex, aNotify);
+        
+        if (IsCombobox()) {
+          mSelectedIndex = -1;
+          SetSelectionChanged(true, aNotify);
+        } else {
+          FindSelectedIndex(aListIndex, aNotify);
+        }
       } else {
         
         
