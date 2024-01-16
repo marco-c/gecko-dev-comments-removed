@@ -51,6 +51,8 @@ const DBG_STRINGS_URI = [
   
   "devtools/client/locales/startup.properties",
   "devtools/client/locales/components.properties",
+  
+  "devtools/client/locales/toolbox.properties",
 ];
 const L10N = new MultiLocalizationHelper(...DBG_STRINGS_URI);
 

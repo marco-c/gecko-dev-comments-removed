@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 importScripts("resource://gre/modules/workers/require.js");
@@ -19,7 +17,7 @@ const {
   getOriginalSourceText,
   getGeneratedRangesForOriginal,
   getFileGeneratedRange,
-  getSourceMapIgnoreList,
+  loadSourceMap,
   clearSourceMaps,
   setSourceMapForGeneratedSources,
 } = require("resource://devtools/client/shared/source-map-loader/source-map.js");
@@ -46,7 +44,7 @@ self.onmessage = workerHandler({
   getOriginalStackFrames,
   getGeneratedRangesForOriginal,
   getFileGeneratedRange,
-  getSourceMapIgnoreList,
+  loadSourceMap,
   setSourceMapForGeneratedSources,
   clearSourceMaps,
 });

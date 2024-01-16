@@ -25,6 +25,14 @@ function initialSourceActorsState() {
     
     
     mutableSourceActorsWithSourceMap: new Set(),
+
+    
+    
+    mutableSourceMapErrors: new Map(),
+
+    
+    
+    mutableResolvedSourceMapURL: new Map(),
   };
 }
 
@@ -79,6 +87,22 @@ export default function update(state = initialSourceActorsState(), action) {
         };
       }
       return state;
+
+    case "SOURCE_MAP_ERROR": {
+      state.mutableSourceMapErrors.set(
+        action.sourceActor.id,
+        action.errorMessage
+      );
+      return { ...state };
+    }
+
+    case "RESOLVED_SOURCEMAP_URL": {
+      state.mutableResolvedSourceMapURL.set(
+        action.sourceActor.id,
+        action.resolvedSourceMapURL
+      );
+      return { ...state };
+    }
   }
 
   return state;

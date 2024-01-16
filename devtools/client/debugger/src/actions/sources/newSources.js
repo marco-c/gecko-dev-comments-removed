@@ -6,7 +6,6 @@
 
 
 
-import { PROMISE } from "../utils/middleware/promise";
 import { insertSourceActors } from "../../actions/source-actors";
 import {
   makeSourceId,
@@ -69,36 +68,67 @@ function loadSourceMaps(sources) {
 
 
 function loadSourceMap(sourceActor) {
-  return async function ({ dispatch, getState, sourceMapLoader }) {
+  return async function ({ dispatch, getState, sourceMapLoader, panel }) {
     if (!prefs.clientSourceMapsEnabled || !sourceActor.sourceMapURL) {
       return [];
     }
 
-    let data = null;
+    let sources, ignoreListUrls, resolvedSourceMapURL, exception;
     try {
       
       
       const source = getSourceByActorId(getState(), sourceActor.id);
       if (source) {
-        data = await sourceMapLoader.getOriginalURLs({
-          
-          
-          id: source.id,
-          url: sourceActor.url || "",
-          sourceMapBaseURL: sourceActor.sourceMapBaseURL || "",
-          sourceMapURL: sourceActor.sourceMapURL || "",
-          isWasm: sourceActor.introductionType === "wasm",
-        });
-        dispatch({
-          type: "ADD_SOURCEMAP_IGNORE_LIST_SOURCES",
-          [PROMISE]: sourceMapLoader.getSourceMapIgnoreList(source.id),
-        });
+        ({ sources, ignoreListUrls, resolvedSourceMapURL, exception } =
+          await sourceMapLoader.loadSourceMap({
+            
+            
+            id: source.id,
+            url: sourceActor.url || "",
+            sourceMapBaseURL: sourceActor.sourceMapBaseURL || "",
+            sourceMapURL: sourceActor.sourceMapURL || "",
+            isWasm: sourceActor.introductionType === "wasm",
+          }));
       }
     } catch (e) {
-      console.error(e);
+      exception = `Internal error: ${e.message}`;
     }
 
-    if (!data || !data.length) {
+    if (resolvedSourceMapURL) {
+      dispatch({
+        type: "RESOLVED_SOURCEMAP_URL",
+        sourceActor,
+        resolvedSourceMapURL,
+      });
+    }
+
+    if (ignoreListUrls?.length) {
+      dispatch({
+        type: "ADD_SOURCEMAP_IGNORE_LIST_SOURCES",
+        ignoreListUrls,
+      });
+    }
+
+    if (exception) {
+      
+      const message = L10N.getFormatStr(
+        "toolbox.sourceMapFailure",
+        exception,
+        sourceActor.url,
+        sourceActor.sourceMapURL
+      );
+      panel.toolbox.commands.targetCommand.targetFront.logWarningInPage(
+        message,
+        "source map",
+        resolvedSourceMapURL
+      );
+
+      dispatch({
+        type: "SOURCE_MAP_ERROR",
+        sourceActor,
+        errorMessage: exception,
+      });
+
       
       
       dispatch({
@@ -110,7 +140,7 @@ function loadSourceMap(sourceActor) {
 
     
     validateSourceActor(getState(), sourceActor);
-    return data;
+    return sources;
   };
 }
 
