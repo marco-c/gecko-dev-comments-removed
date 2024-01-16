@@ -3453,7 +3453,9 @@ mozilla::ipc::IPCResult ContentParent::RecvSetClipboard(
   
 
   if (!ValidatePrincipal(aTransferable.requestingPrincipal(),
-                         {ValidatePrincipalOptions::AllowNullPtr})) {
+                         {ValidatePrincipalOptions::AllowNullPtr,
+                          ValidatePrincipalOptions::AllowExpanded,
+                          ValidatePrincipalOptions::AllowSystem})) {
     LogAndAssertFailedPrincipalValidationInfo(
         aTransferable.requestingPrincipal(), __func__);
   }
@@ -4242,7 +4244,7 @@ static bool CloneIsLegal(ContentParent* aCp, CanonicalBrowsingContext& aSource,
     return false;
   }
 
-  auto* targetEmbedder = aSource.GetParentWindowContext();
+  auto* targetEmbedder = aTarget.GetParentWindowContext();
   if (NS_WARN_IF(!targetEmbedder) ||
       NS_WARN_IF(targetEmbedder->GetContentParent() != aCp)) {
     return false;
