@@ -26,7 +26,6 @@ Services.prefs.setBoolPref(
 );
 
 const CATEGORICAL_HISTOGRAM = "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL";
-const IMPORT_TIMER_HISTOGRAM = "PWMGR_IMPORT_LOGINS_FROM_FILE_MS";
 
 
 
@@ -39,7 +38,6 @@ const IMPORT_TIMER_HISTOGRAM = "PWMGR_IMPORT_LOGINS_FROM_FILE_MS";
 async function setupCsv(csvLines, extension) {
   
   TTU.getAndClearHistogram(CATEGORICAL_HISTOGRAM);
-  TTU.getAndClearHistogram(IMPORT_TIMER_HISTOGRAM);
   Services.logins.removeAllUserFacingLogins();
   let tmpFile = await LoginTestUtils.file.setupCsvFileWithLines(
     csvLines,
