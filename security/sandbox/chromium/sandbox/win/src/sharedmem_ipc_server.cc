@@ -24,6 +24,18 @@ volatile HANDLE g_alive_mutex = nullptr;
 
 namespace sandbox {
 
+ bool SharedMemIPCServer::CreateBrokerAliveMutex() {
+  DCHECK(!g_alive_mutex);
+  
+  
+  
+  
+  
+  
+  g_alive_mutex = ::CreateMutexW(nullptr, true, nullptr);
+  return static_cast<bool>(g_alive_mutex);
+}
+
 SharedMemIPCServer::ServerControl::ServerControl() {}
 
 SharedMemIPCServer::ServerControl::~ServerControl() {}
@@ -37,19 +49,7 @@ SharedMemIPCServer::SharedMemIPCServer(HANDLE target_process,
       target_process_(target_process),
       target_process_id_(target_process_id),
       call_dispatcher_(dispatcher) {
-  
-  
-  
-  
-  
-  
-  if (!g_alive_mutex) {
-    HANDLE mutex = ::CreateMutexW(nullptr, true, nullptr);
-    if (::InterlockedCompareExchangePointer(&g_alive_mutex, mutex, nullptr)) {
-      
-      ::CloseHandle(mutex);
-    }
-  }
+  DCHECK(g_alive_mutex);
 }
 
 SharedMemIPCServer::~SharedMemIPCServer() {

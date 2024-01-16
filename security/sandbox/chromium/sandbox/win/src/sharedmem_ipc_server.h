@@ -60,6 +60,12 @@ class SharedMemIPCServer {
   
   bool Init(void* shared_mem, uint32_t shared_size, uint32_t channel_size);
 
+  
+  
+  
+  
+  static bool CreateBrokerAliveMutex();
+
  private:
   
   
