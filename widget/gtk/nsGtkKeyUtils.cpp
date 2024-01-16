@@ -1004,11 +1004,14 @@ uint32_t KeymapWrapper::ComputeCurrentKeyModifiers() {
 
 
 uint32_t KeymapWrapper::ComputeKeyModifiers(guint aGdkModifierState) {
-  KeymapWrapper* keymapWrapper = GetInstance();
-
   uint32_t keyModifiers = 0;
+  if (!aGdkModifierState) {
+    return keyModifiers;
+  }
+
   
   
+  KeymapWrapper* keymapWrapper = GetInstance();
   if (keymapWrapper->AreModifiersActive(SHIFT, aGdkModifierState)) {
     keyModifiers |= MODIFIER_SHIFT;
   }
