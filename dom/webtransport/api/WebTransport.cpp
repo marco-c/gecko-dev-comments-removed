@@ -214,12 +214,31 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
+  nsTArray<mozilla::ipc::WebTransportHash> aServerCertHashes;
   if (aOptions.mServerCertificateHashes.WasPassed()) {
-    
-    aError.ThrowNotSupportedError("No support for serverCertificateHashes yet");
-    
-    
-    return;
+    if (!dedicated) {
+      aError.ThrowNotSupportedError(
+          "serverCertificateHashes not supported for non-dedicated "
+          "connections");
+      return;
+    }
+    for (const auto& hash : aOptions.mServerCertificateHashes.Value()) {
+      if (!hash.mAlgorithm.WasPassed() || !hash.mValue.WasPassed()) continue;
+
+      if (hash.mAlgorithm.Value() != u"sha-256") {
+        LOG(("Algorithms other than SHA-256 are not supported"));
+        continue;
+      }
+
+      nsTArray<uint8_t> data;
+      if (!AppendTypedArrayDataTo(hash.mValue.Value(), data)) {
+        aError.Throw(NS_ERROR_OUT_OF_MEMORY);
+        return;
+      }
+
+      nsCString alg = NS_ConvertUTF16toUTF8(hash.mAlgorithm.Value());
+      aServerCertHashes.EmplaceBack(alg, data);
+    }
   }
   
   bool requireUnreliable = aOptions.mRequireUnreliable;
@@ -342,11 +361,10 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   mChild = child;
   backgroundChild
-      ->SendCreateWebTransportParent(aURL, principal, ipcClientInfo, dedicated,
-                                     requireUnreliable,
-                                     (uint32_t)congestionControl,
-                                     
-                                     std::move(parentEndpoint))
+      ->SendCreateWebTransportParent(
+          aURL, principal, ipcClientInfo, dedicated, requireUnreliable,
+          (uint32_t)congestionControl, std::move(aServerCertHashes),
+          std::move(parentEndpoint))
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}](
                  PBackgroundChild::CreateWebTransportParentPromise::

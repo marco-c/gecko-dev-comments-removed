@@ -138,7 +138,7 @@ class BackgroundParentImpl : public PBackgroundParent {
       const nsAString& aURL, nsIPrincipal* aPrincipal,
       const mozilla::Maybe<IPCClientInfo>& aClientInfo, const bool& aDedicated,
       const bool& aRequireUnreliable, const uint32_t& aCongestionControl,
-      
+      nsTArray<WebTransportHash>&& aServerCertHashes,
       Endpoint<PWebTransportParent>&& aParentEndpoint,
       CreateWebTransportParentResolver&& aResolver) override;
 
@@ -353,6 +353,7 @@ class BackgroundParentImpl : public PBackgroundParent {
       EnsureUtilityProcessAndCreateBridgeResolver&& aResolver) override;
 
   mozilla::ipc::IPCResult RecvRequestCameraAccess(
+      const bool& aAllowPermissionRequest,
       RequestCameraAccessResolver&& aResolver) override;
 
   bool DeallocPEndpointForReportParent(
