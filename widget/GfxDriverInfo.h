@@ -328,7 +328,10 @@ struct GfxDriverInfo {
 
   
   int32_t mFeature;
-  static int32_t allFeatures;
+  
+  static constexpr int32_t allFeatures = 0;
+  
+  static constexpr int32_t optionalFeatures = -1;
 
   
   int32_t mFeatureStatus;
@@ -338,7 +341,7 @@ struct GfxDriverInfo {
   
   uint64_t mDriverVersion;
   uint64_t mDriverVersionMax;
-  static uint64_t allDriverVersions;
+  static constexpr uint64_t allDriverVersions = ~(uint64_t(0));
 
   const char* mSuggestedVersion;
   nsCString mRuleId;
