@@ -42,6 +42,43 @@ class NextPartObserver : public IProgressObserver {
     mImage->RequestDecodeForSize(gfx::IntSize(0, 0),
                                  imgIContainer::FLAG_SYNC_DECODE);
 
+    if (mImage && mImage->GetType() == imgIContainer::TYPE_VECTOR) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+      if (tracker && !(tracker->GetProgress() & FLAG_LOAD_COMPLETE)) {
+        Progress loadProgress =
+            LoadCompleteProgress( false,  false,
+                                  NS_OK);
+        tracker->SyncNotifyProgress(loadProgress | FLAG_SIZE_AVAILABLE);
+      }
+    }
+
     
     
     
@@ -57,9 +94,26 @@ class NextPartObserver : public IProgressObserver {
       return;
     }
 
-    if (aType == imgINotificationObserver::FRAME_COMPLETE) {
-      FinishObserving();
+    if (aType != imgINotificationObserver::FRAME_COMPLETE) {
+      return;
     }
+
+    if (mImage && mImage->GetType() == imgIContainer::TYPE_VECTOR) {
+      RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+      if (tracker && !(tracker->GetProgress() & FLAG_LOAD_COMPLETE)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        return;
+      }
+    }
+
+    FinishObserving();
   }
 
   virtual void OnLoadComplete(bool aLastPart) override {
@@ -83,6 +137,15 @@ class NextPartObserver : public IProgressObserver {
     
     RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
     if (tracker->GetProgress() & FLAG_HAS_ERROR) {
+      FinishObserving();
+      return;
+    }
+
+    if (mImage && mImage->GetType() == imgIContainer::TYPE_VECTOR &&
+        (tracker->GetProgress() & FLAG_FRAME_COMPLETE)) {
+      
+      
+      
       FinishObserving();
     }
   }
