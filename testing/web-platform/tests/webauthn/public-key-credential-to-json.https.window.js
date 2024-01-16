@@ -115,29 +115,6 @@ function publicKeyCredentialToJson(cred) {
   return convertObject(cred, keys);
 }
 
-
-
-
-function deepSortKeys(jsonObj) {
-  if (typeof jsonObj !== 'object' || jsonObj === null ||
-      jsonObj.__proto__.constructor !== Object ||
-      Object.keys(jsonObj).length === 0) {
-    return jsonObj;
-  }
-  return Object.keys(jsonObj).sort().reduce((acc, key) => {
-    acc[key] = deepSortKeys(jsonObj[key]);
-    return acc;
-  }, {});
-}
-
-
-
-function assertJsonEquals(actual, expected, optMsg) {
-  assert_equals(
-      JSON.stringify(deepSortKeys(actual)),
-      JSON.stringify(deepSortKeys(expected)), optMsg);
-}
-
 virtualAuthenticatorPromiseTest(
     async t => {
       let credential = await createCredential();
