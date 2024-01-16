@@ -3,7 +3,7 @@
 
 
 
-const URL_BASE = "about:firefoxview-next#";
+const URL_BASE = "about:firefoxview#";
 
 function assertCorrectPage(document, name, event) {
   is(
