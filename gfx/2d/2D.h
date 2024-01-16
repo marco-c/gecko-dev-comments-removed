@@ -1990,6 +1990,7 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 class DrawEventRecorder : public RefCounted<DrawEventRecorder> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorder)
+  virtual RecorderType GetRecorderType() const { return RecorderType::UNKNOWN; }
   
   virtual bool Finish() = 0;
   virtual ~DrawEventRecorder() = default;
