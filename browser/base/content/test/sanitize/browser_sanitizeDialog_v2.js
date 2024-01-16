@@ -303,7 +303,10 @@ DialogHelper.prototype = {
       "load",
       () => {
         
-        executeSoon(() => this.onload());
+        executeSoon(async () => {
+          await this.win.gSanitizePromptDialog.dataSizesFinishedUpdatingPromise;
+          this.onload();
+        });
       },
       { once: true }
     );
