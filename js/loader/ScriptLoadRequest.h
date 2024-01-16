@@ -135,6 +135,8 @@ class ScriptLoadRequest
   virtual void SetReady();
 
   enum class State : uint8_t {
+    CheckingCache,
+    PendingFetchingError,
     Fetching,
     Compiling,
     LoadingImports,
@@ -142,10 +144,23 @@ class ScriptLoadRequest
     Canceled
   };
 
+  
+  
+  
+  
+  
+  bool IsCheckingCache() const { return mState == State::CheckingCache; }
+
+  
+  
   bool IsFetching() const { return mState == State::Fetching; }
   bool IsCompiling() const { return mState == State::Compiling; }
   bool IsLoadingImports() const { return mState == State::LoadingImports; }
   bool IsCanceled() const { return mState == State::Canceled; }
+
+  bool IsPendingFetchingError() const {
+    return mState == State::PendingFetchingError;
+  }
 
   
   
@@ -240,6 +255,13 @@ class ScriptLoadRequest
   }
 
   void ClearScriptSource();
+
+  
+  
+  
+  void NoCacheEntryFound();
+
+  void SetPendingFetchingError();
 
   void MarkForBytecodeEncoding(JSScript* aScript);
 
