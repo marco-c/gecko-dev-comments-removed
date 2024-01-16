@@ -13791,6 +13791,9 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
 
   if (!IsArrayPrototypeOptimizable(cx_, obj.as<ArrayObject>(), arrProto,
                                    &arrProtoIterSlot, &iterFun)) {
+    
+    MOZ_ASSERT(
+        !obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact());
     return AttachDecision::NoAction;
   }
 
@@ -13801,6 +13804,9 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   Rooted<JSFunction*> nextFun(cx_);
   if (!IsArrayIteratorPrototypeOptimizable(
           cx_, AllowIteratorReturn::No, &arrayIteratorProto, &slot, &nextFun)) {
+    
+    MOZ_ASSERT(
+        !obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact());
     return AttachDecision::NoAction;
   }
 
@@ -13811,10 +13817,20 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   MOZ_ASSERT(obj->is<ArrayObject>());
   writer.guardShape(objId, obj->shape());
   writer.guardArrayIsPacked(objId);
+  bool intact = obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact();
 
-  MOZ_ASSERT(obj->nonCCWRealm()->realmFuses.optimizeGetIteratorFuse.intact());
-
-  if (!cx_->options().enableDestructuringFuse()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool useDynamicCheck = !intact || !cx_->options().enableDestructuringFuse();
+  if (useDynamicCheck) {
     
     ObjOperandId arrProtoId = writer.loadObject(arrProto);
     ObjOperandId iterId = writer.loadObject(iterFun);
@@ -13840,7 +13856,11 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   writer.loadBooleanResult(true);
   writer.returnFromIC();
 
-  trackAttached("OptimizeGetIterator.Array");
+  if (useDynamicCheck) {
+    trackAttached("OptimizeGetIterator.Array.Dynamic");
+  } else {
+    trackAttached("OptimizeGetIterator.Array.Fuse");
+  }
   return AttachDecision::Attach;
 }
 
