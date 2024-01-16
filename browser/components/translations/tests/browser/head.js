@@ -577,7 +577,7 @@ async function assertLangTagIsShownOnTranslationsButton(
 async function clickCancelButton() {
   logAction();
   const { cancelButton } = TranslationsPanel.elements;
-  ok(isVisible(cancelButton), "Expected the cancel button to be visible");
+  assertIsVisible(true, { element: cancelButton });
   await waitForTranslationsPopupEvent("popuphidden", () => {
     click(cancelButton, "Clicking the cancel button");
   });
@@ -589,7 +589,7 @@ async function clickCancelButton() {
 async function clickRestoreButton() {
   logAction();
   const { restoreButton } = TranslationsPanel.elements;
-  ok(isVisible(restoreButton), "Expect the restore-page button to be visible");
+  assertIsVisible(true, { element: restoreButton });
   await waitForTranslationsPopupEvent("popuphidden", () => {
     click(restoreButton, "Click the restore-page button");
   });
@@ -601,10 +601,7 @@ async function clickRestoreButton() {
 async function clickDismissErrorButton() {
   logAction();
   const { dismissErrorButton } = TranslationsPanel.elements;
-  ok(
-    isVisible(dismissErrorButton),
-    "Expect the dismiss-error button to be visible"
-  );
+  assertIsVisible(true, { element: dismissErrorButton });
   await waitForTranslationsPopupEvent("popuphidden", () => {
     click(dismissErrorButton, "Click the dismiss-error button");
   });
@@ -628,7 +625,7 @@ async function clickTranslateButton({
 } = {}) {
   logAction();
   const { translateButton } = TranslationsPanel.elements;
-  ok(isVisible(translateButton), "Expect the translate button to be visible");
+  assertIsVisible(true, { element: translateButton });
   await waitForTranslationsPopupEvent("popuphidden", () => {
     click(translateButton);
   });
@@ -653,10 +650,7 @@ async function clickTranslateButton({
 async function clickChangeSourceLanguageButton({ firstShow = false } = {}) {
   logAction();
   const { changeSourceLanguageButton } = TranslationsPanel.elements;
-  ok(
-    isVisible(changeSourceLanguageButton),
-    "Expect the translate button to be visible"
-  );
+  assertIsVisible(true, { element: changeSourceLanguageButton });
   await waitForTranslationsPopupEvent(
     "popupshown",
     () => {
@@ -706,11 +700,9 @@ function assertPanelElementVisibility(expectations = {}) {
       `Expected translations panel elements to have property ${propertyName}`
     );
     if (finalExpectations.hasOwnProperty(propertyName)) {
-      is(
-        isVisible(elements[propertyName]),
-        finalExpectations[propertyName],
-        `The element "${propertyName}" visibility should match the expectation`
-      );
+      assertIsVisible(finalExpectations[propertyName], {
+        element: elements[propertyName],
+      });
     }
   }
 }
@@ -1010,6 +1002,47 @@ function isVisible(element) {
 
 
 
+
+function assertIsVisible(expected, { element, id }) {
+  if (id && element) {
+    throw new Error(
+      "assertIsVisible() expects either an element or an id, but both were specified."
+    );
+  }
+
+  if (element) {
+    return is(
+      isVisible(element),
+      expected,
+      `Expected element with id '${element.id}' to be ${
+        expected ? "visible" : "invisible"
+      }.`
+    );
+  }
+
+  if (id) {
+    return is(
+      maybeGetById(id) !== null,
+      expected,
+      `Expected element with id '${id}' to be ${
+        expected ? "visible" : "invisible"
+      }.`
+    );
+  }
+
+  throw new Error(
+    "assertIsVisible() was called with no specified element or id."
+  );
+}
+
+
+
+
+
+
+
+
+
 function getByL10nId(l10nId, doc = document) {
   const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
   if (elements.length === 0) {
@@ -1046,15 +1079,39 @@ function getAllByL10nId(l10nId, doc = document) {
 
 
 
+
 function getById(id, doc = document) {
+  const element = maybeGetById(id,  true, doc);
+  if (!element) {
+    throw new Error("The element is not visible in the DOM: #" + id);
+  }
+  return element;
+}
+
+
+
+
+
+
+
+
+
+
+function maybeGetById(id, ensureIsVisible = true, doc = document) {
   const element = doc.getElementById(id);
   if (!element) {
     throw new Error("Could not find the element by id: #" + id);
   }
+
+  if (!ensureIsVisible) {
+    return element;
+  }
+
   if (isVisible(element)) {
     return element;
   }
-  throw new Error("The element is not visible in the DOM: #" + id);
+
+  return null;
 }
 
 
