@@ -86,6 +86,8 @@ Preferences.addAll([
   { id: "browser.warnOnQuitShortcut", type: "bool" },
   { id: "browser.tabs.warnOnOpen", type: "bool" },
   { id: "browser.ctrlTab.sortByRecentlyUsed", type: "bool" },
+  { id: "browser.tabs.cardPreview.enabled", type: "bool" },
+  { id: "browser.tabs.cardPreview.showThumbnails", type: "bool" },
 
   
   {
@@ -349,6 +351,15 @@ var gMainPane = {
         showTabsInTaskbar.hidden = ver < 6.1;
       } catch (ex) {}
     }
+
+    let thumbsCheckbox = document.getElementById("tabPreviewShowThumbnails");
+    let cardPreviewEnabledPref = Preferences.get(
+      "browser.tabs.cardPreview.enabled"
+    );
+    let maybeShowThumbsCheckbox = () =>
+      (thumbsCheckbox.hidden = !cardPreviewEnabledPref.value);
+    cardPreviewEnabledPref.on("change", maybeShowThumbsCheckbox);
+    maybeShowThumbsCheckbox();
 
     
     

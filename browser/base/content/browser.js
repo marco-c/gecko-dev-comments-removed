@@ -2338,6 +2338,13 @@ var gBrowserInit = {
 
     scheduleIdleTask(() => {
       
+      import("chrome://browser/content/tabpreview/tabpreview.mjs").catch(
+        console.error
+      );
+    });
+
+    scheduleIdleTask(() => {
+      
       gGestureSupport.init(true);
 
       
