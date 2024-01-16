@@ -14,8 +14,6 @@ namespace mozilla::layers {
 
 
 
-
-
 class RemoteTextureHostWrapper : public TextureHost {
  public:
   static RefPtr<TextureHost> Create(const RemoteTextureId aTextureId,
@@ -93,26 +91,22 @@ class RemoteTextureHostWrapper : public TextureHost {
                            const base::ProcessId aForPid,
                            const gfx::IntSize aSize, const TextureFlags aFlags);
   virtual ~RemoteTextureHostWrapper();
+  void MaybeCreateRenderTexture();
 
   
-  TextureHost* GetRemoteTextureHostForDisplayList(
-      const MonitorAutoLock& aProofOfLock);
+  TextureHost* GetRemoteTextureHost(const MonitorAutoLock& aProofOfLock);
   
-  void SetRemoteTextureHostForDisplayList(const MonitorAutoLock& aProofOfLock,
-                                          TextureHost* aTextureHost,
-                                          bool aIsSyncMode);
-  void ClearRemoteTextureHostForDisplayList(
-      const MonitorAutoLock& aProofOfLock);
+  void SetRemoteTextureHost(const MonitorAutoLock& aProofOfLock,
+                            TextureHost* aTextureHost);
+  void ClearRemoteTextureHost(const MonitorAutoLock& aProofOfLock);
 
   
   
   
   
-  
-  
-  CompositableTextureHostRef mRemoteTextureForDisplayList;
+  CompositableTextureHostRef mRemoteTexture;
 
-  bool mIsSyncMode = true;
+  bool mRenderTextureCreated = false;
 
   friend class RemoteTextureMap;
 };

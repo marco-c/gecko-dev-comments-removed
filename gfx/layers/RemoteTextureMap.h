@@ -145,7 +145,7 @@ class RemoteTextureOwnerClient final {
 
   bool IsRegistered(const RemoteTextureOwnerId aOwnerId);
   void RegisterTextureOwner(const RemoteTextureOwnerId aOwnerId,
-                            bool aIsSyncMode, bool aSharedRecycling = false);
+                            bool aSharedRecycling = false);
   void UnregisterTextureOwner(const RemoteTextureOwnerId aOwnerId);
   void UnregisterAllTextureOwners();
   void ClearRecycledTextures();
@@ -230,11 +230,8 @@ class RemoteTextureMap {
                                const mozilla::ipc::Shmem& aDestShmem,
                                const gfx::IntSize& aSize);
 
-  
-  
   void RegisterTextureOwner(
       const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
-      bool aIsSyncMode,
       const RefPtr<RemoteTextureRecycleBin>& aRecycleBin = nullptr);
   void UnregisterTextureOwner(const RemoteTextureOwnerId aOwnerIds,
                               const base::ProcessId aForPid);
@@ -260,21 +257,12 @@ class RemoteTextureMap {
   
   
   
-  
-  
-  
-  bool GetRemoteTextureForDisplayList(
+  bool GetRemoteTexture(
       RemoteTextureHostWrapper* aTextureHostWrapper,
       std::function<void(const RemoteTextureInfo&)>&& aReadyCallback,
       bool aWaitForRemoteTextureOwner = false);
 
-  
-  wr::MaybeExternalImageId GetExternalImageIdOfRemoteTexture(
-      const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
-      const base::ProcessId aForPid);
-
-  void ReleaseRemoteTextureHostForDisplayList(
-      RemoteTextureHostWrapper* aTextureHostWrapper);
+  void ReleaseRemoteTextureHost(RemoteTextureHostWrapper* aTextureHostWrapper);
 
   RefPtr<TextureHost> GetOrCreateRemoteTextureHostWrapper(
       const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
@@ -348,7 +336,6 @@ class RemoteTextureMap {
   };
 
   struct TextureOwner {
-    bool mIsSyncMode = true;
     bool mIsContextLost = false;
     
     
@@ -375,8 +362,6 @@ class RemoteTextureMap {
         RefPtr<TextureHost> aRemoteTextureHostWrapper);
 
     const RefPtr<TextureHost> mRemoteTextureHostWrapper;
-    
-    
     
     CompositableTextureHostRef mRemoteTextureHost;
     bool mReadyCheckSuppressed = false;

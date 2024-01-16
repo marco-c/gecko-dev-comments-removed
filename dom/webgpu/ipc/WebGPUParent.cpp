@@ -901,8 +901,7 @@ ipc::IPCResult WebGPUParent::RecvDeviceCreateSwapChain(
     mRemoteTextureOwner =
         MakeRefPtr<layers::RemoteTextureOwnerClient>(OtherPid());
   }
-  
-  mRemoteTextureOwner->RegisterTextureOwner(aOwnerId,  true);
+  mRemoteTextureOwner->RegisterTextureOwner(aOwnerId);
 
   auto data =
       MakeRefPtr<PresentationData>(aUseExternalTextureInSwapChain, aDeviceId,
