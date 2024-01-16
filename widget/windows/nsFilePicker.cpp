@@ -6,10 +6,9 @@
 
 #include "nsFilePicker.h"
 
-#include <cderr.h>
 #include <shlobj.h>
 #include <shlwapi.h>
-#include <sysinfoapi.h>
+#include <cderr.h>
 #include <winerror.h>
 #include <winuser.h>
 #include <utility>
@@ -26,18 +25,17 @@
 #include "nsEnumeratorUtils.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
-#include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsToolkit.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
 
-#include "mozilla/glean/GleanMetrics.h"
-
 #include "mozilla/widget/filedialog/WinFileDialogCommands.h"
 #include "mozilla/widget/filedialog/WinFileDialogParent.h"
 
+using mozilla::Maybe;
+using mozilla::Result;
 using mozilla::UniquePtr;
 
 using namespace mozilla::widget;
@@ -192,164 +190,96 @@ static auto ShowRemote(HWND parent, ActionType&& action)
 
 
 
-namespace fd_async {
 
+struct LocalAndOrRemote {
+  LocalAndOrRemote() = delete;
 
-namespace details {
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  static T Copy(T const& val) {
+    return val;
+  }
+  template <typename T>
+  static nsTArray<T> Copy(nsTArray<T> const& arr) {
+    return arr.Clone();
+  }
 
+  
+  enum Strategy { Local, Remote, RemoteWithFallback };
 
-template <typename T>
-static T Copy(T const& val) {
-  return val;
-}
-template <typename T>
-static nsTArray<T> Copy(nsTArray<T> const& arr) {
-  return arr.Clone();
-}
+  
+  
+  static Strategy GetStrategy() {
+    int32_t const pref =
+        mozilla::StaticPrefs::widget_windows_utility_process_file_picker();
+    switch (pref) {
+      case -1:
+        return Local;
+      case 2:
+        return Remote;
+      case 1:
+        return RemoteWithFallback;
 
-
-enum Strategy { Local, Remote, RemoteWithFallback };
-
-
-
-static Strategy GetStrategy() {
-  int32_t const pref =
-      mozilla::StaticPrefs::widget_windows_utility_process_file_picker();
-  switch (pref) {
-    case -1:
-      return Local;
-    case 2:
-      return Remote;
-    case 1:
-      return RemoteWithFallback;
-
-    default:
+      default:
 #ifdef NIGHTLY_BUILD
-      
-      return RemoteWithFallback;
+        
+        return RemoteWithFallback;
 #else
-      
-      return Local;
+        
+        return Local;
 #endif
-  }
-};
-
-namespace telemetry {
-static uint32_t Delta(uint64_t tb, uint64_t ta) {
-  
-  
-  return uint32_t((tb - ta) / 10'000);
-};
-static nsCString HexString(HRESULT val) {
-  return nsPrintfCString("%08lX", val);
-};
-
-static void RecordSuccess(uint64_t (&&time)[2]) {
-  auto [t0, t1] = time;
-
-  namespace glean_fd = mozilla::glean::file_dialog;
-  glean_fd::FallbackExtra extra{
-      .hresultLocal = Nothing(),
-      .hresultRemote = Nothing(),
-      .succeeded = Some(true),
-      .timeLocal = Nothing(),
-      .timeRemote = Some(Delta(t1, t0)),
+    }
   };
-  glean_fd::fallback.Record(Some(extra));
-}
 
-static void RecordFailure(uint64_t (&&time)[3], HRESULT hrRemote,
-                          HRESULT hrLocal) {
-  auto [t0, t1, t2] = time;
-
-  {
-    namespace glean_fd = mozilla::glean::file_dialog;
-    glean_fd::FallbackExtra extra{
-        .hresultLocal = Some(HexString(hrLocal)),
-        .hresultRemote = Some(HexString(hrRemote)),
-        .succeeded = Some(false),
-        .timeLocal = Some(Delta(t2, t1)),
-        .timeRemote = Some(Delta(t1, t0)),
-    };
-    glean_fd::fallback.Record(Some(extra));
-  }
-}
-
-}  
-}  
-
-
-
-
-
-
-
-template <typename Fn1, typename Fn2, typename... Args>
-static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args)
-    -> std::invoke_result_t<Fn1, Args...> {
-  using namespace details;
-
-  static_assert(std::is_same_v<std::invoke_result_t<Fn1, Args...>,
-                               std::invoke_result_t<Fn2, Args...>>);
-  using PromiseT = typename std::invoke_result_t<Fn1, Args...>::element_type;
-
-  constexpr static char kFunctionName[] = "LocalAndOrRemote::AsyncExecute";
-
-  switch (GetStrategy()) {
-    case Local:
-      return local(args...);
-
-    case Remote:
-      return remote(args...);
-
-    case RemoteWithFallback:
-      
-      break;
-  }
-
+ public:
   
-  constexpr static const auto GetTime = []() -> uint64_t {
-    FILETIME t;
-    ::GetSystemTimeAsFileTime(&t);
-    return (uint64_t(t.dwHighDateTime) << 32) | t.dwLowDateTime;
-  };
-  uint64_t const t0 = GetTime();
+  
+  
+  
+  
+  
+  template <typename Fn1, typename Fn2, typename... Args>
+  static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args)
+      -> std::invoke_result_t<Fn1, Args...> {
+    static_assert(std::is_same_v<std::invoke_result_t<Fn1, Args...>,
+                                 std::invoke_result_t<Fn2, Args...>>);
+    using PromiseT = typename std::invoke_result_t<Fn1, Args...>::element_type;
 
-  return remote(args...)->Then(
-      NS_GetCurrentThread(), kFunctionName,
-      [t0](typename PromiseT::ResolveValueType result) -> RefPtr<PromiseT> {
-        
-        auto const t1 = GetTime();
-        
-        telemetry::RecordSuccess({t0, t1});
-        return PromiseT::CreateAndResolve(result, kFunctionName);
-      },
-      
-      
-      [=, tuple = std::make_tuple(Copy(args)...)](
-          typename PromiseT::RejectValueType err) mutable -> RefPtr<PromiseT> {
-        
-        auto const t1 = GetTime();
-        HRESULT const hrRemote = err;
+    constexpr static char kFunctionName[] = "LocalAndOrRemote::AsyncExecute";
 
-        
-        auto p0 = std::apply(local, std::move(tuple));
-        
-        return p0->Then(
+    switch (GetStrategy()) {
+      case Local:
+        return local(args...);
+
+      case Remote:
+        return remote(args...);
+
+      case RemoteWithFallback:
+        return remote(args...)->Then(
             NS_GetCurrentThread(), kFunctionName,
-            [t0, t1, hrRemote](typename PromiseT::ResolveOrRejectValue val)
-                -> RefPtr<PromiseT> {
-              auto const t2 = GetTime();
-              HRESULT const hrLocal = val.IsReject() ? val.RejectValue() : S_OK;
-              telemetry::RecordFailure({t0, t1, t2}, hrRemote, hrLocal);
-
-              return PromiseT::CreateAndResolveOrReject(val, kFunctionName);
+            [](typename PromiseT::ResolveValueType result) -> RefPtr<PromiseT> {
+              
+              return PromiseT::CreateAndResolve(result, kFunctionName);
+            },
+            
+            
+            [=, tuple = std::make_tuple(Copy(args)...)](
+                typename PromiseT::RejectValueType _err) mutable
+            -> RefPtr<PromiseT> {
+              
+              return std::apply(local, std::move(tuple));
             });
-      });
-}
-}  
-
-using fd_async::AsyncExecute;
+    }
+  }
+};
 
 }  
 
@@ -435,9 +365,9 @@ RefPtr<mozilla::MozPromise<bool, HRESULT, true>> nsFilePicker::ShowFolderPicker(
   ScopedRtlShimWindow shim(mParentWidget.get());
   AutoWidgetPickerState awps(mParentWidget);
 
-  return mozilla::detail::AsyncExecute(&ShowFolderPickerLocal,
-                                       &ShowFolderPickerRemote, shim.get(),
-                                       commands)
+  return mozilla::detail::LocalAndOrRemote::AsyncExecute(
+             &ShowFolderPickerLocal, &ShowFolderPickerRemote, shim.get(),
+             commands)
       ->Then(
           NS_GetCurrentThread(), __PRETTY_FUNCTION__,
           [self = RefPtr(this), shim = std::move(shim),
@@ -565,7 +495,7 @@ RefPtr<mozilla::MozPromise<bool, HRESULT, true>> nsFilePicker::ShowFilePicker(
   mozilla::BackgroundHangMonitor().NotifyWait();
   auto type = mMode == modeSave ? FileDialogType::Save : FileDialogType::Open;
 
-  auto promise = mozilla::detail::AsyncExecute(
+  auto promise = mozilla::detail::LocalAndOrRemote::AsyncExecute(
       &ShowFilePickerLocal, &ShowFilePickerRemote, shim.get(), type, commands);
 
   return promise->Then(
