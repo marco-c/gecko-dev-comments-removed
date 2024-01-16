@@ -176,7 +176,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
     }
   } else {
     MOZ_ASSERT(mRequest->IsBytecode());
-    if (!mRequest->mScriptBytecode.append(aData, aDataLength)) {
+    if (!mRequest->SRIAndBytecode().append(aData, aDataLength)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
@@ -288,13 +288,13 @@ nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
   }
 
   
-  if (mRequest->mScriptBytecode.length() <=
-      mSRIDataVerifier->DataSummaryLength()) {
+  JS::TranscodeBuffer& receivedData = mRequest->SRIAndBytecode();
+  if (receivedData.length() <= mSRIDataVerifier->DataSummaryLength()) {
     return NS_OK;
   }
 
-  mSRIStatus = mSRIDataVerifier->ImportDataSummary(
-      mRequest->mScriptBytecode.length(), mRequest->mScriptBytecode.begin());
+  mSRIStatus = mSRIDataVerifier->ImportDataSummary(receivedData.length(),
+                                                   receivedData.begin());
 
   if (NS_FAILED(mSRIStatus)) {
     
@@ -404,12 +404,13 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       }
     } else {
       MOZ_ASSERT(mRequest->IsBytecode());
-      if (!mRequest->mScriptBytecode.append(aData, aDataLength)) {
+      JS::TranscodeBuffer& bytecode = mRequest->SRIAndBytecode();
+      if (!bytecode.append(aData, aDataLength)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
       LOG(("ScriptLoadRequest (%p): Bytecode length = %u", mRequest.get(),
-           unsigned(mRequest->mScriptBytecode.length())));
+           unsigned(bytecode.length())));
 
       
       
@@ -427,8 +428,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       
       uint32_t sriLength;
       rv = SRICheckDataVerifier::DataSummaryLength(
-          mRequest->mScriptBytecode.length(), mRequest->mScriptBytecode.begin(),
-          &sriLength);
+          bytecode.length(), bytecode.begin(), &sriLength);
       if (NS_FAILED(rv)) {
         return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
       }
@@ -438,10 +438,9 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       Vector<uint8_t> compressedBytecode;
       
       
-      compressedBytecode.swap(mRequest->mScriptBytecode);
-      if (!JS::loader::ScriptBytecodeDecompress(compressedBytecode,
-                                                mRequest->mBytecodeOffset,
-                                                mRequest->mScriptBytecode)) {
+      compressedBytecode.swap(bytecode);
+      if (!JS::loader::ScriptBytecodeDecompress(
+              compressedBytecode, mRequest->mBytecodeOffset, bytecode)) {
         return NS_ERROR_UNEXPECTED;
       }
     }

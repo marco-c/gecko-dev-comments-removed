@@ -243,6 +243,14 @@ class ScriptLoadRequest
 
   void SetBytecode();
 
+  JS::TranscodeBuffer& SRIAndBytecode() {
+    
+    
+    
+    MOZ_ASSERT(IsBytecode() || IsSource());
+    return mScriptBytecode;
+  }
+
   JS::TranscodeRange Bytecode() const {
     MOZ_ASSERT(IsBytecode());
     const auto& bytecode = mScriptBytecode;
