@@ -19,7 +19,6 @@
 #ifdef XP_WIN
 #  include <io.h>
 #  include <windows.h>
-#  include "mozilla/LateWriteChecks.h"
 #  include "mozilla/UniquePtr.h"
 #endif
 
@@ -231,6 +230,27 @@ void NS_MakeRandomString(char* aBuf, int32_t aBufLen) {
 
 #endif
 
+#ifndef ANDROID
+void vprintf_stderr_buffered(const char* aFmt, va_list aArgs) {
+  
+  
+  char buffer[1024];
+  va_list argsCpy;
+  va_copy(argsCpy, aArgs);
+  int n = VsprintfLiteral(buffer, aFmt, aArgs);
+  if (n < sizeof(buffer)) {
+    fputs(buffer, stderr);
+  } else {
+    
+    
+    
+    vfprintf(stderr, aFmt, argsCpy);
+  }
+  va_end(argsCpy);
+  fflush(stderr);
+}
+#endif
+
 #if defined(XP_WIN)
 void vprintf_stderr(const char* aFmt, va_list aArgs) {
   if (IsDebuggerPresent()) {
@@ -249,22 +269,7 @@ void vprintf_stderr(const char* aFmt, va_list aArgs) {
     }
   }
 
-  
-  
-  int fd = _fileno(stderr);
-  if (fd == -2) {
-    return;
-  }
-
-  FILE* fp = _fdopen(_dup(fd), "a");
-  if (!fp) {
-    return;
-  }
-
-  vfprintf(fp, aFmt, aArgs);
-
-  AutoSuspendLateWriteChecks suspend;
-  fclose(fp);
+  vprintf_stderr_buffered(aFmt, aArgs);
 }
 
 #elif defined(ANDROID)
@@ -277,12 +282,12 @@ void vprintf_stderr(const char* aFmt, va_list aArgs) {
     auto msgbuf = mozilla::Vsmprintf(aFmt, aArgs);
     nyx_puts(msgbuf.get());
   } else {
-    vfprintf(stderr, aFmt, aArgs);
+    vprintf_stderr_buffered(aFmt, aArgs);
   }
 }
 #else
 void vprintf_stderr(const char* aFmt, va_list aArgs) {
-  vfprintf(stderr, aFmt, aArgs);
+  vprintf_stderr_buffered(aFmt, aArgs);
 }
 #endif
 
