@@ -417,8 +417,8 @@ impl AnimationValue {
                 
                 
                 let p = &style.custom_properties();
-                return p.inherited.as_ref().and_then(|map| map.get(*name))
-                    .or_else(|| p.non_inherited.as_ref().and_then(|map| map.get(*name)))
+                return p.inherited.get(*name)
+                    .or_else(|| p.non_inherited.get(*name))
                     .map(|value| AnimationValue::Custom(CustomAnimatedValue { name: (*name).clone(), value: (**value).clone() }));
             }
         };
