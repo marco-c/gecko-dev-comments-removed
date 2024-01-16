@@ -262,13 +262,14 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   IterationResult OneIteration(GraphTime aStateTime, GraphTime aIterationEnd,
-                               AudioMixer* aMixer) override;
+                               MixerCallbackReceiver* aMixerReceiver) override;
 
   
 
 
   IterationResult OneIterationImpl(GraphTime aStateTime,
-                                   GraphTime aIterationEnd, AudioMixer* aMixer);
+                                   GraphTime aIterationEnd,
+                                   MixerCallbackReceiver* aMixerReceiver);
 
   
 
@@ -340,7 +341,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void Process(AudioMixer* aMixer);
+  void Process(MixerCallbackReceiver* aMixerReceiver);
 
   
 
@@ -430,8 +431,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     void* mKey;
     float mVolume;
   };
-  TrackTime PlayAudio(AudioMixer* aMixer, const TrackKeyAndVolume& aTkv,
-                      GraphTime aPlayedTime);
+  TrackTime PlayAudio(const TrackKeyAndVolume& aTkv, GraphTime aPlayedTime);
 
   
 
@@ -1049,6 +1049,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   DeviceInputTrackManager mDeviceInputTrackManagerGraphThread;
+  
+
+
+
+
+  AudioMixer mMixer;
 };
 
 }  

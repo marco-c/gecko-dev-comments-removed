@@ -10,7 +10,6 @@
 #include "AudioSegment.h"
 #include "AudioStream.h"
 #include "nsTArray.h"
-#include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/PodOperations.h"
 
@@ -40,12 +39,7 @@ class AudioMixer {
  public:
   AudioMixer() { mChunk.mBufferFormat = AUDIO_OUTPUT_FORMAT; }
 
-  ~AudioMixer() {
-    MixerCallback* cb;
-    while ((cb = mCallbacks.popFirst())) {
-      delete cb;
-    }
-  }
+  ~AudioMixer() = default;
 
   void StartMixing() {
     mChunk.mDuration = 0;
@@ -54,17 +48,12 @@ class AudioMixer {
 
   
 
-  void FinishMixing() {
+
+  AudioChunk* MixedChunk() {
     MOZ_ASSERT(mSampleRate, "Mix not called for this cycle?");
-    for (MixerCallback* cb = mCallbacks.getFirst(); cb != nullptr;
-         cb = cb->getNext()) {
-      MixerCallbackReceiver* receiver = cb->mReceiver;
-      MOZ_ASSERT(receiver);
-      receiver->MixerCallback(&mChunk, mSampleRate);
-    }
-    mChunk.mDuration = 0;
     mSampleRate = 0;
-  }
+    return &mChunk;
+  };
 
   
 
@@ -91,32 +80,6 @@ class AudioMixer {
     }
   }
 
-  void AddCallback(NotNull<MixerCallbackReceiver*> aReceiver) {
-    mCallbacks.insertBack(new MixerCallback(aReceiver));
-  }
-
-  bool FindCallback(MixerCallbackReceiver* aReceiver) {
-    for (MixerCallback* cb = mCallbacks.getFirst(); cb != nullptr;
-         cb = cb->getNext()) {
-      if (cb->mReceiver == aReceiver) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool RemoveCallback(MixerCallbackReceiver* aReceiver) {
-    for (MixerCallback* cb = mCallbacks.getFirst(); cb != nullptr;
-         cb = cb->getNext()) {
-      if (cb->mReceiver == aReceiver) {
-        cb->remove();
-        delete cb;
-        return true;
-      }
-    }
-    return false;
-  }
-
  private:
   void EnsureCapacityAndSilence() {
     uint32_t sampleCount = mChunk.mDuration * mChunk.ChannelCount();
@@ -136,15 +99,6 @@ class AudioMixer {
     PodZero(mChunk.ChannelDataForWrite<AudioDataValue>(0), sampleCount);
   }
 
-  class MixerCallback : public LinkedListElement<MixerCallback> {
-   public:
-    explicit MixerCallback(NotNull<MixerCallbackReceiver*> aReceiver)
-        : mReceiver(aReceiver) {}
-    NotNull<MixerCallbackReceiver*> mReceiver;
-  };
-
-  
-  LinkedList<MixerCallback> mCallbacks;
   
   AudioChunk mChunk;
   

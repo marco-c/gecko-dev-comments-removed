@@ -195,9 +195,9 @@ struct GraphInterface : public nsISupports {
   virtual void DeviceChanged() = 0;
   
 
-  virtual IterationResult OneIteration(GraphTime aStateComputedEnd,
-                                       GraphTime aIterationEnd,
-                                       AudioMixer* aMixer) = 0;
+  virtual IterationResult OneIteration(
+      GraphTime aStateComputedEnd, GraphTime aIterationEnd,
+      MixerCallbackReceiver* aMixerReceiver) = 0;
 #ifdef DEBUG
   
 
@@ -719,9 +719,6 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   const RefPtr<SharedThreadPool> mCubebOperationThread;
   cubeb_device_pref mInputDevicePreference;
-  
-
-  AudioMixer mMixer;
   
   std::atomic<ProfilerThreadId> mAudioThreadId;
   
