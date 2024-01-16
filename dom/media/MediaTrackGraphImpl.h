@@ -417,11 +417,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void CreateOrDestroyAudioTracks(MediaTrack* aTrack);
-  
-
-
-
   struct TrackAndKey {
     MediaTrack* mTrack;
     void* mKey;
