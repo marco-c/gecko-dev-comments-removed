@@ -128,10 +128,12 @@ class JavaScriptTracer {
     if (!this.loggingMethod) {
       
       
+      
+      
       this.loggingMethod =
+        typeof isWorker == "boolean" ||
         globalThis.constructor.name == "WorkerDebuggerGlobalScope"
-          ? 
-            dump.bind(globalThis)
+          ? dump.bind(null)
           : dump;
     }
 
