@@ -61,7 +61,13 @@ add_task(async () => {
 
 add_task(async function testExtendedAttributeProcessing() {
   for (let entry of extendedAttributeTestCases) {
-    await MacAttribution.setAttributionString(entry.raw);
+    
+    
+    await IOUtils.setMacXAttr(
+      MacAttribution.applicationPath,
+      "com.apple.application-instance",
+      new TextEncoder().encode(entry.raw)
+    );
     try {
       let got = await MacAttribution.getAttributionString();
       if (entry.error === true) {
@@ -89,10 +95,9 @@ add_task(async function testValidAttrCodes() {
       continue;
     }
 
-    await MacAttribution.setAttributionString("__MOZCUSTOM__" + entry.code);
+    await MacAttribution.setAttributionString(entry.code);
 
     
-    await AttributionCode.deleteFileAsync();
     AttributionCode._clearCache();
     let result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(
@@ -102,7 +107,6 @@ add_task(async function testValidAttrCodes() {
     );
 
     
-    AttributionCode._clearCache();
     result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(
       result,
@@ -126,7 +130,6 @@ add_task(async function testInvalidAttrCodes() {
     await MacAttribution.setAttributionString("__MOZCUSTOM__" + code);
 
     
-    await AttributionCode.deleteFileAsync();
     AttributionCode._clearCache();
     let result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(result, {}, "Code should have failed to parse: " + code);
