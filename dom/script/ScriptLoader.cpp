@@ -2687,8 +2687,10 @@ nsresult ScriptLoader::MaybePrepareForBytecodeEncodingAfterExecute(
                    "scriptloader_encode");
     
     
-    MOZ_ASSERT(aRequest->mBytecodeOffset ==
-               aRequest->SRIAndBytecode().length());
+    
+    
+    
+    MOZ_ASSERT(aRequest->GetSRILength() == aRequest->SRIAndBytecode().length());
     RegisterForBytecodeEncoding(aRequest);
     MOZ_ASSERT(IsAlreadyHandledForBytecodeEncodingPreparation(aRequest));
 
@@ -2981,7 +2983,7 @@ void ScriptLoader::EncodeRequestBytecode(JSContext* aCx,
   Vector<uint8_t> compressedBytecode;
   
   if (!ScriptBytecodeCompress(aRequest->SRIAndBytecode(),
-                              aRequest->mBytecodeOffset, compressedBytecode)) {
+                              aRequest->GetSRILength(), compressedBytecode)) {
     return;
   }
 
@@ -3342,10 +3344,13 @@ nsresult ScriptLoader::OnStreamComplete(
       JS::TranscodeBuffer& bytecode = aRequest->SRIAndBytecode();
       MOZ_ASSERT_IF(NS_SUCCEEDED(rv), bytecode.length() == sriLength);
 
-      aRequest->mBytecodeOffset = JS::AlignTranscodingBytecodeOffset(sriLength);
-      if (aRequest->mBytecodeOffset != sriLength) {
+      
+      
+      aRequest->SetSRILength(sriLength);
+      if (aRequest->GetSRILength() != sriLength) {
         
-        if (!bytecode.resize(aRequest->mBytecodeOffset)) {
+        
+        if (!bytecode.resize(aRequest->GetSRILength())) {
           return NS_ERROR_OUT_OF_MEMORY;
         }
       }
