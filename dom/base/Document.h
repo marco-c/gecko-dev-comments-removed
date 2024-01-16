@@ -4334,21 +4334,35 @@ class Document : public nsINode,
     explicit AutoRunningExecCommandMarker(const AutoRunningExecCommandMarker&) =
         delete;
     
-    MOZ_CAN_RUN_SCRIPT explicit AutoRunningExecCommandMarker(
-        Document& aDocument)
-        : mDocument(aDocument),
-          mHasBeenRunning(aDocument.mIsRunningExecCommand) {
-      aDocument.mIsRunningExecCommand = true;
-    }
+    MOZ_CAN_RUN_SCRIPT AutoRunningExecCommandMarker(Document& aDocument,
+                                                    nsIPrincipal* aPrincipal);
     ~AutoRunningExecCommandMarker() {
-      if (!mHasBeenRunning) {
-        mDocument.mIsRunningExecCommand = false;
+      if (mTreatAsUserInput) {
+        mDocument.mIsRunningExecCommandByChromeOrAddon =
+            mHasBeenRunningByChromeOrAddon;
+      } else {
+        mDocument.mIsRunningExecCommandByContent = mHasBeenRunningByContent;
       }
+    }
+
+    [[nodiscard]] bool IsSafeToRun() const {
+      
+      
+      if (mTreatAsUserInput) {
+        return !mHasBeenRunningByChromeOrAddon && !mHasBeenRunningByContent;
+      }
+      
+      
+      
+      
+      return !mHasBeenRunningByContent;
     }
 
    private:
     Document& mDocument;
-    bool mHasBeenRunning;
+    bool mTreatAsUserInput;
+    bool mHasBeenRunningByContent;
+    bool mHasBeenRunningByChromeOrAddon;
   };
 
   
@@ -4810,7 +4824,11 @@ class Document : public nsINode,
   bool mHasWarnedAboutZoom : 1;
 
   
-  bool mIsRunningExecCommand : 1;
+  
+  bool mIsRunningExecCommandByContent : 1;
+  
+  
+  bool mIsRunningExecCommandByChromeOrAddon : 1;
 
   
   

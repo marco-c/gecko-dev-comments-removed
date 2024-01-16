@@ -6448,16 +6448,20 @@ bool EditorBase::AutoEditActionDataSetter::IsBeforeInputEventEnabled() const {
   if (mEditorBase.IsSuppressingDispatchingInputEvent()) {
     return false;
   }
+  return EditorBase::TreatAsUserInput(mPrincipal);
+}
 
+
+bool EditorBase::TreatAsUserInput(nsIPrincipal* aPrincipal) {
   
   
   
-  if (mPrincipal && !mPrincipal->IsSystemPrincipal()) {
+  if (aPrincipal && !aPrincipal->IsSystemPrincipal()) {
     
     
     
     
-    if (!mPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
+    if (!aPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
       return false;
     }
   }
