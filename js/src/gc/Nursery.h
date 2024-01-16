@@ -142,6 +142,8 @@ class Nursery {
   
   
   
+  
+  
   std::tuple<void*, bool> allocateBuffer(JS::Zone* zone, size_t nbytes,
                                          arena_id_t arenaId);
 
@@ -156,6 +158,7 @@ class Nursery {
   void* allocateBufferSameLocation(gc::Cell* owner, size_t nbytes,
                                    arena_id_t arenaId);
 
+  
   
   
   
