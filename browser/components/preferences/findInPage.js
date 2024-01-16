@@ -419,9 +419,15 @@ var gSearchResultsPane = {
       nodeObject.tagName == "description" ||
       nodeObject.tagName == "menulist" ||
       nodeObject.tagName == "menuitem" ||
-      nodeObject.tagName == "checkbox"
+      nodeObject.tagName == "checkbox" ||
+      nodeObject.localName == "moz-toggle"
     ) {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
+      if (nodeObject.shadowRoot) {
+        simpleTextNodes.push(
+          ...this.textNodeDescendants(nodeObject.shadowRoot)
+        );
+      }
       for (let node of simpleTextNodes) {
         let result = this.highlightMatches(
           [node],
