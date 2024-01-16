@@ -3,7 +3,7 @@
 config = {
     
     "marionette_address": "localhost:2828",
-    "test_manifest": "unit-tests.ini",
+    "test_manifest": "unit-tests.toml",
     "default_actions": [
         "clobber",
         "download-and-extract",
