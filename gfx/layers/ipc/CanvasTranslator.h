@@ -359,6 +359,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
     bool mNotifiedRequiresRefresh = false;
     
     int32_t mLocked = 1;
+    OpenMode mTextureLockMode = OpenMode::OPEN_NONE;
   };
   std::unordered_map<int64_t, TextureInfo> mTextureInfo;
   int64_t mNextTextureId = -1;

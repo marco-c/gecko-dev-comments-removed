@@ -4614,22 +4614,19 @@ void SharedContextWebgl::CachePrefs() {
 }
 
 
-void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
-  if (mNeedsPresent) {
-    mNeedsPresent = false;
-    
-    
-    if (!mWebglValid) {
-      if (aPersistedRect.IsEmpty()) {
-        
-        mWebglValid = true;
-        
-        
-        
-        mIsClear = false;
-      } else {
-        FlushFromSkia();
-      }
+void DrawTargetWebgl::BeginFrame(bool aInvalidContents) {
+  
+  
+  if (!mWebglValid) {
+    if (aInvalidContents) {
+      
+      mWebglValid = true;
+      
+      
+      
+      mIsClear = false;
+    } else {
+      FlushFromSkia();
     }
   }
   
@@ -4655,32 +4652,28 @@ void DrawTargetWebgl::EndFrame() {
   mSharedContext->mWebgl->EndOfFrame();
   
   mSharedContext->ClearCachesIfNecessary();
-  
-  mNeedsPresent = true;
 }
 
 void DrawTargetWebgl::CopyToSwapChain(layers::RemoteTextureId aId,
                                       layers::RemoteTextureOwnerId aOwnerId,
                                       base::ProcessId aPid) {
-  if (mNeedsPresent) {
-    mNeedsPresent = false;
-    if (mWebglValid || FlushFromSkia()) {
-      
-      webgl::SwapChainOptions options;
-      options.bgra = true;
-      
-      
-      options.forceAsyncPresent =
-          StaticPrefs::gfx_canvas_accelerated_async_present();
-      options.remoteTextureId = aId;
-      options.remoteTextureOwnerId = aOwnerId;
-      const RefPtr<layers::ImageBridgeChild> imageBridge =
-          layers::ImageBridgeChild::GetSingleton();
-      auto texType = layers::TexTypeForWebgl(imageBridge);
-      mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, texType, options,
-                                              aPid);
-    }
+  if (!mWebglValid && !FlushFromSkia()) {
+    return;
   }
+
+  
+  webgl::SwapChainOptions options;
+  options.bgra = true;
+  
+  
+  options.forceAsyncPresent =
+      StaticPrefs::gfx_canvas_accelerated_async_present();
+  options.remoteTextureId = aId;
+  options.remoteTextureOwnerId = aOwnerId;
+  const RefPtr<layers::ImageBridgeChild> imageBridge =
+      layers::ImageBridgeChild::GetSingleton();
+  auto texType = layers::TexTypeForWebgl(imageBridge);
+  mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, texType, options, aPid);
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(

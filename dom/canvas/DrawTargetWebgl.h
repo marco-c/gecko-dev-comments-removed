@@ -377,8 +377,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   
   bool mRefreshClipState = true;
   
-  bool mNeedsPresent = true;
-  
   int32_t mLayerDepth = 0;
 
   RefPtr<TextureHandle> mSnapshotTexture;
@@ -457,7 +455,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   already_AddRefed<SourceSurface> GetBackingSurface() override;
   void DetachAllSnapshots() override;
 
-  void BeginFrame(const IntRect& aPersistedRect);
+  void BeginFrame(bool aInvalidContents = false);
   void EndFrame();
   bool RequiresRefresh() const { return mProfile.RequiresRefresh(); }
 
