@@ -161,14 +161,12 @@ class TopSitesTelemetry {
   }
 
   _tileProviderForTiles(tiles) {
+    
     return tiles && tiles.length ? this._tileProvider(tiles[0]) : null;
   }
 
   _tileProvider(tile) {
-    
-    return Object.prototype.hasOwnProperty.call(tile, "partner")
-      ? tile.partner
-      : SPONSORED_TILE_PARTNER_AMP;
+    return tile.partner || SPONSORED_TILE_PARTNER_AMP;
   }
 
   _buildPropertyKey(tile) {
@@ -176,8 +174,12 @@ class TopSitesTelemetry {
     return provider + shortURL(tile);
   }
 
+  
+  
+  
+  
+  
   _getFilteredTiles(currentTiles) {
-    
     let notPreviouslyFilteredTiles = Object.assign(
       {},
       ...Object.entries(this.allSponsoredTiles)
@@ -217,13 +219,8 @@ class TopSitesTelemetry {
   }
 
   _getAdvertiser(tile) {
-    let label = Object.prototype.hasOwnProperty.call(tile, "label")
-      ? tile.label
-      : null;
-
-    let title = Object.prototype.hasOwnProperty.call(tile, "title")
-      ? tile.title
-      : null;
+    let label = tile.label || null;
+    let title = tile.title || null;
 
     return label ?? title ?? shortURL(tile);
   }
@@ -246,8 +243,7 @@ class TopSitesTelemetry {
     }
   }
 
-  _setDisplayFailReason(nonFilteredTiles, reason) {
-    let filteredTiles = this._getFilteredTiles(nonFilteredTiles);
+  _setDisplayFailReason(filteredTiles, reason) {
     for (let tile of filteredTiles) {
       if (tile in this.allSponsoredTiles) {
         let tileToUpdate = this.allSponsoredTiles[tile];
@@ -257,15 +253,14 @@ class TopSitesTelemetry {
     }
   }
 
-  setRemovedTilesToOversold(nonOversoldTiles) {
-    this._setDisplayFailReason(nonOversoldTiles, DISPLAY_FAIL_REASON_OVERSOLD);
+  determineFilteredTilesAndSetToOversold(nonOversoldTiles) {
+    let filteredTiles = this._getFilteredTiles(nonOversoldTiles);
+    this._setDisplayFailReason(filteredTiles, DISPLAY_FAIL_REASON_OVERSOLD);
   }
 
-  setRemovedTilesToDismissed(nonDismissedTiles) {
-    this._setDisplayFailReason(
-      nonDismissedTiles,
-      DISPLAY_FAIL_REASON_DISMISSED
-    );
+  determineFilteredTilesAndSetToDismissed(nonDismissedTiles) {
+    let filteredTiles = this._getFilteredTiles(nonDismissedTiles);
+    this._setDisplayFailReason(filteredTiles, DISPLAY_FAIL_REASON_DISMISSED);
   }
 
   _setTilePositions(currentTiles) {
@@ -382,7 +377,7 @@ class ContileIntegration {
         );
         this._topSitesFeed._telemetryUtility.setTiles(cachedTiles);
         cachedTiles = this._filterBlockedSponsors(cachedTiles);
-        this._topSitesFeed._telemetryUtility.setRemovedTilesToDismissed(
+        this._topSitesFeed._telemetryUtility.determineFilteredTilesAndSetToDismissed(
           cachedTiles
         );
         this._sites = cachedTiles;
@@ -476,14 +471,20 @@ class ContileIntegration {
           tiles.length > maxNumFromContile
         ) {
           tiles.length = maxNumFromContile;
-          this._topSitesFeed._telemetryUtility.setRemovedTilesToOversold(tiles);
+          this._topSitesFeed._telemetryUtility.determineFilteredTilesAndSetToOversold(
+            tiles
+          );
         }
         tiles = this._filterBlockedSponsors(tiles);
-        this._topSitesFeed._telemetryUtility.setRemovedTilesToDismissed(tiles);
+        this._topSitesFeed._telemetryUtility.determineFilteredTilesAndSetToDismissed(
+          tiles
+        );
         if (tiles.length > maxNumFromContile) {
           lazy.log.info("Remove unused links from Contile");
           tiles.length = maxNumFromContile;
-          this._topSitesFeed._telemetryUtility.setRemovedTilesToOversold(tiles);
+          this._topSitesFeed._telemetryUtility.determineFilteredTilesAndSetToOversold(
+            tiles
+          );
         }
         this._sites = tiles;
         Services.prefs.setStringPref(
@@ -695,7 +696,9 @@ class TopSitesFeed {
       }
       hasContileTiles = contilePositionIndex > 0;
       
-      this._telemetryUtility.setRemovedTilesToOversold(DEFAULT_TOP_SITES);
+      this._telemetryUtility.determineFilteredTilesAndSetToOversold(
+        DEFAULT_TOP_SITES
+      );
     }
 
     
@@ -1146,7 +1149,9 @@ class TopSitesFeed {
         );
       }
     }
-    this._telemetryUtility.setRemovedTilesToDismissed(contileSponsored);
+    this._telemetryUtility.determineFilteredTilesAndSetToDismissed(
+      contileSponsored
+    );
 
     const discoverySponsored = this.fetchDiscoveryStreamSpocs();
     this._telemetryUtility.setTiles(discoverySponsored);
@@ -1159,7 +1164,7 @@ class TopSitesFeed {
     this._maybeCapSponsoredLinks(sponsored);
 
     
-    this._telemetryUtility.setRemovedTilesToOversold(sponsored);
+    this._telemetryUtility.determineFilteredTilesAndSetToOversold(sponsored);
 
     
     let plainPinned = await this.pinnedCache.request();
