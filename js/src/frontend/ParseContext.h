@@ -116,7 +116,76 @@ class ParseContext : public Nestable<ParseContext> {
     
     
     
-    uint32_t sizeBits_ = 0;
+    
+    
+    
+    
+    enum class GeneratorOrAsyncScopeFlag : uint32_t {
+      
+      Optimizable = 0,
+
+      
+      TooManyBindings = UINT32_MAX,
+    };
+
+    
+    
+    static constexpr uint32_t InnerScopeSlotCountInitialValue = 0;
+    union {
+      
+      
+      
+      uint32_t innerScopeSlotCount_ = InnerScopeSlotCountInitialValue;
+
+      
+      
+      GeneratorOrAsyncScopeFlag optimizableFlag_;
+    } generatorOrAsyncScopeInfo_;
+
+#ifdef DEBUG
+    bool isGeneratorOrAsyncScopeInfoUsed_ = false;
+    bool isOptimizableFlagCalculated_ = false;
+#endif
+
+    uint32_t innerScopeSlotCount() {
+      MOZ_ASSERT(!isOptimizableFlagCalculated_);
+#ifdef DEBUG
+      isGeneratorOrAsyncScopeInfoUsed_ = true;
+#endif
+      return generatorOrAsyncScopeInfo_.innerScopeSlotCount_;
+    }
+    void setInnerScopeSlotCount(uint32_t slotCount) {
+      MOZ_ASSERT(!isOptimizableFlagCalculated_);
+      generatorOrAsyncScopeInfo_.innerScopeSlotCount_ = slotCount;
+#ifdef DEBUG
+      isGeneratorOrAsyncScopeInfoUsed_ = true;
+#endif
+    }
+    void propagateInnerScopeSlotCount(uint32_t slotCount) {
+      if (slotCount > innerScopeSlotCount()) {
+        setInnerScopeSlotCount(slotCount);
+      }
+    }
+
+    void setGeneratorOrAsyncScopeIsOptimizable() {
+      MOZ_ASSERT(!isOptimizableFlagCalculated_);
+#ifdef DEBUG
+      isGeneratorOrAsyncScopeInfoUsed_ = true;
+      isOptimizableFlagCalculated_ = true;
+#endif
+      generatorOrAsyncScopeInfo_.optimizableFlag_ =
+          GeneratorOrAsyncScopeFlag::Optimizable;
+    }
+
+    void setGeneratorOrAsyncScopeHasTooManyBindings() {
+      MOZ_ASSERT(!isOptimizableFlagCalculated_);
+#ifdef DEBUG
+      isGeneratorOrAsyncScopeInfoUsed_ = true;
+      isOptimizableFlagCalculated_ = true;
+#endif
+      generatorOrAsyncScopeInfo_.optimizableFlag_ =
+          GeneratorOrAsyncScopeFlag::TooManyBindings;
+    }
 
     bool maybeReportOOM(ParseContext* pc, bool result) {
       if (!result) {
@@ -206,29 +275,31 @@ class ParseContext : public Nestable<ParseContext> {
     
     
     void setOwnStackSlotCount(uint32_t ownSlotCount) {
-      
-      
-      
-      uint32_t slotCount = ownSlotCount + sizeBits_;
+      uint32_t slotCount = ownSlotCount + innerScopeSlotCount();
       if (slotCount > FixedSlotLimit) {
-        slotCount = sizeBits_;
-        sizeBits_ = UINT32_MAX;
+        slotCount = innerScopeSlotCount();
+        setGeneratorOrAsyncScopeHasTooManyBindings();
       } else {
-        sizeBits_ = 0;
+        setGeneratorOrAsyncScopeIsOptimizable();
       }
 
       
       if (Scope* parent = enclosing()) {
-        if (slotCount > parent->sizeBits_) {
-          parent->sizeBits_ = slotCount;
-        }
+        parent->propagateInnerScopeSlotCount(slotCount);
       }
     }
 
     bool tooBigToOptimize() const {
-      MOZ_ASSERT(sizeBits_ == 0 || sizeBits_ == UINT32_MAX,
-                 "call this only after the parser leaves the scope");
-      return sizeBits_ != 0;
+      
+      
+      
+      
+      static_assert(InnerScopeSlotCountInitialValue ==
+                    uint32_t(GeneratorOrAsyncScopeFlag::Optimizable));
+      MOZ_ASSERT(!isGeneratorOrAsyncScopeInfoUsed_ ||
+                 isOptimizableFlagCalculated_);
+      return generatorOrAsyncScopeInfo_.optimizableFlag_ !=
+             GeneratorOrAsyncScopeFlag::Optimizable;
     }
 
     
