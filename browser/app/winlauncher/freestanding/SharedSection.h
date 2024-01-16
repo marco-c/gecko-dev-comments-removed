@@ -192,7 +192,7 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
   
   
   Kernel32ExportsSolver* GetKernel32Exports();
-  Span<const wchar_t> GetDependentModules() final override;
+  Maybe<Vector<const wchar_t*>> GetDependentModules() final override;
   Span<const DllBlockInfo> GetDynamicBlocklist() final override;
 
   static bool IsDisabled();

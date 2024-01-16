@@ -9,7 +9,8 @@
 
 #include <winternl.h>
 #include "nscore.h"
-#include "mozilla/Span.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Vector.h"
 #include "mozilla/WindowsDllBlocklistInfo.h"
 
 namespace mozilla::nt {
@@ -17,7 +18,9 @@ namespace mozilla::nt {
 
 
 struct NS_NO_VTABLE SharedSection {
-  virtual Span<const wchar_t> GetDependentModules() = 0;
+  
+  
+  virtual Maybe<Vector<const wchar_t*>> GetDependentModules() = 0;
   
   
   virtual Span<const DllBlockInfoT<UNICODE_STRING>> GetDynamicBlocklist() = 0;
