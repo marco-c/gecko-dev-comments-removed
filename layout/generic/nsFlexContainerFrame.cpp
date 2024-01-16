@@ -3601,9 +3601,8 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     
     
     
-    aLines[0].SetLineCrossSize(NS_CSS_MINMAX(aLines[0].LineCrossSize(),
-                                             aReflowInput.ComputedMinBSize(),
-                                             aReflowInput.ComputedMaxBSize()));
+    aLines[0].SetLineCrossSize(
+        aReflowInput.ApplyMinMaxBSize(aLines[0].LineCrossSize()));
   }
 
   
@@ -4347,14 +4346,13 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
   
   if (Maybe<nscoord> containBSize =
           aReflowInput.mFrame->ContainIntrinsicBSize()) {
-    return NS_CSS_MINMAX(*containBSize, aReflowInput.ComputedMinBSize(),
-                         aReflowInput.ComputedMaxBSize());
+    return aReflowInput.ApplyMinMaxBSize(*containBSize);
   }
 
   const AuCoord64 largestLineMainSize = GetLargestLineMainSize(aLines);
-  const nscoord contentBSize = NS_CSS_MINMAX(
-      nscoord(largestLineMainSize.ToMinMaxClamped()),
-      aReflowInput.ComputedMinBSize(), aReflowInput.ComputedMaxBSize());
+  const nscoord contentBSize = aReflowInput.ApplyMinMaxBSize(
+      nscoord(largestLineMainSize.ToMinMaxClamped()));
+
   
   
   
@@ -4411,16 +4409,14 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
   if (Maybe<nscoord> containBSize =
           aReflowInput.mFrame->ContainIntrinsicBSize()) {
     *aIsDefinite = true;
-    return NS_CSS_MINMAX(*containBSize, aReflowInput.ComputedMinBSize(),
-                         aReflowInput.ComputedMaxBSize());
+    return aReflowInput.ApplyMinMaxBSize(*containBSize);
   }
 
   
   *aIsDefinite = false;
 
   const nscoord contentBSize =
-      NS_CSS_MINMAX(aSumLineCrossSizes, aReflowInput.ComputedMinBSize(),
-                    aReflowInput.ComputedMaxBSize());
+      aReflowInput.ApplyMinMaxBSize(aSumLineCrossSizes);
   
   
   

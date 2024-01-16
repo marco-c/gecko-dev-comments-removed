@@ -163,9 +163,7 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      contentBoxBSize =
-          NS_CSS_MINMAX(contentBoxBSize, aReflowInput.ComputedMinBSize(),
-                        aReflowInput.ComputedMaxBSize());
+      contentBoxBSize = aReflowInput.ApplyMinMaxBSize(contentBoxBSize);
 
       borderBoxBSize = contentBoxBSize + borderPadding.BStartEnd(myWM);
     }
