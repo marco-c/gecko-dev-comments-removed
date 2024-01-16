@@ -390,6 +390,9 @@ struct RemoteTextureOwnerId {
   };
 };
 
+typedef uint32_t RemoteTextureTxnType;
+typedef uint64_t RemoteTextureTxnId;
+
 
 struct GpuProcessTextureId {
   uint64_t mId = 0;
