@@ -1044,14 +1044,24 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
-  if (settings.smallestUnit <= TemporalUnit::Week) {
+  bool roundingGranularityIsNoop =
+      settings.smallestUnit == TemporalUnit::Nanosecond &&
+      settings.roundingIncrement == Increment{1};
+
+  
+  bool largestUnitIsCalendarUnit = settings.largestUnit <= TemporalUnit::Week;
+
+  
+  bool roundingRequiresDateAddLookup =
+      !roundingGranularityIsNoop && largestUnitIsCalendarUnit;
+
+  
+  if (settings.smallestUnit <= TemporalUnit::Week ||
+      roundingRequiresDateAddLookup) {
     if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
       return false;
     }
   }
-
-  
-  bool largestUnitIsCalendarUnit = settings.largestUnit <= TemporalUnit::Week;
 
   
   bool largestUnitRequiresDateUntilLookup =
@@ -1074,8 +1084,7 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
-  if (settings.smallestUnit == TemporalUnit::Nanosecond &&
-      settings.roundingIncrement == Increment{1}) {
+  if (roundingGranularityIsNoop) {
     if (operation == TemporalDifference::Since) {
       diff = diff.negate();
     }
@@ -1111,10 +1120,24 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
+  auto toBalance = Duration{
+      roundResult.years,
+      roundResult.months,
+      roundResult.weeks,
+      result.days,
+  };
+  DateDuration balanceResult;
+  if (!temporal::BalanceDateDurationRelative(cx, toBalance,
+                                             settings.largestUnit, relativeTo,
+                                             calendar, &balanceResult)) {
+    return false;
+  }
+
+  
   Duration duration = {
-      roundResult.years,  roundResult.months,  roundResult.weeks,
-      result.days,        result.hours,        result.minutes,
-      result.seconds,     result.milliseconds, result.microseconds,
+      balanceResult.years, balanceResult.months, balanceResult.weeks,
+      balanceResult.days,  result.hours,         result.minutes,
+      result.seconds,      result.milliseconds,  result.microseconds,
       result.nanoseconds,
   };
   if (operation == TemporalDifference::Since) {

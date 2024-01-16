@@ -1548,14 +1548,26 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   }
 
   
-  if (settings.smallestUnit <= TemporalUnit::Week) {
+  bool roundingGranularityIsNoop = settings.smallestUnit == TemporalUnit::Day &&
+                                   settings.roundingIncrement == Increment{1};
+
+  
+  bool largestUnitIsCalendarUnit = settings.largestUnit <= TemporalUnit::Week;
+
+  
+  bool roundingRequiresDateAddLookup =
+      !roundingGranularityIsNoop && largestUnitIsCalendarUnit;
+
+  
+  if (settings.smallestUnit <= TemporalUnit::Week ||
+      roundingRequiresDateAddLookup) {
     if (!CalendarMethodsRecordLookup(cx, &calendar, CalendarMethod::DateAdd)) {
       return false;
     }
   }
 
   
-  if (settings.largestUnit <= TemporalUnit::Week ||
+  if (largestUnitIsCalendarUnit ||
       settings.smallestUnit == TemporalUnit::Year) {
     if (!CalendarMethodsRecordLookup(cx, &calendar,
                                      CalendarMethod::DateUntil)) {
@@ -1592,15 +1604,24 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
   }
 
   
-  if (settings.smallestUnit != TemporalUnit::Day ||
-      settings.roundingIncrement != Increment{1}) {
+  if (!roundingGranularityIsNoop) {
     
+    Duration roundResult;
     if (!temporal::RoundDuration(cx, duration.date(),
                                  settings.roundingIncrement,
                                  settings.smallestUnit, settings.roundingMode,
-                                 temporalDate, calendar, &duration)) {
+                                 temporalDate, calendar, &roundResult)) {
       return false;
     }
+
+    
+    DateDuration balanceResult;
+    if (!temporal::BalanceDateDurationRelative(
+            cx, roundResult.date(), settings.largestUnit, temporalDate,
+            calendar, &balanceResult)) {
+      return false;
+    }
+    duration = balanceResult.toDuration();
   }
 
   
@@ -2948,7 +2969,7 @@ static PlainDateNameAndNative GetPlainDateNameAndNative(
 }
 
 bool js::temporal::IsBuiltinAccess(
-    JSContext* cx, JS::Handle<PlainDateObject*> date,
+    JSContext* cx, Handle<PlainDateObject*> date,
     std::initializer_list<CalendarField> fieldNames) {
   
   

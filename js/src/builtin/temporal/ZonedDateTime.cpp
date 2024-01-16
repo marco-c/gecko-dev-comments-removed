@@ -1475,6 +1475,12 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
+  Rooted<PlainDateObject*> plainRelativeTo(
+      cx, CreateTemporalDate(cx, precalculatedPlainDateTime.date,
+                             calendar.receiver()));
+  if (!plainRelativeTo) {
+    return false;
+  }
 
   
   if (resolvedOptions) {
@@ -1519,22 +1525,37 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   
   Duration roundResult;
   if (!RoundDuration(cx, difference, settings.roundingIncrement,
-                     settings.smallestUnit, settings.roundingMode, calendar,
-                     zonedDateTime, &timeZone, precalculatedPlainDateTime,
-                     &roundResult)) {
+                     settings.smallestUnit, settings.roundingMode,
+                     plainRelativeTo, calendar, zonedDateTime, &timeZone,
+                     precalculatedPlainDateTime, &roundResult)) {
     return false;
   }
 
   
-  Duration result;
+  Duration adjustResult;
   if (!AdjustRoundedDurationDays(cx, roundResult, settings.roundingIncrement,
                                  settings.smallestUnit, settings.roundingMode,
                                  zonedDateTime, calendar, &timeZone,
-                                 precalculatedPlainDateTime, &result)) {
+                                 precalculatedPlainDateTime, &adjustResult)) {
     return false;
   }
 
   
+  DateDuration balanceResult;
+  if (!temporal::BalanceDateDurationRelative(
+          cx, adjustResult.date(), settings.largestUnit, plainRelativeTo,
+          calendar, &balanceResult)) {
+    return false;
+  }
+
+  
+  auto result = Duration{
+      balanceResult.years,       balanceResult.months,
+      balanceResult.weeks,       balanceResult.days,
+      adjustResult.hours,        adjustResult.minutes,
+      adjustResult.seconds,      adjustResult.milliseconds,
+      adjustResult.microseconds, adjustResult.nanoseconds,
+  };
   if (operation == TemporalDifference::Since) {
     result = result.negate();
   }

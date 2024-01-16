@@ -2703,6 +2703,21 @@ static bool BalanceDateDurationRelative(
 
 
 
+bool js::temporal::BalanceDateDurationRelative(
+    JSContext* cx, const Duration& duration, TemporalUnit largestUnit,
+    Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
+    Handle<CalendarRecord> calendar, DateDuration* result) {
+  MOZ_ASSERT(plainRelativeTo);
+  MOZ_ASSERT(calendar.receiver());
+
+  return ::BalanceDateDurationRelative(cx, duration, largestUnit,
+                                       plainRelativeTo, calendar, result);
+}
+
+
+
+
+
 
 static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
                         Duration* duration) {
@@ -6204,20 +6219,11 @@ bool js::temporal::RoundDuration(
 bool js::temporal::RoundDuration(
     JSContext* cx, const Duration& duration, Increment increment,
     TemporalUnit unit, TemporalRoundingMode roundingMode,
-    Handle<CalendarRecord> calendar, Handle<ZonedDateTime> zonedRelativeTo,
+    Handle<PlainDateObject*> plainRelativeTo, Handle<CalendarRecord> calendar,
+    Handle<ZonedDateTime> zonedRelativeTo,
     MutableHandle<TimeZoneRecord> timeZone,
     const PlainDateTime& precalculatedPlainDateTime, Duration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
-
-  
-  Rooted<PlainDateObject*> plainRelativeTo(cx);
-  if (unit <= TemporalUnit::Week) {
-    plainRelativeTo = CreateTemporalDate(cx, precalculatedPlainDateTime.date,
-                                         calendar.receiver());
-    if (!plainRelativeTo) {
-      return false;
-    }
-  }
 
   return ::RoundDuration(cx, duration, increment, unit, roundingMode,
                          plainRelativeTo, calendar, zonedRelativeTo, timeZone,
@@ -7428,8 +7434,8 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
       balanceResult.days,
   };
   DateDuration result;
-  if (!BalanceDateDurationRelative(cx, balanceInput, largestUnit,
-                                   plainRelativeTo, calendar, &result)) {
+  if (!::BalanceDateDurationRelative(cx, balanceInput, largestUnit,
+                                     plainRelativeTo, calendar, &result)) {
     return false;
   }
 
@@ -7708,10 +7714,12 @@ static bool Duration_total(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Duration_toString(JSContext* cx, const CallArgs& args) {
+  auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
+
+  
   SecondsStringPrecision precision = {Precision::Auto(),
                                       TemporalUnit::Nanosecond, Increment{1}};
   auto roundingMode = TemporalRoundingMode::Trunc;
-
   if (args.hasDefined(0)) {
     
     Rooted<JSObject*> options(
@@ -7754,15 +7762,69 @@ static bool Duration_toString(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto* duration = &args.thisv().toObject().as<DurationObject>();
-  Duration rounded;
-  if (!temporal::RoundDuration(cx, ToDuration(duration), precision.increment,
-                               precision.unit, roundingMode, &rounded)) {
-    return false;
+  Duration result;
+  if (precision.unit != TemporalUnit::Nanosecond ||
+      precision.increment != Increment{1}) {
+    
+    auto largestUnit = DefaultTemporalLargestUnit(duration);
+
+    
+    auto toRound = Duration{
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        duration.seconds,
+        duration.milliseconds,
+        duration.microseconds,
+        duration.nanoseconds,
+    };
+    Duration roundResult;
+    if (!temporal::RoundDuration(cx, toRound, precision.increment,
+                                 precision.unit, roundingMode, &roundResult)) {
+      return false;
+    }
+
+    
+    auto toBalance = Duration{
+        0,
+        0,
+        0,
+        duration.days,
+        duration.hours,
+        duration.minutes,
+        roundResult.seconds,
+        roundResult.milliseconds,
+        roundResult.microseconds,
+        roundResult.nanoseconds,
+    };
+    TimeDuration balanceResult;
+    if (!BalanceTimeDuration(cx, toBalance, largestUnit, &balanceResult)) {
+      return false;
+    }
+
+    
+    result = {
+        duration.years,
+        duration.months,
+        duration.weeks,
+        balanceResult.days,
+        balanceResult.hours,
+        balanceResult.minutes,
+        balanceResult.seconds,
+        balanceResult.milliseconds,
+        balanceResult.microseconds,
+        balanceResult.nanoseconds,
+    };
+  } else {
+    
+    result = duration;
   }
 
   
-  JSString* str = TemporalDurationToString(cx, rounded, precision.precision);
+  JSString* str = TemporalDurationToString(cx, result, precision.precision);
   if (!str) {
     return false;
   }
