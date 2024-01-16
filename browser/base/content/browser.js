@@ -9955,16 +9955,11 @@ var ConfirmationHint = {
 var FirefoxViewHandler = {
   tab: null,
   BUTTON_ID: "firefox-view-button",
-  _enabled: false,
   get button() {
     return document.getElementById(this.BUTTON_ID);
   },
   init() {
     CustomizableUI.addListener(this);
-
-    this._updateEnabledState = this._updateEnabledState.bind(this);
-    this._updateEnabledState();
-    NimbusFeatures.majorRelease2022.onUpdate(this._updateEnabledState);
 
     ChromeUtils.defineESModuleGetters(this, {
       SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
@@ -9974,18 +9969,6 @@ var FirefoxViewHandler = {
   uninit() {
     CustomizableUI.removeListener(this);
     Services.obs.removeObserver(this, "firefoxview-notification-dot-update");
-    NimbusFeatures.majorRelease2022.offUpdate(this._updateEnabledState);
-  },
-  _updateEnabledState() {
-    this._enabled = NimbusFeatures.majorRelease2022.getVariable("firefoxView");
-    
-    
-    
-    document.documentElement.toggleAttribute(
-      "firefoxviewhidden",
-      !this._enabled
-    );
-    document.getElementById("menu_openFirefoxView").hidden = !this._enabled;
   },
   onWidgetRemoved(aWidgetId) {
     if (aWidgetId == this.BUTTON_ID && this.tab) {
