@@ -75,9 +75,10 @@ var WindowListener = {
   
   setupWindow(win) {
     win.nativeConsole = win.console;
-    ChromeUtils.defineESModuleGetters(win, {
-      console: "resource://gre/modules/Console.sys.mjs",
-    });
+    let { ConsoleAPI } = ChromeUtils.importESModule(
+      "resource://gre/modules/Console.sys.mjs"
+    );
+    win.console = new ConsoleAPI();
   },
 
   tearDownWindow(win) {
