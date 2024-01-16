@@ -105,6 +105,15 @@ function define_tests() {
 
                         
                         
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         subsetTest(promise_test, function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], null)
                             .then(function(derivation) {
