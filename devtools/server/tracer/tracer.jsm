@@ -231,7 +231,13 @@ class JavaScriptTracer {
     }
   }
 
-  stopTracing() {
+  
+
+
+
+
+
+  stopTracing(reason = "") {
     if (!this.isTracing()) {
       return;
     }
@@ -253,7 +259,7 @@ class JavaScriptTracer {
 
     this.tracedGlobal = null;
 
-    this.notifyToggle(false);
+    this.notifyToggle(false, reason);
   }
 
   isTracing() {
@@ -291,18 +297,25 @@ class JavaScriptTracer {
 
 
 
-  notifyToggle(state) {
+
+
+  notifyToggle(state, reason) {
     let shouldLogToStdout = listeners.size == 0;
     for (const listener of listeners) {
       if (typeof listener.onTracingToggled == "function") {
-        shouldLogToStdout |= listener.onTracingToggled(state);
+        shouldLogToStdout |= listener.onTracingToggled(state, reason);
       }
     }
     if (shouldLogToStdout) {
       if (state) {
         this.loggingMethod(this.prefix + "Start tracing JavaScript\n");
       } else {
-        this.loggingMethod(this.prefix + "Stop tracing JavaScript\n");
+        if (reason) {
+          reason = ` (reason: ${reason})`;
+        }
+        this.loggingMethod(
+          this.prefix + "Stop tracing JavaScript" + reason + "\n"
+        );
       }
     }
   }
@@ -346,7 +359,7 @@ class JavaScriptTracer {
       
       if (this.depth === 0 && this.maxRecords) {
         if (this.records >= this.maxRecords) {
-          this.stopTracing();
+          this.stopTracing("max-records");
           return;
         }
         this.records++;
@@ -355,7 +368,7 @@ class JavaScriptTracer {
       
       if (this.depth == 100) {
         this.notifyInfiniteLoop();
-        this.stopTracing();
+        this.stopTracing("infinite-loop");
         return;
       }
 

@@ -181,10 +181,18 @@ class TracerActor extends Actor {
 
 
 
-  onTracingToggled(enabled) {
+
+
+
+
+  onTracingToggled(enabled, reason) {
+    
+    const shouldLogToStdout = this.logMethod == LOG_METHODS.STDOUT;
+
     if (!enabled) {
       this.stopTracing();
     }
+    return shouldLogToStdout;
   }
 
   onTracingInfiniteLoop() {
