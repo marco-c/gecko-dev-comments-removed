@@ -36,6 +36,11 @@ add_task(async function test_drm_prompt_shows_for_toplevel() {
     
     Services.prefs.setBoolPref("media.eme.enabled", false);
     Services.prefs.setBoolPref("media.gmp-widevinecdm.enabled", false);
+    let notificationShownPromise = BrowserTestUtils.waitForNotificationBar(
+      gBrowser,
+      browser,
+      "drmContentDisabled"
+    );
 
     
     
@@ -64,7 +69,9 @@ add_task(async function test_drm_prompt_shows_for_toplevel() {
 
     
     let box = gBrowser.getNotificationBox(browser);
+    await notificationShownPromise;
     let notification = box.currentNotification;
+    await notification.updateComplete;
 
     ok(notification, "Notification should be visible");
     is(
@@ -152,6 +159,11 @@ add_task(async function test_drm_prompt_shows_for_cross_origin_iframe() {
     
     Services.prefs.setBoolPref("media.eme.enabled", false);
     Services.prefs.setBoolPref("media.gmp-widevinecdm.enabled", false);
+    let notificationShownPromise = BrowserTestUtils.waitForNotificationBar(
+      gBrowser,
+      browser,
+      "drmContentDisabled"
+    );
 
     
     
@@ -198,7 +210,9 @@ add_task(async function test_drm_prompt_shows_for_cross_origin_iframe() {
 
     
     let box = gBrowser.getNotificationBox(browser);
+    await notificationShownPromise;
     let notification = box.currentNotification;
+    await notification.updateComplete;
 
     ok(notification, "Notification should be visible");
     is(
