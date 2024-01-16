@@ -1489,6 +1489,25 @@ JS_PUBLIC_API JSString* JS_NewMaybeExternalStringLatin1(
                                 allocatedExternal);
 }
 
+JS_PUBLIC_API JSString* JS_NewMaybeExternalStringUTF8(
+    JSContext* cx, const JS::UTF8Chars& utf8,
+    const JSExternalStringCallbacks* callbacks, bool* allocatedExternal) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
+  JS::SmallestEncoding encoding = JS::FindSmallestEncoding(utf8);
+  if (encoding == JS::SmallestEncoding::ASCII) {
+    
+    return NewMaybeExternalString(
+        cx, reinterpret_cast<JS::Latin1Char*>(utf8.begin().get()),
+        utf8.length(), callbacks, allocatedExternal);
+  }
+
+  
+  *allocatedExternal = false;
+  return NewStringCopyUTF8N(cx, utf8, encoding);
+}
+
 JS_PUBLIC_API JSString* JS_NewMaybeExternalUCString(
     JSContext* cx, const char16_t* chars, size_t length,
     const JSExternalStringCallbacks* callbacks, bool* allocatedExternal) {
