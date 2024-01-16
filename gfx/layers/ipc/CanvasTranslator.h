@@ -139,12 +139,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-  void SetNextTextureId(int64_t aNextTextureId, RemoteTextureOwnerId aOwnerId) {
-    mNextTextureId = aNextTextureId;
-    mNextRemoteTextureOwnerId = aOwnerId;
-  }
-
-  
 
 
 
@@ -153,6 +147,10 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
+  already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
+      gfx::ReferencePtr aRefPtr, int64_t aTextureId,
+      RemoteTextureOwnerId aTextureOwnerId, const gfx::IntSize& aSize,
+      gfx::SurfaceFormat aFormat);
 
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
       gfx::ReferencePtr aRefPtr, const gfx::IntSize& aSize,
@@ -363,8 +361,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
     OpenMode mTextureLockMode = OpenMode::OPEN_NONE;
   };
   std::unordered_map<int64_t, TextureInfo> mTextureInfo;
-  int64_t mNextTextureId = -1;
-  RemoteTextureOwnerId mNextRemoteTextureOwnerId;
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
   gfx::ReferencePtr mMappedSurface;
   UniquePtr<gfx::DataSourceSurface::ScopedMap> mPreparedMap;
