@@ -421,7 +421,7 @@ class AsmFlags(BaseCompileFlags):
                     debug_flags += ["-F", "dwarf"]
             elif (
                 self._context.config.substs.get("OS_ARCH") == "WINNT"
-                and self._context.config.substs.get("CPU_ARCH") == "aarch64"
+                and self._context.config.substs.get("TARGET_CPU") == "aarch64"
             ):
                 
                 pass
@@ -2179,7 +2179,7 @@ VARIABLES = {
         """Names of example WebIDL interfaces to build as part of the build.
 
         Names in this list correspond to WebIDL interface names defined in
-        WebIDL files included in the build from one of the \*WEBIDL_FILES
+        WebIDL files included in the build from one of the *WEBIDL_FILES
         variables.
         """,
     ),
