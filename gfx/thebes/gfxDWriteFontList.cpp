@@ -675,10 +675,12 @@ gfxFont* gfxDWriteFontEntry::CreateFontInstance(
       case 0:  
         break;
       case 1:  
-        useBoldSim = !mIsDataUserFont;
+               
+        useBoldSim =
+            !mIsDataUserFont && !HasFontTable(TRUETYPE_TAG('C', 'O', 'L', 'R'));
         break;
       default:  
-        useBoldSim = true;
+        useBoldSim = !HasFontTable(TRUETYPE_TAG('C', 'O', 'L', 'R'));
         break;
     }
   }

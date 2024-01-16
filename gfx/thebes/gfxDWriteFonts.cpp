@@ -97,10 +97,14 @@ gfxDWriteFont::gfxDWriteFont(const RefPtr<UnscaledFontDWrite>& aUnscaledFont,
         mApplySyntheticBold = true;
         break;
       case 1:  
-        mApplySyntheticBold = aFontEntry->mIsDataUserFont;
+               
+        mApplySyntheticBold =
+            aFontEntry->mIsDataUserFont ||
+            aFontEntry->HasFontTable(TRUETYPE_TAG('C', 'O', 'L', 'R'));
         break;
       default:  
-        
+        mApplySyntheticBold =
+            aFontEntry->HasFontTable(TRUETYPE_TAG('C', 'O', 'L', 'R'));
         break;
     }
   }
