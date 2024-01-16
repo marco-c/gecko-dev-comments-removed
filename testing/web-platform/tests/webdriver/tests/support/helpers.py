@@ -59,7 +59,13 @@ def cleanup_session(session):
         if session.capabilities.get("setWindowRect"):
             
             
-            if session.window.size != defaults.WINDOW_SIZE:
+            if (
+                session.capabilities.get("browserName") != "chrome" or
+                session.window.size != defaults.WINDOW_SIZE
+                or document_hidden(session)
+                or is_fullscreen(session)
+                or is_maximized(session)
+            ):
                 session.window.size = defaults.WINDOW_SIZE
 
     @ignore_exceptions
