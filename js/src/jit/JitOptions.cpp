@@ -103,6 +103,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableInstructionReordering, false);
 
   
+  SET_DEFAULT(disableMarkLoadsUsedAsPropertyKeys, false);
+
+  
   SET_DEFAULT(disableRangeAnalysis, false);
 
   
