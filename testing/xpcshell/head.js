@@ -488,11 +488,15 @@ function _initDebugging(port) {
 
   
   const tm = Cc["@mozilla.org/thread-manager;1"].getService();
+  let lastUpdate = Date.now();
   tm.spinEventLoopUntil("Test(xpcshell/head.js:_initDebugging)", () => {
     if (initialized) {
       return true;
     }
-    info("Still waiting for debugger to connect...");
+    if (Date.now() - lastUpdate > 5000) {
+      info("Still waiting for debugger to connect...");
+      lastUpdate = Date.now();
+    }
     return false;
   });
   
