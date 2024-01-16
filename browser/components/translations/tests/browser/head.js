@@ -1043,6 +1043,71 @@ function assertIsVisible(expected, { element, id }) {
 
 
 
+async function openContextMenu(runInPage, { openAtSpanishParagraph }) {
+  logAction();
+
+  if (openAtSpanishParagraph === true) {
+    await runInPage(async TranslationsTest => {
+      const { getSpanishParagraph } = TranslationsTest.getSelectors();
+      const paragraph = getSpanishParagraph();
+      await TranslationsTest.rightClickContentElement(paragraph);
+    });
+    return;
+  }
+
+  throw new Error(
+    "openContextMenu() was not provided a declaration for which element to open the menu at."
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertContextMenuTranslateSelectionItem(
+  runInPage,
+  { expectMenuItemVisible, openAtSpanishParagraph },
+  message
+) {
+  logAction();
+
+  if (message) {
+    info(message);
+  }
+
+  await closeTranslationsPanelIfOpen();
+  await closeContextMenuIfOpen();
+
+  await openContextMenu(runInPage, { openAtSpanishParagraph });
+
+  const menuItem = maybeGetById(
+    "context-translate-selection",
+     false
+  );
+
+  if (expectMenuItemVisible !== undefined) {
+    assertIsVisible(expectMenuItemVisible, { element: menuItem });
+  }
+
+  await closeContextMenuIfOpen();
+}
+
+
+
+
+
+
+
+
+
 function getByL10nId(l10nId, doc = document) {
   const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
   if (elements.length === 0) {

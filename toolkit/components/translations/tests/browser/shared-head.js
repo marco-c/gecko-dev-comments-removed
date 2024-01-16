@@ -341,6 +341,28 @@ function getTranslationsParent() {
 
 
 
+function closeContextMenuIfOpen() {
+  return waitForCondition(async () => {
+    const contextMenu = document.getElementById("contentAreaContextMenu");
+    if (!contextMenu) {
+      return true;
+    }
+    if (contextMenu.state === "closed") {
+      return true;
+    }
+    let popuphiddenPromise = BrowserTestUtils.waitForEvent(
+      contextMenu,
+      "popuphidden"
+    );
+    PanelMultiView.hidePopup(contextMenu);
+    await popuphiddenPromise;
+    return false;
+  });
+}
+
+
+
+
 function closeSettingsMenuIfOpen() {
   return waitForCondition(async () => {
     const settings = document.getElementById(
@@ -421,6 +443,7 @@ async function setupActorTest({
     async cleanup() {
       await TranslationsParent.destroyEngineProcess();
       await closeTranslationsPanelIfOpen();
+      await closeContextMenuIfOpen();
       BrowserTestUtils.removeTab(tab);
       await removeMocks();
       TestTranslationsTelemetry.reset();
@@ -562,6 +585,7 @@ async function loadTestPage({
     async cleanup() {
       await TranslationsParent.destroyEngineProcess();
       await closeTranslationsPanelIfOpen();
+      await closeContextMenuIfOpen();
       await removeMocks();
       Services.fog.testResetFOG();
       TranslationsParent.testAutomaticPopup = false;
@@ -1021,6 +1045,7 @@ async function setupAboutPreferences(
   async function cleanup() {
     await TranslationsParent.destroyEngineProcess();
     await closeTranslationsPanelIfOpen();
+    await closeContextMenuIfOpen();
     BrowserTestUtils.removeTab(tab);
     await removeMocks();
     await SpecialPowers.popPrefEnv();

@@ -820,6 +820,7 @@ class nsContextMenu {
     }
 
     this.showAndFormatSearchContextItem();
+    this.showTranslateSelectionItem();
 
     
     
@@ -2447,6 +2448,34 @@ class nsContextMenu {
       dest = "tab";
     }
     openTrustedLinkIn(drmInfoURL, dest);
+  }
+
+  
+
+
+  async showTranslateSelectionItem() {
+    const translateSelectionItem = document.getElementById(
+      "context-translate-selection"
+    );
+    const translationsEnabled = Services.prefs.getBoolPref(
+      "browser.translations.enable"
+    );
+    const selectTranslationsEnabled = Services.prefs.getBoolPref(
+      "browser.translations.select.enable"
+    );
+
+    translateSelectionItem.hidden = !(
+      translationsEnabled && selectTranslationsEnabled
+    );
+
+    if (translateSelectionItem.hidden) {
+      return;
+    }
+
+    document.l10n.setAttributes(
+      translateSelectionItem,
+      "main-context-menu-translate-selection"
+    );
   }
 
   
