@@ -26,6 +26,7 @@ class WaylandProxy {
   bool RunThread();
 
   
+  
   void SetWaylandDisplay();
 
   static void SetVerbose(bool aVerbose);
@@ -53,6 +54,13 @@ class WaylandProxy {
   pid_t mApplicationPID = 0;
   std::atomic<bool> mThreadRunning = false;
   pthread_t mThread;
+
+  
+  static constexpr int sMaxDisplayNameLen = 108;
+  
+  char mWaylandDisplay[sMaxDisplayNameLen];
+  
+  char mWaylandProxy[sMaxDisplayNameLen];
 };
 
 #endif  
