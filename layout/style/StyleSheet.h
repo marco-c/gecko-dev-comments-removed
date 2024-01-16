@@ -547,7 +547,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   void DropMedia();
-
+  
+  void UpdateRelevantGlobal();
   
   void UnlinkInner();
   

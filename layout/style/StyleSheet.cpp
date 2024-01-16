@@ -167,6 +167,15 @@ dom::DocumentOrShadowRoot* StyleSheet::GetAssociatedDocumentOrShadowRoot()
   return nullptr;
 }
 
+void StyleSheet::UpdateRelevantGlobal() {
+  if (mRelevantGlobal || !IsComplete()) {
+    return;
+  }
+  if (Document* doc = GetAssociatedDocument()) {
+    mRelevantGlobal = doc->GetScopeObject();
+  }
+}
+
 Document* StyleSheet::GetKeptAliveByDocument() const {
   const StyleSheet& outer = OutermostSheet();
   if (outer.mDocumentOrShadowRoot) {
@@ -291,12 +300,7 @@ void StyleSheet::SetComplete() {
   MOZ_ASSERT(!IsComplete(), "Already complete?");
   mState |= State::Complete;
 
-  if (!mRelevantGlobal) {
-    
-    if (Document* doc = GetAssociatedDocument()) {
-      mRelevantGlobal = doc->GetScopeObject();
-    }
-  }
+  UpdateRelevantGlobal();
 
   if (!Disabled()) {
     ApplicableStateChanged(true);
@@ -970,6 +974,7 @@ void StyleSheet::SetAssociatedDocumentOrShadowRoot(
 
   
   mDocumentOrShadowRoot = aDocOrShadowRoot;
+  UpdateRelevantGlobal();
 }
 
 void StyleSheet::AppendStyleSheet(StyleSheet& aSheet) {
