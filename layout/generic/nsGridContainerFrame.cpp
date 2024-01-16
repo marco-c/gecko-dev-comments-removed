@@ -2977,12 +2977,11 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
                                        const nsSize& aContainerSize);
 
   
-  static void CollectSubgridForAxis(LogicalAxis aAxis, WritingMode aContainerWM,
-                                    const LineRange& aRangeInAxis,
-                                    const LineRange& aRangeInOppositeAxis,
-                                    const GridItemInfo& aItem,
-                                    const nsTArray<GridItemInfo>& aItems,
-                                    nsTArray<GridItemInfo>& aResult) {
+  static void CollectSubgridItemsForAxisHelper(
+      LogicalAxis aAxis, WritingMode aContainerWM,
+      const LineRange& aRangeInAxis, const LineRange& aRangeInOppositeAxis,
+      const GridItemInfo& aItem, const nsTArray<GridItemInfo>& aItems,
+      nsTArray<GridItemInfo>& aResult) {
     const auto oppositeAxis = GetOrthogonalAxis(aAxis);
     bool itemIsSubgridInOppositeAxis = aItem.IsSubgrid(oppositeAxis);
     auto subgridWM = aItem.mFrame->GetWritingMode();
@@ -3016,10 +3015,10 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
       if (newItem->IsSubgrid(aAxis)) {
         auto* subgrid =
             subgridItem.SubgridFrame()->GetProperty(Subgrid::Prop());
-        CollectSubgridForAxis(aAxis, aContainerWM,
-                              newItem->mArea.LineRangeForAxis(aAxis),
-                              newItem->mArea.LineRangeForAxis(oppositeAxis),
-                              *newItem, subgrid->mGridItems, aResult);
+        CollectSubgridItemsForAxisHelper(
+            aAxis, aContainerWM, newItem->mArea.LineRangeForAxis(aAxis),
+            newItem->mArea.LineRangeForAxis(oppositeAxis), *newItem,
+            subgrid->mGridItems, aResult);
       }
     }
   }
@@ -3033,9 +3032,10 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
       if (item.IsSubgrid(aAxis)) {
         const auto oppositeAxis = GetOrthogonalAxis(aAxis);
         auto* subgrid = item.SubgridFrame()->GetProperty(Subgrid::Prop());
-        CollectSubgridForAxis(aAxis, mWM, item.mArea.LineRangeForAxis(aAxis),
-                              item.mArea.LineRangeForAxis(oppositeAxis), item,
-                              subgrid->mGridItems, aResult);
+        CollectSubgridItemsForAxisHelper(
+            aAxis, mWM, item.mArea.LineRangeForAxis(aAxis),
+            item.mArea.LineRangeForAxis(oppositeAxis), item,
+            subgrid->mGridItems, aResult);
       }
     }
   }
