@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2021 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "wasm/WasmDebugFrame.h"
 
@@ -32,7 +32,7 @@ using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
-/* static */
+
 DebugFrame* DebugFrame::from(Frame* fp) {
   MOZ_ASSERT(GetNearestEffectiveInstance(fp)->code().metadata().debugEnabled);
   auto* df =
@@ -42,9 +42,9 @@ DebugFrame* DebugFrame::from(Frame* fp) {
 }
 
 void DebugFrame::alignmentStaticAsserts() {
-  // VS2017 doesn't consider offsetOfFrame() to be a constexpr, so we have
-  // to use offsetof directly. These asserts can't be at class-level
-  // because the type is incomplete.
+  
+  
+  
 
   static_assert(WasmStackAlignment >= Alignment,
                 "Aligned by ABI before pushing DebugFrame");
@@ -53,9 +53,9 @@ void DebugFrame::alignmentStaticAsserts() {
                 "Aligned after pushing DebugFrame");
 #endif
 #ifdef JS_CODEGEN_ARM64
-  // This constraint may or may not be necessary.  If you hit this because
-  // you've changed the frame size then feel free to remove it, but be extra
-  // aware of possible problems.
+  
+  
+  
   static_assert(sizeof(DebugFrame) % 16 == 0, "ARM64 SP alignment");
 #endif
 }
@@ -94,7 +94,7 @@ bool DebugFrame::getLocal(uint32_t localIndex, MutableHandleValue vp) {
   }
   ArgTypeVector abiArgs(args, stackResults);
 
-  BaseLocalIter iter(locals, abiArgs, /* debugEnabled = */ true);
+  BaseLocalIter iter(locals, abiArgs,  true);
   while (!iter.done() && iter.index() < localIndex) {
     iter++;
   }
@@ -107,7 +107,7 @@ bool DebugFrame::getLocal(uint32_t localIndex, MutableHandleValue vp) {
       vp.set(Int32Value(*static_cast<int32_t*>(dataPtr)));
       break;
     case jit::MIRType::Int64:
-      // Just display as a Number; it's ok if we lose some precision
+      
       vp.set(NumberValue((double)*static_cast<int64_t*>(dataPtr)));
       break;
     case jit::MIRType::Float32:
@@ -149,6 +149,13 @@ bool DebugFrame::updateReturnJSValue(JSContext* cx) {
   return ok;
 }
 
+void DebugFrame::discardReturnJSValue() {
+  MutableHandleValue rval =
+      MutableHandleValue::fromMarkedLocation(&cachedReturnJSValue_);
+  rval.setMagic(JS_OPTIMIZED_OUT);
+  flags_.hasCachedReturnJSValue = true;
+}
+
 HandleValue DebugFrame::returnValue() const {
   MOZ_ASSERT(flags_.hasCachedReturnJSValue);
   return HandleValue::fromMarkedLocation(&cachedReturnJSValue_);
@@ -162,7 +169,7 @@ void DebugFrame::clearReturnJSValue() {
 void DebugFrame::observe(JSContext* cx) {
   if (!flags_.observing) {
     instance()->debug().adjustEnterAndLeaveFrameTrapsState(
-        cx, instance(), /* enabled = */ true);
+        cx, instance(),  true);
     flags_.observing = true;
   }
 }
@@ -170,7 +177,7 @@ void DebugFrame::observe(JSContext* cx) {
 void DebugFrame::leave(JSContext* cx) {
   if (flags_.observing) {
     instance()->debug().adjustEnterAndLeaveFrameTrapsState(
-        cx, instance(), /* enabled = */ false);
+        cx, instance(),  false);
     flags_.observing = false;
   }
 }

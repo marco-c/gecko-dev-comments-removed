@@ -537,18 +537,19 @@ class CallSiteDesc {
       (1 << LINE_OR_BYTECODE_BITS_SIZE) - 1;
 
   enum Kind {
-    Func,          
-    Import,        
-    Indirect,      
-    IndirectFast,  
-    FuncRef,       
-    FuncRefFast,   
-    ReturnFunc,    
-    ReturnStub,    
-    Symbolic,      
-    EnterFrame,    
-    LeaveFrame,    
-    Breakpoint     
+    Func,           
+    Import,         
+    Indirect,       
+    IndirectFast,   
+    FuncRef,        
+    FuncRefFast,    
+    ReturnFunc,     
+    ReturnStub,     
+    Symbolic,       
+    EnterFrame,     
+    LeaveFrame,     
+    CollapseFrame,  
+    Breakpoint      
   };
   CallSiteDesc() : lineOrBytecode_(0), kind_(0) {}
   explicit CallSiteDesc(Kind kind) : lineOrBytecode_(0), kind_(kind) {

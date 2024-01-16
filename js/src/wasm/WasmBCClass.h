@@ -879,7 +879,7 @@ struct BaseCompiler final {
                                        StackHeight destHeight, ResultType type);
 
   
-  bool insertLeaveFrame();
+  bool insertDebugCollapseFrame();
 
   
   
