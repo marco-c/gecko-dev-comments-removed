@@ -25,31 +25,36 @@ const {
 } = require("resource://devtools/client/shared/source-map-loader/utils/index.js");
 
 class SourceMapLoader extends WorkerDispatcher {
+  constructor(targetCommand) {
+    super(SOURCE_MAP_WORKER_URL);
+    this.#targetCommand = targetCommand;
+  }
+
   #setSourceMapForGeneratedSources = this.task(
     "setSourceMapForGeneratedSources"
   );
   #getOriginalURLs = this.task("getOriginalURLs");
   #getOriginalSourceText = this.task("getOriginalSourceText");
-
-  constructor() {
-    super(SOURCE_MAP_WORKER_URL);
-  }
+  #targetCommand = null;
 
   async getOriginalURLs(urlInfo) {
     try {
       return await this.#getOriginalURLs(urlInfo);
     } catch (error) {
-      const message = L10N.getFormatStr(
-        "toolbox.sourceMapFailure",
-        error,
-        urlInfo.url,
-        urlInfo.sourceMapURL
-      );
-      this.emit("source-map-error", message);
+      
+      if (this.#targetCommand) {
+        
+        const message = L10N.getFormatStr(
+          "toolbox.sourceMapFailure",
+          error,
+          urlInfo.url,
+          urlInfo.sourceMapURL
+        );
+        this.#targetCommand.targetFront.logWarningInPage(message, "source map");
+      }
 
       
-      
-      return null;
+      throw error;
     }
   }
 
@@ -80,7 +85,12 @@ class SourceMapLoader extends WorkerDispatcher {
         error.message,
         error.metadata ? error.metadata.url : "<unknown>"
       );
-      this.emit("source-map-error", message);
+
+      
+      if (this.#targetCommand) {
+        
+        this.#targetCommand.targetFront.logWarningInPage(message, "source map");
+      }
 
       
       
@@ -109,7 +119,14 @@ class SourceMapLoader extends WorkerDispatcher {
     return rv;
   }
 
-  stopSourceMapWorker = this.stop.bind(this);
+  destroy() {
+    
+    this.stop();
+    
+    this.clearEvents();
+    
+    this.#targetCommand = null;
+  }
 }
 EventEmitter.decorate(SourceMapLoader.prototype);
 

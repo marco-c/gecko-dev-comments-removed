@@ -319,7 +319,13 @@ class SourceMapURLService {
         let result = null;
         try {
           await map.loaded;
+        } catch (e) {
+          
+          
+          
+        }
 
+        try {
           const position = await this._sourceMapLoader.getOriginalLocation({
             sourceId: map.id,
             line: query.line,
