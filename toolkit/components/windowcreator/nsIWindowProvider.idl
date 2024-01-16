@@ -14,6 +14,7 @@
 #include "nsISupports.idl"
 
 %{ C++
+#include "mozilla/dom/UserActivation.h"
 class nsDocShellLoadState;
 %}
 
@@ -22,6 +23,7 @@ interface mozIDOMWindowProxy;
 interface nsIURI;
 interface nsIOpenWindowInfo;
 native nsDocShellLoadStatePtr(nsDocShellLoadState*);
+[ref] native UserActivationModifiersRef(const mozilla::dom::UserActivation::Modifiers);
 
 
 
@@ -94,6 +96,11 @@ interface nsIWindowProvider : nsISupports
 
 
 
+
+
+
+
+
   [noscript]
   BrowsingContext provideWindow(in nsIOpenWindowInfo aOpenWindowInfo,
                                 in unsigned long aChromeFlags,
@@ -101,6 +108,7 @@ interface nsIWindowProvider : nsISupports
                                 in nsIURI aURI,
                                 in AString aName,
                                 in AUTF8String aFeatures,
+                                in UserActivationModifiersRef aModifiers,
                                 in boolean aForceNoOpener,
                                 in boolean aForceNoReferrer,
                                 in boolean aIsPopupRequested,

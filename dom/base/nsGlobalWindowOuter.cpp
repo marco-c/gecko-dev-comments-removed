@@ -47,6 +47,7 @@
 #include "mozilla/dom/Timeout.h"
 #include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/TimeoutManager.h"
+#include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowFeatures.h"  
 #include "mozilla/dom/WindowProxyHolder.h"
@@ -6795,6 +6796,9 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 
   if (NS_FAILED(rv)) return rv;
 
+  UserActivation::Modifiers modifiers;
+  mBrowsingContext->GetUserActivationModifiersForPopup(&modifiers);
+
   PopupBlocker::PopupControlState abuseLevel =
       PopupBlocker::GetPopupControlState();
   if (checkForPopup) {
@@ -6863,7 +6867,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     if (!aCalledNoScript) {
       
       
-      rv = pwwatch->OpenWindow2(this, url, name, options,
+      rv = pwwatch->OpenWindow2(this, url, name, options, modifiers,
                                  true, aDialog,
                                 aNavigate, argv, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
@@ -6883,7 +6887,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
         nojsapi.emplace();
       }
 
-      rv = pwwatch->OpenWindow2(this, url, name, options,
+      rv = pwwatch->OpenWindow2(this, url, name, options, modifiers,
                                  false, aDialog,
                                 aNavigate, aExtraArgument, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
