@@ -92,18 +92,6 @@ class ReportErrorRunnable final : public WorkerDebuggeeRunnable {
     } else {
       AssertIsOnMainThread();
 
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(!aWorkerPrivate->IsFrozen());
-
-      
-      
-      MOZ_ASSERT(!aWorkerPrivate->IsParentWindowPaused());
-
       if (aWorkerPrivate->IsSharedWorker()) {
         aWorkerPrivate->GetRemoteWorkerController()
             ->ErrorPropagationOnMainThread(mReport.get(),
@@ -175,17 +163,9 @@ class ReportGenericErrorRunnable final : public WorkerDebuggeeRunnable {
   }
 
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!aWorkerPrivate->IsFrozen());
-
-    
-    
-    MOZ_ASSERT(!aWorkerPrivate->IsParentWindowPaused());
+    if (!aWorkerPrivate->IsAcceptingEvents()) {
+      return true;
+    }
 
     if (aWorkerPrivate->IsSharedWorker()) {
       aWorkerPrivate->GetRemoteWorkerController()->ErrorPropagationOnMainThread(
@@ -203,10 +183,6 @@ class ReportGenericErrorRunnable final : public WorkerDebuggeeRunnable {
         actor->ErrorPropagationOnMainThread(nullptr, false);
       }
 
-      return true;
-    }
-
-    if (!aWorkerPrivate->IsAcceptingEvents()) {
       return true;
     }
 

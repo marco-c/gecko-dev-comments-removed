@@ -138,18 +138,6 @@ bool EventWithOptionsRunnable::WorkerRun(JSContext* aCx,
       return true;
     }
 
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!aWorkerPrivate->IsFrozen());
-
-    
-    
-    MOZ_ASSERT(!aWorkerPrivate->IsParentWindowPaused());
-
     aWorkerPrivate->AssertInnerWindowIsCorrect();
 
     return BuildAndFireEvent(aCx, aWorkerPrivate,
