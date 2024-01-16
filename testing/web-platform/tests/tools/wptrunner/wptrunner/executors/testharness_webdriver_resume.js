@@ -1,5 +1,5 @@
 
 
-window.__wptrunner_url = "%(url)s";
+window.__wptrunner_url = arguments[0];
 window.__wptrunner_testdriver_callback = arguments[arguments.length - 1];
 window.__wptrunner_process_next_event();
