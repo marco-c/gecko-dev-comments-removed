@@ -6004,6 +6004,19 @@ static const PrefListEntry sRestrictFromWebContentProcesses[] = {
 
 
 
+static const PrefListEntry sOverrideRestrictionsList[]{
+    PREF_LIST_ENTRY("services.settings.clock_skew_seconds"),
+    PREF_LIST_ENTRY("services.settings.last_update_seconds"),
+    PREF_LIST_ENTRY("services.settings.loglevel"),
+    
+    
+    PREF_LIST_ENTRY("services.settings.preview_enabled"),
+    PREF_LIST_ENTRY("services.settings.server"),
+};
+
+
+
+
 static const PrefListEntry sDynamicPrefOverrideList[]{
     PREF_LIST_ENTRY("accessibility.tabfocus"),
     PREF_LIST_ENTRY("app.update.channel"),
@@ -6090,14 +6103,12 @@ static bool ShouldSanitizePreference(const Pref* const aPref) {
   
   for (const auto& entry : sRestrictFromWebContentProcesses) {
     if (strncmp(entry.mPrefBranch, prefName, entry.mLen) == 0) {
-      const auto* p = prefName;  
-      return !(strncmp("services.settings.clock_skew_seconds", p, 36) == 0 ||
-               strncmp("services.settings.last_update_seconds", p, 37) == 0 ||
-               strncmp("services.settings.loglevel", p, 26) == 0 ||
-               
-               
-               strncmp("services.settings.preview_enabled", p, 33) == 0 ||
-               strncmp("services.settings.server", p, 24) == 0);
+      for (const auto& pasEnt : sOverrideRestrictionsList) {
+        if (strncmp(pasEnt.mPrefBranch, prefName, pasEnt.mLen) == 0) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 
