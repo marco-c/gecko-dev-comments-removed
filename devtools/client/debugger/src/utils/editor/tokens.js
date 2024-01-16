@@ -8,42 +8,57 @@ function _isInvalidTarget(target) {
   }
 
   const tokenText = target.innerText.trim();
-  const cursorPos = target.getBoundingClientRect();
+
+  
+  const invalidToken =
+    tokenText === "" || tokenText.match(/^[(){}\|&%,.;=<>\+-/\*\s](?=)/);
+  if (invalidToken) {
+    return true;
+  }
 
   
   
   
   
   
-  const invalidType = [
-    "",
+  const INVALID_TARGET_CLASSES = [
     "cm-atom",
     "cm-number",
     "cm-operator",
     "cm-string",
     "cm-tag",
-  ].includes(target.className);
-
-  
-  const invalidToken =
-    tokenText === "" || tokenText.match(/^[(){}\|&%,.;=<>\+-/\*\s](?=)/);
-
-  
-  const invalidTarget =
-    (target.parentElement &&
-      !target.parentElement.closest(".CodeMirror-line, .CodeMirror-widget")) ||
-    cursorPos.top == 0;
-
-  const invalidClasses = ["editor-mount"];
-  if (invalidClasses.some(className => target.classList.contains(className))) {
+    
+    "editor-mount",
+  ];
+  if (
+    target.className === "" ||
+    INVALID_TARGET_CLASSES.some(cls => target.classList.contains(cls))
+  ) {
     return true;
   }
 
+  
+  
+  
+  if (target.classList.contains("cm-keyword") && tokenText !== "this") {
+    return true;
+  }
+
+  
+  if (
+    (target.parentElement &&
+      !target.parentElement.closest(".CodeMirror-line, .CodeMirror-widget")) ||
+    target.getBoundingClientRect().top == 0
+  ) {
+    return true;
+  }
+
+  
   if (target.closest(".popover")) {
     return true;
   }
 
-  return !!(invalidTarget || invalidToken || invalidType);
+  return false;
 }
 
 function _dispatch(codeMirror, eventName, data) {
