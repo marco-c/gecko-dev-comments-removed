@@ -439,8 +439,6 @@ class FennecInstance(GeckoInstance):
         "browser.safebrowsing.update.enabled": False,
         
         "browser.sessionstore.resume_from_crash": False,
-        
-        "browser.tabs.remote.autostart": False,
     }
 
     def __init__(

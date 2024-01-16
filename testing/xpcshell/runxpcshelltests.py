@@ -1252,6 +1252,8 @@ class XPCShellTests(object):
         
         self.env["MOZ_CRASHREPORTER_NO_REPORT"] = "1"
         
+        self.env["MOZ_FORCE_DISABLE_E10S"] = "1"
+        
         
         
         
