@@ -1779,14 +1779,6 @@ bool WorkerPrivate::Notify(WorkerStatus aStatus) {
     mCancelingTimer = nullptr;
   }
 
-  
-  
-  
-  
-  if (!mParent) {
-    MOZ_ALWAYS_SUCCEEDS(mMainThreadDebuggeeEventTarget->SetIsPaused(false));
-  }
-
   RefPtr<NotifyRunnable> runnable = new NotifyRunnable(this, aStatus);
   return runnable->Dispatch();
 }
@@ -1795,13 +1787,6 @@ bool WorkerPrivate::Freeze(const nsPIDOMWindowInner* aWindow) {
   AssertIsOnParentThread();
 
   mParentFrozen = true;
-
-  bool isCanceling = false;
-  {
-    MutexAutoLock lock(mMutex);
-
-    isCanceling = mParentStatus >= Canceling;
-  }
 
   
   
@@ -1814,13 +1799,16 @@ bool WorkerPrivate::Freeze(const nsPIDOMWindowInner* aWindow) {
     
     if (mMainThreadDebuggeeEventTarget) {
       
-      MOZ_ALWAYS_SUCCEEDS(
-          mMainThreadDebuggeeEventTarget->SetIsPaused(!isCanceling));
+      MOZ_ALWAYS_SUCCEEDS(mMainThreadDebuggeeEventTarget->SetIsPaused(true));
     }
   }
 
-  if (isCanceling) {
-    return true;
+  {
+    MutexAutoLock lock(mMutex);
+
+    if (mParentStatus >= Canceling) {
+      return true;
+    }
   }
 
   DisableDebugger();
@@ -1835,32 +1823,26 @@ bool WorkerPrivate::Thaw(const nsPIDOMWindowInner* aWindow) {
 
   mParentFrozen = false;
 
+  
+  
+  
+  
+  
+  if (aWindow) {
+    
+    
+    
+    
+    
+    
+    Unused << mMainThreadDebuggeeEventTarget->SetIsPaused(
+        IsParentWindowPaused());
+  }
+
   {
-    bool isCanceling = false;
+    MutexAutoLock lock(mMutex);
 
-    {
-      MutexAutoLock lock(mMutex);
-
-      isCanceling = mParentStatus >= Canceling;
-    }
-
-    
-    
-    
-    
-    
-    if (aWindow) {
-      
-      
-      
-      
-      
-      
-      Unused << mMainThreadDebuggeeEventTarget->SetIsPaused(
-          IsParentWindowPaused() && !isCanceling);
-    }
-
-    if (isCanceling) {
+    if (mParentStatus >= Canceling) {
       return true;
     }
   }
@@ -1879,18 +1861,8 @@ void WorkerPrivate::ParentWindowPaused() {
   
   
   if (mMainThreadDebuggeeEventTarget) {
-    bool isCanceling = false;
-
-    {
-      MutexAutoLock lock(mMutex);
-
-      isCanceling = mParentStatus >= Canceling;
-    }
-
     
-    
-    MOZ_ALWAYS_SUCCEEDS(
-        mMainThreadDebuggeeEventTarget->SetIsPaused(!isCanceling));
+    MOZ_ALWAYS_SUCCEEDS(mMainThreadDebuggeeEventTarget->SetIsPaused(true));
   }
 }
 
@@ -1900,11 +1872,12 @@ void WorkerPrivate::ParentWindowResumed() {
   MOZ_ASSERT(mParentWindowPaused);
   mParentWindowPaused = false;
 
-  bool isCanceling = false;
   {
     MutexAutoLock lock(mMutex);
 
-    isCanceling = mParentStatus >= Canceling;
+    if (mParentStatus >= Canceling) {
+      return;
+    }
   }
 
   
@@ -1913,8 +1886,7 @@ void WorkerPrivate::ParentWindowResumed() {
   
   
   
-  Unused << mMainThreadDebuggeeEventTarget->SetIsPaused(IsFrozen() &&
-                                                        !isCanceling);
+  Unused << mMainThreadDebuggeeEventTarget->SetIsPaused(IsFrozen());
 }
 
 void WorkerPrivate::PropagateStorageAccessPermissionGranted() {
