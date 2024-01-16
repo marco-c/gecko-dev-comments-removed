@@ -34,6 +34,8 @@ using FFmpegBitRate = int;
 constexpr size_t FFmpegErrorMaxStringSize = 64;
 #endif
 
+
+
 #if LIBAVCODEC_VERSION_MAJOR < 54
 using FFmpegPixelFormat = enum PixelFormat;
 const FFmpegPixelFormat FFMPEG_PIX_FMT_NONE = FFmpegPixelFormat::PIX_FMT_NONE;
@@ -72,8 +74,6 @@ const FFmpegPixelFormat FFMPEG_PIX_FMT_NV12 =
 const FFmpegPixelFormat FFMPEG_PIX_FMT_NV21 =
     FFmpegPixelFormat::AV_PIX_FMT_NV21;
 #endif
-
-
 
 static const char* GetPixelFormatString(FFmpegPixelFormat aFormat) {
   switch (aFormat) {
