@@ -1076,10 +1076,10 @@ class MediaTrackGraph {
   
   static MediaTrackGraph* GetInstanceIfExists(
       nsPIDOMWindowInner* aWindow, TrackRate aSampleRate,
-      CubebUtils::AudioDeviceID aOutputDeviceID);
+      CubebUtils::AudioDeviceID aPrimaryOutputDeviceID);
   static MediaTrackGraph* GetInstance(
       GraphDriverType aGraphDriverRequested, nsPIDOMWindowInner* aWindow,
-      TrackRate aSampleRate, CubebUtils::AudioDeviceID aOutputDeviceID);
+      TrackRate aSampleRate, CubebUtils::AudioDeviceID aPrimaryOutputDeviceID);
   static MediaTrackGraph* CreateNonRealtimeInstance(TrackRate aSampleRate);
 
   
@@ -1186,6 +1186,14 @@ class MediaTrackGraph {
 
 
   TrackRate GraphRate() const { return mSampleRate; }
+  
+
+
+
+
+  CubebUtils::AudioDeviceID PrimaryOutputDeviceID() const {
+    return mPrimaryOutputDeviceID;
+  }
 
   double AudioOutputLatency();
 
@@ -1228,7 +1236,10 @@ class MediaTrackGraph {
   NativeInputTrack* GetNativeInputTrackMainThread();
 
  protected:
-  explicit MediaTrackGraph(TrackRate aSampleRate) : mSampleRate(aSampleRate) {
+  explicit MediaTrackGraph(TrackRate aSampleRate,
+                           CubebUtils::AudioDeviceID aPrimaryOutputDeviceID)
+      : mSampleRate(aSampleRate),
+        mPrimaryOutputDeviceID(aPrimaryOutputDeviceID) {
     MOZ_COUNT_CTOR(MediaTrackGraph);
   }
   MOZ_COUNTED_DTOR_VIRTUAL(MediaTrackGraph)
@@ -1247,6 +1258,11 @@ class MediaTrackGraph {
 
 
   const TrackRate mSampleRate;
+  
+
+
+
+  const CubebUtils::AudioDeviceID mPrimaryOutputDeviceID;
 };
 
 inline void MediaTrack::AssertOnGraphThread() const {

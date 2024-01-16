@@ -137,11 +137,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                                nsISerialEventTarget* aMainThread);
   static MediaTrackGraphImpl* GetInstance(
       GraphDriverType aGraphDriverRequested, uint64_t aWindowID,
-      TrackRate aSampleRate, CubebUtils::AudioDeviceID aOutputDeviceID,
+      TrackRate aSampleRate, CubebUtils::AudioDeviceID aPrimaryOutputDeviceID,
       nsISerialEventTarget* aMainThread);
   static MediaTrackGraphImpl* GetInstanceIfExists(
       uint64_t aWindowID, TrackRate aSampleRate,
-      CubebUtils::AudioDeviceID aOutputDeviceID);
+      CubebUtils::AudioDeviceID aPrimaryOutputDeviceID);
   
   struct Lookup;
   operator Lookup() const;
@@ -516,7 +516,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   }
 
   
-  uint32_t AudioOutputChannelCount() const;
+  
+  uint32_t PrimaryOutputChannelCount() const;
   
   void SetMaxOutputChannelCount(uint32_t aMaxChannelCount);
 
@@ -649,6 +650,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+  const uint64_t mWindowID;
+  
+
+
+
   const RefPtr<GraphRunner> mGraphRunner;
 
   
@@ -741,19 +747,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   nsTArray<nsCOMPtr<nsIRunnable>> mPendingUpdateRunnables;
-
-  
-
-
-
-  const uint64_t mWindowID;
-  
-
-
-
-
-
-  const CubebUtils::AudioDeviceID mOutputDeviceID;
 
   
 
