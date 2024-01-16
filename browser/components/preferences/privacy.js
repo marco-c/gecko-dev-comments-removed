@@ -341,12 +341,6 @@ var gPrivacyPane = {
   
 
 
-
-  shouldUpdateSiteUsageDataForSanitizeDialog: false,
-
-  
-
-
   _shouldPromptForRestart: true,
 
   
@@ -2031,24 +2025,10 @@ var gPrivacyPane = {
 
 
   showClearPrivateDataSettings() {
-    let dialogFile = useOldClearHistoryDialog
-      ? "chrome://browser/content/preferences/dialogs/sanitize.xhtml"
-      : "chrome://browser/content/sanitize_v2.xhtml";
-
     gSubDialog.open(
-      dialogFile,
-      {
-        features: "resizable=no",
-      },
-      {
-        mode: "clearOnShutdown",
-        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
-      }
+      "chrome://browser/content/preferences/dialogs/sanitize.xhtml",
+      { features: "resizable=no" }
     );
-
-    
-    
-    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
   },
 
   
@@ -2068,27 +2048,17 @@ var gPrivacyPane = {
       ? "chrome://browser/content/sanitize.xhtml"
       : "chrome://browser/content/sanitize_v2.xhtml";
 
-    gSubDialog.open(
-      dialogFile,
-      {
-        features: "resizable=no",
-        closingCallback: () => {
-          
-          if (aClearEverything) {
-            ts.value = timeSpanOrig;
-          }
+    gSubDialog.open(dialogFile, {
+      features: "resizable=no",
+      closingCallback: () => {
+        
+        if (aClearEverything) {
+          ts.value = timeSpanOrig;
+        }
 
-          Services.obs.notifyObservers(null, "clear-private-data");
-        },
+        Services.obs.notifyObservers(null, "clear-private-data");
       },
-      {
-        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
-      }
-    );
-
-    
-    
-    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
+    });
   },
 
   
@@ -2504,25 +2474,9 @@ var gPrivacyPane = {
   },
 
   clearSiteData() {
-    
-    
-    let dialogFile = useOldClearHistoryDialog
-      ? "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml"
-      : "chrome://browser/content/sanitize_v2.xhtml";
-
     gSubDialog.open(
-      dialogFile,
-      {
-        features: "resizable=no",
-      },
-      {
-        mode: "clearSiteData",
-        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
-      }
+      "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml"
     );
-    
-    
-    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
   },
 
   
