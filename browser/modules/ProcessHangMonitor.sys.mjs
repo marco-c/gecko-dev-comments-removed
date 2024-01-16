@@ -472,7 +472,7 @@ export var ProcessHangMonitor = {
   
 
 
-  showNotification(win, report) {
+  async showNotification(win, report) {
     let bundle = win.gNavigatorBundle;
 
     let buttons = [
@@ -563,8 +563,10 @@ export var ProcessHangMonitor = {
       });
     }
 
-    win.gNotificationBox
-      .appendNotification(
+    
+    
+    try {
+      let hangNotification = await win.gNotificationBox.appendNotification(
         "process-hang",
         {
           label: message,
@@ -577,8 +579,11 @@ export var ProcessHangMonitor = {
           },
         },
         buttons
-      )
-      .setAttribute("notification-tag", notificationTag);
+      );
+      hangNotification.setAttribute("notification-tag", notificationTag);
+    } catch (err) {
+      console.warn(err);
+    }
   },
 
   
