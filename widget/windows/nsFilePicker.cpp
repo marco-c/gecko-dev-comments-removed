@@ -6,9 +6,10 @@
 
 #include "nsFilePicker.h"
 
+#include <cderr.h>
 #include <shlobj.h>
 #include <shlwapi.h>
-#include <cderr.h>
+#include <sysinfoapi.h>
 #include <winerror.h>
 #include <winuser.h>
 #include <utility>
@@ -25,17 +26,18 @@
 #include "nsEnumeratorUtils.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
+#include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsToolkit.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
 
+#include "mozilla/glean/GleanMetrics.h"
+
 #include "mozilla/widget/filedialog/WinFileDialogCommands.h"
 #include "mozilla/widget/filedialog/WinFileDialogParent.h"
 
-using mozilla::Maybe;
-using mozilla::Result;
 using mozilla::UniquePtr;
 
 using namespace mozilla::widget;
@@ -239,6 +241,51 @@ struct LocalAndOrRemote {
     }
   };
 
+ private:
+  
+  struct Telemetry {
+    static void RecordSuccess(uint64_t (&&time)[2]) {
+      auto [t0, t1] = time;
+
+      namespace glean_fd = mozilla::glean::file_dialog;
+      glean_fd::FallbackExtra extra{
+          .hresultLocal = Nothing(),
+          .hresultRemote = Nothing(),
+          .succeeded = Some(true),
+          .timeLocal = Nothing(),
+          .timeRemote = Some(delta(t1, t0)),
+      };
+      glean_fd::fallback.Record(Some(extra));
+    }
+
+    static void RecordFailure(uint64_t (&&time)[3], HRESULT hrRemote,
+                              HRESULT hrLocal) {
+      auto [t0, t1, t2] = time;
+
+      {
+        namespace glean_fd = mozilla::glean::file_dialog;
+        glean_fd::FallbackExtra extra{
+            .hresultLocal = Some(hexString(hrLocal)),
+            .hresultRemote = Some(hexString(hrRemote)),
+            .succeeded = Some(false),
+            .timeLocal = Some(delta(t2, t1)),
+            .timeRemote = Some(delta(t1, t0)),
+        };
+        glean_fd::fallback.Record(Some(extra));
+      }
+    }
+
+   private:
+    static uint32_t delta(uint64_t tb, uint64_t ta) {
+      
+      
+      return uint32_t((tb - ta) / 10'000);
+    };
+    static nsCString hexString(HRESULT val) {
+      return nsPrintfCString("%08lX", val);
+    };
+  };
+
  public:
   
   
@@ -263,21 +310,51 @@ struct LocalAndOrRemote {
         return remote(args...);
 
       case RemoteWithFallback:
-        return remote(args...)->Then(
-            NS_GetCurrentThread(), kFunctionName,
-            [](typename PromiseT::ResolveValueType result) -> RefPtr<PromiseT> {
-              
-              return PromiseT::CreateAndResolve(result, kFunctionName);
-            },
-            
-            
-            [=, tuple = std::make_tuple(Copy(args)...)](
-                typename PromiseT::RejectValueType _err) mutable
-            -> RefPtr<PromiseT> {
-              
-              return std::apply(local, std::move(tuple));
-            });
+        
+        break;
     }
+
+    
+    constexpr static const auto GetTime = []() -> uint64_t {
+      FILETIME t;
+      ::GetSystemTimeAsFileTime(&t);
+      return (uint64_t(t.dwHighDateTime) << 32) | t.dwLowDateTime;
+    };
+    uint64_t const t0 = GetTime();
+
+    return remote(args...)->Then(
+        NS_GetCurrentThread(), kFunctionName,
+        [t0](typename PromiseT::ResolveValueType result) -> RefPtr<PromiseT> {
+          
+          auto const t1 = GetTime();
+          
+          Telemetry::RecordSuccess({t0, t1});
+          return PromiseT::CreateAndResolve(result, kFunctionName);
+        },
+        
+        
+        [=, tuple = std::make_tuple(Copy(args)...)](
+            typename PromiseT::RejectValueType err) mutable
+        -> RefPtr<PromiseT> {
+          
+          auto const t1 = GetTime();
+          HRESULT const hrRemote = err;
+
+          
+          auto p0 = std::apply(local, std::move(tuple));
+          
+          return p0->Then(
+              NS_GetCurrentThread(), kFunctionName,
+              [t0, t1, hrRemote](typename PromiseT::ResolveOrRejectValue val)
+                  -> RefPtr<PromiseT> {
+                auto const t2 = GetTime();
+                HRESULT const hrLocal =
+                    val.IsReject() ? val.RejectValue() : S_OK;
+                Telemetry::RecordFailure({t0, t1, t2}, hrRemote, hrLocal);
+
+                return PromiseT::CreateAndResolveOrReject(val, kFunctionName);
+              });
+        });
   }
 };
 
