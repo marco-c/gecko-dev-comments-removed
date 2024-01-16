@@ -629,7 +629,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             return;
         }
 
-        debug_assert_eq!(self.style.get_box().clone_display(), Display::Block);
         
         
         
