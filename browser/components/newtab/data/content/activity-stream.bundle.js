@@ -65,9 +65,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 __webpack_require__.d(__webpack_exports__, {
-  "NewTab": () => ( NewTab),
-  "renderCache": () => ( renderCache),
-  "renderWithoutState": () => ( renderWithoutState)
+  NewTab: () => ( NewTab),
+  renderCache: () => ( renderCache),
+  renderWithoutState: () => ( renderWithoutState)
 });
 
 ;
@@ -539,6 +539,7 @@ var external_React_default = __webpack_require__.n(external_React_namespaceObjec
 
 
 
+
 class SimpleHashRouter extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -547,21 +548,17 @@ class SimpleHashRouter extends (external_React_default()).PureComponent {
       hash: __webpack_require__.g.location.hash
     };
   }
-
   onHashChange() {
     this.setState({
       hash: __webpack_require__.g.location.hash
     });
   }
-
   componentWillMount() {
     __webpack_require__.g.addEventListener("hashchange", this.onHashChange);
   }
-
   componentWillUnmount() {
     __webpack_require__.g.removeEventListener("hashchange", this.onHashChange);
   }
-
   render() {
     const [, ...routes] = this.state.hash.split("-");
     return external_React_default().cloneElement(this.props.children, {
@@ -571,11 +568,9 @@ class SimpleHashRouter extends (external_React_default()).PureComponent {
       }
     });
   }
-
 }
 ;
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
+function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
 
@@ -587,15 +582,12 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 const Row = props => external_React_default().createElement("tr", _extends({
   className: "message-item"
 }, props), props.children);
-
 function relativeTime(timestamp) {
   if (!timestamp) {
     return "";
   }
-
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
   const minutes = Math.floor((Date.now() - timestamp) / 60000);
-
   if (seconds < 2) {
     return "just now";
   } else if (seconds < 60) {
@@ -605,37 +597,30 @@ function relativeTime(timestamp) {
   } else if (minutes < 600) {
     return `${minutes} minutes ago`;
   }
-
   return new Date(timestamp).toLocaleString();
 }
-
 class ToggleStoryButton extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.handleClick = this.handleClick.bind(this);
   }
-
   handleClick() {
     this.props.onClick(this.props.story);
   }
-
   render() {
     return external_React_default().createElement("button", {
       onClick: this.handleClick
     }, "collapse/open");
   }
-
 }
 class TogglePrefCheckbox extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onChange = this.onChange.bind(this);
   }
-
   onChange(event) {
     this.props.onChange(this.props.pref, event.target.checked);
   }
-
   render() {
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("input", {
       type: "checkbox",
@@ -644,20 +629,17 @@ class TogglePrefCheckbox extends (external_React_default()).PureComponent {
       disabled: this.props.disabled
     }), " ", this.props.pref, " ");
   }
-
 }
 class Personalization extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.togglePersonalization = this.togglePersonalization.bind(this);
   }
-
   togglePersonalization() {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.DISCOVERY_STREAM_PERSONALIZATION_TOGGLE
     }));
   }
-
   render() {
     const {
       lastUpdated,
@@ -675,7 +657,6 @@ class Personalization extends (external_React_default()).PureComponent {
       className: "min"
     }, "Personalization Initialized"), external_React_default().createElement("td", null, initialized ? "true" : "false")))));
   }
-
 }
 class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
   constructor(props) {
@@ -692,7 +673,6 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       toggledStories: {}
     };
   }
-
   setConfigValue(name, value) {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.DISCOVERY_STREAM_CONFIG_SET_VALUE,
@@ -702,13 +682,11 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       }
     }));
   }
-
   restorePrefDefaults(event) {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS
     }));
   }
-
   refreshCache() {
     const {
       config
@@ -718,29 +696,23 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       data: config
     }));
   }
-
   dispatchSimpleAction(type) {
     this.props.dispatch(actionCreators.OnlyToMain({
       type
     }));
   }
-
   systemTick() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_SYSTEM_TICK);
   }
-
   expireCache() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_EXPIRE_CACHE);
   }
-
   idleDaily() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_IDLE_DAILY);
   }
-
   syncRemoteSettings() {
     this.dispatchSimpleAction(actionTypes.DISCOVERY_STREAM_DEV_SYNC_RS);
   }
-
   renderComponent(width, component) {
     return external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
@@ -748,7 +720,6 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "min"
     }, "Width"), external_React_default().createElement("td", null, width)), component.feed && this.renderFeed(component.feed)));
   }
-
   renderFeedData(url) {
     const {
       feeds
@@ -756,49 +727,42 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const feed = feeds.data[url].data;
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h4", null, "Feed url: ", url), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, feed.recommendations?.map(story => this.renderStoryData(story)))));
   }
-
   renderFeedsData() {
     const {
       feeds
     } = this.props.state.DiscoveryStream;
     return external_React_default().createElement((external_React_default()).Fragment, null, Object.keys(feeds.data).map(url => this.renderFeedData(url)));
   }
-
   renderSpocs() {
     const {
       spocs
     } = this.props.state.DiscoveryStream;
     let spocsData = [];
-
     if (spocs.data && spocs.data.spocs && spocs.data.spocs.items) {
       spocsData = spocs.data.spocs.items || [];
     }
-
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
     }, "spocs_endpoint"), external_React_default().createElement("td", null, spocs.spocs_endpoint)), external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
     }, "Data last fetched"), external_React_default().createElement("td", null, relativeTime(spocs.lastUpdated))))), external_React_default().createElement("h4", null, "Spoc data"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, spocsData.map(spoc => this.renderStoryData(spoc)))), external_React_default().createElement("h4", null, "Spoc frequency caps"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, spocs.frequency_caps.map(spoc => this.renderStoryData(spoc)))));
   }
-
   onStoryToggle(story) {
     const {
       toggledStories
     } = this.state;
     this.setState({
-      toggledStories: { ...toggledStories,
+      toggledStories: {
+        ...toggledStories,
         [story.id]: !toggledStories[story.id]
       }
     });
   }
-
   renderStoryData(story) {
     let storyData = "";
-
     if (this.state.toggledStories[story.id]) {
       storyData = JSON.stringify(story, null, 2);
     }
-
     return external_React_default().createElement("tr", {
       className: "message-item",
       key: story.id
@@ -811,23 +775,19 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "message-summary"
     }, external_React_default().createElement("pre", null, storyData)));
   }
-
   renderFeed(feed) {
     const {
       feeds
     } = this.props.state.DiscoveryStream;
-
     if (!feed.url) {
       return null;
     }
-
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
     }, "Feed url"), external_React_default().createElement("td", null, feed.url)), external_React_default().createElement(Row, null, external_React_default().createElement("td", {
       className: "min"
     }, "Data last fetched"), external_React_default().createElement("td", null, relativeTime(feeds.data[feed.url] ? feeds.data[feed.url].lastUpdated : null) || "(no data)")));
   }
-
   render() {
     const prefToggles = "enabled collapsible".split(" ");
     const {
@@ -872,14 +832,12 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       }
     }), external_React_default().createElement("h3", null, "Spocs"), this.renderSpocs(), external_React_default().createElement("h3", null, "Feeds Data"), this.renderFeedsData());
   }
-
 }
 class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.setState = this.setState.bind(this);
   }
-
   render() {
     return external_React_default().createElement("div", {
       className: `discoverystream-admin ${this.props.collapsed ? "collapsed" : "expanded"}`
@@ -901,7 +859,6 @@ class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent
       dispatch: this.props.dispatch
     }))));
   }
-
 }
 class CollapseToggle extends (external_React_default()).PureComponent {
   constructor(props) {
@@ -911,21 +868,18 @@ class CollapseToggle extends (external_React_default()).PureComponent {
       collapsed: false
     };
   }
-
   get renderAdmin() {
     const {
       props
     } = this;
     return props.location.hash && props.location.hash.startsWith("#devtools");
   }
-
   onCollapseToggle(e) {
     e.preventDefault();
     this.setState(state => ({
       collapsed: !state.collapsed
     }));
   }
-
   setBodyClass() {
     if (this.renderAdmin && !this.state.collapsed) {
       __webpack_require__.g.document.body.classList.add("no-scroll");
@@ -933,19 +887,15 @@ class CollapseToggle extends (external_React_default()).PureComponent {
       __webpack_require__.g.document.body.classList.remove("no-scroll");
     }
   }
-
   componentDidMount() {
     this.setBodyClass();
   }
-
   componentDidUpdate() {
     this.setBodyClass();
   }
-
   componentWillUnmount() {
     __webpack_require__.g.document.body.classList.remove("no-scroll");
   }
-
   render() {
     const {
       props
@@ -967,11 +917,8 @@ class CollapseToggle extends (external_React_default()).PureComponent {
       collapsed: this.state.collapsed
     })) : null);
   }
-
 }
-
 const _DiscoveryStreamAdmin = props => external_React_default().createElement(SimpleHashRouter, null, external_React_default().createElement(CollapseToggle, props));
-
 const DiscoveryStreamAdmin = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
@@ -1005,13 +952,13 @@ const DiscoveryStreamAdmin = (0,external_ReactRedux_namespaceObject.connect)(sta
 
 
 
+
 class _ConfirmDialog extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this._handleCancelBtn = this._handleCancelBtn.bind(this);
     this._handleConfirmBtn = this._handleConfirmBtn.bind(this);
   }
-
   _handleCancelBtn() {
     this.props.dispatch({
       type: actionTypes.DIALOG_CANCEL
@@ -1021,29 +968,23 @@ class _ConfirmDialog extends (external_React_default()).PureComponent {
       source: this.props.data.eventSource
     }));
   }
-
   _handleConfirmBtn() {
     this.props.data.onConfirm.forEach(this.props.dispatch);
   }
-
   _renderModalMessage() {
     const message_body = this.props.data.body_string_id;
-
     if (!message_body) {
       return null;
     }
-
     return external_React_default().createElement("span", null, message_body.map(msg => external_React_default().createElement("p", {
       key: msg,
       "data-l10n-id": msg
     })));
   }
-
   render() {
     if (!this.props.visible) {
       return null;
     }
-
     return external_React_default().createElement("div", {
       className: "confirmation-dialog"
     }, external_React_default().createElement("div", {
@@ -1067,10 +1008,10 @@ class _ConfirmDialog extends (external_React_default()).PureComponent {
       "data-l10n-id": this.props.data.confirm_button_string_id
     }))));
   }
-
 }
 const ConfirmDialog = (0,external_ReactRedux_namespaceObject.connect)(state => state.Dialog)(_ConfirmDialog);
 ;
+
 
 
 
@@ -1112,7 +1053,6 @@ const PLACEHOLDER_IMAGE_DATA_ARRAY = [{
   scale: "68%"
 }];
 const PLACEHOLDER_IMAGE_COLORS_ARRAY = "#0090ED #FF4F5F #2AC3A2 #FF7139 #A172FF #FFA437 #FF2A8A".split(" ");
-
 function generateIndex({
   keyCode,
   max
@@ -1121,22 +1061,17 @@ function generateIndex({
     
     return Math.floor(Math.random() * max);
   }
-
   const hashStr = str => {
     let hash = 0;
-
     for (let i = 0; i < str.length; i++) {
       let charCode = str.charCodeAt(i);
       hash += charCode;
     }
-
     return hash;
   };
-
   const hash = hashStr(keyCode);
   return hash % max;
 }
-
 function PlaceholderImage({
   urlKey,
   titleKey
@@ -1180,7 +1115,6 @@ class DSImage extends (external_React_default()).PureComponent {
       useTransition: false
     };
   }
-
   onIdleCallback() {
     if (!this.state.isLoaded) {
       this.setState({
@@ -1188,24 +1122,20 @@ class DSImage extends (external_React_default()).PureComponent {
       });
     }
   }
-
   reformatImageURL(url, width, height) {
     
     
     
     return `https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
   }
-
   componentDidMount() {
     this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
   }
-
   componentWillUnmount() {
     if (this.idleCallbackId) {
       this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
     }
   }
-
   render() {
     let classNames = `ds-image
       ${this.props.extraClassNames ? ` ${this.props.extraClassNames}` : ``}
@@ -1213,13 +1143,11 @@ class DSImage extends (external_React_default()).PureComponent {
       ${this.state && this.state.isLoaded ? ` loaded` : ``}
     `;
     let img;
-
     if (this.state) {
       if (this.props.optimize && this.props.rawSource && !this.state.optimizedImageFailed) {
         let baseSource = this.props.rawSource;
         let sizeRules = [];
         let srcSetRules = [];
-
         for (let rule of this.props.sizes) {
           let {
             mediaMatcher,
@@ -1233,13 +1161,11 @@ class DSImage extends (external_React_default()).PureComponent {
           srcSetRules.push(srcSetRule);
           srcSetRules.push(srcSetRule2x);
         }
-
         if (this.props.sizes.length) {
           
           
           sizeRules.push(`${this.props.sizes[this.props.sizes.length - 1].width}px`);
         }
-
         img = external_React_default().createElement("img", {
           loading: "lazy",
           alt: this.props.alt_text,
@@ -1261,9 +1187,9 @@ class DSImage extends (external_React_default()).PureComponent {
         });
       } else {
         
-        classNames = `${classNames} loaded`; 
+        classNames = `${classNames} loaded`;
         
-
+        
         if (this.props.isRecentSave && !this.props.rawSource && !this.props.source) {
           img = external_React_default().createElement(PlaceholderImage, {
             urlKey: this.props.url,
@@ -1276,31 +1202,26 @@ class DSImage extends (external_React_default()).PureComponent {
         }
       }
     }
-
     return external_React_default().createElement("picture", {
       className: classNames
     }, img);
   }
-
   onOptimizedImageError() {
     
     this.setState({
       optimizedImageFailed: true
     });
   }
-
   onNonOptimizedImageError() {
     this.setState({
       nonOptimizedImageFailed: true
     });
   }
-
   onLoad() {
     this.setState({
       isLoaded: true
     });
   }
-
 }
 DSImage.defaultProps = {
   source: null,
@@ -1322,6 +1243,7 @@ DSImage.defaultProps = {
 
 
 
+
 class ContextMenu extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -1329,35 +1251,29 @@ class ContextMenu extends (external_React_default()).PureComponent {
     this.onShow = this.onShow.bind(this);
     this.onClick = this.onClick.bind(this);
   }
-
   hideContext() {
     this.props.onUpdate(false);
   }
-
   onShow() {
     if (this.props.onShow) {
       this.props.onShow();
     }
   }
-
   componentDidMount() {
     this.onShow();
     setTimeout(() => {
       __webpack_require__.g.addEventListener("click", this.hideContext);
     }, 0);
   }
-
   componentWillUnmount() {
     __webpack_require__.g.removeEventListener("click", this.hideContext);
   }
-
   onClick(event) {
     
     
     
     event.stopPropagation();
   }
-
   render() {
     
     return (
@@ -1382,7 +1298,6 @@ class ContextMenu extends (external_React_default()).PureComponent {
       }))))
     );
   }
-
 }
 class _ContextMenuItem extends (external_React_default()).PureComponent {
   constructor(props) {
@@ -1392,40 +1307,35 @@ class _ContextMenuItem extends (external_React_default()).PureComponent {
     this.onKeyUp = this.onKeyUp.bind(this);
     this.focusFirst = this.focusFirst.bind(this);
   }
-
   onClick(event) {
     this.props.hideContext();
     this.props.option.onClick(event);
-  } 
+  }
 
-
+  
   focusFirst(button) {
     if (this.props.keyboardAccess && button) {
       button.focus();
     }
-  } 
+  }
 
-
+  
   focusSibling(target, key) {
     const parent = target.parentNode;
     const closestSiblingSelector = key === "ArrowUp" ? "previousSibling" : "nextSibling";
-
     if (!parent[closestSiblingSelector]) {
       return;
     }
-
     if (parent[closestSiblingSelector].firstElementChild) {
       parent[closestSiblingSelector].firstElementChild.focus();
     } else {
       parent[closestSiblingSelector][closestSiblingSelector].firstElementChild.focus();
     }
   }
-
   onKeyDown(event) {
     const {
       option
     } = this.props;
-
     switch (event.key) {
       case "Tab":
         
@@ -1434,36 +1344,31 @@ class _ContextMenuItem extends (external_React_default()).PureComponent {
         if (event.shiftKey && option.first || !event.shiftKey && option.last) {
           this.props.hideContext();
         }
-
         break;
-
       case "ArrowUp":
       case "ArrowDown":
         event.preventDefault();
         this.focusSibling(event.target, event.key);
         break;
-
       case "Enter":
       case " ":
         event.preventDefault();
         this.props.hideContext();
         option.onClick();
         break;
-
       case "Escape":
         this.props.hideContext();
         break;
     }
-  } 
+  }
+
   
-
-
+  
   onKeyUp(event) {
     if (event.key === " ") {
       event.preventDefault();
     }
   }
-
   render() {
     const {
       option
@@ -1483,7 +1388,6 @@ class _ContextMenuItem extends (external_React_default()).PureComponent {
       "data-l10n-id": option.string_id || option.id
     })));
   }
-
 }
 const ContextMenuItem = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Prefs: state.Prefs
@@ -1506,7 +1410,6 @@ const _OpenInPrivateWindow = site => ({
   }),
   userEvent: "OPEN_PRIVATE_WINDOW"
 });
-
 
 
 
@@ -1813,6 +1716,7 @@ const LinkMenuOptions = {
 
 
 
+
 const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
 class _LinkMenu extends (external_React_default()).PureComponent {
   getOptions() {
@@ -1827,8 +1731,9 @@ class _LinkMenu extends (external_React_default()).PureComponent {
       siteInfo,
       platform,
       userEvent = actionCreators.UserEvent
-    } = props; 
+    } = props;
 
+    
     const propOptions = site.isDefault && !site.searchTopSite && !site.sponsored_position ? DEFAULT_SITE_MENU_OPTIONS : props.options;
     const options = propOptions.map(o => LinkMenuOptions[o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
       const {
@@ -1838,7 +1743,6 @@ class _LinkMenu extends (external_React_default()).PureComponent {
         type,
         userEvent: eventName
       } = option;
-
       if (!type && id) {
         option.onClick = (event = {}) => {
           const {
@@ -1846,8 +1750,8 @@ class _LinkMenu extends (external_React_default()).PureComponent {
             metaKey,
             shiftKey,
             button
-          } = event; 
-
+          } = event;
+          
           if (ctrlKey || metaKey || shiftKey || button === 1) {
             action.data = Object.assign({
               event: {
@@ -1858,9 +1762,7 @@ class _LinkMenu extends (external_React_default()).PureComponent {
               }
             }, action.data);
           }
-
           props.dispatch(action);
-
           if (eventName) {
             const userEventData = Object.assign({
               event: eventName,
@@ -1872,23 +1774,21 @@ class _LinkMenu extends (external_React_default()).PureComponent {
             }, siteInfo);
             props.dispatch(userEvent(userEventData));
           }
-
           if (impression && props.shouldSendImpressionStats) {
             props.dispatch(impression);
           }
         };
       }
-
       return option;
-    }); 
-    
-    
+    });
 
+    
+    
+    
     options[0].first = true;
     options[options.length - 1].last = true;
     return options;
   }
-
   render() {
     return external_React_default().createElement(ContextMenu, {
       onUpdate: this.props.onUpdate,
@@ -1897,16 +1797,14 @@ class _LinkMenu extends (external_React_default()).PureComponent {
       keyboardAccess: this.props.keyboardAccess
     });
   }
-
 }
-
 const getState = state => ({
   isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
   platform: state.Prefs.values.platform
 });
-
 const LinkMenu = (0,external_ReactRedux_namespaceObject.connect)(getState)(_LinkMenu);
 ;
+
 
 
 
@@ -1922,40 +1820,33 @@ class ContextMenuButton extends (external_React_default()).PureComponent {
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onUpdate = this.onUpdate.bind(this);
   }
-
   openContextMenu(isKeyBoard, event) {
     if (this.props.onUpdate) {
       this.props.onUpdate(true);
     }
-
     this.setState({
       showContextMenu: true,
       contextMenuKeyboard: isKeyBoard
     });
   }
-
   onClick(event) {
     event.preventDefault();
     this.openContextMenu(false, event);
   }
-
   onKeyDown(event) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       this.openContextMenu(true, event);
     }
   }
-
   onUpdate(showContextMenu) {
     if (this.props.onUpdate) {
       this.props.onUpdate(showContextMenu);
     }
-
     this.setState({
       showContextMenu
     });
   }
-
   render() {
     const {
       tooltipArgs,
@@ -1980,9 +1871,9 @@ class ContextMenuButton extends (external_React_default()).PureComponent {
       onUpdate: this.onUpdate
     }) : null);
   }
-
 }
 ;
+
 
 
 
@@ -1998,15 +1889,12 @@ class DSLinkMenu extends (external_React_default()).PureComponent {
     } = this.props;
     let pocketMenuOptions = [];
     let TOP_STORIES_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow"];
-
     if (!this.props.isRecentSave) {
       if (this.props.pocket_button_enabled) {
         pocketMenuOptions = this.props.saveToPocketCard ? ["CheckDeleteFromPocket"] : ["CheckSavedToPocket"];
       }
-
       TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", "CheckArchiveFromPocket", ...pocketMenuOptions, "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.showPrivacyInfo ? ["ShowPrivacyInfo"] : [])];
     }
-
     const type = this.props.type || "DISCOVERY_STREAM";
     const title = this.props.title || this.props.source;
     return external_React_default().createElement("div", {
@@ -2038,20 +1926,20 @@ class DSLinkMenu extends (external_React_default()).PureComponent {
       }
     })));
   }
-
 }
 ;
+
 
 
 
 const TOP_SITES_SOURCE = "TOP_SITES";
 const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
 const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "ShowPrivacyInfo"];
-const TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "AboutSponsored"]; 
+const TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "AboutSponsored"];
 
-const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"]; 
+const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"];
 
-const MIN_RICH_FAVICON_SIZE = 96; 
+const MIN_RICH_FAVICON_SIZE = 96;
 
 const MIN_SMALL_FAVICON_SIZE = 16;
 ;
@@ -2061,8 +1949,10 @@ const MIN_SMALL_FAVICON_SIZE = 16;
 
 
 
+
 const VISIBLE = "visible";
-const VISIBILITY_CHANGE_EVENT = "visibilitychange"; 
+const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+
 
 
 
@@ -2093,30 +1983,27 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
     if (!this.impressionCardGuids || this.impressionCardGuids.length !== cards.length) {
       return true;
     }
-
     for (let i = 0; i < cards.length; i++) {
       if (cards[i].id !== this.impressionCardGuids[i]) {
         return true;
       }
     }
-
     return false;
   }
-
   _dispatchImpressionStats() {
     const {
       props
     } = this;
     const cards = props.rows;
-
     if (this.props.flightId) {
       this.props.dispatch(actionCreators.OnlyToMain({
         type: actionTypes.DISCOVERY_STREAM_SPOC_IMPRESSION,
         data: {
           flightId: this.props.flightId
         }
-      })); 
+      }));
 
+      
       if (this.props.source === TOP_SITES_SOURCE) {
         for (const card of cards) {
           this.props.dispatch(actionCreators.OnlyToMain({
@@ -2134,7 +2021,6 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
         }
       }
     }
-
     if (this._needsImpressionStats(cards)) {
       props.dispatch(actionCreators.DiscoveryStreamImpressionStats({
         source: props.source.toUpperCase(),
@@ -2152,30 +2038,26 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
       }));
       this.impressionCardGuids = cards.map(link => link.id);
     }
-  } 
+  }
+
   
-
-
+  
   _needsLoadedContent(cards) {
     if (!this.loadedContentGuids || this.loadedContentGuids.length !== cards.length) {
       return true;
     }
-
     for (let i = 0; i < cards.length; i++) {
       if (cards[i].id !== this.loadedContentGuids[i]) {
         return true;
       }
     }
-
     return false;
   }
-
   _dispatchLoadedContent() {
     const {
       props
     } = this;
     const cards = props.rows;
-
     if (this._needsLoadedContent(cards)) {
       props.dispatch(actionCreators.DiscoveryStreamLoadedContent({
         source: props.source.toUpperCase(),
@@ -2187,20 +2069,16 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
       this.loadedContentGuids = cards.map(link => link.id);
     }
   }
-
   setImpressionObserverOrAddListener() {
     const {
       props
     } = this;
-
     if (!props.dispatch) {
       return;
     }
-
     if (props.document.visibilityState === VISIBLE) {
       
       this._dispatchLoadedContent();
-
       this.setImpressionObserver();
     } else {
       
@@ -2208,23 +2086,19 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
       if (this._onVisibilityChange) {
         props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
       }
-
       this._onVisibilityChange = () => {
         if (props.document.visibilityState === VISIBLE) {
           
           this._dispatchLoadedContent();
-
           this.setImpressionObserver();
           props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
         }
       };
-
       props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
+
   
-
-
 
 
 
@@ -2236,49 +2110,40 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
     const {
       props
     } = this;
-
     if (!props.rows.length) {
       return;
     }
-
     this._handleIntersect = entries => {
       if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= INTERSECTION_RATIO)) {
         this._dispatchImpressionStats();
-
         this.impressionObserver.unobserve(this.refs.impression);
       }
     };
-
     const options = {
       threshold: INTERSECTION_RATIO
     };
     this.impressionObserver = new props.IntersectionObserver(this._handleIntersect, options);
     this.impressionObserver.observe(this.refs.impression);
   }
-
   componentDidMount() {
     if (this.props.rows.length) {
       this.setImpressionObserverOrAddListener();
     }
   }
-
   componentWillUnmount() {
     if (this._handleIntersect && this.impressionObserver) {
       this.impressionObserver.unobserve(this.refs.impression);
     }
-
     if (this._onVisibilityChange) {
       this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
-
   render() {
     return external_React_default().createElement("div", {
       ref: "impression",
       className: "impression-observer"
     }, this.props.children);
   }
-
 }
 ImpressionStats_ImpressionStats.defaultProps = {
   IntersectionObserver: __webpack_require__.g.IntersectionObserver,
@@ -2292,12 +2157,12 @@ ImpressionStats_ImpressionStats.defaultProps = {
 
 
 
+
 class SafeAnchor extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
   }
-
   onClick(event) {
     
     if (this.props.dispatch) {
@@ -2324,34 +2189,27 @@ class SafeAnchor extends (external_React_default()).PureComponent {
           url: event.currentTarget.href
         }
       }));
-    } 
+    }
 
-
+    
     if (this.props.onLinkClick) {
       this.props.onLinkClick(event);
     }
   }
-
   safeURI(url) {
     let protocol = null;
-
     try {
       protocol = new URL(url).protocol;
     } catch (e) {
       return "";
     }
-
     const isAllowed = ["http:", "https:"].includes(protocol);
-
     if (!isAllowed) {
       console.warn(`${url} is not allowed for anchor targets.`); 
-
       return "";
     }
-
     return url;
   }
-
   render() {
     const {
       url,
@@ -2363,9 +2221,9 @@ class SafeAnchor extends (external_React_default()).PureComponent {
       onClick: this.onClick
     }, this.props.children);
   }
-
 }
 ;
+
 
 
 
@@ -2407,6 +2265,7 @@ const external_ReactTransitionGroup_namespaceObject = ReactTransitionGroup;
 
 
 
+
 class FluentOrText extends (external_React_default()).PureComponent {
   render() {
     
@@ -2414,25 +2273,27 @@ class FluentOrText extends (external_React_default()).PureComponent {
       children,
       message
     } = this.props;
-    const child = children ? external_React_default().Children.only(children) : external_React_default().createElement("span", null); 
+    const child = children ? external_React_default().Children.only(children) : external_React_default().createElement("span", null);
 
+    
     let grandChildren = message;
-    let extraProps; 
+    let extraProps;
 
+    
     if (typeof message === "object") {
       const args = message.args || message.values;
       extraProps = {
         "data-l10n-args": args && JSON.stringify(args),
         "data-l10n-id": message.id || message.string_id
-      }; 
+      };
 
+      
       grandChildren = child.props.children;
-    } 
+    }
 
-
+    
     return external_React_default().cloneElement(child, extraProps, grandChildren);
   }
-
 }
 ;
 
@@ -2441,7 +2302,9 @@ class FluentOrText extends (external_React_default()).PureComponent {
 
 
 
- 
+
+
+
 
 const ANIMATION_DURATION = 3000;
 const DSMessageLabel = props => {
@@ -2453,7 +2316,6 @@ const DSMessageLabel = props => {
     icon,
     fluentID
   } = cardContextTypes[context_type] || {};
-
   if (!context && context_type) {
     return external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.TransitionGroup, {
       component: null
@@ -2466,7 +2328,6 @@ const DSMessageLabel = props => {
       fluentID: fluentID
     })));
   }
-
   return null;
 };
 const StatusMessage = ({
@@ -2487,8 +2348,8 @@ const SponsorLabel = ({
   context,
   newSponsoredLabel
 }) => {
-  const classList = `story-sponsored-label ${newSponsoredLabel || ""} clamp`; 
-
+  const classList = `story-sponsored-label ${newSponsoredLabel || ""} clamp`;
+  
   if (sponsored_by_override) {
     return external_React_default().createElement("p", {
       className: classList
@@ -2514,7 +2375,6 @@ const SponsorLabel = ({
       className: classList
     }, context);
   }
-
   return null;
 };
 class DSContextFooter extends (external_React_default()).PureComponent {
@@ -2534,16 +2394,13 @@ class DSContextFooter extends (external_React_default()).PureComponent {
       context,
       context_type
     });
-
     if (sponsorLabel || dsMessageLabel) {
       return external_React_default().createElement("div", {
         className: "story-footer"
       }, sponsorLabel, dsMessageLabel);
     }
-
     return null;
   }
-
 }
 const DSMessageFooter = props => {
   const {
@@ -2554,17 +2411,18 @@ const DSMessageFooter = props => {
   const dsMessageLabel = DSMessageLabel({
     context,
     context_type
-  }); 
+  });
 
+  
   if (!dsMessageLabel || saveToPocketCard && context_type === "pocket") {
     return null;
   }
-
   return external_React_default().createElement("div", {
     className: "story-footer"
   }, dsMessageLabel);
 };
 ;
+
 
 
 
@@ -2588,7 +2446,6 @@ function readTimeFromWordCount(wordCount) {
   if (!wordCount) {
     return false;
   }
-
   return Math.ceil(parseInt(wordCount, 10) / READING_WPM);
 }
 const DSSource = ({
@@ -2610,9 +2467,9 @@ const DSSource = ({
         newSponsoredLabel: "new-sponsored-label"
       });
     }
-  } 
+  }
 
-
+  
   if (source && timeToRead) {
     return external_React_default().createElement("p", {
       className: "source clamp time-to-read"
@@ -2625,9 +2482,9 @@ const DSSource = ({
         }
       }
     }));
-  } 
+  }
 
-
+  
   return external_React_default().createElement("p", {
     className: "source clamp"
   }, source);
@@ -2677,32 +2534,30 @@ class _DSCard extends (external_React_default()).PureComponent {
     this.onSaveClick = this.onSaveClick.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
     this.onMenuShow = this.onMenuShow.bind(this);
-
     this.setContextMenuButtonHostRef = element => {
       this.contextMenuButtonHostElement = element;
     };
-
     this.setPlaceholderRef = element => {
       this.placeholderElement = element;
     };
-
     this.state = {
       isSeen: false
-    }; 
-    
+    };
 
+    
+    
     if (props.App.isForStartupCache) {
       this.state.isSeen = true;
-    } 
-    
-    
-    
-    
-    
-    
-    
+    }
 
-
+    
+    
+    
+    
+    
+    
+    
+    
     this.dsImageSizes = [{
       mediaMatcher: "(min-width: 1122px)",
       width: 296,
@@ -2717,7 +2572,6 @@ class _DSCard extends (external_React_default()).PureComponent {
       height: 101
     }];
   }
-
   onLinkClick(event) {
     if (this.props.dispatch) {
       this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
@@ -2750,7 +2604,6 @@ class _DSCard extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   onSaveClick(event) {
     if (this.props.dispatch) {
       this.props.dispatch(actionCreators.AlsoToMain({
@@ -2789,81 +2642,66 @@ class _DSCard extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   onMenuUpdate(showContextMenu) {
     if (!showContextMenu) {
       const dsLinkMenuHostDiv = this.contextMenuButtonHostElement;
-
       if (dsLinkMenuHostDiv) {
         dsLinkMenuHostDiv.classList.remove("active", "last-item");
       }
     }
   }
-
   async onMenuShow() {
     const dsLinkMenuHostDiv = this.contextMenuButtonHostElement;
-
     if (dsLinkMenuHostDiv) {
       
       await this.props.windowObj.document.l10n.translateFragment(dsLinkMenuHostDiv);
-
       if (this.props.windowObj.scrollMaxX > 0) {
         dsLinkMenuHostDiv.classList.add("last-item");
       }
-
       dsLinkMenuHostDiv.classList.add("active");
     }
   }
-
   onSeen(entries) {
     if (this.state) {
       const entry = entries.find(e => e.isIntersecting);
-
       if (entry) {
         if (this.placeholderElement) {
           this.observer.unobserve(this.placeholderElement);
-        } 
+        }
 
-
+        
         this.setState({
           isSeen: true
         });
       }
     }
   }
-
   onIdleCallback() {
     if (!this.state.isSeen) {
       if (this.observer && this.placeholderElement) {
         this.observer.unobserve(this.placeholderElement);
       }
-
       this.setState({
         isSeen: true
       });
     }
   }
-
   componentDidMount() {
     this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
-
     if (this.placeholderElement) {
       this.observer = new IntersectionObserver(this.onSeen.bind(this));
       this.observer.observe(this.placeholderElement);
     }
   }
-
   componentWillUnmount() {
     
     if (this.observer && this.placeholderElement) {
       this.observer.unobserve(this.placeholderElement);
     }
-
     if (this.idleCallbackId) {
       this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
     }
   }
-
   render() {
     if (this.props.placeholder || !this.state.isSeen) {
       return external_React_default().createElement("div", {
@@ -2871,20 +2709,17 @@ class _DSCard extends (external_React_default()).PureComponent {
         ref: this.setPlaceholderRef
       });
     }
-
     const {
       isRecentSave,
       DiscoveryStream,
       saveToPocketCard
     } = this.props;
     let source = this.props.source || this.props.publisher;
-
     if (!source) {
       try {
         source = new URL(this.props.url).hostname;
       } catch (e) {}
     }
-
     const {
       pocketButtonEnabled,
       hideDescriptions,
@@ -2897,16 +2732,13 @@ class _DSCard extends (external_React_default()).PureComponent {
     } = DiscoveryStream;
     const excerpt = !hideDescriptions ? this.props.excerpt : "";
     let timeToRead;
-
     if (displayReadTime) {
       timeToRead = this.props.time_to_read || readTimeFromWordCount(this.props.word_count);
     }
-
     const compactImagesClassName = compactImages ? `ds-card-compact-image` : ``;
     const imageGradientClassName = imageGradient ? `ds-card-image-gradient` : ``;
     const titleLinesName = `ds-card-title-lines-${titleLines}`;
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
-
     let stpButton = () => {
       return external_React_default().createElement("button", {
         className: "card-stp-button",
@@ -2921,7 +2753,6 @@ class _DSCard extends (external_React_default()).PureComponent {
         "data-l10n-id": "newtab-pocket-save"
       })));
     };
-
     return external_React_default().createElement("div", {
       className: `ds-card ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName}`,
       ref: this.setContextMenuButtonHostRef
@@ -3005,11 +2836,9 @@ class _DSCard extends (external_React_default()).PureComponent {
       isRecentSave: isRecentSave
     }));
   }
-
 }
 _DSCard.defaultProps = {
   windowObj: window 
-
 };
 const DSCard = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   App: state.App,
@@ -3024,19 +2853,18 @@ const PlaceholderDSCard = props => external_React_default().createElement(DSCard
 
 
 
+
 class DSEmptyState extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onReset = this.onReset.bind(this);
     this.state = {};
   }
-
   componentWillUnmount() {
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
   }
-
   onReset() {
     if (this.props.dispatch && this.props.feed) {
       const {
@@ -3048,8 +2876,10 @@ class DSEmptyState extends (external_React_default()).PureComponent {
       this.props.dispatch({
         type: actionTypes.DISCOVERY_STREAM_FEED_UPDATE,
         data: {
-          feed: { ...feed,
-            data: { ...feed.data,
+          feed: {
+            ...feed,
+            data: {
+              ...feed.data,
               status: "waiting"
             }
           },
@@ -3073,7 +2903,6 @@ class DSEmptyState extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   renderButton() {
     if (this.props.status === "waiting" || this.state.waiting) {
       return external_React_default().createElement("button", {
@@ -3081,28 +2910,24 @@ class DSEmptyState extends (external_React_default()).PureComponent {
         "data-l10n-id": "newtab-discovery-empty-section-topstories-loading"
       });
     }
-
     return external_React_default().createElement("button", {
       className: "try-again-button",
       onClick: this.onReset,
       "data-l10n-id": "newtab-discovery-empty-section-topstories-try-again-button"
     });
   }
-
   renderState() {
     if (this.props.status === "waiting" || this.props.status === "failed") {
       return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h2", {
         "data-l10n-id": "newtab-discovery-empty-section-topstories-timed-out"
       }), this.renderButton());
     }
-
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h2", {
       "data-l10n-id": "newtab-discovery-empty-section-topstories-header"
     }), external_React_default().createElement("p", {
       "data-l10n-id": "newtab-discovery-empty-section-topstories-content"
     }));
   }
-
   render() {
     return external_React_default().createElement("div", {
       className: "section-empty-state"
@@ -3110,9 +2935,9 @@ class DSEmptyState extends (external_React_default()).PureComponent {
       className: "empty-state-message"
     }, this.renderState()));
   }
-
 }
 ;
+
 
 
 
@@ -3127,25 +2952,21 @@ class DSDismiss extends (external_React_default()).PureComponent {
       hovering: false
     };
   }
-
   onDismissClick() {
     if (this.props.onDismissClick) {
       this.props.onDismissClick();
     }
   }
-
   onHover() {
     this.setState({
       hovering: true
     });
   }
-
   offHover() {
     this.setState({
       hovering: false
     });
   }
-
   render() {
     let className = `ds-dismiss
       ${this.state.hovering ? ` hovering` : ``}
@@ -3162,9 +2983,9 @@ class DSDismiss extends (external_React_default()).PureComponent {
       className: "icon icon-dismiss"
     })));
   }
-
 }
 ;
+
 
 
 
@@ -3187,11 +3008,9 @@ function _TopicsWidget(props) {
     utmSource
   } = DiscoveryStream.experimentData;
   let queryParams = `?utm_source=${utmSource}`;
-
   if (utmCampaign && utmContent) {
     queryParams += `&utm_content=${utmContent}&utm_campaign=${utmCampaign}`;
   }
-
   const topics = [{
     label: "Technology",
     name: "technology"
@@ -3221,7 +3040,6 @@ function _TopicsWidget(props) {
     name: "must-reads",
     url: `https://getpocket.com/collections${queryParams}`
   }];
-
   function onLinkClick(topic, positionInCard) {
     if (dispatch) {
       dispatch(actionCreators.DiscoveryStreamUserEvent({
@@ -3248,7 +3066,6 @@ function _TopicsWidget(props) {
       }));
     }
   }
-
   function mapTopicItem(topic, index) {
     return external_React_default().createElement("li", {
       key: topic.name,
@@ -3259,7 +3076,6 @@ function _TopicsWidget(props) {
       onLinkClick: () => onLinkClick(topic.name, index)
     }, topic.label));
   }
-
   return external_React_default().createElement("div", {
     className: "ds-topics-widget"
   }, external_React_default().createElement("header", {
@@ -3282,12 +3098,12 @@ function _TopicsWidget(props) {
 }
 _TopicsWidget.defaultProps = {
   windowObj: window 
-
 };
 const TopicsWidget = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   DiscoveryStream: state.DiscoveryStream
 }))(_TopicsWidget);
 ;
+
 
 
 
@@ -3350,31 +3166,28 @@ function OnboardingExperience({
         dispatch(actionCreators.DiscoveryStreamUserEvent({
           event: "IMPRESSION",
           source: "POCKET_ONBOARDING"
-        })); 
-
+        }));
+        
         intersectionObserver.unobserve(heightElement.current);
       }
     }, options);
-
     const onVisibilityChange = () => {
       intersectionObserver.observe(heightElement.current);
       windowObj.document.removeEventListener(CardGrid_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
     };
-
     if (heightElement.current) {
-      resizeObserver.observe(heightElement.current); 
+      resizeObserver.observe(heightElement.current);
       
-
+      
       if (windowObj.document.visibilityState === CardGrid_VISIBLE) {
         intersectionObserver.observe(heightElement.current);
       } else {
         windowObj.document.addEventListener(CardGrid_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
       }
-
       setMaxHeight(heightElement.current.offsetHeight);
-    } 
+    }
 
-
+    
     return () => {
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
@@ -3382,7 +3195,6 @@ function OnboardingExperience({
     };
   }, [dispatch, windowObj]);
   const style = {};
-
   if (dismissed) {
     style.maxHeight = "0";
     style.opacity = "0";
@@ -3390,7 +3202,6 @@ function OnboardingExperience({
   } else if (maxHeight) {
     style.maxHeight = `${maxHeight}px`;
   }
-
   return external_React_default().createElement("div", {
     style: style
   }, external_React_default().createElement("div", {
@@ -3419,24 +3230,20 @@ function CardGrid_IntersectionObserver({
   const intersectionElement = (0,external_React_namespaceObject.useRef)(null);
   (0,external_React_namespaceObject.useEffect)(() => {
     let observer;
-
     if (!observer && onIntersecting && intersectionElement.current) {
       observer = new windowObj.IntersectionObserver(entries => {
         const entry = entries.find(e => e.isIntersecting);
-
         if (entry) {
           
           if (observer && intersectionElement.current) {
             observer.unobserve(intersectionElement.current);
           }
-
           onIntersecting();
         }
       });
       observer.observe(intersectionElement.current);
-    } 
-
-
+    }
+    
     return () => observer?.disconnect();
   }, [windowObj, onIntersecting]);
   return external_React_default().createElement("div", {
@@ -3467,39 +3274,35 @@ function RecentSavesContainer({
         type: actionTypes.DISCOVERY_STREAM_POCKET_STATE_INIT
       }));
     }
-  }, [visible, dispatch]); 
-  
+  }, [visible, dispatch]);
 
+  
+  
   if (!visible) {
     return external_React_default().createElement(CardGrid_IntersectionObserver, {
       windowObj: windowObj,
       onIntersecting: onIntersecting
     });
-  } 
+  }
 
-
+  
   if (visible && !isUserLoggedIn) {
     return null;
   }
-
-  let queryParams = `?utm_source=${utmSource}`; 
-
+  let queryParams = `?utm_source=${utmSource}`;
+  
   if (utmCampaign && utmContent) {
     queryParams += `&utm_content=${utmContent}&utm_campaign=${utmCampaign}`;
   }
-
   function renderCard(rec, index) {
     const url = new URL(rec.url);
     const urlSearchParams = new URLSearchParams(queryParams);
-
     if (rec?.id && !url.href.match(/getpocket\.com\/read/)) {
       url.href = `https://getpocket.com/read/${rec.id}`;
     }
-
     for (let [key, val] of urlSearchParams.entries()) {
       url.searchParams.set(key, val);
     }
-
     return external_React_default().createElement(DSCard, {
       key: `dscard-${rec?.id || index}`,
       id: rec.id,
@@ -3517,20 +3320,17 @@ function RecentSavesContainer({
       dispatch: dispatch
     });
   }
-
   function onMyListClicked() {
     dispatch(actionCreators.DiscoveryStreamUserEvent({
       event: "CLICK",
       source: `${source}_VIEW_LIST`
     }));
   }
-
-  const recentSavesCards = []; 
+  const recentSavesCards = [];
   
-
+  
   for (let index = 0; index < items; index++) {
     const recentSave = recentSavesData[index];
-
     if (!recentSave) {
       recentSavesCards.push( external_React_default().createElement(PlaceholderDSCard, {
         key: `dscard-${index}`
@@ -3548,9 +3348,9 @@ function RecentSavesContainer({
         excerpt: recentSave.excerpt
       }, index));
     }
-  } 
+  }
 
-
+  
   return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement(DSSubHeader, null, external_React_default().createElement("span", {
     className: "section-title"
   }, external_React_default().createElement(FluentOrText, {
@@ -3591,7 +3391,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
     const cards = [];
     let essentialReadsCards = [];
     let editorsPicksCards = [];
-
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
       cards.push(!rec || rec.placeholder ? external_React_default().createElement(PlaceholderDSCard, {
@@ -3624,19 +3423,17 @@ class _CardGrid extends (external_React_default()).PureComponent {
         recommendation_id: rec.recommendation_id
       }));
     }
-
     if (widgets?.positions?.length && widgets?.data?.length) {
       let positionIndex = 0;
       const source = "CARDGRID_WIDGET";
-
       for (const widget of widgets.data) {
         let widgetComponent = null;
-        const position = widgets.positions[positionIndex]; 
+        const position = widgets.positions[positionIndex];
 
+        
         if (!position) {
           break;
         }
-
         switch (widget?.type) {
           case "TopicsWidget":
             widgetComponent = external_React_default().createElement(TopicsWidget, {
@@ -3647,35 +3444,31 @@ class _CardGrid extends (external_React_default()).PureComponent {
             });
             break;
         }
-
         if (widgetComponent) {
           
-          positionIndex++; 
-
+          positionIndex++;
+          
           cards.splice(position.index, 1, widgetComponent);
         }
       }
     }
-
-    let moreRecsHeader = ""; 
-
+    let moreRecsHeader = "";
+    
     if (showRecentSaves || essentialReadsHeader && editorsPicksHeader) {
-      let spliceAt = 6; 
-
+      let spliceAt = 6;
+      
       if (fourCardLayout) {
         spliceAt = 8;
-      } 
-
-
-      moreRecsHeader = "More Recommendations"; 
-
-      essentialReadsCards = [...cards.splice(0, spliceAt)]; 
-
+      }
+      
+      moreRecsHeader = "More Recommendations";
+      
+      essentialReadsCards = [...cards.splice(0, spliceAt)];
+      
       if (essentialReadsHeader && editorsPicksHeader) {
         editorsPicksCards = [...cards.splice(0, cards.length)];
       }
     }
-
     const hideCardBackgroundClass = hideCardBackground ? `ds-card-grid-hide-background` : ``;
     const fourCardLayoutClass = fourCardLayout ? `ds-card-grid-four-card-variant` : ``;
     const hideDescriptionsClassName = !hideDescriptions ? `ds-card-grid-include-descriptions` : ``;
@@ -3703,17 +3496,17 @@ class _CardGrid extends (external_React_default()).PureComponent {
       className: gridClassName
     }, cards)));
   }
-
   render() {
     const {
       data
-    } = this.props; 
+    } = this.props;
 
+    
     if (!data) {
       return null;
-    } 
+    }
 
-
+    
     const isEmpty = data.recommendations.length === 0;
     return external_React_default().createElement("div", null, this.props.title && external_React_default().createElement("div", {
       className: "ds-header"
@@ -3731,17 +3524,16 @@ class _CardGrid extends (external_React_default()).PureComponent {
       feed: this.props.feed
     })) : this.renderCards());
   }
-
 }
 _CardGrid.defaultProps = {
   items: 4 
-
 };
 const CardGrid = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Prefs: state.Prefs,
   DiscoveryStream: state.DiscoveryStream
 }))(_CardGrid);
 ;
+
 
 
 
@@ -3758,20 +3550,18 @@ class CollectionCardGrid extends (external_React_default()).PureComponent {
       dismissed: false
     };
   }
-
   onDismissClick() {
     const {
       data
     } = this.props;
-
     if (this.props.dispatch && data && data.spocs && data.spocs.length) {
       this.setState({
         dismissed: true
       });
       const pos = 0;
-      const source = this.props.type.toUpperCase(); 
+      const source = this.props.type.toUpperCase();
       
-
+      
       const spocsData = data.spocs.map(item => ({
         url: item.url,
         guid: item.id,
@@ -3790,44 +3580,41 @@ class CollectionCardGrid extends (external_React_default()).PureComponent {
         source,
         action_position: pos
       }));
-
       if (impression) {
         this.props.dispatch(impression);
       }
     }
   }
-
   render() {
     const {
       data,
       dismissible,
       pocket_button_enabled
     } = this.props;
-
-    if (this.state.dismissed || !data || !data.spocs || !data.spocs[0] || 
+    if (this.state.dismissed || !data || !data.spocs || !data.spocs[0] ||
+    
     data.spocs.length < 3) {
       return null;
     }
-
     const {
       spocs,
       placement,
       feed
-    } = this.props; 
-
+    } = this.props;
+    
     const {
       title,
       context,
       sponsored_by_override,
       sponsor
-    } = spocs.data[placement.name] || {}; 
-
+    } = spocs.data[placement.name] || {};
+    
     if (!title) {
       return null;
     }
+    let sponsoredByMessage = "";
 
-    let sponsoredByMessage = ""; 
-
+    
     if (sponsored_by_override || sponsored_by_override === "") {
       
       
@@ -3842,24 +3629,25 @@ class CollectionCardGrid extends (external_React_default()).PureComponent {
       };
     } else if (context) {
       sponsoredByMessage = context;
-    } 
-    
-    
-    
-    
-    
-    
-    
+    }
 
-
+    
+    
+    
+    
+    
+    
+    
+    
     const recsData = {
       recommendations: data.spocs
-    }; 
-    
-    
-    
-    
+    };
 
+    
+    
+    
+    
+    
     const type = `${this.props.type}_card`;
     const collectionGrid = external_React_default().createElement("div", {
       className: "ds-collection-card-grid"
@@ -3874,20 +3662,17 @@ class CollectionCardGrid extends (external_React_default()).PureComponent {
       dispatch: this.props.dispatch,
       items: this.props.items
     }));
-
     if (dismissible) {
       return external_React_default().createElement(DSDismiss, {
         onDismissClick: this.onDismissClick,
         extraClasses: `ds-dismiss-ds-collection`
       }, collectionGrid);
     }
-
     return collectionGrid;
   }
-
 }
 ;
-function A11yLinkButton_extends() { A11yLinkButton_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return A11yLinkButton_extends.apply(this, arguments); }
+function A11yLinkButton_extends() { A11yLinkButton_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return A11yLinkButton_extends.apply(this, arguments); }
 
 
 
@@ -3896,11 +3681,9 @@ function A11yLinkButton_extends() { A11yLinkButton_extends = Object.assign || fu
 function A11yLinkButton(props) {
   
   let className = "a11y-link-button";
-
   if (props.className) {
     className += ` ${props.className}`;
   }
-
   return external_React_default().createElement("button", A11yLinkButton_extends({
     type: "button"
   }, props, {
@@ -3913,33 +3696,31 @@ function A11yLinkButton(props) {
 
 
 
+
 class ErrorBoundaryFallback extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.windowObj = this.props.windowObj || window;
     this.onClick = this.onClick.bind(this);
   }
+
   
-
-
 
 
 
   onClick() {
     this.windowObj.location.reload(true);
   }
-
   render() {
     const defaultClass = "as-error-fallback";
     let className;
-
     if ("className" in this.props) {
       className = `${this.props.className} ${defaultClass}`;
     } else {
       className = defaultClass;
-    } 
+    }
 
-
+    
     return external_React_default().createElement("div", {
       className: className
     }, external_React_default().createElement("div", {
@@ -3950,7 +3731,6 @@ class ErrorBoundaryFallback extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-error-fallback-refresh-link"
     })));
   }
-
 }
 ErrorBoundaryFallback.defaultProps = {
   className: "as-error-fallback"
@@ -3962,28 +3742,25 @@ class ErrorBoundary extends (external_React_default()).PureComponent {
       hasError: false
     };
   }
-
   componentDidCatch(error, info) {
     this.setState({
       hasError: true
     });
   }
-
   render() {
     if (!this.state.hasError) {
       return this.props.children;
     }
-
     return external_React_default().createElement(this.props.FallbackComponent, {
       className: this.props.className
     });
   }
-
 }
 ErrorBoundary.defaultProps = {
   FallbackComponent: ErrorBoundaryFallback
 };
 ;
+
 
 
 
@@ -4009,33 +3786,27 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     };
     this.setContextMenuButtonRef = this.setContextMenuButtonRef.bind(this);
   }
-
   setContextMenuButtonRef(element) {
     this.contextMenuButtonRef = element;
   }
-
   onBodyMount(node) {
     this.sectionBody = node;
   }
-
   onMenuButtonMouseEnter() {
     this.setState({
       menuButtonHover: true
     });
   }
-
   onMenuButtonMouseLeave() {
     this.setState({
       menuButtonHover: false
     });
   }
-
   onMenuUpdate(showContextMenu) {
     this.setState({
       showContextMenu
     });
   }
-
   render() {
     const {
       isAnimating,
@@ -4052,7 +3823,6 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     } = this.props;
     const active = menuButtonHover || showContextMenu;
     let bodyStyle;
-
     if (isAnimating && !collapsed) {
       bodyStyle = {
         maxHeight
@@ -4062,18 +3832,16 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
         display: "none"
       };
     }
-
     let titleStyle;
-
     if (this.props.hideTitle) {
       titleStyle = {
         visibility: "hidden"
       };
     }
-
     const hasSubtitleClassName = subTitle ? `has-subtitle` : ``;
     return external_React_default().createElement("section", {
-      className: `collapsible-section ${this.props.className}${active ? " active" : ""}` 
+      className: `collapsible-section ${this.props.className}${active ? " active" : ""}`
+      
       ,
       "data-section-id": id
     }, external_React_default().createElement("div", {
@@ -4104,7 +3872,6 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       style: bodyStyle
     }, this.props.children)));
   }
-
 }
 _CollapsibleSection.defaultProps = {
   document: __webpack_require__.g.document || {
@@ -4117,6 +3884,7 @@ const CollapsibleSection = (0,external_ReactRedux_namespaceObject.connect)(state
   Prefs: state.Prefs
 }))(_CollapsibleSection);
 ;
+
 
 
 
@@ -4145,9 +3913,9 @@ class DSMessage extends (external_React_default()).PureComponent {
       message: this.props.link_text
     }))));
   }
-
 }
 ;
+
 
 
 
@@ -4156,36 +3924,31 @@ class ModalOverlayWrapper extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onKeyDown = this.onKeyDown.bind(this);
-  } 
+  }
+
   
-
-
+  
   onKeyDown(event) {
     if (event.key === "Escape") {
       this.props.onClose(event);
     }
   }
-
   componentWillMount() {
     this.props.document.addEventListener("keydown", this.onKeyDown);
     this.props.document.body.classList.add("modal-open");
   }
-
   componentWillUnmount() {
     this.props.document.removeEventListener("keydown", this.onKeyDown);
     this.props.document.body.classList.remove("modal-open");
   }
-
   render() {
     const {
       props
     } = this;
     let className = props.unstyled ? "" : "modalOverlayInner active";
-
     if (props.innerClassName) {
       className += ` ${props.innerClassName}`;
     }
-
     return external_React_default().createElement("div", {
       className: "modalOverlayOuter active",
       onKeyDown: this.onKeyDown,
@@ -4197,12 +3960,12 @@ class ModalOverlayWrapper extends (external_React_default()).PureComponent {
       role: "dialog"
     }, props.children));
   }
-
 }
 ModalOverlayWrapper.defaultProps = {
   document: __webpack_require__.g.document
 };
 ;
+
 
 
 
@@ -4216,27 +3979,23 @@ class DSPrivacyModal extends (external_React_default()).PureComponent {
     this.onLearnLinkClick = this.onLearnLinkClick.bind(this);
     this.onManageLinkClick = this.onManageLinkClick.bind(this);
   }
-
   onLearnLinkClick(event) {
     this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
       event: "CLICK_PRIVACY_INFO",
       source: "DS_PRIVACY_MODAL"
     }));
   }
-
   onManageLinkClick(event) {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.SETTINGS_OPEN
     }));
   }
-
   closeModal() {
     this.props.dispatch({
       type: `HIDE_PRIVACY_INFO`,
       data: {}
     });
   }
-
   render() {
     return external_React_default().createElement(ModalOverlayWrapper, {
       onClose: this.closeModal,
@@ -4265,9 +4024,9 @@ class DSPrivacyModal extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-privacy-modal-button-done"
     })));
   }
-
 }
 ;
+
 
 
 
@@ -4288,7 +4047,6 @@ class DSSignup extends (external_React_default()).PureComponent {
     this.onLinkClick = this.onLinkClick.bind(this);
     this.onMenuShow = this.onMenuShow.bind(this);
   }
-
   onMenuButtonUpdate(showContextMenu) {
     if (!showContextMenu) {
       this.setState({
@@ -4297,36 +4055,30 @@ class DSSignup extends (external_React_default()).PureComponent {
       });
     }
   }
-
   nextAnimationFrame() {
     return new Promise(resolve => this.props.windowObj.requestAnimationFrame(resolve));
   }
-
   async onMenuShow() {
     let {
       lastItem
-    } = this.state; 
-
+    } = this.state;
+    
     await this.nextAnimationFrame();
-
     if (this.props.windowObj.scrollMaxX > 0) {
       lastItem = true;
     }
-
     this.setState({
       active: true,
       lastItem
     });
   }
-
   onLinkClick() {
     const {
       data
     } = this.props;
-
     if (this.props.dispatch && data && data.spocs && data.spocs.length) {
-      const source = this.props.type.toUpperCase(); 
-
+      const source = this.props.type.toUpperCase();
+      
       const [spoc] = data.spocs;
       this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
         event: "CLICK",
@@ -4346,19 +4098,16 @@ class DSSignup extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   render() {
     const {
       data,
       dispatch,
       type
     } = this.props;
-
     if (!data || !data.spocs || !data.spocs[0]) {
       return null;
-    } 
-
-
+    }
+    
     const [spoc] = data.spocs;
     const {
       title,
@@ -4415,13 +4164,12 @@ class DSSignup extends (external_React_default()).PureComponent {
       }
     })));
   }
-
 }
 DSSignup.defaultProps = {
   windowObj: window 
-
 };
 ;
+
 
 
 
@@ -4438,15 +4186,13 @@ class DSTextPromo extends (external_React_default()).PureComponent {
     this.onLinkClick = this.onLinkClick.bind(this);
     this.onDismissClick = this.onDismissClick.bind(this);
   }
-
   onLinkClick() {
     const {
       data
     } = this.props;
-
     if (this.props.dispatch && data && data.spocs && data.spocs.length) {
-      const source = this.props.type.toUpperCase(); 
-
+      const source = this.props.type.toUpperCase();
+      
       const [spoc] = data.spocs;
       this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
         event: "CLICK",
@@ -4466,16 +4212,14 @@ class DSTextPromo extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   onDismissClick() {
     const {
       data
     } = this.props;
-
     if (this.props.dispatch && data && data.spocs && data.spocs.length) {
       const index = 0;
-      const source = this.props.type.toUpperCase(); 
-
+      const source = this.props.type.toUpperCase();
+      
       const [spoc] = data.spocs;
       const spocData = {
         url: spoc.url,
@@ -4494,23 +4238,19 @@ class DSTextPromo extends (external_React_default()).PureComponent {
         source,
         action_position: index
       }));
-
       if (impression) {
         this.props.dispatch(impression);
       }
     }
   }
-
   render() {
     const {
       data
     } = this.props;
-
     if (!data || !data.spocs || !data.spocs[0]) {
       return null;
-    } 
-
-
+    }
+    
     const [spoc] = data.spocs;
     const {
       image_src,
@@ -4553,7 +4293,6 @@ class DSTextPromo extends (external_React_default()).PureComponent {
       source: this.props.type
     })));
   }
-
 }
 ;
 
@@ -4576,25 +4315,21 @@ const ScreenshotUtils = {
   isBlob(isLocal, image) {
     return !!(image && image.path && (!isLocal && image.data || isLocal && image.url));
   },
-
   
   createLocalImageObject(remoteImage) {
     if (!remoteImage) {
       return null;
     }
-
     if (this.isBlob(false, remoteImage)) {
       return {
         url: __webpack_require__.g.URL.createObjectURL(remoteImage.data),
         path: remoteImage.path
       };
     }
-
     return {
       url: remoteImage
     };
   },
-
   
   
   maybeRevokeBlobObjectURL(localImage) {
@@ -4602,19 +4337,17 @@ const ScreenshotUtils = {
       __webpack_require__.g.URL.revokeObjectURL(localImage.url);
     }
   },
-
   
   isRemoteImageLocal(localImage, remoteImage) {
     
     if (remoteImage && localImage) {
       return this.isBlob(false, remoteImage) ? localImage.path === remoteImage.path : localImage.url === remoteImage;
-    } 
+    }
+
     
-
-
+    
     return !remoteImage && !localImage;
   }
-
 };
 ;
 
@@ -4626,7 +4359,9 @@ const ScreenshotUtils = {
 
 
 
- 
+
+
+
 
 const gImageLoading = new Map();
 
@@ -4650,9 +4385,8 @@ class _Card extends (external_React_default()).PureComponent {
     this.onMenuButtonUpdate = this.onMenuButtonUpdate.bind(this);
     this.onLinkClick = this.onLinkClick.bind(this);
   }
+
   
-
-
 
 
   async maybeLoadImage() {
@@ -4660,13 +4394,10 @@ class _Card extends (external_React_default()).PureComponent {
     const {
       cardImage
     } = this.state;
-
     if (!cardImage) {
       return;
     }
-
     const imageUrl = cardImage.url;
-
     if (!this.state.imageLoaded) {
       
       if (!gImageLoading.has(imageUrl)) {
@@ -4675,21 +4406,22 @@ class _Card extends (external_React_default()).PureComponent {
           loader.addEventListener("load", resolve);
           loader.addEventListener("error", reject);
           loader.src = imageUrl;
-        }); 
+        });
 
+        
         gImageLoading.set(imageUrl, loaderPromise);
         loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl)).catch();
-      } 
+      }
 
-
+      
       try {
         await gImageLoading.get(imageUrl);
       } catch (ex) {
         
         return;
-      } 
+      }
 
-
+      
       if (ScreenshotUtils.isRemoteImageLocal(this.state.cardImage, this.props.link.image) && !this.state.imageLoaded) {
         this.setState({
           imageLoaded: true
@@ -4697,9 +4429,8 @@ class _Card extends (external_React_default()).PureComponent {
       }
     }
   }
+
   
-
-
 
 
 
@@ -4715,25 +4446,24 @@ class _Card extends (external_React_default()).PureComponent {
       image
     } = nextProps.link;
     const imageInState = ScreenshotUtils.isRemoteImageLocal(prevState.cardImage, image);
-    let nextState = null; 
+    let nextState = null;
 
+    
     if (!imageInState && nextProps.link) {
       nextState = {
         imageLoaded: false
       };
     }
-
     if (imageInState) {
       return nextState;
-    } 
+    }
 
-
+    
     ScreenshotUtils.maybeRevokeBlobObjectURL(prevState.cardImage);
     nextState = nextState || {};
     nextState.cardImage = ScreenshotUtils.createLocalImageObject(image);
     return nextState;
   }
-
   onMenuButtonUpdate(isOpen) {
     if (isOpen) {
       this.setState({
@@ -4745,9 +4475,8 @@ class _Card extends (external_React_default()).PureComponent {
       });
     }
   }
+
   
-
-
 
 
   _getTelemetryInfo() {
@@ -4759,10 +4488,8 @@ class _Card extends (external_React_default()).PureComponent {
         }
       };
     }
-
     return null;
   }
-
   onLinkClick(event) {
     event.preventDefault();
     const {
@@ -4772,7 +4499,6 @@ class _Card extends (external_React_default()).PureComponent {
       metaKey,
       shiftKey
     } = event;
-
     if (this.props.link.type === "download") {
       this.props.dispatch(actionCreators.OnlyToMain({
         type: actionTypes.OPEN_DOWNLOAD_FILE,
@@ -4799,7 +4525,6 @@ class _Card extends (external_React_default()).PureComponent {
         })
       }));
     }
-
     if (this.props.isWebExtension) {
       this.props.dispatch(actionCreators.WebExtEvent(actionTypes.WEBEXT_CLICK, {
         source: this.props.eventSource,
@@ -4812,7 +4537,6 @@ class _Card extends (external_React_default()).PureComponent {
         source: this.props.eventSource,
         action_position: this.props.index
       }, this._getTelemetryInfo())));
-
       if (this.props.shouldSendImpressionStats) {
         this.props.dispatch(actionCreators.ImpressionStats({
           source: this.props.eventSource,
@@ -4825,41 +4549,35 @@ class _Card extends (external_React_default()).PureComponent {
       }
     }
   }
-
   componentDidMount() {
     this.maybeLoadImage();
   }
-
   componentDidUpdate() {
     this.maybeLoadImage();
-  } 
+  }
+
   
   
-
-
+  
   componentWillMount() {
     const nextState = _Card.getNextStateFromProps(this.props, this.state);
-
-    if (nextState) {
-      this.setState(nextState);
-    }
-  } 
-  
-  
-
-
-  componentWillReceiveProps(nextProps) {
-    const nextState = _Card.getNextStateFromProps(nextProps, this.state);
-
     if (nextState) {
       this.setState(nextState);
     }
   }
 
+  
+  
+  
+  componentWillReceiveProps(nextProps) {
+    const nextState = _Card.getNextStateFromProps(nextProps, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
   componentWillUnmount() {
     ScreenshotUtils.maybeRevokeBlobObjectURL(this.state.cardImage);
   }
-
   render() {
     const {
       index,
@@ -4874,8 +4592,8 @@ class _Card extends (external_React_default()).PureComponent {
       props
     } = this;
     const title = link.title || link.hostname;
-    const isContextMenuOpen = this.state.activeCard === index; 
-
+    const isContextMenuOpen = this.state.activeCard === index;
+    
     const {
       icon,
       fluentID
@@ -4944,7 +4662,6 @@ class _Card extends (external_React_default()).PureComponent {
       shouldSendImpressionStats: shouldSendImpressionStats
     })));
   }
-
 }
 _Card.defaultProps = {
   link: {}
@@ -4957,6 +4674,7 @@ const PlaceholderCard = props => external_React_default().createElement(Card, {
   className: props.className
 });
 ;
+
 
 
 
@@ -4984,7 +4702,6 @@ _PerfService.prototype = {
   mark: function mark(str) {
     this._perf.mark(str);
   },
-
   
 
 
@@ -4996,7 +4713,6 @@ _PerfService.prototype = {
   getEntriesByName: function getEntriesByName(name, type) {
     return this._perf.getEntriesByName(name, type);
   },
-
   
 
 
@@ -5015,7 +4731,6 @@ _PerfService.prototype = {
   get timeOrigin() {
     return this._perf.timeOrigin;
   },
-
   
 
 
@@ -5026,7 +4741,6 @@ _PerfService.prototype = {
   absNow: function absNow() {
     return this.timeOrigin + this._perf.now();
   },
-
   
 
 
@@ -5047,15 +4761,12 @@ _PerfService.prototype = {
 
   getMostRecentAbsMarkStartByName(name) {
     let entries = this.getEntriesByName(name, "mark");
-
     if (!entries.length) {
       throw new Error(`No marks with the name ${name}`);
     }
-
     let mostRecentEntry = entries[entries.length - 1];
     return this._perf.timeOrigin + mostRecentEntry.startTime;
   }
-
 };
 const perfService = new _PerfService();
 ;
@@ -5064,14 +4775,16 @@ const perfService = new _PerfService();
 
 
 
- 
+
+
+
 
 
 const RECORDED_SECTIONS = ["highlights", "topsites"];
 class ComponentPerfTimer extends (external_React_default()).Component {
   constructor(props) {
-    super(props); 
-
+    super(props);
+    
     this.perfSvc = this.props.perfSvc || perfService;
     this._sendBadStateEvent = this._sendBadStateEvent.bind(this);
     this._sendPaintedEvent = this._sendPaintedEvent.bind(this);
@@ -5079,25 +4792,20 @@ class ComponentPerfTimer extends (external_React_default()).Component {
     this._timestampHandled = false;
     this._recordedFirstRender = false;
   }
-
   componentDidMount() {
     if (!RECORDED_SECTIONS.includes(this.props.id)) {
       return;
     }
-
     this._maybeSendPaintedEvent();
   }
-
   componentDidUpdate() {
     if (!RECORDED_SECTIONS.includes(this.props.id)) {
       return;
     }
-
     this._maybeSendPaintedEvent();
   }
+
   
-
-
 
 
 
@@ -5120,7 +4828,6 @@ class ComponentPerfTimer extends (external_React_default()).Component {
   _afterFramePaint(callback) {
     requestAnimationFrame(() => setTimeout(callback, 0));
   }
-
   _maybeSendBadStateEvent() {
     
     
@@ -5128,45 +4835,41 @@ class ComponentPerfTimer extends (external_React_default()).Component {
       
       this._reportMissingData = true;
     } else if (this._reportMissingData) {
-      this._reportMissingData = false; 
-
+      this._reportMissingData = false;
+      
       this._sendBadStateEvent();
     }
   }
-
   _maybeSendPaintedEvent() {
     
     if (this._timestampHandled || !this.props.initialized) {
       return;
-    } 
-    
-    
-    
-    
+    }
 
-
+    
+    
+    
+    
+    
     this._timestampHandled = true;
-
     this._afterFramePaint(this._sendPaintedEvent);
   }
+
   
-
-
 
 
 
   _ensureFirstRenderTsRecorded() {
     
     if (!this._recordedFirstRender) {
-      this._recordedFirstRender = true; 
-
+      this._recordedFirstRender = true;
+      
       const key = `${this.props.id}_first_render_ts`;
       this.perfSvc.mark(key);
     }
   }
+
   
-
-
 
 
 
@@ -5176,10 +4879,9 @@ class ComponentPerfTimer extends (external_React_default()).Component {
     
     const dataReadyKey = `${this.props.id}_data_ready_ts`;
     this.perfSvc.mark(dataReadyKey);
-
     try {
-      const firstRenderKey = `${this.props.id}_first_render_ts`; 
-
+      const firstRenderKey = `${this.props.id}_first_render_ts`;
+      
       const value = parseInt(this.perfSvc.getMostRecentAbsMarkStartByName(dataReadyKey) - this.perfSvc.getMostRecentAbsMarkStartByName(firstRenderKey), 10);
       this.props.dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SAVE_SESSION_PERF_DATA,
@@ -5190,19 +4892,18 @@ class ComponentPerfTimer extends (external_React_default()).Component {
       }));
     } catch (ex) {
       
+      
     }
   }
-
   _sendPaintedEvent() {
     
     if (this.props.id !== "topsites") {
       return;
-    } 
+    }
 
-
+    
     const key = `${this.props.id}_first_painted_ts`;
     this.perfSvc.mark(key);
-
     try {
       const data = {};
       data[key] = this.perfSvc.getMostRecentAbsMarkStartByName(key);
@@ -5213,21 +4914,19 @@ class ComponentPerfTimer extends (external_React_default()).Component {
     } catch (ex) {
       
       
+      
     }
   }
-
   render() {
     if (RECORDED_SECTIONS.includes(this.props.id)) {
       this._ensureFirstRenderTsRecorded();
-
       this._maybeSendBadStateEvent();
     }
-
     return this.props.children;
   }
-
 }
 ;
+
 
 
 
@@ -5237,7 +4936,6 @@ class MoreRecommendations extends (external_React_default()).PureComponent {
     const {
       read_more_endpoint
     } = this.props;
-
     if (read_more_endpoint) {
       return external_React_default().createElement("a", {
         className: "more-recommendations",
@@ -5245,12 +4943,11 @@ class MoreRecommendations extends (external_React_default()).PureComponent {
         "data-l10n-id": "newtab-pocket-more-recommendations"
       });
     }
-
     return null;
   }
-
 }
 ;
+
 
 
 
@@ -5276,12 +4973,12 @@ class _PocketLoggedInCta extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-pocket-cta-text"
     }))));
   }
-
 }
 const PocketLoggedInCta = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Pocket: state.Pocket
 }))(_PocketLoggedInCta);
 ;
+
 
 
 
@@ -5297,7 +4994,6 @@ class Topic extends (external_React_default()).PureComponent {
       href: url
     }, name));
   }
-
 }
 class Topics extends (external_React_default()).PureComponent {
   render() {
@@ -5314,9 +5010,9 @@ class Topics extends (external_React_default()).PureComponent {
       name: t.name
     }))));
   }
-
 }
 ;
+
 
 
 
@@ -5358,22 +5054,23 @@ class SelectableSearchShortcut extends (external_React_default()).PureComponent 
       dir: "auto"
     }, shortcut.keyword))))));
   }
-
 }
 class SearchShortcutsForm extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.handleChange = this.handleChange.bind(this);
     this.onCancelButtonClick = this.onCancelButtonClick.bind(this);
-    this.onSaveButtonClick = this.onSaveButtonClick.bind(this); 
+    this.onSaveButtonClick = this.onSaveButtonClick.bind(this);
 
+    
     const shortcuts = [];
     const {
       rows,
       searchShortcuts
     } = props.TopSites;
     searchShortcuts.forEach(shortcut => {
-      shortcuts.push({ ...shortcut,
+      shortcuts.push({
+        ...shortcut,
         isSelected: !!rows.find(row => row && row.isPinned && row.searchTopSite && row.label === shortcut.keyword)
       });
     });
@@ -5381,7 +5078,6 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
       shortcuts
     };
   }
-
   handleChange(event) {
     const {
       target
@@ -5401,15 +5097,14 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
       };
     });
   }
-
   onCancelButtonClick(ev) {
     ev.preventDefault();
     this.props.onClose();
   }
-
   onSaveButtonClick(ev) {
-    ev.preventDefault(); 
+    ev.preventDefault();
 
+    
     const {
       rows
     } = this.props.TopSites;
@@ -5417,7 +5112,6 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
     const unpinQueue = [];
     this.state.shortcuts.forEach(shortcut => {
       const alreadyPinned = rows.find(row => row && row.isPinned && row.searchTopSite && row.label === shortcut.keyword);
-
       if (shortcut.isSelected && !alreadyPinned) {
         pinQueue.push(this._searchTopSite(shortcut));
       } else if (!shortcut.isSelected && alreadyPinned) {
@@ -5426,16 +5120,18 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
           searchVendor: shortcut.shortURL
         });
       }
-    }); 
+    });
 
+    
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.UPDATE_PINNED_SEARCH_SHORTCUTS,
       data: {
         addedShortcuts: pinQueue,
         deletedShortcuts: unpinQueue
       }
-    })); 
+    }));
 
+    
     pinQueue.forEach(shortcut => {
       this.props.dispatch(actionCreators.UserEvent({
         source: TOP_SITES_SOURCE,
@@ -5456,7 +5152,6 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
     });
     this.props.onClose();
   }
-
   _searchTopSite(shortcut) {
     return {
       url: shortcut.url,
@@ -5465,7 +5160,6 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
       searchVendor: shortcut.shortURL
     };
   }
-
   render() {
     return external_React_default().createElement("form", {
       className: "topsite-form"
@@ -5493,7 +5187,6 @@ class SearchShortcutsForm extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-topsites-save-button"
     })));
   }
-
 }
 ;
 
@@ -6395,6 +6088,7 @@ const reducers = {
 
 
 
+
 class TopSiteFormInput extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -6405,26 +6099,22 @@ class TopSiteFormInput extends (external_React_default()).PureComponent {
     this.onMount = this.onMount.bind(this);
     this.onClearIconPress = this.onClearIconPress.bind(this);
   }
-
   componentWillReceiveProps(nextProps) {
     if (nextProps.shouldFocus && !this.props.shouldFocus) {
       this.input.focus();
     }
-
     if (nextProps.validationError && !this.props.validationError) {
       this.setState({
         validationError: true
       });
-    } 
-
-
+    }
+    
     if (this.state.validationError && !nextProps.value) {
       this.setState({
         validationError: false
       });
     }
   }
-
   onClearIconPress(event) {
     
     
@@ -6433,24 +6123,19 @@ class TopSiteFormInput extends (external_React_default()).PureComponent {
       this.props.onClear();
     }
   }
-
   onChange(ev) {
     if (this.state.validationError) {
       this.setState({
         validationError: false
       });
     }
-
     this.props.onChange(ev);
   }
-
   onMount(input) {
     this.input = input;
   }
-
   renderLoadingOrCloseButton() {
     const showClearButton = this.props.value && this.props.onClear;
-
     if (this.props.loading) {
       return external_React_default().createElement("div", {
         className: "loading-container"
@@ -6465,10 +6150,8 @@ class TopSiteFormInput extends (external_React_default()).PureComponent {
         onKeyPress: this.onClearIconPress
       });
     }
-
     return null;
   }
-
   render() {
     const {
       typeUrl
@@ -6485,7 +6168,8 @@ class TopSiteFormInput extends (external_React_default()).PureComponent {
       value: this.props.value,
       ref: this.onMount,
       onChange: this.onChange,
-      "data-l10n-id": this.props.placeholderId 
+      "data-l10n-id": this.props.placeholderId
+      
       
       ,
       autoFocus: this.props.autoFocusOnOpen,
@@ -6495,7 +6179,6 @@ class TopSiteFormInput extends (external_React_default()).PureComponent {
       "data-l10n-id": this.props.errorMessageId
     })));
   }
-
 }
 TopSiteFormInput.defaultProps = {
   showClearButton: false,
@@ -6508,8 +6191,10 @@ TopSiteFormInput.defaultProps = {
 
 
 
+
 const TopSiteImpressionWrapper_VISIBLE = "visible";
-const TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT = "visibilitychange"; 
+const TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT = "visibilitychange";
+
 
 
 
@@ -6530,11 +6215,9 @@ class TopSiteImpressionWrapper extends (external_React_default()).PureComponent 
       actionType,
       tile
     } = this.props;
-
     if (!actionType) {
       return;
     }
-
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionType,
       data: {
@@ -6543,16 +6226,13 @@ class TopSiteImpressionWrapper extends (external_React_default()).PureComponent 
       }
     }));
   }
-
   setImpressionObserverOrAddListener() {
     const {
       props
     } = this;
-
     if (!props.dispatch) {
       return;
     }
-
     if (props.document.visibilityState === TopSiteImpressionWrapper_VISIBLE) {
       this.setImpressionObserver();
     } else {
@@ -6561,20 +6241,17 @@ class TopSiteImpressionWrapper extends (external_React_default()).PureComponent 
       if (this._onVisibilityChange) {
         props.document.removeEventListener(TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
       }
-
       this._onVisibilityChange = () => {
         if (props.document.visibilityState === TopSiteImpressionWrapper_VISIBLE) {
           this.setImpressionObserver();
           props.document.removeEventListener(TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
         }
       };
-
       props.document.addEventListener(TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
+
   
-
-
 
 
 
@@ -6586,49 +6263,40 @@ class TopSiteImpressionWrapper extends (external_React_default()).PureComponent 
     const {
       props
     } = this;
-
     if (!props.tile) {
       return;
     }
-
     this._handleIntersect = entries => {
       if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= TopSiteImpressionWrapper_INTERSECTION_RATIO)) {
         this._dispatchImpressionStats();
-
         this.impressionObserver.unobserve(this.refs.topsite_impression_wrapper);
       }
     };
-
     const options = {
       threshold: TopSiteImpressionWrapper_INTERSECTION_RATIO
     };
     this.impressionObserver = new props.IntersectionObserver(this._handleIntersect, options);
     this.impressionObserver.observe(this.refs.topsite_impression_wrapper);
   }
-
   componentDidMount() {
     if (this.props.tile) {
       this.setImpressionObserverOrAddListener();
     }
   }
-
   componentWillUnmount() {
     if (this._handleIntersect && this.impressionObserver) {
       this.impressionObserver.unobserve(this.refs.topsite_impression_wrapper);
     }
-
     if (this._onVisibilityChange) {
       this.props.document.removeEventListener(TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
-
   render() {
     return external_React_default().createElement("div", {
       ref: "topsite_impression_wrapper",
       className: "topsite-impression-observer"
     }, this.props.children);
   }
-
 }
 TopSiteImpressionWrapper.defaultProps = {
   IntersectionObserver: __webpack_require__.g.IntersectionObserver,
@@ -6637,7 +6305,7 @@ TopSiteImpressionWrapper.defaultProps = {
   tile: null
 };
 ;
-function TopSite_extends() { TopSite_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return TopSite_extends.apply(this, arguments); }
+function TopSite_extends() { TopSite_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return TopSite_extends.apply(this, arguments); }
 
 
 
@@ -6653,7 +6321,8 @@ function TopSite_extends() { TopSite_extends = Object.assign || function (target
 
 
 const SPOC_TYPE = "SPOC";
-const NEWTAB_SOURCE = "newtab"; 
+const NEWTAB_SOURCE = "newtab";
+
 
 
 
@@ -6662,7 +6331,6 @@ const NEWTAB_SOURCE = "newtab";
 function isSponsored(link) {
   return link?.sponsored_position || link?.type === SPOC_TYPE;
 }
-
 class TopSiteLink extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -6672,9 +6340,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     this.onDragEvent = this.onDragEvent.bind(this);
     this.onKeyPress = this.onKeyPress.bind(this);
   }
+
   
-
-
 
 
 
@@ -6682,7 +6349,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
   _allowDrop(e) {
     return (this.dragged || !isSponsored(this.props.link)) && e.dataTransfer.types.includes("text/topsite-index");
   }
-
   onDragEvent(event) {
     switch (event.type) {
       case "click":
@@ -6690,27 +6356,21 @@ class TopSiteLink extends (external_React_default()).PureComponent {
         if (this.dragged) {
           event.preventDefault();
         }
-
         break;
-
       case "dragstart":
         event.target.blur();
-
         if (isSponsored(this.props.link)) {
           event.preventDefault();
           break;
         }
-
         this.dragged = true;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/topsite-index", this.props.index);
         this.props.onDragEvent(event, this.props.index, this.props.link, this.props.title);
         break;
-
       case "dragend":
         this.props.onDragEvent(event);
         break;
-
       case "dragenter":
       case "dragover":
       case "drop":
@@ -6718,23 +6378,19 @@ class TopSiteLink extends (external_React_default()).PureComponent {
           event.preventDefault();
           this.props.onDragEvent(event, this.props.index);
         }
-
         break;
-
       case "mousedown":
         
         if (event.button === 1 && this.props.link.searchTopSite) {
           event.preventDefault();
-        } 
-
-
+        }
+        
         this.dragged = false;
         break;
     }
   }
+
   
-
-
 
 
 
@@ -6750,44 +6406,39 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       screenshot
     } = nextProps.link;
     const imageInState = ScreenshotUtils.isRemoteImageLocal(prevState.screenshotImage, screenshot);
-
     if (imageInState) {
       return null;
-    } 
+    }
 
-
+    
     ScreenshotUtils.maybeRevokeBlobObjectURL(prevState.screenshotImage);
     return {
       screenshotImage: ScreenshotUtils.createLocalImageObject(screenshot)
     };
-  } 
+  }
+
   
   
-
-
+  
   componentWillMount() {
     const nextState = TopSiteLink.getNextStateFromProps(this.props, this.state);
-
-    if (nextState) {
-      this.setState(nextState);
-    }
-  } 
-  
-  
-
-
-  componentWillReceiveProps(nextProps) {
-    const nextState = TopSiteLink.getNextStateFromProps(nextProps, this.state);
-
     if (nextState) {
       this.setState(nextState);
     }
   }
 
+  
+  
+  
+  componentWillReceiveProps(nextProps) {
+    const nextState = TopSiteLink.getNextStateFromProps(nextProps, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
   componentWillUnmount() {
     ScreenshotUtils.maybeRevokeBlobObjectURL(this.state.screenshotImage);
   }
-
   onKeyPress(event) {
     
     
@@ -6796,9 +6447,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       this.props.onClick(event);
     }
   }
+
   
-
-
 
 
 
@@ -6807,29 +6457,22 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       title,
       colors
     } = this.props;
-
     if (!colors) {
       return "";
     }
-
     let colorArray = colors.split(",");
-
     const hashStr = str => {
       let hash = 0;
-
       for (let i = 0; i < str.length; i++) {
         let charCode = str.charCodeAt(i);
         hash += charCode;
       }
-
       return hash;
     };
-
     let hash = hashStr(title);
     let index = hash % colorArray.length;
     return colorArray[index];
   }
-
   calculateStyle() {
     const {
       defaultStyle,
@@ -6845,7 +6488,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     let smallFaviconStyle;
     let hasScreenshotImage = this.state.screenshotImage && this.state.screenshotImage.url;
     let selectedColor;
-
     if (defaultStyle) {
       
       selectedColor = this.generateColor();
@@ -6881,7 +6523,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       selectedColor = this.generateColor();
       imageClassName = "";
     }
-
     return {
       showSmallFavicon,
       smallFaviconStyle,
@@ -6890,7 +6531,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       selectedColor
     };
   }
-
   render() {
     const {
       children,
@@ -6910,7 +6550,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       selectedColor
     } = this.calculateStyle();
     let draggableProps = {};
-
     if (isDraggable) {
       draggableProps = {
         onClick: this.onDragEvent,
@@ -6919,9 +6558,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
         onMouseDown: this.onDragEvent
       };
     }
-
     let impressionStats = null;
-
     if (link.type === SPOC_TYPE) {
       
       impressionStats = external_React_default().createElement(ImpressionStats_ImpressionStats, {
@@ -6945,7 +6582,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
           reporting_url: link.sponsored_impression_url,
           advertiser: title.toLocaleLowerCase(),
           source: NEWTAB_SOURCE
-        } 
+        }
+        
         ,
         IntersectionObserver: this.props.IntersectionObserver,
         document: this.props.document,
@@ -6958,14 +6596,14 @@ class TopSiteLink extends (external_React_default()).PureComponent {
         tile: {
           position: this.props.index,
           source: NEWTAB_SOURCE
-        } 
+        }
+        
         ,
         IntersectionObserver: this.props.IntersectionObserver,
         document: this.props.document,
         dispatch: this.props.dispatch
       });
     }
-
     return external_React_default().createElement("li", TopSite_extends({
       className: topSiteOuterClassName,
       onDrop: this.onDragEvent,
@@ -7011,7 +6649,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-topsite-sponsored"
     })))), children, impressionStats));
   }
-
 }
 TopSiteLink.defaultProps = {
   title: "",
@@ -7027,35 +6664,30 @@ class TopSite extends (external_React_default()).PureComponent {
     this.onLinkClick = this.onLinkClick.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
   }
+
   
-
-
 
 
   _getTelemetryInfo() {
     const value = {
       icon_type: this.props.link.iconType
-    }; 
-
+    };
+    
     if (this.props.link.isPinned) {
       value.card_type = "pinned";
     }
-
     if (this.props.link.searchTopSite) {
       
       value.card_type = "search";
       value.search_vendor = this.props.link.hostname;
     }
-
     if (isSponsored(this.props.link)) {
       value.card_type = "spoc";
     }
-
     return {
       value
     };
   }
-
   userEvent(event) {
     this.props.dispatch(actionCreators.UserEvent(Object.assign({
       event,
@@ -7063,11 +6695,11 @@ class TopSite extends (external_React_default()).PureComponent {
       action_position: this.props.index
     }, this._getTelemetryInfo())));
   }
-
   onLinkClick(event) {
-    this.userEvent("CLICK"); 
-    
+    this.userEvent("CLICK");
 
+    
+    
     event.preventDefault();
     const {
       altKey,
@@ -7076,7 +6708,6 @@ class TopSite extends (external_React_default()).PureComponent {
       metaKey,
       shiftKey
     } = event;
-
     if (!this.props.link.searchTopSite) {
       this.props.dispatch(actionCreators.OnlyToMain({
         type: actionTypes.OPEN_LINK,
@@ -7090,7 +6721,6 @@ class TopSite extends (external_React_default()).PureComponent {
           }
         })
       }));
-
       if (this.props.link.type === SPOC_TYPE) {
         
         this.props.dispatch(actionCreators.ImpressionStats({
@@ -7101,8 +6731,9 @@ class TopSite extends (external_React_default()).PureComponent {
             pos: this.props.link.pos,
             shim: this.props.link.shim && this.props.link.shim.click
           }]
-        })); 
+        }));
 
+        
         const title = this.props.link.label || this.props.link.hostname;
         this.props.dispatch(actionCreators.OnlyToMain({
           type: actionTypes.TOP_SITES_SPONSORED_IMPRESSION_STATS,
@@ -7139,7 +6770,6 @@ class TopSite extends (external_React_default()).PureComponent {
           }
         }));
       }
-
       if (this.props.link.sendAttributionRequest) {
         this.props.dispatch(actionCreators.OnlyToMain({
           type: actionTypes.PARTNER_LINK_ATTRIBUTION,
@@ -7158,7 +6788,6 @@ class TopSite extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   onMenuUpdate(isOpen) {
     if (isOpen) {
       this.props.onActivate(this.props.index);
@@ -7166,7 +6795,6 @@ class TopSite extends (external_React_default()).PureComponent {
       this.props.onActivate();
     }
   }
-
   render() {
     const {
       props
@@ -7177,7 +6805,6 @@ class TopSite extends (external_React_default()).PureComponent {
     const isContextMenuOpen = props.activeIndex === props.index;
     const title = link.label || link.hostname;
     let menuOptions;
-
     if (link.sponsored_position) {
       menuOptions = TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS;
     } else if (link.searchTopSite) {
@@ -7187,7 +6814,6 @@ class TopSite extends (external_React_default()).PureComponent {
     } else {
       menuOptions = TOP_SITES_CONTEXT_MENU_OPTIONS;
     }
-
     return external_React_default().createElement(TopSiteLink, TopSite_extends({}, props, {
       onClick: this.onLinkClick,
       onDragEvent: this.props.onDragEvent,
@@ -7210,20 +6836,16 @@ class TopSite extends (external_React_default()).PureComponent {
       source: TOP_SITES_SOURCE
     }))));
   }
-
 }
 TopSite.defaultProps = {
   link: {},
-
   onActivate() {}
-
 };
 class TopSitePlaceholder extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onEditButtonClick = this.onEditButtonClick.bind(this);
   }
-
   onEditButtonClick() {
     this.props.dispatch({
       type: actionTypes.TOP_SITES_EDIT,
@@ -7232,7 +6854,6 @@ class TopSitePlaceholder extends (external_React_default()).PureComponent {
       }
     });
   }
-
   render() {
     return external_React_default().createElement(TopSiteLink, TopSite_extends({}, this.props, {
       className: `placeholder ${this.props.className || ""}`,
@@ -7244,7 +6865,6 @@ class TopSitePlaceholder extends (external_React_default()).PureComponent {
       onClick: this.onEditButtonClick
     }));
   }
-
 }
 class _TopSiteList extends (external_React_default()).PureComponent {
   static get DEFAULT_STATE() {
@@ -7256,26 +6876,22 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       topSitesPreview: null
     };
   }
-
   constructor(props) {
     super(props);
     this.state = _TopSiteList.DEFAULT_STATE;
     this.onDragEvent = this.onDragEvent.bind(this);
     this.onActivate = this.onActivate.bind(this);
   }
-
   componentWillReceiveProps(nextProps) {
     if (this.state.draggedSite) {
       const prevTopSites = this.props.TopSites && this.props.TopSites.rows;
       const newTopSites = nextProps.TopSites && nextProps.TopSites.rows;
-
       if (prevTopSites && prevTopSites[this.state.draggedIndex] && prevTopSites[this.state.draggedIndex].url === this.state.draggedSite.url && (!newTopSites[this.state.draggedIndex] || newTopSites[this.state.draggedIndex].url !== this.state.draggedSite.url)) {
         
         this.setState(_TopSiteList.DEFAULT_STATE);
       }
     }
   }
-
   userEvent(event, index) {
     this.props.dispatch(actionCreators.UserEvent({
       event,
@@ -7283,7 +6899,6 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       action_position: index
     }));
   }
-
   onDragEvent(event, index, link, title) {
     switch (event.type) {
       case "dragstart":
@@ -7296,15 +6911,12 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         });
         this.userEvent("DRAG", index);
         break;
-
       case "dragend":
         if (!this.dropped) {
           
           this.setState(_TopSiteList.DEFAULT_STATE);
         }
-
         break;
-
       case "dragenter":
         if (index === this.state.draggedIndex) {
           this.setState({
@@ -7315,9 +6927,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
             topSitesPreview: this._makeTopSitesPreview(index)
           });
         }
-
         break;
-
       case "drop":
         if (index !== this.state.draggedIndex) {
           this.dropped = true;
@@ -7339,26 +6949,22 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           }));
           this.userEvent("DROP", index);
         }
-
         break;
     }
   }
-
   _getTopSites() {
     
     let topSites = this.props.TopSites.rows.slice();
     topSites.length = this.props.TopSitesRows * TOP_SITES_MAX_SITES_PER_ROW;
     return topSites;
   }
+
   
-
-
 
 
 
   _makeTopSitesPreview(index) {
     const topSites = this._getTopSites();
-
     topSites[this.state.draggedIndex] = null;
     const preview = topSites.map(site => site && (site.isPinned || isSponsored(site)) ? site : null);
     const unpinned = topSites.filter(site => site && !site.isPinned && !isSponsored(site));
@@ -7366,7 +6972,6 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       isPinned: true,
       isDragged: true
     });
-
     if (!preview[index]) {
       preview[index] = siteToInsert;
     } else {
@@ -7374,65 +6979,55 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       
       let holeIndex = index;
       const indexStep = index > this.state.draggedIndex ? -1 : 1;
-
       while (preview[holeIndex]) {
         holeIndex += indexStep;
-      } 
+      }
 
-
+      
       const shiftingStep = index > this.state.draggedIndex ? 1 : -1;
-
       while (index > this.state.draggedIndex ? holeIndex < index : holeIndex > index) {
         let nextIndex = holeIndex + shiftingStep;
-
         while (isSponsored(preview[nextIndex])) {
           nextIndex += shiftingStep;
         }
-
         preview[holeIndex] = preview[nextIndex];
         holeIndex = nextIndex;
       }
-
       preview[index] = siteToInsert;
-    } 
+    }
 
-
+    
     for (let i = 0; i < preview.length; i++) {
       if (!preview[i]) {
         preview[i] = unpinned.shift() || null;
       }
     }
-
     return preview;
   }
-
   onActivate(index) {
     this.setState({
       activeIndex: index
     });
   }
-
   render() {
     const {
       props
     } = this;
-
     const topSites = this.state.topSitesPreview || this._getTopSites();
-
     const topSitesUI = [];
     const commonProps = {
       onDragEvent: this.onDragEvent,
       dispatch: props.dispatch
-    }; 
+    };
     
     
     
+    
+    let holeIndex = 0;
 
-    let holeIndex = 0; 
     
-
+    
     const maxNarrowVisibleIndex = props.TopSitesRows * 6;
-
     for (let i = 0, l = topSites.length; i < l; i++) {
       const link = topSites[i] && Object.assign({}, topSites[i], {
         iconType: this.props.topSiteIconType(topSites[i])
@@ -7441,14 +7036,12 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         key: link ? link.url : holeIndex++,
         index: i
       };
-
       if (i >= maxNarrowVisibleIndex) {
         slotProps.className = "hide-for-narrow";
       }
-
-      let topSiteLink; 
+      let topSiteLink;
       
-
+      
       if (!link || props.App.isForStartupCache && isSponsored(link)) {
         topSiteLink = external_React_default().createElement(TopSitePlaceholder, TopSite_extends({}, slotProps, commonProps));
       } else {
@@ -7460,20 +7053,18 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           colors: props.colors
         }));
       }
-
       topSitesUI.push(topSiteLink);
     }
-
     return external_React_default().createElement("ul", {
       className: `top-sites-list${this.state.draggedSite ? " dnd-active" : ""}`
     }, topSitesUI);
   }
-
 }
 const TopSiteList = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   App: state.App
 }))(_TopSiteList);
 ;
+
 
 
 
@@ -7507,33 +7098,28 @@ class TopSiteForm extends (external_React_default()).PureComponent {
     this.onEnableScreenshotUrlForm = this.onEnableScreenshotUrlForm.bind(this);
     this.validateUrl = this.validateUrl.bind(this);
   }
-
   onLabelChange(event) {
     this.setState({
       label: event.target.value
     });
   }
-
   onUrlChange(event) {
     this.setState({
       url: event.target.value,
       validationError: false
     });
   }
-
   onClearUrlClick() {
     this.setState({
       url: "",
       validationError: false
     });
   }
-
   onEnableScreenshotUrlForm() {
     this.setState({
       showCustomScreenshotForm: true
     });
   }
-
   _updateCustomScreenshotInput(customScreenshotUrl) {
     this.setState({
       customScreenshotUrl,
@@ -7543,23 +7129,18 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       type: actionTypes.PREVIEW_REQUEST_CANCEL
     });
   }
-
   onCustomScreenshotUrlChange(event) {
     this._updateCustomScreenshotInput(event.target.value);
   }
-
   onClearScreenshotInput() {
     this._updateCustomScreenshotInput("");
   }
-
   onCancelButtonClick(ev) {
     ev.preventDefault();
     this.props.onClose();
   }
-
   onDoneButtonClick(ev) {
     ev.preventDefault();
-
     if (this.validateForm()) {
       const site = {
         url: this.cleanUrl(this.state.url)
@@ -7567,18 +7148,15 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       const {
         index
       } = this.props;
-
       if (this.state.label !== "") {
         site.label = this.state.label;
       }
-
       if (this.state.customScreenshotUrl) {
         site.customScreenshotURL = this.cleanUrl(this.state.customScreenshotUrl);
       } else if (this.props.site && this.props.site.customScreenshotURL) {
         
         site.customScreenshotURL = null;
       }
-
       this.props.dispatch(actionCreators.AlsoToMain({
         type: actionTypes.TOP_SITES_PIN,
         data: {
@@ -7594,10 +7172,8 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       this.props.onClose();
     }
   }
-
   onPreviewButtonClick(event) {
     event.preventDefault();
-
     if (this.validateForm()) {
       this.props.dispatch(actionCreators.AlsoToMain({
         type: actionTypes.PREVIEW_REQUEST,
@@ -7611,16 +7187,13 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   cleanUrl(url) {
     
     if (!url.startsWith("http:") && !url.startsWith("https:")) {
       return `http://${url}`;
     }
-
     return url;
   }
-
   _tryParseUrl(url) {
     try {
       return new URL(url);
@@ -7628,44 +7201,35 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       return null;
     }
   }
-
   validateUrl(url) {
     const validProtocols = ["http:", "https:"];
-
     const urlObj = this._tryParseUrl(url) || this._tryParseUrl(this.cleanUrl(url));
-
     return urlObj && validProtocols.includes(urlObj.protocol);
   }
-
   validateCustomScreenshotUrl() {
     const {
       customScreenshotUrl
     } = this.state;
     return !customScreenshotUrl || this.validateUrl(customScreenshotUrl);
   }
-
   validateForm() {
     const validate = this.validateUrl(this.state.url) && this.validateCustomScreenshotUrl();
-
     if (!validate) {
       this.setState({
         validationError: true
       });
     }
-
     return validate;
   }
-
   _renderCustomScreenshotInput() {
     const {
       customScreenshotUrl
     } = this.state;
     const requestFailed = this.props.previewResponse === "";
-    const validationError = this.state.validationError && !this.validateCustomScreenshotUrl() || requestFailed; 
-
+    const validationError = this.state.validationError && !this.validateCustomScreenshotUrl() || requestFailed;
+    
     const shouldFocus = validationError && this.validateUrl(this.state.url) || !customScreenshotUrl;
     const isLoading = this.props.previewResponse === null && customScreenshotUrl && this.props.previewUrl === this.cleanUrl(customScreenshotUrl);
-
     if (!this.state.showCustomScreenshotForm) {
       return external_React_default().createElement(A11yLinkButton, {
         onClick: this.onEnableScreenshotUrlForm,
@@ -7673,7 +7237,6 @@ class TopSiteForm extends (external_React_default()).PureComponent {
         "data-l10n-id": "newtab-topsites-use-image-link"
       });
     }
-
     return external_React_default().createElement("div", {
       className: "custom-image-input-container"
     }, external_React_default().createElement(TopSiteFormInput, {
@@ -7689,27 +7252,24 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       placeholderId: "newtab-topsites-url-input"
     }));
   }
-
   render() {
     const {
       customScreenshotUrl
     } = this.state;
-    const requestFailed = this.props.previewResponse === ""; 
-
+    const requestFailed = this.props.previewResponse === "";
+    
     const showAsAdd = !this.props.site;
     const previous = this.props.site && this.props.site.customScreenshotURL || "";
-    const changed = customScreenshotUrl && this.cleanUrl(customScreenshotUrl) !== previous; 
+    const changed = customScreenshotUrl && this.cleanUrl(customScreenshotUrl) !== previous;
     
-
+    
     const previewMode = changed && !this.props.previewResponse;
     const previewLink = Object.assign({}, this.props.site);
-
     if (this.props.previewResponse) {
       previewLink.screenshot = this.props.previewResponse;
       previewLink.customScreenshotURL = this.props.previewUrl;
-    } 
-
-
+    }
+    
     const onSubmit = previewMode ? this.onPreviewButtonClick : this.onDoneButtonClick;
     const addTopsitesHeaderL10nId = "newtab-topsites-add-shortcut-header";
     const editTopsitesHeaderL10nId = "newtab-topsites-edit-shortcut-header";
@@ -7762,15 +7322,13 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       "data-l10n-id": showAsAdd ? "newtab-topsites-add-button" : "newtab-topsites-save-button"
     })));
   }
-
 }
 TopSiteForm.defaultProps = {
   site: null,
   index: -1
 };
 ;
-function TopSites_extends() { TopSites_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return TopSites_extends.apply(this, arguments); }
-
+function TopSites_extends() { TopSites_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return TopSites_extends.apply(this, arguments); }
 
 
 
@@ -7790,22 +7348,17 @@ function topSiteIconType(link) {
   if (link.customScreenshotURL) {
     return "custom_screenshot";
   }
-
   if (link.tippyTopIcon || link.faviconRef === "tippytop") {
     return "tippytop";
   }
-
   if (link.faviconSize >= MIN_RICH_FAVICON_SIZE) {
     return "rich_icon";
   }
-
   if (link.screenshot) {
     return "screenshot";
   }
-
   return "no_image";
 }
-
 
 
 
@@ -7817,7 +7370,6 @@ function countTopSitesIconsTypes(topSites) {
     acc[topSiteIconType(link)]++;
     return acc;
   };
-
   return topSites.reduce(countTopSitesTypes, {
     custom_screenshot: 0,
     screenshot: 0,
@@ -7826,25 +7378,22 @@ function countTopSitesIconsTypes(topSites) {
     no_image: 0
   });
 }
-
 class _TopSites extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
     this.onEditFormClose = this.onEditFormClose.bind(this);
     this.onSearchShortcutsFormClose = this.onSearchShortcutsFormClose.bind(this);
   }
+
   
-
-
 
 
   _dispatchTopSitesStats() {
     const topSites = this._getVisibleTopSites().filter(topSite => topSite !== null && topSite !== undefined);
-
     const topSitesIconsStats = countTopSitesIconsTypes(topSites);
     const topSitesPinned = topSites.filter(site => !!site.isPinned).length;
-    const searchShortcuts = topSites.filter(site => !!site.searchTopSite).length; 
-
+    const searchShortcuts = topSites.filter(site => !!site.searchTopSite).length;
+    
     this.props.dispatch(actionCreators.AlsoToMain({
       type: actionTypes.SAVE_SESSION_PERF_DATA,
       data: {
@@ -7854,30 +7403,25 @@ class _TopSites extends (external_React_default()).PureComponent {
       }
     }));
   }
+
   
-
-
 
 
   _getVisibleTopSites() {
     
-    let sitesPerRow = TOP_SITES_MAX_SITES_PER_ROW; 
-
+    let sitesPerRow = TOP_SITES_MAX_SITES_PER_ROW;
+    
     if (!__webpack_require__.g.matchMedia(`(min-width: 1072px)`).matches) {
       sitesPerRow -= 2;
     }
-
     return this.props.TopSites.rows.slice(0, this.props.TopSitesRows * sitesPerRow);
   }
-
   componentDidUpdate() {
     this._dispatchTopSitesStats();
   }
-
   componentDidMount() {
     this._dispatchTopSitesStats();
   }
-
   onEditFormClose() {
     this.props.dispatch(actionCreators.UserEvent({
       source: TOP_SITES_SOURCE,
@@ -7887,7 +7431,6 @@ class _TopSites extends (external_React_default()).PureComponent {
       type: actionTypes.TOP_SITES_CANCEL_EDIT
     });
   }
-
   onSearchShortcutsFormClose() {
     this.props.dispatch(actionCreators.UserEvent({
       source: TOP_SITES_SOURCE,
@@ -7897,7 +7440,6 @@ class _TopSites extends (external_React_default()).PureComponent {
       type: actionTypes.TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL
     });
   }
-
   render() {
     const {
       props
@@ -7908,11 +7450,9 @@ class _TopSites extends (external_React_default()).PureComponent {
     } = props.TopSites;
     const extraMenuOptions = ["AddTopSite"];
     const colors = props.Prefs.values["newNewtabExperience.colors"];
-
     if (props.Prefs.values["improvesearch.topSiteSearchShortcuts"]) {
       extraMenuOptions.push("AddSearchShortcut");
     }
-
     return external_React_default().createElement(ComponentPerfTimer, {
       id: "topsites",
       initialized: props.TopSites.initialized,
@@ -7962,7 +7502,6 @@ class _TopSites extends (external_React_default()).PureComponent {
       dispatch: this.props.dispatch
     }))))));
   }
-
 }
 const TopSites_TopSites = (0,external_ReactRedux_namespaceObject.connect)((state, props) => ({
   TopSites: state.TopSites,
@@ -7970,7 +7509,7 @@ const TopSites_TopSites = (0,external_ReactRedux_namespaceObject.connect)((state
   TopSitesRows: state.Prefs.values.topSitesRows
 }))(_TopSites);
 ;
-function Sections_extends() { Sections_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Sections_extends.apply(this, arguments); }
+function Sections_extends() { Sections_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Sections_extends.apply(this, arguments); }
 
 
 
@@ -7999,23 +7538,19 @@ class Section extends (external_React_default()).PureComponent {
     } = this.props;
     return rowsPref ? Prefs.values[rowsPref] : maxRows;
   }
-
   _dispatchImpressionStats() {
     const {
       props
     } = this;
     let cardsPerRow = CARDS_PER_ROW_DEFAULT;
-
     if (props.compactCards && __webpack_require__.g.matchMedia(`(min-width: 1072px)`).matches) {
       
       
       
       cardsPerRow = CARDS_PER_ROW_COMPACT_WIDE;
     }
-
     const maxCards = cardsPerRow * this.numRows;
     const cards = props.rows.slice(0, maxCards);
-
     if (this.needsImpressionStats(cards)) {
       props.dispatch(actionCreators.ImpressionStats({
         source: props.eventSource,
@@ -8025,20 +7560,18 @@ class Section extends (external_React_default()).PureComponent {
       }));
       this.impressionCardGuids = cards.map(link => link.guid);
     }
-  } 
+  }
+
   
   
-
-
+  
   sendImpressionStatsOrAddListener() {
     const {
       props
     } = this;
-
     if (!props.shouldSendImpressionStats || !props.dispatch) {
       return;
     }
-
     if (props.document.visibilityState === Sections_VISIBLE) {
       this._dispatchImpressionStats();
     } else {
@@ -8046,76 +7579,68 @@ class Section extends (external_React_default()).PureComponent {
       
       if (this._onVisibilityChange) {
         props.document.removeEventListener(Sections_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-      } 
+      }
 
-
+      
       this._onVisibilityChange = () => {
         if (props.document.visibilityState === Sections_VISIBLE) {
           if (!this.props.pref.collapsed) {
             this._dispatchImpressionStats();
           }
-
           props.document.removeEventListener(Sections_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
         }
       };
-
       props.document.addEventListener(Sections_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
-
   componentWillMount() {
     this.sendNewTabRehydrated(this.props.initialized);
   }
-
   componentDidMount() {
     if (this.props.rows.length && !this.props.pref.collapsed) {
       this.sendImpressionStatsOrAddListener();
     }
   }
-
   componentDidUpdate(prevProps) {
     const {
       props
     } = this;
     const isCollapsed = props.pref.collapsed;
     const wasCollapsed = prevProps.pref.collapsed;
-
-    if ( 
-    props.rows.length && ( 
+    if (
     
-    props.rows !== prevProps.rows && !isCollapsed || 
+    props.rows.length && (
+    
+    
+    props.rows !== prevProps.rows && !isCollapsed ||
+    
     wasCollapsed && !isCollapsed)) {
       this.sendImpressionStatsOrAddListener();
     }
   }
-
   componentWillUpdate(nextProps) {
     this.sendNewTabRehydrated(nextProps.initialized);
   }
-
   componentWillUnmount() {
     if (this._onVisibilityChange) {
       this.props.document.removeEventListener(Sections_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
-
   needsImpressionStats(cards) {
     if (!this.impressionCardGuids || this.impressionCardGuids.length !== cards.length) {
       return true;
     }
-
     for (let i = 0; i < cards.length; i++) {
       if (cards[i].guid !== this.impressionCardGuids[i]) {
         return true;
       }
     }
-
     return false;
-  } 
+  }
+
   
   
-
-
+  
   sendNewTabRehydrated(initialized) {
     if (initialized && !this.renderNotified) {
       this.props.dispatch(actionCreators.AlsoToMain({
@@ -8125,7 +7650,6 @@ class Section extends (external_React_default()).PureComponent {
       this.renderNotified = true;
     }
   }
-
   render() {
     const {
       id,
@@ -8159,36 +7683,38 @@ class Section extends (external_React_default()).PureComponent {
     } = Pocket || {};
     const {
       useCta
-    } = pocketCta || {}; 
-    
+    } = pocketCta || {};
 
+    
+    
     const isPocketLoggedInDefined = isUserLoggedIn === true || isUserLoggedIn === false;
     const hasTopics = topics && !!topics.length;
-    const shouldShowPocketCta = id === "topstories" && useCta && isUserLoggedIn === false; 
+    const shouldShowPocketCta = id === "topstories" && useCta && isUserLoggedIn === false;
+
     
+    
+    const shouldShowTopics = id === "topstories" && hasTopics && (useCta && isUserLoggedIn === true || !useCta && isPocketLoggedInDefined);
 
-    const shouldShowTopics = id === "topstories" && hasTopics && (useCta && isUserLoggedIn === true || !useCta && isPocketLoggedInDefined); 
-
+    
     const shouldShowReadMore = read_more_endpoint && hasTopics;
-    const realRows = rows.slice(0, maxCards); 
-    
+    const realRows = rows.slice(0, maxCards);
 
+    
+    
     const shouldShowEmptyState = initialized && !rows.length;
     const cards = [];
-
     if (!shouldShowEmptyState) {
       for (let i = 0; i < maxCards; i++) {
-        const link = realRows[i]; 
+        const link = realRows[i];
         
-
+        
         const className = i >= maxCardsOnNarrow ? "hide-for-narrow" : "";
-        let usePlaceholder = !link; 
+        let usePlaceholder = !link;
         
-
+        
         if (!usePlaceholder && i === 2 && waitingForSpoc) {
           usePlaceholder = true;
         }
-
         cards.push(!usePlaceholder ? external_React_default().createElement(Card, {
           key: i,
           index: i,
@@ -8205,10 +7731,10 @@ class Section extends (external_React_default()).PureComponent {
         }));
       }
     }
+    const sectionClassName = ["section", compactCards ? "compact-cards" : "normal-cards"].join(" ");
 
-    const sectionClassName = ["section", compactCards ? "compact-cards" : "normal-cards"].join(" "); 
     
-
+    
     return external_React_default().createElement(ComponentPerfTimer, this.props, external_React_default().createElement(CollapsibleSection, {
       className: sectionClassName,
       title: title,
@@ -8251,7 +7777,6 @@ class Section extends (external_React_default()).PureComponent {
       read_more_endpoint: read_more_endpoint
     })))));
   }
-
 }
 Section.defaultProps = {
   document: __webpack_require__.g.document,
@@ -8271,44 +7796,38 @@ class _Sections extends (external_React_default()).PureComponent {
     const {
       sectionOrder,
       "feeds.topsites": showTopSites
-    } = this.props.Prefs.values; 
-
+    } = this.props.Prefs.values;
+    
     const expectedCount = enabledSections.length + ~~showTopSites;
-
     for (const sectionId of sectionOrder.split(",")) {
       const commonProps = {
         key: sectionId,
         isFirst: sections.length === 0,
         isLast: sections.length === expectedCount - 1
       };
-
       if (sectionId === "topsites" && showTopSites) {
         sections.push( external_React_default().createElement(TopSites_TopSites, commonProps));
       } else {
         const section = enabledSections.find(s => s.id === sectionId);
-
         if (section) {
           sections.push( external_React_default().createElement(SectionIntl, Sections_extends({}, section, commonProps)));
         }
       }
     }
-
     return sections;
   }
-
   render() {
     return external_React_default().createElement("div", {
       className: "sections-list"
     }, this.renderSections());
   }
-
 }
 const Sections_Sections = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Sections: state.Sections,
   Prefs: state.Prefs
 }))(_Sections);
 ;
-function Highlights_extends() { Highlights_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Highlights_extends.apply(this, arguments); }
+function Highlights_extends() { Highlights_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Highlights_extends.apply(this, arguments); }
 
 
 
@@ -8319,23 +7838,21 @@ function Highlights_extends() { Highlights_extends = Object.assign || function (
 class _Highlights extends (external_React_default()).PureComponent {
   render() {
     const section = this.props.Sections.find(s => s.id === "highlights");
-
     if (!section || !section.enabled) {
       return null;
     }
-
     return external_React_default().createElement("div", {
       className: "ds-highlights sections-list"
     }, external_React_default().createElement(SectionIntl, Highlights_extends({}, section, {
       isFixed: true
     })));
   }
-
 }
 const Highlights = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Sections: state.Sections
 }))(_Highlights);
 ;
+
 
 
 
@@ -8346,9 +7863,9 @@ class HorizontalRule extends (external_React_default()).PureComponent {
       className: "ds-hr"
     });
   }
-
 }
 ;
+
 
 
 
@@ -8361,7 +7878,6 @@ class Navigation_Topic extends (external_React_default()).PureComponent {
     super(props);
     this.onLinkClick = this.onLinkClick.bind(this);
   }
-
   onLinkClick(event) {
     if (this.props.dispatch) {
       this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
@@ -8374,7 +7890,6 @@ class Navigation_Topic extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   render() {
     const {
       url,
@@ -8386,7 +7901,6 @@ class Navigation_Topic extends (external_React_default()).PureComponent {
       url: url
     }, name);
   }
-
 }
 class Navigation extends (external_React_default()).PureComponent {
   render() {
@@ -8402,17 +7916,14 @@ class Navigation extends (external_React_default()).PureComponent {
     let {
       title
     } = header;
-
     if (newFooterSection) {
       title = {
         id: "newtab-pocket-new-topics-title"
       };
-
       if (this.props.extraLinks) {
         links = [...links.slice(0, links.length - 1), ...this.props.extraLinks, links[links.length - 1]];
       }
     }
-
     return external_React_default().createElement("div", {
       className: className
     }, title && english ? external_React_default().createElement(FluentOrText, {
@@ -8441,9 +7952,9 @@ class Navigation extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-pocket-pocket-firefox-family"
     })) : null);
   }
-
 }
 ;
+
 
 
 
@@ -8463,9 +7974,9 @@ class PrivacyLink extends (external_React_default()).PureComponent {
       message: properties.title
     })));
   }
-
 }
 ;
+
 
 
 
@@ -8486,9 +7997,9 @@ class SectionTitle extends (external_React_default()).PureComponent {
       className: "subtitle"
     }, subtitle) : null);
   }
-
 }
 ;
+
 
 
 
@@ -8503,8 +8014,8 @@ const selectLayoutRender = ({
     spocs
   } = state;
   let spocIndexPlacementMap = {};
-  
 
+  
 
 
 
@@ -8514,177 +8025,162 @@ const selectLayoutRender = ({
     if (!spocIndexPlacementMap[placementName] && spocIndexPlacementMap[placementName] !== 0) {
       spocIndexPlacementMap[placementName] = 0;
     }
-
     const results = [...data];
-
     for (let position of spocsConfig.positions) {
-      const spoc = spocsData[spocIndexPlacementMap[placementName]]; 
-
+      const spoc = spocsData[spocIndexPlacementMap[placementName]];
+      
       if (!spoc) {
         break;
-      } 
-      
-      
+      }
 
-
-      spocIndexPlacementMap[placementName]++; 
       
       
+      
+      spocIndexPlacementMap[placementName]++;
 
+      
+      
+      
       if (!spocs.blocked.includes(spoc.url)) {
         results.splice(position.index, 0, spoc);
       }
     }
-
     return results;
   }
-
   const positions = {};
   const DS_COMPONENTS = ["Message", "TextPromo", "SectionTitle", "Signup", "Navigation", "CardGrid", "CollectionCardGrid", "HorizontalRule", "PrivacyLink"];
   const filterArray = [];
-
   if (!prefs["feeds.topsites"]) {
     filterArray.push("TopSites");
   }
-
   const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
-
   if (!pocketEnabled) {
     filterArray.push(...DS_COMPONENTS);
   }
-
   const placeholderComponent = component => {
     if (!component.feed) {
       
-      return { ...component,
+      return {
+        ...component,
         data: {
           spocs: []
         }
       };
     }
-
     const data = {
       recommendations: []
     };
     let items = 0;
-
     if (component.properties && component.properties.items) {
       items = component.properties.items;
     }
-
     for (let i = 0; i < items; i++) {
       data.recommendations.push({
         placeholder: true
       });
     }
-
-    return { ...component,
+    return {
+      ...component,
       data
     };
-  }; 
+  };
 
-
+  
   const handleSpocs = (data, component) => {
-    let result = [...data]; 
-
+    let result = [...data];
+    
     if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
       const placement = component.placement || {};
       const placementName = placement.name || "spocs";
-      const spocsData = spocs.data[placementName]; 
-
+      const spocsData = spocs.data[placementName];
+      
       if (spocs.loaded && spocsData && spocsData.items && spocsData.items.length) {
         result = fillSpocPositionsForPlacement(result, component.spocs, spocsData.items, placementName);
       }
     }
-
     return result;
   };
-
   const handleComponent = component => {
     if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
       const placement = component.placement || {};
       const placementName = placement.name || "spocs";
       const spocsData = spocs.data[placementName];
-
       if (spocs.loaded && spocsData && spocsData.items && spocsData.items.length) {
-        return { ...component,
+        return {
+          ...component,
           data: {
-            spocs: spocsData.items.filter(spoc => spoc && !spocs.blocked.includes(spoc.url)).map((spoc, index) => ({ ...spoc,
+            spocs: spocsData.items.filter(spoc => spoc && !spocs.blocked.includes(spoc.url)).map((spoc, index) => ({
+              ...spoc,
               pos: index
             }))
           }
         };
       }
     }
-
-    return { ...component,
+    return {
+      ...component,
       data: {
         spocs: []
       }
     };
   };
-
   const handleComponentWithFeed = component => {
     positions[component.type] = positions[component.type] || 0;
     let data = {
       recommendations: []
     };
     const feed = feeds.data[component.feed.url];
-
     if (feed && feed.data) {
-      data = { ...feed.data,
+      data = {
+        ...feed.data,
         recommendations: [...(feed.data.recommendations || [])]
       };
     }
-
     if (component && component.properties && component.properties.offset) {
-      data = { ...data,
+      data = {
+        ...data,
         recommendations: data.recommendations.slice(component.properties.offset)
       };
     }
-
-    data = { ...data,
+    data = {
+      ...data,
       recommendations: handleSpocs(data.recommendations, component)
     };
     let items = 0;
-
     if (component.properties && component.properties.items) {
       items = Math.min(component.properties.items, data.recommendations.length);
-    } 
+    }
+
     
     
-
-
+    
     for (let i = 0; i < items; i++) {
-      data.recommendations[i] = { ...data.recommendations[i],
+      data.recommendations[i] = {
+        ...data.recommendations[i],
         pos: positions[component.type]++
       };
     }
-
-    return { ...component,
+    return {
+      ...component,
       data
     };
   };
-
   const renderLayout = () => {
     const renderedLayoutArray = [];
-
     for (const row of layout.filter(r => r.components.filter(c => !filterArray.includes(c.type)).length)) {
       let components = [];
-      renderedLayoutArray.push({ ...row,
+      renderedLayoutArray.push({
+        ...row,
         components
       });
-
       for (const component of row.components.filter(c => !filterArray.includes(c.type))) {
         const spocsConfig = component.spocs;
-
         if (spocsConfig || component.feed) {
           
           if (component.feed && !feeds.data[component.feed.url] || spocsConfig && spocsConfig.positions && spocsConfig.positions.length && !spocs.loaded) {
             components.push(placeholderComponent(component));
             return renderedLayoutArray;
           }
-
           if (component.feed) {
             components.push(handleComponentWithFeed(component));
           } else {
@@ -8695,16 +8191,15 @@ const selectLayoutRender = ({
         }
       }
     }
-
     return renderedLayoutArray;
   };
-
   const layoutRender = renderLayout();
   return {
     layoutRender
   };
 };
 ;
+
 
 
 
@@ -8736,9 +8231,9 @@ function isAllowedCSS(property, value) {
   
   if (value === undefined) {
     return true;
-  } 
+  }
 
-
+  
   const urls = value.match(/url\("[^"]+"\)/g);
   return !urls || urls.every(url => ALLOWED_CSS_URL_PREFIXES.some(prefix => url.slice(5).startsWith(prefix)));
 }
@@ -8747,13 +8242,11 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     super(props);
     this.onStyleMount = this.onStyleMount.bind(this);
   }
-
   onStyleMount(style) {
     
     if (!style) {
       return;
     }
-
     const {
       sheet
     } = style;
@@ -8764,29 +8257,31 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
         if (!component) {
           return;
         }
-
         Object.entries(component).forEach(([selectors, declarations]) => {
           
           sheet.insertRule(`${DUMMY_CSS_SELECTOR} {}`);
-          const [rule] = sheet.cssRules; 
-          
+          const [rule] = sheet.cssRules;
 
+          
+          
           rule.style = declarations;
           [...rule.style].forEach(property => {
             const value = rule.style[property];
-
             if (!isAllowedCSS(property, value)) {
               console.error(`Bad CSS declaration ${property}: ${value}`);
               rule.style.removeProperty(property);
             }
-          }); 
+          });
 
-          const prefix = `.ds-layout > .ds-column:nth-child(${rowIndex + 1}) .ds-column-grid > :nth-child(${componentIndex + 1})`; 
           
+          const prefix = `.ds-layout > .ds-column:nth-child(${rowIndex + 1}) .ds-column-grid > :nth-child(${componentIndex + 1})`;
+          
+          
+          rule.selectorText = selectors.split(",").map(selector => prefix + (
+          
+          selector[0] === ":" ? "" : " ") + selector).join(",");
 
-          rule.selectorText = selectors.split(",").map(selector => prefix + ( 
-          selector[0] === ":" ? "" : " ") + selector).join(","); 
-
+          
           if (rule.selectorText === DUMMY_CSS_SELECTOR) {
             console.error(`Bad CSS selector ${selectors}`);
           }
@@ -8794,12 +8289,10 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       });
     });
   }
-
   renderComponent(component, embedWidth) {
     switch (component.type) {
       case "Highlights":
         return external_React_default().createElement(Highlights, null);
-
       case "TopSites":
         return external_React_default().createElement("div", {
           className: "ds-top-sites"
@@ -8807,21 +8300,18 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           isFixed: true,
           title: component.header?.title
         }));
-
       case "TextPromo":
         return external_React_default().createElement(DSTextPromo, {
           dispatch: this.props.dispatch,
           type: component.type,
           data: component.data
         });
-
       case "Signup":
         return external_React_default().createElement(DSSignup, {
           dispatch: this.props.dispatch,
           type: component.type,
           data: component.data
         });
-
       case "Message":
         return external_React_default().createElement(DSMessage, {
           title: component.header && component.header.title,
@@ -8832,12 +8322,10 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           essentialReadsHeader: component.essentialReadsHeader,
           editorsPicksHeader: component.editorsPicksHeader
         });
-
       case "SectionTitle":
         return external_React_default().createElement(SectionTitle, {
           header: component.header
         });
-
       case "Navigation":
         return external_React_default().createElement(Navigation, {
           dispatch: this.props.dispatch,
@@ -8850,7 +8338,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           newFooterSection: component.newFooterSection,
           privacyNoticeURL: component.properties.privacyNoticeURL
         });
-
       case "CollectionCardGrid":
         const {
           DiscoveryStream
@@ -8865,7 +8352,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           dismissible: this.props.DiscoveryStream.isCollectionDismissible,
           dispatch: this.props.dispatch
         });
-
       case "CardGrid":
         return external_React_default().createElement(CardGrid, {
           title: component.header && component.header.title,
@@ -8885,20 +8371,16 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           recentSavesEnabled: this.props.DiscoveryStream.recentSavesEnabled,
           hideDescriptions: this.props.DiscoveryStream.hideDescriptions
         });
-
       case "HorizontalRule":
         return external_React_default().createElement(HorizontalRule, null);
-
       case "PrivacyLink":
         return external_React_default().createElement(PrivacyLink, {
           properties: component.properties
         });
-
       default:
         return external_React_default().createElement("div", null, component.type);
     }
   }
-
   renderStyles(styles) {
     
     
@@ -8909,12 +8391,11 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       ref: this.onStyleMount
     });
   }
-
   render() {
     const {
       locale
-    } = this.props; 
-
+    } = this.props;
+    
     const {
       layoutRender
     } = selectLayoutRender({
@@ -8924,13 +8405,14 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     });
     const {
       config
-    } = this.props.DiscoveryStream; 
+    } = this.props.DiscoveryStream;
 
+    
     if (!config.collapsible) {
       return this.renderLayout(layoutRender);
-    } 
+    }
 
-
+    
     const extractComponent = type => {
       for (const [rowIndex, row] of Object.entries(layoutRender)) {
         for (const [index, component] of Object.entries(row.components)) {
@@ -8941,23 +8423,20 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
             } else {
               row.components.splice(index, 1);
             }
-
             return component;
           }
         }
       }
-
       return null;
-    }; 
+    };
 
-
+    
     const topStories = this.props.Sections.find(s => s.id === "topstories");
-
     if (!topStories) {
       return null;
-    } 
+    }
 
-
+    
     const topSites = extractComponent("TopSites");
     const sponsoredCollection = extractComponent("CollectionCardGrid");
     const message = extractComponent("Message") || {
@@ -8975,21 +8454,21 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       }
     };
     let sectionTitle = message.header.title;
-    let subTitle = ""; 
-    
+    let subTitle = "";
 
+    
+    
     if (message.essentialReadsHeader || message.editorsPicksHeader) {
       learnMore = null;
       subTitle = "Recommended By Pocket";
-
       if (message.essentialReadsHeader) {
         sectionTitle = "Today’s Essential Reads";
       } else if (message.editorsPicksHeader) {
         sectionTitle = "Editor’s Picks";
       }
-    } 
+    }
 
-
+    
     return external_React_default().createElement((external_React_default()).Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && external_React_default().createElement(DSPrivacyModal, {
       dispatch: this.props.dispatch
     }), topSites && this.renderLayout([{
@@ -9020,7 +8499,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       components: [privacyLinkComponent]
     }]));
   }
-
   renderLayout(layoutRender) {
     const styles = [];
     return external_React_default().createElement("div", {
@@ -9034,14 +8512,12 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       if (!component) {
         return null;
       }
-
       styles[rowIndex] = [...(styles[rowIndex] || []), component.styles];
       return external_React_default().createElement("div", {
         key: `component-${componentIndex}`
       }, this.renderComponent(component, row.width));
     })))), this.renderStyles(styles));
   }
-
 }
 const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   DiscoveryStream: state.DiscoveryStream,
@@ -9055,13 +8531,14 @@ const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(stat
 
 
 
+
 class BackgroundsSection extends (external_React_default()).PureComponent {
   render() {
     return external_React_default().createElement("div", null);
   }
-
 }
 ;
+
 
 
 
@@ -9070,12 +8547,12 @@ class BackgroundsSection extends (external_React_default()).PureComponent {
 class ContentSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
-    this.onPreferenceSelect = this.onPreferenceSelect.bind(this); 
+    this.onPreferenceSelect = this.onPreferenceSelect.bind(this);
 
+    
     this.topSitesDrawerRef = external_React_default().createRef();
     this.pocketDrawerRef = external_React_default().createRef();
   }
-
   inputUserEvent(eventSource, status) {
     this.props.dispatch(actionCreators.UserEvent({
       event: "PREF_CHANGED",
@@ -9086,7 +8563,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       }
     }));
   }
-
   onPreferenceSelect(e) {
     
     const {
@@ -9094,42 +8570,33 @@ class ContentSection extends (external_React_default()).PureComponent {
       eventSource
     } = e.target.dataset;
     let value;
-
     if (e.target.nodeName === "SELECT") {
       value = parseInt(e.target.value, 10);
     } else if (e.target.nodeName === "INPUT") {
       value = e.target.checked;
-
       if (eventSource) {
         this.inputUserEvent(eventSource, value);
       }
     } else if (e.target.nodeName === "MOZ-TOGGLE") {
       value = e.target.pressed;
-
       if (eventSource) {
         this.inputUserEvent(eventSource, value);
       }
     }
-
     this.props.setPref(preference, value);
   }
-
   componentDidMount() {
     this.setDrawerMargins();
   }
-
   componentDidUpdate() {
     this.setDrawerMargins();
   }
-
   setDrawerMargins() {
     this.setDrawerMargin(`TOP_SITES`, this.props.enabledSections.topSitesEnabled);
     this.setDrawerMargin(`TOP_STORIES`, this.props.enabledSections.pocketEnabled);
   }
-
   setDrawerMargin(drawerID, isOpen) {
     let drawerRef;
-
     if (drawerID === `TOP_SITES`) {
       drawerRef = this.topSitesDrawerRef.current;
     } else if (drawerID === `TOP_STORIES`) {
@@ -9137,12 +8604,9 @@ class ContentSection extends (external_React_default()).PureComponent {
     } else {
       return;
     }
-
     let drawerHeight;
-
     if (drawerRef) {
       drawerHeight = parseFloat(window.getComputedStyle(drawerRef)?.height);
-
       if (isOpen) {
         drawerRef.style.marginTop = `0`;
       } else {
@@ -9150,7 +8614,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       }
     }
   }
-
   render() {
     const {
       enabledSections,
@@ -9302,9 +8765,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-custom-settings"
     })));
   }
-
 }
 ;
+
 
 
 
@@ -9319,19 +8782,16 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     this.onEntered = this.onEntered.bind(this);
     this.onExited = this.onExited.bind(this);
   }
-
   onEntered() {
     if (this.closeButton) {
       this.closeButton.focus();
     }
   }
-
   onExited() {
     if (this.openButton) {
       this.openButton.focus();
     }
   }
-
   render() {
     return external_React_default().createElement("span", null, external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       timeout: 300,
@@ -9370,12 +8830,12 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       dispatch: this.props.dispatch
     }))));
   }
-
 }
 const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   DiscoveryStream: state.DiscoveryStream
 }))(_CustomizeMenu);
 ;
+
 
 
 
@@ -9435,7 +8895,6 @@ class _Search extends (external_React_default()).PureComponent {
     this.onInputMountHandoff = this.onInputMountHandoff.bind(this);
     this.onSearchHandoffButtonMount = this.onSearchHandoffButtonMount.bind(this);
   }
-
   handleEvent(event) {
     
     if (event.detail.type === "Search") {
@@ -9444,11 +8903,9 @@ class _Search extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   onSearchClick(event) {
     window.gContentSearchController.search(event);
   }
-
   doSearchHandoff(text) {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.HANDOFF_SEARCH_TO_AWESOMEBAR,
@@ -9462,14 +8919,12 @@ class _Search extends (external_React_default()).PureComponent {
     this.props.dispatch(actionCreators.UserEvent({
       event: "SEARCH_HANDOFF"
     }));
-
     if (text) {
       this.props.dispatch({
         type: actionTypes.DISABLE_SEARCH
       });
     }
   }
-
   onSearchHandoffClick(event) {
     
     
@@ -9478,25 +8933,20 @@ class _Search extends (external_React_default()).PureComponent {
     event.preventDefault();
     this.doSearchHandoff();
   }
-
   onSearchHandoffPaste(event) {
     event.preventDefault();
     this.doSearchHandoff(event.clipboardData.getData("Text"));
   }
-
   onSearchHandoffDrop(event) {
     event.preventDefault();
     let text = event.dataTransfer.getData("text");
-
     if (text) {
       this.doSearchHandoff(text);
     }
   }
-
   componentWillUnmount() {
     delete window.gContentSearchController;
   }
-
   onInputMount(input) {
     if (input) {
       
@@ -9504,16 +8954,18 @@ class _Search extends (external_React_default()).PureComponent {
       
       
       
-      const healthReportKey = IS_NEWTAB ? "newtab" : "abouthome"; 
-      
-      
-      
-      
+      const healthReportKey = IS_NEWTAB ? "newtab" : "abouthome";
 
-      const searchSource = IS_NEWTAB ? "newtab" : "homepage"; 
       
       
+      
+      
+      
+      const searchSource = IS_NEWTAB ? "newtab" : "homepage";
 
+      
+      
+      
       window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey, searchSource);
       addEventListener("ContentSearchClient", this);
     } else {
@@ -9521,7 +8973,6 @@ class _Search extends (external_React_default()).PureComponent {
       removeEventListener("ContentSearchClient", this);
     }
   }
-
   onInputMountHandoff(input) {
     if (input) {
       
@@ -9529,14 +8980,12 @@ class _Search extends (external_React_default()).PureComponent {
       this._handoffSearchController = new ContentSearchHandoffUIController();
     }
   }
-
   onSearchHandoffButtonMount(button) {
     
     this._searchHandoffButton = button;
   }
+
   
-
-
 
 
 
@@ -9585,13 +9034,12 @@ class _Search extends (external_React_default()).PureComponent {
       className: "fake-caret"
     }))));
   }
-
 }
 const Search_Search = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   Prefs: state.Prefs
 }))(_Search);
 ;
-function Base_extends() { Base_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Base_extends.apply(this, arguments); }
+function Base_extends() { Base_extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return Base_extends.apply(this, arguments); }
 
 
 
@@ -9615,7 +9063,8 @@ const PrefsButton = ({
   className: `icon ${icon || "icon-settings"}`,
   onClick: onClick,
   "data-l10n-id": "newtab-settings-button"
-})); 
+}));
+
 
 
 function debounce(func, wait) {
@@ -9624,16 +9073,13 @@ function debounce(func, wait) {
     if (timer) {
       return;
     }
-
     let wakeUp = () => {
       timer = null;
     };
-
     timer = setTimeout(wakeUp, wait);
     func.apply(this, args);
   };
 }
-
 class _Base extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -9642,26 +9088,22 @@ class _Base extends (external_React_default()).PureComponent {
     };
     this.notifyContent = this.notifyContent.bind(this);
   }
-
   notifyContent(state) {
     this.setState(state);
   }
-
   componentWillUnmount() {
     this.updateTheme();
   }
-
   componentWillUpdate() {
     this.updateTheme();
   }
-
   updateTheme() {
-    const bodyClassName = ["activity-stream", 
+    const bodyClassName = ["activity-stream",
+    
     
     document.body.classList.contains("inline-onboarding") ? "inline-onboarding" : ""].filter(v => v).join(" ");
     __webpack_require__.g.document.body.className = bodyClassName;
   }
-
   render() {
     const {
       props
@@ -9670,11 +9112,9 @@ class _Base extends (external_React_default()).PureComponent {
       App
     } = props;
     const isDevtoolsEnabled = props.Prefs.values["asrouter.devtoolsEnabled"];
-
     if (!App.initialized) {
       return null;
     }
-
     return external_React_default().createElement(ErrorBoundary, {
       className: "base-content-fallback"
     }, external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement(BaseContent, Base_extends({}, this.props, {
@@ -9683,7 +9123,6 @@ class _Base extends (external_React_default()).PureComponent {
       notifyContent: this.notifyContent
     }) : null));
   }
-
 }
 class BaseContent extends (external_React_default()).PureComponent {
   constructor(props) {
@@ -9698,21 +9137,17 @@ class BaseContent extends (external_React_default()).PureComponent {
       fixedSearch: false
     };
   }
-
   componentDidMount() {
     __webpack_require__.g.addEventListener("scroll", this.onWindowScroll);
     __webpack_require__.g.addEventListener("keydown", this.handleOnKeyDown);
   }
-
   componentWillUnmount() {
     __webpack_require__.g.removeEventListener("scroll", this.onWindowScroll);
     __webpack_require__.g.removeEventListener("keydown", this.handleOnKeyDown);
   }
-
   onWindowScroll() {
     const prefs = this.props.Prefs.values;
     const SCROLL_THRESHOLD = prefs["logowordmark.alwaysVisible"] ? 179 : 34;
-
     if (__webpack_require__.g.scrollY > SCROLL_THRESHOLD && !this.state.fixedSearch) {
       this.setState({
         fixedSearch: true
@@ -9723,7 +9158,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       });
     }
   }
-
   openPreferences() {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.SETTINGS_OPEN
@@ -9732,7 +9166,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       event: "OPEN_NEWTAB_PREFS"
     }));
   }
-
   openCustomizationMenu() {
     this.props.dispatch({
       type: actionTypes.SHOW_PERSONALIZE
@@ -9741,7 +9174,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       event: "SHOW_PERSONALIZE"
     }));
   }
-
   closeCustomizationMenu() {
     if (this.props.App.customizeMenuVisible) {
       this.props.dispatch({
@@ -9752,17 +9184,14 @@ class BaseContent extends (external_React_default()).PureComponent {
       }));
     }
   }
-
   handleOnKeyDown(e) {
     if (e.key === "Escape") {
       this.closeCustomizationMenu();
     }
   }
-
   setPref(pref, value) {
     this.props.dispatch(actionCreators.SetPref(pref, value));
   }
-
   render() {
     const {
       props
@@ -9821,7 +9250,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       locale: props.App.locale
     })) : external_React_default().createElement(Sections_Sections, null)), external_React_default().createElement(ConfirmDialog, null))));
   }
-
 }
 const Base = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   App: state.App,
@@ -9836,19 +9264,19 @@ const Base = (0,external_ReactRedux_namespaceObject.connect)(state => ({
 
 
 
+
 const detect_user_session_start_VISIBLE = "visible";
 const detect_user_session_start_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 class DetectUserSessionStart {
   constructor(store, options = {}) {
-    this._store = store; 
-
+    this._store = store;
+    
     this.document = options.document || __webpack_require__.g.document;
     this._perfService = options.perfService || perfService;
     this._onVisibilityChange = this._onVisibilityChange.bind(this);
   }
+
   
-
-
 
 
 
@@ -9864,19 +9292,16 @@ class DetectUserSessionStart {
       this.document.addEventListener(detect_user_session_start_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
+
   
-
-
 
 
 
 
   _sendEvent() {
     this._perfService.mark("visibility_event_rcvd_ts");
-
     try {
       let visibility_event_rcvd_ts = this._perfService.getMostRecentAbsMarkStartByName("visibility_event_rcvd_ts");
-
       this._store.dispatch(actionCreators.AlsoToMain({
         type: actionTypes.SAVE_SESSION_PERF_DATA,
         data: {
@@ -9885,26 +9310,25 @@ class DetectUserSessionStart {
       }));
     } catch (ex) {
       
+      
     }
   }
+
   
-
-
 
 
 
   _onVisibilityChange() {
     if (this.document.visibilityState === detect_user_session_start_VISIBLE) {
       this._sendEvent();
-
       this.document.removeEventListener(detect_user_session_start_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
-
 }
 ;
 const external_Redux_namespaceObject = Redux;
 ;
+
 
 
 
@@ -9935,11 +9359,11 @@ const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";
 function mergeStateReducer(mainReducer) {
   return (prevState, action) => {
     if (action.type === MERGE_STORE_ACTION) {
-      return { ...prevState,
+      return {
+        ...prevState,
         ...action.data
       };
     }
-
     return mainReducer(prevState, action);
   };
 }
@@ -9947,19 +9371,15 @@ function mergeStateReducer(mainReducer) {
 
 
 
-
 const messageMiddleware = store => next => action => {
   const skipLocal = action.meta && action.meta.skipLocal;
-
   if (actionUtils.isSendToMain(action)) {
     RPMSendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
   }
-
   if (!skipLocal) {
     next(action);
   }
 };
-
 const rehydrationMiddleware = ({
   getState
 }) => {
@@ -9974,37 +9394,31 @@ const rehydrationMiddleware = ({
       if (window.__FROM_STARTUP_CACHE__ && action.meta && action.meta.isStartup) {
         return null;
       }
-
       return next(action);
     }
-
     const isMergeStoreAction = action.type === MERGE_STORE_ACTION;
     const isRehydrationRequest = action.type === actionTypes.NEW_TAB_STATE_REQUEST;
-
     if (isRehydrationRequest) {
       getState.didRequestInitialState = true;
       return next(action);
     }
-
     if (isMergeStoreAction) {
       getState.didRehydrate = true;
       return next(action);
-    } 
+    }
 
-
+    
     if (getState.didRequestInitialState && action.type === actionTypes.INIT) {
       return next(actionCreators.AlsoToMain({
         type: actionTypes.NEW_TAB_STATE_REQUEST
       }));
     }
-
     if (actionUtils.isBroadcastToContent(action) || actionUtils.isSendToOneContent(action) || actionUtils.isSendToPreloaded(action)) {
       
       
       
       return null;
     }
-
     return next(action);
   };
 };
@@ -10018,7 +9432,6 @@ const rehydrationMiddleware = ({
 
 function initStore(reducers, initialState) {
   const store = (0,external_Redux_namespaceObject.createStore)(mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)), initialState, __webpack_require__.g.RPMAddMessageListener && (0,external_Redux_namespaceObject.applyMiddleware)(rehydrationMiddleware, messageMiddleware));
-
   if (__webpack_require__.g.RPMAddMessageListener) {
     __webpack_require__.g.RPMAddMessageListener(INCOMING_MESSAGE_NAME, msg => {
       try {
@@ -10029,13 +9442,13 @@ function initStore(reducers, initialState) {
       }
     });
   }
-
   return store;
 }
 ;
 const external_ReactDOM_namespaceObject = ReactDOM;
 var external_ReactDOM_default = __webpack_require__.n(external_ReactDOM_namespaceObject);
 ;
+
 
 
 
@@ -10054,26 +9467,24 @@ const NewTab = ({
 }, external_React_default().createElement(Base, null));
 function renderWithoutState() {
   const store = initStore(reducers);
-  new DetectUserSessionStart(store).sendEventOrAddListener(); 
-  
-  
+  new DetectUserSessionStart(store).sendEventOrAddListener();
 
+  
+  
+  
   let didRequest = false;
   let requestIdleCallbackId = 0;
-
   function doRequest() {
     if (!didRequest) {
       if (requestIdleCallbackId) {
         cancelIdleCallback(requestIdleCallbackId);
       }
-
       didRequest = true;
       store.dispatch(actionCreators.AlsoToMain({
         type: actionTypes.NEW_TAB_STATE_REQUEST
       }));
     }
   }
-
   if (document.hidden) {
     requestIdleCallbackId = requestIdleCallback(doRequest);
     addEventListener("visibilitychange", doRequest, {
@@ -10082,7 +9493,6 @@ function renderWithoutState() {
   } else {
     doRequest();
   }
-
   external_ReactDOM_default().hydrate( external_React_default().createElement(NewTab, {
     store: store
   }), document.getElementById("root"));
