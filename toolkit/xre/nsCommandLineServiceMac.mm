@@ -4,6 +4,9 @@
 
 
 #include "nsCommandLineServiceMac.h"
+
+#include "nsString.h"
+#include "nsTArray.h"
 #include "MacApplicationDelegate.h"
 #include <cstring>
 #include <Cocoa/Cocoa.h>
@@ -15,8 +18,6 @@ static const int kArgsGrowSize = 20;
 static char** sArgs = nullptr;
 static int sArgsAllocated = 0;
 static int sArgsUsed = 0;
-
-static bool sBuildingCommandLine = false;
 
 void AddToCommandLine(const char* inArgText) {
   if (sArgsUsed >= sArgsAllocated - 1) {
@@ -46,8 +47,6 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
   sArgs[0] = nullptr;
   sArgsUsed = 0;
 
-  sBuildingCommandLine = true;
-
   
   for (int arg = 0; arg < argc; arg++) {
     char* flag = argv[arg];
@@ -59,9 +58,11 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
 
   
   
-  
-  
-  ProcessPendingGetURLAppleEvents();
+  nsTArray<nsCString> startupURLs = TakeStartupURLs();
+  for (const nsCString& url : startupURLs) {
+    AddToCommandLine("-url");
+    AddToCommandLine(url.get());
+  }
 
   
   
@@ -74,22 +75,9 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
     }
   }
 
-  sBuildingCommandLine = false;
-
   free(argv);
   argc = sArgsUsed;
   argv = sArgs;
-}
-
-bool AddURLToCurrentCommandLine(const char* aURL) {
-  if (!sBuildingCommandLine) {
-    return false;
-  }
-
-  AddToCommandLine("-url");
-  AddToCommandLine(aURL);
-
-  return true;
 }
 
 }  

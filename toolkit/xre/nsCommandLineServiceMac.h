@@ -11,10 +11,6 @@
 namespace CommandLineServiceMac {
 void SetupMacCommandLine(int& argc, char**& argv, bool forRestart);
 
-
-
-
-bool AddURLToCurrentCommandLine(const char* aURL);
 }  
 
 #endif  
