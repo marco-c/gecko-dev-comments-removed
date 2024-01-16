@@ -3038,31 +3038,6 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     return NS_OK;
   }
 
-  bool shouldSkip = [&] {
-    nsIFrame* frame = element->GetPrimaryFrame();
-    if (!frame) {
-      return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    for (; frame; frame = nsLayoutUtils::GetCrossDocParentFrame(frame)) {
-      if (frame->PresShell() == presShell) {
-        
-        
-        
-        return nsLayoutUtils::IsInPositionFixedSubtree(frame);
-      }
-      frame = frame->PresShell()->GetRootFrame();
-    }
-
-    return false;
-  }();
-
   
   
   
@@ -3071,10 +3046,6 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
       element, ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
       ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
       ScrollFlags::ScrollOverflowHidden);
-
-  if (shouldSkip) {
-    return NS_OK;
-  }
 
   RefPtr<Document> document = presShell->GetDocument();
   if (!document) {
