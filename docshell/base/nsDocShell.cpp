@@ -11264,16 +11264,19 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
       
       
       
-      nsAutoCString currentUserPass, newUserPass;
-      NS_ENSURE_SUCCESS(currentURI->GetUserPass(currentUserPass),
-                        NS_ERROR_FAILURE);
-      NS_ENSURE_SUCCESS(newURI->GetUserPass(newUserPass), NS_ERROR_FAILURE);
       bool isPrivateWin =
           document->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId >
           0;
       if (NS_FAILED(secMan->CheckSameOriginURI(currentURI, newURI, true,
-                                               isPrivateWin)) ||
-          !currentUserPass.Equals(newUserPass)) {
+                                               isPrivateWin))) {
+        return NS_ERROR_DOM_SECURITY_ERR;
+      }
+
+      nsAutoCString currentUserPass, newUserPass;
+      NS_ENSURE_SUCCESS(currentURI->GetUserPass(currentUserPass),
+                        NS_ERROR_FAILURE);
+      NS_ENSURE_SUCCESS(newURI->GetUserPass(newUserPass), NS_ERROR_FAILURE);
+      if (!currentUserPass.Equals(newUserPass)) {
         return NS_ERROR_DOM_SECURITY_ERR;
       }
     } else {
