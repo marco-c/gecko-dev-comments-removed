@@ -483,9 +483,12 @@ void WindowContext::AddSecurityState(uint32_t aStateFlags) {
   }
 }
 
-void WindowContext::NotifyUserGestureActivation() {
+void WindowContext::NotifyUserGestureActivation(
+    UserActivation::Modifiers
+        aModifiers ) {
   UserActivation::StateAndModifiers stateAndModifiers;
   stateAndModifiers.SetState(UserActivation::State::FullActivated);
+  stateAndModifiers.SetModifiers(aModifiers);
   Unused << SetUserActivationStateAndModifiers(stateAndModifiers.GetRawData());
 }
 

@@ -203,7 +203,8 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   
   
-  void NotifyUserGestureActivation();
+  void NotifyUserGestureActivation(
+      UserActivation::Modifiers aModifiers = UserActivation::Modifiers::None());
 
   
   

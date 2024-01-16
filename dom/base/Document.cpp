@@ -16756,7 +16756,9 @@ BrowsingContext* Document::GetBrowsingContext() const {
                             : nullptr;
 }
 
-void Document::NotifyUserGestureActivation() {
+void Document::NotifyUserGestureActivation(
+    UserActivation::Modifiers
+        aModifiers ) {
   
   
   RefPtr<BrowsingContext> currentBC = GetBrowsingContext();
@@ -16772,12 +16774,12 @@ void Document::NotifyUserGestureActivation() {
   
   
   
-  currentWC->NotifyUserGestureActivation();
+  currentWC->NotifyUserGestureActivation(aModifiers);
 
   
   
   for (WindowContext* wc = currentWC; wc; wc = wc->GetParentWindowContext()) {
-    wc->NotifyUserGestureActivation();
+    wc->NotifyUserGestureActivation(aModifiers);
   }
 
   
@@ -16795,7 +16797,7 @@ void Document::NotifyUserGestureActivation() {
       return;
     }
 
-    wc->NotifyUserGestureActivation();
+    wc->NotifyUserGestureActivation(aModifiers);
   });
 }
 

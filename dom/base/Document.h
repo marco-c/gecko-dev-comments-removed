@@ -54,6 +54,7 @@
 #include "mozilla/dom/TreeOrderedArray.h"
 #include "mozilla/dom/ViewportMetaData.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WakeLockBinding.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "nsAtom.h"
@@ -3642,7 +3643,8 @@ class Document : public nsINode,
   
   
   
-  void NotifyUserGestureActivation();
+  void NotifyUserGestureActivation(
+      UserActivation::Modifiers aModifiers = UserActivation::Modifiers::None());
 
   
   void ClearUserGestureActivation();
