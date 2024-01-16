@@ -228,6 +228,10 @@ void CanvasTranslator::AddBuffer(ipc::SharedMemoryBasic::Handle&& aBufferHandle,
   MOZ_ASSERT(mDefaultBufferSize != 0);
 
   
+  
+  CheckAndSignalWriter();
+
+  
   if (mCurrentShmem.Size() == mDefaultBufferSize) {
     mCanvasShmems.emplace(std::move(mCurrentShmem));
   }
@@ -326,6 +330,10 @@ void CanvasTranslator::RecycleBuffer() {
 }
 
 void CanvasTranslator::NextBuffer() {
+  
+  
+  CheckAndSignalWriter();
+
   mCurrentShmem = std::move(mCanvasShmems.front());
   mCanvasShmems.pop();
   mCurrentMemReader = mCurrentShmem.CreateMemReader();

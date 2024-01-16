@@ -37,6 +37,7 @@ static Maybe<ShmemAndHandle> CreateAndMapShmem(size_t aSize) {
 CanvasDrawEventRecorder::CanvasDrawEventRecorder() {
   mDefaultBufferSize = ipc::SharedMemory::PageAlignedSize(
       StaticPrefs::gfx_canvas_remote_default_buffer_size());
+  mMaxDefaultBuffers = StaticPrefs::gfx_canvas_remote_max_default_buffers();
   mMaxSpinCount = StaticPrefs::gfx_canvas_remote_max_spin_count();
   mDropBufferLimit = StaticPrefs::gfx_canvas_remote_drop_buffer_limit();
   mDropBufferOnZero = mDropBufferLimit;
@@ -176,9 +177,25 @@ gfx::ContiguousBuffer& CanvasDrawEventRecorder::GetContiguousBuffer(
     return mCurrentBuffer;
   }
 
-  
-  if (mRecycledBuffers.front().Capacity() > aSize &&
-      mRecycledBuffers.front().eventCount <= mHeader->processedCount) {
+  bool useRecycledBuffer = false;
+  if (mRecycledBuffers.front().Capacity() > aSize) {
+    
+    if (mRecycledBuffers.front().eventCount <= mHeader->processedCount) {
+      useRecycledBuffer = true;
+    } else if (mRecycledBuffers.size() >= mMaxDefaultBuffers) {
+      
+      
+      
+      useRecycledBuffer = true;
+      if (!WaitForCheckpoint(mRecycledBuffers.front().eventCount - 1)) {
+        
+        mCurrentBuffer = CanvasBuffer();
+        return mCurrentBuffer;
+      }
+    }
+  }
+
+  if (useRecycledBuffer) {
     
     if (mCurrentBuffer.Capacity() == mDefaultBufferSize) {
       WriteInternalEvent(RECYCLE_BUFFER);
