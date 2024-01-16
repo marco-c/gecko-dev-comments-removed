@@ -324,13 +324,6 @@ bool ToIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
 
 
 
-bool GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
-               JS::Handle<PropertyName*> name,
-               JS::MutableHandle<JS::Value> result);
-
-
-
-
 JSObject* GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
                     JS::Handle<PropertyName*> name);
 

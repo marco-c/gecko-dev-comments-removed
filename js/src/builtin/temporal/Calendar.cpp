@@ -51,6 +51,7 @@
 #include "js/AllocPolicy.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
+#include "js/CharacterEncoding.h"
 #include "js/Class.h"
 #include "js/Conversions.h"
 #include "js/ErrorReport.h"
@@ -1138,9 +1139,9 @@ bool js::temporal::CalendarFields(
   return SortTemporalFieldNames(cx, result.get());
 }
 
-static bool ToIntegerIfIntegralNumber(JSContext* cx, Handle<Value> value,
-                                      const char* name,
-                                      MutableHandle<Value> result) {
+static bool RequireIntegralNumber(JSContext* cx, Handle<Value> value,
+                                  Handle<PropertyName*> name,
+                                  MutableHandle<Value> result) {
   if (MOZ_LIKELY(value.isInt32())) {
     result.set(value);
     return true;
@@ -1153,36 +1154,112 @@ static bool ToIntegerIfIntegralNumber(JSContext* cx, Handle<Value> value,
       return true;
     }
 
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_INVALID_INTEGER, name);
+    if (auto str = QuoteString(cx, name)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_INVALID_INTEGER, str.get());
+    }
     return false;
   }
 
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
-                            name, "not a number");
+  if (auto str = QuoteString(cx, name)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_UNEXPECTED_TYPE, str.get(), "not a number");
+  }
   return false;
 }
 
-static bool ToPositiveIntegerIfIntegralNumber(JSContext* cx,
-                                              Handle<Value> value,
-                                              const char* name,
-                                              MutableHandle<Value> result) {
-  if (!ToIntegerIfIntegralNumber(cx, value, name, result)) {
+static bool RequireIntegralPositiveNumber(JSContext* cx, Handle<Value> value,
+                                          Handle<PropertyName*> name,
+                                          MutableHandle<Value> result) {
+  if (!RequireIntegralNumber(cx, value, name, result)) {
     return false;
   }
 
   if (result.toNumber() <= 0) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_INVALID_NUMBER, name);
+    if (auto str = QuoteString(cx, name)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_INVALID_NUMBER, str.get());
+    }
     return false;
   }
   return true;
 }
 
+static bool RequireString(JSContext* cx, Handle<Value> value,
+                          Handle<PropertyName*> name,
+                          MutableHandle<Value> result) {
+  if (MOZ_LIKELY(value.isString())) {
+    result.set(value);
+    return true;
+  }
+
+  if (auto str = QuoteString(cx, name)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_UNEXPECTED_TYPE, str.get(), "not a string");
+  }
+  return false;
+}
+
+static bool RequireBoolean(JSContext* cx, Handle<Value> value,
+                           Handle<PropertyName*> name,
+                           MutableHandle<Value> result) {
+  if (MOZ_LIKELY(value.isBoolean())) {
+    result.set(value);
+    return true;
+  }
+
+  if (auto str = QuoteString(cx, name)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_UNEXPECTED_TYPE, str.get(),
+                              "not a boolean");
+  }
+  return false;
+}
+
+using BuiltinCalendarMethod = bool (*)(JSContext* cx, const PlainDate&,
+                                       MutableHandle<Value>);
+
+using CalendarConversion = bool (*)(JSContext*, Handle<Value>,
+                                    Handle<PropertyName*>,
+                                    MutableHandle<Value>);
+
+template <BuiltinCalendarMethod builtin, CalendarConversion conversion>
+static bool CallCalendarMethod(JSContext* cx, Handle<PropertyName*> name,
+                               JSNative native, Handle<CalendarValue> calendar,
+                               Handle<JSObject*> dateLike,
+                               const PlainDate& date,
+                               MutableHandle<Value> result) {
+  
+  if (calendar.isString()) {
+    return builtin(cx, date, result);
+  }
+
+  
+  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+  JSObject* fn = GetMethod(cx, calendarObj, name);
+  if (!fn) {
+    return false;
+  }
+
+  
+  if (calendarObj->is<CalendarObject>() && IsNativeFunction(fn, native)) {
+    return builtin(cx, date, result);
+  }
+
+  Rooted<JS::Value> fnVal(cx, ObjectValue(*fn));
+  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
+  if (!Call(cx, fnVal, calendarObj, dateLikeValue, result)) {
+    return false;
+  }
+
+  
+  return conversion(cx, result, name, result);
+}
 
 
 
-static bool BuiltinCalendarYear(const PlainDate& date,
+
+static bool BuiltinCalendarYear(JSContext* cx, const PlainDate& date,
                                 MutableHandle<Value> result) {
   
 
@@ -1200,30 +1277,8 @@ static bool CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
                          Handle<JSObject*> dateLike, const PlainDate& date,
                          MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarYear(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().year, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_year)) {
-    return BuiltinCalendarYear(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToIntegerIfIntegralNumber(cx, result, "year", result);
+  return CallCalendarMethod<BuiltinCalendarYear, RequireIntegralNumber>(
+      cx, cx->names().year, Calendar_year, calendar, dateLike, date, result);
 }
 
 
@@ -1271,7 +1326,7 @@ bool js::temporal::CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
 
 
 
-static bool BuiltinCalendarMonth(const PlainDate& date,
+static bool BuiltinCalendarMonth(JSContext* cx, const PlainDate& date,
                                  MutableHandle<Value> result) {
   
 
@@ -1289,30 +1344,9 @@ static bool CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
                           Handle<JSObject*> dateLike, const PlainDate& date,
                           MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarMonth(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().month, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_month)) {
-    return BuiltinCalendarMonth(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "month", result);
+  return CallCalendarMethod<BuiltinCalendarMonth,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().month, Calendar_month, calendar, dateLike, date, result);
 }
 
 
@@ -1383,38 +1417,9 @@ static bool CalendarMonthCode(JSContext* cx, Handle<CalendarValue> calendar,
                               Handle<JSObject*> dateLike, const PlainDate& date,
                               MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarMonthCode(cx, date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().monthCode, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_monthCode)) {
-    return BuiltinCalendarMonthCode(cx, date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  if (!result.isString()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_UNEXPECTED_TYPE, "monthCode",
-                              "not a string");
-    return false;
-  }
-
-  
-  return true;
+  return CallCalendarMethod<BuiltinCalendarMonthCode, RequireString>(
+      cx, cx->names().monthCode, Calendar_monthCode, calendar, dateLike, date,
+      result);
 }
 
 
@@ -1512,7 +1517,7 @@ static bool CalendarDay(JSContext* cx, Handle<CalendarRecord> calendar,
   }
 
   
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "day", result);
+  return RequireIntegralPositiveNumber(cx, result, cx->names().day, result);
 }
 
 
@@ -1602,7 +1607,7 @@ bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarRecord> calendar,
 
 
 
-static bool BuiltinCalendarDayOfWeek(const PlainDate& date,
+static bool BuiltinCalendarDayOfWeek(JSContext* cx, const PlainDate& date,
                                      MutableHandle<Value> result) {
   
 
@@ -1620,30 +1625,10 @@ static bool CalendarDayOfWeek(JSContext* cx, Handle<CalendarValue> calendar,
                               Handle<JSObject*> dateLike, const PlainDate& date,
                               MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarDayOfWeek(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().dayOfWeek, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_dayOfWeek)) {
-    return BuiltinCalendarDayOfWeek(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "dayOfWeek", result);
+  return CallCalendarMethod<BuiltinCalendarDayOfWeek,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().dayOfWeek, Calendar_dayOfWeek, calendar, dateLike, date,
+      result);
 }
 
 
@@ -1687,7 +1672,7 @@ bool js::temporal::CalendarDayOfWeek(JSContext* cx,
 
 
 
-static bool BuiltinCalendarDayOfYear(const PlainDate& date,
+static bool BuiltinCalendarDayOfYear(JSContext* cx, const PlainDate& date,
                                      MutableHandle<Value> result) {
   
 
@@ -1705,30 +1690,10 @@ static bool CalendarDayOfYear(JSContext* cx, Handle<CalendarValue> calendar,
                               Handle<JSObject*> dateLike, const PlainDate& date,
                               MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarDayOfYear(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().dayOfYear, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_dayOfYear)) {
-    return BuiltinCalendarDayOfYear(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "dayOfYear", result);
+  return CallCalendarMethod<BuiltinCalendarDayOfYear,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().dayOfYear, Calendar_dayOfYear, calendar, dateLike, date,
+      result);
 }
 
 
@@ -1772,7 +1737,7 @@ bool js::temporal::CalendarDayOfYear(JSContext* cx,
 
 
 
-static bool BuiltinCalendarWeekOfYear(const PlainDate& date,
+static bool BuiltinCalendarWeekOfYear(JSContext* cx, const PlainDate& date,
                                       MutableHandle<Value> result) {
   
 
@@ -1791,30 +1756,10 @@ static bool CalendarWeekOfYear(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarWeekOfYear(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().weekOfYear, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_weekOfYear)) {
-    return BuiltinCalendarWeekOfYear(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "weekOfYear", result);
+  return CallCalendarMethod<BuiltinCalendarWeekOfYear,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().weekOfYear, Calendar_weekOfYear, calendar, dateLike, date,
+      result);
 }
 
 
@@ -1858,7 +1803,7 @@ bool js::temporal::CalendarWeekOfYear(JSContext* cx,
 
 
 
-static bool BuiltinCalendarYearOfWeek(const PlainDate& date,
+static bool BuiltinCalendarYearOfWeek(JSContext* cx, const PlainDate& date,
                                       MutableHandle<Value> result) {
   
 
@@ -1877,30 +1822,9 @@ static bool CalendarYearOfWeek(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarYearOfWeek(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().yearOfWeek, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_yearOfWeek)) {
-    return BuiltinCalendarYearOfWeek(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToIntegerIfIntegralNumber(cx, result, "yearOfWeek", result);
+  return CallCalendarMethod<BuiltinCalendarYearOfWeek, RequireIntegralNumber>(
+      cx, cx->names().yearOfWeek, Calendar_yearOfWeek, calendar, dateLike, date,
+      result);
 }
 
 
@@ -1944,7 +1868,7 @@ bool js::temporal::CalendarYearOfWeek(JSContext* cx,
 
 
 
-static bool BuiltinCalendarDaysInWeek(const PlainDate& date,
+static bool BuiltinCalendarDaysInWeek(JSContext* cx, const PlainDate& date,
                                       MutableHandle<Value> result) {
   
 
@@ -1963,30 +1887,10 @@ static bool CalendarDaysInWeek(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarDaysInWeek(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().daysInWeek, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_daysInWeek)) {
-    return BuiltinCalendarDaysInWeek(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "daysInWeek", result);
+  return CallCalendarMethod<BuiltinCalendarDaysInWeek,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().daysInWeek, Calendar_daysInWeek, calendar, dateLike, date,
+      result);
 }
 
 
@@ -2030,7 +1934,7 @@ bool js::temporal::CalendarDaysInWeek(JSContext* cx,
 
 
 
-static bool BuiltinCalendarDaysInMonth(const PlainDate& date,
+static bool BuiltinCalendarDaysInMonth(JSContext* cx, const PlainDate& date,
                                        MutableHandle<Value> result) {
   
 
@@ -2049,30 +1953,10 @@ static bool CalendarDaysInMonth(JSContext* cx, Handle<CalendarValue> calendar,
                                 const PlainDate& date,
                                 MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarDaysInMonth(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().daysInMonth, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_daysInMonth)) {
-    return BuiltinCalendarDaysInMonth(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "daysInMonth", result);
+  return CallCalendarMethod<BuiltinCalendarDaysInMonth,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().daysInMonth, Calendar_daysInMonth, calendar, dateLike,
+      date, result);
 }
 
 
@@ -2127,7 +2011,7 @@ bool js::temporal::CalendarDaysInMonth(JSContext* cx,
 
 
 
-static bool BuiltinCalendarDaysInYear(const PlainDate& date,
+static bool BuiltinCalendarDaysInYear(JSContext* cx, const PlainDate& date,
                                       MutableHandle<Value> result) {
   
 
@@ -2146,30 +2030,10 @@ static bool CalendarDaysInYear(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarDaysInYear(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().daysInYear, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_daysInYear)) {
-    return BuiltinCalendarDaysInYear(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "daysInYear", result);
+  return CallCalendarMethod<BuiltinCalendarDaysInYear,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().daysInYear, Calendar_daysInYear, calendar, dateLike, date,
+      result);
 }
 
 
@@ -2224,7 +2088,7 @@ bool js::temporal::CalendarDaysInYear(JSContext* cx,
 
 
 
-static bool BuiltinCalendarMonthsInYear(const PlainDate& date,
+static bool BuiltinCalendarMonthsInYear(JSContext* cx, const PlainDate& date,
                                         MutableHandle<Value> result) {
   
 
@@ -2243,30 +2107,10 @@ static bool CalendarMonthsInYear(JSContext* cx, Handle<CalendarValue> calendar,
                                  const PlainDate& date,
                                  MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarMonthsInYear(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().monthsInYear, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_monthsInYear)) {
-    return BuiltinCalendarMonthsInYear(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  return ToPositiveIntegerIfIntegralNumber(cx, result, "monthsInYear", result);
+  return CallCalendarMethod<BuiltinCalendarMonthsInYear,
+                            RequireIntegralPositiveNumber>(
+      cx, cx->names().monthsInYear, Calendar_monthsInYear, calendar, dateLike,
+      date, result);
 }
 
 
@@ -2321,7 +2165,7 @@ bool js::temporal::CalendarMonthsInYear(JSContext* cx,
 
 
 
-static bool BuiltinCalendarInLeapYear(const PlainDate& date,
+static bool BuiltinCalendarInLeapYear(JSContext* cx, const PlainDate& date,
                                       MutableHandle<Value> result) {
   
 
@@ -2340,38 +2184,9 @@ static bool CalendarInLeapYear(JSContext* cx, Handle<CalendarValue> calendar,
                                const PlainDate& date,
                                MutableHandle<Value> result) {
   
-  if (calendar.isString()) {
-    return BuiltinCalendarInLeapYear(date, result);
-  }
-
-  
-  Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-  Rooted<Value> fn(cx);
-  if (!GetMethod(cx, calendarObj, cx->names().inLeapYear, &fn)) {
-    return false;
-  }
-
-  
-  if (calendarObj->is<CalendarObject>() &&
-      IsNativeFunction(fn, Calendar_inLeapYear)) {
-    return BuiltinCalendarInLeapYear(date, result);
-  }
-
-  Rooted<JS::Value> dateLikeValue(cx, ObjectValue(*dateLike));
-  if (!Call(cx, fn, calendarObj, dateLikeValue, result)) {
-    return false;
-  }
-
-  
-  if (!result.isBoolean()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_UNEXPECTED_TYPE, "inLeapYear",
-                              "not a boolean");
-    return false;
-  }
-
-  
-  return true;
+  return CallCalendarMethod<BuiltinCalendarInLeapYear, RequireBoolean>(
+      cx, cx->names().inLeapYear, Calendar_inLeapYear, calendar, dateLike, date,
+      result);
 }
 
 
@@ -4201,7 +4016,7 @@ static bool Calendar_year(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarYear(date, args.rval());
+  return BuiltinCalendarYear(cx, date, args.rval());
 }
 
 
@@ -4238,7 +4053,7 @@ static bool Calendar_month(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarMonth(date, args.rval());
+  return BuiltinCalendarMonth(cx, date, args.rval());
 }
 
 
@@ -4318,7 +4133,7 @@ static bool Calendar_dayOfWeek(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarDayOfWeek(date, args.rval());
+  return BuiltinCalendarDayOfWeek(cx, date, args.rval());
 }
 
 
@@ -4344,7 +4159,7 @@ static bool Calendar_dayOfYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarDayOfYear(date, args.rval());
+  return BuiltinCalendarDayOfYear(cx, date, args.rval());
 }
 
 
@@ -4370,7 +4185,7 @@ static bool Calendar_weekOfYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarWeekOfYear(date, args.rval());
+  return BuiltinCalendarWeekOfYear(cx, date, args.rval());
 }
 
 
@@ -4396,7 +4211,7 @@ static bool Calendar_yearOfWeek(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarYearOfWeek(date, args.rval());
+  return BuiltinCalendarYearOfWeek(cx, date, args.rval());
 }
 
 
@@ -4422,7 +4237,7 @@ static bool Calendar_daysInWeek(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarDaysInWeek(date, args.rval());
+  return BuiltinCalendarDaysInWeek(cx, date, args.rval());
 }
 
 
@@ -4449,7 +4264,7 @@ static bool Calendar_daysInMonth(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarDaysInMonth(date, args.rval());
+  return BuiltinCalendarDaysInMonth(cx, date, args.rval());
 }
 
 
@@ -4476,7 +4291,7 @@ static bool Calendar_daysInYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarDaysInYear(date, args.rval());
+  return BuiltinCalendarDaysInYear(cx, date, args.rval());
 }
 
 
@@ -4503,7 +4318,7 @@ static bool Calendar_monthsInYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarMonthsInYear(date, args.rval());
+  return BuiltinCalendarMonthsInYear(cx, date, args.rval());
 }
 
 
@@ -4530,7 +4345,7 @@ static bool Calendar_inLeapYear(JSContext* cx, const CallArgs& args) {
   }
 
   
-  return BuiltinCalendarInLeapYear(date, args.rval());
+  return BuiltinCalendarInLeapYear(cx, date, args.rval());
 }
 
 
