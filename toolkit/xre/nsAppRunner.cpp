@@ -5980,8 +5980,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   gLastAppVersion.Truncate();
   gLastAppBuildID.Truncate();
 
-  mozilla::AppShutdown::MaybeDoRestart();
-
 #ifdef MOZ_WIDGET_GTK
   
   
@@ -5992,6 +5990,8 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
 #  endif
   }
 #endif
+
+  mozilla::AppShutdown::MaybeDoRestart();
 
   XRE_DeinitCommandLine();
 
