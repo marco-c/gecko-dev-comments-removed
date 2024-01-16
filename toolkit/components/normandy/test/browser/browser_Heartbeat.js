@@ -82,13 +82,6 @@ function getStars(notice) {
   return notice.buttonContainer.querySelectorAll(".star-x");
 }
 
-async function getUpdatedNotice(heartbeat) {
-  let notice = await heartbeat.noticePromise;
-  
-  await notice.updateComplete;
-  return notice;
-}
-
 add_setup(async function () {
   let win = await BrowserTestUtils.openNewBrowserWindow();
   
@@ -115,18 +108,17 @@ add_task(async function () {
     learnMoreMessage: "Learn More",
     learnMoreUrl: "https://example.org/learnmore",
   });
-  let notice = await getUpdatedNotice(hb);
 
   
-  const learnMoreEl = notice.supportLinkEls[0];
+  const learnMoreEl = hb.notice.messageText.querySelector(".text-link");
   Assert.equal(
     notificationBox.allNotifications.length,
     preCount + 1,
     "Correct number of notifications open"
   );
-  Assert.equal(getStars(notice).length, 5, "Correct number of stars");
+  Assert.equal(getStars(hb.notice).length, 5, "Correct number of stars");
   Assert.equal(
-    notice.buttonContainer.querySelectorAll(".notification-button").length,
+    hb.notice.buttonContainer.querySelectorAll(".notification-button").length,
     0,
     "Engagement button not shown"
   );
@@ -138,8 +130,8 @@ add_task(async function () {
   Assert.equal(learnMoreEl.value, "Learn More", "Learn more label correct");
   
   Assert.equal(
-    notice.messageText.textContent.trim(),
-    "test",
+    hb.notice.messageText.textContent,
+    "test ",
     "Message is correct"
   );
 
@@ -194,12 +186,11 @@ add_task(async function () {
     learnMoreMessage: "Learn More",
     learnMoreUrl: "https://example.org/learnMore",
   });
-  let notice = await getUpdatedNotice(hb);
-  const engagementButton = notice.buttonContainer.querySelector(
+  const engagementButton = hb.notice.buttonContainer.querySelector(
     ".notification-button"
   );
 
-  Assert.equal(getStars(notice).length, 0, "Stars not shown");
+  Assert.equal(getStars(hb.notice).length, 0, "Stars not shown");
   Assert.ok(engagementButton, "Engagement button added");
   Assert.equal(
     engagementButton.label,
@@ -207,6 +198,9 @@ add_task(async function () {
     "Engagement button has correct label"
   );
 
+  const engagementEl = hb.notice.buttonContainer.querySelector(
+    ".notification-button"
+  );
   let loadedPromise;
   const tabOpenPromise = new Promise(resolve => {
     targetWindow.gBrowser.tabContainer.addEventListener(
@@ -223,7 +217,7 @@ add_task(async function () {
       { once: true }
     );
   });
-  engagementButton.click();
+  engagementEl.click();
   const tab = await tabOpenPromise;
   const tabUrl = await loadedPromise;
   

@@ -36,16 +36,16 @@ let testcases = [
   async function test_showLoginPageButton() {
     let win = await openWindowAndWaitForFocus();
     await portalDetected();
-    let notification = await ensurePortalNotification(win);
-    await testShowLoginPageButtonVisibility(notification, "visible");
+    let notification = ensurePortalNotification(win);
+    testShowLoginPageButtonVisibility(notification, "visible");
 
-    async function testPortalTabSelectedAndButtonNotVisible() {
+    function testPortalTabSelectedAndButtonNotVisible() {
       is(
         win.gBrowser.selectedTab,
         tab,
         "The captive portal tab should be selected."
       );
-      await testShowLoginPageButtonVisibility(notification, "hidden");
+      testShowLoginPageButtonVisibility(notification, "hidden");
     }
 
     let button = notification.buttonContainer.querySelector(
@@ -66,12 +66,12 @@ let testcases = [
     
     
     let tab = await clickButtonAndExpectNewPortalTab();
-    await testPortalTabSelectedAndButtonNotVisible();
+    testPortalTabSelectedAndButtonNotVisible();
 
     
     BrowserTestUtils.removeTab(tab);
     ensureNoPortalTab(win);
-    await testShowLoginPageButtonVisibility(notification, "visible");
+    testShowLoginPageButtonVisibility(notification, "visible");
 
     
     
@@ -80,7 +80,7 @@ let testcases = [
     
     
     let anotherTab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
-    await testShowLoginPageButtonVisibility(notification, "visible");
+    testShowLoginPageButtonVisibility(notification, "visible");
     button.click();
     is(
       win.gBrowser.selectedTab,
@@ -92,7 +92,7 @@ let testcases = [
     
     BrowserTestUtils.removeTab(tab);
     win.gBrowser.selectedTab = anotherTab;
-    await testShowLoginPageButtonVisibility(notification, "visible");
+    testShowLoginPageButtonVisibility(notification, "visible");
     tab = await clickButtonAndExpectNewPortalTab();
 
     BrowserTestUtils.removeTab(anotherTab);
