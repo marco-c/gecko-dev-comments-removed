@@ -28,6 +28,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "ScriptKind.h"
+#include "ScriptFetchOptions.h"
 #include "nsIScriptElement.h"
 
 class nsICacheInfoChannel;
@@ -53,88 +54,6 @@ using Utf8Unit = mozilla::Utf8Unit;
 class LoadContextBase;
 class ModuleLoadRequest;
 class ScriptLoadRequestList;
-
-
-
-
-enum class ParserMetadata {
-  NotParserInserted,
-  ParserInserted,
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ScriptFetchOptions {
-  ~ScriptFetchOptions();
-
- public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ScriptFetchOptions)
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ScriptFetchOptions)
-
-  ScriptFetchOptions(mozilla::CORSMode aCORSMode, const nsAString& aNonce,
-                     mozilla::dom::RequestPriority aFetchPriority,
-                     const ParserMetadata aParserMetadata,
-                     nsIPrincipal* aTriggeringPrincipal,
-                     mozilla::dom::Element* aElement = nullptr);
-
-  
-
-
-
-
-  const mozilla::CORSMode mCORSMode;
-
-  
-
-
-
-  const nsString mNonce;
-
-  
-
-
-  const mozilla::dom::RequestPriority mFetchPriority;
-
-  
-
-
-
-  const ParserMetadata mParserMetadata;
-
-  
-
-
-
-
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  
-
-
-
-
-
-
-  nsCOMPtr<mozilla::dom::Element> mElement;
-};
 
 
 
