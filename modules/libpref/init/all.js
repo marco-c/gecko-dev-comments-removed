@@ -2026,6 +2026,9 @@ pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);
 pref("svg.disabled", false);
 
 
+pref("browser.tabs.remote.autostart", false);
+
+
 
 pref("browser.tabs.remote.enforceRemoteTypeRestrictions", false);
 
