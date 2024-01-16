@@ -3374,7 +3374,7 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   asMasm().setupUnalignedABICall(r1);
   asMasm().passABIArg(r0);
   asMasm().callWithABI<Fn, HandleException>(
-      ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   Label entryFrame;
   Label catch_;
@@ -4531,7 +4531,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   }
 }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
                                      bool callFromWasm) {
   if (secondScratchReg_ != lr) {
     ma_mov(secondScratchReg_, lr);
@@ -4541,16 +4541,15 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
   
   if (!callFromWasm && !UseHardFpABI()) {
     switch (result) {
-      case ABIType::Float64:
+      case MoveOp::DOUBLE:
         
         ma_vxfer(r0, r1, ReturnDoubleReg);
         break;
-      case ABIType::Float32:
+      case MoveOp::FLOAT32:
         
         ma_vxfer(r0, ReturnFloat32Reg);
         break;
-      case ABIType::General:
-      case ABIType::Int64:
+      case MoveOp::GENERAL:
         break;
       default:
         MOZ_CRASH("unexpected callWithABI result");
@@ -4571,7 +4570,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
 #endif
 }
 
-void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
+void MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result) {
   
   ma_mov(fun, r12);
   uint32_t stackAdjust;
@@ -4580,7 +4579,8 @@ void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
   callWithABIPost(stackAdjust, result);
 }
 
-void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
+void MacroAssembler::callWithABINoProfiler(const Address& fun,
+                                           MoveOp::Type result) {
   
   
   
@@ -5940,10 +5940,10 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
     masm.passABIArg(rhs);
     if (isUnsigned) {
       masm.callWithABI<Fn, __aeabi_uidivmod>(
-          ABIType::Int64, CheckUnsafeCallWithABI::DontCheckOther);
+          MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
     } else {
       masm.callWithABI<Fn, __aeabi_idivmod>(
-          ABIType::Int64, CheckUnsafeCallWithABI::DontCheckOther);
+          MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
     }
     if (isRemainder) {
       masm.mov(ReturnRegVal1, lhsOutput);
@@ -5995,10 +5995,10 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
     passABIArg(lhsOutput);
     passABIArg(rhs);
     if (isUnsigned) {
-      callWithABI<Fn, __aeabi_uidivmod>(ABIType::Int64,
+      callWithABI<Fn, __aeabi_uidivmod>(MoveOp::GENERAL,
                                         CheckUnsafeCallWithABI::DontCheckOther);
     } else {
-      callWithABI<Fn, __aeabi_idivmod>(ABIType::Int64,
+      callWithABI<Fn, __aeabi_idivmod>(MoveOp::GENERAL,
                                        CheckUnsafeCallWithABI::DontCheckOther);
     }
     moveRegPair(ReturnRegVal0, ReturnRegVal1, lhsOutput, remOutput);

@@ -1921,7 +1921,7 @@ void MacroAssemblerRiscv64Compat::handleFailureWithHandlerTail(
   asMasm().setupUnalignedABICall(a1);
   asMasm().passABIArg(a0);
   asMasm().callWithABI<Fn, HandleException>(
-      ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   Label entryFrame;
   Label catch_;
@@ -2955,7 +2955,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   assertStackAlignment(ABIStackAlignment);
 }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
                                      bool callFromWasm) {
   
   loadPtr(Address(StackPointer, stackAdjust - sizeof(intptr_t)), ra);
@@ -2975,7 +2975,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
 #endif
 }
 
-void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
+void MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result) {
   
   
   
@@ -2989,7 +2989,8 @@ void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
   callWithABIPost(stackAdjust, result);
 }
 
-void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
+void MacroAssembler::callWithABINoProfiler(const Address& fun,
+                                           MoveOp::Type result) {
   
   UseScratchRegisterScope temps(this);
   temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));

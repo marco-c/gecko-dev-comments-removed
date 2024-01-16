@@ -795,26 +795,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void passABIArg(const MoveOperand& from, ABIType type);
+  void passABIArg(const MoveOperand& from, MoveOp::Type type);
   inline void passABIArg(Register reg);
-  inline void passABIArg(FloatRegister reg, ABIType type);
+  inline void passABIArg(FloatRegister reg, MoveOp::Type type);
 
   inline void callWithABI(
-      DynFn fun, ABIType result = ABIType::General,
+      DynFn fun, MoveOp::Type result = MoveOp::GENERAL,
       CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
   template <typename Sig, Sig fun>
   inline void callWithABI(
-      ABIType result = ABIType::General,
+      MoveOp::Type result = MoveOp::GENERAL,
       CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
-  inline void callWithABI(Register fun, ABIType result = ABIType::General);
+  inline void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
   inline void callWithABI(const Address& fun,
-                          ABIType result = ABIType::General);
+                          MoveOp::Type result = MoveOp::GENERAL);
 
   CodeOffset callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
                          mozilla::Maybe<int32_t> instanceOffset,
-                         ABIType result = ABIType::General);
+                         MoveOp::Type result = MoveOp::GENERAL);
   void callDebugWithABI(wasm::SymbolicAddress fun,
-                        ABIType result = ABIType::General);
+                        MoveOp::Type result = MoveOp::GENERAL);
 
  private:
   
@@ -831,18 +831,18 @@ class MacroAssembler : public MacroAssemblerSpecific {
                       bool callFromWasm = false) PER_ARCH;
 
   
-  void callWithABINoProfiler(void* fun, ABIType result,
+  void callWithABINoProfiler(void* fun, MoveOp::Type result,
                              CheckUnsafeCallWithABI check);
-  void callWithABINoProfiler(Register fun, ABIType result) PER_ARCH;
-  void callWithABINoProfiler(const Address& fun, ABIType result) PER_ARCH;
+  void callWithABINoProfiler(Register fun, MoveOp::Type result) PER_ARCH;
+  void callWithABINoProfiler(const Address& fun, MoveOp::Type result) PER_ARCH;
 
   
-  void callWithABIPost(uint32_t stackAdjust, ABIType result,
+  void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
                        bool callFromWasm = false) PER_ARCH;
 
   
   
-  inline void appendSignatureType(ABIType type);
+  inline void appendSignatureType(MoveOp::Type type);
   inline ABIFunctionType signature() const;
 
   
