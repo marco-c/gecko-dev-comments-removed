@@ -54,7 +54,7 @@ function promiseNextTick() {
 
 
 function promiseWaitForAlertActive(aNotificationBox) {
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   aNotificationBox.stack.addEventListener(
     "AlertActive",
     function () {
@@ -71,7 +71,7 @@ function promiseWaitForAlertActive(aNotificationBox) {
 
 
 function promiseWaitForNotificationClose(aNotification) {
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   waitForNotificationClose(aNotification, deferred.resolve);
   return deferred.promise;
 }

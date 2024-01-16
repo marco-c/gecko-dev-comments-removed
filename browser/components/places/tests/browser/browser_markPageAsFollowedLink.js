@@ -10,8 +10,8 @@ const RIGHT_URL = BASE_URL + "/frameRight.html";
 
 add_task(async function test() {
   
-  let deferredLeftFrameVisit = PromiseUtils.defer();
-  let deferredRightFrameVisit = PromiseUtils.defer();
+  let deferredLeftFrameVisit = Promise.withResolvers();
+  let deferredRightFrameVisit = Promise.withResolvers();
 
   Services.obs.addObserver(function observe(subject) {
     (async function () {

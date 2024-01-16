@@ -19,7 +19,7 @@ async function createAndShutdownContentProcess(url) {
 
   
   
-  let browserDestroyed = PromiseUtils.defer();
+  let browserDestroyed = Promise.withResolvers();
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,

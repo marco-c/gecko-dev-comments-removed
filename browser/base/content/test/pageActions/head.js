@@ -123,7 +123,7 @@ async function promiseAnimationFrame(win = window) {
 }
 
 async function promisePopupNotShown(id, win = window) {
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   function listener(e) {
     deferred.reject("Unexpected popupshown");
   }
@@ -145,7 +145,7 @@ async function promisePopupNotShown(id, win = window) {
 
 
 function promiseStableResize(expectedWidth, win = window) {
-  let deferred = PromiseUtils.defer();
+  let deferred = Promise.withResolvers();
   let id;
   function listener() {
     win.clearTimeout(id);

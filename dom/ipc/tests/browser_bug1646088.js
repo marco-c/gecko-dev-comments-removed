@@ -9,8 +9,8 @@ add_task(async function () {
       
       
       
-      let prepareToChangeCalled = PromiseUtils.defer();
-      let finishSwitch = PromiseUtils.defer();
+      let prepareToChangeCalled = Promise.withResolvers();
+      let finishSwitch = Promise.withResolvers();
       let oldPrepare = browser.prepareToChangeRemoteness;
       browser.prepareToChangeRemoteness = async () => {
         prepareToChangeCalled.resolve();
@@ -34,7 +34,7 @@ add_task(async function () {
       
       info("Creating new tab loaded in file URI process");
       let fileProcess;
-      let browserParentDestroyed = PromiseUtils.defer();
+      let browserParentDestroyed = Promise.withResolvers();
       await BrowserTestUtils.withNewTab(
         uriString,
         async function (otherBrowser) {

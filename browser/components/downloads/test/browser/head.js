@@ -51,7 +51,7 @@ const TEST_DATA_SHORT = "This test string is downloaded.";
 
 
 
-var _gDeferResponses = PromiseUtils.defer();
+var _gDeferResponses = Promise.withResolvers();
 
 
 
@@ -79,7 +79,7 @@ function mustInterruptResponses() {
   _gDeferResponses.resolve();
 
   info("Interruptible responses will be blocked midway.");
-  _gDeferResponses = PromiseUtils.defer();
+  _gDeferResponses = Promise.withResolvers();
 }
 
 
