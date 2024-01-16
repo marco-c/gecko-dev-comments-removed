@@ -429,6 +429,38 @@ add_tasks_with_rust(async function showLessFrequently() {
   });
 });
 
+
+
+add_task(async function rustProviders() {
+  
+  
+  
+  
+  UrlbarPrefs.set("suggest.addons", false);
+
+  await doRustProvidersTests({
+    searchString: LOW_KEYWORD,
+    tests: [
+      {
+        prefs: {
+          "suggest.pocket": true,
+        },
+        expectedUrls: ["https://example.com/pocket-0"],
+      },
+      {
+        prefs: {
+          "suggest.pocket": false,
+        },
+        expectedUrls: [],
+      },
+    ],
+  });
+
+  UrlbarPrefs.clear("suggest.addons");
+  UrlbarPrefs.clear("suggest.pocket");
+  await QuickSuggestTestUtils.forceSync();
+});
+
 function makeExpectedResult({
   searchString,
   fullKeyword = searchString,
