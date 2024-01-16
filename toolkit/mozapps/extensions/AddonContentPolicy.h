@@ -4,11 +4,9 @@
 
 
 
-#include "nsIContentPolicy.h"
 #include "nsIAddonPolicyService.h"
 
-class AddonContentPolicy : public nsIContentPolicy,
-                           public nsIAddonContentPolicy {
+class AddonContentPolicy : public nsIAddonContentPolicy {
  protected:
   virtual ~AddonContentPolicy();
 
@@ -16,6 +14,5 @@ class AddonContentPolicy : public nsIContentPolicy,
   AddonContentPolicy();
 
   NS_DECL_ISUPPORTS
-  NS_DECL_NSICONTENTPOLICY
   NS_DECL_NSIADDONCONTENTPOLICY
 };
