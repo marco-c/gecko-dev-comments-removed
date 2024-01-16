@@ -3097,7 +3097,13 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(
               this);
           return nsEventStatus_eIgnore;
         }
-        touch->SetSingleTapOccurred();
+
+        
+        
+        
+        if (aType != TapType::eLongTapUp) {
+          touch->SetSingleTapOccurred();
+        }
       }
       
       
