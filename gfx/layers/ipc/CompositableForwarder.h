@@ -9,9 +9,8 @@
 
 #include <stdint.h>  
 #include "mozilla/Assertions.h"  
-#include "mozilla/RefPtr.h"             
-#include "mozilla/TimeStamp.h"          
-#include "mozilla/ipc/ProtocolUtils.h"  
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/TimeStamp.h"               
 #include "mozilla/layers/KnowsCompositor.h"  
 #include "nsRect.h"                          
 #include "nsRegion.h"                        
@@ -25,34 +24,6 @@ class ImageContainer;
 class PTextureChild;
 class SurfaceDescriptorTiles;
 class TextureClient;
-
-
-
-
-
-
-
-
-
-
-
-struct FwdTransactionCounter {
-  explicit FwdTransactionCounter(mozilla::ipc::IToplevelProtocol* aToplevel)
-      : mFwdTransactionType(aToplevel->GetProtocolId()) {}
-
-  
-
-
-
-  mozilla::ipc::ProtocolId mFwdTransactionType;
-
-  
-
-
-
-
-  uint64_t mFwdTransactionId = 0;
-};
 
 
 
@@ -121,23 +92,14 @@ class CompositableForwarder : public KnowsCompositor {
       CompositableClient* aCompositable, const RemoteTextureOwnerId aOwnerId,
       const gfx::IntSize aSize, const TextureFlags aFlags) = 0;
 
-  void UpdateFwdTransactionId() {
-    ++GetFwdTransactionCounter().mFwdTransactionId;
-  }
-  uint64_t GetFwdTransactionId() {
-    return GetFwdTransactionCounter().mFwdTransactionId;
-  }
-  mozilla::ipc::ProtocolId GetFwdTransactionType() {
-    return GetFwdTransactionCounter().mFwdTransactionType;
-  }
+  virtual void UpdateFwdTransactionId() = 0;
+  virtual uint64_t GetFwdTransactionId() = 0;
 
   virtual bool InForwarderThread() = 0;
 
   void AssertInForwarderThread() { MOZ_ASSERT(InForwarderThread()); }
 
  protected:
-  virtual FwdTransactionCounter& GetFwdTransactionCounter() = 0;
-
   nsTArray<RefPtr<TextureClient>> mTexturesToRemove;
   nsTArray<RefPtr<CompositableClient>> mCompositableClientsToRemove;
 };
