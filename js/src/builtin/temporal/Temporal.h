@@ -338,6 +338,12 @@ bool GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
 
 
 
+JSObject* GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
+                    JS::Handle<PropertyName*> name);
+
+
+
+
 
 PlainObject* SnapshotOwnProperties(JSContext* cx, JS::Handle<JSObject*> source);
 
@@ -393,6 +399,11 @@ inline bool GetDifferenceSettings(JSContext* cx, TemporalDifference operation,
                                TemporalUnit::Nanosecond, fallbackSmallestUnit,
                                smallestLargestDefaultUnit, result);
 }
+
+
+
+
+bool IsArrayIterationSane(JSContext* cx, bool* result);
 
 } 
 

@@ -55,6 +55,7 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/ObjectOperations.h"
+#include "vm/PIC.h"
 #include "vm/PlainObject.h"
 #include "vm/Realm.h"
 #include "vm/StringType.h"
@@ -1555,6 +1556,30 @@ bool js::temporal::GetMethod(JSContext* cx, Handle<JSObject*> object,
 
 
 
+JSObject* js::temporal::GetMethod(JSContext* cx, Handle<JSObject*> object,
+                                  Handle<PropertyName*> name) {
+  
+  Rooted<Value> value(cx);
+  if (!GetProperty(cx, object, object, name, &value)) {
+    return nullptr;
+  }
+
+  
+  if (!IsCallable(value)) {
+    if (auto chars = StringToNewUTF8CharsZ(cx, *name)) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_PROPERTY_NOT_CALLABLE, chars.get());
+    }
+    return nullptr;
+  }
+
+  
+  return &value.toObject();
+}
+
+
+
+
 
 
 bool js::temporal::CopyDataProperties(JSContext* cx,
@@ -1801,6 +1826,14 @@ bool js::temporal::GetDifferenceSettings(
   
   *result = {smallestUnit, largestUnit, roundingMode, roundingIncrement};
   return true;
+}
+
+bool temporal::IsArrayIterationSane(JSContext* cx, bool* result) {
+  auto* stubChain = ForOfPIC::getOrCreate(cx);
+  if (!stubChain) {
+    return false;
+  }
+  return stubChain->tryOptimizeArray(cx, result);
 }
 
 static JSObject* CreateTemporalObject(JSContext* cx, JSProtoKey key) {

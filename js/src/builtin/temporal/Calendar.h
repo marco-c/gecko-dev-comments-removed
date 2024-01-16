@@ -128,6 +128,8 @@ enum class CalendarMethod {
 
 class CalendarRecord {
   CalendarValue receiver_;
+
+  
   JSObject* dateAdd_ = nullptr;
   JSObject* dateFromFields_ = nullptr;
   JSObject* dateUntil_ = nullptr;
@@ -817,12 +819,6 @@ inline bool CalendarMethodsRecordIsBuiltin(const CalendarRecord& calendar) {
 
 bool IsBuiltinAccess(JSContext* cx, JS::Handle<CalendarObject*> calendar,
                      std::initializer_list<CalendarField> fieldNames);
-
-
-
-
-
-bool IsBuiltinAccessForStringCalendar(JSContext* cx);
 
 
 bool WrapCalendarValue(JSContext* cx, JS::MutableHandle<JS::Value> calendar);
