@@ -1775,6 +1775,10 @@ void SVGObserverUtils::AddRenderingObserver(Element* aElement,
   SVGRenderingObserverSet* observers = GetObserverSet(aElement);
   if (!observers) {
     observers = new SVGRenderingObserverSet();
+    
+    
+    
+    
     aElement->SetProperty(nsGkAtoms::renderingobserverset, observers,
                           nsINode::DeleteProperty<SVGRenderingObserverSet>,
                            true);
