@@ -2948,6 +2948,8 @@ void nsPresContext::FlushFontPaletteValues() {
   mFontPaletteValueSet = styleSet->BuildFontPaletteValueSet();
   mFontPaletteValuesDirty = false;
 
+  mFontPaletteCache.SetPaletteValueSet(mFontPaletteValueSet);
+
   
   
   InvalidatePaintedLayers();
