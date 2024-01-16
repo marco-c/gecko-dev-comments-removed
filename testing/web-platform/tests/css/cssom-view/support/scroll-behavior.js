@@ -1,3 +1,5 @@
+
+
 function observeScrolling(elements, callback) {
   if (!Array.isArray(elements))
       elements = [elements];
@@ -11,7 +13,10 @@ function observeScrolling(elements, callback) {
   function tick(frames) {
     
     
-    if (frames >= 500 || frames - lastChangedFrame > 20) {
+    
+    
+    
+    if (frames >= 5000 || frames - lastChangedFrame > 20) {
       callback(true);
     } else {
       var scrollHappened = elements.some((element) => {
