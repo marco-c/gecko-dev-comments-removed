@@ -1252,14 +1252,15 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
   GetData();
 
+  if (aFeature == nsIGfxInfo::FEATURE_BACKDROP_FILTER) {
+    *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+    return NS_OK;
+  }
+
   if (mGlxTestError) {
     
-    if (OnlyAllowFeatureOnKnownConfig(aFeature)) {
-      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-      aFailureId = "FEATURE_FAILURE_GLXTEST_FAILED";
-    } else {
-      *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
-    }
+    *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+    aFailureId = "FEATURE_FAILURE_GLXTEST_FAILED";
     return NS_OK;
   }
 
@@ -1267,12 +1268,8 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     
     
     
-    if (OnlyAllowFeatureOnKnownConfig(aFeature)) {
-      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-      aFailureId = "FEATURE_FAILURE_OPENGL_1";
-    } else {
-      *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
-    }
+    *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+    aFailureId = "FEATURE_FAILURE_OPENGL_1";
     return NS_OK;
   }
 
