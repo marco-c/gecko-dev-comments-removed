@@ -312,8 +312,8 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   
-  LABELS_HTTP_CHILD_OMT_STATS mOMTResult =
-      LABELS_HTTP_CHILD_OMT_STATS::notRequested;
+  Atomic<LABELS_HTTP_CHILD_OMT_STATS, mozilla::Relaxed> mOMTResult{
+      LABELS_HTTP_CHILD_OMT_STATS::notRequested};
 
   uint32_t mCacheKey{0};
   int32_t mCacheFetchCount{0};
