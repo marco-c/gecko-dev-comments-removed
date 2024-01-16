@@ -25,10 +25,6 @@ const CONTENT_BLOCKING_PREFS = [
   "privacy.fingerprintingProtection.pbmode",
 ];
 
-const PREF_URLBAR_QUICKSUGGEST_BLOCKLIST =
-  "browser.urlbar.quicksuggest.blockedDigests";
-const PREF_URLBAR_WEATHER_USER_ENABLED = "browser.urlbar.suggest.weather";
-
 
 
 
@@ -452,15 +448,6 @@ var gPrivacyPane = {
         Services.prefs.removeObserver(pref, trackingProtectionObserver);
       }
     });
-  },
-
-  _initQuickActionsSection() {
-    let showPref = Preferences.get("browser.urlbar.quickactions.showPrefs");
-    let showQuickActionsGroup = () => {
-      document.getElementById("quickActionsBox").hidden = !showPref.value;
-    };
-    showPref.on("change", showQuickActionsGroup);
-    showQuickActionsGroup();
   },
 
   _initThirdPartyCertsToggle() {
@@ -984,12 +971,6 @@ var gPrivacyPane = {
       
       gPrivacyPane.clearPrivateDataNow(historyMode.value == "dontremember");
     });
-    setEventListener("openSearchEnginePreferences", "click", function (event) {
-      if (event.button == 0) {
-        gotoPref("search");
-      }
-      return false;
-    });
     setEventListener(
       "privateBrowsingAutoStart",
       "command",
@@ -1151,7 +1132,12 @@ var gPrivacyPane = {
       }
     }
 
-    this._initAddressBar();
+    let onNimbus = () => this._updateFirefoxSuggestToggle();
+    NimbusFeatures.urlbar.onUpdate(onNimbus);
+    this._updateFirefoxSuggestToggle(true);
+    window.addEventListener("unload", () => {
+      NimbusFeatures.urlbar.offUpdate(onNimbus);
+    });
 
     this.initSiteDataControls();
     setEventListener(
@@ -2575,170 +2561,19 @@ var gPrivacyPane = {
 
   
 
-  
-
-
-  _initAddressBar() {
-    
-    let onNimbus = () => this._updateFirefoxSuggestSection();
-    NimbusFeatures.urlbar.onUpdate(onNimbus);
-    window.addEventListener("unload", () => {
-      NimbusFeatures.urlbar.offUpdate(onNimbus);
-    });
-
-    
-    
-    let infoBoxPrefs = [
-      "browser.urlbar.suggest.quicksuggest.nonsponsored",
-      "browser.urlbar.suggest.quicksuggest.sponsored",
-      "browser.urlbar.quicksuggest.dataCollection.enabled",
-    ];
-    for (let pref of infoBoxPrefs) {
-      Preferences.get(pref).on("change", () =>
-        this._updateFirefoxSuggestInfoBox()
-      );
-    }
-
-    document.getElementById("clipboardSuggestion").hidden = !UrlbarPrefs.get(
-      "clipboard.featureGate"
-    );
-
-    this._updateFirefoxSuggestSection(true);
-    this._initQuickActionsSection();
-  },
-
-  
 
 
 
 
 
-
-  _updateFirefoxSuggestSection(onInit = false) {
-    let container = document.getElementById("firefoxSuggestContainer");
+  _updateFirefoxSuggestToggle(onInit = false) {
+    let container = document.getElementById("firefoxSuggestPrivacyContainer");
 
     if (UrlbarPrefs.get("quickSuggestEnabled")) {
-      
-      let l10nIdByElementId = {
-        locationBarGroupHeader: "addressbar-header-firefox-suggest",
-        locationBarSuggestionLabel: "addressbar-suggest-firefox-suggest",
-      };
-      for (let [elementId, l10nId] of Object.entries(l10nIdByElementId)) {
-        let element = document.getElementById(elementId);
-        element.dataset.l10nIdOriginal ??= element.dataset.l10nId;
-        element.dataset.l10nId = l10nId;
-      }
-
-      
-      document
-        .getElementById("openSearchEnginePreferences")
-        .classList.add("extraMargin");
-
-      
-      this._updateFirefoxSuggestInfoBox();
-
-      this._updateDismissedSuggestionsStatus();
-      Preferences.get(PREF_URLBAR_QUICKSUGGEST_BLOCKLIST).on("change", () =>
-        this._updateDismissedSuggestionsStatus()
-      );
-      Preferences.get(PREF_URLBAR_WEATHER_USER_ENABLED).on("change", () =>
-        this._updateDismissedSuggestionsStatus()
-      );
-      setEventListener("restoreDismissedSuggestions", "command", () =>
-        this.restoreDismissedSuggestions()
-      );
-
       container.removeAttribute("hidden");
     } else if (!onInit) {
-      
-      
-      
       container.setAttribute("hidden", "true");
-      let elementIds = ["locationBarGroupHeader", "locationBarSuggestionLabel"];
-      for (let id of elementIds) {
-        let element = document.getElementById(id);
-        element.dataset.l10nId = element.dataset.l10nIdOriginal;
-        delete element.dataset.l10nIdOriginal;
-        document.l10n.translateElements([element]);
-      }
-      document
-        .getElementById("openSearchEnginePreferences")
-        .classList.remove("extraMargin");
     }
-  },
-
-  
-
-
-
-  _updateFirefoxSuggestInfoBox() {
-    let nonsponsored = Preferences.get(
-      "browser.urlbar.suggest.quicksuggest.nonsponsored"
-    ).value;
-    let sponsored = Preferences.get(
-      "browser.urlbar.suggest.quicksuggest.sponsored"
-    ).value;
-    let dataCollection = Preferences.get(
-      "browser.urlbar.quicksuggest.dataCollection.enabled"
-    ).value;
-
-    
-    
-    let l10nId;
-    if (nonsponsored && sponsored && dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-all";
-    } else if (nonsponsored && sponsored && !dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-nonsponsored-sponsored";
-    } else if (nonsponsored && !sponsored && dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-nonsponsored-data";
-    } else if (nonsponsored && !sponsored && !dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-nonsponsored";
-    } else if (!nonsponsored && sponsored && dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-sponsored-data";
-    } else if (!nonsponsored && sponsored && !dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-sponsored";
-    } else if (!nonsponsored && !sponsored && dataCollection) {
-      l10nId = "addressbar-firefox-suggest-info-data";
-    }
-
-    let instance = (this._firefoxSuggestInfoBoxInstance = {});
-    let infoBox = document.getElementById("firefoxSuggestInfoBox");
-    if (!l10nId) {
-      infoBox.hidden = true;
-    } else {
-      let infoText = document.getElementById("firefoxSuggestInfoText");
-      infoText.dataset.l10nId = l10nId;
-
-      
-      
-      
-      document.l10n.translateElements([infoText]).then(() => {
-        if (instance == this._firefoxSuggestInfoBoxInstance) {
-          infoBox.hidden = false;
-        }
-      });
-    }
-  },
-
-  
-
-
-
-  _updateDismissedSuggestionsStatus() {
-    document.getElementById("restoreDismissedSuggestions").disabled =
-      !Services.prefs.prefHasUserValue(PREF_URLBAR_QUICKSUGGEST_BLOCKLIST) &&
-      !(
-        Services.prefs.prefHasUserValue(PREF_URLBAR_WEATHER_USER_ENABLED) &&
-        !Services.prefs.getBoolPref(PREF_URLBAR_WEATHER_USER_ENABLED)
-      );
-  },
-
-  
-
-
-  restoreDismissedSuggestions() {
-    Services.prefs.clearUserPref(PREF_URLBAR_QUICKSUGGEST_BLOCKLIST);
-    Services.prefs.clearUserPref(PREF_URLBAR_WEATHER_USER_ENABLED);
   },
 
   
