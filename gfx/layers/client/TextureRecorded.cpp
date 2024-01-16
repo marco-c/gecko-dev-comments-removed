@@ -46,6 +46,8 @@ void RecordedTextureData::SetRemoteTextureOwnerId(
   mRemoteTextureOwnerId = aRemoteTextureOwnerId;
 }
 
+void RecordedTextureData::InvalidateContents() { mInvalidContents = true; }
+
 bool RecordedTextureData::Lock(OpenMode aMode) {
   if (!mCanvasChild->EnsureBeginTransaction()) {
     return false;
@@ -57,16 +59,9 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
   }
 
   
-  
-  
-  
-  
-  RemoteTextureId obsoleteRemoteTextureId;
-  if (!mUsedRemoteTexture) {
-    obsoleteRemoteTextureId = mLastRemoteTextureId;
+  if (aMode & OpenMode::OPEN_WRITE) {
+    mUsedRemoteTexture = false;
   }
-  mLastRemoteTextureId = RemoteTextureId::GetNext();
-  mUsedRemoteTexture = false;
 
   if (!mDT) {
     mTextureId = sNextRecordedTextureId++;
@@ -82,9 +77,10 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
     return true;
   }
 
-  mCanvasChild->RecordEvent(RecordedTextureLock(
-      mTextureId, aMode, mLastRemoteTextureId, obsoleteRemoteTextureId));
+  mCanvasChild->RecordEvent(
+      RecordedTextureLock(mTextureId, aMode, mInvalidContents));
   mLockedMode = aMode;
+  mInvalidContents = false;
   return true;
 }
 
@@ -96,8 +92,7 @@ void RecordedTextureData::Unlock() {
     mCanvasChild->RecordEvent(RecordedCacheDataSurface(mSnapshot.get()));
   }
 
-  mCanvasChild->RecordEvent(
-      RecordedTextureUnlock(mTextureId, mLastRemoteTextureId));
+  mCanvasChild->RecordEvent(RecordedTextureUnlock(mTextureId));
 
   mLockedMode = OpenMode::OPEN_NONE;
 }
@@ -149,14 +144,24 @@ void RecordedTextureData::ReturnSnapshot(
 void RecordedTextureData::Deallocate(LayersIPCChannel* aAllocator) {}
 
 bool RecordedTextureData::Serialize(SurfaceDescriptor& aDescriptor) {
-  if (!mRemoteTextureOwnerId.IsValid() || !mLastRemoteTextureId.IsValid()) {
-    MOZ_ASSERT_UNREACHABLE("Missing remote texture ids!");
+  if (!mRemoteTextureOwnerId.IsValid()) {
+    MOZ_ASSERT_UNREACHABLE("Missing remote texture owner id!");
     return false;
   }
+
+  
+  if (!mUsedRemoteTexture) {
+    mLastRemoteTextureId = RemoteTextureId::GetNext();
+    mCanvasChild->RecordEvent(
+        RecordedPresentTexture(mTextureId, mLastRemoteTextureId));
+    mUsedRemoteTexture = true;
+  } else if (!mLastRemoteTextureId.IsValid()) {
+    MOZ_ASSERT_UNREACHABLE("Missing remote texture id!");
+    return false;
+  }
+
   aDescriptor = SurfaceDescriptorRemoteTexture(mLastRemoteTextureId,
                                                mRemoteTextureOwnerId);
-  
-  mUsedRemoteTexture = true;
   return true;
 }
 
