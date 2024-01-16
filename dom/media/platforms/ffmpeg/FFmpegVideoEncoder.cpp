@@ -485,6 +485,11 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
   
   
 
+  
+  
+  
+  mCodecContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+
   AVDictionary* options = nullptr;
   if (int ret = OpenCodecContext(codec, &options); ret < 0) {
     FFMPEGV_LOG("failed to open %s avcodec: %s", codec->name,
@@ -524,10 +529,6 @@ int FFmpegVideoEncoder<LIBAV_VER>::OpenCodecContext(const AVCodec* aCodec,
   MOZ_ASSERT(mCodecContext);
 
   StaticMutexAutoLock mon(sMutex);
-  
-  
-  
-  mCodecContext->strict_std_compliance = -2;
 #if LIBAVCODEC_VERSION_MAJOR >= 60
   mCodecContext->flags |= AV_CODEC_FLAG_FRAME_DURATION;
 #endif
