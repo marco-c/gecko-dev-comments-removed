@@ -157,6 +157,94 @@ static Maybe<H264Setting> GetH264Level(const H264_LEVEL& aLevel) {
   return Some(H264Setting{val, str});
 }
 
+struct VPXSVCSetting {
+  uint8_t mLayeringMode;
+  size_t mNumberLayers;
+  uint8_t mPeriodicity;
+  nsTArray<uint8_t> mLayerIds;
+  nsTArray<uint8_t> mRateDecimators;
+  nsTArray<uint32_t> mTargetBitrates;
+};
+
+static Maybe<VPXSVCSetting> GetVPXSVCSetting(
+    const MediaDataEncoder::ScalabilityMode& aMode, uint32_t aBitPerSec) {
+  if (aMode == MediaDataEncoder::ScalabilityMode::None) {
+    return Nothing();
+  }
+
+  
+  
+
+  uint8_t mode = 0;
+  size_t layers = 0;
+  uint32_t kbps = aBitPerSec / 1000;  
+
+  uint8_t periodicity;
+  nsTArray<uint8_t> layerIds;
+  nsTArray<uint8_t> rateDecimators;
+  nsTArray<uint32_t> bitrates;
+  if (aMode == MediaDataEncoder::ScalabilityMode::L1T2) {
+    
+    
+    
+    
+    
+
+    mode = 2;  
+    layers = 2;
+
+    
+    periodicity = 2;
+
+    
+    layerIds.AppendElement(0);
+    layerIds.AppendElement(1);
+
+    
+    rateDecimators.AppendElement(2);
+    rateDecimators.AppendElement(1);
+
+    
+    bitrates.AppendElement(kbps * 3 / 5);
+    bitrates.AppendElement(kbps);
+  } else {
+    MOZ_ASSERT(aMode == MediaDataEncoder::ScalabilityMode::L1T3);
+    
+    
+    
+    
+    
+    
+
+    mode = 3;  
+    layers = 3;
+
+    
+    periodicity = 4;
+
+    
+    layerIds.AppendElement(0);
+    layerIds.AppendElement(2);
+    layerIds.AppendElement(1);
+    layerIds.AppendElement(2);
+
+    
+    rateDecimators.AppendElement(4);
+    rateDecimators.AppendElement(2);
+    rateDecimators.AppendElement(1);
+
+    
+    bitrates.AppendElement(kbps / 2);
+    bitrates.AppendElement(kbps * 7 / 10);
+    bitrates.AppendElement(kbps);
+  }
+
+  MOZ_ASSERT(layers == bitrates.Length(),
+             "Bitrate must be assigned to each layer");
+  return Some(VPXSVCSetting{mode, layers, periodicity, std::move(layerIds),
+                            std::move(rateDecimators), std::move(bitrates)});
+}
+
 static nsCString MakeErrorString(const FFmpegLibWrapper* aLib, int aErrNum) {
   MOZ_ASSERT(aLib);
 
@@ -407,12 +495,63 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
   mCodecContext->flags |= AV_CODEC_FLAG_FRAME_DURATION;
 #endif
   mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
+  
+  
   if (mConfig.mUsage == MediaDataEncoder::Usage::Realtime) {
     mLib->av_opt_set(mCodecContext->priv_data, "deadline", "realtime", 0);
     
     
     mLib->av_opt_set(mCodecContext->priv_data, "lag-in-frames", "0", 0);
   }
+  
+  if (Maybe<VPXSVCSetting> svc =
+          GetVPXSVCSetting(mConfig.mScalabilityMode, mConfig.mBitrate)) {
+    
+    if (mCodecName == "libvpx" || mCodecName == "libvpx-vp9") {
+      
+      if (mConfig.mCodecSpecific) {
+        if (mConfig.mCodecSpecific->is<VP8Specific>() ||
+            mConfig.mCodecSpecific->is<VP9Specific>()) {
+          const uint8_t numTemporalLayers =
+              mConfig.mCodecSpecific->is<VP8Specific>()
+                  ? mConfig.mCodecSpecific->as<VP8Specific>().mNumTemporalLayers
+                  : mConfig.mCodecSpecific->as<VP9Specific>()
+                        .mNumTemporalLayers;
+          if (numTemporalLayers != svc->mNumberLayers) {
+            FFMPEGV_LOG(
+                "Force using %zu layers defined in scalability mode instead of "
+                "the %u layers defined in VP8/9Specific",
+                svc->mNumberLayers, numTemporalLayers);
+          }
+        }
+      }
+
+      
+      nsPrintfCString parameters("ts_layering_mode=%u", svc->mLayeringMode);
+      
+      parameters.Append(":ts_target_bitrate=");
+      for (size_t i = 0; i < svc->mTargetBitrates.Length(); ++i) {
+        if (i > 0) {
+          parameters.Append(",");
+        }
+        parameters.Append(nsPrintfCString("%d", svc->mTargetBitrates[i]));
+      }
+      
+      
+      
+
+      
+      mLib->av_opt_set(mCodecContext->priv_data, "ts-parameters",
+                       parameters.get(), 0);
+
+      
+      
+    } else {
+      FFMPEGV_LOG("SVC setting is not implemented for %s codec",
+                  mCodecName.get());
+    }
+  }
+  
   nsCString codecSpecificLog;
   if (mConfig.mCodecSpecific) {
     if (mConfig.mCodecSpecific->is<H264Specific>()) {
@@ -474,7 +613,6 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
       }
     }
   }
-  
   
   
   
