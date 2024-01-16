@@ -1861,108 +1861,6 @@ static double IsSafeInteger(double num) {
   return minSafeInteger <= num && num <= maxSafeInteger;
 }
 
-static int64_t ClampToInt64(double num) {
-  MOZ_ASSERT(js::IsInteger(num));
-
-  return int64_t(std::clamp(num, double(INT64_MIN), double(INT64_MAX)));
-}
-
-
-
-
-
-static bool UnbalanceDateDurationRelativeMonthSlow(
-    JSContext* cx, const Duration& duration, double oneYearMonthsToAdd,
-    int32_t sign, Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
-    Handle<CalendarRecord> calendar, Handle<DurationObject*> oneYear,
-    DateDuration* result) {
-  MOZ_ASSERT(sign == -1 || sign == 1);
-  MOZ_ASSERT(plainRelativeTo);
-  MOZ_ASSERT(calendar.receiver());
-
-  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, plainRelativeTo.get());
-
-  Rooted<BigInt*> years(cx, BigInt::createFromDouble(cx, duration.years));
-  if (!years) {
-    return false;
-  }
-
-  Rooted<BigInt*> months(cx, BigInt::createFromDouble(cx, duration.months));
-  if (!months) {
-    return false;
-  }
-
-  
-
-  if (oneYearMonthsToAdd) {
-    Rooted<BigInt*> toAdd(cx, BigInt::createFromDouble(cx, oneYearMonthsToAdd));
-    if (!toAdd) {
-      return false;
-    }
-
-    months = BigInt::add(cx, months, toAdd);
-    if (!months) {
-      return false;
-    }
-
-    if (sign < 0) {
-      years = BigInt::inc(cx, years);
-    } else {
-      years = BigInt::dec(cx, years);
-    }
-    if (!years) {
-      return false;
-    }
-  }
-
-  
-  Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
-  Rooted<BigInt*> oneYearMonths(cx);
-  while (!years->isZero()) {
-    
-    newRelativeTo = CalendarDateAdd(cx, calendar, dateRelativeTo, oneYear);
-    if (!newRelativeTo) {
-      return false;
-    }
-
-    
-    Duration untilResult;
-    if (!CalendarDateUntil(cx, calendar, dateRelativeTo, newRelativeTo,
-                           TemporalUnit::Month, &untilResult)) {
-      return false;
-    }
-
-    
-    oneYearMonths = BigInt::createFromDouble(cx, untilResult.months);
-    if (!oneYearMonths) {
-      return false;
-    }
-
-    
-    dateRelativeTo = newRelativeTo;
-
-    
-    if (sign < 0) {
-      years = BigInt::inc(cx, years);
-    } else {
-      years = BigInt::dec(cx, years);
-    }
-    if (!years) {
-      return false;
-    }
-
-    
-    months = BigInt::add(cx, months, oneYearMonths);
-    if (!months) {
-      return false;
-    }
-  }
-
-  
-  return CreateDateDurationRecord(cx, 0, BigInt::numberValue(months),
-                                  duration.weeks, duration.days, result);
-}
-
 static bool UnbalanceDateDurationRelativeHasEffect(const Duration& duration,
                                                    TemporalUnit largestUnit) {
   MOZ_ASSERT(largestUnit != TemporalUnit::Auto);
@@ -1989,42 +1887,12 @@ static bool UnbalanceDateDurationRelative(
   double days = duration.days;
 
   
-  
-
-  
 
   
   if (!UnbalanceDateDurationRelativeHasEffect(duration, largestUnit)) {
     
     *result = CreateDateDurationRecord(years, months, weeks, days);
     return true;
-  }
-
-  
-  int32_t sign = DurationSign({years, months, weeks, days});
-
-  
-  MOZ_ASSERT(sign != 0);
-
-  
-  Rooted<DurationObject*> oneYear(cx,
-                                  CreateTemporalDuration(cx, {double(sign)}));
-  if (!oneYear) {
-    return false;
-  }
-
-  
-  Rooted<DurationObject*> oneMonth(
-      cx, CreateTemporalDuration(cx, {0, double(sign)}));
-  if (!oneMonth) {
-    return false;
-  }
-
-  
-  Rooted<DurationObject*> oneWeek(
-      cx, CreateTemporalDuration(cx, {0, 0, double(sign)}));
-  if (!oneWeek) {
-    return false;
   }
 
   
@@ -2043,54 +1911,32 @@ static bool UnbalanceDateDurationRelative(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateUntil));
 
     
-    if (MOZ_UNLIKELY(!IsSafeInteger(months))) {
-      return UnbalanceDateDurationRelativeMonthSlow(
-          cx, {years, months, weeks, days}, 0, sign, plainRelativeTo, calendar,
-          oneYear, result);
+    auto yearsDuration = Duration{years};
+
+    
+    Rooted<Wrapped<PlainDateObject*>> later(
+        cx, CalendarDateAdd(cx, calendar, plainRelativeTo, yearsDuration));
+    if (!later) {
+      return false;
     }
 
     
-    
-    
-    int64_t intYears = ClampToInt64(years);
-    Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, plainRelativeTo.get());
-    Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
-    while (intYears != 0) {
-      
-      newRelativeTo = CalendarDateAdd(cx, calendar, dateRelativeTo, oneYear);
-      if (!newRelativeTo) {
-        return false;
-      }
-
-      
-      Duration untilResult;
-      if (!CalendarDateUntil(cx, calendar, dateRelativeTo, newRelativeTo,
-                             TemporalUnit::Month, &untilResult)) {
-        return false;
-      }
-
-      
-      double oneYearMonths = untilResult.months;
-
-      
-      dateRelativeTo = newRelativeTo;
-
-      
-      if (MOZ_UNLIKELY(!IsSafeInteger(months + oneYearMonths))) {
-        return UnbalanceDateDurationRelativeMonthSlow(
-            cx, {double(intYears), months, weeks, days}, oneYearMonths, sign,
-            dateRelativeTo, calendar, oneYear, result);
-      }
-
-      
-      intYears -= sign;
-
-      
-      months += oneYearMonths;
+    Duration untilResult;
+    if (!CalendarDateUntil(cx, calendar, plainRelativeTo, later,
+                           TemporalUnit::Month, &untilResult)) {
+      return false;
     }
 
     
-    return CreateDateDurationRecord(cx, 0, months, weeks, days, result);
+    double yearsInMonths = untilResult.months;
+
+    
+    
+    
+    
+    
+    return CreateDateDurationRecord(cx, 0, months + yearsInMonths, weeks, days,
+                                    result);
   }
 
   
@@ -2105,57 +1951,35 @@ static bool UnbalanceDateDurationRelative(
         CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
     
-    int32_t daysToAdd = 0;
+    auto yearsMonthsDuration = Duration{years, months};
 
     
-    
-    
-    int64_t intYears = ClampToInt64(years);
-    Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, plainRelativeTo.get());
-    while (intYears != 0) {
-      
-      int32_t oneYearDays;
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneYear,
-                            &dateRelativeTo, &oneYearDays)) {
-        return false;
-      }
-
-      
-      daysToAdd += oneYearDays;
-      MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-      
-      intYears -= sign;
+    auto later =
+        CalendarDateAdd(cx, calendar, plainRelativeTo, yearsMonthsDuration);
+    if (!later) {
+      return false;
     }
+    auto laterDate = ToPlainDate(&later.unwrap());
 
-    
-    
-    
-    int64_t intMonths = ClampToInt64(months);
-    while (intMonths != 0) {
-      
-      int32_t oneMonthDays;
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth,
-                            &dateRelativeTo, &oneMonthDays)) {
-        return false;
-      }
-
-      
-      daysToAdd += oneMonthDays;
-      MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-      
-      intMonths -= sign;
+    auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
+    if (!unwrappedRelativeTo) {
+      return false;
     }
+    auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
+
+    
+    int32_t yearsMonthsInDays = DaysUntil(relativeToDate, laterDate);
 
     
     
     
     
     
-    return CreateDateDurationRecord(cx, 0, 0, weeks, days + double(daysToAdd),
+    return CreateDateDurationRecord(cx, 0, 0, weeks, days + yearsMonthsInDays,
                                     result);
   }
+
+  
 
   
   MOZ_ASSERT(years != 0 || months != 0 || weeks != 0);
@@ -2169,75 +1993,31 @@ static bool UnbalanceDateDurationRelative(
       CalendarMethodsRecordHasLookedUp(calendar, CalendarMethod::DateAdd));
 
   
-  int32_t daysToAdd = 0;
+  auto yearsMonthsWeeksDuration = Duration{years, months, weeks};
 
   
-  
-  
-  int64_t intYears = ClampToInt64(years);
-  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, plainRelativeTo.get());
-  while (intYears != 0) {
-    
-    int32_t oneYearDays;
-    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneYear,
-                          &dateRelativeTo, &oneYearDays)) {
-      return false;
-    }
-
-    
-    daysToAdd += oneYearDays;
-    MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-    
-    intYears -= sign;
+  auto later =
+      CalendarDateAdd(cx, calendar, plainRelativeTo, yearsMonthsWeeksDuration);
+  if (!later) {
+    return false;
   }
+  auto laterDate = ToPlainDate(&later.unwrap());
 
-  
-  
-  
-  int64_t intMonths = ClampToInt64(months);
-  while (intMonths != 0) {
-    
-    int32_t oneMonthDays;
-    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth,
-                          &dateRelativeTo, &oneMonthDays)) {
-      return false;
-    }
-
-    
-    daysToAdd += oneMonthDays;
-    MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-    
-    intMonths -= sign;
+  auto* unwrappedRelativeTo = plainRelativeTo.unwrap(cx);
+  if (!unwrappedRelativeTo) {
+    return false;
   }
+  auto relativeToDate = ToPlainDate(unwrappedRelativeTo);
 
   
-  
-  
-  int64_t intWeeks = ClampToInt64(weeks);
-  while (intWeeks != 0) {
-    
-    int32_t oneWeekDays;
-    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneWeek,
-                          &dateRelativeTo, &oneWeekDays)) {
-      return false;
-    }
-
-    
-    daysToAdd += oneWeekDays;
-    MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-    
-    intWeeks -= sign;
-  }
+  int32_t yearsMonthsWeeksInDay = DaysUntil(relativeToDate, laterDate);
 
   
   
   
   
   
-  return CreateDateDurationRecord(cx, 0, 0, 0, days + double(daysToAdd),
+  return CreateDateDurationRecord(cx, 0, 0, 0, days + yearsMonthsWeeksInDay,
                                   result);
 }
 
