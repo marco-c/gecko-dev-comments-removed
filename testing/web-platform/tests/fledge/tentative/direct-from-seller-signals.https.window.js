@@ -9,8 +9,10 @@
 
 
 
-"use strict;"
 
+
+
+"use strict;"
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
@@ -95,7 +97,6 @@ subsetTest(promise_test, async test => {
       { directFromSellerSignalsHeaderAdSlot: 'adSlot/4' }
   );
 }, 'Test directFromSellerSignals with sellerSignals, auctionSignals and perBuyerSignals.');
-
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
@@ -224,7 +225,6 @@ subsetTest(promise_test, async test => {
   );
 }, 'Test directFromSellerSignals with mismatched perBuyerSignals.');
 
-
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await fetchDirectFromSellerSignals({ 'Buyer-Origin': '*' });
@@ -303,7 +303,6 @@ subsetTest(promise_test, async test => {
       { directFromSellerSignalsHeaderAdSlot: 'adSlot' }
   );
 }, 'Test directFromSellerSignals with HTTP error.');
-
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
@@ -396,7 +395,6 @@ subsetTest(promise_test, async test => {
         interestGroupBuyers: [OTHER_ORIGIN1] }
   );
 }, 'Test directFromSellerSignals different interest group owner origin from top frame.');
-
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
