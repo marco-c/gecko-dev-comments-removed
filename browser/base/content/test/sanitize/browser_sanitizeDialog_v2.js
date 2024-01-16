@@ -75,6 +75,20 @@ async function promiseHistoryClearedState(aURIs, aShouldBeCleared) {
 
 
 
+
+
+
+function boolPrefIs(aPrefName, aExpectedVal, aMsg) {
+  is(Services.prefs.getBoolPref("privacy." + aPrefName), aExpectedVal, aMsg);
+}
+
+
+
+
+
+
+
+
 async function downloadExists(aPath) {
   let publicList = await Downloads.getList(Downloads.PUBLIC);
   let listArray = await publicList.getAll();
@@ -276,9 +290,14 @@ async function blankSlate() {
 
 
 
-function DialogHelper(browserWin = window) {
+
+
+
+
+function DialogHelper(browserWin = window, mode = null) {
   this._browserWin = browserWin;
   this.win = null;
+  this._mode = mode;
   this.promiseClosed = new Promise(resolve => {
     this._resolveClosed = resolve;
   });
@@ -327,11 +346,31 @@ DialogHelper.prototype = {
   
 
 
+
+
+
+  validateCheckbox(aCheckboxId, aCheckState) {
+    let cb = this.win.document.querySelectorAll(
+      "checkbox[id='" + aCheckboxId + "']"
+    );
+    is(cb.length, 1, `found checkbox for id=${aCheckboxId}`);
+    is(
+      cb[0].checked,
+      aCheckState,
+      `checkbox for ${aCheckboxId} is ${aCheckState}`
+    );
+  },
+
+  
+
+
   _checkAllCheckboxesCustom(check) {
     var cb = this.win.document.querySelectorAll("checkbox[id]");
     ok(cb.length, "found checkboxes for ids");
     for (var i = 0; i < cb.length; ++i) {
-      cb[i].checked = check;
+      if (cb[i].checked != check) {
+        cb[i].click();
+      }
     }
   },
 
@@ -341,6 +380,10 @@ DialogHelper.prototype = {
 
   uncheckAllCheckboxes() {
     this._checkAllCheckboxesCustom(false);
+  },
+
+  setMode(value) {
+    this._mode = value;
   },
 
   
@@ -383,7 +426,7 @@ DialogHelper.prototype = {
     );
 
     executeSoon(() => {
-      Sanitizer.showUI(this._browserWin);
+      Sanitizer.showUI(this._browserWin, this._mode);
     });
 
     this.win = await dialogPromise;
@@ -927,6 +970,228 @@ add_task(async function test_single_download() {
   dh.open();
   await dh.promiseClosed;
   blankSlate();
+});
+
+
+add_task(async function test_clear_on_shutdown() {
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.sanitize.sanitizeOnShutdown", true]],
+  });
+
+  let dh = new DialogHelper();
+  dh.setMode("clearOnShutdown");
+  dh.onload = async function () {
+    this.uncheckAllCheckboxes();
+    this.checkPrefCheckbox("history", true);
+    this.checkPrefCheckbox("cookies", true);
+    this.acceptDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  
+  let downloadIDs = [];
+  for (let i = 0; i < 5; i++) {
+    await addDownloadWithMinutesAgo(downloadIDs, i);
+  }
+  
+  let olderDownloadIDs = [];
+  for (let i = 0; i < 5; i++) {
+    await addDownloadWithMinutesAgo(olderDownloadIDs, 61 + i);
+  }
+
+  boolPrefIs(
+    "clearOnShutdown.history",
+    true,
+    "clearOnShutdown history should be true "
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.cookies",
+    true,
+    "clearOnShutdown cookies should be true"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.formdata",
+    true,
+    "clearOnShutdown formdata should be true"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.offlineApps",
+    true,
+    "clearOnShutdown offlineApps should be true"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.sessions",
+    true,
+    "clearOnShutdown sessions should be true"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.downloads",
+    false,
+    "clearOnShutdown downloads should be false"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.cache",
+    false,
+    "clearOnShutdown cache should be false"
+  );
+
+  await createDummyDataForHost("example.org");
+  await createDummyDataForHost("example.com");
+
+  ok(
+    await SiteDataTestUtils.hasIndexedDB("https://example.org"),
+    "We have indexedDB data for example.org"
+  );
+  ok(
+    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+    "We have indexedDB data for example.com"
+  );
+
+  
+  await Sanitizer.runSanitizeOnShutdown();
+
+  
+  ok(
+    !(await SiteDataTestUtils.hasIndexedDB("https://example.org")),
+    "We don't have indexedDB data for example.org"
+  );
+  
+  ok(
+    !(await SiteDataTestUtils.hasIndexedDB("https://example.com")),
+    "We don't have indexedDB data for example.com"
+  );
+
+  
+  await ensureDownloadsClearedState(downloadIDs, false);
+  await ensureDownloadsClearedState(olderDownloadIDs, false);
+
+  dh = new DialogHelper();
+  dh.setMode("clearOnShutdown");
+  dh.onload = async function () {
+    this.uncheckAllCheckboxes();
+    this.checkPrefCheckbox("downloads", true);
+    this.acceptDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  boolPrefIs(
+    "clearOnShutdown.history",
+    false,
+    "clearOnShutdown history should be false"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.cookies",
+    false,
+    "clearOnShutdown cookies should be false"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.formdata",
+    false,
+    "clearOnShutdown formdata should be false"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.offlineApps",
+    false,
+    "clearOnShutdown offlineApps should be false"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.sessions",
+    false,
+    "clearOnShutdown sessions should be false"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.downloads",
+    true,
+    "clearOnShutdown downloads should be true"
+  );
+
+  boolPrefIs(
+    "clearOnShutdown.cache",
+    false,
+    "clearOnShutdown cache should be false"
+  );
+
+  ok(
+    await SiteDataTestUtils.hasIndexedDB("https://example.org"),
+    "We have indexedDB data for example.org"
+  );
+  ok(
+    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+    "We have indexedDB data for example.com"
+  );
+
+  
+  await Sanitizer.runSanitizeOnShutdown();
+
+  
+  ok(
+    await SiteDataTestUtils.hasIndexedDB("https://example.org"),
+    "We have indexedDB data for example.org"
+  );
+  
+  ok(
+    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+    "We have indexedDB data for example.com"
+  );
+
+  
+  await ensureDownloadsClearedState(downloadIDs, true);
+  await ensureDownloadsClearedState(olderDownloadIDs, true);
+
+  
+  await SiteDataTestUtils.clear();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+add_task(async function test_defaults_prefs() {
+  let dh = new DialogHelper();
+  dh.setMode("clearSiteData");
+
+  dh.onload = function () {
+    
+    this.validateCheckbox("history", false);
+    this.validateCheckbox("cache", true);
+    this.validateCheckbox("cookies", true);
+    this.validateCheckbox("siteSettings", false);
+    this.validateCheckbox("downloads", false);
+
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  
+  
+
+  dh = new DialogHelper();
+  dh.onload = function () {
+    
+    this.validateCheckbox("history", true);
+    this.validateCheckbox("cache", true);
+    this.validateCheckbox("cookies", true);
+    this.validateCheckbox("siteSettings", false);
+    this.validateCheckbox("downloads", true);
+
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
 });
 
 
