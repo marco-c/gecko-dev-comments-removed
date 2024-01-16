@@ -3022,24 +3022,6 @@ public class GeckoSession {
 
 
 
-
-
-
-  @Deprecated
-  @DeprecationSchedule(version = 124, id = "shopping-status")
-  @AnyThread
-  public @NonNull GeckoResult<String> requestAnalysisCreationStatus(@NonNull final String url) {
-    final GeckoBundle bundle = new GeckoBundle(1);
-    bundle.putString("url", url);
-    return mEventDispatcher.queryString("GeckoView:RequestAnalysisCreationStatus", bundle);
-  }
-
-  
-
-
-
-
-
   @AnyThread
   public @NonNull GeckoResult<AnalysisStatusResponse> requestAnalysisStatus(
       @NonNull final String url) {
