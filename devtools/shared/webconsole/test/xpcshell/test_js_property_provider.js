@@ -3,7 +3,7 @@
 
 "use strict";
 const {
-  FallibleJSPropertyProvider: JSPropertyProvider,
+  fallibleJsPropertyProvider: jsPropertyProvider,
 } = require("resource://devtools/shared/webconsole/js-property-provider.js");
 
 const { addDebuggerToGlobal } = ChromeUtils.importESModule(
@@ -115,7 +115,7 @@ function run_test() {
 
 function runChecks(dbgObject, environment, sandbox) {
   const propertyProvider = (inputValue, options) =>
-    JSPropertyProvider({
+    jsPropertyProvider({
       dbgObject,
       environment,
       inputValue,

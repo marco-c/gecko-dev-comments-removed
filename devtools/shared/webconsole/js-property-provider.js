@@ -95,7 +95,7 @@ const MAX_AUTOCOMPLETIONS = (exports.MAX_AUTOCOMPLETIONS = 1500);
 
 
 
-function JSPropertyProvider({
+function jsPropertyProvider({
   dbgObject,
   environment,
   frameActorId,
@@ -797,7 +797,7 @@ var DebuggerEnvironmentSupport = {
   },
 };
 
-exports.JSPropertyProvider = DevToolsUtils.makeInfallible(JSPropertyProvider);
+exports.jsPropertyProvider = DevToolsUtils.makeInfallible(jsPropertyProvider);
 
 
-exports.FallibleJSPropertyProvider = JSPropertyProvider;
+exports.fallibleJsPropertyProvider = jsPropertyProvider;
