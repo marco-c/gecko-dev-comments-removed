@@ -46,7 +46,13 @@ add_task(async function test() {
     );
 
     info("Focus the urlbar clicking on the indicator");
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     EventUtils.synthesizeMouseAtCenter(indicator, {});
+    AccessibilityUtils.resetEnv();
     Assert.ok(BrowserTestUtils.is_visible(indicator));
     Assert.ok(BrowserTestUtils.is_visible(indicatorCloseButton));
     Assert.ok(!BrowserTestUtils.is_visible(labelBox));
