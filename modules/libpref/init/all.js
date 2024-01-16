@@ -3695,10 +3695,6 @@ pref("toolkit.aboutProcesses.profileDuration", 5);
 
 
 
-pref("toolkit.lazyHiddenWindow", true);
-
-
-
 
 
 pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);

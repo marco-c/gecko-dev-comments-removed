@@ -5506,11 +5506,12 @@ nsresult XREMain::XRE_mainRun() {
     SaveToEnv("XRE_RESTARTED_BY_PROFILE_MANAGER=");
 
     if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+      
+      
 #ifdef XP_MACOSX
       bool lazyHiddenWindow = false;
 #else
-      bool lazyHiddenWindow =
-          Preferences::GetBool("toolkit.lazyHiddenWindow", false);
+      bool lazyHiddenWindow = true;
 #endif
 
 #ifdef MOZ_BACKGROUNDTASKS

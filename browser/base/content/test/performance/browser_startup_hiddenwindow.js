@@ -26,10 +26,7 @@ add_task(async function () {
   let phasesExpectations = {
     "before profile selection": false,
     "before opening first browser window": false,
-    "before first paint": !Services.prefs.getBoolPref(
-      "toolkit.lazyHiddenWindow"
-    ),
-
+    "before first paint": AppConstants.platform === "macosx",
     
     "before handling user events": true,
     "before becoming idle": true,
