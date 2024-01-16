@@ -398,11 +398,17 @@ add_task(async function testKeyboardSupport() {
   isFocused(disableButton, "The disable button is still focused");
   let moved = BrowserTestUtils.waitForEvent(list, "move");
   
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  
   EventUtils.synthesizeMouseAtCenter(
     doc.querySelector(".header-name"),
     {},
     win
   );
+  AccessibilityUtils.resetEnv();
   await moved;
   is(
     card.parentNode,
@@ -935,7 +941,13 @@ add_task(async function testDisabledDimming() {
   let pageHeader = doc.querySelector("addon-page-header");
 
   
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  
   EventUtils.synthesizeMouseAtCenter(pageHeader, {}, win);
+  AccessibilityUtils.resetEnv();
 
   const checkOpacity = (card, expected, msg) => {
     let { opacity } = card.ownerGlobal.getComputedStyle(card.firstElementChild);
@@ -972,7 +984,13 @@ add_task(async function testDisabledDimming() {
 
   
   transitionEnded = waitForTransition(card);
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(pageHeader, {}, win);
+  AccessibilityUtils.resetEnv();
   await transitionEnded;
   checkOpacity(card, "0.6", "The card is dimmed again");
 

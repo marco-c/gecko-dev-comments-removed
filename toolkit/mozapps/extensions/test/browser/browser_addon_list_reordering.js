@@ -142,11 +142,18 @@ add_task(async function testReordering() {
   assertInSection(cardThree, "disabled", "cardThree stays in disabled");
 
   transitionsEnded = waitForTransitionEnd(cardOne, cardThree);
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  
   EventUtils.synthesizeMouseAtCenter(
     win.document.querySelector(".header-name"),
     {},
     win
   );
+  AccessibilityUtils.resetEnv();
   await transitionsEnded;
 
   assertInSection(cardOne, "enabled", "cardOne is now in enabled");
