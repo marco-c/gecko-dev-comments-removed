@@ -1048,6 +1048,10 @@ function assertIsVisible(expected, { element, id }) {
 
 
 
+
+
+
+
 async function openContextMenu(
   runInPage,
   {
@@ -1055,6 +1059,8 @@ async function openContextMenu(
     selectSpanishParagraph,
     openAtFirstParagraph,
     openAtSpanishParagraph,
+    openAtEnglishHyperlink,
+    openAtSpanishHyperlink,
   }
 ) {
   logAction();
@@ -1093,10 +1099,32 @@ async function openContextMenu(
     return;
   }
 
+  if (openAtEnglishHyperlink === true) {
+    await runInPage(async TranslationsTest => {
+      const { getEnglishHyperlink } = TranslationsTest.getSelectors();
+      const hyperlink = getEnglishHyperlink();
+      await TranslationsTest.rightClickContentElement(hyperlink);
+    });
+    return;
+  }
+
+  if (openAtSpanishHyperlink === true) {
+    await runInPage(async TranslationsTest => {
+      const { getSpanishHyperlink } = TranslationsTest.getSelectors();
+      const hyperlink = getSpanishHyperlink();
+      await TranslationsTest.rightClickContentElement(hyperlink);
+    });
+    return;
+  }
+
   throw new Error(
     "openContextMenu() was not provided a declaration for which element to open the menu at."
   );
 }
+
+
+
+
 
 
 
@@ -1124,6 +1152,8 @@ async function assertContextMenuTranslateSelectionItem(
     expectedTargetLanguage,
     openAtFirstParagraph,
     openAtSpanishParagraph,
+    openAtEnglishHyperlink,
+    openAtSpanishHyperlink,
   },
   message
 ) {
@@ -1141,6 +1171,8 @@ async function assertContextMenuTranslateSelectionItem(
     selectSpanishParagraph,
     openAtFirstParagraph,
     openAtSpanishParagraph,
+    openAtEnglishHyperlink,
+    openAtSpanishHyperlink,
   });
 
   const menuItem = maybeGetById(
@@ -1156,7 +1188,9 @@ async function assertContextMenuTranslateSelectionItem(
     if (expectedTargetLanguage) {
       
       const expectedL10nId =
-        "main-context-menu-translate-selection-to-language";
+        selectFirstParagraph === true || selectSpanishParagraph === true
+          ? "main-context-menu-translate-selection-to-language"
+          : "main-context-menu-translate-link-text-to-language";
       await waitForCondition(
         () => menuItem.getAttribute("data-l10n-id") === expectedL10nId,
         `Waiting for translate-selection context menu item to localize with target language ${expectedTargetLanguage}`
@@ -1176,7 +1210,10 @@ async function assertContextMenuTranslateSelectionItem(
       );
     } else {
       
-      const expectedL10nId = "main-context-menu-translate-selection";
+      const expectedL10nId =
+        selectFirstParagraph === true || selectSpanishParagraph === true
+          ? "main-context-menu-translate-selection"
+          : "main-context-menu-translate-link-text";
       await waitForCondition(
         () => menuItem.getAttribute("data-l10n-id") === expectedL10nId,
         "Waiting for translate-selection context menu item to localize without target language."
