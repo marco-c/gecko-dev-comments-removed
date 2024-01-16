@@ -2,8 +2,22 @@
 
 
 
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/ProfilerCounts.h"
+#ifndef ProfilerBandwidthCounter_h
+#define ProfilerBandwidthCounter_h
+
+#ifndef MOZ_GECKO_PROFILER
+
+namespace mozilla {
+
+inline void profiler_count_bandwidth_read_bytes(int64_t aCount) {}
+inline void profiler_count_bandwidth_written_bytes(int64_t aCount) {}
+
+}  
+
+#else
+
+#  include "mozilla/ProfilerMarkers.h"
+#  include "mozilla/ProfilerCounts.h"
 
 class ProfilerBandwidthCounter final : public BaseProfilerCount {
  public:
@@ -86,3 +100,7 @@ inline void profiler_count_bandwidth_written_bytes(int64_t aCount) {
 }
 
 }  
+
+#endif  
+
+#endif  
