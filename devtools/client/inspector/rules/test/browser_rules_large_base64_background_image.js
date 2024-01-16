@@ -40,6 +40,7 @@ const TEST_URL =
 
 
 add_task(async function () {
+  await pushPref("devtools.inspector.showRulesViewEnterKeyNotice", false);
   const { inspector } = await openInspectorForURL(TEST_URL);
   const view = selectRuleView(inspector);
 

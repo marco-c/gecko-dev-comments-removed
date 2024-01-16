@@ -244,7 +244,17 @@ async function assertJumpToContainerButton(
   );
 
   await onNodeUnhighlight;
-  ok("Highlighter was hidden when clicking on icon");
+  ok(true, "Highlighter was hidden when clicking on icon");
+
+  
+  
+  EventUtils.synthesizeMouse(
+    selectContainerButton.closest("body"),
+    0,
+    0,
+    { type: "mouseover" },
+    selectContainerButton.ownerDocument.defaultView
+  );
 }
 
 async function assertQueryContainerTooltip({

@@ -1095,7 +1095,7 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  #apply(event, direction) {
+  #apply(direction, key) {
     if (this.#applied) {
       return null;
     }
@@ -1104,7 +1104,7 @@ class InplaceEditor extends EventEmitter {
 
     if (this.done) {
       const val = this.cancelled ? this.initial : this.currentInputValue;
-      return this.done(val, !this.cancelled, direction);
+      return this.done(val, !this.cancelled, direction, key);
     }
 
     return null;
@@ -1335,7 +1335,7 @@ class InplaceEditor extends EventEmitter {
         }
       }
 
-      this.#apply(event, direction);
+      this.#apply(direction, key);
 
       
       if (this.popup && this.popup.isOpen) {

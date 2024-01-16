@@ -15,7 +15,7 @@ add_task(async function () {
   isInInspectorSearchBox(inspector);
 
   info("Click somewhere in the rule-view");
-  clickInRuleView(inspector);
+  moveFocusInRuleView(inspector);
 
   info("Check that the rule-view search field gets focused");
   pressCtrlF();
@@ -52,9 +52,13 @@ function pressCtrlF() {
   EventUtils.synthesizeKey("f", { accelKey: true });
 }
 
-function clickInRuleView(inspector) {
-  const el = inspector.panelDoc.querySelector("#sidebar-panel-ruleview");
-  EventUtils.synthesizeMouseAtCenter(el, {}, inspector.panelDoc.defaultView);
+function moveFocusInRuleView(inspector) {
+  
+  
+  
+  inspector.panelDoc
+    .querySelector("#sidebar-panel-ruleview .ruleview-ruleclose")
+    .focus();
 }
 
 function clickInComputedView(inspector) {
