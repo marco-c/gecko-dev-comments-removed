@@ -41,7 +41,7 @@ static T get_real_symbol(const char* aName, T aReplacementSymbol) {
   T real_symbol = dlsym_wrapper<T>(RTLD_NEXT, aName);
 
 #if defined(ANDROID)
-  if (real_symbol == nullptr) {
+  if ((real_symbol == nullptr) || (real_symbol == aReplacementSymbol)) {
     
     
     
