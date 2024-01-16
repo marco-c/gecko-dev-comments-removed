@@ -394,14 +394,12 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
       static_cast<ffmpeg::FFmpegBitRate>(mConfig.mBitrate);
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
-  if (mConfig.mFramerate) {
-    mCodecContext->time_base =
-        AVRational{.num = 1, .den = static_cast<int>(mConfig.mFramerate)};
-  } else {
-    
-    mCodecContext->time_base = AVRational{.num = 1, .den = 90000};
-  }
+  
+  
+  mCodecContext->time_base =
+      AVRational{.num = 1, .den = static_cast<int>(USECS_PER_S)};
 #if LIBAVCODEC_VERSION_MAJOR >= 57
+  
   mCodecContext->framerate =
       AVRational{.num = static_cast<int>(mConfig.mFramerate), .den = 1};
 #endif
@@ -704,15 +702,19 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegVideoEncoder<
   }
 
   
+  
+  
+  
+#  if LIBAVCODEC_VERSION_MAJOR >= 59
+  mFrame->time_base =
+      AVRational{.num = 1, .den = static_cast<int>(USECS_PER_S)};
+#  endif
   mFrame->pts = aSample->mTime.ToMicroseconds();
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
   mFrame->duration = aSample->mDuration.ToMicroseconds();
   mFrame->pkt_duration = aSample->mDuration.ToMicroseconds();
 #  else
   mFrame->pkt_duration = aSample->mDuration.ToMicroseconds();
-#  endif
-#  if LIBAVCODEC_VERSION_MAJOR >= 59
-  mFrame->time_base = {1, USECS_PER_S};
 #  endif
 
   
@@ -883,6 +885,8 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
   }
 
   data->mKeyframe = (aPacket->flags & AV_PKT_FLAG_KEY) != 0;
+  
+  
   
   data->mTime = media::TimeUnit::FromMicroseconds(aPacket->pts);
   data->mDuration = media::TimeUnit::FromMicroseconds(aPacket->duration);
