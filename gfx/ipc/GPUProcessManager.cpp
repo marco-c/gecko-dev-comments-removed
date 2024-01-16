@@ -276,8 +276,8 @@ bool GPUProcessManager::MaybeDisableGPUProcess(const char* aMessage,
     mLastErrorMsg.reset();
   } else {
     wantRestart = gfxPlatform::FallbackFromAcceleration(
-        FeatureStatus::Unavailable, "GPU Process is disabled",
-        "FEATURE_FAILURE_GPU_PROCESS_DISABLED"_ns);
+        FeatureStatus::Unavailable, aMessage,
+        "FEATURE_FAILURE_GPU_PROCESS_ERROR"_ns);
   }
   if (aAllowRestart && wantRestart) {
     
@@ -322,7 +322,8 @@ bool GPUProcessManager::MaybeDisableGPUProcess(const char* aMessage,
   return true;
 }
 
-nsresult GPUProcessManager::EnsureGPUReady() {
+nsresult GPUProcessManager::EnsureGPUReady(
+    bool aRetryAfterFallback ) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -330,31 +331,40 @@ nsresult GPUProcessManager::EnsureGPUReady() {
   
   bool inShutdown = AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown);
 
-  
-  if (!mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-    if (NS_WARN_IF(inShutdown)) {
-      return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  while (true) {
+    
+    
+    if (!mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+      if (NS_WARN_IF(inShutdown)) {
+        return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+      }
+
+      if (!LaunchGPUProcess()) {
+        return NS_ERROR_FAILURE;
+      }
     }
 
-    if (!LaunchGPUProcess()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-  }
+    if (mProcess && !mProcess->IsConnected()) {
+      if (NS_WARN_IF(inShutdown)) {
+        return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+      }
 
-  if (mProcess && !mProcess->IsConnected()) {
-    if (NS_WARN_IF(inShutdown)) {
-      return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+      if (!mProcess->WaitForLaunch()) {
+        
+        
+        MOZ_ASSERT(!mProcess && !mGPUChild);
+        return NS_ERROR_FAILURE;
+      }
     }
 
-    if (!mProcess->WaitForLaunch()) {
-      
-      
-      MOZ_ASSERT(!mProcess && !mGPUChild);
-      return NS_ERROR_NOT_AVAILABLE;
+    
+    
+    
+    if (!mGPUChild) {
+      MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+      break;
     }
-  }
 
-  if (mGPUChild) {
     if (mGPUChild->EnsureGPUReady()) {
       return NS_OK;
     }
@@ -362,9 +372,22 @@ nsresult GPUProcessManager::EnsureGPUReady() {
     
     
     
+    if (MaybeDisableGPUProcess("Failed to initialize GPU process",
+                                true)) {
+      MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+      break;
+    }
+
     
     
-    DisableGPUProcess("Failed to initialize GPU process");
+    
+    MOZ_DIAGNOSTIC_ASSERT(gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+    OnBlockingProcessUnexpectedShutdown();
+
+    
+    if (!aRetryAfterFallback) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
   }
 
   
@@ -374,7 +397,7 @@ nsresult GPUProcessManager::EnsureGPUReady() {
     }
     ResetProcessStable();
   }
-  return NS_ERROR_NOT_AVAILABLE;
+  return NS_ERROR_FAILURE;
 }
 
 bool GPUProcessManager::EnsureProtocolsReady() {
@@ -783,6 +806,15 @@ void GPUProcessManager::NotifyListenersOnCompositeDeviceReset() {
   }
 }
 
+void GPUProcessManager::OnBlockingProcessUnexpectedShutdown() {
+  if (mProcess) {
+    CompositorManagerChild::OnGPUProcessLost(mProcess->GetProcessToken());
+  }
+  DestroyProcess( true);
+  mUnstableProcessAttempts = 0;
+  HandleProcessLost();
+}
+
 void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
   MOZ_ASSERT(mProcess && mProcess == aHost);
 
@@ -800,8 +832,11 @@ void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
                    mTotalProcessAttempts);
     if (!MaybeDisableGPUProcess(disableMessage,  true)) {
       
+      MOZ_DIAGNOSTIC_ASSERT(gfxConfig::IsEnabled(Feature::GPU_PROCESS));
       mUnstableProcessAttempts = 0;
       HandleProcessLost();
+    } else {
+      MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
     }
   } else if (mUnstableProcessAttempts >
                  uint32_t(StaticPrefs::
@@ -1037,15 +1072,22 @@ already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
 
   LayersId layerTreeId = AllocateLayerTreeId();
 
-  if (!EnsureProtocolsReady()) {
+  RefPtr<CompositorSession> session;
+
+  nsresult rv = EnsureGPUReady( false);
+  if (NS_WARN_IF(rv == NS_ERROR_ILLEGAL_DURING_SHUTDOWN)) {
     *aRetryOut = false;
     return nullptr;
   }
 
-  RefPtr<CompositorSession> session;
+  
+  
+  if (rv == NS_ERROR_NOT_AVAILABLE) {
+    *aRetryOut = true;
+    return nullptr;
+  }
 
-  nsresult rv = EnsureGPUReady();
-  if (NS_WARN_IF(rv == NS_ERROR_ILLEGAL_DURING_SHUTDOWN)) {
+  if (!EnsureProtocolsReady()) {
     *aRetryOut = false;
     return nullptr;
   }
@@ -1054,9 +1096,15 @@ already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
     session = CreateRemoteSession(aWidget, aLayerManager, layerTreeId, aScale,
                                   aOptions, aUseExternalSurfaceSize,
                                   aSurfaceSize, aInnerWindowId);
-    if (!session) {
-      
-      DisableGPUProcess("Failed to create remote compositor");
+    if (NS_WARN_IF(!session)) {
+      if (!MaybeDisableGPUProcess("Failed to create remote compositor",
+                                   true)) {
+        
+        MOZ_DIAGNOSTIC_ASSERT(gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+        OnBlockingProcessUnexpectedShutdown();
+      } else {
+        MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+      }
       *aRetryOut = true;
       return nullptr;
     }

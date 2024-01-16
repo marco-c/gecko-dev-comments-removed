@@ -96,7 +96,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
-  nsresult EnsureGPUReady();
+  nsresult EnsureGPUReady(bool aRetryAfterFallback = true);
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
       nsBaseWidget* aWidget, WebRenderLayerManager* aLayerManager,
@@ -241,6 +241,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   void DestroyRemoteCompositorSessions();
   void DestroyInProcessCompositorSessions();
+
+  void OnBlockingProcessUnexpectedShutdown();
 
   
   
