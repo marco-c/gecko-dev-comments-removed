@@ -9980,10 +9980,7 @@ var FirefoxViewHandler = {
       this.button.removeAttribute("open");
     }
   },
-  openTab(event) {
-    if (event?.type == "mousedown" && event?.button != 0) {
-      return;
-    }
+  openTab(section) {
     if (!CustomizableUI.getPlacementOfWidget(this.BUTTON_ID)) {
       CustomizableUI.addWidgetToArea(
         this.BUTTON_ID,
@@ -9991,7 +9988,10 @@ var FirefoxViewHandler = {
         CustomizableUI.getPlacementOfWidget("tabbrowser-tabs").position
       );
     }
-    const viewURL = "about:firefoxview";
+    let viewURL = "about:firefoxview";
+    if (section) {
+      viewURL = `${viewURL}#${section}`;
+    }
     
     if (
       this.tab &&
@@ -10012,6 +10012,12 @@ var FirefoxViewHandler = {
     
     this._closeDeviceConnectedTab();
     gBrowser.selectedTab = this.tab;
+  },
+  openToolbarMouseEvent(event, section) {
+    if (event?.type == "mousedown" && event?.button != 0) {
+      return;
+    }
+    this.openTab(section);
   },
   handleEvent(e) {
     switch (e.type) {
