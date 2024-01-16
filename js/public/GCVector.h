@@ -175,10 +175,13 @@ class GCVector {
   }
 
   
+  
   template <typename Pred>
-  void mutableEraseIf(Pred pred) {
-    T* src = begin();
-    T* dst = begin();
+  void mutableEraseIf(Pred pred, size_t startIndex = 0) {
+    MOZ_ASSERT(startIndex <= length());
+
+    T* src = begin() + startIndex;
+    T* dst = src;
     while (src != end()) {
       if (!pred(*src)) {
         if (src != dst) {

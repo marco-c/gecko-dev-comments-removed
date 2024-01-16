@@ -551,8 +551,25 @@ ArrayBufferObjectMaybeShared* CreateWasmBuffer(JSContext* cx,
 
 
 class InnerViewTable {
+  
+  
+  
   using ViewVector =
       GCVector<UnsafeBarePtr<ArrayBufferViewObject*>, 1, ZoneAllocPolicy>;
+  struct Views {
+    ViewVector views;  
+    size_t firstNurseryView = 0;
+
+    explicit Views(JS::Zone* zone) : views(zone) {}
+    bool empty();
+    bool hasNurseryViews();
+    bool addView(ArrayBufferViewObject* view);
+
+    bool traceWeak(JSTracer* trc, size_t startIndex = 0);
+    bool sweepAfterMinorGC(JSTracer* trc);
+
+    void check();
+  };
 
   
   
@@ -566,7 +583,7 @@ class InnerViewTable {
   
   
   using ArrayBufferViewMap =
-      GCHashMap<UnsafeBarePtr<ArrayBufferObject*>, ViewVector,
+      GCHashMap<UnsafeBarePtr<ArrayBufferObject*>, Views,
                 StableCellHasher<JSObject*>, ZoneAllocPolicy>;
   ArrayBufferViewMap map;
 
