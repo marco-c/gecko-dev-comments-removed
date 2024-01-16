@@ -1,6 +1,8 @@
 
 
 
+
+
 const CARD_COLLAPSED_EVENT = [
   ["firefoxview_next", "card_collapsed", "card_container", undefined],
 ];

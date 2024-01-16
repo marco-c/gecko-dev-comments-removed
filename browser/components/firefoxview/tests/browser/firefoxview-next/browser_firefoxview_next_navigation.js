@@ -1,6 +1,8 @@
 
 
 
+
+
 const URL_BASE = `${getFirefoxViewURL()}#`;
 
 function assertCorrectPage(document, name, event) {
