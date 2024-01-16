@@ -1043,8 +1043,46 @@ function assertIsVisible(expected, { element, id }) {
 
 
 
-async function openContextMenu(runInPage, { openAtSpanishParagraph }) {
+
+
+
+
+
+async function openContextMenu(
+  runInPage,
+  {
+    selectFirstParagraph,
+    selectSpanishParagraph,
+    openAtFirstParagraph,
+    openAtSpanishParagraph,
+  }
+) {
   logAction();
+
+  if (selectFirstParagraph === true) {
+    await runInPage(async TranslationsTest => {
+      const { getFirstParagraph } = TranslationsTest.getSelectors();
+      const paragraph = getFirstParagraph();
+      TranslationsTest.selectContentElement(paragraph);
+    });
+  }
+
+  if (selectSpanishParagraph === true) {
+    await runInPage(async TranslationsTest => {
+      const { getSpanishParagraph } = TranslationsTest.getSelectors();
+      const paragraph = getSpanishParagraph();
+      TranslationsTest.selectContentElement(paragraph);
+    });
+  }
+
+  if (openAtFirstParagraph === true) {
+    await runInPage(async TranslationsTest => {
+      const { getFirstParagraph } = TranslationsTest.getSelectors();
+      const paragraph = getFirstParagraph();
+      await TranslationsTest.rightClickContentElement(paragraph);
+    });
+    return;
+  }
 
   if (openAtSpanishParagraph === true) {
     await runInPage(async TranslationsTest => {
@@ -1072,9 +1110,21 @@ async function openContextMenu(runInPage, { openAtSpanishParagraph }) {
 
 
 
+
+
+
+
+
 async function assertContextMenuTranslateSelectionItem(
   runInPage,
-  { expectMenuItemVisible, openAtSpanishParagraph },
+  {
+    selectFirstParagraph,
+    selectSpanishParagraph,
+    expectMenuItemIsVisible,
+    expectedTargetLanguage,
+    openAtFirstParagraph,
+    openAtSpanishParagraph,
+  },
   message
 ) {
   logAction();
@@ -1086,15 +1136,58 @@ async function assertContextMenuTranslateSelectionItem(
   await closeTranslationsPanelIfOpen();
   await closeContextMenuIfOpen();
 
-  await openContextMenu(runInPage, { openAtSpanishParagraph });
+  await openContextMenu(runInPage, {
+    selectFirstParagraph,
+    selectSpanishParagraph,
+    openAtFirstParagraph,
+    openAtSpanishParagraph,
+  });
 
   const menuItem = maybeGetById(
     "context-translate-selection",
      false
   );
 
-  if (expectMenuItemVisible !== undefined) {
-    assertIsVisible(expectMenuItemVisible, { element: menuItem });
+  if (expectMenuItemIsVisible !== undefined) {
+    assertIsVisible(expectMenuItemIsVisible, { element: menuItem });
+  }
+
+  if (expectMenuItemIsVisible === true) {
+    if (expectedTargetLanguage) {
+      
+      const expectedL10nId =
+        "main-context-menu-translate-selection-to-language";
+      await waitForCondition(
+        () => menuItem.getAttribute("data-l10n-id") === expectedL10nId,
+        `Waiting for translate-selection context menu item to localize with target language ${expectedTargetLanguage}`
+      );
+
+      is(
+        menuItem.getAttribute("data-l10n-id"),
+        expectedL10nId,
+        "Expected the translate-selection context menu item to be localized with a target language."
+      );
+
+      const l10nArgs = JSON.parse(menuItem.getAttribute("data-l10n-args"));
+      is(
+        l10nArgs.language,
+        getIntlDisplayName(expectedTargetLanguage),
+        `Expected the translate-selection context menu item to have the target language '${expectedTargetLanguage}'.`
+      );
+    } else {
+      
+      const expectedL10nId = "main-context-menu-translate-selection";
+      await waitForCondition(
+        () => menuItem.getAttribute("data-l10n-id") === expectedL10nId,
+        "Waiting for translate-selection context menu item to localize without target language."
+      );
+
+      is(
+        menuItem.getAttribute("data-l10n-id"),
+        expectedL10nId,
+        "Expected the translate-selection context menu item to be localized without a target language."
+      );
+    }
   }
 
   await closeContextMenuIfOpen();

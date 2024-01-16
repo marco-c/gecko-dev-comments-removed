@@ -2464,12 +2464,41 @@ class nsContextMenu {
       "browser.translations.select.enable"
     );
 
-    translateSelectionItem.hidden = !(
-      translationsEnabled && selectTranslationsEnabled
-    );
+    const translatableText = this.selectedText.trim();
+
+    translateSelectionItem.hidden =
+      
+      !(translationsEnabled && selectTranslationsEnabled) ||
+      
+      translatableText.length === 0;
 
     if (translateSelectionItem.hidden) {
       return;
+    }
+
+    const preferredLanguages =
+      nsContextMenu.TranslationsParent.getPreferredLanguages();
+    const topPreferredLanguage = preferredLanguages[0];
+
+    if (topPreferredLanguage) {
+      const { language } = await nsContextMenu.LanguageDetector.detectLanguage(
+        translatableText
+      );
+      if (topPreferredLanguage !== language) {
+        try {
+          const dn = new Services.intl.DisplayNames(undefined, {
+            type: "language",
+          });
+          document.l10n.setAttributes(
+            translateSelectionItem,
+            "main-context-menu-translate-selection-to-language",
+            { language: dn.of(topPreferredLanguage) }
+          );
+          return;
+        } catch {
+          
+        }
+      }
     }
 
     document.l10n.setAttributes(
@@ -2580,8 +2609,11 @@ class nsContextMenu {
 
 ChromeUtils.defineESModuleGetters(nsContextMenu, {
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
+  LanguageDetector:
+    "resource://gre/modules/translation/LanguageDetector.sys.mjs",
   LoginManagerContextMenu:
     "resource://gre/modules/LoginManagerContextMenu.sys.mjs",
+  TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
 });
 

@@ -44,3 +44,38 @@ add_task(
     await cleanup();
   }
 );
+
+
+
+
+
+
+
+add_task(
+  async function test_translate_selection_menuitem_is_unavailable_with_feature_disabled_and_text_selected() {
+    const { cleanup, runInPage } = await loadTestPage({
+      page: SPANISH_PAGE_URL,
+      languagePairs: LANGUAGE_PAIRS,
+      prefs: [["browser.translations.select.enable", false]],
+    });
+
+    await assertTranslationsButton(
+      { button: true, circleArrows: false, locale: false, icon: true },
+      "The button is available."
+    );
+
+    await assertPageIsUntranslated(runInPage);
+
+    await assertContextMenuTranslateSelectionItem(
+      runInPage,
+      {
+        selectSpanishParagraph: true,
+        openAtSpanishParagraph: true,
+        expectMenuItemVisible: false,
+      },
+      "The translate-selection context menu item should be unavailable when the feature is disabled."
+    );
+
+    await cleanup();
+  }
+);
