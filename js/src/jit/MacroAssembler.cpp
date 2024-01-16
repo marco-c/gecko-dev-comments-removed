@@ -7639,18 +7639,7 @@ void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
   move64(value.toRegister64(), r64);
   rshift64Arithmetic(Imm32(32), r64);
 #else
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  move32(value.typeReg(), temp);
 #endif
 
   
@@ -7660,9 +7649,7 @@ void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
   
   
   rotateLeft(Imm32(5), result, result);
-#ifdef JS_PUNBOX64
   xor32(temp, result);
-#endif
 
   
   
