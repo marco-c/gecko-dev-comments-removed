@@ -39,7 +39,7 @@
 #include "nsGkAtoms.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsChangeHint.h"
-#include "gfxFont.h"
+#include "gfxTypes.h"
 #include "gfxRect.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -932,10 +932,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void FlushFontPaletteValues();
   void MarkFontPaletteValuesDirty() { mFontPaletteValuesDirty = true; }
 
-  mozilla::gfx::COLRFonts::PaletteCache& FontPaletteCache() {
-    return mFontPaletteCache;
-  }
-
   
   
   
@@ -1203,8 +1199,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   const nsStaticAtom* mMedium;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
   RefPtr<mozilla::gfx::FontPaletteValueSet> mFontPaletteValueSet;
-
-  mozilla::gfx::COLRFonts::PaletteCache mFontPaletteCache;
 
   
   
