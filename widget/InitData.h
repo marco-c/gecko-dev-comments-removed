@@ -105,6 +105,8 @@ struct InitData {
   
   bool mResizable = false;
   bool mIsPrivate = false;
+  
+  bool mIsAlert = false;
 };
 
 }  
