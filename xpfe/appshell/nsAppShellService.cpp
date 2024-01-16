@@ -32,7 +32,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/StartupTimeline.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/Try.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -496,8 +495,9 @@ uint32_t nsAppShellService::CalculateWindowZLevel(nsIAppWindow* aParent,
 
 
 
-  if ((aChromeMask & nsIWebBrowserChrome::CHROME_DEPENDENT) && aParent)
+  if ((aChromeMask & nsIWebBrowserChrome::CHROME_DEPENDENT) && aParent) {
     aParent->GetZLevel(&zLevel);
+  }
 #endif
 
   return zLevel;
@@ -558,23 +558,26 @@ nsresult nsAppShellService::JustCreateTopWindow(
 #endif
 
   widget::InitData widgetInitData;
-
-  if (aIsHiddenWindow)
+  if (aIsHiddenWindow) {
     widgetInitData.mWindowType = widget::WindowType::Invisible;
-  else
+  } else {
     widgetInitData.mWindowType =
         aChromeMask & nsIWebBrowserChrome::CHROME_OPENAS_DIALOG
             ? widget::WindowType::Dialog
             : widget::WindowType::TopLevel;
+  }
 
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_SUPPRESS_ANIMATION)
+  if (aChromeMask & nsIWebBrowserChrome::CHROME_SUPPRESS_ANIMATION) {
     widgetInitData.mIsAnimationSuppressed = true;
+  }
 
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP)
+  if (aChromeMask & nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP) {
     widgetInitData.mAlwaysOnTop = true;
+  }
 
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW)
+  if (aChromeMask & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW) {
     widgetInitData.mHasRemoteContent = true;
+  }
 
 #if defined(MOZ_WIDGET_GTK) || defined(XP_WIN)
   
@@ -617,31 +620,36 @@ nsresult nsAppShellService::JustCreateTopWindow(
 
   
   
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_DEFAULT)
+  if (aChromeMask & nsIWebBrowserChrome::CHROME_DEFAULT) {
     widgetInitData.mBorderStyle = BorderStyle::Default;
-  else if ((aChromeMask & nsIWebBrowserChrome::CHROME_ALL) ==
-           nsIWebBrowserChrome::CHROME_ALL)
+  } else if ((aChromeMask & nsIWebBrowserChrome::CHROME_ALL) ==
+             nsIWebBrowserChrome::CHROME_ALL) {
     widgetInitData.mBorderStyle = BorderStyle::All;
-  else {
+  } else {
     widgetInitData.mBorderStyle = BorderStyle::None;  
-    if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_BORDERS)
+    if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_BORDERS) {
       widgetInitData.mBorderStyle |= BorderStyle::Border;
-    if (aChromeMask & nsIWebBrowserChrome::CHROME_TITLEBAR)
+    }
+    if (aChromeMask & nsIWebBrowserChrome::CHROME_TITLEBAR) {
       widgetInitData.mBorderStyle |= BorderStyle::Title;
-    if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_CLOSE)
+    }
+    if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_CLOSE) {
       widgetInitData.mBorderStyle |= BorderStyle::Close;
+    }
     if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_RESIZE) {
       widgetInitData.mResizable = true;
       widgetInitData.mBorderStyle |= BorderStyle::ResizeH;
       
-      if (!(aChromeMask & nsIWebBrowserChrome::CHROME_OPENAS_DIALOG))
+      if (!(aChromeMask & nsIWebBrowserChrome::CHROME_OPENAS_DIALOG)) {
         widgetInitData.mBorderStyle |= BorderStyle::Maximize;
+      }
     }
     
-    if (!(aChromeMask & nsIWebBrowserChrome::CHROME_OPENAS_DIALOG))
+    if (!(aChromeMask & nsIWebBrowserChrome::CHROME_OPENAS_DIALOG)) {
       widgetInitData.mBorderStyle |= BorderStyle::Minimize | BorderStyle::Menu;
+    }
     
-    if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_MIN) {
+    if (aChromeMask & nsIWebBrowserChrome::CHROME_WINDOW_MINIMIZE) {
       widgetInitData.mBorderStyle |= BorderStyle::Minimize;
     }
   }
