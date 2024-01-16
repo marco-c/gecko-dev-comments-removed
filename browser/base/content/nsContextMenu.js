@@ -2453,6 +2453,39 @@ class nsContextMenu {
   
 
 
+
+
+  static #getTranslationsActor() {
+    const actor =
+      gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
+        "Translations"
+      );
+
+    if (!actor) {
+      throw new Error("Unable to get the TranslationsParent");
+    }
+    return actor;
+  }
+
+  
+
+
+
+
+  static #isFullPageTranslationsActive() {
+    try {
+      const { requestedTranslationPair } =
+        this.#getTranslationsActor().languageState;
+      return requestedTranslationPair !== null;
+    } catch {
+      
+    }
+    return false;
+  }
+
+  
+
+
   async showTranslateSelectionItem() {
     const translateSelectionItem = document.getElementById(
       "context-translate-selection"
@@ -2473,7 +2506,9 @@ class nsContextMenu {
       
       !(translationsEnabled && selectTranslationsEnabled) ||
       
-      translatableText.length === 0;
+      translatableText.length === 0 ||
+      
+      nsContextMenu.#isFullPageTranslationsActive();
 
     if (translateSelectionItem.hidden) {
       return;
