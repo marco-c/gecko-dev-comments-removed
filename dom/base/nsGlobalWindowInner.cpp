@@ -2150,7 +2150,8 @@ void nsGlobalWindowInner::FireFrameLoadEvent() {
   
   RefPtr<BrowserChild> browserChild =
       BrowserChild::GetFrom(static_cast<nsPIDOMWindowInner*>(this));
-  if (browserChild) {
+  if (browserChild &&
+      !GetBrowsingContext()->GetParentWindowContext()->IsInProcess()) {
     
     
     
