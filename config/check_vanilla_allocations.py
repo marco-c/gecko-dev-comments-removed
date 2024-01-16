@@ -147,10 +147,6 @@ def main():
         "Decimal.o",
         
         "regexp-ast.o",
-        
-        
-        
-        "Debug.o",
     ]
     all_ignored_files = set((f, 1) for f in ignored_files)
 

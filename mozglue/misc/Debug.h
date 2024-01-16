@@ -7,16 +7,24 @@
 #ifndef mozilla_glue_Debug_h
 #define mozilla_glue_Debug_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/Types.h"       
-
-#include <cstdarg>
-#include <sstream>
 
 
 
 
 
+
+
+
+#include <io.h>
+#if defined(XP_WIN)
+#  include <windows.h>
+#endif  
+#include "mozilla/Attributes.h"
+#include "mozilla/Sprintf.h"
+
+#if defined(MOZILLA_INTERNAL_API)
+#  error Do not include this file from XUL sources.
+#endif
 
 
 
@@ -25,49 +33,34 @@
 extern "C" {
 #endif
 
+void printf_stderr(const char* fmt, ...) MOZ_FORMAT_PRINTF(1, 2);
+inline void printf_stderr(const char* fmt, ...) {
+#if defined(XP_WIN)
+  if (IsDebuggerPresent()) {
+    char buf[2048];
+    va_list args;
+    va_start(args, fmt);
+    VsprintfLiteral(buf, fmt, args);
+    va_end(args);
+    OutputDebugStringA(buf);
+  }
+#endif  
 
+  
+  
+  int fd = _fileno(stderr);
+  if (fd == -2) return;
 
+  FILE* fp = _fdopen(_dup(fd), "a");
+  if (!fp) return;
 
+  va_list args;
+  va_start(args, fmt);
+  vfprintf(fp, fmt, args);
+  va_end(args);
 
-
-
-
-
-
-MFBT_API void printf_stderr(const char* aFmt, ...) MOZ_FORMAT_PRINTF(1, 2);
-
-
-
-
-MFBT_API void vprintf_stderr(const char* aFmt, va_list aArgs)
-    MOZ_FORMAT_PRINTF(1, 0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-MFBT_API void fprintf_stderr(FILE* aFile, const char* aFmt, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
-
-
-
-
-
-
-
-MFBT_API void print_stderr(std::stringstream& aStr);
-MFBT_API void fprint_stderr(FILE* aFile, std::stringstream& aStr);
+  fclose(fp);
+}
 
 #ifdef __cplusplus
 }

@@ -69,7 +69,6 @@ included_inclnames_to_ignore = set(
         "jit/LIROpsGenerated.h",  
         "jit/MIROpsGenerated.h",  
         "js/ProfilingCategoryList.h",  
-        "mozilla/glue/Debug.h",  
         "jscustomallocator.h",  
         "js-config.h",  
         "fdlibm.h",  
