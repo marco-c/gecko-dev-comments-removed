@@ -3829,27 +3829,6 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
 
         self.cls.addstmts([dtor, Whitespace.NL])
 
-        
-        actoralloc = MethodDefn(MethodDecl("ActorAlloc", methodspec=MethodSpec.FINAL))
-        actordealloc = MethodDefn(
-            MethodDecl("ActorDealloc", methodspec=MethodSpec.FINAL)
-        )
-
-        
-        procattr = p.procAttribute(self.side)
-        if procattr not in ("any", None):
-            if procattr == "anychild":
-                procattr_assertion = "!XRE_IsParentProcess()"
-            elif procattr == "anydom":
-                procattr_assertion = "XRE_IsParentProcess() || XRE_IsContentProcess()"
-            elif procattr == "compositor":
-                procattr_assertion = "XRE_IsParentProcess() || XRE_IsGPUProcess()"
-            else:
-                procattr_assertion = "XRE_Is%sProcess()" % procattr
-            actoralloc.addcode(
-                "MOZ_RELEASE_ASSERT(${assertion});\n", assertion=procattr_assertion
-            )
-
         if ptype.isRefcounted():
             if not ptype.isToplevel():
                 self.cls.addcode(
@@ -3857,22 +3836,13 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                     NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
                     """
                 )
-            
-            actoralloc.addcode("AddRef();\n")
-            actordealloc.addcode("Release();\n")
-        elif not ptype.isToplevel():
-            
-            
-            actordealloc.addcode(
+            self.cls.addstmt(Label.PROTECTED)
+            self.cls.addcode(
                 """
-                if (Manager()) {
-                    Manager()->DeallocManagee(${protocolId}, this);
-                }
-                """,
-                protocolId=_protocolId(ptype),
+                void ActorAlloc() final { AddRef(); }
+                void ActorDealloc() final { Release(); }
+                """
             )
-
-        self.cls.addstmts([Label.PROTECTED, actoralloc, actordealloc])
 
         self.cls.addstmt(Label.PUBLIC)
         if ptype.hasOtherPid():

@@ -11,7 +11,7 @@ namespace gfx {
 
 
 
-[NeedsOtherPid, ChildImpl="VRGPUChild", ParentImpl="VRGPUParent", ParentProc=VR, ChildProc=GPU]
+[NeedsOtherPid, ChildImpl="VRGPUChild", ParentImpl="VRGPUParent"]
 async protocol PVRGPU
 {
 parent:

@@ -22,7 +22,6 @@ namespace net {
 
 
 
-[ChildProc=Socket]
 sync protocol PSocketProcessBackground
 {
 parent:
