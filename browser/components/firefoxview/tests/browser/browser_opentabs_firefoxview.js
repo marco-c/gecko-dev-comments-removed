@@ -1,8 +1,6 @@
 
 
 
-
-
 const TEST_URL1 = "about:robots";
 const TEST_URL2 = "https://example.org/";
 const TEST_URL3 = "about:mozilla";
