@@ -1,25 +1,18 @@
-
-
-
-
-
-
 function delayByFrames(f, num_frames) {
   function recurse(depth) {
-    if (depth == 0) f();
-    else requestAnimationFrame(() => recurse(depth - 1));
+    if (depth == 0)
+      f();
+    else
+      requestAnimationFrame(() => recurse(depth-1));
   }
   recurse(num_frames);
 }
 
 
 
-
-
-
-function getEvent(eventType, options = { once: true }) {
-  return new Promise((resolve) => {
-    document.body.addEventListener(eventType, resolve, options);
+function getEvent(eventType) {
+  return new Promise(resolve => {
+    document.body.addEventListener(eventType, e => resolve(e), {once: true});
   });
 }
 
@@ -28,28 +21,16 @@ function getEvent(eventType, options = { once: true }) {
 
 
 
-async function consumeTransientActivation(context = window) {
-  if (!context.navigator.userActivation.isActive) {
-    throw new Error(
-      "User activation is not active so can't be consumed. Something is probably wrong with the test."
-    );
+
+async function consumeTransientActivation() {
+  try {
+    await document.body.requestFullscreen();
+    await document.exitFullscreen();
+    return true;
+  } catch(e) {
+    return false;
   }
-  if (test_driver?.consume_user_activation) {
-    return test_driver.consume_user_activation(context);
-  }
-  
-  if (!context.document.fullscreenElement) {
-    await context.document.documentElement.requestFullscreen();
-  }
-  await context.document.exitFullscreen();
-  return !context.navigator.userActivation.isActive;
 }
-
-
-
-
-
-
 
 function receiveMessage(type) {
   return new Promise((resolve) => {
@@ -64,20 +45,4 @@ function receiveMessage(type) {
       }
     });
   });
-}
-
-
-
-
-
-
-
-async function attachIframe(src, document = window.document) {
-  const iframe = document.createElement("iframe");
-  await new Promise((resolve) => {
-    iframe.addEventListener("load", resolve, { once: true });
-    document.body.appendChild(iframe);
-    iframe.src = src;
-  });
-  return iframe;
 }
