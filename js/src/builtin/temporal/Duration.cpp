@@ -4622,11 +4622,9 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   }
 
   
-
-  
-  
   if (oneYearDays == 0) {
-    JS_ReportErrorASCII(cx, "division by zero");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_INVALID_NUMBER, "days");
     return false;
   }
 
@@ -4783,11 +4781,9 @@ static bool RoundDurationMonth(
   }
 
   
-
-  
-  
   if (oneMonthDays == 0) {
-    JS_ReportErrorASCII(cx, "division by zero");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_INVALID_NUMBER, "days");
     return false;
   }
 
@@ -4916,11 +4912,9 @@ static bool RoundDurationWeek(JSContext* cx, const Duration& duration,
   }
 
   
-
-  
-  
   if (oneWeekDays == 0) {
-    JS_ReportErrorASCII(cx, "division by zero");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_INVALID_NUMBER, "days");
     return false;
   }
 
