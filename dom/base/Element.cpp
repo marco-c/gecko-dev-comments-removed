@@ -241,11 +241,6 @@ ASSERT_NODE_SIZE(Text, 120, 80);
 #undef ASSERT_NODE_SIZE
 #undef EXTRA_DOM_NODE_BYTES
 
-
-
-
-#define LINK_ACTIVATE_EVENT (1 << 0)
-
 }  
 
 nsAtom* nsIContent::DoGetID() const {
@@ -3167,7 +3162,6 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     case eFocus:
     case eMouseOut:
     case eBlur:
-    case eMouseClick:
       break;
     default:
       return;
@@ -3213,17 +3207,6 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
       nsresult rv = LeaveLink(aVisitor.mPresContext);
       if (NS_SUCCEEDED(rv)) {
         aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
-      }
-      break;
-    }
-    case eMouseClick: {
-      
-      
-      
-      WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-      if (mouseEvent && mouseEvent->IsLeftClickEvent() &&
-          !aVisitor.mEvent->mFlags.mMultipleActivationPrevented) {
-        aVisitor.mItemFlags |= LINK_ACTIVATE_EVENT;
       }
       break;
     }
@@ -3347,11 +3330,7 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
 
     case eMouseClick: {
       WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-      if (mouseEvent->IsLeftClickEvent() &&
-          
-          
-          
-          (aVisitor.mItemFlags & LINK_ACTIVATE_EVENT)) {
+      if (mouseEvent->IsLeftClickEvent()) {
         if (!mouseEvent->IsControl() && !mouseEvent->IsMeta() &&
             !mouseEvent->IsAlt() && !mouseEvent->IsShift()) {
           if (OwnerDoc()->MayHaveDOMActivateListeners()) {
