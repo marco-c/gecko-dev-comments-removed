@@ -175,9 +175,7 @@ add_task(async function setup() {
   
   if (AppConstants.MOZ_BUILD_APP == "browser") {
     TelemetryEnvironmentTesting.spoofAttributionData();
-    registerCleanupFunction(async function () {
-      await TelemetryEnvironmentTesting.cleanupAttributionData;
-    });
+    registerCleanupFunction(TelemetryEnvironmentTesting.cleanupAttributionData);
   }
 
   await TelemetryEnvironmentTesting.spoofProfileReset();

@@ -1865,7 +1865,12 @@ class _ASRouter {
         encodeURIComponent(attributionData)
       );
     } else if (AppConstants.platform === "macosx") {
-      await this.setAttributionString(encodeURIComponent(attributionData));
+      await this.setAttributionString(
+        `__MOZCUSTOM__${encodeURIComponent(attributionData)}`
+      );
+
+      
+      await AttributionCode.deleteFileAsync();
     }
 
     

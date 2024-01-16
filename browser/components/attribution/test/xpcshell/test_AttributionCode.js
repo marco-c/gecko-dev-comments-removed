@@ -39,14 +39,7 @@ add_task(async function testValidAttrCodes() {
       
       
       msixCampaignIdStub.callsFake(async () => decodeURIComponent(currentCode));
-    } else if (AppConstants.platform === "macosx") {
-      const { MacAttribution } = ChromeUtils.importESModule(
-        "resource:///modules/MacAttribution.sys.mjs"
-      );
-
-      await MacAttribution.setAttributionString(currentCode);
     } else {
-      
       await AttributionCode.writeAttributionFile(currentCode);
     }
     AttributionCode._clearCache();
@@ -87,14 +80,7 @@ add_task(async function testInvalidAttrCodes() {
       }
 
       msixCampaignIdStub.callsFake(async () => decodeURIComponent(currentCode));
-    } else if (AppConstants.platform === "macosx") {
-      const { MacAttribution } = ChromeUtils.importESModule(
-        "resource:///modules/MacAttribution.sys.mjs"
-      );
-
-      await MacAttribution.setAttributionString(currentCode);
     } else {
-      
       await AttributionCode.writeAttributionFile(currentCode);
     }
     AttributionCode._clearCache();
@@ -119,9 +105,8 @@ let condition = {
   
   
   skip_if: () =>
-    (AppConstants.platform === "win" &&
-      Services.sysinfo.getProperty("hasWinPackageId")) ||
-    AppConstants.platform === "macosx",
+    AppConstants.platform === "win" &&
+    Services.sysinfo.getProperty("hasWinPackageId"),
 };
 add_task(condition, async function testDeletedFile() {
   
