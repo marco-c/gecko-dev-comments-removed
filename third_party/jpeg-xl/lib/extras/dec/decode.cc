@@ -22,41 +22,30 @@ namespace {
 
 constexpr size_t kMinBytes = 9;
 
-void BasenameAndExtension(const std::string& path, std::string* filename,
-                          std::string* extension) {
+std::string GetExtension(const std::string& path) {
   
-  size_t pos = path.find_first_of(':');
+  size_t pos = path.find_last_of('.');
   if (pos != std::string::npos) {
-    *extension = "." + path.substr(0, pos);
-    *filename = path.substr(pos + 1);
-    
-    
-    return;
+    return path.substr(pos);
   }
 
   
-  pos = path.find_last_of('.');
-  if (pos != std::string::npos) {
-    *extension = path.substr(pos);
-    *filename = path;
-    return;
-  }
-
-  
-  *filename = path;
-  *extension = "";
+  return "";
 }
 
 }  
 
 Codec CodecFromPath(std::string path, size_t* JXL_RESTRICT bits_per_sample,
-                    std::string* filename, std::string* extension) {
+                    std::string* extension) {
   std::string base;
-  std::string ext;
-  BasenameAndExtension(path, &base, &ext);
-  if (filename) *filename = base;
-  if (extension) *extension = ext;
-
+  std::string ext = GetExtension(path);
+  if (extension) {
+    if (extension->empty()) {
+      *extension = ext;
+    } else {
+      ext = *extension;
+    }
+  }
   std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) {
     return std::tolower(c, std::locale::classic());
   });

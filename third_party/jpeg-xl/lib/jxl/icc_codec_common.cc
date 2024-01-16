@@ -81,8 +81,8 @@ void AppendKeyword(const Tag& keyword, PaddedBytes* data) {
 }
 
 
-Status CheckOutOfBounds(size_t a, size_t b, size_t size) {
-  size_t pos = a + b;
+Status CheckOutOfBounds(uint64_t a, uint64_t b, uint64_t size) {
+  uint64_t pos = a + b;
   if (pos > size) return JXL_FAILURE("Out of bounds");
   if (pos < a) return JXL_FAILURE("Out of bounds");  
   return true;

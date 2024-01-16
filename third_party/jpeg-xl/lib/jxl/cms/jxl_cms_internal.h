@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "lib/jxl/base/common.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/matrix_ops.h"
 #include "lib/jxl/base/span.h"  
@@ -1065,14 +1066,15 @@ static Status MaybeCreateProfileImpl(const JxlColorEncoding& c,
 
 
 
-static std::string ColorEncodingDescription(const JxlColorEncoding& c) {
+static JXL_MAYBE_UNUSED std::string ColorEncodingDescription(
+    const JxlColorEncoding& c) {
   return detail::ColorEncodingDescriptionImpl(c);
 }
 
 
 
-static Status MaybeCreateProfile(const JxlColorEncoding& c,
-                                 std::vector<uint8_t>* icc) {
+static JXL_MAYBE_UNUSED Status MaybeCreateProfile(const JxlColorEncoding& c,
+                                                  std::vector<uint8_t>* icc) {
   return detail::MaybeCreateProfileImpl(c, icc);
 }
 

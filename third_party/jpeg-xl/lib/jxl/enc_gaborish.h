@@ -19,7 +19,8 @@ namespace jxl {
 
 
 
-void GaborishInverse(Image3F* in_out, float mul[3], ThreadPool* pool);
+void GaborishInverse(Image3F* in_out, const Rect& rect, float mul[3],
+                     ThreadPool* pool);
 
 }  
 
