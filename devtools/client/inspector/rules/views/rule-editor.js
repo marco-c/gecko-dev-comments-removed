@@ -253,13 +253,6 @@ RuleEditor.prototype = {
           selectorContainer.append(
             this.doc.createTextNode(`@import ${ancestorData.value}`)
           );
-        } else if (ancestorData.selectorText) {
-          
-          
-          
-          selectorContainer.append(
-            this.doc.createTextNode(ancestorData.selectorText)
-          );
         } else if (ancestorData.selectors) {
           ancestorData.selectors.forEach((selector, i) => {
             if (i !== 0) {
