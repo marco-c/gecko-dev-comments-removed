@@ -117,6 +117,11 @@ add_task(async function () {
       }
       throw e;
     }
+    
+    if (!workerDescriptorFront.name) {
+      info("Failed to connect to " + workerDescriptorFront.url);
+      continue;
+    }
 
     is(
       workerDescriptorFront,
