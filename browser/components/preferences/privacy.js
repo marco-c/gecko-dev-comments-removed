@@ -2031,10 +2031,24 @@ var gPrivacyPane = {
 
 
   showClearPrivateDataSettings() {
+    let dialogFile = useOldClearHistoryDialog
+      ? "chrome://browser/content/preferences/dialogs/sanitize.xhtml"
+      : "chrome://browser/content/sanitize_v2.xhtml";
+
     gSubDialog.open(
-      "chrome://browser/content/preferences/dialogs/sanitize.xhtml",
-      { features: "resizable=no" }
+      dialogFile,
+      {
+        features: "resizable=no",
+      },
+      {
+        mode: "clearOnShutdown",
+        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
+      }
     );
+
+    
+    
+    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
   },
 
   
@@ -2490,10 +2504,25 @@ var gPrivacyPane = {
   },
 
   clearSiteData() {
+    
+    
+    let dialogFile = useOldClearHistoryDialog
+      ? "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml"
+      : "chrome://browser/content/sanitize_v2.xhtml";
+
     gSubDialog.open(
-      "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml",
-      { features: "resizable=no" }
+      dialogFile,
+      {
+        features: "resizable=no",
+      },
+      {
+        mode: "clearSiteData",
+        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
+      }
     );
+    
+    
+    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
   },
 
   

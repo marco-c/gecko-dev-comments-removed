@@ -37,6 +37,14 @@ Preferences.addAll([
   { id: "privacy.cpd.offlineApps", type: "bool" },
   { id: "privacy.cpd.siteSettings", type: "bool" },
   { id: "privacy.sanitize.timeSpan", type: "int" },
+  { id: "privacy.clearOnShutdown.history", type: "bool" },
+  { id: "privacy.clearOnShutdown.formdata", type: "bool" },
+  { id: "privacy.clearOnShutdown.downloads", type: "bool" },
+  { id: "privacy.clearOnShutdown.cookies", type: "bool" },
+  { id: "privacy.clearOnShutdown.cache", type: "bool" },
+  { id: "privacy.clearOnShutdown.offlineApps", type: "bool" },
+  { id: "privacy.clearOnShutdown.sessions", type: "bool" },
+  { id: "privacy.clearOnShutdown.siteSettings", type: "bool" },
 ]);
 
 var gSanitizePromptDialog = {
@@ -62,13 +70,9 @@ var gSanitizePromptDialog = {
     this.downloadSizes = {};
 
     if (!lazy.USE_OLD_DIALOG) {
-      this._cookiesAndSiteDataCheckbox = document.getElementById(
-        "clearCookiesAndSiteData"
-      );
-      this._cacheCheckbox = document.getElementById("clearCachedContent");
-      this._downloadHistoryCheckbox = document.getElementById(
-        "clearDownloadHistory"
-      );
+      this._cookiesAndSiteDataCheckbox = document.getElementById("cookies");
+      this._cacheCheckbox = document.getElementById("cache");
+      this._downloadHistoryCheckbox = document.getElementById("downloads");
     }
 
     let arg = window.arguments?.[0] || {};
@@ -79,6 +83,15 @@ var gSanitizePromptDialog = {
     if (!lazy.USE_OLD_DIALOG && arg.updateUsageData != undefined) {
       updateUsageData = arg.updateUsageData || arg.inBrowserWindow;
     }
+
+    
+    this._inClearOnShutdownNewDialog = false;
+    this._inClearSiteDataNewDialog = false;
+    if (arg.mode && !lazy.USE_OLD_DIALOG) {
+      this._inClearOnShutdownNewDialog = arg.mode == "clearOnShutdown";
+      this._inClearSiteDataNewDialog = arg.mode == "clearSiteData";
+    }
+
     if (arg.inBrowserWindow) {
       this._dialog.setAttribute("inbrowserwindow", "true");
       this._observeTitleForChanges();
@@ -95,18 +108,68 @@ var gSanitizePromptDialog = {
       this.getAndUpdateDataSizes(updateUsageData);
 
     let OKButton = this._dialog.getButton("accept");
-    let okButtonLabel = lazy.USE_OLD_DIALOG
-      ? "sanitize-button-ok"
-      : "sanitize-button-ok2";
-    document.l10n.setAttributes(OKButton, okButtonLabel);
+    let clearOnShutdownGroupbox = document.getElementById(
+      "clearOnShutdownGroupbox"
+    );
+    let clearPrivateDataGroupbox = document.getElementById(
+      "clearPrivateDataGroupbox"
+    );
 
-    document.addEventListener("dialogaccept", function (e) {
-      gSanitizePromptDialog.sanitize(e);
+    let okButtonl10nID = "sanitize-button-ok";
+    if (this._inClearOnShutdownNewDialog) {
+      okButtonl10nID = "sanitize-button-ok-on-shutdown";
+      this._dialog.setAttribute("inClearOnShutdown", "true");
+      
+      clearPrivateDataGroupbox.remove();
+    } else if (!lazy.USE_OLD_DIALOG) {
+      okButtonl10nID = "sanitize-button-ok2";
+      
+      clearOnShutdownGroupbox.remove();
+    }
+    document.l10n.setAttributes(OKButton, okButtonl10nID);
+
+    
+    
+    
+    if (!lazy.USE_OLD_DIALOG && !this._inClearOnShutdownNewDialog) {
+      let checkboxes = document.querySelectorAll(
+        "#clearPrivateDataGroupbox .clearingItemCheckbox"
+      );
+      for (let checkbox of checkboxes) {
+        let pref = checkbox.getAttribute("data-l10n-id");
+        let value = true;
+        
+        if (pref == "item-site-prefs") {
+          value = false;
+        }
+        
+        
+        else if (
+          this._inClearSiteDataNewDialog &&
+          (pref == "item-browsing-and-search" ||
+            pref == "item-download-history")
+        ) {
+          value = false;
+        }
+        checkbox.checked = value;
+      }
+    }
+
+    document.addEventListener("dialogaccept", e => {
+      if (this._inClearOnShutdownNewDialog) {
+        this.updatePrefs();
+      } else {
+        this.sanitize(e);
+      }
     });
 
     this.registerSyncFromPrefListeners();
 
-    if (this.selectedTimespan === Sanitizer.TIMESPAN_EVERYTHING) {
+    
+    if (
+      this.selectedTimespan === Sanitizer.TIMESPAN_EVERYTHING &&
+      !arg.inClearOnShutdown
+    ) {
       this.prepareWarning();
       this.warningBox.hidden = false;
       if (lazy.USE_OLD_DIALOG) {
@@ -199,7 +262,8 @@ var gSanitizePromptDialog = {
         ignoreTimespan: !range,
         range,
       };
-      Sanitizer.sanitize(null, options)
+      let itemsToClear = this.getItemsToClear();
+      Sanitizer.sanitize(itemsToClear, options)
         .catch(console.error)
         .then(() => window.close())
         .catch(console.error);
@@ -312,9 +376,8 @@ var gSanitizePromptDialog = {
   updatePrefs() {
     Services.prefs.setIntPref(Sanitizer.PREF_TIMESPAN, this.selectedTimespan);
 
-    let historyValue = Preferences.get("privacy.cpd.history").value;
-
     if (lazy.USE_OLD_DIALOG) {
+      let historyValue = Preferences.get(`privacy.cpd.history`).value;
       
       Preferences.get("privacy.cpd.downloads").value = historyValue;
       Services.prefs.setBoolPref("privacy.cpd.downloads", historyValue);
@@ -323,13 +386,19 @@ var gSanitizePromptDialog = {
     
     
     
-    else {
-      Preferences.get("privacy.cpd.formdata").value = historyValue;
+    else if (gSanitizePromptDialog._inClearOnShutdownNewDialog) {
+      let historyValue = Preferences.get(
+        `privacy.clearOnShutdown.history`
+      ).value;
+      Preferences.get(`privacy.clearOnShutdown.formdata`).value = historyValue;
 
-      let cookiesValue = Preferences.get("privacy.cpd.cookies").value;
+      let cookiesValue = Preferences.get(
+        "privacy.clearOnShutdown.cookies"
+      ).value;
       
-      Preferences.get("privacy.cpd.sessions").value = cookiesValue;
-      Preferences.get("privacy.cpd.offlineApps").value = cookiesValue;
+      Preferences.get(`privacy.clearOnShutdown.sessions`).value = cookiesValue;
+      Preferences.get(`privacy.clearOnShutdown.offlineApps`).value =
+        cookiesValue;
     }
 
     
@@ -420,6 +489,38 @@ var gSanitizePromptDialog = {
       "item-download-history-with-size",
       { count: downloadcount }
     );
+  },
+
+  
+
+
+
+
+  getItemsToClear() {
+    
+    if (lazy.USE_OLD_DIALOG) {
+      return null;
+    }
+
+    let items = [];
+    let clearPrivateDataGroupbox = document.getElementById(
+      "clearPrivateDataGroupbox"
+    );
+
+    for (let cb of clearPrivateDataGroupbox.querySelectorAll("checkbox")) {
+      if (cb.checked) {
+        if (cb.id == "history") {
+          
+          items.push("formdata");
+        } else if (cb.id == "cookies") {
+          
+          items.push("offlineApps");
+          items.push("sessions");
+        }
+        items.push(cb.id);
+      }
+    }
+    return items;
   },
 };
 
