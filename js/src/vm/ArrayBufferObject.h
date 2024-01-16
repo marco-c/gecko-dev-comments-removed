@@ -551,43 +551,37 @@ ArrayBufferObjectMaybeShared* CreateWasmBuffer(JSContext* cx,
 
 
 class InnerViewTable {
- public:
-  using ViewVector = GCVector<UnsafeBarePtr<JSObject*>, 1, ZoneAllocPolicy>;
-
-  friend class ArrayBufferObject;
-
- private:
-  
-  
-  
-  
-  
-  
-  
-  
-  using Map = GCHashMap<UnsafeBarePtr<JSObject*>, ViewVector,
-                        StableCellHasher<JSObject*>, ZoneAllocPolicy>;
-
-  
-  
-  Map map;
+  using ViewVector =
+      GCVector<UnsafeBarePtr<ArrayBufferViewObject*>, 1, ZoneAllocPolicy>;
 
   
   
   
   
   
-  Vector<JSObject*, 0, SystemAllocPolicy> nurseryKeys;
+  
+  
+  
+  
+  
+  
+  using ArrayBufferViewMap =
+      GCHashMap<UnsafeBarePtr<ArrayBufferObject*>, ViewVector,
+                StableCellHasher<JSObject*>, ZoneAllocPolicy>;
+  ArrayBufferViewMap map;
 
   
-  bool nurseryKeysValid;
+  
+  
+  
+  
+  Vector<ArrayBufferObject*, 0, SystemAllocPolicy> nurseryKeys;
 
-  bool addView(JSContext* cx, ArrayBufferObject* buffer, JSObject* view);
-  ViewVector* maybeViewsUnbarriered(ArrayBufferObject* obj);
-  void removeViews(ArrayBufferObject* obj);
+  
+  bool nurseryKeysValid = true;
 
  public:
-  explicit InnerViewTable(Zone* zone) : map(zone), nurseryKeysValid(true) {}
+  explicit InnerViewTable(Zone* zone) : map(zone) {}
 
   
   
@@ -601,6 +595,13 @@ class InnerViewTable {
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+
+ private:
+  friend class ArrayBufferObject;
+  bool addView(JSContext* cx, ArrayBufferObject* buffer,
+               ArrayBufferViewObject* view);
+  ViewVector* maybeViewsUnbarriered(ArrayBufferObject* buffer);
+  void removeViews(ArrayBufferObject* buffer);
 };
 
 template <typename Wrapper>
