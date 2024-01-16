@@ -530,8 +530,7 @@ class ServoStyleSet {
 
 
   void MaybeInvalidateForElementRemove(const dom::Element& aElement,
-                                       const dom::Element* aPrevSibling,
-                                       const dom::Element* aNextSibling);
+                                       const nsIContent* aFollowingSibling);
 
   
 

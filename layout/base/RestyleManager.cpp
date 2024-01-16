@@ -440,17 +440,9 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
     
     IncrementUndisplayedRestyleGeneration();
   }
-  Element* nextSibling = aFollowingSibling
-                             ? aFollowingSibling->IsElement()
-                                   ? aFollowingSibling->AsElement()
-                                   : aFollowingSibling->GetNextElementSibling()
-                             : nullptr;
   if (aOldChild->IsElement()) {
-    Element* prevSibling = aFollowingSibling
-                               ? aFollowingSibling->GetPreviousElementSibling()
-                               : container->GetLastElementChild();
     StyleSet()->MaybeInvalidateForElementRemove(*aOldChild->AsElement(),
-                                                prevSibling, nextSibling);
+                                                aFollowingSibling);
   }
 
   const auto selectorFlags =
@@ -512,6 +504,11 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
     
     RestyleSiblingsStartingWith(aFollowingSibling);
     if (selectorFlags & NodeSelectorFlags::HasSlowSelectorNthAll) {
+      Element* nextSibling =
+          aFollowingSibling ? aFollowingSibling->IsElement()
+                                  ? aFollowingSibling->AsElement()
+                                  : aFollowingSibling->GetNextElementSibling()
+                            : nullptr;
       StyleSet()->MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
           nextSibling);
     }
@@ -596,7 +593,8 @@ static bool StateChangeMayAffectFrame(const Element& aElement,
 
 static bool RepaintForAppearance(nsIFrame& aFrame, const Element& aElement,
                                  ElementState aStateMask) {
-  if (aStateMask.HasAtLeastOneOfStates(ElementState::HOVER) &&
+  if (aStateMask.HasAtLeastOneOfStates(ElementState::HOVER |
+                                       ElementState::ACTIVE) &&
       aElement.IsAnyOfXULElements(nsGkAtoms::checkbox, nsGkAtoms::radio)) {
     
     
