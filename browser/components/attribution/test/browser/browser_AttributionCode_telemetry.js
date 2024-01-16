@@ -80,17 +80,9 @@ add_task(async function test_read_error() {
     throw new Error("read_error");
   };
 
-  
-  
-  let oldMsixCampaignId = AttributionIOUtils.msixCampaignId;
-  AttributionIOUtils.msixCampaignId = async () => {
-    throw new Error("read_error");
-  };
-
   registerCleanupFunction(() => {
     AttributionIOUtils.exists = oldExists;
     AttributionIOUtils.read = oldRead;
-    AttributionIOUtils.msixCampaignId = oldMsixCampaignId;
   });
 
   
