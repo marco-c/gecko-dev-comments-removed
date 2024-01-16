@@ -406,11 +406,6 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
   void ApplyVolume(float aVolume);
   
   
-  
-  void WriteTo(AudioMixer& aMixer, uint32_t aChannelCount,
-               uint32_t aSampleRate);
-  
-  
   void Mix(AudioMixer& aMixer, uint32_t aChannelCount, uint32_t aSampleRate);
 
   
