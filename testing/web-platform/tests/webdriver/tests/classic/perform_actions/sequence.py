@@ -1,5 +1,3 @@
-
-
 from tests.classic.perform_actions.support.refine import get_events, get_keys
 
 
