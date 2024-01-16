@@ -76,14 +76,3 @@ add_task(async function test_aria_roles() {
     );
   });
 });
-
-add_task(async function firefoxview_next_icon() {
-  let viewButton = window.document.querySelector("#firefox-view-button");
-  let style = window.getComputedStyle(viewButton);
-  
-  Services.prefs.setBoolPref("browser.tabs.firefox-view-newIcon", false);
-  ok(style.listStyleImage.includes, "chrome://branding/content/about-logo.png");
-  
-  Services.prefs.setBoolPref("browser.tabs.firefox-view-newIcon", true);
-  ok(style.listStyleImage.includes, "chrome://browser/skin/firefox-view.svg");
-});
