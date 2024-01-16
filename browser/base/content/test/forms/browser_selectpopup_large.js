@@ -174,12 +174,18 @@ async function performLargePopupTests(win) {
   ok(true, "scroll position at drag up from option");
 
   scrollPos = getScrollPos();
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ labelRule: false });
   EventUtils.synthesizeMouseAtPoint(
     popupRect.left + 20,
     popupRect.bottom + 25,
     { type: "mouseup" },
     win
   );
+  AccessibilityUtils.resetEnv();
   is(
     getScrollPos(),
     scrollPos,

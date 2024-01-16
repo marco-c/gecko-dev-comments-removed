@@ -8,7 +8,13 @@ add_task(async function () {
   registerCleanupFunction(() => select.remove());
   document.body.appendChild(select);
   let popupShownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ labelRule: false });
   EventUtils.synthesizeMouseAtCenter(select, {});
+  AccessibilityUtils.resetEnv();
 
   let popup = await popupShownPromise;
   ok(!!popup, "Should've shown the popup");
