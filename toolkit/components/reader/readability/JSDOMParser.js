@@ -24,14 +24,6 @@
 
 
 
-
-
-
-
-
-
-
-
 (function (global) {
 
   

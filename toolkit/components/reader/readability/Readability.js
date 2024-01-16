@@ -24,14 +24,6 @@
 
 
 
-
-
-
-
-
-
-
-
 function Readability(doc, options) {
   
   if (options && options.documentElement) {
