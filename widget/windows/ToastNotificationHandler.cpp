@@ -142,6 +142,12 @@ static bool AddActionNode(ComPtr<IXmlDocument>& toastXml,
 
     
     
+    
+    
+    
+    
+    
+    
     success = SetAttribute(action, HStringReference(L"arguments"), actionArgs);
     NS_ENSURE_TRUE(success, false);
   }
@@ -666,6 +672,9 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
   
   
   if (mRequireInteraction && !mActions.Length()) {
+    
+    
+    
     nsTArray<nsCString> resIds = {
         "toolkit/global/alert.ftl"_ns,
     };
@@ -678,7 +687,7 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
 
     NS_ENSURE_TRUE(
         AddActionNode(toastXml, actionsNode, NS_ConvertUTF8toUTF16(closeTitle),
-                      launchArg, u""_ns, u""_ns, u"background"_ns),
+                      u""_ns, u"dismiss"_ns, u""_ns, u"system"_ns),
         nullptr);
   }
 
@@ -848,6 +857,7 @@ ToastNotificationHandler::OnActivate(
 
   if (mAlertListener) {
     
+    nsAutoString argumentsString;
     nsAutoString actionString;
     if (inspectable) {
       ComPtr<IToastActivatedEventArgs> eventArgs;
@@ -862,6 +872,7 @@ ToastNotificationHandler::OnActivate(
             MOZ_LOG(sWASLog, LogLevel::Info,
                     ("OnActivate: arguments: %s",
                      NS_ConvertUTF16toUTF8(buffer).get()));
+            argumentsString.Assign(buffer);
 
             
             
@@ -888,7 +899,14 @@ ToastNotificationHandler::OnActivate(
       }
     }
 
-    if (actionString.EqualsLiteral("settings")) {
+    if (argumentsString.EqualsLiteral("dismiss")) {
+      
+      
+      
+      
+      
+      SendFinished();
+    } else if (actionString.EqualsLiteral("settings")) {
       mAlertListener->Observe(nullptr, "alertsettingscallback", mCookie.get());
     } else if (actionString.EqualsLiteral("snooze")) {
       mAlertListener->Observe(nullptr, "alertdisablecallback", mCookie.get());
