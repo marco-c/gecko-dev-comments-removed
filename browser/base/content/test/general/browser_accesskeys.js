@@ -21,9 +21,9 @@ add_task(async function () {
   
   let newButton = document.createXULElement("button");
   newButton.id = "chromebutton";
+  newButton.setAttribute("aria-label", "chromebutton");
   newButton.setAttribute("accesskey", "z");
   document.documentElement.appendChild(newButton);
-
   Services.focus.clearFocus(window);
 
   newButton.getBoundingClientRect(); 
