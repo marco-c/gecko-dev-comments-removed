@@ -41,7 +41,6 @@
 #include "nsStandaloneNativeMenu.h"
 #include "nsCocoaUtils.h"
 #include "nsMenuBarX.h"
-#include "mozilla/NeverDestroyed.h"
 
 class AutoAutoreleasePool {
  public:
@@ -65,16 +64,11 @@ class AutoAutoreleasePool {
 enum class LaunchStatus {
   Initial,
   DelegateIsSetup,
-  CollectingURLs,
-  CollectedURLs
+  ProcessingURLs,
+  ProcessedURLs
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
-
-static nsTArray<nsCString>& StartupURLs() {
-  static mozilla::NeverDestroyed<nsTArray<nsCString>> sStartupURLs;
-  return *sStartupURLs;
-}
 
 
 
@@ -136,18 +130,19 @@ void SetupMacApplicationDelegate(bool* gRestartedByOS) {
 
 
 
-void InitializeMacApp() {
+
+
+
+void ProcessPendingGetURLAppleEvents() {
   if (sLaunchStatus != LaunchStatus::DelegateIsSetup) {
     
     return;
   }
 
-  sLaunchStatus = LaunchStatus::CollectingURLs;
+  sLaunchStatus = LaunchStatus::ProcessingURLs;
   [NSApp run];
-  sLaunchStatus = LaunchStatus::CollectedURLs;
+  sLaunchStatus = LaunchStatus::ProcessedURLs;
 }
-
-nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
 @implementation MacApplicationDelegate
 
@@ -260,7 +255,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification*)notification {
-  if (sLaunchStatus == LaunchStatus::CollectingURLs) {
+  if (sLaunchStatus == LaunchStatus::ProcessingURLs) {
     
     
     
@@ -357,8 +352,8 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
     }
 
     const char* const urlString = [[url absoluteString] UTF8String];
-    if (sLaunchStatus == LaunchStatus::CollectingURLs) {
-      StartupURLs().AppendElement(urlString);
+    
+    if (CommandLineServiceMac::AddURLToCurrentCommandLine(urlString)) {
       continue;
     }
 
