@@ -412,7 +412,8 @@ for (const { name, input, only, skip } of cases) {
   if ((includesOnly && !only) || skip) {
     continue;
   }
-  test(name, async () => {
+  
+  test(`${name}`, async () => {
     const actual = prettyFast(input, {
       indent: "  ",
       url: "test.js",

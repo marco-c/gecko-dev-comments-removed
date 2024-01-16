@@ -16,7 +16,7 @@ describe("scrollList", () => {
   });
   
 
-  it("calls scrollIntoView ", () => {
+  it("calls scrollIntoView", () => {
     const ul = document.createElement("ul");
     const li = document.createElement("li");
 

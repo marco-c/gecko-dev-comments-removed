@@ -369,4 +369,10 @@ module.exports = {
       ["-\\*-(.*)-\\*-", "eslint(.*)", "vim(.*)"],
     ],
   },
+  settings: {
+    jest: {
+      
+      version: 27,
+    },
+  },
 };
