@@ -3,15 +3,16 @@
 
 "use strict";
 
-const { SiteDataManager } = ChromeUtils.importESModule(
-  "resource:///modules/SiteDataManager.sys.mjs"
-);
-const { SiteDataTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/SiteDataTestUtils.sys.mjs"
-);
-const { PermissionTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/PermissionTestUtils.sys.mjs"
-);
+
+
+
+
+
+ChromeUtils.defineESModuleGetters(this, {
+  SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
+  SiteDataTestUtils: "resource://testing-common/SiteDataTestUtils.sys.mjs",
+  PermissionTestUtils: "resource://testing-common/PermissionTestUtils.sys.mjs",
+});
 
 const EXAMPLE_ORIGIN = "https://www.example.com";
 const EXAMPLE_ORIGIN_2 = "https://example.org";
