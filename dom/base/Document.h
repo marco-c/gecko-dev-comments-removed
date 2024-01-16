@@ -3665,6 +3665,9 @@ class Document : public nsINode,
   
   bool ConsumeTransientUserGestureActivation();
 
+  bool GetTransientUserGestureActivationModifiers(
+      UserActivation::Modifiers* aModifiers);
+
   BrowsingContext* GetBrowsingContext() const;
 
   

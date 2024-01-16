@@ -2172,11 +2172,27 @@ void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
   }
 }
 
-
-
-
-
-
+template <typename FuncT>
+inline bool ApplyToDocumentsForPopup(Document* doc, FuncT func) {
+  
+  
+  
+  
+  
+  
+  
+  if (func(doc)) {
+    return true;
+  }
+  if (!doc->IsInitialDocument()) {
+    return false;
+  }
+  Document* parentDoc = doc->GetInProcessParentDocument();
+  if (!parentDoc || !parentDoc->NodePrincipal()->Equals(doc->NodePrincipal())) {
+    return false;
+  }
+  return func(parentDoc);
+}
 
 PopupBlocker::PopupControlState BrowsingContext::RevisePopupAbuseLevel(
     PopupBlocker::PopupControlState aControl) {
@@ -2220,27 +2236,11 @@ PopupBlocker::PopupControlState BrowsingContext::RevisePopupAbuseLevel(
   
   
   if (doc) {
-    
-    
-    
-    
-    
-    
-    
     auto ConsumeTransientUserActivationForMultiplePopupBlocking =
         [&]() -> bool {
-      if (doc->ConsumeTransientUserGestureActivation()) {
-        return true;
-      }
-      if (!doc->IsInitialDocument()) {
-        return false;
-      }
-      Document* parentDoc = doc->GetInProcessParentDocument();
-      if (!parentDoc ||
-          !parentDoc->NodePrincipal()->Equals(doc->NodePrincipal())) {
-        return false;
-      }
-      return parentDoc->ConsumeTransientUserGestureActivation();
+      return ApplyToDocumentsForPopup(doc, [](Document* doc) {
+        return doc->ConsumeTransientUserGestureActivation();
+      });
     };
 
     
@@ -2257,6 +2257,18 @@ PopupBlocker::PopupControlState BrowsingContext::RevisePopupAbuseLevel(
   }
 
   return abuse;
+}
+
+void BrowsingContext::GetUserActivationModifiersForPopup(
+    UserActivation::Modifiers* aModifiers) {
+  RefPtr<Document> doc = GetExtantDocument();
+  if (doc) {
+    
+    
+    (void)ApplyToDocumentsForPopup(doc, [&](Document* doc) {
+      return doc->GetTransientUserGestureActivationModifiers(aModifiers);
+    });
+  }
 }
 
 void BrowsingContext::IncrementHistoryEntryCountForBrowsingContext() {

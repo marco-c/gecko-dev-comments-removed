@@ -906,8 +906,18 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool CanBlurCheck(CallerType aCallerType);
 
+  
+  
+  
+  
   PopupBlocker::PopupControlState RevisePopupAbuseLevel(
       PopupBlocker::PopupControlState aControl);
+
+  
+  
+  
+  void GetUserActivationModifiersForPopup(
+      UserActivation::Modifiers* aModifiers);
 
   void IncrementHistoryEntryCountForBrowsingContext();
 
