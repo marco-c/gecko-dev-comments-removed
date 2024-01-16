@@ -40,17 +40,6 @@ class AbstractGeneratorObject : public NativeObject {
     RESERVED_SLOTS
   };
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static constexpr uint32_t FixedSlotLimit = 256;
-
  private:
   static JSObject* createModuleGenerator(JSContext* cx, AbstractFramePtr frame);
 
