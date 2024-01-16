@@ -149,6 +149,7 @@ enum class MessageProcessedResult { NotProcessed, Processed };
 
 bool IsOnAndroid();
 bool IsOnMacOS();
+bool IsOnLinux();
 
 
 
