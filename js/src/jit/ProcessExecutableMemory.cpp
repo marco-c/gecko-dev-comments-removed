@@ -489,22 +489,38 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
   void* randomAddr = ComputeRandomAllocationAddress();
   unsigned protection = PROT_NONE;
   unsigned flags = MAP_NORESERVE | MAP_PRIVATE | MAP_ANON;
-#  ifdef JS_USE_APPLE_FAST_WX
-  protection = PROT_READ | PROT_WRITE | PROT_EXEC;
+#  if defined(XP_DARWIN)
   flags |= MAP_JIT;
+#    if defined(JS_USE_APPLE_FAST_WX)
+  protection = PROT_READ | PROT_WRITE | PROT_EXEC;
+#    endif
 #  endif
   void* p = MozTaggedAnonymousMmap(randomAddr, bytes, protection, flags, -1, 0,
                                    "js-executable-memory");
   if (p == MAP_FAILED) {
     return nullptr;
   }
-#  ifdef JS_USE_APPLE_FAST_WX
+#  if defined(XP_DARWIN)
   DecommitPages(p, bytes);
 #  endif
   return p;
@@ -548,12 +564,21 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
 [[nodiscard]] static bool CommitPages(void* addr, size_t bytes,
                                       ProtectionSetting protection) {
   
-#  ifdef JS_USE_APPLE_FAST_WX
+#  if defined(XP_DARWIN)
   int ret;
   do {
     ret = madvise(addr, bytes, MADV_FREE_REUSE);
   } while (ret != 0 && errno == EAGAIN);
-  return ret == 0;
+  if (ret != 0) {
+    return false;
+  }
+#    if !defined(JS_USE_APPLE_FAST_WX)
+  unsigned flags = ProtectionSettingToFlags(protection);
+  if (mprotect(addr, bytes, flags)) {
+    return false;
+  }
+#    endif
+  return true;
 #  else
   unsigned flags = ProtectionSettingToFlags(protection);
   void* p = MozTaggedAnonymousMmap(addr, bytes, flags,
@@ -569,8 +594,12 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
 
 static void DecommitPages(void* addr, size_t bytes) {
   
-#  ifdef JS_USE_APPLE_FAST_WX
+#  if defined(XP_DARWIN)
   int ret;
+#    if !defined(JS_USE_APPLE_FAST_WX)
+  ret = mprotect(addr, bytes, PROT_NONE);
+  MOZ_RELEASE_ASSERT(ret == 0);
+#    endif
   do {
     ret = madvise(addr, bytes, MADV_FREE_REUSABLE);
   } while (ret != 0 && errno == EAGAIN);
