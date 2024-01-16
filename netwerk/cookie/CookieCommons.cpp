@@ -397,6 +397,12 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
     }
   }
 
+  bool mustBePartitioned =
+      isForeignAndNotAddon &&
+      aDocument->CookieJarSettings()->GetCookieBehavior() ==
+          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+      !aDocument->UsingStorageAccess();
+
   
   
   CookieStatus cookieStatus = CookieStatusForWindow(innerWindow, principalURI);
@@ -415,7 +421,8 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
   bool canSetCookie = false;
   CookieService::CanSetCookie(principalURI, baseDomain, cookieData,
                               requireHostMatch, cookieStatus, cookieString,
-                              false, isForeignAndNotAddon, crc, canSetCookie);
+                              false, isForeignAndNotAddon, mustBePartitioned,
+                              crc, canSetCookie);
 
   if (!canSetCookie) {
     return nullptr;
