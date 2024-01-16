@@ -79,6 +79,18 @@ class IDTracker {
 
 
 
+  void ResetWithLocalRef(Element& aFrom, const nsAString& aLocalRef,
+                         bool aWatch = true);
+
+  
+
+
+
+
+
+
+
+
   void ResetWithID(Element& aFrom, nsAtom* aID, bool aWatch = true);
 
   
