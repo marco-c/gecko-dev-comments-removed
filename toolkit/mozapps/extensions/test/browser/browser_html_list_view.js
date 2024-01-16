@@ -745,7 +745,13 @@ add_task(async function testSideloadRemoveButton() {
 
   
   let prevented = BrowserTestUtils.waitForEvent(card, "remove-disabled");
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   removeButton.click();
+  AccessibilityUtils.resetEnv();
   await prevented;
 
   
