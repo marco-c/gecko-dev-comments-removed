@@ -1,0 +1,11 @@
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+#[error]
+pub struct MyError;
+
+fn main() {
+    
+    
+    _ = &MyError as &dyn std::error::Error;
+}

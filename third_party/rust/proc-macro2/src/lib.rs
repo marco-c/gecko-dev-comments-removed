@@ -86,13 +86,15 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.69")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.74")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![deny(unsafe_op_in_unsafe_fn)]
 #![allow(
     clippy::cast_lossless,
     clippy::cast_possible_truncation,
+    clippy::checked_conversions,
     clippy::doc_markdown,
     clippy::items_after_statements,
     clippy::iter_without_into_iter,
@@ -118,6 +120,15 @@ compile_error! {"\
     procmacro2_semver_exempt, you need to ensure that it \
     is turned on for the compilation of the proc-macro2 \
     build script as well.
+"}
+
+#[cfg(all(
+    procmacro2_nightly_testing,
+    feature = "proc-macro",
+    not(proc_macro_span)
+))]
+compile_error! {"\
+    Build script probe failed to compile.
 "}
 
 extern crate alloc;
@@ -160,6 +171,7 @@ use std::error::Error;
 use std::path::PathBuf;
 
 #[cfg(span_locations)]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
 pub use crate::location::LineColumn;
 
 
@@ -949,8 +961,9 @@ impl Ident {
     
     
     
+    #[track_caller]
     pub fn new(string: &str, span: Span) -> Self {
-        Ident::_new(imp::Ident::new(string, span.inner))
+        Ident::_new(imp::Ident::new_checked(string, span.inner))
     }
 
     
@@ -958,12 +971,9 @@ impl Ident {
     
     
     
+    #[track_caller]
     pub fn new_raw(string: &str, span: Span) -> Self {
-        Ident::_new_raw(string, span)
-    }
-
-    fn _new_raw(string: &str, span: Span) -> Self {
-        Ident::_new(imp::Ident::new_raw(string, span.inner))
+        Ident::_new(imp::Ident::new_raw_checked(string, span.inner))
     }
 
     
@@ -1240,7 +1250,7 @@ impl Literal {
     
     #[doc(hidden)]
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
-        Literal::_new(imp::Literal::from_str_unchecked(repr))
+        Literal::_new(unsafe { imp::Literal::from_str_unchecked(repr) })
     }
 }
 

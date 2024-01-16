@@ -92,7 +92,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/quote/1.0.28")]
+#![doc(html_root_url = "https://docs.rs/quote/1.0.35")]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -101,6 +101,8 @@
     
     clippy::wrong_self_convention,
 )]
+
+extern crate alloc;
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;

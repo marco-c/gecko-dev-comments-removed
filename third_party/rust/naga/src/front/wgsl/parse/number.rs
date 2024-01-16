@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::front::wgsl::error::NumberError;
 use crate::front::wgsl::parse::lexer::Token;
 
@@ -19,8 +17,6 @@ pub enum Number {
     
     F64(f64),
 }
-
-
 
 pub(in crate::front::wgsl) fn consume_number(input: &str) -> (Token<'_>, &str) {
     let (result, rest) = parse(input);
@@ -43,6 +39,8 @@ enum FloatKind {
     F32,
     F64,
 }
+
+
 
 
 
@@ -152,8 +150,6 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
 
     let general_extract = ExtractSubStr::start(input, bytes);
 
-    let is_negative = consume!(bytes, b'-');
-
     if consume!(bytes, b'0', b'x' | b'X') {
         let digits_extract = ExtractSubStr::start(input, bytes);
 
@@ -216,10 +212,7 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
             } else {
                 let kind = consume_map!(bytes, [b'i' => IntKind::I32, b'u' => IntKind::U32]);
 
-                (
-                    parse_hex_int(is_negative, digits, kind),
-                    rest_to_str!(bytes),
-                )
+                (parse_hex_int(digits, kind), rest_to_str!(bytes))
             }
         }
     } else {
@@ -272,7 +265,7 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
                     return (Err(NumberError::Invalid), rest_to_str!(bytes));
                 }
 
-                let digits_with_sign = general_extract.end(bytes);
+                let digits = general_extract.end(bytes);
 
                 let kind = consume_map!(bytes, [
                     b'i' => Kind::Int(IntKind::I32),
@@ -282,10 +275,7 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
                     b'l', b'f' => Kind::Float(FloatKind::F64),
                 ]);
 
-                (
-                    parse_dec(is_negative, digits_with_sign, kind),
-                    rest_to_str!(bytes),
-                )
+                (parse_dec(digits, kind), rest_to_str!(bytes))
             }
         }
     }
@@ -312,29 +302,22 @@ fn parse_hex_float_missing_period(
 }
 
 fn parse_hex_int(
-    is_negative: bool,
     
     digits: &str,
     kind: Option<IntKind>,
 ) -> Result<Number, NumberError> {
-    let digits_with_sign = if is_negative {
-        Cow::Owned(format!("-{digits}"))
-    } else {
-        Cow::Borrowed(digits)
-    };
-    parse_int(&digits_with_sign, kind, 16, is_negative)
+    parse_int(digits, kind, 16)
 }
 
 fn parse_dec(
-    is_negative: bool,
     
-    digits_with_sign: &str,
+    digits: &str,
     kind: Option<Kind>,
 ) -> Result<Number, NumberError> {
     match kind {
-        None => parse_int(digits_with_sign, None, 10, is_negative),
-        Some(Kind::Int(kind)) => parse_int(digits_with_sign, Some(kind), 10, is_negative),
-        Some(Kind::Float(kind)) => parse_dec_float(digits_with_sign, Some(kind)),
+        None => parse_int(digits, None, 10),
+        Some(Kind::Int(kind)) => parse_int(digits, Some(kind), 10),
+        Some(Kind::Float(kind)) => parse_dec_float(digits, Some(kind)),
     }
 }
 
@@ -411,12 +394,7 @@ fn parse_dec_float(input: &str, kind: Option<FloatKind>) -> Result<Number, Numbe
     }
 }
 
-fn parse_int(
-    input: &str,
-    kind: Option<IntKind>,
-    radix: u32,
-    is_negative: bool,
-) -> Result<Number, NumberError> {
+fn parse_int(input: &str, kind: Option<IntKind>, radix: u32) -> Result<Number, NumberError> {
     fn map_err(e: core::num::ParseIntError) -> NumberError {
         match *e.kind() {
             core::num::IntErrorKind::PosOverflow | core::num::IntErrorKind::NegOverflow => {
@@ -434,7 +412,6 @@ fn parse_int(
             Ok(num) => Ok(Number::I32(num)),
             Err(e) => Err(map_err(e)),
         },
-        Some(IntKind::U32) if is_negative => Err(NumberError::NotRepresentable),
         Some(IntKind::U32) => match u32::from_str_radix(input, radix) {
             Ok(num) => Ok(Number::U32(num)),
             Err(e) => Err(map_err(e)),

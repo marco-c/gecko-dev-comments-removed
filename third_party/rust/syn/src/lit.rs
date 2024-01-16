@@ -784,17 +784,16 @@ pub_if_not_doc! {
     }
 }
 
-ast_enum! {
-    /// The style of a string literal, either plain quoted or a raw string like
-    /// `r##"data"##`.
-    pub enum StrStyle #no_visit {
-        /// An ordinary string like `"data"`.
-        Cooked,
-        /// A raw string like `r##"data"##`.
-        ///
-        /// The unsigned integer is the number of `#` symbols used.
-        Raw(usize),
-    }
+
+
+#[doc(hidden)] 
+pub enum StrStyle {
+    
+    Cooked,
+    
+    
+    
+    Raw(usize),
 }
 
 #[cfg(feature = "parsing")]
@@ -1025,12 +1024,12 @@ mod value {
     use std::ops::{Index, RangeFrom};
 
     impl Lit {
-        /// Interpret a Syn literal from a proc-macro2 literal.
+        
         pub fn new(token: Literal) -> Self {
             let repr = token.to_string();
 
             match byte(&repr, 0) {
-                // "...", r"...", r#"..."#
+                
                 b'"' | b'r' => {
                     let (_, suffix) = parse_lit_str(&repr);
                     return Lit::Str(LitStr {
@@ -1038,14 +1037,14 @@ mod value {
                     });
                 }
                 b'b' => match byte(&repr, 1) {
-                    // b"...", br"...", br#"...#"
+                    
                     b'"' | b'r' => {
                         let (_, suffix) = parse_lit_byte_str(&repr);
                         return Lit::ByteStr(LitByteStr {
                             repr: Box::new(LitRepr { token, suffix }),
                         });
                     }
-                    // b'...'
+                    
                     b'\'' => {
                         let (_, suffix) = parse_lit_byte(&repr);
                         return Lit::Byte(LitByte {
@@ -1054,7 +1053,7 @@ mod value {
                     }
                     _ => {}
                 },
-                // '...'
+                
                 b'\'' => {
                     let (_, suffix) = parse_lit_char(&repr);
                     return Lit::Char(LitChar {
@@ -1062,7 +1061,7 @@ mod value {
                     });
                 }
                 b'0'..=b'9' | b'-' => {
-                    // 0, 123, 0xFF, 0o77, 0b11
+                    
                     if let Some((digits, suffix)) = parse_lit_int(&repr) {
                         return Lit::Int(LitInt {
                             repr: Box::new(LitIntRepr {
@@ -1072,7 +1071,7 @@ mod value {
                             }),
                         });
                     }
-                    // 1.0, 1e-1, 1e+1
+                    
                     if let Some((digits, suffix)) = parse_lit_float(&repr) {
                         return Lit::Float(LitFloat {
                             repr: Box::new(LitFloatRepr {
@@ -1083,7 +1082,7 @@ mod value {
                         });
                     }
                 }
-                // true, false
+                
                 b't' | b'f' => {
                     if repr == "true" || repr == "false" {
                         return Lit::Bool(LitBool {
@@ -1092,8 +1091,8 @@ mod value {
                         });
                     }
                 }
-                // c"...", cr"...", cr#"..."#
-                // TODO: add a Lit::CStr variant?
+                
+                
                 b'c' => return Lit::Verbatim(token),
                 b'(' if repr == "(/*ERROR*/)" => return Lit::Verbatim(token),
                 _ => {}

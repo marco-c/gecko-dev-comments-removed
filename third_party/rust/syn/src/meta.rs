@@ -1,6 +1,6 @@
 
 
-use crate::ext::IdentExt;
+use crate::ext::IdentExt as _;
 use crate::lit::Lit;
 use crate::parse::{Error, ParseStream, Parser, Result};
 use crate::path::{Path, PathSegment};

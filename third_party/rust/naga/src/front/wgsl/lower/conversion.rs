@@ -51,21 +51,80 @@ impl<'source, 'temp, 'out> super::ExpressionContext<'source, 'temp, 'out> {
                 }
             };
 
-        let converted = if let crate::TypeInner::Array { .. } = *goal_inner {
-            let span = self.get_expression_span(expr);
+        self.convert_leaf_scalar(expr, expr_span, goal_scalar)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_automatic_conversion_for_leaf_scalar(
+        &mut self,
+        expr: Handle<crate::Expression>,
+        goal_scalar: crate::Scalar,
+        goal_span: Span,
+    ) -> Result<Handle<crate::Expression>, super::Error<'source>> {
+        let expr_span = self.get_expression_span(expr);
+        let expr_resolution = super::resolve!(self, expr);
+        let types = &self.module.types;
+        let expr_inner = expr_resolution.inner_with(types);
+
+        let make_error = || {
+            let gctx = &self.module.to_ctx();
+            let source_type = expr_resolution.to_wgsl(gctx);
+            super::Error::AutoConversionLeafScalar {
+                dest_span: goal_span,
+                dest_scalar: goal_scalar.to_wgsl(),
+                source_span: expr_span,
+                source_type,
+            }
+        };
+
+        let expr_scalar = match expr_inner.scalar() {
+            Some(scalar) => scalar,
+            None => return Err(make_error()),
+        };
+
+        if expr_scalar == goal_scalar {
+            return Ok(expr);
+        }
+
+        if !expr_scalar.automatically_converts_to(goal_scalar) {
+            return Err(make_error());
+        }
+
+        assert!(expr_scalar.is_abstract());
+
+        self.convert_leaf_scalar(expr, expr_span, goal_scalar)
+    }
+
+    fn convert_leaf_scalar(
+        &mut self,
+        expr: Handle<crate::Expression>,
+        expr_span: Span,
+        goal_scalar: crate::Scalar,
+    ) -> Result<Handle<crate::Expression>, super::Error<'source>> {
+        let expr_inner = super::resolve_inner!(self, expr);
+        if let crate::TypeInner::Array { .. } = *expr_inner {
             self.as_const_evaluator()
-                .cast_array(expr, goal_scalar, span)
-                .map_err(|err| super::Error::ConstantEvaluatorError(err, span))?
+                .cast_array(expr, goal_scalar, expr_span)
+                .map_err(|err| super::Error::ConstantEvaluatorError(err, expr_span))
         } else {
             let cast = crate::Expression::As {
                 expr,
                 kind: goal_scalar.kind,
                 convert: Some(goal_scalar.width),
             };
-            self.append_expression(cast, expr_span)?
-        };
-
-        Ok(converted)
+            self.append_expression(cast, expr_span)
+        }
     }
 
     
@@ -131,6 +190,27 @@ impl<'source, 'temp, 'out> super::ExpressionContext<'source, 'temp, 'out> {
     }
 
     
+    pub fn convert_to_leaf_scalar(
+        &mut self,
+        expr: &mut Handle<crate::Expression>,
+        goal: crate::Scalar,
+    ) -> Result<(), super::Error<'source>> {
+        let inner = super::resolve_inner!(self, *expr);
+        
+        
+        if inner.scalar() != Some(goal) {
+            let cast = crate::Expression::As {
+                expr: *expr,
+                kind: goal.kind,
+                convert: Some(goal.width),
+            };
+            let expr_span = self.get_expression_span(*expr);
+            *expr = self.append_expression(cast, expr_span)?;
+        }
+
+        Ok(())
+    }
+
     
     
     
@@ -140,24 +220,14 @@ impl<'source, 'temp, 'out> super::ExpressionContext<'source, 'temp, 'out> {
     
     
     
-    pub fn convert_slice_to_common_scalar(
+    
+    pub fn convert_slice_to_common_leaf_scalar(
         &mut self,
         exprs: &mut [Handle<crate::Expression>],
         goal: crate::Scalar,
     ) -> Result<(), super::Error<'source>> {
         for expr in exprs.iter_mut() {
-            let inner = super::resolve_inner!(self, *expr);
-            
-            
-            if inner.scalar() != Some(goal) {
-                let cast = crate::Expression::As {
-                    expr: *expr,
-                    kind: goal.kind,
-                    convert: Some(goal.width),
-                };
-                let expr_span = self.get_expression_span(*expr);
-                *expr = self.append_expression(cast, expr_span)?;
-            }
+            self.convert_to_leaf_scalar(expr, goal)?;
         }
 
         Ok(())
@@ -195,6 +265,57 @@ impl<'source, 'temp, 'out> super::ExpressionContext<'source, 'temp, 'out> {
         }
 
         Ok(expr)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn automatic_conversion_consensus<'handle, I>(
+        &self,
+        components: I,
+    ) -> Result<crate::Scalar, usize>
+    where
+        I: IntoIterator<Item = &'handle Handle<crate::Expression>>,
+        I::IntoIter: Clone, 
+    {
+        let types = &self.module.types;
+        let mut inners = components
+            .into_iter()
+            .map(|&c| self.typifier()[c].inner_with(types));
+        log::debug!(
+            "wgsl automatic_conversion_consensus: {:?}",
+            inners
+                .clone()
+                .map(|inner| inner.to_wgsl(&self.module.to_ctx()))
+                .collect::<Vec<String>>()
+        );
+        let mut best = inners.next().unwrap().scalar().ok_or(0_usize)?;
+        for (inner, i) in inners.zip(1..) {
+            let scalar = inner.scalar().ok_or(i)?;
+            match best.automatic_conversion_combine(scalar) {
+                Some(new_best) => {
+                    best = new_best;
+                }
+                None => return Err(i),
+            }
+        }
+
+        log::debug!("    consensus: {:?}", best.to_wgsl());
+        Ok(best)
     }
 }
 
@@ -364,6 +485,11 @@ impl crate::Scalar {
             
             (Sk::Sint | Sk::Uint | Sk::Float, Sk::Sint | Sk::Uint | Sk::Float) => None,
         }
+    }
+
+    
+    pub fn automatically_converts_to(self, goal: Self) -> bool {
+        self.automatic_conversion_combine(goal) == Some(goal)
     }
 
     const fn concretize(self) -> Self {
