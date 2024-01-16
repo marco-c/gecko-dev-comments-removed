@@ -654,7 +654,8 @@ void MediaTrackGraphImpl::UpdateTrackOrder() {
 }
 
 TrackTime MediaTrackGraphImpl::PlayAudio(const TrackKeyAndVolume& aTkv,
-                                         GraphTime aPlayedTime) {
+                                         GraphTime aPlayedTime,
+                                         uint32_t aOutputChannelCount) {
   MOZ_ASSERT(OnGraphThread());
   MOZ_ASSERT(mRealtime, "Should only attempt to play audio in realtime mode");
 
@@ -732,18 +733,7 @@ TrackTime MediaTrackGraphImpl::PlayAudio(const TrackKeyAndVolume& aTkv,
     }
     t = end;
 
-    uint32_t outputChannels;
-    
-    
-    
-    
-    if (CurrentDriver()->AsAudioCallbackDriver()) {
-      outputChannels =
-          CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount();
-    } else {
-      outputChannels = AudioOutputChannelCount();
-    }
-    output.Mix(mMixer, outputChannels, mSampleRate);
+    output.Mix(mMixer, aOutputChannelCount, mSampleRate);
   }
   return ticksWritten;
 }
@@ -1477,12 +1467,19 @@ void MediaTrackGraphImpl::Process(MixerCallbackReceiver* aMixerReceiver) {
 
   if (aMixerReceiver) {
     MOZ_ASSERT(mRealtime, "If there's a mixer, this graph must be realtime");
+    MOZ_ASSERT(CurrentDriver()->AsAudioCallbackDriver(),
+               "Driver must be AudioCallbackDriver if aMixerReceiver");
+    
+    
+    uint32_t outputChannelCount =
+        CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount();
     mMixer.StartMixing();
     
     
     TrackTime ticksPlayed = 0;
     for (auto& t : mAudioOutputs) {
-      TrackTime ticksPlayedForThisTrack = PlayAudio(t, oldProcessedTime);
+      TrackTime ticksPlayedForThisTrack =
+          PlayAudio(t, oldProcessedTime, outputChannelCount);
       if (ticksPlayed == 0) {
         ticksPlayed = ticksPlayedForThisTrack;
       } else {
@@ -1496,8 +1493,7 @@ void MediaTrackGraphImpl::Process(MixerCallbackReceiver* aMixerReceiver) {
       
       
       
-      mMixer.Mix(nullptr,
-                 CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount(),
+      mMixer.Mix(nullptr, outputChannelCount,
                  mStateComputedTime - oldProcessedTime, mSampleRate);
     }
     aMixerReceiver->MixerCallback(mMixer.MixedChunk(), mSampleRate);
