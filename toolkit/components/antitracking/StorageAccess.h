@@ -93,18 +93,6 @@ StorageAccess StorageAllowedForChannel(nsIChannel* aChannel);
 StorageAccess StorageAllowedForServiceWorker(
     nsIPrincipal* aPrincipal, nsICookieJarSettings* aCookieJarSettings);
 
-
-
-
-
-
-
-
-bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
-                                   nsIChannel* aChannel,
-                                   nsIPrincipal* aPrincipal, nsIURI* aURI,
-                                   uint32_t& aRejectedReason);
-
 bool ShouldPartitionStorage(StorageAccess aAccess);
 
 bool ShouldPartitionStorage(uint32_t aRejectedReason);
