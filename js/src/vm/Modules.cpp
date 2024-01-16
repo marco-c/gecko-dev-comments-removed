@@ -856,9 +856,14 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
 
   bool isAmbiguous = resolution == StringValue(cx->names().ambiguous);
 
+  
+  
+  
+  
+  
   static constexpr unsigned ErrorNumbers[2][2] = {
-      {JSMSG_AMBIGUOUS_IMPORT, JSMSG_MISSING_IMPORT},
-      {JSMSG_AMBIGUOUS_INDIRECT_EXPORT, JSMSG_MISSING_INDIRECT_EXPORT}};
+      {JSMSG_MISSING_INDIRECT_EXPORT, JSMSG_AMBIGUOUS_INDIRECT_EXPORT},
+      {JSMSG_MISSING_IMPORT, JSMSG_AMBIGUOUS_IMPORT}};
   unsigned errorNumber = ErrorNumbers[isDirectImport][isAmbiguous];
 
   const JSErrorFormatString* errorString =
@@ -917,6 +922,9 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
   Rooted<JSAtom*> exportName(cx);
   Rooted<Value> resolution(cx);
   for (const ExportEntry& e : module->indirectExportEntries()) {
+    
+    MOZ_ASSERT(e.exportName());
+
     
     exportName = e.exportName();
     if (!ModuleResolveExport(cx, module, exportName, &resolution)) {
