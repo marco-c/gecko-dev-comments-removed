@@ -321,14 +321,13 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       }
 
       
-      
-      
-      JSString* str = JS_NewStringCopyN(cx, cString->Data(), cString->Length());
-      if (!str) {
+      nsStringBuffer* buf;
+      if (!XPCStringConvert::Latin1ToJSVal(cx, *cString, &buf, d)) {
         return false;
       }
-
-      d.setString(str);
+      if (buf) {
+        buf->AddRef();
+      }
       return true;
     }
 
