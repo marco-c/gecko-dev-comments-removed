@@ -90,16 +90,6 @@ class FFmpegVideoEncoder<LIBAV_VER> final : public MediaDataEncoder {
   AVFrame* mFrame;
   DurationMap mDurationMap;
 
-  struct SVCInfo {
-    explicit SVCInfo(nsTArray<uint8_t>&& aTemporalLayerIds)
-        : mTemporalLayerIds(std::move(aTemporalLayerIds)), mNextIndex(0) {}
-    const nsTArray<uint8_t> mTemporalLayerIds;
-    size_t mNextIndex;
-    
-    uint8_t UpdateTemporalLayerId();
-  };
-  Maybe<SVCInfo> mSVCInfo;
-
   
   
   static StaticMutex sMutex;
