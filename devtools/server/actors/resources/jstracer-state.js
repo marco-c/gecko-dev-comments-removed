@@ -47,9 +47,16 @@ class TracingStateWatcher {
   }
 
   
-  
-  
-  onTracingToggled(enabled) {
+
+
+
+
+
+
+
+
+
+  onTracingToggled(enabled, reason) {
     const tracerActor = this.targetActor.getTargetScopedActor("tracer");
     const logMethod = tracerActor?.getLogMethod();
     this.onAvailable([
@@ -62,6 +69,7 @@ class TracingStateWatcher {
             ? tracerActor.getProfile()
             : undefined,
         timeStamp: ChromeUtils.dateNow(),
+        reason,
       },
     ]);
   }
