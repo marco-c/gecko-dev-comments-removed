@@ -24,7 +24,12 @@ class GCMarker;
 class SliceBudget;
 class WeakMapBase;
 
+#ifdef DEBUG
+
+static const size_t MARK_STACK_BASE_CAPACITY = 4;
+#else
 static const size_t MARK_STACK_BASE_CAPACITY = 4096;
+#endif
 
 enum class SlotsOrElementsKind {
   Unused = 0,  
