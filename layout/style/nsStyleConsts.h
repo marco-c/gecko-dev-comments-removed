@@ -476,17 +476,9 @@ enum class StyleImeMode : uint8_t {
 
 
 
-
-
-
 enum class StyleWindowShadow : uint8_t {
+  Auto,
   None,
-  Default,
-
-  
-  
-  Menu,
-  Tooltip,
 };
 
 

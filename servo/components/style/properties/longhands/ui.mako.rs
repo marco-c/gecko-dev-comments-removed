@@ -59,11 +59,10 @@ ${helpers.single_keyword(
 
 ${helpers.single_keyword(
     "-moz-window-shadow",
-    "default none",
+    "auto none",
     engines="gecko",
     gecko_ffi_name="mWindowShadow",
     gecko_enum_prefix="StyleWindowShadow",
-    gecko_inexhaustive=True,
     animation_value_type="discrete",
     enabled_in="chrome",
     spec="None (Nonstandard internal property)",
