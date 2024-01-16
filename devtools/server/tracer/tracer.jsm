@@ -103,6 +103,11 @@ const customLazy = {
 
 
 
+
+
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -132,6 +137,9 @@ class JavaScriptTracer {
 
     this.traceDOMEvents = !!options.traceDOMEvents;
     this.traceValues = !!options.traceValues;
+    this.maxDepth = options.maxDepth;
+    this.maxRecords = options.maxRecords;
+    this.records = 0;
 
     
     if (options.traceOnNextInteraction && typeof isWorker !== "boolean") {
@@ -330,19 +338,34 @@ class JavaScriptTracer {
       return;
     }
     try {
+      
+      if (this.maxDepth && this.depth >= this.maxDepth) {
+        return;
+      }
+
+      
+      if (this.depth === 0 && this.maxRecords) {
+        if (this.records >= this.maxRecords) {
+          this.stopTracing();
+          return;
+        }
+        this.records++;
+      }
+
+      
       if (this.depth == 100) {
         this.notifyInfiniteLoop();
         this.stopTracing();
         return;
       }
 
-      const formatedDisplayName = formatDisplayName(frame);
       let shouldLogToStdout = true;
 
       
       
       if (listeners.size > 0) {
         shouldLogToStdout = false;
+        const formatedDisplayName = formatDisplayName(frame);
         for (const listener of listeners) {
           
           if (typeof listener.onTracingFrame == "function") {
@@ -360,61 +383,7 @@ class JavaScriptTracer {
       
       
       if (shouldLogToStdout) {
-        const { script } = frame;
-        const { lineNumber, columnNumber } = script.getOffsetMetadata(
-          frame.offset
-        );
-        const padding = "—".repeat(this.depth + 1);
-
-        
-        
-        
-        if (this.currentDOMEvent && this.depth == 0) {
-          this.loggingMethod(
-            this.prefix + padding + this.currentDOMEvent + "\n"
-          );
-        }
-
-        
-        
-        const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
-
-        
-        
-        const urlLink = `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
-
-        let message = `${padding}[${
-          frame.implementation
-        }]—> ${urlLink} - ${formatDisplayName(frame)}`;
-
-        
-        
-        
-        
-        if (this.traceValues && frame.arguments) {
-          message += "(";
-          for (let i = 0, l = frame.arguments.length; i < l; i++) {
-            const arg = frame.arguments[i];
-            
-            if (arg?.unsafeDereference) {
-              
-              if (arg.isClassConstructor) {
-                message += "class " + arg.name;
-              } else {
-                message += objectToString(arg.unsafeDereference());
-              }
-            } else {
-              message += primitiveToString(arg);
-            }
-
-            if (i < l - 1) {
-              message += ", ";
-            }
-          }
-          message += ")";
-        }
-
-        this.loggingMethod(this.prefix + message + "\n");
+        this.logFrameToStdout(frame);
       }
 
       this.depth++;
@@ -424,6 +393,65 @@ class JavaScriptTracer {
     } catch (e) {
       console.error("Exception while tracing javascript", e);
     }
+  }
+
+  
+
+
+
+
+  logFrameToStdout(frame) {
+    const { script } = frame;
+    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
+    const padding = "—".repeat(this.depth + 1);
+
+    
+    
+    
+    if (this.currentDOMEvent && this.depth == 0) {
+      this.loggingMethod(this.prefix + padding + this.currentDOMEvent + "\n");
+    }
+
+    
+    
+    const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
+
+    
+    
+    const urlLink = `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
+
+    let message = `${padding}[${
+      frame.implementation
+    }]—> ${urlLink} - ${formatDisplayName(frame)}`;
+
+    
+    
+    
+    
+    if (this.traceValues && frame.arguments) {
+      message += "(";
+      for (let i = 0, l = frame.arguments.length; i < l; i++) {
+        const arg = frame.arguments[i];
+        
+        if (arg?.unsafeDereference) {
+          
+          if (arg.isClassConstructor) {
+            message += "class " + arg.name;
+          } else {
+            message += objectToString(arg.unsafeDereference());
+          }
+        } else {
+          message += primitiveToString(arg);
+        }
+
+        if (i < l - 1) {
+          message += ", ";
+        }
+      }
+      message += ")";
+    }
+
+    this.loggingMethod(this.prefix + message + "\n");
   }
 }
 

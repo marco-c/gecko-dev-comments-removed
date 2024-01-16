@@ -113,6 +113,12 @@ class TracerActor extends Actor {
     if (options.prefix && typeof options.prefix != "string") {
       throw new Error("Invalid prefix, only support string type");
     }
+    if (options.maxDepth && typeof options.maxDepth != "number") {
+      throw new Error("Invalid max-depth, only support numbers");
+    }
+    if (options.maxRecords && typeof options.maxRecords != "number") {
+      throw new Error("Invalid max-records, only support numbers");
+    }
     this.logMethod = options.logMethod || LOG_METHODS.STDOUT;
 
     if (this.logMethod == LOG_METHODS.PROFILER) {
@@ -122,6 +128,7 @@ class TracerActor extends Actor {
     this.tracingListener = {
       onTracingFrame: this.onTracingFrame.bind(this),
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
+      onTracingToggled: this.onTracingToggled.bind(this),
     };
     addTracingListener(this.tracingListener);
     this.traceValues = !!options.traceValues;
@@ -134,6 +141,10 @@ class TracerActor extends Actor {
       traceValues: !!options.traceValues,
       
       traceOnNextInteraction: !!options.traceOnNextInteraction,
+      
+      maxDepth: options.maxDepth,
+      
+      maxRecords: options.maxRecords,
     });
   }
 
@@ -160,6 +171,20 @@ class TracerActor extends Actor {
       return profile;
     }
     return null;
+  }
+
+  
+
+
+
+
+
+
+
+  onTracingToggled(enabled) {
+    if (!enabled) {
+      this.stopTracing();
+    }
   }
 
   onTracingInfiniteLoop() {
