@@ -97,6 +97,8 @@ struct HeterogeneousCpuInfo {
   
   
   
+  
+  
   static const size_t MAX_CPUS = 32;
   size_t mTotalNumCpus;
   mozilla::BitSet<MAX_CPUS> mLittleCpus;
