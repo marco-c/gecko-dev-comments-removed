@@ -1108,7 +1108,7 @@ const gStoragePressureObserver = {
     }
     messageFragment.appendChild(message);
 
-    gNotificationBox.appendNotification(
+    await gNotificationBox.appendNotification(
       NOTIFICATION_VALUE,
       {
         label: messageFragment,
@@ -1124,7 +1124,7 @@ const gStoragePressureObserver = {
 };
 
 var gPopupBlockerObserver = {
-  handleEvent(aEvent) {
+  async handleEvent(aEvent) {
     if (aEvent.originalTarget != gBrowser.selectedBrowser) {
       return;
     }
@@ -1160,23 +1160,31 @@ var gPopupBlockerObserver = {
 
         let notificationBox = gBrowser.getNotificationBox();
         let notification =
-          notificationBox.getNotificationWithValue("popup-blocked");
+          notificationBox.getNotificationWithValue("popup-blocked") ||
+          (await this.notificationPromise);
         if (notification) {
           notification.label = label;
         } else {
           const image = "chrome://browser/skin/notification-icons/popup.svg";
           const priority = notificationBox.PRIORITY_INFO_MEDIUM;
-          notificationBox.appendNotification(
-            "popup-blocked",
-            { label, image, priority },
-            [
-              {
-                "l10n-id": "popup-warning-button",
-                popup: "blockedPopupOptions",
-                callback: null,
-              },
-            ]
-          );
+          try {
+            this.notificationPromise = notificationBox.appendNotification(
+              "popup-blocked",
+              { label, image, priority },
+              [
+                {
+                  "l10n-id": "popup-warning-button",
+                  popup: "blockedPopupOptions",
+                  callback: null,
+                },
+              ]
+            );
+            await this.notificationPromise;
+          } catch (err) {
+            console.warn(err);
+          } finally {
+            this.notificationPromise = null;
+          }
         }
       }
 
@@ -1404,7 +1412,7 @@ var gKeywordURIFixup = {
     let asciiHost = fixedURI.asciiHost;
 
     let onLookupCompleteListener = {
-      onLookupComplete(request, record, status) {
+      async onLookupComplete(request, record, status) {
         let browserRef = weakBrowser.get();
         if (!Components.isSuccessCode(status) || !browserRef) {
           return;
@@ -1459,7 +1467,7 @@ var gKeywordURIFixup = {
             },
           },
         ];
-        let notification = notificationBox.appendNotification(
+        let notification = await notificationBox.appendNotification(
           "keyword-uri-fixup",
           {
             label: message,
@@ -3336,22 +3344,9 @@ function PageProxyClickHandler(aEvent) {
 
 
 var BrowserOnClick = {
-  ignoreWarningLink(reason, blockedInfo, browsingContext) {
-    let triggeringPrincipal =
-      blockedInfo.triggeringPrincipal ||
-      _createNullPrincipalFromTabUserContextId();
-
+  async ignoreWarningLink(reason, blockedInfo, browsingContext) {
     
     
-    
-    
-    
-    
-    browsingContext.fixupAndLoadURIString(blockedInfo.uri, {
-      triggeringPrincipal,
-      flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
-    });
-
     
     
     let principal = Services.scriptSecurityManager.createContentPrincipal(
@@ -3426,7 +3421,20 @@ var BrowserOnClick = {
       
     }
 
-    SafeBrowsingNotificationBox.show(title, buttons);
+    await SafeBrowsingNotificationBox.show(title, buttons);
+
+    
+    
+    
+    
+    let triggeringPrincipal =
+      blockedInfo.triggeringPrincipal ||
+      _createNullPrincipalFromTabUserContextId();
+
+    browsingContext.fixupAndLoadURIString(blockedInfo.uri, {
+      triggeringPrincipal,
+      flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
+    });
   },
 };
 
@@ -9061,7 +9069,7 @@ var PanicButtonNotifier = {
 
 const SafeBrowsingNotificationBox = {
   _currentURIBaseDomain: null,
-  show(title, buttons) {
+  async show(title, buttons) {
     let uri = gBrowser.currentURI;
 
     
@@ -9082,7 +9090,7 @@ const SafeBrowsingNotificationBox = {
       notificationBox.removeNotification(previousNotification);
     }
 
-    let notification = notificationBox.appendNotification(
+    let notification = await notificationBox.appendNotification(
       value,
       {
         label: title,

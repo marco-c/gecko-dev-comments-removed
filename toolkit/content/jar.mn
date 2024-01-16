@@ -27,6 +27,9 @@ toolkit.jar:
    content/global/aboutwebrtc/aboutWebrtc.mjs    (aboutwebrtc/aboutWebrtc.mjs)
    content/global/aboutwebrtc/graph.mjs    (aboutwebrtc/graph.mjs)
    content/global/aboutwebrtc/graphdb.mjs    (aboutwebrtc/graphdb.mjs)
+   content/global/aboutwebrtc/configurationList.mjs (aboutwebrtc/configurationList.mjs)
+   content/global/aboutwebrtc/disclosure.mjs (aboutwebrtc/disclosure.mjs)
+   content/global/aboutwebrtc/copyButton.mjs (aboutwebrtc/copyButton.mjs)
    content/global/aboutwebrtc/aboutWebrtc.html (aboutwebrtc/aboutWebrtc.html)
    content/global/aboutSupport.js
 *  content/global/aboutSupport.xhtml
@@ -103,6 +106,7 @@ toolkit.jar:
    content/global/elements/moz-toggle.css      (widgets/moz-toggle/moz-toggle.css)
    content/global/elements/moz-toggle.mjs      (widgets/moz-toggle/moz-toggle.mjs)
    content/global/elements/named-deck.js       (widgets/named-deck.js)
+   content/global/elements/infobar.css         (widgets/infobar.css)
    content/global/elements/notificationbox.js  (widgets/notificationbox.js)
    content/global/elements/panel.js            (widgets/panel.js)
    content/global/elements/panel-item.css      (widgets/panel-list/panel-item.css)
