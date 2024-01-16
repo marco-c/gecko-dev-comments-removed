@@ -1588,21 +1588,20 @@ bool MinidumpCallback(
     WriteAnnotationsForMainProcessCrash(apiData, addrInfo, crashTime);
   }
 
-  if (!doReport) {
-#ifdef XP_WIN
-    TerminateProcess(GetCurrentProcess(), 1);
-#endif  
-    return returnValue;
+  if (doReport && isSafeToDump) {
+    
+    
+    
+#if defined(MOZ_WIDGET_ANDROID)  
+    returnValue =
+        LaunchCrashHandlerService(crashReporterPath.c_str(), minidumpPath);
+#else  
+    returnValue = LaunchProgram(crashReporterPath.c_str(), minidumpPath);
+#endif
   }
 
-#if defined(MOZ_WIDGET_ANDROID)  
-  returnValue =
-      LaunchCrashHandlerService(crashReporterPath.c_str(), minidumpPath);
-#else  
-  returnValue = LaunchProgram(crashReporterPath.c_str(), minidumpPath);
-#  ifdef XP_WIN
+#ifdef XP_WIN
   TerminateProcess(GetCurrentProcess(), 1);
-#  endif
 #endif
 
   return returnValue;
