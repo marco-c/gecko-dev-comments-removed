@@ -50,8 +50,8 @@ void AdjustQuantField(const AcStrategyImage& ac_strategy, const Rect& rect,
 
 
 
-void FindBestQuantizer(const ImageBundle* linear, const Image3F& opsin,
-                       PassesEncoderState* enc_state,
+void FindBestQuantizer(const FrameHeader& frame_header, const Image3F* linear,
+                       const Image3F& opsin, PassesEncoderState* enc_state,
                        const JxlCmsInterface& cms, ThreadPool* pool,
                        AuxOut* aux_out, double rescale = 1.0);
 

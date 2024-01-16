@@ -6,6 +6,8 @@
 #ifndef LIB_JXL_ENC_MODULAR_H_
 #define LIB_JXL_ENC_MODULAR_H_
 
+#include <cstdint>
+
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_modular.h"
 #include "lib/jxl/enc_bit_writer.h"
@@ -32,21 +34,26 @@ class ModularFrameEncoder {
                              PassesEncoderState* JXL_RESTRICT enc_state,
                              const JxlCmsInterface& cms, ThreadPool* pool,
                              AuxOut* aux_out, bool do_color);
+  Status ComputeTree(ThreadPool* pool);
+  Status ComputeTokens(ThreadPool* pool);
   
-  Status EncodeGlobalInfo(BitWriter* writer, AuxOut* aux_out);
+  Status EncodeGlobalInfo(bool streaming_mode, BitWriter* writer,
+                          AuxOut* aux_out);
   
   
   Status EncodeStream(BitWriter* writer, AuxOut* aux_out, size_t layer,
                       const ModularStreamId& stream);
+  void ClearStreamData(const ModularStreamId& stream);
   
   
   
   
-  void AddVarDCTDC(const Image3F& dc, size_t group_index, bool nl_dc,
+  void AddVarDCTDC(const FrameHeader& frame_header, const Image3F& dc,
+                   const Rect& r, size_t group_index, bool nl_dc,
                    PassesEncoderState* enc_state, bool jpeg_transcode);
   
   
-  void AddACMetadata(size_t group_index, bool jpeg_transcode,
+  void AddACMetadata(const Rect& r, size_t group_index, bool jpeg_transcode,
                      PassesEncoderState* enc_state);
   
   
@@ -63,14 +70,12 @@ class ModularFrameEncoder {
   std::vector<uint8_t> extra_dc_precision;
 
  private:
-  Status PrepareEncoding(const FrameHeader& frame_header, ThreadPool* pool,
-                         EncoderHeuristics* heuristics,
-                         AuxOut* aux_out = nullptr);
   Status PrepareStreamParams(const Rect& rect, const CompressParams& cparams,
                              int minShift, int maxShift,
                              const ModularStreamId& stream, bool do_color);
   std::vector<Image> stream_images_;
   std::vector<ModularOptions> stream_options_;
+  std::vector<uint32_t> quants_;
 
   Tree tree_;
   std::vector<std::vector<Token>> tree_tokens_;
@@ -81,7 +86,6 @@ class ModularFrameEncoder {
   FrameDimensions frame_dim_;
   CompressParams cparams_;
   std::vector<size_t> tree_splits_;
-  std::vector<ModularMultiplierInfo> multiplier_info_;
   std::vector<std::vector<uint32_t>> gi_channel_;
   std::vector<size_t> image_widths_;
   Predictor delta_pred_ = Predictor::Average4;

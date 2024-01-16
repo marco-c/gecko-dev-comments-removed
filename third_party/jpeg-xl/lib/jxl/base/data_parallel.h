@@ -25,7 +25,7 @@ namespace jxl {
 class ThreadPool {
  public:
   ThreadPool(JxlParallelRunner runner, void* runner_opaque)
-      : runner_(runner ? runner : &ThreadPool::SequentialRunnerStatic),
+      : runner_(runner),
         runner_opaque_(runner ? runner_opaque : static_cast<void*>(this)) {}
 
   ThreadPool(const ThreadPool&) = delete;
@@ -50,6 +50,16 @@ class ThreadPool {
     RunCallState<InitFunc, DataFunc> call_state(init_func, data_func);
     
     
+    if (!runner_) {
+      void* jpegxl_opaque = static_cast<void*>(&call_state);
+      if (call_state.CallInitFunc(jpegxl_opaque, 1) != 0) {
+        return JXL_FAILURE("Failed to initialize thread");
+      }
+      for (uint32_t i = begin; i < end; i++) {
+        call_state.CallDataFunc(jpegxl_opaque, i, 0);
+      }
+      return true;
+    }
     return (*runner_)(runner_opaque_, static_cast<void*>(&call_state),
                       &call_state.CallInitFunc, &call_state.CallDataFunc, begin,
                       end) == 0;
@@ -88,12 +98,6 @@ class ThreadPool {
     const InitFunc& init_func_;
     const DataFunc& data_func_;
   };
-
-  
-  
-  static JxlParallelRetCode SequentialRunnerStatic(
-      void* runner_opaque, void* jpegxl_opaque, JxlParallelRunInit init,
-      JxlParallelRunFunction func, uint32_t start_range, uint32_t end_range);
 
   
   const JxlParallelRunner runner_;

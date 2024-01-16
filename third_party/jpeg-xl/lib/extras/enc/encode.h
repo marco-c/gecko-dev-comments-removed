@@ -8,10 +8,17 @@
 
 
 
+#include <jxl/codestream_header.h>
+#include <jxl/types.h>
+
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
-#include "lib/extras/dec/decode.h"
+#include "lib/extras/packed_image.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
 
@@ -74,10 +81,6 @@ class Encoder {
  private:
   std::unordered_map<std::string, std::string> options_;
 };
-
-
-Status SelectFormat(const std::vector<JxlPixelFormat>& accepted_formats,
-                    const JxlBasicInfo& basic_info, JxlPixelFormat* format);
 
 }  
 }  

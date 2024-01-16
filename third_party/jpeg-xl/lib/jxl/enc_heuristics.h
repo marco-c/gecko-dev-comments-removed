@@ -16,6 +16,7 @@
 
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
+#include "lib/jxl/frame_header.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/modular/encoding/enc_ma.h"
 
@@ -27,54 +28,22 @@ class DequantMatrices;
 class ImageBundle;
 class ModularFrameEncoder;
 
-class EncoderHeuristics {
- public:
-  virtual ~EncoderHeuristics() = default;
-  
-  
-  
-  
-  
-  virtual Status LossyFrameHeuristics(
-      PassesEncoderState* enc_state, ModularFrameEncoder* modular_frame_encoder,
-      const ImageBundle* original_pixels, Image3F* opsin,
-      const JxlCmsInterface& cms, ThreadPool* pool, AuxOut* aux_out) = 0;
-
-  
-  
-  virtual bool CustomFixedTreeLossless(const FrameDimensions& frame_dim,
-                                       Tree* tree) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  virtual bool HandlesColorConversion(const CompressParams& cparams,
-                                      const ImageBundle& ib) {
-    return false;
-  }
-};
-
-class DefaultEncoderHeuristics : public EncoderHeuristics {
- public:
-  Status LossyFrameHeuristics(PassesEncoderState* enc_state,
-                              ModularFrameEncoder* modular_frame_encoder,
-                              const ImageBundle* original_pixels,
-                              Image3F* opsin, const JxlCmsInterface& cms,
-                              ThreadPool* pool, AuxOut* aux_out) override;
-  bool HandlesColorConversion(const CompressParams& cparams,
-                              const ImageBundle& ib) override;
-};
 
 
 
-void FindBestDequantMatrices(const CompressParams& cparams,
-                             const Image3F& opsin,
-                             ModularFrameEncoder* modular_frame_encoder,
-                             DequantMatrices* dequant_matrices);
+
+
+Status LossyFrameHeuristics(const FrameHeader& frame_header,
+                            PassesEncoderState* enc_state,
+                            ModularFrameEncoder* modular_frame_encoder,
+                            const Image3F* original_pixels, Image3F* opsin,
+                            const JxlCmsInterface& cms, ThreadPool* pool,
+                            AuxOut* aux_out);
+
+void FindBestBlockEntropyModel(PassesEncoderState& enc_state);
+
+void DownsampleImage2_Iterative(Image3F* output);
+void DownsampleImage2_Sharper(Image3F* opsin);
 
 }  
 

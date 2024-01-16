@@ -350,6 +350,8 @@ typedef enum {
 
 
 
+
+
   JXL_ENC_FRAME_SETTING_BUFFERING = 34,
 
   
@@ -1424,6 +1426,44 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameDistance(
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelDistance(
     JxlEncoderFrameSettings* frame_settings, size_t index, float distance);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT float JxlEncoderDistanceFromQuality(float quality);
 
 
 

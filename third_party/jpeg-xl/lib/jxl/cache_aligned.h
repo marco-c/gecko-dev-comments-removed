@@ -62,13 +62,6 @@ static inline CacheAlignedUniquePtr AllocateArray(const size_t bytes) {
       CacheAlignedDeleter());
 }
 
-static inline CacheAlignedUniquePtr AllocateArray(const size_t bytes,
-                                                  const size_t offset) {
-  return CacheAlignedUniquePtr(
-      static_cast<uint8_t*>(CacheAligned::Allocate(bytes, offset)),
-      CacheAlignedDeleter());
-}
-
 }  
 
 #endif  

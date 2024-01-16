@@ -8,6 +8,8 @@
 
 
 
+#include <jxl/cms_interface.h>
+
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
@@ -19,12 +21,13 @@ namespace jxl {
 
 
 
+void ToXYB(const Image3F& color, const ColorEncoding& c_current,
+           float intensity_target, const ImageF* black, ThreadPool* pool,
+           Image3F* JXL_RESTRICT xyb, const JxlCmsInterface& cms,
+           Image3F* const JXL_RESTRICT linear);
 
-
-
-const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
-                         Image3F* JXL_RESTRICT xyb, const JxlCmsInterface& cms,
-                         ImageBundle* JXL_RESTRICT linear = nullptr);
+void ToXYB(const ImageBundle& in, ThreadPool* pool, Image3F* JXL_RESTRICT xyb,
+           const JxlCmsInterface& cms, Image3F* JXL_RESTRICT linear = nullptr);
 
 void Image3FToXYB(const Image3F& in, const ColorEncoding& color_encoding,
                   float intensity_target, ThreadPool* pool,

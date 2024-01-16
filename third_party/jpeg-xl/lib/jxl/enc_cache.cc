@@ -13,7 +13,6 @@
 #include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/common.h"
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/span.h"
 #include "lib/jxl/color_encoding_internal.h"
 #include "lib/jxl/compressed_dc.h"
@@ -35,36 +34,35 @@
 
 namespace jxl {
 
-Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
+Status InitializePassesEncoder(const FrameHeader& frame_header,
+                               const Image3F& opsin, const JxlCmsInterface& cms,
                                ThreadPool* pool, PassesEncoderState* enc_state,
                                ModularFrameEncoder* modular_frame_encoder,
                                AuxOut* aux_out) {
   PassesSharedState& JXL_RESTRICT shared = enc_state->shared;
 
-  enc_state->histogram_idx.resize(shared.frame_dim.num_groups);
+  enc_state->x_qm_multiplier = std::pow(1.25f, frame_header.x_qm_scale - 2.0f);
+  enc_state->b_qm_multiplier = std::pow(1.25f, frame_header.b_qm_scale - 2.0f);
 
-  enc_state->x_qm_multiplier =
-      std::pow(1.25f, shared.frame_header.x_qm_scale - 2.0f);
-  enc_state->b_qm_multiplier =
-      std::pow(1.25f, shared.frame_header.b_qm_scale - 2.0f);
-
-  if (enc_state->coeffs.size() < shared.frame_header.passes.num_passes) {
-    enc_state->coeffs.reserve(shared.frame_header.passes.num_passes);
+  if (enc_state->coeffs.size() < frame_header.passes.num_passes) {
+    enc_state->coeffs.reserve(frame_header.passes.num_passes);
     for (size_t i = enc_state->coeffs.size();
-         i < shared.frame_header.passes.num_passes; i++) {
+         i < frame_header.passes.num_passes; i++) {
       
       enc_state->coeffs.emplace_back(make_unique<ACImageT<int32_t>>(
           kGroupDim * kGroupDim, shared.frame_dim.num_groups));
     }
   }
-  while (enc_state->coeffs.size() > shared.frame_header.passes.num_passes) {
+  while (enc_state->coeffs.size() > frame_header.passes.num_passes) {
     enc_state->coeffs.pop_back();
   }
 
-  float scale =
-      shared.quantizer.ScaleGlobalScale(enc_state->cparams.quant_ac_rescale);
-  DequantMatricesScaleDC(&shared.matrices, scale);
-  shared.quantizer.RecomputeFromGlobalScale();
+  if (enc_state->initialize_global_state) {
+    float scale =
+        shared.quantizer.ScaleGlobalScale(enc_state->cparams.quant_ac_rescale);
+    DequantMatricesScaleDC(&shared.matrices, scale);
+    shared.quantizer.RecomputeFromGlobalScale();
+  }
 
   Image3F dc(shared.frame_dim.xsize_blocks, shared.frame_dim.ysize_blocks);
   JXL_RETURN_IF_ERROR(RunOnPool(
@@ -74,7 +72,7 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
       },
       "Compute coeffs"));
 
-  if (shared.frame_header.flags & FrameHeader::kUseDcFrame) {
+  if (frame_header.flags & FrameHeader::kUseDcFrame) {
     CompressParams cparams = enc_state->cparams;
     cparams.dots = Override::kOff;
     cparams.noise = Override::kOff;
@@ -117,6 +115,7 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
       
       
       
+      
       std::vector<ImageF> extra_channels;
       extra_channels.reserve(ib.metadata()->extra_channel_info.size());
       for (size_t i = 0; i < ib.metadata()->extra_channel_info.size(); i++) {
@@ -129,18 +128,15 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
       }
       ib.SetExtraChannels(std::move(extra_channels));
     }
-    std::unique_ptr<PassesEncoderState> state =
-        jxl::make_unique<PassesEncoderState>();
-
     auto special_frame = std::unique_ptr<BitWriter>(new BitWriter());
     FrameInfo dc_frame_info;
     dc_frame_info.frame_type = FrameType::kDCFrame;
-    dc_frame_info.dc_level = shared.frame_header.dc_level + 1;
+    dc_frame_info.dc_level = frame_header.dc_level + 1;
     dc_frame_info.ib_needs_color_transform = false;
     dc_frame_info.save_before_color_transform = true;  
     AuxOut dc_aux_out;
-    JXL_CHECK(EncodeFrame(cparams, dc_frame_info, shared.metadata, ib,
-                          state.get(), cms, pool, special_frame.get(),
+    JXL_CHECK(EncodeFrame(cparams, dc_frame_info, shared.metadata, ib, cms,
+                          pool, special_frame.get(),
                           aux_out ? &dc_aux_out : nullptr));
     if (aux_out) {
       for (const auto& l : dc_aux_out.layers) {
@@ -159,7 +155,8 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
     size_t encoded_size = encoded.size();
     for (int i = 0; i <= cparams.progressive_dc; ++i) {
       JXL_CHECK(DecodeFrame(dec_state.get(), pool, frame_start, encoded_size,
-                            &decoded, *shared.metadata));
+                            nullptr, &decoded,
+                            *shared.metadata));
       frame_start += decoded.decoded_bytes();
       encoded_size -= decoded.decoded_bytes();
     }
@@ -169,7 +166,7 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
     
     
     const Image3F& dc_frame =
-        dec_state->shared->dc_frames[shared.frame_header.dc_level];
+        dec_state->shared->dc_frames[frame_header.dc_level];
     shared.dc_storage = Image3F(dc_frame.xsize(), dc_frame.ysize());
     CopyImageTo(dc_frame, &shared.dc_storage);
     ZeroFillImage(&shared.quant_dc);
@@ -177,33 +174,40 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
     JXL_CHECK(encoded_size == 0);
   } else {
     auto compute_dc_coeffs = [&](int group_index, int ) {
+      const Rect r = enc_state->shared.frame_dim.DCGroupRect(group_index);
+      int modular_group_index = group_index;
+      if (enc_state->streaming_mode) {
+        JXL_ASSERT(group_index == 0);
+        modular_group_index = enc_state->dc_group_index;
+      }
       modular_frame_encoder->AddVarDCTDC(
-          dc, group_index, enc_state->cparams.speed_tier < SpeedTier::kFalcon,
-          enc_state, false);
+          frame_header, dc, r, modular_group_index,
+          enc_state->cparams.speed_tier < SpeedTier::kFalcon, enc_state,
+          false);
     };
     JXL_RETURN_IF_ERROR(RunOnPool(pool, 0, shared.frame_dim.num_dc_groups,
                                   ThreadPool::NoInit, compute_dc_coeffs,
                                   "Compute DC coeffs"));
     
-    if (!(shared.frame_header.flags & FrameHeader::kSkipAdaptiveDCSmoothing)) {
+    if (!(frame_header.flags & FrameHeader::kSkipAdaptiveDCSmoothing)) {
       AdaptiveDCSmoothing(shared.quantizer.MulDC(), &shared.dc_storage, pool);
     }
   }
   auto compute_ac_meta = [&](int group_index, int ) {
-    modular_frame_encoder->AddACMetadata(group_index, false,
-                                         enc_state);
+    const Rect r = enc_state->shared.frame_dim.DCGroupRect(group_index);
+    int modular_group_index = group_index;
+    if (enc_state->streaming_mode) {
+      JXL_ASSERT(group_index == 0);
+      modular_group_index = enc_state->dc_group_index;
+    }
+    modular_frame_encoder->AddACMetadata(r, modular_group_index,
+                                         false, enc_state);
   };
   JXL_RETURN_IF_ERROR(RunOnPool(pool, 0, shared.frame_dim.num_dc_groups,
                                 ThreadPool::NoInit, compute_ac_meta,
                                 "Compute AC Metadata"));
 
   return true;
-}
-
-void EncCache::InitOnce() {
-  if (num_nzeroes.xsize() == 0) {
-    num_nzeroes = Image3I(kGroupDimInBlocks, kGroupDimInBlocks);
-  }
 }
 
 }  

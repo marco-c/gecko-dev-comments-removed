@@ -227,7 +227,7 @@ class BitReader {
     JXL_ASSERT(TotalBitsConsumed() % kBitsPerByte == 0);
     const size_t offset = TotalBitsConsumed() / kBitsPerByte;  
     JXL_ASSERT(offset <= TotalBytes());
-    return Span<const uint8_t>(first_byte_ + offset, TotalBytes() - offset);
+    return Bytes(first_byte_ + offset, TotalBytes() - offset);
   }
 
   

@@ -16,9 +16,12 @@
 
 #include "lib/jxl/base/override.h"
 #include "lib/jxl/butteraugli/butteraugli.h"
+#include "lib/jxl/enc_progressive_split.h"
 #include "lib/jxl/frame_header.h"
+#include "lib/jxl/modular/encoding/dec_ma.h"
 #include "lib/jxl/modular/options.h"
 #include "lib/jxl/modular/transform/transform.h"
+#include "lib/jxl/splines.h"
 
 namespace jxl {
 
@@ -193,8 +196,20 @@ struct CompressParams {
   
   int level = -1;
 
+  
+  int buffering = 0;
+
   std::vector<float> manual_noise;
   std::vector<float> manual_xyb_factors;
+
+  
+  
+  Tree custom_fixed_tree;
+  
+  
+  Splines custom_splines;
+  
+  const ProgressiveMode* custom_progressive_mode = nullptr;
 
   JxlDebugImageCallback debug_image = nullptr;
   void* debug_image_opaque;

@@ -13,11 +13,12 @@
 
 
 #include <hwy/highway.h>
+#include <mutex>
 
 #include "lib/extras/dec/color_hints.h"
+#include "lib/extras/mmap.h"
 #include "lib/extras/packed_image.h"
 #include "lib/jxl/base/data_parallel.h"
-#include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/span.h"
 #include "lib/jxl/base/status.h"
 
@@ -34,6 +35,32 @@ Status DecodeImagePNM(Span<const uint8_t> bytes, const ColorHints& color_hints,
                       const SizeConstraints* constraints = nullptr);
 
 void TestCodecPNM();
+
+struct HeaderPNM {
+  size_t xsize;
+  size_t ysize;
+  bool is_gray;    
+  bool has_alpha;  
+  size_t bits_per_sample;
+  bool floating_point;
+  bool big_endian;
+  std::vector<JxlExtraChannelType> ec_types;  
+};
+
+class ChunkedPNMDecoder {
+ public:
+  static StatusOr<ChunkedPNMDecoder> Init(const char* file_path);
+  
+  jxl::Status InitializePPF(const ColorHints& color_hints,
+                            PackedPixelFile* ppf);
+
+ private:
+  HeaderPNM header_ = {};
+  size_t data_start_ = 0;
+  MemoryMappedFile pnm_;
+
+  friend struct PNMChunkedInputFrame;
+};
 
 }  
 }  

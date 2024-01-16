@@ -471,7 +471,7 @@ int ProcessScan(j_decompress_ptr cinfo, const uint8_t* const data,
     }
 
     
-    HWY_ALIGN_MAX coeff_t dummy_block[DCTSIZE2];
+    HWY_ALIGN_MAX coeff_t sink_block[DCTSIZE2];
     bool scan_ok = true;
     for (int i = 0; i < cinfo->comps_in_scan; ++i) {
       const jpeg_component_info* comp = cinfo->cur_comp_info[i];
@@ -492,7 +492,7 @@ int ProcessScan(j_decompress_ptr cinfo, const uint8_t* const data,
             
             
             
-            coeffs = dummy_block;
+            coeffs = sink_block;
           } else {
             coeffs = &m->coeff_rows[c][biy][block_x][0];
           }

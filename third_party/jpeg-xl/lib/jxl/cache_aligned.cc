@@ -3,7 +3,7 @@
 
 
 
-#include "lib/jxl/base/cache_aligned.h"
+#include "lib/jxl/cache_aligned.h"
 
 #include <stdio.h>
 #include <stdlib.h>

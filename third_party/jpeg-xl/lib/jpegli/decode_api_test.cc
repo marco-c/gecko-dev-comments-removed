@@ -4,6 +4,7 @@
 
 
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 #include "lib/jpegli/decode.h"

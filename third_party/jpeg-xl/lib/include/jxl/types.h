@@ -33,6 +33,8 @@ extern "C" {
 
 #define JXL_FALSE 0
 
+#define TO_JXL_BOOL(C) (!!(C) ? JXL_TRUE : JXL_FALSE)
+
 
 
 typedef enum {

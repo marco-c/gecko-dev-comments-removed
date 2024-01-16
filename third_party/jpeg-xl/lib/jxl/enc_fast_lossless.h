@@ -17,8 +17,30 @@
 #endif
 #endif
 
+#if !FJXL_STANDALONE
+#include <jxl/encode.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if FJXL_STANDALONE
+
+
+
+struct JxlChunkedFrameInputSource {
+  void* opaque;
+  const void* (*get_color_channel_data_at)(void* opaque, size_t xpos,
+                                           size_t ypos, size_t xsize,
+                                           size_t ysize, size_t* row_offset);
+  void (*release_buffer)(void* opaque, const void* buf);
+};
+
+
+struct JxlEncoderOutputProcessorWrapper {
+  int unused;
+};
 #endif
 
 
@@ -46,9 +68,17 @@ struct JxlFastLosslessFrameState;
 
 
 JxlFastLosslessFrameState* JxlFastLosslessPrepareFrame(
-    const unsigned char* rgba, size_t width, size_t row_stride, size_t height,
-    size_t nb_chans, size_t bitdepth, int big_endian, int effort,
-    void* runner_opaque, FJxlParallelRunner runner);
+    JxlChunkedFrameInputSource input, size_t width, size_t height,
+    size_t nb_chans, size_t bitdepth, int big_endian, int effort);
+
+#if !FJXL_STANDALONE
+class JxlEncoderOutputProcessorWrapper;
+#endif
+
+void JxlFastLosslessProcessFrame(
+    JxlFastLosslessFrameState* frame_state, bool is_last, void* runner_opaque,
+    FJxlParallelRunner runner,
+    JxlEncoderOutputProcessorWrapper* output_processor);
 
 
 
@@ -80,6 +110,12 @@ void JxlFastLosslessFreeFrameState(JxlFastLosslessFrameState* frame);
 
 #ifdef __cplusplus
 }  
+#endif
+
+#if !FJXL_STANDALONE
+void JxlFastLosslessOutputFrame(
+    JxlFastLosslessFrameState* frame_state,
+    JxlEncoderOutputProcessorWrapper* output_process);
 #endif
 
 #endif  

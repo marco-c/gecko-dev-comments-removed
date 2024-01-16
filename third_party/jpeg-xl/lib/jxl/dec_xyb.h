@@ -8,6 +8,8 @@
 
 
 
+#include <jxl/cms_interface.h>
+
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
@@ -41,7 +43,11 @@ struct OutputEncodingInfo {
   
   
   
+  
   ColorEncoding color_encoding;
+  
+  
+  ColorEncoding linear_color_encoding;
   bool color_encoding_is_original;
   
   
@@ -55,6 +61,8 @@ struct OutputEncodingInfo {
   float luminances[3];
   
   float desired_intensity_target;
+  bool cms_set = false;
+  JxlCmsInterface color_management_system;
 
   Status SetFromMetadata(const CodecMetadata& metadata);
   Status MaybeSetColorEncoding(const ColorEncoding& c_desired);

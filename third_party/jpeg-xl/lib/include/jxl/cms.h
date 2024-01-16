@@ -1,0 +1,24 @@
+
+
+
+
+
+#ifndef JXL_CMS_H_
+#define JXL_CMS_H_
+
+
+
+#include <jxl/cms_interface.h>
+#include <jxl/jxl_cms_export.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+JXL_CMS_EXPORT const JxlCmsInterface* JxlGetDefaultCms();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  

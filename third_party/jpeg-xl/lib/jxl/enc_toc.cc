@@ -17,14 +17,14 @@
 
 namespace jxl {
 Status WriteGroupOffsets(const std::vector<BitWriter>& group_codes,
-                         const std::vector<coeff_order_t>* permutation,
+                         const std::vector<coeff_order_t>& permutation,
                          BitWriter* JXL_RESTRICT writer, AuxOut* aux_out) {
   BitWriter::Allotment allotment(writer, MaxBits(group_codes.size()));
-  if (permutation && !group_codes.empty()) {
+  if (!permutation.empty() && !group_codes.empty()) {
     
     writer->Write(1, 1);  
-    JXL_DASSERT(permutation->size() == group_codes.size());
-    EncodePermutation(permutation->data(), 0, permutation->size(),
+    JXL_DASSERT(permutation.size() == group_codes.size());
+    EncodePermutation(permutation.data(), 0, permutation.size(),
                       writer,  0, aux_out);
 
   } else {

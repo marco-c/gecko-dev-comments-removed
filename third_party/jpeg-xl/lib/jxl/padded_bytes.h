@@ -16,9 +16,9 @@
 #include <initializer_list>
 #include <utility>  
 
-#include "lib/jxl/base/cache_aligned.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
+#include "lib/jxl/cache_aligned.h"
 
 namespace jxl {
 
@@ -32,20 +32,18 @@ class PaddedBytes {
   PaddedBytes() : size_(0), capacity_(0) {}
 
   explicit PaddedBytes(size_t size) : size_(size), capacity_(0) {
-    if (size != 0) IncreaseCapacityTo(size);
+    reserve(size);
   }
 
   PaddedBytes(size_t size, uint8_t value) : size_(size), capacity_(0) {
-    if (size != 0) {
-      IncreaseCapacityTo(size);
-    }
+    reserve(size);
     if (size_ != 0) {
       memset(data(), value, size);
     }
   }
 
   PaddedBytes(const PaddedBytes& other) : size_(other.size_), capacity_(0) {
-    if (size_ != 0) IncreaseCapacityTo(size_);
+    reserve(size_);
     if (data() != nullptr) memcpy(data(), other.data(), size_);
   }
   PaddedBytes& operator=(const PaddedBytes& other) {
@@ -79,8 +77,38 @@ class PaddedBytes {
     std::swap(data_, other.data_);
   }
 
+  
+  
+  
+  
+  
   void reserve(size_t capacity) {
-    if (capacity > capacity_) IncreaseCapacityTo(capacity);
+    if (capacity <= capacity_) return;
+
+    size_t new_capacity = std::max(capacity, 3 * capacity_ / 2);
+    new_capacity = std::max<size_t>(64, new_capacity);
+
+    
+    CacheAlignedUniquePtr new_data = AllocateArray(new_capacity + 8);
+    if (new_data == nullptr) {
+      
+      size_ = capacity_ = 0;
+      return;
+    }
+
+    if (data_ == nullptr) {
+      
+      new_data[0] = 0;
+    } else {
+      
+      memcpy(new_data.get(), data_.get(), size_);
+      
+      
+      new_data[size_] = 0;
+    }
+
+    capacity_ = new_capacity;
+    std::swap(new_data, data_);
   }
 
   
@@ -88,7 +116,7 @@ class PaddedBytes {
   
   
   void resize(size_t size) {
-    if (size > capacity_) IncreaseCapacityTo(size);
+    reserve(size);
     size_ = (data() == nullptr) ? 0 : size;
   }
 
@@ -104,7 +132,7 @@ class PaddedBytes {
   
   void push_back(uint8_t x) {
     if (size_ == capacity_) {
-      IncreaseCapacityTo(capacity_ + 1);
+      reserve(capacity_ + 1);
       if (data() == nullptr) return;
     }
 
@@ -126,9 +154,6 @@ class PaddedBytes {
     resize(il.size());
     memcpy(data(), il.begin(), il.size());
   }
-
-  
-  void assign(const uint8_t* new_begin, const uint8_t* new_end);
 
   uint8_t* begin() { return data(); }
   const uint8_t* begin() const { return data(); }
@@ -172,12 +197,6 @@ class PaddedBytes {
     
     JXL_ASSERT(i <= size());
   }
-
-  
-  
-  
-  
-  void IncreaseCapacityTo(size_t capacity);
 
   size_t size_;
   size_t capacity_;

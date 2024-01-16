@@ -6,6 +6,7 @@
 #ifndef LIB_JXL_CMS_COLOR_ENCODING_CMS_H_
 #define LIB_JXL_CMS_COLOR_ENCODING_CMS_H_
 
+#include <jxl/cms.h>
 #include <jxl/cms_interface.h>
 #include <jxl/color_encoding.h>
 #include <jxl/types.h>
@@ -19,7 +20,7 @@
 
 #include "lib/jxl/base/common.h"
 #include "lib/jxl/base/status.h"
-#include "lib/jxl/cms/color_management.h"
+#include "lib/jxl/cms/jxl_cms_internal.h"
 
 namespace jxl {
 namespace cms {
@@ -505,16 +506,9 @@ struct ColorEncoding {
     return SameColorSpace(other) && tf.IsSame(other.tf);
   }
 
-  Status CreateICC() {
-    icc.clear();
-    return MaybeCreateProfile(*this, &icc);
-  }
-
   
   
   Status SetFieldsFromICC(IccBytes&& new_icc, const JxlCmsInterface& cms) {
-    
-    
     
     JXL_ASSERT(!new_icc.empty());
     color_space = ColorSpace::kUnknown;
@@ -533,49 +527,51 @@ struct ColorEncoding {
     return true;
   }
 
-  void ToExternal(JxlColorEncoding* external) const {
-    
+  JxlColorEncoding ToExternal() const {
+    JxlColorEncoding external = {};
     if (!have_fields) {
-      external->color_space = JXL_COLOR_SPACE_UNKNOWN;
-      external->primaries = JXL_PRIMARIES_CUSTOM;
-      external->rendering_intent = JXL_RENDERING_INTENT_PERCEPTUAL;  
-      external->transfer_function = JXL_TRANSFER_FUNCTION_UNKNOWN;
-      external->white_point = JXL_WHITE_POINT_CUSTOM;
-      return;
+      external.color_space = JXL_COLOR_SPACE_UNKNOWN;
+      external.primaries = JXL_PRIMARIES_CUSTOM;
+      external.rendering_intent = JXL_RENDERING_INTENT_PERCEPTUAL;  
+      external.transfer_function = JXL_TRANSFER_FUNCTION_UNKNOWN;
+      external.white_point = JXL_WHITE_POINT_CUSTOM;
+      return external;
     }
-    external->color_space = static_cast<JxlColorSpace>(color_space);
+    external.color_space = static_cast<JxlColorSpace>(color_space);
 
-    external->white_point = static_cast<JxlWhitePoint>(white_point);
+    external.white_point = static_cast<JxlWhitePoint>(white_point);
 
     CIExy wp = GetWhitePoint();
-    external->white_point_xy[0] = wp.x;
-    external->white_point_xy[1] = wp.y;
+    external.white_point_xy[0] = wp.x;
+    external.white_point_xy[1] = wp.y;
 
-    if (external->color_space == JXL_COLOR_SPACE_RGB ||
-        external->color_space == JXL_COLOR_SPACE_UNKNOWN) {
-      external->primaries = static_cast<JxlPrimaries>(primaries);
+    if (external.color_space == JXL_COLOR_SPACE_RGB ||
+        external.color_space == JXL_COLOR_SPACE_UNKNOWN) {
+      external.primaries = static_cast<JxlPrimaries>(primaries);
       PrimariesCIExy p = GetPrimaries();
-      external->primaries_red_xy[0] = p.r.x;
-      external->primaries_red_xy[1] = p.r.y;
-      external->primaries_green_xy[0] = p.g.x;
-      external->primaries_green_xy[1] = p.g.y;
-      external->primaries_blue_xy[0] = p.b.x;
-      external->primaries_blue_xy[1] = p.b.y;
+      external.primaries_red_xy[0] = p.r.x;
+      external.primaries_red_xy[1] = p.r.y;
+      external.primaries_green_xy[0] = p.g.x;
+      external.primaries_green_xy[1] = p.g.y;
+      external.primaries_blue_xy[0] = p.b.x;
+      external.primaries_blue_xy[1] = p.b.y;
     }
 
     if (tf.have_gamma) {
-      external->transfer_function = JXL_TRANSFER_FUNCTION_GAMMA;
-      external->gamma = tf.GetGamma();
+      external.transfer_function = JXL_TRANSFER_FUNCTION_GAMMA;
+      external.gamma = tf.GetGamma();
     } else {
-      external->transfer_function =
+      external.transfer_function =
           static_cast<JxlTransferFunction>(tf.GetTransferFunction());
-      external->gamma = 0;
+      external.gamma = 0;
     }
 
-    external->rendering_intent =
+    external.rendering_intent =
         static_cast<JxlRenderingIntent>(rendering_intent);
+    return external;
   }
 
+  
   Status FromExternal(const JxlColorEncoding& external) {
     
     color_space = static_cast<ColorSpace>(external.color_space);
@@ -620,151 +616,11 @@ struct ColorEncoding {
     JXL_RETURN_IF_ERROR(RenderingIntentFromExternal(external.rendering_intent,
                                                     &rendering_intent));
 
-    
-    
-    if (!(CreateICC())) {
-      
-      
-      
-      
-    }
+    icc.clear();
 
     return true;
   }
 };
-
-
-
-static inline std::string ToString(ColorSpace color_space) {
-  switch (color_space) {
-    case ColorSpace::kRGB:
-      return "RGB";
-    case ColorSpace::kGray:
-      return "Gra";
-    case ColorSpace::kXYB:
-      return "XYB";
-    case ColorSpace::kUnknown:
-      return "CS?";
-  }
-  
-  JXL_UNREACHABLE("Invalid ColorSpace %u", static_cast<uint32_t>(color_space));
-}
-
-static inline std::string ToString(WhitePoint white_point) {
-  switch (white_point) {
-    case WhitePoint::kD65:
-      return "D65";
-    case WhitePoint::kCustom:
-      return "Cst";
-    case WhitePoint::kE:
-      return "EER";
-    case WhitePoint::kDCI:
-      return "DCI";
-  }
-  
-  JXL_UNREACHABLE("Invalid WhitePoint %u", static_cast<uint32_t>(white_point));
-}
-
-static inline std::string ToString(Primaries primaries) {
-  switch (primaries) {
-    case Primaries::kSRGB:
-      return "SRG";
-    case Primaries::k2100:
-      return "202";
-    case Primaries::kP3:
-      return "DCI";
-    case Primaries::kCustom:
-      return "Cst";
-  }
-  
-  JXL_UNREACHABLE("Invalid Primaries %u", static_cast<uint32_t>(primaries));
-}
-
-static inline std::string ToString(TransferFunction transfer_function) {
-  switch (transfer_function) {
-    case TransferFunction::kSRGB:
-      return "SRG";
-    case TransferFunction::kLinear:
-      return "Lin";
-    case TransferFunction::k709:
-      return "709";
-    case TransferFunction::kPQ:
-      return "PeQ";
-    case TransferFunction::kHLG:
-      return "HLG";
-    case TransferFunction::kDCI:
-      return "DCI";
-    case TransferFunction::kUnknown:
-      return "TF?";
-  }
-  
-  JXL_UNREACHABLE("Invalid TransferFunction %u",
-                  static_cast<uint32_t>(transfer_function));
-}
-
-static inline std::string ToString(RenderingIntent rendering_intent) {
-  switch (rendering_intent) {
-    case RenderingIntent::kPerceptual:
-      return "Per";
-    case RenderingIntent::kRelative:
-      return "Rel";
-    case RenderingIntent::kSaturation:
-      return "Sat";
-    case RenderingIntent::kAbsolute:
-      return "Abs";
-  }
-  
-  JXL_UNREACHABLE("Invalid RenderingIntent %u",
-                  static_cast<uint32_t>(rendering_intent));
-}
-
-
-
-static inline std::string Description(const ColorEncoding& c) {
-  std::string d = ToString(c.color_space);
-
-  bool explicit_wp_tf = (c.color_space != ColorSpace::kXYB);
-  if (explicit_wp_tf) {
-    d += '_';
-    if (c.white_point == WhitePoint::kCustom) {
-      const CIExy wp = c.GetWhitePoint();
-      d += jxl::ToString(wp.x) + ';';
-      d += jxl::ToString(wp.y);
-    } else {
-      d += ToString(c.white_point);
-    }
-  }
-
-  if (c.HasPrimaries()) {
-    d += '_';
-    if (c.primaries == Primaries::kCustom) {
-      const PrimariesCIExy pr = c.GetPrimaries();
-      d += jxl::ToString(pr.r.x) + ';';
-      d += jxl::ToString(pr.r.y) + ';';
-      d += jxl::ToString(pr.g.x) + ';';
-      d += jxl::ToString(pr.g.y) + ';';
-      d += jxl::ToString(pr.b.x) + ';';
-      d += jxl::ToString(pr.b.y);
-    } else {
-      d += ToString(c.primaries);
-    }
-  }
-
-  d += '_';
-  d += ToString(c.rendering_intent);
-
-  if (explicit_wp_tf) {
-    d += '_';
-    if (c.tf.have_gamma) {
-      d += 'g';
-      d += jxl::ToString(c.tf.GetGamma());
-    } else {
-      d += ToString(c.tf.transfer_function);
-    }
-  }
-
-  return d;
-}
 
 }  
 }  

@@ -15,6 +15,9 @@
 
 namespace jxl {
 
+
+using ANSHistBin = int32_t;
+
 struct HistogramParams {
   enum class ClusteringType {
     kFastest,  
@@ -69,6 +72,10 @@ struct HistogramParams {
   std::vector<size_t> image_widths;
   size_t max_histograms = ~0;
   bool force_huffman = false;
+  bool initialize_global_state = true;
+  bool streaming_mode = false;
+  bool add_missing_symbols = false;
+  bool add_fixed_histograms = false;
 };
 
 }  

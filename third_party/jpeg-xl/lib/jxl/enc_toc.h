@@ -23,7 +23,7 @@ struct AuxOut;
 
 
 Status WriteGroupOffsets(const std::vector<BitWriter>& group_codes,
-                         const std::vector<coeff_order_t>* permutation,
+                         const std::vector<coeff_order_t>& permutation,
                          BitWriter* JXL_RESTRICT writer, AuxOut* aux_out);
 
 }  

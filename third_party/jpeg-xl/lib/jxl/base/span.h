@@ -9,8 +9,8 @@
 
 
 
-#include <stddef.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "lib/jxl/base/status.h"
@@ -64,7 +64,7 @@ class Span {
 
   
   template <typename NCT>
-  void AppendTo(std::vector<NCT>* dst) {
+  void AppendTo(std::vector<NCT>* dst) const {
     dst->insert(dst->end(), begin(), end());
   }
 
@@ -72,6 +72,8 @@ class Span {
   T* ptr_;
   size_t len_;
 };
+
+typedef Span<const uint8_t> Bytes;
 
 }  
 

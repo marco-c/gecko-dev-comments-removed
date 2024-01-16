@@ -89,17 +89,18 @@ class ModularFrameDecoder {
   void Init(const FrameDimensions& frame_dim) { this->frame_dim = frame_dim; }
   Status DecodeGlobalInfo(BitReader* reader, const FrameHeader& frame_header,
                           bool allow_truncated_group);
-  Status DecodeGroup(const Rect& rect, BitReader* reader, int minShift,
-                     int maxShift, const ModularStreamId& stream, bool zerofill,
+  Status DecodeGroup(const FrameHeader& frame_header, const Rect& rect,
+                     BitReader* reader, int minShift, int maxShift,
+                     const ModularStreamId& stream, bool zerofill,
                      PassesDecoderState* dec_state,
                      RenderPipelineInput* render_pipeline_input,
                      bool allow_truncated, bool* should_run_pipeline = nullptr);
   
-  Status DecodeVarDCTDC(size_t group_id, BitReader* reader,
-                        PassesDecoderState* dec_state);
+  Status DecodeVarDCTDC(const FrameHeader& frame_header, size_t group_id,
+                        BitReader* reader, PassesDecoderState* dec_state);
   
-  Status DecodeAcMetadata(size_t group_id, BitReader* reader,
-                          PassesDecoderState* dec_state);
+  Status DecodeAcMetadata(const FrameHeader& frame_header, size_t group_id,
+                          BitReader* reader, PassesDecoderState* dec_state);
   
   
   
@@ -110,14 +111,16 @@ class ModularFrameDecoder {
   
   
   
-  Status FinalizeDecoding(PassesDecoderState* dec_state, jxl::ThreadPool* pool,
+  Status FinalizeDecoding(const FrameHeader& frame_header,
+                          PassesDecoderState* dec_state, jxl::ThreadPool* pool,
                           bool inplace);
   bool have_dc() const { return have_something; }
   void MaybeDropFullImage();
   bool UsesFullImage() const { return use_full_image; }
 
  private:
-  Status ModularImageToDecodedRect(Image& gi, PassesDecoderState* dec_state,
+  Status ModularImageToDecodedRect(const FrameHeader& frame_header, Image& gi,
+                                   PassesDecoderState* dec_state,
                                    jxl::ThreadPool* pool,
                                    RenderPipelineInput& render_pipeline_input,
                                    Rect modular_rect);

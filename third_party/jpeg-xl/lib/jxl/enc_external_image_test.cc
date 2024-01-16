@@ -26,16 +26,16 @@ TEST(ExternalImageTest, InvalidSize) {
 
   JxlPixelFormat format = {4, JXL_TYPE_UINT16, JXL_BIG_ENDIAN, 0};
   const uint8_t buf[10 * 100 * 8] = {};
+  EXPECT_FALSE(ConvertFromExternal(Bytes(buf, 10), 10, 100,
+                                   ColorEncoding::SRGB(),
+                                   16, format, nullptr,
+                                   &ib));
   EXPECT_FALSE(ConvertFromExternal(
-      Span<const uint8_t>(buf, 10), 10, 100,
-      ColorEncoding::SRGB(),
-      16, format, nullptr, &ib));
-  EXPECT_FALSE(ConvertFromExternal(
-      Span<const uint8_t>(buf, sizeof(buf) - 1), 10, 100,
+      Bytes(buf, sizeof(buf) - 1), 10, 100,
       ColorEncoding::SRGB(),
       16, format, nullptr, &ib));
   EXPECT_TRUE(
-      ConvertFromExternal(Span<const uint8_t>(buf, sizeof(buf)), 10,
+      ConvertFromExternal(Bytes(buf, sizeof(buf)), 10,
                           100, ColorEncoding::SRGB(),
                           16, format, nullptr, &ib));
 }
@@ -53,8 +53,7 @@ TEST(ExternalImageTest, AlphaMissing) {
   JxlPixelFormat format = {4, JXL_TYPE_UINT8, JXL_BIG_ENDIAN, 0};
   
   
-  EXPECT_TRUE(ConvertFromExternal(Span<const uint8_t>(buf, sizeof(buf)), xsize,
-                                  ysize,
+  EXPECT_TRUE(ConvertFromExternal(Bytes(buf, sizeof(buf)), xsize, ysize,
                                   ColorEncoding::SRGB(),
                                   8, format, nullptr, &ib));
   EXPECT_FALSE(ib.HasAlpha());

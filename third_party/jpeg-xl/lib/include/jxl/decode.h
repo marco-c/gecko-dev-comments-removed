@@ -877,7 +877,8 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetOutputColorProfile(
 
 
 
-JXL_EXPORT void JxlDecoderSetCms(JxlDecoder* dec, JxlCmsInterface cms);
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetCms(JxlDecoder* dec,
+                                             JxlCmsInterface cms);
 
 
 

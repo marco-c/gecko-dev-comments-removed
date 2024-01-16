@@ -341,6 +341,9 @@ Status DecodeHistograms(BitReader* br, size_t num_contexts, ANSCode* code,
   if (num_contexts > 1) {
     JXL_RETURN_IF_ERROR(DecodeContextMap(context_map, &num_histograms, br));
   }
+  JXL_DEBUG_V(
+      4, "Decoded context map of size %" PRIuS " and %" PRIuS " histograms",
+      num_contexts, num_histograms);
   code->lz77.nonserialized_distance_context = context_map->back();
   code->use_prefix_code = br->ReadFixedBits<1>();
   if (code->use_prefix_code) {
@@ -354,17 +357,6 @@ Status DecodeHistograms(BitReader* br, size_t num_contexts, ANSCode* code,
   const size_t max_alphabet_size = 1 << code->log_alpha_size;
   JXL_RETURN_IF_ERROR(
       DecodeANSCodes(num_histograms, max_alphabet_size, br, code));
-  
-  
-  
-  
-  
-  if (!code->lz77.enabled && code->max_num_bits > 32) {
-    
-    JXL_WARNING("Histogram can represent numbers that are too large: %" PRIuS
-                "\n",
-                code->max_num_bits);
-  }
   return true;
 }
 

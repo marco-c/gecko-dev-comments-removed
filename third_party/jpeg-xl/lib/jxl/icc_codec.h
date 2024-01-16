@@ -8,14 +8,14 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_ans.h"
 #include "lib/jxl/dec_bit_reader.h"
+#include "lib/jxl/padded_bytes.h"
 
 namespace jxl {
 
@@ -38,13 +38,6 @@ struct ICCReader {
   ANSSymbolReader ans_reader_;
   PaddedBytes decompressed_;
 };
-
-
-
-
-
-Status ReadICC(BitReader* JXL_RESTRICT reader, PaddedBytes* JXL_RESTRICT icc,
-               size_t output_limit = 0);
 
 
 Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result);
