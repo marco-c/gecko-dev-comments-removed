@@ -61,6 +61,8 @@ const LOG_COMPLETE_SUCCESS = "complete_log_success" + COMPARE_LOG_SUFFIX;
 const LOG_PARTIAL_SUCCESS = "partial_log_success" + COMPARE_LOG_SUFFIX;
 const LOG_PARTIAL_FAILURE = "partial_log_failure" + COMPARE_LOG_SUFFIX;
 const LOG_REPLACE_SUCCESS = "replace_log_success";
+const MAC_APP_XATTR_KEY = "com.apple.application-instance";
+const MAC_APP_XATTR_VALUE = "dlsource%3Dmozillaci";
 
 const USE_EXECV = AppConstants.platform == "linux";
 
@@ -3167,6 +3169,15 @@ async function setupUpdaterTest(
 
   
   
+  if (AppConstants.platform == "macosx") {
+    await IOUtils.setMacXAttr(
+      getApplyDirFile().path,
+      MAC_APP_XATTR_KEY,
+      new TextEncoder().encode(MAC_APP_XATTR_VALUE)
+    );
+  }
+  
+  
   gTestDirs.forEach(function SUT_TD_FE(aTestDir) {
     debugDump("start - setup test directory: " + aTestDir.relPathDir);
     let testDir = getApplyDirFile(aTestDir.relPathDir);
@@ -3744,6 +3755,22 @@ function checkFilesAfterUpdateSuccess(
       }
     }
   });
+
+  if (AppConstants.platform == "macosx") {
+    debugDump("testing that xattrs were preserved after a successful update");
+    IOUtils.getMacXAttr(getApplyDirFile().path, MAC_APP_XATTR_KEY).then(
+      bytes => {
+        Assert.equal(
+          new TextDecoder().decode(bytes),
+          MAC_APP_XATTR_VALUE,
+          "xattr value changed"
+        );
+      },
+      reason => {
+        Assert.fail(MAC_APP_XATTR_KEY + " xattr is missing!");
+      }
+    );
+  }
 
   checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists);
 }
