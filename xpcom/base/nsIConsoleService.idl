@@ -23,7 +23,7 @@ interface nsIConsoleService : nsISupports
     
     
     [implicit_jscontext]
-    jsval callFunctionAndLogException(in jsval targetGlobal, in jsval function);
+    jsval callFunctionAndLogException(in jsval targetGlobal, in jsval func);
 
     
     
