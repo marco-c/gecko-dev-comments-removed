@@ -4733,8 +4733,22 @@
           this.shouldActivateDocShell(ourBrowser);
       }
 
+      let ourBrowserContainer =
+        ourBrowser.ownerDocument.getElementById("browser");
+      let otherBrowserContainer =
+        aOtherBrowser.ownerDocument.getElementById("browser");
+      let ourBrowserContainerWasHidden = ourBrowserContainer.hidden;
+      let otherBrowserContainerWasHidden = otherBrowserContainer.hidden;
+
+      
+      
+      ourBrowserContainer.hidden = otherBrowserContainer.hidden = false;
+
       
       ourBrowser.swapDocShells(aOtherBrowser);
+
+      ourBrowserContainer.hidden = ourBrowserContainerWasHidden;
+      otherBrowserContainer.hidden = otherBrowserContainerWasHidden;
 
       
       let ourPermanentKey = ourBrowser.permanentKey;
