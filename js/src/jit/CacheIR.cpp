@@ -7651,6 +7651,93 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  writer.stringTrimResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringTrim");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimStart() {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  writer.stringTrimStartResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringTrimStart");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimEnd() {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  writer.stringTrimEndResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringTrimEnd");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachMathRandom() {
   
   if (argc_ != 0) {
@@ -11080,6 +11167,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachStringToLowerCase();
     case InlinableNative::StringToUpperCase:
       return tryAttachStringToUpperCase();
+    case InlinableNative::StringTrim:
+      return tryAttachStringTrim();
+    case InlinableNative::StringTrimStart:
+      return tryAttachStringTrimStart();
+    case InlinableNative::StringTrimEnd:
+      return tryAttachStringTrimEnd();
     case InlinableNative::IntrinsicStringReplaceString:
       return tryAttachStringReplaceString();
     case InlinableNative::IntrinsicStringSplitString:
