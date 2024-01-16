@@ -297,44 +297,6 @@ static NSScreen* FindTargetScreenForRect(const DesktopIntRect& aRect) {
   return targetScreen;
 }
 
-
-
-
-static void FitRectToVisibleAreaForScreen(DesktopIntRect& aRect,
-                                          NSScreen* aScreen) {
-  if (!aScreen) {
-    aScreen = FindTargetScreenForRect(aRect);
-  }
-
-  DesktopIntRect screenBounds =
-      nsCocoaUtils::CocoaRectToGeckoRect([aScreen visibleFrame]);
-
-  if (aRect.width > screenBounds.width) {
-    aRect.width = screenBounds.width;
-  }
-  if (aRect.height > screenBounds.height) {
-    aRect.height = screenBounds.height;
-  }
-
-  if (aRect.x - screenBounds.x + aRect.width > screenBounds.width) {
-    aRect.x += screenBounds.width - (aRect.x - screenBounds.x + aRect.width);
-  }
-  if (aRect.y - screenBounds.y + aRect.height > screenBounds.height) {
-    aRect.y += screenBounds.height - (aRect.y - screenBounds.y + aRect.height);
-  }
-
-  
-  
-  if (aRect.x < screenBounds.x ||
-      aRect.x > (screenBounds.x + screenBounds.width)) {
-    aRect.x = screenBounds.x;
-  }
-  if (aRect.y < screenBounds.y ||
-      aRect.y > (screenBounds.y + screenBounds.height)) {
-    aRect.y = screenBounds.y;
-  }
-}
-
 DesktopToLayoutDeviceScale ParentBackingScaleFactor(nsIWidget* aParent,
                                                     NSView* aParentView) {
   if (aParent) {
@@ -392,9 +354,6 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   
   nsAutoreleasePool localPool;
 
-  DesktopIntRect newBounds = aRect;
-  FitRectToVisibleAreaForScreen(newBounds, nullptr);
-
   
   mWindowType = WindowType::TopLevel;
   mBorderStyle = BorderStyle::Default;
@@ -431,7 +390,7 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     
     
     LayoutDeviceIntRect devRect =
-        RoundedToInt(newBounds * GetDesktopToDeviceScale());
+        RoundedToInt(aRect * GetDesktopToDeviceScale());
     return CreatePopupContentView(devRect, aInitData);
   }
 
@@ -2165,10 +2124,6 @@ void nsCocoaWindow::DoResize(double aX, double aY, double aWidth,
   DesktopIntRect newBounds(NSToIntRound(aX), NSToIntRound(aY),
                            NSToIntRound(width / scale),
                            NSToIntRound(height / scale));
-
-  
-  FitRectToVisibleAreaForScreen(
-      newBounds, aConstrainToCurrentScreen ? [mWindow screen] : nullptr);
 
   
   NSRect newFrame = nsCocoaUtils::GeckoRectToCocoaRect(newBounds);
