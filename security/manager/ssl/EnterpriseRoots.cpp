@@ -222,6 +222,143 @@ static void GatherEnterpriseCertsWindows(Vector<EnterpriseCert>& certs) {
 #endif  
 
 #ifdef XP_MACOSX
+enum class CertificateTrustResult {
+  CanUseAsIntermediate,
+  CanUseAsTrustAnchor,
+  DoNotUse,
+};
+
+
+
+
+CertificateTrustResult GetCertificateTrustResultInDomain(
+    const SecCertificateRef certificate, SecTrustSettingsDomain domain) {
+  CFArrayRef trustSettingsRaw;
+  OSStatus rv =
+      SecTrustSettingsCopyTrustSettings(certificate, domain, &trustSettingsRaw);
+  if (rv != errSecSuccess || !trustSettingsRaw) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("SecTrustSettingsCopyTrustSettings failed (or not found)"));
+    return CertificateTrustResult::CanUseAsIntermediate;
+  }
+  
+  
+  ScopedCFType<CFArrayRef> trustSettings(trustSettingsRaw);
+  
+  const CFIndex numTrustDictionaries = CFArrayGetCount(trustSettings.get());
+  if (numTrustDictionaries == 0) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("empty trust settings -> trust anchor"));
+    return CertificateTrustResult::CanUseAsTrustAnchor;
+  }
+  CertificateTrustResult currentTrustSettings =
+      CertificateTrustResult::CanUseAsIntermediate;
+  for (CFIndex i = 0; i < numTrustDictionaries; i++) {
+    CFDictionaryRef trustDictionary = reinterpret_cast<CFDictionaryRef>(
+        CFArrayGetValueAtIndex(trustSettings.get(), i));
+    
+    
+    
+    
+    
+    
+    if (CFDictionaryContainsKey(trustDictionary,
+                                kSecTrustSettingsApplication) ||
+        CFDictionaryContainsKey(trustDictionary,
+                                kSecTrustSettingsPolicyString)) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("found unsupported policy -> assuming distrusted"));
+      return CertificateTrustResult::DoNotUse;
+    }
+
+    
+    
+    
+    
+    if (CFDictionaryContainsKey(trustDictionary, kSecTrustSettingsKeyUsage)) {
+      CFNumberRef keyUsage = (CFNumberRef)CFDictionaryGetValue(
+          trustDictionary, kSecTrustSettingsKeyUsage);
+      int32_t keyUsageValue;
+      if (!keyUsage ||
+          CFNumberGetValue(keyUsage, kCFNumberSInt32Type, &keyUsageValue) ||
+          keyUsageValue < 0) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                ("no trust settings key usage or couldn't get value"));
+        return CertificateTrustResult::DoNotUse;
+      }
+      switch ((uint64_t)keyUsageValue) {
+        case kSecTrustSettingsKeyUseSignature:  
+        case kSecTrustSettingsKeyUseSignCert:   
+        case kSecTrustSettingsKeyUseAny:
+          break;
+        default:
+          return CertificateTrustResult::DoNotUse;
+      }
+    }
+
+    
+    
+    
+    if (CFDictionaryContainsKey(trustDictionary, kSecTrustSettingsPolicy)) {
+      SecPolicyRef policy = (SecPolicyRef)CFDictionaryGetValue(
+          trustDictionary, kSecTrustSettingsPolicy);
+      if (!policy) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                ("kSecTrustSettingsPolicy present, but null?"));
+        continue;
+      }
+      ScopedCFType<CFDictionaryRef> policyProperties(
+          SecPolicyCopyProperties(policy));
+      CFStringRef policyOid = (CFStringRef)CFDictionaryGetValue(
+          policyProperties.get(), kSecPolicyOid);
+      if (!CFEqual(policyOid, kSecPolicyAppleSSL)) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("policy doesn't match"));
+        continue;
+      }
+    }
+
+    
+    
+    int32_t trustSettingsValue = kSecTrustSettingsResultTrustRoot;
+    if (CFDictionaryContainsKey(trustDictionary, kSecTrustSettingsResult)) {
+      CFNumberRef trustSetting = (CFNumberRef)CFDictionaryGetValue(
+          trustDictionary, kSecTrustSettingsResult);
+      if (!trustSetting || !CFNumberGetValue(trustSetting, kCFNumberSInt32Type,
+                                             &trustSettingsValue)) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                ("no trust settings result or couldn't get value"));
+        continue;
+      }
+    }
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("trust setting: %d", trustSettingsValue));
+    if (trustSettingsValue == kSecTrustSettingsResultDeny) {
+      return CertificateTrustResult::DoNotUse;
+    }
+    if (trustSettingsValue == kSecTrustSettingsResultTrustRoot ||
+        trustSettingsValue == kSecTrustSettingsResultTrustAsRoot) {
+      currentTrustSettings = CertificateTrustResult::CanUseAsTrustAnchor;
+    }
+  }
+  return currentTrustSettings;
+}
+
+CertificateTrustResult GetCertificateTrustResult(
+    const SecCertificateRef certificate) {
+  
+  
+  
+  
+  CertificateTrustResult certificateTrustResult =
+      GetCertificateTrustResultInDomain(certificate,
+                                        kSecTrustSettingsDomainUser);
+  if (certificateTrustResult != CertificateTrustResult::CanUseAsIntermediate) {
+    return certificateTrustResult;
+  }
+  return GetCertificateTrustResultInDomain(certificate,
+                                           kSecTrustSettingsDomainAdmin);
+}
+
 OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
   
   
@@ -229,15 +366,8 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
   
   
   
-  
-  
-  
-  const CFStringRef keys[] = {kSecClass, kSecMatchLimit, kSecMatchPolicy,
-                              kSecMatchTrustedOnly};
-  
-  ScopedCFType<SecPolicyRef> sslPolicy(SecPolicyCreateSSL(true, nullptr));
-  const void* values[] = {kSecClassCertificate, kSecMatchLimitAll,
-                          sslPolicy.get(), kCFBooleanTrue};
+  const CFStringRef keys[] = {kSecClass, kSecMatchLimit};
+  const void* values[] = {kSecClassCertificate, kSecMatchLimitAll};
   static_assert(ArrayLength(keys) == ArrayLength(values),
                 "mismatched SecItemCopyMatching key/value array sizes");
   
@@ -257,38 +387,22 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
   CFIndex count = CFArrayGetCount(arr.get());
   uint32_t numImported = 0;
   for (CFIndex i = 0; i < count; i++) {
-    const CFTypeRef c = CFArrayGetValueAtIndex(arr.get(), i);
-    SecTrustRef trust;
-    rv = SecTrustCreateWithCertificates(c, sslPolicy.get(), &trust);
-    if (rv != errSecSuccess) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("SecTrustCreateWithCertificates failed"));
-      continue;
-    }
-    ScopedCFType<SecTrustRef> trustHandle(trust);
-    
-    rv = SecTrustSetNetworkFetchAllowed(trustHandle.get(), false);
-    if (rv != errSecSuccess) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("SecTrustSetNetworkFetchAllowed failed"));
-      continue;
-    }
-
-    if (!SecTrustEvaluateWithError(trustHandle.get(), nullptr)) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping cert not trusted"));
-      continue;
-    }
-
-    CFIndex count = SecTrustGetCertificateCount(trustHandle.get());
-    bool isRoot = count == 1;
-
     
     
-    const SecCertificateRef s = (const SecCertificateRef)c;
-    ScopedCFType<CFDataRef> der(SecCertificateCopyData(s));
+    const SecCertificateRef certificate =
+        (const SecCertificateRef)CFArrayGetValueAtIndex(arr.get(), i);
+    CertificateTrustResult certificateTrustResult =
+        GetCertificateTrustResult(certificate);
+    if (certificateTrustResult == CertificateTrustResult::DoNotUse) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping distrusted cert"));
+      continue;
+    }
+    ScopedCFType<CFDataRef> der(SecCertificateCopyData(certificate));
     EnterpriseCert enterpriseCert;
-    if (NS_FAILED(enterpriseCert.Init(CFDataGetBytePtr(der.get()),
-                                      CFDataGetLength(der.get()), isRoot))) {
+    if (NS_FAILED(enterpriseCert.Init(
+            CFDataGetBytePtr(der.get()), CFDataGetLength(der.get()),
+            certificateTrustResult ==
+                CertificateTrustResult::CanUseAsTrustAnchor))) {
       
       continue;
     }
