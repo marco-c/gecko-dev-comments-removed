@@ -236,7 +236,7 @@ class SingleTestMixin(object):
                     "mochitest-browser-chrome",
                     "screenshots",
                     None,
-                ): "mochitest-browser-chrome-screenshots",  
+                ): "mochitest-browser-screenshots",  
                 ("mochitest-plain", "media", None): "mochitest-media",
                 
                 ("mochitest-chrome", "gpu", None): "mochitest-chrome-gpu",
