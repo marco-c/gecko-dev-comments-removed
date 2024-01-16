@@ -1173,25 +1173,6 @@ static OperatingSystem WindowsVersionToOperatingSystem(
   }
 }
 
-static bool OnlyAllowFeatureOnWhitelistedVendor(int32_t aFeature) {
-  switch (aFeature) {
-    
-    
-    case nsIGfxInfo::FEATURE_GPU_PROCESS:
-    
-    case nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE:
-    
-    
-    case nsIGfxInfo::FEATURE_ALLOW_WEBGL_OUT_OF_PROCESS:
-    
-    
-    case nsIGfxInfo::FEATURE_BACKDROP_FILTER:
-      return false;
-    default:
-      return true;
-  }
-}
-
 
 #if defined(_M_X64)
 static inline bool DetectBrokenAVX() {
@@ -1930,12 +1911,16 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     if (NS_FAILED(GetAdapterVendorID(adapterVendorID)) ||
         NS_FAILED(GetAdapterDeviceID(adapterDeviceID)) ||
         NS_FAILED(GetAdapterDriverVersion(adapterDriverVersionString))) {
-      aFailureId = "FEATURE_FAILURE_GET_ADAPTER";
-      *aStatus = FEATURE_BLOCKED_DEVICE;
+      if (OnlyAllowFeatureOnKnownConfig(aFeature)) {
+        aFailureId = "FEATURE_FAILURE_GET_ADAPTER";
+        *aStatus = FEATURE_BLOCKED_DEVICE;
+      } else {
+        *aStatus = FEATURE_STATUS_OK;
+      }
       return NS_OK;
     }
 
-    if (OnlyAllowFeatureOnWhitelistedVendor(aFeature) &&
+    if (OnlyAllowFeatureOnKnownConfig(aFeature) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::Intel),
             nsCaseInsensitiveStringComparator) &&
@@ -1985,15 +1970,23 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     }
 
     if (adapterDriverVersionString.Length() == 0) {
-      aFailureId = "FEATURE_FAILURE_EMPTY_DRIVER_VERSION";
-      *aStatus = FEATURE_BLOCKED_DRIVER_VERSION;
+      if (OnlyAllowFeatureOnKnownConfig(aFeature)) {
+        aFailureId = "FEATURE_FAILURE_EMPTY_DRIVER_VERSION";
+        *aStatus = FEATURE_BLOCKED_DRIVER_VERSION;
+      } else {
+        *aStatus = FEATURE_STATUS_OK;
+      }
       return NS_OK;
     }
 
     uint64_t driverVersion;
     if (!ParseDriverVersion(adapterDriverVersionString, &driverVersion)) {
-      aFailureId = "FEATURE_FAILURE_PARSE_DRIVER";
-      *aStatus = FEATURE_BLOCKED_DRIVER_VERSION;
+      if (OnlyAllowFeatureOnKnownConfig(aFeature)) {
+        aFailureId = "FEATURE_FAILURE_PARSE_DRIVER";
+        *aStatus = FEATURE_BLOCKED_DRIVER_VERSION;
+      } else {
+        *aStatus = FEATURE_STATUS_OK;
+      }
       return NS_OK;
     }
   }
