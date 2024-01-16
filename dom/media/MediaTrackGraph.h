@@ -269,7 +269,9 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   void SetGraphImpl(MediaTrackGraph* aGraph);
 
   
-  void AddAudioOutput(void* aKey);
+  void AddAudioOutput(void* aKey, const AudioDeviceInfo* aSink);
+  void AddAudioOutput(void* aKey, CubebUtils::AudioDeviceID aDeviceID,
+                      TrackRate aPreferredSampleRate);
   void SetAudioOutputVolume(void* aKey, float aVolume);
   void RemoveAudioOutput(void* aKey);
   

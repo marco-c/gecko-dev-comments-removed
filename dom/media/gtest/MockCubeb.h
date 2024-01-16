@@ -209,7 +209,9 @@ class MockCubebStream {
   MediaEventSource<nsCString>& NameSetEvent();
   MediaEventSource<cubeb_state>& StateEvent();
   MediaEventSource<uint32_t>& FramesProcessedEvent();
+  
   MediaEventSource<uint32_t>& FramesVerifiedEvent();
+  
   MediaEventSource<std::tuple<uint64_t, float, uint32_t>>&
   OutputVerificationEvent();
   MediaEventSource<void>& ErrorForcedEvent();

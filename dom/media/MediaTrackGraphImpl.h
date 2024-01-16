@@ -204,13 +204,24 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   }
   
 
-  void RegisterAudioOutput(MediaTrack* aTrack, void* aKey);
+
+
+
+  void RegisterAudioOutput(MediaTrack* aTrack, void* aKey,
+                           CubebUtils::AudioDeviceID aDeviceID,
+                           TrackRate aPreferredSampleRate);
   void UnregisterAudioOutput(MediaTrack* aTrack, void* aKey);
 
   void SetAudioOutputVolume(MediaTrack* aTrack, void* aKey, float aVolume);
   
 
-  void UpdateAudioOutput(MediaTrack* aTrack);
+  void IncrementOutputDeviceRefCnt(CubebUtils::AudioDeviceID aDeviceID,
+                                   TrackRate aPreferredSampleRate);
+  void DecrementOutputDeviceRefCnt(CubebUtils::AudioDeviceID aDeviceID);
+  
+
+  void UpdateAudioOutput(MediaTrack* aTrack,
+                         CubebUtils::AudioDeviceID aDeviceID);
   
 
 
@@ -515,9 +526,16 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     mTrackOrderDirty = true;
   }
 
+ private:
+  
+  
+  struct OutputDeviceEntry;
+  uint32_t AudioOutputChannelCount(const OutputDeviceEntry& aDevice) const;
   
   
   uint32_t PrimaryOutputChannelCount() const;
+
+ public:
   
   void SetMaxOutputChannelCount(uint32_t aMaxChannelCount);
 
@@ -990,18 +1008,42 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     MOZ_UNSAFE_REF("struct exists only if track exists") MediaTrack* mTrack;
     void* mKey;
   };
-  struct TrackKeyAndVolume {
+  struct TrackKeyDeviceAndVolume {
     MOZ_UNSAFE_REF("struct exists only if track exists")
     MediaTrack* const mTrack;
     void* const mKey;
+    const CubebUtils::AudioDeviceID mDeviceID;
     float mVolume;
 
     bool operator==(const TrackAndKey& aTrackAndKey) const {
       return mTrack == aTrackAndKey.mTrack && mKey == aTrackAndKey.mKey;
     }
   };
-  nsTArray<TrackKeyAndVolume> mAudioOutputParams;
+  nsTArray<TrackKeyDeviceAndVolume> mAudioOutputParams;
   
+
+
+
+
+
+  struct DeviceReceiverAndCount {
+    const CubebUtils::AudioDeviceID mDeviceID;
+    
+    
+    const RefPtr<CrossGraphReceiver> mReceiver;
+    size_t mRefCnt;  
+
+    bool operator==(CubebUtils::AudioDeviceID aDeviceID) const {
+      return mDeviceID == aDeviceID;
+    }
+  };
+  nsTArray<DeviceReceiverAndCount> mOutputDeviceRefCnts;
+  
+
+
+
+
+
 
 
 
@@ -1012,7 +1054,22 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
     bool operator==(const MediaTrack* aTrack) const { return mTrack == aTrack; }
   };
-  nsTArray<TrackAndVolume> mAudioOutputs;
+  struct OutputDeviceEntry {
+    const CubebUtils::AudioDeviceID mDeviceID;
+    
+    
+    const RefPtr<CrossGraphReceiver> mReceiver;
+    
+
+
+
+    nsTArray<TrackAndVolume> mTrackOutputs;
+
+    bool operator==(CubebUtils::AudioDeviceID aDeviceID) const {
+      return mDeviceID == aDeviceID;
+    }
+  };
+  nsTArray<OutputDeviceEntry> mOutputDevices;
 
   
 

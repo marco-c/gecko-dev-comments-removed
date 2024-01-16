@@ -315,7 +315,7 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
   mTrack = AudioNodeTrack::Create(aContext, engine, kTrackFlags, graph);
   mTrack->AddMainThreadListener(this);
   
-  mTrack->AddAudioOutput(nullptr);
+  mTrack->AddAudioOutput(nullptr, nullptr);
 }
 
 void AudioDestinationNode::Init() {
