@@ -758,45 +758,11 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
-  nscoord ApplyMinMaxWidth(nscoord aWidth) const {
-    if (NS_UNCONSTRAINEDSIZE != ComputedMaxWidth()) {
-      aWidth = std::min(aWidth, ComputedMaxWidth());
-    }
-    return std::max(aWidth, ComputedMinWidth());
-  }
-
-  
-
-
-
   nscoord ApplyMinMaxISize(nscoord aISize) const {
     if (NS_UNCONSTRAINEDSIZE != ComputedMaxISize()) {
       aISize = std::min(aISize, ComputedMaxISize());
     }
     return std::max(aISize, ComputedMinISize());
-  }
-
-  
-
-
-
-
-
-
-
-
-  nscoord ApplyMinMaxHeight(nscoord aHeight, nscoord aConsumed = 0) const {
-    aHeight += aConsumed;
-
-    if (NS_UNCONSTRAINEDSIZE != ComputedMaxHeight()) {
-      aHeight = std::min(aHeight, ComputedMaxHeight());
-    }
-
-    if (NS_UNCONSTRAINEDSIZE != ComputedMinHeight()) {
-      aHeight = std::max(aHeight, ComputedMinHeight());
-    }
-
-    return aHeight - aConsumed;
   }
 
   
