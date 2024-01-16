@@ -2778,10 +2778,11 @@ dom.contentprocess:
       - 1754658
       - 1777404
       - 1817104
+      - 1866197
     description: >
       The number of times a process crashed early but we could verify it was not
       because of buildID mismatch between the parent and the content processes.
-    expires: "123"
+    expires: "135"
     kind: uint
     notification_emails:
       - alissy@mozilla.com
@@ -6150,13 +6151,14 @@ browser.searchinit:
       - 1763528
       - 1801017
       - 1832463
+      - 1871199
     description: >
       Records the WebExtension ID of a search engine where the WebExtension
       is not installed (= 1), disabled (= 2), search engine no longer specified (= 4),
       a different name (= 5), where the submission URL is different between the
       search engine and the WebExtension (= 6). The value '3' has been replaced
       by '6' to distinguish newer entries.
-    expires: "124"
+    expires: "129"
     keyed: true
     kind: uint
     notification_emails:
@@ -8939,6 +8941,21 @@ shopping:
       experiment.
     expires: "134"
     kind: uint
+    notification_emails:
+      - betling@mozilla.com
+      - fx-desktop-shopping-eng@mozilla.com
+    products:
+      - 'firefox'
+    record_in_processes:
+      - main
+  disabled_ads:
+    bug_numbers:
+      - 1858540
+    description: >
+      Indicates if the user has manually disabled ads. Set during shopping
+      component init and updated when changed in browser.
+    expires: "134"
+    kind: boolean
     notification_emails:
       - betling@mozilla.com
       - fx-desktop-shopping-eng@mozilla.com
