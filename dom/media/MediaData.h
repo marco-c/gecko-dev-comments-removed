@@ -696,6 +696,9 @@ class MediaRawData final : public MediaData {
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 
   
+  Maybe<uint8_t> mTemporalLayerId;
+
+  
   
   
   
