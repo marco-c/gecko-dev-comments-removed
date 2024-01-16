@@ -54,7 +54,10 @@ class Popover extends Component {
 
   componentDidUpdate(prevProps) {
     
-    if (prevProps.type != this.props.type) {
+    if (
+      prevProps.type != this.props.type ||
+      prevProps.target !== this.props.target
+    ) {
       const coords =
         this.props.type == "popover"
           ? this.getPopoverCoords()
