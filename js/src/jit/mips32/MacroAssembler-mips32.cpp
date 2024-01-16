@@ -1767,7 +1767,7 @@ void MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(
   asMasm().setupUnalignedABICall(a1);
   asMasm().passABIArg(a0);
   asMasm().callWithABI<Fn, HandleException>(
-      MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   Label entryFrame;
   Label catch_;
@@ -2119,7 +2119,7 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   assertStackAlignment(ABIStackAlignment);
 }
 
-void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
+void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result,
                                      bool callFromWasm) {
   
   loadPtr(Address(StackPointer, stackAdjust - sizeof(intptr_t)), ra);
@@ -2139,7 +2139,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
 #endif
 }
 
-void MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result) {
+void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
   
   
   
@@ -2150,8 +2150,7 @@ void MacroAssembler::callWithABINoProfiler(Register fun, MoveOp::Type result) {
   callWithABIPost(stackAdjust, result);
 }
 
-void MacroAssembler::callWithABINoProfiler(const Address& fun,
-                                           MoveOp::Type result) {
+void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
   
   loadPtr(Address(fun.base, fun.offset), t9);
   uint32_t stackAdjust;

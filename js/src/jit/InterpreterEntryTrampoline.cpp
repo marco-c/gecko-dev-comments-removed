@@ -208,7 +208,7 @@ void JitRuntime::generateInterpreterEntryTrampoline(MacroAssembler& masm) {
   masm.passABIArg(arg0);  
   masm.passABIArg(arg1);  
   masm.callWithABI<Fn, Interpret>(
-      MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+      ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
 #ifdef JS_CODEGEN_ARM64
   masm.syncStackPtr();
