@@ -103,8 +103,7 @@ class HitTestingTreeNode {
   
 
   void SetHitTestData(
-      const LayerIntRegion& aVisibleRegion,
-      const LayerIntSize& aRemoteDocumentSize,
+      const LayerIntRect& aVisibleRect, const LayerIntSize& aRemoteDocumentSize,
       const CSSTransformMatrix& aTransform,
       const EventRegionsOverride& aOverride,
       const Maybe<ScrollableLayerGuid::ViewID>& aAsyncZoomContainerId);
@@ -152,7 +151,7 @@ class HitTestingTreeNode {
 
 
   LayerToScreenMatrix4x4 GetTransformToGecko(LayersId aRemoteLayersId) const;
-  const LayerIntRegion& GetVisibleRegion() const;
+  const LayerIntRect& GetVisibleRect() const;
 
   
 
@@ -205,7 +204,7 @@ class HitTestingTreeNode {
   
   Maybe<uint64_t> mStickyPositionAnimationId;
 
-  LayerIntRegion mVisibleRegion;
+  LayerIntRect mVisibleRect;
 
   
 

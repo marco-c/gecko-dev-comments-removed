@@ -41,10 +41,10 @@ class TestWRScrollData : public WebRenderScrollData {
 
 
 
-  static TestWRScrollData Create(
-      const char* aTreeShape, const APZUpdater& aUpdater,
-      const LayerIntRegion* aVisibleRegions = nullptr,
-      const gfx::Matrix4x4* aTransforms = nullptr);
+  static TestWRScrollData Create(const char* aTreeShape,
+                                 const APZUpdater& aUpdater,
+                                 const LayerIntRect* aVisibleRects = nullptr,
+                                 const gfx::Matrix4x4* aTransforms = nullptr);
 
   
   

@@ -36,7 +36,7 @@ class APZHitTestingTester : public APZCTreeManagerTester {
   void CreateComplexMultiLayerTree() {
     const char* treeShape = "x(xx(x)xx(x(x)xx))";
     
-    LayerIntRegion layerVisibleRegion[] = {
+    LayerIntRect layerVisibleRect[] = {
         LayerIntRect(0, 0, 300, 400),    
         LayerIntRect(0, 0, 100, 100),    
         LayerIntRect(50, 50, 200, 300),  
@@ -54,7 +54,7 @@ class APZHitTestingTester : public APZCTreeManagerTester {
         LayerIntRect(200, 300, 100,
                      100),  
     };
-    CreateScrollData(treeShape, layerVisibleRegion);
+    CreateScrollData(treeShape, layerVisibleRect);
     SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
     SetScrollableFrameMetrics(layers[2], ScrollableLayerGuid::START_SCROLL_ID);
     SetScrollableFrameMetrics(layers[4],
@@ -72,11 +72,11 @@ class APZHitTestingTester : public APZCTreeManagerTester {
   void CreateBug1148350LayerTree() {
     const char* treeShape = "x(x)";
     
-    LayerIntRegion layerVisibleRegion[] = {
+    LayerIntRect layerVisibleRect[] = {
         LayerIntRect(0, 0, 200, 200),
         LayerIntRect(0, 0, 200, 200),
     };
-    CreateScrollData(treeShape, layerVisibleRegion);
+    CreateScrollData(treeShape, layerVisibleRect);
     SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
   }
 };
@@ -342,7 +342,7 @@ TEST_F(APZHitTestingTester, Bug1148350) {
   SetDefaultAllowedTouchBehavior(manager, blockId);
   mcc->AdvanceByMillis(100);
 
-  layers[0]->SetVisibleRegion(LayerIntRegion(LayerIntRect(0, 50, 200, 150)));
+  layers[0]->SetVisibleRect(LayerIntRect(0, 50, 200, 150));
   layers[0]->SetTransform(Matrix4x4::Translation(0, 50, 0));
   UpdateHitTestingTree();
 
