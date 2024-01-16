@@ -3174,6 +3174,10 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
   if (CheckActivationBehaviorPreconditions(aVisitor)) {
     aVisitor.mWantsActivationBehavior = true;
+    
+    
+    
+    aVisitor.mEvent->mFlags.mMultipleActivationPrevented = true;
   }
 
   
