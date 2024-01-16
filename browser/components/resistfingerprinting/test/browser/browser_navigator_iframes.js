@@ -29,13 +29,11 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
 
-const osVersion = Services.sysinfo.get("version");
-
 const DEFAULT_APPVERSION = {
   linux: "5.0 (X11)",
   win: "5.0 (Windows)",
   macosx: "5.0 (Macintosh)",
-  android: `5.0 (Android ${osVersion})`,
+  android: "5.0 (Android 10)",
   other: "5.0 (X11)",
 };
 
@@ -53,19 +51,34 @@ if (cpuArch == "x86-64") {
   cpuArch = "x86_64";
 }
 
+
+
+
+const freezeCpu = Services.prefs.getBoolPref(
+  "network.http.useragent.freezeCpu",
+  false
+);
+
+let defaultLinuxCpu;
+if (freezeCpu) {
+  defaultLinuxCpu = AppConstants.platform == "android" ? "armv81" : "x86_64";
+} else {
+  defaultLinuxCpu = cpuArch;
+}
+
 const DEFAULT_PLATFORM = {
-  linux: `Linux ${cpuArch}`,
+  linux: `Linux ${defaultLinuxCpu}`,
   win: "Win32",
   macosx: "MacIntel",
-  android: `Linux ${cpuArch}`,
-  other: `Linux ${cpuArch}`,
+  android: `Linux ${defaultLinuxCpu}`,
+  other: `Linux ${defaultLinuxCpu}`,
 };
 
 const SPOOFED_PLATFORM = {
   linux: "Linux x86_64",
   win: "Win32",
   macosx: "MacIntel",
-  android: "Linux aarch64",
+  android: "Linux armv81",
   other: "Linux x86_64",
 };
 
@@ -79,32 +92,32 @@ const WindowsOscpuPromise = (async () => {
     let isWow64 = (await Services.sysinfo.processInfo).isWow64;
     WindowsOscpu =
       cpuArch == "x86_64" || isWow64 || (cpuArch == "aarch64" && isWin11)
-        ? `Windows NT ${osVersion}; Win64; x64`
-        : `Windows NT ${osVersion}`;
+        ? "Windows NT 10.0; Win64; x64"
+        : "Windows NT 10.0";
   }
   return WindowsOscpu;
 })();
 
 const DEFAULT_OSCPU = {
-  linux: `Linux ${cpuArch}`,
+  linux: `Linux ${defaultLinuxCpu}`,
   macosx: "Intel Mac OS X 10.15",
-  android: `Linux ${cpuArch}`,
-  other: `Linux ${cpuArch}`,
+  android: `Linux ${defaultLinuxCpu}`,
+  other: `Linux ${defaultLinuxCpu}`,
 };
 
 const SPOOFED_OSCPU = {
   linux: "Linux x86_64",
   win: "Windows NT 10.0; Win64; x64",
   macosx: "Intel Mac OS X 10.15",
-  android: "Linux aarch64",
+  android: "Linux armv81",
   other: "Linux x86_64",
 };
 
 const DEFAULT_UA_OS = {
-  linux: `X11; Linux ${cpuArch}`,
+  linux: `X11; Linux ${defaultLinuxCpu}`,
   macosx: "Macintosh; Intel Mac OS X 10.15",
-  android: `Android ${osVersion}; Mobile`,
-  other: `X11; Linux ${cpuArch}`,
+  android: "Android 10; Mobile",
+  other: `X11; Linux ${defaultLinuxCpu}`,
 };
 
 const SPOOFED_UA_NAVIGATOR_OS = {
