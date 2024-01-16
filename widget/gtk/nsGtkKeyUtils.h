@@ -58,7 +58,9 @@ class KeymapWrapper {
   
 
 
-  enum Modifier {
+
+
+  enum MappedModifier {
     NOT_MODIFIER = 0x0000,
     CAPS_LOCK = 0x0001,
     NUM_LOCK = 0x0002,
@@ -77,7 +79,7 @@ class KeymapWrapper {
 
 
 
-  typedef uint32_t Modifiers;
+  typedef uint32_t MappedModifiers;
 
   
 
@@ -93,24 +95,13 @@ class KeymapWrapper {
 
 
 
-
-
-
-
-
-  static bool AreModifiersCurrentlyActive(Modifiers aModifiers);
-
-  
-
-
-
   static uint32_t ComputeCurrentKeyModifiers();
 
   
 
 
 
-  static uint32_t ComputeKeyModifiers(guint aModifierState);
+  static uint32_t ComputeKeyModifiers(guint aGdkModifierState);
 
   
 
@@ -123,7 +114,7 @@ class KeymapWrapper {
 
 
   static void InitInputEvent(WidgetInputEvent& aInputEvent,
-                             guint aModifierState);
+                             guint aGdkModifierState);
 
   
 
@@ -299,7 +290,7 @@ class KeymapWrapper {
   };
   guint mModifierMasks[COUNT_OF_MODIFIER_INDEX];
 
-  guint GetModifierMask(Modifier aModifier) const;
+  guint GetGdkModifierMask(MappedModifier aModifier) const;
 
   
 
@@ -308,9 +299,9 @@ class KeymapWrapper {
 
 
 
-  static Modifier GetModifierForGDKKeyval(guint aGdkKeyval);
+  static MappedModifier GetModifierForGDKKeyval(guint aGdkKeyval);
 
-  static const char* GetModifierName(Modifier aModifier);
+  static const char* GetModifierName(MappedModifier aModifier);
 
   
 
@@ -323,7 +314,8 @@ class KeymapWrapper {
 
 
 
-  static bool AreModifiersActive(Modifiers aModifiers, guint aModifierState);
+  static bool AreModifiersActive(MappedModifiers aModifiers,
+                                 guint aGdkModifierState);
 
   
 
@@ -388,8 +380,8 @@ class KeymapWrapper {
 
 
   static uint32_t GetCharCodeFor(const GdkEventKey* aGdkKeyEvent);
-  uint32_t GetCharCodeFor(const GdkEventKey* aGdkKeyEvent, guint aModifierState,
-                          gint aGroup);
+  uint32_t GetCharCodeFor(const GdkEventKey* aGdkKeyEvent,
+                          guint aGdkModifierState, gint aGroup);
 
   
 
