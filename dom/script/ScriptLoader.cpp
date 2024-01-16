@@ -2762,7 +2762,8 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
 
   
   RefPtr<ClassicScript> classicScript = new ClassicScript(
-      aRequest->ReferrerPolicy(), aRequest->mFetchOptions, aRequest->mBaseURL);
+      aRequest->ReferrerPolicy(), aRequest->mFetchOptions, aRequest->mURI);
+  classicScript->SetBaseURL(aRequest->mBaseURL);
   JS::Rooted<JS::Value> classicScriptValue(cx, JS::PrivateValue(classicScript));
 
   JS::CompileOptions options(cx);
