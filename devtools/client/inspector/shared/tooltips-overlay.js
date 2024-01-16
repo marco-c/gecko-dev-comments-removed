@@ -276,6 +276,17 @@ TooltipsOverlay.prototype = {
     return tooltipType;
   },
 
+  _removePreviousInstances() {
+    for (const tooltip of this._instances.values()) {
+      if (tooltip.isVisible()) {
+        if (tooltip.revert) {
+          tooltip.revert();
+        }
+        tooltip.hide();
+      }
+    }
+  },
+
   
 
 
@@ -298,12 +309,7 @@ TooltipsOverlay.prototype = {
       return false;
     }
 
-    for (const [, tooltip] of this._instances) {
-      if (tooltip.isVisible()) {
-        tooltip.revert();
-        tooltip.hide();
-      }
-    }
+    this._removePreviousInstances();
 
     const inspector = this.view.inspector;
 
@@ -390,15 +396,7 @@ TooltipsOverlay.prototype = {
       return false;
     }
 
-    
-    for (const [, tooltip] of this._instances) {
-      if (tooltip.isVisible()) {
-        if (tooltip.revert) {
-          tooltip.revert();
-        }
-        tooltip.hide();
-      }
-    }
+    this._removePreviousInstances();
 
     if (type === TOOLTIP_INACTIVE_CSS) {
       
