@@ -20,18 +20,12 @@ add_task(async function () {
     "doc-sourcemap-bogus.html",
     "non-existant-map.js",
     "map-with-failed-original-request.js",
-    "map-with-failed-original-request.original.js",
-    "invalid-json-map.js"
+    "map-with-failed-original-request.original.js"
   );
   
-  is(dbg.selectors.getSourceCount(), 4, "Only 4 source exists");
+  is(dbg.selectors.getSourceCount(), 3, "Only 3 source exists");
 
   await selectSource(dbg, "non-existant-map.js");
-  is(
-    findFooterNotificationMessage(dbg),
-    "Source Map Error: request failed with status 404",
-    "There is a warning about the missing source map file"
-  );
 
   
   
@@ -45,20 +39,7 @@ add_task(async function () {
   );
   await resume(dbg);
 
-  
-  await selectSource(dbg, "invalid-json-map.js");
-  is(
-    findFooterNotificationMessage(dbg),
-    "Source Map Error: JSON.parse: expected property name or '}' at line 2 column 3 of the JSON data",
-    "There is a warning about the missing source map file"
-  );
-
-  
   await selectSource(dbg, "map-with-failed-original-request.js");
-  ok(
-    !findElement(dbg, "editorNotificationFooter"),
-    "The source-map is valid enough to not spawn a warning message"
-  );
   await addBreakpoint(dbg, "map-with-failed-original-request.js", 7);
   invokeInTab("changeStyleAttribute");
   await waitForPaused(dbg);
@@ -73,15 +54,6 @@ add_task(async function () {
   
   
   await selectSource(dbg, "map-with-failed-original-request.original.js");
-  const notificationMessage = DEBUGGER_L10N.getFormatStr(
-    "editorNotificationFooter.noOriginalScopes",
-    DEBUGGER_L10N.getStr("scopes.showOriginalScopes")
-  );
-  is(
-    findFooterNotificationMessage(dbg),
-    notificationMessage,
-    "There is no warning about source-map but rather one about original scopes"
-  );
   is(
     getCM(dbg).getValue(),
     `Error while fetching an original source: request failed with status 404\nSource URL: ${EXAMPLE_URL}map-with-failed-original-request.original.js`

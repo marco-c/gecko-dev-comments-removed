@@ -1,21 +1,21 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const SOURCE_MAP_PREF = "devtools.source-map.client-service.enabled";
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A simple service to track source actors and keep a mapping between
+ * original URLs and objects holding the source or style actor's ID
+ * (which is used as a cookie by the devtools-source-map service) and
+ * the source map URL.
+ *
+ * @param {object} commands
+ *        The commands object with all interfaces defined from devtools/shared/commands/
+ * @param {SourceMapLoader} sourceMapLoader
+ *        The source-map-loader implemented in devtools/client/shared/source-map-loader/
+ */
 class SourceMapURLService {
   constructor(commands, sourceMapLoader) {
     this._commands = commands;
@@ -35,11 +35,11 @@ class SourceMapURLService {
 
     Services.prefs.addObserver(SOURCE_MAP_PREF, this._syncPrevValue);
 
-    
-    
-    
-    
-    
+    // If a tool has changed or introduced a source map
+    // (e.g, by pretty-printing a source), tell the
+    // source map URL service about the change, so that
+    // subscribers to that service can be updated as
+    // well.
     this._sourceMapLoader.on(
       "source-map-created",
       this.newSourceMapCreated.bind(this)
@@ -62,8 +62,8 @@ class SourceMapURLService {
         { onAvailable: this._onResourceAvailable }
       );
     } catch (e) {
-      
-      
+      // If unwatchResources is called before finishing process of watchResources,
+      // it throws an error during stopping listener.
     }
 
     this._sourcesLoading = null;
@@ -73,24 +73,24 @@ class SourceMapURLService {
     this._mapsById = null;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Subscribe to notifications about the original location of a given
+   * generated location, as it may not be known at this time, may become
+   * available at some unknown time in the future, or may change from one
+   * location to another.
+   *
+   * @param {string} id The actor ID of the source.
+   * @param {number} line The line number in the source.
+   * @param {number} column The column number in the source.
+   * @param {Function} callback A callback that may eventually be passed an
+   *      an object with url/line/column properties specifying a location in
+   *      the original file, or null if no particular original location could
+   *      be found. The callback will run synchronously if the location is
+   *      already know to the URL service.
+   *
+   * @return {Function} A function to call to remove this subscription. The
+   *      "callback" argument is guaranteed to never run once unsubscribed.
+   */
   subscribeByID(id, line, column, callback) {
     this._ensureAllSourcesPopulated();
 
@@ -119,24 +119,24 @@ class SourceMapURLService {
     };
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Subscribe to notifications about the original location of a given
+   * generated location, as it may not be known at this time, may become
+   * available at some unknown time in the future, or may change from one
+   * location to another.
+   *
+   * @param {string} id The actor ID of the source.
+   * @param {number} line The line number in the source.
+   * @param {number} column The column number in the source.
+   * @param {Function} callback A callback that may eventually be passed an
+   *      an object with url/line/column properties specifying a location in
+   *      the original file, or null if no particular original location could
+   *      be found. The callback will run synchronously if the location is
+   *      already know to the URL service.
+   *
+   * @return {Function} A function to call to remove this subscription. The
+   *      "callback" argument is guaranteed to never run once unsubscribed.
+   */
   subscribeByURL(url, line, column, callback) {
     this._ensureAllSourcesPopulated();
 
@@ -169,14 +169,14 @@ class SourceMapURLService {
     };
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Subscribe generically based on either an ID or a URL.
+   *
+   * In an ideal world we'd always know which of these to use, but there are
+   * still cases where end up with a mixture of both, so this is provided as
+   * a helper. If you can specifically use one of these, please do that
+   * instead however.
+   */
   subscribeByLocation({ id, url, line, column }, callback) {
     if (id) {
       return this.subscribeByID(id, line, column, callback);
@@ -185,19 +185,19 @@ class SourceMapURLService {
     return this.subscribeByURL(url, line, column, callback);
   }
 
-  
-
-
-
-
-
+  /**
+   * Tell the URL service than some external entity has registered a sourcemap
+   * in the worker for one of the source files.
+   *
+   * @param {Array<string>} ids The actor ids of the sources that had the map registered.
+   */
   async newSourceMapCreated(ids) {
     await this._ensureAllSourcesPopulated();
 
     for (const id of ids) {
       const map = this._mapsById.get(id);
       if (!map) {
-        
+        // State could have been cleared.
         continue;
       }
 
@@ -304,8 +304,8 @@ class SourceMapURLService {
     if (!query.action) {
       const { map } = query;
 
-      
-      
+      // Call getOriginalURLs to make sure the source map has been
+      // fetched.  We don't actually need the result of this though.
       if (!map.loaded) {
         map.loaded = this._sourceMapLoader.getOriginalURLs({
           id: map.id,
@@ -319,13 +319,7 @@ class SourceMapURLService {
         let result = null;
         try {
           await map.loaded;
-        } catch (e) {
-          
-          
-          
-        }
 
-        try {
           const position = await this._sourceMapLoader.getOriginalLocation({
             sourceId: map.id,
             line: query.line,
@@ -339,12 +333,12 @@ class SourceMapURLService {
             };
           }
         } finally {
-          
-          
+          // If this action was dispatched and then the file was pretty-printed
+          // we want to ignore the result since the query has restarted.
           if (action === query.action) {
-            
-            
-            
+            // It is important that we consistently set the query result and
+            // trigger the subscribers here in order to maintain the invariant
+            // that if 'result' is truthy, then the subscribers will have run.
             const position = result;
             query.result = { position };
             this._ensureSubscribersSynchronized(query);
@@ -358,7 +352,7 @@ class SourceMapURLService {
   }
 
   _ensureSubscribersSynchronized(query) {
-    
+    // Synchronize the subscribers with the pref-disabled state if they need it.
     if (!this._prefValue) {
       if (query.mostRecentEmitted) {
         query.mostRecentEmitted = null;
@@ -367,8 +361,8 @@ class SourceMapURLService {
       return;
     }
 
-    
-    
+    // Synchronize the subscribers with the newest computed result if they
+    // need it.
     const { result } = query;
     if (result && query.mostRecentEmitted !== result.position) {
       query.mostRecentEmitted = result.position;
@@ -377,9 +371,9 @@ class SourceMapURLService {
   }
 
   _dispatchSubscribers(position, subscribers) {
-    
-    
-    
+    // We copy the subscribers before iterating because something could be
+    // removed while we're calling the callbacks, which is also why we check
+    // the 'unsubscribed' flag.
     for (const subscriber of Array.from(subscribers)) {
       if (subscriber.unsubscribed) {
         continue;
@@ -421,8 +415,8 @@ class SourceMapURLService {
       subscribers.add(entry);
 
       if (query.mostRecentEmitted) {
-        
-        
+        // Maintain the invariant that if a query has emitted a value, then
+        // _all_ subscribers will have received that value.
         this._dispatchSubscribers(query.mostRecentEmitted, [entry]);
       }
 
@@ -464,7 +458,7 @@ class SourceMapURLService {
     const { resourceCommand } = this._commands;
     const { STYLESHEET, SOURCE, DOCUMENT_EVENT } = resourceCommand.TYPES;
     for (const resource of resources) {
-      
+      // Only consider top level document, and ignore remote iframes top document
       if (
         resource.resourceType == DOCUMENT_EVENT &&
         resource.name == "will-navigate" &&

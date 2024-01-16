@@ -25,36 +25,31 @@ const {
 } = require("resource://devtools/client/shared/source-map-loader/utils/index.js");
 
 class SourceMapLoader extends WorkerDispatcher {
-  constructor(targetCommand) {
-    super(SOURCE_MAP_WORKER_URL);
-    this.#targetCommand = targetCommand;
-  }
-
   #setSourceMapForGeneratedSources = this.task(
     "setSourceMapForGeneratedSources"
   );
   #getOriginalURLs = this.task("getOriginalURLs");
   #getOriginalSourceText = this.task("getOriginalSourceText");
-  #targetCommand = null;
+
+  constructor() {
+    super(SOURCE_MAP_WORKER_URL);
+  }
 
   async getOriginalURLs(urlInfo) {
     try {
       return await this.#getOriginalURLs(urlInfo);
     } catch (error) {
-      
-      if (this.#targetCommand) {
-        
-        const message = L10N.getFormatStr(
-          "toolbox.sourceMapFailure",
-          error,
-          urlInfo.url,
-          urlInfo.sourceMapURL
-        );
-        this.#targetCommand.targetFront.logWarningInPage(message, "source map");
-      }
+      const message = L10N.getFormatStr(
+        "toolbox.sourceMapFailure",
+        error,
+        urlInfo.url,
+        urlInfo.sourceMapURL
+      );
+      this.emit("source-map-error", message);
 
       
-      throw error;
+      
+      return null;
     }
   }
 
@@ -74,7 +69,7 @@ class SourceMapLoader extends WorkerDispatcher {
   getOriginalLocations = this.task("getOriginalLocations");
   getGeneratedRangesForOriginal = this.task("getGeneratedRangesForOriginal");
   getFileGeneratedRange = this.task("getFileGeneratedRange");
-  loadSourceMap = this.task("loadSourceMap");
+  getSourceMapIgnoreList = this.task("getSourceMapIgnoreList");
 
   async getOriginalSourceText(originalSourceId) {
     try {
@@ -85,12 +80,7 @@ class SourceMapLoader extends WorkerDispatcher {
         error.message,
         error.metadata ? error.metadata.url : "<unknown>"
       );
-
-      
-      if (this.#targetCommand) {
-        
-        this.#targetCommand.targetFront.logWarningInPage(message, "source map");
-      }
+      this.emit("source-map-error", message);
 
       
       
@@ -119,14 +109,7 @@ class SourceMapLoader extends WorkerDispatcher {
     return rv;
   }
 
-  destroy() {
-    
-    this.stop();
-    
-    this.clearEvents();
-    
-    this.#targetCommand = null;
-  }
+  stopSourceMapWorker = this.stop.bind(this);
 }
 EventEmitter.decorate(SourceMapLoader.prototype);
 

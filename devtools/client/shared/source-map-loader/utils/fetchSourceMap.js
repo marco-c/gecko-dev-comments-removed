@@ -33,14 +33,14 @@ function hasOriginalURL(url) {
   return originalURLs.has(url);
 }
 
-function resolveSourceMapURL(source) {
+function _resolveSourceMapURL(source) {
   let { sourceMapBaseURL, sourceMapURL } = source;
   sourceMapBaseURL = sourceMapBaseURL || "";
   sourceMapURL = sourceMapURL || "";
 
   if (!sourceMapBaseURL) {
     
-    return { resolvedSourceMapURL: sourceMapURL, baseURL: sourceMapURL };
+    return { sourceMapURL, baseURL: sourceMapURL };
   }
 
   let resolvedString;
@@ -63,11 +63,14 @@ function resolveSourceMapURL(source) {
     baseURL = resolvedString;
   }
 
-  return { resolvedSourceMapURL: resolvedString, baseURL };
+  return { sourceMapURL: resolvedString, baseURL };
 }
 
-async function _fetch(generatedSource, resolvedSourceMapURL, baseURL) {
-  let fetched = await networkRequest(resolvedSourceMapURL, {
+async function _resolveAndFetch(generatedSource) {
+  
+  const { sourceMapURL, baseURL } = _resolveSourceMapURL(generatedSource);
+
+  let fetched = await networkRequest(sourceMapURL, {
     loadFromCache: false,
     
     
@@ -102,7 +105,7 @@ async function _fetch(generatedSource, resolvedSourceMapURL, baseURL) {
   return map;
 }
 
-function fetchSourceMap(generatedSource, resolvedSourceMapURL, baseURL) {
+function fetchSourceMap(generatedSource) {
   const existingRequest = getSourceMap(generatedSource.id);
 
   
@@ -121,7 +124,7 @@ function fetchSourceMap(generatedSource, resolvedSourceMapURL, baseURL) {
   }
 
   
-  const req = _fetch(generatedSource, resolvedSourceMapURL, baseURL);
+  const req = _resolveAndFetch(generatedSource);
   
   
   setSourceMap(
@@ -131,9 +134,4 @@ function fetchSourceMap(generatedSource, resolvedSourceMapURL, baseURL) {
   return req;
 }
 
-module.exports = {
-  fetchSourceMap,
-  hasOriginalURL,
-  clearOriginalURLs,
-  resolveSourceMapURL,
-};
+module.exports = { fetchSourceMap, hasOriginalURL, clearOriginalURLs };

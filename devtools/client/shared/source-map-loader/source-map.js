@@ -25,7 +25,6 @@ const {
 const assert = require("resource://devtools/client/shared/source-map-loader/utils/assert.js");
 const {
   fetchSourceMap,
-  resolveSourceMapURL,
   hasOriginalURL,
   clearOriginalURLs,
 } = require("resource://devtools/client/shared/source-map-loader/utils/fetchSourceMap.js");
@@ -46,87 +45,15 @@ const {
   clearWasmXScopes,
 } = require("resource://devtools/client/shared/source-map-loader/wasm-dwarf/wasmXScopes.js");
 
-
-
-
-
-function mapToOriginalSourceInfos(generatedId, urls) {
-  return urls.map(url => {
-    return {
-      id: generatedToOriginalId(generatedId, url),
-      url,
-    };
-  });
-}
-
-
-
-
-
-
-
-
-
-
 async function getOriginalURLs(generatedSource) {
-  const { resolvedSourceMapURL, baseURL } =
-    resolveSourceMapURL(generatedSource);
-  const map = await fetchSourceMap(
-    generatedSource,
-    resolvedSourceMapURL,
-    baseURL
-  );
-  return map ? mapToOriginalSourceInfos(generatedSource.id, map.sources) : null;
+  await fetchSourceMap(generatedSource);
+  const data = await getSourceMapWithMetadata(generatedSource.id);
+  return data ? data.sources : null;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function loadSourceMap(generatedSource) {
-  const { resolvedSourceMapURL, baseURL } =
-    resolveSourceMapURL(generatedSource);
-  try {
-    const map = await fetchSourceMap(
-      generatedSource,
-      resolvedSourceMapURL,
-      baseURL
-    );
-    if (!map.sources.length) {
-      throw new Error("No sources are declared in this source map.");
-    }
-    let ignoreListUrls = [];
-    if (map.x_google_ignoreList?.length) {
-      ignoreListUrls = map.x_google_ignoreList.map(
-        sourceIndex => map.sources[sourceIndex]
-      );
-    }
-    return {
-      sources: mapToOriginalSourceInfos(generatedSource.id, map.sources),
-      resolvedSourceMapURL,
-      ignoreListUrls,
-    };
-  } catch (e) {
-    return {
-      sources: [],
-      resolvedSourceMapURL,
-      ignoreListUrls: [],
-      exception: e.message,
-    };
-  }
+async function getSourceMapIgnoreList(generatedSourceId) {
+  const data = await getSourceMapWithMetadata(generatedSourceId);
+  return data ? data.ignoreListUrls : [];
 }
 
 const COMPUTED_SPANS = new WeakSet();
@@ -631,7 +558,6 @@ function clearSourceMaps() {
 
 module.exports = {
   getOriginalURLs,
-  loadSourceMap,
   hasOriginalURL,
   getOriginalRanges,
   getGeneratedRanges,
@@ -641,6 +567,7 @@ module.exports = {
   getOriginalSourceText,
   getGeneratedRangesForOriginal,
   getFileGeneratedRange,
+  getSourceMapIgnoreList,
   setSourceMapForGeneratedSources,
   clearSourceMaps,
 };
