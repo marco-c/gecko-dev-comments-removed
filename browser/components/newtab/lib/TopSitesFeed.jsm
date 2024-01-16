@@ -694,6 +694,8 @@ class TopSitesFeed {
         DEFAULT_TOP_SITES.push(link);
       }
       hasContileTiles = contilePositionIndex > 0;
+      
+      this._telemetryUtility.setRemovedTilesToOversold(DEFAULT_TOP_SITES);
     }
 
     
