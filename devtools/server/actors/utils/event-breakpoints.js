@@ -143,8 +143,7 @@ const AVAILABLE_BREAKPOINTS = [
       generalEvent("control", "reset"),
       generalEvent("control", "resize"),
       generalEvent("control", "scroll"),
-      
-      generalEvent("control", "scrollend", win => "onscrollend" in win),
+      generalEvent("control", "scrollend"),
       generalEvent("control", "select"),
       generalEvent("control", "toggle"),
       generalEvent("control", "submit"),

@@ -5426,10 +5426,6 @@ void nsHTMLScrollFrame::FireScrollEndEvent() {
   WidgetGUIEvent event(true, eScrollend, nullptr);
   event.mFlags.mBubbles = mIsRoot;
   event.mFlags.mCancelable = false;
-  
-  
-  event.mFlags.mOnlyChromeDispatch =
-      !StaticPrefs::apz_scrollend_event_content_enabled();
   RefPtr<nsINode> target =
       mIsRoot ? static_cast<nsINode*>(presContext->Document()) : GetContent();
   EventDispatcher::Dispatch(target, presContext, &event, nullptr, &status);
