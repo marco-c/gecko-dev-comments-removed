@@ -82,7 +82,9 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
     eIndexSelRawText,
     eIndexConvText,
     eIndexSelConvText,
-    eIndexSpellChecker
+    eIndexSpellChecker,
+    eNumSelectionTypes 
+
   };
 
   static uint32_t GetUnderlineStyleIndexForSelectionType(
