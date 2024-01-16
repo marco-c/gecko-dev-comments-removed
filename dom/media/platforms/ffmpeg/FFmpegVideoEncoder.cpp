@@ -1062,7 +1062,7 @@ RefPtr<MediaRawData> FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(
   
   if (mSVCInfo) {
     uint8_t temporalLayerId = mSVCInfo->UpdateTemporalLayerId();
-    
+    data->mTemporalLayerId.emplace(temporalLayerId);
   }
 
   return data;
