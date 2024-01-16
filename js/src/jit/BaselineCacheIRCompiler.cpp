@@ -3386,7 +3386,6 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   
   LiveGeneralRegisterSet liveNonGCRegs;
   liveNonGCRegs.add(argcReg);
-  liveNonGCRegs.add(ICStubReg);
   masm.PushRegsInMask(liveNonGCRegs);
 
   
@@ -3423,6 +3422,8 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
   
   masm.PopRegsInMask(liveNonGCRegs);
+  Address stubAddr(FramePointer, BaselineStubFrameLayout::ICStubOffsetFromFP);
+  masm.loadPtr(stubAddr, ICStubReg);
 
   
   MOZ_ASSERT(!liveNonGCRegs.aliases(JSReturnOperand));
