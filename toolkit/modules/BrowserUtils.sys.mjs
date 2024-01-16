@@ -369,6 +369,9 @@ export var BrowserUtils = {
 
     
 
+    
+    
+
     var metaKey = AppConstants.platform == "macosx" ? meta : ctrl;
     if (metaKey || (middle && middleUsesTabs)) {
       return shift ? "tabshifted" : "tab";

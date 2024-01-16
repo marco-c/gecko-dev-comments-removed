@@ -544,7 +544,8 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   
   
   bool unused = false;
-  uint32_t chromeFlags = CalculateChromeFlagsForContent(aFeatures, &unused);
+  uint32_t chromeFlags =
+      CalculateChromeFlagsForContent(aFeatures, aModifiers, &unused);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -760,7 +761,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   } else {
     MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
                           "content caller must provide content parent");
-    chromeFlags = CalculateChromeFlagsForContent(features, &isPopupRequested);
+    chromeFlags =
+        CalculateChromeFlagsForContent(features, aModifiers, &isPopupRequested);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -1832,8 +1834,18 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures) {
 
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
-    const WindowFeatures& aFeatures, bool* aIsPopupRequested) {
+    const WindowFeatures& aFeatures,
+    const mozilla::dom::UserActivation::Modifiers& aModifiers,
+    bool* aIsPopupRequested) {
   if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures)) {
+    
+    
+    return nsIWebBrowserChrome::CHROME_ALL;
+  }
+
+  int32_t unused;
+  if (IsWindowOpenLocationModified(aModifiers, &unused)) {
+    
     
     
     return nsIWebBrowserChrome::CHROME_ALL;
@@ -2426,14 +2438,47 @@ static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
 }
 
 
-int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
-                                               uint32_t aChromeFlags,
-                                               bool aCalledFromJS,
-                                               bool aIsForPrinting) {
+bool nsWindowWatcher::IsWindowOpenLocationModified(
+    const mozilla::dom::UserActivation::Modifiers& aModifiers,
+    int32_t* aLocation) {
+  
+  
+#ifdef XP_MACOSX
+  bool metaKey = aModifiers.IsMeta();
+#else
+  bool metaKey = aModifiers.IsControl();
+#endif
+  bool shiftKey = aModifiers.IsShift();
+  if (metaKey) {
+    if (shiftKey) {
+      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB;
+      return true;
+    }
+    *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_BACKGROUND;
+    return true;
+  }
+  if (shiftKey) {
+    *aLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
+    return true;
+  }
+
+  return false;
+}
+
+
+int32_t nsWindowWatcher::GetWindowOpenLocation(
+    nsPIDOMWindowOuter* aParent, uint32_t aChromeFlags,
+    const mozilla::dom::UserActivation::Modifiers& aModifiers,
+    bool aCalledFromJS, bool aIsForPrinting) {
   
   
   if (aIsForPrinting) {
     return nsIBrowserDOMWindow::OPEN_PRINT_BROWSER;
+  }
+
+  int32_t modifiedLocation = 0;
+  if (IsWindowOpenLocationModified(aModifiers, &modifiedLocation)) {
+    return modifiedLocation;
   }
 
   
