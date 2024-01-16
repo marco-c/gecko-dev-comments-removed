@@ -35,6 +35,16 @@ function disallowAdditionalProperties(section) {
   
   
   
+  
+  
+  
+  if (!AppConstants.NIGHTLY_BUILD) {
+    return;
+  }
+
+  
+  
+  
   if (isObject(section)) {
     if (section.properties && !("recordType" in section.properties)) {
       section.additionalProperties = false;
@@ -154,8 +164,9 @@ add_task(async function test_search_config_override_validates_to_schema_v1() {
   );
 });
 
-if (SearchUtils.newSearchConfigEnabled) {
-  add_task(async function test_search_config_validates_to_schema() {
+add_task(
+  { skip_if: () => !SearchUtils.newSearchConfigEnabled },
+  async function test_search_config_validates_to_schema() {
     delete SearchUtils.newSearchConfigEnabled;
     SearchUtils.newSearchConfigEnabled = true;
 
@@ -163,17 +174,23 @@ if (SearchUtils.newSearchConfigEnabled) {
     let searchConfig = await selector.getEngineConfiguration();
 
     await checkSearchConfigValidates(searchConfigSchema, searchConfig);
-  });
+  }
+);
 
-  add_task(async function test_ui_schema_valid() {
+add_task(
+  { skip_if: () => !SearchUtils.newSearchConfigEnabled },
+  async function test_ui_schema_valid() {
     let uiSchema = await IOUtils.readJSON(
       PathUtils.join(do_get_cwd().path, "search-config-v2-ui-schema.json")
     );
 
     await checkUISchemaValid(searchConfigSchema, uiSchema);
-  });
+  }
+);
 
-  add_task(async function test_search_config_override_validates_to_schema() {
+add_task(
+  { skip_if: () => !SearchUtils.newSearchConfigEnabled },
+  async function test_search_config_override_validates_to_schema() {
     let selector = new SearchEngineSelector(() => {});
     let searchConfigOverrides =
       await selector.getEngineConfigurationOverrides();
@@ -188,5 +205,5 @@ if (SearchUtils.newSearchConfigEnabled) {
       overrideSchema,
       searchConfigOverrides
     );
-  });
-}
+  }
+);

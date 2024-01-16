@@ -4,6 +4,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   TELEMETRY_SETTINGS_KEY: "resource:///modules/SearchSERPTelemetry.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
@@ -33,6 +34,17 @@ function isObject(value) {
 
 
 function disallowAdditionalProperties(section) {
+  
+  
+  
+  
+  
+  
+  if (!AppConstants.NIGHTLY_BUILD) {
+    info("Skipping additional properties validation.");
+    return;
+  }
+
   if (section.type == "object") {
     section.additionalProperties = false;
   }
