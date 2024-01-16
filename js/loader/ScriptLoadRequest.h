@@ -27,6 +27,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
+#include "LoadedScript.h"
 #include "ScriptKind.h"
 #include "ScriptFetchOptions.h"
 #include "nsIScriptElement.h"
@@ -257,6 +258,8 @@ class ScriptLoadRequest
 
   void ClearScriptSource();
 
+  void EnsureScript();
+
   
   
   
@@ -359,6 +362,14 @@ class ScriptLoadRequest
 
   
   nsCOMPtr<nsIURI> mBaseURL;
+
+  
+  
+  
+  
+  
+  
+  RefPtr<LoadedScript> mLoadedScript;
 
   
   
