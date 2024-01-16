@@ -188,12 +188,30 @@ sixgill_bin = '{bindir}'
                 data.unmangledToMangled[unmangled] = mangled
                 return
 
-            limit = 0
-            m = re.match(r"^\w (?:/(\d+))? ", line)
-            if m:
-                limit = int(m[1])
-
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             tokens = line.split(" ")
+            limit = 0
+            if tokens[1].startswith("/"):
+                attr_str = tokens.pop(1)
+                limit = int(attr_str[1:])
+            elif ":" in tokens[1]:
+                attr_str = tokens.pop(1)
+                limit = int(attr_str[0 : attr_str.index(":")])
+
             if tokens[0] in ("D", "R"):
                 _, caller, callee = tokens
                 add_call(lookup(caller), lookup(callee), limit)

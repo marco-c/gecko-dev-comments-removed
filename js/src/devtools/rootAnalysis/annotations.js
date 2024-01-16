@@ -12,8 +12,7 @@ var ignoreIndirectCalls = {
     "aMallocSizeOf" : true,
     "__conv" : true,
     "__convf" : true,
-    "prerrortable.c:callback_newtable" : true,
-    "mozalloc_oom.cpp:void (* gAbortHandler)(size_t)" : true,
+    "callback_newtable" : true,
 };
 
 

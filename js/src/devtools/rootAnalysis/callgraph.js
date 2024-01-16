@@ -124,10 +124,30 @@ function translateCallees(edge)
         return []; 
 
     assert(callee.Kind == "Drf");
-    const called = callee.Exp[0];
+    let called = callee.Exp[0];
+    let indirection = 1;
+    if (called.Kind == "Drf") {
+        
+        
+        
+        
+        
+        
+        called = called.Exp[0];
+        indirection += 1;
+    }
+
     if (called.Kind == "Var") {
         
-        return [{'kind': "indirect", 'variable': callee.Exp[0].Variable.Name[0]}];
+        
+        
+        
+        
+        
+        
+        
+        const [decorated, bare] = called.Variable.Name;
+        return [{'kind': "indirect", 'variable': bare, indirection}];
     }
 
     if (called.Kind != "Fld") {
@@ -142,7 +162,7 @@ function translateCallees(edge)
     
     
     const callees = [];
-    const field = callee.Exp[0].Field;
+    const field = called.Field;
     const staticCSU = getFieldCallInstanceCSU(edge, field);
     callees.push({'kind': "field", 'csu': field.FieldCSU.Type.Name, staticCSU,
                   'field': field.Name[0], 'fieldKey': fieldKey(staticCSU, field),

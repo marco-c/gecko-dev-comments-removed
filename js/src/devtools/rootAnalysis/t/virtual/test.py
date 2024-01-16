@@ -89,3 +89,11 @@ assert "c20" not in hazmap
 
 
 assert "c21" in hazmap
+
+
+assert "c22" in hazmap
+assert "c23" in hazmap
+assert "c24" in hazmap
+assert "c25" not in hazmap
+assert "c26" not in hazmap
+assert "c27" not in hazmap
