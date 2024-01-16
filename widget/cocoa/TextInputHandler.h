@@ -1076,7 +1076,7 @@ class IMEInputHandler : public TextInputHandlerBase {
 
 
 
-  void InsertTextAsCommittingComposition(NSAttributedString* aAttrString,
+  void InsertTextAsCommittingComposition(NSString* aString,
                                          NSRange* aReplacementRange);
 
   
@@ -1263,8 +1263,7 @@ class TextInputHandler : public IMEInputHandler {
 
 
 
-  void InsertText(NSAttributedString* aAttrString,
-                  NSRange* aReplacementRange = nullptr);
+  void InsertText(NSString* aString, NSRange* aReplacementRange = nullptr);
 
   
 
