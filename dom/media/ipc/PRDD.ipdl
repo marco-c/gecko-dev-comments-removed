@@ -41,7 +41,7 @@ namespace mozilla {
 
 
 
-[NeedsOtherPid]
+[NeedsOtherPid, ParentProc=RDD, ChildProc=Parent]
 protocol PRDD
 {
 parent:

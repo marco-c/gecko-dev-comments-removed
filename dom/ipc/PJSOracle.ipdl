@@ -9,6 +9,7 @@ namespace mozilla {
 namespace dom {
 
 
+[ChildProc=Utility]
 async protocol PJSOracle {
   manages PJSValidator;
 

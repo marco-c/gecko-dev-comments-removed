@@ -10,6 +10,7 @@ namespace mozilla {
 namespace dom {
 
 
+[ChildProc=Utility]
 protocol PWindowsUtils {
   manages PWindowsLocation;
 
