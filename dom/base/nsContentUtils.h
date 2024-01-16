@@ -2524,11 +2524,6 @@ class nsContentUtils {
 
   static bool IsSecureContextOrWebExtension(JSContext*, JSObject*);
 
-  
-
-
-  static bool IsSWFPlayerEnabled();
-
   enum DocumentViewerType {
     TYPE_UNSUPPORTED,
     TYPE_CONTENT,
