@@ -16,7 +16,13 @@ add_task(async function test_alt_fixup_middle_click() {
       link.textContent = "Me, me, click me!";
       content.document.body.append(link);
     });
-    let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+    let newTabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+       null,
+       true,
+       false,
+       true
+    );
     await BrowserTestUtils.synthesizeMouseAtCenter(
       "a[href]",
       { button: 1 },
@@ -24,19 +30,6 @@ add_task(async function test_alt_fixup_middle_click() {
     );
     let tab = await newTabPromise;
     let { browsingContext } = tab.linkedBrowser;
-    
-    if (
-      !browsingContext.currentWindowGlobal?.documentURI.spec.startsWith(
-        "about:neterror"
-      )
-    ) {
-      await BrowserTestUtils.browserLoaded(
-        tab.linkedBrowser,
-        false,
-        null,
-        true
-      );
-    }
     
     
     
