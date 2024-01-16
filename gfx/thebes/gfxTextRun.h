@@ -464,7 +464,6 @@ class gfxTextRun : public gfxShapedText {
       gfxFloat aWidth, const PropertyProvider& aProvider,
       SuppressBreak aSuppressBreak, gfxFont::BoundingBoxType aBoundingBoxType,
       DrawTarget* aRefDrawTarget, bool aCanWordWrap, bool aCanWhitespaceWrap,
-      bool aIsBreakSpaces,
       
       TrimmableWS* aOutTrimmableWhitespace,  
       Metrics& aOutMetrics, bool& aOutUsedHyphenation, uint32_t& aOutLastBreak,

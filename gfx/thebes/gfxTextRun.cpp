@@ -249,11 +249,7 @@ bool gfxTextRun::SetPotentialLineBreaks(Range aRange,
         canBreak = CompressedGlyph::FLAG_BREAK_TYPE_NONE;
       }
     }
-    
-    
-    if (canBreak) {
-      changed |= cg->SetCanBreakBefore(canBreak);
-    }
+    changed |= cg->SetCanBreakBefore(canBreak);
     ++cg;
   }
   return changed != 0;
@@ -931,8 +927,6 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     gfxFloat aWidth, const PropertyProvider& aProvider,
     SuppressBreak aSuppressBreak, gfxFont::BoundingBoxType aBoundingBoxType,
     DrawTarget* aRefDrawTarget, bool aCanWordWrap, bool aCanWhitespaceWrap,
-    bool aIsBreakSpaces,
-    
     TrimmableWS* aOutTrimmableWhitespace, Metrics& aOutMetrics,
     bool& aOutUsedHyphenation, uint32_t& aOutLastBreak,
     gfxBreakPriority& aBreakPriority) {
@@ -1039,8 +1033,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     
     if (aSuppressBreak != eSuppressAllBreaks &&
         (aSuppressBreak != eSuppressInitialBreak || i > aStart)) {
-      bool atNaturalBreak = mCharacterGlyphs[i].CanBreakBefore() ==
-                            CompressedGlyph::FLAG_BREAK_TYPE_NORMAL;
+      bool atNaturalBreak = mCharacterGlyphs[i].CanBreakBefore() == 1;
       
       
       
@@ -1053,20 +1046,16 @@ uint32_t gfxTextRun::BreakAndMeasureText(
           atHyphenationBreak &&
           hyphenBuffer[i - aStart] == HyphenType::AutoWithManualInSameWord;
       bool atBreak = atNaturalBreak || atHyphenationBreak;
-      bool wordWrapping =
-          (aCanWordWrap ||
-           (aCanWhitespaceWrap &&
-            mCharacterGlyphs[i].CanBreakBefore() ==
-                CompressedGlyph::FLAG_BREAK_TYPE_EMERGENCY_WRAP)) &&
-          mCharacterGlyphs[i].IsClusterStart() &&
-          aBreakPriority <= gfxBreakPriority::eWordWrapBreak;
+      bool wordWrapping = aCanWordWrap &&
+                          mCharacterGlyphs[i].IsClusterStart() &&
+                          aBreakPriority <= gfxBreakPriority::eWordWrapBreak;
 
       bool whitespaceWrapping = false;
       if (i > aStart) {
         
         auto const& g = mCharacterGlyphs[i - 1];
         whitespaceWrapping =
-            aIsBreakSpaces &&
+            aCanWhitespaceWrap &&
             (g.CharIsSpace() || g.CharIsTab() || g.CharIsNewline());
       }
 
