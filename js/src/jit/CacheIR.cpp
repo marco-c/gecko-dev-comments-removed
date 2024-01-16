@@ -7426,6 +7426,39 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachStringIncludes() {
+  
+  if (argc_ != 1 || !args_[0].isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  StringOperandId searchStrId = writer.guardToString(argId);
+
+  writer.stringIncludesResult(strId, searchStrId);
+  writer.returnFromIC();
+
+  trackAttached("StringIncludes");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
   
   if (argc_ != 1 || !args_[0].isString()) {
@@ -7456,6 +7489,39 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
   writer.returnFromIC();
 
   trackAttached("StringIndexOf");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachStringLastIndexOf() {
+  
+  if (argc_ != 1 || !args_[0].isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  StringOperandId searchStrId = writer.guardToString(argId);
+
+  writer.stringLastIndexOfResult(strId, searchStrId);
+  writer.returnFromIC();
+
+  trackAttached("StringLastIndexOf");
   return AttachDecision::Attach;
 }
 
@@ -11000,8 +11066,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachStringFromCharCode();
     case InlinableNative::StringFromCodePoint:
       return tryAttachStringFromCodePoint();
+    case InlinableNative::StringIncludes:
+      return tryAttachStringIncludes();
     case InlinableNative::StringIndexOf:
       return tryAttachStringIndexOf();
+    case InlinableNative::StringLastIndexOf:
+      return tryAttachStringLastIndexOf();
     case InlinableNative::StringStartsWith:
       return tryAttachStringStartsWith();
     case InlinableNative::StringEndsWith:
