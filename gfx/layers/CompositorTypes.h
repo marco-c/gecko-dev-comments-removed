@@ -97,9 +97,11 @@ enum class TextureFlags : uint32_t {
   DUMMY_TEXTURE = 1 << 22,
   
   SOFTWARE_DECODED_VIDEO = 1 << 23,
+  
+  WAIT_FOR_REMOTE_TEXTURE_OWNER = 1 << 24,
 
   
-  ALL_BITS = (1 << 24) - 1,
+  ALL_BITS = (1 << 25) - 1,
   
   DEFAULT = NO_FLAGS
 };
