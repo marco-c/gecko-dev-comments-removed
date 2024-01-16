@@ -100,6 +100,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Likely.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
@@ -716,7 +717,10 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadBitfields(
 
     
     
-    mColors = MakeUnique<ColorTableEntry[]>(256);
+    mColors = MakeUniqueFallible<ColorTableEntry[]>(256);
+    if (NS_WARN_IF(!mColors)) {
+      return Transition::TerminateFailure();
+    }
     memset(mColors.get(), 0, 256 * sizeof(ColorTableEntry));
 
     
