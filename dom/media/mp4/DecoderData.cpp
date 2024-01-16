@@ -13,8 +13,6 @@
 #include "MP4Metadata.h"
 #include "mozilla/Logging.h"
 
-
-#include "OpusDecoder.h"
 #include "mp4parse.h"
 
 #define LOG(...) \

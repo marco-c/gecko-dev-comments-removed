@@ -303,12 +303,9 @@ bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
         return false;
       }
       break;
+    
     case WMFStreamType::MP3:
-      
-      if (StaticPrefs::media_ffvpx_mp3_enabled()) {
-        return false;
-      }
-      break;
+      return false;
     default:
       break;
   }

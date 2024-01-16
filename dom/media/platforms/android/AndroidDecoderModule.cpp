@@ -10,11 +10,9 @@
 #  include "AOMDecoder.h"
 #endif
 #include "MediaInfo.h"
-#include "OpusDecoder.h"
 #include "RemoteDataDecoder.h"
 #include "TheoraDecoder.h"
 #include "VPXDecoder.h"
-#include "VorbisDecoder.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_media.h"
@@ -102,34 +100,22 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
       break;
 
     
-    case MediaCodec::MP3:
-      if (StaticPrefs::media_ffvpx_mp3_enabled()) {
-        return media::DecodeSupportSet{};
-      }
-      if (sSupportedCodecs &&
-          sSupportedCodecs->contains(MediaCodecsSupport::MP3SoftwareDecode)) {
-        return DecodeSupport::SoftwareDecode;
-      }
-      return media::DecodeSupportSet{};
-
-    
     
     
     case MediaCodec::Theora:
       SLOG("Rejecting video of type %s", aMimeType.Data());
       return media::DecodeSupportSet{};
+    
+    case MediaCodec::MP3:
+      [[fallthrough]];
     case MediaCodec::Opus:
       [[fallthrough]];
     case MediaCodec::Vorbis:
       [[fallthrough]];
+    case MediaCodec::Wave:
+      [[fallthrough]];
     case MediaCodec::FLAC:
       SLOG("Rejecting audio of type %s", aMimeType.Data());
-      return media::DecodeSupportSet{};
-
-    
-    
-    
-    case MediaCodec::Wave:
       return media::DecodeSupportSet{};
 
     
