@@ -158,7 +158,7 @@ this.DateTimeBoxWidget = class {
     this.mMaxDay = 31;
     this.mMinYear = 1;
     
-    this.mMaxYear = 9999;
+    this.mMaxYear = 275760;
     this.mMonthDayLength = 2;
     this.mYearLength = 4;
     this.mMonthPageUpDownInterval = 3;
