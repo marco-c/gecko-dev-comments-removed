@@ -61,16 +61,17 @@ class StaticStrings {
   static constexpr size_t NUM_LENGTH2_ENTRIES =
       NUM_SMALL_CHARS * NUM_SMALL_CHARS;
 
-  JSAtom* length2StaticTable[NUM_LENGTH2_ENTRIES] = {};  
-
  public:
   
   static const size_t UNIT_STATIC_LIMIT = 256U;
-  JSAtom* unitStaticTable[UNIT_STATIC_LIMIT] = {};  
-
   static const size_t INT_STATIC_LIMIT = 256U;
-  JSAtom* intStaticTable[INT_STATIC_LIMIT] = {};  
 
+ private:
+  JSAtom* length2StaticTable[NUM_LENGTH2_ENTRIES] = {};  
+  JSAtom* unitStaticTable[UNIT_STATIC_LIMIT] = {};       
+  JSAtom* intStaticTable[INT_STATIC_LIMIT] = {};         
+
+ public:
   StaticStrings() = default;
 
   bool init(JSContext* cx);
