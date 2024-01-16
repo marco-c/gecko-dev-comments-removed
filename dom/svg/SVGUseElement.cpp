@@ -16,10 +16,9 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
-#include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
+#include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/dom/SVGSVGElement.h"
-#include "mozilla/dom/SVGSymbolElement.h"
 #include "mozilla/dom/SVGUseElementBinding.h"
 #include "nsGkAtoms.h"
 #include "nsContentUtils.h"
@@ -248,8 +247,11 @@ void SVGUseElement::NodeWillBeDestroyed(nsINode* aNode) {
 
 
 static bool NodeCouldBeRendered(const nsINode& aNode) {
-  if (const auto* symbol = SVGSymbolElement::FromNode(aNode)) {
-    return symbol->CouldBeRendered();
+  if (aNode.IsSVGElement(nsGkAtoms::symbol)) {
+    
+    
+    auto* shadowRoot = ShadowRoot::FromNodeOrNull(aNode.GetParentNode());
+    return shadowRoot && shadowRoot->Host()->IsSVGElement(nsGkAtoms::use);
   }
   
   return true;

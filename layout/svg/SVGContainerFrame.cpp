@@ -162,7 +162,9 @@ void SVGDisplayContainerFrame::InsertFrames(
     for (nsIFrame* kid = firstNewFrame; kid != nextFrame;
          kid = kid->GetNextSibling()) {
       ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
-      if (SVGFrame && !kid->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+      if (SVGFrame) {
+        MOZ_ASSERT(!kid->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
+                   "Check for this explicitly in the |if|, then");
         bool isFirstReflow = kid->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
         
         kid->RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
@@ -188,10 +190,8 @@ void SVGDisplayContainerFrame::RemoveFrame(DestroyContext& aContext,
   
   
   SchedulePaint();
-  if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-    PresContext()->RestyleManager()->PostRestyleEvent(
-        mContent->AsElement(), RestyleHint{0}, nsChangeHint_UpdateOverflow);
-  }
+  PresContext()->RestyleManager()->PostRestyleEvent(
+      mContent->AsElement(), RestyleHint{0}, nsChangeHint_UpdateOverflow);
 
   SVGContainerFrame::RemoveFrame(aContext, aListID, aOldFrame);
 }
@@ -332,7 +332,9 @@ void SVGDisplayContainerFrame::ReflowSVG() {
 
   for (auto* kid : mFrames) {
     ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
-    if (SVGFrame && !kid->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+    if (SVGFrame) {
+      MOZ_ASSERT(!kid->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
+                 "Check for this explicitly in the |if|, then");
       SVGFrame->ReflowSVG();
 
       

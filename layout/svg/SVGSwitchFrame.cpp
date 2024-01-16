@@ -195,7 +195,9 @@ void SVGSwitchFrame::ReflowSVG() {
   ReflowAllSVGTextFramesInsideNonActiveChildren(child);
 
   ISVGDisplayableFrame* svgChild = do_QueryFrame(child);
-  if (svgChild && !child->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+  if (svgChild) {
+    MOZ_ASSERT(!child->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
+               "Check for this explicitly in the |if|, then");
     svgChild->ReflowSVG();
 
     
