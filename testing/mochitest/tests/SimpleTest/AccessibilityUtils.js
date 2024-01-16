@@ -291,6 +291,55 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+  function isKeyboardFocusableTabInTablist(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    if (accessible.role != Ci.nsIAccessibleRole.ROLE_PAGETAB) {
+      return false; 
+    }
+    
+    
+    const tablist = accessible.parent;
+    if (!tablist || tablist.role != Ci.nsIAccessibleRole.ROLE_PAGETABLIST) {
+      return false; 
+    }
+    
+    
+    
+    const childCount = tablist.childCount;
+    let foundFocusable = false;
+    for (let c = 0; c < childCount; c++) {
+      const tab = tablist.getChildAt(c);
+      
+      
+      if (tab.DOMNode.tabIndex == 0) {
+        if (foundFocusable) {
+          
+          
+          
+          
+          
+          
+          
+          
+          a11yFail("Only one tab should be focusable in a tablist", accessible);
+          return false;
+        }
+        foundFocusable = true;
+      }
+    }
+    return foundFocusable;
+  }
+
+  
+
+
+
+
+
   function isKeyboardFocusableUrlbarButton(accessible) {
     const node = accessible.DOMNode;
     if (!node || !node.ownerGlobal) {
@@ -360,7 +409,8 @@ this.AccessibilityUtils = (function () {
       isKeyboardFocusableOption(accessible) ||
       isKeyboardFocusablePanelMultiViewControl(accessible) ||
       isKeyboardFocusableUrlbarButton(accessible) ||
-      isKeyboardFocusableXULTab(accessible)
+      isKeyboardFocusableXULTab(accessible) ||
+      isKeyboardFocusableTabInTablist(accessible)
     ) {
       return true;
     }
