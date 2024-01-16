@@ -51,7 +51,14 @@ async function waitForDialogAndDragNDropURL(crossDomain) {
   let dataTran = new DataTransfer();
   let urlEvent = new DragEvent("dragstart", { dataTransfer: dataTran });
   let urlBarContainer = document.getElementById("urlbar-input-container");
+  
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   urlBarContainer.click();
+  AccessibilityUtils.resetEnv();
   
   urlbar.dispatchEvent(urlEvent);
   

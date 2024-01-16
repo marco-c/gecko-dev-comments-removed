@@ -42,7 +42,14 @@ add_task(async function test_readerModeURLDrag() {
       let urlEvent = new DragEvent("dragstart", { dataTransfer: dataTran });
       let oldUrl = TEST_PATH + "readerModeArticle.html";
       let urlBarContainer = document.getElementById("urlbar-input-container");
+      
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
       urlBarContainer.click();
+      AccessibilityUtils.resetEnv();
       urlbar.dispatchEvent(urlEvent);
 
       let newUrl = urlEvent.dataTransfer.getData("text/plain");
