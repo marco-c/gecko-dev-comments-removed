@@ -854,14 +854,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
       aFrame->GetContent()->GetID() == nsGkAtoms::tabbrowser_arrowscrollbox) {
     return false;
   }
-  
-  
-  
-  
-  
-  
-  const bool isLeaf = aFrame->IsLeaf();
-  if (!isLeaf) {
+  if (aFrame->IsScrollContainer()) {
     if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
       if (MaybeCreateDisplayPort(aBuilder, aFrame, sf, RepaintMode::Repaint)) {
         
@@ -896,12 +889,9 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
     
     return false;
   }
-  if (!isLeaf) {
-    for (nsIFrame* child : aFrame->PrincipalChildList()) {
-      if (MaybeCreateDisplayPortInFirstScrollFrameEncountered(child,
-                                                              aBuilder)) {
-        return true;
-      }
+  for (nsIFrame* child : aFrame->PrincipalChildList()) {
+    if (MaybeCreateDisplayPortInFirstScrollFrameEncountered(child, aBuilder)) {
+      return true;
     }
   }
   return false;
