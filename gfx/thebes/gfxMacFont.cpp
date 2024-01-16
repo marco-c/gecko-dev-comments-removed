@@ -479,23 +479,7 @@ bool gfxMacFont::GetGlyphBounds(uint16_t aGID, gfxRect* aBounds, bool aTight) {
   gfxRect bounds(bb.origin.x, -(bb.origin.y + bb.size.height), bb.size.width,
                  bb.size.height);
   bounds.Scale(mFUnitsConvFactor);
-
-  
-  
-  
-  
-  if (GetFontEntry()->HasColorBitmapTable()) {
-    aBounds->x = std::min(bounds.x, 0.0);
-    aBounds->width = std::max(bounds.width, mMetrics.maxAdvance);
-    
-    
-    aBounds->y = std::min(bounds.y, -mMetrics.maxAscent);
-    aBounds->height =
-        std::max(bounds.YMost(), mMetrics.maxDescent) - aBounds->y;
-  } else {
-    *aBounds = bounds;
-  }
-
+  *aBounds = bounds;
   return true;
 }
 

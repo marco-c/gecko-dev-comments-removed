@@ -80,7 +80,7 @@ class gfxFT2FontBase : public gfxFont {
   
   
   bool GetFTGlyphExtents(uint16_t aGID, int32_t* aWidth,
-                         mozilla::gfx::IntRect* aBounds = nullptr);
+                         mozilla::gfx::IntRect* aBounds = nullptr) const;
 
  protected:
   ~gfxFT2FontBase() override;
@@ -143,10 +143,10 @@ class gfxFT2FontBase : public gfxFont {
   };
 
   const GlyphMetrics& GetCachedGlyphMetrics(
-      uint16_t aGID, mozilla::gfx::IntRect* aBounds = nullptr);
+      uint16_t aGID, mozilla::gfx::IntRect* aBounds = nullptr) const;
 
-  mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, GlyphMetrics>> mGlyphMetrics
-      MOZ_GUARDED_BY(mLock);
+  mutable mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, GlyphMetrics>>
+      mGlyphMetrics MOZ_GUARDED_BY(mLock);
 };
 
 #endif 
