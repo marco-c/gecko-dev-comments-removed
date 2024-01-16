@@ -326,39 +326,8 @@ FFmpegVideoEncoder<LIBAV_VER>::ProcessReconfigure(
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  using P = MediaDataEncoder::ReconfigurationPromise;
-  
-  
-  
-  return P::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
+  return MediaDataEncoder::ReconfigurationPromise::CreateAndReject(
+      NS_ERROR_NOT_IMPLEMENTED, __func__);
 }
 
 RefPtr<MediaDataEncoder::EncodePromise>
