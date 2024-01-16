@@ -216,7 +216,13 @@ IPCResult BrowserBridgeParent::RecvDispatchSynthesizedMouseEvent(
     return IPC_FAIL(this, "Unexpected event type");
   }
 
+  nsCOMPtr<nsIWidget> widget = Manager()->GetWidget();
+  if (!widget) {
+    return IPC_OK();
+  }
+
   WidgetMouseEvent event = aEvent;
+  event.mWidget = widget;
   
   
   

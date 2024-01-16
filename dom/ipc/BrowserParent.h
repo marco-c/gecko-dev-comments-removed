@@ -619,6 +619,7 @@ class BrowserParent final : public PBrowserParent,
 
   
   
+  LayoutDeviceIntPoint TransformParentToChild(const WidgetMouseEvent& aEvent);
   LayoutDeviceIntPoint TransformParentToChild(
       const LayoutDeviceIntPoint& aPoint);
   LayoutDevicePoint TransformParentToChild(const LayoutDevicePoint& aPoint);
