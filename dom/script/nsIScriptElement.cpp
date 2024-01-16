@@ -95,8 +95,7 @@ void nsIScriptElement::DetermineKindFromType(
     
     
     
-    if (aOwnerDoc->ImportMapsEnabled() &&
-        type.LowerCaseEqualsASCII("importmap")) {
+    if (type.LowerCaseEqualsASCII("importmap")) {
       mKind = ScriptKind::eImportMap;
     }
   }

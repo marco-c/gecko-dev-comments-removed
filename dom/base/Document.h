@@ -3991,8 +3991,6 @@ class Document : public nsINode,
 
   mozilla::dom::FeaturePolicy* FeaturePolicy() const;
 
-  bool ImportMapsEnabled() const;
-
   
 
 

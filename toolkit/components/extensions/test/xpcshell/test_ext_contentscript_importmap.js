@@ -11,7 +11,6 @@
 
 
 
-Services.prefs.setBoolPref("dom.importMaps.enabled", true);
 
 const server = createHttpServer({ hosts: ["example.com"] });
 

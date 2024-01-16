@@ -729,63 +729,15 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
   return NS_OK;
 }
 
-
-bool ImportMapsEnabled() {
-  if (NS_IsMainThread()) {
-    return mozilla::StaticPrefs::dom_importMaps_enabled();
-  }
-  return false;
-}
-
 ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
     LoadedScript* aScript, const nsAString& aSpecifier) {
   
   
+  MOZ_ASSERT_IF(!NS_IsMainThread(), mImportMap == nullptr);
   
   
-  
-  
-  if (ImportMapsEnabled()) {
-    return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
-                                             aSpecifier);
-  }
-
-  
-  
-  
-  
-  
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aSpecifier);
-  if (NS_SUCCEEDED(rv)) {
-    return WrapNotNull(uri);
-  }
-
-  if (rv != NS_ERROR_MALFORMED_URI) {
-    return Err(ResolveError::Failure);
-  }
-
-  if (!StringBeginsWith(aSpecifier, u"/"_ns) &&
-      !StringBeginsWith(aSpecifier, u"./"_ns) &&
-      !StringBeginsWith(aSpecifier, u"../"_ns)) {
-    return Err(ResolveError::FailureMayBeBare);
-  }
-
-  
-  nsCOMPtr<nsIURI> baseURL;
-  if (aScript && !aScript->IsEventScript()) {
-    baseURL = aScript->BaseURL();
-  } else {
-    baseURL = GetBaseURI();
-  }
-
-  rv = NS_NewURI(getter_AddRefs(uri), aSpecifier, nullptr, baseURL);
-  if (NS_SUCCEEDED(rv)) {
-    return WrapNotNull(uri);
-  }
-
-  return Err(ResolveError::Failure);
+  return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
+                                           aSpecifier);
 }
 
 nsresult ModuleLoaderBase::ResolveRequestedModules(
