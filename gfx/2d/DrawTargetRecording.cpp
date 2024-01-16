@@ -780,6 +780,7 @@ void DrawTargetRecording::FlushItem(const IntRect& aBounds) {
   
   
   
+  MOZ_DIAGNOSTIC_ASSERT(mRecorder->GetRecorderType() != RecorderType::CANVAS);
   mRecorder->RecordEvent(
       RecordedDrawTargetCreation(this, mFinalDT->GetBackendType(), mRect,
                                  mFinalDT->GetFormat(), false, nullptr));
