@@ -17,6 +17,8 @@ class nsIURI;
 
 namespace JS::loader {
 
+class ScriptLoadRequest;
+
 void HostAddRefTopLevelScript(const JS::Value& aPrivate);
 void HostReleaseTopLevelScript(const JS::Value& aPrivate);
 
@@ -69,9 +71,12 @@ class LoadedScript : public nsISupports {
 class ClassicScript final : public LoadedScript {
   ~ClassicScript() = default;
 
- public:
+ private:
+  
   ClassicScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                 ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
+
+  friend class ScriptLoadRequest;
 };
 
 class EventScript final : public LoadedScript {
@@ -97,9 +102,14 @@ class ModuleScript final : public LoadedScript {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(ModuleScript,
                                                          LoadedScript)
 
+ private:
+  
   ModuleScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
+  friend class ScriptLoadRequest;
+
+ public:
   void SetModuleRecord(JS::Handle<JSObject*> aModuleRecord);
   void SetParseError(const JS::Value& aError);
   void SetErrorToRethrow(const JS::Value& aError);

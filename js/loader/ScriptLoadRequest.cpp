@@ -162,10 +162,9 @@ const ModuleLoadRequest* ScriptLoadRequest::AsModuleRequest() const {
 void ScriptLoadRequest::NoCacheEntryFound() {
   MOZ_ASSERT(IsCheckingCache());
   MOZ_ASSERT(mURI);
-  mState = State::Fetching;
-}
-
-void ScriptLoadRequest::EnsureScript() {
+  
+  
+  
   switch (mKind) {
     case ScriptKind::eClassic:
     case ScriptKind::eImportMap:
@@ -178,6 +177,7 @@ void ScriptLoadRequest::EnsureScript() {
       MOZ_ASSERT_UNREACHABLE("EventScripts are not using ScriptLoadRequest");
       break;
   }
+  mState = State::Fetching;
 }
 
 void ScriptLoadRequest::SetPendingFetchingError() {

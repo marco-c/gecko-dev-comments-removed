@@ -2761,7 +2761,6 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
   aRequest->GetScriptLoadContext()->GetProfilerLabel(profilerLabelString);
 
   
-  aRequest->EnsureScript();
   MOZ_ASSERT(aRequest->mLoadedScript->IsClassicScript());
   MOZ_ASSERT(aRequest->mLoadedScript->GetFetchOptions() ==
              aRequest->mFetchOptions);

@@ -258,8 +258,6 @@ class ScriptLoadRequest
 
   void ClearScriptSource();
 
-  void EnsureScript();
-
   
   
   
