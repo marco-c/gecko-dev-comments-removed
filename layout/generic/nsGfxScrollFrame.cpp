@@ -599,29 +599,31 @@ ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
 
 }  
 
-
 static nsSize ComputeInsideBorderSize(const ScrollReflowInput& aState,
                                       const nsSize& aDesiredInsideBorderSize) {
   
   
   
-  nscoord contentWidth = aState.mReflowInput.ComputedWidth();
-  if (contentWidth == NS_UNCONSTRAINEDSIZE) {
-    contentWidth = aDesiredInsideBorderSize.width -
-                   aState.mReflowInput.ComputedPhysicalPadding().LeftRight();
+  const WritingMode wm = aState.mReflowInput.GetWritingMode();
+  const LogicalSize desiredInsideBorderSize(wm, aDesiredInsideBorderSize);
+  LogicalSize contentSize = aState.mReflowInput.ComputedSize();
+  const LogicalMargin padding = aState.mReflowInput.ComputedLogicalPadding(wm);
+
+  if (contentSize.ISize(wm) == NS_UNCONSTRAINEDSIZE) {
+    contentSize.ISize(wm) =
+        desiredInsideBorderSize.ISize(wm) - padding.IStartEnd(wm);
   }
-  nscoord contentHeight = aState.mReflowInput.ComputedHeight();
-  if (contentHeight == NS_UNCONSTRAINEDSIZE) {
-    contentHeight = aDesiredInsideBorderSize.height -
-                    aState.mReflowInput.ComputedPhysicalPadding().TopBottom();
+  if (contentSize.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
+    contentSize.BSize(wm) =
+        desiredInsideBorderSize.BSize(wm) - padding.BStartEnd(wm);
   }
 
-  contentWidth = aState.mReflowInput.ApplyMinMaxWidth(contentWidth);
-  contentHeight = aState.mReflowInput.ApplyMinMaxHeight(contentHeight);
-  return nsSize(
-      contentWidth + aState.mReflowInput.ComputedPhysicalPadding().LeftRight(),
-      contentHeight +
-          aState.mReflowInput.ComputedPhysicalPadding().TopBottom());
+  contentSize.ISize(wm) =
+      aState.mReflowInput.ApplyMinMaxISize(contentSize.ISize(wm));
+  contentSize.BSize(wm) =
+      aState.mReflowInput.ApplyMinMaxBSize(contentSize.BSize(wm));
+
+  return (contentSize + padding.Size(wm)).GetPhysicalSize(wm);
 }
 
 
@@ -681,7 +683,6 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput& aState,
   const nsSize scrollbarGutterSize(scrollbarGutter.LeftRight(),
                                    scrollbarGutter.TopBottom());
 
-  
   
   nsSize kidSize = GetContainSizeAxes().ContainSize(
       aKidMetrics->PhysicalSize(), *aState.mReflowInput.mFrame);
