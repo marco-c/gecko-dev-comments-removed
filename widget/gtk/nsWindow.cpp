@@ -1713,7 +1713,7 @@ bool nsWindow::WaylandPopupConfigure() {
   }
 
   LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d hint %d\n",
-      mPopupTrackInHierarchy, mPopupAnchored, int(mPopupHint));
+      mPopupTrackInHierarchy, mPopupAnchored, int(mPopupType));
 
   
   
@@ -1731,7 +1731,7 @@ bool nsWindow::WaylandPopupConfigure() {
   
   
   GdkWindowTypeHint gtkTypeHint;
-  switch (mPopupHint) {
+  switch (mPopupType) {
     case PopupType::Menu:
       
       
@@ -1886,7 +1886,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         return false;
       }
-      if (popup->mPopupHint == PopupType::Panel &&
+      if (popup->mPopupType == PopupType::Panel &&
           popup->WaylandPopupIsFirst() &&
           popup->WaylandPopupFitsToplevelWindow( true)) {
         
@@ -2602,7 +2602,7 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
 void nsWindow::WaylandPopupPrepareForMove() {
   LOG("nsWindow::WaylandPopupPrepareForMove()");
 
-  if (mPopupHint == PopupType::Tooltip) {
+  if (mPopupType == PopupType::Tooltip) {
     
     if (mPopupUseMoveToRect && gtk_widget_is_visible(mShell)) {
       HideWaylandPopupWindow( true,
@@ -5731,7 +5731,7 @@ nsAutoCString nsWindow::GetFrameTag() const {
 }
 
 nsCString nsWindow::GetPopupTypeName() {
-  switch (mPopupHint) {
+  switch (mPopupType) {
     case PopupType::Menu:
       return nsCString("Menu");
     case PopupType::Tooltip:
@@ -6091,7 +6091,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   } else if (mWindowType == WindowType::Popup) {
     MOZ_ASSERT(aInitData);
     mGtkWindowRoleName = "Popup";
-    mPopupHint = aInitData->mPopupHint;
 
     LOG("nsWindow::Create() Popup");
 
@@ -6132,7 +6131,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       
       GdkWindowTypeHint gtkTypeHint;
-      switch (mPopupHint) {
+      switch (mPopupType) {
         case PopupType::Menu:
           gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
           break;
@@ -6153,7 +6152,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       GtkWindowSetTransientFor(GTK_WINDOW(mShell), parentWidget);
 
       
-      if (mPopupHint != PopupType::Tooltip &&
+      if (mPopupType != PopupType::Tooltip &&
           gtk_window_get_modal(parentWidget)) {
         gtk_window_set_modal(GTK_WINDOW(mShell), true);
       }
