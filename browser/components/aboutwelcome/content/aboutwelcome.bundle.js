@@ -1557,7 +1557,10 @@ function useLanguageSwitcher(appAndSystemLocaleInfo, screens, screenIndex, setSc
     } else {
       setLanguageFilteredScreens(screens);
     }
-  }, [appAndSystemLocaleInfo?.matchType, languageMismatchScreenIndex, negotiatedLanguage, screen, screenIndex, screens, setScreenIndex]);
+  },
+  
+  
+  [appAndSystemLocaleInfo?.matchType, languageMismatchScreenIndex, negotiatedLanguage, screen, screens, setScreenIndex]);
   return {
     negotiatedLanguage,
     langPackInstallPhase,
