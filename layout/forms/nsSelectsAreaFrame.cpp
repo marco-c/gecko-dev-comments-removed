@@ -14,14 +14,13 @@
 using namespace mozilla;
 
 nsContainerFrame* NS_NewSelectsAreaFrame(PresShell* aShell,
-                                         ComputedStyle* aStyle,
-                                         nsFrameState aFlags) {
+                                         ComputedStyle* aStyle) {
   nsSelectsAreaFrame* it =
       new (aShell) nsSelectsAreaFrame(aStyle, aShell->GetPresContext());
 
   
   
-  it->AddStateBits(aFlags | NS_BLOCK_FLOAT_MGR);
+  it->AddStateBits(NS_BLOCK_FLOAT_MGR);
 
   return it;
 }

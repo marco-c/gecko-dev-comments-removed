@@ -3014,9 +3014,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
     
     
     
-    nsFrameState flags = NS_BLOCK_FLOAT_MGR;
     nsComboboxControlFrame* comboboxFrame =
-        NS_NewComboboxControlFrame(mPresShell, computedStyle, flags);
+        NS_NewComboboxControlFrame(mPresShell, computedStyle);
 
     
     
@@ -3088,7 +3087,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
       NS_NewListControlFrame(mPresShell, computedStyle);
 
   nsContainerFrame* scrolledFrame =
-      NS_NewSelectsAreaFrame(mPresShell, computedStyle, NS_BLOCK_FLOAT_MGR);
+      NS_NewSelectsAreaFrame(mPresShell, computedStyle);
 
   
   
