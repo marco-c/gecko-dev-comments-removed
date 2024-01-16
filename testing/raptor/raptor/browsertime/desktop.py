@@ -47,7 +47,9 @@ class BrowsertimeDesktop(PerftestDesktop, Browsertime):
 
         
         
-        chrome_args.extend(["--no-first-run"])
+        chrome_args.extend(
+            ["--no-first-run", "--no-experiments", "--disable-site-isolation-trials"]
+        )
 
         btime_chrome_args = []
         for arg in chrome_args:
