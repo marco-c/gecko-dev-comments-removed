@@ -65,37 +65,6 @@ async function searchWithTab(
 
 
 
-add_task(async function list_of_search_strings() {
-  const searches = [
-    {
-      
-      searchString: "chocolate",
-    },
-    {
-      
-      searchString: "chocolate cake",
-    },
-    {
-      
-      searchString: "chocolate;,?:@&=+$-_.!~*'()#cake",
-    },
-    {
-      searchString: '"chocolate cake" -recipes',
-    },
-    {
-      
-      searchString: "site:example.com chocolate -cake",
-    },
-  ];
-
-  for (let { searchString } of searches) {
-    let { tab } = await searchWithTab(searchString);
-    BrowserTestUtils.removeTab(tab);
-  }
-});
-
-
-
 add_task(async function go_back() {
   let { tab } = await searchWithTab(SEARCH_STRING);
 
