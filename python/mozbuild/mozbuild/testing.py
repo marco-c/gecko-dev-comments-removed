@@ -48,11 +48,7 @@ TEST_MANIFESTS = dict(
         ".",
         False,
     ),
-    
-    
     MARIONETTE=("marionette", "marionette", ".", False),
-    MARIONETTE_UNIT=("marionette", "marionette", ".", False),
-    MARIONETTE_WEBAPI=("marionette", "marionette", ".", False),
     MOCHITEST=("mochitest", "testing/mochitest", "tests", True),
     MOCHITEST_CHROME=("chrome", "testing/mochitest", "chrome", True),
     WEBRTC_SIGNALLING_TEST=("steeplechase", "steeplechase", ".", True),
