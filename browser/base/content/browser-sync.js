@@ -821,6 +821,7 @@ var gSync = {
       
       
       if (this.PXI_TOOLBAR_ENABLED) {
+        this.updateFxAPanel(UIState.get());
         this.updateCTAPanel();
         PanelUI.showSubView("PanelUI-fxa", anchor, aEvent);
       } else {
