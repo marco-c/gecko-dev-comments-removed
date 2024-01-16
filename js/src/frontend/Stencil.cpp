@@ -36,6 +36,7 @@
 #include "js/experimental/JSStencil.h"  
 #include "js/GCAPI.h"                   
 #include "js/Printer.h"                 
+#include "js/RealmOptions.h"            
 #include "js/RootingAPI.h"              
 #include "js/Transcoding.h"             
 #include "js/Utility.h"                 
@@ -50,6 +51,7 @@
 #include "vm/JSObject.h"      
 #include "vm/JSONPrinter.h"   
 #include "vm/JSScript.h"      
+#include "vm/Realm.h"         
 #include "vm/RegExpObject.h"  
 #include "vm/Scope.h"  
 #include "vm/ScopeKind.h"    
@@ -2618,6 +2620,10 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
   
   bool isInitialParse = stencil.isInitialStencil();
   MOZ_ASSERT(stencil.isInitialStencil() == input.isInitialStencil());
+
+  
+  MOZ_ASSERT_IF(cx->realm()->behaviors().discardSource(),
+                !stencil.canLazilyParse);
 
   CompilationAtomCache& atomCache = input.atomCache;
   const JS::InstantiateOptions options(input.options);
