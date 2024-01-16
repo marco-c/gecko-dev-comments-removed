@@ -542,7 +542,6 @@ const AVAILABLE_UA_OVERRIDES = [
     config: {
       matches: [
         "*://411.ca/", 
-        "*://*.commerzbank.de/*", 
         "*://*.mms.telekom.de/*", 
         "*://ubank.com.au/*", 
         "*://wifi.sncf/*", 
@@ -1075,23 +1074,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1831441",
-    platform: "all",
-    domain: "luna.amazon.com",
-    bug: "1831441",
-    config: {
-      matches: ["*://luna.amazon.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
     id: "bug1836109",
     platform: "all",
     domain: "watch.tonton.com.my",
@@ -1276,25 +1258,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://my.southerncross.co.nz/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-    id: "bug1858664",
-    platform: "all",
-    domain: "tesco.com",
-    bug: "1858664",
-    config: {
-      matches: ["*://*.tesco.com/*"],
-      uaTransformer: originalUA => {
-        const cappedRv = UAHelpers.capRvTo109(originalUA);
-        return UAHelpers.capVersionToNumber(cappedRv);
       },
     },
   },
