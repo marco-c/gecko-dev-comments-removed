@@ -4599,6 +4599,10 @@
         aOtherTab.dispatchEvent(event);
       }
 
+      if (otherBrowser.isDistinctProductPageVisit) {
+        ourBrowser.isDistinctProductPageVisit = true;
+      }
+
       SitePermissions.copyTemporaryPermissions(otherBrowser, ourBrowser);
 
       
