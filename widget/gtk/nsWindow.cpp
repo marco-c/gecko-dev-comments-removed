@@ -805,11 +805,7 @@ void nsWindow::SetModal(bool aModal) {
 
 bool nsWindow::IsVisible() const { return mIsShown; }
 
-bool nsWindow::IsMapped() const {
-  
-  
-  return GdkIsWaylandDisplay() ? mIsMapped : true;
-}
+bool nsWindow::IsMapped() const { return mIsMapped; }
 
 void nsWindow::RegisterTouchWindow() {
   mHandleTouchEvent = true;
