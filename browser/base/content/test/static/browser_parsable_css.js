@@ -155,6 +155,15 @@ let propNameAllowlist = [
     isFromDevTools: false,
   },
   { propName: "--browser-stack-z-index-rdm-toolbar", isFromDevTools: false },
+
+  
+  
+  { propName: "--panel-border-radius", isFromDevTools: true },
+  { propName: "--panel-padding", isFromDevTools: true },
+  { propName: "--panel-background", isFromDevTools: true },
+  { propName: "--panel-border-color", isFromDevTools: true },
+  { propName: "--panel-shadow", isFromDevTools: true },
+  { propName: "--panel-shadow-margin", isFromDevTools: true },
 ];
 
 

@@ -69,15 +69,9 @@ const ARROW_OFFSET = {
 const EXTRA_HEIGHT = {
   normal: 0,
   
-  arrow: 13,
+  arrow: 14,
   
   doorhanger: 9,
-};
-
-const EXTRA_BORDER = {
-  normal: 0,
-  arrow: -0.5,
-  doorhanger: 0,
 };
 
 
@@ -382,21 +376,14 @@ function HTMLTooltip(
   this._onXulPanelHidden = this._onXulPanelHidden.bind(this);
 
   this.container = this._createContainer();
-  this.container.classList.toggle("tooltip-container-xul", this.useXulWrapper);
-
   if (this.useXulWrapper) {
     
     
     
     
-    
     this.xulPanelWrapper = this._createXulPanelWrapper();
-    const inner = this.doc.createElementNS(XHTML_NS, "div");
-    inner.classList.add("tooltip-xul-wrapper-inner");
-
     this.doc.documentElement.appendChild(this.xulPanelWrapper);
-    this.xulPanelWrapper.appendChild(inner);
-    inner.appendChild(this.container);
+    this.xulPanelWrapper.appendChild(this.container);
   } else if (this._hasXULRootElement()) {
     this.doc.documentElement.appendChild(this.container);
   } else {
@@ -569,8 +556,7 @@ HTMLTooltip.prototype = {
       ({ width: preferredWidth, height: measuredHeight } =
         this._measureContainerSize());
     } else {
-      const themeWidth = 2 * EXTRA_BORDER[this.type];
-      preferredWidth = this.preferredWidth + themeWidth;
+      preferredWidth = this.preferredWidth;
     }
 
     const anchorWin = anchor.ownerDocument.defaultView;
@@ -635,8 +621,7 @@ HTMLTooltip.prototype = {
       }
       preferredHeight += verticalMargin;
     } else {
-      const themeHeight =
-        EXTRA_HEIGHT[this.type] + verticalMargin + 2 * EXTRA_BORDER[this.type];
+      const themeHeight = EXTRA_HEIGHT[this.type] + verticalMargin;
       preferredHeight = this.preferredHeight + themeHeight;
     }
 
@@ -1005,6 +990,9 @@ HTMLTooltip.prototype = {
 
     
     panel.setAttribute("type", "arrow");
+    panel.setAttribute("tooltip-type", this.type);
+
+    panel.setAttribute("flip", "none");
 
     panel.setAttribute("level", "top");
     panel.setAttribute("class", "tooltip-xul-wrapper");
@@ -1026,7 +1014,14 @@ HTMLTooltip.prototype = {
   },
 
   _moveXulWrapperTo(left, top) {
-    this.xulPanelWrapper.moveTo(left, top);
+    
+    
+    
+    const margin = parseFloat(
+      this.xulPanelWrapper.ownerGlobal.getComputedStyle(this.xulPanelWrapper)
+        .marginTop
+    );
+    this.xulPanelWrapper.moveTo(left + margin, top + margin);
   },
 
   _hideXulWrapper() {
