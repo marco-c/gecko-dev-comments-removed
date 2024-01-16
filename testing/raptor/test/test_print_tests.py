@@ -16,17 +16,17 @@ def test_pageload_subtests(capsys, monkeypatch, tmpdir):
         return str(tmpdir)
 
     monkeypatch.setattr(os.path, "dirname", mock)
-    manifest = tmpdir.join("raptor.ini")
+    manifest = tmpdir.join("raptor.toml")
     manifest.write(
         """
 [DEFAULT]
-type = pageload
-apps = firefox
+type = "pageload"
+apps = "firefox"
 
-[raptor-subtest-1]
-measure = foo, bar
+["raptor-subtest-1"]
+measure = ["foo", "bar"]
 
-[raptor-subtest-2]
+["raptor-subtest-2"]
 """
     )
     with pytest.raises(SystemExit):

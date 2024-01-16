@@ -19,7 +19,7 @@ from utils import (
 )
 
 here = os.path.abspath(os.path.dirname(__file__))
-raptor_ini = os.path.join(here, "raptor.ini")
+raptor_toml = os.path.join(here, "raptor.toml")
 tests_dir = os.path.join(here, "tests")
 LOG = RaptorLogger(component="raptor-manifest")
 
@@ -49,15 +49,15 @@ def filter_app(tests, values):
 
 
 def get_browser_test_list(browser_app, run_local):
-    LOG.info(raptor_ini)
-    test_manifest = TestManifest([raptor_ini], strict=False)
+    LOG.info(raptor_toml)
+    test_manifest = TestManifest([raptor_toml], strict=False)
     info = {"app": browser_app, "run_local": run_local}
     return test_manifest.active_tests(
         exists=False, disabled=False, filters=[filter_app], **info
     )
 
 
-def validate_test_ini(test_details):
+def validate_test_toml(test_details):
     
     valid_settings = True
 
@@ -98,8 +98,11 @@ def validate_test_ini(test_details):
         
         
         
+        
+        
         test_details["alert_on"] = [
-            _item.strip() for _item in test_details["alert_on"].split(",")
+            _item.strip()
+            for _item in test_details["alert_on"].replace("\n", ",").split(",")
         ]
 
         
@@ -316,24 +319,24 @@ def write_test_settings_json(args, test_details, oskey):
 
 def get_raptor_test_list(args, oskey):
     """
-    A test ini (i.e. raptor-firefox-tp6.ini) will have one or more subtests inside,
-    each with it's own name ([the-ini-file-test-section]).
+    A test toml (i.e. raptor-firefox-tp6.toml) will have one or more subtests inside,
+    each with it's own name ([the-toml-file-test-section]).
 
     We want the ability to eiter:
-        - run * all * of the subtests listed inside the test ini; - or -
-        - just run a single one of those subtests that are inside the ini
+        - run * all * of the subtests listed inside the test toml; - or -
+        - just run a single one of those subtests that are inside the toml
 
     A test name is received on the command line. This will either match the name
-    of a single subtest (within an ini) - or - if there's no matching single
+    of a single subtest (within an toml) - or - if there's no matching single
     subtest with that name, then the test name provided might be the name of a
-    test ini itself (i.e. raptor-firefox-tp6) that contains multiple subtests.
+    test toml itself (i.e. raptor-firefox-tp6) that contains multiple subtests.
 
     First look for a single matching subtest name in the list of all availble tests,
     and if it's found we will just run that single subtest.
 
     Then look at the list of all available tests - each available test has a manifest
     name associated to it - and pull out all subtests whose manifest name matches
-    the test name provided on the command line i.e. run all subtests in a specified ini.
+    the test name provided on the command line i.e. run all subtests in a specified toml.
 
     If no tests are found at all then the test name is invalid.
     """
@@ -350,10 +353,10 @@ def get_raptor_test_list(args, oskey):
     
     
     if len(tests_to_run) == 0:
-        _ini = args.test + ".ini"
+        _toml = args.test + ".toml"
         for next_test in available_tests:
             head, tail = os.path.split(next_test["manifest"])
-            if tail == _ini:
+            if tail == _toml:
                 
                 tests_to_run.append(next_test)
 
@@ -630,7 +633,7 @@ def get_raptor_test_list(args, oskey):
     
     if len(tests_to_run) != 0:
         for test in tests_to_run:
-            if validate_test_ini(test):
+            if validate_test_toml(test):
                 write_test_settings_json(args, test, oskey)
             else:
                 
