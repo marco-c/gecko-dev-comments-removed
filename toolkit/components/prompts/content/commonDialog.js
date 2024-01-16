@@ -5,6 +5,18 @@
 const { CommonDialog } = ChromeUtils.importESModule(
   "resource://gre/modules/CommonDialog.sys.mjs"
 );
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = {};
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "gContentAnalysis",
+  "@mozilla.org/contentanalysis;1",
+  Ci.nsIContentAnalysis
+);
 
 
 
@@ -123,6 +135,58 @@ function commonDialogOnLoad() {
   
   
   ui.infoIcon.addEventListener("load", () => window.sizeToContent());
+  if (lazy.gContentAnalysis.isActive && args.owningBrowsingContext?.isContent) {
+    ui.loginTextbox?.addEventListener("paste", async event => {
+      let data = event.clipboardData.getData("text/plain");
+      if (data?.length > 0) {
+        
+        event.preventDefault();
+        
+        const startIndex = Math.min(
+          ui.loginTextbox.selectionStart,
+          ui.loginTextbox.selectionEnd
+        );
+        const endIndex = Math.max(
+          ui.loginTextbox.selectionStart,
+          ui.loginTextbox.selectionEnd
+        );
+        const selectionDirection =
+          endIndex < startIndex ? "backward" : "forward";
+        try {
+          const response = await lazy.gContentAnalysis.analyzeContentRequest(
+            {
+              requestToken: Services.uuid.generateUUID().toString(),
+              resources: [],
+              analysisType: Ci.nsIContentAnalysis.eBulkDataEntry,
+              operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eClipboard,
+              url: args.owningBrowsingContext.currentURI.spec,
+              textContent: data,
+              windowGlobalParent:
+                args.owningBrowsingContext.currentWindowContext,
+            },
+            true
+          );
+          if (response.shouldAllowContent) {
+            ui.loginTextbox.value =
+              ui.loginTextbox.value.slice(0, startIndex) +
+              data +
+              ui.loginTextbox.value.slice(endIndex);
+            ui.loginTextbox.focus();
+            if (startIndex !== endIndex) {
+              
+              ui.loginTextbox.setSelectionRange(
+                startIndex,
+                startIndex + data.length,
+                selectionDirection
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Content analysis request returned error: ", error);
+        }
+      }
+    });
+  }
 
   window.getAttention();
 }
