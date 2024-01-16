@@ -158,7 +158,9 @@ class JavaScriptTracer {
         capture: true,
       };
       
-      const eventHandler = this.tracedGlobal.docShell.chromeEventHandler;
+      
+      const eventHandler =
+        this.tracedGlobal.docShell.chromeEventHandler || this.tracedGlobal;
       eventHandler.addEventListener("mousedown", listener, eventOptions);
       eventHandler.addEventListener("keydown", listener, eventOptions);
     } else {
