@@ -4051,6 +4051,40 @@ static bool ToRelativeTemporalObject(
   return true;
 }
 
+
+
+
+
+static bool CreateCalendarMethodsRecordFromRelativeTo(
+    JSContext* cx, Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
+    Handle<ZonedDateTime> zonedRelativeTo,
+    mozilla::EnumSet<CalendarMethod> methods,
+    MutableHandle<CalendarRecord> result) {
+  
+  if (zonedRelativeTo) {
+    return CreateCalendarMethodsRecord(cx, zonedRelativeTo.calendar(), methods,
+                                       result);
+  }
+
+  
+  if (plainRelativeTo) {
+    auto* unwrapped = plainRelativeTo.unwrap(cx);
+    if (!unwrapped) {
+      return false;
+    }
+
+    Rooted<CalendarValue> calendar(cx, unwrapped->calendar());
+    if (!calendar.wrap(cx)) {
+      return false;
+    }
+
+    return CreateCalendarMethodsRecord(cx, calendar, methods, result);
+  }
+
+  
+  return true;
+}
+
 static constexpr bool IsSafeInteger(int64_t x) {
   constexpr int64_t MaxSafeInteger = int64_t(1) << 53;
   constexpr int64_t MinSafeInteger = -MaxSafeInteger;
@@ -6270,36 +6304,14 @@ static bool AddDurationToOrSubtractDurationFromDuration(
 
   
   Rooted<CalendarRecord> calendar(cx);
-
-  
-
-  
-  if (zonedRelativeTo || plainRelativeTo) {
-    
-    Rooted<CalendarValue> calendarValue(cx);
-    if (plainRelativeTo) {
-      auto* unwrapped = plainRelativeTo.unwrap(cx);
-      if (!unwrapped) {
-        return false;
-      }
-
-      calendarValue = unwrapped->calendar();
-      if (!calendarValue.wrap(cx)) {
-        return false;
-      }
-    } else {
-      calendarValue = zonedRelativeTo.calendar();
-    }
-
-    
-    if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                     {
-                                         CalendarMethod::DateAdd,
-                                         CalendarMethod::DateUntil,
-                                     },
-                                     &calendar)) {
-      return false;
-    }
+  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
+                                                 zonedRelativeTo,
+                                                 {
+                                                     CalendarMethod::DateAdd,
+                                                     CalendarMethod::DateUntil,
+                                                 },
+                                                 &calendar)) {
+    return false;
   }
 
   
@@ -6521,33 +6533,13 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-
-  
-  if (zonedRelativeTo || plainRelativeTo) {
-    
-    Rooted<CalendarValue> calendarValue(cx);
-    if (plainRelativeTo) {
-      auto* unwrapped = plainRelativeTo.unwrap(cx);
-      if (!unwrapped) {
-        return false;
-      }
-
-      calendarValue = unwrapped->calendar();
-      if (!calendarValue.wrap(cx)) {
-        return false;
-      }
-    } else {
-      calendarValue = zonedRelativeTo.calendar();
-    }
-
-    
-    if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                     {
-                                         CalendarMethod::DateAdd,
-                                     },
-                                     &calendar)) {
-      return false;
-    }
+  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
+                                                 zonedRelativeTo,
+                                                 {
+                                                     CalendarMethod::DateAdd,
+                                                 },
+                                                 &calendar)) {
+    return false;
   }
 
   
@@ -7283,34 +7275,14 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-
-  
-  if (zonedRelativeTo || plainRelativeTo) {
-    
-    Rooted<CalendarValue> calendarValue(cx);
-    if (plainRelativeTo) {
-      auto* unwrapped = plainRelativeTo.unwrap(cx);
-      if (!unwrapped) {
-        return false;
-      }
-
-      calendarValue = unwrapped->calendar();
-      if (!calendarValue.wrap(cx)) {
-        return false;
-      }
-    } else {
-      calendarValue = zonedRelativeTo.calendar();
-    }
-
-    
-    if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                     {
-                                         CalendarMethod::DateAdd,
-                                         CalendarMethod::DateUntil,
-                                     },
-                                     &calendar)) {
-      return false;
-    }
+  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
+                                                 zonedRelativeTo,
+                                                 {
+                                                     CalendarMethod::DateAdd,
+                                                     CalendarMethod::DateUntil,
+                                                 },
+                                                 &calendar)) {
+    return false;
   }
 
   
@@ -7505,36 +7477,14 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<CalendarRecord> calendar(cx);
-
-  
-
-  
-  if (zonedRelativeTo || plainRelativeTo) {
-    
-    Rooted<CalendarValue> calendarValue(cx);
-    if (plainRelativeTo) {
-      auto* unwrapped = plainRelativeTo.unwrap(cx);
-      if (!unwrapped) {
-        return false;
-      }
-
-      calendarValue = unwrapped->calendar();
-      if (!calendarValue.wrap(cx)) {
-        return false;
-      }
-    } else {
-      calendarValue = zonedRelativeTo.calendar();
-    }
-
-    
-    if (!CreateCalendarMethodsRecord(cx, calendarValue,
-                                     {
-                                         CalendarMethod::DateAdd,
-                                         CalendarMethod::DateUntil,
-                                     },
-                                     &calendar)) {
-      return false;
-    }
+  if (!CreateCalendarMethodsRecordFromRelativeTo(cx, plainRelativeTo,
+                                                 zonedRelativeTo,
+                                                 {
+                                                     CalendarMethod::DateAdd,
+                                                     CalendarMethod::DateUntil,
+                                                 },
+                                                 &calendar)) {
+    return false;
   }
 
   
