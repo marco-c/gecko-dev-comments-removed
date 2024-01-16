@@ -235,81 +235,13 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
         return true;
       }
 
-      if (utf8String->IsEmpty()) {
-        d.set(JS_GetEmptyStringValue(cx));
-        return true;
-      }
-
-      uint32_t len = utf8String->Length();
-      auto allocLen = CheckedUint32(len) + 1;
-      if (!allocLen.isValid()) {
+      nsStringBuffer* buf;
+      if (!XPCStringConvert::UTF8ToJSVal(cx, *utf8String, &buf, d)) {
         return false;
       }
-
-      
-      
-      
-
-      if (IsUtf8Latin1(*utf8String)) {
-        using UniqueLatin1Chars =
-            js::UniquePtr<JS::Latin1Char[], JS::FreePolicy>;
-
-        UniqueLatin1Chars buffer(static_cast<JS::Latin1Char*>(
-            JS_string_malloc(cx, allocLen.value())));
-        if (!buffer) {
-          return false;
-        }
-
-        size_t written = LossyConvertUtf8toLatin1(
-            *utf8String, Span(reinterpret_cast<char*>(buffer.get()), len));
-        buffer[written] = 0;
-
-        
-        JSString* str = JS_NewLatin1String(cx, std::move(buffer), written);
-        if (!str) {
-          return false;
-        }
-
-        d.setString(str);
-        return true;
+      if (buf) {
+        buf->AddRef();
       }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      allocLen *= sizeof(char16_t);
-      if (!allocLen.isValid()) {
-        return false;
-      }
-
-      JS::UniqueTwoByteChars buffer(
-          static_cast<char16_t*>(JS_string_malloc(cx, allocLen.value())));
-      if (!buffer) {
-        return false;
-      }
-
-      
-      
-      
-      
-      
-      
-      size_t written =
-          ConvertUtf8toUtf16(*utf8String, Span(buffer.get(), allocLen.value()));
-      MOZ_RELEASE_ASSERT(written <= len);
-      buffer[written] = 0;
-
-      JSString* str = JS_NewUCStringDontDeflate(cx, std::move(buffer), written);
-      if (!str) {
-        return false;
-      }
-
-      d.setString(str);
       return true;
     }
     case nsXPTType::T_CSTRING: {
@@ -658,7 +590,6 @@ bool XPCConvert::JSData2Native(JSContext* cx, void* d, HandleValue s,
         return true;
       }
 
-      
       JSString* str = ToString(cx, s);
       if (!str) {
         return false;
@@ -670,24 +601,7 @@ bool XPCConvert::JSData2Native(JSContext* cx, void* d, HandleValue s,
         return true;
       }
 
-      JSLinearString* linear = JS_EnsureLinearString(cx, str);
-      if (!linear) {
-        return false;
-      }
-
-      size_t utf8Length = JS::GetDeflatedUTF8StringLength(linear);
-      if (!rs->SetLength(utf8Length, fallible)) {
-        if (pErr) {
-          *pErr = NS_ERROR_OUT_OF_MEMORY;
-        }
-        return false;
-      }
-
-      mozilla::DebugOnly<size_t> written = JS::DeflateStringToUTF8Buffer(
-          linear, mozilla::Span(rs->BeginWriting(), utf8Length));
-      MOZ_ASSERT(written == utf8Length);
-
-      return true;
+      return AssignJSString(cx, *rs, str);
     }
 
     case nsXPTType::T_CSTRING: {
