@@ -711,4 +711,18 @@ add_task(async function run_test_17() {
   await AddonManagerPrivate.backgroundUpdateCheck();
   let aAddons = await promiseAddonsByIDs(ADDON_IDS);
   check_results(aAddons, WITH_EXTENSION_CACHE);
+  Services.prefs.clearUserPref(PREF_GETADDONS_CACHE_TYPES);
+});
+
+
+
+add_task(async function run_test_18() {
+  
+  
+  Services.prefs.setCharPref(PREF_GETADDONS_BYIDS, "data:text/not-json,");
+
+  await AddonManagerPrivate.backgroundUpdateCheck();
+  let aAddons = await promiseAddonsByIDs(ADDON_IDS);
+  check_results(aAddons, WITH_EXTENSION_CACHE);
+  Services.prefs.setCharPref(PREF_GETADDONS_BYIDS, GETADDONS_RESULTS);
 });
