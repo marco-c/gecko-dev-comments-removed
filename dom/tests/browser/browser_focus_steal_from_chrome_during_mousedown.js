@@ -27,7 +27,13 @@ add_task(async function test() {
 
     
     
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+    
+    
     EventUtils.synthesizeMouse(tab.linkedBrowser, 20, 20, { button });
+    AccessibilityUtils.resetEnv();
 
     isnot(
       fm.focusedElement,
