@@ -854,29 +854,36 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
       aFrame->GetContent()->GetID() == nsGkAtoms::tabbrowser_arrowscrollbox) {
     return false;
   }
-  if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
-    if (MaybeCreateDisplayPort(aBuilder, aFrame, sf, RepaintMode::Repaint)) {
-      
-      
-      
-      
-      
-      
-      
-      sf->SetIsFirstScrollableFrameSequenceNumber(
-          Some(nsDisplayListBuilder::GetPaintSequenceNumber()));
-      return true;
+  
+  
+  
+  
+  
+  
+  const bool isLeaf = aFrame->IsLeaf();
+  if (!isLeaf) {
+    if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
+      if (MaybeCreateDisplayPort(aBuilder, aFrame, sf, RepaintMode::Repaint)) {
+        
+        
+        
+        
+        
+        
+        
+        sf->SetIsFirstScrollableFrameSequenceNumber(
+            Some(nsDisplayListBuilder::GetPaintSequenceNumber()));
+        return true;
+      }
     }
-  }
-  if (aFrame->IsPlaceholderFrame()) {
+  } else if (aFrame->IsPlaceholderFrame()) {
     nsPlaceholderFrame* placeholder = static_cast<nsPlaceholderFrame*>(aFrame);
     nsIFrame* oof = placeholder->GetOutOfFlowFrame();
     if (oof && !nsLayoutUtils::IsPopup(oof) &&
         MaybeCreateDisplayPortInFirstScrollFrameEncountered(oof, aBuilder)) {
       return true;
     }
-  }
-  if (aFrame->IsSubDocumentFrame()) {
+  } else if (aFrame->IsSubDocumentFrame()) {
     PresShell* presShell = static_cast<nsSubDocumentFrame*>(aFrame)
                                ->GetSubdocumentPresShellForPainting(0);
     if (nsIFrame* root = presShell ? presShell->GetRootFrame() : nullptr) {
@@ -889,9 +896,12 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
     
     return false;
   }
-  for (nsIFrame* child : aFrame->PrincipalChildList()) {
-    if (MaybeCreateDisplayPortInFirstScrollFrameEncountered(child, aBuilder)) {
-      return true;
+  if (!isLeaf) {
+    for (nsIFrame* child : aFrame->PrincipalChildList()) {
+      if (MaybeCreateDisplayPortInFirstScrollFrameEncountered(child,
+                                                              aBuilder)) {
+        return true;
+      }
     }
   }
   return false;
