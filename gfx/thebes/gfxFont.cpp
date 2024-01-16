@@ -32,6 +32,7 @@
 #include "gfxHarfBuzzShaper.h"
 #include "gfxUserFontSet.h"
 #include "nsCRT.h"
+#include "nsContentUtils.h"
 #include "nsSpecialCasingData.h"
 #include "nsTextRunTransformations.h"
 #include "nsUGenCategory.h"
@@ -728,10 +729,30 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
   
   const char16_t kBengaliVirama = 0x09CD;
   const char16_t kBengaliYa = 0x09AF;
+  
+  
+  auto isHyphen = [](char16_t c) {
+    return c == char16_t('-') ||  
+           c == 0x2010 ||         
+           c == 0x2012 ||         
+           c == 0x2013 ||         
+           c == 0x058A;           
+  };
+  bool prevWasHyphen = false;
   while (pos < aLength) {
     const char16_t ch = aString[pos];
+    if (prevWasHyphen) {
+      if (nsContentUtils::IsAlphanumeric(ch)) {
+        glyphs[pos].SetCanBreakBefore(
+            CompressedGlyph::FLAG_BREAK_TYPE_EMERGENCY_WRAP);
+      }
+      prevWasHyphen = false;
+    }
     if (ch == char16_t(' ') || ch == kIdeographicSpace) {
       glyphs[pos].SetIsSpace();
+    } else if (isHyphen(ch) && pos &&
+               nsContentUtils::IsAlphanumeric(aString[pos - 1])) {
+      prevWasHyphen = true;
     } else if (ch == kBengaliYa) {
       
       if (pos > 0 && aString[pos - 1] == kBengaliVirama) {
@@ -753,14 +774,25 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
                                            const uint8_t* aString,
                                            uint32_t aLength) {
   CompressedGlyph* glyphs = GetCharacterGlyphs() + aOffset;
-  const uint8_t* limit = aString + aLength;
-
-  while (aString < limit) {
-    if (*aString == uint8_t(' ')) {
-      glyphs->SetIsSpace();
+  uint32_t pos = 0;
+  bool prevWasHyphen = false;
+  while (pos < aLength) {
+    uint8_t ch = aString[pos];
+    if (prevWasHyphen) {
+      if (nsContentUtils::IsAlphanumeric(ch)) {
+        glyphs->SetCanBreakBefore(
+            CompressedGlyph::FLAG_BREAK_TYPE_EMERGENCY_WRAP);
+      }
+      prevWasHyphen = false;
     }
-    aString++;
-    glyphs++;
+    if (ch == uint8_t(' ')) {
+      glyphs->SetIsSpace();
+    } else if (ch == uint8_t('-') && pos &&
+               nsContentUtils::IsAlphanumeric(aString[pos - 1])) {
+      prevWasHyphen = true;
+    }
+    ++pos;
+    ++glyphs;
   }
 }
 
