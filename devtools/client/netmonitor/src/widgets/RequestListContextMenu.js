@@ -294,6 +294,8 @@ class RequestListContextMenu {
       id,
       isCustom,
       method,
+      cause,
+      isEventStream,
       mimeType,
       requestHeaders,
       requestPostData,
@@ -322,16 +324,18 @@ class RequestListContextMenu {
         click: () => HarMenuUtils.saveAllAsHar(requests, connector),
       },
       {
-        id: "request-list-context-save-image-as",
-        label: L10N.getStr("netmonitor.context.saveImageAs"),
-        accesskey: L10N.getStr("netmonitor.context.saveImageAs.accesskey"),
+        id: "request-list-context-save-response-as",
+        label: L10N.getStr("netmonitor.context.saveResponseAs"),
+        accesskey: L10N.getStr("netmonitor.context.saveResponseAs.accesskey"),
         visible: !!(
           clickedRequest &&
           (responseContentAvailable || responseContent) &&
           mimeType &&
-          mimeType.includes("image/")
+          
+          cause.type !== "websocket" &&
+          !isEventStream
         ),
-        click: () => this.saveImageAs(id, url, responseContent),
+        click: () => this.saveResponseAs(id, url, responseContent),
       },
       {
         type: "separator",
@@ -754,7 +758,7 @@ class RequestListContextMenu {
   
 
 
-  async saveImageAs(id, url, responseContent) {
+  async saveResponseAs(id, url, responseContent) {
     responseContent =
       responseContent ||
       (await this.props.connector.requestData(id, "responseContent"));

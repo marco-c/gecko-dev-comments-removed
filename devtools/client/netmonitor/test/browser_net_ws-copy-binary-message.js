@@ -44,6 +44,25 @@ add_task(async function () {
   EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
+  EventUtils.sendMouseEvent({ type: "contextmenu" }, requests[0]);
+
+  ok(
+    !getContextMenuItem(monitor, "request-list-context-save-response-as"),
+    "The 'Save Response As' context menu item should be hidden"
+  );
+
+  
+  const contextMenu = monitor.toolbox.topDoc.querySelector(
+    'popupset menupopup[menu-api="true"]'
+  );
+  const popupHiddenPromise = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popuphidden"
+  );
+  contextMenu.hidePopup();
+  await popupHiddenPromise;
+
+  
   clickOnSidebarTab(document, "response");
   await wait;
 
