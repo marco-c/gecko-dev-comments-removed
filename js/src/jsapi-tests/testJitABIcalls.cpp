@@ -289,24 +289,24 @@ using ArgsFillBits_t = std::integer_sequence<uint64_t, FillBits<Args>()...>;
 
 
 template <typename Type>
-constexpr MoveOp::Type TypeToMoveOp() {
+constexpr ABIType TypeToABIType() {
   if constexpr (std::is_same_v<Type, float>) {
-    return MoveOp::FLOAT32;
+    return ABIType::Float32;
   } else if constexpr (std::is_same_v<Type, double>) {
-    return MoveOp::DOUBLE;
+    return ABIType::Float64;
   } else {
-    return MoveOp::GENERAL;
+    return ABIType::General;
   }
 }
 
 
 
 
-template <MoveOp::Type... Val>
-class MoveOpSequence {};
+template <ABIType... Val>
+class ABITypeSequence {};
 
 template <typename... Args>
-using ArgsMoveOps_t = MoveOpSequence<TypeToMoveOp<Args>()...>;
+using ArgsABITypes_t = ABITypeSequence<TypeToABIType<Args>()...>;
 
 
 
@@ -457,11 +457,11 @@ NO_ARGS_CHECKS bool CheckArgsEqual(JSAPIRuntimeTest* instance, int lineno,
 
 
 
-template <uint64_t... Off, MoveOp::Type... Move>
+template <uint64_t... Off, ABIType... Type>
 static void passABIArgs(MacroAssembler& masm, Register base,
                         std::integer_sequence<uint64_t, Off...>,
-                        MoveOpSequence<Move...>) {
-  (masm.passABIArg(MoveOperand(base, size_t(Off)), Move), ...);
+                        ABITypeSequence<Type...>) {
+  (masm.passABIArg(MoveOperand(base, size_t(Off)), Type), ...);
 }
 
 
@@ -595,10 +595,10 @@ struct DefineCheckArgs<Res (*)(Args...)> {
 
       masm.setupUnalignedABICall(setup);
       using Offsets = ArgsOffsets_t<0, Args...>;
-      using MoveOps = ArgsMoveOps_t<Args...>;
-      passABIArgs(masm, base, Offsets(), MoveOps());
+      using ABITypes = ArgsABITypes_t<Args...>;
+      passABIArgs(masm, base, Offsets(), ABITypes());
       masm.callWithABI(DynFn{JS_FUNC_TO_DATA_PTR(void*, test.fun)},
-                       TypeToMoveOp<Res>(),
+                       TypeToABIType<Res>(),
                        CheckUnsafeCallWithABI::DontCheckOther);
     }
   }
