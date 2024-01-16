@@ -1302,6 +1302,23 @@ bool RetainedDisplayListBuilder::ShouldBuildPartial(
   return true;
 }
 
+void RetainedDisplayListBuilder::InvalidateCaretFramesIfNeeded() {
+  if (mPreviousCaret == mBuilder.GetCaretFrame()) {
+    
+    return;
+  }
+
+  if (mPreviousCaret) {
+    mPreviousCaret->MarkNeedsDisplayItemRebuild();
+  }
+
+  if (mBuilder.GetCaretFrame()) {
+    mBuilder.GetCaretFrame()->MarkNeedsDisplayItemRebuild();
+  }
+
+  mPreviousCaret = mBuilder.GetCaretFrame();
+}
+
 class AutoClearFramePropsArray {
  public:
   explicit AutoClearFramePropsArray(size_t aCapacity) : mFrames(aCapacity) {}
@@ -1556,6 +1573,8 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
     DL_LOGI("RDL - Sync decoding images");
     MarkFramesWithItemsAndImagesModified(&mList);
   }
+
+  InvalidateCaretFramesIfNeeded();
 
   
   
