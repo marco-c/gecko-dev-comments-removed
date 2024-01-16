@@ -739,14 +739,19 @@ static inline int GetWeightOverride(const nsAString& aPSName) {
 
 
 
+
 static inline int32_t CoreTextWeightToCSSWeight(CGFloat aCTWeight) {
   if (aCTWeight >= 0.4) {
     
-    return 700 + NS_round((aCTWeight - 0.4) * 500);
+    return 700 + NS_round((aCTWeight - 0.4) * (1000 - 700) / (1.0 - 0.4));
+  }
+  if (aCTWeight >= 0.23) {
+    
+    return 500 + NS_round((aCTWeight - 0.23) * (700 - 500) / (0.4 - 0.23));
   }
   if (aCTWeight >= 0.0) {
     
-    return 400 + NS_round(aCTWeight * 750);
+    return 400 + NS_round(aCTWeight * (500 - 400) / 0.23);
   }
   
   return 400 + NS_round(aCTWeight * 300);

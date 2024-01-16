@@ -2652,7 +2652,6 @@ pref("font.size.monospace.x-math", 13);
 
   pref("font.weight-override.HelveticaNeue-Light", 300); 
   pref("font.weight-override.HelveticaNeue-LightItalic", 300);
-  pref("font.weight-override.HelveticaNeue-MediumItalic", 500); 
 
   
   pref("ui.panel.default_level_parent", false);
