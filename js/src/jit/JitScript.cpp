@@ -381,6 +381,9 @@ void ICScript::prepareForDestruction(Zone* zone) {
   
   JSRuntime* rt = zone->runtimeFromMainThread();
   rt->gc.queueAllLifoBlocksForFreeAfterMinorGC(&allocSitesSpace_);
+
+  
+  PreWriteBarrier(zone, this);
 }
 
 void JitScript::prepareForDestruction(Zone* zone) {
