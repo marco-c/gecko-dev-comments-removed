@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=199692
+-->
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Popup in test for Bug 199692</title>
@@ -21,55 +21,55 @@
   </style>
   
 </head>
+<!--
+Elements are styled in such a way that they don't overlap visually
+unless they also overlap structurally.
 
-
-
-
-
-
-
-
+This file is designed to be opened from test_bug199692.html in a popup
+window, to guarantee that the window in which document.elementFromPoint runs
+is large enough to display all the elements being tested.
+-->
 <body>
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=199692">Mozilla Bug 199692</a>
 
 <div id="content" style="width: 500px; background-color: #ccc;">
 
-
+<!-- element containing text -->
 <div id="txt" style="height: 30px;">txt</div>
 
-
+<!-- element not containing text -->
 <div id="empty" style="border: 2px solid blue;"></div>
 
-
+<!-- element with only whitespace -->
 <p id="whitespace" style="border: 2px solid magenta;"> </p>
 
-
+<!-- position: static -->
 <span id="static" style="position: static; border-color: green;">static</span>
 
-
+<!-- floated element -->
 <div id="float" style="border-color: red; float: right;">float</div>
 
-
+<!-- position: fixed -->
 <span id="fixed" style="position: fixed; top: 500px; left: 100px; border: 3px solid yellow;">fixed</span>
 
-
+<!-- position: absolute -->
 <span id="absolute" style="position: absolute; top: 550px; left: 150px; border-color: orange;">abs</span>
 
-
+<!-- position: relative -->
 <div id="relative" style="position: relative; top: 200px; border-color: teal;">rel</div>
 
-
+<!-- visibility: hidden -->
 <div id="hidden-wrapper" style="border: 1px dashed teal;">
     <div id="hidden" style="opacity: 0.5; background-color: blue; visibility:hidden;">hidden</div>
 </div>
 
-
+<!-- iframe (within iframe) -->
 <iframe id="our-iframe" src="bug199692-nested.html" style="height: 100px; overflow: scroll;"></iframe>
 
 <input type="textbox" id="textbox" value="textbox"></input>
 </div>
 
-
+<!-- interaction with scrolling -->
 <iframe id="scrolled-iframe"
         src="bug199692-scrolled.html#down"
         style="position: absolute; top: 345px; left: 325px; height: 200px; width: 200px"></iframe>
@@ -160,14 +160,16 @@ function testPoints()
   // hidden
   c = $("hidden");
   pos = getCoords(c);
-  x = pos.x, y = pos.y;
+  x = pos.x;
+  y = pos.y;
   is(doc.pt(x, y), $("hidden-wrapper"),
      "Hit testing should bypass hidden elements.");
 
   // iframe nested
   var iframe = $("our-iframe");
   pos = getCoords(iframe);
-  x = pos.x, y = pos.y;
+  x = pos.x;
+  y = pos.y;
   is(doc.pt(x + 20, y + 20), $("our-iframe"),
      "Element from nested iframe returned is from calling document");
   // iframe, doubly nested
