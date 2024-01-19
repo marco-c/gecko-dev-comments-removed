@@ -1538,9 +1538,9 @@ static void draw_perspective(int nump, Interpolants interp_outs[4],
       
       
       
-      
-      if (!isfinite(w)) w = 0.0f;
-      p_clip[i] = Point3D(p_clip[i].sel(X, Y, Z) * w * scale + offset, w);
+      p_clip[i] = isfinite(w)
+                      ? Point3D(p_clip[i].sel(X, Y, Z) * w * scale + offset, w)
+                      : Point3D(0.0f);
     }
     draw_perspective_clipped(nump, p_clip, interp_clip, colortex, depthtex);
   }
