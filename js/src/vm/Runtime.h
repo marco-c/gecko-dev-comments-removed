@@ -665,19 +665,8 @@ struct JSRuntime {
   
   js::UnprotectedData<js::coverage::LCovRuntime> lcovOutput_;
 
-  
-
-  js::MainThreadData<std::vector<std::pair<void (*)(void*), void*>>>
-      cleanupClosures;
-
  public:
   js::coverage::LCovRuntime& lcovOutput() { return lcovOutput_.ref(); }
-
-  
-
-  void atExit(void (*function)(void*), void* data) {
-    cleanupClosures.ref().push_back({function, data});
-  }
 
  private:
   js::UnprotectedData<js::jit::JitRuntime*> jitRuntime_;
