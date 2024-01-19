@@ -3445,7 +3445,9 @@ void RestyleManager::ElementStateChanged(Element* aElement,
   
   IncrementUndisplayedRestyleGeneration();
 
-  if (!aElement->HasServoData()) {
+  if (!aElement->HasServoData() &&
+      !(aElement->GetSelectorFlags() &
+        NodeSelectorFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
     return;
   }
 
