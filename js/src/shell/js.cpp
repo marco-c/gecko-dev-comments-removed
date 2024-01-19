@@ -161,7 +161,6 @@
 #include "js/Stack.h"
 #include "js/StreamConsumer.h"
 #include "js/StructuredClone.h"
-#include "js/SweepingAPI.h"
 #include "js/Transcoding.h"  
 #include "js/Warnings.h"    
 #include "js/WasmModule.h"  
