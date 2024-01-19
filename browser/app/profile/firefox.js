@@ -2170,11 +2170,6 @@ pref("privacy.webrtc.sharedTabWarning", false);
 pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 
 
-
-
-pref("privacy.webrtc.showIndicatorsOnMacos14AndAbove", false);
-
-
 pref("privacy.fingerprintingProtection.pbmode", true);
 
 
