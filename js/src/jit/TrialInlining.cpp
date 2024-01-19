@@ -555,6 +555,47 @@ bool TrialInliner::canInline(JSFunction* target, HandleScript caller,
   return true;
 }
 
+static bool ShouldUseMonomorphicInlining(JSScript* targetScript) {
+  switch (JitOptions.monomorphicInlining) {
+    case UseMonomorphicInlining::Default:
+      
+      break;
+    case UseMonomorphicInlining::Always:
+      return true;
+    case UseMonomorphicInlining::Never:
+      return false;
+  }
+
+  JitScript* jitScript = targetScript->jitScript();
+  ICScript* icScript = jitScript->icScript();
+
+  
+  
+  
+  
+  
+  for (size_t i = 0; i < icScript->numICEntries(); i++) {
+    ICEntry& entry = icScript->icEntry(i);
+    ICFallbackStub* fallback = icScript->fallbackStub(i);
+    if (fallback->enteredCount() > 0 ||
+        fallback->state().mode() != ICState::Mode::Specialized) {
+      return false;
+    }
+
+    ICStub* firstStub = entry.firstStub();
+    if (firstStub != fallback) {
+      for (ICStub* next = firstStub->toCacheIRStub()->next(); next;
+           next = next->maybeNext()) {
+        if (next->enteredCount() != 0) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
                                                         ICCacheIRStub* stub,
                                                         BytecodeLocation loc) {
@@ -627,31 +668,9 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
             unsigned(targetScript->length()));
   }
 
-  JitScript* jitScript = targetScript->jitScript();
-  ICScript* icScript = jitScript->icScript();
-
   
-  
-  
-  
-  
-  for (size_t i = 0; i < icScript->numICEntries(); i++) {
-    ICEntry& entry = icScript->icEntry(i);
-    ICFallbackStub* fallback = icScript->fallbackStub(i);
-    if (fallback->enteredCount() > 0 ||
-        fallback->state().mode() != ICState::Mode::Specialized) {
-      return TrialInliningDecision::Inline;
-    }
-
-    ICStub* firstStub = entry.firstStub();
-    if (firstStub != fallback) {
-      for (ICStub* next = firstStub->toCacheIRStub()->next(); next;
-           next = next->maybeNext()) {
-        if (next->enteredCount() != 0) {
-          return TrialInliningDecision::Inline;
-        }
-      }
-    }
+  if (!ShouldUseMonomorphicInlining(targetScript)) {
+    return TrialInliningDecision::Inline;
   }
 
   JitSpewIndent spewIndent(JitSpew_WarpTrialInlining);
