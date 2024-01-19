@@ -414,9 +414,15 @@ class ResourceCommand {
   async _startLegacyListenersForExistingTargets(resourceType) {
     
     
+    
+    
+    
+    
+    
     const shouldRunLegacyListeners =
-      !this.hasResourceCommandSupport(resourceType) ||
-      this._shouldRunLegacyListenerEvenWithWatcherSupport(resourceType);
+      resourceType in LegacyListeners &&
+      (!this.hasResourceCommandSupport(resourceType) ||
+        this._shouldRunLegacyListenerEvenWithWatcherSupport(resourceType));
     if (shouldRunLegacyListeners) {
       const promises = [];
       const targets = this.targetCommand.getAllTargets(
