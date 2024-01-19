@@ -3760,33 +3760,48 @@ void MediaTrackGraphImpl::RemoveTrack(MediaTrack* aTrack) {
   }
 }
 
-auto MediaTrackGraph::NotifyWhenDeviceStarted(MediaTrack* aTrack)
+auto MediaTrackGraphImpl::NotifyWhenDeviceStarted(AudioDeviceID aDeviceID)
     -> RefPtr<GraphStartedPromise> {
   MOZ_ASSERT(NS_IsMainThread());
+
+  size_t index = mOutputDeviceRefCnts.IndexOf(aDeviceID);
+  if (index == decltype(mOutputDeviceRefCnts)::NoIndex) {
+    return GraphStartedPromise::CreateAndReject(NS_ERROR_INVALID_ARG, __func__);
+  }
+
   MozPromiseHolder<GraphStartedPromise> h;
   RefPtr<GraphStartedPromise> p = h.Ensure(__func__);
-  aTrack->GraphImpl()->NotifyWhenGraphStarted(aTrack, std::move(h));
+
+  if (CrossGraphReceiver* receiver = mOutputDeviceRefCnts[index].mReceiver) {
+    receiver->GraphImpl()->NotifyWhenPrimaryDeviceStarted(std::move(h));
+    return p;
+  }
+
+  
+  NotifyWhenPrimaryDeviceStarted(std::move(h));
   return p;
 }
 
-void MediaTrackGraphImpl::NotifyWhenGraphStarted(
-    RefPtr<MediaTrack> aTrack,
+void MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted(
     MozPromiseHolder<GraphStartedPromise>&& aHolder) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (aTrack->IsDestroyed()) {
+  if (mOutputDeviceRefCnts[0].mRefCnt == 0) {
+    
+    
+    
     aHolder.Reject(NS_ERROR_NOT_AVAILABLE, __func__);
     return;
   }
 
   QueueControlOrShutdownMessage(
-      [self = RefPtr{this}, this, track = std::move(aTrack),
+      [self = RefPtr{this}, this,
        holder = std::move(aHolder)](IsInShutdown aInShutdown) mutable {
         if (aInShutdown == IsInShutdown::Yes) {
           holder.Reject(NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
           return;
         }
 
-        TRACE("MTG::GraphStartedNotificationControlMessage ControlMessage");
+        TRACE("MTG::NotifyWhenPrimaryDeviceStarted ControlMessage");
         
         
         
@@ -3796,18 +3811,17 @@ void MediaTrackGraphImpl::NotifyWhenGraphStarted(
             !CurrentDriver()->AsAudioCallbackDriver()->OnFallback()) {
           
           Dispatch(NS_NewRunnableFunction(
-              "MediaTrackGraphImpl::NotifyWhenGraphStarted::Resolver",
+              "MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted::Resolver",
               [holder = std::move(holder)]() mutable {
                 holder.Resolve(true, __func__);
               }));
         } else {
           DispatchToMainThreadStableState(
               NewRunnableMethod<
-                  StoreCopyPassByRRef<RefPtr<MediaTrack>>,
                   StoreCopyPassByRRef<MozPromiseHolder<GraphStartedPromise>>>(
-                  "MediaTrackGraphImpl::NotifyWhenGraphStarted", this,
-                  &MediaTrackGraphImpl::NotifyWhenGraphStarted,
-                  std::move(track), std::move(holder)));
+                  "MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted", this,
+                  &MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted,
+                  std::move(holder)));
         }
       });
 }

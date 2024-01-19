@@ -90,7 +90,8 @@ CrossGraphPort::~CrossGraphPort() {
 
 RefPtr<GenericPromise> CrossGraphPort::EnsureConnected() {
   
-  return mReceiver->Graph()->NotifyWhenDeviceStarted(mReceiver.get());
+  return mReceiver->Graph()->NotifyWhenDeviceStarted(
+      mReceiver->Graph()->PrimaryOutputDeviceID());
 }
 
 

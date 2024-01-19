@@ -864,6 +864,7 @@ class HTMLMediaElement::MediaStreamRenderer
                  
                  
                  
+                 
                  mSetAudioDevicePromise.Resolve(true, __func__);
                })
         ->Track(mDeviceStartedRequest);

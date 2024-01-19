@@ -1130,8 +1130,10 @@ class MediaTrackGraph {
 
 
 
+
   using GraphStartedPromise = GenericPromise;
-  RefPtr<GraphStartedPromise> NotifyWhenDeviceStarted(MediaTrack* aTrack);
+  virtual RefPtr<GraphStartedPromise> NotifyWhenDeviceStarted(
+      CubebUtils::AudioDeviceID aDeviceID) = 0;
 
   
 

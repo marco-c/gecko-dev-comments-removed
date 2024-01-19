@@ -386,8 +386,23 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void NotifyWhenGraphStarted(RefPtr<MediaTrack> aTrack,
-                              MozPromiseHolder<GraphStartedPromise>&& aHolder);
+
+
+
+
+
+  using GraphStartedPromise = GenericPromise;
+  RefPtr<GraphStartedPromise> NotifyWhenDeviceStarted(
+      CubebUtils::AudioDeviceID aDeviceID) override;
+
+  
+
+
+
+
+
+  void NotifyWhenPrimaryDeviceStarted(
+      MozPromiseHolder<GraphStartedPromise>&& aHolder);
 
   
 
