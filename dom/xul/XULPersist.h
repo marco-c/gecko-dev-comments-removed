@@ -19,6 +19,13 @@ class nsCOMArray;
 
 namespace mozilla::dom {
 
+
+
+
+
+
+
+
 class XULPersist final : public nsStubDocumentObserver {
  public:
   NS_DECL_ISUPPORTS
