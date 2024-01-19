@@ -245,6 +245,8 @@ class GfxMemoryImageReporter final : public nsIMemoryReporter {
 
 class FixedSizeSmallShmemSectionAllocator final : public ShmemSectionAllocator {
  public:
+  NS_DECL_OWNINGTHREAD
+
   enum AllocationStatus { STATUS_ALLOCATED, STATUS_FREED };
 
   struct ShmemSectionHeapHeader {
