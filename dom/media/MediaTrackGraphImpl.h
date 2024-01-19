@@ -207,6 +207,18 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+
+
+  template <typename Function>
+  void QueueControlOrShutdownMessage(Function&& aFunction) {
+    AppendMessage(WrapUnique(new MediaTrack::ControlOrShutdownMessage(
+        std::forward<Function>(aFunction))));
+  }
+  
+
+
+
+
   void RegisterAudioOutput(MediaTrack* aTrack, void* aKey,
                            CubebUtils::AudioDeviceID aDeviceID,
                            TrackRate aPreferredSampleRate);
