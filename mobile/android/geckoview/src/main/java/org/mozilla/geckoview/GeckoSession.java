@@ -3078,6 +3078,19 @@ public class GeckoSession {
 
 
   @AnyThread
+  public @NonNull GeckoResult<Boolean> sendPlacementAttributionEvent(@NonNull final String aid) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("aid", aid);
+    return mEventDispatcher.queryBoolean("GeckoView:SendPlacementAttributionEvent", bundle);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
   public @NonNull GeckoResult<List<Recommendation>> requestRecommendations(
       @NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
