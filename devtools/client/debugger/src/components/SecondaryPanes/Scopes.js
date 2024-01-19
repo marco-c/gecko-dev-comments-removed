@@ -3,7 +3,11 @@
 
 
 import React, { PureComponent } from "react";
-import { div, button, span } from "react-dom-factories";
+import {
+  div,
+  button,
+  span,
+} from "devtools/client/shared/vendor/react-dom-factories";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import AccessibleImage from "../shared/AccessibleImage";
 import { showMenu } from "../../context-menu/menu";
