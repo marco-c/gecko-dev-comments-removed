@@ -4,7 +4,7 @@
 
 
 add_task(async function sanitizeStorageAccessPermissions() {
-  let categories = ["history", "historyFormDataAndDownloads"];
+  let categories = ["history", "historyAndFormData"];
 
   for (let pref of categories) {
     await new Promise(resolve => {

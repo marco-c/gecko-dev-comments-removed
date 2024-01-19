@@ -3,7 +3,7 @@
 
 
 add_task(async function test() {
-  let prefs = ["history", "historyFormDataAndDownloads"];
+  let prefs = ["history", "historyAndFormData"];
 
   for (let pref of prefs) {
     
