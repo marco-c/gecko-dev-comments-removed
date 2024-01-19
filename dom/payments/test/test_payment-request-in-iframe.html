@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1318988
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1318988</title>
@@ -117,7 +117,7 @@
       var ifrr = document.createElement('iframe');
 
       let listener = function(event) {
-        if (ifrr.allow =! 'payment') {
+        if (ifrr.allow != 'payment') {
           is(event.data, "SecurityError",
             "Expected 'SecurityError' without allow=payment in nested iframe");
           ifrr.setAttribute('allow', "payment");
