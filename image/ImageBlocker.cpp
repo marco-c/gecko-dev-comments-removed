@@ -16,8 +16,6 @@ NS_IMPL_ISUPPORTS(ImageBlocker, nsIContentPolicy)
 NS_IMETHODIMP
 ImageBlocker::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
                          int16_t* aShouldLoad) {
-  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-
   *aShouldLoad = nsIContentPolicy::ACCEPT;
 
   if (!aContentLocation) {
@@ -27,20 +25,13 @@ ImageBlocker::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
     return NS_OK;
   }
 
-  
-  
-  nsAutoCString scheme;
-  aContentLocation->GetScheme(scheme);
-  if (!scheme.LowerCaseEqualsLiteral("http") &&
-      !scheme.LowerCaseEqualsLiteral("https")) {
+  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
+  if (contentType != ExtContentPolicy::TYPE_IMAGE &&
+      contentType != ExtContentPolicy::TYPE_IMAGESET) {
     return NS_OK;
   }
 
-  
-  if ((contentType == ExtContentPolicy::TYPE_IMAGE ||
-       contentType == ExtContentPolicy::TYPE_IMAGESET) &&
-      StaticPrefs::permissions_default_image() ==
-          nsIPermissionManager::DENY_ACTION) {
+  if (ImageBlocker::ShouldBlock(aContentLocation)) {
     NS_SetRequestBlockingReason(
         aLoadInfo, nsILoadInfo::BLOCKING_REASON_CONTENT_POLICY_CONTENT_BLOCKED);
     *aShouldLoad = nsIContentPolicy::REJECT_TYPE;
@@ -55,4 +46,18 @@ ImageBlocker::ShouldProcess(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
   
   *aShouldProcess = nsIContentPolicy::ACCEPT;
   return NS_OK;
+}
+
+
+bool ImageBlocker::ShouldBlock(nsIURI* aContentLocation) {
+  
+  if (StaticPrefs::permissions_default_image() !=
+      nsIPermissionManager::DENY_ACTION) {
+    return false;
+  }
+
+  
+  
+  return aContentLocation->SchemeIs("http") ||
+         aContentLocation->SchemeIs("https");
 }

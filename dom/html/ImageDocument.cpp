@@ -23,6 +23,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsDocShell.h"
 #include "DocumentInlines.h"
+#include "ImageBlocker.h"
 #include "nsDOMTokenList.h"
 #include "nsIDOMEventListener.h"
 #include "nsIFrame.h"
@@ -77,32 +78,12 @@ ImageListener::OnStartRequest(nsIRequest* request) {
   NS_ENSURE_TRUE(domWindow, NS_ERROR_UNEXPECTED);
 
   
+  
+  
+  
   nsCOMPtr<nsIURI> channelURI;
   channel->GetURI(getter_AddRefs(channelURI));
-
-  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  
-  
-  nsCOMPtr<nsINode> requestingNode = domWindow->GetFrameElementInternal();
-  nsCOMPtr<nsIPrincipal> loadingPrincipal;
-  if (requestingNode) {
-    loadingPrincipal = requestingNode->NodePrincipal();
-  } else {
-    nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
-        channel, getter_AddRefs(loadingPrincipal));
-  }
-
-  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new net::LoadInfo(
-      loadingPrincipal, loadInfo->TriggeringPrincipal(), requestingNode,
-      nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-      nsIContentPolicy::TYPE_INTERNAL_IMAGE);
-
-  int16_t decision = nsIContentPolicy::ACCEPT;
-  nsresult rv =
-      NS_CheckContentProcessPolicy(channelURI, secCheckLoadInfo, &decision,
-                                   nsContentUtils::GetContentPolicy());
-
-  if (NS_FAILED(rv) || NS_CP_REJECTED(decision)) {
+  if (image::ImageBlocker::ShouldBlock(channelURI)) {
     request->Cancel(NS_ERROR_CONTENT_BLOCKED);
     return NS_OK;
   }
