@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This code is based on Rust implementation at
-// https://github.com/the8472/weyland-p5000
 
-// Version 1.1
+
+
+
+
+
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,7 @@
 
 #include "wayland-proxy.h"
 
-// The maximum number of fds libwayland can recvmsg at once
+
 #define MAX_LIBWAY_FDS 28
 #define MAX_DATA_SIZE 4096
 #define POLL_TIMEOUT 30000
@@ -87,14 +87,14 @@ class ProxiedConnection {
   struct pollfd* AddToPollFd(struct pollfd* aPfds);
   struct pollfd* LoadPollFd(struct pollfd* aPfds);
 
-  // Process this connection (send/receive data).
-  // Returns false if connection is broken and should be removed.
+  
+  
   bool Process();
 
   ~ProxiedConnection();
 
  private:
-  // Try to connect to compositor. Returns false in case of fatal error.
+  
   bool ConnectToCompositor();
 
   bool TransferOrQueue(
@@ -103,14 +103,14 @@ class ProxiedConnection {
   bool FlushQueue(int aDestSocket, int aDestPollFlags,
                   std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue);
 
-  // Where we should connect.
-  // Weak pointer to parent WaylandProxy class.
+  
+  
   char* mWaylandDisplay = nullptr;
 
-  // We don't have connected compositor yet. Try to connect
+  
   bool mCompositorConnected = false;
 
-  // We're disconnected from app or compositor. We will close this connection.
+  
   bool mFailed = false;
 
   int mCompositorSocket = -1;
@@ -119,7 +119,7 @@ class ProxiedConnection {
   int mApplicationSocket = -1;
   int mApplicationFlags = 0;
 
-  // Stored proxied data
+  
   std::vector<std::unique_ptr<WaylandMessage>> mToCompositorQueue;
   std::vector<std::unique_ptr<WaylandMessage>> mToApplicationQueue;
 };
@@ -131,7 +131,7 @@ WaylandMessage::~WaylandMessage() {
 }
 
 bool WaylandMessage::Read(int aSocket) {
-  // We don't expect WaylandMessage re-read
+  
   assert(!mLoaded && !mFailed);
 
   mData.resize(MAX_DATA_SIZE);
@@ -156,7 +156,7 @@ bool WaylandMessage::Read(int aSocket) {
     switch (errno) {
       case EAGAIN:
       case EINTR:
-        // Neither loaded nor failed, we'll try again later
+        
         Print("WaylandMessage::Write() failed %s\n", strerror(errno));
         return false;
       default:
@@ -166,10 +166,10 @@ bool WaylandMessage::Read(int aSocket) {
     }
   }
 
-  // Set correct data size
+  
   mData.resize(ret);
 
-  // Read cmsg
+  
   struct cmsghdr* header = CMSG_FIRSTHDR(&msg);
   while (header) {
     struct cmsghdr* next = CMSG_NXTHDR(&msg, header);
@@ -206,6 +206,12 @@ bool WaylandMessage::Write(int aSocket) {
   msg.msg_iov = &iov;
   msg.msg_iovlen = 1;
 
+  union {
+    char buf[CMSG_SPACE(sizeof(int) * MAX_LIBWAY_FDS)];
+    struct cmsghdr align;
+  } cmsgu;
+  memset(cmsgu.buf, 0, sizeof(cmsgu.buf));
+
   int filenum = mFds.size();
   if (filenum) {
     if (filenum >= MAX_LIBWAY_FDS) {
@@ -220,14 +226,7 @@ bool WaylandMessage::Write(int aSocket) {
       }
     }
 #endif
-    union {
-      char buf[CMSG_SPACE(sizeof(int) * MAX_LIBWAY_FDS)];
-      struct cmsghdr align;
-    } cmsgu;
-    memset(cmsgu.buf, 0, sizeof(cmsgu.buf));
-
     msg.msg_control = cmsgu.buf;
-    msg.msg_controllen = sizeof(cmsgu.buf);
     msg.msg_controllen = CMSG_SPACE(filenum * sizeof(int));
 
     struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
@@ -242,7 +241,7 @@ bool WaylandMessage::Write(int aSocket) {
     switch (errno) {
       case EAGAIN:
       case EINTR:
-        // Neither loaded nor failed, we'll try again later
+        
         Print("WaylandMessage::Write() failed %s\n", strerror(errno));
         return false;
       default:
@@ -282,12 +281,12 @@ bool ProxiedConnection::Init(int aApplicationSocket, char* aWaylandDisplay) {
 }
 
 struct pollfd* ProxiedConnection::AddToPollFd(struct pollfd* aPfds) {
-  // Listen application's requests
+  
   aPfds->fd = mApplicationSocket;
   aPfds->events = POLLIN;
 
-  // We're connected and we have data for appplication from compositor.
-  // Add POLLOUT to request write to app socket.
+  
+  
   if (mCompositorConnected && !mToApplicationQueue.empty()) {
     aPfds->events |= POLLOUT;
   }
@@ -295,7 +294,7 @@ struct pollfd* ProxiedConnection::AddToPollFd(struct pollfd* aPfds) {
 
   aPfds->fd = mCompositorSocket;
   aPfds->events = 0;
-  // We're waiting for connection or we have data for compositor
+  
   if (!mCompositorConnected || !mToCompositorQueue.empty()) {
     aPfds->events |= POLLOUT;
   }
@@ -320,7 +319,7 @@ struct pollfd* ProxiedConnection::LoadPollFd(struct pollfd* aPfds) {
 
 bool ProxiedConnection::ConnectToCompositor() {
   if (!(mCompositorFlags & POLLOUT)) {
-    // Try again later
+    
     return true;
   }
 
@@ -340,7 +339,7 @@ bool ProxiedConnection::ConnectToCompositor() {
       case EINTR:
       case EISCONN:
       case ETIMEDOUT:
-        // We can recover from these errors and try again
+        
         Warning("ConnectToCompositor() try again");
         return true;
       default:
@@ -351,13 +350,13 @@ bool ProxiedConnection::ConnectToCompositor() {
   return true;
 }
 
-// Read data from aSourceSocket and try to twite them to aDestSocket.
-// If data write fails, append them to aMessageQueue.
-// Return
+
+
+
 bool ProxiedConnection::TransferOrQueue(
     int aSourceSocket, int aSourcePollFlags, int aDestSocket,
     std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue) {
-  // Don't read if we don't have any data ready
+  
   if (!(aSourcePollFlags & POLLIN)) {
     return true;
   }
@@ -365,7 +364,7 @@ bool ProxiedConnection::TransferOrQueue(
   while (1) {
     int availableData = 0;
     if (ioctl(aSourceSocket, FIONREAD, &availableData) < 0) {
-      // Broken connection, we're finished here
+      
       Warning("ProxiedConnection::TransferOrQueue() broken source socket %s\n");
       return false;
     }
@@ -375,16 +374,16 @@ bool ProxiedConnection::TransferOrQueue(
 
     auto message = std::make_unique<WaylandMessage>(aSourceSocket);
     if (message->Failed()) {
-      // Failed to read message due to error
+      
       return false;
     }
     if (!message->Loaded()) {
-      // Let's try again
+      
       return true;
     }
     if (!message->Write(aDestSocket)) {
       if (message->Failed()) {
-        // Failed to write and we can't recover
+        
         return false;
       }
       aMessageQueue->push_back(std::move(message));
@@ -392,11 +391,11 @@ bool ProxiedConnection::TransferOrQueue(
   }
 }
 
-// Try to flush all data to aMessageQueue.
+
 bool ProxiedConnection::FlushQueue(
     int aDestSocket, int aDestPollFlags,
     std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue) {
-  // Can't write to destination yet
+  
   if (!(aDestPollFlags & POLLOUT) || aMessageQueue.empty()) {
     return true;
   }
@@ -404,8 +403,8 @@ bool ProxiedConnection::FlushQueue(
   std::vector<std::unique_ptr<WaylandMessage>>::iterator message;
   for (message = aMessageQueue.begin(); message != aMessageQueue.end();) {
     if (!(*message)->Write(aDestSocket)) {
-      // Failed to write the message, remove whole connection
-      // as it's broken.
+      
+      
       if ((*message)->Failed()) {
         return false;
       }
@@ -414,7 +413,7 @@ bool ProxiedConnection::FlushQueue(
     message++;
   }
 
-  // Remove all written messages at once.
+  
   if (message != aMessageQueue.begin()) {
     aMessageQueue.erase(aMessageQueue.begin(), message);
   }
@@ -427,24 +426,24 @@ bool ProxiedConnection::Process() {
     return false;
   }
 
-  // Check if appplication is still listening
+  
   if (mApplicationFlags & (POLLHUP | POLLERR)) {
     return false;
   }
 
-  // Check if compositor is still listening
+  
   if (mCompositorConnected) {
     if (mCompositorFlags & (POLLHUP | POLLERR)) {
       return false;
     }
   } else {
-    // Try to reconnect to compositor.
+    
     if (!ConnectToCompositor()) {
       Print("Failed to connect to compositor\n");
       return false;
     }
-    // We're not connected yet but ConnectToCompositor() didn't return
-    // fatal error. Try again later.
+    
+    
     if (!mCompositorConnected) {
       return true;
     }
@@ -474,7 +473,7 @@ bool WaylandProxy::SetupWaylandDisplays() {
     return false;
   }
 
-  // WAYLAND_DISPLAY can be absolute path
+  
   if (waylandDisplay[0] == '/') {
     if (strlen(mWaylandDisplay) >= sMaxDisplayNameLen) {
       Error("Init() WAYLAND_DISPLAY is too large.", false);
@@ -561,7 +560,7 @@ bool WaylandProxy::IsChildAppTerminated() {
     return false;
   }
   if (ret == mApplicationPID) {
-    // Child application is terminated, so quit too.
+    
     return true;
   }
   bool terminate = (errno == ECHILD);
@@ -580,8 +579,8 @@ bool WaylandProxy::PollConnections() {
   }
   int nfds = (addedPollfd - pollfds);
 
-  // If all connections are attached to compositor, add another one
-  // for new potential connection from application.
+  
+  
   bool addNewConnection = mConnections.empty() ||
                           mConnections.back()->IsConnected();
   if (addNewConnection) {
@@ -594,10 +593,10 @@ bool WaylandProxy::PollConnections() {
   while (1) {
     int ret = poll(pollfds, nfds, POLL_TIMEOUT);
     if (ret == 0) {
-      // No change on fds
+      
       continue;
     } else if (ret > 0) {
-      // We have FD to read
+      
       break;
     } else if (ret == -1) {
       switch (errno) {
@@ -622,7 +621,7 @@ bool WaylandProxy::PollConnections() {
   assert(loadedPollfd == addedPollfd);
   assert(loadedPollfd < pollfds + nfds_max);
 
-  // Create a new connection if there's a new client waiting
+  
   if (addNewConnection && (loadedPollfd->revents & POLLIN)) {
     Info("new child connection\n");
     int applicationSocket = accept4(loadedPollfd->fd, nullptr, nullptr,
@@ -631,7 +630,7 @@ bool WaylandProxy::PollConnections() {
       switch (errno) {
         case EAGAIN:
         case EINTR:
-          // Try again later
+          
           break;
         default:
           Error("Faild to accept connection from application");
@@ -655,7 +654,7 @@ bool WaylandProxy::ProcessConnections() {
       Info("remove connection\n");
       connection = mConnections.erase(connection);
       if (mConnections.empty()) {
-        // We removed last connection - quit.
+        
         Info("removed last connection, quit\n");
         return false;
       }
@@ -745,7 +744,7 @@ bool WaylandProxy::RunThread() {
   mThreadRunning = pthread_create(&mThread, nullptr, (void* (*)(void*))RunProxyThread, this) == 0;
   if (!mThreadRunning) {
     ErrorPlain("pthread_create() failed\n");
-    // If we failed to run proxy thread, set WAYLAND_DISPLAY back.
+    
     SetWaylandDisplay();
   }
 
