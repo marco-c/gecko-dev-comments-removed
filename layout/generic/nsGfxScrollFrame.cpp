@@ -2384,7 +2384,7 @@ void nsHTMLScrollFrame::ScrollToInternal(
 
 void nsHTMLScrollFrame::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
                                           ScrollMode aMode) {
-  CSSIntPoint currentCSSPixels = GetScrollPositionCSSPixels();
+  CSSIntPoint currentCSSPixels = GetRoundedScrollPositionCSSPixels();
   
   
   
@@ -2446,7 +2446,7 @@ void nsHTMLScrollFrame::ScrollToCSSPixelsForApz(
   
 }
 
-CSSIntPoint nsHTMLScrollFrame::GetScrollPositionCSSPixels() {
+CSSIntPoint nsHTMLScrollFrame::GetRoundedScrollPositionCSSPixels() {
   return CSSIntPoint::FromAppUnitsRounded(GetScrollPosition());
 }
 
@@ -5006,7 +5006,7 @@ void nsHTMLScrollFrame::ScrollByCSSPixelsInternal(const CSSIntPoint& aDelta,
   
   
   
-  CSSIntPoint currentCSSPixels = GetScrollPositionCSSPixels();
+  CSSIntPoint currentCSSPixels = GetRoundedScrollPositionCSSPixels();
   nsPoint pt = CSSPoint::ToAppUnits(currentCSSPixels + aDelta);
 
   nscoord halfPixel = nsPresContext::CSSPixelsToAppUnits(0.5f);

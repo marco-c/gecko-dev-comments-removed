@@ -289,7 +289,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual CSSIntPoint GetScrollPositionCSSPixels() = 0;
+  virtual CSSIntPoint GetRoundedScrollPositionCSSPixels() = 0;
   
 
 

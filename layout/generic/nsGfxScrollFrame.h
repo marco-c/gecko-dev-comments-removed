@@ -271,7 +271,8 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
 
 
-  CSSIntPoint GetScrollPositionCSSPixels() final;
+  CSSIntPoint GetRoundedScrollPositionCSSPixels() final;
+
   
 
 
