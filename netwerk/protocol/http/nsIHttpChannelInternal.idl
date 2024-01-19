@@ -510,4 +510,13 @@ interface nsIHttpChannelInternal : nsISupports
 
 
     [must_use] attribute unsigned long earlyHintLinkType;
+
+    
+
+
+
+
+
+
+    [must_use] attribute boolean isUserAgentHeaderModified;
 };

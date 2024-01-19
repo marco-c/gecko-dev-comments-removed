@@ -6136,11 +6136,20 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
   
   
   
-  rv = mRequestHead.SetHeader(
-      nsHttp::User_Agent,
-      gHttpHandler->UserAgent(nsContentUtils::ShouldResistFingerprinting(
-          this, RFPTarget::HttpUserAgent)));
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  
+  
+  
+  if (!LoadIsUserAgentHeaderModified()) {
+    rv = mRequestHead.ClearHeader(nsHttp::User_Agent);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    rv = mRequestHead.SetHeader(
+        nsHttp::User_Agent,
+        gHttpHandler->UserAgent(nsContentUtils::ShouldResistFingerprinting(
+            this, RFPTarget::HttpUserAgent)),
+        false, nsHttpHeaderArray::eVarietyRequestDefault);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
 
   if (WaitingForTailUnblock()) {
     
