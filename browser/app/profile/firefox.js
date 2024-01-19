@@ -643,6 +643,10 @@ pref("browser.urlbar.suggest.mdn", true);
 
 
 
+pref("browser.urlbar.suggest.yelp", true);
+
+
+
 pref("browser.urlbar.addons.minKeywordLength", 0);
 
 
