@@ -110,15 +110,6 @@ JS_PUBLIC_API const JSErrorReport* GetFrontendWarningAt(
 
 
 
-JS_PUBLIC_API bool SetSupportedImportAssertions(
-    JS::FrontendContext* fc,
-    const JS::ImportAssertionVector& supportedImportAssertions);
-
-
-
-
-
-
 struct CompilationStorage {
  private:
   

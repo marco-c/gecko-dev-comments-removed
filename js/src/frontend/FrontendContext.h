@@ -15,7 +15,6 @@
 
 #include "js/AllocPolicy.h"  
 #include "js/ErrorReport.h"  
-#include "js/Modules.h"      
 #include "js/Stack.h"  
 #include "js/Vector.h"          
 #include "vm/ErrorReporting.h"  
@@ -82,8 +81,6 @@ class FrontendContext {
   bool ownNameCollectionPool_;
 
   js::SharedScriptDataTableHolder* scriptDataTableHolder_;
-
-  JS::ImportAssertionVector supportedImportAssertions_;
 
   
   
@@ -154,12 +151,6 @@ class FrontendContext {
   
   
   JSContext* maybeCurrentJSContext() { return maybeCx_; }
-
-  const JS::ImportAssertionVector& getSupportedImportAssertions() const {
-    return supportedImportAssertions_;
-  }
-  bool setSupportedImportAssertions(
-      const JS::ImportAssertionVector& supportedImportAssertions);
 
   enum class Warning { Suppress, Report };
 

@@ -1025,10 +1025,6 @@ struct JSRuntime {
   mozilla::Atomic<JS::ModuleDynamicImportHook> moduleDynamicImportHook;
 
   
-  
-  js::MainThreadData<JS::ImportAssertionVector> supportedImportAssertions;
-
-  
   js::MainThreadData<JS::ScriptPrivateReferenceHook> scriptPrivateAddRefHook;
   js::MainThreadData<JS::ScriptPrivateReferenceHook> scriptPrivateReleaseHook;
 

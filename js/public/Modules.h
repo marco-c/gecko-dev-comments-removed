@@ -36,20 +36,6 @@ union Utf8Unit;
 
 namespace JS {
 
-enum class ImportAssertion { Type };
-
-using ImportAssertionVector =
-    js::Vector<ImportAssertion, 1, js::SystemAllocPolicy>;
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void SetSupportedImportAssertions(
-    JSRuntime* rt, const ImportAssertionVector& assertions);
-
 
 
 
