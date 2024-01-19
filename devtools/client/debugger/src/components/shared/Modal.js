@@ -2,7 +2,7 @@
 
 
 
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import React from "react";
 import { div } from "react-dom-factories";
 const classnames = require("devtools/client/shared/classnames.js");

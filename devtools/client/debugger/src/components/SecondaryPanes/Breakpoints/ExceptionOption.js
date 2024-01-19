@@ -2,7 +2,7 @@
 
 
 import { div, input, label } from "react-dom-factories";
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 export default function ExceptionOption({
   className,
