@@ -25,6 +25,10 @@ namespace mozilla {
 
 
 
+
+
+
+
 class CrossGraphTransmitter : public ProcessedMediaTrack {
  public:
   CrossGraphTransmitter(TrackRate aSampleRate,
@@ -70,16 +74,7 @@ class CrossGraphPort final {
   static UniquePtr<CrossGraphPort> Connect(
       const RefPtr<dom::AudioStreamTrack>& aStreamTrack,
       MediaTrackGraph* aPartnerGraph);
-  static UniquePtr<CrossGraphPort> Connect(
-      const RefPtr<dom::AudioStreamTrack>& aStreamTrack, AudioDeviceInfo* aSink,
-      nsPIDOMWindowInner* aWindow);
   ~CrossGraphPort();
-
-  void AddAudioOutput(void* aKey);
-  void RemoveAudioOutput(void* aKey);
-  void SetAudioOutputVolume(void* aKey, float aVolume);
-
-  RefPtr<GenericPromise> EnsureConnected();
 
   const RefPtr<CrossGraphTransmitter> mTransmitter;
   const RefPtr<CrossGraphReceiver> mReceiver;

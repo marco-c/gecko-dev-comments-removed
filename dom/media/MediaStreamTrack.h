@@ -539,7 +539,7 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
 
 
 
-  virtual void SetReadyState(MediaStreamTrackState aState);
+  void SetReadyState(MediaStreamTrackState aState);
 
   
 

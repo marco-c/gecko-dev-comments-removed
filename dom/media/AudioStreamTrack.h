@@ -30,7 +30,6 @@ class AudioStreamTrack : public MediaStreamTrack {
   
   
   
-  
   RefPtr<GenericPromise> AddAudioOutput(void* aKey, AudioDeviceInfo* aSink);
   void RemoveAudioOutput(void* aKey);
   void SetAudioOutputVolume(void* aKey, float aVolume);
@@ -42,13 +41,6 @@ class AudioStreamTrack : public MediaStreamTrack {
 
  protected:
   already_AddRefed<MediaStreamTrack> CloneInternal() override;
-  void SetReadyState(MediaStreamTrackState aState) override;
-
- private:
-  
-  
-  
-  nsClassHashtable<nsPtrHashKey<void>, CrossGraphPort> mCrossGraphs;
 };
 
 }  
