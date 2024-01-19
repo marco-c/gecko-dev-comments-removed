@@ -2,13 +2,11 @@
 
 
 
-
-
-import { BinaryReader } from "wasmparser/dist/cjs/WasmParser";
+import { BinaryReader } from "devtools/client/shared/vendor/WasmParser";
 import {
   WasmDisassembler,
   NameSectionReader,
-} from "wasmparser/dist/cjs/WasmDis";
+} from "devtools/client/shared/vendor/WasmDis";
 
 var wasmStates = Object.create(null);
 
