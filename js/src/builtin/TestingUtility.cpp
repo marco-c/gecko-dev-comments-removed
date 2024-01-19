@@ -8,18 +8,22 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"                 
-#include "js/CharacterEncoding.h"  
-#include "js/ColumnNumber.h"       
-#include "js/CompileOptions.h"     
+#include "jsapi.h"  
+
+#include "frontend/CompilationStencil.h"  
+#include "js/CharacterEncoding.h"         
+#include "js/ColumnNumber.h"              
+#include "js/CompileOptions.h"            
 #include "js/Conversions.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
+#include "js/RealmOptions.h"        
 #include "js/RootingAPI.h"          
 #include "js/Utility.h"             
 #include "js/Value.h"               
 #include "vm/JSContext.h"           
 #include "vm/JSScript.h"
+#include "vm/Realm.h"  
 
 bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,
                              JS::Handle<JSObject*> opts,
@@ -291,4 +295,16 @@ JS::UniqueChars js::StringToLocale(JSContext* cx, JS::Handle<JSObject*> callee,
   }
 
   return locale;
+}
+
+bool js::ValidateLazinessOfStencilAndGlobal(
+    JSContext* cx, const js::frontend::CompilationStencil& stencil) {
+  if (cx->realm()->behaviors().discardSource() && stencil.canLazilyParse) {
+    JS_ReportErrorASCII(cx,
+                        "Stencil compiled with with lazy parse option cannot "
+                        "be used in a realm with discardSource");
+    return false;
+  }
+
+  return true;
 }

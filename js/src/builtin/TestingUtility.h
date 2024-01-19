@@ -23,6 +23,10 @@ namespace js {
 class FrontendContext;
 class ScriptSource;
 
+namespace frontend {
+struct CompilationStencil;
+}  
+
 
 
 
@@ -62,6 +66,11 @@ JSObject* CreateScriptPrivate(JSContext* cx,
 [[nodiscard]] JS::UniqueChars StringToLocale(JSContext* cx,
                                              JS::Handle<JSObject*> callee,
                                              JS::Handle<JSString*> str_);
+
+
+
+bool ValidateLazinessOfStencilAndGlobal(
+    JSContext* cx, const frontend::CompilationStencil& stencil);
 
 } 
 
