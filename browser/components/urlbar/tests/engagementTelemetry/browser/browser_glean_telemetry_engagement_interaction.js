@@ -75,8 +75,11 @@ add_task(async function pasted() {
 });
 
 add_task(async function topsite_search() {
-  
-  
+  await doTopsitesSearchTest({
+    trigger: () => doEnter(),
+    assert: () =>
+      assertEngagementTelemetry([{ interaction: "topsite_search" }]),
+  });
 });
 
 add_task(async function returned_restarted_refined() {
