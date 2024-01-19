@@ -1973,6 +1973,11 @@ class BrowsertimeOutput(PerftestOutput):
             for s in suites.values()
         ]
 
+        if test.get("support_class"):
+            
+            
+            test.get("support_class").summarize_suites(suites)
+
         suites.sort(key=lambda suite: suite["name"])
 
         test_results["suites"] = suites

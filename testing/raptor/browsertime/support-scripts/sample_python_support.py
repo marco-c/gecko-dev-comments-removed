@@ -2,11 +2,10 @@
 
 
 
+from base_python_support import BasePythonSupport
 
-class SamplePythonSupport:
-    def __init__(self, **kwargs):
-        pass
 
+class SamplePythonSupport(BasePythonSupport):
     def modify_command(self, cmd):
         for i, entry in enumerate(cmd):
             if "{replace-with-constant-value}" in entry:
