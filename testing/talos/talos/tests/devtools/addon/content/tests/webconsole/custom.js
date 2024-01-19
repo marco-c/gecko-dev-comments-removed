@@ -21,26 +21,41 @@ const TEST_URL = PAGES_BASE_URL + "custom/console/index.html";
 
 module.exports = async function () {
   
-  const sync = 500,
-    stream = 250,
-    batch = 500,
-    simple = 5000;
+  
+  
+  const sync = 10000,
+    
+    
+    stream = 100,
+    
+    batch = 10,
+    
+    batchSize = 500;
 
-  const params = `?sync=${sync}&stream=${stream}&batch=${batch}&simple=${simple}`;
+  const params = `?sync=${sync}&stream=${stream}&batch=${batch}&batchSize=${batchSize}`;
   const url = TEST_URL + params;
   await testSetup(url, { disableCache: true });
 
   const toolbox = await openToolboxAndLog("custom.webconsole", "webconsole");
+  const { hud } = toolbox.getPanel("webconsole");
+  
+  await waitForConsoleOutputChildListChange(hud, consoleOutput => {
+    const messages = consoleOutput.querySelectorAll(".message-body");
+    return (
+      messages &&
+      messages[messages.length - 1]?.textContent.includes("very last message")
+    );
+  });
   
   
   await reloadConsoleAndLog("custom", toolbox, [
     {
-      text: "simple log " + (simple - 1),
+      text: "very last message",
     },
   ]);
 
   dump("Clear console\n");
-  const { hud } = toolbox.getPanel("webconsole");
+
   const onMessageCleared = waitForConsoleOutputChildListChange(
     hud,
     consoleOutput => consoleOutput.querySelector(".message-body") == null
