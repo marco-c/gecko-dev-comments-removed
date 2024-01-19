@@ -1,8 +1,6 @@
 
 
 
-
-
 add_setup(async function () {
   registerCleanupFunction(() => {
     
@@ -684,6 +682,7 @@ add_task(async function search_synced_tabs_recent_browsing() {
         ),
       "Synced Tabs component is done updating."
     );
+    slot.tabLists[0].scrollIntoView();
     await TestUtils.waitForCondition(
       () => slot.tabLists[0]?.rowEls.length === 5,
       "Not all search results are shown yet."
