@@ -9302,7 +9302,6 @@ class Document::TitleChangeEvent final : public Runnable {
   
   
   const bool mBlockOnload;
-  bool mRunning = false;
 };
 
 void Document::NotifyPossibleTitleChange(bool aBoundTitleElement) {
