@@ -1792,7 +1792,6 @@ bool DOMXrayTraits::call(JSContext* cx, HandleObject wrapper,
                          const JS::CallArgs& args,
                          const js::Wrapper& baseInstance) {
   RootedObject obj(cx, getTargetObject(wrapper));
-  const JSClass* clasp = JS::GetClass(obj);
   
   
   
@@ -1800,9 +1799,18 @@ bool DOMXrayTraits::call(JSContext* cx, HandleObject wrapper,
   
   
   
-  if (JSNative call = clasp->getCall()) {
-    
-    return call(cx, args.length(), args.base());
+  if (js::IsProxy(obj)) {
+    if (JS::IsCallable(obj)) {
+      
+      
+      return GetProxyHandler(obj)->call(cx, obj, args);
+    }
+  } else {
+    const JSClass* clasp = JS::GetClass(obj);
+    if (JSNative call = clasp->getCall()) {
+      
+      return call(cx, args.length(), args.base());
+    }
   }
 
   RootedValue v(cx, ObjectValue(*wrapper));
