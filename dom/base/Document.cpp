@@ -9299,6 +9299,54 @@ void Document::SetTitle(const nsAString& aTitle, ErrorResult& aRv) {
   aRv = nsContentUtils::SetNodeTextContent(title, aTitle, false);
 }
 
+class Document::TitleChangeEvent final : public Runnable {
+ public:
+  explicit TitleChangeEvent(Document* aDoc)
+      : Runnable("Document::TitleChangeEvent"),
+        mDoc(aDoc)
+#ifndef ANDROID
+        ,
+        mBlockOnload(aDoc->IsInChromeDocShell())
+#endif
+  {
+    if (mBlockOnload) {
+      mDoc->BlockOnload();
+    }
+  }
+
+  NS_IMETHOD Run() final {
+    if (!mDoc) {
+      return NS_OK;
+    }
+    const RefPtr<Document> doc = mDoc;
+    const bool blockOnload = mBlockOnload;
+    mDoc = nullptr;
+    doc->DoNotifyPossibleTitleChange();
+    if (blockOnload) {
+      doc->UnblockOnload( true);
+    }
+    return NS_OK;
+  }
+
+  void Revoke() {
+    if (mDoc) {
+      if (mBlockOnload) {
+        mDoc->UnblockOnload( false);
+      }
+      mDoc = nullptr;
+    }
+  }
+
+ private:
+  
+  Document* mDoc;
+  
+  
+  
+  
+  const bool mBlockOnload = false;
+};
+
 void Document::NotifyPossibleTitleChange(bool aBoundTitleElement) {
   NS_ASSERTION(!mInUnlinkOrDeletion || !aBoundTitleElement,
                "Setting a title while unlinking or destroying the element?");
@@ -9309,15 +9357,15 @@ void Document::NotifyPossibleTitleChange(bool aBoundTitleElement) {
   if (aBoundTitleElement) {
     mMayHaveTitleElement = true;
   }
+
   if (mPendingTitleChangeEvent.IsPending()) {
     return;
   }
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  RefPtr<nsRunnableMethod<Document, void, false>> event =
-      NewNonOwningRunnableMethod("Document::DoNotifyPossibleTitleChange", this,
-                                 &Document::DoNotifyPossibleTitleChange);
+  RefPtr<TitleChangeEvent> event = new TitleChangeEvent(this);
   if (NS_WARN_IF(NS_FAILED(Dispatch(do_AddRef(event))))) {
+    event->Revoke();
     return;
   }
   mPendingTitleChangeEvent = std::move(event);
@@ -9328,7 +9376,7 @@ void Document::DoNotifyPossibleTitleChange() {
     return;
   }
   
-  mPendingTitleChangeEvent.Revoke();
+  mPendingTitleChangeEvent.Forget();
   mHaveFiredTitleChange = true;
 
   nsAutoString title;
