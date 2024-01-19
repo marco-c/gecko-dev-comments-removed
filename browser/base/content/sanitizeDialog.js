@@ -38,13 +38,18 @@ Preferences.addAll([
   { id: "privacy.cpd.siteSettings", type: "bool" },
   { id: "privacy.sanitize.timeSpan", type: "int" },
   { id: "privacy.clearOnShutdown.history", type: "bool" },
+  { id: "privacy.clearOnShutdown_v2.historyAndFormData", type: "bool" },
   { id: "privacy.clearOnShutdown.formdata", type: "bool" },
   { id: "privacy.clearOnShutdown.downloads", type: "bool" },
+  { id: "privacy.clearOnShutdown_v2.downloads", type: "bool" },
   { id: "privacy.clearOnShutdown.cookies", type: "bool" },
+  { id: "privacy.clearOnShutdown_v2.cookiesAndStorage", type: "bool" },
   { id: "privacy.clearOnShutdown.cache", type: "bool" },
+  { id: "privacy.clearOnShutdown_v2.cache", type: "bool" },
   { id: "privacy.clearOnShutdown.offlineApps", type: "bool" },
   { id: "privacy.clearOnShutdown.sessions", type: "bool" },
   { id: "privacy.clearOnShutdown.siteSettings", type: "bool" },
+  { id: "privacy.clearOnShutdown_v2.siteSettings", type: "bool" },
 ]);
 
 var gSanitizePromptDialog = {
@@ -70,7 +75,8 @@ var gSanitizePromptDialog = {
     this.downloadSizes = {};
 
     if (!lazy.USE_OLD_DIALOG) {
-      this._cookiesAndSiteDataCheckbox = document.getElementById("cookies");
+      this._cookiesAndSiteDataCheckbox =
+        document.getElementById("cookiesAndStorage");
       this._cacheCheckbox = document.getElementById("cache");
       this._downloadHistoryCheckbox = document.getElementById("downloads");
     }
@@ -382,24 +388,6 @@ var gSanitizePromptDialog = {
       Preferences.get("privacy.cpd.downloads").value = historyValue;
       Services.prefs.setBoolPref("privacy.cpd.downloads", historyValue);
     }
-    
-    
-    
-    
-    else if (gSanitizePromptDialog._inClearOnShutdownNewDialog) {
-      let historyValue = Preferences.get(
-        `privacy.clearOnShutdown.history`
-      ).value;
-      Preferences.get(`privacy.clearOnShutdown.formdata`).value = historyValue;
-
-      let cookiesValue = Preferences.get(
-        "privacy.clearOnShutdown.cookies"
-      ).value;
-      
-      Preferences.get(`privacy.clearOnShutdown.sessions`).value = cookiesValue;
-      Preferences.get(`privacy.clearOnShutdown.offlineApps`).value =
-        cookiesValue;
-    }
 
     
     
@@ -509,14 +497,6 @@ var gSanitizePromptDialog = {
 
     for (let cb of clearPrivateDataGroupbox.querySelectorAll("checkbox")) {
       if (cb.checked) {
-        if (cb.id == "history") {
-          
-          items.push("formdata");
-        } else if (cb.id == "cookies") {
-          
-          items.push("offlineApps");
-          items.push("sessions");
-        }
         items.push(cb.id);
       }
     }
