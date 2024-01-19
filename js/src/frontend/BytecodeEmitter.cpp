@@ -1358,8 +1358,8 @@ restart:
     case ParseNodeKind::ImportSpecList:       
     case ParseNodeKind::ImportSpec:           
     case ParseNodeKind::ImportNamespaceSpec:  
-    case ParseNodeKind::ImportAssertion:      
-    case ParseNodeKind::ImportAssertionList:  
+    case ParseNodeKind::ImportAttribute:      
+    case ParseNodeKind::ImportAttributeList:  
     case ParseNodeKind::ImportModuleRequest:  
     case ParseNodeKind::ExportBatchSpecStmt:  
     case ParseNodeKind::ExportSpecList:       
