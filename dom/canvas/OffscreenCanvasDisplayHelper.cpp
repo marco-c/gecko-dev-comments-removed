@@ -13,6 +13,7 @@
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/layers/PersistentBufferProvider.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/TextureWrapperImage.h"
 #include "mozilla/SVGObserverUtils.h"
@@ -188,7 +189,9 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
   }
 
   bool paintCallbacks = mData.mDoPaintCallbacks;
+  bool hasRemoteTextureDesc = false;
   RefPtr<layers::Image> image;
+  RefPtr<layers::TextureClient> texture;
   RefPtr<gfx::SourceSurface> surface;
   Maybe<layers::SurfaceDescriptor> desc;
 
@@ -199,18 +202,29 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     }
 
     desc = aContext->PresentFrontBuffer(nullptr, aTextureType);
-    if (!desc) {
-      surface =
-          aContext->GetFrontBufferSnapshot( false);
-      if (surface && surface->GetType() == gfx::SurfaceType::WEBGL) {
-        
-        
-        
-        gfx::DataSourceSurface::ScopedMap map(
-            static_cast<gfx::DataSourceSurface*>(surface.get()),
-            gfx::DataSourceSurface::READ);
-        if (!map.IsMapped()) {
-          surface = nullptr;
+    if (desc) {
+      hasRemoteTextureDesc =
+          desc->type() ==
+          layers::SurfaceDescriptor::TSurfaceDescriptorRemoteTexture;
+    } else {
+      if (layers::PersistentBufferProvider* provider =
+              aContext->GetBufferProvider()) {
+        texture = provider->GetTextureClient();
+      }
+
+      if (!texture) {
+        surface =
+            aContext->GetFrontBufferSnapshot( false);
+        if (surface && surface->GetType() == gfx::SurfaceType::WEBGL) {
+          
+          
+          
+          gfx::DataSourceSurface::ScopedMap map(
+              static_cast<gfx::DataSourceSurface*>(surface.get()),
+              gfx::DataSourceSurface::READ);
+          if (!map.IsMapped()) {
+            surface = nullptr;
+          }
         }
       }
     }
@@ -220,26 +234,33 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     }
   }
 
-  if (desc) {
-    if (desc->type() ==
-        layers::SurfaceDescriptor::TSurfaceDescriptorRemoteTexture) {
-      const auto& textureDesc = desc->get_SurfaceDescriptorRemoteTexture();
-      imageBridge->UpdateCompositable(mImageContainer, textureDesc.textureId(),
-                                      textureDesc.ownerId(), mData.mSize,
-                                      flags);
-    } else {
-      RefPtr<layers::TextureClient> texture =
-          layers::SharedSurfaceTextureData::CreateTextureClient(
-              *desc, format, mData.mSize, flags, imageBridge);
-      if (texture) {
-        image = new layers::TextureWrapperImage(
-            texture, gfx::IntRect(gfx::IntPoint(0, 0), mData.mSize));
-      }
-    }
-  } else if (surface) {
+  
+  
+  
+  mFrontBufferSurface = surface;
+
+  
+  
+  if (hasRemoteTextureDesc) {
+    const auto& textureDesc = desc->get_SurfaceDescriptorRemoteTexture();
+    imageBridge->UpdateCompositable(mImageContainer, textureDesc.textureId(),
+                                    textureDesc.ownerId(), mData.mSize, flags);
+    return true;
+  }
+
+  if (surface) {
     auto surfaceImage = MakeRefPtr<layers::SourceSurfaceImage>(surface);
     surfaceImage->SetTextureFlags(flags);
     image = surfaceImage;
+  } else {
+    if (desc && !texture) {
+      texture = layers::SharedSurfaceTextureData::CreateTextureClient(
+          *desc, format, mData.mSize, flags, imageBridge);
+    }
+    if (texture) {
+      image = new layers::TextureWrapperImage(
+          texture, gfx::IntRect(gfx::IntPoint(0, 0), texture->GetSize()));
+    }
   }
 
   if (image) {
@@ -247,16 +268,10 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     imageList.AppendElement(layers::ImageContainer::NonOwningImage(
         image, TimeStamp(), mLastFrameID++, mImageProducerID));
     mImageContainer->SetCurrentImages(imageList);
-  } else if (!desc ||
-             desc->type() !=
-                 layers::SurfaceDescriptor::TSurfaceDescriptorRemoteTexture) {
+  } else {
     mImageContainer->ClearAllImages();
   }
 
-  
-  
-  
-  mFrontBufferSurface = surface;
   return true;
 }
 
@@ -290,47 +305,84 @@ void OffscreenCanvasDisplayHelper::InvalidateElement() {
   }
 }
 
-bool OffscreenCanvasDisplayHelper::TransformSurface(
-    const gfx::DataSourceSurface::ScopedMap& aSrcMap,
-    const gfx::DataSourceSurface::ScopedMap& aDstMap,
-    gfx::SurfaceFormat aFormat, const gfx::IntSize& aSize, bool aNeedsPremult,
-    gl::OriginPos aOriginPos) const {
-  if (!aSrcMap.IsMapped() || !aDstMap.IsMapped()) {
-    return false;
+already_AddRefed<gfx::SourceSurface>
+OffscreenCanvasDisplayHelper::TransformSurface(gfx::SourceSurface* aSurface,
+                                               bool aHasAlpha,
+                                               bool aIsAlphaPremult,
+                                               gl::OriginPos aOriginPos) const {
+  if (!aSurface) {
+    return nullptr;
   }
 
+  if (aOriginPos == gl::OriginPos::TopLeft && (!aHasAlpha || aIsAlphaPremult)) {
+    
+    
+    return do_AddRef(aSurface);
+  }
+
+  
+  RefPtr<gfx::DataSourceSurface> srcSurface = aSurface->GetDataSurface();
+  if (!srcSurface) {
+    return nullptr;
+  }
+
+  const auto size = srcSurface->GetSize();
+  const auto format = srcSurface->GetFormat();
+
+  RefPtr<gfx::DataSourceSurface> dstSurface =
+      gfx::Factory::CreateDataSourceSurface(size, format,  false);
+  if (!dstSurface) {
+    return nullptr;
+  }
+
+  gfx::DataSourceSurface::ScopedMap srcMap(srcSurface,
+                                           gfx::DataSourceSurface::READ);
+  gfx::DataSourceSurface::ScopedMap dstMap(dstSurface,
+                                           gfx::DataSourceSurface::WRITE);
+  if (!srcMap.IsMapped() || !dstMap.IsMapped()) {
+    return nullptr;
+  }
+
+  bool success;
   switch (aOriginPos) {
     case gl::OriginPos::BottomLeft:
-      if (aNeedsPremult) {
-        return gfx::PremultiplyYFlipData(aSrcMap.GetData(), aSrcMap.GetStride(),
-                                         aFormat, aDstMap.GetData(),
-                                         aDstMap.GetStride(), aFormat, aSize);
+      if (aHasAlpha && !aIsAlphaPremult) {
+        success = gfx::PremultiplyYFlipData(
+            srcMap.GetData(), srcMap.GetStride(), format, dstMap.GetData(),
+            dstMap.GetStride(), format, size);
+      } else {
+        success = gfx::SwizzleYFlipData(srcMap.GetData(), srcMap.GetStride(),
+                                        format, dstMap.GetData(),
+                                        dstMap.GetStride(), format, size);
       }
-      return gfx::SwizzleYFlipData(aSrcMap.GetData(), aSrcMap.GetStride(),
-                                   aFormat, aDstMap.GetData(),
-                                   aDstMap.GetStride(), aFormat, aSize);
+      break;
     case gl::OriginPos::TopLeft:
-      if (aNeedsPremult) {
-        return gfx::PremultiplyData(aSrcMap.GetData(), aSrcMap.GetStride(),
-                                    aFormat, aDstMap.GetData(),
-                                    aDstMap.GetStride(), aFormat, aSize);
+      if (aHasAlpha && !aIsAlphaPremult) {
+        success = gfx::PremultiplyData(srcMap.GetData(), srcMap.GetStride(),
+                                       format, dstMap.GetData(),
+                                       dstMap.GetStride(), format, size);
+      } else {
+        success = gfx::SwizzleData(srcMap.GetData(), srcMap.GetStride(), format,
+                                   dstMap.GetData(), dstMap.GetStride(), format,
+                                   size);
       }
-      return gfx::SwizzleData(aSrcMap.GetData(), aSrcMap.GetStride(), aFormat,
-                              aDstMap.GetData(), aDstMap.GetStride(), aFormat,
-                              aSize);
+      break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unhandled origin position!");
+      success = false;
       break;
   }
 
-  return false;
+  if (!success) {
+    return nullptr;
+  }
+
+  return dstSurface.forget();
 }
 
 already_AddRefed<gfx::SourceSurface>
 OffscreenCanvasDisplayHelper::GetSurfaceSnapshot() {
   MOZ_ASSERT(NS_IsMainThread());
-
-  Maybe<layers::SurfaceDescriptor> desc;
 
   bool hasAlpha;
   bool isAlphaPremult;
@@ -355,38 +407,7 @@ OffscreenCanvasDisplayHelper::GetSurfaceSnapshot() {
 
   if (surface) {
     
-
-    if (originPos == gl::OriginPos::TopLeft && (!hasAlpha || isAlphaPremult)) {
-      
-      
-      return surface.forget();
-    }
-
-    
-    RefPtr<gfx::DataSourceSurface> srcSurface = surface->GetDataSurface();
-    if (!srcSurface) {
-      return nullptr;
-    }
-
-    const auto size = srcSurface->GetSize();
-    const auto format = srcSurface->GetFormat();
-
-    RefPtr<gfx::DataSourceSurface> dstSurface =
-        gfx::Factory::CreateDataSourceSurface(size, format,  false);
-    if (!dstSurface) {
-      return nullptr;
-    }
-
-    gfx::DataSourceSurface::ScopedMap srcMap(srcSurface,
-                                             gfx::DataSourceSurface::READ);
-    gfx::DataSourceSurface::ScopedMap dstMap(dstSurface,
-                                             gfx::DataSourceSurface::WRITE);
-    if (!TransformSurface(srcMap, dstMap, format, size,
-                          hasAlpha && !isAlphaPremult, originPos)) {
-      return nullptr;
-    }
-
-    return dstSurface.forget();
+    return TransformSurface(surface, hasAlpha, isAlphaPremult, originPos);
   }
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -405,46 +426,39 @@ OffscreenCanvasDisplayHelper::GetSurfaceSnapshot() {
         hasAlpha && !isAlphaPremult, originPos == gl::OriginPos::BottomLeft);
   }
 
-  
-  
-  
-  
   if (!canvasElement) {
     return nullptr;
   }
 
+  
+  
+  
+  
   const auto* offscreenCanvas = canvasElement->GetOffscreenCanvas();
-  nsICanvasRenderingContextInternal* context = offscreenCanvas->GetContext();
-  if (!context) {
-    return nullptr;
-  }
-
-  surface = context->GetFrontBufferSnapshot( false);
-  if (!surface) {
-    return nullptr;
-  }
-
-  if (originPos == gl::OriginPos::TopLeft && (!hasAlpha || isAlphaPremult)) {
-    
-    
-    return surface.forget();
+  if (nsICanvasRenderingContextInternal* context =
+          offscreenCanvas->GetContext()) {
+    surface = context->GetFrontBufferSnapshot( false);
+    surface = TransformSurface(surface, hasAlpha, isAlphaPremult, originPos);
+    if (surface) {
+      return surface.forget();
+    }
   }
 
   
-  RefPtr<gfx::DataSourceSurface> dataSurface = surface->GetDataSurface();
-  if (!dataSurface) {
-    return nullptr;
+  
+  if (layers::ImageContainer* container = canvasElement->GetImageContainer()) {
+    AutoTArray<layers::ImageContainer::OwningImage, 1> images;
+    uint32_t generationCounter;
+    container->GetCurrentImages(&images, &generationCounter);
+    if (!images.IsEmpty()) {
+      if (layers::Image* image = images.LastElement().mImage) {
+        surface = image->GetAsSourceSurface();
+        return TransformSurface(surface, hasAlpha, isAlphaPremult, originPos);
+      }
+    }
   }
 
-  gfx::DataSourceSurface::ScopedMap map(dataSurface,
-                                        gfx::DataSourceSurface::READ_WRITE);
-  if (!TransformSurface(map, map, dataSurface->GetFormat(),
-                        dataSurface->GetSize(), hasAlpha && !isAlphaPremult,
-                        originPos)) {
-    return nullptr;
-  }
-
-  return surface.forget();
+  return nullptr;
 }
 
 already_AddRefed<layers::Image> OffscreenCanvasDisplayHelper::GetAsImage() {
