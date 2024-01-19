@@ -115,15 +115,7 @@ typedef struct _nsCocoaWindowList {
 @end
 
 @interface NSWindow (Undocumented)
-
-
-
-
-
-
-- (void)_setWindowNumber:(NSInteger)aNumber;
-
-- (BOOL)bottomCornerRounded;
+- (NSDictionary*)shadowParameters;
 
 
 - (NSRect)contentRectForFrameRect:(NSRect)windowFrame
