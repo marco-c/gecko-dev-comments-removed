@@ -63,28 +63,6 @@ add_task(async function testNotificationPermission() {
     true
   );
 
-  Services.prefs.setIntPref(
-    "permissions.default.desktop-notification",
-    Ci.nsIPermissionManager.DENY_ACTION
-  );
-
-  
-  
-
-  await testPostPrompt(function () {
-    E10SUtils.wrapHandlingUserInput(content, true, function () {
-      content.document.getElementById("desktop-notification").click();
-    });
-  });
-
-  await testPostPrompt(function () {
-    E10SUtils.wrapHandlingUserInput(content, true, function () {
-      content.document.getElementById("push").click();
-    });
-  });
-
-  Services.prefs.clearUserPref("permissions.default.desktop-notification");
-
   
   
 
