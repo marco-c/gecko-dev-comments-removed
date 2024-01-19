@@ -3356,8 +3356,7 @@ nsresult PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
   
   
   if (!StringBeginsWith(aOrigin, "http:"_ns) &&
-      !StringBeginsWith(aOrigin, "https:"_ns) &&
-      !StringBeginsWith(aOrigin, "ftp:"_ns)) {
+      !StringBeginsWith(aOrigin, "https:"_ns)) {
     return NS_OK;
   }
 
@@ -3378,8 +3377,7 @@ nsresult PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
   nsCOMPtr<nsIPrincipal> dbgPrincipal;
   MOZ_ALWAYS_SUCCEEDS(GetPrincipalFromOrigin(aOrigin, aForceStripOA,
                                              getter_AddRefs(dbgPrincipal)));
-  MOZ_ASSERT(dbgPrincipal->SchemeIs("http") ||
-             dbgPrincipal->SchemeIs("https") || dbgPrincipal->SchemeIs("ftp"));
+  MOZ_ASSERT(dbgPrincipal->SchemeIs("http") || dbgPrincipal->SchemeIs("https"));
   MOZ_ASSERT(dbgPrincipal->OriginAttributesRef() == attrs);
 #endif
 

@@ -783,10 +783,7 @@ nsBaseChannel::OnStartRequest(nsIRequest* request) {
   MOZ_ASSERT_IF(mRequest, request == mRequest);
   MOZ_ASSERT_IF(mCancelableAsyncRequest, !mRequest);
 
-  nsAutoCString scheme;
-  mURI->GetScheme(scheme);
-
-  if (mPump && !scheme.EqualsLiteral("ftp")) {
+  if (mPump) {
     
     
     
