@@ -794,6 +794,9 @@ class HTMLMediaElement::MediaStreamRenderer
         t->AsAudioStreamTrack()->RemoveAudioOutput(mAudioOutputKey);
       }
     }
+    
+    
+    ResolveAudioDevicePromiseIfExists(__func__);
 
     if (mVideoTrack) {
       mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(mVideoContainer);
@@ -816,16 +819,15 @@ class HTMLMediaElement::MediaStreamRenderer
     }
   }
 
-  RefPtr<GenericPromise::AllPromiseType> SetAudioOutputDevice(
-      AudioDeviceInfo* aSink) {
+  RefPtr<GenericPromise> SetAudioOutputDevice(AudioDeviceInfo* aSink) {
     MOZ_ASSERT(aSink);
     MOZ_ASSERT(mAudioOutputSink != aSink);
 
     mAudioOutputSink = aSink;
 
     if (!mRendering) {
-      return GenericPromise::AllPromiseType::CreateAndResolve(nsTArray<bool>(),
-                                                              __func__);
+      MOZ_ASSERT(mSetAudioDevicePromise.IsEmpty());
+      return GenericPromise::CreateAndResolve(true, __func__);
     }
 
     nsTArray<RefPtr<GenericPromise>> promises;
@@ -838,11 +840,35 @@ class HTMLMediaElement::MediaStreamRenderer
     }
     if (!promises.Length()) {
       
-      return GenericPromise::AllPromiseType::CreateAndResolve(nsTArray<bool>(),
-                                                              __func__);
+      MOZ_ASSERT(mSetAudioDevicePromise.IsEmpty());
+      return GenericPromise::CreateAndResolve(true, __func__);
     }
 
-    return GenericPromise::All(GetCurrentSerialEventTarget(), promises);
+    
+    
+    ResolveAudioDevicePromiseIfExists(__func__);
+
+    RefPtr promise = mSetAudioDevicePromise.Ensure(__func__);
+    GenericPromise::AllSettled(GetCurrentSerialEventTarget(), promises)
+        ->Then(GetMainThreadSerialEventTarget(), __func__,
+               [self = RefPtr{this},
+                this](const GenericPromise::AllSettledPromiseType::
+                          ResolveOrRejectValue& aValue) {
+                 
+                 
+                 MOZ_ASSERT(!mSetAudioDevicePromise.IsEmpty());
+                 mDeviceStartedRequest.Complete();
+                 
+                 
+                 
+                 
+                 
+                 
+                 mSetAudioDevicePromise.Resolve(true, __func__);
+               })
+        ->Track(mDeviceStartedRequest);
+
+    return promise;
   }
 
   void AddTrack(AudioStreamTrack* aTrack) {
@@ -878,6 +904,12 @@ class HTMLMediaElement::MediaStreamRenderer
       aTrack->RemoveAudioOutput(mAudioOutputKey);
     }
     mAudioTracks.RemoveElement(aTrack);
+
+    if (mAudioTracks.IsEmpty()) {
+      
+      
+      ResolveAudioDevicePromiseIfExists(__func__);
+    }
   }
   void RemoveTrack(VideoStreamTrack* aTrack) {
     MOZ_DIAGNOSTIC_ASSERT(mVideoTrack == aTrack);
@@ -938,6 +970,11 @@ class HTMLMediaElement::MediaStreamRenderer
         graph->CreateSourceTrack(MediaSegment::AUDIO));
   }
 
+  void ResolveAudioDevicePromiseIfExists(const char* aMethodName) {
+    mSetAudioDevicePromise.ResolveIfExists(true, aMethodName);
+    mDeviceStartedRequest.DisconnectIfExists();
+  }
+
   
   
   bool mRendering = false;
@@ -950,6 +987,13 @@ class HTMLMediaElement::MediaStreamRenderer
 
   
   RefPtr<AudioDeviceInfo> mAudioOutputSink;
+  
+  
+  MozPromiseHolder<GenericPromise> mSetAudioDevicePromise;
+  
+  
+  MozPromiseRequestHolder<GenericPromise::AllSettledPromiseType>
+      mDeviceStartedRequest;
 
   
   WatchManager<MediaStreamRenderer> mWatchManager;
@@ -7582,8 +7626,8 @@ already_AddRefed<Promise> HTMLMediaElement::SetSinkId(const nsAString& aSinkId,
               RefPtr<SinkInfoPromise> p =
                   mMediaStreamRenderer->SetAudioOutputDevice(aInfo)->Then(
                       AbstractMainThread(), __func__,
-                      [aInfo](const GenericPromise::AllPromiseType::
-                                  ResolveOrRejectValue& aValue) {
+                      [aInfo](
+                          const GenericPromise::ResolveOrRejectValue& aValue) {
                         if (aValue.IsResolve()) {
                           return SinkInfoPromise::CreateAndResolve(aInfo,
                                                                    __func__);
