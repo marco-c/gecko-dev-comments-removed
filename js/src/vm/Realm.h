@@ -238,7 +238,7 @@ class ObjectRealm {
 
  public:
   
-  JS::WeakCache<js::InnerViewTable> innerViews;
+  WeakCache<js::InnerViewTable> innerViews;
 
   
   

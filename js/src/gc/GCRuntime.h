@@ -236,13 +236,11 @@ class ZoneList {
 };
 
 struct WeakCacheToSweep {
-  JS::detail::WeakCacheBase* cache;
+  WeakCacheBase* cache;
   JS::Zone* zone;
 };
 
 class WeakCacheSweepIterator {
-  using WeakCacheBase = JS::detail::WeakCacheBase;
-
   JS::Zone* sweepZone;
   WeakCacheBase* sweepCache;
 
@@ -1207,8 +1205,7 @@ class GCRuntime {
 
 
 
-  JS::WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>>
-      testMarkQueue;
+  WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>> testMarkQueue;
 
   
   size_t queuePos = 0;

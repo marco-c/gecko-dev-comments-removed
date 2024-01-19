@@ -264,7 +264,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  js::MainThreadOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>>
+  js::MainThreadOrGCTaskData<mozilla::LinkedList<js::gc::WeakCacheBase>>
       weakCaches_;
 
   
@@ -559,10 +559,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     }
   }
 
-  mozilla::LinkedList<detail::WeakCacheBase>& weakCaches() {
+  mozilla::LinkedList<js::gc::WeakCacheBase>& weakCaches() {
     return weakCaches_.ref();
   }
-  void registerWeakCache(detail::WeakCacheBase* cachep) {
+  void registerWeakCache(js::gc::WeakCacheBase* cachep) {
     weakCaches().insertBack(cachep);
   }
 

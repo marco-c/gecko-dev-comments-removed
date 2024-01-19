@@ -40,7 +40,7 @@ struct BaseShapeHasher {
            key.unbarrieredGet()->proto() == lookup.proto;
   }
 };
-using BaseShapeSet = JS::WeakCache<
+using BaseShapeSet = WeakCache<
     JS::GCHashSet<WeakHeapPtr<BaseShape*>, BaseShapeHasher, SystemAllocPolicy>>;
 
 
@@ -63,8 +63,8 @@ struct InitialPropMapHasher {
   }
 };
 using InitialPropMapSet =
-    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<SharedPropMap*>,
-                                InitialPropMapHasher, SystemAllocPolicy>>;
+    WeakCache<JS::GCHashSet<WeakHeapPtr<SharedPropMap*>, InitialPropMapHasher,
+                            SystemAllocPolicy>>;
 
 
 struct ShapeBaseHasher {
@@ -118,8 +118,8 @@ struct InitialShapeHasher {
   }
 };
 using InitialShapeSet =
-    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<SharedShape*>, InitialShapeHasher,
-                                SystemAllocPolicy>>;
+    WeakCache<JS::GCHashSet<WeakHeapPtr<SharedShape*>, InitialShapeHasher,
+                            SystemAllocPolicy>>;
 
 
 
@@ -159,8 +159,8 @@ struct PropMapShapeHasher {
   }
 };
 using PropMapShapeSet =
-    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<SharedShape*>, PropMapShapeHasher,
-                                SystemAllocPolicy>>;
+    WeakCache<JS::GCHashSet<WeakHeapPtr<SharedShape*>, PropMapShapeHasher,
+                            SystemAllocPolicy>>;
 
 
 
@@ -171,8 +171,8 @@ struct ProxyShapeHasher : public ShapeBaseHasher {
   }
 };
 using ProxyShapeSet =
-    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<ProxyShape*>, ProxyShapeHasher,
-                                SystemAllocPolicy>>;
+    WeakCache<JS::GCHashSet<WeakHeapPtr<ProxyShape*>, ProxyShapeHasher,
+                            SystemAllocPolicy>>;
 
 
 
@@ -200,8 +200,8 @@ struct WasmGCShapeHasher : public ShapeBaseHasher {
   }
 };
 using WasmGCShapeSet =
-    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<WasmGCShape*>, WasmGCShapeHasher,
-                                SystemAllocPolicy>>;
+    WeakCache<JS::GCHashSet<WeakHeapPtr<WasmGCShape*>, WasmGCShapeHasher,
+                            SystemAllocPolicy>>;
 
 struct ShapeZone {
   
