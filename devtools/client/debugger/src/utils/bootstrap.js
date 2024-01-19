@@ -3,7 +3,10 @@
 
 
 import React from "react";
-import { bindActionCreators, combineReducers } from "redux";
+import {
+  bindActionCreators,
+  combineReducers,
+} from "devtools/client/shared/vendor/redux";
 import ReactDOM from "react-dom";
 const { Provider } = require("react-redux");
 
