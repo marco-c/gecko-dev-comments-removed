@@ -1,5 +1,7 @@
 
 
+
+
 function testRequestedModules(source, expected) {
     var module = parseModule(source);
     var actual = module.requestedModules;
