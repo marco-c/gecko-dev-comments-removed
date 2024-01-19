@@ -2,7 +2,7 @@
 
 
 
-import { getSourceActorsForSource } from "../../selectors/index";
+import { getSourceActorsForSource } from "../../selectors";
 import { sortSelectedLocations } from "../location";
 export * from "./breakpointPositions";
 

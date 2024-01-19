@@ -2,14 +2,10 @@
 
 
 
-import { PureComponent } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import { PureComponent } from "react";
+import PropTypes from "prop-types";
 
-import {
-  toEditorPosition,
-  getTokenEnd,
-  hasDocument,
-} from "../../utils/editor/index";
+import { toEditorPosition, getTokenEnd, hasDocument } from "../../utils/editor";
 
 import { getIndentation } from "../../utils/indentation";
 import { createLocation } from "../../utils/location";

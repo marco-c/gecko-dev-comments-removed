@@ -6,7 +6,7 @@
 
 
 import { objectInspector } from "devtools/client/shared/components/reps/index";
-import { simplifyDisplayName } from "../pause/frames/index";
+import { simplifyDisplayName } from "../pause/frames";
 
 const {
   utils: {

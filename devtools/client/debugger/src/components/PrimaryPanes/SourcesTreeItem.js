@@ -2,9 +2,9 @@
 
 
 
-import React, { Component } from "devtools/client/shared/vendor/react";
-import { div, span } from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { Component } from "react";
+import { div, span } from "react-dom-factories";
+import PropTypes from "prop-types";
 import { connect } from "../../utils/connect";
 
 import SourceIcon from "../shared/SourceIcon";
@@ -14,8 +14,8 @@ import {
   getGeneratedSourceByURL,
   isSourceOverridden,
   getHideIgnoredSources,
-} from "../../selectors/index";
-import actions from "../../actions/index";
+} from "../../selectors";
+import actions from "../../actions";
 
 import { sourceTypes } from "../../utils/source";
 import { createLocation } from "../../utils/location";

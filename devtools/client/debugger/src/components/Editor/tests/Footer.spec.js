@@ -3,7 +3,7 @@
 
 
 
-import React from "devtools/client/shared/vendor/react";
+import React from "react";
 import { shallow } from "enzyme";
 
 import SourceFooter from "../Footer";

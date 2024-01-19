@@ -2,9 +2,9 @@
 
 
 
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import { span } from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { PureComponent } from "react";
+import { span } from "react-dom-factories";
+import PropTypes from "prop-types";
 import Reps from "devtools/client/shared/components/reps/index";
 
 const {

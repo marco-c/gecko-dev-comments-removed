@@ -2,16 +2,16 @@
 
 
 
-import React, { Component } from "devtools/client/shared/vendor/react";
-import { div } from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { Component } from "react";
+import { div } from "react-dom-factories";
+import PropTypes from "prop-types";
 import InlinePreviewRow from "./InlinePreviewRow";
 import { connect } from "../../utils/connect";
 import {
   getSelectedFrame,
   getCurrentThread,
   getInlinePreviews,
-} from "../../selectors/index";
+} from "../../selectors";
 
 function hasPreviews(previews) {
   return !!previews && !!Object.keys(previews).length;

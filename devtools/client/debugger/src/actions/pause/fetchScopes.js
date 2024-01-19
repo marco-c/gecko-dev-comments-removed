@@ -2,10 +2,7 @@
 
 
 
-import {
-  getGeneratedFrameScope,
-  getOriginalFrameScope,
-} from "../../selectors/index";
+import { getGeneratedFrameScope, getOriginalFrameScope } from "../../selectors";
 import { mapScopes } from "./mapScopes";
 import { generateInlinePreview } from "./inlinePreview";
 import { PROMISE } from "../utils/middleware/promise";

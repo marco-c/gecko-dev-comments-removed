@@ -2,17 +2,13 @@
 
 
 
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import {
-  div,
-  button,
-  span,
-} from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { PureComponent } from "react";
+import { div, button, span } from "react-dom-factories";
+import PropTypes from "prop-types";
 import AccessibleImage from "../shared/AccessibleImage";
 import { showMenu } from "../../context-menu/menu";
 import { connect } from "../../utils/connect";
-import actions from "../../actions/index";
+import actions from "../../actions";
 
 import {
   getSelectedFrame,
@@ -24,7 +20,7 @@ import {
   isMapScopesEnabled,
   getLastExpandedScopes,
   getIsCurrentThreadPaused,
-} from "../../selectors/index";
+} from "../../selectors";
 import {
   getScopesItemsForSelectedFrame,
   getScopeItemPath,

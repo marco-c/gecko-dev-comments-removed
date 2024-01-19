@@ -2,7 +2,7 @@
 
 
 
-import SourceEditor from "devtools/client/shared/sourceeditor/editor";
+import SourceEditor from "./source-editor";
 import { features, prefs } from "../prefs";
 
 export function createEditor() {

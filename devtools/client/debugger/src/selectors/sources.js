@@ -2,7 +2,7 @@
 
 
 
-import { createSelector } from "devtools/client/shared/vendor/reselect";
+import { createSelector } from "reselect";
 
 import { getPrettySourceURL, isPretty, isJavaScript } from "../utils/source";
 

@@ -2,8 +2,8 @@
 
 
 
-import { Component } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import { Component } from "react";
+import PropTypes from "prop-types";
 
 class HighlightLines extends Component {
   static get propTypes() {

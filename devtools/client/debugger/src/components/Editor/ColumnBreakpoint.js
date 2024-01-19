@@ -2,10 +2,10 @@
 
 
 
-import { PureComponent } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import { PureComponent } from "react";
+import PropTypes from "prop-types";
 
-import { getDocument } from "../../utils/editor/index";
+import { getDocument } from "../../utils/editor";
 const classnames = require("devtools/client/shared/classnames.js");
 
 

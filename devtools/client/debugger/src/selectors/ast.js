@@ -2,7 +2,7 @@
 
 
 
-import { makeBreakpointId } from "../utils/breakpoint/index";
+import { makeBreakpointId } from "../utils/breakpoint";
 
 export function getSymbols(state, location) {
   if (!location) {

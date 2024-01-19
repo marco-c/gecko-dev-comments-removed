@@ -2,7 +2,7 @@
 
 
 
-import { getMainThread } from "../selectors/index";
+import { getMainThread } from "../selectors";
 
 export function setExpandedState(expanded) {
   return { type: "SET_EXPANDED_STATE", expanded };

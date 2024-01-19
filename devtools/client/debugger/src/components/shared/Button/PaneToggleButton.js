@@ -2,10 +2,10 @@
 
 
 
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { PureComponent } from "react";
+import PropTypes from "prop-types";
 import AccessibleImage from "../AccessibleImage";
-import { CommandBarButton } from "./index";
+import { CommandBarButton } from "./";
 
 const classnames = require("devtools/client/shared/classnames.js");
 

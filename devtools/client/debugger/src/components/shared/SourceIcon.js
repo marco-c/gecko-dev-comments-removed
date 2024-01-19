@@ -2,19 +2,15 @@
 
 
 
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { PureComponent } from "react";
+import PropTypes from "prop-types";
 
 import { connect } from "../../utils/connect";
 
 import AccessibleImage from "./AccessibleImage";
 
 import { getSourceClassnames } from "../../utils/source";
-import {
-  getSymbols,
-  isSourceBlackBoxed,
-  hasPrettyTab,
-} from "../../selectors/index";
+import { getSymbols, isSourceBlackBoxed, hasPrettyTab } from "../../selectors";
 
 import "./SourceIcon.css";
 

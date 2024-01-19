@@ -2,15 +2,11 @@
 
 
 
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import {
-  div,
-  button,
-  span,
-} from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { PureComponent } from "react";
+import { div, button, span } from "react-dom-factories";
+import PropTypes from "prop-types";
 import { connect } from "../../utils/connect";
-import actions from "../../actions/index";
+import actions from "../../actions";
 import {
   getSelectedSource,
   getSelectedLocation,
@@ -23,11 +19,11 @@ import {
   isSourceOnSourceMapIgnoreList,
   isSourceMapIgnoreListEnabled,
   getSelectedMappedSource,
-} from "../../selectors/index";
+} from "../../selectors";
 
 import { isPretty, getFilename, shouldBlackbox } from "../../utils/source";
 
-import { PaneToggleButton } from "../shared/Button/index";
+import { PaneToggleButton } from "../shared/Button";
 import AccessibleImage from "../shared/AccessibleImage";
 
 const classnames = require("devtools/client/shared/classnames.js");

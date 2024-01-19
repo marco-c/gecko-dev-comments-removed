@@ -3,8 +3,7 @@
 
 
 import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
-import { getSelectedLocation } from "./sources";
-import { getCurrentThread, getSelectedFrame } from "./pause";
+import { getSelectedFrame, getSelectedLocation, getCurrentThread } from ".";
 
 function getGeneratedId(source) {
   if (source.isOriginal) {

@@ -2,11 +2,11 @@
 
 
 
-import React, { Component, memo } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { Component, memo } from "react";
+import PropTypes from "prop-types";
 
 import AccessibleImage from "../../shared/AccessibleImage";
-import { formatDisplayName } from "../../../utils/pause/frames/index";
+import { formatDisplayName } from "../../../utils/pause/frames";
 import { getFilename, getFileURL } from "../../../utils/source";
 import FrameIndent from "./FrameIndent";
 const classnames = require("devtools/client/shared/classnames.js");

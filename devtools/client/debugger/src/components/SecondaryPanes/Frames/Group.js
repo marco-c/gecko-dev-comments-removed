@@ -2,10 +2,10 @@
 
 
 
-import React, { Component } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
-import { getLibraryFromUrl } from "../../../utils/pause/frames/index";
+import { getLibraryFromUrl } from "../../../utils/pause/frames";
 
 import AccessibleImage from "../../shared/AccessibleImage";
 import FrameComponent from "./Frame";

@@ -2,8 +2,8 @@
 
 
 
-import React from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React from "react";
+import PropTypes from "prop-types";
 import "./Badge.css";
 
 class Badge extends React.Component {

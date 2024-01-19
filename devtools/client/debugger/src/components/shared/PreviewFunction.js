@@ -2,14 +2,11 @@
 
 
 
-import { Component } from "devtools/client/shared/vendor/react";
-import {
-  span,
-  button,
-} from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import { Component } from "react";
+import { span, button } from "react-dom-factories";
+import PropTypes from "prop-types";
 
-import { formatDisplayName } from "../../utils/pause/frames/index";
+import { formatDisplayName } from "../../utils/pause/frames";
 
 import "./PreviewFunction.css";
 

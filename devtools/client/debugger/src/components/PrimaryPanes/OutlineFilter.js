@@ -2,13 +2,9 @@
 
 
 
-import { Component } from "devtools/client/shared/vendor/react";
-import {
-  form,
-  div,
-  input,
-} from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import { Component } from "react";
+import { form, div, input } from "react-dom-factories";
+import PropTypes from "prop-types";
 const classnames = require("devtools/client/shared/classnames.js");
 
 import "./OutlineFilter.css";

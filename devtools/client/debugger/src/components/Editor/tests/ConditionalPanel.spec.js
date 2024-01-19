@@ -3,7 +3,7 @@
 
 
 
-import React from "devtools/client/shared/vendor/react";
+import React from "react";
 import { mount } from "enzyme";
 import { ConditionalPanel } from "../ConditionalPanel";
 import * as mocks from "../../../utils/test-mockup";

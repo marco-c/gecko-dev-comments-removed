@@ -2,9 +2,9 @@
 
 
 
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import React from "devtools/client/shared/vendor/react";
-import { div } from "devtools/client/shared/vendor/react-dom-factories";
+import PropTypes from "prop-types";
+import React from "react";
+import { div } from "react-dom-factories";
 const classnames = require("devtools/client/shared/classnames.js");
 import "./Modal.css";
 

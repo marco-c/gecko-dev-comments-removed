@@ -2,7 +2,7 @@
 
 
 
-import { getIsPaused } from "../../selectors/index";
+import { getIsPaused } from "../../selectors";
 
 export function fetchFrames(thread) {
   return async function ({ dispatch, client, getState }) {

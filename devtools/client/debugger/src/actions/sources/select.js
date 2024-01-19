@@ -8,11 +8,11 @@
 
 
 import { setSymbols } from "./symbols";
-import { setInScopeLines } from "../ast/index";
+import { setInScopeLines } from "../ast";
 import { prettyPrintAndSelectSource } from "./prettyPrint";
 import { addTab, closeTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
-import { setBreakableLines } from "./breakableLines";
+import { setBreakableLines } from ".";
 
 import { prefs } from "../../utils/prefs";
 import { isMinified } from "../../utils/source";
@@ -36,7 +36,7 @@ import {
   hasSourceActor,
   hasPrettyTab,
   isSourceActorWithSourceMap,
-} from "../../selectors/index";
+} from "../../selectors";
 
 
 export const setSelectedLocation = (

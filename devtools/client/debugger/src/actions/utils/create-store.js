@@ -9,10 +9,7 @@
 
 
 
-import {
-  createStore,
-  applyMiddleware,
-} from "devtools/client/shared/vendor/redux";
+import { createStore, applyMiddleware } from "redux";
 import { waitUntilService } from "./middleware/wait-service";
 import { log } from "./middleware/log";
 import { promise } from "./middleware/promise";

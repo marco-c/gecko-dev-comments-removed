@@ -2,6 +2,6 @@
 
 
 
-import { connect as reduxConnect } from "devtools/client/shared/vendor/react-redux";
+import { connect as reduxConnect } from "react-redux";
 
 export const connect = reduxConnect;

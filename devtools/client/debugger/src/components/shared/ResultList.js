@@ -2,9 +2,9 @@
 
 
 
-import React, { Component } from "devtools/client/shared/vendor/react";
-import { li, div, ul } from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { Component } from "react";
+import { li, div, ul } from "react-dom-factories";
+import PropTypes from "prop-types";
 
 import AccessibleImage from "./AccessibleImage";
 

@@ -3,7 +3,7 @@
 
 
 import { createFrame } from "./create";
-import { makeBreakpointServerLocationId } from "../../utils/breakpoint/index";
+import { makeBreakpointServerLocationId } from "../../utils/breakpoint";
 
 import Reps from "devtools/client/shared/components/reps/index";
 

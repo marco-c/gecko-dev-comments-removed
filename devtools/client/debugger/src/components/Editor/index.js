@@ -2,11 +2,11 @@
 
 
 
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import { div } from "devtools/client/shared/vendor/react-dom-factories";
-import { bindActionCreators } from "devtools/client/shared/vendor/redux";
-import ReactDOM from "devtools/client/shared/vendor/react-dom";
+import PropTypes from "prop-types";
+import React, { PureComponent } from "react";
+import { div } from "react-dom-factories";
+import { bindActionCreators } from "redux";
+import ReactDOM from "react-dom";
 import { connect } from "../../utils/connect";
 
 import { getLineText, isLineBlackboxed } from "./../../utils/source";
@@ -30,14 +30,14 @@ import {
   isSourceMapIgnoreListEnabled,
   isSourceOnSourceMapIgnoreList,
   isMapScopesEnabled,
-} from "../../selectors/index";
+} from "../../selectors";
 
 
-import actions from "../../actions/index";
+import actions from "../../actions";
 
 import SearchInFileBar from "./SearchInFileBar";
 import HighlightLines from "./HighlightLines";
-import Preview from "./Preview/index";
+import Preview from "./Preview";
 import Breakpoints from "./Breakpoints";
 import ColumnBreakpoints from "./ColumnBreakpoints";
 import DebugLine from "./DebugLine";
@@ -66,7 +66,7 @@ import {
   onMouseOver,
   startOperation,
   endOperation,
-} from "../../utils/editor/index";
+} from "../../utils/editor";
 
 import { resizeToggleButton, resizeBreakpointGutter } from "../../utils/ui";
 

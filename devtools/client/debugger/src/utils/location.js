@@ -3,7 +3,7 @@
 
 
 import { getSelectedLocation } from "./selected-location";
-import { getSource } from "../selectors/index";
+import { getSource } from "../selectors";
 
 
 

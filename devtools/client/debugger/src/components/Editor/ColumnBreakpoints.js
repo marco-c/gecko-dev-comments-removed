@@ -2,9 +2,9 @@
 
 
 
-import React, { Component } from "devtools/client/shared/vendor/react";
-import { div } from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { Component } from "react";
+import { div } from "react-dom-factories";
+import PropTypes from "prop-types";
 
 import ColumnBreakpoint from "./ColumnBreakpoint";
 
@@ -12,10 +12,10 @@ import {
   getSelectedSource,
   visibleColumnBreakpoints,
   isSourceBlackBoxed,
-} from "../../selectors/index";
-import actions from "../../actions/index";
+} from "../../selectors";
+import actions from "../../actions";
 import { connect } from "../../utils/connect";
-import { makeBreakpointId } from "../../utils/breakpoint/index";
+import { makeBreakpointId } from "../../utils/breakpoint";
 
 
 

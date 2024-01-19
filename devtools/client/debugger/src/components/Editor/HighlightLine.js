@@ -2,13 +2,9 @@
 
 
 
-import { Component } from "devtools/client/shared/vendor/react";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import {
-  toEditorLine,
-  endOperation,
-  startOperation,
-} from "../../utils/editor/index";
+import { Component } from "react";
+import PropTypes from "prop-types";
+import { toEditorLine, endOperation, startOperation } from "../../utils/editor";
 import { getDocument, hasDocument } from "../../utils/editor/source-documents";
 
 import { connect } from "../../utils/connect";
@@ -18,7 +14,7 @@ import {
   getSelectedSourceTextContent,
   getPauseCommand,
   getCurrentThread,
-} from "../../selectors/index";
+} from "../../selectors";
 
 function isDebugLine(selectedFrame, selectedLocation) {
   if (!selectedFrame) {

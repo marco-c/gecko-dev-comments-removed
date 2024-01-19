@@ -7,7 +7,7 @@
 
 
 
-import { makeBreakpointId } from "../utils/breakpoint/index";
+import { makeBreakpointId } from "../utils/breakpoint";
 
 export function initialASTState() {
   return {

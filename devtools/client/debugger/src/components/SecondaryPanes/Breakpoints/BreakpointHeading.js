@@ -2,12 +2,12 @@
 
 
 
-import React, { PureComponent } from "devtools/client/shared/vendor/react";
-import { div, span } from "devtools/client/shared/vendor/react-dom-factories";
-import PropTypes from "devtools/client/shared/vendor/react-prop-types";
+import React, { PureComponent } from "react";
+import { div, span } from "react-dom-factories";
+import PropTypes from "prop-types";
 
 import { connect } from "../../../utils/connect";
-import actions from "../../../actions/index";
+import actions from "../../../actions";
 
 import {
   getTruncatedFileName,
@@ -16,7 +16,7 @@ import {
   getFileURL,
 } from "../../../utils/source";
 import { createLocation } from "../../../utils/location";
-import { getFirstSourceActorForGeneratedSource } from "../../../selectors/index";
+import { getFirstSourceActorForGeneratedSource } from "../../../selectors";
 
 import SourceIcon from "../../shared/SourceIcon";
 
