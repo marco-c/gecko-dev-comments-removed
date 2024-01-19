@@ -129,6 +129,14 @@ class IMEStateManager {
 
 
 
+  static nsIWidget* GetWidgetForTextInputHandling() {
+    return sTextInputHandlingWidget;
+  }
+
+  
+
+
+
   static void SetInputContextForChildProcess(BrowserParent* aBrowserParent,
                                              const InputContext& aInputContext,
                                              const InputContextAction& aAction);
