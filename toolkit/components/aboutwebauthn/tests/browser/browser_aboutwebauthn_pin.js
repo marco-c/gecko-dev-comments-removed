@@ -132,6 +132,8 @@ add_task(async function pin_switch_back_and_forth() {
   let info_section = doc.getElementById("token-info-section");
 
   
+  await TestUtils.waitForTick();
+  
   info_tab_button.click();
   
   isnot(info_section.style.display, "none", "info section not visible");
