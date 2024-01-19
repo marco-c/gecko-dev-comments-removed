@@ -2,7 +2,7 @@
 
 
 
-import { Component } from "react";
+import { Component } from "devtools/client/shared/vendor/react";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import { toEditorLine, endOperation, startOperation } from "../../utils/editor";
 import { getDocument, hasDocument } from "../../utils/editor/source-documents";

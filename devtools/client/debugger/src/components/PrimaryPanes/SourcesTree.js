@@ -3,7 +3,10 @@
 
 
 
-import React, { Component, Fragment } from "react";
+import React, {
+  Component,
+  Fragment,
+} from "devtools/client/shared/vendor/react";
 import {
   div,
   button,

@@ -2,7 +2,7 @@
 
 
 
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 import { shallow } from "enzyme";
 import WhyPaused from "../SecondaryPanes/WhyPaused.js";
 

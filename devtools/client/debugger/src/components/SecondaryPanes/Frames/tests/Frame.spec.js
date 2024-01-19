@@ -2,7 +2,7 @@
 
 
 
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 import { shallow, mount } from "enzyme";
 import Frame from "../Frame.js";
 import { makeMockFrame, makeMockSource } from "../../../../utils/test-mockup";

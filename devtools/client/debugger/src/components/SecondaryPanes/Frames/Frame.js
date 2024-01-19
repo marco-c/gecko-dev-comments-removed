@@ -2,7 +2,7 @@
 
 
 
-import React, { Component, memo } from "react";
+import React, { Component, memo } from "devtools/client/shared/vendor/react";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 import AccessibleImage from "../../shared/AccessibleImage";

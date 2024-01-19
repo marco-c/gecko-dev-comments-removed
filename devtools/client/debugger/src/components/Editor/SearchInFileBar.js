@@ -3,7 +3,7 @@
 
 
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import React, { Component } from "react";
+import React, { Component } from "devtools/client/shared/vendor/react";
 import { div } from "devtools/client/shared/vendor/react-dom-factories";
 import { connect } from "../../utils/connect";
 import actions from "../../actions";

@@ -2,7 +2,7 @@
 
 
 
-import React, { PureComponent } from "react";
+import React, { PureComponent } from "devtools/client/shared/vendor/react";
 import {
   div,
   input,

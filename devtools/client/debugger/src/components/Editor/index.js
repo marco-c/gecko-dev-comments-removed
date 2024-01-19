@@ -3,7 +3,7 @@
 
 
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import React, { PureComponent } from "react";
+import React, { PureComponent } from "devtools/client/shared/vendor/react";
 import { div } from "devtools/client/shared/vendor/react-dom-factories";
 import { bindActionCreators } from "devtools/client/shared/vendor/redux";
 import ReactDOM from "devtools/client/shared/vendor/react-dom";

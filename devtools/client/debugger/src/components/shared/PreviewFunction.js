@@ -2,7 +2,7 @@
 
 
 
-import { Component } from "react";
+import { Component } from "devtools/client/shared/vendor/react";
 import {
   span,
   button,
