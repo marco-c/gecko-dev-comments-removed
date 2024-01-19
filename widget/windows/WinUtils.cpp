@@ -1466,26 +1466,14 @@ static bool IsTabletDevice() {
   return false;
 }
 
-static bool IsMousePresent() {
-  if (!::GetSystemMetrics(SM_MOUSEPRESENT)) {
-    return false;
-  }
-
-  DWORD count = InputDeviceUtils::CountMouseDevices();
-  if (!count) {
-    return false;
-  }
-
+static bool SystemHasMouse() {
   
   
   
   
-  if (count == 1 &&
-      (WinUtils::IsTouchDeviceSupportPresent() || IsTabletDevice())) {
-    return false;
-  }
-
-  return true;
+  
+  
+  return !!::GetSystemMetrics(SM_MOUSEPRESENT);
 }
 
 
@@ -1494,7 +1482,7 @@ PointerCapabilities WinUtils::GetPrimaryPointerCapabilities() {
     return PointerCapabilities::Coarse;
   }
 
-  if (IsMousePresent()) {
+  if (SystemHasMouse()) {
     return PointerCapabilities::Fine | PointerCapabilities::Hover;
   }
 
@@ -1515,16 +1503,6 @@ static bool SystemHasPenDigitizer() {
   int digitizerMetrics = ::GetSystemMetrics(SM_DIGITIZER);
   return (digitizerMetrics & NID_INTEGRATED_PEN) ||
          (digitizerMetrics & NID_EXTERNAL_PEN);
-}
-
-static bool SystemHasMouse() {
-  
-  
-  
-  
-  
-  
-  return !!::GetSystemMetrics(SM_MOUSEPRESENT);
 }
 
 
