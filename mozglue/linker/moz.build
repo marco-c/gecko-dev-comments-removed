@@ -4,18 +4,12 @@
 
 
 
-if CONFIG["MOZ_LINKER"]:
-    SOURCES += [
-        "BaseElf.cpp",
-        "CustomElf.cpp",
-        "ElfLoader.cpp",
-        "Mappable.cpp",
-    ]
-
-
-
 SOURCES += [
+    "BaseElf.cpp",
+    "CustomElf.cpp",
+    "ElfLoader.cpp",
     "Logging.cpp",
+    "Mappable.cpp",
     "Zip.cpp",
 ]
 
