@@ -628,8 +628,8 @@ void nsStyleList::TriggerImageLoads(Document& aDocument,
       aDocument, aOldStyle ? &aOldStyle->mListStyleImage : nullptr);
 }
 
-nsChangeHint nsStyleList::CalcDifference(
-    const nsStyleList& aNewData, const nsStyleDisplay& aOldDisplay) const {
+nsChangeHint nsStyleList::CalcDifference(const nsStyleList& aNewData,
+                                         const ComputedStyle& aOldStyle) const {
   
   
   if (mQuotes != aNewData.mQuotes) {
@@ -640,22 +640,15 @@ nsChangeHint nsStyleList::CalcDifference(
   
   
   
-  
-  
-  if (aOldDisplay.IsListItem()) {
-    if (mListStylePosition != aNewData.mListStylePosition ||
-        mCounterStyle != aNewData.mCounterStyle ||
-        mListStyleImage != aNewData.mListStyleImage) {
+  if (mListStylePosition != aNewData.mListStylePosition ||
+      mCounterStyle != aNewData.mCounterStyle ||
+      mListStyleImage != aNewData.mListStyleImage) {
+    if (aOldStyle.StyleDisplay()->IsListItem()) {
       return nsChangeHint_ReconstructFrame;
     }
-  } else if (mListStylePosition != aNewData.mListStylePosition ||
-             mCounterStyle != aNewData.mCounterStyle) {
+    
+    
     hint = nsChangeHint_NeutralChange;
-  }
-  
-  
-  if (mListStyleImage != aNewData.mListStyleImage) {
-    return NS_STYLE_HINT_REFLOW;
   }
   return hint;
 }
@@ -1152,8 +1145,7 @@ static bool IsAutonessEqual(const StyleRect<LengthPercentageOrAuto>& aSides1,
 }
 
 nsChangeHint nsStylePosition::CalcDifference(
-    const nsStylePosition& aNewData,
-    const nsStyleVisibility& aOldStyleVisibility) const {
+    const nsStylePosition& aNewData, const ComputedStyle& aOldStyle) const {
   if (mGridTemplateColumns.IsMasonry() !=
           aNewData.mGridTemplateColumns.IsMasonry() ||
       mGridTemplateRows.IsMasonry() != aNewData.mGridTemplateRows.IsMasonry()) {
@@ -1271,17 +1263,18 @@ nsChangeHint nsStylePosition::CalcDifference(
                        mMinHeight != aNewData.mMinHeight ||
                        mMaxHeight != aNewData.mMaxHeight;
 
-  
-  
-  
-  bool isVertical = aOldStyleVisibility.mWritingMode !=
-                    StyleWritingModeProperty::HorizontalTb;
-  if (isVertical ? widthChanged : heightChanged) {
-    hint |= nsChangeHint_ReflowHintsForBSizeChange;
-  }
-
-  if (isVertical ? heightChanged : widthChanged) {
-    hint |= nsChangeHint_ReflowHintsForISizeChange;
+  if (widthChanged || heightChanged) {
+    
+    
+    
+    const bool isVertical = aOldStyle.StyleVisibility()->mWritingMode !=
+                            StyleWritingModeProperty::HorizontalTb;
+    if (isVertical ? widthChanged : heightChanged) {
+      hint |= nsChangeHint_ReflowHintsForBSizeChange;
+    }
+    if (isVertical ? heightChanged : widthChanged) {
+      hint |= nsChangeHint_ReflowHintsForISizeChange;
+    }
   }
 
   if (mAspectRatio != aNewData.mAspectRatio) {
@@ -2254,7 +2247,7 @@ static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
 }
 
 nsChangeHint nsStyleDisplay::CalcDifference(
-    const nsStyleDisplay& aNewData, const nsStylePosition& aOldPosition) const {
+    const nsStyleDisplay& aNewData, const ComputedStyle& aOldStyle) const {
   if (mDisplay != aNewData.mDisplay || mContain != aNewData.mContain ||
       (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None) ||
       mTopLayer != aNewData.mTopLayer || mResize != aNewData.mResize) {
@@ -2489,7 +2482,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     
     
     if (IsAbsolutelyPositionedStyle() &&
-        aOldPosition.NeedsHypotheticalPositionIfAbsPos()) {
+        aOldStyle.StylePosition()->NeedsHypotheticalPositionIfAbsPos()) {
       hint |=
           nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
     } else {
