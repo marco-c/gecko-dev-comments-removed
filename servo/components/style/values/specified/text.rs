@@ -14,12 +14,12 @@ use crate::values::generics::text::{GenericTextDecorationLength, GenericTextInde
 use crate::values::specified::length::{Length, LengthPercentage};
 use crate::values::specified::{AllowQuirks, Integer, Number};
 use cssparser::{Parser, Token};
+use icu_segmenter::GraphemeClusterSegmenter;
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
 use style_traits::values::SequenceWriter;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 use style_traits::{KeywordsCollectFn, SpecifiedValueInfo};
-use unicode_segmentation::UnicodeSegmentation;
 
 
 pub type InitialLetter = GenericInitialLetter<Number, Integer>;
@@ -668,9 +668,8 @@ impl ToComputedValue for TextEmphasisStyle {
                 
                 
                 
-                
-                let s = s.graphemes(true).next().unwrap_or("").to_string();
-                ComputedTextEmphasisStyle::String(s.into())
+                let first_grapheme_end = GraphemeClusterSegmenter::new().segment_str(s).nth(1).unwrap_or(0);
+                ComputedTextEmphasisStyle::String(s[0..first_grapheme_end].to_string().into())
             },
         }
     }
