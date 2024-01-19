@@ -122,7 +122,7 @@ add_task(async function viewContainsStaleRows() {
   
   let items = Array.from(
     UrlbarTestUtils.getResultsContainer(window).children
-  ).filter(r => BrowserTestUtils.is_visible(r));
+  ).filter(r => BrowserTestUtils.isVisible(r));
   Assert.equal(items.length, maxResults);
 
   

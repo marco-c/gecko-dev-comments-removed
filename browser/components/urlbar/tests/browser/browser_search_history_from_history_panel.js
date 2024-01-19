@@ -32,7 +32,7 @@ add_task(async function searchHistoryFromHistoryPanel() {
   
   let searchHistoryButton = document.getElementById("appMenuSearchHistory");
   ok(
-    BrowserTestUtils.is_visible(
+    BrowserTestUtils.isVisible(
       searchHistoryButton,
       "'Search History Button' is visible."
     )
@@ -72,7 +72,7 @@ add_task(async function searchHistoryFromAppMenuHistoryButton() {
   
   let searchHistoryButton = document.getElementById("appMenuSearchHistory");
   ok(
-    BrowserTestUtils.is_visible(
+    BrowserTestUtils.isVisible(
       searchHistoryButton,
       "'Search History Button' is visible."
     )

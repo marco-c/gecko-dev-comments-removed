@@ -37,7 +37,7 @@ add_task(async function () {
       
       await BrowserTestUtils.waitForCondition(() => {
         let preview = document.querySelector(".printPreviewBrowser");
-        return preview && BrowserTestUtils.is_visible(preview);
+        return preview && BrowserTestUtils.isVisible(preview);
       });
 
       ok(true, "Entered print preview mode");

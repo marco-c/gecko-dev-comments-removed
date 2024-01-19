@@ -39,7 +39,7 @@ add_task(async function testSwitchToTabTextDisplay() {
 
   
   const extensionText = document.getElementById("urlbar-label-extension");
-  Assert.ok(BrowserTestUtils.is_visible(extensionText));
+  Assert.ok(BrowserTestUtils.isVisible(extensionText));
   Assert.equal(extensionText.value, "Extension:");
 
   
