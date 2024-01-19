@@ -544,17 +544,8 @@ Mappable* ElfLoader::GetMappableFromPath(const char* path) {
     free(zip_path);
     Zip::Stream s;
     if (zip && zip->GetStream(subpath, &s)) {
-      
-
-
-
-      const char* extract = getenv("MOZ_LINKER_EXTRACT");
-      if (extract && !strncmp(extract, "1", 2 ))
-        mappable = MappableExtractFile::Create(name, zip, &s);
-      if (!mappable) {
-        if (s.GetType() == Zip::Stream::DEFLATE) {
-          mappable = MappableDeflate::Create(name, zip, &s);
-        }
+      if (s.GetType() == Zip::Stream::DEFLATE) {
+        mappable = MappableDeflate::Create(name, zip, &s);
       }
     }
   }

@@ -6,8 +6,6 @@
 #define Mappable_h
 
 #include "Zip.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "zlib.h"
 
 
@@ -26,7 +24,6 @@ class Mappable : public mozilla::RefCounted<Mappable> {
 
   enum Kind {
     MAPPABLE_FILE,
-    MAPPABLE_EXTRACT_FILE,
     MAPPABLE_DEFLATE,
     MAPPABLE_SEEKABLE_ZSTREAM
   };
@@ -79,45 +76,6 @@ class MappableFile : public Mappable {
  private:
   
   AutoCloseFD fd;
-};
-
-
-
-
-
-class MappableExtractFile : public MappableFile {
- public:
-  ~MappableExtractFile() = default;
-
-  
-
-
-
-  static Mappable* Create(const char* name, Zip* zip, Zip::Stream* stream);
-
-  
-  virtual void finalize() {}
-
-  virtual Kind GetKind() const { return MAPPABLE_EXTRACT_FILE; };
-
- private:
-  
-
-
-
-  struct UnlinkFile {
-    void operator()(char* value) {
-      unlink(value);
-      delete[] value;
-    }
-  };
-  typedef mozilla::UniquePtr<char[], UnlinkFile> AutoUnlinkFile;
-
-  MappableExtractFile(int fd, const char* path)
-      : MappableFile(fd), path(path) {}
-
-  
-  mozilla::UniquePtr<const char[]> path;
 };
 
 class _MappableBuffer;
