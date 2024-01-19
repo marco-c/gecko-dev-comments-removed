@@ -26,8 +26,6 @@ XPCOMUtils.defineLazyServiceGetter(
 const oneHour = 3600000000;
 const fiveHours = oneHour * 5;
 
-const itemsToClear = ["cookies", "offlineApps"];
-
 function waitForUnregister(host) {
   return new Promise(resolve => {
     let listener = {
@@ -54,192 +52,198 @@ function moveOriginInTime(principals, endDate, host) {
   return false;
 }
 
-add_task(async function testWithRange() {
-  
-  
-  
-  PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_ABORT/);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.serviceWorkers.enabled", true],
-      ["dom.serviceWorkers.exemptFromPerDomainMax", true],
-      ["dom.serviceWorkers.testing.enabled", true],
-    ],
-  });
 
-  
-  
-  sas.testOnlyReset();
+let prefs = [["cookiesAndStorage"], ["cookies", "offlineApps"]];
 
-  let endDate = Date.now() * 1000;
-  let principals = sas.getActiveOrigins(endDate - oneHour, endDate);
-  is(principals.length, 0, "starting from clear activity state");
+for (let itemsToClear of prefs) {
+  add_task(async function testWithRange() {
+    
+    
+    
+    PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_ABORT/);
 
-  info("sanitize: " + itemsToClear.join(", "));
-  await Sanitizer.sanitize(itemsToClear, { ignoreTimespan: false });
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["dom.serviceWorkers.enabled", true],
+        ["dom.serviceWorkers.exemptFromPerDomainMax", true],
+        ["dom.serviceWorkers.testing.enabled", true],
+      ],
+    });
 
-  await createDummyDataForHost("example.org");
-  await createDummyDataForHost("example.com");
+    
+    
+    sas.testOnlyReset();
 
-  endDate = Date.now() * 1000;
-  principals = sas.getActiveOrigins(endDate - oneHour, endDate);
-  ok(!!principals, "We have an active origin.");
-  ok(principals.length >= 2, "We have an active origin.");
+    let endDate = Date.now() * 1000;
+    let principals = sas.getActiveOrigins(endDate - oneHour, endDate);
+    is(principals.length, 0, "starting from clear activity state");
 
-  let found = 0;
-  for (let i = 0; i < principals.length; ++i) {
-    let principal = principals.queryElementAt(i, Ci.nsIPrincipal);
-    if (principal.host == "example.org" || principal.host == "example.com") {
-      found++;
+    info("sanitize: " + itemsToClear.join(", "));
+    await Sanitizer.sanitize(itemsToClear, { ignoreTimespan: false });
+
+    await createDummyDataForHost("example.org");
+    await createDummyDataForHost("example.com");
+
+    endDate = Date.now() * 1000;
+    principals = sas.getActiveOrigins(endDate - oneHour, endDate);
+    ok(!!principals, "We have an active origin.");
+    ok(principals.length >= 2, "We have an active origin.");
+
+    let found = 0;
+    for (let i = 0; i < principals.length; ++i) {
+      let principal = principals.queryElementAt(i, Ci.nsIPrincipal);
+      if (principal.host == "example.org" || principal.host == "example.com") {
+        found++;
+      }
     }
-  }
 
-  is(found, 2, "Our origins are active.");
+    is(found, 2, "Our origins are active.");
 
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.org"),
-    "We have indexedDB data for example.org"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.org"),
-    "We have serviceWorker data for example.org"
-  );
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.org"),
+      "We have indexedDB data for example.org"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.org"),
+      "We have serviceWorker data for example.org"
+    );
 
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
-    "We have indexedDB data for example.com"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.com"),
-    "We have serviceWorker data for example.com"
-  );
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+      "We have indexedDB data for example.com"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.com"),
+      "We have serviceWorker data for example.com"
+    );
 
-  
-  ok(
-    moveOriginInTime(principals, endDate, "example.com"),
-    "Operation completed!"
-  );
+    
+    ok(
+      moveOriginInTime(principals, endDate, "example.com"),
+      "Operation completed!"
+    );
 
-  let p = waitForUnregister("example.org");
+    let p = waitForUnregister("example.org");
 
-  
-  info("sanitize: " + itemsToClear.join(", "));
-  await Sanitizer.sanitize(itemsToClear, { ignoreTimespan: false });
-  await p;
+    
+    info("sanitize: " + itemsToClear.join(", "));
+    await Sanitizer.sanitize(itemsToClear, { ignoreTimespan: false });
+    await p;
 
-  ok(
-    !(await SiteDataTestUtils.hasIndexedDB("https://example.org")),
-    "We don't have indexedDB data for example.org"
-  );
-  ok(
-    !SiteDataTestUtils.hasServiceWorkers("https://example.org"),
-    "We don't have serviceWorker data for example.org"
-  );
+    ok(
+      !(await SiteDataTestUtils.hasIndexedDB("https://example.org")),
+      "We don't have indexedDB data for example.org"
+    );
+    ok(
+      !SiteDataTestUtils.hasServiceWorkers("https://example.org"),
+      "We don't have serviceWorker data for example.org"
+    );
 
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
-    "We still have indexedDB data for example.com"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.com"),
-    "We still have serviceWorker data for example.com"
-  );
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+      "We still have indexedDB data for example.com"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.com"),
+      "We still have serviceWorker data for example.com"
+    );
 
-  
-  
-  ok(
-    moveOriginInTime(principals, endDate, "example.com"),
-    "Operation completed!"
-  );
+    
+    
+    ok(
+      moveOriginInTime(principals, endDate, "example.com"),
+      "Operation completed!"
+    );
 
-  
-  info("sanitize again to ensure clearing doesn't expand the activity scope");
-  await Sanitizer.sanitize(itemsToClear, { ignoreTimespan: false });
+    
+    info("sanitize again to ensure clearing doesn't expand the activity scope");
+    await Sanitizer.sanitize(itemsToClear, { ignoreTimespan: false });
 
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
-    "We still have indexedDB data for example.com"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.com"),
-    "We still have serviceWorker data for example.com"
-  );
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+      "We still have indexedDB data for example.com"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.com"),
+      "We still have serviceWorker data for example.com"
+    );
 
-  ok(
-    !(await SiteDataTestUtils.hasIndexedDB("https://example.org")),
-    "We don't have indexedDB data for example.org"
-  );
-  ok(
-    !SiteDataTestUtils.hasServiceWorkers("https://example.org"),
-    "We don't have serviceWorker data for example.org"
-  );
+    ok(
+      !(await SiteDataTestUtils.hasIndexedDB("https://example.org")),
+      "We don't have indexedDB data for example.org"
+    );
+    ok(
+      !SiteDataTestUtils.hasServiceWorkers("https://example.org"),
+      "We don't have serviceWorker data for example.org"
+    );
 
-  sas.testOnlyReset();
+    sas.testOnlyReset();
 
-  
-  await SiteDataTestUtils.clear();
-});
-
-add_task(async function testExceptionsOnShutdown() {
-  await createDummyDataForHost("example.org");
-  await createDummyDataForHost("example.com");
-
-  
-  let originALLOW = "https://example.org";
-  PermissionTestUtils.add(
-    originALLOW,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
-  );
-
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.org"),
-    "We have indexedDB data for example.org"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.org"),
-    "We have serviceWorker data for example.org"
-  );
-
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.com"),
-    "We have indexedDB data for example.com"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.com"),
-    "We have serviceWorker data for example.com"
-  );
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.sanitizer.loglevel", "All"],
-      ["privacy.clearOnShutdown.offlineApps", true],
-      ["privacy.sanitize.sanitizeOnShutdown", true],
-    ],
+    
+    await SiteDataTestUtils.clear();
   });
-  
-  await Sanitizer.runSanitizeOnShutdown();
-  
-  ok(
-    await SiteDataTestUtils.hasIndexedDB("https://example.org"),
-    "We still have indexedDB data for example.org"
-  );
-  ok(
-    SiteDataTestUtils.hasServiceWorkers("https://example.org"),
-    "We still have serviceWorker data for example.org"
-  );
-  
-  ok(
-    !(await SiteDataTestUtils.hasIndexedDB("https://example.com")),
-    "We don't have indexedDB data for example.com"
-  );
-  ok(
-    !SiteDataTestUtils.hasServiceWorkers("https://example.com"),
-    "We don't have serviceWorker data for example.com"
-  );
 
-  
-  await SiteDataTestUtils.clear();
-  Services.perms.removeAll();
-});
+  add_task(async function testExceptionsOnShutdown() {
+    await createDummyDataForHost("example.org");
+    await createDummyDataForHost("example.com");
+
+    
+    let originALLOW = "https://example.org";
+    PermissionTestUtils.add(
+      originALLOW,
+      "cookie",
+      Ci.nsICookiePermission.ACCESS_ALLOW
+    );
+
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.org"),
+      "We have indexedDB data for example.org"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.org"),
+      "We have serviceWorker data for example.org"
+    );
+
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.com"),
+      "We have indexedDB data for example.com"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.com"),
+      "We have serviceWorker data for example.com"
+    );
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.sanitizer.loglevel", "All"],
+        ["privacy.clearOnShutdown.offlineApps", true],
+        ["privacy.sanitize.sanitizeOnShutdown", true],
+      ],
+    });
+    
+    await Sanitizer.runSanitizeOnShutdown();
+    
+    ok(
+      await SiteDataTestUtils.hasIndexedDB("https://example.org"),
+      "We still have indexedDB data for example.org"
+    );
+    ok(
+      SiteDataTestUtils.hasServiceWorkers("https://example.org"),
+      "We still have serviceWorker data for example.org"
+    );
+    
+    ok(
+      !(await SiteDataTestUtils.hasIndexedDB("https://example.com")),
+      "We don't have indexedDB data for example.com"
+    );
+    ok(
+      !SiteDataTestUtils.hasServiceWorkers("https://example.com"),
+      "We don't have serviceWorker data for example.com"
+    );
+
+    
+    await SiteDataTestUtils.clear();
+    Services.perms.removeAll();
+  });
+}

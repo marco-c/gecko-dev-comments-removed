@@ -4,129 +4,133 @@
 
 
 add_task(async function sanitizeStorageAccessPermissions() {
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
-  });
+  let categories = ["history", "historyAndFormData"];
 
-  await SiteDataTestUtils.addToIndexedDB("https://sub.example.org");
-  await SiteDataTestUtils.addToCookies({ origin: "https://example.com" });
+  for (let pref of categories) {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+    });
 
-  PermissionTestUtils.add(
-    "https://example.org",
-    "storageAccessAPI",
-    Services.perms.ALLOW_ACTION
-  );
-  PermissionTestUtils.add(
-    "https://example.com",
-    "storageAccessAPI",
-    Services.perms.ALLOW_ACTION
-  );
-  PermissionTestUtils.add(
-    "http://mochi.test",
-    "storageAccessAPI",
-    Services.perms.ALLOW_ACTION
-  );
+    await SiteDataTestUtils.addToIndexedDB("https://sub.example.org");
+    await SiteDataTestUtils.addToCookies({ origin: "https://example.com" });
 
-  
-  
-  
-  await new Promise(c => setTimeout(c, 100));
-  let timestamp = Date.now();
-  
-  await new Promise(c => setTimeout(c, 100));
+    PermissionTestUtils.add(
+      "https://example.org",
+      "storageAccessAPI",
+      Services.perms.ALLOW_ACTION
+    );
+    PermissionTestUtils.add(
+      "https://example.com",
+      "storageAccessAPI",
+      Services.perms.ALLOW_ACTION
+    );
+    PermissionTestUtils.add(
+      "http://mochi.test",
+      "storageAccessAPI",
+      Services.perms.ALLOW_ACTION
+    );
 
-  PermissionTestUtils.add(
-    "http://example.net",
-    "storageAccessAPI",
-    Services.perms.ALLOW_ACTION
-  );
-
-  await Sanitizer.sanitize(["history"], {
     
-    range: [timestamp * 1000, Date.now() * 1000],
-  });
+    
+    
+    await new Promise(c => setTimeout(c, 100));
+    let timestamp = Date.now();
+    
+    await new Promise(c => setTimeout(c, 100));
 
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
+    PermissionTestUtils.add(
       "http://example.net",
-      "storageAccessAPI"
-    ),
-    Services.perms.UNKNOWN_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "http://mochi.test",
-      "storageAccessAPI"
-    ),
-    Services.perms.ALLOW_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "https://example.com",
-      "storageAccessAPI"
-    ),
-    Services.perms.ALLOW_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "https://example.org",
-      "storageAccessAPI"
-    ),
-    Services.perms.ALLOW_ACTION
-  );
+      "storageAccessAPI",
+      Services.perms.ALLOW_ACTION
+    );
 
-  await Sanitizer.sanitize(["history"]);
+    await Sanitizer.sanitize([pref], {
+      
+      range: [timestamp * 1000, Date.now() * 1000],
+    });
 
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "http://mochi.test",
-      "storageAccessAPI"
-    ),
-    Services.perms.UNKNOWN_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "http://example.net",
-      "storageAccessAPI"
-    ),
-    Services.perms.UNKNOWN_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "https://example.com",
-      "storageAccessAPI"
-    ),
-    Services.perms.ALLOW_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "https://example.org",
-      "storageAccessAPI"
-    ),
-    Services.perms.ALLOW_ACTION
-  );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "http://example.net",
+        "storageAccessAPI"
+      ),
+      Services.perms.UNKNOWN_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "http://mochi.test",
+        "storageAccessAPI"
+      ),
+      Services.perms.ALLOW_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "https://example.com",
+        "storageAccessAPI"
+      ),
+      Services.perms.ALLOW_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "https://example.org",
+        "storageAccessAPI"
+      ),
+      Services.perms.ALLOW_ACTION
+    );
 
-  await Sanitizer.sanitize(["history", "siteSettings"]);
+    await Sanitizer.sanitize([pref]);
 
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "http://mochi.test",
-      "storageAccessAPI"
-    ),
-    Services.perms.UNKNOWN_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "https://example.com",
-      "storageAccessAPI"
-    ),
-    Services.perms.UNKNOWN_ACTION
-  );
-  Assert.equal(
-    PermissionTestUtils.testExactPermission(
-      "https://example.org",
-      "storageAccessAPI"
-    ),
-    Services.perms.UNKNOWN_ACTION
-  );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "http://mochi.test",
+        "storageAccessAPI"
+      ),
+      Services.perms.UNKNOWN_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "http://example.net",
+        "storageAccessAPI"
+      ),
+      Services.perms.UNKNOWN_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "https://example.com",
+        "storageAccessAPI"
+      ),
+      Services.perms.ALLOW_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "https://example.org",
+        "storageAccessAPI"
+      ),
+      Services.perms.ALLOW_ACTION
+    );
+
+    await Sanitizer.sanitize([pref, "siteSettings"]);
+
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "http://mochi.test",
+        "storageAccessAPI"
+      ),
+      Services.perms.UNKNOWN_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "https://example.com",
+        "storageAccessAPI"
+      ),
+      Services.perms.UNKNOWN_ACTION
+    );
+    Assert.equal(
+      PermissionTestUtils.testExactPermission(
+        "https://example.org",
+        "storageAccessAPI"
+      ),
+      Services.perms.UNKNOWN_ACTION
+    );
+  }
 });

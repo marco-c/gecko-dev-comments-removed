@@ -2,6 +2,10 @@ const { SiteDataTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SiteDataTestUtils.sys.mjs"
 );
 
+
+
+let prefs = [["cookiesAndStorage"], ["cookies", "offlineApps"]];
+
 function checkDataForAboutURL() {
   return new Promise(resolve => {
     let data = true;
@@ -20,82 +24,88 @@ function checkDataForAboutURL() {
   });
 }
 
-add_task(async function deleteStorageInAboutURL() {
-  info("Test about:newtab");
+for (let itemsToClear of prefs) {
+  add_task(async function deleteStorageInAboutURL() {
+    info("Test about:newtab");
 
-  
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+    
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+    });
+
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.sanitizer.loglevel", "All"]],
+    });
+
+    
+    await SiteDataTestUtils.addToIndexedDB("about:newtab", "foo", "bar", {});
+
+    ok(await checkDataForAboutURL(), "We have data for about:newtab");
+
+    
+    await Sanitizer.runSanitizeOnShutdown();
+
+    ok(await checkDataForAboutURL(), "about:newtab data is not deleted.");
+
+    
+    await Sanitizer.sanitize(itemsToClear);
+
+    let principal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        "about:newtab"
+      );
+    await new Promise(aResolve => {
+      let req = Services.qms.clearStoragesForPrincipal(principal);
+      req.callback = () => {
+        aResolve();
+      };
+    });
   });
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.sanitizer.loglevel", "All"]],
-  });
+  add_task(async function deleteStorageOnlyCustomPermissionInAboutURL() {
+    info("Test about:newtab + permissions");
 
-  
-  await SiteDataTestUtils.addToIndexedDB("about:newtab", "foo", "bar", {});
+    
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+    });
 
-  ok(await checkDataForAboutURL(), "We have data for about:newtab");
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.sanitizer.loglevel", "All"]],
+    });
 
-  
-  await Sanitizer.runSanitizeOnShutdown();
-
-  ok(await checkDataForAboutURL(), "about:newtab data is not deleted.");
-
-  
-  await Sanitizer.sanitize(["cookies", "offlineApps"]);
-
-  let principal =
-    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      "about:newtab"
+    
+    let uri = Services.io.newURI("about:newtab");
+    PermissionTestUtils.add(
+      uri,
+      "cookie",
+      Ci.nsICookiePermission.ACCESS_SESSION
     );
-  await new Promise(aResolve => {
-    let req = Services.qms.clearStoragesForPrincipal(principal);
-    req.callback = () => {
-      aResolve();
-    };
+
+    
+    await SiteDataTestUtils.addToIndexedDB("about:newtab", "foo", "bar", {});
+
+    ok(await checkDataForAboutURL(), "We have data for about:newtab");
+
+    
+    await Sanitizer.runSanitizeOnShutdown();
+
+    ok(await checkDataForAboutURL(), "about:newtab data is not deleted.");
+
+    
+    await Sanitizer.sanitize(itemsToClear);
+
+    let principal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        "about:newtab"
+      );
+    await new Promise(aResolve => {
+      let req = Services.qms.clearStoragesForPrincipal(principal);
+      req.callback = () => {
+        aResolve();
+      };
+    });
+
+    PermissionTestUtils.remove(uri, "cookie");
   });
-});
-
-add_task(async function deleteStorageOnlyCustomPermissionInAboutURL() {
-  info("Test about:newtab + permissions");
-
-  
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.sanitizer.loglevel", "All"]],
-  });
-
-  
-  let uri = Services.io.newURI("about:newtab");
-  PermissionTestUtils.add(uri, "cookie", Ci.nsICookiePermission.ACCESS_SESSION);
-
-  
-  await SiteDataTestUtils.addToIndexedDB("about:newtab", "foo", "bar", {});
-
-  ok(await checkDataForAboutURL(), "We have data for about:newtab");
-
-  
-  await Sanitizer.runSanitizeOnShutdown();
-
-  ok(await checkDataForAboutURL(), "about:newtab data is not deleted.");
-
-  
-  await Sanitizer.sanitize(["cookies", "offlineApps"]);
-
-  let principal =
-    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      "about:newtab"
-    );
-  await new Promise(aResolve => {
-    let req = Services.qms.clearStoragesForPrincipal(principal);
-    req.callback = () => {
-      aResolve();
-    };
-  });
-
-  PermissionTestUtils.remove(uri, "cookie");
-});
+}
