@@ -29,19 +29,6 @@ function getIconFile() {
   });
 }
 
-async function openTabInUserContext(uri, userContextId) {
-  
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
-
-  
-  gBrowser.selectedTab = tab;
-  tab.ownerGlobal.focus();
-
-  let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
-  return { tab, browser };
-}
-
 function loadIndexHandler(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "Ok");
   response.setHeader("Content-Type", "text/html", false);

@@ -40,28 +40,13 @@ add_setup(async function () {
   });
 });
 
-
-
-async function openTabInUserContext(uri, userContextId) {
-  
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
-
-  
-  gBrowser.selectedTab = tab;
-  tab.ownerGlobal.focus();
-
-  let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
-  return tab;
-}
-
 add_task(async function test() {
   for (
     let userContextId = 0;
     userContextId < NUM_USER_CONTEXTS;
     userContextId++
   ) {
-    let tab = await openTabInUserContext(FILE_URI, userContextId);
+    let { tab } = await openTabInUserContext(FILE_URI, userContextId);
     gBrowser.removeTab(tab);
   }
   is(

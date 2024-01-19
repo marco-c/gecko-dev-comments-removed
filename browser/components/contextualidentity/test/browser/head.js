@@ -55,6 +55,7 @@ function loadTestSubscript(filePath) {
 
 
 
+
 async function openTabInUserContext(uri, userContextId) {
   let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
 
@@ -63,5 +64,5 @@ async function openTabInUserContext(uri, userContextId) {
 
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
-  return tab;
+  return { tab, browser };
 }

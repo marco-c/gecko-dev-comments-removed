@@ -16,19 +16,6 @@ const USER_CONTEXTS = ["default", "personal"];
 
 
 
-async function openTabInUserContext(uri, userContextId) {
-  
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
-
-  
-  gBrowser.selectedTab = tab;
-  tab.ownerGlobal.focus();
-
-  let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
-  return { tab, browser };
-}
-
 
 async function setupIndexedDB(browser) {
   await SpecialPowers.spawn(

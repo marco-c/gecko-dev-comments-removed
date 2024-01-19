@@ -20,19 +20,6 @@ const TESTKEY = {
 const USER_ID_DEFAULT = 0;
 const USER_ID_PERSONAL = 1;
 
-async function openTabInUserContext(uri, userContextId) {
-  
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
-
-  
-  gBrowser.selectedTab = tab;
-  tab.ownerGlobal.focus();
-
-  let browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
-  return { tab, browser };
-}
-
 function HexToBase64(hex) {
   var bin = "";
   for (var i = 0; i < hex.length; i += 2) {
