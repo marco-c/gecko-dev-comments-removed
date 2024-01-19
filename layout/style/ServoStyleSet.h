@@ -523,7 +523,8 @@ class ServoStyleSet {
 
 
 
-  void MaybeInvalidateForElementAppend(const dom::Element&);
+
+  void MaybeInvalidateForElementAppend(const nsIContent&);
 
   
 
