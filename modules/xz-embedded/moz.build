@@ -21,15 +21,10 @@ UNIFIED_SOURCES += [
 
 AllowCompilerWarnings()
 
-if CONFIG['CPU_ARCH'] == 'arm':
-    
-    if CONFIG['MOZ_THUMB2']:
-        DEFINES['XZ_DEC_ARMTHUMB'] = 1
-    else:
-        DEFINES['XZ_DEC_ARM'] = 1
-elif CONFIG['INTEL_ARCHITECTURE']:
-    
-    DEFINES['XZ_DEC_X86'] = 1
+
+DEFINES['XZ_DEC_ARM'] = 1
+
+DEFINES['XZ_DEC_X86'] = 1
 
 DEFINES['XZ_USE_CRC64'] = 1
 
