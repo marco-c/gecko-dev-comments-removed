@@ -2,7 +2,7 @@
 
 
 
-import React, { Component } from "react";
+import React, { Component } from "devtools/client/shared/vendor/react";
 import {
   div,
   ul,

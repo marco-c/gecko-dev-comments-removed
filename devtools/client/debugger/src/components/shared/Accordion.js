@@ -2,7 +2,7 @@
 
 
 
-import { cloneElement, Component } from "react";
+import { cloneElement, Component } from "devtools/client/shared/vendor/react";
 import {
   aside,
   button,

@@ -2,7 +2,7 @@
 
 
 
-import { PureComponent } from "react";
+import { PureComponent } from "devtools/client/shared/vendor/react";
 import {
   div,
   textarea,

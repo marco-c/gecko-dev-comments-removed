@@ -2,7 +2,7 @@
 
 
 
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 import { mount, shallow } from "enzyme";
 import Frames from "../index.js";
 

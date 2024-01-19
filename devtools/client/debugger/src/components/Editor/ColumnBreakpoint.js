@@ -2,7 +2,7 @@
 
 
 
-import { PureComponent } from "react";
+import { PureComponent } from "devtools/client/shared/vendor/react";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 import { getDocument } from "../../utils/editor";

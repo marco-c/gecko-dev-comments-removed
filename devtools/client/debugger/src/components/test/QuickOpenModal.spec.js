@@ -3,7 +3,7 @@
 
 
 
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 import { Provider } from "devtools/client/shared/vendor/react-redux";
 import configureStore from "redux-mock-store";
 import { shallow, mount } from "enzyme";

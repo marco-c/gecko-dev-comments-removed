@@ -3,7 +3,7 @@
 
 
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 import { div } from "devtools/client/shared/vendor/react-dom-factories";
 const classnames = require("devtools/client/shared/classnames.js");
 import "./Modal.css";

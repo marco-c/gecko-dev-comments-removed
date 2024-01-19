@@ -2,7 +2,7 @@
 
 
 
-import React, { Component } from "react";
+import React, { Component } from "devtools/client/shared/vendor/react";
 import { div, button } from "devtools/client/shared/vendor/react-dom-factories";
 import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 

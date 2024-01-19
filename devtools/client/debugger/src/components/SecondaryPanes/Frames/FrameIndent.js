@@ -2,7 +2,7 @@
 
 
 
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 
 export default function FrameIndent({ indentLevel = 1 } = {}) {
   

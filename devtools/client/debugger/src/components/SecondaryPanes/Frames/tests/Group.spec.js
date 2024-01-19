@@ -2,7 +2,7 @@
 
 
 
-import React from "react";
+import React from "devtools/client/shared/vendor/react";
 import { shallow } from "enzyme";
 import Group from "../Group.js";
 import { makeMockFrame, makeMockSource } from "../../../../utils/test-mockup";

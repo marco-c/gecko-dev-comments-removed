@@ -2,7 +2,7 @@
 
 
 
-import React, { PureComponent } from "react";
+import React, { PureComponent } from "devtools/client/shared/vendor/react";
 import ReactDOM from "devtools/client/shared/vendor/react-dom";
 
 import actions from "../../actions";
