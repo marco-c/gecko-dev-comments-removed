@@ -92,10 +92,6 @@ where
     serialize_name(&ident, dest)
 }
 
-fn nan_inf_enabled() -> bool {
-    static_prefs::pref!("layout.css.nan-inf.enabled")
-}
-
 
 pub fn serialize_number<W>(v: f32, was_calc: bool, dest: &mut CssWriter<W>) -> fmt::Result
 where
@@ -118,7 +114,7 @@ where
         dest.write_str("calc(")?;
     }
 
-    if !v.is_finite() && nan_inf_enabled() {
+    if !v.is_finite() {
         
         
         
