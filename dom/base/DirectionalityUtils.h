@@ -53,6 +53,14 @@ Directionality RecomputeDirectionality(mozilla::dom::Element* aElement,
 
 
 
+Directionality GetParentDirectionality(const mozilla::dom::Element* aElement);
+
+
+
+
+
+
+
 
 void SetDirectionalityOnDescendants(mozilla::dom::Element* aElement,
                                     Directionality aDir, bool aNotify = true);

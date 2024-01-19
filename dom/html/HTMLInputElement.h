@@ -1112,7 +1112,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  void SetDirectionFromValue(bool aNotify,
+  void SetAutoDirectionality(bool aNotify,
                              const nsAString* aKnownValue = nullptr);
 
   
@@ -1600,8 +1600,8 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-  bool IsAutoDirectionalityAssociated() const {
-    switch (mType) {
+  static bool IsAutoDirectionalityAssociated(FormControlType aType) {
+    switch (aType) {
       case FormControlType::InputHidden:
       case FormControlType::InputText:
       case FormControlType::InputSearch:
@@ -1616,6 +1616,10 @@ class HTMLInputElement final : public TextControlElement,
       default:
         return false;
     }
+  }
+
+  bool IsAutoDirectionalityAssociated() const {
+    return IsAutoDirectionalityAssociated(mType);
   }
 
   static bool CreatesDateTimeWidget(FormControlType aType) {

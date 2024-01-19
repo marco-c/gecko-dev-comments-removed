@@ -1255,7 +1255,7 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       if (!mValueChanged && GetValueMode() == VALUE_MODE_VALUE) {
         SetDefaultValueAsValue();
       } else if (GetValueMode() == VALUE_MODE_DEFAULT && HasDirAuto()) {
-        SetDirectionFromValue(aNotify);
+        SetAutoDirectionality(aNotify);
       }
       
       
@@ -1382,7 +1382,7 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::dir && aValue &&
                aValue->Equals(nsGkAtoms::_auto, eIgnoreCase)) {
-      SetDirectionFromValue(aNotify);
+      SetAutoDirectionality(aNotify);
     } else if (aName == nsGkAtoms::lang) {
       
       
@@ -4352,7 +4352,7 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   
   if (HasDirAuto()) {
-    SetDirectionFromValue(false);
+    SetAutoDirectionality(false);
   }
 
   
@@ -4645,8 +4645,13 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   
   
   
-  if (!HasDirAuto() && (oldType == FormControlType::InputTel ||
-                        mType == FormControlType::InputTel)) {
+  if (HasDirAuto()) {
+    const bool autoDirAssociated = IsAutoDirectionalityAssociated(mType);
+    if (IsAutoDirectionalityAssociated(oldType) != autoDirAssociated) {
+      SetAutoDirectionality(aNotify);
+    }
+  } else if (oldType == FormControlType::InputTel ||
+             mType == FormControlType::InputTel) {
     RecomputeDirectionality(this, aNotify);
   }
 
@@ -5895,10 +5900,11 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
   return SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
 }
 
-void HTMLInputElement::SetDirectionFromValue(bool aNotify,
+
+void HTMLInputElement::SetAutoDirectionality(bool aNotify,
                                              const nsAString* aKnownValue) {
   if (!IsAutoDirectionalityAssociated()) {
-    return;
+    return SetDirectionality(GetParentDirectionality(this), aNotify);
   }
   nsAutoString value;
   if (!aKnownValue) {
@@ -6967,7 +6973,7 @@ void HTMLInputElement::OnValueChanged(ValueChangeKind aKind,
   UpdateAllValidityStates(true);
 
   if (HasDirAuto()) {
-    SetDirectionFromValue(true, aKnownNewValue);
+    SetAutoDirectionality(true, aKnownNewValue);
   }
 }
 
