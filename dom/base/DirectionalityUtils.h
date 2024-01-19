@@ -22,7 +22,7 @@ class HTMLSlotElement;
 
 namespace mozilla {
 
-enum Directionality : uint8_t { eDir_NotSet, eDir_RTL, eDir_LTR, eDir_Auto };
+enum class Directionality : uint8_t { Unset, Rtl, Ltr, Auto };
 
 
 
