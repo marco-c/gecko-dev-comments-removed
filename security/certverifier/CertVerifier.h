@@ -200,7 +200,7 @@ class CertVerifier {
                uint32_t certShortLifetimeInDays,
                NetscapeStepUpPolicy netscapeStepUpPolicy,
                CertificateTransparencyMode ctMode, CRLiteMode crliteMode,
-               const Vector<EnterpriseCert>& thirdPartyCerts);
+               const nsTArray<EnterpriseCert>& thirdPartyCerts);
   ~CertVerifier();
 
   void ClearOCSPCache() { mOCSPCache.Clear(); }
@@ -217,12 +217,12 @@ class CertVerifier {
  private:
   OCSPCache mOCSPCache;
   
-  Vector<EnterpriseCert> mThirdPartyCerts;
+  nsTArray<EnterpriseCert> mThirdPartyCerts;
   
   
-  Vector<mozilla::pkix::Input> mThirdPartyRootInputs;
+  nsTArray<mozilla::pkix::Input> mThirdPartyRootInputs;
   
-  Vector<mozilla::pkix::Input> mThirdPartyIntermediateInputs;
+  nsTArray<mozilla::pkix::Input> mThirdPartyIntermediateInputs;
 
   
   

@@ -30,30 +30,12 @@ extern mozilla::LazyLogModule gPIPNSSLog;
 
 using namespace mozilla;
 
-nsresult EnterpriseCert::Init(const uint8_t* data, size_t len, bool isRoot) {
-  mDER.clear();
-  if (!mDER.append(data, len)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-  mIsRoot = isRoot;
-
-  return NS_OK;
-}
-
-nsresult EnterpriseCert::Init(const EnterpriseCert& orig) {
-  return Init(orig.mDER.begin(), orig.mDER.length(), orig.mIsRoot);
-}
-
-nsresult EnterpriseCert::CopyBytes(nsTArray<uint8_t>& dest) const {
-  dest.Clear();
-  
-  
-  dest.AppendElements(mDER.begin(), mDER.length());
-  return NS_OK;
+void EnterpriseCert::CopyBytes(nsTArray<uint8_t>& dest) const {
+  dest.Assign(mDER);
 }
 
 pkix::Result EnterpriseCert::GetInput(pkix::Input& input) const {
-  return input.Init(mDER.begin(), mDER.length());
+  return input.Init(mDER.Elements(), mDER.Length());
 }
 
 bool EnterpriseCert::GetIsRoot() const { return mIsRoot; }
@@ -149,7 +131,7 @@ class ScopedCertStore final {
 
 
 static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
-                                             Vector<EnterpriseCert>& certs) {
+                                             nsTArray<EnterpriseCert>& certs) {
   MOZ_ASSERT(locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE ||
@@ -192,16 +174,9 @@ static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
                 ("skipping cert not trusted for TLS server auth"));
         continue;
       }
-      EnterpriseCert enterpriseCert;
-      if (NS_FAILED(enterpriseCert.Init(certificate->pbCertEncoded,
-                                        certificate->cbCertEncoded, isRoot))) {
-        
-        continue;
-      }
-      if (!certs.append(std::move(enterpriseCert))) {
-        
-        continue;
-      }
+      EnterpriseCert enterpriseCert(certificate->pbCertEncoded,
+                                    certificate->cbCertEncoded, isRoot);
+      certs.AppendElement(std::move(enterpriseCert));
       numImported++;
     }
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
@@ -209,7 +184,7 @@ static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
   }
 }
 
-static void GatherEnterpriseCertsWindows(Vector<EnterpriseCert>& certs) {
+static void GatherEnterpriseCertsWindows(nsTArray<EnterpriseCert>& certs) {
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE, certs);
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
                                    certs);
@@ -222,7 +197,7 @@ static void GatherEnterpriseCertsWindows(Vector<EnterpriseCert>& certs) {
 #endif  
 
 #ifdef XP_MACOSX
-OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
+OSStatus GatherEnterpriseCertsMacOS(nsTArray<EnterpriseCert>& certs) {
   
   
   
@@ -286,16 +261,9 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
     
     const SecCertificateRef s = (const SecCertificateRef)c;
     ScopedCFType<CFDataRef> der(SecCertificateCopyData(s));
-    EnterpriseCert enterpriseCert;
-    if (NS_FAILED(enterpriseCert.Init(CFDataGetBytePtr(der.get()),
-                                      CFDataGetLength(der.get()), isRoot))) {
-      
-      continue;
-    }
-    if (!certs.append(std::move(enterpriseCert))) {
-      
-      continue;
-    }
+    EnterpriseCert enterpriseCert(CFDataGetBytePtr(der.get()),
+                                  CFDataGetLength(der.get()), isRoot);
+    certs.AppendElement(std::move(enterpriseCert));
     numImported++;
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u certs", numImported));
@@ -304,7 +272,7 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
 #endif  
 
 #ifdef MOZ_WIDGET_ANDROID
-void GatherEnterpriseCertsAndroid(Vector<EnterpriseCert>& certs) {
+void GatherEnterpriseCertsAndroid(nsTArray<EnterpriseCert>& certs) {
   if (!jni::IsAvailable()) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("JNI not available"));
     return;
@@ -313,25 +281,23 @@ void GatherEnterpriseCertsAndroid(Vector<EnterpriseCert>& certs) {
       java::EnterpriseRoots::GatherEnterpriseRoots();
   for (size_t i = 0; i < roots->Length(); i++) {
     jni::ByteArray::LocalRef root = roots->GetElement(i);
-    EnterpriseCert cert;
     
     
-    if (NS_SUCCEEDED(cert.Init(
-            reinterpret_cast<uint8_t*>(root->GetElements().Elements()),
-            root->Length(), true))) {
-      Unused << certs.append(std::move(cert));
-    }
+    EnterpriseCert cert(
+        reinterpret_cast<uint8_t*>(root->GetElements().Elements()),
+        root->Length(), true);
+    certs.AppendElement(std::move(cert));
   }
 }
 #endif  
 
-nsresult GatherEnterpriseCerts(Vector<EnterpriseCert>& certs) {
+nsresult GatherEnterpriseCerts(nsTArray<EnterpriseCert>& certs) {
   MOZ_ASSERT(!NS_IsMainThread());
   if (NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
-  certs.clear();
+  certs.Clear();
 #ifdef XP_WIN
   GatherEnterpriseCertsWindows(certs);
 #endif  

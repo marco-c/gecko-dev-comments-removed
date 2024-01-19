@@ -130,7 +130,7 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
       MOZ_GUARDED_BY(mMutex);
   nsString mMitmCanaryIssuer MOZ_GUARDED_BY(mMutex);
   bool mMitmDetecionEnabled MOZ_GUARDED_BY(mMutex);
-  mozilla::Vector<EnterpriseCert> mEnterpriseCerts MOZ_GUARDED_BY(mMutex);
+  nsTArray<EnterpriseCert> mEnterpriseCerts MOZ_GUARDED_BY(mMutex);
 
   
   static int mInstanceCount;
