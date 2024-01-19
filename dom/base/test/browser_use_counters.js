@@ -4,7 +4,7 @@ requestLongerTimeout(2);
 
 const gHttpTestRoot = "https://example.com/browser/dom/base/test/";
 
-add_task(async function test_initialize() {
+add_setup(async function test_initialize() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["layout.css.use-counters.enabled", true],
@@ -12,6 +12,87 @@ add_task(async function test_initialize() {
     ],
   });
 });
+
+async function grabCounters(counters, before) {
+  let result = await grabHistogramsFromContent(
+    counters.map(c => c.name),
+    before?.sentinel
+  );
+  await Services.fog.testFlushAllChildren();
+  result.gleanPage = Object.fromEntries(
+    counters.map(c => [
+      c.name,
+      Glean[`useCounter${c.glean[0]}Page`][c.glean[1]].testGetValue() ?? 0,
+    ])
+  );
+  result.gleanDoc = Object.fromEntries(
+    counters.map(c => [
+      c.name,
+      Glean[`useCounter${c.glean[0]}Doc`][c.glean[1]].testGetValue() ?? 0,
+    ])
+  );
+  result.glean_docs_destroyed =
+    Glean.useCounter.contentDocumentsDestroyed.testGetValue();
+  result.glean_toplevel_destroyed =
+    Glean.useCounter.topLevelContentDocumentsDestroyed.testGetValue();
+  return result;
+}
+
+function assertRange(before, after, key, range) {
+  before = before[key];
+  after = after[key];
+  let desc = key + " are correct";
+  if (Array.isArray(range)) {
+    let [min, max] = range;
+    Assert.greaterOrEqual(after, before + min, desc);
+    Assert.lessOrEqual(after, before + max, desc);
+  } else {
+    Assert.equal(after, before + range, desc);
+  }
+}
+
+async function test_once({ counters, toplevel_docs, docs }, callback) {
+  
+  
+  let before = await grabCounters(counters);
+
+  await callback();
+
+  let after = await grabCounters(counters, before);
+
+  
+  for (let counter of counters) {
+    let name = counter.name;
+    let value = counter.value ?? 1;
+    if (!counter.xfail) {
+      is(
+        after.page[name],
+        before.page[name] + value,
+        `page counts for ${name} after are correct`
+      );
+      is(
+        after.document[name],
+        before.document[name] + value,
+        `document counts for ${name} after are correct`
+      );
+      is(
+        after.gleanPage[name],
+        before.gleanPage[name] + value,
+        `Glean page counts for ${name} are correct`
+      );
+      is(
+        after.gleanDoc[name],
+        before.gleanDoc[name] + value,
+        `Glean document counts for ${name} are correct`
+      );
+    }
+  }
+
+  assertRange(before, after, "toplevel_docs", toplevel_docs);
+  assertRange(before, after, "glean_toplevel_destroyed", toplevel_docs);
+  assertRange(before, after, "docs", docs);
+  assertRange(before, after, "glean_docs_destroyed", docs);
+}
 
 add_task(async function () {
   const TESTS = [
@@ -172,187 +253,83 @@ add_task(async function () {
     let file = test.filename;
     info(`checking ${file} (${test.type})`);
 
-    
-    
-    let before = await grabHistogramsFromContent(
-      test.counters.map(c => c.name)
-    );
-
-    await Services.fog.testFlushAllChildren();
-    before.gleanPage = Object.fromEntries(
-      test.counters.map(c => [
-        c.name,
-        Glean[`useCounter${c.glean[0]}Page`][c.glean[1]].testGetValue() ?? 0,
-      ])
-    );
-    before.gleanDoc = Object.fromEntries(
-      test.counters.map(c => [
-        c.name,
-        Glean[`useCounter${c.glean[0]}Doc`][c.glean[1]].testGetValue() ?? 0,
-      ])
-    );
-    before.glean_docs_destroyed =
-      Glean.useCounter.contentDocumentsDestroyed.testGetValue();
-    before.glean_toplevel_destroyed =
-      Glean.useCounter.topLevelContentDocumentsDestroyed.testGetValue();
-
-    
-    
-    let url, targetElement;
-    switch (test.type) {
-      case "iframe":
-        url = gHttpTestRoot + "file_use_counter_outer.html";
-        targetElement = "content";
-        break;
-      case "undisplayed-iframe":
-        url = gHttpTestRoot + "file_use_counter_outer_display_none.html";
-        targetElement = "content";
-        break;
-      case "img":
-        url = gHttpTestRoot + "file_use_counter_outer.html";
-        targetElement = "display";
-        break;
-      case "direct":
-        url = gHttpTestRoot + file;
-        targetElement = null;
-        break;
-      default:
-        throw `unexpected type ${test.type}`;
-    }
-
-    let waitForFinish = null;
-    if (test.waitForExplicitFinish) {
-      is(
-        test.type,
-        "direct",
-        `cannot use waitForExplicitFinish with test type ${test.type}`
-      );
+    let options = {
+      counters: test.counters,
       
-      waitForFinish = BrowserTestUtils.waitForLocationChange(
-        gBrowser,
-        url + "#finished"
-      );
-    }
-
-    let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-    if (waitForFinish) {
-      await waitForFinish;
-    }
-
-    if (targetElement) {
       
-      await SpecialPowers.spawn(
-        gBrowser.selectedBrowser,
-        [{ file, targetElement }],
-        function (opts) {
-          let target = content.document.getElementById(opts.targetElement);
-          target.src = opts.file;
+      
+      
+      toplevel_docs: file == "file_use_counter_bfcache.html" ? [5, 6] : 1,
+      docs: [test.type == "img" ? 2 : 1, Infinity],
+    };
 
-          return new Promise(resolve => {
-            let listener = event => {
-              event.target.removeEventListener("load", listener, true);
-              resolve();
-            };
-            target.addEventListener("load", listener, true);
-          });
-        }
-      );
-    }
+    await test_once(options, async function () {
+      
+      
+      let url, targetElement;
+      switch (test.type) {
+        case "iframe":
+          url = gHttpTestRoot + "file_use_counter_outer.html";
+          targetElement = "content";
+          break;
+        case "undisplayed-iframe":
+          url = gHttpTestRoot + "file_use_counter_outer_display_none.html";
+          targetElement = "content";
+          break;
+        case "img":
+          url = gHttpTestRoot + "file_use_counter_outer.html";
+          targetElement = "display";
+          break;
+        case "direct":
+          url = gHttpTestRoot + file;
+          targetElement = null;
+          break;
+        default:
+          throw `unexpected type ${test.type}`;
+      }
 
-    
-    await BrowserTestUtils.removeTab(newTab);
-
-    
-    let after = await grabHistogramsFromContent(
-      test.counters.map(c => c.name),
-      before.sentinel
-    );
-    await Services.fog.testFlushAllChildren();
-    after.gleanPage = Object.fromEntries(
-      test.counters.map(c => [
-        c.name,
-        Glean[`useCounter${c.glean[0]}Page`][c.glean[1]].testGetValue() ?? 0,
-      ])
-    );
-    after.gleanDoc = Object.fromEntries(
-      test.counters.map(c => [
-        c.name,
-        Glean[`useCounter${c.glean[0]}Doc`][c.glean[1]].testGetValue() ?? 0,
-      ])
-    );
-    after.glean_docs_destroyed =
-      Glean.useCounter.contentDocumentsDestroyed.testGetValue();
-    after.glean_toplevel_destroyed =
-      Glean.useCounter.topLevelContentDocumentsDestroyed.testGetValue();
-
-    
-    for (let counter of test.counters) {
-      let name = counter.name;
-      let value = counter.value ?? 1;
-      if (!counter.xfail) {
+      let waitForFinish = null;
+      if (test.waitForExplicitFinish) {
         is(
-          after.page[name],
-          before.page[name] + value,
-          `page counts for ${name} after are correct`
+          test.type,
+          "direct",
+          `cannot use waitForExplicitFinish with test type ${test.type}`
         );
-        is(
-          after.document[name],
-          before.document[name] + value,
-          `document counts for ${name} after are correct`
-        );
-        is(
-          after.gleanPage[name],
-          before.gleanPage[name] + value,
-          `Glean page counts for ${name} are correct`
-        );
-        is(
-          after.gleanDoc[name],
-          before.gleanDoc[name] + value,
-          `Glean document counts for ${name} are correct`
+        
+        waitForFinish = BrowserTestUtils.waitForLocationChange(
+          gBrowser,
+          url + "#finished"
         );
       }
-    }
 
-    if (test.filename == "file_use_counter_bfcache.html") {
-      
-      
-      
-      
-      ok(
-        after.toplevel_docs == before.toplevel_docs + 5 ||
-          after.toplevel_docs == before.toplevel_docs + 6,
-        `top level destroyed document counts are correct: ${before.toplevel_docs} vs ${after.toplevel_docs}`
-      );
-      ok(
-        after.glean_toplevel_destroyed == before.glean_toplevel_destroyed + 5 ||
-          after.glean_toplevel_destroyed == before.glean_toplevel_destroyed + 6,
-        `Glean top level destroyed docs counts are correct: ${before.glean_toplevel_destroyed} vs ${after.glean_toplevel_destroyed}`
-      );
-    } else {
-      is(
-        after.toplevel_docs,
-        before.toplevel_docs + 1,
-        "top level destroyed document counts are correct"
-      );
-      is(
-        after.glean_toplevel_destroyed,
-        before.glean_toplevel_destroyed + 1,
-        "Glean top level destroyed document counts are correct"
-      );
-    }
+      let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+      if (waitForFinish) {
+        await waitForFinish;
+      }
 
-    
-    
-    
-    ok(
-      after.docs >= before.docs + (test.type == "img" ? 2 : 1),
-      "destroyed document counts are correct"
-    );
-    Assert.greaterOrEqual(
-      after.glean_docs_destroyed,
-      before.glean_docs_destroyed + (test.type == "img" ? 2 : 1),
-      "Glean destroyed doc counts are correct"
-    );
+      if (targetElement) {
+        
+        await SpecialPowers.spawn(
+          gBrowser.selectedBrowser,
+          [{ file, targetElement }],
+          function (opts) {
+            let target = content.document.getElementById(opts.targetElement);
+            target.src = opts.file;
+
+            return new Promise(resolve => {
+              let listener = event => {
+                event.target.removeEventListener("load", listener, true);
+                resolve();
+              };
+              target.addEventListener("load", listener, true);
+            });
+          }
+        );
+      }
+
+      
+      await BrowserTestUtils.removeTab(newTab);
+    });
   }
 });
 
