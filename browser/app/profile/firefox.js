@@ -1851,9 +1851,6 @@ pref("identity.fxaccounts.remote.root", "https://accounts.firefox.com/");
 pref("identity.fxaccounts.contextParam", "fx_desktop_v3");
 
 
-pref("identity.fxaccounts.oauth.enabled", false);
-
-
 pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox.com/v1");
 
 
