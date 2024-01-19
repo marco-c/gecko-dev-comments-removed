@@ -80,6 +80,7 @@ onconnect = function (event) {
   
   (function () {
     return;
+    
     1;
   });
 

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1435161
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for retry PaymentRequest</title>
@@ -148,13 +148,10 @@
     try {
       await payResponse.retry(validationErrors);
       ok(false, `${testName}: Unexpected success when retry the PaymentResponse.`);
-      return;
     } catch(err) {
       is(err.name,
          "InvalidStateError",
          expectedErrMsg(testName, "InvalidStateError", err.name, "retrying"));
-      await requestChromeAction("finish-test");
-      return;
     }
     await requestChromeAction("finish-test");
   }

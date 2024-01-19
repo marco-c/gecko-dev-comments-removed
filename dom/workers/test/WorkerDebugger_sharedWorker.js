@@ -11,7 +11,6 @@ self.onconnect = function (event) {
         close();
         
         while (1) {}
-        break;
     }
   };
 };

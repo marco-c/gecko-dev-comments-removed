@@ -42,5 +42,6 @@ onmessage = function (event) {
       throw "Weird number of messages: " + messageCount;
   }
 
+  
   throw "Impossible to get here!";
 };
