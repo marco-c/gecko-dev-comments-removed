@@ -27,7 +27,6 @@ UNSUPPORTED_FEATURES = set(
         "resizable-arraybuffer",  
         "regexp-duplicate-named-groups",  
         "json-parse-with-source",  
-        "import-attributes",  
         "set-methods",  
     ]
 )
@@ -48,6 +47,7 @@ RELEASE_OR_BETA = set(
 )
 SHELL_OPTIONS = {
     "import-assertions": "--enable-import-assertions",
+    "import-attributes": "--enable-import-attributes",
     "ShadowRealm": "--enable-shadow-realms",
     "iterator-helpers": "--enable-iterator-helpers",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
