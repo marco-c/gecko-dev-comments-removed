@@ -35,18 +35,28 @@ def restore_patch_stack(
 
     
     
+    print("fetch repo")
     fetch_repo(
         github_path, clone_protocol, True, os.path.join(state_directory, tar_name)
     )
 
     
+    print("clear no-op-cherry-pick-msg files")
     run_shell("rm {}/*.no-op-cherry-pick-msg || true".format(state_directory))
 
     
+    print(
+        "lookup latest vendored commit from third_party/libwebrtc/README.moz-ff-commit"
+    )
     file = os.path.abspath("third_party/libwebrtc/README.moz-ff-commit")
     last_vendored_commit = get_last_line(file)
 
     
+    print(
+        "checkout the previous vendored commit ({}) with proper branch name".format(
+            last_vendored_commit
+        )
+    )
     cmd = "git checkout -b {} {}".format(github_branch, last_vendored_commit)
     run_git(cmd, github_path)
 
