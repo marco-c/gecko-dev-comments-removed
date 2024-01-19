@@ -69,4 +69,5 @@ self.onerror = function (message, filename, lineno) {
     
     return true;
   }
+  return undefined;
 };

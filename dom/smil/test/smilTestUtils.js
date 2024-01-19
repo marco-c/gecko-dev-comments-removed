@@ -46,6 +46,7 @@ var SMILUtil = {
       
       return SMILUtil.getComputedStyleWrapper(elem, attr.attrName);
     }
+    throw new Error(`Unexpected attribute value ${attr.attrType}`);
   },
 
   

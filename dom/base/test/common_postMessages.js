@@ -263,7 +263,7 @@ function runTests(obj) {
     
     .then(function () {
       if (!obj.transferableObjects) {
-        return;
+        return Promise.resolve();
       }
 
       
@@ -283,7 +283,7 @@ function runTests(obj) {
     
     .then(function () {
       if (!obj.transferableObjects) {
-        return;
+        return Promise.resolve();
       }
 
       
@@ -306,7 +306,7 @@ function runTests(obj) {
     
     .then(function () {
       if (!obj.transferableObjects) {
-        return;
+        return Promise.resolve();
       }
 
       
@@ -354,7 +354,7 @@ function runTests(obj) {
     
     .then(function () {
       if (obj.transferableObjects) {
-        return;
+        return Promise.resolve();
       }
 
       
