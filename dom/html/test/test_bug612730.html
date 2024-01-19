@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=612730
+-->
 <head>
   <title>Test for Bug 612730</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -34,8 +34,8 @@ function runTest()
 
     ok(!select.matches(":-moz-ui-invalid"),
        ":-moz-ui-invalid should not apply");
-    todo(!select.matches(":-moz-ui-valid"),
-         ":-moz-ui-valid should not apply");
+    ok(!select.matches(":-moz-ui-valid"),
+       ":-moz-ui-valid should not apply");
 
     SimpleTest.finish();
   }, {once: true});
