@@ -97,9 +97,12 @@ impl StringList for StringListMetric {
             }
             StringListMetric::Child(c) => {
                 log::error!(
-                    "Unable to set string list metric {:?} in non-main process. Ignoring.",
+                    "Unable to set string list metric {:?} in non-main process. This operation will be ignored.",
                     c.0
                 );
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to set string list metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         }

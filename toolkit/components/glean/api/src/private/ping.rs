@@ -77,7 +77,12 @@ impl glean::traits::Ping for Ping {
                 p.submit(reason);
             }
             Ping::Child => {
-                log::error!("Unable to submit ping in non-main process. Ignoring.");
+                log::error!(
+                    "Unable to submit ping in non-main process. This operation will be ignored."
+                );
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to submit a ping in non-main process, which is forbidden. This panics in automation.");
                 
             }
         };
@@ -97,7 +102,8 @@ mod test {
     };
 
     
-    static PROTOTYPE_PING: Lazy<Ping> = Lazy::new(|| Ping::new("prototype", false, true, true, vec![]));
+    static PROTOTYPE_PING: Lazy<Ping> =
+        Lazy::new(|| Ping::new("prototype", false, true, true, vec![]));
 
     #[test]
     fn smoke_test_custom_ping() {

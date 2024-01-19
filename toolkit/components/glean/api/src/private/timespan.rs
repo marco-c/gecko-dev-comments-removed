@@ -42,8 +42,11 @@ impl TimespanMetric {
             }
             TimespanMetric::Child => {
                 log::error!(
-                    "Unable to set_raw_unitless on timespan in non-main process. Ignoring."
+                    "Unable to set_raw_unitless on timespan in non-main process. This operation will be ignored."
                 );
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to set_raw_unitless on timespan metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         }
@@ -56,7 +59,10 @@ impl Timespan for TimespanMetric {
         match self {
             TimespanMetric::Parent(p, _) => p.start(),
             TimespanMetric::Child => {
-                log::error!("Unable to start timespan metric in non-main process. Ignoring.");
+                log::error!("Unable to start timespan metric in non-main process. This operation will be ignored.");
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to start timespan metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         }
@@ -66,7 +72,10 @@ impl Timespan for TimespanMetric {
         match self {
             TimespanMetric::Parent(p, _) => p.stop(),
             TimespanMetric::Child => {
-                log::error!("Unable to stop timespan metric in non-main process. Ignoring.");
+                log::error!("Unable to stop timespan metric in non-main process. This operation will be ignored.");
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to stop timespan metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         }
@@ -76,7 +85,10 @@ impl Timespan for TimespanMetric {
         match self {
             TimespanMetric::Parent(p, _) => p.cancel(),
             TimespanMetric::Child => {
-                log::error!("Unable to cancel timespan metric in non-main process. Ignoring.");
+                log::error!("Unable to cancel timespan metric in non-main process. This operation will be ignored.");
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to cancel timespan metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         }
@@ -87,7 +99,10 @@ impl Timespan for TimespanMetric {
         match self {
             TimespanMetric::Parent(p, _) => p.set_raw_nanos(elapsed),
             TimespanMetric::Child => {
-                log::error!("Unable to set_raw on timespan in non-main process. Ignoring.");
+                log::error!("Unable to set_raw on timespan in non-main process. This operation will be ignored.");
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to set_raw on timespan metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         }
@@ -100,7 +115,7 @@ impl Timespan for TimespanMetric {
             
             TimespanMetric::Parent(p, _) => p.test_get_value(ping_name).map(|i| i as u64),
             TimespanMetric::Child => {
-                panic!("Cannot get test value for in non-parent process!");
+                panic!("Cannot get test value for in non-main process!");
             }
         }
     }
@@ -109,7 +124,7 @@ impl Timespan for TimespanMetric {
         match self {
             TimespanMetric::Parent(p, _) => p.test_get_num_recorded_errors(error),
             TimespanMetric::Child => {
-                panic!("Cannot get the number of recorded errors for timespan metric in non-parent process!");
+                panic!("Cannot get the number of recorded errors for timespan metric in non-main process!");
             }
         }
     }

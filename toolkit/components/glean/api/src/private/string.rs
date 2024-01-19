@@ -81,7 +81,10 @@ impl glean::traits::String for StringMetric {
                 p.set(value.into());
             }
             StringMetric::Child(_) => {
-                log::error!("Unable to set string metric in non-main process. Ignoring.");
+                log::error!("Unable to set string metric in non-main process. This operation will be ignored.");
+                
+                
+                assert!(!crate::ipc::is_in_automation(), "Attempted to set string metric in non-main process, which is forbidden. This panics in automation.");
                 
             }
         };
@@ -105,7 +108,7 @@ impl glean::traits::String for StringMetric {
         match self {
             StringMetric::Parent(p) => p.test_get_value(ping_name),
             StringMetric::Child(_) => {
-                panic!("Cannot get test value for string metric in non-parent process!")
+                panic!("Cannot get test value for string metric in non-main process!")
             }
         }
     }
@@ -127,7 +130,7 @@ impl glean::traits::String for StringMetric {
         match self {
             StringMetric::Parent(p) => p.test_get_num_recorded_errors(error),
             StringMetric::Child(_) => panic!(
-                "Cannot get the number of recorded errors for string metric in non-parent process!"
+                "Cannot get the number of recorded errors for string metric in non-main process!"
             ),
         }
     }
