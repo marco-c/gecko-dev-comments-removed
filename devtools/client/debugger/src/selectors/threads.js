@@ -2,7 +2,7 @@
 
 
 
-import { createSelector } from "reselect";
+import { createSelector } from "devtools/client/shared/vendor/reselect";
 import { parse } from "../utils/url";
 
 export const getThreads = createSelector(
