@@ -209,6 +209,8 @@ add_task(async function testNonUrlClipboardSuggestion() {
         
         
         "http://",
+        "https://example.com some text",
+        "https://example.com/ some text",
       ];
       for (let i = 0; i < malformedURLs.length; i++) {
         SpecialPowers.clipboardCopyString(malformedURLs[i]);
