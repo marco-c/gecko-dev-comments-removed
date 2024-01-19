@@ -23,7 +23,7 @@
 
     var lib$4 = {};
 
-    var isReactComponent = {};
+    var isReactComponent$1 = {};
 
     var buildMatchMemberExpression = {};
 
@@ -2935,20 +2935,20 @@
     var hasRequiredIsReactComponent;
 
     function requireIsReactComponent () {
-    	if (hasRequiredIsReactComponent) return isReactComponent;
+    	if (hasRequiredIsReactComponent) return isReactComponent$1;
     	hasRequiredIsReactComponent = 1;
 
-    	Object.defineProperty(isReactComponent, "__esModule", {
+    	Object.defineProperty(isReactComponent$1, "__esModule", {
     	  value: true
     	});
-    	isReactComponent.default = void 0;
+    	isReactComponent$1.default = void 0;
     	var _buildMatchMemberExpression = requireBuildMatchMemberExpression();
-    	const isReactComponent$1 = (0, _buildMatchMemberExpression.default)("React.Component");
-    	var _default = isReactComponent$1;
-    	isReactComponent.default = _default;
+    	const isReactComponent = (0, _buildMatchMemberExpression.default)("React.Component");
+    	var _default = isReactComponent;
+    	isReactComponent$1.default = _default;
 
     	
-    	return isReactComponent;
+    	return isReactComponent$1;
     }
 
     var isCompatTag = {};
@@ -39058,6 +39058,61 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return "anonymous";
     }
 
+    function getFramework(symbols) {
+      if (isReactComponent(symbols)) {
+        return "React";
+      }
+      if (isAngularComponent(symbols)) {
+        return "Angular";
+      }
+      if (isVueComponent(symbols)) {
+        return "Vue";
+      }
+
+      return null;
+    }
+
+    function isReactComponent({ importsReact, classes, identifiers }) {
+      return (
+        importsReact ||
+        extendsReactComponent(classes) ||
+        isReact(identifiers) ||
+        isRedux(identifiers)
+      );
+    }
+
+    function extendsReactComponent(classes) {
+      return classes.some(
+        classObj =>
+          libExports$2.isIdentifier(classObj.parent, { name: "Component" }) ||
+          libExports$2.isIdentifier(classObj.parent, { name: "PureComponent" }) ||
+          (libExports$2.isMemberExpression(classObj.parent, { computed: false }) &&
+            libExports$2.isIdentifier(classObj.parent, { name: "Component" }))
+      );
+    }
+
+    function isAngularComponent({ memberExpressions }) {
+      return memberExpressions.some(
+        item =>
+          item.expression == "angular.controller" ||
+          item.expression == "angular.module"
+      );
+    }
+
+    function isVueComponent({ identifiers }) {
+      return identifiers.some(identifier => identifier.name == "Vue");
+    }
+
+    
+    function isReact(identifiers) {
+      return identifiers.some(identifier => identifier.name == "isReactComponent");
+    }
+
+    
+    function isRedux(identifiers) {
+      return identifiers.some(identifier => identifier.name == "Redux");
+    }
+
     const symbolDeclarations = new Map();
 
     function extractFunctionSymbol(path, state, symbols) {
@@ -39141,6 +39196,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         literals: [],
         hasJsx: false,
         hasTypes: false,
+        framework: undefined,
         importsReact: false,
       };
 
@@ -39163,6 +39219,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
 
       
       symbols.comments = getComments(ast);
+      symbols.framework = getFramework(symbols);
 
       return symbols;
     }
@@ -39446,13 +39503,22 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         
         
         
+        
+        
+        
+        
+        
 
+        
         
         
 
         
         hasJsx: symbols.hasJsx,
         hasTypes: symbols.hasTypes,
+
+        
+        framework: symbols.framework,
 
         
         

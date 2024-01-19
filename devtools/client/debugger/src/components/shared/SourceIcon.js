@@ -10,14 +10,18 @@ import { connect } from "devtools/client/shared/vendor/react-redux";
 import AccessibleImage from "./AccessibleImage";
 
 import { getSourceClassnames } from "../../utils/source";
-import { isSourceBlackBoxed, hasPrettyTab } from "../../selectors/index";
+import {
+  getSymbols,
+  isSourceBlackBoxed,
+  hasPrettyTab,
+} from "../../selectors/index";
 
 import "./SourceIcon.css";
 
 class SourceIcon extends PureComponent {
   static get propTypes() {
     return {
-      modifier: PropTypes.func,
+      modifier: PropTypes.func.isRequired,
       location: PropTypes.object.isRequired,
       iconClass: PropTypes.string,
       forTab: PropTypes.bool,
@@ -43,6 +47,13 @@ class SourceIcon extends PureComponent {
 
 export default connect((state, props) => {
   const { forTab, location } = props;
+  
+  
+  
+  if (!location.source.isOriginal && !location.sourceActor) {
+    return "file";
+  }
+  const symbols = getSymbols(state, location);
   const isBlackBoxed = isSourceBlackBoxed(state, location.source);
   
   const hasMatchingPrettyTab = !forTab && hasPrettyTab(state, location.source);
@@ -51,6 +62,7 @@ export default connect((state, props) => {
   
   const iconClass = getSourceClassnames(
     location.source,
+    symbols,
     isBlackBoxed,
     hasMatchingPrettyTab
   );

@@ -404,8 +404,11 @@ export function getTextAtPosition(sourceId, asyncContent, location) {
 
 
 
+
+
 export function getSourceClassnames(
   source,
+  symbols,
   isBlackBoxed,
   hasPrettyTab = false
 ) {
@@ -425,6 +428,10 @@ export function getSourceClassnames(
 
   if (isBlackBoxed) {
     return "blackBox";
+  }
+
+  if (symbols && symbols.framework) {
+    return symbols.framework.toLowerCase();
   }
 
   if (isUrlExtension(source.url)) {
