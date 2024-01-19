@@ -1,3 +1,5 @@
+
+
 load(libdir + "asserts.js");
 
 const gWithSource = newGlobal({discardSource: false});
