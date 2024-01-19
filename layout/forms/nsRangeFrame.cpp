@@ -315,7 +315,18 @@ a11y::AccType nsRangeFrame::AccessibleType() { return a11y::eHTMLRangeType; }
 #endif
 
 double nsRangeFrame::GetValueAsFractionOfRange() {
-  return GetDoubleAsFractionOfRange(InputElement().GetValueAsDecimal());
+  const auto& input = InputElement();
+  if (MOZ_UNLIKELY(!input.IsDoneCreating())) {
+    
+    
+    
+    
+    
+    
+    
+    return 0.0;
+  }
+  return GetDoubleAsFractionOfRange(input.GetValueAsDecimal());
 }
 
 double nsRangeFrame::GetDoubleAsFractionOfRange(const Decimal& aValue) {

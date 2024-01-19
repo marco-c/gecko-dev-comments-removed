@@ -170,6 +170,10 @@ class HTMLInputElement final : public TextControlElement,
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
 
+  
+  
+  bool IsDoneCreating() const { return mDoneCreating; }
+
   bool LastValueChangeWasInteractive() const {
     return mLastValueChangeWasInteractive;
   }
