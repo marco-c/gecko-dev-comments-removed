@@ -92,15 +92,8 @@ const RECORDS = {
 };
 
 add_setup(async () => {
-  Services.prefs.setBoolPref(
-    "browser.search.serpEventTelemetryCategorization.enabled",
-    true
-  );
-
   
   do_get_profile();
-
-  
   await db.clear();
 });
 
