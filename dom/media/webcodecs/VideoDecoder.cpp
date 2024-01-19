@@ -754,6 +754,22 @@ Result<UniquePtr<TrackInfo>, nsresult> VideoDecoderTraits::CreateTrackInfo(
     vi->mExtraData = new MediaByteBuffer();
   }
 
+  
+  
+  
+  
+  const gfx::IntSize DEFAULT_IMG(640, 480);
+  if (vi->mImage.width <= 0) {
+    vi->mImage.width =
+        vi->mDisplay.width >= 0 ? vi->mDisplay.width : DEFAULT_IMG.width;
+    LOGW("image width is set to %d compulsively", vi->mImage.width);
+  }
+  if (vi->mImage.height <= 0) {
+    vi->mImage.height =
+        vi->mDisplay.height >= 0 ? vi->mDisplay.height : DEFAULT_IMG.height;
+    LOGW("image height is set to %d compulsively", vi->mImage.height);
+  }
+
   LOG("Created a VideoInfo for decoder - %s",
       NS_ConvertUTF16toUTF8(vi->ToString()).get());
 
