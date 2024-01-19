@@ -88,7 +88,7 @@ class PageAction {
     
     this.stateTransitionTimeoutIDs = [];
 
-    XPCOMUtils.defineLazyGetter(this, "isDarkTheme", () => {
+    ChromeUtils.defineLazyGetter(this, "isDarkTheme", () => {
       try {
         return this.window.document.documentElement.hasAttribute(
           "lwt-toolbar-field-brighttext"

@@ -55,7 +55,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 
 
-XPCOMUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
+ChromeUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
   try {
     let { BuiltInThemes } = ChromeUtils.importESModule(
       "resource:///modules/BuiltInThemes.sys.mjs"

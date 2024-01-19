@@ -31,19 +31,16 @@ if (typeof module == "object") {
     true
   );
 } else {
-  const { XPCOMUtils } = ChromeUtils.importESModule(
-    "resource://gre/modules/XPCOMUtils.sys.mjs"
-  );
   
   
   
-  XPCOMUtils.defineLazyGetter(lazy, "validateBreakpointLocation", () => {
+  ChromeUtils.defineLazyGetter(lazy, "validateBreakpointLocation", () => {
     return ChromeUtils.import(
       "resource://devtools/shared/validate-breakpoint.jsm"
     ).validateBreakpointLocation;
   });
   
-  XPCOMUtils.defineLazyGetter(lazy, "validateEventBreakpoint", () => {
+  ChromeUtils.defineLazyGetter(lazy, "validateEventBreakpoint", () => {
     const { loader } = ChromeUtils.importESModule(
       "resource://devtools/shared/loader/Loader.sys.mjs"
     );
