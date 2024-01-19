@@ -1055,11 +1055,26 @@ class SystemResourceMonitor(object):
                     sum(list(m.cpu_percent)) / len(m.cpu_percent)
                 ),
             }
+
+            
+            
+            
+            
             total = 0
-            for field in ["nice", "user", "system", "iowait", "softirq"]:
+            for field in ["nice", "user", "system", "iowait", "softirq", "idle"]:
                 if hasattr(m.cpu_times[0], field):
                     total += sum(getattr(core, field) for core in m.cpu_times) / (
                         m.end - m.start
+                    )
+            divisor = total if total > 1 else 1
+
+            total = 0
+            for field in ["nice", "user", "system", "iowait", "softirq"]:
+                if hasattr(m.cpu_times[0], field):
+                    total += (
+                        sum(getattr(core, field) for core in m.cpu_times)
+                        / (m.end - m.start)
+                        / divisor
                     )
                     if total > 0:
                         valid_cpu_fields.add(field)
