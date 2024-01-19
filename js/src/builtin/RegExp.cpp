@@ -19,7 +19,6 @@
 #include "js/PropertySpec.h"
 #include "js/RegExpFlags.h"  
 #include "util/StringBuffer.h"
-#include "util/Unicode.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
 #include "vm/RegExpObject.h"
@@ -1064,28 +1063,6 @@ const JSPropertySpec js::regexp_static_props[] = {
     JS_SELF_HOSTED_SYM_GET(species, "$RegExpSpecies", 0),
     JS_PS_END};
 
-template <typename CharT>
-static bool IsTrailSurrogateWithLeadSurrogateImpl(Handle<JSLinearString*> input,
-                                                  size_t index) {
-  JS::AutoCheckCannotGC nogc;
-  MOZ_ASSERT(index > 0 && index < input->length());
-  const CharT* inputChars = input->chars<CharT>(nogc);
-
-  return unicode::IsTrailSurrogate(inputChars[index]) &&
-         unicode::IsLeadSurrogate(inputChars[index - 1]);
-}
-
-static bool IsTrailSurrogateWithLeadSurrogate(Handle<JSLinearString*> input,
-                                              int32_t index) {
-  if (index <= 0 || size_t(index) >= input->length()) {
-    return false;
-  }
-
-  return input->hasLatin1Chars()
-             ? IsTrailSurrogateWithLeadSurrogateImpl<Latin1Char>(input, index)
-             : IsTrailSurrogateWithLeadSurrogateImpl<char16_t>(input, index);
-}
-
 
 
 
@@ -1121,35 +1098,6 @@ static RegExpRunStatus ExecuteRegExp(JSContext* cx, HandleObject regexp,
   MOZ_ASSERT(lastIndex >= 0 && size_t(lastIndex) <= input->length());
 
   
-
-  
-  if (reobj->unicode() || reobj->unicodeSets()) {
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if (IsTrailSurrogateWithLeadSurrogate(input, lastIndex)) {
-      lastIndex--;
-    }
-  }
 
   
   RegExpRunStatus status =

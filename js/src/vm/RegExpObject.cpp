@@ -23,6 +23,7 @@
 #include "js/RegExp.h"
 #include "js/RegExpFlags.h"  
 #include "util/StringBuffer.h"
+#include "util/Unicode.h"
 #include "vm/MatchPairs.h"
 #include "vm/PlainObject.h"
 #include "vm/RegExpStatics.h"
@@ -782,11 +783,56 @@ bool RegExpShared::markedForTierUp() const {
   return ticks_ == 0;
 }
 
+
+
+static size_t StepBackToLeadSurrogate(const JSLinearString* input,
+                                      size_t index) {
+  
+  
+  if (index == 0 || index >= input->length() || input->hasLatin1Chars()) {
+    return index;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  JS::AutoCheckCannotGC nogc;
+  const auto* chars = input->twoByteChars(nogc);
+  if (unicode::IsTrailSurrogate(chars[index]) &&
+      unicode::IsLeadSurrogate(chars[index - 1])) {
+    index--;
+  }
+  return index;
+}
+
 static RegExpRunStatus ExecuteAtomImpl(RegExpShared* re, JSLinearString* input,
                                        size_t start, MatchPairs* matches) {
   MOZ_ASSERT(re->pairCount() == 1);
   size_t length = input->length();
   size_t searchLength = re->patternAtom()->length();
+
+  if (re->unicode() || re->unicodeSets()) {
+    start = StepBackToLeadSurrogate(input, start);
+  }
 
   if (re->sticky()) {
     

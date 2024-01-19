@@ -1814,70 +1814,6 @@ static Address RegExpPairCountAddress(MacroAssembler& masm,
                                    MatchPairs::offsetOfPairCount());
 }
 
-
-
-
-static void StepBackToLeadSurrogate(MacroAssembler& masm, Register regexpShared,
-                                    Register input, Register lastIndex,
-                                    Register temp1, Register temp2) {
-  Label done;
-
-  
-  masm.branchTest32(
-      Assembler::Zero, Address(regexpShared, RegExpShared::offsetOfFlags()),
-      Imm32(int32_t(JS::RegExpFlag::Unicode | JS::RegExpFlag::UnicodeSets)),
-      &done);
-
-  
-  masm.branchLatin1String(input, &done);
-
-  
-  
-  masm.branchTest32(Assembler::Zero, lastIndex, lastIndex, &done);
-  masm.loadStringLength(input, temp1);
-  masm.branch32(Assembler::AboveOrEqual, lastIndex, temp1, &done);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  constexpr char16_t SurrogateMask = 0xFC00;
-
-  Register charsReg = temp1;
-  masm.loadStringChars(input, charsReg, CharEncoding::TwoByte);
-
-  
-  masm.loadChar(charsReg, lastIndex, temp2, CharEncoding::TwoByte);
-  masm.and32(Imm32(SurrogateMask), temp2);
-  masm.branch32(Assembler::NotEqual, temp2, Imm32(unicode::TrailSurrogateMin),
-                &done);
-
-  
-  masm.loadChar(charsReg, lastIndex, temp2, CharEncoding::TwoByte,
-                -int32_t(sizeof(char16_t)));
-  masm.and32(Imm32(SurrogateMask), temp2);
-  masm.branch32(Assembler::NotEqual, temp2, Imm32(unicode::LeadSurrogateMin),
-                &done);
-
-  
-  masm.sub32(Imm32(1), lastIndex);
-
-  masm.bind(&done);
-}
-
 static void UpdateRegExpStatics(MacroAssembler& masm, Register regexp,
                                 Register input, Register lastIndex,
                                 Register staticsReg, Register temp1,
@@ -2066,9 +2002,6 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
       regexp, NativeObject::getFixedSlotOffset(RegExpObject::SHARED_SLOT));
   masm.branchTestUndefined(Assembler::Equal, sharedSlot, failure);
   masm.unboxNonDouble(sharedSlot, regexpReg, JSVAL_TYPE_PRIVATE_GCTHING);
-
-  
-  StepBackToLeadSurrogate(masm, regexpReg, input, lastIndex, temp2, temp3);
 
   
   Label notAtom, checkSuccess;
