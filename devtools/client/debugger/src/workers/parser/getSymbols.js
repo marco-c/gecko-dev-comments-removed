@@ -20,7 +20,6 @@ import {
 
 import { inferClassName } from "./utils/inferClassName";
 import getFunctionName from "./utils/getFunctionName";
-import { getFramework } from "./frameworks";
 
 const symbolDeclarations = new Map();
 
@@ -105,7 +104,6 @@ function extractSymbols(sourceId) {
     literals: [],
     hasJsx: false,
     hasTypes: false,
-    framework: undefined,
     importsReact: false,
   };
 
@@ -128,7 +126,6 @@ function extractSymbols(sourceId) {
 
   
   symbols.comments = getComments(ast);
-  symbols.framework = getFramework(symbols);
 
   return symbols;
 }
@@ -412,22 +409,13 @@ export function getSymbols(sourceId) {
     
     
     
-    
-    
-    
-    
-    
 
-    
     
     
 
     
     hasJsx: symbols.hasJsx,
     hasTypes: symbols.hasTypes,
-
-    
-    framework: symbols.framework,
 
     
     
