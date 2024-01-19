@@ -480,8 +480,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   
 
-  void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                        TrackRate aRate, uint32_t aChannels) override;
+  void NotifyOutputData(const AudioChunk& aChunk);
   
 
   void NotifyInputStopped() override;

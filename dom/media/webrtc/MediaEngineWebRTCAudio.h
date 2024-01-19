@@ -116,8 +116,7 @@ class AudioInputProcessing : public AudioDataListener {
   void Process(MediaTrackGraph* aGraph, GraphTime aFrom, GraphTime aTo,
                AudioSegment* aInput, AudioSegment* aOutput);
 
-  void ProcessOutputData(MediaTrackGraph* aGraph, AudioDataValue* aBuffer,
-                         size_t aFrames, TrackRate aRate, uint32_t aChannels);
+  void ProcessOutputData(MediaTrackGraph* aGraph, const AudioChunk& aChunk);
   bool IsVoiceInput(MediaTrackGraph* aGraph) const override {
     
     
@@ -181,9 +180,6 @@ class AudioInputProcessing : public AudioDataListener {
   Maybe<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
   
   
-  Maybe<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
-  
-  
   uint32_t mRequestedInputChannelCount;
   
   
@@ -191,7 +187,13 @@ class AudioInputProcessing : public AudioDataListener {
   bool mSkipProcessing;
   
   
+  
+  
   AlignedFloatBuffer mOutputBuffer;
+  
+  uint32_t mOutputBufferChannelCount = 0;
+  
+  uint32_t mOutputBufferFrameCount = 0;
   
   AlignedFloatBuffer mInputBuffer;
   
@@ -209,6 +211,11 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   uint64_t mPacketCount;
+  
+  
+  
+  
+  AudioChunk mSubChunk;
   
   
   
@@ -246,8 +253,7 @@ class AudioProcessingTrack : public DeviceInputConsumerTrack {
   }
   
   
-  void NotifyOutputData(MediaTrackGraph* aGraph, AudioDataValue* aBuffer,
-                        size_t aFrames, TrackRate aRate, uint32_t aChannels);
+  void NotifyOutputData(MediaTrackGraph* aGraph, const AudioChunk& aChunk);
 
   
   AudioProcessingTrack* AsAudioProcessingTrack() override { return this; }

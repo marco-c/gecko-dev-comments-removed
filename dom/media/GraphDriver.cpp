@@ -334,10 +334,6 @@ class AudioCallbackDriver::FallbackWrapper : public GraphInterface {
   bool OnThread() { return mFallbackDriver->OnThread(); }
 
   
-  void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                        TrackRate aRate, uint32_t aChannels) override {
-    MOZ_CRASH("Unexpected NotifyOutputData from fallback SystemClockDriver");
-  }
   void NotifyInputStopped() override {
     MOZ_CRASH("Unexpected NotifyInputStopped from fallback SystemClockDriver");
   }
@@ -960,14 +956,6 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   NaNToZeroInPlace(aOutputBuffer, aFrames * mOutputChannelCount);
 #endif
-
-  
-  
-  
-  
-  
-  Graph()->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
-                            mSampleRate, mOutputChannelCount);
 
 #ifdef XP_MACOSX
   

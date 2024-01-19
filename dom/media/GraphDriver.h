@@ -179,10 +179,6 @@ struct GraphInterface : public nsISupports {
 
   
 
-  virtual void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                                TrackRate aRate, uint32_t aChannels) = 0;
-  
-
   virtual void NotifyInputStopped() = 0;
   
 
