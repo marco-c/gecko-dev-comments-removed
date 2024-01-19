@@ -155,7 +155,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
   virtual nsRect GetScrolledRect() const = 0;
   
 
@@ -170,6 +169,10 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
   virtual nsPoint GetScrollPosition() const = 0;
   
+
+
+
+
 
 
   virtual nsPoint GetLogicalScrollPosition() const = 0;

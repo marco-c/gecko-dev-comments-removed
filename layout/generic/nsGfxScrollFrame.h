@@ -208,31 +208,11 @@ class nsHTMLScrollFrame : public nsContainerFrame,
     }
     return mScrollPort.Size();
   }
-  
-
-
-
-
-
-
-
-
-
-
-
-
   nsRect GetScrolledRect() const final;
   nsRect GetScrollPortRect() const final { return mScrollPort; }
   nsPoint GetScrollPosition() const final {
     return mScrollPort.TopLeft() - mScrolledFrame->GetPosition();
   }
-  
-
-
-
-
-
-
   nsPoint GetLogicalScrollPosition() const final {
     nsPoint pt;
     pt.x = IsPhysicalLTR()
