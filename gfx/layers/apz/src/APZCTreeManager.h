@@ -588,7 +588,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
   CSSToCSSMatrix4x4 GetOopifToRootContentTransform(
       AsyncPanZoomController* aApzc) const;
 
