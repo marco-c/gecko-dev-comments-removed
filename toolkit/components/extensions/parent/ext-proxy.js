@@ -9,6 +9,19 @@
 ChromeUtils.defineESModuleGetters(this, {
   ProxyChannelFilter: "resource://gre/modules/ProxyChannelFilter.sys.mjs",
 });
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "isEarlyWakeupOnRequestEnabled",
+  "extensions.webextensions.early_background_wakeup_on_request",
+  false
+);
 var { ExtensionPreferencesManager } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionPreferencesManager.sys.mjs"
 );
@@ -86,6 +99,10 @@ function registerProxyFilterEvent(
   extraInfoSpec = []
 ) {
   let listener = data => {
+    if (isEarlyWakeupOnRequestEnabled && fire.wakeup) {
+      
+      extension.emit("start-background-script");
+    }
     return fire.sync(data);
   };
 

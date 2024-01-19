@@ -262,6 +262,11 @@ pref("extensions.update.url", "https://versioncheck.addons.mozilla.org/update/Ve
 pref("extensions.webextOptionalPermissionPrompts", true);
 
 
+
+
+pref("extensions.webextensions.early_background_wakeup_on_request", true);
+
+
 pref("formhelper.autozoom", true);
 
 
