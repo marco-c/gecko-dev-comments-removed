@@ -294,9 +294,6 @@ module.exports = {
     "no-restricted-globals": ["error", "event"],
 
     
-    "no-return-await": "error",
-
-    
     "no-self-compare": "error",
 
     
