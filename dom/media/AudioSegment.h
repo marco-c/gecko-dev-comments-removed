@@ -298,6 +298,9 @@ struct AudioChunk {
 
   const PrincipalHandle& GetPrincipalHandle() const { return mPrincipalHandle; }
 
+  
+  void DownMixTo(Span<AudioDataValue* const> aOutputChannels) const;
+
   TrackTime mDuration = 0;             
   RefPtr<ThreadSharedObject> mBuffer;  
                                        
