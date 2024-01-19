@@ -20,7 +20,7 @@ nsContainerFrame* NS_NewSelectsAreaFrame(PresShell* aShell,
 
   
   
-  it->AddStateBits(NS_BLOCK_FLOAT_MGR);
+  it->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
 
   return it;
 }

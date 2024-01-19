@@ -2474,7 +2474,7 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
   
   
   if (IsBlockFrameOrSubclass() &&
-      !HasAllStateBits(NS_BLOCK_FLOAT_MGR | NS_BLOCK_MARGIN_ROOT)) {
+      !HasAllStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS)) {
     return false;
   }
 
