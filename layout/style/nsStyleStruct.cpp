@@ -2347,7 +2347,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   }
 
   if (mScrollbarGutter != aNewData.mScrollbarGutter) {
-    if (IsScrollableOverflow()) {
+    if (IsScrollableOverflow() || aOldStyle.IsRootElementStyle()) {
+      
       
       
       hint |= nsChangeHint_ReflowHintsForScrollbarChange;
