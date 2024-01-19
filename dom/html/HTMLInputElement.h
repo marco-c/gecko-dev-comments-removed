@@ -15,7 +15,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/HTMLFormElement.h"  
 #include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -36,6 +35,7 @@
 #include "nsIContentPrefService2.h"
 #include "nsContentUtils.h"
 
+class nsIEditor;
 class nsIRadioVisitor;
 
 namespace mozilla {
@@ -338,7 +338,7 @@ class HTMLInputElement final : public TextControlElement,
   
   
   void UpdateAllValidityStates(bool aNotify);
-  void UpdateValidityElementStates(bool aNotify) final;
+  void UpdateValidityElementStates(bool aNotify);
   MOZ_CAN_RUN_SCRIPT
   void MaybeUpdateAllValidityStates(bool aNotify) {
     
@@ -395,16 +395,7 @@ class HTMLInputElement final : public TextControlElement,
 
   void SetFilePickerFiltersFromAccept(nsIFilePicker* filePicker);
 
-  
-
-
-
-
-
-
-
-
-  void UpdateValidityUIBits(bool aIsFocused);
+  void SetUserInteracted(bool) final;
 
   
 
@@ -1119,37 +1110,6 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-
-
-  bool ShouldShowValidityUI() const {
-    
-
-
-
-
-
-    if (mForm && mForm->HasEverTriedInvalidSubmit()) {
-      return true;
-    }
-
-    switch (GetValueMode()) {
-      case VALUE_MODE_DEFAULT:
-        return true;
-      case VALUE_MODE_DEFAULT_ON:
-        return GetCheckedChanged();
-      case VALUE_MODE_VALUE:
-      case VALUE_MODE_FILENAME:
-        return mValueChanged;
-    }
-
-    MOZ_ASSERT_UNREACHABLE("We should not be there: there are no other modes.");
-    return false;
-  }
-
-  
-
-
-
   RadioGroupContainer* GetCurrentRadioGroupContainer() const;
   
 
@@ -1551,6 +1511,8 @@ class HTMLInputElement final : public TextControlElement,
   
   
   bool mValueChanged : 1;
+  
+  bool mUserInteracted : 1;
   bool mLastValueChangeWasInteractive : 1;
   bool mCheckedChanged : 1;
   bool mChecked : 1;
@@ -1561,8 +1523,6 @@ class HTMLInputElement final : public TextControlElement,
   bool mCheckedIsToggled : 1;
   bool mIndeterminate : 1;
   bool mInhibitRestoration : 1;
-  bool mCanShowValidUI : 1;
-  bool mCanShowInvalidUI : 1;
   bool mHasRange : 1;
   bool mIsDraggingRange : 1;
   bool mNumberControlSpinnerIsSpinning : 1;

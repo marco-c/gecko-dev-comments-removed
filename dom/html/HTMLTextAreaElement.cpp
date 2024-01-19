@@ -48,15 +48,8 @@ HTMLTextAreaElement::HTMLTextAreaElement(
     FromParser aFromParser)
     : TextControlElement(std::move(aNodeInfo), aFromParser,
                          FormControlType::Textarea),
-      mValueChanged(false),
-      mLastValueChangeWasInteractive(false),
-      mHandlingSelect(false),
       mDoneAddingChildren(!aFromParser),
       mInhibitStateRestoration(!!(aFromParser & FROM_PARSER_FRAGMENT)),
-      mDisabledChanged(false),
-      mCanShowInvalidUI(true),
-      mCanShowValidUI(true),
-      mIsPreviewEnabled(false),
       mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mState(TextControlState::Construct(this)) {
   AddMutationObserver(this);
@@ -465,6 +458,13 @@ void HTMLTextAreaElement::FireChangeEventIfNeeded() {
   nsString value;
   GetValueInternal(value, true);
 
+  
+  
+  
+  if (mValueChanged) {
+    SetUserInteracted(true);
+  }
+
   if (mFocusedValue.Equals(value)) {
     return;
   }
@@ -478,24 +478,6 @@ void HTMLTextAreaElement::FireChangeEventIfNeeded() {
 nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   if (aVisitor.mEvent->mMessage == eFormSelect) {
     mHandlingSelect = false;
-  }
-
-  if (aVisitor.mEvent->mMessage == eFocus ||
-      aVisitor.mEvent->mMessage == eBlur) {
-    if (aVisitor.mEvent->mMessage == eFocus) {
-      
-      
-      GetValueInternal(mFocusedValue, true);
-      mCanShowInvalidUI = !IsValid() && ShouldShowValidityUI();
-
-      
-      
-      mCanShowValidUI = ShouldShowValidityUI();
-    } else {  
-      mCanShowInvalidUI = true;
-      mCanShowValidUI = true;
-    }
-    UpdateValidityElementStates(true);
   }
 
   return NS_OK;
@@ -654,6 +636,7 @@ nsresult HTMLTextAreaElement::Reset() {
   nsAutoString resetVal;
   GetDefaultValue(resetVal, IgnoreErrors());
   SetValueChanged(false);
+  SetUserInteracted(false);
 
   nsresult rv = SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -751,27 +734,14 @@ void HTMLTextAreaElement::UpdateValidityElementStates(bool aNotify) {
   ElementState state;
   if (IsValid()) {
     state |= ElementState::VALID;
+    if (mUserInteracted) {
+      state |= ElementState::USER_VALID;
+    }
   } else {
     state |= ElementState::INVALID;
-    
-    
-    if (GetValidityState(VALIDITY_STATE_CUSTOM_ERROR) ||
-        (mCanShowInvalidUI && ShouldShowValidityUI())) {
+    if (mUserInteracted) {
       state |= ElementState::USER_INVALID;
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (mCanShowValidUI && ShouldShowValidityUI() &&
-      (IsValid() ||
-       (state.HasState(ElementState::USER_INVALID) && !mCanShowInvalidUI))) {
-    state |= ElementState::USER_VALID;
   }
   AddStatesSilently(state);
 }
@@ -1154,6 +1124,14 @@ void HTMLTextAreaElement::OnValueChanged(ValueChangeKind aKind,
 bool HTMLTextAreaElement::HasCachedSelection() {
   MOZ_ASSERT(mState);
   return mState->IsSelectionCached();
+}
+
+void HTMLTextAreaElement::SetUserInteracted(bool aInteracted) {
+  if (mUserInteracted == aInteracted) {
+    return;
+  }
+  mUserInteracted = aInteracted;
+  UpdateValidityElementStates(true);
 }
 
 void HTMLTextAreaElement::FieldSetDisabledChanged(bool aNotify) {

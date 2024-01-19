@@ -233,16 +233,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult ConstructEntryList(FormData* aFormData);
-
-  
-
-
-
-
-
-
-  bool HasEverTriedInvalidSubmit() const { return mEverTriedInvalidSubmit; }
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult ConstructEntryList(FormData*);
 
   
 

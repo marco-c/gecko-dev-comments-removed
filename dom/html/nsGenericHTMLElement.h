@@ -334,10 +334,10 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(bool aNullParent = true) override;
 
-  bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) override {
-    bool isFocusable = false;
-    IsHTMLFocusable(aWithMouse, &isFocusable, aTabIndex);
-    return isFocusable;
+  Focusable IsFocusableWithoutStyle(bool aWithMouse) override {
+    Focusable result;
+    IsHTMLFocusable(aWithMouse, &result.mFocusable, &result.mTabIndex);
+    return result;
   }
   
 
@@ -1024,8 +1024,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
   
   
-  
-  virtual void UpdateValidityElementStates(bool aNotify) {}
+  virtual void SetUserInteracted(bool aNotify) {}
 
  protected:
   virtual ~nsGenericHTMLFormElement() = default;

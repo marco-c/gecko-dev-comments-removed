@@ -121,7 +121,6 @@ HTMLFormElement::HTMLFormElement(
       mDeferSubmission(false),
       mNotifiedObservers(false),
       mNotifiedObserversResult(false),
-      mEverTriedInvalidSubmit(false),
       mIsConstructingEntryList(false),
       mIsFiringSubmissionEvents(false) {
   
@@ -269,6 +268,18 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
   
   AutoRestore<bool> resetFiringSubmissionEventsFlag(mIsFiringSubmissionEvents);
   mIsFiringSubmissionEvents = true;
+
+  
+  
+  
+  {
+    for (nsGenericHTMLFormElement* el : mControls->mElements) {
+      el->SetUserInteracted(true);
+    }
+    for (nsGenericHTMLFormElement* el : mControls->mNotInElements) {
+      el->SetUserInteracted(true);
+    }
+  }
 
   
   
@@ -635,7 +646,6 @@ nsresult HTMLFormElement::DoReset() {
     doc->FlushPendingNotifications(FlushType::ContentAndNotify);
   }
 
-  mEverTriedInvalidSubmit = false;
   
   uint32_t numElements = mControls->Length();
   for (uint32_t elementX = 0; elementX < numElements; ++elementX) {
@@ -1051,15 +1061,11 @@ nsresult HTMLFormElement::ConstructEntryList(FormData* aFormData) {
   nsresult rv = mControls->GetSortedControls(sortedControls);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  uint32_t len = sortedControls.Length();
-
   
-  
-  
-  for (uint32_t i = 0; i < len; ++i) {
+  for (nsGenericHTMLFormElement* control : sortedControls) {
     
-    if (!sortedControls[i]->IsDisabled()) {
-      nsCOMPtr<nsIFormControl> fc = do_QueryInterface(sortedControls[i]);
+    if (!control->IsDisabled()) {
+      nsCOMPtr<nsIFormControl> fc = do_QueryInterface(control);
       MOZ_ASSERT(fc);
       
       fc->SubmitNamesValues(aFormData);
@@ -1766,44 +1772,6 @@ bool HTMLFormElement::CheckValidFormSubmission() {
   AutoTArray<RefPtr<Element>, 32> invalidElements;
   if (CheckFormValidity(&invalidElements)) {
     return true;
-  }
-
-  
-  
-  
-  if (!mEverTriedInvalidSubmit) {
-    mEverTriedInvalidSubmit = true;
-
-    
-
-
-
-
-
-    nsAutoScriptBlocker scriptBlocker;
-
-    for (nsGenericHTMLFormElement* element : mControls->mElements) {
-      
-      
-      if (auto* input = HTMLInputElement::FromNode(*element)) {
-        
-        
-        
-        
-        
-        if (input->State().HasState(ElementState::FOCUS)) {
-          input->UpdateValidityUIBits(true);
-        }
-      }
-      element->UpdateValidityElementStates(true);
-    }
-
-    
-    
-    
-    for (nsGenericHTMLFormElement* element : mControls->mNotInElements) {
-      element->UpdateValidityElementStates(true);
-    }
   }
 
   AutoJSAPI jsapi;

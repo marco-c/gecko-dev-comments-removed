@@ -128,6 +128,9 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void GetAutocompleteInfo(AutocompleteInfo& aInfo);
 
+  
+  MOZ_CAN_RUN_SCRIPT void UserFinishedInteracting(bool aChanged);
+
   bool Disabled() const { return GetBoolAttr(nsGkAtoms::disabled); }
   void SetDisabled(bool aVal, ErrorResult& aRv) {
     SetHTMLBoolAttr(nsGkAtoms::disabled, aVal, aRv);
@@ -194,8 +197,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
-  MOZ_CAN_RUN_SCRIPT
-  nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
 
   bool IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                        int32_t* aTabIndex) override;
@@ -300,7 +301,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
                                 ValidityStateType aType) override;
 
   void UpdateValueMissingValidityState();
-  void UpdateValidityElementStates(bool aNotify) final;
+  void UpdateValidityElementStates(bool aNotify);
   
 
 
@@ -451,7 +452,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void SetSelectedIndexInternal(int32_t aIndex, bool aNotify);
 
-  void SetSelectionChanged(bool aValue, bool aNotify);
+  void OnSelectionChanged();
 
   
 
@@ -459,25 +460,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void UpdateSelectedOptions();
 
-  
-
-
-
-
-
-  bool ShouldShowValidityUI() const {
-    
-
-
-
-
-
-    if (mForm && mForm->HasEverTriedInvalidSubmit()) {
-      return true;
-    }
-
-    return mSelectionHasChanged;
-  }
+  void SetUserInteracted(bool) final;
 
   
   RefPtr<HTMLOptionsCollection> mOptions;
@@ -496,22 +479,9 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   bool mInhibitStateRestoration : 1;
   
-
-
-  bool mSelectionHasChanged : 1;
+  bool mUserInteracted : 1;
   
-
-
   bool mDefaultSelectionSet : 1;
-  
-
-
-  bool mCanShowInvalidUI : 1;
-  
-
-
-  bool mCanShowValidUI : 1;
-
   
   bool mIsOpenInParentProcess : 1;
 

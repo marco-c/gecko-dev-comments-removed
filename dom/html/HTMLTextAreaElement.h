@@ -289,24 +289,22 @@ class HTMLTextAreaElement final : public TextControlElement,
 
   nsCOMPtr<nsIControllers> mControllers;
   
-  bool mValueChanged;
+  bool mUserInteracted = false;
+  
+  bool mValueChanged = false;
   
 
-  bool mLastValueChangeWasInteractive;
+  bool mLastValueChangeWasInteractive = false;
   
-  bool mHandlingSelect;
+  bool mHandlingSelect = false;
   
 
   bool mDoneAddingChildren;
   
   bool mInhibitStateRestoration;
   
-  bool mDisabledChanged;
-  
-  bool mCanShowInvalidUI;
-  
-  bool mCanShowValidUI;
-  bool mIsPreviewEnabled;
+  bool mDisabledChanged = false;
+  bool mIsPreviewEnabled = false;
 
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
 
@@ -353,27 +351,6 @@ class HTMLTextAreaElement final : public TextControlElement,
   
 
 
-
-
-
-  bool ShouldShowValidityUI() const {
-    
-
-
-
-
-
-
-    if (mForm && mForm->HasEverTriedInvalidSubmit()) {
-      return true;
-    }
-
-    return mValueChanged;
-  }
-
-  
-
-
   bool IsMutable() const;
 
   
@@ -392,7 +369,8 @@ class HTMLTextAreaElement final : public TextControlElement,
   void GetSelectionRange(uint32_t* aSelectionStart, uint32_t* aSelectionEnd,
                          ErrorResult& aRv);
 
-  void UpdateValidityElementStates(bool aNotify) final;
+  void SetUserInteracted(bool) final;
+  void UpdateValidityElementStates(bool aNotify);
 
  private:
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);
