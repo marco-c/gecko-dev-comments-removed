@@ -4,7 +4,7 @@
 
 
 import React from "react";
-import { Provider } from "react-redux";
+import { Provider } from "devtools/client/shared/vendor/react-redux";
 import configureStore from "redux-mock-store";
 import { shallow, mount } from "enzyme";
 import { getDisplayURL } from "../../utils/sources-tree/getURL";
