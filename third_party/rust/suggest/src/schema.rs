@@ -6,7 +6,7 @@
 use rusqlite::{Connection, Transaction};
 use sql_support::open_database::{self, ConnectionInitializer};
 
-pub const VERSION: u32 = 9;
+pub const VERSION: u32 = 10;
 
 pub const SQL: &str = "
     CREATE TABLE meta(
@@ -78,6 +78,24 @@ pub const SQL: &str = "
         id TEXT PRIMARY KEY,
         data BLOB NOT NULL
     ) WITHOUT ROWID;
+
+    CREATE TABLE yelp_subjects(
+        keyword TEXT PRIMARY KEY,
+        record_id TEXT NOT NULL
+    ) WITHOUT ROWID;
+
+    CREATE TABLE yelp_modifiers(
+        type INTEGER NOT NULL,
+        keyword TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        PRIMARY KEY (type, keyword)
+    ) WITHOUT ROWID;
+
+    CREATE TABLE yelp_location_signs(
+        keyword TEXT PRIMARY KEY,
+        need_location INTEGER NOT NULL,
+        record_id TEXT NOT NULL
+    ) WITHOUT ROWID;
 ";
 
 
@@ -108,7 +126,7 @@ impl ConnectionInitializer for SuggestConnectionInitializer {
 
     fn upgrade_from(&self, _db: &Transaction<'_>, version: u32) -> open_database::Result<()> {
         match version {
-            1..=8 => {
+            1..=9 => {
                 
                 
                 
