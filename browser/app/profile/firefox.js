@@ -2897,6 +2897,9 @@ pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 #endif
 
 
+pref("cookiebanners.ui.desktop.showCallout", false);
+
+
 pref("cookiebanners.ui.desktop.cfrVariant", 0);
 
 
