@@ -10,8 +10,6 @@ import assert from "../../utils/assert";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import InlinePreview from "./InlinePreview";
 
-import "./InlinePreview.css";
-
 
 
 
