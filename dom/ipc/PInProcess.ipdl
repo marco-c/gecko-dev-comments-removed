@@ -21,6 +21,7 @@ namespace dom {
 
 
 
+[ChildProc=Parent]
 async protocol PInProcess
 {
   manages PExtensions;

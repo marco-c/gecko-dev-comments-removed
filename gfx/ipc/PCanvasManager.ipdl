@@ -22,7 +22,7 @@ namespace gfx {
 
 
 
-[NeedsOtherPid]
+[NeedsOtherPid, ParentProc=compositor, ChildProc=anydom]
 sync protocol PCanvasManager
 {
   manages PCanvas;
