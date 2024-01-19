@@ -395,27 +395,25 @@ DNSRequestSender::Cancel(nsresult reason) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (mIPCActor->CanSend()) {
-    
-    nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-        "net::CancelDNSRequestEvent",
-        [actor(mIPCActor), host(mHost), trrServer(mTrrServer), port(mPort),
-         type(mType), originAttributes(mOriginAttributes), flags(mFlags),
-         reason]() {
-          if (!actor->CanSend()) {
-            return;
-          }
+  
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "net::CancelDNSRequestEvent",
+      [actor(mIPCActor), host(mHost), trrServer(mTrrServer), port(mPort),
+       type(mType), originAttributes(mOriginAttributes), flags(mFlags),
+       reason]() {
+        if (!actor->CanSend()) {
+          return;
+        }
 
-          if (DNSRequestChild* child = actor->AsDNSRequestChild()) {
-            Unused << child->SendCancelDNSRequest(
-                host, trrServer, port, type, originAttributes, flags, reason);
-          } else if (DNSRequestParent* parent = actor->AsDNSRequestParent()) {
-            Unused << parent->SendCancelDNSRequest(
-                host, trrServer, port, type, originAttributes, flags, reason);
-          }
-        });
-    SchedulerGroup::Dispatch(runnable.forget());
-  }
+        if (DNSRequestChild* child = actor->AsDNSRequestChild()) {
+          Unused << child->SendCancelDNSRequest(
+              host, trrServer, port, type, originAttributes, flags, reason);
+        } else if (DNSRequestParent* parent = actor->AsDNSRequestParent()) {
+          Unused << parent->SendCancelDNSRequest(
+              host, trrServer, port, type, originAttributes, flags, reason);
+        }
+      });
+  SchedulerGroup::Dispatch(runnable.forget());
   return NS_OK;
 }
 
