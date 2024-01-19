@@ -7,7 +7,9 @@
 use crate::applicable_declarations::CascadePriority;
 use crate::color::AbsoluteColor;
 use crate::computed_value_flags::ComputedValueFlags;
-use crate::custom_properties::CustomPropertiesBuilder;
+use crate::custom_properties::{
+    CustomPropertiesBuilder, DeferFontRelativeCustomPropertyResolution,
+};
 use crate::dom::TElement;
 use crate::font_metrics::FontMetricsOrientation;
 use crate::logical_geometry::WritingMode;
@@ -315,20 +317,26 @@ where
             LonghandIdSet::visited_dependent()
         },
         CascadeMode::Unvisited { visited_rules } => {
-            (
-                context.builder.custom_properties,
-                context.builder.invalid_non_custom_properties,
-            ) = {
-                let mut builder = CustomPropertiesBuilder::new(stylist, &context);
+            let deferred_custom_properties = {
+                let mut builder = CustomPropertiesBuilder::new(stylist, &mut context);
                 iter_declarations(iter, &mut declarations, Some(&mut builder));
-                builder.build()
+                
+                
+                
+                
+                builder.build(DeferFontRelativeCustomPropertyResolution::Yes)
             };
 
             
             
             cascade.apply_prioritary_properties(&mut context, &declarations, &mut shorthand_cache);
 
-           if let Some(visited_rules) = visited_rules {
+            
+            if let Some(deferred) = deferred_custom_properties {
+                CustomPropertiesBuilder::build_deferred(deferred, stylist, &mut context);
+            }
+
+            if let Some(visited_rules) = visited_rules {
                 cascade.compute_visited_style_if_needed(
                     &mut context,
                     element,
