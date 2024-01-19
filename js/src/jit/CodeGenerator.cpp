@@ -1823,9 +1823,10 @@ static void StepBackToLeadSurrogate(MacroAssembler& masm, Register regexpShared,
   Label done;
 
   
-  masm.branchTest32(Assembler::Zero,
-                    Address(regexpShared, RegExpShared::offsetOfFlags()),
-                    Imm32(int32_t(JS::RegExpFlag::Unicode)), &done);
+  masm.branchTest32(
+      Assembler::Zero, Address(regexpShared, RegExpShared::offsetOfFlags()),
+      Imm32(int32_t(JS::RegExpFlag::Unicode | JS::RegExpFlag::UnicodeSets)),
+      &done);
 
   
   masm.branchLatin1String(input, &done);
@@ -2067,6 +2068,9 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   masm.unboxNonDouble(sharedSlot, regexpReg, JSVAL_TYPE_PRIVATE_GCTHING);
 
   
+  StepBackToLeadSurrogate(masm, regexpReg, input, lastIndex, temp2, temp3);
+
+  
   Label notAtom, checkSuccess;
   masm.branchPtr(Assembler::Equal,
                  Address(regexpReg, RegExpShared::offsetOfPatternAtom()),
@@ -2099,9 +2103,6 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
 
   
   masm.store32(temp2, pairCountAddress);
-
-  
-  StepBackToLeadSurrogate(masm, regexpReg, input, lastIndex, temp2, temp3);
 
   
   

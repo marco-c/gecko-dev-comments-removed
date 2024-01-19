@@ -1123,7 +1123,7 @@ static RegExpRunStatus ExecuteRegExp(JSContext* cx, HandleObject regexp,
   
 
   
-  if (reobj->unicode()) {
+  if (reobj->unicode() || reobj->unicodeSets()) {
     
 
 
