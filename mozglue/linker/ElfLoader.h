@@ -48,14 +48,6 @@ int __wrap_dl_iterate_phdr(dl_phdr_cb callback, void* data);
 const void* __wrap___gnu_Unwind_Find_exidx(void* pc, int* pcount);
 #endif
 
-
-
-
-MFBT_API size_t __dl_get_mappable_length(void* handle);
-
-MFBT_API void* __dl_mmap(void* handle, void* addr, size_t length, off_t offset);
-
-MFBT_API void __dl_munmap(void* handle, void* addr, size_t length);
 }
 
 
@@ -165,24 +157,6 @@ class LibHandle : public mozilla::external::AtomicRefCounted<LibHandle> {
 
 
   MozRefCountType DirectRefCount() { return directRefCnt; }
-
-  
-
-
-
-  size_t GetMappableLength() const;
-
-  
-
-
-
-  void* MappableMMap(void* addr, size_t length, off_t offset) const;
-
-  
-
-
-
-  void MappableMUnmap(void* addr, size_t length) const;
 
 #ifdef __ARM_EABI__
   
