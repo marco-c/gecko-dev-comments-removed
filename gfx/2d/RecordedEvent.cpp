@@ -182,20 +182,30 @@ void Translator::DrawDependentSurface(uint64_t aKey, const Rect& aRect) {
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  const Matrix oldTransform = mCurrentDT->GetTransform();
+
+  Matrix dependentTransform = oldTransform;
+  dependentTransform.PreTranslate(aRect.TopLeft());
+
   mCurrentDT->PushClipRect(aRect);
+  mCurrentDT->SetTransform(dependentTransform);
 
-  
-  
-  
-  Matrix transform = mCurrentDT->GetTransform();
-  transform.PreTranslate(aRect.TopLeft());
-  InlineTranslator translator(mCurrentDT, nullptr);
-  translator.SetReferenceDrawTargetTransform(transform);
+  {
+    InlineTranslator translator(mCurrentDT, nullptr);
+    translator.SetReferenceDrawTargetTransform(dependentTransform);
+    translator.SetDependentSurfaces(mDependentSurfaces);
+    translator.TranslateRecording((char*)recordedSurface->mRecording.mData,
+                                  recordedSurface->mRecording.mLen);
+  }
 
-  translator.SetDependentSurfaces(mDependentSurfaces);
-  translator.TranslateRecording((char*)recordedSurface->mRecording.mData,
-                                recordedSurface->mRecording.mLen);
-
+  mCurrentDT->SetTransform(oldTransform);
   mCurrentDT->PopClip();
 }
 
