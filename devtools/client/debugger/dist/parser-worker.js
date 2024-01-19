@@ -11,7 +11,7 @@
                 Object.assign(process.env, env);
                 return;
             }
-        } catch (e) {} // avoid ReferenceError: process is not defined
+        } catch (e) {} 
         globalThis.process = { env:env };
     })();
 
@@ -2992,14 +2992,14 @@
 
     	let fastProto = null;
 
-    	// Creates an object with permanently fast properties in V8. See Toon Verwaest's
-    	// post https://medium.com/@tverwaes/setting-up-prototypes-in-v8-ec9c9491dfe2#5f62
-    	// for more details. Use %HasFastProperties(object) and the Node.js flag
-    	// --allow-natives-syntax to check whether an object has fast properties.
+    	
+    	
+    	
+    	
     	function FastObject(o) {
-    		// A prototype object will have "fast properties" enabled once it is checked
-    		// against the inline property cache of a function, e.g. fastProto.property:
-    		// https://github.com/v8/v8/blob/6.0.122/test/mjsunit/fast-prototype.js#L48-L63
+    		
+    		
+    		
     		if (fastProto !== null && typeof fastProto.property) {
     			const result = fastProto;
     			fastProto = FastObject.prototype = null;
@@ -3009,7 +3009,7 @@
     		return new FastObject;
     	}
 
-    	// Initialize the inline property cache of FastObject
+    	
     	FastObject();
 
     	toFastProperties = function toFastproperties(o) {
@@ -3022,8 +3022,8 @@
       typeof self !== "undefined" ? self :
       typeof window !== "undefined" ? window : {});
 
-    // shim for using process in browser
-    // based off https://github.com/defunctzombie/node-process/blob/master/browser.js
+    
+    
 
     function defaultSetTimout() {
         throw new Error('setTimeout has not been defined');
@@ -3042,23 +3042,23 @@
 
     function runTimeout(fun) {
         if (cachedSetTimeout === setTimeout) {
-            //normal enviroments in sane situations
+            
             return setTimeout(fun, 0);
         }
-        // if setTimeout wasn't available but was latter defined
+        
         if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
             cachedSetTimeout = setTimeout;
             return setTimeout(fun, 0);
         }
         try {
-            // when when somebody has screwed with setTimeout but no I.E. maddness
+            
             return cachedSetTimeout(fun, 0);
         } catch(e){
             try {
-                // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+                
                 return cachedSetTimeout.call(null, fun, 0);
             } catch(e){
-                // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+                
                 return cachedSetTimeout.call(this, fun, 0);
             }
         }
@@ -3067,24 +3067,24 @@
     }
     function runClearTimeout(marker) {
         if (cachedClearTimeout === clearTimeout) {
-            //normal enviroments in sane situations
+            
             return clearTimeout(marker);
         }
-        // if clearTimeout wasn't available but was latter defined
+        
         if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
             cachedClearTimeout = clearTimeout;
             return clearTimeout(marker);
         }
         try {
-            // when when somebody has screwed with setTimeout but no I.E. maddness
+            
             return cachedClearTimeout(marker);
         } catch (e){
             try {
-                // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+                
                 return cachedClearTimeout.call(null, marker);
             } catch (e){
-                // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-                // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+                
+                
                 return cachedClearTimeout.call(this, marker);
             }
         }
@@ -3147,7 +3147,7 @@
             runTimeout(drainQueue);
         }
     }
-    // v8 likes predictible objects
+    
     function Item(fun, array) {
         this.fun = fun;
         this.array = array;
@@ -3160,7 +3160,7 @@
     var browser = true;
     var env = {};
     var argv = [];
-    var version = ''; // empty string to avoid regexp issues
+    var version = ''; 
     var versions = {};
     var release = {};
     var config = {};
@@ -3184,7 +3184,7 @@
         throw new Error('process.chdir is not supported');
     }function umask() { return 0; }
 
-    // from https://github.com/kumavis/browser-process-hrtime/blob/master/index.js
+    
     var performance = global$1.performance || {};
     var performanceNow =
       performance.now        ||
@@ -3194,8 +3194,8 @@
       performance.webkitNow  ||
       function(){ return (new Date()).getTime() };
 
-    // generate timestamp or delta
-    // see http://nodejs.org/api/process.html#process_process_hrtime
+    
+    
     function hrtime(previousTimestamp){
       var clocktime = performanceNow.call(performance)*1e-3;
       var seconds = Math.floor(clocktime);
@@ -14956,25 +14956,25 @@
 
     var libExports$2 = requireLib$2();
 
-    /* This Source Code Form is subject to the terms of the Mozilla Public
-     * License, v. 2.0. If a copy of the MPL was not distributed with this
-     * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+    
+
+
 
     function createSimplePath(ancestors) {
       if (ancestors.length === 0) {
         return null;
       }
 
-      // Slice the array because babel-types traverse may continue mutating
-      // the ancestors array in later traversal logic.
+      
+      
       return new SimplePath(ancestors.slice());
     }
 
-    /**
-     * Mimics @babel/traverse's NodePath API in a simpler fashion that isn't as
-     * heavy, but still allows the ease of passing paths around to process nested
-     * AST structures.
-     */
+    
+
+
+
+
     class SimplePath {
       _index;
       _ancestors;
@@ -29537,12 +29537,12 @@
 
     var libExports$1 = requireLib$1();
 
-    /**
-     *  https://github.com/ryanjduffy/parse-script-tags
-     *
-     * Copyright (c) by Ryan Duff
-     * Licensed under the MIT License.
-     */
+    
+
+
+
+
+
 
     const alphanum = /[a-z0-9\-]/i;
 
@@ -29587,8 +29587,8 @@
           }
         } else if (attribute !== null) {
           if (c === "=") {
-            // once we've started an attribute, look for = to indicate
-            // it's a non-boolean attribute
+            
+            
             attribute.bool = false;
             if (attribute.value === true) {
               attribute.value = "";
@@ -29598,21 +29598,21 @@
             attribute.terminator === null &&
             (c === '"' || c === "'")
           ) {
-            // once we've determined it's non-boolean, look for a
-            // value terminator (", ')
+            
+            
             attribute.terminator = c;
           } else if (attribute.terminator) {
             if (c === attribute.terminator) {
-              // if we had a terminator and found another, we've
-              // reach the end of the attribute
+              
+              
               attributes[attribute.name] = attribute.value;
               attribute = null;
             } else {
-              // otherwise, append the character to the attribute value
+              
               attribute.value += c;
 
-              // check for an escaped terminator and push it as well
-              // to avoid terminating prematurely
+              
+              
               if (c === "\\") {
                 const next = str.charAt(i + 1);
                 if (next === attribute.terminator) {
@@ -29622,13 +29622,13 @@
               }
             }
           } else if (!/\s/.test(c)) {
-            // if we've hit a non-space character and aren't processing a value,
-            // we're starting a new attribute so push the attribute and clear the
-            // local variable
+            
+            
+            
             attributes[attribute.name] = attribute.value;
             attribute = null;
 
-            // move the cursor back to re-find the start of the attribute
+            
             i -= 1;
           }
         }
@@ -29656,7 +29656,7 @@
         const c = str.charAt(i++);
 
         if (!open && !tag && c === "<") {
-          // Open Start Tag
+          
           open = true;
 
           const tagNode = parseToken(str, i);
@@ -29667,10 +29667,10 @@
           i = tagNode.index - 1;
           tag = tagNode.token;
         } else if (open && c === ">") {
-          // Close Start Tag
+          
           break;
         } else if (open) {
-          // Attributes
+          
           const attributeNode = parseAttributes(str, i - 1);
 
           if (attributeNode) {
@@ -29692,7 +29692,7 @@
 
     const startScript = /<script[^>]*>/im;
     const endScript = /<\/script\s*>/im;
-    // https://stackoverflow.com/questions/5034781/js-regex-to-split-by-line#comment5633979_5035005
+    
     const newLines = /\r\n|[\n\v\f\r\x85\u2028\u2029]/;
 
     function getType(tag) {
@@ -29721,8 +29721,8 @@
           const locIndex = i + startsAt;
           const endIndex = locIndex + locLength + endMatch[0].length;
 
-          // extract the complete tag (incl start and end tags and content). if the
-          // type is invalid (= not JS), skip this tag and continue
+          
+          
           const tag = source.substring(i + startMatch.index, endIndex);
           const type = getType(tag);
           if (
@@ -29768,8 +29768,8 @@
       return Object.assign({}, location, {
         line,
         column,
-        // prepend whitespace for scripts that do not start on the first column
-        // NOTE: `column` is 1-based
+        
+        
         source: " ".repeat(column - 1) + location.source,
       });
     }
@@ -29810,7 +29810,7 @@
     }
 
     function parseScript$1({ source, line }) {
-      // remove empty or only whitespace scripts
+      
       if (source.length === 0 || /^\s+$/.test(source)) {
         return null;
       }
@@ -29829,9 +29829,9 @@
       return parseScriptTags$1(source, parser);
     }
 
-    /* This Source Code Form is subject to the terms of the Mozilla Public
-     * License, v. 2.0. If a copy of the MPL was not distributed with this
-     * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+    
+
+
 
     const cachedSources = new Map();
 
@@ -29921,8 +29921,8 @@
       return ast;
     }
 
-    // Custom parser for parse-script-tags that adapts its input structure to
-    // our parser's signature
+    
+    
     function htmlParser({ source, line }) {
       return parse(source, { startLine: line, ...sourceOptions.generated });
     }
@@ -29941,14 +29941,14 @@
 
       let ast;
 
-      // .vue files go through several passes, so while there is a
-      // single-file-component Vue template, there are also generally .vue files
-      // that are still just JS as well.
+      
+      
+      
       if (code.match(VUE_COMPONENT_START)) {
         ast = parseScriptTags(code, vueParser);
         if (libExports$2.isFile(ast)) {
-          // parseScriptTags is currently hard-coded to return scripts, but Vue
-          // always expects ESM syntax, so we just hard-code it.
+          
+          
           ast.program.sourceType = "module";
         }
       } else {
@@ -30093,27 +30093,27 @@
     		(function (global, factory) {
     		    factory(exports) ;
     		})(commonjsGlobal, (function (exports) {
-    		    /**
-    		     * Gets the index associated with `key` in the backing array, if it is already present.
-    		     */
+    		    
+
+
     		    exports.get = void 0;
-    		    /**
-    		     * Puts `key` into the backing array, if it is not already present. Returns
-    		     * the index of the `key` in the backing array.
-    		     */
+    		    
+
+
+
     		    exports.put = void 0;
-    		    /**
-    		     * Pops the last added item out of the SetArray.
-    		     */
+    		    
+
+
     		    exports.pop = void 0;
-    		    /**
-    		     * SetArray acts like a `Set` (allowing only one occurrence of a string `key`), but provides the
-    		     * index of the `key` in the backing array.
-    		     *
-    		     * This is designed to allow synchronizing a second array with the contents of the backing array,
-    		     * like how in a sourcemap `sourcesContent[i]` is the source content associated with `source[i]`,
-    		     * and there are never duplicates.
-    		     */
+    		    
+
+
+
+
+
+
+
     		    class SetArray {
     		        constructor() {
     		            this._indexes = { __proto__: null };
@@ -30123,7 +30123,7 @@
     		    (() => {
     		        exports.get = (strarr, key) => strarr._indexes[key];
     		        exports.put = (strarr, key) => {
-    		            // The key may or may not be present. If it is present, it's a number.
+    		            
     		            const index = exports.get(strarr, key);
     		            if (index !== undefined)
     		                return index;
@@ -30176,17 +30176,17 @@
         throw new Error('Invalid string. Length must be a multiple of 4')
       }
 
-      // the number of equal signs (place holders)
-      // if there are two placeholders, than the two characters before it
-      // represent one byte
-      // if there is only one, then the three characters before it represent 2 bytes
-      // this is just a cheap hack to not do indexOf twice
+      
+      
+      
+      
+      
       placeHolders = b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0;
 
-      // base64 is 4/3 + up to two characters of the original data
+      
       arr = new Arr(len * 3 / 4 - placeHolders);
 
-      // if there are placeholders, only get up to the last complete 4 chars
+      
       l = placeHolders > 0 ? len - 4 : len;
 
       var L = 0;
@@ -30230,17 +30230,17 @@
       }
       var tmp;
       var len = uint8.length;
-      var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
+      var extraBytes = len % 3; 
       var output = '';
       var parts = [];
-      var maxChunkLength = 16383; // must be multiple of 3
+      var maxChunkLength = 16383; 
 
-      // go through the array every three bytes, we'll deal with trailing stuff later
+      
       for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
         parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)));
       }
 
-      // pad the end with zeros, but make sure to not forget the extra bytes
+      
       if (extraBytes === 1) {
         tmp = uint8[len - 1];
         output += lookup[tmp >> 2];
@@ -30350,46 +30350,46 @@
       return toString.call(arr) == '[object Array]';
     };
 
-    /*!
-     * The buffer module from node.js, for the browser.
-     *
-     * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
-     * @license  MIT
-     */
+    
+
+
+
+
+
 
     var INSPECT_MAX_BYTES = 50;
 
-    /**
-     * If `Buffer.TYPED_ARRAY_SUPPORT`:
-     *   === true    Use Uint8Array implementation (fastest)
-     *   === false   Use Object implementation (most compatible, even IE6)
-     *
-     * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
-     * Opera 11.6+, iOS 4.2+.
-     *
-     * Due to various browser bugs, sometimes the Object implementation will be used even
-     * when the browser supports typed arrays.
-     *
-     * Note:
-     *
-     *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
-     *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
-     *
-     *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
-     *
-     *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
-     *     incorrect length in some situations.
+    
 
-     * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
-     * get the Object implementation, which is slower but behaves correctly.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Buffer.TYPED_ARRAY_SUPPORT = global$1.TYPED_ARRAY_SUPPORT !== undefined
       ? global$1.TYPED_ARRAY_SUPPORT
       : true;
 
-    /*
-     * Export kMaxLength after typed array support is determined.
-     */
+    
+
+
     kMaxLength();
 
     function kMaxLength () {
@@ -30403,11 +30403,11 @@
         throw new RangeError('Invalid typed array length')
       }
       if (Buffer.TYPED_ARRAY_SUPPORT) {
-        // Return an augmented `Uint8Array` instance, for best performance
+        
         that = new Uint8Array(length);
         that.__proto__ = Buffer.prototype;
       } else {
-        // Fallback: Return an object instance of the Buffer class
+        
         if (that === null) {
           that = new Buffer(length);
         }
@@ -30417,22 +30417,22 @@
       return that
     }
 
-    /**
-     * The Buffer constructor returns instances of `Uint8Array` that have their
-     * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
-     * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
-     * and the `Uint8Array` methods. Square bracket notation works as expected -- it
-     * returns a single octet.
-     *
-     * The `Uint8Array` prototype remains unmodified.
-     */
+    
+
+
+
+
+
+
+
+
 
     function Buffer (arg, encodingOrOffset, length) {
       if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
         return new Buffer(arg, encodingOrOffset, length)
       }
 
-      // Common case.
+      
       if (typeof arg === 'number') {
         if (typeof encodingOrOffset === 'string') {
           throw new Error(
@@ -30444,9 +30444,9 @@
       return from(this, arg, encodingOrOffset, length)
     }
 
-    Buffer.poolSize = 8192; // not used by this implementation
+    Buffer.poolSize = 8192; 
 
-    // TODO: Legacy, not needed anymore. Remove in next major version.
+    
     Buffer._augment = function (arr) {
       arr.__proto__ = Buffer.prototype;
       return arr
@@ -30468,14 +30468,14 @@
       return fromObject(that, value)
     }
 
-    /**
-     * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
-     * if value is a number.
-     * Buffer.from(str[, encoding])
-     * Buffer.from(array)
-     * Buffer.from(buffer)
-     * Buffer.from(arrayBuffer[, byteOffset[, length]])
-     **/
+    
+
+
+
+
+
+
+
     Buffer.from = function (value, encodingOrOffset, length) {
       return from(null, value, encodingOrOffset, length)
     };
@@ -30499,9 +30499,9 @@
         return createBuffer(that, size)
       }
       if (fill !== undefined) {
-        // Only pay attention to encoding if it's a string. This
-        // prevents accidentally sending in a number that would
-        // be interpretted as a start offset.
+        
+        
+        
         return typeof encoding === 'string'
           ? createBuffer(that, size).fill(fill, encoding)
           : createBuffer(that, size).fill(fill)
@@ -30509,10 +30509,10 @@
       return createBuffer(that, size)
     }
 
-    /**
-     * Creates a new filled Buffer instance.
-     * alloc(size[, fill[, encoding]])
-     **/
+    
+
+
+
     Buffer.alloc = function (size, fill, encoding) {
       return alloc(null, size, fill, encoding)
     };
@@ -30528,15 +30528,15 @@
       return that
     }
 
-    /**
-     * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
-     * */
+    
+
+
     Buffer.allocUnsafe = function (size) {
       return allocUnsafe(null, size)
     };
-    /**
-     * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
-     */
+    
+
+
     Buffer.allocUnsafeSlow = function (size) {
       return allocUnsafe(null, size)
     };
@@ -30556,9 +30556,9 @@
       var actual = that.write(string, encoding);
 
       if (actual !== length) {
-        // Writing a hex string, for example, that contains invalid characters will
-        // cause everything after the first invalid character to be ignored. (e.g.
-        // 'abxxcd' will be treated as 'ab')
+        
+        
+        
         that = that.slice(0, actual);
       }
 
@@ -30575,7 +30575,7 @@
     }
 
     function fromArrayBuffer (that, array, byteOffset, length) {
-      array.byteLength; // this throws if `array` is not a valid ArrayBuffer
+      array.byteLength; 
 
       if (byteOffset < 0 || array.byteLength < byteOffset) {
         throw new RangeError('\'offset\' is out of bounds')
@@ -30594,11 +30594,11 @@
       }
 
       if (Buffer.TYPED_ARRAY_SUPPORT) {
-        // Return an augmented `Uint8Array` instance, for best performance
+        
         that = array;
         that.__proto__ = Buffer.prototype;
       } else {
-        // Fallback: Return an object instance of the Buffer class
+        
         that = fromArrayLike(that, array);
       }
       return that
@@ -30635,8 +30635,8 @@
     }
 
     function checked (length) {
-      // Note: cannot use `length < kMaxLength()` here because that fails when
-      // length is NaN (which is otherwise coerced to zero.)
+      
+      
       if (length >= kMaxLength()) {
         throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
                              'size: 0x' + kMaxLength().toString(16) + ' bytes')
@@ -30735,7 +30735,7 @@
       var len = string.length;
       if (len === 0) return 0
 
-      // Use a for loop to avoid recursion
+      
       var loweredCase = false;
       for (;;) {
         switch (encoding) {
@@ -30757,7 +30757,7 @@
           case 'base64':
             return base64ToBytes(string).length
           default:
-            if (loweredCase) return utf8ToBytes(string).length // assume utf8
+            if (loweredCase) return utf8ToBytes(string).length 
             encoding = ('' + encoding).toLowerCase();
             loweredCase = true;
         }
@@ -30768,18 +30768,18 @@
     function slowToString (encoding, start, end) {
       var loweredCase = false;
 
-      // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
-      // property of a typed array.
+      
+      
 
-      // This behaves neither like String nor Uint8Array in that we set start/end
-      // to their upper/lower bounds if the value passed is out of range.
-      // undefined is handled specially as per ECMA-262 6th Edition,
-      // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+      
+      
+      
+      
       if (start === undefined || start < 0) {
         start = 0;
       }
-      // Return early if start > this.length. Done here to prevent potential uint32
-      // coercion fail below.
+      
+      
       if (start > this.length) {
         return ''
       }
@@ -30792,7 +30792,7 @@
         return ''
       }
 
-      // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+      
       end >>>= 0;
       start >>>= 0;
 
@@ -30835,8 +30835,8 @@
       }
     }
 
-    // The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
-    // Buffer instances.
+    
+    
     Buffer.prototype._isBuffer = true;
 
     function swap (b, n, m) {
@@ -30964,20 +30964,20 @@
       return 0
     };
 
-    // Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
-    // OR the last index of `val` in `buffer` at offset <= `byteOffset`.
-    //
-    // Arguments:
-    // - buffer - a Buffer to search
-    // - val - a string, Buffer, or number
-    // - byteOffset - an index into `buffer`; will be clamped to an int32
-    // - encoding - an optional encoding, relevant is val is a string
-    // - dir - true for indexOf, false for lastIndexOf
+    
+    
+    
+    
+    
+    
+    
+    
+    
     function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
-      // Empty buffer means no match
+      
       if (buffer.length === 0) return -1
 
-      // Normalize byteOffset
+      
       if (typeof byteOffset === 'string') {
         encoding = byteOffset;
         byteOffset = 0;
@@ -30986,13 +30986,13 @@
       } else if (byteOffset < -0x80000000) {
         byteOffset = -0x80000000;
       }
-      byteOffset = +byteOffset;  // Coerce to Number.
+      byteOffset = +byteOffset;  
       if (isNaN(byteOffset)) {
-        // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+        
         byteOffset = dir ? 0 : (buffer.length - 1);
       }
 
-      // Normalize byteOffset: negative offsets start from the end of the buffer
+      
       if (byteOffset < 0) byteOffset = buffer.length + byteOffset;
       if (byteOffset >= buffer.length) {
         if (dir) return -1
@@ -31002,20 +31002,20 @@
         else return -1
       }
 
-      // Normalize val
+      
       if (typeof val === 'string') {
         val = Buffer.from(val, encoding);
       }
 
-      // Finally, search either indexOf (if dir is true) or lastIndexOf
+      
       if (internalIsBuffer(val)) {
-        // Special case: looking for empty string/buffer always fails
+        
         if (val.length === 0) {
           return -1
         }
         return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
       } else if (typeof val === 'number') {
-        val = val & 0xFF; // Search for a byte value [0-255]
+        val = val & 0xFF; 
         if (Buffer.TYPED_ARRAY_SUPPORT &&
             typeof Uint8Array.prototype.indexOf === 'function') {
           if (dir) {
@@ -31110,7 +31110,7 @@
         }
       }
 
-      // must be an even number of digits
+      
       var strLen = string.length;
       if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
 
@@ -31146,17 +31146,17 @@
     }
 
     Buffer.prototype.write = function write (string, offset, length, encoding) {
-      // Buffer#write(string)
+      
       if (offset === undefined) {
         encoding = 'utf8';
         length = this.length;
         offset = 0;
-      // Buffer#write(string, encoding)
+      
       } else if (length === undefined && typeof offset === 'string') {
         encoding = offset;
         length = this.length;
         offset = 0;
-      // Buffer#write(string, offset[, length][, encoding])
+      
       } else if (isFinite(offset)) {
         offset = offset | 0;
         if (isFinite(length)) {
@@ -31166,7 +31166,7 @@
           encoding = length;
           length = undefined;
         }
-      // legacy write(string, encoding, offset, length) - remove in v0.13
+      
       } else {
         throw new Error(
           'Buffer.write(string, encoding, offset[, length]) is no longer supported'
@@ -31200,7 +31200,7 @@
             return latin1Write(this, string, offset, length)
 
           case 'base64':
-            // Warning: maxLength not taken into account in base64Write
+            
             return base64Write(this, string, offset, length)
 
           case 'ucs2':
@@ -31287,12 +31287,12 @@
         }
 
         if (codePoint === null) {
-          // we did not generate a valid codePoint so insert a
-          // replacement char (U+FFFD) and advance only 1 byte
+          
+          
           codePoint = 0xFFFD;
           bytesPerSequence = 1;
         } else if (codePoint > 0xFFFF) {
-          // encode to utf16 (surrogate pair dance)
+          
           codePoint -= 0x10000;
           res.push(codePoint >>> 10 & 0x3FF | 0xD800);
           codePoint = 0xDC00 | codePoint & 0x3FF;
@@ -31305,18 +31305,18 @@
       return decodeCodePointsArray(res)
     }
 
-    // Based on http://stackoverflow.com/a/22747272/680742, the browser with
-    // the lowest limit is Chrome, with 0x10000 args.
-    // We go 1 magnitude less, for safety
+    
+    
+    
     var MAX_ARGUMENTS_LENGTH = 0x1000;
 
     function decodeCodePointsArray (codePoints) {
       var len = codePoints.length;
       if (len <= MAX_ARGUMENTS_LENGTH) {
-        return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+        return String.fromCharCode.apply(String, codePoints) 
       }
 
-      // Decode in chunks to avoid "call stack size exceeded".
+      
       var res = '';
       var i = 0;
       while (i < len) {
@@ -31406,9 +31406,9 @@
       return newBuf
     };
 
-    /*
-     * Need to make sure that buffer isn't trying to write out of bounds.
-     */
+    
+
+
     function checkOffset (offset, ext, length) {
       if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
       if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
@@ -31844,7 +31844,7 @@
       return writeDouble(this, value, offset, false, noAssert)
     };
 
-    // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+    
     Buffer.prototype.copy = function copy (target, targetStart, start, end) {
       if (!start) start = 0;
       if (!end && end !== 0) end = this.length;
@@ -31852,18 +31852,18 @@
       if (!targetStart) targetStart = 0;
       if (end > 0 && end < start) end = start;
 
-      // Copy 0 bytes; we're done
+      
       if (end === start) return 0
       if (target.length === 0 || this.length === 0) return 0
 
-      // Fatal error conditions
+      
       if (targetStart < 0) {
         throw new RangeError('targetStart out of bounds')
       }
       if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
       if (end < 0) throw new RangeError('sourceEnd out of bounds')
 
-      // Are we oob?
+      
       if (end > this.length) end = this.length;
       if (target.length - targetStart < end - start) {
         end = target.length - targetStart + start;
@@ -31873,12 +31873,12 @@
       var i;
 
       if (this === target && start < targetStart && targetStart < end) {
-        // descending copy from end
+        
         for (i = len - 1; i >= 0; --i) {
           target[i + targetStart] = this[i + start];
         }
       } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-        // ascending copy from start
+        
         for (i = 0; i < len; ++i) {
           target[i + targetStart] = this[i + start];
         }
@@ -31893,12 +31893,12 @@
       return len
     };
 
-    // Usage:
-    //    buffer.fill(number[, offset[, end]])
-    //    buffer.fill(buffer[, offset[, end]])
-    //    buffer.fill(string[, offset[, end]][, encoding])
+    
+    
+    
+    
     Buffer.prototype.fill = function fill (val, start, end, encoding) {
-      // Handle string cases:
+      
       if (typeof val === 'string') {
         if (typeof start === 'string') {
           encoding = start;
@@ -31924,7 +31924,7 @@
         val = val & 255;
       }
 
-      // Invalid ranges are not set to a default, so can range check early.
+      
       if (start < 0 || this.length < start || this.length < end) {
         throw new RangeError('Out of range index')
       }
@@ -31956,17 +31956,17 @@
       return this
     };
 
-    // HELPER FUNCTIONS
-    // ================
+    
+    
 
     var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
 
     function base64clean (str) {
-      // Node strips out invalid characters like \n and \t from the string, base64-js does not
+      
       str = stringtrim(str).replace(INVALID_BASE64_RE, '');
-      // Node converts strings with length < 2 to ''
+      
       if (str.length < 2) return ''
-      // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+      
       while (str.length % 4 !== 0) {
         str = str + '=';
       }
@@ -31993,44 +31993,44 @@
       for (var i = 0; i < length; ++i) {
         codePoint = string.charCodeAt(i);
 
-        // is surrogate component
+        
         if (codePoint > 0xD7FF && codePoint < 0xE000) {
-          // last char was a lead
+          
           if (!leadSurrogate) {
-            // no lead yet
+            
             if (codePoint > 0xDBFF) {
-              // unexpected trail
+              
               if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
               continue
             } else if (i + 1 === length) {
-              // unpaired lead
+              
               if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
               continue
             }
 
-            // valid lead
+            
             leadSurrogate = codePoint;
 
             continue
           }
 
-          // 2 leads in a row
+          
           if (codePoint < 0xDC00) {
             if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
             leadSurrogate = codePoint;
             continue
           }
 
-          // valid surrogate pair
+          
           codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000;
         } else if (leadSurrogate) {
-          // valid bmp char, but last char was a lead
+          
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
         }
 
         leadSurrogate = null;
 
-        // encode utf8
+        
         if (codePoint < 0x80) {
           if ((units -= 1) < 0) break
           bytes.push(codePoint);
@@ -32066,7 +32066,7 @@
     function asciiToBytes (str) {
       var byteArray = [];
       for (var i = 0; i < str.length; ++i) {
-        // Node's code seems to be doing this and not & 0x7F..
+        
         byteArray.push(str.charCodeAt(i) & 0xFF);
       }
       return byteArray
@@ -32102,13 +32102,13 @@
     }
 
     function isnan (val) {
-      return val !== val // eslint-disable-line no-self-compare
+      return val !== val 
     }
 
 
-    // the following is from is-buffer, also by Feross Aboukhadijeh and with same lisence
-    // The _isBuffer check is for Safari 5-7 support, because it's missing
-    // Object.prototype.constructor. Remove this eventually
+    
+    
+    
     function isBuffer(obj) {
       return obj != null && (!!obj._isBuffer || isFastBuffer(obj) || isSlowBuffer(obj))
     }
@@ -32117,7 +32117,7 @@
       return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
     }
 
-    // For Node v0.10 support. Remove this eventually.
+    
     function isSlowBuffer (obj) {
       return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isFastBuffer(obj.slice(0, 0))
     }
@@ -32136,16 +32136,16 @@
     		    const comma = ','.charCodeAt(0);
     		    const semicolon = ';'.charCodeAt(0);
     		    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    		    const intToChar = new Uint8Array(64); // 64 possible chars.
-    		    const charToInt = new Uint8Array(128); // z is 122 in ASCII
+    		    const intToChar = new Uint8Array(64); 
+    		    const charToInt = new Uint8Array(128); 
     		    for (let i = 0; i < chars.length; i++) {
     		        const c = chars.charCodeAt(i);
     		        intToChar[i] = c;
     		        charToInt[c] = i;
     		    }
-    		    // Provide a fallback for older environments.
+    		    
     		    const td = typeof TextDecoder !== 'undefined'
-    		        ? /* #__PURE__ */ new TextDecoder()
+    		        ?  new TextDecoder()
     		        : typeof Buffer !== 'undefined'
     		            ? {
     		                decode(buf) {
@@ -32174,17 +32174,17 @@
     		            state[0] = 0;
     		            for (let i = index; i < semi; i++) {
     		                let seg;
-    		                i = decodeInteger(mappings, i, state, 0); // genColumn
+    		                i = decodeInteger(mappings, i, state, 0); 
     		                const col = state[0];
     		                if (col < lastCol)
     		                    sorted = false;
     		                lastCol = col;
     		                if (hasMoreVlq(mappings, i, semi)) {
-    		                    i = decodeInteger(mappings, i, state, 1); // sourcesIndex
-    		                    i = decodeInteger(mappings, i, state, 2); // sourceLine
-    		                    i = decodeInteger(mappings, i, state, 3); // sourceColumn
+    		                    i = decodeInteger(mappings, i, state, 1); 
+    		                    i = decodeInteger(mappings, i, state, 2); 
+    		                    i = decodeInteger(mappings, i, state, 3); 
     		                    if (hasMoreVlq(mappings, i, semi)) {
-    		                        i = decodeInteger(mappings, i, state, 4); // namesIndex
+    		                        i = decodeInteger(mappings, i, state, 4); 
     		                        seg = [col, state[1], state[2], state[3], state[4]];
     		                    }
     		                    else {
@@ -32258,8 +32258,8 @@
     		            state[0] = 0;
     		            for (let j = 0; j < line.length; j++) {
     		                const segment = line[j];
-    		                // We can push up to 5 ints, each int can take at most 7 chars, and we
-    		                // may push a comma.
+    		                
+    		                
     		                if (pos > subLength) {
     		                    out += td.decode(sub);
     		                    buf.copyWithin(0, subLength, pos);
@@ -32267,15 +32267,15 @@
     		                }
     		                if (j > 0)
     		                    buf[pos++] = comma;
-    		                pos = encodeInteger(buf, pos, state, segment, 0); // genColumn
+    		                pos = encodeInteger(buf, pos, state, segment, 0); 
     		                if (segment.length === 1)
     		                    continue;
-    		                pos = encodeInteger(buf, pos, state, segment, 1); // sourcesIndex
-    		                pos = encodeInteger(buf, pos, state, segment, 2); // sourceLine
-    		                pos = encodeInteger(buf, pos, state, segment, 3); // sourceColumn
+    		                pos = encodeInteger(buf, pos, state, segment, 1); 
+    		                pos = encodeInteger(buf, pos, state, segment, 2); 
+    		                pos = encodeInteger(buf, pos, state, segment, 3); 
     		                if (segment.length === 4)
     		                    continue;
-    		                pos = encodeInteger(buf, pos, state, segment, 4); // namesIndex
+    		                pos = encodeInteger(buf, pos, state, segment, 4); 
     		            }
     		        }
     		        return out + td.decode(buf.subarray(0, pos));
@@ -32319,28 +32319,28 @@
     		(function (global, factory) {
     		    module.exports = factory() ;
     		})(commonjsGlobal, (function () {
-    		    // Matches the scheme of a URL, eg "http://"
+    		    
     		    const schemeRegex = /^[\w+.-]+:\/\//;
-    		    /**
-    		     * Matches the parts of a URL:
-    		     * 1. Scheme, including ":", guaranteed.
-    		     * 2. User/password, including "@", optional.
-    		     * 3. Host, guaranteed.
-    		     * 4. Port, including ":", optional.
-    		     * 5. Path, including "/", optional.
-    		     * 6. Query, including "?", optional.
-    		     * 7. Hash, including "#", optional.
-    		     */
+    		    
+
+
+
+
+
+
+
+
+
     		    const urlRegex = /^([\w+.-]+:)\/\/([^@/#?]*@)?([^:/#?]*)(:\d+)?(\/[^#?]*)?(\?[^#]*)?(#.*)?/;
-    		    /**
-    		     * File URLs are weird. They dont' need the regular `//` in the scheme, they may or may not start
-    		     * with a leading `/`, they can have a domain (but only if they don't start with a Windows drive).
-    		     *
-    		     * 1. Host, optional.
-    		     * 2. Path, which may include "/", guaranteed.
-    		     * 3. Query, including "?", optional.
-    		     * 4. Hash, including "#", optional.
-    		     */
+    		    
+
+
+
+
+
+
+
+
     		    const fileRegex = /^file:(?:\/\/((?![a-z]:)[^/#?]*)?)?(\/?[^#?]*)(\?[^#]*)?(#.*)?/i;
     		    var UrlType;
     		    (function (UrlType) {
@@ -32419,8 +32419,8 @@
     		        return url;
     		    }
     		    function stripPathFilename(path) {
-    		        // If a path ends with a parent directory "..", then it's a relative path with excess parent
-    		        // paths. It's not a file, so we can't strip it.
+    		        
+    		        
     		        if (path.endsWith('/..'))
     		            return path;
     		        const index = path.lastIndexOf('/');
@@ -32428,47 +32428,47 @@
     		    }
     		    function mergePaths(url, base) {
     		        normalizePath(base, base.type);
-    		        // If the path is just a "/", then it was an empty path to begin with (remember, we're a relative
-    		        // path).
+    		        
+    		        
     		        if (url.path === '/') {
     		            url.path = base.path;
     		        }
     		        else {
-    		            // Resolution happens relative to the base path's directory, not the file.
+    		            
     		            url.path = stripPathFilename(base.path) + url.path;
     		        }
     		    }
-    		    /**
-    		     * The path can have empty directories "//", unneeded parents "foo/..", or current directory
-    		     * "foo/.". We need to normalize to a standard representation.
-    		     */
+    		    
+
+
+
     		    function normalizePath(url, type) {
     		        const rel = type <= UrlType.RelativePath;
     		        const pieces = url.path.split('/');
-    		        // We need to preserve the first piece always, so that we output a leading slash. The item at
-    		        // pieces[0] is an empty string.
+    		        
+    		        
     		        let pointer = 1;
-    		        // Positive is the number of real directories we've output, used for popping a parent directory.
-    		        // Eg, "foo/bar/.." will have a positive 2, and we can decrement to be left with just "foo".
+    		        
+    		        
     		        let positive = 0;
-    		        // We need to keep a trailing slash if we encounter an empty directory (eg, splitting "foo/" will
-    		        // generate `["foo", ""]` pieces). And, if we pop a parent directory. But once we encounter a
-    		        // real directory, we won't need to append, unless the other conditions happen again.
+    		        
+    		        
+    		        
     		        let addTrailingSlash = false;
     		        for (let i = 1; i < pieces.length; i++) {
     		            const piece = pieces[i];
-    		            // An empty directory, could be a trailing slash, or just a double "//" in the path.
+    		            
     		            if (!piece) {
     		                addTrailingSlash = true;
     		                continue;
     		            }
-    		            // If we encounter a real directory, then we don't need to append anymore.
+    		            
     		            addTrailingSlash = false;
-    		            // A current directory, which we can always drop.
+    		            
     		            if (piece === '.')
     		                continue;
-    		            // A parent directory, we need to see if there are any real directories we can pop. Else, we
-    		            // have an excess of parents, and we'll need to keep the "..".
+    		            
+    		            
     		            if (piece === '..') {
     		                if (positive) {
     		                    addTrailingSlash = true;
@@ -32476,14 +32476,14 @@
     		                    pointer--;
     		                }
     		                else if (rel) {
-    		                    // If we're in a relativePath, then we need to keep the excess parents. Else, in an absolute
-    		                    // URL, protocol relative URL, or an absolute path, we don't need to keep excess.
+    		                    
+    		                    
     		                    pieces[pointer++] = piece;
     		                }
     		                continue;
     		            }
-    		            // We've encountered a real directory. Move it to the next insertion pointer, which accounts for
-    		            // any popped or dropped directories.
+    		            
+    		            
     		            pieces[pointer++] = piece;
     		            positive++;
     		        }
@@ -32496,9 +32496,9 @@
     		        }
     		        url.path = path;
     		    }
-    		    /**
-    		     * Attempts to resolve `input` URL/path relative to `base`.
-    		     */
+    		    
+
+
     		    function resolve(input, base) {
     		        if (!input && !base)
     		            return '';
@@ -32510,22 +32510,22 @@
     		            switch (inputType) {
     		                case UrlType.Empty:
     		                    url.hash = baseUrl.hash;
-    		                // fall through
+    		                
     		                case UrlType.Hash:
     		                    url.query = baseUrl.query;
-    		                // fall through
+    		                
     		                case UrlType.Query:
     		                case UrlType.RelativePath:
     		                    mergePaths(url, baseUrl);
-    		                // fall through
+    		                
     		                case UrlType.AbsolutePath:
-    		                    // The host, user, and port are joined, you can't copy one without the others.
+    		                    
     		                    url.user = baseUrl.user;
     		                    url.host = baseUrl.host;
     		                    url.port = baseUrl.port;
-    		                // fall through
+    		                
     		                case UrlType.SchemeRelative:
-    		                    // The input doesn't have a schema at least, so we need to copy at least that over.
+    		                    
     		                    url.scheme = baseUrl.scheme;
     		            }
     		            if (baseType > inputType)
@@ -32534,20 +32534,20 @@
     		        normalizePath(url, inputType);
     		        const queryHash = url.query + url.hash;
     		        switch (inputType) {
-    		            // This is impossible, because of the empty checks at the start of the function.
-    		            // case UrlType.Empty:
+    		            
+    		            
     		            case UrlType.Hash:
     		            case UrlType.Query:
     		                return queryHash;
     		            case UrlType.RelativePath: {
-    		                // The first char is always a "/", and we need it to be relative.
+    		                
     		                const path = url.path.slice(1);
     		                if (!path)
     		                    return queryHash || '.';
     		                if (isRelative(base || input) && !isRelative(path)) {
-    		                    // If base started with a leading ".", or there is no base and input started with a ".",
-    		                    // then we need to ensure that the relative path starts with a ".". We don't know if
-    		                    // relative starts with a "..", though, so check before prepending.
+    		                    
+    		                    
+    		                    
     		                    return './' + path + queryHash;
     		                }
     		                return path + queryHash;
@@ -32578,20 +32578,20 @@
     		})(commonjsGlobal, (function (exports, sourcemapCodec, resolveUri) {
     		    function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
-    		    var resolveUri__default = /*#__PURE__*/_interopDefaultLegacy(resolveUri);
+    		    var resolveUri__default = _interopDefaultLegacy(resolveUri);
 
     		    function resolve(input, base) {
-    		        // The base is always treated as a directory, if it's not empty.
-    		        // https://github.com/mozilla/source-map/blob/8cb3ee57/lib/util.js#L327
-    		        // https://github.com/chromium/chromium/blob/da4adbb3/third_party/blink/renderer/devtools/front_end/sdk/SourceMap.js#L400-L401
+    		        
+    		        
+    		        
     		        if (base && !base.endsWith('/'))
     		            base += '/';
     		        return resolveUri__default["default"](input, base);
     		    }
 
-    		    /**
-    		     * Removes everything after the last "/", but leaves the slash.
-    		     */
+    		    
+
+
     		    function stripFilename(path) {
     		        if (!path)
     		            return '';
@@ -32611,8 +32611,8 @@
     		        const unsortedIndex = nextUnsortedSegmentLine(mappings, 0);
     		        if (unsortedIndex === mappings.length)
     		            return mappings;
-    		        // If we own the array (meaning we parsed it from JSON), then we're free to directly mutate it. If
-    		        // not, we do not want to modify the consumer's input array.
+    		        
+    		        
     		        if (!owned)
     		            mappings = mappings.slice();
     		        for (let i = unsortedIndex; i < mappings.length; i = nextUnsortedSegmentLine(mappings, i + 1)) {
@@ -32645,22 +32645,22 @@
     		    }
 
     		    let found = false;
-    		    /**
-    		     * A binary search implementation that returns the index if a match is found.
-    		     * If no match is found, then the left-index (the index associated with the item that comes just
-    		     * before the desired index) is returned. To maintain proper sort order, a splice would happen at
-    		     * the next index:
-    		     *
-    		     * ```js
-    		     * const array = [1, 3];
-    		     * const needle = 2;
-    		     * const index = binarySearch(array, needle, (item, needle) => item - needle);
-    		     *
-    		     * assert.equal(index, 0);
-    		     * array.splice(index + 1, 0, needle);
-    		     * assert.deepEqual(array, [1, 2, 3]);
-    		     * ```
-    		     */
+    		    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     		    function binarySearch(haystack, needle, low, high) {
     		        while (low <= high) {
     		            const mid = low + ((high - low) >> 1);
@@ -32700,10 +32700,10 @@
     		            lastIndex: -1,
     		        };
     		    }
-    		    /**
-    		     * This overly complicated beast is just to record the last tested line/column and the resulting
-    		     * index, allowing us to skip a few tests if mappings are monotonically increasing.
-    		     */
+    		    
+
+
+
     		    function memoizedBinarySearch(haystack, needle, state, key) {
     		        const { lastKey, lastNeedle, lastIndex } = state;
     		        let low = 0;
@@ -32714,7 +32714,7 @@
     		                return lastIndex;
     		            }
     		            if (needle >= lastNeedle) {
-    		                // lastIndex may be -1 if the previous needle was not found.
+    		                
     		                low = lastIndex === -1 ? 0 : lastIndex;
     		            }
     		            else {
@@ -32726,8 +32726,8 @@
     		        return (state.lastIndex = binarySearch(haystack, needle, low, high));
     		    }
 
-    		    // Rebuilds the original source files, with mappings that are ordered by source line/column instead
-    		    // of generated line/column.
+    		    
+    		    
     		    function buildBySources(decoded, memos) {
     		        const sources = memos.map(buildNullArray);
     		        for (let i = 0; i < decoded.length; i++) {
@@ -32742,10 +32742,10 @@
     		                const originalSource = sources[sourceIndex];
     		                const originalLine = (originalSource[sourceLine] || (originalSource[sourceLine] = []));
     		                const memo = memos[sourceIndex];
-    		                // The binary search either found a match, or it found the left-index just before where the
-    		                // segment should go. Either way, we want to insert after that. And there may be multiple
-    		                // generated segments associated with an original location, so there may need to move several
-    		                // indexes before we find where we need to insert.
+    		                
+    		                
+    		                
+    		                
     		                const index = upperBound(originalLine, sourceColumn, memoizedBinarySearch(originalLine, sourceColumn, memo, sourceLine));
     		                insert(originalLine, (memo.lastIndex = index + 1), [sourceColumn, i, seg[COLUMN]]);
     		            }
@@ -32758,11 +32758,11 @@
     		        }
     		        array[index] = value;
     		    }
-    		    // Null arrays allow us to use ordered index keys without actually allocating contiguous memory like
-    		    // a real array. We use a null-prototype object to avoid prototype pollution and deoptimizations.
-    		    // Numeric properties on objects are magically sorted in ascending order by the engine regardless of
-    		    // the insertion order. So, by setting any numeric keys, even out of order, we'll get ascending
-    		    // order when iterating with for-in.
+    		    
+    		    
+    		    
+    		    
+    		    
     		    function buildNullArray() {
     		        return { __proto__: null };
     		    }
@@ -32822,24 +32822,24 @@
     		                sourcesContent.push(null);
     		        for (let i = 0; i < decoded.length; i++) {
     		            const lineI = lineOffset + i;
-    		            // We can only add so many lines before we step into the range that the next section's map
-    		            // controls. When we get to the last line, then we'll start checking the segments to see if
-    		            // they've crossed into the column range. But it may not have any columns that overstep, so we
-    		            // still need to check that we don't overstep lines, too.
+    		            
+    		            
+    		            
+    		            
     		            if (lineI > stopLine)
     		                return;
-    		            // The out line may already exist in mappings (if we're continuing the line started by a
-    		            // previous section). Or, we may have jumped ahead several lines to start this section.
+    		            
+    		            
     		            const out = getLine(mappings, lineI);
-    		            // On the 0th loop, the section's column offset shifts us forward. On all other lines (since the
-    		            // map can be multiple lines), it doesn't.
+    		            
+    		            
     		            const cOffset = i === 0 ? columnOffset : 0;
     		            const line = decoded[i];
     		            for (let j = 0; j < line.length; j++) {
     		                const seg = line[j];
     		                const column = cOffset + seg[COLUMN];
-    		                // If this segment steps into the column range that the next section's map controls, we need
-    		                // to stop early.
+    		                
+    		                
     		                if (lineI === stopLine && column >= stopColumn)
     		                    return;
     		                if (seg.length === 1) {
@@ -32869,55 +32869,55 @@
     		    const COL_GTR_EQ_ZERO = '`column` must be greater than or equal to 0 (columns start at column 0)';
     		    const LEAST_UPPER_BOUND = -1;
     		    const GREATEST_LOWER_BOUND = 1;
-    		    /**
-    		     * Returns the encoded (VLQ string) form of the SourceMap's mappings field.
-    		     */
+    		    
+
+
     		    exports.encodedMappings = void 0;
-    		    /**
-    		     * Returns the decoded (array of lines of segments) form of the SourceMap's mappings field.
-    		     */
+    		    
+
+
     		    exports.decodedMappings = void 0;
-    		    /**
-    		     * A low-level API to find the segment associated with a generated line/column (think, from a
-    		     * stack trace). Line and column here are 0-based, unlike `originalPositionFor`.
-    		     */
+    		    
+
+
+
     		    exports.traceSegment = void 0;
-    		    /**
-    		     * A higher-level API to find the source/line/column associated with a generated line/column
-    		     * (think, from a stack trace). Line is 1-based, but column is 0-based, due to legacy behavior in
-    		     * `source-map` library.
-    		     */
+    		    
+
+
+
+
     		    exports.originalPositionFor = void 0;
-    		    /**
-    		     * Finds the generated line/column position of the provided source/line/column source position.
-    		     */
+    		    
+
+
     		    exports.generatedPositionFor = void 0;
-    		    /**
-    		     * Finds all generated line/column positions of the provided source/line/column source position.
-    		     */
+    		    
+
+
     		    exports.allGeneratedPositionsFor = void 0;
-    		    /**
-    		     * Iterates each mapping in generated position order.
-    		     */
+    		    
+
+
     		    exports.eachMapping = void 0;
-    		    /**
-    		     * Retrieves the source content for a particular source, if its found. Returns null if not.
-    		     */
+    		    
+
+
     		    exports.sourceContentFor = void 0;
-    		    /**
-    		     * A helper that skips sorting of the input map's mappings array, which can be expensive for larger
-    		     * maps.
-    		     */
+    		    
+
+
+
     		    exports.presortedDecodedMap = void 0;
-    		    /**
-    		     * Returns a sourcemap object (with decoded mappings) suitable for passing to a library that expects
-    		     * a sourcemap, or to JSON.stringify.
-    		     */
+    		    
+
+
+
     		    exports.decodedMap = void 0;
-    		    /**
-    		     * Returns a sourcemap object (with encoded mappings) suitable for passing to a library that expects
-    		     * a sourcemap, or to JSON.stringify.
-    		     */
+    		    
+
+
+
     		    exports.encodedMap = void 0;
     		    class TraceMap {
     		        constructor(map, mapUrl) {
@@ -32958,8 +32958,8 @@
     		        };
     		        exports.traceSegment = (map, line, column) => {
     		            const decoded = exports.decodedMappings(map);
-    		            // It's common for parent source maps to have pointers to lines that have no
-    		            // mapping (like a "//# sourceMappingURL=") at the end of the child file.
+    		            
+    		            
     		            if (line >= decoded.length)
     		                return null;
     		            const segments = decoded[line];
@@ -32973,8 +32973,8 @@
     		            if (column < 0)
     		                throw new Error(COL_GTR_EQ_ZERO);
     		            const decoded = exports.decodedMappings(map);
-    		            // It's common for parent source maps to have pointers to lines that have no
-    		            // mapping (like a "//# sourceMappingURL=") at the end of the child file.
+    		            
+    		            
     		            if (line >= decoded.length)
     		                return OMapping(null, null, null, null);
     		            const segments = decoded[line];
@@ -32988,7 +32988,7 @@
     		            return OMapping(resolvedSources[segment[SOURCES_INDEX]], segment[SOURCE_LINE] + 1, segment[SOURCE_COLUMN], segment.length === 5 ? names[segment[NAMES_INDEX]] : null);
     		        };
     		        exports.allGeneratedPositionsFor = (map, { source, line, column, bias }) => {
-    		            // SourceMapConsumer uses LEAST_UPPER_BOUND for some reason, so we follow suit.
+    		            
     		            return generatedPosition(map, source, line, column, bias || LEAST_UPPER_BOUND, true);
     		        };
     		        exports.generatedPositionFor = (map, { source, line, column, bias }) => {
@@ -33101,21 +33101,21 @@
     		    }
     		    function sliceGeneratedPositions(segments, memo, line, column, bias) {
     		        let min = traceSegmentInternal(segments, memo, line, column, GREATEST_LOWER_BOUND);
-    		        // We ignored the bias when tracing the segment so that we're guarnateed to find the first (in
-    		        // insertion order) segment that matched. Even if we did respect the bias when tracing, we would
-    		        // still need to call `lowerBound()` to find the first segment, which is slower than just looking
-    		        // for the GREATEST_LOWER_BOUND to begin with. The only difference that matters for us is when the
-    		        // binary search didn't match, in which case GREATEST_LOWER_BOUND just needs to increment to
-    		        // match LEAST_UPPER_BOUND.
+    		        
+    		        
+    		        
+    		        
+    		        
+    		        
     		        if (!found && bias === LEAST_UPPER_BOUND)
     		            min++;
     		        if (min === -1 || min === segments.length)
     		            return [];
-    		        // We may have found the segment that started at an earlier column. If this is the case, then we
-    		        // need to slice all generated segments that match _that_ column, because all such segments span
-    		        // to our desired column.
+    		        
+    		        
+    		        
     		        const matchedColumn = found ? column : segments[min][COLUMN];
-    		        // The binary search is not guaranteed to find the lower bound when a match wasn't found.
+    		        
     		        if (!found)
     		            min = lowerBound(segments, matchedColumn, min);
     		        const max = upperBound(segments, matchedColumn, min);
@@ -33156,56 +33156,56 @@
     		    const NAMES_INDEX = 4;
 
     		    const NO_NAME = -1;
-    		    /**
-    		     * A low-level API to associate a generated position with an original source position. Line and
-    		     * column here are 0-based, unlike `addMapping`.
-    		     */
+    		    
+
+
+
     		    exports.addSegment = void 0;
-    		    /**
-    		     * A high-level API to associate a generated position with an original source position. Line is
-    		     * 1-based, but column is 0-based, due to legacy behavior in `source-map` library.
-    		     */
+    		    
+
+
+
     		    exports.addMapping = void 0;
-    		    /**
-    		     * Same as `addSegment`, but will only add the segment if it generates useful information in the
-    		     * resulting map. This only works correctly if segments are added **in order**, meaning you should
-    		     * not add a segment with a lower generated line/column than one that came before.
-    		     */
+    		    
+
+
+
+
     		    exports.maybeAddSegment = void 0;
-    		    /**
-    		     * Same as `addMapping`, but will only add the mapping if it generates useful information in the
-    		     * resulting map. This only works correctly if mappings are added **in order**, meaning you should
-    		     * not add a mapping with a lower generated line/column than one that came before.
-    		     */
+    		    
+
+
+
+
     		    exports.maybeAddMapping = void 0;
-    		    /**
-    		     * Adds/removes the content of the source file to the source map.
-    		     */
+    		    
+
+
     		    exports.setSourceContent = void 0;
-    		    /**
-    		     * Returns a sourcemap object (with decoded mappings) suitable for passing to a library that expects
-    		     * a sourcemap, or to JSON.stringify.
-    		     */
+    		    
+
+
+
     		    exports.toDecodedMap = void 0;
-    		    /**
-    		     * Returns a sourcemap object (with encoded mappings) suitable for passing to a library that expects
-    		     * a sourcemap, or to JSON.stringify.
-    		     */
+    		    
+
+
+
     		    exports.toEncodedMap = void 0;
-    		    /**
-    		     * Constructs a new GenMapping, using the already present mappings of the input.
-    		     */
+    		    
+
+
     		    exports.fromMap = void 0;
-    		    /**
-    		     * Returns an array of high-level mapping objects for every recorded segment, which could then be
-    		     * passed to the `source-map` library.
-    		     */
+    		    
+
+
+
     		    exports.allMappings = void 0;
-    		    // This split declaration is only so that terser can elminiate the static initialization block.
+    		    
     		    let addSegmentInternal;
-    		    /**
-    		     * Provides the state to generate a sourcemap.
-    		     */
+    		    
+
+
     		    class GenMapping {
     		        constructor({ file, sourceRoot } = {}) {
     		            this._names = new setArray.SetArray();
@@ -33281,7 +33281,7 @@
     		            gen._mappings = traceMapping.decodedMappings(map);
     		            return gen;
     		        };
-    		        // Internal helpers
+    		        
     		        addSegmentInternal = (skipable, map, genLine, genColumn, source, sourceLine, sourceColumn, name, content) => {
     		            const { _mappings: mappings, _sources: sources, _sourcesContent: sourcesContent, _names: names, } = map;
     		            const line = getLine(mappings, genLine);
@@ -33339,26 +33339,26 @@
     		            setArray.put(strarr, array[i]);
     		    }
     		    function skipSourceless(line, index) {
-    		        // The start of a line is already sourceless, so adding a sourceless segment to the beginning
-    		        // doesn't generate any useful information.
+    		        
+    		        
     		        if (index === 0)
     		            return true;
     		        const prev = line[index - 1];
-    		        // If the previous segment is also sourceless, then adding another sourceless segment doesn't
-    		        // genrate any new information. Else, this segment will end the source/named segment and point to
-    		        // a sourceless position, which is useful.
+    		        
+    		        
+    		        
     		        return prev.length === 1;
     		    }
     		    function skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex) {
-    		        // A source/named segment at the start of a line gives position at that genColumn
+    		        
     		        if (index === 0)
     		            return false;
     		        const prev = line[index - 1];
-    		        // If the previous segment is sourceless, then we're transitioning to a source.
+    		        
     		        if (prev.length === 1)
     		            return false;
-    		        // If the previous segment maps to the exact same source position, then this segment doesn't
-    		        // provide any new position information.
+    		        
+    		        
     		        return (sourcesIndex === prev[SOURCES_INDEX] &&
     		            sourceLine === prev[SOURCE_LINE] &&
     		            sourceColumn === prev[SOURCE_COLUMN] &&
@@ -35686,7 +35686,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     	const isArray = Array.isArray;
     	const isBuffer = Buffer.isBuffer;
     	const isObject = (value) => {
-    		// This is a very simple check, but it’s good enough for what we need.
+    		
     		return toString.call(value) == '[object Object]';
     	};
     	const isString = (value) => {
@@ -35707,9 +35707,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     		return toString.call(value) == '[object Set]';
     	};
 
-    	/*--------------------------------------------------------------------------*/
+    	
 
-    	// https://mathiasbynens.be/notes/javascript-escapes#single
+    	
     	const singleEscapes = {
     		'"': '\\"',
     		'\'': '\\\'',
@@ -35719,8 +35719,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     		'\n': '\\n',
     		'\r': '\\r',
     		'\t': '\\t'
-    		// `\v` is omitted intentionally, because in IE < 9, '\v' == 'v'.
-    		// '\v': '\\x0B'
+    		
+    		
     	};
     	const regexSingleEscape = /["'\\\b\f\n\r\t]/;
 
@@ -35733,7 +35733,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     			++options.indentLevel;
     			indent = options.indent.repeat(options.indentLevel);
     		};
-    		// Handle options
+    		
     		const defaults = {
     			'escapeEverything': false,
     			'minimal': false,
@@ -35840,7 +35840,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     					(compact ? '' : oldIndent) + ']';
     			} else if (isNumber(argument)) {
     				if (json) {
-    					// Some number values (e.g. `Infinity`) cannot be represented in JSON.
+    					
     					return JSON.stringify(argument);
     				}
     				if (useDecNumbers) {
@@ -35861,13 +35861,13 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     				}
     			} else if (!isObject(argument)) {
     				if (json) {
-    					// For some values (e.g. `undefined`, `function` objects),
-    					// `JSON.stringify(value)` returns `undefined` (which isn’t valid
-    					// JSON) instead of `'null'`.
+    					
+    					
+    					
     					return JSON.stringify(argument) || 'null';
     				}
     				return String(argument);
-    			} else { // it’s an object
+    			} else { 
     				result = [];
     				options.wrap = true;
     				increaseIndentation();
@@ -35889,7 +35889,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     		}
 
     		const string = argument;
-    		// Loop over each code unit in the string and escape it
+    		
     		let index = -1;
     		const length = string.length;
     		result = '';
@@ -35897,13 +35897,13 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     			const character = string.charAt(index);
     			if (options.es6) {
     				const first = string.charCodeAt(index);
-    				if ( // check if it’s the start of a surrogate pair
-    					first >= 0xD800 && first <= 0xDBFF && // high surrogate
-    					length > index + 1 // there is a next code unit
+    				if ( 
+    					first >= 0xD800 && first <= 0xDBFF && 
+    					length > index + 1 
     				) {
     					const second = string.charCodeAt(index + 1);
-    					if (second >= 0xDC00 && second <= 0xDFFF) { // low surrogate
-    						// https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+    					if (second >= 0xDC00 && second <= 0xDFFF) { 
+    						
     						const codePoint = (first - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
     						let hexadecimal = codePoint.toString(16);
     						if (!lowercaseHex) {
@@ -35917,8 +35917,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     			}
     			if (!options.escapeEverything) {
     				if (regexWhitelist.test(character)) {
-    					// It’s a printable ASCII character that is not `"`, `'` or `\`,
-    					// so don’t escape it.
+    					
+    					
     					result += character;
     					continue;
     				}
@@ -35944,7 +35944,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     				continue;
     			}
     			if (regexSingleEscape.test(character)) {
-    				// no need for a `hasOwnProperty` check here
+    				
     				result += singleEscapes[character];
     				continue;
     			}
@@ -35970,7 +35970,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     			result = result.replace(/\$\{/g, '\\\$\{');
     		}
     		if (options.isScriptContext) {
-    			// https://mathiasbynens.be/notes/etago
+    			
     			return result
     				.replace(/<\/(script|style)/gi, '<\\/$1')
     				.replace(/<!--/g, json ? '\\u003C!--' : '\\x3C!--');
@@ -38723,7 +38723,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     }
 
     var libExports = requireLib();
-    var generate = /*@__PURE__*/getDefaultExportFromCjs(libExports);
+    var generate = getDefaultExportFromCjs(libExports);
 
     function isFunction(node) {
       return (
@@ -38787,16 +38787,16 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return /^\[/m.test(expression);
     }
 
-    /**
-     * Add the identifiers for a given object pattern.
-     *
-     * @param {Array.<Object>} identifiers
-     *        the current list of identifiers where to push the new identifiers
-     *        related to this path.
-     * @param {Set<String>} identifiersKeys
-     *        List of currently registered identifier location key.
-     * @param {Object} pattern
-     */
+    
+
+
+
+
+
+
+
+
+
     function addPatternIdentifiers(identifiers, identifiersKeys, pattern) {
       let items;
       if (libExports$2.isObjectPattern(pattern)) {
@@ -38828,8 +38828,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
     }
 
-    // Top Level checks the number of "body" nodes in the ancestor chain
-    // if the node is top-level, then it shoul only have one body.
+    
+    
     function isTopLevel(ancestors) {
       return ancestors.filter(ancestor => ancestor.key == "body").length == 1;
     }
@@ -38845,7 +38845,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
             return param.name;
           }
 
-          // Parameter with default value
+          
           if (
             param.left.type === "Identifier" &&
             param.right.type === "Identifier"
@@ -38879,8 +38879,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return [];
     }
 
-    // the function class is inferred from a call like
-    // createClass or extend
+    
+    
     function fromCallExpression(callExpression) {
       const allowlist = ["extend", "createClass"];
       const { callee } = callExpression.node;
@@ -38924,8 +38924,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return null;
     }
 
-    // the function class is inferred from a prototype assignment
-    // e.g. TodoClass.prototype.render = function() {}
+    
+    
     function fromPrototype(assignment) {
       const { left } = assignment.node;
       if (!left) {
@@ -38944,10 +38944,10 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return null;
     }
 
-    // infer class finds an appropriate class for functions
-    // that are defined inside of a class like thing.
-    // e.g. `class Foo`, `TodoClass.prototype.foo`,
-    //      `Todo = createClass({ foo: () => {}})`
+    
+    
+    
+    
     function inferClassName(path) {
       const classDeclaration = path.findParent(p => libExports$2.isClassDeclaration(p.node));
       if (classDeclaration) {
@@ -38967,9 +38967,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return null;
     }
 
-    // Perform ES6's anonymous function name inference for all
-    // locations where static analysis is possible.
-    // eslint-disable-next-line complexity
+    
+    
+    
     function getFunctionName(node, parent) {
       if (libExports$2.isIdentifier(node.id)) {
         return node.id.name;
@@ -38999,9 +38999,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
 
       if (
         libExports$2.isObjectProperty(parent, { computed: false, value: node }) ||
-        // TODO: Babylon 6 doesn't support computed class props. It is included
-        // here so that it is most flexible. Once Babylon 7 is used, this
-        // can change to use computed: false like ObjectProperty.
+        
+        
+        
         (libExports$2.isClassProperty(parent, { value: node }) && !parent.computed) ||
         (libExports$2.isClassPrivateProperty(parent, { value: node }) && !parent.computed)
       ) {
@@ -39027,8 +39027,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
           return parent.left.name;
         }
 
-        // This case is not supported in standard ES6 name inference, but it
-        // is included here since it is still a helpful case during debugging.
+        
+        
         if (libExports$2.isMemberExpression(parent.left, { computed: false })) {
           return parent.left.property.name;
         }
@@ -39103,12 +39103,12 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return identifiers.some(identifier => identifier.name == "Vue");
     }
 
-    /* This identifies the react lib file */
+    
     function isReact(identifiers) {
       return identifiers.some(identifier => identifier.name == "isReactComponent");
     }
 
-    /* This identifies the redux lib file */
+    
     function isRedux(identifiers) {
       return identifiers.some(identifier => identifier.name == "Redux");
     }
@@ -39128,9 +39128,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         location: path.node.loc,
         parameterNames: getFunctionParameterNames(path),
         identifier: path.node.id,
-        // indicates the occurence of the function in a file
-        // e.g { name: foo, ... index: 4 } is the 4th foo function
-        // in the file
+        
+        
+        
         index,
       });
     }
@@ -39168,7 +39168,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         (libExports$2.isStringLiteral(path) || libExports$2.isNumericLiteral(path)) &&
         libExports$2.isMemberExpression(path.parentPath)
       ) {
-        // We only need literals that are part of computed memeber expressions
+        
         const { start, end } = path.node.loc;
         symbols.literals.push({
           location: { start, end },
@@ -39189,8 +39189,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         memberExpressions: [],
         comments: [],
         identifiers: [],
-        // This holds a set of unique identifier location key (string)
-        // It helps registering only the first identifier when there is duplicated ones for the same location.
+        
+        
         identifiersKeys: new Set(),
         classes: [],
         literals: [],
@@ -39217,7 +39217,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         },
       });
 
-      // comments are extracted separately from the AST
+      
       symbols.comments = getComments(ast);
       symbols.framework = getFramework(symbols);
 
@@ -39413,11 +39413,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         return [];
       }
       let { functions } = symbols;
-      // Avoid transferring more symbols than necessary
+      
       if (maxResults && functions.length > maxResults) {
         functions = functions.slice(0, maxResults);
       }
-      // The Outline & the Quick open panels do not need anonymous functions
+      
       return functions.filter(fn => fn.name !== "anonymous");
     }
 
@@ -39430,48 +39430,98 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return symbols.classes;
     }
 
-    // This is only called from the main thread and we return a subset of attributes
+    function containsPosition$1(a, b) {
+      const bColumn = b.column || 0;
+      const startsBefore =
+        a.start.line < b.line ||
+        (a.start.line === b.line && a.start.column <= bColumn);
+      const endsAfter =
+        a.end.line > b.line || (a.end.line === b.line && a.end.column >= bColumn);
+
+      return startsBefore && endsAfter;
+    }
+
+    function getClosestFunctionName(location) {
+      const symbols = getInternalSymbols(location.source.id);
+      if (!symbols || !symbols.functions) {
+        return "";
+      }
+
+      const closestFunction = symbols.functions.reduce((found, currNode) => {
+        if (
+          currNode.name === "anonymous" ||
+          !containsPosition$1(currNode.location, {
+            line: location.line,
+            column: location.column || 0,
+          })
+        ) {
+          return found;
+        }
+
+        if (!found) {
+          return currNode;
+        }
+
+        if (found.location.start.line > currNode.location.start.line) {
+          return found;
+        }
+        if (
+          found.location.start.line === currNode.location.start.line &&
+          found.location.start.column > currNode.location.start.column
+        ) {
+          return found;
+        }
+
+        return currNode;
+      }, null);
+
+      if (!closestFunction) {
+        return "";
+      }
+      return closestFunction.name;
+    }
+
+    
     function getSymbols(sourceId) {
       const symbols = getInternalSymbols(sourceId);
       return {
-        // This is used in the main thread by:
-        // - Outline panel
-        // - The `getFunctionSymbols` function
-        // - The mapping of frame function names
-        // And within the worker by `findOutOfScopeLocations`
-        functions: symbols.functions,
+        
+        
+        
+        
+        
 
-        // The three following attributes are only used by `findBestMatchExpression` within the worker thread
-        // `memberExpressions`, `literals`
-        // This one is also used within the worker for framework computation
-        // `identifiers`
-        //
-        // These three memberExpressions, literals and identifiers attributes are arrays containing objects whose attributes are:
-        // * name: string
-        // * location: object {start: number, end: number}
-        // * expression: string
-        // * computed: boolean (only for memberExpressions)
-        //
-        // `findBestMatchExpression` uses `location`, `computed` and `expression` (not name).
-        //    `expression` isn't used from the worker thread implementation of `findBestMatchExpression`.
-        //    The main thread only uses `expression` and `location`.
-        // framework computation uses only:
-        // * `name` for identifiers
-        // * `expression` for memberExpression
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        // This is used within the worker for framework computation,
-        // and in the `getClassSymbols` function
-        // `classes`
+        
+        
+        
 
-        // The two following are only used by the main thread for computing CodeMirror "mode"
+        
         hasJsx: symbols.hasJsx,
         hasTypes: symbols.hasTypes,
 
-        // This is used in the main thread only to compute the source icon
+        
         framework: symbols.framework,
 
-        // This is only used by `findOutOfScopeLocations`:
-        // `comments`
+        
+        
       };
     }
 
@@ -39528,16 +39578,16 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       };
     }
 
-    /**
-     * Get a list of identifiers that are part of the given path.
-     *
-     * @param {Array.<Object>} identifiers
-     *        the current list of identifiers where to push the new identifiers
-     *        related to this path.
-     * @param {Set<String>} identifiersKeys
-     *        List of currently registered identifier location key.
-     * @param {Object} path
-     */
+    
+
+
+
+
+
+
+
+
+
     function getIdentifierSymbols(identifiers, identifiersKeys, path) {
       if (libExports$2.isStringLiteral(path) && libExports$2.isProperty(path.parentPath)) {
         if (!identifiersKeys.has(nodeLocationKey(path.node.loc))) {
@@ -39555,7 +39605,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
 
       if (libExports$2.isIdentifier(path) && !libExports$2.isGenericTypeAnnotation(path.parent)) {
-        // We want to include function params, but exclude the function name
+        
         if (libExports$2.isClassMethod(path.parent) && !path.inList) {
           return;
         }
@@ -39607,29 +39657,29 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
     }
 
-    /**
-     * "implicit"
-     * Variables added automaticly like "this" and "arguments"
-     *
-     * "var"
-     * Variables declared with "var" or non-block function declarations
-     *
-     * "let"
-     * Variables declared with "let".
-     *
-     * "const"
-     * Variables declared with "const", or added as const
-     * bindings like inner function expressions and inner class names.
-     *
-     * "import"
-     * Imported binding names exposed from other modules.
-     *
-     * "global"
-     * Variables that reference undeclared global values.
-     */
+    
 
-    // Location information about the expression immediartely surrounding a
-    // given binding reference.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
 
     function isGeneratedId(id) {
       return !/\/originalSource/.test(id);
@@ -39648,26 +39698,26 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       const { global, lexical } = createGlobalScope(ast, sourceId);
 
       const state = {
-        // The id for the source that scope list is generated for
+        
         sourceId,
 
-        // A map of any free variables(variables which are used within the current scope but not
-        // declared within the scope). This changes when a new scope is created.
+        
+        
         freeVariables: new Map(),
 
-        // A stack of all the free variables created across all the scopes that have
-        // been created.
+        
+        
         freeVariableStack: [],
 
         inType: null,
 
-        // The current scope, a new scope is potentially created on a visit to each node
-        // depending in the criteria. Initially set to the lexical global scope which is the
-        // child to the global scope.
+        
+        
+        
         scope: lexical,
 
-        // A stack of all the existing scopes, this is mainly used retrieve the parent scope
-        // (which is the last scope push onto the stack) on exiting a visited node.
+        
+        
         scopeStack: [],
 
         declarationBindingIds: new Set(),
@@ -39687,9 +39737,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         binding.refs = freeVariables.concat(binding.refs);
       }
 
-      // TODO: This should probably check for ".mjs" extension on the
-      // original file, and should also be skipped if the the generated
-      // code is an ES6 module rather than a script.
+      
+      
+      
       if (
         isGeneratedId(sourceId) ||
         (ast.program.sourceType === "script" && !looksLikeCommonJS(global))
@@ -39705,8 +39755,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         return undefined;
       }
       return children.map(scope => ({
-        // Removing unneed information from TempScope such as parent reference.
-        // We also need to convert BabelLocation to the Location type.
+        
+        
         start: scope.loc.start,
         end: scope.loc.end,
         type:
@@ -39720,28 +39770,28 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }));
     }
 
-    /**
-     * Create a new scope object and link the scope to it parent.
-     *
-     * @param {String} type - scope type
-     * @param {String} displayName - The scope display name
-     * @param {Object} parent - The parent object scope
-     * @param {Object} loc - The start and end postions (line/columns) of the scope
-     * @returns {Object} The newly created scope
-     */
+    
+
+
+
+
+
+
+
+
     function createTempScope(type, displayName, parent, loc) {
       const scope = {
         type,
         displayName,
         parent,
 
-        // A list of all the child scopes
+        
         children: [],
         loc,
 
-        // All the bindings defined in this scope
-        // bindings = [binding, ...]
-        // binding = { type: "", refs: []}
+        
+        
+        
         bindings: Object.create(null),
       };
 
@@ -39751,8 +39801,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return scope;
     }
 
-    // Sets a new current scope and creates a new map to store the free variables
-    // that may exist in this scope.
+    
+    
     function pushTempScope(state, type, displayName, loc) {
       const scope = createTempScope(type, displayName, state.scope, loc);
 
@@ -39767,7 +39817,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return node ? node.type === type : false;
     }
 
-    // Walks up the scope tree to the top most variable scope
+    
     function getVarScope(scope) {
       let s = scope;
       while (s.type !== "function" && s.type !== "module") {
@@ -39893,8 +39943,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return isNode(node, "VariableDeclaration") && isLetOrConst(node);
     }
 
-    // Creates the global scopes for this source, the overall global scope
-    // and a lexical global scope.
+    
+    
     function createGlobalScope(ast, sourceId) {
       const global = createTempScope("object", "Global", null, {
         start: fromBabelLocation(ast.loc.start, sourceId),
@@ -39910,7 +39960,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     }
 
     const scopeCollectionVisitor = {
-      // eslint-disable-next-line complexity
+      
       enter(node, ancestors, state) {
         state.scopeStack.push(state.scope);
 
@@ -39956,8 +40006,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
           }
 
           if (libExports$2.isFunctionDeclaration(node) && isNode(node.id, "Identifier")) {
-            // This ignores Annex B function declaration hoisting, which
-            // is probably a fine assumption.
+            
+            
             state.declarationBindingIds.add(node.id);
             const refs = [
               {
@@ -39977,7 +40027,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
                 refs,
               };
             } else {
-              // Add the binding to the ancestor scope
+              
               getVarScope(scope).bindings[node.id.name] = {
                 type: "var",
                 refs,
@@ -39990,8 +40040,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
             "function",
             getFunctionName(node, parentNode),
             {
-              // Being at the start of a function doesn't count as
-              // being inside of it.
+              
+              
               start: fromBabelLocation(
                 node.params[0] ? node.params[0].loc.start : node.loc.start,
                 state.sourceId
@@ -40026,15 +40076,15 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
           }
         } else if (libExports$2.isClass(node)) {
           if (libExports$2.isIdentifier(node.id)) {
-            // For decorated classes, the AST considers the first the decorator
-            // to be the start of the class. For the purposes of mapping class
-            // declarations however, we really want to look for the "class Foo"
-            // piece. To achieve that, we estimate the location of the declaration
-            // instead.
+            
+            
+            
+            
+            
             let declStart = node.loc.start;
             if (node.decorators && node.decorators.length) {
-              // Estimate the location of the "class" keyword since it
-              // is unlikely to be a different line than the class name.
+              
+              
               declStart = {
                 line: node.id.loc.start.line,
                 column: node.id.loc.start.column - "class ".length,
@@ -40082,10 +40132,10 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         } else if (libExports$2.isForXStatement(node) || libExports$2.isForStatement(node)) {
           const init = node.init || node.left;
           if (isNode(init, "VariableDeclaration") && isLetOrConst(init)) {
-            // Debugger will create new lexical environment for the for.
+            
             pushTempScope(state, "block", "For", {
-              // Being at the start of a for loop doesn't count as
-              // being inside it.
+              
+              
               start: fromBabelLocation(init.loc.start, state.sourceId),
               end: fromBabelLocation(node.loc.end, state.sourceId),
             });
@@ -40098,11 +40148,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
           parseDeclarator(node.param, scope, "var", "catch", node, state);
         } else if (
           libExports$2.isBlockStatement(node) &&
-          // Function body's are handled in the function logic above.
+          
           !libExports$2.isFunction(parentNode) &&
           hasLexicalDeclaration(node, parentNode)
         ) {
-          // Debugger will create new lexical environment for the block.
+          
           pushTempScope(state, "block", "Block", {
             start: fromBabelLocation(node.loc.start, state.sourceId),
             end: fromBabelLocation(node.loc.end, state.sourceId),
@@ -40110,11 +40160,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         } else if (
           libExports$2.isVariableDeclaration(node) &&
           (node.kind === "var" ||
-            // Lexical declarations in for statements are handled above.
+            
             !libExports$2.isForStatement(parentNode, { init: node }) ||
             !libExports$2.isForXStatement(parentNode, { left: node }))
         ) {
-          // Finds right lexical environment
+          
           const hoistAt = !isLetOrConst(node)
             ? getVarScope(state.scope)
             : state.scope;
@@ -40141,8 +40191,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
               state.declarationBindingIds.add(spec.local);
 
               state.scope.bindings[spec.local.name] = {
-                // Imported namespaces aren't live import bindings, they are
-                // just normal const bindings.
+                
+                
                 type: "const",
                 refs: [
                   {
@@ -40218,13 +40268,13 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         } else if (
           libExports$2.isIdentifier(node) &&
           libExports$2.isReferenced(node, parentNode) &&
-          // Babel doesn't cover this in 'isReferenced' yet, but it should
-          // eventually.
+          
+          
           !libExports$2.isTSEnumMember(parentNode, { id: node }) &&
           !libExports$2.isTSModuleDeclaration(parentNode, { id: node }) &&
-          // isReferenced above fails to see `var { foo } = ...` as a non-reference
-          // because the direct parent is not enough to know that the pattern is
-          // used within a variable declaration.
+          
+          
+          
           !state.declarationBindingIds.has(node)
         ) {
           let freeVariables = state.freeVariables.get(node.name);
@@ -40289,11 +40339,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         }
 
         if (
-          // In general Flow expressions are deleted, so they can't contain
-          // runtime bindings, but typecasts are the one exception there.
+          
+          
           (libExports$2.isFlow(node) && !libExports$2.isTypeCastExpression(node)) ||
-          // In general TS items are deleted, but TS has a few wrapper node
-          // types that can contain general JS expressions.
+          
+          
           (node.type.startsWith("TS") &&
             !libExports$2.isTSTypeAssertion(node) &&
             !libExports$2.isTSAsExpression(node) &&
@@ -40303,8 +40353,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
             !libExports$2.isTSParameterProperty(node) &&
             !libExports$2.isTSExportAssignment(node))
         ) {
-          // Flag this node as a root "type" node. All items inside of this
-          // will be skipped entirely.
+          
+          
           state.inType = node;
         }
       },
@@ -40316,9 +40366,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         }
         state.scope = parentScope;
 
-        // It is possible, as in the case of function expressions, that a single
-        // node has added multiple scopes, so we need to traverse upward here
-        // rather than jumping stright to 'parentScope'.
+        
+        
+        
         for (
           let scope = currentScope;
           scope && scope !== parentScope;
@@ -40328,8 +40378,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
           state.freeVariables = state.freeVariableStack.pop();
           const parentFreeVariables = state.freeVariables;
 
-          // Match up any free variables that match this scope's bindings and
-          // merge then into the refs.
+          
+          
           for (const key of Object.keys(scope.bindings)) {
             const binding = scope.bindings[key];
 
@@ -40340,8 +40390,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
             }
           }
 
-          // Move any undeclared references in this scope into the parent for
-          // processing in higher scopes.
+          
+          
           for (const [key, value] of freeVariables) {
             let refs = parentFreeVariables.get(key);
             if (!refs) {
@@ -40389,7 +40439,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       const parent = ancestors[parentIndex].node;
       const grandparent = ancestors[parentIndex - 1].node;
 
-      // Consider "0, foo" to be equivalent to "foo".
+      
       if (
         libExports$2.isSequenceExpression(parent) &&
         parent.expressions.length === 2 &&
@@ -40399,8 +40449,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         let { start, end } = parent.loc;
 
         if (libExports$2.isCallExpression(grandparent, { callee: parent })) {
-          // Attempt to expand the range around parentheses, e.g.
-          // (0, foo.bar)()
+          
+          
           start = grandparent.loc.start;
           end = Object.assign({}, end);
           end.column += 1;
@@ -40414,8 +40464,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         };
       }
 
-      // Consider "Object(foo)", and "__webpack_require__.i(foo)" to be
-      // equivalent to "foo" since they are essentially identity functions.
+      
+      
       if (
         libExports$2.isCallExpression(parent) &&
         (libExports$2.isIdentifier(parent.callee, { name: "Object" }) ||
@@ -40526,11 +40576,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
     }
 
-    /**
-     * Searches all scopes and their bindings at the specific location.
-     */
+    
+
+
     function findScopes(scopes, location) {
-      // Find inner most in the tree structure.
+      
       let searchInScopes = scopes;
       const found = [];
       while (searchInScopes) {
@@ -40539,7 +40589,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
             compareLocations(s.start, location) <= 0 &&
             compareLocations(location, s.end) < 0
           ) {
-            // Found the next scope, trying to search recusevly in its children.
+            
             found.unshift(s);
             searchInScopes = s.children;
             return true;
@@ -40561,14 +40611,14 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     }
 
     function compareLocations(a, b) {
-      // According to type of Location.column can be undefined, if will not be the
-      // case here, ignoring flow error.
+      
+      
       return a.line == b.line ? a.column - b.column : a.line - b.line;
     }
 
-    /* This Source Code Form is subject to the terms of the Mozilla Public
-     * License, v. 2.0. If a copy of the MPL was not distributed with this
-     * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+    
+
+
 
     function startsBefore(a, b) {
       let before = a.start.line < b.line;
@@ -40601,17 +40651,17 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return { functions, comments };
     }
 
-    /**
-     * Returns the location for a given function path. If the path represents a
-     * function declaration, the location will begin after the function identifier
-     * but before the function parameters.
-     */
+    
+
+
+
+
 
     function getLocation(func) {
       const location = { ...func.location };
 
-      // if the function has an identifier, start the block after it so the
-      // identifier is included in the "scope" of its parent
+      
+      
       const identifierEnd = func?.identifier?.loc?.end;
       if (identifierEnd) {
         location.start = identifierEnd;
@@ -40620,17 +40670,17 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return location;
     }
 
-    /**
-     * Find the nearest location containing the input position and
-     * return inner locations under that nearest location
-     *
-     * @param {Array<Object>} locations Notice! The locations MUST be sorted by `sortByStart`
-     *                  so that we can do linear time complexity operation.
-     * @returns {Array<Object>}
-     */
+    
+
+
+
+
+
+
+
     function getInnerLocations(locations, position) {
-      // First, let's find the nearest position-enclosing function location,
-      // which is to find the last location enclosing the position.
+      
+      
       let parentIndex;
       for (let i = locations.length - 1; i >= 0; i--) {
         const loc = locations[i];
@@ -40645,8 +40695,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
       const parentLoc = locations[parentIndex];
 
-      // Then, from the nearest location, loop locations again and put locations into
-      // the innerLocations array until we get to a location not enclosed by the nearest location.
+      
+      
       const innerLocations = [];
       for (let i = parentIndex + 1; i < locations.length; i++) {
         const loc = locations[i];
@@ -40660,13 +40710,13 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return innerLocations;
     }
 
-    /**
-     * Return an new locations array which excludes
-     * items that are completely enclosed by another location in the input locations
-     *
-     * @param locations Notice! The locations MUST be sorted by `sortByStart`
-     *                  so that we can do linear time complexity operation.
-     */
+    
+
+
+
+
+
+
     function removeOverlaps(locations) {
       if (!locations.length) {
         return [];
@@ -40683,9 +40733,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return nodes;
     }
 
-    /**
-     * Sorts an array of locations by start position
-     */
+    
+
+
     function sortByStart(a, b) {
       if (a.start.line < b.start.line) {
         return -1;
@@ -40696,10 +40746,10 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return 1;
     }
 
-    /**
-     * Returns an array of locations that are considered out of scope for the given
-     * location.
-     */
+    
+
+
+
     function findOutOfScopeLocations(location) {
       const { functions, comments } = findSymbols(location.source.id);
       const commentLocations = comments.map(c => c.location);
@@ -40734,15 +40784,15 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         return start.line == line && start.column <= column && end.column >= column;
       }
       function matchMemberExpression(expression) {
-        // For member expressions we ignore "computed" member expressions `foo[bar]`,
-        // to only match the one that looks like: `foo.bar`.
+        
+        
         return !expression.computed && matchExpression(expression);
       }
-      // Avoid duplicating these arrays and be careful about performance as they can be large
-      //
-      // Process member expressions first as they can be including identifiers which
-      // are subset of the member expression.
-      // Ex: `foo.bar` is a member expression made of `foo` and `bar` identifiers.
+      
+      
+      
+      
+      
       return (
         memberExpressions.find(matchMemberExpression) ||
         literals.find(matchExpression) ||
@@ -40759,7 +40809,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
     }
 
-    // NOTE: this will only work if we are replacing an original identifier
+    
     function replaceNode(ancestors, node) {
       const ancestor = ancestors[ancestors.length - 1];
 
@@ -40790,11 +40840,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       const nodes = new Map();
       const replacements = new Map();
 
-      // The ref-only global bindings are the ones that are accessed, but not
-      // declared anywhere in the parsed code, meaning they are either global,
-      // or declared somewhere in a scope outside the parsed code, so we
-      // rewrite all of those specifically to avoid rewritting declarations that
-      // shadow outer mappings.
+      
+      
+      
+      
+      
       for (const name of Object.keys(scopes[0].bindings)) {
         const { refs } = scopes[0].bindings[name];
         const mapping = mappings[name];
@@ -40816,7 +40866,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         for (const ref of refs) {
           let { line, column } = ref.start;
 
-          // This shouldn't happen, just keeping Flow happy.
+          
           if (typeof column !== "number") {
             column = 0;
           }
@@ -40826,8 +40876,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }
 
       if (replacements.size === 0) {
-        // Avoid the extra code generation work and also avoid potentially
-        // reformatting the user's code unnecessarily.
+        
+        
         return expression;
       }
 
@@ -40837,8 +40887,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         }
 
         const ancestor = ancestors[ancestors.length - 1];
-        // Shorthand properties can have a key and value with `node.loc.start` value
-        // and we only want to replace the value.
+        
+        
         if (libExports$2.isObjectProperty(ancestor.node) && ancestor.key !== "value") {
           return;
         }
@@ -40899,8 +40949,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return node;
     }
 
-    // translates new bindings `var a = 3` into `self.a = 3`
-    // and existing bindings `var a = 3` into `a = 3` for re-assignments
+    
+    
     function globalizeDeclaration(node, bindings) {
       return node.declarations.map(declaration =>
         libExports$2.expressionStatement(
@@ -40913,8 +40963,8 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       );
     }
 
-    // translates new bindings `a = 3` into `self.a = 3`
-    // and keeps assignments the same for existing bindings.
+    
+    
     function globalizeAssignment(node, bindings) {
       return libExports$2.assignmentExpression(
         node.operator,
@@ -40977,10 +41027,10 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return hasAwait;
     }
 
-    // translates new bindings `var a = 3` into `a = 3`.
+    
     function translateDeclarationIntoAssignment(node) {
       return node.declarations.reduce((acc, declaration) => {
-        // Don't translate declaration without initial assignment (e.g. `var a;`)
+        
         if (!declaration.init) {
           return acc;
         }
@@ -40993,25 +41043,25 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       }, []);
     }
 
-    /**
-     * Given an AST, modify it to return the last evaluated statement's expression value if possible.
-     * This is to preserve existing console behavior of displaying the last executed expression value.
-     */
+    
+
+
+
     function addReturnNode(ast) {
       const statements = ast.program.body;
       const lastStatement = statements.pop();
 
-      // if the last expression is an awaitExpression, strip the `await` part and directly
-      // return the argument to avoid calling the argument's `then` function twice when the
-      // mapped expression gets evaluated (See Bug 1771428)
+      
+      
+      
       if (libExports$2.isAwaitExpression(lastStatement.expression)) {
         lastStatement.expression = lastStatement.expression.argument;
       }
 
-      // NOTE: For more complicated cases such as an if/for statement, the last evaluated
-      // expression value probably can not be displayed, unless doing hacky workarounds such
-      // as returning the `eval` of the final statement (won't always work due to CSP issues?)
-      // or SpiderMonkey support (See Bug 1839588) at which point this entire module can be removed.
+      
+      
+      
+      
       statements.push(
         libExports$2.isExpressionStatement(lastStatement)
           ? libExports$2.returnStatement(lastStatement.expression)
@@ -41027,9 +41077,9 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         return acc.concat(declarators);
       }, []);
 
-      // We can't declare const variables outside of the async iife because we
-      // wouldn't be able to re-assign them. As a workaround, we transform them
-      // to `let` which should be good enough for those case.
+      
+      
+      
       return libExports$2.variableDeclaration(
         kind === "const" ? "let" : kind,
         declaratorNodes
@@ -41067,10 +41117,10 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return [];
     }
 
-    /**
-     * Given an AST and an array of variableDeclaration nodes, return a new AST with
-     * all the declarations at the top of the AST.
-     */
+    
+
+
+
     function addTopDeclarationNodes(ast, declarationNodes) {
       const statements = [];
       declarationNodes.forEach(declarationNode => {
@@ -41080,13 +41130,13 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       return libExports$2.program(statements);
     }
 
-    /**
-     * Given an AST, return an object of the following shape:
-     *   - newAst: {AST} the AST where variable declarations were transformed into
-     *             variable assignments
-     *   - declarations: {Array<Node>} An array of all the declaration nodes needed
-     *                   outside of the async iife.
-     */
+    
+
+
+
+
+
+
     function translateDeclarationsIntoAssignment(ast) {
       const declarations = [];
       libExports$2.traverse(ast, (node, ancestors) => {
@@ -41116,23 +41166,23 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       };
     }
 
-    /**
-     * Given an AST, wrap its body in an async iife, transform variable declarations
-     * in assignments and move the variable declarations outside of the async iife.
-     * Example: With the AST for the following expression: `let a = await 123`, the
-     * function will return:
-     * let a;
-     * (async => {
-     *   return a = await 123;
-     * })();
-     */
+    
+
+
+
+
+
+
+
+
+
     function wrapExpressionFromAst(ast) {
-      // Transform let and var declarations into assignments, and get back an array
-      // of variable declarations.
+      
+      
       let { newAst, declarations } = translateDeclarationsIntoAssignment(ast);
       const body = addReturnNode(newAst);
 
-      // Create the async iife.
+      
       newAst = libExports$2.expressionStatement(
         libExports$2.callExpression(
           libExports$2.arrowFunctionExpression([], libExports$2.blockStatement(body), true),
@@ -41140,7 +41190,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
         )
       );
 
-      // Now let's put all the variable declarations at the top of the async iife.
+      
       newAst = addTopDeclarationNodes(newAst, declarations);
 
       return generate(newAst).code;
@@ -41148,11 +41198,11 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
 
     function mapTopLevelAwait(expression, ast) {
       if (!ast) {
-        // If there's no ast this means the expression is malformed. And if the
-        // expression contains the await keyword, we still want to wrap it in an
-        // async iife in order to get a meaningful message (without this, the
-        // engine will throw an Error stating that await keywords are only valid
-        // in async functions and generators).
+        
+        
+        
+        
+        
         if (expression.includes("await ")) {
           return `(async () => { ${expression} })();`;
         }
@@ -41221,7 +41271,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     		class WorkerDispatcher {
     		  #msgId = 1;
     		  #worker = null;
-    		  // Map of message ids -> promise resolution functions, for dispatching worker responses
+    		  
     		  #pendingCalls = new Map();
     		  #url = "";
 
@@ -41230,7 +41280,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
     		  }
 
     		  start() {
-    		    // When running in debugger jest test, we don't have access to ChromeWorker
+    		    
     		    if (typeof ChromeWorker == "function") {
     		      this.#worker = new ChromeWorker(this.#url);
     		    } else {
@@ -41388,6 +41438,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
       getSymbols,
       getFunctionSymbols,
       getClassSymbols,
+      getClosestFunctionName,
       getScopes,
       clearSources: clearAllHelpersForSources,
       hasSyntaxError,

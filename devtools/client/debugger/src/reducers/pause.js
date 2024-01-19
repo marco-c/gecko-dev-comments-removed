@@ -10,7 +10,6 @@
 
 
 import { prefs } from "../utils/prefs";
-import { findClosestFunction } from "../utils/ast";
 
 
 
@@ -223,23 +222,6 @@ function update(state = initialPauseState(), action) {
       return updateThreadState({ frames, selectedFrameId });
     }
 
-    case "MAP_FRAME_DISPLAY_NAMES": {
-      const { frames } = action;
-      return updateThreadState({ frames });
-    }
-
-    case "SET_SYMBOLS": {
-      
-      if (action.status === "start") {
-        return state;
-      }
-      return updateFrameOriginalDisplayName(
-        state,
-        action.location.source,
-        action.value
-      );
-    }
-
     case "ADD_SCOPES": {
       const { status, value } = action;
       const selectedFrameId = action.selectedFrame.id;
@@ -440,97 +422,6 @@ function getPauseLocation(state, action) {
     location: frame.location,
     generatedLocation: frame.generatedLocation,
   };
-}
-
-
-
-
-
-
-
-function mapDisplayName(frame, symbols) {
-  
-  if (frame.isOriginal) {
-    return frame;
-  }
-  
-  if (!frame.location.source.isOriginal) {
-    return frame;
-  }
-  
-  if (frame.originalDisplayName) {
-    return frame;
-  }
-
-  if (!symbols.functions) {
-    return frame;
-  }
-
-  const originalDisplayName = getOriginalDisplayNameForOriginalLocation(
-    symbols,
-    frame.location
-  );
-  if (!originalDisplayName) {
-    return frame;
-  }
-
-  
-  return { ...frame, originalDisplayName };
-}
-
-function updateFrameOriginalDisplayName(state, source, symbols) {
-  
-  if (!source.isOriginal) {
-    return state;
-  }
-
-  
-  
-  let newState = null;
-  for (const threadActorId in state.threads) {
-    const thread = state.threads[threadActorId];
-    if (!thread.frames) {
-      continue;
-    }
-    
-    
-    const shouldUpdateThreadFrames = thread.frames.some(
-      frame => frame.location.source == source
-    );
-    if (!shouldUpdateThreadFrames) {
-      continue;
-    }
-    
-    const frames = thread.frames.map(frame =>
-      frame.location.source == source ? mapDisplayName(frame, symbols) : frame
-    );
-    if (!newState) {
-      newState = { ...state };
-    }
-    newState.threads[threadActorId] = {
-      ...thread,
-      frames,
-    };
-  }
-  return newState ? newState : state;
-}
-
-
-
-
-
-
-
-
-
-export function getOriginalDisplayNameForOriginalLocation(symbols, location) {
-  if (!symbols.functions) {
-    return null;
-  }
-
-  const originalFunction = findClosestFunction(symbols, location);
-
-  return originalFunction ? originalFunction.name : null;
 }
 
 export default update;

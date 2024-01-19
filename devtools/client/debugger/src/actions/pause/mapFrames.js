@@ -6,7 +6,6 @@ import {
   getFrames,
   getBlackBoxRanges,
   getSelectedFrame,
-  getSymbols,
 } from "../../selectors";
 
 import { isFrameBlackBoxed } from "../../utils/source";
@@ -19,7 +18,8 @@ import {
 } from "../../utils/location";
 import { annotateFramesWithLibrary } from "../../utils/pause/frames/annotateFrames";
 import { createWasmOriginalFrame } from "../../client/firefox/create";
-import { getOriginalDisplayNameForOriginalLocation } from "../../reducers/pause";
+
+import { getOriginalFunctionDisplayName } from "../sources";
 
 function getSelectedFrameId(state, thread, frames) {
   let selectedFrame = getSelectedFrame(state, thread);
@@ -51,11 +51,9 @@ async function updateFrameLocationAndDisplayName(frame, thunkArgs) {
 
   
   
-  
-  const symbols = getSymbols(thunkArgs.getState(), location);
-  const originalDisplayName = symbols
-    ? getOriginalDisplayNameForOriginalLocation(symbols, location)
-    : null;
+  const originalDisplayName = await thunkArgs.dispatch(
+    getOriginalFunctionDisplayName(location)
+  );
 
   
   return {

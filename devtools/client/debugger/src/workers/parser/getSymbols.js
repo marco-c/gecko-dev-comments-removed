@@ -339,6 +339,57 @@ export function getClassSymbols(sourceId) {
   return symbols.classes;
 }
 
+function containsPosition(a, b) {
+  const bColumn = b.column || 0;
+  const startsBefore =
+    a.start.line < b.line ||
+    (a.start.line === b.line && a.start.column <= bColumn);
+  const endsAfter =
+    a.end.line > b.line || (a.end.line === b.line && a.end.column >= bColumn);
+
+  return startsBefore && endsAfter;
+}
+
+export function getClosestFunctionName(location) {
+  const symbols = getInternalSymbols(location.source.id);
+  if (!symbols || !symbols.functions) {
+    return "";
+  }
+
+  const closestFunction = symbols.functions.reduce((found, currNode) => {
+    if (
+      currNode.name === "anonymous" ||
+      !containsPosition(currNode.location, {
+        line: location.line,
+        column: location.column || 0,
+      })
+    ) {
+      return found;
+    }
+
+    if (!found) {
+      return currNode;
+    }
+
+    if (found.location.start.line > currNode.location.start.line) {
+      return found;
+    }
+    if (
+      found.location.start.line === currNode.location.start.line &&
+      found.location.start.column > currNode.location.start.column
+    ) {
+      return found;
+    }
+
+    return currNode;
+  }, null);
+
+  if (!closestFunction) {
+    return "";
+  }
+  return closestFunction.name;
+}
+
 
 export function getSymbols(sourceId) {
   const symbols = getInternalSymbols(sourceId);
@@ -348,7 +399,6 @@ export function getSymbols(sourceId) {
     
     
     
-    functions: symbols.functions,
 
     
     
