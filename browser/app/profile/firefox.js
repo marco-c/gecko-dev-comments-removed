@@ -2183,9 +2183,6 @@ pref("privacy.exposeContentTitleInWindow", true);
 pref("privacy.exposeContentTitleInWindow.pbm", true);
 
 
-pref("browser.tabs.remote.autostart", true);
-
-
 pref("media.peerconnection.mtransport_process", true);
 
 

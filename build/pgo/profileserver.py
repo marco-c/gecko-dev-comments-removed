@@ -124,12 +124,6 @@ if __name__ == "__main__":
                 v = v.format(**interpolation)
             prefs[k] = Preferences.cast(v)
 
-        
-        
-        
-        
-        prefs["browser.tabs.remote.autostart"] = True
-
         profile = FirefoxProfile(
             profile=profilePath,
             preferences=prefs,

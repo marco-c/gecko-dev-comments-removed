@@ -773,6 +773,9 @@ class XPCShellTestThread(Thread):
         
         expect_pass = self.test_object["expected"] == "pass"
 
+        if self.test_object.get("disable_e10s") == "true":
+            self.env["MOZ_FORCE_DISABLE_E10S"] = "1"
+
         
         
         if self.app_dir_key and self.app_dir_key in self.test_object:
