@@ -3,7 +3,7 @@
 
 
 import { createThread } from "../client/firefox/create";
-import { getSourcesToRemoveForThread } from "../selectors";
+import { getSourcesToRemoveForThread } from "../selectors/index";
 import { clearDocumentsForSources } from "../utils/editor/source-documents";
 
 export function addTarget(targetFront) {

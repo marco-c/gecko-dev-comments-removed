@@ -5,7 +5,6 @@
 "use strict";
 
 const Babel = require("./babel");
-const fs = require("fs");
 const _path = require("path");
 
 function isRequire(t, node) {
@@ -47,24 +46,6 @@ function transformMC({ types: t }) {
 
         if (!isRequire(t, path.parent)) {
           return;
-        }
-
-        
-        
-        
-        
-        
-        const dir = _path.dirname(filePath);
-        const depPath = _path.join(dir, `${value}.js`);
-        const exists = fs.existsSync(depPath);
-        if (
-          !exists &&
-          !value.endsWith("index") &&
-          !value.endsWith(".jsm") &&
-          !value.startsWith("devtools")
-        ) {
-          value = `${value}/index`;
-          path.replaceWith(t.stringLiteral(value));
         }
 
         if (shouldLazyLoad(value)) {

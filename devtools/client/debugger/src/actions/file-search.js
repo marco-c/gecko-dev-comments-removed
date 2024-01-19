@@ -2,9 +2,12 @@
 
 
 
-import { searchSourceForHighlight } from "../utils/editor";
+import { searchSourceForHighlight } from "../utils/editor/index";
 
-import { getSelectedSourceTextContent, getSearchOptions } from "../selectors";
+import {
+  getSelectedSourceTextContent,
+  getSearchOptions,
+} from "../selectors/index";
 
 import { closeActiveSearch, clearHighlightLineRange } from "./ui";
 

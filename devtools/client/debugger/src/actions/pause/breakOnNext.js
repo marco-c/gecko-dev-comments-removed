@@ -2,7 +2,7 @@
 
 
 
-import { getCurrentThread } from "../../selectors";
+import { getCurrentThread } from "../../selectors/index";
 
 
 

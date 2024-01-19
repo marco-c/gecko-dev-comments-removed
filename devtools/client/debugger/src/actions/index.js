@@ -2,26 +2,26 @@
 
 
 
-import * as ast from "./ast";
-import * as breakpoints from "./breakpoints";
+import * as ast from "./ast/index";
+import * as breakpoints from "./breakpoints/index";
 import * as exceptions from "./exceptions";
 import * as expressions from "./expressions";
 import * as eventListeners from "./event-listeners";
-import * as pause from "./pause";
+import * as pause from "./pause/index";
 import * as navigation from "./navigation";
 import * as ui from "./ui";
 import * as fileSearch from "./file-search";
 import * as projectTextSearch from "./project-text-search";
 import * as quickOpen from "./quick-open";
 import * as sourcesTree from "./sources-tree";
-import * as sources from "./sources";
+import * as sources from "./sources/index";
 import * as sourcesActors from "./source-actors";
 import * as tabs from "./tabs";
 import * as threads from "./threads";
 import * as toolbox from "./toolbox";
 import * as preview from "./preview";
 import * as tracing from "./tracing";
-import * as contextMenu from "./context-menus";
+import * as contextMenu from "./context-menus/index";
 
 import { objectInspector } from "devtools/client/shared/components/reps/index";
 
