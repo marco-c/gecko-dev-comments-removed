@@ -2325,6 +2325,11 @@ pub struct StyleBuilder<'a> {
     pub custom_properties: crate::custom_properties::ComputedCustomProperties,
 
     
+    
+    
+    pub invalid_non_custom_properties: LonghandIdSet,
+
+    
     pub pseudo: Option<<&'a PseudoElement>,
 
     
@@ -2379,6 +2384,7 @@ impl<'a> StyleBuilder<'a> {
             modified_reset: false,
             is_root_element,
             custom_properties: crate::custom_properties::ComputedCustomProperties::default(),
+            invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: inherited_style.writing_mode,
             effective_zoom: inherited_style.effective_zoom,
             flags: Cell::new(flags),
@@ -2417,6 +2423,7 @@ impl<'a> StyleBuilder<'a> {
             is_root_element: false,
             rules: None,
             custom_properties: style_to_derive_from.custom_properties().clone(),
+            invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: style_to_derive_from.writing_mode,
             effective_zoom: style_to_derive_from.effective_zoom,
             flags: Cell::new(style_to_derive_from.flags),

@@ -46,6 +46,8 @@ pub const PX_PER_PT: CSSFloat = PX_PER_IN / 72.;
 pub const PX_PER_PC: CSSFloat = PX_PER_PT * 12.;
 
 
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum FontRelativeLength {
     
@@ -104,6 +106,23 @@ impl FontBaseSize {
 
 impl FontRelativeLength {
     
+    pub const EM: &'static str = "em";
+    
+    pub const EX: &'static str = "ex";
+    
+    pub const CH: &'static str = "ch";
+    
+    pub const CAP: &'static str = "cap";
+    
+    pub const IC: &'static str = "ic";
+    
+    pub const REM: &'static str = "rem";
+    
+    pub const LH: &'static str = "lh";
+    
+    pub const RLH: &'static str = "rlh";
+
+    
     fn unitless_value(&self) -> CSSFloat {
         match *self {
             Self::Em(v) |
@@ -120,14 +139,14 @@ impl FontRelativeLength {
     
     fn unit(&self) -> &'static str {
         match *self {
-            Self::Em(_) => "em",
-            Self::Ex(_) => "ex",
-            Self::Ch(_) => "ch",
-            Self::Cap(_) => "cap",
-            Self::Ic(_) => "ic",
-            Self::Rem(_) => "rem",
-            Self::Lh(_) => "lh",
-            Self::Rlh(_) => "rlh",
+            Self::Em(_) => Self::EM,
+            Self::Ex(_) => Self::EX,
+            Self::Ch(_) => Self::CH,
+            Self::Cap(_) => Self::CAP,
+            Self::Ic(_) => Self::IC,
+            Self::Rem(_) => Self::REM,
+            Self::Lh(_) => Self::LH,
+            Self::Rlh(_) => Self::RLH,
         }
     }
 
