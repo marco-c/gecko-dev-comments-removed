@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('gather', buildOperationWithTwoInputs, 'gpu');
