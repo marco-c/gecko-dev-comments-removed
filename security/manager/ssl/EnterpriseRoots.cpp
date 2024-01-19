@@ -10,6 +10,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Unused.h"
 #include "mozpkix/Result.h"
+#include "nsNSSCertHelper.h"
 #include "nsThreadUtils.h"
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -39,6 +40,24 @@ pkix::Result EnterpriseCert::GetInput(pkix::Input& input) const {
 }
 
 bool EnterpriseCert::GetIsRoot() const { return mIsRoot; }
+
+bool EnterpriseCert::IsKnownRoot(UniqueSECMODModule& rootsModule) {
+  if (!rootsModule) {
+    return false;
+  }
+
+  SECItem certItem = {siBuffer, mDER.Elements(),
+                      static_cast<unsigned int>(mDER.Length())};
+  AutoSECMODListReadLock lock;
+  for (int i = 0; i < rootsModule->slotCount; i++) {
+    PK11SlotInfo* slot = rootsModule->slots[i];
+    if (PK11_FindEncodedCertInSlot(slot, &certItem, nullptr) !=
+        CK_INVALID_HANDLE) {
+      return true;
+    }
+  }
+  return false;
+}
 
 #ifdef XP_WIN
 const wchar_t* kWindowsDefaultRootStoreNames[] = {L"ROOT", L"CA"};
@@ -131,7 +150,8 @@ class ScopedCertStore final {
 
 
 static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
-                                             nsTArray<EnterpriseCert>& certs) {
+                                             nsTArray<EnterpriseCert>& certs,
+                                             UniqueSECMODModule& rootsModule) {
   MOZ_ASSERT(locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE ||
@@ -176,28 +196,36 @@ static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
       }
       EnterpriseCert enterpriseCert(certificate->pbCertEncoded,
                                     certificate->cbCertEncoded, isRoot);
-      certs.AppendElement(std::move(enterpriseCert));
-      numImported++;
+      if (!enterpriseCert.IsKnownRoot(rootsModule)) {
+        certs.AppendElement(std::move(enterpriseCert));
+        numImported++;
+      } else {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping known root cert"));
+      }
     }
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("imported %u certs from %S", numImported, name));
   }
 }
 
-static void GatherEnterpriseCertsWindows(nsTArray<EnterpriseCert>& certs) {
-  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE, certs);
+static void GatherEnterpriseCertsWindows(nsTArray<EnterpriseCert>& certs,
+                                         UniqueSECMODModule& rootsModule) {
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE, certs,
+                                   rootsModule);
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
-                                   certs);
+                                   certs, rootsModule);
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
-                                   certs);
-  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_CURRENT_USER, certs);
+                                   certs, rootsModule);
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_CURRENT_USER, certs,
+                                   rootsModule);
   GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
-                                   certs);
+                                   certs, rootsModule);
 }
 #endif  
 
 #ifdef XP_MACOSX
-OSStatus GatherEnterpriseCertsMacOS(nsTArray<EnterpriseCert>& certs) {
+OSStatus GatherEnterpriseCertsMacOS(nsTArray<EnterpriseCert>& certs,
+                                    UniqueSECMODModule& rootsModule) {
   
   
   
@@ -263,8 +291,12 @@ OSStatus GatherEnterpriseCertsMacOS(nsTArray<EnterpriseCert>& certs) {
     ScopedCFType<CFDataRef> der(SecCertificateCopyData(s));
     EnterpriseCert enterpriseCert(CFDataGetBytePtr(der.get()),
                                   CFDataGetLength(der.get()), isRoot);
-    certs.AppendElement(std::move(enterpriseCert));
-    numImported++;
+    if (!enterpriseCert.IsKnownRoot(rootsModule)) {
+      certs.AppendElement(std::move(enterpriseCert));
+      numImported++;
+    } else {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping known root cert"));
+    }
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u certs", numImported));
   return errSecSuccess;
@@ -272,22 +304,30 @@ OSStatus GatherEnterpriseCertsMacOS(nsTArray<EnterpriseCert>& certs) {
 #endif  
 
 #ifdef MOZ_WIDGET_ANDROID
-void GatherEnterpriseCertsAndroid(nsTArray<EnterpriseCert>& certs) {
+void GatherEnterpriseCertsAndroid(nsTArray<EnterpriseCert>& certs,
+                                  UniqueSECMODModule& rootsModule) {
   if (!jni::IsAvailable()) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("JNI not available"));
     return;
   }
   jni::ObjectArray::LocalRef roots =
       java::EnterpriseRoots::GatherEnterpriseRoots();
+  uint32_t numImported = 0;
   for (size_t i = 0; i < roots->Length(); i++) {
     jni::ByteArray::LocalRef root = roots->GetElement(i);
     
     
-    EnterpriseCert cert(
+    EnterpriseCert enterpriseCert(
         reinterpret_cast<uint8_t*>(root->GetElements().Elements()),
         root->Length(), true);
-    certs.AppendElement(std::move(cert));
+    if (!enterpriseCert.IsKnownRoot(rootsModule)) {
+      certs.AppendElement(std::move(enterpriseCert));
+      numImported++;
+    } else {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping known root cert"));
+    }
   }
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u certs", numImported));
 }
 #endif  
 
@@ -298,17 +338,18 @@ nsresult GatherEnterpriseCerts(nsTArray<EnterpriseCert>& certs) {
   }
 
   certs.Clear();
+  UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
 #ifdef XP_WIN
-  GatherEnterpriseCertsWindows(certs);
+  GatherEnterpriseCertsWindows(certs, rootsModule);
 #endif  
 #ifdef XP_MACOSX
-  OSStatus rv = GatherEnterpriseCertsMacOS(certs);
+  OSStatus rv = GatherEnterpriseCertsMacOS(certs, rootsModule);
   if (rv != errSecSuccess) {
     return NS_ERROR_FAILURE;
   }
 #endif  
 #ifdef MOZ_WIDGET_ANDROID
-  GatherEnterpriseCertsAndroid(certs);
+  GatherEnterpriseCertsAndroid(certs, rootsModule);
 #endif  
   return NS_OK;
 }
