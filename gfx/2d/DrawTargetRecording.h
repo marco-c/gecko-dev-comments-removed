@@ -352,6 +352,8 @@ class DrawTargetRecording : public DrawTarget {
 
   virtual void SetTransform(const Matrix& aTransform) override;
 
+  virtual void SetPermitSubpixelAA(bool aPermitSubpixelAA) override;
+
   
 
 
@@ -386,6 +388,13 @@ class DrawTargetRecording : public DrawTarget {
   RefPtr<DrawEventRecorderPrivate> mRecorder;
   RefPtr<DrawTarget> mFinalDT;
   IntRect mRect;
+
+  struct PushedLayer {
+    explicit PushedLayer(bool aOldPermitSubpixelAA)
+        : mOldPermitSubpixelAA(aOldPermitSubpixelAA) {}
+    bool mOldPermitSubpixelAA;
+  };
+  std::vector<PushedLayer> mPushedLayers;
 };
 
 }  
