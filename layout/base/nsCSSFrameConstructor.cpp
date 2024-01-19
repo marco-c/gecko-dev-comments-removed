@@ -2910,21 +2910,17 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
   
   pageFrame->Init(nullptr, aParentFrame, aPrevPageFrame);
 
-  
-  
-  
-  
-  
-  RefPtr<const nsAtom> pageName = mNextPageContentFramePageName.forget();
-
-  
-  
-  
-  const StylePagePseudoClassFlags pseudoFlags =
-      aPrevPageFrame ? StylePagePseudoClassFlags::NONE
-                     : StylePagePseudoClassFlags::FIRST;
+  RefPtr<const nsAtom> pageName;
+  if (mNextPageContentFramePageName) {
+    pageName = mNextPageContentFramePageName.forget();
+  } else if (aPrevPageFrame) {
+    pageName = aPrevPageFrame->ComputePageValue();
+    MOZ_ASSERT(pageName,
+               "Page name from prev-in-flow should not have been null");
+  }
   RefPtr<ComputedStyle> pageContentPseudoStyle =
-      styleSet->ResolvePageContentStyle(pageName, pseudoFlags);
+      styleSet->ResolvePageContentStyle(pageName,
+                                        StylePagePseudoClassFlags::NONE);
 
   nsContainerFrame* pageContentFrame = NS_NewPageContentFrame(
       aPresShell, pageContentPseudoStyle, pageName.forget());
