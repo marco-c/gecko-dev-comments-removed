@@ -11,26 +11,16 @@
 
 
 
-
-
-
 class Mappable : public mozilla::RefCounted<Mappable> {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(Mappable)
-  virtual ~Mappable() {}
+  ~Mappable() {}
 
-  virtual MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
-                           off_t offset) = 0;
-
-  enum Kind {
-    MAPPABLE_FILE,
-    MAPPABLE_SEEKABLE_ZSTREAM
-  };
-
-  virtual Kind GetKind() const = 0;
+  MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
+                   off_t offset);
 
  private:
-  virtual void munmap(void* addr, size_t length) { ::munmap(addr, length); }
+  void munmap(void* addr, size_t length) { ::munmap(addr, length); }
   
 
   friend class Mappable1stPagePtr;
@@ -40,37 +30,21 @@ class Mappable : public mozilla::RefCounted<Mappable> {
   
 
 
-  virtual void finalize() = 0;
+  void finalize();
 
   
 
 
 
-  virtual size_t GetLength() const = 0;
-};
-
-
-
-
-class MappableFile : public Mappable {
- public:
-  ~MappableFile() {}
+  size_t GetLength() const;
 
   
 
 
   static Mappable* Create(const char* path);
 
-  
-  virtual MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
-                           off_t offset);
-  virtual void finalize();
-  virtual size_t GetLength() const;
-
-  virtual Kind GetKind() const { return MAPPABLE_FILE; };
-
  protected:
-  explicit MappableFile(int fd) : fd(fd) {}
+  explicit Mappable(int fd) : fd(fd) {}
 
  private:
   
