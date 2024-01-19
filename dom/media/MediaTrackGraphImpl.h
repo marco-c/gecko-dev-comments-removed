@@ -464,6 +464,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+  void SelectOutputDeviceForAEC();
+  
+
+
+
   struct TrackAndVolume;
   TrackTime PlayAudio(const TrackAndVolume& aOutput, GraphTime aPlayedTime,
                       uint32_t aOutputChannelCount);
@@ -1096,6 +1101,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     }
   };
   nsTArray<OutputDeviceEntry> mOutputDevices;
+  
+
+
+
+
+  CubebUtils::AudioDeviceID mOutputDeviceForAEC = nullptr;
 
   
 

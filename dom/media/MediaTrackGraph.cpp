@@ -1387,6 +1387,52 @@ void MediaTrackGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions) {
   }
 }
 
+void MediaTrackGraphImpl::SelectOutputDeviceForAEC() {
+  MOZ_ASSERT(OnGraphThread());
+  size_t currentDeviceIndex = mOutputDevices.IndexOf(mOutputDeviceForAEC);
+  if (currentDeviceIndex == mOutputDevices.NoIndex) {
+    
+    
+    mOutputDeviceForAEC = PrimaryOutputDeviceID();
+    currentDeviceIndex = 0;
+    MOZ_ASSERT(mOutputDevices[0].mDeviceID == mOutputDeviceForAEC);
+  }
+  if (mOutputDevices.Length() == 1) {
+    
+    return;
+  }
+
+  
+  
+  
+  
+  auto HasNonNullAudio = [](const TrackAndVolume& aTV) {
+    return aTV.mVolume != 0 && !aTV.mTrack->IsSuspended() &&
+           !aTV.mTrack->GetData()->IsNull();
+  };
+  
+  
+  
+  
+  
+  for (const auto& output : mOutputDevices[currentDeviceIndex].mTrackOutputs) {
+    if (HasNonNullAudio(output)) {
+      return;
+    }
+  }
+  
+  for (const auto& outputDeviceEntry : mOutputDevices) {
+    for (const auto& output : outputDeviceEntry.mTrackOutputs) {
+      if (HasNonNullAudio(output)) {
+        
+        mOutputDeviceForAEC = outputDeviceEntry.mDeviceID;
+        return;
+      }
+    }
+  }
+  
+}
+
 void MediaTrackGraphImpl::Process(MixerCallbackReceiver* aMixerReceiver) {
   TRACE("MTG::Process");
   MOZ_ASSERT(OnGraphThread());
@@ -1436,6 +1482,7 @@ void MediaTrackGraphImpl::Process(MixerCallbackReceiver* aMixerReceiver) {
   }
   mProcessedTime = mStateComputedTime;
 
+  SelectOutputDeviceForAEC();
   for (const auto& outputDeviceEntry : mOutputDevices) {
     uint32_t outputChannelCount;
     if (!outputDeviceEntry.mReceiver) {  
@@ -1478,12 +1525,13 @@ void MediaTrackGraphImpl::Process(MixerCallbackReceiver* aMixerReceiver) {
                  mStateComputedTime - oldProcessedTime, mSampleRate);
     }
     AudioChunk* outputChunk = mMixer.MixedChunk();
-    if (!outputDeviceEntry.mReceiver) {  
+    if (outputDeviceEntry.mDeviceID == mOutputDeviceForAEC) {
       
       
       
       NotifyOutputData(*outputChunk);
-
+    }
+    if (!outputDeviceEntry.mReceiver) {  
       aMixerReceiver->MixerCallback(outputChunk, mSampleRate);
     } else {
       outputDeviceEntry.mReceiver->EnqueueAudio(*outputChunk);
