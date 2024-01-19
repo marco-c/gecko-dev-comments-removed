@@ -16,7 +16,7 @@ function checkAndClickButton(document, id) {
 
 function is_element_visible(aElement, aMsg) {
   isnot(aElement, null, "Element should not be null, when checking visibility");
-  Assert.ok(!BrowserTestUtils.is_hidden(aElement), aMsg);
+  Assert.ok(!BrowserTestUtils.isHidden(aElement), aMsg);
 }
 
 

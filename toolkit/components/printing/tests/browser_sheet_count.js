@@ -27,7 +27,7 @@ add_task(async function testSheetCount() {
     
     
     let numCopies = helper.get("copies-count");
-    ok(BrowserTestUtils.is_hidden(numCopies), "numCopies element is hidden");
+    ok(BrowserTestUtils.isHidden(numCopies), "numCopies element is hidden");
     helper.dispatchSettingsChange({
       numCopies: 4,
     });

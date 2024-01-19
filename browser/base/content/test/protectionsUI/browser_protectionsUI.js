@@ -124,7 +124,7 @@ add_task(async function testToggleSwitch() {
 
   
   ok(
-    BrowserTestUtils.is_hidden(
+    BrowserTestUtils.isHidden(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
     ),
     "The 'Site Fixed?' link should be hidden."
@@ -179,14 +179,14 @@ add_task(async function testToggleSwitch() {
 
   
   ok(
-    BrowserTestUtils.is_hidden(
+    BrowserTestUtils.isHidden(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
     ),
     "The 'Site not working?' link should be hidden after TP switch turns to off."
   );
   
   ok(
-    BrowserTestUtils.is_hidden(
+    BrowserTestUtils.isHidden(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
     ),
     "The 'Site Fixed?' link should be hidden."
@@ -221,7 +221,7 @@ add_task(async function testToggleSwitch() {
 
   
   ok(
-    BrowserTestUtils.is_hidden(
+    BrowserTestUtils.isHidden(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
     ),
     "The 'Site not working?' link should be hidden if TP is off."
@@ -252,14 +252,14 @@ add_task(async function testToggleSwitch() {
   await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
 
   ok(
-    BrowserTestUtils.is_hidden(
+    BrowserTestUtils.isHidden(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
     ),
     `The 'Site not working?' link should be still hidden after toggling TP
      switch to on from off.`
   );
   ok(
-    BrowserTestUtils.is_hidden(
+    BrowserTestUtils.isHidden(
       gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
     ),
     "The 'Site Fixed?' link should be hidden."
@@ -600,7 +600,7 @@ add_task(async function testNumberOfBlockedTrackers() {
   
   
   ok(
-    BrowserTestUtils.is_hidden(trackerCounterBox),
+    BrowserTestUtils.isHidden(trackerCounterBox),
     "The blocked tracker counter is hidden if there is no blocked tracker."
   );
 
