@@ -2,8 +2,8 @@
 
 
 
-const Menu = require("devtools/client/framework/menu");
-const MenuItem = require("devtools/client/framework/menu-item");
+const Menu = require("resource://devtools/client/framework/menu.js");
+const MenuItem = require("resource://devtools/client/framework/menu-item.js");
 
 export function showMenu(evt, items) {
   if (items.length === 0) {

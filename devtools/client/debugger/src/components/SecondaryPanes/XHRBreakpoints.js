@@ -22,7 +22,7 @@ import { CloseButton } from "../shared/Button/index";
 import { getXHRBreakpoints, shouldPauseOnAnyXHR } from "../../selectors/index";
 import ExceptionOption from "./Breakpoints/ExceptionOption";
 
-const classnames = require("devtools/client/shared/classnames.js");
+const classnames = require("resource://devtools/client/shared/classnames.js");
 
 
 

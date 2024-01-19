@@ -16,6 +16,7 @@ function shouldLazyLoad(value) {
     !value.includes("codemirror/") &&
     !value.endsWith(".properties") &&
     !value.startsWith("devtools/") &&
+    !value.startsWith("resource://devtools/") &&
     
     
     

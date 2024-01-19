@@ -2,7 +2,7 @@
 
 
 
-const { throttle } = require("devtools/shared/throttle");
+const { throttle } = require("resource://devtools/shared/throttle.js");
 
 
 let newOriginalQueuedSources;
