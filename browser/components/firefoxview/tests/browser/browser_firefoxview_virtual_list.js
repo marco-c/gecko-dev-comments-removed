@@ -1,8 +1,6 @@
 
 
 
-
-
 const VIRTUAL_LIST_ENABLED_PREF = "browser.firefox-view.virtual-list.enabled";
 
 add_setup(async () => {

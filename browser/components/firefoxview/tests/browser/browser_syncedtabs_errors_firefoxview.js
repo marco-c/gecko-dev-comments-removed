@@ -1,8 +1,6 @@
 
 
 
-
-
 const { LoginTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/LoginTestUtils.sys.mjs"
 );
