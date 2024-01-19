@@ -404,20 +404,30 @@ void nsPageContentFrame::AppendDirectlyOwnedAnonBoxes(
 void nsPageContentFrame::EnsurePageName() {
   MOZ_ASSERT(HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
              "Should only have been called on first reflow");
+
   if (mPageName) {
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
     return;
   }
-  MOZ_ASSERT(!GetPrevInFlow(),
-             "Only the first page should initially have a null page name.");
-  
-  
+
   mPageName = ComputePageValue();
 
   MOZ_ASSERT(mPageName, "Page name should never be null");
   
+  const StylePagePseudoClassFlags pseudoFlags =
+      GetPrevInFlow() ? StylePagePseudoClassFlags::NONE
+                      : StylePagePseudoClassFlags::FIRST;
   RefPtr<ComputedStyle> pageContentPseudoStyle =
-      PresShell()->StyleSet()->ResolvePageContentStyle(
-          mPageName, StylePagePseudoClassFlags::FIRST);
+      PresShell()->StyleSet()->ResolvePageContentStyle(mPageName, pseudoFlags);
   SetComputedStyleWithoutNotification(pageContentPseudoStyle);
 }
 
