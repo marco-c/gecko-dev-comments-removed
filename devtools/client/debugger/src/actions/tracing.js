@@ -2,7 +2,7 @@
 
 
 
-import { getIsThreadCurrentlyTracing, getAllThreads } from "../selectors";
+import { getIsThreadCurrentlyTracing, getAllThreads } from "../selectors/index";
 import { PROMISE } from "./utils/middleware/promise";
 
 

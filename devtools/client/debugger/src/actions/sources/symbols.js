@@ -2,7 +2,7 @@
 
 
 
-import { getSymbols } from "../../selectors";
+import { getSymbols } from "../../selectors/index";
 
 import { PROMISE } from "../utils/middleware/promise";
 import { loadSourceText } from "./loadSourceText";

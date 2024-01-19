@@ -10,7 +10,7 @@ import {
   hasSourceActor,
   getCurrentlyFetchedTopFrame,
   hasFrame,
-} from "../selectors";
+} from "../selectors/index";
 
 
 

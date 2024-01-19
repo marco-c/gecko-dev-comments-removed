@@ -2,7 +2,7 @@
 
 
 
-import { selectLocation } from "../sources";
+import { selectLocation } from "../sources/index";
 import { evaluateExpressions } from "../expressions";
 import { fetchScopes } from "./fetchScopes";
 import { validateSelectedFrame } from "../../utils/context";

@@ -2,7 +2,7 @@
 
 
 
-import { getSkipPausing } from "../../selectors";
+import { getSkipPausing } from "../../selectors/index";
 
 
 

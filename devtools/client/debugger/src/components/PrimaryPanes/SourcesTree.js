@@ -25,10 +25,10 @@ import {
   getSourcesTreeSources,
   getFocusedSourceItem,
   getHideIgnoredSources,
-} from "../../selectors";
+} from "../../selectors/index";
 
 
-import actions from "../../actions";
+import actions from "../../actions/index";
 
 
 import SourcesTreeItem from "./SourcesTreeItem";

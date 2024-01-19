@@ -2,9 +2,13 @@
 
 
 
-import { isStepping, getPauseReason, getSelectedFrame } from "../../selectors";
+import {
+  isStepping,
+  getPauseReason,
+  getSelectedFrame,
+} from "../../selectors/index";
 import { evaluateExpressions } from "../expressions";
-import { inDebuggerEval } from "../../utils/pause";
+import { inDebuggerEval } from "../../utils/pause/index";
 
 
 
