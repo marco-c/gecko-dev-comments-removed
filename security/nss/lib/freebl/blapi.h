@@ -12,6 +12,7 @@
 #include "hasht.h"
 #include "cmac.h"
 #include "alghmac.h"
+#include "kyber.h"
 
 SEC_BEGIN_PROTOS
 
@@ -1895,6 +1896,30 @@ extern int EC_GetPointSize(const ECParams *params);
 
 
 extern int EC_GetScalarSize(const ECParams *params);
+
+
+
+
+
+
+
+extern SECStatus Kyber_NewKey(KyberParams params, const SECItem *seed, SECItem *privKey, SECItem *pubKey);
+
+
+
+
+
+
+
+
+extern SECStatus Kyber_Encapsulate(KyberParams params, const SECItem *seed, const SECItem *pubKey, SECItem *ciphertext, SECItem *secret);
+
+
+
+
+
+
+extern SECStatus Kyber_Decapsulate(KyberParams params, const SECItem *privKey, const SECItem *ciphertext, SECItem *secret);
 
 SEC_END_PROTOS
 

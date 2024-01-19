@@ -11,6 +11,9 @@
 #ifndef _PQG_H_
 #define _PQG_H_ 1
 
+SECStatus
+PQG_HashBuf(HASH_HashType type, unsigned char *dest,
+            const unsigned char *src, PRUint32 src_len);
 
 
 

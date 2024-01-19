@@ -427,6 +427,11 @@ PK11SymKey *PK11_PubDeriveWithKDF(SECKEYPrivateKey *privKey,
 
 
 
+PK11SymKey *PK11_ConcatSymKeys(PK11SymKey *left, PK11SymKey *right, CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation);
+
+
+
+
 
 
 
@@ -811,6 +816,42 @@ SECStatus PK11_VerifyWithMechanism(SECKEYPublicKey *key,
                                    CK_MECHANISM_TYPE mechanism,
                                    const SECItem *param, const SECItem *sig,
                                    const SECItem *hash, void *wincx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SECStatus PK11_Encapsulate(SECKEYPublicKey *pubKey, CK_MECHANISM_TYPE target,
+                           PK11AttrFlags attrFlags, CK_FLAGS opFlags,
+                           PK11SymKey **outKey, SECItem **outCiphertext);
+
+
+
+
+
+
+
+
+
+
+
+
+SECStatus
+PK11_Decapsulate(SECKEYPrivateKey *privKey, const SECItem *ciphertext,
+                 CK_MECHANISM_TYPE target, PK11AttrFlags attrFlags,
+                 CK_FLAGS opFlags, PK11SymKey **outKey);
 
 
 

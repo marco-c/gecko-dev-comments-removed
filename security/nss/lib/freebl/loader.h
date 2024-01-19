@@ -10,7 +10,7 @@
 
 #include "blapi.h"
 
-#define FREEBL_VERSION 0x0326
+#define FREEBL_VERSION 0x0327
 
 struct FREEBLVectorStr {
 
@@ -910,6 +910,14 @@ struct FREEBLVectorStr {
 
     
 
+    SECStatus (*p_Kyber_NewKey)(KyberParams params, const SECItem *seed, SECItem *privKey, SECItem *pubKey);
+
+    SECStatus (*p_Kyber_Encapsulate)(KyberParams params, const SECItem *seed, const SECItem *pubKey, SECItem *ciphertext, SECItem *secret);
+
+    SECStatus (*p_Kyber_Decapsulate)(KyberParams params, const SECItem *privKey, const SECItem *ciphertext, SECItem *secret);
+
+    
+
     
 
 };
@@ -1012,3 +1020,9 @@ typedef SECStatus (*F_RC2_InitContext)(RC2Context *cx,
 
 typedef RC2Context *(*F_RC2_AllocateContext)(void);
 #endif
+
+typedef SECStatus (*F_Kyber_NewKey)(KyberParams params, const SECItem *seed, SECItem *privKey, SECItem *pubKey);
+
+typedef SECStatus (*F_Kyber_Encapsulate)(KyberParams params, const SECItem *seed, const SECItem *pubKey, SECItem *ciphertext, SECItem *secret);
+
+typedef SECStatus (*F_Kyber_Decapsulate)(KyberParams params, const SECItem *privKey, const SECItem *ciphertext, SECItem *secret);

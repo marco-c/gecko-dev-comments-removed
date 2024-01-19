@@ -55,6 +55,7 @@ const extern std::vector<SSLNamedGroup> kAllDHEGroups;
 const extern std::vector<SSLNamedGroup> kECDHEGroups;
 const extern std::vector<SSLNamedGroup> kFFDHEGroups;
 const extern std::vector<SSLNamedGroup> kFasterDHEGroups;
+const extern std::vector<SSLNamedGroup> kEcdhHybridGroups;
 
 
 
