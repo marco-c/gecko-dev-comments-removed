@@ -656,6 +656,9 @@ nsCString getKeaGroupName(uint32_t aKeaGroup) {
     case ssl_grp_ec_curve25519:
       groupName = "x25519"_ns;
       break;
+    case ssl_grp_kem_xyber768d00:
+      groupName = "xyber768d00"_ns;
+      break;
     case ssl_grp_ffdhe_2048:
       groupName = "FF 2048"_ns;
       break;
@@ -819,6 +822,8 @@ SECStatus CanFalseStartCallback(PRFileDesc* fd, void* client_data,
     reasonsForNotFalseStarting |= POSSIBLE_VERSION_DOWNGRADE;
   }
 
+  
+  
   
   if (channelInfo.keaType != ssl_kea_ecdh) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
@@ -1038,6 +1043,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
       case ssl_kea_ecdh:
         AccumulateECCCurve(Telemetry::SSL_KEA_ECDHE_CURVE_FULL,
                            channelInfo.keaKeyBits);
+        break;
+      case ssl_kea_ecdh_hybrid:
+        
         break;
       default:
         MOZ_CRASH("impossible KEA");

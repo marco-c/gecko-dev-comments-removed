@@ -1432,17 +1432,37 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   
   
   
-  const SSLNamedGroup namedGroups[] = {
-      ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
-      ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,   ssl_grp_ffdhe_3072};
-  if (SECSuccess != SSL_NamedGroupConfig(fd, namedGroups,
-                                         mozilla::ArrayLength(namedGroups))) {
-    return NS_ERROR_FAILURE;
-  }
-  
-  
-  if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 1)) {
-    return NS_ERROR_FAILURE;
+  if (StaticPrefs::security_tls_enable_kyber() &&
+      range.max >= SSL_LIBRARY_VERSION_TLS_1_3 &&
+      !(infoObject->GetProviderFlags() &
+        (nsISocketProvider::BE_CONSERVATIVE | nsISocketTransport::IS_RETRY))) {
+    const SSLNamedGroup namedGroups[] = {
+        ssl_grp_kem_xyber768d00, ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1,
+        ssl_grp_ec_secp384r1,    ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,
+        ssl_grp_ffdhe_3072};
+    if (SECSuccess != SSL_NamedGroupConfig(fd, namedGroups,
+                                           mozilla::ArrayLength(namedGroups))) {
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 2)) {
+      return NS_ERROR_FAILURE;
+    }
+  } else {
+    const SSLNamedGroup namedGroups[] = {
+        ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
+        ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,   ssl_grp_ffdhe_3072};
+    
+    if (SECSuccess != SSL_NamedGroupConfig(fd, namedGroups,
+                                           mozilla::ArrayLength(namedGroups))) {
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 1)) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   
