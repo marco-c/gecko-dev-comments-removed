@@ -2,7 +2,7 @@
 
 
 
-import { createSelector } from "reselect";
+import { createSelector } from "devtools/client/shared/vendor/reselect";
 
 import { getBreakpointsList } from "./breakpoints";
 import { getSelectedSource } from "./sources";
