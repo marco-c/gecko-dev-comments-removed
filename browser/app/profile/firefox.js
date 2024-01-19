@@ -2438,7 +2438,7 @@ pref("browser.toolbars.bookmarks.showInPrivateBrowsing", false);
 
 pref("identity.fxaccounts.toolbar.enabled", true);
 pref("identity.fxaccounts.toolbar.accessed", false);
-pref("identity.fxaccounts.toolbar.defaultVisible", true);
+pref("identity.fxaccounts.toolbar.defaultVisible", false);
 pref("identity.fxaccounts.toolbar.pxiToolbarEnabled", false);
 
 
