@@ -142,6 +142,8 @@ pref("browser.sessionstore.max_tabs_undo", 10);
 pref("browser.sessionstore.privacy_level", 0);
 pref("browser.sessionstore.resume_from_crash", true);
 
+pref("browser.tabs.remote.autostart", true);
+
 
 #ifdef NIGHTLY_BUILD
   pref("browser.translations.enable", true);
