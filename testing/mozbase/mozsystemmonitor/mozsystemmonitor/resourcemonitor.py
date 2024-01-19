@@ -123,11 +123,11 @@ def _collect(pipe, poll_interval):
     try:
         
 
-        last_time = time.monotonic()
         io_last = get_disk_io_counters()
-        cpu_last = psutil.cpu_times(True)
         swap_last = psutil.swap_memory()
         psutil.cpu_percent(None, True)
+        cpu_last = psutil.cpu_times(True)
+        last_time = time.monotonic()
 
         sin_index = swap_last._fields.index("sin")
         sout_index = swap_last._fields.index("sout")
@@ -136,10 +136,14 @@ def _collect(pipe, poll_interval):
 
         while not _poll(pipe, poll_interval=sleep_interval):
             io = get_disk_io_counters()
-            cpu_times = psutil.cpu_times(True)
-            cpu_percent = psutil.cpu_percent(None, True)
             virt_mem = psutil.virtual_memory()
             swap_mem = psutil.swap_memory()
+            cpu_percent = psutil.cpu_percent(None, True)
+            cpu_times = psutil.cpu_times(True)
+            
+            
+            
+            
             measured_end_time = time.monotonic()
 
             
