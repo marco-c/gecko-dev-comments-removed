@@ -47,13 +47,8 @@ class nsSplittableFrame : public nsIFrame {
   nsIFrame* GetNextContinuation() const final;
 
   
-  
-  
-  
-  
-  void SetNextContinuation(nsIFrame* aFrame) final {
-    SetNextContinuation(aFrame, false);
-  }
+  void SetPrevContinuation(nsIFrame*) final;
+  void SetNextContinuation(nsIFrame*) final;
 
   
   nsIFrame* FirstContinuation() const override;
@@ -70,13 +65,8 @@ class nsSplittableFrame : public nsIFrame {
   nsIFrame* GetNextInFlow() const final;
 
   
-  
-  
-  
-  
-  void SetNextInFlow(nsIFrame* aFrame) final {
-    SetNextContinuation(aFrame, true);
-  }
+  void SetPrevInFlow(nsIFrame*) final;
+  void SetNextInFlow(nsIFrame*) final;
 
   
   nsIFrame* FirstInFlow() const final;
@@ -149,12 +139,6 @@ class nsSplittableFrame : public nsIFrame {
   LogicalSides PreReflowBlockLevelLogicalSkipSides() const {
     return GetBlockLevelLogicalSkipSides(false);
   };
-
-  
-
-
-
-  void SetNextContinuation(nsIFrame* aFrame, bool aIsFluid);
 
   nsIFrame* mPrevContinuation = nullptr;
   nsIFrame* mNextContinuation = nullptr;

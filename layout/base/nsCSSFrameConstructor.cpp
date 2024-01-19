@@ -2224,6 +2224,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCol(
     nsTableColFrame* newCol = NS_NewTableColFrame(mPresShell, computedStyle);
     InitAndRestoreFrame(aState, content, aParentFrame, newCol, false);
     aFrameList.LastChild()->SetNextContinuation(newCol);
+    newCol->SetPrevContinuation(aFrameList.LastChild());
     aFrameList.AppendFrame(nullptr, newCol);
     newCol->SetColType(eColAnonymousCol);
   }
@@ -8031,7 +8032,7 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
   
   
   if (!aIsFluid) {
-    aFrame->SetNextContinuation(newFrame);
+    newFrame->SetPrevContinuation(aFrame);
   }
 
   
@@ -8039,8 +8040,10 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
   
 
   if (nextInFlow) {
+    nextInFlow->SetPrevInFlow(newFrame);
     newFrame->SetNextInFlow(nextInFlow);
   } else if (nextContinuation) {
+    nextContinuation->SetPrevContinuation(newFrame);
     newFrame->SetNextContinuation(nextContinuation);
   }
 
