@@ -147,19 +147,6 @@ DevToolsClient.prototype = {
 
 
 
-  release(to) {
-    return this.request({
-      to,
-      type: "release",
-    });
-  },
-
-  
-
-
-
-
-
 
 
 
