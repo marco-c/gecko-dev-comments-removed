@@ -171,14 +171,8 @@ already_AddRefed<DrawTarget> Translator::CreateDrawTarget(
   return newDT.forget();
 }
 
-void Translator::DrawDependentSurface(ReferencePtr aDrawTarget, uint64_t aKey,
-                                      const Rect& aRect) {
-  if (!mDependentSurfaces) {
-    return;
-  }
-
-  DrawTarget* dt = LookupDrawTarget(aDrawTarget);
-  if (!dt) {
+void Translator::DrawDependentSurface(uint64_t aKey, const Rect& aRect) {
+  if (!mDependentSurfaces || !mCurrentDT) {
     return;
   }
 
@@ -188,21 +182,21 @@ void Translator::DrawDependentSurface(ReferencePtr aDrawTarget, uint64_t aKey,
     return;
   }
 
-  dt->PushClipRect(aRect);
+  mCurrentDT->PushClipRect(aRect);
 
   
   
   
-  Matrix transform = dt->GetTransform();
+  Matrix transform = mCurrentDT->GetTransform();
   transform.PreTranslate(aRect.TopLeft());
-  InlineTranslator translator(dt, nullptr);
+  InlineTranslator translator(mCurrentDT, nullptr);
   translator.SetReferenceDrawTargetTransform(transform);
 
   translator.SetDependentSurfaces(mDependentSurfaces);
   translator.TranslateRecording((char*)recordedSurface->mRecording.mData,
                                 recordedSurface->mRecording.mLen);
 
-  dt->PopClip();
+  mCurrentDT->PopClip();
 }
 
 }  
