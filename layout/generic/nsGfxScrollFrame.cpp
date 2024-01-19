@@ -5006,7 +5006,12 @@ void nsHTMLScrollFrame::ScrollByCSSPixelsInternal(const CSSIntPoint& aDelta,
   
   
   
-  CSSIntPoint currentCSSPixels = GetRoundedScrollPositionCSSPixels();
+  CSSPoint currentCSSPixels;
+  if (StaticPrefs::layout_scroll_disable_pixel_alignment()) {
+    currentCSSPixels = GetScrollPositionCSSPixels();
+  } else {
+    currentCSSPixels = GetRoundedScrollPositionCSSPixels();
+  }
   nsPoint pt = CSSPoint::ToAppUnits(currentCSSPixels + aDelta);
 
   nscoord halfPixel = nsPresContext::CSSPixelsToAppUnits(0.5f);
