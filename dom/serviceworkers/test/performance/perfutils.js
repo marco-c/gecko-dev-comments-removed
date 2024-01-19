@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 function reportMetrics(journal) {
   let metrics = {};
   let text = "\nResults (ms)\n";
