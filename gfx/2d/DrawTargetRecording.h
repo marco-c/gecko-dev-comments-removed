@@ -173,14 +173,6 @@ class DrawTargetRecording : public DrawTarget {
   
 
 
-  virtual void StrokeGlyphs(
-      ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
-      const StrokeOptions& aStrokeOptions = StrokeOptions(),
-      const DrawOptions& aOptions = DrawOptions()) override;
-
-  
-
-
 
 
 
@@ -377,11 +369,6 @@ class DrawTargetRecording : public DrawTarget {
   Path* GetPathForPathRecording(const Path* aPath) const;
   already_AddRefed<PathRecording> EnsurePathStored(const Path* aPath);
   void EnsurePatternDependenciesStored(const Pattern& aPattern);
-
-  void DrawGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
-                  const Pattern& aPattern,
-                  const DrawOptions& aOptions = DrawOptions(),
-                  const StrokeOptions* aStrokeOptions = nullptr);
 
   RefPtr<DrawEventRecorderPrivate> mRecorder;
   RefPtr<DrawTarget> mFinalDT;
