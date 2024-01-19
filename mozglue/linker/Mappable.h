@@ -5,8 +5,8 @@
 #ifndef Mappable_h
 #define Mappable_h
 
-#include "Zip.h"
-#include "zlib.h"
+#include "mozilla/RefCounted.h"
+#include "Utils.h"
 
 
 
@@ -24,7 +24,6 @@ class Mappable : public mozilla::RefCounted<Mappable> {
 
   enum Kind {
     MAPPABLE_FILE,
-    MAPPABLE_DEFLATE,
     MAPPABLE_SEEKABLE_ZSTREAM
   };
 
@@ -79,41 +78,5 @@ class MappableFile : public Mappable {
 };
 
 class _MappableBuffer;
-
-
-
-
-
-class MappableDeflate : public Mappable {
- public:
-  ~MappableDeflate();
-
-  
-
-
-
-
-  static Mappable* Create(const char* name, Zip* zip, Zip::Stream* stream);
-
-  
-  virtual MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
-                           off_t offset);
-  virtual void finalize();
-  virtual size_t GetLength() const;
-
-  virtual Kind GetKind() const { return MAPPABLE_DEFLATE; };
-
- private:
-  MappableDeflate(_MappableBuffer* buf, Zip* zip, Zip::Stream* stream);
-
-  
-  RefPtr<Zip> zip;
-
-  
-  mozilla::UniquePtr<_MappableBuffer> buffer;
-
-  
-  z_stream zStream;
-};
 
 #endif 
