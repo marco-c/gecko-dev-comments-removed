@@ -1115,14 +1115,14 @@ NotifyIconObservers::Run() {
 
   nsCOMPtr<nsIURI> iconURI;
   if (!mIcon.spec.IsEmpty()) {
-    MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(iconURI), mIcon.spec));
-    if (iconURI) {
+    if (!NS_WARN_IF(
+            NS_FAILED(NS_NewURI(getter_AddRefs(iconURI), mIcon.spec)))) {
       
       if (mIcon.status & ICON_STATUS_SAVED ||
           mIcon.status & ICON_STATUS_ASSOCIATED) {
         nsCOMPtr<nsIURI> pageURI;
-        MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(pageURI), mPage.spec));
-        if (pageURI) {
+        if (!NS_WARN_IF(
+                NS_FAILED(NS_NewURI(getter_AddRefs(pageURI), mPage.spec)))) {
           
           nsFaviconService* favicons = nsFaviconService::GetFaviconService();
           MOZ_ASSERT(favicons);
