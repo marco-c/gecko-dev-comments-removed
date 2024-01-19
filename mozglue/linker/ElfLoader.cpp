@@ -376,23 +376,6 @@ void* SystemElf::GetSymbolPtr(const char* symbol) const {
   return sym;
 }
 
-Mappable* SystemElf::GetMappable() const {
-  const char* path = GetPath();
-  if (!path) return nullptr;
-#ifdef ANDROID
-  
-  const char* name = LeafName(path);
-  std::string systemPath;
-  if (name == path) {
-    systemPath = "/system/lib/";
-    systemPath += path;
-    path = systemPath.c_str();
-  }
-#endif
-
-  return Mappable::Create(path);
-}
-
 #ifdef __ARM_EABI__
 const void* SystemElf::FindExidx(int* pcount) const {
   

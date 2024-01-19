@@ -170,11 +170,6 @@ class LibHandle : public mozilla::external::AtomicRefCounted<LibHandle> {
   
 
 
-  virtual Mappable* GetMappable() const = 0;
-
-  
-
-
 
 
   friend class ElfLoader;
@@ -248,8 +243,6 @@ class SystemElf : public LibHandle {
 #endif
 
  protected:
-  virtual Mappable* GetMappable() const;
-
   
 
 
