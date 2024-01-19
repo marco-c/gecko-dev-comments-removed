@@ -329,9 +329,14 @@ function assert_phase(animation, phase) {
 
 
 
-async function waitForCompositorReady(target) {
+async function waitForCompositorReady() {
   const animation =
       document.body.animate({ opacity: [ 1, 1 ] }, {duration: 1 });
   return animation.finished;
+}
+
+async function takeScreenshotOnAnimationsReady() {
+  await Promise.all(document.getAnimations().map(a => a.ready));
+  requestAnimationFrame(() => requestAnimationFrame(takeScreenshot));
 }
 
