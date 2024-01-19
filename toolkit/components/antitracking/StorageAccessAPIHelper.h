@@ -52,17 +52,12 @@ class StorageAccessAPIHelper final {
   
   
   
+  
   typedef MozPromise<int, bool, true> StorageAccessPermissionGrantPromise;
   typedef std::function<RefPtr<StorageAccessPermissionGrantPromise>()>
       PerformPermissionGrant;
   [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
-  AllowAccessForOnParentProcess(
-      nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
-      ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
-
-  [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
-  AllowAccessForOnChildProcess(
+  AllowAccessFor(
       nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
       const PerformPermissionGrant& aPerformFinalChecks = nullptr);
@@ -103,7 +98,7 @@ class StorageAccessAPIHelper final {
   
   
   static RefPtr<MozPromise<Maybe<bool>, nsresult, true>>
-  AsyncCheckCookiesPermittedDecidesStorageAccessAPIOnChildProcess(
+  AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
       dom::BrowsingContext* aBrowsingContext,
       nsIPrincipal* aRequestingPrincipal);
 
@@ -177,33 +172,10 @@ class StorageAccessAPIHelper final {
 
  private:
   friend class dom::ContentParent;
-
   
   
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] static RefPtr<
-      StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
-  AllowAccessForHelper(
-      nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
-      ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      nsCOMPtr<nsIPrincipal>* aTrackingPrincipal, nsACString& aTrackingOrigin,
-      uint64_t* aTopLevelWindowId, uint32_t* aBehavior);
-
   [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
-  CompleteAllowAccessForOnParentProcess(
-      dom::BrowsingContext* aParentContext, uint64_t aTopLevelWindowId,
-      nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
-      uint32_t aCookieBehavior,
-      ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
-
-  [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
-  CompleteAllowAccessForOnChildProcess(
+  CompleteAllowAccessFor(
       dom::BrowsingContext* aParentContext, uint64_t aTopLevelWindowId,
       nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
       uint32_t aCookieBehavior,

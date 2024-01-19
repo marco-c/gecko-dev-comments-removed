@@ -16978,7 +16978,7 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
   }
 
   
-  Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
+  Unused << StorageAccessAPIHelper::AllowAccessFor(
       NodePrincipal(), openerBC,
       ContentBlockingNotifier::eOpenerAfterUserInteraction);
 }
@@ -17900,72 +17900,68 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   
   
   
-  StorageAccessAPIHelper::
-      AsyncCheckCookiesPermittedDecidesStorageAccessAPIOnChildProcess(
-          GetBrowsingContext(), principal)
-          ->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              [inner, thirdPartyURI, bc, principal, hasUserActivation,
-               aRequireUserActivation, self,
-               promise](Maybe<bool> cookieResult) {
-                
-                
-                if (cookieResult.isSome()) {
-                  if (cookieResult.value()) {
-                    return MozPromise<int, bool, true>::CreateAndResolve(
-                        true, __func__);
-                  }
-                  return MozPromise<int, bool, true>::CreateAndReject(false,
-                                                                      __func__);
-                }
+  StorageAccessAPIHelper::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
+      GetBrowsingContext(), principal)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [inner, thirdPartyURI, bc, principal, hasUserActivation,
+           aRequireUserActivation, self, promise](Maybe<bool> cookieResult) {
+            
+            
+            if (cookieResult.isSome()) {
+              if (cookieResult.value()) {
+                return MozPromise<int, bool, true>::CreateAndResolve(true,
+                                                                     __func__);
+              }
+              return MozPromise<int, bool, true>::CreateAndReject(false,
+                                                                  __func__);
+            }
 
-                
-                nsAutoCString type;
-                bool ok = AntiTrackingUtils::CreateStoragePermissionKey(
-                    principal, type);
-                if (!ok) {
-                  return MozPromise<int, bool, true>::CreateAndReject(false,
-                                                                      __func__);
-                }
-                if (AntiTrackingUtils::CheckStoragePermission(
-                        self->NodePrincipal(), type,
-                        nsContentUtils::IsInPrivateBrowsing(self), nullptr,
-                        0)) {
-                  return MozPromise<int, bool, true>::CreateAndResolve(
-                      true, __func__);
-                }
+            
+            nsAutoCString type;
+            bool ok =
+                AntiTrackingUtils::CreateStoragePermissionKey(principal, type);
+            if (!ok) {
+              return MozPromise<int, bool, true>::CreateAndReject(false,
+                                                                  __func__);
+            }
+            if (AntiTrackingUtils::CheckStoragePermission(
+                    self->NodePrincipal(), type,
+                    nsContentUtils::IsInPrivateBrowsing(self), nullptr, 0)) {
+              return MozPromise<int, bool, true>::CreateAndResolve(true,
+                                                                   __func__);
+            }
 
-                
-                
-                
-                return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                    self, inner, bc, principal, hasUserActivation,
-                    aRequireUserActivation, false,
-                    ContentBlockingNotifier::
-                        ePrivilegeStorageAccessForOriginAPI,
-                    true);
-              },
-              
-              
-              [promise]() {
-                return MozPromise<int, bool, true>::CreateAndReject(false,
-                                                                    __func__);
-              })
-          ->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              
-              
-              [self, inner, promise] {
-                inner->SaveStorageAccessPermissionGranted();
-                self->NotifyUserGestureActivation();
-                promise->MaybeResolveWithUndefined();
-              },
-              
-              
-              [promise] {
-                promise->MaybeRejectWithNotAllowedError(
-                    "requestStorageAccess not allowed"_ns);
-              });
+            
+            
+            
+            return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
+                self, inner, bc, principal, hasUserActivation,
+                aRequireUserActivation, false,
+                ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI,
+                true);
+          },
+          
+          
+          [promise]() {
+            return MozPromise<int, bool, true>::CreateAndReject(false,
+                                                                __func__);
+          })
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          
+          
+          [self, inner, promise] {
+            inner->SaveStorageAccessPermissionGranted();
+            self->NotifyUserGestureActivation();
+            promise->MaybeResolveWithUndefined();
+          },
+          
+          
+          [promise] {
+            promise->MaybeRejectWithNotAllowedError(
+                "requestStorageAccess not allowed"_ns);
+          });
 
   
   
@@ -18226,8 +18222,8 @@ already_AddRefed<Promise> Document::CompleteStorageAccessRequestFromSite(
               
               
               return StorageAccessAPIHelper::
-                  AsyncCheckCookiesPermittedDecidesStorageAccessAPIOnChildProcess(
-                      bc, principal);
+                  AsyncCheckCookiesPermittedDecidesStorageAccessAPI(bc,
+                                                                    principal);
             }
             return MozPromise<Maybe<bool>, nsresult, true>::CreateAndReject(
                 NS_ERROR_FAILURE, __func__);
