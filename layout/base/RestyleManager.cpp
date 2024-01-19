@@ -686,7 +686,8 @@ nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
                          "AddOrRemoveTransform",
                          "ScrollbarChange",
                          "UpdateTableCellSpans",
-                         "VisibilityChange"};
+                         "VisibilityChange",
+                         "UpdateBFC"};
   static_assert(nsChangeHint_AllHints ==
                     static_cast<uint32_t>((1ull << ArrayLength(names)) - 1),
                 "Name list doesn't match change hints.");
@@ -1552,6 +1553,31 @@ static void TryToHandleContainingBlockChange(nsChangeHint& aHint,
   }
 }
 
+static void TryToHandleBlockFormattingContextChange(nsChangeHint& aHint,
+                                                    nsIFrame* aFrame) {
+  if (!(aHint & nsChangeHint_UpdateBFC)) {
+    return;
+  }
+  if (aHint & nsChangeHint_ReconstructFrame) {
+    return;
+  }
+  MOZ_ASSERT(aFrame, "If we're not reframing, we ought to have a frame");
+
+  if (nsBlockFrame* blockFrame = do_QueryFrame(aFrame)) {
+    if (blockFrame->MaybeHasFloats()) {
+      
+      
+      
+      
+      
+      aHint |= nsChangeHint_ReconstructFrame;
+      return;
+    }
+    blockFrame->AddOrRemoveStateBits(NS_BLOCK_DYNAMIC_BFC,
+                                     blockFrame->IsDynamicBFC());
+  }
+}
+
 void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
@@ -1663,6 +1689,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
     TryToDealWithScrollbarChange(hint, content, frame, presContext);
     TryToHandleContainingBlockChange(hint, frame);
+    TryToHandleBlockFormattingContextChange(hint, frame);
 
     if (hint & nsChangeHint_ReconstructFrame) {
       
@@ -2709,6 +2736,15 @@ enum class ServoPostTraversalFlags : uint32_t {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoPostTraversalFlags)
 
+static bool IsVisibleForA11y(const ComputedStyle& aStyle) {
+  return aStyle.StyleVisibility()->IsVisible() && !aStyle.StyleUI()->IsInert();
+}
+
+static bool IsSubtreeVisibleForA11y(const ComputedStyle& aStyle) {
+  return aStyle.StyleDisplay()->mContentVisibility !=
+         StyleContentVisibility::Hidden;
+}
+
 
 
 static ServoPostTraversalFlags SendA11yNotifications(
@@ -2744,8 +2780,9 @@ static ServoPostTraversalFlags SendA11yNotifications(
   }
 
   bool needsNotify = false;
-  const bool isVisible = aNewStyle.StyleVisibility()->IsVisible() &&
-                         !aNewStyle.StyleUI()->IsInert();
+  const bool isVisible = IsVisibleForA11y(aNewStyle);
+  const bool wasVisible = IsVisibleForA11y(aOldStyle);
+
   if (aFlags & Flags::SendA11yNotificationsIfShown) {
     if (!isVisible) {
       
@@ -2758,9 +2795,11 @@ static ServoPostTraversalFlags SendA11yNotifications(
   } else {
     
     
-    const bool wasVisible = aOldStyle.StyleVisibility()->IsVisible() &&
-                            !aOldStyle.StyleUI()->IsInert();
-    needsNotify = wasVisible != isVisible;
+    
+    const bool isSubtreeVisible = IsSubtreeVisibleForA11y(aNewStyle);
+    const bool wasSubtreeVisible = IsSubtreeVisibleForA11y(aOldStyle);
+    needsNotify =
+        wasVisible != isVisible || wasSubtreeVisible != isSubtreeVisible;
   }
 
   if (needsNotify) {
@@ -2772,10 +2811,12 @@ static ServoPostTraversalFlags SendA11yNotifications(
       
       return Flags::SkipA11yNotifications;
     }
-    
-    
-    accService->ContentRemoved(presShell, aElement);
-    return Flags::SendA11yNotificationsIfShown;
+    if (wasVisible) {
+      
+      
+      accService->ContentRemoved(presShell, aElement);
+      return Flags::SendA11yNotificationsIfShown;
+    }
   }
 #endif
 
@@ -3295,6 +3336,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
 
   doc->ClearServoRestyleRoot();
   presContext->FinishedContainerQueryUpdate();
+  presContext->UpdateHiddenByContentVisibilityForAnimationsIfNeeded();
   ClearSnapshots();
   styleSet->AssertTreeIsClean();
 

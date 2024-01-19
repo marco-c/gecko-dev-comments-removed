@@ -2248,21 +2248,9 @@ static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
 
 nsChangeHint nsStyleDisplay::CalcDifference(
     const nsStyleDisplay& aNewData, const ComputedStyle& aOldStyle) const {
-  if (mDisplay != aNewData.mDisplay || mContain != aNewData.mContain ||
+  if (mDisplay != aNewData.mDisplay ||
       (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None) ||
       mTopLayer != aNewData.mTopLayer || mResize != aNewData.mResize) {
-    return nsChangeHint_ReconstructFrame;
-  }
-
-  
-  
-  
-  if (mContentVisibility != aNewData.mContentVisibility) {
-    return nsChangeHint_ReconstructFrame;
-  }
-
-  
-  if (mContainerType != aNewData.mContainerType) {
     return nsChangeHint_ReconstructFrame;
   }
 
@@ -2279,6 +2267,21 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   }
 
   auto hint = nsChangeHint(0);
+  const auto containmentDiff =
+      mEffectiveContainment ^ aNewData.mEffectiveContainment;
+  if (containmentDiff) {
+    if (containmentDiff & StyleContain::STYLE) {
+      
+      return nsChangeHint_ReconstructFrame;
+    }
+    if (containmentDiff & (StyleContain::PAINT | StyleContain::LAYOUT)) {
+      
+      
+      hint |= nsChangeHint_UpdateContainingBlock | nsChangeHint_UpdateBFC;
+    }
+    
+    hint |= nsChangeHint_AllReflowHints | nsChangeHint_RepaintFrame;
+  }
   if (mPosition != aNewData.mPosition) {
     if (IsAbsolutelyPositionedStyle() ||
         aNewData.IsAbsolutelyPositionedStyle()) {
@@ -2511,8 +2514,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   
   
   
+  
+  
   if (!hint && (mWillChange != aNewData.mWillChange ||
                 mOverflowAnchor != aNewData.mOverflowAnchor ||
+                mContentVisibility != aNewData.mContentVisibility ||
+                mContainerType != aNewData.mContainerType ||
+                mContain != aNewData.mContain ||
                 mContainerName != aNewData.mContainerName)) {
     hint |= nsChangeHint_NeutralChange;
   }

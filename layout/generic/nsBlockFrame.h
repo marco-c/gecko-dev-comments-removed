@@ -654,13 +654,6 @@ class nsBlockFrame : public nsContainerFrame {
 
   bool IsInLineClampContext() const;
 
- protected:
-  
-
-
-
-  bool DrainOverflowLines();
-
   
 
 
@@ -679,6 +672,21 @@ class nsBlockFrame : public nsContainerFrame {
     
     return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
   }
+
+  
+
+
+  bool IsDynamicBFC() const {
+    return StyleDisplay()->IsContainPaint() ||
+           StyleDisplay()->IsContainLayout();
+  }
+
+ protected:
+  
+
+
+
+  bool DrainOverflowLines();
 
   
 

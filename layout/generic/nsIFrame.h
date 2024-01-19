@@ -2388,6 +2388,13 @@ class nsIFrame : public nsQueryFrame {
 
 
   void InitPrimaryFrame();
+  
+
+
+
+
+
+  void HandlePrimaryFrameStyleChange(ComputedStyle* aOldStyle);
 
  public:
   
@@ -3304,8 +3311,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  [[nodiscard]] bool UpdateIsRelevantContent(
-      const ContentRelevancy& aRelevancyToUpdate);
+  bool UpdateIsRelevantContent(const ContentRelevancy& aRelevancyToUpdate);
 
   
 
@@ -4695,8 +4701,6 @@ class nsIFrame : public nsQueryFrame {
   }
   
   void UpdateVisibleDescendantsState();
-
-  void UpdateAnimationVisibility();
 
   
 
