@@ -406,6 +406,7 @@ async function focusUpdateSubmitForm(target, args, submit = true) {
   if (alreadyFocused) {
     
     
+    FormAutofillParent.removeMessageObserver(fieldsIdentifiedObserver);
     fieldsIdentifiedPromiseResolver();
   }
 
