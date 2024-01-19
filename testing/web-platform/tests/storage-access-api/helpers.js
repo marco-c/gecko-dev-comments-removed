@@ -266,6 +266,14 @@ function FetchFromFrame(frame, url) {
 
 
 
+function NoCorsSubresourceCookiesFromFrame(frame, host) {
+  const url = `${host}/storage-access-api/resources/echo-cookie-header.py`;
+  return PostMessageAndAwaitReply(
+    { command: "no-cors fetch", url }, frame.contentWindow);
+}
+
+
+
 
 
 
