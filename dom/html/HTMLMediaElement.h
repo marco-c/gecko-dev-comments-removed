@@ -1001,6 +1001,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+
+
+
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(
       StreamCaptureBehavior aFinishBehavior,
       StreamCaptureType aStreamCaptureType, MediaTrackGraph* aGraph);
