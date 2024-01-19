@@ -318,14 +318,11 @@ function getSyncChangeCounter(records, guid) {
 
 
 
-
 function objectMatches(object, fields) {
   let actual = {};
-  for (const key in fields) {
+  for (let key in fields) {
     if (!object.hasOwnProperty(key)) {
-      if (fields[key] != undefined) {
-        return false;
-      }
+      return false;
     }
     actual[key] = object[key];
   }
