@@ -21,7 +21,7 @@ from requests.packages.urllib3.util.retry import Retry
 
 from condprof import progress
 
-TASK_CLUSTER = "MOZ_AUTOMATION" in os.environ.keys()
+TASK_CLUSTER = "TASK_ID" in os.environ.keys()
 DOWNLOAD_TIMEOUT = 30
 
 
@@ -122,12 +122,7 @@ def fresh_profile(profile, customization_data):
     extensions = []
     for name, url in customization_data["addons"].items():
         logger.info("Downloading addon %s" % name)
-        
-        
-        
-        
-        
-        extension = download_file(url, mozfetches_subdir="firefox-addons")
+        extension = download_file(url, check_mozfetches=True)
         extensions.append(extension)
     logger.info("Installing addons")
     new_profile.addons.install(extensions)
@@ -189,26 +184,25 @@ def check_exists(archive, server=None, all_types=False):
     return exists, resp.headers
 
 
-def check_mozfetches_dir(target, mozfetches_subdir):
+def check_mozfetches_dir(target):
     logger.info("Checking for existence of: %s in MOZ_FETCHES_DIR" % target)
     fetches = os.environ.get("MOZ_FETCHES_DIR")
     if fetches is None:
         return None
-    fetches_target = os.path.join(fetches, mozfetches_subdir, target)
+    fetches_target = os.path.join(fetches, target)
     if not os.path.exists(fetches_target):
         return None
     logger.info("Already fetched and available in MOZ_FETCHES_DIR: %s" % fetches_target)
     return fetches_target
 
 
-def download_file(url, target=None, mozfetches_subdir=None):
+def download_file(url, target=None, check_mozfetches=False):
     if target is None:
         target = url.split("/")[-1]
 
     
-    
-    if mozfetches_subdir is not None:
-        filepath = check_mozfetches_dir(target, mozfetches_subdir)
+    if check_mozfetches:
+        filepath = check_mozfetches_dir(target)
         if filepath is not None:
             return filepath
 
