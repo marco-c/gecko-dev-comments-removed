@@ -758,15 +758,9 @@ void AudioInputProcessing::ProcessOutputData(MediaTrackGraph* aGraph,
         interleavedFarend, framesPerPacketFarend, channelCountFarend,
         deinterleavedPacketDataChannelPointers.Elements());
 
-    
-    
-    StreamConfig inputConfig(aRate, channelCountFarend);
-    StreamConfig outputConfig = inputConfig;
-
-    
-    DebugOnly<int> err = mAudioProcessing->ProcessReverseStream(
-        deinterleavedPacketDataChannelPointers.Elements(), inputConfig,
-        outputConfig, deinterleavedPacketDataChannelPointers.Elements());
+    StreamConfig reverseConfig(aRate, channelCountFarend);
+    DebugOnly<int> err = mAudioProcessing->AnalyzeReverseStream(
+        deinterleavedPacketDataChannelPointers.Elements(), reverseConfig);
 
     MOZ_ASSERT(!err, "Could not process the reverse stream.");
   }
