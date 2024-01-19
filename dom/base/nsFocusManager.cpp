@@ -3185,10 +3185,10 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
   return NS_OK;
 }
 
-nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
-                                              PresShell* aPresShell,
-                                              nsIContent** aStartContent,
-                                              nsIContent** aEndContent) {
+void nsFocusManager::GetSelectionLocation(Document* aDocument,
+                                          PresShell* aPresShell,
+                                          nsIContent** aStartContent,
+                                          nsIContent** aEndContent) {
   *aStartContent = *aEndContent = nullptr;
 
   nsPresContext* presContext = aPresShell->GetPresContext();
@@ -3197,12 +3197,12 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
   RefPtr<Selection> domSelection =
       aPresShell->ConstFrameSelection()->GetSelection(SelectionType::eNormal);
   if (!domSelection) {
-    return NS_OK;
+    return;
   }
 
   const nsRange* domRange = domSelection->GetRangeAt(0);
   if (!domRange || !domRange->IsPositioned()) {
-    return NS_OK;
+    return;
   }
   nsIContent* start = nsIContent::FromNode(domRange->GetStartContainer());
   nsIContent* end = nsIContent::FromNode(domRange->GetEndContainer());
@@ -3216,17 +3216,16 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
   
   
   
+  
+  
+  
+  
+  
   if (auto* text = Text::FromNodeOrNull(start);
-      text && text->TextDataLength() == domRange->StartOffset() &&
+      text && text->GetPrimaryFrame() &&
+      text->TextDataLength() == domRange->StartOffset() &&
       domSelection->IsCollapsed()) {
     nsIFrame* startFrame = start->GetPrimaryFrame();
-    
-    
-    
-    MOZ_ASSERT(startFrame);
-    if (MOZ_UNLIKELY(!startFrame)) {
-      return NS_ERROR_FAILURE;
-    }
     
     nsIFrame* limiter =
         domSelection && domSelection->GetAncestorLimiter()
@@ -3282,8 +3281,6 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
 
   NS_IF_ADDREF(*aStartContent = start);
   NS_IF_ADDREF(*aEndContent = end);
-
-  return NS_OK;
 }
 
 nsresult nsFocusManager::DetermineElementToMoveFocus(

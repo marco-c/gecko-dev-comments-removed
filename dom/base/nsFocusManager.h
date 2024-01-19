@@ -548,10 +548,9 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsresult GetSelectionLocation(Document* aDocument,
-                                mozilla::PresShell* aPresShell,
-                                nsIContent** aStartContent,
-                                nsIContent** aEndContent);
+  void GetSelectionLocation(Document* aDocument, mozilla::PresShell* aPresShell,
+                            nsIContent** aStartContent,
+                            nsIContent** aEndContent);
 
   
 
