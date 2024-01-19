@@ -1,7 +1,7 @@
 
 
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 
 
@@ -81,17 +81,6 @@ impl serde::ser::Serialize for ServerTimestamp {
 impl<'de> serde::de::Deserialize<'de> for ServerTimestamp {
     fn deserialize<D: serde::de::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         f64::deserialize(d).map(Self::from_float_seconds)
-    }
-}
-
-
-
-
-impl TryFrom<SystemTime> for ServerTimestamp {
-    type Error = std::time::SystemTimeError;
-
-    fn try_from(value: SystemTime) -> Result<Self, Self::Error> {
-        Ok(Self(value.duration_since(UNIX_EPOCH)?.as_millis() as i64))
     }
 }
 

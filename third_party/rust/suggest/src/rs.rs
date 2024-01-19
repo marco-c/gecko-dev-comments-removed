@@ -90,8 +90,6 @@ pub(crate) enum SuggestRecord {
     Amo,
     #[serde(rename = "pocket-suggestions")]
     Pocket,
-    #[serde(rename = "yelp-suggestions")]
-    Yelp,
 }
 
 
@@ -267,22 +265,4 @@ pub(crate) struct DownloadedPocketSuggestion {
     #[serde(rename = "highConfidenceKeywords")]
     pub high_confidence_keywords: Vec<String>,
     pub score: f64,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub(crate) struct DownloadedYelpLocationSign {
-    pub keyword: String,
-    #[serde(rename = "needLocation")]
-    pub need_location: bool,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub(crate) struct DownloadedYelpSuggestion {
-    pub subjects: Vec<String>,
-    #[serde(rename = "preModifiers")]
-    pub pre_modifiers: Vec<String>,
-    #[serde(rename = "postModifiers")]
-    pub post_modifiers: Vec<String>,
-    #[serde(rename = "locationSigns")]
-    pub location_signs: Vec<DownloadedYelpLocationSign>,
 }
