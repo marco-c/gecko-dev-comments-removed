@@ -544,7 +544,6 @@ bool gFxREmbedded = false;
 
 enum E10sStatus {
   kE10sEnabledByDefault,
-  kE10sDisabledByUser,
   kE10sForceDisabled,
 };
 
@@ -566,43 +565,18 @@ bool BrowserTabsRemoteAutostart() {
     return gBrowserTabsRemoteAutostart;
   }
 
-#if defined(MOZILLA_OFFICIAL) && MOZ_BUILD_APP_IS_BROWSER
-  bool allowSingleProcessOutsideAutomation = false;
-#else
-  bool allowSingleProcessOutsideAutomation = true;
-#endif
-
+  gBrowserTabsRemoteAutostart = true;
   E10sStatus status = kE10sEnabledByDefault;
-  
-  
-  
-  
-  
-  
-  if (allowSingleProcessOutsideAutomation ||
-      xpc::AreNonLocalConnectionsDisabled()) {
-    bool optInPref =
-        Preferences::GetBool("browser.tabs.remote.autostart", true);
-
-    if (optInPref) {
-      gBrowserTabsRemoteAutostart = true;
-    } else {
-      status = kE10sDisabledByUser;
-    }
-  } else {
-    gBrowserTabsRemoteAutostart = true;
-  }
 
   
-  if (gBrowserTabsRemoteAutostart) {
+  
+  
+  
+  
+  
+  if (gBrowserTabsRemoteAutostart && xpc::AreNonLocalConnectionsDisabled()) {
     const char* forceDisable = PR_GetEnv("MOZ_FORCE_DISABLE_E10S");
-#if defined(MOZ_WIDGET_ANDROID)
-    
-    if (forceDisable && *forceDisable) {
-#else
-
-    if (forceDisable && gAppData && !strcmp(forceDisable, gAppData->version)) {
-#endif
+    if (forceDisable && *forceDisable == '1') {
       gBrowserTabsRemoteAutostart = false;
       status = kE10sForceDisabled;
     }
