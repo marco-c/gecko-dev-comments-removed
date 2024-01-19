@@ -2179,10 +2179,20 @@ static bool EvaluateDynamicImportOptions(
   RootedValue assertValue(cx);
 
   
-  RootedId assertId(cx, NameToId(cx->names().assert_));
-  if (!GetProperty(cx, assertWrapperObject, assertWrapperObject, assertId,
+  RootedId withId(cx, NameToId(cx->names().with));
+  if (!GetProperty(cx, assertWrapperObject, assertWrapperObject, withId,
                    &assertValue)) {
     return false;
+  }
+
+  if (assertValue.isUndefined() &&
+      cx->options().importAttributesAssertSyntax()) {
+    
+    RootedId assertId(cx, NameToId(cx->names().assert_));
+    if (!GetProperty(cx, assertWrapperObject, assertWrapperObject, assertId,
+                     &assertValue)) {
+      return false;
+    }
   }
 
   
