@@ -100,16 +100,6 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  static already_AddRefed<nsIReferrerInfo> CreateFromOtherAndPolicyOverride(
-      nsIReferrerInfo* aOther, ReferrerPolicyEnum aPolicyOverride);
-
-  
-
-
-
-
-
-
 
   static already_AddRefed<nsIReferrerInfo> CreateFromDocumentAndPolicyOverride(
       Document* aDoc, ReferrerPolicyEnum aPolicyOverride);

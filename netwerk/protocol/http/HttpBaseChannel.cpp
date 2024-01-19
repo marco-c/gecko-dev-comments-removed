@@ -4561,14 +4561,25 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
             dom::ReferrerInfo::ReferrerPolicyFromHeaderString(tRPHeaderValue);
       }
 
-      if (referrerPolicy != dom::ReferrerPolicy::_empty) {
-        
-        
-        
-        nsCOMPtr<nsIReferrerInfo> referrerInfo =
-            dom::ReferrerInfo::CreateFromOtherAndPolicyOverride(mReferrerInfo,
-                                                                referrerPolicy);
-        config.referrerInfo = referrerInfo;
+      
+      
+      
+      
+      
+      
+      
+      bool wasNonHSTSUpgrade =
+          (aRedirectFlags & nsIChannelEventSink::REDIRECT_STS_UPGRADE) &&
+          (!mLoadInfo->GetHstsStatus());
+      if (wasNonHSTSUpgrade) {
+        nsCOMPtr<nsIURI> referrer = mReferrerInfo->GetOriginalReferrer();
+        config.referrerInfo =
+            new dom::ReferrerInfo(referrer, mReferrerInfo->ReferrerPolicy(),
+                                  mReferrerInfo->GetSendReferrer());
+      } else if (referrerPolicy != dom::ReferrerPolicy::_empty) {
+        nsCOMPtr<nsIURI> referrer = mReferrerInfo->GetComputedReferrer();
+        config.referrerInfo = new dom::ReferrerInfo(
+            referrer, referrerPolicy, mReferrerInfo->GetSendReferrer());
       } else {
         config.referrerInfo = mReferrerInfo;
       }
