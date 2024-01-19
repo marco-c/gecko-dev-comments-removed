@@ -164,13 +164,6 @@ class ConsoleOutput extends Component {
     const bottomBuffer = this.lazyMessageListRef.current.bottomBuffer;
     this.scrollDetectionIntersectionObserver.unobserve(bottomBuffer);
 
-    
-    
-    
-    
-    
-    
-
     const visibleMessagesDelta =
       nextProps.visibleMessages.length - this.props.visibleMessages.length;
     const messagesDelta = nextProps.messageCount - this.props.messageCount;
@@ -182,24 +175,34 @@ class ConsoleOutput extends Component {
       nextProps.mutableMessages.get(nextProps.lastMessageId)?.type ===
         MESSAGE_TYPE.RESULT;
 
-    const messagesUiDelta =
-      nextProps.messagesUi.length - this.props.messagesUi.length;
-    const isOpeningGroup =
-      messagesUiDelta > 0 &&
-      nextProps.messagesUi.some(
-        id =>
-          !this.props.messagesUi.includes(id) &&
-          nextProps.messagesUi.includes(id) &&
-          this.props.visibleMessages.includes(id) &&
-          nextProps.visibleMessages.includes(id)
+    
+    
+    const isOpeningGroup = () => {
+      const messagesUiDelta =
+        nextProps.messagesUi.length - this.props.messagesUi.length;
+      return (
+        messagesUiDelta > 0 &&
+        nextProps.messagesUi.some(
+          id =>
+            !this.props.messagesUi.includes(id) &&
+            this.props.visibleMessages.includes(id) &&
+            nextProps.visibleMessages.includes(id)
+        )
       );
+    };
 
+    
     this.shouldScrollBottom =
+      
       (!this.props.initialized &&
         nextProps.initialized &&
         this.scrolledToBottom) ||
+      
+      
       isNewMessageEvaluationResult ||
-      (this.scrolledToBottom && visibleMessagesDelta > 0 && !isOpeningGroup);
+      
+      
+      (this.scrolledToBottom && visibleMessagesDelta > 0 && !isOpeningGroup());
   }
 
   componentDidUpdate(prevProps) {
