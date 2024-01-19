@@ -46,13 +46,9 @@ add_task(async function basic() {
     "The result should be from the expected provider"
   );
   Assert.equal(result.payload.provider, "Yelp");
-  
-  
   Assert.equal(
     result.payload.url,
-    "https://www.yelp.com/search?find_desc=ramen&find_loc=tokyo"
+    "https://www.yelp.com/search?find_desc=RaMeN&find_loc=tOkYo"
   );
-  
-  
-  Assert.equal(result.payload.title, "ramen in tokyo");
+  Assert.equal(result.payload.title, "RaMeN iN tOkYo");
 });
