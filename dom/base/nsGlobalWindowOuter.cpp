@@ -6942,7 +6942,7 @@ void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
       aURI, doc->NodePrincipal()->OriginAttributesRef());
 
   
-  Unused << StorageAccessAPIHelper::AllowAccessFor(
+  Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
       principal, GetBrowsingContext(), ContentBlockingNotifier::eOpener);
 }
 
