@@ -2,7 +2,7 @@
 
 
 
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import { Component } from "react";
 import { toEditorLine, fromEditorLine } from "../../utils/editor";
 import { isLineBlackboxed } from "../../utils/source";

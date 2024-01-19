@@ -3,7 +3,7 @@
 
 
 import React, { PureComponent } from "react";
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import AccessibleImage from "../AccessibleImage";
 import { CommandBarButton } from "./";
 

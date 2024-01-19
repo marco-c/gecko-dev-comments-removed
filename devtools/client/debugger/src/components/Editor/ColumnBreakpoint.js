@@ -3,7 +3,7 @@
 
 
 import { PureComponent } from "react";
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 import { getDocument } from "../../utils/editor";
 const classnames = require("devtools/client/shared/classnames.js");

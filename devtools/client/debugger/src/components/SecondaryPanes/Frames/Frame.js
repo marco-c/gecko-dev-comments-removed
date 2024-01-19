@@ -3,7 +3,7 @@
 
 
 import React, { Component, memo } from "react";
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 import AccessibleImage from "../../shared/AccessibleImage";
 import { formatDisplayName } from "../../../utils/pause/frames";

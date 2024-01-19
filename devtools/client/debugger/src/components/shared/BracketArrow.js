@@ -3,7 +3,7 @@
 
 
 import { div } from "react-dom-factories";
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 
 const classnames = require("devtools/client/shared/classnames.js");
 

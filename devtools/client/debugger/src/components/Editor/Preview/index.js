@@ -2,7 +2,7 @@
 
 
 
-import PropTypes from "prop-types";
+import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import React, { PureComponent } from "react";
 import { connect } from "../../../utils/connect";
 
