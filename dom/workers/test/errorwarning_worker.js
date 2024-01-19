@@ -38,7 +38,9 @@ onmessage = function (event) {
 };
 
 onerror = errorHandler;
+
 onerror = onerror;
+
 if (!onerror || onerror != onerror) {
   throw "onerror wasn't set properly";
 }

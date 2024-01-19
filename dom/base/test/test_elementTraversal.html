@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=444722
+-->
 <head>
   <title>Test for the ElementTraversal spec</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -12,7 +12,7 @@
 <a target="_blank" href="http://dev.w3.org/2006/webapi/ElementTraversal/publish/ElementTraversal.html">ElementTraversal</a>
 <div id="content" style="display: none">
 <span>span</span><div>div</div>
-
+<!--comment goes here-->
 <p id="p1">p1</p>
 text here
 <p id="p2">p2</p>
@@ -36,6 +36,7 @@ function testContent() {
   is(i, c.children.length, "wrong number of child elements");
 
   // Nuke all elements to retest the child list.
+  // eslint-disable-next-line no-self-assign
   c.innerHTML = c.innerHTML;
 
   for(i--, e = c.lastElementChild; e; e = e.previousElementSibling, i--) {

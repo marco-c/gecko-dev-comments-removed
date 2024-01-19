@@ -9,6 +9,7 @@ onmessage = function (event) {
 
   postMessage({
     event: "console is the same object",
+    
     status: console === console,
     last: false,
   });
