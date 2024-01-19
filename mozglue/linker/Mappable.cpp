@@ -3,17 +3,9 @@
 
 
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 
 #include "Mappable.h"
-
-#include "mozilla/IntegerPrintfMacros.h"
-
-#ifdef ANDROID
-#  include "mozilla/Ashmem.h"
-#endif
-#include "Logging.h"
 
 Mappable* MappableFile::Create(const char* path) {
   int fd = open(path, O_RDONLY);
@@ -40,72 +32,3 @@ size_t MappableFile::GetLength() const {
   struct stat st;
   return fstat(fd, &st) ? 0 : st.st_size;
 }
-
-
-
-
-
-
-
-class _MappableBuffer : public MappedPtr {
- public:
-  
-
-
-
-  static _MappableBuffer* Create(const char* name, size_t length) {
-    AutoCloseFD fd;
-    const char* ident;
-#ifdef ANDROID
-    
-    fd = mozilla::android::ashmem_create(name, length);
-    ident = name;
-#else
-    
-
-    
-    char path[256];
-    sprintf(path, "/dev/shm/%s.XXXXXX", name);
-    fd = mkstemp(path);
-    if (fd == -1) return nullptr;
-    unlink(path);
-    ftruncate(fd, length);
-    ident = path;
-#endif
-
-    void* buf =
-        ::mmap(nullptr, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (buf != MAP_FAILED) {
-      DEBUG_LOG("Decompression buffer of size 0x%" PRIxPTR
-                " in "
-#ifdef ANDROID
-                "ashmem "
-#endif
-                "\"%s\", mapped @%p",
-                length, ident, buf);
-      return new _MappableBuffer(fd.forget(), buf, length);
-    }
-    return nullptr;
-  }
-
-  void* mmap(const void* addr, size_t length, int prot, int flags,
-             off_t offset) {
-    MOZ_ASSERT(fd != -1);
-#ifdef ANDROID
-    
-
-    if (flags & MAP_PRIVATE) {
-      flags &= ~MAP_PRIVATE;
-      flags |= MAP_SHARED;
-    }
-#endif
-    return ::mmap(const_cast<void*>(addr), length, prot, flags, fd, offset);
-  }
-
- private:
-  _MappableBuffer(int fd, void* buf, size_t length)
-      : MappedPtr(buf, length), fd(fd) {}
-
-  
-  AutoCloseFD fd;
-};
