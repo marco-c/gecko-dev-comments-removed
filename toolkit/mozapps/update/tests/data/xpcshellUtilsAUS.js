@@ -36,6 +36,7 @@ const { TestUtils } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
+  Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
   updateAppInfo: "resource://testing-common/AppInfo.sys.mjs",
 });
 
@@ -114,9 +115,6 @@ const HELPER_SLEEP_TIMEOUT = 180;
 
 
 const FILE_IN_USE_TIMEOUT_MS = 1000;
-
-const PIPE_TO_NULL =
-  AppConstants.platform == "win" ? ">nul" : "> /dev/null 2>&1";
 
 const LOG_FUNCTION = info;
 
@@ -994,11 +992,6 @@ function cleanupTestCommon() {
   }
 
   gTestserver = null;
-
-  if (AppConstants.platform == "macosx" || AppConstants.platform == "linux") {
-    
-    getLaunchScript();
-  }
 
   if (gIsServiceTest) {
     let exts = ["id", "log", "status"];
@@ -2841,29 +2834,6 @@ function waitForApplicationStop(aApplication) {
 
 
 
-
-function getLaunchBin() {
-  let launchBin;
-  if (AppConstants.platform == "win") {
-    launchBin = Services.dirsvc.get("WinD", Ci.nsIFile);
-    launchBin.append("System32");
-    launchBin.append("cmd.exe");
-  } else {
-    launchBin = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    launchBin.initWithPath("/bin/sh");
-  }
-  Assert.ok(launchBin.exists(), MSG_SHOULD_EXIST + getMsgPath(launchBin.path));
-
-  return launchBin;
-}
-
-
-
-
-
-
-
-
 function lockDirectory(aDirPath) {
   if (AppConstants.platform != "win") {
     do_throw("Windows only function called by a different platform!");
@@ -4389,17 +4359,7 @@ function createAppInfo(aID, aName, aVersion, aPlatformVersion) {
 
 
 
-
-
-
-
-
-
-function getProcessArgs(aExtraArgs) {
-  if (!aExtraArgs) {
-    aExtraArgs = [];
-  }
-
+function getSubprocessOptions(aExtraArgs = []) {
   let appBin = getApplyDirFile(DIR_MACOS + FILE_APP_BIN);
   Assert.ok(appBin.exists(), MSG_SHOULD_EXIST + ", path: " + appBin.path);
   let appBinPath = appBin.path;
@@ -4419,41 +4379,18 @@ function getProcessArgs(aExtraArgs) {
   profileDir.append("profile");
   let profilePath = profileDir.path;
 
-  let args;
-  if (AppConstants.platform == "macosx" || AppConstants.platform == "linux") {
-    let launchScript = getLaunchScript();
-    
-    launchScript.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_DIRECTORY);
-
-    let scriptContents = "#! /bin/sh\n";
-    scriptContents += "export XRE_PROFILE_PATH=" + profilePath + "\n";
-    scriptContents +=
-      appBinPath +
-      " -no-remote -test-process-updates " +
-      aExtraArgs.join(" ") +
-      " " +
-      PIPE_TO_NULL;
-    writeFile(launchScript, scriptContents);
-    debugDump(
-      "created " + launchScript.path + " containing:\n" + scriptContents
-    );
-    args = [launchScript.path];
-  } else {
-    args = [
-      "/D",
-      "/Q",
-      "/C",
-      appBinPath,
-      "-profile",
-      profilePath,
-      "-no-remote",
-      "-test-process-updates",
-      "-wait-for-browser",
-    ]
-      .concat(aExtraArgs)
-      .concat([PIPE_TO_NULL]);
+  
+  if (!profileDir.exists()) {
+    profileDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
   }
-  return args;
+
+  let args = ["-profile", profilePath, "-no-remote", "-test-process-updates"];
+  if (AppConstants.platform == "win") {
+    args.push("-wait-for-browser");
+  }
+  args.push(...aExtraArgs);
+
+  return { command: appBinPath, arguments: args };
 }
 
 
@@ -4472,20 +4409,6 @@ function getAppArgsLogPath() {
     appArgsLogPath = '"' + appArgsLogPath + '"';
   }
   return appArgsLogPath;
-}
-
-
-
-
-
-
-
-function getLaunchScript() {
-  let launchScript = do_get_file("/" + gTestID + "_launch.sh", true);
-  if (launchScript.exists()) {
-    launchScript.remove(false);
-  }
-  return launchScript;
 }
 
 
@@ -4519,7 +4442,7 @@ function adjustGeneralPaths() {
   ds.QueryInterface(Ci.nsIProperties).undefine(NS_GRE_BIN_DIR);
   ds.QueryInterface(Ci.nsIProperties).undefine(XRE_EXECUTABLE_FILE);
   ds.registerProvider(dirProvider);
-  registerCleanupFunction(function AGP_cleanup() {
+  registerCleanupFunction(async function AGP_cleanup() {
     debugDump("start - unregistering directory provider");
 
     if (gAppTimer) {
@@ -4529,10 +4452,10 @@ function adjustGeneralPaths() {
       debugDump("finish - cancel app timer");
     }
 
-    if (gProcess && gProcess.isRunning) {
+    if (gProcess) {
       debugDump("start - kill process");
       try {
-        gProcess.kill();
+        await gProcess.kill();
       } catch (e) {
         debugDump("kill process failed, Exception: " + e);
       }
@@ -4594,7 +4517,7 @@ function adjustGeneralPaths() {
 const gAppTimerCallback = {
   notify: function TC_notify(aTimer) {
     gAppTimer = null;
-    if (gProcess.isRunning) {
+    if (gProcess) {
       logTestInfo("attempting to kill process");
       gProcess.kill();
     }
@@ -4615,13 +4538,15 @@ async function runUpdateUsingApp(aExpectedStatus) {
   
   
   const APP_TIMER_TIMEOUT = 120000;
-  let launchBin = getLaunchBin();
-  let args = getProcessArgs();
-  debugDump("launching " + launchBin.path + " " + args.join(" "));
 
-  gProcess = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
-  gProcess.init(launchBin);
+  let subprocess = getSubprocessOptions();
+  Object.assign(subprocess, {
+    environmentAppend: true,
+    stderr: "stdout",
+  });
+  debugDump("launching with subprocess options" + JSON.stringify(subprocess));
 
+  
   gAppTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   gAppTimer.initWithCallback(
     gAppTimerCallback,
@@ -4629,11 +4554,41 @@ async function runUpdateUsingApp(aExpectedStatus) {
     Ci.nsITimer.TYPE_ONE_SHOT
   );
 
+  
   setEnvironment();
 
   debugDump("launching application");
-  gProcess.run(true, args, args.length);
-  debugDump("launched application exited");
+  gProcess = await Subprocess.call(subprocess).then(p => {
+    p.stdin.close();
+    const dumpPipe = async pipe => {
+      
+      let leftover = "";
+      let data = await pipe.readString();
+      while (data) {
+        data = leftover + data;
+        
+        
+        
+        
+        let lines = data.split(/\r\n|\r|\n/);
+        for (let line of lines.slice(0, -1)) {
+          debugDump(`${p.pid}> ${line}\n`);
+        }
+        leftover = lines[lines.length - 1];
+        data = await pipe.readString();
+      }
+
+      if (leftover.length) {
+        debugDump(`${p.pid}> ${leftover}\n`);
+      }
+    };
+    dumpPipe(p.stdout);
+
+    return p;
+  });
+  let { exitCode } = await gProcess.wait();
+  gProcess = null;
+  debugDump(`launched application exited with exitCode: ${exitCode}`);
 
   resetEnvironment();
 
