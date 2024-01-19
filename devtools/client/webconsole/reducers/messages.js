@@ -453,15 +453,15 @@ function messages(
       });
 
     case constants.PRIVATE_MESSAGES_CLEAR: {
-      const removedIds = [];
+      const removedIds = new Set();
       for (const [id, message] of mutableMessagesById) {
         if (message.private === true) {
-          removedIds.push(id);
+          removedIds.add(id);
         }
       }
 
       
-      if (removedIds.length === 0) {
+      if (removedIds.size === 0) {
         return state;
       }
 
@@ -474,7 +474,7 @@ function messages(
     }
 
     case constants.TARGET_MESSAGES_REMOVE: {
-      const removedIds = [];
+      const removedIds = new Set();
       for (const [id, message] of mutableMessagesById) {
         
         
@@ -486,7 +486,7 @@ function messages(
           message.type !== MESSAGE_TYPE.COMMAND &&
           message.type !== MESSAGE_TYPE.RESULT
         ) {
-          removedIds.push(id);
+          removedIds.add(id);
         }
       }
 
@@ -724,7 +724,7 @@ function messages(
         {
           ...state,
         },
-        [action.id]
+        new Set([action.id])
       );
 
     case constants.FILTER_TOGGLE:
@@ -853,7 +853,7 @@ function setVisibleMessages({
 
 
 
-function getNewCurrentGroup(currentGroup, groupsById, ignoredIds = []) {
+function getNewCurrentGroup(currentGroup, groupsById, ignoredIds = new Set()) {
   if (!currentGroup) {
     return null;
   }
@@ -864,7 +864,7 @@ function getNewCurrentGroup(currentGroup, groupsById, ignoredIds = []) {
   
   if (Array.isArray(parents) && parents.length) {
     
-    if (ignoredIds.includes(parents[0])) {
+    if (ignoredIds.has(parents[0])) {
       return getNewCurrentGroup(parents[0], groupsById, ignoredIds);
     }
 
@@ -913,7 +913,7 @@ function limitTopLevelMessageCount(newState, logLimit) {
     return newState;
   }
 
-  const removedMessagesId = [];
+  const removedMessagesId = new Set();
 
   let cleaningGroup = false;
   for (const id of newState.mutableMessagesOrder) {
@@ -940,7 +940,7 @@ function limitTopLevelMessageCount(newState, logLimit) {
       topLevelCount--;
     }
 
-    removedMessagesId.push(id);
+    removedMessagesId.add(id);
   }
 
   return removeMessagesFromState(newState, removedMessagesId);
@@ -955,7 +955,7 @@ function limitTopLevelMessageCount(newState, logLimit) {
 
 
 function removeMessagesFromState(state, removedMessagesIds) {
-  if (!Array.isArray(removedMessagesIds) || removedMessagesIds.length === 0) {
+  if (removedMessagesIds.size === 0) {
     return state;
   }
 
@@ -984,8 +984,15 @@ function removeMessagesFromState(state, removedMessagesIds) {
     state.frontsToRelease = state.frontsToRelease.concat(frontsToRelease);
   }
 
-  const isInRemovedId = id => removedMessagesIds.includes(id);
-  const mapHasRemovedIdKey = map => removedMessagesIds.some(id => map.has(id));
+  const isInRemovedId = id => removedMessagesIds.has(id);
+  const mapHasRemovedIdKey = map => {
+    for (const id of removedMessagesIds) {
+      if (map.has(id)) {
+        return true;
+      }
+    }
+    return false;
+  };
   const objectHasRemovedIdKey = obj =>
     Object.keys(obj).findIndex(isInRemovedId) !== -1;
 
