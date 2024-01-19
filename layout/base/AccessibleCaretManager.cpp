@@ -652,8 +652,9 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   
   
   
-  nsIFrame::ContentOffsets offsets =
-      ptFrame->GetContentOffsetsFromPoint(ptInFrame, nsIFrame::SKIP_HIDDEN);
+  nsIFrame::ContentOffsets offsets = ptFrame->GetContentOffsetsFromPoint(
+      ptInFrame,
+      nsIFrame::SKIP_HIDDEN | nsIFrame::IGNORE_NATIVE_ANONYMOUS_SUBTREE);
   if (offsets.content) {
     RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
     if (frameSelection) {
@@ -1266,8 +1267,8 @@ nsresult AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint) {
     return NS_ERROR_FAILURE;
   }
 
-  nsIFrame::ContentOffsets offsets =
-      newFrame->GetContentOffsetsFromPoint(newPoint);
+  nsIFrame::ContentOffsets offsets = newFrame->GetContentOffsetsFromPoint(
+      newPoint, nsIFrame::IGNORE_NATIVE_ANONYMOUS_SUBTREE);
   if (offsets.IsNull()) {
     return NS_ERROR_FAILURE;
   }

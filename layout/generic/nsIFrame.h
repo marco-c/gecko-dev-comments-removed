@@ -2250,9 +2250,12 @@ class nsIFrame : public nsQueryFrame {
     mozilla::CaretAssociationHint associate{0};  
   };
   enum {
-    IGNORE_SELECTION_STYLE = 0x01,
+    IGNORE_SELECTION_STYLE = 1 << 0,
     
-    SKIP_HIDDEN = 0x02
+    SKIP_HIDDEN = 1 << 1,
+    
+    
+    IGNORE_NATIVE_ANONYMOUS_SUBTREE = 1 << 2,
   };
   
 
