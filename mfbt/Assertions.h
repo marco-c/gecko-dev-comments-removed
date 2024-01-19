@@ -149,6 +149,25 @@ MOZ_MAYBE_UNUSED static MOZ_COLD MOZ_NEVER_INLINE void MOZ_ReportCrash(
 
 
 
+
+
+
+#if defined(__clang__) || defined(__GNUC__)
+#  define MOZ_ASSUME_UNREACHABLE_MARKER() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define MOZ_ASSUME_UNREACHABLE_MARKER() __assume(0)
+#else
+#  ifdef __cplusplus
+#    define MOZ_ASSUME_UNREACHABLE_MARKER() ::abort()
+#  else
+#    define MOZ_ASSUME_UNREACHABLE_MARKER() abort()
+#  endif
+#endif
+
+
+
+
+
 #if defined(_MSC_VER)
 
 
@@ -176,6 +195,7 @@ MOZ_MAYBE_UNUSED static MOZ_COLD MOZ_NORETURN MOZ_NEVER_INLINE void
 MOZ_NoReturn(int aLine) {
   *((volatile int*)NULL) = aLine;
   TerminateProcess(GetCurrentProcess(), 3);
+  MOZ_ASSUME_UNREACHABLE_MARKER();
 }
 
 #  define MOZ_REALLY_CRASH(line) \
@@ -499,25 +519,6 @@ struct AssertionConditionType {
 #  define MOZ_DIAGNOSTIC_ASSERT_IF(cond, expr) \
     do {                                       \
     } while (false)
-#endif
-
-
-
-
-
-
-
-
-#if defined(__clang__) || defined(__GNUC__)
-#  define MOZ_ASSUME_UNREACHABLE_MARKER() __builtin_unreachable()
-#elif defined(_MSC_VER)
-#  define MOZ_ASSUME_UNREACHABLE_MARKER() __assume(0)
-#else
-#  ifdef __cplusplus
-#    define MOZ_ASSUME_UNREACHABLE_MARKER() ::abort()
-#  else
-#    define MOZ_ASSUME_UNREACHABLE_MARKER() abort()
-#  endif
 #endif
 
 
