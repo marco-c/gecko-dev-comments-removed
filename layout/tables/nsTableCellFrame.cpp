@@ -393,12 +393,13 @@ nsMargin nsTableCellFrame::GetBorderOverflow() { return nsMargin(0, 0, 0, 0); }
 
 void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
   
-  const LogicalMargin border = GetLogicalUsedBorder(GetWritingMode())
-                                   .ApplySkipSides(GetLogicalSkipSides())
-                                   .ConvertTo(aWM, GetWritingMode());
+  const LogicalMargin borderPadding =
+      GetLogicalUsedBorderAndPadding(GetWritingMode())
+          .ApplySkipSides(GetLogicalSkipSides())
+          .ConvertTo(aWM, GetWritingMode());
 
-  nscoord bStartInset = border.BStart(aWM);
-  nscoord bEndInset = border.BEnd(aWM);
+  nscoord bStartInset = borderPadding.BStart(aWM);
+  nscoord bEndInset = borderPadding.BEnd(aWM);
 
   nscoord bSize = BSize(aWM);
   nsIFrame* firstKid = mFrames.FirstChild();
@@ -496,16 +497,13 @@ StyleVerticalAlignKeyword nsTableCellFrame::GetVerticalAlign() const {
   return StyleVerticalAlignKeyword::Baseline;
 }
 
-static bool CellHasVisibleContent(nsTableFrame* aTableFrame,
-                                  nsIFrame* aKidFrame) {
+bool nsTableCellFrame::CellHasVisibleContent(nscoord height,
+                                             nsTableFrame* tableFrame,
+                                             nsIFrame* kidFrame) {
   
-  if (aKidFrame->GetContentRect().Height() > 0) {
-    return true;
-  }
-  if (aTableFrame->IsBorderCollapse()) {
-    return true;
-  }
-  for (nsIFrame* innerFrame : aKidFrame->PrincipalChildList()) {
+  if (height > 0) return true;
+  if (tableFrame->IsBorderCollapse()) return true;
+  for (nsIFrame* innerFrame : kidFrame->PrincipalChildList()) {
     LayoutFrameType frameType = innerFrame->Type();
     if (LayoutFrameType::Text == frameType) {
       nsTextFrame* textFrame = static_cast<nsTextFrame*>(innerFrame);
@@ -525,14 +523,15 @@ nscoord nsTableCellFrame::GetCellBaseline() const {
   
   nsIFrame* inner = mFrames.FirstChild();
   const auto wm = GetWritingMode();
+  const auto borderPadding = GetLogicalUsedBorderAndPadding(wm);
   nscoord result;
   if (!StyleDisplay()->IsContainLayout() &&
       nsLayoutUtils::GetFirstLineBaseline(wm, inner, &result)) {
-    
-    return result + GetLogicalUsedBorder(wm).BStart(wm);
+    return result + borderPadding.BStart(wm);
   }
-  return inner->ContentBSize(wm) +
-         GetLogicalUsedBorderAndPadding(wm).BStart(wm);
+  const auto logicalSize = inner->GetLogicalSize(wm);
+  
+  return logicalSize.BSize(wm) + borderPadding.BStart(wm);
 }
 
 int32_t nsTableCellFrame::GetRowSpan() {
@@ -571,10 +570,6 @@ int32_t nsTableCellFrame::GetColSpan() {
   return colSpan;
 }
 
-nsIScrollableFrame* nsTableCellFrame::GetScrollTargetFrame() const {
-  return do_QueryFrame(mFrames.FirstChild());
-}
-
 
 nscoord nsTableCellFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
@@ -582,8 +577,7 @@ nscoord nsTableCellFrame::GetMinISize(gfxContext* aRenderingContext) {
 
   nsIFrame* inner = mFrames.FirstChild();
   result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext, inner,
-                                                IntrinsicISizeType::MinISize,
-                                                nsLayoutUtils::IGNORE_PADDING);
+                                                IntrinsicISizeType::MinISize);
   return result;
 }
 
@@ -594,8 +588,7 @@ nscoord nsTableCellFrame::GetPrefISize(gfxContext* aRenderingContext) {
 
   nsIFrame* inner = mFrames.FirstChild();
   result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext, inner,
-                                                IntrinsicISizeType::PrefISize,
-                                                nsLayoutUtils::IGNORE_PADDING);
+                                                IntrinsicISizeType::PrefISize);
   return result;
 }
 
@@ -675,9 +668,8 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
   WritingMode wm = aReflowInput.GetWritingMode();
   LogicalSize availSize = aReflowInput.AvailableSize();
 
-  
-  
-  LogicalMargin border = GetBorderWidth(wm);
+  LogicalMargin borderPadding =
+      aReflowInput.ComputedLogicalPadding(wm) + GetBorderWidth(wm);
 
   ReflowOutput kidSize(wm);
   SetPriorAvailISize(aReflowInput.AvailableISize());
@@ -687,23 +679,17 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
       "Frame construction error, a table cell always has an inner cell frame");
   nsTableFrame* tableFrame = GetTableFrame();
 
-  if (aReflowInput.mFlags.mSpecialBSizeReflow || aPresContext->IsPaginated()) {
-    
-    
-    
-    const LogicalMargin bp = border + aReflowInput.ComputedLogicalPadding(wm);
-    if (aReflowInput.mFlags.mSpecialBSizeReflow) {
+  if (aReflowInput.mFlags.mSpecialBSizeReflow) {
+    const_cast<ReflowInput&>(aReflowInput)
+        .SetComputedBSize(BSize(wm) - borderPadding.BStartEnd(wm));
+    DISPLAY_REFLOW_CHANGE();
+  } else if (aPresContext->IsPaginated()) {
+    nscoord computedUnpaginatedBSize = CalcUnpaginatedBSize(
+        (nsTableCellFrame&)*this, *tableFrame, borderPadding.BStartEnd(wm));
+    if (computedUnpaginatedBSize > 0) {
       const_cast<ReflowInput&>(aReflowInput)
-          .SetComputedBSize(BSize(wm) - bp.BStartEnd(wm));
+          .SetComputedBSize(computedUnpaginatedBSize);
       DISPLAY_REFLOW_CHANGE();
-    } else {
-      const nscoord computedUnpaginatedBSize =
-          CalcUnpaginatedBSize(*this, *tableFrame, bp.BStartEnd(wm));
-      if (computedUnpaginatedBSize > 0) {
-        const_cast<ReflowInput&>(aReflowInput)
-            .SetComputedBSize(computedUnpaginatedBSize);
-        DISPLAY_REFLOW_CHANGE();
-      }
     }
   }
 
@@ -714,20 +700,20 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  border.ApplySkipSides(PreReflowBlockLevelLogicalSkipSides());
+  borderPadding.ApplySkipSides(PreReflowBlockLevelLogicalSkipSides());
 
-  availSize.ISize(wm) -= border.IStartEnd(wm);
+  availSize.ISize(wm) -= borderPadding.IStartEnd(wm);
 
   
   
   if (NS_UNCONSTRAINEDSIZE != availSize.BSize(wm)) {
-    availSize.BSize(wm) -= border.BStart(wm);
+    availSize.BSize(wm) -= borderPadding.BStart(wm);
 
     if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
         StyleBoxDecorationBreak::Clone) {
       
       
-      availSize.BSize(wm) -= border.BEnd(wm);
+      availSize.BSize(wm) -= borderPadding.BEnd(wm);
     }
   }
 
@@ -740,11 +726,7 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
 
   WritingMode kidWM = firstKid->GetWritingMode();
   ReflowInput kidReflowInput(aPresContext, aReflowInput, firstKid,
-                             availSize.ConvertTo(kidWM, wm), Nothing(),
-                             ReflowInput::InitFlag::CallerWillInit);
-  
-  kidReflowInput.Init(aPresContext, Nothing(), Nothing(),
-                      Some(aReflowInput.ComputedLogicalPadding(kidWM)));
+                             availSize.ConvertTo(kidWM, wm));
 
   
   
@@ -768,10 +750,11 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
 
   nsSize containerSize = aReflowInput.ComputedSizeAsContainerIfConstrained();
 
-  const LogicalPoint kidOrigin = border.StartOffset(wm);
-  const nsRect origRect = firstKid->GetRect();
-  const nsRect origInkOverflow = firstKid->InkOverflowRect();
-  const bool firstReflow = firstKid->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
+  LogicalPoint kidOrigin(wm, borderPadding.IStart(wm),
+                         borderPadding.BStart(wm));
+  nsRect origRect = firstKid->GetRect();
+  nsRect origInkOverflow = firstKid->InkOverflowRect();
+  bool firstReflow = firstKid->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
 
   ReflowChild(firstKid, aPresContext, kidSize, kidReflowInput, wm, kidOrigin,
               containerSize, ReflowChildFlags::Default, aStatus);
@@ -794,17 +777,19 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
 #endif
 
   
+  
+  nsIFrame* prevInFlow = GetPrevInFlow();
+  bool isEmpty;
+  if (prevInFlow) {
+    isEmpty = static_cast<nsTableCellFrame*>(prevInFlow)->GetContentEmpty();
+  } else {
+    isEmpty = !CellHasVisibleContent(kidSize.Height(), tableFrame, firstKid);
+  }
+  SetContentEmpty(isEmpty);
+
+  
   FinishReflowChild(firstKid, aPresContext, kidSize, &kidReflowInput, wm,
                     kidOrigin, containerSize, ReflowChildFlags::Default);
-
-  {
-    nsIFrame* prevInFlow = GetPrevInFlow();
-    const bool isEmpty =
-        prevInFlow
-            ? static_cast<nsTableCellFrame*>(prevInFlow)->GetContentEmpty()
-            : !CellHasVisibleContent(tableFrame, firstKid);
-    SetContentEmpty(isEmpty);
-  }
 
   if (tableFrame->IsBorderCollapse()) {
     nsTableFrame::InvalidateTableFrame(firstKid, origRect, origInkOverflow,
@@ -816,22 +801,22 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
   cellSize.BSize(wm) = kidSize.BSize(wm);
 
   if (NS_UNCONSTRAINEDSIZE != cellSize.BSize(wm)) {
-    cellSize.BSize(wm) += border.BStart(wm);
+    cellSize.BSize(wm) += borderPadding.BStart(wm);
 
     if (aStatus.IsComplete() ||
         aReflowInput.mStyleBorder->mBoxDecorationBreak ==
             StyleBoxDecorationBreak::Clone) {
-      cellSize.BSize(wm) += border.BEnd(wm);
+      cellSize.BSize(wm) += borderPadding.BEnd(wm);
     }
   }
 
   
-  
-  cellSize.ISize(wm) = kidSize.ISize(wm);
+  cellSize.ISize(wm) = kidSize.ISize(
+      wm);  
 
   
   if (NS_UNCONSTRAINEDSIZE != cellSize.ISize(wm)) {
-    cellSize.ISize(wm) += border.IStartEnd(wm);
+    cellSize.ISize(wm) += borderPadding.IStartEnd(wm);
   }
 
   

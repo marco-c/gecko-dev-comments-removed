@@ -2244,7 +2244,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
 
   nsTableFrame* tableFrame =
       static_cast<nsTableRowFrame*>(aParentFrame)->GetTableFrame();
-  nsContainerFrame* cellFrame;
+  nsContainerFrame* newFrame;
   
   
   
@@ -2254,43 +2254,35 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
   
   
   if (isMathMLContent && !tableFrame->IsBorderCollapse()) {
-    cellFrame = NS_NewMathMLmtdFrame(mPresShell, computedStyle, tableFrame);
+    newFrame = NS_NewMathMLmtdFrame(mPresShell, computedStyle, tableFrame);
   } else {
     
     
     
-    cellFrame = NS_NewTableCellFrame(mPresShell, computedStyle, tableFrame);
+    newFrame = NS_NewTableCellFrame(mPresShell, computedStyle, tableFrame);
   }
 
   
-  InitAndRestoreFrame(aState, content, aParentFrame, cellFrame);
-  cellFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
+  InitAndRestoreFrame(aState, content, aParentFrame, newFrame);
+  newFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
   RefPtr<ComputedStyle> innerPseudoStyle =
       mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
           PseudoStyleType::cellContent, computedStyle);
 
-  nsContainerFrame* cellInnerFrame;
-  nsContainerFrame* scrollFrame = nullptr;
-  bool isScrollable = false;
   
+  nsContainerFrame* cellInnerFrame;
   if (isMathMLContent) {
     cellInnerFrame = NS_NewMathMLmtdInnerFrame(mPresShell, innerPseudoStyle);
   } else {
-    isScrollable = innerPseudoStyle->StyleDisplay()->IsScrollableOverflow();
-    if (isScrollable) {
-      innerPseudoStyle = BeginBuildingScrollFrame(
-          aState, content, innerPseudoStyle, cellFrame,
-          PseudoStyleType::scrolledContent, false, scrollFrame);
-    }
     cellInnerFrame = NS_NewBlockFormattingContext(mPresShell, innerPseudoStyle);
   }
-  auto* parent = scrollFrame ? scrollFrame : cellFrame;
-  InitAndRestoreFrame(aState, content, parent, cellInnerFrame);
+
+  InitAndRestoreFrame(aState, content, newFrame, cellInnerFrame);
 
   nsFrameConstructorSaveState absoluteSaveState;
-  MakeTablePartAbsoluteContainingBlock(aState, absoluteSaveState, cellFrame);
+  MakeTablePartAbsoluteContainingBlock(aState, absoluteSaveState, newFrame);
 
   nsFrameConstructorSaveState floatSaveState;
   aState.MaybePushFloatContainingBlock(cellInnerFrame, floatSaveState);
@@ -2309,13 +2301,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
 
   cellInnerFrame->SetInitialChildList(FrameChildListID::Principal,
                                       std::move(childList));
-
-  if (isScrollable) {
-    FinishBuildingScrollFrame(scrollFrame, cellInnerFrame);
-  }
-  SetInitialSingleChild(cellFrame, scrollFrame ? scrollFrame : cellInnerFrame);
-  aFrameList.AppendFrame(nullptr, cellFrame);
-  return cellFrame;
+  SetInitialSingleChild(newFrame, cellInnerFrame);
+  aFrameList.AppendFrame(nullptr, newFrame);
+  return newFrame;
 }
 
 static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
@@ -3184,7 +3172,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
   
   nsContainerFrame* contentFrameTop;
   nsContainerFrame* contentFrame;
-  auto* parent = scrollFrame ? scrollFrame : fieldsetFrame;
+  auto parent = scrollFrame ? scrollFrame : fieldsetFrame;
   MOZ_ASSERT(fieldsetContentDisplay->DisplayOutside() ==
              StyleDisplayOutside::Block);
   switch (fieldsetContentDisplay->DisplayInside()) {
