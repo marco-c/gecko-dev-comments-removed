@@ -3500,9 +3500,6 @@ class IDLWrapperType(IDLType):
         ):
             return True
         if self.isDictionary():
-            
-            if other.isCallback():
-                return not other.callback._treatNonObjectAsNull
             return other.isNonCallbackInterface()
 
         assert self.isInterface()
@@ -6070,9 +6067,6 @@ class IDLCallbackType(IDLType):
         if other.isUnion():
             
             return other.isDistinguishableFrom(self)
-        
-        if other.isDictionaryLike():
-            return not self.callback._treatNonObjectAsNull
         return (
             other.isUndefined()
             or other.isPrimitive()
