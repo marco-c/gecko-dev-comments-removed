@@ -1,5 +1,4 @@
-from typing import Any, Callable, Dict, Mapping
-
+from typing import Any, Callable, Dict, List, Mapping
 from webdriver.bidi.modules.script import ContextTarget
 
 
@@ -11,14 +10,13 @@ def recursive_compare(expected: Any, actual: Any) -> None:
         expected(actual)
         return
 
-    assert type(expected) is type(actual)
-    if type(expected) is list:
+    if isinstance(actual, List) and isinstance(expected, List):
         assert len(expected) == len(actual)
         for index, _ in enumerate(expected):
             recursive_compare(expected[index], actual[index])
         return
 
-    if type(expected) is dict:
+    if isinstance(actual, Dict) and isinstance(expected, Dict):
         
         assert (
             expected.keys() <= actual.keys()
