@@ -19,7 +19,7 @@ def write_aom_config(system, arch, variables, cache_variables):
 
     
     cache_variables = [x for x in sorted(cache_variables)
-                       if x and not x.startswith((' ', 'CMAKE', 'AOM'))]
+                       if x and not x.startswith((' ', 'CMAKE', 'AOM_C', 'AOM_RTCD'))]
 
     
     cache_variables.remove('HAVE_PTHREAD_H')
@@ -122,21 +122,24 @@ if __name__ == '__main__':
         
         if generate_sources:
             
-            sources = filter(lambda x: x.startswith(AOM_DIR), sources)
-            sources = filter(lambda x: not x.endswith('.pl'), sources)
+            sources = list(filter(lambda x: x.startswith(AOM_DIR), sources))
+            sources = list(filter(lambda x: not x.endswith('.pl'), sources))
+
 
             
-            exports = filter(lambda x: re.match(os.path.join(AOM_DIR, '(aom|aom_mem|aom_ports|aom_scale)/.*h$'), x), sources)
-            exports = filter(lambda x: not re.search('(internal|src)', x), exports)
-            exports = filter(lambda x: not re.search('(emmintrin_compat.h|mem_.*|msvc.h|aom_once.h)$', x), exports)
+            exports = list(filter(lambda x: re.match(os.path.join(AOM_DIR, '(aom|aom_mem|aom_ports|aom_scale)/.*h$'), x), sources))
+            exports = list(filter(lambda x: not re.search('(internal|src)', x), exports))
+            exports = list(filter(lambda x: not re.search('(emmintrin_compat.h|mem_.*|msvc.h|aom_once.h)$', x), exports))
 
             sources = list(sources)
-            
+
             for export in exports:
-                sources.remove(export)
+                if export in sources:
+                    sources.remove(export)
 
             
             sources = sorted(filter(lambda x: not x.endswith('.h'), sources))
+            sources = sorted(filter(lambda x: not x.endswith('.inc'), sources))
 
             
             
