@@ -147,9 +147,16 @@ void CookieServiceChild::RemoveSingleCookie(const CookieStruct& aCookie,
 
   for (uint32_t i = 0; i < cookiesList->Length(); i++) {
     Cookie* cookie = cookiesList->ElementAt(i);
+    
+    
+    
+    
+    
+    
     if (cookie->Name().Equals(aCookie.name()) &&
         cookie->Host().Equals(aCookie.host()) &&
-        cookie->Path().Equals(aCookie.path())) {
+        cookie->Path().Equals(aCookie.path()) &&
+        cookie->Expiry() <= aCookie.expiry()) {
       cookiesList->RemoveElementAt(i);
       break;
     }
