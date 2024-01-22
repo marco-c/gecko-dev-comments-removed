@@ -64,7 +64,7 @@ class LSDatabaseChild final : public PBackgroundLSDatabaseChild {
 
   LSDatabase* mDatabase;
 
-  NS_DECL_OWNINGTHREAD
+  NS_INLINE_DECL_REFCOUNTING(LSDatabaseChild, override)
 
  public:
   void AssertIsOnOwningThread() const {
@@ -75,7 +75,6 @@ class LSDatabaseChild final : public PBackgroundLSDatabaseChild {
   
   explicit LSDatabaseChild(LSDatabase* aDatabase);
 
-  
   ~LSDatabaseChild();
 
   void SendDeleteMeInternal();
