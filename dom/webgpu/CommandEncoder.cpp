@@ -254,10 +254,16 @@ already_AddRefed<CommandBuffer> CommandEncoder::Finish(
     const dom::GPUCommandBufferDescriptor& aDesc) {
   
   
-  RawId id = mBridge->CommandEncoderFinish(mId, mParent->mId, aDesc);
+  
+  
+  RawId deviceId = mParent->mId;
+  if (mBridge->CanSend()) {
+    mBridge->SendCommandEncoderFinish(mId, deviceId, aDesc);
+  }
+
   RefPtr<CommandEncoder> me(this);
-  RefPtr<CommandBuffer> comb =
-      new CommandBuffer(mParent, id, std::move(mTargetContexts), std::move(me));
+  RefPtr<CommandBuffer> comb = new CommandBuffer(
+      mParent, mId, std::move(mTargetContexts), std::move(me));
   return comb.forget();
 }
 
