@@ -132,9 +132,6 @@ class nsTableCellFrame : public nsContainerFrame,
            !GetContentEmpty();
   }
 
-  bool CellHasVisibleContent(nscoord aBSize, nsTableFrame* tableFrame,
-                             nsIFrame* kidFrame);
-
   
 
 
