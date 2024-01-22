@@ -18,6 +18,7 @@
 #include "mozilla/XorShift128PlusRNG.h"
 
 #include <algorithm>
+#include <utility>
 
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/SharedIntlData.h"
@@ -665,8 +666,19 @@ struct JSRuntime {
   
   js::UnprotectedData<js::coverage::LCovRuntime> lcovOutput_;
 
+  
+
+  js::MainThreadData<mozilla::Vector<std::pair<void (*)(void*), void*>, 4>>
+      cleanupClosures;
+
  public:
   js::coverage::LCovRuntime& lcovOutput() { return lcovOutput_.ref(); }
+
+  
+
+  bool atExit(void (*function)(void*), void* data) {
+    return cleanupClosures.ref().append(std::pair(function, data));
+  }
 
  private:
   js::UnprotectedData<js::jit::JitRuntime*> jitRuntime_;
