@@ -60,16 +60,6 @@ mozilla::ipc::IPCResult ClientManagerChild::RecvPClientNavigateOpConstructor(
   return IPC_OK();
 }
 
-PClientSourceChild* ClientManagerChild::AllocPClientSourceChild(
-    const ClientSourceConstructorArgs& aArgs) {
-  return new ClientSourceChild(aArgs);
-}
-
-bool ClientManagerChild::DeallocPClientSourceChild(PClientSourceChild* aActor) {
-  delete aActor;
-  return true;
-}
-
 
 already_AddRefed<ClientManagerChild> ClientManagerChild::Create() {
   RefPtr<ClientManagerChild> actor = new ClientManagerChild();
