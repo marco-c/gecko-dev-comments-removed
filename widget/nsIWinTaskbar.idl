@@ -157,6 +157,20 @@ interface nsIWinTaskbar : nsISupports
 
 
 
+  AString getGroupIdForWindow(in mozIDOMWindow aParent);
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
