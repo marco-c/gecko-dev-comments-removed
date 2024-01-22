@@ -156,6 +156,7 @@ typedef IPCMessageStart ProtocolId;
 
 const char* ProtocolIdToName(IPCMessageStart aId);
 
+class IRefCountedProtocol;
 class IToplevelProtocol;
 class ActorLifecycleProxy;
 class WeakActorLifecycleProxy;
@@ -412,10 +413,20 @@ class ManagedEndpoint;
 
 
 
+class IRefCountedProtocol : public IProtocol {
+ public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  using IProtocol::IProtocol;
+};
 
 
 
-class IToplevelProtocol : public IProtocol {
+
+
+
+
+class IToplevelProtocol : public IRefCountedProtocol {
   template <class PFooSide>
   friend class Endpoint;
 
@@ -425,9 +436,6 @@ class IToplevelProtocol : public IProtocol {
   ~IToplevelProtocol() = default;
 
  public:
-  
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
   
   
   int32_t Register(IProtocol* aRouted);
