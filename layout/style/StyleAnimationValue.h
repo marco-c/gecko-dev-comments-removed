@@ -44,7 +44,6 @@ class Animatable;
 
 enum class PseudoStyleType : uint8_t;
 struct PropertyStyleAnimationValuePair;
-struct AnimatedPropertyID;
 
 struct AnimationValue {
   explicit AnimationValue(const RefPtr<StyleAnimationValue>& aValue)
@@ -102,13 +101,12 @@ struct AnimationValue {
                           const AnimationValue& aToValue) const;
 
   
-  double ComputeDistance(nsCSSPropertyID aProperty,
-                         const AnimationValue& aOther) const;
+  double ComputeDistance(const AnimationValue& aOther) const;
 
   
   
   
-  static AnimationValue FromString(nsCSSPropertyID aProperty,
+  static AnimationValue FromString(AnimatedPropertyID& aProperty,
                                    const nsACString& aValue,
                                    dom::Element* aElement);
 
