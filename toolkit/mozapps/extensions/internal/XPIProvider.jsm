@@ -2562,9 +2562,12 @@ var XPIProvider = {
       if (AppConstants.MOZ_CRASHREPORTER) {
         
         try {
+          
+          
+          
           Services.appinfo.annotateCrashReport(
             "EMCheckCompatibility",
-            AddonManager.checkCompatibility
+            AddonManager.checkCompatibility.toString()
           );
         } catch (e) {}
         this.addAddonsToCrashReporter();
