@@ -1358,7 +1358,7 @@ const gCSSProperties2 = {
   'text-spacing-trim': {
     
     types: [
-      { type: 'discrete', options: [ [ 'auto', 'space-all' ] ] }
+      { type: 'discrete', options: [ [ 'normal', 'space-all' ] ] }
     ]
   },
   'text-transform': {
