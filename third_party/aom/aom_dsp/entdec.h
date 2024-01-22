@@ -53,8 +53,6 @@ struct od_ec_dec {
   uint16_t rng;
   
   int16_t cnt;
-  
-  int error;
 };
 
 

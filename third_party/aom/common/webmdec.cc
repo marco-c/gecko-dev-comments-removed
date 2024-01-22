@@ -197,6 +197,17 @@ int webm_read_frame(struct WebmInputContext *webm_ctx, uint8_t **buffer,
   return frame.Read(reader, *buffer) ? -1 : 0;
 }
 
+
+static int gcd(int a, int b) {
+  int remainder;
+  while (b > 0) {
+    remainder = a % b;
+    a = b;
+    b = remainder;
+  }
+  return a;
+}
+
 int webm_guess_framerate(struct WebmInputContext *webm_ctx,
                          struct AvxInputContext *aom_ctx) {
   uint32_t i = 0;
@@ -213,6 +224,14 @@ int webm_guess_framerate(struct WebmInputContext *webm_ctx,
   aom_ctx->framerate.numerator = (i - 1) * 1000000;
   aom_ctx->framerate.denominator =
       static_cast<int>(webm_ctx->timestamp_ns / 1000);
+  
+  
+  int g = gcd(aom_ctx->framerate.numerator, aom_ctx->framerate.denominator);
+  if (g != 0) {
+    aom_ctx->framerate.numerator /= g;
+    aom_ctx->framerate.denominator /= g;
+  }
+
   delete[] buffer;
   webm_ctx->buffer = NULL;
 

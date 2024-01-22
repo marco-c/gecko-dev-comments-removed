@@ -14,7 +14,7 @@
 
 #include "common/video_common.h"
 
-typedef enum { kContainerIVF } AvxContainer;
+enum { kContainerIVF } UENUM1BYTE(AvxContainer);
 
 struct AvxVideoWriterStruct;
 typedef struct AvxVideoWriterStruct AvxVideoWriter;
@@ -37,6 +37,8 @@ void aom_video_writer_close(AvxVideoWriter *writer);
 
 int aom_video_writer_write_frame(AvxVideoWriter *writer, const uint8_t *buffer,
                                  size_t size, int64_t pts);
+
+void aom_video_writer_set_fourcc(AvxVideoWriter *writer, uint32_t fourcc);
 
 #ifdef __cplusplus
 }  

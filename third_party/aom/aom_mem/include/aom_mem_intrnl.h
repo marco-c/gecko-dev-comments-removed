@@ -26,8 +26,4 @@
 #endif
 #endif
 
-
-#define align_addr(addr, align) \
-  (void *)(((size_t)(addr) + ((align)-1)) & ~(size_t)((align)-1))
-
 #endif  

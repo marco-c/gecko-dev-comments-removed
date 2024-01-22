@@ -16,34 +16,34 @@
 
 #include "av1/common/x86/cfl_simd.h"
 
-#define CFL_GET_SUBSAMPLE_FUNCTION_AVX2(sub, bd)                           \
-  CFL_SUBSAMPLE(avx2, sub, bd, 32, 32)                                     \
-  CFL_SUBSAMPLE(avx2, sub, bd, 32, 16)                                     \
-  CFL_SUBSAMPLE(avx2, sub, bd, 32, 8)                                      \
-  cfl_subsample_##bd##_fn cfl_get_luma_subsampling_##sub##_##bd##_avx2(    \
-      TX_SIZE tx_size) {                                                   \
-    static const cfl_subsample_##bd##_fn subfn_##sub[TX_SIZES_ALL] = {     \
-      subsample_##bd##_##sub##_4x4_ssse3,   /* 4x4 */                      \
-      subsample_##bd##_##sub##_8x8_ssse3,   /* 8x8 */                      \
-      subsample_##bd##_##sub##_16x16_ssse3, /* 16x16 */                    \
-      subsample_##bd##_##sub##_32x32_avx2,  /* 32x32 */                    \
-      cfl_subsample_##bd##_null,            /* 64x64 (invalid CFL size) */ \
-      subsample_##bd##_##sub##_4x8_ssse3,   /* 4x8 */                      \
-      subsample_##bd##_##sub##_8x4_ssse3,   /* 8x4 */                      \
-      subsample_##bd##_##sub##_8x16_ssse3,  /* 8x16 */                     \
-      subsample_##bd##_##sub##_16x8_ssse3,  /* 16x8 */                     \
-      subsample_##bd##_##sub##_16x32_ssse3, /* 16x32 */                    \
-      subsample_##bd##_##sub##_32x16_avx2,  /* 32x16 */                    \
-      cfl_subsample_##bd##_null,            /* 32x64 (invalid CFL size) */ \
-      cfl_subsample_##bd##_null,            /* 64x32 (invalid CFL size) */ \
-      subsample_##bd##_##sub##_4x16_ssse3,  /* 4x16  */                    \
-      subsample_##bd##_##sub##_16x4_ssse3,  /* 16x4  */                    \
-      subsample_##bd##_##sub##_8x32_ssse3,  /* 8x32  */                    \
-      subsample_##bd##_##sub##_32x8_avx2,   /* 32x8  */                    \
-      cfl_subsample_##bd##_null,            /* 16x64 (invalid CFL size) */ \
-      cfl_subsample_##bd##_null,            /* 64x16 (invalid CFL size) */ \
-    };                                                                     \
-    return subfn_##sub[tx_size];                                           \
+#define CFL_GET_SUBSAMPLE_FUNCTION_AVX2(sub, bd)                               \
+  CFL_SUBSAMPLE(avx2, sub, bd, 32, 32)                                         \
+  CFL_SUBSAMPLE(avx2, sub, bd, 32, 16)                                         \
+  CFL_SUBSAMPLE(avx2, sub, bd, 32, 8)                                          \
+  cfl_subsample_##bd##_fn cfl_get_luma_subsampling_##sub##_##bd##_avx2(        \
+      TX_SIZE tx_size) {                                                       \
+    static const cfl_subsample_##bd##_fn subfn_##sub[TX_SIZES_ALL] = {         \
+      cfl_subsample_##bd##_##sub##_4x4_ssse3,   /* 4x4 */                      \
+      cfl_subsample_##bd##_##sub##_8x8_ssse3,   /* 8x8 */                      \
+      cfl_subsample_##bd##_##sub##_16x16_ssse3, /* 16x16 */                    \
+      cfl_subsample_##bd##_##sub##_32x32_avx2,  /* 32x32 */                    \
+      NULL,                                     /* 64x64 (invalid CFL size) */ \
+      cfl_subsample_##bd##_##sub##_4x8_ssse3,   /* 4x8 */                      \
+      cfl_subsample_##bd##_##sub##_8x4_ssse3,   /* 8x4 */                      \
+      cfl_subsample_##bd##_##sub##_8x16_ssse3,  /* 8x16 */                     \
+      cfl_subsample_##bd##_##sub##_16x8_ssse3,  /* 16x8 */                     \
+      cfl_subsample_##bd##_##sub##_16x32_ssse3, /* 16x32 */                    \
+      cfl_subsample_##bd##_##sub##_32x16_avx2,  /* 32x16 */                    \
+      NULL,                                     /* 32x64 (invalid CFL size) */ \
+      NULL,                                     /* 64x32 (invalid CFL size) */ \
+      cfl_subsample_##bd##_##sub##_4x16_ssse3,  /* 4x16  */                    \
+      cfl_subsample_##bd##_##sub##_16x4_ssse3,  /* 16x4  */                    \
+      cfl_subsample_##bd##_##sub##_8x32_ssse3,  /* 8x32  */                    \
+      cfl_subsample_##bd##_##sub##_32x8_avx2,   /* 32x8  */                    \
+      NULL,                                     /* 16x64 (invalid CFL size) */ \
+      NULL,                                     /* 64x16 (invalid CFL size) */ \
+    };                                                                         \
+    return subfn_##sub[tx_size];                                               \
   }
 
 
@@ -147,6 +147,7 @@ static void cfl_luma_subsampling_444_lbd_avx2(const uint8_t *input,
 
 CFL_GET_SUBSAMPLE_FUNCTION_AVX2(444, lbd)
 
+#if CONFIG_AV1_HIGHBITDEPTH
 
 
 
@@ -238,6 +239,7 @@ static void cfl_luma_subsampling_444_hbd_avx2(const uint16_t *input,
 }
 
 CFL_GET_SUBSAMPLE_FUNCTION_AVX2(444, hbd)
+#endif  
 
 static INLINE __m256i predict_unclipped(const __m256i *input, __m256i alpha_q12,
                                         __m256i alpha_sign, __m256i dc_q0) {
@@ -269,37 +271,38 @@ static INLINE void cfl_predict_lbd_avx2(const int16_t *pred_buf_q3,
   } while ((row += CFL_BUF_LINE_I256) < row_end);
 }
 
-CFL_PREDICT_X(avx2, 32, 8, lbd);
-CFL_PREDICT_X(avx2, 32, 16, lbd);
-CFL_PREDICT_X(avx2, 32, 32, lbd);
+CFL_PREDICT_X(avx2, 32, 8, lbd)
+CFL_PREDICT_X(avx2, 32, 16, lbd)
+CFL_PREDICT_X(avx2, 32, 32, lbd)
 
-cfl_predict_lbd_fn get_predict_lbd_fn_avx2(TX_SIZE tx_size) {
+cfl_predict_lbd_fn cfl_get_predict_lbd_fn_avx2(TX_SIZE tx_size) {
   static const cfl_predict_lbd_fn pred[TX_SIZES_ALL] = {
-    predict_lbd_4x4_ssse3,   
-    predict_lbd_8x8_ssse3,   
-    predict_lbd_16x16_ssse3, 
-    predict_lbd_32x32_avx2,  
-    cfl_predict_lbd_null,    
-    predict_lbd_4x8_ssse3,   
-    predict_lbd_8x4_ssse3,   
-    predict_lbd_8x16_ssse3,  
-    predict_lbd_16x8_ssse3,  
-    predict_lbd_16x32_ssse3, 
-    predict_lbd_32x16_avx2,  
-    cfl_predict_lbd_null,    
-    cfl_predict_lbd_null,    
-    predict_lbd_4x16_ssse3,  
-    predict_lbd_16x4_ssse3,  
-    predict_lbd_8x32_ssse3,  
-    predict_lbd_32x8_avx2,   
-    cfl_predict_lbd_null,    
-    cfl_predict_lbd_null,    
+    cfl_predict_lbd_4x4_ssse3,   
+    cfl_predict_lbd_8x8_ssse3,   
+    cfl_predict_lbd_16x16_ssse3, 
+    cfl_predict_lbd_32x32_avx2,  
+    NULL,                        
+    cfl_predict_lbd_4x8_ssse3,   
+    cfl_predict_lbd_8x4_ssse3,   
+    cfl_predict_lbd_8x16_ssse3,  
+    cfl_predict_lbd_16x8_ssse3,  
+    cfl_predict_lbd_16x32_ssse3, 
+    cfl_predict_lbd_32x16_avx2,  
+    NULL,                        
+    NULL,                        
+    cfl_predict_lbd_4x16_ssse3,  
+    cfl_predict_lbd_16x4_ssse3,  
+    cfl_predict_lbd_8x32_ssse3,  
+    cfl_predict_lbd_32x8_avx2,   
+    NULL,                        
+    NULL,                        
   };
   
   
   return pred[tx_size % TX_SIZES_ALL];
 }
 
+#if CONFIG_AV1_HIGHBITDEPTH
 static __m256i highbd_max_epi16(int bd) {
   const __m256i neg_one = _mm256_set1_epi16(-1);
   
@@ -346,32 +349,33 @@ CFL_PREDICT_X(avx2, 32, 8, hbd)
 CFL_PREDICT_X(avx2, 32, 16, hbd)
 CFL_PREDICT_X(avx2, 32, 32, hbd)
 
-cfl_predict_hbd_fn get_predict_hbd_fn_avx2(TX_SIZE tx_size) {
+cfl_predict_hbd_fn cfl_get_predict_hbd_fn_avx2(TX_SIZE tx_size) {
   static const cfl_predict_hbd_fn pred[TX_SIZES_ALL] = {
-    predict_hbd_4x4_ssse3,  
-    predict_hbd_8x8_ssse3,  
-    predict_hbd_16x16_avx2, 
-    predict_hbd_32x32_avx2, 
-    cfl_predict_hbd_null,   
-    predict_hbd_4x8_ssse3,  
-    predict_hbd_8x4_ssse3,  
-    predict_hbd_8x16_ssse3, 
-    predict_hbd_16x8_avx2,  
-    predict_hbd_16x32_avx2, 
-    predict_hbd_32x16_avx2, 
-    cfl_predict_hbd_null,   
-    cfl_predict_hbd_null,   
-    predict_hbd_4x16_ssse3, 
-    predict_hbd_16x4_avx2,  
-    predict_hbd_8x32_ssse3, 
-    predict_hbd_32x8_avx2,  
-    cfl_predict_hbd_null,   
-    cfl_predict_hbd_null,   
+    cfl_predict_hbd_4x4_ssse3,  
+    cfl_predict_hbd_8x8_ssse3,  
+    cfl_predict_hbd_16x16_avx2, 
+    cfl_predict_hbd_32x32_avx2, 
+    NULL,                       
+    cfl_predict_hbd_4x8_ssse3,  
+    cfl_predict_hbd_8x4_ssse3,  
+    cfl_predict_hbd_8x16_ssse3, 
+    cfl_predict_hbd_16x8_avx2,  
+    cfl_predict_hbd_16x32_avx2, 
+    cfl_predict_hbd_32x16_avx2, 
+    NULL,                       
+    NULL,                       
+    cfl_predict_hbd_4x16_ssse3, 
+    cfl_predict_hbd_16x4_avx2,  
+    cfl_predict_hbd_8x32_ssse3, 
+    cfl_predict_hbd_32x8_avx2,  
+    NULL,                       
+    NULL,                       
   };
   
   
   return pred[tx_size % TX_SIZES_ALL];
 }
+#endif  
 
 
 
@@ -463,27 +467,27 @@ CFL_SUB_AVG_X(avx2, 32, 32, 512, 10)
 
 
 
-cfl_subtract_average_fn get_subtract_average_fn_avx2(TX_SIZE tx_size) {
+cfl_subtract_average_fn cfl_get_subtract_average_fn_avx2(TX_SIZE tx_size) {
   static const cfl_subtract_average_fn sub_avg[TX_SIZES_ALL] = {
-    subtract_average_4x4_sse2,   
-    subtract_average_8x8_sse2,   
-    subtract_average_16x16_avx2, 
-    subtract_average_32x32_avx2, 
-    cfl_subtract_average_null,   
-    subtract_average_4x8_sse2,   
-    subtract_average_8x4_sse2,   
-    subtract_average_8x16_sse2,  
-    subtract_average_16x8_avx2,  
-    subtract_average_16x32_avx2, 
-    subtract_average_32x16_avx2, 
-    cfl_subtract_average_null,   
-    cfl_subtract_average_null,   
-    subtract_average_4x16_sse2,  
-    subtract_average_16x4_avx2,  
-    subtract_average_8x32_sse2,  
-    subtract_average_32x8_avx2,  
-    cfl_subtract_average_null,   
-    cfl_subtract_average_null,   
+    cfl_subtract_average_4x4_sse2,   
+    cfl_subtract_average_8x8_sse2,   
+    cfl_subtract_average_16x16_avx2, 
+    cfl_subtract_average_32x32_avx2, 
+    NULL,                            
+    cfl_subtract_average_4x8_sse2,   
+    cfl_subtract_average_8x4_sse2,   
+    cfl_subtract_average_8x16_sse2,  
+    cfl_subtract_average_16x8_avx2,  
+    cfl_subtract_average_16x32_avx2, 
+    cfl_subtract_average_32x16_avx2, 
+    NULL,                            
+    NULL,                            
+    cfl_subtract_average_4x16_sse2,  
+    cfl_subtract_average_16x4_avx2,  
+    cfl_subtract_average_8x32_sse2,  
+    cfl_subtract_average_32x8_avx2,  
+    NULL,                            
+    NULL,                            
   };
   
   

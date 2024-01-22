@@ -16,10 +16,12 @@
 extern "C" {
 #endif
 
+#include "config/av1_rtcd.h"
+
 #define NN_MAX_HIDDEN_LAYERS 10
 #define NN_MAX_NODES_PER_LAYER 128
 
-typedef struct {
+struct NN_CONFIG {
   int num_inputs;         
   int num_outputs;        
   int num_hidden_layers;  
@@ -29,18 +31,52 @@ typedef struct {
   const float *weights[NN_MAX_HIDDEN_LAYERS + 1];
   
   const float *bias[NN_MAX_HIDDEN_LAYERS + 1];
-} NN_CONFIG;
+};
+
+
+#if CONFIG_NN_V2
+
+struct FC_LAYER {
+  const int num_inputs;   
+  const int num_outputs;  
+
+  float *weights;               
+  float *bias;                  
+  const ACTIVATION activation;  
+
+  float *output;  
+  float *dY;      
+  float *dW;      
+  float *db;      
+};
+
+
+struct NN_CONFIG_V2 {
+  const int num_hidden_layers;  
+  FC_LAYER layer[NN_MAX_HIDDEN_LAYERS + 1];  
+  const int num_logits;                      
+  float *logits;    
+  const LOSS loss;  
+};
 
 
 
 
-void av1_nn_predict(const float *features, const NN_CONFIG *nn_config,
-                    float *output);
+void av1_nn_predict_v2(const float *features, NN_CONFIG_V2 *nn_config,
+                       int reduce_prec, float *output);
+#endif  
 
 
 
 
 void av1_nn_softmax(const float *input, float *output, int n);
+
+
+void av1_nn_fast_softmax_16_c(const float *input, float *output);
+
+
+
+void av1_nn_output_prec_reduce(float *const output, int num_output);
 
 #ifdef __cplusplus
 }  

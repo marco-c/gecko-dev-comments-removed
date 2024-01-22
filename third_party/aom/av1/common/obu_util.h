@@ -22,7 +22,7 @@ typedef struct {
                 
   OBU_TYPE type;
   int has_size_field;
-  int has_extension;
+  int has_extension;  
   
   
   int temporal_layer_id;

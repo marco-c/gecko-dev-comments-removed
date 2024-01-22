@@ -36,6 +36,60 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef AOM_AOM_AOM_CODEC_H_
 #define AOM_AOM_AOM_CODEC_H_
 
@@ -95,7 +149,7 @@ extern "C" {
 
 
 
-#define AOM_CODEC_ABI_VERSION (3 + AOM_IMAGE_ABI_VERSION) /**<\hideinitializer*/
+#define AOM_CODEC_ABI_VERSION (7 + AOM_IMAGE_ABI_VERSION) /**<\hideinitializer*/
 
 
 typedef enum {
@@ -178,6 +232,25 @@ typedef long aom_codec_flags_t;
 
 
 
+typedef int64_t aom_codec_pts_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef const struct aom_codec_iface aom_codec_iface_t;
 
 
@@ -186,6 +259,27 @@ typedef const struct aom_codec_iface aom_codec_iface_t;
 
 
 typedef struct aom_codec_priv aom_codec_priv_t;
+
+
+
+
+
+
+
+
+typedef uint32_t aom_codec_frame_flags_t;
+#define AOM_FRAME_IS_KEY 0x1u /**< frame is the start of a GOP */
+
+
+#define AOM_FRAME_IS_DROPPABLE 0x2u
+
+#define AOM_FRAME_IS_INTRAONLY 0x10u
+
+#define AOM_FRAME_IS_SWITCH 0x20u
+
+#define AOM_FRAME_IS_ERROR_RESILIENT 0x40u
+
+#define AOM_FRAME_IS_DELAYED_RANDOM_ACCESS_POINT 0x80u
 
 
 
@@ -256,8 +350,6 @@ typedef enum aom_superblock_size {
 
 
 
-
-
 int aom_codec_version(void);
 
 
@@ -276,10 +368,7 @@ int aom_codec_version(void);
 
 
 
-
-
 const char *aom_codec_version_str(void);
-
 
 
 
@@ -328,7 +417,7 @@ const char *aom_codec_err_to_string(aom_codec_err_t err);
 
 
 
-const char *aom_codec_error(aom_codec_ctx_t *ctx);
+const char *aom_codec_error(const aom_codec_ctx_t *ctx);
 
 
 
@@ -340,7 +429,11 @@ const char *aom_codec_error(aom_codec_ctx_t *ctx);
 
 
 
-const char *aom_codec_error_detail(aom_codec_ctx_t *ctx);
+
+
+const char *aom_codec_error_detail(const aom_codec_ctx_t *ctx);
+
+
 
 
 
@@ -394,25 +487,13 @@ aom_codec_caps_t aom_codec_get_caps(aom_codec_iface_t *iface);
 
 
 
-aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
-#if defined(AOM_DISABLE_CTRL_TYPECHECKS) && AOM_DISABLE_CTRL_TYPECHECKS
-#define aom_codec_control(ctx, id, data) aom_codec_control_(ctx, id, data)
-#define AOM_CTRL_USE_TYPE(id, typ)
-#define AOM_CTRL_USE_TYPE_DEPRECATED(id, typ)
-#define AOM_CTRL_VOID(id, typ)
-
-#else
 
 
 
 
 
 
-
-
-
-#define aom_codec_control(ctx, id, data) \
-  aom_codec_control_##id(ctx, id, data) /**<\hideinitializer*/
+aom_codec_err_t aom_codec_control(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 
 
@@ -425,14 +506,14 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 
 
-#define AOM_CTRL_USE_TYPE(id, typ)                                           \
-  static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *, int, typ) \
-      AOM_UNUSED;                                                            \
-                                                                             \
-  static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *ctx,        \
-                                                int ctrl_id, typ data) {     \
-    return aom_codec_control_(ctx, ctrl_id, data);                           \
-  } /**<\hideinitializer*/
+
+
+
+
+
+
+aom_codec_err_t aom_codec_set_option(aom_codec_ctx_t *ctx, const char *name,
+                                     const char *value);
 
 
 
@@ -441,17 +522,8 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 
 
-
-
-
-#define AOM_CTRL_USE_TYPE_DEPRECATED(id, typ)                            \
-  AOM_DECLSPEC_DEPRECATED static aom_codec_err_t aom_codec_control_##id( \
-      aom_codec_ctx_t *, int, typ) AOM_DEPRECATED AOM_UNUSED;            \
-                                                                         \
-  AOM_DECLSPEC_DEPRECATED static aom_codec_err_t aom_codec_control_##id( \
-      aom_codec_ctx_t *ctx, int ctrl_id, typ data) {                     \
-    return aom_codec_control_(ctx, ctrl_id, data);                       \
-  } /**<\hideinitializer*/
+#define AOM_CODEC_CONTROL_TYPECHECKED(ctx, id, data) \
+  aom_codec_control_typechecked_##id(ctx, id, data) /**<\hideinitializer*/
 
 
 
@@ -459,20 +531,15 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 
 
+#define AOM_CTRL_USE_TYPE(id, typ)                           \
+  static aom_codec_err_t aom_codec_control_typechecked_##id( \
+      aom_codec_ctx_t *, int, typ) AOM_UNUSED;               \
+  static aom_codec_err_t aom_codec_control_typechecked_##id( \
+      aom_codec_ctx_t *ctx, int ctrl, typ data) {            \
+    return aom_codec_control(ctx, ctrl, data);               \
+  } /**<\hideinitializer*/                                   \
+  typedef typ aom_codec_control_type_##id;
 
-
-
-
-#define AOM_CTRL_VOID(id)                                               \
-  static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *, int) \
-      AOM_UNUSED;                                                       \
-                                                                        \
-  static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *ctx,   \
-                                                int ctrl_id) {          \
-    return aom_codec_control_(ctx, ctrl_id);                            \
-  } /**<\hideinitializer*/
-
-#endif
 
 
 typedef enum ATTRIBUTE_PACKED {
@@ -502,19 +569,6 @@ typedef enum {
 
 
 const char *aom_obu_type_to_string(OBU_TYPE type);
-
-
-
-
-
-
-typedef struct cfg_options {
-  
-
-
-
-  unsigned int ext_partition;
-} cfg_options_t;
 
 
 #ifdef __cplusplus

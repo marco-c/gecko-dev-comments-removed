@@ -14,10 +14,17 @@
 
 
 
+
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <assert.h>
 #include <string.h>  
 
 #include "aom_mem/aom_mem.h"
+#include "aom_ports/sanitizer.h"
 #include "aom_util/aom_thread.h"
 
 #if CONFIG_MULTITHREAD
@@ -34,22 +41,52 @@ static void execute(AVxWorker *const worker);
 
 static THREADFN thread_loop(void *ptr) {
   AVxWorker *const worker = (AVxWorker *)ptr;
-  int done = 0;
-  while (!done) {
-    pthread_mutex_lock(&worker->impl_->mutex_);
+#ifdef __APPLE__
+  if (worker->thread_name != NULL) {
+    
+    
+    
+    
+    
+    char thread_name[64];
+    strncpy(thread_name, worker->thread_name, sizeof(thread_name) - 1);
+    thread_name[sizeof(thread_name) - 1] = '\0';
+    pthread_setname_np(thread_name);
+  }
+#elif (defined(__GLIBC__) && !defined(__GNU__)) || defined(__BIONIC__)
+  if (worker->thread_name != NULL) {
+    
+    
+    char thread_name[16];
+    strncpy(thread_name, worker->thread_name, sizeof(thread_name) - 1);
+    thread_name[sizeof(thread_name) - 1] = '\0';
+    pthread_setname_np(pthread_self(), thread_name);
+  }
+#endif
+  pthread_mutex_lock(&worker->impl_->mutex_);
+  for (;;) {
     while (worker->status_ == OK) {  
       pthread_cond_wait(&worker->impl_->condition_, &worker->impl_->mutex_);
     }
     if (worker->status_ == WORK) {
+      
+      
+      
+      
+      
+      pthread_mutex_unlock(&worker->impl_->mutex_);
       execute(worker);
+      pthread_mutex_lock(&worker->impl_->mutex_);
+      assert(worker->status_ == WORK);
       worker->status_ = OK;
-    } else if (worker->status_ == NOT_OK) {  
-      done = 1;
+      
+      pthread_cond_signal(&worker->impl_->condition_);
+    } else {
+      assert(worker->status_ == NOT_OK);  
+      break;
     }
-    
-    pthread_cond_signal(&worker->impl_->condition_);
-    pthread_mutex_unlock(&worker->impl_->mutex_);
   }
+  pthread_mutex_unlock(&worker->impl_->mutex_);
   return THREAD_RETURN(NULL);  
 }
 
@@ -108,11 +145,30 @@ static int reset(AVxWorker *const worker) {
       pthread_mutex_destroy(&worker->impl_->mutex_);
       goto Error;
     }
+    pthread_attr_t attr;
+    if (pthread_attr_init(&attr)) goto Error2;
+      
+      
+      
+#if defined(AOM_ADDRESS_SANITIZER) && defined(__APPLE__) && AOM_ARCH_ARM && \
+    !defined(NDEBUG)
+    size_t stacksize;
+    if (!pthread_attr_getstacksize(&attr, &stacksize)) {
+      const size_t kMinStackSize = 1 << 20;  
+      if (stacksize < kMinStackSize &&
+          pthread_attr_setstacksize(&attr, kMinStackSize)) {
+        pthread_attr_destroy(&attr);
+        goto Error2;
+      }
+    }
+#endif
     pthread_mutex_lock(&worker->impl_->mutex_);
-    ok = !pthread_create(&worker->impl_->thread_, NULL, thread_loop, worker);
+    ok = !pthread_create(&worker->impl_->thread_, &attr, thread_loop, worker);
     if (ok) worker->status_ = OK;
     pthread_mutex_unlock(&worker->impl_->mutex_);
+    pthread_attr_destroy(&attr);
     if (!ok) {
+    Error2:
       pthread_mutex_destroy(&worker->impl_->mutex_);
       pthread_cond_destroy(&worker->impl_->condition_);
     Error:

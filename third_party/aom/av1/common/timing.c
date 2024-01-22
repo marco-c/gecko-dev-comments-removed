@@ -15,22 +15,35 @@
 
 
 
+#define UNDEFINED_RATE \
+  (1 << 21)  // Placeholder rate for levels with undefined rate
+#define INVALID_RATE \
+  (0)  // For invalid profile-level configuration, set rate to 0
 
 
 
 static int32_t main_kbps[1 << LEVEL_BITS] = {
-  1500, 3000,  0,     0,     6000,  10000, 0,      0,      12000,  20000,    0,
-  0,    30000, 40000, 60000, 60000, 60000, 100000, 160000, 160000, 0,        0,
-  0,    0,     0,     0,     0,     0,     0,      0,      0,      (1 << 26)
+  1500,           3000,           UNDEFINED_RATE, UNDEFINED_RATE,
+  6000,           10000,          UNDEFINED_RATE, UNDEFINED_RATE,
+  12000,          20000,          UNDEFINED_RATE, UNDEFINED_RATE,
+  30000,          40000,          60000,          60000,
+  60000,          100000,         160000,         160000,
+  UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE,
+  UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE,
+  UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE
 };
 
 
 
 static int32_t high_kbps[1 << LEVEL_BITS] = {
-  0,      0,      0,      0,      0,      0,      0,      0,
-  30000,  50000,  0,      0,      100000, 160000, 240000, 240000,
-  240000, 480000, 800000, 800000, 0,      0,      0,      0,
-  0,      0,      0,      0,      0,      0,      0,      (1 << 26)
+  INVALID_RATE,   INVALID_RATE,   INVALID_RATE,   INVALID_RATE,
+  INVALID_RATE,   INVALID_RATE,   INVALID_RATE,   INVALID_RATE,
+  30000,          50000,          UNDEFINED_RATE, UNDEFINED_RATE,
+  100000,         160000,         240000,         240000,
+  240000,         480000,         800000,         800000,
+  UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE,
+  UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE,
+  UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE, UNDEFINED_RATE
 };
 
 
@@ -38,8 +51,8 @@ static int bitrate_profile_factor[1 << PROFILE_BITS] = {
   1, 2, 3, 0, 0, 0, 0, 0
 };
 
-int64_t max_level_bitrate(BITSTREAM_PROFILE seq_profile, int seq_level_idx,
-                          int seq_tier) {
+int64_t av1_max_level_bitrate(BITSTREAM_PROFILE seq_profile, int seq_level_idx,
+                              int seq_tier) {
   int64_t bitrate;
 
   if (seq_tier) {
@@ -51,13 +64,13 @@ int64_t max_level_bitrate(BITSTREAM_PROFILE seq_profile, int seq_level_idx,
   return bitrate * 1000;
 }
 
-void set_aom_dec_model_info(aom_dec_model_info_t *decoder_model) {
+void av1_set_aom_dec_model_info(aom_dec_model_info_t *decoder_model) {
   decoder_model->encoder_decoder_buffer_delay_length = 16;
   decoder_model->buffer_removal_time_length = 10;
   decoder_model->frame_presentation_time_length = 10;
 }
 
-void set_dec_model_op_parameters(aom_dec_model_op_parameters_t *op_params) {
+void av1_set_dec_model_op_parameters(aom_dec_model_op_parameters_t *op_params) {
   op_params->decoder_model_param_present_flag = 1;
   op_params->decoder_buffer_delay = 90000 >> 1;  
   op_params->encoder_buffer_delay = 90000 >> 1;  
@@ -66,7 +79,7 @@ void set_dec_model_op_parameters(aom_dec_model_op_parameters_t *op_params) {
   op_params->initial_display_delay = 8;  
 }
 
-void set_resource_availability_parameters(
+void av1_set_resource_availability_parameters(
     aom_dec_model_op_parameters_t *op_params) {
   op_params->decoder_model_param_present_flag = 0;
   op_params->decoder_buffer_delay =

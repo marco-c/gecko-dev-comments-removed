@@ -21,35 +21,41 @@ extern "C" {
 #include "aom/aom_codec.h"
 #include "aom/aom_frame_buffer.h"
 #include "aom/aom_integer.h"
+#include "aom/internal/aom_image_internal.h"
+
+
 
 #define AOMINNERBORDERINPIXELS 160
 #define AOM_INTERP_EXTEND 4
-
-
-
-
-#if CONFIG_REDUCED_ENCODER_BORDER
-#define AOM_BORDER_IN_PIXELS 160
-#else
 #define AOM_BORDER_IN_PIXELS 288
+#define AOM_ENC_NO_SCALE_BORDER 160
+#define AOM_ENC_ALLINTRA_BORDER 64
+#define AOM_DEC_BORDER_IN_PIXELS 64
+
+#if CONFIG_AV1_ENCODER && !CONFIG_REALTIME_ONLY
+struct image_pyramid;
+struct corner_list;
 #endif  
 
+
+
+
+
 typedef struct yv12_buffer_config {
+  
   union {
     struct {
       int y_width;
       int uv_width;
-      int alpha_width;
     };
-    int widths[3];
+    int widths[2];
   };
   union {
     struct {
       int y_height;
       int uv_height;
-      int alpha_height;
     };
-    int heights[3];
+    int heights[2];
   };
   union {
     struct {
@@ -69,18 +75,16 @@ typedef struct yv12_buffer_config {
     struct {
       int y_stride;
       int uv_stride;
-      int alpha_stride;
     };
-    int strides[3];
+    int strides[2];
   };
   union {
     struct {
       uint8_t *y_buffer;
       uint8_t *u_buffer;
       uint8_t *v_buffer;
-      uint8_t *alpha_buffer;
     };
-    uint8_t *buffers[4];
+    uint8_t *buffers[3];
   };
 
   
@@ -92,9 +96,11 @@ typedef struct yv12_buffer_config {
   uint8_t *store_buf_adr[3];
 
   
+#if CONFIG_AV1_ENCODER && !CONFIG_REALTIME_ONLY
   
-  uint8_t *y_buffer_8bit;
-  int buf_8bit_valid;
+  struct image_pyramid *y_pyramid;
+  struct corner_list *corners;
+#endif  
 
   uint8_t *buffer_alloc;
   size_t buffer_alloc_sz;
@@ -106,7 +112,7 @@ typedef struct yv12_buffer_config {
   aom_color_primaries_t color_primaries;
   aom_transfer_characteristics_t transfer_characteristics;
   aom_matrix_coefficients_t matrix_coefficients;
-  int monochrome;
+  uint8_t monochrome;
   aom_chroma_sample_position_t chroma_sample_position;
   aom_color_range_t color_range;
   int render_width;
@@ -114,13 +120,38 @@ typedef struct yv12_buffer_config {
 
   int corrupted;
   int flags;
+  aom_metadata_array_t *metadata;
+  
 } YV12_BUFFER_CONFIG;
+
+
 
 #define YV12_FLAG_HIGHBITDEPTH 8
 
+
+
+
+
+
+
+
+
+
 int aom_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                            int ss_x, int ss_y, int use_highbitdepth, int border,
-                           int byte_alignment);
+                           int byte_alignment, int num_pyramid_levels,
+                           int alloc_y_plane_only);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -133,8 +164,48 @@ int aom_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                              int ss_x, int ss_y, int use_highbitdepth,
                              int border, int byte_alignment,
                              aom_codec_frame_buffer_t *fb,
-                             aom_get_frame_buffer_cb_fn_t cb, void *cb_priv);
+                             aom_get_frame_buffer_cb_fn_t cb, void *cb_priv,
+                             int num_pyramid_levels, int alloc_y_plane_only);
+
 int aom_free_frame_buffer(YV12_BUFFER_CONFIG *ybf);
+
+
+
+
+
+
+
+
+
+void aom_remove_metadata_from_frame_buffer(YV12_BUFFER_CONFIG *ybf);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int aom_copy_metadata_to_frame_buffer(YV12_BUFFER_CONFIG *ybf,
+                                      const aom_metadata_array_t *arr);
+
+
+
+
+
+
+
+
+
+static AOM_INLINE int aom_calc_y_stride(int aligned_width, int border) {
+  return ((aligned_width + 2 * border) + 31) & ~31;
+}
 
 #ifdef __cplusplus
 }

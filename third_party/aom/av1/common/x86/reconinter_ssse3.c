@@ -9,9 +9,11 @@
 
 
 
-#include <tmmintrin.h>
-
 #include "config/av1_rtcd.h"
+
+#if CONFIG_AV1_HIGHBITDEPTH
+
+#include <tmmintrin.h>
 
 #include "aom/aom_integer.h"
 #include "aom_dsp/blend.h"
@@ -114,3 +116,5 @@ void av1_build_compound_diffwtd_mask_highbd_ssse3(
     }
   }
 }
+
+#endif  

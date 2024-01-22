@@ -8,8 +8,7 @@
 
 
 
-
-#ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_  
+#ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
 #include "libyuv/basic_types.h"
@@ -27,25 +26,24 @@ namespace libyuv {
 extern "C" {
 #endif
 
-LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size);
+LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size);
 
 #ifdef __cplusplus
 }  
 #endif
 
-static const uint32 kUnknownDataSize = 0xFFFFFFFF;
+static const uint32_t kUnknownDataSize = 0xFFFFFFFF;
 
 enum JpegSubsamplingType {
   kJpegYuv420,
   kJpegYuv422,
-  kJpegYuv411,
   kJpegYuv444,
   kJpegYuv400,
   kJpegUnknown
 };
 
 struct Buffer {
-  const uint8* data;
+  const uint8_t* data;
   int len;
 };
 
@@ -67,7 +65,7 @@ struct SetJmpErrorMgr;
 class LIBYUV_API MJpegDecoder {
  public:
   typedef void (*CallbackFunction)(void* opaque,
-                                   const uint8* const* data,
+                                   const uint8_t* const* data,
                                    const int* strides,
                                    int rows);
 
@@ -87,7 +85,7 @@ class LIBYUV_API MJpegDecoder {
   
   
   
-  LIBYUV_BOOL LoadFrame(const uint8* src, size_t src_len);
+  LIBYUV_BOOL LoadFrame(const uint8_t* src, size_t src_len);
 
   
   int GetWidth();
@@ -140,18 +138,22 @@ class LIBYUV_API MJpegDecoder {
   
   
   
-  LIBYUV_BOOL DecodeToBuffers(uint8** planes, int dst_width, int dst_height);
+  LIBYUV_BOOL DecodeToBuffers(uint8_t** planes, int dst_width, int dst_height);
 
   
   
   
   
-  LIBYUV_BOOL DecodeToCallback(CallbackFunction fn, void* opaque,
-                        int dst_width, int dst_height);
+  LIBYUV_BOOL DecodeToCallback(CallbackFunction fn,
+                               void* opaque,
+                               int dst_width,
+                               int dst_height);
 
   
   static JpegSubsamplingType JpegSubsamplingTypeHelper(
-     int* subsample_x, int* subsample_y, int number_of_components);
+      int* subsample_x,
+      int* subsample_y,
+      int number_of_components);
 
  private:
   void AllocOutputBuffers(int num_outbufs);
@@ -160,7 +162,7 @@ class LIBYUV_API MJpegDecoder {
   LIBYUV_BOOL StartDecode();
   LIBYUV_BOOL FinishDecode();
 
-  void SetScanlinePointers(uint8** data);
+  void SetScanlinePointers(uint8_t** data);
   LIBYUV_BOOL DecodeImcuRow();
 
   int GetComponentScanlinePadding(int component);
@@ -179,11 +181,11 @@ class LIBYUV_API MJpegDecoder {
 
   
   int num_outbufs_;  
-  uint8*** scanlines_;
+  uint8_t*** scanlines_;
   int* scanlines_sizes_;
   
   
-  uint8** databuf_;
+  uint8_t** databuf_;
   int* databuf_strides_;
 };
 

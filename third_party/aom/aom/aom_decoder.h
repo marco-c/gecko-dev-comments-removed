@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include "aom/aom_codec.h"
+#include "aom/aom_codec.h"  
 #include "aom/aom_frame_buffer.h"
 
 
@@ -42,7 +42,7 @@ extern "C" {
 
 
 #define AOM_DECODER_ABI_VERSION \
-  (3 + AOM_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (6 + AOM_CODEC_ABI_VERSION) /**<\hideinitializer*/
 
 
 
@@ -52,11 +52,8 @@ extern "C" {
 
 
 
-#define AOM_CODEC_CAP_PUT_SLICE 0x10000 /**< Will issue put_slice callbacks */
-#define AOM_CODEC_CAP_PUT_FRAME 0x20000 /**< Will issue put_frame callbacks */
-#define AOM_CODEC_CAP_POSTPROC 0x40000  /**< Can postprocess decoded frame */
 
-#define AOM_CODEC_CAP_INPUT_FRAGMENTS 0x100000
+#define AOM_CODEC_CAP_EXTERNAL_FRAME_BUFFER 0x200000
 
 
 
@@ -65,15 +62,6 @@ extern "C" {
 
 
 
-
-#define AOM_CODEC_CAP_FRAME_THREADING 0x200000
-
-#define AOM_CODEC_CAP_EXTERNAL_FRAME_BUFFER 0x400000
-
-#define AOM_CODEC_USE_POSTPROC 0x10000 /**< Postprocess decoded frame */
-
-
-#define AOM_CODEC_USE_INPUT_FRAGMENTS 0x40000
 
 
 
@@ -105,7 +93,6 @@ typedef struct aom_codec_dec_cfg {
   unsigned int w;       
   unsigned int h;       
   unsigned int allow_lowbitdepth; 
-  cfg_options_t cfg;              
 } aom_codec_dec_cfg_t;            
 
 
@@ -201,17 +188,6 @@ aom_codec_err_t aom_codec_get_stream_info(aom_codec_ctx_t *ctx,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 aom_codec_err_t aom_codec_decode(aom_codec_ctx_t *ctx, const uint8_t *data,
                                  size_t data_sz, void *user_priv);
 
@@ -232,89 +208,6 @@ aom_codec_err_t aom_codec_decode(aom_codec_ctx_t *ctx, const uint8_t *data,
 
 
 aom_image_t *aom_codec_get_frame(aom_codec_ctx_t *ctx, aom_codec_iter_t *iter);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void (*aom_codec_put_frame_cb_fn_t)(void *user_priv,
-                                            const aom_image_t *img);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-aom_codec_err_t aom_codec_register_put_frame_cb(aom_codec_ctx_t *ctx,
-                                                aom_codec_put_frame_cb_fn_t cb,
-                                                void *user_priv);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void (*aom_codec_put_slice_cb_fn_t)(void *user_priv,
-                                            const aom_image_t *img,
-                                            const aom_image_rect_t *valid,
-                                            const aom_image_rect_t *update);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-aom_codec_err_t aom_codec_register_put_slice_cb(aom_codec_ctx_t *ctx,
-                                                aom_codec_put_slice_cb_fn_t cb,
-                                                void *user_priv);
-
-
-
-
-
 
 
 

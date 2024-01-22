@@ -30,7 +30,18 @@
 extern "C" {
 #endif
 
-#include "aom/aom_codec.h"
+#include "aom/aom_codec.h"  
+#include "aom/aom_external_partition.h"
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -41,7 +52,7 @@ extern "C" {
 
 
 #define AOM_ENCODER_ABI_VERSION \
-  (5 + AOM_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (10 + AOM_CODEC_ABI_VERSION + /*AOM_EXT_PART_ABI_VERSION=*/3)
 
 
 
@@ -65,8 +76,7 @@ extern "C" {
 
 
 
-#define AOM_CODEC_USE_PSNR 0x10000 /**< Calculate PSNR on each frame */
-
+#define AOM_CODEC_USE_PSNR 0x10000         /**< Calculate PSNR on each frame */
 #define AOM_CODEC_USE_HIGHBITDEPTH 0x40000 /**< Use high bitdepth */
 
 
@@ -77,30 +87,6 @@ typedef struct aom_fixed_buf {
   void *buf;       
   size_t sz;       
 } aom_fixed_buf_t; 
-
-
-
-
-
-
-typedef int64_t aom_codec_pts_t;
-
-
-
-
-
-
-
-
-typedef uint32_t aom_codec_frame_flags_t;
-#define AOM_FRAME_IS_KEY 0x1 /**< frame is the start of a GOP */
-
-
-#define AOM_FRAME_IS_DROPPABLE 0x2
-
-#define AOM_FRAME_IS_INVISIBLE 0x4
-
-#define AOM_FRAME_IS_FRAGMENT 0x8
 
 
 
@@ -155,17 +141,19 @@ typedef struct aom_codec_cx_pkt {
       unsigned int samples[4]; 
       uint64_t sse[4];         
       double psnr[4];          
-    } psnr;                    
-    aom_fixed_buf_t raw;       
+      
 
-    
+      unsigned int samples_hbd[4];
+      
 
+      uint64_t sse_hbd[4];
+      
 
-
-
-    char pad[128 - sizeof(enum aom_codec_cx_pkt_kind)]; 
-  } data;                                               
-} aom_codec_cx_pkt_t; 
+      double psnr_hbd[4];
+    } psnr;              
+    aom_fixed_buf_t raw; 
+  } data;                
+} aom_codec_cx_pkt_t;    
 
 
 
@@ -177,10 +165,18 @@ typedef struct aom_rational {
 } aom_rational_t; 
 
 
+
+
+
+
+
+
 enum aom_enc_pass {
-  AOM_RC_ONE_PASS,   
-  AOM_RC_FIRST_PASS, 
-  AOM_RC_LAST_PASS   
+  AOM_RC_ONE_PASS = 0,    
+  AOM_RC_FIRST_PASS = 1,  
+  AOM_RC_SECOND_PASS = 2, 
+  AOM_RC_THIRD_PASS = 3,  
+  AOM_RC_LAST_PASS = 2,   
 };
 
 
@@ -206,6 +202,170 @@ enum aom_kf_mode {
 };
 
 
+typedef enum {
+  
+  AOM_SUPERRES_NONE,
+  
+  AOM_SUPERRES_FIXED,
+  
+  AOM_SUPERRES_RANDOM,
+  
+
+  AOM_SUPERRES_QTHRESH,
+  
+
+  AOM_SUPERRES_AUTO,
+} aom_superres_mode;
+
+
+
+
+
+
+typedef struct cfg_options {
+  
+
+
+  unsigned int init_by_cfg_file;
+  
+
+
+  unsigned int super_block_size;
+  
+
+
+  unsigned int max_partition_size;
+  
+
+
+  unsigned int min_partition_size;
+  
+
+
+  unsigned int disable_ab_partition_type;
+  
+
+
+  unsigned int disable_rect_partition_type;
+  
+
+
+  unsigned int disable_1to4_partition_type;
+  
+
+
+  unsigned int disable_flip_idtx;
+  
+
+
+  unsigned int disable_cdef;
+  
+
+
+  unsigned int disable_lr;
+  
+
+
+  unsigned int disable_obmc;
+  
+
+
+  unsigned int disable_warp_motion;
+  
+
+
+  unsigned int disable_global_motion;
+  
+
+
+  unsigned int disable_dist_wtd_comp;
+  
+
+
+  unsigned int disable_diff_wtd_comp;
+  
+
+
+  unsigned int disable_inter_intra_comp;
+  
+
+
+  unsigned int disable_masked_comp;
+  
+
+
+  unsigned int disable_one_sided_comp;
+  
+
+
+  unsigned int disable_palette;
+  
+
+
+  unsigned int disable_intrabc;
+  
+
+
+  unsigned int disable_cfl;
+  
+
+
+  unsigned int disable_smooth_intra;
+  
+
+
+  unsigned int disable_filter_intra;
+  
+
+
+  unsigned int disable_dual_filter;
+  
+
+
+  unsigned int disable_intra_angle_delta;
+  
+
+
+  unsigned int disable_intra_edge_filter;
+  
+
+
+  unsigned int disable_tx_64x64;
+  
+
+
+  unsigned int disable_smooth_inter_intra;
+  
+
+
+  unsigned int disable_inter_inter_wedge;
+  
+
+
+  unsigned int disable_inter_intra_wedge;
+  
+
+
+  unsigned int disable_paeth_intra;
+  
+
+
+  unsigned int disable_trellis_quant;
+  
+
+
+  unsigned int disable_ref_frame_mv;
+  
+
+
+  unsigned int reduced_reference_set;
+  
+
+
+  unsigned int reduced_tx_type_set;
+} cfg_options_t;
+
+
 
 
 
@@ -213,7 +373,8 @@ enum aom_kf_mode {
 
 
 typedef long aom_enc_frame_flags_t;
-#define AOM_EFLAG_FORCE_KF (1 << 0) /**< Force this frame to be a keyframe */
+
+#define AOM_EFLAG_FORCE_KF (1 << 0)
 
 
 
@@ -272,6 +433,11 @@ typedef struct aom_codec_enc_cfg {
   unsigned int g_h;
 
   
+
+
+
+
+
 
 
   unsigned int g_limit;
@@ -402,10 +568,7 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-
-
-
-  unsigned int rc_superres_mode;
+  aom_superres_mode rc_superres_mode;
 
   
 
@@ -512,15 +675,9 @@ typedef struct aom_codec_enc_cfg {
 
 
 
-
-
-
   unsigned int rc_undershoot_pct;
 
   
-
-
-
 
 
 
@@ -669,6 +826,8 @@ typedef struct aom_codec_enc_cfg {
 
 
 
+
+
   unsigned int full_still_picture_hdr;
 
   
@@ -724,8 +883,26 @@ typedef struct aom_codec_enc_cfg {
   
 
 
-  cfg_options_t cfg;
+
+
+
+
+  unsigned int use_fixed_qp_offsets;
+
+  
+
+
+
+  int fixed_qp_offsets[5];
+
+  
+
+
+  cfg_options_t encoder_cfg;
 } aom_codec_enc_cfg_t; 
+
+
+
 
 
 
@@ -781,40 +958,10 @@ aom_codec_err_t aom_codec_enc_init_ver(aom_codec_ctx_t *ctx,
 
 
 
-aom_codec_err_t aom_codec_enc_init_multi_ver(
-    aom_codec_ctx_t *ctx, aom_codec_iface_t *iface, aom_codec_enc_cfg_t *cfg,
-    int num_enc, aom_codec_flags_t flags, aom_rational_t *dsf, int ver);
-
-
-
-
-
-#define aom_codec_enc_init_multi(ctx, iface, cfg, num_enc, flags, dsf) \
-  aom_codec_enc_init_multi_ver(ctx, iface, cfg, num_enc, flags, dsf,   \
-                               AOM_ENCODER_ABI_VERSION)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 aom_codec_err_t aom_codec_enc_config_default(aom_codec_iface_t *iface,
                                              aom_codec_enc_cfg_t *cfg,
-                                             unsigned int reserved);
+                                             unsigned int usage);
 
 
 
@@ -857,6 +1004,22 @@ aom_codec_err_t aom_codec_enc_config_set(aom_codec_ctx_t *ctx,
 
 
 aom_fixed_buf_t *aom_codec_get_global_headers(aom_codec_ctx_t *ctx);
+
+
+#define AOM_USAGE_GOOD_QUALITY 0u
+
+#define AOM_USAGE_REALTIME 1u
+
+#define AOM_USAGE_ALL_INTRA 2u
+
+
+
+
+
+
+
+
+
 
 
 

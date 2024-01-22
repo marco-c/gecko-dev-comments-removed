@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+
+
+
+
+
+#define AOM_RESTORATION_FRAME_BORDER 32
 #define CLIP(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 #define RINT(x) ((x) < 0 ? (int)((x)-0.5) : (int)((x) + 0.5))
 
@@ -120,7 +126,9 @@ extern "C" {
 
 
 #define WIENER_WIN_CHROMA (WIENER_WIN - 2)
+#define WIENER_WIN_REDUCED (WIENER_WIN - 2)
 #define WIENER_WIN2_CHROMA ((WIENER_WIN_CHROMA) * (WIENER_WIN_CHROMA))
+#define WIENER_STATS_DOWNSAMPLE_FACTOR 4
 
 #define WIENER_FILT_PREC_BITS 7
 #define WIENER_FILT_STEP (1 << WIENER_FILT_PREC_BITS)
@@ -172,31 +180,36 @@ extern "C" {
 #error "Wiener filter currently only works if WIENER_FILT_PREC_BITS == 7"
 #endif
 
-#define LR_TILE_ROW 0
-#define LR_TILE_COL 0
-#define LR_TILE_COLS 1
-
 typedef struct {
   int r[2];  
   int s[2];  
 } sgr_params_type;
 
+
+
 typedef struct {
+  
+
+
   RestorationType restoration_type;
+
+  
+
+
   WienerInfo wiener_info;
+
+  
+
+
   SgrprojInfo sgrproj_info;
 } RestorationUnitInfo;
 
 
 
+
+
 #define RESTORATION_LINEBUFFER_WIDTH \
   (RESTORATION_UNITSIZE_MAX * 3 / 2 + 2 * RESTORATION_EXTRA_HORZ)
-
-
-
-
-#define RESTORATION_COLBUFFER_HEIGHT \
-  (RESTORATION_PROC_UNIT_SIZE + 2 * RESTORATION_BORDER)
 
 typedef struct {
   
@@ -205,31 +218,81 @@ typedef struct {
   uint16_t tmp_save_below[RESTORATION_BORDER][RESTORATION_LINEBUFFER_WIDTH];
 } RestorationLineBuffers;
 
+
+
 typedef struct {
+  
+
+
   uint8_t *stripe_boundary_above;
+
+  
+
+
   uint8_t *stripe_boundary_below;
+
+  
+
+
   int stripe_boundary_stride;
+
+  
+
+
   int stripe_boundary_size;
 } RestorationStripeBoundaries;
 
+
 typedef struct {
+  
+
+
   RestorationType frame_restoration_type;
+
+  
+
+
   int restoration_unit_size;
 
   
+
+
   
   
+
+
+  int num_rest_units;
+
   
+
+
+  int vert_units;
+
   
+
+
+  int horz_units;
   
+
   
-  
-  int units_per_tile;
-  int vert_units_per_tile, horz_units_per_tile;
+
+
   RestorationUnitInfo *unit_info;
+
+  
+
+
   RestorationStripeBoundaries boundaries;
+
+  
+
+
+
+
   int optimized_lr;
 } RestorationInfo;
+
+
 
 static INLINE void set_default_sgrproj(SgrprojInfo *sgrproj_info) {
   sgrproj_info->xqd[0] = (SGRPROJ_PRJ_MIN0 + SGRPROJ_PRJ_MAX0) / 2;
@@ -253,19 +316,18 @@ typedef struct {
 } RestorationTileLimits;
 
 typedef void (*rest_unit_visitor_t)(const RestorationTileLimits *limits,
-                                    const AV1PixelRect *tile_rect,
                                     int rest_unit_idx, void *priv,
                                     int32_t *tmpbuf,
-                                    RestorationLineBuffers *rlbs);
+                                    RestorationLineBuffers *rlbs,
+                                    struct aom_internal_error_info *error_info);
 
 typedef struct FilterFrameCtxt {
   const RestorationInfo *rsi;
-  int tile_stripe0;
   int ss_x, ss_y;
+  int plane_w, plane_h;
   int highbd, bit_depth;
   uint8_t *data8, *dst8;
   int data_stride, dst_stride;
-  AV1PixelRect tile_rect;
 } FilterFrameCtxt;
 
 typedef struct AV1LrStruct {
@@ -275,18 +337,34 @@ typedef struct AV1LrStruct {
   YV12_BUFFER_CONFIG *dst;
 } AV1LrStruct;
 
-extern const sgr_params_type sgr_params[SGRPROJ_PARAMS];
+extern const sgr_params_type av1_sgr_params[SGRPROJ_PARAMS];
 extern int sgrproj_mtable[SGRPROJ_PARAMS][2];
-extern const int32_t x_by_xplus1[256];
-extern const int32_t one_by_x[MAX_NELEM];
+extern const int32_t av1_x_by_xplus1[256];
+extern const int32_t av1_one_by_x[MAX_NELEM];
 
 void av1_alloc_restoration_struct(struct AV1Common *cm, RestorationInfo *rsi,
                                   int is_uv);
 void av1_free_restoration_struct(RestorationInfo *rst_info);
 
-void extend_frame(uint8_t *data, int width, int height, int stride,
-                  int border_horz, int border_vert, int highbd);
-void decode_xq(const int *xqd, int *xq, const sgr_params_type *params);
+void av1_extend_frame(uint8_t *data, int width, int height, int stride,
+                      int border_horz, int border_vert, int highbd);
+void av1_decode_xq(const int *xqd, int *xq, const sgr_params_type *params);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -310,17 +388,30 @@ void decode_xq(const int *xqd, int *xq, const sgr_params_type *params);
 void av1_loop_restoration_filter_unit(
     const RestorationTileLimits *limits, const RestorationUnitInfo *rui,
     const RestorationStripeBoundaries *rsb, RestorationLineBuffers *rlbs,
-    const AV1PixelRect *tile_rect, int tile_stripe0, int ss_x, int ss_y,
-    int highbd, int bit_depth, uint8_t *data8, int stride, uint8_t *dst8,
-    int dst_stride, int32_t *tmpbuf, int optimized_lr);
+    int plane_w, int plane_h, int ss_x, int ss_y, int highbd, int bit_depth,
+    uint8_t *data8, int stride, uint8_t *dst8, int dst_stride, int32_t *tmpbuf,
+    int optimized_lr, struct aom_internal_error_info *error_info);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void av1_loop_restoration_filter_frame(YV12_BUFFER_CONFIG *frame,
                                        struct AV1Common *cm, int optimized_lr,
                                        void *lr_ctxt);
-void av1_loop_restoration_precal();
 
-typedef void (*rest_tile_start_visitor_t)(int tile_row, int tile_col,
-                                          void *priv);
+
+void av1_loop_restoration_precal(void);
+
 struct AV1LrSyncData;
 
 typedef void (*sync_read_fn_t)(void *const lr_sync, int r, int c, int plane);
@@ -331,10 +422,8 @@ typedef void (*sync_write_fn_t)(void *const lr_sync, int r, int c,
 
 void av1_foreach_rest_unit_in_plane(const struct AV1Common *cm, int plane,
                                     rest_unit_visitor_t on_rest_unit,
-                                    void *priv, AV1PixelRect *tile_rect,
-                                    int32_t *tmpbuf,
+                                    void *priv, int32_t *tmpbuf,
                                     RestorationLineBuffers *rlbs);
-
 
 
 
@@ -359,17 +448,22 @@ void av1_loop_restoration_filter_frame_init(AV1LrStruct *lr_ctxt,
 void av1_loop_restoration_copy_planes(AV1LrStruct *loop_rest_ctxt,
                                       struct AV1Common *cm, int num_planes);
 void av1_foreach_rest_unit_in_row(
-    RestorationTileLimits *limits, const AV1PixelRect *tile_rect,
+    RestorationTileLimits *limits, int plane_w,
     rest_unit_visitor_t on_rest_unit, int row_number, int unit_size,
-    int unit_idx0, int hunits_per_tile, int vunits_per_tile, int plane,
-    void *priv, int32_t *tmpbuf, RestorationLineBuffers *rlbs,
-    sync_read_fn_t on_sync_read, sync_write_fn_t on_sync_write,
-    struct AV1LrSyncData *const lr_sync);
-AV1PixelRect av1_whole_frame_rect(const struct AV1Common *cm, int is_uv);
-int av1_lr_count_units_in_tile(int unit_size, int tile_size);
+    int hnum_rest_units, int vnum_rest_units, int plane, void *priv,
+    int32_t *tmpbuf, RestorationLineBuffers *rlbs, sync_read_fn_t on_sync_read,
+    sync_write_fn_t on_sync_write, struct AV1LrSyncData *const lr_sync,
+    struct aom_internal_error_info *error_info);
+
+void av1_get_upsampled_plane_size(const struct AV1Common *cm, int is_uv,
+                                  int *plane_w, int *plane_h);
+int av1_lr_count_units(int unit_size, int plane_size);
 void av1_lr_sync_read_dummy(void *const lr_sync, int r, int c, int plane);
 void av1_lr_sync_write_dummy(void *const lr_sync, int r, int c,
                              const int sb_cols, int plane);
+
+
+
 #ifdef __cplusplus
 }  
 #endif

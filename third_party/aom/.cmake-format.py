@@ -6,8 +6,6 @@ line_width = 80
 tab_size = 2
 
 
-
-
 max_subargs_per_line = 10
 
 
@@ -21,16 +19,19 @@ separate_fn_name_with_space = False
 dangle_parens = False
 
 
-bullet_char = u'*'
+bullet_char = '*'
 
 
-enum_char = u'.'
+enum_char = '.'
 
 
 line_ending = u'unix'
 
 
 command_case = u'lower'
+
+
+keyword_case = u'unchanged'
 
 
 additional_commands = {
@@ -46,3 +47,56 @@ additional_commands = {
     }
   }
 }
+
+
+always_wrap = []
+
+
+algorithm_order = [0, 1, 2, 3, 4]
+
+
+
+autosort = False
+
+
+enable_markup = True
+
+
+
+
+first_comment_is_literal = True
+
+
+
+literal_comment_pattern = None
+
+
+
+fence_pattern = u'^\\s*([`~]{3}[`~]*)(.*)$'
+
+
+
+ruler_pattern = u'^\\s*[^\\w\\s]{3}.*[^\\w\\s]{3}$'
+
+
+emit_byteorder_mark = False
+
+
+
+
+hashruler_min_length = 10
+
+
+
+canonicalize_hashrulers = True
+
+
+input_encoding = u'utf-8'
+
+
+
+output_encoding = u'utf-8'
+
+
+
+per_command = {}

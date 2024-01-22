@@ -17,98 +17,93 @@ extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    defined(_MSC_VER) && !defined(__clang__)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 
-static uvec8 kShuf0 =
-  { 0, 1, 3, 4, 5, 7, 8, 9, 128, 128, 128, 128, 128, 128, 128, 128 };
+static const uvec8 kShuf0 = {0,   1,   3,   4,   5,   7,   8,   9,
+                             128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShuf1 =
-  { 3, 4, 5, 7, 8, 9, 11, 12, 128, 128, 128, 128, 128, 128, 128, 128 };
+static const uvec8 kShuf1 = {3,   4,   5,   7,   8,   9,   11,  12,
+                             128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShuf2 =
-  { 5, 7, 8, 9, 11, 12, 13, 15, 128, 128, 128, 128, 128, 128, 128, 128 };
+static const uvec8 kShuf2 = {5,   7,   8,   9,   11,  12,  13,  15,
+                             128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShuf01 =
-  { 0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10 };
+static const uvec8 kShuf01 = {0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10};
 
 
-static uvec8 kShuf11 =
-  { 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13 };
+static const uvec8 kShuf11 = {2, 3, 4, 5,  5,  6,  6,  7,
+                              8, 9, 9, 10, 10, 11, 12, 13};
 
 
-static uvec8 kShuf21 =
-  { 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13, 13, 14, 14, 15 };
+static const uvec8 kShuf21 = {5,  6,  6,  7,  8,  9,  9,  10,
+                              10, 11, 12, 13, 13, 14, 14, 15};
 
 
-static uvec8 kMadd01 =
-  { 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2 };
+static const uvec8 kMadd01 = {3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2};
 
 
-static uvec8 kMadd11 =
-  { 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1 };
+static const uvec8 kMadd11 = {1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1};
 
 
-static uvec8 kMadd21 =
-  { 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3 };
+static const uvec8 kMadd21 = {2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3};
 
 
-static vec16 kRound34 =
-  { 2, 2, 2, 2, 2, 2, 2, 2 };
+static const vec16 kRound34 = {2, 2, 2, 2, 2, 2, 2, 2};
 
-static uvec8 kShuf38a =
-  { 0, 3, 6, 8, 11, 14, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
+static const uvec8 kShuf38a = {0,   3,   6,   8,   11,  14,  128, 128,
+                               128, 128, 128, 128, 128, 128, 128, 128};
 
-static uvec8 kShuf38b =
-  { 128, 128, 128, 128, 128, 128, 0, 3, 6, 8, 11, 14, 128, 128, 128, 128 };
-
-
-static uvec8 kShufAc =
-  { 0, 1, 6, 7, 12, 13, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
+static const uvec8 kShuf38b = {128, 128, 128, 128, 128, 128, 0,   3,
+                               6,   8,   11,  14,  128, 128, 128, 128};
 
 
-static uvec8 kShufAc3 =
-  { 128, 128, 128, 128, 128, 128, 0, 1, 6, 7, 12, 13, 128, 128, 128, 128 };
+static const uvec8 kShufAc = {0,   1,   6,   7,   12,  13,  128, 128,
+                              128, 128, 128, 128, 128, 128, 128, 128};
 
 
-static uvec16 kScaleAc33 =
-  { 65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9, 65536 / 9, 65536 / 6, 0, 0 };
+static const uvec8 kShufAc3 = {128, 128, 128, 128, 128, 128, 0,   1,
+                               6,   7,   12,  13,  128, 128, 128, 128};
 
 
-static uvec8 kShufAb0 =
-  { 0, 128, 3, 128, 6, 128, 8, 128, 11, 128, 14, 128, 128, 128, 128, 128 };
+static const uvec16 kScaleAc33 = {65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9,
+                                  65536 / 9, 65536 / 6, 0,         0};
 
 
-static uvec8 kShufAb1 =
-  { 1, 128, 4, 128, 7, 128, 9, 128, 12, 128, 15, 128, 128, 128, 128, 128 };
+static const uvec8 kShufAb0 = {0,  128, 3,  128, 6,   128, 8,   128,
+                               11, 128, 14, 128, 128, 128, 128, 128};
 
 
-static uvec8 kShufAb2 =
-  { 2, 128, 5, 128, 128, 128, 10, 128, 13, 128, 128, 128, 128, 128, 128, 128 };
+static const uvec8 kShufAb1 = {1,  128, 4,  128, 7,   128, 9,   128,
+                               12, 128, 15, 128, 128, 128, 128, 128};
 
 
-static uvec16 kScaleAb2 =
-  { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
+static const uvec8 kShufAb2 = {2,  128, 5,   128, 128, 128, 10,  128,
+                               13, 128, 128, 128, 128, 128, 128, 128};
 
 
-__declspec(naked)
-void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) {
+static const uvec16 kScaleAb2 = {65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3,
+                                 65536 / 3, 65536 / 2, 0,         0};
+
+
+__declspec(naked) void ScaleRowDown2_SSSE3(const uint8_t* src_ptr,
+                                           ptrdiff_t src_stride,
+                                           uint8_t* dst_ptr,
+                                           int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
+    mov        eax, [esp + 4]  
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
 
   wloop:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    psrlw      xmm0, 8               
+    psrlw      xmm0, 8          
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     movdqu     [edx], xmm0
@@ -121,32 +116,30 @@ void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                              uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown2Linear_SSSE3(const uint8_t* src_ptr,
+                                                 ptrdiff_t src_stride,
+                                                 uint8_t* dst_ptr,
+                                                 int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
-    pcmpeqb    xmm5, xmm5            
-    psrlw      xmm5, 8
+    mov        eax, [esp + 4]  
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
+
+    pcmpeqb    xmm4, xmm4  
+    psrlw      xmm4, 15
+    packuswb   xmm4, xmm4
+    pxor       xmm5, xmm5  
 
   wloop:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-
-    movdqa     xmm2, xmm0            
-    psrlw      xmm0, 8
-    movdqa     xmm3, xmm1
-    psrlw      xmm1, 8
-    pand       xmm2, xmm5
-    pand       xmm3, xmm5
-    pavgw      xmm0, xmm2
-    pavgw      xmm1, xmm3
+    pmaddubsw  xmm0, xmm4  
+    pmaddubsw  xmm1, xmm4
+    pavgw      xmm0, xmm5       
+    pavgw      xmm1, xmm5
     packuswb   xmm0, xmm1
-
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
@@ -157,17 +150,21 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown2Box_SSSE3(const uint8_t* src_ptr,
+                                              ptrdiff_t src_stride,
+                                              uint8_t* dst_ptr,
+                                              int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    
-    mov        esi, [esp + 4 + 8]    
-    mov        edx, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    pcmpeqb    xmm5, xmm5            
-    psrlw      xmm5, 8
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
+    mov        edx, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+
+    pcmpeqb    xmm4, xmm4  
+    psrlw      xmm4, 15
+    packuswb   xmm4, xmm4
+    pxor       xmm5, xmm5  
 
   wloop:
     movdqu     xmm0, [eax]
@@ -175,19 +172,17 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     movdqu     xmm2, [eax + esi]
     movdqu     xmm3, [eax + esi + 16]
     lea        eax,  [eax + 32]
-    pavgb      xmm0, xmm2            
-    pavgb      xmm1, xmm3
-
-    movdqa     xmm2, xmm0            
-    psrlw      xmm0, 8
-    movdqa     xmm3, xmm1
-    psrlw      xmm1, 8
-    pand       xmm2, xmm5
-    pand       xmm3, xmm5
-    pavgw      xmm0, xmm2
-    pavgw      xmm1, xmm3
+    pmaddubsw  xmm0, xmm4  
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2  
+    paddw      xmm1, xmm3
+    psrlw      xmm0, 1
+    psrlw      xmm1, 1
+    pavgw      xmm0, xmm5  
+    pavgw      xmm1, xmm5
     packuswb   xmm0, xmm1
-
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
@@ -200,23 +195,24 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 
 #ifdef HAS_SCALEROWDOWN2_AVX2
 
-__declspec(naked)
-void ScaleRowDown2_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown2_AVX2(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
+    mov        eax, [esp + 4]  
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
 
   wloop:
     vmovdqu     ymm0, [eax]
     vmovdqu     ymm1, [eax + 32]
     lea         eax,  [eax + 64]
-    vpsrlw      ymm0, ymm0, 8        
+    vpsrlw      ymm0, ymm0, 8  
     vpsrlw      ymm1, ymm1, 8
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8     
+    vpermq      ymm0, ymm0, 0xd8       
     vmovdqu     [edx], ymm0
     lea         edx, [edx + 32]
     sub         ecx, 32
@@ -228,32 +224,31 @@ void ScaleRowDown2_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown2Linear_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
-                              uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown2Linear_AVX2(const uint8_t* src_ptr,
+                                                ptrdiff_t src_stride,
+                                                uint8_t* dst_ptr,
+                                                int dst_width) {
   __asm {
-    mov         eax, [esp + 4]        
-                                      
-    mov         edx, [esp + 12]       
-    mov         ecx, [esp + 16]       
+    mov         eax, [esp + 4]  
+    
+    mov         edx, [esp + 12]  
+    mov         ecx, [esp + 16]  
 
-    vpcmpeqb    ymm4, ymm4, ymm4      
+    vpcmpeqb    ymm4, ymm4, ymm4  
     vpsrlw      ymm4, ymm4, 15
     vpackuswb   ymm4, ymm4, ymm4
-    vpxor       ymm5, ymm5, ymm5      
+    vpxor       ymm5, ymm5, ymm5  
 
   wloop:
     vmovdqu     ymm0, [eax]
     vmovdqu     ymm1, [eax + 32]
     lea         eax,  [eax + 64]
-
-    vpmaddubsw  ymm0, ymm0, ymm4      
+    vpmaddubsw  ymm0, ymm0, ymm4  
     vpmaddubsw  ymm1, ymm1, ymm4
-    vpavgw      ymm0, ymm0, ymm5      
+    vpavgw      ymm0, ymm0, ymm5  
     vpavgw      ymm1, ymm1, ymm5
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8      
-
+    vpermq      ymm0, ymm0, 0xd8       
     vmovdqu     [edx], ymm0
     lea         edx, [edx + 32]
     sub         ecx, 32
@@ -265,35 +260,42 @@ void ScaleRowDown2Linear_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst_ptr, int dst_width) {
+
+
+__declspec(naked) void ScaleRowDown2Box_AVX2(const uint8_t* src_ptr,
+                                             ptrdiff_t src_stride,
+                                             uint8_t* dst_ptr,
+                                             int dst_width) {
   __asm {
     push        esi
-    mov         eax, [esp + 4 + 4]    
-    mov         esi, [esp + 4 + 8]    
-    mov         edx, [esp + 4 + 12]   
-    mov         ecx, [esp + 4 + 16]   
+    mov         eax, [esp + 4 + 4]  
+    mov         esi, [esp + 4 + 8]  
+    mov         edx, [esp + 4 + 12]  
+    mov         ecx, [esp + 4 + 16]  
 
-    vpcmpeqb    ymm4, ymm4, ymm4      
+    vpcmpeqb    ymm4, ymm4, ymm4  
     vpsrlw      ymm4, ymm4, 15
     vpackuswb   ymm4, ymm4, ymm4
-    vpxor       ymm5, ymm5, ymm5      
+    vpxor       ymm5, ymm5, ymm5  
 
   wloop:
-    vmovdqu     ymm0, [eax]           
+    vmovdqu     ymm0, [eax]
     vmovdqu     ymm1, [eax + 32]
-    vpavgb      ymm0, ymm0, [eax + esi]
-    vpavgb      ymm1, ymm1, [eax + esi + 32]
+    vmovdqu     ymm2, [eax + esi]
+    vmovdqu     ymm3, [eax + esi + 32]
     lea         eax,  [eax + 64]
-
-    vpmaddubsw  ymm0, ymm0, ymm4      
+    vpmaddubsw  ymm0, ymm0, ymm4  
     vpmaddubsw  ymm1, ymm1, ymm4
-    vpavgw      ymm0, ymm0, ymm5      
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2  
+    vpaddw      ymm1, ymm1, ymm3
+    vpsrlw      ymm0, ymm0, 1  
+    vpsrlw      ymm1, ymm1, 1
+    vpavgw      ymm0, ymm0, ymm5  
     vpavgw      ymm1, ymm1, ymm5
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8      
-
+    vpermq      ymm0, ymm0, 0xd8  
     vmovdqu     [edx], ymm0
     lea         edx, [edx + 32]
     sub         ecx, 32
@@ -307,15 +309,16 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
 #endif  
 
 
-__declspec(naked)
-void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown4_SSSE3(const uint8_t* src_ptr,
+                                           ptrdiff_t src_stride,
+                                           uint8_t* dst_ptr,
+                                           int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 4]  
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
+    pcmpeqb    xmm5, xmm5       
     psrld      xmm5, 24
     pslld      xmm5, 16
 
@@ -338,53 +341,52 @@ void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown4Box_SSSE3(const uint8_t* src_ptr,
+                                              ptrdiff_t src_stride,
+                                              uint8_t* dst_ptr,
+                                              int dst_width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        ecx, [esp + 8 + 16]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        ecx, [esp + 8 + 16]  
     lea        edi, [esi + esi * 2]  
-    pcmpeqb    xmm7, xmm7            
-    psrlw      xmm7, 8
+    pcmpeqb    xmm4, xmm4  
+    psrlw      xmm4, 15
+    movdqa     xmm5, xmm4
+    packuswb   xmm4, xmm4
+    psllw      xmm5, 3  
 
   wloop:
-    movdqu     xmm0, [eax]           
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + esi]
     movdqu     xmm3, [eax + esi + 16]
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
+    pmaddubsw  xmm0, xmm4  
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2  
+    paddw      xmm1, xmm3
     movdqu     xmm2, [eax + esi * 2]
     movdqu     xmm3, [eax + esi * 2 + 16]
-    movdqu     xmm4, [eax + edi]
-    movdqu     xmm5, [eax + edi + 16]
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2  
+    paddw      xmm1, xmm3
+    movdqu     xmm2, [eax + edi]
+    movdqu     xmm3, [eax + edi + 16]
     lea        eax, [eax + 32]
-    pavgb      xmm2, xmm4
-    pavgb      xmm3, xmm5
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
-
-    movdqa     xmm2, xmm0            
-    psrlw      xmm0, 8
-    movdqa     xmm3, xmm1
-    psrlw      xmm1, 8
-    pand       xmm2, xmm7
-    pand       xmm3, xmm7
-    pavgw      xmm0, xmm2
-    pavgw      xmm1, xmm3
-    packuswb   xmm0, xmm1
-
-    movdqa     xmm2, xmm0            
-    psrlw      xmm0, 8
-    pand       xmm2, xmm7
-    pavgw      xmm0, xmm2
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2  
+    paddw      xmm1, xmm3
+    phaddw     xmm0, xmm1
+    paddw      xmm0, xmm5  
+    psrlw      xmm0, 4  
     packuswb   xmm0, xmm0
-
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
     sub        ecx, 8
@@ -398,15 +400,16 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 
 #ifdef HAS_SCALEROWDOWN4_AVX2
 
-__declspec(naked)
-void ScaleRowDown4_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown4_AVX2(const uint8_t* src_ptr,
+                                          ptrdiff_t src_stride,
+                                          uint8_t* dst_ptr,
+                                          int dst_width) {
   __asm {
-    mov         eax, [esp + 4]        
-                                      
-    mov         edx, [esp + 12]       
-    mov         ecx, [esp + 16]       
-    vpcmpeqb    ymm5, ymm5, ymm5      
+    mov         eax, [esp + 4]  
+    
+    mov         edx, [esp + 12]  
+    mov         ecx, [esp + 16]  
+    vpcmpeqb    ymm5, ymm5, ymm5  
     vpsrld      ymm5, ymm5, 24
     vpslld      ymm5, ymm5, 16
 
@@ -417,10 +420,10 @@ void ScaleRowDown4_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
     vpand       ymm0, ymm0, ymm5
     vpand       ymm1, ymm1, ymm5
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8      
+    vpermq      ymm0, ymm0, 0xd8  
     vpsrlw      ymm0, ymm0, 8
     vpackuswb   ymm0, ymm0, ymm0
-    vpermq      ymm0, ymm0, 0xd8      
+    vpermq      ymm0, ymm0, 0xd8       
     vmovdqu     [edx], xmm0
     lea         edx, [edx + 16]
     sub         ecx, 16
@@ -432,48 +435,53 @@ void ScaleRowDown4_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown4Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown4Box_AVX2(const uint8_t* src_ptr,
+                                             ptrdiff_t src_stride,
+                                             uint8_t* dst_ptr,
+                                             int dst_width) {
   __asm {
     push        esi
     push        edi
-    mov         eax, [esp + 8 + 4]    
-    mov         esi, [esp + 8 + 8]    
-    mov         edx, [esp + 8 + 12]   
-    mov         ecx, [esp + 8 + 16]   
+    mov         eax, [esp + 8 + 4]  
+    mov         esi, [esp + 8 + 8]  
+    mov         edx, [esp + 8 + 12]  
+    mov         ecx, [esp + 8 + 16]  
     lea         edi, [esi + esi * 2]  
-    vpcmpeqb    ymm7, ymm7, ymm7      
-    vpsrlw      ymm7, ymm7, 8
+    vpcmpeqb    ymm4, ymm4, ymm4  
+    vpsrlw      ymm4, ymm4, 15
+    vpsllw      ymm5, ymm4, 3  
+    vpackuswb   ymm4, ymm4, ymm4
 
   wloop:
-    vmovdqu     ymm0, [eax]           
+    vmovdqu     ymm0, [eax]  
     vmovdqu     ymm1, [eax + 32]
-    vpavgb      ymm0, ymm0, [eax + esi]
-    vpavgb      ymm1, ymm1, [eax + esi + 32]
+    vmovdqu     ymm2, [eax + esi]
+    vmovdqu     ymm3, [eax + esi + 32]
+    vpmaddubsw  ymm0, ymm0, ymm4  
+    vpmaddubsw  ymm1, ymm1, ymm4
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2  
+    vpaddw      ymm1, ymm1, ymm3
     vmovdqu     ymm2, [eax + esi * 2]
     vmovdqu     ymm3, [eax + esi * 2 + 32]
-    vpavgb      ymm2, ymm2, [eax + edi]
-    vpavgb      ymm3, ymm3, [eax + edi + 32]
-    lea         eax, [eax + 64]
-    vpavgb      ymm0, ymm0, ymm2
-    vpavgb      ymm1, ymm1, ymm3
-
-    vpand       ymm2, ymm0, ymm7      
-    vpand       ymm3, ymm1, ymm7
-    vpsrlw      ymm0, ymm0, 8
-    vpsrlw      ymm1, ymm1, 8
-    vpavgw      ymm0, ymm0, ymm2
-    vpavgw      ymm1, ymm1, ymm3
-    vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8      
-
-    vpand       ymm2, ymm0, ymm7      
-    vpsrlw      ymm0, ymm0, 8
-    vpavgw      ymm0, ymm0, ymm2
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2  
+    vpaddw      ymm1, ymm1, ymm3
+    vmovdqu     ymm2, [eax + edi]
+    vmovdqu     ymm3, [eax + edi + 32]
+    lea         eax,  [eax + 64]
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2  
+    vpaddw      ymm1, ymm1, ymm3
+    vphaddw     ymm0, ymm0, ymm1  
+    vpermq      ymm0, ymm0, 0xd8  
+    vpaddw      ymm0, ymm0, ymm5  
+    vpsrlw      ymm0, ymm0, 4  
     vpackuswb   ymm0, ymm0, ymm0
-    vpermq      ymm0, ymm0, 0xd8      
-
+    vpermq      ymm0, ymm0, 0xd8  
     vmovdqu     [edx], xmm0
     lea         edx, [edx + 16]
     sub         ecx, 16
@@ -491,17 +499,18 @@ void ScaleRowDown4Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
 
 
 
-__declspec(naked)
-void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
-                          uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown34_SSSE3(const uint8_t* src_ptr,
+                                            ptrdiff_t src_stride,
+                                            uint8_t* dst_ptr,
+                                            int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
-    movdqa     xmm3, kShuf0
-    movdqa     xmm4, kShuf1
-    movdqa     xmm5, kShuf2
+    mov        eax, [esp + 4]   
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
+    movdqa     xmm3, xmmword ptr kShuf0
+    movdqa     xmm4, xmmword ptr kShuf1
+    movdqa     xmm5, xmmword ptr kShuf2
 
   wloop:
     movdqu     xmm0, [eax]
@@ -538,25 +547,25 @@ void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
 
 
 
-__declspec(naked)
-void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown34_1_Box_SSSE3(const uint8_t* src_ptr,
+                                                  ptrdiff_t src_stride,
+                                                  uint8_t* dst_ptr,
+                                                  int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    
-    mov        esi, [esp + 4 + 8]    
-    mov        edx, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    movdqa     xmm2, kShuf01
-    movdqa     xmm3, kShuf11
-    movdqa     xmm4, kShuf21
-    movdqa     xmm5, kMadd01
-    movdqa     xmm6, kMadd11
-    movdqa     xmm7, kRound34
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
+    mov        edx, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    movdqa     xmm2, xmmword ptr kShuf01
+    movdqa     xmm3, xmmword ptr kShuf11
+    movdqa     xmm4, xmmword ptr kShuf21
+    movdqa     xmm5, xmmword ptr kMadd01
+    movdqa     xmm6, xmmword ptr kMadd11
+    movdqa     xmm7, xmmword ptr kRound34
 
   wloop:
-    movdqu     xmm0, [eax]           
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + esi]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm2
@@ -565,7 +574,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
     movq       qword ptr [edx], xmm0
-    movdqu     xmm0, [eax + 8]       
+    movdqu     xmm0, [eax + 8]  
     movdqu     xmm1, [eax + esi + 8]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm3
@@ -574,12 +583,12 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
     movq       qword ptr [edx + 8], xmm0
-    movdqu     xmm0, [eax + 16]      
+    movdqu     xmm0, [eax + 16]  
     movdqu     xmm1, [eax + esi + 16]
     lea        eax, [eax + 32]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm4
-    movdqa     xmm1, kMadd21
+    movdqa     xmm1, xmmword ptr kMadd21
     pmaddubsw  xmm0, xmm1
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
@@ -595,25 +604,25 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked)
-void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown34_0_Box_SSSE3(const uint8_t* src_ptr,
+                                                  ptrdiff_t src_stride,
+                                                  uint8_t* dst_ptr,
+                                                  int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    
-    mov        esi, [esp + 4 + 8]    
-    mov        edx, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    movdqa     xmm2, kShuf01
-    movdqa     xmm3, kShuf11
-    movdqa     xmm4, kShuf21
-    movdqa     xmm5, kMadd01
-    movdqa     xmm6, kMadd11
-    movdqa     xmm7, kRound34
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
+    mov        edx, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    movdqa     xmm2, xmmword ptr kShuf01
+    movdqa     xmm3, xmmword ptr kShuf11
+    movdqa     xmm4, xmmword ptr kShuf21
+    movdqa     xmm5, xmmword ptr kMadd01
+    movdqa     xmm6, xmmword ptr kMadd11
+    movdqa     xmm7, xmmword ptr kRound34
 
   wloop:
-    movdqu     xmm0, [eax]           
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + esi]
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
@@ -623,7 +632,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
     movq       qword ptr [edx], xmm0
-    movdqu     xmm0, [eax + 8]       
+    movdqu     xmm0, [eax + 8]  
     movdqu     xmm1, [eax + esi + 8]
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
@@ -633,13 +642,13 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
     movq       qword ptr [edx + 8], xmm0
-    movdqu     xmm0, [eax + 16]      
+    movdqu     xmm0, [eax + 16]  
     movdqu     xmm1, [eax + esi + 16]
     lea        eax, [eax + 32]
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm4
-    movdqa     xmm1, kMadd21
+    movdqa     xmm1, xmmword ptr kMadd21
     pmaddubsw  xmm0, xmm1
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
@@ -657,26 +666,27 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
 
 
 
-__declspec(naked)
-void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
-                          uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown38_SSSE3(const uint8_t* src_ptr,
+                                            ptrdiff_t src_stride,
+                                            uint8_t* dst_ptr,
+                                            int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
-    movdqa     xmm4, kShuf38a
-    movdqa     xmm5, kShuf38b
+    mov        eax, [esp + 4]  
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
+    movdqa     xmm4, xmmword ptr kShuf38a
+    movdqa     xmm5, xmmword ptr kShuf38b
 
   xloop:
-    movdqu     xmm0, [eax]           
-    movdqu     xmm1, [eax + 16]      
+    movdqu     xmm0, [eax]  
+    movdqu     xmm1, [eax + 16]  
     lea        eax, [eax + 32]
     pshufb     xmm0, xmm4
     pshufb     xmm1, xmm5
     paddusb    xmm0, xmm1
 
-    movq       qword ptr [edx], xmm0  
+    movq       qword ptr [edx], xmm0       
     movhlps    xmm1, xmm0
     movd       [edx + 8], xmm1
     lea        edx, [edx + 12]
@@ -688,23 +698,23 @@ void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown38_3_Box_SSSE3(const uint8_t* src_ptr,
+                                                  ptrdiff_t src_stride,
+                                                  uint8_t* dst_ptr,
+                                                  int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    
-    mov        esi, [esp + 4 + 8]    
-    mov        edx, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    movdqa     xmm2, kShufAc
-    movdqa     xmm3, kShufAc3
-    movdqa     xmm4, kScaleAc33
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
+    mov        edx, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    movdqa     xmm2, xmmword ptr kShufAc
+    movdqa     xmm3, xmmword ptr kShufAc3
+    movdqa     xmm4, xmmword ptr kScaleAc33
     pxor       xmm5, xmm5
 
   xloop:
-    movdqu     xmm0, [eax]           
+    movdqu     xmm0, [eax]  
     movdqu     xmm6, [eax + esi]
     movhlps    xmm1, xmm0
     movhlps    xmm7, xmm6
@@ -722,14 +732,14 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     paddusw    xmm0, xmm6
     paddusw    xmm1, xmm7
 
-    movdqa     xmm6, xmm0            
+    movdqa     xmm6, xmm0  
     psrldq     xmm0, 2
     paddusw    xmm6, xmm0
     psrldq     xmm0, 2
     paddusw    xmm6, xmm0
     pshufb     xmm6, xmm2
 
-    movdqa     xmm7, xmm1            
+    movdqa     xmm7, xmm1  
     psrldq     xmm1, 2
     paddusw    xmm7, xmm1
     psrldq     xmm1, 2
@@ -737,10 +747,10 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     pshufb     xmm7, xmm3
     paddusw    xmm6, xmm7
 
-    pmulhuw    xmm6, xmm4            
+    pmulhuw    xmm6, xmm4  
     packuswb   xmm6, xmm6
 
-    movd       [edx], xmm6           
+    movd       [edx], xmm6  
     psrlq      xmm6, 16
     movd       [edx + 2], xmm6
     lea        edx, [edx + 6]
@@ -753,28 +763,28 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked)
-void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
-                                ptrdiff_t src_stride,
-                                uint8* dst_ptr, int dst_width) {
+__declspec(naked) void ScaleRowDown38_2_Box_SSSE3(const uint8_t* src_ptr,
+                                                  ptrdiff_t src_stride,
+                                                  uint8_t* dst_ptr,
+                                                  int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    
-    mov        esi, [esp + 4 + 8]    
-    mov        edx, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    movdqa     xmm2, kShufAb0
-    movdqa     xmm3, kShufAb1
-    movdqa     xmm4, kShufAb2
-    movdqa     xmm5, kScaleAb2
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
+    mov        edx, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    movdqa     xmm2, xmmword ptr kShufAb0
+    movdqa     xmm3, xmmword ptr kShufAb1
+    movdqa     xmm4, xmmword ptr kShufAb2
+    movdqa     xmm5, xmmword ptr kScaleAb2
 
   xloop:
-    movdqu     xmm0, [eax]           
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + esi]
     lea        eax, [eax + 16]
     pavgb      xmm0, xmm1
 
-    movdqa     xmm1, xmm0            
+    movdqa     xmm1, xmm0  
     pshufb     xmm1, xmm2
     movdqa     xmm6, xmm0
     pshufb     xmm6, xmm3
@@ -782,10 +792,10 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     pshufb     xmm0, xmm4
     paddusw    xmm1, xmm0
 
-    pmulhuw    xmm1, xmm5            
+    pmulhuw    xmm1, xmm5  
     packuswb   xmm1, xmm1
 
-    movd       [edx], xmm1           
+    movd       [edx], xmm1  
     psrlq      xmm1, 16
     movd       [edx + 2], xmm1
     lea        edx, [edx + 6]
@@ -798,26 +808,27 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
 }
 
 
-__declspec(naked)
-void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
+__declspec(naked) void ScaleAddRow_SSE2(const uint8_t* src_ptr,
+                                        uint16_t* dst_ptr,
+                                        int src_width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     pxor       xmm5, xmm5
 
-  
+        
   xloop:
-    movdqu     xmm3, [eax]       
+    movdqu     xmm3, [eax]  
     lea        eax, [eax + 16]
-    movdqu     xmm0, [edx]       
+    movdqu     xmm0, [edx]  
     movdqu     xmm1, [edx + 16]
     movdqa     xmm2, xmm3
     punpcklbw  xmm2, xmm5
     punpckhbw  xmm3, xmm5
-    paddusw    xmm0, xmm2        
+    paddusw    xmm0, xmm2  
     paddusw    xmm1, xmm3
-    movdqu     [edx], xmm0       
+    movdqu     [edx], xmm0  
     movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 16
@@ -828,24 +839,25 @@ void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
 
 #ifdef HAS_SCALEADDROW_AVX2
 
-__declspec(naked)
-void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
+__declspec(naked) void ScaleAddRow_AVX2(const uint8_t* src_ptr,
+                                        uint16_t* dst_ptr,
+                                        int src_width) {
   __asm {
-    mov         eax, [esp + 4]   
-    mov         edx, [esp + 8]   
+    mov         eax, [esp + 4]  
+    mov         edx, [esp + 8]  
     mov         ecx, [esp + 12]  
     vpxor       ymm5, ymm5, ymm5
 
-  
+        
   xloop:
-    vmovdqu     ymm3, [eax]       
+    vmovdqu     ymm3, [eax]  
     lea         eax, [eax + 32]
     vpermq      ymm3, ymm3, 0xd8  
     vpunpcklbw  ymm2, ymm3, ymm5
     vpunpckhbw  ymm3, ymm3, ymm5
-    vpaddusw    ymm0, ymm2, [edx] 
+    vpaddusw    ymm0, ymm2, [edx]  
     vpaddusw    ymm1, ymm3, [edx + 32]
-    vmovdqu     [edx], ymm0       
+    vmovdqu     [edx], ymm0  
     vmovdqu     [edx + 32], ymm1
     lea         edx, [edx + 64]
     sub         ecx, 32
@@ -858,71 +870,89 @@ void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
 #endif  
 
 
-__declspec(naked)
-void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
-                           int dst_width, int x, int dx) {
+
+static const uvec8 kFsub80 = {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+                              0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
+
+
+static const uvec16 kFadd40 = {0x4040, 0x4040, 0x4040, 0x4040,
+                               0x4040, 0x4040, 0x4040, 0x4040};
+
+
+__declspec(naked) void ScaleFilterCols_SSSE3(uint8_t* dst_ptr,
+                                             const uint8_t* src_ptr,
+                                             int dst_width,
+                                             int x,
+                                             int dx) {
   __asm {
     push       ebx
     push       esi
     push       edi
-    mov        edi, [esp + 12 + 4]    
-    mov        esi, [esp + 12 + 8]    
-    mov        ecx, [esp + 12 + 12]   
+    mov        edi, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
+    mov        ecx, [esp + 12 + 12]  
     movd       xmm2, [esp + 12 + 16]  
     movd       xmm3, [esp + 12 + 20]  
-    mov        eax, 0x04040000      
+    mov        eax, 0x04040000  
     movd       xmm5, eax
-    pcmpeqb    xmm6, xmm6           
+    pcmpeqb    xmm6, xmm6  
     psrlw      xmm6, 9
-    pextrw     eax, xmm2, 1         
+    pcmpeqb    xmm7, xmm7  
+    psrlw      xmm7, 15
+    pextrw     eax, xmm2, 1  
     sub        ecx, 2
     jl         xloop29
 
-    movdqa     xmm0, xmm2           
+    movdqa     xmm0, xmm2  
     paddd      xmm0, xmm3
-    punpckldq  xmm2, xmm0           
-    punpckldq  xmm3, xmm3           
-    paddd      xmm3, xmm3           
-    pextrw     edx, xmm2, 3         
+    punpckldq  xmm2, xmm0  
+    punpckldq  xmm3, xmm3  
+    paddd      xmm3, xmm3  
+    pextrw     edx, xmm2, 3  
 
     
   xloop2:
-    movdqa     xmm1, xmm2           
-    paddd      xmm2, xmm3           
+    movdqa     xmm1, xmm2  
+    paddd      xmm2, xmm3  
     movzx      ebx, word ptr [esi + eax]  
     movd       xmm0, ebx
-    psrlw      xmm1, 9              
+    psrlw      xmm1, 9  
     movzx      ebx, word ptr [esi + edx]  
     movd       xmm4, ebx
-    pshufb     xmm1, xmm5           
+    pshufb     xmm1, xmm5  
     punpcklwd  xmm0, xmm4
-    pxor       xmm1, xmm6           
-    pmaddubsw  xmm0, xmm1           
-    pextrw     eax, xmm2, 1         
-    pextrw     edx, xmm2, 3         
-    psrlw      xmm0, 7              
-    packuswb   xmm0, xmm0           
-    movd       ebx, xmm0
+    psubb      xmm0, xmmword ptr kFsub80  
+    pxor       xmm1, xmm6  
+    paddusb    xmm1, xmm7  
+    pmaddubsw  xmm1, xmm0  
+    pextrw     eax, xmm2, 1  
+    pextrw     edx, xmm2, 3  
+    paddw      xmm1, xmmword ptr kFadd40  
+    psrlw      xmm1, 7  
+    packuswb   xmm1, xmm1  
+    movd       ebx, xmm1
     mov        [edi], bx
     lea        edi, [edi + 2]
-    sub        ecx, 2               
+    sub        ecx, 2  
     jge        xloop2
 
  xloop29:
-
     add        ecx, 2 - 1
     jl         xloop99
 
-    
+            
     movzx      ebx, word ptr [esi + eax]  
     movd       xmm0, ebx
-    psrlw      xmm2, 9              
-    pshufb     xmm2, xmm5           
-    pxor       xmm2, xmm6           
-    pmaddubsw  xmm0, xmm2           
-    psrlw      xmm0, 7              
-    packuswb   xmm0, xmm0           
-    movd       ebx, xmm0
+    psrlw      xmm2, 9  
+    pshufb     xmm2, xmm5  
+    psubb      xmm0, xmmword ptr kFsub80  
+    pxor       xmm2, xmm6  
+    paddusb    xmm2, xmm7  
+    pmaddubsw  xmm2, xmm0  
+    paddw      xmm2, xmmword ptr kFadd40  
+    psrlw      xmm2, 7  
+    packuswb   xmm2, xmm2  
+    movd       ebx, xmm2
     mov        [edi], bl
 
  xloop99:
@@ -935,13 +965,15 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 
-__declspec(naked)
-void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                       int dst_width, int x, int dx) {
+__declspec(naked) void ScaleColsUp2_SSE2(uint8_t* dst_ptr,
+                                         const uint8_t* src_ptr,
+                                         int dst_width,
+                                         int x,
+                                         int dx) {
   __asm {
-    mov        edx, [esp + 4]    
-    mov        eax, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        edx, [esp + 4]  
+    mov        eax, [esp + 8]  
+    mov        ecx, [esp + 12]  
 
   wloop:
     movdqu     xmm0, [eax]
@@ -960,15 +992,15 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 
-__declspec(naked)
-void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
-                            ptrdiff_t src_stride,
-                            uint8* dst_argb, int dst_width) {
+__declspec(naked) void ScaleARGBRowDown2_SSE2(const uint8_t* src_argb,
+                                              ptrdiff_t src_stride,
+                                              uint8_t* dst_argb,
+                                              int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
+    mov        eax, [esp + 4]   
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
 
   wloop:
     movdqu     xmm0, [eax]
@@ -985,23 +1017,23 @@ void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked)
-void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
-                                  ptrdiff_t src_stride,
-                                  uint8* dst_argb, int dst_width) {
+__declspec(naked) void ScaleARGBRowDown2Linear_SSE2(const uint8_t* src_argb,
+                                                    ptrdiff_t src_stride,
+                                                    uint8_t* dst_argb,
+                                                    int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        
-                                     
-    mov        edx, [esp + 12]       
-    mov        ecx, [esp + 16]       
+    mov        eax, [esp + 4]  
+    
+    mov        edx, [esp + 12]  
+    mov        ecx, [esp + 16]  
 
   wloop:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     movdqa     xmm2, xmm0
-    shufps     xmm0, xmm1, 0x88      
-    shufps     xmm2, xmm1, 0xdd      
+    shufps     xmm0, xmm1, 0x88  
+    shufps     xmm2, xmm1, 0xdd       
     pavgb      xmm0, xmm2
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
@@ -1013,16 +1045,16 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked)
-void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
-                               ptrdiff_t src_stride,
-                               uint8* dst_argb, int dst_width) {
+__declspec(naked) void ScaleARGBRowDown2Box_SSE2(const uint8_t* src_argb,
+                                                 ptrdiff_t src_stride,
+                                                 uint8_t* dst_argb,
+                                                 int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    
-    mov        esi, [esp + 4 + 8]    
-    mov        edx, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
+    mov        edx, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
 
   wloop:
     movdqu     xmm0, [eax]
@@ -1030,11 +1062,11 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
     movdqu     xmm2, [eax + esi]
     movdqu     xmm3, [eax + esi + 16]
     lea        eax,  [eax + 32]
-    pavgb      xmm0, xmm2            
+    pavgb      xmm0, xmm2  
     pavgb      xmm1, xmm3
-    movdqa     xmm2, xmm0            
-    shufps     xmm0, xmm1, 0x88      
-    shufps     xmm2, xmm1, 0xdd      
+    movdqa     xmm2, xmm0  
+    shufps     xmm0, xmm1, 0x88  
+    shufps     xmm2, xmm1, 0xdd  
     pavgb      xmm0, xmm2
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
@@ -1047,18 +1079,19 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked)
-void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
-                               int src_stepx,
-                               uint8* dst_argb, int dst_width) {
+__declspec(naked) void ScaleARGBRowDownEven_SSE2(const uint8_t* src_argb,
+                                                 ptrdiff_t src_stride,
+                                                 int src_stepx,
+                                                 uint8_t* dst_argb,
+                                                 int dst_width) {
   __asm {
     push       ebx
     push       edi
-    mov        eax, [esp + 8 + 4]    
-                                     
-    mov        ebx, [esp + 8 + 12]   
-    mov        edx, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
+    mov        eax, [esp + 8 + 4]   
+    
+    mov        ebx, [esp + 8 + 12]  
+    mov        edx, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
     lea        ebx, [ebx * 4]
     lea        edi, [ebx + ebx * 2]
 
@@ -1083,21 +1116,21 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
 }
 
 
-__declspec(naked)
-void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
-                                  ptrdiff_t src_stride,
-                                  int src_stepx,
-                                  uint8* dst_argb, int dst_width) {
+__declspec(naked) void ScaleARGBRowDownEvenBox_SSE2(const uint8_t* src_argb,
+                                                    ptrdiff_t src_stride,
+                                                    int src_stepx,
+                                                    uint8_t* dst_argb,
+                                                    int dst_width) {
   __asm {
     push       ebx
     push       esi
     push       edi
-    mov        eax, [esp + 12 + 4]    
-    mov        esi, [esp + 12 + 8]    
-    mov        ebx, [esp + 12 + 12]   
-    mov        edx, [esp + 12 + 16]   
-    mov        ecx, [esp + 12 + 20]   
-    lea        esi, [eax + esi]       
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
+    mov        ebx, [esp + 12 + 12]  
+    mov        edx, [esp + 12 + 16]  
+    mov        ecx, [esp + 12 + 20]  
+    lea        esi, [eax + esi]  
     lea        ebx, [ebx * 4]
     lea        edi, [ebx + ebx * 2]
 
@@ -1112,11 +1145,11 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     movq       xmm3, qword ptr [esi + ebx * 2]
     movhps     xmm3, qword ptr [esi + edi]
     lea        esi,  [esi + ebx * 4]
-    pavgb      xmm0, xmm2            
+    pavgb      xmm0, xmm2  
     pavgb      xmm1, xmm3
-    movdqa     xmm2, xmm0            
-    shufps     xmm0, xmm1, 0x88      
-    shufps     xmm2, xmm1, 0xdd      
+    movdqa     xmm2, xmm0  
+    shufps     xmm0, xmm1, 0x88  
+    shufps     xmm2, xmm1, 0xdd  
     pavgb      xmm0, xmm2
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
@@ -1131,64 +1164,66 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
 }
 
 
-__declspec(naked)
-void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
-                        int dst_width, int x, int dx) {
+__declspec(naked) void ScaleARGBCols_SSE2(uint8_t* dst_argb,
+                                          const uint8_t* src_argb,
+                                          int dst_width,
+                                          int x,
+                                          int dx) {
   __asm {
     push       edi
     push       esi
-    mov        edi, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        ecx, [esp + 8 + 12]   
+    mov        edi, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        ecx, [esp + 8 + 12]  
     movd       xmm2, [esp + 8 + 16]  
     movd       xmm3, [esp + 8 + 20]  
 
-    pshufd     xmm2, xmm2, 0         
-    pshufd     xmm0, xmm3, 0x11      
+    pshufd     xmm2, xmm2, 0  
+    pshufd     xmm0, xmm3, 0x11  
     paddd      xmm2, xmm0
-    paddd      xmm3, xmm3            
-    pshufd     xmm0, xmm3, 0x05      
-    paddd      xmm2, xmm0            
-    paddd      xmm3, xmm3            
-    pshufd     xmm3, xmm3, 0         
+    paddd      xmm3, xmm3  
+    pshufd     xmm0, xmm3, 0x05  
+    paddd      xmm2, xmm0  
+    paddd      xmm3, xmm3  
+    pshufd     xmm3, xmm3, 0  
 
-    pextrw     eax, xmm2, 1          
-    pextrw     edx, xmm2, 3          
+    pextrw     eax, xmm2, 1  
+    pextrw     edx, xmm2, 3  
 
     cmp        ecx, 0
     jle        xloop99
     sub        ecx, 4
     jl         xloop49
 
-    
+        
  xloop4:
     movd       xmm0, [esi + eax * 4]  
     movd       xmm1, [esi + edx * 4]  
-    pextrw     eax, xmm2, 5           
-    pextrw     edx, xmm2, 7           
-    paddd      xmm2, xmm3             
-    punpckldq  xmm0, xmm1             
+    pextrw     eax, xmm2, 5  
+    pextrw     edx, xmm2, 7  
+    paddd      xmm2, xmm3  
+    punpckldq  xmm0, xmm1  
 
     movd       xmm1, [esi + eax * 4]  
     movd       xmm4, [esi + edx * 4]  
-    pextrw     eax, xmm2, 1           
-    pextrw     edx, xmm2, 3           
-    punpckldq  xmm1, xmm4             
-    punpcklqdq xmm0, xmm1             
+    pextrw     eax, xmm2, 1  
+    pextrw     edx, xmm2, 3  
+    punpckldq  xmm1, xmm4  
+    punpcklqdq xmm0, xmm1  
     movdqu     [edi], xmm0
     lea        edi, [edi + 16]
-    sub        ecx, 4                 
+    sub        ecx, 4  
     jge        xloop4
 
  xloop49:
     test       ecx, 2
     je         xloop29
 
-    
+        
     movd       xmm0, [esi + eax * 4]  
     movd       xmm1, [esi + edx * 4]  
-    pextrw     eax, xmm2, 5           
-    punpckldq  xmm0, xmm1             
+    pextrw     eax, xmm2, 5  
+    punpckldq  xmm0, xmm1  
 
     movq       qword ptr [edi], xmm0
     lea        edi, [edi + 8]
@@ -1197,7 +1232,7 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     test       ecx, 1
     je         xloop99
 
-    
+        
     movd       xmm0, [esi + eax * 4]  
     movd       dword ptr [edi], xmm0
  xloop99:
@@ -1212,60 +1247,62 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
 
 
 
-static uvec8 kShuffleColARGB = {
-  0u, 4u, 1u, 5u, 2u, 6u, 3u, 7u,  
-  8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  
+static const uvec8 kShuffleColARGB = {
+    0u, 4u,  1u, 5u,  2u,  6u,  3u,  7u,  
+    8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  
 };
 
 
-static uvec8 kShuffleFractions = {
-  0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
+static const uvec8 kShuffleFractions = {
+    0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
 };
 
-__declspec(naked)
-void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                               int dst_width, int x, int dx) {
+__declspec(naked) void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
+                                                 const uint8_t* src_argb,
+                                                 int dst_width,
+                                                 int x,
+                                                 int dx) {
   __asm {
     push       esi
     push       edi
-    mov        edi, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        ecx, [esp + 8 + 12]   
+    mov        edi, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        ecx, [esp + 8 + 12]  
     movd       xmm2, [esp + 8 + 16]  
     movd       xmm3, [esp + 8 + 20]  
-    movdqa     xmm4, kShuffleColARGB
-    movdqa     xmm5, kShuffleFractions
-    pcmpeqb    xmm6, xmm6           
+    movdqa     xmm4, xmmword ptr kShuffleColARGB
+    movdqa     xmm5, xmmword ptr kShuffleFractions
+    pcmpeqb    xmm6, xmm6  
     psrlw      xmm6, 9
-    pextrw     eax, xmm2, 1         
+    pextrw     eax, xmm2, 1  
     sub        ecx, 2
     jl         xloop29
 
-    movdqa     xmm0, xmm2           
+    movdqa     xmm0, xmm2  
     paddd      xmm0, xmm3
-    punpckldq  xmm2, xmm0           
-    punpckldq  xmm3, xmm3           
-    paddd      xmm3, xmm3           
-    pextrw     edx, xmm2, 3         
+    punpckldq  xmm2, xmm0  
+    punpckldq  xmm3, xmm3  
+    paddd      xmm3, xmm3  
+    pextrw     edx, xmm2, 3  
 
     
   xloop2:
-    movdqa     xmm1, xmm2           
-    paddd      xmm2, xmm3           
+    movdqa     xmm1, xmm2  
+    paddd      xmm2, xmm3  
     movq       xmm0, qword ptr [esi + eax * 4]  
-    psrlw      xmm1, 9              
+    psrlw      xmm1, 9  
     movhps     xmm0, qword ptr [esi + edx * 4]  
-    pshufb     xmm1, xmm5           
-    pshufb     xmm0, xmm4           
-    pxor       xmm1, xmm6           
-    pmaddubsw  xmm0, xmm1           
-    pextrw     eax, xmm2, 1         
-    pextrw     edx, xmm2, 3         
-    psrlw      xmm0, 7              
-    packuswb   xmm0, xmm0           
+    pshufb     xmm1, xmm5  
+    pshufb     xmm0, xmm4  
+    pxor       xmm1, xmm6  
+    pmaddubsw  xmm0, xmm1  
+    pextrw     eax, xmm2, 1  
+    pextrw     edx, xmm2, 3  
+    psrlw      xmm0, 7  
+    packuswb   xmm0, xmm0  
     movq       qword ptr [edi], xmm0
     lea        edi, [edi + 8]
-    sub        ecx, 2               
+    sub        ecx, 2  
     jge        xloop2
 
  xloop29:
@@ -1273,15 +1310,15 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     add        ecx, 2 - 1
     jl         xloop99
 
-    
-    psrlw      xmm2, 9              
+            
+    psrlw      xmm2, 9  
     movq       xmm0, qword ptr [esi + eax * 4]  
-    pshufb     xmm2, xmm5           
-    pshufb     xmm0, xmm4           
-    pxor       xmm2, xmm6           
-    pmaddubsw  xmm0, xmm2           
+    pshufb     xmm2, xmm5  
+    pshufb     xmm0, xmm4  
+    pxor       xmm2, xmm6  
+    pmaddubsw  xmm0, xmm2  
     psrlw      xmm0, 7
-    packuswb   xmm0, xmm0           
+    packuswb   xmm0, xmm0  
     movd       [edi], xmm0
 
  xloop99:
@@ -1293,13 +1330,15 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 }
 
 
-__declspec(naked)
-void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
-                           int dst_width, int x, int dx) {
+__declspec(naked) void ScaleARGBColsUp2_SSE2(uint8_t* dst_argb,
+                                             const uint8_t* src_argb,
+                                             int dst_width,
+                                             int x,
+                                             int dx) {
   __asm {
-    mov        edx, [esp + 4]    
-    mov        eax, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        edx, [esp + 4]  
+    mov        eax, [esp + 8]  
+    mov        ecx, [esp + 12]  
 
   wloop:
     movdqu     xmm0, [eax]
@@ -1318,12 +1357,11 @@ void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
 }
 
 
-__declspec(naked)
-int FixedDiv_X86(int num, int div) {
+__declspec(naked) int FixedDiv_X86(int num, int div) {
   __asm {
-    mov        eax, [esp + 4]    
-    cdq                          
-    shld       edx, eax, 16      
+    mov        eax, [esp + 4]  
+    cdq  
+    shld       edx, eax, 16  
     shl        eax, 16
     idiv       dword ptr [esp + 8]
     ret
@@ -1331,13 +1369,12 @@ int FixedDiv_X86(int num, int div) {
 }
 
 
-__declspec(naked)
-int FixedDiv1_X86(int num, int div) {
+__declspec(naked) int FixedDiv1_X86(int num, int div) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        ecx, [esp + 8]    
-    cdq                          
-    shld       edx, eax, 16      
+    mov        eax, [esp + 4]  
+    mov        ecx, [esp + 8]  
+    cdq  
+    shld       edx, eax, 16  
     shl        eax, 16
     sub        eax, 0x00010001
     sbb        edx, 0

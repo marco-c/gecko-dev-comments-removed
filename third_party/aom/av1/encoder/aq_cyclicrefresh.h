@@ -13,6 +13,8 @@
 #define AOM_AV1_ENCODER_AQ_CYCLICREFRESH_H_
 
 #include "av1/common/blockd.h"
+#include "av1/encoder/block.h"
+#include "av1/encoder/tokenize.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,9 +29,103 @@ extern "C" {
 
 #define CR_MAX_RATE_TARGET_RATIO 4.0
 
+
+
+
+
+struct CYCLIC_REFRESH {
+  
+
+
+
+  int percent_refresh;
+
+  
+
+
+  int percent_refresh_adjustment;
+
+  
+
+
+  int max_qdelta_perc;
+  
+
+
+  int sb_index;
+  
+
+
+  int last_sb_index;
+  
+
+
+
+
+  int time_for_refresh;
+  
+
+
+  int target_num_seg_blocks;
+  
+
+
+
+  int actual_num_seg1_blocks;
+  
+
+
+
+  int actual_num_seg2_blocks;
+  
+
+
+  int rdmult;
+  
+
+
+  int8_t *map;
+  
+
+
+
+  int64_t thresh_rate_sb;
+  
+
+
+
+  int64_t thresh_dist_sb;
+  
+
+
+
+  int16_t motion_thresh;
+  
+
+
+  double rate_ratio_qdelta;
+
+  
+
+
+  double rate_ratio_qdelta_adjustment;
+
+  
+
+
+  int rate_boost_fac;
+
+  
+  int qindex_delta[3];
+  int apply_cyclic_refresh;
+  int skip_over4x4;
+  int counter_encode_maxq_scene_change;
+  int use_block_sad_scene_det;
+  
+};
+
 struct AV1_COMP;
 
-struct CYCLIC_REFRESH;
 typedef struct CYCLIC_REFRESH CYCLIC_REFRESH;
 
 CYCLIC_REFRESH *av1_cyclic_refresh_alloc(int mi_rows, int mi_cols);
@@ -38,8 +134,37 @@ void av1_cyclic_refresh_free(CYCLIC_REFRESH *cr);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 int av1_cyclic_refresh_estimate_bits_at_q(const struct AV1_COMP *cpi,
                                           double correction_factor);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -49,26 +174,133 @@ int av1_cyclic_refresh_rc_bits_per_mb(const struct AV1_COMP *cpi, int i,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av1_cyclic_reset_segment_skip(const struct AV1_COMP *cpi,
+                                   MACROBLOCK *const x, int mi_row, int mi_col,
+                                   BLOCK_SIZE bsize, RUN_TYPE dry_run);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void av1_cyclic_refresh_update_segment(const struct AV1_COMP *cpi,
-                                       MB_MODE_INFO *const mbmi, int mi_row,
+                                       MACROBLOCK *const x, int mi_row,
                                        int mi_col, BLOCK_SIZE bsize,
-                                       int64_t rate, int64_t dist, int skip);
+                                       int64_t rate, int64_t dist, int skip,
+                                       RUN_TYPE dry_run);
 
 
 
-void av1_cyclic_refresh_update__map(struct AV1_COMP *const cpi);
 
 
-void av1_cyclic_refresh_postencode(struct AV1_COMP *const cpi);
+
+
+
+
+
+
+
+
+
+
+void av1_init_cyclic_refresh_counters(MACROBLOCK *const x);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av1_accumulate_cyclic_refresh_counters(
+    CYCLIC_REFRESH *const cyclic_refresh, const MACROBLOCK *const x);
+
+
+
+
+
+
+
+
+
 
 
 void av1_cyclic_refresh_set_golden_update(struct AV1_COMP *const cpi);
 
 
-void av1_cyclic_refresh_check_golden_update(struct AV1_COMP *const cpi);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void av1_cyclic_refresh_update_parameters(struct AV1_COMP *const cpi);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void av1_cyclic_refresh_setup(struct AV1_COMP *const cpi);
@@ -76,6 +308,8 @@ void av1_cyclic_refresh_setup(struct AV1_COMP *const cpi);
 int av1_cyclic_refresh_get_rdmult(const CYCLIC_REFRESH *cr);
 
 void av1_cyclic_refresh_reset_resize(struct AV1_COMP *const cpi);
+
+int av1_cyclic_refresh_disable_lf_cdef(struct AV1_COMP *const cpi);
 
 static INLINE int cyclic_refresh_segment_id_boosted(int segment_id) {
   return segment_id == CR_SEGMENT_ID_BOOST1 ||

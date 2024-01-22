@@ -9,6 +9,9 @@
 
 
 
+
+
+
 #ifndef AOM_AV1_ENCODER_PALETTE_H_
 #define AOM_AV1_ENCODER_PALETTE_H_
 
@@ -18,29 +21,45 @@
 extern "C" {
 #endif
 
-#define AV1_K_MEANS_RENAME(func, dim) func##_dim##dim
+struct AV1_COMP;
+struct PICK_MODE_CONTEXT;
+struct macroblock;
 
-void AV1_K_MEANS_RENAME(av1_calc_indices, 1)(const int *data,
-                                             const int *centroids,
-                                             uint8_t *indices, int n, int k);
-void AV1_K_MEANS_RENAME(av1_calc_indices, 2)(const int *data,
-                                             const int *centroids,
-                                             uint8_t *indices, int n, int k);
-void AV1_K_MEANS_RENAME(av1_k_means, 1)(const int *data, int *centroids,
+
+#define AV1_K_MEANS_RENAME(func, dim) func##_dim##dim##_c
+
+void AV1_K_MEANS_RENAME(av1_k_means, 1)(const int16_t *data, int16_t *centroids,
                                         uint8_t *indices, int n, int k,
                                         int max_itr);
-void AV1_K_MEANS_RENAME(av1_k_means, 2)(const int *data, int *centroids,
+void AV1_K_MEANS_RENAME(av1_k_means, 2)(const int16_t *data, int16_t *centroids,
                                         uint8_t *indices, int n, int k,
                                         int max_itr);
 
 
 
-static INLINE void av1_calc_indices(const int *data, const int *centroids,
-                                    uint8_t *indices, int n, int k, int dim) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static INLINE void av1_calc_indices(const int16_t *data,
+                                    const int16_t *centroids, uint8_t *indices,
+                                    int n, int k, int dim) {
+  assert(n > 0);
+  assert(k > 0);
   if (dim == 1) {
-    AV1_K_MEANS_RENAME(av1_calc_indices, 1)(data, centroids, indices, n, k);
+    av1_calc_indices_dim1(data, centroids, indices, NULL, n, k);
   } else if (dim == 2) {
-    AV1_K_MEANS_RENAME(av1_calc_indices, 2)(data, centroids, indices, n, k);
+    av1_calc_indices_dim2(data, centroids, indices, NULL, n, k);
   } else {
     assert(0 && "Untemplated k means dimension");
   }
@@ -50,9 +69,27 @@ static INLINE void av1_calc_indices(const int *data, const int *centroids,
 
 
 
-static INLINE void av1_k_means(const int *data, int *centroids,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static INLINE void av1_k_means(const int16_t *data, int16_t *centroids,
                                uint8_t *indices, int n, int k, int dim,
                                int max_itr) {
+  assert(n > 0);
+  assert(k > 0);
   if (dim == 1) {
     AV1_K_MEANS_RENAME(av1_k_means, 1)(data, centroids, indices, n, k, max_itr);
   } else if (dim == 2) {
@@ -66,7 +103,27 @@ static INLINE void av1_k_means(const int *data, int *centroids,
 
 
 
-int av1_remove_duplicates(int *centroids, int num_centroids);
+
+
+
+
+
+
+
+
+int av1_remove_duplicates(int16_t *centroids, int num_centroids);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -77,17 +134,79 @@ int av1_index_color_cache(const uint16_t *color_cache, int n_cache,
 
 
 
+
+
+
+
+
+
+
+
+
+
 int av1_get_palette_delta_bits_v(const PALETTE_MODE_INFO *const pmi,
                                  int bit_depth, int *zero_count, int *min_bits);
 
 
+
+
+
+
+
+
+
+
+
+
 int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi,
-                             uint16_t *color_cache, int n_cache, int bit_depth);
+                             const uint16_t *color_cache, int n_cache,
+                             int bit_depth);
+
+
+
+
+
+
+
+
+
+
 
 
 int av1_palette_color_cost_uv(const PALETTE_MODE_INFO *const pmi,
-                              uint16_t *color_cache, int n_cache,
+                              const uint16_t *color_cache, int n_cache,
                               int bit_depth);
+
+
+
+
+
+
+
+void av1_rd_pick_palette_intra_sby(
+    const struct AV1_COMP *cpi, struct macroblock *x, BLOCK_SIZE bsize,
+    int dc_mode_cost, MB_MODE_INFO *best_mbmi, uint8_t *best_palette_color_map,
+    int64_t *best_rd, int *rate, int *rate_tokenonly, int64_t *distortion,
+    uint8_t *skippable, int *beat_best_rd, struct PICK_MODE_CONTEXT *ctx,
+    uint8_t *best_blk_skip, uint8_t *tx_type_map);
+
+
+
+
+
+
+
+void av1_rd_pick_palette_intra_sbuv(const struct AV1_COMP *cpi,
+                                    struct macroblock *x, int dc_mode_cost,
+                                    uint8_t *best_palette_color_map,
+                                    MB_MODE_INFO *const best_mbmi,
+                                    int64_t *best_rd, int *rate,
+                                    int *rate_tokenonly, int64_t *distortion,
+                                    uint8_t *skippable);
+
+
+
+void av1_restore_uv_color_map(const struct AV1_COMP *cpi, struct macroblock *x);
 
 #ifdef __cplusplus
 }  

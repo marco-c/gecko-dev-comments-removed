@@ -82,16 +82,16 @@ static const BLOCK_SIZE subsize_lookup[EXT_PARTITION_TYPES][SQR_BLOCK_SIZES] = {
     BLOCK_INVALID, BLOCK_4X4, BLOCK_8X8,
     BLOCK_16X16, BLOCK_32X32, BLOCK_64X64
   }, {  
-    BLOCK_INVALID, BLOCK_8X4, BLOCK_16X8,
+    BLOCK_INVALID, BLOCK_INVALID, BLOCK_16X8,
     BLOCK_32X16, BLOCK_64X32, BLOCK_128X64
   }, {  
-    BLOCK_INVALID, BLOCK_8X4, BLOCK_16X8,
+    BLOCK_INVALID, BLOCK_INVALID, BLOCK_16X8,
     BLOCK_32X16, BLOCK_64X32, BLOCK_128X64
   }, {  
-    BLOCK_INVALID, BLOCK_4X8, BLOCK_8X16,
+    BLOCK_INVALID, BLOCK_INVALID, BLOCK_8X16,
     BLOCK_16X32, BLOCK_32X64, BLOCK_64X128
   }, {  
-    BLOCK_INVALID, BLOCK_4X8, BLOCK_8X16,
+    BLOCK_INVALID, BLOCK_INVALID, BLOCK_8X16,
     BLOCK_16X32, BLOCK_32X64, BLOCK_64X128
   }, {  
     BLOCK_INVALID, BLOCK_INVALID, BLOCK_16X4,
@@ -258,8 +258,18 @@ static const int tx_size_wide_log2[TX_SIZES_ALL] = {
 };
 
 
+static const int tx_size_wide_unit_log2[TX_SIZES_ALL] = {
+  0, 1, 2, 3, 4, 0, 1, 1, 2, 2, 3, 3, 4, 0, 2, 1, 3, 2, 4,
+};
+
+
 static const int tx_size_high_log2[TX_SIZES_ALL] = {
   2, 3, 4, 5, 6, 3, 2, 4, 3, 5, 4, 6, 5, 4, 2, 5, 3, 6, 4,
+};
+
+
+static const int tx_size_high_unit_log2[TX_SIZES_ALL] = {
+  0, 1, 2, 3, 4, 1, 0, 2, 1, 3, 2, 4, 3, 2, 0, 3, 1, 4, 2,
 };
 
 static const int tx_size_2d[TX_SIZES_ALL + 1] = {
@@ -355,7 +365,6 @@ static const int8_t txsize_log2_minus4[TX_SIZES_ALL] = {
   5,  
 };
 
-
 static const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES] = {
   TX_4X4,    
   TX_64X64,  
@@ -364,33 +373,7 @@ static const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES] = {
 
 
 
-static const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES_ALL][2][2] = {
-  
-  
-  { { BLOCK_4X4,     BLOCK_4X4 },     { BLOCK_4X4,     BLOCK_4X4 } },
-  { { BLOCK_4X8,     BLOCK_4X4 },     { BLOCK_INVALID, BLOCK_4X4 } },
-  { { BLOCK_8X4,     BLOCK_INVALID }, { BLOCK_4X4,     BLOCK_4X4 } },
-  { { BLOCK_8X8,     BLOCK_8X4 },     { BLOCK_4X8,     BLOCK_4X4 } },
-  { { BLOCK_8X16,    BLOCK_8X8 },     { BLOCK_INVALID, BLOCK_4X8 } },
-  { { BLOCK_16X8,    BLOCK_INVALID }, { BLOCK_8X8,     BLOCK_8X4 } },
-  { { BLOCK_16X16,   BLOCK_16X8 },    { BLOCK_8X16,    BLOCK_8X8 } },
-  { { BLOCK_16X32,   BLOCK_16X16 },   { BLOCK_INVALID, BLOCK_8X16 } },
-  { { BLOCK_32X16,   BLOCK_INVALID }, { BLOCK_16X16,   BLOCK_16X8 } },
-  { { BLOCK_32X32,   BLOCK_32X16 },   { BLOCK_16X32,   BLOCK_16X16 } },
-  { { BLOCK_32X64,   BLOCK_32X32 },   { BLOCK_INVALID, BLOCK_16X32 } },
-  { { BLOCK_64X32,   BLOCK_INVALID }, { BLOCK_32X32,   BLOCK_32X16 } },
-  { { BLOCK_64X64,   BLOCK_64X32 },   { BLOCK_32X64,   BLOCK_32X32 } },
-  { { BLOCK_64X128,  BLOCK_64X64 },   { BLOCK_INVALID, BLOCK_32X64 } },
-  { { BLOCK_128X64,  BLOCK_INVALID }, { BLOCK_64X64,   BLOCK_64X32 } },
-  { { BLOCK_128X128, BLOCK_128X64 },  { BLOCK_64X128,  BLOCK_64X64 } },
-  { { BLOCK_4X16,    BLOCK_4X8 },     { BLOCK_INVALID, BLOCK_4X8 } },
-  { { BLOCK_16X4,    BLOCK_INVALID }, { BLOCK_8X4,     BLOCK_8X4 } },
-  { { BLOCK_8X32,    BLOCK_8X16 },    { BLOCK_INVALID, BLOCK_4X16 } },
-  { { BLOCK_32X8,    BLOCK_INVALID }, { BLOCK_16X8,    BLOCK_16X4 } },
-  { { BLOCK_16X64,   BLOCK_16X32 },   { BLOCK_INVALID, BLOCK_8X32 } },
-  { { BLOCK_64X16,   BLOCK_INVALID }, { BLOCK_32X16,   BLOCK_32X8 } }
-};
-
+extern const BLOCK_SIZE av1_ss_size_lookup[BLOCK_SIZES_ALL][2][2];
 
 
 
@@ -434,9 +417,12 @@ static const int intra_mode_context[INTRA_MODES] = {
 static const int quant_dist_weight[4][2] = {
   { 2, 3 }, { 2, 5 }, { 2, 7 }, { 1, MAX_FRAME_DISTANCE }
 };
-static const int quant_dist_lookup_table[2][4][2] = {
-  { { 9, 7 }, { 11, 5 }, { 12, 4 }, { 13, 3 } },
-  { { 7, 9 }, { 5, 11 }, { 4, 12 }, { 3, 13 } },
+
+static const int quant_dist_lookup_table[4][2] = {
+  { 9, 7 },
+  { 11, 5 },
+  { 12, 4 },
+  { 13, 3 },
 };
 
 #ifdef __cplusplus

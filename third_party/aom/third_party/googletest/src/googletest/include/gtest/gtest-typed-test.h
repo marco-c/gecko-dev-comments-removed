@@ -29,8 +29,10 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
-#define GTEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
+
+
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
 
 
 
@@ -55,7 +57,7 @@ class FooTest : public testing::Test {
 
 
 typedef testing::Types<char, int, unsigned int> MyTypes;
-TYPED_TEST_CASE(FooTest, MyTypes);
+TYPED_TEST_SUITE(FooTest, MyTypes);
 
 
 
@@ -82,6 +84,24 @@ TYPED_TEST(FooTest, DoesBlah) {
 
 TYPED_TEST(FooTest, HasPropertyA) { ... }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif  
 
 
@@ -110,7 +130,7 @@ class FooTest : public testing::Test {
 
 
 
-TYPED_TEST_CASE_P(FooTest);
+TYPED_TEST_SUITE_P(FooTest);
 
 
 
@@ -126,8 +146,8 @@ TYPED_TEST_P(FooTest, HasPropertyA) { ... }
 
 
 
-REGISTER_TYPED_TEST_CASE_P(FooTest,
-                           DoesBlah, HasPropertyA);
+REGISTER_TYPED_TEST_SUITE_P(FooTest,
+                            DoesBlah, HasPropertyA);
 
 
 
@@ -138,7 +158,12 @@ REGISTER_TYPED_TEST_CASE_P(FooTest,
 
 
 typedef testing::Types<char, int, unsigned int> MyTypes;
-INSTANTIATE_TYPED_TEST_CASE_P(My, FooTest, MyTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(My, FooTest, MyTypes);
+
+
+
+
+
 
 
 
@@ -146,118 +171,161 @@ INSTANTIATE_TYPED_TEST_CASE_P(My, FooTest, MyTypes);
 
 #endif  
 
+#include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-port.h"
 #include "gtest/internal/gtest-type-util.h"
 
 
 
-#if GTEST_HAS_TYPED_TEST
 
 
 
 
-
-# define GTEST_TYPE_PARAMS_(TestCaseName) gtest_type_params_##TestCaseName##_
-
+#define GTEST_TYPE_PARAMS_(TestSuiteName) gtest_type_params_##TestSuiteName##_
 
 
 
-# define TYPED_TEST_CASE(CaseName, Types) \
-  typedef ::testing::internal::TypeList< Types >::type \
-      GTEST_TYPE_PARAMS_(CaseName)
+#define GTEST_NAME_GENERATOR_(TestSuiteName) \
+  gtest_type_params_##TestSuiteName##_NameGenerator
 
-# define TYPED_TEST(CaseName, TestName) \
-  template <typename gtest_TypeParam_> \
-  class GTEST_TEST_CLASS_NAME_(CaseName, TestName) \
-      : public CaseName<gtest_TypeParam_> { \
-   private: \
-    typedef CaseName<gtest_TypeParam_> TestFixture; \
-    typedef gtest_TypeParam_ TypeParam; \
-    virtual void TestBody(); \
-  }; \
-  bool gtest_##CaseName##_##TestName##_registered_ GTEST_ATTRIBUTE_UNUSED_ = \
-      ::testing::internal::TypeParameterizedTest< \
-          CaseName, \
-          ::testing::internal::TemplateSel< \
-              GTEST_TEST_CLASS_NAME_(CaseName, TestName)>, \
-          GTEST_TYPE_PARAMS_(CaseName)>::Register(\
-              "", ::testing::internal::CodeLocation(__FILE__, __LINE__), \
-              #CaseName, #TestName, 0); \
-  template <typename gtest_TypeParam_> \
-  void GTEST_TEST_CLASS_NAME_(CaseName, TestName)<gtest_TypeParam_>::TestBody()
+#define TYPED_TEST_SUITE(CaseName, Types, ...)                          \
+  typedef ::testing::internal::GenerateTypeList<Types>::type            \
+      GTEST_TYPE_PARAMS_(CaseName);                                     \
+  typedef ::testing::internal::NameGeneratorSelector<__VA_ARGS__>::type \
+  GTEST_NAME_GENERATOR_(CaseName)
 
+#define TYPED_TEST(CaseName, TestName)                                        \
+  static_assert(sizeof(GTEST_STRINGIFY_(TestName)) > 1,                       \
+                "test-name must not be empty");                               \
+  template <typename gtest_TypeParam_>                                        \
+  class GTEST_TEST_CLASS_NAME_(CaseName, TestName)                            \
+      : public CaseName<gtest_TypeParam_> {                                   \
+   private:                                                                   \
+    typedef CaseName<gtest_TypeParam_> TestFixture;                           \
+    typedef gtest_TypeParam_ TypeParam;                                       \
+    void TestBody() override;                                                 \
+  };                                                                          \
+  static bool gtest_##CaseName##_##TestName##_registered_                     \
+      GTEST_ATTRIBUTE_UNUSED_ = ::testing::internal::TypeParameterizedTest<   \
+          CaseName,                                                           \
+          ::testing::internal::TemplateSel<GTEST_TEST_CLASS_NAME_(CaseName,   \
+                                                                  TestName)>, \
+          GTEST_TYPE_PARAMS_(                                                 \
+              CaseName)>::Register("",                                        \
+                                   ::testing::internal::CodeLocation(         \
+                                       __FILE__, __LINE__),                   \
+                                   GTEST_STRINGIFY_(CaseName),                \
+                                   GTEST_STRINGIFY_(TestName), 0,             \
+                                   ::testing::internal::GenerateNames<        \
+                                       GTEST_NAME_GENERATOR_(CaseName),       \
+                                       GTEST_TYPE_PARAMS_(CaseName)>());      \
+  template <typename gtest_TypeParam_>                                        \
+  void GTEST_TEST_CLASS_NAME_(CaseName,                                       \
+                              TestName)<gtest_TypeParam_>::TestBody()
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+#define TYPED_TEST_CASE                                                \
+  static_assert(::testing::internal::TypedTestCaseIsDeprecated(), ""); \
+  TYPED_TEST_SUITE
 #endif  
 
 
 
-#if GTEST_HAS_TYPED_TEST_P
 
 
 
 
 
-
-# define GTEST_CASE_NAMESPACE_(TestCaseName) \
-  gtest_case_##TestCaseName##_
+#define GTEST_SUITE_NAMESPACE_(TestSuiteName) gtest_suite_##TestSuiteName##_
 
 
 
 
 
-# define GTEST_TYPED_TEST_CASE_P_STATE_(TestCaseName) \
-  gtest_typed_test_case_p_state_##TestCaseName##_
+#define GTEST_TYPED_TEST_SUITE_P_STATE_(TestSuiteName) \
+  gtest_typed_test_suite_p_state_##TestSuiteName##_
 
 
 
 
 
-# define GTEST_REGISTERED_TEST_NAMES_(TestCaseName) \
-  gtest_registered_test_names_##TestCaseName##_
+#define GTEST_REGISTERED_TEST_NAMES_(TestSuiteName) \
+  gtest_registered_test_names_##TestSuiteName##_
 
 
 
 
-# define TYPED_TEST_CASE_P(CaseName) \
-  static ::testing::internal::TypedTestCasePState \
-      GTEST_TYPED_TEST_CASE_P_STATE_(CaseName)
-
-# define TYPED_TEST_P(CaseName, TestName) \
-  namespace GTEST_CASE_NAMESPACE_(CaseName) { \
-  template <typename gtest_TypeParam_> \
-  class TestName : public CaseName<gtest_TypeParam_> { \
-   private: \
-    typedef CaseName<gtest_TypeParam_> TestFixture; \
-    typedef gtest_TypeParam_ TypeParam; \
-    virtual void TestBody(); \
-  }; \
-  static bool gtest_##TestName##_defined_ GTEST_ATTRIBUTE_UNUSED_ = \
-      GTEST_TYPED_TEST_CASE_P_STATE_(CaseName).AddTestName(\
-          __FILE__, __LINE__, #CaseName, #TestName); \
-  } \
-  template <typename gtest_TypeParam_> \
-  void GTEST_CASE_NAMESPACE_(CaseName)::TestName<gtest_TypeParam_>::TestBody()
-
-# define REGISTER_TYPED_TEST_CASE_P(CaseName, ...) \
-  namespace GTEST_CASE_NAMESPACE_(CaseName) { \
-  typedef ::testing::internal::Templates<__VA_ARGS__>::type gtest_AllTests_; \
-  } \
-  static const char* const GTEST_REGISTERED_TEST_NAMES_(CaseName) = \
-      GTEST_TYPED_TEST_CASE_P_STATE_(CaseName).VerifyRegisteredTestNames(\
-          __FILE__, __LINE__, #__VA_ARGS__)
+#define TYPED_TEST_SUITE_P(SuiteName)              \
+  static ::testing::internal::TypedTestSuitePState \
+  GTEST_TYPED_TEST_SUITE_P_STATE_(SuiteName)
 
 
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+#define TYPED_TEST_CASE_P                                                 \
+  static_assert(::testing::internal::TypedTestCase_P_IsDeprecated(), ""); \
+  TYPED_TEST_SUITE_P
+#endif  
+
+#define TYPED_TEST_P(SuiteName, TestName)                             \
+  namespace GTEST_SUITE_NAMESPACE_(SuiteName) {                       \
+    template <typename gtest_TypeParam_>                              \
+    class TestName : public SuiteName<gtest_TypeParam_> {             \
+     private:                                                         \
+      typedef SuiteName<gtest_TypeParam_> TestFixture;                \
+      typedef gtest_TypeParam_ TypeParam;                             \
+      void TestBody() override;                                       \
+    };                                                                \
+    static bool gtest_##TestName##_defined_ GTEST_ATTRIBUTE_UNUSED_ = \
+        GTEST_TYPED_TEST_SUITE_P_STATE_(SuiteName).AddTestName(       \
+            __FILE__, __LINE__, GTEST_STRINGIFY_(SuiteName),          \
+            GTEST_STRINGIFY_(TestName));                              \
+  }                                                                   \
+  template <typename gtest_TypeParam_>                                \
+  void GTEST_SUITE_NAMESPACE_(                                        \
+      SuiteName)::TestName<gtest_TypeParam_>::TestBody()
 
 
-# define INSTANTIATE_TYPED_TEST_CASE_P(Prefix, CaseName, Types) \
-  bool gtest_##Prefix##_##CaseName GTEST_ATTRIBUTE_UNUSED_ = \
-      ::testing::internal::TypeParameterizedTestCase<CaseName, \
-          GTEST_CASE_NAMESPACE_(CaseName)::gtest_AllTests_, \
-          ::testing::internal::TypeList< Types >::type>::Register(\
-              #Prefix, \
-              ::testing::internal::CodeLocation(__FILE__, __LINE__), \
-              &GTEST_TYPED_TEST_CASE_P_STATE_(CaseName), \
-              #CaseName, GTEST_REGISTERED_TEST_NAMES_(CaseName))
+#define REGISTER_TYPED_TEST_SUITE_P(SuiteName, ...)                         \
+  namespace GTEST_SUITE_NAMESPACE_(SuiteName) {                             \
+    typedef ::testing::internal::Templates<__VA_ARGS__> gtest_AllTests_;    \
+  }                                                                         \
+  static const char* const GTEST_REGISTERED_TEST_NAMES_(                    \
+      SuiteName) GTEST_ATTRIBUTE_UNUSED_ =                                  \
+      GTEST_TYPED_TEST_SUITE_P_STATE_(SuiteName).VerifyRegisteredTestNames( \
+          GTEST_STRINGIFY_(SuiteName), __FILE__, __LINE__, #__VA_ARGS__)
 
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+#define REGISTER_TYPED_TEST_CASE_P                                           \
+  static_assert(::testing::internal::RegisterTypedTestCase_P_IsDeprecated(), \
+                "");                                                         \
+  REGISTER_TYPED_TEST_SUITE_P
+#endif  
+
+#define INSTANTIATE_TYPED_TEST_SUITE_P(Prefix, SuiteName, Types, ...)     \
+  static_assert(sizeof(GTEST_STRINGIFY_(Prefix)) > 1,                     \
+                "test-suit-prefix must not be empty");                    \
+  static bool gtest_##Prefix##_##SuiteName GTEST_ATTRIBUTE_UNUSED_ =      \
+      ::testing::internal::TypeParameterizedTestSuite<                    \
+          SuiteName, GTEST_SUITE_NAMESPACE_(SuiteName)::gtest_AllTests_,  \
+          ::testing::internal::GenerateTypeList<Types>::type>::           \
+          Register(GTEST_STRINGIFY_(Prefix),                              \
+                   ::testing::internal::CodeLocation(__FILE__, __LINE__), \
+                   &GTEST_TYPED_TEST_SUITE_P_STATE_(SuiteName),           \
+                   GTEST_STRINGIFY_(SuiteName),                           \
+                   GTEST_REGISTERED_TEST_NAMES_(SuiteName),               \
+                   ::testing::internal::GenerateNames<                    \
+                       ::testing::internal::NameGeneratorSelector<        \
+                           __VA_ARGS__>::type,                            \
+                       ::testing::internal::GenerateTypeList<Types>::type>())
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+#define INSTANTIATE_TYPED_TEST_CASE_P                                      \
+  static_assert(                                                           \
+      ::testing::internal::InstantiateTypedTestCase_P_IsDeprecated(), ""); \
+  INSTANTIATE_TYPED_TEST_SUITE_P
 #endif  
 
 #endif  

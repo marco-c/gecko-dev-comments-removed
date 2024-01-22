@@ -43,12 +43,19 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
-#define GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
+
+
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
 
 #include <limits>
+#include <memory>
+#include <sstream>
 
 #include "gtest/internal/gtest-port.h"
+
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 
 
@@ -102,17 +109,10 @@ class GTEST_API_ Message {
     *ss_ << str;
   }
 
-#if GTEST_OS_SYMBIAN
   
   template <typename T>
-  inline Message& operator <<(const T& value) {
-    StreamHelper(typename internal::is_pointer<T>::type(), value);
-    return *this;
-  }
-#else
-  
-  template <typename T>
-  inline Message& operator <<(const T& val) {
+  inline Message& operator<<(const T& val) {
+        
     
     
     
@@ -126,8 +126,7 @@ class GTEST_API_ Message {
     
     
     
-    
-    using ::operator <<;
+    using ::operator<<;
     *ss_ << val;
     return *this;
   }
@@ -146,15 +145,14 @@ class GTEST_API_ Message {
   
   
   template <typename T>
-  inline Message& operator <<(T* const& pointer) {  
-    if (pointer == NULL) {
+  inline Message& operator<<(T* const& pointer) {  
+    if (pointer == nullptr) {
       *ss_ << "(null)";
     } else {
       *ss_ << pointer;
     }
     return *this;
   }
-#endif  
 
   
   
@@ -162,31 +160,23 @@ class GTEST_API_ Message {
   
   
   
-  Message& operator <<(BasicNarrowIoManip val) {
+  Message& operator<<(BasicNarrowIoManip val) {
     *ss_ << val;
     return *this;
   }
 
   
-  Message& operator <<(bool b) {
-    return *this << (b ? "true" : "false");
-  }
+  Message& operator<<(bool b) { return *this << (b ? "true" : "false"); }
 
   
   
-  Message& operator <<(const wchar_t* wide_c_str);
-  Message& operator <<(wchar_t* wide_c_str);
+  Message& operator<<(const wchar_t* wide_c_str);
+  Message& operator<<(wchar_t* wide_c_str);
 
 #if GTEST_HAS_STD_WSTRING
   
   
-  Message& operator <<(const ::std::wstring& wstr);
-#endif  
-
-#if GTEST_HAS_GLOBAL_WSTRING
-  
-  
-  Message& operator <<(const ::wstring& wstr);
+  Message& operator<<(const ::std::wstring& wstr);
 #endif  
 
   
@@ -196,32 +186,8 @@ class GTEST_API_ Message {
   std::string GetString() const;
 
  private:
-
-#if GTEST_OS_SYMBIAN
   
-  
-  
-  
-  template <typename T>
-  inline void StreamHelper(internal::true_type , T* pointer) {
-    if (pointer == NULL) {
-      *ss_ << "(null)";
-    } else {
-      *ss_ << pointer;
-    }
-  }
-  template <typename T>
-  inline void StreamHelper(internal::false_type ,
-                           const T& value) {
-    
-    
-    using ::operator <<;
-    *ss_ << value;
-  }
-#endif  
-
-  
-  const internal::scoped_ptr< ::std::stringstream> ss_;
+  const std::unique_ptr< ::std::stringstream> ss_;
 
   
   
@@ -229,7 +195,7 @@ class GTEST_API_ Message {
 };
 
 
-inline std::ostream& operator <<(std::ostream& os, const Message& sb) {
+inline std::ostream& operator<<(std::ostream& os, const Message& sb) {
   return os << sb.GetString();
 }
 
@@ -246,5 +212,7 @@ std::string StreamableToString(const T& streamable) {
 
 }  
 }  
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 #endif  

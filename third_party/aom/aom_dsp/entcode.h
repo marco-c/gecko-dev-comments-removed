@@ -14,7 +14,7 @@
 
 #include <limits.h>
 #include <stddef.h>
-#include "av1/common/odintrin.h"
+#include "aom_dsp/odintrin.h"
 #include "aom_dsp/prob.h"
 
 #define EC_PROB_SHIFT 6
@@ -23,6 +23,7 @@
 
 
 typedef uint32_t od_ec_window;
+
 
 #define OD_EC_WINDOW_SIZE ((int)sizeof(od_ec_window) * CHAR_BIT)
 

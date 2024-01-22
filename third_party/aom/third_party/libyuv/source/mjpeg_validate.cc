@@ -18,84 +18,54 @@ extern "C" {
 #endif
 
 
-
-
-#ifdef ENABLE_SCASB
-
-
-__declspec(naked)
-const uint8* ScanRow_ERMS(const uint8* src, uint32 val, int count) {
-  __asm {
-    mov        edx, edi
-    mov        edi, [esp + 4]   
-    mov        eax, [esp + 8]   
-    mov        ecx, [esp + 12]  
-    repne scasb
-    jne        sr99
-    mov        eax, edi
-    sub        eax, 1
-    mov        edi, edx
-    ret
-
-  sr99:
-    mov        eax, 0
-    mov        edi, edx
-    ret
-  }
-}
-#endif
-
-
-static LIBYUV_BOOL ScanEOI(const uint8* sample, size_t sample_size) {
-  const uint8* end = sample + sample_size - 1;
-  const uint8* it = sample;
-  for (;;) {
-#ifdef ENABLE_SCASB
-    it = ScanRow_ERMS(it, 0xff, end - it);
-#else
-    it = static_cast<const uint8*>(memchr(it, 0xff, end - it));
-#endif
-    if (it == NULL) {
-      break;
+static LIBYUV_BOOL ScanEOI(const uint8_t* src_mjpg, size_t src_size_mjpg) {
+  if (src_size_mjpg >= 2) {
+    const uint8_t* end = src_mjpg + src_size_mjpg - 1;
+    const uint8_t* it = src_mjpg;
+    while (it < end) {
+      
+      it = (const uint8_t*)(memchr(it, 0xff, end - it));
+      if (it == NULL) {
+        break;
+      }
+      if (it[1] == 0xd9) {
+        return LIBYUV_TRUE;  
+      }
+      ++it;  
     }
-    if (it[1] == 0xd9) {
-      return LIBYUV_TRUE;  
-    }
-    ++it;  
   }
   
   return LIBYUV_FALSE;
 }
 
 
-LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
+LIBYUV_BOOL ValidateJpeg(const uint8_t* src_mjpg, size_t src_size_mjpg) {
+  
+  const size_t kMaxJpegSize = 0x7fffffffull;
   const size_t kBackSearchSize = 1024;
-  if (sample_size < 64) {
-    
-    return LIBYUV_FALSE;
-  }
-  if (sample[0] != 0xff || sample[1] != 0xd8) {  
+  if (src_size_mjpg < 64 || src_size_mjpg > kMaxJpegSize || !src_mjpg) {
     
     return LIBYUV_FALSE;
   }
   
-  sample += 2;
-  sample_size -= 2;
+  if (src_mjpg[0] != 0xff || src_mjpg[1] != 0xd8 || src_mjpg[2] != 0xff) {
+    
+    return LIBYUV_FALSE;
+  }
 
   
-  if (sample_size > kBackSearchSize) {
-    if (ScanEOI(sample + sample_size - kBackSearchSize, kBackSearchSize)) {
+  if (src_size_mjpg > kBackSearchSize) {
+    if (ScanEOI(src_mjpg + src_size_mjpg - kBackSearchSize, kBackSearchSize)) {
       return LIBYUV_TRUE;  
     }
     
-    sample_size = sample_size - kBackSearchSize + 1;
+    src_size_mjpg = src_size_mjpg - kBackSearchSize + 1;
   }
-  return ScanEOI(sample, sample_size);
-
+  
+  return ScanEOI(src_mjpg + 2, src_size_mjpg - 2);
 }
 
 #ifdef __cplusplus
 }  
 }  
 #endif
-

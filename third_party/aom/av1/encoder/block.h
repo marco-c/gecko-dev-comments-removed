@@ -9,365 +9,1426 @@
 
 
 
+
+
+
 #ifndef AOM_AV1_ENCODER_BLOCK_H_
 #define AOM_AV1_ENCODER_BLOCK_H_
 
+#include "av1/common/blockd.h"
 #include "av1/common/entropymv.h"
 #include "av1/common/entropy.h"
+#include "av1/common/enums.h"
 #include "av1/common/mvref_common.h"
-#include "av1/encoder/hash.h"
-#if CONFIG_DIST_8X8
-#include "aom/aomcx.h"
+
+#include "av1/encoder/enc_enums.h"
+#include "av1/encoder/mcomp_structs.h"
+#if !CONFIG_REALTIME_ONLY
+#include "av1/encoder/partition_cnn_weights.h"
 #endif
+
+#include "av1/encoder/hash_motion.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+#define MIN_TPL_BSIZE_1D 16
+
+#define MAX_TPL_BLK_IN_SB (MAX_SB_SIZE / MIN_TPL_BSIZE_1D)
+
+#define RD_RECORD_BUFFER_LEN 8
+
+
+#define MAX_TX_TYPE_PROB 1024
+
+
+#define COLOR_SENS_IDX(plane) ((plane)-1)
+
+
+#define COLLECT_NONRD_PICK_MODE_STAT 0
+
+
+#if COLLECT_NONRD_PICK_MODE_STAT
+#include "aom_ports/aom_timer.h"
+
+typedef struct _mode_search_stat_nonrd {
+  int32_t num_blocks[BLOCK_SIZES];
+  int64_t total_block_times[BLOCK_SIZES];
+  int32_t num_searches[BLOCK_SIZES][MB_MODE_COUNT];
+  int32_t num_nonskipped_searches[BLOCK_SIZES][MB_MODE_COUNT];
+  int64_t search_times[BLOCK_SIZES][MB_MODE_COUNT];
+  int64_t nonskipped_search_times[BLOCK_SIZES][MB_MODE_COUNT];
+  int64_t ms_time[BLOCK_SIZES][MB_MODE_COUNT];
+  int64_t ifs_time[BLOCK_SIZES][MB_MODE_COUNT];
+  int64_t model_rd_time[BLOCK_SIZES][MB_MODE_COUNT];
+  int64_t txfm_time[BLOCK_SIZES][MB_MODE_COUNT];
+  struct aom_usec_timer timer1;
+  struct aom_usec_timer timer2;
+  struct aom_usec_timer bsize_timer;
+} mode_search_stat_nonrd;
+#endif  
+
+
+
+
+
+
+
+
 typedef struct {
-  unsigned int sse;
-  int sum;
-  unsigned int var;
-} DIFF;
+  
+  BLOCK_SIZE min_partition_size;
+  
+  BLOCK_SIZE max_partition_size;
+
+  
+
+
+
+
+
+  
+  
+  int tpl_data_count;
+  
+  int64_t tpl_inter_cost[MAX_TPL_BLK_IN_SB * MAX_TPL_BLK_IN_SB];
+  
+  int64_t tpl_intra_cost[MAX_TPL_BLK_IN_SB * MAX_TPL_BLK_IN_SB];
+  
+  int_mv tpl_mv[MAX_TPL_BLK_IN_SB * MAX_TPL_BLK_IN_SB][INTER_REFS_PER_FRAME];
+  
+  int tpl_stride;
+  
+} SuperBlockEnc;
+
+
+
+typedef struct {
+  
+  MB_MODE_INFO mbmi;
+  
+  RD_STATS rd_cost;
+  
+  int64_t rd;
+  
+  int rate_y;
+  
+  int rate_uv;
+  
+  uint8_t color_index_map[MAX_SB_SQUARE];
+  
+  THR_MODES mode_index;
+} WinnerModeStats;
+
+
+
+
 
 typedef struct macroblock_plane {
-  DECLARE_ALIGNED(16, int16_t, src_diff[MAX_SB_SQUARE]);
+  
+  int16_t *src_diff;
+  
+  tran_low_t *dqcoeff;
+  
   tran_low_t *qcoeff;
+  
   tran_low_t *coeff;
+  
   uint16_t *eobs;
+  
   uint8_t *txb_entropy_ctx;
+  
   struct buf_2d src;
 
   
-  
+
+
+
+
+
   
   
   const int16_t *quant_fp_QTX;
+  
   const int16_t *round_fp_QTX;
+  
   const int16_t *quant_QTX;
-  const int16_t *quant_shift_QTX;
-  const int16_t *zbin_QTX;
+  
   const int16_t *round_QTX;
+  
+  const int16_t *quant_shift_QTX;
+  
+  const int16_t *zbin_QTX;
+  
   const int16_t *dequant_QTX;
+  
 } MACROBLOCK_PLANE;
 
-typedef struct {
-  int txb_skip_cost[TXB_SKIP_CONTEXTS][2];
-  int base_eob_cost[SIG_COEF_CONTEXTS_EOB][3];
-  int base_cost[SIG_COEF_CONTEXTS][4];
-  int eob_extra_cost[EOB_COEF_CONTEXTS][2];
-  int dc_sign_cost[DC_SIGN_CONTEXTS][2];
-  int lps_cost[LEVEL_CONTEXTS][COEFF_BASE_RANGE + 1];
-} LV_MAP_COEFF_COST;
+
+
+
 
 typedef struct {
+  
+  int txb_skip_cost[TXB_SKIP_CONTEXTS][2];
+  
+
+
+
+  int base_eob_cost[SIG_COEF_CONTEXTS_EOB][3];
+  
+
+
+
+  int base_cost[SIG_COEF_CONTEXTS][8];
+  
+
+
+
+  int eob_extra_cost[EOB_COEF_CONTEXTS][2];
+  
+  int dc_sign_cost[DC_SIGN_CONTEXTS][2];
+  
+  int lps_cost[LEVEL_CONTEXTS][COEFF_BASE_RANGE + 1 + COEFF_BASE_RANGE + 1];
+} LV_MAP_COEFF_COST;
+
+
+
+typedef struct {
+  
   int eob_cost[2][11];
 } LV_MAP_EOB_COST;
 
-typedef struct {
-  tran_low_t tcoeff[MAX_MB_PLANE][MAX_SB_SQUARE];
-  uint16_t eobs[MAX_MB_PLANE][MAX_SB_SQUARE / (TX_SIZE_W_MIN * TX_SIZE_H_MIN)];
-  uint8_t txb_skip_ctx[MAX_MB_PLANE]
-                      [MAX_SB_SQUARE / (TX_SIZE_W_MIN * TX_SIZE_H_MIN)];
-  int dc_sign_ctx[MAX_MB_PLANE]
-                 [MAX_SB_SQUARE / (TX_SIZE_W_MIN * TX_SIZE_H_MIN)];
-} CB_COEFF_BUFFER;
+
 
 typedef struct {
-  int16_t mode_context[MODE_CTX_REF_FRAMES];
   
   tran_low_t *tcoeff[MAX_MB_PLANE];
+  
   uint16_t *eobs[MAX_MB_PLANE];
-  uint8_t *txb_skip_ctx[MAX_MB_PLANE];
-  int *dc_sign_ctx[MAX_MB_PLANE];
+  
+
+
+
+
+
+  uint8_t *entropy_ctx[MAX_MB_PLANE];
+} CB_COEFF_BUFFER;
+
+
+
+typedef struct {
+  
+  
+  CANDIDATE_MV ref_mv_stack[MODE_CTX_REF_FRAMES][USABLE_REF_MV_STACK_SIZE];
+  
+  uint16_t weight[MODE_CTX_REF_FRAMES][USABLE_REF_MV_STACK_SIZE];
+  
   uint8_t ref_mv_count[MODE_CTX_REF_FRAMES];
-  CANDIDATE_MV ref_mv_stack[MODE_CTX_REF_FRAMES][MAX_REF_MV_STACK_SIZE];
+  
   int_mv global_mvs[REF_FRAMES];
-  int16_t compound_mode_context[MODE_CTX_REF_FRAMES];
+  
+  int16_t mode_context[MODE_CTX_REF_FRAMES];
 } MB_MODE_INFO_EXT;
 
-typedef struct {
-  int col_min;
-  int col_max;
-  int row_min;
-  int row_max;
-} MvLimits;
+
+
+
+
+
 
 typedef struct {
-  uint8_t best_palette_color_map[MAX_PALETTE_SQUARE];
-  int kmeans_data_buf[2 * MAX_PALETTE_SQUARE];
-} PALETTE_BUFFER;
+  
+  CANDIDATE_MV ref_mv_stack[USABLE_REF_MV_STACK_SIZE];
+  
+  uint16_t weight[USABLE_REF_MV_STACK_SIZE];
+  
+  uint8_t ref_mv_count;
+  
+  
+  int_mv global_mvs[REF_FRAMES];
+  
+  int16_t mode_context;
+  
+  uint16_t cb_offset[PLANE_TYPES];
+} MB_MODE_INFO_EXT_FRAME;
+
+
 
 typedef struct {
+  
   TX_SIZE tx_size;
+  
   TX_SIZE inter_tx_size[INTER_TX_SIZE_BUF_LEN];
+  
   uint8_t blk_skip[MAX_MIB_SIZE * MAX_MIB_SIZE];
-  TX_TYPE txk_type[TXK_TYPE_BUF_LEN];
+  
+  uint8_t tx_type_map[MAX_MIB_SIZE * MAX_MIB_SIZE];
+  
   RD_STATS rd_stats;
+  
   uint32_t hash_value;
 } MB_RD_INFO;
 
-#define RD_RECORD_BUFFER_LEN 8
+
+
+
+
+
+
 typedef struct {
-  MB_RD_INFO tx_rd_info[RD_RECORD_BUFFER_LEN];  
+  
+
+
+  MB_RD_INFO mb_rd_info[RD_RECORD_BUFFER_LEN];
+  
   int index_start;
+  
   int num;
-  CRC32C crc_calculator;  
+  
+  CRC32C crc_calculator;
 } MB_RD_RECORD;
 
-typedef struct {
-  int64_t dist;
-  int64_t sse;
-  int rate;
-  uint16_t eob;
-  TX_TYPE tx_type;
-  uint16_t entropy_context;
-  uint8_t txb_entropy_ctx;
-  uint8_t valid;
-  uint8_t fast;  
-} TXB_RD_INFO;
 
-#define TX_SIZE_RD_RECORD_BUFFER_LEN 256
-typedef struct {
-  uint32_t hash_vals[TX_SIZE_RD_RECORD_BUFFER_LEN];
-  TXB_RD_INFO tx_rd_info[TX_SIZE_RD_RECORD_BUFFER_LEN];
-  int index_start;
-  int num;
-} TXB_RD_RECORD;
+#define MAX_COMP_RD_STATS 64
 
-typedef struct tx_size_rd_info_node {
-  TXB_RD_INFO *rd_info_array;  
-  struct tx_size_rd_info_node *children[4];
-} TXB_RD_INFO_NODE;
-
-
-
-
-#define FIRST_PARTITION_PASS_SAMPLE_REGION 8
-#define FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2 3
-#define FIRST_PARTITION_PASS_STATS_TABLES                     \
-  (MAX_MIB_SIZE >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2) * \
-      (MAX_MIB_SIZE >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2)
-#define FIRST_PARTITION_PASS_STATS_STRIDE \
-  (MAX_MIB_SIZE_LOG2 - FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2)
-
-static INLINE int av1_first_partition_pass_stats_index(int mi_row, int mi_col) {
-  const int row =
-      (mi_row & MAX_MIB_MASK) >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2;
-  const int col =
-      (mi_col & MAX_MIB_MASK) >> FIRST_PARTITION_PASS_SAMPLE_REGION_LOG2;
-  return (row << FIRST_PARTITION_PASS_STATS_STRIDE) + col;
-}
 
 typedef struct {
-  uint8_t ref0_counts[REF_FRAMES];  
-  uint8_t ref1_counts[REF_FRAMES];  
-  int sample_counts;                
-} FIRST_PARTITION_PASS_STATS;
-
-#define MAX_INTERP_FILTER_STATS 64
-typedef struct {
-  InterpFilters filters;
+  
+  int32_t rate[COMPOUND_TYPES];
+  
+  int64_t dist[COMPOUND_TYPES];
+  
+  int32_t model_rate[COMPOUND_TYPES];
+  
+  int64_t model_dist[COMPOUND_TYPES];
+  
+  int comp_rs2[COMPOUND_TYPES];
+  
   int_mv mv[2];
-  int8_t ref_frames[2];
-  COMPOUND_TYPE comp_type;
-} INTERPOLATION_FILTER_STATS;
+  
+  MV_REFERENCE_FRAME ref_frames[2];
+  
+  PREDICTION_MODE mode;
+  
+  int_interpfilters filter;
+  
+  int ref_mv_idx;
+  
+  int is_global[2];
+  
+  INTERINTER_COMPOUND_DATA interinter_comp;
+} COMP_RD_STATS;
 
-typedef struct macroblock MACROBLOCK;
-struct macroblock {
+
+
+
+
+typedef struct {
+  
+
+
+
+  int32_t *wsrc;
+  
+
+
+
+  int32_t *mask;
+  
+
+
+
+  uint8_t *above_pred;
+  
+
+
+
+  uint8_t *left_pred;
+} OBMCBuffer;
+
+
+
+typedef struct {
+  
+  uint8_t best_palette_color_map[MAX_PALETTE_SQUARE];
+  
+  int16_t kmeans_data_buf[2 * MAX_PALETTE_SQUARE];
+} PALETTE_BUFFER;
+
+
+
+
+
+
+typedef struct {
+  
+  uint8_t *pred0;
+  
+  uint8_t *pred1;
+  
+  int16_t *residual1;
+  
+  int16_t *diff10;
+  
+  uint8_t *tmp_best_mask_buf;
+} CompoundTypeRdBuffers;
+
+
+
+
+typedef struct {
+#if !CONFIG_REALTIME_ONLY
+  
+  
+  
+
+
+
+  int quad_tree_idx;
+  
+  int cnn_output_valid;
+  
+  float cnn_buffer[CNN_OUT_BUF_SIZE];
+  
+  float log_q;
+#endif
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  uint8_t variance_low[105];
+} PartitionSearchInfo;
+
+
+enum {
+  
+
+
+  TX_PRUNE_NONE = 0,
+  
+
+
+  TX_PRUNE_LARGEST = 1,
+  
+
+
+  TX_PRUNE_SPLIT = 2,
+} UENUM1BYTE(TX_PRUNE_TYPE);
+
+
+
+
+
+
+typedef struct {
+  
+
+
+
+
+  int use_default_intra_tx_type;
+
+  
+  int default_inter_tx_type_prob_thresh;
+
+  
+  int prune_2d_txfm_mode;
+
+  
+
+
+
+  unsigned int coeff_opt_thresholds[2];
+  
+  unsigned int tx_domain_dist_threshold;
+  
+  TX_SIZE_SEARCH_METHOD tx_size_search_method;
+  
+  unsigned int use_transform_domain_distortion;
+  
+  unsigned int skip_txfm_level;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  TX_MODE tx_mode_search_type;
+
+  
+
+
+
+
+
+
+
+  unsigned int predict_dc_level;
+
+  
+
+
+
+  int use_qm_dist_metric;
+
+  
+
+
+
+  int mode_eval_type;
+
+#if !CONFIG_REALTIME_ONLY
+  
+  TX_PRUNE_TYPE nn_prune_depths_for_intra_tx;
+
+  
+
+
+
+
+  bool enable_nn_prune_intra_tx_depths;
+#endif
+} TxfmSearchParams;
+
+
+#define MAX_NUM_8X8_TXBS ((MAX_MIB_SIZE >> 1) * (MAX_MIB_SIZE >> 1))
+#define MAX_NUM_16X16_TXBS ((MAX_MIB_SIZE >> 2) * (MAX_MIB_SIZE >> 2))
+#define MAX_NUM_32X32_TXBS ((MAX_MIB_SIZE >> 3) * (MAX_MIB_SIZE >> 3))
+#define MAX_NUM_64X64_TXBS ((MAX_MIB_SIZE >> 4) * (MAX_MIB_SIZE >> 4))
+
+
+
+
+
+
+
+typedef struct {
+  
+  uint8_t skip_txfm;
+
+  
+
+
+
+
+
+
+  uint8_t blk_skip[MAX_MIB_SIZE * MAX_MIB_SIZE];
+
+  
+
+
+
+
+
+
+
+
+  uint8_t tx_type_map_[MAX_MIB_SIZE * MAX_MIB_SIZE];
+
+  
+  MB_RD_RECORD *mb_rd_record;
+
+  
+
+
+
+
+
+
+
+  
+  
+  unsigned int txb_split_count;
+#if CONFIG_SPEED_STATS
+  
+  unsigned int tx_search_count;
+#endif  
+} TxfmSearchInfo;
+#undef MAX_NUM_8X8_TXBS
+#undef MAX_NUM_16X16_TXBS
+#undef MAX_NUM_32X32_TXBS
+#undef MAX_NUM_64X64_TXBS
+
+
+
+
+
+
+typedef struct {
+  
+
+
+  
+  
+  int partition_cost[PARTITION_CONTEXTS][EXT_PARTITION_TYPES];
+  
+
+  
+
+
+  
+  
+  int mbmode_cost[BLOCK_SIZE_GROUPS][INTRA_MODES];
+  
+  int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
+  
+  int intra_uv_mode_cost[CFL_ALLOWED_TYPES][INTRA_MODES][UV_INTRA_MODES];
+  
+  int filter_intra_cost[BLOCK_SIZES_ALL][2];
+  
+  int filter_intra_mode_cost[FILTER_INTRA_MODES];
+  
+  int angle_delta_cost[DIRECTIONAL_MODES][2 * MAX_ANGLE_DELTA + 1];
+
+  
+  int cfl_cost[CFL_JOINT_SIGNS][CFL_PRED_PLANES][CFL_ALPHABET_SIZE];
+  
+
+  
+
+
+  
+  
+  int intrabc_cost[2];
+
+  
+  int palette_y_size_cost[PALATTE_BSIZE_CTXS][PALETTE_SIZES];
+  
+  int palette_uv_size_cost[PALATTE_BSIZE_CTXS][PALETTE_SIZES];
+  
+  int palette_y_color_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
+                          [PALETTE_COLORS];
+  
+  int palette_uv_color_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
+                           [PALETTE_COLORS];
+  
+  int palette_y_mode_cost[PALATTE_BSIZE_CTXS][PALETTE_Y_MODE_CONTEXTS][2];
+  
+  int palette_uv_mode_cost[PALETTE_UV_MODE_CONTEXTS][2];
+  
+
+  
+
+
+  
+  
+  int skip_mode_cost[SKIP_MODE_CONTEXTS][2];
+  
+  int newmv_mode_cost[NEWMV_MODE_CONTEXTS][2];
+  
+  int zeromv_mode_cost[GLOBALMV_MODE_CONTEXTS][2];
+  
+  int refmv_mode_cost[REFMV_MODE_CONTEXTS][2];
+  
+  int drl_mode_cost0[DRL_MODE_CONTEXTS][2];
+  
+
+  
+
+
+  
+  
+  int single_ref_cost[REF_CONTEXTS][SINGLE_REFS - 1][2];
+  
+  int comp_inter_cost[COMP_INTER_CONTEXTS][2];
+  
+  int comp_ref_type_cost[COMP_REF_TYPE_CONTEXTS]
+                        [CDF_SIZE(COMP_REFERENCE_TYPES)];
+  
+  int uni_comp_ref_cost[UNI_COMP_REF_CONTEXTS][UNIDIR_COMP_REFS - 1]
+                       [CDF_SIZE(2)];
+  
+
+
+
+  int comp_ref_cost[REF_CONTEXTS][FWD_REFS - 1][2];
+  
+
+
+
+  int comp_bwdref_cost[REF_CONTEXTS][BWD_REFS - 1][2];
+  
+
+  
+
+
+  
+  
+  int intra_inter_cost[INTRA_INTER_CONTEXTS][2];
+  
+  int inter_compound_mode_cost[INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES];
+  
+  int compound_type_cost[BLOCK_SIZES_ALL][MASKED_COMPOUND_TYPES];
+  
+  int wedge_idx_cost[BLOCK_SIZES_ALL][16];
+  
+  int interintra_cost[BLOCK_SIZE_GROUPS][2];
+  
+  int wedge_interintra_cost[BLOCK_SIZES_ALL][2];
+  
+  int interintra_mode_cost[BLOCK_SIZE_GROUPS][INTERINTRA_MODES];
+  
+
+  
+
+
+  
+  
+  int comp_idx_cost[COMP_INDEX_CONTEXTS][2];
+  
+  int comp_group_idx_cost[COMP_GROUP_IDX_CONTEXTS][2];
+  
+
+  
+
+
+  
+  
+  int motion_mode_cost[BLOCK_SIZES_ALL][MOTION_MODES];
+  
+  int motion_mode_cost1[BLOCK_SIZES_ALL][2];
+  
+  int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
+  
+
+  
+
+
+  
+  
+  int skip_txfm_cost[SKIP_CONTEXTS][2];
+  
+  int tx_size_cost[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES];
+  
+  int txfm_partition_cost[TXFM_PARTITION_CONTEXTS][2];
+  
+  int inter_tx_type_costs[EXT_TX_SETS_INTER][EXT_TX_SIZES][TX_TYPES];
+  
+  int intra_tx_type_costs[EXT_TX_SETS_INTRA][EXT_TX_SIZES][INTRA_MODES]
+                         [TX_TYPES];
+  
+
+  
+
+
+  
+  
+  int switchable_restore_cost[RESTORE_SWITCHABLE_TYPES];
+  
+  int wiener_restore_cost[2];
+  
+  int sgrproj_restore_cost[2];
+  
+
+  
+
+
+  
+  
+  int tmp_pred_cost[SEG_TEMPORAL_PRED_CTXS][2];
+  
+  int spatial_pred_cost[SPATIAL_PREDICTION_PROBS][MAX_SEGMENTS];
+  
+} ModeCosts;
+
+
+
+typedef struct {
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+  int nmv_joint_cost[MV_JOINTS];
+
+  
+  int nmv_cost_alloc[2][MV_VALS];
+  
+  int nmv_cost_hp_alloc[2][MV_VALS];
+  
+  int *nmv_cost[2];
+  
+  int *nmv_cost_hp[2];
+  
+  int **mv_cost_stack;
+  
+} MvCosts;
+
+
+
+typedef struct {
+  
+  int joint_mv[MV_JOINTS];
+
+  
+
+
+
+
+  int dv_costs_alloc[2][MV_VALS];
+
+  
+  int *dv_costs[2];
+} IntraBCMVCosts;
+
+
+
+typedef struct {
+  
+  LV_MAP_COEFF_COST coeff_costs[TX_SIZES][PLANE_TYPES];
+  
+  LV_MAP_EOB_COST eob_costs[7][2];
+} CoeffCosts;
+
+
+
+#define SINGLE_REF_MODES ((REF_FRAMES - 1) * 4)
+
+struct inter_modes_info;
+
+
+
+typedef struct {
+  
+  int num;
+  
+  int pts[16];
+  
+  int pts_inref[16];
+} WARP_SAMPLE_INFO;
+
+
+typedef enum {
+  kZeroSad = 0,
+  kVeryLowSad = 1,
+  kLowSad = 2,
+  kMedSad = 3,
+  kHighSad = 4
+} SOURCE_SAD;
+
+typedef struct {
+  
+  SOURCE_SAD source_sad_nonrd;
+  
+  SOURCE_SAD source_sad_rd;
+  int lighting_change;
+  int low_sumdiff;
+} CONTENT_STATE_SB;
+
+
+typedef struct {
+  uint16_t abs_dx_abs_dy_sum;
+  int8_t hist_bin_idx;
+  bool is_dx_zero;
+} PixelLevelGradientInfo;
+
+
+typedef struct {
+  double log_var;
+  int var;
+} Block4x4VarInfo;
+
+#ifndef NDEBUG
+typedef struct SetOffsetsLoc {
+  int mi_row;
+  int mi_col;
+  BLOCK_SIZE bsize;
+} SetOffsetsLoc;
+#endif  
+
+
+
+
+
+
+
+
+
+
+typedef struct macroblock {
+  
+
+
+  
+  
+
+
+
+
   struct macroblock_plane plane[MAX_MB_PLANE];
 
   
-  
-  
-  int rd_model;
 
-  
-  
-  
-  int cb_partition_scan;
 
-  FIRST_PARTITION_PASS_STATS
-  first_partition_pass_stats[FIRST_PARTITION_PASS_STATS_TABLES];
 
-  
-  INTERPOLATION_FILTER_STATS interp_filter_stats[2][MAX_INTERP_FILTER_STATS];
-  int interp_filter_stats_idx[2];
 
-  
-  int use_cb_search_range;
-
-  
-  MB_RD_RECORD mb_rd_record;
-
-  
-  TXB_RD_RECORD txb_rd_record_8X8[(MAX_MIB_SIZE >> 1) * (MAX_MIB_SIZE >> 1)];
-  TXB_RD_RECORD txb_rd_record_16X16[(MAX_MIB_SIZE >> 2) * (MAX_MIB_SIZE >> 2)];
-  TXB_RD_RECORD txb_rd_record_32X32[(MAX_MIB_SIZE >> 3) * (MAX_MIB_SIZE >> 3)];
-  TXB_RD_RECORD txb_rd_record_64X64[(MAX_MIB_SIZE >> 4) * (MAX_MIB_SIZE >> 4)];
-
-  
-  TXB_RD_RECORD txb_rd_record_intra;
 
   MACROBLOCKD e_mbd;
-  MB_MODE_INFO_EXT *mbmi_ext;
-  int skip_block;
+
+  
+
+
+
+
+  MB_MODE_INFO_EXT mbmi_ext;
+
+  
+
+
+
+
+  MB_MODE_INFO_EXT_FRAME *mbmi_ext_frame;
+
+  
+  FRAME_CONTEXT *row_ctx;
+  
+
+
+
+
+
+
+
+  FRAME_CONTEXT *tile_pb_ctx;
+
+  
+
+
+
+
+
+
+
+  CB_COEFF_BUFFER *cb_coef_buff;
+  
+  uint16_t cb_offset[PLANE_TYPES];
+
+  
+  OBMCBuffer obmc_buffer;
+  
+  PALETTE_BUFFER *palette_buffer;
+  
+  CompoundTypeRdBuffers comp_rd_buffer;
+  
+  CONV_BUF_TYPE *tmp_conv_dst;
+
+  
+
+
+
+
+
+
+
+
+  uint8_t *tmp_pred_bufs[2];
+  
+
+  
+
+
+  
+  
+
+
+
+
   int qindex;
+
+  
+
+
+
+
+  int delta_qindex;
+
+  
+
+
+
+
+
+
+
+  int rdmult_delta_qindex;
+
+  
+
+
+  int rdmult_cur_qindex;
+
+  
+
+
+
+
+
+
+
+  int rdmult;
+
+  
+  int intra_sb_rdmult_modifier;
+
+  
+  double rb;
+
+  
+  int mb_energy;
+  
+  int sb_energy_level;
+
+  
+  ModeCosts mode_costs;
+
+  
+  
+  MvCosts *mv_costs;
+
+  
+
+
+  IntraBCMVCosts *dv_costs;
+
+  
+  CoeffCosts coeff_costs;
+  
+
+  
+
 
   
   
   int errorperbit;
   
+  int sadperbit;
   
-  int sadperbit16;
-  
-  
-  int sadperbit4;
-  int rdmult;
-  int mb_energy;
-  int sb_energy_level;
-  int *m_search_count_ptr;
-  int *ex_search_count_ptr;
 
-  unsigned int txb_split_count;
+  
+
 
   
   
-  BLOCK_SIZE min_partition_size;
-  BLOCK_SIZE max_partition_size;
+
+
+
+
+  int seg_skip_block;
+
+  
+
+
+
+  int actual_num_seg1_blocks;
+
+  
+
+
+
+  int actual_num_seg2_blocks;
+
+  
+
+  int cnt_zeromv;
+
+  
+
+
+
+
+  int force_zeromv_skip_for_sb;
+
+  
+
+  int force_zeromv_skip_for_blk;
+
+  
+
+
+  int prev_segment_id;
+  
+
+  
+
+
+  
+  
+  
+  SuperBlockEnc sb_enc;
+
+  
+
+
+
+
+  CONTENT_STATE_SB content_state_sb;
+  
+
+  
+
+
+  
+  
+
+
+
+  int pred_mv_sad[REF_FRAMES];
+  
+
+
+
+
+  int best_pred_mv_sad[2];
+  
+  int pred_mv0_sad[REF_FRAMES];
+  
+  int pred_mv1_sad[REF_FRAMES];
+
+  
+
+
+
+
+
+  uint8_t tpl_keep_ref_frame[REF_FRAMES];
+
+  
+
+
+
+  WARP_SAMPLE_INFO warp_sample_info[REF_FRAMES];
+
+  
+
+
+
+
+
+  int picked_ref_frames_mask[MAX_MIB_SIZE * MAX_MIB_SIZE];
+
+  
+
+
+
+
+
+
+  int nonrd_prune_ref_frame_search;
+  
+
+  
+
+
+  
+  
+  PartitionSearchInfo part_search_info;
+
+  
+
+
+
+
+
+
+  int must_find_valid_partition;
+  
+
+  
+
+
+  
+  
+
+
+
+
+
+  int skip_mode;
+
+  
+
+
+
+
+
+  int thresh_freq_fact[BLOCK_SIZES_ALL][MAX_MODES];
+
+  
+
+
+
+
+
+
+
+  WinnerModeStats *winner_mode_stats;
+  
+  int winner_mode_count;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  TXFM_RD_MODEL rd_model;
+
+  
+
+
+
+
+
+
+
+
+  
+  
+  struct inter_modes_info *inter_modes_info;
+
+  
+  uint8_t compound_idx;
+
+  
+  COMP_RD_STATS comp_rd_stats[MAX_COMP_RD_STATS];
+  
+  int comp_rd_stats_idx;
+
+  
+
+
+
+
+
+
+  int recalc_luma_mc_data;
+
+  
+
+
+
+  IntraBCHashInfo intrabc_hash_info;
+
+  
+  int use_mb_mode_cache;
+  
+
+  const MB_MODE_INFO *mb_mode_cache;
+  
+
+
+
+
+
+  PixelLevelGradientInfo *pixel_gradient_info;
+  
+  bool is_sb_gradient_cached[PLANE_TYPES];
+
+  
+  bool reuse_inter_pred;
+  
+
+  
+
+
+  
+  
+
+
+
 
   unsigned int max_mv_context[REF_FRAMES];
+
+  
+
+
+
+
+  FullMvLimits mv_limits;
+
+  
+
+
+
+
+
+
+  search_site_config search_site_cfg_buf[NUM_DISTINCT_SEARCH_METHODS];
+  
+
+  
+
+
+  
+  
+
+
+
+
+  TxfmSearchParams txfm_search_params;
+
+  
+
+
+
+
+  TxfmSearchInfo txfm_search_info;
+
+  
+
+
+
+
+  uint8_t color_sensitivity_sb[MAX_MB_PLANE - 1];
+  
+  uint8_t color_sensitivity_sb_g[MAX_MB_PLANE - 1];
+  
+  uint8_t color_sensitivity_sb_alt[MAX_MB_PLANE - 1];
+  
+  uint8_t color_sensitivity[MAX_MB_PLANE - 1];
+  
+  int64_t min_dist_inter_uv;
+
+  
+  
+  tran_low_t *dqcoeff_buf;
+  
+
+  
+
+
+  
+  
   unsigned int source_variance;
+  
+  int block_is_zero_sad;
+  
+  
+  
+  int sb_me_partition;
+  
+  
+  int sb_me_block;
+  
+  
+  int_mv sb_me_mv;
+  
   unsigned int pred_sse[REF_FRAMES];
-  int pred_mv_sad[REF_FRAMES];
-
-  int *nmvjointcost;
-  int nmv_vec_cost[MV_JOINTS];
-  int *nmvcost[2];
-  int *nmvcost_hp[2];
-  int **mv_cost_stack;
-  int **mvcost;
-
-  int32_t *wsrc_buf;
-  int32_t *mask_buf;
-  uint8_t *above_pred_buf;
-  uint8_t *left_pred_buf;
-
-  PALETTE_BUFFER *palette_buffer;
-
-  CONV_BUF_TYPE *tmp_conv_dst;
-  uint8_t *tmp_obmc_bufs[2];
+  
+#if CONFIG_RT_ML_PARTITIONING
+  DECLARE_ALIGNED(16, uint8_t, est_pred[128 * 128]);
+#endif
+  
 
   
-  
-  
-  
-  uint32_t *hash_value_buffer[2][2];
 
-  CRC_CALCULATOR crc_calculator1;
-  CRC_CALCULATOR crc_calculator2;
-  int g_crc_initialized;
+
+
+
+
+  int try_merge_partition;
 
   
-  
-  MvLimits mv_limits;
 
-  uint8_t blk_skip[MAX_MIB_SIZE * MAX_MIB_SIZE];
 
-  int skip;
-  int skip_chroma_rd;
-  int skip_cost[SKIP_CONTEXTS][2];
 
-  int skip_mode;  
-  int skip_mode_cost[SKIP_CONTEXTS][2];
 
-  int compound_idx;
 
-  LV_MAP_COEFF_COST coeff_costs[TX_SIZES][PLANE_TYPES];
-  LV_MAP_EOB_COST eob_costs[7][2];
-  uint16_t cb_offset;
-
+  Block4x4VarInfo *src_var_info_of_4x4_sub_blocks;
+#ifndef NDEBUG
   
-  int intra_inter_cost[INTRA_INTER_CONTEXTS][2];
-
-  int mbmode_cost[BLOCK_SIZE_GROUPS][INTRA_MODES];
-  int newmv_mode_cost[NEWMV_MODE_CONTEXTS][2];
-  int zeromv_mode_cost[GLOBALMV_MODE_CONTEXTS][2];
-  int refmv_mode_cost[REFMV_MODE_CONTEXTS][2];
-  int drl_mode_cost0[DRL_MODE_CONTEXTS][2];
-
-  int comp_inter_cost[COMP_INTER_CONTEXTS][2];
-  int single_ref_cost[REF_CONTEXTS][SINGLE_REFS - 1][2];
-  int comp_ref_type_cost[COMP_REF_TYPE_CONTEXTS]
-                        [CDF_SIZE(COMP_REFERENCE_TYPES)];
-  int uni_comp_ref_cost[UNI_COMP_REF_CONTEXTS][UNIDIR_COMP_REFS - 1]
-                       [CDF_SIZE(2)];
-  
-  
-  int comp_ref_cost[REF_CONTEXTS][FWD_REFS - 1][2];
-  
-  
-  int comp_bwdref_cost[REF_CONTEXTS][BWD_REFS - 1][2];
-  int inter_compound_mode_cost[INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES];
-  int compound_type_cost[BLOCK_SIZES_ALL][COMPOUND_TYPES - 1];
-  int wedge_idx_cost[BLOCK_SIZES_ALL][16];
-  int interintra_cost[BLOCK_SIZE_GROUPS][2];
-  int wedge_interintra_cost[BLOCK_SIZES_ALL][2];
-  int interintra_mode_cost[BLOCK_SIZE_GROUPS][INTERINTRA_MODES];
-  int motion_mode_cost[BLOCK_SIZES_ALL][MOTION_MODES];
-  int motion_mode_cost1[BLOCK_SIZES_ALL][2];
-  int intra_uv_mode_cost[CFL_ALLOWED_TYPES][INTRA_MODES][UV_INTRA_MODES];
-  int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
-  int filter_intra_cost[BLOCK_SIZES_ALL][2];
-  int filter_intra_mode_cost[FILTER_INTRA_MODES];
-  int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
-  int partition_cost[PARTITION_CONTEXTS][EXT_PARTITION_TYPES];
-  int palette_y_size_cost[PALATTE_BSIZE_CTXS][PALETTE_SIZES];
-  int palette_uv_size_cost[PALATTE_BSIZE_CTXS][PALETTE_SIZES];
-  int palette_y_color_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
-                          [PALETTE_COLORS];
-  int palette_uv_color_cost[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS]
-                           [PALETTE_COLORS];
-  int palette_y_mode_cost[PALATTE_BSIZE_CTXS][PALETTE_Y_MODE_CONTEXTS][2];
-  int palette_uv_mode_cost[PALETTE_UV_MODE_CONTEXTS][2];
-  
-  int cfl_cost[CFL_JOINT_SIGNS][CFL_PRED_PLANES][CFL_ALPHABET_SIZE];
-  int tx_size_cost[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES];
-  int txfm_partition_cost[TXFM_PARTITION_CONTEXTS][2];
-  int inter_tx_type_costs[EXT_TX_SETS_INTER][EXT_TX_SIZES][TX_TYPES];
-  int intra_tx_type_costs[EXT_TX_SETS_INTRA][EXT_TX_SIZES][INTRA_MODES]
-                         [TX_TYPES];
-  int angle_delta_cost[DIRECTIONAL_MODES][2 * MAX_ANGLE_DELTA + 1];
-  int switchable_restore_cost[RESTORE_SWITCHABLE_TYPES];
-  int wiener_restore_cost[2];
-  int sgrproj_restore_cost[2];
-  int intrabc_cost[2];
-
-  
-  MV pred_mv[REF_FRAMES];
-
-  
-  int_mv best_mv;
-  
-  int_mv second_best_mv;
-
-  
-  int use_default_intra_tx_type;
-  
-  int use_default_inter_tx_type;
-#if CONFIG_DIST_8X8
-  int using_dist_8x8;
-  aom_tune_metric tune_metric;
+  SetOffsetsLoc last_set_offsets_loc;
 #endif  
-  int comp_idx_cost[COMP_INDEX_CONTEXTS][2];
-  int comp_group_idx_cost[COMP_GROUP_IDX_CONTEXTS][2];
+
+#if COLLECT_NONRD_PICK_MODE_STAT
+  mode_search_stat_nonrd ms_stat_nonrd;
+#endif  
+
   
-  int tx_search_prune[EXT_TX_SET_TYPES];
-  int must_find_valid_partition;
-  int tx_split_prune_flag;  
-  int recalc_luma_mc_data;  
-                            
-};
+
+
+  int palette_pixels;
+
+  
+
+
+  struct SB_FIRST_PASS_STATS *sb_stats_cache;
+
+  
+
+
+  struct SB_FIRST_PASS_STATS *sb_fp_stats;
+
+#if CONFIG_PARTITION_SEARCH_ORDER
+  
+
+
+  RD_STATS *rdcost;
+#endif  
+} MACROBLOCK;
+#undef SINGLE_REF_MODES
+
+
+
+
+
+static INLINE void zero_winner_mode_stats(BLOCK_SIZE bsize, int n_stats,
+                                          WinnerModeStats *stats) {
+  
+  
+  if (stats == NULL) return;
+
+  const int block_height = block_size_high[bsize];
+  const int block_width = block_size_wide[bsize];
+  for (int i = 0; i < n_stats; ++i) {
+    WinnerModeStats *const stat = &stats[i];
+    memset(&stat->mbmi, 0, sizeof(stat->mbmi));
+    memset(&stat->rd_cost, 0, sizeof(stat->rd_cost));
+    memset(&stat->rd, 0, sizeof(stat->rd));
+    memset(&stat->rate_y, 0, sizeof(stat->rate_y));
+    memset(&stat->rate_uv, 0, sizeof(stat->rate_uv));
+    
+    memset(&stat->color_index_map, 0,
+           block_width * block_height * sizeof(stat->color_index_map[0]));
+    memset(&stat->mode_index, 0, sizeof(stat->mode_index));
+  }
+}
 
 static INLINE int is_rect_tx_allowed_bsize(BLOCK_SIZE bsize) {
   static const char LUT[BLOCK_SIZES_ALL] = {
@@ -400,7 +1461,7 @@ static INLINE int is_rect_tx_allowed_bsize(BLOCK_SIZE bsize) {
 
 static INLINE int is_rect_tx_allowed(const MACROBLOCKD *xd,
                                      const MB_MODE_INFO *mbmi) {
-  return is_rect_tx_allowed_bsize(mbmi->sb_type) &&
+  return is_rect_tx_allowed_bsize(mbmi->bsize) &&
          !xd->lossless[mbmi->segment_id];
 }
 
@@ -415,35 +1476,37 @@ static INLINE int tx_size_to_depth(TX_SIZE tx_size, BLOCK_SIZE bsize) {
   return depth;
 }
 
-static INLINE void set_blk_skip(MACROBLOCK *x, int plane, int blk_idx,
+static INLINE void set_blk_skip(uint8_t txb_skip[], int plane, int blk_idx,
                                 int skip) {
   if (skip)
-    x->blk_skip[blk_idx] |= 1UL << plane;
+    txb_skip[blk_idx] |= 1UL << plane;
   else
-    x->blk_skip[blk_idx] &= ~(1UL << plane);
+    txb_skip[blk_idx] &= ~(1UL << plane);
 #ifndef NDEBUG
   
   
   if (plane == 0) {
-    x->blk_skip[blk_idx] |= 1UL << (1 + 4);
-    x->blk_skip[blk_idx] |= 1UL << (2 + 4);
+    txb_skip[blk_idx] |= 1UL << (1 + 4);
+    txb_skip[blk_idx] |= 1UL << (2 + 4);
   }
 
   
-  x->blk_skip[blk_idx] &= ~(1UL << (plane + 4));
+  txb_skip[blk_idx] &= ~(1UL << (plane + 4));
 #endif
 }
 
-static INLINE int is_blk_skip(MACROBLOCK *x, int plane, int blk_idx) {
+static INLINE int is_blk_skip(uint8_t *txb_skip, int plane, int blk_idx) {
 #ifndef NDEBUG
   
-  assert(!(x->blk_skip[blk_idx] & (1UL << (plane + 4))));
+  assert(!(txb_skip[blk_idx] & (1UL << (plane + 4))));
 
   
-  assert((x->blk_skip[blk_idx] & 0x88) == 0);
+  assert((txb_skip[blk_idx] & 0x88) == 0);
 #endif
-  return (x->blk_skip[blk_idx] >> plane) & 1;
+  return (txb_skip[blk_idx] >> plane) & 1;
 }
+
+
 
 #ifdef __cplusplus
 }  

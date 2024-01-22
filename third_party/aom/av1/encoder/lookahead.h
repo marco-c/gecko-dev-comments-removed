@@ -9,8 +9,13 @@
 
 
 
+
+
+
 #ifndef AOM_AV1_ENCODER_LOOKAHEAD_H_
 #define AOM_AV1_ENCODER_LOOKAHEAD_H_
+
+#include <stdbool.h>
 
 #include "aom_scale/yv12config.h"
 #include "aom/aom_integer.h"
@@ -19,25 +24,42 @@
 extern "C" {
 #endif
 
-#define MAX_LAG_BUFFERS 25
+
+#define MAX_LAG_BUFFERS 48
+#define MAX_LAP_BUFFERS 48
+#define MAX_TOTAL_BUFFERS (MAX_LAG_BUFFERS + MAX_LAP_BUFFERS)
+#define LAP_LAG_IN_FRAMES 17
 
 struct lookahead_entry {
   YV12_BUFFER_CONFIG img;
   int64_t ts_start;
   int64_t ts_end;
+  int display_idx;
   aom_enc_frame_flags_t flags;
 };
 
 
 #define MAX_PRE_FRAMES 1
 
-struct lookahead_ctx {
-  int max_sz;                  
-  int sz;                      
-  int read_idx;                
-  int write_idx;               
-  struct lookahead_entry *buf; 
+enum { ENCODE_STAGE, LAP_STAGE, MAX_STAGES } UENUM1BYTE(COMPRESSOR_STAGE);
+
+struct read_ctx {
+  int sz;       
+  int read_idx; 
+  int pop_sz;   
+  int valid;    
 };
+
+struct lookahead_ctx {
+  int max_sz;                            
+  int write_idx;                         
+  struct read_ctx read_ctxs[MAX_STAGES]; 
+  struct lookahead_entry *buf;           
+  int push_frame_count; 
+  uint8_t
+      max_pre_frames; 
+};
+
 
 
 
@@ -46,7 +68,9 @@ struct lookahead_ctx {
 
 struct lookahead_ctx *av1_lookahead_init(
     unsigned int width, unsigned int height, unsigned int subsampling_x,
-    unsigned int subsampling_y, int use_highbitdepth, unsigned int depth);
+    unsigned int subsampling_y, int use_highbitdepth, unsigned int depth,
+    const int border_in_pixels, int byte_alignment, int num_lap_buffers,
+    bool is_all_intra, int num_pyramid_levels);
 
 
 
@@ -54,6 +78,7 @@ void av1_lookahead_destroy(struct lookahead_ctx *ctx);
 
 
 
+int av1_lookahead_full(const struct lookahead_ctx *ctx);
 
 
 
@@ -67,9 +92,11 @@ void av1_lookahead_destroy(struct lookahead_ctx *ctx);
 
 
 
-int av1_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
+
+
+int av1_lookahead_push(struct lookahead_ctx *ctx, const YV12_BUFFER_CONFIG *src,
                        int64_t ts_start, int64_t ts_end, int use_highbitdepth,
-                       aom_enc_frame_flags_t flags);
+                       int num_pyramid_levels, aom_enc_frame_flags_t flags);
 
 
 
@@ -81,7 +108,8 @@ int av1_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
 
 
 
-struct lookahead_entry *av1_lookahead_pop(struct lookahead_ctx *ctx, int drain);
+struct lookahead_entry *av1_lookahead_pop(struct lookahead_ctx *ctx, int drain,
+                                          COMPRESSOR_STAGE stage);
 
 
 
@@ -90,14 +118,18 @@ struct lookahead_entry *av1_lookahead_pop(struct lookahead_ctx *ctx, int drain);
 
 
 
-struct lookahead_entry *av1_lookahead_peek(struct lookahead_ctx *ctx,
-                                           int index);
+
+struct lookahead_entry *av1_lookahead_peek(struct lookahead_ctx *ctx, int index,
+                                           COMPRESSOR_STAGE stage);
 
 
 
+unsigned int av1_lookahead_depth(struct lookahead_ctx *ctx,
+                                 COMPRESSOR_STAGE stage);
 
 
-unsigned int av1_lookahead_depth(struct lookahead_ctx *ctx);
+
+int av1_lookahead_pop_sz(struct lookahead_ctx *ctx, COMPRESSOR_STAGE stage);
 
 #ifdef __cplusplus
 }  

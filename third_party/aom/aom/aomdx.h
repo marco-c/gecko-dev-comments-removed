@@ -33,8 +33,16 @@ extern "C" {
 
 
 
+
+
+
+
+
 extern aom_codec_iface_t aom_codec_av1_dx_algo;
+
+
 extern aom_codec_iface_t *aom_codec_av1_dx(void);
+
 
 
 
@@ -45,6 +53,7 @@ typedef struct Accounting Accounting;
 
 
 typedef void (*aom_inspect_cb)(void *decoder, void *ctx);
+
 #endif
 
 
@@ -64,6 +73,21 @@ typedef struct aom_inspect_init {
 
 
 
+
+
+typedef struct {
+  
+  const unsigned char *buf;
+  
+  int idx;
+  
+  int show_existing;
+} Av1DecodeReturn;
+
+
+
+
+
 typedef struct aom_tile_data {
   
   size_t coded_tile_data_size;
@@ -72,6 +96,81 @@ typedef struct aom_tile_data {
   
   size_t extra_size;
 } aom_tile_data;
+
+
+
+
+
+
+
+
+#define AOM_MAX_TILE_COLS 64
+
+
+
+
+
+
+
+#define AOM_MAX_TILE_ROWS 64
+
+
+
+
+
+
+
+typedef struct aom_tile_info {
+  
+  int tile_columns;
+  
+  int tile_rows;
+  
+  int tile_widths[AOM_MAX_TILE_COLS];
+  
+  int tile_heights[AOM_MAX_TILE_ROWS];
+  
+  int num_tile_groups;
+} aom_tile_info;
+
+
+
+
+
+
+typedef struct aom_still_picture_info {
+  
+  int is_still_picture;
+  
+  int is_reduced_still_picture_hdr;
+} aom_still_picture_info;
+
+
+
+
+
+
+typedef struct aom_s_frame_info {
+  
+  int is_s_frame;
+  
+  int is_s_frame_at_altref;
+} aom_s_frame_info;
+
+
+
+
+
+
+
+typedef struct aom_screen_content_tools_info {
+  
+  int allow_screen_content_tools;
+  
+  int allow_intrabc;
+  
+  int force_integer_mv;
+} aom_screen_content_tools_info;
 
 
 
@@ -92,6 +191,7 @@ typedef struct av1_ext_ref_frame {
 
 
 
+
 enum aom_dec_control_id {
   
 
@@ -99,6 +199,8 @@ enum aom_dec_control_id {
   AOMD_GET_LAST_REF_UPDATES = AOM_DECODER_CTRL_ID_START,
 
   
+
+
   AOMD_GET_FRAME_CORRUPTED,
 
   
@@ -109,23 +211,42 @@ enum aom_dec_control_id {
   
 
 
+
+
+
   AV1D_GET_FRAME_SIZE,
 
   
 
 
+
+
+
   AV1D_GET_DISPLAY_SIZE,
 
   
+
+
   AV1D_GET_BIT_DEPTH,
 
   
+
+
   AV1D_GET_IMG_FORMAT,
 
   
+
+
   AV1D_GET_TILE_SIZE,
 
   
+
+
+  AV1D_GET_TILE_COUNT,
+
+  
+
+
 
 
 
@@ -140,9 +261,13 @@ enum aom_dec_control_id {
 
 
 
+
+
   AV1_INVERT_TILE_DECODE_ORDER,
 
   
+
+
 
 
 
@@ -155,9 +280,15 @@ enum aom_dec_control_id {
 
 
 
+
+
+
+
   AV1_GET_ACCOUNTING,
 
   
+
+
 
 
   AOMD_GET_LAST_QUANTIZER,
@@ -168,26 +299,37 @@ enum aom_dec_control_id {
 
 
 
+
+
   AV1_SET_DECODE_TILE_ROW,
   AV1_SET_DECODE_TILE_COL,
+
   
+
+
 
 
 
   AV1_SET_TILE_MODE,
+
   
 
 
   AV1D_GET_FRAME_HEADER_INFO,
+
   
 
 
   AV1D_GET_TILE_DATA,
+
   
 
 
 
+
+
   AV1D_SET_EXT_REF_PTR,
+
   
 
 
@@ -197,12 +339,18 @@ enum aom_dec_control_id {
 
 
 
+
+
   AV1D_SET_ROW_MT,
 
   
+
+
   AV1D_SET_IS_ANNEXB,
 
   
+
+
 
 
 
@@ -219,9 +367,12 @@ enum aom_dec_control_id {
 
 
 
+
   AV1D_SET_OUTPUT_ALL_LAYERS,
 
   
+
+
 
 
 
@@ -231,10 +382,92 @@ enum aom_dec_control_id {
 
 
 
+
+
   AV1D_SET_SKIP_FILM_GRAIN,
 
-  AOM_DECODER_CTRL_ID_MAX,
+  
+
+
+  AOMD_GET_FWD_KF_PRESENT,
+
+  
+
+
+
+
+  AOMD_GET_FRAME_FLAGS,
+
+  
+
+
+  AOMD_GET_ALTREF_PRESENT,
+
+  
+
+
+
+
+  AOMD_GET_TILE_INFO,
+
+  
+
+
+
+
+
+
+  AOMD_GET_SCREEN_CONTENT_TOOLS_INFO,
+
+  
+
+
+  AOMD_GET_STILL_PICTURE,
+
+  
+
+
+
+
+
+  AOMD_GET_SB_SIZE,
+
+  
+
+
+  AOMD_GET_SHOW_EXISTING_FRAME_FLAG,
+
+  
+
+
+  AOMD_GET_S_FRAME_INFO,
+
+  
+
+  AOMD_GET_SHOW_FRAME_FLAG,
+
+  
+
+
+  AOMD_GET_BASE_Q_IDX,
+
+  
+
+
+  AOMD_GET_ORDER_HINT,
+
+  
+
+
+
+
+
+  AV1D_GET_MI_INFO,
 };
+
+
+
+
 
 
 
@@ -246,53 +479,122 @@ enum aom_dec_control_id {
 
 AOM_CTRL_USE_TYPE(AOMD_GET_LAST_REF_UPDATES, int *)
 #define AOM_CTRL_AOMD_GET_LAST_REF_UPDATES
+
 AOM_CTRL_USE_TYPE(AOMD_GET_FRAME_CORRUPTED, int *)
 #define AOM_CTRL_AOMD_GET_FRAME_CORRUPTED
+
 AOM_CTRL_USE_TYPE(AOMD_GET_LAST_REF_USED, int *)
 #define AOM_CTRL_AOMD_GET_LAST_REF_USED
-AOM_CTRL_USE_TYPE(AOMD_GET_LAST_QUANTIZER, int *)
-#define AOM_CTRL_AOMD_GET_LAST_QUANTIZER
-AOM_CTRL_USE_TYPE(AV1D_GET_DISPLAY_SIZE, int *)
-#define AOM_CTRL_AV1D_GET_DISPLAY_SIZE
-AOM_CTRL_USE_TYPE(AV1D_GET_BIT_DEPTH, unsigned int *)
-#define AOM_CTRL_AV1D_GET_BIT_DEPTH
-AOM_CTRL_USE_TYPE(AV1D_GET_IMG_FORMAT, aom_img_fmt_t *)
-#define AOM_CTRL_AV1D_GET_IMG_FORMAT
-AOM_CTRL_USE_TYPE(AV1D_GET_TILE_SIZE, unsigned int *)
-#define AOM_CTRL_AV1D_GET_TILE_SIZE
+
 AOM_CTRL_USE_TYPE(AV1D_GET_FRAME_SIZE, int *)
 #define AOM_CTRL_AV1D_GET_FRAME_SIZE
+
+AOM_CTRL_USE_TYPE(AV1D_GET_DISPLAY_SIZE, int *)
+#define AOM_CTRL_AV1D_GET_DISPLAY_SIZE
+
+AOM_CTRL_USE_TYPE(AV1D_GET_BIT_DEPTH, unsigned int *)
+#define AOM_CTRL_AV1D_GET_BIT_DEPTH
+
+AOM_CTRL_USE_TYPE(AV1D_GET_IMG_FORMAT, aom_img_fmt_t *)
+#define AOM_CTRL_AV1D_GET_IMG_FORMAT
+
+AOM_CTRL_USE_TYPE(AV1D_GET_TILE_SIZE, unsigned int *)
+#define AOM_CTRL_AV1D_GET_TILE_SIZE
+
+AOM_CTRL_USE_TYPE(AV1D_GET_TILE_COUNT, unsigned int *)
+#define AOM_CTRL_AV1D_GET_TILE_COUNT
+
 AOM_CTRL_USE_TYPE(AV1_INVERT_TILE_DECODE_ORDER, int)
 #define AOM_CTRL_AV1_INVERT_TILE_DECODE_ORDER
+
+AOM_CTRL_USE_TYPE(AV1_SET_SKIP_LOOP_FILTER, int)
+#define AOM_CTRL_AV1_SET_SKIP_LOOP_FILTER
+
 AOM_CTRL_USE_TYPE(AV1_GET_ACCOUNTING, Accounting **)
 #define AOM_CTRL_AV1_GET_ACCOUNTING
+
+AOM_CTRL_USE_TYPE(AOMD_GET_LAST_QUANTIZER, int *)
+#define AOM_CTRL_AOMD_GET_LAST_QUANTIZER
+
 AOM_CTRL_USE_TYPE(AV1_SET_DECODE_TILE_ROW, int)
 #define AOM_CTRL_AV1_SET_DECODE_TILE_ROW
+
 AOM_CTRL_USE_TYPE(AV1_SET_DECODE_TILE_COL, int)
 #define AOM_CTRL_AV1_SET_DECODE_TILE_COL
+
 AOM_CTRL_USE_TYPE(AV1_SET_TILE_MODE, unsigned int)
 #define AOM_CTRL_AV1_SET_TILE_MODE
+
 AOM_CTRL_USE_TYPE(AV1D_GET_FRAME_HEADER_INFO, aom_tile_data *)
 #define AOM_CTRL_AV1D_GET_FRAME_HEADER_INFO
+
 AOM_CTRL_USE_TYPE(AV1D_GET_TILE_DATA, aom_tile_data *)
 #define AOM_CTRL_AV1D_GET_TILE_DATA
+
 AOM_CTRL_USE_TYPE(AV1D_SET_EXT_REF_PTR, av1_ext_ref_frame_t *)
 #define AOM_CTRL_AV1D_SET_EXT_REF_PTR
+
 AOM_CTRL_USE_TYPE(AV1D_EXT_TILE_DEBUG, unsigned int)
 #define AOM_CTRL_AV1D_EXT_TILE_DEBUG
+
 AOM_CTRL_USE_TYPE(AV1D_SET_ROW_MT, unsigned int)
 #define AOM_CTRL_AV1D_SET_ROW_MT
-AOM_CTRL_USE_TYPE(AV1D_SET_SKIP_FILM_GRAIN, int)
-#define AOM_CTRL_AV1D_SET_SKIP_FILM_GRAIN
+
 AOM_CTRL_USE_TYPE(AV1D_SET_IS_ANNEXB, unsigned int)
 #define AOM_CTRL_AV1D_SET_IS_ANNEXB
+
 AOM_CTRL_USE_TYPE(AV1D_SET_OPERATING_POINT, int)
 #define AOM_CTRL_AV1D_SET_OPERATING_POINT
+
 AOM_CTRL_USE_TYPE(AV1D_SET_OUTPUT_ALL_LAYERS, int)
 #define AOM_CTRL_AV1D_SET_OUTPUT_ALL_LAYERS
+
 AOM_CTRL_USE_TYPE(AV1_SET_INSPECTION_CALLBACK, aom_inspect_init *)
 #define AOM_CTRL_AV1_SET_INSPECTION_CALLBACK
 
+AOM_CTRL_USE_TYPE(AV1D_SET_SKIP_FILM_GRAIN, int)
+#define AOM_CTRL_AV1D_SET_SKIP_FILM_GRAIN
+
+AOM_CTRL_USE_TYPE(AOMD_GET_FWD_KF_PRESENT, int *)
+#define AOM_CTRL_AOMD_GET_FWD_KF_PRESENT
+
+AOM_CTRL_USE_TYPE(AOMD_GET_FRAME_FLAGS, int *)
+#define AOM_CTRL_AOMD_GET_FRAME_FLAGS
+
+AOM_CTRL_USE_TYPE(AOMD_GET_ALTREF_PRESENT, int *)
+#define AOM_CTRL_AOMD_GET_ALTREF_PRESENT
+
+AOM_CTRL_USE_TYPE(AOMD_GET_TILE_INFO, aom_tile_info *)
+#define AOM_CTRL_AOMD_GET_TILE_INFO
+
+AOM_CTRL_USE_TYPE(AOMD_GET_SCREEN_CONTENT_TOOLS_INFO,
+                  aom_screen_content_tools_info *)
+#define AOM_CTRL_AOMD_GET_SCREEN_CONTENT_TOOLS_INFO
+
+AOM_CTRL_USE_TYPE(AOMD_GET_STILL_PICTURE, aom_still_picture_info *)
+#define AOM_CTRL_AOMD_GET_STILL_PICTURE
+
+AOM_CTRL_USE_TYPE(AOMD_GET_SB_SIZE, aom_superblock_size_t *)
+#define AOMD_CTRL_AOMD_GET_SB_SIZE
+
+AOM_CTRL_USE_TYPE(AOMD_GET_SHOW_EXISTING_FRAME_FLAG, int *)
+#define AOMD_CTRL_AOMD_GET_SHOW_EXISTING_FRAME_FLAG
+
+AOM_CTRL_USE_TYPE(AOMD_GET_S_FRAME_INFO, aom_s_frame_info *)
+#define AOMD_CTRL_AOMD_GET_S_FRAME_INFO
+
+AOM_CTRL_USE_TYPE(AOMD_GET_SHOW_FRAME_FLAG, int *)
+#define AOM_CTRL_AOMD_GET_SHOW_FRAME_FLAG
+
+AOM_CTRL_USE_TYPE(AOMD_GET_BASE_Q_IDX, int *)
+#define AOM_CTRL_AOMD_GET_BASE_Q_IDX
+
+AOM_CTRL_USE_TYPE(AOMD_GET_ORDER_HINT, unsigned int *)
+#define AOM_CTRL_AOMD_GET_ORDER_HINT
+
+
+
+#define AOM_CTRL_AV1D_GET_MI_INFO
 
 
 #ifdef __cplusplus

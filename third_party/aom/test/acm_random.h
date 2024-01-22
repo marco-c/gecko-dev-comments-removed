@@ -26,54 +26,58 @@ class ACMRandom {
 
   void Reset(int seed) { random_.Reseed(seed); }
 
-  uint32_t Rand31(void) {
+  
+  uint32_t Rand31() {
     return random_.Generate(testing::internal::Random::kMaxRange);
   }
 
-  uint16_t Rand16(void) {
+  uint16_t Rand16() {
     const uint32_t value =
         random_.Generate(testing::internal::Random::kMaxRange);
+    
     return (value >> 15) & 0xffff;
   }
 
-  int16_t Rand15Signed(void) {
+  int16_t Rand16Signed() { return static_cast<int16_t>(Rand16()); }
+
+  int16_t Rand15() {
     const uint32_t value =
         random_.Generate(testing::internal::Random::kMaxRange);
-    return (value >> 17) & 0xffff;
+    
+    return (value >> 16) & 0x7fff;
   }
 
-  uint16_t Rand12(void) {
+  int16_t Rand15Signed() {
+    
+    return static_cast<int16_t>(Rand15()) - (1 << 14);
+  }
+
+  uint16_t Rand12() {
     const uint32_t value =
         random_.Generate(testing::internal::Random::kMaxRange);
     
     return (value >> 19) & 0xfff;
   }
 
-  int16_t Rand9Signed(void) {
-    
-    const uint32_t value = random_.Generate(512);
-    return static_cast<int16_t>(value) - 256;
-  }
-
-  uint8_t Rand8(void) {
+  uint8_t Rand8() {
     const uint32_t value =
         random_.Generate(testing::internal::Random::kMaxRange);
     
     return (value >> 23) & 0xff;
   }
 
-  uint8_t Rand8Extremes(void) {
+  uint8_t Rand8Extremes() {
     
     
     const uint8_t r = Rand8();
-    return r < 128 ? r << 4 : r >> 4;
+    return static_cast<uint8_t>((r < 128) ? r << 4 : r >> 4);
   }
 
   int PseudoUniform(int range) { return random_.Generate(range); }
 
   int operator()(int n) { return PseudoUniform(n); }
 
-  static int DeterministicSeed(void) { return 0xbaba; }
+  static int DeterministicSeed() { return 0xbaba; }
 
  private:
   testing::internal::Random random_;

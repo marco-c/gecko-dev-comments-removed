@@ -13,29 +13,72 @@
 #define AOM_AV1_ENCODER_GLOBAL_MOTION_H_
 
 #include "aom/aom_integer.h"
+#include "aom_dsp/flow_estimation/flow_estimation.h"
 #include "aom_scale/yv12config.h"
-#include "av1/common/mv.h"
+#include "aom_util/aom_thread.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define RANSAC_NUM_MOTIONS 1
-
-void convert_model_to_params(const double *params, WarpedMotionParams *model);
-
-int is_enough_erroradvantage(double best_erroradvantage, int params_cost,
-                             int erroradv_type);
+#define GM_MAX_REFINEMENT_STEPS 5
+#define MAX_DIRECTIONS 2
 
 
 
+typedef struct {
+  int distance;
+  MV_REFERENCE_FRAME frame;
+} FrameDistPair;
 
-int64_t refine_integerized_param(WarpedMotionParams *wm,
-                                 TransformationType wmtype, int use_hbd, int bd,
-                                 uint8_t *ref, int r_width, int r_height,
-                                 int r_stride, uint8_t *dst, int d_width,
-                                 int d_height, int d_stride, int n_refinements,
-                                 int64_t best_frame_error);
+typedef struct {
+  
+  
+  
+  MotionModel motion_models[RANSAC_NUM_MOTIONS];
+
+  
+  uint8_t *segment_map;
+} GlobalMotionData;
+
+typedef struct {
+  
+  
+  
+  int8_t thread_id_to_dir[MAX_NUM_THREADS];
+
+  
+  
+  
+  int8_t early_exit[MAX_DIRECTIONS];
+
+  
+  
+  
+  int8_t next_frame_to_process[MAX_DIRECTIONS];
+} JobInfo;
+
+typedef struct {
+  
+  JobInfo job_info;
+
+#if CONFIG_MULTITHREAD
+  
+  pthread_mutex_t *mutex_;
+#endif
+
+  
+  
+  bool gm_mt_exit;
+} AV1GlobalMotionSync;
+
+void av1_convert_model_to_params(const double *params,
+                                 WarpedMotionParams *model);
+
+
+static const double erroradv_tr = 0.65;
+static const double erroradv_prod_tr = 20000;
 
 
 
@@ -46,18 +89,68 @@ int64_t refine_integerized_param(WarpedMotionParams *wm,
 
 
 
+static const double erroradv_early_tr = 0.70;
+
+int av1_is_enough_erroradvantage(double best_erroradvantage, int params_cost);
+
+void av1_compute_feature_segmentation_map(uint8_t *segment_map, int width,
+                                          int height, int *inliers,
+                                          int num_inliers);
+
+extern const int error_measure_lut[513];
+
+static INLINE int error_measure(int err) {
+  return error_measure_lut[256 + err];
+}
+
+#if CONFIG_AV1_HIGHBITDEPTH
+static INLINE int highbd_error_measure(int err, int bd) {
+  const int b = bd - 8;
+  const int bmask = (1 << b) - 1;
+  const int v = (1 << b);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const int e1 = err >> b;
+  const int e2 = err & bmask;
+  return error_measure_lut[256 + e1] * (v - e2) +
+         error_measure_lut[257 + e1] * e2;
+}
+#endif  
+
+int64_t av1_segmented_frame_error(int use_hbd, int bd, const uint8_t *ref,
+                                  int ref_stride, uint8_t *dst, int dst_stride,
+                                  int p_width, int p_height,
+                                  uint8_t *segment_map, int segment_map_stride);
+
+
+
+int64_t av1_warp_error(WarpedMotionParams *wm, int use_hbd, int bd,
+                       const uint8_t *ref, int ref_width, int ref_height,
+                       int ref_stride, uint8_t *dst, int dst_stride, int p_col,
+                       int p_row, int p_width, int p_height, int subsampling_x,
+                       int subsampling_y, int64_t best_error,
+                       uint8_t *segment_map, int segment_map_stride);
 
 
 
 
+int64_t av1_refine_integerized_param(
+    WarpedMotionParams *wm, TransformationType wmtype, int use_hbd, int bd,
+    uint8_t *ref, int r_width, int r_height, int r_stride, uint8_t *dst,
+    int d_width, int d_height, int d_stride, int n_refinements,
+    int64_t ref_frame_error, uint8_t *segment_map, int segment_map_stride);
 
-
-int compute_global_motion_feature_based(TransformationType type,
-                                        YV12_BUFFER_CONFIG *frm,
-                                        YV12_BUFFER_CONFIG *ref, int bit_depth,
-                                        int *num_inliers_by_motion,
-                                        double *params_by_motion,
-                                        int num_motions);
 #ifdef __cplusplus
 }  
 #endif

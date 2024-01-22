@@ -31,13 +31,12 @@ extern "C" {
 #define DO_RANGE_CHECK_CLAMP 0
 #endif
 
-extern const int32_t av1_cospi_arr_data[7][64];
-extern const int32_t av1_sinpi_arr_data[7][5];
+extern const int32_t av1_cospi_arr_data[4][64];
+extern const int32_t av1_sinpi_arr_data[4][5];
 
 #define MAX_TXFM_STAGE_NUM 12
 
 static const int cos_bit_min = 10;
-static const int cos_bit_max = 16;
 
 #define NewSqrt2Bits ((int32_t)12)
 
@@ -53,13 +52,38 @@ static INLINE const int32_t *sinpi_arr(int n) {
   return av1_sinpi_arr_data[n - cos_bit_min];
 }
 
+
+
+#if HAVE_NEON
+
+
+extern const int16_t av1_cospi_arr_q13_data[4][128];
+extern const int16_t av1_sinpi_arr_q13_data[4][4];
+
+extern const int32_t av1_cospi_arr_s32_data[4][66];
+
+static INLINE const int16_t *cospi_arr_q13(int n) {
+  return av1_cospi_arr_q13_data[n - cos_bit_min];
+}
+
+static INLINE const int16_t *sinpi_arr_q13(int n) {
+  return av1_sinpi_arr_q13_data[n - cos_bit_min];
+}
+
+static INLINE const int32_t *cospi_arr_s32(int n) {
+  return av1_cospi_arr_s32_data[n - cos_bit_min];
+}
+#endif  
+
 static INLINE int32_t range_check_value(int32_t value, int8_t bit) {
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
   const int64_t max_value = (1LL << (bit - 1)) - 1;
   const int64_t min_value = -(1LL << (bit - 1));
   if (value < min_value || value > max_value) {
     fprintf(stderr, "coeff out of bit range, value: %d bit %d\n", value, bit);
+#if !CONFIG_AV1_ENCODER
     assert(0);
+#endif
   }
 #endif  
 #if DO_RANGE_CHECK_CLAMP
@@ -110,7 +134,7 @@ typedef void (*TxfmFunc)(const int32_t *input, int32_t *output, int8_t cos_bit,
 typedef void (*FwdTxfm2dFunc)(const int16_t *input, int32_t *output, int stride,
                               TX_TYPE tx_type, int bd);
 
-typedef enum TXFM_TYPE {
+enum {
   TXFM_TYPE_DCT4,
   TXFM_TYPE_DCT8,
   TXFM_TYPE_DCT16,
@@ -125,7 +149,7 @@ typedef enum TXFM_TYPE {
   TXFM_TYPE_IDENTITY32,
   TXFM_TYPES,
   TXFM_TYPE_INVALID,
-} TXFM_TYPE;
+} UENUM1BYTE(TXFM_TYPE);
 
 typedef struct TXFM_2D_FLIP_CFG {
   TX_SIZE tx_size;

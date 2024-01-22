@@ -28,7 +28,7 @@ namespace libaom_test {
 class CodecFactory;
 class VideoSource;
 
-enum TestMode { kRealTime, kOnePassGood, kTwoPassGood };
+enum TestMode { kRealTime, kOnePassGood, kTwoPassGood, kAllIntra };
 #define ALL_TEST_MODES                                                     \
   ::testing::Values(::libaom_test::kRealTime, ::libaom_test::kOnePassGood, \
                     ::libaom_test::kTwoPassGood)
@@ -45,7 +45,7 @@ enum TestMode { kRealTime, kOnePassGood, kTwoPassGood };
 class CxDataIterator {
  public:
   explicit CxDataIterator(aom_codec_ctx_t *encoder)
-      : encoder_(encoder), iter_(NULL) {}
+      : encoder_(encoder), iter_(nullptr) {}
 
   const aom_codec_cx_pkt_t *Next() {
     return aom_codec_get_cx_data(encoder_, &iter_);
@@ -82,7 +82,7 @@ class TwopassStatsStore {
 
 class Encoder {
  public:
-  Encoder(aom_codec_enc_cfg_t cfg, const uint32_t init_flags,
+  Encoder(aom_codec_enc_cfg_t cfg, const aom_codec_flags_t init_flags,
           TwopassStatsStore *stats)
       : cfg_(cfg), init_flags_(init_flags), stats_(stats) {
     memset(&encoder_, 0, sizeof(encoder_));
@@ -99,32 +99,62 @@ class Encoder {
   }
   
   
-  void EncodeFrame(VideoSource *video, const unsigned long frame_flags);
+  void EncodeFrame(VideoSource *video, aom_enc_frame_flags_t frame_flags);
 
   
   void EncodeFrame(VideoSource *video) { EncodeFrame(video, 0); }
 
   void Control(int ctrl_id, int arg) {
-    const aom_codec_err_t res = aom_codec_control_(&encoder_, ctrl_id, arg);
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
     ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
   }
 
   void Control(int ctrl_id, int *arg) {
-    const aom_codec_err_t res = aom_codec_control_(&encoder_, ctrl_id, arg);
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
     ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
   }
 
   void Control(int ctrl_id, struct aom_scaling_mode *arg) {
-    const aom_codec_err_t res = aom_codec_control_(&encoder_, ctrl_id, arg);
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
+  }
+
+  void Control(int ctrl_id, struct aom_svc_layer_id *arg) {
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
+  }
+
+  void Control(int ctrl_id, struct aom_svc_ref_frame_config *arg) {
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
+  }
+
+  void Control(int ctrl_id, struct aom_svc_ref_frame_comp_pred *arg) {
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
+  }
+
+  void Control(int ctrl_id, struct aom_svc_params *arg) {
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
+  }
+
+  void Control(int ctrl_id, struct aom_ext_part_funcs *arg) {
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
     ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
   }
 
 #if CONFIG_AV1_ENCODER
   void Control(int ctrl_id, aom_active_map_t *arg) {
-    const aom_codec_err_t res = aom_codec_control_(&encoder_, ctrl_id, arg);
+    const aom_codec_err_t res = aom_codec_control(&encoder_, ctrl_id, arg);
     ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
   }
 #endif
+
+  void SetOption(const char *name, const char *value) {
+    const aom_codec_err_t res = aom_codec_set_option(&encoder_, name, value);
+    ASSERT_EQ(AOM_CODEC_OK, res) << EncoderError();
+  }
 
   void Config(const aom_codec_enc_cfg_t *cfg) {
     const aom_codec_err_t res = aom_codec_enc_config_set(&encoder_, cfg);
@@ -142,14 +172,14 @@ class Encoder {
 
   
   void EncodeFrameInternal(const VideoSource &video,
-                           const unsigned long frame_flags);
+                           aom_enc_frame_flags_t frame_flags);
 
   
   void Flush();
 
   aom_codec_ctx_t encoder_;
   aom_codec_enc_cfg_t cfg_;
-  unsigned long init_flags_;
+  aom_codec_flags_t init_flags_;
   TwopassStatsStore *stats_;
 };
 
@@ -164,23 +194,19 @@ class EncoderTest {
  protected:
   explicit EncoderTest(const CodecFactory *codec)
       : codec_(codec), abort_(false), init_flags_(0), frame_flags_(0),
-        last_pts_(0), mode_(kRealTime) {
+        mode_(kRealTime) {
     
     cfg_.g_threads = 1;
   }
 
-  virtual ~EncoderTest() {}
+  virtual ~EncoderTest() = default;
 
   
-  void InitializeConfig();
+  
+  void InitializeConfig(TestMode mode);
 
   
-  void SetMode(TestMode mode);
-
-  
-  void set_init_flags(unsigned long flag) {  
-    init_flags_ = flag;
-  }
+  void set_init_flags(aom_codec_flags_t flag) { init_flags_ = flag; }
 
   
   virtual void RunLoop(VideoSource *video);
@@ -192,15 +218,25 @@ class EncoderTest {
   virtual void EndPassHook() {}
 
   
-  virtual void PreEncodeFrameHook(VideoSource * ) {}
   virtual void PreEncodeFrameHook(VideoSource * ,
                                   Encoder * ) {}
+
+  virtual void PostEncodeFrameHook(Encoder * ) {}
 
   
   virtual void FramePktHook(const aom_codec_cx_pkt_t * ) {}
 
   
   virtual void PSNRPktHook(const aom_codec_cx_pkt_t * ) {}
+
+  
+  virtual void StatsPktHook(const aom_codec_cx_pkt_t * ) {}
+
+  
+  virtual void CalculateFrameLevelSSIM(const aom_image_t * ,
+                                       const aom_image_t * ,
+                                       aom_bit_depth_t ,
+                                       unsigned int ) {}
 
   
   virtual bool Continue() const {
@@ -227,6 +263,8 @@ class EncoderTest {
     return AOM_CODEC_OK == res_dec;
   }
 
+  virtual int GetNumSpatialLayers() { return 1; }
+
   
   virtual const aom_codec_cx_pkt_t *MutateEncoderOutputHook(
       const aom_codec_cx_pkt_t *pkt) {
@@ -238,9 +276,8 @@ class EncoderTest {
   aom_codec_enc_cfg_t cfg_;
   unsigned int passes_;
   TwopassStatsStore stats_;
-  unsigned long init_flags_;
-  unsigned long frame_flags_;
-  aom_codec_pts_t last_pts_;
+  aom_codec_flags_t init_flags_;
+  aom_enc_frame_flags_t frame_flags_;
   TestMode mode_;
 };
 

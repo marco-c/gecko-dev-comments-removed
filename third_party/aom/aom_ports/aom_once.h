@@ -39,80 +39,25 @@
 
 
 #if CONFIG_MULTITHREAD && defined(_WIN32)
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <stdlib.h>
 
 
 
 
 
+static INIT_ONCE aom_init_once = INIT_ONCE_STATIC_INIT;
 
-
-static LONG aom_once_state;
 static void aom_once(void (*func)(void)) {
-  
-
-
-  if (InterlockedCompareExchange(&aom_once_state, 1, 0) == 0) {
+  BOOL pending;
+  InitOnceBeginInitialize(&aom_init_once, 0, &pending, NULL);
+  if (!pending) {
     
-
-    func();
-    
-    InterlockedIncrement(&aom_once_state);
     return;
   }
-
-  
-
-
-
-
-
-
-  while (InterlockedCompareExchange(&aom_once_state, 2, 2) != 2) {
-    
-
-
-
-
-
-
-
-
-
-    Sleep(0);
-  }
-
-  
-
-
-
-
-
-  return;
-}
-
-#elif CONFIG_MULTITHREAD && defined(__OS2__)
-#define INCL_DOS
-#include <os2.h>
-static void aom_once(void (*func)(void)) {
-  static int done;
-
-  
-  if (done) return;
-
-  
-
-
-  DosEnterCritSec();
-
-  if (!done) {
-    func();
-    done = 1;
-  }
-
-  
-  DosExitCritSec();
+  func();
+  InitOnceComplete(&aom_init_once, 0, NULL);
 }
 
 #elif CONFIG_MULTITHREAD && HAVE_PTHREAD_H
@@ -126,7 +71,7 @@ static void aom_once(void (*func)(void)) {
 
 
 static void aom_once(void (*func)(void)) {
-  static int done;
+  static volatile int done;
 
   if (!done) {
     func();

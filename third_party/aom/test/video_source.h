@@ -14,14 +14,21 @@
 #if defined(_WIN32)
 #undef NOMINMAX
 #define NOMINMAX
+#undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <memory>
 #include <string>
-#include "test/acm_random.h"
+
 #include "aom/aom_encoder.h"
+#include "test/acm_random.h"
+#if !defined(_WIN32)
+#include "third_party/googletest/src/googletest/include/gtest/gtest.h"
+#endif
 
 namespace libaom_test {
 
@@ -35,7 +42,7 @@ namespace libaom_test {
 
 static std::string GetDataPath() {
   const char *const data_path = getenv("LIBAOM_TEST_DATA_PATH");
-  if (data_path == NULL) {
+  if (data_path == nullptr) {
 #ifdef LIBAOM_TEST_DATA_PATH
     
     
@@ -69,11 +76,24 @@ static FILE *GetTempOutFile(std::string *file_name) {
       return fopen(fname, "wb+");
     }
   }
-  return NULL;
+  return nullptr;
 #else
-  char name_template[] = "/tmp/libaomtest.XXXXXX";
-  const int fd = mkstemp(name_template);
-  *file_name = name_template;
+  std::string temp_dir = testing::TempDir();
+  if (temp_dir.empty()) return nullptr;
+  
+  
+  
+  if (temp_dir[temp_dir.size() - 1] != '/') temp_dir += '/';
+  const char name_template[] = "libaomtest.XXXXXX";
+  std::unique_ptr<char[]> temp_file_name(
+      new char[temp_dir.size() + sizeof(name_template)]);
+  if (temp_file_name == nullptr) return nullptr;
+  memcpy(temp_file_name.get(), temp_dir.data(), temp_dir.size());
+  memcpy(temp_file_name.get() + temp_dir.size(), name_template,
+         sizeof(name_template));
+  const int fd = mkstemp(temp_file_name.get());
+  if (fd == -1) return nullptr;
+  *file_name = temp_file_name.get();
   return fdopen(fd, "wb+");
 #endif
 }
@@ -94,7 +114,7 @@ class TempOutFile {
   void CloseFile() {
     if (file_) {
       fclose(file_);
-      file_ = NULL;
+      file_ = nullptr;
     }
   }
   FILE *file_;
@@ -105,7 +125,7 @@ class TempOutFile {
 
 class VideoSource {
  public:
-  virtual ~VideoSource() {}
+  virtual ~VideoSource() = default;
 
   
   virtual void Begin() = 0;
@@ -135,38 +155,40 @@ class VideoSource {
 class DummyVideoSource : public VideoSource {
  public:
   DummyVideoSource()
-      : img_(NULL), limit_(100), width_(80), height_(64),
+      : img_(nullptr), limit_(100), width_(80), height_(64),
         format_(AOM_IMG_FMT_I420) {
     ReallocImage();
   }
 
-  virtual ~DummyVideoSource() { aom_img_free(img_); }
+  ~DummyVideoSource() override { aom_img_free(img_); }
 
-  virtual void Begin() {
+  void Begin() override {
     frame_ = 0;
     FillFrame();
   }
 
-  virtual void Next() {
+  void Next() override {
     ++frame_;
     FillFrame();
   }
 
-  virtual aom_image_t *img() const { return (frame_ < limit_) ? img_ : NULL; }
+  aom_image_t *img() const override {
+    return (frame_ < limit_) ? img_ : nullptr;
+  }
 
   
-  virtual aom_codec_pts_t pts() const { return frame_; }
+  aom_codec_pts_t pts() const override { return frame_; }
 
-  virtual unsigned long duration() const { return 1; }
+  unsigned long duration() const override { return 1; }
 
-  virtual aom_rational_t timebase() const {
+  aom_rational_t timebase() const override {
     const aom_rational_t t = { 1, 30 };
     return t;
   }
 
-  virtual unsigned int frame() const { return frame_; }
+  unsigned int frame() const override { return frame_; }
 
-  virtual unsigned int limit() const { return limit_; }
+  unsigned int limit() const override { return limit_; }
 
   void set_limit(unsigned int limit) { limit_ = limit; }
 
@@ -192,8 +214,9 @@ class DummyVideoSource : public VideoSource {
 
   void ReallocImage() {
     aom_img_free(img_);
-    img_ = aom_img_alloc(NULL, format_, width_, height_, 32);
-    raw_sz_ = ((img_->w + 31) & ~31) * img_->h * img_->bps / 8;
+    img_ = aom_img_alloc(nullptr, format_, width_, height_, 32);
+    ASSERT_NE(img_, nullptr);
+    raw_sz_ = ((img_->w + 31) & ~31u) * img_->h * img_->bps / 8;
   }
 
   aom_image_t *img_;
@@ -210,17 +233,17 @@ class RandomVideoSource : public DummyVideoSource {
   RandomVideoSource(int seed = ACMRandom::DeterministicSeed())
       : rnd_(seed), seed_(seed) {}
 
- protected:
   
-  virtual void Begin() {
+  void Begin() override {
     frame_ = 0;
     rnd_.Reset(seed_);
     FillFrame();
   }
 
+ protected:
   
   
-  virtual void FillFrame() {
+  void FillFrame() override {
     if (img_) {
       if (frame_ % 30 < 15)
         for (size_t i = 0; i < raw_sz_; ++i) img_->img_data[i] = rnd_.Rand8();
@@ -237,7 +260,7 @@ class RandomVideoSource : public DummyVideoSource {
 
 class CompressedVideoSource {
  public:
-  virtual ~CompressedVideoSource() {}
+  virtual ~CompressedVideoSource() = default;
 
   virtual void Init() = 0;
 

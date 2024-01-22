@@ -14,6 +14,10 @@
 #include "aom_dsp/grain_table.h"
 #include "aom/internal/aom_codec_internal.h"
 #include "av1/encoder/grain_test_vectors.h"
+#include "test/codec_factory.h"
+#include "test/encode_test_driver.h"
+#include "test/i420_video_source.h"
+#include "test/util.h"
 #include "test/video_source.h"
 
 void grain_equal(const aom_film_grain_t *expected,
@@ -87,7 +91,7 @@ TEST(FilmGrainTableTest, AddAndLookupSingleSegment) {
 
   
   aom_film_grain_table_append(&table, 2000, 3000, film_grain_test_vectors + 0);
-  EXPECT_EQ(0, table.head->next);
+  EXPECT_EQ(nullptr, table.head->next);
 
   
   EXPECT_TRUE(aom_film_grain_table_lookup(&table, 1000, 2000, true, &grain));
@@ -96,8 +100,22 @@ TEST(FilmGrainTableTest, AddAndLookupSingleSegment) {
   EXPECT_TRUE(aom_film_grain_table_lookup(&table, 2000, 3000, true, &grain));
   EXPECT_FALSE(aom_film_grain_table_lookup(&table, 2000, 3000, false, &grain));
 
-  EXPECT_EQ(0, table.head);
-  EXPECT_EQ(0, table.tail);
+  EXPECT_EQ(nullptr, table.head);
+  EXPECT_EQ(nullptr, table.tail);
+  aom_film_grain_table_free(&table);
+}
+
+TEST(FilmGrainTableTest, AddSingleSegmentRemoveBiggerSegment) {
+  aom_film_grain_table_t table;
+  aom_film_grain_t grain;
+
+  memset(&table, 0, sizeof(table));
+
+  aom_film_grain_table_append(&table, 0, 1000, film_grain_test_vectors + 0);
+  EXPECT_TRUE(aom_film_grain_table_lookup(&table, 0, 1100, true, &grain));
+
+  EXPECT_EQ(nullptr, table.head);
+  EXPECT_EQ(nullptr, table.tail);
   aom_film_grain_table_free(&table);
 }
 
@@ -110,12 +128,12 @@ TEST(FilmGrainTableTest, SplitSingleSegment) {
 
   
   EXPECT_TRUE(aom_film_grain_table_lookup(&table, 0, 100, true, &grain));
-  EXPECT_EQ(NULL, table.head->next);
+  EXPECT_EQ(nullptr, table.head->next);
   EXPECT_EQ(100, table.head->start_time);
 
   
   EXPECT_TRUE(aom_film_grain_table_lookup(&table, 900, 1000, true, &grain));
-  EXPECT_EQ(NULL, table.head->next);
+  EXPECT_EQ(nullptr, table.head->next);
   EXPECT_EQ(100, table.head->start_time);
   EXPECT_EQ(900, table.head->end_time);
 
@@ -124,7 +142,7 @@ TEST(FilmGrainTableTest, SplitSingleSegment) {
   EXPECT_EQ(100, table.head->start_time);
   EXPECT_EQ(400, table.head->end_time);
 
-  ASSERT_NE((void *)NULL, table.head->next);
+  ASSERT_NE(nullptr, table.head->next);
   EXPECT_EQ(table.tail, table.head->next);
   EXPECT_EQ(600, table.head->next->start_time);
   EXPECT_EQ(900, table.head->next->end_time);
@@ -162,7 +180,7 @@ TEST(FilmGrainTableTest, AddAndLookupMultipleSegments) {
 
 class FilmGrainTableIOTest : public ::testing::Test {
  protected:
-  void SetUp() { memset(&error_, 0, sizeof(error_)); }
+  void SetUp() override { memset(&error_, 0, sizeof(error_)); }
   struct aom_internal_error_info error_;
 };
 
@@ -179,6 +197,7 @@ TEST_F(FilmGrainTableIOTest, ReadTruncatedFile) {
 
   std::string grain_file;
   FILE *file = libaom_test::GetTempOutFile(&grain_file);
+  ASSERT_NE(file, nullptr);
   fwrite("deadbeef", 8, 1, file);
   fclose(file);
   ASSERT_EQ(AOM_CODEC_ERROR,
@@ -203,7 +222,9 @@ TEST_F(FilmGrainTableIOTest, RoundTripReadWrite) {
                                 expected_grain + i);
   }
   std::string grain_file;
-  fclose(libaom_test::GetTempOutFile(&grain_file));
+  FILE *tmpfile = libaom_test::GetTempOutFile(&grain_file);
+  ASSERT_NE(tmpfile, nullptr);
+  fclose(tmpfile);
   ASSERT_EQ(AOM_CODEC_OK,
             aom_film_grain_table_write(&table, grain_file.c_str(), &error_));
   aom_film_grain_table_free(&table);
@@ -223,7 +244,9 @@ TEST_F(FilmGrainTableIOTest, RoundTripReadWrite) {
 
 TEST_F(FilmGrainTableIOTest, RoundTripSplit) {
   std::string grain_file;
-  fclose(libaom_test::GetTempOutFile(&grain_file));
+  FILE *tmpfile = libaom_test::GetTempOutFile(&grain_file);
+  ASSERT_NE(tmpfile, nullptr);
+  fclose(tmpfile);
 
   aom_film_grain_table_t table;
   memset(&table, 0, sizeof(table));
@@ -247,4 +270,112 @@ TEST_F(FilmGrainTableIOTest, RoundTripSplit) {
   aom_film_grain_table_free(&table);
 
   EXPECT_EQ(0, remove(grain_file.c_str()));
+}
+
+const ::libaom_test::TestMode kFilmGrainEncodeTestModes[] = {
+  ::libaom_test::kRealTime,
+#if !CONFIG_REALTIME_ONLY
+  ::libaom_test::kOnePassGood
+#endif
+};
+
+class FilmGrainEncodeTest
+    : public ::libaom_test::CodecTestWith3Params<int, int,
+                                                 ::libaom_test::TestMode>,
+      public ::libaom_test::EncoderTest {
+ protected:
+  FilmGrainEncodeTest()
+      : EncoderTest(GET_PARAM(0)), test_monochrome_(GET_PARAM(1)),
+        key_frame_dist_(GET_PARAM(2)), test_mode_(GET_PARAM(3)) {}
+  ~FilmGrainEncodeTest() override = default;
+
+  void SetUp() override {
+    InitializeConfig(test_mode_);
+    cfg_.monochrome = test_monochrome_ == 1;
+    cfg_.rc_target_bitrate = 300;
+    cfg_.kf_max_dist = key_frame_dist_;
+    cfg_.g_lag_in_frames = 0;
+  }
+
+  void PreEncodeFrameHook(::libaom_test::VideoSource *video,
+                          ::libaom_test::Encoder *encoder) override {
+    if (video->frame() == 0) {
+      encoder->Control(AOME_SET_CPUUSED,
+                       test_mode_ == ::libaom_test::kRealTime ? 7 : 5);
+      encoder->Control(AV1E_SET_TUNE_CONTENT, AOM_CONTENT_FILM);
+      encoder->Control(AV1E_SET_DENOISE_NOISE_LEVEL, 1);
+    } else if (video->frame() == 1) {
+      cfg_.monochrome = (test_monochrome_ == 1 || test_monochrome_ == 2);
+      encoder->Config(&cfg_);
+    } else {
+      cfg_.monochrome = test_monochrome_ == 1;
+      encoder->Config(&cfg_);
+    }
+  }
+
+  bool DoDecode() const override { return false; }
+
+  void DoTest() {
+    ::libaom_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352,
+                                         288, 30, 1, 0, 3);
+    cfg_.g_w = video.img()->d_w;
+    cfg_.g_h = video.img()->d_h;
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+ private:
+  
+  
+  
+  
+  
+  
+  int test_monochrome_;
+  int key_frame_dist_;
+  ::libaom_test::TestMode test_mode_;
+};
+
+TEST_P(FilmGrainEncodeTest, Test) { DoTest(); }
+
+AV1_INSTANTIATE_TEST_SUITE(FilmGrainEncodeTest, ::testing::Range(0, 3),
+                           ::testing::Values(0, 10),
+                           ::testing::ValuesIn(kFilmGrainEncodeTestModes));
+
+
+
+
+
+
+TEST(FilmGrainEncodeTest, InitMonochrome1EncodeMonochrome0) {
+  const int kWidth = 352;
+  const int kHeight = 288;
+  const int usage = AOM_USAGE_REALTIME;
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, usage), AOM_CODEC_OK);
+  aom_codec_ctx_t enc;
+  cfg.g_w = kWidth;
+  cfg.g_h = kHeight;
+  
+  cfg.monochrome = 1;
+  aom_codec_err_t init_status = aom_codec_enc_init(&enc, iface, &cfg, 0);
+  ASSERT_EQ(init_status, AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 7), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TUNE_CONTENT, AOM_CONTENT_FILM),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_DENOISE_NOISE_LEVEL, 1),
+            AOM_CODEC_OK);
+  
+  constexpr size_t kBufferSize =
+      kWidth * kHeight + 2 * (kWidth + 1) / 2 * (kHeight + 1) / 2;
+  std::vector<unsigned char> buffer(kBufferSize);
+  aom_image_t img;
+  EXPECT_EQ(&img, aom_img_wrap(&img, AOM_IMG_FMT_I420, kWidth, kHeight, 1,
+                               buffer.data()));
+  
+  ASSERT_EQ(aom_codec_encode(&enc, &img, 0, 1, 0), AOM_CODEC_OK);
+  
+  cfg.monochrome = 0;
+  ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_INVALID_PARAM);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
 }

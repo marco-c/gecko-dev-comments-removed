@@ -1,17 +1,50 @@
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <assert.h>
 #include <stdlib.h>
 #include "fast.h"
 
 
 #define Compare(X, Y) ((X)>=(Y))
 
-xy* nonmax_suppression(const xy* corners, const int* scores, int num_corners, int* ret_num_nonmax)
+xy* aom_nonmax_suppression(const xy* corners, const int* scores, int num_corners,
+                           int** ret_scores, int* ret_num_nonmax)
 {
   int num_nonmax=0;
   int last_row;
   int* row_start;
   int i, j;
   xy* ret_nonmax;
+  int* nonmax_scores;
   const int sz = (int)num_corners;
 
   
@@ -19,20 +52,38 @@ xy* nonmax_suppression(const xy* corners, const int* scores, int num_corners, in
   int point_above = 0;
   int point_below = 0;
 
-
-  if(num_corners < 1)
+  *ret_scores = 0;
+  *ret_num_nonmax = -1;
+  if(!(corners && scores) || num_corners < 1)
   {
     *ret_num_nonmax = 0;
     return 0;
   }
 
   ret_nonmax = (xy*)malloc(num_corners * sizeof(xy));
+  if(!ret_nonmax)
+  {
+    return 0;
+  }
+
+  nonmax_scores = (int*)malloc(num_corners * sizeof(*nonmax_scores));
+  if (!nonmax_scores)
+  {
+    free(ret_nonmax);
+    return 0;
+  }
 
   
 
 
   last_row = corners[num_corners-1].y;
   row_start = (int*)malloc((last_row+1)*sizeof(int));
+  if(!row_start)
+  {
+    free(ret_nonmax);
+    free(nonmax_scores);
+    return 0;
+  }
 
   for(i=0; i < last_row+1; i++)
     row_start[i] = -1;
@@ -53,6 +104,7 @@ xy* nonmax_suppression(const xy* corners, const int* scores, int num_corners, in
   {
     int score = scores[i];
     xy pos = corners[i];
+    assert(pos.y <= last_row);
 
     
     if(i > 0)
@@ -65,55 +117,56 @@ xy* nonmax_suppression(const xy* corners, const int* scores, int num_corners, in
         continue;
 
     
-    if(pos.y > 0)
-      if (row_start[pos.y - 1] != -1)
+    if(pos.y > 0 && row_start[pos.y - 1] != -1)
+    {
+      
+
+      if(corners[point_above].y < pos.y - 1)
+        point_above = row_start[pos.y-1];
+
+      
+
+      for(; corners[point_above].y < pos.y && corners[point_above].x < pos.x - 1; point_above++)
+      {}
+
+
+      for(j=point_above; corners[j].y < pos.y && corners[j].x <= pos.x + 1; j++)
       {
-        
-
-        if(corners[point_above].y < pos.y - 1)
-          point_above = row_start[pos.y-1];
-
-        
-
-        for(; corners[point_above].y < pos.y && corners[point_above].x < pos.x - 1; point_above++)
-        {}
-
-
-        for(j=point_above; corners[j].y < pos.y && corners[j].x <= pos.x + 1; j++)
-        {
-          int x = corners[j].x;
-          if( (x == pos.x - 1 || x ==pos.x || x == pos.x+1) && Compare(scores[j], score))
-            goto cont;
-        }
-
+        int x = corners[j].x;
+        if( (x == pos.x - 1 || x ==pos.x || x == pos.x+1) && Compare(scores[j], score))
+          goto cont;
       }
+
+    }
 
     
-    if(pos.y >= 0)
-      if (pos.y != last_row && row_start[pos.y + 1] != -1 && point_below < sz) 
+    if (pos.y + 1 < last_row+1 && row_start[pos.y + 1] != -1 && point_below < sz) 
+    {
+      if(corners[point_below].y < pos.y + 1)
+        point_below = row_start[pos.y+1];
+
+      
+
+      for(; point_below < sz && corners[point_below].y == pos.y+1 && corners[point_below].x < pos.x - 1; point_below++)
+      {}
+
+      for(j=point_below; j < sz && corners[j].y == pos.y+1 && corners[j].x <= pos.x + 1; j++)
       {
-        if(corners[point_below].y < pos.y + 1)
-          point_below = row_start[pos.y+1];
-
-        
-
-        for(; point_below < sz && corners[point_below].y == pos.y+1 && corners[point_below].x < pos.x - 1; point_below++)
-        {}
-
-        for(j=point_below; j < sz && corners[j].y == pos.y+1 && corners[j].x <= pos.x + 1; j++)
-        {
-          int x = corners[j].x;
-          if( (x == pos.x - 1 || x ==pos.x || x == pos.x+1) && Compare(scores[j],score))
-            goto cont;
-        }
+        int x = corners[j].x;
+        if( (x == pos.x - 1 || x ==pos.x || x == pos.x+1) && Compare(scores[j],score))
+          goto cont;
       }
+    }
 
-    ret_nonmax[num_nonmax++] = corners[i];
+    ret_nonmax[num_nonmax] = corners[i];
+    nonmax_scores[num_nonmax] = scores[i];
+    num_nonmax++;
 cont:
     ;
   }
 
   free(row_start);
+  *ret_scores = nonmax_scores;
   *ret_num_nonmax = num_nonmax;
   return ret_nonmax;
 }

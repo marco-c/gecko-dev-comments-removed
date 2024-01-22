@@ -39,41 +39,10 @@ typedef struct FrameWorkerData {
   const uint8_t *data_end;
   size_t data_size;
   void *user_priv;
-  int worker_id;
   int received_frame;
-
-  
-  
-  uint8_t *scratch_buffer;
-  size_t scratch_buffer_size;
-
-#if CONFIG_MULTITHREAD
-  pthread_mutex_t stats_mutex;
-  pthread_cond_t stats_cond;
-#endif
-
   int frame_context_ready;  
   int frame_decoded;        
 } FrameWorkerData;
-
-void av1_frameworker_lock_stats(AVxWorker *const worker);
-void av1_frameworker_unlock_stats(AVxWorker *const worker);
-void av1_frameworker_signal_stats(AVxWorker *const worker);
-
-
-
-
-
-void av1_frameworker_wait(AVxWorker *const worker, RefCntBuffer *const ref_buf,
-                          int row);
-
-
-
-void av1_frameworker_broadcast(RefCntBuffer *const buf, int row);
-
-
-void av1_frameworker_copy_context(AVxWorker *const dst_worker,
-                                  AVxWorker *const src_worker);
 
 #ifdef __cplusplus
 }  

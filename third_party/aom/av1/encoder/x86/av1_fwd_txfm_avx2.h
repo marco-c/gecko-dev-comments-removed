@@ -13,13 +13,6 @@
 #define AOM_AV1_ENCODER_X86_AV1_FWD_TXFM_AVX2_H_
 #include <immintrin.h>
 
-static INLINE __m256i av1_round_shift_32_avx2(__m256i vec, int bit) {
-  __m256i tmp, round;
-  round = _mm256_set1_epi32(1 << (bit - 1));
-  tmp = _mm256_add_epi32(vec, round);
-  return _mm256_srai_epi32(tmp, bit);
-}
-
 
 
 static INLINE void btf_32_avx2_type0(const int32_t w0, const int32_t w1,

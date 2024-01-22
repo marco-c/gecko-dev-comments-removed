@@ -20,8 +20,41 @@
 
 #include "aom/aom_integer.h"
 #include "aom_ports/mem.h"
+#include "av1/common/av1_common_int.h"
 #include "av1/common/cdef_block.h"
-#include "av1/common/onyxc_int.h"
+
+enum { TOP, LEFT, BOTTOM, RIGHT, BOUNDARIES } UENUM1BYTE(BOUNDARY);
+
+struct AV1CdefSyncData;
+
+
+typedef struct {
+  uint16_t *src;                       
+  uint16_t *top_linebuf[MAX_MB_PLANE]; 
+  uint16_t *bot_linebuf[MAX_MB_PLANE]; 
+  uint8_t *dst;                        
+  cdef_list
+      dlist[MI_SIZE_64X64 * MI_SIZE_64X64]; 
+
+  int xdec;                       
+  int ydec;                       
+  int mi_wide_l2;                 
+  int mi_high_l2;                 
+  int frame_boundary[BOUNDARIES]; 
+
+  int damping;     
+  int coeff_shift; 
+  int level;       
+  int sec_strength; 
+  int cdef_count;   
+  int dir[CDEF_NBLOCKS]
+         [CDEF_NBLOCKS]; 
+  int var[CDEF_NBLOCKS][CDEF_NBLOCKS]; 
+
+  int dst_stride; 
+  int coffset;    
+  int roffset;    
+} CdefBlockInfo;
 
 static INLINE int sign(int i) { return i < 0 ? -1 : 1; }
 
@@ -37,13 +70,41 @@ static INLINE int constrain(int diff, int threshold, int damping) {
 extern "C" {
 #endif
 
-int sb_all_skip(const AV1_COMMON *const cm, int mi_row, int mi_col);
-int sb_compute_cdef_list(const AV1_COMMON *const cm, int mi_row, int mi_col,
-                         cdef_list *dlist, BLOCK_SIZE bsize);
-void av1_cdef_frame(YV12_BUFFER_CONFIG *frame, AV1_COMMON *cm, MACROBLOCKD *xd);
+int av1_cdef_compute_sb_list(const CommonModeInfoParams *const mi_params,
+                             int mi_row, int mi_col, cdef_list *dlist,
+                             BLOCK_SIZE bsize);
 
-void av1_cdef_search(YV12_BUFFER_CONFIG *frame, const YV12_BUFFER_CONFIG *ref,
-                     AV1_COMMON *cm, MACROBLOCKD *xd, int fast);
+typedef void (*cdef_init_fb_row_t)(
+    const AV1_COMMON *const cm, const MACROBLOCKD *const xd,
+    CdefBlockInfo *const fb_info, uint16_t **const linebuf, uint16_t *const src,
+    struct AV1CdefSyncData *const cdef_sync, int fbr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av1_cdef_frame(YV12_BUFFER_CONFIG *frame, AV1_COMMON *const cm,
+                    MACROBLOCKD *xd, cdef_init_fb_row_t cdef_init_fb_row_fn);
+void av1_cdef_fb_row(const AV1_COMMON *const cm, MACROBLOCKD *xd,
+                     uint16_t **const linebuf, uint16_t **const colbuf,
+                     uint16_t *const src, int fbr,
+                     cdef_init_fb_row_t cdef_init_fb_row_fn,
+                     struct AV1CdefSyncData *const cdef_sync,
+                     struct aom_internal_error_info *error_info);
+void av1_cdef_init_fb_row(const AV1_COMMON *const cm,
+                          const MACROBLOCKD *const xd,
+                          CdefBlockInfo *const fb_info,
+                          uint16_t **const linebuf, uint16_t *const src,
+                          struct AV1CdefSyncData *const cdef_sync, int fbr);
 
 #ifdef __cplusplus
 }  

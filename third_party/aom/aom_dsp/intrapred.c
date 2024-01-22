@@ -52,9 +52,9 @@ static INLINE uint16_t paeth_predictor_single(uint16_t left, uint16_t top,
   const int p_top_left = abs_diff(base, top_left);
 
   
-  return (p_left <= p_top && p_left <= p_top_left)
-             ? left
-             : (p_top <= p_top_left) ? top : top_left;
+  return (p_left <= p_top && p_left <= p_top_left) ? left
+         : (p_top <= p_top_left)                   ? top
+                                                   : top_left;
 }
 
 static INLINE void paeth_predictor(uint8_t *dst, ptrdiff_t stride, int bw,
@@ -86,11 +86,11 @@ static INLINE void smooth_predictor(uint8_t *dst, ptrdiff_t stride, int bw,
                                     const uint8_t *left) {
   const uint8_t below_pred = left[bh - 1];   
   const uint8_t right_pred = above[bw - 1];  
-  const uint8_t *const sm_weights_w = sm_weight_arrays + bw;
-  const uint8_t *const sm_weights_h = sm_weight_arrays + bh;
+  const uint8_t *const sm_weights_w = smooth_weights + bw - 4;
+  const uint8_t *const sm_weights_h = smooth_weights + bh - 4;
   
-  const int log2_scale = 1 + sm_weight_log2_scale;
-  const uint16_t scale = (1 << sm_weight_log2_scale);
+  const int log2_scale = 1 + SMOOTH_WEIGHT_LOG2_SCALE;
+  const uint16_t scale = (1 << SMOOTH_WEIGHT_LOG2_SCALE);
   sm_weights_sanity_checks(sm_weights_w, sm_weights_h, scale,
                            log2_scale + sizeof(*dst));
   int r;
@@ -116,10 +116,10 @@ static INLINE void smooth_v_predictor(uint8_t *dst, ptrdiff_t stride, int bw,
                                       int bh, const uint8_t *above,
                                       const uint8_t *left) {
   const uint8_t below_pred = left[bh - 1];  
-  const uint8_t *const sm_weights = sm_weight_arrays + bh;
+  const uint8_t *const sm_weights = smooth_weights + bh - 4;
   
-  const int log2_scale = sm_weight_log2_scale;
-  const uint16_t scale = (1 << sm_weight_log2_scale);
+  const int log2_scale = SMOOTH_WEIGHT_LOG2_SCALE;
+  const uint16_t scale = (1 << SMOOTH_WEIGHT_LOG2_SCALE);
   sm_weights_sanity_checks(sm_weights, sm_weights, scale,
                            log2_scale + sizeof(*dst));
 
@@ -145,10 +145,10 @@ static INLINE void smooth_h_predictor(uint8_t *dst, ptrdiff_t stride, int bw,
                                       int bh, const uint8_t *above,
                                       const uint8_t *left) {
   const uint8_t right_pred = above[bw - 1];  
-  const uint8_t *const sm_weights = sm_weight_arrays + bw;
+  const uint8_t *const sm_weights = smooth_weights + bw - 4;
   
-  const int log2_scale = sm_weight_log2_scale;
-  const uint16_t scale = (1 << sm_weight_log2_scale);
+  const int log2_scale = SMOOTH_WEIGHT_LOG2_SCALE;
+  const uint16_t scale = (1 << SMOOTH_WEIGHT_LOG2_SCALE);
   sm_weights_sanity_checks(sm_weights, sm_weights, scale,
                            log2_scale + sizeof(*dst));
 
@@ -239,23 +239,23 @@ static INLINE int divide_using_multiply_shift(int num, int shift1,
   return interm * multiplier >> shift2;
 }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define DC_MULTIPLIER_1X2 0x5556
 #define DC_MULTIPLIER_1X4 0x3334
@@ -405,11 +405,11 @@ static INLINE void highbd_smooth_predictor(uint16_t *dst, ptrdiff_t stride,
   (void)bd;
   const uint16_t below_pred = left[bh - 1];   
   const uint16_t right_pred = above[bw - 1];  
-  const uint8_t *const sm_weights_w = sm_weight_arrays + bw;
-  const uint8_t *const sm_weights_h = sm_weight_arrays + bh;
+  const uint8_t *const sm_weights_w = smooth_weights + bw - 4;
+  const uint8_t *const sm_weights_h = smooth_weights + bh - 4;
   
-  const int log2_scale = 1 + sm_weight_log2_scale;
-  const uint16_t scale = (1 << sm_weight_log2_scale);
+  const int log2_scale = 1 + SMOOTH_WEIGHT_LOG2_SCALE;
+  const uint16_t scale = (1 << SMOOTH_WEIGHT_LOG2_SCALE);
   sm_weights_sanity_checks(sm_weights_w, sm_weights_h, scale,
                            log2_scale + sizeof(*dst));
   int r;
@@ -437,10 +437,10 @@ static INLINE void highbd_smooth_v_predictor(uint16_t *dst, ptrdiff_t stride,
                                              const uint16_t *left, int bd) {
   (void)bd;
   const uint16_t below_pred = left[bh - 1];  
-  const uint8_t *const sm_weights = sm_weight_arrays + bh;
+  const uint8_t *const sm_weights = smooth_weights + bh - 4;
   
-  const int log2_scale = sm_weight_log2_scale;
-  const uint16_t scale = (1 << sm_weight_log2_scale);
+  const int log2_scale = SMOOTH_WEIGHT_LOG2_SCALE;
+  const uint16_t scale = (1 << SMOOTH_WEIGHT_LOG2_SCALE);
   sm_weights_sanity_checks(sm_weights, sm_weights, scale,
                            log2_scale + sizeof(*dst));
 
@@ -468,10 +468,10 @@ static INLINE void highbd_smooth_h_predictor(uint16_t *dst, ptrdiff_t stride,
                                              const uint16_t *left, int bd) {
   (void)bd;
   const uint16_t right_pred = above[bw - 1];  
-  const uint8_t *const sm_weights = sm_weight_arrays + bw;
+  const uint8_t *const sm_weights = smooth_weights + bw - 4;
   
-  const int log2_scale = sm_weight_log2_scale;
-  const uint16_t scale = (1 << sm_weight_log2_scale);
+  const int log2_scale = SMOOTH_WEIGHT_LOG2_SCALE;
+  const uint16_t scale = (1 << SMOOTH_WEIGHT_LOG2_SCALE);
   sm_weights_sanity_checks(sm_weights, sm_weights, scale,
                            log2_scale + sizeof(*dst));
 
@@ -752,6 +752,7 @@ void aom_highbd_dc_predictor_64x32_c(uint16_t *dst, ptrdiff_t stride,
   intra_pred_highbd_sized(type, 32, 8) \
   intra_pred_highbd_sized(type, 16, 64) \
   intra_pred_highbd_sized(type, 64, 16)
+
 #define intra_pred_above_4x4(type) \
   intra_pred_sized(type, 8, 8) \
   intra_pred_sized(type, 16, 16) \

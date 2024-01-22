@@ -111,6 +111,10 @@ static INLINE void transpose_16bit_4x4(const __m128i *const in,
   
   
   
+  
+  
+  
+  
   out[0] = _mm_unpacklo_epi32(a0, a1);
   out[1] = _mm_srli_si128(out[0], 8);
   out[2] = _mm_unpackhi_epi32(a0, a1);

@@ -9,7 +9,13 @@
 
 
 #include "libyuv/basic_types.h"
+
+#include "libyuv/compare_row.h"
 #include "libyuv/row.h"
+
+#if defined(_MSC_VER)
+#include <intrin.h>  
+#endif
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -17,15 +23,29 @@ extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    defined(_MSC_VER) && !defined(__clang__)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
-__declspec(naked)
-uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
+uint32_t HammingDistance_SSE42(const uint8_t* src_a,
+                               const uint8_t* src_b,
+                               int count) {
+  uint32_t diff = 0u;
+
+  int i;
+  for (i = 0; i < count - 3; i += 4) {
+    uint32_t x = *((uint32_t*)src_a) ^ *((uint32_t*)src_b);  
+    src_a += 4;
+    src_b += 4;
+    diff += __popcnt(x);
+  }
+  return diff;
+}
+
+__declspec(naked) uint32_t
+    SumSquareError_SSE2(const uint8_t* src_a, const uint8_t* src_b, int count) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
     pxor       xmm0, xmm0
     pxor       xmm5, xmm5
 
@@ -60,13 +80,13 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
 
 #if _MSC_VER >= 1700
 
-#pragma warning(disable: 4752)
-__declspec(naked)
-uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
+#pragma warning(disable : 4752)
+__declspec(naked) uint32_t
+    SumSquareError_AVX2(const uint8_t* src_a, const uint8_t* src_b, int count) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
     vpxor      ymm0, ymm0, ymm0  
     vpxor      ymm5, ymm5, ymm5  
     sub        edx, eax
@@ -100,74 +120,65 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
 }
 #endif  
 
-#define HAS_HASHDJB2_SSE41
-static uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  
-static uvec32 kHashMul0 = {
-  0x0c3525e1,  
-  0xa3476dc1,  
-  0x3b4039a1,  
-  0x4f5f0981,  
+uvec32 kHash16x33 = {0x92d9e201, 0, 0, 0};  
+uvec32 kHashMul0 = {
+    0x0c3525e1,  
+    0xa3476dc1,  
+    0x3b4039a1,  
+    0x4f5f0981,  
 };
-static uvec32 kHashMul1 = {
-  0x30f35d61,  
-  0x855cb541,  
-  0x040a9121,  
-  0x747c7101,  
+uvec32 kHashMul1 = {
+    0x30f35d61,  
+    0x855cb541,  
+    0x040a9121,  
+    0x747c7101,  
 };
-static uvec32 kHashMul2 = {
-  0xec41d4e1,  
-  0x4cfa3cc1,  
-  0x025528a1,  
-  0x00121881,  
+uvec32 kHashMul2 = {
+    0xec41d4e1,  
+    0x4cfa3cc1,  
+    0x025528a1,  
+    0x00121881,  
 };
-static uvec32 kHashMul3 = {
-  0x00008c61,  
-  0x00000441,  
-  0x00000021,  
-  0x00000001,  
+uvec32 kHashMul3 = {
+    0x00008c61,  
+    0x00000441,  
+    0x00000021,  
+    0x00000001,  
 };
 
-
-
-
-
-
-#define pmulld(reg) _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 \
-    _asm _emit 0x40 _asm _emit reg
-
-__declspec(naked)
-uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
+__declspec(naked) uint32_t
+    HashDjb2_SSE41(const uint8_t* src, int count, uint32_t seed) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        ecx, [esp + 8]    
+    mov        eax, [esp + 4]  
+    mov        ecx, [esp + 8]  
     movd       xmm0, [esp + 12]  
 
-    pxor       xmm7, xmm7        
-    movdqa     xmm6, kHash16x33
+    pxor       xmm7, xmm7  
+    movdqa     xmm6, xmmword ptr kHash16x33
 
   wloop:
-    movdqu     xmm1, [eax]       
+    movdqu     xmm1, [eax]  
     lea        eax, [eax + 16]
-    pmulld(0xc6)                 
-    movdqa     xmm5, kHashMul0
+    pmulld     xmm0, xmm6  
+    movdqa     xmm5, xmmword ptr kHashMul0
     movdqa     xmm2, xmm1
-    punpcklbw  xmm2, xmm7        
+    punpcklbw  xmm2, xmm7  
     movdqa     xmm3, xmm2
-    punpcklwd  xmm3, xmm7        
-    pmulld(0xdd)                 
-    movdqa     xmm5, kHashMul1
+    punpcklwd  xmm3, xmm7  
+    pmulld     xmm3, xmm5
+    movdqa     xmm5, xmmword ptr kHashMul1
     movdqa     xmm4, xmm2
-    punpckhwd  xmm4, xmm7        
-    pmulld(0xe5)                 
-    movdqa     xmm5, kHashMul2
-    punpckhbw  xmm1, xmm7        
+    punpckhwd  xmm4, xmm7  
+    pmulld     xmm4, xmm5
+    movdqa     xmm5, xmmword ptr kHashMul2
+    punpckhbw  xmm1, xmm7  
     movdqa     xmm2, xmm1
-    punpcklwd  xmm2, xmm7        
-    pmulld(0xd5)                 
-    movdqa     xmm5, kHashMul3
-    punpckhwd  xmm1, xmm7        
-    pmulld(0xcd)                 
-    paddd      xmm3, xmm4        
+    punpcklwd  xmm2, xmm7  
+    pmulld     xmm2, xmm5
+    movdqa     xmm5, xmmword ptr kHashMul3
+    punpckhwd  xmm1, xmm7  
+    pmulld     xmm1, xmm5
+    paddd      xmm3, xmm4  
     paddd      xmm1, xmm2
     paddd      xmm1, xmm3
 
@@ -179,48 +190,49 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     sub        ecx, 16
     jg         wloop
 
-    movd       eax, xmm0         
+    movd       eax, xmm0  
     ret
   }
 }
 
 
 #if _MSC_VER >= 1700
-__declspec(naked)
-uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
+__declspec(naked) uint32_t
+    HashDjb2_AVX2(const uint8_t* src, int count, uint32_t seed) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        ecx, [esp + 8]    
-    movd       xmm0, [esp + 12]  
-    movdqa     xmm6, kHash16x33
+    mov        eax, [esp + 4]  
+    mov        ecx, [esp + 8]  
+    vmovd      xmm0, [esp + 12]  
 
   wloop:
-    vpmovzxbd  xmm3, dword ptr [eax]  
-    pmulld     xmm0, xmm6  
-    vpmovzxbd  xmm4, dword ptr [eax + 4]  
-    pmulld     xmm3, kHashMul0
-    vpmovzxbd  xmm2, dword ptr [eax + 8]  
-    pmulld     xmm4, kHashMul1
-    vpmovzxbd  xmm1, dword ptr [eax + 12]  
-    pmulld     xmm2, kHashMul2
+    vpmovzxbd  xmm3, [eax]  
+    vpmulld    xmm0, xmm0, xmmword ptr kHash16x33  
+    vpmovzxbd  xmm4, [eax + 4]  
+    vpmulld    xmm3, xmm3, xmmword ptr kHashMul0
+    vpmovzxbd  xmm2, [eax + 8]  
+    vpmulld    xmm4, xmm4, xmmword ptr kHashMul1
+    vpmovzxbd  xmm1, [eax + 12]  
+    vpmulld    xmm2, xmm2, xmmword ptr kHashMul2
     lea        eax, [eax + 16]
-    pmulld     xmm1, kHashMul3
-    paddd      xmm3, xmm4        
-    paddd      xmm1, xmm2
-    paddd      xmm1, xmm3
-    pshufd     xmm2, xmm1, 0x0e  
-    paddd      xmm1, xmm2
-    pshufd     xmm2, xmm1, 0x01
-    paddd      xmm1, xmm2
-    paddd      xmm0, xmm1
+    vpmulld    xmm1, xmm1, xmmword ptr kHashMul3
+    vpaddd     xmm3, xmm3, xmm4  
+    vpaddd     xmm1, xmm1, xmm2
+    vpaddd     xmm1, xmm1, xmm3
+    vpshufd    xmm2, xmm1, 0x0e  
+    vpaddd     xmm1, xmm1,xmm2
+    vpshufd    xmm2, xmm1, 0x01
+    vpaddd     xmm1, xmm1, xmm2
+    vpaddd     xmm0, xmm0, xmm1
     sub        ecx, 16
     jg         wloop
 
-    movd       eax, xmm0         
+    vmovd      eax, xmm0  
+    vzeroupper
     ret
   }
 }
 #endif  
+
 #endif  
 
 #ifdef __cplusplus

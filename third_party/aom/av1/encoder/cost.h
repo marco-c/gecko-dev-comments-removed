@@ -30,6 +30,10 @@ extern const uint16_t av1_prob_cost[128];
 
 
 static INLINE int av1_cost_symbol(aom_cdf_prob p15) {
+  
+  
+  
+  p15 = (aom_cdf_prob)clamp(p15, 1, CDF_PROB_TOP - 1);
   assert(0 < p15 && p15 < CDF_PROB_TOP);
   const int shift = CDF_PROB_BITS - 1 - get_msb(p15);
   const int prob = get_prob(p15 << shift, CDF_PROB_TOP);

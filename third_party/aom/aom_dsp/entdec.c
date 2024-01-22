@@ -87,11 +87,25 @@ static void od_ec_dec_refill(od_ec_dec *dec) {
   end = dec->end;
   s = OD_EC_WINDOW_SIZE - 9 - (cnt + 15);
   for (; s >= 0 && bptr < end; s -= 8, bptr++) {
+    
+
+
     assert(s <= OD_EC_WINDOW_SIZE - 8);
     dif ^= (od_ec_window)bptr[0] << s;
     cnt += 8;
   }
   if (bptr >= end) {
+    
+
+
+
+
+
+
+
+
+
+
     dec->tell_offs += OD_EC_LOTS_OF_BITS - cnt;
     cnt = OD_EC_LOTS_OF_BITS;
   }
@@ -114,6 +128,7 @@ static int od_ec_dec_normalize(od_ec_dec *dec, od_ec_window dif, unsigned rng,
   assert(rng <= 65535U);
   
   d = 16 - OD_ILOG_NZ(rng);
+  
   dec->cnt -= d;
   
   dec->dif = ((dif + 1) << d) - 1;
@@ -134,7 +149,6 @@ void od_ec_dec_init(od_ec_dec *dec, const unsigned char *buf,
   dec->dif = ((od_ec_window)1 << (OD_EC_WINDOW_SIZE - 1)) - 1;
   dec->rng = 0x8000;
   dec->cnt = -15;
-  dec->error = 0;
   od_ec_dec_refill(dec);
 }
 
@@ -191,14 +205,14 @@ int od_ec_decode_cdf_q15(od_ec_dec *dec, const uint16_t *icdf, int nsyms) {
   assert(dif >> (OD_EC_WINDOW_SIZE - 16) < r);
   assert(icdf[nsyms - 1] == OD_ICDF(CDF_PROB_TOP));
   assert(32768U <= r);
-  assert(7 - EC_PROB_SHIFT - CDF_SHIFT >= 0);
+  assert(7 - EC_PROB_SHIFT >= 0);
   c = (unsigned)(dif >> (OD_EC_WINDOW_SIZE - 16));
   v = r;
   ret = -1;
   do {
     u = v;
     v = ((r >> 8) * (uint32_t)(icdf[++ret] >> EC_PROB_SHIFT) >>
-         (7 - EC_PROB_SHIFT - CDF_SHIFT));
+         (7 - EC_PROB_SHIFT));
     v += EC_MIN_PROB * (N - ret);
   } while (c < v);
   assert(v < u);
@@ -215,6 +229,10 @@ int od_ec_decode_cdf_q15(od_ec_dec *dec, const uint16_t *icdf, int nsyms) {
 
 
 int od_ec_dec_tell(const od_ec_dec *dec) {
+  
+
+
+
   return (int)((dec->bptr - dec->buf) * 8 - dec->cnt + dec->tell_offs);
 }
 

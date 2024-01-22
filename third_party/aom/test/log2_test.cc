@@ -9,6 +9,7 @@
 
 
 
+#include <limits.h>
 #include <math.h>
 
 #include "aom_ports/bitops.h"
@@ -42,9 +43,9 @@ TEST(Log2Test, Av1CeilLog2) {
     const int power_of_2 = 1 << exponent;
     EXPECT_EQ(av1_ceil_log2(power_of_2 - 1), exponent);
     EXPECT_EQ(av1_ceil_log2(power_of_2), exponent);
-    
-    if (exponent < 30) {
-      EXPECT_EQ(av1_ceil_log2(power_of_2 + 1), exponent + 1);
-    }
+    EXPECT_EQ(av1_ceil_log2(power_of_2 + 1), exponent + 1);
   }
+
+  
+  EXPECT_EQ(av1_ceil_log2(INT_MAX), 31);
 }

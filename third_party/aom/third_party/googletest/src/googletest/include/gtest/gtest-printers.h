@@ -92,76 +92,152 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_PRINTERS_H_
-#define GTEST_INCLUDE_GTEST_GTEST_PRINTERS_H_
 
+
+
+
+
+
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_PRINTERS_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_PRINTERS_H_
+
+#include <functional>
+#include <memory>
 #include <ostream>  
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
-#include "gtest/internal/gtest-port.h"
-#include "gtest/internal/gtest-internal.h"
 
-#if GTEST_HAS_STD_TUPLE_
-# include <tuple>
-#endif
+#include "gtest/internal/gtest-internal.h"
+#include "gtest/internal/gtest-port.h"
 
 namespace testing {
 
 
 
-namespace internal2 {
+namespace internal {
+
+template <typename T>
+void UniversalPrint(const T& value, ::std::ostream* os);
 
 
 
-GTEST_API_ void PrintBytesInObjectTo(const unsigned char* obj_bytes,
-                                     size_t count,
-                                     ::std::ostream* os);
+struct ContainerPrinter {
+  template <typename T,
+            typename = typename std::enable_if<
+                (sizeof(IsContainerTest<T>(0)) == sizeof(IsContainer)) &&
+                !IsRecursiveContainer<T>::value>::type>
+  static void PrintValue(const T& container, std::ostream* os) {
+    const size_t kMaxCount = 32;  
+    *os << '{';
+    size_t count = 0;
+    for (auto&& elem : container) {
+      if (count > 0) {
+        *os << ',';
+        if (count == kMaxCount) {  
+          *os << " ...";
+          break;
+        }
+      }
+      *os << ' ';
+      
+      
+      internal::UniversalPrint(elem, os);
+      ++count;
+    }
 
-
-
-enum TypeKind {
-  kProtobuf,              
-  kConvertibleToInteger,  
-                          
-  kOtherType              
-};
-
-
-
-
-
-template <typename T, TypeKind kTypeKind>
-class TypeWithoutFormatter {
- public:
-  
-  static void PrintValue(const T& value, ::std::ostream* os) {
-    PrintBytesInObjectTo(reinterpret_cast<const unsigned char*>(&value),
-                         sizeof(value), os);
+    if (count > 0) {
+      *os << ' ';
+    }
+    *os << '}';
   }
 };
 
 
 
 
-const size_t kProtobufOneLinerMaxLength = 50;
 
-template <typename T>
-class TypeWithoutFormatter<T, kProtobuf> {
- public:
+
+
+struct FunctionPointerPrinter {
+  template <typename T, typename = typename std::enable_if<
+                            std::is_function<T>::value>::type>
+  static void PrintValue(T* p, ::std::ostream* os) {
+    if (p == nullptr) {
+      *os << "NULL";
+    } else {
+      
+      
+      
+      *os << reinterpret_cast<const void*>(p);
+    }
+  }
+};
+
+struct PointerPrinter {
+  template <typename T>
+  static void PrintValue(T* p, ::std::ostream* os) {
+    if (p == nullptr) {
+      *os << "NULL";
+    } else {
+      
+      
+      
+      *os << p;
+    }
+  }
+};
+
+namespace internal_stream_operator_without_lexical_name_lookup {
+
+
+
+
+
+struct LookupBlocker {};
+void operator<<(LookupBlocker, LookupBlocker);
+
+struct StreamPrinter {
+  template <typename T,
+            
+            
+            typename = typename std::enable_if<
+                !std::is_member_pointer<T>::value>::type,
+            
+            
+            typename = decltype(std::declval<std::ostream&>()
+                                << std::declval<const T&>())>
   static void PrintValue(const T& value, ::std::ostream* os) {
-    const ::testing::internal::string short_str = value.ShortDebugString();
-    const ::testing::internal::string pretty_str =
-        short_str.length() <= kProtobufOneLinerMaxLength ?
-        short_str : ("\n" + value.DebugString());
+    
+    
+    *os << value;
+  }
+};
+
+}  
+
+struct ProtobufPrinter {
+  
+  
+  
+  static const size_t kProtobufOneLinerMaxLength = 50;
+
+  template <typename T,
+            typename = typename std::enable_if<
+                internal::HasDebugStringAndShortDebugString<T>::value>::type>
+  static void PrintValue(const T& value, ::std::ostream* os) {
+    std::string pretty_str = value.ShortDebugString();
+    if (pretty_str.length() > kProtobufOneLinerMaxLength) {
+      pretty_str = "\n" + value.DebugString();
+    }
     *os << ("<" + pretty_str + ">");
   }
 };
 
-template <typename T>
-class TypeWithoutFormatter<T, kConvertibleToInteger> {
- public:
+struct ConvertibleToIntegerPrinter {
   
   
   
@@ -169,10 +245,51 @@ class TypeWithoutFormatter<T, kConvertibleToInteger> {
   
   
   
-  static void PrintValue(const T& value, ::std::ostream* os) {
-    const internal::BiggestInt kBigInt = value;
-    *os << kBigInt;
+  static void PrintValue(internal::BiggestInt value, ::std::ostream* os) {
+    *os << value;
   }
+};
+
+struct ConvertibleToStringViewPrinter {
+#if GTEST_INTERNAL_HAS_STRING_VIEW
+  static void PrintValue(internal::StringView value, ::std::ostream* os) {
+    internal::UniversalPrint(value, os);
+  }
+#endif
+};
+
+
+
+GTEST_API_ void PrintBytesInObjectTo(const unsigned char* obj_bytes,
+                                     size_t count, ::std::ostream* os);
+struct RawBytesPrinter {
+  
+  template <typename T, size_t = sizeof(T)>
+  static void PrintValue(const T& value, ::std::ostream* os) {
+    PrintBytesInObjectTo(
+        static_cast<const unsigned char*>(
+            
+            reinterpret_cast<const void*>(std::addressof(value))),
+        sizeof(value), os);
+  }
+};
+
+struct FallbackPrinter {
+  template <typename T>
+  static void PrintValue(const T&, ::std::ostream* os) {
+    *os << "(incomplete type)";
+  }
+};
+
+
+template <typename T, typename E, typename Printer, typename... Printers>
+struct FindFirstPrinter : FindFirstPrinter<T, E, Printers...> {};
+
+template <typename T, typename Printer, typename... Printers>
+struct FindFirstPrinter<
+    T, decltype(Printer::PrintValue(std::declval<const T&>(), nullptr)),
+    Printer, Printers...> {
+  using type = Printer;
 };
 
 
@@ -184,75 +301,15 @@ class TypeWithoutFormatter<T, kConvertibleToInteger> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename Char, typename CharTraits, typename T>
-::std::basic_ostream<Char, CharTraits>& operator<<(
-    ::std::basic_ostream<Char, CharTraits>& os, const T& x) {
-  TypeWithoutFormatter<T,
-      (internal::IsAProtocolMessage<T>::value ? kProtobuf :
-       internal::ImplicitlyConvertible<const T&, internal::BiggestInt>::value ?
-       kConvertibleToInteger : kOtherType)>::PrintValue(x, &os);
-  return os;
-}
-
-}  
-}  
-
-
-
-namespace testing_internal {
-
-
-
 template <typename T>
-void DefaultPrintNonContainerTo(const T& value, ::std::ostream* os) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  using namespace ::testing::internal2;  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  *os << value;
+void PrintWithFallback(const T& value, ::std::ostream* os) {
+  using Printer = typename FindFirstPrinter<
+      T, void, ContainerPrinter, FunctionPointerPrinter, PointerPrinter,
+      internal_stream_operator_without_lexical_name_lookup::StreamPrinter,
+      ProtobufPrinter, ConvertibleToIntegerPrinter,
+      ConvertibleToStringViewPrinter, RawBytesPrinter, FallbackPrinter>::type;
+  Printer::PrintValue(value, os);
 }
-
-}  
-
-namespace testing {
-namespace internal {
 
 
 
@@ -302,6 +359,14 @@ GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(char);
 GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const char);
 GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(wchar_t);
 GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const wchar_t);
+#ifdef __cpp_lib_char8_t
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(char8_t);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const char8_t);
+#endif
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(char16_t);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const char16_t);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(char32_t);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const char32_t);
 
 #undef GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_
 
@@ -309,26 +374,24 @@ GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const wchar_t);
 
 
 #define GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(CharType, OtherStringType) \
-  template <>                                                           \
-  class FormatForComparison<CharType*, OtherStringType> {               \
-   public:                                                              \
-    static ::std::string Format(CharType* value) {                      \
-      return ::testing::PrintToString(value);                           \
-    }                                                                   \
+  template <>                                                            \
+  class FormatForComparison<CharType*, OtherStringType> {                \
+   public:                                                               \
+    static ::std::string Format(CharType* value) {                       \
+      return ::testing::PrintToString(value);                            \
+    }                                                                    \
   }
 
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char, ::std::string);
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char, ::std::string);
-
-#if GTEST_HAS_GLOBAL_STRING
-GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char, ::string);
-GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char, ::string);
+#ifdef __cpp_char8_t
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char8_t, ::std::u8string);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char8_t, ::std::u8string);
 #endif
-
-#if GTEST_HAS_GLOBAL_WSTRING
-GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(wchar_t, ::wstring);
-GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const wchar_t, ::wstring);
-#endif
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char16_t, ::std::u16string);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char16_t, ::std::u16string);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char32_t, ::std::u32string);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char32_t, ::std::u32string);
 
 #if GTEST_HAS_STD_WSTRING
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(wchar_t, ::std::wstring);
@@ -346,8 +409,8 @@ GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const wchar_t, ::std::wstring);
 
 
 template <typename T1, typename T2>
-std::string FormatForComparisonFailureMessage(
-    const T1& value, const T2& ) {
+std::string FormatForComparisonFailureMessage(const T1& value,
+                                              const T2& ) {
   return FormatForComparison<T1, T2>::Format(value);
 }
 
@@ -360,84 +423,6 @@ std::string FormatForComparisonFailureMessage(
 
 template <typename T>
 class UniversalPrinter;
-
-template <typename T>
-void UniversalPrint(const T& value, ::std::ostream* os);
-
-
-
-template <typename C>
-void DefaultPrintTo(IsContainer ,
-                    false_type ,
-                    const C& container, ::std::ostream* os) {
-  const size_t kMaxCount = 32;  
-  *os << '{';
-  size_t count = 0;
-  for (typename C::const_iterator it = container.begin();
-       it != container.end(); ++it, ++count) {
-    if (count > 0) {
-      *os << ',';
-      if (count == kMaxCount) {  
-        *os << " ...";
-        break;
-      }
-    }
-    *os << ' ';
-    
-    
-    internal::UniversalPrint(*it, os);
-  }
-
-  if (count > 0) {
-    *os << ' ';
-  }
-  *os << '}';
-}
-
-
-
-
-
-
-
-template <typename T>
-void DefaultPrintTo(IsNotContainer ,
-                    true_type ,
-                    T* p, ::std::ostream* os) {
-  if (p == NULL) {
-    *os << "NULL";
-  } else {
-    
-    
-    
-    
-    
-    if (IsTrue(ImplicitlyConvertible<T*, const void*>::value)) {
-      
-      
-      
-      *os << p;
-    } else {
-      
-      
-      
-      
-      
-      
-      *os << reinterpret_cast<const void*>(
-          reinterpret_cast<internal::UInt64>(p));
-    }
-  }
-}
-
-
-
-template <typename T>
-void DefaultPrintTo(IsNotContainer ,
-                    false_type ,
-                    const T& value, ::std::ostream* os) {
-  ::testing_internal::DefaultPrintNonContainerTo(value, os);
-}
 
 
 
@@ -452,29 +437,7 @@ void DefaultPrintTo(IsNotContainer ,
 
 template <typename T>
 void PrintTo(const T& value, ::std::ostream* os) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  DefaultPrintTo(IsContainerTest<T>(0), is_pointer<T>(), value, os);
+  internal::PrintWithFallback(value, os);
 }
 
 
@@ -505,6 +468,22 @@ inline void PrintTo(bool x, ::std::ostream* os) {
 
 GTEST_API_ void PrintTo(wchar_t wc, ::std::ostream* os);
 
+GTEST_API_ void PrintTo(char32_t c, ::std::ostream* os);
+inline void PrintTo(char16_t c, ::std::ostream* os) {
+  PrintTo(ImplicitCast_<char32_t>(c), os);
+}
+#ifdef __cpp_char8_t
+inline void PrintTo(char8_t c, ::std::ostream* os) {
+  PrintTo(ImplicitCast_<char32_t>(c), os);
+}
+#endif
+
+
+#if defined(__SIZEOF_INT128__)
+GTEST_API_ void PrintTo(__uint128_t v, ::std::ostream* os);
+GTEST_API_ void PrintTo(__int128_t v, ::std::ostream* os);
+#endif  
+
 
 GTEST_API_ void PrintTo(const char* s, ::std::ostream* os);
 inline void PrintTo(char* s, ::std::ostream* os) {
@@ -524,6 +503,23 @@ inline void PrintTo(const unsigned char* s, ::std::ostream* os) {
 }
 inline void PrintTo(unsigned char* s, ::std::ostream* os) {
   PrintTo(ImplicitCast_<const void*>(s), os);
+}
+#ifdef __cpp_char8_t
+
+GTEST_API_ void PrintTo(const char8_t* s, ::std::ostream* os);
+inline void PrintTo(char8_t* s, ::std::ostream* os) {
+  PrintTo(ImplicitCast_<const char8_t*>(s), os);
+}
+#endif
+
+GTEST_API_ void PrintTo(const char16_t* s, ::std::ostream* os);
+inline void PrintTo(char16_t* s, ::std::ostream* os) {
+  PrintTo(ImplicitCast_<const char16_t*>(s), os);
+}
+
+GTEST_API_ void PrintTo(const char32_t* s, ::std::ostream* os);
+inline void PrintTo(char32_t* s, ::std::ostream* os) {
+  PrintTo(ImplicitCast_<const char32_t*>(s), os);
 }
 
 
@@ -554,122 +550,121 @@ void PrintRawArrayTo(const T a[], size_t count, ::std::ostream* os) {
 }
 
 
-#if GTEST_HAS_GLOBAL_STRING
-GTEST_API_ void PrintStringTo(const ::string&s, ::std::ostream* os);
-inline void PrintTo(const ::string& s, ::std::ostream* os) {
-  PrintStringTo(s, os);
-}
-#endif  
-
-GTEST_API_ void PrintStringTo(const ::std::string&s, ::std::ostream* os);
+GTEST_API_ void PrintStringTo(const ::std::string& s, ::std::ostream* os);
 inline void PrintTo(const ::std::string& s, ::std::ostream* os) {
   PrintStringTo(s, os);
 }
 
 
-#if GTEST_HAS_GLOBAL_WSTRING
-GTEST_API_ void PrintWideStringTo(const ::wstring&s, ::std::ostream* os);
-inline void PrintTo(const ::wstring& s, ::std::ostream* os) {
-  PrintWideStringTo(s, os);
+#ifdef __cpp_char8_t
+GTEST_API_ void PrintU8StringTo(const ::std::u8string& s, ::std::ostream* os);
+inline void PrintTo(const ::std::u8string& s, ::std::ostream* os) {
+  PrintU8StringTo(s, os);
 }
-#endif  
+#endif
+
+
+GTEST_API_ void PrintU16StringTo(const ::std::u16string& s, ::std::ostream* os);
+inline void PrintTo(const ::std::u16string& s, ::std::ostream* os) {
+  PrintU16StringTo(s, os);
+}
+
+
+GTEST_API_ void PrintU32StringTo(const ::std::u32string& s, ::std::ostream* os);
+inline void PrintTo(const ::std::u32string& s, ::std::ostream* os) {
+  PrintU32StringTo(s, os);
+}
+
 
 #if GTEST_HAS_STD_WSTRING
-GTEST_API_ void PrintWideStringTo(const ::std::wstring&s, ::std::ostream* os);
+GTEST_API_ void PrintWideStringTo(const ::std::wstring& s, ::std::ostream* os);
 inline void PrintTo(const ::std::wstring& s, ::std::ostream* os) {
   PrintWideStringTo(s, os);
 }
 #endif  
 
-#if GTEST_HAS_TR1_TUPLE || GTEST_HAS_STD_TUPLE_
+#if GTEST_INTERNAL_HAS_STRING_VIEW
+
+inline void PrintTo(internal::StringView sp, ::std::ostream* os) {
+  PrintTo(::std::string(sp), os);
+}
+#endif  
+
+inline void PrintTo(std::nullptr_t, ::std::ostream* os) { *os << "(nullptr)"; }
+
+#if GTEST_HAS_RTTI
+inline void PrintTo(const std::type_info& info, std::ostream* os) {
+  *os << internal::GetTypeName(info);
+}
+#endif  
+
+template <typename T>
+void PrintTo(std::reference_wrapper<T> ref, ::std::ostream* os) {
+  UniversalPrinter<T&>::Print(ref.get(), os);
+}
+
+inline const void* VoidifyPointer(const void* p) { return p; }
+inline const void* VoidifyPointer(volatile const void* p) {
+  return const_cast<const void*>(p);
+}
+
+template <typename T, typename Ptr>
+void PrintSmartPointer(const Ptr& ptr, std::ostream* os, char) {
+  if (ptr == nullptr) {
+    *os << "(nullptr)";
+  } else {
+    
+    *os << "(" << (VoidifyPointer)(ptr.get()) << ")";
+  }
+}
+template <typename T, typename Ptr,
+          typename = typename std::enable_if<!std::is_void<T>::value &&
+                                             !std::is_array<T>::value>::type>
+void PrintSmartPointer(const Ptr& ptr, std::ostream* os, int) {
+  if (ptr == nullptr) {
+    *os << "(nullptr)";
+  } else {
+    *os << "(ptr = " << (VoidifyPointer)(ptr.get()) << ", value = ";
+    UniversalPrinter<T>::Print(*ptr, os);
+    *os << ")";
+  }
+}
+
+template <typename T, typename D>
+void PrintTo(const std::unique_ptr<T, D>& ptr, std::ostream* os) {
+  (PrintSmartPointer<T>)(ptr, os, 0);
+}
+
+template <typename T>
+void PrintTo(const std::shared_ptr<T>& ptr, std::ostream* os) {
+  (PrintSmartPointer<T>)(ptr, os, 0);
+}
+
 
 
 template <typename T>
-void PrintTupleTo(const T& t, ::std::ostream* os);
-#endif  
+void PrintTupleTo(const T&, std::integral_constant<size_t, 0>,
+                  ::std::ostream*) {}
 
-#if GTEST_HAS_TR1_TUPLE
-
-
-
-
-
-
-
-
-inline void PrintTo(const ::std::tr1::tuple<>& t, ::std::ostream* os) {
-  PrintTupleTo(t, os);
+template <typename T, size_t I>
+void PrintTupleTo(const T& t, std::integral_constant<size_t, I>,
+                  ::std::ostream* os) {
+  PrintTupleTo(t, std::integral_constant<size_t, I - 1>(), os);
+  GTEST_INTENTIONAL_CONST_COND_PUSH_()
+  if (I > 1) {
+    GTEST_INTENTIONAL_CONST_COND_POP_()
+    *os << ", ";
+  }
+  UniversalPrinter<typename std::tuple_element<I - 1, T>::type>::Print(
+      std::get<I - 1>(t), os);
 }
 
-template <typename T1>
-void PrintTo(const ::std::tr1::tuple<T1>& t, ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2>
-void PrintTo(const ::std::tr1::tuple<T1, T2>& t, ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3>& t, ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3, T4>& t, ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3, T4, T5>& t,
-             ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5,
-          typename T6>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3, T4, T5, T6>& t,
-             ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5,
-          typename T6, typename T7>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3, T4, T5, T6, T7>& t,
-             ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5,
-          typename T6, typename T7, typename T8>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3, T4, T5, T6, T7, T8>& t,
-             ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5,
-          typename T6, typename T7, typename T8, typename T9>
-void PrintTo(const ::std::tr1::tuple<T1, T2, T3, T4, T5, T6, T7, T8, T9>& t,
-             ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5,
-          typename T6, typename T7, typename T8, typename T9, typename T10>
-void PrintTo(
-    const ::std::tr1::tuple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>& t,
-    ::std::ostream* os) {
-  PrintTupleTo(t, os);
-}
-#endif  
-
-#if GTEST_HAS_STD_TUPLE_
 template <typename... Types>
 void PrintTo(const ::std::tuple<Types...>& t, ::std::ostream* os) {
-  PrintTupleTo(t, os);
+  *os << "(";
+  PrintTupleTo(t, std::integral_constant<size_t, sizeof...(Types)>(), os);
+  *os << ")";
 }
-#endif  
 
 
 template <typename T1, typename T2>
@@ -711,6 +706,98 @@ class UniversalPrinter {
 };
 
 
+template <typename T>
+class UniversalPrinter<const T> : public UniversalPrinter<T> {};
+
+#if GTEST_INTERNAL_HAS_ANY
+
+
+
+template <>
+class UniversalPrinter<Any> {
+ public:
+  static void Print(const Any& value, ::std::ostream* os) {
+    if (value.has_value()) {
+      *os << "value of type " << GetTypeName(value);
+    } else {
+      *os << "no value";
+    }
+  }
+
+ private:
+  static std::string GetTypeName(const Any& value) {
+#if GTEST_HAS_RTTI
+    return internal::GetTypeName(value.type());
+#else
+    static_cast<void>(value);  
+    return "<unknown_type>";
+#endif  
+  }
+};
+
+#endif  
+
+#if GTEST_INTERNAL_HAS_OPTIONAL
+
+
+
+template <typename T>
+class UniversalPrinter<Optional<T>> {
+ public:
+  static void Print(const Optional<T>& value, ::std::ostream* os) {
+    *os << '(';
+    if (!value) {
+      *os << "nullopt";
+    } else {
+      UniversalPrint(*value, os);
+    }
+    *os << ')';
+  }
+};
+
+template <>
+class UniversalPrinter<decltype(Nullopt())> {
+ public:
+  static void Print(decltype(Nullopt()), ::std::ostream* os) {
+    *os << "(nullopt)";
+  }
+};
+
+#endif  
+
+#if GTEST_INTERNAL_HAS_VARIANT
+
+
+
+template <typename... T>
+class UniversalPrinter<Variant<T...>> {
+ public:
+  static void Print(const Variant<T...>& value, ::std::ostream* os) {
+    *os << '(';
+#if GTEST_HAS_ABSL
+    absl::visit(Visitor{os, value.index()}, value);
+#else
+    std::visit(Visitor{os, value.index()}, value);
+#endif  
+    *os << ')';
+  }
+
+ private:
+  struct Visitor {
+    template <typename U>
+    void operator()(const U& u) const {
+      *os << "'" << GetTypeName<U>() << "(index = " << index
+          << ")' with value ";
+      UniversalPrint(u, os);
+    }
+    ::std::ostream* os;
+    std::size_t index;
+  };
+};
+
+#endif  
+
+
 
 template <typename T>
 void UniversalPrintArray(const T* begin, size_t len, ::std::ostream* os) {
@@ -720,7 +807,6 @@ void UniversalPrintArray(const T* begin, size_t len, ::std::ostream* os) {
     *os << "{ ";
     const size_t kThreshold = 18;
     const size_t kChunkSize = 8;
-    
     
     
     
@@ -735,12 +821,26 @@ void UniversalPrintArray(const T* begin, size_t len, ::std::ostream* os) {
   }
 }
 
-GTEST_API_ void UniversalPrintArray(
-    const char* begin, size_t len, ::std::ostream* os);
+GTEST_API_ void UniversalPrintArray(const char* begin, size_t len,
+                                    ::std::ostream* os);
+
+#ifdef __cpp_char8_t
+
+GTEST_API_ void UniversalPrintArray(const char8_t* begin, size_t len,
+                                    ::std::ostream* os);
+#endif
 
 
-GTEST_API_ void UniversalPrintArray(
-    const wchar_t* begin, size_t len, ::std::ostream* os);
+GTEST_API_ void UniversalPrintArray(const char16_t* begin, size_t len,
+                                    ::std::ostream* os);
+
+
+GTEST_API_ void UniversalPrintArray(const char32_t* begin, size_t len,
+                                    ::std::ostream* os);
+
+
+GTEST_API_ void UniversalPrintArray(const wchar_t* begin, size_t len,
+                                    ::std::ostream* os);
 
 
 template <typename T, size_t N>
@@ -802,27 +902,70 @@ template <>
 class UniversalTersePrinter<const char*> {
  public:
   static void Print(const char* str, ::std::ostream* os) {
-    if (str == NULL) {
+    if (str == nullptr) {
       *os << "NULL";
     } else {
-      UniversalPrint(string(str), os);
+      UniversalPrint(std::string(str), os);
     }
   }
 };
 template <>
-class UniversalTersePrinter<char*> {
+class UniversalTersePrinter<char*> : public UniversalTersePrinter<const char*> {
+};
+
+#ifdef __cpp_char8_t
+template <>
+class UniversalTersePrinter<const char8_t*> {
  public:
-  static void Print(char* str, ::std::ostream* os) {
-    UniversalTersePrinter<const char*>::Print(str, os);
+  static void Print(const char8_t* str, ::std::ostream* os) {
+    if (str == nullptr) {
+      *os << "NULL";
+    } else {
+      UniversalPrint(::std::u8string(str), os);
+    }
   }
 };
+template <>
+class UniversalTersePrinter<char8_t*>
+    : public UniversalTersePrinter<const char8_t*> {};
+#endif
+
+template <>
+class UniversalTersePrinter<const char16_t*> {
+ public:
+  static void Print(const char16_t* str, ::std::ostream* os) {
+    if (str == nullptr) {
+      *os << "NULL";
+    } else {
+      UniversalPrint(::std::u16string(str), os);
+    }
+  }
+};
+template <>
+class UniversalTersePrinter<char16_t*>
+    : public UniversalTersePrinter<const char16_t*> {};
+
+template <>
+class UniversalTersePrinter<const char32_t*> {
+ public:
+  static void Print(const char32_t* str, ::std::ostream* os) {
+    if (str == nullptr) {
+      *os << "NULL";
+    } else {
+      UniversalPrint(::std::u32string(str), os);
+    }
+  }
+};
+template <>
+class UniversalTersePrinter<char32_t*>
+    : public UniversalTersePrinter<const char32_t*> {};
 
 #if GTEST_HAS_STD_WSTRING
 template <>
 class UniversalTersePrinter<const wchar_t*> {
  public:
   static void Print(const wchar_t* str, ::std::ostream* os) {
-    if (str == NULL) {
+    if (str == nullptr) {
       *os << "NULL";
     } else {
       UniversalPrint(::std::wstring(str), os);
@@ -856,110 +999,22 @@ void UniversalPrint(const T& value, ::std::ostream* os) {
   UniversalPrinter<T1>::Print(value, os);
 }
 
-typedef ::std::vector<string> Strings;
-
-
-
-
-
-
-
-
-template <typename TupleT>
-struct TuplePolicy;
-
-#if GTEST_HAS_TR1_TUPLE
-template <typename TupleT>
-struct TuplePolicy {
-  typedef TupleT Tuple;
-  static const size_t tuple_size = ::std::tr1::tuple_size<Tuple>::value;
-
-  template <size_t I>
-  struct tuple_element : ::std::tr1::tuple_element<I, Tuple> {};
-
-  template <size_t I>
-  static typename AddReference<
-      const typename ::std::tr1::tuple_element<I, Tuple>::type>::type get(
-      const Tuple& tuple) {
-    return ::std::tr1::get<I>(tuple);
-  }
-};
-template <typename TupleT>
-const size_t TuplePolicy<TupleT>::tuple_size;
-#endif  
-
-#if GTEST_HAS_STD_TUPLE_
-template <typename... Types>
-struct TuplePolicy< ::std::tuple<Types...> > {
-  typedef ::std::tuple<Types...> Tuple;
-  static const size_t tuple_size = ::std::tuple_size<Tuple>::value;
-
-  template <size_t I>
-  struct tuple_element : ::std::tuple_element<I, Tuple> {};
-
-  template <size_t I>
-  static const typename ::std::tuple_element<I, Tuple>::type& get(
-      const Tuple& tuple) {
-    return ::std::get<I>(tuple);
-  }
-};
-template <typename... Types>
-const size_t TuplePolicy< ::std::tuple<Types...> >::tuple_size;
-#endif  
-
-#if GTEST_HAS_TR1_TUPLE || GTEST_HAS_STD_TUPLE_
-
-
-
-
-
-
-
-
-template <size_t N>
-struct TuplePrefixPrinter {
-  
-  template <typename Tuple>
-  static void PrintPrefixTo(const Tuple& t, ::std::ostream* os) {
-    TuplePrefixPrinter<N - 1>::PrintPrefixTo(t, os);
-    GTEST_INTENTIONAL_CONST_COND_PUSH_()
-    if (N > 1) {
-    GTEST_INTENTIONAL_CONST_COND_POP_()
-      *os << ", ";
-    }
-    UniversalPrinter<
-        typename TuplePolicy<Tuple>::template tuple_element<N - 1>::type>
-        ::Print(TuplePolicy<Tuple>::template get<N - 1>(t), os);
-  }
-
-  
-  
-  template <typename Tuple>
-  static void TersePrintPrefixToStrings(const Tuple& t, Strings* strings) {
-    TuplePrefixPrinter<N - 1>::TersePrintPrefixToStrings(t, strings);
-    ::std::stringstream ss;
-    UniversalTersePrint(TuplePolicy<Tuple>::template get<N - 1>(t), &ss);
-    strings->push_back(ss.str());
-  }
-};
-
-
-template <>
-struct TuplePrefixPrinter<0> {
-  template <typename Tuple>
-  static void PrintPrefixTo(const Tuple&, ::std::ostream*) {}
-
-  template <typename Tuple>
-  static void TersePrintPrefixToStrings(const Tuple&, Strings*) {}
-};
+typedef ::std::vector<::std::string> Strings;
 
 
 
 template <typename Tuple>
-void PrintTupleTo(const Tuple& t, ::std::ostream* os) {
-  *os << "(";
-  TuplePrefixPrinter<TuplePolicy<Tuple>::tuple_size>::PrintPrefixTo(t, os);
-  *os << ")";
+void TersePrintPrefixToStrings(const Tuple&, std::integral_constant<size_t, 0>,
+                               Strings*) {}
+template <typename Tuple, size_t I>
+void TersePrintPrefixToStrings(const Tuple& t,
+                               std::integral_constant<size_t, I>,
+                               Strings* strings) {
+  TersePrintPrefixToStrings(t, std::integral_constant<size_t, I - 1>(),
+                            strings);
+  ::std::stringstream ss;
+  UniversalTersePrint(std::get<I - 1>(t), &ss);
+  strings->push_back(ss.str());
 }
 
 
@@ -968,11 +1023,11 @@ void PrintTupleTo(const Tuple& t, ::std::ostream* os) {
 template <typename Tuple>
 Strings UniversalTersePrintTupleFieldsToStrings(const Tuple& value) {
   Strings result;
-  TuplePrefixPrinter<TuplePolicy<Tuple>::tuple_size>::
-      TersePrintPrefixToStrings(value, &result);
+  TersePrintPrefixToStrings(
+      value, std::integral_constant<size_t, std::tuple_size<Tuple>::value>(),
+      &result);
   return result;
 }
-#endif  
 
 }  
 

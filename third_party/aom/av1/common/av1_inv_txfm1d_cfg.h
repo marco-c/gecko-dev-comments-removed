@@ -36,12 +36,10 @@ static const int8_t inv_start_range[TX_SIZES_ALL] = {
   7,  
 };
 
-extern const int8_t *inv_txfm_shift_ls[TX_SIZES_ALL];
+extern const int8_t *av1_inv_txfm_shift_ls[TX_SIZES_ALL];
 
 
 
 #define INV_COS_BIT 12
-extern const int8_t inv_cos_bit_col[5 ][5 ];
-extern const int8_t inv_cos_bit_row[5 ][5 ];
 
 #endif  

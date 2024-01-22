@@ -54,11 +54,15 @@ void PrintUsage() {
 }
 
 VideoFileType GetFileType(InputContext *ctx) {
-  if (file_is_ivf(ctx->avx_ctx)) return FILE_TYPE_IVF;
-  if (file_is_obu(ctx->obu_ctx)) return FILE_TYPE_OBU;
+  
+  
+  
+  
 #if CONFIG_WEBM_IO
   if (file_is_webm(ctx->webm_ctx, ctx->avx_ctx)) return FILE_TYPE_WEBM;
 #endif
+  if (file_is_ivf(ctx->avx_ctx)) return FILE_TYPE_IVF;
+  if (file_is_obu(ctx->obu_ctx)) return FILE_TYPE_OBU;
   return FILE_TYPE_RAW;
 }
 
@@ -66,7 +70,7 @@ bool ReadTemporalUnit(InputContext *ctx, size_t *unit_size) {
   const VideoFileType file_type = ctx->avx_ctx->file_type;
   switch (file_type) {
     case FILE_TYPE_IVF: {
-      if (ivf_read_frame(ctx->avx_ctx->file, &ctx->unit_buffer, unit_size,
+      if (ivf_read_frame(ctx->avx_ctx, &ctx->unit_buffer, unit_size,
                          &ctx->unit_buffer_size, NULL)) {
         return false;
       }

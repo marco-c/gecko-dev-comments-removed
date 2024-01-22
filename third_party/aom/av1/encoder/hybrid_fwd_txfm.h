@@ -24,6 +24,15 @@ void av1_fwd_txfm(const int16_t *src_diff, tran_low_t *coeff, int diff_stride,
 void av1_highbd_fwd_txfm(const int16_t *src_diff, tran_low_t *coeff,
                          int diff_stride, TxfmParam *txfm_param);
 
+
+
+
+
+
+
+
+void av1_quick_txfm(int use_hadamard, TX_SIZE tx_size, BitDepthInfo bd_info,
+                    const int16_t *src_diff, int src_stride, tran_low_t *coeff);
 #ifdef __cplusplus
 }  
 #endif

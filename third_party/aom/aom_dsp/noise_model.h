@@ -17,7 +17,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "aom_dsp/grain_synthesis.h"
+#include "aom_dsp/grain_params.h"
+#include "aom_ports/mem.h"
 #include "aom_scale/yv12config.h"
 
 
@@ -158,10 +159,10 @@ int aom_flat_block_finder_run(const aom_flat_block_finder_t *block_finder,
                               int stride, uint8_t *flat_blocks);
 
 
-typedef enum {
+enum {
   AOM_NOISE_SHAPE_DIAMOND = 0,
   AOM_NOISE_SHAPE_SQUARE = 1
-} aom_noise_shape;
+} UENUM1BYTE(aom_noise_shape);
 
 
 
@@ -202,13 +203,13 @@ typedef struct {
 } aom_noise_model_t;
 
 
-typedef enum {
+enum {
   AOM_NOISE_STATUS_OK = 0,
   AOM_NOISE_STATUS_INVALID_ARGUMENT,
   AOM_NOISE_STATUS_INSUFFICIENT_FLAT_BLOCKS,
   AOM_NOISE_STATUS_DIFFERENT_NOISE_TYPE,
   AOM_NOISE_STATUS_INTERNAL_ERROR,
-} aom_noise_status_t;
+} UENUM1BYTE(aom_noise_status_t);
 
 
 
@@ -298,8 +299,12 @@ struct aom_denoise_and_model_t;
 
 
 
+
+
+
 int aom_denoise_and_model_run(struct aom_denoise_and_model_t *ctx,
-                              YV12_BUFFER_CONFIG *buf, aom_film_grain_t *grain);
+                              YV12_BUFFER_CONFIG *buf, aom_film_grain_t *grain,
+                              int apply_denoise);
 
 
 

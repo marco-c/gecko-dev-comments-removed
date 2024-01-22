@@ -24,19 +24,12 @@
 #define DECLARE_ALIGNED(n, typ, val) typ val
 #endif
 
-
-
-
-
-#if defined(__GNUC__) && __GNUC__
-#define UNINITIALIZED_IS_SAFE(x) x = x
-#else
-#define UNINITIALIZED_IS_SAFE(x) x
-#endif
-
 #if HAVE_NEON && defined(_MSC_VER)
 #define __builtin_prefetch(x)
 #endif
+
+
+
 
 
 #define ROUND_POWER_OF_TWO(value, n) (((value) + (((1 << (n)) >> 1))) >> (n))
@@ -47,12 +40,20 @@
                  : ROUND_POWER_OF_TWO((value), (n)))
 
 
+
+
+
 #define ROUND_POWER_OF_TWO_64(value, n) \
   (((value) + ((((int64_t)1 << (n)) >> 1))) >> (n))
+
+
 
 #define ROUND_POWER_OF_TWO_SIGNED_64(value, n)           \
   (((value) < 0) ? -ROUND_POWER_OF_TWO_64(-(value), (n)) \
                  : ROUND_POWER_OF_TWO_64((value), (n)))
+
+
+#define CEIL_POWER_OF_TWO(value, n) (((value) + (1 << (n)) - 1) >> (n))
 
 
 #define RIGHT_SIGNED_SHIFT(value, n) \
@@ -60,10 +61,42 @@
 
 #define ALIGN_POWER_OF_TWO(value, n) \
   (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
+#define ALIGN_POWER_OF_TWO_UNSIGNED(value, n) \
+  (((value) + ((1u << (n)) - 1)) & ~((1u << (n)) - 1))
 
 #define DIVIDE_AND_ROUND(x, y) (((x) + ((y) >> 1)) / (y))
 
 #define CONVERT_TO_SHORTPTR(x) ((uint16_t *)(((uintptr_t)(x)) << 1))
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t *)(((uintptr_t)(x)) >> 1))
+
+
+#define UENUM1BYTE(enumvar) \
+  ;                         \
+  typedef uint8_t enumvar
+
+
+#define SENUM1BYTE(enumvar) \
+  ;                         \
+  typedef int8_t enumvar
+
+
+#define UENUM2BYTE(enumvar) \
+  ;                         \
+  typedef uint16_t enumvar
+
+
+#define SENUM2BYTE(enumvar) \
+  ;                         \
+  typedef int16_t enumvar
+
+
+#define UENUM4BYTE(enumvar) \
+  ;                         \
+  typedef uint32_t enumvar
+
+
+#define SENUM4BYTE(enumvar) \
+  ;                         \
+  typedef int32_t enumvar
 
 #endif  

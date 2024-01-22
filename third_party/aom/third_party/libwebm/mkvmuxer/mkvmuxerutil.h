@@ -32,6 +32,9 @@ const int64 kMaxBlockTimecode = 0x07FFFLL;
 int32 SerializeInt(IMkvWriter* writer, int64 value, int32 size);
 
 
+int32 SerializeFloat(IMkvWriter* writer, float f);
+
+
 int32 GetUIntSize(uint64 value);
 int32 GetIntSize(int64 value);
 int32 GetCodedUIntSize(uint64 value);

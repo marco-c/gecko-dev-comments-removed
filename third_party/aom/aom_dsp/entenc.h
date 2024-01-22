@@ -13,10 +13,13 @@
 #define AOM_AOM_DSP_ENTENC_H_
 #include <stddef.h>
 #include "aom_dsp/entcode.h"
+#include "aom_util/endian_inl.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef uint64_t od_ec_enc_window;
 
 typedef struct od_ec_enc od_ec_enc;
 
@@ -31,13 +34,9 @@ struct od_ec_enc {
   
   uint32_t storage;
   
-  uint16_t *precarry_buf;
-  
-  uint32_t precarry_storage;
-  
   uint32_t offs;
   
-  od_ec_window low;
+  od_ec_enc_window low;
   
   uint16_t rng;
   
@@ -75,8 +74,32 @@ OD_WARN_UNUSED_RESULT int od_ec_enc_tell(const od_ec_enc *enc)
 OD_WARN_UNUSED_RESULT uint32_t od_ec_enc_tell_frac(const od_ec_enc *enc)
     OD_ARG_NONNULL(1);
 
-void od_ec_enc_checkpoint(od_ec_enc *dst, const od_ec_enc *src);
-void od_ec_enc_rollback(od_ec_enc *dst, const od_ec_enc *src);
+
+static AOM_INLINE void propagate_carry_bwd(unsigned char *buf, uint32_t offs) {
+  uint16_t sum, carry = 1;
+  do {
+    sum = (uint16_t)buf[offs] + 1;
+    buf[offs--] = (unsigned char)sum;
+    carry = sum >> 8;
+  } while (carry);
+}
+
+
+
+static AOM_INLINE void write_enc_data_to_out_buf(unsigned char *out,
+                                                 uint32_t offs, uint64_t output,
+                                                 uint64_t carry,
+                                                 uint32_t *enc_offs,
+                                                 uint8_t num_bytes_ready) {
+  const uint64_t reg = HToBE64(output << ((8 - num_bytes_ready) << 3));
+  memcpy(&out[offs], &reg, 8);
+  
+  if (carry) {
+    assert(offs > 0);
+    propagate_carry_bwd(out, offs - 1);
+  }
+  *enc_offs = offs + num_bytes_ready;
+}
 
 #ifdef __cplusplus
 }  

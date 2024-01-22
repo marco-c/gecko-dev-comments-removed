@@ -20,11 +20,15 @@ extern "C" {
 #endif
 
 
-#define HAS_EDSP 0x01
+#define HAS_NEON (1 << 0)
 
-#define HAS_MEDIA 0x02
+#define HAS_ARM_CRC32 (1 << 1)
 
-#define HAS_NEON 0x04
+#define HAS_NEON_DOTPROD (1 << 2)
+
+#define HAS_NEON_I8MM (1 << 3)
+
+#define HAS_SVE (1 << 4)
 
 int aom_arm_cpu_caps(void);
 

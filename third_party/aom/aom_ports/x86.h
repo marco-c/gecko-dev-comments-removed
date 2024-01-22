@@ -44,11 +44,11 @@ typedef enum {
 } aom_cpu_t;
 
 #if defined(__GNUC__) && __GNUC__ || defined(__ANDROID__)
-#if ARCH_X86_64
+#if AOM_ARCH_X86_64
 #define cpuid(func, func2, ax, bx, cx, dx)                      \
   __asm__ __volatile__("cpuid           \n\t"                   \
                        : "=a"(ax), "=b"(bx), "=c"(cx), "=d"(dx) \
-                       : "a"(func), "c"(func2));
+                       : "a"(func), "c"(func2))
 #else
 #define cpuid(func, func2, ax, bx, cx, dx)     \
   __asm__ __volatile__(                        \
@@ -56,11 +56,11 @@ typedef enum {
       "cpuid              \n\t"                \
       "xchg %%edi, %%ebx  \n\t"                \
       : "=a"(ax), "=D"(bx), "=c"(cx), "=d"(dx) \
-      : "a"(func), "c"(func2));
+      : "a"(func), "c"(func2))
 #endif
 #elif defined(__SUNPRO_C) || \
     defined(__SUNPRO_CC) 
-#if ARCH_X86_64
+#if AOM_ARCH_X86_64
 #define cpuid(func, func2, ax, bx, cx, dx)     \
   asm volatile(                                \
       "xchg %rsi, %rbx \n\t"                   \
@@ -68,7 +68,7 @@ typedef enum {
       "movl %ebx, %edi \n\t"                   \
       "xchg %rsi, %rbx \n\t"                   \
       : "=a"(ax), "=D"(bx), "=c"(cx), "=d"(dx) \
-      : "a"(func), "c"(func2));
+      : "a"(func), "c"(func2))
 #else
 #define cpuid(func, func2, ax, bx, cx, dx)     \
   asm volatile(                                \
@@ -77,10 +77,10 @@ typedef enum {
       "movl %ebx, %edi  \n\t"                  \
       "popl %ebx        \n\t"                  \
       : "=a"(ax), "=D"(bx), "=c"(cx), "=d"(dx) \
-      : "a"(func), "c"(func2));
+      : "a"(func), "c"(func2))
 #endif
 #else 
-#if ARCH_X86_64
+#if AOM_ARCH_X86_64
 #if defined(_MSC_VER) && _MSC_VER > 1500
 #define cpuid(func, func2, a, b, c, d) \
   do {                                 \
@@ -148,6 +148,10 @@ static INLINE uint64_t xgetbv(void) {
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1700
+#undef NOMINMAX
+#define NOMINMAX
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #if WINAPI_FAMILY_PARTITION(WINAPI_FAMILY_APP)
 #define getenv(x) NULL
@@ -164,15 +168,14 @@ static INLINE uint64_t xgetbv(void) {
 #define HAS_AVX2 0x80
 #define HAS_SSE4_2 0x100
 #ifndef BIT
-#define BIT(n) (1 << n)
+#define BIT(n) (1u << (n))
 #endif
 
 static INLINE int x86_simd_caps(void) {
   unsigned int flags = 0;
-  unsigned int mask = ~0;
+  unsigned int mask = ~0u;
   unsigned int max_cpuid_val, reg_eax, reg_ebx, reg_ecx, reg_edx;
   char *env;
-  (void)reg_ebx;
 
   
   env = getenv("AOM_SIMD_CAPS");
@@ -207,6 +210,7 @@ static INLINE int x86_simd_caps(void) {
 
   
   if ((reg_ecx & (BIT(27) | BIT(28))) == (BIT(27) | BIT(28))) {
+    
     if ((xgetbv() & 0x6) == 0x6) {
       flags |= HAS_AVX;
 
@@ -219,8 +223,25 @@ static INLINE int x86_simd_caps(void) {
     }
   }
 
+  (void)reg_eax;  
+
   return flags & mask;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -237,7 +258,7 @@ static INLINE unsigned int x86_readtsc(void) {
   asm volatile("rdtsc\n\t" : "=a"(tsc) :);
   return tsc;
 #else
-#if ARCH_X86_64
+#if AOM_ARCH_X86_64
   return (unsigned int)__rdtsc();
 #else
   __asm rdtsc;
@@ -255,7 +276,7 @@ static INLINE uint64_t x86_readtsc64(void) {
   asm volatile("rdtsc\n\t" : "=a"(lo), "=d"(hi));
   return ((uint64_t)hi << 32) | lo;
 #else
-#if ARCH_X86_64
+#if AOM_ARCH_X86_64
   return (uint64_t)__rdtsc();
 #else
   __asm rdtsc;
@@ -263,12 +284,59 @@ static INLINE uint64_t x86_readtsc64(void) {
 #endif
 }
 
+
+static INLINE unsigned int x86_readtscp(void) {
+#if defined(__GNUC__) && __GNUC__
+  unsigned int tscp;
+  __asm__ __volatile__("rdtscp\n\t" : "=a"(tscp) :);
+  return tscp;
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+  unsigned int tscp;
+  asm volatile("rdtscp\n\t" : "=a"(tscp) :);
+  return tscp;
+#elif defined(_MSC_VER)
+  unsigned int ui;
+  return (unsigned int)__rdtscp(&ui);
+#else
+#if AOM_ARCH_X86_64
+  return (unsigned int)__rdtscp();
+#else
+  __asm rdtscp;
+#endif
+#endif
+}
+
+static INLINE unsigned int x86_tsc_start(void) {
+  unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  
+  cpuid(0, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
+  
+  (void)reg_eax;
+  (void)reg_ebx;
+  (void)reg_ecx;
+  (void)reg_edx;
+  return x86_readtsc();
+}
+
+static INLINE unsigned int x86_tsc_end(void) {
+  uint32_t v = x86_readtscp();
+  unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  
+  cpuid(0, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
+  
+  (void)reg_eax;
+  (void)reg_ebx;
+  (void)reg_ecx;
+  (void)reg_edx;
+  return v;
+}
+
 #if defined(__GNUC__) && __GNUC__
 #define x86_pause_hint() __asm__ __volatile__("pause \n\t")
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #define x86_pause_hint() asm volatile("pause \n\t")
 #else
-#if ARCH_X86_64
+#if AOM_ARCH_X86_64
 #define x86_pause_hint() _mm_pause();
 #else
 #define x86_pause_hint() __asm pause
@@ -293,7 +361,7 @@ static unsigned short x87_get_control_word(void) {
   asm volatile("fstcw %0\n\t" : "=m"(*&mode) :);
   return mode;
 }
-#elif ARCH_X86_64
+#elif AOM_ARCH_X86_64
 
 extern void aom_winx64_fldcw(unsigned short mode);
 extern unsigned short aom_winx64_fstcw(void);
@@ -312,11 +380,20 @@ static unsigned short x87_get_control_word(void) {
 
 static INLINE unsigned int x87_set_double_precision(void) {
   unsigned int mode = x87_get_control_word();
-  x87_set_control_word((mode & ~0x300) | 0x200);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  x87_set_control_word((mode & ~0x300u) | 0x200u);
   return mode;
 }
-
-extern void aom_reset_mmx_state(void);
 
 #ifdef __cplusplus
 }  

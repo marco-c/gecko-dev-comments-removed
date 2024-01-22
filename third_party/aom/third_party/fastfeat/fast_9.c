@@ -1,11 +1,39 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <stdlib.h>
+#include "fast.h"
 
-typedef struct { int x, y; } xy;
-typedef unsigned char byte;
-
-int fast9_corner_score(const byte* p, const int pixel[], int bstart)
+int aom_fast9_corner_score(const byte* p, const int pixel[], int bstart)
 {
   int bmin = bstart;
   int bmax = 255;
@@ -2958,22 +2986,23 @@ static void make_offsets(int pixel[], int row_stride)
 
 
 
-int* fast9_score(const byte* i, int stride, xy* corners, int num_corners, int b)
+int* aom_fast9_score(const byte* i, int stride, const xy* corners, int num_corners, int b)
 {
   int* scores = (int*)malloc(sizeof(int)* num_corners);
   int n;
 
   int pixel[16];
+  if(!scores) return NULL;
   make_offsets(pixel, stride);
 
   for(n=0; n < num_corners; n++)
-    scores[n] = fast9_corner_score(i + corners[n].y*stride + corners[n].x, pixel, b);
+    scores[n] = aom_fast9_corner_score(i + corners[n].y*stride + corners[n].x, pixel, b);
 
   return scores;
 }
 
 
-xy* fast9_detect(const byte* im, int xsize, int ysize, int stride, int b, int* ret_num_corners)
+xy* aom_fast9_detect(const byte* im, int xsize, int ysize, int stride, int b, int* ret_num_corners)
 {
   int num_corners=0;
   xy* ret_corners;
@@ -2982,6 +3011,7 @@ xy* fast9_detect(const byte* im, int xsize, int ysize, int stride, int b, int* r
   int x, y;
 
   ret_corners = (xy*)malloc(sizeof(xy)*rsize);
+  if(!ret_corners) return NULL;
   make_offsets(pixel, stride);
 
   for(y=3; y < ysize - 3; y++)
@@ -5895,7 +5925,13 @@ xy* fast9_detect(const byte* im, int xsize, int ysize, int stride, int b, int* r
       if(num_corners == rsize)
       {
         rsize*=2;
-        ret_corners = (xy*)realloc(ret_corners, sizeof(xy)*rsize);
+        xy* new_ret_corners = (xy*)realloc(ret_corners, sizeof(xy)*rsize);
+        if(!new_ret_corners)
+        {
+          free(ret_corners);
+          return NULL;
+        }
+        ret_corners = new_ret_corners;
       }
       ret_corners[num_corners].x = x;
       ret_corners[num_corners].y = y;

@@ -53,54 +53,69 @@
 
 
 
-static void od_ec_enc_normalize(od_ec_enc *enc, od_ec_window low,
+static void od_ec_enc_normalize(od_ec_enc *enc, od_ec_enc_window low,
                                 unsigned rng) {
   int d;
   int c;
   int s;
+  if (enc->error) return;
   c = enc->cnt;
   assert(rng <= 65535U);
   
   d = 16 - OD_ILOG_NZ(rng);
   s = c + d;
+
   
 
 
 
 
-  if (s >= 0) {
-    uint16_t *buf;
-    uint32_t storage;
-    uint32_t offs;
-    unsigned m;
-    buf = enc->precarry_buf;
-    storage = enc->precarry_storage;
-    offs = enc->offs;
-    if (offs + 2 > storage) {
-      storage = 2 * storage + 2;
-      buf = (uint16_t *)realloc(buf, sizeof(*buf) * storage);
-      if (buf == NULL) {
+
+
+
+
+
+  if (s >= 40) {  
+    unsigned char *out = enc->buf;
+    uint32_t storage = enc->storage;
+    uint32_t offs = enc->offs;
+    if (offs + 8 > storage) {
+      storage = 2 * storage + 8;
+      out = (unsigned char *)realloc(out, sizeof(*out) * storage);
+      if (out == NULL) {
         enc->error = -1;
-        enc->offs = 0;
         return;
       }
-      enc->precarry_buf = buf;
-      enc->precarry_storage = storage;
+      enc->buf = out;
+      enc->storage = storage;
     }
-    c += 16;
-    m = (1 << c) - 1;
-    if (s >= 8) {
-      assert(offs < storage);
-      buf[offs++] = (uint16_t)(low >> c);
-      low &= m;
-      c -= 8;
-      m >>= 8;
-    }
-    assert(offs < storage);
-    buf[offs++] = (uint16_t)(low >> c);
+    
+    
+    uint8_t num_bytes_ready = (s >> 3) + 1;
+
+    
+    
+    
+    c += 24 - (num_bytes_ready << 3);
+
+    
+    uint64_t output = low >> c;
+    low = low & (((uint64_t)1 << c) - 1);
+
+    
+    uint64_t mask = (uint64_t)1 << (num_bytes_ready << 3);
+    uint64_t carry = output & mask;
+
+    mask = mask - 0x01;
+    output = output & mask;
+
+    
+    write_enc_data_to_out_buf(out, offs, output, carry, &enc->offs,
+                              num_bytes_ready);
+
+    
+    
     s = c + d - 24;
-    low &= m;
-    enc->offs = offs;
   }
   enc->low = low << d;
   enc->rng = rng << d;
@@ -115,12 +130,6 @@ void od_ec_enc_init(od_ec_enc *enc, uint32_t size) {
   enc->storage = size;
   if (size > 0 && enc->buf == NULL) {
     enc->storage = 0;
-    enc->error = -1;
-  }
-  enc->precarry_buf = (uint16_t *)malloc(sizeof(*enc->precarry_buf) * size);
-  enc->precarry_storage = size;
-  if (size > 0 && enc->precarry_buf == NULL) {
-    enc->precarry_storage = 0;
     enc->error = -1;
   }
 }
@@ -141,12 +150,7 @@ void od_ec_enc_reset(od_ec_enc *enc) {
 }
 
 
-void od_ec_enc_clear(od_ec_enc *enc) {
-  free(enc->precarry_buf);
-  free(enc->buf);
-}
-
-
+void od_ec_enc_clear(od_ec_enc *enc) { free(enc->buf); }
 
 
 
@@ -155,7 +159,7 @@ void od_ec_enc_clear(od_ec_enc *enc) {
 
 static void od_ec_encode_q15(od_ec_enc *enc, unsigned fl, unsigned fh, int s,
                              int nsyms) {
-  od_ec_window l;
+  od_ec_enc_window l;
   unsigned r;
   unsigned u;
   unsigned v;
@@ -164,20 +168,17 @@ static void od_ec_encode_q15(od_ec_enc *enc, unsigned fl, unsigned fh, int s,
   assert(32768U <= r);
   assert(fh <= fl);
   assert(fl <= 32768U);
-  assert(7 - EC_PROB_SHIFT - CDF_SHIFT >= 0);
+  assert(7 - EC_PROB_SHIFT >= 0);
   const int N = nsyms - 1;
   if (fl < CDF_PROB_TOP) {
-    u = ((r >> 8) * (uint32_t)(fl >> EC_PROB_SHIFT) >>
-         (7 - EC_PROB_SHIFT - CDF_SHIFT)) +
+    u = ((r >> 8) * (uint32_t)(fl >> EC_PROB_SHIFT) >> (7 - EC_PROB_SHIFT)) +
         EC_MIN_PROB * (N - (s - 1));
-    v = ((r >> 8) * (uint32_t)(fh >> EC_PROB_SHIFT) >>
-         (7 - EC_PROB_SHIFT - CDF_SHIFT)) +
+    v = ((r >> 8) * (uint32_t)(fh >> EC_PROB_SHIFT) >> (7 - EC_PROB_SHIFT)) +
         EC_MIN_PROB * (N - (s + 0));
     l += r - u;
     r = u - v;
   } else {
-    r -= ((r >> 8) * (uint32_t)(fh >> EC_PROB_SHIFT) >>
-          (7 - EC_PROB_SHIFT - CDF_SHIFT)) +
+    r -= ((r >> 8) * (uint32_t)(fh >> EC_PROB_SHIFT) >> (7 - EC_PROB_SHIFT)) +
          EC_MIN_PROB * (N - (s + 0));
   }
   od_ec_enc_normalize(enc, l, r);
@@ -191,7 +192,7 @@ static void od_ec_encode_q15(od_ec_enc *enc, unsigned fl, unsigned fh, int s,
 
 
 void od_ec_encode_bool_q15(od_ec_enc *enc, int val, unsigned f) {
-  od_ec_window l;
+  od_ec_enc_window l;
   unsigned r;
   unsigned v;
   assert(0 < f);
@@ -251,12 +252,11 @@ void od_ec_enc_patch_initial_bits(od_ec_enc *enc, unsigned val, int nbits) {
   mask = ((1U << nbits) - 1) << shift;
   if (enc->offs > 0) {
     
-    enc->precarry_buf[0] =
-        (uint16_t)((enc->precarry_buf[0] & ~mask) | val << shift);
+    enc->buf[0] = (unsigned char)((enc->buf[0] & ~mask) | val << shift);
   } else if (9 + enc->cnt + (enc->rng == 0x8000) > nbits) {
     
-    enc->low = (enc->low & ~((od_ec_window)mask << (16 + enc->cnt))) |
-               (od_ec_window)val << (16 + enc->cnt + shift);
+    enc->low = (enc->low & ~((od_ec_enc_window)mask << (16 + enc->cnt))) |
+               (od_ec_enc_window)val << (16 + enc->cnt + shift);
   } else {
     
     enc->error = -1;
@@ -276,11 +276,10 @@ void od_ec_enc_patch_initial_bits(od_ec_enc *enc, unsigned val, int nbits) {
 unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes) {
   unsigned char *out;
   uint32_t storage;
-  uint16_t *buf;
   uint32_t offs;
-  od_ec_window m;
-  od_ec_window e;
-  od_ec_window l;
+  od_ec_enc_window m;
+  od_ec_enc_window e;
+  od_ec_enc_window l;
   int c;
   int s;
   if (enc->error) return NULL;
@@ -295,7 +294,6 @@ unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes) {
             (double)tell / enc->nb_symbols);
   }
 #endif
-  
 
   l = enc->low;
   c = enc->cnt;
@@ -304,36 +302,14 @@ unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes) {
   e = ((l + m) & ~m) | (m + 1);
   s += c;
   offs = enc->offs;
-  buf = enc->precarry_buf;
-  if (s > 0) {
-    unsigned n;
-    storage = enc->precarry_storage;
-    if (offs + ((s + 7) >> 3) > storage) {
-      storage = storage * 2 + ((s + 7) >> 3);
-      buf = (uint16_t *)realloc(buf, sizeof(*buf) * storage);
-      if (buf == NULL) {
-        enc->error = -1;
-        return NULL;
-      }
-      enc->precarry_buf = buf;
-      enc->precarry_storage = storage;
-    }
-    n = (1 << (c + 16)) - 1;
-    do {
-      assert(offs < storage);
-      buf[offs++] = (uint16_t)(e >> (c + 16));
-      e &= n;
-      s -= 8;
-      c -= 8;
-      n >>= 8;
-    } while (s > 0);
-  }
+
   
   out = enc->buf;
   storage = enc->storage;
-  c = OD_MAXI((s + 7) >> 3, 0);
-  if (offs + c > storage) {
-    storage = offs + c;
+  const int s_bits = (s + 7) >> 3;
+  int b = OD_MAXI(s_bits, 0);
+  if (offs + b > storage) {
+    storage = offs + b;
     out = (unsigned char *)realloc(out, sizeof(*out) * storage);
     if (out == NULL) {
       enc->error = -1;
@@ -342,22 +318,29 @@ unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes) {
     enc->buf = out;
     enc->storage = storage;
   }
-  *nbytes = offs;
+
   
-  assert(offs <= storage);
-  out = out + storage - offs;
-  c = 0;
-  while (offs > 0) {
-    offs--;
-    c = buf[offs] + c;
-    out[offs] = (unsigned char)c;
-    c >>= 8;
+
+  if (s > 0) {
+    uint64_t n;
+    n = ((uint64_t)1 << (c + 16)) - 1;
+    do {
+      assert(offs < storage);
+      uint16_t val = (uint16_t)(e >> (c + 16));
+      out[offs] = (unsigned char)(val & 0x00FF);
+      if (val & 0x0100) {
+        assert(offs > 0);
+        propagate_carry_bwd(out, offs - 1);
+      }
+      offs++;
+
+      e &= n;
+      s -= 8;
+      c -= 8;
+      n >>= 8;
+    } while (s > 0);
   }
-  
-
-
-
-
+  *nbytes = offs;
 
   return out;
 }
@@ -388,36 +371,4 @@ int od_ec_enc_tell(const od_ec_enc *enc) {
 
 uint32_t od_ec_enc_tell_frac(const od_ec_enc *enc) {
   return od_ec_tell_frac(od_ec_enc_tell(enc), enc->rng);
-}
-
-
-
-
-
-void od_ec_enc_checkpoint(od_ec_enc *dst, const od_ec_enc *src) {
-  OD_COPY(dst, src, 1);
-}
-
-
-
-
-
-
-
-void od_ec_enc_rollback(od_ec_enc *dst, const od_ec_enc *src) {
-  unsigned char *buf;
-  uint32_t storage;
-  uint16_t *precarry_buf;
-  uint32_t precarry_storage;
-  assert(dst->storage >= src->storage);
-  assert(dst->precarry_storage >= src->precarry_storage);
-  buf = dst->buf;
-  storage = dst->storage;
-  precarry_buf = dst->precarry_buf;
-  precarry_storage = dst->precarry_storage;
-  OD_COPY(dst, src, 1);
-  dst->buf = buf;
-  dst->storage = storage;
-  dst->precarry_buf = precarry_buf;
-  dst->precarry_storage = precarry_storage;
 }

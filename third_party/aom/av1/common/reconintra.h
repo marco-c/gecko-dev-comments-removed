@@ -15,8 +15,8 @@
 #include <stdlib.h>
 
 #include "aom/aom_integer.h"
+#include "av1/common/av1_common_int.h"
 #include "av1/common/blockd.h"
-#include "av1/common/onyxc_int.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,13 +26,14 @@ void av1_init_intra_predictors(void);
 void av1_predict_intra_block_facade(const AV1_COMMON *cm, MACROBLOCKD *xd,
                                     int plane, int blk_col, int blk_row,
                                     TX_SIZE tx_size);
-void av1_predict_intra_block(const AV1_COMMON *cm, const MACROBLOCKD *xd,
-                             int bw, int bh, TX_SIZE tx_size,
-                             PREDICTION_MODE mode, int angle_delta,
-                             int use_palette,
+void av1_predict_intra_block(const MACROBLOCKD *xd, BLOCK_SIZE sb_size,
+                             int enable_intra_edge_filter, int wpx, int hpx,
+                             TX_SIZE tx_size, PREDICTION_MODE mode,
+                             int angle_delta, int use_palette,
                              FILTER_INTRA_MODE filter_intra_mode,
                              const uint8_t *ref, int ref_stride, uint8_t *dst,
-                             int dst_stride, int aoff, int loff, int plane);
+                             int dst_stride, int col_off, int row_off,
+                             int plane);
 
 
 static const PREDICTION_MODE interintra_to_intra_mode[INTERINTRA_MODES] = {
@@ -51,18 +52,22 @@ static INLINE int av1_is_directional_mode(PREDICTION_MODE mode) {
   return mode >= V_PRED && mode <= D67_PRED;
 }
 
+static INLINE int av1_is_diagonal_mode(PREDICTION_MODE mode) {
+  return mode >= D45_PRED && mode <= D67_PRED;
+}
+
 static INLINE int av1_use_angle_delta(BLOCK_SIZE bsize) {
   return bsize >= BLOCK_8X8;
 }
 
 static INLINE int av1_allow_intrabc(const AV1_COMMON *const cm) {
-  return frame_is_intra_only(cm) && cm->allow_screen_content_tools &&
-         cm->allow_intrabc;
+  return frame_is_intra_only(cm) && cm->features.allow_screen_content_tools &&
+         cm->features.allow_intrabc;
 }
 
 static INLINE int av1_filter_intra_allowed_bsize(const AV1_COMMON *const cm,
                                                  BLOCK_SIZE bs) {
-  if (!cm->seq_params.enable_filter_intra || bs == BLOCK_INVALID) return 0;
+  if (!cm->seq_params->enable_filter_intra || bs == BLOCK_INVALID) return 0;
 
   return block_size_wide[bs] <= 32 && block_size_high[bs] <= 32;
 }
@@ -71,10 +76,44 @@ static INLINE int av1_filter_intra_allowed(const AV1_COMMON *const cm,
                                            const MB_MODE_INFO *mbmi) {
   return mbmi->mode == DC_PRED &&
          mbmi->palette_mode_info.palette_size[0] == 0 &&
-         av1_filter_intra_allowed_bsize(cm, mbmi->sb_type);
+         av1_filter_intra_allowed_bsize(cm, mbmi->bsize);
 }
 
 extern const int8_t av1_filter_intra_taps[FILTER_INTRA_MODES][8][8];
+
+static const int16_t dr_intra_derivative[90] = {
+  
+  
+  
+  0,    0, 0,        
+  1023, 0, 0,        
+  547,  0, 0,        
+  372,  0, 0, 0, 0,  
+  273,  0, 0,        
+  215,  0, 0,        
+  178,  0, 0,        
+  151,  0, 0,        
+  132,  0, 0,        
+  116,  0, 0,        
+  102,  0, 0, 0,     
+  90,   0, 0,        
+  80,   0, 0,        
+  71,   0, 0,        
+  64,   0, 0,        
+  57,   0, 0,        
+  51,   0, 0,        
+  45,   0, 0, 0,     
+  40,   0, 0,        
+  35,   0, 0,        
+  31,   0, 0,        
+  27,   0, 0,        
+  23,   0, 0,        
+  19,   0, 0,        
+  15,   0, 0, 0, 0,  
+  11,   0, 0,        
+  7,    0, 0,        
+  3,    0, 0,        
+};
 
 
 
@@ -110,7 +149,7 @@ static INLINE int av1_use_intra_edge_upsample(int bs0, int bs1, int delta,
                                               int type) {
   const int d = abs(delta);
   const int blk_wh = bs0 + bs1;
-  if (d <= 0 || d >= 40) return 0;
+  if (d == 0 || d >= 40) return 0;
   return type ? (blk_wh <= 8) : (blk_wh <= 16);
 }
 #ifdef __cplusplus

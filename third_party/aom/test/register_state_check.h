@@ -26,15 +26,11 @@
 
 
 
-
-
-
-
-
-#if defined(_WIN64) && ARCH_X86_64
+#if defined(_WIN64) && AOM_ARCH_X86_64
 
 #undef NOMINMAX
 #define NOMINMAX
+#undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winnt.h>
@@ -56,7 +52,7 @@ class RegisterStateCheck {
  private:
   static bool StoreRegisters(CONTEXT *const context) {
     const HANDLE this_thread = GetCurrentThread();
-    EXPECT_TRUE(this_thread != NULL);
+    EXPECT_NE(this_thread, nullptr);
     context->ContextFlags = CONTEXT_FLOATING_POINT;
     const bool context_saved = GetThreadContext(this_thread, context) == TRUE;
     EXPECT_TRUE(context_saved) << "GetLastError: " << GetLastError();
@@ -81,13 +77,6 @@ class RegisterStateCheck {
   bool initialized_;
   CONTEXT pre_context_;
 };
-
-#define ASM_REGISTER_STATE_CHECK(statement)    \
-  do {                                         \
-    libaom_test::RegisterStateCheck reg_check; \
-    statement;                                 \
-  } while (false)
-
 }  
 
 #else
@@ -95,15 +84,11 @@ class RegisterStateCheck {
 namespace libaom_test {
 
 class RegisterStateCheck {};
-#define ASM_REGISTER_STATE_CHECK(statement) statement
-
 }  
 
 #endif  
 
-#if ARCH_X86 || ARCH_X86_64
-#if defined(__GNUC__)
-
+#if (AOM_ARCH_X86 || AOM_ARCH_X86_64) && defined(__GNUC__)
 namespace libaom_test {
 
 
@@ -129,20 +114,23 @@ class RegisterStateCheckMMX {
 
   uint16_t pre_fpu_env_[14];
 };
+}  
 
-#define API_REGISTER_STATE_CHECK(statement)       \
-  do {                                            \
-    libaom_test::RegisterStateCheckMMX reg_check; \
-    ASM_REGISTER_STATE_CHECK(statement);          \
-  } while (false)
+#else
+namespace libaom_test {
 
+class RegisterStateCheckMMX {};
 }  
 
 #endif  
-#endif  
 
-#ifndef API_REGISTER_STATE_CHECK
-#define API_REGISTER_STATE_CHECK ASM_REGISTER_STATE_CHECK
-#endif
+#define API_REGISTER_STATE_CHECK(statement)           \
+  do {                                                \
+    libaom_test::RegisterStateCheck reg_check;        \
+    libaom_test::RegisterStateCheckMMX reg_check_mmx; \
+    statement;                                        \
+    (void)reg_check_mmx;                              \
+    (void)reg_check;                                  \
+  } while (false)
 
 #endif  

@@ -9,36 +9,91 @@
 
 
 
+#include <stdbool.h>
 #include "common/rawenc.h"
 
-void raw_write_image_file(const aom_image_t *img, const int *planes,
-                          const int num_planes, FILE *file) {
-  const int bytes_per_sample = ((img->fmt & AOM_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
+
+#define BATCH_SIZE 8
+
+
+
+
+
+typedef void (*WRITER)(void *, const uint8_t *, unsigned int, unsigned int);
+
+static void write_file(void *fp, const uint8_t *buffer, unsigned int size,
+                       unsigned int nmemb) {
+  fwrite(buffer, size, nmemb, (FILE *)fp);
+}
+
+static void write_md5(void *md5, const uint8_t *buffer, unsigned int size,
+                      unsigned int nmemb) {
+  MD5Update((MD5Context *)md5, buffer, size * nmemb);
+}
+
+
+static void write_greyscale(const aom_image_t *img, int n, WRITER writer_func,
+                            void *file_or_md5) {
+  
+  int bytes_per_sample;
+  union {
+    uint8_t u8[BATCH_SIZE];
+    uint16_t u16[BATCH_SIZE / 2];
+  } batched;
+  if (img->fmt & AOM_IMG_FMT_HIGHBITDEPTH) {
+    bytes_per_sample = 2;
+    for (int i = 0; i < BATCH_SIZE / 2; ++i) {
+      batched.u16[i] = 1 << (img->bit_depth - 1);
+    }
+  } else {
+    bytes_per_sample = 1;
+    for (int i = 0; i < BATCH_SIZE; ++i) {
+      batched.u8[i] = 0x80;
+    }
+  }
+  const int samples_per_batch = BATCH_SIZE / bytes_per_sample;
+  const int num_batched_writes = n / samples_per_batch;
+  for (int i = 0; i < num_batched_writes; ++i) {
+    writer_func(file_or_md5, batched.u8, sizeof(uint8_t), BATCH_SIZE);
+  }
+  const int remaining = n % samples_per_batch;
+  for (int i = 0; i < remaining; ++i) {
+    writer_func(file_or_md5, batched.u8, sizeof(uint8_t), bytes_per_sample);
+  }
+}
+
+
+
+static void raw_write_image_file_or_md5(const aom_image_t *img,
+                                        const int *planes, const int num_planes,
+                                        void *file_or_md5, WRITER writer_func) {
+  const bool high_bitdepth = img->fmt & AOM_IMG_FMT_HIGHBITDEPTH;
+  const int bytes_per_sample = high_bitdepth ? 2 : 1;
   for (int i = 0; i < num_planes; ++i) {
     const int plane = planes[i];
-    const unsigned char *buf = img->planes[plane];
-    const int stride = img->stride[plane];
     const int w = aom_img_plane_width(img, plane);
     const int h = aom_img_plane_height(img, plane);
+    
+    
+    if (img->monochrome && plane != AOM_PLANE_Y) {
+      write_greyscale(img, w * h, writer_func, file_or_md5);
+      continue;
+    }
+    const unsigned char *buf = img->planes[plane];
+    const int stride = img->stride[plane];
     for (int y = 0; y < h; ++y) {
-      fwrite(buf, bytes_per_sample, w, file);
+      writer_func(file_or_md5, buf, bytes_per_sample, w);
       buf += stride;
     }
   }
 }
 
+void raw_write_image_file(const aom_image_t *img, const int *planes,
+                          const int num_planes, FILE *file) {
+  raw_write_image_file_or_md5(img, planes, num_planes, file, write_file);
+}
+
 void raw_update_image_md5(const aom_image_t *img, const int *planes,
                           const int num_planes, MD5Context *md5) {
-  for (int i = 0; i < num_planes; ++i) {
-    const int plane = planes[i];
-    const unsigned char *buf = img->planes[plane];
-    const int stride = img->stride[plane];
-    const int w = aom_img_plane_width(img, plane) *
-                  ((img->fmt & AOM_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
-    const int h = aom_img_plane_height(img, plane);
-    for (int y = 0; y < h; ++y) {
-      MD5Update(md5, buf, w);
-      buf += stride;
-    }
-  }
+  raw_write_image_file_or_md5(img, planes, num_planes, md5, write_md5);
 }

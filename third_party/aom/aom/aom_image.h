@@ -30,11 +30,11 @@ extern "C" {
 
 
 
-#define AOM_IMAGE_ABI_VERSION (4) /**<\hideinitializer*/
+#define AOM_IMAGE_ABI_VERSION (9) /**<\hideinitializer*/
 
-#define AOM_IMG_FMT_PLANAR 0x100       /**< Image is a planar format. */
-#define AOM_IMG_FMT_UV_FLIP 0x200      /**< V plane precedes U in memory. */
-#define AOM_IMG_FMT_HAS_ALPHA 0x400    /**< Image has an alpha channel. */
+#define AOM_IMG_FMT_PLANAR 0x100  /**< Image is a planar format. */
+#define AOM_IMG_FMT_UV_FLIP 0x200 /**< V plane precedes U in memory. */
+
 #define AOM_IMG_FMT_HIGHBITDEPTH 0x800 /**< Image uses 16bit framebuffer. */
 
 
@@ -48,8 +48,13 @@ typedef enum aom_img_fmt {
   AOM_IMG_FMT_AOMI420 = AOM_IMG_FMT_PLANAR | 4,
   AOM_IMG_FMT_I422 = AOM_IMG_FMT_PLANAR | 5,
   AOM_IMG_FMT_I444 = AOM_IMG_FMT_PLANAR | 6,
-  AOM_IMG_FMT_444A = AOM_IMG_FMT_PLANAR | AOM_IMG_FMT_HAS_ALPHA | 6,
+
+
+#define AOM_HAVE_IMG_FMT_NV12 1
+  AOM_IMG_FMT_NV12 =
+      AOM_IMG_FMT_PLANAR | 7, 
   AOM_IMG_FMT_I42016 = AOM_IMG_FMT_I420 | AOM_IMG_FMT_HIGHBITDEPTH,
+  AOM_IMG_FMT_YV1216 = AOM_IMG_FMT_YV12 | AOM_IMG_FMT_HIGHBITDEPTH,
   AOM_IMG_FMT_I42216 = AOM_IMG_FMT_I422 | AOM_IMG_FMT_HIGHBITDEPTH,
   AOM_IMG_FMT_I44416 = AOM_IMG_FMT_I444 | AOM_IMG_FMT_HIGHBITDEPTH,
 } aom_img_fmt_t; 
@@ -125,7 +130,11 @@ typedef enum aom_matrix_coefficients {
 
 typedef enum aom_color_range {
   AOM_CR_STUDIO_RANGE = 0, 
+                           
+                           
   AOM_CR_FULL_RANGE = 1    
+                           
+                           
 } aom_color_range_t;       
 
 
@@ -136,6 +145,36 @@ typedef enum aom_chroma_sample_position {
   AOM_CSP_COLOCATED = 2,        
   AOM_CSP_RESERVED = 3          
 } aom_chroma_sample_position_t; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum aom_metadata_insert_flags {
+  AOM_MIF_NON_KEY_FRAME = 0, 
+  AOM_MIF_KEY_FRAME = 1,     
+  AOM_MIF_ANY_FRAME = 2      
+} aom_metadata_insert_flags_t;
+
+
+typedef struct aom_metadata_array aom_metadata_array_t;
+
+
+typedef struct aom_metadata {
+  uint32_t type;                           
+  uint8_t *payload;                        
+  size_t sz;                               
+  aom_metadata_insert_flags_t insert_flag; 
+} aom_metadata_t;
 
 
 typedef struct aom_image {
@@ -165,13 +204,14 @@ typedef struct aom_image {
   unsigned int y_chroma_shift; 
 
 
-#define AOM_PLANE_PACKED 0  /**< To be used for all packed formats */
-#define AOM_PLANE_Y 0       /**< Y (Luminance) plane */
-#define AOM_PLANE_U 1       /**< U (Chroma) plane */
-#define AOM_PLANE_V 2       /**< V (Chroma) plane */
-#define AOM_PLANE_ALPHA 3   /**< A (Transparency) plane */
-  unsigned char *planes[4]; 
-  int stride[4];            
+#define AOM_PLANE_PACKED 0 /**< To be used for all packed formats */
+#define AOM_PLANE_Y 0      /**< Y (Luminance) plane */
+#define AOM_PLANE_U 1      /**< U (Chroma) plane */
+#define AOM_PLANE_V 2      /**< V (Chroma) plane */
+  
+
+  unsigned char *planes[3]; 
+  int stride[3];            
   size_t sz;                
 
   int bps; 
@@ -189,16 +229,11 @@ typedef struct aom_image {
   int img_data_owner;      
   int self_allocd;         
 
+  aom_metadata_array_t
+      *metadata; 
+
   void *fb_priv; 
 } aom_image_t;   
-
-
-typedef struct aom_image_rect {
-  unsigned int x;   
-  unsigned int y;   
-  unsigned int w;   
-  unsigned int h;   
-} aom_image_rect_t; 
 
 
 
@@ -221,6 +256,7 @@ typedef struct aom_image_rect {
 aom_image_t *aom_img_alloc(aom_image_t *img, aom_img_fmt_t fmt,
                            unsigned int d_w, unsigned int d_h,
                            unsigned int align);
+
 
 
 
@@ -286,6 +322,7 @@ aom_image_t *aom_img_alloc_with_border(aom_image_t *img, aom_img_fmt_t fmt,
 
 
 
+
 int aom_img_set_rect(aom_image_t *img, unsigned int x, unsigned int y,
                      unsigned int w, unsigned int h, unsigned int border);
 
@@ -323,6 +360,86 @@ int aom_img_plane_width(const aom_image_t *img, int plane);
 
 
 int aom_img_plane_height(const aom_image_t *img, int plane);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int aom_img_add_metadata(aom_image_t *img, uint32_t type, const uint8_t *data,
+                         size_t sz, aom_metadata_insert_flags_t insert_flag);
+
+
+
+
+
+
+
+
+
+
+
+
+const aom_metadata_t *aom_img_get_metadata(const aom_image_t *img,
+                                           size_t index);
+
+
+
+
+
+
+
+
+
+
+
+
+size_t aom_img_num_metadata(const aom_image_t *img);
+
+
+
+
+
+
+
+
+void aom_img_remove_metadata(aom_image_t *img);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+aom_metadata_t *aom_img_metadata_alloc(uint32_t type, const uint8_t *data,
+                                       size_t sz,
+                                       aom_metadata_insert_flags_t insert_flag);
+
+
+
+
+
+
+
+void aom_img_metadata_free(aom_metadata_t *metadata);
 
 #ifdef __cplusplus
 }  

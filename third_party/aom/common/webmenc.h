@@ -30,24 +30,39 @@ struct WebmOutputContext {
 };
 
 
-typedef enum stereo_format {
+enum {
   STEREO_FORMAT_MONO = 0,
   STEREO_FORMAT_LEFT_RIGHT = 1,
   STEREO_FORMAT_BOTTOM_TOP = 2,
   STEREO_FORMAT_TOP_BOTTOM = 3,
   STEREO_FORMAT_RIGHT_LEFT = 11
-} stereo_format_t;
+} UENUM1BYTE(stereo_format_t);
 
-void write_webm_file_header(struct WebmOutputContext *webm_ctx,
-                            const aom_codec_enc_cfg_t *cfg,
-                            stereo_format_t stereo_fmt, unsigned int fourcc,
-                            const struct AvxRational *par);
 
-void write_webm_block(struct WebmOutputContext *webm_ctx,
-                      const aom_codec_enc_cfg_t *cfg,
-                      const aom_codec_cx_pkt_t *pkt);
 
-void write_webm_file_footer(struct WebmOutputContext *webm_ctx);
+
+
+
+
+
+char *extract_encoder_settings(const char *version, const char **argv, int argc,
+                               const char *input_fname);
+
+
+
+
+int write_webm_file_header(struct WebmOutputContext *webm_ctx,
+                           aom_codec_ctx_t *encoder_ctx,
+                           const aom_codec_enc_cfg_t *cfg,
+                           stereo_format_t stereo_fmt, unsigned int fourcc,
+                           const struct AvxRational *par,
+                           const char *encoder_settings);
+
+int write_webm_block(struct WebmOutputContext *webm_ctx,
+                     const aom_codec_enc_cfg_t *cfg,
+                     const aom_codec_cx_pkt_t *pkt);
+
+int write_webm_file_footer(struct WebmOutputContext *webm_ctx);
 
 #ifdef __cplusplus
 }  

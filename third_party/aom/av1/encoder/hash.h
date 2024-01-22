@@ -32,7 +32,8 @@ typedef struct _crc_calculator {
 
 void av1_crc_calculator_init(CRC_CALCULATOR *p_crc_calculator, uint32_t bits,
                              uint32_t truncPoly);
-uint32_t av1_get_crc_value(void *crc_calculator, uint8_t *p, int length);
+uint32_t av1_get_crc_value(CRC_CALCULATOR *p_crc_calculator, uint8_t *p,
+                           int length);
 
 
 typedef struct _CRC32C {

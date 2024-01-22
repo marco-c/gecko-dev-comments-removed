@@ -16,34 +16,120 @@
 extern "C" {
 #endif
 
-#include "av1/encoder/encoder.h"
+#include "av1/common/av1_common_int.h"
+#include "av1/common/blockd.h"
+#include "av1/common/enums.h"
+#include "av1/encoder/level.h"
+#include "aom_dsp/bitwriter.h"
 
 struct aom_write_bit_buffer;
+struct AV1_COMP;
+struct ThreadData;
 
 
 
 
-uint32_t write_sequence_header_obu(AV1_COMP *cpi, uint8_t *const dst);
+
+typedef struct {
+  uint8_t *data;
+  size_t size;
+} TileBufferEnc;
+
+typedef struct {
+  uint8_t *frame_header;
+  size_t obu_header_byte_offset;
+  size_t total_length;
+} FrameHeaderInfo;
+
+typedef struct {
+  struct aom_write_bit_buffer *saved_wb;  
+  TileBufferEnc buf;     
+  uint32_t *total_size;  
+  uint8_t *dst;          
+  uint8_t *tile_data_curr;   
+  size_t tile_buf_size;      
+  uint8_t obu_extn_header;   
+  uint32_t obu_header_size;  
+  int curr_tg_hdr_size;      
+  int tile_size_mi;          
+  int tile_row;              
+  int tile_col;              
+  int is_last_tile_in_tg;    
+  int new_tg;                
+} PackBSParams;
+
+typedef struct {
+  uint64_t abs_sum_level;
+  uint16_t tile_idx;
+} PackBSTileOrder;
 
 
-
-uint32_t write_obu_header(OBU_TYPE obu_type, int obu_extension,
-                          uint8_t *const dst);
-
-int write_uleb_obu_size(uint32_t obu_header_size, uint32_t obu_payload_size,
-                        uint8_t *dest);
-
-int av1_pack_bitstream(AV1_COMP *const cpi, uint8_t *dest, size_t *size);
-
-static INLINE int av1_preserve_existing_gf(AV1_COMP *cpi) {
+typedef struct {
+#if CONFIG_MULTITHREAD
   
-  return cpi->rc.is_src_frame_alt_ref && !cpi->rc.is_src_frame_ext_arf;
-}
+  pthread_mutex_t *mutex_;
+#endif
+  
+  PackBSTileOrder pack_bs_tile_order[MAX_TILES];
+
+  
+  int next_job_idx;
+  
+  
+  bool pack_bs_mt_exit;
+} AV1EncPackBSSync;
+
+
+
+
+
+
+uint32_t av1_write_sequence_header_obu(const SequenceHeader *seq_params,
+                                       uint8_t *const dst);
+
+
+
+uint32_t av1_write_obu_header(AV1LevelParams *const level_params,
+                              int *frame_header_count, OBU_TYPE obu_type,
+                              int obu_extension, uint8_t *const dst);
+
+int av1_write_uleb_obu_size(size_t obu_header_size, size_t obu_payload_size,
+                            uint8_t *dest);
+
+
+
+void av1_pack_tile_info(struct AV1_COMP *const cpi, struct ThreadData *const td,
+                        PackBSParams *const pack_bs_params);
+
+void av1_write_last_tile_info(
+    struct AV1_COMP *const cpi, const FrameHeaderInfo *fh_info,
+    struct aom_write_bit_buffer *saved_wb, size_t *curr_tg_data_size,
+    uint8_t *curr_tg_start, uint32_t *const total_size,
+    uint8_t **tile_data_start, int *const largest_tile_id,
+    int *const is_first_tg, uint32_t obu_header_size, uint8_t obu_extn_header);
+
+
+
+
+
+
+int av1_pack_bitstream(struct AV1_COMP *const cpi, uint8_t *dst, size_t *size,
+                       int *const largest_tile_id);
 
 void av1_write_tx_type(const AV1_COMMON *const cm, const MACROBLOCKD *xd,
-                       int blk_row, int blk_col, int plane, TX_SIZE tx_size,
-                       aom_writer *w);
+                       TX_TYPE tx_type, TX_SIZE tx_size, aom_writer *w);
 
+void av1_reset_pack_bs_thread_data(struct ThreadData *const td);
+
+void av1_accumulate_pack_bs_thread_data(struct AV1_COMP *const cpi,
+                                        struct ThreadData const *td);
+
+void av1_write_obu_tg_tile_headers(struct AV1_COMP *const cpi,
+                                   MACROBLOCKD *const xd,
+                                   PackBSParams *const pack_bs_params,
+                                   const int tile_idx);
+
+int av1_neg_interleave(int x, int ref, int max);
 #ifdef __cplusplus
 }  
 #endif
