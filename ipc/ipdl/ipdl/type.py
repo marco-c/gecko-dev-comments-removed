@@ -1295,6 +1295,9 @@ class GatherDecls(TcheckVisitor):
             if "ChildProc" not in p.attributes:
                 self.error(p.loc, "Toplevel protocols must specify [ChildProc]")
 
+        if p.decl.type.isManager() and not p.decl.type.isRefcounted():
+            self.error(p.loc, "[ManualDealloc] protocols cannot be managers")
+
         
         
         
