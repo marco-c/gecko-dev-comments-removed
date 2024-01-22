@@ -31,7 +31,8 @@ NS_IMETHODIMP
 WebBrowserPersistResourcesChild::VisitDocument(
     nsIWebBrowserPersistDocument* aDocument,
     nsIWebBrowserPersistDocument* aSubDocument) {
-  auto* subActor = new WebBrowserPersistDocumentChild();
+  RefPtr<WebBrowserPersistDocumentChild> subActor =
+      new WebBrowserPersistDocumentChild();
   
   
   
@@ -40,11 +41,8 @@ WebBrowserPersistResourcesChild::VisitDocument(
   
   if (!Manager()->Manager()->SendPWebBrowserPersistDocumentConstructor(
           subActor, nullptr, nullptr)) {
-    
     return NS_ERROR_FAILURE;
   }
-  
-  
 
   
   

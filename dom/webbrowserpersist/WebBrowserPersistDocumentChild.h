@@ -16,8 +16,9 @@ namespace mozilla {
 class WebBrowserPersistDocumentChild final
     : public PWebBrowserPersistDocumentChild {
  public:
+  NS_INLINE_DECL_REFCOUNTING(WebBrowserPersistDocumentChild, override)
+
   WebBrowserPersistDocumentChild();
-  ~WebBrowserPersistDocumentChild();
 
   
   
@@ -45,6 +46,8 @@ class WebBrowserPersistDocumentChild final
       PWebBrowserPersistSerializeChild* aActor);
 
  private:
+  ~WebBrowserPersistDocumentChild();
+
   nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
 };
 

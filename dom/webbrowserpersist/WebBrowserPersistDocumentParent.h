@@ -33,8 +33,9 @@ class WebBrowserPersistRemoteDocument;
 class WebBrowserPersistDocumentParent final
     : public PWebBrowserPersistDocumentParent {
  public:
+  NS_INLINE_DECL_REFCOUNTING(WebBrowserPersistDocumentParent, override)
+
   WebBrowserPersistDocumentParent();
-  virtual ~WebBrowserPersistDocumentParent();
 
   
   
@@ -62,6 +63,8 @@ class WebBrowserPersistDocumentParent final
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
+  virtual ~WebBrowserPersistDocumentParent();
+
   
   nsCOMPtr<nsIWebBrowserPersistDocumentReceiver> mOnReady;
   WebBrowserPersistRemoteDocument* mReflection;
