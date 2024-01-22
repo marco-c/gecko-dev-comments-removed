@@ -44,6 +44,8 @@ class QuotaChild final : public PQuotaChild {
 #endif
 
  public:
+  NS_INLINE_DECL_REFCOUNTING(QuotaChild, override)
+
   void AssertIsOnOwningThread() const
 #ifdef DEBUG
       ;
@@ -56,7 +58,6 @@ class QuotaChild final : public PQuotaChild {
   
   explicit QuotaChild(QuotaManagerService* aService);
 
-  
   ~QuotaChild();
 
   
