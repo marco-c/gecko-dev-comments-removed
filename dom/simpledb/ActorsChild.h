@@ -34,7 +34,7 @@ class SDBConnectionChild final : public PBackgroundSDBConnectionChild {
 
   SDBConnection* mConnection;
 
-  NS_DECL_OWNINGTHREAD
+  NS_INLINE_DECL_REFCOUNTING(SDBConnectionChild, override)
 
  public:
   void AssertIsOnOwningThread() const {
@@ -45,7 +45,6 @@ class SDBConnectionChild final : public PBackgroundSDBConnectionChild {
   
   explicit SDBConnectionChild(SDBConnection* aConnection);
 
-  
   ~SDBConnectionChild();
 
   void SendDeleteMeInternal();
