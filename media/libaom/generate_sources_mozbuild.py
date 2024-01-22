@@ -117,6 +117,14 @@ if __name__ == '__main__':
         
         cache_variables.remove('HAVE_UNISTD_H')
         write_aom_config(system, arch, variables, cache_variables)
+
+        
+        
+        if cpu is 'x86_64' and system is 'win':
+          f.write('  \'X64_WIN_SOURCES\': [\n')
+          f.write('    \'%s\',\n' % variables['AOM_PORTS_ASM_X86'])
+          f.write("  ],\n")
+
         
         
         
@@ -124,7 +132,6 @@ if __name__ == '__main__':
             
             sources = list(filter(lambda x: x.startswith(AOM_DIR), sources))
             sources = list(filter(lambda x: not x.endswith('.pl'), sources))
-
 
             
             exports = list(filter(lambda x: re.match(os.path.join(AOM_DIR, '(aom|aom_mem|aom_ports|aom_scale)/.*h$'), x), sources))
