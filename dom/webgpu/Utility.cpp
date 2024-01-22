@@ -50,4 +50,10 @@ ffi::WGPUExtent3d ConvertExtent(const dom::OwningGPUExtent3D& aExtent) {
   return extent;
 }
 
+ffi::WGPUCompareFunction ConvertCompareFunction(
+    const dom::GPUCompareFunction& aCompare) {
+  
+  return ffi::WGPUCompareFunction(UnderlyingValue(aCompare) + 1);
+}
+
 }  
