@@ -2368,9 +2368,6 @@ pref("extensions.screenshots.disabled", false);
 pref("screenshots.browser.component.enabled", false);
 
 
-pref("screenshots.browser.component.last-saved-method", "download");
-
-
 pref("doh-rollout.clearModeOnShutdown", false);
 
 
