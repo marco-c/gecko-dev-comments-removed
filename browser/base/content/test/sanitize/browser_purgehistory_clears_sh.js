@@ -6,7 +6,7 @@ const url =
 
 
 
-let prefs = [["history"], ["historyAndFormData"]];
+let prefs = [["history"], ["historyFormDataAndDownloads"]];
 
 for (let itemsToClear of prefs) {
   add_task(async function purgeHistoryTest() {
