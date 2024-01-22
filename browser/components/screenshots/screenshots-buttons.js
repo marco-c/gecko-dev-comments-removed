@@ -44,10 +44,24 @@
       document.l10n.disconnectRoot(this.shadowRoot);
     }
 
-    focusFirst(focusOptions) {
-      this.shadowRoot.querySelector("button:enabled").focus(focusOptions);
+    
+
+
+
+
+    focusButton(buttonToFocus) {
+      if (buttonToFocus === "fullpage") {
+        this.shadowRoot
+          .querySelector(".full-page")
+          .focus({ focusVisible: true });
+      } else {
+        this.shadowRoot
+          .querySelector(".visible-page")
+          .focus({ focusVisible: true });
+      }
     }
   }
+
   customElements.define("screenshots-buttons", ScreenshotsButtons, {
     extends: "toolbar",
   });
