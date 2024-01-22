@@ -46,8 +46,10 @@ function _isInvalidTarget(target) {
 
   
   if (
-    (target.parentElement &&
-      !target.parentElement.closest(".CodeMirror-line, .CodeMirror-widget")) ||
+    
+    target.closest(".CodeMirror-widget") ||
+    
+    target.matches(".CodeMirror-line, .CodeMirror-gutter-elt") ||
     target.getBoundingClientRect().top == 0
   ) {
     return true;

@@ -128,17 +128,51 @@ async function testHoveringInvalidTargetTokens(dbg) {
   
   invokeInTab("invalidTargets");
   await waitForPaused(dbg);
+  
+  await waitForInlinePreviews(dbg);
+
   await assertNoPreviews(dbg, `"a"`, 69, 4);
   await assertNoPreviews(dbg, `false`, 70, 4);
   await assertNoPreviews(dbg, `undefined`, 71, 4);
   await assertNoPreviews(dbg, `null`, 72, 4);
   await assertNoPreviews(dbg, `42`, 73, 4);
   await assertNoPreviews(dbg, `const`, 74, 4);
+
+  
+  
+  resetCursorPositionToTopLeftCorner(dbg);
+
+  const inlinePreviewEl = findElementWithSelector(
+    dbg,
+    ".CodeMirror-code .CodeMirror-widget"
+  );
+  is(inlinePreviewEl.innerText, `myVar:"foo"`, "got expected inline preview");
+
+  const racePromise = Promise.any([
+    waitForElement(dbg, "previewPopup"),
+    wait(500).then(() => "TIMEOUT"),
+  ]);
+  
+  hoverToken(inlinePreviewEl);
+  const raceResult = await racePromise;
+  is(raceResult, "TIMEOUT", "No popup was displayed over the inline preview");
+
   await resume(dbg);
 }
 
 async function assertNoPreviews(dbg, expression, line, column) {
   
+  resetCursorPositionToTopLeftCorner(dbg);
+
+  
+  const result = await Promise.race([
+    tryHoverTokenAtLine(dbg, expression, line, column, "previewPopup"),
+    wait(500).then(() => "TIMEOUT"),
+  ]);
+  is(result, "TIMEOUT", `No popup was displayed when hovering "${expression}"`);
+}
+
+function resetCursorPositionToTopLeftCorner(dbg) {
   EventUtils.synthesizeMouse(
     findElement(dbg, "codeMirror"),
     0,
@@ -148,16 +182,6 @@ async function assertNoPreviews(dbg, expression, line, column) {
     },
     dbg.win
   );
-
-  
-  await waitForInlinePreviews(dbg);
-
-  
-  const result = await Promise.race([
-    tryHoverTokenAtLine(dbg, expression, line, column, "previewPopup"),
-    wait(1000).then(() => "TIMEOUT"),
-  ]);
-  is(result, "TIMEOUT", `No popup was displayed when hovering "${expression}"`);
 }
 
 async function testMovingFromATokenToAnother(dbg) {
