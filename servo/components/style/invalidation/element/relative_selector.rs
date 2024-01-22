@@ -213,10 +213,12 @@ impl<'a, E: TElement> OptimizationContext<'a, E> {
                 
 
                 
+                
+                
                 if matches!(
                     matches_compound_selector_from(
                         &dependency.selector,
-                        dependency.selector_offset,
+                        dependency.selector.len() - prev_offset + 1,
                         &mut matching_context,
                         &element
                     ),
