@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 
 const kQuotaPerOrigin = 64 * 1024;  

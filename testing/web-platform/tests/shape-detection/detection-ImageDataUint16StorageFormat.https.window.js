@@ -1,7 +1,5 @@
 
 
-
-
 const imgUint16 = new ImageData(1024, 1024, {storageFormat: 'uint16'});
 
 

@@ -10,8 +10,6 @@
 
 
 
-
-
 async function createNestedIframe(parent, origin, frame_sandbox, header_sandbox)
 {
   let headers = [];
