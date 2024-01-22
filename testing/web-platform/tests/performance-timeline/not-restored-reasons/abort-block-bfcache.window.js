@@ -2,8 +2,6 @@
 
 
 
-
-
 async_test(t => {
   if (!sessionStorage.getItem("pageVisited")) {
     
