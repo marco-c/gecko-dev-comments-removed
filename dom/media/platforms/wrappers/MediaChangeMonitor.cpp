@@ -392,9 +392,10 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
         info.mDisplay.Width(), info.mDisplay.Height(),
         info.mDisplayAndImageDifferent ? "specified" : "unspecified");
 
+    bool imageSizeEmpty = mCurrentConfig.mImage.IsEmpty();
     mInfo = Some(info);
     mCurrentConfig.mImage = info.mImage;
-    if (info.mDisplayAndImageDifferent) {
+    if (imageSizeEmpty || info.mDisplayAndImageDifferent) {
       
       
       mCurrentConfig.mDisplay = info.mDisplay;
