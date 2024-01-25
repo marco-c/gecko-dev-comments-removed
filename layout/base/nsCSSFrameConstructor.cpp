@@ -8045,23 +8045,6 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
   
   aFrame->RemoveStateBits(NS_FRAME_DYNAMIC_REFLOW_ROOT);
 
-  
-  
-  
-  
-  if (nsIFrame::PageValues* pageValues =
-          aFrame->GetProperty(nsIFrame::PageValuesProperty())) {
-    
-    
-    
-    
-    if (pageValues->mStartPageValue || pageValues->mEndPageValue) {
-      nsIFrame::PageValues* const newPageValues =
-          new nsIFrame::PageValues(*pageValues);
-      newFrame->SetProperty(nsIFrame::PageValuesProperty(), newPageValues);
-    }
-  }
-
   MOZ_ASSERT(!newFrame->GetNextSibling(), "unexpected sibling");
   return newFrame;
 }
