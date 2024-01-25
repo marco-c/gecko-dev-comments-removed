@@ -30,6 +30,7 @@
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/ntp_time.h"
 
@@ -92,7 +93,7 @@ int32_t RTPSenderAudio::RegisterAudioPayload(absl::string_view payload_name,
     return 0;
   } else if (payload_name == "audio") {
     MutexLock lock(&send_audio_mutex_);
-    encoder_rtp_timestamp_frequency_ = frequency;
+    encoder_rtp_timestamp_frequency_ = rtc::dchecked_cast<int>(frequency);
     return 0;
   }
   return 0;
@@ -154,11 +155,22 @@ bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
   
   constexpr int kDtmfIntervalTimeMs = 50;
   uint32_t dtmf_payload_freq = 0;
-  absl::optional<uint32_t> encoder_rtp_timestamp_frequency;
+  absl::optional<AbsoluteCaptureTime> absolute_capture_time;
   {
     MutexLock lock(&send_audio_mutex_);
     dtmf_payload_freq = dtmf_payload_freq_;
-    encoder_rtp_timestamp_frequency = encoder_rtp_timestamp_frequency_;
+    if (frame.capture_time.has_value()) {
+      
+      
+      
+      absolute_capture_time = absolute_capture_time_sender_.OnSendPacket(
+          rtp_sender_->SSRC(), frame.rtp_timestamp,
+          
+          
+          encoder_rtp_timestamp_frequency_.value_or(0),
+          clock_->ConvertTimestampToNtpTime(*frame.capture_time),
+          0);
+    }
   }
 
   
@@ -252,25 +264,10 @@ bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
       frame.type == AudioFrameType::kAudioFrameSpeech,
       frame.audio_level_dbov.value_or(127));
 
-  if (frame.capture_time.has_value()) {
+  if (absolute_capture_time.has_value()) {
     
     
-    
-    auto absolute_capture_time = absolute_capture_time_sender_.OnSendPacket(
-        AbsoluteCaptureTimeSender::GetSource(packet->Ssrc(), packet->Csrcs()),
-        packet->Timestamp(),
-        
-        
-        encoder_rtp_timestamp_frequency.value_or(0),
-        static_cast<uint64_t>(
-            clock_->ConvertTimestampToNtpTime(*frame.capture_time)),
-        0);
-    if (absolute_capture_time) {
-      
-      
-      packet->SetExtension<AbsoluteCaptureTimeExtension>(
-          *absolute_capture_time);
-    }
+    packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
   }
 
   uint8_t* payload = packet->AllocatePayload(frame.payload.size());
