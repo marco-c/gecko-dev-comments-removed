@@ -32,7 +32,6 @@ namespace mozilla::dom {
 struct BindContext;
 template <typename T>
 class Sequence;
-struct MozPluginParameter;
 class HTMLIFrameElement;
 template <typename T>
 struct Nullable;
@@ -81,21 +80,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   void SetIsNetworkCreated(bool aNetworkCreated) {
     mNetworkCreated = aNetworkCreated;
   }
-
-  
-
-
-
-
-
-
-  
-  void GetPluginAttributes(
-      nsTArray<mozilla::dom::MozPluginParameter>& aAttributes);
-
-  
-  void GetPluginParameters(
-      nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
 
   
 
@@ -288,22 +272,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
     
     eParamContentTypeChanged = 1u << 2
   };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
-
-  [[nodiscard]] nsresult BuildParametersArray();
 
   
 
@@ -535,9 +503,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   bool mRewrittenYoutubeEmbed : 1;
 
   bool mLoadingSyntheticDocument : 1;
-
-  nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
-  nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;
 
   
   
