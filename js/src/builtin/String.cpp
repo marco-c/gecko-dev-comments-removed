@@ -1893,7 +1893,7 @@ bool js::str_charCodeAt(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool str_codePointAt(JSContext* cx, unsigned argc, Value* vp) {
+bool js::str_codePointAt(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "codePointAt");
   CallArgs args = CallArgsFromVp(argc, vp);
 
