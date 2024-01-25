@@ -108,20 +108,6 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
   }
 
   
-  
-  if (mData.mRemoteTextureOwnerIdOfPushCallback) {
-    if (!HasPipeline()) {
-      GetForwarder()->EnableRemoteTexturePushCallback(
-          mCanvasClient, *mData.mRemoteTextureOwnerIdOfPushCallback,
-          mData.mSize, flags);
-      EnsurePipeline();
-    }
-    
-    context->GetFrontBuffer(nullptr);
-    return;
-  }
-
-  
 
   const auto fnGetExistingTc =
       [&](const Maybe<SurfaceDescriptor>& aDesc,
@@ -193,7 +179,8 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
       if (!mData.mIsAlphaPremult) {
         flags |= TextureFlags::NON_PREMULTIPLIED;
       }
-      if (provider && provider->WaitForRemoteTextureOwner()) {
+      if ((provider && provider->WaitForRemoteTextureOwner()) ||
+          mData.mRemoteTextureOwnerId.isSome()) {
         flags |= TextureFlags::WAIT_FOR_REMOTE_TEXTURE_OWNER;
       }
       EnsurePipeline();

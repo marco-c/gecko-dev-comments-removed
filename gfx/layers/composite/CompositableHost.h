@@ -88,15 +88,6 @@ class CompositableHost {
   virtual void UseTextureHost(const nsTArray<TimedTexture>& aTextures);
   virtual void RemoveTextureHost(TextureHost* aTexture);
 
-  
-  virtual void EnableRemoteTexturePushCallback(
-      const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
-      const gfx::IntSize aSize, const TextureFlags aFlags) = 0;
-  
-  virtual void NotifyPushTexture(const RemoteTextureId aTextureId,
-                                 const RemoteTextureOwnerId aOwnerId,
-                                 const base::ProcessId aForPid) = 0;
-
   uint64_t GetCompositorBridgeID() const { return mCompositorBridgeID; }
 
   const AsyncCompositableRef& GetAsyncRef() const { return mAsyncRef; }
