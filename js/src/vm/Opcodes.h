@@ -2585,12 +2585,27 @@
 
 
 
+ \
+    MACRO(Throw, throw_, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
  \
-    MACRO(Throw, throw_, NULL, 1, 1, 0, JOF_BYTE) \
+    MACRO(ThrowWithStack, throw_with_stack, NULL, 1, 2, 0, JOF_BYTE) \
     
 
 
@@ -2657,9 +2672,24 @@
 
 
 
-
  \
     MACRO(Exception, exception, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ExceptionAndStack, exception_and_stack, NULL, 1, 0, 2, JOF_BYTE) \
     
 
 
@@ -3585,15 +3615,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(232))     \
-  IF_RECORD_TUPLE(, MACRO(233))     \
   IF_RECORD_TUPLE(, MACRO(234))     \
   IF_RECORD_TUPLE(, MACRO(235))     \
   IF_RECORD_TUPLE(, MACRO(236))     \
   IF_RECORD_TUPLE(, MACRO(237))     \
   IF_RECORD_TUPLE(, MACRO(238))     \
-  MACRO(239)                                   \
-  MACRO(240)                                   \
+  IF_RECORD_TUPLE(, MACRO(239))     \
+  IF_RECORD_TUPLE(, MACRO(240))     \
   MACRO(241)                                   \
   MACRO(242)                                   \
   MACRO(243)                                   \

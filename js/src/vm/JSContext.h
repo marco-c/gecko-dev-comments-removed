@@ -704,7 +704,22 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return JS::IsCatchableExceptionStatus(status);
   }
 
+  
+
+
   [[nodiscard]] bool getPendingException(JS::MutableHandleValue rval);
+
+  
+
+
+
+
+  [[nodiscard]] bool getPendingExceptionStack(JS::MutableHandleValue rval);
+
+  
+
+
+
 
   js::SavedFrame* getPendingExceptionStack();
 

@@ -1986,6 +1986,13 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
       case JSOp::Exception:
         return write("EXCEPTION");
 
+      case JSOp::ExceptionAndStack:
+        if (defIndex == 0) {
+          return write("EXCEPTION");
+        }
+        MOZ_ASSERT(defIndex == 1);
+        return write("STACK");
+
       case JSOp::Try:
         
         
