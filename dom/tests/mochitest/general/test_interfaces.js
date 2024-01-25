@@ -1971,9 +1971,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "visualViewport", insecureContext: true },
   
-  { name: "WakeLock", nightly: true },
+  { name: "WakeLock" },
   
-  { name: "WakeLockSentinel", nightly: true },
+  { name: "WakeLockSentinel" },
   
   { name: "webkitURL", insecureContext: true },
   
