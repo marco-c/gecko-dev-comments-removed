@@ -332,10 +332,6 @@ already_AddRefed<mozilla::gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
 Maybe<layers::SurfaceDescriptor> CanvasContext::GetFrontBuffer(
     WebGLFramebufferJS*, const bool) {
-  
-  
-  
-  
   if (mPendingSwapChainPresent) {
     auto desc = SwapChainPresent();
     MOZ_ASSERT(!mPendingSwapChainPresent);
