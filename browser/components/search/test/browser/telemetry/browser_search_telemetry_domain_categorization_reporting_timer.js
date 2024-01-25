@@ -63,6 +63,20 @@ const TEST_PROVIDER_INFO = [
 add_setup(async function () {
   SearchTestUtils.useMockIdleService();
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
+
+  
+  
+  
+  
+  
+  if (
+    Services.prefs.getBoolPref(
+      "browser.search.serpEventTelemetryCategorization.enabled"
+    )
+  ) {
+    SearchSERPCategorizationEventScheduler.uninit();
+    SearchSERPCategorizationEventScheduler.init();
+  }
   await waitForIdle();
 
   let promise = waitForDomainToCategoriesUpdate();
