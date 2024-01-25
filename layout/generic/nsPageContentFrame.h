@@ -46,13 +46,6 @@ class nsPageContentFrame final : public mozilla::ViewportFrame {
 
   void EnsurePageName();
 
-  
-  
-  
-  
-  
-  nsIFrame* FirstContinuation() const final;
-
 #ifdef DEBUG_FRAME_DUMP
   
   nsresult GetFrameName(nsAString& aResult) const override;
