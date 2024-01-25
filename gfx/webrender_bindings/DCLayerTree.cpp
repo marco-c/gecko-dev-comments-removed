@@ -24,6 +24,7 @@
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
 #include "mozilla/webrender/RenderDcompSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderTextureHost.h"
@@ -53,7 +54,7 @@ extern LazyLogModule gRenderThreadLog;
   MOZ_LOG(gDcompSurface, LogLevel::Debug, \
           ("DCSurfaceHandle=%p, " msg, this, ##__VA_ARGS__))
 
-UniquePtr<GpuOverlayInfo> DCLayerTree::sGpuOverlayInfo;
+StaticAutoPtr<GpuOverlayInfo> DCLayerTree::sGpuOverlayInfo;
 
 
 UniquePtr<DCLayerTree> DCLayerTree::Create(gl::GLContext* aGL,
@@ -156,7 +157,7 @@ bool DCLayerTree::Initialize(HWND aHwnd, nsACString& aError) {
   }
   if (!sGpuOverlayInfo) {
     
-    sGpuOverlayInfo = MakeUnique<GpuOverlayInfo>();
+    sGpuOverlayInfo = new GpuOverlayInfo();
   }
 
   
@@ -290,7 +291,11 @@ bool DCLayerTree::InitializeVideoOverlaySupport() {
 
   info->mSupportsOverlays = info->mSupportsHardwareOverlays;
 
-  sGpuOverlayInfo = std::move(info);
+  
+  
+  
+  
+  sGpuOverlayInfo = info.release();
 
   if (auto* gpuParent = gfx::GPUParent::GetSingleton()) {
     gpuParent->NotifyOverlayInfo(GetOverlayInfo());

@@ -3,8 +3,9 @@
 
 
 
+
 #include "gfxConfig.h"
-#include "mozilla/UniquePtr.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GraphicsMessages.h"
@@ -13,7 +14,7 @@
 namespace mozilla {
 namespace gfx {
 
-static UniquePtr<gfxConfig> sConfig;
+static StaticAutoPtr<gfxConfig> sConfig;
 
  FeatureState& gfxConfig::GetFeature(Feature aFeature) {
   return sConfig->GetState(aFeature);
@@ -277,7 +278,7 @@ void gfxConfig::ImportChange(Feature aFeature,
 }
 
 
-void gfxConfig::Init() { sConfig = mozilla::MakeUnique<gfxConfig>(); }
+void gfxConfig::Init() { sConfig = new gfxConfig(); }
 
 
 void gfxConfig::Shutdown() { sConfig = nullptr; }
