@@ -184,7 +184,7 @@ impl Module {
 
     fn encode_data_count(&self, module: &mut wasm_encoder::Module) {
         
-        if !self.config.bulk_memory_enabled() {
+        if !self.config.bulk_memory_enabled {
             return;
         }
         

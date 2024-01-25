@@ -255,6 +255,8 @@ impl ValType {
     pub const FUNCREF: ValType = ValType::Ref(RefType::FUNCREF);
     
     pub const EXTERNREF: ValType = ValType::Ref(RefType::EXTERNREF);
+    
+    pub const EXNREF: ValType = ValType::Ref(RefType::EXNREF);
 }
 
 impl Encode for StorageType {
@@ -303,6 +305,12 @@ impl RefType {
     pub const EXTERNREF: RefType = RefType {
         nullable: true,
         heap_type: HeapType::Extern,
+    };
+
+    
+    pub const EXNREF: RefType = RefType {
+        nullable: true,
+        heap_type: HeapType::Exn,
     };
 }
 
@@ -394,6 +402,9 @@ pub enum HeapType {
     I31,
 
     
+    Exn,
+
+    
     Concrete(u32),
 }
 
@@ -410,6 +421,7 @@ impl Encode for HeapType {
             HeapType::Struct => sink.push(0x6B),
             HeapType::Array => sink.push(0x6A),
             HeapType::I31 => sink.push(0x6C),
+            HeapType::Exn => sink.push(0x69),
             
             
             HeapType::Concrete(i) => i64::from(*i).encode(sink),
@@ -434,6 +446,7 @@ impl TryFrom<wasmparser::HeapType> for HeapType {
             wasmparser::HeapType::Struct => HeapType::Struct,
             wasmparser::HeapType::Array => HeapType::Array,
             wasmparser::HeapType::I31 => HeapType::I31,
+            wasmparser::HeapType::Exn => HeapType::Exn,
         })
     }
 }

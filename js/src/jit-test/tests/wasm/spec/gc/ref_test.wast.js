@@ -464,7 +464,7 @@ let $1 = instantiate(`(module
 )`);
 
 
-invoke($1, `test-sub`, []);
+assert_return(() => invoke($1, `test-sub`, []), []);
 
 
-invoke($1, `test-canon`, []);
+assert_return(() => invoke($1, `test-canon`, []), []);
