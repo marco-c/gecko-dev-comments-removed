@@ -1143,7 +1143,12 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
   }
 
   if (request && request->IsModuleRequest() &&
-      mModuleLoader->HasImportMapRegistered()) {
+      mModuleLoader->HasImportMapRegistered() &&
+      request->mState > ScriptLoadRequest::State::Fetching) {
+    
+    
+    
+    
     
     
     request->Cancel();
