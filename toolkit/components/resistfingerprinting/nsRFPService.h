@@ -424,6 +424,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   nsresult GetBrowsingSessionKey(const OriginAttributes& aOriginAttributes,
                                  nsID& aBrowsingSessionKey);
   void ClearBrowsingSessionKey(const OriginAttributesPattern& aPattern);
+  void ClearBrowsingSessionKey(const OriginAttributes& aOriginAttributes);
 
   
   
