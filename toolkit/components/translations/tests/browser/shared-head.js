@@ -4,6 +4,13 @@
 "use strict";
 
 
+
+
+const { EngineProcess } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/EngineProcess.sys.mjs"
+);
+
+
 const BLANK_PAGE =
   "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
 
@@ -133,7 +140,7 @@ async function openAboutTranslations({
   BrowserTestUtils.removeTab(tab);
 
   await removeMocks();
-  await TranslationsParent.destroyEngineProcess();
+  await EngineProcess.destroyTranslationsEngine();
 
   await SpecialPowers.popPrefEnv();
 }
@@ -441,7 +448,7 @@ async function setupActorTest({
     actor,
     remoteClients,
     async cleanup() {
-      await TranslationsParent.destroyEngineProcess();
+      await EngineProcess.destroyTranslationsEngine();
       await closeTranslationsPanelIfOpen();
       await closeContextMenuIfOpen();
       BrowserTestUtils.removeTab(tab);
@@ -498,7 +505,7 @@ async function loadTestPage({
 }) {
   info(`Loading test page starting at url: ${page}`);
   
-  await TranslationsParent.destroyEngineProcess();
+  await EngineProcess.destroyTranslationsEngine();
   Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -583,7 +590,7 @@ async function loadTestPage({
 
 
     async cleanup() {
-      await TranslationsParent.destroyEngineProcess();
+      await EngineProcess.destroyTranslationsEngine();
       await closeTranslationsPanelIfOpen();
       await closeContextMenuIfOpen();
       await removeMocks();
@@ -1047,7 +1054,7 @@ async function setupAboutPreferences(
   const elements = await selectAboutPreferencesElements();
 
   async function cleanup() {
-    await TranslationsParent.destroyEngineProcess();
+    await EngineProcess.destroyTranslationsEngine();
     await closeTranslationsPanelIfOpen();
     await closeContextMenuIfOpen();
     BrowserTestUtils.removeTab(tab);
