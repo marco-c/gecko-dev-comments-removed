@@ -137,7 +137,7 @@ void TestSlowStart(const TrackRate aRate) MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
   auto graph = MakeRefPtr<NiceMock<MockGraphInterface>>(aRate);
   EXPECT_CALL(*graph, NotifyInputStopped).Times(0);
 
-  auto* mainThread = AbstractThread::GetCurrent();
+  nsIThread* mainThread = NS_GetCurrentThread();
   Maybe<int64_t> audioStart;
   Maybe<uint32_t> alreadyBuffered;
   int64_t inputFrameCount = 0;
@@ -211,6 +211,8 @@ void TestSlowStart(const TrackRate aRate) MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
 
   
   MOZ_KnownLive(driver)->Shutdown();
+  
+  NS_ProcessPendingEvents(mainThread);
   processedListener.Disconnect();
 
   EXPECT_EQ(inputFrameCount, processedFrameCount);
