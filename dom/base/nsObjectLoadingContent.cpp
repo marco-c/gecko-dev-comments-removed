@@ -583,13 +583,6 @@ nsObjectLoadingContent::GetDisplayedType(uint32_t* aType) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsObjectLoadingContent::GetContentTypeForMIMEType(const nsACString& aMIMEType,
-                                                  uint32_t* aType) {
-  *aType = GetTypeOfContent(PromiseFlatCString(aMIMEType), false);
-  return NS_OK;
-}
-
 
 
 

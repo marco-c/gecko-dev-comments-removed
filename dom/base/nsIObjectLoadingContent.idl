@@ -59,13 +59,6 @@ interface nsIObjectLoadingContent : nsISupports
 
 
 
-  unsigned long getContentTypeForMIMEType(in AUTF8String aMimeType);
-
-  
-
-
-
-
 
   void reload(in boolean aClearActivation);
 
