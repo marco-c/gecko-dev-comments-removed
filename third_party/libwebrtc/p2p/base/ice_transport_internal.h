@@ -105,7 +105,9 @@ webrtc::RTCError VerifyCandidates(const Candidates& candidates);
 
 
 
-struct IceConfig {
+
+
+struct RTC_EXPORT IceConfig {
   
   absl::optional<int> receiving_timeout;
   
@@ -229,6 +231,8 @@ enum class IceTransportState {
   STATE_COMPLETED,
   STATE_FAILED
 };
+
+
 
 
 
