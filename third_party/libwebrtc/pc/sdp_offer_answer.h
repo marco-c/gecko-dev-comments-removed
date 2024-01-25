@@ -359,9 +359,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  RTCError UpdateDataChannel(cricket::ContentSource source,
-                             const cricket::ContentInfo& content,
-                             const cricket::ContentGroup* bundle_group)
+  RTCError UpdateDataChannelTransport(cricket::ContentSource source,
+                                      const cricket::ContentInfo& content,
+                                      const cricket::ContentGroup* bundle_group)
       RTC_RUN_ON(signaling_thread());
   
   
@@ -525,12 +525,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   RTCError CreateChannels(const cricket::SessionDescription& desc);
-
-  bool CreateDataChannel(const std::string& mid);
-
-  
-  
-  void DestroyDataChannelTransport(RTCError error);
 
   
   

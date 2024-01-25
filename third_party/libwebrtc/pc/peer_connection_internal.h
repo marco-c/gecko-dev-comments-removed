@@ -95,7 +95,6 @@ class PeerConnectionSdpMethods {
       const std::map<std::string, const cricket::ContentGroup*>&
           bundle_groups_by_mid) = 0;
 
-  virtual absl::optional<std::string> GetDataMid() const = 0;
   
   
   virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
@@ -121,13 +120,10 @@ class PeerConnectionSdpMethods {
   
   
   
-  virtual absl::optional<std::string> SetupDataChannelTransport_n(
-      absl::string_view mid) = 0;
-  virtual void TeardownDataChannelTransport_n(RTCError error) = 0;
-  virtual void SetSctpDataInfo(absl::string_view mid,
-                               absl::string_view transport_name) = 0;
-  virtual void ResetSctpDataInfo() = 0;
-
+  virtual bool CreateDataChannelTransport(absl::string_view mid) = 0;
+  
+  
+  virtual void DestroyDataChannelTransport(RTCError error) = 0;
   virtual const FieldTrialsView& trials() const = 0;
 
   virtual void ClearStatsCache() = 0;
