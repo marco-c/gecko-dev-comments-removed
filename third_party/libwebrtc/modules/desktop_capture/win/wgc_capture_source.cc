@@ -109,9 +109,6 @@ ABI::Windows::Graphics::SizeInt32 WgcWindowSource::GetSize() {
           window_rect.bottom - window_rect.top};
 }
 
-
-
-
 bool WgcWindowSource::ShouldBeCapturable() {
   return IsWindowValidAndVisible(reinterpret_cast<HWND>(GetSourceId()));
 }
