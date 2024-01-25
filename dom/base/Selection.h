@@ -839,9 +839,9 @@ class Selection final : public nsSupportsWeakReference,
 
     StyledRange* FindRangeData(AbstractRange* aRange);
 
-    using Elements = AutoTArray<StyledRange, 1>;
+    using StyledRangeArray = AutoTArray<StyledRange, 1>;
 
-    Elements::size_type Length() const;
+    StyledRangeArray::size_type Length() const;
 
     nsresult RemoveCollapsedRanges();
 
@@ -879,9 +879,9 @@ class Selection final : public nsSupportsWeakReference,
                                    const nsINode* aEndNode, uint32_t aEndOffset,
                                    bool aAllowAdjacent,
                                    Maybe<size_t>& aStartIndex,
-                                   Maybe<size_t>& aEndIndex) const;
+                                   Maybe<size_t>& aEndIndex);
 
-    bool HasEqualRangeBoundariesAt(const nsRange& aRange,
+    bool HasEqualRangeBoundariesAt(const AbstractRange& aRange,
                                    size_t aRangeIndex) const;
 
     
@@ -894,6 +894,12 @@ class Selection final : public nsSupportsWeakReference,
 
     MOZ_CAN_RUN_SCRIPT nsresult
     MaybeAddRangeAndTruncateOverlaps(nsRange* aRange, Maybe<size_t>* aOutIndex);
+
+    
+
+
+    MOZ_CAN_RUN_SCRIPT nsresult
+    AddRangeAndIgnoreOverlaps(AbstractRange* aRange);
 
     
 
@@ -943,15 +949,38 @@ class Selection final : public nsSupportsWeakReference,
     
     
     
+    void ReorderRangesIfNecessary();
+
     
     
     
     
     
     
-    Elements mRanges;
+    
+    
+    
+    
+    
+    
+    
+    StyledRangeArray mRanges;
+
+    
+    
+    
+    
+    
+    
+    StyledRangeArray mInvalidStaticRanges;
 
     Selection& mSelection;
+
+    
+    int32_t mDocumentGeneration{0};
+    
+    
+    bool mRangesMightHaveChanged{false};
   };
 
   StyledRanges mStyledRanges{*this};
