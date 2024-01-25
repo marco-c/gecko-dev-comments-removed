@@ -19,10 +19,6 @@ export const baseKeys = {
   user_prefs: Joi.number().integer().required(),
 };
 
-export const BasePing = Joi.object()
-  .keys(baseKeys)
-  .options({ allowUnknown: true });
-
 export const eventsTelemetryExtraKeys = Joi.object()
   .keys({
     session_id: baseKeys.session_id.required(),
@@ -32,25 +28,6 @@ export const eventsTelemetryExtraKeys = Joi.object()
     action_position: Joi.string().optional(),
   })
   .options({ allowUnknown: false });
-
-export const UserEventPing = Joi.object().keys(
-  Object.assign({}, baseKeys, {
-    session_id: baseKeys.session_id.required(),
-    page: baseKeys.page.required(),
-    source: Joi.string(),
-    event: Joi.string().required(),
-    action: Joi.valid("activity_stream_user_event").required(),
-    metadata_source: Joi.string(),
-    highlight_type: Joi.valid(["bookmarks", "recommendation", "history"]),
-    recommender_type: Joi.string(),
-    value: Joi.object().keys({
-      newtab_url_category: Joi.string(),
-      newtab_extension_id: Joi.string(),
-      home_url_category: Joi.string(),
-      home_extension_id: Joi.string(),
-    }),
-  })
-);
 
 export const UTUserEventPing = Joi.array().items(
   Joi.string().required().valid("activity_stream"),
@@ -157,94 +134,6 @@ export const TileSchema = Joi.object().keys({
   id: Joi.number().integer().required(),
   pos: Joi.number().integer(),
 });
-
-export const SessionPing = Joi.object().keys(
-  Object.assign({}, baseKeys, {
-    session_id: baseKeys.session_id.required(),
-    page: baseKeys.page.required(),
-    session_duration: Joi.number().integer(),
-    action: Joi.valid("activity_stream_session").required(),
-    profile_creation_date: Joi.number().integer(),
-    perf: Joi.object()
-      .keys({
-        
-        highlights_data_late_by_ms: Joi.number().positive(),
-
-        
-        
-        
-        
-        
-        load_trigger_ts: Joi.number()
-          .integer()
-          .notes(["server counter", "server counter alert"]),
-
-        
-        
-        
-        
-        load_trigger_type: Joi.valid([
-          "first_window_opened",
-          "menu_plus_or_keyboard",
-          "unexpected",
-        ])
-          .notes(["server counter", "server counter alert"])
-          .required(),
-
-        
-        topsites_data_late_by_ms: Joi.number().positive(),
-
-        
-        
-        
-        
-        topsites_first_painted_ts: Joi.number()
-          .integer()
-          .notes(["server counter", "server counter alert"]),
-
-        
-        topsites_icon_stats: Joi.object().keys({
-          custom_screenshot: Joi.number(),
-          rich_icon: Joi.number(),
-          screenshot: Joi.number(),
-          screenshot_with_icon: Joi.number(),
-          tippytop: Joi.number(),
-          no_image: Joi.number(),
-        }),
-
-        
-        topsites_pinned: Joi.number(),
-
-        
-        topsites_search_shortcuts: Joi.number(),
-
-        
-        
-        
-        
-        
-        
-        visibility_event_rcvd_ts: Joi.number()
-          .integer()
-          .notes(["server counter", "server counter alert"]),
-
-        
-        is_preloaded: Joi.bool().required(),
-      })
-      .required(),
-  })
-);
-
-export const ASRouterEventPing = Joi.object()
-  .keys({
-    addon_version: Joi.string().required(),
-    locale: Joi.string().required(),
-    message_id: Joi.string().required(),
-    event: Joi.string().required(),
-    client_id: Joi.string(),
-    impression_id: Joi.string(),
-  })
-  .or("client_id", "impression_id");
 
 export const UTSessionPing = Joi.array().items(
   Joi.string().required().valid("activity_stream"),
