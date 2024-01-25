@@ -40,5 +40,10 @@ using VerificationTag = webrtc::StrongAlias<class VerificationTagTag, uint32_t>;
 
 using TieTag = webrtc::StrongAlias<class TieTagTag, uint64_t>;
 
+
+
+using OutgoingMessageId =
+    webrtc::StrongAlias<class OutgoingMessageIdTag, uint32_t>;
+
 }  
 #endif  

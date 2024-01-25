@@ -27,7 +27,11 @@ class SendQueue {
  public:
   
   struct DataToSend {
-    explicit DataToSend(Data data) : data(std::move(data)) {}
+    DataToSend(OutgoingMessageId message_id, Data data)
+        : message_id(message_id), data(std::move(data)) {}
+
+    OutgoingMessageId message_id;
+
     
     Data data;
 
@@ -67,7 +71,7 @@ class SendQueue {
   
   
   
-  virtual bool Discard(IsUnordered unordered, StreamID stream_id, MID mid) = 0;
+  virtual bool Discard(StreamID stream_id, OutgoingMessageId message_id) = 0;
 
   
   

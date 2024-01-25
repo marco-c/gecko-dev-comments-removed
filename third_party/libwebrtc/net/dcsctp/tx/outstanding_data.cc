@@ -63,6 +63,8 @@ void OutstandingData::Item::MarkAsRetransmitted() {
 }
 
 void OutstandingData::Item::Abandon() {
+  RTC_DCHECK(expires_at_ != TimeMs::InfiniteFuture() ||
+             max_retransmissions_ != MaxRetransmits::NoLimit());
   lifecycle_ = Lifecycle::kAbandoned;
 }
 
@@ -252,6 +254,7 @@ bool OutstandingData::NackItem(UnwrappedTSN tsn,
       RTC_DLOG(LS_VERBOSE) << *tsn.Wrap() << " marked for retransmission";
       break;
     case Item::NackAction::kAbandon:
+      RTC_DLOG(LS_VERBOSE) << *tsn.Wrap() << " Nacked, resulted in abandoning";
       AbandonAllFor(item);
       break;
   }
@@ -260,8 +263,7 @@ bool OutstandingData::NackItem(UnwrappedTSN tsn,
 
 void OutstandingData::AbandonAllFor(const Item& item) {
   
-  if (discard_from_send_queue_(item.data().is_unordered, item.data().stream_id,
-                               item.data().mid)) {
+  if (discard_from_send_queue_(item.data().stream_id, item.message_id())) {
     
     
     
@@ -279,10 +281,10 @@ void OutstandingData::AbandonAllFor(const Item& item) {
     Item& added_item =
         outstanding_data_
             .emplace(std::piecewise_construct, std::forward_as_tuple(tsn),
-                     std::forward_as_tuple(std::move(message_end), TimeMs(0),
-                                           MaxRetransmits::NoLimit(),
-                                           TimeMs::InfiniteFuture(),
-                                           LifecycleId::NotSet()))
+                     std::forward_as_tuple(
+                         item.message_id(), std::move(message_end), TimeMs(0),
+                         MaxRetransmits(0), TimeMs::InfiniteFuture(),
+                         LifecycleId::NotSet()))
             .first->second;
     
     
@@ -294,8 +296,7 @@ void OutstandingData::AbandonAllFor(const Item& item) {
   for (auto& [tsn, other] : outstanding_data_) {
     if (!other.is_abandoned() &&
         other.data().stream_id == item.data().stream_id &&
-        other.data().is_unordered == item.data().is_unordered &&
-        other.data().mid == item.data().mid) {
+        other.message_id() == item.message_id()) {
       RTC_DLOG(LS_VERBOSE) << "Marking chunk " << *tsn.Wrap()
                            << " as abandoned";
       if (other.should_be_retransmitted()) {
@@ -395,6 +396,7 @@ UnwrappedTSN OutstandingData::highest_outstanding_tsn() const {
 }
 
 absl::optional<UnwrappedTSN> OutstandingData::Insert(
+    OutgoingMessageId message_id,
     const Data& data,
     TimeMs time_sent,
     MaxRetransmits max_retransmissions,
@@ -409,9 +411,9 @@ absl::optional<UnwrappedTSN> OutstandingData::Insert(
   ++outstanding_items_;
   auto it = outstanding_data_
                 .emplace(std::piecewise_construct, std::forward_as_tuple(tsn),
-                         std::forward_as_tuple(data.Clone(), time_sent,
-                                               max_retransmissions, expires_at,
-                                               lifecycle_id))
+                         std::forward_as_tuple(message_id, data.Clone(),
+                                               time_sent, max_retransmissions,
+                                               expires_at, lifecycle_id))
                 .first;
 
   if (it->second.has_expired(time_sent)) {
