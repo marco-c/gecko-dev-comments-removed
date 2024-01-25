@@ -23,13 +23,6 @@ ChromeUtils.defineESModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
-ChromeUtils.defineLazyGetter(this, "extensionStylesheets", () => {
-  const { ExtensionParent } = ChromeUtils.importESModule(
-    "resource://gre/modules/ExtensionParent.sys.mjs"
-  );
-  return ExtensionParent.extensionStylesheets;
-});
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "manifestV3enabled",
@@ -1795,7 +1788,10 @@ class InlineOptionsBrowser extends HTMLElement {
       };
 
       if (optionsBrowserStyle) {
-        browserOptions.stylesheets = extensionStylesheets;
+        
+        
+        
+        browserOptions.stylesheets = ["chrome://browser/content/extension.css"];
       }
 
       mm.sendAsyncMessage("Extension:InitBrowser", browserOptions);
