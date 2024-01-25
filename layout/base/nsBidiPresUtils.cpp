@@ -997,10 +997,12 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
       if (++numRun >= runCount) {
         
         
-        storeBidiDataToFrame();
-        if (isTextFrame) {
-          frame->AdjustOffsetsForBidi(contentOffset,
-                                      contentOffset + fragmentLength);
+        if (frame != NS_BIDI_CONTROL_FRAME) {
+          storeBidiDataToFrame();
+          if (isTextFrame) {
+            frame->AdjustOffsetsForBidi(contentOffset,
+                                        contentOffset + fragmentLength);
+          }
         }
         break;
       }

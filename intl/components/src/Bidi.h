@@ -7,7 +7,13 @@
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/intl/ICU4CGlue.h"
 
+#define USE_RUST_UNICODE_BIDI 1
+
+#if USE_RUST_UNICODE_BIDI
+#  include "mozilla/intl/unicode_bidi_ffi_generated.h"
+#else
 struct UBiDi;
+#endif
 
 namespace mozilla::intl {
 
@@ -118,7 +124,7 @@ class Bidi final {
   
 
 
-  static BaseDirection GetBaseDirection(Span<const char16_t> aParagraph);
+  static BaseDirection GetBaseDirection(Span<const char16_t> aText);
 
   
 
@@ -142,6 +148,15 @@ class Bidi final {
                              int32_t* aLength);
 
  private:
+#if USE_RUST_UNICODE_BIDI
+  using UnicodeBidi = mozilla::intl::ffi::UnicodeBidi;
+  struct BidiFreePolicy {
+    void operator()(void* aPtr) {
+      bidi_destroy(static_cast<UnicodeBidi*>(aPtr));
+    }
+  };
+  mozilla::UniquePtr<UnicodeBidi, BidiFreePolicy> mBidi;
+#else
   ICUPointer<UBiDi> mBidi = ICUPointer<UBiDi>(nullptr);
 
   
@@ -154,6 +169,7 @@ class Bidi final {
 
 
   int32_t mLength = 0;
+#endif
 };
 
 }  
