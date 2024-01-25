@@ -40,6 +40,10 @@ constexpr int kSrtpAeadAes256Gcm = 0x0008;
 constexpr int kSrtpCryptoSuiteMaxValue = 0xFFFF;
 
 
+constexpr int kSslSignatureAlgorithmUnknown = 0;
+constexpr int kSslSignatureAlgorithmMaxValue = 0xFFFF;
+
+
 
 extern const char kCsAesCm128HmacSha1_80[];
 
@@ -217,6 +221,9 @@ class SSLStreamAdapter : public StreamInterface {
                                     bool use_context,
                                     uint8_t* result,
                                     size_t result_len);
+
+  
+  virtual uint16_t GetPeerSignatureAlgorithm() const = 0;
 
   
   virtual bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites);

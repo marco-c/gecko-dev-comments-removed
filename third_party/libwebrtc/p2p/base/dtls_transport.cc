@@ -416,6 +416,13 @@ bool DtlsTransport::GetSslVersionBytes(int* version) const {
   return dtls_->GetSslVersionBytes(version);
 }
 
+uint16_t DtlsTransport::GetSslPeerSignatureAlgorithm() const {
+  if (dtls_state() != webrtc::DtlsTransportState::kConnected) {
+    return rtc::kSslSignatureAlgorithmUnknown;  
+  }
+  return dtls_->GetPeerSignatureAlgorithm();
+}
+
 
 int DtlsTransport::SendPacket(const char* data,
                               size_t size,

@@ -158,6 +158,12 @@ class DtlsTransport : public DtlsTransportInternal {
   
   bool GetSrtpCryptoSuite(int* cipher) override;
 
+  
+  
+  
+  
+  uint16_t GetSslPeerSignatureAlgorithm() const override;
+
   bool GetDtlsRole(rtc::SSLRole* role) const override;
   bool SetDtlsRole(rtc::SSLRole role) override;
 

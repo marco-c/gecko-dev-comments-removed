@@ -72,6 +72,12 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   virtual bool GetSslCipherSuite(int* cipher) = 0;
 
   
+  
+  
+  
+  virtual uint16_t GetSslPeerSignatureAlgorithm() const = 0;
+
+  
   virtual rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate()
       const = 0;
 
