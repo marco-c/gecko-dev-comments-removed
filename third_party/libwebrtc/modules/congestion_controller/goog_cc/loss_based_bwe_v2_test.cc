@@ -713,25 +713,21 @@ TEST_F(LossBasedBweV2Test,
 TEST_F(LossBasedBweV2Test,
        LossBasedStateIsNotDelayBasedEstimateIfDelayBasedEsimtateInfinite) {
   ExplicitKeyValueConfig key_value_config(
-      "WebRTC-Bwe-LossBasedBweV2/"
-      "CandidateFactors:100|1|0.5,"
-      "ObservationWindowSize:2,"
-      "InstantUpperBoundBwBalance:10000kbps,"
-      "MaxIncreaseFactor:100/");
+      ShortObservationConfig("CandidateFactors:100|1|0.5,"
+                             "InstantUpperBoundBwBalance:10000kbps,"
+                             "MaxIncreaseFactor:100"));
   LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
-  DataRate delay_based_estimate = DataRate::PlusInfinity();
-  DataRate acked_rate = DataRate::KilobitsPerSec(300);
   loss_based_bandwidth_estimator.SetBandwidthEstimate(
       DataRate::KilobitsPerSec(600));
-  loss_based_bandwidth_estimator.SetAcknowledgedBitrate(acked_rate);
 
   
   std::vector<PacketResult> enough_feedback_1 =
       CreatePacketResultsWith100pLossRate(
           Timestamp::Zero());
-  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(enough_feedback_1,
-                                                         delay_based_estimate,
-                                                         false);
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_1,
+      DataRate::PlusInfinity(),
+      false);
   ASSERT_EQ(loss_based_bandwidth_estimator.GetLossBasedResult().state,
             LossBasedState::kDecreasing);
 
@@ -742,9 +738,10 @@ TEST_F(LossBasedBweV2Test,
           kObservationDurationLowerBound);
   loss_based_bandwidth_estimator.SetAcknowledgedBitrate(
       DataRate::KilobitsPerSec(600));
-  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(enough_feedback_2,
-                                                         delay_based_estimate,
-                                                         false);
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_2,
+      DataRate::PlusInfinity(),
+      false);
   EXPECT_NE(loss_based_bandwidth_estimator.GetLossBasedResult().state,
             LossBasedState::kDelayBasedEstimate);
 }
@@ -1295,6 +1292,80 @@ TEST_F(LossBasedBweV2Test, NotBoundEstimateByAckedRate) {
   EXPECT_LT(
       loss_based_bandwidth_estimator.GetLossBasedResult().bandwidth_estimate,
       DataRate::KilobitsPerSec(500));
+}
+
+TEST_F(LossBasedBweV2Test, HasDecreaseStateBecauseOfUpperBound) {
+  ExplicitKeyValueConfig key_value_config(ShortObservationConfig(
+      "CandidateFactors:1.0,InstantUpperBoundBwBalance:10kbps"));
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+  loss_based_bandwidth_estimator.SetMinMaxBitrate(
+      DataRate::KilobitsPerSec(10),
+      DataRate::KilobitsPerSec(1000000));
+  loss_based_bandwidth_estimator.SetBandwidthEstimate(
+      DataRate::KilobitsPerSec(500));
+  loss_based_bandwidth_estimator.SetAcknowledgedBitrate(
+      DataRate::KilobitsPerSec(500));
+
+  std::vector<PacketResult> enough_feedback_10p_loss_1 =
+      CreatePacketResultsWith10pLossRate(
+          Timestamp::Zero());
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_10p_loss_1,
+      DataRate::PlusInfinity(),
+      false);
+
+  
+  
+  EXPECT_EQ(
+      loss_based_bandwidth_estimator.GetLossBasedResult().bandwidth_estimate,
+      DataRate::KilobitsPerSec(200));
+  EXPECT_EQ(loss_based_bandwidth_estimator.GetLossBasedResult().state,
+            LossBasedState::kDecreasing);
+}
+
+TEST_F(LossBasedBweV2Test, HasIncreaseStateBecauseOfLowerBound) {
+  ExplicitKeyValueConfig key_value_config(ShortObservationConfig(
+      "CandidateFactors:1.0,LowerBoundByAckedRateFactor:10.0"));
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+  loss_based_bandwidth_estimator.SetMinMaxBitrate(
+      DataRate::KilobitsPerSec(10),
+      DataRate::KilobitsPerSec(1000000));
+  loss_based_bandwidth_estimator.SetBandwidthEstimate(
+      DataRate::KilobitsPerSec(500));
+  loss_based_bandwidth_estimator.SetAcknowledgedBitrate(
+      DataRate::KilobitsPerSec(1));
+
+  
+  std::vector<PacketResult> enough_feedback_50p_loss_1 =
+      CreatePacketResultsWith50pLossRate(
+          Timestamp::Zero());
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_50p_loss_1,
+      DataRate::PlusInfinity(),
+      false);
+
+  ASSERT_EQ(loss_based_bandwidth_estimator.GetLossBasedResult().state,
+            LossBasedState::kDecreasing);
+
+  
+  loss_based_bandwidth_estimator.SetAcknowledgedBitrate(
+      DataRate::KilobitsPerSec(200));
+  std::vector<PacketResult> enough_feedback_50p_loss_2 =
+      CreatePacketResultsWith50pLossRate(
+          Timestamp::Zero() +
+          kObservationDurationLowerBound);
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_50p_loss_2,
+      DataRate::PlusInfinity(),
+      false);
+
+  
+  
+  EXPECT_EQ(
+      loss_based_bandwidth_estimator.GetLossBasedResult().bandwidth_estimate,
+      DataRate::KilobitsPerSec(200) * 10);
+  EXPECT_EQ(loss_based_bandwidth_estimator.GetLossBasedResult().state,
+            LossBasedState::kIncreasing);
 }
 
 }  
