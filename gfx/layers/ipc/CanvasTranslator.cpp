@@ -145,7 +145,8 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
   mHeaderShmem = MakeAndAddRef<ipc::SharedMemoryBasic>();
   if (!CreateAndMapShmem(mHeaderShmem, std::move(aReadHandle),
                          ipc::SharedMemory::RightsReadWrite, sizeof(Header))) {
-    return IPC_FAIL(this, "Failed.");
+    Deactivate();
+    return IPC_FAIL(this, "Failed to map canvas header shared memory.");
   }
 
   mHeader = static_cast<Header*>(mHeaderShmem->memory());
@@ -175,7 +176,8 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
   auto handleIter = aBufferHandles.begin();
   if (!CreateAndMapShmem(mCurrentShmem.shmem, std::move(*handleIter),
                          ipc::SharedMemory::RightsReadOnly, aBufferSize)) {
-    return IPC_FAIL(this, "Failed.");
+    Deactivate();
+    return IPC_FAIL(this, "Failed to map canvas buffer shared memory.");
   }
   mCurrentMemReader = mCurrentShmem.CreateMemReader();
 
@@ -184,7 +186,8 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
     CanvasShmem newShmem;
     if (!CreateAndMapShmem(newShmem.shmem, std::move(*handleIter),
                            ipc::SharedMemory::RightsReadOnly, aBufferSize)) {
-      return IPC_FAIL(this, "Failed.");
+      Deactivate();
+      return IPC_FAIL(this, "Failed to map canvas buffer shared memory.");
     }
     mCanvasShmems.emplace(std::move(newShmem));
   }
@@ -394,7 +397,9 @@ void CanvasTranslator::Deactivate() {
     return;
   }
   mDeactivated = true;
-  mHeader->readerState = State::Failed;
+  if (mHeader) {
+    mHeader->readerState = State::Failed;
+  }
 
   
   
@@ -660,12 +665,14 @@ bool CanvasTranslator::CreateReferenceTexture() {
   mReferenceTextureData =
       CreateTextureData(gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, true);
   if (!mReferenceTextureData) {
+    Deactivate();
     return false;
   }
 
   if (NS_WARN_IF(!mReferenceTextureData->Lock(OpenMode::OPEN_READ_WRITE))) {
     gfxCriticalNote << "CanvasTranslator::CreateReferenceTexture lock failed";
     mReferenceTextureData.reset();
+    Deactivate();
     return false;
   }
 
@@ -674,6 +681,7 @@ bool CanvasTranslator::CreateReferenceTexture() {
   if (!mBaseDT) {
     
     
+    Deactivate();
     return false;
   }
 

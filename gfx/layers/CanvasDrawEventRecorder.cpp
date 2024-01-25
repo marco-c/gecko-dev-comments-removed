@@ -61,7 +61,7 @@ bool CanvasDrawEventRecorder::Init(TextureType aTextureType,
   mHeader->writerWaitCount = 0;
   mHeader->writerState = State::Processing;
   mHeader->processedCount = 0;
-  mHeader->readerState = State::Processing;
+  mHeader->readerState = State::Paused;
 
   
   
