@@ -184,7 +184,7 @@ class Call final : public webrtc::Call,
                    public BitrateAllocator::LimitObserver {
  public:
   Call(Clock* clock,
-       const Call::Config& config,
+       const CallConfig& config,
        std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
        TaskQueueFactory* task_queue_factory);
   ~Call() override;
@@ -355,7 +355,7 @@ class Call final : public webrtc::Call,
   const int num_cpu_cores_;
   const std::unique_ptr<CallStats> call_stats_;
   const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
-  const Call::Config config_ RTC_GUARDED_BY(worker_thread_);
+  const CallConfig config_ RTC_GUARDED_BY(worker_thread_);
   
   const FieldTrialsView& trials_;
 
@@ -474,13 +474,15 @@ class Call final : public webrtc::Call,
 
 
 
-Call* Call::Create(const Call::Config& config,
-                   Clock* clock,
-                   std::unique_ptr<RtpTransportControllerSendInterface>
-                       transportControllerSend) {
+std::unique_ptr<Call> Call::Create(
+    const CallConfig& config,
+    Clock* clock,
+    std::unique_ptr<RtpTransportControllerSendInterface>
+        transportControllerSend) {
   RTC_DCHECK(config.task_queue_factory);
-  return new internal::Call(clock, config, std::move(transportControllerSend),
-                            config.task_queue_factory);
+  return std::make_unique<internal::Call>(clock, config,
+                                          std::move(transportControllerSend),
+                                          config.task_queue_factory);
 }
 
 
@@ -647,7 +649,7 @@ void Call::SendStats::SetMinAllocatableRate(BitrateAllocationLimits limits) {
 }
 
 Call::Call(Clock* clock,
-           const Call::Config& config,
+           const CallConfig& config,
            std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
            TaskQueueFactory* task_queue_factory)
     : clock_(clock),
