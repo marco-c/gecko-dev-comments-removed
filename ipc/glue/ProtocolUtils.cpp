@@ -258,12 +258,6 @@ ActorLifecycleProxy::ActorLifecycleProxy(IProtocol* aActor) : mActor(aActor) {
              "Cannot create LifecycleProxy for non-connected actor!");
 
   
-  
-  if (mActor->mManager) {
-    mManager = mActor->mManager->mLifecycleProxy;
-  }
-
-  
   mActor->ActorAlloc();
 }
 
@@ -493,13 +487,13 @@ bool IProtocol::DeallocShmem(Shmem& aMem) {
   return ok;
 }
 
-void IProtocol::SetManager(IProtocol* aManager) {
+void IProtocol::SetManager(IRefCountedProtocol* aManager) {
   MOZ_RELEASE_ASSERT(!mManager || mManager == aManager);
   mManager = aManager;
   mToplevel = aManager->mToplevel;
 }
 
-void IProtocol::SetManagerAndRegister(IProtocol* aManager) {
+void IProtocol::SetManagerAndRegister(IRefCountedProtocol* aManager) {
   
   
   SetManager(aManager);
@@ -507,7 +501,8 @@ void IProtocol::SetManagerAndRegister(IProtocol* aManager) {
   aManager->Register(this);
 }
 
-void IProtocol::SetManagerAndRegister(IProtocol* aManager, int32_t aId) {
+void IProtocol::SetManagerAndRegister(IRefCountedProtocol* aManager,
+                                      int32_t aId) {
   
   
   SetManager(aManager);
