@@ -1,4 +1,4 @@
-//! The ELF ABI. 🧝
+
 
 pub const SELFMAG: usize = 4;
 pub const ELFMAG: [u8; SELFMAG] = [0x7f, b'E', b'L', b'F'];
@@ -9,16 +9,16 @@ pub const EI_OSABI: usize = 7;
 pub const EI_ABIVERSION: usize = 8;
 pub const EV_CURRENT: u8 = 1;
 #[cfg(target_pointer_width = "32")]
-pub const ELFCLASS: u8 = 1; // ELFCLASS32
+pub const ELFCLASS: u8 = 1; 
 #[cfg(target_pointer_width = "64")]
-pub const ELFCLASS: u8 = 2; // ELFCLASS64
+pub const ELFCLASS: u8 = 2; 
 #[cfg(target_endian = "little")]
-pub const ELFDATA: u8 = 1; // ELFDATA2LSB
+pub const ELFDATA: u8 = 1; 
 #[cfg(target_endian = "big")]
-pub const ELFDATA: u8 = 2; // ELFDATA2MSB
+pub const ELFDATA: u8 = 2; 
 pub const ELFOSABI_SYSV: u8 = 0;
 pub const ELFOSABI_LINUX: u8 = 3;
-// At present all of our supported platforms use 0.
+
 pub const ELFABIVERSION: u8 = 0;
 pub const ET_DYN: u16 = 3;
 pub const EI_NIDENT: usize = 16;
@@ -42,6 +42,9 @@ pub const DT_SYMTAB: usize = 6;
 pub const DT_RELA: usize = 7;
 pub const DT_RELASZ: usize = 8;
 pub const DT_RELAENT: usize = 9;
+pub const DT_REL: usize = 17;
+pub const DT_RELSZ: usize = 18;
+pub const DT_RELENT: usize = 19;
 pub const DT_SYMENT: usize = 11;
 pub const DT_VERSYM: usize = 0x6fff_fff0;
 pub const DT_VERDEF: usize = 0x6fff_fffc;
@@ -54,24 +57,24 @@ pub const VER_FLG_BASE: u16 = 0x1;
 pub const VER_DEF_CURRENT: u16 = 1;
 pub const STV_DEFAULT: u8 = 0;
 #[cfg(target_arch = "arm")]
-pub const EM_CURRENT: u16 = 40; // EM_ARM
+pub const EM_CURRENT: u16 = 40; 
 #[cfg(target_arch = "x86")]
-pub const EM_CURRENT: u16 = 3; // EM_386
+pub const EM_CURRENT: u16 = 3; 
 #[cfg(target_arch = "powerpc64")]
-pub const EM_CURRENT: u16 = 21; // EM_PPC64
+pub const EM_CURRENT: u16 = 21; 
 #[cfg(any(
     target_arch = "mips",
     target_arch = "mips32r6",
     target_arch = "mips64",
     target_arch = "mips64r6"
 ))]
-pub const EM_CURRENT: u16 = 8; // EM_MIPS
+pub const EM_CURRENT: u16 = 8; 
 #[cfg(target_arch = "x86_64")]
-pub const EM_CURRENT: u16 = 62; // EM_X86_64
+pub const EM_CURRENT: u16 = 62; 
 #[cfg(target_arch = "aarch64")]
-pub const EM_CURRENT: u16 = 183; // EM_AARCH64
+pub const EM_CURRENT: u16 = 183; 
 #[cfg(target_arch = "riscv64")]
-pub const EM_CURRENT: u16 = 243; // EM_RISCV
+pub const EM_CURRENT: u16 = 243; 
 
 #[inline]
 pub const fn ELF_ST_VISIBILITY(o: u8) -> u8 {
@@ -233,24 +236,52 @@ impl Elf_Rela {
     }
 }
 
+#[cfg(target_pointer_width = "32")]
+#[repr(C)]
+pub struct Elf_Rel {
+    pub r_offset: usize,
+    pub r_info: u32,
+}
+
+#[cfg(target_pointer_width = "64")]
+#[repr(C)]
+pub struct Elf_Rel {
+    pub r_offset: usize,
+    pub r_info: u64,
+}
+
+impl Elf_Rel {
+    #[inline]
+    pub fn type_(&self) -> u32 {
+        #[cfg(target_pointer_width = "32")]
+        {
+            self.r_info & 0xff
+        }
+        #[cfg(target_pointer_width = "64")]
+        {
+            (self.r_info & 0xffff_ffff) as u32
+        }
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
-pub const R_RELATIVE: u32 = 8; // `R_X86_64_RELATIVE`
+pub const R_RELATIVE: u32 = 8; 
 #[cfg(target_arch = "x86")]
-pub const R_RELATIVE: u32 = 8; // `R_386_RELATIVE`
+pub const R_RELATIVE: u32 = 8; 
 #[cfg(target_arch = "aarch64")]
-pub const R_RELATIVE: u32 = 1027; // `R_AARCH64_RELATIVE`
+pub const R_RELATIVE: u32 = 1027; 
 #[cfg(target_arch = "riscv64")]
-pub const R_RELATIVE: u32 = 3; // `R_RISCV_RELATIVE`
+pub const R_RELATIVE: u32 = 3; 
 #[cfg(target_arch = "arm")]
-pub const R_RELATIVE: u32 = 23; // `R_ARM_RELATIVE`
+pub const R_RELATIVE: u32 = 23; 
 
 #[repr(C)]
 #[derive(Clone)]
 pub struct Elf_auxv_t {
     pub a_type: usize,
 
-    // Some of the values in the auxv array are pointers, so we make `a_val` a
-    // pointer, in order to preserve their provenance. For the values which are
-    // integers, we cast this to `usize`.
+    
+    
+    
     pub a_val: *mut crate::ctypes::c_void,
 }
