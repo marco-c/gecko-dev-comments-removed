@@ -110,8 +110,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
   
   
-  nscoord IntrinsicScrollbarGutterSizeAtInlineEdges(
-      gfxContext* aRenderingContext);
+  nscoord IntrinsicScrollbarGutterSizeAtInlineEdges();
 
   bool GetBorderRadii(const nsSize& aFrameSize, const nsSize& aBorderArea,
                       Sides aSkipSides, nscoord aRadii[8]) const final;
