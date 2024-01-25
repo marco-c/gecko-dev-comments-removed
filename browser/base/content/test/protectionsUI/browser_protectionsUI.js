@@ -18,6 +18,8 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/CustomizableUITestUtils.sys.mjs"
 );
 
+requestLongerTimeout(3);
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -198,20 +200,12 @@ add_task(async function testToggleSwitch() {
   
   
   
-  let popupShownPromise = BrowserTestUtils.waitForEvent(
-    gProtectionsHandler._protectionsPopup,
-    "popupshown"
-  );
-  popuphiddenPromise = BrowserTestUtils.waitForEvent(
-    gProtectionsHandler._protectionsPopup,
-    "popuphidden"
-  );
+  let toastShown = waitForProtectionsPanelToast();
 
   await browserLoadedPromise;
 
   
-  await popupShownPromise;
-  await popuphiddenPromise;
+  await toastShown;
 
   await openProtectionsPanel();
   ok(
@@ -249,6 +243,12 @@ add_task(async function testToggleSwitch() {
   
   
   browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+
+  popuphiddenPromise = BrowserTestUtils.waitForEvent(
+    gProtectionsHandler._protectionsPopup,
+    "popuphidden"
+  );
+
   await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
 
   ok(
@@ -265,7 +265,17 @@ add_task(async function testToggleSwitch() {
     "The 'Site Fixed?' link should be hidden."
   );
 
+  
+  
+  await popuphiddenPromise;
+
+  toastShown = waitForProtectionsPanelToast();
+
   await browserLoadedPromise;
+
+  
+  await toastShown;
+
   checkClickTelemetry("etp_toggle_on");
 
   ContentBlockingAllowList.remove(tab.linkedBrowser);
@@ -339,6 +349,7 @@ add_task(async function testTrackingProtectionLabel() {
 
   Services.prefs.setStringPref("browser.contentblocking.category", "strict");
   await openProtectionsPanel();
+
   is(
     trackingProtectionLabel.textContent,
     "Strict",
@@ -714,8 +725,6 @@ add_task(async function testSubViewTelemetry() {
 
 
 add_task(async function testQuickSwitchTabAfterTogglingTPSwitch() {
-  requestLongerTimeout(3);
-
   const FIRST_TEST_SITE = "https://example.com/";
   const SECOND_TEST_SITE = "https://example.org/";
 
