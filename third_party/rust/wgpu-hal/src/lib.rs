@@ -52,30 +52,30 @@
 )]
 
 
-#[cfg(all(feature = "dx12", windows))]
+#[cfg(dx12)]
 pub mod dx12;
 
 pub mod empty;
 
-#[cfg(feature = "gles")]
+#[cfg(gles)]
 pub mod gles;
 
-#[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
+#[cfg(metal)]
 pub mod metal;
 
-#[cfg(all(feature = "vulkan", not(target_arch = "wasm32")))]
+#[cfg(vulkan)]
 pub mod vulkan;
 
 pub mod auxil;
 pub mod api {
-    #[cfg(all(feature = "dx12", windows))]
+    #[cfg(dx12)]
     pub use super::dx12::Api as Dx12;
     pub use super::empty::Api as Empty;
-    #[cfg(feature = "gles")]
+    #[cfg(gles)]
     pub use super::gles::Api as Gles;
-    #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
+    #[cfg(metal)]
     pub use super::metal::Api as Metal;
-    #[cfg(all(feature = "vulkan", not(target_arch = "wasm32")))]
+    #[cfg(vulkan)]
     pub use super::vulkan::Api as Vulkan;
 }
 
@@ -463,7 +463,7 @@ pub trait CommandEncoder<A: Api>: WasmNotSendSync + fmt::Debug {
     
     
     
-    #[cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))]
+    #[cfg(webgl)]
     unsafe fn copy_external_image_to_texture<T>(
         &mut self,
         src: &wgt::ImageCopyExternalImage,
@@ -926,7 +926,10 @@ pub struct SurfaceCapabilities {
     
     
     
-    pub swap_chain_sizes: RangeInclusive<u32>,
+    
+    
+    
+    pub maximum_frame_latency: RangeInclusive<u32>,
 
     
     pub current_extent: Option<wgt::Extent3d>,
@@ -1254,7 +1257,7 @@ pub struct RenderPipelineDescriptor<'a, A: Api> {
 pub struct SurfaceConfiguration {
     
     
-    pub swap_chain_size: u32,
+    pub maximum_frame_latency: u32,
     
     pub present_mode: wgt::PresentMode,
     

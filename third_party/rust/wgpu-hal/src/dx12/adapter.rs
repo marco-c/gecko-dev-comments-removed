@@ -627,7 +627,7 @@ impl crate::Adapter<super::Api> for super::Adapter {
                 wgt::TextureFormat::Rgba16Float,
             ],
             
-            swap_chain_sizes: 2..=16,
+            maximum_frame_latency: 1..=16,
             current_extent,
             usage: crate::TextureUses::COLOR_TARGET
                 | crate::TextureUses::COPY_SRC

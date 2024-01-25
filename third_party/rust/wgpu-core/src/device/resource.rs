@@ -319,29 +319,6 @@ impl<A: HalApi> Device<A> {
         maintain: wgt::Maintain<queue::WrappedSubmissionIndex>,
     ) -> Result<(UserClosures, bool), WaitIdleError> {
         profiling::scope!("Device::maintain");
-        {
-            
-            
-            
-            
-            
-            let temp_suspected = self
-                .temp_suspected
-                .lock()
-                .replace(ResourceMaps::new())
-                .unwrap();
-
-            let mut life_tracker = self.lock_life();
-            life_tracker.suspected_resources.extend(temp_suspected);
-
-            life_tracker.triage_suspected(
-                &self.trackers,
-                #[cfg(feature = "trace")]
-                self.trace.lock().as_mut(),
-            );
-            life_tracker.triage_mapped();
-        }
-
         let last_done_index = if maintain.is_wait() {
             let index_to_wait_for = match maintain {
                 wgt::Maintain::WaitForSubmissionIndex(submission_index) => {
@@ -374,10 +351,26 @@ impl<A: HalApi> Device<A> {
             last_done_index,
             self.command_allocator.lock().as_mut().unwrap(),
         );
-        let mapping_closures = life_tracker.handle_mapping(self.raw(), &self.trackers);
 
-        
-        life_tracker.cleanup();
+        {
+            
+            
+            
+            
+            
+            let temp_suspected = self
+                .temp_suspected
+                .lock()
+                .replace(ResourceMaps::new())
+                .unwrap();
+
+            life_tracker.suspected_resources.extend(temp_suspected);
+
+            life_tracker.triage_suspected(&self.trackers);
+            life_tracker.triage_mapped();
+        }
+
+        let mapping_closures = life_tracker.handle_mapping(self.raw(), &self.trackers);
 
         
         
@@ -1832,7 +1825,16 @@ impl<A: HalApi> Device<A> {
                 }
                 (size.get(), end)
             }
-            None => (buffer.size - bb.offset, buffer.size),
+            None => {
+                if buffer.size < bb.offset {
+                    return Err(Error::BindingRangeTooLarge {
+                        buffer: bb.buffer_id,
+                        range: bb.offset..bb.offset,
+                        size: buffer.size,
+                    });
+                }
+                (buffer.size - bb.offset, buffer.size)
+            }
         };
 
         if bind_size > range_limit as u64 {
@@ -3378,7 +3380,6 @@ impl<A: HalApi> Device<A> {
             current_index,
             self.command_allocator.lock().as_mut().unwrap(),
         );
-        life_tracker.cleanup();
         #[cfg(feature = "trace")]
         {
             *self.trace.lock() = None;

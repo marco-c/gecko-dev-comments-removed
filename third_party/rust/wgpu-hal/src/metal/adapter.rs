@@ -321,12 +321,13 @@ impl crate::Adapter<super::Api> for super::Adapter {
         Some(crate::SurfaceCapabilities {
             formats,
             
-            swap_chain_sizes: if pc.can_set_maximum_drawables_count {
-                2..=3
+            
+            maximum_frame_latency: if pc.can_set_maximum_drawables_count {
+                1..=2
             } else {
                 
                 
-                3..=3
+                2..=2
             },
             present_modes: if pc.can_set_display_sync {
                 vec![wgt::PresentMode::Fifo, wgt::PresentMode::Immediate]

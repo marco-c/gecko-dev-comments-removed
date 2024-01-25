@@ -11,7 +11,9 @@ use crate::{
     FastHashMap,
 };
 
-use super::{clear::clear_texture, BakedCommands, DestroyedBufferError, DestroyedTextureError};
+use super::{
+    clear::clear_texture, BakedCommands, ClearError, DestroyedBufferError, DestroyedTextureError,
+};
 
 
 
@@ -301,15 +303,26 @@ impl<A: HalApi> BakedCommands<A> {
 
             
             for range in ranges.drain(..) {
-                clear_texture(
+                let clear_result = clear_texture(
                     &texture_use.texture,
                     range,
                     &mut self.encoder,
                     &mut device_tracker.textures,
                     &device.alignments,
                     device.zero_buffer.as_ref().unwrap(),
-                )
-                .unwrap();
+                );
+
+                
+                
+                
+                if let Err(ClearError::InvalidTexture(id)) = clear_result {
+                    return Err(DestroyedTextureError(id));
+                }
+
+                
+                if let Err(error) = clear_result {
+                    panic!("{error}");
+                }
             }
         }
 

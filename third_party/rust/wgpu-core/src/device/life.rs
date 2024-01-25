@@ -1,5 +1,3 @@
-#[cfg(feature = "trace")]
-use crate::device::trace;
 use crate::{
     binding_model::{BindGroup, BindGroupLayout, PipelineLayout},
     command::RenderBundle,
@@ -150,7 +148,6 @@ struct ActiveSubmission<A: HalApi> {
     
     
     
-    
     last_resources: ResourceMaps<A>,
 
     
@@ -173,8 +170,6 @@ pub enum WaitIdleError {
     #[error("GPU got stuck :(")]
     StuckGpu,
 }
-
-
 
 
 
@@ -237,13 +232,6 @@ pub(crate) struct LifetimeTracker<A: HalApi> {
 
     
     
-    
-    
-    
-    free_resources: ResourceMaps<A>,
-
-    
-    
     ready_to_map: Vec<Arc<Buffer<A>>>,
 
     
@@ -266,7 +254,6 @@ impl<A: HalApi> LifetimeTracker<A> {
             future_suspected_textures: Vec::new(),
             suspected_resources: ResourceMaps::new(),
             active: Vec::new(),
-            free_resources: ResourceMaps::new(),
             ready_to_map: Vec::new(),
             work_done_closures: SmallVec::new(),
             device_lost_closure: None,
@@ -376,7 +363,6 @@ impl<A: HalApi> LifetimeTracker<A> {
         let mut work_done_closures: SmallVec<_> = self.work_done_closures.drain(..).collect();
         for a in self.active.drain(..done_count) {
             log::debug!("Active submission {} is done", a.index);
-            self.free_resources.extend(a.last_resources);
             self.ready_to_map.extend(a.mapped);
             for encoder in a.encoders {
                 let raw = unsafe { encoder.land() };
@@ -385,11 +371,6 @@ impl<A: HalApi> LifetimeTracker<A> {
             work_done_closures.extend(a.work_done_closures);
         }
         work_done_closures
-    }
-
-    pub fn cleanup(&mut self) {
-        profiling::scope!("LifetimeTracker::cleanup");
-        self.free_resources.clear();
     }
 
     pub fn schedule_resource_destruction(
@@ -401,22 +382,24 @@ impl<A: HalApi> LifetimeTracker<A> {
             .active
             .iter_mut()
             .find(|a| a.index == last_submit_index)
-            .map_or(&mut self.free_resources, |a| &mut a.last_resources);
-        match temp_resource {
-            TempResource::Buffer(raw) => {
-                resources.buffers.insert(raw.as_info().id(), raw);
-            }
-            TempResource::StagingBuffer(raw) => {
-                resources.staging_buffers.insert(raw.as_info().id(), raw);
-            }
-            TempResource::DestroyedBuffer(destroyed) => {
-                resources.destroyed_buffers.insert(destroyed.id, destroyed);
-            }
-            TempResource::Texture(raw) => {
-                resources.textures.insert(raw.as_info().id(), raw);
-            }
-            TempResource::DestroyedTexture(destroyed) => {
-                resources.destroyed_textures.insert(destroyed.id, destroyed);
+            .map(|a| &mut a.last_resources);
+        if let Some(resources) = resources {
+            match temp_resource {
+                TempResource::Buffer(raw) => {
+                    resources.buffers.insert(raw.as_info().id(), raw);
+                }
+                TempResource::StagingBuffer(raw) => {
+                    resources.staging_buffers.insert(raw.as_info().id(), raw);
+                }
+                TempResource::DestroyedBuffer(destroyed) => {
+                    resources.destroyed_buffers.insert(destroyed.id, destroyed);
+                }
+                TempResource::Texture(raw) => {
+                    resources.textures.insert(raw.as_info().id(), raw);
+                }
+                TempResource::DestroyedTexture(destroyed) => {
+                    resources.destroyed_textures.insert(destroyed.id, destroyed);
+                }
             }
         }
     }
@@ -436,18 +419,15 @@ impl<A: HalApi> LifetimeTracker<A> {
 }
 
 impl<A: HalApi> LifetimeTracker<A> {
-    fn triage_resources<Id, R, T>(
+    fn triage_resources<Id, R>(
         resources_map: &mut FastHashMap<Id, Arc<R>>,
         active: &mut [ActiveSubmission<A>],
-        free_resources: &mut ResourceMaps<A>,
         trackers: &mut impl ResourceTracker<Id, R>,
         get_resource_map: impl Fn(&mut ResourceMaps<A>) -> &mut FastHashMap<Id, Arc<R>>,
-        mut on_remove: T,
     ) -> Vec<Arc<R>>
     where
         Id: id::TypedId,
         R: Resource<Id>,
-        T: FnMut(&Id, &Arc<R>),
     {
         let mut removed_resources = Vec::new();
         resources_map.retain(|&id, resource| {
@@ -455,38 +435,28 @@ impl<A: HalApi> LifetimeTracker<A> {
             let non_referenced_resources = active
                 .iter_mut()
                 .find(|a| a.index == submit_index)
-                .map_or(&mut *free_resources, |a| &mut a.last_resources);
+                .map(|a| &mut a.last_resources);
 
             let is_removed = trackers.remove_abandoned(id);
             if is_removed {
-                on_remove(&id, resource);
                 removed_resources.push(resource.clone());
-                get_resource_map(non_referenced_resources).insert(id, resource.clone());
+                if let Some(ressources) = non_referenced_resources {
+                    get_resource_map(ressources).insert(id, resource.clone());
+                }
             }
             !is_removed
         });
         removed_resources
     }
 
-    fn triage_suspected_render_bundles(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_render_bundles(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.render_bundles;
         let mut removed_resources = Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.bundles,
             |maps| &mut maps.render_bundles,
-            |_bundle_id, _bundle| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyRenderBundle(*_bundle_id));
-                }
-            },
         );
         removed_resources.drain(..).for_each(|bundle| {
             for v in bundle.used.buffers.write().drain_resources() {
@@ -516,25 +486,14 @@ impl<A: HalApi> LifetimeTracker<A> {
         self
     }
 
-    fn triage_suspected_bind_groups(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_bind_groups(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.bind_groups;
         let mut removed_resource = Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.bind_groups,
             |maps| &mut maps.bind_groups,
-            |_bind_group_id, _bind_group| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyBindGroup(*_bind_group_id));
-                }
-            },
         );
         removed_resource.drain(..).for_each(|bind_group| {
             for v in bind_group.used.buffers.drain_resources() {
@@ -563,25 +522,14 @@ impl<A: HalApi> LifetimeTracker<A> {
         self
     }
 
-    fn triage_suspected_texture_views(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_texture_views(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.texture_views;
         let mut removed_resources = Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.views,
             |maps| &mut maps.texture_views,
-            |_texture_view_id, _texture_view| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyTextureView(*_texture_view_id));
-                }
-            },
         );
         removed_resources.drain(..).for_each(|texture_view| {
             let mut lock = texture_view.parent.write();
@@ -594,89 +542,44 @@ impl<A: HalApi> LifetimeTracker<A> {
         self
     }
 
-    fn triage_suspected_textures(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_textures(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.textures;
         Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.textures,
             |maps| &mut maps.textures,
-            |_texture_id, _texture| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyTexture(*_texture_id));
-                }
-            },
         );
         self
     }
 
-    fn triage_suspected_samplers(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_samplers(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.samplers;
         Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.samplers,
             |maps| &mut maps.samplers,
-            |_sampler_id, _sampler| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroySampler(*_sampler_id));
-                }
-            },
         );
         self
     }
 
-    fn triage_suspected_buffers(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_buffers(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.buffers;
-        let mut removed_resources = Self::triage_resources(
+        Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.buffers,
             |maps| &mut maps.buffers,
-            |_buffer_id, _buffer| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyBuffer(*_buffer_id));
-                }
-            },
         );
-        removed_resources.drain(..).for_each(|buffer| {
-            if let resource::BufferMapState::Init {
-                ref stage_buffer, ..
-            } = *buffer.map_state.lock()
-            {
-                self.free_resources
-                    .buffers
-                    .insert(stage_buffer.as_info().id(), stage_buffer.clone());
-            }
-        });
+
         self
     }
 
-    fn triage_suspected_destroyed_buffers(
-        &mut self,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) {
+    fn triage_suspected_destroyed_buffers(&mut self) {
         for (id, buffer) in self.suspected_resources.destroyed_buffers.drain() {
             let submit_index = buffer.submission_index;
             if let Some(resources) = self.active.iter_mut().find(|a| a.index == submit_index) {
@@ -684,20 +587,11 @@ impl<A: HalApi> LifetimeTracker<A> {
                     .last_resources
                     .destroyed_buffers
                     .insert(id, buffer);
-            } else {
-                self.free_resources.destroyed_buffers.insert(id, buffer);
-            }
-            #[cfg(feature = "trace")]
-            if let Some(ref mut t) = *trace {
-                t.add(trace::Action::DestroyBuffer(id));
             }
         }
     }
 
-    fn triage_suspected_destroyed_textures(
-        &mut self,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) {
+    fn triage_suspected_destroyed_textures(&mut self) {
         for (id, texture) in self.suspected_resources.destroyed_textures.drain() {
             let submit_index = texture.submission_index;
             if let Some(resources) = self.active.iter_mut().find(|a| a.index == submit_index) {
@@ -705,35 +599,18 @@ impl<A: HalApi> LifetimeTracker<A> {
                     .last_resources
                     .destroyed_textures
                     .insert(id, texture);
-            } else {
-                self.free_resources.destroyed_textures.insert(id, texture);
-            }
-            #[cfg(feature = "trace")]
-            if let Some(ref mut t) = *trace {
-                t.add(trace::Action::DestroyTexture(id));
             }
         }
     }
 
-    fn triage_suspected_compute_pipelines(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_compute_pipelines(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.compute_pipelines;
         let mut removed_resources = Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.compute_pipelines,
             |maps| &mut maps.compute_pipelines,
-            |_compute_pipeline_id, _compute_pipeline| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyComputePipeline(*_compute_pipeline_id));
-                }
-            },
         );
         removed_resources.drain(..).for_each(|compute_pipeline| {
             self.suspected_resources.pipeline_layouts.insert(
@@ -744,25 +621,14 @@ impl<A: HalApi> LifetimeTracker<A> {
         self
     }
 
-    fn triage_suspected_render_pipelines(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_render_pipelines(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.render_pipelines;
         let mut removed_resources = Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.render_pipelines,
             |maps| &mut maps.render_pipelines,
-            |_render_pipeline_id, _render_pipeline| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyRenderPipeline(*_render_pipeline_id));
-                }
-            },
         );
         removed_resources.drain(..).for_each(|render_pipeline| {
             self.suspected_resources.pipeline_layouts.insert(
@@ -773,18 +639,11 @@ impl<A: HalApi> LifetimeTracker<A> {
         self
     }
 
-    fn triage_suspected_pipeline_layouts(
-        &mut self,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
+    fn triage_suspected_pipeline_layouts(&mut self) -> &mut Self {
         let mut removed_resources = Vec::new();
         self.suspected_resources
             .pipeline_layouts
             .retain(|_pipeline_layout_id, pipeline_layout| {
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyPipelineLayout(*_pipeline_layout_id));
-                }
                 removed_resources.push(pipeline_layout.clone());
                 false
             });
@@ -798,26 +657,12 @@ impl<A: HalApi> LifetimeTracker<A> {
         self
     }
 
-    fn triage_suspected_bind_group_layouts(
-        &mut self,
-        #[cfg(feature = "trace")] trace: &mut Option<&mut trace::Trace>,
-    ) -> &mut Self {
-        self.suspected_resources.bind_group_layouts.retain(
-            |bind_group_layout_id, bind_group_layout| {
-                
-                
-                
-                
-                #[cfg(feature = "trace")]
-                if let Some(ref mut t) = *trace {
-                    t.add(trace::Action::DestroyBindGroupLayout(*bind_group_layout_id));
-                }
-                self.free_resources
-                    .bind_group_layouts
-                    .insert(*bind_group_layout_id, bind_group_layout.clone());
-                false
-            },
-        );
+    fn triage_suspected_bind_group_layouts(&mut self) -> &mut Self {
+        
+        
+        
+        self.suspected_resources.bind_group_layouts.clear();
+
         self
     }
 
@@ -827,23 +672,15 @@ impl<A: HalApi> LifetimeTracker<A> {
         Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
-            &mut self.free_resources,
             &mut trackers.query_sets,
             |maps| &mut maps.query_sets,
-            |_query_set_id, _query_set| {},
         );
         self
     }
 
     fn triage_suspected_staging_buffers(&mut self) -> &mut Self {
-        self.suspected_resources
-            .staging_buffers
-            .retain(|staging_buffer_id, staging_buffer| {
-                self.free_resources
-                    .staging_buffers
-                    .insert(*staging_buffer_id, staging_buffer.clone());
-                false
-            });
+        self.suspected_resources.staging_buffers.clear();
+
         self
     }
 
@@ -881,77 +718,24 @@ impl<A: HalApi> LifetimeTracker<A> {
     
     
     
-    
-    
-    
-    
-    
-    pub(crate) fn triage_suspected(
-        &mut self,
-        trackers: &Mutex<Tracker<A>>,
-        #[cfg(feature = "trace")] mut trace: Option<&mut trace::Trace>,
-    ) {
+    pub(crate) fn triage_suspected(&mut self, trackers: &Mutex<Tracker<A>>) {
         profiling::scope!("triage_suspected");
 
         
-        self.triage_suspected_render_bundles(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_compute_pipelines(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_render_pipelines(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_bind_groups(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_pipeline_layouts(
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_bind_group_layouts(
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
+        self.triage_suspected_render_bundles(trackers);
+        self.triage_suspected_compute_pipelines(trackers);
+        self.triage_suspected_render_pipelines(trackers);
+        self.triage_suspected_bind_groups(trackers);
+        self.triage_suspected_pipeline_layouts();
+        self.triage_suspected_bind_group_layouts();
         self.triage_suspected_query_sets(trackers);
-        self.triage_suspected_samplers(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
+        self.triage_suspected_samplers(trackers);
         self.triage_suspected_staging_buffers();
-        self.triage_suspected_texture_views(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_textures(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_buffers(
-            trackers,
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_destroyed_buffers(
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
-        self.triage_suspected_destroyed_textures(
-            #[cfg(feature = "trace")]
-            &mut trace,
-        );
+        self.triage_suspected_texture_views(trackers);
+        self.triage_suspected_textures(trackers);
+        self.triage_suspected_buffers(trackers);
+        self.triage_suspected_destroyed_buffers();
+        self.triage_suspected_destroyed_textures();
     }
 
     
@@ -1006,9 +790,6 @@ impl<A: HalApi> LifetimeTracker<A> {
             if is_removed {
                 *buffer.map_state.lock() = resource::BufferMapState::Idle;
                 log::trace!("Buffer ready to map {:?} is not tracked anymore", buffer_id);
-                self.free_resources
-                    .buffers
-                    .insert(buffer_id, buffer.clone());
             } else {
                 let mapping = match std::mem::replace(
                     &mut *buffer.map_state.lock(),

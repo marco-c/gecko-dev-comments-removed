@@ -1848,7 +1848,11 @@ impl crate::Adapter<super::Api> for super::Adapter {
             .collect();
         Some(crate::SurfaceCapabilities {
             formats,
-            swap_chain_sizes: caps.min_image_count..=max_image_count,
+            
+            
+            
+            
+            maximum_frame_latency: (caps.min_image_count - 1)..=(max_image_count - 1), 
             current_extent,
             usage: conv::map_vk_image_usage(caps.supported_usage_flags),
             present_modes: raw_present_modes
