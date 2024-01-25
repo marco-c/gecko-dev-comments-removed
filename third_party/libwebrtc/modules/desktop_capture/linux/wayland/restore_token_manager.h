@@ -27,7 +27,7 @@ class RestoreTokenManager {
   static RestoreTokenManager& GetInstance();
 
   void AddToken(DesktopCapturer::SourceId id, const std::string& token);
-  std::string TakeToken(DesktopCapturer::SourceId id);
+  std::string GetToken(DesktopCapturer::SourceId id);
 
   
   DesktopCapturer::SourceId GetUnusedId();
