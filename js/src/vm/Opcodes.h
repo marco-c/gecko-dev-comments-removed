@@ -2180,10 +2180,8 @@
 
 
 
-
-
  \
-    MACRO(AsyncResolve, async_resolve, NULL, 2, 2, 1, JOF_UINT8) \
+    MACRO(AsyncResolve, async_resolve, NULL, 1, 2, 1, JOF_BYTE) \
     
 
 
