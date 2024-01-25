@@ -15,48 +15,51 @@ const SUPPORT_COUNTRIES_TESTCASES = [
   },
 ];
 
-var AddressDataLoader, FormAutofillUtils;
+var AddressMetaDataLoader, FormAutofillUtils;
 add_setup(async () => {
-  ({ AddressDataLoader, FormAutofillUtils } = ChromeUtils.importESModule(
+  ({ FormAutofillUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
+  ));
+  ({ AddressMetaDataLoader } = ChromeUtils.importESModule(
+    "resource://gre/modules/shared/AddressMetaDataLoader.sys.mjs"
   ));
 });
 
 add_task(async function test_initalState() {
   
-  Assert.equal(AddressDataLoader._addressData, undefined);
+  Assert.deepEqual(AddressMetaDataLoader.addressData, {});
   
-  Assert.equal(AddressDataLoader._dataLoaded.country, false);
-  Assert.equal(AddressDataLoader._dataLoaded.level1.size, 0);
+  Assert.equal(AddressMetaDataLoader.dataLoaded.country, false);
+  Assert.equal(AddressMetaDataLoader.dataLoaded.level1.size, 0);
 });
 
 add_task(async function test_loadDataCountry() {
-  sinon.spy(AddressDataLoader, "_loadAddressMetaData");
+  sinon.spy(AddressMetaDataLoader, "loadAddressMetaData");
   let metadata = FormAutofillUtils.getCountryAddressData("US");
-  Assert.ok(AddressDataLoader._addressData, "addressData exists");
+  Assert.ok(AddressMetaDataLoader.addressData, "addressData exists");
   
-  Assert.equal(AddressDataLoader._dataLoaded.country, true);
-  Assert.equal(AddressDataLoader._dataLoaded.level1.size, 0);
+  Assert.equal(AddressMetaDataLoader.dataLoaded.country, true);
+  Assert.equal(AddressMetaDataLoader.dataLoaded.level1.size, 0);
   
-  sinon.assert.called(AddressDataLoader._loadAddressMetaData);
+  sinon.assert.called(AddressMetaDataLoader.loadAddressMetaData);
   
   Assert.equal(metadata.id, "data/US");
   Assert.ok(
     metadata.alternative_names,
     "US alternative names should be loaded from extension"
   );
-  AddressDataLoader._loadAddressMetaData.resetHistory();
+  AddressMetaDataLoader.loadAddressMetaData.resetHistory();
 
   
   let newMetadata = FormAutofillUtils.getCountryAddressData();
   
-  sinon.assert.notCalled(AddressDataLoader._loadAddressMetaData);
+  sinon.assert.notCalled(AddressMetaDataLoader.loadAddressMetaData);
   Assert.deepEqual(
     metadata,
     newMetadata,
     "metadata should be US if country is not specified"
   );
-  AddressDataLoader._loadAddressMetaData.resetHistory();
+  AddressMetaDataLoader.loadAddressMetaData.resetHistory();
 });
 
 
@@ -65,23 +68,23 @@ add_task(async function test_loadDataCountry() {
 
 
 add_task(async function test_loadDataState() {
-  sinon.spy(AddressDataLoader, "_loadAddressMetaData");
+  sinon.spy(AddressMetaDataLoader, "loadAddressMetaData");
   
   let undefinedMetadata = FormAutofillUtils.getCountryAddressData("US", "CA");
   
-  sinon.assert.called(AddressDataLoader._loadAddressMetaData);
+  sinon.assert.called(AddressMetaDataLoader.loadAddressMetaData);
   Assert.equal(undefinedMetadata, undefined, "metadata should be undefined");
   Assert.ok(
-    AddressDataLoader._dataLoaded.level1.has("US"),
+    AddressMetaDataLoader.dataLoaded.level1.has("US"),
     "level 1 state array should be set even there's no valid metadata"
   );
-  AddressDataLoader._loadAddressMetaData.resetHistory();
+  AddressMetaDataLoader.loadAddressMetaData.resetHistory();
 
   
   undefinedMetadata = FormAutofillUtils.getCountryAddressData("US", "AS");
   Assert.equal(undefinedMetadata, undefined, "metadata should be undefined");
   
-  sinon.assert.notCalled(AddressDataLoader._loadAddressMetaData);
+  sinon.assert.notCalled(AddressMetaDataLoader.loadAddressMetaData);
 }).skip();
 
 SUPPORT_COUNTRIES_TESTCASES.forEach(testcase => {
