@@ -21,7 +21,6 @@
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
 #include "api/field_trials_view.h"
 #include "api/ice_transport_interface.h"
@@ -29,7 +28,6 @@
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/task_queue/task_queue_factory.h"
 #include "api/test/frame_generator_interface.h"
 #include "api/test/pclf/media_configuration.h"
 #include "api/test/pclf/media_quality_test_params.h"
@@ -62,10 +60,6 @@ class PeerConfigurer {
   
   
   
-  PeerConfigurer* SetTaskQueueFactory(
-      std::unique_ptr<TaskQueueFactory> task_queue_factory);
-  PeerConfigurer* SetCallFactory(
-      std::unique_ptr<CallFactoryInterface> call_factory);
   PeerConfigurer* SetEventLogFactory(
       std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory);
   PeerConfigurer* SetFecControllerFactory(
