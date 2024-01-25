@@ -38,7 +38,7 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
 }
 
 bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
-  if (!tryCatch_->emitCatch()) {
+  if (!tryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes)) {
     
     return false;
   }
@@ -53,7 +53,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;  
   }
 
-  if (!bce->emit1(JSOp::Throw)) {
+  if (!bce->emit1(JSOp::ThrowWithStack)) {
     
     return false;
   }
