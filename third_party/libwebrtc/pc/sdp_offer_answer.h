@@ -167,7 +167,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   absl::optional<rtc::SSLRole> GuessSslRole() const;
 
   
-  void DestroyAllChannels();
+  void DestroyMediaChannels();
 
   rtc::scoped_refptr<StreamCollectionInterface> local_streams();
   rtc::scoped_refptr<StreamCollectionInterface> remote_streams();

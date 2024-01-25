@@ -566,10 +566,8 @@ PeerConnection::~PeerConnection() {
   if (sdp_handler_) {
     
     
-    sdp_handler_->DestroyAllChannels();
-
+    sdp_handler_->DestroyMediaChannels();
     RTC_LOG(LS_INFO) << "Session: " << session_id() << " is destroyed.";
-
     sdp_handler_->ResetSessionDescFactory();
   }
 
@@ -584,6 +582,8 @@ PeerConnection::~PeerConnection() {
     if (network_thread_safety_)
       network_thread_safety_->SetNotAlive();
   });
+  sctp_mid_s_.reset();
+  SetSctpTransportName("");
 
   
   worker_thread()->BlockingCall([this] {
@@ -1899,7 +1899,12 @@ void PeerConnection::Close() {
 
   
   
-  sdp_handler_->DestroyAllChannels();
+  
+  
+  
+  
+  
+  sdp_handler_->DestroyMediaChannels();
 
   
   
@@ -1912,18 +1917,17 @@ void PeerConnection::Close() {
   }
 
   network_thread()->BlockingCall([this] {
-    
-    
-    
-    
-    
     RTC_DCHECK_RUN_ON(network_thread());
+    TeardownDataChannelTransport_n({});
     transport_controller_.reset();
     port_allocator_->DiscardCandidatePool();
     if (network_thread_safety_) {
       network_thread_safety_->SetNotAlive();
     }
   });
+
+  sctp_mid_s_.reset();
+  SetSctpTransportName("");
 
   worker_thread()->BlockingCall([this] {
     RTC_DCHECK_RUN_ON(worker_thread());
