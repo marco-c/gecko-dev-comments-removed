@@ -32,6 +32,16 @@ PendingTaskSafetyFlag::CreateDetached() {
   return safety_flag;
 }
 
+
+
+rtc::scoped_refptr<PendingTaskSafetyFlag>
+PendingTaskSafetyFlag::CreateAttachedToTaskQueue(
+    bool alive,
+    TaskQueueBase* attached_queue) {
+  return rtc::scoped_refptr<PendingTaskSafetyFlag>(
+      new PendingTaskSafetyFlag(alive, attached_queue));
+}
+
 rtc::scoped_refptr<PendingTaskSafetyFlag>
 PendingTaskSafetyFlag::CreateDetachedInactive() {
   rtc::scoped_refptr<PendingTaskSafetyFlag> safety_flag = CreateInternal(false);
