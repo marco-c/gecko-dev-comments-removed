@@ -34,10 +34,10 @@ class HTMLObjectElement final : public nsGenericHTMLFormControlElement,
   int32_t TabIndexDefault() override;
 
   
-  bool IsInteractiveHTMLContent() const override;
+  const Element* AsElement() const final { return this; }
 
   
-  void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+  bool IsInteractiveHTMLContent() const override;
 
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(bool aNullParent = true) override;
@@ -167,9 +167,6 @@ class HTMLObjectElement final : public nsGenericHTMLFormControlElement,
   void StartObjectLoad(bool aNotify, bool aForceLoad);
 
  protected:
-  
-  nsIContent* AsContent() override { return this; }
-
   void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;

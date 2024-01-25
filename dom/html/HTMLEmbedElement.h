@@ -33,7 +33,7 @@ class HTMLEmbedElement final : public nsGenericHTMLElement,
   }
 
   
-  void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
+  const Element* AsElement() const final { return this; }
 
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(bool aNullParent = true) override;
@@ -103,9 +103,6 @@ class HTMLEmbedElement final : public nsGenericHTMLElement,
   void StartObjectLoad(bool aNotify, bool aForceLoad);
 
  protected:
-  
-  nsIContent* AsContent() override { return this; }
-
   void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
