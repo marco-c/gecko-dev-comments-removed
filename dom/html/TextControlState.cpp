@@ -1927,6 +1927,21 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
       return rv;
     }
   }
+  
+  
+  
+  
+  
+  
+  
+  else if (mTextCtrlElement && mTextCtrlElement->IsTextArea() &&
+           !mTextCtrlElement->ValueChanged()) {
+    MOZ_ASSERT(defaultValue.IsEmpty());
+    IMEContentObserver* observer = GetIMEContentObserver();
+    if (observer && observer->WasInitializedWith(*newTextEditor)) {
+      observer->OnTextControlValueChangedWhileNotObservable(defaultValue);
+    }
+  }
 
   DebugOnly<bool> enabledUndoRedo =
       newTextEditor->EnableUndoRedo(TextControlElement::DEFAULT_UNDO_CAP);
@@ -2826,6 +2841,23 @@ bool TextControlState::SetValueWithTextEditor(
                          "TextInputListener::OnEditActionHandled() failed");
     if (rv != NS_ERROR_OUT_OF_MEMORY) {
       rv = rvOnEditActionHandled;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mTextCtrlElement && mTextCtrlElement->IsTextArea() &&
+      !mTextCtrlElement->ValueChanged() && textEditor->IsBeingInitialized() &&
+      !textEditor->Destroyed()) {
+    IMEContentObserver* observer = GetIMEContentObserver();
+    if (observer && observer->WasInitializedWith(*textEditor)) {
+      nsAutoString currentValue;
+      textEditor->ComputeTextValue(0, currentValue);
+      observer->OnTextControlValueChangedWhileNotObservable(currentValue);
     }
   }
 
