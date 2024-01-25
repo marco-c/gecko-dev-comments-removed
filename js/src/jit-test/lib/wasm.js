@@ -582,6 +582,21 @@ function assertSame(got, expected) {
 
 
 
+
+
+
+function assertEqResults(got, expected) {
+    if (!Array.isArray(got)) {
+        got = [got];
+    }
+    if (!Array.isArray(expected)) {
+        expected = [expected];
+    }
+    assertSame(got, expected);
+}
+
+
+
 var TailCallIterations = getBuildConfiguration("simulator") ? 1000 : 100000;
 
 var TailCallBallast = 30;
