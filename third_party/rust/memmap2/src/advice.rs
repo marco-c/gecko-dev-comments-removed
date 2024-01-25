@@ -1,40 +1,32 @@
 
 
-#[derive(Debug, Eq, PartialEq, Hash)]
-pub struct Advice(pub(crate) libc::c_int);
 
-impl Advice {
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum Advice {
     
     
     
-    pub fn normal() -> Self {
-        Self(libc::MADV_NORMAL)
-    }
+    Normal = libc::MADV_NORMAL,
 
     
     
     
     
-    pub fn random() -> Self {
-        Self(libc::MADV_RANDOM)
-    }
+    Random = libc::MADV_RANDOM,
 
     
     
     
     
     
-    pub fn sequential() -> Self {
-        Self(libc::MADV_SEQUENTIAL)
-    }
+    Sequential = libc::MADV_SEQUENTIAL,
 
     
     
     
     
-    pub fn will_need() -> Self {
-        Self(libc::MADV_WILLNEED)
-    }
+    WillNeed = libc::MADV_WILLNEED,
 
     
     
@@ -44,6 +36,48 @@ impl Advice {
     
     
     
+    #[cfg(target_os = "linux")]
+    DontFork = libc::MADV_DONTFORK,
+
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    DoFork = libc::MADV_DOFORK,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    Mergeable = libc::MADV_MERGEABLE,
+
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    Unmergeable = libc::MADV_UNMERGEABLE,
+
     
     
     
@@ -71,9 +105,187 @@ impl Advice {
     
     
     
-    pub unsafe fn dont_need() -> Self {
-        Self(libc::MADV_DONTNEED)
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    HugePage = libc::MADV_HUGEPAGE,
+
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    NoHugePage = libc::MADV_NOHUGEPAGE,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    DontDump = libc::MADV_DONTDUMP,
+
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    DoDump = libc::MADV_DODUMP,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    HwPoison = libc::MADV_HWPOISON,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    PopulateRead = libc::MADV_POPULATE_READ,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    PopulateWrite = libc::MADV_POPULATE_WRITE,
+
+    
+    
+    
+    
+    
+    
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    ZeroWiredPages = libc::MADV_ZERO_WIRED_PAGES,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum UncheckedAdvice {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DontNeed = libc::MADV_DONTNEED,
 
     
     
@@ -108,9 +320,7 @@ impl Advice {
     
     
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "ios"))]
-    pub unsafe fn free() -> Self {
-        Self(libc::MADV_FREE)
-    }
+    Free = libc::MADV_FREE,
 
     
     
@@ -137,238 +347,7 @@ impl Advice {
     
     
     #[cfg(target_os = "linux")]
-    pub unsafe fn remove() -> Self {
-        Self(libc::MADV_REMOVE)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn dont_fork() -> Self {
-        Self(libc::MADV_DONTFORK)
-    }
-
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn do_fork() -> Self {
-        Self(libc::MADV_DOFORK)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn mergeable() -> Self {
-        Self(libc::MADV_MERGEABLE)
-    }
-
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn unmergeable() -> Self {
-        Self(libc::MADV_UNMERGEABLE)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn huge_page() -> Self {
-        Self(libc::MADV_HUGEPAGE)
-    }
-
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn no_huge_page() -> Self {
-        Self(libc::MADV_NOHUGEPAGE)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn dont_dump() -> Self {
-        Self(libc::MADV_DONTDUMP)
-    }
-
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn do_dump() -> Self {
-        Self(libc::MADV_DODUMP)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn hw_poison() -> Self {
-        Self(libc::MADV_HWPOISON)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn populate_read() -> Self {
-        Self(libc::MADV_POPULATE_READ)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(target_os = "linux")]
-    pub fn populate_write() -> Self {
-        Self(libc::MADV_POPULATE_WRITE)
-    }
-
-    
-    
-    
-    
-    
-    
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub fn zero_wired_pages() -> Self {
-        Self(libc::MADV_ZERO_WIRED_PAGES)
-    }
+    Remove = libc::MADV_REMOVE,
 
     
     
@@ -380,9 +359,7 @@ impl Advice {
     
     
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub unsafe fn free_reusable() -> Self {
-        Self(libc::MADV_FREE_REUSABLE)
-    }
+    FreeReusable = libc::MADV_FREE_REUSABLE,
 
     
     
@@ -396,9 +373,7 @@ impl Advice {
     
     
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub unsafe fn free_reuse() -> Self {
-        Self(libc::MADV_FREE_REUSE)
-    }
+    FreeReuse = libc::MADV_FREE_REUSE,
 }
 
 

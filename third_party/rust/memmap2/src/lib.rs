@@ -47,7 +47,7 @@ use crate::os::{file_len, MmapInner};
 #[cfg(unix)]
 mod advice;
 #[cfg(unix)]
-pub use crate::advice::Advice;
+pub use crate::advice::{Advice, UncheckedAdvice};
 
 use std::fmt;
 #[cfg(not(any(unix, windows)))]
@@ -140,6 +140,7 @@ where
 pub struct MmapOptions {
     offset: u64,
     len: Option<usize>,
+    huge: Option<u8>,
     stack: bool,
     populate: bool,
 }
@@ -281,6 +282,30 @@ impl MmapOptions {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn huge(&mut self, page_bits: Option<u8>) -> &mut Self {
+        self.huge = Some(page_bits.unwrap_or(0));
+        self
+    }
     
     
     
@@ -484,7 +509,8 @@ impl MmapOptions {
             ));
         }
 
-        MmapInner::map_anon(len, self.stack, self.populate).map(|inner| MmapMut { inner })
+        MmapInner::map_anon(len, self.stack, self.populate, self.huge)
+            .map(|inner| MmapMut { inner })
     }
 
     
@@ -642,9 +668,23 @@ impl Mmap {
     
     
     
+    
+    
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner.advise(advice, 0, self.inner.len())
+        self.inner
+            .advise(advice as libc::c_int, 0, self.inner.len())
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub unsafe fn unchecked_advise(&self, advice: UncheckedAdvice) -> Result<()> {
+        self.inner
+            .advise(advice as libc::c_int, 0, self.inner.len())
     }
 
     
@@ -656,7 +696,24 @@ impl Mmap {
     
     #[cfg(unix)]
     pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
-        self.inner.advise(advice, offset, len)
+        self.inner.advise(advice as libc::c_int, offset, len)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub unsafe fn unchecked_advise_range(
+        &self,
+        advice: UncheckedAdvice,
+        offset: usize,
+        len: usize,
+    ) -> Result<()> {
+        self.inner.advise(advice as libc::c_int, offset, len)
     }
 
     
@@ -855,9 +912,23 @@ impl MmapRaw {
     
     
     
+    
+    
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner.advise(advice, 0, self.inner.len())
+        self.inner
+            .advise(advice as libc::c_int, 0, self.inner.len())
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub unsafe fn unchecked_advise(&self, advice: UncheckedAdvice) -> Result<()> {
+        self.inner
+            .advise(advice as libc::c_int, 0, self.inner.len())
     }
 
     
@@ -869,7 +940,24 @@ impl MmapRaw {
     
     #[cfg(unix)]
     pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
-        self.inner.advise(advice, offset, len)
+        self.inner.advise(advice as libc::c_int, offset, len)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub unsafe fn unchecked_advise_range(
+        &self,
+        advice: UncheckedAdvice,
+        offset: usize,
+        len: usize,
+    ) -> Result<()> {
+        self.inner.advise(advice as libc::c_int, offset, len)
     }
 
     
@@ -1145,9 +1233,23 @@ impl MmapMut {
     
     
     
+    
+    
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner.advise(advice, 0, self.inner.len())
+        self.inner
+            .advise(advice as libc::c_int, 0, self.inner.len())
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub unsafe fn unchecked_advise(&self, advice: UncheckedAdvice) -> Result<()> {
+        self.inner
+            .advise(advice as libc::c_int, 0, self.inner.len())
     }
 
     
@@ -1159,7 +1261,24 @@ impl MmapMut {
     
     #[cfg(unix)]
     pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
-        self.inner.advise(advice, offset, len)
+        self.inner.advise(advice as libc::c_int, offset, len)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub fn unchecked_advise_range(
+        &self,
+        advice: UncheckedAdvice,
+        offset: usize,
+        len: usize,
+    ) -> Result<()> {
+        self.inner.advise(advice as libc::c_int, offset, len)
     }
 
     
@@ -1816,7 +1935,7 @@ mod test {
 
         
         let mut mmap = unsafe { MmapMut::map_mut(&file).unwrap() };
-        mmap.advise(Advice::random())
+        mmap.advise(Advice::Random)
             .expect("mmap advising should be supported on unix");
 
         let len = mmap.len();
@@ -1828,7 +1947,7 @@ mod test {
         
         assert_eq!(&zeros[..], &mmap[..]);
 
-        mmap.advise_range(Advice::sequential(), 0, mmap.len())
+        mmap.advise_range(Advice::Sequential, 0, mmap.len())
             .expect("mmap advising should be supported on unix");
 
         
@@ -1840,7 +1959,7 @@ mod test {
         
         let mmap = unsafe { Mmap::map(&file).unwrap() };
 
-        mmap.advise(Advice::random())
+        mmap.advise(Advice::Random)
             .expect("mmap advising should be supported on unix");
 
         
@@ -1850,16 +1969,45 @@ mod test {
     #[test]
     #[cfg(target_os = "linux")]
     fn advise_writes_unsafely() {
-        let mut mmap = MmapMut::map_anon(4096).unwrap();
+        let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+
+        let mut mmap = MmapMut::map_anon(page_size).unwrap();
         mmap.as_mut().fill(255);
         let mmap = mmap.make_read_only().unwrap();
 
         let a = mmap.as_ref()[0];
-        mmap.advise(unsafe { Advice::dont_need() }).unwrap();
+        unsafe {
+            mmap.unchecked_advise(crate::UncheckedAdvice::DontNeed)
+                .unwrap();
+        }
         let b = mmap.as_ref()[0];
 
         assert_eq!(a, 255);
         assert_eq!(b, 0);
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn advise_writes_unsafely_to_part_of_map() {
+        let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+
+        let mut mmap = MmapMut::map_anon(2 * page_size).unwrap();
+        mmap.as_mut().fill(255);
+        let mmap = mmap.make_read_only().unwrap();
+
+        let a = mmap.as_ref()[0];
+        let b = mmap.as_ref()[page_size];
+        unsafe {
+            mmap.unchecked_advise_range(crate::UncheckedAdvice::DontNeed, page_size, page_size)
+                .unwrap();
+        }
+        let c = mmap.as_ref()[0];
+        let d = mmap.as_ref()[page_size];
+
+        assert_eq!(a, 255);
+        assert_eq!(b, 255);
+        assert_eq!(c, 255);
+        assert_eq!(d, 0);
     }
 
     
