@@ -682,6 +682,10 @@ async function autoTranslatePage(options) {
 
 
 
+
+
+
+
 function createAttachmentMock(
   client,
   mockedCollectionName,
