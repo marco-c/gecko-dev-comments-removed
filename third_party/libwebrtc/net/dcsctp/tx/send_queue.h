@@ -67,9 +67,7 @@ class SendQueue {
   
   
   
-  virtual bool Discard(IsUnordered unordered,
-                       StreamID stream_id,
-                       MID message_id) = 0;
+  virtual bool Discard(IsUnordered unordered, StreamID stream_id, MID mid) = 0;
 
   
   

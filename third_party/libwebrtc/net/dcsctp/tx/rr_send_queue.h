@@ -76,9 +76,7 @@ class RRSendQueue : public SendQueue {
 
   
   absl::optional<DataToSend> Produce(TimeMs now, size_t max_size) override;
-  bool Discard(IsUnordered unordered,
-               StreamID stream_id,
-               MID message_id) override;
+  bool Discard(IsUnordered unordered, StreamID stream_id, MID mid) override;
   void PrepareResetStream(StreamID streams) override;
   bool HasStreamsReadyToBeReset() const override;
   std::vector<StreamID> GetStreamsReadyToBeReset() override;
@@ -163,7 +161,7 @@ class RRSendQueue : public SendQueue {
     ThresholdWatcher& buffered_amount() { return buffered_amount_; }
 
     
-    bool Discard(IsUnordered unordered, MID message_id);
+    bool Discard(IsUnordered unordered, MID mid);
 
     
     void Pause();
@@ -232,7 +230,7 @@ class RRSendQueue : public SendQueue {
       size_t remaining_size;
       
       
-      absl::optional<MID> message_id = absl::nullopt;
+      absl::optional<MID> mid = absl::nullopt;
       absl::optional<SSN> ssn = absl::nullopt;
       
       FSN current_fsn = FSN(0);
