@@ -72,6 +72,23 @@ uint32_t mozilla::detail::CheckCookiePermissionForPrincipal(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static StorageAccess InternalStorageAllowedCheck(
     nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow, nsIURI* aURI,
     nsIChannel* aChannel, nsICookieJarSettings* aCookieJarSettings,
@@ -165,9 +182,11 @@ static StorageAccess InternalStorageAllowedCheck(
         aRejectedReason);
   } else {
     MOZ_ASSERT(aPrincipal);
-    nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
-        net::CookieJarSettings::Create(aPrincipal);
-    disabled = !ShouldAllowAccessFor(aPrincipal, cookieJarSettings);
+    nsCOMPtr<nsICookieJarSettings> cookieJarSettings = aCookieJarSettings;
+    if (!cookieJarSettings) {
+      cookieJarSettings = net::CookieJarSettings::Create(aPrincipal);
+    }
+    disabled = !ShouldAllowAccessFor(aPrincipal, aCookieJarSettings);
   }
 
   if (!disabled) {
@@ -383,6 +402,18 @@ int32_t CookiesBehavior(Document* a3rdPartyDocument) {
   }
 
   return a3rdPartyDocument->CookieJarSettings()->GetCookieBehavior();
+}
+
+bool CookiesBehaviorRejectsThirdPartyContexts(Document* aDocument) {
+  MOZ_ASSERT(aDocument);
+
+  
+  
+  if (BasePrincipal::Cast(aDocument->NodePrincipal())->AddonPolicy()) {
+    return false;
+  }
+
+  return aDocument->CookieJarSettings()->GetRejectThirdPartyContexts();
 }
 
 int32_t CookiesBehavior(nsILoadInfo* aLoadInfo, nsIURI* a3rdPartyURI) {
@@ -776,14 +807,8 @@ bool ShouldAllowAccessFor(nsIPrincipal* aPrincipal,
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aCookieJarSettings);
 
-  uint32_t access = nsICookiePermission::ACCESS_DEFAULT;
-  if (aPrincipal->GetIsContentPrincipal()) {
-    PermissionManager* permManager = PermissionManager::GetInstance();
-    if (permManager) {
-      Unused << NS_WARN_IF(NS_FAILED(permManager->TestPermissionFromPrincipal(
-          aPrincipal, "cookie"_ns, &access)));
-    }
-  }
+  uint32_t access =
+      detail::CheckCookiePermissionForPrincipal(aCookieJarSettings, aPrincipal);
 
   if (access != nsICookiePermission::ACCESS_DEFAULT) {
     return access != nsICookiePermission::ACCESS_DENY;
@@ -811,9 +836,9 @@ bool ApproximateAllowAccessForWithoutChannel(
     return false;
   }
 
-  if (!parentDocument->CookieJarSettings()->GetRejectThirdPartyContexts()) {
+  if (!CookiesBehaviorRejectsThirdPartyContexts(parentDocument)) {
     LOG(("Disabled by the pref (%d), bail out early",
-         parentDocument->CookieJarSettings()->GetCookieBehavior()));
+         CookiesBehavior(parentDocument)));
     return true;
   }
 

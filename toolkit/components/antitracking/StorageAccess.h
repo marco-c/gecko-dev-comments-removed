@@ -115,8 +115,15 @@ bool StoragePartitioningEnabled(uint32_t aRejectedReason,
 
 
 
+
+
+
+
 bool ShouldAllowAccessFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
                           nsIURI* aURI, uint32_t* aRejectedReason);
+
+
+
 
 
 
@@ -131,8 +138,17 @@ bool ApproximateAllowAccessForWithoutChannel(
 
 
 
+
+
+
+
 bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
                           uint32_t* aRejectedReason);
+
+
+
+
+
 
 
 
