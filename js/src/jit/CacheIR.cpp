@@ -1762,15 +1762,48 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyShadowed(
 
 
 
-static void CheckDOMProxyExpandoDoesNotShadow(CacheIRWriter& writer,
-                                              ProxyObject* obj, jsid id,
-                                              ObjOperandId objId) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void CheckDOMProxyDoesNotShadow(CacheIRWriter& writer, ProxyObject* obj,
+                                       jsid id, ObjOperandId objId) {
   MOZ_ASSERT(IsCacheableDOMProxy(obj));
 
   Value expandoVal = GetProxyPrivate(obj);
 
   ValOperandId expandoId;
   if (!expandoVal.isObject() && !expandoVal.isUndefined()) {
+    
     auto expandoAndGeneration =
         static_cast<ExpandoAndGeneration*>(expandoVal.toPrivate());
     uint64_t generation = expandoAndGeneration->generation;
@@ -1778,6 +1811,7 @@ static void CheckDOMProxyExpandoDoesNotShadow(CacheIRWriter& writer,
         objId, expandoAndGeneration, generation);
     expandoVal = expandoAndGeneration->expando;
   } else {
+    
     expandoId = writer.loadDOMExpandoValue(objId);
   }
 
@@ -1800,25 +1834,26 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
     ValOperandId receiverId) {
   MOZ_ASSERT(IsCacheableDOMProxy(obj));
 
-  JSObject* checkObj = obj->staticPrototype();
-  if (!checkObj) {
+  JSObject* protoObj = obj->staticPrototype();
+  if (!protoObj) {
     return AttachDecision::NoAction;
   }
 
   NativeObject* holder = nullptr;
   Maybe<PropertyInfo> prop;
   NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, checkObj, id, &holder, &prop, pc_);
+      CanAttachNativeGetProp(cx_, protoObj, id, &holder, &prop, pc_);
   if (kind == NativeGetPropKind::None) {
     return AttachDecision::NoAction;
   }
-  auto* nativeCheckObj = &checkObj->as<NativeObject>();
+  auto* nativeProtoObj = &protoObj->as<NativeObject>();
 
   maybeEmitIdGuard(id);
 
   
+  
   TestMatchingProxyReceiver(writer, obj, objId);
-  CheckDOMProxyExpandoDoesNotShadow(writer, obj, id, objId);
+  CheckDOMProxyDoesNotShadow(writer, obj, id, objId);
 
   if (holder) {
     
@@ -1842,7 +1877,7 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
       MOZ_ASSERT(!isSuper());
       EmitGuardGetterSetterSlot(writer, holder, *prop, holderId,
                                  true);
-      EmitCallGetterResultNoGuards(cx_, writer, kind, nativeCheckObj, holder,
+      EmitCallGetterResultNoGuards(cx_, writer, kind, nativeProtoObj, holder,
                                    *prop, receiverId);
     }
   } else {
@@ -4863,8 +4898,9 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyUnshadowed(
   maybeEmitIdGuard(id);
 
   
+  
   TestMatchingProxyReceiver(writer, obj, objId);
-  CheckDOMProxyExpandoDoesNotShadow(writer, obj, id, objId);
+  CheckDOMProxyDoesNotShadow(writer, obj, id, objId);
 
   GeneratePrototypeGuards(writer, obj, holder, objId);
 
