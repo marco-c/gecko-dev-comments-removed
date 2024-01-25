@@ -1,3 +1,9 @@
+let { ForgetAboutSite } = ChromeUtils.importESModule(
+  "resource://gre/modules/ForgetAboutSite.sys.mjs"
+);
+
+requestLongerTimeout(2);
+
 const TEST_DOMAIN = "https://example.com";
 const TEST_DOMAIN_ANOTHER = "https://example.org";
 const TEST_DOMAIN_THIRD = "https://example.net";
@@ -319,7 +325,10 @@ add_task(async function test_reset_key_after_pbm_session_ends() {
 
   
   BrowserTestUtils.removeTab(tab);
+
+  let promisePBExit = TestUtils.topicObserved("last-pb-context-exited");
   await BrowserTestUtils.closeWindow(privateWin);
+  await promisePBExit;
 
   privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
@@ -411,4 +420,71 @@ add_task(async function test_randomization_with_exempted_normal_window() {
 
   BrowserTestUtils.removeTab(tab);
   await BrowserTestUtils.closeWindow(privateWin);
+});
+
+
+add_task(async function test_reset_random_key_when_clear_site_data() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.resistFingerprinting", true]],
+  });
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+
+  let keyHex = await getRandomKeyHexFromBrowser(
+    tab.linkedBrowser,
+    TEST_PAGE,
+    TEST_DOMAIN_THIRD_PAGE
+  );
+
+  
+  let anotherTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_DOMAIN_ANOTHER_PAGE
+  );
+
+  let keyHexAnother = await getRandomKeyHexFromBrowser(
+    anotherTab.linkedBrowser,
+    TEST_PAGE,
+    TEST_DOMAIN_THIRD_PAGE
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(anotherTab);
+
+  
+  await ForgetAboutSite.removeDataFromDomain("example.com");
+
+  
+  tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+  let keyHexNew = await getRandomKeyHexFromBrowser(
+    tab.linkedBrowser,
+    TEST_PAGE,
+    TEST_DOMAIN_THIRD_PAGE
+  );
+
+  
+  anotherTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_DOMAIN_ANOTHER_PAGE
+  );
+  let keyHexAnotherNew = await getRandomKeyHexFromBrowser(
+    anotherTab.linkedBrowser,
+    TEST_PAGE,
+    TEST_DOMAIN_THIRD_PAGE
+  );
+
+  
+  isnot(keyHexNew, keyHex, "Ensure the new key is different from the old one.");
+
+  
+  is(
+    keyHexAnother,
+    keyHexAnotherNew,
+    "Ensure the key of another domain isn't reset."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(anotherTab);
 });
