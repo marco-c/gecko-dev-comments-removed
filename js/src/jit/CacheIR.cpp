@@ -1795,8 +1795,16 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyShadowed(
 
 
 
+
+
+
+
+
+
+
 static void CheckDOMProxyDoesNotShadow(CacheIRWriter& writer, ProxyObject* obj,
-                                       jsid id, ObjOperandId objId) {
+                                       jsid id, ObjOperandId objId,
+                                       bool* canOptimizeMissing) {
   MOZ_ASSERT(IsCacheableDOMProxy(obj));
 
   Value expandoVal = GetProxyPrivate(obj);
@@ -1810,9 +1818,11 @@ static void CheckDOMProxyDoesNotShadow(CacheIRWriter& writer, ProxyObject* obj,
     expandoId = writer.loadDOMExpandoValueGuardGeneration(
         objId, expandoAndGeneration, generation);
     expandoVal = expandoAndGeneration->expando;
+    *canOptimizeMissing = true;
   } else {
     
     expandoId = writer.loadDOMExpandoValue(objId);
+    *canOptimizeMissing = false;
   }
 
   if (expandoVal.isUndefined()) {
@@ -1853,7 +1863,8 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
   
   
   TestMatchingProxyReceiver(writer, obj, objId);
-  CheckDOMProxyDoesNotShadow(writer, obj, id, objId);
+  bool canOptimizeMissing = false;
+  CheckDOMProxyDoesNotShadow(writer, obj, id, objId, &canOptimizeMissing);
 
   if (holder) {
     
@@ -1882,10 +1893,16 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
     }
   } else {
     
-    
     MOZ_ASSERT(kind == NativeGetPropKind::Missing);
-    MOZ_ASSERT(!isSuper());
-    writer.proxyGetResult(objId, id);
+    if (canOptimizeMissing) {
+      
+      
+      ObjOperandId protoId = writer.loadObject(nativeProtoObj);
+      EmitMissingPropResult(writer, nativeProtoObj, protoId);
+    } else {
+      MOZ_ASSERT(!isSuper());
+      writer.proxyGetResult(objId, id);
+    }
     writer.returnFromIC();
   }
 
@@ -4900,7 +4917,8 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyUnshadowed(
   
   
   TestMatchingProxyReceiver(writer, obj, objId);
-  CheckDOMProxyDoesNotShadow(writer, obj, id, objId);
+  bool canOptimizeMissing = false;
+  CheckDOMProxyDoesNotShadow(writer, obj, id, objId, &canOptimizeMissing);
 
   GeneratePrototypeGuards(writer, obj, holder, objId);
 
