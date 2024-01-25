@@ -103,9 +103,16 @@ bool nsTransitionManager::DoUpdateTransitions(
   bool startedAny = false;
   AnimatedPropertyIDSet propertiesChecked;
   for (uint32_t i = aStyle.mTransitionPropertyCount; i--;) {
+    const float delay = aStyle.GetTransitionDelay(i).ToMilliseconds();
+
+    
+    const float duration =
+        std::max(aStyle.GetTransitionDuration(i).ToMilliseconds(), 0.0f);
+
     
     
-    if (i == 0 && aStyle.GetTransitionCombinedDuration(i).seconds <= 0.0f) {
+    
+    if (i == 0 && delay + duration <= 0.0f) {
       continue;
     }
 
@@ -115,9 +122,9 @@ bool nsTransitionManager::DoUpdateTransitions(
                                
                                
                                startedAny |= ConsiderInitiatingTransition(
-                                   aProperty, aStyle, i, aElement, aPseudoType,
-                                   aElementTransitions, aOldStyle, aNewStyle,
-                                   propertiesChecked);
+                                   aProperty, aStyle, i, delay, duration,
+                                   aElement, aPseudoType, aElementTransitions,
+                                   aOldStyle, aNewStyle, propertiesChecked);
                              });
   }
 
@@ -192,10 +199,6 @@ static nsTArray<Keyframe> GetTransitionKeyframes(
   return keyframes;
 }
 
-static bool IsTransitionable(const AnimatedPropertyID& aProperty) {
-  return Servo_Property_IsTransitionable(&aProperty);
-}
-
 static Maybe<CSSTransition::ReplacedTransitionProperties>
 GetReplacedTransitionProperties(const CSSTransition* aTransition,
                                 const DocumentTimeline* aTimelineToMatch) {
@@ -244,7 +247,8 @@ GetReplacedTransitionProperties(const CSSTransition* aTransition,
 
 bool nsTransitionManager::ConsiderInitiatingTransition(
     const AnimatedPropertyID& aProperty, const nsStyleUIReset& aStyle,
-    uint32_t transitionIdx, dom::Element* aElement, PseudoStyleType aPseudoType,
+    uint32_t aTransitionIndex, float aDelay, float aDuration,
+    dom::Element* aElement, PseudoStyleType aPseudoType,
     CSSTransitionCollection*& aElementTransitions,
     const ComputedStyle& aOldStyle, const ComputedStyle& aNewStyle,
     AnimatedPropertyIDSet& aPropertiesChecked) {
@@ -267,19 +271,7 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
 
   aPropertiesChecked.AddProperty(property);
 
-  if (!IsTransitionable(property)) {
-    return false;
-  }
-
-  float delay = aStyle.GetTransitionDelay(transitionIdx).ToMilliseconds();
-
-  
-  float duration = std::max(
-      aStyle.GetTransitionDuration(transitionIdx).ToMilliseconds(), 0.0f);
-
-  
-  
-  if (delay + duration <= 0.0f) {
+  if (aDuration + aDelay <= 0.0f) {
     return false;
   }
 
@@ -370,12 +362,12 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
     
     
     
-    if (delay < 0.0f && std::isfinite(delay)) {
-      delay *= valuePortion;
+    if (aDelay < 0.0f && std::isfinite(aDelay)) {
+      aDelay *= valuePortion;
     }
 
-    if (std::isfinite(duration)) {
-      duration *= valuePortion;
+    if (std::isfinite(aDuration)) {
+      aDuration *= valuePortion;
     }
 
     startForReversingTest = oldTransition->ToValue();
@@ -383,11 +375,11 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
   }
 
   TimingParams timing = TimingParamsFromCSSParams(
-      duration, delay, 1.0 ,
+      aDuration, aDelay, 1.0 ,
       StyleAnimationDirection::Normal, StyleAnimationFillMode::Backwards);
 
   const StyleComputedTimingFunction& tf =
-      aStyle.GetTransitionTimingFunction(transitionIdx);
+      aStyle.GetTransitionTimingFunction(aTransitionIndex);
   if (!tf.IsLinearKeyword()) {
     timing.SetTimingFunction(Some(tf));
   }

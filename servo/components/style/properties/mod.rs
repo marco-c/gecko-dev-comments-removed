@@ -368,14 +368,6 @@ impl PropertyId {
     }
 
     
-    pub fn is_transitionable(&self) -> bool {
-        match self {
-            Self::NonCustom(id) => id.is_transitionable(),
-            Self::Custom(..) => true,
-        }
-    }
-
-    
     
     
     

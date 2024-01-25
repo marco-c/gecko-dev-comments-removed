@@ -478,13 +478,6 @@ impl NonCustomPropertyId {
 
     
     #[inline]
-    pub fn is_transitionable(self) -> bool {
-        ${static_non_custom_property_id_set("TRANSITIONABLE", lambda p: p.transitionable)}
-        TRANSITIONABLE.contains(self)
-    }
-
-    
-    #[inline]
     pub fn is_animatable(self) -> bool {
         ${static_non_custom_property_id_set("ANIMATABLE", lambda p: p.animatable)}
         ANIMATABLE.contains(self)
