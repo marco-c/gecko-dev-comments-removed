@@ -22,7 +22,7 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
-using js::wasm::FieldType;
+using js::wasm::StorageType;
 
 namespace js::wasm {
 
@@ -108,7 +108,8 @@ class WasmGcObject : public JSObject {
 
   [[nodiscard]] static bool lookUpProperty(JSContext* cx,
                                            Handle<WasmGcObject*> obj, jsid id,
-                                           PropOffset* offset, FieldType* type);
+                                           PropOffset* offset,
+                                           StorageType* type);
 
  public:
   [[nodiscard]] static bool loadValue(JSContext* cx, Handle<WasmGcObject*> obj,
@@ -281,14 +282,14 @@ class WasmStructObject : public WasmGcObject {
   
   
   
-  static inline void fieldOffsetToAreaAndOffset(FieldType fieldType,
+  static inline void fieldOffsetToAreaAndOffset(StorageType fieldType,
                                                 uint32_t fieldOffset,
                                                 bool* areaIsOutline,
                                                 uint32_t* areaOffset);
 
   
   
-  inline uint8_t* fieldOffsetToAddress(FieldType fieldType,
+  inline uint8_t* fieldOffsetToAddress(StorageType fieldType,
                                        uint32_t fieldOffset) const;
 
   
@@ -340,7 +341,7 @@ inline bool WasmStructObject::requiresOutlineBytes(uint32_t totalBytes) {
 }
 
 
-inline void WasmStructObject::fieldOffsetToAreaAndOffset(FieldType fieldType,
+inline void WasmStructObject::fieldOffsetToAreaAndOffset(StorageType fieldType,
                                                          uint32_t fieldOffset,
                                                          bool* areaIsOutline,
                                                          uint32_t* areaOffset) {
@@ -359,7 +360,7 @@ inline void WasmStructObject::fieldOffsetToAreaAndOffset(FieldType fieldType,
 }
 
 inline uint8_t* WasmStructObject::fieldOffsetToAddress(
-    FieldType fieldType, uint32_t fieldOffset) const {
+    StorageType fieldType, uint32_t fieldOffset) const {
   bool areaIsOutline;
   uint32_t areaOffset;
   fieldOffsetToAreaAndOffset(fieldType, fieldOffset, &areaIsOutline,

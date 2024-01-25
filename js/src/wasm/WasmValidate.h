@@ -126,9 +126,12 @@ struct ModuleEnvironment {
 #undef WASM_FEATURE
   Shareable sharedMemoryEnabled() const { return features.sharedMemory; }
   bool simdAvailable() const { return features.simd; }
-  bool intrinsicsEnabled() const { return features.intrinsics; }
 
   bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
+  
+  
+  
+  bool isBuiltinModule() const { return features.isBuiltinModule; }
 
   bool hugeMemoryEnabled(uint32_t memoryIndex) const {
     return !isAsmJS() && memoryIndex < memories.length() &&
@@ -267,8 +270,8 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 [[nodiscard]] bool CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
-                                    size_t opcodeOffset, FieldType subType,
-                                    FieldType superType);
+                                    size_t opcodeOffset, StorageType subType,
+                                    StorageType superType);
 
 
 
