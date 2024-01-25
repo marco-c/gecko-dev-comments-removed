@@ -34,6 +34,10 @@ EXCLUDED_PACKAGES = {
     
     
     "ansicon",
+    
+    
+    
+    "pip",
 }
 
 
