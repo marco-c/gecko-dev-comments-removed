@@ -4890,17 +4890,31 @@ bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
     return false;
   }
 
-  Selection* selection = aFrameSelection.GetSelection(SelectionType::eNormal);
-  if (selection && !selection->IsCollapsed()) {
+  const bool contentIsEditable = aContentAtEventPoint.IsEditable();
+  const TextControlElement* const contentAsTextControl =
+      TextControlElement::FromNodeOrNull(
+          aContentAtEventPoint.IsTextControlElement()
+              ? &aContentAtEventPoint
+              : aContentAtEventPoint.GetClosestNativeAnonymousSubtreeRoot());
+  if (Selection* selection =
+          aFrameSelection.GetSelection(SelectionType::eNormal)) {
+    const bool selectionIsCollapsed = selection->IsCollapsed();
     
-    if (nsContentUtils::IsPointInSelection(
+    if (!selectionIsCollapsed &&
+        nsContentUtils::IsPointInSelection(
             *selection, aContentAtEventPoint,
             static_cast<uint32_t>(aOffsetAtEventPoint))) {
       return false;
     }
-
-    if (StaticPrefs::
-            ui_mouse_right_click_collapse_selection_stop_if_non_collapsed_selection()) {
+    const bool wantToPreventMoveCaret =
+        StaticPrefs::
+            ui_mouse_right_click_move_caret_stop_if_in_focused_editable_node() &&
+        selectionIsCollapsed && (contentIsEditable || contentAsTextControl);
+    const bool wantToPreventCollapseSelection =
+        StaticPrefs::
+            ui_mouse_right_click_collapse_selection_stop_if_non_collapsed_selection() &&
+        !selectionIsCollapsed;
+    if (wantToPreventMoveCaret || wantToPreventCollapseSelection) {
       
       
       
@@ -4913,12 +4927,19 @@ bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
         MOZ_ASSERT(ancestorLimiter->IsEditable());
         return !aContentAtEventPoint.IsInclusiveDescendantOf(ancestorLimiter);
       }
-      
-      
-      
-      if (!aContentAtEventPoint.IsEditable()) {
-        return false;
-      }
+    }
+    
+    
+    
+    if (wantToPreventMoveCaret && contentAsTextControl &&
+        contentAsTextControl == nsFocusManager::GetFocusedElementStatic()) {
+      return false;
+    }
+    
+    
+    
+    if (wantToPreventCollapseSelection && !contentIsEditable) {
+      return false;
     }
   }
 
@@ -4926,13 +4947,11 @@ bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
              ui_mouse_right_click_collapse_selection_stop_if_non_editable_node() ||
          
          
-         aContentAtEventPoint.IsEditable() ||
+         contentIsEditable ||
          
          
          
-         aContentAtEventPoint.IsTextControlElement() ||
-         TextControlElement::FromNodeOrNull(
-             aContentAtEventPoint.GetClosestNativeAnonymousSubtreeRoot());
+         contentAsTextControl;
 }
 
 nsresult nsIFrame::SelectByTypeAtPoint(nsPresContext* aPresContext,
