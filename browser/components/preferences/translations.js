@@ -1,0 +1,15 @@
+
+
+
+
+
+
+let gTranslationsPane = {
+  init() {
+    document
+      .getElementById("translations-settings-back-button")
+      .addEventListener("command", function () {
+        gotoPref("general");
+      });
+  },
+};

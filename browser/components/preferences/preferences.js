@@ -15,6 +15,7 @@
 
 
 
+
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -203,6 +204,7 @@ function init_all() {
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
+  register_module("paneTranslations", gTranslationsPane);
   if (Services.prefs.getBoolPref("browser.preferences.experimental")) {
     
     document.getElementById("category-experimental").hidden =
@@ -412,6 +414,16 @@ async function gotoPref(
     "show",
     aShowReason,
     category
+  );
+
+  document.dispatchEvent(
+    new CustomEvent("paneshown", {
+      bubbles: true,
+      cancelable: true,
+      detail: {
+        category,
+      },
+    })
   );
 }
 
