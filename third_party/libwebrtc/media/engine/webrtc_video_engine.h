@@ -250,6 +250,8 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
     ADAPTREASON_BANDWIDTH = 2,
   };
 
+  
+  
   static constexpr int kDefaultQpMax = 56;
 
   

@@ -128,6 +128,11 @@ const char kVP9ProfileId[] = "profile-id";
 
 const int kDefaultVideoMaxFramerate = 60;
 
+
+const int kDefaultVideoMaxQpVpx = 56;
+
+const int kDefaultVideoMaxQpH26x = 51;
+
 const size_t kConferenceMaxNumSpatialLayers = 3;
 const size_t kConferenceMaxNumTemporalLayers = 3;
 const size_t kConferenceDefaultNumTemporalLayers = 3;
