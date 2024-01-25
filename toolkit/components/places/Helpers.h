@@ -18,6 +18,8 @@
 #include "mozilla/Telemetry.h"
 #include "mozIStorageStatementCallback.h"
 
+class nsIFile;
+
 namespace mozilla {
 namespace places {
 
@@ -208,6 +210,26 @@ nsresult TokenizeQueryString(const nsACString& aQuery,
 
 void TokensToQueryString(const nsTArray<QueryKeyValuePair>& aTokens,
                          nsACString& aQuery);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult BackupDatabaseFile(nsIFile* aDBFile, const nsAString& aBackupFileName,
+                            nsIFile* aBackupParentDirectory, nsIFile** backup);
 
 
 
