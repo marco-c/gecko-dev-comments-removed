@@ -12,6 +12,7 @@
 #define API_FRAME_TRANSFORMER_INTERFACE_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "api/scoped_refptr.h"
@@ -53,6 +54,11 @@ class TransformableFrameInterface {
   
   
   virtual Direction GetDirection() const { return Direction::kUnknown; }
+  virtual std::string GetMimeType() const {
+    
+    
+    return "unknown/unknown";
+  }
 };
 
 class TransformableVideoFrameInterface : public TransformableFrameInterface {

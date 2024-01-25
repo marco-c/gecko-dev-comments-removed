@@ -74,9 +74,15 @@ class RtpSenderVideoFrameTransformerDelegateTest : public ::testing::Test {
                           frame_to_transform) {
           frame = std::move(frame_to_transform);
         });
+    RTPVideoHeader rtp_header;
+
+    VideoFrameMetadata metadata;
+    metadata.SetCodec(VideoCodecType::kVideoCodecVP8);
+    metadata.SetRTPVideoHeaderCodecSpecifics(RTPVideoHeaderVP8());
+
     delegate->TransformFrame(
         1, VideoCodecType::kVideoCodecVP8, 2,
-        encoded_image, RTPVideoHeader(),
+        encoded_image, RTPVideoHeader::FromMetadata(metadata),
         TimeDelta::PlusInfinity());
     return frame;
   }
@@ -135,6 +141,7 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
   std::unique_ptr<TransformableFrameInterface> frame =
       GetTransformableFrame(delegate);
   ASSERT_TRUE(frame);
+  EXPECT_STRCASEEQ("video/VP8", frame->GetMimeType().c_str());
 
   rtc::Event event;
   EXPECT_CALL(test_sender_, SendVideo).WillOnce(WithoutArgs([&] {
@@ -162,6 +169,7 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest, CloneSenderVideoFrame) {
 
   EXPECT_EQ(clone->IsKeyFrame(), video_frame.IsKeyFrame());
   EXPECT_EQ(clone->GetPayloadType(), video_frame.GetPayloadType());
+  EXPECT_EQ(clone->GetMimeType(), video_frame.GetMimeType());
   EXPECT_EQ(clone->GetSsrc(), video_frame.GetSsrc());
   EXPECT_EQ(clone->GetTimestamp(), video_frame.GetTimestamp());
   EXPECT_EQ(clone->Metadata(), video_frame.Metadata());
@@ -182,6 +190,7 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest, CloneKeyFrame) {
 
   EXPECT_EQ(clone->IsKeyFrame(), video_frame.IsKeyFrame());
   EXPECT_EQ(clone->GetPayloadType(), video_frame.GetPayloadType());
+  EXPECT_EQ(clone->GetMimeType(), video_frame.GetMimeType());
   EXPECT_EQ(clone->GetSsrc(), video_frame.GetSsrc());
   EXPECT_EQ(clone->GetTimestamp(), video_frame.GetTimestamp());
   EXPECT_EQ(clone->Metadata(), video_frame.Metadata());
