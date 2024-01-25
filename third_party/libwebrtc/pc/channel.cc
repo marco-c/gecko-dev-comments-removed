@@ -844,19 +844,6 @@ VoiceChannel::~VoiceChannel() {
   DisableMedia_w();
 }
 
-void VoiceChannel::InitCallback() {
-  RTC_DCHECK_RUN_ON(worker_thread());
-  
-  
-  send_channel()->SetSendCodecChangedCallback([this]() {
-    RTC_DCHECK_RUN_ON(worker_thread());
-    
-    receive_channel()->SetReceiveNackEnabled(
-        send_channel()->SendCodecHasNack());
-    receive_channel()->SetReceiveNonSenderRttEnabled(
-        send_channel()->SenderNonSenderRttEnabled());
-  });
-}
 void VoiceChannel::UpdateMediaSendRecvState_w() {
   
   
