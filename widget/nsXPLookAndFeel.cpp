@@ -623,8 +623,10 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(TextSelectDisabledBackground, 0xAA, 0xAA, 0xAA)
 
       
-      COLOR(Activeborder, 0xB4, 0xB4, 0xB4)
-      COLOR(Inactiveborder, 0xB4, 0xB4, 0xB4)
+      
+      COLOR(Activeborder, 0xE3, 0xE3, 0xE3)
+      
+      COLOR(Inactiveborder, 0xE3, 0xE3, 0xE3)
       
       COLOR(Activecaption, 0xFF, 0xFF, 0xFF)
       
@@ -667,17 +669,21 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Menutext, 0x00, 0x00, 0x00)
       
       COLOR(Scrollbar, 0xFF, 0xFF, 0xFF)
-      COLOR(Threeddarkshadow, 0x69, 0x69, 0x69)
+      
+      COLOR(Threeddarkshadow, 0xE3, 0xE3, 0xE3)
       
       COLOR(Threedface, 0xE9, 0xE9, 0xED)
-      COLOR(Threedhighlight, 0xFF, 0xFF, 0xFF)
+      
+      COLOR(Threedhighlight, 0xE3, 0xE3, 0xE3)
       COLOR(Threedlightshadow, 0xE3, 0xE3, 0xE3)
-      COLOR(Threedshadow, 0xA0, 0xA0, 0xA0)
+      
+      COLOR(Threedshadow, 0xE3, 0xE3, 0xE3)
       COLOR(Buttonborder, 0xE3, 0xE3, 0xE3)
       COLOR(Mark, 0xFF, 0xFF, 0x00)
       COLOR(Marktext, 0x00, 0x00, 0x00)
       COLOR(Window, 0xFF, 0xFF, 0xFF)
-      COLOR(Windowframe, 0x64, 0x64, 0x64)
+      
+      COLOR(Windowframe, 0xE3, 0xE3, 0xE3)
       COLOR(Windowtext, 0x00, 0x00, 0x00)
       COLOR(Field, 0xFF, 0xFF, 0xFF)
       COLORA(MozDisabledfield, 0xFF, 0xFF, 0xFF, 128)
@@ -1277,6 +1283,10 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     
     
     BIT_FOR(Buttonhighlight) | BIT_FOR(Buttonshadow) | BIT_FOR(Threedface) |
+    
+    BIT_FOR(Activeborder) | BIT_FOR(Inactiveborder) |
+    BIT_FOR(Threeddarkshadow) | BIT_FOR(Threedhighlight) |
+    BIT_FOR(Threedshadow) | BIT_FOR(Windowframe) |
     
     BIT_FOR(Inactivecaptiontext) |
     
