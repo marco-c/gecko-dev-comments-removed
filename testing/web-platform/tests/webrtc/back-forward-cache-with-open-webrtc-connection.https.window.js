@@ -16,5 +16,5 @@ promise_test(async t => {
   await openWebRTC(rc1);
   
   await assertBFCacheEligibility(rc1,  false);
-  await assertNotRestoredFromBFCache(rc1, ['WebRTC']);
+  await assertNotRestoredFromBFCache(rc1, ['WebRTC', 'LiveMediaStreamTrack']);
 });
