@@ -28,7 +28,7 @@
 
 namespace cricket {
 
-typedef std::map<std::string, std::string> CodecParameterMap;
+using CodecParameterMap = std::map<std::string, std::string>;
 
 class FeedbackParam {
  public:
@@ -186,6 +186,9 @@ struct RTC_EXPORT Codec {
 
 using VideoCodec = Codec;
 using AudioCodec = Codec;
+
+using VideoCodecs = std::vector<Codec>;
+using AudioCodecs = std::vector<Codec>;
 
 Codec CreateAudioCodec(int id,
                        const std::string& name,

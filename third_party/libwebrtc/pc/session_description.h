@@ -43,10 +43,8 @@
 
 namespace cricket {
 
-typedef std::vector<AudioCodec> AudioCodecs;
-typedef std::vector<VideoCodec> VideoCodecs;
-typedef std::vector<CryptoParams> CryptoParamsVec;
-typedef std::vector<webrtc::RtpExtension> RtpHeaderExtensions;
+using CryptoParamsVec = std::vector<CryptoParams>;
+using RtpHeaderExtensions = std::vector<webrtc::RtpExtension>;
 
 
 const int kAutoBandwidth = -1;
@@ -260,6 +258,7 @@ class MediaContentDescription {
  protected:
   
   
+  
   std::string protocol_;
 
  private:
@@ -290,9 +289,7 @@ class MediaContentDescription {
   std::vector<Codec> codecs_;
 };
 
-template <class C>
-class MediaContentDescriptionImpl : public MediaContentDescription {};
-using RtpMediaContentDescription = MediaContentDescriptionImpl<Codec>;
+class RtpMediaContentDescription : public MediaContentDescription {};
 
 class AudioContentDescription : public RtpMediaContentDescription {
  public:
