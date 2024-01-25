@@ -1022,7 +1022,7 @@ void PlatformOverrideChanged(const char* ,
 } 
 
 
-UniquePtr<JSSettings> RuntimeService::sDefaultJSSettings;
+StaticAutoPtr<JSSettings> RuntimeService::sDefaultJSSettings;
 
 RuntimeService::RuntimeService()
     : mMutex("RuntimeService::mMutex"),
@@ -1338,7 +1338,7 @@ nsresult RuntimeService::Init() {
   nsLayoutStatics::AddRef();
 
   
-  sDefaultJSSettings = MakeUnique<JSSettings>();
+  sDefaultJSSettings = new JSSettings();
   SetDefaultJSGCSettings(JSGC_MAX_BYTES, Some(WORKER_DEFAULT_RUNTIME_HEAPSIZE));
   SetDefaultJSGCSettings(JSGC_ALLOCATION_THRESHOLD,
                          Some(WORKER_DEFAULT_ALLOCATION_THRESHOLD));
