@@ -3657,13 +3657,6 @@ nsCSSFrameConstructor::FindObjectData(const Element& aElement,
                "embed and object must implement "
                "nsIObjectLoadingContent!");
   objContent->GetDisplayedType(&type);
-  if (type == nsIObjectLoadingContent::TYPE_IMAGE &&
-      aElement.State().HasState(ElementState::BROKEN)) {
-    
-    
-    
-    type = nsIObjectLoadingContent::TYPE_NULL;
-  }
 
   if (type == nsIObjectLoadingContent::TYPE_FALLBACK &&
       !StaticPrefs::layout_use_plugin_fallback()) {
@@ -3675,8 +3668,6 @@ nsCSSFrameConstructor::FindObjectData(const Element& aElement,
                         NS_NewEmptyFrame),
       SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_FALLBACK,
                         ToCreationFunc(NS_NewBlockFrame)),
-      SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_IMAGE,
-                        NS_NewSubDocumentFrame),
       SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_DOCUMENT,
                         NS_NewSubDocumentFrame),
       
