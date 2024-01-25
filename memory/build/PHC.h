@@ -129,10 +129,6 @@ enum PHCState {
 
 MOZ_JEMALLOC_API void SetPHCState(PHCState aState);
 
-MOZ_JEMALLOC_API void SetPHCProbabilities(int64_t aAvgDelayFirst,
-                                          int64_t aAvgDelayNormal,
-                                          int64_t aAvgDelayPageReuse);
-
 struct MemoryUsage {
   
   
