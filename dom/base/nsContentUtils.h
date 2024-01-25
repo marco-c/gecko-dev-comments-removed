@@ -3386,12 +3386,6 @@ class nsContentUtils {
 
 
 
-  static bool ShouldHideObjectOrEmbedImageDocument();
-
-  
-
-
-
 
   static nsresult EnsureAndLoadStringBundle(PropertiesFile aFile);
 
