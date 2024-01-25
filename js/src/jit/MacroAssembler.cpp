@@ -33,6 +33,7 @@
 #include "js/friend/DOMProxy.h"  
 #include "js/GCAPI.h"            
 #include "js/ScalarType.h"       
+#include "util/Unicode.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/BoundFunctionObject.h"
@@ -1606,6 +1607,43 @@ void MacroAssembler::addToCharPtr(Register chars, Register index,
   } else {
     computeEffectiveAddress(BaseIndex(chars, index, TimesTwo), chars);
   }
+}
+
+void MacroAssembler::branchIfNotLeadSurrogate(Register src, Label* label) {
+  branch32(Assembler::Below, src, Imm32(unicode::LeadSurrogateMin), label);
+  branch32(Assembler::Above, src, Imm32(unicode::LeadSurrogateMax), label);
+}
+
+void MacroAssembler::branchSurrogate(Assembler::Condition cond, Register src,
+                                     Register scratch, Label* label,
+                                     SurrogateChar surrogateChar) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  constexpr char16_t SurrogateMask = 0xFC00;
+  char16_t SurrogateMin = surrogateChar == SurrogateChar::Lead
+                              ? unicode::LeadSurrogateMin
+                              : unicode::TrailSurrogateMin;
+
+  if (src != scratch) {
+    move32(src, scratch);
+  }
+
+  and32(Imm32(SurrogateMask), scratch);
+  branch32(cond, scratch, Imm32(SurrogateMin), label);
 }
 
 void MacroAssembler::loadStringFromUnit(Register unit, Register dest,
