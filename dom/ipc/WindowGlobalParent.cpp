@@ -381,7 +381,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvInternalLoad(
   return IPC_OK();
 }
 
-IPCResult WindowGlobalParent::RecvUpdateDocumentURI(nsIURI* aURI) {
+IPCResult WindowGlobalParent::RecvUpdateDocumentURI(NotNull<nsIURI*> aURI) {
   
   
   if (StaticPrefs::dom_security_setdocumenturi()) {
@@ -1317,7 +1317,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvSetSingleChannelId(
 }
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvSetDocumentDomain(
-    nsIURI* aDomain) {
+    NotNull<nsIURI*> aDomain) {
   if (mSandboxFlags & SANDBOXED_DOMAIN) {
     
     return IPC_FAIL(this, "Sandbox disallows domain setting.");
@@ -1335,7 +1335,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvSetDocumentDomain(
     }
   }
 
-  if (!aDomain || !Document::IsValidDomain(uri, aDomain)) {
+  if (!Document::IsValidDomain(uri, aDomain)) {
     
     return IPC_FAIL(
         this, "Setting domain that's not a suffix of existing domain value.");

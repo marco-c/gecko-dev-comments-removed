@@ -109,7 +109,7 @@ parent:
   async InternalLoad(nsDocShellLoadState aLoadState);
 
   
-  [LazySend] async UpdateDocumentURI(nullable nsIURI aUri);
+  [LazySend] async UpdateDocumentURI(nsIURI aUri);
 
   
   
@@ -196,7 +196,7 @@ parent:
 
   async SetSingleChannelId(uint64_t? singleChannelId);
 
-  async SetDocumentDomain(nullable nsIURI aDomain);
+  async SetDocumentDomain(nsIURI aDomain);
 
   async Destroy();
 
