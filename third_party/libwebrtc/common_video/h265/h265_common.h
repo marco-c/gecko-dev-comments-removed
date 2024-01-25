@@ -64,11 +64,11 @@ enum SliceType : uint8_t { kB = 0, kP = 1, kI = 2 };
 
 struct NaluIndex {
   
-  size_t start_offset;
+  size_t start_offset = 0;
   
-  size_t payload_start_offset;
+  size_t payload_start_offset = 0;
   
-  size_t payload_size;
+  size_t payload_size = 0;
 };
 
 
