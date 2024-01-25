@@ -10,6 +10,7 @@ interface nsIFile;
 interface nsIURI;
 interface mozIDOMWindowProxy;
 interface nsISimpleEnumerator;
+webidl BrowsingContext;
 
 
 interface nsIFilePickerShownCallback;
@@ -71,7 +72,13 @@ interface nsIFilePicker : nsISupports
 
 
 
-  void init(in mozIDOMWindowProxy parent, in AString title, in nsIFilePicker_Mode mode);
+
+
+
+  void init(in mozIDOMWindowProxy parent,
+            in AString title,
+            in nsIFilePicker_Mode mode,
+            [optional] in BrowsingContext browsingContext);
 
   
 
