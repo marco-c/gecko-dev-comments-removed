@@ -75,7 +75,8 @@ enum class GetFrameResult {
   kGetContentSizeFailed = 9,
   kResizeMappedTextureFailed = 10,
   kRecreateFramePoolFailed = 11,
-  kMaxValue = kRecreateFramePoolFailed
+  kFramePoolEmpty = 12,
+  kMaxValue = kFramePoolEmpty
 };
 
 void RecordStartCaptureResult(StartCaptureResult error) {
@@ -338,10 +339,15 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   }
 
   if (!capture_frame) {
-    
-    if (queue_.current_frame()) {
-      RTC_DLOG(LS_WARNING) << "Frame pool was empty => kFrameDropped.";
+    if (!queue_.current_frame()) {
+      
+      RTC_DLOG(LS_ERROR) << "Frame pool was empty => kFrameDropped.";
       RecordGetFrameResult(GetFrameResult::kFrameDropped);
+    } else {
+      
+      
+      RTC_DLOG(LS_WARNING) << "Frame pool was empty => kFramePoolEmpty.";
+      RecordGetFrameResult(GetFrameResult::kFramePoolEmpty);
     }
     return E_FAIL;
   }

@@ -55,7 +55,9 @@ class WgcCaptureSession final {
   
   
   
-  static constexpr int kNumBuffers = 1;
+  
+  
+  static constexpr int kNumBuffers = 2;
 
  private:
   
