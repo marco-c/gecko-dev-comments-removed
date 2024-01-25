@@ -98,31 +98,11 @@ function AdvanceStringIndex(S, index) {
   
 
   
-  var length = S.length;
-
-  
-  if (index + 1 >= length) {
-    return index + 1;
-  }
-
-  
-  var first = callFunction(std_String_charCodeAt, S, index);
-
-  
-  if (first < 0xd800 || first > 0xdbff) {
-    return index + 1;
-  }
-
-  
-  var second = callFunction(std_String_charCodeAt, S, index + 1);
-
-  
-  if (second < 0xdc00 || second > 0xdfff) {
-    return index + 1;
-  }
-
-  
-  return index + 2;
+  var supplementary = (
+    index < S.length &&
+    callFunction(std_String_codePointAt, S, index) > 0xffff
+  );
+  return index + 1 + supplementary;
 }
 
 
