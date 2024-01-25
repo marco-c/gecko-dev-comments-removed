@@ -49,8 +49,7 @@ void AbortSignalImpl::SignalAbort(JS::Handle<JS::Value> aReason) {
   }
 
   
-  mAborted = true;
-  mReason = aReason;
+  SetAborted(aReason);
 
   
   
@@ -64,6 +63,11 @@ void AbortSignalImpl::SignalAbort(JS::Handle<JS::Value> aReason) {
 
   
   UnlinkFollowers();
+}
+
+void AbortSignalImpl::SetAborted(JS::Handle<JS::Value> aReason) {
+  mAborted = true;
+  mReason = aReason;
 }
 
 void AbortSignalImpl::Traverse(AbortSignalImpl* aSignal,
@@ -109,11 +113,13 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(AbortSignal)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(AbortSignal,
                                                   DOMEventTargetHelper)
   AbortSignalImpl::Traverse(static_cast<AbortSignalImpl*>(tmp), cb);
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDependentSignals)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(AbortSignal,
                                                 DOMEventTargetHelper)
   AbortSignalImpl::Unlink(static_cast<AbortSignalImpl*>(tmp));
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDependentSignals)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(AbortSignal)
@@ -129,7 +135,9 @@ NS_IMPL_RELEASE_INHERITED(AbortSignal, DOMEventTargetHelper)
 
 AbortSignal::AbortSignal(nsIGlobalObject* aGlobalObject, bool aAborted,
                          JS::Handle<JS::Value> aReason)
-    : DOMEventTargetHelper(aGlobalObject), AbortSignalImpl(aAborted, aReason) {
+    : DOMEventTargetHelper(aGlobalObject),
+      AbortSignalImpl(aAborted, aReason),
+      mDependent(false) {
   mozilla::HoldJSObjects(this);
 }
 
@@ -251,6 +259,62 @@ already_AddRefed<AbortSignal> AbortSignal::Timeout(GlobalObject& aGlobal,
 }
 
 
+already_AddRefed<AbortSignal> AbortSignal::Any(
+    GlobalObject& aGlobal,
+    const Sequence<OwningNonNull<AbortSignal>>& aSignals) {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+
+  
+  
+  RefPtr<AbortSignal> resultSignal =
+      new AbortSignal(global, false, JS::UndefinedHandleValue);
+
+  
+  
+  
+  for (const auto& signal : aSignals) {
+    if (signal->Aborted()) {
+      JS::Rooted<JS::Value> reason(RootingCx(), signal->RawReason());
+      resultSignal->SetAborted(reason);
+      return resultSignal.forget();
+    }
+  }
+
+  
+  resultSignal->mDependent = true;
+
+  
+  for (const auto& signal : aSignals) {
+    if (!signal->Dependent()) {
+      
+      resultSignal->MakeDependentOn(signal);
+    } else {
+      
+      for (const auto& sourceSignal : signal->mSourceSignals) {
+        MOZ_ASSERT(!sourceSignal->Aborted() && !sourceSignal->Dependent());
+        resultSignal->MakeDependentOn(sourceSignal);
+      }
+    }
+  }
+
+  
+  return resultSignal.forget();
+}
+
+void AbortSignal::MakeDependentOn(AbortSignal* aSignal) {
+  MOZ_ASSERT(mDependent);
+  MOZ_ASSERT(aSignal);
+  
+  
+  if (!mSourceSignals.Contains(aSignal)) {
+    mSourceSignals.AppendElement(aSignal);
+  }
+  if (!aSignal->mDependentSignals.Contains(this)) {
+    aSignal->mDependentSignals.AppendElement(this);
+  }
+}
+
+
 void AbortSignal::ThrowIfAborted(JSContext* aCx, ErrorResult& aRv) {
   aRv.MightThrowJSException();
 
@@ -280,12 +344,22 @@ void AbortSignal::SignalAbort(JS::Handle<JS::Value> aReason) {
   event->SetTrusted(true);
 
   DispatchEvent(*event);
+
+  
+  for (const auto& dependant : mDependentSignals) {
+    MOZ_ASSERT(dependant->mSourceSignals.Contains(this));
+    dependant->SignalAbort(aReason);
+  }
+  
+  mDependentSignals.Clear();
 }
 
 void AbortSignal::RunAbortAlgorithm() {
   JS::Rooted<JS::Value> reason(RootingCx(), Signal()->RawReason());
   SignalAbort(reason);
 }
+
+bool AbortSignal::Dependent() const { return mDependent; }
 
 AbortSignal::~AbortSignal() { mozilla::DropJSObjects(this); }
 
