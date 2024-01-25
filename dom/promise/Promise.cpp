@@ -772,11 +772,12 @@ void Promise::MaybeRejectWithClone(JSContext* aCx,
 
 
 
-class PromiseWorkerProxyRunnable : public WorkerRunnable {
+class PromiseWorkerProxyRunnable final : public WorkerRunnable {
  public:
   PromiseWorkerProxyRunnable(PromiseWorkerProxy* aPromiseWorkerProxy,
                              PromiseWorkerProxy::RunCallbackFunc aFunc)
-      : WorkerRunnable(aPromiseWorkerProxy->GetWorkerPrivate(), WorkerThread),
+      : WorkerRunnable(aPromiseWorkerProxy->GetWorkerPrivate(),
+                       "PromiseWorkerProxyRunnable", WorkerThread),
         mPromiseWorkerProxy(aPromiseWorkerProxy),
         mFunc(aFunc) {
     MOZ_ASSERT(NS_IsMainThread());
