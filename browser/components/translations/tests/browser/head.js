@@ -38,6 +38,37 @@ class FullPageTranslationsTestUtils {
 
 
 
+
+
+  static async assertPageIsTranslated(
+    fromLanguage,
+    toLanguage,
+    runInPage,
+    message = null
+  ) {
+    if (message) {
+      info(message);
+    }
+    info("Checking that the page is translated");
+    const callback = async (TranslationsTest, { fromLang, toLang }) => {
+      const { getH1 } = TranslationsTest.getSelectors();
+      await TranslationsTest.assertTranslationResult(
+        "The page's H1 is translated.",
+        getH1,
+        `DON QUIJOTE DE LA MANCHA [${fromLang} to ${toLang}, html]`
+      );
+    };
+    await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
+    await assertLangTagIsShownOnTranslationsButton(fromLanguage, toLanguage);
+  }
+
+  
+
+
+
+
+
+
   static async assertPageIsUntranslated(runInPage, message = null) {
     if (message) {
       info(message);
@@ -52,37 +83,6 @@ class FullPageTranslationsTestUtils {
       );
     });
   }
-}
-
-
-
-
-
-
-
-
-
-
-async function assertPageIsTranslated(
-  fromLanguage,
-  toLanguage,
-  runInPage,
-  message = null
-) {
-  if (message) {
-    info(message);
-  }
-  info("Checking that the page is translated");
-  const callback = async (TranslationsTest, { fromLang, toLang }) => {
-    const { getH1 } = TranslationsTest.getSelectors();
-    await TranslationsTest.assertTranslationResult(
-      "The page's H1 is translated.",
-      getH1,
-      `DON QUIJOTE DE LA MANCHA [${fromLang} to ${toLang}, html]`
-    );
-  };
-  await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
-  await assertLangTagIsShownOnTranslationsButton(fromLanguage, toLanguage);
 }
 
 
