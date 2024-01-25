@@ -333,6 +333,11 @@ static ProxyStubType GetProxyStubType(JSContext* cx, HandleObject obj,
     return ProxyStubType::Generic;
   }
 
+  
+  if (id.isPrivateName()) {
+    return ProxyStubType::Generic;
+  }
+
   DOMProxyShadowsResult shadows = GetDOMProxyShadowsCheck()(cx, proxy, id);
   if (shadows == DOMProxyShadowsResult::ShadowCheckFailed) {
     cx->clearPendingException();
