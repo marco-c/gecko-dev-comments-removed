@@ -562,6 +562,32 @@ public class EglRenderer implements VideoSink {
     }
   }
 
+  private void swapBuffersOnRenderThread(final VideoFrame frame, long swapBuffersStartTimeNs) {
+    synchronized (threadLock) {
+      if (eglThread != null) {
+        eglThread.scheduleRenderUpdate(
+            runsInline -> {
+              if (!runsInline) {
+                if (eglBase == null || !eglBase.hasSurface()) {
+                  return;
+                }
+                eglBase.makeCurrent();
+              }
+
+              if (usePresentationTimeStamp) {
+                eglBase.swapBuffers(frame.getTimestampNs());
+              } else {
+                eglBase.swapBuffers();
+              }
+
+              synchronized (statisticsLock) {
+                renderSwapBufferTimeNs += (System.nanoTime() - swapBuffersStartTimeNs);
+              }
+            });
+      }
+    }
+  }
+
   
 
 
@@ -638,17 +664,11 @@ public class EglRenderer implements VideoSink {
             eglBase.surfaceWidth(), eglBase.surfaceHeight());
 
         final long swapBuffersStartTimeNs = System.nanoTime();
-        if (usePresentationTimeStamp) {
-          eglBase.swapBuffers(frame.getTimestampNs());
-        } else {
-          eglBase.swapBuffers();
-        }
+        swapBuffersOnRenderThread(frame, swapBuffersStartTimeNs);
 
-        final long currentTimeNs = System.nanoTime();
         synchronized (statisticsLock) {
           ++framesRendered;
-          renderTimeNs += (currentTimeNs - startTimeNs);
-          renderSwapBufferTimeNs += (currentTimeNs - swapBuffersStartTimeNs);
+          renderTimeNs += (swapBuffersStartTimeNs - startTimeNs);
         }
       }
 
