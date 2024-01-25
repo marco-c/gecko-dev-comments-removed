@@ -47,11 +47,14 @@ DocumentTimeline::DocumentTimeline(Document* aDocument,
       mDocument(aDocument),
       mIsObservingRefreshDriver(false),
       mOriginTime(aOriginTime) {
-  if (mDocument) {
-    mDocument->Timelines().insertBack(this);
-  }
+  mDocument->Timelines().insertBack(this);
   
-  UpdateLastRefreshDriverTime();
+  if (nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming()) {
+    mLastRefreshDriverTime = timing->GetNavigationStartTimeStamp();
+  }
+  if (nsRefreshDriver* rd = GetRefreshDriver()) {
+    MaybeUpdateLastRefreshDriverTime(rd->MostRecentRefresh());
+  }
 }
 
 DocumentTimeline::~DocumentTimeline() {
@@ -100,41 +103,28 @@ bool DocumentTimeline::TracksWallclockTime() const {
 }
 
 TimeStamp DocumentTimeline::GetCurrentTimeStamp() const {
-  nsRefreshDriver* refreshDriver = GetRefreshDriver();
-  return refreshDriver ? refreshDriver->MostRecentRefresh()
-                       : mLastRefreshDriverTime;
+  if (nsRefreshDriver* refreshDriver = GetRefreshDriver()) {
+    auto ts = refreshDriver->MostRecentRefresh();
+    if (ts > mLastRefreshDriverTime) {
+      return ts;
+    }
+  }
+  return mLastRefreshDriverTime;
 }
 
-void DocumentTimeline::UpdateLastRefreshDriverTime(TimeStamp aKnownTime) {
-  TimeStamp result = [&] {
-    if (!aKnownTime.IsNull()) {
-      return aKnownTime;
-    }
-    if (auto* rd = GetRefreshDriver()) {
-      return rd->MostRecentRefresh();
-    };
-    return mLastRefreshDriverTime;
-  }();
-
-  if (nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (result.IsNull() || result < timing->GetNavigationStartTimeStamp()) {
-      result = timing->GetNavigationStartTimeStamp();
-    }
+bool DocumentTimeline::MaybeUpdateLastRefreshDriverTime(TimeStamp aTime) {
+  
+  
+  
+  
+  
+  
+  if (aTime < mLastRefreshDriverTime) {
+    return false;
   }
 
-  if (!result.IsNull()) {
-    mLastRefreshDriverTime = result;
-  }
+  mLastRefreshDriverTime = aTime;
+  return true;
 }
 
 Nullable<TimeDuration> DocumentTimeline::ToTimelineTime(
@@ -169,10 +159,34 @@ void DocumentTimeline::NotifyAnimationUpdated(Animation& aAnimation) {
   }
 }
 
-void DocumentTimeline::MostRecentRefreshTimeUpdated() {
+void DocumentTimeline::TriggerAllPendingAnimationsNow() {
+  for (Animation* animation : mAnimationOrder) {
+    animation->TryTriggerNow();
+  }
+}
+
+void DocumentTimeline::WillRefresh(TimeStamp aTime) { MaybeTick(aTime); }
+
+void DocumentTimeline::NotifyTimerAdjusted(TimeStamp aTime) {
+  MaybeTick(aTime);
+}
+
+void DocumentTimeline::MaybeTick(TimeStamp aTime) {
+  if (NS_WARN_IF(!MaybeUpdateLastRefreshDriverTime(aTime))) {
+    
+    
+    
+    auto* rd = GetRefreshDriver();
+    if (rd && rd->IsTestControllingRefreshesEnabled()) {
+      mLastRefreshDriverTime = aTime;
+    } else {
+      return;
+    }
+  }
+
   MOZ_ASSERT(mIsObservingRefreshDriver);
   MOZ_ASSERT(GetRefreshDriver(),
-             "Should be able to reach refresh driver from within WillRefresh");
+             "Should be able to reach refresh driver from within the tick");
 
   nsAutoAnimationMutationBatch mb(mDocument);
 
@@ -198,21 +212,6 @@ void DocumentTimeline::MostRecentRefreshTimeUpdated() {
                "Refresh driver should still be valid at end of WillRefresh");
     UnregisterFromRefreshDriver();
   }
-}
-
-void DocumentTimeline::TriggerAllPendingAnimationsNow() {
-  for (Animation* animation : mAnimationOrder) {
-    animation->TryTriggerNow();
-  }
-}
-
-void DocumentTimeline::WillRefresh(TimeStamp aTime) {
-  UpdateLastRefreshDriverTime();
-  MostRecentRefreshTimeUpdated();
-}
-
-void DocumentTimeline::NotifyTimerAdjusted(TimeStamp aTime) {
-  MostRecentRefreshTimeUpdated();
 }
 
 void DocumentTimeline::ObserveRefreshDriver(nsRefreshDriver* aDriver) {
@@ -241,7 +240,7 @@ void DocumentTimeline::NotifyRefreshDriverCreated(nsRefreshDriver* aDriver) {
     
     
     
-    MostRecentRefreshTimeUpdated();
+    MaybeTick(aDriver->MostRecentRefresh());
   }
 }
 
