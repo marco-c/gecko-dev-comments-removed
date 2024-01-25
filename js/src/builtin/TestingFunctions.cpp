@@ -1812,6 +1812,15 @@ static bool DisassembleNative(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+#ifdef JS_CODEGEN_ARM
+  
+  
+  if (fuzzingSafe) {
+    JS_ReportErrorASCII(cx, "disnative is not fuzzing-safe on ARM32");
+    return false;
+  }
+#endif
+
   
   
   if (!fuzzingSafe && args.length() > 1 && args[1].isString()) {
