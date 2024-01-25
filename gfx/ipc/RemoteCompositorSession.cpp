@@ -48,8 +48,11 @@ RemoteCompositorSession::~RemoteCompositorSession() {
 void RemoteCompositorSession::NotifySessionLost() {
   
   
+  RefPtr<nsBaseWidget> widget(mWidget);
   
-  mWidget->NotifyCompositorSessionLost(this);
+  
+  
+  widget->NotifyCompositorSessionLost(this);
 }
 
 CompositorBridgeParent* RemoteCompositorSession::GetInProcessBridge() const {
