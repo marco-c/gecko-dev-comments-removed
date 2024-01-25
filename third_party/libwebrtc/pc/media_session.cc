@@ -1672,9 +1672,6 @@ MediaSessionDescriptionFactory::CreateOfferOrError(
         msection_index < current_description->contents().size()) {
       current_content = &current_description->contents()[msection_index];
       
-      RTC_DCHECK(current_content->name != media_description_options.mid ||
-                 IsMediaContentOfType(current_content,
-                                      media_description_options.type));
     }
     RTCError error;
     switch (media_description_options.type) {
@@ -2285,7 +2282,6 @@ RTCError MediaSessionDescriptionFactory::AddAudioContentForOffer(
         current_content->name == media_description_options.mid) {
       if (!IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO)) {
         
-        
         LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                              "Media type for content with mid='" +
                                  current_content->name +
@@ -2384,7 +2380,6 @@ RTCError MediaSessionDescriptionFactory::AddVideoContentForOffer(
     if (current_content && !current_content->rejected &&
         current_content->name == media_description_options.mid) {
       if (!IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO)) {
-        
         
         LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                              "Media type for content with mid='" +
