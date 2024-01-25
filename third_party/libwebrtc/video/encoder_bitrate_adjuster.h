@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "api/field_trials_view.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
@@ -34,7 +35,8 @@ class EncoderBitrateAdjuster {
   
   static constexpr double kDefaultUtilizationFactor = 1.2;
 
-  explicit EncoderBitrateAdjuster(const VideoCodec& codec_settings);
+  EncoderBitrateAdjuster(const VideoCodec& codec_settings,
+                         const FieldTrialsView& field_trials);
   ~EncoderBitrateAdjuster();
 
   
