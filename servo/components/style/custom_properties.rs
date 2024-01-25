@@ -985,9 +985,6 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
                     if let Some(registration) = custom_registration {
                         let mut input = ParserInput::new(&unparsed_value.css);
                         let mut input = Parser::new(&mut input);
-                        
-                        
-                        
                         if let Ok(value) = SpecifiedRegisteredValue::compute(
                             &mut input,
                             registration,

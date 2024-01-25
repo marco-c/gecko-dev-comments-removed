@@ -205,8 +205,6 @@ impl SpecifiedValue {
             return Err(());
         };
 
-        
-        
         let value = value.to_computed_value(context);
         Ok(value.to_var(url_data))
     }
