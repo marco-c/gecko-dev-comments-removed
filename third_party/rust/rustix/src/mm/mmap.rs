@@ -10,11 +10,39 @@ use crate::{backend, io};
 use backend::fd::AsFd;
 use core::ffi::c_void;
 
+#[cfg(any(linux_kernel, freebsdlike, netbsdlike))]
+pub use backend::mm::types::MlockAllFlags;
 #[cfg(linux_kernel)]
 pub use backend::mm::types::MlockFlags;
 #[cfg(any(target_os = "emscripten", target_os = "linux"))]
 pub use backend::mm::types::MremapFlags;
 pub use backend::mm::types::{MapFlags, MprotectFlags, ProtFlags};
+
+impl MapFlags {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(linux_kernel)]
+    pub const fn hugetlb_with_size_log2(huge_page_size_log2: u32) -> Option<Self> {
+        use linux_raw_sys::general::{MAP_HUGETLB, MAP_HUGE_SHIFT};
+        if 16 <= huge_page_size_log2 && huge_page_size_log2 <= 63 {
+            let bits = MAP_HUGETLB | (huge_page_size_log2 << MAP_HUGE_SHIFT);
+            Self::from_bits(bits)
+        } else {
+            None
+        }
+    }
+}
 
 
 
@@ -313,4 +341,69 @@ pub unsafe fn mlock_with(ptr: *mut c_void, len: usize, flags: MlockFlags) -> io:
 #[inline]
 pub unsafe fn munlock(ptr: *mut c_void, len: usize) -> io::Result<()> {
     backend::mm::syscalls::munlock(ptr, len)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(linux_kernel, freebsdlike, netbsdlike))]
+#[inline]
+pub fn mlockall(flags: MlockAllFlags) -> io::Result<()> {
+    backend::mm::syscalls::mlockall(flags)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(linux_kernel, freebsdlike, netbsdlike))]
+#[inline]
+pub fn munlockall() -> io::Result<()> {
+    backend::mm::syscalls::munlockall()
 }

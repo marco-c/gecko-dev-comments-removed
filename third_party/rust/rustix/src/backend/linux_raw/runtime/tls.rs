@@ -8,6 +8,7 @@
 
 use crate::backend::c;
 use crate::backend::param::auxv::exe_phdrs;
+use core::arch::global_asm;
 use core::ptr::{null, NonNull};
 use linux_raw_sys::elf::*;
 
@@ -27,6 +28,10 @@ pub(crate) fn startup_tls_info() -> StartupTlsInfo {
 
     
     
+    let dynamic_addr: *const c::c_void = unsafe { &_DYNAMIC };
+
+    
+    
     unsafe {
         let phdrs_end = current_phdr.cast::<u8>().add(phnum * phent).cast();
         while current_phdr != phdrs_end {
@@ -34,7 +39,13 @@ pub(crate) fn startup_tls_info() -> StartupTlsInfo {
             current_phdr = current_phdr.cast::<u8>().add(phent).cast();
 
             match phdr.p_type {
-                PT_PHDR => base = first_phdr.cast::<u8>().sub(phdr.p_vaddr),
+                
+                
+                
+                
+                PT_PHDR => base = first_phdr.cast::<u8>().wrapping_sub(phdr.p_vaddr),
+                PT_DYNAMIC => base = dynamic_addr.cast::<u8>().wrapping_sub(phdr.p_vaddr),
+
                 PT_TLS => tls_phdr = phdr,
                 PT_GNU_STACK => stack_size = phdr.p_memsz,
                 _ => {}
@@ -51,7 +62,7 @@ pub(crate) fn startup_tls_info() -> StartupTlsInfo {
             }
         } else {
             StartupTlsInfo {
-                addr: base.cast::<u8>().add((*tls_phdr).p_vaddr).cast(),
+                addr: base.cast::<u8>().wrapping_add((*tls_phdr).p_vaddr).cast(),
                 mem_size: (*tls_phdr).p_memsz,
                 file_size: (*tls_phdr).p_filesz,
                 align: (*tls_phdr).p_align,
@@ -60,6 +71,15 @@ pub(crate) fn startup_tls_info() -> StartupTlsInfo {
         }
     }
 }
+
+extern "C" {
+    
+    
+    
+    static _DYNAMIC: c::c_void;
+}
+
+global_asm!(".weak _DYNAMIC");
 
 
 

@@ -1,12 +1,9 @@
 use crate::backend;
 #[cfg(any(
     linux_raw,
-    all(
-        libc,
-        any(
-            all(target_os = "android", target_pointer_width = "64"),
-            target_os = "linux",
-        )
+    any(
+        all(target_os = "android", target_pointer_width = "64"),
+        target_os = "linux",
     )
 ))]
 use crate::ffi::CStr;
@@ -39,7 +36,7 @@ pub fn page_size() -> usize {
 
 
 
-#[cfg(not(target_os = "wasi"))]
+#[cfg(not(any(target_os = "vita", target_os = "wasi")))]
 #[inline]
 #[doc(alias = "_SC_CLK_TCK")]
 pub fn clock_ticks_per_second() -> u64 {
@@ -58,12 +55,9 @@ pub fn clock_ticks_per_second() -> u64 {
 
 #[cfg(any(
     linux_raw,
-    all(
-        libc,
-        any(
-            all(target_os = "android", target_pointer_width = "64"),
-            target_os = "linux",
-        )
+    any(
+        all(target_os = "android", target_pointer_width = "64"),
+        target_os = "linux",
     )
 ))]
 #[inline]
@@ -82,12 +76,9 @@ pub fn linux_hwcap() -> (usize, usize) {
 
 #[cfg(any(
     linux_raw,
-    all(
-        libc,
-        any(
-            all(target_os = "android", target_pointer_width = "64"),
-            target_os = "linux",
-        )
+    any(
+        all(target_os = "android", target_pointer_width = "64"),
+        target_os = "linux",
     )
 ))]
 #[inline]

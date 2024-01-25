@@ -1,8 +1,9 @@
 use crate::fd::AsFd;
-use crate::pid::Pid;
 #[cfg(not(target_os = "espidf"))]
 use crate::termios::{Action, OptionalActions, QueueSelector, Termios, Winsize};
 use crate::{backend, io};
+
+pub use crate::pid::Pid;
 
 
 
@@ -39,6 +40,11 @@ pub fn tcgetattr<Fd: AsFd>(fd: Fd) -> io::Result<Termios> {
 pub fn tcgetwinsize<Fd: AsFd>(fd: Fd) -> io::Result<Winsize> {
     backend::termios::syscalls::tcgetwinsize(fd.as_fd())
 }
+
+
+
+
+
 
 
 

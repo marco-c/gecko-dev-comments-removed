@@ -40,6 +40,13 @@ pub(crate) fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<Termios> {
         let termios2 = unsafe {
             let mut termios2 = MaybeUninit::<c::termios2>::uninit();
 
+            
+            
+            #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
+            {
+                termios2.write(core::mem::zeroed());
+            }
+
             ret(c::ioctl(
                 borrowed_fd(fd),
                 c::TCGETS2 as _,
@@ -60,6 +67,33 @@ pub(crate) fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<Termios> {
             input_speed: termios2.c_ispeed,
             output_speed: termios2.c_ospeed,
         };
+
+        
+        
+        #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
+        {
+            use crate::termios::speed;
+
+            if result.output_speed == 0 && (termios2.c_cflag & c::CBAUD) != c::BOTHER {
+                if let Some(output_speed) = speed::decode(termios2.c_cflag & c::CBAUD) {
+                    result.output_speed = output_speed;
+                }
+            }
+            if result.input_speed == 0
+                && ((termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT) != c::BOTHER
+            {
+                
+                
+                if ((termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT) == c::B0 {
+                    result.input_speed = result.output_speed;
+                } else if let Some(input_speed) =
+                    speed::decode((termios2.c_cflag & c::CIBAUD) >> c::IBSHIFT)
+                {
+                    result.input_speed = input_speed;
+                }
+            }
+        }
+
         result.special_codes.0[..termios2.c_cc.len()].copy_from_slice(&termios2.c_cc);
 
         Ok(result)
@@ -81,6 +115,15 @@ pub(crate) fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<Termios> {
 pub(crate) fn tcgetpgrp(fd: BorrowedFd<'_>) -> io::Result<Pid> {
     unsafe {
         let pid = ret_pid_t(c::tcgetpgrp(borrowed_fd(fd)))?;
+
+        
+        
+        
+        #[cfg(linux_kernel)]
+        if pid == 0 {
+            return Err(io::Errno::OPNOTSUPP);
+        }
+
         Ok(Pid::from_raw_unchecked(pid))
     }
 }
@@ -110,9 +153,9 @@ pub(crate) fn tcsetattr(
         
         
         #[cfg(any(target_arch = "sparc", target_arch = "sparc64"))]
-        const TCSETS: u32 = 0x80245409;
+        const TCSETS: u32 = 0x8024_5409;
         #[cfg(any(target_arch = "sparc", target_arch = "sparc64"))]
-        const TCSETS2: u32 = 0x802c540d;
+        const TCSETS2: u32 = 0x802c_540d;
 
         
         

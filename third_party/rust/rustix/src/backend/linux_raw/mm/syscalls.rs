@@ -7,7 +7,7 @@
 #![allow(clippy::undocumented_unsafe_blocks)]
 
 use super::types::{
-    Advice, MapFlags, MlockFlags, MprotectFlags, MremapFlags, MsyncFlags, ProtFlags,
+    Advice, MapFlags, MlockAllFlags, MlockFlags, MprotectFlags, MremapFlags, MsyncFlags, ProtFlags,
     UserfaultfdFlags,
 };
 use crate::backend::c;
@@ -209,4 +209,29 @@ pub(crate) unsafe fn munlock(addr: *mut c::c_void, length: usize) -> io::Result<
 #[inline]
 pub(crate) unsafe fn userfaultfd(flags: UserfaultfdFlags) -> io::Result<OwnedFd> {
     ret_owned_fd(syscall_readonly!(__NR_userfaultfd, flags))
+}
+
+
+
+
+
+
+
+
+#[inline]
+pub(crate) fn mlockall(flags: MlockAllFlags) -> io::Result<()> {
+    
+    
+    
+    
+    
+    
+    
+    unsafe { ret(syscall!(__NR_mlockall, flags)) }
+}
+
+
+#[inline]
+pub(crate) fn munlockall() -> io::Result<()> {
+    unsafe { ret(syscall_readonly!(__NR_munlockall)) }
 }

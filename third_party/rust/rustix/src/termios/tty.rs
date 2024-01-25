@@ -51,14 +51,18 @@ fn _ttyname(dirfd: BorrowedFd<'_>, mut buffer: Vec<u8>) -> io::Result<CString> {
     loop {
         match backend::termios::syscalls::ttyname(dirfd, buffer.spare_capacity_mut()) {
             Err(io::Errno::RANGE) => {
-                buffer.reserve(buffer.capacity() + 1); 
+                
+                
+                buffer.reserve(buffer.capacity() + 1);
             }
             Ok(len) => {
                 
+                
                 unsafe {
-                    buffer.set_len(len);
+                    buffer.set_len(len + 1);
                 }
 
+                
                 
                 
                 

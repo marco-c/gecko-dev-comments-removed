@@ -69,16 +69,13 @@
 
 
 
-
-
-
-
 #![allow(unsafe_code)]
 
 use crate::backend::c;
 use crate::backend::event::syscalls;
 use crate::fd::{AsFd, AsRawFd, OwnedFd};
 use crate::io;
+#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 use bitflags::bitflags;
 use core::ffi::c_void;
@@ -93,7 +90,7 @@ bitflags! {
         /// `EPOLL_CLOEXEC`
         const CLOEXEC = linux_raw_sys::general::EPOLL_CLOEXEC;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -148,7 +145,7 @@ bitflags! {
         /// `EPOLLEXCLUSIVE`
         const EXCLUSIVE = linux_raw_sys::general::EPOLLEXCLUSIVE as u32;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -242,6 +239,8 @@ pub fn delete(epoll: impl AsFd, source: impl AsFd) -> io::Result<()> {
 
 
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "alloc")))]
 #[inline]
 pub fn wait(epoll: impl AsFd, event_list: &mut EventVec, timeout: c::c_int) -> io::Result<()> {
     
@@ -371,10 +370,12 @@ struct SixtyFourBitPointer {
 }
 
 
+#[cfg(feature = "alloc")]
 pub struct EventVec {
     events: Vec<Event>,
 }
 
+#[cfg(feature = "alloc")]
 impl EventVec {
     
     
@@ -449,6 +450,7 @@ impl EventVec {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a> IntoIterator for &'a EventVec {
     type IntoIter = Iter<'a>;
     type Item = Event;

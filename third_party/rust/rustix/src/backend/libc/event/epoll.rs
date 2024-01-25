@@ -69,15 +69,14 @@
 
 
 
-
-
-
-
 use crate::backend::c;
-use crate::backend::conv::{ret, ret_owned_fd, ret_u32};
+#[cfg(feature = "alloc")]
+use crate::backend::conv::ret_u32;
+use crate::backend::conv::{ret, ret_owned_fd};
 use crate::fd::{AsFd, AsRawFd, OwnedFd};
 use crate::io;
 use crate::utils::as_mut_ptr;
+#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 use bitflags::bitflags;
 use core::ffi::c_void;
@@ -93,7 +92,7 @@ bitflags! {
         /// `EPOLL_CLOEXEC`
         const CLOEXEC = bitcast!(c::EPOLL_CLOEXEC);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -149,7 +148,7 @@ bitflags! {
         #[cfg(not(target_os = "android"))]
         const EXCLUSIVE = bitcast!(c::EPOLLEXCLUSIVE);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -257,6 +256,8 @@ pub fn delete(epoll: impl AsFd, source: impl AsFd) -> io::Result<()> {
 
 
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "alloc")))]
 pub fn wait(epoll: impl AsFd, event_list: &mut EventVec, timeout: c::c_int) -> io::Result<()> {
     
     
@@ -395,10 +396,12 @@ struct SixtyFourBitPointer {
 }
 
 
+#[cfg(feature = "alloc")]
 pub struct EventVec {
     events: Vec<Event>,
 }
 
+#[cfg(feature = "alloc")]
 impl EventVec {
     
     
@@ -473,6 +476,7 @@ impl EventVec {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a> IntoIterator for &'a EventVec {
     type IntoIter = Iter<'a>;
     type Item = Event;

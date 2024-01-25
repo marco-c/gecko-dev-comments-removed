@@ -6,42 +6,41 @@
 
 
 use crate::fd::OwnedFd;
+use crate::ffi::CStr;
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
+use crate::fs::Access;
+#[cfg(not(target_os = "espidf"))]
+use crate::fs::AtFlags;
 #[cfg(apple)]
 use crate::fs::CloneFlags;
-#[cfg(not(any(apple, target_os = "espidf", target_os = "wasi")))]
-use crate::fs::FileType;
 #[cfg(linux_kernel)]
 use crate::fs::RenameFlags;
+#[cfg(not(target_os = "espidf"))]
+use crate::fs::Stat;
+#[cfg(not(any(apple, target_os = "espidf", target_os = "vita", target_os = "wasi")))]
+use crate::fs::{Dev, FileType};
 #[cfg(not(any(target_os = "espidf", target_os = "wasi")))]
 use crate::fs::{Gid, Uid};
 use crate::fs::{Mode, OFlags};
 use crate::{backend, io, path};
-use backend::fd::AsFd;
+use backend::fd::{AsFd, BorrowedFd};
+use core::mem::MaybeUninit;
+use core::slice;
 #[cfg(feature = "alloc")]
-use {
-    crate::ffi::{CStr, CString},
-    crate::path::SMALL_PATH_BUFFER_SIZE,
-    alloc::vec::Vec,
-    backend::fd::BorrowedFd,
-};
-#[cfg(not(target_os = "espidf"))]
-use {
-    crate::fs::{Access, AtFlags, Stat, Timestamps},
-    crate::timespec::Nsecs,
-};
-
-pub use backend::fs::types::{Dev, RawMode};
+use {crate::ffi::CString, crate::path::SMALL_PATH_BUFFER_SIZE, alloc::vec::Vec};
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
+use {crate::fs::Timestamps, crate::timespec::Nsecs};
 
 
 
 
-#[cfg(not(any(target_os = "espidf", target_os = "redox")))]
+#[cfg(not(any(target_os = "espidf", target_os = "redox", target_os = "vita")))]
 pub const UTIME_NOW: Nsecs = backend::c::UTIME_NOW as Nsecs;
 
 
 
 
-#[cfg(not(any(target_os = "espidf", target_os = "redox")))]
+#[cfg(not(any(target_os = "espidf", target_os = "redox", target_os = "vita")))]
 pub const UTIME_OMIT: Nsecs = backend::c::UTIME_OMIT as Nsecs;
 
 
@@ -128,9 +127,50 @@ fn _readlinkat(dirfd: BorrowedFd<'_>, path: &CStr, mut buffer: Vec<u8>) -> io::R
             }
         }
 
-        buffer.reserve(buffer.capacity() + 1); 
-                                               
-                                               
+        
+        buffer.reserve(buffer.capacity() + 1);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn readlinkat_raw<P: path::Arg, Fd: AsFd>(
+    dirfd: Fd,
+    path: P,
+    buf: &mut [MaybeUninit<u8>],
+) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
+    path.into_with_c_str(|path| _readlinkat_raw(dirfd.as_fd(), path, buf))
+}
+
+#[allow(unsafe_code)]
+fn _readlinkat_raw<'a>(
+    dirfd: BorrowedFd<'_>,
+    path: &CStr,
+    buf: &'a mut [MaybeUninit<u8>],
+) -> io::Result<(&'a mut [u8], &'a mut [MaybeUninit<u8>])> {
+    let n = backend::fs::syscalls::readlinkat(dirfd.as_fd(), path, buf)?;
+    unsafe {
+        Ok((
+            slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), n),
+            &mut buf[n..],
+        ))
     }
 }
 
@@ -311,7 +351,7 @@ pub fn statat<P: path::Arg, Fd: AsFd>(dirfd: Fd, path: P, flags: AtFlags) -> io:
 
 
 
-#[cfg(not(target_os = "espidf"))]
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
 #[inline]
 #[doc(alias = "faccessat")]
 pub fn accessat<P: path::Arg, Fd: AsFd>(
@@ -331,7 +371,7 @@ pub fn accessat<P: path::Arg, Fd: AsFd>(
 
 
 
-#[cfg(not(target_os = "espidf"))]
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
 #[inline]
 pub fn utimensat<P: path::Arg, Fd: AsFd>(
     dirfd: Fd,
@@ -393,7 +433,7 @@ pub fn fclonefileat<Fd: AsFd, DstFd: AsFd, P: path::Arg>(
 
 
 
-#[cfg(not(any(apple, target_os = "espidf", target_os = "wasi")))]
+#[cfg(not(any(apple, target_os = "espidf", target_os = "vita", target_os = "wasi")))]
 #[inline]
 pub fn mknodat<P: path::Arg, Fd: AsFd>(
     dirfd: Fd,

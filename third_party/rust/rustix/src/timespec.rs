@@ -1,6 +1,7 @@
 
 
 
+#[cfg(not(fix_y2038))]
 use crate::backend::c;
 
 
@@ -29,16 +30,20 @@ pub type Secs = c::time_t;
 pub type Secs = i64;
 
 
-#[cfg(all(libc, target_arch = "x86_64", target_pointer_width = "32"))]
+#[cfg(any(
+    fix_y2038,
+    linux_raw,
+    all(libc, target_arch = "x86_64", target_pointer_width = "32")
+))]
 pub type Nsecs = i64;
 
 
-#[cfg(all(libc, not(all(target_arch = "x86_64", target_pointer_width = "32"))))]
+#[cfg(all(
+    not(fix_y2038),
+    libc,
+    not(all(target_arch = "x86_64", target_pointer_width = "32"))
+))]
 pub type Nsecs = c::c_long;
-
-
-#[cfg(linux_raw)]
-pub type Nsecs = i64;
 
 
 
@@ -52,7 +57,7 @@ pub(crate) struct LibcTimespec {
     #[cfg(target_endian = "big")]
     padding: core::mem::MaybeUninit<u32>,
 
-    pub(crate) tv_nsec: Nsecs,
+    pub(crate) tv_nsec: i32,
 
     #[cfg(target_endian = "little")]
     padding: core::mem::MaybeUninit<u32>,
@@ -64,7 +69,7 @@ impl From<LibcTimespec> for Timespec {
     fn from(t: LibcTimespec) -> Self {
         Self {
             tv_sec: t.tv_sec,
-            tv_nsec: t.tv_nsec,
+            tv_nsec: t.tv_nsec as _,
         }
     }
 }
@@ -75,7 +80,7 @@ impl From<Timespec> for LibcTimespec {
     fn from(t: Timespec) -> Self {
         Self {
             tv_sec: t.tv_sec,
-            tv_nsec: t.tv_nsec,
+            tv_nsec: t.tv_nsec as _,
             padding: core::mem::MaybeUninit::uninit(),
         }
     }

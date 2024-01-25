@@ -6,6 +6,7 @@ use crate::backend::c;
 use crate::io::Result;
 
 use core::marker::PhantomData;
+use core::ptr::addr_of_mut;
 use core::{fmt, mem};
 
 
@@ -144,10 +145,54 @@ unsafe impl<Opcode: CompileTimeOpcode, Input> Ioctl for Setter<Opcode, Input> {
     const OPCODE: self::Opcode = Opcode::OPCODE;
 
     fn as_ptr(&mut self) -> *mut c::c_void {
-        &mut self.input as *mut Input as *mut c::c_void
+        addr_of_mut!(self.input).cast::<c::c_void>()
     }
 
     unsafe fn output_from_ptr(_: IoctlOutput, _: *mut c::c_void) -> Result<Self::Output> {
+        Ok(())
+    }
+}
+
+
+
+
+
+pub struct Updater<'a, Opcode, Value> {
+    
+    value: &'a mut Value,
+
+    
+    _opcode: PhantomData<Opcode>,
+}
+
+impl<'a, Opcode: CompileTimeOpcode, Value> Updater<'a, Opcode, Value> {
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn new(value: &'a mut Value) -> Self {
+        Self {
+            value,
+            _opcode: PhantomData,
+        }
+    }
+}
+
+unsafe impl<'a, Opcode: CompileTimeOpcode, T> Ioctl for Updater<'a, Opcode, T> {
+    type Output = ();
+
+    const IS_MUTATING: bool = true;
+    const OPCODE: self::Opcode = Opcode::OPCODE;
+
+    fn as_ptr(&mut self) -> *mut c::c_void {
+        (self.value as *mut T).cast()
+    }
+
+    unsafe fn output_from_ptr(_output: IoctlOutput, _ptr: *mut c::c_void) -> Result<()> {
         Ok(())
     }
 }
@@ -166,37 +211,46 @@ impl<const OPCODE: RawOpcode> CompileTimeOpcode for BadOpcode<OPCODE> {
 }
 
 
-#[cfg(any(linux_kernel, apple, bsd))]
+
+
+#[cfg(any(linux_kernel, bsd))]
 pub struct ReadOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
 
-#[cfg(any(linux_kernel, apple, bsd))]
+#[cfg(any(linux_kernel, bsd))]
 impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for ReadOpcode<GROUP, NUM, Data> {
     const OPCODE: Opcode = Opcode::read::<Data>(GROUP, NUM);
 }
 
 
-#[cfg(any(linux_kernel, apple, bsd))]
+
+
+#[cfg(any(linux_kernel, bsd))]
 pub struct WriteOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
 
-#[cfg(any(linux_kernel, apple, bsd))]
+#[cfg(any(linux_kernel, bsd))]
 impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for WriteOpcode<GROUP, NUM, Data> {
     const OPCODE: Opcode = Opcode::write::<Data>(GROUP, NUM);
 }
 
 
-#[cfg(any(linux_kernel, apple, bsd))]
+
+
+#[cfg(any(linux_kernel, bsd))]
 pub struct ReadWriteOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
 
-#[cfg(any(linux_kernel, apple, bsd))]
+#[cfg(any(linux_kernel, bsd))]
 impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for ReadWriteOpcode<GROUP, NUM, Data> {
     const OPCODE: Opcode = Opcode::read_write::<Data>(GROUP, NUM);
 }
 
 
-#[cfg(any(linux_kernel, apple, bsd))]
+
+
+
+#[cfg(any(linux_kernel, bsd))]
 pub struct NoneOpcode<const GROUP: u8, const NUM: u8, Data>(Data);
 
-#[cfg(any(linux_kernel, apple, bsd))]
+#[cfg(any(linux_kernel, bsd))]
 impl<const GROUP: u8, const NUM: u8, Data> CompileTimeOpcode for NoneOpcode<GROUP, NUM, Data> {
     const OPCODE: Opcode = Opcode::none::<Data>(GROUP, NUM);
 }

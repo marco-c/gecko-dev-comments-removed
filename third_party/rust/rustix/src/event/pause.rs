@@ -1,0 +1,31 @@
+use crate::backend;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn pause() {
+    backend::event::syscalls::pause()
+}

@@ -5,8 +5,8 @@
 
 #![allow(unsafe_code)]
 
-use alloc::vec;
-use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
+use alloc::{vec, vec::Vec};
 use core::mem::MaybeUninit;
 use core::ptr;
 
@@ -230,7 +230,7 @@ bitflags! {
         /// The process is the root of the reaper tree (pid 1).
         const REALINIT = 2;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -300,7 +300,8 @@ bitflags! {
         const REAPER = 4;
         /// The reported process is in the zombie state.
         const ZOMBIE = 8;
-        /// The reported process is stopped by SIGSTOP/SIGTSTP.
+        /// The reported process is stopped by
+        /// [`Signal::Stop`]/[`Signal::Tstp`].
         const STOPPED = 16;
         /// The reported process is in the process of exiting.
         const EXITING = 32;
@@ -341,6 +342,7 @@ pub struct PidInfo {
 
 
 
+#[cfg(feature = "alloc")]
 pub fn get_reaper_pids(process: ProcSelector) -> io::Result<Vec<PidInfo>> {
     
     

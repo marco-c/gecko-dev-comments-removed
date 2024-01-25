@@ -1,7 +1,11 @@
 
 
+#![allow(unsafe_code)]
+
+use crate::buffer::split_init;
 use crate::{backend, io};
 use backend::fd::AsFd;
+use core::mem::MaybeUninit;
 
 
 #[cfg(not(windows))]
@@ -34,7 +38,25 @@ pub use backend::io::types::ReadWriteFlags;
 
 #[inline]
 pub fn read<Fd: AsFd>(fd: Fd, buf: &mut [u8]) -> io::Result<usize> {
-    backend::io::syscalls::read(fd.as_fd(), buf)
+    unsafe { backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr(), buf.len()) }
+}
+
+
+
+
+
+
+#[inline]
+pub fn read_uninit<Fd: AsFd>(
+    fd: Fd,
+    buf: &mut [MaybeUninit<u8>],
+) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
+    
+    let length =
+        unsafe { backend::io::syscalls::read(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len()) };
+
+    
+    Ok(unsafe { split_init(buf, length?) })
 }
 
 
@@ -86,7 +108,24 @@ pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> io::Result<usize> {
 
 #[inline]
 pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: u64) -> io::Result<usize> {
-    backend::io::syscalls::pread(fd.as_fd(), buf, offset)
+    unsafe { backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr(), buf.len(), offset) }
+}
+
+
+
+
+
+
+#[inline]
+pub fn pread_uninit<Fd: AsFd>(
+    fd: Fd,
+    buf: &mut [MaybeUninit<u8>],
+    offset: u64,
+) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
+    let length = unsafe {
+        backend::io::syscalls::pread(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len(), offset)
+    };
+    Ok(unsafe { split_init(buf, length?) })
 }
 
 
@@ -192,7 +231,8 @@ pub fn writev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
     target_os = "haiku",
     target_os = "nto",
     target_os = "redox",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "vita"
 )))]
 #[inline]
 pub fn preadv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>], offset: u64) -> io::Result<usize> {
@@ -225,7 +265,8 @@ pub fn preadv<Fd: AsFd>(fd: Fd, bufs: &mut [IoSliceMut<'_>], offset: u64) -> io:
     target_os = "haiku",
     target_os = "nto",
     target_os = "redox",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "vita"
 )))]
 #[inline]
 pub fn pwritev<Fd: AsFd>(fd: Fd, bufs: &[IoSlice<'_>], offset: u64) -> io::Result<usize> {

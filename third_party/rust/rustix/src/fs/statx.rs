@@ -3,13 +3,42 @@
 use crate::fd::AsFd;
 use crate::fs::AtFlags;
 use crate::{backend, io, path};
-
-pub use backend::fs::types::{Statx, StatxFlags, StatxTimestamp};
+use backend::fs::types::{Statx, StatxFlags};
 
 #[cfg(feature = "linux_4_11")]
 use backend::fs::syscalls::statx as _statx;
 #[cfg(not(feature = "linux_4_11"))]
 use compat::statx as _statx;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -42,6 +71,7 @@ mod compat {
 
     use backend::fs::types::{Statx, StatxFlags};
 
+    
     
     
     

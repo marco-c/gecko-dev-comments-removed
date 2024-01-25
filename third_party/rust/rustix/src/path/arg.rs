@@ -1063,10 +1063,12 @@ where
 
     #[cfg(not(feature = "alloc"))]
     {
-        #[cfg(libc)]
+        #[cfg(all(libc, not(target_os = "wasi")))]
         const LARGE_PATH_BUFFER_SIZE: usize = libc::PATH_MAX as usize;
         #[cfg(linux_raw)]
         const LARGE_PATH_BUFFER_SIZE: usize = linux_raw_sys::general::PATH_MAX as usize;
+        #[cfg(target_os = "wasi")]
+        const LARGE_PATH_BUFFER_SIZE: usize = 4096 as usize; 
 
         
         

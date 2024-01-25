@@ -6,6 +6,7 @@ use crate::backend::c;
 use crate::io;
 use crate::net::{Ipv4Addr, Ipv6Addr, SocketAddrAny, SocketAddrUnix, SocketAddrV4, SocketAddrV6};
 use core::mem::size_of;
+use core::slice;
 
 
 #[repr(C)]
@@ -93,17 +94,22 @@ pub(crate) unsafe fn read_sockaddr(
                 
                 
                 if decode.sun_path[0] == 0 {
-                    return SocketAddrUnix::new_abstract_name(
-                        &decode.sun_path[1..len - offsetof_sun_path],
-                    )
-                    .map(SocketAddrAny::Unix);
+                    let bytes = &decode.sun_path[1..len - offsetof_sun_path];
+
+                    
+                    let bytes = slice::from_raw_parts(bytes.as_ptr().cast::<u8>(), bytes.len());
+
+                    return SocketAddrUnix::new_abstract_name(bytes).map(SocketAddrAny::Unix);
                 }
 
                 
+                let bytes = &decode.sun_path[..len - 1 - offsetof_sun_path];
+
+                
+                let bytes = slice::from_raw_parts(bytes.as_ptr().cast::<u8>(), bytes.len());
+
                 assert_eq!(decode.sun_path[len - 1 - offsetof_sun_path], 0);
-                Ok(SocketAddrAny::Unix(SocketAddrUnix::new(
-                    &decode.sun_path[..len - 1 - offsetof_sun_path],
-                )?))
+                Ok(SocketAddrAny::Unix(SocketAddrUnix::new(bytes)?))
             }
         }
         _ => Err(io::Errno::NOTSUP),
@@ -165,19 +171,23 @@ pub(crate) unsafe fn read_sockaddr_os(storage: *const c::sockaddr, len: usize) -
                 
                 
                 if decode.sun_path[0] == 0 {
-                    return SocketAddrAny::Unix(
-                        SocketAddrUnix::new_abstract_name(
-                            &decode.sun_path[1..len - offsetof_sun_path],
-                        )
-                        .unwrap(),
-                    );
+                    let bytes = &decode.sun_path[1..len - offsetof_sun_path];
+
+                    
+                    let bytes = slice::from_raw_parts(bytes.as_ptr().cast::<u8>(), bytes.len());
+
+                    return SocketAddrAny::Unix(SocketAddrUnix::new_abstract_name(bytes).unwrap());
                 }
 
                 
                 assert_eq!(decode.sun_path[len - 1 - offsetof_sun_path], 0);
-                SocketAddrAny::Unix(
-                    SocketAddrUnix::new(&decode.sun_path[..len - 1 - offsetof_sun_path]).unwrap(),
-                )
+
+                let bytes = &decode.sun_path[..len - 1 - offsetof_sun_path];
+
+                
+                let bytes = slice::from_raw_parts(bytes.as_ptr().cast::<u8>(), bytes.len());
+
+                SocketAddrAny::Unix(SocketAddrUnix::new(bytes).unwrap())
             }
         }
         other => unimplemented!("{:?}", other),

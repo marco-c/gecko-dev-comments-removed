@@ -83,12 +83,14 @@ bitflags! {
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct TimerfdFlags: u32 {
         /// `TFD_NONBLOCK`
+        #[doc(alias = "TFD_NONBLOCK")]
         const NONBLOCK = bitcast!(c::TFD_NONBLOCK);
 
         /// `TFD_CLOEXEC`
+        #[doc(alias = "TFD_CLOEXEC")]
         const CLOEXEC = bitcast!(c::TFD_CLOEXEC);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -102,13 +104,15 @@ bitflags! {
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct TimerfdTimerFlags: u32 {
         /// `TFD_TIMER_ABSTIME`
+        #[doc(alias = "TFD_TIMER_ABSTIME")]
         const ABSTIME = bitcast!(c::TFD_TIMER_ABSTIME);
 
         /// `TFD_TIMER_CANCEL_ON_SET`
         #[cfg(linux_kernel)]
+        #[doc(alias = "TFD_TIMER_CANCEL_ON_SET")]
         const CANCEL_ON_SET = bitcast!(c::TFD_TIMER_CANCEL_ON_SET);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -127,6 +131,7 @@ pub enum TimerfdClockId {
     
     
     
+    #[doc(alias = "CLOCK_REALTIME")]
     Realtime = bitcast!(c::CLOCK_REALTIME),
 
     
@@ -137,12 +142,14 @@ pub enum TimerfdClockId {
     
     
     
+    #[doc(alias = "CLOCK_MONOTONIC")]
     Monotonic = bitcast!(c::CLOCK_MONOTONIC),
 
     
     
     
     
+    #[doc(alias = "CLOCK_BOOTTIME")]
     Boottime = bitcast!(c::CLOCK_BOOTTIME),
 
     
@@ -150,6 +157,7 @@ pub enum TimerfdClockId {
     
     
     
+    #[doc(alias = "CLOCK_REALTIME_ALARM")]
     RealtimeAlarm = bitcast!(c::CLOCK_REALTIME_ALARM),
 
     
@@ -157,6 +165,7 @@ pub enum TimerfdClockId {
     
     
     
+    #[doc(alias = "CLOCK_BOOTTIME_ALARM")]
     BoottimeAlarm = bitcast!(c::CLOCK_BOOTTIME_ALARM),
 }
 

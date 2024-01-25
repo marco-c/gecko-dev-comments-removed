@@ -18,7 +18,7 @@ use crate::backend::c;
 use crate::fd::{AsFd, BorrowedFd};
 use crate::io::Result;
 
-#[cfg(any(linux_kernel, apple, bsd))]
+#[cfg(any(linux_kernel, bsd))]
 use core::mem;
 
 pub use patterns::*;
@@ -28,14 +28,16 @@ mod patterns;
 #[cfg(linux_kernel)]
 mod linux;
 
-#[cfg(any(apple, bsd))]
+#[cfg(bsd)]
 mod bsd;
 
 #[cfg(linux_kernel)]
 use linux as platform;
 
-#[cfg(any(apple, bsd))]
+#[cfg(bsd)]
 use bsd as platform;
+
+
 
 
 
@@ -205,7 +207,9 @@ impl Opcode {
     }
 
     
-    #[cfg(any(linux_kernel, apple, bsd))]
+    
+    
+    #[cfg(any(linux_kernel, bsd))]
     #[inline]
     pub const fn from_components(
         direction: Direction,
@@ -227,7 +231,10 @@ impl Opcode {
 
     
     
-    #[cfg(any(linux_kernel, apple, bsd))]
+    
+    
+    
+    #[cfg(any(linux_kernel, bsd))]
     #[inline]
     pub const fn none<T>(group: u8, number: u8) -> Self {
         Self::from_components(Direction::None, group, number, mem::size_of::<T>())
@@ -235,7 +242,9 @@ impl Opcode {
 
     
     
-    #[cfg(any(linux_kernel, apple, bsd))]
+    
+    
+    #[cfg(any(linux_kernel, bsd))]
     #[inline]
     pub const fn read<T>(group: u8, number: u8) -> Self {
         Self::from_components(Direction::Read, group, number, mem::size_of::<T>())
@@ -243,7 +252,9 @@ impl Opcode {
 
     
     
-    #[cfg(any(linux_kernel, apple, bsd))]
+    
+    
+    #[cfg(any(linux_kernel, bsd))]
     #[inline]
     pub const fn write<T>(group: u8, number: u8) -> Self {
         Self::from_components(Direction::Write, group, number, mem::size_of::<T>())
@@ -251,7 +262,9 @@ impl Opcode {
 
     
     
-    #[cfg(any(linux_kernel, apple, bsd))]
+    
+    
+    #[cfg(any(linux_kernel, bsd))]
     #[inline]
     pub const fn read_write<T>(group: u8, number: u8) -> Self {
         Self::from_components(Direction::ReadWrite, group, number, mem::size_of::<T>())
@@ -294,11 +307,20 @@ pub type RawOpcode = _RawOpcode;
 type _RawOpcode = c::c_uint;
 
 
-#[cfg(all(not(linux_raw), target_os = "linux", target_env = "gnu"))]
+#[cfg(all(
+    not(linux_raw),
+    target_os = "linux",
+    any(target_env = "gnu", target_env = "uclibc")
+))]
 type _RawOpcode = c::c_ulong;
 
 
-#[cfg(all(not(linux_raw), target_os = "linux", not(target_env = "gnu")))]
+#[cfg(all(
+    not(linux_raw),
+    target_os = "linux",
+    not(target_env = "gnu"),
+    not(target_env = "uclibc")
+))]
 type _RawOpcode = c::c_int;
 
 
@@ -306,13 +328,19 @@ type _RawOpcode = c::c_int;
 type _RawOpcode = c::c_int;
 
 
-#[cfg(any(apple, bsd, target_os = "redox", target_os = "haiku"))]
+#[cfg(any(
+    bsd,
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "vita"
+))]
 type _RawOpcode = c::c_ulong;
 
 
 #[cfg(any(
-    target_os = "solaris",
-    target_os = "illumos",
+    solarish,
+    target_os = "aix",
     target_os = "fuchsia",
     target_os = "emscripten",
     target_os = "wasi",

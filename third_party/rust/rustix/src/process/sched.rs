@@ -108,3 +108,18 @@ pub fn sched_getaffinity(pid: Option<Pid>) -> io::Result<CpuSet> {
     let mut cpuset = CpuSet::new();
     backend::process::syscalls::sched_getaffinity(pid, &mut cpuset.cpu_set).and(Ok(cpuset))
 }
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(linux_kernel, target_os = "dragonfly"))]
+#[inline]
+pub fn sched_getcpu() -> usize {
+    backend::process::syscalls::sched_getcpu()
+}

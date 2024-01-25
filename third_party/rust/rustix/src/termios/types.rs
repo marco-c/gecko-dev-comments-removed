@@ -289,11 +289,12 @@ bitflags! {
             target_os = "aix",
             target_os = "emscripten",
             target_os = "haiku",
+            target_os = "hurd",
             target_os = "redox",
         )))]
         const IUTF8 = c::IUTF8;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -508,7 +509,7 @@ bitflags! {
         )))]
         const VT1 = c::VT1;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -566,12 +567,13 @@ bitflags! {
             target_os = "aix",
             target_os = "emscripten",
             target_os = "haiku",
+            target_os = "hurd",
             target_os = "nto",
             target_os = "redox",
         )))]
         const CMSPAR = c::CMSPAR;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -637,7 +639,7 @@ bitflags! {
         /// `IEXTEN`
         const IEXTEN = c::IEXTEN;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -806,7 +808,18 @@ pub mod speed {
 
     
     
-    #[cfg(not(any(linux_kernel, bsd)))]
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        bsd,
+        all(
+            linux_kernel,
+            not(any(target_arch = "powerpc", target_arch = "powerpc64"))
+        )
+    )))]
     pub(crate) const fn decode(encoded_speed: c::speed_t) -> Option<u32> {
         match encoded_speed {
             c::B0 => Some(0),
@@ -1131,6 +1144,7 @@ impl SpecialCodeIndex {
         solarish,
         target_os = "aix",
         target_os = "haiku",
+        target_os = "hurd",
         target_os = "nto",
     )))]
     pub const VSWTC: Self = Self(c::VSWTC as usize);

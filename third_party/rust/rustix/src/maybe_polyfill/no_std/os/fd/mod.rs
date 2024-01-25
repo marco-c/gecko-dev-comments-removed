@@ -6,7 +6,10 @@
 
 
 
-#![cfg_attr(staged_api, unstable(feature = "io_safety", issue = "87074"))]
+
+
+
+#![cfg_attr(staged_api, stable(feature = "os_fd", since = "1.66.0"))]
 #![deny(unsafe_op_in_unsafe_fn)]
 
 
@@ -15,5 +18,8 @@ mod raw;
 
 mod owned;
 
+
+#[cfg_attr(staged_api, stable(feature = "os_fd", since = "1.66.0"))]
 pub use owned::*;
+#[cfg_attr(staged_api, stable(feature = "os_fd", since = "1.66.0"))]
 pub use raw::*;

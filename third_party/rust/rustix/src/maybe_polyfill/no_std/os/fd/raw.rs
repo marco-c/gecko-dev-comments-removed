@@ -92,6 +92,9 @@ pub trait FromRawFd {
     
     
     
+    
+    
+    
     #[cfg_attr(staged_api, stable(feature = "from_raw_os", since = "1.1.0"))]
     unsafe fn from_raw_fd(fd: RawFd) -> Self;
 }

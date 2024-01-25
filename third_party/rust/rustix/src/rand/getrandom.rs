@@ -1,4 +1,8 @@
+#![allow(unsafe_code)]
+
+use crate::buffer::split_init;
 use crate::{backend, io};
+use core::mem::MaybeUninit;
 
 pub use backend::rand::types::GetRandomFlags;
 
@@ -16,5 +20,24 @@ pub use backend::rand::types::GetRandomFlags;
 
 #[inline]
 pub fn getrandom(buf: &mut [u8], flags: GetRandomFlags) -> io::Result<usize> {
-    backend::rand::syscalls::getrandom(buf, flags)
+    unsafe { backend::rand::syscalls::getrandom(buf.as_mut_ptr(), buf.len(), flags) }
+}
+
+
+
+
+
+
+#[inline]
+pub fn getrandom_uninit(
+    buf: &mut [MaybeUninit<u8>],
+    flags: GetRandomFlags,
+) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
+    
+    let length = unsafe {
+        backend::rand::syscalls::getrandom(buf.as_mut_ptr() as *mut u8, buf.len(), flags)
+    };
+
+    
+    Ok(unsafe { split_init(buf, length?) })
 }

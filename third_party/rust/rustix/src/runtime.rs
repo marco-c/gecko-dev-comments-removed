@@ -21,6 +21,9 @@
 
 
 
+
+
+
 #![allow(unsafe_code)]
 
 use crate::backend;
@@ -107,22 +110,6 @@ pub unsafe fn set_fs(data: *mut c_void) {
 #[inline]
 pub unsafe fn set_tid_address(data: *mut c_void) -> Pid {
     backend::runtime::syscalls::tls::set_tid_address(data)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub unsafe fn set_thread_name(name: &CStr) -> io::Result<()> {
-    backend::runtime::syscalls::tls::set_thread_name(name)
 }
 
 #[cfg(linux_raw)]
@@ -226,6 +213,19 @@ pub fn entry() -> usize {
     backend::param::auxv::entry()
 }
 
+
+
+
+
+
+
+
+
+#[inline]
+pub fn random() -> *const [u8; 16] {
+    backend::param::auxv::random()
+}
+
 #[cfg(linux_raw)]
 pub use backend::runtime::tls::StartupTlsInfo;
 
@@ -306,8 +306,22 @@ pub use backend::runtime::tls::StartupTlsInfo;
 
 
 
-pub unsafe fn fork() -> io::Result<Option<Pid>> {
+
+
+
+
+
+
+pub unsafe fn fork() -> io::Result<Fork> {
     backend::runtime::syscalls::fork()
+}
+
+
+
+
+pub enum Fork {
+    Child(Pid),
+    Parent(Pid),
 }
 
 
@@ -432,6 +446,28 @@ pub unsafe fn sigprocmask(how: How, set: Option<&Sigset>) -> io::Result<Sigset> 
 
 
 
+#[inline]
+pub fn sigpending() -> Sigset {
+    backend::runtime::syscalls::sigpending()
+}
+
+
+
+
+
+
+
+#[inline]
+pub fn sigsuspend(set: &Sigset) -> io::Result<()> {
+    backend::runtime::syscalls::sigsuspend(set)
+}
+
+
+
+
+
+
+
 
 
 
@@ -476,3 +512,70 @@ pub unsafe fn sigwaitinfo(set: &Sigset) -> io::Result<Siginfo> {
 pub unsafe fn sigtimedwait(set: &Sigset, timeout: Option<Timespec>) -> io::Result<Siginfo> {
     backend::runtime::syscalls::sigtimedwait(set, timeout)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(
+    linux_raw,
+    any(
+        all(target_os = "android", target_pointer_width = "64"),
+        target_os = "linux",
+    )
+))]
+#[inline]
+pub fn linux_secure() -> bool {
+    backend::param::auxv::linux_secure()
+}
+
+
+
+
+
+
+
+
+#[cfg(linux_raw)]
+#[inline]
+pub unsafe fn brk(addr: *mut c_void) -> io::Result<*mut c_void> {
+    backend::runtime::syscalls::brk(addr)
+}
+
+
+
+
+
+
+#[cfg(linux_raw)]
+pub const SIGRTMIN: u32 = linux_raw_sys::general::SIGRTMIN;
+
+
+
+
+
+
+#[cfg(linux_raw)]
+pub const SIGRTMAX: u32 = {
+    
+    #[cfg(not(any(target_arch = "arm", target_arch = "x86", target_arch = "x86_64")))]
+    {
+        linux_raw_sys::general::SIGRTMAX
+    }
+
+    
+    #[cfg(any(target_arch = "arm", target_arch = "x86", target_arch = "x86_64"))]
+    {
+        linux_raw_sys::general::_NSIG - 1
+    }
+};

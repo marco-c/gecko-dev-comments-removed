@@ -18,7 +18,10 @@ pub(super) const fn compose_opcode(
     dir | num | (group << 8) | ((size & IOCPARAM_MASK) << 16)
 }
 
+
 pub const NONE: RawOpcode = 0x2000_0000;
-pub const WRITE: RawOpcode = 0x4000_0000;
-pub const READ: RawOpcode = 0x8000_0000;
+
+pub const READ: RawOpcode = 0x4000_0000;
+
+pub const WRITE: RawOpcode = 0x8000_0000;
 pub const IOCPARAM_MASK: RawOpcode = 0x1FFF;

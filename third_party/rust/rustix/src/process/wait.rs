@@ -9,7 +9,7 @@ use crate::fd::BorrowedFd;
 use crate::backend::process::wait::SiginfoExt;
 
 bitflags! {
-    /// Options for modifying the behavior of wait/waitpid
+    /// Options for modifying the behavior of [`wait`]/[`waitpid`].
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct WaitOptions: u32 {
@@ -23,21 +23,21 @@ bitflags! {
         /// [`Signal::Cont`].
         const CONTINUED = bitcast!(backend::process::wait::WCONTINUED);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox", target_os = "wasi")))]
 bitflags! {
-    /// Options for modifying the behavior of waitid
+    /// Options for modifying the behavior of [`waitid`].
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct WaitidOptions: u32 {
         /// Return immediately if no child has exited.
         const NOHANG = bitcast!(backend::process::wait::WNOHANG);
         /// Return if a stopped child has been resumed by delivery of
-        /// [`Signal::Cont`]
+        /// [`Signal::Cont`].
         const CONTINUED = bitcast!(backend::process::wait::WCONTINUED);
         /// Wait for processed that have exited.
         const EXITED = bitcast!(backend::process::wait::WEXITED);
@@ -46,7 +46,7 @@ bitflags! {
         /// Wait for processes that have been stopped.
         const STOPPED = bitcast!(backend::process::wait::WSTOPPED);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -176,7 +176,7 @@ impl WaitidStatus {
     
     
     #[inline]
-    #[cfg(not(any(target_os = "netbsd", target_os = "fuchsia", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "emscripten", target_os = "fuchsia", target_os = "netbsd")))]
     pub fn stopping_signal(&self) -> Option<u32> {
         if self.stopped() {
             Some(self.si_status() as _)
@@ -188,7 +188,7 @@ impl WaitidStatus {
     
     
     #[inline]
-    #[cfg(not(any(target_os = "netbsd", target_os = "fuchsia", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "emscripten", target_os = "fuchsia", target_os = "netbsd")))]
     pub fn trapping_signal(&self) -> Option<u32> {
         if self.trapped() {
             Some(self.si_status() as _)
@@ -200,7 +200,7 @@ impl WaitidStatus {
     
     
     #[inline]
-    #[cfg(not(any(target_os = "netbsd", target_os = "fuchsia", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "emscripten", target_os = "fuchsia", target_os = "netbsd")))]
     pub fn exit_status(&self) -> Option<u32> {
         if self.exited() {
             Some(self.si_status() as _)
@@ -212,7 +212,7 @@ impl WaitidStatus {
     
     
     #[inline]
-    #[cfg(not(any(target_os = "netbsd", target_os = "fuchsia", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "emscripten", target_os = "fuchsia", target_os = "netbsd")))]
     pub fn terminating_signal(&self) -> Option<u32> {
         if self.killed() || self.dumped() {
             Some(self.si_status() as _)
@@ -237,7 +237,7 @@ impl WaitidStatus {
         self.0.si_code
     }
 
-    #[cfg(not(any(target_os = "netbsd", target_os = "fuchsia", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "emscripten", target_os = "fuchsia", target_os = "netbsd")))]
     #[allow(unsafe_code)]
     fn si_status(&self) -> backend::c::c_int {
         
@@ -254,21 +254,31 @@ impl WaitidStatus {
 #[non_exhaustive]
 pub enum WaitId<'a> {
     
+    #[doc(alias = "P_ALL")]
     All,
 
     
+    #[doc(alias = "P_PID")]
     Pid(Pid),
 
     
+    #[doc(alias = "P_PGID")]
+    Pgid(Option<Pid>),
+
+    
     #[cfg(target_os = "linux")]
+    #[doc(alias = "P_PIDFD")]
     PidFd(BorrowedFd<'a>),
 
     
     #[doc(hidden)]
     #[cfg(not(target_os = "linux"))]
     __EatLifetime(core::marker::PhantomData<&'a ()>),
-    
 }
+
+
+
+
 
 
 
@@ -298,6 +308,28 @@ pub enum WaitId<'a> {
 #[inline]
 pub fn waitpid(pid: Option<Pid>, waitopts: WaitOptions) -> io::Result<Option<WaitStatus>> {
     Ok(backend::process::syscalls::waitpid(pid, waitopts)?.map(|(_, status)| status))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(not(target_os = "wasi"))]
+#[inline]
+pub fn waitpgid(pgid: Pid, waitopts: WaitOptions) -> io::Result<Option<WaitStatus>> {
+    Ok(backend::process::syscalls::waitpgid(pgid, waitopts)?.map(|(_, status)| status))
 }
 
 

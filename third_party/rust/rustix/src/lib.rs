@@ -121,7 +121,11 @@
 #![allow(clippy::useless_conversion)]
 
 
-#![cfg_attr(any(target_os = "redox", target_os = "wasi"), allow(unused_imports))]
+
+#![cfg_attr(
+    any(target_os = "redox", target_os = "wasi", not(feature = "all-apis")),
+    allow(unused_imports)
+)]
 
 #[cfg(all(feature = "alloc", not(feature = "rustc-dep-of-std")))]
 extern crate alloc;
@@ -137,6 +141,7 @@ extern crate static_assertions;
 mod static_assertions;
 
 
+mod buffer;
 #[cfg(not(windows))]
 #[macro_use]
 pub(crate) mod cstr;
@@ -202,7 +207,7 @@ pub mod io;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "io_uring")))]
 pub mod io_uring;
 pub mod ioctl;
-#[cfg(not(any(windows, target_os = "espidf", target_os = "wasi")))]
+#[cfg(not(any(windows, target_os = "espidf", target_os = "vita", target_os = "wasi")))]
 #[cfg(feature = "mm")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "mm")))]
 pub mod mm;
@@ -246,6 +251,16 @@ pub mod pty;
 #[cfg(feature = "rand")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "rand")))]
 pub mod rand;
+#[cfg(not(any(
+    windows,
+    target_os = "android",
+    target_os = "espidf",
+    target_os = "vita",
+    target_os = "wasi"
+)))]
+#[cfg(feature = "shm")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "shm")))]
+pub mod shm;
 #[cfg(not(windows))]
 #[cfg(feature = "stdio")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "stdio")))]
@@ -254,7 +269,7 @@ pub mod stdio;
 #[cfg(not(any(windows, target_os = "wasi")))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "system")))]
 pub mod system;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "vita")))]
 #[cfg(feature = "termios")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "termios")))]
 pub mod termios;
@@ -271,7 +286,7 @@ pub mod time;
 #[cfg(not(windows))]
 #[cfg(feature = "runtime")]
 #[cfg(linux_raw)]
-#[doc(hidden)]
+#[cfg_attr(not(document_experimental_runtime_api), doc(hidden))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "runtime")))]
 pub mod runtime;
 
@@ -291,6 +306,7 @@ pub(crate) mod mount;
     not(feature = "use-explicitly-provided-auxv"),
     any(
         feature = "param",
+        feature = "process",
         feature = "runtime",
         feature = "time",
         target_arch = "x86",
@@ -308,6 +324,7 @@ pub(crate) mod fs;
     not(feature = "use-explicitly-provided-auxv"),
     any(
         feature = "param",
+        feature = "process",
         feature = "runtime",
         feature = "time",
         target_arch = "x86",
@@ -326,7 +343,8 @@ mod clockid;
     feature = "runtime",
     feature = "termios",
     feature = "thread",
-    all(bsd, feature = "event")
+    all(bsd, feature = "event"),
+    all(linux_kernel, feature = "net")
 ))]
 mod pid;
 #[cfg(any(feature = "process", feature = "thread"))]
@@ -338,6 +356,7 @@ mod signal;
 #[cfg(not(windows))]
 #[cfg(any(
     feature = "fs",
+    feature = "process",
     feature = "runtime",
     feature = "thread",
     feature = "time",
@@ -347,6 +366,7 @@ mod signal;
         not(feature = "use-explicitly-provided-auxv"),
         any(
             feature = "param",
+            feature = "process",
             feature = "runtime",
             feature = "time",
             target_arch = "x86",
@@ -369,6 +389,7 @@ mod timespec;
             feature = "time",
             target_arch = "x86",
         )
-    )
+    ),
+    all(linux_kernel, feature = "net")
 ))]
 mod ugid;

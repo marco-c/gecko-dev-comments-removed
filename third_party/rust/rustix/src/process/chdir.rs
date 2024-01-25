@@ -67,9 +67,12 @@ fn _getcwd(mut buffer: Vec<u8>) -> io::Result<CString> {
     loop {
         match backend::process::syscalls::getcwd(buffer.spare_capacity_mut()) {
             Err(io::Errno::RANGE) => {
-                buffer.reserve(buffer.capacity() + 1); 
+                
+                
+                buffer.reserve(buffer.capacity() + 1);
             }
             Ok(_) => {
+                
                 
                 
                 

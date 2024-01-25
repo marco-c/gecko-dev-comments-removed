@@ -1,17 +1,33 @@
 
 
+#![allow(unsafe_code)]
+
+use crate::buffer::split_init;
 #[cfg(unix)]
 use crate::net::SocketAddrUnix;
 use crate::net::{SocketAddr, SocketAddrAny, SocketAddrV4, SocketAddrV6};
 use crate::{backend, io};
 use backend::fd::{AsFd, BorrowedFd};
+use core::mem::MaybeUninit;
 
 pub use backend::net::send_recv::{RecvFlags, SendFlags};
 
-#[cfg(not(any(windows, target_os = "espidf", target_os = "redox", target_os = "wasi")))]
+#[cfg(not(any(
+    windows,
+    target_os = "espidf",
+    target_os = "redox",
+    target_os = "vita",
+    target_os = "wasi"
+)))]
 mod msg;
 
-#[cfg(not(any(windows, target_os = "espidf", target_os = "redox", target_os = "wasi")))]
+#[cfg(not(any(
+    windows,
+    target_os = "espidf",
+    target_os = "redox",
+    target_os = "vita",
+    target_os = "wasi"
+)))]
 pub use msg::*;
 
 
@@ -42,7 +58,25 @@ pub use msg::*;
 
 #[inline]
 pub fn recv<Fd: AsFd>(fd: Fd, buf: &mut [u8], flags: RecvFlags) -> io::Result<usize> {
-    backend::net::syscalls::recv(fd.as_fd(), buf, flags)
+    unsafe { backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr(), buf.len(), flags) }
+}
+
+
+
+
+
+
+#[inline]
+pub fn recv_uninit<Fd: AsFd>(
+    fd: Fd,
+    buf: &mut [MaybeUninit<u8>],
+    flags: RecvFlags,
+) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>])> {
+    let length = unsafe {
+        backend::net::syscalls::recv(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len(), flags)
+    };
+
+    Ok(unsafe { split_init(buf, length?) })
 }
 
 
@@ -109,7 +143,27 @@ pub fn recvfrom<Fd: AsFd>(
     buf: &mut [u8],
     flags: RecvFlags,
 ) -> io::Result<(usize, Option<SocketAddrAny>)> {
-    backend::net::syscalls::recvfrom(fd.as_fd(), buf, flags)
+    unsafe { backend::net::syscalls::recvfrom(fd.as_fd(), buf.as_mut_ptr(), buf.len(), flags) }
+}
+
+
+
+
+
+
+
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn recvfrom_uninit<Fd: AsFd>(
+    fd: Fd,
+    buf: &mut [MaybeUninit<u8>],
+    flags: RecvFlags,
+) -> io::Result<(&mut [u8], &mut [MaybeUninit<u8>], Option<SocketAddrAny>)> {
+    let (length, addr) = unsafe {
+        backend::net::syscalls::recvfrom(fd.as_fd(), buf.as_mut_ptr() as *mut u8, buf.len(), flags)?
+    };
+    let (init, uninit) = unsafe { split_init(buf, length) };
+    Ok((init, uninit, addr))
 }
 
 

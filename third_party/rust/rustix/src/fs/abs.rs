@@ -1,7 +1,7 @@
 
 
 use crate::fd::OwnedFd;
-#[cfg(not(target_os = "espidf"))]
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
 use crate::fs::Access;
 #[cfg(not(any(
     solarish,
@@ -10,12 +10,15 @@ use crate::fs::Access;
     target_os = "netbsd",
     target_os = "nto",
     target_os = "redox",
+    target_os = "vita",
     target_os = "wasi",
 )))]
 use crate::fs::StatFs;
 #[cfg(not(any(target_os = "haiku", target_os = "redox", target_os = "wasi")))]
 use crate::fs::StatVfs;
 use crate::fs::{Mode, OFlags, Stat};
+#[cfg(not(target_os = "wasi"))]
+use crate::ugid::{Gid, Uid};
 use crate::{backend, io, path};
 #[cfg(feature = "alloc")]
 use {
@@ -127,7 +130,8 @@ fn _readlink(path: &CStr, mut buffer: Vec<u8>) -> io::Result<CString> {
             buffer.resize(nread, 0_u8);
             return Ok(CString::new(buffer).unwrap());
         }
-        buffer.reserve(1); 
+        
+        buffer.reserve(1);
         buffer.resize(buffer.capacity(), 0_u8);
     }
 }
@@ -233,7 +237,7 @@ pub fn mkdir<P: path::Arg>(path: P, mode: Mode) -> io::Result<()> {
 
 
 
-#[cfg(not(target_os = "espidf"))]
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
 #[inline]
 pub fn access<P: path::Arg>(path: P, access: Access) -> io::Result<()> {
     path.into_with_c_str(|path| backend::fs::syscalls::access(path, access))
@@ -255,6 +259,7 @@ pub fn access<P: path::Arg>(path: P, access: Access) -> io::Result<()> {
     target_os = "netbsd",
     target_os = "nto",
     target_os = "redox",
+    target_os = "vita",
     target_os = "wasi",
 )))]
 #[inline]
@@ -279,4 +284,18 @@ pub fn statfs<P: path::Arg>(path: P) -> io::Result<StatFs> {
 #[inline]
 pub fn statvfs<P: path::Arg>(path: P) -> io::Result<StatVfs> {
     path.into_with_c_str(backend::fs::syscalls::statvfs)
+}
+
+
+
+
+
+
+
+
+
+#[cfg(not(target_os = "wasi"))]
+#[inline]
+pub fn chown<P: path::Arg>(path: P, owner: Option<Uid>, group: Option<Gid>) -> io::Result<()> {
+    path.into_with_c_str(|path| backend::fs::syscalls::chown(path, owner, group))
 }

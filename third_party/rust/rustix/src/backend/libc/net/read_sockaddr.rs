@@ -14,13 +14,39 @@ use core::mem::size_of;
 
 #[repr(C)]
 struct sockaddr_header {
-    #[cfg(any(bsd, target_os = "haiku"))]
+    #[cfg(any(
+        bsd,
+        target_os = "aix",
+        target_os = "espidf",
+        target_os = "haiku",
+        target_os = "nto",
+        target_os = "vita"
+    ))]
     sa_len: u8,
-    #[cfg(any(bsd, target_os = "haiku"))]
+    #[cfg(any(
+        bsd,
+        target_os = "aix",
+        target_os = "espidf",
+        target_os = "haiku",
+        target_os = "nto",
+        target_os = "vita"
+    ))]
     ss_family: u8,
-    #[cfg(not(any(bsd, target_os = "haiku")))]
+    #[cfg(not(any(
+        bsd,
+        target_os = "aix",
+        target_os = "espidf",
+        target_os = "haiku",
+        target_os = "nto",
+        target_os = "vita"
+    )))]
     ss_family: u16,
 }
+
+
+
+
+
 
 #[inline]
 unsafe fn read_ss_family(storage: *const c::sockaddr_storage) -> u16 {
@@ -31,7 +57,8 @@ unsafe fn read_ss_family(storage: *const c::sockaddr_storage) -> u16 {
             target_os = "aix",
             target_os = "espidf",
             target_os = "haiku",
-            target_os = "nto"
+            target_os = "nto",
+            target_os = "vita"
         ))]
         sa_len: 0_u8,
         #[cfg(any(
@@ -39,7 +66,8 @@ unsafe fn read_ss_family(storage: *const c::sockaddr_storage) -> u16 {
             target_os = "aix",
             target_os = "espidf",
             target_os = "haiku",
-            target_os = "nto"
+            target_os = "nto",
+            target_os = "vita"
         ))]
         sa_family: 0_u8,
         #[cfg(not(any(
@@ -47,7 +75,8 @@ unsafe fn read_ss_family(storage: *const c::sockaddr_storage) -> u16 {
             target_os = "aix",
             target_os = "espidf",
             target_os = "haiku",
-            target_os = "nto"
+            target_os = "nto",
+            target_os = "vita"
         )))]
         sa_family: 0_u16,
         #[cfg(not(target_os = "haiku"))]
@@ -138,7 +167,7 @@ pub(crate) unsafe fn read_sockaddr(
                 
 
                 
-                let path_bytes = if cfg!(target_os = "freebsd") {
+                let path_bytes = if cfg!(any(solarish, target_os = "freebsd")) {
                     
                     
                     
@@ -168,6 +197,11 @@ pub(crate) unsafe fn read_sockaddr(
     }
 }
 
+
+
+
+
+
 pub(crate) unsafe fn maybe_read_sockaddr_os(
     storage: *const c::sockaddr_storage,
     len: usize,
@@ -184,6 +218,11 @@ pub(crate) unsafe fn maybe_read_sockaddr_os(
         Some(inner_read_sockaddr_os(family, storage, len))
     }
 }
+
+
+
+
+
 
 pub(crate) unsafe fn read_sockaddr_os(
     storage: *const c::sockaddr_storage,
@@ -253,7 +292,7 @@ unsafe fn inner_read_sockaddr_os(
                 
                 
                 
-                #[cfg(target_os = "freebsd")]
+                #[cfg(any(solarish, target_os = "freebsd"))]
                 let path_bytes = &path_bytes[..path_bytes.iter().position(|b| *b == 0).unwrap()];
 
                 SocketAddrAny::Unix(

@@ -18,20 +18,19 @@
 
 
 
-use crate::backend::pid::syscalls::getpid;
 use crate::fd::{AsFd, BorrowedFd, OwnedFd};
+use crate::ffi::CStr;
 use crate::fs::{
-    fstat, fstatfs, major, openat, renameat, FileType, FsWord, Mode, OFlags, Stat, CWD,
+    fstat, fstatfs, major, openat, renameat, FileType, FsWord, Mode, OFlags, RawDir, Stat, CWD,
     PROC_SUPER_MAGIC,
 };
 use crate::io;
 use crate::path::DecInt;
 #[cfg(feature = "rustc-dep-of-std")]
 use core::lazy::OnceCell;
+use core::mem::MaybeUninit;
 #[cfg(not(feature = "rustc-dep-of-std"))]
 use once_cell::sync::OnceCell;
-#[cfg(feature = "alloc")]
-use {crate::ffi::CStr, crate::fs::Dir};
 
 
 const PROC_ROOT_INO: u64 = 1;
@@ -42,8 +41,8 @@ enum Kind {
     Proc,
     Pid,
     Fd,
-    #[cfg(feature = "alloc")]
     File,
+    Symlink,
 }
 
 
@@ -69,16 +68,23 @@ fn check_proc_entry_with_stat(
     match kind {
         Kind::Proc => check_proc_root(entry, &entry_stat)?,
         Kind::Pid | Kind::Fd => check_proc_subdir(entry, &entry_stat, proc_stat)?,
-        #[cfg(feature = "alloc")]
         Kind::File => check_proc_file(&entry_stat, proc_stat)?,
+        Kind::Symlink => check_proc_symlink(&entry_stat, proc_stat)?,
     }
 
     
     
     
-    let expected_mode = if let Kind::Fd = kind { 0o500 } else { 0o555 };
-    if entry_stat.st_mode & 0o777 & !expected_mode != 0 {
-        return Err(io::Errno::NOTSUP);
+    match kind {
+        Kind::Symlink => {
+            
+        }
+        _ => {
+            let expected_mode = if let Kind::Fd = kind { 0o500 } else { 0o555 };
+            if entry_stat.st_mode & 0o777 & !expected_mode != 0 {
+                return Err(io::Errno::NOTSUP);
+            }
+        }
     }
 
     match kind {
@@ -97,8 +103,14 @@ fn check_proc_entry_with_stat(
                 return Err(io::Errno::NOTSUP);
             }
         }
-        #[cfg(feature = "alloc")]
         Kind::File => {
+            
+            
+            if entry_stat.st_nlink != 1 {
+                return Err(io::Errno::NOTSUP);
+            }
+        }
+        Kind::Symlink => {
             
             
             if entry_stat.st_nlink != 1 {
@@ -153,10 +165,20 @@ fn check_proc_subdir(
     Ok(())
 }
 
-#[cfg(feature = "alloc")]
 fn check_proc_file(stat: &Stat, proc_stat: Option<&Stat>) -> io::Result<()> {
     
     if FileType::from_raw_mode(stat.st_mode) != FileType::RegularFile {
+        return Err(io::Errno::NOTSUP);
+    }
+
+    check_proc_nonroot(stat, proc_stat)?;
+
+    Ok(())
+}
+
+fn check_proc_symlink(stat: &Stat, proc_stat: Option<&Stat>) -> io::Result<()> {
+    
+    if FileType::from_raw_mode(stat.st_mode) != FileType::Symlink {
         return Err(io::Errno::NOTSUP);
     }
 
@@ -245,6 +267,7 @@ fn proc() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
 
 
 
+#[allow(unsafe_code)]
 fn proc_self() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
     static PROC_SELF: StaticFd = StaticFd::new();
 
@@ -253,11 +276,21 @@ fn proc_self() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
         .get_or_try_init(|| {
             let (proc, proc_stat) = proc()?;
 
-            let pid = getpid();
+            
+            
+            
+            let self_symlink = open_and_check_file(proc, proc_stat, cstr!("self"), Kind::Symlink)?;
+            let mut buf = [MaybeUninit::<u8>::uninit(); 20];
+            let len = crate::backend::fs::syscalls::readlinkat(
+                self_symlink.as_fd(),
+                cstr!(""),
+                &mut buf,
+            )?;
+            let pid: &[u8] = unsafe { core::mem::transmute(&buf[..len]) };
 
             
             
-            let proc_self = proc_opendirat(proc, DecInt::new(pid.as_raw_nonzero().get()))?;
+            let proc_self = proc_opendirat(proc, pid)?;
             let proc_self_stat = check_proc_entry(Kind::Pid, proc_self.as_fd(), Some(proc_stat))
                 .map_err(|_err| io::Errno::NOTSUP)?;
 
@@ -314,7 +347,6 @@ fn new_static_fd(fd: OwnedFd, stat: Stat) -> (OwnedFd, Stat) {
 
 
 
-#[cfg(feature = "alloc")]
 fn proc_self_fdinfo() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
     static PROC_SELF_FDINFO: StaticFd = StaticFd::new();
 
@@ -344,18 +376,21 @@ fn proc_self_fdinfo() -> io::Result<(BorrowedFd<'static>, &'static Stat)> {
 
 
 
-#[cfg(feature = "alloc")]
 #[inline]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
 pub fn proc_self_fdinfo_fd<Fd: AsFd>(fd: Fd) -> io::Result<OwnedFd> {
     _proc_self_fdinfo(fd.as_fd())
 }
 
-#[cfg(feature = "alloc")]
 fn _proc_self_fdinfo(fd: BorrowedFd<'_>) -> io::Result<OwnedFd> {
     let (proc_self_fdinfo, proc_self_fdinfo_stat) = proc_self_fdinfo()?;
     let fd_str = DecInt::from_fd(fd);
-    open_and_check_file(proc_self_fdinfo, proc_self_fdinfo_stat, fd_str.as_c_str())
+    open_and_check_file(
+        proc_self_fdinfo,
+        proc_self_fdinfo_stat,
+        fd_str.as_c_str(),
+        Kind::File,
+    )
 }
 
 
@@ -369,7 +404,6 @@ fn _proc_self_fdinfo(fd: BorrowedFd<'_>) -> io::Result<OwnedFd> {
 
 
 
-#[cfg(feature = "alloc")]
 #[inline]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
 pub fn proc_self_pagemap() -> io::Result<OwnedFd> {
@@ -385,7 +419,6 @@ pub fn proc_self_pagemap() -> io::Result<OwnedFd> {
 
 
 
-#[cfg(feature = "alloc")]
 #[inline]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
 pub fn proc_self_maps() -> io::Result<OwnedFd> {
@@ -401,7 +434,6 @@ pub fn proc_self_maps() -> io::Result<OwnedFd> {
 
 
 
-#[cfg(feature = "alloc")]
 #[inline]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "procfs")))]
 pub fn proc_self_status() -> io::Result<OwnedFd> {
@@ -409,15 +441,18 @@ pub fn proc_self_status() -> io::Result<OwnedFd> {
 }
 
 
-#[cfg(feature = "alloc")]
 fn proc_self_file(name: &CStr) -> io::Result<OwnedFd> {
     let (proc_self, proc_self_stat) = proc_self()?;
-    open_and_check_file(proc_self, proc_self_stat, name)
+    open_and_check_file(proc_self, proc_self_stat, name, Kind::File)
 }
 
 
-#[cfg(feature = "alloc")]
-fn open_and_check_file(dir: BorrowedFd<'_>, dir_stat: &Stat, name: &CStr) -> io::Result<OwnedFd> {
+fn open_and_check_file(
+    dir: BorrowedFd<'_>,
+    dir_stat: &Stat,
+    name: &CStr,
+    kind: Kind,
+) -> io::Result<OwnedFd> {
     let (_, proc_stat) = proc()?;
 
     
@@ -426,7 +461,11 @@ fn open_and_check_file(dir: BorrowedFd<'_>, dir_stat: &Stat, name: &CStr) -> io:
     
     
     
-    let oflags = OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NOCTTY;
+    let mut oflags = OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NOCTTY;
+    if let Kind::Symlink = kind {
+        
+        oflags |= OFlags::PATH;
+    }
     let file = openat(dir, name, oflags, Mode::empty()).map_err(|_err| io::Errno::NOTSUP)?;
     let file_stat = fstat(&file)?;
 
@@ -439,29 +478,26 @@ fn open_and_check_file(dir: BorrowedFd<'_>, dir_stat: &Stat, name: &CStr) -> io:
     
     
     
-    
-    
-    
-    
-    let dir = Dir::read_from(dir).map_err(|_err| io::Errno::NOTSUP)?;
 
-    
-    let dot_stat = dir.stat().map_err(|_err| io::Errno::NOTSUP)?;
-    if (dot_stat.st_dev, dot_stat.st_ino) != (dir_stat.st_dev, dir_stat.st_ino) {
-        return Err(io::Errno::NOTSUP);
-    }
+    let expected_type = match kind {
+        Kind::File => FileType::RegularFile,
+        Kind::Symlink => FileType::Symlink,
+        _ => unreachable!(),
+    };
 
     let mut found_file = false;
     let mut found_dot = false;
-    for entry in dir {
+
+    let mut buf = [MaybeUninit::uninit(); 2048];
+    let mut iter = RawDir::new(dir, &mut buf);
+    while let Some(entry) = iter.next() {
         let entry = entry.map_err(|_err| io::Errno::NOTSUP)?;
         if entry.ino() == file_stat.st_ino
-            && entry.file_type() == FileType::RegularFile
+            && entry.file_type() == expected_type
             && entry.file_name() == name
         {
             
-            let _ =
-                check_proc_entry_with_stat(Kind::File, file.as_fd(), file_stat, Some(proc_stat))?;
+            let _ = check_proc_entry_with_stat(kind, file.as_fd(), file_stat, Some(proc_stat))?;
 
             found_file = true;
         } else if entry.ino() == dir_stat.st_ino

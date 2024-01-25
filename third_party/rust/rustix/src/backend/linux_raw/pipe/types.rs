@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 bitflags! {
     /// `O_*` constants for use with [`pipe_with`].
     ///
-    /// [`pipe_with`]: crate::io::pipe_with
+    /// [`pipe_with`]: crate::pipe::pipe_with
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct PipeFlags: c::c_uint {
@@ -16,13 +16,13 @@ bitflags! {
         /// `O_NONBLOCK`
         const NONBLOCK = linux_raw_sys::general::O_NONBLOCK;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
 
 bitflags! {
-    /// `SPLICE_F_*` constants for use with [`splice`] [`vmsplice`], and
+    /// `SPLICE_F_*` constants for use with [`splice`], [`vmsplice`], and
     /// [`tee`].
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -36,10 +36,12 @@ bitflags! {
         /// `SPLICE_F_GIFT`
         const GIFT = linux_raw_sys::general::SPLICE_F_GIFT;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
+
+
 
 
 

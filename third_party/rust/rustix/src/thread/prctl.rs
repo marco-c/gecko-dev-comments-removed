@@ -90,6 +90,9 @@ const PR_SET_NAME: c_int = 15;
 
 
 
+
+
+
 #[inline]
 pub fn set_name(name: &CStr) -> io::Result<()> {
     unsafe { prctl_2args(PR_SET_NAME, name.as_ptr() as *mut _) }.map(|_r| ())
@@ -374,6 +377,7 @@ pub enum Capability {
     
     
     
+    
     BerkeleyPacketFilters = linux_raw_sys::general::CAP_BPF,
     
     
@@ -443,7 +447,7 @@ bitflags! {
         /// Set [`NO_CAP_AMBIENT_RAISE`] irreversibly.
         const NO_CAP_AMBIENT_RAISE_LOCKED = 1_u32 << 7;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -742,18 +746,20 @@ const PR_MTE_TAG_SHIFT: u32 = 3;
 const PR_MTE_TAG_MASK: u32 = 0xffff_u32 << PR_MTE_TAG_SHIFT;
 
 bitflags! {
-    /// Zero means addresses that are passed for the purpose of being dereferenced by the kernel must be untagged.
+    /// Zero means addresses that are passed for the purpose of being
+    /// dereferenced by the kernel must be untagged.
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct TaggedAddressMode: u32 {
-        /// Addresses that are passed for the purpose of being dereferenced by the kernel may be tagged.
+        /// Addresses that are passed for the purpose of being dereferenced by
+        /// the kernel may be tagged.
         const ENABLED = 1_u32 << 0;
         /// Synchronous tag check fault mode.
         const TCF_SYNC = 1_u32 << 1;
         /// Asynchronous tag check fault mode.
         const TCF_ASYNC = 1_u32 << 2;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }

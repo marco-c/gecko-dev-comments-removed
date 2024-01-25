@@ -1,6 +1,9 @@
 
 
-#[allow(unused_macros)]
+#![allow(unused_macros)]
+
+
+
 macro_rules! bitcast {
     ($x:expr) => {{
         if false {
@@ -24,7 +27,6 @@ macro_rules! bitcast {
 
 
 
-#[allow(unused_macros)]
 macro_rules! bitflags_bits {
     ($x:expr) => {{
         bitcast!($x.bits())

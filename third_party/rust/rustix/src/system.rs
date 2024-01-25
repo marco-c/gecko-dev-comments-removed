@@ -7,8 +7,10 @@
 #![allow(unsafe_code)]
 
 use crate::backend;
+#[cfg(target_os = "linux")]
+use crate::backend::c;
 use crate::ffi::CStr;
-#[cfg(not(any(target_os = "espidf", target_os = "emscripten")))]
+#[cfg(not(any(target_os = "espidf", target_os = "emscripten", target_os = "vita")))]
 use crate::io;
 use core::fmt;
 
@@ -38,6 +40,9 @@ pub use backend::system::types::Sysinfo;
 
 
 
+
+
+#[doc(alias = "gethostname")]
 #[inline]
 pub fn uname() -> Uname {
     Uname(backend::system::syscalls::uname())
@@ -54,6 +59,8 @@ impl Uname {
         Self::to_cstr(self.0.sysname.as_ptr().cast())
     }
 
+    
+    
     
     
     
@@ -148,9 +155,66 @@ pub fn sysinfo() -> Sysinfo {
     target_os = "emscripten",
     target_os = "espidf",
     target_os = "redox",
+    target_os = "vita",
     target_os = "wasi"
 )))]
 #[inline]
 pub fn sethostname(name: &[u8]) -> io::Result<()> {
     backend::system::syscalls::sethostname(name)
+}
+
+
+#[cfg(target_os = "linux")]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(i32)]
+#[non_exhaustive]
+pub enum RebootCommand {
+    
+    
+    
+    
+    
+    CadOff = c::LINUX_REBOOT_CMD_CAD_OFF,
+    
+    
+    
+    
+    
+    CadOn = c::LINUX_REBOOT_CMD_CAD_ON,
+    
+    Halt = c::LINUX_REBOOT_CMD_HALT,
+    
+    
+    
+    Kexec = c::LINUX_REBOOT_CMD_KEXEC,
+    
+    
+    PowerOff = c::LINUX_REBOOT_CMD_POWER_OFF,
+    
+    Restart = c::LINUX_REBOOT_CMD_RESTART,
+    
+    SwSuspend = c::LINUX_REBOOT_CMD_SW_SUSPEND,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(target_os = "linux")]
+pub fn reboot(cmd: RebootCommand) -> io::Result<()> {
+    backend::system::syscalls::reboot(cmd)
 }

@@ -119,6 +119,9 @@ impl<'buf, Fd: AsFd> RawDir<'buf, Fd> {
     
     
     
+    
+    
+    
     pub fn new(fd: Fd, buf: &'buf mut [MaybeUninit<u8>]) -> Self {
         Self {
             fd,

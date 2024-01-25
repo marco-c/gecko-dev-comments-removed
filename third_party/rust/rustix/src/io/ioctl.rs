@@ -16,14 +16,6 @@ use backend::fd::AsFd;
 
 
 
-
-
-
-
-
-
-
-
 #[cfg(apple)]
 #[inline]
 #[doc(alias = "FIOCLEX")]
@@ -73,7 +65,7 @@ pub fn ioctl_fionbio<Fd: AsFd>(fd: Fd, value: bool) -> io::Result<()> {
 
 
 
-#[cfg(not(target_os = "espidf"))]
+#[cfg(not(any(target_os = "espidf", target_os = "vita")))]
 #[inline]
 #[doc(alias = "FIONREAD")]
 pub fn ioctl_fionread<Fd: AsFd>(fd: Fd) -> io::Result<u64> {

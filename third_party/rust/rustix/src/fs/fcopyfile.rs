@@ -1,9 +1,7 @@
 use crate::fs::CopyfileFlags;
 use crate::{backend, io};
 use backend::fd::AsFd;
-
-
-pub use backend::fs::types::copyfile_state_t;
+use backend::fs::types::copyfile_state_t;
 
 
 

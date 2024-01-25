@@ -68,6 +68,7 @@ pub(crate) fn ptsname(fd: BorrowedFd<'_>, mut buffer: Vec<u8>) -> io::Result<CSt
                 libc_ptsname_r(borrowed_fd(fd), buffer.as_mut_ptr().cast(), buffer.len())
             } else {
                 
+                
                 let mut name: [u8; 128] = [0_u8; 128];
                 match c::ioctl(borrowed_fd(fd), c::TIOCPTYGNAME as _, &mut name) {
                     0 => {
@@ -87,7 +88,8 @@ pub(crate) fn ptsname(fd: BorrowedFd<'_>, mut buffer: Vec<u8>) -> io::Result<CSt
             return Err(io::Errno::from_raw_os_error(r));
         }
 
-        buffer.reserve(1); 
+        
+        buffer.reserve(1);
         buffer.resize(buffer.capacity(), 0_u8);
     }
 }

@@ -18,12 +18,38 @@ pub struct Dir {
     
     fd: OwnedFd,
 
+    
+    any_errors: bool,
+
+    
+    rewind: bool,
+
+    
     buf: Vec<u8>,
+
+    
     pos: usize,
-    next: Option<u64>,
 }
 
 impl Dir {
+    
+    
+    #[inline]
+    pub fn new<Fd: Into<OwnedFd>>(fd: Fd) -> io::Result<Self> {
+        Self::_new(fd.into())
+    }
+
+    #[inline]
+    fn _new(fd: OwnedFd) -> io::Result<Self> {
+        Ok(Self {
+            fd,
+            any_errors: false,
+            rewind: false,
+            buf: Vec::new(),
+            pos: 0,
+        })
+    }
+
     
     
     #[inline]
@@ -38,25 +64,39 @@ impl Dir {
 
         Ok(Self {
             fd: fd_for_dir,
+            any_errors: false,
+            rewind: false,
             buf: Vec::new(),
             pos: 0,
-            next: None,
         })
     }
 
     
     #[inline]
     pub fn rewind(&mut self) {
+        self.any_errors = false;
+        self.rewind = true;
         self.pos = self.buf.len();
-        self.next = Some(0);
     }
 
     
     pub fn read(&mut self) -> Option<io::Result<DirEntry>> {
-        if let Some(next) = self.next.take() {
-            match crate::backend::fs::syscalls::_seek(self.fd.as_fd(), next as i64, SEEK_SET) {
+        
+        if self.any_errors {
+            return None;
+        }
+
+        
+        if self.rewind {
+            self.rewind = false;
+            match io::retry_on_intr(|| {
+                crate::backend::fs::syscalls::_seek(self.fd.as_fd(), 0, SEEK_SET)
+            }) {
                 Ok(_) => (),
-                Err(err) => return Some(Err(err)),
+                Err(err) => {
+                    self.any_errors = true;
+                    return Some(Err(err));
+                }
             }
         }
 
@@ -78,7 +118,7 @@ impl Dir {
         if self.buf.len() - self.pos < size_of::<linux_dirent64>() {
             match self.read_more()? {
                 Ok(()) => (),
-                Err(e) => return Some(Err(e)),
+                Err(err) => return Some(Err(err)),
             }
         }
 
@@ -135,15 +175,33 @@ impl Dir {
         }))
     }
 
+    #[must_use]
     fn read_more(&mut self) -> Option<io::Result<()>> {
-        let og_len = self.buf.len();
         
-        self.buf
-            .resize(self.buf.capacity() + 32 * size_of::<linux_dirent64>(), 0);
-        let nread = match crate::backend::fs::syscalls::getdents(self.fd.as_fd(), &mut self.buf) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if self.buf.len() < 1024 * size_of::<linux_dirent64>() {
+            self.buf.reserve(32 * size_of::<linux_dirent64>());
+        }
+        self.buf.resize(self.buf.capacity(), 0);
+        let nread = match io::retry_on_intr(|| {
+            crate::backend::fs::syscalls::getdents(self.fd.as_fd(), &mut self.buf)
+        }) {
             Ok(nread) => nread,
+            Err(io::Errno::NOENT) => {
+                self.any_errors = true;
+                return None;
+            }
             Err(err) => {
-                self.buf.resize(og_len, 0);
+                self.any_errors = true;
                 return Some(Err(err));
             }
         };
@@ -224,4 +282,34 @@ impl DirEntry {
     pub fn ino(&self) -> u64 {
         self.d_ino
     }
+}
+
+#[test]
+fn dir_iterator_handles_io_errors() {
+    
+    let tmp = tempfile::tempdir().unwrap();
+    let fd = crate::fs::openat(
+        crate::fs::CWD,
+        tmp.path(),
+        crate::fs::OFlags::RDONLY | crate::fs::OFlags::CLOEXEC,
+        crate::fs::Mode::empty(),
+    )
+    .unwrap();
+
+    let file_fd = crate::fs::openat(
+        &fd,
+        tmp.path().join("test.txt"),
+        crate::fs::OFlags::WRONLY | crate::fs::OFlags::CREATE,
+        crate::fs::Mode::RWXU,
+    )
+    .unwrap();
+
+    let mut dir = Dir::read_from(&fd).unwrap();
+
+    
+    
+    crate::io::dup2(&file_fd, &mut dir.fd).unwrap();
+
+    assert!(matches!(dir.next(), Some(Err(_))));
+    assert!(dir.next().is_none());
 }

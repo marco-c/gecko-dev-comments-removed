@@ -211,11 +211,9 @@ pub fn setsid() -> io::Result<Pid> {
 
 #[cfg(feature = "alloc")]
 pub fn getgroups() -> io::Result<Vec<Gid>> {
-    let mut buffer = Vec::new();
-
     
     
-    buffer.reserve(8);
+    let mut buffer = Vec::with_capacity(8);
     buffer.resize(buffer.capacity(), Gid::ROOT);
 
     loop {
@@ -227,7 +225,8 @@ pub fn getgroups() -> io::Result<Vec<Gid>> {
             buffer.resize(ngroups, Gid::ROOT);
             return Ok(buffer);
         }
-        buffer.reserve(1); 
+        
+        buffer.reserve(1);
         buffer.resize(buffer.capacity(), Gid::ROOT);
     }
 }

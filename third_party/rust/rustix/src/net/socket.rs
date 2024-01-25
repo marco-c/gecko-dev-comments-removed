@@ -479,6 +479,44 @@ pub fn connect_unix<Fd: AsFd>(sockfd: Fd, addr: &SocketAddrUnix) -> io::Result<(
 
 
 
+
+
+
+
+
+
+#[inline]
+#[doc(alias = "connect")]
+pub fn connect_unspec<Fd: AsFd>(sockfd: Fd) -> io::Result<()> {
+    backend::net::syscalls::connect_unspec(sockfd.as_fd())
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[inline]
 pub fn listen<Fd: AsFd>(sockfd: Fd, backlog: i32) -> io::Result<()> {
     backend::net::syscalls::listen(sockfd.as_fd(), backlog)

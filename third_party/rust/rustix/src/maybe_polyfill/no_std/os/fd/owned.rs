@@ -29,6 +29,7 @@ use core::mem::forget;
 
 
 
+
 #[derive(Copy, Clone)]
 #[repr(transparent)]
 #[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_start(0))]
@@ -36,12 +37,13 @@ use core::mem::forget;
 
 
 #[cfg_attr(rustc_attrs, rustc_layout_scalar_valid_range_end(0xFF_FF_FF_FE))]
-#[cfg_attr(staged_api, unstable(feature = "io_safety", issue = "87074"))]
 #[cfg_attr(rustc_attrs, rustc_nonnull_optimization_guaranteed)]
+#[cfg_attr(staged_api, stable(feature = "io_safety", since = "1.63.0"))]
 pub struct BorrowedFd<'fd> {
     fd: RawFd,
     _phantom: PhantomData<&'fd OwnedFd>,
 }
+
 
 
 
@@ -71,7 +73,11 @@ impl BorrowedFd<'_> {
     
     
     #[inline]
-    #[cfg_attr(staged_api, unstable(feature = "io_safety", issue = "87074"))]
+    #[cfg_attr(
+        staged_api,
+        rustc_const_stable(feature = "io_safety", since = "1.63.0")
+    )]
+    #[cfg_attr(staged_api, stable(feature = "io_safety", since = "1.63.0"))]
     pub const unsafe fn borrow_raw(fd: RawFd) -> Self {
         assert!(fd != u32::MAX as RawFd);
         
@@ -106,12 +112,11 @@ impl OwnedFd {
         Ok(fd.into())
     }
 
+    
+    
     #[cfg(target_arch = "wasm32")]
     pub fn try_clone(&self) -> crate::io::Result<Self> {
-        Err(crate::io::const_io_error!(
-            crate::io::ErrorKind::Unsupported,
-            "operation not supported on WASI yet",
-        ))
+        Err(crate::io::Errno::NOSYS)
     }
 }
 
@@ -144,10 +149,7 @@ impl BorrowedFd<'_> {
     #[cfg(any(target_arch = "wasm32", target_os = "hermit"))]
     #[cfg_attr(staged_api, stable(feature = "io_safety", since = "1.63.0"))]
     pub fn try_clone_to_owned(&self) -> crate::io::Result<OwnedFd> {
-        Err(crate::io::const_io_error!(
-            crate::io::ErrorKind::Unsupported,
-            "operation not supported on WASI yet",
-        ))
+        Err(crate::io::Errno::NOSYS)
     }
 }
 
@@ -179,6 +181,8 @@ impl IntoRawFd for OwnedFd {
 
 #[cfg_attr(staged_api, unstable(feature = "io_safety", issue = "87074"))]
 impl FromRawFd for OwnedFd {
+    
+    
     
     
     

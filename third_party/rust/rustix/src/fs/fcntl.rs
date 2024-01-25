@@ -8,6 +8,7 @@
     target_os = "espidf",
     target_os = "fuchsia",
     target_os = "redox",
+    target_os = "vita",
     target_os = "wasi"
 )))]
 use crate::fs::FlockOperation;
@@ -64,7 +65,7 @@ pub fn fcntl_get_seals<Fd: AsFd>(fd: Fd) -> io::Result<SealFlags> {
 }
 
 #[cfg(any(linux_kernel, target_os = "freebsd", target_os = "fuchsia"))]
-pub use backend::fs::types::SealFlags;
+use backend::fs::types::SealFlags;
 
 
 
@@ -100,6 +101,7 @@ pub fn fcntl_add_seals<Fd: AsFd>(fd: Fd, seals: SealFlags) -> io::Result<()> {
     target_os = "espidf",
     target_os = "fuchsia",
     target_os = "redox",
+    target_os = "vita",
     target_os = "wasi"
 )))]
 #[inline]

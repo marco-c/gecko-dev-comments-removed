@@ -6,9 +6,9 @@
 
 
 mod auxv;
-#[cfg(feature = "use-explicitly-provided-auxv")]
+#[cfg(all(feature = "use-explicitly-provided-auxv", not(libc)))]
 mod init;
 
 pub use auxv::*;
-#[cfg(feature = "use-explicitly-provided-auxv")]
+#[cfg(all(feature = "use-explicitly-provided-auxv", not(libc)))]
 pub use init::init;

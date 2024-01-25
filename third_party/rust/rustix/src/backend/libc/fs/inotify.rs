@@ -18,7 +18,7 @@ bitflags! {
         /// `IN_NONBLOCK`
         const NONBLOCK = bitcast!(c::IN_NONBLOCK);
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -38,7 +38,7 @@ bitflags! {
         const CLOSE_NOWRITE = c::IN_CLOSE_NOWRITE;
         /// `IN_CLOSE_WRITE`
         const CLOSE_WRITE = c::IN_CLOSE_WRITE;
-        /// `IN_CREATE `
+        /// `IN_CREATE`
         const CREATE = c::IN_CREATE;
         /// `IN_DELETE`
         const DELETE = c::IN_DELETE;
@@ -75,7 +75,7 @@ bitflags! {
         /// `IN_ONLYDIR`
         const ONLYDIR = c::IN_ONLYDIR;
 
-        /// <https://docs.rs/bitflags/latest/bitflags/#externally-defined-flags>
+        /// <https://docs.rs/bitflags/*/bitflags/#externally-defined-flags>
         const _ = !0;
     }
 }
@@ -89,7 +89,6 @@ pub fn inotify_init(flags: CreateFlags) -> io::Result<OwnedFd> {
     
     unsafe { ret_owned_fd(c::inotify_init1(bitflags_bits!(flags))) }
 }
-
 
 
 
