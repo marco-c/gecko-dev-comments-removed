@@ -1572,7 +1572,8 @@ void nsJSContext::EndCycleCollectionCallback(
         "A max duration ICC shouldn't reduce GC delay to 0");
 
     TimeDuration delay;
-    if (aResults.mFreedGCed > 10000) {
+    if (aResults.mFreedGCed > 10000 && aResults.mFreedRefCounted > 10000) {
+      
       
       delay = TimeDuration::FromMilliseconds(
           StaticPrefs::javascript_options_gc_delay_interslice());
