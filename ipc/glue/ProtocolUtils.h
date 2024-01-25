@@ -264,6 +264,11 @@ class IProtocol : public HasResultCodes {
   
   
   
+  void UnlinkManager();
+
+  
+  
+  
   void SetManagerAndRegister(IRefCountedProtocol* aManager);
   void SetManagerAndRegister(IRefCountedProtocol* aManager, int32_t aId);
 
