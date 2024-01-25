@@ -379,7 +379,7 @@ static Maybe<SimdPermuteOp> TryZeroExtend(SimdConstant* control) {
   for (; i <= 4 && lanes[i] == int8_t(i); i++) {
   }
   
-  if (!mozilla::IsPowerOfTwo(i)) {
+  if (!mozilla::IsPowerOfTwo(i) || lanes[i] < 16) {
     return Nothing();
   }
   MOZ_ASSERT(i > 0 && i <= 4);
