@@ -703,7 +703,6 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
 
   
 
-  nsPresContext* presContext = tableFrame->PresContext();
   if (aAttribute == nsGkAtoms::rowspacing_ ||
       aAttribute == nsGkAtoms::columnspacing_ ||
       aAttribute == nsGkAtoms::framespacing_) {
@@ -726,7 +725,7 @@ nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
   }
 
   
-  presContext->PresShell()->FrameNeedsReflow(
+  PresShell()->FrameNeedsReflow(
       this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
 
   return NS_OK;
@@ -1042,8 +1041,6 @@ nsresult nsMathMLmtrFrame::AttributeChanged(int32_t aNameSpaceID,
   
   
 
-  nsPresContext* presContext = PresContext();
-
   if (aAttribute != nsGkAtoms::rowalign_ &&
       aAttribute != nsGkAtoms::columnalign_) {
     return NS_OK;
@@ -1057,7 +1054,7 @@ nsresult nsMathMLmtrFrame::AttributeChanged(int32_t aNameSpaceID,
   ParseFrameAttribute(this, aAttribute, allowMultiValues);
 
   
-  presContext->PresShell()->FrameNeedsReflow(
+  PresShell()->FrameNeedsReflow(
       this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
 
   return NS_OK;

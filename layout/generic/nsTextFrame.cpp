@@ -4571,7 +4571,7 @@ nsresult nsTextFrame::CharacterDataChanged(
   
   nsIFrame* lastDirtiedFrameParent = nullptr;
 
-  mozilla::PresShell* presShell = PresContext()->GetPresShell();
+  mozilla::PresShell* presShell = PresShell();
   do {
     
     
