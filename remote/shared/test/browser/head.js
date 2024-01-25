@@ -15,8 +15,10 @@
 
 
 
-function addTab(browser, url) {
-  const tab = BrowserTestUtils.addTab(browser, url);
+
+
+function addTab(browser, url, options) {
+  const tab = BrowserTestUtils.addTab(browser, url, options);
   registerCleanupFunction(() => browser.removeTab(tab));
   return tab;
 }
