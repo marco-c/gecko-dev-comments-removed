@@ -88,7 +88,8 @@ impl<L, N, P, LP, C, Image, U, Integer, A, T, R, Transform>
 }
 
 
-#[derive(Clone, ToCss, ToComputedValue)]
+#[derive(Animate, Clone, ToCss, ToComputedValue, Debug, MallocSizeOf, PartialEq)]
+#[animation(no_bound(Image, Url))]
 pub enum GenericValueComponent<
     Length,
     Number,
@@ -114,8 +115,10 @@ pub enum GenericValueComponent<
     
     Color(Color),
     
+    #[animation(error)]
     Image(Image),
     
+    #[animation(error)]
     Url(Url),
     
     Integer(Integer),
@@ -128,18 +131,23 @@ pub enum GenericValueComponent<
     
     TransformFunction(TransformFunction),
     
+    #[animation(error)]
     CustomIdent(CustomIdent),
     
+    #[animation(error)]
     TransformList(ComponentList<Self>),
     
+    #[animation(error)]
     String(OwnedStr),
 }
 
 
-#[derive(Clone, ToComputedValue)]
+#[derive(Clone, ToComputedValue, Debug, MallocSizeOf, PartialEq)]
 pub struct ComponentList<Component> {
-    multiplier: Multiplier,
-    components: crate::OwnedSlice<Component>,
+    
+    pub multiplier: Multiplier,
+    
+    pub components: crate::OwnedSlice<Component>,
 }
 
 impl<Component: ToCss> ToCss for ComponentList<Component> {
@@ -169,13 +177,13 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 }
 
 
-#[derive(ToComputedValue, ToCss)]
+#[derive(ToComputedValue, ToCss, Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum Value<Component> {
     
     
     Component(Component),
     
-    Universal(Arc<ComputedPropertyValue>),
+    Universal(#[ignore_malloc_size_of = "Arc"] Arc<ComputedPropertyValue>),
     
     List(ComponentList<Component>),
 }
@@ -188,7 +196,6 @@ pub type ComputedValue = Value<ComputedValueComponent>;
 
 impl SpecifiedValue {
     
-    
     pub fn compute<'i, 't>(
         input: &mut CSSParser<'i, 't>,
         registration: &PropertyRegistration,
@@ -196,6 +203,26 @@ impl SpecifiedValue {
         context: &computed::Context,
         allow_computationally_dependent: AllowComputationallyDependent,
     ) -> Result<Arc<ComputedPropertyValue>, ()> {
+        let value = Self::get_computed_value(
+            input,
+            registration,
+            url_data,
+            context,
+            allow_computationally_dependent
+        );
+
+        Ok(value?.to_var(url_data))
+    }
+
+    
+    
+    pub fn get_computed_value<'i, 't>(
+        input: &mut CSSParser<'i, 't>,
+        registration: &PropertyRegistration,
+        url_data: &UrlExtraData,
+        context: &computed::Context,
+        allow_computationally_dependent: AllowComputationallyDependent,
+    ) -> Result<ComputedValue, ()> {
         let Ok(value) = Self::parse(
             input,
             &registration.syntax,
@@ -205,8 +232,7 @@ impl SpecifiedValue {
             return Err(());
         };
 
-        let value = value.to_computed_value(context);
-        Ok(value.to_var(url_data))
+        Ok(value.to_computed_value(context))
     }
 
     
