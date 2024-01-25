@@ -28,8 +28,12 @@ namespace webrtc {
 
 enum class LossBasedState {
   kIncreasing = 0,
-  kDecreasing = 1,
-  kDelayBasedEstimate = 2
+  
+  
+  
+  kIncreaseUsingPadding = 1,
+  kDecreasing = 2,
+  kDelayBasedEstimate = 3
 };
 
 class LossBasedBweV2 {
