@@ -281,4 +281,11 @@ uint32_t Connection::DecreaseTransactionNestingLevel(
   return mBase->DecreaseTransactionNestingLevel(aProofOfLock);
 }
 
+NS_IMETHODIMP
+Connection::BackupToFileAsync(nsIFile* aDestinationFile,
+                              mozIStorageCompletionCallback* aCallback) {
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 }  
