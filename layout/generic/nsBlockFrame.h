@@ -422,6 +422,8 @@ class nsBlockFrame : public nsContainerFrame {
 
   virtual ~nsBlockFrame();
 
+  void DidSetComputedStyle(ComputedStyle* aOldStyle) override;
+
 #ifdef DEBUG
   already_AddRefed<ComputedStyle> GetFirstLetterStyle(
       nsPresContext* aPresContext);
@@ -671,14 +673,6 @@ class nsBlockFrame : public nsContainerFrame {
     
     
     return HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
-  }
-
-  
-
-
-  bool IsDynamicBFC() const {
-    return StyleDisplay()->IsContainPaint() ||
-           StyleDisplay()->IsContainLayout();
   }
 
  protected:

@@ -2277,7 +2277,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     if (containmentDiff & (StyleContain::PAINT | StyleContain::LAYOUT)) {
       
       
-      hint |= nsChangeHint_UpdateContainingBlock | nsChangeHint_UpdateBFC;
+      hint |= nsChangeHint_UpdateContainingBlock;
     }
     
     hint |= nsChangeHint_AllReflowHints | nsChangeHint_RepaintFrame;

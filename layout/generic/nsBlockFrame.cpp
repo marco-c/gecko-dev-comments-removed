@@ -6409,6 +6409,38 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   *aFoundValidLine = FindValidLine();
 }
 
+static bool StyleEstablishesBFC(const ComputedStyle* style) {
+  return style->StyleDisplay()->IsContainPaint() ||
+         style->StyleDisplay()->IsContainLayout();
+}
+
+void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
+  nsContainerFrame::DidSetComputedStyle(aOldStyle);
+  if (!aOldStyle) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (HasAnyStateBits(NS_BLOCK_STATIC_BFC)) {
+    return;
+  }
+
+  bool isBFC = StyleEstablishesBFC(Style());
+  if (StyleEstablishesBFC(aOldStyle) != isBFC) {
+    if (MaybeHasFloats()) {
+      
+      
+      
+      RemoveStateBits(NS_BLOCK_DYNAMIC_BFC);
+      MarkSameFloatManagerLinesDirty(this);
+    }
+    AddOrRemoveStateBits(NS_BLOCK_DYNAMIC_BFC, isBFC);
+  }
+}
+
 void nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState) {
   nsIFrame* letterFrame = GetFirstLetter();
   if (!letterFrame) {
@@ -7760,7 +7792,7 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     AddStateBits(NS_BLOCK_STATIC_BFC);
   }
 
-  if (IsDynamicBFC()) {
+  if (StyleEstablishesBFC(Style())) {
     AddStateBits(NS_BLOCK_DYNAMIC_BFC);
   }
 
