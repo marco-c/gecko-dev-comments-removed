@@ -303,14 +303,6 @@
 #  endif
 #endif
 
-#ifndef Z_ARG 
-#  if defined(STDC) || defined(Z_HAVE_STDARG_H)
-#    define Z_ARG(args)  args
-#  else
-#    define Z_ARG(args)  ()
-#  endif
-#endif
-
 
 
 

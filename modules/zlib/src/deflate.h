@@ -27,6 +27,10 @@
 
 
 
+
+
+
+
 #define LENGTH_CODES 29
 
 
@@ -217,7 +221,14 @@ typedef struct internal_state {
     
 
 
+#ifdef LIT_MEM
+#   define LIT_BUFS 5
+    ushf *d_buf;          
+    uchf *l_buf;          
+#else
+#   define LIT_BUFS 4
     uchf *sym_buf;        
+#endif
 
     uInt  lit_bufsize;
     
@@ -318,6 +329,25 @@ void ZLIB_INTERNAL _tr_stored_block(deflate_state *s, charf *buf,
   extern const uch ZLIB_INTERNAL _dist_code[];
 #endif
 
+#ifdef LIT_MEM
+# define _tr_tally_lit(s, c, flush) \
+  { uch cc = (c); \
+    s->d_buf[s->sym_next] = 0; \
+    s->l_buf[s->sym_next++] = cc; \
+    s->dyn_ltree[cc].Freq++; \
+    flush = (s->sym_next == s->sym_end); \
+   }
+# define _tr_tally_dist(s, distance, length, flush) \
+  { uch len = (uch)(length); \
+    ush dist = (ush)(distance); \
+    s->d_buf[s->sym_next] = dist; \
+    s->l_buf[s->sym_next++] = len; \
+    dist--; \
+    s->dyn_ltree[_length_code[len]+LITERALS+1].Freq++; \
+    s->dyn_dtree[d_code(dist)].Freq++; \
+    flush = (s->sym_next == s->sym_end); \
+  }
+#else
 # define _tr_tally_lit(s, c, flush) \
   { uch cc = (c); \
     s->sym_buf[s->sym_next++] = 0; \
@@ -337,6 +367,7 @@ void ZLIB_INTERNAL _tr_stored_block(deflate_state *s, charf *buf,
     s->dyn_dtree[d_code(dist)].Freq++; \
     flush = (s->sym_next == s->sym_end); \
   }
+#endif
 #else
 # define _tr_tally_lit(s, c, flush) flush = _tr_tally(s, 0, c)
 # define _tr_tally_dist(s, distance, length, flush) \

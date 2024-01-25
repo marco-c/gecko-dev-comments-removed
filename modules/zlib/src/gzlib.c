@@ -563,20 +563,20 @@ void ZLIB_INTERNAL gz_error(gz_statep state, int err, const char *msg) {
 #endif
 }
 
-#ifndef INT_MAX
 
 
 
 
 unsigned ZLIB_INTERNAL gz_intmax(void) {
-    unsigned p, q;
-
-    p = 1;
+#ifdef INT_MAX
+    return INT_MAX;
+#else
+    unsigned p = 1, q;
     do {
         q = p;
         p <<= 1;
         p++;
     } while (p > q);
     return q >> 1;
-}
 #endif
+}
