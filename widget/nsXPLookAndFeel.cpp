@@ -620,7 +620,7 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
     case ColorID::Accentcolortext:
       return widget::sDefaultAccentText.ToABGR();
       COLOR(SpellCheckerUnderline, 0xff, 0x00, 0x00)
-      COLOR(TextSelectDisabledBackground, 0xaa, 0xaa, 0xaa)
+      COLOR(TextSelectDisabledBackground, 0xAA, 0xAA, 0xAA)
 
       
       COLOR(Activeborder, 0xB4, 0xB4, 0xB4)
@@ -633,15 +633,17 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       
       COLOR(Appworkspace, 0xAB, 0xAB, 0xAB)
       COLOR(Background, 0x00, 0x00, 0x00)
-      COLOR(Buttonhighlight, 0xFF, 0xFF, 0xFF)
-      COLOR(Buttonshadow, 0xA0, 0xA0, 0xA0)
+      
+      COLOR(Buttonhighlight, 0xE9, 0xE9, 0xED)
+      
+      COLOR(Buttonshadow, 0xE9, 0xE9, 0xED)
 
       
       
-      COLOR(Buttonface, 0xe9, 0xe9, 0xed)
-      COLORA(MozButtondisabledface, 0xe9, 0xe9, 0xed, 128)
+      COLOR(Buttonface, 0xE9, 0xE9, 0xED)
+      COLORA(MozButtondisabledface, 0xE9, 0xE9, 0xED, 128)
 
-      COLOR(MozCombobox, 0xe9, 0xe9, 0xed)
+      COLOR(MozCombobox, 0xE9, 0xE9, 0xED)
 
       COLOR(Buttontext, 0x00, 0x00, 0x00)
       COLOR(MozComboboxtext, 0x00, 0x00, 0x00)
@@ -1249,6 +1251,10 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     BIT_FOR(MozButtonactivetext) | BIT_FOR(MozButtondisabledface) |
     BIT_FOR(Buttonborder) |
     
+    
+    
+    BIT_FOR(Buttonhighlight) | BIT_FOR(Buttonshadow) |
+    
     BIT_FOR(MozCombobox) | BIT_FOR(MozComboboxtext) |
     BIT_FOR(Threedlightshadow) |
     
@@ -1259,6 +1265,7 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     BIT_FOR(Field) | BIT_FOR(Fieldtext) |
     
     BIT_FOR(MozDisabledfield) | BIT_FOR(Graytext) |
+    
     
     
     
