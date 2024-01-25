@@ -139,7 +139,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   
   
   
-  nsCOMPtr<nsISerialEventTarget> mIntermediatePreloadingHealerTaskQueue;
   nsCOMPtr<nsITimer> mIntermediatePreloadingHealerTimer;
 };
 
