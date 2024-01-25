@@ -1865,6 +1865,46 @@ bool js::str_charCodeAt(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool str_codePointAt(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "codePointAt");
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedString str(cx,
+                   ToStringForStringFunction(cx, "codePointAt", args.thisv()));
+  if (!str) {
+    return false;
+  }
+
+  
+  mozilla::Maybe<size_t> index{};
+  if (!ToStringIndex(cx, args.get(0), str->length(), &index)) {
+    return false;
+  }
+
+  
+  if (index.isNothing()) {
+    args.rval().setUndefined();
+    return true;
+  }
+  MOZ_ASSERT(*index < str->length());
+
+  
+  char32_t codePoint;
+  if (!str->getCodePoint(cx, *index, &codePoint)) {
+    return false;
+  }
+
+  
+  args.rval().setInt32(codePoint);
+  return true;
+}
+
+
+
+
+
+
 
 static const uint32_t sBMHCharSetSize = 256; 
 static const uint32_t sBMHPatLenMax = 255;   
@@ -3802,10 +3842,10 @@ static const JSFunctionSpec string_methods[] = {
     JS_INLINABLE_FN("toUpperCase", str_toUpperCase, 0, 0, StringToUpperCase),
     JS_INLINABLE_FN("charAt", str_charAt, 1, 0, StringCharAt),
     JS_INLINABLE_FN("charCodeAt", str_charCodeAt, 1, 0, StringCharCodeAt),
+    JS_FN("codePointAt", str_codePointAt, 1, 0),
     JS_SELF_HOSTED_FN("substring", "String_substring", 2, 0),
     JS_SELF_HOSTED_FN("padStart", "String_pad_start", 2, 0),
     JS_SELF_HOSTED_FN("padEnd", "String_pad_end", 2, 0),
-    JS_SELF_HOSTED_FN("codePointAt", "String_codePointAt", 1, 0),
     JS_INLINABLE_FN("includes", str_includes, 1, 0, StringIncludes),
     JS_INLINABLE_FN("indexOf", str_indexOf, 1, 0, StringIndexOf),
     JS_INLINABLE_FN("lastIndexOf", str_lastIndexOf, 1, 0, StringLastIndexOf),
