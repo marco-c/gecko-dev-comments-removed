@@ -1415,29 +1415,31 @@ class SelectTranslationsTestUtils {
   }
 }
 
+class TranslationsSettingsTestUtils {
+  
 
 
 
 
 
+  static async openAboutPreferencesTranslationsSettingsPane(settingsButton) {
+    const document = gBrowser.selectedBrowser.contentDocument;
 
-async function openAboutPreferencesTranslationsSettingsPane(settingsButton) {
-  const document = gBrowser.selectedBrowser.contentDocument;
+    const promise = BrowserTestUtils.waitForEvent(
+      document,
+      "paneshown",
+      false,
+      event => event.detail.category === "paneTranslations"
+    );
 
-  const promise = BrowserTestUtils.waitForEvent(
-    document,
-    "paneshown",
-    false,
-    event => event.detail.category === "paneTranslations"
-  );
+    click(settingsButton, "Click settings button");
+    await promise;
 
-  click(settingsButton, "Click settings button");
-  await promise;
+    const elements = {
+      backButton: document.getElementById("translations-settings-back-button"),
+      header: document.getElementById("translations-settings-header"),
+    };
 
-  const elements = {
-    backButton: document.getElementById("translations-settings-back-button"),
-    header: document.getElementById("translations-settings-header"),
-  };
-
-  return elements;
+    return elements;
+  }
 }
