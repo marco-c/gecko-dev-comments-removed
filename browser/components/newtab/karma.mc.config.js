@@ -103,7 +103,7 @@ module.exports = function (config) {
             
 
 
-            "lib/TelemetryFeed.jsm": {
+            "lib/TelemetryFeed.sys.mjs": {
               statements: 10,
               lines: 10,
               functions: 9,
