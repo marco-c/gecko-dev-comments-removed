@@ -609,6 +609,11 @@ RefPtr<mozilla::MozPromise<bool, HRESULT, true>> nsFilePicker::ShowFilePicker(
       });
 }
 
+void nsFilePicker::ClearFiles() {
+  mUnicodeFile.Truncate();
+  mFiles.Clear();
+}
+
 
 
 
@@ -630,8 +635,7 @@ nsresult nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
   }
 
   
-  mUnicodeFile.Truncate();
-  mFiles.Clear();
+  ClearFiles();
 
   auto promise = mMode == modeGetFolder ? ShowFolderPicker(initialDir)
                                         : ShowFilePicker(initialDir);
