@@ -627,7 +627,8 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Inactiveborder, 0xB4, 0xB4, 0xB4)
       
       COLOR(Activecaption, 0xFF, 0xFF, 0xFF)
-      COLOR(Inactivecaption, 0xF0, 0xF0, 0xF4)
+      
+      COLOR(Inactivecaption, 0xFF, 0xFF, 0xFF)
       
       COLOR(Captiontext, 0x00, 0x00, 0x00)
       
@@ -1284,8 +1285,9 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     
     
     
+    
     BIT_FOR(Activecaption) | BIT_FOR(Appworkspace) | BIT_FOR(Background) |
-    BIT_FOR(Menu) | BIT_FOR(Scrollbar) |
+    BIT_FOR(Inactivecaption) | BIT_FOR(Menu) | BIT_FOR(Scrollbar) |
     
     
     
