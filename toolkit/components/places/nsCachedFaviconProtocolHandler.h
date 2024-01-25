@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAnnoProtocolHandler_h___
-#define nsAnnoProtocolHandler_h___
+#ifndef nsCachedFaviconProtocolHandler_h___
+#define nsCachedFaviconProtocolHandler_h___
 
 #include "nsCOMPtr.h"
 #include "nsIProtocolHandler.h"
@@ -14,26 +14,25 @@
 #include "mozilla/Attributes.h"
 
 
-#define NS_ANNOPROTOCOLHANDLER_CID                   \
+#define NS_CACHEDFAVICONPROTOCOLHANDLER_CID          \
   {                                                  \
     0xe8b8bdb7, 0xc96c, 0x4d82, {                    \
       0x9c, 0x6f, 0x2b, 0x3c, 0x58, 0x5e, 0xc7, 0xea \
     }                                                \
   }
 
-class nsAnnoProtocolHandler final : public nsIProtocolHandler,
-                                    public nsSupportsWeakReference {
+class nsCachedFaviconProtocolHandler final : public nsIProtocolHandler,
+                                             public nsSupportsWeakReference {
  public:
-  nsAnnoProtocolHandler() = default;
+  nsCachedFaviconProtocolHandler() = default;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPROTOCOLHANDLER
 
  private:
-  ~nsAnnoProtocolHandler() = default;
+  ~nsCachedFaviconProtocolHandler() = default;
 
- protected:
-  nsresult ParseAnnoURI(nsIURI* aURI, nsIURI** aResultURI, nsCString& aName);
+  nsresult ParseCachedFaviconURI(nsIURI* aURI, nsIURI** aResultURI);
 
   
 
@@ -49,7 +48,7 @@ class nsAnnoProtocolHandler final : public nsIProtocolHandler,
 
 
 
-  nsresult NewFaviconChannel(nsIURI* aURI, nsIURI* aAnnotationURI,
+  nsresult NewFaviconChannel(nsIURI* aURI, nsIURI* aCachedFaviconURI,
                              nsILoadInfo* aLoadInfo, nsIChannel** _channel);
 };
 
