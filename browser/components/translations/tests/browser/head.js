@@ -40,6 +40,169 @@ class FullPageTranslationsTestUtils {
 
 
 
+
+  static async #assertCheckboxState(
+    dataL10nId,
+    { langTag = null, checked = true, disabled = false }
+  ) {
+    const menuItems = getAllByL10nId(dataL10nId);
+    for (const menuItem of menuItems) {
+      if (langTag) {
+        const {
+          args: { language },
+        } = document.l10n.getAttributes(menuItem);
+        is(
+          language,
+          getIntlDisplayName(langTag),
+          `Should match expected language display name for ${dataL10nId}`
+        );
+      }
+      is(
+        menuItem.disabled,
+        disabled,
+        `Should match expected disabled state for ${dataL10nId}`
+      );
+      await waitForCondition(
+        () => menuItem.getAttribute("checked") === (checked ? "true" : "false"),
+        "Waiting for checkbox state"
+      );
+      is(
+        menuItem.getAttribute("checked"),
+        checked ? "true" : "false",
+        `Should match expected checkbox state for ${dataL10nId}`
+      );
+    }
+  }
+
+  
+
+
+
+
+  static async assertIsAlwaysOfferTranslationsEnabled(checked) {
+    info(
+      `Checking that always-offer-translations is ${
+        checked ? "enabled" : "disabled"
+      }`
+    );
+    await FullPageTranslationsTestUtils.#assertCheckboxState(
+      "translations-panel-settings-always-offer-translation",
+      { checked }
+    );
+  }
+
+  /**
+   * Asserts that the always-translate-language checkbox matches the expected checked state.
+   *
+   * @param {string} langTag - A BCP-47 language tag
+   * @param {object} expectations
+   * @param {boolean} expectations.checked - Whether the checkbox is expected to be checked.
+   * @param {boolean} expectations.disabled - Whether the menuitem is expected to be disabled.
+   */
+  static async assertIsAlwaysTranslateLanguage(
+    langTag,
+    { checked = true, disabled = false }
+  ) {
+    info(
+      `Checking that always-translate is ${
+        checked ? "enabled" : "disabled"
+      } for "${langTag}"`
+    );
+    await FullPageTranslationsTestUtils.#assertCheckboxState(
+      "translations-panel-settings-always-translate-language",
+      { langTag, checked, disabled }
+    );
+  }
+
+  /**
+   * Asserts that the never-translate-language checkbox matches the expected checked state.
+   *
+   * @param {string} langTag - A BCP-47 language tag
+   * @param {object} expectations
+   * @param {boolean} expectations.checked - Whether the checkbox is expected to be checked.
+   * @param {boolean} expectations.disabled - Whether the menuitem is expected to be disabled.
+   */
+  static async assertIsNeverTranslateLanguage(
+    langTag,
+    { checked = true, disabled = false }
+  ) {
+    info(
+      `Checking that never-translate is ${
+        checked ? "enabled" : "disabled"
+      } for "${langTag}"`
+    );
+    await FullPageTranslationsTestUtils.#assertCheckboxState(
+      "translations-panel-settings-never-translate-language",
+      { langTag, checked, disabled }
+    );
+  }
+
+  /**
+   * Asserts that the never-translate-site checkbox matches the expected checked state.
+   *
+   * @param {string} url - The url of a website
+   * @param {object} expectations
+   * @param {boolean} expectations.checked - Whether the checkbox is expected to be checked.
+   * @param {boolean} expectations.disabled - Whether the menuitem is expected to be disabled.
+   */
+  static async assertIsNeverTranslateSite(
+    url,
+    { checked = true, disabled = false }
+  ) {
+    info(
+      `Checking that never-translate is ${
+        checked ? "enabled" : "disabled"
+      } for "${url}"`
+    );
+    await FullPageTranslationsTestUtils.#assertCheckboxState(
+      "translations-panel-settings-never-translate-site",
+      { checked, disabled }
+    );
+  }
+
+  /**
+   * Asserts that the proper language tags are shown on the translations button.
+   *
+   * @param {string} fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} toLanguage - The BCP-47 language tag being translated into.
+   */
+  static async #assertLangTagIsShownOnTranslationsButton(
+    fromLanguage,
+    toLanguage
+  ) {
+    info(
+      `Ensuring that the translations button displays the language tag "${toLanguage}"`
+    );
+    const { button, locale } =
+      await FullPageTranslationsTestUtils.assertTranslationsButton(
+        { button: true, circleArrows: false, locale: true, icon: true },
+        "The icon presents the locale."
+      );
+    is(
+      locale.innerText,
+      toLanguage,
+      `The expected language tag "${toLanguage}" is shown.`
+    );
+    is(
+      button.getAttribute("data-l10n-id"),
+      "urlbar-translations-button-translated"
+    );
+    const fromLangDisplay = getIntlDisplayName(fromLanguage);
+    const toLangDisplay = getIntlDisplayName(toLanguage);
+    is(
+      button.getAttribute("data-l10n-args"),
+      `{"fromLanguage":"${fromLangDisplay}","toLanguage":"${toLangDisplay}"}`
+    );
+  }
+  /**
+   * Asserts that the Spanish test page has been translated by checking
+   * that the H1 element has been modified from its original form.
+   *
+   * @param {string} fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} runInPage - Allows running a closure in the content page.
+   * @param {string} message - An optional message to log to info.
+   */
   static async assertPageIsTranslated(
     fromLanguage,
     toLanguage,
@@ -59,16 +222,19 @@ class FullPageTranslationsTestUtils {
       );
     };
     await runInPage(callback, { fromLang: fromLanguage, toLang: toLanguage });
-    await assertLangTagIsShownOnTranslationsButton(fromLanguage, toLanguage);
+    await FullPageTranslationsTestUtils.#assertLangTagIsShownOnTranslationsButton(
+      fromLanguage,
+      toLanguage
+    );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Asserts that the Spanish test page is untranslated by checking
+   * that the H1 element is still in its original Spanish form.
+   *
+   * @param {Function} runInPage - Allows running a closure in the content page.
+   * @param {string} message - An optional message to log to info.
+   */
   static async assertPageIsUntranslated(runInPage, message = null) {
     if (message) {
       info(message);
@@ -84,11 +250,11 @@ class FullPageTranslationsTestUtils {
     });
   }
 
-  
-
-
-
-
+  /**
+   * Asserts that the selected from-language matches the provided language tag.
+   *
+   * @param {string} langTag - A BCP-47 language tag.
+   */
   static assertSelectedFromLanguage(langTag) {
     info(`Checking that the selected from-language matches ${langTag}`);
     const { fromMenuList } = TranslationsPanel.elements;
@@ -99,11 +265,11 @@ class FullPageTranslationsTestUtils {
     );
   }
 
-  
-
-
-
-
+  /**
+   * Asserts that the selected to-language matches the provided language tag.
+   *
+   * @param {string} langTag - A BCP-47 language tag.
+   */
   static assertSelectedToLanguage(langTag) {
     info(`Checking that the selected to-language matches ${langTag}`);
     const { toMenuList } = TranslationsPanel.elements;
@@ -114,13 +280,13 @@ class FullPageTranslationsTestUtils {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Assert some property about the translations button.
+   *
+   * @param {Record<string, boolean>} visibleAssertions
+   * @param {string} message The message for the assertion.
+   * @returns {HTMLElement}
+   */
   static async assertTranslationsButton(visibleAssertions, message) {
     const elements = {
       button: document.getElementById("translations-button"),
@@ -138,7 +304,7 @@ class FullPageTranslationsTestUtils {
     }
 
     try {
-      
+      // Test that the visibilities match.
       await waitForCondition(() => {
         for (const [name, visible] of Object.entries(visibleAssertions)) {
           if (elements[name].hidden === visible) {
@@ -148,7 +314,7 @@ class FullPageTranslationsTestUtils {
         return true;
       }, message);
     } catch (error) {
-      
+      // On a mismatch, report it.
       for (const [name, expected] of Object.entries(visibleAssertions)) {
         is(!elements[name].hidden, expected, `Visibility for "${name}"`);
       }
@@ -159,11 +325,11 @@ class FullPageTranslationsTestUtils {
     return elements;
   }
 
-  
-
-
-
-
+  /**
+   * Simulates the effect of clicking the always-offer-translations menuitem.
+   * Requires that the settings menu of the translations panel is open,
+   * otherwise the test will fail.
+   */
   static async clickAlwaysOfferTranslations() {
     logAction();
     await FullPageTranslationsTestUtils.#clickSettingsMenuItemByL10nId(
@@ -348,10 +514,10 @@ class FullPageTranslationsTestUtils {
     );
   }
 
-  
-
-
-
+  /**
+   * Opens the translations panel settings menu.
+   * Requires that the translations panel is already open.
+   */
   static async openTranslationsSettingsMenu() {
     logAction();
     const gearIcons = getAllByL10nId("translations-panel-settings-button");
@@ -372,11 +538,11 @@ class FullPageTranslationsTestUtils {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Switches the selected from-language to the provided language tag.
+   *
+   * @param {string} langTag - A BCP-47 language tag.
+   */
   static switchSelectedFromLanguage(langTag) {
     logAction(langTag);
     const { fromMenuList } = TranslationsPanel.elements;
@@ -384,11 +550,11 @@ class FullPageTranslationsTestUtils {
     fromMenuList.dispatchEvent(new Event("command"));
   }
 
-  
-
-
-
-
+  /**
+   * Switches the selected to-language to the provided language tag.
+   *
+   * @param {string} langTag - A BCP-47 language tag.
+   */
   static switchSelectedToLanguage(langTag) {
     logAction(langTag);
     const { toMenuList } = TranslationsPanel.elements;
@@ -397,17 +563,17 @@ class FullPageTranslationsTestUtils {
   }
 }
 
-
-
-
-
+/**
+ * Provide a uniform way to log actions. This abuses the Error stack to get the callers
+ * of the action. This should help in test debugging.
+ */
 function logAction(...params) {
   const error = new Error();
   const stackLines = error.stack.split("\n");
   const actionName = stackLines[1]?.split("@")[0] ?? "";
   const taskFileLocation = stackLines[2]?.split("@")[1] ?? "";
   if (taskFileLocation.includes("head.js")) {
-    
+    // Only log actions that were done at the test level.
     return;
   }
 
@@ -420,173 +586,9 @@ function logAction(...params) {
   );
 }
 
-
-
-
-
-
-async function assertIsAlwaysOfferTranslationsEnabled(checked) {
-  info(
-    `Checking that always-offer-translations is ${
-      checked ? "enabled" : "disabled"
-    }`
-  );
-  await assertCheckboxState(
-    "translations-panel-settings-always-offer-translation",
-    { checked }
-  );
-}
-
-
-
-
-
-
-
-
-
-async function assertIsAlwaysTranslateLanguage(
-  langTag,
-  { checked = true, disabled = false }
-) {
-  info(
-    `Checking that always-translate is ${
-      checked ? "enabled" : "disabled"
-    } for "${langTag}"`
-  );
-  await assertCheckboxState(
-    "translations-panel-settings-always-translate-language",
-    { langTag, checked, disabled }
-  );
-}
-
-
-
-
-
-
-
-
-
-async function assertIsNeverTranslateLanguage(
-  langTag,
-  { checked = true, disabled = false }
-) {
-  info(
-    `Checking that never-translate is ${
-      checked ? "enabled" : "disabled"
-    } for "${langTag}"`
-  );
-  await assertCheckboxState(
-    "translations-panel-settings-never-translate-language",
-    { langTag, checked, disabled }
-  );
-}
-
-
-
-
-
-
-
-
-
-async function assertIsNeverTranslateSite(
-  url,
-  { checked = true, disabled = false }
-) {
-  info(
-    `Checking that never-translate is ${
-      checked ? "enabled" : "disabled"
-    } for "${url}"`
-  );
-  await assertCheckboxState(
-    "translations-panel-settings-never-translate-site",
-    { checked, disabled }
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-async function assertCheckboxState(
-  dataL10nId,
-  { langTag = null, checked = true, disabled = false }
-) {
-  const menuItems = getAllByL10nId(dataL10nId);
-  for (const menuItem of menuItems) {
-    if (langTag) {
-      const {
-        args: { language },
-      } = document.l10n.getAttributes(menuItem);
-      is(
-        language,
-        getIntlDisplayName(langTag),
-        `Should match expected language display name for ${dataL10nId}`
-      );
-    }
-    is(
-      menuItem.disabled,
-      disabled,
-      `Should match expected disabled state for ${dataL10nId}`
-    );
-    await waitForCondition(
-      () => menuItem.getAttribute("checked") === (checked ? "true" : "false"),
-      "Waiting for checkbox state"
-    );
-    is(
-      menuItem.getAttribute("checked"),
-      checked ? "true" : "false",
-      `Should match expected checkbox state for ${dataL10nId}`
-    );
-  }
-}
-
-
-
-
-
-
-
-async function assertLangTagIsShownOnTranslationsButton(
-  fromLanguage,
-  toLanguage
-) {
-  info(
-    `Ensuring that the translations button displays the language tag "${toLanguage}"`
-  );
-  const { button, locale } =
-    await FullPageTranslationsTestUtils.assertTranslationsButton(
-      { button: true, circleArrows: false, locale: true, icon: true },
-      "The icon presents the locale."
-    );
-  is(
-    locale.innerText,
-    toLanguage,
-    `The expected language tag "${toLanguage}" is shown.`
-  );
-  is(
-    button.getAttribute("data-l10n-id"),
-    "urlbar-translations-button-translated"
-  );
-  const fromLangDisplay = getIntlDisplayName(fromLanguage);
-  const toLangDisplay = getIntlDisplayName(toLanguage);
-  is(
-    button.getAttribute("data-l10n-args"),
-    `{"fromLanguage":"${fromLangDisplay}","toLanguage":"${toLangDisplay}"}`
-  );
-}
-
-
-
-
+/**
+ * Simulates clicking the cancel button.
+ */
 async function clickCancelButton() {
   logAction();
   const { cancelButton } = TranslationsPanel.elements;
@@ -596,9 +598,9 @@ async function clickCancelButton() {
   });
 }
 
-
-
-
+/**
+ * Simulates clicking the restore-page button.
+ */
 async function clickRestoreButton() {
   logAction();
   const { restoreButton } = TranslationsPanel.elements;
@@ -608,9 +610,9 @@ async function clickRestoreButton() {
   });
 }
 
-
-
-
+/**
+ * Simulates clicking the dismiss-error button.
+ */
 async function clickDismissErrorButton() {
   logAction();
   const { dismissErrorButton } = TranslationsPanel.elements;
@@ -620,18 +622,18 @@ async function clickDismissErrorButton() {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Simulates clicking the translate button.
+ *
+ * @param {object} config
+ * @param {Function} config.downloadHandler
+ *  - The function handle expected downloads, resolveDownloads() or rejectDownloads()
+ *    Leave as null to test more granularly, such as testing opening the loading view,
+ *    or allowing for the automatic downloading of files.
+ * @param {boolean} config.pivotTranslation
+ *  - True if the expected translation is a pivot translation, otherwise false.
+ *    Affects the number of expected downloads.
+ */
 async function clickTranslateButton({
   downloadHandler = null,
   pivotTranslation = false,
@@ -652,14 +654,14 @@ async function clickTranslateButton({
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Simulates clicking the change-source-language button.
+ *
+ * @param {object} config
+ * @param {boolean} config.firstShow
+ *  - True if the first-show view should be expected
+ *    False if the default view should be expected
+ */
 async function clickChangeSourceLanguageButton({ firstShow = false } = {}) {
   logAction();
   const { changeSourceLanguageButton } = TranslationsPanel.elements;
@@ -676,16 +678,16 @@ async function clickChangeSourceLanguageButton({ firstShow = false } = {}) {
   );
 }
 
-
-
-
-
-
-
-
+/**
+ * Asserts that for each provided expectation, the visible state of the corresponding
+ * element in TranslationsPanel.elements both exists and matches the visibility expectation.
+ *
+ * @param {object} expectations
+ *   A list of expectations for the visibility of any subset of TranslationsPanel.elements
+ */
 function assertPanelElementVisibility(expectations = {}) {
-  
-  
+  // Assume nothing is visible by default, and overwrite them
+  // with any specific expectations provided in the argument.
   const finalExpectations = {
     cancelButton: false,
     changeSourceLanguageButton: false,
@@ -720,11 +722,11 @@ function assertPanelElementVisibility(expectations = {}) {
   }
 }
 
-
-
-
-
-
+/**
+ * Asserts that the mainViewId of the panel matches the given string.
+ *
+ * @param {string} expectedId
+ */
 function assertPanelMainViewId(expectedId) {
   const mainViewId =
     TranslationsPanel.elements.multiview.getAttribute("mainViewId");
@@ -735,9 +737,9 @@ function assertPanelMainViewId(expectedId) {
   );
 }
 
-
-
-
+/**
+ * A collection of element visibility expectations for the default panel view.
+ */
 const defaultViewVisibilityExpectations = {
   cancelButton: true,
   fromMenuList: true,
@@ -749,11 +751,11 @@ const defaultViewVisibilityExpectations = {
   translateButton: true,
 };
 
-
-
-
-
-
+/**
+ * Asserts that the TranslationsPanel header has the expected l10nId.
+ *
+ * @param {string} l10nId - The expected data-l10n-id of the header.
+ */
 function assertDefaultHeaderL10nId(l10nId) {
   const { header } = TranslationsPanel.elements;
   is(
@@ -763,9 +765,9 @@ function assertDefaultHeaderL10nId(l10nId) {
   );
 }
 
-
-
-
+/**
+ * Asserts that panel element visibility matches the default panel view.
+ */
 function assertPanelDefaultView() {
   info("Checking that the panel shows the default view");
   assertPanelMainViewId("translations-panel-view-default");
@@ -775,9 +777,9 @@ function assertPanelDefaultView() {
   assertDefaultHeaderL10nId("translations-panel-header");
 }
 
-
-
-
+/**
+ * Asserts that the panel element visibility matches the panel loading view.
+ */
 function assertPanelLoadingView() {
   info("Checking that the panel shows the loading view");
   assertPanelDefaultView();
@@ -788,9 +790,9 @@ function assertPanelLoadingView() {
   ok(loadingButton.disabled, "The loading button is disabled");
 }
 
-
-
-
+/**
+ * Asserts that panel element visibility matches the panel error view.
+ */
 function assertPanelErrorView() {
   info("Checking that the panel shows the error view");
   assertPanelMainViewId("translations-panel-view-default");
@@ -801,9 +803,9 @@ function assertPanelErrorView() {
   assertDefaultHeaderL10nId("translations-panel-header");
 }
 
-
-
-
+/**
+ * Asserts that panel element visibility matches the panel first-show view.
+ */
 function assertPanelFirstShowView() {
   info("Checking that the panel shows the first-show view");
   assertPanelMainViewId("translations-panel-view-default");
@@ -815,9 +817,9 @@ function assertPanelFirstShowView() {
   assertDefaultHeaderL10nId("translations-panel-intro-header");
 }
 
-
-
-
+/**
+ * Asserts that panel element visibility matches the panel first-show error view.
+ */
 function assertPanelFirstShowErrorView() {
   info("Checking that the panel shows the first-show error view");
   assertPanelMainViewId("translations-panel-view-default");
@@ -830,9 +832,9 @@ function assertPanelFirstShowErrorView() {
   assertDefaultHeaderL10nId("translations-panel-intro-header");
 }
 
-
-
-
+/**
+ * Asserts that panel element visibility matches the panel revisit view.
+ */
 function assertPanelRevisitView() {
   info("Checking that the panel shows the revisit view");
   assertPanelMainViewId("translations-panel-view-default");
@@ -847,9 +849,9 @@ function assertPanelRevisitView() {
   assertDefaultHeaderL10nId("translations-panel-revisit-header");
 }
 
-
-
-
+/**
+ * Asserts that panel element visibility matches the panel unsupported language view.
+ */
 function assertPanelUnsupportedLanguageView() {
   info("Checking that the panel shows the unsupported-language view");
   assertPanelMainViewId("translations-panel-view-unsupported-language");
@@ -862,24 +864,24 @@ function assertPanelUnsupportedLanguageView() {
   });
 }
 
-
-
-
+/**
+ * Navigate to a URL and indicate a message as to why.
+ */
 async function navigate(
   message,
   { url, onOpenPanel = null, downloadHandler = null, pivotTranslation = false }
 ) {
   logAction();
-  
-  
-  
-  
+  // When the translations panel is open from the app menu,
+  // it doesn't close on navigate the way that it does when it's
+  // open from the translations button, so ensure that we always
+  // close it when we navigate to a new page.
   await closeTranslationsPanelIfOpen();
 
   info(message);
 
-  
-  
+  // Load a blank page first to ensure that tests don't hang.
+  // I don't know why this is needed, but it appears to be necessary.
   BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, BLANK_PAGE);
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
@@ -908,10 +910,10 @@ async function navigate(
   }
 }
 
-
-
-
-
+/**
+ * Click the reader-mode button if the reader-mode button is available.
+ * Fails if the reader-mode button is hidden.
+ */
 async function toggleReaderMode() {
   logAction();
   const readerButton = document.getElementById("reader-mode-button");
@@ -932,17 +934,17 @@ async function toggleReaderMode() {
   await readyPromise;
 }
 
-
-
-
-
-
+/**
+ * Opens a new tab in the foreground.
+ *
+ * @param {string} url
+ */
 async function addTab(url) {
   logAction(url);
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     url,
-    true 
+    true // Wait for laod
   );
   return {
     tab,
@@ -952,24 +954,24 @@ async function addTab(url) {
   };
 }
 
-
-
-
-
-
-
+/**
+ * Switches to a given tab.
+ *
+ * @param {object} tab - The tab to switch to
+ * @param {string} name
+ */
 async function switchTab(tab, name) {
   logAction("tab", name);
   gBrowser.selectedTab = tab;
   await new Promise(resolve => setTimeout(resolve, 0));
 }
 
-
-
-
-
-
-
+/**
+ * Simulates clicking an element with the mouse.
+ *
+ * @param {element} element - The element to click.
+ * @param {string} [message] - A message to log to info.
+ */
 function click(element, message) {
   logAction(message);
   return new Promise(resolve => {
@@ -992,12 +994,12 @@ function click(element, message) {
   });
 }
 
-
-
-
-
-
-
+/**
+ * Returns whether an element's computed style is visible.
+ *
+ * @param {Element} element - The element to check.
+ * @returns {boolean}
+ */
 function isVisible(element) {
   if (element.offsetParent === null) {
     return false;
@@ -1007,15 +1009,15 @@ function isVisible(element) {
   return visibility === "visible" && display !== "none";
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Asserts the visibility state of an element retrieved by one of the three available options.
+ *
+ * @param {boolean} expected - The expected visibility state (true for visible, false for invisible).
+ * @param {object} options - The element retrieval options
+ * @param {Element} options.element - The HTML element to check visibility for.
+ * @param {string} options.id - The Id of the element to retrieve and check visibility for.
+ * @throws Throws if the visibility does not match the expected visibility state.
+ */
 function assertIsVisible(expected, { element, id }) {
   if (id && element) {
     throw new Error(
@@ -1048,23 +1050,23 @@ function assertIsVisible(expected, { element, id }) {
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Opens the context menu at a specified element on the page, based on the provided options.
+ *
+ * @param {Function} runInPage - A content-exposed function to run within the context of the page.
+ * @param {object} options - Options for opening the context menu.
+ * @param {boolean} options.selectFirstParagraph - Selects the first paragraph before opening the context menu.
+ * @param {boolean} options.selectSpanishParagraph - Selects the Spanish paragraph before opening the context menu.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {boolean} options.openAtFirstParagraph - Opens the context menu at the first paragraph in the test page.
+ * @param {boolean} options.openAtSpanishParagraph - Opens the context menu at the Spanish paragraph in the test page.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {boolean} options.openAtEnglishHyperlink - Opens the context menu at the English hyperlink in the test page.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {boolean} options.openAtSpanishHyperlink - Opens the context menu at the Spanish hyperlink in the test page.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @throws Throws an error if no valid option was provided for opening the menu.
+ */
 async function openContextMenu(
   runInPage,
   {
@@ -1135,27 +1137,27 @@ async function openContextMenu(
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Opens the context menu then asserts properties of the translate-selection item in the context menu.
+ *
+ * @param {Function} runInPage - A content-exposed function to run within the context of the page.
+ * @param {object} options - Options for how to open the context menu and what properties to assert about the translate-selection item.
+ * @param {boolean} options.selectFirstParagraph - Selects the first paragraph before opening the context menu.
+ * @param {boolean} options.selectSpanishParagraph - Selects the Spanish paragraph before opening the context menu.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {boolean} options.expectMenuItemIsVisible - Whether the translate-selection item is expected to be visible.
+ *                                                  Does not assert visibility if left undefined.
+ * @param {string} options.expectedTargetLanguage - The target language for translation.
+ * @param {boolean} options.openAtFirstParagraph - Opens the context menu at the first paragraph in the test page.
+ * @param {boolean} options.openAtSpanishParagraph - Opens the context menu at the Spanish paragraph in the test page.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {boolean} options.openAtEnglishHyperlink - Opens the context menu at the English hyperlink in the test page.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {boolean} options.openAtSpanishHyperlink - Opens the context menu at the Spanish hyperlink in the test page.
+ *                                                   This is only available in SPANISH_TEST_PAGE.
+ * @param {string} [message] - A message to log to info.
+ * @throws Throws an error if the properties of the translate-selection item do not match the expected options.
+ */
 async function assertContextMenuTranslateSelectionItem(
   runInPage,
   {
@@ -1190,7 +1192,7 @@ async function assertContextMenuTranslateSelectionItem(
 
   const menuItem = maybeGetById(
     "context-translate-selection",
-     false
+    /* ensureIsVisible */ false
   );
 
   if (expectMenuItemIsVisible !== undefined) {
@@ -1199,7 +1201,7 @@ async function assertContextMenuTranslateSelectionItem(
 
   if (expectMenuItemIsVisible === true) {
     if (expectedTargetLanguage) {
-      
+      // Target language expected, check for the data-l10n-id with a `{$language}` argument.
       const expectedL10nId =
         selectFirstParagraph === true || selectSpanishParagraph === true
           ? "main-context-menu-translate-selection-to-language"
@@ -1222,7 +1224,7 @@ async function assertContextMenuTranslateSelectionItem(
         `Expected the translate-selection context menu item to have the target language '${expectedTargetLanguage}'.`
       );
     } else {
-      
+      // No target language expected, check for the data-l10n-id that has no `{$language}` argument.
       const expectedL10nId =
         selectFirstParagraph === true || selectSpanishParagraph === true
           ? "main-context-menu-translate-selection"
@@ -1243,14 +1245,14 @@ async function assertContextMenuTranslateSelectionItem(
   await closeContextMenuIfOpen();
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Get an element by its l10n id, as this is a user-visible way to find an element.
+ * The `l10nId` represents the text that a user would actually see.
+ *
+ * @param {string} l10nId
+ * @param {Document} doc
+ * @returns {Element}
+ */
 function getByL10nId(l10nId, doc = document) {
   const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
   if (elements.length === 0) {
@@ -1264,13 +1266,13 @@ function getByL10nId(l10nId, doc = document) {
   throw new Error("The element is not visible in the DOM: " + l10nId);
 }
 
-
-
-
-
-
-
-
+/**
+ * Get all elements that match the l10n id.
+ *
+ * @param {string} l10nId
+ * @param {Document} doc
+ * @returns {Element}
+ */
 function getAllByL10nId(l10nId, doc = document) {
   const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
   console.log(doc);
@@ -1280,31 +1282,31 @@ function getAllByL10nId(l10nId, doc = document) {
   return elements;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Retrieves an element by its Id.
+ *
+ * @param {string} id
+ * @param {Document} [doc]
+ * @returns {Element}
+ * @throws Throws if the element is not visible in the DOM.
+ */
 function getById(id, doc = document) {
-  const element = maybeGetById(id,  true, doc);
+  const element = maybeGetById(id, /* ensureIsVisible */ true, doc);
   if (!element) {
     throw new Error("The element is not visible in the DOM: #" + id);
   }
   return element;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Attempts to retrieve an element by its Id.
+ *
+ * @param {string} id - The Id of the element to retrieve.
+ * @param {boolean} [ensureIsVisible=true] - If set to true, the function will return null when the element is not visible.
+ * @param {Document} [doc=document] - The document from which to retrieve the element.
+ * @returns {Element | null} - The retrieved element.
+ * @throws Throws if no element was found by the given Id.
+ */
 function maybeGetById(id, ensureIsVisible = true, doc = document) {
   const element = doc.getElementById(id);
   if (!element) {
@@ -1322,12 +1324,12 @@ function maybeGetById(id, ensureIsVisible = true, doc = document) {
   return null;
 }
 
-
-
-
-
-
-
+/**
+ * A non-throwing version of `getByL10nId`.
+ *
+ * @param {string} l10nId
+ * @returns {Element | null}
+ */
 function maybeGetByL10nId(l10nId, doc = document) {
   const selector = `[data-l10n-id="${l10nId}"]`;
   const elements = doc.querySelectorAll(selector);
