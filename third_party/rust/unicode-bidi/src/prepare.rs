@@ -59,17 +59,7 @@ pub fn isolating_run_sequences(
         assert!(!stack.is_empty());
 
         let start_class = original_classes[run.start];
-        
-        
-        
-        
-        let end_class = original_classes[run.start..run.end]
-            .iter()
-            .copied()
-            .rev()
-            .filter(not_removed_by_x9)
-            .next()
-            .unwrap_or(start_class);
+        let end_class = original_classes[run.end - 1];
 
         let mut sequence = if start_class == PDI && stack.len() > 1 {
             
@@ -176,6 +166,15 @@ pub fn isolating_run_sequences(
 }
 
 impl IsolatingRunSequence {
+    
+    pub(crate) fn text_range(&self) -> Range<usize> {
+        if let (Some(start), Some(end)) = (self.runs.first(), self.runs.last()) {
+            start.start..end.end
+        } else {
+            return 0..0;
+        }
+    }
+
     
     
     

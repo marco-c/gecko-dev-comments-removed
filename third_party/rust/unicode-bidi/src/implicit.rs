@@ -14,15 +14,15 @@ use core::cmp::max;
 
 use super::char_data::BidiClass::{self, *};
 use super::level::Level;
-use super::prepare::{not_removed_by_x9, IsolatingRunSequence};
-use super::{BidiDataSource, TextSource};
+use super::prepare::{not_removed_by_x9, removed_by_x9, IsolatingRunSequence};
+use super::BidiDataSource;
 
 
 
 
 #[cfg_attr(feature = "flame_it", flamer::flame)]
-pub fn resolve_weak<'a, T: TextSource<'a> + ?Sized>(
-    text: &'a T,
+pub fn resolve_weak(
+    text: &str,
     sequence: &IsolatingRunSequence,
     processing_classes: &mut [BidiClass],
 ) {
@@ -120,9 +120,9 @@ pub fn resolve_weak<'a, T: TextSource<'a> + ?Sized>(
                     
                     
                     
-                    if let Some((_, char_len)) = text.char_at(i) {
+                    if let Some(ch) = text.get(i..).and_then(|s| s.chars().next()) {
                         let mut next_class = sequence
-                            .iter_forwards_from(i + char_len, run_index)
+                            .iter_forwards_from(i + ch.len_utf8(), run_index)
                             .map(|j| processing_classes[j])
                             
                             .find(not_removed_by_x9)
@@ -156,7 +156,7 @@ pub fn resolve_weak<'a, T: TextSource<'a> + ?Sized>(
                                 }
                                 *class = ON;
                             }
-                            for idx in sequence.iter_forwards_from(i + char_len, run_index) {
+                            for idx in sequence.iter_forwards_from(i + ch.len_utf8(), run_index) {
                                 let class = &mut processing_classes[idx];
                                 if *class != BN {
                                     break;
@@ -248,8 +248,8 @@ pub fn resolve_weak<'a, T: TextSource<'a> + ?Sized>(
 
 
 #[cfg_attr(feature = "flame_it", flamer::flame)]
-pub fn resolve_neutral<'a, D: BidiDataSource, T: TextSource<'a> + ?Sized>(
-    text: &'a T,
+pub fn resolve_neutral<D: BidiDataSource>(
+    text: &str,
     data_source: &D,
     sequence: &IsolatingRunSequence,
     levels: &[Level],
@@ -288,13 +288,12 @@ pub fn resolve_neutral<'a, D: BidiDataSource, T: TextSource<'a> + ?Sized>(
         let mut found_not_e = false;
         let mut class_to_set = None;
 
-        let start_char_len =
-            T::char_len(text.subrange(pair.start..pair.end).chars().next().unwrap());
+        let start_len_utf8 = text[pair.start..].chars().next().unwrap().len_utf8();
         
         
         
         
-        for enclosed_i in sequence.iter_forwards_from(pair.start + start_char_len, pair.start_run) {
+        for enclosed_i in sequence.iter_forwards_from(pair.start + start_len_utf8, pair.start_run) {
             if enclosed_i >= pair.end {
                 #[cfg(feature = "std")]
                 debug_assert!(
@@ -363,12 +362,11 @@ pub fn resolve_neutral<'a, D: BidiDataSource, T: TextSource<'a> + ?Sized>(
         if let Some(class_to_set) = class_to_set {
             
             
-            let end_char_len =
-                T::char_len(text.subrange(pair.end..text.len()).chars().next().unwrap());
-            for class in &mut processing_classes[pair.start..pair.start + start_char_len] {
+            let end_len_utf8 = text[pair.end..].chars().next().unwrap().len_utf8();
+            for class in &mut processing_classes[pair.start..pair.start + start_len_utf8] {
                 *class = class_to_set;
             }
-            for class in &mut processing_classes[pair.end..pair.end + end_char_len] {
+            for class in &mut processing_classes[pair.end..pair.end + end_len_utf8] {
                 *class = class_to_set;
             }
             
@@ -384,7 +382,7 @@ pub fn resolve_neutral<'a, D: BidiDataSource, T: TextSource<'a> + ?Sized>(
 
             
             
-            let nsm_start = pair.start + start_char_len;
+            let nsm_start = pair.start + start_len_utf8;
             for idx in sequence.iter_forwards_from(nsm_start, pair.start_run) {
                 let class = original_classes[idx];
                 if class == BidiClass::NSM || processing_classes[idx] == BN {
@@ -393,7 +391,7 @@ pub fn resolve_neutral<'a, D: BidiDataSource, T: TextSource<'a> + ?Sized>(
                     break;
                 }
             }
-            let nsm_end = pair.end + end_char_len;
+            let nsm_end = pair.end + end_len_utf8;
             for idx in sequence.iter_forwards_from(nsm_end, pair.end_run) {
                 let class = original_classes[idx];
                 if class == BidiClass::NSM || processing_classes[idx] == BN {
@@ -479,8 +477,8 @@ struct BracketPair {
 
 
 
-fn identify_bracket_pairs<'a, T: TextSource<'a> + ?Sized, D: BidiDataSource>(
-    text: &'a T,
+fn identify_bracket_pairs<D: BidiDataSource>(
+    text: &str,
     data_source: &D,
     run_sequence: &IsolatingRunSequence,
     original_classes: &[BidiClass],
@@ -489,14 +487,27 @@ fn identify_bracket_pairs<'a, T: TextSource<'a> + ?Sized, D: BidiDataSource>(
     let mut stack = vec![];
 
     for (run_index, level_run) in run_sequence.runs.iter().enumerate() {
-        for (i, ch) in text.subrange(level_run.clone()).char_indices() {
-            let actual_index = level_run.start + i;
+        let slice = if let Some(slice) = text.get(level_run.clone()) {
+            slice
+        } else {
+            #[cfg(feature = "std")]
+            std::debug_assert!(
+                false,
+                "Found broken indices in level run: found indices {}..{} for string of length {}",
+                level_run.start,
+                level_run.end,
+                text.len()
+            );
+            return ret;
+        };
 
+        for (i, ch) in slice.char_indices() {
+            let actual_index = level_run.start + i;
             
             
             
             
-            if original_classes[actual_index] != BidiClass::ON {
+            if original_classes[level_run.start + i] != BidiClass::ON {
                 continue;
             }
 
