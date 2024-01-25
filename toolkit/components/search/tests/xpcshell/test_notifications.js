@@ -27,9 +27,6 @@ add_task(async function test_addingEngine_opensearch() {
     [
       
       
-      SearchUtils.MODIFIED_TYPE.LOADED,
-      
-      
       SearchUtils.MODIFIED_TYPE.ADDED,
     ],
     SearchUtils.MODIFIED_TYPE.ADDED
