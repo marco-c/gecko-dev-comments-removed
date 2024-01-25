@@ -199,6 +199,11 @@ if __name__ == "__main__":
     
     atexit.register(early_exit_handler)
 
+    
+    
+    cmd = f"git show --format=%h --no-patch {args.commit_sha}"
+    args.commit_sha = run_git(cmd, args.repo_path)[0]
+
     commit_message_filename = os.path.join(args.tmp_path, "cherry-pick-commit_msg.txt")
 
     resume_state_filename = os.path.join(args.state_path, "cherry_pick_commit.resume")
