@@ -13621,9 +13621,8 @@ void Document::SetNavigationTiming(nsDOMNavigationTiming* aTiming) {
   
   
   
-  if (mDocumentTimeline && mTiming) {
-    mDocumentTimeline->MaybeUpdateLastRefreshDriverTime(
-        mTiming->GetNavigationStartTimeStamp());
+  if (mDocumentTimeline) {
+    mDocumentTimeline->UpdateLastRefreshDriverTime();
   }
 }
 
