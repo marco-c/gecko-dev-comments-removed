@@ -104,11 +104,15 @@ SECStatus RemoteProcessCertVerification(
   ipc::Endpoint<PVerifySSLServerCertChild> childEndpoint;
   PVerifySSLServerCert::CreateEndpoints(&parentEndpoint, &childEndpoint);
 
+  
+  
+  nsCString hostName(aHostName);
+
   if (NS_FAILED(net::SocketProcessBackgroundChild::WithActor(
           "SendInitVerifySSLServerCert",
           [endpoint = std::move(parentEndpoint),
            peerCertBytes = std::move(peerCertBytes),
-           hostName = PromiseFlatCString(aHostName), port(aPort),
+           hostName = std::move(hostName), port(aPort),
            originAttributes(aOriginAttributes),
            stapledOCSPResponse = std::move(stapledOCSPResponse),
            sctsFromTLSExtension = std::move(sctsFromTLSExtension),
