@@ -10,4 +10,6 @@ fn main() {
 
     
     let _ = nss_build_common::link_nss();
+
+    uniffi::generate_scaffolding("./src/webext-storage.udl").unwrap();
 }

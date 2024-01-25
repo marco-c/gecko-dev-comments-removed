@@ -28,11 +28,11 @@ use serde_json::Value as JsonValue;
 
 
 
-pub struct Store {
+pub struct WebExtStorageStore {
     db: Arc<ThreadSafeStorageDb>,
 }
 
-impl Store {
+impl WebExtStorageStore {
     
     
     pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
@@ -153,7 +153,7 @@ impl Store {
                 
                 
                 log::warn!("Attempting to close a store while other DB references exist.");
-                return Err(ErrorKind::OtherConnectionReferencesExist.into());
+                return Err(Error::OtherConnectionReferencesExist);
             }
         };
         
@@ -207,11 +207,11 @@ pub mod test {
     fn test_send() {
         fn ensure_send<T: Send>() {}
         
-        ensure_send::<Store>();
+        ensure_send::<WebExtStorageStore>();
     }
 
-    pub fn new_mem_store() -> Store {
-        Store {
+    pub fn new_mem_store() -> WebExtStorageStore {
+        WebExtStorageStore {
             db: Arc::new(ThreadSafeStorageDb::new(crate::db::test::new_mem_db())),
         }
     }
