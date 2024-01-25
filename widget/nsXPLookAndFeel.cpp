@@ -628,7 +628,8 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Activecaption, 0xF0, 0xF0, 0xF4)
       COLOR(Inactivecaption, 0xF0, 0xF0, 0xF4)
       COLOR(Captiontext, 0x00, 0x00, 0x00)
-      COLOR(Inactivecaptiontext, 0x00, 0x00, 0x00)
+      
+      COLOR(Inactivecaptiontext, 0x6D, 0x6D, 0x6D)
 
       
       COLOR(Appworkspace, 0xAB, 0xAB, 0xAB)
@@ -1263,6 +1264,10 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     BIT_FOR(Threedface) |
     
     BIT_FOR(Field) | BIT_FOR(Fieldtext) |
+    
+    
+    
+    BIT_FOR(Inactivecaptiontext) |
     
     BIT_FOR(MozDisabledfield) | BIT_FOR(Graytext) |
     
