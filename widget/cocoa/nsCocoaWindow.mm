@@ -171,57 +171,24 @@ nsCocoaWindow::nsCocoaWindow()
 void nsCocoaWindow::DestroyNativeWindow() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  if (!mWindow) return;
-
-  
-  bool (^inNativeFullscreen)(void) = ^{
-    return ((mWindow.styleMask & NSWindowStyleMaskFullScreen) ==
-            NSWindowStyleMaskFullScreen);
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mInLocalRunLoop) {
-    mInLocalRunLoop = true;
-    bool haveRequestedFullscreenExit = false;
-    NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-    while ((mWaitingOnFinishCurrentTransition || inNativeFullscreen() ||
-            WeAreInNativeTransition()) &&
-           [localRunLoop runMode:NSDefaultRunLoopMode
-                      beforeDate:[NSDate distantFuture]]) {
-      
-      
-
-      
-      
-      
-      if (!haveRequestedFullscreenExit && inNativeFullscreen() &&
-          CanStartNativeTransition()) {
-        [mWindow toggleFullScreen:nil];
-        haveRequestedFullscreenExit = true;
-      }
-    }
-    mInLocalRunLoop = false;
+  if (!mWindow) {
+    return;
   }
+
+  MOZ_ASSERT(mWindowMadeHere,
+             "We shouldn't be trying to destroy a window we didn't create.");
+
+  
+  
+  
+  
+  mTransitionCurrent.reset();
+  mIsTransitionCurrentAdded = false;
+  std::queue<TransitionType>().swap(mTransitionsPending);
+
+  
+  
+  EndOurNativeTransition();
 
   [mWindow releaseJSObjects];
   
@@ -230,12 +197,6 @@ void nsCocoaWindow::DestroyNativeWindow() {
   [mWindow close];
   mWindow = nil;
   [mDelegate autorelease];
-
-  
-  
-  
-  
-  EndOurNativeTransition();
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -682,19 +643,17 @@ void nsCocoaWindow::Destroy() {
   }
   nsBaseWidget::OnDestroy();
 
-  if (mInFullScreenMode) {
+  if (mInFullScreenMode && !mInNativeFullScreenMode) {
     
-    
-    
-    
-    
-    
-    
-    if (mInNativeFullScreenMode) {
-      DestroyNativeWindow();
-    } else if (mWindow) {
-      nsCocoaUtils::HideOSChromeOnScreen(false);
-    }
+    nsCocoaUtils::HideOSChromeOnScreen(false);
+  }
+
+  
+  
+  
+  
+  if (mWindow && mWindowMadeHere) {
+    DestroyNativeWindow();
   }
 }
 
@@ -1727,8 +1686,8 @@ void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
 }
 
 void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
-  mHasStartedNativeFullscreen = false;
   EndOurNativeTransition();
+  mHasStartedNativeFullscreen = false;
   DispatchOcclusionEvent();
 
   
@@ -1873,18 +1832,13 @@ void nsCocoaWindow::ProcessTransitions() {
         if (!mInFullScreenMode) {
           
           
-          
-          
-          if (!mInLocalRunLoop) {
-            mInLocalRunLoop = true;
-            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-            while (mWindow && !CanStartNativeTransition() &&
-                   [localRunLoop runMode:NSDefaultRunLoopMode
-                              beforeDate:[NSDate distantFuture]]) {
-              
-              
-            }
-            mInLocalRunLoop = false;
+          NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+          while (mWindow && !CanStartNativeTransition() &&
+                 [localRunLoop runMode:NSDefaultRunLoopMode
+                            beforeDate:[NSDate distantFuture]]) {
+            
+            
+            
           }
 
           
@@ -1915,18 +1869,13 @@ void nsCocoaWindow::ProcessTransitions() {
           if (mInNativeFullScreenMode) {
             
             
-            
-            
-            if (!mInLocalRunLoop) {
-              mInLocalRunLoop = true;
-              NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-              while (mWindow && !CanStartNativeTransition() &&
-                     [localRunLoop runMode:NSDefaultRunLoopMode
-                                beforeDate:[NSDate distantFuture]]) {
-                
-                
-              }
-              mInLocalRunLoop = false;
+            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+            while (mWindow && !CanStartNativeTransition() &&
+                   [localRunLoop runMode:NSDefaultRunLoopMode
+                              beforeDate:[NSDate distantFuture]]) {
+              
+              
+              
             }
 
             
@@ -2009,13 +1958,6 @@ void nsCocoaWindow::ProcessTransitions() {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-void nsCocoaWindow::FinishCurrentTransition() {
-  mWaitingOnFinishCurrentTransition = false;
-  mTransitionCurrent.reset();
-  mIsTransitionCurrentAdded = false;
-  ProcessTransitions();
-}
-
 void nsCocoaWindow::FinishCurrentTransitionIfMatching(
     const TransitionType& aTransition) {
   
@@ -2029,23 +1971,18 @@ void nsCocoaWindow::FinishCurrentTransitionIfMatching(
   if (mTransitionCurrent.isSome() && (*mTransitionCurrent == aTransition)) {
     
     
+    mTransitionCurrent.reset();
+    mIsTransitionCurrentAdded = false;
+
     
     
     
     
-    if (NS_SUCCEEDED(NS_DispatchToCurrentThread(
-            NewRunnableMethod("FinishCurrentTransition", this,
-                              &nsCocoaWindow::FinishCurrentTransition)))) {
-      mWaitingOnFinishCurrentTransition = true;
-    } else {
-      
-      
-      MOZ_ASSERT(mTransitionsPending.empty(),
-                 "Pending transitions won't be executed until the next call to "
-                 "QueueTransition.");
-      mTransitionCurrent.reset();
-      mIsTransitionCurrentAdded = false;
-      DispatchSizeModeEvent();
+    
+    
+    if (!mTransitionsPending.empty()) {
+      NS_DispatchToCurrentThread(NewRunnableMethod(
+          "FinishCurrentTransition", this, &nsCocoaWindow::ProcessTransitions));
     }
   }
 }
@@ -2063,29 +2000,21 @@ bool nsCocoaWindow::HandleUpdateFullscreenOnResize() {
   return true;
 }
 
- mozilla::StaticDataMutex<nsCocoaWindow*>
-    nsCocoaWindow::sWindowInNativeTransition(nullptr);
+ nsCocoaWindow* nsCocoaWindow::sWindowInNativeTransition(nullptr);
 
 bool nsCocoaWindow::CanStartNativeTransition() {
-  auto window = sWindowInNativeTransition.Lock();
-  if (*window == nullptr) {
+  if (sWindowInNativeTransition == nullptr) {
     
     
-    *window = this;
+    sWindowInNativeTransition = this;
     return true;
   }
   return false;
 }
 
-bool nsCocoaWindow::WeAreInNativeTransition() {
-  auto window = sWindowInNativeTransition.Lock();
-  return (*window == this);
-}
-
 void nsCocoaWindow::EndOurNativeTransition() {
-  auto window = sWindowInNativeTransition.Lock();
-  if (*window == this) {
-    *window = nullptr;
+  if (sWindowInNativeTransition == this) {
+    sWindowInNativeTransition = nullptr;
   }
 }
 
