@@ -179,16 +179,14 @@ void TraceXPCGlobal(JSTracer* trc, JSObject* obj);
 
 
 
-
 nsresult InitClassesWithNewWrappedGlobal(
     JSContext* aJSContext, nsISupports* aCOMObj, nsIPrincipal* aPrincipal,
     uint32_t aFlags, JS::RealmOptions& aOptions,
     JS::MutableHandle<JSObject*> aNewGlobal);
 
 enum InitClassesFlag {
-  INIT_JS_STANDARD_CLASSES = 1 << 0,
-  DONT_FIRE_ONNEWGLOBALHOOK = 1 << 1,
-  OMIT_COMPONENTS_OBJECT = 1 << 2,
+  DONT_FIRE_ONNEWGLOBALHOOK = 1 << 0,
+  OMIT_COMPONENTS_OBJECT = 1 << 1,
 };
 
 } 
