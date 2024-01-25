@@ -461,10 +461,14 @@ bool ProxiedConnection::Process() {
 }
 
 bool WaylandProxy::SetupWaylandDisplays() {
-  char* waylandDisplay = getenv("WAYLAND_DISPLAY");
+  char* waylandDisplay = getenv("WAYLAND_DISPLAY_COMPOSITOR");
   if (!waylandDisplay) {
-    Error("Init(), Missing Wayland display, WAYLAND_DISPLAY is empty.", false);
-    return false;
+    waylandDisplay = getenv("WAYLAND_DISPLAY");
+    if (!waylandDisplay) {
+      Error("Init(), Missing Wayland display, WAYLAND_DISPLAY is empty.",
+            false);
+      return false;
+    }
   }
 
   char* XDGRuntimeDir = getenv("XDG_RUNTIME_DIR");
@@ -488,6 +492,10 @@ bool WaylandProxy::SetupWaylandDisplays() {
       return false;
     }
   }
+
+  
+  setenv("WAYLAND_DISPLAY_COMPOSITOR", waylandDisplay,  true);
+
   int ret = snprintf(mWaylandProxy, sMaxDisplayNameLen,
                      "%s/wayland-proxy-%d", XDGRuntimeDir, getpid());
   if (ret < 0 || ret >= sMaxDisplayNameLen) {
@@ -541,13 +549,18 @@ bool WaylandProxy::Init() {
 
 void WaylandProxy::SetWaylandProxyDisplay() {
   Info("SetWaylandProxyDisplay() WAYLAND_DISPLAY %s\n", mWaylandDisplay);
-  setenv("WAYLAND_DISPLAY", mWaylandProxy, true);
+  setenv("WAYLAND_DISPLAY", mWaylandProxy,  true);
 }
 
-void WaylandProxy::SetWaylandDisplay() {
-  Info("SetWaylandDisplay() WAYLAND_DISPLAY %s\n", mWaylandDisplay);
-  setenv("WAYLAND_DISPLAY", mWaylandDisplay, true);
+void WaylandProxy::RestoreWaylandDisplay() {
   unlink(mWaylandProxy);
+  char* waylandDisplay = getenv("WAYLAND_DISPLAY_COMPOSITOR");
+  if (waylandDisplay) {
+    Info("RestoreWaylandDisplay() WAYLAND_DISPLAY restored to %s\n",
+         waylandDisplay);
+    setenv("WAYLAND_DISPLAY", waylandDisplay,  true);
+    unsetenv("WAYLAND_DISPLAY_COMPOSITOR");
+  }
 }
 
 bool WaylandProxy::IsChildAppTerminated() {
@@ -681,7 +694,7 @@ WaylandProxy::~WaylandProxy() {
   if (mProxyServerSocket != -1) {
     close(mProxyServerSocket);
   }
-  SetWaylandDisplay();
+  RestoreWaylandDisplay();
 }
 
 void* WaylandProxy::RunProxyThread(WaylandProxy* aProxy) {
@@ -745,7 +758,7 @@ bool WaylandProxy::RunThread() {
   if (!mThreadRunning) {
     ErrorPlain("pthread_create() failed\n");
     
-    SetWaylandDisplay();
+    RestoreWaylandDisplay();
   }
 
   pthread_attr_destroy(&attr);
