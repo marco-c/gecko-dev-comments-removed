@@ -157,33 +157,31 @@ bool FilterInstance::BuildWebRenderFiltersImpl(nsIFrame* aFilteredFrame,
   aWrFilters.filter_datas.Clear();
   aWrFilters.values.Clear();
 
-  if (aFilteredFrame->GetPrevContinuation()) {
-    aInitialized = false;
-    return true;
-  }
+  nsIFrame* firstFrame =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFilteredFrame);
+
   nsTArray<SVGFilterFrame*> filterFrames;
-  if (SVGObserverUtils::GetAndObserveFilters(aFilteredFrame, &filterFrames,
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, &filterFrames,
                                              aStyleFilterType) ==
       SVGObserverUtils::eHasRefsSomeInvalid) {
     aInitialized = false;
     return true;
   }
 
-  UniquePtr<UserSpaceMetrics> metrics =
-      UserSpaceMetricsForFrame(aFilteredFrame);
+  UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(firstFrame);
 
   
   
   gfxMatrix scaleMatrix;
   gfxMatrix scaleMatrixInDevUnits =
-      scaleMatrix * SVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
+      scaleMatrix * SVGUtils::GetCSSPxToDevPxMatrix(firstFrame);
 
   
   
-  FilterInstance instance(
-      aFilteredFrame, aFilteredFrame->GetContent(), *metrics, aFilters,
-      filterFrames,  true, nullptr, scaleMatrixInDevUnits,
-      nullptr, nullptr, nullptr, nullptr);
+  FilterInstance instance(firstFrame, firstFrame->GetContent(), *metrics,
+                          aFilters, filterFrames,  true,
+                          nullptr, scaleMatrixInDevUnits, nullptr, nullptr,
+                          nullptr, nullptr);
 
   if (!instance.IsInitialized()) {
     aInitialized = false;
