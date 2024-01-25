@@ -26,19 +26,9 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   explicit AnimationTimeline(nsIGlobalObject* aWindow,
                              RTPCallerType aRTPCallerType);
 
-  
-  
-  
-  
-  
-  
-  
-  
   struct TickState {
-    AutoTArray<Animation*, 8> mStartedAnimations;
-    AutoTArray<Animation*, 8> mStartedTransitions;
-    bool mStartedAnyGeometricTransition = false;
-    bool mStartedAnyGeometricAnimation = false;
+    TickState() = default;
+    
   };
 
  protected:

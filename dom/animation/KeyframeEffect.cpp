@@ -1685,13 +1685,6 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
   }
 
   MOZ_ASSERT(mAnimation);
-  
-  
-  const bool enableMainthreadSynchronizationWithGeometricAnimations =
-      StaticPrefs::
-          dom_animations_mainthread_synchronization_with_geometric_animations() &&
-      !mAnimation->UsingScrollTimeline();
-
   for (const AnimationProperty& property : mProperties) {
     
     
@@ -1706,13 +1699,6 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
         effectSet->PropertiesForAnimationsLevel().HasProperty(
             property.mProperty)) {
       continue;
-    }
-    
-    if (enableMainthreadSynchronizationWithGeometricAnimations &&
-        IsGeometricProperty(property.mProperty.mID)) {
-      aPerformanceWarning =
-          AnimationPerformanceWarning::Type::TransformWithGeometricProperties;
-      return true;
     }
 
     

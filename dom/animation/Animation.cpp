@@ -929,21 +929,7 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
     
     
     if (mSawTickWhilePending) {
-      if (TryTriggerNow() &&
-          StaticPrefs::
-              dom_animations_mainthread_synchronization_with_geometric_animations()) {
-        auto* transition = AsCSSTransition();
-        const bool isTransition = transition && transition->IsTiedToMarkup();
-        auto* array = isTransition ? &aTickState.mStartedTransitions
-                                   : &aTickState.mStartedAnimations;
-        array->AppendElement(this);
-        bool* startedAnyGeometric =
-            isTransition ? &aTickState.mStartedAnyGeometricTransition
-                         : &aTickState.mStartedAnyGeometricAnimation;
-        if (!*startedAnyGeometric) {
-          *startedAnyGeometric = mEffect && mEffect->AffectsGeometry();
-        }
-      }
+      TryTriggerNow();
     }
     mSawTickWhilePending = true;
   }
@@ -1069,20 +1055,6 @@ bool Animation::ShouldBeSynchronizedWithMainThread(
       mEffect ? mEffect->AsKeyframeEffect() : nullptr;
   if (!keyframeEffect) {
     return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (mSyncWithGeometricAnimations &&
-      keyframeEffect->HasAnimationOfPropertySet(
-          nsCSSPropertyIDSet::TransformLikeProperties())) {
-    aPerformanceWarning =
-        AnimationPerformanceWarning::Type::TransformWithSyncGeometricAnimations;
-    return true;
   }
 
   return keyframeEffect->ShouldBlockAsyncTransformAnimations(
@@ -1478,10 +1450,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 
   mPendingState = PendingState::PlayPending;
 
-  
-  
-  
-  mSyncWithGeometricAnimations = false;
   mSawTickWhilePending = false;
   if (Document* doc = GetRenderedDocument()) {
     if (HasFiniteTimeline()) {

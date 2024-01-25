@@ -330,7 +330,6 @@ class Animation : public DOMEventTargetHelper,
   void NotifyEffectTimingUpdated();
   void NotifyEffectPropertiesUpdated();
   void NotifyEffectTargetUpdated();
-  void NotifyGeometricAnimationsStartingThisFrame();
 
   
 
@@ -402,7 +401,6 @@ class Animation : public DOMEventTargetHelper,
   void UpdateHiddenByContentVisibility();
 
   DocGroup* GetDocGroup();
-  void SetSyncWithGeometricAnimations() { mSyncWithGeometricAnimations = true; }
 
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -566,11 +564,6 @@ class Animation : public DOMEventTargetHelper,
   
   
   bool mFinishedIsResolved = false;
-
-  
-  
-  
-  bool mSyncWithGeometricAnimations = false;
 
   RefPtr<MicroTaskRunnable> mFinishNotificationTask;
 

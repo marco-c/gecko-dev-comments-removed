@@ -178,16 +178,6 @@ void DocumentTimeline::MostRecentRefreshTimeUpdated() {
 
   TickState state;
   bool ticked = Tick(state);
-  if (state.mStartedAnyGeometricTransition) {
-    for (auto* transition : state.mStartedTransitions) {
-      transition->SetSyncWithGeometricAnimations();
-    }
-  }
-  if (state.mStartedAnyGeometricAnimation) {
-    for (auto* animation : state.mStartedAnimations) {
-      animation->SetSyncWithGeometricAnimations();
-    }
-  }
   if (!ticked) {
     
     

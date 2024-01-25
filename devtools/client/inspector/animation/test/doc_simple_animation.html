@@ -90,6 +90,8 @@
 
     .compositor-notall {
       animation: compositor-notall 2s infinite;
+      /* Blocks the transform animation from running in the compositor */
+      backface-visibility: hidden;
     }
 
     .longhand {
@@ -144,7 +146,7 @@
   </style>
 </head>
 <body>
-  
+  <!-- Comment node -->
   <div class="ball still"></div>
   <div class="ball animated"></div>
   <div class="ball multi"></div>
