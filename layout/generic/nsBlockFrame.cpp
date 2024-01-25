@@ -63,9 +63,6 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/Telemetry.h"
 #include "nsFlexContainerFrame.h"
-#include "nsFileControlFrame.h"
-#include "nsMathMLContainerFrame.h"
-#include "nsSelectsAreaFrame.h"
 
 #include "nsBidiPresUtils.h"
 
@@ -6412,15 +6409,9 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   *aFoundValidLine = FindValidLine();
 }
 
-static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
-  
-  
-  
-  
-  
-  return aStyle->StyleDisplay()->IsContainPaint() ||
-         aStyle->StyleDisplay()->IsContainLayout() ||
-         aStyle->GetPseudoType() == PseudoStyleType::columnContent;
+static bool StyleEstablishesBFC(const ComputedStyle* style) {
+  return style->StyleDisplay()->IsContainPaint() ||
+         style->StyleDisplay()->IsContainLayout();
 }
 
 void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
@@ -7749,27 +7740,6 @@ void nsBlockFrame::ChildIsDirty(nsIFrame* aChild) {
   nsContainerFrame::ChildIsDirty(aChild);
 }
 
-static bool AlwaysEstablishesBFC(const nsBlockFrame* aFrame) {
-  switch (aFrame->Type()) {
-    case LayoutFrameType::ColumnSetWrapper:
-      
-      
-      
-    case LayoutFrameType::ComboboxControl:
-      return true;
-    case LayoutFrameType::Block:
-      return static_cast<const nsFileControlFrame*>(do_QueryFrame(aFrame)) ||
-             
-             
-             static_cast<const nsSelectsAreaFrame*>(do_QueryFrame(aFrame)) ||
-             
-             static_cast<const nsMathMLmathBlockFrame*>(do_QueryFrame(aFrame));
-    default:
-      MOZ_ASSERT_UNREACHABLE("aFrame should be a block");
-      return false;
-  }
-}
-
 void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                         nsIFrame* aPrevInFlow) {
   
@@ -7812,16 +7782,13 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   
-  
-  
-  
   if (StyleDisplay()->mDisplay == mozilla::StyleDisplay::FlowRoot ||
       (GetParent() &&
        (GetWritingMode().GetBlockDir() !=
             GetParent()->GetWritingMode().GetBlockDir() ||
         GetWritingMode().IsVerticalSideways() !=
             GetParent()->GetWritingMode().IsVerticalSideways())) ||
-      IsColumnSpan() || AlwaysEstablishesBFC(this)) {
+      IsColumnSpan()) {
     AddStateBits(NS_BLOCK_STATIC_BFC);
   }
 
