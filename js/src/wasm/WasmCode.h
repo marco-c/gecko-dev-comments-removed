@@ -45,6 +45,7 @@
 #include "threading/ExclusiveData.h"
 #include "util/Memory.h"
 #include "vm/MutexIDs.h"
+#include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenConstants.h"
 #include "wasm/WasmCodegenTypes.h"
@@ -360,6 +361,8 @@ struct MetadataCacheablePod {
   uint32_t instanceDataLength;
   Maybe<uint32_t> startFuncIndex;
   Maybe<uint32_t> nameCustomSectionIndex;
+  BuiltinModuleIds builtinModules;
+  FeatureUsage featureUsage;
   bool filenameIsURL;
   uint32_t typeDefsOffsetStart;
   uint32_t memoriesOffsetStart;
@@ -368,13 +371,15 @@ struct MetadataCacheablePod {
   uint32_t padding;
 
   WASM_CHECK_CACHEABLE_POD(kind, instanceDataLength, startFuncIndex,
-                           nameCustomSectionIndex, filenameIsURL,
-                           typeDefsOffsetStart, memoriesOffsetStart,
-                           tablesOffsetStart, tagsOffsetStart)
+                           nameCustomSectionIndex, builtinModules, featureUsage,
+                           filenameIsURL, typeDefsOffsetStart,
+                           memoriesOffsetStart, tablesOffsetStart,
+                           tagsOffsetStart)
 
   explicit MetadataCacheablePod(ModuleKind kind)
       : kind(kind),
         instanceDataLength(0),
+        featureUsage(FeatureUsage::None),
         filenameIsURL(false),
         typeDefsOffsetStart(UINT32_MAX),
         memoriesOffsetStart(UINT32_MAX),

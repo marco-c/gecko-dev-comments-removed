@@ -619,6 +619,9 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   JitContext jcx;
 
   
+  metadata_->featureUsage |= code.featureUsage;
+
+  
   
 
   if (!InRange(startOfUnpatchedCallsites_,

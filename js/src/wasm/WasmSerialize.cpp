@@ -956,7 +956,7 @@ CoderResult CodeSymbolicLinkArray(
 template <CoderMode mode>
 CoderResult CodeLinkData(Coder<mode>& coder,
                          CoderArg<mode, wasm::LinkData> item) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::LinkData, 7968);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::LinkData, 8760);
   if constexpr (mode == MODE_ENCODE) {
     MOZ_ASSERT(item->tier == Tier::Serialized);
   }
@@ -1048,7 +1048,7 @@ CoderResult CodeMetadataTier(Coder<mode>& coder,
 template <CoderMode mode>
 CoderResult CodeMetadata(Coder<mode>& coder,
                          CoderArg<mode, wasm::Metadata> item) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Metadata, 440);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Metadata, 448);
   if constexpr (mode == MODE_ENCODE) {
     
     MOZ_ASSERT(!item->debugEnabled && item->debugFuncTypeIndices.empty());

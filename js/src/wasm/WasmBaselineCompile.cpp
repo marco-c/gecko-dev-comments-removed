@@ -11927,6 +11927,9 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
                                       hasUnwindInfo)) {
       return false;
     }
+
+    
+    code->featureUsage |= f.iter_.featureUsage();
   }
 
   masm.finish();

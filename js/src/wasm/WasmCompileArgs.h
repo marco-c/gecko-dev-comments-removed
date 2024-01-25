@@ -20,6 +20,7 @@
 #define wasm_compile_args_h
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/TypedEnumBits.h"
 
 #include "js/Utility.h"
 #include "js/WasmFeatures.h"
@@ -73,10 +74,16 @@ class Tiers {
 
 
 struct FeatureOptions {
-  FeatureOptions() : intrinsics(false) {}
+  FeatureOptions() : isBuiltinModule(false), jsStringBuiltins(false) {}
 
   
-  bool intrinsics;
+  bool isBuiltinModule;
+  
+  
+  bool jsStringBuiltins;
+
+  
+  [[nodiscard]] bool init(JSContext* cx, HandleValue val);
 };
 
 
@@ -89,7 +96,7 @@ struct FeatureArgs {
 #undef WASM_FEATURE
             sharedMemory(Shareable::False),
         simd(false),
-        intrinsics(false) {
+        isBuiltinModule(false) {
   }
   FeatureArgs(const FeatureArgs&) = default;
   FeatureArgs& operator=(const FeatureArgs&) = default;
@@ -103,8 +110,24 @@ struct FeatureArgs {
 
   Shareable sharedMemory;
   bool simd;
-  bool intrinsics;
+  
+  
+  bool isBuiltinModule;
+  
+  BuiltinModuleIds builtinModules;
 };
+
+
+
+enum class FeatureUsage : uint8_t {
+  None = 0x0,
+  LegacyExceptions = 0x1,
+};
+
+void SetUseCountersForFeatureUsage(JSContext* cx, JSObject* object,
+                                   FeatureUsage usage);
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(FeatureUsage);
 
 
 
