@@ -1745,19 +1745,19 @@ void BaseCompiler::loadTag(RegPtr instance, uint32_t tagIndex, RegRef tagDst) {
   masm.loadPtr(Address(instance, offset), tagDst);
 }
 
-void BaseCompiler::consumePendingException(RegPtr instance, RegRef* exnDst,
-                                           RegRef* tagDst) {
+void BaseCompiler::consumePendingException(RegRef* exnDst, RegRef* tagDst) {
   RegPtr pendingAddr = RegPtr(PreBarrierReg);
   needPtr(pendingAddr);
   masm.computeEffectiveAddress(
-      Address(instance, Instance::offsetOfPendingException()), pendingAddr);
+      Address(InstanceReg, Instance::offsetOfPendingException()), pendingAddr);
   *exnDst = needRef();
   masm.loadPtr(Address(pendingAddr, 0), *exnDst);
   emitBarrieredClear(pendingAddr);
 
   *tagDst = needRef();
   masm.computeEffectiveAddress(
-      Address(instance, Instance::offsetOfPendingExceptionTag()), pendingAddr);
+      Address(InstanceReg, Instance::offsetOfPendingExceptionTag()),
+      pendingAddr);
   masm.loadPtr(Address(pendingAddr, 0), *tagDst);
   emitBarrieredClear(pendingAddr);
   freePtr(pendingAddr);
@@ -4073,27 +4073,21 @@ bool BaseCompiler::emitTryTable() {
     return false;
   }
 
-  if (!deadCode_) {
-    
-    
-    sync();
+  if (deadCode_) {
+    return true;
   }
+
+  
+  
+  sync();
 
   initControl(controlItem(), params);
   
   controlItem().bceSafeOnExit = 0;
 
   
-  if (deadCode_) {
-    return true;
-  }
-
-  
-  Label skipLandingPad;
-  masm.jump(&skipLandingPad);
-
-  
-  masm.bind(&controlItem().otherLabel);
+  Label skip;
+  masm.jump(&skip);
 
   StackHeight prePadHeight = fr.stackHeight();
   uint32_t padOffset = masm.currentOffset();
@@ -4102,19 +4096,36 @@ bool BaseCompiler::emitTryTable() {
   
   
   
-  RegPtr instance = RegPtr(InstanceReg);
+  fr.storeInstancePtr(InstanceReg);
+
+  
+  
+  
+  
+  
+  ResultType resultRegs = ResultType::Single(RefType::extern_());
+  needIntegerResultRegisters(resultRegs);
 #ifndef RABALDR_PIN_INSTANCE
-  needPtr(instance);
+  needPtr(RegPtr(InstanceReg));
 #endif
 
   
   RegRef exn;
   RegRef exnTag;
-  consumePendingException(instance, &exn, &exnTag);
+  consumePendingException(&exn, &exnTag);
 
   
   RegRef catchTag = needRef();
 
+  
+#ifndef RABALDR_PIN_INSTANCE
+  freePtr(RegPtr(InstanceReg));
+#endif
+  freeIntegerResultRegisters(resultRegs);
+
+  MOZ_ASSERT(exn != InstanceReg);
+  MOZ_ASSERT(exnTag != InstanceReg);
+  MOZ_ASSERT(catchTag != InstanceReg);
   bool hadCatchAll = false;
   for (const TryTableCatch& tryTableCatch : catches) {
     ResultType labelParams = ResultType::Vector(tryTableCatch.labelType);
@@ -4127,20 +4138,17 @@ bool BaseCompiler::emitTryTable() {
       
       if (tryTableCatch.captureExnRef) {
         pushRef(exn);
-      } else {
-        freeRef(exn);
       }
-      
-      freeRef(exnTag);
-      freeRef(catchTag);
-#ifndef RABALDR_PIN_INSTANCE
-      freePtr(instance);
-#endif
-
-      
       popBlockResults(labelParams, target.stackHeight, ContinuationKind::Jump);
       masm.jump(&target.label);
+      
+      
       freeResultRegisters(labelParams);
+      
+      
+      if (!tryTableCatch.captureExnRef) {
+        freeRef(exn);
+      }
 
       
       
@@ -4148,26 +4156,18 @@ bool BaseCompiler::emitTryTable() {
       break;
     }
 
-    
     const TagType& tagType = *moduleEnv_.tags[tryTableCatch.tagIndex].type;
     const TagOffsetVector& tagOffsets = tagType.argOffsets();
     ResultType tagParams = tagType.resultType();
 
-    
-    
-    Label skipCatch;
-    loadTag(instance, tryTableCatch.tagIndex, catchTag);
-    masm.branchPtr(Assembler::NotEqual, exnTag, catchTag, &skipCatch);
+    Label skip;
+    loadTag(RegPtr(InstanceReg), tryTableCatch.tagIndex, catchTag);
+    masm.branchPtr(Assembler::NotEqual, exnTag, catchTag, &skip);
 
     
-    freeRef(exnTag);
-    freeRef(catchTag);
-#ifndef RABALDR_PIN_INSTANCE
-    freePtr(instance);
-#endif
-
     
-    RegPtr data = needPtr();
+    
+    RegPtr data = RegPtr(exnTag);
 
     
     masm.loadPtr(Address(exn, (int32_t)WasmExceptionObject::offsetOfData()),
@@ -4227,42 +4227,27 @@ bool BaseCompiler::emitTryTable() {
     }
 
     
-    
-    freePtr(data);
-
-    
     if (tryTableCatch.captureExnRef) {
       pushRef(exn);
-    } else {
-      freeRef(exn);
     }
-
-    
     popBlockResults(labelParams, target.stackHeight, ContinuationKind::Jump);
     masm.jump(&target.label);
+    
+    
     freeResultRegisters(labelParams);
 
     
     fr.setStackHeight(prePadHeight);
-    masm.bind(&skipCatch);
+    masm.bind(&skip);
 
     
-    needRef(exn);
-    needRef(exnTag);
-    needRef(catchTag);
-#ifndef RABALDR_PIN_INSTANCE
-    needPtr(instance);
-#endif
+    
+    if (tryTableCatch.captureExnRef) {
+      needRef(exn);
+    }
   }
 
   if (!hadCatchAll) {
-    
-    freeRef(exnTag);
-    freeRef(catchTag);
-#ifndef RABALDR_PIN_INSTANCE
-    freePtr(instance);
-#endif
-
     
     
     if (!throwFrom(exn)) {
@@ -4271,22 +4256,19 @@ bool BaseCompiler::emitTryTable() {
   } else {
     
     MOZ_ASSERT(isAvailableRef(exn));
-    MOZ_ASSERT(isAvailableRef(exnTag));
-    MOZ_ASSERT(isAvailableRef(catchTag));
-#ifndef RABALDR_PIN_INSTANCE
-    MOZ_ASSERT(isAvailablePtr(instance));
-#endif
   }
+
+  freeRef(catchTag);
+  freeRef(exnTag);
 
   
   fr.setStackHeight(prePadHeight);
-  masm.bind(&skipLandingPad);
 
-  
+  masm.bind(&skip);
+
   if (!startTryNote(&controlItem().tryNoteIndex)) {
     return false;
   }
-
   
   TryNoteVector& tryNotes = masm.tryNotes();
   TryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
@@ -4493,7 +4475,7 @@ bool BaseCompiler::emitBodyDelegateThrowPad() {
     
     RegRef exn;
     RegRef tag;
-    consumePendingException(RegPtr(InstanceReg), &exn, &tag);
+    consumePendingException(&exn, &tag);
     freeRef(tag);
     if (!throwFrom(exn)) {
       return false;
@@ -4558,7 +4540,6 @@ bool BaseCompiler::emitDelegate() {
   
   Control& lastBlock = controlOutermost();
   while (controlKind(relativeDepth) != LabelKind::Try &&
-         controlKind(relativeDepth) != LabelKind::TryTable &&
          &controlItem(relativeDepth) != &lastBlock) {
     relativeDepth++;
   }
@@ -4646,7 +4627,7 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   
   RegRef exn;
   RegRef tag;
-  consumePendingException(RegPtr(InstanceReg), &exn, &tag);
+  consumePendingException(&exn, &tag);
 
   
   RegRef catchTag = needRef();
@@ -4697,10 +4678,8 @@ bool BaseCompiler::endTryCatch(ResultType type) {
 }
 
 bool BaseCompiler::endTryTable(ResultType type) {
-  if (!controlItem().deadOnArrival) {
-    
-    finishTryNote(controlItem().tryNoteIndex);
-  }
+  
+  finishTryNote(controlItem().tryNoteIndex);
   return endBlock(type);
 }
 
@@ -11927,9 +11906,6 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
                                       hasUnwindInfo)) {
       return false;
     }
-
-    
-    code->featureUsage |= f.iter_.featureUsage();
   }
 
   masm.finish();

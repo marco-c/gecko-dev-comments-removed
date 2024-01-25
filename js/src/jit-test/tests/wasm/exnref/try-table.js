@@ -1,58 +1,42 @@
 
 {
-  let maxResults1 = Array.from(Array(1000).keys());
-  let maxResults2 = maxResults1.map((x) => x - 1);
-  const TESTS = [
-    ['i32', 'i32.const', [0], [1]],
-    ['i32 '.repeat(1000), 'i32.const', maxResults1, maxResults2],
-    ['i64', 'i64.const', [0], [1]],
-    ['i64 '.repeat(1000), 'i64.const', maxResults1, maxResults2],
-    ['f32', 'f32.const', [0], [1]],
-    ['f32 '.repeat(1000), 'f32.const', maxResults1, maxResults2],
-    ['f64', 'f64.const', [0], [1]],
-    ['f64 '.repeat(1000), 'f64.const', maxResults1, maxResults2],
-  ];
-  for (let [types, constructor, values1, values2] of TESTS) {
-    let {test} = wasmEvalText(`(module
-      (func (export "test") (param $shouldBranch i32) (result ${types})
-        try_table (result ${types})
-          ${values2.map((x) => `${constructor} ${x}`).join(" ")}
-          (br_if 1 local.get $shouldBranch)
-          ${values1.map((x) => `${constructor} ${x}`).join(" ")}
-          br 0
-        end
-      )
-    )`).exports;
-    assertEqResults(test(0), values1);
-    assertEqResults(test(1), values2);
-  }
+  let {test} = wasmEvalText(`(module
+    (func (export "test") (result i32)
+      try_table
+        br 0
+        (return i32.const 0)
+      end
+      (return i32.const 1)
+    )
+  )`).exports;
+  assertEq(test(), 1);
 }
 
 
 {
-  let maxParams1 = Array.from(Array(1000).keys());
-  const TESTS = [
-    ['i32', 'i32.const', [0]],
-    ['i32 '.repeat(1000), 'i32.const', maxParams1],
-    ['i64', 'i64.const', [0]],
-    ['i64 '.repeat(1000), 'i64.const', maxParams1],
-    ['f32', 'f32.const', [0]],
-    ['f32 '.repeat(1000), 'f32.const', maxParams1],
-    ['f64', 'f64.const', [0]],
-    ['f64 '.repeat(1000), 'f64.const', maxParams1],
-  ];
-  for (let [types, constructor, params] of TESTS) {
-    let {test} = wasmEvalText(`(module
-      (func (export "test") (result ${types})
-        ${params.map((x) => `${constructor} ${x}`).join(" ")}
-        try_table (param ${types})
-          return
-        end
-        unreachable
-      )
-    )`).exports;
-    assertEqResults(test(), params);
-  }
+  let {test} = wasmEvalText(`(module
+    (func (export "test") (result i32)
+      try_table (result i32)
+        i32.const 1
+        br 0
+      end
+    )
+  )`).exports;
+  assertEq(test(), 1);
+}
+
+
+{
+  let {test} = wasmEvalText(`(module
+    (func (export "test") (result i32)
+      i32.const 1
+      try_table (param i32)
+        return
+      end
+      (return i32.const 0)
+    )
+  )`).exports;
+  assertEq(test(), 1);
 }
 
 
@@ -180,168 +164,6 @@
 
 
 {
-  let maxResults1 = Array.from(Array(999).keys());
-  const TESTS = [
-    ['i32', 'i32.const', [0]],
-    ['i32 '.repeat(999), 'i32.const', maxResults1],
-    ['i64', 'i64.const', [0]],
-    ['i64 '.repeat(999), 'i64.const', maxResults1],
-    ['f32', 'f32.const', [0]],
-    ['f32 '.repeat(999), 'f32.const', maxResults1],
-    ['f64', 'f64.const', [0]],
-    ['f64 '.repeat(999), 'f64.const', maxResults1],
-  ];
-  for (let [types, constructor, params] of TESTS) {
-    let {testCatch, testCatchRef} = wasmEvalText(`(module
-      (tag $E (param ${types}))
-
-      (func (export "testCatch") (result ${types})
-        try_table (catch $E 0)
-          ${params.map((x) => `${constructor} ${x}`).join(" ")}
-          throw $E
-        end
-        unreachable
-      )
-      (func (export "testCatchRef") (result ${types})
-        (block (result ${types} exnref)
-          try_table (catch_ref $E 0)
-            ${params.map((x) => `${constructor} ${x}`).join(" ")}
-            throw $E
-          end
-          unreachable
-        )
-        drop
-        return
-      )
-
-    )`).exports;
-    assertEqResults(testCatch(), params);
-    assertEqResults(testCatchRef(), params);
-  }
-}
-
-
-{
-  let {test} = wasmEvalText(`(module
-    (tag $E)
-
-    (func (export "test") (param $shouldThrow i32) (result i32)
-      (local $result i32)
-
-      (block $join
-        (block $catch
-          try_table (catch $E $catch)
-            local.get $shouldThrow
-            if
-              throw $E
-            end
-            (local.set $result i32.const 0)
-            br $join
-          end
-        )
-        (local.set $result i32.const 1)
-        br $join
-      )
-
-      local.get $result
-    )
-
-  )`).exports;
-  assertEq(test(0), 0);
-  assertEq(test(1), 1);
-}
-
-
-{
-  let {testCatch, testCatchRef, testCatchAll, testCatchAllRef} = wasmEvalText(`(module
-    (tag $E)
-
-    (func (export "testCatch")
-      (block $good
-        (block $bad
-          try_table (catch $E $good) (catch $E $bad) (catch_all $bad)
-            throw $E
-          end
-        )
-        unreachable
-      )
-    )
-    (func (export "testCatchAll")
-      (block $good
-        (block $bad
-          try_table (catch_all $good) (catch $E $bad) (catch $E $bad)
-            throw $E
-          end
-        )
-        unreachable
-      )
-    )
-    (func (export "testCatchRef")
-      (block $good (result exnref)
-        (block $bad (result exnref)
-          try_table (catch_ref $E $good) (catch_ref $E $bad) (catch_all_ref $bad)
-            throw $E
-          end
-          unreachable
-        )
-        unreachable
-      )
-      drop
-    )
-    (func (export "testCatchAllRef")
-      (block $good (result exnref)
-        (block $bad (result exnref)
-          try_table (catch_all_ref $good) (catch_ref $E $bad) (catch_ref $E $bad)
-            throw $E
-          end
-          unreachable
-        )
-        unreachable
-      )
-      drop
-    )
-  )`).exports;
-  testCatch();
-  testCatchAll();
-  testCatchRef();
-  testCatchAllRef();
-}
-
-
-{
-  let {test} = wasmEvalText(`(module
-    (tag $E)
-    (func (export "test")
-      block $good
-        block $bad
-          try_table $a (catch_all $good)
-            try
-              try
-                throw $E
-              delegate $a
-            catch $E
-              br $bad
-            end
-          end
-        end
-        unreachable
-      end
-    )
-  )`).exports;
-  test();
-}
-
-
-{
-  wasmFailValidateText(`(module
-    (func
-      try_table (catch_all 0) rethrow 0 end
-    )
-  )`, /rethrow target/);
-}
-
-
-{
   let tag = new WebAssembly.Tag({parameters: []});
   let exn = new WebAssembly.Exception(tag, []);
   let values = [...WasmExternrefValues, exn];
@@ -351,29 +173,23 @@
   let {test} = wasmEvalText(`(module
     (import "" "tag" (tag $tag))
     (import "" "throwJS" (func $throwJS (param externref)))
-    (func $innerRethrow (param externref)
-      (block (result exnref)
-        try_table (catch_ref $tag 0) (catch_all_ref 0)
-          local.get 0
-          call $throwJS
-        end
-        return
-      )
-      throw_ref
-    )
     (func (export "test") (param externref)
-      (block (result exnref)
-        try_table (catch_ref $tag 0) (catch_all_ref 0)
-          local.get 0
-          call $innerRethrow
-        end
+      try_table (result exnref) (catch_ref $tag 0) (catch_all_ref 0)
+        local.get 0
+        call $throwJS
         return
-      )
+      end
       throw_ref
     )
   )`, {"": {tag, throwJS}}).exports;
 
   for (let value of values) {
+    
+    
+    if (value === null) {
+      continue;
+    }
+
     try {
       test(value);
       assertEq(true, false);

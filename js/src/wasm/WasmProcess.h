@@ -29,10 +29,6 @@ namespace wasm {
 class Code;
 class CodeRange;
 class CodeSegment;
-class TagType;
-
-extern const TagType* sWrappedJSValueTagType;
-static constexpr uint32_t WrappedJSValueTagType_ValueOffset = 0;
 
 
 

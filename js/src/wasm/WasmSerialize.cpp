@@ -1049,7 +1049,7 @@ CoderResult CodeMetadataTier(Coder<mode>& coder,
 template <CoderMode mode>
 CoderResult CodeMetadata(Coder<mode>& coder,
                          CoderArg<mode, wasm::Metadata> item) {
-  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Metadata, 448);
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Metadata, 440);
   if constexpr (mode == MODE_ENCODE) {
     
     MOZ_ASSERT(!item->debugEnabled && item->debugFuncTypeIndices.empty());

@@ -305,7 +305,6 @@ class FunctionCompiler {
   BytecodeOffset bytecodeIfNotAsmJS() const {
     return moduleEnv_.isAsmJS() ? BytecodeOffset() : iter_.bytecodeOffset();
   }
-  FeatureUsage featureUsage() const { return iter_.featureUsage(); }
 
   
   [[nodiscard]] UniqueTryControl newTryControl() {
@@ -2400,30 +2399,14 @@ class FunctionCompiler {
     }
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
-    MWasmCallTryDesc tryDesc;
-    if (!beginTryCall(&tryDesc)) {
-      return false;
-    }
-
     MInstruction* ins;
-    if (tryDesc.inTry) {
-      ins = MWasmCallCatchable::NewBuiltinInstanceMethodCall(
-          alloc(), desc, builtin.identity, builtin.failureMode,
-          call.instanceArg_, call.regArgs_, StackArgAreaSizeUnaligned(builtin),
-          tryDesc);
-    } else {
-      ins = MWasmCallUncatchable::NewBuiltinInstanceMethodCall(
-          alloc(), desc, builtin.identity, builtin.failureMode,
-          call.instanceArg_, call.regArgs_, StackArgAreaSizeUnaligned(builtin));
-    }
+    ins = MWasmCallUncatchable::NewBuiltinInstanceMethodCall(
+        alloc(), desc, builtin.identity, builtin.failureMode, call.instanceArg_,
+        call.regArgs_, StackArgAreaSizeUnaligned(builtin));
     if (!ins) {
       return false;
     }
     curBlock_->add(ins);
-
-    if (!finishTryCall(&tryDesc)) {
-      return false;
-    }
 
     if (!def) {
       return true;
@@ -9408,9 +9391,6 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
       }
 
       f.finish();
-
-      
-      code->featureUsage |= f.featureUsage();
     }
 
     

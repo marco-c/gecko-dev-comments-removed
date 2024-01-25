@@ -1288,10 +1288,10 @@ struct BaseCompiler final {
   [[nodiscard]] bool throwFrom(RegRef exn);
 
   
-  void loadTag(RegPtr instance, uint32_t tagIndex, RegRef tagDst);
+  void loadTag(RegPtr instanceData, uint32_t tagIndex, RegRef tagDst);
 
   
-  void consumePendingException(RegPtr instance, RegRef* exnDst, RegRef* tagDst);
+  void consumePendingException(RegRef* exnDst, RegRef* tagDst);
 
   [[nodiscard]] bool startTryNote(size_t* tryNoteIndex);
   void finishTryNote(size_t tryNoteIndex);

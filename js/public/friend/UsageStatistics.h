@@ -91,7 +91,7 @@ extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
 
 
 
-enum class JSUseCounter { ASMJS, WASM, WASM_LEGACY_EXCEPTIONS, LATE_WEEKDAY };
+enum class JSUseCounter { ASMJS, WASM, LATE_WEEKDAY };
 
 using JSSetUseCounterCallback = void (*)(JSObject*, JSUseCounter);
 

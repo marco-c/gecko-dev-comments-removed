@@ -175,10 +175,10 @@ let $4 = instantiate(`(module
 )`);
 
 
-assert_trap(() => invoke($4, `struct.get-null`, []), `null structure reference`);
+assert_trap(() => invoke($4, `struct.get-null`, []), `null structure`);
 
 
-assert_trap(() => invoke($4, `struct.set-null`, []), `null structure reference`);
+assert_trap(() => invoke($4, `struct.set-null`, []), `null structure`);
 
 
 let $5 = instantiate(`(module

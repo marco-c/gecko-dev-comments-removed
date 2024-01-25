@@ -119,10 +119,10 @@ assert_return(() => invoke($2, `set_get`, [1, value("f32", 7)]), [value("f32", 7
 assert_return(() => invoke($2, `len`, []), [value("i32", 3)]);
 
 
-assert_trap(() => invoke($2, `get`, [10]), `out of bounds array access`);
+assert_trap(() => invoke($2, `get`, [10]), `out of bounds`);
 
 
-assert_trap(() => invoke($2, `set_get`, [10, value("f32", 7)]), `out of bounds array access`);
+assert_trap(() => invoke($2, `set_get`, [10, value("f32", 7)]), `out of bounds`);
 
 
 let $3 = instantiate(`(module
@@ -177,34 +177,27 @@ assert_return(() => invoke($3, `set_get`, [1, value("f32", 7)]), [value("f32", 7
 assert_return(() => invoke($3, `len`, []), [value("i32", 2)]);
 
 
-assert_trap(() => invoke($3, `get`, [10]), `out of bounds array access`);
+assert_trap(() => invoke($3, `get`, [10]), `out of bounds`);
 
 
-assert_trap(() => invoke($3, `set_get`, [10, value("f32", 7)]), `out of bounds array access`);
+assert_trap(() => invoke($3, `set_get`, [10, value("f32", 7)]), `out of bounds`);
 
 
 let $4 = instantiate(`(module
   (type $$vec (array i8))
   (type $$mvec (array (mut i8)))
 
-  (data $$d "\\00\\01\\02\\ff\\04")
+  (data $$d "\\00\\01\\02\\03\\04")
 
   (func $$new (export "new") (result (ref $$vec))
     (array.new_data $$vec $$d (i32.const 1) (i32.const 3))
   )
 
-  (func $$get_u (param $$i i32) (param $$v (ref $$vec)) (result i32)
+  (func $$get (param $$i i32) (param $$v (ref $$vec)) (result i32)
     (array.get_u $$vec (local.get $$v) (local.get $$i))
   )
-  (func (export "get_u") (param $$i i32) (result i32)
-    (call $$get_u (local.get $$i) (call $$new))
-  )
-
-  (func $$get_s (param $$i i32) (param $$v (ref $$vec)) (result i32)
-    (array.get_s $$vec (local.get $$v) (local.get $$i))
-  )
-  (func (export "get_s") (param $$i i32) (result i32)
-    (call $$get_s (local.get $$i) (call $$new))
+  (func (export "get") (param $$i i32) (result i32)
+    (call $$get (local.get $$i) (call $$new))
   )
 
   (func $$set_get (param $$i i32) (param $$v (ref $$mvec)) (param $$y i32) (result i32)
@@ -233,10 +226,7 @@ assert_return(() => invoke($4, `new`, []), [new RefWithType('arrayref')]);
 assert_return(() => invoke($4, `new`, []), [new RefWithType('eqref')]);
 
 
-assert_return(() => invoke($4, `get_u`, [2]), [value("i32", 255)]);
-
-
-assert_return(() => invoke($4, `get_s`, [2]), [value("i32", -1)]);
+assert_return(() => invoke($4, `get`, [0]), [value("i32", 1)]);
 
 
 assert_return(() => invoke($4, `set_get`, [1, 7]), [value("i32", 7)]);
@@ -245,13 +235,10 @@ assert_return(() => invoke($4, `set_get`, [1, 7]), [value("i32", 7)]);
 assert_return(() => invoke($4, `len`, []), [value("i32", 3)]);
 
 
-assert_trap(() => invoke($4, `get_u`, [10]), `out of bounds array access`);
+assert_trap(() => invoke($4, `get`, [10]), `out of bounds`);
 
 
-assert_trap(() => invoke($4, `get_s`, [10]), `out of bounds array access`);
-
-
-assert_trap(() => invoke($4, `set_get`, [10, 7]), `out of bounds array access`);
+assert_trap(() => invoke($4, `set_get`, [10, 7]), `out of bounds`);
 
 
 let $5 = instantiate(`(module
@@ -322,10 +309,10 @@ assert_return(() => invoke($5, `set_get`, [0, 1, 1]), [value("i32", 2)]);
 assert_return(() => invoke($5, `len`, []), [value("i32", 2)]);
 
 
-assert_trap(() => invoke($5, `get`, [10, 0]), `out of bounds array access`);
+assert_trap(() => invoke($5, `get`, [10, 0]), `out of bounds`);
 
 
-assert_trap(() => invoke($5, `set_get`, [10, 0, 0]), `out of bounds array access`);
+assert_trap(() => invoke($5, `set_get`, [10, 0, 0]), `out of bounds`);
 
 
 assert_invalid(
@@ -379,7 +366,7 @@ let $6 = instantiate(`(module
 )`);
 
 
-assert_trap(() => invoke($6, `array.get-null`, []), `null array reference`);
+assert_trap(() => invoke($6, `array.get-null`, []), `null array`);
 
 
-assert_trap(() => invoke($6, `array.set-null`, []), `null array reference`);
+assert_trap(() => invoke($6, `array.set-null`, []), `null array`);

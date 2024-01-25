@@ -157,14 +157,6 @@ impl NameSection {
     
     
     
-    pub fn tag(&mut self, names: &NameMap) {
-        self.subsection_header(Subsection::Tag, names.size());
-        names.encode(&mut self.bytes);
-    }
-
-    
-    
-    
     
     
     pub fn fields(&mut self, names: &IndirectNameMap) {
