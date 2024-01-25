@@ -151,11 +151,6 @@ TEST_F(PortAllocatorTest, SetConfigurationUpdatesCandidatePoolSize) {
 }
 
 
-TEST_F(PortAllocatorTest, SetConfigurationWithNegativePoolSizeFails) {
-  SetConfigurationWithPoolSizeExpectFailure(-1);
-}
-
-
 
 TEST_F(PortAllocatorTest, SetConfigurationCreatesPooledSessions) {
   SetConfigurationWithPoolSize(2);
@@ -210,33 +205,6 @@ TEST_F(PortAllocatorTest,
   EXPECT_EQ(turn_servers_2, session_1->turn_servers());
   EXPECT_EQ(stun_servers_2, session_2->stun_servers());
   EXPECT_EQ(turn_servers_2, session_2->turn_servers());
-  EXPECT_EQ(0, GetAllPooledSessionsReturnCount());
-}
-
-
-
-
-TEST_F(PortAllocatorTest,
-       SetConfigurationDoesNotRecreatePooledSessionsAfterFreezeCandidatePool) {
-  cricket::ServerAddresses stun_servers_1 = {stun_server_1};
-  std::vector<cricket::RelayServerConfig> turn_servers_1 = {turn_server_1};
-  allocator_->SetConfiguration(stun_servers_1, turn_servers_1, 1,
-                               webrtc::NO_PRUNE);
-  EXPECT_EQ(stun_servers_1, allocator_->stun_servers());
-  EXPECT_EQ(turn_servers_1, allocator_->turn_servers());
-
-  
-  allocator_->FreezeCandidatePool();
-  cricket::ServerAddresses stun_servers_2 = {stun_server_2};
-  std::vector<cricket::RelayServerConfig> turn_servers_2 = {turn_server_2};
-  allocator_->SetConfiguration(stun_servers_2, turn_servers_2, 2,
-                               webrtc::NO_PRUNE);
-  EXPECT_EQ(stun_servers_2, allocator_->stun_servers());
-  EXPECT_EQ(turn_servers_2, allocator_->turn_servers());
-  auto session = TakePooledSession();
-  ASSERT_NE(nullptr, session.get());
-  EXPECT_EQ(stun_servers_1, session->stun_servers());
-  EXPECT_EQ(turn_servers_1, session->turn_servers());
   EXPECT_EQ(0, GetAllPooledSessionsReturnCount());
 }
 

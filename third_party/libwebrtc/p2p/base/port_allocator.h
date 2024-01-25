@@ -444,15 +444,6 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
       const IceParameters* ice_credentials = nullptr) const;
 
   
-  
-  
-  
-  
-  
-  
-  void FreezeCandidatePool();
-
-  
   void DiscardCandidatePool();
 
   
@@ -655,7 +646,6 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   std::vector<RelayServerConfig> turn_servers_;
   int candidate_pool_size_ = 0;  
   std::vector<std::unique_ptr<PortAllocatorSession>> pooled_sessions_;
-  bool candidate_pool_frozen_ = false;
   webrtc::PortPrunePolicy turn_port_prune_policy_ = webrtc::NO_PRUNE;
 
   
