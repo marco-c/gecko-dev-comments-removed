@@ -4422,7 +4422,6 @@ PBIResult PortableBaselineInterpret(JSContext* cx_, State& state, Stack& stack,
 
     CASE(AsyncResolve) {
       
-      auto resolveKind = AsyncFunctionResolveKind(GET_UINT8(pc));
       JSObject* promise;
       {
         ReservedRooted<JSObject*> obj0(&state.obj0,
@@ -4431,13 +4430,34 @@ PBIResult PortableBaselineInterpret(JSContext* cx_, State& state, Stack& stack,
                                      POP().asValue());  
         PUSH_EXIT_FRAME();
         promise = AsyncFunctionResolve(
-            cx, obj0.as<AsyncFunctionGeneratorObject>(), value0, resolveKind);
+            cx, obj0.as<AsyncFunctionGeneratorObject>(), value0);
         if (!promise) {
           goto error;
         }
       }
       PUSH(StackVal(ObjectValue(*promise)));
       END_OP(AsyncResolve);
+    }
+
+    CASE(AsyncReject) {
+      
+      JSObject* promise;
+      {
+        ReservedRooted<JSObject*> obj0(&state.obj0,
+                                       &POP().asValue().toObject());  
+        ReservedRooted<Value> value0(&state.value0,
+                                     POP().asValue());  
+        ReservedRooted<Value> value1(&state.value1,
+                                     POP().asValue());  
+        PUSH_EXIT_FRAME();
+        promise = AsyncFunctionReject(
+            cx, obj0.as<AsyncFunctionGeneratorObject>(), value1, value0);
+        if (!promise) {
+          goto error;
+        }
+      }
+      PUSH(StackVal(ObjectValue(*promise)));
+      END_OP(AsyncReject);
     }
 
     CASE(CanSkipAwait) {
@@ -4724,6 +4744,17 @@ PBIResult PortableBaselineInterpret(JSContext* cx_, State& state, Stack& stack,
       END_OP(Throw);
     }
 
+    CASE(ThrowWithStack) {
+      {
+        ReservedRooted<Value> value0(&state.value0, POP().asValue());
+        ReservedRooted<Value> value1(&state.value1, POP().asValue());
+        PUSH_EXIT_FRAME();
+        MOZ_ALWAYS_FALSE(ThrowWithStackOperation(cx, value1, value0));
+        goto error;
+      }
+      END_OP(ThrowWithStack);
+    }
+
     CASE(ThrowMsg) {
       {
         PUSH_EXIT_FRAME();
@@ -4758,6 +4789,25 @@ PBIResult PortableBaselineInterpret(JSContext* cx_, State& state, Stack& stack,
       PUSH(StackVal(state.res));
       state.res.setUndefined();
       END_OP(Exception);
+    }
+
+    CASE(ExceptionAndStack) {
+      {
+        ReservedRooted<Value> value0(&state.value0);
+        {
+          PUSH_EXIT_FRAME();
+          if (!cx.getCx()->getPendingExceptionStack(&value0)) {
+            goto error;
+          }
+          if (!GetAndClearException(cx, &state.res)) {
+            goto error;
+          }
+        }
+        PUSH(StackVal(state.res));
+        PUSH(StackVal(value0));
+        state.res.setUndefined();
+      }
+      END_OP(ExceptionAndStack);
     }
 
     CASE(Finally) {
@@ -5256,6 +5306,7 @@ error:
         sp = reinterpret_cast<StackVal*>(rfe.stackPointer);
         TRACE_PRINTF(" -> finally to pc %p\n", pc);
         PUSH(StackVal(rfe.exception));
+        PUSH(StackVal(rfe.exceptionStack));
         PUSH(StackVal(BooleanValue(true)));
         stack.unwindingSP = sp;
         goto unwind;
