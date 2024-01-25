@@ -1081,7 +1081,9 @@ fn records_database_file_size() {
     let glean = Glean::with_options(&tmpname, GLOBAL_APPLICATION_ID, true);
     let database_size = &glean.database_metrics.size;
     let data = database_size.get_value(&glean, "metrics");
+
     assert!(data.is_none());
+
     drop(glean);
 
     
@@ -1094,6 +1096,11 @@ fn records_database_file_size() {
 
     
     assert!(data.sum > 0);
+
+    let rkv_load_state = &glean.database_metrics.rkv_load_error;
+    let rkv_load_error = rkv_load_state.get_value(&glean, "metrics");
+
+    assert_eq!(rkv_load_error, None);
 }
 
 #[cfg(not(target_os = "windows"))]

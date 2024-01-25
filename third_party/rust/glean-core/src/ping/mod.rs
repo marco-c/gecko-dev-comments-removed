@@ -313,28 +313,6 @@ impl PingMaker {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn collect_string(
-        &self,
-        glean: &Glean,
-        ping: &PingType,
-        reason: Option<&str>,
-    ) -> Option<String> {
-        self.collect(glean, ping, reason, "", "")
-            .map(|ping| ::serde_json::to_string_pretty(&ping.content).unwrap())
-    }
-
-    
-    
-    
-    
     fn get_pings_dir(&self, data_path: &Path, ping_type: Option<&str>) -> std::io::Result<PathBuf> {
         
         let pings_dir = match ping_type {
