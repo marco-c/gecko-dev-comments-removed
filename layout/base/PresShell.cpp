@@ -6944,6 +6944,38 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
     return NS_OK;
   }
 
+  if (mPresContext) {
+    switch (aGUIEvent->mMessage) {
+      case eMouseDown:
+      case eMouseUp: {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        RefPtr<PresShell> rootPresShell =
+            mPresContext->IsRoot() ? this : GetRootPresShell();
+        if (rootPresShell && rootPresShell->mSynthMouseMoveEvent.IsPending()) {
+          RefPtr<nsSynthMouseMoveEvent> synthMouseMoveEvent =
+              rootPresShell->mSynthMouseMoveEvent.get();
+          synthMouseMoveEvent->Run();
+        }
+        if (IsDestroying()) {
+          return NS_OK;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
   EventHandler eventHandler(*this);
   return eventHandler.HandleEvent(aFrameForPresShell, aGUIEvent,
                                   aDontRetargetEvents, aEventStatus);
@@ -7976,6 +8008,10 @@ PresShell::EventHandler::HandleEventWithPointerCapturingContentWithoutItsFrame(
     
     
     PointerEventHandler::ReleaseIfCaptureByDescendant(aPointerCapturingContent);
+    
+    
+    
+    PointerEventHandler::MaybeImplicitlyReleasePointerCapture(aGUIEvent);
     return NS_OK;
   }
 

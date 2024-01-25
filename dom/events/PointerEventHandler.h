@@ -117,6 +117,8 @@ class PointerEventHandler final {
   static void ImplicitlyCapturePointer(nsIFrame* aFrame, WidgetEvent* aEvent);
   MOZ_CAN_RUN_SCRIPT
   static void ImplicitlyReleasePointerCapture(WidgetEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT static void MaybeImplicitlyReleasePointerCapture(
+      WidgetGUIEvent* aEvent);
 
   
 
@@ -183,7 +185,8 @@ class PointerEventHandler final {
 
   static bool ShouldGeneratePointerEventFromMouse(WidgetGUIEvent* aEvent) {
     return aEvent->mMessage == eMouseDown || aEvent->mMessage == eMouseUp ||
-           aEvent->mMessage == eMouseMove ||
+           (aEvent->mMessage == eMouseMove &&
+            aEvent->AsMouseEvent()->IsReal()) ||
            aEvent->mMessage == eMouseExitFromWidget;
   }
 
@@ -202,6 +205,10 @@ class PointerEventHandler final {
   static bool IsDragAndDropEnabled(WidgetMouseEvent& aEvent);
 
  private:
+  
+  static EventMessage ToPointerEventMessage(
+      const WidgetGUIEvent* aMouseOrTouchEvent);
+
   
   static void SetPointerCaptureById(uint32_t aPointerId,
                                     dom::Element* aElement);
