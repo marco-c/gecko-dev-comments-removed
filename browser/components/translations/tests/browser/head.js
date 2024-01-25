@@ -30,23 +30,28 @@ const getIntlDisplayName = (() => {
 
 
 
+class FullPageTranslationsTestUtils {
+  
 
 
 
 
-async function assertPageIsUntranslated(runInPage, message = null) {
-  if (message) {
-    info(message);
+
+
+  static async assertPageIsUntranslated(runInPage, message = null) {
+    if (message) {
+      info(message);
+    }
+    info("Checking that the page is untranslated");
+    await runInPage(async TranslationsTest => {
+      const { getH1 } = TranslationsTest.getSelectors();
+      await TranslationsTest.assertTranslationResult(
+        "The page's H1 is untranslated and in the original Spanish.",
+        getH1,
+        "Don Quijote de La Mancha"
+      );
+    });
   }
-  info("Checking that the page is untranslated");
-  await runInPage(async TranslationsTest => {
-    const { getH1 } = TranslationsTest.getSelectors();
-    await TranslationsTest.assertTranslationResult(
-      "The page's H1 is untranslated and in the original Spanish.",
-      getH1,
-      "Don Quijote de La Mancha"
-    );
-  });
 }
 
 
