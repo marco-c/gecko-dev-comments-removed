@@ -197,7 +197,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     INLINE_DATA = 0b000,
 
     
-    MALLOCED = 0b001,
+
+
+
+    MALLOCED_ARRAYBUFFER_CONTENTS_ARENA = 0b001,
 
     
 
@@ -219,8 +222,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     EXTERNAL = 0b110,
 
     
-    
-    BAD1 = 0b111,
+
+
+
+    MALLOCED_UNKNOWN_ARENA = 0b111,
 
     KIND_MASK = 0b111
   };
@@ -285,8 +290,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
       return BufferContents(static_cast<uint8_t*>(data), INLINE_DATA);
     }
 
-    static BufferContents createMalloced(void* data) {
-      return BufferContents(static_cast<uint8_t*>(data), MALLOCED);
+    static BufferContents createMallocedArrayBufferContentsArena(void* data) {
+      return BufferContents(static_cast<uint8_t*>(data),
+                            MALLOCED_ARRAYBUFFER_CONTENTS_ARENA);
+    }
+
+    static BufferContents createMallocedUnknownArena(void* data) {
+      return BufferContents(static_cast<uint8_t*>(data),
+                            MALLOCED_UNKNOWN_ARENA);
     }
 
     static BufferContents createNoData() {
@@ -317,7 +328,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
       
       
       
-      return BufferContents(nullptr, MALLOCED);
+      return BufferContents(nullptr, MALLOCED_ARRAYBUFFER_CONTENTS_ARENA);
     }
 
     uint8_t* data() const { return data_; }
@@ -461,7 +472,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   }
 
   bool isInlineData() const { return bufferKind() == INLINE_DATA; }
-  bool isMalloced() const { return bufferKind() == MALLOCED; }
+  bool isMalloced() const {
+    return bufferKind() == MALLOCED_ARRAYBUFFER_CONTENTS_ARENA ||
+           bufferKind() == MALLOCED_UNKNOWN_ARENA;
+  }
   bool isNoData() const { return bufferKind() == NO_DATA; }
   bool hasUserOwnedData() const { return bufferKind() == USER_OWNED; }
 
