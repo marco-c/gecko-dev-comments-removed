@@ -41,7 +41,7 @@ struct RTC_EXPORT CryptoOptions {
   struct Srtp {
     
     
-    bool enable_gcm_crypto_suites = false;
+    bool enable_gcm_crypto_suites = true;
 
     
     

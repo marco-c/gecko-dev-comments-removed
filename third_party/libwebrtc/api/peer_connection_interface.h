@@ -1493,7 +1493,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
     rtc::SSLProtocolVersion ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
 
     
-    CryptoOptions crypto_options = CryptoOptions::NoGcm();
+    CryptoOptions crypto_options = {};
   };
 
   
