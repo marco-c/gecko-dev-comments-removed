@@ -943,7 +943,11 @@ pref("javascript.options.mem.gc_compacting", true);
 
 
 
+#ifndef ANDROID
+pref("javascript.options.mem.gc_parallel_marking", true);
+#else
 pref("javascript.options.mem.gc_parallel_marking", false);
+#endif
 
 
 
@@ -2012,9 +2016,6 @@ pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);
 
 
 pref("svg.disabled", false);
-
-
-pref("browser.tabs.remote.autostart", false);
 
 
 
