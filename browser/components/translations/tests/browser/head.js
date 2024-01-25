@@ -128,7 +128,8 @@ class FullPageTranslationsTestUtils {
 
     return elements;
   }
-}
+
+  
 
 
 
@@ -139,24 +140,29 @@ class FullPageTranslationsTestUtils {
 
 
 
-
-
-async function openTranslationsPanel({
-  onOpenPanel = null,
-  openFromAppMenu = false,
-  openWithKeyboard = false,
-}) {
-  logAction();
-  await closeTranslationsPanelIfOpen();
-  if (openFromAppMenu) {
-    await openTranslationsPanelViaAppMenu({ onOpenPanel, openWithKeyboard });
-  } else {
-    await openTranslationsPanelViaTranslationsButton({
-      onOpenPanel,
-      openWithKeyboard,
-    });
+  static async openTranslationsPanel({
+    onOpenPanel = null,
+    openFromAppMenu = false,
+    openWithKeyboard = false,
+  }) {
+    logAction();
+    await closeTranslationsPanelIfOpen();
+    if (openFromAppMenu) {
+      await FullPageTranslationsTestUtils.#openTranslationsPanelViaAppMenu({
+        onOpenPanel,
+        openWithKeyboard,
+      });
+    } else {
+      await FullPageTranslationsTestUtils.#openTranslationsPanelViaTranslationsButton(
+        {
+          onOpenPanel,
+          openWithKeyboard,
+        }
+      );
+    }
   }
-}
+
+  
 
 
 
@@ -165,29 +171,71 @@ async function openTranslationsPanel({
 
 
 
+  static async #openTranslationsPanelViaAppMenu({
+    onOpenPanel = null,
+    openWithKeyboard = false,
+  }) {
+    logAction();
+    const appMenuButton = getById("PanelUI-menu-button");
+    if (openWithKeyboard) {
+      hitEnterKey(appMenuButton, "Opening the app-menu button with keyboard");
+    } else {
+      click(appMenuButton, "Opening the app-menu button");
+    }
+    await BrowserTestUtils.waitForEvent(window.PanelUI.mainView, "ViewShown");
 
+    const translateSiteButton = getById("appMenu-translate-button");
 
-async function openTranslationsPanelViaTranslationsButton({
-  onOpenPanel = null,
-  openWithKeyboard = false,
-}) {
-  logAction();
-  const { button } =
-    await FullPageTranslationsTestUtils.assertTranslationsButton(
-      { button: true },
-      "The translations button is visible."
+    is(
+      translateSiteButton.disabled,
+      false,
+      "The app-menu translate button should be enabled"
     );
-  await waitForTranslationsPopupEvent(
-    "popupshown",
-    () => {
-      if (openWithKeyboard) {
-        hitEnterKey(button, "Opening the popup with keyboard");
-      } else {
-        click(button, "Opening the popup");
-      }
-    },
-    onOpenPanel
-  );
+
+    await waitForTranslationsPopupEvent(
+      "popupshown",
+      () => {
+        if (openWithKeyboard) {
+          hitEnterKey(translateSiteButton, "Opening the popup with keyboard");
+        } else {
+          click(translateSiteButton, "Opening the popup");
+        }
+      },
+      onOpenPanel
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+  static async #openTranslationsPanelViaTranslationsButton({
+    onOpenPanel = null,
+    openWithKeyboard = false,
+  }) {
+    logAction();
+    const { button } =
+      await FullPageTranslationsTestUtils.assertTranslationsButton(
+        { button: true },
+        "The translations button is visible."
+      );
+    await waitForTranslationsPopupEvent(
+      "popupshown",
+      () => {
+        if (openWithKeyboard) {
+          hitEnterKey(button, "Opening the popup with keyboard");
+        } else {
+          click(button, "Opening the popup");
+        }
+      },
+      onOpenPanel
+    );
+  }
 }
 
 
@@ -235,49 +283,6 @@ async function openTranslationsSettingsMenu() {
     );
     return;
   }
-}
-
-
-
-
-
-
-
-
-
-
-async function openTranslationsPanelViaAppMenu({
-  onOpenPanel = null,
-  openWithKeyboard = false,
-}) {
-  logAction();
-  const appMenuButton = getById("PanelUI-menu-button");
-  if (openWithKeyboard) {
-    hitEnterKey(appMenuButton, "Opening the app-menu button with keyboard");
-  } else {
-    click(appMenuButton, "Opening the app-menu button");
-  }
-  await BrowserTestUtils.waitForEvent(window.PanelUI.mainView, "ViewShown");
-
-  const translateSiteButton = getById("appMenu-translate-button");
-
-  is(
-    translateSiteButton.disabled,
-    false,
-    "The app-menu translate button should be enabled"
-  );
-
-  await waitForTranslationsPopupEvent(
-    "popupshown",
-    () => {
-      if (openWithKeyboard) {
-        hitEnterKey(translateSiteButton, "Opening the popup with keyboard");
-      } else {
-        click(translateSiteButton, "Opening the popup");
-      }
-    },
-    onOpenPanel
-  );
 }
 
 
