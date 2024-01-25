@@ -5,7 +5,7 @@
 
 
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos"))]
+#[cfg(any(target_os = "macos", target_os = "tvos", target_os = "ios", target_os = "watchos"))]
 use core::ptr;
 use core::{
     cell::{Cell, UnsafeCell},
@@ -130,6 +130,7 @@ impl ThreadParker {
     #[cfg(any(
         target_os = "macos",
         target_os = "ios",
+        target_os = "tvos",
         target_os = "watchos",
         target_os = "android",
         target_os = "espidf"
@@ -141,6 +142,7 @@ impl ThreadParker {
     #[cfg(not(any(
         target_os = "macos",
         target_os = "ios",
+        target_os = "tvos",
         target_os = "watchos",
         target_os = "android",
         target_os = "espidf"
@@ -195,7 +197,7 @@ impl super::UnparkHandleT for UnparkHandle {
 }
 
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "tvos", target_os = "watchos"))]
 #[inline]
 fn timespec_now() -> libc::timespec {
     let mut now = MaybeUninit::<libc::timeval>::uninit();
@@ -208,7 +210,7 @@ fn timespec_now() -> libc::timespec {
         tv_nsec: now.tv_usec as tv_nsec_t * 1000,
     }
 }
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "watchos")))]
+#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "tvos", target_os = "watchos")))]
 #[inline]
 fn timespec_now() -> libc::timespec {
     let mut now = MaybeUninit::<libc::timespec>::uninit();
