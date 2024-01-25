@@ -29,8 +29,10 @@ loader.lazyGetter(this, "RELOAD_PAGE_INFO", function () {
 });
 
 
+
+
 const bugLink =
-  "https://bugzilla.mozilla.org/enter_bug.cgi?product=DevTools&component=";
+  "https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__&product=DevTools&component=";
 
 
 
