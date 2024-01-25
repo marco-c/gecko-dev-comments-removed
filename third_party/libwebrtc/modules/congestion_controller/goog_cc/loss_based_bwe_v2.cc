@@ -282,12 +282,10 @@ void LossBasedBweV2::UpdateBandwidthEstimate(
     
     if (increasing_when_loss_limited && IsValid(acknowledged_bitrate_)) {
       best_candidate.loss_limited_bandwidth =
-          IsValid(best_candidate.loss_limited_bandwidth)
-              ? std::min(best_candidate.loss_limited_bandwidth,
-                         config_->bandwidth_rampup_upper_bound_factor *
-                             (*acknowledged_bitrate_))
-              : config_->bandwidth_rampup_upper_bound_factor *
-                    (*acknowledged_bitrate_);
+          std::max(current_best_estimate_.loss_limited_bandwidth,
+                   std::min(best_candidate.loss_limited_bandwidth,
+                            config_->bandwidth_rampup_upper_bound_factor *
+                                (*acknowledged_bitrate_)));
     }
   }
 
@@ -323,11 +321,13 @@ void LossBasedBweV2::UpdateResult() {
   if (IsEstimateIncreasingWhenLossLimited(
           loss_based_result_.bandwidth_estimate,
           bounded_bandwidth_estimate) &&
-      bounded_bandwidth_estimate < delay_based_estimate_) {
+      bounded_bandwidth_estimate < delay_based_estimate_ &&
+      bounded_bandwidth_estimate < max_bitrate_) {
     loss_based_result_.state = LossBasedState::kIncreasing;
-  } else if (bounded_bandwidth_estimate < delay_based_estimate_) {
+  } else if (bounded_bandwidth_estimate < delay_based_estimate_ &&
+             bounded_bandwidth_estimate < max_bitrate_) {
     loss_based_result_.state = LossBasedState::kDecreasing;
-  } else if (bounded_bandwidth_estimate >= delay_based_estimate_) {
+  } else {
     loss_based_result_.state = LossBasedState::kDelayBasedEstimate;
   }
   loss_based_result_.bandwidth_estimate = bounded_bandwidth_estimate;
