@@ -71,14 +71,10 @@ struct ProbeControllerConfig {
   FieldTrialParameter<int> min_probe_packets_sent;
   
   FieldTrialParameter<TimeDelta> min_probe_duration;
-  
-  FieldTrialParameter<bool> limit_probe_target_rate_to_loss_bwe;
   FieldTrialParameter<double> loss_limited_probe_scale;
   
   
   FieldTrialParameter<double> skip_if_estimate_larger_than_fraction_of_max;
-  
-  FieldTrialParameter<bool> not_probe_if_delay_increased;
 };
 
 
@@ -86,7 +82,7 @@ struct ProbeControllerConfig {
 
 enum class BandwidthLimitedCause {
   kLossLimitedBweIncreasing = 0,
-  kLossLimitedBweDecreasing = 1,
+  kLossLimitedBwe = 1,
   kDelayBasedLimited = 2,
   kDelayBasedLimitedDelayIncreased = 3,
   kRttBasedBackOffHighRtt = 4
@@ -141,11 +137,6 @@ class ProbeController {
 
   ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> Process(
       Timestamp at_time);
-
-  
-  bool DontProbeIfDelayIncreased() {
-    return config_.not_probe_if_delay_increased;
-  }
 
  private:
   enum class State {
