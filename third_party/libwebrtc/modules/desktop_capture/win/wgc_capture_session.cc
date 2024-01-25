@@ -262,10 +262,16 @@ void WgcCaptureSession::EnsureFrame() {
       << "Unable to process a valid frame even after trying 10 times.";
 }
 
-bool WgcCaptureSession::GetFrame(std::unique_ptr<DesktopFrame>* output_frame) {
+bool WgcCaptureSession::GetFrame(std::unique_ptr<DesktopFrame>* output_frame,
+                                 bool source_should_be_capturable) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
-  EnsureFrame();
+  
+  
+  
+  
+  if (source_should_be_capturable)
+    EnsureFrame();
 
   
   

@@ -29,6 +29,10 @@ WgcCaptureSource::WgcCaptureSource(DesktopCapturer::SourceId source_id)
     : source_id_(source_id) {}
 WgcCaptureSource::~WgcCaptureSource() = default;
 
+bool WgcCaptureSource::ShouldBeCapturable() {
+  return true;
+}
+
 bool WgcCaptureSource::IsCapturable() {
   
   
@@ -105,9 +109,17 @@ ABI::Windows::Graphics::SizeInt32 WgcWindowSource::GetSize() {
           window_rect.bottom - window_rect.top};
 }
 
+
+
+
+bool WgcWindowSource::ShouldBeCapturable() {
+  return IsWindowValidAndVisible(reinterpret_cast<HWND>(GetSourceId()));
+}
+
 bool WgcWindowSource::IsCapturable() {
-  if (!IsWindowValidAndVisible(reinterpret_cast<HWND>(GetSourceId())))
+  if (!ShouldBeCapturable()) {
     return false;
+  }
 
   return WgcCaptureSource::IsCapturable();
 }

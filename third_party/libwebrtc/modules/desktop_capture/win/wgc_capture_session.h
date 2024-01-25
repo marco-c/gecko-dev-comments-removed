@@ -44,7 +44,8 @@ class WgcCaptureSession final {
   HRESULT StartCapture(const DesktopCaptureOptions& options);
 
   
-  bool GetFrame(std::unique_ptr<DesktopFrame>* output_frame);
+  bool GetFrame(std::unique_ptr<DesktopFrame>* output_frame,
+                bool source_should_be_capturable);
 
   bool IsCaptureStarted() const {
     RTC_DCHECK_RUN_ON(&sequence_checker_);
