@@ -8,11 +8,12 @@
 
 
 
+#include "absl/flags/flag.h"
 #include "api/test/metrics/global_metrics_logger_and_exporter.h"
 #include "api/test/metrics/metric.h"
 #include "modules/audio_coding/neteq/tools/neteq_performance_test.h"
-#include "system_wrappers/include/field_trial.h"
 #include "test/gtest.h"
+#include "test/test_flags.h"
 
 namespace webrtc {
 namespace {
@@ -29,8 +30,8 @@ TEST(NetEqPerformanceTest, 10_Pl_10_Drift) {
   const int kLossPeriod = 10;  
   const double kDriftFactor = 0.1;
   int64_t runtime = test::NetEqPerformanceTest::Run(
-      field_trial::IsEnabled("WebRTC-QuickPerfTest") ? kQuickSimulationTimeMs
-                                                     : kSimulationTimeMs,
+      absl::GetFlag(FLAGS_webrtc_quick_perf_test) ? kQuickSimulationTimeMs
+                                                  : kSimulationTimeMs,
       kLossPeriod, kDriftFactor);
   ASSERT_GT(runtime, 0);
   GetGlobalMetricsLogger()->LogSingleValueMetric(
@@ -47,8 +48,8 @@ TEST(NetEqPerformanceTest, 0_Pl_0_Drift) {
   const int kLossPeriod = 0;        
   const double kDriftFactor = 0.0;  
   int64_t runtime = test::NetEqPerformanceTest::Run(
-      field_trial::IsEnabled("WebRTC-QuickPerfTest") ? kQuickSimulationTimeMs
-                                                     : kSimulationTimeMs,
+      absl::GetFlag(FLAGS_webrtc_quick_perf_test) ? kQuickSimulationTimeMs
+                                                  : kSimulationTimeMs,
       kLossPeriod, kDriftFactor);
   ASSERT_GT(runtime, 0);
   GetGlobalMetricsLogger()->LogSingleValueMetric(

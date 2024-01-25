@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/numerics/samples_stats_counter.h"
@@ -52,6 +53,7 @@
 #include "test/gtest.h"
 #include "test/null_transport.h"
 #include "test/rtp_rtcp_observer.h"
+#include "test/test_flags.h"
 #include "test/testsupport/file_utils.h"
 #include "test/video_encoder_proxy_factory.h"
 #include "test/video_test_constants.h"
@@ -361,7 +363,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   observer->PrintResults();
 
   
-  if (!field_trial::IsEnabled("WebRTC-QuickPerfTest")) {
+  if (!absl::GetFlag(FLAGS_webrtc_quick_perf_test)) {
 
 #if !defined(WEBRTC_IOS)
     EXPECT_METRIC_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
@@ -975,8 +977,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
     void PerformTest() override {
       
       
-      const bool quick_perf_test =
-          field_trial::IsEnabled("WebRTC-QuickPerfTest");
+      const bool quick_perf_test = absl::GetFlag(FLAGS_webrtc_quick_perf_test);
+
       int last_passed_test_bitrate = -1;
       for (int test_bitrate = test_bitrate_from_;
            test_bitrate_from_ < test_bitrate_to_
@@ -1125,8 +1127,7 @@ void CallPerfTest::TestEncodeFramerate(VideoEncoderFactory* encoder_factory,
     }
 
     void VerifyStats() const {
-      const bool quick_perf_test =
-          field_trial::IsEnabled("WebRTC-QuickPerfTest");
+      const bool quick_perf_test = absl::GetFlag(FLAGS_webrtc_quick_perf_test);
       double input_fps = 0.0;
       for (const auto& configured_framerate : configured_framerates_) {
         input_fps = std::max(configured_framerate.second, input_fps);
