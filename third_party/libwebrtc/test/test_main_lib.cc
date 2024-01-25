@@ -150,11 +150,6 @@ class TestMainImpl : public TestMain {
     
     field_trials_ = absl::GetFlag(FLAGS_force_fieldtrials);
     webrtc::field_trial::InitFieldTrialsFromString(field_trials_.c_str());
-    
-    
-    if (webrtc::field_trial::IsEnabled("WebRTC-QuickPerfTest")) {
-      absl::SetFlag(&FLAGS_webrtc_quick_perf_test, true);
-    }
     webrtc::metrics::Enable();
 
 #if defined(WEBRTC_WIN)
