@@ -1678,6 +1678,17 @@ inline bool OpIter<Policy>::readTryTable(ResultType* paramType,
 
     
     
+    
+    
+    
+    
+    if (tryTableCatch.labelRelativeDepth == UINT32_MAX) {
+      return fail("catch depth out of range");
+    }
+    tryTableCatch.labelRelativeDepth += 1;
+
+    
+    
     if (tryTableCatch.tagIndex != CatchAllIndex) {
       const TagType& tagType = *env_.tags[tryTableCatch.tagIndex].type;
       ResultType tagResult = tagType.resultType();
