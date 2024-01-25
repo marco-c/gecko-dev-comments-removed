@@ -89,6 +89,36 @@ class FullPageTranslationsTestUtils {
 
 
 
+  static assertSelectedFromLanguage(langTag) {
+    info(`Checking that the selected from-language matches ${langTag}`);
+    const { fromMenuList } = TranslationsPanel.elements;
+    is(
+      fromMenuList.value,
+      langTag,
+      "Expected selected from-language to match the given language tag"
+    );
+  }
+
+  
+
+
+
+
+  static assertSelectedToLanguage(langTag) {
+    info(`Checking that the selected to-language matches ${langTag}`);
+    const { toMenuList } = TranslationsPanel.elements;
+    is(
+      toMenuList.value,
+      langTag,
+      "Expected selected to-language to match the given language tag"
+    );
+  }
+
+  
+
+
+
+
 
 
   static async assertTranslationsButton(visibleAssertions, message) {
@@ -260,6 +290,30 @@ class FullPageTranslationsTestUtils {
       return;
     }
   }
+
+  
+
+
+
+
+  static switchSelectedFromLanguage(langTag) {
+    logAction(langTag);
+    const { fromMenuList } = TranslationsPanel.elements;
+    fromMenuList.value = langTag;
+    fromMenuList.dispatchEvent(new Event("command"));
+  }
+
+  
+
+
+
+
+  static switchSelectedToLanguage(langTag) {
+    logAction(langTag);
+    const { toMenuList } = TranslationsPanel.elements;
+    toMenuList.value = langTag;
+    toMenuList.dispatchEvent(new Event("command"));
+  }
 }
 
 
@@ -282,60 +336,6 @@ function logAction(...params) {
       "chrome://mochitests/content/browser/",
       ""
     )}`
-  );
-}
-
-
-
-
-
-
-function switchSelectedFromLanguage(langTag) {
-  logAction(langTag);
-  const { fromMenuList } = TranslationsPanel.elements;
-  fromMenuList.value = langTag;
-  fromMenuList.dispatchEvent(new Event("command"));
-}
-
-
-
-
-
-
-function assertSelectedFromLanguage(langTag) {
-  info(`Checking that the selected from-language matches ${langTag}`);
-  const { fromMenuList } = TranslationsPanel.elements;
-  is(
-    fromMenuList.value,
-    langTag,
-    "Expected selected from-language to match the given language tag"
-  );
-}
-
-
-
-
-
-
-function switchSelectedToLanguage(langTag) {
-  logAction(langTag);
-  const { toMenuList } = TranslationsPanel.elements;
-  toMenuList.value = langTag;
-  toMenuList.dispatchEvent(new Event("command"));
-}
-
-
-
-
-
-
-function assertSelectedToLanguage(langTag) {
-  info(`Checking that the selected to-language matches ${langTag}`);
-  const { toMenuList } = TranslationsPanel.elements;
-  is(
-    toMenuList.value,
-    langTag,
-    "Expected selected to-language to match the given language tag"
   );
 }
 
