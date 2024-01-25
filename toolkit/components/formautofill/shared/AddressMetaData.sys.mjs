@@ -1,24 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// The data below is initially copied from
+// https://chromium-i18n.appspot.com/ssl-aggregate-address
 
+// See https://github.com/googlei18n/libaddressinput/wiki/AddressValidationMetadata for
+// documentation on how to use the data.
 
+// WARNING: DO NOT change any value or add additional properties in addressData.
+// We only accept the metadata of the supported countries that is copied from libaddressinput directly.
+// Please edit AddressMetaDataExtension.sys.mjs instead if you want to add new property as complement
+// or overwrite the existing properties.
 
-
-
-
-"use strict";
-
-
-
-
-
-
-
-
-
-
-
-
-var addressData = {
+export const AddressMetaData = {
   "data/AD": {
     fmt: "%N%n%O%n%A%n%Z %C",
     id: "data/AD",
@@ -2453,3 +2448,4 @@ var addressData = {
   },
   "data/ZW": { id: "data/ZW", key: "ZW", name: "ZIMBABWE" },
 };
+export default AddressMetaData;
