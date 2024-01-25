@@ -54,7 +54,7 @@ class CTFontEntry final : public gfxFontEntry {
   
   
   
-  CGFontRef CreateOrCopyFontRef();
+  CGFontRef CreateOrCopyFontRef() MOZ_REQUIRES_SHARED(mLock);
 
   
   
@@ -84,18 +84,19 @@ class CTFontEntry final : public gfxFontEntry {
 
   static void DestroyBlobFunc(void* aUserData);
 
-  CGFontRef mFontRef;  
+  CGFontRef mFontRef MOZ_GUARDED_BY(mLock);  
 
-  double mSizeHint;
+  const double mSizeHint;
 
-  bool mFontRefInitialized;
-  bool mRequiresAAT;
-  bool mIsCFF;
-  bool mIsCFFInitialized;
-  bool mHasVariations;
-  bool mHasVariationsInitialized;
-  bool mHasAATSmallCaps;
-  bool mHasAATSmallCapsInitialized;
+  bool mFontRefInitialized MOZ_GUARDED_BY(mLock);
+
+  mozilla::Atomic<bool> mRequiresAAT;
+  mozilla::Atomic<bool> mIsCFF;
+  mozilla::Atomic<bool> mIsCFFInitialized;
+  mozilla::Atomic<bool> mHasVariations;
+  mozilla::Atomic<bool> mHasVariationsInitialized;
+  mozilla::Atomic<bool> mHasAATSmallCaps;
+  mozilla::Atomic<bool> mHasAATSmallCapsInitialized;
 
   
   
@@ -104,10 +105,10 @@ class CTFontEntry final : public gfxFontEntry {
   
   
   
-  gfxFontVariationAxis mOpszAxis;
-  float mAdjustedDefaultOpsz;
+  gfxFontVariationAxis mOpszAxis MOZ_GUARDED_BY(mLock);
+  float mAdjustedDefaultOpsz MOZ_GUARDED_BY(mLock);
 
-  nsTHashtable<nsUint32HashKey> mAvailableTables;
+  nsTHashtable<nsUint32HashKey> mAvailableTables MOZ_GUARDED_BY(mLock);
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontMac> mUnscaledFont;
 };
