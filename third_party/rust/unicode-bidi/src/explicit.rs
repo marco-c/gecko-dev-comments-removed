@@ -18,14 +18,15 @@ use super::char_data::{
     BidiClass::{self, *},
 };
 use super::level::Level;
+use super::TextSource;
 
 
 
 
 
 #[cfg_attr(feature = "flame_it", flamer::flame)]
-pub fn compute(
-    text: &str,
+pub fn compute<'a, T: TextSource<'a> + ?Sized>(
+    text: &'a T,
     para_level: Level,
     original_classes: &[BidiClass],
     levels: &mut [Level],
@@ -41,7 +42,7 @@ pub fn compute(
     let mut overflow_embedding_count = 0u32;
     let mut valid_isolate_count = 0u32;
 
-    for (i, c) in text.char_indices() {
+    for (i, len) in text.indices_lengths() {
         match original_classes[i] {
             
             RLE | LRE | RLO | LRO | RLI | LRI | FSI => {
@@ -167,7 +168,7 @@ pub fn compute(
         }
 
         
-        for j in 1..c.len_utf8() {
+        for j in 1..len {
             levels[i + j] = levels[i];
             processing_classes[i + j] = processing_classes[i];
         }

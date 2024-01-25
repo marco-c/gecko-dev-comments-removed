@@ -167,15 +167,6 @@ pub fn isolating_run_sequences(
 
 impl IsolatingRunSequence {
     
-    pub(crate) fn text_range(&self) -> Range<usize> {
-        if let (Some(start), Some(end)) = (self.runs.first(), self.runs.last()) {
-            start.start..end.end
-        } else {
-            return 0..0;
-        }
-    }
-
-    
     
     
     pub(crate) fn iter_forwards_from(
