@@ -1444,17 +1444,59 @@ void MacroAssembler::storeDependentStringBase(Register base, Register str) {
   storePtr(base, Address(str, JSDependentString::offsetOfBase()));
 }
 
-void MacroAssembler::loadRopeChild(Register str, Register index,
-                                   Register output, Label* isLinear) {
+void MacroAssembler::branchIfMaybeSplitSurrogatePair(Register leftChild,
+                                                     Register index,
+                                                     Register scratch,
+                                                     Label* maybeSplit,
+                                                     Label* notSplit) {
+  
+  
+  
+
+  
+  branchLatin1String(leftChild, notSplit);
+
+  
+  add32(Imm32(1), index, scratch);
+  branch32(Assembler::Above, Address(leftChild, JSString::offsetOfLength()),
+           scratch, notSplit);
+
+  
+  loadStringChars(leftChild, scratch, CharEncoding::TwoByte);
+  loadChar(scratch, index, scratch, CharEncoding::TwoByte);
+
+  
+  branchIfLeadSurrogate(scratch, scratch, maybeSplit);
+}
+
+void MacroAssembler::loadRopeChild(CharKind kind, Register str, Register index,
+                                   Register output, Register maybeScratch,
+                                   Label* isLinear, Label* splitSurrogate) {
   
   branchIfNotRope(str, isLinear);
 
   loadRopeLeftChild(str, output);
 
-  
   Label loadedChild;
-  branch32(Assembler::Above, Address(output, JSString::offsetOfLength()), index,
-           &loadedChild);
+  if (kind == CharKind::CharCode) {
+    
+    branch32(Assembler::Above, Address(output, JSString::offsetOfLength()),
+             index, &loadedChild);
+  } else {
+    MOZ_ASSERT(maybeScratch != InvalidReg);
+
+    
+    Label loadRight;
+    branch32(Assembler::BelowOrEqual,
+             Address(output, JSString::offsetOfLength()), index, &loadRight);
+    {
+      
+      branchIfMaybeSplitSurrogatePair(output, index, maybeScratch,
+                                      splitSurrogate, &loadedChild);
+      jump(&loadedChild);
+    }
+    bind(&loadRight);
+  }
 
   
   loadRopeRightChild(str, output);
@@ -1462,19 +1504,29 @@ void MacroAssembler::loadRopeChild(Register str, Register index,
   bind(&loadedChild);
 }
 
-void MacroAssembler::branchIfCanLoadStringChar(Register str, Register index,
-                                               Register scratch, Label* label) {
-  loadRopeChild(str, index, scratch, label);
+void MacroAssembler::branchIfCanLoadStringChar(CharKind kind, Register str,
+                                               Register index, Register scratch,
+                                               Register maybeScratch,
+                                               Label* label) {
+  Label splitSurrogate;
+  loadRopeChild(kind, str, index, scratch, maybeScratch, label,
+                &splitSurrogate);
 
   
   branchIfNotRope(scratch, label);
+
+  if (kind == CharKind::CodePoint) {
+    bind(&splitSurrogate);
+  }
 }
 
-void MacroAssembler::branchIfNotCanLoadStringChar(Register str, Register index,
+void MacroAssembler::branchIfNotCanLoadStringChar(CharKind kind, Register str,
+                                                  Register index,
                                                   Register scratch,
+                                                  Register maybeScratch,
                                                   Label* label) {
   Label done;
-  loadRopeChild(str, index, scratch, &done);
+  loadRopeChild(kind, str, index, scratch, maybeScratch, &done, label);
 
   
   branchIfRope(scratch, label);
@@ -1482,12 +1534,13 @@ void MacroAssembler::branchIfNotCanLoadStringChar(Register str, Register index,
   bind(&done);
 }
 
-void MacroAssembler::loadStringChar(Register str, Register index,
+void MacroAssembler::loadStringChar(CharKind kind, Register str, Register index,
                                     Register output, Register scratch1,
                                     Register scratch2, Label* fail) {
   MOZ_ASSERT(str != output);
   MOZ_ASSERT(str != index);
   MOZ_ASSERT(index != output);
+  MOZ_ASSERT_IF(kind == CharKind::CodePoint, index != scratch1);
   MOZ_ASSERT(output != scratch1);
   MOZ_ASSERT(output != scratch2);
 
@@ -1507,6 +1560,10 @@ void MacroAssembler::loadStringChar(Register str, Register index,
   Label loadedChild, notInLeft;
   spectreBoundsCheck32(scratch1, Address(output, JSString::offsetOfLength()),
                        scratch2, &notInLeft);
+  if (kind == CharKind::CodePoint) {
+    branchIfMaybeSplitSurrogatePair(output, scratch1, scratch2, fail,
+                                    &loadedChild);
+  }
   jump(&loadedChild);
 
   
@@ -1522,16 +1579,54 @@ void MacroAssembler::loadStringChar(Register str, Register index,
   bind(&notRope);
 
   Label isLatin1, done;
-  
-  
   branchLatin1String(output, &isLatin1);
-  loadStringChars(output, scratch2, CharEncoding::TwoByte);
-  loadChar(scratch2, scratch1, output, CharEncoding::TwoByte);
-  jump(&done);
+  {
+    loadStringChars(output, scratch2, CharEncoding::TwoByte);
 
+    if (kind == CharKind::CharCode) {
+      loadChar(scratch2, scratch1, output, CharEncoding::TwoByte);
+    } else {
+      
+      addToCharPtr(scratch2, scratch1, CharEncoding::TwoByte);
+      loadChar(Address(scratch2, 0), output, CharEncoding::TwoByte);
+
+      
+      branchIfNotLeadSurrogate(output, &done);
+
+      
+      
+      
+      
+      
+      
+
+      
+      add32(Imm32(1), index, scratch1);
+      spectreBoundsCheck32(scratch1, Address(str, JSString::offsetOfLength()),
+                           InvalidReg, &done);
+
+      
+      loadChar(Address(scratch2, sizeof(char16_t)), scratch1,
+               CharEncoding::TwoByte);
+
+      
+      branchIfNotTrailSurrogate(scratch1, scratch2, &done);
+
+      
+      lshift32(Imm32(10), output);
+      add32(Imm32(unicode::NonBMPMin - (unicode::LeadSurrogateMin << 10) -
+                  unicode::TrailSurrogateMin),
+            scratch1);
+      add32(scratch1, output);
+    }
+
+    jump(&done);
+  }
   bind(&isLatin1);
-  loadStringChars(output, scratch2, CharEncoding::Latin1);
-  loadChar(scratch2, scratch1, output, CharEncoding::Latin1);
+  {
+    loadStringChars(output, scratch2, CharEncoding::Latin1);
+    loadChar(scratch2, scratch1, output, CharEncoding::Latin1);
+  }
 
   bind(&done);
 }
