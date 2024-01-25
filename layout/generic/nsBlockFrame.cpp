@@ -1467,9 +1467,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   
-  bool tryBalance =
-      StyleText()->mTextWrapStyle == StyleTextWrapStyle::Balance &&
-      !GetPrevContinuation();
+  bool tryBalance = StyleText()->mTextWrap == StyleTextWrap::Balance &&
+                    !GetPrevContinuation();
 
   
   
