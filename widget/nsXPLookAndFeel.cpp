@@ -668,7 +668,8 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       
       COLOR(Scrollbar, 0xFF, 0xFF, 0xFF)
       COLOR(Threeddarkshadow, 0x69, 0x69, 0x69)
-      COLOR(Threedface, 0xF0, 0xF0, 0xF0)
+      
+      COLOR(Threedface, 0xE9, 0xE9, 0xED)
       COLOR(Threedhighlight, 0xFF, 0xFF, 0xFF)
       COLOR(Threedlightshadow, 0xE3, 0xE3, 0xE3)
       COLOR(Threedshadow, 0xA0, 0xA0, 0xA0)
@@ -1275,7 +1276,7 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     
     
     
-    BIT_FOR(Buttonhighlight) | BIT_FOR(Buttonshadow) |
+    BIT_FOR(Buttonhighlight) | BIT_FOR(Buttonshadow) | BIT_FOR(Threedface) |
     
     BIT_FOR(Inactivecaptiontext) |
     
