@@ -2154,19 +2154,14 @@ RefPtr<VsyncMainChild> BrowserChild::GetVsyncChild() {
   
   
 #if defined(MOZ_WAYLAND)
-  if (IsWaylandEnabled()) {
-    if (auto* actor = static_cast<VsyncMainChild*>(
-            LoneManagedOrNullAsserts(ManagedPVsyncChild()))) {
-      return actor;
+  if (IsWaylandEnabled() && !mVsyncChild) {
+    mVsyncChild = MakeRefPtr<VsyncMainChild>();
+    if (!SendPVsyncConstructor(mVsyncChild)) {
+      mVsyncChild = nullptr;
     }
-    auto actor = MakeRefPtr<VsyncMainChild>();
-    if (!SendPVsyncConstructor(actor)) {
-      return nullptr;
-    }
-    return actor;
   }
 #endif
-  return nullptr;
+  return mVsyncChild;
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvLoadRemoteScript(

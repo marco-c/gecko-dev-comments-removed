@@ -215,7 +215,7 @@ class IProtocol : public HasResultCodes {
   const char* GetProtocolName() const { return ProtocolIdToName(mProtocolId); }
 
   int32_t Id() const { return mId; }
-  IRefCountedProtocol* Manager() const { return mManager; }
+  IProtocol* Manager() const { return mManager; }
 
   ActorLifecycleProxy* GetLifecycleProxy() { return mLifecycleProxy; }
   WeakActorLifecycleProxy* GetWeakLifecycleProxy();
@@ -259,18 +259,13 @@ class IProtocol : public HasResultCodes {
 
   
   
-  void SetManager(IRefCountedProtocol* aManager);
+  void SetManager(IProtocol* aManager);
 
   
   
   
-  void UnlinkManager();
-
-  
-  
-  
-  void SetManagerAndRegister(IRefCountedProtocol* aManager);
-  void SetManagerAndRegister(IRefCountedProtocol* aManager, int32_t aId);
+  void SetManagerAndRegister(IProtocol* aManager);
+  void SetManagerAndRegister(IProtocol* aManager, int32_t aId);
 
   
   bool ChannelSend(UniquePtr<IPC::Message> aMsg);
@@ -338,7 +333,7 @@ class IProtocol : public HasResultCodes {
   Side mSide;
   LinkStatus mLinkStatus;
   ActorLifecycleProxy* mLifecycleProxy;
-  RefPtr<IRefCountedProtocol> mManager;
+  IProtocol* mManager;
   IToplevelProtocol* mToplevel;
 };
 
@@ -670,6 +665,10 @@ class ActorLifecycleProxy {
   ActorLifecycleProxy& operator=(const ActorLifecycleProxy&) = delete;
 
   IProtocol* MOZ_NON_OWNING_REF mActor;
+
+  
+  
+  RefPtr<ActorLifecycleProxy> mManager;
 
   
   

@@ -561,12 +561,7 @@ class ChildImpl final : public BackgroundChildImpl {
 #endif
   }
 
-  
-  
-  
-  
-  
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChildImpl, override)
+  NS_INLINE_DECL_REFCOUNTING(ChildImpl, override)
 
  private:
   

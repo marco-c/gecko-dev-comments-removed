@@ -748,6 +748,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   Maybe<bool> mLayersConnectRequested;
   EffectsInfo mEffectsInfo;
 
+  RefPtr<VsyncMainChild> mVsyncChild;
+
   RefPtr<APZEventState> mAPZEventState;
 
   
