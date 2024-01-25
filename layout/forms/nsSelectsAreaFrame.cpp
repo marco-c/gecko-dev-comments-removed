@@ -17,6 +17,11 @@ nsContainerFrame* NS_NewSelectsAreaFrame(PresShell* aShell,
                                          ComputedStyle* aStyle) {
   nsSelectsAreaFrame* it =
       new (aShell) nsSelectsAreaFrame(aStyle, aShell->GetPresContext());
+
+  
+  
+  it->AddStateBits(NS_BLOCK_STATIC_BFC);
+
   return it;
 }
 
