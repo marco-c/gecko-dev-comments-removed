@@ -2845,6 +2845,13 @@ bool TypeAnalyzer::propagateUnbox() {
 
       
       
+      
+      if (IsFloatingPointType(unbox->type())) {
+        continue;
+      }
+
+      
+      
       for (auto uses = input->usesBegin(); uses != input->usesEnd();) {
         auto* use = *uses++;
 
