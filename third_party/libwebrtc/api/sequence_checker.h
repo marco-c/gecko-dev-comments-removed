@@ -46,8 +46,22 @@ class RTC_LOCKABLE SequenceChecker
  public:
   enum InitialState : bool { kDetached = false, kAttached = true };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   explicit SequenceChecker(InitialState initial_state = kAttached)
       : Impl(initial_state) {}
+  explicit SequenceChecker(TaskQueueBase* attached_queue)
+      : Impl(attached_queue) {}
 
   
   bool IsCurrent() const { return Impl::IsCurrent(); }
