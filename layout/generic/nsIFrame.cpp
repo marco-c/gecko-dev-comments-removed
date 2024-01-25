@@ -10194,14 +10194,16 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
   
   
   
+#ifdef DEBUG
   for (const auto otype : AllOverflowTypes()) {
-    DebugOnly<nsRect*> r = &aOverflowAreas.Overflow(otype);
+    const nsRect& r = aOverflowAreas.Overflow(otype);
     NS_ASSERTION(aNewSize.width == 0 || aNewSize.height == 0 ||
-                     r->width == nscoord_MAX || r->height == nscoord_MAX ||
+                     r.width == nscoord_MAX || r.height == nscoord_MAX ||
                      HasAnyStateBits(NS_FRAME_SVG_LAYOUT) ||
-                     r->Contains(nsRect(nsPoint(0, 0), aNewSize)),
+                     r.Contains(nsRect(nsPoint(), aNewSize)),
                  "Computed overflow area must contain frame bounds");
   }
+#endif
 
   
   
