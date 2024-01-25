@@ -1068,6 +1068,8 @@ pref("network.protocol-handler.external.disk", false);
 pref("network.protocol-handler.external.disks", false);
 pref("network.protocol-handler.external.afp", false);
 pref("network.protocol-handler.external.moz-icon", false);
+pref("network.protocol-handler.external.firefox", false);
+pref("network.protocol-handler.external.firefox-private", false);
 
 
 pref("network.protocol-handler.external.ttp", false);  
