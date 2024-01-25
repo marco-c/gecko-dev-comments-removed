@@ -639,6 +639,9 @@ PeerConnection::PeerConnection(
       ice_transport_factory_(std::move(dependencies.ice_transport_factory)),
       tls_cert_verifier_(std::move(dependencies.tls_cert_verifier)),
       call_(std::move(call)),
+      worker_thread_safety_(PendingTaskSafetyFlag::CreateAttachedToTaskQueue(
+          call_ != nullptr,
+          worker_thread())),
       call_ptr_(call_.get()),
       
       
@@ -648,14 +651,7 @@ PeerConnection::PeerConnection(
       dtls_enabled_(dtls_enabled),
       data_channel_controller_(this),
       message_handler_(signaling_thread()),
-      weak_factory_(this) {
-  worker_thread()->BlockingCall([this] {
-    RTC_DCHECK_RUN_ON(worker_thread());
-    worker_thread_safety_ = PendingTaskSafetyFlag::Create();
-    if (!call_)
-      worker_thread_safety_->SetNotAlive();
-  });
-}
+      weak_factory_(this) {}
 
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
