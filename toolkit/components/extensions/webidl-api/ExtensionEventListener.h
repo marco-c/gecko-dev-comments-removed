@@ -120,7 +120,7 @@ class ExtensionEventListener final : public mozIExtensionEventListener {
 
 
 
-class ExtensionListenerCallWorkerRunnable final : public dom::WorkerRunnable {
+class ExtensionListenerCallWorkerRunnable : public dom::WorkerRunnable {
   friend class ExtensionListenerCallPromiseResultHandler;
 
  public:
@@ -134,7 +134,7 @@ class ExtensionListenerCallWorkerRunnable final : public dom::WorkerRunnable {
       ListenerCallOptions* aCallOptions,
       RefPtr<dom::Promise> aPromiseRetval = nullptr)
       : WorkerRunnable(aExtensionEventListener->GetWorkerPrivate(),
-                       "ExtensionListenerCallWorkerRunnable", WorkerThread),
+                       WorkerThread),
         mListener(aExtensionEventListener),
         mArgsHolder(std::move(aArgsHolder)),
         mPromiseResult(std::move(aPromiseRetval)),
