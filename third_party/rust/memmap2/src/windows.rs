@@ -343,12 +343,7 @@ impl MmapInner {
         Ok(inner)
     }
 
-    pub fn map_anon(
-        len: usize,
-        _stack: bool,
-        _populate: bool,
-        _huge: Option<u8>,
-    ) -> io::Result<MmapInner> {
+    pub fn map_anon(len: usize, _stack: bool, _populate: bool) -> io::Result<MmapInner> {
         
         let mapped_len = len.max(1);
         unsafe {
