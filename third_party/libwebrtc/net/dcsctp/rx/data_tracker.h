@@ -75,7 +75,8 @@ class DataTracker {
   void ObservePacketEnd();
 
   
-  void HandleForwardTsn(TSN new_cumulative_ack);
+  
+  bool HandleForwardTsn(TSN new_cumulative_ack);
 
   
   

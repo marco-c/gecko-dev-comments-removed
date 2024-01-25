@@ -79,13 +79,6 @@ void ReassemblyQueue::Add(TSN tsn, Data data) {
 
   UnwrappedTSN unwrapped_tsn = tsn_unwrapper_.Unwrap(tsn);
 
-  if (unwrapped_tsn <= last_assembled_tsn_watermark_ ||
-      delivered_tsns_.find(unwrapped_tsn) != delivered_tsns_.end()) {
-    RTC_DLOG(LS_VERBOSE) << log_prefix_
-                         << "Chunk has already been delivered - skipping";
-    return;
-  }
-
   
   
   
@@ -218,15 +211,7 @@ void ReassemblyQueue::AddReassembledMessage(
                        << ", payload=" << message.payload().size() << " bytes";
 
   for (const UnwrappedTSN tsn : tsns) {
-    if (tsn <= last_assembled_tsn_watermark_) {
-      
-      
-      
-      RTC_DLOG(LS_VERBOSE)
-          << log_prefix_
-          << "Message is built from fragments already seen - skipping";
-      return;
-    } else if (tsn == last_assembled_tsn_watermark_.next_value()) {
+    if (tsn == last_assembled_tsn_watermark_.next_value()) {
       
       last_assembled_tsn_watermark_.Increment();
     } else {
