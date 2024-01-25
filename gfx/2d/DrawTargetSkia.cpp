@@ -1486,6 +1486,9 @@ bool DrawTarget::Draw3DTransformedSurface(SourceSurface* aSurface,
   }
 
   DataSourceSurface::ScopedMap map(dstSurf, DataSourceSurface::READ_WRITE);
+  if (!map.IsMapped()) {
+    return false;
+  }
   std::unique_ptr<SkCanvas> dstCanvas(SkCanvas::MakeRasterDirect(
       SkImageInfo::Make(xformBounds.Width(), xformBounds.Height(),
                         GfxFormatToSkiaColorType(dstSurf->GetFormat()),
@@ -1630,16 +1633,21 @@ DrawTargetSkia::OptimizeSourceSurfaceForUnknownAlpha(
     return surface.forget();
   }
 
-  RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface();
-  DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ_WRITE);
+  if (RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface()) {
+    DataSourceSurface::ScopedMap map(dataSurface,
+                                     DataSourceSurface::READ_WRITE);
+    if (map.IsMapped()) {
+      
+      
+      
+      
+      WriteRGBXFormat(map.GetData(), dataSurface->GetSize(), map.GetStride(),
+                      dataSurface->GetFormat());
+      return dataSurface.forget();
+    }
+  }
 
-  
-  
-  
-  
-  WriteRGBXFormat(map.GetData(), dataSurface->GetSize(), map.GetStride(),
-                  dataSurface->GetFormat());
-  return dataSurface.forget();
+  return nullptr;
 }
 
 already_AddRefed<SourceSurface> DrawTargetSkia::OptimizeSourceSurface(
@@ -1653,13 +1661,18 @@ already_AddRefed<SourceSurface> DrawTargetSkia::OptimizeSourceSurface(
   
   
   
-  RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface();
+  if (RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface()) {
 #ifdef DEBUG
-  DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ);
-  MOZ_ASSERT(VerifyRGBXFormat(map.GetData(), dataSurface->GetSize(),
-                              map.GetStride(), dataSurface->GetFormat()));
+    DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ);
+    if (map.IsMapped()) {
+      MOZ_ASSERT(VerifyRGBXFormat(map.GetData(), dataSurface->GetSize(),
+                                  map.GetStride(), dataSurface->GetFormat()));
+    }
 #endif
-  return dataSurface.forget();
+    return dataSurface.forget();
+  }
+
+  return nullptr;
 }
 
 already_AddRefed<SourceSurface>
