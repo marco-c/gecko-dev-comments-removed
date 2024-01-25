@@ -47,6 +47,11 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
 
+#if (defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)) && \
+    (defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS))
+#define MOBILE_ARM
+#endif
+
 namespace webrtc {
 
 namespace {
@@ -201,13 +206,12 @@ vpx_svc_ref_frame_config_t Vp9References(
 }
 
 bool AllowDenoising() {
+#ifdef MOBILE_ARM
   
   
-#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
-    !defined(ANDROID)
-  return true;
-#else
   return false;
+#else
+  return true;
 #endif
 }
 
@@ -769,8 +773,7 @@ int LibvpxVp9Encoder::NumberOfThreads(int width,
     return 2;
   } else {
 
-#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
-    defined(WEBRTC_ANDROID)
+#ifdef MOBILE_ARM
     if (width * height >= 320 * 180 && number_of_cores > 2) {
       return 2;
     }
@@ -2050,7 +2053,7 @@ LibvpxVp9Encoder::PerformanceFlags
 LibvpxVp9Encoder::GetDefaultPerformanceFlags() {
   PerformanceFlags flags;
   flags.use_per_layer_speed = true;
-#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
+#ifdef MOBILE_ARM
   
   flags.settings_by_resolution[0] = {.base_layer_speed = 8,
                                      .high_layer_speed = 8,
