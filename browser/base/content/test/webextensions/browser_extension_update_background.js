@@ -110,7 +110,11 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   addons.children[0].click();
 
   
-  ok(PanelUI.panel.state != "open", "Main menu is closed or closing.");
+  Assert.notEqual(
+    PanelUI.panel.state,
+    "open",
+    "Main menu is closed or closing."
+  );
 
   
   let tab = await tabPromise;

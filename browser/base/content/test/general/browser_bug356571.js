@@ -53,8 +53,9 @@ var gProgressListener = {
       
       ok(didFail, "Correctly failed on unknown protocol");
       
-      ok(
-        gBrowser.tabs.length == kURIs.length,
+      Assert.equal(
+        gBrowser.tabs.length,
+        kURIs.length,
         "Correctly opened all expected tabs"
       );
       finishTest();

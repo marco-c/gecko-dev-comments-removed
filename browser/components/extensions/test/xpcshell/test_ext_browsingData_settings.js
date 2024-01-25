@@ -136,8 +136,9 @@ add_task(async function testSettingsSince() {
 
     
     
-    ok(
-      Math.abs(settings.options.since - TEST_DATA[timespan]) < 10000,
+    Assert.less(
+      Math.abs(settings.options.since - TEST_DATA[timespan]),
+      10000,
       "settings.options contains the expected since value."
     );
   }

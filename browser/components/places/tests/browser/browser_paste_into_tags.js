@@ -59,7 +59,7 @@ add_task(async function () {
 
   
   tags = PlacesUtils.tagging.getTagsForURI(MOZURISPEC);
-  ok(tags.length == 1, "history node is tagged: " + tags.length);
+  Assert.equal(tags.length, 1, "history node is tagged: " + tags.length);
 
   
   let bookmarks = [];

@@ -88,8 +88,9 @@ add_task(async function test_notificationClose() {
       let currentTime = alertWindow.Date.now();
       
       
-      ok(
-        currentTime - closedTime < 5000,
+      Assert.less(
+        currentTime - closedTime,
+        5000,
         "Close requested at " +
           closedTime +
           ", actually closed at " +

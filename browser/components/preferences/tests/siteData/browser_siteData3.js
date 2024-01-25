@@ -131,8 +131,9 @@ add_task(async function test_grouping() {
   
   
   
-  ok(
-    parseFloat(l10nAttributes.args.value) >= parseFloat(value),
+  Assert.greaterOrEqual(
+    parseFloat(l10nAttributes.args.value),
+    parseFloat(value),
     "Should show the correct accumulated quota size."
   );
   is(

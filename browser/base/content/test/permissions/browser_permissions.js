@@ -410,12 +410,20 @@ add_task(async function testPolicyPermission() {
     
     
     let menulist = document.getElementById("permission-popup-menulist");
-    ok(menulist == null, "The popup permission menulist is not visible");
+    Assert.equal(
+      menulist,
+      null,
+      "The popup permission menulist is not visible"
+    );
 
     let removeButton = permissionsList.querySelector(
       ".permission-popup-permission-remove-button"
     );
-    ok(removeButton == null, "The permission remove button is not visible");
+    Assert.equal(
+      removeButton,
+      null,
+      "The permission remove button is not visible"
+    );
 
     Services.perms.removeAll();
     await closePermissionPopup();

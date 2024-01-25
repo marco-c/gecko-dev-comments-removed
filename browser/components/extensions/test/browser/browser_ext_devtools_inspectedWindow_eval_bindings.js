@@ -220,7 +220,11 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
     const [oi] = objectInspectors;
     let nodes = oi.querySelectorAll(".node");
 
-    ok(nodes.length >= 1, "The object preview is rendered as expected");
+    Assert.greaterOrEqual(
+      nodes.length,
+      1,
+      "The object preview is rendered as expected"
+    );
 
     
     if (nodes.length === 1) {

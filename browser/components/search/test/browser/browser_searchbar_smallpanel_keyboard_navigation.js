@@ -76,7 +76,11 @@ add_task(async function test_arrows() {
   
   
   let oneOffs = getOneOffs();
-  ok(oneOffs.length >= 4, "we have at least 4 one-off buttons displayed");
+  Assert.greaterOrEqual(
+    oneOffs.length,
+    4,
+    "we have at least 4 one-off buttons displayed"
+  );
 
   ok(!textbox.selectedButton, "no one-off button should be selected");
 

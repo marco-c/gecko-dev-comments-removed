@@ -17,8 +17,9 @@ add_task(async function test() {
   
   let placesItems = document.getElementById("PlacesToolbarItems");
   ok(placesItems, "PlacesToolbarItems should not be null");
-  ok(
-    placesItems.localName == "scrollbox",
+  Assert.equal(
+    placesItems.localName,
+    "scrollbox",
     "PlacesToolbarItems should not be null"
   );
 
