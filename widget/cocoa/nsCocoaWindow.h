@@ -10,6 +10,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "mozilla/StaticMutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsBaseWidget.h"
 #include "nsPIWidgetCocoa.h"
@@ -382,6 +383,7 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
     Deminiaturize,
     Zoom,
   };
+  void FinishCurrentTransition();
   void FinishCurrentTransitionIfMatching(const TransitionType& aTransition);
 
   
@@ -461,6 +463,7 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   void ProcessTransitions();
 
   bool mInProcessTransitions = false;
+  bool mInLocalRunLoop = false;
 
   
   
@@ -477,6 +480,8 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   
   
   bool mHasStartedNativeFullscreen;
+
+  bool mWaitingOnFinishCurrentTransition = false;
 
   bool mModal;
   bool mFakeModal;
@@ -496,12 +501,13 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
  private:
   
   
-  static nsCocoaWindow* sWindowInNativeTransition;
+  static mozilla::StaticDataMutex<nsCocoaWindow*> sWindowInNativeTransition;
 
   
   
   
   bool CanStartNativeTransition();
+  bool WeAreInNativeTransition();
   void EndOurNativeTransition();
 
   
