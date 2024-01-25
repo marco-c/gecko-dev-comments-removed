@@ -19,11 +19,7 @@ nsBlockFrame* NS_NewColumnSetWrapperFrame(PresShell* aPresShell,
                                           nsFrameState aStateFlags) {
   ColumnSetWrapperFrame* frame = new (aPresShell)
       ColumnSetWrapperFrame(aStyle, aPresShell->GetPresContext());
-
-  
-  
-  
-  frame->AddStateBits(aStateFlags | NS_BLOCK_STATIC_BFC);
+  frame->AddStateBits(aStateFlags);
   return frame;
 }
 

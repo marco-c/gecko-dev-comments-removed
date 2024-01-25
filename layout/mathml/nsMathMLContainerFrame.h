@@ -430,10 +430,6 @@ class nsMathMLmathBlockFrame final : public nsBlockFrame {
   explicit nsMathMLmathBlockFrame(ComputedStyle* aStyle,
                                   nsPresContext* aPresContext)
       : nsBlockFrame(aStyle, aPresContext, kClassID) {
-    
-    
-    
-    
   }
   virtual ~nsMathMLmathBlockFrame() = default;
 };
