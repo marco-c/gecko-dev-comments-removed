@@ -200,6 +200,12 @@ class ModuleLoaderBase : public nsISupports {
 
   virtual ~ModuleLoaderBase();
 
+#ifdef DEBUG
+  const ScriptLoadRequestList& DynamicImportRequests() const {
+    return mDynamicImportRequests;
+  }
+#endif
+
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoaderBase)
@@ -233,6 +239,9 @@ class ModuleLoaderBase : public nsISupports {
   virtual already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
       JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
       JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise) = 0;
+
+  
+  virtual void OnDynamicImportStarted(ModuleLoadRequest* aRequest) {}
 
   
   
@@ -298,7 +307,7 @@ class ModuleLoaderBase : public nsISupports {
   nsresult EvaluateModuleInContext(JSContext* aCx, ModuleLoadRequest* aRequest,
                                    JS::ModuleErrorBehaviour errorBehaviour);
 
-  void StartDynamicImport(ModuleLoadRequest* aRequest);
+  nsresult StartDynamicImport(ModuleLoadRequest* aRequest);
   void ProcessDynamicImport(ModuleLoadRequest* aRequest);
   void CancelAndClearDynamicImports();
 
