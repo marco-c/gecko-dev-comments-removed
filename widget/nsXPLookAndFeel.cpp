@@ -1261,10 +1261,6 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     BIT_FOR(MozButtonactivetext) | BIT_FOR(MozButtondisabledface) |
     BIT_FOR(Buttonborder) |
     
-    
-    
-    BIT_FOR(Buttonhighlight) | BIT_FOR(Buttonshadow) |
-    
     BIT_FOR(MozCombobox) | BIT_FOR(MozComboboxtext) |
     BIT_FOR(Threedlightshadow) |
     
@@ -1274,27 +1270,19 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     
     BIT_FOR(Field) | BIT_FOR(Fieldtext) |
     
-    
-    
-    BIT_FOR(Inactivecaptiontext) |
-    
     BIT_FOR(MozDisabledfield) | BIT_FOR(Graytext) |
     
     
     
+    BIT_FOR(Buttonhighlight) | BIT_FOR(Buttonshadow) |
     
+    BIT_FOR(Inactivecaptiontext) |
     
+    BIT_FOR(Appworkspace) | BIT_FOR(Background) | BIT_FOR(Inactivecaption) |
+    BIT_FOR(Menu) | BIT_FOR(Scrollbar) |
     
-    
-    
-    BIT_FOR(Activecaption) | BIT_FOR(Appworkspace) | BIT_FOR(Background) |
-    BIT_FOR(Inactivecaption) | BIT_FOR(Menu) | BIT_FOR(Scrollbar) |
-    
-    
-    
-    
-    
-    BIT_FOR(Captiontext) | BIT_FOR(Infotext) | BIT_FOR(Menutext) |
+    BIT_FOR(Activecaption) | BIT_FOR(Captiontext) | BIT_FOR(Infotext) |
+    BIT_FOR(Menutext) |
     
     
     
