@@ -783,6 +783,9 @@ pref("browser.shopping.experience2023.survey.hasSeen", false);
 pref("browser.shopping.experience2023.survey.pdpVisits", 0);
 
 
+pref("browser.shopping.experience2023.autoOpen", true);
+
+
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
 
 
@@ -2183,9 +2186,6 @@ pref("privacy.fingerprintingProtection.pbmode", true);
 
 pref("privacy.exposeContentTitleInWindow", true);
 pref("privacy.exposeContentTitleInWindow.pbm", true);
-
-
-pref("browser.tabs.remote.autostart", true);
 
 
 pref("media.peerconnection.mtransport_process", true);
