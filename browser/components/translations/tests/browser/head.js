@@ -13,47 +13,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-
-
-
-function assertIsVisible(expected, { element, id }) {
-  if (id && element) {
-    throw new Error(
-      "assertIsVisible() expects either an element or an id, but both were specified."
-    );
-  }
-
-  if (element) {
-    return is(
-      BrowserTestUtils.isVisible(element),
-      expected,
-      `Expected element with id '${element.id}' to be ${
-        expected ? "visible" : "invisible"
-      }.`
-    );
-  }
-
-  if (id) {
-    return is(
-      maybeGetById(id) !== null,
-      expected,
-      `Expected element with id '${id}' to be ${
-        expected ? "visible" : "invisible"
-      }.`
-    );
-  }
-
-  throw new Error(
-    "assertIsVisible() was called with no specified element or id."
-  );
-}
-
-
-
-
-
-
 async function addTab(url) {
   logAction(url);
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -584,18 +543,24 @@ class FullPageTranslationsTestUtils {
       unsupportedLearnMoreLink: false,
       ...expectations,
     };
+
     const elements = TranslationsPanel.elements;
+    const hidden = {};
+    const visible = {};
+
     for (const propertyName in finalExpectations) {
       ok(
         elements.hasOwnProperty(propertyName),
         `Expected translations panel elements to have property ${propertyName}`
       );
-      if (finalExpectations.hasOwnProperty(propertyName)) {
-        assertIsVisible(finalExpectations[propertyName], {
-          element: elements[propertyName],
-        });
+      if (finalExpectations[propertyName]) {
+        visible[propertyName] = elements[propertyName];
+      } else {
+        hidden[propertyName] = elements[propertyName];
       }
     }
+
+    assertVisibility({ hidden, visible });
   }
 
   /**
@@ -863,7 +828,7 @@ class FullPageTranslationsTestUtils {
   static async clickCancelButton() {
     logAction();
     const { cancelButton } = TranslationsPanel.elements;
-    assertIsVisible(true, { element: cancelButton });
+    assertVisibility({ visible: { cancelButton } });
     await FullPageTranslationsTestUtils.waitForTranslationsPopupEvent(
       "popuphidden",
       () => {
@@ -883,7 +848,7 @@ class FullPageTranslationsTestUtils {
   static async clickChangeSourceLanguageButton({ firstShow = false } = {}) {
     logAction();
     const { changeSourceLanguageButton } = TranslationsPanel.elements;
-    assertIsVisible(true, { element: changeSourceLanguageButton });
+    assertVisibility({ visible: { changeSourceLanguageButton } });
     await FullPageTranslationsTestUtils.waitForTranslationsPopupEvent(
       "popupshown",
       () => {
@@ -904,7 +869,7 @@ class FullPageTranslationsTestUtils {
   static async clickDismissErrorButton() {
     logAction();
     const { dismissErrorButton } = TranslationsPanel.elements;
-    assertIsVisible(true, { element: dismissErrorButton });
+    assertVisibility({ visible: { dismissErrorButton } });
     await FullPageTranslationsTestUtils.waitForTranslationsPopupEvent(
       "popuphidden",
       () => {
@@ -955,7 +920,7 @@ class FullPageTranslationsTestUtils {
   static async clickRestoreButton() {
     logAction();
     const { restoreButton } = TranslationsPanel.elements;
-    assertIsVisible(true, { element: restoreButton });
+    assertVisibility({ visible: { restoreButton } });
     await FullPageTranslationsTestUtils.waitForTranslationsPopupEvent(
       "popuphidden",
       () => {
@@ -993,7 +958,7 @@ class FullPageTranslationsTestUtils {
   } = {}) {
     logAction();
     const { translateButton } = TranslationsPanel.elements;
-    assertIsVisible(true, { element: translateButton });
+    assertVisibility({ visible: { translateButton } });
     await FullPageTranslationsTestUtils.waitForTranslationsPopupEvent(
       "popuphidden",
       () => {
@@ -1263,7 +1228,8 @@ class SelectTranslationsTestUtils {
     );
 
     if (expectMenuItemIsVisible !== undefined) {
-      assertIsVisible(expectMenuItemIsVisible, { element: menuItem });
+      const visibility = expectMenuItemIsVisible ? "visible" : "hidden";
+      assertVisibility({ [visibility]: menuItem });
     }
 
     if (expectMenuItemIsVisible === true) {
