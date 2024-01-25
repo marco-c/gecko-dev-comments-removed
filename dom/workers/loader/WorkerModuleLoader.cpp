@@ -143,12 +143,8 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
        true, 
       this, ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
 
-  request->mDynamicReferencingScript = aMaybeActiveScript;
-  request->mDynamicSpecifier = aSpecifier;
-  request->mDynamicPromise = aPromise;
+  request->SetDynamicImport(aMaybeActiveScript, aSpecifier, aPromise);
   request->NoCacheEntryFound();
-
-  HoldJSObjects(request.get());
 
   return request.forget();
 }
