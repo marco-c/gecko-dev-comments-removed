@@ -47,6 +47,7 @@
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
 #include "nsView.h"
+#include "nsViewManager.h"
 #include "nsBaseWidget.h"
 #include "nsQueryObject.h"
 #include "ReferrerInfo.h"
@@ -992,6 +993,14 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* frame) {
   ds->SetScrollbarPreference(GetScrollbarPreference(mOwnerContent));
   const bool marginsChanged =
       ds->UpdateFrameMargins(GetMarginAttributes(mOwnerContent));
+
+  nsView* view = frame->EnsureInnerView();
+  if (!view) {
+    return false;
+  }
+
+  
+  
   if (PresShell* presShell = ds->GetPresShell()) {
     
     if (marginsChanged) {
@@ -1000,11 +1009,21 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* frame) {
                                     NS_FRAME_IS_DIRTY);
       }
     }
-    return true;
-  }
+    nsView* childView = presShell->GetViewManager()->GetRootView();
+    MOZ_DIAGNOSTIC_ASSERT(childView);
+    if (childView->GetParent() == view) {
+      
+      
+      return true;
+    }
 
-  nsView* view = frame->EnsureInnerView();
-  if (!view) return false;
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!view->GetFirstChild());
+    MOZ_DIAGNOSTIC_ASSERT(!childView->GetParent(), "Stale view?");
+    nsSubDocumentFrame::InsertViewsInReverseOrder(childView, view);
+    nsSubDocumentFrame::EndSwapDocShellsForViews(view->GetFirstChild());
+  }
 
   RefPtr<nsDocShell> baseWindow = GetDocShell();
   baseWindow->InitWindow(nullptr, view->GetWidget(), 0, 0, size.width,
@@ -1012,6 +1031,9 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* frame) {
   baseWindow->SetVisibility(true);
   NS_ENSURE_TRUE(GetDocShell(), false);
 
+  
+  
+  
   
   
   

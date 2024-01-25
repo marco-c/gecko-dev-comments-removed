@@ -116,10 +116,6 @@ class AsyncFrameInit : public Runnable {
   WeakFrame mFrame;
 };
 
-static void InsertViewsInReverseOrder(nsView* aSibling, nsView* aParent);
-
-static void EndSwapDocShellsForViews(nsView* aView);
-
 void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                               nsIFrame* aPrevInFlow) {
   MOZ_ASSERT(aContent);
@@ -148,8 +144,8 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     nsView* detachedView = detachedFrame ? detachedFrame->GetView() : nullptr;
     if (detachedView) {
       
-      ::InsertViewsInReverseOrder(detachedView, mInnerView);
-      ::EndSwapDocShellsForViews(mInnerView->GetFirstChild());
+      InsertViewsInReverseOrder(detachedView, mInnerView);
+      EndSwapDocShellsForViews(mInnerView->GetFirstChild());
     } else if (hadFrame) {
       
       frameloader->Hide();
@@ -921,7 +917,7 @@ class nsHideViewer final : public Runnable {
     mFrameLoader->SetDetachedSubdocFrame(nullptr);
 
     nsSubDocumentFrame* frame = do_QueryFrame(mFrameElement->GetPrimaryFrame());
-    if (!frame) {
+    if (!frame || frame->FrameLoader() != mFrameLoader) {
       PropagateIsUnderHiddenEmbedderElement(mFrameLoader, true);
       if (mHideViewerIfFrameless) {
         
@@ -1080,7 +1076,9 @@ static nsView* BeginSwapDocShellsForViews(nsView* aSibling) {
   return removedViews;
 }
 
-static void InsertViewsInReverseOrder(nsView* aSibling, nsView* aParent) {
+
+void nsSubDocumentFrame::InsertViewsInReverseOrder(nsView* aSibling,
+                                                   nsView* aParent) {
   MOZ_ASSERT(aParent, "null view");
   MOZ_ASSERT(!aParent->GetFirstChild(), "inserting into non-empty list");
 
@@ -1115,8 +1113,8 @@ nsresult nsSubDocumentFrame::BeginSwapDocShells(nsIFrame* aOther) {
     nsView* otherSubdocViews = other->mInnerView->GetFirstChild();
     nsView* otherRemovedViews = ::BeginSwapDocShellsForViews(otherSubdocViews);
 
-    ::InsertViewsInReverseOrder(ourRemovedViews, other->mInnerView);
-    ::InsertViewsInReverseOrder(otherRemovedViews, mInnerView);
+    InsertViewsInReverseOrder(ourRemovedViews, other->mInnerView);
+    InsertViewsInReverseOrder(otherRemovedViews, mInnerView);
   }
   mFrameLoader.swap(other->mFrameLoader);
   return NS_OK;
@@ -1147,7 +1145,8 @@ static CallState EndSwapDocShellsForDocument(Document& aDocument) {
   return CallState::Continue;
 }
 
-static void EndSwapDocShellsForViews(nsView* aSibling) {
+
+void nsSubDocumentFrame::EndSwapDocShellsForViews(nsView* aSibling) {
   for (; aSibling; aSibling = aSibling->GetNextSibling()) {
     if (Document* doc = ::GetDocumentFromView(aSibling)) {
       ::EndSwapDocShellsForDocument(*doc);
@@ -1178,10 +1177,10 @@ void nsSubDocumentFrame::EndSwapDocShells(nsIFrame* aOther) {
   AutoWeakFrame weakOther(aOther);
 
   if (mInnerView) {
-    ::EndSwapDocShellsForViews(mInnerView->GetFirstChild());
+    EndSwapDocShellsForViews(mInnerView->GetFirstChild());
   }
   if (other->mInnerView) {
-    ::EndSwapDocShellsForViews(other->mInnerView->GetFirstChild());
+    EndSwapDocShellsForViews(other->mInnerView->GetFirstChild());
   }
 
   
