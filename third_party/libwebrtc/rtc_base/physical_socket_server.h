@@ -11,17 +11,23 @@
 #ifndef RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 #define RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 
+#include "api/async_dns_resolver.h"
 #include "api/units/time_delta.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
 #if defined(WEBRTC_LINUX)
 
 #include <sys/epoll.h>
+
 #define WEBRTC_USE_EPOLL 1
 #elif defined(WEBRTC_FUCHSIA)
 
 
 #include <poll.h>
+
 #define WEBRTC_USE_POLL 1
 #else
 
@@ -29,7 +35,9 @@
 #endif  
 
 #include <array>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -218,7 +226,7 @@ class PhysicalSocket : public Socket, public sigslot::has_slots<> {
                        SocketAddress* out_addr,
                        int64_t* timestamp);
 
-  void OnResolveResult(AsyncResolverInterface* resolver);
+  void OnResolveResult(const webrtc::AsyncDnsResolverResult& resolver);
 
   void UpdateLastError();
   void MaybeRemapSendError();
@@ -237,7 +245,7 @@ class PhysicalSocket : public Socket, public sigslot::has_slots<> {
   mutable webrtc::Mutex mutex_;
   int error_ RTC_GUARDED_BY(mutex_);
   ConnState state_;
-  AsyncResolver* resolver_;
+  std::unique_ptr<webrtc::AsyncDnsResolverInterface> resolver_;
 
 #if !defined(NDEBUG)
   std::string dbg_addr_;
