@@ -3328,7 +3328,10 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
   mCursor = aCursor;
 
   
-  GdkCursor* imageCursor = GetCursorForImage(aCursor, GdkCeiledScaleFactor());
+  GdkCursor* imageCursor = nullptr;
+  if (mCustomCursorAllowed) {
+    imageCursor = GetCursorForImage(aCursor, GdkCeiledScaleFactor());
+  }
 
   
   

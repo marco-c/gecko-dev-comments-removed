@@ -23,6 +23,7 @@
 #include "nsIObserver.h"
 #include "nsThreadUtils.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/FunctionRef.h"
 #include "mozilla/widget/InitData.h"
 #include "mozilla/widget/NativeMenu.h"
 
@@ -553,6 +554,13 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
+
+  nsMenuChainItem* FirstMatchingPopup(
+      mozilla::FunctionRef<bool(nsMenuChainItem*)> aMatcher) const;
+
+  
+
+
   void UpdateFollowAnchor(nsMenuPopupFrame* aPopup);
 
   
@@ -732,6 +740,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsMenuChainItem* GetTopVisibleMenu() {
     return GetRollupItem(RollupKind::Menu);
   }
+
+  
+  void AddMenuChainItem(mozilla::UniquePtr<nsMenuChainItem>);
 
   
   void RemoveMenuChainItem(nsMenuChainItem*);

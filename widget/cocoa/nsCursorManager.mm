@@ -276,13 +276,14 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 }
 
 - (nsresult)setCustomCursor:(const nsIWidget::Cursor&)aCursor
-          widgetScaleFactor:(CGFloat)scaleFactor {
+          widgetScaleFactor:(CGFloat)scaleFactor
+                forceUpdate:(bool)aForceUpdate {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
   
-  if (sCurrentCursor == aCursor && sCurrentCursorScaleFactor == scaleFactor &&
-      mCurrentMacCursor) {
+  if (!aForceUpdate && sCurrentCursor == aCursor &&
+      sCurrentCursorScaleFactor == scaleFactor && mCurrentMacCursor) {
     
     if (MOZ_UNLIKELY(![mCurrentMacCursor isSet])) {
       [mCurrentMacCursor set];

@@ -36,7 +36,8 @@
 
 
 - (nsresult)setCustomCursor:(const nsIWidget::Cursor&)aCursor
-          widgetScaleFactor:(CGFloat)aWidgetScaleFactor;
+          widgetScaleFactor:(CGFloat)aWidgetScaleFactor
+                forceUpdate:(bool)aForceUpdate;
 
 
 
