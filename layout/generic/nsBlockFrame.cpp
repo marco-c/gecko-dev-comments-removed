@@ -6409,9 +6409,15 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   *aFoundValidLine = FindValidLine();
 }
 
-static bool StyleEstablishesBFC(const ComputedStyle* style) {
-  return style->StyleDisplay()->IsContainPaint() ||
-         style->StyleDisplay()->IsContainLayout();
+static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
+  
+  
+  
+  
+  
+  return aStyle->StyleDisplay()->IsContainPaint() ||
+         aStyle->StyleDisplay()->IsContainLayout() ||
+         aStyle->GetPseudoType() == PseudoStyleType::columnContent;
 }
 
 void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
