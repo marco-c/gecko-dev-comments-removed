@@ -1158,9 +1158,8 @@ void nsHTMLScrollFrame::ReflowContents(ScrollReflowInput& aState,
 
 void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
                                         const nsPoint& aScrollPosition) {
-  nsIFrame* scrolledFrame = mScrolledFrame;
   
-  scrolledFrame->SetPosition(ScrollPort().TopLeft() - aScrollPosition);
+  mScrolledFrame->SetPosition(ScrollPort().TopLeft() - aScrollPosition);
 
   
   
@@ -1185,7 +1184,7 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   
   OverflowAreas overflow(scrolledArea, scrolledArea);
-  scrolledFrame->FinishAndStoreOverflow(overflow, scrolledFrame->GetSize());
+  mScrolledFrame->FinishAndStoreOverflow(overflow, mScrolledFrame->GetSize());
 
   
   
@@ -1193,7 +1192,7 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   
   nsContainerFrame::SyncFrameViewAfterReflow(
-      scrolledFrame->PresContext(), scrolledFrame, scrolledFrame->GetView(),
+      mScrolledFrame->PresContext(), mScrolledFrame, mScrolledFrame->GetView(),
       scrolledArea, ReflowChildFlags::Default);
 }
 
