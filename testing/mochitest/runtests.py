@@ -176,6 +176,7 @@ class MessageLogger(object):
         self.structured = structured
         self.gecko_id = "GECKO"
         self.is_test_running = False
+        self._manifest = None
 
         
         
@@ -188,6 +189,9 @@ class MessageLogger(object):
 
         
         self.buffered_messages = []
+
+    def setManifest(self, name):
+        self._manifest = name
 
     def validate(self, obj):
         """Tests whether the given object is a valid structured message
@@ -257,6 +261,7 @@ class MessageLogger(object):
             self._fix_subtest_name(message)
             self._fix_test_name(message)
             self._fix_message_format(message)
+            message["group"] = self._manifest
             messages.append(message)
 
         return messages
@@ -1994,6 +1999,9 @@ toolbar#nav-bar {
         if options.headless:
             browserEnv["MOZ_HEADLESS"] = "1"
 
+        if not options.e10s:
+            browserEnv["MOZ_FORCE_DISABLE_E10S"] = "1"
+
         if options.dmd:
             browserEnv["DMD"] = os.environ.get("DMD", "1")
 
@@ -2452,7 +2460,6 @@ toolbar#nav-bar {
 
         
         prefs = {
-            "browser.tabs.remote.autostart": options.e10s,
             
             
             "remote.log.level": "Trace",
@@ -3459,6 +3466,7 @@ toolbar#nav-bar {
         for m in sorted(manifests):
             self.log.group_start(name=m)
             self.log.info("Running manifest: {}".format(m))
+            self.message_logger.setManifest(m)
 
             args = list(self.args_by_manifest[m])[0]
             self.extraArgs = []
