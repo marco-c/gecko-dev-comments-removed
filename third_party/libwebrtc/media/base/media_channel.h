@@ -945,8 +945,6 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   virtual void GenerateSendKeyFrame(uint32_t ssrc,
                                     const std::vector<std::string>& rids) = 0;
-  
-  virtual void SetVideoCodecSwitchingEnabled(bool enabled) = 0;
   virtual bool GetStats(VideoMediaSendInfo* stats) = 0;
   
   

@@ -662,6 +662,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     bool enable_implicit_rollback = false;
 
     
+    
     absl::optional<bool> allow_codec_switching;
 
     

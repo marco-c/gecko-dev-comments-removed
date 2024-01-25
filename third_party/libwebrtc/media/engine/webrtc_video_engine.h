@@ -225,8 +225,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
                           webrtc::VideoEncoderFactory::EncoderSelectorInterface*
                               encoder_selector) override;
 
-  void SetVideoCodecSwitchingEnabled(bool enabled) override;
-
   void SetSendCodecChangedCallback(
       absl::AnyInvocable<void()> callback) override {
     send_codec_changed_callback_ = std::move(callback);
@@ -548,11 +546,6 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   
   rtc::scoped_refptr<webrtc::FrameTransformerInterface>
       unsignaled_frame_transformer_ RTC_GUARDED_BY(thread_checker_);
-
-  
-  
-  
-  bool allow_codec_switching_ = false;
 
   
   
