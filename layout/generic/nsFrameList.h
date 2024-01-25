@@ -180,7 +180,6 @@ class nsFrameList {
 
 
   nsIFrame* RemoveFirstChild();
-  nsIFrame* RemoveLastChild();
 
   
 

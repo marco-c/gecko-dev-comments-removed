@@ -85,6 +85,13 @@ class nsPageFrame final : public nsContainerFrame {
   
   double GetPageOrientationRotation(nsSharedPageData* aPD) const;
 
+  
+  
+  
+  
+  
+  nsIFrame* FirstContinuation() const final;
+
  protected:
   explicit nsPageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
   virtual ~nsPageFrame();

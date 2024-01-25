@@ -48,15 +48,10 @@ class nsSplittableFrame : public nsIFrame {
 
   
   void SetPrevContinuation(nsIFrame*) final;
-
-  
-  
-  
-  
   void SetNextContinuation(nsIFrame*) final;
 
   
-  nsIFrame* FirstContinuation() const final;
+  nsIFrame* FirstContinuation() const override;
   nsIFrame* LastContinuation() const final;
 
 #ifdef DEBUG
@@ -71,11 +66,6 @@ class nsSplittableFrame : public nsIFrame {
 
   
   void SetPrevInFlow(nsIFrame*) final;
-
-  
-  
-  
-  
   void SetNextInFlow(nsIFrame*) final;
 
   
@@ -91,14 +81,6 @@ class nsSplittableFrame : public nsIFrame {
   nsSplittableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                     ClassID aID)
       : nsIFrame(aStyle, aPresContext, aID) {}
-
-  
-  
-  
-  
-  
-  
-  void UpdateFirstContinuationAndFirstInFlowCache();
 
   
 
