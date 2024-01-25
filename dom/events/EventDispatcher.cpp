@@ -585,12 +585,7 @@ void EventTargetChainItem::HandleEventTargetChain(
   }
 
   
-  const bool prefCorrectOrder =
-      StaticPrefs::dom_events_phases_correctOrderOnTarget();
   aVisitor.mEvent->mFlags.mInTargetPhase = true;
-  if (!prefCorrectOrder) {
-    aVisitor.mEvent->mFlags.mInBubblingPhase = true;
-  }
   EventTargetChainItem& targetItem = chain[firstCanHandleEventTargetIdx];
   
   
@@ -602,23 +597,18 @@ void EventTargetChainItem::HandleEventTargetChain(
        targetItem.ForceContentDispatch())) {
     targetItem.HandleEvent(aVisitor, aCd);
   }
-  if (prefCorrectOrder) {
-    aVisitor.mEvent->mFlags.mInCapturePhase = false;
-    aVisitor.mEvent->mFlags.mInBubblingPhase = true;
-    if (!aVisitor.mEvent->PropagationStopped() &&
-        (!aVisitor.mEvent->mFlags.mNoContentDispatch ||
-         targetItem.ForceContentDispatch())) {
-      targetItem.HandleEvent(aVisitor, aCd);
-    }
+  aVisitor.mEvent->mFlags.mInCapturePhase = false;
+  aVisitor.mEvent->mFlags.mInBubblingPhase = true;
+  if (!aVisitor.mEvent->PropagationStopped() &&
+      (!aVisitor.mEvent->mFlags.mNoContentDispatch ||
+       targetItem.ForceContentDispatch())) {
+    targetItem.HandleEvent(aVisitor, aCd);
   }
 
   if (aVisitor.mEvent->mFlags.mInSystemGroup) {
     targetItem.PostHandleEvent(aVisitor);
   }
   aVisitor.mEvent->mFlags.mInTargetPhase = false;
-  if (!prefCorrectOrder) {
-    aVisitor.mEvent->mFlags.mInCapturePhase = false;
-  }
 
   
   for (uint32_t i = firstCanHandleEventTargetIdx + 1; i < chainLength; ++i) {
