@@ -118,7 +118,7 @@ absl::optional<VideoPlayoutDelay> LoadVideoPlayoutDelayOverride(
 
 
 
-bool PacketWillLikelyBeRequestedForRestransmitionIfLost(
+bool PacketWillLikelyBeRequestedForRestransmissionIfLost(
     const RTPVideoHeader& video_header) {
   return IsBaseLayer(video_header) &&
          !(video_header.generic.has_value()
@@ -443,7 +443,7 @@ void RTPSenderVideo::AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
       first_packet &&
       send_allocation_ != SendVideoLayersAllocation::kDontSend &&
       (video_header.frame_type == VideoFrameType::kVideoFrameKey ||
-       PacketWillLikelyBeRequestedForRestransmitionIfLost(video_header))) {
+       PacketWillLikelyBeRequestedForRestransmissionIfLost(video_header))) {
     VideoLayersAllocation allocation = allocation_.value();
     allocation.resolution_and_frame_rate_is_valid =
         send_allocation_ == SendVideoLayersAllocation::kSendWithResolution;
@@ -734,7 +734,7 @@ bool RTPSenderVideo::SendVideo(int payload_type,
   }
 
   if (video_header.frame_type == VideoFrameType::kVideoFrameKey ||
-      PacketWillLikelyBeRequestedForRestransmitionIfLost(video_header)) {
+      PacketWillLikelyBeRequestedForRestransmissionIfLost(video_header)) {
     
     
     playout_delay_pending_ = false;
