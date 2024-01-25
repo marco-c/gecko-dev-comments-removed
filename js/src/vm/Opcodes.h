@@ -2203,6 +2203,27 @@
 
 
 
+ \
+    MACRO(AsyncReject, async_reject, NULL, 1, 3, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3615,14 +3636,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(234))     \
   IF_RECORD_TUPLE(, MACRO(235))     \
   IF_RECORD_TUPLE(, MACRO(236))     \
   IF_RECORD_TUPLE(, MACRO(237))     \
   IF_RECORD_TUPLE(, MACRO(238))     \
   IF_RECORD_TUPLE(, MACRO(239))     \
   IF_RECORD_TUPLE(, MACRO(240))     \
-  MACRO(241)                                   \
+  IF_RECORD_TUPLE(, MACRO(241))     \
   MACRO(242)                                   \
   MACRO(243)                                   \
   MACRO(244)                                   \

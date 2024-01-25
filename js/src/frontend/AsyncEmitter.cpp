@@ -178,7 +178,7 @@ bool AsyncEmitter::emitFinalYield() {
 }
 
 bool AsyncEmitter::emitRejectCatch() {
-  if (!rejectTryCatch_->emitCatch()) {
+  if (!rejectTryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes)) {
     
     return false;
   }
@@ -188,8 +188,7 @@ bool AsyncEmitter::emitRejectCatch() {
     return false;
   }
 
-  if (!bce_->emit2(JSOp::AsyncResolve,
-                   uint8_t(AsyncFunctionResolveKind::Reject))) {
+  if (!bce_->emit1(JSOp::AsyncReject)) {
     
     return false;
   }

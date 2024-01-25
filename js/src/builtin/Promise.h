@@ -173,9 +173,10 @@ enum class UnhandledRejectionBehavior { Ignore, Report };
     JSContext* cx, JS::Handle<PromiseObject*> resultPromise,
     JS::Handle<JS::Value> value);
 
-[[nodiscard]] bool AsyncFunctionThrown(JSContext* cx,
-                                       JS::Handle<PromiseObject*> resultPromise,
-                                       JS::Handle<JS::Value> reason);
+[[nodiscard]] bool AsyncFunctionThrown(
+    JSContext* cx, JS::Handle<PromiseObject*> resultPromise,
+    JS::Handle<JS::Value> reason,
+    JS::Handle<SavedFrame*> unwrappedRejectionStack = nullptr);
 
 
 

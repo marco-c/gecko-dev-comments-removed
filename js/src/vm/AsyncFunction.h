@@ -297,6 +297,12 @@ JSObject* AsyncFunctionResolve(JSContext* cx,
                                HandleValue valueOrReason,
                                AsyncFunctionResolveKind resolveKind);
 
+
+
+JSObject* AsyncFunctionReject(JSContext* cx,
+                              Handle<AsyncFunctionGeneratorObject*> generator,
+                              HandleValue reason, HandleValue stack);
+
 class AsyncFunctionGeneratorObject : public AbstractGeneratorObject {
  public:
   enum {
