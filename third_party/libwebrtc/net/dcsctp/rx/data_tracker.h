@@ -93,6 +93,10 @@ class DataTracker {
     return TSN(last_cumulative_acked_tsn_.Wrap());
   }
 
+  bool IsLaterThanCumulativeAckedTsn(TSN tsn) const {
+    return tsn_unwrapper_.PeekUnwrap(tsn) > last_cumulative_acked_tsn_;
+  }
+
   
   bool will_increase_cum_ack_tsn(TSN tsn) const;
 

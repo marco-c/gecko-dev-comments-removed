@@ -1102,7 +1102,7 @@ void DcSctpSocket::HandleDataCommon(AnyDataChunk& chunk) {
 
   if (tcb_->data_tracker().Observe(tsn, immediate_ack)) {
     tcb_->reassembly_queue().Add(tsn, std::move(data));
-    MaybeResetStreamsDeferredAndDeliverMessages();
+    MaybeDeliverMessages();
   }
 }
 
@@ -1453,12 +1453,7 @@ void DcSctpSocket::HandleCookieAck(
   callbacks_.OnConnected();
 }
 
-void DcSctpSocket::MaybeResetStreamsDeferredAndDeliverMessages() {
-  
-  
-  tcb_->reassembly_queue().MaybeResetStreamsDeferred(
-      tcb_->data_tracker().last_cumulative_acked_tsn());
-
+void DcSctpSocket::MaybeDeliverMessages() {
   for (auto& message : tcb_->reassembly_queue().FlushMessages()) {
     ++metrics_.rx_messages_count;
     callbacks_.OnMessageReceived(std::move(message));
@@ -1571,6 +1566,10 @@ void DcSctpSocket::HandleReconfig(
     
     
     tcb_->SendBufferedPackets(now);
+
+    
+    
+    MaybeDeliverMessages();
   }
 }
 
@@ -1710,12 +1709,12 @@ void DcSctpSocket::HandleForwardTsnCommon(const AnyForwardTsnChunk& chunk) {
     return;
   }
   if (tcb_->data_tracker().HandleForwardTsn(chunk.new_cumulative_tsn())) {
-    tcb_->reassembly_queue().Handle(chunk);
+    tcb_->reassembly_queue().HandleForwardTsn(chunk.new_cumulative_tsn(),
+                                              chunk.skipped_streams());
   }
 
   
-  
-  MaybeResetStreamsDeferredAndDeliverMessages();
+  MaybeDeliverMessages();
 }
 
 void DcSctpSocket::MaybeSendShutdownOrAck() {

@@ -181,8 +181,7 @@ class DcSctpSocket : public DcSctpSocketInterface {
   void DebugPrintOutgoing(rtc::ArrayView<const uint8_t> payload);
   
   
-  
-  void MaybeResetStreamsDeferredAndDeliverMessages();
+  void MaybeDeliverMessages();
   
   bool ValidateHasTCB();
 

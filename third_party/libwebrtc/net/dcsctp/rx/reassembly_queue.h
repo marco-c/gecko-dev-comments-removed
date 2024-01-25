@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "net/dcsctp/common/internal_types.h"
@@ -30,6 +31,7 @@
 #include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_message.h"
 #include "net/dcsctp/rx/reassembly_streams.h"
+#include "rtc_base/containers/flat_set.h"
 
 namespace dcsctp {
 
@@ -88,18 +90,18 @@ class ReassemblyQueue {
   
   
   
-  void Handle(const AnyForwardTsnChunk& forward_tsn);
+  void HandleForwardTsn(
+      TSN new_cumulative_tsn,
+      rtc::ArrayView<const AnyForwardTsnChunk::SkippedStream> skipped_streams);
 
   
   
-  
-  ReconfigurationResponseParameter::Result ResetStreams(
-      const OutgoingSSNResetRequestParameter& req,
-      TSN cum_tsn_ack);
+  void ResetStreamsAndLeaveDeferredReset(
+      rtc::ArrayView<const StreamID> stream_ids);
 
   
-  
-  bool MaybeResetStreamsDeferred(TSN cum_ack_tsn);
+  void EnterDeferredReset(TSN sender_last_assigned_tsn,
+                          rtc::ArrayView<const StreamID> streams);
 
   
   
@@ -126,17 +128,21 @@ class ReassemblyQueue {
   void RestoreFromState(const DcSctpSocketHandoverState& state);
 
  private:
+  struct DeferredResetStreams {
+    DeferredResetStreams(UnwrappedTSN sender_last_assigned_tsn,
+                         webrtc::flat_set<StreamID> streams)
+        : sender_last_assigned_tsn(sender_last_assigned_tsn),
+          streams(std::move(streams)) {}
+
+    UnwrappedTSN sender_last_assigned_tsn;
+    webrtc::flat_set<StreamID> streams;
+    std::vector<absl::AnyInvocable<void(void)>> deferred_actions;
+  };
+
   bool IsConsistent() const;
   void AddReassembledMessage(rtc::ArrayView<const UnwrappedTSN> tsns,
                              DcSctpMessage message);
   void MaybeMoveLastAssembledWatermarkFurther();
-
-  struct DeferredResetStreams {
-    explicit DeferredResetStreams(OutgoingSSNResetRequestParameter req)
-        : req(std::move(req)) {}
-    OutgoingSSNResetRequestParameter req;
-    std::vector<std::pair<TSN, Data>> deferred_chunks;
-  };
 
   const absl::string_view log_prefix_;
   const size_t max_size_bytes_;
