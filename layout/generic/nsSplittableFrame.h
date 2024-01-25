@@ -56,7 +56,7 @@ class nsSplittableFrame : public nsIFrame {
   void SetNextContinuation(nsIFrame*) final;
 
   
-  nsIFrame* FirstContinuation() const override;
+  nsIFrame* FirstContinuation() const final;
   nsIFrame* LastContinuation() const final;
 
 #ifdef DEBUG
