@@ -188,12 +188,6 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, assign) BOOL allowCodecSwitching;
-
-
-
-
-
 
 @property(nonatomic, nullable) RTC_OBJC_TYPE(RTCCryptoOptions) * cryptoOptions;
 
