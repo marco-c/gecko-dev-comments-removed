@@ -256,13 +256,8 @@ void FetchService::FetchInstance::Cancel() {
 
   FETCH_LOG(("FetchInstance::Cancel() [%p]", this));
 
-  
-  
-  
-  
   if (mFetchDriver) {
     mFetchDriver->RunAbortAlgorithm();
-    return;
   }
 
   MOZ_ASSERT(mPromises);
@@ -299,27 +294,17 @@ void FetchService::FetchInstance::OnResponseEnd(
 
   MOZ_ASSERT(mPromises);
 
-  if (aReason == eAborted) {
-    
-    
-    if (!mPromises->GetResponseAvailablePromise()->IsResolved()) {
-      mPromises->ResolveResponseAvailablePromise(
-          InternalResponse::NetworkError(NS_ERROR_DOM_ABORT_ERR), __func__);
-    }
-
-    
-    
-    if (!mPromises->GetResponseTimingPromise()->IsResolved()) {
-      mPromises->ResolveResponseTimingPromise(ResponseTiming(), __func__);
-    }
-    return;
+  
+  
+  if (!mPromises->GetResponseTimingPromise()->IsResolved()) {
+    mPromises->ResolveResponseTimingPromise(ResponseTiming(), __func__);
   }
-
-  MOZ_ASSERT(mPromises->GetResponseAvailablePromise()->IsResolved() &&
-             mPromises->GetResponseTimingPromise()->IsResolved());
-
   
   mPromises->ResolveResponseEndPromise(ResponseEndArgs(aReason), __func__);
+
+  if (aReason == eAborted) {
+    return;
+  }
 
   
   RefPtr<FetchService> fetchService = FetchService::GetInstance();
