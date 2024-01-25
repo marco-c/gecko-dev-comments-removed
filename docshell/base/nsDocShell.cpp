@@ -9436,7 +9436,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   if (mozilla::SessionHistoryInParent()) {
-    Document* document = GetDocument();
+    Document* document = GetExtantDocument();
     uint32_t flags = 0;
     if (document && !document->CanSavePresentation(nullptr, flags, true)) {
       
