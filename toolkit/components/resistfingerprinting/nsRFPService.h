@@ -72,6 +72,8 @@ class nsIChannel;
 
 namespace mozilla {
 class WidgetKeyboardEvent;
+class OriginAttributes;
+class OriginAttributesPattern;
 namespace dom {
 class Document;
 enum class CanvasContextType : uint8_t;
@@ -419,8 +421,9 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
       uint32_t aSize, nsTArray<uint8_t>& aCanvasKey);
 
   
-  nsresult EnsureSessionKey(bool aIsPrivate);
-  void ClearSessionKey(bool aIsPrivate);
+  nsresult GetBrowsingSessionKey(const OriginAttributes& aOriginAttributes,
+                                 nsID& aBrowsingSessionKey);
+  void ClearBrowsingSessionKey(const OriginAttributesPattern& aPattern);
 
   
   
@@ -432,8 +435,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   
-  Maybe<nsID> mBrowsingSessionKey;
-  Maybe<nsID> mPrivateBrowsingSessionKey;
+  nsTHashMap<nsCStringHashKey, nsID> mBrowsingSessionKeys;
 
   nsCOMPtr<nsIFingerprintingWebCompatService> mWebCompatService;
   nsTHashMap<nsCStringHashKey, RFPTarget> mFingerprintingOverrides;
