@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_AUDIO_PROCESSING_TEST_ECHO_CANCELLER3_CONFIG_JSON_H_
+#define MODULES_AUDIO_PROCESSING_TEST_ECHO_CANCELLER3_CONFIG_JSON_H_
+
+#include <string>
+
+#include "absl/strings/string_view.h"
+#include "api/audio/echo_canceller3_config.h"
+
+namespace webrtc {
+
+
+
+
+
+void Aec3ConfigFromJsonString(absl::string_view json_string,
+                                         EchoCanceller3Config* config,
+                                         bool* parsing_successful);
+
+
+
+std::string Aec3ConfigToJsonString(
+    const EchoCanceller3Config& config);
+
+}  
+
+#endif  
