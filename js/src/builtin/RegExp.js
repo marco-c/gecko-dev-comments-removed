@@ -243,7 +243,7 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
     lastIndex = RegExpSearcherLastLimit(S);
 
     
-    var matchStr = SubstringKernel(S, position, lastIndex - position);
+    var matchStr = Substring(S, position, lastIndex - position);
 
     
     DefineDataProperty(A, n, matchStr);

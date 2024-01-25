@@ -287,11 +287,7 @@ function CreateSegmentDataObject(string, boundaries) {
   assert(startIndex < endIndex, "startIndex is strictly less than endIndex");
 
   
-  var segment = SubstringKernel(
-    string,
-    startIndex | 0,
-    (endIndex - startIndex) | 0
-  );
+  var segment = Substring(string, startIndex, endIndex - startIndex);
 
   
   if (isWordLike === undefined) {
