@@ -71,7 +71,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     }
     
     InternalIfEmitter ifGeneratorClosing(bce);
-    if (!bce->emit1(JSOp::Swap)) {
+    if (!bce->emitPickN(2)) {
       
       return false;
     }
@@ -96,7 +96,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
       
       return false;
     }
-    if (!bce->emit1(JSOp::Swap)) {
+    if (!bce->emitUnpickN(2)) {
       
       return false;
     }

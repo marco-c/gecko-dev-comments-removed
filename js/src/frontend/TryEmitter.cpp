@@ -182,7 +182,8 @@ bool TryEmitter::emitFinally(
   
   
   
-  bce_->bytecodeSection().setStackDepth(depth_ + 2);
+  
+  bce_->bytecodeSection().setStackDepth(depth_ + 3);
 
   if (!bce_->emitJumpTarget(&finallyStart_)) {
     return false;
@@ -236,21 +237,32 @@ bool TryEmitter::emitFinallyEnd() {
     }
   }
 
+  
+
   InternalIfEmitter ifThrowing(bce_);
   if (!ifThrowing.emitThenElse()) {
+    
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Throw)) {
+  if (!bce_->emit1(JSOp::ThrowWithStack)) {
+    
     return false;
   }
 
   if (!ifThrowing.emitElse()) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Pop)) {
+    
     return false;
   }
 
   if (controlInfo_ && !controlInfo_->continuations_.empty()) {
     if (!controlInfo_->emitContinuations(bce_)) {
+      
       return false;
     }
   } else {
@@ -259,6 +271,7 @@ bool TryEmitter::emitFinallyEnd() {
     
     
     if (!bce_->emit1(JSOp::Pop)) {
+      
       return false;
     }
   }

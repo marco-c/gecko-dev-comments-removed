@@ -4366,11 +4366,14 @@ error:
 
 
       ReservedRooted<Value> exception(&rootValue0);
-      if (!cx->getPendingException(&exception)) {
+      ReservedRooted<Value> exceptionStack(&rootValue1);
+      if (!cx->getPendingException(&exception) ||
+          !cx->getPendingExceptionStack(&exceptionStack)) {
         interpReturnOK = false;
         goto return_continuation;
       }
       PUSH_COPY(exception);
+      PUSH_COPY(exceptionStack);
       PUSH_BOOLEAN(true);
       cx->clearPendingException();
     }

@@ -3,25 +3,14 @@ function throwValue(value) {
 }
 
 
-function testForOfLoop() {
-  function f() {
-    for (let _ of [null]) {
-      throwValue("exception-value");
-    }
-  }
-
-  let info = getExceptionInfo(f);
-  assertEq(info.exception, "exception-value");
-  assertEq(info.stack.includes("throwValue"), true);
-}
-testForOfLoop();
-
-
 function testFinally() {
   function f() {
     try {
       throwValue("exception-value");
     } finally {
+      for (let i = 0; i < 100; ++i) {
+        
+      }
     }
   }
 
@@ -39,6 +28,9 @@ function testCatchFinally() {
     } catch {
      throwValue("exception-value");
     } finally {
+      for (let i = 0; i < 100; ++i) {
+        
+      }
     }
   }
 
