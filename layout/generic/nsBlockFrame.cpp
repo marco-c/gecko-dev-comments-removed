@@ -63,6 +63,9 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/Telemetry.h"
 #include "nsFlexContainerFrame.h"
+#include "nsFileControlFrame.h"
+#include "nsMathMLContainerFrame.h"
+#include "nsSelectsAreaFrame.h"
 
 #include "nsBidiPresUtils.h"
 
@@ -7746,6 +7749,26 @@ void nsBlockFrame::ChildIsDirty(nsIFrame* aChild) {
   nsContainerFrame::ChildIsDirty(aChild);
 }
 
+static bool AlwaysEstablishesBFC(const nsBlockFrame* aFrame) {
+  switch (aFrame->Type()) {
+    case LayoutFrameType::ColumnSetWrapper:
+      
+      
+      
+    case LayoutFrameType::ComboboxControl:
+      return true;
+    case LayoutFrameType::Block:
+      return static_cast<const nsFileControlFrame*>(do_QueryFrame(aFrame)) ||
+             
+             
+             static_cast<const nsSelectsAreaFrame*>(do_QueryFrame(aFrame)) ||
+             
+             static_cast<const nsMathMLmathBlockFrame*>(do_QueryFrame(aFrame));
+    default:
+      return false;
+  }
+}
+
 void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                         nsIFrame* aPrevInFlow) {
   
@@ -7788,13 +7811,16 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   
+  
+  
+  
   if (StyleDisplay()->mDisplay == mozilla::StyleDisplay::FlowRoot ||
       (GetParent() &&
        (GetWritingMode().GetBlockDir() !=
             GetParent()->GetWritingMode().GetBlockDir() ||
         GetWritingMode().IsVerticalSideways() !=
             GetParent()->GetWritingMode().IsVerticalSideways())) ||
-      IsColumnSpan()) {
+      IsColumnSpan() || AlwaysEstablishesBFC(this)) {
     AddStateBits(NS_BLOCK_STATIC_BFC);
   }
 
