@@ -301,6 +301,23 @@ add_task(async function test_shift_tab() {
     !Services.focus.focusedElement.classList.contains("searchbar-textbox"),
     "the search input in the search bar should no longer be focused"
   );
+
+  
+  EventUtils.synthesizeKey("KEY_Tab");
+  ok(
+    Services.focus.focusedElement.classList.contains("searchbar-textbox"),
+    "the search bar should be focused"
+  );
+
+  
+  EventUtils.synthesizeKey("fo");
+  is(
+    Services.focus.focusedElement.value,
+    "fo",
+    "when the search bar was focused, the value should be autoselected"
+  );
+  
+  EventUtils.synthesizeKey("o");
 });
 
 add_task(async function test_alt_down() {
