@@ -632,8 +632,10 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Inactivecaptiontext, 0x6D, 0x6D, 0x6D)
 
       
-      COLOR(Appworkspace, 0xAB, 0xAB, 0xAB)
-      COLOR(Background, 0x00, 0x00, 0x00)
+      
+      COLOR(Appworkspace, 0xFF, 0xFF, 0xFF)
+      
+      COLOR(Background, 0xFF, 0xFF, 0xFF)
       
       COLOR(Buttonhighlight, 0xE9, 0xE9, 0xED)
       
@@ -654,9 +656,11 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Highlighttext, 0xFF, 0xFF, 0xFF)
       COLOR(Infobackground, 0xFF, 0xFF, 0xE1)
       COLOR(Infotext, 0x00, 0x00, 0x00)
-      COLOR(Menu, 0xF0, 0xF0, 0xF0)
+      
+      COLOR(Menu, 0xFF, 0xFF, 0xFF)
       COLOR(Menutext, 0x00, 0x00, 0x00)
-      COLOR(Scrollbar, 0xC8, 0xC8, 0xC8)
+      
+      COLOR(Scrollbar, 0xFF, 0xFF, 0xFF)
       COLOR(Threeddarkshadow, 0x69, 0x69, 0x69)
       COLOR(Threedface, 0xF0, 0xF0, 0xF0)
       COLOR(Threedhighlight, 0xFF, 0xFF, 0xFF)
@@ -1270,6 +1274,15 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     BIT_FOR(Inactivecaptiontext) |
     
     BIT_FOR(MozDisabledfield) | BIT_FOR(Graytext) |
+    
+    
+    
+    
+    
+    
+    
+    BIT_FOR(Appworkspace) | BIT_FOR(Background) | BIT_FOR(Menu) |
+    BIT_FOR(Scrollbar) |
     
     
     
