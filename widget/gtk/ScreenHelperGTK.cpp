@@ -246,6 +246,12 @@ static already_AddRefed<Screen> MakeScreenGtk(GdkScreen* aScreen,
   }
 
   uint32_t pixelDepth = GetGTKPixelDepth();
+  if (pixelDepth == 32) {
+    
+    
+    
+    pixelDepth = 24;
+  }
 
   CSSToLayoutDeviceScale defaultCssScale(gdkScaleFactor);
 
