@@ -214,6 +214,8 @@ interface nsIWindowsShellService : nsISupports
    *
    * @return An array of paths for all taskbar tab shortcuts.
    *
+   * @throws NS_ERROR_NOT_IMPLEMENTED
+   *         if run on a MinGW compilation
    * @throws NS_ERROR_ABORT
    *         if instance cannot be created.
    * @throws NS_ERROR_FILE_NOT_FOUND

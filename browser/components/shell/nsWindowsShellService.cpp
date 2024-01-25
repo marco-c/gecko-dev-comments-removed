@@ -1486,6 +1486,9 @@ nsWindowsShellService::GetTaskbarTabShortcutPath(const nsAString& aShortcutName,
 
 NS_IMETHODIMP
 nsWindowsShellService::GetTaskbarTabPins(nsTArray<nsString>& aShortcutPaths) {
+#ifdef __MINGW32__
+  return NS_ERROR_NOT_IMPLEMENTED;
+#else
   aShortcutPaths.Clear();
 
   
@@ -1542,7 +1545,6 @@ nsWindowsShellService::GetTaskbarTabPins(nsTArray<nsString>& aShortcutPaths) {
     
     nsString fileName(ffd.cFileName);
     RefPtr<IShellLinkW> link;
-    RefPtr<IPersistFile> ppf;
     RefPtr<IPropertyStore> pps;
     nsString target;
     target.SetLength(MAX_PATH);
@@ -1595,6 +1597,7 @@ nsWindowsShellService::GetTaskbarTabPins(nsTArray<nsString>& aShortcutPaths) {
   } while (FindNextFile(fileHandle, &ffd) != 0);
   FindClose(fileHandle);
   return NS_OK;
+#endif
 }
 
 static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
