@@ -93,14 +93,21 @@ var gConnectionsDialog = {
       
       if (
         proxyPref.value != "" &&
-        proxyPortPref.value == 0 &&
         (prefName == "http" || prefName == "socks" || !shareProxiesPref.value)
       ) {
-        document
-          .getElementById("networkProxy" + prefName.toUpperCase() + "_Port")
-          .focus();
-        event.preventDefault();
-        return;
+        if (proxyPortPref.value == 0) {
+          document
+            .getElementById("networkProxy" + prefName.toUpperCase() + "_Port")
+            .focus();
+          event.preventDefault();
+          return;
+        } else if (!Services.io.isValidHostname(proxyPref.value)) {
+          document
+            .getElementById("networkProxy" + prefName.toUpperCase())
+            .focus();
+          event.preventDefault();
+          return;
+        }
       }
     }
 

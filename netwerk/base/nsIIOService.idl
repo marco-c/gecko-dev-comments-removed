@@ -234,6 +234,14 @@ interface nsIIOService : nsISupports
 
 
 
+    boolean isValidHostname(in AUTF8String hostname);
+
+    
+
+
+
+
+
 
 
 
