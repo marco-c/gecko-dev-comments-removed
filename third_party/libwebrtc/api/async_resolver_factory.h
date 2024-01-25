@@ -19,13 +19,16 @@ namespace webrtc {
 
 
 
-class AsyncResolverFactory {
+class [[deprecated("Use AsyncDnsResolverFactory")]] AsyncResolverFactory {
  public:
   AsyncResolverFactory() = default;
   virtual ~AsyncResolverFactory() = default;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   
   virtual rtc::AsyncResolverInterface* Create() = 0;
+#pragma clang diagnostic pop
 };
 
 }  

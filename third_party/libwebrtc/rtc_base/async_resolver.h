@@ -39,7 +39,12 @@ namespace rtc {
 
 
 
-class RTC_EXPORT AsyncResolver : public AsyncResolverInterface {
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wstrict-aliasing"
+class [[deprecated("Use AsyncDnsResolver")]] RTC_EXPORT AsyncResolver
+    : public AsyncResolverInterface {
+#pragma clang diagnostic pop
  public:
   AsyncResolver();
   ~AsyncResolver() override;

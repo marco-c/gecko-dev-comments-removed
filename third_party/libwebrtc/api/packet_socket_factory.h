@@ -76,7 +76,9 @@ class RTC_EXPORT PacketSocketFactory {
   
   
   
-  virtual AsyncResolverInterface* CreateAsyncResolver() {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  [[deprecated]] virtual AsyncResolverInterface* CreateAsyncResolver() {
     
     
     RTC_DCHECK_NOTREACHED();
@@ -89,6 +91,7 @@ class RTC_EXPORT PacketSocketFactory {
     return std::make_unique<webrtc::WrappingAsyncDnsResolver>(
         CreateAsyncResolver());
   }
+#pragma clang diagnostic pop
 
  private:
   PacketSocketFactory(const PacketSocketFactory&) = delete;

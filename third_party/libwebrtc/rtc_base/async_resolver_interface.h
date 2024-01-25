@@ -20,7 +20,7 @@ namespace rtc {
 
 
 
-class RTC_EXPORT AsyncResolverInterface {
+class [[deprecated("Use AsyncDnsResolver")]] RTC_EXPORT AsyncResolverInterface {
  public:
   AsyncResolverInterface();
   virtual ~AsyncResolverInterface();
