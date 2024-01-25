@@ -35,7 +35,6 @@ macro_rules! w {
     }};
 }
 
-
 pub use s;
 pub use w;
 
