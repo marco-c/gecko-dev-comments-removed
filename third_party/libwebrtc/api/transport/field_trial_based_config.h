@@ -14,10 +14,11 @@
 
 #include "absl/strings/string_view.h"
 #include "api/field_trials_registry.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
-class FieldTrialBasedConfig : public FieldTrialsRegistry {
+class RTC_EXPORT FieldTrialBasedConfig : public FieldTrialsRegistry {
  private:
   std::string GetValue(absl::string_view key) const override;
 };
