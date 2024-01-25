@@ -34,8 +34,7 @@ static bool sCanvasRenderThreadEverStarted = false;
 CanvasRenderThread::CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread,
                                        nsCOMPtr<nsIThreadPool>&& aWorkers,
                                        bool aCreatedThread)
-    : mMutex("CanvasRenderThread::mMutex"),
-      mThread(std::move(aThread)),
+    : mThread(std::move(aThread)),
       mWorkers(std::move(aWorkers)),
       mCreatedThread(aCreatedThread) {}
 
@@ -149,26 +148,7 @@ void CanvasRenderThread::Shutdown() {
     return;
   }
 
-  
   CanvasManagerParent::Shutdown();
-
-  
-  
-  
-  while (true) {
-    RefPtr<TaskQueue> taskQueue;
-    {
-      MutexAutoLock lock(sCanvasRenderThread->mMutex);
-
-      auto& pendingQueues = sCanvasRenderThread->mPendingShutdownTaskQueues;
-      if (pendingQueues.IsEmpty()) {
-        break;
-      }
-
-      taskQueue = pendingQueues.PopLastElement();
-    }
-    taskQueue->AwaitShutdownAndIdle();
-  }
 
   
   
@@ -227,41 +207,13 @@ already_AddRefed<nsIThread> CanvasRenderThread::GetCanvasRenderThread() {
 
  already_AddRefed<TaskQueue>
 CanvasRenderThread::CreateWorkerTaskQueue() {
-  if (!sCanvasRenderThread) {
+  if (!sCanvasRenderThread || !sCanvasRenderThread->mWorkers) {
     return nullptr;
   }
 
-  if (sCanvasRenderThread->mWorkers) {
-    return TaskQueue::Create(do_AddRef(sCanvasRenderThread->mWorkers),
-                             "CanvasWorker")
-        .forget();
-  }
-
-  return TaskQueue::Create(do_AddRef(sCanvasRenderThread->mThread),
+  return TaskQueue::Create(do_AddRef(sCanvasRenderThread->mWorkers),
                            "CanvasWorker")
       .forget();
-}
-
- void CanvasRenderThread::ShutdownWorkerTaskQueue(
-    TaskQueue* aTaskQueue) {
-  if (!sCanvasRenderThread) {
-    MOZ_ASSERT_UNREACHABLE("No CanvasRenderThread!");
-    return;
-  }
-
-  MutexAutoLock lock(sCanvasRenderThread->mMutex);
-  auto& pendingQueues = sCanvasRenderThread->mPendingShutdownTaskQueues;
-  pendingQueues.AppendElement(aTaskQueue);
-}
-
- void CanvasRenderThread::FinishShutdownWorkerTaskQueue(
-    TaskQueue* aTaskQueue) {
-  if (!sCanvasRenderThread) {
-    return;
-  }
-
-  MutexAutoLock lock(sCanvasRenderThread->mMutex);
-  sCanvasRenderThread->mPendingShutdownTaskQueues.RemoveElement(aTaskQueue);
 }
 
  void CanvasRenderThread::Dispatch(

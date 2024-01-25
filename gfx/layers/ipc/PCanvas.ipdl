@@ -32,11 +32,14 @@ parent:
 
 
 
+
+
   async InitTranslator(TextureType aTextureType, BackendType aBackendType,
                        Handle aHeaderHandle, Handle[] aBufferHandles,
                        uint64_t aBufferSize,
                        CrossProcessSemaphoreHandle aReaderSem,
-                       CrossProcessSemaphoreHandle aWriterSem);
+                       CrossProcessSemaphoreHandle aWriterSem,
+                       bool aUseIPDLThread);
 
   
 
