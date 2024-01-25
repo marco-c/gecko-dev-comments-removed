@@ -60,6 +60,7 @@
 #include "pc/rtp_transport_internal.h"
 #include "pc/sdp_utils.h"
 #include "pc/session_description.h"
+#include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -89,8 +90,6 @@ using ::testing::Combine;
 using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
 using ::testing::Values;
-
-constexpr int kDefaultTimeout = 10000;
 
 
 
@@ -743,18 +742,18 @@ TEST_P(PeerConnectionBundleTest, ApplyDescriptionWithSameSsrcsBundledFails) {
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   
   ASSERT_GE(offer->description()->contents().size(), 2U);
-  offer->description()
-      ->contents()[0]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
-  offer->description()
-      ->contents()[1]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
-  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[0]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[1]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
 
+  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
   
   
   auto answer = callee->CreateAnswer(options);
@@ -774,16 +773,16 @@ TEST_P(PeerConnectionBundleTest,
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   
   ASSERT_GE(offer->description()->contents().size(), 2U);
-  offer->description()
-      ->contents()[0]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
-  offer->description()
-      ->contents()[1]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[0]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[1]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
   EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
 
   

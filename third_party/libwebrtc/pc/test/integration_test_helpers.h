@@ -173,6 +173,10 @@ void RemoveSsrcsAndMsids(cricket::SessionDescription* desc);
 
 void RemoveSsrcsAndKeepMsids(cricket::SessionDescription* desc);
 
+
+
+void ReplaceFirstSsrc(StreamParams& stream, uint32_t ssrc);
+
 int FindFirstMediaStatsIndexByKind(
     const std::string& kind,
     const std::vector<const webrtc::RTCInboundRtpStreamStats*>& inbound_rtps);
