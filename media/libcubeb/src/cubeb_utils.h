@@ -182,7 +182,9 @@ public:
     if (length_ + length > capacity_) {
       reserve(length_ + length);
     }
-    PodCopy(data_ + length_, elements, length);
+    if (data_) {
+      PodCopy(data_ + length_, elements, length);
+    }
     length_ += length;
   }
 
@@ -195,7 +197,9 @@ public:
     if (length_ + length > capacity_) {
       reserve(length + length_);
     }
-    PodZero(data_ + length_, length);
+    if (data_) {
+      PodZero(data_ + length_, length);
+    }
     length_ += length;
   }
 
@@ -208,8 +212,10 @@ public:
     if (length_ + length > capacity_) {
       reserve(length + length_);
     }
-    PodMove(data_ + length, data_, length_);
-    PodZero(data_, length);
+    if (data_) {
+      PodMove(data_ + length, data_, length_);
+      PodZero(data_, length);
+    }
     length_ += length;
   }
 
@@ -226,6 +232,9 @@ public:
   {
     if (length > length_) {
       return false;
+    }
+    if (!data_) {
+      return true;
     }
     if (elements) {
       PodCopy(elements, data_, length);

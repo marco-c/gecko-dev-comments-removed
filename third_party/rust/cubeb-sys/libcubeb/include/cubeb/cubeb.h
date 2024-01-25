@@ -259,6 +259,18 @@ typedef enum {
 } cubeb_stream_prefs;
 
 
+
+
+
+typedef enum {
+  CUBEB_INPUT_PROCESSING_PARAM_NONE = 0x00,
+  CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION = 0x01,
+  CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION = 0x02,
+  CUBEB_INPUT_PROCESSING_PARAM_AUTOMATIC_GAIN_CONTROL = 0x04,
+  CUBEB_INPUT_PROCESSING_PARAM_VOICE_ISOLATION = 0x08,
+} cubeb_input_processing_params;
+
+
 typedef struct {
   cubeb_sample_format format; 
 
@@ -517,6 +529,18 @@ cubeb_get_preferred_sample_rate(cubeb * context, uint32_t * rate);
 
 
 
+
+
+
+
+
+CUBEB_EXPORT int
+cubeb_get_supported_input_processing_params(
+    cubeb * context, cubeb_input_processing_params * params);
+
+
+
+
 CUBEB_EXPORT void
 cubeb_destroy(cubeb * context);
 
@@ -640,6 +664,30 @@ cubeb_stream_set_name(cubeb_stream * stream, char const * stream_name);
 CUBEB_EXPORT int
 cubeb_stream_get_current_device(cubeb_stream * stm,
                                 cubeb_device ** const device);
+
+
+
+
+
+
+
+
+
+
+CUBEB_EXPORT int
+cubeb_stream_set_input_mute(cubeb_stream * stream, int mute);
+
+
+
+
+
+
+
+
+
+CUBEB_EXPORT int
+cubeb_stream_set_input_processing_params(cubeb_stream * stream,
+                                         cubeb_input_processing_params params);
 
 
 
