@@ -10,6 +10,7 @@
 #include "DDMediaLogs.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
 
 namespace mozilla {
@@ -40,7 +41,7 @@ struct DDLogShutdowner {
     DecoderDoctorLogger::ShutdownLogging();
   }
 };
-static UniquePtr<DDLogShutdowner> sDDLogShutdowner;
+static StaticAutoPtr<DDLogShutdowner> sDDLogShutdowner;
 
 
 struct DDLogDeleter {
@@ -52,7 +53,7 @@ struct DDLogDeleter {
     }
   }
 };
-static UniquePtr<DDLogDeleter> sDDLogDeleter;
+static StaticAutoPtr<DDLogDeleter> sDDLogDeleter;
 
 
 void DecoderDoctorLogger::PanicInternal(const char* aReason, bool aDontBlock) {
@@ -114,10 +115,10 @@ bool DecoderDoctorLogger::EnsureLogIsEnabled() {
           
           MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(
               NS_NewRunnableFunction("DDLogger shutdown setup", [] {
-                sDDLogShutdowner = MakeUnique<DDLogShutdowner>();
+                sDDLogShutdowner = new DDLogShutdowner();
                 ClearOnShutdown(&sDDLogShutdowner,
                                 ShutdownPhase::XPCOMShutdown);
-                sDDLogDeleter = MakeUnique<DDLogDeleter>();
+                sDDLogDeleter = new DDLogDeleter();
                 ClearOnShutdown(&sDDLogDeleter,
                                 ShutdownPhase::XPCOMShutdownThreads);
               })));
