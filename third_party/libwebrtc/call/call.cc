@@ -390,11 +390,6 @@ class Call final : public webrtc::Call,
 
   
   
-  std::map<uint32_t, ReceiveStreamInterface*> receive_rtp_config_
-      RTC_GUARDED_BY(&receive_11993_checker_);
-
-  
-  
   
   std::map<uint32_t, AudioSendStream*> audio_send_ssrcs_
       RTC_GUARDED_BY(worker_thread_);
@@ -835,11 +830,6 @@ webrtc::AudioReceiveStreamInterface* Call::CreateAudioReceiveStream(
   
   receive_stream->RegisterWithTransport(&audio_receiver_controller_);
 
-  
-  
-  
-  RegisterReceiveStream(config.rtp.remote_ssrc, receive_stream);
-
   ConfigureSync(config.sync_group);
 
   auto it = audio_send_ssrcs_.find(config.rtp.local_ssrc);
@@ -873,8 +863,6 @@ void Call::DestroyAudioReceiveStream(
   
   
   ConfigureSync(audio_receive_stream->sync_group());
-
-  UnregisterReceiveStream(ssrc);
 
   UpdateAggregateNetworkState();
   
@@ -1012,15 +1000,6 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
   
   
   receive_stream->RegisterWithTransport(&video_receiver_controller_);
-
-  if (receive_stream->rtx_ssrc()) {
-    
-    
-    
-    
-    RegisterReceiveStream(receive_stream->rtx_ssrc(), receive_stream);
-  }
-  RegisterReceiveStream(receive_stream->remote_ssrc(), receive_stream);
   video_receive_streams_.insert(receive_stream);
 
   ConfigureSync(receive_stream->sync_group());
@@ -1039,14 +1018,6 @@ void Call::DestroyVideoReceiveStream(
       static_cast<VideoReceiveStream2*>(receive_stream);
   
   receive_stream_impl->UnregisterFromTransport();
-
-  
-  
-  UnregisterReceiveStream(receive_stream_impl->remote_ssrc());
-
-  if (receive_stream_impl->rtx_ssrc()) {
-    UnregisterReceiveStream(receive_stream_impl->rtx_ssrc());
-  }
   video_receive_streams_.erase(receive_stream_impl);
   ConfigureSync(receive_stream_impl->sync_group());
 
@@ -1074,8 +1045,6 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
   
   
   receive_stream->RegisterWithTransport(&video_receiver_controller_);
-  RegisterReceiveStream(receive_stream->remote_ssrc(), receive_stream);
-
   
 
   return receive_stream;
@@ -1091,8 +1060,6 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
   receive_stream_impl->UnregisterFromTransport();
 
   auto ssrc = receive_stream_impl->remote_ssrc();
-  UnregisterReceiveStream(ssrc);
-
   
   
   receive_side_cc_.RemoveStream(ssrc);
@@ -1454,26 +1421,6 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
   transport_send_->OnReceivedPacket(packet_msg);
 
   receive_side_cc_.OnReceivedPacket(packet, media_type);
-}
-
-bool Call::RegisterReceiveStream(uint32_t ssrc,
-                                 ReceiveStreamInterface* stream) {
-  RTC_DCHECK_RUN_ON(&receive_11993_checker_);
-  RTC_DCHECK(stream);
-  auto inserted = receive_rtp_config_.emplace(ssrc, stream);
-  if (!inserted.second) {
-    RTC_DLOG(LS_WARNING) << "ssrc already registered: " << ssrc;
-  }
-  return inserted.second;
-}
-
-bool Call::UnregisterReceiveStream(uint32_t ssrc) {
-  RTC_DCHECK_RUN_ON(&receive_11993_checker_);
-  size_t erased = receive_rtp_config_.erase(ssrc);
-  if (!erased) {
-    RTC_DLOG(LS_WARNING) << "ssrc wasn't registered: " << ssrc;
-  }
-  return erased != 0u;
 }
 
 }  
