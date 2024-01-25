@@ -43,4 +43,14 @@ public interface AudioDeviceModule {
   default boolean setNoiseSuppressorEnabled(boolean enabled) {
     return false;
   }
+
+  
+
+
+
+
+
+  default boolean setPreferredMicrophoneFieldDimension(float dimension) {
+    return false;
+  }
 }
