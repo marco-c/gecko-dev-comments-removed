@@ -976,8 +976,13 @@ function hitEnterKey(button, message) {
 
 
 
-async function assertVisibility({ message, visible, hidden }) {
-  info(message);
+
+
+
+
+
+
+async function ensureVisibility({ message = null, visible = {}, hidden = {} }) {
   try {
     
     await waitForCondition(() => {
@@ -997,6 +1002,21 @@ async function assertVisibility({ message, visible, hidden }) {
     
   }
   
+  assertVisibility({ message, visible, hidden });
+}
+
+
+
+
+
+
+
+
+
+function assertVisibility({ message = null, visible = {}, hidden = {} }) {
+  if (message) {
+    info(message);
+  }
   for (const [name, element] of Object.entries(visible)) {
     ok(BrowserTestUtils.isVisible(element), `${name} is visible.`);
   }
