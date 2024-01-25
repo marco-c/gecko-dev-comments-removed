@@ -76,7 +76,8 @@ class WebGPUParent final : public PWebGPUParent {
   ipc::IPCResult RecvCommandBufferDrop(RawId aCommandBufferId);
   ipc::IPCResult RecvRenderBundleDrop(RawId aBundleId);
   ipc::IPCResult RecvQueueSubmit(RawId aQueueId, RawId aDeviceId,
-                                 const nsTArray<RawId>& aCommandBuffers);
+                                 const nsTArray<RawId>& aCommandBuffers,
+                                 const nsTArray<RawId>& aTextureIds);
   ipc::IPCResult RecvQueueOnSubmittedWorkDone(
       RawId aQueueId, std::function<void(mozilla::void_t)>&& aResolver);
   ipc::IPCResult RecvQueueWriteAction(RawId aQueueId, RawId aDeviceId,
@@ -211,6 +212,9 @@ class WebGPUParent final : public PWebGPUParent {
   
   
   nsTHashSet<RawId> mLostDeviceIds;
+
+  
+  RefPtr<gfx::FileHandleWrapper> mFenceHandle;
 };
 
 }  
