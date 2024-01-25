@@ -8,6 +8,23 @@
 
 "use strict";
 
+add_setup(function () {
+  
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+
+  registerCleanupFunction(async () => {
+    
+    
+    
+    
+    AccessibilityUtils.resetEnv();
+  });
+});
+
 add_task(async function () {
   await BrowserTestUtils.withNewTab("about:robots", async () => {
     for (let elt of [

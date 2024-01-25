@@ -596,7 +596,14 @@ add_task(async function ignoreEndsEngagement() {
         .closest("#nav-bar")
         .querySelector("toolbarspring");
       await UrlbarTestUtils.promisePopupClose(window, async () => {
+        
+        
+        
+        
+        
+        AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
         await EventUtils.synthesizeMouseAtCenter(spring, {});
+        AccessibilityUtils.resetEnv();
       });
       Assert.ok(
         UrlbarProviderSearchTips.showedTipTypeInCurrentEngagement ==
