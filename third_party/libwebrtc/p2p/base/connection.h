@@ -111,6 +111,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   bool connected() const;
   bool weak() const;
   bool active() const;
+  bool pending_delete() const { return !port_; }
 
   
   bool dead(int64_t now) const;

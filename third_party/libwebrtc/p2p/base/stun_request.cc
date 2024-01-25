@@ -133,31 +133,39 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
     }
   }
 
-  bool success = true;
-
   if (!msg->GetNonComprehendedAttributes().empty()) {
     
     
     
     RTC_LOG(LS_ERROR) << ": Discarding response due to unknown "
                          "comprehension-required attribute.";
-    success = false;
+    requests_.erase(iter);
+    return false;
   } else if (msg->type() == GetStunSuccessResponseType(request->type())) {
     if (!msg->IntegrityOk() && !skip_integrity_checking) {
       return false;
     }
-    request->OnResponse(msg);
+    
+    
+    
+    std::unique_ptr<StunRequest> owned_request = std::move(iter->second);
+    requests_.erase(iter);
+    owned_request->OnResponse(msg);
+    return true;
   } else if (msg->type() == GetStunErrorResponseType(request->type())) {
-    request->OnErrorResponse(msg);
+    
+    
+    
+    std::unique_ptr<StunRequest> owned_request = std::move(iter->second);
+    requests_.erase(iter);
+    owned_request->OnErrorResponse(msg);
+    return true;
   } else {
     RTC_LOG(LS_ERROR) << "Received response with wrong type: " << msg->type()
                       << " (expecting "
                       << GetStunSuccessResponseType(request->type()) << ")";
     return false;
   }
-
-  requests_.erase(iter);
-  return success;
 }
 
 bool StunRequestManager::empty() const {
