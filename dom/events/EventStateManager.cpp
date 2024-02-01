@@ -306,7 +306,7 @@ int16_t EventStateManager::sCurrentMouseBtn = MouseButton::eNotPressed;
 EventStateManager* EventStateManager::sActiveESM = nullptr;
 EventStateManager* EventStateManager::sCursorSettingManager = nullptr;
 AutoWeakFrame EventStateManager::sLastDragOverFrame = nullptr;
-LayoutDeviceIntPoint EventStateManager::sPreLockPoint =
+LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint =
     LayoutDeviceIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastScreenPoint = CSSIntPoint(0, 0);
@@ -5128,7 +5128,7 @@ OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
 
 
 void EventStateManager::SetPointerLock(nsIWidget* aWidget,
-                                       nsIContent* aElement) {
+                                       nsPresContext* aPresContext) {
   
   WheelTransaction::EndTransaction();
 
@@ -5138,6 +5138,7 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
 
   if (PointerLockManager::IsLocked()) {
     MOZ_ASSERT(aWidget, "Locking pointer requires a widget");
+    MOZ_ASSERT(aPresContext, "Locking pointer requires a presContext");
 
     
     
@@ -5145,7 +5146,8 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
 
     
     
-    sPreLockPoint = sLastRefPoint;
+    sPreLockScreenPoint = LayoutDeviceIntPoint::Round(
+        sLastScreenPoint * aPresContext->CSSToDevPixelScale());
 
     
     
@@ -5172,18 +5174,17 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
 
     
     
-    
-    
-    sLastRefPoint = sPreLockPoint;
-    
-    
     sSynthCenteringPoint = kInvalidRefPoint;
     if (aWidget) {
       
       
       
-      aWidget->SynthesizeNativeMouseMove(
-          sPreLockPoint + aWidget->WidgetToScreenOffset(), nullptr);
+      
+      sLastRefPoint = sPreLockScreenPoint - aWidget->WidgetToScreenOffset();
+      
+      
+      
+      aWidget->SynthesizeNativeMouseMove(sPreLockScreenPoint, nullptr);
     }
 
     
