@@ -10,10 +10,11 @@
 
 
 
+
+
 var ENCODER_CONFIG = null;
 promise_setup(async () => {
   const config = {
-    
     '?av1': {
       codec: 'av01.0.04M.08',
       hasEmbeddedColorSpace: true,
@@ -33,6 +34,21 @@ promise_setup(async () => {
       codec: 'vp09.02.10.10',
       hasEmbeddedColorSpace: true,
       hardwareAcceleration: 'prefer-software',
+      
+      
+    },
+    '?vp9_444_p1': {
+      codec: 'vp09.01.10.08.03',
+      hasEmbeddedColorSpace: true,
+      hardwareAcceleration: 'prefer-software',
+      outputPixelFormat: 'I444',
+    },
+    '?vp9_444_p3': {
+      codec: 'vp09.03.10.10.03',
+      hasEmbeddedColorSpace: true,
+      hardwareAcceleration: 'prefer-software',
+      
+      
     },
     '?h264_avc': {
       codec: 'avc1.42001E',
@@ -89,6 +105,12 @@ async function runFullCycleTest(t, options) {
       assert_equals(frame.visibleRect.height, h, "visibleRect.height");
       if (!options.realTimeLatencyMode) {
         assert_equals(frame.timestamp, next_ts++, "decode timestamp");
+      }
+
+      if (ENCODER_CONFIG.outputPixelFormat) {
+        assert_equals(
+            frame.format, ENCODER_CONFIG.outputPixelFormat,
+            "decoded pixel format");
       }
 
       
