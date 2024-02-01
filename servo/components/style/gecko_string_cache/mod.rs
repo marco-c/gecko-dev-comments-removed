@@ -14,7 +14,6 @@ use crate::gecko_bindings::bindings::Gecko_Atomize;
 use crate::gecko_bindings::bindings::Gecko_Atomize16;
 use crate::gecko_bindings::bindings::Gecko_ReleaseAtom;
 use crate::gecko_bindings::structs::root::mozilla::detail::gGkAtoms;
-use crate::gecko_bindings::structs::root::mozilla::detail::kGkAtomsArrayOffset;
 use crate::gecko_bindings::structs::root::mozilla::detail::GkAtoms_Atoms_AtomsCount;
 use crate::gecko_bindings::structs::{nsAtom, nsDynamicAtom, nsStaticAtom};
 use nsstring::{nsAString, nsStr};
@@ -50,7 +49,6 @@ pub use self::namespace::{Namespace, WeakNamespace};
 
 
 
-
 #[derive(Eq, PartialEq)]
 #[repr(C)]
 pub struct Atom(NonZeroUsize);
@@ -64,35 +62,6 @@ pub struct WeakAtom(nsAtom);
 
 const STATIC_ATOM_COUNT: usize = GkAtoms_Atoms_AtomsCount as usize;
 
-
-
-
-
-
-
-
-#[inline]
-fn static_atoms() -> &'static [nsStaticAtom; STATIC_ATOM_COUNT] {
-    unsafe {
-        let addr = &gGkAtoms as *const _ as usize + kGkAtomsArrayOffset as usize;
-        &*(addr as *const _)
-    }
-}
-
-
-
-#[inline]
-fn valid_static_atom_addr(addr: usize) -> bool {
-    unsafe {
-        let atoms = static_atoms();
-        let start = atoms.as_ptr();
-        let end = atoms.get_unchecked(STATIC_ATOM_COUNT) as *const _;
-        let in_range = addr >= start as usize && addr < end as usize;
-        let aligned = addr % mem::align_of::<nsStaticAtom>() == 0;
-        in_range && aligned
-    }
-}
-
 impl Deref for Atom {
     type Target = WeakAtom;
 
@@ -100,11 +69,11 @@ impl Deref for Atom {
     fn deref(&self) -> &WeakAtom {
         unsafe {
             let addr = if self.is_static() {
-                (&gGkAtoms as *const _ as usize) + (self.0.get() >> 1)
+                
+                &gGkAtoms.mAtoms.get_unchecked(self.0.get() >> 1)._base as *const nsAtom
             } else {
-                self.0.get()
+                self.0.get() as *const nsAtom
             };
-            debug_assert!(!self.is_static() || valid_static_atom_addr(addr));
             WeakAtom::new(addr as *const nsAtom)
         }
     }
@@ -360,12 +329,13 @@ unsafe fn make_handle(ptr: *const nsAtom) -> NonZeroUsize {
 
 #[inline]
 unsafe fn make_static_handle(ptr: *const nsStaticAtom) -> NonZeroUsize {
-    
-    
-    debug_assert!(valid_static_atom_addr(ptr as usize));
-    let base = &gGkAtoms as *const _;
-    let offset = ptr as usize - base as usize;
-    NonZeroUsize::new_unchecked((offset << 1) | 1)
+    let index = ptr.offset_from(&gGkAtoms.mAtoms[0] as *const _);
+    debug_assert!(index >= 0, "Should be a non-negative index");
+    debug_assert!(
+        (index as usize) < STATIC_ATOM_COUNT,
+        "Should be a valid static atom index"
+    );
+    NonZeroUsize::new_unchecked(((index as usize) << 1) | 1)
 }
 
 impl Atom {
@@ -389,14 +359,8 @@ impl Atom {
     
     #[inline]
     pub const unsafe fn from_index_unchecked(index: u16) -> Self {
-        
-        
-        
-        
-        
-        let offset =
-            (index as usize) * std::mem::size_of::<nsStaticAtom>() + kGkAtomsArrayOffset as usize;
-        Atom(NonZeroUsize::new_unchecked((offset << 1) | 1))
+        debug_assert!((index as usize) < STATIC_ATOM_COUNT);
+        Atom(NonZeroUsize::new_unchecked(((index as usize) << 1) | 1))
     }
 
     
