@@ -102,9 +102,6 @@ class PaletteCache;
 }  
 
 
-enum nsPresContext_CachedIntPrefType { kPresContext_ScrollbarSide = 1 };
-
-
 
 
 
@@ -375,21 +372,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
   void EmulateMedium(nsAtom* aMediaType);
-
-  
-  
-  int32_t GetCachedIntPref(nsPresContext_CachedIntPrefType aPrefType) const {
-    
-    
-    switch (aPrefType) {
-      case kPresContext_ScrollbarSide:
-        return mPrefScrollbarSide;
-      default:
-        NS_ERROR("invalid arg passed to GetCachedIntPref");
-    }
-
-    return false;
-  }
 
   const mozilla::PreferenceSheet::Prefs& PrefSheetPrefs() const {
     return mozilla::PreferenceSheet::PrefsFor(*mDocument);
@@ -1352,7 +1334,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   unsigned mCanPaginatedScroll : 1;
   unsigned mDoScaledTwips : 1;
   unsigned mIsRootPaginatedDocument : 1;
-  unsigned mPrefScrollbarSide : 2;
   unsigned mPendingThemeChanged : 1;
   
   unsigned mPendingThemeChangeKind : kThemeChangeKindBits;
