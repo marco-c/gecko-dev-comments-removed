@@ -123,8 +123,9 @@ add_task(async function test_dns_resolve() {
       
       
       
-      ok(
-        result.addresses.length >= test.expect.addresses.length,
+      Assert.greaterOrEqual(
+        result.addresses.length,
+        test.expect.addresses.length,
         "expected number of addresses returned"
       );
       if (test.expect.addresses.length && result.addresses.length) {

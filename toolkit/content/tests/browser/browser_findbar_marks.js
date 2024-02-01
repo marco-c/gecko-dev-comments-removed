@@ -1,7 +1,7 @@
-/* eslint-disable mozilla/no-arbitrary-setTimeout */
 
-// This test verifies that the find scrollbar marks are triggered in the right locations.
-// Reftests in layout/xul/reftest are used to verify their appearance.
+
+
+
 
 const TEST_PAGE_URI =
   "data:text/html,<body style='font-size: 20px; margin: 0;'><p style='margin: 0; block-size: 30px;'>This is some fun text.</p><p style='margin-block-start: 2000px; block-size: 30px;'>This is some tex to find.</p><p style='margin-block-start: 500px; block-size: 30px;'>This is some text to find.</p></body>";
@@ -52,7 +52,7 @@ add_task(async function test_findmarks() {
     TEST_PAGE_URI
   );
 
-  // Open the findbar so that the content scroll size can be measured.
+  
   await promiseFindFinished(gBrowser, "s");
 
   let browser = tab.linkedBrowser;
@@ -63,7 +63,7 @@ add_task(async function test_findmarks() {
   let endFn = initForBrowser(browser);
 
   for (let step = 0; step < 3; step++) {
-    // If the document root or body is absolutely positioned, this can affect the scroll height.
+    
     await SpecialPowers.spawn(browser, [step], stepChild => {
       let document = content.document;
       let adjustments = [
@@ -80,15 +80,15 @@ add_task(async function test_findmarks() {
       adjustments[stepChild]();
     });
 
-    // For the first value, get the numbers and ensure that they are approximately
-    // in the right place. Later tests should give the same values.
+    
+    
     await promiseFindFinished(gBrowser, "tex", true);
 
     let values = await getMarks(browser, true);
 
-    // The exact values vary on each platform, so use fuzzy matches.
-    // 2610 is the approximate expected document height, and
-    // 10, 2040, 2570 are the approximate positions of the marks.
+    
+    
+    
     const expectedDocHeight = 2610;
     isfuzzy(
       values[0],
@@ -111,7 +111,7 @@ add_task(async function test_findmarks() {
 
     await doAndVerifyFind(browser, "text", true, [values[0], values[2]]);
     await doAndVerifyFind(browser, "", true, []);
-    await doAndVerifyFind(browser, "isz", false, [], true); // marks should not be updated here
+    await doAndVerifyFind(browser, "isz", false, [], true); 
     await doAndVerifyFind(browser, "tex", true, values);
     await doAndVerifyFind(browser, "isz", true, []);
     await doAndVerifyFind(browser, "tex", true, values);
@@ -169,7 +169,7 @@ add_task(async function test_findmarks_vertical() {
   gBrowser.removeTab(tab);
 });
 
-// This test verifies what happens when scroll marks are visible and the window is resized.
+
 add_task(async function test_found_resize() {
   let window2 = await BrowserTestUtils.openNewBrowserWindow({});
   let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -191,26 +191,26 @@ add_task(async function test_found_resize() {
   window2.resizeTo(window2.outerWidth - 100, window2.outerHeight - 80);
   await resizePromise;
 
-  // Some number of extra scrollbar adjustment and painting events can occur
-  // when resizing the window, so don't use an exact match for the count.
+  
+  
   let resizedValues = await getMarks(browser, true);
   info(`values: ${JSON.stringify(values)}`);
   info(`resizedValues: ${JSON.stringify(resizedValues)}`);
   isfuzzy(resizedValues[0], values[0], 2, "first value");
-  ok(resizedValues[1] - 50 > values[1], "second value");
-  ok(resizedValues[2] - 50 > values[2], "third value");
+  Assert.greater(resizedValues[1] - 50, values[1], "second value");
+  Assert.greater(resizedValues[2] - 50, values[2], "third value");
 
   endFn();
 
   await BrowserTestUtils.closeWindow(window2);
 });
 
-// Returns the scroll marks that should have been assigned
-// to the scrollbar after a find. As a side effect, also
-// verifies that the marks have been updated since the last
-// call to getMarks. If increase is true, then the marks should
-// have been updated, and if increase is false, the marks should
-// not have been updated.
+
+
+
+
+
+
 async function getMarks(browser, increase, shouldBeOnHScrollbar = false) {
   let results = await SpecialPowers.spawn(browser, [], () => {
     let { marks, onHorizontalScrollbar } = content.lastMarks;
@@ -222,9 +222,9 @@ async function getMarks(browser, increase, shouldBeOnHScrollbar = false) {
     };
   });
 
-  // The marks are updated whenever the scrollbar is updated and
-  // this could happen several times as either a find for multiple
-  // characters occurs. This check allows for mutliple updates to occur.
+  
+  
+  
   if (increase) {
     Assert.ok(results.count > gUpdateCount, "expected events count");
 

@@ -79,7 +79,11 @@ add_task(async function test_recording() {
       
       await processCreated;
       let newPid = browser.frameLoader.remoteTab.osPid;
-      ok(currentPid != newPid, "The new tab must spawn its own process");
+      Assert.notEqual(
+        currentPid,
+        newPid,
+        "The new tab must spawn its own process"
+      );
 
       
       

@@ -653,9 +653,17 @@ add_task(async function test_worker_flush() {
   check_result(result, test_item[0], test_item[3]);
 
   
-  ok(workerManager._idleTimeout != null, "Should have an idle timeout");
-  ok(workerManager._worker != null, "Should have a worker instance");
-  ok(workerManager._workerReadyPromise != null, "Should have a worker promise");
+  Assert.notEqual(
+    workerManager._idleTimeout,
+    null,
+    "Should have an idle timeout"
+  );
+  Assert.notEqual(workerManager._worker, null, "Should have a worker instance");
+  Assert.notEqual(
+    workerManager._workerReadyPromise,
+    null,
+    "Should have a worker promise"
+  );
 
   
   

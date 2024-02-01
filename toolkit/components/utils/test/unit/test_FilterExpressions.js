@@ -354,57 +354,57 @@ add_task(async function test_versionCompare() {
 
   
   val = await FilterExpressions.eval('"1.0.0"|versionCompare("1")');
-  ok(val === 0);
+  Assert.strictEqual(val, 0);
 
   
   val = await FilterExpressions.eval('"1.0.0"|versionCompare("1.1")');
-  ok(val < 0);
+  Assert.less(val, 0);
 
   
   val = await FilterExpressions.eval('"1.0.0"|versionCompare("0.1")');
-  ok(val > 0);
+  Assert.greater(val, 0);
 
   
   val = await FilterExpressions.eval(`'111.0.1'|versionCompare('110') < 0`);
-  ok(val === false);
+  Assert.strictEqual(val, false);
 
   
   val = await FilterExpressions.eval(`'111.0.1'|versionCompare('111') < 0`);
-  ok(val === false);
+  Assert.strictEqual(val, false);
 
   
   val = await FilterExpressions.eval(`'111.0.1'|versionCompare('111.0.1') < 0`);
-  ok(val === false);
+  Assert.strictEqual(val, false);
 
   
   val = await FilterExpressions.eval(`'111.0.1'|versionCompare('111.0.2') < 0`);
-  ok(val === true);
+  Assert.strictEqual(val, true);
 
   
   val = await FilterExpressions.eval(`'111.0.1'|versionCompare('112') < 0`);
-  ok(val === true);
+  Assert.strictEqual(val, true);
 
   
   val = await FilterExpressions.eval(`'113.0a1'|versionCompare('113') < 0`);
-  ok(val === true);
+  Assert.strictEqual(val, true);
 
   
   val = await FilterExpressions.eval(`'113.0a1'|versionCompare('113.0a1') < 0`);
-  ok(val === false);
+  Assert.strictEqual(val, false);
 
   
   val = await FilterExpressions.eval(`'113.0a1'|versionCompare('113.0a0') > 0`);
-  ok(val === true);
+  Assert.strictEqual(val, true);
 
   
   val = await FilterExpressions.eval(`'113'|versionCompare('113.0a0') > 0`);
-  ok(val === true);
+  Assert.strictEqual(val, true);
 
   
   val = await FilterExpressions.eval(`'114'|versionCompare('113.0a0') > 0`);
-  ok(val === true);
+  Assert.strictEqual(val, true);
 
   
   val = await FilterExpressions.eval(`'112'|versionCompare('113.0a0') > 0`);
-  ok(val === false);
+  Assert.strictEqual(val, false);
 });

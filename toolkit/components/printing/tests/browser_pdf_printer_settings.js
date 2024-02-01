@@ -21,8 +21,9 @@ add_task(async function testPDFPrinterSettings() {
     
     let { settings } = helper;
 
-    ok(
-      settings.outputDestination == Ci.nsIPrintSettings.kOutputDestinationFile,
+    Assert.equal(
+      settings.outputDestination,
+      Ci.nsIPrintSettings.kOutputDestinationFile,
       "Check the current settings have file destination"
     );
     ok(
