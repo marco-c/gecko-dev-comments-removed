@@ -282,6 +282,8 @@ SetIsInlinableLargeFunction(TypedArrayEvery);
 
 
 
+
+
 function TypedArrayFill(value, start = 0, end = undefined) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
@@ -340,6 +342,11 @@ function TypedArrayFill(value, start = 0, end = undefined) {
   if (IsDetachedBuffer(buffer)) {
     ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
   }
+
+  len = TypedArrayLength(O);
+
+  
+  final = std_Math_min(final, len);
 
   
   for (; k < final; k++) {
