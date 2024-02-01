@@ -3940,10 +3940,6 @@ Preferences::Observe(nsISupports* aSubject, const char* aTopic,
     MOZ_ASSERT(!mDirty, "Preferences should not be dirty");
     mProfileShutdown = true;
 
-  } else if (!nsCRT::strcmp(aTopic, "reload-default-prefs")) {
-    
-    Unused << InitInitialObjects( false);
-
   } else if (!nsCRT::strcmp(aTopic, "suspend_process_notification")) {
     
     
