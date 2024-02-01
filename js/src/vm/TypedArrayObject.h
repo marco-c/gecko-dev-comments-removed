@@ -86,6 +86,12 @@ class TypedArrayObject : public ArrayBufferViewObject {
 
   mozilla::Maybe<size_t> length() const;
 
+  
+  
+  size_t byteOffsetMaybeOutOfBounds() const {
+    return ArrayBufferViewObject::byteOffset();
+  }
+
   template <AllowGC allowGC>
   bool getElement(JSContext* cx, size_t index,
                   typename MaybeRooted<Value, allowGC>::MutableHandleType val);
