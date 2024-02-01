@@ -9,6 +9,7 @@
 #ifndef mozilla_UniquePtr_h
 #define mozilla_UniquePtr_h
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -641,6 +642,94 @@ namespace std {
 template <typename T, class D>
 void swap(mozilla::UniquePtr<T, D>& aX, mozilla::UniquePtr<T, D>& aY) {
   aX.swap(aY);
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace mozilla {
+namespace detail {
+
+template <class T, class UniquePtrT>
+class MOZ_TEMPORARY_CLASS TempPtrToSetterT final {
+ private:
+  UniquePtrT* const mDest;
+  T* mNewVal;
+
+ public:
+  explicit TempPtrToSetterT(UniquePtrT* dest)
+      : mDest(dest), mNewVal(mDest->get()) {}
+
+  operator T**() { return &mNewVal; }
+
+  ~TempPtrToSetterT() {
+    if (mDest->get() != mNewVal) {
+      mDest->reset(mNewVal);
+    }
+  }
+};
+
+}  
+
+template <class T, class Deleter>
+auto TempPtrToSetter(UniquePtr<T, Deleter>* const p) {
+  return detail::TempPtrToSetterT<T, UniquePtr<T, Deleter>>{p};
+}
+
+template <class T, class Deleter>
+auto TempPtrToSetter(std::unique_ptr<T, Deleter>* const p) {
+  return detail::TempPtrToSetterT<T, std::unique_ptr<T, Deleter>>{p};
 }
 
 }  
