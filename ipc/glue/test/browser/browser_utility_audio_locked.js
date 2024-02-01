@@ -21,5 +21,8 @@ add_task(async function testAudioDecodingInUtility() {
   
   
   
-  await runTest({ expectUtility: isNightlyOnly(), expectError: isBetaOnly() });
+  await runTest({
+    expectUtility: isNightlyOnly(),
+    expectError: !isNightlyOnly(),
+  });
 });
