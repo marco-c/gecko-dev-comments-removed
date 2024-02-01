@@ -66,15 +66,6 @@ const modifiedStyleSheets = new WeakMap();
 
 
 
-
-
-
-
-
-
-
-
-
 class StyleSheetsManager extends EventEmitter {
   #abortController;
   
@@ -85,6 +76,11 @@ class StyleSheetsManager extends EventEmitter {
   #targetActor;
   #transitionSheetLoaded;
   #transitionTimeout;
+  #watchListeners = {
+    onAvailable: [],
+    onUpdated: [],
+    onDestroyed: [],
+  };
 
   
 
@@ -128,7 +124,56 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  async startWatching() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async watch({ onAvailable, onUpdated, onDestroyed, ignoreExisting = false }) {
+    if (!onAvailable && !onUpdated && !onDestroyed) {
+      throw new Error("Expect onAvailable, onUpdated or onDestroyed");
+    }
+
+    if (onAvailable) {
+      if (typeof onAvailable !== "function") {
+        throw new Error("onAvailable should be a function");
+      }
+
+      
+      
+    }
+
+    if (onUpdated) {
+      if (typeof onUpdated !== "function") {
+        throw new Error("onUpdated should be a function");
+      }
+      this.#watchListeners.onUpdated.push(onUpdated);
+    }
+
+    if (onDestroyed) {
+      if (typeof onDestroyed !== "function") {
+        throw new Error("onDestroyed should be a function");
+      }
+      this.#watchListeners.onDestroyed.push(onDestroyed);
+    }
+
     
     const promises = [];
     for (const window of this.#targetActor.windows) {
@@ -138,19 +183,58 @@ class StyleSheetsManager extends EventEmitter {
     this.#setEventListenersIfNeeded();
 
     
-    let styleSheets = await Promise.all(promises);
-    styleSheets = styleSheets.flat();
-    for (const styleSheet of styleSheets) {
-      const resourceId = this.#findStyleSheetResourceId(styleSheet);
-      if (resourceId) {
-        
-        
-        this.emitAsync("applicable-stylesheet-added", {
-          resourceId,
-          styleSheet,
-        });
-      } else {
-        this.#registerStyleSheet(styleSheet);
+    const styleSheets = await Promise.all(promises);
+    const styleSheetsData = styleSheets.flat().map(styleSheet => ({
+      styleSheet,
+      resourceId: this.#registerStyleSheet(styleSheet),
+    }));
+
+    let registeredStyleSheetsPromises;
+    if (onAvailable && ignoreExisting !== true) {
+      registeredStyleSheetsPromises = styleSheetsData.map(
+        ({ resourceId, styleSheet }) => onAvailable({ resourceId, styleSheet })
+      );
+    }
+
+    
+    
+    if (onAvailable) {
+      this.#watchListeners.onAvailable.push(onAvailable);
+    }
+
+    if (registeredStyleSheetsPromises) {
+      await Promise.all(registeredStyleSheetsPromises);
+    }
+  }
+
+  
+
+
+
+
+  unwatch({ onAvailable, onUpdated, onDestroyed }) {
+    if (!this.#watchListeners) {
+      return;
+    }
+
+    if (onAvailable) {
+      const index = this.#watchListeners.onAvailable.indexOf(onAvailable);
+      if (index !== -1) {
+        this.#watchListeners.onAvailable.splice(index, 1);
+      }
+    }
+
+    if (onUpdated) {
+      const index = this.#watchListeners.onUpdated.indexOf(onUpdated);
+      if (index !== -1) {
+        this.#watchListeners.onUpdated.splice(index, 1);
+      }
+    }
+
+    if (onDestroyed) {
+      const index = this.#watchListeners.onDestroyed.indexOf(onDestroyed);
+      if (index !== -1) {
+        this.#watchListeners.onDestroyed.splice(index, 1);
       }
     }
   }
@@ -378,7 +462,7 @@ class StyleSheetsManager extends EventEmitter {
     if (transition) {
       this.#startTransition(resourceId, kind, cause);
     } else {
-      this.emit("stylesheet-updated", {
+      this.#onStyleSheetUpdated({
         resourceId,
         updateKind: "style-applied",
         updates: {
@@ -387,7 +471,7 @@ class StyleSheetsManager extends EventEmitter {
       });
     }
 
-    this.emit("stylesheet-updated", {
+    this.#onStyleSheetUpdated({
       resourceId,
       updateKind: "at-rules-changed",
       updates: {
@@ -448,7 +532,7 @@ class StyleSheetsManager extends EventEmitter {
     this.#transitionTimeout = null;
     removePseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
 
-    this.emit("stylesheet-updated", {
+    this.#onStyleSheetUpdated({
       resourceId,
       updateKind: "style-applied",
       updates: {
@@ -629,7 +713,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
   #onMatchesChange(resourceId, index, mql) {
-    this.emit("stylesheet-updated", {
+    this.#onStyleSheetUpdated({
       resourceId,
       updateKind: "matches-change",
       updates: {
@@ -751,7 +835,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
   #notifyPropertyChanged(resourceId, property, value) {
-    this.emit("stylesheet-updated", {
+    this.#onStyleSheetUpdated({
       resourceId,
       updateKind: "property-change",
       updates: { resourceUpdates: { [property]: value } },
@@ -825,20 +909,22 @@ class StyleSheetsManager extends EventEmitter {
     const creationData = this.#styleSheetCreationData?.get(styleSheet);
     this.#styleSheetCreationData?.delete(styleSheet);
 
-    
-    
-    const onEventHandlerDone = this.emitAsync("applicable-stylesheet-added", {
-      resourceId,
-      styleSheet,
-      creationData,
-    });
+    const onAvailablePromises = [];
+    for (const onAvailable of this.#watchListeners.onAvailable) {
+      onAvailablePromises.push(
+        onAvailable({
+          resourceId,
+          styleSheet,
+          creationData,
+        })
+      );
+    }
 
     
     if (creationData) {
       
       
-      
-      onEventHandlerDone.then(() => creationData?.resolve());
+      Promise.all(onAvailablePromises).then(() => creationData?.resolve());
     }
     return resourceId;
   }
@@ -857,9 +943,20 @@ class StyleSheetsManager extends EventEmitter {
 
     this.#styleSheetMap.delete(existingResourceId);
     this.#styleSheetCreationData?.delete(styleSheet);
-    this.emit("applicable-stylesheet-removed", {
-      resourceId: existingResourceId,
-    });
+
+    for (const onDestroyed of this.#watchListeners.onDestroyed) {
+      onDestroyed({
+        resourceId: existingResourceId,
+      });
+    }
+  }
+
+  #onStyleSheetUpdated(data) {
+    this.emit("stylesheet-updated", data);
+
+    for (const onUpdated of this.#watchListeners.onUpdated) {
+      onUpdated(data);
+    }
   }
 
   
@@ -873,8 +970,8 @@ class StyleSheetsManager extends EventEmitter {
     
     
     if (
-      href === "resource://content-accessible/accessiblecaret.css" ||
-      (href === "resource://devtools-highlighter-styles/highlighters.css" &&
+      href === "resource:
+      (href === "resource:
         this.#targetActor.sessionContext.type !== "all")
     ) {
       return false;
@@ -909,6 +1006,7 @@ class StyleSheetsManager extends EventEmitter {
     this.#styleSheetCreationData = null;
     this.#styleSheetMap = null;
     this.#targetActor = null;
+    this.#watchListeners = null;
   }
 }
 
