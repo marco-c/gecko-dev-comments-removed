@@ -90,6 +90,9 @@ class nsTPromiseFlatString : public nsTString<T> {
   void operator=(const self_type&) = delete;
 
   
+  nsTPromiseFlatString(const self_type&) = delete;
+
+  
   nsTPromiseFlatString() = delete;
 
   
