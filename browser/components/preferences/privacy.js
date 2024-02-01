@@ -341,12 +341,6 @@ var gPrivacyPane = {
   
 
 
-
-  shouldUpdateSiteUsageDataForSanitizeDialog: false,
-
-  
-
-
   _shouldPromptForRestart: true,
 
   
@@ -2042,13 +2036,8 @@ var gPrivacyPane = {
       },
       {
         mode: "clearOnShutdown",
-        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
       }
     );
-
-    
-    
-    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
   },
 
   
@@ -2068,27 +2057,17 @@ var gPrivacyPane = {
       ? "chrome://browser/content/sanitize.xhtml"
       : "chrome://browser/content/sanitize_v2.xhtml";
 
-    gSubDialog.open(
-      dialogFile,
-      {
-        features: "resizable=no",
-        closingCallback: () => {
-          
-          if (aClearEverything) {
-            ts.value = timeSpanOrig;
-          }
+    gSubDialog.open(dialogFile, {
+      features: "resizable=no",
+      closingCallback: () => {
+        
+        if (aClearEverything) {
+          ts.value = timeSpanOrig;
+        }
 
-          Services.obs.notifyObservers(null, "clear-private-data");
-        },
+        Services.obs.notifyObservers(null, "clear-private-data");
       },
-      {
-        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
-      }
-    );
-
-    
-    
-    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
+    });
   },
 
   
@@ -2517,12 +2496,8 @@ var gPrivacyPane = {
       },
       {
         mode: "clearSiteData",
-        updateUsageData: this.shouldUpdateSiteUsageDataForSanitizeDialog,
       }
     );
-    
-    
-    this.shouldUpdateSiteUsageDataForSanitizeDialog = true;
   },
 
   

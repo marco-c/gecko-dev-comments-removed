@@ -85,15 +85,9 @@ var gSanitizePromptDialog = {
     let arg = window.arguments?.[0] || {};
 
     
-    
-    let updateUsageData = true;
-    if (!lazy.USE_OLD_DIALOG && arg.updateUsageData != undefined) {
-      updateUsageData = arg.updateUsageData || arg.inBrowserWindow;
-    }
-
-    
     this._inClearOnShutdownNewDialog = false;
     this._inClearSiteDataNewDialog = false;
+    this._inBrowserWindow = !!arg.inBrowserWindow;
     if (arg.mode && !lazy.USE_OLD_DIALOG) {
       this._inClearOnShutdownNewDialog = arg.mode == "clearOnShutdown";
       this._inClearSiteDataNewDialog = arg.mode == "clearSiteData";
@@ -126,9 +120,7 @@ var gSanitizePromptDialog = {
       
       let timerId = Glean.privacySanitize.loadTime.start();
 
-      this.dataSizesFinishedUpdatingPromise = this.getAndUpdateDataSizes(
-        updateUsageData
-      )
+      this.dataSizesFinishedUpdatingPromise = this.getAndUpdateDataSizes()
         .then(() => {
           
           Glean.privacySanitize.loadTime.stopAndAccumulate(timerId);
@@ -317,7 +309,16 @@ var gSanitizePromptDialog = {
       let itemsToClear = this.getItemsToClear();
       Sanitizer.sanitize(itemsToClear, options)
         .catch(console.error)
-        .then(() => window.close())
+        .then(() => {
+          
+          
+          if (!this._inBrowserWindow) {
+            
+            
+            lazy.SiteDataManager.updateSites();
+          }
+          window.close();
+        })
         .catch(console.error);
       event.preventDefault();
     } catch (er) {
@@ -384,14 +385,16 @@ var gSanitizePromptDialog = {
 
 
 
-
-
-  async getAndUpdateDataSizes(doUpdateSites) {
+  async getAndUpdateDataSizes() {
     if (lazy.USE_OLD_DIALOG) {
       return;
     }
 
-    if (doUpdateSites) {
+    
+    
+    
+    
+    if (this._inBrowserWindow) {
       await lazy.SiteDataManager.updateSites();
     }
     
