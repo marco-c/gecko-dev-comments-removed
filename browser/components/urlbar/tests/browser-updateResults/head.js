@@ -55,7 +55,7 @@ add_setup(async function headInit() {
 class DelayingTestProvider extends UrlbarTestUtils.TestProvider {
   finishQueryPromise = null;
   async startQuery(context, addCallback) {
-    for (let result of this._results) {
+    for (let result of this.results) {
       addCallback(this, result);
     }
     await this.finishQueryPromise;
@@ -291,7 +291,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   
   
-  provider._results = makeProviderResults({
+  provider.results = makeProviderResults({
     specs: search1.other,
     count: search1.otherCount,
     type: search1.otherType,
@@ -314,9 +314,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   
   for (let [suggestedIndex, resultSpan] of search1.suggestedIndexes) {
-    provider._results.push(
-      makeSuggestedIndexResult(suggestedIndex, resultSpan)
-    );
+    provider.results.push(makeSuggestedIndexResult(suggestedIndex, resultSpan));
   }
 
   
@@ -352,7 +350,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   
   
-  provider._results = makeProviderResults({
+  provider.results = makeProviderResults({
     specs: search2.other,
     count: search2.otherCount,
     type: search2.otherType,
@@ -375,9 +373,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   
   for (let [suggestedIndex, resultSpan] of search2.suggestedIndexes) {
-    provider._results.push(
-      makeSuggestedIndexResult(suggestedIndex, resultSpan)
-    );
+    provider.results.push(makeSuggestedIndexResult(suggestedIndex, resultSpan));
   }
 
   let rowCountDuringUpdate = duringUpdate.reduce(

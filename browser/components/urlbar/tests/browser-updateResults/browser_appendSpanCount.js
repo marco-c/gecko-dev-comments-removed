@@ -33,7 +33,7 @@ add_task(async function viewUpdateAppendHidden() {
 
   
   
-  provider._results = queryStrings.map(
+  provider.results = queryStrings.map(
     suggestion =>
       new UrlbarResult(
         UrlbarUtils.RESULT_TYPE.SEARCH,
@@ -73,7 +73,7 @@ add_task(async function viewUpdateAppendHidden() {
   
   
   
-  provider._results = queryStrings.map(title => {
+  provider.results = queryStrings.map(title => {
     let url = "http://example.com/" + title;
     return new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
