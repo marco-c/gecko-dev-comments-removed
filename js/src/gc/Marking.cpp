@@ -1387,7 +1387,7 @@ bool GCMarker::markCurrentColorInParallel(SliceBudget& budget) {
     
     
     
-    if (waitingTaskCount && canDonateWork()) {
+    if (waitingTaskCount && shouldDonateWork()) {
       parallelMarker_->donateWorkFrom(this);
     }
   }
@@ -2230,12 +2230,22 @@ void GCMarker::leaveParallelMarkingMode() {
   parallelMarker_ = nullptr;
 }
 
-bool GCMarker::canDonateWork() const {
-  
-  
-  
-  constexpr size_t MinWordCount = 12;
 
+
+
+
+
+
+
+
+
+
+
+bool GCMarker::canDonateWork() const {
+  return stack.position() > ValueRangeWords;
+}
+bool GCMarker::shouldDonateWork() const {
+  constexpr size_t MinWordCount = 12;
   static_assert(MinWordCount >= ValueRangeWords,
                 "We must always leave at least one stack entry.");
 
