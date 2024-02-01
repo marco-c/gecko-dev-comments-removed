@@ -6946,8 +6946,16 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
 
   if (mPresContext) {
     switch (aGUIEvent->mMessage) {
+      case eMouseMove:
+        if (!aGUIEvent->AsMouseEvent()->IsReal()) {
+          break;
+        }
+        [[fallthrough]];
       case eMouseDown:
       case eMouseUp: {
+        
+        
+        
         
         
         
