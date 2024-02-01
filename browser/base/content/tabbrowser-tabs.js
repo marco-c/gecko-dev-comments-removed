@@ -294,7 +294,12 @@
               triggeringEvent: event,
             });
           }
-        } else if (event.originalTarget.closest("scrollbox")) {
+        } else if (
+          event.originalTarget.closest("scrollbox") &&
+          !Services.prefs.getBoolPref(
+            "widget.gtk.titlebar-action-middle-click-enabled"
+          )
+        ) {
           
           
           let visibleTabs = this._getVisibleTabs();
