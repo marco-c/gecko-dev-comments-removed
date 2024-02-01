@@ -368,7 +368,7 @@ class alignas(16) Instance {
 
   
 
-  void setPendingException(HandleAnyRef exn);
+  void setPendingException(Handle<WasmExceptionObject*> exn);
 
   
 
