@@ -8,19 +8,18 @@
 
 
 
+#include <jxl/cms_interface.h>
 #include <jxl/encode.h>
 #include <stddef.h>
-#include <stdint.h>
 
-#include <string>
+#include <vector>
 
 #include "lib/jxl/base/override.h"
-#include "lib/jxl/butteraugli/butteraugli.h"
 #include "lib/jxl/enc_progressive_split.h"
+#include "lib/jxl/frame_dimensions.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/modular/encoding/dec_ma.h"
 #include "lib/jxl/modular/options.h"
-#include "lib/jxl/modular/transform/transform.h"
 #include "lib/jxl/splines.h"
 
 namespace jxl {
@@ -92,10 +91,10 @@ struct CompressParams {
   int epf = -1;
 
   
-  bool progressive_mode = false;
+  Override progressive_mode = Override::kDefault;
 
   
-  bool qprogressive_mode = false;
+  Override qprogressive_mode = Override::kDefault;
 
   
   bool centerfirst = false;
@@ -137,8 +136,6 @@ struct CompressParams {
   
   ModularOptions options;
   int responsive = -1;
-  
-  std::vector<SqueezeParams> squeezes;
   int colorspace = -1;
   
   float channel_colors_pre_transform_percent = 95.f;
@@ -173,7 +170,7 @@ struct CompressParams {
   void SetLossless() {
     modular_mode = true;
     butteraugli_distance = 0.0f;
-    for (float &f : ec_distance) f = 0.0f;
+    for (float& f : ec_distance) f = 0.0f;
     color_transform = jxl::ColorTransform::kNone;
   }
 
@@ -198,6 +195,8 @@ struct CompressParams {
 
   
   int buffering = 0;
+  
+  bool use_full_image_heuristics = true;
 
   std::vector<float> manual_noise;
   std::vector<float> manual_xyb_factors;

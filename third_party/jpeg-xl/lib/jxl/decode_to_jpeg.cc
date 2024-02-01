@@ -5,7 +5,18 @@
 
 #include "lib/jxl/decode_to_jpeg.h"
 
+#include <jxl/decode.h>
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+
+#include "lib/jxl/base/span.h"
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/common.h"  
+#include "lib/jxl/jpeg/dec_jpeg_data.h"
+#include "lib/jxl/jpeg/jpeg_data.h"
 
 namespace jxl {
 

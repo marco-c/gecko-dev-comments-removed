@@ -16,10 +16,8 @@
 #pragma pop_macro("PRIuS")
 #pragma pop_macro("PRIdS")
 
-#include <sstream>
-
-
 #include "gtest/gtest.h"
+
 #include "lib/jxl/common.h"
 
 #ifdef JXL_DISABLE_SLOW_TESTS
@@ -44,6 +42,12 @@
 #define JXL_TSAN_SLOW_TEST(X) DISABLED_##X
 #else
 #define JXL_TSAN_SLOW_TEST(X) X
+#endif  
+
+#if defined(__x86_64__)
+#define JXL_X86_64_TEST(X) X
+#else
+#define JXL_X86_64_TEST(X) DISABLED_##X
 #endif  
 
 

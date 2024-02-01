@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <limits>
 #include <map>
 #include <string>
 #include <vector>
@@ -93,6 +94,8 @@ static inline void EncodeVarInt(uint64_t value, PaddedBytes* data) {
   data->resize(pos);
 }
 
+constexpr size_t kSizeLimit = std::numeric_limits<uint32_t>::max() >> 2;
+
 }  
 
 
@@ -102,6 +105,13 @@ static inline void EncodeVarInt(uint64_t value, PaddedBytes* data) {
 Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
   PaddedBytes commands;
   PaddedBytes data;
+
+  static_assert(sizeof(size_t) >= 4, "size_t is too short");
+  
+  
+  if (size > kSizeLimit) {
+    return JXL_FAILURE("ICC profile is too large");
+  }
 
   EncodeVarInt(size, result);
 
@@ -227,6 +237,11 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
   Tag tag;
   size_t tagstart = 0, tagsize = 0, clutstart = 0;
 
+  
+  const auto tag_sane = [&tagsize]() {
+    return (tagsize > 8) && (tagsize < kSizeLimit);
+  };
+
   size_t last0 = pos;
   
   
@@ -241,7 +256,8 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
     PaddedBytes data_add;
 
     
-    if (pos > tagstart + tagsize) {
+    
+    if ((pos > tagstart + tagsize) && (tagsize < kSizeLimit)) {
       tag = {{0, 0, 0, 0}};  
     }
 
@@ -252,7 +268,7 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
       tagstart = tagstarts[index];
       tagsize = tagsizes[index];
 
-      if (tag == kMlucTag && pos + tagsize <= size && tagsize > 8 &&
+      if (tag == kMlucTag && tag_sane() && pos + tagsize <= size &&
           icc[pos + 4] == 0 && icc[pos + 5] == 0 && icc[pos + 6] == 0 &&
           icc[pos + 7] == 0) {
         size_t num = tagsize - 8;
@@ -268,7 +284,7 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
         Unshuffle(data_add.data() + start, num, 2);
       }
 
-      if (tag == kCurvTag && pos + tagsize <= size && tagsize > 8 &&
+      if (tag == kCurvTag && tag_sane() && pos + tagsize <= size &&
           icc[pos + 4] == 0 && icc[pos + 5] == 0 && icc[pos + 6] == 0 &&
           icc[pos + 7] == 0) {
         size_t num = tagsize - 8;
@@ -334,8 +350,8 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
     }
 
     if (commands_add.empty() && data_add.empty() && tag == kGbd_Tag &&
-        pos == tagstart + 8 && pos + tagsize - 8 <= size && pos > 16 &&
-        tagsize > 8) {
+        tag_sane() && pos == tagstart + 8 && pos + tagsize - 8 <= size &&
+        pos > 16) {
       size_t width = 4, order = 0, stride = width;
       size_t num = tagsize - 8;
       uint8_t flags = (order << 2) | (width - 1) | (stride == width ? 0 : 16);

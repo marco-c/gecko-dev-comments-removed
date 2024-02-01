@@ -15,14 +15,15 @@
 
 #include <jxl/cms_interface.h>
 #include <jxl/codestream_header.h>
+#include <jxl/color_encoding.h>
 #include <jxl/jxl_export.h>
 #include <jxl/memory_manager.h>
 #include <jxl/parallel_runner.h>
 #include <jxl/stats.h>
-#include <jxl/version.h>
+#include <jxl/types.h>
+#include <jxl/version.h>  
+#include <stddef.h>
 #include <stdint.h>
-
-#include "jxl/types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -377,6 +378,14 @@ typedef enum {
 
 
   JXL_ENC_FRAME_SETTING_JPEG_KEEP_JUMBF = 37,
+
+  
+
+
+
+
+
+  JXL_ENC_FRAME_SETTING_USE_FULL_IMAGE_HEURISTICS = 38,
 
   
 
@@ -1193,8 +1202,8 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetBasicInfo(JxlEncoder* enc,
 
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetUpsamplingMode(JxlEncoder* enc,
-                                                        const int64_t factor,
-                                                        const int64_t mode);
+                                                        int64_t factor,
+                                                        int64_t mode);
 
 
 

@@ -3,11 +3,16 @@
 
 
 
+#include <jxl/jxl_threads_export.h>
+#include <jxl/memory_manager.h>
+#include <jxl/parallel_runner.h>
 #include <jxl/resizable_parallel_runner.h>
 
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
+#include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <thread>
 #include <vector>

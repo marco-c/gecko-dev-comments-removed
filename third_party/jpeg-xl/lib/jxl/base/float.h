@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "lib/jxl/base/byte_order.h"
+#include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
 
 namespace jxl {
@@ -61,7 +62,9 @@ static Status JXL_INLINE LoadFloatRow(const uint8_t* src, size_t count,
 
     case JXL_TYPE_UINT8:
       for (size_t i = 0; i < count; ++i) {
-        callback(i, src[stride * i] * scale);
+        
+        
+        callback(i, (src[stride * i] * 257) * scale);
       }
       return true;
 

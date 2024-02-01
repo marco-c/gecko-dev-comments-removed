@@ -8,9 +8,6 @@
 
 
 
-#include <stdint.h>
-
-#include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/image.h"
 

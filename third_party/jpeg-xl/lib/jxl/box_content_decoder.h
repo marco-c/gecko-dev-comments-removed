@@ -11,9 +11,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <memory>
-#include <vector>
-
 namespace jxl {
 
 

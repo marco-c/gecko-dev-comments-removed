@@ -9,8 +9,8 @@
 
 
 #include <stddef.h>
-#include <stdint.h>
 
+#include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/image.h"
 
@@ -55,19 +55,6 @@ struct WeightsSeparable5 {
   float vert[3 * 4];
 };
 
-
-
-
-
-
-
-
-struct WeightsSeparable7 {
-  
-  float horz[4 * 4];
-  float vert[4 * 4];
-};
-
 const WeightsSymmetric3& WeightsSymmetric3Lowpass();
 const WeightsSeparable5& WeightsSeparable5Lowpass();
 const WeightsSymmetric5& WeightsSymmetric5Lowpass();
@@ -78,10 +65,6 @@ void SlowSymmetric3(const ImageF& in, const Rect& rect,
 
 void SlowSeparable5(const ImageF& in, const Rect& in_rect,
                     const WeightsSeparable5& weights, ThreadPool* pool,
-                    ImageF* out, const Rect& out_rect);
-
-void SlowSeparable7(const ImageF& in, const Rect& in_rect,
-                    const WeightsSeparable7& weights, ThreadPool* pool,
                     ImageF* out, const Rect& out_rect);
 
 void Symmetric3(const ImageF& in, const Rect& rect,
@@ -98,10 +81,6 @@ void Symmetric5(const ImageF& in, const Rect& rect,
 
 void Separable5(const ImageF& in, const Rect& rect,
                 const WeightsSeparable5& weights, ThreadPool* pool,
-                ImageF* out);
-
-void Separable7(const ImageF& in, const Rect& rect,
-                const WeightsSeparable7& weights, ThreadPool* pool,
                 ImageF* out);
 
 }  

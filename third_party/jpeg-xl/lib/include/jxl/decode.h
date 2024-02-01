@@ -20,7 +20,7 @@
 #include <jxl/memory_manager.h>
 #include <jxl/parallel_runner.h>
 #include <jxl/types.h>
-#include <jxl/version.h>
+#include <jxl/version.h>  
 #include <stddef.h>
 #include <stdint.h>
 
@@ -1356,14 +1356,6 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetDecompressBoxes(JxlDecoder* dec,
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec,
                                                  JxlBoxType type,
                                                  JXL_BOOL decompressed);
-
-
-
-
-
-
-
-
 
 
 

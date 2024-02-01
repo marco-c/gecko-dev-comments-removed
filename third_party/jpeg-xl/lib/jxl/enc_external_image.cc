@@ -62,7 +62,14 @@ Status ConvertFromExternalNoSizeCheck(const uint8_t* data, size_t xsize,
   size_t bytes_per_pixel = format.num_channels * bytes_per_channel;
   size_t pixel_offset = c * bytes_per_channel;
   
-  float scale = 1. / ((1ull << bits_per_sample) - 1);
+  float scale = 1.0f;
+  if (format.data_type == JXL_TYPE_UINT8) {
+    
+    
+    scale = 1.0f / (257 * ((1ull << bits_per_sample) - 1));
+  } else {
+    scale = 1.0f / ((1ull << bits_per_sample) - 1);
+  }
 
   const bool little_endian =
       format.endianness == JXL_LITTLE_ENDIAN ||

@@ -74,6 +74,19 @@ namespace jxl {
 #define JXL_DEBUG_ON_ABORT JXL_DEBUG_ON_ERROR
 #endif  
 
+#ifdef USE_ANDROID_LOGGER
+#include <android/log.h>
+#define LIBJXL_ANDROID_LOG_TAG ("libjxl")
+inline void android_vprintf(const char* format, va_list args) {
+  char* message = nullptr;
+  int res = vasprintf(&message, format, args);
+  if (res != -1) {
+    __android_log_write(ANDROID_LOG_DEBUG, LIBJXL_ANDROID_LOG_TAG, message);
+    free(message);
+  }
+}
+#endif
+
 
 
 
@@ -81,7 +94,11 @@ JXL_FORMAT(1, 2)
 inline JXL_NOINLINE bool Debug(const char* format, ...) {
   va_list args;
   va_start(args, format);
+#ifdef USE_ANDROID_LOGGER
+  android_vprintf(format, args);
+#else
   vfprintf(stderr, format, args);
+#endif
   va_end(args);
   return false;
 }
@@ -110,8 +127,12 @@ inline JXL_NOINLINE bool Debug(const char* format, ...) {
 
 
 
+#if JXL_DEBUG_V_LEVEL > 0
 #define JXL_DEBUG_V(level, format, ...) \
   JXL_DEBUG(level <= JXL_DEBUG_V_LEVEL, format, ##__VA_ARGS__)
+#else
+#define JXL_DEBUG_V(level, format, ...)
+#endif
 
 
 
@@ -329,7 +350,11 @@ inline JXL_FORMAT(2, 3) Status
       (JXL_DEBUG_ON_ALL_ERROR && !status)) {
     va_list args;
     va_start(args, format);
+#ifdef USE_ANDROID_LOGGER
+    android_vprintf(format, args);
+#else
     vfprintf(stderr, format, args);
+#endif
     va_end(args);
   }
 #ifdef JXL_CRASH_ON_ERROR
