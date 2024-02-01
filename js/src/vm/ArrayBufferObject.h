@@ -107,6 +107,12 @@ uint64_t WasmReservedBytes();
 
 
 
+
+
+
+
+
+
 class ArrayBufferObjectMaybeShared;
 
 wasm::IndexType WasmArrayBufferIndexType(
@@ -146,6 +152,12 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
   inline bool isPreparedForAsmJS() const;
   inline bool isWasm() const;
 };
+
+class FixedLengthArrayBufferObject;
+class ResizableArrayBufferObject;
+
+
+
 
 
 
@@ -187,10 +199,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 #else
   static constexpr size_t MaxByteLength = MaxByteLengthForSmallBuffer;
 #endif
-
-  
-  static constexpr size_t MaxInlineBytes =
-      (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
 
  public:
   enum BufferKind {
@@ -344,7 +352,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     WasmArrayRawBuffer* wasmBuffer() const;
   };
 
-  static const JSClass class_;
   static const JSClass protoClass_;
 
   static bool byteLengthGetter(JSContext* cx, unsigned argc, Value* vp);
@@ -555,12 +562,48 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   }
 };
 
-inline bool ArrayBufferObjectMaybeShared::pinLength(bool pin) {
-  if (is<ArrayBufferObject>()) {
-    return as<ArrayBufferObject>().pinLength(pin);
-  }
-  return false;  
-}
+
+
+
+
+
+
+
+
+
+
+class FixedLengthArrayBufferObject : public ArrayBufferObject {
+ public:
+  
+  static const uint8_t RESERVED_SLOTS = ArrayBufferObject::RESERVED_SLOTS;
+
+  
+  static constexpr size_t MaxInlineBytes =
+      (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
+
+  static const JSClass class_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ResizableArrayBufferObject : public ArrayBufferObject {
+  friend class ArrayBufferObject;
+
+ public:
+  static const uint8_t RESERVED_SLOTS = ArrayBufferObject::RESERVED_SLOTS;
+
+  static const JSClass class_;
+};
 
 
 
@@ -725,6 +768,12 @@ class WasmArrayRawBuffer {
 };
 
 }  
+
+template <>
+inline bool JSObject::is<js::ArrayBufferObject>() const {
+  return is<js::FixedLengthArrayBufferObject>() ||
+         is<js::ResizableArrayBufferObject>();
+}
 
 template <>
 bool JSObject::is<js::ArrayBufferObjectMaybeShared>() const;
