@@ -7128,6 +7128,17 @@ bool nsIFrame::UpdateIsRelevantContent(
                       HasSelectionInSubtree());
   }
 
+  
+  
+  
+  
+  
+  bool isProximityToViewportDetermined =
+      oldRelevancy ? true : element->GetVisibleForContentVisibility().isSome();
+  if (!isProximityToViewportDetermined && newRelevancy.isEmpty()) {
+    return false;
+  }
+
   bool overallRelevancyChanged =
       !oldRelevancy || oldRelevancy->isEmpty() != newRelevancy.isEmpty();
   if (!oldRelevancy || *oldRelevancy != newRelevancy) {
