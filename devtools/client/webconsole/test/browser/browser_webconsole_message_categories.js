@@ -93,21 +93,16 @@ const TESTS = [
     file: "test-message-categories-image.html",
     category: "Image",
     matchString: "corrupt",
-    typeSelector: ".warn",
-    
-    skipInE10s: true,
+    typeSelector: ".error",
   },
 ];
 
 add_task(async function () {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   requestLongerTimeout(2);
 
+  
+  
+  await pushPref("fission.bfcacheInParent", false);
   await pushPref("devtools.webconsole.filter.css", true);
   await pushPref("devtools.webconsole.filter.net", true);
 
@@ -126,12 +121,7 @@ add_task(async function () {
 });
 
 async function runTest(test, hud) {
-  const { file, category, matchString, typeSelector, onload, skipInE10s } =
-    test;
-
-  if (skipInE10s && Services.appinfo.browserTabsRemoteAutostart) {
-    return;
-  }
+  const { file, category, matchString, typeSelector, onload } = test;
 
   const onMessageLogged = waitForMessageByType(hud, matchString, typeSelector);
 
@@ -162,6 +152,7 @@ async function runTest(test, hud) {
   info("Wait for log message to be observed with the correct category");
   await onMessageObserved;
 
-  info("Wait for log message to be displayed in the hud");
+  info(`Wait for log message ("${matchString}") to be displayed in the hud`);
   await onMessageLogged;
+  ok(true, `Message "${matchString}" displayed`);
 }
