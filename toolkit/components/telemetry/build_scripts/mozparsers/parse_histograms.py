@@ -9,6 +9,8 @@ import json
 import math
 import os
 import re
+import runpy
+import sys
 from collections import OrderedDict
 from ctypes import c_int
 
@@ -51,6 +53,22 @@ GECKOVIEW_STREAMING_SUPPORTED_KINDS = [
     "exponential",
     "categorical",
 ]
+
+
+
+
+
+
+try:
+    import buildconfig
+
+    
+    sys.path.append(os.path.join(buildconfig.topsrcdir, "dom/base/"))
+except ImportError:
+    
+    
+    
+    pass
 
 
 def linear_buckets(dmin, dmax, n_buckets):
@@ -126,6 +144,11 @@ class Histogram:
                                  submissions, so we have to skip them there by default.
         """
         self._strict_type_checks = strict_type_checks
+        self._is_use_counter = name.startswith("USE_COUNTER2_")
+        if self._is_use_counter:
+            definition.setdefault("record_in_processes", ["main", "content"])
+            definition.setdefault("releaseChannelCollection", "opt-out")
+            definition.setdefault("products", ["firefox", "fennec"])
         self.verify_attributes(name, definition)
         self._name = name
         self._description = definition["description"]
@@ -548,7 +571,9 @@ class Histogram:
     
     def check_allowlistable_fields(self, name, definition):
         
-        if not self._strict_type_checks:
+        
+        
+        if self._is_use_counter or not self._strict_type_checks:
             return
 
         
@@ -775,6 +800,40 @@ def from_json(filename, strict_type_checks):
     return histograms
 
 
+def from_UseCounters_conf(filename, strict_type_checks):
+    return usecounters.generate_histograms(filename)
+
+
+def from_UseCountersWorker_conf(filename, strict_type_checks):
+    return usecounters.generate_histograms(filename, True)
+
+
+def from_nsDeprecatedOperationList(filename, strict_type_checks):
+    operation_regex = re.compile("^DEPRECATED_OPERATION\\(([^)]+)\\)")
+    histograms = collections.OrderedDict()
+
+    with open(filename, "r") as f:
+        for line in f:
+            match = operation_regex.search(line)
+            if not match:
+                continue
+
+            op = match.group(1)
+
+            def add_counter(context):
+                name = "USE_COUNTER2_DEPRECATED_%s_%s" % (op, context.upper())
+                histograms[name] = {
+                    "expires_in_version": "never",
+                    "kind": "boolean",
+                    "description": "Whether a %s used %s" % (context, op),
+                }
+
+            add_counter("document")
+            add_counter("page")
+
+    return histograms
+
+
 def to_camel_case(property_name):
     return re.sub(
         "(^|_|-)([a-z0-9])",
@@ -783,9 +842,97 @@ def to_camel_case(property_name):
     )
 
 
+def add_css_property_counters(histograms, property_name):
+    def add_counter(context):
+        name = "USE_COUNTER2_CSS_PROPERTY_%s_%s" % (
+            to_camel_case(property_name),
+            context.upper(),
+        )
+        histograms[name] = {
+            "expires_in_version": "never",
+            "kind": "boolean",
+            "description": "Whether a %s used the CSS property %s"
+            % (context, property_name),
+        }
+
+    add_counter("document")
+    add_counter("page")
+
+
+def from_ServoCSSPropList(filename, strict_type_checks):
+    histograms = collections.OrderedDict()
+    properties = runpy.run_path(filename)["data"]
+    for prop in properties.values():
+        add_css_property_counters(histograms, prop.name)
+    return histograms
+
+
+def from_counted_unknown_properties(filename, strict_type_checks):
+    histograms = collections.OrderedDict()
+    properties = runpy.run_path(filename)["COUNTED_UNKNOWN_PROPERTIES"]
+
+    
+    
+    
+    
+    
+    for prop in properties:
+        add_css_property_counters(histograms, prop)
+    return histograms
+
+
+
+def from_properties_db(filename, strict_type_checks):
+    histograms = collections.OrderedDict()
+    with open(filename, "r") as f:
+        in_css_properties = False
+
+        for line in f:
+            if not in_css_properties:
+                if line.startswith("exports.CSS_PROPERTIES = {"):
+                    in_css_properties = True
+                continue
+
+            if line.startswith("};"):
+                break
+
+            if not line.startswith('  "'):
+                continue
+
+            name = line.split('"')[1]
+            add_css_property_counters(histograms, name)
+    return histograms
+
+
 FILENAME_PARSERS = [
     (lambda x: from_json if x.endswith(".json") else None),
+    (
+        lambda x: from_nsDeprecatedOperationList
+        if x == "nsDeprecatedOperationList.h"
+        else None
+    ),
+    (lambda x: from_ServoCSSPropList if x == "ServoCSSPropList.py" else None),
+    (
+        lambda x: from_counted_unknown_properties
+        if x == "counted_unknown_properties.py"
+        else None
+    ),
+    (lambda x: from_properties_db if x == "properties-db.js" else None),
 ]
+
+
+
+try:
+    import usecounters
+
+    FILENAME_PARSERS.append(
+        lambda x: from_UseCounters_conf if x == "UseCounters.conf" else None
+    )
+    FILENAME_PARSERS.append(
+        lambda x: from_UseCountersWorker_conf if x == "UseCountersWorker.conf" else None
+    )
+except ImportError:
+    pass
 
 
 def from_files(filenames, strict_type_checks=True):
@@ -819,6 +966,32 @@ def from_files(filenames, strict_type_checks=True):
             if name in all_histograms:
                 ParserError('Duplicate histogram name "%s".' % name).handle_later()
             all_histograms[name] = definition
+
+    def check_continuity(iterable, filter_function, name):
+        indices = list(filter(filter_function, enumerate(iter(iterable.keys()))))
+        if indices:
+            lower_bound = indices[0][0]
+            upper_bound = indices[-1][0]
+            n_counters = upper_bound - lower_bound + 1
+            if n_counters != len(indices):
+                ParserError(
+                    "Histograms %s must be defined in a contiguous block." % name
+                ).handle_later()
+
+    
+    
+    check_continuity(
+        all_histograms,
+        lambda x: x[1].startswith("USE_COUNTER2_") and x[1].endswith("_WORKER"),
+        "use counter worker",
+    )
+    
+    
+    check_continuity(
+        all_histograms,
+        lambda x: x[1].startswith("USE_COUNTER2_") and not x[1].endswith("_WORKER"),
+        "use counter",
+    )
 
     
     
