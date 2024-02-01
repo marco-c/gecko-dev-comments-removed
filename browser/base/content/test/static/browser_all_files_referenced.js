@@ -68,7 +68,10 @@ var gExceptionPaths = [
   "resource://nimbus/schemas/",
 
   
-  "resource://activity-stream/schemas",
+  "resource://normandy/schemas/",
+
+  
+  "chrome://browser/content/asrouter/schemas/",
 
   
   "resource://app/localization/en-US/browser/featureCallout.ftl",
