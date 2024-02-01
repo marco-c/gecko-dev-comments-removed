@@ -164,8 +164,7 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   
   
-  if (IsEditingHost() || Type() == eType_Document ||
-      Type() == eType_FakePlugin) {
+  if (IsEditingHost() || Type() == eType_Document) {
     if (aTabIndex) {
       *aTabIndex = isFocusable ? attrVal->GetIntegerValue() : 0;
     }

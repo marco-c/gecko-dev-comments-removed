@@ -53,10 +53,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
     
     eType_Fallback = TYPE_FALLBACK,
     
-    
-    
-    eType_FakePlugin = TYPE_FAKE_PLUGIN,
-    
     eType_Document = TYPE_DOCUMENT,
     
     
@@ -98,13 +94,9 @@ class nsObjectLoadingContent : public nsIStreamListener,
     CopyUTF8toUTF16(mContentType, aType);
   }
   uint32_t DisplayedType() const { return mType; }
-  void Reload(bool aClearActivation, mozilla::ErrorResult& aRv) {
-    aRv = Reload(aClearActivation);
-  }
+  void Reload(mozilla::ErrorResult& aRv) { aRv = Reload(); }
   nsIURI* GetSrcURI() const { return mURI; }
 
-  
-  void SkipFakePlugins(mozilla::ErrorResult& aRv) { aRv = SkipFakePlugins(); }
   void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
                         mozilla::ErrorResult& aRv) {
     aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
@@ -350,7 +342,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   bool CheckProcessPolicy(int16_t* aContentPolicy);
 
-  void SetupFrameLoader(int32_t aJSPluginId);
+  void SetupFrameLoader();
 
   
 
@@ -390,9 +382,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
 
 
-
-
-  ObjectType GetTypeOfContent(const nsCString& aMIMEType, bool aNoFakePlugin);
+  ObjectType GetTypeOfContent(const nsCString& aMIMEType);
 
   
 
@@ -474,9 +464,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   
   bool mContentBlockingEnabled : 1;
-
-  
-  bool mSkipFakePlugins : 1;
 
   
   bool mIsStopping : 1;

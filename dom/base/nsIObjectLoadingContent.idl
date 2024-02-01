@@ -28,9 +28,8 @@ interface nsIObjectLoadingContent : nsISupports
 
   const unsigned long TYPE_LOADING     = 0;
   const unsigned long TYPE_FALLBACK    = 2;
-  const unsigned long TYPE_FAKE_PLUGIN = 3;
-  const unsigned long TYPE_DOCUMENT    = 4;
-  const unsigned long TYPE_NULL        = 5;
+  const unsigned long TYPE_DOCUMENT    = 3;
+  const unsigned long TYPE_NULL        = 4;
 
   const unsigned long PLUGIN_ACTIVE               = 0xFF;
 
@@ -58,8 +57,7 @@ interface nsIObjectLoadingContent : nsISupports
 
 
 
-
-  void reload(in boolean aClearActivation);
+  void reload();
 
   
 
@@ -79,11 +77,6 @@ interface nsIObjectLoadingContent : nsISupports
 
 
   readonly attribute nsIURI srcURI;
-
-  
-
-
-  void skipFakePlugins();
 
   
 

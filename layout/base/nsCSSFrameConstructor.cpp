@@ -3683,10 +3683,6 @@ nsCSSFrameConstructor::FindObjectData(const Element& aElement,
       SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_DOCUMENT,
                         NS_NewSubDocumentFrame),
       
-      
-      SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_FAKE_PLUGIN,
-                        NS_NewSubDocumentFrame)
-      
   };
 
   return FindDataByInt((int32_t)type, aElement, aStyle, sObjectData,
