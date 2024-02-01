@@ -6018,15 +6018,13 @@ nsSize nsHTMLScrollFrame::GetSnapportSize() const {
 }
 
 bool nsHTMLScrollFrame::IsScrollbarOnRight() const {
-  nsPresContext* presContext = PresContext();
-
   
   
   
   if (!mIsRoot) {
     return IsPhysicalLTR();
   }
-  switch (presContext->GetCachedIntPref(kPresContext_ScrollbarSide)) {
+  switch (StaticPrefs::layout_scrollbar_side()) {
     default:
     case 0:  
       return StaticPrefs::bidi_direction() == IBMBIDI_TEXTDIRECTION_LTR;
