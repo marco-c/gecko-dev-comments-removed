@@ -232,6 +232,10 @@ function TypedArrayEntries() {
   EnsureTypedArrayWithArrayBuffer(O);
 
   
+  
+  PossiblyWrappedTypedArrayLength(O);
+
+  
   return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
 }
 
@@ -697,6 +701,7 @@ function TypedArrayKeys() {
 
   
   EnsureTypedArrayWithArrayBuffer(O);
+  PossiblyWrappedTypedArrayLength(O);
 
   
   return CreateArrayIterator(O, ITEM_KIND_KEY);
@@ -1427,6 +1432,7 @@ function $TypedArrayValues() {
 
   
   EnsureTypedArrayWithArrayBuffer(O);
+  PossiblyWrappedTypedArrayLength(O);
 
   
   return CreateArrayIterator(O, ITEM_KIND_VALUE);
