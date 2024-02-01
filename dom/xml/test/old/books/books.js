@@ -73,8 +73,8 @@ function initiateToggle() {
   setTimeout(toggleStyleSheet, 0);
 }
 
-var sortableProps = new Array("Author", "Title", "ISBN");
-var books = new Array();
+var sortableProps = ["Author", "Title", "ISBN"];
+var books = [];
 
 
 

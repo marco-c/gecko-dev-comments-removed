@@ -25,8 +25,8 @@ function toggleDisplay(event) {
 
 
 
-var searchTags = new Array("book", "chapter", "section");
-var tocTags = new Array("level1", "level2", "level3");
+var searchTags = ["book", "chapter", "section"];
+var tocTags = ["level1", "level2", "level3"];
 function addToToc(root, tocFrame) {
   var i;
   var newTocFrame = tocFrame;

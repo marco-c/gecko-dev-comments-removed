@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1072116
+-->
 <head>
   <title>Test for Bug 1072116</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,14 +22,14 @@ var attr = document.createAttribute("c");
 
 var xpathExpr = document.createExpression('a', null);
 
-var status = false;
+let isAlive = false;
 try {
   xpathExpr.evaluate(attr, null, null, null, null);
 } catch(e) {
-  status = true;
+  isAlive = true;
 }
 
-ok(status, "Still alive \\o/");
+ok(isAlive, "Still alive \\o/");
 
 </script>
 </pre>
