@@ -436,8 +436,17 @@ AutocompletePopup.prototype = {
       maxLabelLength = Math.max(label.length, maxLabelLength);
     });
 
+    
+    
     const fragmentClone = fragment.cloneNode(true);
-    this.list.style.width = maxLabelLength + 3 + "ch";
+    let width = `calc(${
+      maxLabelLength + 3
+    }ch + 2 * var(--autocomplete-item-padding-inline, 0px))`;
+    
+    if (fragment.querySelector(".autocomplete-colorswatch")) {
+      width = `calc(${width} + var(--autocomplete-item-color-swatch-size) + 2 * var(--autocomplete-item-color-swatch-margin-inline))`;
+    }
+    this.list.style.width = width;
     this.list.appendChild(fragment);
     
     this._listClone.appendChild(fragmentClone);
