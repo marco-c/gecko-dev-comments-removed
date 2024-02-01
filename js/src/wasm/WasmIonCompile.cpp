@@ -305,6 +305,7 @@ class FunctionCompiler {
   BytecodeOffset bytecodeIfNotAsmJS() const {
     return moduleEnv_.isAsmJS() ? BytecodeOffset() : iter_.bytecodeOffset();
   }
+  FeatureUsage featureUsage() const { return iter_.featureUsage(); }
 
   
   [[nodiscard]] UniqueTryControl newTryControl() {
@@ -9407,6 +9408,9 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
       }
 
       f.finish();
+
+      
+      code->featureUsage |= f.featureUsage();
     }
 
     
