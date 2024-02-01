@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 
+#include "mozilla/WeakPtr.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 #include "mozilla/webgpu/PWebGPUParent.h"
 #include "mozilla/webrender/WebRenderAPI.h"
@@ -40,7 +41,7 @@ class PresentationData;
 
 
 
-class WebGPUParent final : public PWebGPUParent {
+class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebGPUParent, override)
 
  public:
@@ -169,6 +170,8 @@ class WebGPUParent final : public PWebGPUParent {
  private:
   static void MapCallback(ffi::WGPUBufferMapAsyncStatus aStatus,
                           uint8_t* aUserData);
+  static void DeviceLostCallback(uint8_t* aUserData, uint8_t aReason,
+                                 const char* aMessage);
   void DeallocBufferShmem(RawId aBufferId);
 
   void RemoveExternalTexture(RawId aTextureId);
@@ -215,6 +218,16 @@ class WebGPUParent final : public PWebGPUParent {
 
   
   RefPtr<gfx::FileHandleWrapper> mFenceHandle;
+
+  
+  
+  
+  struct DeviceLostRequest {
+    WeakPtr<WebGPUParent> mParent;
+    RawId mDeviceId;
+  };
+  std::unordered_map<RawId, std::unique_ptr<DeviceLostRequest>>
+      mDeviceLostRequests;
 };
 
 }  

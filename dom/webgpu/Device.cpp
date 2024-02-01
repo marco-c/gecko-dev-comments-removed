@@ -136,15 +136,14 @@ void Device::ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
     
     return;
   }
-  if (lostPromise->State() != dom::Promise::PromiseState::Pending) {
-    
-    return;
-  }
   if (!lostPromise->PromiseObj()) {
     
     return;
   }
-
+  if (lostPromise->State() != dom::Promise::PromiseState::Pending) {
+    
+    return;
+  }
   RefPtr<DeviceLostInfo> info;
   if (aReason.isSome()) {
     info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), *aReason, aMessage);
