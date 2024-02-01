@@ -30,15 +30,6 @@ interface nsIObjectLoadingContent : nsISupports
   const unsigned long TYPE_DOCUMENT    = 3;
   const unsigned long TYPE_NULL        = 4;
 
-  const unsigned long PLUGIN_ACTIVE               = 0xFF;
-
-  
-  
-  
-  
-  
-  const unsigned long PLUGIN_PERMISSION_PROMPT_ACTION_QUIET = 8;
-
   
 
 
@@ -50,26 +41,6 @@ interface nsIObjectLoadingContent : nsISupports
 
 
   readonly attribute unsigned long displayedType;
-
-  
-
-
-
-
-  void reload();
-
-  
-
-
-
-
-
-
-
-
-
-
-  [noscript] void initializeFromChannel(in nsIRequest request);
 
   
 

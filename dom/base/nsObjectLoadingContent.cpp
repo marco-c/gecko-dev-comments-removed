@@ -239,8 +239,6 @@ void nsObjectLoadingContent::UnbindFromTree(bool aNullParent) {
 
 nsObjectLoadingContent::nsObjectLoadingContent()
     : mType(eType_Loading),
-      mRunID(0),
-      mHasRunID(false),
       mChannelLoaded(false),
       mNetworkCreated(true),
       mContentBlockingEnabled(false),
@@ -1031,33 +1029,6 @@ nsObjectLoadingContent::UpdateObjectParameters() {
 }
 
 
-
-NS_IMETHODIMP
-nsObjectLoadingContent::InitializeFromChannel(nsIRequest* aChannel) {
-  LOG(("OBJLC [%p] InitializeFromChannel: %p", this, aChannel));
-  if (mType != eType_Loading || mChannel) {
-    
-    
-    MOZ_ASSERT_UNREACHABLE("Should not have begun loading at this point");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  
-  
-  UpdateObjectParameters();
-  
-  mType = eType_Loading;
-  mChannel = do_QueryInterface(aChannel);
-  NS_ASSERTION(mChannel, "passed a request that is not a channel");
-
-  
-  
-  
-  return NS_OK;
-}
-
-
 nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad) {
   return LoadObject(aNotify, aForceLoad, nullptr);
 }
@@ -1735,9 +1706,6 @@ void nsObjectLoadingContent::ConfigureFallback() {
 }
 
 NS_IMETHODIMP
-nsObjectLoadingContent::Reload() { return LoadObject(true, true); }
-
-NS_IMETHODIMP
 nsObjectLoadingContent::UpgradeLoadToDocument(
     nsIChannel* aRequest, BrowsingContext** aBrowsingContext) {
   AUTO_PROFILER_LABEL("nsObjectLoadingContent::UpgradeLoadToDocument", NETWORK);
@@ -1778,17 +1746,6 @@ nsObjectLoadingContent::UpgradeLoadToDocument(
 
   bc.forget(aBrowsingContext);
   return NS_OK;
-}
-
-uint32_t nsObjectLoadingContent::GetRunID(SystemCallerGuarantee,
-                                          ErrorResult& aRv) {
-  if (!mHasRunID) {
-    
-    
-    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    return 0;
-  }
-  return mRunID;
 }
 
 bool nsObjectLoadingContent::ShouldBlockContent() {

@@ -82,7 +82,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
     CopyUTF8toUTF16(mContentType, aType);
   }
   uint32_t DisplayedType() const { return mType; }
-  void Reload(mozilla::ErrorResult& aRv) { aRv = Reload(); }
   nsIURI* GetSrcURI() const { return mURI; }
 
   void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
@@ -93,9 +92,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
                         mozilla::ErrorResult& aRv) {
     aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
   }
-
-  uint32_t GetRunID(mozilla::dom::SystemCallerGuarantee,
-                    mozilla::ErrorResult& aRv);
 
   bool IsRewrittenYoutubeEmbed() const { return mRewrittenYoutubeEmbed; }
 
@@ -431,9 +427,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   
   ObjectType mType : 8;
-
-  uint32_t mRunID;
-  bool mHasRunID : 1;
 
   
   
