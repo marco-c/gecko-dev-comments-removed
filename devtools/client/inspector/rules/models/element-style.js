@@ -862,6 +862,39 @@ class ElementStyle {
       ? registeredPropertiesMap.get(name).initialValue
       : null;
   }
+
+  
+
+
+
+
+
+
+
+
+  getAllCustomProperties(pseudo = "") {
+    const customProperties = new Map();
+
+    const variables = this.variablesMap.get(pseudo);
+    if (variables) {
+      for (const [name, value] of variables) {
+        customProperties.set(name, value);
+      }
+    }
+
+    const registeredPropertiesMap =
+      this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
+    if (registeredPropertiesMap) {
+      for (const [name, propertyDefinition] of registeredPropertiesMap) {
+        
+        if (!customProperties.has(name)) {
+          customProperties.set(name, propertyDefinition.initialValue);
+        }
+      }
+    }
+
+    return customProperties;
+  }
 }
 
 module.exports = ElementStyle;
