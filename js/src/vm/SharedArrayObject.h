@@ -288,6 +288,12 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
     return rawBufferObject()->dataPointerShared();
   }
 
+  bool isGrowable() const {
+    
+    
+    return false;
+  }
+
   
 
   
