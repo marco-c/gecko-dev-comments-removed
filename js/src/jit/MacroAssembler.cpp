@@ -1462,6 +1462,9 @@ void MacroAssembler::branchIfMaybeSplitSurrogatePair(Register leftChild,
            scratch, notSplit);
 
   
+  branchIfRope(leftChild, maybeSplit);
+
+  
   loadStringChars(leftChild, scratch, CharEncoding::TwoByte);
   loadChar(scratch, index, scratch, CharEncoding::TwoByte);
 
