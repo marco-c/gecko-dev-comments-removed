@@ -115,13 +115,13 @@ class nsEditingSession final : public nsIEditingSession,
   
 
 
-  nsresult DisableJS(nsPIDOMWindowInner* aWindow);
+  nsresult DisableJSAndPlugins(nsPIDOMWindowInner* aWindow);
 
   
 
 
 
-  nsresult RestoreJS(nsPIDOMWindowInner* aWindow);
+  nsresult RestoreJSAndPlugins(nsPIDOMWindowInner* aWindow);
 
  protected:
   bool mDoneSetup;  
@@ -135,11 +135,15 @@ class nsEditingSession final : public nsIEditingSession,
   bool mInteractive;
   bool mMakeWholeDocumentEditable;
 
-  bool mDisabledJS;
+  bool mDisabledJSAndPlugins;
 
   
   
   bool mScriptsEnabled;
+
+  
+  
+  bool mPluginsEnabled;
 
   bool mProgressListenerRegistered;
 

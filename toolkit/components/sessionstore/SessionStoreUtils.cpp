@@ -223,6 +223,7 @@ void SessionStoreUtils::CollectDocShellCapabilities(const GlobalObject& aGlobal,
   }                               \
   PR_END_MACRO
 
+  TRY_ALLOWPROP(Plugins);
   
   
   TRY_ALLOWPROP(MetaRedirects);
@@ -240,6 +241,7 @@ void SessionStoreUtils::CollectDocShellCapabilities(const GlobalObject& aGlobal,
 
 void SessionStoreUtils::RestoreDocShellCapabilities(
     nsIDocShell* aDocShell, const nsCString& aDisallowCapabilities) {
+  aDocShell->SetAllowPlugins(true);
   aDocShell->SetAllowMetaRedirects(true);
   aDocShell->SetAllowSubframes(true);
   aDocShell->SetAllowImages(true);
@@ -252,7 +254,9 @@ void SessionStoreUtils::RestoreDocShellCapabilities(
   bool allowJavascript = true;
   for (const nsACString& token :
        nsCCharSeparatedTokenizer(aDisallowCapabilities, ',').ToRange()) {
-    if (token.EqualsLiteral("Javascript")) {
+    if (token.EqualsLiteral("Plugins")) {
+      aDocShell->SetAllowPlugins(false);
+    } else if (token.EqualsLiteral("Javascript")) {
       allowJavascript = false;
     } else if (token.EqualsLiteral("MetaRedirects")) {
       aDocShell->SetAllowMetaRedirects(false);

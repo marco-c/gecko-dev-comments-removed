@@ -65,8 +65,9 @@ nsEditingSession::nsEditingSession()
       mCanCreateEditor(false),
       mInteractive(false),
       mMakeWholeDocumentEditable(true),
-      mDisabledJS(false),
+      mDisabledJSAndPlugins(false),
       mScriptsEnabled(true),
+      mPluginsEnabled(true),
       mProgressListenerRegistered(false),
       mImageAnimationMode(0),
       mEditorFlags(0),
@@ -122,7 +123,7 @@ nsEditingSession::MakeWindowEditable(mozIDOMWindowProxy* aWindow,
 
   nsresult rv;
   if (!mInteractive) {
-    rv = DisableJS(window->GetCurrentInnerWindow());
+    rv = DisableJSAndPlugins(window->GetCurrentInnerWindow());
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -174,21 +175,30 @@ nsEditingSession::MakeWindowEditable(mozIDOMWindowProxy* aWindow,
   return rv;
 }
 
-nsresult nsEditingSession::DisableJS(nsPIDOMWindowInner* aWindow) {
+nsresult nsEditingSession::DisableJSAndPlugins(nsPIDOMWindowInner* aWindow) {
   WindowContext* wc = aWindow->GetWindowContext();
+  BrowsingContext* bc = wc->GetBrowsingContext();
 
   mScriptsEnabled = wc->GetAllowJavascript();
+
   MOZ_TRY(wc->SetAllowJavascript(false));
-  mDisabledJS = true;
+
+  
+  mPluginsEnabled = bc->GetAllowPlugins();
+
+  MOZ_TRY(bc->SetAllowPlugins(false));
+
+  mDisabledJSAndPlugins = true;
+
   return NS_OK;
 }
 
-nsresult nsEditingSession::RestoreJS(nsPIDOMWindowInner* aWindow) {
-  if (!mDisabledJS) {
+nsresult nsEditingSession::RestoreJSAndPlugins(nsPIDOMWindowInner* aWindow) {
+  if (!mDisabledJSAndPlugins) {
     return NS_OK;
   }
 
-  mDisabledJS = false;
+  mDisabledJSAndPlugins = false;
 
   if (NS_WARN_IF(!aWindow)) {
     
@@ -196,7 +206,13 @@ nsresult nsEditingSession::RestoreJS(nsPIDOMWindowInner* aWindow) {
   }
 
   WindowContext* wc = aWindow->GetWindowContext();
-  return wc->SetAllowJavascript(mScriptsEnabled);
+  BrowsingContext* bc = wc->GetBrowsingContext();
+
+  MOZ_TRY(wc->SetAllowJavascript(mScriptsEnabled));
+
+  
+
+  return bc->SetAllowPlugins(mPluginsEnabled);
 }
 
 
@@ -491,7 +507,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy* aWindow) {
 
   if (stopEditing) {
     
-    RestoreJS(window->GetCurrentInnerWindow());
+    RestoreJSAndPlugins(window->GetCurrentInnerWindow());
     RestoreAnimationMode(window);
 
     if (mMakeWholeDocumentEditable) {
@@ -1175,7 +1191,7 @@ nsresult nsEditingSession::DetachFromWindow(nsPIDOMWindowOuter* aWindow) {
   
   RemoveEditorControllers(aWindow);
   RemoveWebProgressListener(aWindow);
-  RestoreJS(aWindow->GetCurrentInnerWindow());
+  RestoreJSAndPlugins(aWindow->GetCurrentInnerWindow());
   RestoreAnimationMode(aWindow);
 
   
@@ -1202,7 +1218,7 @@ nsresult nsEditingSession::ReattachToWindow(nsPIDOMWindowOuter* aWindow) {
 
   
   if (!mInteractive) {
-    rv = DisableJS(aWindow->GetCurrentInnerWindow());
+    rv = DisableJSAndPlugins(aWindow->GetCurrentInnerWindow());
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

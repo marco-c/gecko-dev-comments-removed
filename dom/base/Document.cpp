@@ -4352,6 +4352,25 @@ void Document::SetContentType(const nsACString& aContentType) {
   mContentType = aContentType;
 }
 
+bool Document::GetAllowPlugins() {
+  
+  auto* browsingContext = GetBrowsingContext();
+
+  if (browsingContext) {
+    if (!browsingContext->GetAllowPlugins()) {
+      return false;
+    }
+
+    
+    
+    if (mSandboxFlags & SANDBOXED_PLUGINS) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool Document::HasPendingInitialTranslation() {
   return mDocumentL10n && mDocumentL10n->GetState() != DocumentL10nState::Ready;
 }
