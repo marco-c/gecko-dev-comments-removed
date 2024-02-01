@@ -41,12 +41,15 @@
 #include "nsMimeTypes.h"
 #include "nsHtml5SVGLoadDispatcher.h"
 #include "nsTextNode.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/CDATASection.h"
 #include "mozilla/dom/Comment.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/MutationObservers.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/txMozillaXSLTProcessor.h"
@@ -471,17 +474,53 @@ nsresult nsXMLContentSink::CreateElement(
   RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
   RefPtr<Element> element;
 
+  
+  
+  
   const char16_t* is = nullptr;
-  if ((aNodeInfo->NamespaceEquals(kNameSpaceID_XHTML) ||
-       aNodeInfo->NamespaceEquals(kNameSpaceID_XUL)) &&
-      FindIsAttrValue(aAtts, &is)) {
-    const nsDependentString isStr(is);
-    rv = NS_NewElement(getter_AddRefs(element), ni.forget(), aFromParser,
-                       &isStr);
-  } else {
-    rv = NS_NewElement(getter_AddRefs(element), ni.forget(), aFromParser);
+  RefPtr<nsAtom> isAtom;
+  uint32_t namespaceID = ni->NamespaceID();
+  bool isXHTMLOrXUL =
+      namespaceID == kNameSpaceID_XHTML || namespaceID == kNameSpaceID_XUL;
+  if (isXHTMLOrXUL && FindIsAttrValue(aAtts, &is)) {
+    isAtom = NS_AtomizeMainThread(nsDependentString(is));
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  CustomElementDefinition* customElementDefinition = nullptr;
+  nsAtom* nameAtom = ni->NameAtom();
+  if (mDocument && !mDocument->IsLoadedAsData() && isXHTMLOrXUL &&
+      (isAtom || nsContentUtils::IsCustomElementName(nameAtom, namespaceID))) {
+    nsAtom* typeAtom = is ? isAtom.get() : nameAtom;
+
+    MOZ_ASSERT(nameAtom->Equals(ni->LocalName()));
+    customElementDefinition = nsContentUtils::LookupCustomElementDefinition(
+        mDocument, nameAtom, namespaceID, typeAtom);
+  }
+
+  if (customElementDefinition) {
+    
+    
+    FlushTags();
+    { nsAutoMicroTask mt; }
+
+    Maybe<AutoCEReaction> autoCEReaction;
+    if (auto* docGroup = mDocument->GetDocGroup()) {
+      autoCEReaction.emplace(docGroup->CustomElementReactionsStack(), nullptr);
+    }
+    rv = NS_NewElement(getter_AddRefs(element), ni.forget(), aFromParser,
+                       isAtom, customElementDefinition);
+  } else {
+    rv = NS_NewElement(getter_AddRefs(element), ni.forget(), aFromParser,
+                       isAtom);
+  }
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XHTML) ||
@@ -566,6 +605,11 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
 
     
     StopDeflecting();
+
+    
+    
+    
+    FlushTags();
 
     
     
