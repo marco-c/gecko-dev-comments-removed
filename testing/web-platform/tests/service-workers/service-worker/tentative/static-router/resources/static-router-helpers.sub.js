@@ -8,7 +8,8 @@
 
 
 
-const get_info_from_worker = async worker => {
+const get_info_from_worker =
+    async worker => {
   const promise = new Promise(function(resolve) {
       var channel = new MessageChannel();
       channel.port1.onmessage = function(msg) { resolve(msg); };
@@ -20,7 +21,8 @@ const get_info_from_worker = async worker => {
 }
 
 
-const reset_info_in_worker = async worker => {
+const reset_info_in_worker =
+    async worker => {
   const promise = new Promise(function(resolve) {
       var channel = new MessageChannel();
       channel.port1.onmessage = function(msg) { resolve(msg); };
@@ -31,8 +33,11 @@ const reset_info_in_worker = async worker => {
 
 
 
-const registerAndActivate = async (test, ruleKey) => {
-  const swScript = 'resources/static-router-sw.js';
+
+const registerAndActivate = async (test, ruleKey, swScript) => {
+  if (!swScript) {
+    swScript = 'resources/static-router-sw.js'
+  }
   const swURL = `${swScript}?key=${ruleKey}`;
   const swScope = 'resources/';
   const reg = await service_worker_unregister_and_register(
@@ -42,4 +47,22 @@ const registerAndActivate = async (test, ruleKey) => {
   await wait_for_state(test, worker, 'activated');
 
   return worker;
+};
+
+
+
+const createIframe = async (t, url) => {
+  const iframe = await with_iframe(url);
+  t.add_cleanup(() => iframe.remove());
+
+  return iframe;
+};
+
+
+function iframeTest(url, ruleKey, callback, name) {
+  return promise_test(async t => {
+    const worker = await registerAndActivate(t, ruleKey);
+    const iframe = await createIframe(t, url);
+    await callback(t, iframe.contentWindow, worker);
+  }, name);
 };
