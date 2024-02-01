@@ -324,7 +324,7 @@ bool PropertyEnumerator::enumerateNativeProperties(JSContext* cx) {
     
     
     if (pobj->is<TypedArrayObject>()) {
-      size_t len = pobj->as<TypedArrayObject>().length();
+      size_t len = pobj->as<TypedArrayObject>().length().valueOr(0);
 
       
       

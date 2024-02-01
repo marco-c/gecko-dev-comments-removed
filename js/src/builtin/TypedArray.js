@@ -971,7 +971,7 @@ function TypedArraySlice(start, end) {
     );
   }
 
-  var buffer = GetAttachedArrayBuffer(O);
+  GetAttachedArrayBuffer(O);
 
   
   var len = TypedArrayLength(O);
@@ -1003,21 +1003,15 @@ function TypedArraySlice(start, end) {
   
   if (count > 0) {
     
-    if (buffer === null) {
-      
-      
-      buffer = ViewedArrayBufferIfReified(O);
-    }
-
-    if (IsDetachedBuffer(buffer)) {
-      ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-    }
-
-    
     var sliced = TypedArrayBitwiseSlice(O, A, k, count);
 
     
     if (!sliced) {
+      
+      
+      
+      final = std_Math_min(final, TypedArrayLength(O));
+
       
       var n = 0;
 
