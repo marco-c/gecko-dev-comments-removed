@@ -73,6 +73,8 @@ class nsObjectLoadingContent : public nsIStreamListener,
     mNetworkCreated = aNetworkCreated;
   }
 
+  static bool IsFallbackMimeType(const nsACString& aMimeType);
+
   
   bool DoResolve(
       JSContext* aCx, JS::Handle<JSObject*> aObject, JS::Handle<jsid> aId,
@@ -171,21 +173,20 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   enum Capabilities {
     eSupportImages = 1u << 0,     
-    eSupportPlugins = 1u << 1,    
-    eSupportDocuments = 1u << 2,  
+    eSupportDocuments = 1u << 1,  
                                   
                                   
 
     
     
-    eFallbackIfClassIDPresent = 1u << 3,
+    eFallbackIfClassIDPresent = 1u << 2,
 
     
     
     
     
     
-    eAllowPluginSkipChannel = 1u << 4
+    eAllowPluginSkipChannel = 1u << 3
   };
 
   

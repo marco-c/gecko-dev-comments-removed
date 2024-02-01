@@ -38,7 +38,6 @@
 #include "nsClassHashtable.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
-#include "nsPluginTags.h"
 #include "nsHashKeys.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIDOMProcessParent.h"
@@ -223,14 +222,6 @@ class ContentParent final : public PContentParent,
 
 
 
-  static already_AddRefed<ContentParent> GetNewOrUsedJSPluginProcess(
-      uint32_t aPluginID, const hal::ProcessPriority& aPriority);
-
-  
-
-
-
-
   static already_AddRefed<RemoteBrowser> CreateBrowser(
       const TabContext& aContext, Element* aFrameElement,
       const nsACString& aRemoteType, BrowsingContext* aBrowsingContext,
@@ -391,9 +382,6 @@ class ContentParent final : public PContentParent,
   bool IsDead() const { return mLifecycleState == LifecycleState::DEAD; }
 
   bool IsForBrowser() const { return mIsForBrowser; }
-  bool IsForJSPlugin() const {
-    return mJSPluginID != nsFakePluginTag::NOT_JSPLUGIN;
-  }
 
   GeckoChildProcessHost* Process() const { return mSubprocess; }
 
@@ -690,8 +678,6 @@ class ContentParent final : public PContentParent,
 
   static nsClassHashtable<nsCStringHashKey, nsTArray<ContentParent*>>*
       sBrowserContentParents;
-  static mozilla::StaticAutoPtr<nsTHashMap<nsUint32HashKey, ContentParent*>>
-      sJSPluginContentParents;
   static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
   
@@ -728,11 +714,7 @@ class ContentParent final : public PContentParent,
       bool aLoadUri, nsIContentSecurityPolicy* aCsp,
       const OriginAttributes& aOriginAttributes);
 
-  explicit ContentParent(int32_t aPluginID) : ContentParent(""_ns, aPluginID) {}
-  explicit ContentParent(const nsACString& aRemoteType)
-      : ContentParent(aRemoteType, nsFakePluginTag::NOT_JSPLUGIN) {}
-
-  ContentParent(const nsACString& aRemoteType, int32_t aPluginID);
+  explicit ContentParent(const nsACString& aRemoteType);
 
   
   
@@ -797,7 +779,7 @@ class ContentParent final : public PContentParent,
   
 
 
-  bool HasActiveWorkerOrJSPlugin();
+  bool HasActiveWorker();
 
   
 
@@ -1465,12 +1447,6 @@ class ContentParent final : public PContentParent,
 
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
-
-  
-  
-  
-  
-  int32_t mJSPluginID;
 
   
   

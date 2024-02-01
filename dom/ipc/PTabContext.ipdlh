@@ -30,11 +30,6 @@ struct FrameIPCTabContext
   uint32_t maxTouchPoints;
 };
 
-struct JSPluginFrameIPCTabContext
-{
-  uint32_t jsPluginId;
-};
-
 
 
 
@@ -46,7 +41,6 @@ union IPCTabContext
 {
   PopupIPCTabContext;
   FrameIPCTabContext;
-  JSPluginFrameIPCTabContext;
 };
 
 }
