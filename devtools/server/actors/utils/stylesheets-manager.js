@@ -76,6 +76,7 @@ const modifiedStyleSheets = new WeakMap();
 
 
 class StyleSheetsManager extends EventEmitter {
+  #abortController;
   
   #mqlList = [];
   #styleSheetCount = 0;
@@ -95,6 +96,32 @@ class StyleSheetsManager extends EventEmitter {
     this.#targetActor = targetActor;
   }
 
+  #setEventListenersIfNeeded() {
+    if (this.#abortController) {
+      return;
+    }
+
+    this.#abortController = new AbortController();
+    const { signal } = this.#abortController;
+
+    
+    this.#targetActor.chromeEventHandler.addEventListener(
+      "StyleSheetApplicableStateChanged",
+      this.#onApplicableStateChanged,
+      { capture: true, signal }
+    );
+    this.#targetActor.chromeEventHandler.addEventListener(
+      "StyleSheetRemoved",
+      this.#onStylesheetRemoved,
+      { capture: true, signal }
+    );
+
+    this.#watchStyleSheetChangeEvents();
+    this.#targetActor.on("window-ready", this.#onTargetActorWindowReady, {
+      signal,
+    });
+  }
+
   
 
 
@@ -108,19 +135,7 @@ class StyleSheetsManager extends EventEmitter {
       promises.push(this.#getStyleSheetsForWindow(window));
     }
 
-    
-    this.#targetActor.chromeEventHandler.addEventListener(
-      "StyleSheetApplicableStateChanged",
-      this.#onApplicableStateChanged,
-      true
-    );
-    this.#targetActor.chromeEventHandler.addEventListener(
-      "StyleSheetRemoved",
-      this.#onStylesheetRemoved,
-      true
-    );
-    this.#watchStyleSheetChangeEvents();
-    this.#targetActor.on("window-ready", this.#onTargetActorWindowReady);
+    this.#setEventListenersIfNeeded();
 
     
     let styleSheets = await Promise.all(promises);
@@ -873,19 +888,11 @@ class StyleSheetsManager extends EventEmitter {
 
   destroy() {
     
-    this.#targetActor.off("window-ready", this.#watchStyleSheetChangeEvents);
+    if (this.#abortController) {
+      this.#abortController.abort();
+    }
 
     try {
-      this.#targetActor.chromeEventHandler.removeEventListener(
-        "StyleSheetApplicableStateChanged",
-        this.#onApplicableStateChanged,
-        true
-      );
-      this.#targetActor.chromeEventHandler.removeEventListener(
-        "StyleSheetRemoved",
-        this.#onStylesheetRemoved,
-        true
-      );
       this.#unwatchStyleSheetChangeEvents();
     } catch (e) {
       console.error(
@@ -897,10 +904,11 @@ class StyleSheetsManager extends EventEmitter {
     }
 
     this.#styleSheetMap.clear();
+    this.#abortController = null;
+    this.#mqlList = null;
+    this.#styleSheetCreationData = null;
     this.#styleSheetMap = null;
     this.#targetActor = null;
-    this.#styleSheetCreationData = null;
-    this.#mqlList = null;
   }
 }
 
