@@ -783,7 +783,12 @@ pref("browser.shopping.experience2023.survey.hasSeen", false);
 pref("browser.shopping.experience2023.survey.pdpVisits", 0);
 
 
-pref("browser.shopping.experience2023.autoOpen", true);
+
+
+pref("browser.shopping.experience2023.autoOpen.enabled", true);
+
+
+pref("browser.shopping.experience2023.autoOpen.userEnabled", true);
 
 
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
