@@ -44,13 +44,6 @@ const unsigned long SANDBOXED_TOPLEVEL_NAVIGATION = 0x4;
 
 
 
-const unsigned long SANDBOXED_PLUGINS = 0x8;
-
-
-
-
-
-
 
 const unsigned long SANDBOXED_ORIGIN = 0x10;
 
