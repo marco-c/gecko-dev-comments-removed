@@ -5,9 +5,11 @@
 
 
 #include "js/Id.h"
+#include "js/Printer.h"  
 #include "js/RootingAPI.h"
 
 #include "vm/JSContext.h"
+#include "vm/JSONPrinter.h"  
 #include "vm/SymbolType.h"
 
 #include "vm/JSAtomUtils-inl.h"  
@@ -48,3 +50,41 @@ bool JS::PropertyKey::isWellKnownSymbol(JS::SymbolCode code) const {
  bool JS::PropertyKey::isNonIntAtom(JSString* str) {
   return JS::PropertyKey::isNonIntAtom(&str->asAtom());
 }
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+
+void JS::PropertyKey::dump() const {
+  js::Fprinter out(stderr);
+  dump(out);
+}
+
+void JS::PropertyKey::dump(js::GenericPrinter& out) const {
+  js::JSONPrinter json(out);
+  dump(json);
+  out.put("\n");
+}
+
+void JS::PropertyKey::dump(js::JSONPrinter& json) const {
+  json.beginObject();
+  dumpFields(json);
+  json.endObject();
+}
+
+void JS::PropertyKey::dumpFields(js::JSONPrinter& json) const {
+  if (isAtom()) {
+    json.property("type", "atom");
+    toAtom()->dumpFields(json);
+  } else if (isInt()) {
+    json.property("type", "int");
+    json.property("value", toInt());
+  } else if (isSymbol()) {
+    json.property("type", "symbol");
+    toSymbol()->dumpFields(json);
+  } else if (isVoid()) {
+    json.property("type", "void");
+  } else {
+    json.formatProperty("type", "Unknown(%zx)", size_t(asRawBits()));
+  }
+}
+
+#endif 
