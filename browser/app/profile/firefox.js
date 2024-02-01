@@ -785,7 +785,7 @@ pref("browser.shopping.experience2023.survey.pdpVisits", 0);
 
 
 
-pref("browser.shopping.experience2023.autoOpen.enabled", true);
+pref("browser.shopping.experience2023.autoOpen.enabled", false);
 
 
 pref("browser.shopping.experience2023.autoOpen.userEnabled", true);
