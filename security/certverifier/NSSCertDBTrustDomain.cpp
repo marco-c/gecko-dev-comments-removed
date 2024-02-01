@@ -137,8 +137,7 @@ static void FindRootsWithSubject(UniqueSECMODModule& rootsModule,
 
 
 
-static bool ShouldSkipSelfSignedNonTrustAnchor(TrustDomain& trustDomain,
-                                               Input certDER) {
+bool NSSCertDBTrustDomain::ShouldSkipSelfSignedNonTrustAnchor(Input certDER) {
   BackCert cert(certDER, EndEntityOrCA::MustBeCA, nullptr);
   if (cert.Init() != Success) {
     return false;  
@@ -148,8 +147,8 @@ static bool ShouldSkipSelfSignedNonTrustAnchor(TrustDomain& trustDomain,
     return false;
   }
   TrustLevel trust;
-  if (trustDomain.GetCertTrust(EndEntityOrCA::MustBeCA, CertPolicyId::anyPolicy,
-                               certDER, trust) != Success) {
+  if (GetCertTrust(EndEntityOrCA::MustBeCA, CertPolicyId::anyPolicy, certDER,
+                   trust) != Success) {
     return false;
   }
   
@@ -157,7 +156,7 @@ static bool ShouldSkipSelfSignedNonTrustAnchor(TrustDomain& trustDomain,
   if (trust != TrustLevel::InheritsTrust) {
     return false;
   }
-  if (VerifySignedData(trustDomain, cert.GetSignedData(),
+  if (VerifySignedData(*this, cert.GetSignedData(),
                        cert.GetSubjectPublicKeyInfo()) != Success) {
     return false;
   }
@@ -166,24 +165,25 @@ static bool ShouldSkipSelfSignedNonTrustAnchor(TrustDomain& trustDomain,
   return true;
 }
 
-static Result CheckCandidates(TrustDomain& trustDomain,
-                              TrustDomain::IssuerChecker& checker,
-                              nsTArray<Input>& candidates,
-                              Input* nameConstraintsInputPtr, bool& keepGoing) {
-  for (Input candidate : candidates) {
+Result NSSCertDBTrustDomain::CheckCandidates(
+    IssuerChecker& checker, nsTArray<IssuerCandidateWithSource>& candidates,
+    Input* nameConstraintsInputPtr, bool& keepGoing) {
+  for (const auto& candidate : candidates) {
     
     if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
       keepGoing = false;
       return Success;
     }
-    if (ShouldSkipSelfSignedNonTrustAnchor(trustDomain, candidate)) {
+    if (ShouldSkipSelfSignedNonTrustAnchor(candidate.mDER)) {
       continue;
     }
-    Result rv = checker.Check(candidate, nameConstraintsInputPtr, keepGoing);
+    Result rv =
+        checker.Check(candidate.mDER, nameConstraintsInputPtr, keepGoing);
     if (rv != Success) {
       return rv;
     }
     if (!keepGoing) {
+      mIssuerSources += candidate.mIssuerSource;
       return Success;
     }
   }
@@ -212,29 +212,8 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
 
   
   
-  nsTArray<Input> geckoRootCandidates;
-  nsTArray<Input> geckoIntermediateCandidates;
-
-  if (!mCertStorage) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  nsTArray<uint8_t> subject;
-  subject.AppendElements(encodedIssuerName.UnsafeGetData(),
-                         encodedIssuerName.GetLength());
-  nsTArray<nsTArray<uint8_t>> certs;
-  nsresult rv = mCertStorage->FindCertsBySubject(subject, certs);
-  if (NS_FAILED(rv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  for (auto& cert : certs) {
-    Input certDER;
-    Result rv = certDER.Init(cert.Elements(), cert.Length());
-    if (rv != Success) {
-      continue;  
-    }
-    
-    geckoIntermediateCandidates.AppendElement(std::move(certDER));
-  }
+  nsTArray<IssuerCandidateWithSource> geckoRootCandidates;
+  nsTArray<IssuerCandidateWithSource> geckoIntermediateCandidates;
 
   
   
@@ -248,43 +227,12 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
       if (rv != Success) {
         continue;  
       }
-      geckoRootCandidates.AppendElement(rootInput);
+      geckoRootCandidates.AppendElement(IssuerCandidateWithSource{
+          rootInput, IssuerSource::BuiltInRootsModule});
     }
   } else {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("NSSCertDBTrustDomain::FindIssuer: no built-in roots module"));
-  }
-
-  for (const auto& thirdPartyRootInput : mThirdPartyRootInputs) {
-    BackCert root(thirdPartyRootInput, EndEntityOrCA::MustBeCA, nullptr);
-    Result rv = root.Init();
-    if (rv != Success) {
-      continue;
-    }
-    
-    
-    
-    if (!InputsAreEqual(encodedIssuerName, root.GetSubject())) {
-      continue;
-    }
-    geckoRootCandidates.AppendElement(thirdPartyRootInput);
-  }
-
-  for (const auto& thirdPartyIntermediateInput :
-       mThirdPartyIntermediateInputs) {
-    BackCert intermediate(thirdPartyIntermediateInput, EndEntityOrCA::MustBeCA,
-                          nullptr);
-    Result rv = intermediate.Init();
-    if (rv != Success) {
-      continue;
-    }
-    
-    
-    
-    if (!InputsAreEqual(encodedIssuerName, intermediate.GetSubject())) {
-      continue;
-    }
-    geckoIntermediateCandidates.AppendElement(thirdPartyIntermediateInput);
   }
 
   if (mExtraCertificates.isSome()) {
@@ -307,15 +255,72 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
       }
       
       
-      geckoIntermediateCandidates.AppendElement(certInput);
+      geckoIntermediateCandidates.AppendElement(
+          IssuerCandidateWithSource{certInput, IssuerSource::TLSHandshake});
     }
+  }
+
+  for (const auto& thirdPartyRootInput : mThirdPartyRootInputs) {
+    BackCert root(thirdPartyRootInput, EndEntityOrCA::MustBeCA, nullptr);
+    Result rv = root.Init();
+    if (rv != Success) {
+      continue;
+    }
+    
+    
+    
+    if (!InputsAreEqual(encodedIssuerName, root.GetSubject())) {
+      continue;
+    }
+    geckoRootCandidates.AppendElement(IssuerCandidateWithSource{
+        thirdPartyRootInput, IssuerSource::ThirdPartyCertificates});
+  }
+
+  for (const auto& thirdPartyIntermediateInput :
+       mThirdPartyIntermediateInputs) {
+    BackCert intermediate(thirdPartyIntermediateInput, EndEntityOrCA::MustBeCA,
+                          nullptr);
+    Result rv = intermediate.Init();
+    if (rv != Success) {
+      continue;
+    }
+    
+    
+    
+    if (!InputsAreEqual(encodedIssuerName, intermediate.GetSubject())) {
+      continue;
+    }
+    geckoIntermediateCandidates.AppendElement(IssuerCandidateWithSource{
+        thirdPartyIntermediateInput, IssuerSource::ThirdPartyCertificates});
+  }
+
+  if (!mCertStorage) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  nsTArray<uint8_t> subject;
+  subject.AppendElements(encodedIssuerName.UnsafeGetData(),
+                         encodedIssuerName.GetLength());
+  nsTArray<nsTArray<uint8_t>> certs;
+  nsresult rv = mCertStorage->FindCertsBySubject(subject, certs);
+  if (NS_FAILED(rv)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  for (auto& cert : certs) {
+    Input certDER;
+    Result rv = certDER.Init(cert.Elements(), cert.Length());
+    if (rv != Success) {
+      continue;  
+    }
+    
+    geckoIntermediateCandidates.AppendElement(IssuerCandidateWithSource{
+        std::move(certDER), IssuerSource::PreloadedIntermediates});
   }
 
   
   geckoRootCandidates.AppendElements(std::move(geckoIntermediateCandidates));
 
   bool keepGoing = true;
-  Result result = CheckCandidates(*this, checker, geckoRootCandidates,
+  Result result = CheckCandidates(checker, geckoRootCandidates,
                                   nameConstraintsInputPtr, keepGoing);
   if (result != Success) {
     return result;
@@ -365,14 +370,15 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  nsTArray<Input> nssCandidates;
+  nsTArray<IssuerCandidateWithSource> nssCandidates;
   for (const auto& rootCandidate : nssRootCandidates) {
     Input certDER;
     Result rv = certDER.Init(rootCandidate.Elements(), rootCandidate.Length());
     if (rv != Success) {
       continue;  
     }
-    nssCandidates.AppendElement(std::move(certDER));
+    nssCandidates.AppendElement(
+        IssuerCandidateWithSource{std::move(certDER), IssuerSource::NSSCertDB});
   }
   for (const auto& intermediateCandidate : nssIntermediateCandidates) {
     Input certDER;
@@ -381,10 +387,11 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
     if (rv != Success) {
       continue;  
     }
-    nssCandidates.AppendElement(std::move(certDER));
+    nssCandidates.AppendElement(
+        IssuerCandidateWithSource{std::move(certDER), IssuerSource::NSSCertDB});
   }
 
-  return CheckCandidates(*this, checker, nssCandidates, nameConstraintsInputPtr,
+  return CheckCandidates(checker, nssCandidates, nameConstraintsInputPtr,
                          keepGoing);
 }
 
@@ -1606,6 +1613,7 @@ void NSSCertDBTrustDomain::ResetAccumulatedState() {
   mSCTListFromCertificate = nullptr;
   mSawDistrustedCAByPolicyError = false;
   mIsBuiltChainRootBuiltInRoot = false;
+  mIssuerSources.clear();
 }
 
 static Input SECItemToInput(const UniqueSECItem& item) {

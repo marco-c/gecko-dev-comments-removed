@@ -13,6 +13,7 @@
 #include "OCSPCache.h"
 #include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -69,6 +70,17 @@ enum class CRLiteMode {
 };
 
 enum class NetscapeStepUpPolicy : uint32_t;
+
+
+enum class IssuerSource {
+  TLSHandshake,            
+  PreloadedIntermediates,  
+  ThirdPartyCertificates,  
+  NSSCertDB,  
+  BuiltInRootsModule,  
+};
+
+using IssuerSources = EnumSet<IssuerSource>;
 
 class PinningTelemetryInfo {
  public:
@@ -163,7 +175,8 @@ class CertVerifier {
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
        bool* isBuiltChainRootBuiltInRoot = nullptr,
-       bool* madeOCSPRequests = nullptr);
+       bool* madeOCSPRequests = nullptr,
+       IssuerSources* = nullptr);
 
   mozilla::pkix::Result VerifySSLServerCert(
       const nsTArray<uint8_t>& peerCert, mozilla::pkix::Time time, void* pinarg,
@@ -184,7 +197,8 @@ class CertVerifier {
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
        bool* isBuiltChainRootBuiltInRoot = nullptr,
-       bool* madeOCSPRequests = nullptr);
+       bool* madeOCSPRequests = nullptr,
+       IssuerSources* = nullptr);
 
   enum OcspDownloadConfig { ocspOff = 0, ocspOn = 1, ocspEVOnly = 2 };
   enum OcspStrictConfig { ocspRelaxed = 0, ocspStrict };
