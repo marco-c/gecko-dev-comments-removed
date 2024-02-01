@@ -267,7 +267,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mHasEverBuiltInvisibleText(false),
       mPendingInterruptFromTest(false),
       mInterruptsEnabled(false),
-      mSendAfterPaintToContent(false),
       mDrawImageBackground(true),  
       mDrawColorBackground(true),
       
@@ -335,7 +334,6 @@ static const char* gExactCallbackPrefs[] = {
     "browser.anchor_color",
     "browser.visited_color",
     "dom.meta-viewport.enabled",
-    "dom.send_after_paint_to_content",
     "image.animation_mode",
     "intl.accept_languages",
     "layout.css.devPixelsPerPx",
@@ -434,9 +432,6 @@ void nsPresContext::GetUserPreferences() {
   }
 
   PreferenceSheet::EnsureInitialized();
-
-  mSendAfterPaintToContent = Preferences::GetBool(
-      "dom.send_after_paint_to_content", mSendAfterPaintToContent);
 
   mPrefScrollbarSide = StaticPrefs::layout_scrollbar_side();
 
@@ -2263,7 +2258,7 @@ void nsPresContext::FireDOMPaintEvent(
 
   nsCOMPtr<EventTarget> dispatchTarget = do_QueryInterface(ourWindow);
   nsCOMPtr<EventTarget> eventTarget = dispatchTarget;
-  if (!IsChrome() && !mSendAfterPaintToContent) {
+  if (!IsChrome() && !StaticPrefs::dom_send_after_paint_to_content()) {
     
     
     
