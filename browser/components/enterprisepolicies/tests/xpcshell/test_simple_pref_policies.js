@@ -466,6 +466,19 @@ const POLICIES_TESTS = [
     policies: {
       DNSOverHTTPS: {
         Enabled: true,
+        Fallback: false,
+      },
+    },
+    unlockedPrefs: {
+      "network.trr.mode": 3,
+    },
+  },
+
+  
+  {
+    policies: {
+      DNSOverHTTPS: {
+        Enabled: true,
         ProviderURL: "https://example.com/provider",
         ExcludedDomains: ["example.com", "example.org"],
         Locked: true,
