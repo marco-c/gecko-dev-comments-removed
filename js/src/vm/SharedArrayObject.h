@@ -210,6 +210,10 @@ inline SharedMem<uint8_t*> SharedArrayRawBuffer::dataPointerShared() const {
 
 
 
+
+
+
+
 class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static bool byteLengthGetterImpl(JSContext* cx, const CallArgs& args);
 
@@ -229,7 +233,6 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static const uint8_t RESERVED_SLOTS = 2;
 
-  static const JSClass class_;
   static const JSClass protoClass_;
 
   static bool byteLengthGetter(JSContext* cx, unsigned argc, Value* vp);
@@ -279,19 +282,36 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
     return dataPointerShared().asValue();
   }
 
-  size_t byteLength() const {
+ protected:
+  size_t growableByteLength() const {
+    MOZ_ASSERT(isGrowable());
+    return rawBufferObject()->volatileByteLength();
+  }
+
+ public:
+  
+  
+  size_t byteLengthOrMaxByteLength() const {
     return size_t(getFixedSlot(LENGTH_SLOT).toPrivate());
   }
 
-  bool isWasm() const { return rawBufferObject()->isWasm(); }
-  SharedMem<uint8_t*> dataPointerShared() const {
-    return rawBufferObject()->dataPointerShared();
+  size_t byteLength() const {
+    if (isGrowable()) {
+      return growableByteLength();
+    }
+    return byteLengthOrMaxByteLength();
   }
+
+  bool isWasm() const { return rawBufferObject()->isWasm(); }
 
   bool isGrowable() const {
     
     
     return false;
+  }
+
+  SharedMem<uint8_t*> dataPointerShared() const {
+    return rawBufferObject()->dataPointerShared();
   }
 
   
@@ -323,6 +343,44 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   void dropRawBuffer();
 };
 
+
+
+
+
+
+
+
+
+class FixedLengthSharedArrayBufferObject : public SharedArrayBufferObject {
+ public:
+  static const JSClass class_;
+
+  size_t byteLength() const { return byteLengthOrMaxByteLength(); }
+};
+
+
+
+
+
+
+
+
+
+class GrowableSharedArrayBufferObject : public SharedArrayBufferObject {
+ public:
+  static const JSClass class_;
+
+  size_t byteLength() const { return growableByteLength(); }
+
+  size_t maxByteLength() const { return byteLengthOrMaxByteLength(); }
+};
+
 }  
+
+template <>
+inline bool JSObject::is<js::SharedArrayBufferObject>() const {
+  return is<js::FixedLengthSharedArrayBufferObject>() ||
+         is<js::GrowableSharedArrayBufferObject>();
+}
 
 #endif  
