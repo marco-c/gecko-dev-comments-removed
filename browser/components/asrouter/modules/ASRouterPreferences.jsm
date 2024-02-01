@@ -51,6 +51,7 @@ class _ASRouterPreferences {
 
     ChromeUtils.defineLazyGetter(this, "console", () => {
       let { ConsoleAPI } = ChromeUtils.importESModule(
+        
         "resource://gre/modules/Console.sys.mjs"
       );
       let consoleOptions = {
