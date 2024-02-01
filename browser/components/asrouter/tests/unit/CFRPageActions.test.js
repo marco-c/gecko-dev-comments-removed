@@ -1,9 +1,9 @@
 
 
-import { CFRPageActions, PageAction } from "lib/CFRPageActions.jsm";
-import { FAKE_RECOMMENDATION } from "./constants";
+import { CFRPageActions, PageAction } from "newtab/lib/CFRPageActions.jsm";
+import { FAKE_RECOMMENDATION } from "test/unit/asrouter/constants";
 import { GlobalOverrider } from "test/unit/utils";
-import { CFRMessageProvider } from "lib/CFRMessageProvider.sys.mjs";
+import { CFRMessageProvider } from "newtab/lib/CFRMessageProvider.sys.mjs";
 
 describe("CFRPageActions", () => {
   let sandbox;
