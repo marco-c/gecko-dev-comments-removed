@@ -428,7 +428,7 @@ def set_try_config(parameters, task_config_file):
             parameters["try_task_config"] = task_config
         elif task_config_version == 2:
             parameters.update(task_config["parameters"])
-            return
+            parameters["try_mode"] = "try_task_config"
         else:
             raise Exception(
                 f"Unknown `try_task_config.json` version: {task_config_version}"
@@ -444,11 +444,7 @@ def set_try_config(parameters, task_config_file):
         
         
         
-        parameters["optimize_target_tasks"] = False
-    else:
-        
-        
-        parameters["optimize_target_tasks"] = True
+        parameters.setdefault("optimize_target_tasks", False)
 
 
 def set_decision_indexes(decision_task_id, params, graph_config):
