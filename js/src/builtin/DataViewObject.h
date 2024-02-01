@@ -210,6 +210,9 @@ class ResizableDataViewObject : public DataViewObject {
   }
 };
 
+
+JSObject* NewDataView(JSContext* cx, HandleObject buffer, size_t byteOffset);
+
 }  
 
 template <>
