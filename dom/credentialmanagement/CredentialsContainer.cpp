@@ -80,6 +80,19 @@ static bool IsInActiveTab(nsPIDOMWindowInner* aParent) {
   return IsInActiveTab(doc);
 }
 
+static bool ConsumeUserActivation(nsPIDOMWindowInner* aParent) {
+  
+  
+  MOZ_ASSERT(aParent);
+
+  RefPtr<Document> doc = aParent->GetExtantDoc();
+  if (NS_WARN_IF(!doc)) {
+    return false;
+  }
+
+  return doc->ConsumeTransientUserGestureActivation();
+}
+
 static bool IsSameOriginWithAncestors(nsPIDOMWindowInner* aParent) {
   
   
@@ -235,9 +248,15 @@ already_AddRefed<Promise> CredentialsContainer::Create(
   if (aOptions.mPublicKey.WasPassed() &&
       StaticPrefs::security_webauth_webauthn()) {
     MOZ_ASSERT(mParent);
+    
+    
+    
+    bool hasRequiredActivation =
+        IsInActiveTab(mParent) &&
+        (IsSameOriginWithAncestors(mParent) || ConsumeUserActivation(mParent));
     if (!FeaturePolicyUtils::IsFeatureAllowed(
             mParent->GetExtantDoc(), u"publickey-credentials-create"_ns) ||
-        !IsInActiveTab(mParent)) {
+        !hasRequiredActivation) {
       return CreateAndRejectWithNotAllowed(mParent, aRv);
     }
 
