@@ -113,6 +113,8 @@ uint64_t WasmReservedBytes();
 
 
 
+
+
 class ArrayBufferObjectMaybeShared;
 
 wasm::IndexType WasmArrayBufferIndexType(
