@@ -74,21 +74,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
   }
 
   static bool IsFallbackMimeType(const nsACString& aMimeType);
-
-  
-  bool DoResolve(
-      JSContext* aCx, JS::Handle<JSObject*> aObject, JS::Handle<jsid> aId,
-      JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc);
-  
-  
-  static bool MayResolve(jsid aId);
-
   static bool IsSuccessfulRequest(nsIRequest*, nsresult* aStatus);
-
-  
-  void GetOwnPropertyNames(JSContext* aCx,
-                           JS::MutableHandleVector<jsid> ,
-                           bool , mozilla::ErrorResult& aRv);
 
   
   mozilla::dom::Document* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
@@ -112,10 +98,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
                     mozilla::ErrorResult& aRv);
 
   bool IsRewrittenYoutubeEmbed() const { return mRewrittenYoutubeEmbed; }
-
-  void PresetOpenerWindow(const mozilla::dom::Nullable<
-                              mozilla::dom::WindowProxyHolder>& aOpenerWindow,
-                          mozilla::ErrorResult& aRv);
 
   const mozilla::Maybe<mozilla::IntrinsicSize>& GetSubdocumentIntrinsicSize()
       const {
