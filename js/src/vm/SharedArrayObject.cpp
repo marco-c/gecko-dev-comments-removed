@@ -430,6 +430,37 @@ bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
     return false;
   }
 
+  mozilla::Maybe<uint64_t> maxByteLength;
+#ifdef NIGHTLY_BUILD
+  
+  if (cx->realm()->creationOptions().getSharedArrayBufferGrowableEnabled()) {
+    
+    if (args.get(1).isObject()) {
+      Rooted<JSObject*> options(cx, &args[1].toObject());
+
+      Rooted<Value> val(cx);
+      if (!GetProperty(cx, options, options, cx->names().maxByteLength, &val)) {
+        return false;
+      }
+      if (!val.isUndefined()) {
+        uint64_t maxByteLengthInt;
+        if (!ToIndex(cx, val, &maxByteLengthInt)) {
+          return false;
+        }
+
+        
+        if (byteLength > maxByteLengthInt) {
+          JS_ReportErrorNumberASCII(
+              cx, GetErrorMessage, nullptr,
+              JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
+          return false;
+        }
+        maxByteLength = mozilla::Some(maxByteLengthInt);
+      }
+    }
+  }
+#endif
+
   
   
   RootedObject proto(cx);
@@ -444,6 +475,15 @@ bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SHARED_ARRAY_BAD_LENGTH);
     return false;
+  }
+
+  if (maxByteLength) {
+    auto* bufobj = NewGrowable(cx, byteLength, *maxByteLength, proto);
+    if (!bufobj) {
+      return false;
+    }
+    args.rval().setObject(*bufobj);
+    return true;
   }
 
   
