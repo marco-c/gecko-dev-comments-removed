@@ -39,12 +39,31 @@ function generateLocalThrows(types, baseThrow) {
       `(try (param ${types})
          (do ${baseThrow}))`;
 
+  let catchlessThrowExnref =
+      `try_table (param ${types})
+         ${baseThrow}
+       end`;
+
   let catchAndThrow =
       `(try (param ${types})
          (do ${baseThrow})
          (catch $exn
            ${baseThrow})
          (catch_all))`;
+
+  let catchAndThrowExnref =
+      `(block $join (param ${types})
+          (block $catch (param ${types}) (result ${types})
+            (block $catchAll (param ${types})
+              try_table (param ${types}) (catch $exn $catch) (catch_all $catchAll)
+                ${baseThrow}
+                unreachable
+              end
+            )
+            br $join
+          )
+          ${baseThrow}
+       )`;
 
   let blockThrow =
       `(block (param ${types})
@@ -73,6 +92,9 @@ function generateLocalThrows(types, baseThrow) {
 
   let basicThrows = [catchlessTryThrow, blockThrow, conditionalThrow,
                      baseDelegate, nestedDelegate1InBlock];
+  if (wasmExnRefEnabled()) {
+    basicThrows = basicThrows.concat(catchlessThrowExnref, catchAndThrowExnref);
+  }
 
   
 
@@ -113,7 +135,12 @@ function generateLocalThrows(types, baseThrow) {
 
   for (let basicThrow of basicThrows) {
     result.push(basicThrow);
+    let isExnref = basicThrow == catchlessThrowExnref || basicThrow == catchAndThrowExnref;
     for (let secondaryThrow of secondaryThrows) {
+      let isRethrow = secondaryThrow == baseRethrow || secondaryThrow == nestedRethrow || secondaryThrow == catchAllRethrowOriginal;
+      if (isExnref && isRethrow) {
+        continue;
+      }
       result.push(basicNesting(basicThrow, secondaryThrow));
     }
   }
@@ -380,7 +407,7 @@ function generateLocalThrows(types, baseThrow) {
 
     
     for (let functionBody of functionBodies) {
-      console.log("functionBody = : " + functionBody); 
+      
 
       for (let mod of getModuleTextsForFunctionBody(functionBody)) {
         
