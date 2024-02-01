@@ -29,7 +29,14 @@ async function testButton(btn) {
   });
   await testCloseMenu(btn, () => {
     let spacer = win.document.querySelector(".main-heading .spacer");
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     EventUtils.synthesizeMouseAtCenter(spacer, {}, win);
+    AccessibilityUtils.resetEnv();
   });
 
   info("Test open/close with keyboard");
