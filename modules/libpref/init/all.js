@@ -1962,13 +1962,6 @@ pref("mousewheel.with_shift.delta_multiplier_y", 100);
 pref("mousewheel.with_shift.delta_multiplier_z", 100);
 
 
-
-
-
-
-pref("layout.scrollbar.side", 0);
-
-
 pref("gestures.enable_single_finger_input", true);
 
 pref("dom.use_watchdog", true);
