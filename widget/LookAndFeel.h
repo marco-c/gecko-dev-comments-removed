@@ -493,6 +493,28 @@ class LookAndFeel {
 
   static bool DrawInTitlebar();
 
+  enum class TitlebarAction {
+    None,
+    WindowLower,
+    WindowMenu,
+    WindowMinimize,
+    WindowMaximize,
+    WindowMaximizeToggle,
+    
+    
+    
+  };
+
+  enum class TitlebarEvent {
+    Double_Click,
+    Middle_Click,
+  };
+
+  
+
+
+  static TitlebarAction GetTitlebarAction(TitlebarEvent aEvent);
+
   
 
 
