@@ -928,7 +928,7 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
   if (Pending()) {
     
     
-    if (!mPendingReadyTime.IsNull() || mSawTickWhilePending) {
+    if (mSawTickWhilePending) {
       TryTriggerNow();
     }
     mSawTickWhilePending = true;
@@ -959,16 +959,6 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
 bool Animation::TryTriggerNow() {
   if (!Pending()) {
     return true;
-  }
-  if (!mPendingReadyTime.IsNull()) {
-    auto timelineTime = mTimeline->ToTimelineTime(mPendingReadyTime);
-    MOZ_ASSERT(!timelineTime.IsNull(),
-               "How? This came from the timeline itself");
-    mPendingReadyTime = {};
-    if (!timelineTime.IsNull()) {
-      FinishPendingAt(timelineTime.Value());
-      return true;
-    }
   }
   
   if (NS_WARN_IF(!mTimeline)) {
@@ -1459,7 +1449,7 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   }
 
   mPendingState = PendingState::PlayPending;
-  mPendingReadyTime = {};
+
   mSawTickWhilePending = false;
   if (Document* doc = GetRenderedDocument()) {
     if (HasFiniteTimeline()) {
@@ -1521,7 +1511,6 @@ void Animation::Pause(ErrorResult& aRv) {
   }
 
   mPendingState = PendingState::PausePending;
-  mPendingReadyTime = {};
   mSawTickWhilePending = false;
 
   
