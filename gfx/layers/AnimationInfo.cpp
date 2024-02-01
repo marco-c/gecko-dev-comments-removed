@@ -493,14 +493,10 @@ void AnimationInfo::AddAnimationForProperty(
     animSegment->sampleFn() = segment.mTimingFunction;
   }
 
-  if (aAnimation->Pending()) {
-    const TimeStamp readyTime =
-        aFrame->PresContext()->RefreshDriver()->MostRecentRefresh(
-             false);
-    MOZ_ASSERT(!readyTime.IsNull());
-    aAnimation->SetPendingReadyTime(readyTime);
-    MaybeStartPendingAnimation(*animation, readyTime);
-  }
+  const TimeStamp readyTime =
+      aFrame->PresContext()->RefreshDriver()->MostRecentRefresh(
+           false);
+  MaybeStartPendingAnimation(*animation, readyTime);
 }
 
 
@@ -604,8 +600,8 @@ bool AnimationInfo::AddAnimationsForProperty(
     
     
     
-    if (anim->Pending() && anim->GetTimeline() &&
-        !anim->GetTimeline()->TracksWallclockTime()) {
+    if (anim->Pending() &&
+        (anim->GetTimeline() && !anim->GetTimeline()->TracksWallclockTime())) {
       continue;
     }
 
