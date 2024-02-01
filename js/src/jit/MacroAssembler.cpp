@@ -7416,41 +7416,80 @@ static constexpr bool ValidateSizeRange(Scalar::Type from, Scalar::Type to) {
 }
 
 void MacroAssembler::typedArrayElementSize(Register obj, Register output) {
-  static_assert(Scalar::Int8 == 0, "Int8 is the first typed array class");
-  static_assert(
-      (Scalar::BigUint64 - Scalar::Int8) == Scalar::MaxTypedArrayViewType - 1,
-      "BigUint64 is the last typed array class");
+  loadObjClassUnsafe(obj, output);
+
+  
+  Label fixedLength;
+  branchPtr(Assembler::Below, output,
+            ImmPtr(std::end(TypedArrayObject::fixedLengthClasses)),
+            &fixedLength);
+  {
+    MOZ_ASSERT(std::end(TypedArrayObject::fixedLengthClasses) ==
+                   std::begin(TypedArrayObject::resizableClasses),
+               "TypedArray classes are in contiguous memory");
+
+    const auto* firstFixedLengthTypedArrayClass =
+        std::begin(TypedArrayObject::fixedLengthClasses);
+    const auto* firstResizableTypedArrayClass =
+        std::begin(TypedArrayObject::resizableClasses);
+
+    MOZ_ASSERT(firstFixedLengthTypedArrayClass < firstResizableTypedArrayClass);
+
+    ptrdiff_t diff =
+        firstResizableTypedArrayClass - firstFixedLengthTypedArrayClass;
+
+    mozilla::CheckedInt<int32_t> checked = diff;
+    checked *= sizeof(JSClass);
+    MOZ_ASSERT(checked.isValid(), "pointer difference fits in int32");
+
+    subPtr(Imm32(int32_t(checked.value())), output);
+  }
+  bind(&fixedLength);
+
+#ifdef DEBUG
+  Label invalidClass, validClass;
+  branchPtr(Assembler::Below, output,
+            ImmPtr(std::begin(TypedArrayObject::fixedLengthClasses)),
+            &invalidClass);
+  branchPtr(Assembler::Below, output,
+            ImmPtr(std::end(TypedArrayObject::fixedLengthClasses)),
+            &validClass);
+  bind(&invalidClass);
+  assumeUnreachable("value isn't a valid FixedLengthTypedArray class");
+  bind(&validClass);
+#endif
+
+  auto classForType = [](Scalar::Type type) {
+    MOZ_ASSERT(type < Scalar::MaxTypedArrayViewType);
+    return &TypedArrayObject::fixedLengthClasses[type];
+  };
 
   Label one, two, four, eight, done;
 
-  
-  loadObjClassUnsafe(obj, output);
-
   static_assert(ValidateSizeRange(Scalar::Int8, Scalar::Int16),
                 "element size is one in [Int8, Int16)");
-  branchPtr(Assembler::Below, output,
-            ImmPtr(TypedArrayObject::classForType(Scalar::Int16)), &one);
+  branchPtr(Assembler::Below, output, ImmPtr(classForType(Scalar::Int16)),
+            &one);
 
   static_assert(ValidateSizeRange(Scalar::Int16, Scalar::Int32),
                 "element size is two in [Int16, Int32)");
-  branchPtr(Assembler::Below, output,
-            ImmPtr(TypedArrayObject::classForType(Scalar::Int32)), &two);
+  branchPtr(Assembler::Below, output, ImmPtr(classForType(Scalar::Int32)),
+            &two);
 
   static_assert(ValidateSizeRange(Scalar::Int32, Scalar::Float64),
                 "element size is four in [Int32, Float64)");
-  branchPtr(Assembler::Below, output,
-            ImmPtr(TypedArrayObject::classForType(Scalar::Float64)), &four);
+  branchPtr(Assembler::Below, output, ImmPtr(classForType(Scalar::Float64)),
+            &four);
 
   static_assert(ValidateSizeRange(Scalar::Float64, Scalar::Uint8Clamped),
                 "element size is eight in [Float64, Uint8Clamped)");
   branchPtr(Assembler::Below, output,
-            ImmPtr(TypedArrayObject::classForType(Scalar::Uint8Clamped)),
-            &eight);
+            ImmPtr(classForType(Scalar::Uint8Clamped)), &eight);
 
   static_assert(ValidateSizeRange(Scalar::Uint8Clamped, Scalar::BigInt64),
                 "element size is one in [Uint8Clamped, BigInt64)");
-  branchPtr(Assembler::Below, output,
-            ImmPtr(TypedArrayObject::classForType(Scalar::BigInt64)), &one);
+  branchPtr(Assembler::Below, output, ImmPtr(classForType(Scalar::BigInt64)),
+            &one);
 
   static_assert(
       ValidateSizeRange(Scalar::BigInt64, Scalar::MaxTypedArrayViewType),
@@ -7478,15 +7517,14 @@ void MacroAssembler::typedArrayElementSize(Register obj, Register output) {
 void MacroAssembler::branchIfClassIsNotTypedArray(Register clasp,
                                                   Label* notTypedArray) {
   
-  static_assert(Scalar::Int8 == 0, "Int8 is the first typed array class");
-  const JSClass* firstTypedArrayClass =
-      TypedArrayObject::classForType(Scalar::Int8);
 
-  static_assert(
-      (Scalar::BigUint64 - Scalar::Int8) == Scalar::MaxTypedArrayViewType - 1,
-      "BigUint64 is the last typed array class");
-  const JSClass* lastTypedArrayClass =
-      TypedArrayObject::classForType(Scalar::BigUint64);
+  const auto* firstTypedArrayClass =
+      std::begin(TypedArrayObject::fixedLengthClasses);
+  const auto* lastTypedArrayClass =
+      std::prev(std::end(TypedArrayObject::resizableClasses));
+  MOZ_ASSERT(std::end(TypedArrayObject::fixedLengthClasses) ==
+                 std::begin(TypedArrayObject::resizableClasses),
+             "TypedArray classes are in contiguous memory");
 
   branchPtr(Assembler::Below, clasp, ImmPtr(firstTypedArrayClass),
             notTypedArray);
