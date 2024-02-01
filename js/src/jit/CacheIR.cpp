@@ -10127,11 +10127,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayElementSize() {
   MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
 
   
-  if (!args_[0].toObject().is<FixedLengthTypedArrayObject>()) {
-    return AttachDecision::NoAction;
-  }
-
-  
   initializeInputOperand();
 
   
