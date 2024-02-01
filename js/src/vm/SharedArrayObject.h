@@ -106,6 +106,16 @@ class SharedArrayRawBuffer {
   [[nodiscard]] bool addReference();
   void dropReference();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  bool grow(size_t newByteLength);
+
   static int32_t liveBuffers();
 };
 
@@ -232,6 +242,9 @@ class GrowableSharedArrayBufferObject;
 
 class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static bool byteLengthGetterImpl(JSContext* cx, const CallArgs& args);
+  static bool maxByteLengthGetterImpl(JSContext* cx, const CallArgs& args);
+  static bool growableGetterImpl(JSContext* cx, const CallArgs& args);
+  static bool growImpl(JSContext* cx, const CallArgs& args);
 
  public:
   
@@ -253,7 +266,13 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static bool byteLengthGetter(JSContext* cx, unsigned argc, Value* vp);
 
+  static bool maxByteLengthGetter(JSContext* cx, unsigned argc, Value* vp);
+
+  static bool growableGetter(JSContext* cx, unsigned argc, Value* vp);
+
   static bool class_constructor(JSContext* cx, unsigned argc, Value* vp);
+
+  static bool grow(JSContext* cx, unsigned argc, Value* vp);
 
   static bool isOriginalByteLengthGetter(Native native) {
     return native == byteLengthGetter;
