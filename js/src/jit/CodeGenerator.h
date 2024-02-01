@@ -412,6 +412,11 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   
   
+  void assertObjectDoesNotEmulateUndefined(Register input, Register temp,
+                                           const MInstruction* mir);
+
+  
+  
   enum class FuseDependencyKind {
     HasSeenObjectEmulateUndefinedFuse,
   };
