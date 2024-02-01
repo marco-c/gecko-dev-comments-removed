@@ -153,6 +153,10 @@ var gSanitizePromptDialog = {
       this._dialog.setAttribute("inClearOnShutdown", "true");
       
       clearPrivateDataGroupbox.remove();
+
+      
+      
+      Sanitizer.maybeMigrateSanitizeOnShutdownPrefs();
     } else if (!lazy.USE_OLD_DIALOG) {
       okButtonl10nID = "sanitize-button-ok2";
       
