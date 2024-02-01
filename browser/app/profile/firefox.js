@@ -828,6 +828,10 @@ pref("permissions.fullscreen.allowed", false);
 
 
 
+pref("browser.link.force_default_user_context_id_for_external_opens", false);
+
+
+
 pref("browser.link.open_newwindow", 3);
 
 
