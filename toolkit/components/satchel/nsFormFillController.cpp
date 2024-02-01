@@ -925,6 +925,9 @@ nsFormFillController::HandleEvent(Event* aEvent) {
         RemoveForDocument(doc);
       }
     } break;
+    case eResize:
+      SetPopupOpen(false);
+      break;
     default:
       
       
@@ -952,6 +955,7 @@ void nsFormFillController::AttachListeners(EventTarget* aEventTarget) {
                               TrustedEventsAtCapture());
   elm->AddEventListenerByType(this, u"contextmenu"_ns,
                               TrustedEventsAtCapture());
+  elm->AddEventListenerByType(this, u"resize"_ns, TrustedEventsAtCapture());
 }
 
 void nsFormFillController::RemoveForDocument(Document* aDoc) {
