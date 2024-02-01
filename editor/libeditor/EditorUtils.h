@@ -403,8 +403,8 @@ class EditorUtils final {
   
 
 
-  static Maybe<StyleWhiteSpace> GetComputedWhiteSpaceStyle(
-      const nsIContent& aContent);
+  static Maybe<std::pair<StyleWhiteSpaceCollapse, StyleTextWrapMode>>
+  GetComputedWhiteSpaceStyles(const nsIContent& aContent);
 
   
 

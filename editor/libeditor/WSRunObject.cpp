@@ -724,8 +724,8 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
       
       (aLeftBlockElement.NodeInfo()->NameAtom() ==
            aRightBlockElement.NodeInfo()->NameAtom() &&
-       EditorUtils::GetComputedWhiteSpaceStyle(aLeftBlockElement) ==
-           EditorUtils::GetComputedWhiteSpaceStyle(aRightBlockElement))) {
+       EditorUtils::GetComputedWhiteSpaceStyles(aLeftBlockElement) ==
+           EditorUtils::GetComputedWhiteSpaceStyles(aRightBlockElement))) {
     
     EditorDOMPoint atFirstChildOfRightNode;
     nsresult rv = aHTMLEditor.JoinNearestEditableNodesWithTransaction(

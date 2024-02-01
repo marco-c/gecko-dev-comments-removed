@@ -38,8 +38,11 @@ void HTMLPreElement::MapAttributesIntoRule(
     MappedDeclarationsBuilder& aBuilder) {
   
   if (aBuilder.GetAttr(nsGkAtoms::wrap)) {
-    aBuilder.SetKeywordValue(eCSSProperty_white_space,
-                             StyleWhiteSpace::PreWrap);
+    
+    aBuilder.SetKeywordValue(eCSSProperty_white_space_collapse,
+                             StyleWhiteSpaceCollapse::Preserve);
+    aBuilder.SetKeywordValue(eCSSProperty_text_wrap_mode,
+                             StyleTextWrapMode::Wrap);
   }
 
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
