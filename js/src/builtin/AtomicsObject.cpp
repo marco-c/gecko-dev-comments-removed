@@ -60,11 +60,13 @@ static bool ReportOutOfRange(JSContext* cx) {
 
 static bool ValidateIntegerTypedArray(
     JSContext* cx, HandleValue typedArray, bool waitable,
-    MutableHandle<TypedArrayObject*> unwrappedTypedArray) {
+    MutableHandle<FixedLengthTypedArrayObject*> unwrappedTypedArray) {
   
 
   
-  auto* unwrapped = UnwrapAndTypeCheckValue<TypedArrayObject>(
+
+  
+  auto* unwrapped = UnwrapAndTypeCheckValue<FixedLengthTypedArrayObject>(
       cx, typedArray, [cx]() { ReportBadArrayType(cx); });
   if (!unwrapped) {
     return false;
@@ -106,9 +108,9 @@ static bool ValidateIntegerTypedArray(
 
 
 
-static bool ValidateAtomicAccess(JSContext* cx,
-                                 Handle<TypedArrayObject*> typedArray,
-                                 HandleValue requestIndex, size_t* index) {
+static bool ValidateAtomicAccess(
+    JSContext* cx, Handle<FixedLengthTypedArrayObject*> typedArray,
+    HandleValue requestIndex, size_t* index) {
   
 
   MOZ_ASSERT(!typedArray->hasDetachedBuffer());
@@ -241,7 +243,7 @@ struct ArrayOps<uint64_t> {
 template <typename Op>
 bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
   
-  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
+  Rooted<FixedLengthTypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, obj, false, &unwrappedTypedArray)) {
     return false;
   }
@@ -281,7 +283,8 @@ bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
 }
 
 template <typename T>
-static SharedMem<T*> TypedArrayData(JSContext* cx, TypedArrayObject* typedArray,
+static SharedMem<T*> TypedArrayData(JSContext* cx,
+                                    FixedLengthTypedArrayObject* typedArray,
                                     size_t index) {
   if (typedArray->hasDetachedBuffer()) {
     ReportDetachedArrayBuffer(cx);
@@ -302,7 +305,8 @@ static bool atomics_compareExchange(JSContext* cx, unsigned argc, Value* vp) {
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
+      [cx, &args](auto ops,
+                  Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -339,7 +343,8 @@ static bool atomics_load(JSContext* cx, unsigned argc, Value* vp) {
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
+      [cx, &args](auto ops,
+                  Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -364,7 +369,8 @@ static bool atomics_store(JSContext* cx, unsigned argc, Value* vp) {
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
+      [cx, &args](auto ops,
+                  Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -394,7 +400,8 @@ static bool AtomicReadModifyWrite(JSContext* cx, const CallArgs& args,
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args, op](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
+      [cx, &args, op](auto ops,
+                      Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
                       size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -620,10 +627,9 @@ FutexThread::WaitResult js::atomics_wait_impl(
 
 
 template <typename T>
-static bool DoAtomicsWait(JSContext* cx,
-                          Handle<TypedArrayObject*> unwrappedTypedArray,
-                          size_t index, T value, HandleValue timeoutv,
-                          MutableHandleValue r) {
+static bool DoAtomicsWait(
+    JSContext* cx, Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
+    size_t index, T value, HandleValue timeoutv, MutableHandleValue r) {
   mozilla::Maybe<mozilla::TimeDuration> timeout;
   if (!timeoutv.isUndefined()) {
     
@@ -685,7 +691,7 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
   MutableHandleValue r = args.rval();
 
   
-  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
+  Rooted<FixedLengthTypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
@@ -778,7 +784,7 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
   MutableHandleValue r = args.rval();
 
   
-  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
+  Rooted<FixedLengthTypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
