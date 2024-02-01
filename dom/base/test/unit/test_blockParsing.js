@@ -54,6 +54,14 @@ server.registerPathHandler("/slow.js", async (request, response) => {
   response.finish();
 });
 
+add_setup(function () {
+  Services.prefs.setBoolPref("security.allow_unsafe_parent_loads", true);
+});
+
+registerCleanupFunction(function () {
+  Services.prefs.clearUserPref("security.allow_unsafe_parent_loads");
+});
+
 
 
 
