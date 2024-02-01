@@ -136,7 +136,7 @@ module.exports = function (config) {
             
 
 
-            "lib/PlacesFeed.jsm": {
+            "lib/PlacesFeed.sys.mjs": {
               statements: 7,
               lines: 7,
               functions: 8,

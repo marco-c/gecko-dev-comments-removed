@@ -1,18 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  actionCreators as ac,
+  actionTypes as at,
+  actionUtils as au,
+} from "resource://activity-stream/common/Actions.sys.mjs";
 
-
-"use strict";
-
-const {
-  actionCreators: ac,
-  actionTypes: at,
-  actionUtils: au,
-} = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
 const { shortURL } = ChromeUtils.import(
   "resource://activity-stream/lib/ShortURL.jsm"
 );
+
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// AboutNewTab, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
+
+// eslint-disable-next-line mozilla/use-static-import
 const { AboutNewTab } = ChromeUtils.importESModule(
   "resource:///modules/AboutNewTab.sys.mjs"
 );
@@ -30,16 +36,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const LINK_BLOCKED_EVENT = "newtab-linkBlocked";
-const PLACES_LINKS_CHANGED_DELAY_TIME = 1000; 
+const PLACES_LINKS_CHANGED_DELAY_TIME = 1000; // time in ms to delay timer for places links changed events
 
-
-
-
+// The pref to store the blocked sponsors of the sponsored Top Sites.
+// The value of this pref is an array (JSON serialized) of hostnames of the
+// blocked sponsors.
 const TOP_SITES_BLOCKED_SPONSORS_PREF = "browser.topsites.blockedSponsors";
 
-
-
-
+/**
+ * PlacesObserver - observes events from PlacesUtils.observers
+ */
 class PlacesObserver {
   constructor(dispatch) {
     this.dispatch = dispatch;
@@ -72,8 +78,8 @@ class PlacesObserver {
           }
           break;
         case "bookmark-added":
-          
-          
+          // Skips items that are not bookmarks (like folders), about:* pages or
+          // default bookmarks, added when the profile is created.
           if (
             isTagging ||
             itemType !== lazy.PlacesUtils.bookmarks.TYPE_BOOKMARK ||
@@ -133,7 +139,7 @@ class PlacesObserver {
   }
 }
 
-class PlacesFeed {
+export class PlacesFeed {
   constructor() {
     this.placesChangedTimer = null;
     this.customDispatch = this.customDispatch.bind(this);
@@ -149,12 +155,12 @@ class PlacesFeed {
     Services.obs.addObserver(this, LINK_BLOCKED_EVENT);
   }
 
-  
-
-
-
-
-
+  /**
+   * setTimeout - A custom function that creates an nsITimer that can be cancelled
+   *
+   * @param {func} callback       A function to be executed after the timer expires
+   * @param {int}  delay          The time (in ms) the timer should wait before the function is executed
+   */
   setTimeout(callback, delay) {
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     timer.initWithCallback(callback, delay, Ci.nsITimer.TYPE_ONE_SHOT);
@@ -162,8 +168,8 @@ class PlacesFeed {
   }
 
   customDispatch(action) {
-    
-    
+    // If we are changing many links at once, delay this action and only dispatch
+    // one action at the end
     if (action.type === at.PLACES_LINKS_CHANGED) {
       if (this.placesChangedTimer) {
         this.placesChangedTimer.delay = PLACES_LINKS_CHANGED_DELAY_TIME;
@@ -190,17 +196,17 @@ class PlacesFeed {
     Services.obs.removeObserver(this, LINK_BLOCKED_EVENT);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * observe - An observer for the LINK_BLOCKED_EVENT.
+   *           Called when a link is blocked.
+   *           Links can be blocked outside of newtab,
+   *           which is why we need to listen to this
+   *           on such a generic level.
+   *
+   * @param  {null} subject
+   * @param  {str} topic   The name of the event
+   * @param  {str} value   The data associated with the event
+   */
   observe(subject, topic, value) {
     if (topic === LINK_BLOCKED_EVENT) {
       this.store.dispatch(
@@ -212,14 +218,14 @@ class PlacesFeed {
     }
   }
 
-  
-
-
+  /**
+   * Open a link in a desired destination defaulting to action's event.
+   */
   openLink(action, where = "", isPrivate = false) {
     const params = {
       private: isPrivate,
       targetBrowser: action._target.browser,
-      forceForeground: false, 
+      forceForeground: false, // This ensure we maintain user preference for how to open new tabs.
       globalHistoryOptions: {
         triggeringSponsoredURL: action.data.sponsored_tile_id
           ? action.data.url
@@ -227,7 +233,7 @@ class PlacesFeed {
       },
     };
 
-    
+    // Always include the referrer (even for http links) if we have one
     const { event, referrer, typedBonus } = action.data;
     if (referrer) {
       const ReferrerInfo = Components.Constructor(
@@ -242,7 +248,7 @@ class PlacesFeed {
       );
     }
 
-    
+    // Pocket gives us a special reader URL to open their stories in
     const urlToOpen =
       action.data.type === "pocket" ? action.data.open_url : action.data.url;
 
@@ -258,7 +264,7 @@ class PlacesFeed {
       return;
     }
 
-    
+    // Mark the page as typed for frecency bonus before opening the link
     if (typedBonus) {
       lazy.PlacesUtils.history.markPageAsTyped(Services.io.newURI(urlToOpen));
     }
@@ -270,8 +276,8 @@ class PlacesFeed {
       params
     );
 
-    
-    
+    // If there's an original URL e.g. using the unprocessed %YYYYMMDDHH% tag,
+    // add a visit for that so it may become a frecent top site.
     if (action.data.original_url) {
       lazy.PlacesUtils.history.insert({
         url: action.data.original_url,
@@ -283,16 +289,16 @@ class PlacesFeed {
   async saveToPocket(site, browser) {
     const sendToPocket =
       lazy.NimbusFeatures.pocketNewtab.getVariable("sendToPocket");
-    
+    // An experiment to send the user directly to Pocket's signup page.
     if (sendToPocket && !lazy.pktApi.isUserLoggedIn()) {
       const pocketNewtabExperiment = lazy.ExperimentAPI.getExperiment({
         featureId: "pocketNewtab",
       });
       const pocketSiteHost = Services.prefs.getStringPref(
         "extensions.pocket.site"
-      ); 
+      ); // getpocket.com
       let utmSource = "firefox_newtab_save_button";
-      
+      // We want to know if the user is in a Pocket newtab related experiment.
       let utmCampaign = pocketNewtabExperiment?.slug;
       let utmContent = pocketNewtabExperiment?.branch?.slug;
 
@@ -333,11 +339,11 @@ class PlacesFeed {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Deletes an item from a user's saved to Pocket feed
+   * @param {int} itemID
+   *  The unique ID given by Pocket for that item; used to look the item up when deleting
+   */
   async deleteFromPocket(itemID) {
     try {
       await lazy.NewTabUtils.activityStreamLinks.deletePocketEntry(itemID);
@@ -347,11 +353,11 @@ class PlacesFeed {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Archives an item from a user's saved to Pocket feed
+   * @param {int} itemID
+   *  The unique ID given by Pocket for that item; used to look the item up when archiving
+   */
   async archiveFromPocket(itemID) {
     try {
       await lazy.NewTabUtils.activityStreamLinks.archivePocketEntry(itemID);
@@ -361,11 +367,11 @@ class PlacesFeed {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Sends an attribution request for Top Sites interactions.
+   * @param {object} data
+   *   Attribution paramters from a Top Site.
+   */
   makeAttributionRequest(data) {
     let args = Object.assign(
       {
@@ -411,9 +417,9 @@ class PlacesFeed {
     }
 
     const checkFirstChange = () => {
-      
-      
-      
+      // Check if this is the first change since we hidden focused. If it is,
+      // remove hidden focus styles, prepend the search alias and hide the
+      // in-content search.
       if (isFirstChange) {
         isFirstChange = false;
         urlBar.removeHiddenFocus(true);
@@ -427,18 +433,18 @@ class PlacesFeed {
     };
 
     const onKeydown = ev => {
-      
+      // Check if the keydown will cause a value change.
       if (ev.key.length === 1 && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
         checkFirstChange();
       }
-      
+      // If the Esc button is pressed, we are done. Show in-content search and cleanup.
       if (ev.key === "Escape") {
-        onDone(); 
+        onDone(); // eslint-disable-line no-use-before-define
       }
     };
 
     const onDone = ev => {
-      
+      // We are done. Show in-content search again and cleanup.
       this.store.dispatch(
         ac.OnlyToOneContent({ type: at.SHOW_SEARCH }, meta.fromTarget)
       );
@@ -460,12 +466,12 @@ class PlacesFeed {
     urlBar.addEventListener("paste", checkFirstChange);
   }
 
-  
-
-
-
-
-
+  /**
+   * Add the hostnames of the given urls to the Top Sites sponsor blocklist.
+   *
+   * @param {array} urls
+   *   An array of the objects structured as `{ url }`
+   */
   addToBlockedTopSitesSponsors(urls) {
     const blockedPref = JSON.parse(
       Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
@@ -481,7 +487,7 @@ class PlacesFeed {
   onAction(action) {
     switch (action.type) {
       case at.INIT:
-        
+        // Briefly avoid loading services for observing for better startup timing
         Services.tm.dispatchToMainThread(() => this.addObservers());
         break;
       case at.UNINIT:
@@ -560,7 +566,5 @@ class PlacesFeed {
   }
 }
 
-
+// Exported for testing only
 PlacesFeed.PlacesObserver = PlacesObserver;
-
-const EXPORTED_SYMBOLS = ["PlacesFeed"];
