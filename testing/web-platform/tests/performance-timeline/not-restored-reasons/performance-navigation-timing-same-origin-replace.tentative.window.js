@@ -34,11 +34,10 @@ promise_test(async t => {
   
   await assertNotRestoredReasonsEquals(
       rc1,
-       "yes",
        rc1_url,
        null,
        null,
        null,
-      ['websocket'],
+      [{'reason': 'websocket'}],
        []);
 });

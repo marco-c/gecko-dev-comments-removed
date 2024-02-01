@@ -26,14 +26,13 @@ promise_test(async t => {
   
   await assertBFCacheEligibility(rc1,  false);
   await assertNotRestoredReasonsEquals(
-      rc1,
-       "yes",
-       rc1_url,
-       null,
-       null,
-       null,
-      ['websocket'],
-       []);
+        rc1,
+         rc1_url,
+         null,
+         null,
+         null,
+        [{'reason': 'websocket'}],
+         []);
 
   
   await rc1.navigate(() => {

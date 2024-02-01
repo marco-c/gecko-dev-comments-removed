@@ -56,6 +56,17 @@ function matchReasons(expectedNotRestoredReasonsSet, notRestoredReasonsSet) {
 
 
 
+function extractReason(reasonSet) {
+  let reasonsExtracted = new Set();
+  for (let reason of reasonSet) {
+    reasonsExtracted.add(reason.reason);
+  }
+  return reasonsExtracted;
+}
+
+
+
+
 
 
 
@@ -96,7 +107,7 @@ async function assertNotRestoredFromBFCache(
   
   const collectReason = (node) => {
     for (let reason of node.reasons) {
-      notRestoredReasonsSet.add(reason);
+      notRestoredReasonsSet.add(reason.reason);
     }
     for (let child of node.children) {
       collectReason(child);

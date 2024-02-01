@@ -31,11 +31,10 @@ promise_test(async t => {
   await assertBFCacheEligibility(rc1,  false);
   await assertNotRestoredReasonsEquals(
       rc1,
-       "yes",
        rc1_url,
        null,
        null,
        null,
-      ['fetch'],
+      [{'reason': 'fetch'}],
       []);
 });

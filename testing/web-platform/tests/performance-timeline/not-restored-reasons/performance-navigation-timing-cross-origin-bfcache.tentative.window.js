@@ -44,14 +44,12 @@ promise_test(async t => {
   await assertBFCacheEligibility(rc1,  false);
   await assertNotRestoredReasonsEquals(
       rc1,
-       "no",
        rc1_url,
        null,
        null,
        null,
-      [],
+      [{'reason': "masked"}],
       [{
-        'preventedBackForwardCache': "masked",
         'url': null,
         'src': rc1_child_url,
         'id': 'test-id',
