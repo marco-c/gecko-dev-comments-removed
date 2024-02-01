@@ -1516,7 +1516,7 @@ already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(
     
     
     if (aPrincipal->SchemeIs("chrome") || aPrincipal->SchemeIs("resource") ||
-        aPrincipal->SchemeIs("about")) {
+        aPrincipal->SchemeIs("about") || aPrincipal->SchemeIs("jar")) {
       truncatedPrincipal = aPrincipal;
       return truncatedPrincipal.forget();
     }
