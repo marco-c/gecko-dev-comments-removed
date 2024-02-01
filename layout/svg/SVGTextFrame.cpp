@@ -718,16 +718,16 @@ gfxMatrix TextRenderedRun::GetTransformFromUserSpaceForPainting(
   
   m.PreRotate(mRotate);
 
-  m.PreScale(mLengthAdjustScaleFactor, 1.0);
-
+  
   
   nsPoint t;
-
   if (IsVertical()) {
+    m.PreScale(1.0, mLengthAdjustScaleFactor);
     t = nsPoint(-mBaseline, IsRightToLeft()
                                 ? -mFrame->GetRect().height + aVisIEndEdge
                                 : -aVisIStartEdge);
   } else {
+    m.PreScale(mLengthAdjustScaleFactor, 1.0);
     t = nsPoint(IsRightToLeft() ? -mFrame->GetRect().width + aVisIEndEdge
                                 : -aVisIStartEdge,
                 -mBaseline);
@@ -757,14 +757,15 @@ gfxMatrix TextRenderedRun::GetTransformFromRunUserSpaceToUserSpace(
   m.PreRotate(mRotate);
 
   
-  m.PreScale(mLengthAdjustScaleFactor, 1.0);
-
   
+
   nsPoint t;
   if (IsVertical()) {
+    m.PreScale(1.0, mLengthAdjustScaleFactor);
     t = nsPoint(-mBaseline,
                 IsRightToLeft() ? -mFrame->GetRect().height + start + end : 0);
   } else {
+    m.PreScale(mLengthAdjustScaleFactor, 1.0);
     t = nsPoint(IsRightToLeft() ? -mFrame->GetRect().width + start + end : 0,
                 -mBaseline);
   }
@@ -868,6 +869,12 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
       gfxRect(fillInAppUnits.x, fillInAppUnits.y, fillInAppUnits.width,
               fillInAppUnits.height),
       aContext);
+
+  if (vertical) {
+    fill.Scale(1.0, mLengthAdjustScaleFactor);
+  } else {
+    fill.Scale(mLengthAdjustScaleFactor, 1.0);
+  }
 
   
   fill.Scale(1.0 / mFontSizeScaleFactor);
