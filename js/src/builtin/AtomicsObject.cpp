@@ -48,12 +48,6 @@ static bool ReportDetachedArrayBuffer(JSContext* cx) {
   return false;
 }
 
-static bool ReportResizedArrayBuffer(JSContext* cx) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_TYPED_ARRAY_RESIZED_BOUNDS);
-  return false;
-}
-
 static bool ReportOutOfRange(JSContext* cx) {
   
   
@@ -115,15 +109,10 @@ static bool ValidateIntegerTypedArray(
 static bool ValidateAtomicAccess(JSContext* cx,
                                  Handle<TypedArrayObject*> typedArray,
                                  HandleValue requestIndex, size_t* index) {
-  MOZ_ASSERT(!typedArray->hasDetachedBuffer());
-
   
-  mozilla::Maybe<size_t> length = typedArray->length();
-  if (!length) {
-    
-    
-    return ReportResizedArrayBuffer(cx);
-  }
+
+  MOZ_ASSERT(!typedArray->hasDetachedBuffer());
+  size_t length = typedArray->length();
 
   
   uint64_t accessIndex;
@@ -132,7 +121,7 @@ static bool ValidateAtomicAccess(JSContext* cx,
   }
 
   
-  if (accessIndex >= *length) {
+  if (accessIndex >= length) {
     return ReportOutOfRange(cx);
   }
 
@@ -294,18 +283,8 @@ bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
 template <typename T>
 static SharedMem<T*> TypedArrayData(JSContext* cx, TypedArrayObject* typedArray,
                                     size_t index) {
-  
-  mozilla::Maybe<size_t> length = typedArray->length();
-
-  
-  if (!length) {
+  if (typedArray->hasDetachedBuffer()) {
     ReportDetachedArrayBuffer(cx);
-    return {};
-  }
-
-  
-  if (index >= *length) {
-    ReportOutOfRange(cx);
     return {};
   }
 
@@ -669,15 +648,12 @@ static bool DoAtomicsWait(JSContext* cx,
       cx, unwrappedTypedArray->bufferShared());
 
   
-  mozilla::Maybe<size_t> offset = unwrappedTypedArray->byteOffset();
-  MOZ_ASSERT(
-      offset,
-      "offset can't become invalid because shared buffers can only grow");
+  size_t offset = unwrappedTypedArray->byteOffset();
 
   
   
   
-  size_t indexedPosition = index * sizeof(T) + *offset;
+  size_t indexedPosition = index * sizeof(T) + offset;
 
   
   switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
@@ -841,16 +817,13 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
       cx, unwrappedTypedArray->bufferShared());
 
   
-  mozilla::Maybe<size_t> offset = unwrappedTypedArray->byteOffset();
-  MOZ_ASSERT(
-      offset,
-      "offset can't become invalid because shared buffers can only grow");
+  size_t offset = unwrappedTypedArray->byteOffset();
 
   
   
   
   size_t elementSize = Scalar::byteSize(unwrappedTypedArray->type());
-  size_t indexedPosition = intIndex * elementSize + *offset;
+  size_t indexedPosition = intIndex * elementSize + offset;
 
   
   r.setNumber(double(atomics_notify_impl(unwrappedSab->rawBufferObject(),

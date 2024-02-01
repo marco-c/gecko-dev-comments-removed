@@ -1646,7 +1646,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
   if (obj->is<TypedArrayObject>()) {
     Handle<TypedArrayObject*> tobj = obj.as<TypedArrayObject>();
-    size_t len = tobj->length().valueOr(0);
+    size_t len = tobj->length();
 
     
     
@@ -1964,7 +1964,7 @@ static bool CountEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
   if (obj->is<TypedArrayObject>()) {
     Handle<TypedArrayObject*> tobj = obj.as<TypedArrayObject>();
-    size_t len = tobj->length().valueOr(0);
+    size_t len = tobj->length();
 
     
     

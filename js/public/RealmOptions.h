@@ -246,20 +246,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     symbolsAsWeakMapKeys_ = flag;
     return *this;
   }
-
-  bool getArrayBufferResizableEnabled() const { return arrayBufferResizable_; }
-  RealmCreationOptions& setArrayBufferResizableEnabled(bool flag) {
-    arrayBufferResizable_ = flag;
-    return *this;
-  }
-
-  bool getSharedArrayBufferGrowableEnabled() const {
-    return sharedArrayBufferGrowable_;
-  }
-  RealmCreationOptions& setSharedArrayBufferGrowableEnabled(bool flag) {
-    sharedArrayBufferGrowable_ = flag;
-    return *this;
-  }
 #endif
 
   
@@ -333,10 +319,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   
   bool newSetMethods_ = false;
   bool symbolsAsWeakMapKeys_ = false;
-  
-  bool arrayBufferResizable_ = false;
-  
-  bool sharedArrayBufferGrowable_ = false;
 #endif
 
   

@@ -28,7 +28,7 @@ if (typeof detachArrayBuffer === "function") {
         
         detached = false;
         typedArray = new constructor(2);
-        assertEq(typedArray.toLocaleString(), "0,");
+        assertThrowsInstanceOf(() => typedArray.toLocaleString(), TypeError);
         assertEq(detached, true);
     }
     Number.prototype.toLocaleString = originalNumberToLocaleString;

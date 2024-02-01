@@ -736,9 +736,6 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
  private:
   Span<element_type> GetCurrentData() const {
     MOZ_ASSERT(inited());
-    MOZ_RELEASE_ASSERT(
-        !ArrayT::fromObject(mImplObj).isResizable(),
-        "Bindings must have checked ArrayBuffer{View} is non-resizable");
 
     
     

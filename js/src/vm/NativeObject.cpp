@@ -1837,12 +1837,7 @@ static bool DefineNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
     if (mozilla::Maybe<uint64_t> index = ToTypedArrayIndex(id)) {
       
       
-      
-      
-      MOZ_ASSERT(index.value() >=
-                     obj->as<TypedArrayObject>().length().valueOr(0) ||
-                 (obj->as<TypedArrayObject>().isSharedMemory() &&
-                  obj->as<TypedArrayObject>().bufferShared()->isGrowable()));
+      MOZ_ASSERT(index.value() >= obj->as<TypedArrayObject>().length());
 
       
 

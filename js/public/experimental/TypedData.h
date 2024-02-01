@@ -282,14 +282,6 @@ JS_PUBLIC_API bool IsLargeArrayBufferView(JSObject* obj);
 
 
 
-JS_PUBLIC_API bool IsResizableArrayBufferView(JSObject* obj);
-
-
-
-
-
-
-
 
 
 
@@ -368,7 +360,6 @@ class JS_PUBLIC_API ArrayBufferOrView {
   }
 
   bool isDetached() const;
-  bool isResizable() const;
 
   void exposeToActiveJS() const {
     if (obj) {
@@ -394,10 +385,8 @@ class JS_PUBLIC_API ArrayBufferOrView {
 };
 
 class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
-  static const JSClass* const FixedLengthUnsharedClass;
-  static const JSClass* const ResizableUnsharedClass;
-  static const JSClass* const FixedLengthSharedClass;
-  static const JSClass* const GrowableSharedClass;
+  static const JSClass* const UnsharedClass;
+  static const JSClass* const SharedClass;
 
  protected:
   explicit ArrayBuffer(JSObject* unwrapped) : ArrayBufferOrView(unwrapped) {}
@@ -406,9 +395,7 @@ class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
   static ArrayBuffer fromObject(JSObject* unwrapped) {
     if (unwrapped) {
       const JSClass* clasp = GetClass(unwrapped);
-      if (clasp == FixedLengthUnsharedClass ||
-          clasp == ResizableUnsharedClass || clasp == FixedLengthSharedClass ||
-          clasp == GrowableSharedClass) {
+      if (clasp == UnsharedClass || clasp == SharedClass) {
         return ArrayBuffer(unwrapped);
       }
     }
@@ -417,6 +404,9 @@ class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
   static ArrayBuffer unwrap(JSObject* maybeWrapped);
 
   static ArrayBuffer create(JSContext* cx, size_t nbytes);
+
+  bool isDetached() const;
+  bool isSharedMemory() const;
 
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);
@@ -442,7 +432,7 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
   }
 
   bool isDetached() const;
-  bool isResizable() const;
+  bool isSharedMemory() const;
 
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);
@@ -452,19 +442,15 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
 };
 
 class JS_PUBLIC_API DataView : public ArrayBufferView {
-  static const JSClass* const FixedLengthClassPtr;
-  static const JSClass* const ResizableClassPtr;
+  static const JSClass* const ClassPtr;
 
  protected:
   explicit DataView(JSObject* unwrapped) : ArrayBufferView(unwrapped) {}
 
  public:
   static DataView fromObject(JSObject* unwrapped) {
-    if (unwrapped) {
-      const JSClass* clasp = GetClass(unwrapped);
-      if (clasp == FixedLengthClassPtr || clasp == ResizableClassPtr) {
-        return DataView(unwrapped);
-      }
+    if (unwrapped && GetClass(unwrapped) == ClassPtr) {
+      return DataView(unwrapped);
     }
     return DataView(nullptr);
   }
@@ -486,8 +472,7 @@ class JS_PUBLIC_API TypedArray_base : public ArrayBufferView {
  protected:
   explicit TypedArray_base(JSObject* unwrapped) : ArrayBufferView(unwrapped) {}
 
-  static const JSClass* const fixedLengthClasses;
-  static const JSClass* const resizableClasses;
+  static const JSClass* const classes;
 
  public:
   static TypedArray_base fromObject(JSObject* unwrapped);
@@ -506,22 +491,6 @@ class JS_PUBLIC_API TypedArray_base : public ArrayBufferView {
 
 template <JS::Scalar::Type TypedArrayElementType>
 class JS_PUBLIC_API TypedArray : public TypedArray_base {
-  
-  
-  
-  
-  
-  
-  
-  static const JSClass* fixedLengthClasp() {
-    return &TypedArray_base::fixedLengthClasses[static_cast<int>(
-        TypedArrayElementType)];
-  }
-  static const JSClass* resizableClasp() {
-    return &TypedArray_base::resizableClasses[static_cast<int>(
-        TypedArrayElementType)];
-  }
-
  protected:
   explicit TypedArray(JSObject* unwrapped) : TypedArray_base(unwrapped) {}
 
@@ -529,6 +498,17 @@ class JS_PUBLIC_API TypedArray : public TypedArray_base {
   using DataType = detail::ExternalTypeOf_t<TypedArrayElementType>;
 
   static constexpr JS::Scalar::Type Scalar = TypedArrayElementType;
+
+  
+  
+  
+  
+  
+  
+  
+  static const JSClass* clasp() {
+    return &TypedArray_base::classes[static_cast<int>(TypedArrayElementType)];
+  }
 
   static TypedArray create(JSContext* cx, size_t nelements);
   static TypedArray fromArray(JSContext* cx, HandleObject other);
@@ -538,11 +518,8 @@ class JS_PUBLIC_API TypedArray : public TypedArray_base {
   
   
   static TypedArray fromObject(JSObject* unwrapped) {
-    if (unwrapped) {
-      const JSClass* clasp = GetClass(unwrapped);
-      if (clasp == fixedLengthClasp() || clasp == resizableClasp()) {
-        return TypedArray(unwrapped);
-      }
+    if (unwrapped && GetClass(unwrapped) == clasp()) {
+      return TypedArray(unwrapped);
     }
     return TypedArray(nullptr);
   }
@@ -627,7 +604,8 @@ ArrayBufferView ArrayBufferView::fromObject(JSObject* unwrapped) {
                                             size_t* length,                \
                                             bool* isSharedMemory,          \
                                             ExternalType** data) {         \
-    MOZ_ASSERT(JS::TypedArray<JS::Scalar::Name>::fromObject(unwrapped));   \
+    MOZ_ASSERT(JS::GetClass(unwrapped) ==                                  \
+               JS::TypedArray<JS::Scalar::Name>::clasp());                 \
     const JS::Value& lenSlot =                                             \
         JS::GetReservedSlot(unwrapped, detail::TypedArrayLengthSlot);      \
     *length = size_t(lenSlot.toPrivate());                                 \
