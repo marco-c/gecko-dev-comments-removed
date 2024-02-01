@@ -2,20 +2,20 @@
 
 
 
-import { getIsJavascriptTracingEnabled } from "../selectors/index";
+import {
+  getIsJavascriptTracingEnabled,
+  getJavascriptTracingLogMethod,
+} from "../selectors/index";
 import { PROMISE } from "./utils/middleware/promise";
 
 
 
 
-
-
-
-
-export function toggleTracing(logMethod) {
+export function toggleTracing() {
   return async ({ dispatch, getState, client, panel }) => {
     
     const isTracingEnabled = getIsJavascriptTracingEnabled(getState());
+    const logMethod = getJavascriptTracingLogMethod(getState());
 
     
     if (!isTracingEnabled && logMethod == "console") {
@@ -24,7 +24,7 @@ export function toggleTracing(logMethod) {
 
     return dispatch({
       type: "TOGGLE_TRACING",
-      [PROMISE]: client.toggleTracing(logMethod),
+      [PROMISE]: client.toggleTracing(),
       enabled: !isTracingEnabled,
     });
   };

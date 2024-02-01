@@ -5,6 +5,10 @@
 "use strict";
 
 const { Actor } = require("resource://devtools/shared/protocol.js");
+const {
+  TYPES,
+  getResourceWatcher,
+} = require("resource://devtools/server/actors/resources/index.js");
 
 loader.lazyRequireGetter(
   this,
@@ -147,9 +151,44 @@ class BaseTargetActor extends Actor {
 
 
 
+
+
+
+
+
+
+
   updateTargetConfiguration(options = {}, calledFromDocumentCreation = false) {
     
     if (options.tracerOptions) {
+      
+      
+      
+      if (
+        options.tracerOptions.traceOnNextLoad &&
+        (!calledFromDocumentCreation || !this.isTopLevelTarget)
+      ) {
+        if (this.isTopLevelTarget) {
+          const consoleMessageWatcher = getResourceWatcher(
+            this,
+            TYPES.CONSOLE_MESSAGE
+          );
+          if (consoleMessageWatcher) {
+            consoleMessageWatcher.emitMessages([
+              {
+                arguments: [
+                  "Waiting for next navigation or page reload before starting tracing",
+                ],
+                styles: [],
+                level: "jstracer",
+                chromeContext: false,
+                timeStamp: ChromeUtils.dateNow(),
+              },
+            ]);
+          }
+        }
+        return;
+      }
       const tracerActor = this.getTargetScopedActor("tracer");
       tracerActor.startTracing(options.tracerOptions);
     } else if (this.hasTargetScopedActor("tracer")) {

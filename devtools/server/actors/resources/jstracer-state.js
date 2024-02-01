@@ -59,6 +59,15 @@ class TracingStateWatcher {
   onTracingToggled(enabled, reason) {
     const tracerActor = this.targetActor.getTargetScopedActor("tracer");
     const logMethod = tracerActor?.getLogMethod();
+
+    
+    
+    
+    
+    if (!logMethod) {
+      return;
+    }
+
     this.onAvailable([
       {
         resourceType: JSTRACER_STATE,
