@@ -53,7 +53,10 @@ class nsLineLayout {
                        
                        nscoord aInset = 0);
 
-  void EndLineReflow();
+  
+
+
+  bool EndLineReflow();
 
   
 
@@ -330,6 +333,11 @@ class nsLineLayout {
 
   void SetSuppressLineWrap(bool aEnabled) { mSuppressLineWrap = aEnabled; }
 
+  
+
+
+  void SetUsedOverflowWrap() { mUsedOverflowWrap = true; }
+
  protected:
   
 
@@ -585,6 +593,7 @@ class nsLineLayout {
   bool mLineAtStart : 1;
   bool mHasRuby : 1;
   bool mSuppressLineWrap : 1;
+  bool mUsedOverflowWrap : 1;
 
   int32_t mSpanDepth;
 #ifdef DEBUG

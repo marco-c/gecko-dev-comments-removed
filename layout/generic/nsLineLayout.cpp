@@ -78,7 +78,8 @@ nsLineLayout::nsLineLayout(nsPresContext* aPresContext,
       mDirtyNextLine(false),
       mLineAtStart(false),
       mHasRuby(false),
-      mSuppressLineWrap(LineContainerFrame()->IsInSVGTextSubtree())
+      mSuppressLineWrap(LineContainerFrame()->IsInSVGTextSubtree()),
+      mUsedOverflowWrap(false)
 #ifdef DEBUG
       ,
       mSpansAllocated(0),
@@ -196,7 +197,7 @@ void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
   psd->mIEnd = aICoord + aISize;
   
   
-  psd->mInset = aISize < aInset * 2 ? 0 : aInset;
+  psd->mInset = aISize > aInset ? aInset : 0;
   mContainerSize = aContainerSize;
 
   mBStartEdge = aBCoord;
@@ -251,7 +252,7 @@ void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
   }
 }
 
-void nsLineLayout::EndLineReflow() {
+bool nsLineLayout::EndLineReflow() {
 #ifdef NOISY_REFLOW
   LineContainerFrame()->ListTag(stdout);
   printf(": EndLineReflow: width=%d\n",
@@ -282,6 +283,8 @@ void nsLineLayout::EndLineReflow() {
     maxFramesAllocated = mFramesAllocated;
   }
 #endif
+
+  return mUsedOverflowWrap;
 }
 
 

@@ -553,6 +553,8 @@ class nsBlockFrame : public nsContainerFrame {
     const nscoord mEffectiveContentBoxBSize;
     bool mNeedFloatManager;
     
+    bool mUsedOverflowWrap = false;
+    
     bool mBalancing = false;
     nscoord mInset = 0;
     
@@ -581,6 +583,7 @@ class nsBlockFrame : public nsContainerFrame {
       mFcBounds.Clear();
       mBlockEndEdgeOfChildren = 0;
       mContainerWidth = 0;
+      mUsedOverflowWrap = false;
     }
   };
 
@@ -737,7 +740,10 @@ class nsBlockFrame : public nsContainerFrame {
   void PrepareResizeReflow(BlockReflowState& aState);
 
   
-  void ReflowDirtyLines(BlockReflowState& aState);
+
+
+
+  bool ReflowDirtyLines(BlockReflowState& aState);
 
   
   void MarkLineDirtyForInterrupt(nsLineBox* aLine);
@@ -755,7 +761,9 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void ReflowLine(BlockReflowState& aState, LineIterator aLine,
+
+
+  bool ReflowLine(BlockReflowState& aState, LineIterator aLine,
                   bool* aKeepReflowGoing);
 
   
@@ -798,7 +806,8 @@ class nsBlockFrame : public nsContainerFrame {
   void ReflowBlockFrame(BlockReflowState& aState, LineIterator aLine,
                         bool* aKeepGoing);
 
-  void ReflowInlineFrames(BlockReflowState& aState, LineIterator aLine,
+  
+  bool ReflowInlineFrames(BlockReflowState& aState, LineIterator aLine,
                           bool* aKeepLineGoing);
 
   void DoReflowInlineFrames(

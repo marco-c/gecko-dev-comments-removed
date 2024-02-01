@@ -1559,7 +1559,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     if (tryBalance) {
       tryBalance = false;
       
-      if (!reflowStatus.IsFullyComplete()) {
+      
+      if (!reflowStatus.IsFullyComplete() || trialState.mUsedOverflowWrap) {
         break;
       }
       balanceTarget.mOffset =
@@ -1596,7 +1597,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     
     
     auto trialSucceeded = [&]() -> bool {
-      if (!reflowStatus.IsFullyComplete()) {
+      if (!reflowStatus.IsFullyComplete() || trialState.mUsedOverflowWrap) {
         return false;
       }
       if (balanceTarget.mContent) {
@@ -1626,7 +1627,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     
     
     if (balanceTarget.mOffset >= 0) {
-      if (trialSucceeded()) {
+      if (!trialState.mInset || trialSucceeded()) {
         break;
       }
       trialState.ResetForBalance(-1);
@@ -1907,7 +1908,7 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   }
 
   
-  ReflowDirtyLines(state);
+  aTrialState.mUsedOverflowWrap = ReflowDirtyLines(state);
 
   
   
@@ -2832,11 +2833,12 @@ static bool LinesAreEmpty(const nsLineList& aList) {
   return true;
 }
 
-void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
+bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool keepGoing = true;
   bool repositionViews = false;  
   bool foundAnyClears = aState.mTrailingClearFromPIF != StyleClear::None;
   bool willReflowAgain = false;
+  bool usedOverflowWrap = false;
 
 #ifdef DEBUG
   if (gNoisyReflow) {
@@ -3157,7 +3159,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
       } else {
         
         
-        ReflowLine(aState, line, &keepGoing);
+        usedOverflowWrap |= ReflowLine(aState, line, &keepGoing);
       }
 
       if (aState.mReflowInput.WillReflowAgainForClearance()) {
@@ -3454,7 +3456,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
         
         
         while (line != LinesEnd()) {
-          ReflowLine(aState, line, &keepGoing);
+          usedOverflowWrap |= ReflowLine(aState, line, &keepGoing);
 
           if (aState.mReflowInput.WillReflowAgainForClearance()) {
             line->MarkDirty();
@@ -3558,6 +3560,8 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
            ToString(aState.mReflowStatus).c_str());
   }
 #endif
+
+  return usedOverflowWrap;
 }
 
 void nsBlockFrame::MarkLineDirtyForInterrupt(nsLineBox* aLine) {
@@ -3619,7 +3623,8 @@ void nsBlockFrame::DeleteLine(BlockReflowState& aState,
 
 
 
-void nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
+
+bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
                               bool* aKeepReflowGoing) {
   MOZ_ASSERT(aLine->GetChildCount(), "reflowing empty line");
 
@@ -3639,15 +3644,16 @@ void nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   nsIFrame* firstChild = aLine->mFirstChild;
   if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
       !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
-    return;
+    return false;
   }
 
   
+  bool usedOverflowWrap = false;
   if (aLine->IsBlock()) {
     ReflowBlockFrame(aState, aLine, aKeepReflowGoing);
   } else {
     aLine->SetLineWrapped(false);
-    ReflowInlineFrames(aState, aLine, aKeepReflowGoing);
+    usedOverflowWrap = ReflowInlineFrames(aState, aLine, aKeepReflowGoing);
 
     
     aLine->ClearFloatEdges();
@@ -3670,6 +3676,8 @@ void nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   }
 
   aLine->ClearMovedFragments();
+
+  return usedOverflowWrap;
 }
 
 nsIFrame* nsBlockFrame::PullFrame(BlockReflowState& aState,
@@ -4635,10 +4643,12 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 #endif
 }
 
-void nsBlockFrame::ReflowInlineFrames(BlockReflowState& aState,
+
+bool nsBlockFrame::ReflowInlineFrames(BlockReflowState& aState,
                                       LineIterator aLine,
                                       bool* aKeepReflowGoing) {
   *aKeepReflowGoing = true;
+  bool usedOverflowWrap = false;
 
   aLine->SetLineIsImpactedByFloat(false);
 
@@ -4678,7 +4688,7 @@ void nsBlockFrame::ReflowInlineFrames(BlockReflowState& aState,
         DoReflowInlineFrames(aState, lineLayout, aLine, floatAvailableSpace,
                              availableSpaceBSize, &floatManagerState,
                              aKeepReflowGoing, &lineReflowStatus, allowPullUp);
-        lineLayout.EndLineReflow();
+        usedOverflowWrap = lineLayout.EndLineReflow();
 
         if (LineReflowStatus::RedoNoPull == lineReflowStatus ||
             LineReflowStatus::RedoMoreFloats == lineReflowStatus ||
@@ -4707,6 +4717,8 @@ void nsBlockFrame::ReflowInlineFrames(BlockReflowState& aState,
       } while (LineReflowStatus::RedoNoPull == lineReflowStatus);
     } while (LineReflowStatus::RedoMoreFloats == lineReflowStatus);
   } while (LineReflowStatus::RedoNextBand == lineReflowStatus);
+
+  return usedOverflowWrap;
 }
 
 void nsBlockFrame::SetBreakBeforeStatusBeforeLine(BlockReflowState& aState,
