@@ -33,7 +33,7 @@ module.exports = {
     {
       
       
-      files: ["tests/**"],
+      files: ["tests/**", "modules/**"],
       rules: {
         "no-implicit-globals": "off",
       },

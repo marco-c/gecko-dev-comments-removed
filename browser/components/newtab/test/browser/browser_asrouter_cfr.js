@@ -1,6 +1,6 @@
 
 const { ASRouterTriggerListeners } = ChromeUtils.import(
-  "resource://activity-stream/lib/ASRouterTriggerListeners.jsm"
+  "resource:///modules/asrouter/ASRouterTriggerListeners.jsm"
 );
 const { ASRouter } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouter.jsm"
