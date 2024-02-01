@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('instanceNormalization', buildLayerNorm, 'gpu');
