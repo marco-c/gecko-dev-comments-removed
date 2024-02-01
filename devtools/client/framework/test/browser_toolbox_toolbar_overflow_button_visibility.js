@@ -44,8 +44,9 @@ add_task(async function () {
   const initialTabCount = toolbox.doc.querySelectorAll(".devtools-tab").length;
   
   setToolboxButtonsVisibility(checkButtons, true);
-  ok(
-    toolbox.doc.querySelectorAll(".devtools-tab").length < initialTabCount,
+  Assert.less(
+    toolbox.doc.querySelectorAll(".devtools-tab").length,
+    initialTabCount,
     "Count of shown devtools tab should decreased"
   );
 

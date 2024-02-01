@@ -36,8 +36,8 @@ add_task(async function () {
 
     const { naturalWidth: widthImage1, naturalHeight: heightImage1 } = image;
 
-    ok(widthImage1 > 0, "Preview width is greater than 0");
-    ok(heightImage1 > 0, "Preview height is greater than 0");
+    Assert.greater(widthImage1, 0, "Preview width is greater than 0");
+    Assert.greater(heightImage1, 0, "Preview height is greater than 0");
 
     
     
@@ -60,12 +60,14 @@ add_task(async function () {
 
     
     
-    ok(
-      widthImage2 > widthImage1,
+    Assert.greater(
+      widthImage2,
+      widthImage1,
       "Preview width is greater than with default parameters"
     );
-    ok(
-      heightImage2 === heightImage1,
+    Assert.strictEqual(
+      heightImage2,
+      heightImage1,
       "Preview height is the same as with default parameters"
     );
 
@@ -89,12 +91,14 @@ add_task(async function () {
     const { naturalWidth: widthImage3, naturalHeight: heightImage3 } = image;
 
     
-    ok(
-      widthImage3 < widthImage1,
+    Assert.less(
+      widthImage3,
+      widthImage1,
       "Preview width is smaller than with default parameters"
     );
-    ok(
-      heightImage3 < heightImage1,
+    Assert.less(
+      heightImage3,
+      heightImage1,
       "Preview height is smaller than with default parameters"
     );
 
@@ -119,12 +123,14 @@ add_task(async function () {
 
     
     
-    ok(
-      widthImage4 === widthImage1,
+    Assert.strictEqual(
+      widthImage4,
+      widthImage1,
       "Preview width is the same as with default parameters"
     );
-    ok(
-      heightImage4 > heightImage1,
+    Assert.greater(
+      heightImage4,
+      heightImage1,
       "Preview height is greater than with default parameters"
     );
   });

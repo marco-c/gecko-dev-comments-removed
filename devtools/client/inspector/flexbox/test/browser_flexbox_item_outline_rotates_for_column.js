@@ -27,7 +27,7 @@ add_task(async function () {
 
   
   let bounds = flexOutline.getBoxQuads()[0].getBounds();
-  ok(bounds.width > bounds.height, "The outline looks like a row");
+  Assert.greater(bounds.width, bounds.height, "The outline looks like a row");
 
   
   onFlexItemOutlineRendered = waitForDOM(
@@ -45,5 +45,9 @@ add_task(async function () {
 
   
   bounds = flexOutline.getBoxQuads()[0].getBounds();
-  ok(bounds.height > bounds.width, "The outline looks like a column");
+  Assert.greater(
+    bounds.height,
+    bounds.width,
+    "The outline looks like a column"
+  );
 });

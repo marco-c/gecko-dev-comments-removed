@@ -254,7 +254,11 @@ add_task(async function () {
     
     
     const time = performance.now() - start;
-    ok(time < 15000, `item ${item} completed in less than 15000ms ${time}`);
+    Assert.less(
+      time,
+      15000,
+      `item ${item} completed in less than 15000ms ${time}`
+    );
 
     await findVariableViewProperties(ruleArray, parsed);
   }

@@ -39,7 +39,11 @@ add_task(async function () {
   
   
   
-  ok(players.length >= 4, "All subtree animations were retrieved");
+  Assert.greaterOrEqual(
+    players.length,
+    4,
+    "All subtree animations were retrieved"
+  );
 
   await target.destroy();
   gBrowser.removeCurrentTab();

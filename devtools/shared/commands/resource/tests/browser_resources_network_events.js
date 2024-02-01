@@ -231,8 +231,9 @@ async function assertNetworkResourcesOnPage(
       
       
       const idx = expectedAvailable.findIndex(e => e.url === resource.url);
-      ok(
-        idx != -1,
+      Assert.notEqual(
+        idx,
+        -1,
         "Found a matching available notification for: " + resource.url
       );
       
@@ -244,8 +245,9 @@ async function assertNetworkResourcesOnPage(
   const onUpdated = updates => {
     for (const { resource } of updates) {
       const idx = expectedUpdated.findIndex(e => e.url === resource.url);
-      ok(
-        idx != -1,
+      Assert.notEqual(
+        idx,
+        -1,
         "Found a matching updated notification for: " + resource.url
       );
       

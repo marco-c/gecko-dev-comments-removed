@@ -92,8 +92,9 @@ const runAutocompletionTest = async function (editor) {
       
       
       const offset = getPopupOffset(editor);
-      ok(
-        offset > previousOffset,
+      Assert.greater(
+        offset,
+        previousOffset,
         "New popup offset is greater than the previous one"
       );
       previousOffset = offset;

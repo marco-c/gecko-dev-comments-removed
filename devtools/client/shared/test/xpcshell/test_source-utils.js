@@ -138,8 +138,9 @@ add_task(async function () {
   const longMalformedURL = `example.com${new Array(100)
     .fill("/a")
     .join("")}/file.js`;
-  ok(
-    sourceUtils.getSourceNames(longMalformedURL).short.length <= 100,
+  Assert.lessOrEqual(
+    sourceUtils.getSourceNames(longMalformedURL).short.length,
+    100,
     "`short` names are capped at 100 characters"
   );
 
@@ -159,8 +160,9 @@ add_task(async function () {
   const longDataURIShort = sourceUtils.getSourceNames(longDataURI).short;
 
   
-  ok(
-    longDataURIShort.length <= 100,
+  Assert.lessOrEqual(
+    longDataURIShort.length,
+    100,
     "`short` names are capped at 100 characters for data URIs"
   );
   equal(

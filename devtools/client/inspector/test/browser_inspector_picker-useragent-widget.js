@@ -37,8 +37,9 @@ async function runUserAgentWidgetPickerTest({ enableAnonymousContent }) {
     
     
     const shadowHost = getShadowHost(selectedNode);
-    ok(
-      selectedNode.tagName.toLowerCase() !== "video",
+    Assert.notStrictEqual(
+      selectedNode.tagName.toLowerCase(),
+      "video",
       "The selected node is not the <video>"
     );
     ok(shadowHost, "The selected node is in a shadow root");
