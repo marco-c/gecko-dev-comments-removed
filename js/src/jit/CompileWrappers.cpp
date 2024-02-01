@@ -92,6 +92,22 @@ const void* CompileRuntime::addressOfLastBufferedWholeCell() {
   return runtime()->gc.addressOfLastBufferedWholeCell();
 }
 
+const void* CompileRuntime::addressOfHasSeenObjectEmulateUndefinedFuse() {
+  
+  
+  return runtime()->hasSeenObjectEmulateUndefinedFuse.refNoCheck().fuseRef();
+}
+
+bool CompileRuntime::hasSeenObjectEmulateUndefinedFuseIntact() {
+  
+  
+  
+  
+  
+  
+  return runtime()->hasSeenObjectEmulateUndefinedFuse.ref().intact();
+}
+
 const DOMCallbacks* CompileRuntime::DOMcallbacks() {
   return runtime()->DOMcallbacks;
 }

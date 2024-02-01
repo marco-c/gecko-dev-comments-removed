@@ -1527,11 +1527,17 @@ void CodeGenerator::visitTestOAndBranch(LTestOAndBranch* lir) {
   Label* falsy = getJumpLabelForBranch(lir->ifFalsy());
   Register input = ToRegister(lir->input());
 
-  auto* ool = new (alloc()) OutOfLineTestObject();
-  addOutOfLineCode(ool, lir->mir());
+  bool intact = hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted();
+  if (intact) {
+    
+    masm.jump(truthy);
+  } else {
+    auto* ool = new (alloc()) OutOfLineTestObject();
+    addOutOfLineCode(ool, lir->mir());
 
-  testObjectEmulatesUndefined(input, falsy, truthy, ToRegister(lir->temp()),
-                              ool);
+    testObjectEmulatesUndefined(input, falsy, truthy, ToRegister(lir->temp()),
+                                ool);
+  }
 }
 
 void CodeGenerator::visitTestVAndBranch(LTestVAndBranch* lir) {
@@ -11117,42 +11123,67 @@ void CodeGenerator::visitIsNullOrLikeUndefinedV(LIsNullOrLikeUndefinedV* lir) {
   const ValueOperand value = ToValue(lir, LIsNullOrLikeUndefinedV::ValueIndex);
   Register output = ToRegister(lir->output());
 
-  auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
-  addOutOfLineCode(ool, lir->mir());
+  bool intact = hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted();
+  if (!intact) {
+    auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
+    addOutOfLineCode(ool, lir->mir());
 
-  Label* nullOrLikeUndefined = ool->label1();
-  Label* notNullOrLikeUndefined = ool->label2();
+    Label* nullOrLikeUndefined = ool->label1();
+    Label* notNullOrLikeUndefined = ool->label2();
 
-  {
-    ScratchTagScope tag(masm, value);
-    masm.splitTagForTest(value, tag);
+    {
+      ScratchTagScope tag(masm, value);
+      masm.splitTagForTest(value, tag);
 
-    masm.branchTestNull(Assembler::Equal, tag, nullOrLikeUndefined);
-    masm.branchTestUndefined(Assembler::Equal, tag, nullOrLikeUndefined);
+      masm.branchTestNull(Assembler::Equal, tag, nullOrLikeUndefined);
+      masm.branchTestUndefined(Assembler::Equal, tag, nullOrLikeUndefined);
+
+      
+      
+      masm.branchTestObject(Assembler::NotEqual, tag, notNullOrLikeUndefined);
+    }
+
+    Register objreg =
+        masm.extractObject(value, ToTempUnboxRegister(lir->temp0()));
+    branchTestObjectEmulatesUndefined(objreg, nullOrLikeUndefined,
+                                      notNullOrLikeUndefined, output, ool);
+    
+
+    Label done;
 
     
     
-    masm.branchTestObject(Assembler::NotEqual, tag, notNullOrLikeUndefined);
+    masm.move32(Imm32(op == JSOp::Ne), output);
+    masm.jump(&done);
+
+    masm.bind(nullOrLikeUndefined);
+    masm.move32(Imm32(op == JSOp::Eq), output);
+
+    
+    masm.bind(&done);
+  } else {
+    Label nullOrUndefined;
+    {
+      ScratchTagScope tag(masm, value);
+      masm.splitTagForTest(value, tag);
+
+      masm.branchTestNull(Assembler::Equal, tag, &nullOrUndefined);
+      masm.branchTestUndefined(Assembler::Equal, tag, &nullOrUndefined);
+    }
+
+    Label done;
+
+    
+    
+    masm.move32(Imm32(op == JSOp::Ne), output);
+    masm.jump(&done);
+
+    masm.bind(&nullOrUndefined);
+    masm.move32(Imm32(op == JSOp::Eq), output);
+
+    
+    masm.bind(&done);
   }
-
-  Register objreg =
-      masm.extractObject(value, ToTempUnboxRegister(lir->temp0()));
-  branchTestObjectEmulatesUndefined(objreg, nullOrLikeUndefined,
-                                    notNullOrLikeUndefined, output, ool);
-  
-
-  Label done;
-
-  
-  
-  masm.move32(Imm32(op == JSOp::Ne), output);
-  masm.jump(&done);
-
-  masm.bind(nullOrLikeUndefined);
-  masm.move32(Imm32(op == JSOp::Eq), output);
-
-  
-  masm.bind(&done);
 }
 
 void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchV(
@@ -11174,8 +11205,7 @@ void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchV(
     std::swap(ifTrue, ifFalse);
   }
 
-  auto* ool = new (alloc()) OutOfLineTestObject();
-  addOutOfLineCode(ool, lir->cmpMir());
+  bool intact = hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted();
 
   Label* ifTrueLabel = getJumpLabelForBranch(ifTrue);
   Label* ifFalseLabel = getJumpLabelForBranch(ifFalse);
@@ -11190,11 +11220,20 @@ void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchV(
     masm.branchTestObject(Assembler::NotEqual, tag, ifFalseLabel);
   }
 
-  
-  Register objreg =
-      masm.extractObject(value, ToTempUnboxRegister(lir->tempToUnbox()));
-  Register scratch = ToRegister(lir->temp());
-  testObjectEmulatesUndefined(objreg, ifTrueLabel, ifFalseLabel, scratch, ool);
+  if (!intact) {
+    OutOfLineTestObject* ool = new (alloc()) OutOfLineTestObject();
+    addOutOfLineCode(ool, lir->cmpMir());
+
+    
+    Register objreg =
+        masm.extractObject(value, ToTempUnboxRegister(lir->tempToUnbox()));
+    Register scratch = ToRegister(lir->temp());
+    testObjectEmulatesUndefined(objreg, ifTrueLabel, ifFalseLabel, scratch,
+                                ool);
+  } else {
+    
+    masm.jump(ifFalseLabel);
+  }
 }
 
 void CodeGenerator::visitIsNullOrLikeUndefinedT(LIsNullOrLikeUndefinedT* lir) {
@@ -11202,29 +11241,36 @@ void CodeGenerator::visitIsNullOrLikeUndefinedT(LIsNullOrLikeUndefinedT* lir) {
              lir->mir()->compareType() == MCompare::Compare_Null);
   MOZ_ASSERT(lir->mir()->lhs()->type() == MIRType::Object);
 
+  bool intact = hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted();
   JSOp op = lir->mir()->jsop();
-  MOZ_ASSERT(IsLooseEqualityOp(op), "Strict equality should have been folded");
-
-  Register objreg = ToRegister(lir->input());
   Register output = ToRegister(lir->output());
+  if (!intact) {
+    MOZ_ASSERT(IsLooseEqualityOp(op),
+               "Strict equality should have been folded");
 
-  auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
-  addOutOfLineCode(ool, lir->mir());
+    Register objreg = ToRegister(lir->input());
 
-  Label* emulatesUndefined = ool->label1();
-  Label* doesntEmulateUndefined = ool->label2();
+    auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
+    addOutOfLineCode(ool, lir->mir());
 
-  branchTestObjectEmulatesUndefined(objreg, emulatesUndefined,
-                                    doesntEmulateUndefined, output, ool);
+    Label* emulatesUndefined = ool->label1();
+    Label* doesntEmulateUndefined = ool->label2();
 
-  Label done;
+    branchTestObjectEmulatesUndefined(objreg, emulatesUndefined,
+                                      doesntEmulateUndefined, output, ool);
 
-  masm.move32(Imm32(op == JSOp::Ne), output);
-  masm.jump(&done);
+    Label done;
 
-  masm.bind(emulatesUndefined);
-  masm.move32(Imm32(op == JSOp::Eq), output);
-  masm.bind(&done);
+    masm.move32(Imm32(op == JSOp::Ne), output);
+    masm.jump(&done);
+
+    masm.bind(emulatesUndefined);
+    masm.move32(Imm32(op == JSOp::Eq), output);
+    masm.bind(&done);
+  } else {
+    
+    masm.move32(Imm32(op == JSOp::Ne), output);
+  }
 }
 
 void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchT(
@@ -11232,6 +11278,8 @@ void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchT(
   MOZ_ASSERT(lir->cmpMir()->compareType() == MCompare::Compare_Undefined ||
              lir->cmpMir()->compareType() == MCompare::Compare_Null);
   MOZ_ASSERT(lir->cmpMir()->lhs()->type() == MIRType::Object);
+
+  bool intact = hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted();
 
   JSOp op = lir->cmpMir()->jsop();
   MOZ_ASSERT(IsLooseEqualityOp(op), "Strict equality should have been folded");
@@ -11244,17 +11292,23 @@ void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchT(
     std::swap(ifTrue, ifFalse);
   }
 
-  Register input = ToRegister(lir->getOperand(0));
+  if (intact) {
+    
+    Label* ifFalseLabel = getJumpLabelForBranch(ifFalse);
+    masm.jump(ifFalseLabel);
+  } else {
+    Register input = ToRegister(lir->getOperand(0));
 
-  auto* ool = new (alloc()) OutOfLineTestObject();
-  addOutOfLineCode(ool, lir->cmpMir());
+    auto* ool = new (alloc()) OutOfLineTestObject();
+    addOutOfLineCode(ool, lir->cmpMir());
 
-  Label* ifTrueLabel = getJumpLabelForBranch(ifTrue);
-  Label* ifFalseLabel = getJumpLabelForBranch(ifFalse);
+    Label* ifTrueLabel = getJumpLabelForBranch(ifTrue);
+    Label* ifFalseLabel = getJumpLabelForBranch(ifFalse);
 
-  
-  Register scratch = ToRegister(lir->temp());
-  testObjectEmulatesUndefined(input, ifTrueLabel, ifFalseLabel, scratch, ool);
+    
+    Register scratch = ToRegister(lir->temp());
+    testObjectEmulatesUndefined(input, ifTrueLabel, ifFalseLabel, scratch, ool);
+  }
 }
 
 void CodeGenerator::visitIsNull(LIsNull* lir) {
@@ -13167,27 +13221,34 @@ void CodeGenerator::visitNotBI(LNotBI* lir) {
 }
 
 void CodeGenerator::visitNotO(LNotO* lir) {
-  auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
-  addOutOfLineCode(ool, lir->mir());
+  bool intact = hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted();
+  if (intact) {
+    
+    Register output = ToRegister(lir->output());
+    masm.move32(Imm32(0), output);
+  } else {
+    auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
+    addOutOfLineCode(ool, lir->mir());
 
-  Label* ifEmulatesUndefined = ool->label1();
-  Label* ifDoesntEmulateUndefined = ool->label2();
+    Label* ifEmulatesUndefined = ool->label1();
+    Label* ifDoesntEmulateUndefined = ool->label2();
 
-  Register objreg = ToRegister(lir->input());
-  Register output = ToRegister(lir->output());
-  branchTestObjectEmulatesUndefined(objreg, ifEmulatesUndefined,
-                                    ifDoesntEmulateUndefined, output, ool);
-  
+    Register objreg = ToRegister(lir->input());
+    Register output = ToRegister(lir->output());
+    branchTestObjectEmulatesUndefined(objreg, ifEmulatesUndefined,
+                                      ifDoesntEmulateUndefined, output, ool);
+    
 
-  Label join;
+    Label join;
 
-  masm.move32(Imm32(0), output);
-  masm.jump(&join);
+    masm.move32(Imm32(0), output);
+    masm.jump(&join);
 
-  masm.bind(ifEmulatesUndefined);
-  masm.move32(Imm32(1), output);
+    masm.bind(ifEmulatesUndefined);
+    masm.move32(Imm32(1), output);
 
-  masm.bind(&join);
+    masm.bind(&join);
+  }
 }
 
 void CodeGenerator::visitNotV(LNotV* lir) {
@@ -14939,6 +15000,43 @@ static bool AddInlinedCompilations(JSContext* cx, HandleScript script,
   return true;
 }
 
+void CodeGenerator::validateAndRegisterFuseDependencies(JSContext* cx,
+                                                        HandleScript script,
+                                                        bool* isValid) {
+  
+  if (!*isValid) {
+    return;
+  }
+
+  for (auto dependency : fuseDependencies) {
+    switch (dependency) {
+      case FuseDependencyKind::HasSeenObjectEmulateUndefinedFuse: {
+        auto& hasSeenObjectEmulateUndefinedFuse =
+            cx->runtime()->hasSeenObjectEmulateUndefinedFuse.ref();
+
+        if (!hasSeenObjectEmulateUndefinedFuse.intact()) {
+          JitSpew(JitSpew_Codegen,
+                  "tossing compilation; fuse dependency no longer valid\n");
+          *isValid = false;
+          return;
+        }
+
+        if (!hasSeenObjectEmulateUndefinedFuse.addFuseDependency(cx, script)) {
+          JitSpew(
+              JitSpew_Codegen,
+              "tossing compilation; failed to register script dependency\n");
+          *isValid = false;
+          return;
+        }
+        break;
+      }
+
+      default:
+        MOZ_CRASH("Unknown Dependency Kind");
+    }
+  }
+}
+
 bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   AutoCreatedBy acb(masm, "CodeGenerator::link");
 
@@ -14976,6 +15074,17 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   if (!AddInlinedCompilations(cx, script, compilationId, snapshot, &isValid)) {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  validateAndRegisterFuseDependencies(cx, script, &isValid);
+
+  
+  
   if (!isValid) {
     return true;
   }
@@ -15158,7 +15267,6 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   if (IonScriptCounts* counts = extractScriptCounts()) {
     script->addIonCounts(counts);
   }
-
   
 
   

@@ -50,6 +50,7 @@
 #include "vm/Caches.h"  
 #include "vm/CodeCoverage.h"
 #include "vm/GeckoProfiler.h"
+#include "vm/InvalidatingFuse.h"
 #include "vm/JSScript.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
 #include "vm/SharedScriptDataTableHolder.h"   
@@ -293,6 +294,17 @@ class Metrics {
   }
   FOR_EACH_JS_METRIC(DECLARE_METRIC_HELPER)
 #undef DECLARE_METRIC_HELPER
+};
+
+class HasSeenObjectEmulateUndefinedFuse : public js::InvalidatingRuntimeFuse {
+  virtual const char* name() override {
+    return "HasSeenObjectEmulateUndefinedFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override {
+    
+    
+    return true;
+  }
 };
 
 }  
@@ -1087,6 +1099,9 @@ struct JSRuntime {
 
   js::MainThreadData<JS::GlobalCreationCallback>
       shadowRealmGlobalCreationCallback;
+
+  js::MainThreadData<js::HasSeenObjectEmulateUndefinedFuse>
+      hasSeenObjectEmulateUndefinedFuse;
 };
 
 namespace js {

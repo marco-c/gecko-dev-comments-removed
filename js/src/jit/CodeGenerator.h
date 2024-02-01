@@ -409,6 +409,36 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 #define LIR_OP(op) void visit##op(L##op* ins);
   LIR_OPCODE_LIST(LIR_OP)
 #undef LIR_OP
+
+  
+  
+  enum class FuseDependencyKind {
+    HasSeenObjectEmulateUndefinedFuse,
+  };
+
+  
+  mozilla::EnumSet<FuseDependencyKind> fuseDependencies;
+
+  
+  void addHasSeenObjectEmulateUndefinedFuseDependency() {
+    fuseDependencies += FuseDependencyKind::HasSeenObjectEmulateUndefinedFuse;
+  }
+
+  
+  
+  
+  void validateAndRegisterFuseDependencies(JSContext* cx, HandleScript script,
+                                           bool* isValid);
+
+  
+  
+  bool hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted() {
+    bool intact = gen->outerInfo().hasSeenObjectEmulateUndefinedFuseIntact();
+    if (intact) {
+      addHasSeenObjectEmulateUndefinedFuseDependency();
+    }
+    return intact;
+  }
 };
 
 class OutOfLineResumableWasmTrap : public OutOfLineCodeBase<CodeGenerator> {

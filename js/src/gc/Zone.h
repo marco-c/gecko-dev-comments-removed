@@ -29,6 +29,7 @@
 #include "js/GCHashTable.h"
 #include "js/Vector.h"
 #include "vm/AtomsTable.h"
+#include "vm/InvalidatingFuse.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "vm/ShapeZone.h"
@@ -676,6 +677,20 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
 #endif
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  js::Vector<js::DependentScriptSet, 1, js::SystemAllocPolicy> fuseDependencies;
+  js::DependentScriptSet* getOrCreateDependentScriptSet(
+      JSContext* cx, js::InvalidatingFuse* fuse);
 
  private:
   js::jit::JitZone* createJitZone(JSContext* cx);
