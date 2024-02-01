@@ -336,7 +336,8 @@ TextPropertyEditor.prototype = {
         
         
         
-        stopOnReturn: true,
+        
+        stopOnReturn: this.ruleView.inplaceEditorFocusNextOnEnter !== true,
         inputAriaLabel: PROPERTY_NAME_INPUT_LABEL,
       });
 
@@ -439,7 +440,8 @@ TextPropertyEditor.prototype = {
         
         
         
-        stopOnReturn: true,
+        
+        stopOnReturn: this.ruleView.inplaceEditorFocusNextOnEnter !== true,
         
         
         inputAriaLabelledBy: this.nameSpan.id,

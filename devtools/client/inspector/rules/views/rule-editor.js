@@ -336,7 +336,8 @@ RuleEditor.prototype = {
         
         
         
-        stopOnReturn: true,
+        
+        stopOnReturn: this.ruleView.inplaceEditorFocusNextOnEnter !== true,
       });
     }
 
