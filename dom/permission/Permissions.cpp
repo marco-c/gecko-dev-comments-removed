@@ -41,20 +41,37 @@ JSObject* Permissions::WrapObject(JSContext* aCx,
 
 namespace {
 
+
+
+
 RefPtr<MozPromise<RefPtr<PermissionStatus>, nsresult, true>>
-CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermission,
+CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermissionDesc,
                        nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
-  PermissionDescriptor permission;
-  JS::Rooted<JS::Value> value(aCx, JS::ObjectOrNullValue(aPermission));
-  if (NS_WARN_IF(!permission.Init(aCx, value))) {
+  
+  
+  PermissionDescriptor rootDesc;
+  JS::Rooted<JS::Value> permissionDescValue(
+      aCx, JS::ObjectOrNullValue(aPermissionDesc));
+  if (NS_WARN_IF(!rootDesc.Init(aCx, permissionDescValue))) {
+    
+    
+    
+    
+    
+    
     aRv.NoteJSContextException(aCx);
     return nullptr;
   }
 
-  switch (permission.mName) {
+  
+  
+  
+  
+  
+  switch (rootDesc.mName) {
     case PermissionName::Midi: {
       MidiPermissionDescriptor midiPerm;
-      if (NS_WARN_IF(!midiPerm.Init(aCx, value))) {
+      if (NS_WARN_IF(!midiPerm.Init(aCx, permissionDescValue))) {
         aRv.NoteJSContextException(aCx);
         return nullptr;
       }
@@ -68,7 +85,7 @@ CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermission,
     case PermissionName::Push:
     case PermissionName::Persistent_storage:
     case PermissionName::Screen_wake_lock:
-      return PermissionStatus::Create(aWindow, permission.mName);
+      return PermissionStatus::Create(aWindow, rootDesc.mName);
 
     default:
       MOZ_ASSERT_UNREACHABLE("Unhandled type");
@@ -80,9 +97,16 @@ CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermission,
 
 }  
 
+
 already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
                                              JS::Handle<JSObject*> aPermission,
                                              ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
   if (!mWindow || !mWindow->IsFullyActive()) {
     aRv.ThrowInvalidStateError("The document is not fully active.");
     return nullptr;
@@ -93,6 +117,7 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
     return nullptr;
   }
 
+  
   auto permissionStatusPromise =
       CreatePermissionStatus(aCx, aPermission, mWindow, aRv);
   if (!permissionStatusPromise) {

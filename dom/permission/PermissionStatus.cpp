@@ -42,7 +42,13 @@ PermissionStatus::PermissionStatus(nsPIDOMWindowInner* aWindow,
   KeepAliveIfHasListenersFor(nsGkAtoms::onchange);
 }
 
+
+
 RefPtr<PermissionStatus::SimplePromise> PermissionStatus::Init() {
+  
+  
+  
+  
   mObserver = PermissionObserver::GetInstance();
   if (NS_WARN_IF(!mObserver)) {
     return SimplePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
@@ -50,6 +56,7 @@ RefPtr<PermissionStatus::SimplePromise> PermissionStatus::Init() {
 
   mObserver->AddSink(this);
 
+  
   return UpdateState();
 }
 
@@ -68,7 +75,19 @@ nsLiteralCString PermissionStatus::GetPermissionType() {
   return PermissionNameToType(mName);
 }
 
+
+
+
+
 RefPtr<PermissionStatus::SimplePromise> PermissionStatus::UpdateState() {
+  
+  
+  
+
+  
+  
+  
+
   nsCOMPtr<nsPIDOMWindowInner> window = GetOwner();
   if (NS_WARN_IF(!window)) {
     return SimplePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
@@ -95,7 +114,6 @@ RefPtr<PermissionStatus::SimplePromise> PermissionStatus::UpdateState() {
 
   mState = ActionToPermissionState(action);
   return SimplePromise::CreateAndResolve(NS_OK, __func__);
-  ;
 }
 
 bool PermissionStatus::MaybeUpdatedBy(nsIPermission* aPermission) const {
@@ -126,13 +144,25 @@ bool PermissionStatus::MaybeUpdatedByNotifyOnly(
   return false;
 }
 
+
 void PermissionStatus::PermissionChanged() {
   auto oldState = mState;
   RefPtr<PermissionStatus> self(this);
+  
+  
+  
+  
+  
+  
+  
+
+  
   UpdateState()->Then(
       GetMainThreadSerialEventTarget(), __func__,
       [self, oldState]() {
         if (self->mState != oldState) {
+          
+          
           RefPtr<AsyncEventDispatcher> eventDispatcher =
               new AsyncEventDispatcher(self.get(), u"change"_ns,
                                        CanBubble::eNo);
