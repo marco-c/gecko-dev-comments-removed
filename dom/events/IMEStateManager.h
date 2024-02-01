@@ -22,6 +22,7 @@ namespace mozilla {
 class EditorBase;
 class EventDispatchingCallback;
 class IMEContentObserver;
+class PseudoFocusChangeRunnable;
 class TextCompositionArray;
 class TextComposition;
 
@@ -384,6 +385,26 @@ class IMEStateManager {
   static bool HasActiveChildSetInputContext();
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static void SetMenubarPseudoFocus(
+      PseudoFocusChangeRunnable* aCaller, bool aSetPseudoFocus,
+      nsPresContext* aFocusedPresContextAtRequested);
+
+  
   
   
   static StaticRefPtr<dom::Element> sFocusedElement;
@@ -493,6 +514,11 @@ class IMEStateManager {
    private:
     bool mOldValue;
   };
+
+  
+  
+  static StaticRefPtr<PseudoFocusChangeRunnable> sPseudoFocusChangeRunnable;
+  friend class PseudoFocusChangeRunnable;
 };
 
 }  

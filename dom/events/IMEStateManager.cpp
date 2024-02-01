@@ -45,6 +45,7 @@
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
 #include "nsPresContext.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 
@@ -85,6 +86,29 @@ bool IMEStateManager::sCleaningUpForStoppingIMEStateManagement = false;
 bool IMEStateManager::sIsActive = false;
 Maybe<IMEStateManager::PendingFocusedBrowserSwitchingData>
     IMEStateManager::sPendingFocusedBrowserSwitchingData;
+
+class PseudoFocusChangeRunnable : public Runnable {
+ public:
+  explicit PseudoFocusChangeRunnable(bool aInstallingMenuKeyboardListener)
+      : Runnable("PseudoFocusChangeRunnable"),
+        mFocusedPresContext(IMEStateManager::sFocusedPresContext),
+        mFocusedElement(IMEStateManager::sFocusedElement),
+        mInstallMenuKeyboardListener(aInstallingMenuKeyboardListener) {}
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
+    IMEStateManager::SetMenubarPseudoFocus(this, mInstallMenuKeyboardListener,
+                                           mFocusedPresContext);
+    return NS_OK;
+  }
+
+ private:
+  const RefPtr<nsPresContext> mFocusedPresContext;
+  const RefPtr<Element> mFocusedElement;
+  const bool mInstallMenuKeyboardListener;
+};
+
+StaticRefPtr<PseudoFocusChangeRunnable>
+    IMEStateManager::sPseudoFocusChangeRunnable;
 
 
 void IMEStateManager::Init() {
@@ -737,21 +761,84 @@ void IMEStateManager::OnInstalledMenuKeyboardListener(bool aInstalling) {
   MOZ_LOG(
       sISMLog, LogLevel::Info,
       ("OnInstalledMenuKeyboardListener(aInstalling=%s), "
+       "nsContentUtils::IsSafeToRunScript()=%s, "
        "sInstalledMenuKeyboardListener=%s, BrowserParent::GetFocused()=0x%p, "
-       "sActiveChildInputContext=%s",
-       GetBoolName(aInstalling), GetBoolName(sInstalledMenuKeyboardListener),
-       BrowserParent::GetFocused(),
-       ToString(sActiveChildInputContext).c_str()));
+       "sActiveChildInputContext=%s, sFocusedPresContext=0x%p, "
+       "sFocusedElement=0x%p, sPseudoFocusChangeRunnable=0x%p",
+       GetBoolName(aInstalling),
+       GetBoolName(nsContentUtils::IsSafeToRunScript()),
+       GetBoolName(sInstalledMenuKeyboardListener), BrowserParent::GetFocused(),
+       ToString(sActiveChildInputContext).c_str(), sFocusedPresContext.get(),
+       sFocusedElement.get(), sPseudoFocusChangeRunnable.get()));
 
+  
+  
   sInstalledMenuKeyboardListener = aInstalling;
+  
+  
+  if (sPseudoFocusChangeRunnable) {
+    return;
+  }
+  sPseudoFocusChangeRunnable = new PseudoFocusChangeRunnable(aInstalling);
+  nsContentUtils::AddScriptRunner(sPseudoFocusChangeRunnable);
+}
 
-  InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
-                            aInstalling
-                                ? InputContextAction::MENU_GOT_PSEUDO_FOCUS
-                                : InputContextAction::MENU_LOST_PSEUDO_FOCUS);
-  RefPtr<nsPresContext> focusedPresContext = sFocusedPresContext;
-  RefPtr<Element> focusedElement = sFocusedElement;
-  OnChangeFocusInternal(focusedPresContext, focusedElement, action);
+
+void IMEStateManager::SetMenubarPseudoFocus(
+    PseudoFocusChangeRunnable* aCaller, bool aSetPseudoFocus,
+    nsPresContext* aFocusedPresContextAtRequested) {
+  MOZ_LOG(
+      sISMLog, LogLevel::Info,
+      ("SetMenubarPseudoFocus(aCaller=0x%p, aSetPseudoFocus=%s, "
+       "aFocusedPresContextAtRequested=0x%p), "
+       "sInstalledMenuKeyboardListener=%s, sFocusedPresContext=0x%p, "
+       "sFocusedElement=0x%p, sPseudoFocusChangeRunnable=0x%p",
+       aCaller, GetBoolName(aSetPseudoFocus), aFocusedPresContextAtRequested,
+       GetBoolName(sInstalledMenuKeyboardListener), sFocusedPresContext.get(),
+       sFocusedElement.get(), sPseudoFocusChangeRunnable.get()));
+
+  MOZ_ASSERT(sPseudoFocusChangeRunnable.get() == aCaller);
+
+  
+  
+  RefPtr<PseudoFocusChangeRunnable> runningOne =
+      sPseudoFocusChangeRunnable.forget();
+  MOZ_ASSERT(!sPseudoFocusChangeRunnable);
+
+  
+  
+  
+  
+  
+  
+  
+  if (sInstalledMenuKeyboardListener == aSetPseudoFocus) {
+    InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
+                              aSetPseudoFocus
+                                  ? InputContextAction::MENU_GOT_PSEUDO_FOCUS
+                                  : InputContextAction::MENU_LOST_PSEUDO_FOCUS);
+    RefPtr<nsPresContext> focusedPresContext = sFocusedPresContext;
+    RefPtr<Element> focusedElement = sFocusedElement;
+    OnChangeFocusInternal(focusedPresContext, focusedElement, action);
+    return;
+  }
+
+  
+  
+  
+  
+  if (!aFocusedPresContextAtRequested) {
+    return;
+  }
+  RefPtr<TextComposition> composition =
+      GetTextCompositionFor(aFocusedPresContextAtRequested);
+  if (!composition) {
+    return;
+  }
+  if (nsCOMPtr<nsIWidget> widget =
+          aFocusedPresContextAtRequested->GetTextInputHandlingWidget()) {
+    composition->RequestToCommit(widget, false);
+  }
 }
 
 
