@@ -632,13 +632,13 @@ let $28 = instantiate(`(module
 )`);
 
 
-register($28, `M`);
+register($28, `M3`);
 
 
 let $29 = instantiate(`(module
   (rec (type $$f1 (sub (func))) (type (struct (field (ref $$f1)))))
   (rec (type $$g1 (sub $$f1 (func))) (type (struct)))
-  (func (import "M" "g") (type $$g1))
+  (func (import "M3" "g") (type $$g1))
 )`);
 
 
@@ -653,7 +653,7 @@ let $30 = instantiate(`(module
 )`);
 
 
-register($30, `M`);
+register($30, `M4`);
 
 
 let $31 = instantiate(`(module
@@ -663,7 +663,7 @@ let $31 = instantiate(`(module
     (type $$g1 (sub $$f1 (func)))
     (type (sub $$s1 (struct (field (ref $$f1) (ref $$f1) (ref $$f2) (ref $$f2) (ref $$g1)))))
   )
-  (func (import "M" "g") (type $$g1))
+  (func (import "M4" "g") (type $$g1))
 )`);
 
 
@@ -675,14 +675,14 @@ let $32 = instantiate(`(module
 )`);
 
 
-register($32, `M`);
+register($32, `M5`);
 
 
 assert_unlinkable(
   () => instantiate(`(module
     (rec (type $$f1 (sub (func))) (type (struct (field (ref $$f1)))))
     (rec (type $$g1 (sub $$f1 (func))) (type (struct)))
-    (func (import "M" "g") (type $$g1))
+    (func (import "M5" "g") (type $$g1))
   )`),
   `incompatible import`,
 );
@@ -696,14 +696,14 @@ let $33 = instantiate(`(module
 )`);
 
 
-register($33, `M`);
+register($33, `M6`);
 
 
 let $34 = instantiate(`(module
   (rec (type $$f1 (sub (func))) (type (struct (field (ref $$f1)))))
   (rec (type $$f2 (sub (func))) (type (struct (field (ref $$f2)))))
   (rec (type $$g (sub $$f1 (func))) (type (struct)))
-  (func (import "M" "g") (type $$f1))
+  (func (import "M6" "g") (type $$f1))
 )`);
 
 
@@ -719,7 +719,7 @@ let $35 = instantiate(`(module
 )`);
 
 
-register($35, `M`);
+register($35, `M7`);
 
 
 let $36 = instantiate(`(module
@@ -730,8 +730,8 @@ let $36 = instantiate(`(module
     (type (sub $$s1 (struct (field (ref $$f1) (ref $$f1) (ref $$f2) (ref $$f2) (ref $$g1)))))
   )
   (rec (type $$h (sub $$g1 (func))) (type (struct)))
-  (func (import "M" "h") (type $$f1))
-  (func (import "M" "h") (type $$g1))
+  (func (import "M7" "h") (type $$f1))
+  (func (import "M7" "h") (type $$g1))
 )`);
 
 
@@ -743,16 +743,16 @@ let $37 = instantiate(`(module
 )`);
 
 
-register($37, `M`);
+register($37, `M8`);
 
 
 let $38 = instantiate(`(module
   (rec (type $$f11 (sub (func (result (ref func))))) (type $$f12 (sub $$f11 (func (result (ref $$f11))))))
   (rec (type $$f21 (sub (func (result (ref func))))) (type $$f22 (sub $$f21 (func (result (ref $$f21))))))
-  (func (import "M" "f11") (type $$f11))
-  (func (import "M" "f11") (type $$f21))
-  (func (import "M" "f12") (type $$f12))
-  (func (import "M" "f12") (type $$f22))
+  (func (import "M8" "f11") (type $$f11))
+  (func (import "M8" "f11") (type $$f21))
+  (func (import "M8" "f12") (type $$f12))
+  (func (import "M8" "f12") (type $$f22))
 )`);
 
 
@@ -766,7 +766,7 @@ let $39 = instantiate(`(module
 )`);
 
 
-register($39, `M`);
+register($39, `M9`);
 
 
 let $40 = instantiate(`(module
@@ -774,14 +774,14 @@ let $40 = instantiate(`(module
   (rec (type $$f21 (sub (func (result (ref func))))) (type $$f22 (sub $$f21 (func (result (ref $$f21))))))
   (rec (type $$g11 (sub $$f11 (func (result (ref func))))) (type $$g12 (sub $$g11 (func (result (ref $$g11))))))
   (rec (type $$g21 (sub $$f21 (func (result (ref func))))) (type $$g22 (sub $$g21 (func (result (ref $$g21))))))
-  (func (import "M" "g11") (type $$f11))
-  (func (import "M" "g11") (type $$f21))
-  (func (import "M" "g12") (type $$f11))
-  (func (import "M" "g12") (type $$f21))
-  (func (import "M" "g11") (type $$g11))
-  (func (import "M" "g11") (type $$g21))
-  (func (import "M" "g12") (type $$g12))
-  (func (import "M" "g12") (type $$g22))
+  (func (import "M9" "g11") (type $$f11))
+  (func (import "M9" "g11") (type $$f21))
+  (func (import "M9" "g12") (type $$f11))
+  (func (import "M9" "g12") (type $$f21))
+  (func (import "M9" "g11") (type $$g11))
+  (func (import "M9" "g11") (type $$g21))
+  (func (import "M9" "g12") (type $$g12))
+  (func (import "M9" "g12") (type $$g22))
 )`);
 
 
@@ -792,13 +792,13 @@ let $41 = instantiate(`(module
 )`);
 
 
-register($41, `M`);
+register($41, `M10`);
 
 
 assert_unlinkable(
   () => instantiate(`(module
     (rec (type $$f11 (sub (func))) (type $$f12 (sub $$f11 (func))))
-    (func (import "M" "f") (type $$f11))
+    (func (import "M10" "f") (type $$f11))
   )`),
   `incompatible import`,
 );
@@ -812,14 +812,14 @@ let $42 = instantiate(`(module
 )`);
 
 
-register($42, `M`);
+register($42, `M11`);
 
 
 assert_unlinkable(
   () => instantiate(`(module
     (rec (type $$f01 (sub (func))) (type $$f02 (sub $$f01 (func))))
     (rec (type $$f11 (sub (func))) (type $$f12 (sub $$f01 (func))))
-    (func (import "M" "f") (type $$f11))
+    (func (import "M11" "f") (type $$f11))
   )`),
   `incompatible import`,
 );

@@ -144,7 +144,7 @@ testMemoryFailGrow(1, MemoryMaxValid, MemoryMaxRuntime + 1, true);
 
 function testTableValidate(initial, maximum) {
   wasmValidateText(`(module
-    (table ${initial} ${maximum || ''} anyfunc)
+    (table ${initial} ${maximum || ''} funcref)
   )`);
 }
 
@@ -158,7 +158,7 @@ testTableValidate(TableMaxValid, TableMaxValid);
 
 function testTableFailValidate(initial, maximum, pattern) {
   wasmFailValidateText(`(module
-    (table ${initial} ${maximum || ''} anyfunc)
+    (table ${initial} ${maximum || ''} funcref)
   )`, pattern);
 }
 
@@ -172,7 +172,7 @@ function testTableFailConstruct(initial, maximum, pattern) {
   assertErrorMessage(() => new WebAssembly.Table({
     initial,
     maximum,
-    element: 'anyfunc',
+    element: 'funcref',
   }), TypeError, pattern);
 }
 
@@ -185,7 +185,7 @@ function testTableCreate(initial, maximum) {
   
   try {
       wasmEvalText(`(module
-        (table ${initial} ${maximum || ''} anyfunc)
+        (table ${initial} ${maximum || ''} funcref)
       )`);
   } catch (e) {
       assertEq(String(e).indexOf("out of memory") !== -1, true, `${e}`);
@@ -194,7 +194,7 @@ function testTableCreate(initial, maximum) {
     new WebAssembly.Table({
       initial,
       maximum,
-      element: 'anyfunc',
+      element: 'funcref',
     });
   } catch (e) {
     assertEq(String(e).indexOf("out of memory") !== -1, true, `${e}`);
@@ -212,12 +212,12 @@ testTableCreate(TableMaxRuntime, TableMaxValid);
 
 function testTableFailCreate(initial, maximum, pattern) {
   assertErrorMessage(() => wasmEvalText(`(module
-    (table ${initial} ${maximum || ''} anyfunc)
+    (table ${initial} ${maximum || ''} funcref)
   )`), WebAssembly.RuntimeError, pattern);
   assertErrorMessage(() => new WebAssembly.Table({
     initial,
     maximum,
-    element: 'anyfunc',
+    element: 'funcref',
   }), WebAssembly.RuntimeError, pattern);
 }
 

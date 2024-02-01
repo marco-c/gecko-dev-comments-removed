@@ -241,12 +241,12 @@ let $13 = instantiate(`(module
 )`);
 
 
-register($13, `M`);
+register($13, `Mr1`);
 
 
 let $14 = instantiate(`(module
   (rec (type $$t2 (func (param i32 (ref $$t2)))))
-  (func (import "M" "f") (param (ref $$t2)))
+  (func (import "Mr1" "f") (param (ref $$t2)))
 )`);
 
 
@@ -262,7 +262,7 @@ let $15 = instantiate(`(module
 )`);
 
 
-register($15, `M`);
+register($15, `Mr2`);
 
 
 let $16 = instantiate(`(module
@@ -271,9 +271,9 @@ let $16 = instantiate(`(module
     (type $$t2 (func (param i32 (ref $$t3))))
     (type $$t3 (func (param i32 (ref $$t2))))
   )
-  (func (import "M" "f1") (param (ref $$t1)))
-  (func (import "M" "f2") (param (ref $$t2)))
-  (func (import "M" "f3") (param (ref $$t3)))
+  (func (import "Mr2" "f1") (param (ref $$t1)))
+  (func (import "Mr2" "f2") (param (ref $$t2)))
+  (func (import "Mr2" "f3") (param (ref $$t3)))
 )`);
 
 
@@ -289,7 +289,7 @@ let $17 = instantiate(`(module
 )`);
 
 
-register($17, `M`);
+register($17, `Mr3`);
 
 
 let $18 = instantiate(`(module
@@ -298,9 +298,9 @@ let $18 = instantiate(`(module
     (type $$t2 (func (param i32 (ref $$t1))))
     (type $$t3 (func (param i32 (ref $$t2))))
   )
-  (func (import "M" "f1") (param (ref $$t1)))
-  (func (import "M" "f2") (param (ref $$t2)))
-  (func (import "M" "f3") (param (ref $$t3)))
+  (func (import "Mr3" "f1") (param (ref $$t1)))
+  (func (import "Mr3" "f2") (param (ref $$t2)))
+  (func (import "Mr3" "f3") (param (ref $$t3)))
 )`);
 
 
@@ -323,7 +323,7 @@ let $19 = instantiate(`(module
 )`);
 
 
-register($19, `M`);
+register($19, `Mr4`);
 
 
 let $20 = instantiate(`(module
@@ -339,7 +339,7 @@ let $20 = instantiate(`(module
     (type $$u3 (func (param f32 (ref $$t2))))
   )
 
-  (func (import "M" "f1") (param (ref $$t1)))
-  (func (import "M" "f2") (param (ref $$t2)))
-  (func (import "M" "f3") (param (ref $$t3)))
+  (func (import "Mr4" "f1") (param (ref $$t1)))
+  (func (import "Mr4" "f2") (param (ref $$t2)))
+  (func (import "Mr4" "f3") (param (ref $$t3)))
 )`);
