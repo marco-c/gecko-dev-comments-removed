@@ -7,6 +7,9 @@ support-files = [
   "experiment.json",
 ]
 
+["test_backgroundtask_automaticrestart.js"]
+run-if = ["os == 'win'"]
+
 ["test_backgroundtask_deletes_profile.js"]
 
 ["test_backgroundtask_exitcodes.js"]

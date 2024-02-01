@@ -74,6 +74,8 @@ skip-if = [
 
 ["browser_feature_callout_panel.js"]
 
+["browser_foxdoodle_set_default.js"]
+
 ["browser_getScreenshots.js"]
 
 ["browser_highlights_section.js"]
