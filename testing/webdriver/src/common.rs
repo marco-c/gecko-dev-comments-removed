@@ -61,6 +61,7 @@ pub enum FrameId {
         serialize_with = "serialize_webelement_id"
     )]
     Element(WebElement),
+    Top,
 }
 
 
