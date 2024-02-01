@@ -389,14 +389,19 @@ enum class StyleVisibility : uint8_t {
 };
 
 
-enum class StyleWhiteSpace : uint8_t {
-  Normal = 0,
-  Pre,
-  Nowrap,
-  PreWrap,
-  PreLine,
-  PreSpace,
+enum class StyleWhiteSpaceCollapse : uint8_t {
+  Collapse = 0,
+  
+  Preserve,
+  PreserveBreaks,
+  PreserveSpaces,
   BreakSpaces,
+};
+
+
+enum class StyleTextWrapMode : uint8_t {
+  Wrap = 0,
+  Nowrap,
 };
 
 
