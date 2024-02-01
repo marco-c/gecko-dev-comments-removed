@@ -1,5 +1,5 @@
 
-import { ASRouterNewTabHook } from "lib/ASRouterNewTabHook.sys.mjs";
+import { ASRouterNewTabHook } from "modules/ASRouterNewTabHook.sys.mjs";
 
 describe("ASRouterNewTabHook", () => {
   let sandbox = null;
