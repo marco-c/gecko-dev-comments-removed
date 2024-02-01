@@ -65,23 +65,78 @@ class OverOutElementsWrapper final : public nsISupports {
   NS_DECL_CYCLE_COLLECTION_CLASS(OverOutElementsWrapper)
 
   void ContentRemoved(nsIContent& aContent);
+  void WillDispatchOverAndEnterEvent(nsIContent* aOverEventTarget) {
+    mDeepestEnterEventTarget = aOverEventTarget;
+    
+    
+    mDispatchingOverEventTarget = aOverEventTarget;
+    mDeepestEnterEventTargetIsOverEventTarget = true;
+  }
+  void DidDispatchOverAndEnterEvent() { mDispatchingOverEventTarget = nullptr; }
+  [[nodiscard]] bool IsDispatchingOverEventOn(
+      nsIContent* aOverEventTarget) const {
+    MOZ_ASSERT(aOverEventTarget);
+    return mDeepestEnterEventTargetIsOverEventTarget &&
+           mDeepestEnterEventTarget == aOverEventTarget;
+  }
+  void WillDispatchOutAndOrLeaveEvent() {
+    
+    
+    
+    mDispatchingOutOrDeepestLeaveEventTarget = mDeepestEnterEventTarget;
+  }
+  void DidDispatchOutAndOrLeaveEvent() {
+    mLastOverFrame = nullptr;
+    mDeepestEnterEventTarget = mDispatchingOutOrDeepestLeaveEventTarget =
+        nullptr;
+  }
+  [[nodiscard]] bool IsDispatchingOutEventOnLastOverEventTarget() const {
+    return mDispatchingOutOrDeepestLeaveEventTarget &&
+           mDispatchingOutOrDeepestLeaveEventTarget == mDeepestEnterEventTarget;
+  }
+  void OverrideOverEventTarget(nsIContent* aOverEventTarget) {
+    mDeepestEnterEventTarget = aOverEventTarget;
+    mDeepestEnterEventTargetIsOverEventTarget = true;
+  }
 
+  [[nodiscard]] nsIContent* GetDeepestLeaveEventTarget() const {
+    
+    
+    return mDeepestEnterEventTarget;
+  }
+  [[nodiscard]] nsIContent* GetOutEventTarget() const {
+    
+    
+    return mDeepestEnterEventTargetIsOverEventTarget
+               ? mDeepestEnterEventTarget.get()
+               : nullptr;
+  }
+
+ public:
   WeakFrame mLastOverFrame;
 
-  nsCOMPtr<nsIContent> mLastOverElement;
+ private:
+  
+  
+  
+  
+  nsCOMPtr<nsIContent> mDeepestEnterEventTarget;
 
   
   
-  nsCOMPtr<nsIContent> mFirstOverEventElement;
+  
+  nsCOMPtr<nsIContent> mDispatchingOverEventTarget;
 
   
   
-  nsCOMPtr<nsIContent> mFirstOutEventElement;
+  
+  nsCOMPtr<nsIContent> mDispatchingOutOrDeepestLeaveEventTarget;
 
   
   
   
-  bool mLastOverElementRemoved = false;
+  
+  bool mDeepestEnterEventTargetIsOverEventTarget = true;
 };
 
 class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
