@@ -579,7 +579,7 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
 
   
   
-  len = TypedArrayLength(O);
+  len = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
 
   assert(
     len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
@@ -652,15 +652,12 @@ function TypedArrayJoin(separator) {
     return "";
   }
 
-  
-  
-  if (TypedArrayLength(O) === 0) {
-    assert(
-      IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
-      "TypedArrays with detached buffers have a length of zero"
-    );
+  var limit = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
 
-    return callFunction(String_repeat, ",", len - 1);
+  
+  
+  if (limit === 0) {
+    return callFunction(String_repeat, separator, len - 1);
   }
 
   assert(
@@ -677,7 +674,7 @@ function TypedArrayJoin(separator) {
   var R = ToString(element0);
 
   
-  for (var k = 1; k < len; k++) {
+  for (var k = 1; k < limit; k++) {
     
     var element = O[k];
 
@@ -686,6 +683,10 @@ function TypedArrayJoin(separator) {
 
     
     R += sep + ToString(element);
+  }
+
+  if (limit < len) {
+    R += callFunction(String_repeat, separator, len - limit);
   }
 
   
@@ -748,7 +749,7 @@ function TypedArrayLastIndexOf(searchElement ) {
 
   
   
-  len = TypedArrayLength(O);
+  len = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
 
   assert(
     len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
@@ -1254,7 +1255,7 @@ function TypedArraySubarray(begin, end) {
   }
 
   
-  var srcLength = TypedArrayLength(obj);
+  var srcLength = TypedArrayLengthZeroOnOutOfBounds(obj);
 
   
   
@@ -2033,15 +2034,15 @@ function TypedArrayWith(index, value) {
   }
 
   
-  len = TypedArrayLength(O);
+  var currentLen = TypedArrayLengthZeroOnOutOfBounds(O);
   assert(
-    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)) || len === 0,
+    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)) || currentLen === 0,
     "length is set to zero when the buffer has been detached"
   );
 
   
   
-  if (actualIndex < 0 || actualIndex >= len) {
+  if (actualIndex < 0 || actualIndex >= currentLen) {
     ThrowRangeError(JSMSG_BAD_INDEX);
   }
 

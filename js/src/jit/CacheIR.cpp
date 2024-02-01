@@ -10133,6 +10133,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
   return AttachDecision::Attach;
 }
 
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayLengthZeroOnOutOfBounds() {
+  
+  
+  return tryAttachTypedArrayLength( false);
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength(
     bool isPossiblyWrapped) {
   
@@ -11492,6 +11499,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachTypedArrayElementSize();
     case InlinableNative::IntrinsicTypedArrayLength:
       return tryAttachTypedArrayLength( false);
+    case InlinableNative::IntrinsicTypedArrayLengthZeroOnOutOfBounds:
+      return tryAttachTypedArrayLengthZeroOnOutOfBounds();
     case InlinableNative::IntrinsicPossiblyWrappedTypedArrayLength:
       return tryAttachTypedArrayLength( true);
 
