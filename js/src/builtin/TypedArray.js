@@ -177,34 +177,6 @@ function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
   ValidateTypedArray(newTypedArray);
 
   
-  
-  PossiblyWrappedTypedArrayLength(newTypedArray);
-
-  
-
-  
-  return newTypedArray;
-}
-
-
-
-function TypedArrayCreateWithResizableBuffer(constructor, buffer, byteOffset) {
-  
-  var newTypedArray = constructContentFunction(
-    constructor,
-    constructor,
-    buffer,
-    byteOffset
-  );
-
-  
-  ValidateTypedArray(newTypedArray);
-
-  
-  
-  PossiblyWrappedTypedArrayLength(newTypedArray);
-
-  
 
   
   return newTypedArray;
@@ -240,22 +212,6 @@ function TypedArraySpeciesCreateWithBuffer(
 }
 
 
-
-function TypedArraySpeciesCreateWithResizableBuffer(
-  exemplar,
-  buffer,
-  byteOffset
-) {
-  
-
-  
-  var C = TypedArraySpeciesConstructor(exemplar);
-
-  
-  return TypedArrayCreateWithResizableBuffer(C, buffer, byteOffset);
-}
-
-
 function TypedArrayEntries() {
   
   var O = this;
@@ -274,10 +230,6 @@ function TypedArrayEntries() {
 
   
   EnsureTypedArrayWithArrayBuffer(O);
-
-  
-  
-  PossiblyWrappedTypedArrayLength(O);
 
   
   return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
@@ -327,8 +279,6 @@ function TypedArrayEvery(callbackfn ) {
 }
 
 SetIsInlinableLargeFunction(TypedArrayEvery);
-
-
 
 
 
@@ -390,11 +340,6 @@ function TypedArrayFill(value, start = 0, end = undefined) {
   if (IsDetachedBuffer(buffer)) {
     ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
   }
-
-  len = TypedArrayLength(O);
-
-  
-  final = std_Math_min(final, len);
 
   
   for (; k < final; k++) {
@@ -623,7 +568,7 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
 
   
   
-  len = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
+  len = TypedArrayLength(O);
 
   assert(
     len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
@@ -696,12 +641,15 @@ function TypedArrayJoin(separator) {
     return "";
   }
 
-  var limit = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
+  
+  
+  if (TypedArrayLength(O) === 0) {
+    assert(
+      IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+      "TypedArrays with detached buffers have a length of zero"
+    );
 
-  
-  
-  if (limit === 0) {
-    return callFunction(String_repeat, separator, len - 1);
+    return callFunction(String_repeat, ",", len - 1);
   }
 
   assert(
@@ -718,7 +666,7 @@ function TypedArrayJoin(separator) {
   var R = ToString(element0);
 
   
-  for (var k = 1; k < limit; k++) {
+  for (var k = 1; k < len; k++) {
     
     var element = O[k];
 
@@ -727,10 +675,6 @@ function TypedArrayJoin(separator) {
 
     
     R += sep + ToString(element);
-  }
-
-  if (limit < len) {
-    R += callFunction(String_repeat, separator, len - limit);
   }
 
   
@@ -746,7 +690,6 @@ function TypedArrayKeys() {
 
   
   EnsureTypedArrayWithArrayBuffer(O);
-  PossiblyWrappedTypedArrayLength(O);
 
   
   return CreateArrayIterator(O, ITEM_KIND_KEY);
@@ -793,7 +736,7 @@ function TypedArrayLastIndexOf(searchElement ) {
 
   
   
-  len = std_Math_min(len, TypedArrayLengthZeroOnOutOfBounds(O));
+  len = TypedArrayLength(O);
 
   assert(
     len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
@@ -1028,7 +971,7 @@ function TypedArraySlice(start, end) {
     );
   }
 
-  GetAttachedArrayBuffer(O);
+  var buffer = GetAttachedArrayBuffer(O);
 
   
   var len = TypedArrayLength(O);
@@ -1060,15 +1003,21 @@ function TypedArraySlice(start, end) {
   
   if (count > 0) {
     
+    if (buffer === null) {
+      
+      
+      buffer = ViewedArrayBufferIfReified(O);
+    }
+
+    if (IsDetachedBuffer(buffer)) {
+      ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+    }
+
+    
     var sliced = TypedArrayBitwiseSlice(O, A, k, count);
 
     
     if (!sliced) {
-      
-      
-      
-      final = std_Math_min(final, TypedArrayLength(O));
-
       
       var n = 0;
 
@@ -1214,10 +1163,6 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
 
   
   var firstElement = array[0];
-  assert(
-    typeof firstElement === "number" || typeof firstElement === "bigint",
-    "TypedArray elements are either Numbers or BigInts"
-  );
 
   
   
@@ -1244,23 +1189,21 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
   
   for (var k = 1; k < len; k++) {
     
-    R += separator;
+    var S = R + separator;
 
     
     var nextElement = array[k];
 
     
-    if (nextElement === undefined) {
-      continue;
-    }
-    assert(
-      typeof nextElement === "number" || typeof nextElement === "bigint",
-      "TypedArray elements are either Numbers or BigInts"
-    );
+    
+    
+    
+    
+    
 
     
 #if JS_HAS_INTL_API
-    R += ToString(
+    R = ToString(
       callContentFunction(
         nextElement.toLocaleString,
         nextElement,
@@ -1269,8 +1212,11 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
       )
     );
 #else
-    R += ToString(callContentFunction(nextElement.toLocaleString, nextElement));
+    R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));
 #endif
+
+    
+    R = S + R;
   }
 
   
@@ -1302,7 +1248,7 @@ function TypedArraySubarray(begin, end) {
   }
 
   
-  var srcLength = TypedArrayLengthZeroOnOutOfBounds(obj);
+  var srcLength = TypedArrayLength(obj);
 
   
   
@@ -1318,20 +1264,6 @@ function TypedArraySubarray(begin, end) {
       : std_Math_min(relativeBegin, srcLength);
 
   
-  var elementSize = TypedArrayElementSize(obj);
-
-  
-  var beginByteOffset = srcByteOffset + beginIndex * elementSize;
-
-  if (end === undefined && TypedArrayIsAutoLength(obj)) {
-    return TypedArraySpeciesCreateWithResizableBuffer(
-      obj,
-      buffer,
-      beginByteOffset
-    );
-  }
-
-  
   var relativeEnd = end === undefined ? srcLength : ToInteger(end);
 
   
@@ -1342,6 +1274,12 @@ function TypedArraySubarray(begin, end) {
 
   
   var newLength = std_Math_max(endIndex - beginIndex, 0);
+
+  
+  var elementSize = TypedArrayElementSize(obj);
+
+  
+  var beginByteOffset = srcByteOffset + beginIndex * elementSize;
 
   
   return TypedArraySpeciesCreateWithBuffer(
@@ -1488,7 +1426,6 @@ function $TypedArrayValues() {
 
   
   EnsureTypedArrayWithArrayBuffer(O);
-  PossiblyWrappedTypedArrayLength(O);
 
   
   return CreateArrayIterator(O, ITEM_KIND_VALUE);
@@ -1885,14 +1822,7 @@ function ArrayBufferSlice(start, end) {
   }
 
   
-  
-  
-  var currentLen = ArrayBufferByteLength(O);
-
-  if (first < currentLen) {
-    var count = std_Math_min(newLen, currentLen - first);
-    ArrayBufferCopyData(newBuffer, 0, O, first, count, isWrapped);
-  }
+  ArrayBufferCopyData(newBuffer, 0, O, first, newLen, isWrapped);
 
   
   return newBuffer;
@@ -2096,15 +2026,15 @@ function TypedArrayWith(index, value) {
   }
 
   
-  var currentLen = TypedArrayLengthZeroOnOutOfBounds(O);
+  len = TypedArrayLength(O);
   assert(
-    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)) || currentLen === 0,
+    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)) || len === 0,
     "length is set to zero when the buffer has been detached"
   );
 
   
   
-  if (actualIndex < 0 || actualIndex >= currentLen) {
+  if (actualIndex < 0 || actualIndex >= len) {
     ThrowRangeError(JSMSG_BAD_INDEX);
   }
 
