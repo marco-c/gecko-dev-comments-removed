@@ -1,3 +1,8 @@
+const { ChromeUtils } = SpecialPowers;
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
+
 
 var testName = location.pathname.split("/").pop();
 
@@ -85,15 +90,23 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
       throw "'type' must be either 'enter', or 'exit'.";
     }
   }
-  function invokeCallback(event) {
-    
-    
-    requestAnimationFrame(() => setTimeout(() => callback(event), 0), 0);
-  }
   function onFullscreenChange(event) {
     doc.removeEventListener("fullscreenchange", onFullscreenChange);
     ok(checkCondition(), `Should ${type} fullscreen.`);
-    invokeCallback(event);
+
+    
+    
+    let bc = SpecialPowers.wrap(topWin).browsingContext;
+    TestUtils.waitForCondition(
+      () => bc.isActive,
+      "browsingContext should become active"
+    )
+      .catch(e =>
+        ok(false, `Wait for browsingContext.isActive failed with ${e}`)
+      )
+      .finally(() => {
+        requestAnimationFrame(() => setTimeout(() => callback(event), 0), 0);
+      });
   }
   doc.addEventListener("fullscreenchange", onFullscreenChange);
 }
