@@ -5375,10 +5375,6 @@ nsresult XREMain::XRE_mainRun() {
       }
     }
 
-#ifdef XP_MACOSX
-    InitializeMacApp();
-#endif
-
     
     
     
@@ -5405,6 +5401,10 @@ nsresult XREMain::XRE_mainRun() {
             aKey = MOZ_APP_NAME;
             gResetOldProfile->GetName(aName);
           }
+#ifdef XP_MACOSX
+          
+          InitializeMacApp();
+#endif
           pm->Migrate(&mDirProvider, aKey, aName);
         }
       }
@@ -5590,6 +5590,8 @@ nsresult XREMain::XRE_mainRun() {
 #endif
 
 #ifdef XP_MACOSX
+      InitializeMacApp();
+
       
       
       cmdLine = new nsCommandLine();
