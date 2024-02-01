@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <utility>
+#include "ErrorList.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"
@@ -66,6 +67,8 @@ class WorkerRunnable : public nsIRunnable
   
   
   bool mCallingCancelWithinRun;
+  
+  bool mCallingWithoutNesting;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -92,6 +95,12 @@ class WorkerRunnable : public nsIRunnable
 
   static WorkerRunnable* FromRunnable(nsIRunnable* aRunnable);
 
+  
+  
+  
+  
+  nsresult RunDirectly();
+
  protected:
   WorkerRunnable(WorkerPrivate* aWorkerPrivate,
                  const char* aName = "WorkerRunnable",
@@ -104,7 +113,8 @@ class WorkerRunnable : public nsIRunnable
 #  ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
         mName(aName),
 #  endif
-        mCallingCancelWithinRun(false) {
+        mCallingCancelWithinRun(false),
+        mCallingWithoutNesting(false) {
   }
 #endif
 
