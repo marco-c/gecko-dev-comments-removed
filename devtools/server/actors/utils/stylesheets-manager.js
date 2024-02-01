@@ -76,10 +76,14 @@ const modifiedStyleSheets = new WeakMap();
 
 
 class StyleSheetsManager extends EventEmitter {
-  _styleSheetCount = 0;
-  _styleSheetMap = new Map();
   
-  _mqlList = [];
+  #mqlList = [];
+  #styleSheetCount = 0;
+  #styleSheetMap = new Map();
+  #styleSheetCreationData;
+  #targetActor;
+  #transitionSheetLoaded;
+  #transitionTimeout;
 
   
 
@@ -88,10 +92,7 @@ class StyleSheetsManager extends EventEmitter {
   constructor(targetActor) {
     super();
 
-    this._targetActor = targetActor;
-    this._onApplicableStateChanged = this._onApplicableStateChanged.bind(this);
-    this._onStylesheetRemoved = this._onStylesheetRemoved.bind(this);
-    this._onTargetActorWindowReady = this._onTargetActorWindowReady.bind(this);
+    this.#targetActor = targetActor;
   }
 
   
@@ -103,29 +104,29 @@ class StyleSheetsManager extends EventEmitter {
   async startWatching() {
     
     const promises = [];
-    for (const window of this._targetActor.windows) {
-      promises.push(this._getStyleSheetsForWindow(window));
+    for (const window of this.#targetActor.windows) {
+      promises.push(this.#getStyleSheetsForWindow(window));
     }
 
     
-    this._targetActor.chromeEventHandler.addEventListener(
+    this.#targetActor.chromeEventHandler.addEventListener(
       "StyleSheetApplicableStateChanged",
-      this._onApplicableStateChanged,
+      this.#onApplicableStateChanged,
       true
     );
-    this._targetActor.chromeEventHandler.addEventListener(
+    this.#targetActor.chromeEventHandler.addEventListener(
       "StyleSheetRemoved",
-      this._onStylesheetRemoved,
+      this.#onStylesheetRemoved,
       true
     );
-    this._watchStyleSheetChangeEvents();
-    this._targetActor.on("window-ready", this._onTargetActorWindowReady);
+    this.#watchStyleSheetChangeEvents();
+    this.#targetActor.on("window-ready", this.#onTargetActorWindowReady);
 
     
     let styleSheets = await Promise.all(promises);
     styleSheets = styleSheets.flat();
     for (const styleSheet of styleSheets) {
-      const resourceId = this._findStyleSheetResourceId(styleSheet);
+      const resourceId = this.#findStyleSheetResourceId(styleSheet);
       if (resourceId) {
         
         
@@ -134,29 +135,29 @@ class StyleSheetsManager extends EventEmitter {
           styleSheet,
         });
       } else {
-        this._registerStyleSheet(styleSheet);
+        this.#registerStyleSheet(styleSheet);
       }
     }
   }
 
-  _watchStyleSheetChangeEvents() {
-    for (const window of this._targetActor.windows) {
-      this._watchStyleSheetChangeEventsForWindow(window);
+  #watchStyleSheetChangeEvents() {
+    for (const window of this.#targetActor.windows) {
+      this.#watchStyleSheetChangeEventsForWindow(window);
     }
   }
 
-  _onTargetActorWindowReady({ window }) {
-    this._watchStyleSheetChangeEventsForWindow(window);
-  }
+  #onTargetActorWindowReady = ({ window }) => {
+    this.#watchStyleSheetChangeEventsForWindow(window);
+  };
 
-  _watchStyleSheetChangeEventsForWindow(window) {
+  #watchStyleSheetChangeEventsForWindow(window) {
     
     
     window.document.styleSheetChangeEventsEnabled = true;
   }
 
-  _unwatchStyleSheetChangeEvents() {
-    for (const window of this._targetActor.windows) {
+  #unwatchStyleSheetChangeEvents() {
+    for (const window of this.#targetActor.windows) {
       window.document.styleSheetChangeEventsEnabled = false;
     }
   }
@@ -193,10 +194,10 @@ class StyleSheetsManager extends EventEmitter {
       resolve = r;
     });
 
-    if (!this._styleSheetCreationData) {
-      this._styleSheetCreationData = new WeakMap();
+    if (!this.#styleSheetCreationData) {
+      this.#styleSheetCreationData = new WeakMap();
     }
-    this._styleSheetCreationData.set(style.sheet, {
+    this.#styleSheetCreationData.set(style.sheet, {
       isCreatedByDevTools: true,
       fileName,
       resolve,
@@ -215,7 +216,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
   getStyleSheetResourceId(styleSheet) {
-    const existingResourceId = this._findStyleSheetResourceId(styleSheet);
+    const existingResourceId = this.#findStyleSheetResourceId(styleSheet);
     if (existingResourceId) {
       return existingResourceId;
     }
@@ -223,7 +224,7 @@ class StyleSheetsManager extends EventEmitter {
     
     
     
-    return this._registerStyleSheet(styleSheet);
+    return this.#registerStyleSheet(styleSheet);
   }
 
   
@@ -233,11 +234,11 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _findStyleSheetResourceId(styleSheet) {
+  #findStyleSheetResourceId(styleSheet) {
     for (const [
       resourceId,
       existingStyleSheet,
-    ] of this._styleSheetMap.entries()) {
+    ] of this.#styleSheetMap.entries()) {
       if (styleSheet === existingStyleSheet) {
         return resourceId;
       }
@@ -254,7 +255,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
   getOwnerNode(resourceId) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
+    const styleSheet = this.#styleSheetMap.get(resourceId);
     return styleSheet.ownerNode;
   }
 
@@ -266,8 +267,23 @@ class StyleSheetsManager extends EventEmitter {
 
 
   getStyleSheetIndex(resourceId) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
-    return this._getStyleSheetIndex(styleSheet);
+    const styleSheet = this.#styleSheetMap.get(resourceId);
+
+    const styleSheets = InspectorUtils.getAllStyleSheets(
+      this.#targetActor.window.document,
+      true
+    );
+    let i = 0;
+    for (const sheet of styleSheets) {
+      if (!this.#shouldListSheet(sheet)) {
+        continue;
+      }
+      if (sheet == styleSheet) {
+        return i;
+      }
+      i++;
+    }
+    return -1;
   }
 
   
@@ -278,7 +294,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
   async getText(resourceId) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
+    const styleSheet = this.#styleSheetMap.get(resourceId);
 
     const modifiedText = modifiedStyleSheets.get(styleSheet);
 
@@ -299,10 +315,10 @@ class StyleSheetsManager extends EventEmitter {
 
 
   toggleDisabled(resourceId) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
+    const styleSheet = this.#styleSheetMap.get(resourceId);
     styleSheet.disabled = !styleSheet.disabled;
 
-    this._notifyPropertyChanged(resourceId, "disabled", styleSheet.disabled);
+    this.#notifyPropertyChanged(resourceId, "disabled", styleSheet.disabled);
 
     return styleSheet.disabled;
   }
@@ -327,13 +343,13 @@ class StyleSheetsManager extends EventEmitter {
     text,
     { transition = false, kind = UPDATE_GENERAL, cause = "" } = {}
   ) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
+    const styleSheet = this.#styleSheetMap.get(resourceId);
     InspectorUtils.parseStyleSheet(styleSheet, text);
     modifiedStyleSheets.set(styleSheet, text);
 
     
     
-    for (const mql of this._mqlList) {
+    for (const mql of this.#mqlList) {
       mql.onchange = null;
     }
 
@@ -341,11 +357,11 @@ class StyleSheetsManager extends EventEmitter {
       this.getStyleSheetRuleCountAndAtRules(styleSheet);
 
     if (kind !== UPDATE_PRESERVING_RULES) {
-      this._notifyPropertyChanged(resourceId, "ruleCount", ruleCount);
+      this.#notifyPropertyChanged(resourceId, "ruleCount", ruleCount);
     }
 
     if (transition) {
-      this._startTransition(resourceId, kind, cause);
+      this.#startTransition(resourceId, kind, cause);
     } else {
       this.emit("stylesheet-updated", {
         resourceId,
@@ -377,13 +393,13 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _startTransition(resourceId, kind, cause) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
+  #startTransition(resourceId, kind, cause) {
+    const styleSheet = this.#styleSheetMap.get(resourceId);
     const document = styleSheet.associatedDocument;
     const window = document.ownerGlobal;
 
-    if (!this._transitionSheetLoaded) {
-      this._transitionSheetLoaded = true;
+    if (!this.#transitionSheetLoaded) {
+      this.#transitionSheetLoaded = true;
       
       
       
@@ -394,9 +410,9 @@ class StyleSheetsManager extends EventEmitter {
 
     
     
-    window.clearTimeout(this._transitionTimeout);
-    this._transitionTimeout = window.setTimeout(
-      this._onTransitionEnd.bind(this, resourceId, kind, cause),
+    window.clearTimeout(this.#transitionTimeout);
+    this.#transitionTimeout = window.setTimeout(
+      this.#onTransitionEnd.bind(this, resourceId, kind, cause),
       TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS
     );
   }
@@ -410,11 +426,11 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _onTransitionEnd(resourceId, kind, cause) {
-    const styleSheet = this._styleSheetMap.get(resourceId);
+  #onTransitionEnd(resourceId, kind, cause) {
+    const styleSheet = this.#styleSheetMap.get(resourceId);
     const document = styleSheet.associatedDocument;
 
-    this._transitionTimeout = null;
+    this.#transitionTimeout = null;
     removePseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
 
     this.emit("stylesheet-updated", {
@@ -432,7 +448,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _getCSSRules(styleSheet) {
+  #getCSSRules(styleSheet) {
     try {
       return styleSheet.cssRules;
     } catch (e) {
@@ -459,10 +475,10 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  async _getImportedStyleSheets(document, styleSheet) {
+  async #getImportedStyleSheets(document, styleSheet) {
     const importedStyleSheets = [];
 
-    for (const rule of await this._getCSSRules(styleSheet)) {
+    for (const rule of await this.#getCSSRules(styleSheet)) {
       const ruleClassName = ChromeUtils.getClassName(rule);
       if (ruleClassName == "CSSImportRule") {
         
@@ -472,8 +488,8 @@ class StyleSheetsManager extends EventEmitter {
         
         if (
           !rule.styleSheet ||
-          this._haveAncestorWithSameURL(rule.styleSheet) ||
-          !this._shouldListSheet(rule.styleSheet)
+          this.#haveAncestorWithSameURL(rule.styleSheet) ||
+          !this.#shouldListSheet(rule.styleSheet)
         ) {
           continue;
         }
@@ -481,7 +497,7 @@ class StyleSheetsManager extends EventEmitter {
         importedStyleSheets.push(rule.styleSheet);
 
         
-        const children = await this._getImportedStyleSheets(
+        const children = await this.#getImportedStyleSheets(
           document,
           rule.styleSheet
         );
@@ -511,12 +527,12 @@ class StyleSheetsManager extends EventEmitter {
 
 
   getStyleSheetRuleCountAndAtRules(styleSheet) {
-    const resourceId = this._findStyleSheetResourceId(styleSheet);
+    const resourceId = this.#findStyleSheetResourceId(styleSheet);
     if (!resourceId) {
       return [];
     }
 
-    this._mqlList = [];
+    this.#mqlList = [];
 
     
     
@@ -543,12 +559,12 @@ class StyleSheetsManager extends EventEmitter {
             rule.media.mediaText
           );
           matches = mql.matches;
-          mql.onchange = this._onMatchesChange.bind(
+          mql.onchange = this.#onMatchesChange.bind(
             this,
             resourceId,
             atRules.length
           );
-          this._mqlList.push(mql);
+          this.#mqlList.push(mql);
         } catch (e) {
           
         }
@@ -597,7 +613,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _onMatchesChange(resourceId, index, mql) {
+  #onMatchesChange(resourceId, index, mql) {
     this.emit("stylesheet-updated", {
       resourceId,
       updateKind: "matches-change",
@@ -618,7 +634,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _getNodeHref(styleSheet) {
+  getNodeHref(styleSheet) {
     const { ownerNode } = styleSheet;
     if (!ownerNode) {
       return null;
@@ -641,20 +657,20 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _getSourcemapBaseURL(styleSheet) {
+  getSourcemapBaseURL(styleSheet) {
     
     
     
     const ownerNode = getStyleSheetOwnerNode(styleSheet);
     const ownerDocument = ownerNode
       ? ownerNode.ownerDocument
-      : this._targetActor.window;
+      : this.#targetActor.window;
 
     return getSourcemapBaseURL(
       
       
       
-      styleSheet.href || this._getNodeHref(styleSheet),
+      styleSheet.href || this.getNodeHref(styleSheet),
       ownerDocument
     );
   }
@@ -665,31 +681,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _getStyleSheetIndex(styleSheet) {
-    const styleSheets = InspectorUtils.getAllStyleSheets(
-      this._targetActor.window.document,
-      true
-    );
-    let i = 0;
-    for (const sheet of styleSheets) {
-      if (!this._shouldListSheet(sheet)) {
-        continue;
-      }
-      if (sheet == styleSheet) {
-        return i;
-      }
-      i++;
-    }
-    return -1;
-  }
-
-  
-
-
-
-
-
-  async _getStyleSheetsForWindow(window) {
+  async #getStyleSheetsForWindow(window) {
     const { document } = window;
     const documentOnly = !document.nodePrincipal.isSystemPrincipal;
 
@@ -699,14 +691,14 @@ class StyleSheetsManager extends EventEmitter {
       document,
       documentOnly
     )) {
-      if (!this._shouldListSheet(styleSheet)) {
+      if (!this.#shouldListSheet(styleSheet)) {
         continue;
       }
 
       styleSheets.push(styleSheet);
 
       
-      const importedStyleSheets = await this._getImportedStyleSheets(
+      const importedStyleSheets = await this.#getImportedStyleSheets(
         document,
         styleSheet
       );
@@ -722,7 +714,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _haveAncestorWithSameURL(styleSheet) {
+  #haveAncestorWithSameURL(styleSheet) {
     const href = styleSheet.href;
     while (styleSheet.parentStyleSheet) {
       if (styleSheet.parentStyleSheet.href == href) {
@@ -743,7 +735,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _notifyPropertyChanged(resourceId, property, value) {
+  #notifyPropertyChanged(resourceId, property, value) {
     this.emit("stylesheet-updated", {
       resourceId,
       updateKind: "property-change",
@@ -770,20 +762,20 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _onApplicableStateChanged({ applicable, stylesheet: styleSheet }) {
+  #onApplicableStateChanged = ({ applicable, stylesheet: styleSheet }) => {
     if (
       
       applicable &&
       styleSheet.associatedDocument &&
-      (!this._targetActor.ignoreSubFrames ||
+      (!this.#targetActor.ignoreSubFrames ||
         styleSheet.associatedDocument.ownerGlobal ===
-          this._targetActor.window) &&
-      this._shouldListSheet(styleSheet) &&
-      !this._haveAncestorWithSameURL(styleSheet)
+          this.#targetActor.window) &&
+      this.#shouldListSheet(styleSheet) &&
+      !this.#haveAncestorWithSameURL(styleSheet)
     ) {
-      this._registerStyleSheet(styleSheet);
+      this.#registerStyleSheet(styleSheet);
     }
-  }
+  };
 
   
 
@@ -791,9 +783,9 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _onStylesheetRemoved(event) {
-    this._unregisterStyleSheet(event.stylesheet);
-  }
+  #onStylesheetRemoved = event => {
+    this.#unregisterStyleSheet(event.stylesheet);
+  };
 
   
 
@@ -802,8 +794,8 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _registerStyleSheet(styleSheet) {
-    const existingResourceId = this._findStyleSheetResourceId(styleSheet);
+  #registerStyleSheet(styleSheet) {
+    const existingResourceId = this.#findStyleSheetResourceId(styleSheet);
     
     if (existingResourceId) {
       return existingResourceId;
@@ -811,12 +803,12 @@ class StyleSheetsManager extends EventEmitter {
 
     
     
-    const resourceId = `${this._targetActor.actorID}:stylesheet:${this
-      ._styleSheetCount++}`;
-    this._styleSheetMap.set(resourceId, styleSheet);
+    const resourceId = `${this.#targetActor.actorID}:stylesheet:${this
+      .#styleSheetCount++}`;
+    this.#styleSheetMap.set(resourceId, styleSheet);
 
-    const creationData = this._styleSheetCreationData?.get(styleSheet);
-    this._styleSheetCreationData?.delete(styleSheet);
+    const creationData = this.#styleSheetCreationData?.get(styleSheet);
+    this.#styleSheetCreationData?.delete(styleSheet);
 
     
     
@@ -842,14 +834,14 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _unregisterStyleSheet(styleSheet) {
-    const existingResourceId = this._findStyleSheetResourceId(styleSheet);
+  #unregisterStyleSheet(styleSheet) {
+    const existingResourceId = this.#findStyleSheetResourceId(styleSheet);
     if (!existingResourceId) {
       return;
     }
 
-    this._styleSheetMap.delete(existingResourceId);
-    this._styleSheetCreationData?.delete(styleSheet);
+    this.#styleSheetMap.delete(existingResourceId);
+    this.#styleSheetCreationData?.delete(styleSheet);
     this.emit("applicable-stylesheet-removed", {
       resourceId: existingResourceId,
     });
@@ -861,14 +853,14 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  _shouldListSheet(styleSheet) {
+  #shouldListSheet(styleSheet) {
     const href = styleSheet.href?.toLowerCase();
     
     
     if (
       href === "resource://content-accessible/accessiblecaret.css" ||
       (href === "resource://devtools-highlighter-styles/highlighters.css" &&
-        this._targetActor.sessionContext.type !== "all")
+        this.#targetActor.sessionContext.type !== "all")
     ) {
       return false;
     }
@@ -881,34 +873,34 @@ class StyleSheetsManager extends EventEmitter {
 
   destroy() {
     
-    this._targetActor.off("window-ready", this._watchStyleSheetChangeEvents);
+    this.#targetActor.off("window-ready", this.#watchStyleSheetChangeEvents);
 
     try {
-      this._targetActor.chromeEventHandler.removeEventListener(
+      this.#targetActor.chromeEventHandler.removeEventListener(
         "StyleSheetApplicableStateChanged",
-        this._onApplicableStateChanged,
+        this.#onApplicableStateChanged,
         true
       );
-      this._targetActor.chromeEventHandler.removeEventListener(
+      this.#targetActor.chromeEventHandler.removeEventListener(
         "StyleSheetRemoved",
-        this._onStylesheetRemoved,
+        this.#onStylesheetRemoved,
         true
       );
-      this._unwatchStyleSheetChangeEvents();
+      this.#unwatchStyleSheetChangeEvents();
     } catch (e) {
       console.error(
         "Error when destroying StyleSheet manager for",
-        this._targetActor,
+        this.#targetActor,
         ": ",
         e
       );
     }
 
-    this._styleSheetMap.clear();
-    this._styleSheetMap = null;
-    this._targetActor = null;
-    this._styleSheetCreationData = null;
-    this._mqlList = null;
+    this.#styleSheetMap.clear();
+    this.#styleSheetMap = null;
+    this.#targetActor = null;
+    this.#styleSheetCreationData = null;
+    this.#mqlList = null;
   }
 }
 
