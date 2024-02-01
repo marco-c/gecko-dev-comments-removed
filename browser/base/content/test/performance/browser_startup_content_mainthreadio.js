@@ -24,6 +24,7 @@ const kDumpAllStacks = false;
 const LINUX = AppConstants.platform == "linux";
 const WIN = AppConstants.platform == "win";
 const MAC = AppConstants.platform == "macosx";
+const FORK_SERVER = Services.prefs.getBoolPref("dom.ipc.forkserver.enable");
 
 
 
@@ -70,13 +71,17 @@ const processes = {
   "Web Content": [
     {
       path: "GreD:omni.ja",
-      condition: !WIN, 
+      
+      
+      condition: !WIN && !FORK_SERVER,
       stat: 1,
     },
     {
       
       path: "XCurProcD:omni.ja",
-      condition: !WIN, 
+      
+      
+      condition: !WIN && !FORK_SERVER,
       stat: 1,
     },
     {
@@ -102,13 +107,17 @@ const processes = {
   "Privileged Content": [
     {
       path: "GreD:omni.ja",
-      condition: !WIN, 
+      
+      
+      condition: !WIN && !FORK_SERVER,
       stat: 1,
     },
     {
       
       path: "XCurProcD:omni.ja",
-      condition: !WIN, 
+      
+      
+      condition: !WIN && !FORK_SERVER,
       stat: 1,
     },
     {
@@ -121,13 +130,17 @@ const processes = {
   WebExtensions: [
     {
       path: "GreD:omni.ja",
-      condition: !WIN, 
+      
+      
+      condition: !WIN && !FORK_SERVER,
       stat: 1,
     },
     {
       
       path: "XCurProcD:omni.ja",
-      condition: !WIN, 
+      
+      
+      condition: !WIN && !FORK_SERVER,
       stat: 1,
     },
     {
