@@ -4025,12 +4025,25 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
       
       
-      if ((aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) &&
-          (mType == FormControlType::InputReset ||
-           mType == FormControlType::InputSubmit ||
-           mType == FormControlType::InputImage) &&
-          mForm) {
-        aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
+      
+      
+      
+      if (aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) {
+        switch (mType) {
+          case FormControlType::InputReset:
+          case FormControlType::InputSubmit:
+          case FormControlType::InputImage:
+            if (mForm) {
+              aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
+            }
+            break;
+          case FormControlType::InputCheckbox:
+          case FormControlType::InputRadio:
+            aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
+            break;
+          default:
+            break;
+        }
       }
     }
   }  
