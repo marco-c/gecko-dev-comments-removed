@@ -141,10 +141,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
-  
   void CallOnAllTopDescendants(
-      const std::function<mozilla::CallState(CanonicalBrowsingContext*)>&
-          aCallback);
+      const FunctionRef<CallState(CanonicalBrowsingContext*)>& aCallback);
 
   void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID,
                             uint32_t aLoadType, bool aPersist,
