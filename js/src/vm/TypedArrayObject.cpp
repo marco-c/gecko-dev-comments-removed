@@ -697,6 +697,12 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     }
 
     
+    if (bufferMaybeUnwrapped->isResizable()) {
+      JS_ReportErrorASCII(cx, "Resizable ArrayBuffers not yet supported");
+      return false;
+    }
+
+    
     size_t bufferByteLength = bufferMaybeUnwrapped->byteLength();
     MOZ_ASSERT(bufferByteLength <= MaxByteLength);
 
