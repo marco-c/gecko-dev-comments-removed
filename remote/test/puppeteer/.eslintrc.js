@@ -1,3 +1,9 @@
+
+
+
+
+
+
 const {readdirSync} = require('fs');
 const {join} = require('path');
 
@@ -29,7 +35,7 @@ module.exports = {
 
   parser: '@typescript-eslint/parser',
 
-  plugins: ['mocha', '@typescript-eslint', 'import'],
+  plugins: ['mocha', '@typescript-eslint', 'import', 'rulesdir'],
 
   extends: ['plugin:prettier/recommended', 'plugin:import/typescript'],
 
@@ -138,6 +144,13 @@ module.exports = {
       
       
     ],
+
+    
+    'rulesdir/prettier-comments': 'error',
+    
+    'rulesdir/extensions': 'error',
+    
+    'rulesdir/check-license': 'warn',
   },
   overrides: [
     {
@@ -151,14 +164,10 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:@typescript-eslint/stylistic',
       ],
-      plugins: ['eslint-plugin-tsdoc', 'rulesdir'],
+      plugins: ['eslint-plugin-tsdoc'],
       rules: {
         
-        'rulesdir/prettier-comments': 'error',
-        
         'rulesdir/use-using': 'error',
-        
-        'rulesdir/extensions': 'error',
         
         curly: ['error', 'all'],
         
@@ -185,6 +194,7 @@ module.exports = {
         '@typescript-eslint/explicit-function-return-type': 'off',
         
         '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-useless-template-literals': 'error',
         
 
 

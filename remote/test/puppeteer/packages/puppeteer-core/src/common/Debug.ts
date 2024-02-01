@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type Debug from 'debug';
 
 import {isNode} from '../environment.js';

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import fs from 'fs';
 import path from 'path';
 
@@ -177,6 +167,21 @@ export const setupTestBrowserHooks = (): void => {
       console.error(error);
       
       
+    }
+  });
+
+  after(() => {
+    if (typeof gc !== 'undefined') {
+      gc();
+      const memory = process.memoryUsage();
+      console.log('Memory stats:');
+      for (const key of Object.keys(memory)) {
+        console.log(
+          key,
+          
+          `${Math.round(((memory[key] / 1024 / 1024) * 100) / 100)} MB`
+        );
+      }
     }
   });
 };

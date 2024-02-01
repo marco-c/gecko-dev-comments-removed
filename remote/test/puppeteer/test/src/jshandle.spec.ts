@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import {JSHandle} from 'puppeteer-core/internal/api/JSHandle.js';
 import {

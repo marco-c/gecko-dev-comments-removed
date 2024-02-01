@@ -4,22 +4,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
 
 import {
   type CDPEvents,
   CDPSession,
   CDPSessionEvent,
+  type CommandOptions,
 } from '../api/CDPSession.js';
 import {CallbackRegistry} from '../common/CallbackRegistry.js';
 import {TargetCloseError} from '../common/Errors.js';
@@ -91,7 +82,8 @@ export class CdpCDPSession extends CDPSession {
 
   override send<T extends keyof ProtocolMapping.Commands>(
     method: T,
-    ...paramArgs: ProtocolMapping.Commands[T]['paramsType']
+    params?: ProtocolMapping.Commands[T]['paramsType'][0],
+    options?: CommandOptions
   ): Promise<ProtocolMapping.Commands[T]['returnType']> {
     if (!this.#connection) {
       return Promise.reject(
@@ -100,13 +92,12 @@ export class CdpCDPSession extends CDPSession {
         )
       );
     }
-    
-    const params = paramArgs.length ? paramArgs[0] : undefined;
     return this.#connection._rawSend(
       this.#callbacks,
       method,
       params,
-      this.#sessionId
+      this.#sessionId,
+      options
     );
   }
 
@@ -165,5 +156,12 @@ export class CdpCDPSession extends CDPSession {
 
   override id(): string {
     return this.#sessionId;
+  }
+
+  
+
+
+  getPendingProtocolErrors(): Error[] {
+    return this.#callbacks.getPendingProtocolErrors();
   }
 }

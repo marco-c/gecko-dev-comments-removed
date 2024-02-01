@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {describe, it, beforeEach} from 'node:test';
 
 import expect from 'expect';
@@ -168,6 +158,28 @@ describe('EventEmitter', () => {
       emitter.removeAllListeners('bar');
       expect(emitter.emit('foo', undefined)).toBe(true);
       expect(emitter.emit('bar', undefined)).toBe(false);
+    });
+  });
+
+  describe('dispose', () => {
+    it('should dispose higher order emitters properly', () => {
+      let values = '';
+      emitter.on('foo', () => {
+        values += '1';
+      });
+      const higherOrderEmitter = new EventEmitter(emitter);
+
+      higherOrderEmitter.on('foo', () => {
+        values += '2';
+      });
+      higherOrderEmitter.emit('foo', undefined);
+
+      expect(values).toMatch('12');
+
+      higherOrderEmitter.off('foo');
+      higherOrderEmitter.emit('foo', undefined);
+
+      expect(values).toMatch('121');
     });
   });
 });

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {JSHandle} from '../api/JSHandle.js';
 import type PuppeteerUtil from '../injected/injected.js';
 

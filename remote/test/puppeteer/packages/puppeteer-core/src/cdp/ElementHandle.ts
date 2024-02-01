@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type Path from 'path';
 
 import type {Protocol} from 'devtools-protocol';

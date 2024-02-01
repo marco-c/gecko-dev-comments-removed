@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {get} from 'https';
 
 import type {Tree} from '@angular-devkit/schematics';
@@ -49,7 +39,7 @@ export function getPackageLatestNpmVersion(name: string): Promise<NodePackage> {
     return get(`https://registry.npmjs.org/${name}`, res => {
       let data = '';
 
-      res.on('data', (chunk: any) => {
+      res.on('data', chunk => {
         data += chunk;
       });
       res.on('end', () => {
@@ -193,7 +183,7 @@ export function updateAngularJsonScripts(
     );
   });
 
-  tree.overwrite('./angular.json', getObjectAsJson(angularJson));
+  tree.overwrite('./angular.json', getObjectAsJson(angularJson as any));
 
   return tree;
 }

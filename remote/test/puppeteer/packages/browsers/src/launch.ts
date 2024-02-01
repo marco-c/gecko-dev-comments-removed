@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import childProcess from 'child_process';
 import {accessSync} from 'fs';
 import os from 'os';

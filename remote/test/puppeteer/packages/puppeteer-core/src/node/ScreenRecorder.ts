@@ -4,27 +4,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ChildProcessWithoutNullStreams} from 'child_process';
 import {spawn, spawnSync} from 'child_process';
 import {PassThrough} from 'stream';
 
 import debug from 'debug';
-import type Protocol from 'devtools-protocol';
 
-import type {
-  Observable,
-  OperatorFunction,
-} from '../../third_party/rxjs/rxjs.js';
+import type {OperatorFunction} from '../../third_party/rxjs/rxjs.js';
 import {
   bufferCount,
   concatMap,
@@ -39,7 +25,7 @@ import {
 import {CDPSessionEvent} from '../api/CDPSession.js';
 import type {BoundingBox} from '../api/ElementHandle.js';
 import type {Page} from '../api/Page.js';
-import {debugError} from '../common/util.js';
+import {debugError, fromEmitterEvent} from '../common/util.js';
 import {guarded} from '../util/decorators.js';
 import {asyncDisposeSymbol} from '../util/disposable.js';
 
@@ -99,11 +85,11 @@ export class ScreenRecorder extends PassThrough {
         
         [
           '-fpsprobesize',
-          `${0}`,
+          '0',
           '-probesize',
-          `${32}`,
+          '32',
           '-analyzeduration',
-          `${0}`,
+          '0',
           '-fflags',
           'nobuffer',
         ],
@@ -120,13 +106,13 @@ export class ScreenRecorder extends PassThrough {
         
         this.#getFormatArgs(format ?? 'webm'),
         
-        ['-b:v', `${0}`],
+        ['-b:v', '0'],
         
         [
           '-vf',
           `${
             speed ? `setpts=${1 / speed}*PTS,` : ''
-          }crop='min(${width},iw):min(${height},ih):${0}:${0}',pad=${width}:${height}:${0}:${0}${
+          }crop='min(${width},iw):min(${height},ih):0:0',pad=${width}:${height}:0:0${
             crop ? `,crop=${crop.width}:${crop.height}:${crop.x}:${crop.y}` : ''
           }${scale ? `,scale=iw*${scale}:-1` : ''}`,
         ],
@@ -147,12 +133,7 @@ export class ScreenRecorder extends PassThrough {
     });
 
     this.#lastFrame = lastValueFrom(
-      (
-        fromEvent(
-          client,
-          'Page.screencastFrame'
-        ) as Observable<Protocol.Page.ScreencastFrameEvent>
-      ).pipe(
+      fromEmitterEvent(client, 'Page.screencastFrame').pipe(
         tap(event => {
           void client.send('Page.screencastFrameAck', {
             sessionId: event.sessionId,
@@ -204,7 +185,7 @@ export class ScreenRecorder extends PassThrough {
           
           ['-crf', `${CRF_VALUE}`],
           
-          ['-deadline', 'realtime', '-cpu-used', `${8}`],
+          ['-deadline', 'realtime', '-cpu-used', '8'],
         ].flat();
       case 'gif':
         return [

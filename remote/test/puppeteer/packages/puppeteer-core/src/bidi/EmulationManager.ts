@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Viewport} from '../common/Viewport.js';
 
 import type {BrowsingContext} from './BrowsingContext.js';

@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import NodeWebSocket from 'ws';
 
 import type {ConnectionTransport} from '../common/ConnectionTransport.js';

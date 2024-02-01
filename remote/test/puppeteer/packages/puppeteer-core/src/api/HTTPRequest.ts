@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {CDPSession} from './CDPSession.js';
@@ -211,6 +201,19 @@ export abstract class HTTPRequest {
 
 
   abstract postData(): string | undefined;
+
+  
+
+
+
+
+
+  abstract hasPostData(): boolean;
+
+  
+
+
+  abstract fetchPostData(): Promise<string | undefined>;
 
   
 

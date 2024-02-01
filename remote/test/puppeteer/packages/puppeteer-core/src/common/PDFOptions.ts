@@ -7,16 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 export interface PDFMargin {
   top?: string | number;
   bottom?: string | number;
@@ -205,7 +195,7 @@ export interface ParsedPDFOptionsInterface {
 
 
 export type ParsedPDFOptions = Required<
-  Omit<PDFOptions, 'path' | 'format'> & ParsedPDFOptionsInterface
+  Omit<PDFOptions, 'path' | 'format' | 'timeout'> & ParsedPDFOptionsInterface
 >;
 
 

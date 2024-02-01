@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Viewport} from './Viewport.js';
 
 

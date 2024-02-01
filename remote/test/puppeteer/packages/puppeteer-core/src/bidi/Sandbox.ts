@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {JSHandle} from '../api/JSHandle.js';
 import {Realm} from '../api/Realm.js';
 import type {TimeoutSettings} from '../common/TimeoutSettings.js';

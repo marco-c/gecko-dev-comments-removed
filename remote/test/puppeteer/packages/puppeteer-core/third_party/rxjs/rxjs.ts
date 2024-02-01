@@ -3,19 +3,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 export {
   bufferCount,
   catchError,
+  concat,
   concatMap,
   defaultIfEmpty,
   defer,
@@ -35,6 +26,7 @@ export {
   mergeMap,
   NEVER,
   noop,
+  Observable,
   of,
   pipe,
   race,
@@ -46,6 +38,7 @@ export {
   tap,
   throwIfEmpty,
   timer,
+  zip,
 } from 'rxjs';
 
 export type * from 'rxjs';

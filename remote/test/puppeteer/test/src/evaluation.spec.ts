@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 
 import {getTestState, setupTestBrowserHooks} from './mocha-utils.js';
@@ -334,16 +324,29 @@ describe('Evaluation specs', function () {
         promise: {},
       });
     });
-    it('should fail for circular object', async () => {
+    it('should work for circular object', async () => {
       const {page} = await getTestState();
 
       const result = await page.evaluate(() => {
-        const a: Record<string, any> = {};
+        const a: Record<string, unknown> = {
+          c: 5,
+          d: {
+            foo: 'bar',
+          },
+        };
         const b = {a};
         a['b'] = b;
         return a;
       });
-      expect(result).toBe(undefined);
+      expect(result).toMatchObject({
+        c: 5,
+        d: {
+          foo: 'bar',
+        },
+        b: {
+          a: undefined,
+        },
+      });
     });
     it('should accept a string', async () => {
       const {page} = await getTestState();

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {
   chain,
   type Rule,
@@ -111,8 +101,6 @@ function addE2EFile(options: SchematicsSpec): Rule {
     context.logger.debug('Creating Spec file.');
 
     return addCommonFiles(
-      tree,
-      context,
       {[foundProject[0]]: foundProject[1]} as Record<string, AngularProject>,
       {
         options: {

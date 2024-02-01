@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ConnectionTransport} from '../common/ConnectionTransport.js';
 import {EventSubscription} from '../common/EventEmitter.js';
 import {debugError} from '../common/util.js';

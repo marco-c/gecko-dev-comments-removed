@@ -13,8 +13,6 @@ const puppeteer = require('puppeteer');
 
 
 
-
-
 const firefoxOptions = {
   product: 'firefox',
   extraPrefsFirefox: {

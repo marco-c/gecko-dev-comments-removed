@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ProtocolError} from '../common/Errors.js';
 
 
@@ -62,7 +52,7 @@ export function rewriteError(
 export function createProtocolErrorMessage(object: {
   error: {message: string; data: any; code: number};
 }): string {
-  let message = `${object.error.message}`;
+  let message = object.error.message;
   
   
   if (

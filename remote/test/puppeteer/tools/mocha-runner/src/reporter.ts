@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import Mocha from 'mocha';
 
 class SpecJSONReporter extends Mocha.reporters.Spec {

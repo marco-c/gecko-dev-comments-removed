@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import {LazyArg} from 'puppeteer-core/internal/common/LazyArg.js';
 

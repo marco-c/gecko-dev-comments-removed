@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import {TimeoutError} from 'puppeteer-core';
 import {

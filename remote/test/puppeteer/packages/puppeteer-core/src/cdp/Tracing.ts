@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {CDPSession} from '../api/CDPSession.js';
 import {
   getReadableAsBuffer,

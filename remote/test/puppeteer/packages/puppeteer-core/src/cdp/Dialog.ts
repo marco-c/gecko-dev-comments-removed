@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {CDPSession} from '../api/CDPSession.js';
@@ -35,7 +25,7 @@ export class CdpDialog extends Dialog {
     this.#client = client;
   }
 
-  override async sendCommand(options: {
+  override async handle(options: {
     accept: boolean;
     text?: string;
   }): Promise<void> {

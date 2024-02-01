@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import {CDPSessionEvent, type CDPSession} from '../api/CDPSession.js';

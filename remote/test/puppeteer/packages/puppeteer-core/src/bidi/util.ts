@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
 import {PuppeteerURL, debugError} from '../common/util.js';
@@ -36,7 +26,7 @@ export async function releaseReference(
       target: client.target,
       handles: [remoteReference.handle],
     })
-    .catch((error: any) => {
+    .catch(error => {
       
       
       debugError(error);

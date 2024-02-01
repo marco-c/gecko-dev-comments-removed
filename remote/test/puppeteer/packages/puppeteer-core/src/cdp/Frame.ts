@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {CDPSession} from '../api/CDPSession.js';
@@ -96,6 +86,11 @@ export class CdpFrame extends Frame {
   updateClient(client: CDPSession, keepWorlds = false): void {
     this.#client = client;
     if (!keepWorlds) {
+      
+      if (this.worlds) {
+        this.worlds[MAIN_WORLD].clearContext();
+        this.worlds[PUPPETEER_WORLD].clearContext();
+      }
       this.worlds = {
         [MAIN_WORLD]: new IsolatedWorld(
           this,

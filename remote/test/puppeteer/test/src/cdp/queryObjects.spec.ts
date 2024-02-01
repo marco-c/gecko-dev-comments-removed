@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 
 import {getTestState, setupTestBrowserHooks} from '../mocha-utils.js';

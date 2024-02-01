@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import path from 'path';
 
 import {getText} from '../httpUtil.js';

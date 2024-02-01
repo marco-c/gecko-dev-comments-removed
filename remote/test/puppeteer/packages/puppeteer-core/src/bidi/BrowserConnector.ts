@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {BrowserCloseCallback} from '../api/Browser.js';
 import {Connection} from '../cdp/Connection.js';
 import type {ConnectionTransport} from '../common/ConnectionTransport.js';
@@ -21,7 +11,7 @@ import type {
   BrowserConnectOptions,
   ConnectOptions,
 } from '../common/ConnectOptions.js';
-import {UnsupportedOperation} from '../common/Errors.js';
+import {ProtocolError, UnsupportedOperation} from '../common/Errors.js';
 import {debugError, DEFAULT_VIEWPORT} from '../common/util.js';
 
 import type {BidiBrowser} from './Browser.js';
@@ -95,8 +85,8 @@ async function getBiDiConnection(
         },
       };
     }
-  } catch (e: any) {
-    if (!('name' in e && e.name === 'ProtocolError')) {
+  } catch (e) {
+    if (!(e instanceof ProtocolError)) {
       
       throw e;
     }

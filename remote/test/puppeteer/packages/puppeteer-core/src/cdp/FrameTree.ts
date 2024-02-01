@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Frame} from '../api/Frame.js';
 import {Deferred} from '../util/Deferred.js';
 

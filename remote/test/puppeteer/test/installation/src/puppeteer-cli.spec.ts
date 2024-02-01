@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import assert from 'assert';
 import {spawnSync} from 'child_process';
 import {existsSync} from 'fs';

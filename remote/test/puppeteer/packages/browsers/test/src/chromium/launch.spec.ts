@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import assert from 'assert';
 import fs from 'fs';
 import os from 'os';
@@ -37,9 +27,9 @@ describe('Chromium', () => {
         browser: Browser.CHROMIUM,
         platform: BrowserPlatform.LINUX,
         buildId: '123',
-        cacheDir: 'cache',
+        cacheDir: '.cache',
       }),
-      path.join('cache', 'chromium', 'linux-123', 'chrome-linux', 'chrome')
+      path.join('.cache', 'chromium', 'linux-123', 'chrome-linux', 'chrome')
     );
   });
 

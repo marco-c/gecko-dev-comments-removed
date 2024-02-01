@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {mkdirSync, writeFileSync} from 'fs';
 import {dirname} from 'path';
 

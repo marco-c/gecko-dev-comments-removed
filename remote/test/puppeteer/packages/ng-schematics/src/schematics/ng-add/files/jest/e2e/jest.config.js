@@ -5,6 +5,6 @@
 
 
 module.exports = {
-  testMatch: ['<rootDir>/build/**/?(*.)+(e2e).js?(x)'],
+  testMatch: ['<rootDir>/build/**/*.e2e.js'],
   testEnvironment: 'node',
 };

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {homedir} from 'os';
 import {join} from 'path';
 
@@ -37,7 +27,9 @@ function isSupportedProduct(product: unknown): product is Product {
 
 
 export const getConfiguration = (): Configuration => {
-  const result = cosmiconfigSync('puppeteer').search();
+  const result = cosmiconfigSync('puppeteer', {
+    searchStrategy: 'global',
+  }).search();
   const configuration: Configuration = result ? result.config : {};
 
   configuration.logLevel = (process.env['PUPPETEER_LOGLEVEL'] ??
@@ -70,6 +62,24 @@ export const getConfiguration = (): Configuration => {
       process.env['npm_config_puppeteer_skip_download'] ??
       process.env['npm_package_config_puppeteer_skip_download'] ??
       configuration.skipDownload
+  );
+
+  
+  configuration.skipChromeDownload = Boolean(
+    process.env['PUPPETEER_SKIP_CHROME_DOWNLOAD'] ??
+      process.env['npm_config_puppeteer_skip_chrome_download'] ??
+      process.env['npm_package_config_puppeteer_skip_chrome_download'] ??
+      configuration.skipChromeDownload
+  );
+
+  
+  configuration.skipChromeHeadlessShellDownload = Boolean(
+    process.env['PUPPETEER_SKIP_CHROME_HEADLESS_SHELL_DOWNLOAD'] ??
+      process.env['npm_config_puppeteer_skip_chrome_headless_shell_download'] ??
+      process.env[
+        'npm_package_config_puppeteer_skip_chrome_headless_shell_download'
+      ] ??
+      configuration.skipChromeHeadlessShellDownload
   );
 
   

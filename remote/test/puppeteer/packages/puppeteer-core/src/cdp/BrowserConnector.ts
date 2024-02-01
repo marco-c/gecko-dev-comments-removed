@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ConnectionTransport} from '../common/ConnectionTransport.js';
 import type {
   BrowserConnectOptions,

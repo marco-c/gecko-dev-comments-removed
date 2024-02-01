@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import {TimeoutError, ElementHandle} from 'puppeteer';
 import {isErrorLike} from 'puppeteer-core/internal/util/ErrorLike.js';

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 export type {Protocol} from 'devtools-protocol';
 
 export * from './api/api.js';

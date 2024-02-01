@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type Protocol from 'devtools-protocol';
 
 import {type Frame, FrameEvent} from '../api/Frame.js';

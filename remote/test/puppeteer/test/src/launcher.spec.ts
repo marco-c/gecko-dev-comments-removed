@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import assert from 'assert';
 import fs from 'fs';
 import {mkdtemp, readFile, writeFile} from 'fs/promises';
@@ -121,6 +111,35 @@ describe('Launcher specs', function () {
       it('can launch and close the browser', async () => {
         const {close} = await launch({});
         await close();
+      });
+      it('should have default url when launching browser', async function () {
+        const {browser, close} = await launch({}, {createContext: false});
+        try {
+          const pages = (await browser.pages()).map(
+            (page: {url: () => any}) => {
+              return page.url();
+            }
+          );
+          expect(pages).toEqual(['about:blank']);
+        } finally {
+          await close();
+        }
+      });
+      it('should close browser with beforeunload page', async () => {
+        const {browser, server, close} = await launch(
+          {},
+          {createContext: false}
+        );
+        try {
+          const page = await browser.newPage();
+
+          await page.goto(server.PREFIX + '/beforeunload.html');
+          
+          
+          await page.click('body');
+        } finally {
+          await close();
+        }
       });
       it('should reject all promises when browser is closed', async () => {
         const {page, close} = await launch({});

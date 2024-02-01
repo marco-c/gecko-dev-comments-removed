@@ -4,20 +4,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ChildProcess} from 'child_process';
 
 import type {Protocol} from 'devtools-protocol';
 
+import type {DebugInfo} from '../api/Browser.js';
 import {
   Browser as BrowserBase,
   BrowserEvent,
@@ -426,6 +417,12 @@ export class CdpBrowser extends BrowserBase {
 
   #getVersion(): Promise<Protocol.Browser.GetVersionResponse> {
     return this.#connection.send('Browser.getVersion');
+  }
+
+  override get debugInfo(): DebugInfo {
+    return {
+      pendingProtocolErrors: this.#connection.getPendingProtocolErrors(),
+    };
   }
 }
 

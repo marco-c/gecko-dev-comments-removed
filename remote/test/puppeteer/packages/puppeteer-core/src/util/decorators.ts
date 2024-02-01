@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Disposed, Moveable} from '../common/types.js';
 
 import {asyncDisposeSymbol, disposeSymbol} from './disposable.js';
@@ -70,6 +60,18 @@ export function throwIfDisposed<This extends Disposed>(
       }
       return target.call(this, ...args);
     };
+  };
+}
+
+export function inertIfDisposed<This extends Disposed>(
+  target: (this: This, ...args: any[]) => any,
+  _: unknown
+) {
+  return function (this: This, ...args: any[]): any {
+    if (this.disposed) {
+      return;
+    }
+    return target.call(this, ...args);
   };
 }
 

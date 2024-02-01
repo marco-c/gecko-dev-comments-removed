@@ -6,16 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {CLI} from './CLI.js';
 
 void new CLI().run(process.argv);

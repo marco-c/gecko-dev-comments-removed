@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import {Puppeteer} from 'puppeteer';
 import {ElementHandle} from 'puppeteer-core/internal/api/ElementHandle.js';

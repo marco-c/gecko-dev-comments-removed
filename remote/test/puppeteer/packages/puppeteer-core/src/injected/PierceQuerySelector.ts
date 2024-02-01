@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 export const pierceQuerySelector = (
   root: Node,
   selector: string

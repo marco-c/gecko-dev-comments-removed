@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import fs from 'fs';
 
 const rmOptions = {

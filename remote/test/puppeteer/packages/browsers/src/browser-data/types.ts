@@ -9,16 +9,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 export enum Browser {
   CHROME = 'chrome',
   CHROMEHEADLESSSHELL = 'chrome-headless-shell',

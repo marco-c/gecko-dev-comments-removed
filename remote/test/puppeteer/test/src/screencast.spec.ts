@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {statSync} from 'fs';
 
 import expect from 'expect';

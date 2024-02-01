@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {EventType} from '../common/EventEmitter.js';
 
 import type {CdpFrame} from './Frame.js';

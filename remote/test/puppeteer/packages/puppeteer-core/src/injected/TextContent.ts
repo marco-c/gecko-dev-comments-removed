@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 interface NonTrivialValueNode extends Node {
   value: string;
 }

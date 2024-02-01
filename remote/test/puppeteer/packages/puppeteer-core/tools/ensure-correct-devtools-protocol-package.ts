@@ -23,16 +23,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {execSync} from 'child_process';
 
 import packageJson from '../package.json' assert {type: 'json'};

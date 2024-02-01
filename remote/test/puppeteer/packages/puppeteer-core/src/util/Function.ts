@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 const createdFunctions = new Map<string, (...args: unknown[]) => unknown>();
 
 

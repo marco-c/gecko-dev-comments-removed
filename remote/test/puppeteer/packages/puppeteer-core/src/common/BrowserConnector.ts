@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Browser} from '../api/Browser.js';
 import {_connectToBiDiBrowser} from '../bidi/BrowserConnector.js';
 import {_connectToCdpBrowser} from '../cdp/BrowserConnector.js';

@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import {Puppeteer} from 'puppeteer';
 import type {CustomQueryHandler} from 'puppeteer-core/internal/common/CustomQueryHandler.js';

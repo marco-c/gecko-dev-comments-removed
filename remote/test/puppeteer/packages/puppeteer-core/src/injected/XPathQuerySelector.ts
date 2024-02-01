@@ -7,16 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 export const xpathQuerySelectorAll = function* (
   root: Node,
   selector: string,

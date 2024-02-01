@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {
   Browser,
   detectBrowserPlatform,

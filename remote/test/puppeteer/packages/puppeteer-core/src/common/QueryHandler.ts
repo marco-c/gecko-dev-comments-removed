@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ElementHandle} from '../api/ElementHandle.js';
 import {_isElementHandle} from '../api/ElementHandleSymbol.js';
 import type {Frame} from '../api/Frame.js';

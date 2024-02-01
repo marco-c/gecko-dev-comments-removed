@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {Frame} from '../api/Frame.js';
@@ -27,10 +17,15 @@ import type {
   NodeFor,
 } from '../common/types.js';
 import type {KeyInput} from '../common/USKeyboardLayout.js';
-import {isString, withSourcePuppeteerURLIfNone} from '../common/util.js';
+import {
+  debugError,
+  isString,
+  withSourcePuppeteerURLIfNone,
+} from '../common/util.js';
 import {assert} from '../util/assert.js';
 import {AsyncIterableUtil} from '../util/AsyncIterableUtil.js';
 import {throwIfDisposed} from '../util/decorators.js';
+import {AsyncDisposableStack} from '../util/disposable.js';
 
 import {_isElementHandle} from './ElementHandleSymbol.js';
 import type {
@@ -1351,6 +1346,31 @@ export abstract class ElementHandle<
 
     const page = this.frame.page();
 
+    
+    
+    
+    const viewport = page.viewport() ?? {
+      width: clip.width,
+      height: clip.height,
+    };
+    await using stack = new AsyncDisposableStack();
+    if (clip.width > viewport.width || clip.height > viewport.height) {
+      await this.frame.page().setViewport({
+        ...viewport,
+        width: Math.max(viewport.width, Math.ceil(clip.width)),
+        height: Math.max(viewport.height, Math.ceil(clip.height)),
+      });
+
+      stack.defer(async () => {
+        try {
+          await this.frame.page().setViewport(viewport);
+        } catch (error) {
+          debugError(error);
+        }
+      });
+    }
+
+    
     if (scrollIntoView) {
       await this.scrollIntoViewIfNeeded();
 

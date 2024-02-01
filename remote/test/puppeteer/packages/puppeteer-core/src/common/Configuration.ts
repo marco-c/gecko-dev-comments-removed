@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Product} from './Product.js';
 
 
@@ -105,6 +95,18 @@ export interface Configuration {
 
 
   skipDownload?: boolean;
+  
+
+
+
+
+  skipChromeDownload?: boolean;
+  
+
+
+
+
+  skipChromeHeadlessShellDownload?: boolean;
   
 
 

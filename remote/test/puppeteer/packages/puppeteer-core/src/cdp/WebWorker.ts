@@ -3,25 +3,14 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {CDPSession} from '../api/CDPSession.js';
 import type {Realm} from '../api/Realm.js';
+import {WebWorker} from '../api/WebWorker.js';
 import type {ConsoleMessageType} from '../common/ConsoleMessage.js';
-import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {TimeoutSettings} from '../common/TimeoutSettings.js';
-import type {EvaluateFunc, HandleFor} from '../common/types.js';
-import {debugError, withSourcePuppeteerURLIfNone} from '../common/util.js';
+import {debugError} from '../common/util.js';
 
 import {ExecutionContext} from './ExecutionContext.js';
 import {IsolatedWorld} from './IsolatedWorld.js';
@@ -46,41 +35,9 @@ export type ExceptionThrownCallback = (
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class WebWorker extends EventEmitter<Record<EventType, unknown>> {
-  
-
-
-  readonly timeoutSettings = new TimeoutSettings();
-
+export class CdpWebWorker extends WebWorker {
   #world: IsolatedWorld;
   #client: CDPSession;
-  #url: string;
-
-  
-
 
   constructor(
     client: CDPSession,
@@ -88,9 +45,8 @@ export class WebWorker extends EventEmitter<Record<EventType, unknown>> {
     consoleAPICalled: ConsoleAPICalledCallback,
     exceptionThrown: ExceptionThrownCallback
   ) {
-    super();
+    super(url);
     this.#client = client;
-    this.#url = url;
     this.#world = new IsolatedWorld(this, new TimeoutSettings());
 
     this.#client.once('Runtime.executionContextCreated', async event => {
@@ -117,78 +73,11 @@ export class WebWorker extends EventEmitter<Record<EventType, unknown>> {
     this.#client.send('Runtime.enable').catch(debugError);
   }
 
-  
-
-
   mainRealm(): Realm {
     return this.#world;
   }
 
-  
-
-
-  url(): string {
-    return this.#url;
-  }
-
-  
-
-
   get client(): CDPSession {
     return this.#client;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async evaluate<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
-  >(
-    pageFunction: Func | string,
-    ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>> {
-    pageFunction = withSourcePuppeteerURLIfNone(
-      this.evaluate.name,
-      pageFunction
-    );
-    return await this.mainRealm().evaluate(pageFunction, ...args);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  async evaluateHandle<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
-  >(
-    pageFunction: Func | string,
-    ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    pageFunction = withSourcePuppeteerURLIfNone(
-      this.evaluateHandle.name,
-      pageFunction
-    );
-    return await this.mainRealm().evaluateHandle(pageFunction, ...args);
   }
 }

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import fs from 'fs';
 import path from 'path';
 
@@ -28,7 +18,7 @@ import type {ConsoleMessage} from 'puppeteer-core/internal/common/ConsoleMessage
 import {getTestState, setupTestBrowserHooks} from './mocha-utils.js';
 import {isFavicon, waitEvent} from './utils.js';
 
-describe('request interception', function () {
+describe('cooperative request interception', function () {
   setupTestBrowserHooks();
 
   describe('Page.setRequestInterception', function () {

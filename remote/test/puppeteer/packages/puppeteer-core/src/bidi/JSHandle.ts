@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
 import type {ElementHandle} from '../api/ElementHandle.js';

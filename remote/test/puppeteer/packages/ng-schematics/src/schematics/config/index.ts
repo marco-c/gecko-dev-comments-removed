@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {
   chain,
   type Rule,
@@ -33,10 +23,10 @@ export function config(): Rule {
 }
 
 function addPuppeteerConfig(): Rule {
-  return (tree: Tree, context: SchematicContext) => {
+  return (_tree: Tree, context: SchematicContext) => {
     context.logger.debug('Adding Puppeteer config file.');
 
-    return addFilesSingle(tree, context, '', {root: ''} as AngularProject, {
+    return addFilesSingle('', {root: ''} as AngularProject, {
       
       options: {
         testRunner: TestRunner.Jasmine,

@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
 import type {WaitForTargetOptions} from '../api/Browser.js';
@@ -21,10 +11,12 @@ import {BrowserContext} from '../api/BrowserContext.js';
 import type {Page} from '../api/Page.js';
 import type {Target} from '../api/Target.js';
 import {UnsupportedOperation} from '../common/Errors.js';
+import {debugError} from '../common/util.js';
 import type {Viewport} from '../common/Viewport.js';
 
 import type {BidiBrowser} from './Browser.js';
 import type {BidiConnection} from './Connection.js';
+import {UserContext} from './core/UserContext.js';
 import type {BidiPage} from './Page.js';
 
 
@@ -32,7 +24,6 @@ import type {BidiPage} from './Page.js';
 
 export interface BidiBrowserContextOptions {
   defaultViewport: Viewport | null;
-  isDefault: boolean;
 }
 
 
@@ -42,14 +33,18 @@ export class BidiBrowserContext extends BrowserContext {
   #browser: BidiBrowser;
   #connection: BidiConnection;
   #defaultViewport: Viewport | null;
-  #isDefault = false;
+  #userContext: UserContext;
 
-  constructor(browser: BidiBrowser, options: BidiBrowserContextOptions) {
+  constructor(
+    browser: BidiBrowser,
+    userContext: UserContext,
+    options: BidiBrowserContextOptions
+  ) {
     super();
     this.#browser = browser;
+    this.#userContext = userContext;
     this.#connection = this.#browser.connection;
     this.#defaultViewport = options.defaultViewport;
-    this.#isDefault = options.isDefault;
   }
 
   override targets(): Target[] {
@@ -100,11 +95,25 @@ export class BidiBrowserContext extends BrowserContext {
   }
 
   override async close(): Promise<void> {
-    if (this.#isDefault) {
+    if (!this.isIncognito()) {
       throw new Error('Default context cannot be closed!');
     }
 
-    await this.#browser._closeContext(this);
+    
+    for (const target of this.targets()) {
+      const page = await target?.page();
+      try {
+        await page?.close();
+      } catch (error) {
+        debugError(error);
+      }
+    }
+
+    try {
+      await this.#userContext.remove();
+    } catch (error) {
+      debugError(error);
+    }
   }
 
   override browser(): BidiBrowser {
@@ -123,7 +132,7 @@ export class BidiBrowserContext extends BrowserContext {
   }
 
   override isIncognito(): boolean {
-    return !this.#isDefault;
+    return this.#userContext.id !== UserContext.DEFAULT;
   }
 
   override overridePermissions(): never {

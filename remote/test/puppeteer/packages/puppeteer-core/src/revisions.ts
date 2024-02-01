@@ -7,17 +7,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 export const PUPPETEER_REVISIONS = Object.freeze({
-  chrome: '119.0.6045.105',
+  chrome: '121.0.6167.85',
+  'chrome-headless-shell': '121.0.6167.85',
   firefox: 'latest',
 });

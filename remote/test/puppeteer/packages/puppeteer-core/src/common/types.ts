@@ -4,20 +4,15 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {ElementHandle} from '../api/ElementHandle.js';
 import type {JSHandle} from '../api/JSHandle.js';
 
 import type {LazyArg} from './LazyArg.js';
+
+
+
+
+export type AwaitablePredicate<T> = (value: T) => Awaitable<boolean>;
 
 
 

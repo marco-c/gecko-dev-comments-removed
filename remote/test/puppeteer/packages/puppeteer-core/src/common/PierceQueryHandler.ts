@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type PuppeteerUtil from '../injected/injected.js';
 
 import {QueryHandler} from './QueryHandler.js';

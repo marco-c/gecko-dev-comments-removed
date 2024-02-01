@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import assert from 'assert';
 import {existsSync} from 'fs';
 import {mkdir, unlink} from 'fs/promises';

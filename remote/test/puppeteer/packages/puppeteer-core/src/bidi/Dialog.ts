@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
 import {Dialog} from '../api/Dialog.js';
@@ -42,7 +32,7 @@ export class BidiDialog extends Dialog {
   
 
 
-  override async sendCommand(options: {
+  override async handle(options: {
     accept: boolean;
     text?: string;
   }): Promise<void> {

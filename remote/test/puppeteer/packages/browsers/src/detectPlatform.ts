@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import os from 'os';
 
 import {BrowserPlatform} from './browser-data/browser-data.js';

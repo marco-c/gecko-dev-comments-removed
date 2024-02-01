@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import assert from 'assert';
 import {readdir} from 'fs/promises';
 import {platform} from 'os';

@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import path from 'path';
 
 import {BrowserPlatform} from './types.js';

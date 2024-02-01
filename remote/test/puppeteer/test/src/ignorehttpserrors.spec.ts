@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {TLSSocket} from 'tls';
 
 import expect from 'expect';

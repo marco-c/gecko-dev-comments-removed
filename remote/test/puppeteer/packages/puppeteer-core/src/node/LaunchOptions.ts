@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {BrowserConnectOptions} from '../common/ConnectOptions.js';
 import type {Product} from '../common/Product.js';
 

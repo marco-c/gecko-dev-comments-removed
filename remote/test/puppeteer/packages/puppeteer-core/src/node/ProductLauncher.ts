@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {existsSync} from 'fs';
 import {tmpdir} from 'os';
 import {join} from 'path';
@@ -26,6 +16,13 @@ import {
   computeExecutablePath,
 } from '@puppeteer/browsers';
 
+import {
+  firstValueFrom,
+  from,
+  map,
+  race,
+  timer,
+} from '../../third_party/rxjs/rxjs.js';
 import type {Browser, BrowserCloseCallback} from '../api/Browser.js';
 import {CdpBrowser} from '../cdp/Browser.js';
 import {Connection} from '../cdp/Connection.js';
@@ -246,7 +243,17 @@ export abstract class ProductLauncher {
         await browserProcess.close();
       }
     } else {
-      await browserProcess.close();
+      
+      await firstValueFrom(
+        race(
+          from(browserProcess.hasClosed()),
+          timer(5000).pipe(
+            map(() => {
+              return from(browserProcess.close());
+            })
+          )
+        )
+      );
     }
   }
 
@@ -386,7 +393,7 @@ export abstract class ProductLauncher {
   
 
 
-  protected resolveExecutablePath(): string {
+  protected resolveExecutablePath(headless?: boolean | 'new'): string {
     let executablePath = this.puppeteer.configuration.executablePath;
     if (executablePath) {
       if (!existsSync(executablePath)) {
@@ -397,9 +404,12 @@ export abstract class ProductLauncher {
       return executablePath;
     }
 
-    function productToBrowser(product?: Product) {
+    function productToBrowser(product?: Product, headless?: boolean | 'new') {
       switch (product) {
         case 'chrome':
+          if (headless === true) {
+            return InstalledBrowser.CHROMEHEADLESSSHELL;
+          }
           return InstalledBrowser.CHROME;
         case 'firefox':
           return InstalledBrowser.FIREFOX;
@@ -409,7 +419,7 @@ export abstract class ProductLauncher {
 
     executablePath = computeExecutablePath({
       cacheDir: this.puppeteer.defaultDownloadPath!,
-      browser: productToBrowser(this.product),
+      browser: productToBrowser(this.product, headless),
       buildId: this.puppeteer.browserRevision,
     });
 

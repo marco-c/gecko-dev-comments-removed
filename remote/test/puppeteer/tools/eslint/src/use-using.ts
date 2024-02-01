@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {ESLintUtils, TSESTree} from '@typescript-eslint/utils';
 
 const usingSymbols = ['ElementHandle', 'JSHandle'];

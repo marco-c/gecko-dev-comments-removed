@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {ApiModel} from '@microsoft/api-extractor-model';
 
 import {MarkdownDocumenter} from './custom_markdown_documenter.js';

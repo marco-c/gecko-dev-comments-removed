@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 const {
   versionsPerRelease,
   lastMaintainedChromeVersion,

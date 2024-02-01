@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {
   Browser as SupportedBrowser,
   resolveBuildId,

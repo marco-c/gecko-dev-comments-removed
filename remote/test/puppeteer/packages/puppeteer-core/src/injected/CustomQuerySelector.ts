@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {CustomQueryHandler} from '../common/CustomQueryHandler.js';
 import type {Awaitable, AwaitableIterable} from '../common/types.js';
 

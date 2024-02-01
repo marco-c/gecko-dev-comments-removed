@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
 import type {Frame} from '../api/Frame.js';
@@ -86,6 +76,14 @@ export class BidiHTTPRequest extends HTTPRequest {
   }
 
   override postData(): string | undefined {
+    return this.#postData;
+  }
+
+  override hasPostData(): boolean {
+    return this.#postData !== undefined;
+  }
+
+  override async fetchPostData(): Promise<string | undefined> {
     return this.#postData;
   }
 

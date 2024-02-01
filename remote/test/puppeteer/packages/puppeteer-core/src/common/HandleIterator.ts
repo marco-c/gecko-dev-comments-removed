@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {JSHandle} from '../api/JSHandle.js';
 import {DisposableStack, disposeSymbol} from '../util/disposable.js';
 

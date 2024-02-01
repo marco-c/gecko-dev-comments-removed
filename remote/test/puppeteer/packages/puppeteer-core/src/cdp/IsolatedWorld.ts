@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {CDPSession} from '../api/CDPSession.js';
@@ -21,11 +11,7 @@ import type {JSHandle} from '../api/JSHandle.js';
 import {Realm} from '../api/Realm.js';
 import type {TimeoutSettings} from '../common/TimeoutSettings.js';
 import type {BindingPayload, EvaluateFunc, HandleFor} from '../common/types.js';
-import {
-  addPageBinding,
-  debugError,
-  withSourcePuppeteerURLIfNone,
-} from '../common/util.js';
+import {debugError, withSourcePuppeteerURLIfNone} from '../common/util.js';
 import {Deferred} from '../util/Deferred.js';
 import {disposeSymbol} from '../util/disposable.js';
 import {Mutex} from '../util/Mutex.js';
@@ -34,7 +20,8 @@ import type {Binding} from './Binding.js';
 import {ExecutionContext, createCdpHandle} from './ExecutionContext.js';
 import type {CdpFrame} from './Frame.js';
 import type {MAIN_WORLD, PUPPETEER_WORLD} from './IsolatedWorlds.js';
-import type {WebWorker} from './WebWorker.js';
+import {addPageBinding} from './utils.js';
+import type {CdpWebWorker} from './WebWorker.js';
 
 
 
@@ -69,10 +56,10 @@ export class IsolatedWorld extends Realm {
     return this.#bindings;
   }
 
-  readonly #frameOrWorker: CdpFrame | WebWorker;
+  readonly #frameOrWorker: CdpFrame | CdpWebWorker;
 
   constructor(
-    frameOrWorker: CdpFrame | WebWorker,
+    frameOrWorker: CdpFrame | CdpWebWorker,
     timeoutSettings: TimeoutSettings
   ) {
     super(timeoutSettings);
@@ -80,7 +67,7 @@ export class IsolatedWorld extends Realm {
     this.frameUpdated();
   }
 
-  get environment(): CdpFrame | WebWorker {
+  get environment(): CdpFrame | CdpWebWorker {
     return this.#frameOrWorker;
   }
 
@@ -93,6 +80,8 @@ export class IsolatedWorld extends Realm {
   }
 
   clearContext(): void {
+    
+    this.#context?.reject(new Error('Execution context was destroyed'));
     this.#context = Deferred.create();
     if ('clearDocumentHandle' in this.#frameOrWorker) {
       this.#frameOrWorker.clearDocumentHandle();

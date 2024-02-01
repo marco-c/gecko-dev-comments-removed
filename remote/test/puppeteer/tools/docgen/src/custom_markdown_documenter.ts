@@ -11,16 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import * as path from 'path';
 
 import type {DocumenterConfig} from '@microsoft/api-documenter/lib/documenters/DocumenterConfig.js';

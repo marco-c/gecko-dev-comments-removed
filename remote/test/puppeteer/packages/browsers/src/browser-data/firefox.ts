@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import fs from 'fs';
 import path from 'path';
 
@@ -222,20 +212,29 @@ function defaultProfilePreferences(
 
     
     'focusmanager.testmode': true,
+
     
     'general.useragent.updates.enabled': false,
+
     
     
     'geo.provider.testing': true,
+
     
     'geo.wifi.scan': false,
+
     
     'hangmonitor.timeout': 0,
+
     
     'javascript.options.showInConsole': true,
 
     
     'media.gmp-manager.updateEnabled': false,
+
+    
+    'media.sanity-test.disabled': true,
+
     
     
     'network.cookie.cookieBehavior': 0,
@@ -267,9 +266,11 @@ function defaultProfilePreferences(
 
     
     'security.certerrors.mitm.priming.enabled': false,
+
     
     
     'security.fileuri.strict_origin_policy': false,
+
     
     'security.notification_enable_delay': 0,
 
@@ -279,6 +280,7 @@ function defaultProfilePreferences(
     
     
     'signon.autofillForms': false,
+
     
     
     'signon.rememberSignons': false,

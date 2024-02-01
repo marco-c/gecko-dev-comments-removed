@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {readFile, rm, writeFile} from 'fs/promises';
 import {join} from 'path';
 

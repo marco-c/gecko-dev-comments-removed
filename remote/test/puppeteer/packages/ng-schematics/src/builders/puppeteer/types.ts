@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {JsonObject} from '@angular-devkit/core';
 
 import type {TestRunner} from '../../schematics/utils/types.js';

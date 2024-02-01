@@ -7,16 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 const prettier = require('@prettier/sync');
 
 const prettierConfigPath = '../../../.prettierrc.cjs';

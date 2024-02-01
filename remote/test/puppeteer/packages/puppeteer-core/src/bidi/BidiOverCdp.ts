@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import * as BidiMapper from 'chromium-bidi/lib/cjs/bidiMapper/BidiMapper.js';
 import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 import type {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
@@ -176,7 +166,7 @@ class CDPClientAdapter<T extends CDPSession | CdpConnection>
     this.#closed = true;
   }
 
-  isCloseError(error: any): boolean {
+  isCloseError(error: unknown): boolean {
     return error instanceof TargetCloseError;
   }
 }
@@ -187,7 +177,9 @@ class CDPClientAdapter<T extends CDPSession | CdpConnection>
 
 
 class NoOpTransport
-  extends BidiMapper.EventEmitter<any>
+  extends BidiMapper.EventEmitter<{
+    bidiResponse: Bidi.ChromiumBidi.Message;
+  }>
   implements BidiMapper.BidiTransport
 {
   #onMessage: (message: Bidi.ChromiumBidi.Command) => Promise<void> | void =

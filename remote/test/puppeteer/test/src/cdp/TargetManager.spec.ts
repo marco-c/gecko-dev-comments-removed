@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import expect from 'expect';
 import type {CdpBrowser} from 'puppeteer-core/internal/cdp/Browser.js';
 

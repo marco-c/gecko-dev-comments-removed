@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {Deferred} from '../util/Deferred.js';
 import {rewriteError} from '../util/ErrorLike.js';
 
@@ -103,6 +93,19 @@ export class CallbackRegistry {
       this._reject(callback, new TargetCloseError('Target closed'));
     }
     this.#callbacks.clear();
+  }
+
+  
+
+
+  getPendingProtocolErrors(): Error[] {
+    const result: Error[] = [];
+    for (const callback of this.#callbacks.values()) {
+      result.push(
+        new Error(`${callback.label} timed out. Trace: ${callback.error.stack}`)
+      );
+    }
+    return result;
   }
 }
 

@@ -1,14 +1,4 @@
-#! /usr/bin/env node
-
-
-
-
-
-
-
-
-
-
+#! /usr/bin/env -S node
 
 
 
@@ -56,6 +46,7 @@ const {
   minTests,
   shard,
   reporter,
+  printMemory,
 } = yargs(hideBin(process.argv))
   .parserConfiguration({'unknown-options-as-args': true})
   .scriptName('@puppeteer/mocha-runner')
@@ -91,6 +82,10 @@ const {
   .option('reporter', {
     string: true,
     requiresArg: true,
+  })
+  .option('print-memory', {
+    boolean: true,
+    default: false,
   })
   .parseSync();
 
@@ -207,6 +202,10 @@ async function main() {
         'trace-warnings',
       ];
 
+      if (printMemory) {
+        args.push('-n', 'expose-gc');
+      }
+
       const specPattern = 'test/build/**/*.spec.js';
       const specs = globSync(specPattern, {
         ignore: !includeCdpTests ? 'test/build/cdp/**/*.spec.js' : undefined,
@@ -215,7 +214,7 @@ async function main() {
       });
       if (shard) {
         
-        const [shardId, shards] = shard.split('/').map(s => {
+        const [shardId, shards] = shard.split('-').map(s => {
           return Number(s);
         }) as [number, number];
         const argsLength = args.length;
@@ -228,7 +227,7 @@ async function main() {
           throw new Error('Shard did not result in any test files');
         }
         console.log(
-          `Running shard ${shardId}/${shards}. Picked ${
+          `Running shard ${shardId}-${shards}. Picked ${
             args.length - argsLength
           } files out of ${specs.length}.`
         );

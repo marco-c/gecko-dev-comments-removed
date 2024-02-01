@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Protocol} from 'devtools-protocol';
 
 import type {TargetFilterCallback} from '../api/Browser.js';
@@ -73,11 +63,6 @@ export class FirefoxTargetManager
 
 
   #availableTargetsBySessionId = new Map<string, CdpTarget>();
-  
-
-
-
-  #ignoredTargets = new Set<string>();
   #targetFilterCallback: TargetFilterCallback | undefined;
   #targetFactory: TargetFactory;
 
@@ -172,7 +157,6 @@ export class FirefoxTargetManager
 
     const target = this.#targetFactory(event.targetInfo, undefined);
     if (this.#targetFilterCallback && !this.#targetFilterCallback(target)) {
-      this.#ignoredTargets.add(event.targetInfo.targetId);
       this.#finishInitializationIfReady(event.targetInfo.targetId);
       return;
     }

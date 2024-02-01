@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import os from 'os';
 
 import expect from 'expect';

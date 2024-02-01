@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type Protocol from 'devtools-protocol';
 
 import type {EvaluateFuncWith, HandleFor, HandleOr} from '../common/types.js';

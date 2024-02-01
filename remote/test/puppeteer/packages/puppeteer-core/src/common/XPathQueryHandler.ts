@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {
   QueryHandler,
   type QuerySelectorAll,

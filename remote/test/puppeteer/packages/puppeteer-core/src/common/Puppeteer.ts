@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import type {Browser} from '../api/Browser.js';
 
 import {_connectToBrowser} from './BrowserConnector.js';

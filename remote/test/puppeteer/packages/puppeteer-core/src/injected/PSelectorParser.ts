@@ -4,16 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import {type Token, tokenize, TOKENS, stringify} from 'parsel-js';
 
 export type CSSSelector = string;
