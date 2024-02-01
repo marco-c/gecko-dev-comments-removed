@@ -70,7 +70,11 @@ class UnsubscribeResultRunnable final : public WorkerRunnable {
     MOZ_ASSERT(aWorkerPrivate);
     aWorkerPrivate->AssertIsOnWorkerThread();
 
-    RefPtr<Promise> promise = mProxy->WorkerPromise();
+    RefPtr<Promise> promise = mProxy->GetWorkerPromise();
+    
+    if (!promise) {
+      return true;
+    }
     if (NS_SUCCEEDED(mStatus)) {
       promise->MaybeResolve(mSuccess);
     } else {

@@ -427,20 +427,15 @@ void RequestResolver::ResolveOrReject() {
     promise = mPromise;
   } else {
     MOZ_ASSERT(mProxy);
-
-    
-    MutexAutoLock lock(mProxy->Lock());
-    if (!mProxy->CleanedUp()) {
-      promise = mProxy->WorkerPromise();
-
-      
-      autoCleanup.emplace(mProxy);
+    promise = mProxy->GetWorkerPromise();
+    if (!promise) {
+      return;
     }
+    
+    autoCleanup.emplace(mProxy);
   }
 
-  if (!promise) {
-    return;
-  }
+  MOZ_ASSERT(promise);
 
   if (mType == Type::Estimate) {
     if (NS_SUCCEEDED(mResultCode)) {

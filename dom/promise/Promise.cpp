@@ -791,7 +791,11 @@ class PromiseWorkerProxyRunnable final : public WorkerRunnable {
     MOZ_ASSERT(aWorkerPrivate == mWorkerPrivate);
 
     MOZ_ASSERT(mPromiseWorkerProxy);
-    RefPtr<Promise> workerPromise = mPromiseWorkerProxy->WorkerPromise();
+    RefPtr<Promise> workerPromise = mPromiseWorkerProxy->GetWorkerPromise();
+    
+    if (!workerPromise) {
+      return true;
+    }
 
     
     JS::Rooted<JS::Value> value(aCx);
@@ -885,9 +889,8 @@ bool PromiseWorkerProxy::OnWritingThread() const {
   return IsCurrentThreadRunningWorker();
 }
 
-Promise* PromiseWorkerProxy::WorkerPromise() const {
+Promise* PromiseWorkerProxy::GetWorkerPromise() const {
   MOZ_ASSERT(IsCurrentThreadRunningWorker());
-  MOZ_ASSERT(mWorkerPromise);
   return mWorkerPromise;
 }
 

@@ -150,7 +150,7 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
 
   
   
-  Promise* WorkerPromise() const;
+  Promise* GetWorkerPromise() const;
 
   
   
