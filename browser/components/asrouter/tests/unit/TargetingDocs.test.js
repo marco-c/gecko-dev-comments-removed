@@ -1,5 +1,5 @@
 import { ASRouterTargeting } from "modules/ASRouterTargeting.jsm";
-import docs from "newtab/content-src/asrouter/docs/targeting-attributes.md";
+import docs from "docs/targeting-attributes.md";
 
 
 const SKIP_DOCS = [];
