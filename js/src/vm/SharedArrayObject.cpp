@@ -277,8 +277,34 @@ void SharedArrayRawBuffer::dropReference() {
   }
 }
 
+bool SharedArrayRawBuffer::grow(size_t newByteLength) {
+  MOZ_RELEASE_ASSERT(isGrowable());
+
+  
+  
+
+  while (true) {
+    
+    
+    size_t oldByteLength = length_;
+    if (newByteLength == oldByteLength) {
+      return true;
+    }
+    if (newByteLength < oldByteLength) {
+      return false;
+    }
+    if (length_.compareExchange(oldByteLength, newByteLength)) {
+      return true;
+    }
+  }
+}
+
 static bool IsSharedArrayBuffer(HandleValue v) {
   return v.isObject() && v.toObject().is<SharedArrayBufferObject>();
+}
+
+static bool IsGrowableSharedArrayBuffer(HandleValue v) {
+  return v.isObject() && v.toObject().is<GrowableSharedArrayBufferObject>();
 }
 
 MOZ_ALWAYS_INLINE bool SharedArrayBufferObject::byteLengthGetterImpl(
@@ -295,6 +321,95 @@ bool SharedArrayBufferObject::byteLengthGetter(JSContext* cx, unsigned argc,
   return CallNonGenericMethod<IsSharedArrayBuffer, byteLengthGetterImpl>(cx,
                                                                          args);
 }
+
+#ifdef NIGHTLY_BUILD
+
+
+
+bool SharedArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
+                                                      const CallArgs& args) {
+  MOZ_ASSERT(IsSharedArrayBuffer(args.thisv()));
+  auto* buffer = &args.thisv().toObject().as<SharedArrayBufferObject>();
+
+  
+  args.rval().setNumber(buffer->byteLengthOrMaxByteLength());
+  return true;
+}
+
+
+
+
+bool SharedArrayBufferObject::maxByteLengthGetter(JSContext* cx, unsigned argc,
+                                                  Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSharedArrayBuffer, maxByteLengthGetterImpl>(
+      cx, args);
+}
+
+
+
+
+bool SharedArrayBufferObject::growableGetterImpl(JSContext* cx,
+                                                 const CallArgs& args) {
+  MOZ_ASSERT(IsSharedArrayBuffer(args.thisv()));
+  auto* buffer = &args.thisv().toObject().as<SharedArrayBufferObject>();
+
+  
+  args.rval().setBoolean(buffer->isGrowable());
+  return true;
+}
+
+
+
+
+bool SharedArrayBufferObject::growableGetter(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSharedArrayBuffer, growableGetterImpl>(cx,
+                                                                       args);
+}
+
+
+
+
+bool SharedArrayBufferObject::growImpl(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsGrowableSharedArrayBuffer(args.thisv()));
+  Rooted<GrowableSharedArrayBufferObject*> buffer(
+      cx, &args.thisv().toObject().as<GrowableSharedArrayBufferObject>());
+
+  
+  uint64_t newByteLength;
+  if (!ToIndex(cx, args.get(0), &newByteLength)) {
+    return false;
+  }
+
+  
+  if (newByteLength > buffer->maxByteLength()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
+    return false;
+  }
+  if (!buffer->rawBufferObject()->grow(newByteLength)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SHARED_ARRAY_LENGTH_SMALLER_THAN_CURRENT);
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+bool SharedArrayBufferObject::grow(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsGrowableSharedArrayBuffer, growImpl>(cx, args);
+}
+#endif
 
 
 
@@ -559,11 +674,18 @@ static const JSPropertySpec sharedarray_properties[] = {
 
 static const JSFunctionSpec sharedarray_proto_functions[] = {
     JS_SELF_HOSTED_FN("slice", "SharedArrayBufferSlice", 2, 0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("grow", SharedArrayBufferObject::grow, 1, 0),
+#endif
     JS_FS_END,
 };
 
 static const JSPropertySpec sharedarray_proto_properties[] = {
     JS_PSG("byteLength", SharedArrayBufferObject::byteLengthGetter, 0),
+#ifdef NIGHTLY_BUILD
+    JS_PSG("maxByteLength", SharedArrayBufferObject::maxByteLengthGetter, 0),
+    JS_PSG("growable", SharedArrayBufferObject::growableGetter, 0),
+#endif
     JS_STRING_SYM_PS(toStringTag, "SharedArrayBuffer", JSPROP_READONLY),
     JS_PS_END,
 };
