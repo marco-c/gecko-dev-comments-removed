@@ -16,6 +16,7 @@ const OutputParser = require("resource://devtools/client/shared/output-parser.js
 const { PrefObserver } = require("resource://devtools/client/shared/prefs.js");
 const ElementStyle = require("resource://devtools/client/inspector/rules/models/element-style.js");
 const RuleEditor = require("resource://devtools/client/inspector/rules/views/rule-editor.js");
+const RegisteredPropertyEditor = require("resource://devtools/client/inspector/rules/views/registered-property-editor.js");
 const TooltipsOverlay = require("resource://devtools/client/inspector/shared/tooltips-overlay.js");
 const {
   createChild,
@@ -78,6 +79,7 @@ const FILTER_STRICT_RE = /\s*`(.*?)`\s*$/;
 
 const RULE_VIEW_HEADER_CLASSNAME = "ruleview-header";
 const PSEUDO_ELEMENTS_CONTAINER_ID = "pseudo-elements-container";
+const REGISTERED_PROPERTIES_CONTAINER_ID = "registered-properties-container";
 
 
 
@@ -254,6 +256,8 @@ function CssRuleView(inspector, document, store) {
 
   
   this.tooltips = new TooltipsOverlay(this);
+
+  this.cssRegisteredPropertiesByTarget = new Map();
 }
 
 CssRuleView.prototype = {
@@ -1330,6 +1334,32 @@ CssRuleView.prototype = {
 
 
 
+  createRegisteredPropertiesExpandableContainer() {
+    const el = this.createExpandableContainer(
+      "@property",
+      REGISTERED_PROPERTIES_CONTAINER_ID
+    );
+    el.classList.add("registered-properties");
+    return el;
+  },
+
+  
+
+
+
+
+
+  getRegisteredPropertyElement(registeredPropertyName) {
+    return this.styleDocument.querySelector(
+      `#${REGISTERED_PROPERTIES_CONTAINER_ID} [data-name="${registeredPropertyName}"]`
+    );
+  },
+
+  
+
+
+
+
 
 
 
@@ -1409,7 +1439,10 @@ CssRuleView.prototype = {
       const inheritedSource = rule.inherited;
       if (inheritedSource && inheritedSource !== lastInheritedSource) {
         const div = this.styleDocument.createElementNS(HTML_NS, "div");
-        div.className = RULE_VIEW_HEADER_CLASSNAME;
+        div.classList.add(
+          RULE_VIEW_HEADER_CLASSNAME,
+          "ruleview-header-inherited"
+        );
         div.setAttribute("role", "heading");
         div.setAttribute("aria-level", "3");
         div.textContent = rule.inheritedSource;
@@ -1447,6 +1480,28 @@ CssRuleView.prototype = {
         this._focusNextUserAddedRule = null;
         rule.editor.selectorText.click();
         this.emitForTests("new-rule-added");
+      }
+    }
+
+    const targetRegisteredProperties =
+      this.getRegisteredPropertiesForSelectedNodeTarget();
+    if (targetRegisteredProperties?.size) {
+      const registeredPropertiesContainer =
+        this.createRegisteredPropertiesExpandableContainer();
+
+      
+      const propertyDefinitions = Array.from(
+        targetRegisteredProperties.values()
+      ).sort((a, b) => (a.name < b.name ? -1 : 1));
+      for (const propertyDefinition of propertyDefinitions) {
+        const registeredPropertyEditor = new RegisteredPropertyEditor(
+          this,
+          propertyDefinition
+        );
+
+        registeredPropertiesContainer.appendChild(
+          registeredPropertyEditor.element
+        );
       }
     }
 
@@ -2095,6 +2150,18 @@ CssRuleView.prototype = {
 
     return false;
   },
+
+  
+
+
+
+
+
+  getRegisteredPropertiesForSelectedNodeTarget() {
+    return this.cssRegisteredPropertiesByTarget.get(
+      this.inspector.selection.nodeFront.targetFront
+    );
+  },
 };
 
 class RuleViewTool {
@@ -2161,6 +2228,31 @@ class RuleViewTool {
 
     
     
+    this.inspector.commands.resourceCommand
+      .watchResources(
+        [
+          this.inspector.commands.resourceCommand.TYPES
+            .CSS_REGISTERED_PROPERTIES,
+        ],
+        {
+          onAvailable: this.#onResourceAvailable,
+          onUpdated: this.#onResourceUpdated,
+          onDestroyed: this.#onResourceDestroyed,
+          ignoreExistingResources: false,
+        }
+      )
+      .catch(e => {
+        
+        
+        
+        if (!this.view) {
+          return;
+        }
+        throw e;
+      });
+
+    
+    
     this.readyPromise = this.onSelected();
   }
 
@@ -2221,14 +2313,17 @@ class RuleViewTool {
     }
 
     let hasNewStylesheet = false;
+    const addedRegisteredProperties = [];
     for (const resource of resources) {
       if (
         resource.resourceType ===
           this.inspector.commands.resourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name === "will-navigate" &&
-        resource.targetFront.isTopLevel
+        resource.name === "will-navigate"
       ) {
-        this.clearUserProperties();
+        this.view.cssRegisteredPropertiesByTarget.delete(resource.targetFront);
+        if (resource.targetFront.isTopLevel) {
+          this.clearUserProperties();
+        }
         continue;
       }
 
@@ -2242,12 +2337,184 @@ class RuleViewTool {
       ) {
         hasNewStylesheet = true;
       }
+
+      if (
+        resource.resourceType ===
+        this.inspector.commands.resourceCommand.TYPES.CSS_REGISTERED_PROPERTIES
+      ) {
+        if (
+          !this.view.cssRegisteredPropertiesByTarget.has(resource.targetFront)
+        ) {
+          this.view.cssRegisteredPropertiesByTarget.set(
+            resource.targetFront,
+            new Map()
+          );
+        }
+        this.view.cssRegisteredPropertiesByTarget
+          .get(resource.targetFront)
+          .set(resource.name, resource);
+        
+        if (
+          this.view.inspector.selection?.nodeFront?.targetFront ===
+          resource.targetFront
+        ) {
+          addedRegisteredProperties.push(resource);
+        }
+      }
+    }
+
+    if (addedRegisteredProperties.length) {
+      
+      let registeredPropertiesContainer =
+        this.view.styleDocument.getElementById(
+          REGISTERED_PROPERTIES_CONTAINER_ID
+        );
+      
+      if (!registeredPropertiesContainer) {
+        registeredPropertiesContainer =
+          this.view.createRegisteredPropertiesExpandableContainer();
+      }
+
+      
+      const names = new Set();
+      for (const propertyDefinition of addedRegisteredProperties) {
+        const editor = new RegisteredPropertyEditor(
+          this.view,
+          propertyDefinition
+        );
+        names.add(propertyDefinition.name);
+
+        
+        
+        let referenceNode = null;
+        for (const child of registeredPropertiesContainer.children) {
+          if (child.getAttribute("data-name") > propertyDefinition.name) {
+            referenceNode = child;
+            break;
+          }
+        }
+        registeredPropertiesContainer.insertBefore(
+          editor.element,
+          referenceNode
+        );
+      }
+
+      
+      this._updateElementStyleRegisteredProperties(names);
     }
 
     if (hasNewStylesheet) {
       this.refresh();
     }
   };
+
+  #onResourceUpdated = updates => {
+    const updatedProperties = [];
+    for (const update of updates) {
+      if (
+        update.resource.resourceType ===
+        this.inspector.commands.resourceCommand.TYPES.CSS_REGISTERED_PROPERTIES
+      ) {
+        const { resource } = update;
+        if (
+          !this.view.cssRegisteredPropertiesByTarget.has(resource.targetFront)
+        ) {
+          continue;
+        }
+
+        this.view.cssRegisteredPropertiesByTarget
+          .get(resource.targetFront)
+          .set(resource.name, resource);
+
+        
+        if (
+          this.view.inspector.selection?.nodeFront?.targetFront ===
+          resource.targetFront
+        ) {
+          updatedProperties.push(resource);
+        }
+      }
+    }
+
+    const names = new Set();
+    if (updatedProperties.length) {
+      const registeredPropertiesContainer =
+        this.view.styleDocument.getElementById(
+          REGISTERED_PROPERTIES_CONTAINER_ID
+        );
+      for (const resource of updatedProperties) {
+        
+        
+        const name = resource.name;
+        const el = this.view.getRegisteredPropertyElement(name);
+        const editor = new RegisteredPropertyEditor(this.view, resource);
+        registeredPropertiesContainer.replaceChild(editor.element, el);
+
+        names.add(resource.name);
+      }
+      
+      this._updateElementStyleRegisteredProperties(names);
+    }
+  };
+
+  #onResourceDestroyed = resources => {
+    const destroyedPropertiesNames = new Set();
+    for (const resource of resources) {
+      if (
+        resource.resourceType ===
+        this.inspector.commands.resourceCommand.TYPES.CSS_REGISTERED_PROPERTIES
+      ) {
+        if (
+          !this.view.cssRegisteredPropertiesByTarget.has(resource.targetFront)
+        ) {
+          continue;
+        }
+
+        const targetRegisteredProperties =
+          this.view.cssRegisteredPropertiesByTarget.get(resource.targetFront);
+        const resourceName = Array.from(
+          targetRegisteredProperties.entries()
+        ).find(
+          ([_, propDef]) => propDef.resourceId === resource.resourceId
+        )?.[0];
+        if (!resourceName) {
+          continue;
+        }
+
+        targetRegisteredProperties.delete(resourceName);
+
+        
+        if (
+          this.view.inspector.selection?.nodeFront?.targetFront ===
+          resource.targetFront
+        ) {
+          destroyedPropertiesNames.add(resourceName);
+        }
+      }
+    }
+    if (destroyedPropertiesNames.size > 0) {
+      for (const name of destroyedPropertiesNames) {
+        this.view.getRegisteredPropertyElement(name)?.remove();
+      }
+      
+      this._updateElementStyleRegisteredProperties(destroyedPropertiesNames);
+    }
+  };
+
+  
+
+
+
+
+
+  _updateElementStyleRegisteredProperties(registeredPropertyNames) {
+    if (!this.view._elementStyle) {
+      return;
+    }
+    this.view._elementStyle.onRegisteredPropertiesChange(
+      registeredPropertyNames
+    );
+  }
 
   clearUserProperties() {
     if (this.view && this.view.store && this.view.store.userProperties) {
@@ -2273,9 +2540,21 @@ class RuleViewTool {
     }
 
     this.inspector.commands.resourceCommand.unwatchResources(
-      [this.inspector.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+      [
+        this.inspector.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+        this.inspector.commands.resourceCommand.TYPES.STYLESHEET,
+      ],
       {
         onAvailable: this.#onResourceAvailable,
+      }
+    );
+
+    this.inspector.commands.resourceCommand.unwatchResources(
+      [this.inspector.commands.resourceCommand.TYPES.CSS_REGISTERED_PROPERTIES],
+      {
+        onAvailable: this.#onResourceAvailable,
+        onUpdated: this.#onResourceUpdated,
+        onDestroyed: this.#onResourceDestroyed,
       }
     );
 

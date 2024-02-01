@@ -429,6 +429,23 @@ class ElementStyle {
 
 
 
+  onRegisteredPropertiesChange(registeredPropertyNamesSet) {
+    for (const rule of this.rules) {
+      for (const textProp of rule.textProps) {
+        if (this._hasUpdatedCSSVariable(textProp, registeredPropertyNamesSet)) {
+          textProp.updateEditor();
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
 
 
   _hasUpdatedCSSVariable(declaration, variableNamesSet) {
@@ -832,7 +849,18 @@ class ElementStyle {
 
   getVariable(name, pseudo = "") {
     const variables = this.variablesMap.get(pseudo);
-    return variables ? variables.get(name) : null;
+
+    if (variables && variables.has(name)) {
+      return variables.get(name);
+    }
+
+    
+    
+    const registeredPropertiesMap =
+      this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
+    return registeredPropertiesMap && registeredPropertiesMap.has(name)
+      ? registeredPropertiesMap.get(name).initialValue
+      : null;
   }
 }
 
