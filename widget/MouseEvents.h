@@ -431,6 +431,10 @@ class WidgetDragEvent : public WidgetMouseEvent {
     mInHTMLEditorEventListener = false;
   }
 
+  bool CanConvertToInputData() const {
+    return mMessage == eDragStart || mMessage == eDragEnd;
+  }
+
   
 
 

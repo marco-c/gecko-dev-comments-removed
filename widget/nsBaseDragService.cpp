@@ -703,7 +703,9 @@ nsBaseDragService::FireDragEventAtSource(EventMessage aEventMessage,
   }
   event.mModifiers = aKeyModifiers;
 
-  if (widget) {
+  
+  
+  if (widget && event.CanConvertToInputData()) {
     
     
     widget->DispatchEventToAPZOnly(&event);
