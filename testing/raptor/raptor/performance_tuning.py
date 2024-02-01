@@ -135,33 +135,10 @@ class PerformanceTuner(object):
                 "getprop ro.product.model", timeout=self.timeout
             )
 
-        if device_name == "Pixel 2":
-            
-            
-            
-            
-            commands.update(
-                {
-                    "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor": "performance",
-                    "/sys/devices/system/cpu/cpufreq/policy4/scaling_governor": "performance",
-                    "/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq": "1900800",
-                    "/sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq": "2457600",
-                }
-            )
-        elif device_name == "Moto G (5)":
-            
-            
-            
-            for x in range(0, 8):
-                commands.update(
-                    {
-                        "/sys/devices/system/cpu/cpu{}/"
-                        "cpufreq/scaling_governor".format(x): "performance",
-                        "/sys/devices/system/cpu/cpu{}/"
-                        "cpufreq/scaling_min_freq".format(x): "1401000",
-                    }
-                )
-        elif device_name == "SM-A515F":
+        
+        
+        
+        if device_name == "SM-A515F":
             commands.update(
                 {
                     "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor": "performance",
@@ -196,36 +173,14 @@ class PerformanceTuner(object):
                 "getprop ro.product.model", timeout=self.timeout
             )
 
-        if device_name == "Pixel 2":
-            
-            
-            
-            commands.update(
-                {
-                    "/sys/devices/soc/5000000.qcom,kgsl-3d0/devfreq/"
-                    "5000000.qcom,kgsl-3d0/governor": "performance",
-                    "/sys/devices/soc/soc:qcom,kgsl-busmon/devfreq/"
-                    "soc:qcom,kgsl-busmon/governor": "performance",
-                    "/sys/devices/soc/5000000.qcom,kgsl-3d0/kgsl/kgsl-3d0/min_clock_mhz": "710",
-                }
+        
+        
+        
+        self.log.info(
+            "GPU for device with ro.product.model '{}' unknown, not setting devfreq".format(
+                device_name
             )
-        elif device_name == "Moto G (5)":
-            
-            
-            
-            commands.update(
-                {
-                    "/sys/devices/soc/1c00000.qcom,kgsl-3d0/devfreq/"
-                    "1c00000.qcom,kgsl-3d0/governor": "performance",
-                    "/sys/devices/soc/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/min_clock_mhz": "450",
-                }
-            )
-        else:
-            self.log.info(
-                "GPU for device with ro.product.model '{}' unknown, not setting devfreq".format(
-                    device_name
-                )
-            )
+        )
 
         for key, value in commands.items():
             self._set_value_and_check_exitcode(key, value)

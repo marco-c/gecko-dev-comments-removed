@@ -10,7 +10,6 @@ from mach.decorators import Command, CommandArgument, SubCommand
 from mozbuild.base import MachCommandConditions as conditions
 
 _TRY_PLATFORMS = {
-    "g5-browsertime": "perftest-android-hw-g5-browsertime",
     "linux-xpcshell": "perftest-linux-try-xpcshell",
     "mac-xpcshell": "perftest-macosx-try-xpcshell",
     "linux-browsertime": "perftest-linux-try-browsertime",

@@ -1090,8 +1090,6 @@ class ADBDevice(ADBCommand):
 
                 
                 
-                
-                
                 try:
                     if (
                         not self._have_su
