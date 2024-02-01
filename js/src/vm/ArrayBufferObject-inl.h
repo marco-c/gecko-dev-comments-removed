@@ -59,6 +59,13 @@ inline bool ArrayBufferObjectMaybeShared::isWasm() const {
   return this->as<SharedArrayBufferObject>().isWasm();
 }
 
+inline bool ArrayBufferObjectMaybeShared::pinLength(bool pin) {
+  if (is<ArrayBufferObject>()) {
+    return as<ArrayBufferObject>().pinLength(pin);
+  }
+  return false;  
+}
+
 }  
 
 #endif  
