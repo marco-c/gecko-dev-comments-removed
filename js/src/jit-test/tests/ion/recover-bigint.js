@@ -24,7 +24,12 @@ function bigIntAddBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 function bigIntSubBail(i) {
@@ -37,7 +42,12 @@ function bigIntSubBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 function bigIntMulBail(i) {
@@ -50,7 +60,12 @@ function bigIntMulBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 function bigIntIncBail(i) {
@@ -63,7 +78,12 @@ function bigIntIncBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return x;
+  }
 }
 
 function bigIntDecBail(i) {
@@ -76,7 +96,12 @@ function bigIntDecBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return x;
+  }
 }
 
 function bigIntBitNotBail(i) {
@@ -89,7 +114,12 @@ function bigIntBitNotBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 function bigIntLshBail(i) {
@@ -102,7 +132,12 @@ function bigIntLshBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 function bigIntRshBail(i) {
@@ -115,7 +150,12 @@ function bigIntRshBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 function bigIntAsUintBail(i) {
@@ -128,7 +168,12 @@ function bigIntAsUintBail(i) {
   
   resumeHere();
 
-  if (i >= 99) bailout();
+  if (i >= 99) {
+    bailout();
+    
+    
+    return a;
+  }
 }
 
 
