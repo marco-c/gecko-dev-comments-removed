@@ -356,6 +356,10 @@ static const JSFunctionSpec arraybuffer_proto_functions[] = {
 
 static const JSPropertySpec arraybuffer_proto_properties[] = {
     JS_PSG("byteLength", ArrayBufferObject::byteLengthGetter, 0),
+#ifdef NIGHTLY_BUILD
+    JS_PSG("maxByteLength", ArrayBufferObject::maxByteLengthGetter, 0),
+    JS_PSG("resizable", ArrayBufferObject::resizableGetter, 0),
+#endif
     JS_PSG("detached", ArrayBufferObject::detachedGetter, 0),
     JS_STRING_SYM_PS(toStringTag, "ArrayBuffer", JSPROP_READONLY),
     JS_PS_END,
@@ -476,6 +480,72 @@ static ArrayBufferObject* ArrayBufferCopyAndDetach(
   return ArrayBufferObject::copyAndDetach(cx, size_t(newByteLength),
                                           arrayBuffer);
 }
+
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+bool ArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
+                                                const CallArgs& args) {
+  MOZ_ASSERT(IsArrayBuffer(args.thisv()));
+
+  auto* buffer = &args.thisv().toObject().as<ArrayBufferObject>();
+
+  
+  size_t maxByteLength;
+  if (buffer->isResizable()) {
+    maxByteLength = buffer->as<ResizableArrayBufferObject>().maxByteLength();
+  } else {
+    maxByteLength = buffer->byteLength();
+  }
+  MOZ_ASSERT_IF(buffer->isDetached(), maxByteLength == 0);
+
+  
+  args.rval().setNumber(maxByteLength);
+  return true;
+}
+
+
+
+
+
+
+bool ArrayBufferObject::maxByteLengthGetter(JSContext* cx, unsigned argc,
+                                            Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsArrayBuffer, maxByteLengthGetterImpl>(cx, args);
+}
+
+
+
+
+
+
+bool ArrayBufferObject::resizableGetterImpl(JSContext* cx,
+                                            const CallArgs& args) {
+  MOZ_ASSERT(IsArrayBuffer(args.thisv()));
+
+  
+  auto* buffer = &args.thisv().toObject().as<ArrayBufferObject>();
+  args.rval().setBoolean(buffer->isResizable());
+  return true;
+}
+
+
+
+
+
+
+bool ArrayBufferObject::resizableGetter(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsArrayBuffer, resizableGetterImpl>(cx, args);
+}
+#endif
 
 
 
