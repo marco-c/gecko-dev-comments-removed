@@ -26,25 +26,19 @@ function enableActorReleaser(webConsoleUI) {
         webConsoleUI &&
         [MESSAGES_ADD, MESSAGES_CLEAR, PRIVATE_MESSAGES_CLEAR].includes(type)
       ) {
-        const promises = [];
-        state.messages.frontsToRelease.forEach(front => {
-          
-          
-          if (
-            front &&
-            typeof front.release === "function" &&
-            !front.isDestroyed() &&
-            (!state.ui.frontInSidebar ||
-              state.ui.frontInSidebar.actorID !== front.actorID)
-          ) {
-            promises.push(front.release());
-          }
-        });
-
+        const { frontInSidebar } = state.ui;
+        let { frontsToRelease } = state.messages;
         
-        Promise.all(promises).then(() =>
-          webConsoleUI.emitForTests("fronts-released")
-        );
+        frontsToRelease = frontInSidebar
+          ? frontsToRelease.filter(
+              front => frontInSidebar.actorID !== front.actorID
+            )
+          : state.messages.frontsToRelease;
+
+        webConsoleUI.hud.commands.objectCommand
+          .releaseObjects(frontsToRelease)
+          
+          .then(() => webConsoleUI.emitForTests("fronts-released"));
 
         
         state = reducer(state, {
