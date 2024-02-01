@@ -496,27 +496,37 @@ StyleVerticalAlignKeyword nsTableCellFrame::GetVerticalAlign() const {
 }
 
 static bool CellHasVisibleContent(nsTableFrame* aTableFrame,
-                                  nsIFrame* aKidFrame) {
+                                  nsTableCellFrame* aCell) {
   
-  if (aKidFrame->GetContentRect().Height() > 0) {
+  nsIFrame* content = aCell->CellContentFrame();
+  if (content->GetContentRect().Height() > 0) {
     return true;
   }
   if (aTableFrame->IsBorderCollapse()) {
     return true;
   }
-  for (nsIFrame* innerFrame : aKidFrame->PrincipalChildList()) {
+  for (nsIFrame* innerFrame : content->PrincipalChildList()) {
     LayoutFrameType frameType = innerFrame->Type();
     if (LayoutFrameType::Text == frameType) {
       nsTextFrame* textFrame = static_cast<nsTextFrame*>(innerFrame);
-      if (textFrame->HasNoncollapsedCharacters()) return true;
+      if (textFrame->HasNoncollapsedCharacters()) {
+        return true;
+      }
     } else if (LayoutFrameType::Placeholder != frameType) {
       return true;
-    } else {
-      nsIFrame* floatFrame = nsLayoutUtils::GetFloatFromPlaceholder(innerFrame);
-      if (floatFrame) return true;
+    } else if (nsLayoutUtils::GetFloatFromPlaceholder(innerFrame)) {
+      return true;
     }
   }
   return false;
+}
+
+nsIFrame* nsTableCellFrame::CellContentFrame() const {
+  nsIFrame* inner = mFrames.FirstChild();
+  if (nsIScrollableFrame* sf = do_QueryFrame(inner)) {
+    return sf->GetScrolledFrame();
+  }
+  return inner;
 }
 
 nscoord nsTableCellFrame::GetCellBaseline() const {
@@ -530,7 +540,7 @@ nscoord nsTableCellFrame::GetCellBaseline() const {
     
     return result + GetLogicalUsedBorder(wm).BStart(wm);
   }
-  return inner->ContentBSize(wm) +
+  return CellContentFrame()->ContentBSize(wm) +
          GetLogicalUsedBorderAndPadding(wm).BStart(wm);
 }
 
@@ -742,8 +752,32 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
                              availSize.ConvertTo(kidWM, wm), Nothing(),
                              ReflowInput::InitFlag::CallerWillInit);
   
-  kidReflowInput.Init(aPresContext, Nothing(), Nothing(),
-                      Some(aReflowInput.ComputedLogicalPadding(kidWM)));
+  {
+    const auto padding = aReflowInput.ComputedLogicalPadding(kidWM);
+    kidReflowInput.Init(aPresContext, Nothing(), Nothing(), Some(padding));
+    if (firstKid->IsScrollFrame()) {
+      
+      
+      
+      
+      
+      auto ToScrolledBSize = [&](const nscoord aBSize) {
+        return std::max(0, aBSize - padding.BStartEnd(kidWM));
+      };
+      if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
+        kidReflowInput.SetComputedBSize(
+            ToScrolledBSize(aReflowInput.ComputedBSize()));
+      }
+      if (aReflowInput.ComputedMinBSize() > 0) {
+        kidReflowInput.SetComputedMinBSize(
+            ToScrolledBSize(aReflowInput.ComputedMinBSize()));
+      }
+      if (aReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
+        kidReflowInput.SetComputedMaxBSize(
+            ToScrolledBSize(aReflowInput.ComputedMaxBSize()));
+      }
+    }
+  }
 
   
   
@@ -780,7 +814,7 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
     
     
     aStatus.SetIncomplete();
-    printf("Set table cell incomplete %p\n", static_cast<void*>(this));
+    NS_WARNING(nsPrintfCString("Set table cell incomplete %p", this).get());
   }
 
   
@@ -801,7 +835,7 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
     const bool isEmpty =
         prevInFlow
             ? static_cast<nsTableCellFrame*>(prevInFlow)->GetContentEmpty()
-            : !CellHasVisibleContent(tableFrame, firstKid);
+            : !CellHasVisibleContent(tableFrame, this);
     SetContentEmpty(isEmpty);
   }
 
