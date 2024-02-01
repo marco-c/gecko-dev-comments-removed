@@ -207,12 +207,12 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   
   
-  static constexpr size_t MaxByteLengthForSmallBuffer = INT32_MAX;
+  static constexpr size_t ByteLengthLimitForSmallBuffer = INT32_MAX;
 #ifdef JS_64BIT
-  static constexpr size_t MaxByteLength =
+  static constexpr size_t ByteLengthLimit =
       size_t(8) * 1024 * 1024 * 1024;  
 #else
-  static constexpr size_t MaxByteLength = MaxByteLengthForSmallBuffer;
+  static constexpr size_t ByteLengthLimit = ByteLengthLimitForSmallBuffer;
 #endif
 
  public:
@@ -649,7 +649,7 @@ class ResizableArrayBufferObject : public ArrayBufferObject {
   bool hasInlineData() const { return dataPointer() == inlineDataPointer(); }
 
   void setMaxByteLength(size_t length) {
-    MOZ_ASSERT(length <= ArrayBufferObject::MaxByteLength);
+    MOZ_ASSERT(length <= ArrayBufferObject::ByteLengthLimit);
     setFixedSlot(MAX_BYTE_LENGTH_SLOT, PrivateValue(length));
   }
 
