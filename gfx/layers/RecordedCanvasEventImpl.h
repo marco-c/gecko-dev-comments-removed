@@ -522,9 +522,6 @@ inline bool RecordedCanvasDrawTargetCreation::PlayCanvasEvent(
     CanvasTranslator* aTranslator) const {
   RefPtr<DrawTarget> newDT = aTranslator->CreateDrawTarget(
       mRefPtr, mTextureId, mTextureOwnerId, mSize, mFormat);
-  if (newDT) {
-    aTranslator->SetCurrentDrawTarget(mRefPtr);
-  }
 
   
   
