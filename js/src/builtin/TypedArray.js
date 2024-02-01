@@ -1885,7 +1885,14 @@ function ArrayBufferSlice(start, end) {
   }
 
   
-  ArrayBufferCopyData(newBuffer, 0, O, first, newLen, isWrapped);
+  
+  
+  var currentLen = ArrayBufferByteLength(O);
+
+  if (first < currentLen) {
+    var count = std_Math_min(newLen, currentLen - first);
+    ArrayBufferCopyData(newBuffer, 0, O, first, count, isWrapped);
+  }
 
   
   return newBuffer;
