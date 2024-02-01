@@ -48,28 +48,6 @@ TEST(PrincipalSerialization, ReusedJSONArgument)
 
 
 
-
-
-
-TEST(PrincipalSerialization, FromPropertiesEmpty)
-{
-  nsTArray<ContentPrincipal::KeyVal> resContent;
-  nsCOMPtr<nsIPrincipal> contentPrincipal =
-      ContentPrincipal::FromProperties(resContent);
-  ASSERT_EQ(nullptr, contentPrincipal);
-
-  nsTArray<ExpandedPrincipal::KeyVal> resExpanded;
-  nsCOMPtr<nsIPrincipal> expandedPrincipal =
-      ExpandedPrincipal::FromProperties(resExpanded);
-  ASSERT_EQ(nullptr, expandedPrincipal);
-
-  nsTArray<NullPrincipal::KeyVal> resNull;
-  nsCOMPtr<nsIPrincipal> nullprincipal = NullPrincipal::FromProperties(resNull);
-  ASSERT_EQ(nullptr, nullprincipal);
-}
-
-
-
 TEST(PrincipalSerialization, TwoKeys)
 {
   
