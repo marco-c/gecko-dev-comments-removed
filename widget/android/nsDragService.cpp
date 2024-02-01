@@ -186,6 +186,12 @@ nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX,
   return NS_OK;
 }
 
+bool nsDragService::MustUpdateDataTransfer(EventMessage aMessage) {
+  
+  
+  return aMessage == eDrop;
+}
+
 java::sdk::Bitmap::LocalRef nsDragService::CreateDragImage(
     nsINode* aNode, const Maybe<CSSIntRegion>& aRegion) {
   LayoutDeviceIntRect dragRect;
@@ -218,6 +224,8 @@ java::sdk::Bitmap::LocalRef nsDragService::CreateDragImage(
 
 void nsDragService::SetData(nsITransferable* aTransferable) {
   mTransferable = aTransferable;
+  
+  mDataTransfer = nullptr;
 }
 
 

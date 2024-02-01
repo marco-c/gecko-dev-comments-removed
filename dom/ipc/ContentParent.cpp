@@ -5358,7 +5358,28 @@ bool ContentParent::DeallocPWebrtcGlobalParent(PWebrtcGlobalParent* aActor) {
 }
 #endif
 
-void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent) {
+void ContentParent::GetIPCTransferableData(
+    nsIDragSession* aSession, BrowserParent* aParent,
+    nsTArray<IPCTransferableData>& aIPCTransferables) {
+  RefPtr<DataTransfer> transfer = aSession->GetDataTransfer();
+  if (!transfer) {
+    
+    
+    transfer = new DataTransfer(nullptr, eDrop, true, -1);
+    aSession->SetDataTransfer(transfer);
+  }
+  
+  
+  
+  transfer->FillAllExternalData();
+  nsCOMPtr<nsILoadContext> lc = aParent ? aParent->GetLoadContext() : nullptr;
+  nsCOMPtr<nsIArray> transferables = transfer->GetTransferables(lc);
+  nsContentUtils::TransferablesToIPCTransferableDatas(
+      transferables, aIPCTransferables, false, this);
+}
+
+void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent,
+                                           EventMessage aMessage) {
   
   
   
@@ -5369,28 +5390,17 @@ void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent) {
 
   nsCOMPtr<nsIDragService> dragService =
       do_GetService("@mozilla.org/widget/dragservice;1");
-  if (dragService && dragService->MaybeAddChildProcess(this)) {
-    
+  if (!dragService) {
+    return;
+  }
+
+  if (dragService->MaybeAddChildProcess(this)) {
     nsCOMPtr<nsIDragSession> session;
     dragService->GetCurrentSession(getter_AddRefs(session));
     if (session) {
+      
       nsTArray<IPCTransferableData> ipcTransferables;
-      RefPtr<DataTransfer> transfer = session->GetDataTransfer();
-      if (!transfer) {
-        
-        
-        transfer = new DataTransfer(nullptr, eDrop, true, -1);
-        session->SetDataTransfer(transfer);
-      }
-      
-      
-      
-      transfer->FillAllExternalData();
-      nsCOMPtr<nsILoadContext> lc =
-          aParent ? aParent->GetLoadContext() : nullptr;
-      nsCOMPtr<nsIArray> transferables = transfer->GetTransferables(lc);
-      nsContentUtils::TransferablesToIPCTransferableDatas(
-          transferables, ipcTransferables, false, this);
+      GetIPCTransferableData(session, aParent, ipcTransferables);
       uint32_t action;
       session->GetDragAction(&action);
 
@@ -5400,6 +5410,19 @@ void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent) {
       session->GetSourceTopWindowContext(getter_AddRefs(sourceTopWC));
       mozilla::Unused << SendInvokeDragSession(
           sourceWC, sourceTopWC, std::move(ipcTransferables), action);
+    }
+    return;
+  }
+
+  if (dragService->MustUpdateDataTransfer(aMessage)) {
+    nsCOMPtr<nsIDragSession> session;
+    dragService->GetCurrentSession(getter_AddRefs(session));
+    if (session) {
+      
+      nsTArray<IPCTransferableData> ipcTransferables;
+      GetIPCTransferableData(session, aParent, ipcTransferables);
+      mozilla::Unused << SendUpdateDragSession(std::move(ipcTransferables),
+                                               aMessage);
     }
   }
 }

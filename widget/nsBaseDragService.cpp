@@ -1025,6 +1025,10 @@ bool nsBaseDragService::RemoveAllChildProcesses() {
   return true;
 }
 
+bool nsBaseDragService::MustUpdateDataTransfer(EventMessage aMessage) {
+  return false;
+}
+
 NS_IMETHODIMP
 nsBaseDragService::MaybeEditorDeletedSourceNode(Element* aEditingHost) {
   
