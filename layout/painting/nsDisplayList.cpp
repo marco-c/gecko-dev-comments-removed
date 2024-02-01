@@ -272,9 +272,6 @@ static uint64_t AddAnimationsForWebRender(
   animationInfo.AddAnimationsForDisplayItem(
       frame, aDisplayListBuilder, aItem, aItem->GetType(),
       aManager->LayerManager(), aPosition);
-  animationInfo.StartPendingAnimations(
-      frame->PresContext()->RefreshDriver()->MostRecentRefresh(
-           false));
 
   
   

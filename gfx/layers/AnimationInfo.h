@@ -75,8 +75,6 @@ class AnimationInfo final {
   
   void ClearAnimations();
   void ClearAnimationsForNextTransaction();
-  bool StartPendingAnimations(const TimeStamp& aReadyTime);
-
   uint64_t GetCompositorAnimationsId() { return mCompositorAnimationsId; }
   
   
@@ -138,7 +136,8 @@ class AnimationInfo final {
       const nsCSSPropertyIDSet& aNonAnimatingProperties, nsIFrame* aFrame,
       Send aSendFlag);
 
- protected:
+  void MaybeStartPendingAnimation(Animation&, const TimeStamp& aReadyTime);
+
   
   
   
