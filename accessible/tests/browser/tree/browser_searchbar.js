@@ -33,6 +33,12 @@ add_task(async function test_searchbar_a11y_tree() {
     children: [
       
       {
+        role: ROLE_BUTTONMENU,
+        children: [],
+      },
+
+      
+      {
         role: ROLE_ENTRY,
         children: [],
       },
@@ -64,6 +70,12 @@ add_task(async function test_searchbar_a11y_tree() {
     role: ROLE_EDITCOMBOBOX,
 
     children: [
+      
+      {
+        role: ROLE_BUTTONMENU,
+        children: [],
+      },
+
       
       {
         role: ROLE_ENTRY,
