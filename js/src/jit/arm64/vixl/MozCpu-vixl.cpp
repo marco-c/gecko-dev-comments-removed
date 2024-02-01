@@ -68,7 +68,7 @@ void CPU::SetUp() {
 
 
 uint32_t CPU::GetCacheType() {
-#if defined(__aarch64__) && (defined(__linux__) || defined(__android__))
+#if defined(__aarch64__) && !defined(_MSC_VER) && !defined(XP_DARWIN) && !defined(__OpenBSD__)
   uint64_t cache_type_register;
   
   __asm__ __volatile__ ("mrs %[ctr], ctr_el0"  
@@ -110,7 +110,7 @@ void CPU::EnsureIAndDCacheCoherency(void* address, size_t length) {
   FlushInstructionCache(GetCurrentProcess(), address, length);
 #elif defined(XP_DARWIN)
   sys_icache_invalidate(address, length);
-#elif defined(__aarch64__) && (defined(__linux__) || defined(__android__))
+#elif defined(__aarch64__) && (defined(__linux__) || defined(__android__) || defined(__FreeBSD__))
   
   
   
@@ -199,6 +199,9 @@ void CPU::EnsureIAndDCacheCoherency(void* address, size_t length) {
       :
       :
       : "memory");
+#elif defined(__aarch64__) && !defined(__OpenBSD__)
+# error Please check/implement the cache invalidation code for your OS
+
 #else
   
   
