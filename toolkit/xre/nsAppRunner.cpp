@@ -4769,6 +4769,14 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       Output(true, "X11 only build is missig X11 display!\n");
     }
 #  endif
+#  if defined(MOZ_WAYLAND)
+    
+    
+    
+    if (gWaylandProxy) {
+      gWaylandProxy->RestoreWaylandDisplay();
+    }
+#  endif
   }
 #endif
 #if defined(MOZ_HAS_REMOTE)
