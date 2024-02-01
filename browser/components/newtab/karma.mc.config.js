@@ -1,38 +1,38 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const path = require("path");
 const webpack = require("webpack");
 const { ResourceUriPlugin } = require("./tools/resourceUriPlugin");
 
 const PATHS = {
-  // Where is the entry point for the unit tests?
+  
   testEntryFile: path.resolve(__dirname, "test/unit/unit-entry.js"),
 
-  // A glob-style pattern matching all unit tests
+  
   testFilesPattern: "test/unit/**/*.js",
 
-  // The base directory of all source files (used for path resolution in webpack importing)
+  
   moduleResolveDirectory: __dirname,
 
-  // a RegEx matching all Cu.import statements of local files
+  
   resourcePathRegEx: /^resource:\/\/activity-stream\//,
 
   coverageReportingPath: "logs/coverage/",
 };
 
-// When tweaking here, be sure to review the docs about the execution ordering
-// semantics of the preprocessors array, as they are somewhat odd.
+
+
 const preprocessors = {};
 preprocessors[PATHS.testFilesPattern] = [
-  "webpack", // require("karma-webpack")
-  "sourcemap", // require("karma-sourcemap-loader")
+  "webpack", 
+  "sourcemap", 
 ];
 
 module.exports = function (config) {
   const isTDD = config.tdd;
-  const browsers = isTDD ? ["Firefox"] : ["FirefoxHeadless"]; // require("karma-firefox-launcher")
+  const browsers = isTDD ? ["Firefox"] : ["FirefoxHeadless"]; 
   config.set({
     singleRun: !isTDD,
     browsers,
@@ -43,32 +43,32 @@ module.exports = function (config) {
       },
     },
     frameworks: [
-      "chai", // require("chai") require("karma-chai")
-      "mocha", // require("mocha") require("karma-mocha")
-      "sinon", // require("sinon") require("karma-sinon")
+      "chai", 
+      "mocha", 
+      "sinon", 
     ],
     reporters: [
-      "coverage-istanbul", // require("karma-coverage")
-      "mocha", // require("karma-mocha-reporter")
+      "coverage-istanbul", 
+      "mocha", 
 
-      // for bin/try-runner.js to parse the output easily
-      "json", // require("karma-json-reporter")
+      
+      "json", 
     ],
     jsonReporter: {
-      // So this doesn't get interleaved with other karma output
+      
       stdout: false,
       outputFile: path.join("logs", "karma-run-results.json"),
     },
     coverageIstanbulReporter: {
-      reports: ["lcov", "text-summary"], // for some reason "lcov" reallys means "lcov" and "html"
+      reports: ["lcov", "text-summary"], 
       "report-config": {
-        // so the full m-c path gets printed; needed for https://coverage.moz.tools/ integration
+        
         lcov: {
           projectRoot: "../../..",
         },
       },
       dir: PATHS.coverageReportingPath,
-      // This will make karma fail if coverage reporting is less than the minimums here
+      
       thresholds: !isTDD && {
         each: {
           statements: 100,
@@ -82,15 +82,9 @@ module.exports = function (config) {
               functions: 94,
               branches: 66,
             },
-            "content-src/asrouter/asrouter-utils.js": {
-              statements: 66,
-              lines: 66,
-              functions: 76,
-              branches: 33,
-            },
-            /**
-             * TelemetryFeed.sys.mjs is tested via an xpcshell test
-             */
+            
+
+
             "lib/TelemetryFeed.sys.mjs": {
               statements: 10,
               lines: 10,
@@ -115,9 +109,9 @@ module.exports = function (config) {
               functions: 100,
               branches: 78,
             },
-            /**
-             * PlacesFeed.sys.mjs is tested via an xpcshell test
-             */
+            
+
+
             "lib/PlacesFeed.sys.mjs": {
               statements: 7,
               lines: 7,
@@ -136,28 +130,28 @@ module.exports = function (config) {
               functions: 75,
               branches: 84,
             },
-            /**
-             * Store.jsm is tested via an xpcshell test
-             */
+            
+
+
             "lib/Store.jsm": {
               statements: 8,
               lines: 8,
               functions: 0,
               branches: 0,
             },
-            /**
-             * TopSitesFeed.jsm is tested via an xpcshell test
-             */
+            
+
+
             "lib/TopSitesFeed.jsm": {
               statements: 9,
               lines: 9,
               functions: 5,
               branches: 0,
             },
-            /**
-             * TopStoresFeed.jsm is not tested in automation and is slated
-             * for eventual removal.
-             */
+            
+
+
+
             "lib/TopStoriesFeed.jsm": {
               statements: 0,
               lines: 0,
@@ -227,11 +221,11 @@ module.exports = function (config) {
     webpack: {
       mode: "none",
       devtool: "inline-source-map",
-      // This loader allows us to override required files in tests
+      
       resolveLoader: {
         alias: { inject: path.join(__dirname, "loaders/inject-loader") },
       },
-      // This resolve config allows us to import with paths relative to the root directory, e.g. "lib/ActivityStream.jsm"
+      
       resolve: {
         extensions: [".js", ".jsx", ".jsm"],
         modules: [PATHS.moduleResolveDirectory, "node_modules"],
@@ -244,9 +238,9 @@ module.exports = function (config) {
         },
       },
       plugins: [
-        // The ResourceUriPlugin handles translating resource URIs in import
-        // statements in .mjs files, in a similar way to what
-        // babel-jsm-to-commonjs does for jsm files.
+        
+        
+        
         new ResourceUriPlugin({
           resourcePathRegEx: PATHS.resourcePathRegEx,
         }),
@@ -255,24 +249,24 @@ module.exports = function (config) {
         }),
       ],
       externals: {
-        // enzyme needs these for backwards compatibility with 0.13.
-        // see https://github.com/airbnb/enzyme/blob/master/docs/guides/webpack.md#using-enzyme-with-webpack
+        
+        
         "react/addons": true,
         "react/lib/ReactContext": true,
         "react/lib/ExecutionEnvironment": true,
       },
       module: {
         rules: [
-          // This rule rewrites importing/exporting in .jsm files to be compatible with esmodules
+          
           {
             test: /\.jsm$/,
             exclude: [/node_modules/],
             use: [
               {
-                loader: "babel-loader", // require("babel-core")
+                loader: "babel-loader", 
                 options: {
                   plugins: [
-                    // Converts .jsm files into common-js modules
+                    
                     [
                       "./tools/babel-jsm-to-commonjs.js",
                       {
@@ -322,7 +316,7 @@ module.exports = function (config) {
         ],
       },
     },
-    // Silences some overly-verbose logging of individual module builds
+    
     webpackMiddleware: { noInfo: true },
   });
 };
