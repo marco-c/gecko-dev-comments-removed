@@ -4847,13 +4847,18 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
                                        isPointer ? ePointerLeave : eMouseLeave);
 
   
-  nsCOMPtr<nsIContent> lastOverElement = wrapper->mLastOverElement;
-  DispatchMouseOrPointerEvent(aMouseEvent, isPointer ? ePointerOut : eMouseOut,
-                              lastOverElement, aMovingInto);
+  
+  if (!wrapper->mLastOverElementRemoved) {
+    nsCOMPtr<nsIContent> lastOverElement = wrapper->mLastOverElement;
+    DispatchMouseOrPointerEvent(aMouseEvent,
+                                isPointer ? ePointerOut : eMouseOut,
+                                lastOverElement, aMovingInto);
+  }
   leaveDispatcher.Dispatch();
 
   wrapper->mLastOverFrame = nullptr;
   wrapper->mLastOverElement = nullptr;
+  wrapper->mLastOverElementRemoved = false;
 
   
   wrapper->mFirstOutEventElement = nullptr;
@@ -4877,7 +4882,10 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
 
   RefPtr<OverOutElementsWrapper> wrapper = GetWrapperByEventID(aMouseEvent);
 
-  if (!wrapper || wrapper->mLastOverElement == aContent) return;
+  if (!wrapper || (!wrapper->mLastOverElementRemoved &&
+                   wrapper->mLastOverElement == aContent)) {
+    return;
+  }
 
   
   if (aContent == wrapper->mFirstOverEventElement) return;
@@ -4897,7 +4905,10 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   }
   
   
-  if (wrapper->mLastOverElement == aContent) return;
+  if (!wrapper->mLastOverElementRemoved &&
+      wrapper->mLastOverElement == aContent) {
+    return;
+  }
 
   
   
@@ -4919,13 +4930,14 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   
   
   wrapper->mFirstOverEventElement = aContent;
+  wrapper->mLastOverElement = aContent;
+  wrapper->mLastOverElementRemoved = false;
 
   
   wrapper->mLastOverFrame = DispatchMouseOrPointerEvent(
       aMouseEvent, isPointer ? ePointerOver : eMouseOver, aContent,
       lastOverElement);
   enterDispatcher.Dispatch();
-  wrapper->mLastOverElement = aContent;
 
   
   wrapper->mFirstOverEventElement = nullptr;
@@ -5970,16 +5982,6 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
   return true;
 }
 
-void EventStateManager::ResetLastOverForContent(
-    const uint32_t& aIdx, const RefPtr<OverOutElementsWrapper>& aElemWrapper,
-    nsIContent* aContent) {
-  if (aElemWrapper && aElemWrapper->mLastOverElement &&
-      nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-          aElemWrapper->mLastOverElement, aContent)) {
-    aElemWrapper->mLastOverElement = nullptr;
-  }
-}
-
 void EventStateManager::RemoveNodeFromChainIfNeeded(ElementState aState,
                                                     nsIContent* aContentRemoved,
                                                     bool aNotify) {
@@ -6088,10 +6090,13 @@ void EventStateManager::ContentRemoved(Document* aDocument,
 
   PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
 
-  
-  ResetLastOverForContent(0, mMouseEnterLeaveHelper, aContent);
+  if (mMouseEnterLeaveHelper) {
+    mMouseEnterLeaveHelper->ContentRemoved(*aContent);
+  }
   for (const auto& entry : mPointersEnterLeaveHelper) {
-    ResetLastOverForContent(entry.GetKey(), entry.GetData(), aContent);
+    if (entry.GetData()) {
+      entry.GetData()->ContentRemoved(*aContent);
+    }
   }
 }
 
@@ -6873,6 +6878,35 @@ bool EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedY(
   Init(index);
   return Abs(mMultiplierY[index]) >=
          MIN_MULTIPLIER_VALUE_ALLOWING_OVER_ONE_PAGE_SCROLL;
+}
+
+void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
+  if (!mLastOverElement) {
+    return;
+  }
+
+  if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(mLastOverElement,
+                                                          &aContent)) {
+    return;
+  }
+
+  if (mFirstOverEventElement &&
+      (mLastOverElement == mFirstOverEventElement ||
+       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+           mFirstOverEventElement, &aContent))) {
+    if (mFirstOverEventElement == mFirstOutEventElement) {
+      mFirstOutEventElement = nullptr;
+    }
+    mFirstOverEventElement = nullptr;
+  }
+  if (mFirstOutEventElement &&
+      (mLastOverElement == mFirstOutEventElement ||
+       nsContentUtils::ContentIsFlattenedTreeDescendantOf(mFirstOutEventElement,
+                                                          &aContent))) {
+    mFirstOutEventElement = nullptr;
+  }
+  mLastOverElement = aContent.GetFlattenedTreeParent();
+  mLastOverElementRemoved = true;
 }
 
 }  
