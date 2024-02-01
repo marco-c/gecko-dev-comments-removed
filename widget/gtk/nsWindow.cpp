@@ -4897,11 +4897,7 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   if (!defaultPrevented && mDrawInTitlebar &&
       event.mButton == MouseButton::ePrimary && event.mClickCount == 2 &&
       mDraggableRegion.Contains(pos)) {
-    if (mSizeMode == nsSizeMode_Maximized) {
-      SetSizeMode(nsSizeMode_Normal);
-    } else if (mSizeMode == nsSizeMode_Normal) {
-      SetSizeMode(nsSizeMode_Maximized);
-    }
+    DoTitlebarAction(nsXPLookAndFeel::TitlebarEvent::Double_Click, aEvent);
   }
   mLastMotionPressure = pressure;
 
