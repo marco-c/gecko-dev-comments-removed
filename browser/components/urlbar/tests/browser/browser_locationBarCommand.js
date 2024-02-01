@@ -286,15 +286,7 @@ async function triggerCommand(eventType, details = {}) {
         gURLBar.hasAttribute("usertyping"),
         "usertyping attribute must be set for the go button to be visible"
       );
-      
-      
-      
-      
-      AccessibilityUtils.setEnv({
-        focusableRule: false,
-      });
       EventUtils.synthesizeMouseAtCenter(gURLBar.goButton, details);
-      AccessibilityUtils.resetEnv();
       break;
     case "keypress":
       EventUtils.synthesizeKey("KEY_Enter", details);

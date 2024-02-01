@@ -234,12 +234,17 @@ this.AccessibilityUtils = (function () {
       return false;
     }
     const toolbar = node.closest("toolbar");
-    if (
-      !toolbar ||
-      toolbar.getAttribute("keyNav") != "true" ||
-      node.id == "urlbar-go-button"
-    ) {
+    if (!toolbar || toolbar.getAttribute("keyNav") != "true") {
       return false;
+    }
+    
+    
+    
+    
+    
+    if (node.getAttribute("keyNav") == "false") {
+      const ariaRoles = getAriaRoles(accessible);
+      return ariaRoles.includes("button");
     }
     return node.ownerGlobal.ToolbarKeyboardNavigator._isButton(node);
   }

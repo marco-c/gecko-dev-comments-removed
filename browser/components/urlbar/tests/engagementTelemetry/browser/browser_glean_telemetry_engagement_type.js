@@ -34,15 +34,7 @@ add_task(async function engagement_type_enter() {
 add_task(async function engagement_type_go_button() {
   await doTest(async browser => {
     await openPopup("x");
-    
-    
-    
-    
-    AccessibilityUtils.setEnv({
-      focusableRule: false,
-    });
     EventUtils.synthesizeMouseAtCenter(gURLBar.goButton, {});
-    AccessibilityUtils.resetEnv();
 
     assertEngagementTelemetry([{ engagement_type: "go_button" }]);
   });
