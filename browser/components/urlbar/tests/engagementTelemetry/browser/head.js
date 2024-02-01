@@ -207,8 +207,6 @@ async function doTest(testFn) {
   
   Services.fog.setMetricsFeatureConfig(
     JSON.stringify({
-      "urlbar.abandonment": true,
-      "urlbar.engagement": true,
       "urlbar.impression": true,
     })
   );
