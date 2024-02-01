@@ -409,72 +409,44 @@ void ClientWebGLContext::ThrowEvent_WebGLContextCreationError(
 
 
 
-template <typename MethodType, MethodType method, typename... Args>
-void ClientWebGLContext::Run(Args&&... args) const {
+
+
+template <typename MethodT, typename... Args>
+void ClientWebGLContext::Run_WithDestArgTypes(
+    std::optional<JS::AutoCheckCannotGC>&& noGc, const MethodT method,
+    const size_t id, const Args&... args) const {
   const auto notLost =
       mNotLost;  
-  if (IsContextLost()) return;
 
-  const auto& inProcess = notLost->inProcess;
-  if (inProcess) {
-    return (inProcess.get()->*method)(std::forward<Args>(args)...);
-  }
-
-  const auto& child = notLost->outOfProcess;
-
-  const auto id = IdByMethod<MethodType, method>();
-
-  const auto info = webgl::SerializationInfo(id, args...);
-  const auto maybeDest = child->AllocPendingCmdBytes(info.requiredByteCount,
-                                                     info.alignmentOverhead);
-  if (!maybeDest) {
-    JsWarning("Failed to allocate internal command buffer.");
-    OnContextLoss(webgl::ContextLossReason::None);
-    return;
-  }
-  const auto& destBytes = *maybeDest;
-  webgl::Serialize(destBytes, id, args...);
-}
-
-template <typename MethodType, MethodType method, typename... Args>
-void ClientWebGLContext::RunWithGCData(JS::AutoCheckCannotGC&& aNoGC,
-                                       Args&&... args) const {
   
   
-  
-  
-  const auto notLost = mNotLost;
+  const auto cleanup = MakeScopeExit([&]() { noGc.reset(); });
+
   if (IsContextLost()) {
-    aNoGC.reset();  
     return;
   }
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
-    (inProcess.get()->*method)(std::forward<Args>(args)...);
-    aNoGC.reset();  
+    (inProcess.get()->*method)(args...);
     return;
   }
 
   const auto& child = notLost->outOfProcess;
 
-  const auto id = IdByMethod<MethodType, method>();
-
   const auto info = webgl::SerializationInfo(id, args...);
   const auto maybeDest = child->AllocPendingCmdBytes(info.requiredByteCount,
                                                      info.alignmentOverhead);
   if (!maybeDest) {
-    aNoGC.reset();  
+    noGc.reset();  
+                   
     JsWarning("Failed to allocate internal command buffer.");
     OnContextLoss(webgl::ContextLossReason::None);
     return;
   }
   const auto& destBytes = *maybeDest;
   webgl::Serialize(destBytes, id, args...);
-  aNoGC.reset();  
 }
-
-
 
 
 
