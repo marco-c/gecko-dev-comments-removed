@@ -21,8 +21,13 @@
 
 class nsAttrValue;
 class nsICookieJarSettings;
+class nsILoadContext;
 class nsIPrincipal;
 class nsIReferrerInfo;
+
+namespace mozilla::dom {
+class CanonicalBrowsingContext;
+}
 
 namespace mozilla::net {
 
@@ -89,7 +94,8 @@ class EarlyHintPreloader final : public nsIStreamListener,
       nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
       nsICookieJarSettings* aCookieJarSettings,
       const nsACString& aReferrerPolicy, const nsACString& aCSPHeader,
-      uint64_t aBrowsingContextID, nsIInterfaceRequestor* aCallbacks,
+      uint64_t aBrowsingContextID,
+      dom::CanonicalBrowsingContext* aLoadingBrowsingContext,
       bool aIsModulepreload);
 
   
@@ -133,8 +139,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
                        nsContentPolicyType aContentPolicyType,
                        nsIReferrerInfo* aReferrerInfo,
                        nsICookieJarSettings* aCookieJarSettings,
-                       uint64_t aBrowsingContextID,
-                       nsIInterfaceRequestor* aCallbacks);
+                       uint64_t aBrowsingContextID);
   void PriorizeAsPreload();
   void SetLinkHeader(const LinkHeader& aLinkHeader);
 
@@ -166,6 +171,10 @@ class EarlyHintPreloader final : public nsIStreamListener,
 
   RefPtr<ParentChannelListener> mParentListener;
   nsCOMPtr<nsITimer> mTimer;
+
+  
+  
+  nsCOMPtr<nsILoadContext> mLoadContext;
 
  private:
   
