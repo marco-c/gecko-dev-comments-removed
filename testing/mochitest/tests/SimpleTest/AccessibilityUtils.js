@@ -233,7 +233,9 @@ this.AccessibilityUtils = (function () {
     if (!node || !node.ownerGlobal) {
       return false;
     }
-    const toolbar = node.closest("toolbar");
+    const toolbar =
+      node.closest("toolbar") ||
+      node.flattenedTreeParentNode.closest("toolbar");
     if (!toolbar || toolbar.getAttribute("keyNav") != "true") {
       return false;
     }
@@ -242,9 +244,16 @@ this.AccessibilityUtils = (function () {
     
     
     
+    
+    
+    
+    
     if (node.getAttribute("keyNav") == "false") {
       const ariaRoles = getAriaRoles(accessible);
-      return ariaRoles.includes("button");
+      return (
+        ariaRoles.includes("button") ||
+        accessible.role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON
+      );
     }
     return node.ownerGlobal.ToolbarKeyboardNavigator._isButton(node);
   }
