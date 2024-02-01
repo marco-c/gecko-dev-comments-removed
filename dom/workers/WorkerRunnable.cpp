@@ -13,6 +13,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
@@ -224,6 +225,33 @@ NS_IMETHODIMP
 WorkerRunnable::Run() {
   LOG(("WorkerRunnable::Run [%p]", this));
   bool targetIsWorkerThread = mTarget == WorkerThread;
+
+  if (targetIsWorkerThread) {
+    
+    
+    
+    if (!CycleCollectedJSContext::Get()) {
+#if (defined(MOZ_COLLECTING_RUNNABLE_TELEMETRY) && defined(DEBUG))
+      
+      
+      LogModule* module = sWorkerRunnableLog;
+      LogLevel prevLevel = module->Level();
+      if (prevLevel < LogLevel::Error) {
+        module->SetLevel(LogLevel::Error);
+      }
+      MOZ_LOG(sWorkerRunnableLog, LogLevel::Error,
+              ("Runnable '%s' was executed after WorkerThreadPrimaryRunnable "
+               "ended.",
+               this->mName));
+      module->SetLevel(prevLevel);
+#endif
+      MOZ_DIAGNOSTIC_ASSERT(false,
+                            "A WorkerRunnable was executed after "
+                            "WorkerThreadPrimaryRunnable ended.");
+
+      return NS_OK;
+    }
+  }
 
 #ifdef DEBUG
   if (targetIsWorkerThread) {

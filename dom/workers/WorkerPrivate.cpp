@@ -3879,7 +3879,9 @@ void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
   if (WorkerRan == aRanOrNot) {
     nsIThread* currentThread = NS_GetCurrentThread();
     MOZ_ASSERT(currentThread);
-    MOZ_ASSERT(!NS_HasPendingEvents(currentThread));
+    
+    
+    Unused << NS_WARN_IF(NS_HasPendingEvents(currentThread));
   }
 #endif
 
