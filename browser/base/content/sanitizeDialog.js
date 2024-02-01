@@ -168,22 +168,28 @@ var gSanitizePromptDialog = {
     
     
     if (!lazy.USE_OLD_DIALOG && !this._inClearOnShutdownNewDialog) {
-      let checkboxes = document.querySelectorAll(
-        "#clearPrivateDataGroupbox .clearingItemCheckbox"
-      );
       let defaults = this.defaultCheckedByContext.clearHistory;
       if (this._inClearSiteDataNewDialog) {
         defaults = this.defaultCheckedByContext.clearSiteData;
       }
 
-      for (let checkbox of checkboxes) {
+      this._allCheckboxes = document.querySelectorAll(
+        "#clearPrivateDataGroupbox .clearingItemCheckbox"
+      );
+      this._allCheckboxes.forEach(checkbox => {
         let pref = checkbox.id;
         let value = false;
         if (defaults.includes(pref)) {
           value = true;
           checkbox.checked = value;
         }
-      }
+
+        
+        
+        checkbox.addEventListener("command", _ =>
+          this.updateAcceptButtonState()
+        );
+      });
     }
 
     document.addEventListener("dialogaccept", e => {
@@ -226,6 +232,14 @@ var gSanitizePromptDialog = {
     if (!lazy.USE_OLD_DIALOG) {
       this.reportTelemetry("open");
     }
+  },
+
+  updateAcceptButtonState() {
+    
+    let noneChecked = Array.from(this._allCheckboxes).every(cb => !cb.checked);
+    let acceptButton = this._dialog.getButton("accept");
+
+    acceptButton.disabled = noneChecked;
   },
 
   selectByTimespan() {
