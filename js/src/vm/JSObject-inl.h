@@ -151,8 +151,9 @@ inline bool ClassCanHaveFixedData(const JSClass* clasp) {
   
   
   
-  
-  return !clasp->isNativeObject() || clasp == &js::ArrayBufferObject::class_ ||
+  return !clasp->isNativeObject() ||
+         clasp == &js::FixedLengthArrayBufferObject::class_ ||
+         clasp == &js::ResizableArrayBufferObject::class_ ||
          js::IsTypedArrayClass(clasp);
 }
 #endif
