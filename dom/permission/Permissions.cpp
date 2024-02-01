@@ -44,9 +44,9 @@ namespace {
 
 
 
-RefPtr<MozPromise<RefPtr<PermissionStatus>, nsresult, true>>
-CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermissionDesc,
-                       nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
+RefPtr<PermissionStatus> CreatePermissionStatus(
+    JSContext* aCx, JS::Handle<JSObject*> aPermissionDesc,
+    nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
   
   
   PermissionDescriptor rootDesc;
@@ -68,6 +68,7 @@ CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermissionDesc,
   
   
   
+  
   switch (rootDesc.mName) {
     case PermissionName::Midi: {
       MidiPermissionDescriptor midiPerm;
@@ -76,22 +77,20 @@ CreatePermissionStatus(JSContext* aCx, JS::Handle<JSObject*> aPermissionDesc,
         return nullptr;
       }
 
-      return MidiPermissionStatus::Create(aWindow, midiPerm.mSysex);
+      return new MidiPermissionStatus(aWindow, midiPerm.mSysex);
     }
     case PermissionName::Storage_access:
-      return StorageAccessPermissionStatus::Create(aWindow);
+      return new StorageAccessPermissionStatus(aWindow);
     case PermissionName::Geolocation:
     case PermissionName::Notifications:
     case PermissionName::Push:
     case PermissionName::Persistent_storage:
     case PermissionName::Screen_wake_lock:
-      return PermissionStatus::Create(aWindow, rootDesc.mName);
-
+      return new PermissionStatus(aWindow, rootDesc.mName);
     default:
       MOZ_ASSERT_UNREACHABLE("Unhandled type");
-      return MozPromise<RefPtr<PermissionStatus>, nsresult,
-                        true>::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED,
-                                               __func__);
+      aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+      return nullptr;
   }
 }
 
@@ -112,27 +111,32 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
     return nullptr;
   }
 
+  
+  RefPtr<PermissionStatus> status =
+      CreatePermissionStatus(aCx, aPermission, mWindow, aRv);
+  if (!status) {
+    return nullptr;
+  }
+
+  
   RefPtr<Promise> promise = Promise::Create(mWindow->AsGlobal(), aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
   
-  auto permissionStatusPromise =
-      CreatePermissionStatus(aCx, aPermission, mWindow, aRv);
-  if (!permissionStatusPromise) {
-    return nullptr;
-  }
-
-  permissionStatusPromise->Then(
+  
+  
+  status->Init()->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [promise](const RefPtr<PermissionStatus>& aStatus) {
-        promise->MaybeResolve(aStatus);
+      [status, promise]() {
+        promise->MaybeResolve(status);
         return;
       },
-      [](nsresult aError) {
+      [promise](nsresult aError) {
         MOZ_ASSERT(NS_FAILED(aError));
         NS_WARNING("Failed PermissionStatus creation");
+        promise->MaybeReject(aError);
         return;
       });
 

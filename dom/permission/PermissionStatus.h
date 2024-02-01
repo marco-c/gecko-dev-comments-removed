@@ -21,11 +21,9 @@ class PermissionStatus : public DOMEventTargetHelper {
   friend class PermissionObserver;
 
  public:
-  using CreatePromise = MozPromise<RefPtr<PermissionStatus>, nsresult, true>;
   using SimplePromise = MozPromise<nsresult, nsresult, true>;
 
-  static RefPtr<CreatePromise> Create(nsPIDOMWindowInner* aWindow,
-                                      PermissionName aName);
+  PermissionStatus(nsPIDOMWindowInner* aWindow, PermissionName aName);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -43,8 +41,6 @@ class PermissionStatus : public DOMEventTargetHelper {
  protected:
   ~PermissionStatus();
 
-  PermissionStatus(nsPIDOMWindowInner* aWindow, PermissionName aName);
-
   
 
 
@@ -55,7 +51,7 @@ class PermissionStatus : public DOMEventTargetHelper {
 
 
 
-  virtual nsLiteralCString GetPermissionType();
+  virtual nsLiteralCString GetPermissionType() const;
 
  private:
   virtual RefPtr<SimplePromise> UpdateState();
