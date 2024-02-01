@@ -2142,6 +2142,9 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT nsRect GetClientAreaRect();
 
   
+  MOZ_CAN_RUN_SCRIPT nsSize GetScrollSize();
+
+  
 
 
 
