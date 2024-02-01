@@ -231,24 +231,13 @@ WorkerRunnable::Run() {
     
     
     if (!CycleCollectedJSContext::Get()) {
-#if (defined(MOZ_COLLECTING_RUNNABLE_TELEMETRY) && defined(DEBUG))
+#if (defined(MOZ_COLLECTING_RUNNABLE_TELEMETRY) && defined(NIGHTLY_BUILD))
       
       
-      LogModule* module = sWorkerRunnableLog;
-      LogLevel prevLevel = module->Level();
-      if (prevLevel < LogLevel::Error) {
-        module->SetLevel(LogLevel::Error);
-      }
-      MOZ_LOG(sWorkerRunnableLog, LogLevel::Error,
-              ("Runnable '%s' was executed after WorkerThreadPrimaryRunnable "
-               "ended.",
-               this->mName));
-      module->SetLevel(prevLevel);
+      MOZ_CRASH_UNSAFE_PRINTF(
+          "Runnable '%s' executed after WorkerThreadPrimaryRunnable ended.",
+          this->mName);
 #endif
-      MOZ_DIAGNOSTIC_ASSERT(false,
-                            "A WorkerRunnable was executed after "
-                            "WorkerThreadPrimaryRunnable ended.");
-
       return NS_OK;
     }
   }
