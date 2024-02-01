@@ -287,16 +287,7 @@
         this._itemBox.setAttribute("no-warning", "true");
       }
 
-      
-      
-      
-      
-      const buttonTextBundleKey = !this.getAttribute("ac-image")
-        ? "autocompleteManageAddresses"
-        : "autocompleteManageCreditCards";
-      const buttonText =
-        this._stringBundle.GetStringFromName(buttonTextBundleKey);
-      this._optionButton.textContent = buttonText;
+      this._optionButton.textContent = value.manageLabel;
     }
   }
 
