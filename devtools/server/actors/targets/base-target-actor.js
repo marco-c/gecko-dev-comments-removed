@@ -108,6 +108,9 @@ class BaseTargetActor extends Actor {
   }
 
   
+  #instantiatedTargetScopedActors = new Set();
+
+  
 
 
 
@@ -121,7 +124,38 @@ class BaseTargetActor extends Actor {
       return null;
     }
     const form = this.form();
+    this.#instantiatedTargetScopedActors.add(prefix);
     return this.conn._getOrCreateActor(form[prefix + "Actor"]);
+  }
+
+  
+
+
+
+
+
+
+
+
+  hasTargetScopedActor(prefix) {
+    return this.#instantiatedTargetScopedActors.has(prefix);
+  }
+
+  
+
+
+
+
+
+  updateTargetConfiguration(options = {}, calledFromDocumentCreation = false) {
+    
+    if (options.tracerOptions) {
+      const tracerActor = this.getTargetScopedActor("tracer");
+      tracerActor.startTracing(options.tracerOptions);
+    } else if (this.hasTargetScopedActor("tracer")) {
+      const tracerActor = this.getTargetScopedActor("tracer");
+      tracerActor.stopTracing();
+    }
   }
 }
 exports.BaseTargetActor = BaseTargetActor;

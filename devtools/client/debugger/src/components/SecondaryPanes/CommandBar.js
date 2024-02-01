@@ -14,6 +14,7 @@ import {
   getCurrentThread,
   isTopFrameSelected,
   getIsCurrentThreadPaused,
+  getIsJavascriptTracingEnabled,
   getIsThreadCurrentlyTracing,
   getJavascriptTracingLogMethod,
   getJavascriptTracingValues,
@@ -203,13 +204,24 @@ class CommandBar extends Component {
     if (!features.javascriptTracing) {
       return null;
     }
+
+    
+    const isActive = this.props.isTracingEnabled;
+    
+    
+    const isPending = isActive && !this.props.isTracingActive;
+
+    let className = "";
+    if (isPending) {
+      className = "pending";
+    } else if (isActive) {
+      className = "active";
+    }
     
     
     
     return button({
-      className: `devtools-button command-bar-button debugger-trace-menu-button ${
-        this.props.isTracingEnabled ? "active" : ""
-      }`,
+      className: `devtools-button command-bar-button debugger-trace-menu-button ${className}`,
       title: this.props.isTracingEnabled
         ? L10N.getFormatStr("stopTraceButtonTooltip2", formatKey("trace"))
         : L10N.getFormatStr(
@@ -432,7 +444,11 @@ const mapStateToProps = state => ({
   topFrameSelected: isTopFrameSelected(state, getCurrentThread(state)),
   javascriptEnabled: state.ui.javascriptEnabled,
   isPaused: getIsCurrentThreadPaused(state),
-  isTracingEnabled: getIsThreadCurrentlyTracing(state, getCurrentThread(state)),
+  isTracingEnabled: getIsJavascriptTracingEnabled(
+    state,
+    getCurrentThread(state)
+  ),
+  isTracingActive: getIsThreadCurrentlyTracing(state, getCurrentThread(state)),
   logMethod: getJavascriptTracingLogMethod(state),
   logValues: getJavascriptTracingValues(state),
   traceOnNextInteraction: getJavascriptTracingOnNextInteraction(state),

@@ -2,7 +2,7 @@
 
 
 
-import { getIsThreadCurrentlyTracing, getAllThreads } from "../selectors/index";
+import { getIsJavascriptTracingEnabled } from "../selectors/index";
 import { PROMISE } from "./utils/middleware/promise";
 
 
@@ -15,11 +15,7 @@ import { PROMISE } from "./utils/middleware/promise";
 export function toggleTracing(logMethod) {
   return async ({ dispatch, getState, client, panel }) => {
     
-    
-    const threads = getAllThreads(getState());
-    const isTracingEnabled = threads.some(thread =>
-      getIsThreadCurrentlyTracing(getState(), thread.actor)
-    );
+    const isTracingEnabled = getIsJavascriptTracingEnabled(getState());
 
     
     if (!isTracingEnabled && logMethod == "console") {
@@ -29,6 +25,7 @@ export function toggleTracing(logMethod) {
     return dispatch({
       type: "TOGGLE_TRACING",
       [PROMISE]: client.toggleTracing(logMethod),
+      enabled: !isTracingEnabled,
     });
   };
 }

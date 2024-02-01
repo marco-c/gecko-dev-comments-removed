@@ -35,6 +35,7 @@ export const initialUIState = () => ({
   inlinePreviewEnabled: features.inlinePreview,
   editorWrappingEnabled: prefs.editorWrapping,
   javascriptEnabled: true,
+  javascriptTracingEnabled: false,
   javascriptTracingLogMethod: prefs.javascriptTracingLogMethod,
   javascriptTracingValues: prefs.javascriptTracingValues,
   javascriptTracingOnNextInteraction: prefs.javascriptTracingOnNextInteraction,
@@ -155,6 +156,13 @@ function update(state = initialUIState(), action) {
       const sourceId = state.highlightedLineRange?.sourceId;
       if (sourceId && action.sources.some(s => s.id == sourceId)) {
         return { ...state, highlightedLineRange: null };
+      }
+      return state;
+    }
+
+    case "TOGGLE_TRACING": {
+      if (action.status === "start") {
+        return { ...state, javascriptTracingEnabled: action.enabled };
       }
       return state;
     }

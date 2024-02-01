@@ -24,7 +24,11 @@ const EXPORTED_SYMBOLS = [
   "stopTracing",
   "addTracingListener",
   "removeTracingListener",
+  "NEXT_INTERACTION_MESSAGE",
 ];
+
+const NEXT_INTERACTION_MESSAGE =
+  "Waiting for next user interaction before tracing (next mousedown or keydown event)";
 
 const listeners = new Set();
 
@@ -163,20 +167,43 @@ class JavaScriptTracer {
         this.tracedGlobal.docShell.chromeEventHandler || this.tracedGlobal;
       eventHandler.addEventListener("mousedown", listener, eventOptions);
       eventHandler.addEventListener("keydown", listener, eventOptions);
+
+      
+      let shouldLogToStdout = listeners.size == 0;
+      for (const l of listeners) {
+        if (typeof l.onTracingPending == "function") {
+          shouldLogToStdout |= l.onTracingPending();
+        }
+      }
+      if (shouldLogToStdout) {
+        this.loggingMethod(this.prefix + NEXT_INTERACTION_MESSAGE + "\n");
+      }
     } else {
       this.#startTracing();
     }
-
-    
-    this.notifyToggle(true);
   }
 
+  
+  
+  isTracing = false;
+
+  
+
+
+
+
+
   #startTracing() {
+    this.isTracing = true;
+
     this.dbg.onEnterFrame = this.onEnterFrame;
 
     if (this.traceDOMEvents) {
       this.startTracingDOMEvents();
     }
+
+    
+    this.notifyToggle(true);
   }
 
   startTracingDOMEvents() {
@@ -242,7 +269,8 @@ class JavaScriptTracer {
 
 
   stopTracing(reason = "") {
-    if (!this.isTracing()) {
+    
+    if (!this.dbg) {
       return;
     }
 
@@ -250,8 +278,10 @@ class JavaScriptTracer {
     this.dbg.removeAllDebuggees();
     this.dbg.onNewGlobalObject = undefined;
     this.dbg = null;
+
     this.depth = 0;
-    this.options = null;
+
+    
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
@@ -262,12 +292,9 @@ class JavaScriptTracer {
     }
 
     this.tracedGlobal = null;
+    this.isTracing = false;
 
     this.notifyToggle(false, reason);
-  }
-
-  isTracing() {
-    return !!this.dbg;
   }
 
   
@@ -597,7 +624,7 @@ function addTracingListener(listener) {
   listeners.add(listener);
 
   if (
-    activeTracer?.isTracing() &&
+    activeTracer?.isTracing &&
     typeof listener.onTracingToggled == "function"
   ) {
     listener.onTracingToggled(true);

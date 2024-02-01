@@ -52,6 +52,8 @@ const SUPPORTED_OPTIONS = {
   
   touchEventsOverride: true,
   
+  tracerOptions: true,
+  
   useSimpleHighlightersForReducedMotion: true,
 };
 
