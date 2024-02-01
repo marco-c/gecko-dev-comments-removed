@@ -48,6 +48,12 @@ static bool ReportDetachedArrayBuffer(JSContext* cx) {
   return false;
 }
 
+static bool ReportResizedArrayBuffer(JSContext* cx) {
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_TYPED_ARRAY_RESIZED_BOUNDS);
+  return false;
+}
+
 static bool ReportOutOfRange(JSContext* cx) {
   
   
@@ -60,13 +66,11 @@ static bool ReportOutOfRange(JSContext* cx) {
 
 static bool ValidateIntegerTypedArray(
     JSContext* cx, HandleValue typedArray, bool waitable,
-    MutableHandle<FixedLengthTypedArrayObject*> unwrappedTypedArray) {
+    MutableHandle<TypedArrayObject*> unwrappedTypedArray) {
   
 
   
-
-  
-  auto* unwrapped = UnwrapAndTypeCheckValue<FixedLengthTypedArrayObject>(
+  auto* unwrapped = UnwrapAndTypeCheckValue<TypedArrayObject>(
       cx, typedArray, [cx]() { ReportBadArrayType(cx); });
   if (!unwrapped) {
     return false;
@@ -108,13 +112,18 @@ static bool ValidateIntegerTypedArray(
 
 
 
-static bool ValidateAtomicAccess(
-    JSContext* cx, Handle<FixedLengthTypedArrayObject*> typedArray,
-    HandleValue requestIndex, size_t* index) {
-  
-
+static bool ValidateAtomicAccess(JSContext* cx,
+                                 Handle<TypedArrayObject*> typedArray,
+                                 HandleValue requestIndex, size_t* index) {
   MOZ_ASSERT(!typedArray->hasDetachedBuffer());
-  size_t length = typedArray->length();
+
+  
+  mozilla::Maybe<size_t> length = typedArray->length();
+  if (!length) {
+    
+    
+    return ReportResizedArrayBuffer(cx);
+  }
 
   
   uint64_t accessIndex;
@@ -123,7 +132,7 @@ static bool ValidateAtomicAccess(
   }
 
   
-  if (accessIndex >= length) {
+  if (accessIndex >= *length) {
     return ReportOutOfRange(cx);
   }
 
@@ -243,7 +252,7 @@ struct ArrayOps<uint64_t> {
 template <typename Op>
 bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
   
-  Rooted<FixedLengthTypedArrayObject*> unwrappedTypedArray(cx);
+  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, obj, false, &unwrappedTypedArray)) {
     return false;
   }
@@ -283,11 +292,20 @@ bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
 }
 
 template <typename T>
-static SharedMem<T*> TypedArrayData(JSContext* cx,
-                                    FixedLengthTypedArrayObject* typedArray,
+static SharedMem<T*> TypedArrayData(JSContext* cx, TypedArrayObject* typedArray,
                                     size_t index) {
-  if (typedArray->hasDetachedBuffer()) {
+  
+  mozilla::Maybe<size_t> length = typedArray->length();
+
+  
+  if (!length) {
     ReportDetachedArrayBuffer(cx);
+    return {};
+  }
+
+  
+  if (index >= *length) {
+    ReportOutOfRange(cx);
     return {};
   }
 
@@ -305,8 +323,7 @@ static bool atomics_compareExchange(JSContext* cx, unsigned argc, Value* vp) {
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args](auto ops,
-                  Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
+      [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -343,8 +360,7 @@ static bool atomics_load(JSContext* cx, unsigned argc, Value* vp) {
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args](auto ops,
-                  Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
+      [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -369,8 +385,7 @@ static bool atomics_store(JSContext* cx, unsigned argc, Value* vp) {
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args](auto ops,
-                  Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
+      [cx, &args](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                   size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -400,8 +415,7 @@ static bool AtomicReadModifyWrite(JSContext* cx, const CallArgs& args,
 
   return AtomicAccess(
       cx, typedArray, index,
-      [cx, &args, op](auto ops,
-                      Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
+      [cx, &args, op](auto ops, Handle<TypedArrayObject*> unwrappedTypedArray,
                       size_t index) {
         using T = typename decltype(ops)::Type;
 
@@ -627,9 +641,10 @@ FutexThread::WaitResult js::atomics_wait_impl(
 
 
 template <typename T>
-static bool DoAtomicsWait(
-    JSContext* cx, Handle<FixedLengthTypedArrayObject*> unwrappedTypedArray,
-    size_t index, T value, HandleValue timeoutv, MutableHandleValue r) {
+static bool DoAtomicsWait(JSContext* cx,
+                          Handle<TypedArrayObject*> unwrappedTypedArray,
+                          size_t index, T value, HandleValue timeoutv,
+                          MutableHandleValue r) {
   mozilla::Maybe<mozilla::TimeDuration> timeout;
   if (!timeoutv.isUndefined()) {
     
@@ -654,12 +669,15 @@ static bool DoAtomicsWait(
       cx, unwrappedTypedArray->bufferShared());
 
   
-  size_t offset = unwrappedTypedArray->byteOffset();
+  mozilla::Maybe<size_t> offset = unwrappedTypedArray->byteOffset();
+  MOZ_ASSERT(
+      offset,
+      "offset can't become invalid because shared buffers can only grow");
 
   
   
   
-  size_t indexedPosition = index * sizeof(T) + offset;
+  size_t indexedPosition = index * sizeof(T) + *offset;
 
   
   switch (atomics_wait_impl(cx, unwrappedSab->rawBufferObject(),
@@ -691,7 +709,7 @@ static bool atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
   MutableHandleValue r = args.rval();
 
   
-  Rooted<FixedLengthTypedArrayObject*> unwrappedTypedArray(cx);
+  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
@@ -784,7 +802,7 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
   MutableHandleValue r = args.rval();
 
   
-  Rooted<FixedLengthTypedArrayObject*> unwrappedTypedArray(cx);
+  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
   if (!ValidateIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
@@ -823,13 +841,16 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
       cx, unwrappedTypedArray->bufferShared());
 
   
-  size_t offset = unwrappedTypedArray->byteOffset();
+  mozilla::Maybe<size_t> offset = unwrappedTypedArray->byteOffset();
+  MOZ_ASSERT(
+      offset,
+      "offset can't become invalid because shared buffers can only grow");
 
   
   
   
   size_t elementSize = Scalar::byteSize(unwrappedTypedArray->type());
-  size_t indexedPosition = intIndex * elementSize + offset;
+  size_t indexedPosition = intIndex * elementSize + *offset;
 
   
   r.setNumber(double(atomics_notify_impl(unwrappedSab->rawBufferObject(),
