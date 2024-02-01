@@ -71,6 +71,127 @@ DataViewObject* DataViewObject::create(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mozilla::Maybe<size_t> DataViewObject::byteLength() {
+  if (MOZ_UNLIKELY(hasDetachedBuffer())) {
+    return mozilla::Nothing{};
+  }
+
+  if (MOZ_LIKELY(is<FixedLengthDataViewObject>())) {
+    size_t viewByteLength = rawByteLength();
+    return mozilla::Some(viewByteLength);
+  }
+
+  auto* buffer = bufferEither();
+  MOZ_ASSERT(buffer->isResizable());
+
+  size_t bufferByteLength = buffer->byteLength();
+  size_t byteOffsetStart = ArrayBufferViewObject::byteOffset();
+  if (byteOffsetStart > bufferByteLength) {
+    return mozilla::Nothing{};
+  }
+
+  if (as<ResizableDataViewObject>().isAutoLength()) {
+    return mozilla::Some(bufferByteLength - byteOffsetStart);
+  }
+
+  size_t viewByteLength = rawByteLength();
+  size_t byteOffsetEnd = byteOffsetStart + viewByteLength;
+  if (byteOffsetEnd > bufferByteLength) {
+    return mozilla::Nothing{};
+  }
+  return mozilla::Some(viewByteLength);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mozilla::Maybe<size_t> DataViewObject::byteOffset() {
+  if (MOZ_UNLIKELY(hasDetachedBuffer())) {
+    return mozilla::Nothing{};
+  }
+
+  size_t byteOffsetStart = ArrayBufferViewObject::byteOffset();
+
+  if (MOZ_LIKELY(is<FixedLengthDataViewObject>())) {
+    return mozilla::Some(byteOffsetStart);
+  }
+
+  auto* buffer = bufferEither();
+  MOZ_ASSERT(buffer->isResizable());
+
+  size_t bufferByteLength = buffer->byteLength();
+  if (byteOffsetStart > bufferByteLength) {
+    return mozilla::Nothing{};
+  }
+
+  if (as<ResizableDataViewObject>().isAutoLength()) {
+    return mozilla::Some(byteOffsetStart);
+  }
+
+  size_t viewByteLength = rawByteLength();
+  size_t byteOffsetEnd = byteOffsetStart + viewByteLength;
+  if (byteOffsetEnd > bufferByteLength) {
+    return mozilla::Nothing{};
+  }
+  return mozilla::Some(byteOffsetStart);
+}
+
+
+
 bool DataViewObject::getAndCheckConstructorArgs(JSContext* cx,
                                                 HandleObject bufobj,
                                                 const CallArgs& args,
@@ -262,12 +383,24 @@ bool DataViewObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
 template <typename NativeType>
 SharedMem<uint8_t*> DataViewObject::getDataPointer(uint64_t offset,
+                                                   size_t length,
                                                    bool* isSharedMemory) {
-  MOZ_ASSERT(offsetIsInBounds<NativeType>(offset));
+  MOZ_ASSERT(length <= *byteLength());
+  MOZ_ASSERT(offsetIsInBounds<NativeType>(offset, length));
 
   MOZ_ASSERT(offset < SIZE_MAX);
   *isSharedMemory = this->isSharedMemory();
   return dataPointerEither().cast<uint8_t*>() + size_t(offset);
+}
+
+static void ReportOutOfBounds(JSContext* cx, DataViewObject* dataView) {
+  if (dataView->hasDetachedBuffer()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+  } else {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_RESIZED_BOUNDS);
+  }
 }
 
 template <typename T>
@@ -326,10 +459,11 @@ struct DataViewIO {
 };
 
 template <typename NativeType>
-NativeType DataViewObject::read(uint64_t offset, bool isLittleEndian) {
+NativeType DataViewObject::read(uint64_t offset, size_t length,
+                                bool isLittleEndian) {
   bool isSharedMemory;
   SharedMem<uint8_t*> data =
-      getDataPointer<NativeType>(offset, &isSharedMemory);
+      getDataPointer<NativeType>(offset, length, &isSharedMemory);
   MOZ_ASSERT(data);
 
   NativeType val = 0;
@@ -344,7 +478,8 @@ NativeType DataViewObject::read(uint64_t offset, bool isLittleEndian) {
   return val;
 }
 
-template uint32_t DataViewObject::read(uint64_t offset, bool isLittleEndian);
+template uint32_t DataViewObject::read(uint64_t offset, size_t length,
+                                       bool isLittleEndian);
 
 
 
@@ -365,21 +500,21 @@ bool DataViewObject::read(JSContext* cx, Handle<DataViewObject*> obj,
   bool isLittleEndian = args.length() >= 2 && ToBoolean(args[1]);
 
   
-  if (obj->hasDetachedBuffer()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
+  auto viewSize = obj->byteLength();
+  if (MOZ_UNLIKELY(!viewSize)) {
+    ReportOutOfBounds(cx, obj);
     return false;
   }
 
   
-  if (!obj->offsetIsInBounds<NativeType>(getIndex)) {
+  if (!offsetIsInBounds<NativeType>(getIndex, *viewSize)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_OFFSET_OUT_OF_DATAVIEW);
     return false;
   }
 
   
-  *val = obj->read<NativeType>(getIndex, isLittleEndian);
+  *val = obj->read<NativeType>(getIndex, *viewSize, isLittleEndian);
   return true;
 }
 
@@ -471,14 +606,14 @@ bool DataViewObject::write(JSContext* cx, Handle<DataViewObject*> obj,
   bool isLittleEndian = args.length() >= 3 && ToBoolean(args[2]);
 
   
-  if (obj->hasDetachedBuffer()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
+  auto viewSize = obj->byteLength();
+  if (MOZ_UNLIKELY(!viewSize)) {
+    ReportOutOfBounds(cx, obj);
     return false;
   }
 
   
-  if (!obj->offsetIsInBounds<NativeType>(getIndex)) {
+  if (!offsetIsInBounds<NativeType>(getIndex, *viewSize)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_OFFSET_OUT_OF_DATAVIEW);
     return false;
@@ -487,7 +622,7 @@ bool DataViewObject::write(JSContext* cx, Handle<DataViewObject*> obj,
   
   bool isSharedMemory;
   SharedMem<uint8_t*> data =
-      obj->getDataPointer<NativeType>(getIndex, &isSharedMemory);
+      obj->getDataPointer<NativeType>(getIndex, *viewSize, &isSharedMemory);
   MOZ_ASSERT(data);
 
   if (isSharedMemory) {
@@ -891,8 +1026,7 @@ bool DataViewObject::fun_setFloat64(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 bool DataViewObject::bufferGetterImpl(JSContext* cx, const CallArgs& args) {
-  Rooted<DataViewObject*> thisView(
-      cx, &args.thisv().toObject().as<DataViewObject>());
+  auto* thisView = &args.thisv().toObject().as<DataViewObject>();
   args.rval().set(thisView->bufferValue());
   return true;
 }
@@ -903,18 +1037,17 @@ bool DataViewObject::bufferGetter(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 bool DataViewObject::byteLengthGetterImpl(JSContext* cx, const CallArgs& args) {
-  Rooted<DataViewObject*> thisView(
-      cx, &args.thisv().toObject().as<DataViewObject>());
+  auto* thisView = &args.thisv().toObject().as<DataViewObject>();
 
   
-  if (thisView->hasDetachedBuffer()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
+  auto byteLength = thisView->byteLength();
+  if (MOZ_UNLIKELY(!byteLength)) {
+    ReportOutOfBounds(cx, thisView);
     return false;
   }
 
   
-  args.rval().set(thisView->byteLengthValue());
+  args.rval().set(NumberValue(*byteLength));
   return true;
 }
 
@@ -924,18 +1057,17 @@ bool DataViewObject::byteLengthGetter(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 bool DataViewObject::byteOffsetGetterImpl(JSContext* cx, const CallArgs& args) {
-  Rooted<DataViewObject*> thisView(
-      cx, &args.thisv().toObject().as<DataViewObject>());
+  auto* thisView = &args.thisv().toObject().as<DataViewObject>();
 
   
-  if (thisView->hasDetachedBuffer()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
+  auto byteOffset = thisView->byteOffset();
+  if (MOZ_UNLIKELY(!byteOffset)) {
+    ReportOutOfBounds(cx, thisView);
     return false;
   }
 
   
-  args.rval().set(thisView->byteOffsetValue());
+  args.rval().set(NumberValue(*byteOffset));
   return true;
 }
 
