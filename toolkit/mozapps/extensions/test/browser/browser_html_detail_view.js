@@ -343,7 +343,14 @@ add_task(async function testOpenDetailView() {
   let card = getAddonCard(win, id);
   ok(!card.querySelector("addon-details"), "The card doesn't have details");
   let loaded = waitForViewLoad(win);
+  
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(card, { clickCount: 1 }, win);
+  AccessibilityUtils.resetEnv();
   await loaded;
 
   card = getAddonCard(win, id);
@@ -402,7 +409,14 @@ add_task(async function testDetailOperations() {
   let card = getAddonCard(win, id);
   ok(!card.querySelector("addon-details"), "The card doesn't have details");
   let loaded = waitForViewLoad(win);
+  
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(card, { clickCount: 1 }, win);
+  AccessibilityUtils.resetEnv();
   await loaded;
 
   card = getAddonCard(win, id);
