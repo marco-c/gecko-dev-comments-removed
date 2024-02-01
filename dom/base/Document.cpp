@@ -14362,7 +14362,7 @@ class PendingFullscreenChangeList {
         if (aDoc->GetBrowsingContext()) {
           mRootBCForIteration = aDoc->GetBrowsingContext();
           if (aOption == eDocumentsWithSameRoot) {
-            RefPtr<BrowsingContext> bc =
+            BrowsingContext* bc =
                 GetParentIgnoreChromeBoundary(mRootBCForIteration);
             while (bc) {
               mRootBCForIteration = bc;
@@ -14382,14 +14382,14 @@ class PendingFullscreenChangeList {
     bool AtEnd() const { return mCurrent == nullptr; }
 
    private:
-    already_AddRefed<BrowsingContext> GetParentIgnoreChromeBoundary(
+    static BrowsingContext* GetParentIgnoreChromeBoundary(
         BrowsingContext* aBC) {
       
       
       if (XRE_IsParentProcess()) {
         return aBC->Canonical()->GetParentCrossChromeBoundary();
       }
-      return do_AddRef(aBC->GetParent());
+      return aBC->GetParent();
     }
 
     UniquePtr<T> TakeAndNextInternal() {
@@ -14401,8 +14401,7 @@ class PendingFullscreenChangeList {
     void SkipToNextMatch() {
       while (mCurrent) {
         if (mCurrent->Type() == T::kType) {
-          RefPtr<BrowsingContext> bc =
-              mCurrent->Document()->GetBrowsingContext();
+          BrowsingContext* bc = mCurrent->Document()->GetBrowsingContext();
           if (!bc) {
             
             
