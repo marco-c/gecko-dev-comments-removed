@@ -46,33 +46,49 @@ async function restoreWindow(win) {
     win,
     "sizemodechange"
   );
+
+  
+  let promiseOcclusion;
+  let willWaitForOcclusion = win.isFullyOccluded;
+  if (willWaitForOcclusion) {
+    
+    
+    
+    
+    
+    promiseOcclusion = BrowserTestUtils.waitForEvent(
+      win,
+      "occlusionstatechange"
+    ).then(() => new Promise(resolve => SimpleTest.executeSoon(resolve)));
+  } else {
+    promiseOcclusion = Promise.resolve();
+  }
+
   info("Calling window.restore");
   win.restore();
   
   
   
-  info("Waiting for sizemodechange event");
+  info(
+    `Waiting for sizemodechange ${
+      willWaitForOcclusion ? "and occlusionstatechange " : ""
+    }event`
+  );
   let timer;
   await Promise.race([
-    promiseSizeModeChange,
+    Promise.all([promiseSizeModeChange, promiseOcclusion]),
     new Promise((resolve, reject) => {
       
       timer = setTimeout(() => {
-        reject("timed out waiting for sizemodechange event");
+        reject(
+          `timed out waiting for sizemodechange sizemodechange ${
+            willWaitForOcclusion ? "and occlusionstatechange " : ""
+          }event`
+        );
       }, 5000);
     }),
   ]);
   clearTimeout(timer);
-  info(
-    "Waiting occlusionstatechange if win.isFullyOccluded: " +
-      win.isFullyOccluded
-  );
-  
-  
-  
-  if (win.isFullyOccluded) {
-    await BrowserTestUtils.waitForEvent(win, "occlusionstatechange");
-  }
   ok(
     win.gBrowser.selectedTab.linkedBrowser.docShellIsActive,
     "Docshell should be active again"
