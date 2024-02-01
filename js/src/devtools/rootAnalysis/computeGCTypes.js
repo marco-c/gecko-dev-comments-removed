@@ -10,6 +10,7 @@ loadRelativeToScript('utility.js');
 loadRelativeToScript('annotations.js');
 
 var options = parse_options([
+    { name: '--verbose', type: 'bool' },
     { name: "gcTypes", default: "gcTypes.txt" },
     { name: "typeInfo", default: "typeInfo.txt" }
 ]);
@@ -316,7 +317,7 @@ if (os.getenv("HAZARD_RUN_INTERNAL_TESTS")) {
 var inheritors = Object.keys(typeInfo.InheritFromTemplateArgs).sort((a, b) => a.length - b.length);
 for (const csu of inheritors) {
     const [templateName, templateArgs] = parseTemplateType(csu);
-    for (const param of templateArgs) {
+    for (const param of (templateArgs || [])) {
         const pos = param.search(/\**$/);
         const ptrdness = param.length - pos;
         const core_type = param.substr(0, pos);
@@ -328,24 +329,41 @@ for (const csu of inheritors) {
     }
 }
 
+function Ptr(level) {
+    if (level < 0)
+        return Array(-level).fill("&").join("");
+    else
+        return Array(level).fill("*").join("");
+}
 
 
 
-function markGCType(typeName, child, why, typePtrLevel, fieldPtrLevel, indent)
-{
+
+function markGCType(typeName, child, childType, typePtrLevel, fieldPtrLevel, indent = "") {
     
     
     
     
     
     
-    if (!fieldPtrLevel && isUnsafeStorage(typeName)) {
+    if (isUnsafeStorage(typeName)) {
         
         
         
         
         
-        fieldPtrLevel = -1;
+        
+        
+        
+        
+        
+        const ptrLevel = typePtrLevel + fieldPtrLevel - 1;
+        if (options.verbose) {
+            printErr(`.${child} : (${childType} : "Cell${Ptr(typePtrLevel)}")${Ptr(fieldPtrLevel)} is-field-of ${typeName} : "Cell${Ptr(ptrLevel)}" [unsafe]`);
+        }
+        markGCTypeImpl(typeName, child, childType, ptrLevel, indent);
+
+        
     }
 
     
@@ -356,8 +374,14 @@ function markGCType(typeName, child, why, typePtrLevel, fieldPtrLevel, indent)
     
     
     
-    var ptrLevel = typePtrLevel + fieldPtrLevel;
+    const ptrLevel = typePtrLevel + fieldPtrLevel;
+    if (options.verbose) {
+        printErr(`.${child} : (${childType} : "Cell${Ptr(typePtrLevel)}")${Ptr(fieldPtrLevel)} is-field-of ${typeName} : "Cell${Ptr(ptrLevel)}"`);
+    }
+    markGCTypeImpl(typeName, child, childType, ptrLevel, indent);
+}
 
+function markGCTypeImpl(typeName, child, childType, ptrLevel, indent) {
     
     
     
@@ -377,19 +401,29 @@ function markGCType(typeName, child, why, typePtrLevel, fieldPtrLevel, indent)
             return;
         if (!(typeName in gcTypes))
             gcTypes[typeName] = new Set();
-        gcTypes[typeName].add(why);
+        gcTypes[typeName].add(childType);
     } else if (ptrLevel == 1) {
         if (typeName in typeInfo.NonGCPointers)
             return;
         if (!(typeName in gcPointers))
             gcPointers[typeName] = new Set();
-        gcPointers[typeName].add(why);
+        gcPointers[typeName].add(childType);
     }
 
     if (ptrLevel < 2) {
         if (!gcFields.has(typeName))
             gcFields.set(typeName, new Map());
-        gcFields.get(typeName).set(child, [ why, fieldPtrLevel ]);
+        const fields = gcFields.get(typeName);
+        if (fields.has(child)) {
+            const [orig_childType, orig_ptrLevel] = fields.get(child);
+            if (ptrLevel >= orig_ptrLevel) {
+                
+                
+                
+                return;
+            }
+        }
+        fields.set(child, [childType, ptrLevel]);
     }
 
     if (typeName in structureParents) {
@@ -406,7 +440,7 @@ function markGCType(typeName, child, why, typePtrLevel, fieldPtrLevel, indent)
     }
 }
 
-function addGCType(typeName, child, why, depth, fieldPtrLevel)
+function addGCType(typeName)
 {
     pendingGCTypes.push([typeName, '<annotation>', '(annotation)', 0, 0]);
 }

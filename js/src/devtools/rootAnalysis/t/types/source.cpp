@@ -61,22 +61,69 @@ class ANNOTATE("moz_inherit_type_annotations_from_template_args") Container {
     InnerClass xxx;
     return;
   }
+
+  struct Entry {
+    T t;
+    U u;
+  }* ent;
 };
 
 Cell* f() {
   Container<int, double> c1;
   Container<SimpleTemplate<int, int>, SimpleTemplate<double, double>> c2;
-  Container<Container<int, double>, Container<void, void>> c3;
-  Container<Container<SimpleTemplate<int, int>, void>,
-            Container<void, SimpleTemplate<char, char>>>
+  Container<Container<int, double>, Container<float, float>> c3;
+  Container<Container<SimpleTemplate<int, int>, float>,
+            Container<float, SimpleTemplate<char, char>>>
       c4;
 
   return nullptr;
+}
+
+
+
+
+namespace mozilla {
+
+template <typename A>
+struct JustAField {
+  A field;
+
+  
+  A& operator->() { return field; }
+};
+
+template <typename T>
+struct UniquePtr {
+  JustAField<T*> holder;
+};
+
+
+
+
+
+
+
+
+template <typename T>
+struct SimpleUniquePtr {
+  T* holder;
+};
+
+}  
+
+class Recursive {
+ public:
+  using EntryMap = Container<Cell*, Recursive>;
+  mozilla::UniquePtr<EntryMap> entries;
 };
 
 void rvalue_ref(World::NS::Unsafe&& arg1) { GC(); }
 
 void ref(const World::NS::Unsafe& arg2) {
+  Recursive* foo;
+  
+  
+  foo->entries.holder->ent;
   GC();
   static int use = arg2.g;
 }
