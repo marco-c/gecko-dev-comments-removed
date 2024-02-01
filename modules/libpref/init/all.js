@@ -3976,9 +3976,6 @@ pref("extensions.formautofill.loglevel", "Warn");
 pref("extensions.formautofill.heuristics.captureOnFormRemoval", false);
 pref("extensions.formautofill.heuristics.captureOnPageNavigation", false);
 
-
-pref("extensions.formautofill.heuristics.interactivityCheckMode", "focusability");
-
 pref("toolkit.osKeyStore.loglevel", "Warn");
 
 pref("extensions.formautofill.supportRTL", false);
