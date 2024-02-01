@@ -471,7 +471,7 @@ void LCPHelpers::CreateLCPEntryForImage(
   
   MOZ_ASSERT(request);
 
-  bool taoPassed = request->IsData() || request->ShouldReportRenderTimeForLCP();
+  bool taoPassed = request->ShouldReportRenderTimeForLCP() || request->IsData();
   
   
   
