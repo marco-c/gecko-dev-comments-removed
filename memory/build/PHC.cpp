@@ -340,29 +340,10 @@ static const Time kMaxTime = ~(Time(0));
 
 
 
-static const Delay kAvgFirstAllocDelay = 64 * 1024;
+constexpr Delay Rnd64ToDelay(Delay aAvgDelay, uint64_t aRnd) {
+  MOZ_ASSERT(IsPowerOfTwo(aAvgDelay), "must be a power of two");
 
-
-
-static const Delay kAvgAllocDelay = 16 * 1024;
-
-
-
-
-
-
-
-static const Delay kAvgPageReuseDelay = 256 * 1024;
-
-
-
-
-
-template <Delay AvgDelay>
-constexpr Delay Rnd64ToDelay(uint64_t aRnd) {
-  static_assert(IsPowerOfTwo(AvgDelay), "must be a power of two");
-
-  return aRnd % (AvgDelay * 2) + 1;
+  return (aRnd & (aAvgDelay * 2 - 1)) + 1;
 }
 
 
@@ -437,10 +418,11 @@ class GAtomic {
 
   static void SetAllocDelay(Delay aAllocDelay) { sAllocDelay = aAllocDelay; }
 
-  static bool AllocDelayHasWrapped() {
+  static bool AllocDelayHasWrapped(Delay aAvgAllocDelay,
+                                   Delay aAvgFirstAllocDelay) {
     
     
-    return sAllocDelay > 2 * std::max(kAvgAllocDelay, kAvgFirstAllocDelay);
+    return sAllocDelay > 2 * std::max(aAvgAllocDelay, aAvgFirstAllocDelay);
   }
 
  private:
@@ -875,7 +857,7 @@ class GMut {
   void SetState(PHCState aState) {
     if (mPhcState != PHCState::Enabled && aState == PHCState::Enabled) {
       MutexAutoLock lock(GMut::sMutex);
-      GAtomic::Init(Rnd64ToDelay<kAvgFirstAllocDelay>(Random64(lock)));
+      GAtomic::Init(Rnd64ToDelay(mAvgFirstAllocDelay, Random64(lock)));
     }
 
     mPhcState = aState;
@@ -945,6 +927,32 @@ class GMut {
   
   Atomic<PHCState, Relaxed> mPhcState =
       Atomic<PHCState, Relaxed>(DEFAULT_STATE);
+
+  
+  
+  
+  Delay mAvgFirstAllocDelay = 64 * 1024;
+
+  
+  
+  Delay mAvgAllocDelay = 16 * 1024;
+
+  
+  
+  
+  
+  
+  
+  Delay mAvgPageReuseDelay = 256 * 1024;
+
+ public:
+  Delay GetAvgAllocDelay(const MutexAutoLock&) { return mAvgAllocDelay; }
+  Delay GetAvgFirstAllocDelay(const MutexAutoLock&) {
+    return mAvgFirstAllocDelay;
+  }
+  Delay GetAvgPageReuseDelay(const MutexAutoLock&) {
+    return mAvgPageReuseDelay;
+  }
 };
 
 Mutex GMut::sMutex;
@@ -1040,13 +1048,11 @@ class GTls {
 
   static void EnableOnCurrentThread() {
     MOZ_ASSERT(GTls::tlsIsDisabled.get());
-    uint64_t rand;
-    if (GAtomic::AllocDelayHasWrapped()) {
-      {
-        MutexAutoLock lock(GMut::sMutex);
-        rand = gMut->Random64(lock);
-      }
-      GAtomic::SetAllocDelay(Rnd64ToDelay<kAvgAllocDelay>(rand));
+    MutexAutoLock lock(GMut::sMutex);
+    Delay avg_delay = gMut->GetAvgAllocDelay(lock);
+    Delay avg_first_delay = gMut->GetAvgFirstAllocDelay(lock);
+    if (GAtomic::AllocDelayHasWrapped(avg_delay, avg_first_delay)) {
+      GAtomic::SetAllocDelay(Rnd64ToDelay(avg_delay, gMut->Random64(lock)));
     }
     tlsIsDisabled.set(false);
   }
@@ -1185,7 +1191,8 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   MutexAutoLock lock(GMut::sMutex);
 
   Time now = GAtomic::Now();
-  Delay newAllocDelay = Rnd64ToDelay<kAvgAllocDelay>(gMut->Random64(lock));
+  Delay newAllocDelay =
+      Rnd64ToDelay(gMut->GetAvgAllocDelay(lock), gMut->Random64(lock));
 
   
   
@@ -1312,8 +1319,9 @@ inline void* MozJemallocPHC::malloc(size_t aReqSize) {
 }
 
 static Delay ReuseDelay(GMutLock aLock) {
-  return (kAvgPageReuseDelay / 2) +
-         Rnd64ToDelay<kAvgPageReuseDelay / 2>(gMut->Random64(aLock));
+  Delay avg_reuse_delay = gMut->GetAvgPageReuseDelay(aLock);
+  return (avg_reuse_delay / 2) +
+         Rnd64ToDelay(avg_reuse_delay / 2, gMut->Random64(aLock));
 }
 
 
