@@ -417,6 +417,28 @@ inline gfx::DrawTargetWebgl* CanvasTranslator::TextureInfo::GetDrawTargetWebgl(
   return nullptr;
 }
 
+bool CanvasTranslator::TryDrawTargetWebglFallback(
+    int64_t aTextureId, gfx::DrawTargetWebgl* aWebgl) {
+  NotifyRequiresRefresh(aTextureId);
+
+  
+  
+  
+  if (!aWebgl->HasDataSnapshot()) {
+    return false;
+  }
+
+  const auto& info = mTextureInfo[aTextureId];
+  if (RefPtr<gfx::DrawTarget> dt = CreateFallbackDrawTarget(
+          info.mRefPtr, aTextureId, info.mRemoteTextureOwnerId,
+          aWebgl->GetSize(), aWebgl->GetFormat())) {
+    aWebgl->CopyToFallback(dt);
+    AddDrawTarget(info.mRefPtr, dt);
+    return true;
+  }
+  return false;
+}
+
 void CanvasTranslator::ForceDrawTargetWebglFallback() {
   
   
@@ -425,21 +447,13 @@ void CanvasTranslator::ForceDrawTargetWebglFallback() {
   for (const auto& entry : mTextureInfo) {
     const auto& info = entry.second;
     if (gfx::DrawTargetWebgl* webgl = info.GetDrawTargetWebgl()) {
-      NotifyRequiresRefresh(entry.first);
-      if (webgl->HasDataSnapshot()) {
-        if (RefPtr<gfx::DrawTarget> dt = CreateFallbackDrawTarget(
-                info.mRefPtr, entry.first, info.mRemoteTextureOwnerId,
-                webgl->GetSize(), webgl->GetFormat())) {
-          webgl->CopyToFallback(dt);
-          AddDrawTarget(info.mRefPtr, dt);
-          continue;
+      if (!TryDrawTargetWebglFallback(entry.first, webgl)) {
+        
+        
+        if (mRemoteTextureOwner &&
+            mRemoteTextureOwner->IsRegistered(info.mRemoteTextureOwnerId)) {
+          lost.insert(info.mRemoteTextureOwnerId);
         }
-      }
-      
-      
-      if (mRemoteTextureOwner &&
-          mRemoteTextureOwner->IsRegistered(info.mRemoteTextureOwnerId)) {
-        lost.insert(info.mRemoteTextureOwnerId);
       }
     }
   }
@@ -815,7 +829,7 @@ void CanvasTranslator::PrepareShmem(int64_t aTextureId) {
       }
     } else {
       
-      webgl->PrepareData();
+      webgl->PrepareShmem();
     }
   }
 }
@@ -829,9 +843,7 @@ void CanvasTranslator::ClearCachedResources() {
     mSharedContext->OnMemoryPressure();
     for (auto const& entry : mTextureInfo) {
       if (gfx::DrawTargetWebgl* webgl = entry.second.GetDrawTargetWebgl()) {
-        if (!webgl->HasDataSnapshot()) {
-          webgl->PrepareData();
-        }
+        webgl->EnsureDataSnapshot();
       }
     }
   }
@@ -1021,15 +1033,22 @@ bool CanvasTranslator::PresentTexture(int64_t aTextureId, RemoteTextureId aId) {
   RemoteTextureOwnerId ownerId = info.mRemoteTextureOwnerId;
   if (gfx::DrawTargetWebgl* webgl = info.GetDrawTargetWebgl()) {
     EnsureRemoteTextureOwner(ownerId);
-    
-    if (webgl->IsValid()) {
-      webgl->CopyToSwapChain(aId, ownerId, mRemoteTextureOwner);
-      if (webgl->IsValid()) {
-        return true;
+    if (webgl->CopyToSwapChain(aId, ownerId, mRemoteTextureOwner)) {
+      return true;
+    }
+    if (mSharedContext && mSharedContext->IsContextLost()) {
+      
+      EnsureSharedContextWebgl();
+    } else {
+      
+      
+      
+      webgl->EnsureDataSnapshot();
+      if (!TryDrawTargetWebglFallback(aTextureId, webgl)) {
+        RemoteTextureOwnerIdSet lost = {info.mRemoteTextureOwnerId};
+        mRemoteTextureOwner->NotifyContextLost(&lost);
       }
     }
-    
-    EnsureSharedContextWebgl();
   }
   if (TextureData* data = info.mTextureData.get()) {
     PushRemoteTexture(aTextureId, data, aId, ownerId);

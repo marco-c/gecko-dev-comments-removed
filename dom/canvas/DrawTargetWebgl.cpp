@@ -1008,18 +1008,25 @@ bool DrawTargetWebgl::HasDataSnapshot() const {
   return (mSkiaValid && !mSkiaLayer) || (mSnapshot && mSnapshot->HasReadData());
 }
 
-void DrawTargetWebgl::PrepareData() {
+bool DrawTargetWebgl::PrepareSkia() {
   if (!mSkiaValid) {
     ReadIntoSkia();
   } else if (mSkiaLayer) {
     FlattenSkia();
   }
+  return mSkiaValid;
 }
+
+bool DrawTargetWebgl::EnsureDataSnapshot() {
+  return HasDataSnapshot() || PrepareSkia();
+}
+
+void DrawTargetWebgl::PrepareShmem() { PrepareSkia(); }
 
 
 
 already_AddRefed<SourceSurface> DrawTargetWebgl::GetDataSnapshot() {
-  PrepareData();
+  PrepareSkia();
   return mSkia->Snapshot(mFormat);
 }
 
@@ -2169,8 +2176,11 @@ bool SharedContextWebgl::DrawRectAccel(
   
   
   
-  if (!SupportsDrawOptions(aOptions) || !SupportsPattern(aPattern) ||
-      aStrokeOptions || !mCurrentTarget->MarkChanged()) {
+  
+  
+  if (!SupportsDrawOptions(aOptions) ||
+      (!aForceUpdate && !SupportsPattern(aPattern)) || aStrokeOptions ||
+      !mCurrentTarget->MarkChanged()) {
     
     
     if (!aAccelOnly) {
@@ -4690,11 +4700,11 @@ void DrawTargetWebgl::EndFrame() {
   mSharedContext->ClearCachesIfNecessary();
 }
 
-void DrawTargetWebgl::CopyToSwapChain(
+bool DrawTargetWebgl::CopyToSwapChain(
     layers::RemoteTextureId aId, layers::RemoteTextureOwnerId aOwnerId,
     layers::RemoteTextureOwnerClient* aOwnerClient) {
   if (!mWebglValid && !FlushFromSkia()) {
-    return;
+    return false;
   }
 
   
@@ -4709,8 +4719,8 @@ void DrawTargetWebgl::CopyToSwapChain(
   const RefPtr<layers::ImageBridgeChild> imageBridge =
       layers::ImageBridgeChild::GetSingleton();
   auto texType = layers::TexTypeForWebgl(imageBridge);
-  mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, texType, options,
-                                          aOwnerClient);
+  return mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, texType, options,
+                                                 aOwnerClient);
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(

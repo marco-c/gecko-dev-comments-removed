@@ -499,7 +499,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   
   
   
-  void CopyToSwapChain(
+  bool CopyToSwapChain(
       WebGLFramebuffer*, layers::TextureType,
       const webgl::SwapChainOptions& options = webgl::SwapChainOptions(),
       layers::RemoteTextureOwnerClient* ownerClient = nullptr);
