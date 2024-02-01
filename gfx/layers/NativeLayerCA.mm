@@ -226,7 +226,6 @@ void NativeLayerRootCA::AppendLayer(NativeLayer* aLayer) {
 
   mSublayers.AppendElement(layerCA);
   layerCA->SetBackingScale(mBackingScale);
-  layerCA->SetRootWindowIsFullscreen(mWindowIsFullscreen);
   ForAllRepresentations(
       [&](Representation& r) { r.mMutatedLayerStructure = true; });
 }
@@ -258,7 +257,6 @@ void NativeLayerRootCA::SetLayers(
     RefPtr<NativeLayerCA> layerCA = layer->AsNativeLayerCA();
     MOZ_RELEASE_ASSERT(layerCA);
     layerCA->SetBackingScale(mBackingScale);
-    layerCA->SetRootWindowIsFullscreen(mWindowIsFullscreen);
     layersCA.AppendElement(std::move(layerCA));
   }
 
@@ -308,8 +306,7 @@ bool NativeLayerRootCA::CommitToScreen() {
       return false;
     }
 
-    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers,
-                                   mWindowIsFullscreen);
+    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers);
 
     mCommitPending = false;
   }
@@ -371,8 +368,7 @@ void NativeLayerRootCA::OnNativeLayerRootSnapshotterDestroyed(
 
 void NativeLayerRootCA::CommitOffscreen() {
   MutexAutoLock lock(mMutex);
-  mOffscreenRepresentation.Commit(WhichRepresentation::OFFSCREEN, mSublayers,
-                                  mWindowIsFullscreen);
+  mOffscreenRepresentation.Commit(WhichRepresentation::OFFSCREEN, mSublayers);
 }
 
 template <typename F>
@@ -397,8 +393,7 @@ NativeLayerRootCA::Representation::~Representation() {
 
 void NativeLayerRootCA::Representation::Commit(
     WhichRepresentation aRepresentation,
-    const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-    bool aWindowIsFullscreen) {
+    const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
   bool mustRebuild = mMutatedLayerStructure;
   if (!mustRebuild) {
     
@@ -523,15 +518,7 @@ void NativeLayerRootCA::DumpLayerTreeToFile(const char* aPath) {
 }
 
 void NativeLayerRootCA::SetWindowIsFullscreen(bool aFullscreen) {
-  MutexAutoLock lock(mMutex);
-
-  if (mWindowIsFullscreen != aFullscreen) {
-    mWindowIsFullscreen = aFullscreen;
-
-    for (auto layer : mSublayers) {
-      layer->SetRootWindowIsFullscreen(mWindowIsFullscreen);
-    }
-  }
+  mWindowIsFullscreen = aFullscreen;
 }
 
  bool IsCGColorOpaqueBlack(CGColorRef aColor) {
@@ -946,49 +933,7 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
     return true;
   }
 
-  
-  
-
-  if (!StaticPrefs::gfx_core_animation_specialize_video()) {
-    
-    return false;
-  }
-
-  if (pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange &&
-      pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
-    
-    return false;
-  }
-
-  
-  return mRootWindowIsFullscreen;
-}
-
-void NativeLayerCA::SetRootWindowIsFullscreen(bool aFullscreen) {
-  if (mRootWindowIsFullscreen == aFullscreen) {
-    return;
-  }
-
-  MutexAutoLock lock(mMutex);
-
-  mRootWindowIsFullscreen = aFullscreen;
-
-  bool oldSpecializeVideo = mSpecializeVideo;
-  mSpecializeVideo = ShouldSpecializeVideo(lock);
-  bool changedSpecializeVideo = (mSpecializeVideo != oldSpecializeVideo);
-
-  if (changedSpecializeVideo) {
-#ifdef NIGHTLY_BUILD
-    if (StaticPrefs::gfx_core_animation_specialize_video_log()) {
-      NSLog(@"VIDEO_LOG: SetRootWindowIsFullscreen: %p is forcing a video "
-            @"layer rebuild.",
-            this);
-    }
-#endif
-
-    ForAllRepresentations(
-        [&](Representation& r) { r.mMutatedSpecializeVideo = true; });
-  }
+  return StaticPrefs::gfx_core_animation_specialize_video();
 }
 
 void NativeLayerCA::SetSurfaceIsFlipped(bool aIsFlipped) {
