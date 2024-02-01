@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  QueryCache: "resource://activity-stream/lib/ASRouterTargeting.jsm",
+  QueryCache: "resource:///modules/asrouter/ASRouterTargeting.jsm",
 });
 
 

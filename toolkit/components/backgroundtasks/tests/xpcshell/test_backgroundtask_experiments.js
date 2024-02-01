@@ -15,7 +15,7 @@
 
 
 const { ASRouterTargeting } = ChromeUtils.import(
-  "resource://activity-stream/lib/ASRouterTargeting.jsm"
+  "resource:///modules/asrouter/ASRouterTargeting.jsm"
 );
 
 
