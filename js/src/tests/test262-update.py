@@ -24,7 +24,6 @@ UNSUPPORTED_FEATURES = set(
         "Atomics.waitAsync",  
         "legacy-regexp",  
         "json-modules",  
-        "resizable-arraybuffer",  
         "regexp-duplicate-named-groups",  
         "json-parse-with-source",  
         "set-methods",  
@@ -39,6 +38,7 @@ FEATURE_CHECK_NEEDED = {
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "Intl.Segmenter": "!Intl.Segmenter",  
+    "resizable-arraybuffer": "!ArrayBuffer.prototype.resize",  
 }
 RELEASE_OR_BETA = set(
     [
@@ -51,6 +51,7 @@ SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
     "iterator-helpers": "--enable-iterator-helpers",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
+    "resizable-arraybuffer": "--enable-arraybuffer-resizable",
 }
 
 
