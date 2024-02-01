@@ -286,9 +286,8 @@ OverOutElementsWrapper::OverOutElementsWrapper() : mLastOverFrame(nullptr) {}
 
 OverOutElementsWrapper::~OverOutElementsWrapper() = default;
 
-NS_IMPL_CYCLE_COLLECTION(OverOutElementsWrapper, mDeepestEnterEventTarget,
-                         mDispatchingOverEventTarget,
-                         mDispatchingOutOrDeepestLeaveEventTarget)
+NS_IMPL_CYCLE_COLLECTION(OverOutElementsWrapper, mLastOverElement,
+                         mFirstOverEventElement, mFirstOutEventElement)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(OverOutElementsWrapper)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(OverOutElementsWrapper)
 
@@ -4803,25 +4802,16 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
                                        nsIContent* aMovingInto) {
   RefPtr<OverOutElementsWrapper> wrapper = GetWrapperByEventID(aMouseEvent);
 
-  
-  
-  
-  if (!wrapper || !wrapper->GetDeepestLeaveEventTarget()) {
+  if (!wrapper || !wrapper->mLastOverElement) {
     return;
   }
   
-  if (wrapper->IsDispatchingOutEventOnLastOverEventTarget()) {
+  if (wrapper->mLastOverElement == wrapper->mFirstOutEventElement) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
   if (RefPtr<nsFrameLoaderOwner> flo =
-          do_QueryObject(wrapper->GetDeepestLeaveEventTarget())) {
+          do_QueryObject(wrapper->mLastOverElement)) {
     if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
       if (nsIDocShell* docshell = bc->GetDocShell()) {
         if (RefPtr<nsPresContext> presContext = docshell->GetPresContext()) {
@@ -4834,11 +4824,13 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
   }
   
   
-  if (!wrapper->GetDeepestLeaveEventTarget()) {
+  if (!wrapper->mLastOverElement) {
     return;
   }
 
-  wrapper->WillDispatchOutAndOrLeaveEvent();
+  
+  
+  wrapper->mFirstOutEventElement = wrapper->mLastOverElement;
 
   
   
@@ -4850,26 +4842,27 @@ void EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
     SetContentState(nullptr, ElementState::HOVER);
   }
 
-  EnterLeaveDispatcher leaveDispatcher(
-      this, wrapper->GetDeepestLeaveEventTarget(), aMovingInto, aMouseEvent,
-      isPointer ? ePointerLeave : eMouseLeave);
+  EnterLeaveDispatcher leaveDispatcher(this, wrapper->mLastOverElement,
+                                       aMovingInto, aMouseEvent,
+                                       isPointer ? ePointerLeave : eMouseLeave);
 
   
-  
-  if (nsCOMPtr<nsIContent> outEventTarget = wrapper->GetOutEventTarget()) {
-    DispatchMouseOrPointerEvent(aMouseEvent,
-                                isPointer ? ePointerOut : eMouseOut,
-                                outEventTarget, aMovingInto);
-  }
+  nsCOMPtr<nsIContent> lastOverElement = wrapper->mLastOverElement;
+  DispatchMouseOrPointerEvent(aMouseEvent, isPointer ? ePointerOut : eMouseOut,
+                              lastOverElement, aMovingInto);
   leaveDispatcher.Dispatch();
 
-  wrapper->DidDispatchOutAndOrLeaveEvent();
+  wrapper->mLastOverFrame = nullptr;
+  wrapper->mLastOverElement = nullptr;
+
+  
+  wrapper->mFirstOutEventElement = nullptr;
 }
 
 void EventStateManager::RecomputeMouseEnterStateForRemoteFrame(
     Element& aElement) {
   if (!mMouseEnterLeaveHelper ||
-      mMouseEnterLeaveHelper->GetDeepestLeaveEventTarget() != &aElement) {
+      mMouseEnterLeaveHelper->mLastOverElement != &aElement) {
     return;
   }
 
@@ -4884,16 +4877,10 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
 
   RefPtr<OverOutElementsWrapper> wrapper = GetWrapperByEventID(aMouseEvent);
 
-  
-  
-  if (!wrapper || aContent == wrapper->GetOutEventTarget()) {
-    return;
-  }
+  if (!wrapper || wrapper->mLastOverElement == aContent) return;
 
   
-  if (wrapper->IsDispatchingOverEventOn(aContent)) {
-    return;
-  }
+  if (aContent == wrapper->mFirstOverEventElement) return;
 
   
   
@@ -4910,19 +4897,16 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   }
   
   
-  if (aContent == wrapper->GetOutEventTarget()) {
-    return;
-  }
+  if (wrapper->mLastOverElement == aContent) return;
 
   
   
   
-  nsCOMPtr<nsIContent> deepestLeaveEventTarget =
-      wrapper->GetDeepestLeaveEventTarget();
+  nsCOMPtr<nsIContent> lastOverElement = wrapper->mLastOverElement;
 
   bool isPointer = aMouseEvent->mClass == ePointerEventClass;
 
-  EnterLeaveDispatcher enterDispatcher(this, aContent, deepestLeaveEventTarget,
+  EnterLeaveDispatcher enterDispatcher(this, aContent, lastOverElement,
                                        aMouseEvent,
                                        isPointer ? ePointerEnter : eMouseEnter);
 
@@ -4932,17 +4916,19 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
 
   NotifyMouseOut(aMouseEvent, aContent);
 
-  wrapper->WillDispatchOverAndEnterEvent(aContent);
+  
+  
+  wrapper->mFirstOverEventElement = aContent;
 
-  
-  
   
   wrapper->mLastOverFrame = DispatchMouseOrPointerEvent(
       aMouseEvent, isPointer ? ePointerOver : eMouseOver, aContent,
-      deepestLeaveEventTarget);
+      lastOverElement);
   enterDispatcher.Dispatch();
+  wrapper->mLastOverElement = aContent;
 
-  wrapper->DidDispatchOverAndEnterEvent();
+  
+  wrapper->mFirstOverEventElement = nullptr;
 }
 
 
@@ -5092,7 +5078,7 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
         RefPtr<OverOutElementsWrapper> helper =
             GetWrapperByEventID(aMouseEvent);
         if (helper) {
-          helper->OverrideOverEventTarget(targetElement);
+          helper->mLastOverElement = targetElement;
         }
         NotifyMouseOut(aMouseEvent, nullptr);
       }
@@ -5983,6 +5969,16 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
   return true;
 }
 
+void EventStateManager::ResetLastOverForContent(
+    const uint32_t& aIdx, const RefPtr<OverOutElementsWrapper>& aElemWrapper,
+    nsIContent* aContent) {
+  if (aElemWrapper && aElemWrapper->mLastOverElement &&
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+          aElemWrapper->mLastOverElement, aContent)) {
+    aElemWrapper->mLastOverElement = nullptr;
+  }
+}
+
 void EventStateManager::RemoveNodeFromChainIfNeeded(ElementState aState,
                                                     nsIContent* aContentRemoved,
                                                     bool aNotify) {
@@ -6091,13 +6087,10 @@ void EventStateManager::ContentRemoved(Document* aDocument,
 
   PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
 
-  if (mMouseEnterLeaveHelper) {
-    mMouseEnterLeaveHelper->ContentRemoved(*aContent);
-  }
+  
+  ResetLastOverForContent(0, mMouseEnterLeaveHelper, aContent);
   for (const auto& entry : mPointersEnterLeaveHelper) {
-    if (entry.GetData()) {
-      entry.GetData()->ContentRemoved(*aContent);
-    }
+    ResetLastOverForContent(entry.GetKey(), entry.GetData(), aContent);
   }
 }
 
@@ -6879,42 +6872,6 @@ bool EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedY(
   Init(index);
   return Abs(mMultiplierY[index]) >=
          MIN_MULTIPLIER_VALUE_ALLOWING_OVER_ONE_PAGE_SCROLL;
-}
-
-void OverOutElementsWrapper::ContentRemoved(nsIContent& aContent) {
-  if (!mDeepestEnterEventTarget) {
-    return;
-  }
-
-  if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-          mDeepestEnterEventTarget, &aContent)) {
-    return;
-  }
-
-  if (!StaticPrefs::
-          dom_events_mouse_pointer_boundary_keep_enter_targets_after_over_target_removed()) {
-    mDeepestEnterEventTarget = nullptr;
-    return;
-  }
-
-  if (mDispatchingOverEventTarget &&
-      (mDeepestEnterEventTarget == mDispatchingOverEventTarget ||
-       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-           mDispatchingOverEventTarget, &aContent))) {
-    if (mDispatchingOverEventTarget ==
-        mDispatchingOutOrDeepestLeaveEventTarget) {
-      mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
-    }
-    mDispatchingOverEventTarget = nullptr;
-  }
-  if (mDispatchingOutOrDeepestLeaveEventTarget &&
-      (mDeepestEnterEventTarget == mDispatchingOutOrDeepestLeaveEventTarget ||
-       nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-           mDispatchingOutOrDeepestLeaveEventTarget, &aContent))) {
-    mDispatchingOutOrDeepestLeaveEventTarget = nullptr;
-  }
-  mDeepestEnterEventTarget = aContent.GetFlattenedTreeParent();
-  mDeepestEnterEventTargetIsOverEventTarget = false;
 }
 
 }  
