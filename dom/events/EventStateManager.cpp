@@ -6093,7 +6093,18 @@ void EventStateManager::ContentRemoved(Document* aDocument,
   PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
 
   if (mMouseEnterLeaveHelper) {
+    const bool hadMouseOutTarget =
+        mMouseEnterLeaveHelper->GetOutEventTarget() != nullptr;
     mMouseEnterLeaveHelper->ContentRemoved(*aContent);
+    
+    
+    
+    if (hadMouseOutTarget && !mMouseEnterLeaveHelper->GetOutEventTarget()) {
+      if (PresShell* presShell =
+              mPresContext ? mPresContext->GetPresShell() : nullptr) {
+        presShell->SynthesizeMouseMove(false);
+      }
+    }
   }
   for (const auto& entry : mPointersEnterLeaveHelper) {
     if (entry.GetData()) {
