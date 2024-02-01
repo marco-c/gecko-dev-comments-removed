@@ -1194,11 +1194,6 @@ class Document : public nsINode,
   
 
 
-  bool GetAllowPlugins();
-
-  
-
-
   nsresult SetSubDocumentFor(Element* aContent, Document* aSubDoc);
 
   
