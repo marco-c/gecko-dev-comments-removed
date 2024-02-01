@@ -343,7 +343,15 @@ static const Time kMaxTime = ~(Time(0));
 constexpr Delay Rnd64ToDelay(Delay aAvgDelay, uint64_t aRnd) {
   MOZ_ASSERT(IsPowerOfTwo(aAvgDelay), "must be a power of two");
 
-  return (aRnd & (aAvgDelay * 2 - 1)) + 1;
+  return (aRnd & (uint64_t(aAvgDelay) * 2 - 1)) + 1;
+}
+
+static Delay CheckProbability(int64_t aProb) {
+  
+  
+  
+  return RoundUpPow2(
+      std::min(std::max(aProb, int64_t(2)), int64_t(0x80000000)));
 }
 
 
@@ -861,6 +869,15 @@ class GMut {
     }
 
     mPhcState = aState;
+  }
+
+  void SetProbabilities(int64_t aAvgDelayFirst, int64_t aAvgDelayNormal,
+                        int64_t aAvgDelayPageReuse) {
+    MutexAutoLock lock(GMut::sMutex);
+
+    mAvgFirstAllocDelay = CheckProbability(aAvgDelayFirst);
+    mAvgAllocDelay = CheckProbability(aAvgDelayNormal);
+    mAvgPageReuseDelay = CheckProbability(aAvgDelayPageReuse);
   }
 
  private:
@@ -1807,4 +1824,14 @@ void SetPHCState(PHCState aState) {
 
   gMut->SetState(aState);
 }
+
+void SetPHCProbabilities(int64_t aAvgDelayFirst, int64_t aAvgDelayNormal,
+                         int64_t aAvgDelayPageReuse) {
+  if (!maybe_init()) {
+    return;
+  }
+
+  gMut->SetProbabilities(aAvgDelayFirst, aAvgDelayNormal, aAvgDelayPageReuse);
+}
+
 }  
