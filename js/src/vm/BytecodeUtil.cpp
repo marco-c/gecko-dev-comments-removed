@@ -1922,7 +1922,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     case JSOp::BigInt:
 #if defined(DEBUG) || defined(JS_JITSPEW)
       
-      script->getBigInt(pc)->dumpLiteral(sprinter);
+      script->getBigInt(pc)->dump(sprinter);
       return !sprinter.hadOutOfMemory();
 #else
       return write("[bigint]");
