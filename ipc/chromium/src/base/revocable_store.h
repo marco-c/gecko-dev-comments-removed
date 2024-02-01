@@ -40,7 +40,7 @@ class RevocableStore {
   class Revocable {
    public:
     explicit Revocable(RevocableStore* store);
-    ~Revocable();
+    ~Revocable() = default;
 
     
     bool revoked() const { return !store_reference_->store(); }
@@ -59,9 +59,6 @@ class RevocableStore {
   
   void RevokeAll();
 
-  
-  bool empty() const { return count_ == 0; }
-
  private:
   friend class Revocable;
 
@@ -71,9 +68,6 @@ class RevocableStore {
 
   
   RefPtr<StoreRef> owning_reference_;
-
-  
-  int count_;
 
   DISALLOW_EVIL_CONSTRUCTORS(RevocableStore);
 };
