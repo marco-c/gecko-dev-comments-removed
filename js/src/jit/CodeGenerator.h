@@ -438,6 +438,11 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   
   bool hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted() {
+    if (!JitOptions.useHasSeenEmulatesUndefinedFuse) {
+      
+      return false;
+    }
+
     bool intact = gen->outerInfo().hasSeenObjectEmulateUndefinedFuseIntact();
     if (intact) {
       addHasSeenObjectEmulateUndefinedFuseDependency();
