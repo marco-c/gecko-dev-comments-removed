@@ -9,6 +9,7 @@
 
 
 pub use bitflags::bitflags as bitflags2;
+pub use bitflags::parser;
 
 
 
@@ -30,8 +31,18 @@ macro_rules! bitflags {
         $($t:tt)*
     ) => {
         $(#[$($outer)+])*
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         $vis struct $BitFlags($T);
+
+        impl core::fmt::Debug for $BitFlags {
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                if self.is_empty() {
+                    core::write!(f, "{:#x}", Self::empty().bits())
+                } else {
+                    $crate::parser::to_writer(self, f)
+                }
+            }
+        }
 
         bitflags2! {
             impl $BitFlags: $T {
