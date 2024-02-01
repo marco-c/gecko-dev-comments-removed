@@ -9,7 +9,6 @@
 #include "nsIDOMEventListener.h"
 
 #include "GeckoProfiler.h"
-#include "jsapi.h"  
 #include "jsfriendapi.h"
 #include "js/ArrayBuffer.h"  
 #include "js/GCPolicyAPI.h"
@@ -192,6 +191,18 @@ class Proxy final : public nsIDOMEventListener {
         mSyncEventResponseTarget ? mSyncEventResponseTarget : mSyncLoopTarget;
     return target.forget();
   }
+
+#ifdef DEBUG
+  void DebugStoreWorkerRef(RefPtr<StrongWorkerRef>& aWorkerRef) {
+    MOZ_ASSERT(!NS_IsMainThread());
+    mXHR->mTSWorkerRef = new ThreadSafeWorkerRef(aWorkerRef);
+  }
+
+  void DebugForgetWorkerRef() {
+    MOZ_ASSERT(!NS_IsMainThread());
+    mXHR->mTSWorkerRef = nullptr;
+  }
+#endif
 
  private:
   ~Proxy() {
@@ -1486,6 +1497,10 @@ void XMLHttpRequestWorker::MaybePin(ErrorResult& aRv) {
   }
 
   mPinnedSelfRef = this;
+
+#ifdef DEBUG
+  mProxy->DebugStoreWorkerRef(mWorkerRef);
+#endif
 }
 
 void XMLHttpRequestWorker::MaybeDispatchPrematureAbortEvents(ErrorResult& aRv) {
@@ -1609,6 +1624,14 @@ void XMLHttpRequestWorker::Unpin() {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
   MOZ_ASSERT(mWorkerRef, "Mismatched calls to Unpin!");
+
+#ifdef DEBUG
+  if (mProxy) {
+    
+    mProxy->DebugForgetWorkerRef();
+  }
+#endif
+
   mWorkerRef = nullptr;
 
   mPinnedSelfRef = nullptr;
