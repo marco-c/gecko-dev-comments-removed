@@ -19,7 +19,6 @@
 #endif
 
 #include <string.h>          
-#include "mozilla/Scoped.h"  
 
 namespace mozilla {
 
@@ -55,20 +54,6 @@ void FindVisualAndDepth(Display* aDisplay, VisualID aVisualID, Visual** aVisual,
 
 
 void FinishX(Display* aDisplay);
-
-
-
-
-
-template <typename T>
-struct ScopedXFreePtrTraits {
-  typedef T* type;
-  static T* empty() { return nullptr; }
-  static void release(T* ptr) {
-    if (ptr != nullptr) XFree(ptr);
-  }
-};
-SCOPED_TEMPLATE(ScopedXFree, ScopedXFreePtrTraits)
 
 }  
 
