@@ -114,6 +114,9 @@ class Animation : public DOMEventTargetHelper,
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
   Nullable<double> GetStartTimeAsDouble() const;
   void SetStartTime(const Nullable<TimeDuration>& aNewStartTime);
+  void SetPendingReadyTime(const TimeStamp& aReadyTime) {
+    mPendingReadyTime = aReadyTime;
+  }
   virtual void SetStartTimeAsDouble(const Nullable<double>& aStartTime);
 
   
@@ -573,6 +576,9 @@ class Animation : public DOMEventTargetHelper,
 
   
   RTPCallerType mRTPCallerType;
+
+  
+  TimeStamp mPendingReadyTime;
 
  private:
   
