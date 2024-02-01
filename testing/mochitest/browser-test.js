@@ -69,6 +69,7 @@ var TabDestroyObserver = {
 
 function testInit() {
   gConfig = readConfig();
+
   if (gConfig.testRoot == "browser") {
     
     var prefs = Services.prefs;
