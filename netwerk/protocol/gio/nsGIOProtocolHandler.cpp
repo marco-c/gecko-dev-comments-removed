@@ -287,20 +287,9 @@ nsresult nsGIOInputStream::DoOpenDirectory() {
   mDirListPtr = mDirList;
 
   
-  mDirBuf.AppendLiteral("300: ");
-  mDirBuf.Append(mSpec);
-  if (mSpec.get()[mSpec.Length() - 1] != '/') {
-    mDirBuf.Append('/');
-  }
-  mDirBuf.Append('\n');
-
-  
   mDirBuf.AppendLiteral(
       "200: filename content-length last-modified file-type\n");
 
-  
-  
-  mDirBuf.AppendLiteral("301: UTF-8\n");
   SetContentTypeOfChannel(APPLICATION_HTTP_INDEX_FORMAT);
   return NS_OK;
 }
