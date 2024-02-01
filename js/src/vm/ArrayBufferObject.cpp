@@ -348,6 +348,9 @@ static const JSPropertySpec arraybuffer_properties[] = {
 
 static const JSFunctionSpec arraybuffer_proto_functions[] = {
     JS_SELF_HOSTED_FN("slice", "ArrayBufferSlice", 2, 0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("resize", ArrayBufferObject::resize, 1, 0),
+#endif
     JS_FN("transfer", ArrayBufferObject::transfer, 0, 0),
     JS_FN("transferToFixedLength", ArrayBufferObject::transferToFixedLength, 0,
           0),
@@ -422,6 +425,12 @@ const JSClass ResizableArrayBufferObject::class_ = {
 static bool IsArrayBuffer(HandleValue v) {
   return v.isObject() && v.toObject().is<ArrayBufferObject>();
 }
+
+#ifdef NIGHTLY_BUILD
+static bool IsResizableArrayBuffer(HandleValue v) {
+  return v.isObject() && v.toObject().is<ResizableArrayBufferObject>();
+}
+#endif
 
 MOZ_ALWAYS_INLINE bool ArrayBufferObject::byteLengthGetterImpl(
     JSContext* cx, const CallArgs& args) {
@@ -643,6 +652,58 @@ bool ArrayBufferObject::transferToFixedLength(JSContext* cx, unsigned argc,
                                                                         args);
 }
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+bool ArrayBufferObject::resizeImpl(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsResizableArrayBuffer(args.thisv()));
+
+  Rooted<ResizableArrayBufferObject*> obj(
+      cx, &args.thisv().toObject().as<ResizableArrayBufferObject>());
+
+  
+  uint64_t newByteLength;
+  if (!ToIndex(cx, args.get(0), &newByteLength)) {
+    return false;
+  }
+
+  
+  if (obj->isDetached()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+    return false;
+  }
+
+  
+  if (newByteLength > obj->maxByteLength()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM);
+    return false;
+  }
+
+  
+  obj->resize(size_t(newByteLength));
+
+  
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+
+bool ArrayBufferObject::resize(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsResizableArrayBuffer, resizeImpl>(cx, args);
+}
+#endif
+
 
 
 
@@ -844,6 +905,26 @@ void ArrayBufferObject::detach(JSContext* cx,
   if (buffer->isResizable()) {
     buffer->as<ResizableArrayBufferObject>().setMaxByteLength(0);
   }
+}
+
+void ResizableArrayBufferObject::resize(size_t newByteLength) {
+  MOZ_ASSERT(!isPreparedForAsmJS());
+  MOZ_ASSERT(!isWasm());
+  MOZ_ASSERT(!isDetached());
+  MOZ_ASSERT(isResizable());
+  MOZ_ASSERT(newByteLength <= maxByteLength());
+
+  
+  
+  
+  
+  size_t oldByteLength = byteLength();
+  if (newByteLength < oldByteLength) {
+    size_t nbytes = oldByteLength - newByteLength;
+    memset(dataPointer() + newByteLength, 0, nbytes);
+  }
+
+  setByteLength(newByteLength);
 }
 
 
