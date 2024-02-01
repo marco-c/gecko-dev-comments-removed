@@ -43,6 +43,11 @@ bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
 
 bool nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(bool aFromPrivateWindow) {
   
+  if (IsHttpsOnlyModeEnabled(aFromPrivateWindow)) {
+    return false;
+  }
+
+  
   if (mozilla::StaticPrefs::dom_security_https_first()) {
     return true;
   }
@@ -122,8 +127,7 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   if ((IsHttpsFirstModeEnabled(isPrivateWin) ||
        (loadInfo->GetWasSchemelessInput() &&
-        mozilla::StaticPrefs::dom_security_https_first_schemeless())) &&
-      !IsHttpsOnlyModeEnabled(isPrivateWin)) {
+        mozilla::StaticPrefs::dom_security_https_first_schemeless()))) {
     int32_t port = 0;
     nsresult rv = channelURI->GetPort(&port);
     int defaultPortforScheme = NS_GetDefaultPort("http");
