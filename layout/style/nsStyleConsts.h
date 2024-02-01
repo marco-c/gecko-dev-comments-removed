@@ -409,7 +409,7 @@ enum class StyleTextWrapMode : uint8_t {
 
 
 
-enum class StyleTextWrap : uint8_t {
+enum class StyleTextWrapStyle : uint8_t {
   Auto = 0,
   Stable,
   Balance,
