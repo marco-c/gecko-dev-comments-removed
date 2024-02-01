@@ -9,6 +9,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsContentPolicyUtils.h"
+#include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
 #include "nsCSPContext.h"
 #include "nsCSPParser.h"
@@ -593,11 +594,12 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
   }
 
   EnsureIPCPoliciesRead();
-  nsAutoString content(u""_ns);
+  nsAutoString content;
 
   
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     
+
     
     
     if (mPolicies[i]->allowsAllInlineBehavior(aDirective)) {
@@ -606,9 +608,23 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
 
     
     
-    
-    if (mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce)) {
-      continue;
+    if ((aDirective == SCRIPT_SRC_ELEM_DIRECTIVE ||
+         aDirective == STYLE_SRC_ELEM_DIRECTIVE) &&
+        aTriggeringElement && !aNonce.IsEmpty()) {
+#ifdef DEBUG
+      
+      
+      if (aDirective == SCRIPT_SRC_ELEM_DIRECTIVE) {
+        
+        MOZ_ASSERT(nsContentSecurityUtils::GetIsElementNonceableNonce(
+                       *aTriggeringElement) == aNonce);
+      }
+#endif
+
+      
+      if (mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce)) {
+        continue;
+      }
     }
 
     

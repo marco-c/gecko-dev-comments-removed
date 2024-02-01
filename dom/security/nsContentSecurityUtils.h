@@ -21,6 +21,7 @@ class NS_ConvertUTF8toUTF16;
 
 namespace mozilla::dom {
 class Document;
+class Element;
 }  
 
 using FilenameTypeAndDetails = std::pair<nsCString, mozilla::Maybe<nsString>>;
@@ -65,6 +66,13 @@ class nsContentSecurityUtils {
   
   
   static bool CheckCSPFrameAncestorAndXFO(nsIChannel* aChannel);
+
+  
+  
+  
+  
+  static nsString GetIsElementNonceableNonce(
+      const mozilla::dom::Element& aElement);
 
   
   static long ClassifyDownload(nsIChannel* aChannel,

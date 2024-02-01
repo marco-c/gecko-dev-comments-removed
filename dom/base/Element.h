@@ -188,7 +188,14 @@ enum : uint32_t {
   ELEMENT_PROCESSED_BY_LCP_FOR_TEXT = ELEMENT_FLAG_BIT(5),
 
   
-  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 6
+  
+  
+  
+  
+  ELEMENT_PARSER_HAD_DUPLICATE_ATTR_ERROR = ELEMENT_FLAG_BIT(6),
+
+  
+  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 7
 };
 
 #undef ELEMENT_FLAG_BIT
@@ -1719,6 +1726,10 @@ class Element : public FragmentOrElement {
 
 
   void TryReserveAttributeCount(uint32_t aAttributeCount);
+
+  void SetParserHadDuplicateAttributeError() {
+    SetFlags(ELEMENT_PARSER_HAD_DUPLICATE_ATTR_ERROR);
+  }
 
   
 

@@ -432,6 +432,12 @@ void nsHtml5Tokenizer::errNcrUnassigned() {
 }
 
 void nsHtml5Tokenizer::errDuplicateAttribute() {
+  if (attributes) {
+    
+    
+    attributes->setDuplicateAttributeError();
+  }
+
   if (MOZ_UNLIKELY(mViewSource)) {
     mViewSource->AddErrorToCurrentNode("errDuplicateAttribute");
   }
