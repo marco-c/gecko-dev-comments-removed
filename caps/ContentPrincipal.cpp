@@ -38,7 +38,6 @@
 #include "mozilla/HashFunctions.h"
 
 #include "nsSerializationHelper.h"
-#include "json/json.h"
 
 using namespace mozilla;
 
@@ -605,7 +604,7 @@ ContentPrincipal::Deserializer::Read(nsIObjectInputStream* aStream) {
   return NS_OK;
 }
 
-nsresult ContentPrincipal::PopulateJSONObject(Json::Value& aObject) {
+nsresult ContentPrincipal::WriteJSONInnerProperties(JSONWriter& aWriter) {
   nsAutoCString principalURI;
   nsresult rv = mURI->GetSpec(principalURI);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -623,7 +622,7 @@ nsresult ContentPrincipal::PopulateJSONObject(Json::Value& aObject) {
   
   
   
-  SetJSONValue<eURI>(aObject, principalURI);
+  WriteJSONProperty<eURI>(aWriter, principalURI);
 
   if (GetHasExplicitDomain()) {
     nsAutoCString domainStr;
@@ -632,13 +631,13 @@ nsresult ContentPrincipal::PopulateJSONObject(Json::Value& aObject) {
       rv = mDomain->GetSpec(domainStr);
       NS_ENSURE_SUCCESS(rv, rv);
     }
-    SetJSONValue<eDomain>(aObject, domainStr);
+    WriteJSONProperty<eDomain>(aWriter, domainStr);
   }
 
   nsAutoCString suffix;
   OriginAttributesRef().CreateSuffix(suffix);
   if (suffix.Length() > 0) {
-    SetJSONValue<eSuffix>(aObject, suffix);
+    WriteJSONProperty<eSuffix>(aWriter, suffix);
   }
 
   return NS_OK;
