@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=973837
+-->
 <head>
 <meta charset="utf-8">
 <title>Tests for Bug 973837</title>
@@ -21,8 +21,7 @@
     testObject instanceof OBJLC;
     testObject = SpecialPowers.wrap(testObject);
 
-    is(testObject.displayedType, OBJLC.TYPE_NULL, testCase.desc +
-       " testObject.displayedType should be TYPE_NULL (4)");
+    is(testObject.displayedType, OBJLC.TYPE_FALLBACK, "expected fallback");
     runNextTest();
   }
 

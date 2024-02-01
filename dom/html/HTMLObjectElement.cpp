@@ -149,22 +149,12 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     return false;
   }
 
-  
-  if (Type() == eType_Fallback) {
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-
-    *aIsFocusable = false;
-    return false;
-  }
-
   const nsAttrValue* attrVal = mAttrs.GetAttr(nsGkAtoms::tabindex);
   bool isFocusable = attrVal && attrVal->Type() == nsAttrValue::eInteger;
 
   
   
-  if (IsEditingHost() || Type() == eType_Document) {
+  if (IsEditingHost() || Type() == ObjectType::Document) {
     if (aTabIndex) {
       *aTabIndex = isFocusable ? attrVal->GetIntegerValue() : 0;
     }

@@ -45,18 +45,13 @@ class nsObjectLoadingContent : public nsIStreamListener,
  public:
   
   
-  enum ObjectType {
+  enum class ObjectType : uint8_t {
     
-    eType_Loading = TYPE_LOADING,
+    Loading = TYPE_LOADING,
     
+    Document = TYPE_DOCUMENT,
     
-    
-    eType_Fallback = TYPE_FALLBACK,
-    
-    eType_Document = TYPE_DOCUMENT,
-    
-    
-    eType_Null = TYPE_NULL
+    Fallback = TYPE_FALLBACK
   };
 
   nsObjectLoadingContent();
@@ -73,7 +68,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
     mNetworkCreated = aNetworkCreated;
   }
 
-  static bool IsFallbackMimeType(const nsACString& aMimeType);
   static bool IsSuccessfulRequest(nsIRequest*, nsresult* aStatus);
 
   
@@ -81,7 +75,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
   void GetActualType(nsAString& aType) const {
     CopyUTF8toUTF16(mContentType, aType);
   }
-  uint32_t DisplayedType() const { return mType; }
+  uint32_t DisplayedType() const { return uint32_t(mType); }
   nsIURI* GetSrcURI() const { return mURI; }
 
   void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
@@ -239,7 +233,9 @@ class nsObjectLoadingContent : public nsIStreamListener,
   
 
 
-  void ConfigureFallback();
+
+
+  void TriggerInnerFallbackLoads();
 
   
 
@@ -426,7 +422,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
   nsCOMPtr<nsIURI> mBaseURI;
 
   
-  ObjectType mType : 8;
+  ObjectType mType;
 
   
   

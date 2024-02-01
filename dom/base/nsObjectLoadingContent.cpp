@@ -32,7 +32,6 @@
 #include "nsError.h"
 
 
-#include "prenv.h"
 #include "mozilla/Logging.h"
 
 #include "nsContentPolicyUtils.h"
@@ -50,7 +49,6 @@
 #include "nsFrameLoader.h"
 
 #include "nsObjectLoadingContent.h"
-#include "js/Object.h"  
 
 #include "nsWidgetsCID.h"
 #include "mozilla/BasicEvents.h"
@@ -60,14 +58,13 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/PluginCrashedEvent.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/widget/IMEData.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/HTMLObjectElementBinding.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
+#include "mozilla/dom/HTMLObjectElementBinding.h"
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/nsCSPContext.h"
@@ -108,11 +105,7 @@ static bool IsFlashMIME(const nsACString& aMIMEType) {
          aMIMEType.LowerCaseEqualsASCII("application/x-shockwave-flash-test");
 }
 
-static bool IsPluginType(nsObjectLoadingContent::ObjectType type) {
-  return type == nsObjectLoadingContent::eType_Fallback;
-}
-
-bool nsObjectLoadingContent::IsFallbackMimeType(const nsACString& aMIMEType) {
+static bool IsPluginMIME(const nsACString& aMIMEType) {
   return IsFlashMIME(aMIMEType) ||
          aMIMEType.LowerCaseEqualsASCII("application/x-test");
 }
@@ -238,7 +231,7 @@ void nsObjectLoadingContent::UnbindFromTree(bool aNullParent) {
 }
 
 nsObjectLoadingContent::nsObjectLoadingContent()
-    : mType(eType_Loading),
+    : mType(ObjectType::Loading),
       mChannelLoaded(false),
       mNetworkCreated(true),
       mContentBlockingEnabled(false),
@@ -280,10 +273,10 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  if (mType == eType_Document) {
+  if (mType == ObjectType::Document) {
     if (!mFinalListener) {
       MOZ_ASSERT_UNREACHABLE(
-          "Already are eType_Document, but don't have final listener yet?");
+          "Already is Document, but don't have final listener yet?");
       return NS_BINDING_ABORTED;
     }
 
@@ -298,7 +291,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
       nsCString channelType;
       MOZ_ALWAYS_SUCCEEDS(mChannel->GetContentType(channelType));
 
-      if (GetTypeOfContent(channelType) != eType_Document) {
+      if (GetTypeOfContent(channelType) != ObjectType::Document) {
         MOZ_CRASH("DocumentChannel request with non-document MIME");
       }
       mContentType = channelType;
@@ -311,7 +304,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
   }
 
   
-  if (mType != eType_Loading) {
+  if (mType != ObjectType::Loading) {
     MOZ_ASSERT_UNREACHABLE("Should be type loading at this point");
     return NS_BINDING_ABORTED;
   }
@@ -501,7 +494,7 @@ nsObjectLoadingContent::AsyncOnChannelRedirect(
   if (mFinalListener) {
     nsCOMPtr<nsIChannelEventSink> sink(do_QueryInterface(mFinalListener));
     MOZ_RELEASE_ASSERT(sink, "mFinalListener isn't nsIChannelEventSink?");
-    if (mType != eType_Document) {
+    if (mType != ObjectType::Document) {
       MOZ_ASSERT_UNREACHABLE(
           "Not a DocumentChannel load, but we're getting a "
           "AsyncOnChannelRedirect with a mFinalListener?");
@@ -654,10 +647,10 @@ bool nsObjectLoadingContent::CheckProcessPolicy(int16_t* aContentPolicy) {
 
   nsContentPolicyType objectType;
   switch (mType) {
-    case eType_Document:
+    case ObjectType::Document:
       objectType = nsIContentPolicy::TYPE_DOCUMENT;
       break;
-    case eType_Fallback:
+    case ObjectType::Fallback:
       objectType = GetContentPolicyType();
       break;
     default:
@@ -699,6 +692,7 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   nsCOMPtr<nsIURI> newURI;
   nsCOMPtr<nsIURI> newBaseURI;
   ObjectType newType;
+  
   
   bool stateInvalid = false;
   
@@ -821,7 +815,7 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   bool useChannel = mChannelLoaded && !(retval & eParamChannelChanged);
   
   
-  bool newChannel = useChannel && mType == eType_Loading;
+  bool newChannel = useChannel && mType == ObjectType::Loading;
 
   RefPtr<DocumentChannel> documentChannel = do_QueryObject(mChannel);
   if (newChannel && documentChannel) {
@@ -833,8 +827,8 @@ nsObjectLoadingContent::UpdateObjectParameters() {
     
     newMime = TEXT_HTML;
 
-    MOZ_DIAGNOSTIC_ASSERT(GetTypeOfContent(newMime) == eType_Document,
-                          "How is text/html not eType_Document?");
+    MOZ_DIAGNOSTIC_ASSERT(GetTypeOfContent(newMime) == ObjectType::Document,
+                          "How is text/html not ObjectType::Document?");
   } else if (newChannel && mChannel) {
     nsCString channelType;
     rv = mChannel->GetContentType(channelType);
@@ -865,9 +859,8 @@ nsObjectLoadingContent::UpdateObjectParameters() {
     }
 
     ObjectType typeHint =
-        newMime.IsEmpty() ? eType_Null : GetTypeOfContent(newMime);
+        newMime.IsEmpty() ? ObjectType::Fallback : GetTypeOfContent(newMime);
 
-    
     
     
     
@@ -879,12 +872,12 @@ nsObjectLoadingContent::UpdateObjectParameters() {
     
 
     bool overrideChannelType = false;
-    if (IsPluginType(typeHint)) {
+    if (IsPluginMIME(newMime)) {
       LOG(("OBJLC [%p]: Using plugin type hint in favor of any channel type",
            this));
       overrideChannelType = true;
-    } else if (binaryChannelType && typeHint != eType_Null) {
-      if (typeHint == eType_Document) {
+    } else if (binaryChannelType && typeHint != ObjectType::Fallback) {
+      if (typeHint == ObjectType::Document) {
         if (imgLoader::SupportImageWithMimeType(newMime)) {
           LOG(
               ("OBJLC [%p]: Using type hint in favor of binary channel type "
@@ -936,47 +929,50 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   ObjectType newMime_Type = GetTypeOfContent(newMime);
 
   if (stateInvalid) {
-    newType = eType_Null;
-    LOG(("OBJLC [%p]: NewType #0: %s - %u", this, newMime.get(), newType));
+    newType = ObjectType::Fallback;
+    LOG(("OBJLC [%p]: NewType #0: %s - %u", this, newMime.get(),
+         uint32_t(newType)));
     newMime.Truncate();
   } else if (newChannel) {
     
     newType = newMime_Type;
-    LOG(("OBJLC [%p]: NewType #1: %s - %u", this, newMime.get(), newType));
+    LOG(("OBJLC [%p]: NewType #1: %s - %u", this, newMime.get(),
+         uint32_t(newType)));
     LOG(("OBJLC [%p]: Using channel type", this));
   } else if (((caps & eAllowPluginSkipChannel) || !newURI) &&
-             IsPluginType(newMime_Type)) {
+             IsPluginMIME(newMime)) {
     newType = newMime_Type;
-    LOG(("OBJLC [%p]: NewType #2: %s - %u", this, newMime.get(), newType));
+    LOG(("OBJLC [%p]: NewType #2: %s - %u", this, newMime.get(),
+         uint32_t(newType)));
     LOG(("OBJLC [%p]: Plugin type with no URI, skipping channel load", this));
-  } else if (newURI &&
-             (mOriginalContentType.IsEmpty() || newMime_Type != eType_Null)) {
+  } else if (newURI && (mOriginalContentType.IsEmpty() ||
+                        newMime_Type != ObjectType::Fallback)) {
     
     
     
     
     
-    newType = eType_Loading;
-    LOG(("OBJLC [%p]: NewType #3: %u", this, newType));
+    newType = ObjectType::Loading;
+    LOG(("OBJLC [%p]: NewType #3: %u", this, uint32_t(newType)));
   } else {
     
     
-    newType = eType_Null;
-    LOG(("OBJLC [%p]: NewType #4: %u", this, newType));
+    newType = ObjectType::Fallback;
+    LOG(("OBJLC [%p]: NewType #4: %u", this, uint32_t(newType)));
   }
 
-  mLoadingSyntheticDocument =
-      newType == eType_Document && imgLoader::SupportImageWithMimeType(newMime);
+  mLoadingSyntheticDocument = newType == ObjectType::Document &&
+                              imgLoader::SupportImageWithMimeType(newMime);
 
   
   
   
 
-  if (useChannel && newType == eType_Loading) {
+  if (useChannel && newType == ObjectType::Loading) {
     
     
     newType = mType;
-    LOG(("OBJLC [%p]: NewType #5: %u", this, newType));
+    LOG(("OBJLC [%p]: NewType #5: %u", this, uint32_t(newType)));
     newMime = mContentType;
     newURI = mURI;
   } else if (useChannel && !newChannel) {
@@ -991,7 +987,8 @@ nsObjectLoadingContent::UpdateObjectParameters() {
 
   if (newType != mType) {
     retval = (ParameterUpdateFlags)(retval | eParamStateChanged);
-    LOG(("OBJLC [%p]: Type changed from %u -> %u", this, mType, newType));
+    LOG(("OBJLC [%p]: Type changed from %u -> %u", this, uint32_t(mType),
+         uint32_t(newType)));
     mType = newType;
   }
 
@@ -1010,7 +1007,7 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   
   
   
-  if (mType != eType_Loading && mContentType != newMime) {
+  if (mType != ObjectType::Loading && mContentType != newMime) {
     retval = (ParameterUpdateFlags)(retval | eParamStateChanged);
     retval = (ParameterUpdateFlags)(retval | eParamContentTypeChanged);
     LOG(("OBJLC [%p]: Object effective mime type changed (%s -> %s)", this,
@@ -1021,7 +1018,7 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   
   
   if (useChannel && !newChannel && (retval & eParamStateChanged)) {
-    mType = eType_Loading;
+    mType = ObjectType::Loading;
     retval = (ParameterUpdateFlags)(retval | eParamChannelChanged);
   }
 
@@ -1046,8 +1043,8 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     
     UnloadObject();
     ObjectType oldType = mType;
-    mType = eType_Fallback;
-    ConfigureFallback();
+    mType = ObjectType::Fallback;
+    TriggerInnerFallbackLoads();
     NotifyStateChanged(oldType, true);
     return NS_OK;
   }
@@ -1116,12 +1113,12 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     
     CloseChannel();
     mChannelLoaded = false;
-  } else if (mType == eType_Null && mChannel) {
+  } else if (mType == ObjectType::Fallback && mChannel) {
     
     
     
     CloseChannel();
-  } else if (mType == eType_Loading && mChannel) {
+  } else if (mType == ObjectType::Loading && mChannel) {
     
     
     return NS_OK;
@@ -1138,20 +1135,20 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   
 
-  if (mType != eType_Null && mType != eType_Fallback) {
+  if (mType != ObjectType::Fallback) {
     bool allowLoad = true;
     int16_t contentPolicy = nsIContentPolicy::ACCEPT;
     
     
     
     
-    if (allowLoad && mURI && !mChannelLoaded && mType != eType_Loading) {
+    if (allowLoad && mURI && !mChannelLoaded && mType != ObjectType::Loading) {
       allowLoad = CheckLoadPolicy(&contentPolicy);
     }
     
     
     
-    if (allowLoad && mType != eType_Loading) {
+    if (allowLoad && mType != ObjectType::Loading) {
       allowLoad = CheckProcessPolicy(&contentPolicy);
     }
 
@@ -1165,7 +1162,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     
     if (!allowLoad) {
       LOG(("OBJLC [%p]: Load denied by policy", this));
-      mType = eType_Null;
+      mType = ObjectType::Fallback;
     }
   }
 
@@ -1174,7 +1171,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   
   
-  if (mType != eType_Null) {
+  if (mType != ObjectType::Fallback) {
     nsCOMPtr<nsIURI> tempURI = mURI;
     nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(tempURI);
     while (nestedURI) {
@@ -1183,7 +1180,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
       if (tempURI->SchemeIs("view-source")) {
         LOG(("OBJLC [%p]: Blocking as effective URI has view-source scheme",
              this));
-        mType = eType_Null;
+        mType = ObjectType::Fallback;
         break;
       }
 
@@ -1194,9 +1191,9 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
 
   
   
-  if ((mType == eType_Null || IsPluginType(mType)) && ShouldBlockContent()) {
+  if (mType == ObjectType::Fallback && ShouldBlockContent()) {
     LOG(("OBJLC [%p]: Enable content blocking", this));
-    mType = eType_Loading;
+    mType = ObjectType::Loading;
   }
 
   
@@ -1208,7 +1205,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
 
   
   
-  if (mType != eType_Null && !!mChannel != mChannelLoaded) {
+  if (mType != ObjectType::Fallback && !!mChannel != mChannelLoaded) {
     MOZ_ASSERT_UNREACHABLE("Trying to load with bad channel state");
     return NS_OK;
   }
@@ -1221,7 +1218,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   nsCOMPtr<nsIStreamListener> finalListener;
   switch (mType) {
-    case eType_Document: {
+    case ObjectType::Document: {
       if (!mChannel) {
         
         
@@ -1262,7 +1259,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
       
       
     } break;
-    case eType_Loading:
+    case ObjectType::Loading:
       
       rv = OpenChannel();
       if (NS_FAILED(rv)) {
@@ -1270,8 +1267,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
              static_cast<uint32_t>(rv)));
       }
       break;
-    case eType_Null:
-    case eType_Fallback:
+    case ObjectType::Fallback:
       
       break;
   }
@@ -1281,12 +1277,11 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   if (NS_FAILED(rv)) {
     
-    LOG(("OBJLC [%p]: Loading failed, switching to null", this));
-    mType = eType_Null;
+    LOG(("OBJLC [%p]: Loading failed, switching to fallback", this));
+    mType = ObjectType::Fallback;
   }
 
-  
-  if (mType == eType_Fallback || mType == eType_Null) {
+  if (mType == ObjectType::Fallback) {
     LOG(("OBJLC [%p]: Switching to fallback state", this));
     MOZ_ASSERT(!mFrameLoader, "switched to fallback but also loaded something");
 
@@ -1300,7 +1295,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     
     finalListener = nullptr;
 
-    ConfigureFallback();
+    TriggerInnerFallbackLoads();
   }
 
   
@@ -1318,7 +1313,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
 
   rv = NS_OK;
   if (finalListener) {
-    NS_ASSERTION(mType != eType_Null && mType != eType_Loading,
+    NS_ASSERTION(mType != ObjectType::Fallback && mType != ObjectType::Loading,
                  "We should not have a final listener with a non-loaded type");
     mFinalListener = finalListener;
 
@@ -1327,7 +1322,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     RefPtr<DocumentChannel> documentChannel = do_QueryObject(mChannel);
     if (documentChannel) {
       MOZ_ASSERT(
-          mType == eType_Document,
+          mType == ObjectType::Document,
           "We have a DocumentChannel here but aren't loading a document?");
     } else {
       rv = finalListener->OnStartRequest(mChannel);
@@ -1338,11 +1333,11 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     
     
     oldType = mType;
-    mType = eType_Fallback;
+    mType = ObjectType::Fallback;
     UnloadObject(false);
     NS_ENSURE_TRUE(mIsLoading, NS_OK);
     CloseChannel();
-    ConfigureFallback();
+    TriggerInnerFallbackLoads();
     NotifyStateChanged(oldType, true);
   }
 
@@ -1576,7 +1571,7 @@ void nsObjectLoadingContent::UnloadObject(bool aResetState) {
   if (aResetState) {
     CloseChannel();
     mChannelLoaded = false;
-    mType = eType_Loading;
+    mType = ObjectType::Loading;
     mURI = mOriginalURI = mBaseURI = nullptr;
     mContentType.Truncate();
     mOriginalContentType.Truncate();
@@ -1593,7 +1588,7 @@ void nsObjectLoadingContent::UnloadObject(bool aResetState) {
 void nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
                                                 bool aNotify) {
   LOG(("OBJLC [%p]: NotifyStateChanged: (%u) -> (%u) (notify %i)", this,
-       aOldType, mType, aNotify));
+       uint32_t(aOldType), uint32_t(mType), aNotify));
 
   dom::Element* thisEl = AsElement();
   
@@ -1654,54 +1649,33 @@ nsObjectLoadingContent::GetSrcURI(nsIURI** aURI) {
   return NS_OK;
 }
 
-void nsObjectLoadingContent::ConfigureFallback() {
+void nsObjectLoadingContent::TriggerInnerFallbackLoads() {
   MOZ_ASSERT(!mFrameLoader && !mChannel,
              "ConfigureFallback called with loaded content");
-
-  
-  
-  
-  MOZ_ASSERT(mType == eType_Fallback || mType == eType_Null);
+  MOZ_ASSERT(mType == ObjectType::Fallback);
 
   Element* el = AsElement();
-
-  
-  
-  
-  
-  
-  
-  
-  bool hasHtmlFallback = false;
-  if (el->IsHTMLElement(nsGkAtoms::object)) {
-    
-    
-    
-    for (nsIContent* child = el->GetFirstChild(); child;) {
-      hasHtmlFallback =
-          hasHtmlFallback || (!child->IsHTMLElement(nsGkAtoms::param) &&
-                              nsStyleUtil::IsSignificantChild(child, false));
-
-      
-      
-      
-      if (auto* embed = HTMLEmbedElement::FromNode(child)) {
-        embed->StartObjectLoad(true, true);
-        
-        child = child->GetNextNonChildNode(el);
-      } else if (auto* object = HTMLObjectElement::FromNode(child)) {
-        object->StartObjectLoad(true, true);
-        
-        child = child->GetNextNonChildNode(el);
-      } else {
-        child = child->GetNextNode(el);
-      }
-    }
+  if (!el->IsHTMLElement(nsGkAtoms::object)) {
+    return;
   }
-
   
-  if (hasHtmlFallback) {
-    mType = eType_Null;
+  
+  
+  for (nsIContent* child = el->GetFirstChild(); child;) {
+    
+    
+    
+    if (auto* embed = HTMLEmbedElement::FromNode(child)) {
+      embed->StartObjectLoad(true, true);
+      
+      child = child->GetNextNonChildNode(el);
+    } else if (auto* object = HTMLObjectElement::FromNode(child)) {
+      object->StartObjectLoad(true, true);
+      
+      child = child->GetNextNonChildNode(el);
+    } else {
+      child = child->GetNextNode(el);
+    }
   }
 }
 
@@ -1718,7 +1692,7 @@ nsObjectLoadingContent::UpgradeLoadToDocument(
   }
 
   
-  if (mType != eType_Loading) {
+  if (mType != ObjectType::Loading) {
     MOZ_ASSERT_UNREACHABLE("Should be type loading at this point");
     return NS_BINDING_ABORTED;
   }
@@ -1798,9 +1772,8 @@ bool nsObjectLoadingContent::BlockEmbedOrObjectContentLoading() {
     
     
     
-    if (HTMLObjectElement* object = HTMLObjectElement::FromNode(parent)) {
-      uint32_t type = object->DisplayedType();
-      if (type != eType_Null) {
+    if (auto* object = HTMLObjectElement::FromNode(parent)) {
+      if (object->Type() != ObjectType::Fallback) {
         return true;
       }
     }
@@ -1830,15 +1803,16 @@ void nsObjectLoadingContent::SubdocumentImageLoadComplete(nsresult aResult) {
 
   if (NS_FAILED(aResult)) {
     UnloadObject();
-    mType = eType_Fallback;
-    ConfigureFallback();
+    mType = ObjectType::Fallback;
+    TriggerInnerFallbackLoads();
     NotifyStateChanged(oldType, true);
     return;
   }
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT_IF(mChannelLoaded && mChannel, mType == eType_Document);
+  MOZ_DIAGNOSTIC_ASSERT_IF(mChannelLoaded && mChannel,
+                           mType == ObjectType::Document);
   NotifyStateChanged(oldType, true);
 }
 

@@ -130,21 +130,11 @@ int32_t HTMLEmbedElement::TabIndexDefault() {
   
   
   
-  return Type() == eType_Document ? 0 : -1;
+  return Type() == ObjectType::Document ? 0 : -1;
 }
 
 bool HTMLEmbedElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                        int32_t* aTabIndex) {
-  
-  if (Type() == eType_Fallback) {
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-
-    *aIsFocusable = false;
-    return false;
-  }
-
   
   
   if (aTabIndex) {

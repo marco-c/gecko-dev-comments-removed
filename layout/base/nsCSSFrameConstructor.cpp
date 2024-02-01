@@ -3670,16 +3670,11 @@ nsCSSFrameConstructor::FindObjectData(const Element& aElement,
                "nsIObjectLoadingContent!");
   objContent->GetDisplayedType(&type);
 
-  if (type == nsIObjectLoadingContent::TYPE_FALLBACK &&
-      !StaticPrefs::layout_use_plugin_fallback()) {
-    type = nsIObjectLoadingContent::TYPE_NULL;
-  }
-
   static constexpr FrameConstructionDataByInt sObjectData[] = {
+      
+      
       SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_LOADING,
                         NS_NewEmptyFrame),
-      SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_FALLBACK,
-                        ToCreationFunc(NS_NewBlockFrame)),
       SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_DOCUMENT,
                         NS_NewSubDocumentFrame),
       
