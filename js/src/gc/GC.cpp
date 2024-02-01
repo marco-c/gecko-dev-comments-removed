@@ -3144,19 +3144,13 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       }
 
       
-      size_t oldPosition = marker().stack.position();
-      marker().markAndTraverse<NormalMarkingOptions>(obj);
-
-      
-      
-      if (marker().stack.position() == oldPosition) {
+      AutoEnterOOMUnsafeRegion oomUnsafe;
+      if (!marker().markOneObjectForTest(obj)) {
+        
+        
         MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
-        AutoEnterOOMUnsafeRegion oomUnsafe;
         oomUnsafe.crash("Overflowed stack while marking test queue");
       }
-
-      SliceBudget unlimited = SliceBudget::unlimited();
-      marker().processMarkStackTop<NormalMarkingOptions>(unlimited);
     } else if (val.isString()) {
       JSLinearString* str = &val.toString()->asLinear();
       if (js::StringEqualsLiteral(str, "yield") && isIncrementalGc()) {
