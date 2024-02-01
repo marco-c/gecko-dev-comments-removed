@@ -89,18 +89,6 @@ const CM_MAPPING = [
 
 const editors = new WeakMap();
 
-Editor.modes = {
-  cljs: { name: "text/x-clojure" },
-  css: { name: "css" },
-  fs: { name: "x-shader/x-fragment" },
-  haxe: { name: "haxe" },
-  http: { name: "http" },
-  html: { name: "htmlmixed" },
-  js: { name: "javascript" },
-  text: { name: "text" },
-  vs: { name: "x-shader/x-vertex" },
-  wasm: { name: "wasm" },
-};
 
 
 
@@ -122,169 +110,212 @@ Editor.modes = {
 
 
 
+class Editor extends EventEmitter {
+  
 
-function Editor(config) {
-  const tabSize = Services.prefs.getIntPref(TAB_SIZE);
-  const useTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
-  const useAutoClose = Services.prefs.getBoolPref(AUTO_CLOSE);
+  
 
-  this.version = null;
-  this.config = {
-    value: "",
-    mode: Editor.modes.text,
-    indentUnit: tabSize,
-    tabSize,
-    contextMenu: null,
-    matchBrackets: true,
-    highlightSelectionMatches: {
-      wordsOnly: true,
-    },
-    extraKeys: {},
-    indentWithTabs: useTabs,
-    inputStyle: "accessibleTextArea",
-    
-    
-    
-    pollInterval: Math.pow(2, 31) - 1,
-    styleActiveLine: true,
-    autoCloseBrackets: "()[]{}''\"\"``",
-    autoCloseEnabled: useAutoClose,
-    theme: "mozilla",
-    themeSwitching: true,
-    autocomplete: false,
-    autocompleteOpts: {},
-    
-    cssProperties: null,
-    
-    disableSearchAddon: false,
-    maxHighlightLength: 1000,
-    
-    cursorBlinkRate: 0,
-    
-    
-    
-    
-    
-    
-    
-    specialChars:
-      
-      /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\u202d\u202e\u2066\u2067\u2069\ufeff\ufff9-\ufffc]/,
-    specialCharPlaceholder: char => {
-      
-      
-      const doc = this._ownerDoc;
-      const el = doc.createElement("span");
-      el.classList.add("cm-non-printable-char");
-      el.append(doc.createTextNode(`\\u${char.codePointAt(0).toString(16)}`));
-      return el;
-    },
+
+
+
+
+
+
+  static accel(key, modifiers = {}) {
+    return (
+      (modifiers.shift ? "Shift-" : "") +
+      (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") +
+      (modifiers.alt ? "Alt-" : "") +
+      key
+    );
+  }
+
+  
+
+
+
+
+
+  static keyFor(cmd, opts = { noaccel: false }) {
+    const key = L10N.getStr(cmd + ".commandkey");
+    return opts.noaccel ? key : Editor.accel(key);
+  }
+
+  static modes = {
+    cljs: { name: "text/x-clojure" },
+    css: { name: "css" },
+    fs: { name: "x-shader/x-fragment" },
+    haxe: { name: "haxe" },
+    http: { name: "http" },
+    html: { name: "htmlmixed" },
+    js: { name: "javascript" },
+    text: { name: "text" },
+    vs: { name: "x-shader/x-vertex" },
+    wasm: { name: "wasm" },
   };
 
-  
-  this.config.extraKeys[Editor.keyFor("jumpToLine")] = () => this.jumpToLine();
-  this.config.extraKeys[Editor.keyFor("moveLineUp", { noaccel: true })] = () =>
-    this.moveLineUp();
-  this.config.extraKeys[Editor.keyFor("moveLineDown", { noaccel: true })] =
-    () => this.moveLineDown();
-  this.config.extraKeys[Editor.keyFor("toggleComment")] = "toggleComment";
+  container = null;
+  version = null;
+  config = null;
+  Doc = null;
 
-  
-  this.config.extraKeys[Editor.keyFor("indentLess")] = false;
-  this.config.extraKeys[Editor.keyFor("indentMore")] = false;
+  constructor(config) {
+    super();
 
-  
-  
-  
-  this.config.extraKeys["Alt-B"] = false;
-  this.config.extraKeys["Alt-F"] = false;
+    const tabSize = Services.prefs.getIntPref(TAB_SIZE);
+    const useTabs = !Services.prefs.getBoolPref(EXPAND_TAB);
+    const useAutoClose = Services.prefs.getBoolPref(AUTO_CLOSE);
 
-  
-  
-  
-  this.config.extraKeys[Editor.accel("U")] = false;
-
-  
-  
-  
-  
-  
-  this.config.extraKeys["'\u0000'"] = false;
-
-  
-  Object.keys(config).forEach(k => {
-    if (k != "extraKeys") {
-      this.config[k] = config[k];
-      return;
-    }
-
-    if (!config.extraKeys) {
-      return;
-    }
-
-    Object.keys(config.extraKeys).forEach(key => {
-      this.config.extraKeys[key] = config.extraKeys[key];
-    });
-  });
-
-  if (!this.config.gutters) {
-    this.config.gutters = [];
-  }
-  if (
-    this.config.lineNumbers &&
-    !this.config.gutters.includes("CodeMirror-linenumbers")
-  ) {
-    this.config.gutters.push("CodeMirror-linenumbers");
-  }
-
-  
-  this.config.autoCloseBracketsSaved = this.config.autoCloseBrackets;
-
-  
-  
-  
-  
-  this.config.extraKeys.Tab = cm => {
-    if (config.extraKeys?.Tab) {
+    this.version = null;
+    this.config = {
+      value: "",
+      mode: Editor.modes.text,
+      indentUnit: tabSize,
+      tabSize,
+      contextMenu: null,
+      matchBrackets: true,
+      highlightSelectionMatches: {
+        wordsOnly: true,
+      },
+      extraKeys: {},
+      indentWithTabs: useTabs,
+      inputStyle: "accessibleTextArea",
       
       
       
-      const res = config.extraKeys.Tab(cm);
-      if (res === false) {
+      pollInterval: Math.pow(2, 31) - 1,
+      styleActiveLine: true,
+      autoCloseBrackets: "()[]{}''\"\"``",
+      autoCloseEnabled: useAutoClose,
+      theme: "mozilla",
+      themeSwitching: true,
+      autocomplete: false,
+      autocompleteOpts: {},
+      
+      cssProperties: null,
+      
+      disableSearchAddon: false,
+      maxHighlightLength: 1000,
+      
+      cursorBlinkRate: 0,
+      
+      
+      
+      
+      
+      
+      
+      specialChars:
+        
+        /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\u202d\u202e\u2066\u2067\u2069\ufeff\ufff9-\ufffc]/,
+      specialCharPlaceholder: char => {
+        
+        
+        const doc = this._ownerDoc;
+        const el = doc.createElement("span");
+        el.classList.add("cm-non-printable-char");
+        el.append(doc.createTextNode(`\\u${char.codePointAt(0).toString(16)}`));
+        return el;
+      },
+    };
+
+    
+    this.config.extraKeys[Editor.keyFor("jumpToLine")] = () =>
+      this.jumpToLine();
+    this.config.extraKeys[Editor.keyFor("moveLineUp", { noaccel: true })] =
+      () => this.moveLineUp();
+    this.config.extraKeys[Editor.keyFor("moveLineDown", { noaccel: true })] =
+      () => this.moveLineDown();
+    this.config.extraKeys[Editor.keyFor("toggleComment")] = "toggleComment";
+
+    
+    this.config.extraKeys[Editor.keyFor("indentLess")] = false;
+    this.config.extraKeys[Editor.keyFor("indentMore")] = false;
+
+    
+    
+    
+    this.config.extraKeys["Alt-B"] = false;
+    this.config.extraKeys["Alt-F"] = false;
+
+    
+    
+    
+    this.config.extraKeys[Editor.accel("U")] = false;
+
+    
+    
+    
+    
+    
+    this.config.extraKeys["'\u0000'"] = false;
+
+    
+    Object.keys(config).forEach(k => {
+      if (k != "extraKeys") {
+        this.config[k] = config[k];
         return;
       }
+
+      if (!config.extraKeys) {
+        return;
+      }
+
+      Object.keys(config.extraKeys).forEach(key => {
+        this.config.extraKeys[key] = config.extraKeys[key];
+      });
+    });
+
+    if (!this.config.gutters) {
+      this.config.gutters = [];
+    }
+    if (
+      this.config.lineNumbers &&
+      !this.config.gutters.includes("CodeMirror-linenumbers")
+    ) {
+      this.config.gutters.push("CodeMirror-linenumbers");
     }
 
-    if (cm.somethingSelected()) {
-      cm.indentSelection("add");
-      return;
-    }
-
-    if (this.config.indentWithTabs) {
-      cm.replaceSelection("\t", "end", "+input");
-      return;
-    }
-
-    let num = cm.getOption("indentUnit");
-    if (cm.getCursor().ch !== 0) {
-      num -= cm.getCursor().ch % num;
-    }
-    cm.replaceSelection(" ".repeat(num), "end", "+input");
-  };
-
-  if (this.config.cssProperties) {
     
-    this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
+    this.config.autoCloseBracketsSaved = this.config.autoCloseBrackets;
+
+    
+    
+    
+    
+    this.config.extraKeys.Tab = cm => {
+      if (config.extraKeys?.Tab) {
+        
+        
+        
+        const res = config.extraKeys.Tab(cm);
+        if (res === false) {
+          return;
+        }
+      }
+
+      if (cm.somethingSelected()) {
+        cm.indentSelection("add");
+        return;
+      }
+
+      if (this.config.indentWithTabs) {
+        cm.replaceSelection("\t", "end", "+input");
+        return;
+      }
+
+      let num = cm.getOption("indentUnit");
+      if (cm.getCursor().ch !== 0) {
+        num -= cm.getCursor().ch % num;
+      }
+      cm.replaceSelection(" ".repeat(num), "end", "+input");
+    };
+
+    if (this.config.cssProperties) {
+      
+      this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
+    }
   }
-
-  EventEmitter.decorate(this);
-}
-
-Editor.prototype = {
-  container: null,
-  version: null,
-  config: null,
-  Doc: null,
 
   
 
@@ -293,7 +324,7 @@ Editor.prototype = {
   get CodeMirror() {
     const codeMirror = editors.get(this);
     return codeMirror?.constructor;
-  },
+  }
 
   
 
@@ -308,14 +339,14 @@ Editor.prototype = {
       );
     }
     return editors.get(this);
-  },
+  }
 
   
 
 
   get hasCodeMirror() {
     return editors.has(this);
-  },
+  }
 
   
 
@@ -355,11 +386,11 @@ Editor.prototype = {
 
       this.once("destroy", () => el.removeChild(env));
     });
-  },
+  }
 
   appendToLocalElement(el) {
     this._setup(el);
-  },
+  }
 
   
 
@@ -529,7 +560,7 @@ Editor.prototype = {
     win.editor = this;
     const editorReadyEvent = new win.CustomEvent("editorReady");
     win.dispatchEvent(editorReadyEvent);
-  },
+  }
 
   
 
@@ -537,7 +568,7 @@ Editor.prototype = {
 
   isAppended() {
     return editors.has(this);
-  },
+  }
 
   
 
@@ -545,7 +576,7 @@ Editor.prototype = {
 
   getMode() {
     return this.getOption("mode");
-  },
+  }
 
   
 
@@ -556,7 +587,7 @@ Editor.prototype = {
     }
     const win = this.container.contentWindow.wrappedJSObject;
     Services.scriptloader.loadSubScript(url, win);
-  },
+  }
 
   
 
@@ -567,7 +598,7 @@ Editor.prototype = {
 
   createDocument(text = "", mode) {
     return new this.Doc(text, mode);
-  },
+  }
 
   
 
@@ -575,7 +606,7 @@ Editor.prototype = {
   replaceDocument(doc) {
     const cm = editors.get(this);
     cm.swapDoc(doc);
-  },
+  }
 
   
 
@@ -590,7 +621,7 @@ Editor.prototype = {
       this.setOption("autocomplete", false);
       this.setOption("autocomplete", true);
     }
-  },
+  }
 
   
 
@@ -601,7 +632,7 @@ Editor.prototype = {
       insertCommandsController,
     } = require("resource://devtools/client/shared/sourceeditor/editor-commands-controller.js");
     insertCommandsController(this);
-  },
+  }
 
   
 
@@ -616,31 +647,31 @@ Editor.prototype = {
 
     const info = this.lineInfo(line);
     return info ? info.text : "";
-  },
+  }
 
   getDoc() {
     const cm = editors.get(this);
     return cm.getDoc();
-  },
+  }
 
   get isWasm() {
     return wasm.isWasm(this.getDoc());
-  },
+  }
 
   wasmOffsetToLine(offset) {
     return wasm.wasmOffsetToLine(this.getDoc(), offset);
-  },
+  }
 
   lineToWasmOffset(number) {
     return wasm.lineToWasmOffset(this.getDoc(), number);
-  },
+  }
 
   toLineIfWasmOffset(maybeOffset) {
     if (typeof maybeOffset !== "number" || !this.isWasm) {
       return maybeOffset;
     }
     return this.wasmOffsetToLine(maybeOffset);
-  },
+  }
 
   lineInfo(lineOrOffset) {
     const line = this.toLineIfWasmOffset(lineOrOffset);
@@ -649,11 +680,11 @@ Editor.prototype = {
     }
     const cm = editors.get(this);
     return cm.lineInfo(line);
-  },
+  }
 
   getLineOrOffset(line) {
     return this.isWasm ? this.lineToWasmOffset(line) : line;
-  },
+  }
 
   
 
@@ -686,7 +717,7 @@ Editor.prototype = {
     cm.setValue(value);
 
     this.resetIndentUnit();
-  },
+  }
 
   
 
@@ -705,7 +736,7 @@ Editor.prototype = {
 
     this.resetIndentUnit();
     this.setupAutoCompletion();
-  },
+  }
 
   
 
@@ -729,7 +760,7 @@ Editor.prototype = {
     } else {
       this.setOption("keyMap", "default");
     }
-  },
+  }
 
   
 
@@ -749,7 +780,7 @@ Editor.prototype = {
     cm.setOption("tabSize", indentUnit);
     cm.setOption("indentUnit", indentUnit);
     cm.setOption("indentWithTabs", indentWithTabs);
-  },
+  }
 
   
 
@@ -772,7 +803,7 @@ Editor.prototype = {
     }
 
     cm.replaceRange(value, from, to);
-  },
+  }
 
   
 
@@ -781,7 +812,7 @@ Editor.prototype = {
   insertText(value, at) {
     const cm = editors.get(this);
     cm.replaceRange(value, at, at);
-  },
+  }
 
   
 
@@ -792,7 +823,7 @@ Editor.prototype = {
     }
 
     this.setCursor(this.getCursor());
-  },
+  }
 
   
 
@@ -800,7 +831,7 @@ Editor.prototype = {
   hasMultipleSelections() {
     const cm = editors.get(this);
     return cm.listSelections().length > 1;
-  },
+  }
 
   
 
@@ -808,7 +839,7 @@ Editor.prototype = {
   getFirstVisibleLine() {
     const cm = editors.get(this);
     return cm.lineAtHeight(0, "local");
-  },
+  }
 
   
 
@@ -817,7 +848,7 @@ Editor.prototype = {
     const cm = editors.get(this);
     const { top } = cm.charCoords({ line, ch: 0 }, "local");
     cm.scrollTo(0, top);
-  },
+  }
 
   
 
@@ -829,7 +860,7 @@ Editor.prototype = {
     this.alignLine(line, align);
     cm.setCursor({ line, ch });
     this.emit("cursorActivity");
-  },
+  }
 
   
 
@@ -863,7 +894,7 @@ Editor.prototype = {
     
     topLine = Math.min(topLine, this.lineCount());
     this.setFirstVisibleLine(topLine);
-  },
+  }
 
   
 
@@ -875,7 +906,7 @@ Editor.prototype = {
     }
 
     return marker.classList.contains(markerClass);
-  },
+  }
 
   
 
@@ -901,7 +932,7 @@ Editor.prototype = {
     marker = cm.getWrapperElement().ownerDocument.createElement("div");
     marker.className = markerClass;
     cm.setGutterMarker(info.line, gutterName, marker);
-  },
+  }
 
   
 
@@ -913,7 +944,7 @@ Editor.prototype = {
     }
 
     this.lineInfo(line).gutterMarkers[gutterName].classList.remove(markerClass);
-  },
+  }
 
   
 
@@ -932,7 +963,7 @@ Editor.prototype = {
     
     marker.innerHTML = content;
     cm.setGutterMarker(info.line, gutterName, marker);
-  },
+  }
 
   
 
@@ -946,7 +977,7 @@ Editor.prototype = {
     }
 
     cm.setGutterMarker(info.line, gutterName, null);
-  },
+  }
 
   getMarker(line, gutterName) {
     const info = this.lineInfo(line);
@@ -960,7 +991,7 @@ Editor.prototype = {
     }
 
     return gutterMarkers[gutterName];
-  },
+  }
 
   
 
@@ -968,7 +999,7 @@ Editor.prototype = {
   removeAllMarkers(gutterName) {
     const cm = editors.get(this);
     cm.clearGutter(gutterName);
-  },
+  }
 
   
 
@@ -991,7 +1022,7 @@ Editor.prototype = {
       const listener = eventsArg[name].bind(this, line, marker, data);
       marker.addEventListener(name, listener);
     }
-  },
+  }
 
   
 
@@ -1004,7 +1035,7 @@ Editor.prototype = {
     }
 
     return info.wrapClass.split(" ").includes(className);
-  },
+  }
 
   
 
@@ -1013,7 +1044,7 @@ Editor.prototype = {
     const cm = editors.get(this);
     const line = this.toLineIfWasmOffset(lineOrOffset);
     cm.addLineClass(line, "wrap", className);
-  },
+  }
 
   
 
@@ -1022,7 +1053,7 @@ Editor.prototype = {
     const cm = editors.get(this);
     const line = this.toLineIfWasmOffset(lineOrOffset);
     cm.removeLineClass(line, "wrap", className);
-  },
+  }
 
   
 
@@ -1041,7 +1072,7 @@ Editor.prototype = {
       anchor: span,
       clear: () => mark.clear(),
     };
-  },
+  }
 
   
 
@@ -1055,7 +1086,7 @@ Editor.prototype = {
     const cm = editors.get(this);
     const res = args.map(ind => cm.posFromIndex(ind));
     return args.length === 1 ? res[0] : res;
-  },
+  }
 
   
 
@@ -1066,7 +1097,7 @@ Editor.prototype = {
     const cm = editors.get(this);
     const res = args.map(pos => cm.indexFromPos(pos));
     return args.length > 1 ? res : res[0];
-  },
+  }
 
   
 
@@ -1075,7 +1106,7 @@ Editor.prototype = {
   getPositionFromCoords({ left, top }) {
     const cm = editors.get(this);
     return cm.coordsChar({ left, top });
-  },
+  }
 
   
 
@@ -1084,7 +1115,7 @@ Editor.prototype = {
   getCoordsFromPosition({ line, ch }) {
     const cm = editors.get(this);
     return cm.charCoords({ line: ~~line, ch: ~~ch });
-  },
+  }
 
   
 
@@ -1092,7 +1123,7 @@ Editor.prototype = {
   canUndo() {
     const cm = editors.get(this);
     return cm.historySize().undo > 0;
-  },
+  }
 
   
 
@@ -1100,7 +1131,7 @@ Editor.prototype = {
   canRedo() {
     const cm = editors.get(this);
     return cm.historySize().redo > 0;
-  },
+  }
 
   
 
@@ -1112,7 +1143,7 @@ Editor.prototype = {
     this._lastDirty = false;
     this.emit("dirty-change");
     return this.version;
-  },
+  }
 
   
 
@@ -1121,7 +1152,7 @@ Editor.prototype = {
   isClean() {
     const cm = editors.get(this);
     return cm.isClean(this.version);
-  },
+  }
 
   
 
@@ -1148,7 +1179,7 @@ Editor.prototype = {
         this.setCursor({ line: matchLine - 1, ch: column ? column - 1 : 0 });
       }
     });
-  },
+  }
 
   
 
@@ -1187,7 +1218,7 @@ Editor.prototype = {
       { line: start.line - 1, ch: start.ch },
       { line: end.line - 1, ch: end.ch }
     );
-  },
+  }
 
   
 
@@ -1224,7 +1255,7 @@ Editor.prototype = {
       { line: start.line + 1, ch: start.ch },
       { line: end.line + 1, ch: end.ch }
     );
-  },
+  }
 
   
 
@@ -1252,7 +1283,7 @@ Editor.prototype = {
     
     
     cm.execCommand("find");
-  },
+  }
 
   
 
@@ -1284,7 +1315,7 @@ Editor.prototype = {
     } else {
       cm.execCommand("findNext");
     }
-  },
+  }
 
   
 
@@ -1295,7 +1326,7 @@ Editor.prototype = {
     const win = el.ownerDocument.defaultView;
 
     return parseInt(win.getComputedStyle(el).getPropertyValue("font-size"), 10);
-  },
+  }
 
   
 
@@ -1304,7 +1335,7 @@ Editor.prototype = {
     const cm = editors.get(this);
     cm.getWrapperElement().style.fontSize = parseInt(size, 10) + "px";
     cm.refresh();
-  },
+  }
 
   
 
@@ -1333,7 +1364,7 @@ Editor.prototype = {
       
       this.updateCodeFoldingGutter();
     }
-  },
+  }
 
   
 
@@ -1347,7 +1378,7 @@ Editor.prototype = {
     }
 
     return cm.getOption(o);
-  },
+  }
 
   
 
@@ -1376,7 +1407,7 @@ Editor.prototype = {
     } else {
       this.destroyAutoCompletion();
     }
-  },
+  }
 
   getAutoCompletionText() {
     const cm = editors.get(this);
@@ -1388,7 +1419,7 @@ Editor.prototype = {
     }
 
     return mark.attributes["data-completion"] || "";
-  },
+  }
 
   setAutoCompletionText(text) {
     const cursor = this.getCursor();
@@ -1411,7 +1442,7 @@ Editor.prototype = {
         });
       }
     });
-  },
+  }
 
   
 
@@ -1442,11 +1473,11 @@ Editor.prototype = {
 
       this[name] = funcs[name].bind(null, ctx);
     });
-  },
+  }
 
   isDestroyed() {
     return !editors.get(this);
-  },
+  }
 
   destroy() {
     this.container = null;
@@ -1472,7 +1503,7 @@ Editor.prototype = {
     }
 
     this.emit("destroy");
-  },
+  }
 
   updateCodeFoldingGutter() {
     let shouldFoldGutter = this.config.enableCodeFolding;
@@ -1509,7 +1540,7 @@ Editor.prototype = {
 
       this.setOption("foldGutter", false);
     }
-  },
+  }
 
   
 
@@ -1531,7 +1562,7 @@ Editor.prototype = {
       const key = L10N.getStr(name);
       shortcuts.on(key, event => this._onSearchShortcut(name, event));
     });
-  },
+  }
   
 
 
@@ -1567,7 +1598,7 @@ Editor.prototype = {
     
     event.stopPropagation();
     event.preventDefault();
-  },
+  }
 
   
 
@@ -1575,8 +1606,8 @@ Editor.prototype = {
   _isInputOrTextarea(element) {
     const name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
-  },
-};
+  }
+}
 
 
 
@@ -1587,36 +1618,6 @@ CM_MAPPING.forEach(name => {
     return cm[name].apply(cm, args);
   };
 });
-
-
-
-
-
-
-
-
-
-
-
-Editor.accel = function (key, modifiers = {}) {
-  return (
-    (modifiers.shift ? "Shift-" : "") +
-    (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") +
-    (modifiers.alt ? "Alt-" : "") +
-    key
-  );
-};
-
-
-
-
-
-
-
-Editor.keyFor = function (cmd, opts = { noaccel: false }) {
-  const key = L10N.getStr(cmd + ".commandkey");
-  return opts.noaccel ? key : Editor.accel(key);
-};
 
 
 
