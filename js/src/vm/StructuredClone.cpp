@@ -1396,6 +1396,12 @@ bool JSStructuredCloneWriter::writeArrayBuffer(HandleObject obj) {
                                     obj->maybeUnwrapAs<ArrayBufferObject>());
   JSAutoRealm ar(context(), buffer);
 
+  
+  if (buffer->isResizable()) {
+    reportDataCloneError(JS_SCERR_UNSUPPORTED_TYPE);
+    return false;
+  }
+
   if (!out.writePair(SCTAG_ARRAY_BUFFER_OBJECT, 0)) {
     return false;
   }
@@ -2251,6 +2257,12 @@ bool JSStructuredCloneWriter::transferOwnership() {
 
       if (arrayBuffer->isPreparedForAsmJS()) {
         reportDataCloneError(JS_SCERR_WASM_NO_TRANSFER);
+        return false;
+      }
+
+      
+      if (arrayBuffer->isResizable()) {
+        reportDataCloneError(JS_SCERR_UNSUPPORTED_TYPE);
         return false;
       }
 

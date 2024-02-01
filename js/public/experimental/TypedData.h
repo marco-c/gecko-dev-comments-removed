@@ -282,6 +282,14 @@ JS_PUBLIC_API bool IsLargeArrayBufferView(JSObject* obj);
 
 
 
+JS_PUBLIC_API bool IsResizableArrayBufferView(JSObject* obj);
+
+
+
+
+
+
+
 
 
 
@@ -360,6 +368,7 @@ class JS_PUBLIC_API ArrayBufferOrView {
   }
 
   bool isDetached() const;
+  bool isResizable() const;
 
   void exposeToActiveJS() const {
     if (obj) {
@@ -405,9 +414,6 @@ class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
 
   static ArrayBuffer create(JSContext* cx, size_t nbytes);
 
-  bool isDetached() const;
-  bool isSharedMemory() const;
-
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);
 };
@@ -432,7 +438,7 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
   }
 
   bool isDetached() const;
-  bool isSharedMemory() const;
+  bool isResizable() const;
 
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);

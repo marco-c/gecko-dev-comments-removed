@@ -96,6 +96,14 @@ extern JS_PUBLIC_API uint8_t* GetArrayBufferMaybeSharedData(
 
 extern JS_PUBLIC_API bool IsLargeArrayBufferMaybeShared(JSObject* obj);
 
+
+
+
+
+
+
+extern JS_PUBLIC_API bool IsResizableArrayBufferMaybeShared(JSObject* obj);
+
 }  
 
 #endif 
