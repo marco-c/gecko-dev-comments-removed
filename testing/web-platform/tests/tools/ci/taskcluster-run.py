@@ -23,10 +23,7 @@ def get_browser_args(product, channel, artifact_path):
         return ["--install-browser", "--processes=12"]
     if product == "chrome" or product == "chromium":
         
-        args = ["--enable-swiftshader"]
-        if channel == "nightly":
-            args.extend(["--install-browser", "--install-webdriver"])
-        return args
+        return ["--enable-swiftshader", "--install-browser", "--install-webdriver"]
     if product == "webkitgtk_minibrowser":
         
         
