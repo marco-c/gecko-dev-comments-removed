@@ -1638,15 +1638,6 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
 
   
   
-  
-  
-  if (primaryFrame->BackfaceIsHidden()) {
-    aPerformanceWarning =
-        AnimationPerformanceWarning::Type::TransformBackfaceVisibilityHidden;
-    return false;
-  }
-  
-  
   if (primaryFrame->IsSVGTransformed()) {
     aPerformanceWarning = AnimationPerformanceWarning::Type::TransformSVG;
     return false;
