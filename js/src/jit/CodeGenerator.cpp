@@ -8991,7 +8991,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   
   
   uint32_t framePushedAtStackMapBase =
-      masm.framePushed() - callBase->stackArgAreaSizeUnaligned();
+      masm.framePushed() -
+      wasm::AlignStackArgAreaSize(callBase->stackArgAreaSizeUnaligned());
   lir->safepoint()->setFramePushedAtStackMapBase(framePushedAtStackMapBase);
   MOZ_ASSERT(lir->safepoint()->wasmSafepointKind() ==
              WasmSafepointKind::LirCall);
@@ -14698,9 +14699,13 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   const size_t nBodyBytes = safepoint.framePushedAtStackMapBase();
 
   
+  const size_t nInboundStackArgBytesAligned =
+      wasm::AlignStackArgAreaSize(nInboundStackArgBytes);
+
+  
   
   const size_t nNonRegisterBytes =
-      nBodyBytes + nFrameBytes + nInboundStackArgBytes;
+      nBodyBytes + nFrameBytes + nInboundStackArgBytesAligned;
   MOZ_ASSERT(nNonRegisterBytes % sizeof(void*) == 0);
 
   
@@ -14826,7 +14831,7 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   
   
   
-  stackMap->setFrameOffsetFromTop((nInboundStackArgBytes + nFrameBytes) /
+  stackMap->setFrameOffsetFromTop((nInboundStackArgBytesAligned + nFrameBytes) /
                                   sizeof(void*));
 #ifdef DEBUG
   for (uint32_t i = 0; i < nFrameBytes / sizeof(void*); i++) {

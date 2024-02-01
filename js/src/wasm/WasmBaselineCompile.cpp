@@ -381,11 +381,11 @@ bool BaseCompiler::beginFunction() {
   ArgTypeVector args(funcType());
   size_t inboundStackArgBytes = StackArgAreaSizeUnaligned(args);
   MOZ_ASSERT(inboundStackArgBytes % sizeof(void*) == 0);
-  stackMapGenerator_.numStackArgWords = inboundStackArgBytes / sizeof(void*);
+  stackMapGenerator_.numStackArgBytes = inboundStackArgBytes;
 
   MOZ_ASSERT(stackMapGenerator_.machineStackTracker.length() == 0);
   if (!stackMapGenerator_.machineStackTracker.pushNonGCPointers(
-          stackMapGenerator_.numStackArgWords)) {
+          stackMapGenerator_.numStackArgBytes / sizeof(void*))) {
     return false;
   }
 
@@ -1391,16 +1391,13 @@ void BaseCompiler::startCallArgs(size_t stackArgAreaSizeUnaligned,
   
   
   
-  
   MOZ_ASSERT(
       stackMapGenerator_.framePushedExcludingOutboundCallArgs.isNothing());
   stackMapGenerator_.framePushedExcludingOutboundCallArgs.emplace(
       
       masm.framePushed() +
       
-      call->frameAlignAdjustment +
-      
-      (stackArgAreaSizeAligned - stackArgAreaSizeUnaligned));
+      call->frameAlignAdjustment);
 
   call->stackArgAreaSize = stackArgAreaSizeAligned;
 

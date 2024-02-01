@@ -80,9 +80,13 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
   const size_t trapExitLayoutBytes = trapExitLayoutWords * sizeof(void*);
 
   
+  const size_t nInboundStackArgBytesAligned =
+      AlignStackArgAreaSize(nInboundStackArgBytes);
+
+  
   const DebugOnly<size_t> nTotalBytes = trapExitLayoutBytes +
                                         nBytesReservedBeforeTrap + nFrameBytes +
-                                        nInboundStackArgBytes;
+                                        nInboundStackArgBytesAligned;
 
   
   
@@ -121,8 +125,8 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
   }
 
   
-  MOZ_ASSERT(nInboundStackArgBytes % sizeof(void*) == 0);
-  const size_t numStackArgWords = nInboundStackArgBytes / sizeof(void*);
+  MOZ_ASSERT(nInboundStackArgBytesAligned % sizeof(void*) == 0);
+  const size_t numStackArgWords = nInboundStackArgBytesAligned / sizeof(void*);
 
   const size_t wordsSoFar = vec.length();
   if (!vec.appendN(false, numStackArgWords)) {

@@ -1319,7 +1319,7 @@ struct StackMapGenerator {
   
 
   
-  size_t numStackArgWords;
+  size_t numStackArgBytes;
 
   MachineStackTracker machineStackTracker;  
 
@@ -1366,7 +1366,7 @@ struct StackMapGenerator {
         trapExitLayoutNumWords_(trapExitLayoutNumWords),
         stackMaps_(stackMaps),
         masm_(masm),
-        numStackArgWords(0),
+        numStackArgBytes(0),
         memRefsOnStk(0) {}
 
   
