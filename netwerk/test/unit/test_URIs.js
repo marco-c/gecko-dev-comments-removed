@@ -966,3 +966,15 @@ add_task(async function round_trip_invalid_ace_label() {
     uri = Services.io.newURI("http://a.b.c.XN--pokxncvks");
   }, /NS_ERROR_MALFORMED_URI/);
 });
+
+add_task(async function test_bug1843717() {
+  
+  
+  let base = Services.io.newURI("file:///abc\\def/");
+  let uri = Services.io.newURI("foo\\bar#x\\y", null, base);
+  Assert.equal(uri.spec, "file:///abc/def/foo/bar#x\\y");
+  uri = Services.io.newURI("foo\\bar#xy", null, base);
+  Assert.equal(uri.spec, "file:///abc/def/foo/bar#xy");
+  uri = Services.io.newURI("foo\\bar#", null, base);
+  Assert.equal(uri.spec, "file:///abc/def/foo/bar#");
+});

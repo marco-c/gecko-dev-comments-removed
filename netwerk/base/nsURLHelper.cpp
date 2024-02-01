@@ -516,6 +516,11 @@ bool net_NormalizeFileURL(const nsACString& aURL, nsCString& aResultBuf) {
       aResultBuf += '/';
       begin = s + 1;
     }
+    if (*s == '#') {
+      
+      s = endIter.get();
+      break;
+    }
   }
   if (writing && s > begin) aResultBuf.Append(begin, s - begin);
 
