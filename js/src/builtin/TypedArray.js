@@ -1214,6 +1214,10 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
 
   
   var firstElement = array[0];
+  assert(
+    typeof firstElement === "number" || typeof firstElement === "bigint",
+    "TypedArray elements are either Numbers or BigInts"
+  );
 
   
   
@@ -1240,21 +1244,23 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
   
   for (var k = 1; k < len; k++) {
     
-    var S = R + separator;
+    R += separator;
 
     
     var nextElement = array[k];
 
     
-    
-    
-    
-    
-    
+    if (nextElement === undefined) {
+      continue;
+    }
+    assert(
+      typeof nextElement === "number" || typeof nextElement === "bigint",
+      "TypedArray elements are either Numbers or BigInts"
+    );
 
     
 #if JS_HAS_INTL_API
-    R = ToString(
+    R += ToString(
       callContentFunction(
         nextElement.toLocaleString,
         nextElement,
@@ -1263,11 +1269,8 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
       )
     );
 #else
-    R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));
+    R += ToString(callContentFunction(nextElement.toLocaleString, nextElement));
 #endif
-
-    
-    R = S + R;
   }
 
   
