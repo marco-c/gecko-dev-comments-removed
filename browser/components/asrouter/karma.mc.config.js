@@ -159,7 +159,13 @@ module.exports = function (config) {
                     [
                       "../newtab/tools/babel-jsm-to-commonjs.js",
                       {
-                        basePath: PATHS.resourcePathRegEx,
+                        basePaths: [
+                          
+                          
+                          
+                          [PATHS.resourcePathRegEx, ""],
+                          [new RegExp("^resource:///modules/asrouter/"), "./"],
+                        ],
                         removeOtherImports: true,
                         replace: true,
                       },
