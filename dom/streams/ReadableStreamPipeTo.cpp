@@ -607,7 +607,7 @@ void PipeToPump::OnReadFulfilled(JSContext* aCx, JS::Handle<JS::Value> aChunk,
   
   
   RefPtr<Promise> promise =
-      Promise::CreateInfallible(mWriter->GetParentObject());
+      Promise::CreateInfallible(xpc::CurrentNativeGlobal(aCx));
   promise->MaybeResolveWithUndefined();
   auto result = promise->ThenWithCycleCollectedArgsJS(
       [](JSContext* aCx, JS::Handle<JS::Value>, ErrorResult& aRv,
