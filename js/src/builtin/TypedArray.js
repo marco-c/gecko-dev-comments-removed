@@ -177,6 +177,34 @@ function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
   ValidateTypedArray(newTypedArray);
 
   
+  
+  PossiblyWrappedTypedArrayLength(newTypedArray);
+
+  
+
+  
+  return newTypedArray;
+}
+
+
+
+function TypedArrayCreateWithResizableBuffer(constructor, buffer, byteOffset) {
+  
+  var newTypedArray = constructContentFunction(
+    constructor,
+    constructor,
+    buffer,
+    byteOffset
+  );
+
+  
+  ValidateTypedArray(newTypedArray);
+
+  
+  
+  PossiblyWrappedTypedArrayLength(newTypedArray);
+
+  
 
   
   return newTypedArray;
@@ -209,6 +237,22 @@ function TypedArraySpeciesCreateWithBuffer(
 
   
   return TypedArrayCreateWithBuffer(C, buffer, byteOffset, length);
+}
+
+
+
+function TypedArraySpeciesCreateWithResizableBuffer(
+  exemplar,
+  buffer,
+  byteOffset
+) {
+  
+
+  
+  var C = TypedArraySpeciesConstructor(exemplar);
+
+  
+  return TypedArrayCreateWithResizableBuffer(C, buffer, byteOffset);
 }
 
 
@@ -1271,6 +1315,20 @@ function TypedArraySubarray(begin, end) {
       : std_Math_min(relativeBegin, srcLength);
 
   
+  var elementSize = TypedArrayElementSize(obj);
+
+  
+  var beginByteOffset = srcByteOffset + beginIndex * elementSize;
+
+  if (end === undefined && TypedArrayIsAutoLength(obj)) {
+    return TypedArraySpeciesCreateWithResizableBuffer(
+      obj,
+      buffer,
+      beginByteOffset
+    );
+  }
+
+  
   var relativeEnd = end === undefined ? srcLength : ToInteger(end);
 
   
@@ -1281,12 +1339,6 @@ function TypedArraySubarray(begin, end) {
 
   
   var newLength = std_Math_max(endIndex - beginIndex, 0);
-
-  
-  var elementSize = TypedArrayElementSize(obj);
-
-  
-  var beginByteOffset = srcByteOffset + beginIndex * elementSize;
 
   
   return TypedArraySpeciesCreateWithBuffer(
