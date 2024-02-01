@@ -271,7 +271,7 @@ pub fn set_real_time_hard_limit_internal(
         
         audio_samplerate_hz / 20
     };
-    let budget_us = (buffer_frames * 1_000_000 / audio_samplerate_hz) as u64;
+    let budget_us = buffer_frames as u64 * 1_000_000 / audio_samplerate_hz as u64;
 
     
     
