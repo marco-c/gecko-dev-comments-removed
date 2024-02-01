@@ -77,9 +77,6 @@ enum class PixelCastJustification : uint8_t {
   
   
   CSSPixelsOfSurroundingContent,
-  
-  
-  UntypedPrePostScale,
 };
 
 template <class TargetUnits, class SourceUnits>

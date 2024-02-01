@@ -1118,6 +1118,24 @@ class Matrix4x4Typed {
     return *this;
   }
 
+  template <typename NewSourceUnits>
+  [[nodiscard]] Matrix4x4Typed<NewSourceUnits, TargetUnits> PreScale(
+      const ScaleFactor<NewSourceUnits, SourceUnits>& aScale) const {
+    auto clone = Matrix4x4Typed<NewSourceUnits, TargetUnits>::FromUnknownMatrix(
+        ToUnknownMatrix());
+    clone.PreScale(aScale.scale, aScale.scale, 1);
+    return clone;
+  }
+
+  template <typename NewSourceUnits>
+  [[nodiscard]] Matrix4x4Typed<NewSourceUnits, TargetUnits> PreScale(
+      const BaseScaleFactors2D<NewSourceUnits, SourceUnits, T>& aScale) const {
+    auto clone = Matrix4x4Typed<NewSourceUnits, TargetUnits>::FromUnknownMatrix(
+        ToUnknownMatrix());
+    clone.PreScale(aScale.xScale, aScale.yScale, 1);
+    return clone;
+  }
+
   
 
 
@@ -1136,6 +1154,24 @@ class Matrix4x4Typed {
     _43 *= aScaleZ;
 
     return *this;
+  }
+
+  template <typename NewTargetUnits>
+  [[nodiscard]] Matrix4x4Typed<SourceUnits, NewTargetUnits> PostScale(
+      const ScaleFactor<TargetUnits, NewTargetUnits>& aScale) const {
+    auto clone = Matrix4x4Typed<SourceUnits, NewTargetUnits>::FromUnknownMatrix(
+        ToUnknownMatrix());
+    clone.PostScale(aScale.scale, aScale.scale, 1);
+    return clone;
+  }
+
+  template <typename NewTargetUnits>
+  [[nodiscard]] Matrix4x4Typed<SourceUnits, NewTargetUnits> PostScale(
+      const BaseScaleFactors2D<TargetUnits, NewTargetUnits, T>& aScale) const {
+    auto clone = Matrix4x4Typed<SourceUnits, NewTargetUnits>::FromUnknownMatrix(
+        ToUnknownMatrix());
+    clone.PostScale(aScale.xScale, aScale.yScale, 1);
+    return clone;
   }
 
   void SkewXY(T aSkew) { (*this)[1] += (*this)[0] * aSkew; }
