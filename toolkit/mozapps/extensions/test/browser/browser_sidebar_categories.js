@@ -82,7 +82,13 @@ add_task(async function testClickingSidebarPaddingNoChange() {
 
   
   await loadDetailView();
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouse(themeCategory, -5, -5, {}, win);
+  AccessibilityUtils.resetEnv();
   ok(!win.gViewController.isLoading, "No view is loading");
 
   await closeView(win);
