@@ -1479,13 +1479,37 @@ impl Animate for ComputedRotate {
                 
                 
                 
-                
-                
-                
-                let fq = Quaternion::from_direction_and_angle(&fv, fa.radians64());
-                let tq = Quaternion::from_direction_and_angle(&tv, ta.radians64());
+                let rq = if procedure == Procedure::Add {
+                    
+                    
+                    
+                    
+                    let f = ComputedTransformOperation::Rotate3D(fx, fy, fz, fa);
+                    let t = ComputedTransformOperation::Rotate3D(tx, ty, tz, ta);
+                    let v =
+                        Transform(vec![f].into()).animate(&Transform(vec![t].into()), procedure)?;
+                    let (m, _) = v.to_transform_3d_matrix(None)?;
+                    
+                    decompose_3d_matrix(Matrix3D::from(m))?.quaternion
+                } else {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let fq = Quaternion::from_direction_and_angle(&fv, fa.radians64());
+                    let tq = Quaternion::from_direction_and_angle(&tv, ta.radians64());
+                    Quaternion::animate(&fq, &tq, procedure)?
+                };
 
-                let rq = Quaternion::animate(&fq, &tq, procedure)?;
+                debug_assert!(rq.3 <= 1.0 && rq.3 >= -1.0, "Invalid cosine value");
                 let (x, y, z, angle) = transform::get_normalized_vector_and_angle(
                     rq.0 as f32,
                     rq.1 as f32,
