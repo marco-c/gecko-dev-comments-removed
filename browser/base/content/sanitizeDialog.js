@@ -208,7 +208,7 @@ var gSanitizePromptDialog = {
     
     if (
       this.selectedTimespan === Sanitizer.TIMESPAN_EVERYTHING &&
-      !arg.inClearOnShutdown
+      !this._inClearOnShutdownNewDialog
     ) {
       this.prepareWarning();
       this.warningBox.hidden = false;
