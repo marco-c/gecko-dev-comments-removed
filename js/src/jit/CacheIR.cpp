@@ -31,6 +31,7 @@
 #include "js/friend/WindowProxy.h"  
 #include "js/friend/XrayJitInfo.h"  
 #include "js/GCAPI.h"               
+#include "js/Prefs.h"               
 #include "js/RegExpFlags.h"         
 #include "js/ScalarType.h"          
 #include "js/Utility.h"             
@@ -14155,7 +14156,7 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   
   
   
-  bool useDynamicCheck = !intact || !cx_->options().enableDestructuringFuse();
+  bool useDynamicCheck = !intact || !JS::Prefs::destructuring_fuse();
   if (useDynamicCheck) {
     
     ObjOperandId arrProtoId = writer.loadObject(arrProto);
