@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Set.prototype.isDisjointFrom,
+  "function",
+  "`typeof Set.prototype.isDisjointFrom` is `'function'`"
+);
+
+verifyProperty(Set.prototype, "isDisjointFrom", {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
+
+reportCompare(0, 0);

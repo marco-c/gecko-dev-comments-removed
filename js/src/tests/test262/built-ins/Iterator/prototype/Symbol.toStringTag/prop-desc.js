@@ -8,16 +8,12 @@
 
 
 
-
-
-
-
-
-verifyProperty(Iterator.prototype, Symbol.toStringTag, {
-  value: 'Iterator',
-  writable: true,
-  enumerable: false,
-  configurable: true,
-});
+let desc = Object.getOwnPropertyDescriptor(Iterator.prototype, Symbol.toStringTag);
+assert.sameValue(typeof desc.get, 'function');
+assert.sameValue(typeof desc.set, 'function');
+assert.sameValue(desc.configurable, true);
+assert.sameValue(desc.enumerable, false);
+assert.sameValue(desc.value, undefined);
+assert.sameValue(desc.writable, undefined);
 
 reportCompare(0, 0);

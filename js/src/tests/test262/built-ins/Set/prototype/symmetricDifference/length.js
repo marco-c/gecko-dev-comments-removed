@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Set.prototype.symmetricDifference, "function");
+
+verifyProperty(Set.prototype.symmetricDifference, "length", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: 1,
+});
+
+reportCompare(0, 0);

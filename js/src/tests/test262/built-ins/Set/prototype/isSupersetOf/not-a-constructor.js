@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Set.prototype.isSupersetOf),
+  false,
+  "isConstructor(Set.prototype.isSupersetOf) must return false"
+);
+
+assert.throws(
+  TypeError,
+  () => {
+    new Set.prototype.isSupersetOf();
+  },
+  "`new Set.prototype.isSupersetOf()` throws TypeError"
+);
+
+reportCompare(0, 0);
