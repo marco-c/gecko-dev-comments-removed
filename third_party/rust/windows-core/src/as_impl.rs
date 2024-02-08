@@ -1,0 +1,10 @@
+
+
+
+pub trait AsImpl<T> {
+    
+    
+    
+    
+    unsafe fn as_impl(&self) -> &T;
+}
