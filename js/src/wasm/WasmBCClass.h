@@ -1722,9 +1722,20 @@ struct BaseCompiler final {
   
   RegPtr loadSuperTypeVector(uint32_t typeIndex);
 
+  
+  
+  
   template <bool ZeroFields>
   bool emitStructAlloc(uint32_t typeIndex, RegRef* object,
                        bool* isOutlineStruct, RegPtr* outlineBase);
+  
+  template <bool ZeroFields>
+  bool emitArrayAlloc(uint32_t typeIndex, RegRef object, RegI32 numElements,
+                      uint32_t elemSize);
+  
+  template <bool ZeroFields>
+  bool emitArrayAllocFixed(uint32_t typeIndex, RegRef object,
+                           uint32_t numElements, uint32_t elemSize);
 
   template <typename NullCheckPolicy>
   RegPtr emitGcArrayGetData(RegRef rp);

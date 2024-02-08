@@ -7244,9 +7244,6 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
   return true;
 }
 
-
-
-
 template <bool ZeroFields>
 bool BaseCompiler::emitStructAlloc(uint32_t typeIndex, RegRef* object,
                                    bool* isOutlineStruct, RegPtr* outlineBase) {
@@ -7546,6 +7543,116 @@ bool BaseCompiler::emitStructSet() {
   return true;
 }
 
+template <bool ZeroFields>
+bool BaseCompiler::emitArrayAlloc(uint32_t typeIndex, RegRef object,
+                                  RegI32 numElements, uint32_t elemSize) {
+  
+  
+  sync();
+
+  RegPtr instance;
+#  ifndef RABALDR_PIN_INSTANCE
+  
+  
+  instance = RegPtr(object);
+  fr.loadInstancePtr(instance);
+#  else
+  
+  instance = RegPtr(InstanceReg);
+#  endif
+
+  RegPtr typeDefData = loadTypeDefInstanceData(typeIndex);
+  RegPtr temp = needPtr();
+
+  Label success;
+  Label fail;
+  masm.wasmNewArrayObject(instance, object, numElements, typeDefData, temp,
+                          &fail, elemSize, ZeroFields);
+  freePtr(temp);
+  masm.jump(&success);
+
+  masm.bind(&fail);
+  freeRef(object);
+  pushI32(numElements);
+  pushPtr(typeDefData);
+  if (!emitInstanceCall(ZeroFields ? SASigArrayNew_true
+                                   : SASigArrayNew_false)) {
+    return false;
+  }
+  popRef(object);
+
+  masm.bind(&success);
+  return true;
+}
+
+template <bool ZeroFields>
+bool BaseCompiler::emitArrayAllocFixed(uint32_t typeIndex, RegRef object,
+                                       uint32_t numElements,
+                                       uint32_t elemSize) {
+  
+  
+  MOZ_ASSERT(WasmArrayObject::calcStorageBytesChecked(elemSize, numElements)
+                 .isValid());
+
+  SymbolicAddressSignature fun =
+      ZeroFields ? SASigArrayNew_true : SASigArrayNew_false;
+
+  uint32_t storageBytes =
+      WasmArrayObject::calcStorageBytes(elemSize, numElements);
+  if (storageBytes > WasmArrayObject_MaxInlineBytes) {
+    RegPtr typeDefData = loadTypeDefInstanceData(typeIndex);
+    freeRef(object);
+    pushI32(numElements);
+    pushPtr(typeDefData);
+    if (!emitInstanceCall(fun)) {
+      return false;
+    }
+    popRef(object);
+
+    return true;
+  }
+
+  
+  
+  sync();
+
+  RegPtr instance;
+#  ifndef RABALDR_PIN_INSTANCE
+  
+  
+  instance = RegPtr(object);
+  fr.loadInstancePtr(instance);
+#  else
+  
+  instance = RegPtr(InstanceReg);
+#  endif
+
+  RegPtr typeDefData = loadTypeDefInstanceData(typeIndex);
+  RegPtr temp1 = needPtr();
+  RegPtr temp2 = needPtr();
+
+  Label success;
+  Label fail;
+  masm.wasmNewArrayObjectFixed(instance, object, typeDefData, temp1, temp2,
+                               &fail, numElements, storageBytes, ZeroFields);
+  freePtr(temp1);
+  freePtr(temp2);
+  masm.jump(&success);
+
+  masm.bind(&fail);
+  freeRef(object);
+  pushI32(numElements);
+  pushPtr(typeDefData);
+  if (!emitInstanceCall(fun)) {
+    return false;
+  }
+  popRef(object);
+
+  masm.bind(&success);
+
+  return true;
+}
+
 bool BaseCompiler::emitArrayNew() {
   uint32_t typeIndex;
   Nothing nothing;
@@ -7561,25 +7668,24 @@ bool BaseCompiler::emitArrayNew() {
 
   
   
-  pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigArrayNew_false)) {
-    return false;
-  }
-
-  
-  
   if (arrayType.elementType_.isRefRepr()) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
-  RegRef rp = popRef();
+  RegRef object = needRef();
+  RegI32 numElements = popI32();
+  if (!emitArrayAlloc<false>(typeIndex, object, numElements,
+                             arrayType.elementType_.size())) {
+    return false;
+  }
+
   AnyReg value = popAny();
 
   
-  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(object);
 
   
-  RegI32 numElements = emitGcArrayGetNumElements<NoNullCheck>(rp);
+  numElements = emitGcArrayGetNumElements<NoNullCheck>(object);
 
   
   if (arrayType.elementType_.isRefRepr()) {
@@ -7598,7 +7704,7 @@ bool BaseCompiler::emitArrayNew() {
   masm.sub32(Imm32(1), numElements);
 
   
-  if (!emitGcArraySet(rp, rdata, numElements, arrayType, value,
+  if (!emitGcArraySet(object, rdata, numElements, arrayType, value,
                       PreBarrierKind::None)) {
     return false;
   }
@@ -7610,7 +7716,7 @@ bool BaseCompiler::emitArrayNew() {
   freeI32(numElements);
   freeAny(value);
   freePtr(rdata);
-  pushRef(rp);
+  pushRef(object);
 
   return true;
 }
@@ -7630,26 +7736,19 @@ bool BaseCompiler::emitArrayNewFixed() {
 
   
   
-  
-  
-  pushI32(numElements);
-  pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigArrayNew_true)) {
-    return false;
-  }
-
-  
-  
   bool avoidPreBarrierReg = arrayType.elementType_.isRefRepr();
   if (avoidPreBarrierReg) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
-  
-  RegRef rp = popRef();
+  RegRef object = needRef();
+  if (!emitArrayAllocFixed<false>(typeIndex, object, numElements,
+                                  arrayType.elementType_.size())) {
+    return false;
+  }
 
   
-  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(object);
 
   
   if (avoidPreBarrierReg) {
@@ -7677,7 +7776,7 @@ bool BaseCompiler::emitArrayNewFixed() {
     if (avoidPreBarrierReg) {
       freePtr(RegPtr(PreBarrierReg));
     }
-    if (!emitGcArraySet(rp, rdata, index, arrayType, value,
+    if (!emitGcArraySet(object, rdata, index, arrayType, value,
                         PreBarrierKind::None)) {
       return false;
     }
@@ -7687,7 +7786,7 @@ bool BaseCompiler::emitArrayNewFixed() {
 
   freePtr(rdata);
 
-  pushRef(rp);
+  pushRef(object);
   return true;
 }
 
@@ -7702,10 +7801,17 @@ bool BaseCompiler::emitArrayNewDefault() {
     return true;
   }
 
-  
-  
-  pushPtr(loadTypeDefInstanceData(typeIndex));
-  return emitInstanceCall(SASigArrayNew_true);
+  const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
+
+  RegRef object = needRef();
+  RegI32 numElements = popI32();
+  if (!emitArrayAlloc<true>(typeIndex, object, numElements,
+                            arrayType.elementType_.size())) {
+    return false;
+  }
+
+  pushRef(object);
+  return true;
 }
 
 bool BaseCompiler::emitArrayNewData() {
