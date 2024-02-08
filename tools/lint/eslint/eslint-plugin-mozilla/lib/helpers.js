@@ -6,7 +6,7 @@
 
 "use strict";
 
-const parser = require("@babel/eslint-parser");
+const parser = require("espree");
 const { analyze } = require("eslint-scope");
 const { KEYS: defaultVisitorKeys } = require("eslint-visitor-keys");
 const estraverse = require("estraverse");
@@ -96,18 +96,19 @@ module.exports = {
     
     let config = { ...this.getPermissiveConfig(configOptions), ...astOptions };
 
-    let parseResult =
-      "parseForESLint" in parser
-        ? parser.parseForESLint(sourceText, config)
-        : { ast: parser.parse(sourceText, config) };
+    let parseResult = parser.parse(sourceText, config);
 
     let visitorKeys = parseResult.visitorKeys || defaultVisitorKeys;
-    visitorKeys.ExperimentalRestProperty = visitorKeys.RestElement;
-    visitorKeys.ExperimentalSpreadProperty = visitorKeys.SpreadElement;
+
+    
+    
+    
+    config.ecmaVersion =
+      config.ecmaVersion == "latest" ? 1e8 : config.ecmaVersion;
 
     return {
-      ast: parseResult.ast,
-      scopeManager: parseResult.scopeManager || analyze(parseResult.ast),
+      ast: parseResult,
+      scopeManager: parseResult.scopeManager || analyze(parseResult, config),
       visitorKeys,
     };
   },
@@ -285,33 +286,14 @@ module.exports = {
 
 
   getPermissiveConfig({ useBabel = true } = {}) {
-    const config = {
+    return {
       range: true,
-      requireConfigFile: false,
-      babelOptions: {
-        
-        
-        
-        
-        
-        
-        
-        
-      },
       loc: true,
       comment: true,
       attachComment: true,
       ecmaVersion: this.getECMAVersion(),
       sourceType: "script",
     };
-
-    if (useBabel && this.isMozillaCentralBased()) {
-      config.babelOptions.configFile = path.join(
-        gRootDir,
-        ".babel-eslint.rc.js"
-      );
-    }
-    return config;
   },
 
   
