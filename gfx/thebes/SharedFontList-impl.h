@@ -200,12 +200,6 @@ class FontList {
 
   Pointer Alloc(uint32_t aSize);
 
-  
-
-
-
-  Pointer ToSharedPointer(const void* aPtr);
-
   uint32_t GetGeneration() { return GetHeader().mGeneration; }
 
   

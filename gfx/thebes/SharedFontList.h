@@ -198,7 +198,8 @@ struct Face {
     return !mDescriptor.IsNull() && mIndex != uint16_t(-1);
   }
 
-  void SetCharacterMap(FontList* aList, gfxCharacterMap* aCharMap);
+  void SetCharacterMap(FontList* aList, gfxCharacterMap* aCharMap,
+                       const Family* aFamily);
 
   String mDescriptor;
   uint16_t mIndex;
@@ -329,6 +330,10 @@ struct Family {
   void SearchAllFontsForChar(FontList* aList, GlobalFontMatch* aMatchData);
 
   void SetupFamilyCharMap(FontList* aList);
+
+  
+  
+  std::pair<uint32_t, bool> FindIndex(FontList* aList) const;
 
  private:
   
