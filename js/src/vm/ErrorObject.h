@@ -115,6 +115,7 @@ class ErrorObject : public NativeObject {
   
   inline JS::ColumnNumberOneOrigin columnNumber() const;
 
+  
   inline JSObject* stack() const;
 
   JSString* getMessage() const {

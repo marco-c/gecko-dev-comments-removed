@@ -39,7 +39,13 @@ inline JS::ColumnNumberOneOrigin js::ErrorObject::columnNumber() const {
 }
 
 inline JSObject* js::ErrorObject::stack() const {
-  return getReservedSlot(STACK_SLOT).toObjectOrNull();
+  
+  
+  JSObject* obj = getReservedSlot(STACK_SLOT).toObjectOrNull();
+  if (obj && obj->canUnwrapAs<SavedFrame>()) {
+    return obj;
+  }
+  return nullptr;
 }
 
 #endif 

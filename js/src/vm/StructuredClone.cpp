@@ -1936,7 +1936,8 @@ bool JSStructuredCloneWriter::traverseError(HandleObject obj) {
   
   RootedValue stack(cx, NullValue());
   RootedObject stackObj(cx, unwrapped->stack());
-  if (stackObj && stackObj->canUnwrapAs<SavedFrame>()) {
+  if (stackObj) {
+    MOZ_ASSERT(stackObj->canUnwrapAs<SavedFrame>());
     stack.setObject(*stackObj);
     if (!cx->compartment()->wrap(cx, &stack)) {
       return false;
