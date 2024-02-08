@@ -351,19 +351,6 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
                                        nsAtom* aLanguage = nullptr)
       MOZ_REQUIRES(mLock) override;
 
-  enum class DistroID : int8_t {
-    Unknown,
-    Ubuntu_any,
-    Ubuntu_20,
-    Ubuntu_22,
-    Fedora_any,
-    Fedora_38,
-    Fedora_39,
-    
-    
-  };
-  DistroID GetDistroID() const;  
-
   FontVisibility GetVisibilityForFamily(const nsACString& aName) const;
 
   gfxFontFamily* CreateFontFamily(const nsACString& aName,
