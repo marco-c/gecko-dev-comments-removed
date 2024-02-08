@@ -954,7 +954,9 @@ nsresult nsHttpChannel::ContinueConnect() {
   }
 
   
-  return DoConnect(mTransactionSticky);
+  nsresult rv = DoConnect(mTransactionSticky);
+  mTransactionSticky = nullptr;
+  return rv;
 }
 
 nsresult nsHttpChannel::DoConnect(HttpTransactionShell* aTransWithStickyConn) {
@@ -8193,8 +8195,6 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   
   mDNSPrefetch = nullptr;
-
-  mTransactionSticky = nullptr;
 
   mRedirectChannel = nullptr;
 
