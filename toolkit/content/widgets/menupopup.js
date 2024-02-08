@@ -7,10 +7,6 @@
 
 
 {
-  const { AppConstants } = ChromeUtils.importESModule(
-    "resource://gre/modules/AppConstants.sys.mjs"
-  );
-
   
   
   
@@ -23,12 +19,7 @@
     function (e) {
       if (e.target.nodeName == "menupopup") {
         let haveCheckableChild = e.target.querySelector(
-          `:scope > menuitem:not([hidden]):is([type=checkbox],[type=radio]${
-            
-            AppConstants.platform == "macosx"
-              ? ",[checked=true],[selected=true]"
-              : ""
-          })`
+          ":scope > menuitem:not([hidden]):is([type=checkbox],[type=radio])"
         );
         e.target.toggleAttribute("needsgutter", haveCheckableChild);
       }
