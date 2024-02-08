@@ -56,11 +56,11 @@ class nsTLiteralString : public mozilla::detail::nsTStringRepr<T> {
 
 
 
-  const nsTString<T>& AsString() const MOZ_LIFETIME_BOUND {
+  MOZ_LIFETIME_BOUND const nsTString<T>& AsString() const {
     return *reinterpret_cast<const nsTString<T>*>(this);
   }
 
-  operator const nsTString<T>&() const MOZ_LIFETIME_BOUND { return AsString(); }
+  MOZ_LIFETIME_BOUND operator const nsTString<T>&() const { return AsString(); }
 
   template <typename N, typename Dummy>
   struct raw_type {
