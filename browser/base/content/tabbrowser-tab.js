@@ -259,6 +259,14 @@
       return this._lastAccessed == Infinity ? Date.now() : this._lastAccessed;
     }
 
+    
+
+
+
+
+
+
+
     get lastSeenActive() {
       const isForegroundWindow =
         this.ownerGlobal ==
@@ -270,8 +278,16 @@
       if (this._lastSeenActive) {
         return this._lastSeenActive;
       }
+
+      const appStartTime = Services.startup.getStartupInfo().start.getTime();
+      if (!this._lastAccessed || this._lastAccessed >= appStartTime) {
+        
+        
+        return appStartTime;
+      }
       
-      return Services.startup.getStartupInfo().start.getTime();
+      
+      return this._lastAccessed;
     }
 
     get _overPlayingIcon() {
