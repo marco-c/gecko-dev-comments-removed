@@ -101,6 +101,9 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
     Idle,
 
     
+    Queued,
+
+    
     
     Dispatched,
 
@@ -170,9 +173,6 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
   void startOrRunIfIdle(AutoLockHelperThreadState& lock);
 
   
-  void cancelDispatchedTask(AutoLockHelperThreadState& lock);
-
-  
   void cancelAndWait();
 
   
@@ -190,8 +190,17 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
     return isDispatched(lock) || isRunning(lock);
   }
 
+  bool isQueued(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Queued;
+  }
+
   bool isDispatched(const AutoLockHelperThreadState& lock) const {
     return state_ == State::Dispatched;
+  }
+
+  bool isNotYetRunning(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Idle || state_ == State::Queued ||
+           state_ == State::Dispatched;
   }
 
  protected:
@@ -216,12 +225,16 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
     return state_ == State::Finished;
   }
 
-  void setDispatched(const AutoLockHelperThreadState& lock) {
+  void setQueued(const AutoLockHelperThreadState& lock) {
     MOZ_ASSERT(isIdle(lock));
+    state_ = State::Queued;
+  }
+  void setDispatched(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(isIdle(lock) || isQueued(lock));
     state_ = State::Dispatched;
   }
   void setRunning(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(isDispatched(lock));
+    MOZ_ASSERT(isNotYetRunning(lock));
     state_ = State::Running;
   }
   void setFinished(const AutoLockHelperThreadState& lock) {
@@ -229,9 +242,10 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
     state_ = State::Finished;
   }
   void setIdle(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(isDispatched(lock) || isFinished(lock));
+    MOZ_ASSERT(!isRunning(lock));
     state_ = State::Idle;
   }
+  friend class gc::GCRuntime;
 
   void runTask(JS::GCContext* gcx, AutoLockHelperThreadState& lock);
 

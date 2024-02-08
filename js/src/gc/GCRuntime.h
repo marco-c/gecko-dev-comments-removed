@@ -625,6 +625,14 @@ class GCRuntime {
   size_t parallelWorkerCount() const;
 
   
+  size_t getMaxParallelThreads() const;
+  void dispatchOrQueueParallelTask(GCParallelTask* task,
+                                   const AutoLockHelperThreadState& lock);
+  void maybeDispatchParallelTasks(const AutoLockHelperThreadState& lock);
+  void onParallelTaskEnd(bool wasDispatched,
+                         const AutoLockHelperThreadState& lock);
+
+  
   bool initOrDisableParallelMarking();
   [[nodiscard]] bool updateMarkersVector();
   size_t markingWorkerCount() const;
@@ -1009,6 +1017,12 @@ class GCRuntime {
   MainThreadData<size_t> maxHelperThreads;
   MainThreadOrGCTaskData<size_t> helperThreadCount;
   MainThreadData<size_t> markingThreadCount;
+
+  
+  
+  HelperThreadLockData<size_t> maxParallelThreads;
+  HelperThreadLockData<size_t> dispatchedParallelTasks;
+  HelperThreadLockData<GCParallelTaskList> queuedParallelTasks;
 
   
   AtomMarkingRuntime atomMarking;

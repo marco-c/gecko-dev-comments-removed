@@ -34,16 +34,7 @@ ParallelMarker::ParallelMarker(GCRuntime* gc) : gc(gc) {}
 size_t ParallelMarker::workerCount() const { return gc->markers.length(); }
 
 bool ParallelMarker::mark(SliceBudget& sliceBudget) {
-#ifdef DEBUG
-  {
-    AutoLockHelperThreadState lock;
-    MOZ_ASSERT(workerCount() <= HelperThreadState().maxGCParallelThreads(lock));
-
-    
-    
-    
-  }
-#endif
+  MOZ_ASSERT(workerCount() <= gc->getMaxParallelThreads());
 
   if (markOneColor(MarkColor::Black, sliceBudget) == NotFinished) {
     return false;
@@ -91,8 +82,7 @@ bool ParallelMarker::markOneColor(MarkColor color, SliceBudget& sliceBudget) {
   AutoLockHelperThreadState lock;
 
   
-  MOZ_RELEASE_ASSERT(HelperThreadState().getGCParallelThreadCount(lock) >=
-                     workerCount());
+  MOZ_RELEASE_ASSERT(gc->maxParallelThreads >= workerCount());
 
   MOZ_ASSERT(activeTasks == 0);
   for (size_t i = 0; i < workerCount(); i++) {

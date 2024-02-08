@@ -899,6 +899,13 @@ void GCRuntime::finish() {
   freeTask.join();
   allocTask.cancelAndWait();
   decommitTask.cancelAndWait();
+#ifdef DEBUG
+  {
+    MOZ_ASSERT(dispatchedParallelTasks == 0);
+    AutoLockHelperThreadState lock;
+    MOZ_ASSERT(queuedParallelTasks.ref().isEmpty(lock));
+  }
+#endif
 
 #ifdef JS_GC_ZEAL
   
@@ -1252,6 +1259,10 @@ void GCRuntime::updateHelperThreadCount() {
   if (!CanUseExtraThreads()) {
     
     MOZ_ASSERT(helperThreadCount == 1);
+    markingThreadCount = 1;
+
+    AutoLockHelperThreadState lock;
+    maxParallelThreads = 1;
     return;
   }
 
@@ -1261,13 +1272,6 @@ void GCRuntime::updateHelperThreadCount() {
   
   
   static constexpr size_t SpareThreadsDuringParallelMarking = 2;
-
-  
-  
-  if (rt->parentRuntime) {
-    helperThreadCount = rt->parentRuntime->gc.helperThreadCount;
-    return;
-  }
 
   
   size_t cpuCount = GetHelperThreadCPUCount();
@@ -1298,7 +1302,7 @@ void GCRuntime::updateHelperThreadCount() {
                availableThreadCount - SpareThreadsDuringParallelMarking);
 
   
-  HelperThreadState().setGCParallelThreadCount(targetCount, lock);
+  maxParallelThreads = targetCount;
 }
 
 size_t GCRuntime::markingWorkerCount() const {
@@ -1336,9 +1340,9 @@ bool GCRuntime::initOrDisableParallelMarking() {
   return true;
 }
 
-static size_t GetGCParallelThreadCount() {
+size_t GCRuntime::getMaxParallelThreads() const {
   AutoLockHelperThreadState lock;
-  return HelperThreadState().getGCParallelThreadCount(lock);
+  return maxParallelThreads.ref();
 }
 
 bool GCRuntime::updateMarkersVector() {
@@ -1349,8 +1353,7 @@ bool GCRuntime::updateMarkersVector() {
 
   
   
-  size_t targetCount =
-      std::min(markingWorkerCount(), GetGCParallelThreadCount());
+  size_t targetCount = std::min(markingWorkerCount(), getMaxParallelThreads());
 
   if (markers.length() > targetCount) {
     return markers.resize(targetCount);
