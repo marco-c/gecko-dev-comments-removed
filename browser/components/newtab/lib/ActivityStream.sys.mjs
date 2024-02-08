@@ -1,8 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// AppConstants, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -20,11 +26,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryFeed: "resource://activity-stream/lib/TelemetryFeed.sys.mjs",
 });
 
-
-
-const { actionCreators: ac, actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
+// NB: Eagerly load modules that will be loaded/constructed/initialized in the
+// common case to avoid the overhead of wrapping and detecting lazy loading.
+import {
+  actionCreators as ac,
+  actionTypes as at,
+} from "resource://activity-stream/common/Actions.sys.mjs";
 
 ChromeUtils.defineModuleGetter(
   lazy,
@@ -80,7 +87,7 @@ ChromeUtils.defineModuleGetter(
 const REGION_BASIC_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.region-basic-config";
 
-
+// Determine if spocs should be shown for a geo/locale
 function showSpocs({ geo }) {
   const spocsGeoString =
     lazy.NimbusFeatures.pocketNewtab.getVariable("regionSpocsConfig") || "";
@@ -88,9 +95,9 @@ function showSpocs({ geo }) {
   return spocsGeo.includes(geo);
 }
 
-
-
-const PREFS_CONFIG = new Map([
+// Configure default Activity Stream prefs with a plain `value` or a `getValue`
+// that computes a value. A `value_local_dev` is used for development defaults.
+export const PREFS_CONFIG = new Map([
   [
     "default.sites",
     {
@@ -104,11 +111,11 @@ const PREFS_CONFIG = new Map([
     "feeds.section.topstories.options",
     {
       title: "Configuration options for top stories feed",
-      
+      // This is a dynamic pref as it depends on the feed being shown or not
       getValue: args =>
         JSON.stringify({
           api_key_pref: "extensions.pocket.oAuthConsumerKey",
-          
+          // Use the opposite value as what default value the feed would have used
           hidden: !PREFS_CONFIG.get("feeds.system.topstories").getValue(args),
           provider_icon: "chrome://global/skin/icons/pocket.svg",
           provider_name: "Pocket",
@@ -151,7 +158,7 @@ const PREFS_CONFIG = new Map([
     "system.showSponsored",
     {
       title: "System pref for sponsored Pocket content",
-      
+      // This pref is dynamic as the sponsored content depends on the region
       getValue: showSpocs,
     },
   ],
@@ -276,7 +283,7 @@ const PREFS_CONFIG = new Map([
     {
       title:
         "An ordered, comma-delimited list of search shortcuts that we should try and pin",
-      
+      // This pref is dynamic as the shortcuts vary depending on the region
       getValue: ({ geo }) => {
         if (!geo) {
           return "";
@@ -320,12 +327,12 @@ const PREFS_CONFIG = new Map([
         type: "local",
         localProvider: "OnboardingMessageProvider",
         enabled: true,
-        
+        // Block specific messages from this local provider
         exclude: [],
       }),
     },
   ],
-  
+  // See browser/app/profile/firefox.js for other ASR preferences. They must be defined there to enable roll-outs.
   [
     "discoverystream.flight.blocks",
     {
@@ -379,10 +386,10 @@ const PREFS_CONFIG = new Map([
       getValue: ({ geo }) => {
         const preffedRegionsString =
           Services.prefs.getStringPref(REGION_BASIC_CONFIG) || "";
-        
-        
-        
-        
+        // If no regions are set to basic,
+        // we don't need to bother checking against the region.
+        // We are also not concerned if geo is not set,
+        // because stories are going to be empty until we have geo.
         if (!preffedRegionsString) {
           return false;
         }
@@ -427,7 +434,7 @@ const PREFS_CONFIG = new Map([
   ],
 ]);
 
-
+// Array of each feed's FEEDS_CONFIG factory and values to add to PREFS_CONFIG
 const FEEDS_DATA = [
   {
     name: "aboutpreferences",
@@ -471,10 +478,10 @@ const FEEDS_DATA = [
       new lazy.TopStoriesFeed(PREFS_CONFIG.get("discoverystream.config")),
     title:
       "System pref that fetches content recommendations from a configurable content provider",
-    
+    // Dynamically determine if Pocket should be shown for a geo / locale
     getValue: ({ geo, locale }) => {
-      
-      
+      // If we don't have geo, we don't want to flash the screen with stories while geo loads.
+      // Best to display nothing until geo is ready.
       if (!geo) {
         return false;
       }
@@ -565,10 +572,10 @@ for (const config of FEEDS_DATA) {
   PREFS_CONFIG.set(pref, config);
 }
 
-class ActivityStream {
-  
-
-
+export class ActivityStream {
+  /**
+   * constructor - Initializes an instance of ActivityStream
+   */
   constructor() {
     this.initialized = false;
     this.store = new lazy.Store();
@@ -582,26 +589,26 @@ class ActivityStream {
       this._defaultPrefs.init();
       Services.obs.addObserver(this, "intl:app-locales-changed");
 
-      
-      
-      
+      // Look for outdated user pref values that might have been accidentally
+      // persisted when restoring the original pref value at the end of an
+      // experiment across versions with a different default value.
       const DS_CONFIG =
         "browser.newtabpage.activity-stream.discoverystream.config";
       if (
         Services.prefs.prefHasUserValue(DS_CONFIG) &&
         [
-          
+          // Firefox 66
           `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","enabled":false,"show_spocs":true,"layout_endpoint":"https://getpocket.com/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`,
-          
+          // Firefox 67
           `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","enabled":false,"show_spocs":true,"layout_endpoint":"https://getpocket.cdn.mozilla.net/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`,
-          
+          // Firefox 68
           `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","collapsible":true,"enabled":false,"show_spocs":true,"hardcoded_layout":true,"personalized":false,"layout_endpoint":"https://getpocket.cdn.mozilla.net/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`,
         ].includes(Services.prefs.getStringPref(DS_CONFIG))
       ) {
         Services.prefs.clearUserPref(DS_CONFIG);
       }
 
-      
+      // Hook up the store and let all feeds and pages initialize
       this.store.init(
         this.feeds,
         ac.BroadcastToContent({
@@ -618,8 +625,8 @@ class ActivityStream {
 
       this.initialized = true;
     } catch (e) {
-      
-      
+      // TelemetryFeed could be unavailable if the telemetry is disabled, or
+      // the telemetry feed is not yet initialized.
       const telemetryFeed = this.store.feeds.get("feeds.telemetry");
       if (telemetryFeed) {
         telemetryFeed.handleUndesiredEvent({
@@ -630,20 +637,20 @@ class ActivityStream {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Check if an old pref has a custom value to migrate. Clears the pref so that
+   * it's the default after migrating (to avoid future need to migrate).
+   *
+   * @param oldPrefName {string} Pref to check and migrate
+   * @param cbIfNotDefault {function} Callback that gets the current pref value
+   */
   _migratePref(oldPrefName, cbIfNotDefault) {
-    
+    // Nothing to do if the user doesn't have a custom value
     if (!Services.prefs.prefHasUserValue(oldPrefName)) {
       return;
     }
 
-    
+    // Figure out what kind of pref getter to use
     let prefGetter;
     switch (Services.prefs.getPrefType(oldPrefName)) {
       case Services.prefs.PREF_BOOL:
@@ -657,7 +664,7 @@ class ActivityStream {
         break;
     }
 
-    
+    // Give the callback the current value then clear the pref
     cbIfNotDefault(Services.prefs[prefGetter](oldPrefName));
     Services.prefs.clearUserPref(oldPrefName);
   }
@@ -674,45 +681,45 @@ class ActivityStream {
   }
 
   _updateDynamicPrefs() {
-    
+    // Save the geo pref if we have it
     if (lazy.Region.home) {
       this.geo = lazy.Region.home;
     } else if (this.geo !== "") {
-      
+      // Watch for geo changes and use a dummy value for now
       Services.obs.addObserver(this, lazy.Region.REGION_TOPIC);
       this.geo = "";
     }
 
     this.locale = Services.locale.appLocaleAsBCP47;
 
-    
+    // Update the pref config of those with dynamic values
     for (const pref of PREFS_CONFIG.keys()) {
-      
+      // Only need to process dynamic prefs
       const prefConfig = PREFS_CONFIG.get(pref);
       if (!prefConfig.getValue) {
         continue;
       }
 
-      
-      
+      // Have the dynamic pref just reuse using existing default, e.g., those
+      // set via Autoconfig or policy
       try {
         const existingDefault = this._defaultPrefs.get(pref);
         if (existingDefault !== undefined && prefConfig.value === undefined) {
           prefConfig.getValue = () => existingDefault;
         }
       } catch (ex) {
-        
-        
+        // We get NS_ERROR_UNEXPECTED for prefs that have a user value (causing
+        // default branch to believe there's a type) but no actual default value
       }
 
-      
+      // Compute the dynamic value (potentially generic based on dummy geo)
       const newValue = prefConfig.getValue({
         geo: this.geo,
         locale: this.locale,
       });
 
-      
-      
+      // If there's an existing value and it has changed, that means we need to
+      // overwrite the default with the new value.
       if (prefConfig.value !== undefined && prefConfig.value !== newValue) {
         this._defaultPrefs.set(pref, newValue);
       }
@@ -730,5 +737,3 @@ class ActivityStream {
     }
   }
 }
-
-const EXPORTED_SYMBOLS = ["ActivityStream", "PREFS_CONFIG"];
