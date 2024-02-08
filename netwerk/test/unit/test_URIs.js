@@ -14,6 +14,8 @@
 
 
 
+Services.prefs.setBoolPref("network.url.useDefaultURI", true);
+
 
 
 var gTests = [
