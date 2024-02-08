@@ -28,10 +28,6 @@ add_task(async function test_async() {
   Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
 
   
-  engine = Services.search.getEngineByName("hidden");
-  Assert.equal(engine, null);
-
-  
   Assert.notEqual(
     await Glean.searchService.startupTime.testGetValue(),
     undefined,

@@ -31,15 +31,17 @@ function checkIdentifier(engineName, expectedIdentifier, expectedTelemetryId) {
   );
 
   Assert.equal(
-    engine.identifier,
-    expectedIdentifier,
-    "Should have the correct identifier"
-  );
-
-  Assert.equal(
     engine.telemetryId,
     expectedTelemetryId,
     "Should have the correct telemetry Id"
+  );
+
+  
+  
+  Assert.equal(
+    engine.identifier,
+    expectedIdentifier,
+    "Should have the correct identifier"
   );
 }
 
@@ -50,7 +52,7 @@ add_task(async function test_from_profile() {
 });
 
 add_task(async function test_from_telemetry_id() {
-  checkIdentifier("basic", "telemetry", "telemetry");
+  checkIdentifier("basic", "basic-telemetry", "basic-telemetry");
 });
 
 add_task(async function test_from_webextension_id() {
