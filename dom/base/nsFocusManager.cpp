@@ -1427,8 +1427,7 @@ void nsFocusManager::ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow,
         [aActive](CanonicalBrowsingContext* aBrowsingContext) {
           aBrowsingContext->SetIsActiveBrowserWindow(aActive);
           return CallState::Continue;
-        },
-         true);
+        });
   }
 
   if (aWindow->GetExtantDoc()) {
