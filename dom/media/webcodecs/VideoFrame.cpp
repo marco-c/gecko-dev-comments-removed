@@ -1746,6 +1746,7 @@ already_AddRefed<VideoFrame> VideoFrame::Clone(ErrorResult& aRv) const {
 
 void VideoFrame::Close() {
   AssertIsOnOwningThread();
+  LOG("VideoFrame %p is closed", this);
 
   mResource.reset();
   mCodedSize = gfx::IntSize();
