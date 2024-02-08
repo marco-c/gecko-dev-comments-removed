@@ -4,6 +4,9 @@
 
 "use strict";
 
+
+requestLongerTimeout(4);
+
 add_task(async function () {
   await BrowserTestUtils.withNewTab(
     "https://example.com/browser/browser/base/content/test/tabs/file_window_open.html",
