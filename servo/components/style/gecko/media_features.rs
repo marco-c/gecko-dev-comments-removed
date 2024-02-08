@@ -593,8 +593,6 @@ pub enum GtkThemeFamily {
     Breeze,
     
     Yaru,
-    
-    YaruRemix,
 }
 
 fn eval_gtk_theme_family(_: &Context, query_value: Option<GtkThemeFamily>) -> bool {
