@@ -1,10 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// AppConstants, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["AboutWelcomeDefaults"];
-
+// eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -18,11 +22,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
-
+// Message to be updated based on finalized MR designs
 const MR_ABOUT_WELCOME_DEFAULT = {
   id: "MR_WELCOME_DEFAULT",
   template: "multistage",
-  
+  // Allow tests to easily disable transitions.
   transitions: Services.prefs.getBoolPref(
     "browser.aboutwelcome.transitions",
     true
@@ -595,8 +599,8 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_MOBILE_DOWNLOAD",
-      
-      
+      // The mobile download screen should only be shown to users who
+      // are either not logged into FxA, or don't have any mobile devices syncing
       targeting: "!isFxASignedIn || sync.mobileDevices == 0",
       content: {
         position: "split",
@@ -643,7 +647,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_AMO_INTRODUCE",
-      
+      // Show to en-* locales only
       targeting: "localeLanguageCode == 'en'",
       content: {
         position: "split",
@@ -727,7 +731,7 @@ async function getAddonInfo(attrbObj) {
     if (!content || source !== "addons.mozilla.org") {
       return null;
     }
-    
+    // Attribution data can be double encoded
     while (content.includes("%")) {
       try {
         const result = decodeURIComponent(content);
@@ -739,10 +743,10 @@ async function getAddonInfo(attrbObj) {
         break;
       }
     }
-    
-    
-    
-    
+    // return_to_amo embeds the addon id in the content
+    // param, prefixed with "rta:".  Translating that
+    // happens in AddonRepository, however we can avoid
+    // an API call if we check up front here.
     if (content.startsWith("rta:")) {
       return await getAddonFromRepository(content);
     }
@@ -771,16 +775,16 @@ async function getAttributionContent() {
   return null;
 }
 
-
+// Return default multistage welcome content
 function getDefaults() {
   return Cu.cloneInto(MR_ABOUT_WELCOME_DEFAULT, {});
 }
 
 let gSourceL10n = null;
 
-
-
-
+// Localize Firefox download source from user agent attribution to show inside
+// import primary button label such as 'Import from <localized browser name>'.
+// no firefox as import wizard doesn't show it
 const allowedUAs = ["chrome", "edge", "ie"];
 function getLocalizedUA(ua) {
   if (!gSourceL10n) {
@@ -801,14 +805,14 @@ function prepareMobileDownload(content) {
     return content;
   }
   if (!lazy.BrowserUtils.sendToDeviceEmailsSupported()) {
-    
-    
+    // If send to device emails are not supported for a user's locale,
+    // remove the send to device link and update the screen text
     delete mobileContent.cta_paragraph.action;
     mobileContent.cta_paragraph.text = {
       string_id: "mr2022-onboarding-no-mobile-download-cta-text",
     };
   }
-  
+  // Update CN specific QRCode url
   if (AppConstants.isChinaRepack()) {
     mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
       0,
@@ -826,10 +830,10 @@ async function prepareContentForReact(content) {
     return content;
   }
 
-  
+  // Set the primary import button source based on attribution.
   if (content?.ua) {
-    
-    
+    // If available, add the browser source to action data
+    // and localized browser string args to primary button label
     const { label, action } =
       content?.screens?.find(
         screen =>
@@ -852,7 +856,7 @@ async function prepareContentForReact(content) {
     }
   }
 
-  
+  // Remove Firefox Accounts related UI and prevent related metrics.
   if (!Services.prefs.getBoolPref("identity.fxaccounts.enabled", false)) {
     delete content.screens?.find(
       screen =>
@@ -866,7 +870,7 @@ async function prepareContentForReact(content) {
   if (content.languageMismatchEnabled) {
     const screen = content?.screens?.find(s => s.id === "AW_LANGUAGE_MISMATCH");
     if (screen && content.appAndSystemLocaleInfo.canLiveReload) {
-      
+      // Add the display names for the OS and Firefox languages, like "American English".
       function addMessageArgs(obj) {
         for (const value of Object.values(obj)) {
           if (value?.string_id) {
@@ -891,7 +895,7 @@ async function prepareContentForReact(content) {
   return prepareMobileDownload(content);
 }
 
-const AboutWelcomeDefaults = {
+export const AboutWelcomeDefaults = {
   prepareContentForReact,
   getDefaults,
   getAttributionContent,
