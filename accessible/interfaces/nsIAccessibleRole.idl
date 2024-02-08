@@ -794,4 +794,9 @@ interface nsIAccessibleRole : nsISupports
 
 
   const unsigned long ROLE_STRONG = 136;
+
+  
+
+
+  const unsigned long ROLE_TIME = 137;
 };
