@@ -12,11 +12,8 @@ use crate::Atom;
 use cssparser::SourceLocation;
 
 
-
 #[derive(Debug, Clone, MallocSizeOf)]
-pub struct PropertyRegistration {
-    
-    pub name: PropertyRuleName,
+pub struct PropertyRegistrationData {
     
     pub syntax: Descriptor,
     
@@ -24,6 +21,35 @@ pub struct PropertyRegistration {
     
     #[ignore_malloc_size_of = "Arc"]
     pub initial_value: Option<InitialValue>,
+}
+
+static UNREGISTERED: PropertyRegistrationData = PropertyRegistrationData {
+    syntax: Descriptor::universal(),
+    inherits: Inherits::True,
+    initial_value: None,
+};
+
+impl PropertyRegistrationData {
+    
+    pub fn unregistered() -> &'static Self {
+        &UNREGISTERED
+    }
+
+    
+    #[inline]
+    pub fn inherits(&self) -> bool {
+        self.inherits == Inherits::True
+    }
+}
+
+
+
+#[derive(Debug, Clone, MallocSizeOf)]
+pub struct PropertyRegistration {
+    
+    pub name: PropertyRuleName,
+    
+    pub data: PropertyRegistrationData,
     
     
     
@@ -36,7 +62,7 @@ impl PropertyRegistration {
     
     #[inline]
     pub fn inherits(&self) -> bool {
-        self.inherits == Inherits::True
+        self.data.inherits == Inherits::True
     }
 }
 

@@ -26,12 +26,21 @@ pub mod data_type;
 #[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
 pub struct Descriptor {
     
-    pub components: Box<[Component]>,
+    
+    pub components: Vec<Component>,
     
     specified: Option<Box<str>>,
 }
 
 impl Descriptor {
+    
+    pub const fn universal() -> Self {
+        Self {
+            components: Vec::new(),
+            specified: None,
+        }
+    }
+
     
     #[inline]
     pub fn is_universal(&self) -> bool {
@@ -82,10 +91,7 @@ impl Descriptor {
             
             parser.parse()?;
         }
-        Ok(Self {
-            components: components.into_boxed_slice(),
-            specified,
-        })
+        Ok(Self { components, specified })
     }
 
     
