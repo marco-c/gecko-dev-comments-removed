@@ -2471,7 +2471,7 @@ function isBinarySigned(aBinPath) {
 
 
 
-async function setupAppFiles({ requiresOmnijar = false } = {}) {
+function setupAppFiles({ requiresOmnijar = false } = {}) {
   debugDump(
     "start - copying or creating symlinks to application files " +
       "for the test"
@@ -2545,26 +2545,6 @@ async function setupAppFiles({ requiresOmnijar = false } = {}) {
   });
 
   copyTestUpdaterToBinDir();
-
-  if (AppConstants.platform == "macosx") {
-    
-    
-    
-    
-    let promises = [];
-    let delMacXAttr = e => {
-      promises.push(
-        IOUtils.delMacXAttr(e.path, "com.apple.quarantine").catch(() => {})
-      );
-    };
-
-    checkFilesInDirRecursive(destDir, delMacXAttr, {
-      includeDirectories: true,
-    });
-
-    
-    await Promise.all(promises);
-  }
 
   debugDump(
     "finish - copying or creating symlinks to application files " +
@@ -3250,9 +3230,9 @@ async function setupUpdaterTest(
     createUpdaterINI(aPostUpdateAsync, aPostUpdateExeRelPathPrefix);
   }
 
-  await TestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(() => {
     try {
-      await setupAppFiles({ requiresOmnijar });
+      setupAppFiles({ requiresOmnijar });
       return true;
     } catch (e) {
       logTestInfo("exception when calling setupAppFiles, Exception: " + e);
@@ -4175,42 +4155,22 @@ function checkForBackupFiles(aFile) {
 
 
 
-
-
-
-
-
-function checkFilesInDirRecursive(
-  aDir,
-  aCallback,
-  { includeDirectories = false } = {}
-) {
+function checkFilesInDirRecursive(aDir, aCallback) {
   if (!aDir.exists()) {
     do_throw("Directory must exist!");
   }
 
   let dirEntries = aDir.directoryEntries;
-  let entries = [];
   while (dirEntries.hasMoreElements()) {
     let entry = dirEntries.nextFile;
-    entries.push([entry.path, entry]);
-  }
 
-  entries.sort(([a], [b]) => b > a);
-
-  for (let pair of entries) {
-    let entry = pair[1];
     if (entry.exists()) {
       if (entry.isDirectory()) {
-        checkFilesInDirRecursive(entry, aCallback, { includeDirectories });
+        checkFilesInDirRecursive(entry, aCallback);
       } else {
         aCallback(entry);
       }
     }
-  }
-
-  if (includeDirectories) {
-    aCallback(aDir);
   }
 }
 
