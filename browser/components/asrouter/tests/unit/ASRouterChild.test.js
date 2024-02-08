@@ -1,6 +1,6 @@
 
 import { ASRouterChild } from "actors/ASRouterChild.sys.mjs";
-import { MESSAGE_TYPE_HASH as msg } from "common/ActorConstants.sys.mjs";
+import { MESSAGE_TYPE_HASH as msg } from "modules/ActorConstants.sys.mjs";
 import { GlobalOverrider } from "test/unit/utils";
 
 describe("ASRouterChild", () => {

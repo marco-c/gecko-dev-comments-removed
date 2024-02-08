@@ -2,7 +2,7 @@
 
 
 
-import { MESSAGE_TYPE_HASH as msg } from "common/ActorConstants.sys.mjs";
+import { MESSAGE_TYPE_HASH as msg } from "modules/ActorConstants.sys.mjs";
 import { actionCreators as ac } from "common/Actions.sys.mjs";
 
 export const ASRouterUtils = {
