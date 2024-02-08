@@ -233,17 +233,10 @@ class SelectionStyleProvider final {
   }
 
   
-  void AttachTo(GdkWindow* aGDKWindow) {
-    GtkWidget* widget = nullptr;
-    
-    
-    
-    gdk_window_get_user_data(aGDKWindow, (gpointer*)&widget);
-    if (GTK_IS_WIDGET(widget)) {
-      gtk_style_context_add_provider(gtk_widget_get_style_context(widget),
-                                     GTK_STYLE_PROVIDER(mProvider),
-                                     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    }
+  void AttachTo(MozContainer* aContainer) {
+    gtk_style_context_add_provider(
+        gtk_widget_get_style_context(GTK_WIDGET(aContainer)),
+        GTK_STYLE_PROVIDER(mProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   }
 
   void OnThemeChanged() {
@@ -417,21 +410,17 @@ nsDependentCSubstring IMContextWrapper::GetIMName() const {
 }
 
 void IMContextWrapper::Init() {
-  MozContainer* container = mOwnerWindow->GetMozContainer();
-  MOZ_ASSERT(container, "container is null");
-  GdkWindow* gdkWindow = gtk_widget_get_window(GTK_WIDGET(container));
-
   
   
   
-  SelectionStyleProvider::GetInstance()->AttachTo(gdkWindow);
+  SelectionStyleProvider::GetInstance()->AttachTo(
+      mOwnerWindow->GetMozContainer());
 
   
   
 
   
   mContext = gtk_im_multicontext_new();
-  gtk_im_context_set_client_window(mContext, gdkWindow);
   g_signal_connect(mContext, "preedit_changed",
                    G_CALLBACK(IMContextWrapper::OnChangeCompositionCallback),
                    this);
@@ -503,7 +492,6 @@ void IMContextWrapper::Init() {
   
   if (sUseSimpleContext) {
     mSimpleContext = gtk_im_context_simple_new();
-    gtk_im_context_set_client_window(mSimpleContext, gdkWindow);
     g_signal_connect(mSimpleContext, "preedit_changed",
                      G_CALLBACK(&IMContextWrapper::OnChangeCompositionCallback),
                      this);
@@ -526,7 +514,6 @@ void IMContextWrapper::Init() {
 
   
   mDummyContext = gtk_im_multicontext_new();
-  gtk_im_context_set_client_window(mDummyContext, gdkWindow);
 
   MOZ_LOG(gIMELog, LogLevel::Info,
           ("0x%p Init(), mOwnerWindow=%p, mContext=%p (im=\"%s\"), "
@@ -551,6 +538,17 @@ IMContextWrapper::~IMContextWrapper() {
     sLastFocusedContext = nullptr;
   }
   MOZ_LOG(gIMELog, LogLevel::Info, ("0x%p ~IMContextWrapper()", this));
+}
+
+void IMContextWrapper::SetGdkWindow(GdkWindow* aGdkWindow) {
+  MOZ_LOG(gIMELog, LogLevel::Info,
+          ("0x%p GdkWindowChanged(%p)", this, aGdkWindow));
+  MOZ_ASSERT(!aGdkWindow || mOwnerWindow->GetGdkWindow() == aGdkWindow);
+  gtk_im_context_set_client_window(mContext, aGdkWindow);
+  if (mSimpleContext) {
+    gtk_im_context_set_client_window(mSimpleContext, aGdkWindow);
+  }
+  gtk_im_context_set_client_window(mDummyContext, aGdkWindow);
 }
 
 NS_IMETHODIMP

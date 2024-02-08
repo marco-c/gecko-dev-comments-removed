@@ -117,6 +117,10 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   void OnUpdateComposition();
   void OnLayoutChange();
 
+  
+  
+  void SetGdkWindow(GdkWindow* aGdkWindow);
+
   TextEventDispatcher* GetTextEventDispatcher();
 
   
