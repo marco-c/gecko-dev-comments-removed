@@ -6,6 +6,7 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Scoped.h"
 #include "mozilla/UniquePtr.h"
 
 #include <algorithm>
@@ -37,17 +38,40 @@ inline mozilla::Maybe<intptr_t> FileDescriptorToHandle(int aFd) {
 
 namespace {
 
-class DebugFilesAutoLock final {
+struct DebugFilesAutoLockTraits {
+  typedef PRLock* type;
+  typedef const PRLock* const_type;
+  static const_type empty() { return nullptr; }
+  static void release(type aL) { PR_Unlock(aL); }
+};
+
+class DebugFilesAutoLock : public mozilla::Scoped<DebugFilesAutoLockTraits> {
+  static PRLock* Lock;
+
  public:
   static PRLock* getDebugFileIDsLock() {
-    static PRLock* sLock = PR_NewLock();
-    return sLock;
+    
+    
+    
+    
+    
+    
+    if (!Lock) {
+      Lock = PR_NewLock();
+    }
+
+    
+    
+    return Lock;
   }
 
-  DebugFilesAutoLock() { PR_Lock(getDebugFileIDsLock()); }
-
-  ~DebugFilesAutoLock() { PR_Unlock(getDebugFileIDsLock()); }
+  DebugFilesAutoLock()
+      : mozilla::Scoped<DebugFilesAutoLockTraits>(getDebugFileIDsLock()) {
+    PR_Lock(get());
+  }
 };
+
+PRLock* DebugFilesAutoLock::Lock;
 
 
 

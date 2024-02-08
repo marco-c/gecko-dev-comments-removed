@@ -176,14 +176,14 @@ bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
       return false;
     }
 
-    if (fseek(file.get(), 0, SEEK_END)) {
+    if (fseek(file, 0, SEEK_END)) {
       
       
       return false;
     }
 
     
-    uint64_t fileSize = static_cast<uint64_t>(ftell(file.get()));
+    uint64_t fileSize = static_cast<uint64_t>(ftell(file));
 
     if (fileSize <= aSize) {
       return true;
@@ -192,7 +192,7 @@ bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
     uint64_t minBytesToDrop = fileSize - aSize;
     uint64_t numBytesDropped = 0;
 
-    if (fseek(file.get(), 0, SEEK_SET)) {
+    if (fseek(file, 0, SEEK_SET)) {
       
       return false;
     }
@@ -250,12 +250,11 @@ bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
     
     
     UniquePtr<char[]> line = MakeUnique<char[]>(aLongLineSize + 1);
-    while (fgets(line.get(), aLongLineSize + 1, file.get())) {
+    while (fgets(line.get(), aLongLineSize + 1, file)) {
       if (numBytesDropped >= minBytesToDrop) {
-        if (fputs(line.get(), temp.get()) < 0) {
+        if (fputs(line.get(), temp) < 0) {
           NS_WARNING(
-              nsPrintfCString("fputs failed: ferror %d\n", ferror(temp.get()))
-                  .get());
+              nsPrintfCString("fputs failed: ferror %d\n", ferror(temp)).get());
           failedToWrite = true;
           break;
         }

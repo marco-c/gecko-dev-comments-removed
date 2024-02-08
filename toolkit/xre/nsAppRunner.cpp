@@ -4553,7 +4553,7 @@ bool XREMain::CheckLastStartupWasCrash() {
   
   AutoFDClose fd;
   Unused << crashFile.inspect()->OpenNSPRFileDesc(
-      PR_WRONLY | PR_CREATE_FILE | PR_EXCL, 0666, getter_Transfers(fd));
+      PR_WRONLY | PR_CREATE_FILE | PR_EXCL, 0666, &fd.rwget());
   return !fd;
 }
 
