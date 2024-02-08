@@ -107,7 +107,8 @@ void SVGAElement::SetReferrerPolicy(const nsAString& aPolicy,
 
 nsDOMTokenList* SVGAElement::RelList() {
   if (!mRelList) {
-    mRelList = new nsDOMTokenList(this, nsGkAtoms::rel, sSupportedRelValues);
+    mRelList =
+        new nsDOMTokenList(this, nsGkAtoms::rel, sAnchorAndFormRelValues);
   }
   return mRelList;
 }
@@ -157,23 +158,20 @@ void SVGAElement::UnbindFromTree(bool aNullParent) {
 
 int32_t SVGAElement::TabIndexDefault() { return 0; }
 
-bool SVGAElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
-  bool isFocusable = false;
-  if (IsSVGFocusable(&isFocusable, aTabIndex)) {
-    return isFocusable;
+Focusable SVGAElement::IsFocusableWithoutStyle(bool aWithMouse) {
+  Focusable result;
+  if (IsSVGFocusable(&result.mFocusable, &result.mTabIndex)) {
+    return result;
   }
 
   if (!OwnerDoc()->LinkHandlingEnabled()) {
-    return false;
+    return {};
   }
 
   
   
   if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-    return false;
+    return {};
   }
 
   if (GetTabIndexAttrValue().isNothing()) {
@@ -181,18 +179,13 @@ bool SVGAElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
     if (!IsLink()) {
       
       
-      if (aTabIndex) {
-        *aTabIndex = -1;
-      }
-      return false;
+      return {};
     }
   }
-
-  if (aTabIndex && (sTabFocusModel & eTabFocus_linksMask) == 0) {
-    *aTabIndex = -1;
+  if ((sTabFocusModel & eTabFocus_linksMask) == 0) {
+    result.mTabIndex = -1;
   }
-
-  return true;
+  return result;
 }
 
 bool SVGAElement::HasHref() const {

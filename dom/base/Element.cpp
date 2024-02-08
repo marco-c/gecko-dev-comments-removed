@@ -1107,6 +1107,9 @@ already_AddRefed<DOMRectList> Element::GetClientRects() {
   return rectList.forget();
 }
 
+const DOMTokenListSupportedToken Element::sAnchorAndFormRelValues[] = {
+    "noreferrer", "noopener", "opener", nullptr};
+
 
 static constexpr nsAttrValue::EnumTable kLoadingTable[] = {
     {"eager", Element::Loading::Eager},

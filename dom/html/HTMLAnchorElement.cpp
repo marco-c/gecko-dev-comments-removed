@@ -98,6 +98,7 @@ bool HTMLAnchorElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   
   if (!OwnerDoc()->LinkHandlingEnabled()) {
+    *aTabIndex = -1;
     *aIsFocusable = false;
     return false;
   }
@@ -105,12 +106,8 @@ bool HTMLAnchorElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   
   
   if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-
+    *aTabIndex = -1;
     *aIsFocusable = false;
-
     return true;
   }
 
@@ -119,22 +116,16 @@ bool HTMLAnchorElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     if (!IsLink()) {
       
       
-      if (aTabIndex) {
-        *aTabIndex = -1;
-      }
-
+      *aTabIndex = -1;
       *aIsFocusable = false;
-
       return false;
     }
   }
 
-  if (aTabIndex && (sTabFocusModel & eTabFocus_linksMask) == 0) {
+  if ((sTabFocusModel & eTabFocus_linksMask) == 0) {
     *aTabIndex = -1;
   }
-
   *aIsFocusable = true;
-
   return false;
 }
 
@@ -161,7 +152,8 @@ void HTMLAnchorElement::GetTarget(nsAString& aValue) const {
 
 nsDOMTokenList* HTMLAnchorElement::RelList() {
   if (!mRelList) {
-    mRelList = new nsDOMTokenList(this, nsGkAtoms::rel, sSupportedRelValues);
+    mRelList =
+        new nsDOMTokenList(this, nsGkAtoms::rel, sAnchorAndFormRelValues);
   }
   return mRelList;
 }
