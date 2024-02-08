@@ -560,8 +560,13 @@ HRESULT SendDefaultAgentPing(
 
     mozilla::glean::system_default::browser.Set(
         nsDependentCString(currentDefaultBrowser.c_str()));
+    
+    
+    
+    std::string uncachedPreviousDefaultBrowser =
+        GetStringForBrowser(browserInfo.previousDefaultBrowser);
     mozilla::glean::system_default::previous_browser.Set(
-        nsDependentCString(previousDefaultBrowser.c_str()));
+        nsDependentCString(uncachedPreviousDefaultBrowser.c_str()));
     mozilla::glean::system_default::pdf_handler.Set(
         nsDependentCString(currentDefaultPdf.c_str()));
 
