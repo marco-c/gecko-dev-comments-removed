@@ -14,6 +14,7 @@ const {
 const {
   setIgnoreLayoutChanges,
   getAdjustedQuads,
+  getCurrentZoom,
 } = require("resource://devtools/shared/layout/utils.js");
 const {
   getCSSStyleRules,
@@ -527,6 +528,9 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
     
     
     this.definedProperties = getDefinedGeometryProperties(this.currentNode);
+    
+    
+    this.zoomFactor = getCurrentZoom(this.currentNode);
 
     if (!this.definedProperties.size) {
       console.warn("The element does not have editable geometry properties");
@@ -599,8 +603,8 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
       el.setAttribute("points", points);
       isHighlighted = true;
     } else if (isRelative) {
-      const xDelta = parseFloat(this.computedStyle.left);
-      const yDelta = parseFloat(this.computedStyle.top);
+      const xDelta = parseFloat(this.computedStyle.left) * this.zoomFactor;
+      const yDelta = parseFloat(this.computedStyle.top) * this.zoomFactor;
       if (xDelta || yDelta) {
         const { p1, p2, p3, p4 } = this.currentQuads.margin[0];
         const points =
@@ -699,16 +703,22 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
     
     const getSideArrowStartPos = side => {
       
-      if (this.parentQuads && this.parentQuads.length) {
-        return this.parentQuads[0].bounds[side];
+      if (this.computedStyle.position === "relative") {
+        if (GeoProp.isInverted(side)) {
+          return (
+            marginBox[side] +
+            parseFloat(this.computedStyle[side]) * this.zoomFactor
+          );
+        }
+        return (
+          marginBox[side] -
+          parseFloat(this.computedStyle[side]) * this.zoomFactor
+        );
       }
 
       
-      if (this.computedStyle.position === "relative") {
-        if (GeoProp.isInverted(side)) {
-          return marginBox[side] + parseFloat(this.computedStyle[side]);
-        }
-        return marginBox[side] - parseFloat(this.computedStyle[side]);
+      if (this.parentQuads && this.parentQuads.length) {
+        return this.parentQuads[0].bounds[side];
       }
 
       
