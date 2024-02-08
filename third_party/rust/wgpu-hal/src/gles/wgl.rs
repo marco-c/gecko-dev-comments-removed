@@ -77,24 +77,6 @@ impl AdapterContext {
 
         AdapterContextLock { inner }
     }
-
-    
-    
-    
-    
-    
-    #[track_caller]
-    fn lock_with_dc(&self, device: HDC) -> Result<AdapterContextLock<'_>, Error> {
-        let inner = self
-            .inner
-            .try_lock_for(Duration::from_secs(CONTEXT_LOCK_TIMEOUT_SECS))
-            .expect("Could not lock adapter context. This is most-likely a deadlock.");
-
-        inner
-            .context
-            .make_current(device)
-            .map(|()| AdapterContextLock { inner })
-    }
 }
 
 
@@ -621,10 +603,16 @@ impl Surface {
             window: self.window,
         };
 
-        let gl = context.lock_with_dc(dc.device).map_err(|e| {
+        let inner = context.inner.lock();
+
+        if let Err(e) = inner.context.make_current(dc.device) {
             log::error!("unable to make the OpenGL context current for surface: {e}",);
-            crate::SurfaceError::Other("unable to make the OpenGL context current for surface")
-        })?;
+            return Err(crate::SurfaceError::Other(
+                "unable to make the OpenGL context current for surface",
+            ));
+        }
+
+        let gl = &inner.gl;
 
         unsafe { gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, None) };
         unsafe { gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(sc.framebuffer)) };
@@ -705,11 +693,16 @@ impl crate::Surface<super::Api> for Surface {
         }
 
         let format_desc = device.shared.describe_texture_format(config.format);
-        let gl = &device.shared.context.lock_with_dc(dc.device).map_err(|e| {
-            log::error!("unable to make the OpenGL context current for surface: {e}",);
-            crate::SurfaceError::Other("unable to make the OpenGL context current for surface")
-        })?;
+        let inner = &device.shared.context.inner.lock();
 
+        if let Err(e) = inner.context.make_current(dc.device) {
+            log::error!("unable to make the OpenGL context current for surface: {e}",);
+            return Err(crate::SurfaceError::Other(
+                "unable to make the OpenGL context current for surface",
+            ));
+        }
+
+        let gl = &inner.gl;
         let renderbuffer = unsafe { gl.create_renderbuffer() }.map_err(|error| {
             log::error!("Internal swapchain renderbuffer creation failed: {error}");
             crate::DeviceError::OutOfMemory

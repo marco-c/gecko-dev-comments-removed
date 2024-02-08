@@ -20,7 +20,7 @@ pub struct Token {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum TokenValue {
     Identifier(String),
 
