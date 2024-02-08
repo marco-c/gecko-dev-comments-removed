@@ -338,8 +338,6 @@ class AudioStream final {
   const uint32_t mOutChannels;
 
   
-  RefPtr<CubebUtils::CubebHandle> mCubeb;
-  
   
   UniquePtr<cubeb_stream, CubebDestroyPolicy> mCubebStream;
 
