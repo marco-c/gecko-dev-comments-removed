@@ -2,91 +2,90 @@ use wgt::Backend;
 
 
 use crate::hal_api::HalApi;
-use crate::instance::HalSurface;
 
-use std::any::Any;
 use std::fmt;
-use std::sync::Arc;
+use std::mem::ManuallyDrop;
+use std::ptr::NonNull;
+
+struct AnySurfaceVtable {
+    
+    
+    backend: Backend,
+    
+    drop: unsafe fn(*mut ()),
+}
 
 
 
 
 
 
-
-pub struct AnySurface(Arc<dyn Any + 'static>);
+pub struct AnySurface {
+    data: NonNull<()>,
+    vtable: &'static AnySurfaceVtable,
+}
 
 impl AnySurface {
     
-    pub fn new<A: HalApi>(surface: HalSurface<A>) -> AnySurface {
-        AnySurface(Arc::new(surface))
+    pub fn new<A: HalApi>(surface: A::Surface) -> AnySurface {
+        unsafe fn drop_glue<A: HalApi>(ptr: *mut ()) {
+            unsafe {
+                _ = Box::from_raw(ptr.cast::<A::Surface>());
+            }
+        }
+
+        let data = NonNull::from(Box::leak(Box::new(surface)));
+
+        AnySurface {
+            data: data.cast(),
+            vtable: &AnySurfaceVtable {
+                backend: A::VARIANT,
+                drop: drop_glue::<A>,
+            },
+        }
     }
 
+    
     pub fn backend(&self) -> Backend {
-        #[cfg(vulkan)]
-        if self.downcast_ref::<hal::api::Vulkan>().is_some() {
-            return Backend::Vulkan;
-        }
-        #[cfg(metal)]
-        if self.downcast_ref::<hal::api::Metal>().is_some() {
-            return Backend::Metal;
-        }
-        #[cfg(dx12)]
-        if self.downcast_ref::<hal::api::Dx12>().is_some() {
-            return Backend::Dx12;
-        }
-        #[cfg(gles)]
-        if self.downcast_ref::<hal::api::Gles>().is_some() {
-            return Backend::Gl;
-        }
-        Backend::Empty
+        self.vtable.backend
     }
 
     
-    
-    pub fn downcast_ref<A: HalApi>(&self) -> Option<&HalSurface<A>> {
-        self.0.downcast_ref::<HalSurface<A>>()
+    pub fn downcast_ref<A: HalApi>(&self) -> Option<&A::Surface> {
+        if A::VARIANT != self.vtable.backend {
+            return None;
+        }
+
+        
+        
+        Some(unsafe { &*self.data.as_ptr().cast::<A::Surface>() })
     }
 
     
-    pub fn take<A: HalApi>(self) -> Option<Arc<HalSurface<A>>> {
-        
-        
-        
-        
-        
-        if (self.0).is::<HalSurface<A>>() {
-            
-            
-            
-            let raw_erased: *const (dyn Any + 'static) = Arc::into_raw(self.0);
-            
-            let raw_typed: *const HalSurface<A> = raw_erased.cast::<HalSurface<A>>();
-            
-            
-            let arc_typed: Arc<HalSurface<A>> = unsafe {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                Arc::from_raw(raw_typed)
-            };
-            Some(arc_typed)
-        } else {
-            None
+    pub fn take<A: HalApi>(self) -> Option<A::Surface> {
+        if A::VARIANT != self.vtable.backend {
+            return None;
         }
+
+        
+        
+        let this = ManuallyDrop::new(self);
+
+        
+        
+        Some(unsafe { *Box::from_raw(this.data.as_ptr().cast::<A::Surface>()) })
+    }
+}
+
+impl Drop for AnySurface {
+    fn drop(&mut self) {
+        unsafe { (self.vtable.drop)(self.data.as_ptr()) }
     }
 }
 
 impl fmt::Debug for AnySurface {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("AnySurface")
+        write!(f, "AnySurface<{}>", self.vtable.backend)
     }
 }
 

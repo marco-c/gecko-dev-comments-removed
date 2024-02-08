@@ -169,7 +169,7 @@ impl super::Swapchain {
     
     
     
-    unsafe fn release_resources(self, device: &ash::Device) -> Self {
+    unsafe fn release_resources(mut self, device: &ash::Device) -> Self {
         profiling::scope!("Swapchain::release_resources");
         {
             profiling::scope!("vkDeviceWaitIdle");
@@ -177,7 +177,13 @@ impl super::Swapchain {
             
             let _ = unsafe { device.device_wait_idle() };
         };
-        unsafe { device.destroy_fence(self.fence, None) };
+
+        for semaphore in self.surface_semaphores.drain(..) {
+            unsafe {
+                device.destroy_semaphore(semaphore, None);
+            }
+        }
+
         self
     }
 }
@@ -934,10 +940,12 @@ impl crate::Surface<super::Api> for super::Surface {
             timeout_ns = u64::MAX;
         }
 
+        let wait_semaphore = sc.surface_semaphores[sc.next_surface_index];
+
         
         let (index, suboptimal) = match unsafe {
             sc.functor
-                .acquire_next_image(sc.raw, timeout_ns, vk::Semaphore::null(), sc.fence)
+                .acquire_next_image(sc.raw, timeout_ns, wait_semaphore, vk::Fence::null())
         } {
             
             
@@ -957,16 +965,13 @@ impl crate::Surface<super::Api> for super::Surface {
             }
         };
 
+        sc.next_surface_index += 1;
+        sc.next_surface_index %= sc.surface_semaphores.len();
+
         
         if sc.device.vendor_id == crate::auxil::db::intel::VENDOR && index > 0x100 {
             return Err(crate::SurfaceError::Outdated);
         }
-
-        let fences = &[sc.fence];
-
-        unsafe { sc.device.raw.wait_for_fences(fences, true, !0) }
-            .map_err(crate::DeviceError::from)?;
-        unsafe { sc.device.raw.reset_fences(fences) }.map_err(crate::DeviceError::from)?;
 
         
         let raw_flags = if sc
@@ -994,6 +999,7 @@ impl crate::Surface<super::Api> for super::Surface {
                 },
                 view_formats: sc.view_formats.clone(),
             },
+            wait_semaphore,
         };
         Ok(Some(crate::AcquiredSurfaceTexture {
             texture,

@@ -104,20 +104,12 @@
 
 
 
-
-
-
-
-
-
 use crate::{
     binding_model::{BindGroup, BindGroupLayout, PipelineLayout},
     command::{CommandBuffer, RenderBundle},
     device::{queue::Queue, Device},
     hal_api::HalApi,
-    id,
-    identity::GlobalIdentityHandlerFactory,
-    instance::{Adapter, HalSurface, Surface},
+    instance::{Adapter, Surface},
     pipeline::{ComputePipeline, RenderPipeline, ShaderModule},
     registry::{Registry, RegistryReport},
     resource::{Buffer, QuerySet, Sampler, StagingBuffer, Texture, TextureView},
@@ -177,56 +169,52 @@ impl HubReport {
 
 
 pub struct Hub<A: HalApi> {
-    pub adapters: Registry<id::AdapterId, Adapter<A>>,
-    pub devices: Registry<id::DeviceId, Device<A>>,
-    pub queues: Registry<id::QueueId, Queue<A>>,
-    pub pipeline_layouts: Registry<id::PipelineLayoutId, PipelineLayout<A>>,
-    pub shader_modules: Registry<id::ShaderModuleId, ShaderModule<A>>,
-    pub bind_group_layouts: Registry<id::BindGroupLayoutId, BindGroupLayout<A>>,
-    pub bind_groups: Registry<id::BindGroupId, BindGroup<A>>,
-    pub command_buffers: Registry<id::CommandBufferId, CommandBuffer<A>>,
-    pub render_bundles: Registry<id::RenderBundleId, RenderBundle<A>>,
-    pub render_pipelines: Registry<id::RenderPipelineId, RenderPipeline<A>>,
-    pub compute_pipelines: Registry<id::ComputePipelineId, ComputePipeline<A>>,
-    pub query_sets: Registry<id::QuerySetId, QuerySet<A>>,
-    pub buffers: Registry<id::BufferId, Buffer<A>>,
-    pub staging_buffers: Registry<id::StagingBufferId, StagingBuffer<A>>,
-    pub textures: Registry<id::TextureId, Texture<A>>,
-    pub texture_views: Registry<id::TextureViewId, TextureView<A>>,
-    pub samplers: Registry<id::SamplerId, Sampler<A>>,
+    pub adapters: Registry<Adapter<A>>,
+    pub devices: Registry<Device<A>>,
+    pub queues: Registry<Queue<A>>,
+    pub pipeline_layouts: Registry<PipelineLayout<A>>,
+    pub shader_modules: Registry<ShaderModule<A>>,
+    pub bind_group_layouts: Registry<BindGroupLayout<A>>,
+    pub bind_groups: Registry<BindGroup<A>>,
+    pub command_buffers: Registry<CommandBuffer<A>>,
+    pub render_bundles: Registry<RenderBundle<A>>,
+    pub render_pipelines: Registry<RenderPipeline<A>>,
+    pub compute_pipelines: Registry<ComputePipeline<A>>,
+    pub query_sets: Registry<QuerySet<A>>,
+    pub buffers: Registry<Buffer<A>>,
+    pub staging_buffers: Registry<StagingBuffer<A>>,
+    pub textures: Registry<Texture<A>>,
+    pub texture_views: Registry<TextureView<A>>,
+    pub samplers: Registry<Sampler<A>>,
 }
 
 impl<A: HalApi> Hub<A> {
-    fn new<F: GlobalIdentityHandlerFactory>(factory: &F) -> Self {
+    fn new() -> Self {
         Self {
-            adapters: Registry::new(A::VARIANT, factory),
-            devices: Registry::new(A::VARIANT, factory),
-            queues: Registry::new(A::VARIANT, factory),
-            pipeline_layouts: Registry::new(A::VARIANT, factory),
-            shader_modules: Registry::new(A::VARIANT, factory),
-            bind_group_layouts: Registry::new(A::VARIANT, factory),
-            bind_groups: Registry::new(A::VARIANT, factory),
-            command_buffers: Registry::new(A::VARIANT, factory),
-            render_bundles: Registry::new(A::VARIANT, factory),
-            render_pipelines: Registry::new(A::VARIANT, factory),
-            compute_pipelines: Registry::new(A::VARIANT, factory),
-            query_sets: Registry::new(A::VARIANT, factory),
-            buffers: Registry::new(A::VARIANT, factory),
-            staging_buffers: Registry::new(A::VARIANT, factory),
-            textures: Registry::new(A::VARIANT, factory),
-            texture_views: Registry::new(A::VARIANT, factory),
-            samplers: Registry::new(A::VARIANT, factory),
+            adapters: Registry::new(A::VARIANT),
+            devices: Registry::new(A::VARIANT),
+            queues: Registry::new(A::VARIANT),
+            pipeline_layouts: Registry::new(A::VARIANT),
+            shader_modules: Registry::new(A::VARIANT),
+            bind_group_layouts: Registry::new(A::VARIANT),
+            bind_groups: Registry::new(A::VARIANT),
+            command_buffers: Registry::new(A::VARIANT),
+            render_bundles: Registry::new(A::VARIANT),
+            render_pipelines: Registry::new(A::VARIANT),
+            compute_pipelines: Registry::new(A::VARIANT),
+            query_sets: Registry::new(A::VARIANT),
+            buffers: Registry::new(A::VARIANT),
+            staging_buffers: Registry::new(A::VARIANT),
+            textures: Registry::new(A::VARIANT),
+            texture_views: Registry::new(A::VARIANT),
+            samplers: Registry::new(A::VARIANT),
         }
     }
 
     
     
     
-    pub(crate) fn clear(
-        &self,
-        surface_guard: &Storage<Surface, id::SurfaceId>,
-        with_adapters: bool,
-    ) {
+    pub(crate) fn clear(&self, surface_guard: &Storage<Surface>, with_adapters: bool) {
         use hal::Surface;
 
         let mut devices = self.devices.write();
@@ -255,7 +243,7 @@ impl<A: HalApi> Hub<A> {
                     if let Some(device) = present.device.downcast_ref::<A>() {
                         let suf = A::get_surface(surface);
                         unsafe {
-                            suf.unwrap().raw.unconfigure(device.raw());
+                            suf.unwrap().unconfigure(device.raw());
                             
                         }
                     }
@@ -272,10 +260,10 @@ impl<A: HalApi> Hub<A> {
         }
     }
 
-    pub(crate) fn surface_unconfigure(&self, device: &Device<A>, surface: &HalSurface<A>) {
+    pub(crate) fn surface_unconfigure(&self, device: &Device<A>, surface: &A::Surface) {
         unsafe {
             use hal::Surface;
-            surface.raw.unconfigure(device.raw());
+            surface.unconfigure(device.raw());
         }
     }
 
@@ -315,18 +303,18 @@ pub struct Hubs {
 }
 
 impl Hubs {
-    pub(crate) fn new<F: GlobalIdentityHandlerFactory>(factory: &F) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             #[cfg(vulkan)]
-            vulkan: Hub::new(factory),
+            vulkan: Hub::new(),
             #[cfg(metal)]
-            metal: Hub::new(factory),
+            metal: Hub::new(),
             #[cfg(dx12)]
-            dx12: Hub::new(factory),
+            dx12: Hub::new(),
             #[cfg(gles)]
-            gl: Hub::new(factory),
+            gl: Hub::new(),
             #[cfg(all(not(vulkan), not(metal), not(dx12), not(gles)))]
-            empty: Hub::new(factory),
+            empty: Hub::new(),
         }
     }
 }

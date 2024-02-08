@@ -7,7 +7,7 @@ use crate::{
     },
     hal_api::HalApi,
     id::{
-        self, BindGroupId, BindGroupLayoutId, BufferId, ComputePipelineId, PipelineLayoutId,
+        self, BindGroupId, BindGroupLayoutId, BufferId, ComputePipelineId, Id, PipelineLayoutId,
         QuerySetId, RenderBundleId, RenderPipelineId, SamplerId, StagingBufferId, TextureId,
         TextureViewId,
     },
@@ -419,15 +419,14 @@ impl<A: HalApi> LifetimeTracker<A> {
 }
 
 impl<A: HalApi> LifetimeTracker<A> {
-    fn triage_resources<Id, R>(
-        resources_map: &mut FastHashMap<Id, Arc<R>>,
+    fn triage_resources<R>(
+        resources_map: &mut FastHashMap<Id<R::Marker>, Arc<R>>,
         active: &mut [ActiveSubmission<A>],
-        trackers: &mut impl ResourceTracker<Id, R>,
-        get_resource_map: impl Fn(&mut ResourceMaps<A>) -> &mut FastHashMap<Id, Arc<R>>,
+        trackers: &mut impl ResourceTracker<R>,
+        get_resource_map: impl Fn(&mut ResourceMaps<A>) -> &mut FastHashMap<Id<R::Marker>, Arc<R>>,
     ) -> Vec<Arc<R>>
     where
-        Id: id::TypedId,
-        R: Resource<Id>,
+        R: Resource,
     {
         let mut removed_resources = Vec::new();
         resources_map.retain(|&id, resource| {
@@ -525,20 +524,12 @@ impl<A: HalApi> LifetimeTracker<A> {
     fn triage_suspected_texture_views(&mut self, trackers: &Mutex<Tracker<A>>) -> &mut Self {
         let mut trackers = trackers.lock();
         let resource_map = &mut self.suspected_resources.texture_views;
-        let mut removed_resources = Self::triage_resources(
+        Self::triage_resources(
             resource_map,
             self.active.as_mut_slice(),
             &mut trackers.views,
             |maps| &mut maps.texture_views,
         );
-        removed_resources.drain(..).for_each(|texture_view| {
-            let mut lock = texture_view.parent.write();
-            if let Some(parent_texture) = lock.take() {
-                self.suspected_resources
-                    .textures
-                    .insert(parent_texture.as_info().id(), parent_texture);
-            }
-        });
         self
     }
 
@@ -836,48 +827,5 @@ impl<A: HalApi> LifetimeTracker<A> {
             }
         }
         pending_callbacks
-    }
-
-    pub(crate) fn release_gpu_resources(&mut self) {
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-
-        
-        for buffer in &self.mapped {
-            let _ = buffer.destroy();
-        }
-
-        
-        for buffer in &self.ready_to_map {
-            let _ = buffer.destroy();
-        }
-
-        
-        for buffer in &self.future_suspected_buffers {
-            let _ = buffer.destroy();
-        }
-
-        
-        for submission in &self.active {
-            for buffer in &submission.mapped {
-                let _ = buffer.destroy();
-            }
-        }
-
-        
-        
-        
-
-
-
-
     }
 }

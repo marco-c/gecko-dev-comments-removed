@@ -1,72 +1,98 @@
+use wgt::Backend;
+
 use super::Device;
 
 use crate::hal_api::HalApi;
 
-use std::any::Any;
 use std::fmt;
+use std::mem::ManuallyDrop;
+use std::ptr::NonNull;
 use std::sync::Arc;
 
+struct AnyDeviceVtable {
+    
+    
+    backend: Backend,
+    
+    drop: unsafe fn(*mut ()),
+}
 
 
 
 
 
 
-pub struct AnyDevice(Arc<dyn Any + 'static>);
+
+pub struct AnyDevice {
+    data: NonNull<()>,
+    vtable: &'static AnyDeviceVtable,
+}
 
 impl AnyDevice {
     
     pub fn new<A: HalApi>(device: Arc<Device<A>>) -> AnyDevice {
-        AnyDevice(device)
+        unsafe fn drop_glue<A: HalApi>(ptr: *mut ()) {
+            
+            unsafe {
+                _ = Arc::from_raw(ptr.cast::<A::Surface>());
+            }
+        }
+
+        
+        
+        let data = unsafe { NonNull::new_unchecked(Arc::into_raw(device).cast_mut()) };
+
+        AnyDevice {
+            data: data.cast(),
+            vtable: &AnyDeviceVtable {
+                backend: A::VARIANT,
+                drop: drop_glue::<A>,
+            },
+        }
     }
 
     
     
     pub fn downcast_ref<A: HalApi>(&self) -> Option<&Device<A>> {
-        self.0.downcast_ref::<Device<A>>()
+        if self.vtable.backend != A::VARIANT {
+            return None;
+        }
+
+        
+        
+        Some(unsafe { &*(self.data.as_ptr().cast::<Device<A>>()) })
     }
 
     
     pub fn downcast_clone<A: HalApi>(&self) -> Option<Arc<Device<A>>> {
-        
-        
-        
-        
-        
-        if (self.0).is::<Device<A>>() {
-            
-            let clone = self.0.clone();
-            
-            
-            
-            let raw_erased: *const (dyn Any + 'static) = Arc::into_raw(clone);
-            
-            let raw_typed: *const Device<A> = raw_erased.cast::<Device<A>>();
-            
-            
-            let arc_typed: Arc<Device<A>> = unsafe {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                Arc::from_raw(raw_typed)
-            };
-            Some(arc_typed)
-        } else {
-            None
+        if self.vtable.backend != A::VARIANT {
+            return None;
         }
+
+        
+        
+        
+        
+        
+        
+        let this =
+            ManuallyDrop::new(unsafe { Arc::from_raw(self.data.as_ptr().cast::<Device<A>>()) });
+
+        
+        
+        Some((*this).clone())
+    }
+}
+
+impl Drop for AnyDevice {
+    fn drop(&mut self) {
+        unsafe { (self.vtable.drop)(self.data.as_ptr()) }
     }
 }
 
 impl fmt::Debug for AnyDevice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("AnyDevice")
+        write!(f, "AnyDevice<{}>", self.vtable.backend)
     }
 }
 
