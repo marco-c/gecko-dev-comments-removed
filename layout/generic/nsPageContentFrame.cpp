@@ -51,8 +51,7 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  const nsSize maxSize(aReflowInput.ComputedWidth(),
-                       aReflowInput.ComputedHeight());
+  const nsSize maxSize = aReflowInput.ComputedPhysicalSize();
   SetSize(maxSize);
 
   

@@ -542,9 +542,10 @@ void nsSliderFrame::Reflow(nsPresContext* aPresContext,
   NS_ASSERTION(aReflowInput.AvailableHeight() != NS_UNCONSTRAINEDSIZE,
                "Bogus avail height");
 
+  const auto wm = GetWritingMode();
+
   
-  aDesiredSize.Width() = aReflowInput.ComputedWidth();
-  aDesiredSize.Height() = aReflowInput.ComputedHeight();
+  aDesiredSize.SetSize(wm, aReflowInput.ComputedSize(wm));
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
   
@@ -556,7 +557,6 @@ void nsSliderFrame::Reflow(nsPresContext* aPresContext,
   nsScrollbarFrame* scrollbarBox = Scrollbar();
   nsIContent* scrollbar = scrollbarBox->GetContent();
   const bool horizontal = scrollbarBox->IsHorizontal();
-  const auto wm = GetWritingMode();
   nsSize availSize = aDesiredSize.PhysicalSize();
   ReflowInput thumbRI(aPresContext, aReflowInput, thumbBox,
                       aReflowInput.AvailableSize(wm));

@@ -342,7 +342,7 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  SetSize(nsSize(aReflowInput.ComputedWidth(), aReflowInput.ComputedHeight()));
+  SetSize(aReflowInput.ComputedPhysicalSize());
 
   
   
