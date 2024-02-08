@@ -686,7 +686,11 @@ add_task(async function test_changeUPLoginOnUPForm_remove() {
       const forceClosePopup = false;
       
       info("waiting for verifyConfirmationHint");
-      await verifyConfirmationHint(browser, forceClosePopup, "identity-icon");
+      await verifyConfirmationHint(
+        browser,
+        forceClosePopup,
+        "identity-icon-box"
+      );
     }
   );
 
