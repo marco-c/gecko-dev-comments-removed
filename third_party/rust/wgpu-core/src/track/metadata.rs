@@ -1,6 +1,6 @@
 
 
-use crate::{hal_api::HalApi, id::TypedId, resource::Resource, Epoch};
+use crate::{hal_api::HalApi, resource::Resource, Epoch};
 use bit_vec::BitVec;
 use std::{borrow::Cow, marker::PhantomData, mem, sync::Arc};
 use wgt::strict_assert;
@@ -13,7 +13,7 @@ use wgt::strict_assert;
 
 
 #[derive(Debug)]
-pub(super) struct ResourceMetadata<A: HalApi, I: TypedId, T: Resource<I>> {
+pub(super) struct ResourceMetadata<A: HalApi, T: Resource> {
     
     owned: BitVec<usize>,
 
@@ -21,10 +21,10 @@ pub(super) struct ResourceMetadata<A: HalApi, I: TypedId, T: Resource<I>> {
     resources: Vec<Option<Arc<T>>>,
 
     
-    _phantom: PhantomData<(A, I)>,
+    _phantom: PhantomData<A>,
 }
 
-impl<A: HalApi, I: TypedId, T: Resource<I>> ResourceMetadata<A, I, T> {
+impl<A: HalApi, T: Resource> ResourceMetadata<A, T> {
     pub(super) fn new() -> Self {
         Self {
             owned: BitVec::default(),
@@ -172,15 +172,15 @@ impl<A: HalApi, I: TypedId, T: Resource<I>> ResourceMetadata<A, I, T> {
 
 
 
-pub(super) enum ResourceMetadataProvider<'a, A: HalApi, I: TypedId, T: Resource<I>> {
+pub(super) enum ResourceMetadataProvider<'a, A: HalApi, T: Resource> {
     
     Direct { resource: Cow<'a, Arc<T>> },
     
     Indirect {
-        metadata: &'a ResourceMetadata<A, I, T>,
+        metadata: &'a ResourceMetadata<A, T>,
     },
 }
-impl<A: HalApi, I: TypedId, T: Resource<I>> ResourceMetadataProvider<'_, A, I, T> {
+impl<A: HalApi, T: Resource> ResourceMetadataProvider<'_, A, T> {
     
     
     

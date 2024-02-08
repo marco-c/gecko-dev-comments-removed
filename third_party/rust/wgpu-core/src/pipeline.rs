@@ -5,7 +5,7 @@ use crate::{
     command::ColorAttachmentError,
     device::{Device, DeviceError, MissingDownlevelFlags, MissingFeatures, RenderPassContext},
     hal_api::HalApi,
-    id::{ComputePipelineId, PipelineLayoutId, RenderPipelineId, ShaderModuleId},
+    id::{PipelineLayoutId, ShaderModuleId},
     resource::{Resource, ResourceInfo, ResourceType},
     resource_log, validation, Label,
 };
@@ -26,6 +26,10 @@ pub(crate) struct LateSizedBufferGroup {
 pub enum ShaderModuleSource<'a> {
     #[cfg(feature = "wgsl")]
     Wgsl(Cow<'a, str>),
+    #[cfg(feature = "glsl")]
+    Glsl(Cow<'a, str>, naga::front::glsl::Options),
+    #[cfg(feature = "spirv")]
+    SpirV(Cow<'a, [u32]>, naga::front::spv::Options),
     Naga(Cow<'static, naga::Module>),
     
     
@@ -34,8 +38,7 @@ pub enum ShaderModuleSource<'a> {
 }
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ShaderModuleDescriptor<'a> {
     pub label: Label<'a>,
     #[cfg_attr(feature = "serde", serde(default))]
@@ -47,7 +50,7 @@ pub struct ShaderModule<A: HalApi> {
     pub(crate) raw: Option<A::ShaderModule>,
     pub(crate) device: Arc<Device<A>>,
     pub(crate) interface: Option<validation::Interface>,
-    pub(crate) info: ResourceInfo<ShaderModuleId>,
+    pub(crate) info: ResourceInfo<ShaderModule<A>>,
     pub(crate) label: String,
 }
 
@@ -67,14 +70,16 @@ impl<A: HalApi> Drop for ShaderModule<A> {
     }
 }
 
-impl<A: HalApi> Resource<ShaderModuleId> for ShaderModule<A> {
+impl<A: HalApi> Resource for ShaderModule<A> {
     const TYPE: ResourceType = "ShaderModule";
 
-    fn as_info(&self) -> &ResourceInfo<ShaderModuleId> {
+    type Marker = crate::id::markers::ShaderModule;
+
+    fn as_info(&self) -> &ResourceInfo<Self> {
         &self.info
     }
 
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<ShaderModuleId> {
+    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
         &mut self.info
     }
 
@@ -97,6 +102,22 @@ pub struct ShaderError<E> {
 }
 #[cfg(feature = "wgsl")]
 impl fmt::Display for ShaderError<naga::front::wgsl::ParseError> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let label = self.label.as_deref().unwrap_or_default();
+        let string = self.inner.emit_to_string(&self.source);
+        write!(f, "\nShader '{label}' parsing {string}")
+    }
+}
+#[cfg(feature = "glsl")]
+impl fmt::Display for ShaderError<naga::front::glsl::ParseError> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let label = self.label.as_deref().unwrap_or_default();
+        let string = self.inner.emit_to_string(&self.source);
+        write!(f, "\nShader '{label}' parsing {string}")
+    }
+}
+#[cfg(feature = "spirv")]
+impl fmt::Display for ShaderError<naga::front::spv::Error> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = self.label.as_deref().unwrap_or_default();
         let string = self.inner.emit_to_string(&self.source);
@@ -151,6 +172,12 @@ pub enum CreateShaderModuleError {
     #[cfg(feature = "wgsl")]
     #[error(transparent)]
     Parsing(#[from] ShaderError<naga::front::wgsl::ParseError>),
+    #[cfg(feature = "glsl")]
+    #[error(transparent)]
+    ParsingGlsl(#[from] ShaderError<naga::front::glsl::ParseError>),
+    #[cfg(feature = "spirv")]
+    #[error(transparent)]
+    ParsingSpirV(#[from] ShaderError<naga::front::spv::Error>),
     #[error("Failed to generate the backend-specific code")]
     Generation,
     #[error(transparent)]
@@ -182,8 +209,7 @@ impl CreateShaderModuleError {
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProgrammableStageDescriptor<'a> {
     
     pub module: ShaderModuleId,
@@ -210,8 +236,7 @@ pub enum ImplicitLayoutError {
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ComputePipelineDescriptor<'a> {
     pub label: Label<'a>,
     
@@ -244,7 +269,7 @@ pub struct ComputePipeline<A: HalApi> {
     pub(crate) device: Arc<Device<A>>,
     pub(crate) _shader_module: Arc<ShaderModule<A>>,
     pub(crate) late_sized_buffer_groups: ArrayVec<LateSizedBufferGroup, { hal::MAX_BIND_GROUPS }>,
-    pub(crate) info: ResourceInfo<ComputePipelineId>,
+    pub(crate) info: ResourceInfo<ComputePipeline<A>>,
 }
 
 impl<A: HalApi> Drop for ComputePipeline<A> {
@@ -265,14 +290,16 @@ impl<A: HalApi> Drop for ComputePipeline<A> {
     }
 }
 
-impl<A: HalApi> Resource<ComputePipelineId> for ComputePipeline<A> {
+impl<A: HalApi> Resource for ComputePipeline<A> {
     const TYPE: ResourceType = "ComputePipeline";
 
-    fn as_info(&self) -> &ResourceInfo<ComputePipelineId> {
+    type Marker = crate::id::markers::ComputePipeline;
+
+    fn as_info(&self) -> &ResourceInfo<Self> {
         &self.info
     }
 
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<ComputePipelineId> {
+    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
         &mut self.info
     }
 }
@@ -285,8 +312,7 @@ impl<A: HalApi> ComputePipeline<A> {
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct VertexBufferLayout<'a> {
     
@@ -299,8 +325,7 @@ pub struct VertexBufferLayout<'a> {
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VertexState<'a> {
     
     pub stage: ProgrammableStageDescriptor<'a>,
@@ -310,8 +335,7 @@ pub struct VertexState<'a> {
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FragmentState<'a> {
     
     pub stage: ProgrammableStageDescriptor<'a>,
@@ -321,8 +345,7 @@ pub struct FragmentState<'a> {
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RenderPipelineDescriptor<'a> {
     pub label: Label<'a>,
     
@@ -330,13 +353,13 @@ pub struct RenderPipelineDescriptor<'a> {
     
     pub vertex: VertexState<'a>,
     
-    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub primitive: wgt::PrimitiveState,
     
-    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub depth_stencil: Option<wgt::DepthStencilState>,
     
-    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub multisample: wgt::MultisampleState,
     
     pub fragment: Option<FragmentState<'a>>,
@@ -468,6 +491,9 @@ pub struct VertexStep {
     pub stride: wgt::BufferAddress,
 
     
+    pub last_stride: wgt::BufferAddress,
+
+    
     pub mode: wgt::VertexStepMode,
 }
 
@@ -475,6 +501,7 @@ impl Default for VertexStep {
     fn default() -> Self {
         Self {
             stride: 0,
+            last_stride: 0,
             mode: wgt::VertexStepMode::Vertex,
         }
     }
@@ -492,7 +519,7 @@ pub struct RenderPipeline<A: HalApi> {
     pub(crate) strip_index_format: Option<wgt::IndexFormat>,
     pub(crate) vertex_steps: Vec<VertexStep>,
     pub(crate) late_sized_buffer_groups: ArrayVec<LateSizedBufferGroup, { hal::MAX_BIND_GROUPS }>,
-    pub(crate) info: ResourceInfo<RenderPipelineId>,
+    pub(crate) info: ResourceInfo<RenderPipeline<A>>,
 }
 
 impl<A: HalApi> Drop for RenderPipeline<A> {
@@ -513,14 +540,16 @@ impl<A: HalApi> Drop for RenderPipeline<A> {
     }
 }
 
-impl<A: HalApi> Resource<RenderPipelineId> for RenderPipeline<A> {
+impl<A: HalApi> Resource for RenderPipeline<A> {
     const TYPE: ResourceType = "RenderPipeline";
 
-    fn as_info(&self) -> &ResourceInfo<RenderPipelineId> {
+    type Marker = crate::id::markers::RenderPipeline;
+
+    fn as_info(&self) -> &ResourceInfo<Self> {
         &self.info
     }
 
-    fn as_info_mut(&mut self) -> &mut ResourceInfo<RenderPipelineId> {
+    fn as_info_mut(&mut self) -> &mut ResourceInfo<Self> {
         &mut self.info
     }
 }

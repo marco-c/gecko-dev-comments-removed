@@ -413,9 +413,12 @@ pub trait Queue<A: Api>: WasmNotSendSync {
     
     
     
+    
+    
     unsafe fn submit(
         &self,
         command_buffers: &[&A::CommandBuffer],
+        surface_textures: &[&A::SurfaceTexture],
         signal_fence: Option<(&mut A::Fence, FenceValue)>,
     ) -> Result<(), DeviceError>;
     unsafe fn present(
