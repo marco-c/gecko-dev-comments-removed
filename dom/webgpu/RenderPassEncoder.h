@@ -35,7 +35,7 @@ class RenderPipeline;
 class TextureView;
 
 struct ffiWGPURenderPassDeleter {
-  void operator()(ffi::WGPURecordedRenderPass*);
+  void operator()(ffi::WGPURenderPass*);
 };
 
 class RenderPassEncoder final : public ObjectBase,
@@ -51,7 +51,7 @@ class RenderPassEncoder final : public ObjectBase,
   virtual ~RenderPassEncoder();
   void Cleanup() {}
 
-  std::unique_ptr<ffi::WGPURecordedRenderPass, ffiWGPURenderPassDeleter> mPass;
+  std::unique_ptr<ffi::WGPURenderPass, ffiWGPURenderPassDeleter> mPass;
   
   nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
   nsTArray<RefPtr<const Buffer>> mUsedBuffers;
