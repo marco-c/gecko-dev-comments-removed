@@ -285,6 +285,10 @@ var allowlist = [
   { file: "chrome://browser/content/screenshots/copy.svg" },
   { file: "chrome://browser/content/screenshots/download.svg" },
   { file: "chrome://browser/content/screenshots/download-white.svg" },
+
+  
+  
+  { file: "chrome://browser/content/parent/ext-urlbar.js" },
 ];
 
 if (AppConstants.platform != "win") {

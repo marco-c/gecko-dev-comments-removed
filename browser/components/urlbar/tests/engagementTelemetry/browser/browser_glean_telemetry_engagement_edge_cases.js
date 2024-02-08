@@ -5,11 +5,6 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/ext/browser/head.js",
-  this
-);
-
 add_setup(async function () {
   await setup();
 });
