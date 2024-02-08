@@ -1,17 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// EventEmitter, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { EventEmitter } = ChromeUtils.importESModule(
   "resource://gre/modules/EventEmitter.sys.mjs"
 );
-const { actionCreators: ac, actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { getDefaultOptions } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/ActivityStreamStorage.sys.mjs"
-);
+import {
+  actionCreators as ac,
+  actionTypes as at,
+} from "resource://activity-stream/common/Actions.sys.mjs";
+import { getDefaultOptions } from "resource://activity-stream/lib/ActivityStreamStorage.sys.mjs";
 
 const lazy = {};
 
@@ -20,11 +25,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
-
-
-
-
-
+/*
+ * Generators for built in sections, keyed by the pref name for their feed.
+ * Built in sections may depend on options stored as serialised JSON in the pref
+ * `${feed_pref_name}.options`.
+ */
 
 const BUILT_IN_SECTIONS = ({ newtab, pocketNewtab }) => ({
   "feeds.section.topstories": options => ({
@@ -155,7 +160,7 @@ const BUILT_IN_SECTIONS = ({ newtab, pocketNewtab }) => ({
   }),
 });
 
-const SectionsManager = {
+export const SectionsManager = {
   ACTIONS_TO_PROXY: ["WEBEXT_CLICK", "WEBEXT_DISMISS"],
   CONTEXT_MENU_PREFS: { CheckSavedToPocket: "extensions.pocket.enabled" },
   CONTEXT_MENU_OPTIONS_FOR_HIGHLIGHT_TYPES: {
@@ -326,13 +331,13 @@ const SectionsManager = {
     }
   },
 
-  
-
-
+  /**
+   * Save metadata to places db and add a visit for that URL.
+   */
   updateBookmarkMetadata({ url }) {
     this.sections.forEach((section, id) => {
       if (id === "highlights") {
-        
+        // Skip Highlights cards, we already have that metadata.
         return;
       }
       if (section.rows) {
@@ -349,7 +354,7 @@ const SectionsManager = {
               description: card.description,
               previewImageURL: card.image,
             });
-            
+            // Highlights query skips bookmarks with no visits.
             lazy.PlacesUtils.history.insert({
               url,
               title: card.title,
@@ -361,14 +366,14 @@ const SectionsManager = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Sets the section's context menu options. These are all available context menu
+   * options minus the ones that are tied to a pref (see CONTEXT_MENU_PREFS) set
+   * to false.
+   *
+   * @param options section options
+   * @param id      section ID
+   */
   updateLinkMenuOptions(options, id) {
     if (options.availableLinkMenuOptions) {
       options.contextMenuOptions = options.availableLinkMenuOptions.filter(
@@ -378,20 +383,20 @@ const SectionsManager = {
       );
     }
 
-    
-    
-    
+    // Once we have rows, we can give each card it's own context menu based on it's type.
+    // We only want to do this for highlights because those have different data types.
+    // All other sections (built by the web extension API) will have the same context menu per section
     if (options.rows && id === "highlights") {
       this._addCardTypeLinkMenuOptions(options.rows);
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Sets each card in highlights' context menu options based on the card's type.
+   * (See types.js for a list of types)
+   *
+   * @param rows section rows containing a type for each card
+   */
   _addCardTypeLinkMenuOptions(rows) {
     for (let card of rows) {
       if (!this.CONTEXT_MENU_OPTIONS_FOR_HIGHLIGHT_TYPES[card.type]) {
@@ -402,9 +407,9 @@ const SectionsManager = {
         card.contextMenuOptions =
           this.CONTEXT_MENU_OPTIONS_FOR_HIGHLIGHT_TYPES[card.type];
 
-        
-        
-        
+        // Remove any options that shouldn't be there based on CONTEXT_MENU_PREFS.
+        // For example: If the Pocket extension is disabled, we should remove the CheckSavedToPocket option
+        // for each card that has it
         card.contextMenuOptions = card.contextMenuOptions.filter(
           o =>
             !this.CONTEXT_MENU_PREFS[o] ||
@@ -414,17 +419,17 @@ const SectionsManager = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Update a specific section card by its url. This allows an action to be
+   * broadcast to all existing pages to update a specific card without having to
+   * also force-update the rest of the section's cards and state on those pages.
+   *
+   * @param id              The id of the section with the card to be updated
+   * @param url             The url of the card to update
+   * @param options         The options to update for the card
+   * @param shouldBroadcast Whether or not to broadcast the update
+   * @param isStartup       If this update is during startup.
+   */
   updateSectionCard(id, url, options, shouldBroadcast, isStartup = false) {
     if (this.sections.has(id)) {
       const card = this.sections.get(id).rows.find(elem => elem.url === url);
@@ -481,7 +486,7 @@ for (const action of [
 
 EventEmitter.decorate(SectionsManager);
 
-class SectionsFeed {
+export class SectionsFeed {
   constructor() {
     this.init = this.init.bind(this);
     this.onAddSection = this.onAddSection.bind(this);
@@ -498,13 +503,13 @@ class SectionsFeed {
       SectionsManager.UPDATE_SECTION_CARD,
       this.onUpdateSectionCard
     );
-    
+    // Catch any sections that have already been added
     SectionsManager.sections.forEach((section, id) =>
       this.onAddSection(
         SectionsManager.ADD_SECTION,
         id,
         section,
-        true 
+        true /* isStartup */
       )
     );
   }
@@ -533,7 +538,7 @@ class SectionsFeed {
         })
       );
 
-      
+      // Make sure the section is in sectionOrder pref. Otherwise, prepend it.
       const orderedSections = this.orderedSectionIds;
       if (!orderedSections.includes(id)) {
         orderedSections.unshift(id);
@@ -606,7 +611,7 @@ class SectionsFeed {
       .getState()
       .Sections.filter(section => section.enabled)
       .map(s => s.id);
-    
+    // Top Sites is a special case. Append if the feed is enabled.
     if (this.store.getState().Prefs.values["feeds.topsites"]) {
       sections.push("topsites");
     }
@@ -619,19 +624,19 @@ class SectionsFeed {
     let index = orderedSections.indexOf(id);
     orderedSections.splice(index, 1);
     if (direction > 0) {
-      
+      // "Move Down"
       while (index < orderedSections.length) {
-        
-        
+        // If the section at the index is enabled/visible, insert moved section after.
+        // Otherwise, move on to the next spot and check it.
         if (enabledSections.includes(orderedSections[index++])) {
           break;
         }
       }
     } else {
-      
+      // "Move Up"
       while (index > 0) {
-        
-        
+        // If the section at the previous index is enabled/visible, insert moved section there.
+        // Otherwise, move on to the previous spot and check it.
         index--;
         if (enabledSections.includes(orderedSections[index])) {
           break;
@@ -648,7 +653,7 @@ class SectionsFeed {
       case at.INIT:
         SectionsManager.onceInitialized(this.init);
         break;
-      
+      // Wait for pref values, as some sections have options stored in prefs
       case at.PREFS_INITIAL_VALUES:
         SectionsManager.init(
           action.data,
@@ -712,5 +717,3 @@ class SectionsFeed {
     }
   }
 }
-
-const EXPORTED_SYMBOLS = ["SectionsFeed", "SectionsManager"];
