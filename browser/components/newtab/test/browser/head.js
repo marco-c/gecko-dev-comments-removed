@@ -1,6 +1,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  DiscoveryStreamFeed:
+    "resource://activity-stream/lib/DiscoveryStreamFeed.sys.mjs",
   FeatureCallout: "resource:///modules/FeatureCallout.sys.mjs",
   FeatureCalloutBroker:
     "resource://activity-stream/lib/FeatureCalloutBroker.sys.mjs",
@@ -19,9 +21,6 @@ const { FxAccounts } = ChromeUtils.importESModule(
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
-);
-const { DiscoveryStreamFeed } = ChromeUtils.import(
-  "resource://activity-stream/lib/DiscoveryStreamFeed.jsm"
 );
 
 
