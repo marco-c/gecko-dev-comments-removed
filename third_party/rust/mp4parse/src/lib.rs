@@ -4519,6 +4519,9 @@ fn read_mvhd<T: Read>(src: &mut BMFFBox<T>) -> Result<MovieHeaderBox> {
     };
     
     skip(src, 80)?;
+
+    
+    skip_box_remain(src)?;
     Ok(MovieHeaderBox {
         timescale,
         duration,
