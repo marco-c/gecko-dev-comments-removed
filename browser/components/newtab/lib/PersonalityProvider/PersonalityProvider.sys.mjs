@@ -1,24 +1,20 @@
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BasePromiseWorker: "resource://gre/modules/PromiseWorker.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   Utils: "resource://services-settings/Utils.sys.mjs",
 });
 
-const { BasePromiseWorker } = ChromeUtils.importESModule(
-  "resource://gre/modules/PromiseWorker.sys.mjs"
-);
-
 const RECIPE_NAME = "personality-provider-recipe";
 const MODELS_NAME = "personality-provider-models";
 
-class PersonalityProvider {
+export class PersonalityProvider {
   constructor(modelKeys) {
     this.modelKeys = modelKeys;
     this.onSync = this.onSync.bind(this);
@@ -36,7 +32,7 @@ class PersonalityProvider {
       return this._personalityProviderWorker;
     }
 
-    this._personalityProviderWorker = new BasePromiseWorker(
+    this._personalityProviderWorker = new lazy.BasePromiseWorker(
       "resource://activity-stream/lib/PersonalityProvider/PersonalityProvider.worker.mjs",
       { type: "module" }
     );
@@ -45,7 +41,7 @@ class PersonalityProvider {
   }
 
   get baseAttachmentsURL() {
-    
+    // Returning a promise, so we can have an async getter.
     return this._getBaseAttachmentsURL();
   }
 
@@ -93,18 +89,18 @@ class PersonalityProvider {
     this.personalityProviderWorker.post("onSync", [event]);
   }
 
-  
-
-
-
+  /**
+   * Gets contents of the attachment if it already exists on file,
+   * and if not attempts to download it.
+   */
   getAttachment(record) {
     return this.personalityProviderWorker.post("getAttachment", [record]);
   }
 
-  
-
-
-
+  /**
+   * Returns a Recipe from remote settings to be consumed by a RecipeExecutor.
+   * A Recipe is a set of instructions on how to processes a RecipeExecutor.
+   */
   async getRecipe() {
     if (!this.recipes || !this.recipes.length) {
       const result = await lazy.RemoteSettings(RECIPE_NAME).get();
@@ -118,9 +114,9 @@ class PersonalityProvider {
     return this.recipes[0];
   }
 
-  
-
-
+  /**
+   * Grabs a slice of browse history for building a interest vector
+   */
   async fetchHistory(columns, beginTimeSecs, endTimeSecs) {
     let sql = `SELECT url, title, visit_count, frecency, last_visit_date, description
     FROM moz_places
@@ -140,9 +136,9 @@ class PersonalityProvider {
     return history;
   }
 
-  
-
-
+  /**
+   * Handles setup and metrics of history fetch.
+   */
   async getHistory() {
     let endTimeSecs = new Date().getTime() / 1000;
     let beginTimeSecs = endTimeSecs - this.interestConfig.history_limit_secs;
@@ -214,31 +210,31 @@ class PersonalityProvider {
       return;
     }
 
-    
-    
-    
-    
+    // We always generate a recipe executor, no cache used here.
+    // This is because the result of this is an object with
+    // functions (taggers) so storing it in cache is not possible.
+    // Thus we cannot use it to rehydrate anything.
     const fetchModelsResult = await this.fetchModels();
-    
+    // If this fails, log an error and return.
     if (!fetchModelsResult.ok) {
       return;
     }
     await this.generateTaggers();
     await this.generateRecipeExecutor();
 
-    
+    // If we don't have a cached vector, create a new one.
     if (!this.interestVector) {
       const interestVectorResult = await this.createInterestVector();
-      
+      // If that failed, log an error and return.
       if (!interestVectorResult.ok) {
         return;
       }
       this.interestVector = interestVectorResult.interestVector;
     }
 
-    
-    
-    
+    // This happens outside the createInterestVector call above,
+    // because create can be skipped if rehydrating from cache.
+    // In that case, the interest vector is provided and not created, so we just set it.
     await this.setInterestVector();
 
     this.initialized = true;
@@ -259,25 +255,23 @@ class PersonalityProvider {
       return -1;
     }
     const { scorableItem, rankingVector } = itemRelevanceScore;
-    
+    // Put the results on the item for debugging purposes.
     pocketItem.scorableItem = scorableItem;
     pocketItem.rankingVector = rankingVector;
     return rankingVector.score;
   }
 
-  
-
-
+  /**
+   * Returns an object holding the personalization scores of this provider instance.
+   */
   getScores() {
     return {
-      
-      
-      
-      
+      // We cannot return taggers here.
+      // What we return here goes into persistent cache, and taggers have functions on it.
+      // If we attempted to save taggers into persistent cache, it would store it to disk,
+      // and the next time we load it, it would start thowing function is not defined.
       interestConfig: this.interestConfig,
       interestVector: this.interestVector,
     };
   }
 }
-
-const EXPORTED_SYMBOLS = ["PersonalityProvider"];
