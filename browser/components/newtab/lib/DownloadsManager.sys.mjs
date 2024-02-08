@@ -1,10 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
+import { actionTypes as at } from "resource://activity-stream/common/Actions.sys.mjs";
 
 const lazy = {};
 
@@ -15,9 +13,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
 });
 
-const DOWNLOAD_CHANGED_DELAY_TIME = 1000; 
+const DOWNLOAD_CHANGED_DELAY_TIME = 1000; // time in ms to delay timer for downloads changed events
 
-class DownloadsManager {
+export class DownloadsManager {
   constructor(store) {
     this._downloadData = null;
     this._store = null;
@@ -49,7 +47,7 @@ class DownloadsManager {
   init(store) {
     this._store = store;
     this._downloadData = lazy.DownloadsCommon.getData(
-      null ,
+      null /* null for non-private downloads */,
       true,
       false,
       true
@@ -61,7 +59,7 @@ class DownloadsManager {
     if (!this._downloadItems.has(download.source.url)) {
       this._downloadItems.set(download.source.url, download);
 
-      
+      // On startup, all existing downloads fire this notification, so debounce them
       if (this._downloadTimer) {
         this._downloadTimer.delay = DOWNLOAD_CHANGED_DELAY_TIME;
       } else {
@@ -93,14 +91,14 @@ class DownloadsManager {
     }
     let results = [];
 
-    
+    // Only get downloads within the time threshold specified and sort by recency
     const downloadThreshold = Date.now() - threshold;
     let downloads = [...this._downloadItems.values()]
       .filter(download => download.endTime > downloadThreshold)
       .sort((download1, download2) => download1.endTime < download2.endTime);
 
     for (const download of downloads) {
-      
+      // Ignore blocked links, but allow long (data:) uris to avoid high CPU
       if (
         download.source.url.length < 10000 &&
         lazy.NewTabUtils.blockedLinks.isBlocked(download.source)
@@ -108,15 +106,15 @@ class DownloadsManager {
         continue;
       }
 
-      
+      // Only include downloads where the file still exists
       if (onlyExists) {
-        
+        // Refresh download to ensure the 'exists' attribute is up to date
         await download.refresh();
         if (!download.target.exists) {
           continue;
         }
       }
-      
+      // Only include downloads that were completed successfully
       if (onlySucceeded) {
         if (!download.succeeded) {
           continue;
@@ -174,8 +172,8 @@ class DownloadsManager {
           action.data.event && win.whereToOpenLink(action.data.event);
         doDownloadAction(download => {
           lazy.DownloadsCommon.openDownload(download, {
-            
-            
+            // Replace "current" or unknown value with "tab" as the default behavior
+            // for opening downloads when handled internally
             openWhere: ["window", "tab", "tabshifted"].includes(openWhere)
               ? openWhere
               : "tab",
@@ -188,4 +186,3 @@ class DownloadsManager {
     }
   }
 }
-const EXPORTED_SYMBOLS = ["DownloadsManager"];
