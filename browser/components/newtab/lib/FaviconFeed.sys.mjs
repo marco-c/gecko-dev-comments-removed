@@ -1,14 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { actionTypes as at } from "resource://activity-stream/common/Actions.sys.mjs";
+import { getDomain } from "resource://activity-stream/lib/TippyTopProvider.sys.mjs";
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// RemoteSettings, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-"use strict";
-
-const { actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { getDomain } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/TippyTopProvider.sys.mjs"
-);
+// eslint-disable-next-line mozilla/use-static-import
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
@@ -22,17 +25,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const MIN_FAVICON_SIZE = 96;
 
-
-
-
-
-
-
+/**
+ * Get favicon info (uri and size) for a uri from Places.
+ *
+ * @param uri {nsIURI} Page to check for favicon data
+ * @returns A promise of an object (possibly null) containing the data
+ */
 function getFaviconInfo(uri) {
   return new Promise(resolve =>
     lazy.PlacesUtils.favicons.getFaviconDataForPage(
       uri,
-      
+      // Package up the icon data in an object if we have it; otherwise null
       (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
         resolve(iconUri ? { iconUri, faviconSize } : null),
       lazy.NewTabUtils.activityStreamProvider.THUMB_FAVICON_SIZE
@@ -40,18 +43,18 @@ function getFaviconInfo(uri) {
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Fetches visit paths for a given URL from its most recent visit in Places.
+ *
+ * Note that this includes the URL itself as well as all the following
+ * permenent&temporary redirected URLs if any.
+ *
+ * @param {String} a URL string
+ *
+ * @returns {Array} Returns an array containing objects as
+ *   {int}    visit_id: ID of the visit in moz_historyvisits.
+ *   {String} url: URL of the redirected URL.
+ */
 async function fetchVisitPaths(url) {
   const query = `
     WITH RECURSIVE path(visit_id)
@@ -91,15 +94,15 @@ async function fetchVisitPaths(url) {
   return visits;
 }
 
-
-
-
-
-
-
-
-
-async function fetchIconFromRedirects(url) {
+/**
+ * Fetch favicon for a url by following its redirects in Places.
+ *
+ * This can improve the rich icon coverage for Top Sites since Places only
+ * associates the favicon to the final url if the original one gets redirected.
+ * Note this is not an urgent request, hence it is dispatched to the main
+ * thread idle handler to avoid any possible performance impact.
+ */
+export async function fetchIconFromRedirects(url) {
   const visitPaths = await fetchVisitPaths(url);
   if (visitPaths.length > 1) {
     const lastVisit = visitPaths.pop();
@@ -118,19 +121,19 @@ async function fetchIconFromRedirects(url) {
   }
 }
 
-class FaviconFeed {
+export class FaviconFeed {
   constructor() {
     this._queryForRedirects = new Set();
   }
 
-  
-
-
-
-
-
+  /**
+   * fetchIcon attempts to fetch a rich icon for the given url from two sources.
+   * First, it looks up the tippy top feed, if it's still missing, then it queries
+   * the places for rich icon with its most recent visit in order to deal with
+   * the redirected visit. See Bug 1421428 for more details.
+   */
   async fetchIcon(url) {
-    
+    // Avoid initializing and fetching icons if prefs are turned off
     if (!this.shouldFetchIcons) {
       return;
     }
@@ -145,7 +148,7 @@ class FaviconFeed {
     }
 
     let iconUri = Services.io.newURI(site.image_url);
-    
+    // The #tippytop is to be able to identify them for telemetry.
     iconUri = iconUri.mutate().setRef("tippytop").finalize();
     lazy.PlacesUtils.favicons.setAndFetchFaviconForPage(
       Services.io.newURI(url),
@@ -157,9 +160,9 @@ class FaviconFeed {
     );
   }
 
-  
-
-
+  /**
+   * Get the site tippy top data from Remote Settings.
+   */
   async getSite(domain) {
     const sites = await this.tippyTop.get({
       filters: { domain },
@@ -168,9 +171,9 @@ class FaviconFeed {
     return sites.length ? sites[0] : null;
   }
 
-  
-
-
+  /**
+   * Get the tippy top collection from Remote Settings.
+   */
   get tippyTop() {
     if (!this._tippyTop) {
       this._tippyTop = RemoteSettings("tippytop");
@@ -178,9 +181,9 @@ class FaviconFeed {
     return this._tippyTop;
   }
 
-  
-
-
+  /**
+   * Determine if we should be fetching and saving icons.
+   */
   get shouldFetchIcons() {
     return Services.prefs.getBoolPref("browser.chrome.site_icons");
   }
@@ -193,5 +196,3 @@ class FaviconFeed {
     }
   }
 }
-
-const EXPORTED_SYMBOLS = ["FaviconFeed", "fetchIconFromRedirects"];
