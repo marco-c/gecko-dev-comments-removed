@@ -613,13 +613,10 @@ void nsWindow::Destroy() {
 #endif
 
   
-  DestroyLayerManager();
-
-  
-  
-  mSurfaceProvider.CleanupResources();
-
-  g_signal_handlers_disconnect_by_data(gtk_settings_get_default(), this);
+  RefPtr<nsDragService> dragService = nsDragService::GetInstance();
+  if (dragService && this == dragService->GetMostRecentDestWindow()) {
+    dragService->ScheduleLeaveEvent();
+  }
 
   nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
   if (rollupListener) {
@@ -629,13 +626,15 @@ void nsWindow::Destroy() {
     }
   }
 
-  
-  RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  if (dragService && this == dragService->GetMostRecentDestWindow()) {
-    dragService->ScheduleLeaveEvent();
-  }
-
   NativeShow(false);
+
+  ClearTransparencyBitmap();
+
+  
+  
+  DisableRendering();
+
+  g_signal_handlers_disconnect_by_data(gtk_settings_get_default(), this);
 
   if (mIMContext) {
     mIMContext->OnDestroyWindow(this);
