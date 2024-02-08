@@ -437,7 +437,7 @@ Assembler::Condition MacroAssemblerCompat::testBigIntTruthy(
 void MacroAssemblerCompat::breakpoint() {
   
   
-  Brk(0);
+  Brk(0xf000);
 }
 
 

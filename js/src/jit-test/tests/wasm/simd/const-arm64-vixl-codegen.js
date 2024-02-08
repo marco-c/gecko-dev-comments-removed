@@ -10,7 +10,7 @@ ${lead}str     x23, \\[sp, #..\\]`;
 
 var suffix =
 `${lead}b       #\\+0x8 \\(addr 0x.*\\)
-${lead}brk     #0x0`;
+${lead}brk     #0xf000`;
 
 for ( let [bits, expected, values] of [
     
