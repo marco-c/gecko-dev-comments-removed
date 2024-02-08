@@ -65,56 +65,15 @@ function validateStatsReport(statsReport) {
 
 
 
-function assert_stats_report_has_stats(statsReport, statsTypes) {
-  const hasTypes = new Set([...statsReport.values()]
-    .map(stats => stats.type));
-
-  for(const type of statsTypes) {
-    assert_true(hasTypes.has(type),
-      `Expect statsReport to contain stats object of type ${type}`);
-  }
-}
-
-function findStatsFromReport(statsReport, predicate, message) {
-  for (const stats of statsReport.values()) {
-    if (predicate(stats)) {
-      return stats;
-    }
-  }
-
-  assert_unreached(message || 'none of stats in statsReport satisfy given condition')
-}
-
-
-
-function getRequiredStats(statsReport, type) {
-  for(const stats of statsReport.values()) {
-    if(stats.type === type) {
-      return stats;
-    }
-  }
-
-  assert_unreached(`required stats of type ${type} is not found in stats report`);
-}
-
-
-
-
-function getStatsById(statsReport, statsId) {
-  assert_true(statsReport.has(statsId),
-    `Expect stats report to have stats object with id ${statsId}`);
-
-  return statsReport.get(statsId);
-}
-
-
-
 
 
 
 function validateIdField(statsReport, stats, field, type) {
   assert_string_field(stats, field);
-  const linkedStats = getStatsById(statsReport, stats[field]);
+  assert_true(statsReport.has(stats[field]),
+    `Expect stats report to have stats object with id ${stats[field]}`);
+
+  const linkedStats = statsReport.get(stats[field]);
   assert_equals(linkedStats.type, type,
     `Expect linked stats object to have type ${type}`);
 }
@@ -755,7 +714,6 @@ function validateDataChannelStats(statsReport, stats) {
 
 
 
-
 function validateTransportStats(statsReport, stats) {
   validateRtcStats(statsReport, stats);
 
@@ -779,7 +737,6 @@ function validateTransportStats(statsReport, stats) {
   assert_optional_string_field(stats, 'tlsVersion');
   assert_optional_string_field(stats, 'dtlsCipher');
   assert_optional_string_field(stats, 'srtpCipher');
-  assert_optional_string_field(stats, 'tlsGroup');
   assert_optional_unsigned_int_field(stats, 'selectedCandidatePairChanges');
 }
 
