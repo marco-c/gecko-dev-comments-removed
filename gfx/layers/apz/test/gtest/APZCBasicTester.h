@@ -36,6 +36,15 @@ class APZCBasicTester : public APZCTesterBase {
         new TestAsyncPanZoomController(LayersId{0}, mcc, tm, mGestureBehavior);
     apzc->SetFrameMetrics(TestFrameMetrics());
     apzc->GetScrollMetadata().SetIsLayersIdRoot(true);
+    
+    
+    
+    
+    
+    
+    
+    
+    apzc->GetFrameMetrics().SetIsRootContent(true);
   }
 
   
@@ -61,6 +70,7 @@ class APZCBasicTester : public APZCTesterBase {
   void MakeApzcWaitForMainThread() { apzc->SetWaitForMainThread(); }
 
   void MakeApzcZoomable() {
+    MOZ_ASSERT(apzc->GetFrameMetrics().IsRootContent());
     apzc->UpdateZoomConstraints(ZoomConstraints(
         true, true, CSSToParentLayerScale(0.25f), CSSToParentLayerScale(4.0f)));
   }
