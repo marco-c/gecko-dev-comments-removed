@@ -856,6 +856,10 @@ nsFilePicker::CheckContentAnalysisService() {
 nsresult nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
   NS_ENSURE_ARG_POINTER(aCallback);
 
+  if (MaybeBlockFilePicker(aCallback)) {
+    return NS_OK;
+  }
+
   
   if (gfxPlatform::IsHeadless()) {
     return nsresult::NS_ERROR_NOT_AVAILABLE;

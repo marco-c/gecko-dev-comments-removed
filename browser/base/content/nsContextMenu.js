@@ -615,6 +615,25 @@ class nsContextMenu {
       "disabled",
       !this.mediaURL || mediaIsBlob
     );
+
+    if (
+      Services.policies.status === Services.policies.ACTIVE &&
+      !Services.policies.isAllowed("filepickers")
+    ) {
+      
+      
+      
+      for (let item of [
+        "context-savepage",
+        "context-savelink",
+        "context-savevideo",
+        "context-saveaudio",
+        "context-video-saveimage",
+        "context-saveaudio",
+      ]) {
+        this.setItemAttr(item, "disabled", true);
+      }
+    }
   }
 
   initImageItems() {
@@ -650,6 +669,17 @@ class nsContextMenu {
       "context-saveimage",
       (this.onLoadedImage || this.onCanvas) && !this.inPDFEditor
     );
+
+    if (Services.policies.status === Services.policies.ACTIVE) {
+      
+      
+      
+      this.setItemAttr(
+        "context-saveimage",
+        "disabled",
+        !Services.policies.isAllowed("filepickers")
+      );
+    }
 
     
     

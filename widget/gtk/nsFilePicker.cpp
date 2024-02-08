@@ -417,6 +417,10 @@ nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
   
   if (mFileChooser) return NS_ERROR_NOT_AVAILABLE;
 
+  if (MaybeBlockFilePicker(aCallback)) {
+    return NS_OK;
+  }
+
   NS_ConvertUTF16toUTF8 title(mTitle);
 
   GtkWindow* parent_widget =
