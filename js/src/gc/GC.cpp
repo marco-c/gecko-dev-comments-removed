@@ -273,6 +273,29 @@ const AllocKind gc::slotsToThingKind[] = {
 static_assert(std::size(slotsToThingKind) == SLOTS_TO_THING_KIND_LIMIT,
               "We have defined a slot count for each kind.");
 
+
+
+
+
+
+
+
+
+const constexpr uint32_t gc::slotsToAllocKindBytes[] = {
+    
+    
+    
+    
+     sizeof(JSObject_Slots0), sizeof(JSObject_Slots2), sizeof(JSObject_Slots2), sizeof(JSObject_Slots4),
+     sizeof(JSObject_Slots4), sizeof(JSObject_Slots8), sizeof(JSObject_Slots8), sizeof(JSObject_Slots8),
+     sizeof(JSObject_Slots8), sizeof(JSObject_Slots12), sizeof(JSObject_Slots12), sizeof(JSObject_Slots12),
+     sizeof(JSObject_Slots12), sizeof(JSObject_Slots16), sizeof(JSObject_Slots16), sizeof(JSObject_Slots16),
+     sizeof(JSObject_Slots16)
+    
+};
+
+static_assert(std::size(slotsToAllocKindBytes) == SLOTS_TO_THING_KIND_LIMIT);
+
 MOZ_THREAD_LOCAL(JS::GCContext*) js::TlsGCContext;
 
 JS::GCContext::GCContext(JSRuntime* runtime) : runtime_(runtime) {}

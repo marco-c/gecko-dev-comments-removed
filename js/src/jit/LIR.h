@@ -501,7 +501,8 @@ class LDefinition {
     GENERAL,  
     INT32,    
     OBJECT,   
-    SLOTS,    
+    SLOTS,  
+            
     WASM_ANYREF,   
     FLOAT32,       
     DOUBLE,        

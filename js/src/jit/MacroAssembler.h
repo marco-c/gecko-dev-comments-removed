@@ -4071,9 +4071,41 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            bool zeroFields);
   
   
+  
+  
+  void wasmNewArrayObject(Register instance, Register result,
+                          Register numElements, Register typeDefData,
+                          Register temp, Label* fail, uint32_t elemSize,
+                          bool zeroFields);
+  
+  
+  
+  
+  void wasmNewArrayObjectFixed(Register instance, Register result,
+                               Register typeDefData, Register temp1,
+                               Register temp2, Label* fail,
+                               uint32_t numElements, uint32_t storageBytes,
+                               bool zeroFields);
+
+  
+  
+  
+  
+  
+  
+  
+  
   void wasmBumpPointerAllocate(Register instance, Register result,
                                Register typeDefData, Register temp1,
                                Register temp2, Label* fail, uint32_t size);
+  
+  
+  
+  
+  
+  void wasmBumpPointerAllocateDynamic(Register instance, Register result,
+                                      Register typeDefData, Register size,
+                                      Register temp1, Label* fail);
 
   
   

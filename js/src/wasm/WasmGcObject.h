@@ -189,6 +189,15 @@ class WasmArrayObject : public WasmGcObject,
   }
 
   
+  
+  static inline constexpr size_t sizeOfIncludingInlineData(
+      size_t sizeOfInlineData) {
+    size_t n = sizeof(WasmArrayObject) + sizeOfInlineData;
+    MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
+    return n;
+  }
+
+  
   static inline gc::AllocKind allocKindForOOL();
   static inline gc::AllocKind allocKindForIL(uint32_t storageBytes);
   inline gc::AllocKind allocKind() const;
@@ -258,6 +267,9 @@ class WasmArrayObject : public WasmGcObject,
   static constexpr size_t offsetOfInlineStorage() {
     return AlignBytes(sizeof(WasmArrayObject), inlineStorageAlignment);
   }
+  static constexpr size_t offsetOfInlineArrayData() {
+    return offsetOfInlineStorage() + sizeof(DataHeader);
+  }
 
   
   static void obj_trace(JSTracer* trc, JSObject* object);
@@ -284,15 +296,15 @@ class WasmArrayObject : public WasmGcObject,
 
   static WasmArrayObject* fromInlineDataPointer(uint8_t* data) {
     MOZ_ASSERT(isDataInline(data));
-    return (WasmArrayObject*)(data - sizeof(DataHeader) -
-                              WasmArrayObject::offsetOfInlineStorage());
+    return (WasmArrayObject*)(data -
+                              WasmArrayObject::offsetOfInlineArrayData());
   }
 
   static DataHeader* addressOfInlineDataHeader(WasmArrayObject* base) {
     return base->offsetToPointer<DataHeader>(offsetOfInlineStorage());
   }
   static uint8_t* addressOfInlineData(WasmArrayObject* base) {
-    return (uint8_t*)(addressOfInlineDataHeader(base) + 1);
+    return base->offsetToPointer<uint8_t>(offsetOfInlineArrayData());
   }
 };
 
@@ -340,7 +352,8 @@ class WasmStructObject : public WasmGcObject,
 
   
   
-  static inline size_t sizeOfIncludingInlineData(size_t sizeOfInlineData) {
+  static inline constexpr size_t sizeOfIncludingInlineData(
+      size_t sizeOfInlineData) {
     size_t n = sizeof(WasmStructObject) + sizeOfInlineData;
     MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
     return n;

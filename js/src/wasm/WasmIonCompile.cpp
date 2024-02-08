@@ -3926,15 +3926,15 @@ class FunctionCompiler {
   
   
   [[nodiscard]] bool writeGcValueAtBasePlusOffset(
-      uint32_t lineOrBytecode, StorageType fieldType, MDefinition* keepAlive,
+      uint32_t lineOrBytecode, StorageType type, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
       uint32_t offset, bool needsTrapInfo, WasmPreBarrierKind preBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
-    MOZ_ASSERT(fieldType.widenToValType().toMIRType() == value->type());
-    MNarrowingOp narrowingOp = fieldStoreInfoToMIR(fieldType);
+    MOZ_ASSERT(type.widenToValType().toMIRType() == value->type());
+    MNarrowingOp narrowingOp = fieldStoreInfoToMIR(type);
 
-    if (!fieldType.isRefRepr()) {
+    if (!type.isRefRepr()) {
       MaybeTrapSiteInfo maybeTrap;
       if (needsTrapInfo) {
         maybeTrap.emplace(getTrapSiteInfo());
@@ -3957,7 +3957,7 @@ class FunctionCompiler {
     
     
     MOZ_ASSERT(narrowingOp == MNarrowingOp::None);
-    MOZ_ASSERT(fieldType.widenToValType() == fieldType.valType());
+    MOZ_ASSERT(type.widenToValType() == type.valType());
 
     
     auto* store = MWasmStoreFieldRefKA::New(
@@ -3979,12 +3979,12 @@ class FunctionCompiler {
   
   
   [[nodiscard]] bool writeGcValueAtBasePlusScaledIndex(
-      uint32_t lineOrBytecode, StorageType fieldType, MDefinition* keepAlive,
+      uint32_t lineOrBytecode, StorageType type, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
       uint32_t scale, MDefinition* index, WasmPreBarrierKind preBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
-    MOZ_ASSERT(fieldType.widenToValType().toMIRType() == value->type());
+    MOZ_ASSERT(type.widenToValType().toMIRType() == value->type());
     MOZ_ASSERT(scale == 1 || scale == 2 || scale == 4 || scale == 8 ||
                scale == 16);
 
@@ -4001,9 +4001,8 @@ class FunctionCompiler {
     }
 
     return writeGcValueAtBasePlusOffset(
-        lineOrBytecode, fieldType, keepAlive, aliasBitset, value, finalAddr,
-        0,
-        false, preBarrierKind);
+        lineOrBytecode, type, keepAlive, aliasBitset, value, finalAddr,
+        0, false, preBarrierKind);
   }
 
   
@@ -4011,14 +4010,14 @@ class FunctionCompiler {
   
   
   [[nodiscard]] MDefinition* readGcValueAtBasePlusOffset(
-      StorageType fieldType, FieldWideningOp fieldWideningOp,
-      MDefinition* keepAlive, AliasSet::Flag aliasBitset, MDefinition* base,
-      uint32_t offset, bool needsTrapInfo) {
+      StorageType type, FieldWideningOp fieldWideningOp, MDefinition* keepAlive,
+      AliasSet::Flag aliasBitset, MDefinition* base, uint32_t offset,
+      bool needsTrapInfo) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
     MIRType mirType;
     MWideningOp mirWideningOp;
-    fieldLoadInfoToMIR(fieldType, fieldWideningOp, &mirType, &mirWideningOp);
+    fieldLoadInfoToMIR(type, fieldWideningOp, &mirType, &mirWideningOp);
     MaybeTrapSiteInfo maybeTrap;
     if (needsTrapInfo) {
       maybeTrap.emplace(getTrapSiteInfo());
@@ -4038,9 +4037,9 @@ class FunctionCompiler {
   
   
   [[nodiscard]] MDefinition* readGcValueAtBasePlusScaledIndex(
-      StorageType fieldType, FieldWideningOp fieldWideningOp,
-      MDefinition* keepAlive, AliasSet::Flag aliasBitset, MDefinition* base,
-      uint32_t scale, MDefinition* index) {
+      StorageType type, FieldWideningOp fieldWideningOp, MDefinition* keepAlive,
+      AliasSet::Flag aliasBitset, MDefinition* base, uint32_t scale,
+      MDefinition* index) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
     MOZ_ASSERT(scale == 1 || scale == 2 || scale == 4 || scale == 8 ||
@@ -4060,7 +4059,7 @@ class FunctionCompiler {
 
     MIRType mirType;
     MWideningOp mirWideningOp;
-    fieldLoadInfoToMIR(fieldType, fieldWideningOp, &mirType, &mirWideningOp);
+    fieldLoadInfoToMIR(type, fieldWideningOp, &mirType, &mirWideningOp);
     auto* load = MWasmLoadFieldKA::New(alloc(), keepAlive, finalAddr,
                                        0, mirType, mirWideningOp,
                                        AliasSet::Load(aliasBitset),
@@ -4353,45 +4352,24 @@ class FunctionCompiler {
   
   
   
-  
-  [[nodiscard]] MDefinition* createDefaultInitializedArrayObject(
-      uint32_t lineOrBytecode, uint32_t typeIndex, MDefinition* numElements) {
+  [[nodiscard]] MDefinition* createArrayObject(uint32_t lineOrBytecode,
+                                               uint32_t typeIndex,
+                                               MDefinition* numElements,
+                                               uint32_t elemSize,
+                                               bool zeroFields) {
     
     MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
     if (!typeDefData) {
       return nullptr;
     }
 
-    
-    
-    
-    
-    MDefinition* arrayObject;
-    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew_true, numElements,
-                           typeDefData, &arrayObject)) {
+    auto* arrayObject = MWasmNewArrayObject::New(
+        alloc(), instancePointer_, numElements, typeDefData, elemSize,
+        zeroFields, bytecodeOffset());
+    if (!arrayObject) {
       return nullptr;
     }
-
-    return arrayObject;
-  }
-
-  [[nodiscard]] MDefinition* createUninitializedArrayObject(
-      uint32_t lineOrBytecode, uint32_t typeIndex, MDefinition* numElements) {
-    
-    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-    if (!typeDefData) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    MDefinition* arrayObject;
-    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew_false, numElements,
-                           typeDefData, &arrayObject)) {
-      return nullptr;
-    }
+    curBlock_->add(arrayObject);
 
     return arrayObject;
   }
@@ -4581,7 +4559,8 @@ class FunctionCompiler {
 
     
     MDefinition* arrayObject =
-        createUninitializedArrayObject(lineOrBytecode, typeIndex, numElements);
+        createArrayObject(lineOrBytecode, typeIndex, numElements,
+                          arrayType.elementType_.size(), false);
     if (!arrayObject) {
       return nullptr;
     }
@@ -7442,8 +7421,10 @@ static bool EmitArrayNewDefault(FunctionCompiler& f) {
   }
 
   
-  MDefinition* arrayObject = f.createDefaultInitializedArrayObject(
-      lineOrBytecode, typeIndex, numElements);
+  const ArrayType& arrayType = (*f.moduleEnv().types)[typeIndex].arrayType();
+  MDefinition* arrayObject =
+      f.createArrayObject(lineOrBytecode, typeIndex, numElements,
+                          arrayType.elementType_.size(), true);
   if (!arrayObject) {
     return false;
   }
@@ -7473,8 +7454,12 @@ static bool EmitArrayNewFixed(FunctionCompiler& f) {
   }
 
   
-  MDefinition* arrayObject = f.createDefaultInitializedArrayObject(
-      lineOrBytecode, typeIndex, numElementsDef);
+  const ArrayType& arrayType = (*f.moduleEnv().types)[typeIndex].arrayType();
+  StorageType elemType = arrayType.elementType_;
+  uint32_t elemSize = elemType.size();
+  MDefinition* arrayObject =
+      f.createArrayObject(lineOrBytecode, typeIndex, numElementsDef, elemSize,
+                          false);
   if (!arrayObject) {
     return false;
   }
@@ -7486,9 +7471,6 @@ static bool EmitArrayNewFixed(FunctionCompiler& f) {
   }
 
   
-  const ArrayType& arrayType = (*f.moduleEnv().types)[typeIndex].arrayType();
-  StorageType elemType = arrayType.elementType_;
-  uint32_t elemSize = elemType.size();
 
   
   

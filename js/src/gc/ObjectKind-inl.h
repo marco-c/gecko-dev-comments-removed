@@ -20,8 +20,8 @@ namespace gc {
 
 
 const size_t SLOTS_TO_THING_KIND_LIMIT = 17;
-
 extern const AllocKind slotsToThingKind[];
+extern const uint32_t slotsToAllocKindBytes[];
 
 
 static inline AllocKind GetGCObjectKind(size_t numSlots) {

@@ -7452,6 +7452,19 @@ void LIRGenerator::visitWasmLoadField(MWasmLoadField* ins) {
                                        ins->maybeTrap()),
            ins);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (ins->getAliasSet().flags() & AliasSet::WasmArrayDataPointer) {
+    LDefinition* def = (*current->rbegin())->getDef(0);
+    def->set(def->virtualRegister(), LDefinition::SLOTS, def->policy());
+  }
 }
 
 void LIRGenerator::visitWasmLoadFieldKA(MWasmLoadFieldKA* ins) {
@@ -7593,6 +7606,15 @@ void LIRGenerator::visitWasmNewStructObject(MWasmNewStructObject* ins) {
   LWasmNewStructObject* lir = new (alloc())
       LWasmNewStructObject(useFixed(ins->instance(), InstanceReg),
                            useRegister(ins->typeDefData()), temp(), temp());
+  define(lir, ins);
+  assignWasmSafepoint(lir);
+}
+
+void LIRGenerator::visitWasmNewArrayObject(MWasmNewArrayObject* ins) {
+  LWasmNewArrayObject* lir = new (alloc())
+      LWasmNewArrayObject(useFixed(ins->instance(), InstanceReg),
+                          useRegisterOrConstant(ins->numElements()),
+                          useRegister(ins->typeDefData()), temp(), temp());
   define(lir, ins);
   assignWasmSafepoint(lir);
 }
