@@ -409,7 +409,7 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
 
   
   
-  bool potentiallyTurstworthy = principal->GetIsOriginPotentiallyTrustworthy();
+  bool potentiallyTrustworthy = principal->GetIsOriginPotentiallyTrustworthy();
 
   bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
@@ -446,7 +446,7 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
     }
 
     
-    if (cookie->IsSecure() && !potentiallyTurstworthy) {
+    if (cookie->IsSecure() && !potentiallyTrustworthy) {
       continue;
     }
 
@@ -1020,7 +1020,7 @@ void CookieService::GetCookiesForURI(
   
   
   
-  bool potentiallyTurstworthy =
+  bool potentiallyTrustworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
   int64_t currentTimeInUsec = PR_Now();
@@ -1049,7 +1049,7 @@ void CookieService::GetCookiesForURI(
     
     
     
-    if (cookie->IsSecure() && !potentiallyTurstworthy &&
+    if (cookie->IsSecure() && !potentiallyTrustworthy &&
         !aAllowSecureCookiesToInsecureOrigin) {
       continue;
     }
@@ -1187,7 +1187,7 @@ bool CookieService::CanSetCookie(
   
   
   
-  bool potentiallyTurstworthy =
+  bool potentiallyTrustworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
   int64_t currentTimeInUsec = PR_Now();
@@ -1272,7 +1272,7 @@ bool CookieService::CanSetCookie(
   }
 
   
-  if (!CheckPrefixes(aCookieData, potentiallyTurstworthy)) {
+  if (!CheckPrefixes(aCookieData, potentiallyTrustworthy)) {
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
                       "failed the prefix tests");
     CookieLogging::LogMessageToConsole(
@@ -1312,7 +1312,7 @@ bool CookieService::CanSetCookie(
   
   
   
-  if (aCookieData.isSecure() && !potentiallyTurstworthy) {
+  if (aCookieData.isSecure() && !potentiallyTrustworthy) {
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                       "non-https cookie can't set secure flag");
     CookieLogging::LogMessageToConsole(
