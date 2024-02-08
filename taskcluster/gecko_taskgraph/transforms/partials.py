@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 """
 Transform the partials task into an actual task description.
 """
@@ -48,7 +48,7 @@ def _generate_task_output_files(job, filenames, locale=None):
 
 
 def identify_desired_signing_keys(project, product):
-    if project in ["mozilla-central", "comm-central", "pine"]:
+    if project in ["mozilla-central", "comm-central", "larch", "pine"]:
         return "nightly"
     if project == "mozilla-beta":
         if product == "devedition":
@@ -65,7 +65,7 @@ def identify_desired_signing_keys(project, product):
 
 @transforms.add
 def make_task_description(config, jobs):
-    # If no balrog release history, then don't generate partials
+    
     if not config.params.get("release_history"):
         return
     for job in jobs:
@@ -93,8 +93,8 @@ def make_task_description(config, jobs):
             config.params["release_history"], build_platform, build_locale
         )
 
-        # If the list is empty there's no available history for this platform
-        # and locale combination, so we can't build any partials.
+        
+        
         if not builds:
             continue
 
@@ -163,7 +163,7 @@ def make_task_description(config, jobs):
             "worker": worker,
         }
 
-        # We only want caching on linux/windows due to bug 1436977
+        
         if int(level) == 3 and any(
             [build_platform.startswith(prefix) for prefix in ["linux", "win"]]
         ):

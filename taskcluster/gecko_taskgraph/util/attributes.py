@@ -23,6 +23,8 @@ RELEASE_PROJECTS = {
     
     
     "pine",
+    
+    "larch",
 }
 
 RELEASE_PROMOTION_PROJECTS = {
