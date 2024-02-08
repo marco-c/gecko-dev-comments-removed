@@ -219,7 +219,7 @@ add_task(async function test_prefs_change_during_sync() {
     } finally {
       _("Updating local pref value");
       
-      Services.prefs.setCharPref(TEST_PREF, "hello");
+      Services.prefs.setStringPref(TEST_PREF, "hello");
       await engine._tracker.asyncObserver.promiseObserversComplete();
     }
   };

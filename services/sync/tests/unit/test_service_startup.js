@@ -6,7 +6,7 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 
-Svc.PrefBranch.setCharPref("registerEngines", "Tab,Bookmarks,Form,History");
+Svc.PrefBranch.setStringPref("registerEngines", "Tab,Bookmarks,Form,History");
 
 add_task(async function run_test() {
   validate_all_future_pings();

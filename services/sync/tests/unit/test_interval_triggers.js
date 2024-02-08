@@ -1,7 +1,7 @@
 
 
 
-Svc.PrefBranch.setCharPref("registerEngines", "");
+Svc.PrefBranch.setStringPref("registerEngines", "");
 const { Service } = ChromeUtils.importESModule(
   "resource://services-sync/service.sys.mjs"
 );
@@ -174,7 +174,7 @@ add_task(async function test_unsuccessful_sync_adjustSyncInterval() {
 
   _("Test unsuccessful sync calls adjustSyncInterval");
   
-  Svc.PrefBranch.setCharPref("firstSync", "notReady");
+  Svc.PrefBranch.setStringPref("firstSync", "notReady");
 
   let server = await sync_httpd_setup();
   await setUp(server);
@@ -326,7 +326,7 @@ add_task(async function test_adjust_interval_on_sync_error() {
 
   _("Test unsuccessful sync updates client mode & sync intervals");
   
-  Svc.PrefBranch.setCharPref("firstSync", "notReady");
+  Svc.PrefBranch.setStringPref("firstSync", "notReady");
 
   Assert.equal(syncFailures, 0);
   Assert.equal(false, scheduler.numClients > 1);

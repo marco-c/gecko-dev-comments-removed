@@ -37,7 +37,7 @@ add_task(async function test_locally_changed_keys() {
   server.start();
 
   try {
-    Svc.PrefBranch.setCharPref("registerEngines", "Tab");
+    Svc.PrefBranch.setStringPref("registerEngines", "Tab");
 
     await configureIdentity({ username: "johndoe" }, server);
     

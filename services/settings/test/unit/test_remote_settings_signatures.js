@@ -47,7 +47,7 @@ function run_test() {
   
   client = RemoteSettings("signed", { signerName: SIGNER_NAME });
 
-  Services.prefs.setCharPref("services.settings.loglevel", "debug");
+  Services.prefs.setStringPref("services.settings.loglevel", "debug");
 
   
   server = new HttpServer();
@@ -148,7 +148,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   }
 
   
-  Services.prefs.setCharPref(
+  Services.prefs.setStringPref(
     PREF_SETTINGS_SERVER,
     `http://localhost:${server.identity.primaryPort}/v1`
   );

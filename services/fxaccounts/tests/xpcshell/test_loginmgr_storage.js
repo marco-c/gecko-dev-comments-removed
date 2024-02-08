@@ -6,7 +6,7 @@
 
 
 
-Services.prefs.setCharPref("identity.fxaccounts.loglevel", "Trace");
+Services.prefs.setStringPref("identity.fxaccounts.loglevel", "Trace");
 
 const { FxAccounts } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccounts.sys.mjs"

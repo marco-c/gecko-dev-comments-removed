@@ -64,12 +64,12 @@ function run_test() {
   Policy.getChannel = () => "nightly";
 
   
-  Services.prefs.setCharPref(
+  Services.prefs.setStringPref(
     "services.settings.server",
     `http://localhost:${server.identity.primaryPort}/v1`
   );
 
-  Services.prefs.setCharPref("services.settings.loglevel", "debug");
+  Services.prefs.setStringPref("services.settings.loglevel", "debug");
 
   client = RemoteSettings("password-fields");
   clientWithDump = RemoteSettings("language-dictionaries");
