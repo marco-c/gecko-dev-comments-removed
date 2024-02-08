@@ -298,6 +298,11 @@ struct TrapData {
 
   Trap trap;
   uint32_t bytecodeOffset;
+
+  
+  
+  
+  bool failedUnwindSignatureMismatch;
 };
 
 

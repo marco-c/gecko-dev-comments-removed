@@ -71,6 +71,8 @@ class WasmFrameIter {
   Unwind unwind_;
   void** unwoundAddressOfReturnAddress_;
   uint8_t* resumePCinCurrentFrame_;
+  
+  bool failedUnwindSignatureMismatch_;
 
   void popFrame();
 
