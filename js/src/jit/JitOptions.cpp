@@ -297,7 +297,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(spectreObjectMitigations, true);
   SET_DEFAULT(spectreStringMitigations, true);
   SET_DEFAULT(spectreValueMasking, true);
-  SET_DEFAULT(spectreJitToCxxCalls, false);
+  SET_DEFAULT(spectreJitToCxxCalls, true);
 #endif
 
   
