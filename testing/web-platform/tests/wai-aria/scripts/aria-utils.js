@@ -38,7 +38,7 @@ const AriaUtils = {
 
 
 
-  verifyRolesBySelector: function(selector) {
+  verifyRolesBySelector: function(selector, roleTestNamePrefix) {
     const els = document.querySelectorAll(selector);
     if (!els.length) {
       throw `Selector passed in verifyRolesBySelector("${selector}") should match at least one element.`;
@@ -46,6 +46,9 @@ const AriaUtils = {
     for (const el of els) {
       let role = el.getAttribute("data-expectedrole");
       let testName = el.getAttribute("data-testname") || role; 
+      if (typeof roleTestNamePrefix !== "undefined") {
+        testName = roleTestNamePrefix + testName;
+      }
       promise_test(async t => {
         const expectedRole = el.getAttribute("data-expectedrole");
         const computedRole = await test_driver.get_computed_role(el);
@@ -127,7 +130,7 @@ const AriaUtils = {
 
 
 
-  verifyLabelsBySelector: function(selector) {
+  verifyLabelsBySelector: function(selector, labelTestNamePrefix) {
     const els = document.querySelectorAll(selector);
     if (!els.length) {
       throw `Selector passed in verifyLabelsBySelector("${selector}") should match at least one element.`;
@@ -135,6 +138,9 @@ const AriaUtils = {
     for (const el of els) {
       let label = el.getAttribute("data-expectedlabel");
       let testName = el.getAttribute("data-testname") || label; 
+      if (typeof labelTestNamePrefix !== "undefined") {
+        testName = labelTestNamePrefix + testName;
+      }
       promise_test(async t => {
         const expectedLabel = el.getAttribute("data-expectedlabel");
         let computedLabel = await test_driver.get_computed_label(el);
@@ -157,5 +163,33 @@ const AriaUtils = {
   },
 
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  verifyRolesAndLabelsBySelector: function(selector) {
+    let labelTestNamePrefix = "Label: ";
+    let roleTestNamePrefix = "Role: ";
+    const els = document.querySelectorAll(selector);
+    if (!els.length) {
+      throw `Selector passed in verifyRolesAndLabelsBySelector("${selector}") should match at least one element.`;
+    }
+    for (const el of els) {
+      el.classList.add("ex-label-only");
+      el.classList.add("ex-role-only");
+    }
+    this.verifyLabelsBySelector(".ex-label-only", labelTestNamePrefix);
+    this.verifyRolesBySelector(".ex-role-only", roleTestNamePrefix);
+  },
 };
 
