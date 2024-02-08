@@ -16,7 +16,7 @@ def parse(Parser, string):
     
     parser = Parser()
     
-    parser.readContents(string.encode('utf8'))
+    parser.readContents(string.encode("utf8"))
     
     return {ent.key: ent for ent in parser}
 
@@ -35,10 +35,7 @@ def ftl_pattern_to_json(code):
 
 
 def to_json(merged_iter):
-    return {
-        path: resource.to_json()
-        for path, resource in merged_iter
-    }
+    return {path: resource.to_json() for path, resource in merged_iter}
 
 
 LOCALIZABLE_ENTRIES = (FTL.Message, FTL.Term)
@@ -79,7 +76,7 @@ def ftl(code):
     """
 
     
-    code = code.lstrip('\n')
+    code = code.lstrip("\n")
 
     return textwrap.dedent(code)
 
