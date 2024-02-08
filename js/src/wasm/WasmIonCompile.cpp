@@ -1917,11 +1917,27 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] bool postBarrier(uint32_t lineOrBytecode, MDefinition* object,
-                                 MDefinition* valueBase, uint32_t valueOffset,
-                                 MDefinition* newValue) {
-    auto* barrier = MWasmPostWriteBarrier::New(
+  [[nodiscard]] bool postBarrierImmediate(uint32_t lineOrBytecode,
+                                          MDefinition* object,
+                                          MDefinition* valueBase,
+                                          uint32_t valueOffset,
+                                          MDefinition* newValue) {
+    auto* barrier = MWasmPostWriteBarrierImmediate::New(
         alloc(), instancePointer_, object, valueBase, valueOffset, newValue);
+    if (!barrier) {
+      return false;
+    }
+    curBlock_->add(barrier);
+    return true;
+  }
+
+  [[nodiscard]] bool postBarrierIndex(uint32_t lineOrBytecode,
+                                      MDefinition* object,
+                                      MDefinition* valueBase,
+                                      MDefinition* index, uint32_t scale,
+                                      MDefinition* newValue) {
+    auto* barrier = MWasmPostWriteBarrierIndex::New(
+        alloc(), instancePointer_, object, valueBase, index, scale, newValue);
     if (!barrier) {
       return false;
     }
@@ -3657,7 +3673,8 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       
-      if (!postBarrier(bytecodeOffset, exception, data, offset, argValues[i])) {
+      if (!postBarrierImmediate(bytecodeOffset, exception, data, offset,
+                                argValues[i])) {
         return false;
       }
     }
@@ -3909,6 +3926,16 @@ class FunctionCompiler {
 
   
   
+  static Scale scaleFromFieldType(StorageType type) {
+    if (type.kind() == StorageType::V128) {
+      
+      return Scale::Invalid;
+    }
+    return ShiftToScale(type.indexingShift());
+  }
+
+  
+  
   static MNarrowingOp fieldStoreInfoToMIR(StorageType type) {
     switch (type.kind()) {
       case StorageType::I8:
@@ -3970,7 +3997,7 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     
-    return postBarrier(lineOrBytecode, keepAlive, base, offset, value);
+    return postBarrierImmediate(lineOrBytecode, keepAlive, base, offset, value);
   }
 
   
@@ -3988,21 +4015,37 @@ class FunctionCompiler {
     MOZ_ASSERT(scale == 1 || scale == 2 || scale == 4 || scale == 8 ||
                scale == 16);
 
-    
-    
-    
-    MDefinition* scaleDef = constantTargetWord(intptr_t(scale));
-    if (!scaleDef) {
-      return false;
-    }
-    MDefinition* finalAddr = computeBasePlusScaledIndex(base, scaleDef, index);
-    if (!finalAddr) {
-      return false;
+    MNarrowingOp narrowingOp = fieldStoreInfoToMIR(type);
+
+    if (!type.isRefRepr()) {
+      MaybeTrapSiteInfo maybeTrap;
+      Scale scale = scaleFromFieldType(type);
+      auto* store = MWasmStoreElementKA::New(
+          alloc(), keepAlive, base, index, value, narrowingOp, scale,
+          AliasSet::Store(aliasBitset), maybeTrap);
+      if (!store) {
+        return false;
+      }
+      curBlock_->add(store);
+      return true;
     }
 
-    return writeGcValueAtBasePlusOffset(
-        lineOrBytecode, type, keepAlive, aliasBitset, value, finalAddr,
-        0, false, preBarrierKind);
+    
+    MOZ_ASSERT(narrowingOp == MNarrowingOp::None);
+    MOZ_ASSERT(type.widenToValType() == type.valType());
+
+    
+    auto* store = MWasmStoreElementRefKA::New(
+        alloc(), instancePointer_, keepAlive, base, index, value,
+        AliasSet::Store(aliasBitset), mozilla::Some(getTrapSiteInfo()),
+        preBarrierKind);
+    if (!store) {
+      return false;
+    }
+    curBlock_->add(store);
+
+    return postBarrierIndex(lineOrBytecode, keepAlive, base, index,
+                            sizeof(void*), value);
   }
 
   
@@ -4036,34 +4079,19 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] MDefinition* readGcValueAtBasePlusScaledIndex(
+  [[nodiscard]] MDefinition* readGcArrayValueAtIndex(
       StorageType type, FieldWideningOp fieldWideningOp, MDefinition* keepAlive,
-      AliasSet::Flag aliasBitset, MDefinition* base, uint32_t scale,
-      MDefinition* index) {
+      AliasSet::Flag aliasBitset, MDefinition* base, MDefinition* index) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
-    MOZ_ASSERT(scale == 1 || scale == 2 || scale == 4 || scale == 8 ||
-               scale == 16);
-
-    
-    
-    
-    MDefinition* scaleDef = constantTargetWord(intptr_t(scale));
-    if (!scaleDef) {
-      return nullptr;
-    }
-    MDefinition* finalAddr = computeBasePlusScaledIndex(base, scaleDef, index);
-    if (!finalAddr) {
-      return nullptr;
-    }
 
     MIRType mirType;
     MWideningOp mirWideningOp;
     fieldLoadInfoToMIR(type, fieldWideningOp, &mirType, &mirWideningOp);
-    auto* load = MWasmLoadFieldKA::New(alloc(), keepAlive, finalAddr,
-                                       0, mirType, mirWideningOp,
-                                       AliasSet::Load(aliasBitset),
-                                       mozilla::Some(getTrapSiteInfo()));
+    Scale scale = scaleFromFieldType(type);
+    auto* load = MWasmLoadElementKA::New(
+        alloc(), keepAlive, base, index, mirType, mirWideningOp, scale,
+        AliasSet::Load(aliasBitset), mozilla::Some(getTrapSiteInfo()));
     if (!load) {
       return nullptr;
     }
@@ -4258,58 +4286,6 @@ class FunctionCompiler {
   }
 
   
-  
-  
-  
-  
-  [[nodiscard]] MDefinition* computeBasePlusScaledIndex(MDefinition* base,
-                                                        MDefinition* scale,
-                                                        MDefinition* index) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    MOZ_ASSERT(base->type() == TargetWordMIRType());
-
-    
-    MDefinition* indexW = unsignedWidenToTargetWord(index);
-    if (!indexW) {
-      return nullptr;
-    }
-    
-    MDefinition* scaleW = unsignedWidenToTargetWord(scale);
-    if (!scaleW) {
-      return nullptr;
-    }
-    
-    MIRType targetWordType = TargetWordMIRType();
-    bool targetIs64 = targetWordType == MIRType::Int64;
-    MMul* scaledIndex =
-        MMul::NewWasm(alloc(), indexW, scaleW, targetWordType,
-                      targetIs64 ? MMul::Mode::Normal : MMul::Mode::Integer,
-                      false);
-    if (!scaledIndex) {
-      return nullptr;
-    }
-    
-    curBlock_->add(scaledIndex);
-    MAdd* result = MAdd::NewWasm(alloc(), base, scaledIndex, targetWordType);
-    if (!result) {
-      return nullptr;
-    }
-    curBlock_->add(result);
-    return result;
-  }
-
-  
 
   
   
@@ -4338,7 +4314,7 @@ class FunctionCompiler {
 
     auto* data = MWasmLoadField::New(
         alloc(), arrayObject, WasmArrayObject::offsetOfData(),
-        TargetWordMIRType(), MWideningOp::None,
+        MIRType::WasmArrayData, MWideningOp::None,
         AliasSet::Load(AliasSet::WasmArrayDataPointer),
         mozilla::Some(getTrapSiteInfo()));
     if (!data) {
@@ -4414,7 +4390,8 @@ class FunctionCompiler {
   [[nodiscard]] bool fillArray(uint32_t lineOrBytecode,
                                const ArrayType& arrayType,
                                MDefinition* arrayObject, MDefinition* index,
-                               MDefinition* numElements, MDefinition* val) {
+                               MDefinition* numElements, MDefinition* val,
+                               WasmPreBarrierKind preBarrierKind) {
     mozilla::DebugOnly<MIRType> valMIRType = val->type();
     StorageType elemType = arrayType.elementType_;
     MOZ_ASSERT(elemType.widenToValType().toMIRType() == valMIRType);
@@ -4451,7 +4428,6 @@ class FunctionCompiler {
     
     
     
-    
     MBasicBlock* loopBlock;
     if (!newBlock(curBlock_, &loopBlock, MBasicBlock::LOOP_HEADER)) {
       return false;
@@ -4462,28 +4438,17 @@ class FunctionCompiler {
     }
 
     
-    MDefinition* elemSizeDef = constantTargetWord(intptr_t(elemSize));
-    if (!elemSizeDef) {
-      return false;
-    }
-
-    MDefinition* fillBase =
-        computeBasePlusScaledIndex(arrayBase, elemSizeDef, index);
-    if (!fillBase) {
-      return false;
-    }
-    MDefinition* limit =
-        computeBasePlusScaledIndex(fillBase, elemSizeDef, numElements);
+    MAdd* limit = MAdd::NewWasm(alloc(), index, numElements, MIRType::Int32);
     if (!limit) {
       return false;
     }
+    curBlock_->add(limit);
 
     
     
     
-    MDefinition* limitEqualsBase = compare(
-        limit, fillBase, JSOp::StrictEq,
-        targetIs64Bit() ? MCompare::Compare_UInt64 : MCompare::Compare_UInt32);
+    MDefinition* limitEqualsBase =
+        compare(limit, index, JSOp::StrictEq, MCompare::Compare_UInt32);
     if (!limitEqualsBase) {
       return false;
     }
@@ -4499,47 +4464,42 @@ class FunctionCompiler {
 
     
     curBlock_ = loopBlock;
-    MPhi* ptrPhi = MPhi::New(alloc(), TargetWordMIRType());
-    if (!ptrPhi) {
+    MPhi* indexPhi = MPhi::New(alloc(), MIRType::Int32);
+    if (!indexPhi) {
       return false;
     }
-    if (!ptrPhi->reserveLength(2)) {
+    if (!indexPhi->reserveLength(2)) {
       return false;
     }
-    ptrPhi->addInput(fillBase);
-    curBlock_->addPhi(ptrPhi);
+    indexPhi->addInput(index);
+    curBlock_->addPhi(indexPhi);
     curBlock_->setLoopDepth(loopDepth_ + 1);
 
-    
-    
-    
-    if (!writeGcValueAtBasePlusOffset(
+    if (!writeGcValueAtBasePlusScaledIndex(
             lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea,
-            val, ptrPhi, 0,
-            false, WasmPreBarrierKind::None)) {
+            val, arrayBase, elemSize, indexPhi, preBarrierKind)) {
       return false;
     }
 
-    auto* ptrNext =
-        MAdd::NewWasm(alloc(), ptrPhi, elemSizeDef, TargetWordMIRType());
-    if (!ptrNext) {
+    auto* indexNext =
+        MAdd::NewWasm(alloc(), indexPhi, constantI32(1), MIRType::Int32);
+    if (!indexNext) {
       return false;
     }
-    curBlock_->add(ptrNext);
-    ptrPhi->addInput(ptrNext);
+    curBlock_->add(indexNext);
+    indexPhi->addInput(indexNext);
 
-    MDefinition* ptrNextLtuLimit = compare(
-        ptrNext, limit, JSOp::Lt,
-        targetIs64Bit() ? MCompare::Compare_UInt64 : MCompare::Compare_UInt32);
-    if (!ptrNextLtuLimit) {
+    MDefinition* indexNextLtuLimit =
+        compare(indexNext, limit, JSOp::Lt, MCompare::Compare_UInt32);
+    if (!indexNextLtuLimit) {
       return false;
     }
-    auto* continueIfPtrNextLtuLimit =
-        MTest::New(alloc(), ptrNextLtuLimit, loopBlock, afterBlock);
-    if (!continueIfPtrNextLtuLimit) {
+    auto* continueIfIndexNextLtuLimit =
+        MTest::New(alloc(), indexNextLtuLimit, loopBlock, afterBlock);
+    if (!continueIfIndexNextLtuLimit) {
       return false;
     }
-    curBlock_->end(continueIfPtrNextLtuLimit);
+    curBlock_->end(continueIfIndexNextLtuLimit);
     if (!loopBlock->addPredecessor(alloc(), loopBlock)) {
       return false;
     }
@@ -4572,7 +4532,7 @@ class FunctionCompiler {
     
 
     if (!fillArray(lineOrBytecode, arrayType, arrayObject, constantI32(0),
-                   numElements, fillValue)) {
+                   numElements, fillValue, WasmPreBarrierKind::None)) {
       return nullptr;
     }
 
@@ -4607,7 +4567,7 @@ class FunctionCompiler {
     curBlock_->add(boundsCheck);
 
     return fillArray(lineOrBytecode, arrayType, arrayObject, index, numElements,
-                     val);
+                     val, WasmPreBarrierKind::Normal);
   }
 
   
@@ -7719,12 +7679,10 @@ static bool EmitArrayGet(FunctionCompiler& f, FieldWideningOp wideningOp) {
   
   const ArrayType& arrayType = (*f.moduleEnv().types)[typeIndex].arrayType();
   StorageType elemType = arrayType.elementType_;
-  uint32_t elemSize = elemType.size();
-  MOZ_ASSERT(elemSize >= 1 && elemSize <= 16);
 
-  MDefinition* load = f.readGcValueAtBasePlusScaledIndex(
-      elemType, wideningOp, arrayObject, AliasSet::WasmArrayDataArea, base,
-      elemSize, index);
+  MDefinition* load =
+      f.readGcArrayValueAtIndex(elemType, wideningOp, arrayObject,
+                                AliasSet::WasmArrayDataArea, base, index);
   if (!load) {
     return false;
   }

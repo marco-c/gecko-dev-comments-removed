@@ -472,10 +472,9 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 
-
+template <class Addr>
 void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, Register instance,
-                             Register scratch, Register valueAddr,
-                             size_t valueOffset, Label* skipBarrier,
+                             Register scratch, Addr addr, Label* skipBarrier,
                              BytecodeOffset* trapOffset);
 
 
@@ -485,10 +484,16 @@ void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, Register instance,
 
 
 
+void EmitWasmPreBarrierCallImmediate(jit::MacroAssembler& masm,
+                                     Register instance, Register scratch,
+                                     Register valueAddr, size_t valueOffset);
 
-void EmitWasmPreBarrierCall(jit::MacroAssembler& masm, Register instance,
-                            Register scratch, Register valueAddr,
-                            size_t valueOffset);
+
+
+
+void EmitWasmPreBarrierCallIndex(jit::MacroAssembler& masm, Register instance,
+                                 Register scratch1, Register scratch2,
+                                 jit::BaseIndex addr);
 
 
 

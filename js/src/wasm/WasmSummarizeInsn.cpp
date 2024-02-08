@@ -1054,8 +1054,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
   
-  if (INSN(31, 28) == 0b1110  
-      && INSN(27, 24) == 0b0111 && INSN(11, 4) == 0b00000'00'0) {
+  
+  
+  
+  
+  if (INSN(31, 28) == 0b1110                             
+      && INSN(27, 24) == 0b0111 && INSN(6, 4) == 0b00'0  
+  ) {
     switch (INSN(22, 20)) {
       case 0b000:
         return Some(TrapMachineInsn::Store32);
