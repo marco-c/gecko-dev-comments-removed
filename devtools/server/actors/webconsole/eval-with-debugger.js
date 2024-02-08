@@ -108,6 +108,8 @@ function isObject(value) {
 
 
 
+
+
 function evalWithDebugger(string, options = {}, webConsole) {
   const trimmedString = string.trim();
   
@@ -156,7 +158,7 @@ function evalWithDebugger(string, options = {}, webConsole) {
     frame,
     string,
     options.selectedNodeActor,
-    !!options.disableBreaks
+    options.preferConsoleCommandsOverLocalSymbols
   );
   let { bindings } = helpers;
 
@@ -200,9 +202,7 @@ function evalWithDebugger(string, options = {}, webConsole) {
     evalOptions.hideFromDebugger = true;
   }
 
-  if (options.disableBreaks) {
-    
-    
+  if (options.preferConsoleCommandsOverLocalSymbols) {
     evalOptions.useInnerBindings = true;
   }
 

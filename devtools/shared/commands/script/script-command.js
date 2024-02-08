@@ -44,6 +44,8 @@ class ScriptCommand {
 
 
 
+
+
   async execute(expression, options = {}) {
     const {
       selectedObjectActor,
@@ -107,6 +109,8 @@ class ScriptCommand {
           selectedObjectActor,
           url: options.url,
           disableBreaks: options.disableBreaks,
+          preferConsoleCommandsOverLocalSymbols:
+            options.preferConsoleCommandsOverLocalSymbols,
         })
         .then(packet => {
           resultID = packet.resultID;

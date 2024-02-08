@@ -245,7 +245,7 @@ const WebConsoleCommandsManager = {
     frame,
     evalInput,
     selectedNodeActorID,
-    ignoreExistingBindings
+    preferConsoleCommandsOverLocalSymbols
   ) {
     const bindings = Object.create(null);
 
@@ -284,8 +284,9 @@ const WebConsoleCommandsManager = {
       
       
       
+      
       if (
-        !ignoreExistingBindings &&
+        !preferConsoleCommandsOverLocalSymbols &&
         (frame || name === "help") &&
         this._isCommandNameAlreadyInScope(name, frame, debuggerGlobal)
       ) {

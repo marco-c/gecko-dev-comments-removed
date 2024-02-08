@@ -933,6 +933,11 @@ class WebConsoleActor extends Actor {
       
       
       disableBreaks: !!request.disableBreaks,
+      
+      
+      
+      preferConsoleCommandsOverLocalSymbols:
+        !!request.preferConsoleCommandsOverLocalSymbols,
     };
 
     const { mapped } = request;
