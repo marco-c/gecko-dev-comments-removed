@@ -1,6 +1,3 @@
-
-
-
 const routerRules = {
   'condition-urlpattern-constructed-source-network': [{
     condition: {urlPattern: new URLPattern({pathname: '/**/direct.txt'})},
