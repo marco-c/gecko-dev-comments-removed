@@ -73,8 +73,11 @@ uint32_t CPU::GetCacheType() {
   
   __asm__ __volatile__ ("mrs %[ctr], ctr_el0"  
                         : [ctr] "=r" (cache_type_register));
-  VIXL_ASSERT(IsUint32(cache_type_register));
-  return static_cast<uint32_t>(cache_type_register);
+  
+  
+  
+  uint64_t mask = 0xffffffffull;
+  return static_cast<uint32_t>(cache_type_register & mask);
 #else
   
   
