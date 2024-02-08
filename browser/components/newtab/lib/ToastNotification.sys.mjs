@@ -1,11 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,8 +15,8 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   AlertsService: ["@mozilla.org/alerts-service;1", "nsIAlertsService"],
 });
 
-const ToastNotification = {
-  
+export const ToastNotification = {
+  // Allow testing to stub the alerts service.
   get AlertsService() {
     return lazy.AlertsService;
   },
@@ -35,22 +32,22 @@ const ToastNotification = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Show a toast notification.
+   * @param message             Message containing content to show.
+   * @param dispatch            A function to dispatch resulting actions.
+   * @return                    boolean value capturing if toast notification was displayed.
+   */
   async showToastNotification(message, dispatch) {
     let { content } = message;
     let title = await lazy.RemoteL10n.formatLocalizableText(content.title);
     let body = await lazy.RemoteL10n.formatLocalizableText(content.body);
 
-    
-    
-    
-    
-    
+    // The only link between background task message experiment and user
+    // re-engagement via the notification is the associated "tag".  Said tag is
+    // usually controlled by the message content, but for message experiments,
+    // we want to avoid a missing tag and to ensure a deterministic tag for
+    // easier analysis, including across branches.
     let { tag } = content;
 
     let experimentMetadata =
@@ -63,12 +60,12 @@ const ToastNotification = {
       experimentMetadata?.slug &&
       experimentMetadata?.branch?.slug
     ) {
-      
+      // Like `my-experiment:my-branch`.
       tag = `${experimentMetadata?.slug}:${experimentMetadata?.branch?.slug}`;
     }
 
-    
-    
+    // There are two events named `IMPRESSION` the first one refers to telemetry
+    // while the other refers to ASRouter impressions used for the frequency cap
     this.sendUserEventTelemetry("IMPRESSION", message, dispatch);
     dispatch({ type: "IMPRESSION", data: message });
 
@@ -83,13 +80,13 @@ const ToastNotification = {
         : content.image_url,
       title,
       body,
-      true ,
+      true /* aTextClickable */,
       content.data,
-      null ,
-      null ,
-      null ,
+      null /* aDir */,
+      null /* aLang */,
+      null /* aData */,
       systemPrincipal,
-      null ,
+      null /* aInPrivateBrowsing */,
       content.requireInteraction
     );
 
@@ -109,8 +106,8 @@ const ToastNotification = {
       alert.actions = actions;
     }
 
-    
-    
+    // Populate `opaqueRelaunchData`, prefering `launch_action` if given,
+    // falling back to `launch_url` if given.
     let relaunchAction = content.launch_action;
     if (!relaunchAction && content.launch_url) {
       relaunchAction = {
@@ -139,5 +136,3 @@ const ToastNotification = {
     return true;
   },
 };
-
-const EXPORTED_SYMBOLS = ["ToastNotification"];
