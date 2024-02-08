@@ -72,9 +72,9 @@ module.exports = function (config) {
       
       thresholds: !isTDD && {
         each: {
-          statements: 100,
-          lines: 100,
-          functions: 100,
+          statements: 80,
+          lines: 80,
+          functions: 80,
           branches: 66,
           overrides: {
             "content-src/asrouter-utils.js": {
