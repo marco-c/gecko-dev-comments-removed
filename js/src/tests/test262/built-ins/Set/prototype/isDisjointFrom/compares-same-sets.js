@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+const s1 = new Set([1, 2]);
+const s2 = new Set([1, 2]);
+
+assert.sameValue(s1.isDisjointFrom(s2), false);
+
+reportCompare(0, 0);

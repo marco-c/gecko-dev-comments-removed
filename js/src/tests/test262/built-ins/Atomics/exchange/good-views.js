@@ -11,7 +11,7 @@
 
 const sab = new SharedArrayBuffer(1024);
 const ab = new ArrayBuffer(16);
-const views = intArrayConstructors.slice();
+const views = nonClampedIntArrayConstructors.slice();
 
 testWithTypedArrayConstructors(function(TA) {
   

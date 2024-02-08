@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Set.prototype.isDisjointFrom, "function");
+
+verifyProperty(Set.prototype.isDisjointFrom, "length", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: 1,
+});
+
+reportCompare(0, 0);

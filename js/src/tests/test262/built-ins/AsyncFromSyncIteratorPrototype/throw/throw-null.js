@@ -26,6 +26,8 @@
 
 
 
+
+
 var throwGets = 0;
 var syncIterator = {
   [Symbol.iterator]() {
@@ -47,14 +49,12 @@ async function* asyncGenerator() {
 var asyncIterator = asyncGenerator();
 var thrownError = { name: "err" };
 
-asyncIterator.next().then(function() {
-  return asyncIterator.throw(thrownError);
-}).then(function(result) {
-  throw new Test262Error("Promise should be rejected, got: " + result.value);
-}, function(err) {
-  assert.sameValue(err, thrownError);
-  return asyncIterator.next().then(function(result) {
-    assert.sameValue(result.value, undefined);
-    assert.sameValue(result.done, true);
-  });
-}).then($DONE, $DONE);
+asyncTest(async function () {
+  await assert.throwsAsync(TypeError, async () => {
+    await asyncIterator.next();
+    return asyncIterator.throw(thrownError);
+  }, "Promise should be rejected");
+  const result = await asyncIterator.next();
+  assert(result.done, "the iterator is completed");
+  assert.sameValue(result.value, undefined, "value is undefined");
+})

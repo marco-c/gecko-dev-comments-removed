@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+const s1 = new Set([1, 2]);
+const s2 = [5, 6];
+s2.size = 3;
+s2.has = function (v) {
+  if (v === 1 || v === 2) return true;
+  throw new Test262Error("Set.prototype.isDisjointFrom should only call its argument's has method with contents of this");
+};
+s2.keys = function () {
+  throw new Test262Error("Set.prototype.isDisjointFrom should not call its argument's keys iterator when this.size ≤ arg.size");
+};
+
+assert.sameValue(s1.isDisjointFrom(s2), false);
+
+reportCompare(0, 0);

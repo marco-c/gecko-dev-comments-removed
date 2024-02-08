@@ -9,16 +9,6 @@
 
 
 
-
-var d = Temporal.Duration.from({
-  seconds: Number.MAX_VALUE,
-  milliseconds: Number.MAX_VALUE
-});
-var str = d.toString();
-assert(str.startsWith("PT"));
-assert(str.endsWith("S"));
-
-
 var d = Temporal.Duration.from({
   milliseconds: Number.MAX_SAFE_INTEGER,
   microseconds: Number.MAX_SAFE_INTEGER

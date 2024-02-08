@@ -23,16 +23,14 @@
 
 
 
+
 var value = {
   valueOf() {
     throw new Test262Error("value coerced");
   }
 };
 
-var badArrayTypes = [
-  Int8Array, Uint8Array, Int16Array, Uint16Array, Uint32Array,
-  Uint8ClampedArray, Float32Array, Float64Array
-];
+var badArrayTypes = typedArrayConstructors.filter(function(TA) { return TA !== Int32Array; });
 
 for (var badArrayType of badArrayTypes) {
   var typedArray = new badArrayType(new SharedArrayBuffer(8));

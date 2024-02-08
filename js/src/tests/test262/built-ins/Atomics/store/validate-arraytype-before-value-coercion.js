@@ -23,17 +23,14 @@
 
 
 
+
 var value = {
   valueOf() {
     throw new Test262Error("value coerced");
   }
 };
 
-var badArrayTypes = [
-  Uint8ClampedArray, Float32Array, Float64Array
-];
-
-for (var badArrayType of badArrayTypes) {
+for (var badArrayType of nonAtomicsFriendlyTypedArrayConstructors) {
   var typedArray = new badArrayType(new SharedArrayBuffer(8));
   assert.throws(TypeError, function() {
     Atomics.store(typedArray, 0, value);

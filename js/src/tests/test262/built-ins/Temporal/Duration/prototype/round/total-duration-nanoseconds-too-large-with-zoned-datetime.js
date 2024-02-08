@@ -10,7 +10,7 @@
 
 
 var duration = Temporal.Duration.from({
-  nanoseconds: Number.MAX_VALUE,
+  seconds: Number.MAX_SAFE_INTEGER,
 });
 
 var zonedDateTime = new Temporal.ZonedDateTime(0n, "UTC");
