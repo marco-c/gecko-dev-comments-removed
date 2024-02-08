@@ -1911,31 +1911,11 @@ static bool DefineNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
     }
   } else if (obj->is<TypedArrayObject>()) {
     
+    
+    
     if (mozilla::Maybe<uint64_t> index = ToTypedArrayIndex(id)) {
-      
-      
-      
-      
-      MOZ_ASSERT(index.value() >=
-                     obj->as<TypedArrayObject>().length().valueOr(0) ||
-                 (obj->as<TypedArrayObject>().isSharedMemory() &&
-                  obj->as<TypedArrayObject>().bufferShared()->isGrowable()));
-
-      
-
-      
-
-      
-      
-      
-      if (!obj->as<TypedArrayObject>().convertForSideEffect(cx, v)) {
-        return false;
-      }
-
-      
-
-      
-      return result.succeed();
+      Rooted<TypedArrayObject*> tobj(cx, &obj->as<TypedArrayObject>());
+      return SetTypedArrayElementOutOfBounds(cx, tobj, *index, v, result);
     }
   } else if (obj->is<ArgumentsObject>()) {
     
