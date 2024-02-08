@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 var gAccumulator = {
   get callback() {
@@ -9,140 +9,125 @@ var gAccumulator = {
 };
 
 add_task(async function invalid_input_throws() {
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch(),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch(),
     /Input should be a valid object/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch(null),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch(null),
     /Input should be a valid object/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guid: "123456789012", index: 0 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guid: "123456789012", index: 0 }),
     /The following properties were expected: parentGuid/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({}),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({}),
     /Unexpected number of conditions provided: 0/
   );
-  Assert.throws(
-    () =>
-      PlacesUtils.bookmarks.fetch({
-        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-      }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    }),
     /Unexpected number of conditions provided: 0/
   );
-  Assert.throws(
-    () =>
-      PlacesUtils.bookmarks.fetch({
-        guid: "123456789012",
-        parentGuid: "012345678901",
-        index: 0,
-      }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({
+      guid: "123456789012",
+      parentGuid: "012345678901",
+      index: 0,
+    }),
     /Unexpected number of conditions provided: 2/
   );
-  Assert.throws(
-    () =>
-      PlacesUtils.bookmarks.fetch({
-        guid: "123456789012",
-        url: "http://example.com",
-      }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({
+      guid: "123456789012",
+      url: "http://example.com",
+    }),
     /Unexpected number of conditions provided: 2/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch("test"),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch("test"),
     /Invalid value for property 'guid'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch(123),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch(123),
     /Invalid value for property 'guid'/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guid: "test" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guid: "test" }),
     /Invalid value for property 'guid'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guid: null }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guid: null }),
     /Invalid value for property 'guid'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guid: 123 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guid: 123 }),
     /Invalid value for property 'guid'/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guidPrefix: "" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guidPrefix: "" }),
     /Invalid value for property 'guidPrefix'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guidPrefix: null }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guidPrefix: null }),
     /Invalid value for property 'guidPrefix'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guidPrefix: 123 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guidPrefix: 123 }),
     /Invalid value for property 'guidPrefix'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guidPrefix: "123456789012" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guidPrefix: "123456789012" }),
     /Invalid value for property 'guidPrefix'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ guidPrefix: "@" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ guidPrefix: "@" }),
     /Invalid value for property 'guidPrefix'/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ parentGuid: "test", index: 0 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ parentGuid: "test", index: 0 }),
     /Invalid value for property 'parentGuid'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ parentGuid: null, index: 0 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ parentGuid: null, index: 0 }),
     /Invalid value for property 'parentGuid'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ parentGuid: 123, index: 0 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ parentGuid: 123, index: 0 }),
     /Invalid value for property 'parentGuid'/
   );
-
-  Assert.throws(
-    () =>
-      PlacesUtils.bookmarks.fetch({ parentGuid: "123456789012", index: "0" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ parentGuid: "123456789012", index: "0" }),
     /Invalid value for property 'index'/
   );
-  Assert.throws(
-    () =>
-      PlacesUtils.bookmarks.fetch({ parentGuid: "123456789012", index: null }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ parentGuid: "123456789012", index: null }),
     /Invalid value for property 'index'/
   );
-  Assert.throws(
-    () =>
-      PlacesUtils.bookmarks.fetch({ parentGuid: "123456789012", index: -10 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ parentGuid: "123456789012", index: -10 }),
     /Invalid value for property 'index'/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ url: "http://te st/" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ url: "http://te st/" }),
     /Invalid value for property 'url'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ url: null }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ url: null }),
     /Invalid value for property 'url'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ url: -10 }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ url: -10 }),
     /Invalid value for property 'url'/
   );
-
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch("123456789012", "test"),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch("123456789012", "test"),
     /onResult callback must be a valid function/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch("123456789012", {}),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch("123456789012", {}),
     /onResult callback must be a valid function/
   );
 });
@@ -211,9 +196,9 @@ add_task(async function fetch_folder() {
   checkBookmarkObject(bm1);
   Assert.deepEqual(bm1.dateAdded, bm1.lastModified);
 
-  
-  
-  
+  // Inserting a child updates both the childCount and lastModified of bm1,
+  // though the bm1 object is static once fetched, thus later we'll manually
+  // update it.
   await PlacesUtils.bookmarks.insert({
     parentGuid: bm1.guid,
     url: "https://www.mozilla.org/",
@@ -249,8 +234,8 @@ add_task(async function fetch_folder_empty_title() {
   checkBookmarkObject(bm2);
 
   Assert.equal(bm2.childCount, 0);
-  
-  
+  // Insert doesn't populate childCount (it would always be 0 anyway), so set
+  // it to be able to just use deepEqual.
   bm1.childCount = bm2.childCount;
 
   Assert.deepEqual(bm1, bm2);
@@ -316,7 +301,7 @@ add_task(async function fetch_byguid_prefix() {
   checkBookmarkObject(bm3);
   Assert.ok(bm3.guid.startsWith(PREFIX));
 
-  
+  // Bookmark 4 doesn't have the same guid prefix, so it shouldn't be returned in the results.
   let bm4 = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://bm3.example.com/",
@@ -332,8 +317,8 @@ add_task(async function fetch_byguid_prefix() {
 
   Assert.equal(gAccumulator.results.length, 3);
 
-  
-  
+  // The results are returned by most recent first, so the first bookmark
+  // inserted is the last one in the returned array.
   Assert.deepEqual(bm1, gAccumulator.results[2]);
   Assert.deepEqual(bm2, gAccumulator.results[1]);
   Assert.equal(gAccumulator.results[0].childCount, 1);
@@ -441,7 +426,7 @@ add_task(async function fetch_byurl() {
   });
   checkBookmarkObject(bm1);
 
-  
+  // Also ensure that fecth-by-url excludes the tags folder.
   PlacesUtils.tagging.tagURI(bm1.url.URI, ["Test Tag"]);
 
   let bm2 = await PlacesUtils.bookmarks.fetch(
@@ -476,21 +461,21 @@ add_task(async function fetch_byurl() {
   gAccumulator.results.forEach(checkBookmarkObject);
   Assert.deepEqual(gAccumulator.results[0], bm4);
 
-  
+  // After an update the returned bookmark should change.
   await PlacesUtils.bookmarks.update({ guid: bm1.guid, title: "new title" });
   let bm5 = await PlacesUtils.bookmarks.fetch(
     { url: bm1.url },
     gAccumulator.callback
   );
   checkBookmarkObject(bm5);
-  
+  // Cannot use deepEqual cause lastModified changed.
   Assert.equal(bm1.guid, bm5.guid);
   Assert.ok(bm5.lastModified > bm1.lastModified);
   Assert.equal(gAccumulator.results.length, 2);
   gAccumulator.results.forEach(checkBookmarkObject);
   Assert.deepEqual(gAccumulator.results[0], bm5);
 
-  
+  // cleanup
   PlacesUtils.tagging.untagURI(bm1.url.URI, ["Test Tag"]);
 });
 

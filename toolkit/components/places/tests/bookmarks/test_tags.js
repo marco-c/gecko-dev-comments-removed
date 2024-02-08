@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 add_task(async function test_fetchTags() {
   let tags = await PlacesUtils.bookmarks.fetchTags();
@@ -34,24 +34,24 @@ add_task(async function test_fetchTags() {
 });
 
 add_task(async function test_fetch_by_tags() {
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ tags: "" }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ tags: "" }),
     /Invalid value for property 'tags'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ tags: [] }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ tags: [] }),
     /Invalid value for property 'tags'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ tags: null }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ tags: null }),
     /Invalid value for property 'tags'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ tags: [""] }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ tags: [""] }),
     /Invalid value for property 'tags'/
   );
-  Assert.throws(
-    () => PlacesUtils.bookmarks.fetch({ tags: ["valid", null] }),
+  await Assert.rejects(
+    PlacesUtils.bookmarks.fetch({ tags: ["valid", null] }),
     /Invalid value for property 'tags'/
   );
 
