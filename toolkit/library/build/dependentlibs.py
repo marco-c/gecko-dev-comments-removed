@@ -28,7 +28,7 @@ def dependentlibs_win32_objdump(lib):
     )
     deps = []
     for line in proc.stdout:
-        match = re.match("\s+DLL Name: (\S+)", line)
+        match = re.match(r"\s+DLL Name: (\S+)", line)
         if match:
             
             
@@ -61,7 +61,7 @@ def dependentlibs_readelf(lib):
             
             
             
-            match = re.search("\[(.*)\]", tmp[3])
+            match = re.search(r"\[(.*)\]", tmp[3])
             if match:
                 deps.append(match.group(1))
     proc.wait()
