@@ -1219,6 +1219,7 @@ RefPtr<GLContextEGL> GLContextEGL::CreateWithoutSurface(
 
 void GLContextEGL::DestroySurface(EglDisplay& aEgl, const EGLSurface aSurface) {
   if (aSurface != EGL_NO_SURFACE) {
+    
     if (!aEgl.fMakeCurrent(EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
       const EGLint err = aEgl.mLib->fGetError();
       gfxCriticalNote << "Error in eglMakeCurrent: " << gfx::hexa(err);
