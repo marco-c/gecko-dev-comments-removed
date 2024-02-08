@@ -163,6 +163,17 @@ static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
       return true;
     }
     
+    
+    
+    
+    
+    ULONG pid = 0;
+    ::GetNamedPipeServerProcessId(aHandle, &pid);
+    if (!pid) {
+      return true;
+    }
+    
+    
     ULONG objNameBufLen;
     NTSTATUS ntStatus = ::NtQueryObject(
         aHandle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation, nullptr, 0,
@@ -184,14 +195,7 @@ static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
     }
     nsDependentString objName(objNameInfo->Name.Buffer,
                               objNameInfo->Name.Length / sizeof(wchar_t));
-
-    
-    
     if (StringBeginsWith(objName, u"\\Device\\NamedPipe\\UIA_PIPE_"_ns)) {
-      
-      
-      ULONG pid = 0;
-      ::GetNamedPipeServerProcessId(aHandle, &pid);
       aPids.AppendElement(pid);
     }
     return true;
