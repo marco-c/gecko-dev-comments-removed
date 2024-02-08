@@ -69,16 +69,13 @@ function promiseStateStop(webProgress) {
     thunks.add(listener);
     webProgress.addProgressListener(
       listener,
-      Ci.nsIWebProgress.NOTIFY_STATE_REQUEST
+      Ci.nsIWebProgress.NOTIFY_STATE_NETWORK
     );
   });
 }
 
 async function runTest(waitForErrorPage) {
-  let page = await XPCShellContentUtils.loadContentPage("about:blank", {
-    remote: false,
-  });
-  let { browser } = page;
+  let page = await XPCShellContentUtils.loadContentPage("about:blank");
 
   
   
@@ -87,20 +84,25 @@ async function runTest(waitForErrorPage) {
     subject => subject.QueryInterface(Ci.nsIRequest).name == topFrameRequest.url
   );
 
-  
-  
-  let doc = browser.contentDocument;
-  let frame = doc.createElement("iframe");
-  frame.src = topFrameRequest.url;
-  doc.body.appendChild(frame);
+  await page.spawn(
+    [topFrameRequest.url, subFrameRequest.url],
+    function (topFrameUrl, subFrameRequestUrl) {
+      
+      
+      let doc = this.content.document;
+      let frame = doc.createElement("iframe");
+      frame.src = topFrameUrl;
+      doc.body.appendChild(frame);
 
-  
-  
-  
-  let frameDoc = frame.contentDocument;
-  let subframe = frameDoc.createElement("iframe");
-  subframe.src = subFrameRequest.url;
-  frameDoc.body.appendChild(subframe);
+      
+      
+      
+      let frameDoc = frame.contentDocument;
+      let subframe = frameDoc.createElement("iframe");
+      subframe.src = subFrameRequestUrl;
+      frameDoc.body.appendChild(subframe);
+    }
+  );
 
   let [req] = await requestPromise;
 
@@ -109,9 +111,7 @@ async function runTest(waitForErrorPage) {
 
   
   
-  await promiseStateStop(
-    browser.docShell.nsIInterfaceRequestor.getInterface(Ci.nsIWebProgress)
-  );
+  await promiseStateStop(page.browsingContext.webProgress);
 
   
   
@@ -121,12 +121,11 @@ async function runTest(waitForErrorPage) {
     
     
     await TestUtils.waitForCondition(() =>
-      frame.contentDocument.documentURI.startsWith("about:neterror?")
+      page.browsingContext.children[0]?.currentWindowGlobal?.documentURI?.spec.startsWith(
+        "about:neterror?"
+      )
     );
   }
-
-  info("Remove frame");
-  frame.remove();
 
   await page.close();
 }
