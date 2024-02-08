@@ -99,6 +99,10 @@ add_task(async function test_tab_matches() {
     ],
   });
 
+  
+  
+  UrlbarPrefs.set("switchTabs.searchAllContainers", false);
+
   info("a container tab is not visible in 'switch to tab'");
   await addOpenPages(uri5, 1,  3);
   context = createContext("abc", { isPrivate: false });
@@ -171,6 +175,13 @@ add_task(async function test_tab_matches() {
       }),
     ],
   });
+
+  UrlbarPrefs.clear("switchTabs.searchAllContainers");
+  if (UrlbarPrefs.get("switchTabs.searchAllContainers")) {
+    
+    
+    await removeOpenPages(uri5, 1,  3);
+  }
 
   info(
     "three results, both normal results are tab matches, one has multiple tabs"

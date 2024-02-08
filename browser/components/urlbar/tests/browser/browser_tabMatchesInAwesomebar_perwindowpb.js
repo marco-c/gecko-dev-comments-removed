@@ -38,7 +38,10 @@ add_task(async function () {
   await BrowserTestUtils.closeWindow(normalWindow);
 });
 
-async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
+async function runTest(aSourceWindow, aDestWindow, aExpectSwitch) {
+  BrowserTestUtils.addTab(aSourceWindow.gBrowser, TEST_URL, {
+    userContextId: 1,
+  });
   await BrowserTestUtils.openNewForegroundTab(aSourceWindow.gBrowser, TEST_URL);
   let testTab = await BrowserTestUtils.openNewForegroundTab(
     aDestWindow.gBrowser
@@ -119,3 +122,53 @@ async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
     await BrowserTestUtils.browserLoaded(testTab.linkedBrowser);
   }
 }
+
+
+
+add_task(async function same_url_both_windows() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  let tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser, TEST_URL);
+
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  await BrowserTestUtils.openNewForegroundTab(privateWin.gBrowser, TEST_URL);
+
+  
+  await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
+
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window: win,
+    value: "dummy_page",
+  });
+  Assert.equal(2, UrlbarTestUtils.getResultCount(win), "Check results count");
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
+  Assert.ok(result.heuristic, "First result is heuristic");
+  result = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
+  Assert.equal(
+    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    result.type,
+    "Second result is tab switch"
+  );
+
+  
+  
+  BrowserTestUtils.removeTab(tab);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window: win,
+    value: "dummy_page",
+  });
+  Assert.equal(2, UrlbarTestUtils.getResultCount(win), "Check results count");
+  result = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
+  Assert.ok(result.heuristic, "First result is heuristic");
+  result = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
+  Assert.notEqual(
+    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    result.type,
+    "Second result is not tab switch"
+  );
+
+  await BrowserTestUtils.closeWindow(privateWin);
+  await BrowserTestUtils.closeWindow(win);
+});

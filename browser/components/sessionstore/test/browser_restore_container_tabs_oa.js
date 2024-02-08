@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { UrlbarProviderOpenTabs } = ChromeUtils.importESModule(
+  "resource:///modules/UrlbarProviderOpenTabs.sys.mjs"
+);
+
 const PATH = "browser/browser/components/sessionstore/test/empty.html";
 
 
@@ -118,6 +122,13 @@ add_task(async function testRestore() {
     "Should have restore data for the closed window"
   );
 
+  Assert.equal(
+    0,
+    (await UrlbarProviderOpenTabs.getDatabaseRegisteredOpenTabsForTests())
+      .length,
+    "No registered open pages should be left"
+  );
+
   
   newWin = SessionStore.undoCloseWindow(0);
 
@@ -228,4 +239,11 @@ add_task(async function testRestore() {
   }
 
   await BrowserTestUtils.closeWindow(newWin);
+
+  Assert.equal(
+    0,
+    (await UrlbarProviderOpenTabs.getDatabaseRegisteredOpenTabsForTests())
+      .length,
+    "No registered open pages should be left"
+  );
 });

@@ -556,7 +556,11 @@ pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.switchTabs.searchAllContainers", true);
+#else
 pref("browser.urlbar.switchTabs.searchAllContainers", false);
+#endif
 
 
 
