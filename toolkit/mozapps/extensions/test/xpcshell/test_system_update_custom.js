@@ -479,13 +479,12 @@ async function waitForSystemAddonStagingDirReleased() {
   
   
   
-  
 
-  const { XPIInternal } = ChromeUtils.import(
-    "resource://gre/modules/addons/XPIProvider.jsm"
+  const { XPIExports } = ChromeUtils.importESModule(
+    "resource://gre/modules/addons/XPIExports.sys.mjs"
   );
-  let systemAddonLocation = XPIInternal.XPIStates.getLocation(
-    XPIInternal.KEY_APP_SYSTEM_ADDONS
+  let systemAddonLocation = XPIExports.XPIInternal.XPIStates.getLocation(
+    XPIExports.XPIInternal.KEY_APP_SYSTEM_ADDONS
   );
   await TestUtils.waitForCondition(() => {
     return systemAddonLocation.installer._stagingDirLock == 0;

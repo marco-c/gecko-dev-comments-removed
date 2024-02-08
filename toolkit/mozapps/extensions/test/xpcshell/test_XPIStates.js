@@ -54,10 +54,10 @@ function checkChange(XS, aPath, aChange) {
 
 
 function getXS() {
-  const { XPIInternal } = ChromeUtils.import(
-    "resource://gre/modules/addons/XPIProvider.jsm"
+  const { XPIExports } = ChromeUtils.importESModule(
+    "resource://gre/modules/addons/XPIExports.sys.mjs"
   );
-  return XPIInternal.XPIStates;
+  return XPIExports.XPIInternal.XPIStates;
 }
 
 async function getXSJSON() {

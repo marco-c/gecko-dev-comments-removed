@@ -3,19 +3,18 @@
 
 "use strict";
 
-const { XPIInstall } = ChromeUtils.import(
-  "resource://gre/modules/addons/XPIInstall.jsm"
+const { XPIExports } = ChromeUtils.importESModule(
+  "resource://gre/modules/addons/XPIExports.sys.mjs"
 );
+
+
 const {
   XPIInternal: {
-    BuiltInLocation,
     KEY_APP_PROFILE,
     KEY_APP_SYSTEM_DEFAULTS,
     KEY_APP_SYSTEM_PROFILE,
-    TemporaryInstallLocation,
-    XPIStates,
   },
-} = ChromeUtils.import("resource://gre/modules/addons/XPIProvider.jsm");
+} = XPIExports;
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
@@ -48,23 +47,27 @@ function getInstallLocation({
 }) {
   if (isTemporary) {
     
-    return TemporaryInstallLocation; 
+    return XPIExports.XPIInternal.TemporaryInstallLocation; 
   }
   let location;
   if (isSystem) {
     if (isBuiltin) {
       
-      location = XPIStates.getLocation(KEY_APP_SYSTEM_DEFAULTS);
+      location = XPIExports.XPIInternal.XPIStates.getLocation(
+        KEY_APP_SYSTEM_DEFAULTS
+      );
     } else {
       
-      location = XPIStates.getLocation(KEY_APP_SYSTEM_PROFILE);
+      location = XPIExports.XPIInternal.XPIStates.getLocation(
+        KEY_APP_SYSTEM_PROFILE
+      );
     }
   } else if (isBuiltin) {
     
-    location = BuiltInLocation; 
+    location = XPIExports.XPIInternal.BuiltInLocation; 
   } else {
     
-    location = XPIStates.getLocation(KEY_APP_PROFILE);
+    location = XPIExports.XPIInternal.XPIStates.getLocation(KEY_APP_PROFILE);
   }
   
   if (location.isSystem !== isSystem) {
@@ -89,14 +92,14 @@ async function testLoadManifest({ location, expectPrivileged }) {
     if (location.isTemporary && !expectPrivileged) {
       ExtensionTestUtils.failOnSchemaWarnings(false);
       await Assert.rejects(
-        XPIInstall.loadManifestFromFile(xpi, location),
+        XPIExports.XPIInstall.loadManifestFromFile(xpi, location),
         /Extension is invalid/,
         "load manifest failed with privileged permission"
       );
       ExtensionTestUtils.failOnSchemaWarnings(true);
       return;
     }
-    let addon = await XPIInstall.loadManifestFromFile(xpi, location);
+    let addon = await XPIExports.XPIInstall.loadManifestFromFile(xpi, location);
     actualPermissions = addon.userPermissions;
     equal(addon.isPrivileged, expectPrivileged, "addon.isPrivileged");
   });
