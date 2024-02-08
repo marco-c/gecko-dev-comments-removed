@@ -411,7 +411,7 @@ class nsGridContainerFrame final : public nsContainerFrame,
   
 
 
-  nscoord SynthesizeBaseline(const FindItemInGridOrderResult& aItem,
+  nscoord SynthesizeBaseline(const FindItemInGridOrderResult& aGridOrderItem,
                              LogicalAxis aAxis, BaselineSharingGroup aGroup,
                              const nsSize& aCBPhysicalSize, nscoord aCBSize,
                              WritingMode aCBWM);
