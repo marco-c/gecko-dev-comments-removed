@@ -65,7 +65,6 @@ pub fn can_accept_markers() -> bool {
 #[inline]
 fn get_active_and_features() -> u32 {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
-    use std::mem;
     use std::sync::atomic::{AtomicU32, Ordering};
 
     
@@ -73,6 +72,10 @@ fn get_active_and_features() -> u32 {
     
     
     
-    unsafe { mem::transmute::<_, &AtomicU32>(&detail::RacyFeatures_sActiveAndFeatures) }
-        .load(Ordering::Relaxed)
+    let active_and_features: &AtomicU32 = unsafe {
+        let ptr: *const u32 = std::ptr::addr_of!(detail::RacyFeatures_sActiveAndFeatures);
+        
+        &*ptr.cast()
+    };
+    active_and_features.load(Ordering::Relaxed)
 }
