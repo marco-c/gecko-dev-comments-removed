@@ -24,7 +24,7 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
     const char* deviceUniqueIdUTF8) {
 
 
-#if !defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
+#if (!defined(WEBRTC_LINUX) && !defined(WEBRTC_BSD)) || defined(WEBRTC_ANDROID)
   return nullptr;
 #else
   return videocapturemodule::VideoCaptureImpl::Create(options,
@@ -40,7 +40,7 @@ VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo(
     VideoCaptureOptions* options) {
 
 
-#if !defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
+#if (!defined(WEBRTC_LINUX) && !defined(WEBRTC_BSD)) || defined(WEBRTC_ANDROID)
   return nullptr;
 #else
   return videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(options);
