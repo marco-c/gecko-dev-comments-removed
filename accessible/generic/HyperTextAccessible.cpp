@@ -554,15 +554,7 @@ nsresult HyperTextAccessible::SetSelectionRange(int32_t aStartPos,
   NS_ENSURE_STATE(domSel);
 
   
-  for (const uint32_t idx : Reversed(IntegerRange(1u, domSel->RangeCount()))) {
-    MOZ_ASSERT(domSel->RangeCount() == idx + 1);
-    RefPtr<nsRange> range{domSel->GetRangeAt(idx)};
-    if (!range) {
-      break;  
-    }
-    domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
-                                                           IgnoreErrors());
-  }
+  domSel->RemoveAllRanges(IgnoreErrors());
   SetSelectionBoundsAt(0, aStartPos, aEndPos);
 
   
