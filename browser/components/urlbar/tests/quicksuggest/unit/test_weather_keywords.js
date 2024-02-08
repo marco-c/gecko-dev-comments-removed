@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -767,7 +769,7 @@ async function doKeywordsTest({
 
   for (let [searchString, expected] of Object.entries(tests)) {
     info(
-      "Doing search: " +
+      "Doing keywords test search: " +
         JSON.stringify({
           searchString,
           expected,

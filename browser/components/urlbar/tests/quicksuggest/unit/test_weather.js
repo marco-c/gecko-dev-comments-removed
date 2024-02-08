@@ -18,6 +18,7 @@ const { WEATHER_RS_DATA, WEATHER_SUGGESTION } = MerinoTestUtils;
 
 add_setup(async () => {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
+    prefs: [["suggest.quicksuggest.nonsponsored", true]],
     remoteSettingsRecords: [
       {
         type: "weather",
@@ -38,14 +39,14 @@ add_setup(async () => {
 
 
 
-add_task(async function disableAndEnable_featureGate() {
+add_tasks_with_rust(async function disableAndEnable_featureGate() {
   await doBasicDisableAndEnableTest("weather.featureGate");
 });
 
 
 
 
-add_task(async function disableAndEnable_suggestPref() {
+add_tasks_with_rust(async function disableAndEnable_suggestPref() {
   await doBasicDisableAndEnableTest("suggest.weather");
 });
 
@@ -66,7 +67,7 @@ async function doBasicDisableAndEnableTest(pref) {
 
   
   let context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
@@ -114,14 +115,16 @@ async function doBasicDisableAndEnableTest(pref) {
 
   
   context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
     context,
-    matches: [makeExpectedResult()],
+    matches: [makeWeatherResult()],
   });
 }
+
+
 
 add_task(async function keywordsNotDefined() {
   
@@ -188,7 +191,7 @@ add_task(async function keywordsNotDefined() {
   });
   await check_results({
     context,
-    matches: [makeExpectedResult()],
+    matches: [makeWeatherResult()],
   });
 });
 
@@ -201,7 +204,7 @@ add_task(async function keywordsNotDefined() {
 
 
 
-add_task(async function disableAndEnable_immediate1() {
+add_tasks_with_rust(async function disableAndEnable_immediate1() {
   
   assertEnabled({
     message: "Sanity check initial state",
@@ -269,7 +272,7 @@ add_task(async function disableAndEnable_immediate1() {
 
 
 
-add_task(async function disableAndEnable_immediate2() {
+add_tasks_with_rust(async function disableAndEnable_immediate2() {
   
   assertEnabled({
     message: "Sanity check initial state",
@@ -325,7 +328,7 @@ add_task(async function disableAndEnable_immediate2() {
 
 
 
-add_task(async function noSuggestion() {
+add_tasks_with_rust(async function noSuggestion() {
   assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
@@ -360,7 +363,7 @@ add_task(async function noSuggestion() {
   });
 
   let context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
@@ -381,7 +384,7 @@ add_task(async function noSuggestion() {
 });
 
 
-add_task(async function networkError() {
+add_tasks_with_rust(async function networkError() {
   assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
@@ -421,7 +424,7 @@ add_task(async function networkError() {
   });
 
   let context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
@@ -440,7 +443,7 @@ add_task(async function networkError() {
 });
 
 
-add_task(async function httpError() {
+add_tasks_with_rust(async function httpError() {
   assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
@@ -473,7 +476,7 @@ add_task(async function httpError() {
   });
 
   let context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
@@ -495,7 +498,7 @@ add_task(async function httpError() {
 
 
 
-add_task(async function clientTimeout() {
+add_tasks_with_rust(async function clientTimeout() {
   assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
@@ -539,7 +542,7 @@ add_task(async function clientTimeout() {
   });
 
   let context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
@@ -573,7 +576,7 @@ add_task(async function clientTimeout() {
 });
 
 
-add_task(async function locale_enUS() {
+add_tasks_with_rust(async function locale_enUS() {
   await doLocaleTest({
     shouldRunTask: osLocale => osLocale == "en-US",
     osUnit: "f",
@@ -589,7 +592,7 @@ add_task(async function locale_enUS() {
 });
 
 
-add_task(async function locale_nonUSEnglish() {
+add_tasks_with_rust(async function locale_nonUSEnglish() {
   await doLocaleTest({
     shouldRunTask: osLocale => osLocale.startsWith("en") && osLocale != "en-US",
     osUnit: "c",
@@ -605,7 +608,7 @@ add_task(async function locale_nonUSEnglish() {
 });
 
 
-add_task(async function locale_nonEnglish() {
+add_tasks_with_rust(async function locale_nonEnglish() {
   await doLocaleTest({
     shouldRunTask: osLocale => !osLocale.startsWith("en"),
     osUnit: "c",
@@ -677,10 +680,13 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
       info("Checking locale: " + locale);
       await check_results({
         context: createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-          providers: [UrlbarProviderWeather.name],
+          providers: [
+            UrlbarProviderQuickSuggest.name,
+            UrlbarProviderWeather.name,
+          ],
           isPrivate: false,
         }),
-        matches: [makeExpectedResult({ temperatureUnit })],
+        matches: [makeWeatherResult({ temperatureUnit })],
       });
 
       info(
@@ -689,10 +695,13 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
       Services.prefs.setBoolPref("intl.regional_prefs.use_os_locales", true);
       await check_results({
         context: createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-          providers: [UrlbarProviderWeather.name],
+          providers: [
+            UrlbarProviderQuickSuggest.name,
+            UrlbarProviderWeather.name,
+          ],
           isPrivate: false,
         }),
-        matches: [makeExpectedResult({ temperatureUnit: osUnit })],
+        matches: [makeWeatherResult({ temperatureUnit: osUnit })],
       });
       Services.prefs.clearUserPref("intl.regional_prefs.use_os_locales");
     });
@@ -700,7 +709,7 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
 }
 
 
-add_task(async function block() {
+add_tasks_with_rust(async function block() {
   
   assertEnabled({
     message: "Sanity check initial state",
@@ -714,12 +723,12 @@ add_task(async function block() {
 
   
   let context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
     context,
-    matches: [makeExpectedResult()],
+    matches: [makeWeatherResult()],
   });
 
   
@@ -732,11 +741,14 @@ add_task(async function block() {
       removeResult() {},
     },
   });
-  UrlbarProviderWeather.onEngagement(
+  let result = context.results[0];
+  let provider = UrlbarProvidersManager.getProvider(result.providerName);
+  Assert.ok(provider, "Sanity check: Result provider found");
+  provider.onEngagement(
     "engagement",
     context,
     {
-      result: context.results[0],
+      result,
       selType: "dismiss",
       selIndex: context.results[0].rowIndex,
     },
@@ -749,7 +761,7 @@ add_task(async function block() {
 
   
   context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-    providers: [UrlbarProviderWeather.name],
+    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
     isPrivate: false,
   });
   await check_results({
@@ -774,7 +786,7 @@ add_task(async function block() {
 
 
 
-add_task(async function wakeBeforeNextFetchPeriod() {
+add_tasks_with_rust(async function wakeBeforeNextFetchPeriod() {
   await doWakeTest({
     sleepIntervalMs: QuickSuggest.weather._test_fetchIntervalMs - 100,
     shouldFetchOnWake: false,
@@ -784,7 +796,7 @@ add_task(async function wakeBeforeNextFetchPeriod() {
 
 
 
-add_task(async function wakeAfterNextFetchPeriod() {
+add_tasks_with_rust(async function wakeAfterNextFetchPeriod() {
   await doWakeTest({
     sleepIntervalMs: QuickSuggest.weather._test_fetchIntervalMs + 100,
     shouldFetchOnWake: true,
@@ -792,7 +804,7 @@ add_task(async function wakeAfterNextFetchPeriod() {
 });
 
 
-add_task(async function wakeAfterManyFetchPeriods() {
+add_tasks_with_rust(async function wakeAfterManyFetchPeriods() {
   await doWakeTest({
     sleepIntervalMs: 100 * QuickSuggest.weather._test_fetchIntervalMs + 100,
     shouldFetchOnWake: true,
@@ -892,7 +904,7 @@ async function doWakeTest({
 
 
 
-add_task(async function networkLinkStatusChanged_nonNull() {
+add_tasks_with_rust(async function networkLinkStatusChanged_nonNull() {
   
   await doOnlineTestWithSuggestion({
     topic: "network:link-status-changed",
@@ -908,7 +920,7 @@ add_task(async function networkLinkStatusChanged_nonNull() {
 
 
 
-add_task(async function networkOfflineStatusChanged_nonNull() {
+add_tasks_with_rust(async function networkOfflineStatusChanged_nonNull() {
   
   await doOnlineTestWithSuggestion({
     topic: "network:offline-status-changed",
@@ -918,7 +930,7 @@ add_task(async function networkOfflineStatusChanged_nonNull() {
 
 
 
-add_task(async function captivePortalLoginSuccess_nonNull() {
+add_tasks_with_rust(async function captivePortalLoginSuccess_nonNull() {
   
   await doOnlineTestWithSuggestion({
     topic: "captive-portal-login-success",
@@ -960,7 +972,7 @@ async function doOnlineTestWithSuggestion({ topic, dataValues }) {
 
 
 
-add_task(async function networkLinkStatusChanged_null() {
+add_tasks_with_rust(async function networkLinkStatusChanged_null() {
   
   await doOnlineTestWithNullSuggestion({
     topic: "network:link-status-changed",
@@ -976,7 +988,7 @@ add_task(async function networkLinkStatusChanged_null() {
 
 
 
-add_task(async function networkOfflineStatusChanged_null() {
+add_tasks_with_rust(async function networkOfflineStatusChanged_null() {
   
   await doOnlineTestWithNullSuggestion({
     topic: "network:offline-status-changed",
@@ -987,7 +999,7 @@ add_task(async function networkOfflineStatusChanged_null() {
 
 
 
-add_task(async function captivePortalLoginSuccess_null() {
+add_tasks_with_rust(async function captivePortalLoginSuccess_null() {
   
   await doOnlineTestWithNullSuggestion({
     topic: "captive-portal-login-success",
@@ -1093,7 +1105,7 @@ async function doOnlineTestWithNullSuggestion({
 
 
 
-add_task(async function manyOnlineNotifications() {
+add_tasks_with_rust(async function manyOnlineNotifications() {
   await doManyNotificationsTest([
     ["network:link-status-changed", "changed"],
     ["network:link-status-changed", "up"],
@@ -1103,7 +1115,7 @@ add_task(async function manyOnlineNotifications() {
 
 
 
-add_task(async function wakeAndOnlineNotifications() {
+add_tasks_with_rust(async function wakeAndOnlineNotifications() {
   await doManyNotificationsTest([
     ["wake_notification", ""],
     ["network:link-status-changed", "changed"],
@@ -1183,7 +1195,7 @@ async function doManyNotificationsTest(notifications) {
 
 
 
-add_task(async function vpn() {
+add_tasks_with_rust(async function vpn() {
   
   let mockLinkService = {
     isLinkUp: true,
@@ -1245,7 +1257,7 @@ add_task(async function vpn() {
 
 
 
-add_task(async function nimbusOverride() {
+add_tasks_with_rust(async function nimbusOverride() {
   
   assertEnabled({
     message: "Sanity check initial state",
@@ -1253,14 +1265,16 @@ add_task(async function nimbusOverride() {
     pendingFetchCount: 0,
   });
 
+  let defaultResult = makeWeatherResult();
+
   
   
   await check_results({
     context: createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
-    matches: [makeExpectedResult()],
+    matches: [defaultResult],
   });
 
   
@@ -1272,26 +1286,33 @@ add_task(async function nimbusOverride() {
   
   await check_results({
     context: createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
     matches: [],
   });
 
   
+  
+  
+  let merinoResult = makeWeatherResult({
+    source: "merino",
+    provider: "accuweather",
+    telemetryType: null,
+  });
   await check_results({
     context: createContext("nimbusoverride", {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
-    matches: [makeExpectedResult()],
+    matches: [merinoResult],
   });
   await check_results({
     context: createContext("nimbus", {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
-    matches: [makeExpectedResult()],
+    matches: [merinoResult],
   });
 
   
@@ -1300,23 +1321,23 @@ add_task(async function nimbusOverride() {
   
   await check_results({
     context: createContext(MerinoTestUtils.WEATHER_KEYWORD, {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
-    matches: [makeExpectedResult()],
+    matches: [defaultResult],
   });
 
   
   await check_results({
     context: createContext("nimbusoverride", {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
     matches: [],
   });
   await check_results({
     context: createContext("nimbus", {
-      providers: [UrlbarProviderWeather.name],
+      providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderWeather.name],
       isPrivate: false,
     }),
     matches: [],
@@ -1373,39 +1394,4 @@ function assertDisabled({ message, pendingFetchCount }) {
     pendingFetchCount,
     "Expected pending fetch count"
   );
-}
-
-function makeExpectedResult({
-  suggestedIndex = 1,
-  temperatureUnit = undefined,
-} = {}) {
-  if (!temperatureUnit) {
-    temperatureUnit =
-      Services.locale.regionalPrefsLocales[0] == "en-US" ? "f" : "c";
-  }
-
-  return {
-    suggestedIndex,
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-    heuristic: false,
-    payload: {
-      temperatureUnit,
-      url: WEATHER_SUGGESTION.url,
-      iconId: "6",
-      helpUrl: QuickSuggest.HELP_URL,
-      requestId: MerinoTestUtils.server.response.body.request_id,
-      source: "merino",
-      provider: "accuweather",
-      dynamicType: "weather",
-      city: WEATHER_SUGGESTION.city_name,
-      temperature:
-        WEATHER_SUGGESTION.current_conditions.temperature[temperatureUnit],
-      currentConditions: WEATHER_SUGGESTION.current_conditions.summary,
-      forecast: WEATHER_SUGGESTION.forecast.summary,
-      high: WEATHER_SUGGESTION.forecast.high[temperatureUnit],
-      low: WEATHER_SUGGESTION.forecast.low[temperatureUnit],
-      shouldNavigate: true,
-    },
-  };
 }
