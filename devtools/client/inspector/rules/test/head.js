@@ -379,6 +379,20 @@ var renameProperty = async function (view, textProp, name) {
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
   info("Wait for property name.");
   await onNameDone;
+
+  if (
+    !Services.prefs.getBoolPref("devtools.inspector.rule-view.focusNextOnEnter")
+  ) {
+    return;
+  }
+
+  
+  
+  
+  const onValueDone = view.once("ruleview-changed");
+  EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
+  info("Wait for property value.");
+  await onValueDone;
 };
 
 

@@ -2567,7 +2567,7 @@ pref("devtools.inspector.simple-highlighters-reduced-motion", false);
 pref("devtools.inspector.showRulesViewEnterKeyNotice", true);
 
 
-pref("devtools.inspector.rule-view.focusNextOnEnter", false);
+pref("devtools.inspector.rule-view.focusNextOnEnter", true);
 
 
 pref("devtools.layout.boxmodel.opened", true);
