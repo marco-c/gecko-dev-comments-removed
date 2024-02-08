@@ -52,7 +52,7 @@ class IonIC;
 
 
 
-class alignas(8) IonScript final : public TrailingArray {
+class alignas(8) IonScript final : public TrailingArray<IonScript> {
  private:
   
   

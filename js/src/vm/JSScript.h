@@ -1304,7 +1304,8 @@ static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
 
 
 
-class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
+class alignas(uintptr_t) PrivateScriptData final
+    : public TrailingArray<PrivateScriptData> {
  private:
   uint32_t ngcthings = 0;
 

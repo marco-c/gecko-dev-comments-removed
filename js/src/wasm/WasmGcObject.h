@@ -217,7 +217,8 @@ class WasmArrayObject : public WasmGcObject {
 
 
 
-class WasmStructObject : public WasmGcObject {
+class WasmStructObject : public WasmGcObject,
+                         public TrailingArray<WasmStructObject> {
  public:
   static const JSClass classInline_;
   static const JSClass classOutline_;
@@ -238,7 +239,10 @@ class WasmStructObject : public WasmGcObject {
   
   
   
-  alignas(8) uint8_t inlineData_[0];
+  
+  uint8_t* inlineData() {
+    return offsetToPointer<uint8_t>(offsetOfInlineData());
+  }
 
   
   
@@ -290,14 +294,15 @@ class WasmStructObject : public WasmGcObject {
   
   
   inline uint8_t* fieldOffsetToAddress(StorageType fieldType,
-                                       uint32_t fieldOffset) const;
+                                       uint32_t fieldOffset);
 
   
+  static const uint32_t inlineDataAlignment = 8;
   static constexpr size_t offsetOfOutlineData() {
     return offsetof(WasmStructObject, outlineData_);
   }
   static constexpr size_t offsetOfInlineData() {
-    return offsetof(WasmStructObject, inlineData_);
+    return AlignBytes(sizeof(WasmStructObject), inlineDataAlignment);
   }
 
   
@@ -308,8 +313,7 @@ class WasmStructObject : public WasmGcObject {
   void storeVal(const wasm::Val& val, uint32_t fieldIndex);
 };
 
-
-static_assert((offsetof(WasmStructObject, inlineData_) % 8) == 0);
+static_assert((WasmStructObject::offsetOfInlineData() % 8) == 0);
 
 
 
@@ -359,14 +363,13 @@ inline void WasmStructObject::fieldOffsetToAreaAndOffset(StorageType fieldType,
       ((fieldOffset + fieldType.size() - 1) < WasmStructObject_MaxInlineBytes));
 }
 
-inline uint8_t* WasmStructObject::fieldOffsetToAddress(
-    StorageType fieldType, uint32_t fieldOffset) const {
+inline uint8_t* WasmStructObject::fieldOffsetToAddress(StorageType fieldType,
+                                                       uint32_t fieldOffset) {
   bool areaIsOutline;
   uint32_t areaOffset;
   fieldOffsetToAreaAndOffset(fieldType, fieldOffset, &areaIsOutline,
                              &areaOffset);
-  return ((uint8_t*)(areaIsOutline ? outlineData_ : &inlineData_[0])) +
-         areaOffset;
+  return (areaIsOutline ? outlineData_ : inlineData()) + areaOffset;
 }
 
 

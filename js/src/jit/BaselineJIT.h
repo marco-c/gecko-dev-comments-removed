@@ -186,7 +186,8 @@ class RetAddrEntry {
 
 
 
-class alignas(uintptr_t) BaselineScript final : public TrailingArray {
+class alignas(uintptr_t) BaselineScript final
+    : public TrailingArray<BaselineScript> {
  private:
   
   HeapPtr<JitCode*> method_ = nullptr;

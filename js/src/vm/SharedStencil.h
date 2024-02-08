@@ -425,7 +425,8 @@ class MutableScriptFlags : public EnumFlags<MutableScriptFlagsEnum> {
 
 
 
-class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
+class alignas(uint32_t) ImmutableScriptData final
+    : public TrailingArray<ImmutableScriptData> {
  private:
   Offset optArrayOffset_ = 0;
 

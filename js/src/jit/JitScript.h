@@ -112,7 +112,7 @@ static IonScript* const IonCompilingScriptPtr =
 
 
 
-class alignas(uintptr_t) ICScript final : public TrailingArray {
+class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
  public:
   ICScript(uint32_t warmUpCount, Offset fallbackStubsOffset, Offset endOffset,
            uint32_t depth, uint32_t bytecodeSize,
@@ -311,7 +311,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
 class alignas(uintptr_t) JitScript final
     : public mozilla::LinkedListElement<JitScript>,
-      public TrailingArray {
+      public TrailingArray<JitScript> {
   friend class ::JSScript;
 
   
