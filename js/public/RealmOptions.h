@@ -222,12 +222,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
-  bool getArrayBufferTransferEnabled() const { return arrayBufferTransfer_; }
-  RealmCreationOptions& setArrayBufferTransferEnabled(bool flag) {
-    arrayBufferTransfer_ = flag;
-    return *this;
-  }
-
 #ifdef NIGHTLY_BUILD
   bool getNewSetMethodsEnabled() const { return newSetMethods_; }
   RealmCreationOptions& setNewSetMethodsEnabled(bool flag) {
@@ -332,9 +326,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   
   bool sharedArrayBufferGrowable_ = false;
 #endif
-
-  
-  bool arrayBufferTransfer_ = false;
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
   bool jsonParseWithSource = false;
 #endif
