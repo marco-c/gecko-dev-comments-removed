@@ -4734,6 +4734,10 @@ bool AsyncPanZoomController::UpdateAnimation(
   
   
   if (mLastSampleTime == aSampleTime) {
+    APZC_LOG_DETAIL(
+        "UpdateAnimation short-circuit, animation=%p, pending frame-delayed "
+        "offset=%d\n",
+        this, mAnimation.get(), HavePendingFrameDelayedOffset());
     return !!mAnimation || HavePendingFrameDelayedOffset();
   }
 
@@ -4750,6 +4754,8 @@ bool AsyncPanZoomController::UpdateAnimation(
   
   
   bool needComposite = SampleCompositedAsyncTransform(aProofOfLock);
+  APZC_LOG_DETAIL("UpdateAnimation needComposite=%d mAnimation=%p\n", this,
+                  needComposite, mAnimation.get());
 
   TimeDuration sampleTimeDelta = aSampleTime - mLastSampleTime;
   mLastSampleTime = aSampleTime;
