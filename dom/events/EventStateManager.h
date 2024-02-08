@@ -1233,7 +1233,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   
   StyleCursorKind mLockCursor;
-  bool mLastFrameConsumedSetCursor = false;
   bool mHidingCursorWhileTyping = false;
 
   

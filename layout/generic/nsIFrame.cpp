@@ -5890,7 +5890,7 @@ StyleTouchAction nsIFrame::UsedTouchAction() const {
   return disp.mTouchAction;
 }
 
-Maybe<nsIFrame::Cursor> nsIFrame::GetCursor(const nsPoint&) {
+nsIFrame::Cursor nsIFrame::GetCursor(const nsPoint&) {
   StyleCursorKind kind = StyleUI()->Cursor().keyword;
   if (kind == StyleCursorKind::Auto) {
     
@@ -5903,7 +5903,7 @@ Maybe<nsIFrame::Cursor> nsIFrame::GetCursor(const nsPoint&) {
     kind = StyleCursorKind::VerticalText;
   }
 
-  return Some(Cursor{kind, AllowCustomCursorImage::Yes});
+  return Cursor{kind, AllowCustomCursorImage::Yes};
 }
 
 

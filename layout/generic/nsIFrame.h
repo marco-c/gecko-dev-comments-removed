@@ -2338,7 +2338,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  virtual Maybe<Cursor> GetCursor(const nsPoint&);
+  virtual Cursor GetCursor(const nsPoint&);
 
   
 

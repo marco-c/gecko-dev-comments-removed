@@ -4348,23 +4348,9 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
     
     nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
         aEvent, RelativeTo{aTargetFrame});
-    Maybe<nsIFrame::Cursor> framecursor = aTargetFrame->GetCursor(pt);
-    
-    if (!framecursor) {
-      if (XRE_IsContentProcess()) {
-        mLastFrameConsumedSetCursor = true;
-      }
-      return;
-    }
-    
-    
-    if (mLastFrameConsumedSetCursor) {
-      ClearCachedWidgetCursor(aTargetFrame);
-      mLastFrameConsumedSetCursor = false;
-    }
-
+    const nsIFrame::Cursor framecursor = aTargetFrame->GetCursor(pt);
     const CursorImage customCursor =
-        ComputeCustomCursor(aPresContext, aEvent, *aTargetFrame, *framecursor);
+        ComputeCustomCursor(aPresContext, aEvent, *aTargetFrame, framecursor);
 
     
     
@@ -4375,7 +4361,7 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
             TimeDuration::FromMilliseconds(kCursorLoadingTimeout)) {
       return;
     }
-    cursor = framecursor->mCursor;
+    cursor = framecursor.mCursor;
     container = std::move(customCursor.mContainer);
     resolution = customCursor.mResolution;
     hotspot = Some(customCursor.mHotspot);

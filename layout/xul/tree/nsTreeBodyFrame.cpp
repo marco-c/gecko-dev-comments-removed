@@ -2220,7 +2220,7 @@ nscoord nsTreeBodyFrame::CalcHorzWidth(const ScrollParts& aParts) {
   return width;
 }
 
-Maybe<nsIFrame::Cursor> nsTreeBodyFrame::GetCursor(const nsPoint& aPoint) {
+nsIFrame::Cursor nsTreeBodyFrame::GetCursor(const nsPoint& aPoint) {
   
   
   bool dummy;
@@ -2237,8 +2237,7 @@ Maybe<nsIFrame::Cursor> nsTreeBodyFrame::GetCursor(const nsPoint& aPoint) {
       if (kind == StyleCursorKind::Auto) {
         kind = StyleCursorKind::Default;
       }
-      return Some(
-          Cursor{kind, AllowCustomCursorImage::Yes, std::move(childContext)});
+      return Cursor{kind, AllowCustomCursorImage::Yes, std::move(childContext)};
     }
   }
   return SimpleXULLeafFrame::GetCursor(aPoint);
