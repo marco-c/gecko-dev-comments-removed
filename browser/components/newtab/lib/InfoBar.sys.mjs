@@ -1,7 +1,6 @@
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -20,11 +19,11 @@ class InfoBarNotification {
     this.notification = null;
   }
 
-  
-
-
-
-
+  /**
+   * Show the infobar notification and send an impression ping
+   *
+   * @param {object} browser Browser reference for the currently selected tab
+   */
   async showNotification(browser) {
     let { content } = this.message;
     let { gBrowser } = browser.ownerGlobal;
@@ -54,7 +53,7 @@ class InfoBarNotification {
 
   formatMessageConfig(doc, content) {
     let docFragment = doc.createDocumentFragment();
-    
+    // notificationbox will only `appendChild` for documentFragments
     docFragment.appendChild(
       lazy.RemoteL10n.createElement(doc, "span", { content })
     );
@@ -64,8 +63,8 @@ class InfoBarNotification {
 
   formatButtonConfig(button) {
     let btnConfig = { callback: this.buttonCallback, ...button };
-    
-    
+    // notificationbox will set correct data-l10n-id attributes if passed in
+    // using the l10n-id key. Otherwise the `button.label` text is used.
     if (button.label.string_id) {
       btnConfig["l10n-id"] = button.label.string_id;
     }
@@ -74,15 +73,15 @@ class InfoBarNotification {
   }
 
   addImpression() {
-    
+    // Record an impression in ASRouter for frequency capping
     this._dispatch({ type: "IMPRESSION", data: this.message });
-    
+    // Send a user impression telemetry ping
     this.sendUserEventTelemetry("IMPRESSION");
   }
 
-  
-
-
+  /**
+   * Called when one of the infobar buttons is clicked
+   */
   buttonCallback(notificationBox, btnDescription, target) {
     this.dispatchUserAction(
       btnDescription.action,
@@ -99,18 +98,18 @@ class InfoBarNotification {
     this._dispatch({ type: "USER_ACTION", data: action }, selectedBrowser);
   }
 
-  
-
-
+  /**
+   * Called when interacting with the toolbar (but not through the buttons)
+   */
   infobarCallback(eventType) {
     if (eventType === "removed") {
       this.notification = null;
-      
+      // eslint-disable-next-line no-use-before-define
       InfoBar._activeInfobar = null;
     } else if (this.notification) {
       this.sendUserEventTelemetry("DISMISSED");
       this.notification = null;
-      
+      // eslint-disable-next-line no-use-before-define
       InfoBar._activeInfobar = null;
     }
   }
@@ -127,7 +126,7 @@ class InfoBarNotification {
   }
 }
 
-const InfoBar = {
+export const InfoBar = {
   _activeInfobar: null,
 
   maybeLoadCustomElement(win) {
@@ -147,7 +146,7 @@ const InfoBar = {
   },
 
   async showInfoBarMessage(browser, message, dispatch) {
-    
+    // Prevent stacking multiple infobars
     if (this._activeInfobar) {
       return null;
     }
@@ -168,5 +167,3 @@ const InfoBar = {
     return notification;
   },
 };
-
-const EXPORTED_SYMBOLS = ["InfoBar"];
