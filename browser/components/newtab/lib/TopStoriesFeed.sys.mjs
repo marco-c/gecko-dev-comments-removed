@@ -1,23 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-const { actionTypes: at, actionCreators: ac } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { Prefs } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/ActivityStreamPrefs.sys.mjs"
-);
-const { shortURL } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/ShortURL.sys.mjs"
-);
-const { SectionsManager } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/SectionsManager.sys.mjs"
-);
-const { PersistentCache } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/PersistentCache.sys.mjs"
-);
+import {
+  actionTypes as at,
+  actionCreators as ac,
+} from "resource://activity-stream/common/Actions.sys.mjs";
+import { Prefs } from "resource://activity-stream/lib/ActivityStreamPrefs.sys.mjs";
+import { shortURL } from "resource://activity-stream/lib/ShortURL.sys.mjs";
+import { SectionsManager } from "resource://activity-stream/lib/SectionsManager.sys.mjs";
+import { PersistentCache } from "resource://activity-stream/lib/PersistentCache.sys.mjs";
 
 const lazy = {};
 
@@ -26,27 +18,30 @@ ChromeUtils.defineESModuleGetters(lazy, {
   pktApi: "chrome://pocket/content/pktApi.sys.mjs",
 });
 
-const STORIES_UPDATE_TIME = 30 * 60 * 1000; 
-const TOPICS_UPDATE_TIME = 3 * 60 * 60 * 1000; 
-const STORIES_NOW_THRESHOLD = 24 * 60 * 60 * 1000; 
-const DEFAULT_RECS_EXPIRE_TIME = 60 * 60 * 1000; 
-const SECTION_ID = "topstories";
+export const STORIES_UPDATE_TIME = 30 * 60 * 1000; // 30 minutes
+export const TOPICS_UPDATE_TIME = 3 * 60 * 60 * 1000; // 3 hours
+const STORIES_NOW_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+export const DEFAULT_RECS_EXPIRE_TIME = 60 * 60 * 1000; // 1 hour
+export const SECTION_ID = "topstories";
 const IMPRESSION_SOURCE = "TOP_STORIES";
-const SPOC_IMPRESSION_TRACKING_PREF =
+
+export const SPOC_IMPRESSION_TRACKING_PREF =
   "feeds.section.topstories.spoc.impressions";
+
 const DISCOVERY_STREAM_PREF_ENABLED = "discoverystream.enabled";
 const DISCOVERY_STREAM_PREF_ENABLED_PATH =
   "browser.newtabpage.activity-stream.discoverystream.enabled";
-const REC_IMPRESSION_TRACKING_PREF = "feeds.section.topstories.rec.impressions";
+export const REC_IMPRESSION_TRACKING_PREF =
+  "feeds.section.topstories.rec.impressions";
 const PREF_USER_TOPSTORIES = "feeds.section.topstories";
-const MAX_LIFETIME_CAP = 500; 
+const MAX_LIFETIME_CAP = 500; // Guard against misconfiguration on the server
 const DISCOVERY_STREAM_PREF = "discoverystream.config";
 
-class TopStoriesFeed {
+export class TopStoriesFeed {
   constructor(ds) {
-    
-    
-    
+    // Use discoverystream config pref default values for fast path and
+    // if needed lazy load activity stream top stories feed based on
+    // actual user preference when INIT and PREF_CHANGED is invoked
     this.discoveryStreamEnabled =
       ds &&
       ds.value &&
@@ -66,7 +61,7 @@ class TopStoriesFeed {
   }
 
   async onInit() {
-    SectionsManager.enableSection(SECTION_ID, true );
+    SectionsManager.enableSection(SECTION_ID, true /* isStartup */);
     if (this.discoveryStreamEnabled) {
       return;
     }
@@ -90,9 +85,9 @@ class TopStoriesFeed {
       this.storiesLoaded = false;
       this.dispatchPocketCta(this._prefs.get("pocketCta"), false);
 
-      
-      
-      
+      // Cache is used for new page loads, which shouldn't have changed data.
+      // If we have changed data, cache should be cleared,
+      // and last updated should be 0, and we can fetch.
       let { stories, topics } = await this.loadCachedData();
       if (this.storiesLastUpdated === 0) {
         stories = await this.fetchStories();
@@ -103,7 +98,7 @@ class TopStoriesFeed {
       this.doContentUpdate({ stories, topics }, true);
       this.storiesLoaded = true;
 
-      
+      // This is filtered so an update function can return true to retry on the next run
       this.contentUpdateQueue = this.contentUpdateQueue.filter(update =>
         update()
       );
@@ -144,23 +139,23 @@ class TopStoriesFeed {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * doContentUpdate - Updates topics and stories in the topstories section.
+   *
+   *                   Sections have one update action for the whole section.
+   *                   Redux creates a state race condition if you call the same action,
+   *                   twice, concurrently. Because of this, doContentUpdate is
+   *                   one place to update both topics and stories in a single action.
+   *
+   *                   Section updates used old topics if none are available,
+   *                   but clear stories if none are available. Because of this, if no
+   *                   stories are passed, we instead use the existing stories in state.
+   *
+   * @param {Object} This is an object with potential new stories or topics.
+   * @param {Boolean} shouldBroadcast If we should update existing tabs or not. For first page
+   *                  loads or pref changes, we want to update existing tabs,
+   *                  for system tick or other updates we do not.
+   */
   doContentUpdate({ stories, topics }, shouldBroadcast) {
     let updateProps = {};
     if (stories) {
@@ -178,7 +173,7 @@ class TopStoriesFeed {
       });
     }
 
-    
+    // We should only be calling this once per init.
     this.dispatchUpdateEvent(shouldBroadcast, updateProps);
   }
 
@@ -270,7 +265,7 @@ class TopStoriesFeed {
             : {},
         };
 
-        
+        // Very old cached spocs may not contain an `expiration_timestamp` property
         if (s.expiration_timestamp) {
           mapped.expiration_timestamp = s.expiration_timestamp;
         }
@@ -318,13 +313,13 @@ class TopStoriesFeed {
   }
 
   updateSettings(settings = {}) {
-    this.spocsPerNewTabs = settings.spocsPerNewTabs || 1; 
+    this.spocsPerNewTabs = settings.spocsPerNewTabs || 1; // Probability of a new tab getting a spoc [0,1]
     this.recsExpireTime = settings.recsExpireTime;
   }
 
-  
-  
-  
+  // We rotate stories on the client so that
+  // active stories are at the front of the list, followed by stories that have expired
+  // impressions i.e. have been displayed for longer than recsExpireTime.
   rotate(items) {
     if (items.length <= 3) {
       return items;
@@ -370,8 +365,8 @@ class TopStoriesFeed {
     return url.replace("$apiKey", apiKey);
   }
 
-  
-  
+  // Need to remove parenthesis from image URLs as React will otherwise
+  // fail to render them properly as part of the card template.
   normalizeUrl(url) {
     if (url) {
       return url.replace(/\(/g, "%28").replace(/\)/g, "%29");
@@ -398,24 +393,24 @@ class TopStoriesFeed {
     }
 
     if (!this.spocs || !this.spocs.length) {
-      
-      
+      // We have stories but no spocs so there's nothing to do and this update can be
+      // removed from the queue.
       return [];
     }
 
-    
+    // Filter spocs based on frequency caps
     const impressions = this.readImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF);
     let spocs = this.spocs.filter(s =>
       this.isBelowFrequencyCap(impressions, s)
     );
 
-    
+    // Filter out expired spocs based on `expiration_timestamp`
     spocs = spocs.filter(spoc => {
-      
+      // If cached data is so old it doesn't contain this property, assume the spoc is ok to show
       if (!(`expiration_timestamp` in spoc)) {
         return true;
       }
-      
+      // `expiration_timestamp` is the number of seconds elapsed since January 1, 1970 00:00:00 UTC
       return spoc.expiration_timestamp * 1000 > Date.now();
     });
 
@@ -431,14 +426,14 @@ class TopStoriesFeed {
         return false;
       }
 
-      
+      // Create a new array with a spoc inserted at index 2
       const section = this.store
         .getState()
         .Sections.find(s => s.id === SECTION_ID);
       let rows = section.rows.slice(0, this.stories.length);
       rows.splice(2, 0, Object.assign(spocs[0], { pinned: true }));
 
-      
+      // Send a content update to the target tab
       const action = {
         type: at.SECTION_UPDATE,
         data: Object.assign({ rows }, { id: SECTION_ID }),
@@ -451,26 +446,26 @@ class TopStoriesFeed {
     if (this.storiesLoaded) {
       updateContent();
     } else {
-      
+      // Delay updating tab content until initial data has been fetched
       this.contentUpdateQueue.push(updateContent);
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Frequency caps are based on campaigns, which may include multiple spocs.
+  // We currently support two types of frequency caps:
+  // - lifetime: Indicates how many times spocs from a campaign can be shown in total
+  // - period: Indicates how many times spocs from a campaign can be shown within a period
+  //
+  // So, for example, the feed configuration below defines that for campaign 1 no more
+  // than 5 spocs can be show in total, and no more than 2 per hour.
+  // "campaign_id": 1,
+  // "caps": {
+  //  "lifetime": 5,
+  //  "campaign": {
+  //    "count": 2,
+  //    "period": 3600
+  //  }
+  // }
   isBelowFrequencyCap(impressions, spoc) {
     const campaignImpressions = impressions[spoc.spoc_meta.campaign_id];
     if (!campaignImpressions) {
@@ -495,8 +490,8 @@ class TopStoriesFeed {
     return !campaignCapExceeded;
   }
 
-  
-  
+  // Clean up campaign impression pref by removing all campaigns that are no
+  // longer part of the response, and are therefore considered inactive.
   cleanUpCampaignImpressionPref() {
     const campaignIds = new Set(this.spocCampaignMap.values());
     this.cleanUpImpressionPref(
@@ -505,8 +500,8 @@ class TopStoriesFeed {
     );
   }
 
-  
-  
+  // Clean up rec impression pref by removing all stories that are no
+  // longer part of the response.
   cleanUpTopRecImpressionPref() {
     const activeStories = new Set(this.stories.map(s => `${s.guid}`));
     this.cleanUpImpressionPref(
@@ -515,13 +510,13 @@ class TopStoriesFeed {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Cleans up the provided impression pref (spocs or recs).
+   *
+   * @param isExpired predicate (boolean-valued function) that returns whether or not
+   * the impression for the given key is expired.
+   * @param pref the impression pref to clean up.
+   */
   cleanUpImpressionPref(isExpired, pref) {
     const impressions = this.readImpressionsPref(pref);
     let changed = false;
@@ -538,8 +533,8 @@ class TopStoriesFeed {
     }
   }
 
-  
-  
+  // Sets a pref mapping campaign IDs to timestamp arrays.
+  // The timestamps represent impressions which are used to calculate frequency caps.
   recordCampaignImpression(campaignId) {
     let impressions = this.readImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF);
 
@@ -550,9 +545,9 @@ class TopStoriesFeed {
     this.writeImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF, impressions);
   }
 
-  
-  
-  
+  // Sets a pref mapping story (rec) IDs to a single timestamp (time of first impression).
+  // We use these timestamps to guarantee a story doesn't stay on top for longer than
+  // configured in the feed settings (settings.recsExpireTime).
   recordTopRecImpressions(topItems) {
     let impressions = this.readImpressionsPref(REC_IMPRESSION_TRACKING_PREF);
     let changed = false;
@@ -579,9 +574,9 @@ class TopStoriesFeed {
   }
 
   async removeSpocs() {
-    
-    
-    
+    // Quick hack so that SPOCS are removed from all open and preloaded tabs when
+    // they are disabled. The longer term fix should probably be to remove them
+    // in the Reducer.
     await this.clearCache();
     this.uninit();
     this.init();
@@ -601,11 +596,11 @@ class TopStoriesFeed {
         JSON.parse(dsPref).enabled &&
         this.store.getState().Prefs.values[DISCOVERY_STREAM_PREF_ENABLED];
     } catch (e) {
-      
+      // Load activity stream top stories if fail to determine discovery stream state
       this.discoveryStreamEnabled = false;
     }
 
-    
+    // Return without invoking initialization if top stories are loaded, or preffed off.
     if (this.storiesLoaded || !userPref) {
       return;
     }
@@ -630,7 +625,7 @@ class TopStoriesFeed {
         }
         if (action.data.name === PREF_USER_TOPSTORIES) {
           if (action.data.value) {
-            
+            // init topstories if value if true.
             this.lazyLoadTopStories({ userPref: action.data.value });
           } else {
             this.uninit();
@@ -649,7 +644,7 @@ class TopStoriesFeed {
       return;
     }
     switch (action.type) {
-      
+      // Check discoverystream pref and load activity stream top stories only if needed
       case at.INIT:
         this.lazyLoadTopStories();
         break;
@@ -684,10 +679,10 @@ class TopStoriesFeed {
         }
         break;
       case at.TELEMETRY_IMPRESSION_STATS: {
-        
-        
-        
-        
+        // We want to make sure we only track impressions from Top Stories,
+        // otherwise unexpected things that are not properly handled can happen.
+        // Example: Impressions from spocs on Discovery Stream can cause the
+        // Top Stories impressions pref to continuously grow, see bug #1523408
         if (action.data.source === IMPRESSION_SOURCE) {
           const payload = action.data;
           const viewImpression = !(
@@ -717,13 +712,13 @@ class TopStoriesFeed {
         }
         if (action.data.name === PREF_USER_TOPSTORIES) {
           if (action.data.value) {
-            
+            // init topstories if value if true.
             this.lazyLoadTopStories({ userPref: action.data.value });
           } else {
             this.uninit();
           }
         }
-        
+        // Check if spocs was disabled. Remove them if they were.
         if (action.data.name === "showSponsored" && !action.data.value) {
           await this.removeSpocs();
         }
@@ -734,13 +729,3 @@ class TopStoriesFeed {
     }
   }
 }
-
-const EXPORTED_SYMBOLS = [
-  "TopStoriesFeed",
-  "STORIES_UPDATE_TIME",
-  "TOPICS_UPDATE_TIME",
-  "SECTION_ID",
-  "SPOC_IMPRESSION_TRACKING_PREF",
-  "REC_IMPRESSION_TRACKING_PREF",
-  "DEFAULT_RECS_EXPIRE_TIME",
-];

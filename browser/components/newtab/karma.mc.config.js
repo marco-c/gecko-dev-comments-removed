@@ -152,7 +152,7 @@ module.exports = function (config) {
 
 
 
-            "lib/TopStoriesFeed.jsm": {
+            "lib/TopStoriesFeed.sys.mjs": {
               statements: 0,
               lines: 0,
               functions: 0,
