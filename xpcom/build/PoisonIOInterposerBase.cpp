@@ -1,12 +1,11 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/Scoped.h"
 #include "mozilla/UniquePtr.h"
 
 #include <algorithm>
@@ -19,13 +18,13 @@
 #  include "replace_malloc_bridge.h"
 #endif
 
-
+// Auxiliary method to convert file descriptors to ids
 #if defined(XP_WIN)
 #  include <io.h>
 inline mozilla::Maybe<intptr_t> FileDescriptorToHandle(int aFd) {
   intptr_t handle = _get_osfhandle(aFd);
   if ((handle == -1) || (handle == -2)) {
-    
+    // -1: Invalid handle. -2: stdin/out/err not associated with a stream.
     return mozilla::Nothing();
   }
   return mozilla::Some(handle);
@@ -34,55 +33,32 @@ inline mozilla::Maybe<intptr_t> FileDescriptorToHandle(int aFd) {
 inline mozilla::Maybe<intptr_t> FileDescriptorToHandle(int aFd) {
   return mozilla::Some<intptr_t>(aFd);
 }
-#endif 
+#endif /* if not XP_WIN */
 
 namespace {
 
-struct DebugFilesAutoLockTraits {
-  typedef PRLock* type;
-  typedef const PRLock* const_type;
-  static const_type empty() { return nullptr; }
-  static void release(type aL) { PR_Unlock(aL); }
-};
-
-class DebugFilesAutoLock : public mozilla::Scoped<DebugFilesAutoLockTraits> {
-  static PRLock* Lock;
-
+class DebugFilesAutoLock final {
  public:
   static PRLock* getDebugFileIDsLock() {
-    
-    
-    
-    
-    
-    
-    if (!Lock) {
-      Lock = PR_NewLock();
-    }
-
-    
-    
-    return Lock;
+    static PRLock* sLock = PR_NewLock();
+    return sLock;
   }
 
-  DebugFilesAutoLock()
-      : mozilla::Scoped<DebugFilesAutoLockTraits>(getDebugFileIDsLock()) {
-    PR_Lock(get());
-  }
+  DebugFilesAutoLock() { PR_Lock(getDebugFileIDsLock()); }
+
+  ~DebugFilesAutoLock() { PR_Unlock(getDebugFileIDsLock()); }
 };
 
-PRLock* DebugFilesAutoLock::Lock;
-
-
-
-
-
-
-
-
-
-
-
+// The ChunkedList<T> class implements, at the high level, a non-iterable
+// list of instances of T. Its goal is to be somehow minimalist for the
+// use case of storing the debug files handles here, with the property of
+// not requiring a lock to look up whether it contains a specific value.
+// It is also chunked in blocks of chunk_size bytes so that its
+// initialization doesn't require a memory allocation, while keeping the
+// possibility to increase its size as necessary. Note that chunks are
+// never deallocated (except in the destructor).
+// All operations are essentially O(N) but N is not expected to be large
+// enough to matter.
 template <typename T, size_t chunk_size = 64>
 class ChunkedList {
   struct ListChunk {
@@ -102,17 +78,17 @@ class ChunkedList {
   ChunkedList() : mLength(0) {}
 
   ~ChunkedList() {
-    
-    
-    
-    
-    
+    // There can be writes happening after this destructor runs, so keep
+    // the list contents and don't reset mLength. But if there are more
+    // elements left than the first chunk can hold, then all hell breaks
+    // loose for any write that would happen after that because any extra
+    // chunk would be deallocated, so just crash in that case.
     MOZ_RELEASE_ASSERT(mLength <= ListChunk::kLength);
   }
 
-  
-  
-  
+  // Add an element at the end of the last chunk of the list. Create a new
+  // chunk if there is not enough room.
+  // This is not thread-safe with another thread calling Add or Remove.
   void Add(T aValue) {
     ListChunk* list = &mList;
     size_t position = mLength;
@@ -122,15 +98,15 @@ class ChunkedList {
       }
       list = list->mNext.get();
     }
-    
-    
+    // Use an order of operations that ensures any racing Contains call
+    // can't be hurt.
     list->mElements[position] = aValue;
     mLength++;
   }
 
-  
-  
-  
+  // Remove an element from the list by replacing it with the last element
+  // of the list, and then shrinking the list.
+  // This is not thread-safe with another thread calling Add or Remove.
   void Remove(T aValue) {
     if (!mLength) {
       return;
@@ -139,17 +115,17 @@ class ChunkedList {
     size_t last = mLength - 1;
     do {
       size_t position = 0;
-      
+      // Look for an element matching the given value.
       for (; position < ListChunk::kLength; position++) {
         if (aValue == list->mElements[position]) {
           ListChunk* last_list = list;
-          
-          
+          // Look for the last element in the list, starting from where we are
+          // instead of starting over.
           for (; last >= ListChunk::kLength; last -= ListChunk::kLength) {
             last_list = last_list->mNext.get();
           }
-          
-          
+          // Use an order of operations that ensures any racing Contains call
+          // can't be hurt.
           T value = last_list->mElements[last];
           list->mElements[position] = value;
           mLength--;
@@ -161,13 +137,13 @@ class ChunkedList {
     } while (list);
   }
 
-  
-  
-  
+  // Returns whether the list contains the given value. It is meant to be safe
+  // to use without locking, with the tradeoff of being not entirely accurate
+  // if another thread adds or removes an element while this function runs.
   bool Contains(T aValue) {
     ListChunk* list = &mList;
-    
-    
+    // Fix the range of the lookup to whatever the list length is when the
+    // function is called.
     size_t length = mLength;
     do {
       size_t list_length = ListChunk::kLength;
@@ -187,24 +163,24 @@ class ChunkedList {
 
 typedef ChunkedList<intptr_t> FdList;
 
-
-
+// Return a list used to hold the IDs of the current debug files. On unix
+// an ID is a file descriptor. On Windows it is a file HANDLE.
 FdList& getDebugFileIDs() {
   static FdList DebugFileIDs;
   return DebugFileIDs;
 }
 
-}  
+}  // namespace
 
 namespace mozilla {
 
-
-
+// Auxiliary Method to test if a file descriptor is registered to be ignored
+// by the poisoning IO interposer
 bool IsDebugFile(intptr_t aFileID) {
   return getDebugFileIDs().Contains(aFileID);
 }
 
-}  
+}  // namespace mozilla
 
 extern "C" {
 
@@ -255,7 +231,7 @@ void MozillaUnRegisterDebugFILE(FILE* aFile) {
   MozillaUnRegisterDebugFD(fd);
 }
 
-}  
+}  // extern "C"
 
 #ifdef MOZ_REPLACE_MALLOC
 void mozilla::DebugFdRegistry::RegisterHandle(intptr_t aHandle) {
