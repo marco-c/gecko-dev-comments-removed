@@ -171,7 +171,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
- var asrouter_content_src_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(19);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(19);
 
 
 
@@ -468,7 +468,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     } = action;
     if (type === "SHOW_FIREFOX_ACCOUNTS") {
       let params = {
-        ...asrouter_content_src_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_6__.BASE_PARAMS,
+        ..._lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__.BASE_PARAMS,
         utm_term: `${UTMTerm}-screen`
       };
       if (action.addFlowParams && flowParams) {
@@ -483,7 +483,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       };
     } else if (type === "OPEN_URL") {
       let url = new URL(data.args);
-      (0,asrouter_content_src_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_6__.addUtmParams)(url, `${UTMTerm}-screen`);
+      (0,_lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__.addUtmParams)(url, `${UTMTerm}-screen`);
       if (action.addFlowParams && flowParams) {
         url.searchParams.append("device_id", flowParams.deviceId);
         url.searchParams.append("flow_id", flowParams.flowId);
@@ -2217,7 +2217,7 @@ const LinkParagraph = props => {
 
  }),
 
- ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
@@ -2234,7 +2234,7 @@ __webpack_require__.r(__webpack_exports__);
 const BASE_PARAMS = {
   utm_source: "activity-stream",
   utm_campaign: "firstrun",
-  utm_medium: "referral"
+  utm_medium: "referral",
 };
 
 
@@ -2257,6 +2257,7 @@ function addUtmParams(url, utmTerm) {
   return returnUrl;
 }
 
+
  }),
 
  ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
@@ -2269,7 +2270,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var asrouter_content_src_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
 
 
 
@@ -2320,7 +2321,7 @@ class ReturnToAMO extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureComp
       };
     } else if (type === "SHOW_FIREFOX_ACCOUNTS") {
       let params = {
-        ...asrouter_content_src_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__.BASE_PARAMS,
+        ..._lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_3__.BASE_PARAMS,
         utm_term: `aboutwelcome-${utm_term}-screen`
       };
       if (action.addFlowParams && this.state.flowParams) {
