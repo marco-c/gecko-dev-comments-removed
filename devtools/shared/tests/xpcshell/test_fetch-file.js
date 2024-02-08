@@ -23,7 +23,7 @@ const ISO_8859_1_BUFFER = new Uint8Array([0x61, 0xe9, 0x64]);
 
 add_task(async function test_arrow_urls() {
   const { path } = createTemporaryFile(".js");
-  const url = "resource://gre/modules/XPIProvider.jsm -> file://" + path;
+  const url = "resource://gre/modules/XPIProvider.sys.mjs -> file://" + path;
 
   await IOUtils.writeUTF8(path, TEST_CONTENT);
   const { content } = await DevToolsUtils.fetch(url);

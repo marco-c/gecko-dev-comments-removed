@@ -415,7 +415,7 @@ class TestUrlFinder(unittest.TestCase):
             ),
             
             (
-                "resource://gre/modules/addons/XPIProvider.jsm -> resource://gre/modules/osfile/osfile_async_worker.js",  
+                "resource://gre/modules/addons/XPIProvider.sys.mjs -> resource://gre/modules/osfile/osfile_async_worker.js",  
                 ("toolkit/components/osfile/modules/osfile_async_worker.js", None),
             ),
             
