@@ -5,8 +5,8 @@
 
 registerCleanupFunction(() => {
   
-  const { revertRecordingSettings } = ChromeUtils.import(
-    "resource://devtools/client/performance-new/shared/background.jsm.js"
+  const { revertRecordingSettings } = ChromeUtils.importESModule(
+    "resource://devtools/client/performance-new/shared/background.sys.mjs"
   );
   revertRecordingSettings();
 });

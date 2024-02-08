@@ -42,8 +42,8 @@
 
 
 
-const { presets } = ChromeUtils.import(
-  "resource://devtools/client/performance-new/shared/background.jsm.js"
+const { presets } = ChromeUtils.importESModule(
+  "resource://devtools/client/performance-new/shared/background.sys.mjs"
 );
 
 const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.js");
