@@ -146,7 +146,7 @@ add_task(async function yelpSpecificPrefsDisabled() {
 
 
 
-add_task(async function nimbus() {
+add_task(async function featureGate() {
   
   UrlbarPrefs.set("yelp.featureGate", false);
   await check_results({
@@ -200,6 +200,47 @@ add_task(async function nimbus() {
 
 
 
+add_task(async function yelpSuggestPriority() {
+  
+  const cleanUpNimbusEnable = await UrlbarTestUtils.initNimbusFeature({
+    yelpSuggestPriority: true,
+  });
+  await QuickSuggestTestUtils.forceSync();
+
+  await check_results({
+    context: createContext("ramen", {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [
+      makeExpectedResult({
+        url: "https://www.yelp.com/search?find_desc=ramen",
+        title: "ramen",
+        isTopPick: true,
+      }),
+    ],
+  });
+
+  await cleanUpNimbusEnable();
+  await QuickSuggestTestUtils.forceSync();
+
+  await check_results({
+    context: createContext("ramen", {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [
+      makeExpectedResult({
+        url: "https://www.yelp.com/search?find_desc=ramen",
+        title: "ramen",
+        isTopPick: false,
+      }),
+    ],
+  });
+});
+
+
+
 add_task(async function rustProviders() {
   await doRustProvidersTests({
     searchString: "ramen",
@@ -227,7 +268,7 @@ function makeExpectedResult(expected) {
   return {
     type: UrlbarUtils.RESULT_TYPE.URL,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-    isBestMatch: true,
+    isBestMatch: expected.isTopPick ?? false,
     heuristic: false,
     payload: {
       source: "rust",
