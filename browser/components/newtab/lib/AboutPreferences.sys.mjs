@@ -1,14 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-const { actionTypes: at, actionCreators: ac } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
+import {
+  actionTypes as at,
+  actionCreators as ac,
+} from "resource://activity-stream/common/Actions.sys.mjs";
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
-const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
+export const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
 
 const lazy = {};
 
@@ -16,8 +16,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
-
-
+// These "section" objects are formatted in a way to be similar to the ones from
+// SectionsManager to construct the preferences view.
 const PREFS_BEFORE_SECTIONS = () => [
   {
     id: "search",
@@ -52,7 +52,7 @@ const PREFS_BEFORE_SECTIONS = () => [
   },
 ];
 
-class AboutPreferences {
+export class AboutPreferences {
   init() {
     Services.obs.addObserver(this, PREFERENCES_LOADED_EVENT);
   }
@@ -72,7 +72,7 @@ class AboutPreferences {
       case at.SETTINGS_OPEN:
         action._target.browser.ownerGlobal.openPreferences("paneHome");
         break;
-      
+      // This is used to open the web extension settings page for an extension
       case at.OPEN_WEBEXT_SETTINGS:
         action._target.browser.ownerGlobal.BrowserOpenAddonsMgr(
           `addons://detail/${encodeURIComponent(action.data)}`
@@ -82,7 +82,7 @@ class AboutPreferences {
   }
 
   handleDiscoverySettings(sections) {
-    
+    // Deep copy object to not modify original Sections state in store
     let sectionsCopy = JSON.parse(JSON.stringify(sections));
     sectionsCopy.forEach(obj => {
       if (obj.id === "topstories") {
@@ -123,30 +123,30 @@ class AboutPreferences {
     ]);
   }
 
-  
-
-
-
+  /**
+   * Render preferences to an about:preferences content window with the provided
+   * preferences structure.
+   */
   renderPreferences({ document, Preferences, gHomePane }, prefStructure) {
-    
+    // Helper to create a new element and append it
     const createAppend = (tag, parent, options) =>
       parent.appendChild(document.createXULElement(tag, options));
 
-    
+    // Helper to get fluentIDs sometimes encase in an object
     const getString = message =>
       typeof message !== "object" ? message : message.id;
 
-    
+    // Helper to link a UI element to a preference for updating
     const linkPref = (element, name, type) => {
       const fullPref = `browser.newtabpage.activity-stream.${name}`;
       element.setAttribute("preference", fullPref);
       Preferences.add({ id: fullPref, type });
 
-      
+      // Prevent changing the UI if the preference can't be changed
       element.disabled = Preferences.get(fullPref).locked;
     };
 
-    
+    // Insert a new group immediately after the homepage one
     const homeGroup = document.getElementById("homepageGroup");
     const contentsGroup = homeGroup.insertAdjacentElement(
       "afterend",
@@ -167,7 +167,7 @@ class AboutPreferences {
       "home-prefs-content-description2"
     );
 
-    
+    // Add preferences for each section
     prefStructure.forEach(sectionData => {
       const {
         id,
@@ -185,23 +185,23 @@ class AboutPreferences {
         nestedPrefs = [],
       } = prefData || {};
 
-      
+      // Don't show any sections that we don't want to expose in preferences UI
       if (shouldHidePref) {
         return;
       }
 
-      
+      // Use full icon spec for certain protocols or fall back to packaged icon
       const iconUrl = !icon.search(/^(chrome|moz-extension|resource):/)
         ? icon
         : `chrome://activity-stream/content/data/content/assets/glyph-${icon}-16.svg`;
 
-      
+      // Add the main preference for turning on/off a section
       const sectionVbox = createAppend("vbox", contentsGroup);
       sectionVbox.setAttribute("data-subcategory", id);
       const checkbox = createAppend("checkbox", sectionVbox);
       checkbox.classList.add("section-checkbox");
       checkbox.setAttribute("src", iconUrl);
-      
+      // Setup a user event if we have an event source for this pref.
       if (eventSource) {
         this.setupUserEvent(checkbox, eventSource);
       }
@@ -213,7 +213,7 @@ class AboutPreferences {
 
       linkPref(checkbox, name, "bool");
 
-      
+      // Specially add a link for stories
       if (id === "topstories") {
         const sponsoredHbox = createAppend("hbox", sectionVbox);
         sponsoredHbox.setAttribute("align", "center");
@@ -226,7 +226,7 @@ class AboutPreferences {
         document.l10n.setAttributes(link, sectionData.pref.learnMore.link.id);
       }
 
-      
+      // Add more details for the section (e.g., description, more prefs)
       const detailVbox = createAppend("vbox", sectionVbox);
       detailVbox.classList.add("indent");
       if (descString) {
@@ -238,17 +238,17 @@ class AboutPreferences {
           descString.values
         );
 
-        
+        // Add a rows dropdown if we have a pref to control and a maximum
         if (rowsPref && maxRows) {
           const detailHbox = createAppend("hbox", detailVbox);
           detailHbox.setAttribute("align", "center");
           description.setAttribute("flex", 1);
           detailHbox.appendChild(description);
 
-          
+          // Add box so the search tooltip is positioned correctly
           const tooltipBox = createAppend("hbox", detailHbox);
 
-          
+          // Add appropriate number of localized entries to the dropdown
           const menulist = createAppend("menulist", tooltipBox);
           menulist.setAttribute("crop", "none");
           const menupopup = createAppend("menupopup", menulist);
@@ -269,10 +269,10 @@ class AboutPreferences {
       const fullName = `browser.newtabpage.activity-stream.${sectionData.pref.feed}`;
       const pref = Preferences.get(fullName);
 
-      
+      // Add a checkbox pref for any nested preferences
       nestedPrefs.forEach(nested => {
         const subcheck = createAppend("checkbox", detailVbox);
-        
+        // Setup a user event if we have an event source for this pref.
         if (nested.eventSource) {
           this.setupUserEvent(subcheck, nested.eventSource);
         }
@@ -284,7 +284,7 @@ class AboutPreferences {
         subcheck.hidden = nested.hidden;
       });
 
-      
+      // Disable any nested checkboxes if the parent pref is not enabled.
       pref.on("change", () => {
         subChecks.forEach(subcheck => {
           subcheck.disabled = !pref._value;
@@ -292,9 +292,7 @@ class AboutPreferences {
       });
     });
 
-    
+    // Update the visibility of the Restore Defaults btn based on checked prefs
     gHomePane.toggleRestoreDefaultsBtn();
   }
 }
-
-const EXPORTED_SYMBOLS = ["AboutPreferences", "PREFERENCES_LOADED_EVENT"];
