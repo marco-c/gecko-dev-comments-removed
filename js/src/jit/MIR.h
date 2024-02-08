@@ -1721,6 +1721,10 @@ class MTableSwitch final : public MControlInstruction,
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
+  
+  
+  
+  
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
@@ -10021,6 +10025,16 @@ class MWasmLoadInstanceDataField : public MUnaryInstruction,
   }
 
   AliasType mightAlias(const MDefinition* def) const override;
+
+#ifdef JS_JITSPEW
+  void getExtras(ExtrasCollector* extras) override {
+    char buf[96];
+    SprintfLiteral(buf, "(offs=%lld, isConst=%s)",
+                   (long long int)instanceDataOffset_,
+                   isConstant_ ? "true" : "false");
+    extras->add(buf);
+  }
+#endif
 };
 
 class MWasmLoadGlobalCell : public MUnaryInstruction,
