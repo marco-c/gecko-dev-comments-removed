@@ -391,11 +391,15 @@ bool MessagePortService::ForceClose(const nsID& aUUID,
     return true;
   }
 
-  if (!data->mDestinationUUID.Equals(aDestinationUUID) ||
-      data->mSequenceID != aSequenceID) {
-    NS_WARNING("DestinationUUID and/or sequenceID do not match.");
-    return false;
-  }
+  NS_ENSURE_TRUE(data->mDestinationUUID.Equals(aDestinationUUID), false);
+
+  
+  
+  
+  
+  
+  NS_WARNING_ASSERTION(data->mSequenceID == aSequenceID,
+                       "sequence IDs do not match");
 
   CloseAll(aUUID, true);
   return true;
