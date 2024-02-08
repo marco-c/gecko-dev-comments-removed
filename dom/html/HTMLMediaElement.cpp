@@ -6995,6 +6995,11 @@ void HTMLMediaElement::MakeAssociationWithCDMResolved() {
 
   
   mMediaKeys = mIncomingMediaKeys;
+#ifdef MOZ_WMF_CDM
+  if (mMediaKeys && mMediaKeys->GetCDMProxy()) {
+    mIsUsingWMFCDM = !!mMediaKeys->GetCDMProxy()->AsWMFCDMProxy();
+  }
+#endif
   
   ResetSetMediaKeysTempVariables();
   
@@ -7865,6 +7870,10 @@ void HTMLMediaElement::NodeInfoChanged(Document* aOldDoc) {
 
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
 }
+
+#ifdef MOZ_WMF_CDM
+bool HTMLMediaElement::IsUsingWMFCDM() const { return mIsUsingWMFCDM; };
+#endif
 
 }  
 
