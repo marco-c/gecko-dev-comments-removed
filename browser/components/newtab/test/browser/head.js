@@ -15,9 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ASRouter: "resource:///modules/asrouter/ASRouter.jsm",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.jsm",
 });
-const { FxAccounts } = ChromeUtils.importESModule(
-  "resource://gre/modules/FxAccounts.sys.mjs"
-);
+
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -95,16 +93,6 @@ async function waitForPreloaded(browser) {
   if (readyState !== "complete") {
     await BrowserTestUtils.browserLoaded(browser);
   }
-}
-
-
-
-
-
-async function waitForUrlLoad(url) {
-  let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.startLoadingURIString(browser, url);
-  await BrowserTestUtils.browserLoaded(browser, false, url);
 }
 
 
