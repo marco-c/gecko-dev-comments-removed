@@ -234,6 +234,11 @@ class DefaultNameMatchingPolicy : public NameMatchingPolicy {
     fallBackToCommonName = FallBackToSearchWithinSubject::Yes;
     return Success;
   }
+
+  virtual HandleInvalidSubjectAlternativeNamesBy
+  HandleInvalidSubjectAlternativeNames() override {
+    return HandleInvalidSubjectAlternativeNamesBy::Halting;
+  }
 };
 
 

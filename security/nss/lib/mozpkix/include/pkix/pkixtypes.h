@@ -380,6 +380,7 @@ class TrustDomain {
 };
 
 enum class FallBackToSearchWithinSubject { No = 0, Yes = 1 };
+enum class HandleInvalidSubjectAlternativeNamesBy { Halting = 0, Skipping = 1 };
 
 
 
@@ -395,6 +396,9 @@ class NameMatchingPolicy {
       Time notBefore,
        FallBackToSearchWithinSubject& fallBackToCommonName) = 0;
 
+  virtual HandleInvalidSubjectAlternativeNamesBy
+  HandleInvalidSubjectAlternativeNames() = 0;
+
  protected:
   NameMatchingPolicy() {}
 
@@ -407,6 +411,9 @@ class StrictNameMatchingPolicy : public NameMatchingPolicy {
   virtual Result FallBackToCommonName(
       Time notBefore,
        FallBackToSearchWithinSubject& fallBacktoCommonName) override;
+
+  virtual HandleInvalidSubjectAlternativeNamesBy
+  HandleInvalidSubjectAlternativeNames() override;
 };
 }  
 }  

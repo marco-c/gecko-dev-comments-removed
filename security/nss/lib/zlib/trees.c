@@ -904,9 +904,14 @@ local void compress_block(deflate_state *s, const ct_data *ltree,
     int extra;          
 
     if (s->sym_next != 0) do {
+#ifdef LIT_MEM
+        dist = s->d_buf[sx];
+        lc = s->l_buf[sx++];
+#else
         dist = s->sym_buf[sx++] & 0xff;
         dist += (unsigned)(s->sym_buf[sx++] & 0xff) << 8;
         lc = s->sym_buf[sx++];
+#endif
         if (dist == 0) {
             send_code(s, lc, ltree); 
             Tracecv(isgraph(lc), (stderr," '%c' ", lc));
@@ -932,7 +937,11 @@ local void compress_block(deflate_state *s, const ct_data *ltree,
         } 
 
         
+#ifdef LIT_MEM
+        Assert(s->pending < 2 * (s->lit_bufsize + sx), "pendingBuf overflow");
+#else
         Assert(s->pending < s->lit_bufsize + sx, "pendingBuf overflow");
+#endif
 
     } while (sx < s->sym_next);
 
@@ -1082,9 +1091,14 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state *s, charf *buf,
 
 
 int ZLIB_INTERNAL _tr_tally(deflate_state *s, unsigned dist, unsigned lc) {
+#ifdef LIT_MEM
+    s->d_buf[s->sym_next] = (ush)dist;
+    s->l_buf[s->sym_next++] = (uch)lc;
+#else
     s->sym_buf[s->sym_next++] = (uch)dist;
     s->sym_buf[s->sym_next++] = (uch)(dist >> 8);
     s->sym_buf[s->sym_next++] = (uch)lc;
+#endif
     if (dist == 0) {
         
         s->dyn_ltree[lc].Freq++;

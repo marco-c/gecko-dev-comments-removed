@@ -132,6 +132,20 @@ TEST_F(Pkcs11SymKeyTest, NotExtractableConcatSymKeyTest) {
 }
 
 
+TEST_F(Pkcs11SymKeyTest, KeySlotConcatSymKeyTest) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
+  ASSERT_NE(nullptr, slot);
+
+  ScopedPK11SymKey left(ImportSymKey(slot.get(), &kLeftHalf));
+
+  ScopedPK11SymKey right(ImportSymKey(slot.get(), &kRightHalf));
+
+  ScopedPK11SymKey key(
+      PK11_ConcatSymKeys(left.get(), right.get(), CKM_HKDF_DERIVE, CKA_DERIVE));
+  CheckKeyData(kFull, key.get());
+}
+
+
 
 
 TEST_F(Pkcs11SymKeyTest, CrossSlotConcatSymKeyTest) {

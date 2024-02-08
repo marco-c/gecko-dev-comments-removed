@@ -17,6 +17,7 @@
 #include "ecl.h"
 #include "verified/Hacl_P384.h"
 #include "verified/Hacl_P521.h"
+#include "secport.h"
 
 #define EC_DOUBLECHECK PR_FALSE
 
@@ -360,6 +361,7 @@ ec_NewKey(ECParams *ecParams, ECPrivateKey **privKey,
             goto cleanup;
         }
         rv = method->pt_mul(&key->publicValue, &key->privateValue, NULL);
+        NSS_DECLASSIFY(key->publicValue.data, key->publicValue.len); 
         if (rv != SECSuccess) {
             goto cleanup;
         } else {
@@ -372,6 +374,7 @@ ec_NewKey(ECParams *ecParams, ECPrivateKey **privKey,
                                          (mp_size)len));
 
     rv = ec_points_mul(ecParams, &k, NULL, NULL, &(key->publicValue));
+    NSS_DECLASSIFY(key->publicValue.data, key->publicValue.len); 
     if (rv != SECSuccess) {
         goto cleanup;
     }
@@ -454,6 +457,7 @@ ec_GenerateRandomPrivateKey(ECParams *ecParams, SECItem *privKey)
             return SECFailure;
         }
         privKey->data[0] &= leading_coeff_mask;
+        NSS_CLASSIFY(privKey->data, privKey->len);
         rv = method->scalar_validate(privKey);
     } while (rv != SECSuccess && --count > 0);
 
@@ -859,7 +863,7 @@ ec_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     if ((kGpoint.data == NULL) ||
         (ec_points_mul(ecParams, &k, NULL, NULL, &kGpoint) != SECSuccess))
         goto cleanup;
-
+    NSS_DECLASSIFY(kGpoint.data, kGpoint.len); 
     
 
 
@@ -934,16 +938,18 @@ ec_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     CHECK_MPI_OK(mp_read_unsigned_octets(&ar, t2, 2 * ecParams->order.len)); 
 
     
-    CHECK_MPI_OK(mp_mul(&k, &ar, &k));       
-    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k)); 
-    CHECK_MPI_OK(mp_invmod(&k, &n, &k));     
-    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k)); 
+    CHECK_MPI_OK(mp_mul(&k, &ar, &k));                              
+    NSS_DECLASSIFY(MP_DIGITS(&k), MP_ALLOC(&k) * sizeof(mp_digit)); 
+    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k));                        
+    CHECK_MPI_OK(mp_invmod(&k, &n, &k));                            
+    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k));                        
     
-    CHECK_MPI_OK(mp_mul(&d, &ar, &t));        
-    CHECK_MPI_OK(mp_mulmod(&t, &r, &n, &d));  
-    CHECK_MPI_OK(mp_mulmod(&s, &ar, &n, &t)); 
-    CHECK_MPI_OK(mp_add(&t, &d, &s));         
-    CHECK_MPI_OK(mp_mulmod(&s, &k, &n, &s));  
+    CHECK_MPI_OK(mp_mul(&d, &ar, &t));                              
+    NSS_DECLASSIFY(MP_DIGITS(&t), MP_ALLOC(&t) * sizeof(mp_digit)); 
+    CHECK_MPI_OK(mp_mulmod(&t, &r, &n, &d));                        
+    CHECK_MPI_OK(mp_mulmod(&s, &ar, &n, &t));                       
+    CHECK_MPI_OK(mp_add(&t, &d, &s));                               
+    CHECK_MPI_OK(mp_mulmod(&s, &k, &n, &s));                        
 
 #if EC_DEBUG
     mp_todecimal(&s, mpstr);
@@ -1061,6 +1067,7 @@ ECDSA_SignDigest(ECPrivateKey *key, SECItem *signature, const SECItem *digest)
 
     
     rv = ECDSA_SignDigestWithSeed(key, signature, digest, nonceRand.data, nonceRand.len);
+    NSS_DECLASSIFY(signature->data, signature->len);
 
 cleanup:
     if (nonceRand.data) {
