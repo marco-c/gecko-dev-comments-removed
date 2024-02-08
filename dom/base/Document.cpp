@@ -17218,18 +17218,19 @@ void Document::ScheduleResizeObserversNotification() const {
 }
 
 static void FlushLayoutForWholeBrowsingContextTree(Document& aDoc) {
+  const ChangesToFlush ctf(FlushType::Layout,  false);
   BrowsingContext* bc = aDoc.GetBrowsingContext();
   if (bc && bc->GetExtantDocument() == &aDoc) {
     RefPtr<BrowsingContext> top = bc->Top();
-    top->PreOrderWalk([](BrowsingContext* aCur) {
+    top->PreOrderWalk([ctf](BrowsingContext* aCur) {
       if (Document* doc = aCur->GetExtantDocument()) {
-        doc->FlushPendingNotifications(FlushType::Layout);
+        doc->FlushPendingNotifications(ctf);
       }
     });
   } else {
     
     
-    aDoc.FlushPendingNotifications(FlushType::Layout);
+    aDoc.FlushPendingNotifications(ctf);
   }
 }
 
