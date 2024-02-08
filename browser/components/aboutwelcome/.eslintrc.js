@@ -4,6 +4,11 @@
 
 module.exports = {
   
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
+  },
   plugins: ["import", "react", "jsx-a11y"],
   settings: {
     react: {
@@ -14,8 +19,7 @@ module.exports = {
   overrides: [
     {
       
-      
-      files: ["tests/unit/**/*.js"],
+      files: ["content-src/**", "tests/unit/**"],
       parserOptions: {
         sourceType: "module",
       },
@@ -38,7 +42,7 @@ module.exports = {
       },
     },
     {
-      files: ["content-src/**", "tests/unit/**"],
+      files: ["./*.js", "content-src/**", "tests/unit/**"],
       env: {
         node: true,
       },
@@ -56,6 +60,8 @@ module.exports = {
       rules: {
         
         "import/no-commonjs": 2,
+        
+        "react/jsx-no-bind": 0,
       },
     },
     {
@@ -76,6 +82,7 @@ module.exports = {
       rules: {
         "func-name-matching": 0,
         "lines-between-class-members": 0,
+        "require-await": 0,
       },
     },
   ],
@@ -84,10 +91,7 @@ module.exports = {
 
     "react/jsx-boolean-value": ["error", "always"],
     "react/jsx-key": "error",
-    "react/jsx-no-bind": [
-      "error",
-      { allowArrowFunctions: true, allowFunctions: true },
-    ],
+    "react/jsx-no-bind": "error",
     "react/jsx-no-comment-textnodes": "error",
     "react/jsx-no-duplicate-props": "error",
     "react/jsx-no-target-blank": "error",
@@ -123,15 +127,20 @@ module.exports = {
     "block-scoped-var": "error",
     "consistent-this": ["error", "use-bind"],
     eqeqeq: "error",
+    "for-direction": "error",
     "func-name-matching": "error",
     "getter-return": "error",
     "guard-for-in": "error",
+    "handle-callback-err": "error",
+    "lines-between-class-members": "error",
     "max-depth": ["error", 4],
     "max-nested-callbacks": ["error", 4],
     "max-params": ["error", 6],
     "max-statements": ["error", 50],
+    "max-statements-per-line": ["error", { max: 2 }],
     "new-cap": ["error", { newIsCap: true, capIsNew: false }],
     "no-alert": "error",
+    "no-buffer-constructor": "error",
     "no-console": ["error", { allow: ["error"] }],
     "no-div-regex": "error",
     "no-duplicate-imports": "error",
@@ -141,12 +150,16 @@ module.exports = {
     "no-implicit-coercion": ["error", { allow: ["!!"] }],
     "no-implicit-globals": "error",
     "no-loop-func": "error",
+    "no-mixed-requires": "error",
     "no-multi-assign": "error",
     "no-multi-str": "error",
     "no-new": "error",
     "no-new-func": "error",
+    "no-new-require": "error",
     "no-octal-escape": "error",
     "no-param-reassign": "error",
+    "no-path-concat": "error",
+    "no-process-exit": "error",
     "no-proto": "error",
     "no-prototype-builtins": "error",
     "no-return-assign": ["error", "except-parens"],
@@ -177,6 +190,7 @@ module.exports = {
     "prefer-spread": "error",
     "prefer-template": "error",
     radix: ["error", "always"],
+    "require-await": "error",
     "sort-vars": "error",
     "symbol-description": "error",
     "vars-on-top": "error",

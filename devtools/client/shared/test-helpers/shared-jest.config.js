@@ -4,6 +4,7 @@
 
 "use strict";
 
+
 const fixturesDir = `${__dirname}/jest-fixtures`;
 
 module.exports = {

@@ -11,11 +11,6 @@
 
 
 
-
-
-
-
-
 module.exports = {
   env: {
     browser: true,
@@ -58,7 +53,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.mjs", "**/*.jsx", "**/*.jsm", "**/?(*.)worker.?(m)js"],
+      files: ["**/*.mjs", "**/*.jsm", "**/?(*.)worker.?(m)js"],
       rules: {
         
         
@@ -72,6 +67,12 @@ module.exports = {
       },
     },
     {
+      files: ["**/*.sys.mjs"],
+      rules: {
+        "mozilla/use-static-import": "error",
+      },
+    },
+    {
       excludedFiles: ["**/*.sys.mjs"],
       files: ["**/*.mjs"],
       rules: {
@@ -81,7 +82,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.mjs", "**/*.jsx"],
+      files: ["**/*.mjs"],
       parserOptions: {
         sourceType: "module",
       },
