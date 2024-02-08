@@ -307,7 +307,7 @@ ${helpers.single_keyword(
     engines="gecko servo-2013 servo-2020",
     gecko_enum_prefix="StyleTextRendering",
     animation_value_type="discrete",
-    spec="https://www.w3.org/TR/SVG11/painting.html#TextRenderingProperty",
+    spec="https://svgwg.org/svg2-draft/painting.html#TextRenderingProperty",
     servo_restyle_damage="rebuild_and_reflow",
     affects="layout",
 )}
