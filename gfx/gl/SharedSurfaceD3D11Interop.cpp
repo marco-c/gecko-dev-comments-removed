@@ -451,7 +451,7 @@ SharedSurface_D3D11Interop::ToSurfaceDescriptor() {
       mData.dxgiHandle,  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
       gfx::ColorRange::FULL,  true,
-       Nothing()));
+       Nothing(),  Nothing()));
 }
 
 

@@ -424,6 +424,36 @@ struct GpuProcessTextureId {
 };
 
 
+struct GpuProcessQueryId {
+  uint64_t mId = 0;
+
+  static GpuProcessQueryId GetNext();
+
+  bool IsValid() const { return mId != 0; }
+
+  
+  explicit operator uint64_t() const { return mId; }
+
+  bool operator==(const GpuProcessQueryId& aOther) const {
+    return mId == aOther.mId;
+  }
+
+  bool operator!=(const GpuProcessQueryId& aOther) const {
+    return !(*this == aOther);
+  }
+
+  
+  
+  
+  
+  struct HashFn {
+    std::size_t operator()(const GpuProcessQueryId aKey) const {
+      return std::hash<uint64_t>{}(aKey.mId);
+    }
+  };
+};
+
+
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(ScrollDirection, uint8_t, (
   eVertical,
   eHorizontal

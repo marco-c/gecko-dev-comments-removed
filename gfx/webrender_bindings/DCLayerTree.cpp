@@ -23,6 +23,7 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/Matrix.h"
+#include "mozilla/layers/HelpersD3D11.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
@@ -1560,6 +1561,19 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
 
   if (!mVideoSwapChain) {
     return false;
+  }
+
+  auto query = texture->GetQuery();
+  if (query) {
+    
+    
+    BOOL result;
+    bool ret = layers::WaitForFrameGPUQuery(mDCLayerTree->GetDevice(),
+                                            mDCLayerTree->GetDeviceContext(),
+                                            query, &result);
+    if (!ret) {
+      gfxCriticalNoteOnce << "WaitForFrameGPUQuery() failed";
+    }
   }
 
   if (!mDCLayerTree->EnsureVideoProcessor(mVideoSize, mSwapChainSize)) {
