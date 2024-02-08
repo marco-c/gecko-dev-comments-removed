@@ -212,6 +212,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     kNoReqStates
   },
   { 
+    nsGkAtoms::definition,
+    roles::DEFINITION,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+  },
+  { 
     nsGkAtoms::deletion,
     roles::CONTENT_DELETION,
     kUseMapRole,
