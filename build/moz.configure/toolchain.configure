@@ -3277,3 +3277,14 @@ set_config(
         flags=["-mavx512bw", "-mavx512f", "-mavx512dq", "-mavx512cd"],
     ),
 )
+
+
+
+set_config(
+    "AVX512VNNI_FLAGS",
+    ["-mavx512vnni", "-mavx512bw", "-mavx512f", "-mavx512dq", "-mavx512cd"],
+    try_compile(
+        check_msg="for -mavx512vnni support",
+        flags=["-mavx512vnni", "-mavx512bw", "-mavx512f", "-mavx512dq", "-mavx512cd"],
+    ),
+)
