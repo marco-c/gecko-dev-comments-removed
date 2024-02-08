@@ -57,6 +57,9 @@ def test_get_prompt_text(session, inline):
     assert prompt_text == "Enter Your Name: "
 
 
+
+
+
 def test_unexpected_alert(session):
     session.execute_script("setTimeout(function() { alert('Hello'); }, 100);")
     wait = Poll(
