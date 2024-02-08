@@ -17,7 +17,7 @@
 #include "prio.h"
 #include "prlink.h"
 
-#include "mozilla/Scoped.h"
+#include <memory>  
 #include "nsIFile.h"
 #include <errno.h>
 #include <limits.h>
@@ -32,51 +32,26 @@ typedef int filedesc_t;
 typedef const char* pathstr_t;
 #endif
 
-
-
-
-
-
-struct ScopedCloseFDTraits {
-  typedef int type;
-  static type empty() { return -1; }
-  static void release(type aFd) {
-    if (aFd != -1) {
-      close(aFd);
-    }
-  }
-};
-typedef Scoped<ScopedCloseFDTraits> ScopedClose;
-
 #if defined(MOZILLA_INTERNAL_API)
 
-
-
-
-
-
-struct ScopedClosePRFDTraits {
-  typedef PRFileDesc* type;
-  static type empty() { return nullptr; }
-  static void release(type aFd) {
+struct PRCloseDeleter {
+  void operator()(PRFileDesc* aFd) {
     if (aFd) {
       PR_Close(aFd);
     }
   }
 };
-typedef Scoped<ScopedClosePRFDTraits> AutoFDClose;
+using AutoFDClose = UniquePtr<PRFileDesc, PRCloseDeleter>;
 
 
-struct ScopedCloseFileTraits {
-  typedef FILE* type;
-  static type empty() { return nullptr; }
-  static void release(type aFile) {
-    if (aFile) {
-      fclose(aFile);
+struct FCloseDeleter {
+  void operator()(FILE* p) {
+    if (p) {
+      fclose(p);
     }
   }
 };
-typedef Scoped<ScopedCloseFileTraits> ScopedCloseFile;
+using ScopedCloseFile = UniquePtr<FILE, FCloseDeleter>;
 
 
 
