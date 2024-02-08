@@ -131,7 +131,6 @@ bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
       
       
       aEl->IsXULElement(nsGkAtoms::menupopup) ||
-      aEl->IsXULElement(nsGkAtoms::popup) ||
       
       
       
