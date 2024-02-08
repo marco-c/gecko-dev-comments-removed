@@ -69,7 +69,7 @@ const modifiedStyleSheets = new WeakMap();
 class StyleSheetsManager extends EventEmitter {
   #abortController;
   
-  #mqlList = [];
+  #mqlChangeAbortControllerMap = new Map();
   #styleSheetCount = 0;
   #styleSheetMap = new Map();
   #styleSheetCreationData;
@@ -446,12 +446,6 @@ class StyleSheetsManager extends EventEmitter {
     InspectorUtils.parseStyleSheet(styleSheet, text);
     modifiedStyleSheets.set(styleSheet, text);
 
-    
-    
-    for (const mql of this.#mqlList) {
-      mql.onchange = null;
-    }
-
     const { atRules, ruleCount } =
       this.getStyleSheetRuleCountAndAtRules(styleSheet);
 
@@ -631,7 +625,10 @@ class StyleSheetsManager extends EventEmitter {
       return [];
     }
 
-    this.#mqlList = [];
+    if (this.#mqlChangeAbortControllerMap.has(resourceId)) {
+      this.#mqlChangeAbortControllerMap.get(resourceId).abort();
+      this.#mqlChangeAbortControllerMap.delete(resourceId);
+    }
 
     
     
@@ -654,16 +651,24 @@ class StyleSheetsManager extends EventEmitter {
         let matches = false;
 
         try {
-          const mql = getStyleSheetAssociatedWindow().matchMedia(
-            rule.media.mediaText
-          );
+          const associatedWin = getStyleSheetAssociatedWindow();
+          const mql = associatedWin.matchMedia(rule.media.mediaText);
           matches = mql.matches;
-          mql.onchange = this.#onMatchesChange.bind(
-            this,
-            resourceId,
-            atRules.length
+
+          let ac = this.#mqlChangeAbortControllerMap.get(resourceId);
+          if (!ac) {
+            ac = new associatedWin.AbortController();
+            this.#mqlChangeAbortControllerMap.set(resourceId, ac);
+          }
+
+          const index = atRules.length;
+          mql.addEventListener(
+            "change",
+            () => this.#onMatchesChange(resourceId, index, mql),
+            {
+              signal: ac.signal,
+            }
           );
-          this.#mqlList.push(mql);
         } catch (e) {
           
         }
@@ -943,6 +948,10 @@ class StyleSheetsManager extends EventEmitter {
 
     this.#styleSheetMap.delete(existingResourceId);
     this.#styleSheetCreationData?.delete(styleSheet);
+    if (this.#mqlChangeAbortControllerMap.has(existingResourceId)) {
+      this.#mqlChangeAbortControllerMap.get(existingResourceId).abort();
+      this.#mqlChangeAbortControllerMap.delete(existingResourceId);
+    }
 
     for (const onDestroyed of this.#watchListeners.onDestroyed) {
       onDestroyed({
@@ -970,8 +979,8 @@ class StyleSheetsManager extends EventEmitter {
     
     
     if (
-      href === "resource:
-      (href === "resource:
+      href === "resource://content-accessible/accessiblecaret.css" ||
+      (href === "resource://devtools-highlighter-styles/highlighters.css" &&
         this.#targetActor.sessionContext.type !== "all")
     ) {
       return false;
@@ -988,6 +997,11 @@ class StyleSheetsManager extends EventEmitter {
     if (this.#abortController) {
       this.#abortController.abort();
     }
+    if (this.#mqlChangeAbortControllerMap) {
+      for (const ac of this.#mqlChangeAbortControllerMap.values()) {
+        ac.abort();
+      }
+    }
 
     try {
       this.#unwatchStyleSheetChangeEvents();
@@ -1002,7 +1016,7 @@ class StyleSheetsManager extends EventEmitter {
 
     this.#styleSheetMap.clear();
     this.#abortController = null;
-    this.#mqlList = null;
+    this.#mqlChangeAbortControllerMap = null;
     this.#styleSheetCreationData = null;
     this.#styleSheetMap = null;
     this.#targetActor = null;
