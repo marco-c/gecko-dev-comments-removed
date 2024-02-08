@@ -1837,6 +1837,11 @@ class Element : public FragmentOrElement {
   
 
 
+  static const DOMTokenListSupportedToken sSupportedBlockingValues[];
+
+  
+
+
 
 
 
