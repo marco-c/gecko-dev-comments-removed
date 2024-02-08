@@ -20,7 +20,7 @@ pub mod ffi {
     
     
     #[diplomat::attr(dart, disable)]
-    pub struct ICU4XDataStruct(pub(crate) AnyPayload);
+    pub struct ICU4XDataStruct(#[allow(dead_code)] AnyPayload);
 
     impl ICU4XDataStruct {
         
