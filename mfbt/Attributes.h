@@ -446,6 +446,23 @@
 #  define MOZ_NO_STACK_PROTECTOR
 #endif
 
+
+
+
+
+
+
+
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(clang::lifetimebound)
+#    define MOZ_LIFETIME_BOUND [[clang::lifetimebound]]
+#  else
+#    define MOZ_LIFETIME_BOUND
+#  endif
+#else
+#  define MOZ_LIFETIME_BOUND
+#endif
+
 #ifdef __cplusplus
 
 
@@ -485,9 +502,6 @@
 #    define MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
 #    define MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
 #  endif
-
-
-
 
 
 
@@ -838,7 +852,6 @@
       __attribute__((annotate("moz_must_return_from_caller_if_this_is_arg")))
 #    define MOZ_MAY_CALL_AFTER_MUST_RETURN \
       __attribute__((annotate("moz_may_call_after_must_return")))
-#    define MOZ_LIFETIME_BOUND __attribute__((annotate("moz_lifetime_bound")))
 #    define MOZ_KNOWN_LIVE __attribute__((annotate("moz_known_live")))
 #    ifndef XGILL_PLUGIN
 #      define MOZ_UNANNOTATED __attribute__((annotate("moz_unannotated")))
@@ -898,7 +911,6 @@
 #    define MOZ_REQUIRED_BASE_METHOD
 #    define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
 #    define MOZ_MAY_CALL_AFTER_MUST_RETURN
-#    define MOZ_LIFETIME_BOUND
 #    define MOZ_KNOWN_LIVE
 #    define MOZ_UNANNOTATED
 #    define MOZ_ANNOTATED
