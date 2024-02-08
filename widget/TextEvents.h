@@ -333,6 +333,26 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
              IsAccel()));
   }
 
+  
+  
+  
+  
+  
+  
+  bool CanReflectModifiersToUserActivation() const {
+    MOZ_ASSERT(CanUserGestureActivateTarget(),
+               "Consumer should check CanUserGestureActivateTarget first");
+    
+    
+    
+    
+    
+    
+    
+    
+    return mKeyNameIndex == KEY_NAME_INDEX_Enter || mKeyCode == NS_VK_SPACE;
+  }
+
   [[nodiscard]] bool ShouldWorkAsSpaceKey() const {
     if (mKeyCode == NS_VK_SPACE) {
       return true;

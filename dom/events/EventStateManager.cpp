@@ -1041,6 +1041,24 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   return NS_OK;
 }
 
+
+
+
+
+
+
+static bool CanReflectModifiersToUserActivation(WidgetInputEvent* aEvent) {
+  MOZ_ASSERT(aEvent->mMessage == eKeyDown || aEvent->mMessage == eMouseDown ||
+             aEvent->mMessage == ePointerDown || aEvent->mMessage == eTouchEnd);
+
+  WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
+  if (keyEvent) {
+    return keyEvent->CanReflectModifiersToUserActivation();
+  }
+
+  return true;
+}
+
 void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
                                                    nsIContent* aTargetContent) {
   if (!aEvent->IsTrusted()) {
@@ -1100,17 +1118,19 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
              aEvent->mMessage == ePointerDown || aEvent->mMessage == eTouchEnd);
   UserActivation::Modifiers modifiers;
   if (WidgetInputEvent* inputEvent = aEvent->AsInputEvent()) {
-    if (inputEvent->IsShift()) {
-      modifiers.SetShift();
-    }
-    if (inputEvent->IsMeta()) {
-      modifiers.SetMeta();
-    }
-    if (inputEvent->IsControl()) {
-      modifiers.SetControl();
-    }
-    if (inputEvent->IsAlt()) {
-      modifiers.SetAlt();
+    if (CanReflectModifiersToUserActivation(inputEvent)) {
+      if (inputEvent->IsShift()) {
+        modifiers.SetShift();
+      }
+      if (inputEvent->IsMeta()) {
+        modifiers.SetMeta();
+      }
+      if (inputEvent->IsControl()) {
+        modifiers.SetControl();
+      }
+      if (inputEvent->IsAlt()) {
+        modifiers.SetAlt();
+      }
     }
   }
   doc->NotifyUserGestureActivation(modifiers);
