@@ -595,15 +595,14 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
   if (containAxes.IsBoth()) {
     
     
-    return containAxes.ContainIntrinsicSize(IntrinsicSize(0, 0), *this);
+    return FinishIntrinsicSize(containAxes, IntrinsicSize(0, 0));
   }
 
   if (nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent)) {
-    auto olc = static_cast<nsObjectLoadingContent*>(iolc.get());
-
+    const auto* olc = static_cast<nsObjectLoadingContent*>(iolc.get());
     if (auto size = olc->GetSubdocumentIntrinsicSize()) {
       
-      return containAxes.ContainIntrinsicSize(*size, *this);
+      return FinishIntrinsicSize(containAxes, *size);
     }
   }
 
@@ -616,8 +615,8 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
   }
 
   
-  return containAxes.ContainIntrinsicSize(IntrinsicSize(kFallbackIntrinsicSize),
-                                          *this);
+  return FinishIntrinsicSize(containAxes,
+                             IntrinsicSize(kFallbackIntrinsicSize));
 }
 
 

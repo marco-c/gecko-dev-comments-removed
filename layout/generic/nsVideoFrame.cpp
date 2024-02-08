@@ -447,7 +447,9 @@ bool nsVideoFrame::ShouldDisplayPoster() const {
 
   uint32_t status = 0;
   res = request->GetImageStatus(&status);
-  if (NS_FAILED(res) || (status & imgIRequest::STATUS_ERROR)) return false;
+  if (NS_FAILED(res) || (status & imgIRequest::STATUS_ERROR)) {
+    return false;
+  }
 
   return true;
 }
@@ -460,29 +462,29 @@ IntrinsicSize nsVideoFrame::GetIntrinsicSize() {
   
   
   if (containAxes.IsBoth()) {
-    return containAxes.ContainIntrinsicSize({}, *this);
+    return FinishIntrinsicSize(containAxes, {});
   }
 
   if (!isVideo) {
     
     
     if (!mFrames.LastChild()) {
-      return containAxes.ContainIntrinsicSize({}, *this);
+      return FinishIntrinsicSize(containAxes, {});
     }
 
-    return containAxes.ContainIntrinsicSize(
-        IntrinsicSize(kFallbackIntrinsicSize), *this);
+    return FinishIntrinsicSize(containAxes,
+                               IntrinsicSize(kFallbackIntrinsicSize));
   }
 
   auto* element = static_cast<HTMLVideoElement*>(GetContent());
   if (Maybe<CSSIntSize> size = element->GetVideoSize()) {
-    return containAxes.ContainIntrinsicSize(
-        IntrinsicSize(CSSPixel::ToAppUnits(*size)), *this);
+    return FinishIntrinsicSize(containAxes,
+                               IntrinsicSize(CSSPixel::ToAppUnits(*size)));
   }
 
   if (ShouldDisplayPoster()) {
     if (Maybe<nsSize> imgSize = PosterImageSize()) {
-      return containAxes.ContainIntrinsicSize(IntrinsicSize(*imgSize), *this);
+      return FinishIntrinsicSize(containAxes, IntrinsicSize(*imgSize));
     }
   }
 
@@ -490,8 +492,8 @@ IntrinsicSize nsVideoFrame::GetIntrinsicSize() {
     return {};
   }
 
-  return containAxes.ContainIntrinsicSize(IntrinsicSize(kFallbackIntrinsicSize),
-                                          *this);
+  return FinishIntrinsicSize(containAxes,
+                             IntrinsicSize(kFallbackIntrinsicSize));
 }
 
 void nsVideoFrame::UpdatePosterSource(bool aNotify) {
