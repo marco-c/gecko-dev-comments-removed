@@ -630,8 +630,7 @@ void RenderThread::HandleFrameOneDocInner(wr::WindowId aWindowId, bool aRender,
   
   
   TimeDuration compositeDuration = TimeStamp::Now() - frame.mStartTime;
-  mozilla::Telemetry::Accumulate(mozilla::Telemetry::COMPOSITE_TIME,
-                                 uint32_t(compositeDuration.ToMilliseconds()));
+  mozilla::glean::gfx::composite_time.AccumulateRawDuration(compositeDuration);
   PerfStats::RecordMeasurement(PerfStats::Metric::Compositing,
                                compositeDuration);
 }

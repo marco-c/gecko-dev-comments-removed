@@ -41,10 +41,11 @@
 #include "mozilla/ServoStyleConsts.h"   
 #include "mozilla/EventForwards.h"      
 #include "mozilla/EventStateManager.h"  
-#include "mozilla/MouseEvents.h"        
-#include "mozilla/Preferences.h"        
-#include "mozilla/RecursiveMutex.h"     
-#include "mozilla/RefPtr.h"             
+#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/MouseEvents.h"     
+#include "mozilla/Preferences.h"     
+#include "mozilla/RecursiveMutex.h"  
+#include "mozilla/RefPtr.h"          
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_general.h"
@@ -5288,13 +5289,12 @@ void AsyncPanZoomController::UpdateCheckerboardEvent(
     const MutexAutoLock& aProofOfLock, uint32_t aMagnitude) {
   if (mCheckerboardEvent && mCheckerboardEvent->RecordFrameInfo(aMagnitude)) {
     
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_SEVERITY,
-                                   mCheckerboardEvent->GetSeverity());
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_PEAK,
-                                   mCheckerboardEvent->GetPeak());
-    mozilla::Telemetry::Accumulate(
-        mozilla::Telemetry::CHECKERBOARD_DURATION,
-        (uint32_t)mCheckerboardEvent->GetDuration().ToMilliseconds());
+    mozilla::glean::gfx_checkerboard::severity.AccumulateSamples(
+        {mCheckerboardEvent->GetSeverity()});
+    mozilla::glean::gfx_checkerboard::peak_pixel_count.AccumulateSamples(
+        {mCheckerboardEvent->GetPeak()});
+    mozilla::glean::gfx_checkerboard::duration.AccumulateRawDuration(
+        mCheckerboardEvent->GetDuration());
 
     
     
