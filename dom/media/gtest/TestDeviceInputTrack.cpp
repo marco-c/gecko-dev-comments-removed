@@ -27,13 +27,10 @@ namespace {
 
 class MockGraphImpl : public MediaTrackGraphImpl {
  public:
-  explicit MockGraphImpl(TrackRate aRate)
-      : MediaTrackGraphImpl(0, aRate, nullptr, NS_GetCurrentThread()) {
+  MockGraphImpl(TrackRate aRate, uint32_t aChannels)
+      : MediaTrackGraphImpl(OFFLINE_THREAD_DRIVER, DIRECT_DRIVER, 0, aRate,
+                            aChannels, nullptr, NS_GetCurrentThread()) {
     ON_CALL(*this, OnGraphThread).WillByDefault(Return(true));
-  }
-
-  void Init(uint32_t aChannels) {
-    MediaTrackGraphImpl::Init(OFFLINE_THREAD_DRIVER, DIRECT_DRIVER, aChannels);
     
     
     
@@ -72,8 +69,7 @@ class TestDeviceInputTrack : public testing::Test {
   TestDeviceInputTrack() : mChannels(2), mRate(44100) {}
 
   void SetUp() override {
-    mGraph = MakeRefPtr<NiceMock<MockGraphImpl>>(mRate);
-    mGraph->Init(mChannels);
+    mGraph = MakeRefPtr<NiceMock<MockGraphImpl>>(mRate, mChannels);
   }
 
   void TearDown() override { mGraph->Destroy(); }
