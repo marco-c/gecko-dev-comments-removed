@@ -516,7 +516,34 @@ this.AccessibilityUtils = (function () {
     return (
       node.tagName == "span" &&
       ariaRoles.includes("option") &&
-      node.classList.contains("urlbarView-row-inner")
+      node.classList.contains("urlbarView-row-inner") &&
+      node.hasAttribute("data-l10n-id")
+    );
+  }
+
+  
+
+
+
+
+
+
+  function isUnlabeledMenuitem(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    let hasLabel = false;
+    for (const child of node.childNodes) {
+      if (child.tagName == "label") {
+        hasLabel = true;
+      }
+    }
+    return (
+      accessible.role == Ci.nsIAccessibleRole.ROLE_MENUITEM &&
+      accessible.parent.role == Ci.nsIAccessibleRole.ROLE_MENUPOPUP &&
+      hasLabel &&
+      node.hasAttribute("data-l10n-id")
     );
   }
 
@@ -729,14 +756,15 @@ this.AccessibilityUtils = (function () {
 
   function assertLabelled(accessible, allowRecurse = true) {
     const { DOMNode } = accessible;
-    if (
-      isUnlabeledUrlBarCombobox(accessible) ||
-      isUnlabeledUrlBarOption(accessible)
-    ) {
-      return;
-    }
     let name = accessible.name;
     if (!name) {
+      if (
+        isUnlabeledUrlBarCombobox(accessible) ||
+        isUnlabeledUrlBarOption(accessible) ||
+        isUnlabeledMenuitem(accessible)
+      ) {
+        return;
+      }
       
       
       forceRefreshDriverTick(DOMNode);
