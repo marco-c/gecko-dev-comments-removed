@@ -488,6 +488,21 @@ struct AssertionConditionType {
 
 
 
+#ifdef FUZZING
+#  define MOZ_ASSERT_DEBUG_OR_FUZZING(...) MOZ_DIAGNOSTIC_ASSERT(__VA_ARGS__)
+#else
+#  define MOZ_ASSERT_DEBUG_OR_FUZZING(...) MOZ_ASSERT(__VA_ARGS__)
+#endif
+
+
+
+
+
+
+
+
+
+
 #ifdef DEBUG
 #  define MOZ_ASSERT_IF(cond, expr) \
     do {                            \
