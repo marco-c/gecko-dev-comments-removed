@@ -1,32 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * This file contains most of the logic required to maintain the
+ * extensions database, including querying and modifying extension
+ * metadata. In general, we try to avoid loading it during startup when
+ * at all possible. Please keep that in mind when deciding whether to
+ * add code here or elsewhere.
+ */
 
+/* eslint "valid-jsdoc": [2, {requireReturn: false, requireReturnDescription: false, prefer: {return: "returns"}}] */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-"use strict";
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = [
-  "AddonInternal",
-  "BuiltInThemesHelpers",
-  "XPIDatabase",
-  "XPIDatabaseReconcile",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { XPIExports } = ChromeUtils.importESModule(
-  "resource://gre/modules/addons/XPIExports.sys.mjs"
-);
+import { XPIExports } from "resource://gre/modules/addons/XPIExports.sys.mjs";
 
 const lazy = {};
 
@@ -47,9 +35,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   QuarantinedDomains: "resource://gre/modules/ExtensionPermissions.sys.mjs",
 });
 
-
-
-
+// WARNING: BuiltInThemes.sys.mjs may be provided by the host application (e.g.
+// Firefox), or it might not exist at all. Use with caution, as we don't
+// want things to completely fail if that module can't be loaded.
 ChromeUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
   try {
     let { BuiltInThemes } = ChromeUtils.importESModule(
@@ -62,11 +50,11 @@ ChromeUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
   return undefined;
 });
 
-
-
-
-
-const BuiltInThemesHelpers = {
+// A set of helpers to account from a single place that in some builds
+// (e.g. GeckoView and Thunderbird) the BuiltInThemes module may either
+// not be bundled at all or not be exposing the same methods provided
+// by the module as defined in Firefox Desktop.
+export const BuiltInThemesHelpers = {
   getLocalizedColorwayGroupName(addonId) {
     return lazy.BuiltInThemes?.getLocalizedColorwayGroupName?.(addonId);
   },
@@ -87,8 +75,9 @@ const BuiltInThemesHelpers = {
     return lazy.BuiltInThemes?.themeIsExpired?.(addonId);
   },
 
-  
-  
+  // Helper function called form XPInstall.sys.mjs to remove from the retained
+  // themes list the built-in colorways theme that have been migrated to a non
+  // built-in.
   unretainMigratedColorwayTheme(addonId) {
     lazy.BuiltInThemes?.unretainMigratedColorwayTheme?.(addonId);
   },
@@ -101,13 +90,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-
-
-
-
-
-
-
+// A temporary hidden pref just meant to be used as a last resort, in case
+// we need to force-disable the "per-addon quarantined domains user controls"
+// feature during the beta cycle, e.g. if unexpected issues are caught late and
+// it shouldn't  ride the train.
+//
+// TODO(Bug 1839616): remove this pref after the user controls features have been
+// released.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "isQuarantineUIDisabled",
@@ -117,9 +106,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 const { nsIBlocklistService } = Ci;
 
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+
 const LOGGER_ID = "addons.xpi-utils";
 
 const nsIFile = Components.Constructor(
@@ -128,8 +116,8 @@ const nsIFile = Components.Constructor(
   "initWithPath"
 );
 
-
-
+// Create a new logger for use by the Addons XPI Provider Utils
+// (Requires AddonManager.jsm)
 var logger = Log.repository.getLogger(LOGGER_ID);
 
 const FILE_JSON_DB = "extensions.json";
@@ -154,7 +142,7 @@ const KEY_APP_TEMPORARY = "app-temporary";
 
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 
-
+// Properties to cache and reload when an addon installation is pending
 const PENDING_INSTALL_METADATA = [
   "syncGUID",
   "targetApplications",
@@ -169,7 +157,7 @@ const PENDING_INSTALL_METADATA = [
   "installTelemetryInfo",
 ];
 
-
+// Properties to save in JSON file
 const PROP_JSON_FIELDS = [
   "id",
   "syncGUID",
@@ -228,23 +216,23 @@ const SIGNED_TYPES = new Set([
   "extension",
   "locale",
   "theme",
-  
+  // TODO(Bug 1789718): Remove after the deprecated XPIProvider-based implementation is also removed.
   "sitepermission-deprecated",
 ]);
 
-
+// Time to wait before async save of XPI JSON database, in milliseconds
 const ASYNC_SAVE_DELAY_MS = 20;
 
 const l10n = new Localization(["browser/appExtensionFields.ftl"], true);
 
-
-
-
-
-
-
-
-
+/**
+ * Schedules an idle task, and returns a promise which resolves to an
+ * IdleDeadline when an idle slice is available. The caller should
+ * perform all of its idle work in the same micro-task, before the
+ * deadline is reached.
+ *
+ * @returns {Promise<IdleDeadline>}
+ */
 function promiseIdleSlice() {
   return new Promise(resolve => {
     ChromeUtils.idleDispatch(resolve);
@@ -253,20 +241,20 @@ function promiseIdleSlice() {
 
 let arrayForEach = Function.call.bind(Array.prototype.forEach);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Loops over the given array, in the same way as Array forEach, but
+ * splitting the work among idle tasks.
+ *
+ * @param {Array} array
+ *        The array to loop over.
+ * @param {function} func
+ *        The function to call on each array element.
+ * @param {integer} [taskTimeMS = 5]
+ *        The minimum time to allocate to each task. If less time than
+ *        this is available in a given idle slice, and there are more
+ *        elements to loop over, they will be deferred until the next
+ *        idle slice.
+ */
 async function idleForEach(array, func, taskTimeMS = 5) {
   let deadline;
   for (let i = 0; i < array.length; i++) {
@@ -277,14 +265,14 @@ async function idleForEach(array, func, taskTimeMS = 5) {
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Asynchronously fill in the _repositoryAddon field for one addon
+ *
+ * @param {AddonInternal} aAddon
+ *        The add-on to annotate.
+ * @returns {AddonInternal}
+ *        The annotated add-on.
+ */
 async function getRepositoryAddon(aAddon) {
   if (aAddon) {
     aAddon._repositoryAddon = await lazy.AddonRepository.getCachedAddonByID(
@@ -294,19 +282,19 @@ async function getRepositoryAddon(aAddon) {
   return aAddon;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Copies properties from one object to another. If no target object is passed
+ * a new object will be created and returned.
+ *
+ * @param {object} aObject
+ *        An object to copy from
+ * @param {string[]} aProperties
+ *        An array of properties to be copied
+ * @param {object?} [aTarget]
+ *        An optional target object to copy the properties to
+ * @returns {Object}
+ *        The object that the properties were copied onto
+ */
 function copyProperties(aObject, aProperties, aTarget) {
   if (!aTarget) {
     aTarget = {};
@@ -319,7 +307,7 @@ function copyProperties(aObject, aProperties, aTarget) {
   return aTarget;
 }
 
-
+// Maps instances of AddonInternal to AddonWrapper
 const wrapperMap = new WeakMap();
 let addonFor = wrapper => wrapperMap.get(wrapper);
 
@@ -327,11 +315,11 @@ const EMPTY_ARRAY = Object.freeze([]);
 
 let AddonWrapper;
 
-
-
-
-
-class AddonInternal {
+/**
+ * The AddonInternal is an internal only representation of add-ons. It
+ * may have come from the database or an extension manifest.
+ */
+export class AddonInternal {
   constructor(addonData) {
     this._wrapper = null;
     this._selectedLocale = null;
@@ -357,12 +345,12 @@ class AddonInternal {
 
     this.inDatabase = false;
 
-    
-
-
-
-
-
+    /**
+     * @property {Array<string>} dependencies
+     *   An array of bootstrapped add-on IDs on which this add-on depends.
+     *   The add-on will remain appDisabled if any of the dependent
+     *   add-ons is not installed and enabled.
+     */
     this.dependencies = EMPTY_ARRAY;
 
     if (addonData) {
@@ -417,17 +405,17 @@ class AddonInternal {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Validate a list of origins are contained in the installOrigins array (defined in manifest.json).
+   *
+   * SitePermission addons are a special case, where the triggering install site may be a subdomain
+   * of a valid xpi origin.
+   *
+   * @param {Object}  origins             Object containing URIs related to install.
+   * @params {nsIURI} origins.installFrom The nsIURI of the website that has triggered the install flow.
+   * @params {nsIURI} origins.source      The nsIURI where the xpi is hosted.
+   * @returns {boolean}
+   */
   validInstallOrigins({ installFrom, source }) {
     if (
       !Services.prefs.getBoolPref("extensions.install_origins.enabled", true)
@@ -437,22 +425,22 @@ class AddonInternal {
 
     let { installOrigins, manifestVersion } = this;
     if (!installOrigins) {
-      
-      
-      
+      // Install origins are mandatory in MV3 and optional
+      // in MV2.  Old addons need to keep installing per the
+      // old install flow.
       return manifestVersion < 3;
     }
-    
+    // An empty install_origins prevents any install from 3rd party websites.
     if (!installOrigins.length) {
       return false;
     }
 
-    
+    // TODO(Bug 1789718): Remove after the deprecated XPIProvider-based implementation is also removed.
     if (this.type == "sitepermission-deprecated") {
-      
+      // NOTE: This may move into a check for all addons later.
       for (let origin of installOrigins) {
         let host = new URL(origin).host;
-        
+        // install_origin cannot be on a known etld (e.g. github.io).
         if (Services.eTLD.getKnownPublicSuffixFromHost(host) == host) {
           logger.warn(
             `Addon ${this.id} Installation not allowed from the install_origin ${host} that is an eTLD`
@@ -503,26 +491,26 @@ class AddonInternal {
       return this._selectedLocale;
     }
 
-    
-
-
-
-
-
+    /**
+     * this.locales is a list of objects that have property `locales`.
+     * It's value is an array of locale codes.
+     *
+     * First, we reduce this nested structure to a flat list of locale codes.
+     */
     const locales = [].concat(...this.locales.map(loc => loc.locales));
 
     let requestedLocales = Services.locale.requestedLocales;
 
-    
-
-
+    /**
+     * If en-US is not in the list, add it as the last fallback.
+     */
     if (!requestedLocales.includes("en-US")) {
       requestedLocales.push("en-US");
     }
 
-    
-
-
+    /**
+     * Then we negotiate best locale code matching the app locales.
+     */
     let bestLocale = Services.locale.negotiateLanguages(
       requestedLocales,
       locales,
@@ -530,17 +518,17 @@ class AddonInternal {
       Services.locale.langNegStrategyLookup
     )[0];
 
-    
-
-
-
+    /**
+     * If no match has been found, we'll assign the default locale as
+     * the selected one.
+     */
     if (bestLocale === "und") {
       this._selectedLocale = this.defaultLocale;
     } else {
-      
-
-
-
+      /**
+       * Otherwise, we'll go through all locale entries looking for the one
+       * that has the best match in it's locales list.
+       */
       this._selectedLocale = this.locales.find(loc =>
         loc.locales.includes(bestLocale)
       );
@@ -556,27 +544,27 @@ class AddonInternal {
   get isCorrectlySigned() {
     switch (this.location.name) {
       case KEY_APP_SYSTEM_PROFILE:
-        
-        
+        // Add-ons installed via Normandy must be signed by the system
+        // key or the "Mozilla Extensions" key.
         return [
           lazy.AddonManager.SIGNEDSTATE_SYSTEM,
           lazy.AddonManager.SIGNEDSTATE_PRIVILEGED,
         ].includes(this.signedState);
       case KEY_APP_SYSTEM_ADDONS:
-        
+        // System add-ons must be signed by the system key.
         return this.signedState == lazy.AddonManager.SIGNEDSTATE_SYSTEM;
 
       case KEY_APP_SYSTEM_DEFAULTS:
       case KEY_APP_BUILTINS:
       case KEY_APP_TEMPORARY:
-        
+        // Temporary and built-in add-ons do not require signing.
         return true;
 
       case KEY_APP_SYSTEM_SHARE:
       case KEY_APP_SYSTEM_LOCAL:
-        
-        
-        
+        // On UNIX platforms except OSX, an additional location for system
+        // add-ons exists in /usr/{lib,share}/mozilla/extensions. Add-ons
+        // installed there do not require signing.
         if (Services.appinfo.OS != "Darwin") {
           return true;
         }
@@ -604,8 +592,8 @@ class AddonInternal {
   get hidden() {
     return (
       this.location.hidden ||
-      
-      
+      // The hidden flag is intended to only be used for features that are part
+      // of the application. Temporary add-ons should not be hidden.
       (this._hidden && this.isPrivileged && !this.location.isTemporary) ||
       false
     );
@@ -631,17 +619,17 @@ class AddonInternal {
 
     let matchedOS = false;
 
-    
-    
+    // If any targetPlatform matches the OS and contains an ABI then we will
+    // only match a targetPlatform that contains both the current OS and ABI
     let needsABI = false;
 
-    
+    // Some platforms do not specify an ABI, test against null in that case.
     let abi = null;
     try {
       abi = Services.appinfo.XPCOMABI;
     } catch (e) {}
 
-    
+    // Something is causing errors in here
     try {
       for (let platform of this.targetPlatforms) {
         if (platform.os == Services.appinfo.OS) {
@@ -663,7 +651,7 @@ class AddonInternal {
         JSON.stringify(this.targetPlatforms);
       logger.error(message, e);
       lazy.AddonManagerPrivate.recordException("XPI", message, e);
-      
+      // don't trust this add-on
       return false;
     }
 
@@ -676,7 +664,7 @@ class AddonInternal {
       return false;
     }
 
-    
+    // set reasonable defaults for minVersion and maxVersion
     let minVersion = app.minVersion || "0";
     let maxVersion = app.maxVersion || "*";
 
@@ -694,9 +682,9 @@ class AddonInternal {
       version = aPlatformVersion;
     }
 
-    
-    
-    
+    // Only extensions and dictionaries can be compatible by default; themes
+    // and language packs always use strict compatibility checking.
+    // Dictionaries are compatible by default unless requested by the dictinary.
     if (
       !this.strictCompatibility &&
       (!lazy.AddonManager.strictCompatibility || this.type == "dictionary")
@@ -743,9 +731,9 @@ class AddonInternal {
     this.blocklistURL = entry && entry.url;
 
     let userDisabled, softDisabled;
-    
-    
-    
+    // After a blocklist update, the blocklist service manually applies
+    // new soft blocks after displaying a UI, in which cases we need to
+    // skip updating it here.
     if (applySoftBlock && oldState != newState) {
       if (newState == Services.blocklist.STATE_SOFTBLOCKED) {
         if (this.type == "theme") {
@@ -785,15 +773,15 @@ class AddonInternal {
     }
 
     if (this.inDatabase) {
-      
-      
+      // System add-ons should not be user disabled, as there is no UI to
+      // re-enable them.
       if (this.location.isSystem && !allowSystemAddons) {
         throw new Error(`Cannot disable system add-on ${this.id}`);
       }
       await XPIDatabase.updateAddonDisabledState(this, { userDisabled: val });
     } else {
       this.userDisabled = val;
-      
+      // When enabling remove the softDisabled flag
       if (!val) {
         this.softDisabled = false;
       }
@@ -836,14 +824,14 @@ class AddonInternal {
     return obj;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * When an add-on install is pending its metadata will be cached in a file.
+   * This method reads particular properties of that metadata that may be newer
+   * than that in the extension manifest, like compatibility information.
+   *
+   * @param {Object} aObj
+   *        A JS object containing the cached metadata
+   */
   importMetadata(aObj) {
     for (let prop of PENDING_INSTALL_METADATA) {
       if (!(prop in aObj)) {
@@ -853,14 +841,14 @@ class AddonInternal {
       this[prop] = aObj[prop];
     }
 
-    
+    // Compatibility info may have changed so update appDisabled
     this.appDisabled = !XPIDatabase.isUsableAddon(this);
   }
 
   permissions() {
     let permissions = 0;
 
-    
+    // Add-ons that aren't installed cannot be modified in any way
     if (!this.inDatabase) {
       return permissions;
     }
@@ -869,32 +857,33 @@ class AddonInternal {
       if (this.userDisabled || this.softDisabled) {
         permissions |= lazy.AddonManager.PERM_CAN_ENABLE;
       } else if (this.type != "theme" || this.id != DEFAULT_THEME_ID) {
-        
+        // We do not expose disabling the default theme.
         permissions |= lazy.AddonManager.PERM_CAN_DISABLE;
       }
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // Add-ons that are in locked install locations, or are pending uninstall
+    // cannot be uninstalled or upgraded.  One caveat is extensions sideloaded
+    // from non-profile locations. Since Firefox 73(?), new sideloaded extensions
+    // from outside the profile have not been installed so any such extensions
+    // must be from an older profile. Users may uninstall such an extension which
+    // removes the related state from this profile but leaves the actual file alone
+    // (since it is outside this profile and may be in use in other profiles)
     let changesAllowed = !this.location.locked && !this.pendingUninstall;
     if (changesAllowed) {
-      
-      
+      // System add-on upgrades are triggered through a different mechanism (see updateSystemAddons())
+      // Builtin addons are only upgraded with Firefox (or app) updates.
       let isSystem = this.location.isSystem || this.location.isBuiltin;
-      
+      // Add-ons that are installed by a file link cannot be upgraded.
       if (!isSystem && !this.location.isLinkedAddon(this.id)) {
         permissions |= lazy.AddonManager.PERM_CAN_UPGRADE;
       }
-      
-      
-      
-      
-      
+      // Allow active and retained colorways builtin themes to be updated to
+      // the same theme hosted on AMO (the PERM_CAN_UPGRADE permission will
+      // ensure we will be asking AMO for an update, then the AMO addon xpi
+      // will be installed in the profile location, overridden in the
+      // `createUpdate` defined in `XPIInstall.sys.mjs` and called from
+      // `UpdateChecker` `onUpdateCheckComplete` method).
       if (
         this.isBuiltinColorwayTheme &&
         BuiltInThemesHelpers.isColorwayMigrationEnabled &&
@@ -906,8 +895,8 @@ class AddonInternal {
       }
     }
 
-    
-    
+    // We allow uninstall of legacy sideloaded extensions, even when in locked locations,
+    // but we do not remove the addon file in that case.
     let isLegacySideload =
       this.foreignInstall &&
       !(this.location.scope & lazy.AddonSettings.SCOPES_SIDELOAD);
@@ -918,12 +907,12 @@ class AddonInternal {
       }
     }
 
-    
-    
-    
+    // The permission to "toggle the private browsing access" is locked down
+    // when the extension has opted out or it gets the permission automatically
+    // on every extension startup (as system, privileged and builtin addons).
     if (
       (this.type === "extension" ||
-        
+        // TODO(Bug 1789718): Remove after the deprecated XPIProvider-based implementation is also removed.
         this.type == "sitepermission-deprecated") &&
       this.incognito !== "not_allowed" &&
       this.signedState !== lazy.AddonManager.SIGNEDSTATE_PRIVILEGED &&
@@ -958,16 +947,16 @@ class AddonInternal {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * The AddonWrapper wraps an Addon to provide the data visible to consumers of
+ * the public API.
+ *
+ * NOTE: Do not add any new logic here.  Add it to AddonInternal and expose
+ * through defineAddonWrapperProperty after this class definition.
+ *
+ * @param {AddonInternal} aAddon
+ *        The add-on object to wrap.
+ */
 AddonWrapper = class {
   constructor(aAddon) {
     wrapperMap.set(this, aAddon);
@@ -982,10 +971,10 @@ AddonWrapper = class {
   }
 
   get quarantineIgnoredByUser() {
-    
-    
-    
-    
+    // NOTE: confirm if this getter could be replaced by a
+    // lazy preference getter and the addon wrapper to not be
+    // kept around longer by the pref observer registered
+    // internally by the lazy getter.
     return lazy.QuarantinedDomains.isUserAllowedAddonId(this.id);
   }
 
@@ -994,8 +983,8 @@ AddonWrapper = class {
   }
 
   get canChangeQuarantineIgnored() {
-    
-    
+    // Never show the quarantined domains user controls UI if the
+    // quarantined domains feature is disabled.
     return (
       WebExtensionPolicy.quarantinedDomainsEnabled &&
       !lazy.isQuarantineUIDisabled &&
@@ -1044,10 +1033,10 @@ AddonWrapper = class {
     let addon = addonFor(this);
     if (addon.optionsURL) {
       if (this.isWebExtension) {
-        
-        
-        
-        
+        // The internal object's optionsURL property comes from the addons
+        // DB and should be a relative URL.  However, extensions with
+        // options pages installed before bug 1293721 was fixed got absolute
+        // URLs in the addons db.  This code handles both cases.
         let policy = WebExtensionPolicy.getByID(addon.id);
         if (!policy) {
           return null;
@@ -1158,18 +1147,18 @@ AddonWrapper = class {
     return [];
   }
 
-  
-  
-  
-  
+  // NOTE: this boolean getter doesn't return true for all recommendation
+  // states at the moment. For the states actually supported on the autograph
+  // side see:
+  // https://github.com/mozilla-services/autograph/blob/8a34847a/autograph.yaml#L1456-L1460
   get isRecommended() {
     return this.recommendationStates.includes("recommended");
   }
 
   get canBypassThirdParyInstallPrompt() {
-    
-    
-    
+    // We only bypass if the extension is signed (to support distributions
+    // that turn off the signing requirement) and has recommendation states,
+    // or the extension is signed as privileged.
     return (
       this.signedState == lazy.AddonManager.SIGNEDSTATE_PRIVILEGED ||
       (this.signedState >= lazy.AddonManager.SIGNEDSTATE_SIGNED &&
@@ -1248,10 +1237,10 @@ AddonWrapper = class {
     let addon = addonFor(this);
     let pending = 0;
     if (!addon.inDatabase) {
-      
-      
-      
-      
+      // Add-on is pending install if there is no associated install (shouldn't
+      // happen here) or if the install is in the process of or has successfully
+      // completed the install. If an add-on is pending install then we ignore
+      // any other pending operations.
       if (
         !addon._install ||
         addon._install.state == lazy.AddonManager.STATE_INSTALLING ||
@@ -1260,8 +1249,8 @@ AddonWrapper = class {
         return lazy.AddonManager.PENDING_INSTALL;
       }
     } else if (addon.pendingUninstall) {
-      
-      
+      // If an add-on is pending uninstall then we ignore any other pending
+      // operations
       return lazy.AddonManager.PENDING_UNINSTALL;
     }
 
@@ -1323,14 +1312,14 @@ AddonWrapper = class {
     return addon.softDisabled || addon.userDisabled;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Get the embedderDisabled property for this addon.
+   *
+   * This is intended for embedders of Gecko like GeckoView apps to control
+   * which addons are usable on their app.
+   *
+   * @returns {boolean}
+   */
   get embedderDisabled() {
     if (!lazy.AddonSettings.IS_EMBEDDED) {
       return undefined;
@@ -1339,20 +1328,20 @@ AddonWrapper = class {
     return addonFor(this).embedderDisabled;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Set the embedderDisabled property for this addon.
+   *
+   * This is intended for embedders of Gecko like GeckoView apps to control
+   * which addons are usable on their app.
+   *
+   * Embedders can disable addons for various reasons, e.g. the addon is not
+   * compatible with their implementation of the WebExtension API.
+   *
+   * When an addon is embedderDisabled it will behave like it was appDisabled.
+   *
+   * @param {boolean} val
+   *        whether this addon should be embedder disabled or not.
+   */
   async setEmbedderDisabled(val) {
     if (!lazy.AddonSettings.IS_EMBEDDED) {
       throw new Error("Setting embedder disabled while not embedding.");
@@ -1391,7 +1380,7 @@ AddonWrapper = class {
     }
 
     if (addon.inDatabase) {
-      
+      // When softDisabling a theme just enable the active theme
       if (addon.type === "theme" && val && !addon.userDisabled) {
         if (addon.isWebExtension) {
           await XPIDatabase.updateAddonDisabledState(addon, {
@@ -1404,7 +1393,7 @@ AddonWrapper = class {
         });
       }
     } else if (!addon.userDisabled) {
-      
+      // Only set softDisabled if not already disabled
       addon.softDisabled = val;
     }
 
@@ -1428,8 +1417,8 @@ AddonWrapper = class {
     return addonFor(this).location.isBuiltin;
   }
 
-  
-  
+  // Returns true if Firefox Sync should sync this addon. Only addons
+  // in the profile install location are considered syncable.
   get isSyncable() {
     let addon = addonFor(this);
     return addon.location.name == KEY_APP_PROFILE;
@@ -1467,7 +1456,7 @@ AddonWrapper = class {
     );
   }
 
-  
+  // Returns true if there was an update in progress, false if there was no update to cancel
   cancelUpdate() {
     let addon = addonFor(this);
     if (addon._updateCheck) {
@@ -1477,13 +1466,13 @@ AddonWrapper = class {
     return false;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Reloads the add-on.
+   *
+   * For temporarily installed add-ons, this uninstalls and re-installs the
+   * add-on. Otherwise, the addon is disabled and then re-enabled, and the cache
+   * is flushed.
+   */
   async reload() {
     const addon = addonFor(this);
 
@@ -1495,22 +1484,22 @@ AddonWrapper = class {
         userDisabled: false,
       });
     } else {
-      
+      // This function supports re-installing an existing add-on.
       await lazy.AddonManager.installTemporaryAddon(addon._sourceBundle);
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a URI to the selected resource or to the add-on bundle if aPath
+   * is null. URIs to the bundle will always be file: URIs. URIs to resources
+   * will be file: URIs if the add-on is unpacked or jar: URIs if the add-on is
+   * still an XPI file.
+   *
+   * @param {string?} aPath
+   *        The path in the add-on to get the URI for or null to get a URI to
+   *        the file or directory the add-on is installed as.
+   * @returns {nsIURI}
+   */
   getResourceURI(aPath) {
     let addon = addonFor(this);
     let url = Services.io.newURI(addon.rootURI);
@@ -1601,7 +1590,7 @@ function defineAddonWrapperProperty(name, getter) {
 ["installDate", "updateDate"].forEach(function (aProp) {
   defineAddonWrapperProperty(aProp, function () {
     let addon = addonFor(this);
-    
+    // installDate is always set, updateDate is sometimes missing.
     return new Date(addon[aProp] ?? addon.installDate);
   });
 });
@@ -1619,11 +1608,11 @@ defineAddonWrapperProperty("signedDate", function () {
   defineAddonWrapperProperty(aProp, function () {
     let addon = addonFor(this);
 
-    
-    
-    
-    
-    
+    // Temporary Installed Addons do not have a "sourceURI",
+    // But we can use the "_sourceBundle" as an alternative,
+    // which points to the path of the addon xpi installed
+    // or its source dir (if it has been installed from a
+    // directory).
     if (aProp == "sourceURI" && this.temporarilyInstalled) {
       return Services.io.newFileURI(addon._sourceBundle);
     }
@@ -1639,8 +1628,8 @@ defineAddonWrapperProperty("signedDate", function () {
   });
 });
 
-
-
+// Add to this Map if you need to change an addon's Fluent ID. Keep it in sync
+// with the list in browser_verify_l10n_strings.js
 const updatedAddonFluentIds = new Map([
   ["extension-default-theme-name", "extension-default-theme-name-auto"],
 ]);
@@ -1650,41 +1639,41 @@ const updatedAddonFluentIds = new Map([
     let addon = addonFor(this);
 
     let formattedMessage;
-    
-    
+    // We want to make sure that all built-in themes that are localizable can
+    // actually localized, particularly those for thunderbird and desktop.
     if (
       (aProp === "name" || aProp === "description") &&
       addon.location.name === KEY_APP_BUILTINS &&
       addon.type === "theme"
     ) {
-      
+      // Built-in themes are localized with Fluent instead of the WebExtension API.
       let addonIdPrefix = addon.id.replace("@mozilla.org", "");
       const colorwaySuffix = "colorway";
       if (addonIdPrefix.endsWith(colorwaySuffix)) {
-        
-        
+        // FIXME: Depending on BuiltInThemes here is sort of a hack. Bug 1733466
+        // would provide a more generalized way of doing this.
         if (aProp == "description") {
           return BuiltInThemesHelpers.getLocalizedColorwayDescription(addon.id);
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Colorway collections are usually divided into and presented as
+        // "groups". A group either contains closely related colorways, e.g.
+        // stemming from the same base color but with different intensities, or
+        // if the current collection doesn't have intensities, each colorway is
+        // their own group. Colorway names combine the group name with an
+        // intensity. Their ids have the format
+        // {colorwayGroup}-{intensity}-colorway@mozilla.org or
+        // {colorwayGroupName}-colorway@mozilla.org). L10n for colorway group
+        // names is optional and falls back on the unlocalized name from the
+        // theme's manifest. The intensity part, if present, must be localized.
         let localizedColorwayGroupName =
           BuiltInThemesHelpers.getLocalizedColorwayGroupName(addon.id);
         let [colorwayGroupName, intensity] = addonIdPrefix.split("-", 2);
         if (intensity == colorwaySuffix) {
-          
+          // This theme doesn't have an intensity.
           return localizedColorwayGroupName || addon.defaultLocale.name;
         }
-        
-        
+        // We're not using toLocaleUpperCase because these color names are
+        // always in English.
         colorwayGroupName =
           localizedColorwayGroupName ||
           colorwayGroupName[0].toUpperCase() + colorwayGroupName.slice(1);
@@ -1716,8 +1705,8 @@ const updatedAddonFluentIds = new Map([
     );
 
     if (result == null) {
-      
-      
+      // Legacy add-ons may be partially localized. Fall back to the default
+      // locale ensure that the result is a string where possible.
       [result, usedRepository] = chooseValue(addon, addon.defaultLocale, aProp);
     }
 
@@ -1749,21 +1738,21 @@ const updatedAddonFluentIds = new Map([
   });
 });
 
+/**
+ * @typedef {Map<string, AddonInternal>} AddonDB
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Internal interface: find an addon from an already loaded addonDB.
+ *
+ * @param {AddonDB} addonDB
+ *        The add-on database.
+ * @param {function(AddonInternal) : boolean} aFilter
+ *        The filter predecate. The first add-on for which it returns
+ *        true will be returned.
+ * @returns {AddonInternal?}
+ *        The first matching add-on, if one is found.
+ */
 function _findAddon(addonDB, aFilter) {
   for (let addon of addonDB.values()) {
     if (aFilter(addon)) {
@@ -1773,41 +1762,41 @@ function _findAddon(addonDB, aFilter) {
   return null;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Internal interface to get a filtered list of addons from a loaded addonDB
+ *
+ * @param {AddonDB} addonDB
+ *        The add-on database.
+ * @param {function(AddonInternal) : boolean} aFilter
+ *        The filter predecate. Add-ons which match this predicate will
+ *        be returned.
+ * @returns {Array<AddonInternal>}
+ *        The list of matching add-ons.
+ */
 function _filterDB(addonDB, aFilter) {
   return Array.from(addonDB.values()).filter(aFilter);
 }
 
-const XPIDatabase = {
-  
+export const XPIDatabase = {
+  // true if the database connection has been opened
   initialized: false,
-  
+  // The database file
   jsonFilePath: PathUtils.join(PathUtils.profileDir, FILE_JSON_DB),
   rebuildingDatabase: false,
   syncLoadingDB: false,
-  
-  
+  // Add-ons from the database in locations which are no longer
+  // supported.
   orphanedAddons: [],
 
   _saveTask: null,
 
-  
+  // Saved error object if we fail to read an existing database
   _loadError: null,
 
-  
+  // Saved error object if we fail to save the database
   _saveError: null,
 
-  
+  // Error reported by our most recent attempt to read or write the database, if any
   get lastError() {
     if (this._loadError) {
       return this._loadError;
@@ -1825,8 +1814,8 @@ const XPIDatabase = {
       });
 
       if (!this._schemaVersionSet) {
-        
-        
+        // Update the XPIDB schema version preference the first time we
+        // successfully save the database.
         logger.debug(
           "XPI Database saved, setting schema version preference to " +
             XPIExports.XPIInternal.DB_SCHEMA
@@ -1837,7 +1826,7 @@ const XPIDatabase = {
         );
         this._schemaVersionSet = true;
 
-        
+        // Reading the DB worked once, so we don't need the load error
         this._loadError = null;
       }
     } catch (error) {
@@ -1850,16 +1839,16 @@ const XPIDatabase = {
     }
   },
 
-  
-
-
+  /**
+   * Mark the current stored data dirty, and schedule a flush to disk
+   */
   saveChanges() {
     if (!this.initialized) {
       throw new Error("Attempt to use XPI database when it is not initialized");
     }
 
     if (XPIExports.XPIProvider._closing) {
-      
+      // use an Error here so we get a stack trace.
       let err = new Error("XPI database modified after shutdown began");
       logger.warn(err);
       lazy.AddonManagerPrivate.recordSimpleMeasure(
@@ -1879,7 +1868,7 @@ const XPIDatabase = {
   },
 
   async finalize() {
-    
+    // handle the "in memory only" and "saveChanges never called" cases
     if (!this._saveTask) {
       return;
     }
@@ -1887,15 +1876,15 @@ const XPIDatabase = {
     await this._saveTask.finalize();
   },
 
-  
-
-
-
-
-
+  /**
+   * Converts the current internal state of the XPI addon database to
+   * a JSON.stringify()-ready structure
+   *
+   * @returns {Object}
+   */
   toJSON() {
     if (!this.addonDB) {
-      
+      // We never loaded the database?
       throw new Error("Attempt to save database without loading it first");
     }
 
@@ -1908,16 +1897,16 @@ const XPIDatabase = {
     return toSave;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Synchronously loads the database, by running the normal async load
+   * operation with idle dispatch disabled, and spinning the event loop
+   * until it finishes.
+   *
+   * @param {boolean} aRebuildOnError
+   *        A boolean indicating whether add-on information should be loaded
+   *        from the install locations if the database needs to be rebuilt.
+   *        (if false, caller is XPIProvider.checkForChanges() which will rebuild)
+   */
   syncLoadDB(aRebuildOnError) {
     let err = new Error("Synchronously loading the add-ons database");
     logger.debug(err.message);
@@ -1937,14 +1926,14 @@ const XPIDatabase = {
     lazy.AddonManagerPrivate.recordSimpleMeasure("XPIDB_startupError", reason);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Parse loaded data, reconstructing the database if the loaded data is not valid
+   *
+   * @param {object} aInputAddons
+   *        The add-on JSON to parse.
+   * @param {boolean} aRebuildOnError
+   *        If true, synchronously reconstruct the database from installed add-ons
+   */
   async parseDB(aInputAddons, aRebuildOnError) {
     try {
       let parseTimer = lazy.AddonManagerPrivate.simpleTimer("XPIDB_parseDB_MS");
@@ -1956,16 +1945,16 @@ const XPIDatabase = {
       }
 
       if (aInputAddons.schemaVersion <= 27) {
-        
+        // Types were translated in bug 857456.
         for (let addon of aInputAddons.addons) {
           XPIExports.XPIInternal.migrateAddonLoader(addon);
         }
       } else if (
         aInputAddons.schemaVersion != XPIExports.XPIInternal.DB_SCHEMA
       ) {
-        
-        
-        
+        // For now, we assume compatibility for JSON data with a
+        // mismatched schema version, though we throw away any fields we
+        // don't know about (bug 902956)
         this._recordStartupError(
           `schemaMismatch-${aInputAddons.schemaVersion}`
         );
@@ -1976,16 +1965,16 @@ const XPIDatabase = {
 
       let forEach = this.syncLoadingDB ? arrayForEach : idleForEach;
 
-      
-      
+      // If we got here, we probably have good data
+      // Make AddonInternal instances from the loaded data and save them
       let addonDB = new Map();
       await forEach(aInputAddons.addons, loadedAddon => {
         if (loadedAddon.path) {
           try {
             loadedAddon._sourceBundle = new nsIFile(loadedAddon.path);
           } catch (e) {
-            
-            
+            // We can fail here when the path is invalid, usually from the
+            // wrong OS
             logger.warn(
               "Could not find source bundle for add-on " + loadedAddon.id,
               e
@@ -2030,27 +2019,27 @@ const XPIDatabase = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Open and read the XPI database asynchronously, upgrading if
+   * necessary. If any DB load operation fails, we need to
+   * synchronously rebuild the DB from the installed extensions.
+   *
+   * @param {boolean} [aRebuildOnError = true]
+   *        A boolean indicating whether add-on information should be loaded
+   *        from the install locations if the database needs to be rebuilt.
+   *        (if false, caller is XPIProvider.checkForChanges() which will rebuild)
+   * @returns {Promise<AddonDB>}
+   *        Resolves to the Map of loaded JSON data stored in
+   *        this.addonDB; rejects in case of shutdown.
+   */
   asyncLoadDB(aRebuildOnError = true) {
-    
+    // Already started (and possibly finished) loading
     if (this._dbPromise) {
       return this._dbPromise;
     }
 
     if (XPIExports.XPIProvider._closing) {
-      
+      // use an Error here so we get a stack trace.
       let err = new Error(
         "XPIDatabase.asyncLoadDB attempt after XPIProvider shutdown."
       );
@@ -2105,20 +2094,20 @@ const XPIDatabase = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Rebuild the database from addon install directories.
+   *
+   * @param {boolean} aRebuildOnError
+   *        A boolean indicating whether add-on information should be loaded
+   *        from the install locations if the database needs to be rebuilt.
+   *        (if false, caller is XPIProvider.checkForChanges() which will rebuild)
+   */
   rebuildDatabase(aRebuildOnError) {
     this.addonDB = new Map();
     this.initialized = true;
 
     if (XPIExports.XPIInternal.XPIStates.size == 0) {
-      
+      // No extensions installed, so we're done
       logger.debug("Rebuilding XPI database with no extensions");
       return;
     }
@@ -2135,55 +2124,55 @@ const XPIDatabase = {
           e
         );
       }
-      
+      // Make sure to update the active add-ons and add-ons list on shutdown
       Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Shuts down the database connection and releases all cached objects.
+   * Return: Promise{integer} resolves / rejects with the result of the DB
+   *                          flush after the database is flushed and
+   *                          all cleanup is done
+   */
   async shutdown() {
     logger.debug("shutdown");
     if (this.initialized) {
-      
+      // If our last database I/O had an error, try one last time to save.
       if (this.lastError) {
         this.saveChanges();
       }
 
       this.initialized = false;
 
-      
-      
+      // If we're shutting down while still loading, finish loading
+      // before everything else!
       if (this._dbPromise) {
         await this._dbPromise;
       }
 
-      
+      // Await any pending DB writes and finish cleaning up.
       await this.finalize();
 
       if (this._saveError) {
-        
-        
+        // If our last attempt to read or write the DB failed, force a new
+        // extensions.ini to be written to disk on the next startup
         Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
       }
 
-      
+      // Clear out the cached addons data loaded from JSON
       delete this.addonDB;
       delete this._dbPromise;
-      
+      // same for the deferred save
       delete this._saveTask;
-      
+      // re-enable the schema version setter
       delete this._schemaVersionSet;
     }
   },
 
-  
-
-
+  /**
+   * Verifies that all installed add-ons are still correctly signed.
+   */
   async verifySignatures() {
     try {
       let addons = await this.getAddonList(a => true);
@@ -2194,7 +2183,7 @@ const XPIDatabase = {
       };
 
       for (let addon of addons) {
-        
+        // The add-on might have vanished, we'll catch that on the next startup
         if (!addon._sourceBundle || !addon._sourceBundle.exists()) {
           continue;
         }
@@ -2231,10 +2220,10 @@ const XPIDatabase = {
     }
   },
 
-  
-
-
-
+  /**
+   * Imports the xpinstall permissions from preferences into the permissions
+   * manager for the user to change later.
+   */
   importPermissions() {
     lazy.PermissionsUtils.importFromPrefs(
       PREF_XPI_PERMISSIONS_BRANCH,
@@ -2242,17 +2231,17 @@ const XPIDatabase = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Called when a new add-on has been enabled when only one add-on of that type
+   * can be enabled.
+   *
+   * @param {string} aId
+   *        The ID of the newly enabled add-on
+   * @param {string} aType
+   *        The type of the newly enabled add-on
+   */
   async addonChanged(aId, aType) {
-    
+    // We only care about themes in this provider
     if (aType !== "theme") {
       return;
     }
@@ -2294,17 +2283,17 @@ const XPIDatabase = {
 
   SIGNED_TYPES,
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously list all addons that match the filter function
+   *
+   * @param {function(AddonInternal) : boolean} aFilter
+   *        Function that takes an addon instance and returns
+   *        true if that addon should be included in the selected array
+   *
+   * @returns {Array<AddonInternal>}
+   *        A Promise that resolves to the list of add-ons matching
+   *        aFilter or an empty array if none match
+   */
   async getAddonList(aFilter) {
     try {
       let addonDB = await this.asyncLoadDB();
@@ -2319,14 +2308,14 @@ const XPIDatabase = {
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Get the first addon that matches the filter function
+   *
+   * @param {function(AddonInternal) : boolean} aFilter
+   *        Function that takes an addon instance and returns
+   *        true if that addon should be selected
+   * @returns {Promise<AddonInternal?>}
+   */
   getAddon(aFilter) {
     return this.asyncLoadDB()
       .then(addonDB => getRepositoryAddon(_findAddon(addonDB, aFilter)))
@@ -2335,69 +2324,69 @@ const XPIDatabase = {
       });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously gets an add-on with a particular ID in a particular
+   * install location.
+   *
+   * @param {string} aId
+   *        The ID of the add-on to retrieve
+   * @param {string} aLocation
+   *        The name of the install location
+   * @returns {Promise<AddonInternal?>}
+   */
   getAddonInLocation(aId, aLocation) {
     return this.asyncLoadDB().then(addonDB =>
       getRepositoryAddon(addonDB.get(aLocation + ":" + aId))
     );
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Asynchronously get all the add-ons in a particular install location.
+   *
+   * @param {string} aLocation
+   *        The name of the install location
+   * @returns {Promise<Array<AddonInternal>>}
+   */
   getAddonsInLocation(aLocation) {
     return this.getAddonList(aAddon => aAddon.location.name == aLocation);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Asynchronously gets the add-on with the specified ID that is visible.
+   *
+   * @param {string} aId
+   *        The ID of the add-on to retrieve
+   * @returns {Promise<AddonInternal?>}
+   */
   getVisibleAddonForID(aId) {
     return this.getAddon(aAddon => aAddon.id == aId && aAddon.visible);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Asynchronously gets the visible add-ons, optionally restricting by type.
+   *
+   * @param {Set<string>?} aTypes
+   *        An array of types to include or null to include all types
+   * @returns {Promise<Array<AddonInternal>>}
+   */
   getVisibleAddons(aTypes) {
     return this.getAddonList(
       aAddon => aAddon.visible && (!aTypes || aTypes.has(aAddon.type))
     );
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Synchronously gets all add-ons of a particular type(s).
+   *
+   * @param {Array<string>} aTypes
+   *        The type(s) of add-on to retrieve
+   * @returns {Array<AddonInternal>}
+   */
   getAddonsByType(...aTypes) {
     if (!this.addonDB) {
-      
-      
-      
+      // jank-tastic! Must synchronously load DB if the theme switches from
+      // an XPI theme to a lightweight theme before the DB has loaded,
+      // because we're called from sync XPIProvider.addonChanged
       logger.warn(
         `Synchronous load of XPI database due to ` +
           `getAddonsByType([${aTypes.join(", ")}]) ` +
@@ -2409,13 +2398,13 @@ const XPIDatabase = {
     return _filterDB(this.addonDB, aAddon => aTypes.includes(aAddon.type));
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Asynchronously gets all add-ons with pending operations.
+   *
+   * @param {Set<string>?} aTypes
+   *        The types of add-ons to retrieve or null to get all types
+   * @returns {Promise<Array<AddonInternal>>}
+   */
   getVisibleAddonsWithPendingOperations(aTypes) {
     return this.getAddonList(
       aAddon =>
@@ -2425,14 +2414,14 @@ const XPIDatabase = {
     );
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Synchronously gets all add-ons in the database.
+   * This is only called from the preference observer for the default
+   * compatibility version preference, so we can return an empty list if
+   * we haven't loaded the database yet.
+   *
+   * @returns {Array<AddonInternal>}
+   */
   getAddons() {
     if (!this.addonDB) {
       return [];
@@ -2440,49 +2429,49 @@ const XPIDatabase = {
     return _filterDB(this.addonDB, aAddon => true);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Called to get an Addon with a particular ID.
+   *
+   * @param {string} aId
+   *        The ID of the add-on to retrieve
+   * @returns {Addon?}
+   */
   async getAddonByID(aId) {
     let aAddon = await this.getVisibleAddonForID(aId);
     return aAddon ? aAddon.wrapper : null;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Obtain an Addon having the specified Sync GUID.
+   *
+   * @param {string} aGUID
+   *        String GUID of add-on to retrieve
+   * @returns {Addon?}
+   */
   async getAddonBySyncGUID(aGUID) {
     let addon = await this.getAddon(aAddon => aAddon.syncGUID == aGUID);
     return addon ? addon.wrapper : null;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Called to get Addons of a particular type.
+   *
+   * @param {Array<string>?} aTypes
+   *        An array of types to fetch. Can be null to get all types.
+   * @returns {Addon[]}
+   */
   async getAddonsByTypes(aTypes) {
     let addons = await this.getVisibleAddons(aTypes ? new Set(aTypes) : null);
     return addons.map(a => a.wrapper);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns true if signing is required for the given add-on type.
+   *
+   * @param {string} aType
+   *        The add-on type to check.
+   * @returns {boolean}
+   */
   mustSign(aType) {
     if (!SIGNED_TYPES.has(aType)) {
       return false;
@@ -2495,16 +2484,16 @@ const XPIDatabase = {
     return lazy.AddonSettings.REQUIRE_SIGNING;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Determine if this addon should be disabled due to being legacy
+   *
+   * @param {Addon} addon The addon to check
+   *
+   * @returns {boolean} Whether the addon should be disabled for being legacy
+   */
   isDisabledLegacy(addon) {
-    
-    
+    // We still have tests that use a legacy addon type, allow them
+    // if we're in automation.  Otherwise, disable if not a webextension.
     if (!Cu.isInAutomation) {
       return !addon.isWebExtension;
     }
@@ -2512,19 +2501,19 @@ const XPIDatabase = {
     return (
       !addon.isWebExtension &&
       addon.type === "extension" &&
-      
+      // Test addons are privileged unless forced otherwise.
       addon.signedState !== lazy.AddonManager.SIGNEDSTATE_PRIVILEGED
     );
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Calculates whether an add-on should be appDisabled or not.
+   *
+   * @param {AddonInternal} aAddon
+   *        The add-on to check
+   * @returns {boolean}
+   *        True if the add-on should not be appDisabled
+   */
   isUsableAddon(aAddon) {
     if (this.mustSign(aAddon.type) && !aAddon.isCorrectlySigned) {
       logger.warn(`Add-on ${aAddon.id} is not correctly signed.`);
@@ -2539,7 +2528,7 @@ const XPIDatabase = {
       return false;
     }
 
-    
+    // If we can't read it, it's not usable:
     if (aAddon.brokenManifest) {
       return false;
     }
@@ -2603,16 +2592,16 @@ const XPIDatabase = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Synchronously adds an AddonInternal's metadata to the database.
+   *
+   * @param {AddonInternal} aAddon
+   *        AddonInternal to add
+   * @param {string} aPath
+   *        The file path of the add-on
+   * @returns {AddonInternal}
+   *        the AddonInternal that was added to the database
+   */
   addToDatabase(aAddon, aPath) {
     aAddon.addedToDatabase();
     aAddon.path = aPath;
@@ -2625,19 +2614,19 @@ const XPIDatabase = {
     return aAddon;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Synchronously updates an add-on's metadata in the database. Currently just
+   * removes and recreates.
+   *
+   * @param {AddonInternal} aOldAddon
+   *        The AddonInternal to be replaced
+   * @param {AddonInternal} aNewAddon
+   *        The new AddonInternal to add
+   * @param {string} aPath
+   *        The file path of the add-on
+   * @returns {AddonInternal}
+   *        The AddonInternal that was added to the database
+   */
   updateAddonMetadata(aOldAddon, aNewAddon, aPath) {
     this.removeAddonMetadata(aOldAddon);
     aNewAddon.syncGUID = aOldAddon.syncGUID;
@@ -2652,12 +2641,12 @@ const XPIDatabase = {
     return this.addToDatabase(aNewAddon, aPath);
   },
 
-  
-
-
-
-
-
+  /**
+   * Synchronously removes an add-on from the database.
+   *
+   * @param {AddonInternal} aAddon
+   *        The AddonInternal being removed
+   */
   removeAddonMetadata(aAddon) {
     this.addonDB.delete(aAddon._key);
     this.saveChanges();
@@ -2671,13 +2660,13 @@ const XPIDatabase = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Synchronously marks a AddonInternal as visible marking all other
+   * instances with the same ID as not visible.
+   *
+   * @param {AddonInternal} aAddon
+   *        The AddonInternal to make visible
+   */
   makeAddonVisible(aAddon) {
     logger.debug("Make addon " + aAddon._key + " visible");
     for (let [, otherAddon] of this.addonDB) {
@@ -2694,17 +2683,17 @@ const XPIDatabase = {
     this.saveChanges();
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Synchronously marks a given add-on ID visible in a given location,
+   * instances with the same ID as not visible.
+   *
+   * @param {string} aId
+   *        The ID of the add-on to make visible
+   * @param {XPIStateLocation} aLocation
+   *        The location in which to make the add-on visible.
+   * @returns {AddonInternal?}
+   *        The add-on instance which was marked visible, if any.
+   */
   makeAddonLocationVisible(aId, aLocation) {
     logger.debug(`Make addon ${aId} visible in location ${aLocation}`);
     let result;
@@ -2729,14 +2718,14 @@ const XPIDatabase = {
     return result;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Synchronously sets properties for an add-on.
+   *
+   * @param {AddonInternal} aAddon
+   *        The AddonInternal being updated
+   * @param {Object} aProperties
+   *        A dictionary of properties to set
+   */
   setAddonProperties(aAddon, aProperties) {
     for (let key in aProperties) {
       aAddon[key] = aProperties[key];
@@ -2744,18 +2733,18 @@ const XPIDatabase = {
     this.saveChanges();
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Synchronously sets the Sync GUID for an add-on.
+   * Only called when the database is already loaded.
+   *
+   * @param {AddonInternal} aAddon
+   *        The AddonInternal being updated
+   * @param {string} aGUID
+   *        GUID string to set the value to
+   * @throws if another addon already has the specified GUID
+   */
   setAddonSyncGUID(aAddon, aGUID) {
-    
+    // Need to make sure no other addon has this GUID
     function excludeSyncGUID(otherAddon) {
       return otherAddon._key != aAddon._key && otherAddon.syncGUID == aGUID;
     }
@@ -2774,14 +2763,14 @@ const XPIDatabase = {
     this.saveChanges();
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Synchronously updates an add-on's active flag in the database.
+   *
+   * @param {AddonInternal} aAddon
+   *        The AddonInternal to update
+   * @param {boolean} aActive
+   *        The new active state for the add-on.
+   */
   updateAddonActive(aAddon, aActive) {
     logger.debug(
       "Updating active state for add-on " + aAddon.id + " to " + aActive
@@ -2791,9 +2780,9 @@ const XPIDatabase = {
     this.saveChanges();
   },
 
-  
-
-
+  /**
+   * Synchronously calculates and updates all the active flags in the database.
+   */
   updateActiveAddons() {
     logger.debug("Updating add-on states");
     for (let [, addon] of this.addonDB) {
@@ -2808,33 +2797,33 @@ const XPIDatabase = {
     Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Updates the disabled state for an add-on. Its appDisabled property will be
+   * calculated and if the add-on is changed the database will be saved and
+   * appropriate notifications will be sent out to the registered AddonListeners.
+   *
+   * @param {AddonInternal} aAddon
+   *        The AddonInternal to update
+   * @param {Object} properties - Properties to set on the addon
+   * @param {boolean?} [properties.userDisabled]
+   *        Value for the userDisabled property. If undefined the value will
+   *        not change
+   * @param {boolean?} [properties.softDisabled]
+   *        Value for the softDisabled property. If undefined the value will
+   *        not change. If true this will force userDisabled to be true
+   * @param {boolean?} [properties.embedderDisabled]
+   *        Value for the embedderDisabled property. If undefined the value will
+   *        not change.
+   * @param {boolean?} [properties.becauseSelecting]
+   *        True if we're disabling this add-on because we're selecting
+   *        another.
+   * @returns {Promise<boolean?>}
+   *       A tri-state indicating the action taken for the add-on:
+   *           - undefined: The add-on did not change state
+   *           - true: The add-on became disabled
+   *           - false: The add-on became enabled
+   * @throws if addon is not a AddonInternal
+   */
   async updateAddonDisabledState(
     aAddon,
     { userDisabled, softDisabled, embedderDisabled, becauseSelecting } = {}
@@ -2851,26 +2840,26 @@ const XPIDatabase = {
     if (userDisabled === undefined) {
       userDisabled = aAddon.userDisabled;
     } else if (!userDisabled) {
-      
+      // If enabling the add-on then remove softDisabled
       softDisabled = false;
     }
 
-    
-    
+    // If not changing softDisabled or the add-on is already userDisabled then
+    // use the existing value for softDisabled
     if (softDisabled === undefined || userDisabled) {
       softDisabled = aAddon.softDisabled;
     }
 
     if (!lazy.AddonSettings.IS_EMBEDDED) {
-      
-      
+      // If embedderDisabled was accidentally set somehow, this will revert it
+      // back to false.
       embedderDisabled = false;
     } else if (embedderDisabled === undefined) {
       embedderDisabled = aAddon.embedderDisabled;
     }
 
     let appDisabled = !this.isUsableAddon(aAddon);
-    
+    // No change means nothing to do here
     if (
       aAddon.userDisabled == userDisabled &&
       aAddon.appDisabled == appDisabled &&
@@ -2884,11 +2873,11 @@ const XPIDatabase = {
     let isDisabled =
       userDisabled || softDisabled || appDisabled || embedderDisabled;
 
-    
-    
+    // If appDisabled changes but addon.disabled doesn't,
+    // no onDisabling/onEnabling is sent - so send a onPropertyChanged.
     let appDisabledChanged = aAddon.appDisabled != appDisabled;
 
-    
+    // Update the properties in the database.
     this.setAddonProperties(aAddon, {
       userDisabled,
       appDisabled,
@@ -2906,18 +2895,18 @@ const XPIDatabase = {
       );
     }
 
-    
-    
+    // If the add-on is not visible or the add-on is not changing state then
+    // there is no need to do anything else
     if (!aAddon.visible || wasDisabled == isDisabled) {
       return undefined;
     }
 
-    
+    // Flag that active states in the database need to be updated on shutdown
     Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
 
     this.updateXPIStates(aAddon);
 
-    
+    // Have we just gone back to the current state?
     if (isDisabled != aAddon.active) {
       lazy.AddonManagerPrivate.callAddonListeners(
         "onOperationCancelled",
@@ -2952,7 +2941,7 @@ const XPIDatabase = {
       }
     }
 
-    
+    // Notify any other providers that a new theme has been enabled
     if (aAddon.type === "theme") {
       if (!isDisabled) {
         await lazy.AddonManagerPrivate.notifyAddonChanged(
@@ -2967,18 +2956,18 @@ const XPIDatabase = {
     return isDisabled;
   },
 
-  
-
-
+  /**
+   * Update the appDisabled property for all add-ons.
+   */
   updateAddonAppDisabledStates() {
     for (let addon of this.getAddons()) {
       this.updateAddonDisabledState(addon);
     }
   },
 
-  
-
-
+  /**
+   * Update the repositoryAddon property for all add-ons.
+   */
   async updateAddonRepositoryData() {
     let addons = await this.getVisibleAddons(null);
     logger.debug(
@@ -2999,12 +2988,12 @@ const XPIDatabase = {
     );
   },
 
-  
-
-
-
-
-
+  /**
+   * Adds the add-on's name and creator to the telemetry payload.
+   *
+   * @param {AddonInternal} aAddon
+   *        The addon to record
+   */
   recordAddonTelemetry(aAddon) {
     let locale = aAddon.defaultLocale;
     XPIExports.XPIProvider.addTelemetry(aAddon.id, {
@@ -3014,17 +3003,17 @@ const XPIDatabase = {
   },
 };
 
-const XPIDatabaseReconcile = {
-  
-
-
-
-
-
-
-
-
-
+export const XPIDatabaseReconcile = {
+  /**
+   * Returns a map of ID -> add-on. When the same add-on ID exists in multiple
+   * install locations the highest priority location is chosen.
+   *
+   * @param {Map<String, AddonInternal>} addonMap
+   *        The add-on map to flatten.
+   * @param {string?} [hideLocation]
+   *        An optional location from which to hide any add-ons.
+   * @returns {Map<string, AddonInternal>}
+   */
   flattenByID(addonMap, hideLocation) {
     let map = new Map();
 
@@ -3048,13 +3037,13 @@ const XPIDatabaseReconcile = {
     return map;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Finds the visible add-ons from the map.
+   *
+   * @param {Map<String, AddonInternal>} addonMap
+   *        The add-on map to filter.
+   * @returns {Map<string, AddonInternal>}
+   */
   getVisibleAddons(addonMap) {
     let map = new Map();
 
@@ -3079,32 +3068,32 @@ const XPIDatabaseReconcile = {
     return map;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Called to add the metadata for an add-on in one of the install locations
+   * to the database. This can be called in three different cases. Either an
+   * add-on has been dropped into the location from outside of Firefox, or
+   * an add-on has been installed through the application, or the database
+   * has been upgraded or become corrupt and add-on data has to be reloaded
+   * into it.
+   *
+   * @param {XPIStateLocation} aLocation
+   *        The install location containing the add-on
+   * @param {string} aId
+   *        The ID of the add-on
+   * @param {XPIState} aAddonState
+   *        The new state of the add-on
+   * @param {AddonInternal?} [aNewAddon]
+   *        The manifest for the new add-on if it has already been loaded
+   * @param {string?} [aOldAppVersion]
+   *        The version of the application last run with this profile or null
+   *        if it is a new profile or the version is unknown
+   * @param {string?} [aOldPlatformVersion]
+   *        The version of the platform last run with this profile or null
+   *        if it is a new profile or the version is unknown
+   * @returns {boolean}
+   *        A boolean indicating if flushing caches is required to complete
+   *        changing this add-on
+   */
   addMetadata(
     aLocation,
     aId,
@@ -3115,23 +3104,23 @@ const XPIDatabaseReconcile = {
   ) {
     logger.debug(`New add-on ${aId} installed in ${aLocation.name}`);
 
-    
-    
-    
-    
-    
-    
-    
+    // We treat this is a new install if,
+    //
+    // a) It was explicitly registered as a staged install in the last
+    //    session, or,
+    // b) We're not currently migrating or rebuilding a corrupt database. In
+    //    that case, we can assume this add-on was found during a routine
+    //    directory scan.
     let isNewInstall = !!aNewAddon || !XPIDatabase.rebuildingDatabase;
 
-    
-    
+    // If it's a new install and we haven't yet loaded the manifest then it
+    // must be something dropped directly into the install location
     let isDetectedInstall = isNewInstall && !aNewAddon;
 
-    
+    // Load the manifest if necessary and sanity check the add-on ID
     let unsigned;
     try {
-      
+      // Do not allow third party installs if xpinstall is disabled by policy
       if (
         isDetectedInstall &&
         Services.policies &&
@@ -3143,13 +3132,13 @@ const XPIDatabaseReconcile = {
       }
 
       if (!aNewAddon) {
-        
+        // Load the manifest from the add-on.
         aNewAddon = XPIExports.XPIInstall.syncLoadManifest(
           aAddonState,
           aLocation
         );
       }
-      
+      // The add-on in the manifest should match the add-on ID.
       if (aNewAddon.id != aId) {
         throw new Error(
           `Invalid addon ID: expected addon ID ${aId}, found ${aNewAddon.id} in manifest`
@@ -3164,8 +3153,8 @@ const XPIDatabaseReconcile = {
     } catch (e) {
       logger.warn(`addMetadata: Add-on ${aId} is invalid`, e);
 
-      
-      
+      // Remove the invalid add-on from the install location if the install
+      // location isn't locked
       if (aLocation.isLinkedAddon(aId)) {
         logger.warn("Not uninstalling invalid item because it is a proxy file");
       } else if (aLocation.locked) {
@@ -3175,9 +3164,9 @@ const XPIDatabaseReconcile = {
       } else if (unsigned && !isNewInstall) {
         logger.warn("Not uninstalling existing unsigned add-on");
       } else if (aLocation.name == KEY_APP_BUILTINS) {
-        
-        
-        
+        // If a builtin has been removed from the build, we need to remove it from our
+        // data sets.  We cannot use location.isBuiltin since the system addon locations
+        // mix it up.
         XPIDatabase.removeAddonMetadata(aAddonState);
         aLocation.removeAddon(aId);
       } else {
@@ -3186,27 +3175,27 @@ const XPIDatabaseReconcile = {
       return null;
     }
 
-    
+    // Update the AddonInternal properties.
     aNewAddon.installDate = aAddonState.mtime;
     aNewAddon.updateDate = aAddonState.mtime;
 
-    
-    
+    // Assume that add-ons in the system add-ons install location aren't
+    // foreign and should default to enabled.
     aNewAddon.foreignInstall =
       isDetectedInstall && !aLocation.isSystem && !aLocation.isBuiltin;
 
-    
+    // appDisabled depends on whether the add-on is a foreignInstall so update
     aNewAddon.appDisabled = !XPIDatabase.isUsableAddon(aNewAddon);
 
     if (isDetectedInstall && aNewAddon.foreignInstall) {
-      
+      // Add the installation source info for the sideloaded extension.
       aNewAddon.installTelemetryInfo = {
         source: aLocation.name,
         method: "sideload",
       };
 
-      
-      
+      // If the add-on is a foreign install and is in a scope where add-ons
+      // that were dropped in should default to disabled then disable it
       let disablingScopes = Services.prefs.getIntPref(
         PREF_EM_AUTO_DISABLED_SCOPES,
         0
@@ -3223,42 +3212,42 @@ const XPIDatabaseReconcile = {
     return XPIDatabase.addToDatabase(aNewAddon, aAddonState.path);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Called when an add-on has been removed.
+   *
+   * @param {AddonInternal} aOldAddon
+   *        The AddonInternal as it appeared the last time the application
+   *        ran
+   */
   removeMetadata(aOldAddon) {
-    
+    // This add-on has disappeared
     logger.debug(
       "Add-on " + aOldAddon.id + " removed from " + aOldAddon.location.name
     );
     XPIDatabase.removeAddonMetadata(aOldAddon);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Updates an add-on's metadata and determines. This is called when either the
+   * add-on's install directory path or last modified time has changed.
+   *
+   * @param {XPIStateLocation} aLocation
+   *        The install location containing the add-on
+   * @param {AddonInternal} aOldAddon
+   *        The AddonInternal as it appeared the last time the application
+   *        ran
+   * @param {XPIState} aAddonState
+   *        The new state of the add-on
+   * @param {AddonInternal?} [aNewAddon]
+   *        The manifest for the new add-on if it has already been loaded
+   * @returns {AddonInternal}
+   *        The AddonInternal that was added to the database
+   */
   updateMetadata(aLocation, aOldAddon, aAddonState, aNewAddon) {
     logger.debug(`Add-on ${aOldAddon.id} modified in ${aLocation.name}`);
 
     try {
-      
+      // If there isn't an updated install manifest for this add-on then load it.
       if (!aNewAddon) {
         aNewAddon = XPIExports.XPIInstall.syncLoadManifest(
           aAddonState,
@@ -3269,8 +3258,8 @@ const XPIDatabaseReconcile = {
         aNewAddon.rootURI = aOldAddon.rootURI;
       }
 
-      
-      
+      // The ID in the manifest that was loaded must match the ID of the old
+      // add-on.
       if (aNewAddon.id != aOldAddon.id) {
         throw new Error(
           `Incorrect id in install manifest for existing add-on ${aOldAddon.id}`
@@ -3293,12 +3282,12 @@ const XPIDatabaseReconcile = {
       return null;
     }
 
-    
+    // Set the additional properties on the new AddonInternal
     aNewAddon.updateDate = aAddonState.mtime;
 
     XPIExports.XPIProvider.persistStartupData(aNewAddon, aAddonState);
 
-    
+    // Update the database
     return XPIDatabase.updateAddonMetadata(
       aOldAddon,
       aNewAddon,
@@ -3306,19 +3295,19 @@ const XPIDatabaseReconcile = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Updates an add-on's path for when the add-on has moved in the
+   * filesystem but hasn't changed in any other way.
+   *
+   * @param {XPIStateLocation} aLocation
+   *        The install location containing the add-on
+   * @param {AddonInternal} aOldAddon
+   *        The AddonInternal as it appeared the last time the application
+   *        ran
+   * @param {XPIState} aAddonState
+   *        The new state of the add-on
+   * @returns {AddonInternal}
+   */
   updatePath(aLocation, aOldAddon, aAddonState) {
     logger.debug(`Add-on ${aOldAddon.id} moved to ${aAddonState.path}`);
     aOldAddon.path = aAddonState.path;
@@ -3331,23 +3320,23 @@ const XPIDatabaseReconcile = {
     return aOldAddon;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Called when no change has been detected for an add-on's metadata but the
+   * application has changed so compatibility may have changed.
+   *
+   * @param {XPIStateLocation} aLocation
+   *        The install location containing the add-on
+   * @param {AddonInternal} aOldAddon
+   *        The AddonInternal as it appeared the last time the application
+   *        ran
+   * @param {XPIState} aAddonState
+   *        The new state of the add-on
+   * @param {boolean} [aReloadMetadata = false]
+   *        A boolean which indicates whether metadata should be reloaded from
+   *        the addon manifests. Default to false.
+   * @returns {AddonInternal}
+   *        The new addon.
+   */
   updateCompatibility(aLocation, aOldAddon, aAddonState, aReloadMetadata) {
     logger.debug(
       `Updating compatibility for add-on ${aOldAddon.id} in ${aLocation.name}`
@@ -3355,13 +3344,13 @@ const XPIDatabaseReconcile = {
 
     let checkSigning =
       aOldAddon.signedState === undefined && SIGNED_TYPES.has(aOldAddon.type);
-    
+    // signedDate must be set if signedState is set.
     let signedDateMissing =
       aOldAddon.signedDate === undefined &&
       (aOldAddon.signedState || checkSigning);
 
-    
-    
+    // If maxVersion was inadvertently updated for a locale, force a reload
+    // from the manifest.  See Bug 1646016 for details.
     if (
       !aReloadMetadata &&
       aOldAddon.type === "locale" &&
@@ -3378,15 +3367,15 @@ const XPIDatabaseReconcile = {
           aLocation
         );
       } catch (err) {
-        
+        // If we can no longer read the manifest, it is no longer compatible.
         aOldAddon.brokenManifest = true;
         aOldAddon.appDisabled = true;
         return aOldAddon;
       }
     }
 
-    
-    
+    // If updating from a version of the app that didn't support signedState
+    // then update that property now
     if (checkSigning) {
       aOldAddon.signedState = manifest.signedState;
     }
@@ -3395,11 +3384,11 @@ const XPIDatabaseReconcile = {
       aOldAddon.signedDate = manifest.signedDate;
     }
 
-    
-    
+    // May be updating from a version of the app that didn't support all the
+    // properties of the currently-installed add-ons.
     if (aReloadMetadata) {
-      
-      
+      // Avoid re-reading these properties from manifest,
+      // use existing addon instead.
       let remove = [
         "syncGUID",
         "foreignInstall",
@@ -3413,7 +3402,7 @@ const XPIDatabaseReconcile = {
         "installTelemetryInfo",
       ];
 
-      
+      // TODO - consider re-scanning for targetApplications for other addon types.
       if (aOldAddon.type !== "locale") {
         remove.push("targetApplications");
       }
@@ -3427,16 +3416,16 @@ const XPIDatabaseReconcile = {
     return aOldAddon;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns true if this install location is part of the application
+   * bundle. Add-ons in these locations are expected to change whenever
+   * the application updates.
+   *
+   * @param {XPIStateLocation} location
+   *        The install location to check.
+   * @returns {boolean}
+   *        True if this location is part of the application bundle.
+   */
   isAppBundledLocation(location) {
     return (
       location.name == KEY_APP_GLOBAL ||
@@ -3445,14 +3434,14 @@ const XPIDatabaseReconcile = {
     );
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Returns true if this install location holds system addons.
+   *
+   * @param {XPIStateLocation} location
+   *        The install location to check.
+   * @returns {boolean}
+   *        True if this location contains system add-ons.
+   */
   isSystemAddonLocation(location) {
     return (
       location.name === KEY_APP_SYSTEM_DEFAULTS ||
@@ -3460,26 +3449,26 @@ const XPIDatabaseReconcile = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Updates the databse metadata for an existing add-on during database
+   * reconciliation.
+   *
+   * @param {AddonInternal} oldAddon
+   *        The existing database add-on entry.
+   * @param {XPIState} xpiState
+   *        The XPIStates entry for this add-on.
+   * @param {AddonInternal?} newAddon
+   *        The new add-on metadata for the add-on, as loaded from a
+   *        staged update in addonStartup.json.
+   * @param {boolean} aUpdateCompatibility
+   *        true to update add-ons appDisabled property when the application
+   *        version has changed
+   * @param {boolean} aSchemaChange
+   *        The schema has changed and all add-on manifests should be re-read.
+   * @returns {AddonInternal?}
+   *        The updated AddonInternal object for the add-on, if one
+   *        could be created.
+   */
   updateExistingAddon(
     oldAddon,
     xpiState,
@@ -3491,13 +3480,13 @@ const XPIDatabaseReconcile = {
 
     let installLocation = oldAddon.location;
 
-    
-    
-    
-    
-    
-    
-    
+    // Update the add-on's database metadata from on-disk metadata if:
+    //
+    //  a) The add-on was staged for install in the last session,
+    //  b) The add-on has been modified since the last session, or,
+    //  c) The app has been updated since the last session, and the
+    //     add-on is part of the application bundle (and has therefore
+    //     likely been replaced in the update process).
     if (
       newAddon ||
       oldAddon.updateDate != xpiState.mtime ||
@@ -3529,30 +3518,31 @@ const XPIDatabaseReconcile = {
     return newAddon;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Compares the add-ons that are currently installed to those that were
+   * known to be installed when the application last ran and applies any
+   * changes found to the database.
+   * Always called after XPIDatabase.sys.mjs and extensions.json have been
+   * loaded.
+   *
+   * @param {Object} aManifests
+   *        A dictionary of cached AddonInstalls for add-ons that have been
+   *        installed
+   * @param {boolean} aUpdateCompatibility
+   *        true to update add-ons appDisabled property when the application
+   *        version has changed
+   * @param {string?} [aOldAppVersion]
+   *        The version of the application last run with this profile or null
+   *        if it is a new profile or the version is unknown
+   * @param {string?} [aOldPlatformVersion]
+   *        The version of the platform last run with this profile or null
+   *        if it is a new profile or the version is unknown
+   * @param {boolean} aSchemaChange
+   *        The schema has changed and all add-on manifests should be re-read.
+   * @returns {boolean}
+   *        A boolean indicating if a change requiring flushing the caches was
+   *        detected
+   */
   processFileChanges(
     aManifests,
     aUpdateCompatibility,
@@ -3567,27 +3557,27 @@ const XPIDatabaseReconcile = {
     let previousAddons = new lazy.ExtensionUtils.DefaultMap(() => new Map());
     let currentAddons = new lazy.ExtensionUtils.DefaultMap(() => new Map());
 
-    
+    // Get the previous add-ons from the database and put them into maps by location
     for (let addon of XPIDatabase.getAddons()) {
       previousAddons.get(addon.location.name).set(addon.id, addon);
     }
 
-    
-    
+    // Keep track of add-ons whose blocklist status may have changed. We'll check this
+    // after everything else.
     let addonsToCheckAgainstBlocklist = [];
 
-    
-    
-    
+    // Build the list of current add-ons into similar maps. When add-ons are still
+    // present we re-use the add-on objects from the database and update their
+    // details directly
     let addonStates = new Map();
     for (let location of XPIExports.XPIInternal.XPIStates.locations()) {
       let locationAddons = currentAddons.get(location.name);
 
-      
-      
+      // Get all the on-disk XPI states for this location, and keep track of which
+      // ones we see in the database.
       let dbAddons = previousAddons.get(location.name) || new Map();
       for (let [id, oldAddon] of dbAddons) {
-        
+        // Check if the add-on is still installed
         let xpiState = location.get(id);
         if (xpiState && !xpiState.missing) {
           let newAddon = this.updateExistingAddon(
@@ -3600,12 +3590,12 @@ const XPIDatabaseReconcile = {
           if (newAddon) {
             locationAddons.set(newAddon.id, newAddon);
 
-            
-            
+            // We need to do a blocklist check later, but the add-on may have changed by then.
+            // Avoid storing the current copy and just get one when we need one instead.
             addonsToCheckAgainstBlocklist.push(newAddon.id);
           }
         } else {
-          
+          // The add-on is in the DB, but not in xpiState (and thus not on disk).
           this.removeMetadata(oldAddon);
         }
       }
@@ -3637,7 +3627,7 @@ const XPIDatabaseReconcile = {
       }
     }
 
-    
+    // Validate the updated system add-ons
     let hideLocation;
     {
       let systemAddonLocation = XPIExports.XPIInternal.XPIStates.getLocation(
@@ -3646,7 +3636,7 @@ const XPIDatabaseReconcile = {
       let addons = currentAddons.get(systemAddonLocation.name);
 
       if (!systemAddonLocation.installer.isValid(addons)) {
-        
+        // Hide the system add-on updates if any are invalid.
         logger.info(
           "One or more updated system add-ons invalid, falling back to defaults."
         );
@@ -3654,8 +3644,8 @@ const XPIDatabaseReconcile = {
       }
     }
 
-    
-    
+    // Apply startup changes to any currently-visible add-ons, and
+    // uninstall any which were previously visible, but aren't anymore.
     let previousVisible = this.getVisibleAddons(previousAddons);
     let currentVisible = this.flattenByID(currentAddons, hideLocation);
 
@@ -3667,8 +3657,8 @@ const XPIDatabaseReconcile = {
 
     let promises = [];
     for (let [id, addon] of currentVisible) {
-      
-      
+      // If we have a stored manifest for the add-on, it came from the
+      // startup data cache, and supersedes any previous XPIStates entry.
       let xpiState =
         !findManifest(addon.location, id) && addonStates.get(addon);
 
@@ -3699,7 +3689,7 @@ const XPIDatabaseReconcile = {
       );
     }
 
-    
+    // Finally update XPIStates to match everything
     for (let [locationName, locationAddons] of currentAddons) {
       for (let [id, addon] of locationAddons) {
         let xpiState = XPIExports.XPIInternal.XPIStates.getAddon(
@@ -3714,14 +3704,14 @@ const XPIDatabaseReconcile = {
     XPIDatabase.rebuildingDatabase = false;
 
     if (aUpdateCompatibility || aSchemaChange) {
-      
-      
-      
+      // Do some blocklist checks. These will happen after we've just saved everything,
+      // because they're async and depend on the blocklist loading. When we're done, save
+      // the data if any of the add-ons' blocklist state has changed.
       lazy.AddonManager.beforeShutdown.addBlocker(
         "Update add-on blocklist state into add-on DB",
         (async () => {
-          
-          
+          // Avoid querying the AddonManager immediately to give startup a chance
+          // to complete.
           await Promise.resolve();
 
           let addons = await lazy.AddonManager.getAddonsByIDs(
@@ -3733,9 +3723,9 @@ const XPIDatabaseReconcile = {
                 return;
               }
               let oldState = addon.blocklistState;
-              
-              
-              
+              // TODO 1712316: updateBlocklistState with object parameter only
+              // works if addon is an AddonInternal instance. But addon is an
+              // AddonWrapper instead. Consequently updateDate:false is ignored.
               await addon.updateBlocklistState({ updateDatabase: false });
               if (oldState !== addon.blocklistState) {
                 lazy.Blocklist.recordAddonBlockChangeTelemetry(
@@ -3754,19 +3744,19 @@ const XPIDatabaseReconcile = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Applies a startup change for the given add-on.
+   *
+   * @param {AddonInternal} currentAddon
+   *        The add-on as it exists in this session.
+   * @param {AddonInternal?} previousAddon
+   *        The add-on as it existed in the previous session.
+   * @param {XPIState?} xpiState
+   *        The XPIState entry for this add-on, if one exists.
+   * @returns {Promise?}
+   *        If an update was performed, returns a promise which resolves
+   *        when the appropriate bootstrap methods have been called.
+   */
   applyStartupChange(currentAddon, previousAddon, xpiState) {
     let promise;
     let { id } = currentAddon;
@@ -3781,13 +3771,13 @@ const XPIDatabaseReconcile = {
           id
         );
 
-        
-        
-        
-        
-        
-        
-        
+        // Bug 1664144:  If the addon changed on disk we will catch it during
+        // the second scan initiated by getNewSideloads.  The addon may have
+        // already started, if so we need to ensure it restarts during the
+        // update, otherwise we're left in a state where the addon is enabled
+        // but not started.  We use the bootstrap started state to check that.
+        // isActive alone is not sufficient as that changes the characteristics
+        // of other updates and breaks many tests.
         let restart =
           isActive &&
           XPIExports.XPIInternal.BootstrapScope.get(currentAddon).started;
@@ -3814,10 +3804,10 @@ const XPIDatabaseReconcile = {
         currentAddon.userDisabled = !isActive;
       }
 
-      
-      
+      // If the add-on wasn't active and it isn't already disabled in some way
+      // then it was probably either softDisabled or userDisabled
       if (!isActive && !currentAddon.disabled) {
-        
+        // If the add-on is softblocked then assume it is softDisabled
         if (
           currentAddon.blocklistState == Services.blocklist.STATE_SOFTBLOCKED
         ) {
