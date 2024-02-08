@@ -230,6 +230,13 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
+  
+  JS::Prefs::setAtStartup_weakrefs(true);
+  JS::Prefs::setAtStartup_experimental_weakrefs_expose_cleanupSome(true);
+#ifdef NIGHTLY_BUILD
+  JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
+#endif
+
   if (!options.frontendOnly) {
     if (!JS_Init()) {
       printf("TEST-UNEXPECTED-FAIL | jsapi-tests | JS_Init() failed.\n");
@@ -247,13 +254,6 @@ int main(int argc, char* argv[]) {
     PrintTests(JSAPIFrontendTest::list);
     return 0;
   }
-
-  
-  JS::Prefs::setAtStartup_weakrefs(true);
-  JS::Prefs::setAtStartup_experimental_weakrefs_expose_cleanupSome(true);
-#ifdef NIGHTLY_BUILD
-  JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
-#endif
 
   
   

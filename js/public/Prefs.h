@@ -86,11 +86,22 @@ class Prefs {
   
   JS_PREF_CLASS_FIELDS;
 
+#ifdef DEBUG
+  static void assertCanSetStartupPref();
+#else
+  static void assertCanSetStartupPref() {}
+#endif
+
  public:
   
-#define DEF_GETSET(NAME, CPP_NAME, TYPE, SETTER) \
-  static TYPE CPP_NAME() { return CPP_NAME##_; } \
-  static void SETTER(TYPE value) { CPP_NAME##_ = value; }
+#define DEF_GETSET(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
+  static TYPE CPP_NAME() { return CPP_NAME##_; }                  \
+  static void SETTER(TYPE value) {                                \
+    if (IS_STARTUP_PREF) {                                        \
+      assertCanSetStartupPref();                                  \
+    }                                                             \
+    CPP_NAME##_ = value;                                          \
+  }
   FOR_EACH_JS_PREF(DEF_GETSET)
 #undef DEF_GETSET
 };

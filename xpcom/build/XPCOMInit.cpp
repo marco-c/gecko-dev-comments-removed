@@ -105,6 +105,7 @@
 
 #include "jsapi.h"
 #include "js/Initialization.h"
+#include "js/Prefs.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "XPCSelfHostedShmem.h"
 
@@ -231,6 +232,9 @@ static void InitializeJS() {
   
   JS::SetAVXEnabled(mozilla::StaticPrefs::javascript_options_wasm_simd_avx());
 #endif
+
+  
+  SET_JS_PREFS_FROM_BROWSER_PREFS;
 
   const char* jsInitFailureReason = JS_InitWithFailureDiagnostic();
   if (jsInitFailureReason) {
