@@ -440,12 +440,6 @@ def set_try_config(parameters, task_config_file):
     else:
         parameters["try_options"] = None
 
-    if parameters["try_mode"] == "try_task_config":
-        
-        
-        
-        parameters.setdefault("optimize_target_tasks", False)
-
 
 def set_decision_indexes(decision_task_id, params, graph_config):
     index_paths = []
