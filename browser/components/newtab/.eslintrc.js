@@ -19,7 +19,12 @@ module.exports = {
   overrides: [
     {
       
-      files: ["content-src/**", "test/schemas/**", "test/unit/**"],
+      
+      files: [
+        "content-src/**/*.js",
+        "test/schemas/**/*.js",
+        "test/unit/**/*.js",
+      ],
       parserOptions: {
         sourceType: "module",
       },

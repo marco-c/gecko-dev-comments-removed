@@ -53,7 +53,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.mjs", "**/*.jsm", "**/?(*.)worker.?(m)js"],
+      files: ["**/*.mjs", "**/*.jsx", "**/*.jsm", "**/?(*.)worker.?(m)js"],
       rules: {
         
         
@@ -67,12 +67,6 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.sys.mjs"],
-      rules: {
-        "mozilla/use-static-import": "error",
-      },
-    },
-    {
       excludedFiles: ["**/*.sys.mjs"],
       files: ["**/*.mjs"],
       rules: {
@@ -82,7 +76,7 @@ module.exports = {
       },
     },
     {
-      files: ["**/*.mjs"],
+      files: ["**/*.mjs", "**/*.jsx"],
       parserOptions: {
         sourceType: "module",
       },
