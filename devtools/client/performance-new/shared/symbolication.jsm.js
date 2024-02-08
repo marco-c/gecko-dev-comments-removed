@@ -234,7 +234,7 @@ class LocalSymbolicationService {
       module,
     };
     return getResultFromWorker(
-      "resource://devtools/client/performance-new/shared/symbolication-worker.js",
+      "resource://devtools/client/performance-new/shared/symbolication.worker.js",
       initialMessage
     );
   }
@@ -258,7 +258,7 @@ class LocalSymbolicationService {
       module,
     };
     return getResultFromWorker(
-      "resource://devtools/client/performance-new/shared/symbolication-worker.js",
+      "resource://devtools/client/performance-new/shared/symbolication.worker.js",
       initialMessage
     );
   }
@@ -309,10 +309,17 @@ class LocalSymbolicationServiceWithRemoteSymbolTableFallback {
         l => l.debugName === debugName && l.breakpadId === breakpadId
       );
       if (!lib) {
+        let errorMessage;
+        if (errorFromLocalFiles instanceof Error) {
+          errorMessage = errorFromLocalFiles.message;
+        } else {
+          errorMessage = `${errorFromLocalFiles}`;
+        }
+
         throw new Error(
           `Could not find the library for "${debugName}", "${breakpadId}" after falling ` +
             `back to remote symbol table querying because regular getSymbolTable failed ` +
-            `with error: ${errorFromLocalFiles.message}.`
+            `with error: ${errorMessage}.`
         );
       }
       return getSymbolTableFromDebuggee(this._perfFront, lib.path, breakpadId);
