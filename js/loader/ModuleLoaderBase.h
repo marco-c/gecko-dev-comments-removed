@@ -191,9 +191,6 @@ class ModuleLoaderBase : public nsISupports {
   bool mImportMapsAllowed = true;
 
  protected:
-  
-  
-  nsCOMPtr<nsISerialEventTarget> mEventTarget;
   RefPtr<ScriptLoaderInterface> mLoader;
 
   mozilla::UniquePtr<ImportMap> mImportMap;
@@ -210,9 +207,7 @@ class ModuleLoaderBase : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoaderBase)
   explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader,
-                            nsIGlobalObject* aGlobalObject,
-                            nsISerialEventTarget* aEventTarget =
-                                mozilla::GetMainThreadSerialEventTarget());
+                            nsIGlobalObject* aGlobalObject);
 
   
   void Shutdown();

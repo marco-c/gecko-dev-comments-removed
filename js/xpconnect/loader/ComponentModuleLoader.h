@@ -52,17 +52,6 @@ class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
   void MaybeReportLoadError(JSContext* aCx);
 
  private:
-  
-  
-  
-  class SyncEventTarget : public nsISerialEventTarget {
-   public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIEVENTTARGET_FULL
-   private:
-    virtual ~SyncEventTarget() = default;
-  };
-
   ~ComponentModuleLoader();
 
   already_AddRefed<ModuleLoadRequest> CreateStaticImport(
