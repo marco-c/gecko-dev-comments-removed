@@ -31,15 +31,11 @@ if (typeof module == "object") {
     true
   );
 } else {
-  
-  
-  
   ChromeUtils.defineLazyGetter(lazy, "validateBreakpointLocation", () => {
     return ChromeUtils.import(
       "resource://devtools/shared/validate-breakpoint.jsm"
     ).validateBreakpointLocation;
   });
-  
   ChromeUtils.defineLazyGetter(lazy, "validateEventBreakpoint", () => {
     const { loader } = ChromeUtils.importESModule(
       "resource://devtools/shared/loader/Loader.sys.mjs"
