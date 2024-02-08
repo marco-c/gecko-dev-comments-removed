@@ -52,12 +52,13 @@ mozilla::ipc::IPCResult RemoteSandboxBrokerChild::RecvLaunchApp(
   
   
   
-  ipc::ScopedProcessHandle parentProcHandle;
-  if (!base::OpenProcessHandle(OtherPid(), &parentProcHandle.rwget())) {
+  UniqueFileHandle parentProcHandle;
+  if (!base::OpenProcessHandle(OtherPid(),
+                               getter_Transfers(parentProcHandle))) {
     *aOutOk = false;
     return IPC_OK();
   }
-  mSandboxBroker.AddTargetPeer(parentProcHandle);
+  mSandboxBroker.AddTargetPeer(parentProcHandle.get());
 
   if (!mSandboxBroker.SetSecurityLevelForGMPlugin(
           AbstractSandboxBroker::SandboxLevel(aParams.sandboxLevel()),
