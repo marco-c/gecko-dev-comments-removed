@@ -95,10 +95,10 @@ using EnableFunctionTag = std::enable_if_t<
 
 
 template <typename Fn>
-class FunctionRef;
+class MOZ_TEMPORARY_CLASS FunctionRef;
 
 template <typename Ret, typename... Params>
-class FunctionRef<Ret(Params...)> {
+class MOZ_TEMPORARY_CLASS FunctionRef<Ret(Params...)> {
   union Payload;
 
   
@@ -168,23 +168,16 @@ class FunctionRef<Ret(Params...)> {
 
 
 
-
-  template <
-      typename Callable,
-      typename = detail::EnableFunctionTag<detail::MatchingFunctorTag, Callable,
-                                           Ret, Params...>,
-      typename std::enable_if_t<!std::is_same_v<
-          typename std::remove_reference_t<typename std::remove_cv_t<Callable>>,
-          FunctionRef>>* = nullptr>
-  MOZ_IMPLICIT FunctionRef(Callable& aCallable) noexcept
+  template <typename Callable,
+            typename = detail::EnableFunctionTag<detail::MatchingFunctorTag,
+                                                 Callable, Ret, Params...>,
+            typename std::enable_if_t<!std::is_same_v<
+                std::remove_cv_t<std::remove_reference_t<Callable>>,
+                FunctionRef>>* = nullptr>
+  MOZ_IMPLICIT FunctionRef(Callable&& aCallable) noexcept
       : mAdaptor([](const Payload& aPayload, Params... aParams) {
-          auto& func = *static_cast<Callable*>(aPayload.mObject);
-          
-          
-          
-          
-          
-          return static_cast<Ret>(func(static_cast<Params>(aParams)...));
+          auto& func = *static_cast<std::remove_reference_t<Callable>*>(aPayload.mObject);
+          return static_cast<Ret>(func(std::forward<Params>(aParams)...));
         }) {
     ::new (KnownNotNull, &mPayload.mObject) void*(&aCallable);
   }
