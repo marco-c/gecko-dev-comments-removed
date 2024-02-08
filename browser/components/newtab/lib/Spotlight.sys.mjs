@@ -1,11 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -20,7 +17,7 @@ ChromeUtils.defineLazyGetter(
   () => new lazy.AboutWelcomeTelemetry()
 );
 
-const Spotlight = {
+export const Spotlight = {
   sendUserEventTelemetry(event, message, dispatch) {
     const ping = {
       message_id: message.content.id,
@@ -39,13 +36,13 @@ const Spotlight = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Shows spotlight tab or window modal specific to the given browser
+   * @param browser             The browser for spotlight display
+   * @param message             Message containing content to show
+   * @param dispatchCFRAction   A function to dispatch resulting actions
+   * @return                    boolean value capturing if spotlight was displayed
+   */
   async showSpotlightDialog(browser, message, dispatch = this.defaultDispatch) {
     const win = browser?.ownerGlobal;
     if (!win || win.gDialogBox.isOpen) {
@@ -54,11 +51,11 @@ const Spotlight = {
     const spotlight_url = "chrome://browser/content/spotlight.html";
 
     const dispatchCFRAction =
-      
+      // This also blocks CFR impressions, which is fine for current use cases.
       message.content?.metrics === "block" ? () => {} : dispatch;
 
-    
-    
+    // This handles `IMPRESSION` events used by ASRouter for frequency caps.
+    // AboutWelcome handles `IMPRESSION` events for telemetry.
     this.sendUserEventTelemetry("IMPRESSION", message, dispatchCFRAction);
     dispatchCFRAction({ type: "IMPRESSION", data: message });
 
@@ -76,10 +73,8 @@ const Spotlight = {
       await win.gDialogBox.open(spotlight_url, message.content);
     }
 
-    
+    // If dismissed report telemetry and exit
     this.sendUserEventTelemetry("DISMISS", message, dispatchCFRAction);
     return true;
   },
 };
-
-const EXPORTED_SYMBOLS = ["Spotlight"];
