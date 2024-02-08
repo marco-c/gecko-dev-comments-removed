@@ -194,6 +194,7 @@ function createUserContextMenu(
     event.target.firstChild.remove();
   }
 
+  MozXULElement.insertFTLIfNeeded("toolkit/global/contextual-identity.ftl");
   let docfrag = document.createDocumentFragment();
 
   
