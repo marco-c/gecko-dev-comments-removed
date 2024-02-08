@@ -323,6 +323,10 @@ TextPropertyEditor.prototype = {
         contentType: InplaceEditor.CONTENT_TYPES.CSS_PROPERTY,
         popup: this.popup,
         cssProperties: this.cssProperties,
+        cssVariables:
+          this.rule.elementStyle.getAllCustomProperties(
+            this.rule.pseudoElement
+          ) || new Map(),
         
         
         focusEditableFieldAfterApply: true,
