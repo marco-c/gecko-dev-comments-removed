@@ -184,24 +184,39 @@ TEST(IntlBidi, RtlOverride)
   ASSERT_EQ(bidi.GetParagraphEmbeddingLevel(), 0);
   ASSERT_EQ(bidi.GetParagraphDirection(), Bidi::ParagraphDirection::Mixed);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   {
     auto logicalRun = logicalRunIter.Next();
     ASSERT_TRUE(logicalRun.isSome());
-    ASSERT_EQ(logicalRun->string, MakeStringSpan(u"ltr"));
+    ASSERT_TRUE(logicalRun->string == MakeStringSpan(u"ltr") ||
+                logicalRun->string == MakeStringSpan(u"ltr\u202b"));
     ASSERT_EQ(logicalRun->embeddingLevel, 0);
     ASSERT_EQ(logicalRun->embeddingLevel.Direction(), BidiDirection::LTR);
   }
   {
     auto logicalRun = logicalRunIter.Next();
     ASSERT_TRUE(logicalRun.isSome());
-    ASSERT_EQ(logicalRun->string, MakeStringSpan(u"\u202b___رائع___"));
+    ASSERT_TRUE(logicalRun->string == MakeStringSpan(u"\u202b___رائع___") ||
+                logicalRun->string == MakeStringSpan(u"___رائع___\u202a"));
     ASSERT_EQ(logicalRun->embeddingLevel, 1);
     ASSERT_EQ(logicalRun->embeddingLevel.Direction(), BidiDirection::RTL);
   }
   {
     auto logicalRun = logicalRunIter.Next();
     ASSERT_TRUE(logicalRun.isSome());
-    ASSERT_EQ(logicalRun->string, MakeStringSpan(u"\u202a___ltr__"));
+    ASSERT_TRUE(logicalRun->string == MakeStringSpan(u"\u202a___ltr__") ||
+                logicalRun->string == MakeStringSpan(u"___ltr__"));
     ASSERT_EQ(logicalRun->embeddingLevel, 2);
     ASSERT_EQ(logicalRun->embeddingLevel.Direction(), BidiDirection::LTR);
   }
@@ -254,19 +269,22 @@ TEST(IntlBidi, VisualRunsWithEmbeds)
   {
     Maybe<VisualRun> run = visualRunIter.Next();
     ASSERT_TRUE(run.isSome());
-    ASSERT_EQ(run->string, MakeStringSpan(u"ltr"));
+    ASSERT_TRUE(run->string == MakeStringSpan(u"ltr") ||
+                run->string == MakeStringSpan(u"ltr\u202b"));
     ASSERT_EQ(run->direction, BidiDirection::LTR);
   }
   {
     Maybe<VisualRun> run = visualRunIter.Next();
     ASSERT_TRUE(run.isSome());
-    ASSERT_EQ(run->string, MakeStringSpan(u"\u202a___ltr___"));
+    ASSERT_TRUE(run->string == MakeStringSpan(u"\u202a___ltr___") ||
+                run->string == MakeStringSpan(u"___ltr___"));
     ASSERT_EQ(run->direction, BidiDirection::LTR);
   }
   {
     Maybe<VisualRun> run = visualRunIter.Next();
     ASSERT_TRUE(run.isSome());
-    ASSERT_EQ(run->string, MakeStringSpan(u"\u202b___رائع___"));
+    ASSERT_TRUE(run->string == MakeStringSpan(u"\u202b___رائع___") ||
+                run->string == MakeStringSpan(u"___رائع___\u202a"));
     ASSERT_EQ(run->direction, BidiDirection::RTL);
   }
   {
