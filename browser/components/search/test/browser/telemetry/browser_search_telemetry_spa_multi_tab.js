@@ -7,6 +7,11 @@
 
 "use strict";
 
+
+if (AppConstants.platform == "macosx") {
+  requestLongerTimeout(3);
+}
+
 add_setup(async function () {
   await initSinglePageAppTest();
 
