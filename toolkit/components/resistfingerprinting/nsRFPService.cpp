@@ -113,8 +113,13 @@ static constexpr uint32_t kVideoDroppedRatio = 5;
 
 
 
+#if defined(MOZ_WIDGET_ANDROID)
+const RFPTarget kDefaultFingerprintingProtections =
+    RFPTarget::CanvasRandomization;
+#else
 const RFPTarget kDefaultFingerprintingProtections =
     RFPTarget::CanvasRandomization | RFPTarget::FontVisibilityLangPack;
+#endif
 
 static constexpr uint32_t kSuspiciousFingerprintingActivityThreshold = 1;
 
