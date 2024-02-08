@@ -137,10 +137,6 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void EnsureWidevineL1PathForSandbox(StringVector& aExtraOpts);
 #endif
 
-#ifdef MOZ_WMF_CDM
-  void EnanbleMFCDMTelemetryEventIfNeeded() const;
-#endif
-
   
   
   

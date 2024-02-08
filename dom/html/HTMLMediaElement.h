@@ -554,10 +554,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   bool IsEncrypted() const override { return mIsEncrypted; }
 
-#ifdef MOZ_WMF_CDM
-  bool IsUsingWMFCDM() const override;
-#endif
-
   bool Paused() const { return mPaused; }
 
   double DefaultPlaybackRate() const {
@@ -1926,11 +1922,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   bool ShouldQueueTimeupdateAsyncTask(TimeupdateType aType) const;
-
-#ifdef MOZ_WMF_CDM
-  
-  bool mIsUsingWMFCDM = false;
-#endif
 };
 
 
