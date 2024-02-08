@@ -42,6 +42,9 @@ already_AddRefed<nsAtom> ICUUtils::LanguageTagIterForContent::GetNext() {
   if (mCurrentFallbackIndex < 2) {
     mCurrentFallbackIndex = 2;
     
+    if (mContent->OwnerDoc()->ShouldResistFingerprinting(RFPTarget::JSLocale)) {
+      return NS_Atomize("en-US");
+    }
     nsAutoCString appLocale;
     LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
     return NS_Atomize(appLocale);
