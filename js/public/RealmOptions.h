@@ -262,14 +262,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   }
 #endif
 
-#ifdef ENABLE_JSON_PARSE_WITH_SOURCE
-  bool getJSONParseWithSource() const { return jsonParseWithSource; }
-  RealmCreationOptions& setJSONParseWithSource(bool flag) {
-    jsonParseWithSource = flag;
-    return *this;
-  }
-#endif
-
   
   
   
@@ -349,9 +341,6 @@ class JS_PUBLIC_API RealmCreationOptions {
 
   
   bool arrayBufferTransfer_ = false;
-#ifdef ENABLE_JSON_PARSE_WITH_SOURCE
-  bool jsonParseWithSource = false;
-#endif
 
   bool secureContext_ = false;
   bool freezeBuiltins_ = false;
