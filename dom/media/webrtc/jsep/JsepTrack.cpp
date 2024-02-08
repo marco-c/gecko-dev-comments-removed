@@ -480,7 +480,10 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
     Maybe<const SdpMediaSection&> local) {
   std::vector<UniquePtr<JsepCodecDescription>> negotiatedCodecs;
   std::vector<UniquePtr<JsepCodecDescription>> newPrototypeCodecs;
-  bool onlyRedUlpFec = true;
+  
+  
+  std::vector<UniquePtr<JsepCodecDescription>> negotiatedPseudoCodecs;
+  std::vector<UniquePtr<JsepCodecDescription>> newPrototypePseudoCodecs;
 
   
   for (const std::string& fmt : remote.GetFormats()) {
@@ -515,24 +518,35 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
           videoCodec->mRtxPayloadType = cloneVideoCodec->mRtxPayloadType;
         }
 
-        if (codec->mName != "red" && codec->mName != "ulpfec") {
-          onlyRedUlpFec = false;
+        
+        
+        
+        if (codec->mName == "red" || codec->mName == "ulpfec" ||
+            codec->mName == "rtx") {
+          newPrototypePseudoCodecs.emplace_back(std::move(codec));
+          negotiatedPseudoCodecs.emplace_back(std::move(clone));
+        } else {
+          newPrototypeCodecs.emplace_back(std::move(codec));
+          negotiatedCodecs.emplace_back(std::move(clone));
         }
-
-        
-        
-        
-        newPrototypeCodecs.emplace_back(std::move(codec));
-        negotiatedCodecs.emplace_back(std::move(clone));
         break;
       }
     }
   }
 
-  if (onlyRedUlpFec) {
+  if (negotiatedCodecs.empty()) {
     
     
-    negotiatedCodecs.clear();
+    negotiatedPseudoCodecs.clear();
+  }
+
+  
+  for (auto& pseudoCodec : negotiatedPseudoCodecs) {
+    negotiatedCodecs.emplace_back(std::move(pseudoCodec));
+  }
+
+  for (auto& pseudoCodec : newPrototypePseudoCodecs) {
+    newPrototypeCodecs.emplace_back(std::move(pseudoCodec));
   }
 
   
