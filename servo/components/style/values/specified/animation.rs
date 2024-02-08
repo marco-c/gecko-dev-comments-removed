@@ -102,6 +102,14 @@ impl TransitionProperty {
     pub fn all() -> Self {
         TransitionProperty::NonCustom(NonCustomPropertyId::from_shorthand(ShorthandId::All))
     }
+
+    
+    #[inline]
+    pub fn is_all(&self) -> bool {
+        self == &TransitionProperty::NonCustom(NonCustomPropertyId::from_shorthand(
+            ShorthandId::All,
+        ))
+    }
 }
 
 
