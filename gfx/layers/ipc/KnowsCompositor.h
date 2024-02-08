@@ -175,7 +175,10 @@ class KnowsCompositor {
 
 
 
-  virtual void SyncWithCompositor() { MOZ_ASSERT_UNREACHABLE("Unimplemented"); }
+  virtual void SyncWithCompositor(
+      const Maybe<uint64_t>& aWindowID = Nothing()) {
+    MOZ_ASSERT_UNREACHABLE("Unimplemented");
+  }
 
   
 
@@ -216,7 +219,8 @@ class KnowsCompositorMediaProxy : public KnowsCompositor {
 
   LayersIPCActor* GetLayersIPCActor() override;
 
-  void SyncWithCompositor() override;
+  void SyncWithCompositor(
+      const Maybe<uint64_t>& aWindowID = Nothing()) override;
 
  protected:
   virtual ~KnowsCompositorMediaProxy();

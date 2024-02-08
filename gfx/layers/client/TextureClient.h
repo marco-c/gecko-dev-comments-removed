@@ -677,6 +677,8 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   void SetUpdated() { mUpdated = true; }
 
+  void OnPrepareForwardToHost();
+  void OnAbandonForwardToHost();
   bool OnForwardedToHost();
 
   
@@ -762,6 +764,7 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 #endif
   bool mIsLocked;
   bool mIsReadLocked MOZ_GUARDED_BY(mMutex);
+  bool mIsPendingForwardReadLocked MOZ_GUARDED_BY(mMutex) = false;
   
   
   

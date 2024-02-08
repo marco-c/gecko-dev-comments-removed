@@ -839,30 +839,77 @@ void TextureClient::EnableReadLock() {
   }
 }
 
+void TextureClient::OnPrepareForwardToHost() {
+  if (!ShouldReadLock()) {
+    return;
+  }
+
+  MutexAutoLock lock(mMutex);
+  if (NS_WARN_IF(!mReadLock)) {
+    MOZ_ASSERT(!mAllocator->IPCOpen(), "Should have created readlock already!");
+    MOZ_ASSERT(!mIsPendingForwardReadLocked);
+    return;
+  }
+
+  if (mIsPendingForwardReadLocked) {
+    return;
+  }
+
+  mReadLock->ReadLock();
+  mIsPendingForwardReadLocked = true;
+}
+
+void TextureClient::OnAbandonForwardToHost() {
+  if (!ShouldReadLock()) {
+    return;
+  }
+
+  MutexAutoLock lock(mMutex);
+  if (!mReadLock || !mIsPendingForwardReadLocked) {
+    return;
+  }
+
+  mReadLock->ReadUnlock();
+  mIsPendingForwardReadLocked = false;
+}
+
 bool TextureClient::OnForwardedToHost() {
   if (mData) {
     mData->OnForwardedToHost();
   }
 
-  if (!ShouldReadLock() || !mUpdated) {
+  if (!ShouldReadLock()) {
     return false;
   }
 
-  {
-    MutexAutoLock lock(mMutex);
-    EnsureHasReadLock();
+  MutexAutoLock lock(mMutex);
+  EnsureHasReadLock();
 
-    if (NS_WARN_IF(!mReadLock)) {
-      MOZ_ASSERT(!mAllocator->IPCOpen());
-      return false;
+  if (NS_WARN_IF(!mReadLock)) {
+    MOZ_ASSERT(!mAllocator->IPCOpen());
+    return false;
+  }
+
+  if (!mUpdated) {
+    if (mIsPendingForwardReadLocked) {
+      mIsPendingForwardReadLocked = false;
+      mReadLock->ReadUnlock();
     }
+    return false;
+  }
 
+  mUpdated = false;
+
+  if (mIsPendingForwardReadLocked) {
+    
+    
+    mIsPendingForwardReadLocked = false;
+  } else {
     
     
     mReadLock->ReadLock();
   }
 
-  mUpdated = false;
   return true;
 }
 

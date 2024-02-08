@@ -206,7 +206,8 @@ class PersistentBufferProviderShared : public PersistentBufferProvider,
 
   static already_AddRefed<PersistentBufferProviderShared> Create(
       gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
-      KnowsCompositor* aKnowsCompositor, bool aWillReadFrequently = false);
+      KnowsCompositor* aKnowsCompositor, bool aWillReadFrequently = false,
+      const Maybe<uint64_t>& aWindowID = Nothing());
 
   bool IsShared() const override { return true; }
 
@@ -237,7 +238,8 @@ class PersistentBufferProviderShared : public PersistentBufferProvider,
   PersistentBufferProviderShared(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
                                  KnowsCompositor* aKnowsCompositor,
                                  RefPtr<TextureClient>& aTexture,
-                                 bool aWillReadFrequently);
+                                 bool aWillReadFrequently,
+                                 const Maybe<uint64_t>& aWindowID);
 
   ~PersistentBufferProviderShared();
 
@@ -262,6 +264,8 @@ class PersistentBufferProviderShared : public PersistentBufferProvider,
   Maybe<uint32_t> mFront;
   
   bool mWillReadFrequently = false;
+  
+  Maybe<uint64_t> mWindowID;
 
   RefPtr<gfx::DrawTarget> mDrawTarget;
   RefPtr<gfx::SourceSurface> mSnapshot;
