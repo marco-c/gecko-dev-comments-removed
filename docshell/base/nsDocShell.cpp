@@ -10684,7 +10684,6 @@ nsresult nsDocShell::OpenRedirectedChannel(nsDocShellLoadState* aLoadState) {
              ExtContentPolicy::TYPE_SUBDOCUMENT) {
     li->UpdateFrameBrowsingContextID(mBrowsingContext->Id());
   }
-  
 
   
   
