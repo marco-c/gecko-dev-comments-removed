@@ -129,12 +129,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  explicit MediaTrackGraphImpl(GraphDriverType aGraphDriverRequested,
-                               GraphRunType aRunTypeRequested,
-                               uint64_t aWindowID, TrackRate aSampleRate,
-                               uint32_t aChannelCount,
+  explicit MediaTrackGraphImpl(uint64_t aWindowID, TrackRate aSampleRate,
                                CubebUtils::AudioDeviceID aOutputDeviceID,
                                nsISerialEventTarget* aMainThread);
+
   static MediaTrackGraphImpl* GetInstance(
       GraphDriverType aGraphDriverRequested, uint64_t aWindowID,
       TrackRate aSampleRate, CubebUtils::AudioDeviceID aPrimaryOutputDeviceID,
@@ -142,6 +140,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   static MediaTrackGraphImpl* GetInstanceIfExists(
       uint64_t aWindowID, TrackRate aSampleRate,
       CubebUtils::AudioDeviceID aPrimaryOutputDeviceID);
+  static MediaTrackGraph* CreateNonRealtimeInstance(TrackRate aSampleRate);
   
   struct Lookup;
   operator Lookup() const;
@@ -265,7 +264,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  void Init();
+  void Init(GraphDriverType aDriverRequested, GraphRunType aRunTypeRequested,
+            uint32_t aChannelCount);
 
   
 
@@ -704,7 +704,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  const RefPtr<GraphRunner> mGraphRunner;
+  RefPtr<GraphRunner> mGraphRunner;
 
   
 
@@ -989,7 +989,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  const bool mRealtime;
+  bool mRealtime;
   
 
 
