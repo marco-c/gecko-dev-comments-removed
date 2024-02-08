@@ -142,7 +142,7 @@ module.exports = function (config) {
             
 
 
-            "lib/TopSitesFeed.jsm": {
+            "lib/TopSitesFeed.sys.mjs": {
               statements: 9,
               lines: 9,
               functions: 5,

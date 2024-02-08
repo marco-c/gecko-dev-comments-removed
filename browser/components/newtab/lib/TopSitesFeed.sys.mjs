@@ -1,28 +1,21 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  actionCreators as ac,
+  actionTypes as at,
+} from "resource://activity-stream/common/Actions.sys.mjs";
+import { TippyTopProvider } from "resource://activity-stream/lib/TippyTopProvider.sys.mjs";
+import {
+  insertPinned,
+  TOP_SITES_MAX_SITES_PER_ROW,
+} from "resource://activity-stream/common/Reducers.sys.mjs";
+import { Dedupe } from "resource://activity-stream/common/Dedupe.sys.mjs";
+import { shortURL } from "resource://activity-stream/lib/ShortURL.sys.mjs";
+import { getDefaultOptions } from "resource://activity-stream/lib/ActivityStreamStorage.sys.mjs";
 
-
-"use strict";
-
-const { actionCreators: ac, actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { TippyTopProvider } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/TippyTopProvider.sys.mjs"
-);
-const { insertPinned, TOP_SITES_MAX_SITES_PER_ROW } =
-  ChromeUtils.importESModule(
-    "resource://activity-stream/common/Reducers.sys.mjs"
-  );
-const { Dedupe } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Dedupe.sys.mjs"
-);
-const { shortURL } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/ShortURL.sys.mjs"
-);
-const { getDefaultOptions } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/ActivityStreamStorage.sys.mjs"
-);
-const {
+import {
   CUSTOM_SEARCH_SHORTCUTS,
   SEARCH_SHORTCUTS_EXPERIMENT,
   SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF,
@@ -30,9 +23,7 @@ const {
   checkHasSearchEngine,
   getSearchProvider,
   getSearchFormURL,
-} = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/SearchShortcuts.sys.mjs"
-);
+} from "resource://activity-stream/lib/SearchShortcuts.sys.mjs";
 
 const lazy = {};
 
@@ -55,7 +46,7 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
   return new Logger("TopSitesFeed");
 });
 
-
+// `contextId` is a unique identifier used by Contextual Services
 const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
 ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
   let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
@@ -68,8 +59,8 @@ ChromeUtils.defineLazyGetter(lazy, "contextId", () => {
 
 const DEFAULT_SITES_PREF = "default.sites";
 const SHOWN_ON_NEWTAB_PREF = "feeds.topsites";
-const DEFAULT_TOP_SITES = [];
-const FRECENCY_THRESHOLD = 100 + 1; 
+export const DEFAULT_TOP_SITES = [];
+const FRECENCY_THRESHOLD = 100 + 1; // 1 visit (skip first-run/one-time pages)
 const MIN_FAVICON_SIZE = 96;
 const CACHED_LINK_PROPS_TO_MIGRATE = ["screenshot", "customScreenshot"];
 const PINNED_FAVICON_PROPS_TO_MIGRATE = [
@@ -80,24 +71,24 @@ const PINNED_FAVICON_PROPS_TO_MIGRATE = [
 const SECTION_ID = "topsites";
 const ROWS_PREF = "topSitesRows";
 const SHOW_SPONSORED_PREF = "showSponsoredTopSites";
-
-
+// The default total number of sponsored top sites to fetch from Contile
+// and Pocket.
 const MAX_NUM_SPONSORED = 2;
-
-
-
+// Nimbus variable for the total number of sponsored top sites including
+// both Contile and Pocket sources.
+// The default will be `MAX_NUM_SPONSORED` if this variable is unspecified.
 const NIMBUS_VARIABLE_MAX_SPONSORED = "topSitesMaxSponsored";
-
-
+// Nimbus variable to allow more than two sponsored tiles from Contile to be
+//considered for Top Sites.
 const NIMBUS_VARIABLE_ADDITIONAL_TILES =
   "topSitesUseAdditionalTilesFromContile";
-
+// Nimbus variable to enable the SOV feature for sponsored tiles.
 const NIMBUS_VARIABLE_CONTILE_SOV_ENABLED = "topSitesContileSovEnabled";
-
-
+// Nimbu variable for the total number of sponsor topsite that come from Contile
+// The default will be `CONTILE_MAX_NUM_SPONSORED` if variable is unspecified.
 const NIMBUS_VARIABLE_CONTILE_MAX_NUM_SPONSORED = "topSitesContileMaxSponsored";
 
-
+// Search experiment stuff
 const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
 const SEARCH_FILTERS = [
   "google",
@@ -113,21 +104,21 @@ const DEFAULT_SITES_OVERRIDE_PREF =
   "browser.newtabpage.activity-stream.default.sites";
 const DEFAULT_SITES_EXPERIMENTS_PREF_BRANCH = "browser.topsites.experiment.";
 
-
-
-
+// Mozilla Tiles Service (Contile) prefs
+// Nimbus variable for the Contile integration. It falls back to the pref:
+// `browser.topsites.contile.enabled`.
 const NIMBUS_VARIABLE_CONTILE_ENABLED = "topSitesContileEnabled";
 const NIMBUS_VARIABLE_CONTILE_POSITIONS = "contileTopsitesPositions";
 const CONTILE_ENDPOINT_PREF = "browser.topsites.contile.endpoint";
-const CONTILE_UPDATE_INTERVAL = 15 * 60 * 1000; 
-
+const CONTILE_UPDATE_INTERVAL = 15 * 60 * 1000; // 15 minutes
+// The maximum number of sponsored top sites to fetch from Contile.
 const CONTILE_MAX_NUM_SPONSORED = 2;
 const TOP_SITES_BLOCKED_SPONSORS_PREF = "browser.topsites.blockedSponsors";
 const CONTILE_CACHE_PREF = "browser.topsites.contile.cachedTiles";
 const CONTILE_CACHE_VALID_FOR_PREF = "browser.topsites.contile.cacheValidFor";
 const CONTILE_CACHE_LAST_FETCH_PREF = "browser.topsites.contile.lastFetch";
 
-
+// Partners of sponsored tiles.
 const SPONSORED_TILE_PARTNER_AMP = "amp";
 const SPONSORED_TILE_PARTNER_MOZ_SALES = "moz-sales";
 const SPONSORED_TILE_PARTNERS = new Set([
@@ -149,7 +140,7 @@ class TopSitesTelemetry {
   }
 
   _tileProviderForTiles(tiles) {
-    
+    // Assumption: the list of tiles is from a single provider
     return tiles && tiles.length ? this._tileProvider(tiles[0]) : null;
   }
 
@@ -162,11 +153,11 @@ class TopSitesTelemetry {
     return provider + shortURL(tile);
   }
 
-  
-  
-  
-  
-  
+  // Returns an array of strings indicating the property name (based on the
+  // provider and brand) of tiles that have been filtered e.g. ["moz-salesbrand1"]
+  // currentTiles: The list of tiles remaining and may be displayed in new tab.
+  // this.allSponsoredTiles: The original list of tiles set via setTiles prior to any filtering
+  // The returned list indicated the difference between these two lists (excluding any previously filtered tiles).
   _getFilteredTiles(currentTiles) {
     let notPreviouslyFilteredTiles = Object.assign(
       {},
@@ -179,12 +170,12 @@ class TopSitesTelemetry {
         .map(([k, v]) => ({ [k]: v }))
     );
 
-    
+    // Get the property names of the newly filtered list.
     let remainingTiles = currentTiles.map(el => {
       return this._buildPropertyKey(el);
     });
 
-    
+    // Get the property names of the tiles that were filtered.
     let tilesToUpdate = Object.keys(notPreviouslyFilteredTiles).filter(
       element => !remainingTiles.includes(element)
     );
@@ -214,8 +205,8 @@ class TopSitesTelemetry {
   }
 
   setTiles(tiles) {
-    
-    
+    // Assumption: the list of tiles is from a single provider,
+    // should be called once per tile source.
     if (tiles && tiles.length) {
       let tile_provider = this._tileProviderForTiles(tiles);
       this.clearTilesForProvider(tile_provider);
@@ -277,12 +268,12 @@ class TopSitesTelemetry {
   }
 }
 
-class ContileIntegration {
+export class ContileIntegration {
   constructor(topSitesFeed) {
     this._topSitesFeed = topSitesFeed;
     this._lastPeriodicUpdate = 0;
     this._sites = [];
-    
+    // The Share-of-Voice object managed by Shepherd and sent via Contile.
     this._sov = null;
   }
 
@@ -310,21 +301,21 @@ class ContileIntegration {
     }
   }
 
-  
-
-
+  /**
+   * Clear Contile Cache Prefs.
+   */
   _resetContileCachePrefs() {
     Services.prefs.clearUserPref(CONTILE_CACHE_PREF);
     Services.prefs.clearUserPref(CONTILE_CACHE_LAST_FETCH_PREF);
     Services.prefs.clearUserPref(CONTILE_CACHE_VALID_FOR_PREF);
   }
 
-  
-
-
-
-
-
+  /**
+   * Filter the tiles whose sponsor is on the Top Sites sponsor blocklist.
+   *
+   * @param {array} tiles
+   *   An array of the tile objects
+   */
   _filterBlockedSponsors(tiles) {
     const blocklist = JSON.parse(
       Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
@@ -332,12 +323,12 @@ class ContileIntegration {
     return tiles.filter(tile => !blocklist.includes(shortURL(tile)));
   }
 
-  
-
-
-
-
-
+  /**
+   * Calculate the time Contile response is valid for based on cache-control header
+   *
+   * @param {string} cacheHeader
+   *   string value of the Contile resposne cache-control header
+   */
   _extractCacheValidFor(cacheHeader) {
     if (!cacheHeader) {
       lazy.log.warn("Contile response cache control header is empty");
@@ -350,9 +341,9 @@ class ContileIntegration {
     return isNaN(validFor) ? 0 : validFor;
   }
 
-  
-
-
+  /**
+   * Load Tiles from Contile Cache Prefs
+   */
   _loadTilesFromCache() {
     lazy.log.info("Contile client is trying to load tiles from local cache.");
     const now = Math.round(Date.now() / 1000);
@@ -384,9 +375,9 @@ class ContileIntegration {
     return false;
   }
 
-  
-
-
+  /**
+   * Determine number of Tiles to get from Contile
+   */
   _getMaxNumFromContile() {
     return (
       lazy.NimbusFeatures.pocketNewtab.getVariable(
@@ -426,9 +417,9 @@ class ContileIntegration {
       Services.prefs.setIntPref(CONTILE_CACHE_LAST_FETCH_PREF, lastFetch);
       this._topSitesFeed._telemetryUtility.setSponsoredTilesConfigured();
 
-      
-      
-      
+      // Contile returns 204 indicating there is no content at the moment.
+      // If this happens, it will clear `this._sites` reset the cached tiles
+      // to an empty array.
       if (response.status === 204) {
         this._topSitesFeed._telemetryUtility.clearTilesForProvider(
           SPONSORED_TILE_PARTNER_AMP
@@ -503,7 +494,7 @@ class ContileIntegration {
   }
 }
 
-class TopSitesFeed {
+export class TopSitesFeed {
   constructor() {
     this._telemetryUtility = new TopSitesTelemetry();
     this._contile = new ContileIntegration(this);
@@ -519,7 +510,7 @@ class TopSitesFeed {
       "getTopSites",
       CACHED_LINK_PROPS_TO_MIGRATE,
       (oldOptions, newOptions) =>
-        
+        // Refresh if no old options or requesting more items
         !(oldOptions.numItems >= newOptions.numItems)
     );
     this.pinnedCache = new lazy.LinksCache(
@@ -532,14 +523,14 @@ class TopSitesFeed {
   }
 
   _nimbusChangeListener(event, reason) {
-    
-    
-    
-    
-    
-    
-    
-    
+    // The Nimbus API current doesn't specify the changed variable(s) in the
+    // listener callback, so we have to refresh unconditionally on every change
+    // of the `newtab` feature. It should be a manageable overhead given the
+    // current update cadence (6 hours) of Nimbus.
+    //
+    // Skip the experiment and rollout loading reasons since this feature has
+    // `isEarlyStartup` enabled, the feature variables are already available
+    // before the experiment or rollout loads.
     if (
       !["feature-experiment-loaded", "feature-rollout-loaded"].includes(reason)
     ) {
@@ -548,7 +539,7 @@ class TopSitesFeed {
   }
 
   init() {
-    
+    // If the feed was previously disabled PREFS_INITIAL_VALUES was never received
     this._readDefaults({ isStartup: true });
     this._storage = this.store.dbStorage.getDbTable("sectionPrefs");
     this._contile.refresh();
@@ -573,9 +564,9 @@ class TopSitesFeed {
   observe(subj, topic, data) {
     switch (topic) {
       case "browser-search-engine-modified":
-        
-        
-        
+        // We should update the current top sites if the search engine has been changed since
+        // the search engine that gets filtered out of top sites has changed.
+        // We also need to drop search shortcuts when their engine gets removed / hidden.
         if (
           data === "engine-default" &&
           this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF]
@@ -604,9 +595,9 @@ class TopSitesFeed {
     return site && site.hostname;
   }
 
-  
-
-
+  /**
+   * _readDefaults - sets DEFAULT_TOP_SITES
+   */
   async _readDefaults({ isStartup = false } = {}) {
     this._useRemoteSetting = false;
 
@@ -618,9 +609,9 @@ class TopSitesFeed {
       return;
     }
 
-    
-    
-    
+    // Try using default top sites from enterprise policies or tests. The pref
+    // is locked when set via enterprise policy. Tests have no default sites
+    // unless they set them via this pref.
     if (
       Services.prefs.prefIsLocked(DEFAULT_SITES_OVERRIDE_PREF) ||
       Cu.isInAutomation
@@ -630,18 +621,18 @@ class TopSitesFeed {
       return;
     }
 
-    
+    // Clear out the array of any previous defaults.
     DEFAULT_TOP_SITES.length = 0;
 
-    
+    // Read defaults from contile.
     const contileEnabled = lazy.NimbusFeatures.newtab.getVariable(
       NIMBUS_VARIABLE_CONTILE_ENABLED
     );
 
-    
-    
-    
-    
+    // Keep the number of positions in the array in sync with CONTILE_MAX_NUM_SPONSORED.
+    // sponsored_position is a 1-based index, and contilePositions is a 0-based index,
+    // so we need to add 1 to each of these.
+    // Also currently this does not work with SOV.
     let contilePositions = lazy.NimbusFeatures.pocketNewtab
       .getVariable(NIMBUS_VARIABLE_CONTILE_POSITIONS)
       ?.split(",")
@@ -654,14 +645,14 @@ class TopSitesFeed {
     let hasContileTiles = false;
     if (contileEnabled) {
       let contilePositionIndex = 0;
-      
-      
-      
+      // We need to loop through potential spocs and set their positions.
+      // If we run out of spocs or positions, we stop.
+      // First, we need to know which array is shortest. This is our exit condition.
       const minLength = Math.min(
         contilePositions.length,
         this._contile.sites.length
       );
-      
+      // Loop until we run out of spocs or positions.
       for (let i = 0; i < minLength; i++) {
         let site = this._contile.sites[i];
         let hostname = shortURL(site);
@@ -679,21 +670,21 @@ class TopSitesFeed {
           partner: SPONSORED_TILE_PARTNER_AMP,
         };
         if (site.image_url && site.image_size >= MIN_FAVICON_SIZE) {
-          
-          
+          // Only use the image from Contile if it's hi-res, otherwise, fallback
+          // to the built-in favicons.
           link.favicon = site.image_url;
           link.faviconSize = site.image_size;
         }
         DEFAULT_TOP_SITES.push(link);
       }
       hasContileTiles = contilePositionIndex > 0;
-      
+      //This is to catch where we receive 3 tiles but reduce to 2 early in the filtering, before blocked list applied.
       this._telemetryUtility.determineFilteredTilesAndSetToOversold(
         DEFAULT_TOP_SITES
       );
     }
 
-    
+    // Read defaults from remote settings.
     this._useRemoteSetting = true;
     let remoteSettingData = await this._getRemoteConfig();
 
@@ -703,16 +694,16 @@ class TopSitesFeed {
 
     for (let siteData of remoteSettingData) {
       let hostname = shortURL(siteData);
-      
-      
+      // Drop default sites when Contile already provided a sponsored one with
+      // the same host name.
       if (
         contileEnabled &&
         DEFAULT_TOP_SITES.findIndex(site => site.hostname === hostname) > -1
       ) {
         continue;
       }
-      
-      
+      // Also drop those sponsored sites that were blocked by the user before
+      // with the same hostname.
       if (
         siteData.sponsored_position &&
         sponsoredBlocklist.includes(hostname)
@@ -759,10 +750,10 @@ class TopSitesFeed {
   }
 
   refreshDefaults(sites, { isStartup = false } = {}) {
-    
+    // Clear out the array of any previous defaults
     DEFAULT_TOP_SITES.length = 0;
 
-    
+    // Add default sites if any based on the pref
     if (sites) {
       for (const url of sites.split(",")) {
         const site = {
@@ -797,18 +788,18 @@ class TopSitesFeed {
       console.error("Received empty top sites configuration!");
       failed = true;
     }
-    
+    // If we failed, or the result is empty, try loading from the local dump.
     if (firstTime && failed) {
       await this._remoteConfig.db.clear();
-      
+      // Now call this again.
       return this._getRemoteConfig(false);
     }
 
-    
+    // Sort sites based on the "order" attribute.
     result.sort((a, b) => a.order - b.order);
 
     result = result.filter(topsite => {
-      
+      // Filter by region.
       if (topsite.exclude_regions?.includes(lazy.Region.home)) {
         return false;
       }
@@ -819,7 +810,7 @@ class TopSitesFeed {
         return false;
       }
 
-      
+      // Filter by locale.
       if (topsite.exclude_locales?.includes(Services.locale.appLocaleAsBCP47)) {
         return false;
       }
@@ -830,8 +821,8 @@ class TopSitesFeed {
         return false;
       }
 
-      
-      
+      // Filter by experiment.
+      // Exclude this top site if any of the specified experiments are running.
       if (
         topsite.exclude_experiments?.some(experimentID =>
           Services.prefs.getBoolPref(
@@ -842,7 +833,7 @@ class TopSitesFeed {
       ) {
         return false;
       }
-      
+      // Exclude this top site if none of the specified experiments are running.
       if (
         topsite.include_experiments?.length &&
         topsite.include_experiments.every(
@@ -875,12 +866,12 @@ class TopSitesFeed {
     );
   }
 
-  
-
-
-
-
-
+  /**
+   * shouldFilterSearchTile - is default filtering enabled and does a given hostname match the user's default search engine?
+   *
+   * @param {string} hostname a top site hostname, such as "amazon" or "foo"
+   * @returns {bool}
+   */
   shouldFilterSearchTile(hostname) {
     if (
       this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF] &&
@@ -892,20 +883,20 @@ class TopSitesFeed {
     return false;
   }
 
-  
-
-
-
-
-
+  /**
+   * _maybeInsertSearchShortcuts - if the search shortcuts experiment is running,
+   *                               insert search shortcuts if needed
+   * @param {Array} plainPinnedSites (from the pinnedSitesCache)
+   * @returns {Boolean} Did we insert any search shortcuts?
+   */
   async _maybeInsertSearchShortcuts(plainPinnedSites) {
-    
+    // Only insert shortcuts if the experiment is running
     if (this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT]) {
-      
+      // We don't want to insert shortcuts we've previously inserted
       const prevInsertedShortcuts = this.store
         .getState()
         .Prefs.values[SEARCH_SHORTCUTS_HAVE_PINNED_PREF].split(",")
-        .filter(s => s); 
+        .filter(s => s); // Filter out empty strings
       const newInsertedShortcuts = [];
 
       let shouldPin = this._useRemoteSetting
@@ -917,7 +908,7 @@ class TopSitesFeed {
         .map(getSearchProvider)
         .filter(s => s && s.shortURL !== this._currentSearchHostname);
 
-      
+      // If we've previously inserted all search shortcuts return early
       if (
         shouldPin.every(shortcut =>
           prevInsertedShortcuts.includes(shortcut.shortURL)
@@ -930,9 +921,9 @@ class TopSitesFeed {
         this.store.getState().Prefs.values[ROWS_PREF] *
         TOP_SITES_MAX_SITES_PER_ROW;
 
-      
-      
-      
+      // The plainPinnedSites array is populated with pinned sites at their
+      // respective indices, and null everywhere else, but is not always the
+      // right length
       const emptySlots = Math.max(numberOfSlots - plainPinnedSites.length, 0);
       const pinnedSites = [...plainPinnedSites].concat(
         Array(emptySlots).fill(null)
@@ -940,9 +931,9 @@ class TopSitesFeed {
 
       const tryToInsertSearchShortcut = async shortcut => {
         const nextAvailable = pinnedSites.indexOf(null);
-        
-        
-        
+        // Only add a search shortcut if the site isn't already pinned, we
+        // haven't previously inserted it, there's space to pin it, and the
+        // search engine is available in Firefox
         if (
           !pinnedSites.find(s => s && shortURL(s) === shortcut.shortURL) &&
           !prevInsertedShortcuts.includes(shortcut.shortURL) &&
@@ -974,26 +965,26 @@ class TopSitesFeed {
     return false;
   }
 
-  
-
-
-
+  /**
+   * This thin wrapper around global.fetch makes it easier for us to write
+   * automated tests that simulate responses from this fetch.
+   */
   fetch(...args) {
     return fetch(...args);
   }
 
-  
-
-
-
-
+  /**
+   * Fetch topsites spocs from the DiscoveryStream feed.
+   *
+   * @returns {Array} An array of sponsored tile objects.
+   */
   fetchDiscoveryStreamSpocs() {
     let sponsored = [];
     const { DiscoveryStream } = this.store.getState();
     if (DiscoveryStream) {
       const discoveryStreamSpocs =
         DiscoveryStream.spocs.data["sponsored-topsites"]?.items || [];
-      
+      // Find the first component of a type and remove it from layout
       const findSponsoredTopsitesPositions = name => {
         for (const row of DiscoveryStream.layout) {
           for (const component of row.components) {
@@ -1005,29 +996,29 @@ class TopSitesFeed {
         return null;
       };
 
-      
+      // Get positions from layout for now. This could be improved if we store position data in state.
       const discoveryStreamSpocPositions =
         findSponsoredTopsitesPositions("sponsored-topsites");
 
       if (discoveryStreamSpocPositions?.length) {
         function reformatImageURL(url, width, height) {
-          
-          
-          
-          
+          // Change the image URL to request a size tailored for the parent container width
+          // Also: force JPEG, quality 60, no upscaling, no EXIF data
+          // Uses Thumbor: https://thumbor.readthedocs.io/en/latest/usage.html
+          // For now we wrap this in single quotes because this is being used in a url() css rule, and otherwise would cause a parsing error.
           return `'https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(
             url
           )}'`;
         }
 
-        
-        
-        
+        // We need to loop through potential spocs and set their positions.
+        // If we run out of spocs or positions, we stop.
+        // First, we need to know which array is shortest. This is our exit condition.
         const minLength = Math.min(
           discoveryStreamSpocPositions.length,
           discoveryStreamSpocs.length
         );
-        
+        // Loop until we run out of spocs or positions.
         for (let i = 0; i < minLength; i++) {
           const positionIndex = discoveryStreamSpocPositions[i].index;
           const spoc = discoveryStreamSpocs[i];
@@ -1042,14 +1033,14 @@ class TopSitesFeed {
             id: spoc.id,
             guid: spoc.id,
             shim: spoc.shim,
-            
-            
-            
+            // For now we are assuming position based on intended position.
+            // Actual position can shift based on other content.
+            // We send the intended position in the ping.
             pos: positionIndex,
-            
-            
+            // Set this so that SPOC topsites won't be shown in the URL bar.
+            // See Bug 1822027. Note that `sponsored_position` is 1-based.
             sponsored_position: positionIndex + 1,
-            
+            // This is used for topsites deduping.
             hostname: shortURL({ url: spoc.url }),
             partner: SPONSORED_TILE_PARTNER_MOZ_SALES,
           };
@@ -1060,25 +1051,25 @@ class TopSitesFeed {
     return sponsored;
   }
 
-  
+  // eslint-disable-next-line max-statements
   async getLinksWithDefaults(isStartup = false) {
     const prefValues = this.store.getState().Prefs.values;
     const numItems = prefValues[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
     const searchShortcutsExperiment = prefValues[SEARCH_SHORTCUTS_EXPERIMENT];
-    
-    
+    // We must wait for search services to initialize in order to access default
+    // search engine properties without triggering a synchronous initialization
     try {
       await Services.search.init();
     } catch {
-      
-      
-      
+      // We continue anyway because we want the user to see their sponsored,
+      // saved, or visited shortcut tiles even if search engines are not
+      // available.
     }
 
-    
+    // Get all frecent sites from history.
     let frecent = [];
     const cache = await this.frecentCache.request({
-      
+      // We need to overquery due to the top 5 alexa search + default search possibly being removed
       numItems: numItems + SEARCH_FILTERS.length + 1,
       topsiteFrecency: FRECENCY_THRESHOLD,
     });
@@ -1094,12 +1085,12 @@ class TopSitesFeed {
       }
     }
 
-    
+    // Get defaults.
     let contileSponsored = [];
     let notBlockedDefaultSites = [];
     for (let link of DEFAULT_TOP_SITES) {
-      
-      
+      // For sponsored Yandex links, default filtering is reversed: we only
+      // show them if Yandex is the default search engine.
       if (link.sponsored_position && link.hostname === "yandex") {
         if (link.hostname !== this._currentSearchHostname) {
           continue;
@@ -1107,7 +1098,7 @@ class TopSitesFeed {
       } else if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
       }
-      
+      // Drop blocked default sites.
       if (
         lazy.NewTabUtils.blockedLinks.isBlocked({
           url: link.url,
@@ -1115,8 +1106,8 @@ class TopSitesFeed {
       ) {
         continue;
       }
-      
-      
+      // If we've previously blocked a search shortcut, remove the default top site
+      // that matches the hostname
       const searchProvider = getSearchProvider(shortURL(link));
       if (
         searchProvider &&
@@ -1130,8 +1121,8 @@ class TopSitesFeed {
         }
         contileSponsored[link.sponsored_position - 1] = link;
 
-        
-        
+        // Unpin search shortcut if present for the sponsored link to be shown
+        // instead.
         this._unpinSearchShortcut(link.hostname);
       } else {
         notBlockedDefaultSites.push(
@@ -1155,15 +1146,15 @@ class TopSitesFeed {
 
     this._maybeCapSponsoredLinks(sponsored);
 
-    
+    // This will set all extra tiles to oversold, including moz-sales.
     this._telemetryUtility.determineFilteredTilesAndSetToOversold(sponsored);
 
-    
+    // Get pinned links augmented with desired properties
     let plainPinned = await this.pinnedCache.request();
 
-    
-    
-    
+    // Insert search shortcuts if we need to.
+    // _maybeInsertSearchShortcuts returns true if any search shortcuts are
+    // inserted, meaning we need to expire and refresh the pinnedCache
     if (await this._maybeInsertSearchShortcuts(plainPinned)) {
       this.pinnedCache.expire();
       plainPinned = await this.pinnedCache.request();
@@ -1175,7 +1166,7 @@ class TopSitesFeed {
           return link;
         }
 
-        
+        // Drop pinned search shortcuts when their engine has been removed / hidden.
         if (link.searchTopSite) {
           const searchProvider = getSearchProvider(shortURL(link));
           if (
@@ -1186,16 +1177,16 @@ class TopSitesFeed {
           }
         }
 
-        
+        // Copy all properties from a frecent link and add more
         const finder = other => other.url === link.url;
 
-        
+        // Remove frecent link's screenshot if pinned link has a custom one
         const frecentSite = frecent.find(finder);
         if (frecentSite && link.customScreenshotURL) {
           delete frecentSite.screenshot;
         }
-        
-        
+        // If the link is a frecent site, do not copy over 'isDefault', else check
+        // if the site is a default site
         const copy = Object.assign(
           {},
           frecentSite || { isDefault: !!notBlockedDefaultSites.find(finder) },
@@ -1204,7 +1195,7 @@ class TopSitesFeed {
           { searchTopSite: !!link.searchTopSite }
         );
 
-        
+        // Add in favicons if we don't already have it
         if (!copy.favicon) {
           try {
             lazy.NewTabUtils.activityStreamProvider._faviconBytesToDataURI(
@@ -1215,7 +1206,7 @@ class TopSitesFeed {
               copy.__sharedCache.updateLink(prop, copy[prop]);
             }
           } catch (e) {
-            
+            // Some issue with favicon, so just continue without one
           }
         }
 
@@ -1223,17 +1214,17 @@ class TopSitesFeed {
       })
     );
 
-    
+    // Remove any duplicates from frecent and default sites
     const [, dedupedSponsored, dedupedFrecent, dedupedDefaults] =
       this.dedupe.group(pinned, sponsored, frecent, notBlockedDefaultSites);
     const dedupedUnpinned = [...dedupedFrecent, ...dedupedDefaults];
 
-    
+    // Remove adult sites if we need to
     const checkedAdult = lazy.FilterAdult.filter(dedupedUnpinned);
 
-    
+    // Insert the original pinned sites into the deduped frecent and defaults.
     let withPinned = insertPinned(checkedAdult, pinned);
-    
+    // Insert sponsored sites at their desired position.
     dedupedSponsored.forEach(link => {
       if (!link) {
         return;
@@ -1242,19 +1233,19 @@ class TopSitesFeed {
       if (index >= withPinned.length) {
         withPinned[index] = link;
       } else if (withPinned[index]?.sponsored_position) {
-        
+        // We currently want DiscoveryStream spocs to replace existing spocs.
         withPinned[index] = link;
       } else {
         withPinned.splice(index, 0, link);
       }
     });
-    
+    // Remove excess items after we inserted sponsored ones.
     withPinned = withPinned.slice(0, numItems);
 
-    
+    // Now, get a tippy top icon, a rich icon, or screenshot for every item
     for (const link of withPinned) {
       if (link) {
-        
+        // If there is a custom screenshot this is the only image we display
         if (link.customScreenshotURL) {
           this._fetchScreenshot(link, link.customScreenshotURL, isStartup);
         } else if (link.searchTopSite && !link.isDefault) {
@@ -1263,10 +1254,10 @@ class TopSitesFeed {
           this._fetchIcon(link, isStartup);
         }
 
-        
+        // Remove internal properties that might be updated after dispatch
         delete link.__sharedCache;
 
-        
+        // Indicate that these links should get a frecency bonus when clicked
         link.typedBonus = true;
       }
     }
@@ -1277,13 +1268,13 @@ class TopSitesFeed {
     return withPinned;
   }
 
-  
-
-
-
-
+  /**
+   * Cap sponsored links if they're more than the specified maximum.
+   *
+   * @param {Array} links An array of sponsored links. Capping will be performed in-place.
+   */
   _maybeCapSponsoredLinks(links) {
-    
+    // Set maximum sponsored top sites
     const maxSponsored =
       lazy.NimbusFeatures.pocketNewtab.getVariable(
         NIMBUS_VARIABLE_MAX_SPONSORED
@@ -1293,15 +1284,15 @@ class TopSitesFeed {
     }
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Merge sponsored links from all the partners using SOV if present.
+   * For each tile position, the user is assigned to one partner via stable sampling.
+   * If the chosen partner doesn't have a tile to serve, another tile from a different
+   * partner is used as the replacement.
+   *
+   * @param {Object} sponsoredLinks An object with sponsored links from all the partners.
+   * @returns {Array} An array of merged sponsored links.
+   */
   _mergeSponsoredLinks(sponsoredLinks) {
     const { positions: allocatedPositions, ready: sovReady } =
       this.store.getState().TopSites.sov || {};
@@ -1315,7 +1306,7 @@ class TopSitesFeed {
       return Object.values(sponsoredLinks).flat();
     }
 
-    
+    // AMP links might have empty slots, remove them as SOV doesn't need those.
     sponsoredLinks[SPONSORED_TILE_PARTNER_AMP] =
       sponsoredLinks[SPONSORED_TILE_PARTNER_AMP].filter(Boolean);
 
@@ -1326,15 +1317,15 @@ class TopSitesFeed {
       let link = null;
       const { assignedPartner } = allocation;
       if (assignedPartner) {
-        
-        
+        // Unknown partners are allowed so that new parters can be added to Shepherd
+        // sooner without waiting for client changes.
         link = sponsoredLinks[assignedPartner]?.shift();
       }
 
       if (!link) {
-        
-        
-        
+        // If the chosen partner doesn't have a tile for this postion, choose any
+        // one from another group. For simplicity, we do _not_ do resampling here
+        // against the remaining partners.
         for (const partner of SPONSORED_TILE_PARTNERS) {
           if (
             partner === assignedPartner ||
@@ -1347,7 +1338,7 @@ class TopSitesFeed {
         }
 
         if (!link) {
-          
+          // No more links to be added across all the partners, just return.
           if (chosenPartners.length) {
             Glean.newtab.sovAllocation.set(
               chosenPartners.map(entry => JSON.stringify(entry))
@@ -1357,28 +1348,28 @@ class TopSitesFeed {
         }
       }
 
-      
+      // Update the position fields. Note that postion is also 1-based in SOV.
       link.sponsored_position = allocation.position;
       if (link.pos !== undefined) {
-        
+        // Pocket `pos` is 0-based.
         link.pos = allocation.position - 1;
       }
       sponsored.push(link);
 
       chosenPartners.push({
         pos: allocation.position,
-        assigned: assignedPartner, 
+        assigned: assignedPartner, // The assigned partner based on SOV
         chosen: link.partner,
       });
     }
-    
+    // Record chosen partners to glean
     if (chosenPartners.length) {
       Glean.newtab.sovAllocation.set(
         chosenPartners.map(entry => JSON.stringify(entry))
       );
     }
 
-    
+    // add the remaining contile sponsoredLinks when nimbus variable present
     if (
       lazy.NimbusFeatures.pocketNewtab.getVariable(
         NIMBUS_VARIABLE_CONTILE_MAX_NUM_SPONSORED
@@ -1390,15 +1381,15 @@ class TopSitesFeed {
     return sponsored;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Attach TippyTop icon to the given search shortcut
+   *
+   * Note that it queries the search form URL from search service For Yandex,
+   * and uses it to choose the best icon for its shortcut variants.
+   *
+   * @param {Object} link A link object with a `url` property
+   * @param {string} keyword Search keyword
+   */
   async _attachTippyTopIconForSearchShortcut(link, keyword) {
     if (
       ["@\u044F\u043D\u0434\u0435\u043A\u0441", "@yandex"].includes(keyword)
@@ -1414,14 +1405,14 @@ class TopSitesFeed {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Refresh the top sites data for content.
+   * @param {bool} options.broadcast Should the update be broadcasted.
+   * @param {bool} options.isStartup Being called while TopSitesFeed is initting.
+   */
   async refresh(options = {}) {
     if (!this._startedUp && !options.isStartup) {
-      
+      // Initial refresh still pending.
       return;
     }
     this._startedUp = true;
@@ -1450,23 +1441,23 @@ class TopSitesFeed {
     }
 
     if (options.broadcast) {
-      
+      // Broadcast an update to all open content pages
       this.store.dispatch(ac.BroadcastToContent(newAction));
     } else {
-      
+      // Don't broadcast only update the state and update the preloaded tab.
       this.store.dispatch(ac.AlsoToPreloaded(newAction));
     }
   }
 
-  
+  // Allocate ad positions to partners based on SOV via stable randomization.
   async allocatePositions() {
-    
-    
+    // If the fetch to get sov fails for whatever reason, we can just return here.
+    // Code that uses this falls back to flattening allocations instead if this has failed.
     if (!this._contile.sov) {
       return;
     }
-    
-    
+    // This sample input should ensure we return the same result for this allocation,
+    // even if called from other parts of the code.
     const sampleInput = `${lazy.contextId}-${this._contile.sov.name}`;
     const allocatedPositions = [];
     for (const allocation of this._contile.sov.allocations) {
@@ -1502,7 +1493,7 @@ class TopSitesFeed {
       await this._tippyTopProvider.init();
     }
 
-    
+    // Populate the state with available search shortcuts
     let searchShortcuts = [];
     for (const engine of await Services.search.getAppProvidedEngines()) {
       const shortcut = CUSTOM_SEARCH_SHORTCUTS.find(s =>
@@ -1541,36 +1532,36 @@ class TopSitesFeed {
     };
   }
 
-  
-
-
+  /**
+   * Get an image for the link preferring tippy top, rich favicon, screenshots.
+   */
   async _fetchIcon(link, isStartup = false) {
-    
+    // Nothing to do if we already have a rich icon from the page
     if (link.favicon && link.faviconSize >= MIN_FAVICON_SIZE) {
       return;
     }
 
-    
+    // Nothing more to do if we can use a default tippy top icon
     this._tippyTopProvider.processSite(link);
     if (link.tippyTopIcon) {
       return;
     }
 
-    
+    // Make a request for a better icon
     this._requestRichIcon(link.url);
 
-    
+    // Also request a screenshot if we don't have one yet
     await this._fetchScreenshot(link, link.url, isStartup);
   }
 
-  
-
-
-
-
-
+  /**
+   * Fetch, cache and broadcast a screenshot for a specific topsite.
+   * @param link cached topsite object
+   * @param url where to fetch the image from
+   * @param isStartup Whether the screenshot is fetched while initting TopSitesFeed.
+   */
   async _fetchScreenshot(link, url, isStartup = false) {
-    
+    // We shouldn't bother caching screenshots if they won't be shown.
     if (
       link.screenshot ||
       !this.store.getState().Prefs.values[SHOWN_ON_NEWTAB_PREF]
@@ -1594,11 +1585,11 @@ class TopSitesFeed {
     );
   }
 
-  
-
-
-
-
+  /**
+   * Dispatch screenshot preview to target or notify if request failed.
+   * @param customScreenshotURL {string} The URL used to capture the screenshot
+   * @param target {string} Id of content process where to dispatch the result
+   */
   async getScreenshotPreview(url, target) {
     const preview = (await lazy.Screenshots.getScreenshotForURL(url)) || "";
     this.store.dispatch(
@@ -1628,22 +1619,22 @@ class TopSitesFeed {
     );
   }
 
-  
-
-
+  /**
+   * Inform others that top sites data has been updated due to pinned changes.
+   */
   _broadcastPinnedSitesUpdated() {
-    
+    // Pinned data changed, so make sure we get latest
     this.pinnedCache.expire();
 
-    
+    // Refresh to update pinned sites with screenshots, trigger deduping, etc.
     this.refresh({ broadcast: true });
   }
 
-  
-
-
-
-
+  /**
+   * Pin a site at a specific position saving only the desired keys.
+   * @param customScreenshotURL {string} User set URL of preview image for site
+   * @param label {string} User set string of custom site name
+   */
   async _pinSiteAt({ customScreenshotURL, label, url, searchTopSite }, index) {
     const toPin = { url };
     if (label) {
@@ -1661,7 +1652,7 @@ class TopSitesFeed {
   }
 
   async _clearLinkCustomScreenshot(site) {
-    
+    // If screenshot url changed or was removed we need to update the cached link obj
     if (site.customScreenshotURL !== undefined) {
       const pinned = await this.pinnedCache.request();
       const link = pinned.find(pin => pin && pin.url === site.url);
@@ -1671,20 +1662,20 @@ class TopSitesFeed {
     }
   }
 
-  
-
-
+  /**
+   * Handle a pin action of a site to a position.
+   */
   async pin(action) {
     let { site, index } = action.data;
     index = this._adjustPinIndexForSponsoredLinks(site, index);
-    
+    // If valid index provided, pin at that position
     if (index >= 0) {
       await this._pinSiteAt(site, index);
       this._broadcastPinnedSitesUpdated();
     } else {
-      
-      
-      
+      // Bug 1458658. If the top site is being pinned from an 'Add a Top Site' option,
+      // then we want to make sure to unblock that link if it has previously been
+      // blocked. We know if the site has been added because the index will be -1.
       if (index === -1) {
         lazy.NewTabUtils.blockedLinks.unblock({ url: site.url });
         this.frecentCache.expire();
@@ -1693,9 +1684,9 @@ class TopSitesFeed {
     }
   }
 
-  
-
-
+  /**
+   * Handle an unpin action of a site.
+   */
   unpin(action) {
     const { site } = action.data;
     lazy.NewTabUtils.pinnedLinks.unpin(site);
@@ -1738,17 +1729,17 @@ class TopSitesFeed {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Reduces the given pinning index by the number of preceding sponsored
+   * sites, to accomodate for sponsored sites pushing pinned ones to the side,
+   * effectively increasing their index again.
+   */
   _adjustPinIndexForSponsoredLinks(site, index) {
     if (!this._linksWithDefaults) {
       return index;
     }
-    
-    
+    // Adjust insertion index for sponsored sites since their position is
+    // fixed.
     let adjustedIndex = index;
     for (let i = 0; i < index; i++) {
       const link = this._linksWithDefaults[i];
@@ -1763,15 +1754,15 @@ class TopSitesFeed {
     return adjustedIndex;
   }
 
-  
-
-
+  /**
+   * Insert a site to pin at a position shifting over any other pinned sites.
+   */
   _insertPin(site, originalIndex, draggedFromIndex) {
     let index = this._adjustPinIndexForSponsoredLinks(site, originalIndex);
 
-    
-    
-    
+    // Don't insert any pins past the end of the visible top sites. Otherwise,
+    // we can end up with a bunch of pinned sites that can never be unpinned again
+    // from the UI.
     const topSitesCount =
       this.store.getState().Prefs.values[ROWS_PREF] *
       TOP_SITES_MAX_SITES_PER_ROW;
@@ -1784,21 +1775,21 @@ class TopSitesFeed {
       this._pinSiteAt(site, index);
     } else {
       pinned[draggedFromIndex] = null;
-      
-      
+      // Find the hole to shift the pinned site(s) towards. We shift towards the
+      // hole left by the site being dragged.
       let holeIndex = index;
       const indexStep = index > draggedFromIndex ? -1 : 1;
       while (pinned[holeIndex]) {
         holeIndex += indexStep;
       }
       if (holeIndex >= topSitesCount || holeIndex < 0) {
-        
-        
-        
+        // There are no holes, so we will effectively unpin the last slot and shifting
+        // towards it. This only happens when adding a new top site to an already
+        // fully pinned grid.
         holeIndex = topSitesCount - 1;
       }
 
-      
+      // Shift towards the hole.
       const shiftingStep = holeIndex > index ? -1 : 1;
       while (holeIndex !== index) {
         const nextIndex = holeIndex + shiftingStep;
@@ -1809,18 +1800,18 @@ class TopSitesFeed {
     }
   }
 
-  
-
-
+  /**
+   * Handle an insert (drop/add) action of a site.
+   */
   async insert(action) {
     let { index } = action.data;
-    
+    // Treat invalid pin index values (e.g., -1, undefined) as insert in the first position
     if (!(index > 0)) {
       index = 0;
     }
 
-    
-    
+    // Inserting a top site pins it in the specified slot, pushing over any link already
+    // pinned in the slot (unless it's the last slot, then it replaces).
     this._insertPin(
       action.data.site,
       index,
@@ -1835,29 +1826,29 @@ class TopSitesFeed {
   }
 
   updatePinnedSearchShortcuts({ addedShortcuts, deletedShortcuts }) {
-    
+    // Unpin the deletedShortcuts.
     deletedShortcuts.forEach(({ url }) => {
       lazy.NewTabUtils.pinnedLinks.unpin({ url });
     });
 
-    
+    // Pin the addedShortcuts.
     const numberOfSlots =
       this.store.getState().Prefs.values[ROWS_PREF] *
       TOP_SITES_MAX_SITES_PER_ROW;
     addedShortcuts.forEach(shortcut => {
-      
+      // Find first hole in pinnedLinks.
       let index = lazy.NewTabUtils.pinnedLinks.links.findIndex(link => !link);
       if (
         index < 0 &&
         lazy.NewTabUtils.pinnedLinks.links.length + 1 < numberOfSlots
       ) {
-        
+        // pinnedLinks can have less slots than the total available.
         index = lazy.NewTabUtils.pinnedLinks.links.length;
       }
       if (index >= 0) {
         lazy.NewTabUtils.pinnedLinks.pin(shortcut, index);
       } else {
-        
+        // No slots available, we need to do an insert in first slot and push over other pinned links.
         this._insertPin(shortcut, 0, numberOfSlots);
       }
     });
@@ -1869,13 +1860,13 @@ class TopSitesFeed {
     switch (action.type) {
       case at.INIT:
         this.init();
-        this.updateCustomSearchShortcuts(true );
+        this.updateCustomSearchShortcuts(true /* isStartup */);
         break;
       case at.SYSTEM_TICK:
         this.refresh({ broadcast: false });
         this._contile.periodicUpdate();
         break;
-      
+      // All these actions mean we need new top sites
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINKS_DELETED:
         this.frecentCache.expire();
@@ -1952,7 +1943,7 @@ class TopSitesFeed {
         this.updatePinnedSearchShortcuts(action.data);
         break;
       case at.DISCOVERY_STREAM_SPOCS_UPDATE:
-        
+        // Refresh to update sponsored topsites.
         this.refresh({ broadcast: true, isStartup: action.meta.isStartup });
         break;
       case at.UNINIT:
@@ -1961,9 +1952,3 @@ class TopSitesFeed {
     }
   }
 }
-
-const EXPORTED_SYMBOLS = [
-  "TopSitesFeed",
-  "DEFAULT_TOP_SITES",
-  "ContileIntegration",
-];
