@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 add_setup(async function () {
@@ -21,7 +23,7 @@ add_setup(async function () {
   });
 });
 
-add_task(async function test_load_serp_and_click_searchbox() {
+add_task(async function test_content_process_engagement() {
   resetTelemetry();
 
   let tab = await SinglePageAppUtils.createTabAndLoadURL();
@@ -70,14 +72,11 @@ add_task(async function test_load_serp_and_click_searchbox() {
   await BrowserTestUtils.removeTab(tab);
 });
 
-
-
-add_task(async function test_load_serp_click_related_click_searchbox() {
+add_task(async function test_content_process_engagement_that_changes_page() {
   resetTelemetry();
 
   let tab = await SinglePageAppUtils.createTabAndLoadURL();
-  await SinglePageAppUtils.visitRelatedSearch(tab);
-  await SinglePageAppUtils.clickSearchbox(tab);
+  await SinglePageAppUtils.clickSuggestion(tab);
 
   await assertSearchSourcesTelemetry(
     {},
@@ -104,8 +103,8 @@ add_task(async function test_load_serp_click_related_click_searchbox() {
       },
       engagements: [
         {
-          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK,
+          action: SearchSERPTelemetryUtils.ACTIONS.SUBMITTED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
         },
       ],
       adImpressions: [
@@ -122,17 +121,11 @@ add_task(async function test_load_serp_click_related_click_searchbox() {
         provider: "example1",
         tagged: "true",
         partner_code: "ff",
-        source: "unknown",
+        source: "follow_on_from_refine_on_incontent_search",
         is_shopping_page: "false",
         is_private: "false",
         shopping_tab_displayed: "false",
       },
-      engagements: [
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
-        },
-      ],
       adImpressions: [
         {
           component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
@@ -149,12 +142,112 @@ add_task(async function test_load_serp_click_related_click_searchbox() {
 
 
 
-add_task(async function test_load_serp_click_related_click_searchbox() {
+
+add_task(
+  async function test_in_page_reload_and_content_process_engagement_that_changes_page() {
+    resetTelemetry();
+
+    let tab = await SinglePageAppUtils.createTabAndLoadURL();
+    await SinglePageAppUtils.visitRelatedSearch(tab);
+    await SinglePageAppUtils.clickSuggestion(tab);
+
+    await assertSearchSourcesTelemetry(
+      {},
+      {
+        "browser.search.content.unknown": {
+          "example1:tagged:ff": 3,
+        },
+        "browser.search.withads.unknown": {
+          "example1:tagged": 3,
+        },
+      }
+    );
+
+    assertSERPTelemetry([
+      {
+        impression: {
+          provider: "example1",
+          tagged: "true",
+          partner_code: "ff",
+          source: "unknown",
+          is_shopping_page: "false",
+          is_private: "false",
+          shopping_tab_displayed: "false",
+        },
+        engagements: [
+          {
+            action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+            target: SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK,
+          },
+        ],
+        adImpressions: [
+          {
+            component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+            ads_loaded: "2",
+            ads_visible: "2",
+            ads_hidden: "0",
+          },
+        ],
+      },
+      {
+        impression: {
+          provider: "example1",
+          tagged: "true",
+          partner_code: "ff",
+          source: "unknown",
+          is_shopping_page: "false",
+          is_private: "false",
+          shopping_tab_displayed: "false",
+        },
+        engagements: [
+          {
+            action: SearchSERPTelemetryUtils.ACTIONS.SUBMITTED,
+            target: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
+          },
+        ],
+        adImpressions: [
+          {
+            component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+            ads_loaded: "2",
+            ads_visible: "2",
+            ads_hidden: "0",
+          },
+        ],
+      },
+      {
+        impression: {
+          provider: "example1",
+          tagged: "true",
+          partner_code: "ff",
+          source: "follow_on_from_refine_on_incontent_search",
+          is_shopping_page: "false",
+          is_private: "false",
+          shopping_tab_displayed: "false",
+        },
+        adImpressions: [
+          {
+            component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+            ads_loaded: "2",
+            ads_visible: "2",
+            ads_hidden: "0",
+          },
+        ],
+      },
+    ]);
+
+    await BrowserTestUtils.removeTab(tab);
+  }
+);
+
+
+
+add_task(async function test_unload_listeners_single_tab() {
   resetTelemetry();
 
   let tab = await SinglePageAppUtils.createTabAndLoadURL();
   await SinglePageAppUtils.clickImagesTab(tab);
   await SinglePageAppUtils.clickSearchbox(tab);
+  await SinglePageAppUtils.clickSuggestionOnImagesTab(tab);
 
   await assertSearchSourcesTelemetry(
     {},
@@ -200,7 +293,7 @@ add_task(async function test_load_serp_click_related_click_searchbox() {
 });
 
 
-add_task(async function test_load_serp_click_related_click_searchbox() {
+add_task(async function test_unload_listeners_multi_tab() {
   resetTelemetry();
 
   let tab1 = await SinglePageAppUtils.createTabAndLoadURL();
@@ -210,6 +303,7 @@ add_task(async function test_load_serp_click_related_click_searchbox() {
   
   await SinglePageAppUtils.clickImagesTab(tab2);
   await SinglePageAppUtils.clickSearchbox(tab2);
+  await SinglePageAppUtils.clickSuggestionOnImagesTab(tab2);
 
   
   await SinglePageAppUtils.clickSearchbox(tab1);
