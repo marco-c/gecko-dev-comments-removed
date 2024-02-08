@@ -592,14 +592,9 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
       "Wrapper register set must be a superset of the Volatile register set.");
 
   
-  
-  
-  
-  masm.pushReturnAddress();
-
-  
   Register reg_cx = IntArgReg0;
   regs.take(reg_cx);
+  Register temp = regs.getAny();
 
   
   
@@ -608,15 +603,92 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   
-  masm.Push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t stackAdjustment = 0;
+
+  
+  stackAdjustment += ExitFrameLayout::SizeWithFooter() - sizeof(uintptr_t);
+  stackAdjustment += f.sizeOfOutParamStackSlot();
+
+  masm.SetStackPointer64(sp);
+
+  
+  masm.Sub(ARMRegister(temp, 64), masm.GetStackPointer64(),
+           Operand(stackAdjustment));
+  masm.And(sp, ARMRegister(temp, 64), ~(uint64_t(JitStackAlignment) - 1));
+
+  
+  
+  
+  
+  masm.str(ARMRegister(lr, 64),
+           MemOperand(PseudoStackPointer64, -8, vixl::PreIndex));
+
+  
+  masm.str(ARMRegister(FramePointer, 64),
+           MemOperand(PseudoStackPointer64, -8, vixl::PreIndex));
+
+  
+  
+  masm.movePtr(PseudoStackPointer, FramePointer);
+
   masm.loadJSContext(reg_cx);
-  masm.enterExitFrame(reg_cx, regs.getAny(), id);
 
   
-  masm.reserveVMFunctionOutParamSpace(f);
 
-  masm.setupUnalignedABICallDontSaveRestoreSP();
+  
+  masm.loadPtr(Address(reg_cx, JSContext::offsetOfActivation()), temp);
+  masm.storePtr(FramePointer,
+                Address(temp, JitActivation::offsetOfPackedExitFP()));
+
+  
+  uint32_t type = uint32_t(ExitFrameType::VMFunction) + uint32_t(id);
+  masm.move32(Imm32(type), temp);
+  masm.str(ARMRegister(temp, 64),
+           MemOperand(PseudoStackPointer64, -8, vixl::PreIndex));
+
+  
+  
+  if (f.outParam == Type_Handle) {
+    switch (f.outParamRootType) {
+      case VMFunctionData::RootNone:
+        MOZ_CRASH("Handle must have root type");
+      case VMFunctionData::RootObject:
+      case VMFunctionData::RootString:
+      case VMFunctionData::RootCell:
+      case VMFunctionData::RootBigInt:
+        masm.str(xzr, MemOperand(PseudoStackPointer64, -8, vixl::PreIndex));
+        break;
+      case VMFunctionData::RootValue:
+        masm.movePtr(ImmWord(UndefinedValue().asRawBits()), temp);
+        masm.str(ARMRegister(temp, 64),
+                 MemOperand(PseudoStackPointer64, -8, vixl::PreIndex));
+        break;
+      case VMFunctionData::RootId:
+        masm.movePtr(ImmWord(JS::PropertyKey::Void().asRawBits()), temp);
+        masm.str(ARMRegister(temp, 64),
+                 MemOperand(PseudoStackPointer64, -8, vixl::PreIndex));
+    }
+  }
+
+  
+  
+  masm.moveStackPtrTo(PseudoStackPointer);
+  masm.SetStackPointer64(PseudoStackPointer64);
+
+  MOZ_ASSERT(masm.framePushed() == 0);
+  masm.setupAlignedABICall();
   masm.passABIArg(reg_cx);
 
   size_t argDisp = ExitFrameLayout::Size();
@@ -684,7 +756,9 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   }
 
   
-  masm.moveToStackPtr(FramePointer);
+  
+  
+  masm.Mov(masm.GetStackPointer64(), ARMRegister(FramePointer, 64));
   masm.pop(FramePointer);
 
   

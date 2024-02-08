@@ -1514,12 +1514,6 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
     emitter.finish();
   }
 
-  
-  
-  
-  
-  syncStackPtr();
-
   assertStackAlignment(ABIStackAlignment);
 }
 
