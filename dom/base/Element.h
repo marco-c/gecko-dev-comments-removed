@@ -583,7 +583,8 @@ class Element : public FragmentOrElement {
   
 
 
-  Element* GetTopmostPopoverAncestor(const Element* aInvoker) const;
+  Element* GetTopmostPopoverAncestor(const Element* aInvoker,
+                                     bool isPopover) const;
 
   ElementAnimationData* GetAnimationData() const {
     if (!MayHaveAnimations()) {
