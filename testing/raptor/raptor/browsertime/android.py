@@ -161,6 +161,9 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
             "--disable-site-isolation-trials",
         ]
 
+        
+        chrome_args += ["--enable-benchmarking"]
+
         if test.get("playback", False):
             pb_args = [
                 "--proxy-server=%s:%d" % (self.playback.host, self.playback.port),
@@ -190,9 +193,6 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
             path = os.path.join(self.profile_data_dir, "raptor-android")
             LOG.info("Merging profile: {}".format(path))
             self.profile.merge(path)
-            self.profile.set_preferences(
-                {"browser.tabs.remote.autostart": self.config["e10s"]}
-            )
 
             
             
