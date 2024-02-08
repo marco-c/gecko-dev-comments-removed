@@ -222,12 +222,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
-  bool getArrayGroupingEnabled() const { return arrayGrouping_; }
-  RealmCreationOptions& setArrayGroupingEnabled(bool flag) {
-    arrayGrouping_ = flag;
-    return *this;
-  }
-
   bool getArrayBufferTransferEnabled() const { return arrayBufferTransfer_; }
   RealmCreationOptions& setArrayBufferTransferEnabled(bool flag) {
     arrayBufferTransfer_ = flag;
@@ -330,7 +324,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool shadowRealms_ = false;
   
   bool wellFormedUnicodeStrings_ = true;
-  bool arrayGrouping_ = true;
 #ifdef NIGHTLY_BUILD
   
   bool newSetMethods_ = false;

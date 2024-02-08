@@ -34,6 +34,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/WindowProxy.h"    
 #include "js/MemoryMetrics.h"
+#include "js/Prefs.h"               
 #include "js/Printer.h"             
 #include "js/PropertyDescriptor.h"  
 #include "js/PropertySpec.h"        
@@ -2198,8 +2199,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   
   
   
-  if (key == JSProto_Function &&
-      !cx->realm()->creationOptions().getArrayGroupingEnabled() &&
+  if (key == JSProto_Function && !JS::Prefs::array_grouping() &&
       (id == NameToId(cx->names().groupBy))) {
     return true;
   }
