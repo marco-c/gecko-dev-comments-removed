@@ -747,13 +747,12 @@ bool shell::enableArrayGrouping = false;
 
 bool shell::enableNewSetMethods = false;
 
-bool shell::enableSymbolsAsWeakMapKeys = false;
-
 bool shell::enableArrayBufferResizable = false;
 #endif
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
 bool shell::enableJSONParseWithSource = false;
 #endif
+
 bool shell::enableArrayBufferTransfer = true;
 bool shell::enableImportAttributes = false;
 bool shell::enableImportAttributesAssertSyntax = false;
@@ -4147,7 +4146,6 @@ static void SetStandardRealmOptions(JS::RealmOptions& options) {
       .setArrayBufferTransferEnabled(enableArrayBufferTransfer)
 #ifdef NIGHTLY_BUILD
       .setNewSetMethodsEnabled(enableNewSetMethods)
-      .setSymbolsAsWeakMapKeysEnabled(enableSymbolsAsWeakMapKeys)
       .setArrayBufferResizableEnabled(enableArrayBufferResizable)
       .setSharedArrayBufferGrowableEnabled(enableArrayBufferResizable)
 #endif
@@ -12148,6 +12146,14 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     }
   }
 
+  
+  
+
+#ifdef NIGHTLY_BUILD
+  JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(
+      op.getBoolOption("enable-symbols-as-weakmap-keys"));
+#endif
+
   if (op.getBoolOption("list-prefs")) {
     ListJSPrefs();
     return false;
@@ -12349,8 +12355,6 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableArrayGrouping = !op.getBoolOption("disable-array-grouping");
 #ifdef NIGHTLY_BUILD
   enableNewSetMethods = op.getBoolOption("enable-new-set-methods");
-  enableSymbolsAsWeakMapKeys =
-      op.getBoolOption("enable-symbols-as-weakmap-keys");
   enableArrayBufferResizable = op.getBoolOption("enable-arraybuffer-resizable");
 #endif
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
