@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AutoMemMap.h"
 #include "ScriptPreloader-inl.h"
@@ -34,7 +34,7 @@ Result<Ok, nsresult> AutoMemMap::init(nsIFile* file, int flags, int mode,
                                       PRFileMapProtect prot) {
   MOZ_ASSERT(!fd);
 
-  MOZ_TRY(file->OpenNSPRFileDesc(flags, mode, &fd.rwget()));
+  MOZ_TRY(file->OpenNSPRFileDesc(flags, mode, getter_Transfers(fd)));
 
   return initInternal(prot);
 }
@@ -48,7 +48,7 @@ Result<Ok, nsresult> AutoMemMap::init(const FileDescriptor& file,
 
   auto handle = file.ClonePlatformHandle();
 
-  fd = PR_ImportFile(PROsfd(handle.get()));
+  fd.reset(PR_ImportFile(PROsfd(handle.get())));
   if (!fd) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -63,13 +63,13 @@ Result<Ok, nsresult> AutoMemMap::initInternal(PRFileMapProtect prot,
   MOZ_ASSERT(!addr);
 
   if (maybeSize > 0) {
-    
-    
-    
+    // Some OSes' shared memory objects can't be stat()ed, either at
+    // all (Android) or without loosening the sandbox (Mac) so just
+    // use the size.
     size_ = maybeSize;
   } else {
-    
-    
+    // But if we don't have the size, assume it's a regular file and
+    // ask for it.
     PRFileInfo64 fileInfo;
     MOZ_TRY(PR_GetOpenFileInfo64(fd.get(), &fileInfo));
 
@@ -79,7 +79,7 @@ Result<Ok, nsresult> AutoMemMap::initInternal(PRFileMapProtect prot,
     size_ = fileInfo.size;
   }
 
-  fileMap = PR_CreateFileMap(fd, 0, prot);
+  fileMap = PR_CreateFileMap(fd.get(), 0, prot);
   if (!fileMap) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -151,8 +151,8 @@ void AutoMemMap::reset() {
     handle_ = nullptr;
   }
 #endif
-  fd.dispose();
+  fd = nullptr;
 }
 
-}  
-}  
+}  // namespace loader
+}  // namespace mozilla
