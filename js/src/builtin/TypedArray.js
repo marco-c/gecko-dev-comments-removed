@@ -701,7 +701,7 @@ function TypedArrayJoin(separator) {
   
   
   if (limit === 0) {
-    return callFunction(String_repeat, separator, len - 1);
+    return callFunction(String_repeat, sep, len - 1);
   }
 
   assert(
@@ -730,7 +730,7 @@ function TypedArrayJoin(separator) {
   }
 
   if (limit < len) {
-    R += callFunction(String_repeat, separator, len - limit);
+    R += callFunction(String_repeat, sep, len - limit);
   }
 
   
