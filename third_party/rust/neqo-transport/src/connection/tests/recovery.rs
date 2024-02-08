@@ -4,6 +4,18 @@
 
 
 
+use std::{
+    mem,
+    time::{Duration, Instant},
+};
+
+use neqo_common::qdebug;
+use neqo_crypto::AuthenticationStatus;
+use test_fixture::{
+    assertions::{assert_handshake, assert_initial},
+    now, split_datagram,
+};
+
 use super::{
     super::{Connection, ConnectionParameters, Output, State},
     assert_full_cwnd, connect, connect_force_idle, connect_rtt_idle, connect_with_rtt, cwnd,
@@ -13,21 +25,15 @@ use super::{
 use crate::{
     cc::CWND_MIN,
     path::PATH_MTU_V6,
-    recovery::{FAST_PTO_SCALE, MAX_OUTSTANDING_UNACK, MIN_OUTSTANDING_UNACK, PTO_PACKET_COUNT},
+    recovery::{
+        FAST_PTO_SCALE, MAX_OUTSTANDING_UNACK, MAX_PTO_PACKET_COUNT, MIN_OUTSTANDING_UNACK,
+    },
     rtt::GRANULARITY,
     stats::MAX_PTO_COUNTS,
     tparams::TransportParameter,
     tracking::DEFAULT_ACK_DELAY,
     StreamType,
 };
-
-use neqo_common::qdebug;
-use neqo_crypto::AuthenticationStatus;
-use std::{
-    mem,
-    time::{Duration, Instant},
-};
-use test_fixture::{self, now, split_datagram};
 
 #[test]
 fn pto_works_basic() {
@@ -63,7 +69,7 @@ fn pto_works_basic() {
     let out = client.process(None, now);
 
     let stream_before = server.stats().frame_rx.stream;
-    server.process_input(out.dgram().unwrap(), now);
+    server.process_input(&out.dgram().unwrap(), now);
     assert_eq!(server.stats().frame_rx.stream, stream_before + 2);
 }
 
@@ -88,7 +94,7 @@ fn pto_works_full_cwnd() {
     
     for d in dgrams {
         let stream_before = server.stats().frame_rx.stream;
-        server.process_input(d, now);
+        server.process_input(&d, now);
         assert!(server.stats().frame_rx.stream > stream_before);
     }
 }
@@ -114,32 +120,32 @@ fn pto_works_ping() {
     assert_eq!(cb, GRANULARITY * 2);
 
     
-    let srv0 = server.process(Some(pkt1), now).dgram();
+    let srv0 = server.process(Some(&pkt1), now).dgram();
     assert!(srv0.is_some()); 
 
     now += Duration::from_millis(20);
 
     
-    let srv1 = server.process(Some(pkt2), now).dgram();
+    let srv1 = server.process(Some(&pkt2), now).dgram();
     assert!(srv1.is_some()); 
 
     now += Duration::from_millis(20);
     
-    let srv2 = server.process(Some(pkt3), now).dgram();
+    let srv2 = server.process(Some(&pkt3), now).dgram();
     
     assert!(srv2.is_some());
 
     
-    let pkt4 = client.process(srv2, now).dgram();
+    let pkt4 = client.process(srv2.as_ref(), now).dgram();
     
     assert!(pkt4.is_some());
 
     
-    let srv3 = server.process(Some(pkt0), now).dgram();
+    let srv3 = server.process(Some(&pkt0), now).dgram();
     assert!(srv3.is_some());
 
     
-    let pkt5 = client.process(srv3, now).dgram();
+    let pkt5 = client.process(srv3.as_ref(), now).dgram();
     assert!(pkt5.is_none());
 
     now += Duration::from_millis(70);
@@ -149,7 +155,7 @@ fn pto_works_ping() {
     assert_eq!(client.stats().frame_tx.ping, client_pings + 1);
 
     let server_pings = server.stats().frame_rx.ping;
-    server.process_input(pkt6.unwrap(), now);
+    server.process_input(&pkt6.unwrap(), now);
     assert_eq!(server.stats().frame_rx.ping, server_pings + 1);
 }
 
@@ -173,24 +179,20 @@ fn pto_initial() {
     assert!(pkt2.is_some());
     assert_eq!(pkt2.unwrap().len(), PATH_MTU_V6);
 
-    let pkt3 = client.process(None, now).dgram();
-    assert!(pkt3.is_some());
-    assert_eq!(pkt3.unwrap().len(), PATH_MTU_V6);
-
     let delay = client.process(None, now).callback();
     
     assert_eq!(delay, INITIAL_PTO * 2);
 
     
     let mut server = default_server();
-    let out = server.process(pkt1, now).dgram();
+    let out = server.process(pkt1.as_ref(), now).dgram();
     assert!(out.is_some());
 
     
     
     
     
-    let out = client.process(out, now).dgram();
+    let out = client.process(out.as_ref(), now).dgram();
     assert!(out.is_some());
 
     
@@ -212,14 +214,17 @@ fn pto_handshake_complete() {
     let mut server = default_server();
 
     let pkt = client.process(None, now).dgram();
+    assert_initial(pkt.as_ref().unwrap(), false);
     let cb = client.process(None, now).callback();
     assert_eq!(cb, Duration::from_millis(300));
 
     now += HALF_RTT;
-    let pkt = server.process(pkt, now).dgram();
+    let pkt = server.process(pkt.as_ref(), now).dgram();
+    assert_initial(pkt.as_ref().unwrap(), false);
 
     now += HALF_RTT;
-    let pkt = client.process(pkt, now).dgram();
+    let pkt = client.process(pkt.as_ref(), now).dgram();
+    assert_handshake(pkt.as_ref().unwrap());
 
     let cb = client.process(None, now).callback();
     
@@ -227,7 +232,7 @@ fn pto_handshake_complete() {
     assert_eq!(cb, HALF_RTT * 6);
 
     now += HALF_RTT;
-    let pkt = server.process(pkt, now).dgram();
+    let pkt = server.process(pkt.as_ref(), now).dgram();
     assert!(pkt.is_none());
 
     now += HALF_RTT;
@@ -235,7 +240,7 @@ fn pto_handshake_complete() {
 
     qdebug!("---- client: SH..FIN -> FIN");
     let pkt1 = client.process(None, now).dgram();
-    assert!(pkt1.is_some());
+    assert_handshake(pkt1.as_ref().unwrap());
     assert_eq!(*client.state(), State::Connected);
 
     let cb = client.process(None, now).callback();
@@ -249,6 +254,7 @@ fn pto_handshake_complete() {
     qdebug!("---- client: PTO");
     now += HALF_RTT * 6;
     let pkt2 = client.process(None, now).dgram();
+    assert_handshake(pkt2.as_ref().unwrap());
 
     pto_counts[0] = 1;
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
@@ -259,7 +265,10 @@ fn pto_handshake_complete() {
     let stream_id = client.stream_create(StreamType::UniDi).unwrap();
     client.stream_close_send(stream_id).unwrap();
     let pkt3 = client.process(None, now).dgram();
+    assert_handshake(pkt3.as_ref().unwrap());
     let (pkt3_hs, pkt3_1rtt) = split_datagram(&pkt3.unwrap());
+    assert_handshake(&pkt3_hs);
+    assert!(pkt3_1rtt.is_some());
 
     
     let cb = client.process(None, now).callback();
@@ -276,8 +285,8 @@ fn pto_handshake_complete() {
     
     let server_acks = server.stats().frame_tx.ack;
     let server_done = server.stats().frame_tx.handshake_done;
-    server.process_input(pkt3_1rtt.unwrap(), now);
-    let ack = server.process(pkt1, now).dgram();
+    server.process_input(&pkt3_1rtt.unwrap(), now);
+    let ack = server.process(pkt1.as_ref(), now).dgram();
     assert!(ack.is_some());
     assert_eq!(server.stats().frame_tx.ack, server_acks + 2);
     assert_eq!(server.stats().frame_tx.handshake_done, server_done + 1);
@@ -285,22 +294,27 @@ fn pto_handshake_complete() {
     
     
     
+    let (pkt2_hs, pkt2_1rtt) = split_datagram(&pkt2.unwrap());
+    assert_handshake(&pkt2_hs);
+    assert!(pkt2_1rtt.is_some());
     let dropped_before1 = server.stats().dropped_rx;
     let server_frames = server.stats().frame_rx.all;
-    server.process_input(pkt2.unwrap(), now);
+    server.process_input(&pkt2_hs, now);
     assert_eq!(1, server.stats().dropped_rx - dropped_before1);
     assert_eq!(server.stats().frame_rx.all, server_frames);
 
+    server.process_input(&pkt2_1rtt.unwrap(), now);
+    let server_frames2 = server.stats().frame_rx.all;
     let dropped_before2 = server.stats().dropped_rx;
-    server.process_input(pkt3_hs, now);
+    server.process_input(&pkt3_hs, now);
     assert_eq!(1, server.stats().dropped_rx - dropped_before2);
-    assert_eq!(server.stats().frame_rx.all, server_frames);
+    assert_eq!(server.stats().frame_rx.all, server_frames2);
 
     now += HALF_RTT;
 
     
     
-    let cb = client.process(ack, now).callback();
+    let cb = client.process(ack.as_ref(), now).callback();
     
     let expected_ack_delay = HALF_RTT * 2 / 4;
     assert_eq!(cb, expected_ack_delay);
@@ -309,13 +323,6 @@ fn pto_handshake_complete() {
     now += cb;
     let out = client.process(None, now).dgram();
     assert!(out.is_some());
-    let cb = client.process(None, now).callback();
-    
-    
-    
-
-    let idle_timeout = ConnectionParameters::default().get_idle_timeout();
-    assert_eq!(cb, idle_timeout - expected_ack_delay);
 }
 
 
@@ -329,14 +336,14 @@ fn pto_handshake_frames() {
     now += Duration::from_millis(10);
     qdebug!("---- server: CH -> SH, EE, CERT, CV, FIN");
     let mut server = default_server();
-    let pkt = server.process(pkt.dgram(), now);
+    let pkt = server.process(pkt.as_dgram_ref(), now);
 
     now += Duration::from_millis(10);
     qdebug!("---- client: cert verification");
-    let pkt = client.process(pkt.dgram(), now);
+    let pkt = client.process(pkt.as_dgram_ref(), now);
 
     now += Duration::from_millis(10);
-    mem::drop(server.process(pkt.dgram(), now));
+    mem::drop(server.process(pkt.as_dgram_ref(), now));
 
     now += Duration::from_millis(10);
     client.authenticated(AuthenticationStatus::Ok, now);
@@ -359,7 +366,7 @@ fn pto_handshake_frames() {
 
     now += Duration::from_millis(10);
     let crypto_before = server.stats().frame_rx.crypto;
-    server.process_input(pkt2.unwrap(), now);
+    server.process_input(&pkt2.unwrap(), now);
     assert_eq!(server.stats().frame_rx.crypto, crypto_before + 1);
 }
 
@@ -381,7 +388,7 @@ fn handshake_ack_pto() {
     let c1 = client.process(None, now).dgram();
 
     now += RTT / 2;
-    let s1 = server.process(c1, now).dgram();
+    let s1 = server.process(c1.as_ref(), now).dgram();
     assert!(s1.is_some());
     let s2 = server.process(None, now).dgram();
     assert!(s1.is_some());
@@ -389,8 +396,8 @@ fn handshake_ack_pto() {
     
     now += RTT / 2;
     let (initial, _) = split_datagram(&s1.unwrap());
-    client.process_input(initial, now);
-    let c2 = client.process(s2, now).dgram();
+    client.process_input(&initial, now);
+    let c2 = client.process(s2.as_ref(), now).dgram();
     assert!(c2.is_some()); 
     let delay = client.process(None, now).callback();
     assert_eq!(delay, RTT * 3);
@@ -405,7 +412,7 @@ fn handshake_ack_pto() {
 
     now += RTT / 2;
     let ping_before = server.stats().frame_rx.ping;
-    server.process_input(c3.unwrap(), now);
+    server.process_input(&c3.unwrap(), now);
     assert_eq!(server.stats().frame_rx.ping, ping_before + 1);
 
     pto_counts[0] = 1;
@@ -413,13 +420,13 @@ fn handshake_ack_pto() {
 
     
     let dgram = server.process(None, now).dgram();
-    client.process_input(dgram.unwrap(), now);
+    client.process_input(&dgram.unwrap(), now);
     maybe_authenticate(&mut client);
     let dgram = client.process(None, now).dgram();
     assert_eq!(*client.state(), State::Connected);
-    let dgram = server.process(dgram, now).dgram();
+    let dgram = server.process(dgram.as_ref(), now).dgram();
     assert_eq!(*server.state(), State::Confirmed);
-    client.process_input(dgram.unwrap(), now);
+    client.process_input(&dgram.unwrap(), now);
     assert_eq!(*client.state(), State::Confirmed);
 
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
@@ -440,7 +447,7 @@ fn loss_recovery_crash() {
     assert!(ack.is_some());
 
     
-    let cb = server.process(ack, now).callback();
+    let cb = server.process(ack.as_ref(), now).callback();
     assert!(cb > Duration::from_secs(0));
 
     
@@ -468,7 +475,8 @@ fn ack_after_pto() {
 
     
     now += AT_LEAST_PTO;
-    for _ in 0..PTO_PACKET_COUNT {
+    
+    for _ in 0..MAX_PTO_PACKET_COUNT {
         let dgram = client.process(None, now).dgram();
         assert!(dgram.is_some());
     }
@@ -484,13 +492,13 @@ fn ack_after_pto() {
 
     
     
-    let ack = client.process(Some(dgram), now).dgram();
+    let ack = client.process(Some(&dgram), now).dgram();
     assert!(ack.is_some());
 
     
     let all_frames_before = server.stats().frame_rx.all;
     let ack_before = server.stats().frame_rx.ack;
-    server.process_input(ack.unwrap(), now);
+    server.process_input(&ack.unwrap(), now);
     assert_eq!(server.stats().frame_rx.all, all_frames_before + 1);
     assert_eq!(server.stats().frame_rx.ack, ack_before + 1);
 }
@@ -511,7 +519,7 @@ fn lost_but_kept_and_lr_timer() {
 
     
     now += RTT / 2;
-    let ack = server.process(Some(p2), now).dgram();
+    let ack = server.process(Some(&p2), now).dgram();
     assert!(ack.is_some());
     
     let _p3 = send_something(&mut client, now);
@@ -520,14 +528,14 @@ fn lost_but_kept_and_lr_timer() {
     
     
     now += RTT / 2;
-    let res = client.process(ack, now);
+    let res = client.process(ack.as_ref(), now);
     
     let lr_timer = res.callback();
     
     assert_ne!(lr_timer, Duration::from_secs(0));
     assert!(lr_timer < (RTT / 2));
     
-    let ack = server.process(Some(p4), now).dgram();
+    let ack = server.process(Some(&p4), now).dgram();
     assert!(ack.is_some());
 
     
@@ -537,7 +545,7 @@ fn lost_but_kept_and_lr_timer() {
     assert!(res.dgram().is_some());
     
     
-    let res = client.process(ack, now);
+    let res = client.process(ack.as_ref(), now);
     let lr_timer2 = res.callback();
     assert_eq!(lr_timer, lr_timer2);
 }
@@ -560,7 +568,7 @@ fn loss_time_past_largest_acked() {
     
     let c_in = client.process(None, now).dgram();
     now += RTT / 2;
-    let s_hs1 = server.process(c_in, now).dgram();
+    let s_hs1 = server.process(c_in.as_ref(), now).dgram();
 
     
     
@@ -583,7 +591,7 @@ fn loss_time_past_largest_acked() {
     
     
     now += RTT / 2;
-    let c_hs1 = client.process(s_hs1, now).dgram();
+    let c_hs1 = client.process(s_hs1.as_ref(), now).dgram();
     assert!(c_hs1.is_some()); 
     maybe_authenticate(&mut client);
     let c_hs2 = client.process(None, now).dgram();
@@ -592,17 +600,17 @@ fn loss_time_past_largest_acked() {
     
     
     let _p1 = send_something(&mut client, now + INCR);
-    let c_hs3 = client.process(s_hs2, now + (INCR * 2)).dgram();
+    let c_hs3 = client.process(s_hs2.as_ref(), now + (INCR * 2)).dgram();
     assert!(c_hs3.is_some()); 
-    let c_hs4 = client.process(s_hs3, now + (INCR * 3)).dgram();
+    let c_hs4 = client.process(s_hs3.as_ref(), now + (INCR * 3)).dgram();
     assert!(c_hs4.is_some()); 
 
     
     
     now += RTT / 2;
     
-    server.process_input(c_hs4.unwrap(), now);
-    let s_ack = server.process(c_hs2, now).dgram();
+    server.process_input(&c_hs4.unwrap(), now);
+    let s_ack = server.process(c_hs2.as_ref(), now).dgram();
     assert!(s_ack.is_some());
     
     
@@ -611,20 +619,12 @@ fn loss_time_past_largest_acked() {
 
     
     now += RTT / 2;
-    let c_ack = client.process(Some(s_hs_ack), now).dgram();
+    let c_ack = client.process(Some(&s_hs_ack), now).dgram();
     assert!(c_ack.is_none());
     
     let lr_time = client.process(None, now).callback();
     assert_ne!(lr_time, Duration::from_secs(0));
     assert!(lr_time < (RTT / 2));
-
-    
-    
-    
-    now += lr_time;
-    let delay = client.process(None, now).callback();
-    assert_ne!(delay, Duration::from_secs(0));
-    assert!(delay > lr_time);
 }
 
 
@@ -636,12 +636,12 @@ fn trickle(sender: &mut Connection, receiver: &mut Connection, mut count: usize,
     while count > 0 {
         qdebug!("trickle: remaining={}", count);
         assert_eq!(sender.stream_send(id, &[9]).unwrap(), 1);
-        let dgram = sender.process(maybe_ack, now).dgram();
+        let dgram = sender.process(maybe_ack.as_ref(), now).dgram();
 
-        maybe_ack = receiver.process(dgram, now).dgram();
+        maybe_ack = receiver.process(dgram.as_ref(), now).dgram();
         count -= usize::from(maybe_ack.is_some());
     }
-    sender.process_input(maybe_ack.unwrap(), now);
+    sender.process_input(&maybe_ack.unwrap(), now);
 }
 
 
@@ -757,7 +757,7 @@ fn fast_pto() {
     let dgram = client.process(None, now).dgram();
 
     let stream_before = server.stats().frame_rx.stream;
-    server.process_input(dgram.unwrap(), now);
+    server.process_input(&dgram.unwrap(), now);
     assert_eq!(server.stats().frame_rx.stream, stream_before + 1);
 }
 
@@ -797,8 +797,8 @@ fn fast_pto_persistent_congestion() {
 
     
     now += DEFAULT_RTT / 2;
-    let ack = server.process(Some(dgram), now).dgram();
+    let ack = server.process(Some(&dgram), now).dgram();
     now += DEFAULT_RTT / 2;
-    client.process_input(ack.unwrap(), now);
+    client.process_input(&ack.unwrap(), now);
     assert_eq!(cwnd(&client), CWND_MIN);
 }

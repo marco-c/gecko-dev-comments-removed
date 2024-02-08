@@ -4,6 +4,15 @@
 
 
 
+use std::{
+    cell::RefCell,
+    convert::TryFrom,
+    fmt::{self, Debug},
+    os::raw::{c_char, c_int, c_uint},
+    ptr::{addr_of_mut, null, null_mut},
+    rc::Rc,
+};
+
 use crate::{
     constants::{
         Cipher, Version, TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
@@ -15,14 +24,6 @@ use crate::{
         PK11_GetBlockSize, SymKey, CKA_ENCRYPT, CKM_AES_ECB, CKM_CHACHA20, CK_ATTRIBUTE_TYPE,
         CK_CHACHA20_PARAMS, CK_MECHANISM_TYPE,
     },
-};
-use std::{
-    cell::RefCell,
-    convert::TryFrom,
-    fmt::{self, Debug},
-    os::raw::{c_char, c_int, c_uint},
-    ptr::{addr_of_mut, null, null_mut},
-    rc::Rc,
 };
 
 experimental_api!(SSL_HkdfExpandLabelWithMech(
@@ -65,6 +66,9 @@ impl HpKey {
     
     
     
+    
+    
+    
     #[allow(clippy::cast_sign_loss)] 
     pub fn extract(version: Version, cipher: Cipher, prk: &SymKey, label: &str) -> Res<Self> {
         const ZERO: &[u8] = &[0; 12];
@@ -72,6 +76,7 @@ impl HpKey {
         let l = label.as_bytes();
         let mut secret: *mut PK11SymKey = null_mut();
 
+        #[allow(clippy::useless_conversion)] 
         let (mech, key_size) = match cipher {
             TLS_AES_128_GCM_SHA256 => (CK_MECHANISM_TYPE::from(CKM_AES_ECB), 16),
             TLS_AES_256_GCM_SHA384 => (CK_MECHANISM_TYPE::from(CKM_AES_ECB), 32),
@@ -99,6 +104,8 @@ impl HpKey {
 
         let res = match cipher {
             TLS_AES_128_GCM_SHA256 | TLS_AES_256_GCM_SHA384 => {
+                
+                #[allow(clippy::useless_conversion)]
                 let context_ptr = unsafe {
                     PK11_CreateContextBySymKey(
                         mech,
@@ -142,6 +149,9 @@ impl HpKey {
     
     
     
+    
+    
+    
     pub fn mask(&self, sample: &[u8]) -> Res<Vec<u8>> {
         let mut output = vec![0_u8; self.block_size()];
 
@@ -171,6 +181,8 @@ impl HpKey {
                 };
                 let mut output_len: c_uint = 0;
                 let mut param_item = Item::wrap_struct(&params);
+                
+                #[allow(clippy::useless_conversion)]
                 secstatus_to_res(unsafe {
                     PK11_Encrypt(
                         **key,

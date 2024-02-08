@@ -4,12 +4,14 @@
 
 
 
-use crate::recovery::RecoveryToken;
-use neqo_common::qtrace;
 use std::{
     cmp::{max, min},
     time::{Duration, Instant},
 };
+
+use neqo_common::qtrace;
+
+use crate::recovery::RecoveryToken;
 
 #[derive(Debug, Clone)]
 

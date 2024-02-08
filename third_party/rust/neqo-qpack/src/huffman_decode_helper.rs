@@ -4,9 +4,11 @@
 
 
 
-use crate::huffman_table::HUFFMAN_TABLE;
-use lazy_static::lazy_static;
 use std::convert::TryFrom;
+
+use lazy_static::lazy_static;
+
+use crate::huffman_table::HUFFMAN_TABLE;
 
 pub struct HuffmanDecoderNode {
     pub next: [Option<Box<HuffmanDecoderNode>>; 2],

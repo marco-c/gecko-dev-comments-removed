@@ -4,18 +4,19 @@
 
 
 
-use crate::connection::{ConnectionIdManager, Role, LOCAL_ACTIVE_CID_LIMIT};
+use std::{cmp::max, convert::TryFrom, time::Duration};
+
 pub use crate::recovery::FAST_PTO_SCALE;
-use crate::recv_stream::RECV_BUFFER_SIZE;
-use crate::rtt::GRANULARITY;
-use crate::stream_id::StreamType;
-use crate::tparams::{self, PreferredAddress, TransportParameter, TransportParametersHandler};
-use crate::tracking::DEFAULT_ACK_DELAY;
-use crate::version::{Version, VersionConfig};
-use crate::{CongestionControlAlgorithm, Res};
-use std::cmp::max;
-use std::convert::TryFrom;
-use std::time::Duration;
+use crate::{
+    connection::{ConnectionIdManager, Role, LOCAL_ACTIVE_CID_LIMIT},
+    recv_stream::RECV_BUFFER_SIZE,
+    rtt::GRANULARITY,
+    stream_id::StreamType,
+    tparams::{self, PreferredAddress, TransportParameter, TransportParametersHandler},
+    tracking::DEFAULT_ACK_DELAY,
+    version::{Version, VersionConfig},
+    CongestionControlAlgorithm, Res,
+};
 
 const LOCAL_MAX_DATA: u64 = 0x3FFF_FFFF_FFFF_FFFF; 
 const LOCAL_STREAM_LIMIT_BIDI: u64 = 16;
@@ -50,9 +51,12 @@ pub struct ConnectionParameters {
     
     max_data: u64,
     
+    
     max_stream_data_bidi_remote: u64,
     
+    
     max_stream_data_bidi_local: u64,
+    
     
     max_stream_data_uni: u64,
     
@@ -75,6 +79,7 @@ pub struct ConnectionParameters {
     fast_pto: u8,
     fuzzing: bool,
     grease: bool,
+    pacing: bool,
 }
 
 impl Default for ConnectionParameters {
@@ -97,6 +102,7 @@ impl Default for ConnectionParameters {
             fast_pto: FAST_PTO_SCALE,
             fuzzing: false,
             grease: true,
+            pacing: true,
         }
     }
 }
@@ -146,6 +152,7 @@ impl ConnectionParameters {
 
     
     
+    
     pub fn max_streams(mut self, stream_type: StreamType, v: u64) -> Self {
         assert!(v <= (1 << 60), "max_streams is too large");
         match stream_type {
@@ -162,6 +169,8 @@ impl ConnectionParameters {
     
     
     
+    
+    
     pub fn get_max_stream_data(&self, stream_type: StreamType, remote: bool) -> u64 {
         match (stream_type, remote) {
             (StreamType::BiDi, false) => self.max_stream_data_bidi_local,
@@ -173,6 +182,8 @@ impl ConnectionParameters {
         }
     }
 
+    
+    
     
     
     
@@ -221,6 +232,7 @@ impl ConnectionParameters {
         self.ack_ratio
     }
 
+    
     
     
     pub fn idle_timeout(mut self, timeout: Duration) -> Self {
@@ -280,6 +292,7 @@ impl ConnectionParameters {
     
     
     
+    
     pub fn fast_pto(mut self, scale: u8) -> Self {
         assert_ne!(scale, 0);
         self.fast_pto = scale;
@@ -301,6 +314,15 @@ impl ConnectionParameters {
 
     pub fn grease(mut self, grease: bool) -> Self {
         self.grease = grease;
+        self
+    }
+
+    pub fn pacing_enabled(&self) -> bool {
+        self.pacing
+    }
+
+    pub fn pacing(mut self, pacing: bool) -> Self {
+        self.pacing = pacing;
         self
     }
 

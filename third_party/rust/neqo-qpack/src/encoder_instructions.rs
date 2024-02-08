@@ -4,15 +4,19 @@
 
 
 
-use crate::prefix::{
-    ENCODER_CAPACITY, ENCODER_DUPLICATE, ENCODER_INSERT_WITH_NAME_LITERAL,
-    ENCODER_INSERT_WITH_NAME_REF_DYNAMIC, ENCODER_INSERT_WITH_NAME_REF_STATIC, NO_PREFIX,
-};
-use crate::qpack_send_buf::QpackData;
-use crate::reader::{IntReader, LiteralReader, ReadByte, Reader};
-use crate::Res;
-use neqo_common::{qdebug, qtrace};
 use std::mem;
+
+use neqo_common::{qdebug, qtrace};
+
+use crate::{
+    prefix::{
+        ENCODER_CAPACITY, ENCODER_DUPLICATE, ENCODER_INSERT_WITH_NAME_LITERAL,
+        ENCODER_INSERT_WITH_NAME_REF_DYNAMIC, ENCODER_INSERT_WITH_NAME_REF_STATIC, NO_PREFIX,
+    },
+    qpack_send_buf::QpackData,
+    reader::{IntReader, LiteralReader, ReadByte, Reader},
+    Res,
+};
 
 
 
@@ -187,6 +191,7 @@ impl EncoderInstructionReader {
     
     
     
+    
     pub fn read_instructions<T: ReadByte + Reader>(
         &mut self,
         recv: &mut T,
@@ -265,8 +270,7 @@ impl EncoderInstructionReader {
 mod test {
 
     use super::{EncoderInstruction, EncoderInstructionReader, QpackData};
-    use crate::reader::test_receiver::TestReceiver;
-    use crate::Error;
+    use crate::{reader::test_receiver::TestReceiver, Error};
 
     fn test_encoding_decoding(instruction: &EncoderInstruction, use_huffman: bool) {
         let mut buf = QpackData::default();

@@ -4,13 +4,14 @@
 
 
 
+use std::{fmt::Debug, mem};
+
+use neqo_common::qtrace;
+
 use crate::{
     client_events::Http3ClientEvents,
     settings::{HSettingType, HSettings},
 };
-use neqo_common::qtrace;
-use std::fmt::Debug;
-use std::mem;
 
 pub mod extended_connect;
 

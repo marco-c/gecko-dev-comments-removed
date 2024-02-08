@@ -4,15 +4,16 @@
 
 
 
+use std::{mem, time::Duration};
+
+use test_fixture::{addr_v4, assertions};
+
 use super::{
     super::{ConnectionParameters, ACK_RATIO_SCALE},
     ack_bytes, connect_rtt_idle, default_client, default_server, fill_cwnd, increase_cwnd,
     induce_persistent_congestion, new_client, new_server, send_something, DEFAULT_RTT,
 };
 use crate::stream_id::StreamType;
-
-use std::{mem, time::Duration};
-use test_fixture::{addr_v4, assertions};
 
 
 
@@ -71,7 +72,7 @@ fn ack_rate_exit_slow_start() {
     
     now += DEFAULT_RTT / 2;
     assert_eq!(client.stats().frame_tx.ack_frequency, 0);
-    let af = client.process(Some(ack), now).dgram();
+    let af = client.process(Some(&ack), now).dgram();
     assert!(af.is_some());
     assert_eq!(client.stats().frame_tx.ack_frequency, 1);
 }
@@ -120,11 +121,11 @@ fn ack_rate_client_one_rtt() {
     
     let d = send_something(&mut client, now);
     now += RTT / 2;
-    let ack = server.process(Some(d), now).dgram();
+    let ack = server.process(Some(&d), now).dgram();
     assert!(ack.is_some());
     let d = send_something(&mut client, now);
     now += RTT / 2;
-    let delay = server.process(Some(d), now).callback();
+    let delay = server.process(Some(&d), now).callback();
     assert_eq!(delay, RTT);
 
     assert_eq!(client.stats().frame_tx.ack_frequency, 1);
@@ -143,11 +144,11 @@ fn ack_rate_server_half_rtt() {
     now += RTT / 2;
     
     
-    let ack = client.process(Some(d), now);
+    let ack = client.process(Some(&d), now);
     assert!(ack.as_dgram_ref().is_some());
     let d = send_something(&mut server, now);
     now += RTT / 2;
-    let delay = client.process(Some(d), now).callback();
+    let delay = client.process(Some(&d), now).callback();
     assert_eq!(delay, RTT / 2);
 
     assert_eq!(server.stats().frame_tx.ack_frequency, 1);
@@ -171,7 +172,7 @@ fn migrate_ack_delay() {
     let client2 = send_something(&mut client, now);
     assertions::assert_v4_path(&client2, false); 
     now += DEFAULT_RTT / 2;
-    server.process_input(client1, now);
+    server.process_input(&client1, now);
 
     let stream = client.stream_create(StreamType::UniDi).unwrap();
     let now = increase_cwnd(&mut client, &mut server, stream, now);
@@ -187,7 +188,7 @@ fn migrate_ack_delay() {
     
     
     let ad_before = client.stats().frame_tx.ack_frequency;
-    let af = client.process(Some(ack), now).dgram();
+    let af = client.process(Some(&ack), now).dgram();
     assert!(af.is_some());
     assert_eq!(client.stats().frame_tx.ack_frequency, ad_before + 1);
 }

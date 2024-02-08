@@ -6,10 +6,12 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use crate::{Error, Http3Parameters, Res};
+use std::ops::Deref;
+
 use neqo_common::{Decoder, Encoder};
 use neqo_crypto::{ZeroRttCheckResult, ZeroRttChecker};
-use std::ops::Deref;
+
+use crate::{Error, Http3Parameters, Res};
 
 type SettingsType = u64;
 
@@ -119,6 +121,7 @@ impl HSettings {
         });
     }
 
+    
     
     
     pub fn decode_frame_contents(&mut self, dec: &mut Decoder) -> Res<()> {

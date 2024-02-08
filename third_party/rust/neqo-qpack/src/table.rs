@@ -4,11 +4,14 @@
 
 
 
-use crate::static_table::{StaticTableEntry, HEADER_STATIC_TABLE};
-use crate::{Error, Res};
+use std::{collections::VecDeque, convert::TryFrom};
+
 use neqo_common::qtrace;
-use std::collections::VecDeque;
-use std::convert::TryFrom;
+
+use crate::{
+    static_table::{StaticTableEntry, HEADER_STATIC_TABLE},
+    Error, Res,
+};
 
 pub const ADDITIONAL_TABLE_ENTRY_SIZE: usize = 32;
 
@@ -109,6 +112,9 @@ impl HeaderTable {
     
     
     
+    
+    
+    
     pub fn set_capacity(&mut self, cap: u64) -> Res<()> {
         qtrace!([self], "set capacity to {}", cap);
         if !self.evict_to(cap) {
@@ -118,6 +124,8 @@ impl HeaderTable {
         Ok(())
     }
 
+    
+    
     
     
     
@@ -150,6 +158,8 @@ impl HeaderTable {
         Ok(&self.dynamic[inx])
     }
 
+    
+    
     
     
     
@@ -283,6 +293,8 @@ impl HeaderTable {
     
     
     
+    
+    
     pub fn insert(&mut self, name: &[u8], value: &[u8]) -> Res<u64> {
         qtrace!([self], "insert name={:?} value={:?}", name, value);
         let entry = DynamicTableEntry {
@@ -303,6 +315,8 @@ impl HeaderTable {
         Ok(index)
     }
 
+    
+    
     
     
     
@@ -340,6 +354,8 @@ impl HeaderTable {
     
     
     
+    
+    
     pub fn duplicate(&mut self, index: u64) -> Res<u64> {
         qtrace!([self], "duplicate entry={}", index);
         
@@ -354,6 +370,8 @@ impl HeaderTable {
         self.insert(&name, &value)
     }
 
+    
+    
     
     
     

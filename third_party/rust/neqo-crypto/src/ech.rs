@@ -4,6 +4,15 @@
 
 
 
+use std::{
+    convert::TryFrom,
+    ffi::CString,
+    os::raw::{c_char, c_uint},
+    ptr::{addr_of_mut, null_mut},
+};
+
+use neqo_common::qtrace;
+
 use crate::{
     err::{ssl::SSL_ERROR_ECH_RETRY_WITH_ECH, Error, Res},
     experimental_api,
@@ -13,14 +22,6 @@ use crate::{
     },
     ssl::{PRBool, PRFileDesc},
 };
-use neqo_common::qtrace;
-use std::{
-    convert::TryFrom,
-    ffi::CString,
-    os::raw::{c_char, c_uint},
-    ptr::{addr_of_mut, null_mut},
-};
-
 pub use crate::{
     p11::{HpkeAeadId as AeadId, HpkeKdfId as KdfId, HpkeKemId as KemId},
     ssl::HpkeSymmetricSuite as SymmetricSuite,
@@ -92,6 +93,9 @@ pub fn convert_ech_error(fd: *mut PRFileDesc, err: Error) -> Error {
 
 
 
+
+
+
 pub fn generate_keys() -> Res<(PrivateKey, PublicKey)> {
     let slot = Slot::internal()?;
 
@@ -109,6 +113,7 @@ pub fn generate_keys() -> Res<(PrivateKey, PublicKey)> {
 
     
     let insensitive_secret_ptr = if log::log_enabled!(log::Level::Trace) {
+        #[allow(clippy::useless_conversion)] 
         unsafe {
             p11::PK11_GenerateKeyPairWithOpFlags(
                 *slot,
@@ -126,6 +131,7 @@ pub fn generate_keys() -> Res<(PrivateKey, PublicKey)> {
     };
     assert_eq!(insensitive_secret_ptr.is_null(), public_ptr.is_null());
     let secret_ptr = if insensitive_secret_ptr.is_null() {
+        #[allow(clippy::useless_conversion)] 
         unsafe {
             p11::PK11_GenerateKeyPairWithOpFlags(
                 *slot,
@@ -147,6 +153,7 @@ pub fn generate_keys() -> Res<(PrivateKey, PublicKey)> {
     qtrace!("Generated key pair: sk={:?} pk={:?}", sk, pk);
     Ok((sk, pk))
 }
+
 
 
 

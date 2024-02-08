@@ -4,10 +4,14 @@
 
 
 
-use crate::frames::{FrameReader, HFrame, StreamReaderConnectionWrapper};
-use crate::{CloseType, Error, Http3StreamType, ReceiveOutput, RecvStream, Res, Stream};
 use neqo_common::qdebug;
 use neqo_transport::{Connection, StreamId};
+
+use crate::{
+    frames::{FrameReader, HFrame, StreamReaderConnectionWrapper},
+    CloseType, Error, Http3StreamType, ReceiveOutput, RecvStream, Res, Stream,
+};
+
 
 
 #[derive(Debug)]

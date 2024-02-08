@@ -4,9 +4,11 @@
 
 
 
-use std::convert::TryFrom;
-use std::mem;
-use std::time::{Duration, Instant};
+use std::{
+    convert::TryFrom,
+    mem,
+    time::{Duration, Instant},
+};
 
 
 struct TimerItem<T> {
@@ -33,6 +35,8 @@ pub struct Timer<T> {
 }
 
 impl<T> Timer<T> {
+    
+    
     
     
     
@@ -108,6 +112,8 @@ impl<T> Timer<T> {
         self.cursor = new;
     }
 
+    
+    
     
     
     
@@ -241,8 +247,9 @@ impl<T> Timer<T> {
 
 #[cfg(test)]
 mod test {
-    use super::{Duration, Instant, Timer};
     use lazy_static::lazy_static;
+
+    use super::{Duration, Instant, Timer};
 
     lazy_static! {
         static ref NOW: Instant = Instant::now();

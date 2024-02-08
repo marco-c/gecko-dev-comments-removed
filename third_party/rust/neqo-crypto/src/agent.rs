@@ -4,6 +4,21 @@
 
 
 
+use std::{
+    cell::RefCell,
+    convert::TryFrom,
+    ffi::{CStr, CString},
+    mem::{self, MaybeUninit},
+    ops::{Deref, DerefMut},
+    os::raw::{c_uint, c_void},
+    pin::Pin,
+    ptr::{null, null_mut},
+    rc::Rc,
+    time::Instant,
+};
+
+use neqo_common::{hex_snip_middle, hex_with_len, qdebug, qinfo, qtrace, qwarn};
+
 pub use crate::{
     agentio::{as_c_void, Record, RecordList},
     cert::CertificateInfo,
@@ -24,19 +39,6 @@ use crate::{
     secrets::SecretHolder,
     ssl::{self, PRBool},
     time::{Time, TimeHolder},
-};
-use neqo_common::{hex_snip_middle, hex_with_len, qdebug, qinfo, qtrace, qwarn};
-use std::{
-    cell::RefCell,
-    convert::TryFrom,
-    ffi::{CStr, CString},
-    mem::{self, MaybeUninit},
-    ops::{Deref, DerefMut},
-    os::raw::{c_uint, c_void},
-    pin::Pin,
-    ptr::{null, null_mut},
-    rc::Rc,
-    time::Instant,
 };
 
 
@@ -158,6 +160,7 @@ impl SecretAgentPreInfo {
 
     
     
+    
     #[must_use]
     pub fn max_early_data(&self) -> usize {
         usize::try_from(self.info.maxEarlyDataSize).unwrap()
@@ -173,6 +176,7 @@ impl SecretAgentPreInfo {
         }
     }
 
+    
     
     
     
@@ -396,6 +400,7 @@ impl SecretAgent {
     
     
     
+    
     fn configure(&mut self, grease: bool) -> Res<()> {
         self.set_version_range(TLS_VERSION_1_3, TLS_VERSION_1_3)?;
         self.set_option(ssl::Opt::Locking, false)?;
@@ -412,11 +417,13 @@ impl SecretAgent {
     
     
     
+    
     pub fn set_version_range(&mut self, min: Version, max: Version) -> Res<()> {
         let range = ssl::SSLVersionRange { min, max };
         secstatus_to_res(unsafe { ssl::SSL_VersionRangeSet(self.fd, &range) })
     }
 
+    
     
     
     
@@ -448,6 +455,7 @@ impl SecretAgent {
     
     
     
+    
     pub fn set_groups(&mut self, groups: &[Group]) -> Res<()> {
         
         let group_vec: Vec<_> = groups
@@ -465,10 +473,23 @@ impl SecretAgent {
     
     
     
+    
+    pub fn send_additional_key_shares(&mut self, count: usize) -> Res<()> {
+        secstatus_to_res(unsafe {
+            ssl::SSL_SendAdditionalKeyShares(self.fd, c_uint::try_from(count)?)
+        })
+    }
+
+    
+    
+    
+    
+    
     pub fn set_option(&mut self, opt: ssl::Opt, value: bool) -> Res<()> {
         opt.set(self.fd, value)
     }
 
+    
     
     
     
@@ -481,10 +502,14 @@ impl SecretAgent {
     
     
     
+    
     pub fn disable_end_of_early_data(&mut self) -> Res<()> {
         self.set_option(ssl::Opt::SuppressEndOfEarlyData, true)
     }
 
+    
+    
+    
     
     
     
@@ -545,6 +570,7 @@ impl SecretAgent {
     
     
     
+    
     pub fn extension_handler(
         &mut self,
         ext: Extension,
@@ -588,6 +614,7 @@ impl SecretAgent {
     
     
     
+    
     pub fn preinfo(&self) -> Res<SecretAgentPreInfo> {
         SecretAgentPreInfo::new(self.fd)
     }
@@ -604,6 +631,8 @@ impl SecretAgent {
         (*self.alert).as_ref()
     }
 
+    
+    
     
     
     
@@ -655,6 +684,7 @@ impl SecretAgent {
     
     
     
+    
     pub fn handshake(&mut self, now: Instant, input: &[u8]) -> Res<Vec<u8>> {
         self.now.set(now)?;
         self.set_raw(false)?;
@@ -691,6 +721,7 @@ impl SecretAgent {
     
     
     
+    
     pub fn handshake_raw(&mut self, now: Instant, input: Option<Record>) -> Res<RecordList> {
         self.now.set(now)?;
         let records = self.setup_raw()?;
@@ -716,6 +747,7 @@ impl SecretAgent {
         Ok(*Pin::into_inner(records))
     }
 
+    
     
     
     #[allow(unknown_lints, clippy::branches_sharing_code)]
@@ -823,6 +855,7 @@ impl Client {
     
     
     
+    
     pub fn new(server_name: impl Into<String>, grease: bool) -> Res<Self> {
         let server_name = server_name.into();
         let mut agent = SecretAgent::new()?;
@@ -913,6 +946,7 @@ impl Client {
     
     
     
+    
     pub fn enable_resumption(&mut self, token: impl AsRef<[u8]>) -> Res<()> {
         unsafe {
             ssl::SSL_SetResumptionToken(
@@ -923,6 +957,7 @@ impl Client {
         }
     }
 
+    
     
     
     
@@ -987,6 +1022,7 @@ pub enum ZeroRttCheckResult {
 }
 
 
+
 pub trait ZeroRttChecker: std::fmt::Debug + std::marker::Unpin {
     fn check(&self, token: &[u8]) -> ZeroRttCheckResult;
 }
@@ -1024,6 +1060,7 @@ pub struct Server {
 }
 
 impl Server {
+    
     
     
     
@@ -1081,6 +1118,7 @@ impl Server {
             }
             ZeroRttCheckResult::HelloRetryRequest(tok) => {
                 
+                
                 assert!(tok.len() <= usize::try_from(retry_token_max).unwrap());
                 let slc = std::slice::from_raw_parts_mut(retry_token, tok.len());
                 slc.copy_from_slice(&tok);
@@ -1090,6 +1128,7 @@ impl Server {
         }
     }
 
+    
     
     
     
@@ -1122,6 +1161,7 @@ impl Server {
     
     
     
+    
     pub fn send_ticket(&mut self, now: Instant, extra: &[u8]) -> Res<RecordList> {
         self.agent.now.set(now)?;
         let records = self.setup_raw()?;
@@ -1133,6 +1173,7 @@ impl Server {
         Ok(*Pin::into_inner(records))
     }
 
+    
     
     
     

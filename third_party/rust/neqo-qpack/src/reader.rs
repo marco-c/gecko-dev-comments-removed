@@ -4,12 +4,15 @@
 
 
 
-use crate::{huffman::decode_huffman, prefix::Prefix, Error, Res};
-use neqo_common::{qdebug, qerror};
-use neqo_transport::{Connection, StreamId};
 use std::{convert::TryInto, mem, str};
 
+use neqo_common::{qdebug, qerror};
+use neqo_transport::{Connection, StreamId};
+
+use crate::{huffman::decode_huffman, prefix::Prefix, Error, Res};
+
 pub trait ReadByte {
+    
     
     
     
@@ -17,6 +20,7 @@ pub trait ReadByte {
 }
 
 pub trait Reader {
+    
     
     
     
@@ -156,6 +160,8 @@ impl IntReader {
     
     
     
+    
+    
     #[must_use]
     pub fn new(first_byte: u8, prefix_len: u8) -> Self {
         debug_assert!(prefix_len < 8, "prefix cannot larger than 7.");
@@ -175,6 +181,7 @@ impl IntReader {
 
     
     
+    
     #[must_use]
     pub fn make(first_byte: u8, prefixes: &[Prefix]) -> Self {
         for prefix in prefixes {
@@ -185,6 +192,8 @@ impl IntReader {
         unreachable!();
     }
 
+    
+    
     
     
     
@@ -247,6 +256,8 @@ impl LiteralReader {
     
     
     
+    
+    
     #[must_use]
     pub fn new_with_first_byte(first_byte: u8, prefix_len: u8) -> Self {
         assert!(prefix_len < 8);
@@ -259,6 +270,10 @@ impl LiteralReader {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -311,6 +326,8 @@ impl LiteralReader {
 
 
 
+
+
 pub fn parse_utf8(v: &[u8]) -> Res<&str> {
     str::from_utf8(v).map_err(|_| Error::BadUtf8)
 }
@@ -318,8 +335,9 @@ pub fn parse_utf8(v: &[u8]) -> Res<&str> {
 #[cfg(test)]
 pub(crate) mod test_receiver {
 
-    use super::{Error, ReadByte, Reader, Res};
     use std::collections::VecDeque;
+
+    use super::{Error, ReadByte, Reader, Res};
 
     #[derive(Default)]
     pub struct TestReceiver {
@@ -358,11 +376,12 @@ pub(crate) mod test_receiver {
 #[cfg(test)]
 mod tests {
 
+    use test_receiver::TestReceiver;
+
     use super::{
         parse_utf8, str, test_receiver, Error, IntReader, LiteralReader, ReadByte,
         ReceiverBufferWrapper, Res,
     };
-    use test_receiver::TestReceiver;
 
     const TEST_CASES_NUMBERS: [(&[u8], u8, u64); 7] = [
         (&[0xEA], 3, 10),

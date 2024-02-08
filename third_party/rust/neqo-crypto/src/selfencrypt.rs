@@ -4,14 +4,17 @@
 
 
 
-use crate::constants::{Cipher, Version};
-use crate::err::{Error, Res};
-use crate::p11::{random, SymKey};
-use crate::{hkdf, Aead};
+use std::mem;
 
 use neqo_common::{hex, qinfo, qtrace, Encoder};
 
-use std::mem;
+use crate::{
+    constants::{Cipher, Version},
+    err::{Error, Res},
+    hkdf,
+    p11::{random, SymKey},
+    Aead,
+};
 
 #[derive(Debug)]
 pub struct SelfEncrypt {
@@ -26,6 +29,7 @@ impl SelfEncrypt {
     const VERSION: u8 = 1;
     const SALT_LENGTH: usize = 16;
 
+    
     
     
     pub fn new(version: Version, cipher: Cipher) -> Res<Self> {
@@ -50,6 +54,8 @@ impl SelfEncrypt {
     
     
     
+    
+    
     pub fn rotate(&mut self) -> Res<()> {
         let new_key = hkdf::generate_key(self.version, self.cipher)?;
         self.old_key = Some(mem::replace(&mut self.key, new_key));
@@ -59,6 +65,7 @@ impl SelfEncrypt {
         Ok(())
     }
 
+    
     
     
     
@@ -114,6 +121,7 @@ impl SelfEncrypt {
         }
     }
 
+    
     
     
     

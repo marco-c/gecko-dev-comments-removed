@@ -5,6 +5,10 @@
 
 
 
+use std::{cell::RefCell, cmp::Ordering, rc::Rc};
+
+use neqo_common::{qtrace, qwarn, Role};
+
 use crate::{
     fc::{LocalStreamLimits, ReceiverFlowControl, RemoteStreamLimits, SenderFlowControl},
     frame::Frame,
@@ -17,9 +21,6 @@ use crate::{
     tparams::{self, TransportParametersHandler},
     ConnectionEvents, Error, Res,
 };
-use neqo_common::{qtrace, qwarn, Role};
-use std::cmp::Ordering;
-use std::{cell::RefCell, rc::Rc};
 
 pub type SendOrder = i64;
 
@@ -269,7 +270,7 @@ impl Streams {
             StreamRecoveryToken::Stream(st) => self.send.lost(st),
             StreamRecoveryToken::ResetStream { stream_id } => self.send.reset_lost(*stream_id),
             StreamRecoveryToken::StreamDataBlocked { stream_id, limit } => {
-                self.send.blocked_lost(*stream_id, *limit)
+                self.send.blocked_lost(*stream_id, *limit);
             }
             StreamRecoveryToken::MaxStreamData {
                 stream_id,
@@ -294,10 +295,10 @@ impl Streams {
                 self.remote_stream_limits[*stream_type].frame_lost(*max_streams);
             }
             StreamRecoveryToken::DataBlocked(limit) => {
-                self.sender_fc.borrow_mut().frame_lost(*limit)
+                self.sender_fc.borrow_mut().frame_lost(*limit);
             }
             StreamRecoveryToken::MaxData(maximum_data) => {
-                self.receiver_fc.borrow_mut().frame_lost(*maximum_data)
+                self.receiver_fc.borrow_mut().frame_lost(*maximum_data);
             }
         }
     }
@@ -437,6 +438,7 @@ impl Streams {
                 self.send.insert(new_id, stream);
 
                 if st == StreamType::BiDi {
+                    
                     
                     
                     

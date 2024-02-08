@@ -6,6 +6,12 @@
 
 #![allow(clippy::module_name_repetitions)]
 
+use std::{any::Any, cell::RefCell, collections::BTreeSet, mem, rc::Rc};
+
+use neqo_common::{qtrace, Encoder, Header, MessageType, Role};
+use neqo_qpack::{QPackDecoder, QPackEncoder};
+use neqo_transport::{streams::SendOrder, Connection, DatagramTracking, StreamId};
+
 use super::{ExtendedConnectEvents, ExtendedConnectType, SessionCloseReason};
 use crate::{
     frames::{FrameReader, StreamReaderRecvStreamWrapper, WebTransportFrame},
@@ -15,14 +21,6 @@ use crate::{
     HttpRecvStreamEvents, Priority, PriorityHandler, ReceiveOutput, RecvStream, RecvStreamEvents,
     Res, SendStream, SendStreamEvents, Stream,
 };
-use neqo_common::{qtrace, Encoder, Header, MessageType, Role};
-use neqo_qpack::{QPackDecoder, QPackEncoder};
-use neqo_transport::{streams::SendOrder, Connection, DatagramTracking, StreamId};
-use std::any::Any;
-use std::cell::RefCell;
-use std::collections::BTreeSet;
-use std::mem;
-use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
 enum SessionState {
@@ -102,6 +100,7 @@ impl WebTransportSession {
     
     
     
+    
     #[must_use]
     pub fn new_with_http_streams(
         session_id: StreamId,
@@ -133,6 +132,9 @@ impl WebTransportSession {
         }
     }
 
+    
+    
+    
     
     
     
@@ -219,6 +221,7 @@ impl WebTransportSession {
         }
     }
 
+    
     
     
     pub fn maybe_check_headers(&mut self) {
@@ -336,6 +339,7 @@ impl WebTransportSession {
 
     
     
+    
     pub fn read_control_stream(&mut self, conn: &mut Connection) -> Res<()> {
         let (f, fin) = self
             .frame_reader
@@ -375,6 +379,7 @@ impl WebTransportSession {
     
     
     
+    
     pub fn close_session(&mut self, conn: &mut Connection, error: u32, message: &str) -> Res<()> {
         self.state = SessionState::Done;
         let close_frame = WebTransportFrame::CloseSession {
@@ -398,6 +403,7 @@ impl WebTransportSession {
         self.control_stream_send.send_data(conn, buf)
     }
 
+    
     
     
     pub fn send_datagram(

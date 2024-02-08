@@ -6,41 +6,43 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use crate::control_stream_local::ControlStreamLocal;
-use crate::control_stream_remote::ControlStreamRemote;
-use crate::features::extended_connect::{
-    webtransport_session::WebTransportSession,
-    webtransport_streams::{WebTransportRecvStream, WebTransportSendStream},
-    ExtendedConnectEvents, ExtendedConnectFeature, ExtendedConnectType,
+use std::{
+    cell::RefCell,
+    collections::{BTreeSet, HashMap},
+    fmt::Debug,
+    mem,
+    rc::Rc,
 };
-use crate::frames::HFrame;
-use crate::push_controller::PushController;
-use crate::qpack_decoder_receiver::DecoderRecvStream;
-use crate::qpack_encoder_receiver::EncoderRecvStream;
-use crate::recv_message::{RecvMessage, RecvMessageInfo};
-use crate::request_target::{AsRequestTarget, RequestTarget};
-use crate::send_message::SendMessage;
-use crate::settings::{HSettingType, HSettings, HttpZeroRttChecker};
-use crate::stream_type_reader::NewStreamHeadReader;
-use crate::{
-    client_events::Http3ClientEvents, CloseType, Http3Parameters, Http3StreamType,
-    HttpRecvStreamEvents, NewStreamType, Priority, PriorityHandler, ReceiveOutput, RecvStream,
-    RecvStreamEvents, SendStream, SendStreamEvents,
-};
+
 use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn, Decoder, Header, MessageType, Role};
-use neqo_qpack::decoder::QPackDecoder;
-use neqo_qpack::encoder::QPackEncoder;
+use neqo_qpack::{decoder::QPackDecoder, encoder::QPackEncoder};
 use neqo_transport::{
     streams::SendOrder, AppError, Connection, ConnectionError, DatagramTracking, State, StreamId,
     StreamType, ZeroRttState,
 };
-use std::cell::RefCell;
-use std::collections::{BTreeSet, HashMap};
-use std::fmt::Debug;
-use std::mem;
-use std::rc::Rc;
 
-use crate::{Error, Res};
+use crate::{
+    client_events::Http3ClientEvents,
+    control_stream_local::ControlStreamLocal,
+    control_stream_remote::ControlStreamRemote,
+    features::extended_connect::{
+        webtransport_session::WebTransportSession,
+        webtransport_streams::{WebTransportRecvStream, WebTransportSendStream},
+        ExtendedConnectEvents, ExtendedConnectFeature, ExtendedConnectType,
+    },
+    frames::HFrame,
+    push_controller::PushController,
+    qpack_decoder_receiver::DecoderRecvStream,
+    qpack_encoder_receiver::EncoderRecvStream,
+    recv_message::{RecvMessage, RecvMessageInfo},
+    request_target::{AsRequestTarget, RequestTarget},
+    send_message::SendMessage,
+    settings::{HSettingType, HSettings, HttpZeroRttChecker},
+    stream_type_reader::NewStreamHeadReader,
+    CloseType, Error, Http3Parameters, Http3StreamType, HttpRecvStreamEvents, NewStreamType,
+    Priority, PriorityHandler, ReceiveOutput, RecvStream, RecvStreamEvents, Res, SendStream,
+    SendStreamEvents,
+};
 
 pub(crate) struct RequestDescription<'b, 't, T>
 where
@@ -385,6 +387,7 @@ impl Http3Connection {
     }
 
     
+    
     pub fn stream_has_pending_data(&mut self, stream_id: StreamId) {
         self.streams_with_pending_data.insert(stream_id);
     }
@@ -627,6 +630,7 @@ impl Http3Connection {
     }
 
     
+    
     pub fn handle_zero_rtt_rejected(&mut self) -> Res<()> {
         if self.state == Http3State::ZeroRtt {
             self.state = Http3State::Initializing;
@@ -862,6 +866,7 @@ impl Http3Connection {
 
     fn create_bidi_transport_stream(&self, conn: &mut Connection) -> Res<StreamId> {
         
+        
         match self.state() {
             Http3State::GoingAway(..) | Http3State::Closing(..) | Http3State::Closed(..) => {
                 return Err(Error::AlreadyClosed)
@@ -929,6 +934,7 @@ impl Http3Connection {
 
         
         
+        
         self.send_streams
             .get_mut(&stream_id)
             .ok_or(Error::InvalidStreamId)?
@@ -936,6 +942,8 @@ impl Http3Connection {
         Ok(())
     }
 
+    
+    
     
     
     
@@ -1006,6 +1014,8 @@ impl Http3Connection {
     
     
     
+    
+    
     pub fn stream_set_sendorder(
         conn: &mut Connection,
         stream_id: StreamId,
@@ -1015,6 +1025,8 @@ impl Http3Connection {
             .map_err(|_| Error::InvalidStreamId)
     }
 
+    
+    
     
     
     
@@ -1184,6 +1196,7 @@ impl Http3Connection {
                     .is_ok()
                 {
                     mem::drop(self.stream_close_send(conn, stream_id));
+                    
                     
                     self.streams_with_pending_data.insert(stream_id);
                 } else {

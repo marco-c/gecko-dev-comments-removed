@@ -4,9 +4,9 @@
 
 
 
+use std::{convert::TryFrom, ops::Range};
+
 use neqo_common::Decoder;
-use std::convert::TryFrom;
-use std::ops::Range;
 
 
 pub struct Random {

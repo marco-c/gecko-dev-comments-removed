@@ -6,6 +6,8 @@
 
 #[derive(Copy, Clone, Debug)]
 pub struct Prefix {
+    #[allow(unknown_lints)] 
+    #[allow(clippy::struct_field_names)]
     prefix: u8,
     len: u8,
     mask: u8,
@@ -13,6 +15,7 @@ pub struct Prefix {
 
 impl Prefix {
     pub fn new(prefix: u8, len: u8) -> Self {
+        
         
         
         
@@ -133,6 +136,7 @@ create_prefix!(HEADER_FIELD_LITERAL_NAME_REF_DYNAMIC, 0x40, 4, 0xD0);
 
 
 create_prefix!(HEADER_FIELD_LITERAL_NAME_REF_DYNAMIC_POST, 0x00, 5, 0xF0);
+
 
 
 

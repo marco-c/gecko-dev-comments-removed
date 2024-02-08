@@ -6,24 +6,23 @@
 
 
 
-use crate::frame::FRAME_TYPE_NEW_CONNECTION_ID;
-use crate::packet::PacketBuilder;
-use crate::recovery::RecoveryToken;
-use crate::stats::FrameStats;
-use crate::{Error, Res};
+use std::{
+    borrow::Borrow,
+    cell::{Ref, RefCell},
+    cmp::{max, min},
+    convert::{AsRef, TryFrom},
+    ops::Deref,
+    rc::Rc,
+};
 
 use neqo_common::{hex, hex_with_len, qinfo, Decoder, Encoder};
 use neqo_crypto::random;
-
 use smallvec::SmallVec;
-use std::borrow::Borrow;
-use std::cell::{Ref, RefCell};
-use std::cmp::max;
-use std::cmp::min;
-use std::convert::AsRef;
-use std::convert::TryFrom;
-use std::ops::Deref;
-use std::rc::Rc;
+
+use crate::{
+    frame::FRAME_TYPE_NEW_CONNECTION_ID, packet::PacketBuilder, recovery::RecoveryToken,
+    stats::FrameStats, Error, Res,
+};
 
 pub const MAX_CONNECTION_ID_LEN: usize = 20;
 pub const LOCAL_ACTIVE_CID_LIMIT: usize = 8;
@@ -88,8 +87,8 @@ impl<T: AsRef<[u8]> + ?Sized> From<&T> for ConnectionId {
     }
 }
 
-impl<'a> From<&ConnectionIdRef<'a>> for ConnectionId {
-    fn from(cidref: &ConnectionIdRef<'a>) -> Self {
+impl<'a> From<ConnectionIdRef<'a>> for ConnectionId {
+    fn from(cidref: ConnectionIdRef<'a>) -> Self {
         Self::from(SmallVec::from(cidref.cid))
     }
 }
@@ -120,7 +119,7 @@ impl<'a> PartialEq<ConnectionIdRef<'a>> for ConnectionId {
     }
 }
 
-#[derive(Hash, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq, Clone, Copy)]
 pub struct ConnectionIdRef<'a> {
     cid: &'a [u8],
 }
@@ -324,6 +323,10 @@ impl<SRT: Clone + PartialEq> ConnectionIdEntry<SRT> {
     pub fn connection_id(&self) -> &ConnectionId {
         &self.cid
     }
+
+    pub fn reset_token(&self) -> &SRT {
+        &self.srt
+    }
 }
 
 pub type RemoteConnectionIdEntry = ConnectionIdEntry<[u8; 16]>;
@@ -340,8 +343,8 @@ impl<SRT: Clone + PartialEq> ConnectionIdStore<SRT> {
         self.cids.retain(|c| c.seqno != seqno);
     }
 
-    pub fn contains(&self, cid: &ConnectionIdRef) -> bool {
-        self.cids.iter().any(|c| &c.cid == cid)
+    pub fn contains(&self, cid: ConnectionIdRef) -> bool {
+        self.cids.iter().any(|c| c.cid == cid)
     }
 
     pub fn next(&mut self) -> Option<ConnectionIdEntry<SRT>> {
@@ -420,6 +423,7 @@ pub struct ConnectionIdManager {
     
     
     
+    
     connection_ids: ConnectionIdStore<()>,
     
     
@@ -479,7 +483,7 @@ impl ConnectionIdManager {
         }
     }
 
-    pub fn is_valid(&self, cid: &ConnectionIdRef) -> bool {
+    pub fn is_valid(&self, cid: ConnectionIdRef) -> bool {
         self.connection_ids.contains(cid)
     }
 
@@ -528,10 +532,6 @@ impl ConnectionIdManager {
         builder.encode_varint(0u64);
         builder.encode_vec(1, &entry.cid);
         builder.encode(&entry.srt);
-        if builder.len() > builder.limit() {
-            return Err(Error::InternalError(8));
-        }
-
         stats.new_connection_id += 1;
         Ok(true)
     }
@@ -592,8 +592,9 @@ impl ConnectionIdManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_fixture::fixture_init;
+
+    use super::*;
 
     #[test]
     fn generate_initial_cid() {

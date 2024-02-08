@@ -6,10 +6,12 @@
 
 #![allow(clippy::unused_unit)] 
 
-use crate::{Error, MessageType, Res};
+use std::convert::TryFrom;
+
 use enumset::{enum_set, EnumSet, EnumSetType};
 use neqo_common::Header;
-use std::convert::TryFrom;
+
+use crate::{Error, MessageType, Res};
 
 #[derive(EnumSetType, Debug)]
 enum PseudoHeaderState {
@@ -43,6 +45,8 @@ impl TryFrom<(MessageType, &str)> for PseudoHeaderState {
         }
     }
 }
+
+
 
 
 
@@ -86,6 +90,8 @@ fn track_pseudo(
         Err(Error::InvalidHeader)
     }
 }
+
+
 
 
 
@@ -157,6 +163,8 @@ pub fn headers_valid(headers: &[Header], message_type: MessageType) -> Res<()> {
 
 
 
+
+
 pub fn trailers_valid(headers: &[Header]) -> Res<()> {
     for header in headers {
         if header.name().starts_with(':') {
@@ -168,9 +176,10 @@ pub fn trailers_valid(headers: &[Header]) -> Res<()> {
 
 #[cfg(test)]
 mod tests {
+    use neqo_common::Header;
+
     use super::headers_valid;
     use crate::MessageType;
-    use neqo_common::Header;
 
     fn create_connect_headers() -> Vec<Header> {
         vec![

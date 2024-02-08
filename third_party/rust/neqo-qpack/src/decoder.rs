@@ -4,6 +4,11 @@
 
 
 
+use std::convert::TryFrom;
+
+use neqo_common::{qdebug, Header};
+use neqo_transport::{Connection, StreamId};
+
 use crate::{
     decoder_instructions::DecoderInstruction,
     encoder_instructions::{DecodedEncoderInstruction, EncoderInstructionReader},
@@ -14,9 +19,6 @@ use crate::{
     table::HeaderTable,
     Error, QpackSettings, Res,
 };
-use neqo_common::{qdebug, Header};
-use neqo_transport::{Connection, StreamId};
-use std::convert::TryFrom;
 
 pub const QPACK_UNI_STREAM_TYPE_DECODER: u64 = 0x3;
 
@@ -37,6 +39,7 @@ pub struct QPackDecoder {
 impl QPackDecoder {
     
     
+    
     #[must_use]
     pub fn new(qpack_settings: &QpackSettings) -> Self {
         qdebug!("Decoder: creating a new qpack decoder.");
@@ -50,7 +53,7 @@ impl QPackDecoder {
             send_buf,
             local_stream_id: None,
             max_table_size: qpack_settings.max_table_size_decoder,
-            max_blocked_streams: usize::try_from(qpack_settings.max_blocked_streams).unwrap(),
+            max_blocked_streams: usize::from(qpack_settings.max_blocked_streams),
             blocked_streams: Vec::new(),
             stats: Stats::default(),
         }
@@ -68,11 +71,14 @@ impl QPackDecoder {
 
     
     
+    
     #[must_use]
     pub fn get_blocked_streams(&self) -> u16 {
         u16::try_from(self.max_blocked_streams).unwrap()
     }
 
+    
+    
     
     
     
@@ -167,6 +173,9 @@ impl QPackDecoder {
     
     
     
+    
+    
+    
     #[allow(clippy::map_err_ignore)]
     pub fn send(&mut self, conn: &mut Connection) -> Res<()> {
         
@@ -187,10 +196,15 @@ impl QPackDecoder {
 
     
     
+    
     pub fn refers_dynamic_table(&self, buf: &[u8]) -> Res<bool> {
         HeaderDecoder::new(buf).refers_dynamic_table(self.max_entries, self.table.base())
     }
 
+    
+    
+    
+    
     
     
     
@@ -237,6 +251,7 @@ impl QPackDecoder {
 
     
     
+    
     pub fn add_send_stream(&mut self, stream_id: StreamId) {
         assert!(
             self.local_stream_id.is_none(),
@@ -272,12 +287,14 @@ fn map_error(err: &Error) -> Error {
 
 #[cfg(test)]
 mod tests {
-    use super::{Connection, Error, QPackDecoder, Res};
-    use crate::QpackSettings;
+    use std::{convert::TryFrom, mem};
+
     use neqo_common::Header;
     use neqo_transport::{StreamId, StreamType};
-    use std::{convert::TryFrom, mem};
     use test_fixture::now;
+
+    use super::{Connection, Error, QPackDecoder, Res};
+    use crate::QpackSettings;
 
     const STREAM_0: StreamId = StreamId::new(0);
 
@@ -319,7 +336,7 @@ mod tests {
             .stream_send(decoder.recv_stream_id, encoder_instruction)
             .unwrap();
         let out = decoder.peer_conn.process(None, now());
-        mem::drop(decoder.conn.process(out.dgram(), now()));
+        mem::drop(decoder.conn.process(out.as_dgram_ref(), now()));
         assert_eq!(
             decoder
                 .decoder
@@ -331,7 +348,7 @@ mod tests {
     fn send_instructions_and_check(decoder: &mut TestDecoder, decoder_instruction: &[u8]) {
         decoder.decoder.send(&mut decoder.conn).unwrap();
         let out = decoder.conn.process(None, now());
-        mem::drop(decoder.peer_conn.process(out.dgram(), now()));
+        mem::drop(decoder.peer_conn.process(out.as_dgram_ref(), now()));
         let mut buf = [0_u8; 100];
         let (amount, fin) = decoder
             .peer_conn
@@ -434,6 +451,7 @@ mod tests {
         );
     }
 
+    
     
     #[test]
     fn test_duplicate() {
@@ -605,6 +623,7 @@ mod tests {
                 encoder_inst: &[],
             },
             
+            
             TestElement {
                 headers: vec![Header::new("my-header", "my-value")],
                 header_block: &[0x02, 0x80, 0x10],
@@ -683,6 +702,7 @@ mod tests {
                 ],
                 encoder_inst: &[],
             },
+            
             
             TestElement {
                 headers: vec![Header::new("my-header", "my-value")],

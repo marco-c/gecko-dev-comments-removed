@@ -4,6 +4,12 @@
 
 
 
+use std::{
+    convert::TryFrom,
+    os::raw::{c_char, c_uint},
+    ptr::null_mut,
+};
+
 use crate::{
     constants::{
         Cipher, Version, TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384,
@@ -14,12 +20,6 @@ use crate::{
         random, Item, PK11Origin, PK11SymKey, PK11_ImportDataKey, Slot, SymKey, CKA_DERIVE,
         CKM_HKDF_DERIVE, CK_ATTRIBUTE_TYPE, CK_MECHANISM_TYPE,
     },
-};
-
-use std::{
-    convert::TryFrom,
-    os::raw::{c_char, c_uint},
-    ptr::null_mut,
 };
 
 experimental_api!(SSL_HkdfExtract(
@@ -55,9 +55,11 @@ fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
 
 
 
+
 pub fn generate_key(version: Version, cipher: Cipher) -> Res<SymKey> {
     import_key(version, &random(key_size(version, cipher)?))
 }
+
 
 
 
@@ -68,6 +70,7 @@ pub fn import_key(version: Version, buf: &[u8]) -> Res<SymKey> {
         return Err(Error::UnsupportedVersion);
     }
     let slot = Slot::internal()?;
+    #[allow(clippy::useless_conversion)] 
     let key_ptr = unsafe {
         PK11_ImportDataKey(
             *slot,
@@ -80,6 +83,7 @@ pub fn import_key(version: Version, buf: &[u8]) -> Res<SymKey> {
     };
     SymKey::from_ptr(key_ptr)
 }
+
 
 
 
@@ -99,6 +103,7 @@ pub fn extract(
     unsafe { SSL_HkdfExtract(version, cipher, salt_ptr, **ikm, &mut prk) }?;
     SymKey::from_ptr(prk)
 }
+
 
 
 

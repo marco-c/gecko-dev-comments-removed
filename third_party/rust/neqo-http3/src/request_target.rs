@@ -7,6 +7,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use std::fmt::{Debug, Formatter};
+
 use url::{ParseError, Url};
 
 pub trait RequestTarget: Debug {
@@ -57,6 +58,8 @@ impl Debug for RefRequestTarget<'_, '_, '_> {
 pub trait AsRequestTarget<'x> {
     type Target: RequestTarget;
     type Error;
+    
+    
     
     
     

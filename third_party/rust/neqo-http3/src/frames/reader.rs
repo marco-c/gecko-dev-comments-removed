@@ -6,14 +6,15 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use crate::{Error, RecvStream, Res};
+use std::{convert::TryFrom, fmt::Debug};
+
 use neqo_common::{
     hex_with_len, qtrace, Decoder, IncrementalDecoderBuffer, IncrementalDecoderIgnore,
     IncrementalDecoderUint,
 };
 use neqo_transport::{Connection, StreamId};
-use std::convert::TryFrom;
-use std::fmt::Debug;
+
+use crate::{Error, RecvStream, Res};
 
 const MAX_READ_SIZE: usize = 4096;
 
@@ -21,15 +22,19 @@ pub(crate) trait FrameDecoder<T> {
     fn is_known_type(frame_type: u64) -> bool;
     
     
+    
     fn frame_type_allowed(_frame_type: u64) -> Res<()> {
         Ok(())
     }
+
+    
     
     
     fn decode(frame_type: u64, frame_len: u64, data: Option<&[u8]>) -> Res<Option<T>>;
 }
 
 pub(crate) trait StreamReader {
+    
     
     
     
@@ -51,6 +56,7 @@ impl<'a> StreamReaderConnectionWrapper<'a> {
 impl<'a> StreamReader for StreamReaderConnectionWrapper<'a> {
     
     
+    
     fn read_data(&mut self, buf: &mut [u8]) -> Res<(usize, bool)> {
         let res = self.conn.stream_recv(self.stream_id, buf)?;
         Ok(res)
@@ -69,6 +75,7 @@ impl<'a> StreamReaderRecvStreamWrapper<'a> {
 }
 
 impl<'a> StreamReader for StreamReaderRecvStreamWrapper<'a> {
+    
     
     
     fn read_data(&mut self, buf: &mut [u8]) -> Res<(usize, bool)> {
@@ -149,6 +156,8 @@ impl FrameReader {
     
     
     
+    
+    
     pub fn receive<T: FrameDecoder<T>>(
         &mut self,
         stream_reader: &mut dyn StreamReader,
@@ -185,6 +194,7 @@ impl FrameReader {
         }
     }
 
+    
     
     
     fn consume<T: FrameDecoder<T>>(&mut self, mut input: Decoder) -> Res<Option<T>> {

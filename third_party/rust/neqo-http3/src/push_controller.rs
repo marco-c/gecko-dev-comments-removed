@@ -3,20 +3,25 @@
 
 
 
-use crate::client_events::{Http3ClientEvent, Http3ClientEvents};
-use crate::connection::Http3Connection;
-use crate::frames::HFrame;
-use crate::{CloseType, Error, Http3StreamInfo, HttpRecvStreamEvents, RecvStreamEvents, Res};
+use std::{
+    cell::RefCell,
+    collections::VecDeque,
+    convert::TryFrom,
+    fmt::{Debug, Display},
+    mem,
+    rc::Rc,
+    slice::SliceIndex,
+};
+
 use neqo_common::{qerror, qinfo, qtrace, Header};
 use neqo_transport::{Connection, StreamId};
-use std::cell::RefCell;
-use std::collections::VecDeque;
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::mem;
-use std::rc::Rc;
-use std::slice::SliceIndex;
+
+use crate::{
+    client_events::{Http3ClientEvent, Http3ClientEvents},
+    connection::Http3Connection,
+    frames::HFrame,
+    CloseType, Error, Http3StreamInfo, HttpRecvStreamEvents, RecvStreamEvents, Res,
+};
 
 
 
@@ -93,9 +98,7 @@ impl ActivePushStreams {
             None | Some(PushState::Closed) => None,
             Some(s) => {
                 let res = mem::replace(s, PushState::Closed);
-                while self.push_streams.get(0).is_some()
-                    && *self.push_streams.get(0).unwrap() == PushState::Closed
-                {
+                while let Some(PushState::Closed) = self.push_streams.front() {
                     self.push_streams.pop_front();
                     self.first_push_id += 1;
                 }
@@ -121,6 +124,7 @@ impl ActivePushStreams {
         self.push_streams.clear();
     }
 }
+
 
 
 
@@ -170,6 +174,8 @@ impl Display for PushController {
 }
 
 impl PushController {
+    
+    
     
     
     
@@ -340,6 +346,7 @@ impl PushController {
         match self.push_streams.get(push_id) {
             None => {
                 qtrace!("Push has already been closed.");
+                
                 
                 
                 if self.conn_events.has_push(push_id) {

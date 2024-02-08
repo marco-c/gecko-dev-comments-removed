@@ -4,9 +4,10 @@
 
 
 
-use crate::Res;
 use neqo_common::qtrace;
 use neqo_transport::{Connection, StreamId};
+
+use crate::Res;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BufferedStream {
@@ -37,6 +38,7 @@ impl BufferedStream {
 
     
     
+    
     pub fn init(&mut self, stream_id: StreamId) {
         debug_assert!(&Self::Uninitialized == self);
         *self = Self::Initialized {
@@ -47,6 +49,7 @@ impl BufferedStream {
 
     
     
+    
     pub fn buffer(&mut self, to_buf: &[u8]) {
         if let Self::Initialized { buf, .. } = self {
             buf.extend_from_slice(to_buf);
@@ -55,6 +58,7 @@ impl BufferedStream {
         }
     }
 
+    
     
     
     pub fn send_buffer(&mut self, conn: &mut Connection) -> Res<usize> {
@@ -75,6 +79,7 @@ impl BufferedStream {
         Ok(sent)
     }
 
+    
     
     
     pub fn send_atomic(&mut self, conn: &mut Connection, to_send: &[u8]) -> Res<bool> {

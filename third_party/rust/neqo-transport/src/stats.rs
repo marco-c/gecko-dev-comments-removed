@@ -7,8 +7,6 @@
 
 #![deny(clippy::pedantic)]
 
-use crate::packet::PacketNumber;
-use neqo_common::qinfo;
 use std::{
     cell::RefCell,
     fmt::{self, Debug},
@@ -16,6 +14,10 @@ use std::{
     rc::Rc,
     time::Duration,
 };
+
+use neqo_common::qinfo;
+
+use crate::packet::PacketNumber;
 
 pub(crate) const MAX_PTO_COUNTS: usize = 16;
 
@@ -141,6 +143,8 @@ pub struct Stats {
     pub rtt: Duration,
     
     pub rttvar: Duration,
+    
+    pub rtt_init_guess: bool,
 
     
     
@@ -173,6 +177,7 @@ impl Stats {
         );
     }
 
+    
     
     
     pub fn add_pto_count(&mut self, count: usize) {

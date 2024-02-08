@@ -4,21 +4,22 @@
 
 
 
-use crate::connection::{Http3Connection, Http3State, WebTransportSessionAcceptAction};
-use crate::frames::HFrame;
-use crate::recv_message::{RecvMessage, RecvMessageInfo};
-use crate::send_message::SendMessage;
-use crate::server_connection_events::{Http3ServerConnEvent, Http3ServerConnEvents};
-use crate::{
-    Error, Http3Parameters, Http3StreamType, NewStreamType, Priority, PriorityHandler,
-    ReceiveOutput, Res,
-};
+use std::{rc::Rc, time::Instant};
+
 use neqo_common::{event::Provider, qdebug, qinfo, qtrace, Header, MessageType, Role};
 use neqo_transport::{
     AppError, Connection, ConnectionEvent, DatagramTracking, StreamId, StreamType,
 };
-use std::rc::Rc;
-use std::time::Instant;
+
+use crate::{
+    connection::{Http3Connection, Http3State, WebTransportSessionAcceptAction},
+    frames::HFrame,
+    recv_message::{RecvMessage, RecvMessageInfo},
+    send_message::SendMessage,
+    server_connection_events::{Http3ServerConnEvent, Http3ServerConnEvents},
+    Error, Http3Parameters, Http3StreamType, NewStreamType, Priority, PriorityHandler,
+    ReceiveOutput, Res,
+};
 
 #[derive(Debug)]
 pub struct Http3ServerHandler {
@@ -47,6 +48,9 @@ impl Http3ServerHandler {
         self.base_handler.state()
     }
 
+    
+    
+    
     
     
     
@@ -91,6 +95,8 @@ impl Http3ServerHandler {
     
     
     
+    
+    
     pub fn stream_close_send(&mut self, stream_id: StreamId, conn: &mut Connection) -> Res<()> {
         qinfo!([self], "Close sending side stream={}.", stream_id);
         self.base_handler.stream_close_send(conn, stream_id)?;
@@ -99,6 +105,8 @@ impl Http3ServerHandler {
         Ok(())
     }
 
+    
+    
     
     
     
@@ -153,6 +161,9 @@ impl Http3ServerHandler {
         )
     }
 
+    
+    
+    
     
     
     
@@ -383,6 +394,8 @@ impl Http3ServerHandler {
         }
     }
 
+    
+    
     
     
     

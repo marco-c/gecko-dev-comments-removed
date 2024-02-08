@@ -6,13 +6,14 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use crate::control_stream_local::HTTP3_UNI_STREAM_TYPE_CONTROL;
-use crate::frames::H3_FRAME_TYPE_HEADERS;
-use crate::{CloseType, Error, Http3StreamType, ReceiveOutput, RecvStream, Res, Stream};
 use neqo_common::{qtrace, Decoder, IncrementalDecoderUint, Role};
-use neqo_qpack::decoder::QPACK_UNI_STREAM_TYPE_DECODER;
-use neqo_qpack::encoder::QPACK_UNI_STREAM_TYPE_ENCODER;
+use neqo_qpack::{decoder::QPACK_UNI_STREAM_TYPE_DECODER, encoder::QPACK_UNI_STREAM_TYPE_ENCODER};
 use neqo_transport::{Connection, StreamId, StreamType};
+
+use crate::{
+    control_stream_local::HTTP3_UNI_STREAM_TYPE_CONTROL, frames::H3_FRAME_TYPE_HEADERS, CloseType,
+    Error, Http3StreamType, ReceiveOutput, RecvStream, Res, Stream,
+};
 
 pub(crate) const HTTP3_UNI_STREAM_TYPE_PUSH: u64 = 0x1;
 pub(crate) const WEBTRANSPORT_UNI_STREAM: u64 = 0x54;
@@ -30,6 +31,8 @@ pub(crate) enum NewStreamType {
 }
 
 impl NewStreamType {
+    
+    
     
     
     
@@ -64,7 +67,6 @@ impl NewStreamType {
         }
     }
 }
-
 
 
 
@@ -234,20 +236,23 @@ impl RecvStream for NewStreamHeadReader {
 
 #[cfg(test)]
 mod tests {
+    use std::mem;
+
+    use neqo_common::{Encoder, Role};
+    use neqo_qpack::{
+        decoder::QPACK_UNI_STREAM_TYPE_DECODER, encoder::QPACK_UNI_STREAM_TYPE_ENCODER,
+    };
+    use neqo_transport::{Connection, StreamId, StreamType};
+    use test_fixture::{connect, now};
+
     use super::{
         NewStreamHeadReader, HTTP3_UNI_STREAM_TYPE_PUSH, WEBTRANSPORT_STREAM,
         WEBTRANSPORT_UNI_STREAM,
     };
-    use neqo_transport::{Connection, StreamId, StreamType};
-    use std::mem;
-    use test_fixture::{connect, now};
-
-    use crate::control_stream_local::HTTP3_UNI_STREAM_TYPE_CONTROL;
-    use crate::frames::H3_FRAME_TYPE_HEADERS;
-    use crate::{CloseType, Error, NewStreamType, ReceiveOutput, RecvStream, Res};
-    use neqo_common::{Encoder, Role};
-    use neqo_qpack::decoder::QPACK_UNI_STREAM_TYPE_DECODER;
-    use neqo_qpack::encoder::QPACK_UNI_STREAM_TYPE_ENCODER;
+    use crate::{
+        control_stream_local::HTTP3_UNI_STREAM_TYPE_CONTROL, frames::H3_FRAME_TYPE_HEADERS,
+        CloseType, Error, NewStreamType, ReceiveOutput, RecvStream, Res,
+    };
 
     struct Test {
         conn_c: Connection,
@@ -262,7 +267,7 @@ mod tests {
             
             let stream_id = conn_s.stream_create(stream_type).unwrap();
             let out = conn_s.process(None, now());
-            mem::drop(conn_c.process(out.dgram(), now()));
+            mem::drop(conn_c.process(out.as_dgram_ref(), now()));
 
             Self {
                 conn_c,
@@ -285,7 +290,7 @@ mod tests {
                     .stream_send(self.stream_id, &enc[i..=i])
                     .unwrap();
                 let out = self.conn_s.process(None, now());
-                mem::drop(self.conn_c.process(out.dgram(), now()));
+                mem::drop(self.conn_c.process(out.as_dgram_ref(), now()));
                 assert_eq!(
                     self.decoder.receive(&mut self.conn_c).unwrap(),
                     (ReceiveOutput::NoOutput, false)
@@ -299,7 +304,7 @@ mod tests {
                 self.conn_s.stream_close_send(self.stream_id).unwrap();
             }
             let out = self.conn_s.process(None, now());
-            mem::drop(self.conn_c.process(out.dgram(), now()));
+            mem::drop(self.conn_c.process(out.dgram().as_ref(), now()));
             assert_eq!(&self.decoder.receive(&mut self.conn_c), outcome);
             assert_eq!(self.decoder.done(), done);
         }
@@ -398,6 +403,7 @@ mod tests {
         let mut t = Test::new(StreamType::UniDi, Role::Server);
         t.decode(
             &[H3_FRAME_TYPE_HEADERS], 
+
             false,
             &Err(Error::HttpStreamCreation),
             true,
@@ -414,6 +420,7 @@ mod tests {
         let mut t = Test::new(StreamType::UniDi, Role::Client);
         t.decode(
             &[H3_FRAME_TYPE_HEADERS, 0xaaaa_aaaa], 
+
             false,
             &Ok((
                 ReceiveOutput::NewStream(NewStreamType::Push(0xaaaa_aaaa)),

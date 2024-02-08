@@ -23,6 +23,8 @@ impl IncrementalDecoderUint {
     
     
     
+    
+    
     pub fn consume(&mut self, dv: &mut Decoder) -> Option<u64> {
         if let Some(r) = &mut self.remaining {
             let amount = min(*r, dv.remaining());
@@ -89,6 +91,8 @@ impl IncrementalDecoderBuffer {
     
     
     
+    
+    
     pub fn consume(&mut self, dv: &mut Decoder) -> Option<Vec<u8>> {
         let amount = min(self.remaining, dv.remaining());
         let b = dv.decode(amount).unwrap();
@@ -108,6 +112,8 @@ pub struct IncrementalDecoderIgnore {
 }
 
 impl IncrementalDecoderIgnore {
+    
+    
     
     
     

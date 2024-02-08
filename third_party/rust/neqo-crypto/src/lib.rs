@@ -37,15 +37,19 @@ pub mod selfencrypt;
 mod ssl;
 mod time;
 
+use std::{
+    ffi::CString,
+    path::{Path, PathBuf},
+    ptr::null,
+};
+
 #[cfg(not(feature = "fuzzing"))]
 pub use self::aead::RealAead as Aead;
-
-#[cfg(feature = "fuzzing")]
-pub use self::aead_fuzzing::FuzzingAead as Aead;
-
 #[cfg(feature = "fuzzing")]
 pub use self::aead::RealAead;
-
+#[cfg(feature = "fuzzing")]
+pub use self::aead_fuzzing::FuzzingAead as Aead;
+use self::once::OnceResult;
 pub use self::{
     agent::{
         Agent, AllowZeroRtt, Client, HandshakeState, Record, RecordList, ResumptionToken,
@@ -66,15 +70,7 @@ pub use self::{
     ssl::Opt,
 };
 
-use self::once::OnceResult;
-
-use std::{
-    ffi::CString,
-    path::{Path, PathBuf},
-    ptr::null,
-};
-
-const MINIMUM_NSS_VERSION: &str = "3.74";
+const MINIMUM_NSS_VERSION: &str = "3.97";
 
 #[allow(non_upper_case_globals, clippy::redundant_static_lifetimes)]
 #[allow(clippy::upper_case_acronyms)]
@@ -122,6 +118,9 @@ fn version_check() {
 
 
 
+
+
+
 pub fn init() {
     
     time::init();
@@ -151,6 +150,8 @@ fn enable_ssl_trace() {
     secstatus_to_res(unsafe { ssl::SSL_OptionGetDefault(opt, &mut v) })
         .expect("SSL_OptionGetDefault failed");
 }
+
+
 
 
 
@@ -194,6 +195,7 @@ pub fn init_db<P: Into<PathBuf>>(dir: P) {
         });
     }
 }
+
 
 
 

@@ -4,15 +4,16 @@
 
 
 
+use neqo_common::{Decoder, Encoder};
+use neqo_transport::StreamId;
+use test_fixture::fixture_init;
+
 use super::enc_dec_hframe;
 use crate::{
     frames::HFrame,
     settings::{HSetting, HSettingType, HSettings},
     Priority,
 };
-use neqo_common::{Decoder, Encoder};
-use neqo_transport::StreamId;
-use test_fixture::fixture_init;
 
 #[test]
 fn test_data_frame() {

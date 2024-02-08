@@ -4,11 +4,11 @@
 
 
 
-use std::mem;
-use std::time::Instant;
+use std::{mem, time::Instant};
+
+use neqo_common::{qdebug, qinfo, Datagram};
 
 use crate::crypto::CryptoSpace;
-use neqo_common::{qdebug, qinfo, Datagram};
 
 
 

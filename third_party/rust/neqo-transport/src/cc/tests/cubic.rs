@@ -7,6 +7,14 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_sign_loss)]
 
+use std::{
+    convert::TryFrom,
+    ops::Sub,
+    time::{Duration, Instant},
+};
+
+use test_fixture::now;
+
 use crate::{
     cc::{
         classic_cc::{ClassicCongestionControl, CWND_INITIAL},
@@ -17,16 +25,12 @@ use crate::{
         CongestionControl, MAX_DATAGRAM_SIZE, MAX_DATAGRAM_SIZE_F64,
     },
     packet::PacketType,
+    rtt::RttEstimate,
     tracking::SentPacket,
 };
-use std::{
-    convert::TryFrom,
-    ops::Sub,
-    time::{Duration, Instant},
-};
-use test_fixture::now;
 
 const RTT: Duration = Duration::from_millis(100);
+const RTT_ESTIMATE: RttEstimate = RttEstimate::from_duration(Duration::from_millis(100));
 const CWND_INITIAL_F64: f64 = 10.0 * MAX_DATAGRAM_SIZE_F64;
 const CWND_INITIAL_10_F64: f64 = 10.0 * CWND_INITIAL_F64;
 const CWND_INITIAL_10: usize = 10 * CWND_INITIAL;
@@ -59,7 +63,7 @@ fn ack_packet(cc: &mut ClassicCongestionControl<Cubic>, pn: u64, now: Instant) {
         Vec::new(),        
         MAX_DATAGRAM_SIZE, 
     );
-    cc.on_packets_acked(&[acked], RTT, now);
+    cc.on_packets_acked(&[acked], &RTT_ESTIMATE, now);
 }
 
 fn packet_lost(cc: &mut ClassicCongestionControl<Cubic>, pn: u64) {
@@ -76,9 +80,7 @@ fn packet_lost(cc: &mut ClassicCongestionControl<Cubic>, pn: u64) {
 }
 
 fn expected_tcp_acks(cwnd_rtt_start: usize) -> u64 {
-    (f64::try_from(i32::try_from(cwnd_rtt_start).unwrap()).unwrap()
-        / MAX_DATAGRAM_SIZE_F64
-        / CUBIC_ALPHA)
+    (f64::from(i32::try_from(cwnd_rtt_start).unwrap()) / MAX_DATAGRAM_SIZE_F64 / CUBIC_ALPHA)
         .round() as u64
 }
 
@@ -148,6 +150,7 @@ fn tcp_phase() {
     
     
     
+    
 
     let cwnd_rtt_start_after_tcp = cubic.cwnd();
     let elapsed_time = now - start_time;
@@ -188,6 +191,7 @@ fn tcp_phase() {
 #[test]
 fn cubic_phase() {
     let mut cubic = ClassicCongestionControl::new(Cubic::default());
+    
     
     cubic.set_last_max_cwnd(CWND_INITIAL_10_F64);
     
@@ -264,6 +268,7 @@ fn congestion_event_congestion_avoidance() {
     
     cubic.set_ssthresh(1);
 
+    
     
     cubic.set_last_max_cwnd(3.0 * MAX_DATAGRAM_SIZE_F64);
 

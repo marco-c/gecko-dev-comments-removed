@@ -4,12 +4,13 @@
 
 
 
-use crate::{frames::reader::FrameDecoder, settings::HSettings, Error, Priority, Res};
+use std::{fmt::Debug, io::Write};
+
 use neqo_common::{Decoder, Encoder};
 use neqo_crypto::random;
 use neqo_transport::StreamId;
-use std::fmt::Debug;
-use std::io::Write;
+
+use crate::{frames::reader::FrameDecoder, settings::HSettings, Error, Priority, Res};
 
 pub(crate) type HFrameType = u64;
 

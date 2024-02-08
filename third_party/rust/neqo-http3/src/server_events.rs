@@ -6,20 +6,25 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use crate::connection::{Http3State, WebTransportSessionAcceptAction};
-use crate::connection_server::Http3ServerHandler;
-use crate::{
-    features::extended_connect::SessionCloseReason, Http3StreamInfo, Http3StreamType, Priority, Res,
+use std::{
+    cell::RefCell,
+    collections::VecDeque,
+    convert::TryFrom,
+    ops::{Deref, DerefMut},
+    rc::Rc,
 };
-use neqo_common::{qdebug, qinfo, Encoder, Header};
-use neqo_transport::server::ActiveConnectionRef;
-use neqo_transport::{AppError, Connection, DatagramTracking, StreamId, StreamType};
 
-use std::cell::RefCell;
-use std::collections::VecDeque;
-use std::convert::TryFrom;
-use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
+use neqo_common::{qdebug, qinfo, Encoder, Header};
+use neqo_transport::{
+    server::ActiveConnectionRef, AppError, Connection, DatagramTracking, StreamId, StreamType,
+};
+
+use crate::{
+    connection::{Http3State, WebTransportSessionAcceptAction},
+    connection_server::Http3ServerHandler,
+    features::extended_connect::SessionCloseReason,
+    Http3StreamInfo, Http3StreamType, Priority, Res,
+};
 
 #[derive(Debug, Clone)]
 pub struct StreamHandler {
@@ -59,6 +64,8 @@ impl StreamHandler {
     
     
     
+    
+    
     pub fn send_headers(&mut self, headers: &[Header]) -> Res<()> {
         self.handler.borrow_mut().send_headers(
             self.stream_id(),
@@ -67,6 +74,8 @@ impl StreamHandler {
         )
     }
 
+    
+    
     
     
     
@@ -79,12 +88,16 @@ impl StreamHandler {
     
     
     
+    
+    
     pub fn stream_close_send(&mut self) -> Res<()> {
         self.handler
             .borrow_mut()
             .stream_close_send(self.stream_id(), &mut self.conn.borrow_mut())
     }
 
+    
+    
     
     
     
@@ -105,6 +118,8 @@ impl StreamHandler {
     
     
     
+    
+    
     pub fn stream_reset_send(&mut self, app_error: AppError) -> Res<()> {
         qdebug!(
             [self],
@@ -119,6 +134,8 @@ impl StreamHandler {
         )
     }
 
+    
+    
     
     
     
@@ -161,10 +178,14 @@ impl Http3OrWebTransportStream {
     
     
     
+    
+    
     pub fn send_headers(&mut self, headers: &[Header]) -> Res<()> {
         self.stream_handler.send_headers(headers)
     }
 
+    
+    
     
     
     
@@ -173,6 +194,8 @@ impl Http3OrWebTransportStream {
         self.stream_handler.send_data(data)
     }
 
+    
+    
     
     
     
@@ -245,6 +268,8 @@ impl WebTransportRequest {
     
     
     
+    
+    
     pub fn response(&mut self, accept: &WebTransportSessionAcceptAction) -> Res<()> {
         qinfo!([self], "Set a response for a WebTransport session.");
         self.stream_handler
@@ -257,6 +282,7 @@ impl WebTransportRequest {
             )
     }
 
+    
     
     
     
@@ -278,6 +304,8 @@ impl WebTransportRequest {
         self.stream_handler.stream_id()
     }
 
+    
+    
     
     
     
@@ -305,6 +333,8 @@ impl WebTransportRequest {
     
     
     
+    
+    
     pub fn send_datagram(&mut self, buf: &[u8], id: impl Into<DatagramTracking>) -> Res<()> {
         let session_id = self.stream_handler.stream_id();
         self.stream_handler
@@ -323,6 +353,10 @@ impl WebTransportRequest {
         self.stream_handler.conn.borrow().remote_datagram_size()
     }
 
+    
+    
+    
+    
     
     
     

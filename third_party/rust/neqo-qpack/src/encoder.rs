@@ -4,19 +4,25 @@
 
 
 
-use crate::decoder_instructions::{DecoderInstruction, DecoderInstructionReader};
-use crate::encoder_instructions::EncoderInstruction;
-use crate::header_block::HeaderEncoder;
-use crate::qlog;
-use crate::qpack_send_buf::QpackData;
-use crate::reader::ReceiverConnWrapper;
-use crate::stats::Stats;
-use crate::table::{HeaderTable, LookupResult, ADDITIONAL_TABLE_ENTRY_SIZE};
-use crate::{Error, QpackSettings, Res};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    convert::TryFrom,
+};
+
 use neqo_common::{qdebug, qerror, qlog::NeqoQlog, qtrace, Header};
 use neqo_transport::{Connection, Error as TransportError, StreamId};
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::convert::TryFrom;
+
+use crate::{
+    decoder_instructions::{DecoderInstruction, DecoderInstructionReader},
+    encoder_instructions::EncoderInstruction,
+    header_block::HeaderEncoder,
+    qlog,
+    qpack_send_buf::QpackData,
+    reader::ReceiverConnWrapper,
+    stats::Stats,
+    table::{HeaderTable, LookupResult, ADDITIONAL_TABLE_ENTRY_SIZE},
+    Error, QpackSettings, Res,
+};
 
 pub const QPACK_UNI_STREAM_TYPE_ENCODER: u64 = 0x2;
 
@@ -78,6 +84,8 @@ impl QPackEncoder {
     
     
     
+    
+    
     pub fn set_max_capacity(&mut self, cap: u64) -> Res<()> {
         if cap > (1 << 30) - 1 {
             return Err(Error::EncoderStream);
@@ -105,11 +113,15 @@ impl QPackEncoder {
     
     
     
+    
+    
     pub fn set_max_blocked_streams(&mut self, blocked_streams: u64) -> Res<()> {
         self.max_blocked_streams = u16::try_from(blocked_streams).or(Err(Error::EncoderStream))?;
         Ok(())
     }
 
+    
+    
     
     
     
@@ -230,6 +242,12 @@ impl QPackEncoder {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn send_and_insert(
         &mut self,
         conn: &mut Connection,
@@ -280,6 +298,7 @@ impl QPackEncoder {
     ) -> Res<()> {
         if let Some(cap) = self.next_capacity {
             
+            
             if cap < self.table.capacity() && !self.table.can_evict_to(cap) {
                 return Err(Error::DynamicTableFull);
             }
@@ -293,7 +312,7 @@ impl QPackEncoder {
                     false,
                     "can_evict_to should have checked and make sure this operation is possible"
                 );
-                return Err(Error::InternalError(1));
+                return Err(Error::InternalError);
             }
             self.max_entries = cap / 32;
             self.next_capacity = None;
@@ -301,6 +320,8 @@ impl QPackEncoder {
         Ok(())
     }
 
+    
+    
     
     
     
@@ -343,6 +364,10 @@ impl QPackEncoder {
     
     
     
+    
+    
+    
+    
     pub fn encode_header_block(
         &mut self,
         conn: &mut Connection,
@@ -354,8 +379,6 @@ impl QPackEncoder {
         let mut encoder_blocked = false;
         
         if self.send_encoder_updates(conn).is_err() {
-            
-            
             
             
             
@@ -408,12 +431,12 @@ impl QPackEncoder {
             } else if can_block && !encoder_blocked {
                 
                 
+                
                 if let Ok(index) = self.send_and_insert(conn, &name, &value) {
                     encoded_h.encode_indexed_dynamic(index);
                     ref_entries.insert(index);
                     self.table.add_ref(index);
                 } else {
-                    
                     
                     
                     
@@ -457,6 +480,8 @@ impl QPackEncoder {
         encoded_h
     }
 
+    
+    
     
     
     
@@ -505,18 +530,20 @@ fn map_stream_send_atomic_error(err: &TransportError) -> Error {
         }
         _ => {
             debug_assert!(false, "Unexpected error");
-            Error::InternalError(2)
+            Error::InternalError
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::mem;
+
+    use neqo_transport::{ConnectionParameters, StreamId, StreamType};
+    use test_fixture::{default_client, default_server, handshake, new_server, now, DEFAULT_ALPN};
+
     use super::{Connection, Error, Header, QPackEncoder, Res};
     use crate::QpackSettings;
-    use neqo_transport::{ConnectionParameters, StreamId, StreamType};
-    use std::mem;
-    use test_fixture::{default_client, default_server, handshake, new_server, now, DEFAULT_ALPN};
 
     struct TestEncoder {
         encoder: QPackEncoder,
@@ -529,6 +556,7 @@ mod tests {
     impl TestEncoder {
         pub fn change_capacity(&mut self, capacity: u64) -> Res<()> {
             self.encoder.set_max_capacity(capacity).unwrap();
+            
             
             self.encoder.send_encoder_updates(&mut self.conn)
         }
@@ -556,8 +584,8 @@ mod tests {
         pub fn send_instructions(&mut self, encoder_instruction: &[u8]) {
             self.encoder.send_encoder_updates(&mut self.conn).unwrap();
             let out = self.conn.process(None, now());
-            let out2 = self.peer_conn.process(out.dgram(), now());
-            mem::drop(self.conn.process(out2.dgram(), now()));
+            let out2 = self.peer_conn.process(out.as_dgram_ref(), now());
+            mem::drop(self.conn.process(out2.as_dgram_ref(), now()));
             let mut buf = [0_u8; 100];
             let (amount, fin) = self
                 .peer_conn
@@ -619,7 +647,7 @@ mod tests {
             .stream_send(encoder.recv_stream_id, decoder_instruction)
             .unwrap();
         let out = encoder.peer_conn.process(None, now());
-        mem::drop(encoder.conn.process(out.dgram(), now()));
+        mem::drop(encoder.conn.process(out.as_dgram_ref(), now()));
         assert!(encoder
             .encoder
             .read_instructions(&mut encoder.conn, encoder.recv_stream_id)
@@ -723,6 +751,7 @@ mod tests {
                 encoder_inst: &[],
             },
             
+            
             TestElement {
                 headers: vec![Header::new("my-header", "my-value")],
                 header_block: &[0x02, 0x80, 0x10],
@@ -796,6 +825,7 @@ mod tests {
                 ],
                 encoder_inst: &[],
             },
+            
             
             TestElement {
                 headers: vec![Header::new("my-header", "my-value")],
@@ -871,6 +901,7 @@ mod tests {
         encoder.send_instructions(HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
 
         
+        
         let res =
             encoder
                 .encoder
@@ -921,6 +952,7 @@ mod tests {
         assert_eq!(&buf[..], ENCODE_INDEXED_REF_DYNAMIC);
         encoder.send_instructions(&[]);
 
+        
         
         let res =
             encoder
@@ -1099,6 +1131,7 @@ mod tests {
 
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
 
+        
         
         let buf = encoder.encoder.encode_header_block(
             &mut encoder.conn,
@@ -1510,6 +1543,7 @@ mod tests {
         
         
         
+        
         let buf1 = encoder.encoder.encode_header_block(
             &mut encoder.conn,
             &[
@@ -1524,6 +1558,7 @@ mod tests {
         
         assert_eq!(buf1[3] & 0xf0, 0x20);
 
+        
         
         let buf2 = encoder.encoder.encode_header_block(
             &mut encoder.conn,
@@ -1540,7 +1575,7 @@ mod tests {
 
         
         let out = encoder.peer_conn.process(None, now());
-        mem::drop(encoder.conn.process(out.dgram(), now()));
+        mem::drop(encoder.conn.process(out.as_dgram_ref(), now()));
 
         
         
@@ -1587,7 +1622,7 @@ mod tests {
             .send_encoder_updates(&mut encoder.conn)
             .unwrap();
         let out = encoder.conn.process(None, now());
-        mem::drop(encoder.peer_conn.process(out.dgram(), now()));
+        mem::drop(encoder.peer_conn.process(out.as_dgram_ref(), now()));
         
         recv_instruction(&mut encoder, &[0x01]);
 

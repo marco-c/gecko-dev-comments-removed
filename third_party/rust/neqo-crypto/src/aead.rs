@@ -4,6 +4,14 @@
 
 
 
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt,
+    ops::{Deref, DerefMut},
+    os::raw::{c_char, c_uint},
+    ptr::null_mut,
+};
+
 use crate::{
     constants::{Cipher, Version},
     err::Res,
@@ -11,14 +19,6 @@ use crate::{
     p11::{PK11SymKey, SymKey},
     scoped_ptr,
     ssl::{self, PRUint16, PRUint64, PRUint8, SSLAeadContext},
-};
-
-use std::{
-    convert::{TryFrom, TryInto},
-    fmt,
-    ops::{Deref, DerefMut},
-    os::raw::{c_char, c_uint},
-    ptr::null_mut,
 };
 
 experimental_api!(SSL_MakeAead(
@@ -59,6 +59,7 @@ pub struct RealAead {
 }
 
 impl RealAead {
+    
     
     
     
@@ -108,6 +109,7 @@ impl RealAead {
     
     
     
+    
     pub fn encrypt<'a>(
         &self,
         count: u64,
@@ -132,6 +134,7 @@ impl RealAead {
         Ok(&output[0..(l.try_into()?)])
     }
 
+    
     
     
     

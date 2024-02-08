@@ -160,14 +160,8 @@ mod server_events;
 mod settings;
 mod stream_type_reader;
 
-use neqo_qpack::Error as QpackError;
-pub use neqo_transport::{streams::SendOrder, Output, StreamId};
-use neqo_transport::{
-    AppError, Connection, Error as TransportError, RecvStreamStats, SendStreamStats,
-};
-use std::fmt::Debug;
+use std::{any::Any, cell::RefCell, fmt::Debug, rc::Rc};
 
-use crate::priority::PriorityHandler;
 use buffered_send_stream::BufferedStream;
 pub use client_events::{Http3ClientEvent, WebTransportEvent};
 pub use conn_params::Http3Parameters;
@@ -177,15 +171,19 @@ use features::extended_connect::WebTransportSession;
 use frames::HFrame;
 pub use neqo_common::Header;
 use neqo_common::MessageType;
+use neqo_qpack::Error as QpackError;
+pub use neqo_transport::{streams::SendOrder, Output, StreamId};
+use neqo_transport::{
+    AppError, Connection, Error as TransportError, RecvStreamStats, SendStreamStats,
+};
 pub use priority::Priority;
 pub use server::Http3Server;
 pub use server_events::{
     Http3OrWebTransportStream, Http3ServerEvent, WebTransportRequest, WebTransportServerEvent,
 };
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
 use stream_type_reader::NewStreamType;
+
+use crate::priority::PriorityHandler;
 
 type Res<T> = Result<T, Error>;
 
@@ -194,6 +192,7 @@ pub enum Error {
     HttpNoError,
     HttpGeneralProtocol,
     HttpGeneralProtocolStream, 
+
     
     
     HttpInternal(u16),
@@ -289,6 +288,7 @@ impl Error {
 
     
     
+    
     #[must_use]
     pub fn map_stream_send_errors(err: &Error) -> Self {
         match err {
@@ -305,6 +305,7 @@ impl Error {
 
     
     
+    
     #[must_use]
     pub fn map_stream_create_errors(err: &TransportError) -> Self {
         match err {
@@ -317,6 +318,7 @@ impl Error {
         }
     }
 
+    
     
     
     #[must_use]
@@ -344,6 +346,9 @@ impl Error {
         }
     }
 
+    
+    
+    
     
     
     
@@ -452,10 +457,17 @@ trait RecvStream: Stream {
     
     
     
+    
+    
     fn receive(&mut self, conn: &mut Connection) -> Res<(ReceiveOutput, bool)>;
+
+    
     
     
     fn reset(&mut self, close_type: CloseType) -> Res<()>;
+
+    
+    
     
     
     
@@ -480,6 +492,8 @@ trait RecvStream: Stream {
 }
 
 trait HttpRecvStream: RecvStream {
+    
+    
     
     
     
@@ -553,19 +567,25 @@ trait HttpRecvStreamEvents: RecvStreamEvents {
 trait SendStream: Stream {
     
     
+    
     fn send(&mut self, conn: &mut Connection) -> Res<()>;
     fn has_data_to_send(&self) -> bool;
     fn stream_writable(&self);
     fn done(&self) -> bool;
     fn set_sendorder(&mut self, conn: &mut Connection, sendorder: Option<SendOrder>) -> Res<()>;
     fn set_fairness(&mut self, conn: &mut Connection, fairness: bool) -> Res<()>;
+
+    
     
     
     fn send_data(&mut self, _conn: &mut Connection, _buf: &[u8]) -> Res<usize>;
 
     
     
+    
     fn close(&mut self, conn: &mut Connection) -> Res<()>;
+
+    
     
     
     fn close_with_message(
@@ -576,6 +596,7 @@ trait SendStream: Stream {
     ) -> Res<()> {
         Err(Error::InvalidStreamId)
     }
+
     
     
     fn handle_stop_sending(&mut self, close_type: CloseType);
@@ -583,6 +604,7 @@ trait SendStream: Stream {
         None
     }
 
+    
     
     
     fn send_data_atomic(&mut self, _conn: &mut Connection, _buf: &[u8]) -> Res<()> {
@@ -596,6 +618,8 @@ trait SendStream: Stream {
 }
 
 trait HttpSendStream: SendStream {
+    
+    
     
     
     

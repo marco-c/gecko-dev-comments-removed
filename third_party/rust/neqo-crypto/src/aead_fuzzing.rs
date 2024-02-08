@@ -4,11 +4,14 @@
 
 
 
-use crate::constants::{Cipher, Version};
-use crate::err::{sec::SEC_ERROR_BAD_DATA, Error, Res};
-use crate::p11::SymKey;
-use crate::RealAead;
 use std::fmt;
+
+use crate::{
+    constants::{Cipher, Version},
+    err::{sec::SEC_ERROR_BAD_DATA, Error, Res},
+    p11::SymKey,
+    RealAead,
+};
 
 pub const FIXED_TAG_FUZZING: &[u8] = &[0x0a; 16];
 

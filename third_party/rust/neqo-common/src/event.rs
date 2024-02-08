@@ -4,8 +4,7 @@
 
 
 
-use std::iter::Iterator;
-use std::marker::PhantomData;
+use std::{iter::Iterator, marker::PhantomData};
 
 
 pub trait Provider {

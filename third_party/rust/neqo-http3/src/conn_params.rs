@@ -4,9 +4,10 @@
 
 
 
+use std::cmp::min;
+
 use neqo_qpack::QpackSettings;
 use neqo_transport::ConnectionParameters;
-use std::cmp::min;
 
 const QPACK_MAX_TABLE_SIZE_DEFAULT: u64 = 65536;
 const QPACK_TABLE_SIZE_LIMIT: u64 = (1 << 30) - 1;
@@ -54,6 +55,7 @@ impl Http3Parameters {
 
     
     
+    
     #[must_use]
     pub fn max_table_size_encoder(mut self, mut max_table: u64) -> Self {
         assert!(max_table <= QPACK_TABLE_SIZE_LIMIT);
@@ -67,6 +69,7 @@ impl Http3Parameters {
         self.qpack_settings.max_table_size_encoder
     }
 
+    
     
     
     #[must_use]

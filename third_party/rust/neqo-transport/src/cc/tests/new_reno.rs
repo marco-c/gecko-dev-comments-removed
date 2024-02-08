@@ -7,15 +7,23 @@
 
 #![deny(clippy::pedantic)]
 
-use crate::cc::new_reno::NewReno;
-use crate::cc::{ClassicCongestionControl, CongestionControl, CWND_INITIAL, MAX_DATAGRAM_SIZE};
-use crate::packet::PacketType;
-use crate::tracking::SentPacket;
 use std::time::Duration;
+
 use test_fixture::now;
+
+use crate::{
+    cc::{
+        new_reno::NewReno, ClassicCongestionControl, CongestionControl, CWND_INITIAL,
+        MAX_DATAGRAM_SIZE,
+    },
+    packet::PacketType,
+    rtt::RttEstimate,
+    tracking::SentPacket,
+};
 
 const PTO: Duration = Duration::from_millis(100);
 const RTT: Duration = Duration::from_millis(98);
+const RTT_ESTIMATE: RttEstimate = RttEstimate::from_duration(Duration::from_millis(98));
 
 fn cwnd_is_default(cc: &ClassicCongestionControl<NewReno>) {
     assert_eq!(cc.cwnd(), CWND_INITIAL);
@@ -117,7 +125,7 @@ fn issue_876() {
     assert_eq!(cc.bytes_in_flight(), 6 * MAX_DATAGRAM_SIZE - 5);
 
     
-    cc.on_packets_acked(&sent_packets[6..], RTT, time_now);
+    cc.on_packets_acked(&sent_packets[6..], &RTT_ESTIMATE, time_now);
     assert_eq!(cc.acked_bytes(), sent_packets[6].size);
     cwnd_is_halved(&cc);
     assert_eq!(cc.bytes_in_flight(), 5 * MAX_DATAGRAM_SIZE - 2);
@@ -181,7 +189,7 @@ fn issue_1465() {
 
     
     
-    cc.on_packets_acked(&[p2], RTT, now);
+    cc.on_packets_acked(&[p2], &RTT_ESTIMATE, now);
 
     assert_eq!(cc.bytes_in_flight(), 0);
 
@@ -189,7 +197,7 @@ fn issue_1465() {
     let p4 = send_next(&mut cc, now);
     cc.on_packet_sent(&p4);
     now += RTT;
-    cc.on_packets_acked(&[p4], RTT, now);
+    cc.on_packets_acked(&[p4], &RTT_ESTIMATE, now);
 
     
     let p5 = send_next(&mut cc, now);

@@ -4,21 +4,18 @@
 
 
 
-use crate::frames::HFrame;
-use crate::{
-    headers_checks::{headers_valid, is_interim, trailers_valid},
-    qlog, BufferedStream, CloseType, Error, Http3StreamInfo, Http3StreamType, HttpSendStream, Res,
-    SendStream, SendStreamEvents, Stream,
-};
+use std::{any::Any, cell::RefCell, cmp::min, fmt::Debug, rc::Rc};
 
 use neqo_common::{qdebug, qinfo, qtrace, Encoder, Header, MessageType};
 use neqo_qpack::encoder::QPackEncoder;
 use neqo_transport::{streams::SendOrder, Connection, StreamId};
-use std::any::Any;
-use std::cell::RefCell;
-use std::cmp::min;
-use std::fmt::Debug;
-use std::rc::Rc;
+
+use crate::{
+    frames::HFrame,
+    headers_checks::{headers_valid, is_interim, trailers_valid},
+    qlog, BufferedStream, CloseType, Error, Http3StreamInfo, Http3StreamType, HttpSendStream, Res,
+    SendStream, SendStreamEvents, Stream,
+};
 
 const MAX_DATA_HEADER_SIZE_2: usize = (1 << 6) - 1; 
 const MAX_DATA_HEADER_SIZE_2_LIMIT: usize = MAX_DATA_HEADER_SIZE_2 + 3; 
@@ -136,6 +133,7 @@ impl SendMessage {
     
     
     
+    
     fn encode(
         encoder: &mut QPackEncoder,
         headers: &[Header],
@@ -235,6 +233,8 @@ impl SendStream for SendMessage {
         }
     }
 
+    
+    
     
     
     

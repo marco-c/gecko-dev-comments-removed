@@ -7,6 +7,7 @@
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
 #![warn(clippy::pedantic)]
 
+
 #![allow(clippy::module_name_repetitions)]
 
 pub mod decoder;
@@ -44,10 +45,11 @@ pub enum Error {
     EncoderStream,
     DecoderStream,
     ClosedCriticalStream,
-    InternalError(u16),
+    InternalError,
 
     
     NeedMoreData, 
+
     HeaderLookup,
     HuffmanDecompressionFailed,
     BadUtf8,
@@ -77,6 +79,7 @@ impl Error {
         }
     }
 
+    
     
     
     fn map_error<R>(r: Result<R, Self>, err: Self) -> Result<R, Self> {

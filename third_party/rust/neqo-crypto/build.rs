@@ -7,13 +7,15 @@
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
 #![warn(clippy::pedantic)]
 
+use std::{
+    collections::HashMap,
+    env, fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
+
 use bindgen::Builder;
 use serde_derive::Deserialize;
-use std::collections::HashMap;
-use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const BINDINGS_DIR: &str = "bindings";
 const BINDINGS_CONFIG: &str = "bindings.toml";
@@ -60,7 +62,8 @@ fn is_debug() -> bool {
 
 
 fn setup_clang() {
-    if env::consts::OS != "windows" {
+    
+    if env::consts::OS != "windows" || env::var("GITHUB_WORKFLOW").unwrap() == "CI" {
         return;
     }
     println!("rerun-if-env-changed=LIBCLANG_PATH");
@@ -130,6 +133,11 @@ fn nss_dir() -> PathBuf {
 }
 
 fn get_bash() -> PathBuf {
+    
+    if let Ok(bash) = env::var("BASH") {
+        return PathBuf::from(bash);
+    }
+
     
     
     match env::var("MOZILLABUILD") {
@@ -257,7 +265,7 @@ fn build_bindings(base: &str, bindings: &Bindings, flags: &[String], gecko: bool
             builder = builder.clang_arg("-DANDROID");
         }
         if bindings.cplusplus {
-            builder = builder.clang_args(&["-x", "c++", "-std=c++11"]);
+            builder = builder.clang_args(&["-x", "c++", "-std=c++14"]);
         }
     }
 

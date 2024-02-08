@@ -36,6 +36,8 @@ impl<'a> Decoder<'a> {
     
     
     
+    
+    
     pub fn skip(&mut self, n: usize) {
         assert!(self.remaining() >= n, "insufficient data");
         self.offset += n;
@@ -89,6 +91,8 @@ impl<'a> Decoder<'a> {
         Some(res)
     }
 
+    
+    
     
     
     
@@ -200,6 +204,8 @@ impl Encoder {
     
     
     
+    
+    
     #[must_use]
     pub const fn varint_len(v: u64) -> usize {
         match () {
@@ -211,6 +217,8 @@ impl Encoder {
         }
     }
 
+    
+    
     
     
     
@@ -263,6 +271,8 @@ impl Encoder {
     
     
     
+    
+    
     #[must_use]
     pub fn from_hex(s: impl AsRef<str>) -> Self {
         let s = s.as_ref();
@@ -293,6 +303,8 @@ impl Encoder {
     
     
     
+    
+    
     #[allow(clippy::cast_possible_truncation)]
     pub fn encode_uint<T: Into<u64>>(&mut self, n: usize, v: T) -> &mut Self {
         let v = v.into();
@@ -303,6 +315,8 @@ impl Encoder {
         self
     }
 
+    
+    
     
     
     
@@ -321,11 +335,15 @@ impl Encoder {
     
     
     
+    
+    
     pub fn encode_vec(&mut self, n: usize, v: &[u8]) -> &mut Self {
         self.encode_uint(n, u64::try_from(v.as_ref().len()).unwrap())
             .encode(v)
     }
 
+    
+    
     
     
     
@@ -345,11 +363,15 @@ impl Encoder {
     
     
     
+    
+    
     pub fn encode_vvec(&mut self, v: &[u8]) -> &mut Self {
         self.encode_varint(u64::try_from(v.as_ref().len()).unwrap())
             .encode(v)
     }
 
+    
+    
     
     
     

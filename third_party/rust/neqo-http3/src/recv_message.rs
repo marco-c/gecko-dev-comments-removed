@@ -4,24 +4,22 @@
 
 
 
-use crate::frames::{FrameReader, HFrame, StreamReaderConnectionWrapper, H3_FRAME_TYPE_HEADERS};
-use crate::push_controller::PushController;
-use crate::{
-    headers_checks::{headers_valid, is_interim},
-    priority::PriorityHandler,
-    qlog, CloseType, Error, Http3StreamInfo, Http3StreamType, HttpRecvStream, HttpRecvStreamEvents,
-    MessageType, Priority, ReceiveOutput, RecvStream, Res, Stream,
+use std::{
+    any::Any, cell::RefCell, cmp::min, collections::VecDeque, convert::TryFrom, fmt::Debug, rc::Rc,
 };
+
 use neqo_common::{qdebug, qinfo, qtrace, Header};
 use neqo_qpack::decoder::QPackDecoder;
 use neqo_transport::{Connection, StreamId};
-use std::any::Any;
-use std::cell::RefCell;
-use std::cmp::min;
-use std::collections::VecDeque;
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::rc::Rc;
+
+use crate::{
+    frames::{FrameReader, HFrame, StreamReaderConnectionWrapper, H3_FRAME_TYPE_HEADERS},
+    headers_checks::{headers_valid, is_interim},
+    priority::PriorityHandler,
+    push_controller::PushController,
+    qlog, CloseType, Error, Http3StreamInfo, Http3StreamType, HttpRecvStream, HttpRecvStreamEvents,
+    MessageType, Priority, ReceiveOutput, RecvStream, Res, Stream,
+};
 
 #[allow(clippy::module_name_repetitions)]
 pub(crate) struct RecvMessageInfo {
@@ -348,6 +346,7 @@ impl RecvMessage {
                     panic!("Stream readable after being closed!");
                 }
                 RecvMessageState::ExtendedConnect => {
+                    
                     
                     break Ok(());
                 }

@@ -4,10 +4,13 @@
 
 
 
-use crate::huffman_decode_helper::{HuffmanDecoderNode, HUFFMAN_DECODE_ROOT};
-use crate::huffman_table::HUFFMAN_TABLE;
-use crate::{Error, Res};
 use std::convert::TryFrom;
+
+use crate::{
+    huffman_decode_helper::{HuffmanDecoderNode, HUFFMAN_DECODE_ROOT},
+    huffman_table::HUFFMAN_TABLE,
+    Error, Res,
+};
 
 struct BitReader<'a> {
     input: &'a [u8],
@@ -69,6 +72,11 @@ impl<'a> BitReader<'a> {
 
 
 
+
+
+
+
+
 pub fn decode_huffman(input: &[u8]) -> Res<Vec<u8>> {
     let mut reader = BitReader::new(input);
     let mut output = Vec::new();
@@ -107,6 +115,7 @@ fn decode_character(reader: &mut BitReader) -> Res<Option<u16>> {
     debug_assert!(node.value.is_some());
     Ok(node.value)
 }
+
 
 
 
