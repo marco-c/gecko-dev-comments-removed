@@ -127,6 +127,8 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
   BailoutKind bailoutKind_;
 
+  bool canUseTrialInlinedICScripts_ = true;
+
   
   
   gc::AutoSuppressGC suppress_;
@@ -503,7 +505,7 @@ void BaselineStackBuilder::setNextCallee(
   nextCallee_ = nextCallee;
 
   if (trialInliningState == TrialInliningState::Inlined &&
-      !iter_.ionScript()->purgedICScripts()) {
+      !iter_.ionScript()->purgedICScripts() && canUseTrialInlinedICScripts_) {
     
     const uint32_t pcOff = script_->pcToOffset(pc_);
     icScript_ = icScript_->findInlinedChild(pcOff);
@@ -515,6 +517,9 @@ void BaselineStackBuilder::setNextCallee(
     
     
     icScript_ = nextCallee->nonLazyScript()->jitScript()->icScript();
+    if (trialInliningState != TrialInliningState::MonomorphicInlined) {
+      canUseTrialInlinedICScripts_ = false;
+    }
   }
 
   
