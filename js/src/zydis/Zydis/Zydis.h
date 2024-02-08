@@ -86,7 +86,7 @@ extern "C" {
 
 
 
-#define ZYDIS_VERSION (ZyanU64)0x0004000000000000
+#define ZYDIS_VERSION (ZyanU64)0x0004000100000000
 
 
 
@@ -141,7 +141,7 @@ typedef enum ZydisFeature_
     
 
 
-    ZYDIS_FEATURE_MAX_VALUE = ZYDIS_FEATURE_KNC,
+    ZYDIS_FEATURE_MAX_VALUE = ZYDIS_FEATURE_SEGMENT,
     
 
 

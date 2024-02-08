@@ -221,6 +221,10 @@ typedef struct ZydisEncoderRelInfo_
 
 
     ZyanBool accepts_branch_hints;
+    
+
+
+    ZyanBool accepts_bound;
 } ZydisEncoderRelInfo;
 
 

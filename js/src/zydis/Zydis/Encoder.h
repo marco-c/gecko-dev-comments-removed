@@ -223,6 +223,10 @@ typedef struct ZydisEncoderOperand_
         
 
 
+
+
+
+
         ZyanI64 displacement;
         
 
@@ -298,6 +302,13 @@ typedef struct ZydisEncoderRequest_
 
     ZydisBranchWidth branch_width;
     
+
+
+
+
+
+
+
 
 
 

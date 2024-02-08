@@ -164,6 +164,10 @@ typedef enum ZydisElementType_
     
 
 
+    ZYDIS_ELEMENT_TYPE_BFLOAT16,
+    
+
+
     ZYDIS_ELEMENT_TYPE_LONGBCD,
     
 

@@ -97,10 +97,13 @@
 #elif defined(__FreeBSD__)
 #   define ZYAN_FREEBSD
 #   define ZYAN_POSIX
+#elif defined(__NetBSD__)
+#   define ZYAN_NETBSD
+#   define ZYAN_POSIX
 #elif defined(sun) || defined(__sun)
 #   define ZYAN_SOLARIS
 #   define ZYAN_POSIX
-#elif defined(__unix)
+#elif defined(__unix) || defined(__unix__)
 #   define ZYAN_UNIX
 #   define ZYAN_POSIX
 #elif defined(__posix)
@@ -136,6 +139,8 @@
 #   define ZYAN_ARM
 #elif defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__WASM__)
 #   define ZYAN_WASM
+#elif defined(__loongarch__)
+#   define ZYAN_LOONGARCH
 #elif defined(__powerpc64__)
 #   define ZYAN_PPC64
 #elif defined(__powerpc__)
@@ -473,6 +478,20 @@
 
 
 #define ZYAN_ALIGN_DOWN(x, align) (((x) - 1) & ~((align) - 1))
+
+
+
+
+
+
+
+
+#if defined(ZYAN_LINUX) && defined(ZYAN_KERNEL)
+#   include <asm/div64.h> 
+#   define ZYAN_DIV64(n, divisor) do_div(n, divisor)
+#else
+#   define ZYAN_DIV64(n, divisor) (n /= divisor)
+#endif
 
 
 

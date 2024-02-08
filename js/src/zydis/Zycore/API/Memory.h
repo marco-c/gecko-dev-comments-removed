@@ -87,7 +87,7 @@ typedef enum ZyanMemoryPageProtection_
 
 
 
-ZYCORE_EXPORT ZyanU32 ZyanMemoryGetSystemPageSize();
+ZYCORE_EXPORT ZyanU32 ZyanMemoryGetSystemPageSize(void);
 
 
 
@@ -100,7 +100,7 @@ ZYCORE_EXPORT ZyanU32 ZyanMemoryGetSystemPageSize();
 
 
 
-ZYCORE_EXPORT ZyanU32 ZyanMemoryGetSystemAllocationGranularity();
+ZYCORE_EXPORT ZyanU32 ZyanMemoryGetSystemAllocationGranularity(void);
 
 
 

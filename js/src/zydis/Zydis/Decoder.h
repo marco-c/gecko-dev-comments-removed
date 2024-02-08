@@ -136,11 +136,28 @@ typedef enum ZydisDecoderMode_
 
 
     ZYDIS_DECODER_MODE_CLDEMOTE,
+    
+
+
+
+
+
+
+    ZYDIS_DECODER_MODE_IPREFETCH,
+    
+
+
+
+
+
+
+
+    ZYDIS_DECODER_MODE_UD0_COMPAT,
 
     
 
 
-    ZYDIS_DECODER_MODE_MAX_VALUE = ZYDIS_DECODER_MODE_CLDEMOTE,
+    ZYDIS_DECODER_MODE_MAX_VALUE = ZYDIS_DECODER_MODE_UD0_COMPAT,
     
 
 
@@ -170,7 +187,7 @@ typedef struct ZydisDecoder_
     
 
 
-    ZyanBool decoder_mode[ZYDIS_DECODER_MODE_MAX_VALUE + 1];
+    ZyanU32 decoder_mode;
 } ZydisDecoder;
 
 

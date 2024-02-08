@@ -263,6 +263,8 @@ typedef enum ZydisFormatterProperty_
 
 
 
+
+
     ZYDIS_FORMATTER_PROP_UPPERCASE_DECORATORS,
 
     
