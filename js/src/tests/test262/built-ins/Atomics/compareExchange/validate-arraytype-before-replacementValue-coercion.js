@@ -23,14 +23,17 @@
 
 
 
-
 var replacementValue = {
   valueOf() {
     throw new Test262Error("replacementValue coerced");
   }
 };
 
-for (var badArrayType of nonAtomicsFriendlyTypedArrayConstructors) {
+var badArrayTypes = [
+  Uint8ClampedArray, Float32Array, Float64Array
+];
+
+for (var badArrayType of badArrayTypes) {
   var typedArray = new badArrayType(new SharedArrayBuffer(8));
   assert.throws(TypeError, function() {
     Atomics.compareExchange(typedArray, 0, 0, replacementValue);

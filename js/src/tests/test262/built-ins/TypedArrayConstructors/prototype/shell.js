@@ -60,33 +60,21 @@ function testWithBigIntTypedArrayConstructors(f, selected) {
 
 
 
-var floatArrayConstructors = [
-  Float64Array,
-  Float32Array
-];
 
-var nonClampedIntArrayConstructors = [
+var typedArrayConstructors = [
+  Float64Array,
+  Float32Array,
   Int32Array,
   Int16Array,
   Int8Array,
   Uint32Array,
   Uint16Array,
-  Uint8Array
+  Uint8Array,
+  Uint8ClampedArray
 ];
 
-var intArrayConstructors = nonClampedIntArrayConstructors.concat([Uint8ClampedArray]);
-
-
-
-if (typeof Float16Array !== 'undefined') {
-  floatArrayConstructors.push(Float16Array);
-}
-
-
-
-
-
-var typedArrayConstructors = floatArrayConstructors.concat(intArrayConstructors);
+var floatArrayConstructors = typedArrayConstructors.slice(0, 2);
+var intArrayConstructors = typedArrayConstructors.slice(2, 7);
 
 
 
@@ -119,7 +107,6 @@ function testWithTypedArrayConstructors(f, selected) {
   }
 }
 
-var nonAtomicsFriendlyTypedArrayConstructors = floatArrayConstructors.concat([Uint8ClampedArray]);
 
 
 
@@ -127,7 +114,11 @@ var nonAtomicsFriendlyTypedArrayConstructors = floatArrayConstructors.concat([Ui
 
 
 function testWithNonAtomicsFriendlyTypedArrayConstructors(f) {
-  testWithTypedArrayConstructors(f, nonAtomicsFriendlyTypedArrayConstructors);
+  testWithTypedArrayConstructors(f, [
+    Float64Array,
+    Float32Array,
+    Uint8ClampedArray
+  ]);
 }
 
 
@@ -172,32 +163,4 @@ function testTypedArrayConversions(byteConversionValues, fn) {
       fn(TA, value, exp, initial);
     });
   });
-}
-
-
-
-
-
-
-
-function isFloatTypedArrayConstructor(arg) {
-  return floatArrayConstructors.indexOf(arg) !== -1;
-}
-
-
-
-
-
-
-
-function floatTypedArrayConstructorPrecision(FA) {
-  if (typeof Float16Array !== "undefined" && FA === Float16Array) {
-    return "half";
-  } else if (FA === Float32Array) {
-    return "single";
-  } else if (FA === Float64Array) {
-    return "double";
-  } else {
-    throw new Error("Malformed test - floatTypedArrayConstructorPrecision called with non-float TypedArray");
-  }
 }

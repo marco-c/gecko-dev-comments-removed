@@ -498,49 +498,6 @@ var byteConversionValues = {
       0,          
       0
     ],
-    Float16: [
-      127,                  
-      128,                  
-      32768,                
-      32768,                
-      Infinity,             
-      Infinity,             
-      255,                  
-      256,                  
-      Infinity,             
-      Infinity,             
-      Infinity,             
-      Infinity,             
-      Infinity,             
-      Infinity,             
-      1.099609375,          
-      0.0999755859375,      
-      0.5,                  
-      0.5,                  
-      0.60009765625,        
-      0.7001953125,         
-      NaN,                  
-      -1,                   
-      -0,                   
-      -0.0999755859375,     
-      -1.099609375,         
-      NaN,                  
-      -127,                 
-      -128,                 
-      -32768,               
-      -32768,               
-      -Infinity,            
-      -Infinity,            
-      -255,                 
-      -256,                 
-      -Infinity,            
-      -Infinity,            
-      -Infinity,            
-      -Infinity,            
-      Infinity,             
-      -Infinity,            
-      0
-    ],
     Float32: [
       127,                  
       128,                  
@@ -1510,18 +1467,17 @@ var TemporalHelpers = {
 
 
   assertDuration(duration, years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(duration instanceof Temporal.Duration, `${prefix}instanceof`);
-    assert.sameValue(duration.years, years, `${prefix}years result:`);
-    assert.sameValue(duration.months, months, `${prefix}months result:`);
-    assert.sameValue(duration.weeks, weeks, `${prefix}weeks result:`);
-    assert.sameValue(duration.days, days, `${prefix}days result:`);
-    assert.sameValue(duration.hours, hours, `${prefix}hours result:`);
-    assert.sameValue(duration.minutes, minutes, `${prefix}minutes result:`);
-    assert.sameValue(duration.seconds, seconds, `${prefix}seconds result:`);
-    assert.sameValue(duration.milliseconds, milliseconds, `${prefix}milliseconds result:`);
-    assert.sameValue(duration.microseconds, microseconds, `${prefix}microseconds result:`);
-    assert.sameValue(duration.nanoseconds, nanoseconds, `${prefix}nanoseconds result`);
+    assert(duration instanceof Temporal.Duration, `${description} instanceof`);
+    assert.sameValue(duration.years, years, `${description} years result`);
+    assert.sameValue(duration.months, months, `${description} months result`);
+    assert.sameValue(duration.weeks, weeks, `${description} weeks result`);
+    assert.sameValue(duration.days, days, `${description} days result`);
+    assert.sameValue(duration.hours, hours, `${description} hours result`);
+    assert.sameValue(duration.minutes, minutes, `${description} minutes result`);
+    assert.sameValue(duration.seconds, seconds, `${description} seconds result`);
+    assert.sameValue(duration.milliseconds, milliseconds, `${description} milliseconds result`);
+    assert.sameValue(duration.microseconds, microseconds, `${description} microseconds result`);
+    assert.sameValue(duration.nanoseconds, nanoseconds, `${description} nanoseconds result`);
   },
 
   
@@ -1531,18 +1487,17 @@ var TemporalHelpers = {
 
 
   assertDateDuration(duration, years, months, weeks, days, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(duration instanceof Temporal.Duration, `${prefix}instanceof`);
-    assert.sameValue(duration.years, years, `${prefix}years result:`);
-    assert.sameValue(duration.months, months, `${prefix}months result:`);
-    assert.sameValue(duration.weeks, weeks, `${prefix}weeks result:`);
-    assert.sameValue(duration.days, days, `${prefix}days result:`);
-    assert.sameValue(duration.hours, 0, `${prefix}hours result should be zero:`);
-    assert.sameValue(duration.minutes, 0, `${prefix}minutes result should be zero:`);
-    assert.sameValue(duration.seconds, 0, `${prefix}seconds result should be zero:`);
-    assert.sameValue(duration.milliseconds, 0, `${prefix}milliseconds result should be zero:`);
-    assert.sameValue(duration.microseconds, 0, `${prefix}microseconds result should be zero:`);
-    assert.sameValue(duration.nanoseconds, 0, `${prefix}nanoseconds result should be zero:`);
+    assert(duration instanceof Temporal.Duration, `${description} instanceof`);
+    assert.sameValue(duration.years, years, `${description} years result`);
+    assert.sameValue(duration.months, months, `${description} months result`);
+    assert.sameValue(duration.weeks, weeks, `${description} weeks result`);
+    assert.sameValue(duration.days, days, `${description} days result`);
+    assert.sameValue(duration.hours, 0, `${description} hours result should be zero`);
+    assert.sameValue(duration.minutes, 0, `${description} minutes result should be zero`);
+    assert.sameValue(duration.seconds, 0, `${description} seconds result should be zero`);
+    assert.sameValue(duration.milliseconds, 0, `${description} milliseconds result should be zero`);
+    assert.sameValue(duration.microseconds, 0, `${description} microseconds result should be zero`);
+    assert.sameValue(duration.nanoseconds, 0, `${description} nanoseconds result should be zero`);
   },
 
   
@@ -1552,8 +1507,7 @@ var TemporalHelpers = {
 
 
   assertDurationsEqual(actual, expected, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(expected instanceof Temporal.Duration, `${prefix}expected value should be a Temporal.Duration`);
+    assert(expected instanceof Temporal.Duration, `${description} expected value should be a Temporal.Duration`);
     TemporalHelpers.assertDuration(actual, expected.years, expected.months, expected.weeks, expected.days, expected.hours, expected.minutes, expected.seconds, expected.milliseconds, expected.microseconds, expected.nanoseconds, description);
   },
 
@@ -1564,10 +1518,9 @@ var TemporalHelpers = {
 
 
   assertInstantsEqual(actual, expected, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(expected instanceof Temporal.Instant, `${prefix}expected value should be a Temporal.Instant`);
-    assert(actual instanceof Temporal.Instant, `${prefix}instanceof`);
-    assert(actual.equals(expected), `${prefix}equals method`);
+    assert(expected instanceof Temporal.Instant, `${description} expected value should be a Temporal.Instant`);
+    assert(actual instanceof Temporal.Instant, `${description} instanceof`);
+    assert(actual.equals(expected), `${description} equals method`);
   },
 
   
@@ -1579,14 +1532,13 @@ var TemporalHelpers = {
 
 
   assertPlainDate(date, year, month, monthCode, day, description = "", era = undefined, eraYear = undefined) {
-    const prefix = description ? `${description}: ` : "";
-    assert(date instanceof Temporal.PlainDate, `${prefix}instanceof`);
-    assert.sameValue(date.era, era, `${prefix}era result:`);
-    assert.sameValue(date.eraYear, eraYear, `${prefix}eraYear result:`);
-    assert.sameValue(date.year, year, `${prefix}year result:`);
-    assert.sameValue(date.month, month, `${prefix}month result:`);
-    assert.sameValue(date.monthCode, monthCode, `${prefix}monthCode result:`);
-    assert.sameValue(date.day, day, `${prefix}day result:`);
+    assert(date instanceof Temporal.PlainDate, `${description} instanceof`);
+    assert.sameValue(date.era, era, `${description} era result`);
+    assert.sameValue(date.eraYear, eraYear, `${description} eraYear result`);
+    assert.sameValue(date.year, year, `${description} year result`);
+    assert.sameValue(date.month, month, `${description} month result`);
+    assert.sameValue(date.monthCode, monthCode, `${description} monthCode result`);
+    assert.sameValue(date.day, day, `${description} day result`);
   },
 
   
@@ -1598,20 +1550,19 @@ var TemporalHelpers = {
 
 
   assertPlainDateTime(datetime, year, month, monthCode, day, hour, minute, second, millisecond, microsecond, nanosecond, description = "", era = undefined, eraYear = undefined) {
-    const prefix = description ? `${description}: ` : "";
-    assert(datetime instanceof Temporal.PlainDateTime, `${prefix}instanceof`);
-    assert.sameValue(datetime.era, era, `${prefix}era result:`);
-    assert.sameValue(datetime.eraYear, eraYear, `${prefix}eraYear result:`);
-    assert.sameValue(datetime.year, year, `${prefix}year result:`);
-    assert.sameValue(datetime.month, month, `${prefix}month result:`);
-    assert.sameValue(datetime.monthCode, monthCode, `${prefix}monthCode result:`);
-    assert.sameValue(datetime.day, day, `${prefix}day result:`);
-    assert.sameValue(datetime.hour, hour, `${prefix}hour result:`);
-    assert.sameValue(datetime.minute, minute, `${prefix}minute result:`);
-    assert.sameValue(datetime.second, second, `${prefix}second result:`);
-    assert.sameValue(datetime.millisecond, millisecond, `${prefix}millisecond result:`);
-    assert.sameValue(datetime.microsecond, microsecond, `${prefix}microsecond result:`);
-    assert.sameValue(datetime.nanosecond, nanosecond, `${prefix}nanosecond result:`);
+    assert(datetime instanceof Temporal.PlainDateTime, `${description} instanceof`);
+    assert.sameValue(datetime.era, era, `${description} era result`);
+    assert.sameValue(datetime.eraYear, eraYear, `${description} eraYear result`);
+    assert.sameValue(datetime.year, year, `${description} year result`);
+    assert.sameValue(datetime.month, month, `${description} month result`);
+    assert.sameValue(datetime.monthCode, monthCode, `${description} monthCode result`);
+    assert.sameValue(datetime.day, day, `${description} day result`);
+    assert.sameValue(datetime.hour, hour, `${description} hour result`);
+    assert.sameValue(datetime.minute, minute, `${description} minute result`);
+    assert.sameValue(datetime.second, second, `${description} second result`);
+    assert.sameValue(datetime.millisecond, millisecond, `${description} millisecond result`);
+    assert.sameValue(datetime.microsecond, microsecond, `${description} microsecond result`);
+    assert.sameValue(datetime.nanosecond, nanosecond, `${description} nanosecond result`);
   },
 
   
@@ -1622,14 +1573,13 @@ var TemporalHelpers = {
 
 
   assertPlainDateTimesEqual(actual, expected, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(expected instanceof Temporal.PlainDateTime, `${prefix}expected value should be a Temporal.PlainDateTime`);
-    assert(actual instanceof Temporal.PlainDateTime, `${prefix}instanceof`);
-    assert(actual.equals(expected), `${prefix}equals method`);
+    assert(expected instanceof Temporal.PlainDateTime, `${description} expected value should be a Temporal.PlainDateTime`);
+    assert(actual instanceof Temporal.PlainDateTime, `${description} instanceof`);
+    assert(actual.equals(expected), `${description} equals method`);
     assert.sameValue(
       actual.getISOFields().calendar,
       expected.getISOFields().calendar,
-      `${prefix}calendar same value:`
+      `${description} calendar same value`
     );
   },
 
@@ -1642,11 +1592,10 @@ var TemporalHelpers = {
 
 
   assertPlainMonthDay(monthDay, monthCode, day, description = "", referenceISOYear = 1972) {
-    const prefix = description ? `${description}: ` : "";
-    assert(monthDay instanceof Temporal.PlainMonthDay, `${prefix}instanceof`);
-    assert.sameValue(monthDay.monthCode, monthCode, `${prefix}monthCode result:`);
-    assert.sameValue(monthDay.day, day, `${prefix}day result:`);
-    assert.sameValue(monthDay.getISOFields().isoYear, referenceISOYear, `${prefix}referenceISOYear result:`);
+    assert(monthDay instanceof Temporal.PlainMonthDay, `${description} instanceof`);
+    assert.sameValue(monthDay.monthCode, monthCode, `${description} monthCode result`);
+    assert.sameValue(monthDay.day, day, `${description} day result`);
+    assert.sameValue(monthDay.getISOFields().isoYear, referenceISOYear, `${description} referenceISOYear result`);
   },
 
   
@@ -1656,14 +1605,13 @@ var TemporalHelpers = {
 
 
   assertPlainTime(time, hour, minute, second, millisecond, microsecond, nanosecond, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(time instanceof Temporal.PlainTime, `${prefix}instanceof`);
-    assert.sameValue(time.hour, hour, `${prefix}hour result:`);
-    assert.sameValue(time.minute, minute, `${prefix}minute result:`);
-    assert.sameValue(time.second, second, `${prefix}second result:`);
-    assert.sameValue(time.millisecond, millisecond, `${prefix}millisecond result:`);
-    assert.sameValue(time.microsecond, microsecond, `${prefix}microsecond result:`);
-    assert.sameValue(time.nanosecond, nanosecond, `${prefix}nanosecond result:`);
+    assert(time instanceof Temporal.PlainTime, `${description} instanceof`);
+    assert.sameValue(time.hour, hour, `${description} hour result`);
+    assert.sameValue(time.minute, minute, `${description} minute result`);
+    assert.sameValue(time.second, second, `${description} second result`);
+    assert.sameValue(time.millisecond, millisecond, `${description} millisecond result`);
+    assert.sameValue(time.microsecond, microsecond, `${description} microsecond result`);
+    assert.sameValue(time.nanosecond, nanosecond, `${description} nanosecond result`);
   },
 
   
@@ -1673,10 +1621,9 @@ var TemporalHelpers = {
 
 
   assertPlainTimesEqual(actual, expected, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(expected instanceof Temporal.PlainTime, `${prefix}expected value should be a Temporal.PlainTime`);
-    assert(actual instanceof Temporal.PlainTime, `${prefix}instanceof`);
-    assert(actual.equals(expected), `${prefix}equals method`);
+    assert(expected instanceof Temporal.PlainTime, `${description} expected value should be a Temporal.PlainTime`);
+    assert(actual instanceof Temporal.PlainTime, `${description} instanceof`);
+    assert(actual.equals(expected), `${description} equals method`);
   },
 
   
@@ -1688,14 +1635,13 @@ var TemporalHelpers = {
 
 
   assertPlainYearMonth(yearMonth, year, month, monthCode, description = "", era = undefined, eraYear = undefined, referenceISODay = 1) {
-    const prefix = description ? `${description}: ` : "";
-    assert(yearMonth instanceof Temporal.PlainYearMonth, `${prefix}instanceof`);
-    assert.sameValue(yearMonth.era, era, `${prefix}era result:`);
-    assert.sameValue(yearMonth.eraYear, eraYear, `${prefix}eraYear result:`);
-    assert.sameValue(yearMonth.year, year, `${prefix}year result:`);
-    assert.sameValue(yearMonth.month, month, `${prefix}month result:`);
-    assert.sameValue(yearMonth.monthCode, monthCode, `${prefix}monthCode result:`);
-    assert.sameValue(yearMonth.getISOFields().isoDay, referenceISODay, `${prefix}referenceISODay result:`);
+    assert(yearMonth instanceof Temporal.PlainYearMonth, `${description} instanceof`);
+    assert.sameValue(yearMonth.era, era, `${description} era result`);
+    assert.sameValue(yearMonth.eraYear, eraYear, `${description} eraYear result`);
+    assert.sameValue(yearMonth.year, year, `${description} year result`);
+    assert.sameValue(yearMonth.month, month, `${description} month result`);
+    assert.sameValue(yearMonth.monthCode, monthCode, `${description} monthCode result`);
+    assert.sameValue(yearMonth.getISOFields().isoDay, referenceISODay, `${description} referenceISODay result`);
   },
 
   
@@ -1706,15 +1652,14 @@ var TemporalHelpers = {
 
 
   assertZonedDateTimesEqual(actual, expected, description = "") {
-    const prefix = description ? `${description}: ` : "";
-    assert(expected instanceof Temporal.ZonedDateTime, `${prefix}expected value should be a Temporal.ZonedDateTime`);
-    assert(actual instanceof Temporal.ZonedDateTime, `${prefix}instanceof`);
-    assert(actual.equals(expected), `${prefix}equals method`);
-    assert.sameValue(actual.timeZone, expected.timeZone, `${prefix}time zone same value:`);
+    assert(expected instanceof Temporal.ZonedDateTime, `${description} expected value should be a Temporal.ZonedDateTime`);
+    assert(actual instanceof Temporal.ZonedDateTime, `${description} instanceof`);
+    assert(actual.equals(expected), `${description} equals method`);
+    assert.sameValue(actual.timeZone, expected.timeZone, `${description} time zone same value`);
     assert.sameValue(
       actual.getISOFields().calendar,
       expected.getISOFields().calendar,
-      `${prefix}calendar same value:`
+      `${description} calendar same value`
     );
   },
 
@@ -2853,7 +2798,7 @@ var TemporalHelpers = {
 
 
   crossDateLineTimeZone() {
-    const { compare } = Temporal.PlainDate;
+    const { compare } = Temporal.PlainDateTime;
     const skippedDay = new Temporal.PlainDate(2011, 12, 30);
     const transitionEpoch = 1325239200_000_000_000n;
     const beforeOffset = new Temporal.TimeZone("-10:00");
@@ -2872,7 +2817,7 @@ var TemporalHelpers = {
       }
 
       getPossibleInstantsFor(datetime) {
-        const comparison = compare(datetime.toPlainDate(), skippedDay);
+        const comparison = Temporal.PlainDate.compare(datetime.toPlainDate(), skippedDay);
         if (comparison === 0) {
           return [];
         }
@@ -3623,33 +3568,21 @@ var TemporalHelpers = {
 
 
 
-var floatArrayConstructors = [
-  Float64Array,
-  Float32Array
-];
 
-var nonClampedIntArrayConstructors = [
+var typedArrayConstructors = [
+  Float64Array,
+  Float32Array,
   Int32Array,
   Int16Array,
   Int8Array,
   Uint32Array,
   Uint16Array,
-  Uint8Array
+  Uint8Array,
+  Uint8ClampedArray
 ];
 
-var intArrayConstructors = nonClampedIntArrayConstructors.concat([Uint8ClampedArray]);
-
-
-
-if (typeof Float16Array !== 'undefined') {
-  floatArrayConstructors.push(Float16Array);
-}
-
-
-
-
-
-var typedArrayConstructors = floatArrayConstructors.concat(intArrayConstructors);
+var floatArrayConstructors = typedArrayConstructors.slice(0, 2);
+var intArrayConstructors = typedArrayConstructors.slice(2, 7);
 
 
 
@@ -3682,7 +3615,6 @@ function testWithTypedArrayConstructors(f, selected) {
   }
 }
 
-var nonAtomicsFriendlyTypedArrayConstructors = floatArrayConstructors.concat([Uint8ClampedArray]);
 
 
 
@@ -3690,7 +3622,11 @@ var nonAtomicsFriendlyTypedArrayConstructors = floatArrayConstructors.concat([Ui
 
 
 function testWithNonAtomicsFriendlyTypedArrayConstructors(f) {
-  testWithTypedArrayConstructors(f, nonAtomicsFriendlyTypedArrayConstructors);
+  testWithTypedArrayConstructors(f, [
+    Float64Array,
+    Float32Array,
+    Uint8ClampedArray
+  ]);
 }
 
 
@@ -3735,34 +3671,6 @@ function testTypedArrayConversions(byteConversionValues, fn) {
       fn(TA, value, exp, initial);
     });
   });
-}
-
-
-
-
-
-
-
-function isFloatTypedArrayConstructor(arg) {
-  return floatArrayConstructors.indexOf(arg) !== -1;
-}
-
-
-
-
-
-
-
-function floatTypedArrayConstructorPrecision(FA) {
-  if (typeof Float16Array !== "undefined" && FA === Float16Array) {
-    return "half";
-  } else if (FA === Float32Array) {
-    return "single";
-  } else if (FA === Float64Array) {
-    return "double";
-  } else {
-    throw new Error("Malformed test - floatTypedArrayConstructorPrecision called with non-float TypedArray");
-  }
 }
 
 

@@ -11,7 +11,7 @@
 
 
 var sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2);
-var views = nonClampedIntArrayConstructors.slice();
+var views = intArrayConstructors.slice();
 
 testWithTypedArrayConstructors(function(TA) {
   let view = new TA(sab);

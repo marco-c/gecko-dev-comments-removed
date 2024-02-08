@@ -37,7 +37,6 @@ function concatTypedArray(type, elems, modulo) {
   assert.compareArray([].concat(ta), expected);
 }
 
-
 var max = [Math.pow(2, 8), Math.pow(2, 16), Math.pow(2, 32), false, false];
 [
   Uint8Array,

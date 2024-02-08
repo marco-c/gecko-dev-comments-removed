@@ -27,10 +27,8 @@
 var cal = new Temporal.Calendar("iso8601");
 var date = new Temporal.PlainDate(1970, 1, 1);
 
-const max = 4294967295;  
-
-var maxValue = new Temporal.Duration(max, max);
-var minValue = new Temporal.Duration(-max, -max);
+var maxValue = new Temporal.Duration(Number.MAX_VALUE, Number.MAX_VALUE);
+var minValue = new Temporal.Duration(-Number.MAX_VALUE, -Number.MAX_VALUE);
 
 assert.throws(RangeError, () => cal.dateAdd(date, maxValue), "years/months is +Number.MAX_VALUE");
 assert.throws(RangeError, () => cal.dateAdd(date, minValue), "years/months is -Number.MAX_VALUE");
