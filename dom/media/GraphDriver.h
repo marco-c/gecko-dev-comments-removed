@@ -15,7 +15,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/DataMutex.h"
-#include "mozilla/SharedThreadPool.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/StaticPtr.h"
 #include "WavDumper.h"
 
@@ -549,7 +549,8 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   class FallbackWrapper;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioCallbackDriver, override);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
+      AudioCallbackDriver, mCubebOperationThread, override);
 
   
   AudioCallbackDriver(GraphInterface* aGraphInterface,
@@ -710,10 +711,12 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
     AudioCallbackDriver* mDriver;
   };
 
+  static already_AddRefed<TaskQueue> CreateTaskQueue();
+
   
 
 
-  const RefPtr<SharedThreadPool> mCubebOperationThread;
+  const RefPtr<TaskQueue> mCubebOperationThread;
   cubeb_device_pref mInputDevicePreference;
   
   std::atomic<ProfilerThreadId> mAudioThreadId;
