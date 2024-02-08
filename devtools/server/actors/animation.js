@@ -45,6 +45,13 @@ const ANIMATION_TYPES = {
 exports.ANIMATION_TYPES = ANIMATION_TYPES;
 
 function getAnimationTypeForLonghand(property) {
+  
+  
+  
+  if (property.startsWith("--")) {
+    return "custom";
+  }
+
   for (const [type, props] of ANIMATION_TYPE_FOR_LONGHANDS) {
     if (props.has(property)) {
       return type;
