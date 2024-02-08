@@ -172,6 +172,10 @@ async def setup_blocked_request(
                 "/webdriver/tests/support/http_handlers/authentication.py?"
                 f"username={username}&password={password}&realm={realm}"
             )
+            if navigate:
+                
+                
+                blocked_url = f"{blocked_url}&contenttype=text/html"
         else:
             blocked_url = url(PAGE_EMPTY_TEXT)
 
