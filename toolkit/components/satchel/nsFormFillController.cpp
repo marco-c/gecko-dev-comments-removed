@@ -597,38 +597,8 @@ NS_IMETHODIMP
 nsFormFillController::OnSearchComplete() { return NS_OK; }
 
 NS_IMETHODIMP
-nsFormFillController::OnTextEntered(Event* aEvent, bool itemWasSelected,
-                                    bool* aPrevent) {
-  NS_ENSURE_ARG(aPrevent);
+nsFormFillController::OnTextEntered(Event* aEvent) {
   NS_ENSURE_TRUE(mFocusedInput, NS_OK);
-
-  
-
-
-
-
-
-  if (!itemWasSelected) {
-    return NS_OK;
-  }
-
-  
-
-  IgnoredErrorResult ignored;
-  RefPtr<Event> event = mFocusedInput->OwnerDoc()->CreateEvent(
-      u"Events"_ns, CallerType::System, ignored);
-  NS_ENSURE_STATE(event);
-
-  event->InitEvent(u"DOMAutoComplete"_ns, true, true);
-
-  
-  
-  
-  event->SetTrusted(true);
-
-  bool defaultActionEnabled =
-      mFocusedInput->DispatchEvent(*event, CallerType::System, IgnoreErrors());
-  *aPrevent = !defaultActionEnabled;
   return NS_OK;
 }
 

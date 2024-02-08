@@ -1943,7 +1943,6 @@ STATIC_ATOMS = [
     Atom("onmozvisualresize", "onmozvisualresize"),
     Atom("onmozvisualscroll", "onmozvisualscroll"),
     
-    Atom("onDOMAutoComplete", "onDOMAutoComplete"),
     Atom("onDOMContentLoaded", "onDOMContentLoaded"),
     Atom("onDOMDocElementInserted", "onDOMDocElementInserted"),
     Atom("onDOMFormBeforeSubmit", "onDOMFormBeforeSubmit"),
