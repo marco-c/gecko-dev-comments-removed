@@ -46,6 +46,8 @@ export class FirefoxLauncher extends ProductLauncher {
         ? {}
         : {
             
+            'browser.tabs.closeWindowWithLastTab': false,
+            
             'fission.bfcacheInParent': false,
           }),
       
