@@ -133,7 +133,7 @@ module.exports = function (config) {
             
 
 
-            "lib/Store.jsm": {
+            "lib/Store.sys.mjs": {
               statements: 8,
               lines: 8,
               functions: 0,
