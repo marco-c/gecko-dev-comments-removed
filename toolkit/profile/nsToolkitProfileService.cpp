@@ -493,6 +493,7 @@ nsToolkitProfileService::nsToolkitProfileService()
       mUseDedicatedProfile(false),
 #endif
       mStartupReason(u"unknown"_ns),
+      mStartupFileVersion("0"_ns),
       mMaybeLockProfile(false),
       mUpdateChannel(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL)),
       mProfileDBExists(false),
@@ -515,6 +516,10 @@ void nsToolkitProfileService::CompleteStartup() {
 
   ScalarSet(mozilla::Telemetry::ScalarID::STARTUP_PROFILE_SELECTION_REASON,
             mStartupReason);
+  ScalarSet(mozilla::Telemetry::ScalarID::STARTUP_PROFILE_DATABASE_VERSION,
+            NS_ConvertUTF8toUTF16(mStartupFileVersion));
+  ScalarSet(mozilla::Telemetry::ScalarID::STARTUP_PROFILE_COUNT,
+            static_cast<uint32_t>(mProfiles.length()));
 
   if (mMaybeLockProfile) {
     nsCOMPtr<nsIToolkitShellService> shell =
@@ -861,10 +866,12 @@ nsresult nsToolkitProfileService::Init() {
       mStartWithLast = !buffer.EqualsLiteral("0");
     }
 
-    rv = mProfileDB.GetString("General", "Version", buffer);
+    rv = mProfileDB.GetString("General", "Version", mStartupFileVersion);
     if (NS_FAILED(rv)) {
       
       
+      
+      mStartupFileVersion.AssignLiteral("1");
       nsINIParser installDB;
 
       if (NS_SUCCEEDED(installDB.Init(mInstallDBFile))) {
@@ -1681,6 +1688,7 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
     rv = CreateDefaultProfile(getter_AddRefs(mCurrent));
     if (NS_SUCCEEDED(rv)) {
+#ifdef MOZ_CREATE_LEGACY_PROFILE
       
       
       
@@ -1692,6 +1700,7 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
                       getter_AddRefs(newProfile));
         SetNormalDefault(newProfile);
       }
+#endif
 
       rv = Flush();
       NS_ENSURE_SUCCESS(rv, rv);

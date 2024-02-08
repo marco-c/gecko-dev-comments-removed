@@ -145,6 +145,9 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   const bool mUseDedicatedProfile;
   nsString mStartupReason;
+  
+  
+  nsCString mStartupFileVersion;
   bool mMaybeLockProfile;
   
   
