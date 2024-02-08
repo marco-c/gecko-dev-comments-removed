@@ -214,14 +214,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
-  bool getWellFormedUnicodeStringsEnabled() const {
-    return wellFormedUnicodeStrings_;
-  }
-  RealmCreationOptions& setWellFormedUnicodeStringsEnabled(bool flag) {
-    wellFormedUnicodeStrings_ = flag;
-    return *this;
-  }
-
 #ifdef NIGHTLY_BUILD
   bool getNewSetMethodsEnabled() const { return newSetMethods_; }
   RealmCreationOptions& setNewSetMethodsEnabled(bool flag) {
@@ -316,8 +308,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool propertyErrorMessageFix_ = false;
   bool iteratorHelpers_ = false;
   bool shadowRealms_ = false;
-  
-  bool wellFormedUnicodeStrings_ = true;
 #ifdef NIGHTLY_BUILD
   
   bool newSetMethods_ = false;
