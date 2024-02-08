@@ -6141,14 +6141,11 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
   
   
   if (!LoadIsUserAgentHeaderModified()) {
-    rv = mRequestHead.ClearHeader(nsHttp::User_Agent);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-
     rv = mRequestHead.SetHeader(
         nsHttp::User_Agent,
         gHttpHandler->UserAgent(nsContentUtils::ShouldResistFingerprinting(
             this, RFPTarget::HttpUserAgent)),
-        false, nsHttpHeaderArray::eVarietyRequestDefault);
+        false, nsHttpHeaderArray::eVarietyRequestEnforceDefault);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
