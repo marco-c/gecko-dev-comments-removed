@@ -5,6 +5,34 @@
 
 const gHttpTestRoot = "https://example.com/browser/dom/workers/test/";
 
+function grabHistogramsFromContent(
+  use_counter_name,
+  worker_type,
+  counter_before = null
+) {
+  let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+    Ci.nsITelemetry
+  );
+  let gather = () => {
+    let snapshots;
+    if (Services.appinfo.browserTabsRemoteAutostart) {
+      snapshots = telemetry.getSnapshotForHistograms("main", false).content;
+    } else {
+      snapshots = telemetry.getSnapshotForHistograms("main", false).parent;
+    }
+    let checkedGet = probe => {
+      return snapshots[probe] ? snapshots[probe].sum : 0;
+    };
+    return [
+      checkedGet(`USE_COUNTER2_${use_counter_name}_${worker_type}_WORKER`),
+      checkedGet(`${worker_type}_WORKER_DESTROYED`),
+    ];
+  };
+  return BrowserTestUtils.waitForCondition(() => {
+    return counter_before != gather()[0];
+  }).then(gather, gather);
+}
+
 function unscream(s) {
   
   return s.charAt(0) + s.slice(1).toLowerCase();
@@ -29,6 +57,10 @@ var check_use_counter_worker = async function (
 
   
   
+  let [histogram_before, destructions_before] = await grabHistogramsFromContent(
+    use_counter_name,
+    worker_type
+  );
   await Services.fog.testFlushAllChildren();
   let glean_before =
     Glean[`useCounterWorker${unscream(worker_type)}`][
@@ -52,18 +84,12 @@ var check_use_counter_worker = async function (
   await tabClosed;
 
   
-  
-  
-  
-  await BrowserTestUtils.waitForCondition(async () => {
-    await Services.fog.testFlushAllChildren();
-    return (
-      glean_before !=
-      Glean[`useCounterWorker${unscream(worker_type)}`][
-        screamToCamel(use_counter_name)
-      ].testGetValue()
-    );
-  });
+  let [histogram_after, destructions_after] = await grabHistogramsFromContent(
+    use_counter_name,
+    worker_type,
+    histogram_before
+  );
+  await Services.fog.testFlushAllChildren();
   let glean_after =
     Glean[`useCounterWorker${unscream(worker_type)}`][
       screamToCamel(use_counter_name)
@@ -74,12 +100,22 @@ var check_use_counter_worker = async function (
     ].testGetValue();
 
   is(
+    histogram_after,
+    histogram_before + 1,
+    `histogram ${use_counter_name} counts for ${worker_type} worker are correct`
+  );
+  is(
     glean_after,
     glean_before + 1,
     `Glean counter ${use_counter_name} for ${worker_type} worker is correct.`
   );
   
   
+  Assert.greater(
+    destructions_after,
+    destructions_before ?? 0,
+    `${worker_type} worker counts are correct`
+  );
   Assert.greater(
     glean_destructions_after,
     glean_destructions_before ?? 0,

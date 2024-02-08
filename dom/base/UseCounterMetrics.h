@@ -21,9 +21,7 @@ enum WorkerKind : uint8_t;
 
 
 
-
-const char* IncrementUseCounter(UseCounter aUseCounter, bool aIsPage);
-
+void IncrementUseCounter(UseCounter aUseCounter, bool aIsPage);
 
 
 
@@ -31,8 +29,7 @@ const char* IncrementUseCounter(UseCounter aUseCounter, bool aIsPage);
 
 
 
-const char* IncrementWorkerUseCounter(UseCounterWorker aUseCounter,
-                                      WorkerKind aKind);
+void IncrementWorkerUseCounter(UseCounterWorker aUseCounter, WorkerKind aKind);
 
 }  
 }  

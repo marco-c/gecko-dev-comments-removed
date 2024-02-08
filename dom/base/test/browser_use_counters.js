@@ -14,7 +14,10 @@ add_setup(async function test_initialize() {
 });
 
 async function grabCounters(counters, before) {
-  let result = { sentinel: await ensureData(before) };
+  let result = await grabHistogramsFromContent(
+    counters.map(c => c.name),
+    before?.sentinel
+  );
   await Services.fog.testFlushAllChildren();
   result.gleanPage = Object.fromEntries(
     counters.map(c => [
@@ -66,6 +69,16 @@ async function test_once(
     let value = counter.value ?? 1;
     if (!counter.xfail) {
       is(
+        after.page[name],
+        before.page[name] + value,
+        `page counts for ${name} after are correct`
+      );
+      is(
+        after.document[name],
+        before.document[name] + value,
+        `document counts for ${name} after are correct`
+      );
+      is(
         after.gleanPage[name],
         before.gleanPage[name] + value,
         `Glean page counts for ${name} are correct`
@@ -78,7 +91,9 @@ async function test_once(
     }
   }
 
+  assertRange(before, after, "toplevel_docs", toplevel_docs);
   assertRange(before, after, "glean_toplevel_destroyed", toplevel_docs);
+  assertRange(before, after, "docs", docs);
   assertRange(before, after, "glean_docs_destroyed", docs);
 }
 
@@ -363,32 +378,61 @@ add_task(async function test_extension_counters() {
   });
 });
 
-async function ensureData(prevSentinelValue = null) {
+async function grabHistogramsFromContent(names, prev_sentinel = null) {
   
   
   
   
   
+  let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+    Ci.nsITelemetry
+  );
+  let gatheredHistograms;
   return BrowserTestUtils.waitForCondition(
-    async () => {
-      await Services.fog.testFlushAllChildren();
-      return (
-        !prevSentinelValue ||
-        (prevSentinelValue?.page !=
-          Glean.useCounterCssPage.cssMarkerMid.testGetValue() &&
-          prevSentinelValue?.doc !=
-            Glean.useCounterCssDoc.cssMarkerMid.testGetValue())
+    function () {
+      
+      
+      let snapshots = telemetry.getSnapshotForHistograms("main", false);
+      let checkGet = probe => {
+        
+        
+        
+        let process =
+          !Services.appinfo.browserTabsRemoteAutostart ||
+          probe.endsWith("_PAGE") ||
+          probe == "TOP_LEVEL_CONTENT_DOCUMENTS_DESTROYED"
+            ? "parent"
+            : "content";
+        return snapshots[process][probe] ? snapshots[process][probe].sum : 0;
+      };
+      let page = Object.fromEntries(
+        names.map(name => [name, checkGet(`USE_COUNTER2_${name}_PAGE`)])
       );
+      let document = Object.fromEntries(
+        names.map(name => [name, checkGet(`USE_COUNTER2_${name}_DOCUMENT`)])
+      );
+      gatheredHistograms = {
+        page,
+        document,
+        docs: checkGet("CONTENT_DOCUMENTS_DESTROYED"),
+        toplevel_docs: checkGet("TOP_LEVEL_CONTENT_DOCUMENTS_DESTROYED"),
+        sentinel: {
+          doc: checkGet("USE_COUNTER2_CSS_PROPERTY_MarkerMid_DOCUMENT"),
+          page: checkGet("USE_COUNTER2_CSS_PROPERTY_MarkerMid_PAGE"),
+        },
+      };
+      let sentinelChanged =
+        !prev_sentinel ||
+        (prev_sentinel.doc != gatheredHistograms.sentinel.doc &&
+          prev_sentinel.page != gatheredHistograms.sentinel.page);
+      return sentinelChanged;
     },
-    "ensureData",
+    "grabHistogramsFromContent",
     100,
     Infinity
   ).then(
-    () => ({
-      doc: Glean.useCounterCssPage.cssMarkerMid.testGetValue(),
-      page: Glean.useCounterCssDoc.cssMarkerMid.testGetValue(),
-    }),
-    msg => {
+    () => gatheredHistograms,
+    function (msg) {
       throw msg;
     }
   );
