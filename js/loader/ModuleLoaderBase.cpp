@@ -478,6 +478,23 @@ void ModuleLoaderBase::SetModuleFetchStarted(ModuleLoadRequest* aRequest) {
   mFetchingModules.InsertOrUpdate(aRequest->mURI, nullptr);
 }
 
+bool ModuleLoaderBase::IsScriptPreloadedAndHasParseError(
+    ModuleLoadRequest* aRequest) {
+  RefPtr<ModuleScript> moduleScript(aRequest->mModuleScript);
+
+  bool hasParseError = false;
+  if (moduleScript) {
+    hasParseError = moduleScript->HasParseError();
+  }
+
+  bool isPreload = false;
+  if (aRequest->HasScriptLoadContext()) {
+    isPreload = aRequest->GetScriptLoadContext()->IsPreload();
+  }
+
+  return hasParseError && isPreload;
+}
+
 void ModuleLoaderBase::SetModuleFetchFinishedAndResumeWaitingRequests(
     ModuleLoadRequest* aRequest, nsresult aResult) {
   
@@ -505,7 +522,14 @@ void ModuleLoaderBase::SetModuleFetchFinishedAndResumeWaitingRequests(
   RefPtr<ModuleScript> moduleScript(aRequest->mModuleScript);
   MOZ_ASSERT(NS_FAILED(aResult) == !moduleScript);
 
-  mFetchedModules.InsertOrUpdate(aRequest->mURI, RefPtr{moduleScript});
+  
+  
+  
+  
+  
+  if (!IsScriptPreloadedAndHasParseError(aRequest)) {
+    mFetchedModules.InsertOrUpdate(aRequest->mURI, RefPtr{moduleScript});
+  }
 
   if (waitingRequests) {
     LOG(("ScriptLoadRequest (%p): Resuming waiting requests", aRequest));
