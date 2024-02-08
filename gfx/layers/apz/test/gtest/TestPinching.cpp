@@ -135,9 +135,8 @@ class APZCPinchGestureDetectorTester : public APZCPinchTester {
     MakeApzcWaitForMainThread();
     MakeApzcZoomable();
 
-    int touchInputId = 0;
     uint64_t blockId = 0;
-    PinchWithTouchInput(apzc, ScreenIntPoint(250, 300), 1.25, touchInputId,
+    PinchWithTouchInput(apzc, ScreenIntPoint(250, 300), 1.25,
                         PinchOptions().OutInputBlockId(&blockId));
 
     
@@ -292,11 +291,9 @@ TEST_F(APZCPinchGestureDetectorTester, Panning_TwoFingerFling_ZoomDisabled) {
   MakeApzcUnzoomable();
 
   
-  int touchInputId = 0;
   uint64_t blockId = 0;
   PinchWithTouchInput(apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100),
-                      1, touchInputId,
-                      PinchOptions().OutInputBlockId(&blockId));
+                      1, PinchOptions().OutInputBlockId(&blockId));
 
   
   apzc->AssertStateIsFling();
@@ -309,11 +306,10 @@ TEST_F(APZCPinchGestureDetectorTester, Pinch_DoesntFling_ZoomDisabled) {
   MakeApzcUnzoomable();
 
   
-  int touchInputId = 0;
   uint64_t blockId = 0;
 
   PinchWithTouchInput(apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100),
-                      2, touchInputId,
+                      2,
                       PinchOptions()
                           .OutInputBlockId(&blockId)
                           .Flags(PinchFlags::LiftFinger2)
@@ -334,11 +330,9 @@ TEST_F(APZCPinchGestureDetectorTester, Panning_TwoFingerFling_ZoomEnabled) {
   MakeApzcZoomable();
 
   
-  int touchInputId = 0;
   uint64_t blockId = 0;
   PinchWithTouchInput(apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100),
-                      1, touchInputId,
-                      PinchOptions().OutInputBlockId(&blockId));
+                      1, PinchOptions().OutInputBlockId(&blockId));
 
   
   apzc->AssertStateIsReset();
@@ -352,10 +346,9 @@ TEST_F(APZCPinchGestureDetectorTester,
   MakeApzcZoomable();
 
   
-  int touchInputId = 0;
   uint64_t blockId = 0;
   PinchWithTouchInput(
-      apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100), 1, touchInputId,
+      apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100), 1,
       PinchOptions().OutInputBlockId(&blockId).Flags(PinchFlags::LiftFinger2));
 
   
@@ -375,10 +368,9 @@ TEST_F(APZCPinchGestureDetectorTester,
   MakeApzcUnzoomable();
 
   
-  int touchInputId = 0;
   uint64_t blockId = 0;
   PinchWithTouchInput(
-      apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100), 1, touchInputId,
+      apzc, ScreenIntPoint(100, 200), ScreenIntPoint(100, 100), 1,
       PinchOptions().OutInputBlockId(&blockId).Flags(PinchFlags::LiftFinger2));
 
   
@@ -516,9 +508,8 @@ TEST_F(APZCPinchGestureDetectorTester, Pinch_APZZoom_Disabled) {
                                  apzc->GetGuid(), _, LayoutDeviceCoord(0), _))
       .Times(1);
 
-  int touchInputId = 0;
   uint64_t blockId = 0;
-  PinchWithTouchInput(apzc, ScreenIntPoint(250, 300), 1.25, touchInputId,
+  PinchWithTouchInput(apzc, ScreenIntPoint(250, 300), 1.25,
                       PinchOptions().OutInputBlockId(&blockId));
 
   
