@@ -1,8 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// XPCOMUtils, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -16,17 +22,17 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true
 );
 
-
+// Keep a Set of adult base domains for lookup (initialized at end of file)
 let gAdultSet;
 
-
+// Keep a hasher for repeated hashings
 let gCryptoHash = null;
 
-
-
-
+/**
+ * Run some text through md5 and return the base64 result.
+ */
 function md5Hash(text) {
-  
+  // Lazily create a reusable hasher
   if (gCryptoHash === null) {
     gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
       Ci.nsICryptoHash
@@ -35,25 +41,25 @@ function md5Hash(text) {
 
   gCryptoHash.init(gCryptoHash.MD5);
 
-  
+  // Convert the text to a byte array for hashing
   gCryptoHash.update(
     text.split("").map(c => c.charCodeAt(0)),
     text.length
   );
 
-  
+  // Request the has result as ASCII base64
   return gCryptoHash.finish(true);
 }
 
-const FilterAdult = {
-  
-
-
-
-
-
-
-
+export const FilterAdult = {
+  /**
+   * Filter out any link objects that have a url with an adult base domain.
+   *
+   * @param {string[]} links
+   *   An array of links to test.
+   * @returns {string[]}
+   *   A filtered array without adult links.
+   */
   filter(links) {
     if (!lazy.gFilterAdultEnabled) {
       return links;
@@ -69,14 +75,14 @@ const FilterAdult = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Determine if the supplied url is an adult url or not.
+   *
+   * @param {string} url
+   *   The url to test.
+   * @returns {boolean}
+   *   True if it is an adult url.
+   */
   isAdultUrl(url) {
     if (!lazy.gFilterAdultEnabled) {
       return false;
@@ -89,18 +95,18 @@ const FilterAdult = {
     }
   },
 
-  
-
-
+  /**
+   * For tests, adds a domain to the adult list.
+   */
   addDomainToList(url) {
     gAdultSet.add(
       md5Hash(Services.eTLD.getBaseDomain(Services.io.newURI(url)))
     );
   },
 
-  
-
-
+  /**
+   * For tests, removes a domain to the adult list.
+   */
   removeDomainFromList(url) {
     gAdultSet.delete(
       md5Hash(Services.eTLD.getBaseDomain(Services.io.newURI(url)))
@@ -108,10 +114,8 @@ const FilterAdult = {
   },
 };
 
-const EXPORTED_SYMBOLS = ["FilterAdult"];
-
-
-
+// These are md5 hashes of base domains to be filtered out. Originally from:
+// https://hg.mozilla.org/mozilla-central/log/default/browser/base/content/newtab/newTab.inadjacent.json
 gAdultSet = new Set([
   "+/UCpAhZhz368iGioEO8aQ==",
   "+1e7jvUo8f2/2l0TFrQqfA==",
