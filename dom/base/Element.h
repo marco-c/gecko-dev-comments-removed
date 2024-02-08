@@ -706,7 +706,7 @@ class Element : public FragmentOrElement {
 
  public:
   MOZ_CAN_RUN_SCRIPT
-  nsIScrollableFrame* GetScrollFrame(nsIFrame** aFrame = nullptr,
+  nsIScrollableFrame* GetScrollFrame(nsIFrame** aStyledFrame = nullptr,
                                      FlushType aFlushType = FlushType::Layout);
 
  private:
@@ -1440,6 +1440,8 @@ class Element : public FragmentOrElement {
   
   
   void ScrollIntoView(const BooleanOrScrollIntoViewOptions& aObject);
+  MOZ_CAN_RUN_SCRIPT void Scroll(double aXScroll, double aYScroll);
+  MOZ_CAN_RUN_SCRIPT void Scroll(const ScrollToOptions& aOptions);
   MOZ_CAN_RUN_SCRIPT void ScrollTo(double aXScroll, double aYScroll);
   MOZ_CAN_RUN_SCRIPT void ScrollTo(const ScrollToOptions& aOptions);
   MOZ_CAN_RUN_SCRIPT void ScrollBy(double aXScrollDif, double aYScrollDif);
@@ -1897,6 +1899,18 @@ class Element : public FragmentOrElement {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
+  void Scroll(const CSSIntPoint& aScroll, const ScrollOptions& aOptions);
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -2139,10 +2153,6 @@ class Element : public FragmentOrElement {
 
   
   MOZ_CAN_RUN_SCRIPT nsSize GetScrollSize();
-  
-  MOZ_CAN_RUN_SCRIPT nsPoint GetScrollOrigin();
-  
-  MOZ_CAN_RUN_SCRIPT nsRect GetScrollRange();
 
   
 
