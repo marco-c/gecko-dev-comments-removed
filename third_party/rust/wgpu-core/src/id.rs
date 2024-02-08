@@ -1,5 +1,6 @@
 use crate::{Epoch, Index};
 use std::{
+    any::Any,
     cmp::Ordering,
     fmt::{self, Debug},
     hash::Hash,
@@ -8,55 +9,111 @@ use std::{
 use wgt::{Backend, WasmNotSendSync};
 
 type IdType = u64;
-type ZippedIndex = Index;
 type NonZeroId = std::num::NonZeroU64;
+type ZippedIndex = Index;
 
 const INDEX_BITS: usize = std::mem::size_of::<ZippedIndex>() * 8;
 const EPOCH_BITS: usize = INDEX_BITS - BACKEND_BITS;
 const BACKEND_BITS: usize = 3;
 const BACKEND_SHIFT: usize = INDEX_BITS * 2 - BACKEND_BITS;
 pub const EPOCH_MASK: u32 = (1 << (EPOCH_BITS)) - 1;
+type Dummy = hal::api::Empty;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[repr(transparent)]
-#[cfg_attr(any(feature = "serde", feature = "trace"), derive(serde::Serialize))]
-#[cfg_attr(any(feature = "serde", feature = "replay"), derive(serde::Deserialize))]
-#[cfg_attr(feature = "trace", serde(into = "SerialId"))]
-#[cfg_attr(feature = "replay", serde(from = "SerialId"))]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RawId(NonZeroId);
+#[cfg_attr(feature = "trace", derive(serde::Serialize), serde(into = "SerialId"))]
+#[cfg_attr(
+    feature = "replay",
+    derive(serde::Deserialize),
+    serde(from = "SerialId")
+)]
+#[cfg_attr(
+    all(feature = "serde", not(feature = "trace")),
+    derive(serde::Serialize)
+)]
+#[cfg_attr(
+    all(feature = "serde", not(feature = "replay")),
+    derive(serde::Deserialize)
+)]
+pub struct Id<T: 'static + WasmNotSendSync>(NonZeroId, PhantomData<T>);
 
-impl RawId {
-    #[doc(hidden)]
-    #[inline]
-    pub fn from_non_zero(non_zero: NonZeroId) -> Self {
-        Self(non_zero)
-    }
 
-    #[doc(hidden)]
-    #[inline]
-    pub fn into_non_zero(self) -> NonZeroId {
-        self.0
-    }
-
+#[allow(dead_code)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+enum SerialId {
     
-    pub fn zip(index: Index, epoch: Epoch, backend: Backend) -> RawId {
-        assert_eq!(0, epoch >> EPOCH_BITS);
-        assert_eq!(0, (index as IdType) >> INDEX_BITS);
-        let v = index as IdType
-            | ((epoch as IdType) << INDEX_BITS)
-            | ((backend as IdType) << BACKEND_SHIFT);
-        Self(NonZeroId::new(v).unwrap())
+    Id(Index, Epoch, Backend),
+}
+#[cfg(feature = "trace")]
+impl<T> From<Id<T>> for SerialId
+where
+    T: 'static + WasmNotSendSync,
+{
+    fn from(id: Id<T>) -> Self {
+        let (index, epoch, backend) = id.unzip();
+        Self::Id(index, epoch, backend)
+    }
+}
+#[cfg(feature = "replay")]
+impl<T> From<SerialId> for Id<T>
+where
+    T: 'static + WasmNotSendSync,
+{
+    fn from(id: SerialId) -> Self {
+        match id {
+            SerialId::Id(index, epoch, backend) => TypedId::zip(index, epoch, backend),
+        }
+    }
+}
+
+impl<T> Id<T>
+where
+    T: 'static + WasmNotSendSync,
+{
+    
+    
+    
+    pub unsafe fn from_raw(raw: NonZeroId) -> Self {
+        Self(raw, PhantomData)
     }
 
-    
-    #[allow(trivial_numeric_casts)]
-    pub fn unzip(self) -> (Index, Epoch, Backend) {
-        (
-            (self.0.get() as ZippedIndex) as Index,
-            (((self.0.get() >> INDEX_BITS) as ZippedIndex) & (EPOCH_MASK as ZippedIndex)) as Index,
-            self.backend(),
-        )
+    #[allow(dead_code)]
+    pub(crate) fn dummy(index: u32) -> Self {
+        Id::zip(index, 1, Backend::Empty)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn is_valid(&self) -> bool {
+        self.backend() != Backend::Empty
     }
 
     pub fn backend(self) -> Backend {
@@ -71,154 +128,12 @@ impl RawId {
     }
 }
 
-
-
-
-
-
-
-pub fn as_option_slice<T: Marker>(ids: &[Id<T>]) -> &[Option<Id<T>>] {
-    
-    
-    unsafe { std::slice::from_raw_parts(ids.as_ptr().cast(), ids.len()) }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[repr(transparent)]
-#[cfg_attr(any(feature = "serde", feature = "trace"), derive(serde::Serialize))]
-#[cfg_attr(any(feature = "serde", feature = "replay"), derive(serde::Deserialize))]
-#[cfg_attr(
-    any(feature = "serde", feature = "trace", feature = "replay"),
-    serde(transparent)
-)]
-pub struct Id<T: Marker>(RawId, PhantomData<T>);
-
-
-#[allow(dead_code)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-enum SerialId {
-    
-    Id(Index, Epoch, Backend),
-}
-
-#[cfg(feature = "trace")]
-impl From<RawId> for SerialId {
-    fn from(id: RawId) -> Self {
-        let (index, epoch, backend) = id.unzip();
-        Self::Id(index, epoch, backend)
-    }
-}
-
-#[cfg(feature = "replay")]
-impl From<SerialId> for RawId {
-    fn from(id: SerialId) -> Self {
-        match id {
-            SerialId::Id(index, epoch, backend) => RawId::zip(index, epoch, backend),
-        }
-    }
-}
-
-impl<T> Id<T>
-where
-    T: Marker,
-{
-    
-    
-    
-    pub unsafe fn from_raw(raw: RawId) -> Self {
-        Self(raw, PhantomData)
-    }
-
-    
-    pub fn into_raw(self) -> RawId {
-        self.0
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn dummy(index: u32) -> Self {
-        Id::zip(index, 1, Backend::Empty)
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn is_valid(&self) -> bool {
-        self.backend() != Backend::Empty
-    }
-
-    
-    #[inline]
-    pub fn backend(self) -> Backend {
-        self.0.backend()
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub const fn transmute<U: self::transmute::Transmute<T>>(self) -> Id<U> {
-        Id(self.0, PhantomData)
-    }
-
-    #[inline]
-    pub fn zip(index: Index, epoch: Epoch, backend: Backend) -> Self {
-        Id(RawId::zip(index, epoch, backend), PhantomData)
-    }
-
-    #[inline]
-    pub fn unzip(self) -> (Index, Epoch, Backend) {
-        self.0.unzip()
-    }
-}
-
-pub(crate) mod transmute {
-    
-    pub trait Transmute<U>: super::Marker {}
-
-    
-    impl<T> Transmute<T> for T where T: super::Marker {}
-
-    
-    impl Transmute<super::markers::Queue> for super::markers::Device {}
-    impl Transmute<super::markers::Device> for super::markers::Queue {}
-    impl Transmute<super::markers::CommandBuffer> for super::markers::CommandEncoder {}
-    impl Transmute<super::markers::CommandEncoder> for super::markers::CommandBuffer {}
-}
-
-impl<T> Copy for Id<T> where T: Marker {}
+impl<T> Copy for Id<T> where T: 'static + WasmNotSendSync {}
 
 impl<T> Clone for Id<T>
 where
-    T: Marker,
+    T: 'static + WasmNotSendSync,
 {
-    #[inline]
     fn clone(&self) -> Self {
         *self
     }
@@ -226,7 +141,7 @@ where
 
 impl<T> Debug for Id<T>
 where
-    T: Marker,
+    T: 'static + WasmNotSendSync,
 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let (index, epoch, backend) = self.unzip();
@@ -245,9 +160,8 @@ where
 
 impl<T> Hash for Id<T>
 where
-    T: Marker,
+    T: 'static + WasmNotSendSync,
 {
-    #[inline]
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.hash(state);
     }
@@ -255,21 +169,19 @@ where
 
 impl<T> PartialEq for Id<T>
 where
-    T: Marker,
+    T: 'static + WasmNotSendSync,
 {
-    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
     }
 }
 
-impl<T> Eq for Id<T> where T: Marker {}
+impl<T> Eq for Id<T> where T: 'static + WasmNotSendSync {}
 
 impl<T> PartialOrd for Id<T>
 where
-    T: Marker,
+    T: 'static + WasmNotSendSync,
 {
-    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.0.partial_cmp(&other.0)
     }
@@ -277,9 +189,8 @@ where
 
 impl<T> Ord for Id<T>
 where
-    T: Marker,
+    T: 'static + WasmNotSendSync,
 {
-    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.cmp(&other.0)
     }
@@ -289,61 +200,67 @@ where
 
 
 
-pub trait Marker: 'static + WasmNotSendSync {}
 
+pub trait TypedId: Copy + Debug + Any + 'static + WasmNotSendSync + Eq + Hash {
+    fn zip(index: Index, epoch: Epoch, backend: Backend) -> Self;
+    fn unzip(self) -> (Index, Epoch, Backend);
+    fn into_raw(self) -> NonZeroId;
+}
 
+#[allow(trivial_numeric_casts)]
+impl<T> TypedId for Id<T>
+where
+    T: 'static + WasmNotSendSync,
+{
+    fn zip(index: Index, epoch: Epoch, backend: Backend) -> Self {
+        assert_eq!(0, epoch >> EPOCH_BITS);
+        assert_eq!(0, (index as IdType) >> INDEX_BITS);
+        let v = index as IdType
+            | ((epoch as IdType) << INDEX_BITS)
+            | ((backend as IdType) << BACKEND_SHIFT);
+        Id(NonZeroId::new(v).unwrap(), PhantomData)
+    }
 
+    fn unzip(self) -> (Index, Epoch, Backend) {
+        (
+            (self.0.get() as ZippedIndex) as Index,
+            (((self.0.get() >> INDEX_BITS) as ZippedIndex) & (EPOCH_MASK as ZippedIndex)) as Index,
+            self.backend(),
+        )
+    }
 
-
-#[cfg(test)]
-impl Marker for () {}
-
-
-macro_rules! ids {
-    ($(
-        $(#[$($meta:meta)*])*
-        pub type $name:ident $marker:ident;
-    )*) => {
-        /// Marker types for each resource.
-        pub mod markers {
-            $(
-                #[derive(Debug)]
-                pub enum $marker {}
-                impl super::Marker for $marker {}
-            )*
-        }
-
-        $(
-            $(#[$($meta)*])*
-            pub type $name = Id<self::markers::$marker>;
-        )*
+    fn into_raw(self) -> NonZeroId {
+        self.0
     }
 }
 
-ids! {
-    pub type AdapterId Adapter;
-    pub type SurfaceId Surface;
-    pub type DeviceId Device;
-    pub type QueueId Queue;
-    pub type BufferId Buffer;
-    pub type StagingBufferId StagingBuffer;
-    pub type TextureViewId TextureView;
-    pub type TextureId Texture;
-    pub type SamplerId Sampler;
-    pub type BindGroupLayoutId BindGroupLayout;
-    pub type PipelineLayoutId PipelineLayout;
-    pub type BindGroupId BindGroup;
-    pub type ShaderModuleId ShaderModule;
-    pub type RenderPipelineId RenderPipeline;
-    pub type ComputePipelineId ComputePipeline;
-    pub type CommandEncoderId CommandEncoder;
-    pub type CommandBufferId CommandBuffer;
-    pub type RenderPassEncoderId RenderPassEncoder;
-    pub type ComputePassEncoderId ComputePassEncoder;
-    pub type RenderBundleEncoderId RenderBundleEncoder;
-    pub type RenderBundleId RenderBundle;
-    pub type QuerySetId QuerySet;
-}
+pub type AdapterId = Id<crate::instance::Adapter<Dummy>>;
+pub type SurfaceId = Id<crate::instance::Surface>;
+
+pub type DeviceId = Id<crate::device::Device<Dummy>>;
+pub type QueueId = DeviceId;
+
+pub type BufferId = Id<crate::resource::Buffer<Dummy>>;
+pub type StagingBufferId = Id<crate::resource::StagingBuffer<Dummy>>;
+pub type TextureViewId = Id<crate::resource::TextureView<Dummy>>;
+pub type TextureId = Id<crate::resource::Texture<Dummy>>;
+pub type SamplerId = Id<crate::resource::Sampler<Dummy>>;
+
+pub type BindGroupLayoutId = Id<crate::binding_model::BindGroupLayout<Dummy>>;
+pub type PipelineLayoutId = Id<crate::binding_model::PipelineLayout<Dummy>>;
+pub type BindGroupId = Id<crate::binding_model::BindGroup<Dummy>>;
+
+pub type ShaderModuleId = Id<crate::pipeline::ShaderModule<Dummy>>;
+pub type RenderPipelineId = Id<crate::pipeline::RenderPipeline<Dummy>>;
+pub type ComputePipelineId = Id<crate::pipeline::ComputePipeline<Dummy>>;
+
+pub type CommandEncoderId = CommandBufferId;
+pub type CommandBufferId = Id<crate::command::CommandBuffer<Dummy>>;
+pub type RenderPassEncoderId = *mut crate::command::RenderPass;
+pub type ComputePassEncoderId = *mut crate::command::ComputePass;
+pub type RenderBundleEncoderId = *mut crate::command::RenderBundleEncoder;
+pub type RenderBundleId = Id<crate::command::RenderBundle<Dummy>>;
+pub type QuerySetId = Id<crate::resource::QuerySet<Dummy>>;
 
 #[test]
 fn test_id_backend() {
@@ -354,7 +271,7 @@ fn test_id_backend() {
         Backend::Dx12,
         Backend::Gl,
     ] {
-        let id = crate::id::Id::<()>::zip(1, 0, b);
+        let id: Id<()> = Id::zip(1, 0, b);
         let (_id, _epoch, backend) = id.unzip();
         assert_eq!(id.backend(), b);
         assert_eq!(backend, b);
@@ -376,7 +293,7 @@ fn test_id() {
     for &i in &indexes {
         for &e in &epochs {
             for &b in &backends {
-                let id = crate::id::Id::<()>::zip(i, e, b);
+                let id: Id<()> = Id::zip(i, e, b);
                 let (index, epoch, backend) = id.unzip();
                 assert_eq!(index, i);
                 assert_eq!(epoch, e);

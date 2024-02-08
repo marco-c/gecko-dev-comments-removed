@@ -1092,7 +1092,6 @@ impl Surface {
             .map_err(|e| {
                 log::error!("swap_buffers failed: {}", e);
                 crate::SurfaceError::Lost
-                
             })?;
         self.egl
             .instance
