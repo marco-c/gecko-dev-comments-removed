@@ -21,6 +21,22 @@ enum CaptureEngine : int {
   MaxEngine
 };
 
+enum class CamerasAccessStatus {
+  
+  
+  Granted = 1,
+  
+  
+  
+  
+  RequestRequired,
+  
+  Rejected,
+  
+  
+  Error,
+};
+
 TrackingId::Source CaptureEngineToTrackingSourceStr(
     const CaptureEngine& aEngine);
 
@@ -33,6 +49,13 @@ struct ParamTraits<mozilla::camera::CaptureEngine>
           mozilla::camera::CaptureEngine,
           mozilla::camera::CaptureEngine::InvalidEngine,
           mozilla::camera::CaptureEngine::MaxEngine> {};
+
+template <>
+struct ParamTraits<mozilla::camera::CamerasAccessStatus>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::camera::CamerasAccessStatus,
+          mozilla::camera::CamerasAccessStatus::Granted,
+          mozilla::camera::CamerasAccessStatus::Error> {};
 }  
 
 #endif  
