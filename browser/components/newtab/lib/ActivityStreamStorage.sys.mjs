@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -8,10 +8,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
 });
 
-class ActivityStreamStorage {
-  
-
-
+export class ActivityStreamStorage {
+  /**
+   * @param storeNames Array of strings used to create all the required stores
+   */
   constructor({ storeNames, telemetry }) {
     if (!storeNames) {
       throw new Error("storeNames required");
@@ -27,12 +27,12 @@ class ActivityStreamStorage {
     return this._db || (this._db = this.createOrOpenDb());
   }
 
-  
-
-
-
-
-
+  /**
+   * Public method that binds the store required by the consumer and exposes
+   * the private db getters and setters.
+   *
+   * @param storeName String name of desired store
+   */
   getDbTable(storeName) {
     if (this.storeNames.includes(storeName)) {
       return {
@@ -69,8 +69,8 @@ class ActivityStreamStorage {
 
   _openDatabase() {
     return lazy.IndexedDB.open(this.dbName, { version: this.dbVersion }, db => {
-      
-      
+      // If provided with array of objectStore names we need to create all the
+      // individual stores
       this.storeNames.forEach(store => {
         if (!db.objectStoreNames.contains(store)) {
           this._requestWrapper(() => db.createObjectStore(store));
@@ -79,13 +79,13 @@ class ActivityStreamStorage {
     });
   }
 
-  
-
-
-
-
-
-
+  /**
+   * createOrOpenDb - Open a db (with this.dbName) if it exists.
+   *                  If it does not exist, create it.
+   *                  If an error occurs, deleted the db and attempt to
+   *                  re-create it.
+   * @returns Promise that resolves with a db instance
+   */
   async createOrOpenDb() {
     try {
       const db = await this._openDatabase();
@@ -114,8 +114,6 @@ class ActivityStreamStorage {
   }
 }
 
-function getDefaultOptions(options) {
+export function getDefaultOptions(options) {
   return { collapsed: !!options.collapsed };
 }
-
-const EXPORTED_SYMBOLS = ["ActivityStreamStorage", "getDefaultOptions"];
