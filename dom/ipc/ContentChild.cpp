@@ -1700,7 +1700,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
 
   if (sandboxEnabled && !StaticPrefs::media_cubeb_sandbox()) {
     
-    Unused << CubebUtils::GetCubebContext();
+    Unused << CubebUtils::GetCubeb();
   }
 
   if (sandboxEnabled) {

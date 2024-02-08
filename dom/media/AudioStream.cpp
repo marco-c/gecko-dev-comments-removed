@@ -245,14 +245,15 @@ nsresult AudioStream::Init(AudioDeviceInfo* aSinkInfo)
   
   mDumpFile.Open("AudioStream", mOutChannels, mAudioClock.GetInputRate());
 
-  cubeb* cubebContext = CubebUtils::GetCubebContext();
-  if (!cubebContext) {
+  RefPtr<CubebUtils::CubebHandle> handle = CubebUtils::GetCubeb();
+  if (!handle) {
     LOGE("Can't get cubeb context!");
     CubebUtils::ReportCubebStreamInitFailure(true);
     return NS_ERROR_DOM_MEDIA_CUBEB_INITIALIZATION_ERR;
   }
 
-  return OpenCubeb(cubebContext, params, startTime,
+  mCubeb = handle;
+  return OpenCubeb(handle->Context(), params, startTime,
                    CubebUtils::GetFirstStream());
 }
 
