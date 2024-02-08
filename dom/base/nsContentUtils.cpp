@@ -11380,6 +11380,10 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
 
   RefPtr shadowRoot = host->AttachShadow(init, IgnoreErrors(),
                                          Element::ShadowRootDeclarative::Yes);
+  if (shadowRoot) {
+    
+    shadowRoot->SetAvailableToElementInternals();
+  }
   return shadowRoot;
 }
 
