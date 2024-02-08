@@ -42,6 +42,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/MemoryCallbacks.h"
+#include "js/Prefs.h"
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
 #include "js/Stack.h"  
@@ -608,7 +609,7 @@ void js::ReportIsNullOrUndefinedForPropertyAccess(JSContext* cx, HandleValue v,
                                                   int vIndex, HandleId key) {
   MOZ_ASSERT(v.isNullOrUndefined());
 
-  if (!cx->realm()->creationOptions().getPropertyErrorMessageFixEnabled()) {
+  if (!JS::Prefs::property_error_message_fix()) {
     ReportIsNullOrUndefinedForPropertyAccess(cx, v, vIndex);
     return;
   }
