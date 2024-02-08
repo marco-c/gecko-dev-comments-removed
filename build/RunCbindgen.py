@@ -41,18 +41,24 @@ def _run_process(args):
 
 
 def generate_metadata(output, cargo_config):
-    stdout, returncode = _run_process(
-        [
-            buildconfig.substs["CARGO"],
-            "metadata",
-            "--frozen",
-            "--all-features",
-            "--format-version",
-            "1",
-            "--manifest-path",
-            CARGO_TOML,
-        ]
-    )
+    args = [
+        buildconfig.substs["CARGO"],
+        "metadata",
+        "--all-features",
+        "--format-version",
+        "1",
+        "--manifest-path",
+        CARGO_TOML,
+    ]
+
+    
+    
+    
+    
+    if not buildconfig.substs.get("JS_STANDALONE"):
+        args.append("--frozen")
+
+    stdout, returncode = _run_process(args)
 
     if returncode != 0:
         return returncode
