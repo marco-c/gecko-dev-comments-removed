@@ -14,7 +14,6 @@
 #include "nsWindowDefs.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/widget/WinMessages.h"
 #include "mozilla/widget/WinModifierKeyState.h"
@@ -825,34 +824,8 @@ class KeyboardLayout {
  public:
   static KeyboardLayout* GetInstance();
   static void Shutdown();
-
-  
-
-
-
-  static HKL GetLayout() {
-    if (!sInstance || sInstance->mIsPendingToRestoreKeyboardLayout) {
-      return ::GetKeyboardLayout(0);
-    }
-    return sInstance->mKeyboardLayout;
-  }
-
-  
-
-
-
-
-
-  HKL GetLoadedLayout() { return mKeyboardLayout; }
-
-  
-
-
-
-  nsCString GetLoadedLayoutName() {
-    return KeyboardLayout::GetLayoutName(mKeyboardLayout);
-  }
-
+  static HKL GetActiveLayout();
+  static nsCString GetActiveLayoutName();
   static void NotifyIdleServiceOfUserActivity();
 
   static bool IsPrintableCharKey(uint8_t aVirtualKey);
@@ -952,6 +925,11 @@ class KeyboardLayout {
 
   static CodeNameIndex ConvertScanCodeToCodeNameIndex(UINT aScanCode);
 
+  HKL GetLayout() const {
+    return mIsPendingToRestoreKeyboardLayout ? ::GetKeyboardLayout(0)
+                                             : mKeyboardLayout;
+  }
+
   
 
 
@@ -972,17 +950,17 @@ class KeyboardLayout {
   ~KeyboardLayout();
 
   static KeyboardLayout* sInstance;
-  static StaticRefPtr<nsIUserIdleServiceInternal> sIdleService;
+  static nsIUserIdleServiceInternal* sIdleService;
 
   struct DeadKeyTableListEntry {
     DeadKeyTableListEntry* next;
     uint8_t data[1];
   };
 
-  HKL mKeyboardLayout = nullptr;
+  HKL mKeyboardLayout;
 
-  VirtualKey mVirtualKeys[NS_NUM_OF_KEYS] = {};
-  DeadKeyTableListEntry* mDeadKeyTableListHead = nullptr;
+  VirtualKey mVirtualKeys[NS_NUM_OF_KEYS];
+  DeadKeyTableListEntry* mDeadKeyTableListHead;
   
   
   
@@ -992,9 +970,9 @@ class KeyboardLayout {
   
   nsTArray<VirtualKey::ShiftState> mDeadKeyShiftStates;
 
-  bool mIsOverridden = false;
-  bool mIsPendingToRestoreKeyboardLayout = false;
-  bool mHasAltGr = false;
+  bool mIsOverridden;
+  bool mIsPendingToRestoreKeyboardLayout;
+  bool mHasAltGr;
 
   static inline int32_t GetKeyIndex(uint8_t aVirtualKey);
   static bool AddDeadKeyEntry(char16_t aBaseChar, char16_t aCompositeChar,
@@ -1025,7 +1003,7 @@ class KeyboardLayout {
 
 
 
-  static nsCString GetLayoutName(HKL aLayout);
+  nsCString GetLayoutName(HKL aLayout) const;
 
   
 
