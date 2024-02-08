@@ -59,7 +59,17 @@ pub fn isolating_run_sequences(
         assert!(!stack.is_empty());
 
         let start_class = original_classes[run.start];
-        let end_class = original_classes[run.end - 1];
+        
+        
+        
+        
+        let end_class = original_classes[run.start..run.end]
+            .iter()
+            .copied()
+            .rev()
+            .filter(not_removed_by_x9)
+            .next()
+            .unwrap_or(start_class);
 
         let mut sequence = if start_class == PDI && stack.len() > 1 {
             
