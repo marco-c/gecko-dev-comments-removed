@@ -229,6 +229,7 @@ class nsWindow final : public nsBaseWidget {
   gboolean OnConfigureEvent(GtkWidget* aWidget, GdkEventConfigure* aEvent);
   void OnMap();
   void OnUnmap();
+  void OnUnrealize();
   void OnSizeAllocate(GtkAllocation* aAllocation);
   void OnDeleteEvent();
   void OnEnterNotifyEvent(GdkEventCrossing* aEvent);
@@ -454,8 +455,6 @@ class nsWindow final : public nsBaseWidget {
   
   
   void ClearRenderingQueue();
-
-  void DisableRendering();
 
   bool ApplyEnterLeaveMutterWorkaround();
 
@@ -985,8 +984,6 @@ class nsWindow final : public nsBaseWidget {
   void KioskLockOnMonitor();
 
   void EmulateResizeDrag(GdkEventMotion* aEvent);
-
-  void RequestRepaint(LayoutDeviceIntRegion& aRepaintRegion);
 
 #ifdef MOZ_X11
   typedef enum {GTK_WIDGET_COMPOSIDED_DEFAULT = 0,
