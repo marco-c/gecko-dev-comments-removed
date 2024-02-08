@@ -255,7 +255,7 @@ class RacyFeatures {
 
   static void SetSamplingUnpaused() { sActiveAndFeatures &= ~SamplingPaused; }
 
-  [[nodiscard]] static mozilla::Maybe<uint32_t> FeaturesIfActive() {
+  [[nodiscard]] static Maybe<uint32_t> FeaturesIfActive() {
     if (uint32_t af = sActiveAndFeatures; af & Active) {
       
       return Some(af & ~(Active | Paused | SamplingPaused));
@@ -263,7 +263,7 @@ class RacyFeatures {
     return Nothing();
   }
 
-  [[nodiscard]] static mozilla::Maybe<uint32_t> FeaturesIfActiveAndUnpaused() {
+  [[nodiscard]] static Maybe<uint32_t> FeaturesIfActiveAndUnpaused() {
     if (uint32_t af = sActiveAndFeatures; (af & (Active | Paused)) == Active) {
       
       
@@ -331,9 +331,7 @@ class RacyFeatures {
 
   
   
-  
-  static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed>
-      sActiveAndFeatures;
+  static Atomic<uint32_t, MemoryOrdering::Relaxed> sActiveAndFeatures;
 };
 
 }  
