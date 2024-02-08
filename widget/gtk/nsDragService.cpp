@@ -380,6 +380,20 @@ nsresult nsDragService::InvokeDragSessionImpl(
 
   LOGDRAGSERVICE("nsDragService::InvokeDragSessionImpl");
 
+  GdkDevice* device = widget::GdkGetPointer();
+  GdkWindow* originGdkWindow = nullptr;
+  if (widget::GdkIsWaylandDisplay() || widget::IsXWaylandProtocol()) {
+    originGdkWindow =
+        gdk_device_get_window_at_position(device, nullptr, nullptr);
+    
+    
+    if (!originGdkWindow) {
+      NS_WARNING(
+          "nsDragService::InvokeDragSessionImpl(): Missing origin GdkWindow!");
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   
   GtkTargetList* sourceList = GetSourceList();
 
@@ -406,7 +420,7 @@ nsresult nsDragService::InvokeDragSessionImpl(
     fakeEvent.type = GDK_BUTTON_PRESS;
     fakeEvent.button.window = gtk_widget_get_window(mHiddenWidget);
     fakeEvent.button.time = nsWindow::GetLastUserInputTime();
-    fakeEvent.button.device = widget::GdkGetPointer();
+    fakeEvent.button.device = device;
   }
 
   
@@ -421,11 +435,8 @@ nsresult nsDragService::InvokeDragSessionImpl(
       mHiddenWidget, sourceList, action, 1,
       existingEvent ? existingEvent : &fakeEvent, -1, -1);
 
-  if (widget::GdkIsWaylandDisplay() || widget::IsXWaylandProtocol()) {
-    GdkDevice* device = gdk_drag_context_get_device(context);
-    GdkWindow* gdkWindow =
-        gdk_device_get_window_at_position(device, nullptr, nullptr);
-    mSourceWindow = nsWindow::GetWindow(gdkWindow);
+  if (originGdkWindow) {
+    mSourceWindow = nsWindow::GetWindow(originGdkWindow);
     if (mSourceWindow) {
       mSourceWindow->SetDragSource(context);
     }
