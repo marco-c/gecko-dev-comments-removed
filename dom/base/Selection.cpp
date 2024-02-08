@@ -2286,6 +2286,10 @@ void Selection::AddRangeAndSelectFramesAndNotifyListenersInternal(
 
   
   NotifySelectionListeners();
+  
+  
+  
+  mStyledRanges.mRangesMightHaveChanged = false;
 }
 
 void Selection::AddHighlightRangeAndSelectFramesAndNotifyListeners(
@@ -2304,7 +2308,12 @@ void Selection::AddHighlightRangeAndSelectFramesAndNotifyListeners(
   SelectFrames(presContext, aRange, true);
 
   
+  RefPtr<Selection> kungFuDeathGrip(this);
   NotifySelectionListeners();
+  
+  
+  
+  mStyledRanges.mRangesMightHaveChanged = false;
 }
 
 
