@@ -904,6 +904,41 @@ class PropertyRestrictions:
 
     
     @staticmethod
+    def svg_text_properties():
+        props = set(
+            [
+                "fill",
+                "fill-opacity",
+                "fill-rule",
+                "paint-order",
+                "stroke",
+                "stroke-dasharray",
+                "stroke-dashoffset",
+                "stroke-linecap",
+                "stroke-linejoin",
+                "stroke-miterlimit",
+                "stroke-opacity",
+                "stroke-width",
+                "text-rendering",
+                "vector-effect",
+            ]
+        )
+        return props
+
+    @staticmethod
+    def webkit_text_properties():
+        props = set(
+            [
+                
+                "-webkit-text-stroke-width",
+                "-webkit-text-fill-color",
+                "-webkit-text-stroke-color",
+            ]
+        )
+        return props
+
+    
+    @staticmethod
     def first_letter(data):
         props = set(
             [
@@ -913,10 +948,6 @@ class PropertyRestrictions:
                 "initial-letter",
                 
                 "-moz-osx-font-smoothing",
-                
-                "-webkit-text-stroke-width",
-                "-webkit-text-fill-color",
-                "-webkit-text-stroke-color",
                 "vertical-align",
                 
                 "baseline-source",
@@ -932,6 +963,8 @@ class PropertyRestrictions:
             + PropertyRestrictions.spec(data, "css-shapes")
             + PropertyRestrictions.spec(data, "css-text-decor")
         )
+        props = props.union(PropertyRestrictions.svg_text_properties())
+        props = props.union(PropertyRestrictions.webkit_text_properties())
 
         _add_logical_props(data, props)
 
@@ -948,10 +981,6 @@ class PropertyRestrictions:
                 "opacity",
                 
                 "-moz-osx-font-smoothing",
-                
-                "-webkit-text-stroke-width",
-                "-webkit-text-fill-color",
-                "-webkit-text-stroke-color",
                 "vertical-align",
                 
                 "baseline-source",
@@ -964,6 +993,8 @@ class PropertyRestrictions:
             + PropertyRestrictions.spec(data, "css-text")
             + PropertyRestrictions.spec(data, "css-text-decor")
         )
+        props = props.union(PropertyRestrictions.svg_text_properties())
+        props = props.union(PropertyRestrictions.webkit_text_properties())
 
         
         for prop in PropertyRestrictions.shorthand(data, "border"):
@@ -991,6 +1022,9 @@ class PropertyRestrictions:
             props.add(p)
         for p in PropertyRestrictions.shorthand(data, "white-space"):
             props.add(p)
+        
+        props -= PropertyRestrictions.svg_text_properties()
+
         return props
 
     
