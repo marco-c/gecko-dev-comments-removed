@@ -28,14 +28,12 @@ export function addExpression(input) {
       return null;
     }
 
-    const expressionError = await parserWorker.hasSyntaxError(input);
-
     
     let expression = getExpression(getState(), input);
     if (!expression) {
       
       
-      dispatch({ type: "ADD_EXPRESSION", input, expressionError });
+      dispatch({ type: "ADD_EXPRESSION", input });
 
       expression = getExpression(getState(), input);
       
@@ -65,22 +63,16 @@ export function clearAutocomplete() {
   return { type: "CLEAR_AUTOCOMPLETE" };
 }
 
-export function clearExpressionError() {
-  return { type: "CLEAR_EXPRESSION_ERROR" };
-}
-
 export function updateExpression(input, expression) {
   return async ({ getState, dispatch, parserWorker }) => {
     if (!input) {
       return;
     }
 
-    const expressionError = await parserWorker.hasSyntaxError(input);
     dispatch({
       type: "UPDATE_EXPRESSION",
       expression,
-      input: expressionError ? expression.input : input,
-      expressionError,
+      input,
     });
 
     await dispatch(evaluateExpressionsForCurrentContext());

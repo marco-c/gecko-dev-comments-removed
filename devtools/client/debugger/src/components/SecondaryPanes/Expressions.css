@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .expression-input-form {
   width: 100%;
@@ -48,12 +48,12 @@
 }
 
 .expressions-list .input-expression {
-  
+  /* Prevent vertical bounce when editing an existing Watch Expression */
   height: 100%;
 }
 
 .expressions-list {
-  
+  /* TODO: add normalize */
   margin: 0;
   padding: 4px 0px;
   overflow-x: auto;
@@ -70,10 +70,6 @@
 
 :root.theme-dark .expression-input-container.focused {
   border: 1px solid var(--blue-50);
-}
-
-.expression-input-container.error {
-  border: 1px solid red;
 }
 
 .expression-container {
@@ -96,7 +92,7 @@
 
 .expression-container .tree .tree-node[aria-level="1"] {
   padding-top: 0px;
-  
+  /* keep line-height at 14px to prevent row from shifting upon expansion */
   line-height: 14px;
 }
 
@@ -118,7 +114,7 @@
 
 .expression-container__close-btn {
   position: absolute;
-  
+  /* hiding button outside of row until hovered or focused */
   top: -100px;
 }
 
