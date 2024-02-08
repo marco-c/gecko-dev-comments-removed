@@ -161,6 +161,11 @@ static ShadowRealmObject* ValidateShadowRealmObject(JSContext* cx,
 void js::ReportPotentiallyDetailedMessage(JSContext* cx,
                                           const unsigned detailedError,
                                           const unsigned genericError) {
+  
+  if (!cx->isExceptionPending()) {
+    return;
+  }
+
   Rooted<Value> exception(cx);
   if (!cx->getPendingException(&exception)) {
     return;
@@ -284,6 +289,10 @@ static bool PerformShadowRealmEval(JSContext* cx, Handle<JSString*> sourceText,
   } while (false);  
 
   if (!compileSuccess) {
+    if (!cx->isExceptionPending()) {
+      return false;
+    }
+
     
     
     Rooted<Value> exception(cx);
