@@ -403,14 +403,6 @@ static inline size_t AlignStackArgAreaSize(size_t unalignedSize) {
 
 
 
-using StackMapBoolVector = Vector<bool, 128, SystemAllocPolicy>;
-
-wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
-    const StackMapBoolVector& vec, bool hasRefs);
-
-
-
-
 
 
 
