@@ -15,8 +15,10 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/VideoColorSpaceBinding.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
+#include "mozilla/media/MediaUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
@@ -218,6 +220,12 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
   VideoFrameData GetVideoFrameData() const;
 
   
+  
+  void StartAutoClose();
+  void StopAutoClose();
+  void CloseIfNeeded();
+
+  
   class Resource final {
    public:
     Resource(const RefPtr<layers::Image>& aImage, Maybe<Format>&& aFormat);
@@ -247,6 +255,10 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
   Maybe<uint64_t> mDuration;
   int64_t mTimestamp;
   VideoColorSpaceInit mColorSpace;
+
+  
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker = nullptr;
+  RefPtr<WeakWorkerRef> mWorkerRef = nullptr;
 };
 
 }  
