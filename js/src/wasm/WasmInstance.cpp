@@ -63,6 +63,7 @@
 #include "wasm/WasmValType.h"
 #include "wasm/WasmValue.h"
 
+#include "gc/Marking-inl.h"
 #include "gc/StoreBuffer-inl.h"
 #include "vm/ArrayBufferObject-inl.h"
 #include "vm/JSObject-inl.h"
@@ -1985,7 +1986,9 @@ void* Instance::stringFromWTF16Array(Instance* instance, void* arrayArg,
     return nullptr;
   }
 
-  JSLinearString* string = NewStringCopyN<CanGC, char16_t>(
+  
+  
+  JSLinearString* string = NewStringCopyN<NoGC, char16_t>(
       cx, (char16_t*)array->data_ + arrayStart, arrayCount);
   if (!string) {
     return nullptr;
@@ -2312,14 +2315,14 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       if (typeDef.kind() == TypeDefKind::Struct) {
         clasp = WasmStructObject::classForTypeDef(&typeDef);
         allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
+
+        
+        if (CanChangeToBackgroundAllocKind(allocKind, clasp)) {
+          allocKind = ForegroundToBackgroundAllocKind(allocKind);
+        }
       } else {
         clasp = &WasmArrayObject::class_;
-        allocKind = WasmArrayObject::allocKind();
-      }
-
-      
-      if (CanChangeToBackgroundAllocKind(allocKind, clasp)) {
-        allocKind = ForegroundToBackgroundAllocKind(allocKind);
+        allocKind = gc::AllocKind::INVALID;
       }
 
       
@@ -2712,16 +2715,9 @@ void js::wasm::TraceInstanceEdge(JSTracer* trc, Instance* instance,
   TraceManuallyBarrieredEdge(trc, &object, name);
 }
 
-uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
-                               uint8_t* nextPC,
-                               uintptr_t highestByteVisitedInPrevFrame) {
-  const StackMap* map = code().lookupStackMap(nextPC);
-  if (!map) {
-    return 0;
-  }
-
-  Frame* frame = wfi.frame();
-
+static uintptr_t* GetFrameScanStartForStackMap(
+    const Frame* frame, const StackMap* map,
+    uintptr_t* highestByteVisitedInPrevFrame) {
   
   
   
@@ -2742,23 +2738,40 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
   
   
 #ifndef JS_CODEGEN_ARM64
-  MOZ_ASSERT_IF(highestByteVisitedInPrevFrame != 0,
-                highestByteVisitedInPrevFrame + 1 == scanStart);
+  MOZ_ASSERT_IF(
+      highestByteVisitedInPrevFrame && *highestByteVisitedInPrevFrame != 0,
+      *highestByteVisitedInPrevFrame + 1 == scanStart);
 #endif
 
-  uintptr_t* stackWords = (uintptr_t*)scanStart;
+  if (highestByteVisitedInPrevFrame) {
+    *highestByteVisitedInPrevFrame = scanStart + numMappedBytes - 1;
+  }
 
   
   
   
-  MOZ_ASSERT_IF(
-      map->header.numExitStubWords > 0,
-      stackWords[map->header.numExitStubWords - 1 -
-                 TrapExitDummyValueOffsetFromTop] == TrapExitDummyValue);
+  MOZ_ASSERT_IF(map->header.numExitStubWords > 0,
+                ((uintptr_t*)scanStart)[map->header.numExitStubWords - 1 -
+                                        TrapExitDummyValueOffsetFromTop] ==
+                    TrapExitDummyValue);
+
+  return (uintptr_t*)scanStart;
+}
+
+uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
+                               uint8_t* nextPC,
+                               uintptr_t highestByteVisitedInPrevFrame) {
+  const StackMap* map = code().lookupStackMap(nextPC);
+  if (!map) {
+    return 0;
+  }
+  Frame* frame = wfi.frame();
+  uintptr_t* stackWords =
+      GetFrameScanStartForStackMap(frame, map, &highestByteVisitedInPrevFrame);
 
   
   for (uint32_t i = 0; i < map->header.numMappedWords; i++) {
-    if (map->getBit(i) == 0) {
+    if (map->get(i) != StackMap::Kind::AnyRef) {
       continue;
     }
 
@@ -2789,7 +2802,35 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
     }
   }
 
-  return scanStart + numMappedBytes - 1;
+  return highestByteVisitedInPrevFrame;
+}
+
+void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
+                                      uint8_t* nextPC) {
+  const StackMap* map = code().lookupStackMap(nextPC);
+  if (!map) {
+    return;
+  }
+  Frame* frame = wfi.frame();
+  uintptr_t* stackWords = GetFrameScanStartForStackMap(frame, map, nullptr);
+
+  
+  
+  for (uint32_t i = 0; i < map->header.numMappedWords; i++) {
+    if (map->get(i) != StackMap::Kind::ArrayDataPointer) {
+      continue;
+    }
+
+    uint8_t** addressOfArrayDataPointer = (uint8_t**)&stackWords[i];
+    if (WasmArrayObject::isDataInline(*addressOfArrayDataPointer)) {
+      WasmArrayObject* oldArray =
+          WasmArrayObject::fromInlineDataPointer(*addressOfArrayDataPointer);
+      WasmArrayObject* newArray =
+          (WasmArrayObject*)gc::MaybeForwarded(oldArray);
+      *addressOfArrayDataPointer =
+          WasmArrayObject::addressOfInlineData(newArray);
+    }
+  }
 }
 
 WasmMemoryObject* Instance::memory(uint32_t memoryIndex) const {

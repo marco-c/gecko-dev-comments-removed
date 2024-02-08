@@ -125,22 +125,32 @@ static_assert(sizeof(StackMapHeader) == 8,
 
 
 
-
 struct StackMap final {
   
   
   StackMapHeader header;
+
+  enum Kind : uint32_t {
+    POD = 0,
+    AnyRef = 1,
+
+    
+    
+    ArrayDataPointer = 2,
+
+    Limit,
+  };
 
  private:
   
   uint32_t bitmap[1];
 
   explicit StackMap(uint32_t numMappedWords) : header(numMappedWords) {
-    const uint32_t nBitmap = calcNBitmap(header.numMappedWords);
+    const uint32_t nBitmap = calcBitmapNumElems(header.numMappedWords);
     memset(bitmap, 0, nBitmap * sizeof(bitmap[0]));
   }
   explicit StackMap(const StackMapHeader& header) : header(header) {
-    const uint32_t nBitmap = calcNBitmap(header.numMappedWords);
+    const uint32_t nBitmap = calcBitmapNumElems(header.numMappedWords);
     memset(bitmap, 0, nBitmap * sizeof(bitmap[0]));
   }
 
@@ -166,7 +176,7 @@ struct StackMap final {
 
   
   static size_t allocationSizeInBytes(uint32_t numMappedWords) {
-    uint32_t nBitmap = calcNBitmap(numMappedWords);
+    uint32_t nBitmap = calcBitmapNumElems(numMappedWords);
     return sizeof(StackMap) + (nBitmap - 1) * sizeof(bitmap[0]);
   }
 
@@ -200,33 +210,39 @@ struct StackMap final {
     header.hasDebugFrameWithLiveRefs = 1;
   }
 
-  inline void setBit(uint32_t bitIndex) {
-    MOZ_ASSERT(bitIndex < header.numMappedWords);
-    uint32_t wordIndex = bitIndex / wordsPerBitmapElem;
-    uint32_t wordOffset = bitIndex % wordsPerBitmapElem;
-    bitmap[wordIndex] |= (1 << wordOffset);
+  inline void set(uint32_t index, Kind kind) {
+    MOZ_ASSERT(index < header.numMappedWords);
+    MOZ_ASSERT(kind < Kind::Limit);
+    uint32_t wordIndex = index / mappedWordsPerBitmapElem;
+    uint32_t wordOffset = index % mappedWordsPerBitmapElem * bitsPerMappedWord;
+    bitmap[wordIndex] |= (kind << wordOffset);
   }
 
-  inline uint32_t getBit(uint32_t bitIndex) const {
-    MOZ_ASSERT(bitIndex < header.numMappedWords);
-    uint32_t wordIndex = bitIndex / wordsPerBitmapElem;
-    uint32_t wordOffset = bitIndex % wordsPerBitmapElem;
-    return (bitmap[wordIndex] >> wordOffset) & 1;
+  inline Kind get(uint32_t index) const {
+    MOZ_ASSERT(index < header.numMappedWords);
+    uint32_t wordIndex = index / mappedWordsPerBitmapElem;
+    uint32_t wordOffset = index % mappedWordsPerBitmapElem * bitsPerMappedWord;
+    Kind result = Kind((bitmap[wordIndex] >> wordOffset) & valueMask);
+    return result;
   }
 
   inline uint8_t* rawBitmap() { return (uint8_t*)&bitmap; }
   inline const uint8_t* rawBitmap() const { return (const uint8_t*)&bitmap; }
   inline size_t rawBitmapLengthInBytes() const {
-    return calcNBitmap(header.numMappedWords) * sizeof(uint32_t);
+    return calcBitmapNumElems(header.numMappedWords) * sizeof(bitmap[0]);
   }
 
  private:
-  static constexpr uint32_t wordsPerBitmapElem = sizeof(bitmap[0]) * 8;
+  static constexpr uint32_t bitsPerMappedWord = 2;
+  static constexpr uint32_t mappedWordsPerBitmapElem =
+      sizeof(bitmap[0]) * CHAR_BIT / bitsPerMappedWord;
+  static constexpr uint32_t valueMask = js::BitMask(bitsPerMappedWord);
+  static_assert(8 % bitsPerMappedWord == 0);
+  static_assert(Kind::Limit - 1 <= valueMask);
 
-  static uint32_t calcNBitmap(uint32_t numMappedWords) {
+  static uint32_t calcBitmapNumElems(uint32_t numMappedWords) {
     MOZ_RELEASE_ASSERT(numMappedWords <= StackMapHeader::maxMappedWords);
-    uint32_t nBitmap =
-        (numMappedWords + wordsPerBitmapElem - 1) / wordsPerBitmapElem;
+    uint32_t nBitmap = js::HowMany(numMappedWords, mappedWordsPerBitmapElem);
     return nBitmap == 0 ? 1 : nBitmap;
   }
 };

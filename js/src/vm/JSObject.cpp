@@ -72,7 +72,6 @@
 #  include "vm/RecordType.h"
 #  include "vm/TupleType.h"
 #endif
-#include "wasm/WasmGcObject.h"
 
 #include "gc/StableCellHasher-inl.h"
 #include "vm/BooleanObject-inl.h"
@@ -86,6 +85,7 @@
 #include "vm/Realm-inl.h"
 #include "vm/StringObject-inl.h"
 #include "vm/TypedArrayObject-inl.h"
+#include "wasm/WasmGcObject-inl.h"
 
 using namespace js;
 
@@ -3188,8 +3188,11 @@ js::gc::AllocKind JSObject::allocKindForTenure(
     return WasmStructObject::allocKindForTypeDef(typeDef);
   }
 
+  
+  
   if (is<WasmArrayObject>()) {
-    return WasmArrayObject::allocKind();
+    gc::AllocKind allocKind = as<WasmArrayObject>().allocKind();
+    return allocKind;
   }
 
   

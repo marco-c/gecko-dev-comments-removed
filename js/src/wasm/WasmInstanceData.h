@@ -70,6 +70,7 @@ struct TypeDefInstanceData {
   const JSClass* clasp;
   
   alignas(8) gc::AllocSite allocSite;
+  
   gc::AllocKind allocKind;
 
   

@@ -23,6 +23,7 @@
 #include "wasm/WasmValType.h"
 
 using js::wasm::StorageType;
+using mozilla::CheckedUint32;
 
 namespace js::wasm {
 
@@ -142,7 +143,11 @@ class WasmGcObject : public JSObject {
 
 
 
-class WasmArrayObject : public WasmGcObject {
+
+
+
+class WasmArrayObject : public WasmGcObject,
+                        public TrailingArray<WasmArrayObject> {
  public:
   static const JSClass class_;
 
@@ -151,10 +156,68 @@ class WasmArrayObject : public WasmGcObject {
 
   
   
+  
+  
+  
+  
   uint8_t* data_;
 
   
-  static gc::AllocKind allocKind();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint8_t* inlineStorage() {
+    return offsetToPointer<uint8_t>(offsetOfInlineStorage());
+  }
+
+  
+  
+  static inline constexpr size_t sizeOfIncludingInlineStorage(
+      size_t sizeOfInlineStorage) {
+    size_t n = sizeof(WasmArrayObject) + sizeOfInlineStorage;
+    MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
+    return n;
+  }
+
+  
+  static inline gc::AllocKind allocKindForOOL();
+  static inline gc::AllocKind allocKindForIL(uint32_t storageBytes);
+  inline gc::AllocKind allocKind() const;
+
+  
+  
+  
+  
+  static CheckedUint32 calcStorageBytesChecked(uint32_t elemSize,
+                                               uint32_t numElements) {
+    static_assert(sizeof(WasmArrayObject) % gc::CellAlignBytes == 0);
+    CheckedUint32 storageBytes = elemSize;
+    storageBytes *= numElements;
+    
+    storageBytes += sizeof(uintptr_t);
+    
+    storageBytes -= 1;
+    storageBytes += gc::CellAlignBytes - (storageBytes % gc::CellAlignBytes);
+    return storageBytes;
+  }
+  static uint32_t calcStorageBytes(uint32_t elemSize, uint32_t numElements) {
+    CheckedUint32 storageBytes = calcStorageBytesChecked(elemSize, numElements);
+    MOZ_ASSERT(storageBytes.isValid());
+    return storageBytes.value();
+  }
+
+  using DataHeader = uintptr_t;
+  static const DataHeader DataIsIL = 0;
+  static const DataHeader DataIsOOL = 1;
 
   
   
@@ -163,29 +226,26 @@ class WasmArrayObject : public WasmGcObject {
   
   
   template <bool ZeroFields>
-  static WasmArrayObject* createArrayNonEmpty(
+  static MOZ_ALWAYS_INLINE WasmArrayObject* createArrayOOL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap, uint32_t numElements);
+      js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
 
   
   
   
   
   
-  static WasmArrayObject* createArrayEmpty(
+  template <bool ZeroFields>
+  static MOZ_ALWAYS_INLINE WasmArrayObject* createArrayIL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap);
+      js::gc::Heap initialHeap, uint32_t numElements, uint32_t storageBytes);
 
   
   
   template <bool ZeroFields>
   static MOZ_ALWAYS_INLINE WasmArrayObject* createArray(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap, uint32_t numElements) {
-    return numElements == 0 ? createArrayEmpty(cx, typeDefData, initialHeap)
-                            : createArrayNonEmpty<ZeroFields>(
-                                  cx, typeDefData, initialHeap, numElements);
-  }
+      js::gc::Heap initialHeap, uint32_t numElements);
 
   
   static constexpr size_t offsetOfNumElements() {
@@ -193,6 +253,10 @@ class WasmArrayObject : public WasmGcObject {
   }
   static constexpr size_t offsetOfData() {
     return offsetof(WasmArrayObject, data_);
+  }
+  static const uint32_t inlineStorageAlignment = 8;
+  static constexpr size_t offsetOfInlineStorage() {
+    return AlignBytes(sizeof(WasmArrayObject), inlineStorageAlignment);
   }
 
   
@@ -202,7 +266,37 @@ class WasmArrayObject : public WasmGcObject {
 
   void storeVal(const wasm::Val& val, uint32_t itemIndex);
   void fillVal(const wasm::Val& val, uint32_t itemIndex, uint32_t len);
+
+  static DataHeader* dataHeaderFromDataPointer(const uint8_t* data) {
+    MOZ_ASSERT(data);
+    return (DataHeader*)data - 1;
+  }
+  DataHeader* dataHeader() const {
+    return WasmArrayObject::dataHeaderFromDataPointer(data_);
+  }
+
+  static bool isDataInline(uint8_t* data) {
+    const DataHeader* header = dataHeaderFromDataPointer(data);
+    MOZ_ASSERT(*header == DataIsIL || *header == DataIsOOL);
+    return *header == DataIsIL;
+  }
+  bool isDataInline() const { return WasmArrayObject::isDataInline(data_); }
+
+  static WasmArrayObject* fromInlineDataPointer(uint8_t* data) {
+    MOZ_ASSERT(isDataInline(data));
+    return (WasmArrayObject*)(data - sizeof(DataHeader) -
+                              WasmArrayObject::offsetOfInlineStorage());
+  }
+
+  static DataHeader* addressOfInlineDataHeader(WasmArrayObject* base) {
+    return base->offsetToPointer<DataHeader>(offsetOfInlineStorage());
+  }
+  static uint8_t* addressOfInlineData(WasmArrayObject* base) {
+    return (uint8_t*)(addressOfInlineDataHeader(base) + 1);
+  }
 };
+
+static_assert((WasmArrayObject::offsetOfInlineStorage() % 8) == 0);
 
 
 
@@ -321,8 +415,11 @@ static_assert((WasmStructObject::offsetOfInlineData() % 8) == 0);
 
 const size_t WasmStructObject_MaxInlineBytes =
     ((JSObject::MAX_BYTE_SIZE - sizeof(WasmStructObject)) / 16) * 16;
+const size_t WasmArrayObject_MaxInlineBytes =
+    ((JSObject::MAX_BYTE_SIZE - sizeof(WasmArrayObject)) / 16) * 16;
 
 static_assert((WasmStructObject_MaxInlineBytes % 16) == 0);
+static_assert((WasmArrayObject_MaxInlineBytes % 16) == 0);
 
 
 inline void WasmStructObject::getDataByteSizes(uint32_t totalBytes,

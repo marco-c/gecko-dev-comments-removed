@@ -364,160 +364,9 @@ static void WriteValTo(const Val& val, StorageType ty, void* dest) {
 
 
 
-gc::AllocKind WasmArrayObject::allocKind() {
-  return gc::GetGCObjectKindForBytes(sizeof(WasmArrayObject));
-}
-
-
-template <bool ZeroFields>
-WasmArrayObject* WasmArrayObject::createArrayNonEmpty(
-    JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements) {
-  STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
-
-  MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
-  MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
-  debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
-
-  mozilla::DebugOnly<const TypeDef*> typeDef = typeDefData->typeDef;
-  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Array);
-
-  
-  
-  MOZ_ASSERT(numElements > 0);
-
-  
-  
-  
-  uint32_t elementTypeSize = typeDefData->arrayElemSize;
-  MOZ_ASSERT(elementTypeSize > 0);
-  MOZ_ASSERT(elementTypeSize == typeDef->arrayType().elementType_.size());
-  CheckedUint32 outlineBytes = elementTypeSize;
-  outlineBytes *= numElements;
-  if (!outlineBytes.isValid() ||
-      outlineBytes.value() > uint32_t(MaxArrayPayloadBytes)) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_ARRAY_IMP_LIMIT);
-    return nullptr;
-  }
-
-  
-  
-  
-  MOZ_ASSERT(outlineBytes.value() > 0);
-
-  
-  
-  
-  Nursery& nursery = cx->nursery();
-  PointerAndUint7 outlineData(nullptr, 0);
-  outlineData = nursery.mallocedBlockCache().alloc(outlineBytes.value());
-  if (MOZ_UNLIKELY(!outlineData.pointer())) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  
-  
-  
-  Rooted<WasmArrayObject*> arrayObj(cx);
-  arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
-      typeDefData->allocKind, initialHeap, typeDefData->clasp,
-      &typeDefData->allocSite);
-  if (MOZ_UNLIKELY(!arrayObj)) {
-    ReportOutOfMemory(cx);
-    if (outlineData.pointer()) {
-      nursery.mallocedBlockCache().free(outlineData);
-    }
-    return nullptr;
-  }
-
-  arrayObj->initShape(typeDefData->shape);
-  arrayObj->superTypeVector_ = typeDefData->superTypeVector;
-  arrayObj->numElements_ = numElements;
-  arrayObj->data_ = (uint8_t*)outlineData.pointer();
-  if constexpr (ZeroFields) {
-    memset(outlineData.pointer(), 0, outlineBytes.value());
-  }
-
-  if (MOZ_LIKELY(js::gc::IsInsideNursery(arrayObj))) {
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(
-            !nursery.registerTrailer(outlineData, outlineBytes.value()))) {
-      nursery.mallocedBlockCache().free(outlineData);
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-  } else {
-    MOZ_ASSERT(arrayObj->isTenured());
-    
-    
-    AddCellMemory(arrayObj, outlineBytes.value() + TrailerBlockOverhead,
-                  MemoryUse::WasmTrailerBlock);
-  }
-
-  js::gc::gcprobes::CreateObject(arrayObj);
-  probes::CreateObject(cx, arrayObj);
-
-  return arrayObj;
-}
-
-template WasmArrayObject* WasmArrayObject::createArrayNonEmpty<true>(
-    JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements);
-template WasmArrayObject* WasmArrayObject::createArrayNonEmpty<false>(
-    JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t numElements);
-
-
-WasmArrayObject* WasmArrayObject::createArrayEmpty(
-    JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap) {
-  STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
-
-  MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
-  MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
-  debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
-
-  mozilla::DebugOnly<const TypeDef*> typeDef = typeDefData->typeDef;
-  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Array);
-
-  
-  
-
-  
-  
-  WasmArrayObject* arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
-      typeDefData->allocKind, initialHeap, typeDefData->clasp,
-      &typeDefData->allocSite);
-  if (MOZ_UNLIKELY(!arrayObj)) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  arrayObj->initShape(typeDefData->shape);
-  arrayObj->superTypeVector_ = typeDefData->superTypeVector;
-  arrayObj->numElements_ = 0;
-  arrayObj->data_ = nullptr;
-
-  js::gc::gcprobes::CreateObject(arrayObj);
-  probes::CreateObject(cx, arrayObj);
-
-  return arrayObj;
-}
-
-
 void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
   uint8_t* data = arrayObj.data_;
-  if (!data) {
-    MOZ_ASSERT(arrayObj.numElements_ == 0);
-    return;
-  }
 
   const auto& typeDef = arrayObj.typeDef();
   const auto& arrayType = typeDef.arrayType();
@@ -526,7 +375,6 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   }
 
   uint32_t numElements = arrayObj.numElements_;
-  MOZ_ASSERT(numElements > 0);
   uint32_t elemSize = arrayType.elementType_.size();
   for (uint32_t i = 0; i < numElements; i++) {
     AnyRef* elementPtr = reinterpret_cast<AnyRef*>(data + i * elemSize);
@@ -540,18 +388,17 @@ void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
   
   
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
-  MOZ_ASSERT((arrayObj.data_ == nullptr) == (arrayObj.numElements_ == 0));
-  if (arrayObj.data_) {
+  if (!arrayObj.isDataInline()) {
     
     
     
-    js_free(arrayObj.data_);
+    js_free(arrayObj.dataHeader());
     
     
     const TypeDef& typeDef = arrayObj.typeDef();
     MOZ_ASSERT(typeDef.isArrayType());
-    size_t trailerSize = size_t(arrayObj.numElements_) *
-                         size_t(typeDef.arrayType().elementType_.size());
+    size_t trailerSize = calcStorageBytes(
+        typeDef.arrayType().elementType_.size(), arrayObj.numElements_);
     
     MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
     gcx->removeCellMemory(&arrayObj, trailerSize + TrailerBlockOverhead,
@@ -564,28 +411,39 @@ void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
 
 size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
   MOZ_ASSERT(!IsInsideNursery(obj));
+
+  
+  WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
+  WasmArrayObject& oldArrayObj = old->as<WasmArrayObject>();
+  if (oldArrayObj.isDataInline()) {
+    
+    
+    arrayObj.data_ = WasmArrayObject::addressOfInlineData(&arrayObj);
+  }
+  MOZ_ASSERT(arrayObj.isDataInline() == oldArrayObj.isDataInline());
+
   if (IsInsideNursery(old)) {
     
     MOZ_ASSERT(obj->isTenured());
-    WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
-    if (arrayObj.data_) {
+    if (!arrayObj.isDataInline()) {
       
       
       
       Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
-      nursery.unregisterTrailer(arrayObj.data_);
+      nursery.unregisterTrailer(arrayObj.dataHeader());
       
       
       const TypeDef& typeDef = arrayObj.typeDef();
       MOZ_ASSERT(typeDef.isArrayType());
-      size_t trailerSize = size_t(arrayObj.numElements_) *
-                           size_t(typeDef.arrayType().elementType_.size());
+      size_t trailerSize = calcStorageBytes(
+          typeDef.arrayType().elementType_.size(), arrayObj.numElements_);
       
       MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
       AddCellMemory(&arrayObj, trailerSize + TrailerBlockOverhead,
                     MemoryUse::WasmTrailerBlock);
     }
   }
+
   return 0;
 }
 
