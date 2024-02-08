@@ -666,6 +666,13 @@ GlobalObject* GlobalObject::new_(JSContext* cx, const JSClass* clasp,
       return nullptr;
     }
 
+    
+    
+    
+    if (!createPlainObjectShapeWithDefaultProto(cx, gc::AllocKind::OBJECT0)) {
+      return nullptr;
+    }
+
     realm->clearInitializingGlobal();
     if (hookOption == JS::FireOnNewGlobalHook) {
       JS_FireOnNewGlobalObject(cx, global);

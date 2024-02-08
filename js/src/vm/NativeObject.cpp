@@ -391,10 +391,11 @@ bool NativeObject::growSlotsForNewSlot(JSContext* cx, uint32_t numFixed,
 bool NativeObject::allocateInitialSlots(JSContext* cx, uint32_t capacity) {
   uint32_t count = ObjectSlots::allocCount(capacity);
   HeapSlot* allocation = AllocateCellBuffer<HeapSlot>(cx, this, count);
-  if (!allocation) {
+  if (MOZ_UNLIKELY(!allocation)) {
     
     
     
+    setShape(GlobalObject::getEmptyPlainObjectShape(cx));
     initEmptyDynamicSlots();
     return false;
   }
