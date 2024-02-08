@@ -21,6 +21,7 @@
 #include "nsINodeList.h"
 #include "nsGkAtoms.h"
 #include "nsContentUtils.h"
+#include "nsFrameSelection.h"
 #include "nsLayoutUtils.h"
 #include "nsTextFrame.h"
 #include "nsContainerFrame.h"
@@ -764,29 +765,66 @@ bool nsRange::IntersectsNode(nsINode& aNode, ErrorResult& aRv) {
 }
 
 void nsRange::NotifySelectionListenersAfterRangeSet() {
-  if (!mSelections.IsEmpty()) {
-    
-    
-    
-    
-    AutoCalledByJSRestore calledByJSRestorer(*this);
-    mCalledByJS = false;
+  if (mSelections.IsEmpty()) {
+    return;
+  }
 
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = false;
+
+  
+  
+  const Document* const docForSelf =
+      mStart.Container() ? mStart.Container()->GetComposedDoc() : nullptr;
+  const nsFrameSelection* const frameSelection =
+      mSelections[0]->GetFrameSelection();
+  const Document* const docForSelection =
+      frameSelection && frameSelection->GetPresShell()
+          ? frameSelection->GetPresShell()->GetDocument()
+          : nullptr;
+  if (!IsPositioned() || docForSelf != docForSelection) {
     
     
     if (IsPartOfOneSelectionOnly()) {
       RefPtr<Selection> selection = mSelections[0].get();
-      selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
+      selection->RemoveRangeAndUnselectFramesAndNotifyListeners(*this,
+                                                                IgnoreErrors());
     } else {
       nsTArray<WeakPtr<Selection>> copiedSelections = mSelections.Clone();
       for (const auto& weakSelection : copiedSelections) {
         RefPtr<Selection> selection = weakSelection.get();
+        if (MOZ_LIKELY(selection)) {
+          selection->RemoveRangeAndUnselectFramesAndNotifyListeners(
+              *this, IgnoreErrors());
+        }
+      }
+    }
+    
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsPartOfOneSelectionOnly()) {
+    RefPtr<Selection> selection = mSelections[0].get();
+    selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
+  } else {
+    nsTArray<WeakPtr<Selection>> copiedSelections = mSelections.Clone();
+    for (const auto& weakSelection : copiedSelections) {
+      RefPtr<Selection> selection = weakSelection.get();
+      if (MOZ_LIKELY(selection)) {
         selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
       }
     }
