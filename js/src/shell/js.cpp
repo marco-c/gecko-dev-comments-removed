@@ -739,8 +739,6 @@ bool shell::enableWeakRefs = false;
 bool shell::enableToSource = false;
 #ifdef NIGHTLY_BUILD
 
-bool shell::enableNewSetMethods = false;
-
 bool shell::enableArrayBufferResizable = false;
 #endif
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
@@ -4131,7 +4129,6 @@ static void SetStandardRealmOptions(JS::RealmOptions& options) {
                               : JS::WeakRefSpecifier::Disabled)
       .setToSourceEnabled(enableToSource)
 #ifdef NIGHTLY_BUILD
-      .setNewSetMethodsEnabled(enableNewSetMethods)
       .setArrayBufferResizableEnabled(enableArrayBufferResizable)
       .setSharedArrayBufferGrowableEnabled(enableArrayBufferResizable)
 #endif
@@ -12146,6 +12143,8 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
 #ifdef NIGHTLY_BUILD
   JS::Prefs::setAtStartup_experimental_iterator_helpers(
       op.getBoolOption("enable-iterator-helpers"));
+  JS::Prefs::setAtStartup_experimental_new_set_methods(
+      op.getBoolOption("enable-new-set-methods"));
   JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(
       op.getBoolOption("enable-symbols-as-weakmap-keys"));
 #endif
@@ -12346,7 +12345,6 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableWeakRefs = !op.getBoolOption("disable-weak-refs");
   enableToSource = !op.getBoolOption("disable-tosource");
 #ifdef NIGHTLY_BUILD
-  enableNewSetMethods = op.getBoolOption("enable-new-set-methods");
   enableArrayBufferResizable = op.getBoolOption("enable-arraybuffer-resizable");
 #endif
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
