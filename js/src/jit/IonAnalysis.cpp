@@ -1446,8 +1446,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       
       
       
-      if (ins->isUnbox() || ins->isParameter() || ins->isBoxNonStrictThis() ||
-          ins->isOsrValue()) {
+      if (ins->isUnbox() || ins->isParameter() || ins->isBoxNonStrictThis()) {
         continue;
       }
 
@@ -1456,15 +1455,6 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       
       if (ins->isRecoveredOnBailout()) {
         MOZ_ASSERT(ins->canRecoverOnBailout());
-        continue;
-      }
-
-      
-      
-      
-      
-      
-      if (ins->canRecoverOnBailout() && ins->resumePoint()) {
         continue;
       }
 
@@ -1480,11 +1470,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       
       
       
-      
-      
-      
-      
-      uint32_t lastConsumerId = 0;
+      uint32_t maxDefinition = 0;
       for (MUseIterator uses(ins->usesBegin()); uses != ins->usesEnd();
            uses++) {
         MNode* consumer = uses->consumer();
@@ -1494,7 +1480,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
           
           MResumePoint* resume = consumer->toResumePoint();
           if (resume->isObservableOperand(*uses)) {
-            lastConsumerId = UINT32_MAX;
+            maxDefinition = UINT32_MAX;
             break;
           }
           continue;
@@ -1502,36 +1488,26 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
 
         MDefinition* def = consumer->toDefinition();
         if (def->block() != *block || def->isBox() || def->isPhi()) {
-          lastConsumerId = UINT32_MAX;
+          maxDefinition = UINT32_MAX;
           break;
         }
-        lastConsumerId = std::max(lastConsumerId, def->id());
+        maxDefinition = std::max(maxDefinition, def->id());
       }
-      if (lastConsumerId == UINT32_MAX) {
+      if (maxDefinition == UINT32_MAX) {
         continue;
       }
 
       
       
-      
-      
-      
-      
-      
       for (MUseIterator uses(ins->usesBegin()); uses != ins->usesEnd();) {
         MUse* use = *uses++;
         if (use->consumer()->isDefinition()) {
-          MOZ_ASSERT(*block == use->consumer()->block());
           continue;
         }
-
         MResumePoint* mrp = use->consumer()->toResumePoint();
-
-        
-        
-        
-        if (mrp->block() == *block &&
-            (!mrp->instruction() || mrp->instruction()->id() <= lastConsumerId)) {
+        if (mrp->block() != *block || !mrp->instruction() ||
+            mrp->instruction() == *ins ||
+            mrp->instruction()->id() <= maxDefinition) {
           continue;
         }
 
