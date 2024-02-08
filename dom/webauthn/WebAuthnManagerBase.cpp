@@ -5,18 +5,11 @@
 
 
 #include "mozilla/dom/WebAuthnManagerBase.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/dom/Event.h"
-#include "nsGlobalWindowInner.h"
-#include "nsPIWindowRoot.h"
 
 namespace mozilla::dom {
-
-constexpr auto kDeactivateEvent = u"deactivate"_ns;
-constexpr auto kVisibilityChange = u"visibilitychange"_ns;
 
 WebAuthnManagerBase::WebAuthnManagerBase(nsPIDOMWindowInner* aParent)
     : mParent(aParent) {
@@ -28,7 +21,6 @@ WebAuthnManagerBase::~WebAuthnManagerBase() { MOZ_ASSERT(NS_IsMainThread()); }
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebAuthnManagerBase)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMEventListener)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(WebAuthnManagerBase, mParent)
@@ -70,82 +62,6 @@ bool WebAuthnManagerBase::MaybeCreateBackgroundActor() {
 void WebAuthnManagerBase::ActorDestroyed() {
   MOZ_ASSERT(NS_IsMainThread());
   mChild = nullptr;
-}
-
-
-
-
-
-void WebAuthnManagerBase::ListenForVisibilityEvents() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsPIDOMWindowOuter> outer = mParent->GetOuterWindow();
-  if (NS_WARN_IF(!outer)) {
-    return;
-  }
-
-  nsCOMPtr<EventTarget> windowRoot = outer->GetTopWindowRoot();
-  if (NS_WARN_IF(!windowRoot)) {
-    return;
-  }
-
-  nsresult rv = windowRoot->AddEventListener(kDeactivateEvent, this,
-                                              true,
-                                              false);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
-
-  rv = windowRoot->AddEventListener(kVisibilityChange, this,
-                                     true,
-                                     false);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
-}
-
-void WebAuthnManagerBase::StopListeningForVisibilityEvents() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsPIDOMWindowOuter> outer = mParent->GetOuterWindow();
-  if (NS_WARN_IF(!outer)) {
-    return;
-  }
-
-  nsCOMPtr<EventTarget> windowRoot = outer->GetTopWindowRoot();
-  if (NS_WARN_IF(!windowRoot)) {
-    return;
-  }
-
-  windowRoot->RemoveEventListener(kDeactivateEvent, this,
-                                   true);
-  windowRoot->RemoveEventListener(kVisibilityChange, this,
-                                   true);
-}
-
-NS_IMETHODIMP
-WebAuthnManagerBase::HandleEvent(Event* aEvent) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aEvent);
-
-  nsAutoString type;
-  aEvent->GetType(type);
-  if (!type.Equals(kDeactivateEvent) && !type.Equals(kVisibilityChange)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  if (type.Equals(kVisibilityChange)) {
-    nsCOMPtr<Document> doc = do_QueryInterface(aEvent->GetTarget());
-    if (NS_WARN_IF(!doc) || !doc->Hidden()) {
-      return NS_OK;
-    }
-
-    nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(doc->GetInnerWindow());
-    if (NS_WARN_IF(!win) || !win->IsTopInnerWindow()) {
-      return NS_OK;
-    }
-  }
-
-  HandleVisibilityChange();
-  return NS_OK;
 }
 
 }  

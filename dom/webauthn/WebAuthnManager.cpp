@@ -203,10 +203,6 @@ nsresult RelaxSameOrigin(nsPIDOMWindowInner* aParent,
 
 
 void WebAuthnManager::ClearTransaction() {
-  if (mTransaction.isSome()) {
-    StopListeningForVisibilityEvents();
-  }
-
   mTransaction.reset();
   Unfollow();
 }
@@ -214,12 +210,6 @@ void WebAuthnManager::ClearTransaction() {
 void WebAuthnManager::CancelParent() {
   if (!NS_WARN_IF(!mChild || mTransaction.isNothing())) {
     mChild->SendRequestCancel(mTransaction.ref().mId);
-  }
-}
-
-void WebAuthnManager::HandleVisibilityChange() {
-  if (mTransaction.isSome()) {
-    mTransaction.ref().mVisibilityChanged = true;
   }
 }
 
@@ -250,15 +240,6 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   }
 
   if (mTransaction.isSome()) {
-    
-    
-    
-    if (!mTransaction.ref().mVisibilityChanged) {
-      promise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-      return promise.forget();
-    }
-
-    
     
     CancelTransaction(NS_ERROR_DOM_ABORT_ERR);
   }
@@ -489,14 +470,6 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   
   
   
-#ifdef XP_WIN
-  if (!WinWebAuthnService::AreWebAuthNApisAvailable()) {
-    ListenForVisibilityEvents();
-  }
-#else
-  ListenForVisibilityEvents();
-#endif
-
   AbortSignal* signal = nullptr;
   if (aSignal.WasPassed()) {
     signal = &aSignal.Value();
@@ -526,15 +499,6 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
   }
 
   if (mTransaction.isSome()) {
-    
-    
-    
-    if (!mTransaction.ref().mVisibilityChanged) {
-      promise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-      return promise.forget();
-    }
-
-    
     
     CancelTransaction(NS_ERROR_DOM_ABORT_ERR);
   }
@@ -684,14 +648,6 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
   
   
   
-#ifdef XP_WIN
-  if (!WinWebAuthnService::AreWebAuthNApisAvailable()) {
-    ListenForVisibilityEvents();
-  }
-#else
-  ListenForVisibilityEvents();
-#endif
-
   AbortSignal* signal = nullptr;
   if (aSignal.WasPassed()) {
     signal = &aSignal.Value();
@@ -717,15 +673,6 @@ already_AddRefed<Promise> WebAuthnManager::Store(const Credential& aCredential,
   }
 
   if (mTransaction.isSome()) {
-    
-    
-    
-    if (!mTransaction.ref().mVisibilityChanged) {
-      promise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-      return promise.forget();
-    }
-
-    
     
     CancelTransaction(NS_ERROR_DOM_ABORT_ERR);
   }

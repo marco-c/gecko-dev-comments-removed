@@ -51,7 +51,7 @@ class Credential;
 class WebAuthnTransaction {
  public:
   explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise)
-      : mPromise(aPromise), mId(NextId()), mVisibilityChanged(false) {
+      : mPromise(aPromise), mId(NextId()) {
     MOZ_ASSERT(mId > 0);
   }
 
@@ -60,10 +60,6 @@ class WebAuthnTransaction {
 
   
   uint64_t mId;
-
-  
-  
-  bool mVisibilityChanged;
 
  private:
   
@@ -116,10 +112,6 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
   
 
   void RunAbortAlgorithm() override;
-
- protected:
-  
-  void HandleVisibilityChange() override;
 
  private:
   virtual ~WebAuthnManager();
