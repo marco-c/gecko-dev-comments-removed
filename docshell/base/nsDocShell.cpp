@@ -8800,6 +8800,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       newURIPartitionedPrincipalToInherit, newCsp, true, true);
 
   nsCOMPtr<nsIInputStream> postData;
+  nsCOMPtr<nsIReferrerInfo> referrerInfo;
   uint32_t cacheKey = 0;
 
   bool scrollRestorationIsManual = false;
@@ -8813,10 +8814,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       
       
       
-      
       if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
         postData = mOSHE->GetPostData();
         cacheKey = mOSHE->GetCacheKey();
+        referrerInfo = mOSHE->GetReferrerInfo();
       }
 
       
@@ -8894,6 +8895,12 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       if (cacheKey != 0) {
         mOSHE->SetCacheKey(cacheKey);
       }
+
+      
+      
+      if (referrerInfo) {
+        mOSHE->SetReferrerInfo(referrerInfo);
+      }
     }
 
     
@@ -8959,6 +8966,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
         if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
           postData = mActiveEntry->GetPostData();
           cacheKey = mActiveEntry->GetCacheKey();
+          referrerInfo = mActiveEntry->GetReferrerInfo();
         }
       }
 
@@ -8984,6 +8992,12 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       
       if (cacheKey != 0) {
         mActiveEntry->SetCacheKey(cacheKey);
+      }
+
+      
+      
+      if (referrerInfo) {
+        mActiveEntry->SetReferrerInfo(referrerInfo);
       }
 
       
