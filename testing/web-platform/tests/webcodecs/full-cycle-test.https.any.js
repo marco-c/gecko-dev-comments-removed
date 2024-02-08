@@ -12,6 +12,7 @@
 
 
 
+
 var ENCODER_CONFIG = null;
 promise_setup(async () => {
   const config = {
@@ -19,6 +20,12 @@ promise_setup(async () => {
       codec: 'av01.0.04M.08',
       hasEmbeddedColorSpace: true,
       hardwareAcceleration: 'prefer-software',
+    },
+    '?av1_444_high': {
+      codec: 'av01.1.04M.08.0.000',
+      hasEmbeddedColorSpace: true,
+      hardwareAcceleration: 'prefer-software',
+      outputPixelFormat: 'I444',
     },
     '?vp8': {
       codec: 'vp8',
