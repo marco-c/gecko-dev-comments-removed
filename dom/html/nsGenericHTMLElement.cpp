@@ -275,7 +275,7 @@ static bool IsOffsetParent(nsIFrame* aFrame) {
   LayoutFrameType frameType = aFrame->Type();
 
   if (frameType == LayoutFrameType::TableCell ||
-      frameType == LayoutFrameType::Table) {
+      frameType == LayoutFrameType::TableWrapper) {
     
     
     
