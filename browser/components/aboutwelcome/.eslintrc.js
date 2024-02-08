@@ -56,8 +56,6 @@ module.exports = {
       rules: {
         
         "import/no-commonjs": 2,
-        
-        "react/jsx-no-bind": 0,
       },
     },
     {
@@ -87,7 +85,10 @@ module.exports = {
 
     "react/jsx-boolean-value": ["error", "always"],
     "react/jsx-key": "error",
-    "react/jsx-no-bind": "error",
+    "react/jsx-no-bind": [
+      "error",
+      { allowArrowFunctions: true, allowFunctions: true },
+    ],
     "react/jsx-no-comment-textnodes": "error",
     "react/jsx-no-duplicate-props": "error",
     "react/jsx-no-target-blank": "error",
