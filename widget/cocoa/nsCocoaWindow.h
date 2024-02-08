@@ -460,6 +460,10 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   void QueueTransition(const TransitionType& aTransition);
   void ProcessTransitions();
 
+  
+  
+  void CancelAllTransitions();
+
   bool mInProcessTransitions = false;
 
   

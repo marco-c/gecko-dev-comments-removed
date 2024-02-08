@@ -182,12 +182,6 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   
   
-  mTransitionCurrent.reset();
-  mIsTransitionCurrentAdded = false;
-  std::queue<TransitionType>().swap(mTransitionsPending);
-
-  
-  
   EndOurNativeTransition();
 
   [mWindow releaseJSObjects];
@@ -224,6 +218,7 @@ nsCocoaWindow::~nsCocoaWindow() {
   }
 
   if (mWindow && mWindowMadeHere) {
+    CancelAllTransitions();
     DestroyNativeWindow();
   }
 
@@ -653,6 +648,7 @@ void nsCocoaWindow::Destroy() {
   
   
   if (mWindow && mWindowMadeHere) {
+    CancelAllTransitions();
     DestroyNativeWindow();
   }
 }
@@ -1956,6 +1952,16 @@ void nsCocoaWindow::ProcessTransitions() {
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void nsCocoaWindow::CancelAllTransitions() {
+  
+  
+  
+  
+  mTransitionCurrent.reset();
+  mIsTransitionCurrentAdded = false;
+  std::queue<TransitionType>().swap(mTransitionsPending);
 }
 
 void nsCocoaWindow::FinishCurrentTransitionIfMatching(
