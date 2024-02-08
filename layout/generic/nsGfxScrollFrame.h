@@ -112,6 +112,16 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
   nscoord IntrinsicScrollbarGutterSizeAtInlineEdges();
 
+  
+  
+  
+  
+  
+  
+  nsMargin ComputeStableScrollbarGutter(
+      const mozilla::StyleScrollbarWidth& aStyleScrollbarWidth,
+      const mozilla::StyleScrollbarGutter& aStyleScrollbarGutter) const;
+
   bool GetBorderRadii(const nsSize& aFrameSize, const nsSize& aBorderArea,
                       Sides aSkipSides, nscoord aRadii[8]) const final;
 
