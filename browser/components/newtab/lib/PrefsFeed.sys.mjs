@@ -1,14 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  actionCreators as ac,
+  actionTypes as at,
+} from "resource://activity-stream/common/Actions.sys.mjs";
+import { Prefs } from "resource://activity-stream/lib/ActivityStreamPrefs.sys.mjs";
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// AppConstants, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-"use strict";
-
-const { actionCreators: ac, actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { Prefs } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/ActivityStreamPrefs.sys.mjs"
-);
+// eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -21,7 +27,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
 });
 
-class PrefsFeed {
+export class PrefsFeed {
   constructor(prefMap) {
     this._prefMap = prefMap;
     this._prefs = new Prefs();
@@ -70,9 +76,9 @@ class PrefsFeed {
     this._prefMap.set(key, { value });
   }
 
-  
-
-
+  /**
+   * Handler for when experiment data updates.
+   */
   onExperimentUpdated(event, reason) {
     const value = lazy.NimbusFeatures.newtab.getAllVariables() || {};
     this.store.dispatch(
@@ -86,12 +92,12 @@ class PrefsFeed {
     );
   }
 
-  
-
-
+  /**
+   * Handler for Pocket specific experiment data updates.
+   */
   onPocketExperimentUpdated(event, reason) {
     const value = lazy.NimbusFeatures.pocketNewtab.getAllVariables() || {};
-    
+    // Loaded experiments are set up inside init()
     if (
       reason !== "feature-experiment-loaded" &&
       reason !== "feature-rollout-loaded"
@@ -115,41 +121,41 @@ class PrefsFeed {
 
     this._storage = this.store.dbStorage.getDbTable("sectionPrefs");
 
-    
+    // Get the initial value of each activity stream pref
     const values = {};
     for (const name of this._prefMap.keys()) {
       values[name] = this._prefs.get(name);
     }
 
-    
-    
+    // These are not prefs, but are needed to determine stuff in content that can only be
+    // computed in main process
     values.isPrivateBrowsingEnabled = lazy.PrivateBrowsingUtils.enabled;
     values.platform = AppConstants.platform;
 
-    
+    // Save the geo pref if we have it
     if (lazy.Region.home) {
       values.region = lazy.Region.home;
       this.geo = values.region;
     } else if (this.geo !== "") {
-      
+      // Watch for geo changes and use a dummy value for now
       Services.obs.addObserver(this, lazy.Region.REGION_TOPIC);
       this.geo = "";
     }
 
-    
+    // Get the firefox accounts url for links and to send firstrun metrics to.
     values.fxa_endpoint = Services.prefs.getStringPref(
       "browser.newtabpage.activity-stream.fxaccounts.endpoint",
       "https://accounts.firefox.com"
     );
 
-    
+    // Get the firefox update channel with values as default, nightly, beta or release
     values.appUpdateChannel = Services.prefs.getStringPref(
       "app.update.channel",
       ""
     );
 
-    
-    
+    // Read the pref for search shortcuts top sites experiment from firefox.js and store it
+    // in our internal list of prefs to watch
     let searchTopSiteExperimentPrefValue = Services.prefs.getBoolPref(
       "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts"
     );
@@ -163,8 +169,8 @@ class PrefsFeed {
       "browser.topsites.useRemoteSetting"
     );
 
-    
-    
+    // Read the pref for search hand-off from firefox.js and store it
+    // in our internal list of prefs to watch
     let handoffToAwesomebarPrefValue = Services.prefs.getBoolPref(
       "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"
     );
@@ -173,7 +179,7 @@ class PrefsFeed {
       value: handoffToAwesomebarPrefValue,
     });
 
-    
+    // Add experiment values and default values
     values.featureConfig = lazy.NimbusFeatures.newtab.getAllVariables() || {};
     values.pocketConfig =
       lazy.NimbusFeatures.pocketNewtab.getAllVariables() || {};
@@ -198,7 +204,7 @@ class PrefsFeed {
     this._setStringPref(values, "discoverystream.spocs-endpoint-query", "");
     this._setStringPref(values, "newNewtabExperience.colors", "");
 
-    
+    // Set the initial state of all prefs in redux
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.PREFS_INITIAL_VALUES,
@@ -265,5 +271,3 @@ class PrefsFeed {
     }
   }
 }
-
-const EXPORTED_SYMBOLS = ["PrefsFeed"];

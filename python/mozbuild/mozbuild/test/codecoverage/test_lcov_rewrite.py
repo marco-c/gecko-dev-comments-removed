@@ -395,8 +395,8 @@ class TestUrlFinder(unittest.TestCase):
             ),
             
             (
-                "resource://activity-stream/lib/PrefsFeed.jsm",
-                ("browser/components/newtab/lib/PrefsFeed.jsm", None),
+                "resource://activity-stream/lib/PrefsFeed.sys.mjs",
+                ("browser/components/newtab/lib/PrefsFeed.sys.mjs", None),
             ),
             
             (
