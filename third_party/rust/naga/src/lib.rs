@@ -687,8 +687,7 @@ pub enum ImageClass {
 }
 
 
-#[derive(Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -700,8 +699,7 @@ pub struct Type {
 }
 
 
-#[derive(Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "clone", derive(Clone))]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
