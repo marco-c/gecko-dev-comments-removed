@@ -1,7 +1,7 @@
-
-
-
-
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 function _sendMessage(messageBody) {
   const messageHeader = {
@@ -24,7 +24,7 @@ function _recvMessage() {
   });
 }
 
-const _UtilsChild = {
+export const UtilsChild = {
   async getCachedOriginUsage() {
     _sendMessage({
       op: "getCachedOriginUsage",
@@ -50,7 +50,3 @@ const _UtilsChild = {
     return _recvMessage();
   },
 };
-
-function importUtilsChild() {
-  return { UtilsChild: _UtilsChild };
-}
