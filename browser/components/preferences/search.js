@@ -35,7 +35,7 @@ const SEARCH_TYPE = "default_search";
 const SEARCH_KEY = "defaultSearch";
 
 
-const TRENDING_ENGINES = ["Google"];
+const TRENDING_ENGINES = ["Google", "Bing"];
 
 var gEngineView = null;
 
