@@ -73,7 +73,7 @@ class ThreadLocalPointer {
  private:
   ThreadLocalStorage::Slot slot_;
 
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalPointer<T>);
+  DISALLOW_COPY_AND_ASSIGN(ThreadLocalPointer);
 };
 
 
@@ -112,7 +112,7 @@ class ThreadLocalOwnedPointer {
 
   ThreadLocalStorage::Slot slot_{&DeleteTlsPtr};
 
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalOwnedPointer<T>);
+  DISALLOW_COPY_AND_ASSIGN(ThreadLocalOwnedPointer);
 };
 #endif  
 
