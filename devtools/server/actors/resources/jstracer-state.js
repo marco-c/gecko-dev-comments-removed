@@ -17,6 +17,7 @@ const {
 } = require("resource://devtools/server/tracer/tracer.jsm");
 
 const { LOG_METHODS } = require("resource://devtools/server/actors/tracer.js");
+const Targets = require("resource://devtools/server/actors/targets/index.js");
 
 class TracingStateWatcher {
   
@@ -30,6 +31,11 @@ class TracingStateWatcher {
 
 
   async watch(targetActor, { onAvailable }) {
+    
+    if (targetActor.targetType == Targets.TYPES.PROCESS) {
+      return;
+    }
+
     this.targetActor = targetActor;
     this.onAvailable = onAvailable;
 
@@ -43,6 +49,9 @@ class TracingStateWatcher {
 
 
   destroy() {
+    if (!this.tracingListener) {
+      return;
+    }
     removeTracingListener(this.tracingListener);
   }
 

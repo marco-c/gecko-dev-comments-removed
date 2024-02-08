@@ -9,6 +9,7 @@ const {
   TYPES,
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
+const Targets = require("devtools/server/actors/targets/index");
 
 loader.lazyRequireGetter(
   this,
@@ -187,6 +188,19 @@ class BaseTargetActor extends Actor {
             ]);
           }
         }
+        return;
+      }
+      
+      
+      
+      
+      
+      
+      
+      if (
+        this.targetType == Targets.TYPES.PROCESS ||
+        this.url?.startsWith("moz-extension://")
+      ) {
         return;
       }
       const tracerActor = this.getTargetScopedActor("tracer");
