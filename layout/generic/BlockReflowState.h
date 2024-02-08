@@ -307,6 +307,11 @@ class BlockReflowState {
   nscoord mInsetForBalance;
 
   
+  
+  
+  
+  
+  
   nsSize mContainerSize;
   const nsSize& ContainerSize() const { return mContainerSize; }
 

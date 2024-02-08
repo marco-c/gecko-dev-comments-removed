@@ -417,16 +417,7 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  nsSize ComputedSizeAsContainerIfConstrained() const {
-    const nscoord wd = ComputedWidth();
-    const nscoord ht = ComputedHeight();
-    return nsSize(wd == NS_UNCONSTRAINEDSIZE
-                      ? 0
-                      : wd + ComputedPhysicalBorderPadding().LeftRight(),
-                  ht == NS_UNCONSTRAINEDSIZE
-                      ? 0
-                      : ht + ComputedPhysicalBorderPadding().TopBottom());
-  }
+  nsSize ComputedSizeAsContainerIfConstrained() const;
 
   
   LogicalSize mContainingBlockSize{mWritingMode};

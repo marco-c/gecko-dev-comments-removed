@@ -37,6 +37,7 @@ BlockReflowState::BlockReflowState(
       mReflowInput(aReflowInput),
       mContentArea(aReflowInput.GetWritingMode()),
       mInsetForBalance(aInset),
+      mContainerSize(aReflowInput.ComputedSizeAsContainerIfConstrained()),
       mPushedFloats(nullptr),
       mOverflowTracker(nullptr),
       mBorderPadding(
@@ -51,28 +52,6 @@ BlockReflowState::BlockReflowState(
                "The consumed block-size should be constrained!");
 
   WritingMode wm = aReflowInput.GetWritingMode();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mContainerSize.width = aReflowInput.ComputedWidth();
-  if (mContainerSize.width == NS_UNCONSTRAINEDSIZE) {
-    mContainerSize.width = 0;
-  }
-
-  mContainerSize.width += mBorderPadding.LeftRight(wm);
-
-  
-  
-  
-  mContainerSize.height =
-      aReflowInput.ComputedHeight() + mBorderPadding.TopBottom(wm);
 
   if (aBStartMarginRoot || 0 != mBorderPadding.BStart(wm)) {
     mFlags.mIsBStartMarginRoot = true;
