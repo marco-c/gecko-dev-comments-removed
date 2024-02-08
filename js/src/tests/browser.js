@@ -460,6 +460,10 @@
       }
     }
 
+    
+    
+    properties.test = properties.test.replace(/\\/g, "/");
+
     global.gTestPath = properties.test;
 
     var testpathparts = properties.test.split("/");
