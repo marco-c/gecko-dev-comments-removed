@@ -49,6 +49,44 @@ def try_compile(
 
 
 
+@template
+def try_link(
+    includes=None,
+    body="",
+    language="C++",
+    flags=None,
+    check_msg=None,
+    when=None,
+    onerror=lambda: None,
+):
+    compiler = {
+        "C": c_compiler,
+        "C++": cxx_compiler,
+    }[language]
+
+    return compiler.try_link(
+        linker_ldflags,
+        includes,
+        body,
+        flags,
+        check_msg,
+        when=when,
+        onerror=onerror,
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -166,12 +204,21 @@ def check_symbol(symbol, language="C", flags=None, when=None, onerror=lambda: No
 
 
 
+
 @template
 def check_and_add_flags(
-    flag, flags_collection, test_flags, compiler=None, when=None, check=True
+    flag,
+    flags_collection,
+    test_flags=(),
+    compiler=None,
+    when=None,
+    check=True,
+    link=False,
 ):
     if compiler is not None:
         compilers = (compiler,)
+    elif link:
+        compilers = (c_compiler,)
     else:
         compilers = (c_compiler, cxx_compiler)
 
@@ -187,12 +234,20 @@ def check_and_add_flags(
 
     for c in compilers:
         assert c in {c_compiler, cxx_compiler, host_c_compiler, host_cxx_compiler}
-        lang, list_of_flags = {
-            c_compiler: ("C", flags_collection.cflags),
-            cxx_compiler: ("C++", flags_collection.cxxflags),
-            host_c_compiler: ("host C", flags_collection.host_cflags),
-            host_cxx_compiler: ("host C++", flags_collection.host_cxxflags),
-        }[c]
+        if link:
+            lang, list_of_flags = {
+                c_compiler: ("C", flags_collection.ldflags),
+                cxx_compiler: ("C++", flags_collection.ldflags),
+                host_c_compiler: ("host C", flags_collection.host_ldflags),
+                host_cxx_compiler: ("host C++", flags_collection.host_ldflags),
+            }[c]
+        else:
+            lang, list_of_flags = {
+                c_compiler: ("C", flags_collection.cflags),
+                cxx_compiler: ("C++", flags_collection.cxxflags),
+                host_c_compiler: ("host C", flags_collection.host_cflags),
+                host_cxx_compiler: ("host C++", flags_collection.host_cxxflags),
+            }[c]
 
         result = when
 
@@ -206,10 +261,23 @@ def check_and_add_flags(
 
                 return flags
 
-            result = c.try_compile(
+            if link:
+
+                def runner(*args, **kwargs):
+                    if c in (c_compiler, cxx_compiler):
+                        return c.try_link(linker_ldflags, *args, **kwargs)
+                    else:
+                        return c.try_link(host_linker_ldflags, *args, **kwargs)
+
+                tool = "linker"
+            else:
+                runner = c.try_compile
+                tool = "compiler"
+
+            result = runner(
                 flags=flags,
                 when=result,
-                check_msg="whether the %s compiler supports %s" % (lang, flag),
+                check_msg="whether the %s %s supports %s" % (lang, tool, flag),
             )
 
         @depends(result, list_of_flags)
@@ -307,3 +375,33 @@ def check_and_add_flag(flag, compiler=None, when=None, check=True):
 @template
 def add_flag(warning, compiler=None, when=None):
     check_and_add_flag(warning, compiler, when, check=False)
+
+
+
+@dependable
+def linker_flags():
+    return namespace(ldflags=[], host_ldflags=[])
+
+
+
+
+
+
+
+
+
+
+@template
+def check_and_add_linker_flag(flag, compiler=None, when=None, check=True):
+    return check_and_add_flags(
+        flag, linker_flags, [flag], when=when, check=check, link=True
+    )
+
+
+
+
+
+
+@template
+def add_linker_flag(flag, compiler=None, when=None):
+    check_and_add_linker_flag(flag, compiler, when, check=False)
