@@ -370,15 +370,20 @@ already_AddRefed<PushManager> ServiceWorkerRegistration::GetPushManager(
   return ret.forget();
 }
 
+
 already_AddRefed<Promise> ServiceWorkerRegistration::ShowNotification(
     JSContext* aCx, const nsAString& aTitle,
     const NotificationOptions& aOptions, ErrorResult& aRv) {
+  
   nsIGlobalObject* global = GetParentObject();
   if (!global) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
+  
+  
+  
   
   
   
@@ -389,12 +394,14 @@ already_AddRefed<Promise> ServiceWorkerRegistration::ShowNotification(
 
   NS_ConvertUTF8toUTF16 scope(mDescriptor.Scope());
 
+  
   RefPtr<Promise> p = Notification::ShowPersistentNotification(
       aCx, global, scope, aTitle, aOptions, mDescriptor, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
+  
   return p.forget();
 }
 

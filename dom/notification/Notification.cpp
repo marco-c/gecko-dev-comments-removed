@@ -2126,6 +2126,8 @@ class CheckLoadRunnable final : public WorkerMainThreadRunnable {
 };
 
 
+
+
 already_AddRefed<Promise> Notification::ShowPersistentNotification(
     JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aScope,
     const nsAString& aTitle, const NotificationOptions& aOptions,
@@ -2184,6 +2186,7 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
     }
   }
 
+  
   RefPtr<Promise> p = Promise::Create(aGlobal, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -2191,12 +2194,14 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
 
   
   
+  
   NotificationPermission permission = GetPermission(aGlobal, aRv);
 
   
   
+  
   if (NS_WARN_IF(aRv.Failed()) ||
-      permission == NotificationPermission::Denied) {
+      permission != NotificationPermission::Granted) {
     p->MaybeRejectWithTypeError("Permission to show Notification denied.");
     return p.forget();
   }
@@ -2206,6 +2211,13 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   
   p->MaybeResolveWithUndefined();
 
+  
+  
+  
+  
+  
+  
+  
   RefPtr<Notification> notification =
       CreateAndShow(aCx, aGlobal, aTitle, aOptions, aScope, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
