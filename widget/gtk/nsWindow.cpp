@@ -4125,8 +4125,6 @@ void nsWindow::OnMap() {
 void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
 
-  
-  
   mIsMapped = false;
 
   if (mSourceDragContext) {
@@ -4137,32 +4135,6 @@ void nsWindow::OnUnmap() {
       mSourceDragContext = nullptr;
     }
   }
-
-#ifdef MOZ_WAYLAND
-  
-  
-  if (GdkIsWaylandDisplay()) {
-    if (mCompositorWidgetDelegate) {
-      mCompositorWidgetDelegate->DisableRendering();
-    }
-    if (moz_container_wayland_has_egl_window(mContainer)) {
-      
-      
-      
-      
-      
-      
-      
-      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-        remoteRenderer->SendResume();
-      }
-    }
-    if (GdkIsWaylandDisplay()) {
-      moz_container_wayland_unmap(GTK_WIDGET(mContainer));
-    }
-  }
-#endif
-  moz_container_unmap(GTK_WIDGET(mContainer));
 }
 
 void nsWindow::OnUnrealize() {
@@ -9957,6 +9929,11 @@ void nsWindow::ClearRenderingQueue() {
   if (mWidgetListener) {
     mWidgetListener->RequestWindowClose(this);
   }
+  DestroyLayerManager();
+}
+
+void nsWindow::DisableRendering() {
+  LOG("nsWindow::DisableRendering()");
   DestroyLayerManager();
 }
 

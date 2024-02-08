@@ -456,6 +456,8 @@ class nsWindow final : public nsBaseWidget {
   
   void ClearRenderingQueue();
 
+  void DisableRendering();
+
   bool ApplyEnterLeaveMutterWorkaround();
 
   void NotifyOcclusionState(mozilla::widget::OcclusionState aState) override;
