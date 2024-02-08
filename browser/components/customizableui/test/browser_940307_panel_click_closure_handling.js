@@ -108,7 +108,14 @@ add_task(async function disabled_button_in_panel() {
   await waitForOverflowButtonShown();
 
   await document.getElementById("nav-bar").overflowable.show();
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustBeEnabled: false,
+  });
   EventUtils.synthesizeMouseAtCenter(button, {});
+  AccessibilityUtils.resetEnv();
   is(PanelUI.overflowPanel.state, "open", "Popup stays open");
   button.removeAttribute("disabled");
   let hiddenAgain = promiseOverflowHidden(window);
