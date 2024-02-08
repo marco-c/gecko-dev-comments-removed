@@ -79,7 +79,7 @@ impl SuggestRemoteSettingsClient for remote_settings::Client {
 
 
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "type")]
 pub(crate) enum SuggestRecord {
     #[serde(rename = "icon")]
@@ -92,6 +92,12 @@ pub(crate) enum SuggestRecord {
     Pocket,
     #[serde(rename = "yelp-suggestions")]
     Yelp,
+    #[serde(rename = "mdn-suggestions")]
+    Mdn,
+    #[serde(rename = "weather")]
+    Weather(DownloadedWeatherData),
+    #[serde(rename = "configuration")]
+    GlobalConfig(DownloadedGlobalConfig),
 }
 
 
@@ -148,15 +154,16 @@ where
 }
 
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct DownloadedSuggestionCommonDetails {
     pub keywords: Vec<String>,
     pub title: String,
     pub url: String,
+    pub score: Option<f64>,
 }
 
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct DownloadedAmpSuggestion {
     #[serde(flatten)]
     pub common_details: DownloadedSuggestionCommonDetails,
@@ -171,7 +178,7 @@ pub(crate) struct DownloadedAmpSuggestion {
 }
 
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct DownloadedWikipediaSuggestion {
     #[serde(flatten)]
     pub common_details: DownloadedSuggestionCommonDetails,
@@ -181,7 +188,7 @@ pub(crate) struct DownloadedWikipediaSuggestion {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub(crate) enum DownloadedAmpWikipediaSuggestion {
     Amp(DownloadedAmpSuggestion),
     Wikipedia(DownloadedWikipediaSuggestion),
@@ -287,4 +294,48 @@ pub(crate) struct DownloadedYelpSuggestion {
     pub location_signs: Vec<DownloadedYelpLocationSign>,
     #[serde(rename = "yelpModifiers")]
     pub yelp_modifiers: Vec<String>,
+}
+
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedMdnSuggestion {
+    pub url: String,
+    pub title: String,
+    pub description: String,
+    pub keywords: Vec<String>,
+    pub score: f64,
+}
+
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedWeatherData {
+    pub weather: DownloadedWeatherDataInner,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedWeatherDataInner {
+    pub min_keyword_length: i32,
+    pub keywords: Vec<String>,
+    
+    
+    #[serde(default, deserialize_with = "de_stringified_f64")]
+    pub score: Option<f64>,
+}
+
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedGlobalConfig {
+    pub configuration: DownloadedGlobalConfigInner,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedGlobalConfigInner {
+    
+    
+    pub show_less_frequently_cap: i32,
+}
+
+fn de_stringified_f64<'de, D>(deserializer: D) -> std::result::Result<Option<f64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    String::deserialize(deserializer).map(|s| s.parse().ok())
 }

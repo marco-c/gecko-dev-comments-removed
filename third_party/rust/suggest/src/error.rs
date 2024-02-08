@@ -3,6 +3,9 @@
 
 
 
+use error_support::{ErrorHandling, GetErrorHandling};
+use remote_settings::RemoteSettingsError;
+
 
 
 
@@ -18,10 +21,13 @@ pub(crate) enum Error {
     Json(#[from] serde_json::Error),
 
     #[error("Error from Remote Settings: {0}")]
-    RemoteSettings(#[from] remote_settings::RemoteSettingsError),
+    RemoteSettings(#[from] RemoteSettingsError),
 
     #[error("Operation interrupted")]
     Interrupted(#[from] interrupt_support::Interrupted),
+
+    #[error("SuggestStoreBuilder {0}")]
+    SuggestStoreBuilder(String),
 }
 
 
@@ -29,15 +35,45 @@ pub(crate) enum Error {
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum SuggestApiError {
+    #[error("Network error: {reason}")]
+    Network { reason: String },
+    
+    #[error("Backoff")]
+    Backoff { seconds: u64 },
+    
+    #[error("Interrupted")]
+    Interrupted,
     #[error("Other error: {reason}")]
     Other { reason: String },
 }
 
-impl From<Error> for SuggestApiError {
-    
-    fn from(error: Error) -> Self {
-        Self::Other {
-            reason: error.to_string(),
+
+
+impl GetErrorHandling for Error {
+    type ExternalError = SuggestApiError;
+
+    fn get_error_handling(&self) -> ErrorHandling<Self::ExternalError> {
+        match self {
+            
+            Self::Interrupted(_) => ErrorHandling::convert(SuggestApiError::Interrupted),
+            
+            Self::RemoteSettings(RemoteSettingsError::RequestError(
+                viaduct::Error::NetworkError(e),
+            )) => ErrorHandling::convert(SuggestApiError::Network {
+                reason: e.to_string(),
+            })
+            .log_warning(),
+            
+            
+            
+            Self::RemoteSettings(RemoteSettingsError::BackoffError(seconds)) => {
+                ErrorHandling::convert(SuggestApiError::Backoff { seconds: *seconds })
+                    .report_error("suggest-backoff")
+            }
+            _ => ErrorHandling::convert(SuggestApiError::Other {
+                reason: self.to_string(),
+            })
+            .report_error("suggest-unexpected"),
         }
     }
 }
