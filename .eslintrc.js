@@ -68,10 +68,15 @@ module.exports = {
   plugins: ["mozilla", "import", "json"],
   overrides: [
     {
-      
-      
-      
-      files: [".eslintrc.js"],
+      files: [
+        
+        
+        
+        ".eslintrc.js",
+        
+        
+        "*.config.?(m)js",
+      ],
       env: {
         node: true,
         browser: false,
