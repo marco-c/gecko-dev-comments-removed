@@ -685,6 +685,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   void BufferData(GLenum target, uint64_t dataLen, const uint8_t* data,
                   GLenum usage) const;
+  void UninitializedBufferData_SizeOnly(GLenum target, uint64_t dataLen,
+                                        GLenum usage) const;
   
   
   
