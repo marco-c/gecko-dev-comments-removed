@@ -427,12 +427,9 @@ class MenuButton extends PureComponent {
       buttonProps.className = buttonProps.className
         ? `${buttonProps.className} ${iconClass}`
         : iconClass;
-      
-      if (typeof this.props.icon == "string") {
-        buttonProps.style = {
-          "--menuitem-icon-image": "url(" + this.props.icon + ")",
-        };
-      }
+      buttonProps.style = {
+        "--menuitem-icon-image": "url(" + this.props.icon + ")",
+      };
     }
 
     if (this.state.isMenuInitialized) {

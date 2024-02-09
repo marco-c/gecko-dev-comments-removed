@@ -1772,7 +1772,6 @@ const selectors = {
   prettyPrintButton: ".source-footer .prettyPrint",
   mappedSourceLink: ".source-footer .mapped-source",
   sourcesFooter: ".sources-panel .source-footer",
-  sourceMapFooterButton: ".debugger-source-map-button",
   editorFooter: ".editor-pane .source-footer",
   sourceNode: i => `.sources-list .tree-node:nth-child(${i}) .node`,
   sourceNodes: ".sources-list .tree-node",
@@ -2203,9 +2202,8 @@ async function clickAtPos(dbg, pos) {
       bubbles: true,
       cancelable: true,
       view: dbg.win,
-      
-      clientX: left + 1,
-      clientY: top + 1,
+      clientX: left,
+      clientY: top,
     })
   );
 }
@@ -2944,33 +2942,6 @@ async function toggleDebbuggerSettingsMenuItem(dbg, { className, isChecked }) {
 
   
   await waitFor(() => menuButton.getAttribute("aria-expanded") === "false");
-}
-
-
-
-
-
-
-
-
-
-
-async function clickOnSourceMapMenuItem(dbg, className) {
-  const menuButton = findElement(dbg, "sourceMapFooterButton");
-  const { parent } = dbg.panel.panelWin;
-  const { document } = parent;
-
-  menuButton.click();
-  
-  await waitFor(() => {
-    const menuListEl = document.querySelector("#debugger-source-map-list");
-    
-    
-    return menuListEl && menuListEl.offsetParent !== null;
-  });
-
-  const menuItem = document.querySelector(className);
-  menuItem.click();
 }
 
 async function setLogPoint(dbg, index, value) {

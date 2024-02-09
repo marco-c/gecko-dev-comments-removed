@@ -61,11 +61,6 @@ export const clearSelectedLocation = () => ({
   type: "CLEAR_SELECTED_LOCATION",
 });
 
-export const setDefaultSelectedLocation = shouldSelectOriginalLocation => ({
-  type: "SET_DEFAULT_SELECTED_LOCATION",
-  shouldSelectOriginalLocation,
-});
-
 
 
 
@@ -122,76 +117,6 @@ export function selectSource(source, sourceActor) {
 
 
 
-async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
-  const { getState, dispatch } = thunkArgs;
-  
-  
-  
-  
-  
-  
-  
-  
-  let shouldSelectOriginalLocation = getShouldSelectOriginalLocation(
-    getState()
-  );
-  if (keepContext) {
-    
-    
-    if (
-      !location.source.isOriginal &&
-      shouldSelectOriginalLocation &&
-      hasPrettyTab(getState(), location.source)
-    ) {
-      
-      
-      
-      await dispatch(prettyPrintAndSelectSource(location.source));
-    }
-    if (shouldSelectOriginalLocation != location.source.isOriginal) {
-      
-      if (
-        location.source.isOriginal ||
-        isSourceActorWithSourceMap(getState(), location.sourceActor.id)
-      ) {
-        
-        
-        location = await getRelatedMapLocation(location, thunkArgs);
-      }
-      
-      
-      
-      
-      
-    }
-  } else if (
-    location.source.isOriginal ||
-    isSourceActorWithSourceMap(getState(), location.sourceActor.id)
-  ) {
-    
-    
-    
-    
-    shouldSelectOriginalLocation = location.source.isOriginal;
-  }
-  return { shouldSelectOriginalLocation, newLocation: location };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 export function selectLocation(location, { keepContext = true } = {}) {
   return async thunkArgs => {
@@ -211,22 +136,47 @@ export function selectLocation(location, { keepContext = true } = {}) {
       return;
     }
 
-    let sourceActor = location.sourceActor;
-    if (!sourceActor) {
-      sourceActor = getFirstSourceActorForGeneratedSource(
-        getState(),
-        source.id
-      );
-      location = createLocation({ ...location, sourceActor });
+    
+    
+    
+    
+    
+    
+    
+    
+    let shouldSelectOriginalLocation = getShouldSelectOriginalLocation(
+      getState()
+    );
+    if (keepContext) {
+      
+      
+      if (
+        !location.source.isOriginal &&
+        shouldSelectOriginalLocation &&
+        hasPrettyTab(getState(), location.source)
+      ) {
+        
+        
+        
+        await dispatch(prettyPrintAndSelectSource(location.source));
+      }
+      if (shouldSelectOriginalLocation != location.source.isOriginal) {
+        
+        
+        location = await getRelatedMapLocation(location, thunkArgs);
+        
+        
+        
+        
+        
+
+        source = location.source;
+      }
+    } else {
+      shouldSelectOriginalLocation = location.source.isOriginal;
     }
 
-    const { shouldSelectOriginalLocation, newLocation } =
-      await mayBeSelectMappedSource(location, keepContext, thunkArgs);
-
-    
-    location = newLocation;
-    source = location.source;
-    sourceActor = location.sourceActor;
+    let sourceActor = location.sourceActor;
     if (!sourceActor) {
       sourceActor = getFirstSourceActorForGeneratedSource(
         getState(),
@@ -391,15 +341,10 @@ export function jumpToMappedLocation(location) {
     
     const pairedLocation = await getRelatedMapLocation(location, thunkArgs);
 
-    
-    
-    if (pairedLocation == location) {
-      return null;
-    }
-
     return dispatch(selectSpecificLocation(pairedLocation));
   };
 }
+
 
 export function jumpToMappedSelectedLocation() {
   return async function ({ dispatch, getState }) {

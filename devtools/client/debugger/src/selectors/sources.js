@@ -163,16 +163,6 @@ export function getSelectedMappedSource(state) {
   return mappedSource || null;
 }
 
-
-
-
-export function isSelectedMappedSourceLoading(state) {
-  const { selectedOriginalLocation } = state.sources;
-  
-  
-  return selectedOriginalLocation === UNDEFINED_LOCATION;
-}
-
 export const getSelectedSource = createSelector(
   getSelectedLocation,
   selectedLocation => {
