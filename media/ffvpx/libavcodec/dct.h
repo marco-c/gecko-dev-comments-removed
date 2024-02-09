@@ -21,36 +21,11 @@
 
 
 
-#if !defined(AVCODEC_DCT_H) && (!defined(FFT_FLOAT) || FFT_FLOAT)
+#ifndef AVCODEC_DCT_H
 #define AVCODEC_DCT_H
 
 #include <stddef.h>
 #include <stdint.h>
-
-#include "rdft.h"
-
-struct DCTContext {
-    int nbits;
-    int inverse;
-    RDFTContext rdft;
-    const float *costab;
-    FFTSample *csc2;
-    void (*dct_calc)(struct DCTContext *s, FFTSample *data);
-    void (*dct32)(FFTSample *out, const FFTSample *in);
-};
-
-
-
-
-
-
-
-
-
-int  ff_dct_init(DCTContext *s, int nbits, enum DCTTransformType type);
-void ff_dct_end (DCTContext *s);
-
-void ff_dct_init_x86(DCTContext *s);
 
 void ff_j_rev_dct(int16_t *data);
 void ff_j_rev_dct4(int16_t *data);

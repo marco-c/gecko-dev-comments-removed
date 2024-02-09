@@ -114,7 +114,6 @@ typedef struct MpegEncContext {
     int input_picture_number;  
     int coded_picture_number;  
     int picture_number;       
-    int extradata_parsed;
     int picture_in_gop_number; 
     int mb_width, mb_height;   
     int mb_stride;             

@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 #include "libavutil/fifo.h"
-#include "libavutil/buffer.h"
 #include "libavutil/frame.h"
 #include "libavutil/pixfmt.h"
 #include "avcodec.h"
@@ -35,10 +34,9 @@
 typedef struct AV1Frame {
     AVFrame *f;
 
-    AVBufferRef *hwaccel_priv_buf;
-    void *hwaccel_picture_private;
+    void *hwaccel_picture_private; 
 
-    AVBufferRef *header_ref;
+    AV1RawOBU *header_ref; 
     AV1RawFrameHeader *raw_frame_header;
 
     int temporal_id;
@@ -71,15 +69,15 @@ typedef struct AV1DecContext {
     CodedBitstreamFragment current_obu;
     AVPacket *pkt;
 
-    AVBufferRef *seq_ref;
+    AV1RawOBU *seq_ref;    
     AV1RawSequenceHeader *raw_seq;
-    AVBufferRef *header_ref;
+    AV1RawOBU *header_ref; 
     AV1RawFrameHeader *raw_frame_header;
     TileGroupInfo *tile_group_info;
 
-    AVBufferRef *cll_ref;
+    AV1RawOBU *cll_ref;    
     AV1RawMetadataHDRCLL *cll;
-    AVBufferRef *mdcv_ref;
+    AV1RawOBU *mdcv_ref;   
     AV1RawMetadataHDRMDCV *mdcv;
     AVFifo *itut_t35_fifo;
 

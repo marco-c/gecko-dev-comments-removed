@@ -176,6 +176,13 @@ enum {
 };
 
 
+enum {
+    AV1_ONLY_4X4        = 0,
+    AV1_TX_MODE_LARGEST = 1,
+    AV1_TX_MODE_SELECT  = 2,
+};
+
+
 
 
 

@@ -53,7 +53,7 @@ extern uint32_t ff_table_4_3_value[TABLE_4_3_SIZE];
 #endif
 
 
-extern VLC ff_huff_vlc[16];
+extern const VLCElem *ff_huff_vlc[16];
 extern VLC ff_huff_quad_vlc[2];
 
 

@@ -21,7 +21,6 @@
 #ifndef AVCODEC_DECODE_H
 #define AVCODEC_DECODE_H
 
-#include "libavutil/buffer.h"
 #include "libavutil/frame.h"
 #include "libavutil/hwcontext.h"
 
@@ -148,9 +147,12 @@ int ff_side_data_update_matrix_encoding(AVFrame *frame,
 
 
 
+int ff_hwaccel_frame_priv_alloc(AVCodecContext *avctx, void **hwaccel_picture_private);
 
 
-int ff_hwaccel_frame_priv_alloc(AVCodecContext *avctx, void **hwaccel_picture_private,
-                                AVBufferRef **hwaccel_priv_buf);
+
+
+const AVPacketSideData *ff_get_coded_side_data(const AVCodecContext *avctx,
+                                               enum AVPacketSideDataType type);
 
 #endif 

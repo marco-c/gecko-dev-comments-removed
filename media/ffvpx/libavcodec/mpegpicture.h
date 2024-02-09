@@ -66,8 +66,8 @@ typedef struct Picture {
     int alloc_mb_height;        
     int alloc_mb_stride;        
 
-    AVBufferRef *hwaccel_priv_buf;
-    void *hwaccel_picture_private; 
+    
+    void *hwaccel_picture_private;
 
     int field_picture;          
 
@@ -84,20 +84,18 @@ typedef struct Picture {
 
 
 
-
 int ff_alloc_picture(AVCodecContext *avctx, Picture *pic, MotionEstContext *me,
-                     ScratchpadContext *sc, int shared, int encoding,
-                     int chroma_x_shift, int chroma_y_shift, int out_format,
+                     ScratchpadContext *sc, int encoding, int out_format,
                      int mb_stride, int mb_width, int mb_height, int b8_stride,
                      ptrdiff_t *linesize, ptrdiff_t *uvlinesize);
 
 int ff_mpeg_framesize_alloc(AVCodecContext *avctx, MotionEstContext *me,
                             ScratchpadContext *sc, int linesize);
 
-int ff_mpeg_ref_picture(AVCodecContext *avctx, Picture *dst, Picture *src);
-void ff_mpeg_unref_picture(AVCodecContext *avctx, Picture *picture);
+int ff_mpeg_ref_picture(Picture *dst, Picture *src);
+void ff_mpeg_unref_picture(Picture *picture);
 
-void ff_mpv_picture_free(AVCodecContext *avctx, Picture *pic);
+void ff_mpv_picture_free(Picture *pic);
 int ff_update_picture_tables(Picture *dst, const Picture *src);
 
 int ff_find_unused_picture(AVCodecContext *avctx, Picture *picture, int shared);

@@ -437,7 +437,8 @@ typedef struct CodedBitstreamAV1Context {
     const AVClass *class;
 
     AV1RawSequenceHeader *sequence_header;
-    AVBufferRef          *sequence_header_ref;
+    
+    AV1RawOBU            *sequence_header_ref;
 
     int     seen_frame_header;
     AVBufferRef *frame_header_ref;
@@ -467,6 +468,10 @@ typedef struct CodedBitstreamAV1Context {
 
     
     int operating_point;
+    
+    
+    
+    int fixed_obu_size_length;
 } CodedBitstreamAV1Context;
 
 

@@ -305,6 +305,30 @@ enum AVPacketSideDataType {
 
 
 
+    AV_PKT_DATA_IAMF_MIX_GAIN_PARAM,
+
+    
+
+
+
+
+
+    AV_PKT_DATA_IAMF_DEMIXING_INFO_PARAM,
+
+    
+
+
+
+
+
+    AV_PKT_DATA_IAMF_RECON_GAIN_INFO_PARAM,
+
+    
+
+
+
+
+
 
 
     AV_PKT_DATA_NB
@@ -312,11 +336,128 @@ enum AVPacketSideDataType {
 
 #define AV_PKT_DATA_QUALITY_FACTOR AV_PKT_DATA_QUALITY_STATS //DEPRECATED
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct AVPacketSideData {
     uint8_t *data;
     size_t   size;
     enum AVPacketSideDataType type;
 } AVPacketSideData;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AVPacketSideData *av_packet_side_data_new(AVPacketSideData **psd, int *pnb_sd,
+                                          enum AVPacketSideDataType type,
+                                          size_t size, int flags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AVPacketSideData *av_packet_side_data_add(AVPacketSideData **sd, int *nb_sd,
+                                          enum AVPacketSideDataType type,
+                                          void *data, size_t size, int flags);
+
+
+
+
+
+
+
+
+
+
+const AVPacketSideData *av_packet_side_data_get(const AVPacketSideData *sd,
+                                                int nb_sd,
+                                                enum AVPacketSideDataType type);
+
+
+
+
+
+
+
+
+
+
+void av_packet_side_data_remove(AVPacketSideData *sd, int *nb_sd,
+                                enum AVPacketSideDataType type);
+
+
+
+
+
+
+
+
+
+
+void av_packet_side_data_free(AVPacketSideData **sd, int *nb_sd);
+
+const char *av_packet_side_data_name(enum AVPacketSideDataType type);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -602,8 +743,6 @@ int av_packet_shrink_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
 
 uint8_t* av_packet_get_side_data(const AVPacket *pkt, enum AVPacketSideDataType type,
                                  size_t *size);
-
-const char *av_packet_side_data_name(enum AVPacketSideDataType type);
 
 
 

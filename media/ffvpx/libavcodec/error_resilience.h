@@ -24,7 +24,6 @@
 
 #include "avcodec.h"
 #include "me_cmp.h"
-#include "threadframe.h"
 
 
 #define VP_START               1
@@ -40,7 +39,7 @@
 
 typedef struct ERPicture {
     AVFrame *f;
-    ThreadFrame *tf;
+    const struct ThreadFrame *tf;
 
     
     int16_t (*motion_val[2])[2];
@@ -90,7 +89,17 @@ typedef struct ERContext {
 } ERContext;
 
 void ff_er_frame_start(ERContext *s);
-void ff_er_frame_end(ERContext *s);
+
+
+
+
+
+
+
+
+
+
+void ff_er_frame_end(ERContext *s, int *decode_error_flags);
 void ff_er_add_slice(ERContext *s, int startx, int starty, int endx, int endy,
                      int status);
 

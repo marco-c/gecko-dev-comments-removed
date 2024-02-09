@@ -160,6 +160,11 @@ typedef struct AVPixFmtDescriptor {
 
 
 
+#define AV_PIX_FMT_FLAG_XYZ          (1 << 10)
+
+
+
+
 
 
 

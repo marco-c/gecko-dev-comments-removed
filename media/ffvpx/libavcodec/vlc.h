@@ -19,7 +19,12 @@
 #ifndef AVCODEC_VLC_H
 #define AVCODEC_VLC_H
 
+#include <stddef.h>
 #include <stdint.h>
+
+#include "libavutil/macros.h"
+
+#define VLC_MULTI_MAX_SYMBOLS 6
 
 
 typedef int16_t VLCBaseType;
@@ -34,22 +39,62 @@ typedef struct VLC {
     int table_size, table_allocated;
 } VLC;
 
+typedef struct VLC_MULTI_ELEM {
+    uint8_t val[VLC_MULTI_MAX_SYMBOLS];
+    int8_t len; 
+    uint8_t num;
+} VLC_MULTI_ELEM;
+
+typedef struct VLC_MULTI {
+    VLC_MULTI_ELEM *table;
+    int table_size, table_allocated;
+} VLC_MULTI;
+
 typedef struct RL_VLC_ELEM {
     int16_t level;
     int8_t len;
     uint8_t run;
 } RL_VLC_ELEM;
 
-#define init_vlc(vlc, nb_bits, nb_codes,                \
+#define vlc_init(vlc, nb_bits, nb_codes,                \
                  bits, bits_wrap, bits_size,            \
                  codes, codes_wrap, codes_size,         \
                  flags)                                 \
-    ff_init_vlc_sparse(vlc, nb_bits, nb_codes,          \
+    ff_vlc_init_sparse(vlc, nb_bits, nb_codes,          \
                        bits, bits_wrap, bits_size,      \
                        codes, codes_wrap, codes_size,   \
                        NULL, 0, 0, flags)
 
-int ff_init_vlc_sparse(VLC *vlc, int nb_bits, int nb_codes,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int ff_vlc_init_sparse(VLC *vlc, int nb_bits, int nb_codes,
                        const void *bits, int bits_wrap, int bits_size,
                        const void *codes, int codes_wrap, int codes_size,
                        const void *symbols, int symbols_wrap, int symbols_size,
@@ -84,61 +129,200 @@ int ff_init_vlc_sparse(VLC *vlc, int nb_bits, int nb_codes,
 
 
 
-int ff_init_vlc_from_lengths(VLC *vlc, int nb_bits, int nb_codes,
+int ff_vlc_init_from_lengths(VLC *vlc, int nb_bits, int nb_codes,
                              const int8_t *lens, int lens_wrap,
                              const void *symbols, int symbols_wrap, int symbols_size,
                              int offset, int flags, void *logctx);
 
-void ff_free_vlc(VLC *vlc);
 
 
 
-#define INIT_VLC_INPUT_LE       2
 
-#define INIT_VLC_OUTPUT_LE      8
-#define INIT_VLC_LE             (INIT_VLC_INPUT_LE | INIT_VLC_OUTPUT_LE)
-#define INIT_VLC_USE_NEW_STATIC 4
-#define INIT_VLC_STATIC_OVERLONG (1 | INIT_VLC_USE_NEW_STATIC)
 
-#define INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,      \
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int ff_vlc_init_multi_from_lengths(VLC *vlc, VLC_MULTI *multi, int nb_bits, int nb_elems,
+                                   int nb_codes, const int8_t *lens, int lens_wrap,
+                                   const void *symbols, int symbols_wrap, int symbols_size,
+                                   int offset, int flags, void *logctx);
+
+
+void ff_vlc_free_multi(VLC_MULTI *vlc);
+void ff_vlc_free(VLC *vlc);
+
+#define VLC_INIT_USE_STATIC     1
+#define VLC_INIT_STATIC_OVERLONG (2 | VLC_INIT_USE_STATIC)
+
+
+#define VLC_INIT_INPUT_LE       4
+
+#define VLC_INIT_OUTPUT_LE      8
+#define VLC_INIT_LE             (VLC_INIT_INPUT_LE | VLC_INIT_OUTPUT_LE)
+
+#define VLC_INIT_CUSTOM_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,      \
                                       h, i, j, flags, static_size)         \
     do {                                                                   \
         static VLCElem table[static_size];                                 \
         (vlc)->table           = table;                                    \
         (vlc)->table_allocated = static_size;                              \
-        ff_init_vlc_sparse(vlc, bits, a, b, c, d, e, f, g, h, i, j,        \
-                           flags | INIT_VLC_USE_NEW_STATIC);               \
+        ff_vlc_init_sparse(vlc, bits, a, b, c, d, e, f, g, h, i, j,        \
+                           flags | VLC_INIT_USE_STATIC);                   \
     } while (0)
 
-#define INIT_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
-    INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
+#define VLC_INIT_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
+    VLC_INIT_CUSTOM_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
                                   h, i, j, 0, static_size)
 
-#define INIT_LE_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
-    INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
-                                  h, i, j, INIT_VLC_LE, static_size)
+#define VLC_INIT_LE_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, h, i, j, static_size) \
+    VLC_INIT_CUSTOM_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
+                                  h, i, j, VLC_INIT_LE, static_size)
 
-#define INIT_CUSTOM_VLC_STATIC(vlc, bits, a, b, c, d, e, f, g, flags, static_size) \
-    INIT_CUSTOM_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
+#define VLC_INIT_CUSTOM_STATIC(vlc, bits, a, b, c, d, e, f, g, flags, static_size) \
+    VLC_INIT_CUSTOM_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g,          \
                                   NULL, 0, 0, flags, static_size)
 
-#define INIT_VLC_STATIC(vlc, bits, a, b, c, d, e, f, g, static_size)       \
-    INIT_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, NULL, 0, 0, static_size)
+#define VLC_INIT_STATIC(vlc, bits, a, b, c, d, e, f, g, static_size)       \
+    VLC_INIT_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, NULL, 0, 0, static_size)
 
-#define INIT_LE_VLC_STATIC(vlc, bits, a, b, c, d, e, f, g, static_size) \
-    INIT_LE_VLC_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, NULL, 0, 0, static_size)
+#define VLC_INIT_LE_STATIC(vlc, bits, a, b, c, d, e, f, g, static_size) \
+    VLC_INIT_LE_SPARSE_STATIC(vlc, bits, a, b, c, d, e, f, g, NULL, 0, 0, static_size)
 
-#define INIT_VLC_STATIC_FROM_LENGTHS(vlc, bits, nb_codes, lens, len_wrap,  \
+#define VLC_INIT_STATIC_FROM_LENGTHS(vlc, bits, nb_codes, lens, len_wrap,  \
                                      symbols, symbols_wrap, symbols_size,  \
                                      offset, flags, static_size)           \
     do {                                                                   \
         static VLCElem table[static_size];                                 \
         (vlc)->table           = table;                                    \
         (vlc)->table_allocated = static_size;                              \
-        ff_init_vlc_from_lengths(vlc, bits, nb_codes, lens, len_wrap,      \
+        ff_vlc_init_from_lengths(vlc, bits, nb_codes, lens, len_wrap,      \
                                  symbols, symbols_wrap, symbols_size,      \
-                                 offset, flags | INIT_VLC_USE_NEW_STATIC,  \
+                                 offset, flags | VLC_INIT_USE_STATIC,      \
                                  NULL);                                    \
     } while (0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct VLCInitState {
+    VLCElem *table;  
+    unsigned size;   
+} VLCInitState;
+
+#define VLC_INIT_STATE(_table) { .table = (_table), .size = FF_ARRAY_ELEMS(_table) }
+
+void ff_vlc_init_table_from_lengths(VLCElem table[], int table_size,
+                                    int nb_bits, int nb_codes,
+                                    const int8_t *lens, int lens_wrap,
+                                    const void *symbols, int symbols_wrap, int symbols_size,
+                                    int offset, int flags);
+
+const VLCElem *ff_vlc_init_tables_from_lengths(VLCInitState *state,
+                                               int nb_bits, int nb_codes,
+                                               const int8_t *lens, int lens_wrap,
+                                               const void *symbols, int symbols_wrap, int symbols_size,
+                                               int offset, int flags);
+
+void ff_vlc_init_table_sparse(VLCElem table[], int table_size,
+                              int nb_bits, int nb_codes,
+                              const void *bits, int bits_wrap, int bits_size,
+                              const void *codes, int codes_wrap, int codes_size,
+                              const void *symbols, int symbols_wrap, int symbols_size,
+                              int flags);
+
+const VLCElem *ff_vlc_init_tables_sparse(VLCInitState *state,
+                                         int nb_bits, int nb_codes,
+                                         const void *bits, int bits_wrap, int bits_size,
+                                         const void *codes, int codes_wrap, int codes_size,
+                                         const void *symbols, int symbols_wrap, int symbols_size,
+                                         int flags);
+
+static inline
+const VLCElem *ff_vlc_init_tables(VLCInitState *state,
+                                  int nb_bits, int nb_codes,
+                                  const void *bits, int bits_wrap, int bits_size,
+                                  const void *codes, int codes_wrap, int codes_size,
+                                  int flags)
+{
+    return ff_vlc_init_tables_sparse(state, nb_bits, nb_codes,
+                                     bits, bits_wrap, bits_size,
+                                     codes, codes_wrap, codes_size,
+                                     NULL, 0, 0, flags);
+}
+
+#define VLC_INIT_STATIC_SPARSE_TABLE(vlc_table, nb_bits, nb_codes,         \
+                                     bits, bits_wrap, bits_size,           \
+                                     codes, codes_wrap, codes_size,        \
+                                     symbols, symbols_wrap, symbols_size,  \
+                                     flags)                                \
+    ff_vlc_init_table_sparse(vlc_table, FF_ARRAY_ELEMS(vlc_table),         \
+                             (nb_bits), (nb_codes),                        \
+                             (bits), (bits_wrap), (bits_size),             \
+                             (codes), (codes_wrap), (codes_size),          \
+                             (symbols), (symbols_wrap), (symbols_size),    \
+                             (flags))
+
+#define VLC_INIT_STATIC_TABLE(vlc_table, nb_bits, nb_codes,                \
+                              bits, bits_wrap, bits_size,                  \
+                              codes, codes_wrap, codes_size,               \
+                              flags)                                       \
+    ff_vlc_init_table_sparse(vlc_table, FF_ARRAY_ELEMS(vlc_table),         \
+                             (nb_bits), (nb_codes),                        \
+                             (bits), (bits_wrap), (bits_size),             \
+                             (codes), (codes_wrap), (codes_size),          \
+                             NULL, 0, 0, (flags))
+
+#define VLC_INIT_STATIC_TABLE_FROM_LENGTHS(vlc_table, nb_bits, nb_codes,   \
+                                           lens, lens_wrap,                \
+                                           syms, syms_wrap, syms_size,     \
+                                           offset, flags)                  \
+    ff_vlc_init_table_from_lengths(vlc_table, FF_ARRAY_ELEMS(vlc_table),   \
+                                   (nb_bits), (nb_codes),                  \
+                                   (lens), (lens_wrap),                    \
+                                   (syms), (syms_wrap), (syms_size),       \
+                                   (offset), (flags))
 
 #endif 

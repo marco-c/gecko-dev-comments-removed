@@ -52,6 +52,8 @@ void ff_thread_flush(AVCodecContext *avctx);
 int ff_thread_decode_frame(AVCodecContext *avctx, AVFrame *picture,
                            int *got_picture_ptr, AVPacket *avpkt);
 
+int ff_thread_can_start_frame(AVCodecContext *avctx);
+
 
 
 
@@ -62,8 +64,6 @@ int ff_thread_decode_frame(AVCodecContext *avctx, AVFrame *picture,
 
 void ff_thread_finish_setup(AVCodecContext *avctx);
 
-#define ff_thread_get_format ff_get_format
-
 
 
 
@@ -73,19 +73,6 @@ void ff_thread_finish_setup(AVCodecContext *avctx);
 
 
 int ff_thread_get_buffer(AVCodecContext *avctx, AVFrame *f, int flags);
-
-
-
-
-
-
-
-
-
-
-
-
-void ff_thread_release_buffer(AVCodecContext *avctx, AVFrame *f);
 
 int ff_thread_init(AVCodecContext *s);
 int ff_slice_thread_execute_with_mainfunc(AVCodecContext *avctx,

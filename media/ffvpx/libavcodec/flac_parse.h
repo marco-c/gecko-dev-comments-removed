@@ -81,7 +81,7 @@ int ff_flac_is_extradata_valid(AVCodecContext *avctx,
 
 
 
-int ff_flac_decode_frame_header(AVCodecContext *avctx, GetBitContext *gb,
+int ff_flac_decode_frame_header(void *logctx, GetBitContext *gb,
                                 FLACFrameInfo *fi, int log_level_offset);
 
 void ff_flac_set_channel_layout(AVCodecContext *avctx, int channels);

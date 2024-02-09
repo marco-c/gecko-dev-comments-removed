@@ -31,6 +31,7 @@
 #include "libavutil/attributes.h"
 #include "libavutil/avutil.h"
 #include "libavutil/buffer.h"
+#include "libavutil/channel_layout.h"
 #include "libavutil/dict.h"
 #include "libavutil/frame.h"
 #include "libavutil/log.h"
@@ -38,8 +39,6 @@
 #include "libavutil/rational.h"
 
 #include "codec.h"
-#include "codec_desc.h"
-#include "codec_par.h"
 #include "codec_id.h"
 #include "defs.h"
 #include "packet.h"
@@ -49,7 +48,12 @@
 
 
 #include "version.h"
+
+#include "codec_desc.h"
+#include "codec_par.h"
 #endif
+
+struct AVCodecParameters;
 
 
 
@@ -1588,7 +1592,11 @@ typedef struct AVCodecContext {
 
 
 
+
      int profile;
+#if FF_API_FF_PROFILE_LEVEL
+    
+
 #define FF_PROFILE_UNKNOWN -99
 #define FF_PROFILE_RESERVED -100
 
@@ -1719,14 +1727,22 @@ typedef struct AVCodecContext {
 
 #define FF_PROFILE_EVC_BASELINE             0
 #define FF_PROFILE_EVC_MAIN                 1
+#endif
 
     
 
 
 
 
+
+
+
      int level;
+#if FF_API_FF_PROFILE_LEVEL
+    
+
 #define FF_LEVEL_UNKNOWN -99
+#endif
 
     
 
@@ -1805,7 +1821,7 @@ typedef struct AVCodecContext {
 
 
 
-    const AVCodecDescriptor *codec_descriptor;
+    const struct AVCodecDescriptor *codec_descriptor;
 
     
 
@@ -2318,7 +2334,7 @@ const AVClass *avcodec_get_subtitle_rect_class(void);
 
 
 
-int avcodec_parameters_from_context(AVCodecParameters *par,
+int avcodec_parameters_from_context(struct AVCodecParameters *par,
                                     const AVCodecContext *codec);
 
 
@@ -2330,7 +2346,7 @@ int avcodec_parameters_from_context(AVCodecParameters *par,
 
 
 int avcodec_parameters_to_context(AVCodecContext *codec,
-                                  const AVCodecParameters *par);
+                                  const struct AVCodecParameters *par);
 
 
 

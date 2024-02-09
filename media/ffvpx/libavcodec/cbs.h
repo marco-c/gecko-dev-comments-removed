@@ -109,7 +109,7 @@ typedef struct CodedBitstreamUnit {
 
 
 
-    AVBufferRef *content_ref;
+    void *content_ref;
 } CodedBitstreamUnit;
 
 
@@ -169,6 +169,51 @@ typedef struct CodedBitstreamFragment {
 } CodedBitstreamFragment;
 
 
+struct CodedBitstreamContext;
+struct GetBitContext;
+struct PutBitContext;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*CBSTraceReadCallback)(void *trace_context,
+                                     struct GetBitContext *gbc,
+                                     int start_position,
+                                     const char *name,
+                                     const int *subscripts,
+                                     int64_t value);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*CBSTraceWriteCallback)(void *trace_context,
+                                      struct PutBitContext *pbc,
+                                      int start_position,
+                                      const char *name,
+                                      const int *subscripts,
+                                      int64_t value);
+
+
 
 
 typedef struct CodedBitstreamContext {
@@ -216,6 +261,24 @@ typedef struct CodedBitstreamContext {
 
 
     int trace_level;
+    
+
+
+    void *trace_context;
+    
+
+
+
+
+
+    CBSTraceReadCallback  trace_read_callback;
+    
+
+
+
+
+
+    CBSTraceWriteCallback trace_write_callback;
 
     
 
@@ -378,11 +441,13 @@ int ff_cbs_alloc_unit_content(CodedBitstreamContext *ctx,
 
 
 
+
+
 int ff_cbs_insert_unit_content(CodedBitstreamFragment *frag,
                                int position,
                                CodedBitstreamUnitType type,
                                void *content,
-                               AVBufferRef *content_buf);
+                               void *content_ref);
 
 
 
@@ -449,5 +514,28 @@ void ff_cbs_discard_units(CodedBitstreamContext *ctx,
                           CodedBitstreamFragment *frag,
                           enum AVDiscard skip,
                           int flags);
+
+
+
+
+
+
+
+
+void ff_cbs_trace_read_log(void *trace_context,
+                           struct GetBitContext *gbc, int length,
+                           const char *str, const int *subscripts,
+                           int64_t value);
+
+
+
+
+
+
+
+void ff_cbs_trace_write_log(void *trace_context,
+                            struct PutBitContext *pbc, int length,
+                            const char *str, const int *subscripts,
+                            int64_t value);
 
 #endif 

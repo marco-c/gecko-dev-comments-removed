@@ -20,6 +20,7 @@
 
 #include "faanidct.h"
 #include "libavutil/common.h"
+#include "libavutil/emms.h"
 
 
 typedef float FLOAT;

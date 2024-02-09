@@ -29,20 +29,13 @@
 #include "libavutil/pixfmt.h"
 
 #include "codec_id.h"
+#include "defs.h"
+#include "packet.h"
 
 
 
 
 
-
-enum AVFieldOrder {
-    AV_FIELD_UNKNOWN,
-    AV_FIELD_PROGRESSIVE,
-    AV_FIELD_TT,          
-    AV_FIELD_BB,          
-    AV_FIELD_TB,          
-    AV_FIELD_BT,          
-};
 
 
 
@@ -223,6 +216,19 @@ typedef struct AVCodecParameters {
 
 
     AVRational framerate;
+
+    
+
+
+
+
+
+    AVPacketSideData *coded_side_data;
+
+    
+
+
+    int nb_coded_side_data;
 } AVCodecParameters;
 
 
