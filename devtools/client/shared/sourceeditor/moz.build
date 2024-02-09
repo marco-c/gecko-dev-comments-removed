@@ -4,6 +4,10 @@
 
 
 
+DIRS += [
+    "codemirror6",
+]
+
 DevToolsModules(
     "autocomplete.js",
     "css-autocompleter.js",

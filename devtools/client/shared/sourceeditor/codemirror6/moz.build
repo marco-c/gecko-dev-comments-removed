@@ -1,0 +1,12 @@
+
+
+
+
+
+
+DevToolsModules(
+    "codemirror6.bundle.js",
+)
+
+with Files("**"):
+    BUG_COMPONENT = ("DevTools", "Source Editor")
