@@ -241,7 +241,7 @@ class CDMProxy {
   
   
   virtual void GetStatusForPolicy(PromiseId aPromiseId,
-                                  const dom::HDCPVersion& aMinHdcpVersion) = 0;
+                                  const nsAString& aMinHdcpVersion) = 0;
 
 #ifdef DEBUG
   virtual bool IsOnOwnerThread() = 0;
