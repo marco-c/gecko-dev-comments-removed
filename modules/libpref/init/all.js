@@ -3950,6 +3950,8 @@ pref("extensions.formautofill.addresses.enabled", true);
   pref("extensions.formautofill.addresses.capture.enabled", false);
 #endif
 
+pref("extensions.formautofill.addresses.experiments.enabled", false);
+
 pref("extensions.formautofill.addresses.capture.requiredFields", "street-address,postal-code,address-level1,address-level2");
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 
