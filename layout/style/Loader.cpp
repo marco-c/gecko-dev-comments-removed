@@ -1372,7 +1372,7 @@ void Loader::AdjustPriority(const SheetLoadData& aLoadData,
   
   
   const int32_t supportsPriority = [&]() {
-    if (!aLoadData.mMediaMatched || aLoadData.mWasAlternate) {
+    if (aLoadData.ShouldDefer()) {
       return nsISupportsPriority::PRIORITY_LOW;
     }
     switch (aLoadData.mFetchPriority) {
