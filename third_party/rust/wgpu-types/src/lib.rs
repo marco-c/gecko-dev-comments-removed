@@ -1553,7 +1553,7 @@ bitflags::bitflags! {
         /// If this is false, calls to `CommandEncoder::resolve_query_set` will be performed on the device (i.e. cpu) timeline
         /// and will block that timeline until the query has data. You may work around this limitation by waiting until the submit
         /// whose queries you are resolving is fully finished (through use of `queue.on_submitted_work_done`) and only
-        /// then submitting the resolve_query_set command. The queries will be guarenteed finished, so will not block.
+        /// then submitting the resolve_query_set command. The queries will be guaranteed finished, so will not block.
         ///
         /// Supported by:
         /// - Vulkan,

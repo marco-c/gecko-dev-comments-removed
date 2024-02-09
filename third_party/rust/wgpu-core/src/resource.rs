@@ -3,8 +3,8 @@ use crate::device::trace;
 use crate::{
     binding_model::BindGroup,
     device::{
-        queue, BufferMapPendingClosure, Device, DeviceError, HostMap, MissingDownlevelFlags,
-        MissingFeatures,
+        queue, resource::DeferredDestroy, BufferMapPendingClosure, Device, DeviceError, HostMap,
+        MissingDownlevelFlags, MissingFeatures,
     },
     global::Global,
     hal_api::HalApi,
@@ -604,29 +604,6 @@ impl<A: HalApi> Resource for Buffer<A> {
     }
 }
 
-fn snatch_and_destroy_bind_groups<A: HalApi>(
-    device: &Device<A>,
-    bind_groups: &[Weak<BindGroup<A>>],
-) {
-    for bind_group in bind_groups {
-        if let Some(bind_group) = bind_group.upgrade() {
-            if let Some(raw_bind_group) = bind_group.raw.snatch(device.snatchable_lock.write()) {
-                resource_log!("Destroy raw BindGroup (destroyed) {:?}", bind_group.label());
-
-                #[cfg(feature = "trace")]
-                if let Some(t) = device.trace.lock().as_mut() {
-                    t.add(trace::Action::DestroyBindGroup(bind_group.info.id()));
-                }
-
-                unsafe {
-                    use hal::Device;
-                    device.raw().destroy_bind_group(raw_bind_group);
-                }
-            }
-        }
-    }
-}
-
 
 #[derive(Debug)]
 pub struct DestroyedBuffer<A: HalApi> {
@@ -650,7 +627,11 @@ impl<A: HalApi> DestroyedBuffer<A> {
 
 impl<A: HalApi> Drop for DestroyedBuffer<A> {
     fn drop(&mut self) {
-        snatch_and_destroy_bind_groups(&self.device, &self.bind_groups);
+        let mut deferred = self.device.deferred_destroy.lock();
+        for bind_group in self.bind_groups.drain(..) {
+            deferred.push(DeferredDestroy::BindGroup(bind_group));
+        }
+        drop(deferred);
 
         if let Some(raw) = self.raw.take() {
             resource_log!("Destroy raw Buffer (destroyed) {:?}", self.label());
@@ -1038,25 +1019,16 @@ impl<A: HalApi> DestroyedTexture<A> {
 impl<A: HalApi> Drop for DestroyedTexture<A> {
     fn drop(&mut self) {
         let device = &self.device;
-        snatch_and_destroy_bind_groups(device, &self.bind_groups);
 
+        let mut deferred = device.deferred_destroy.lock();
         for view in self.views.drain(..) {
-            if let Some(view) = view.upgrade() {
-                if let Some(raw_view) = view.raw.snatch(device.snatchable_lock.write()) {
-                    resource_log!("Destroy raw TextureView (destroyed) {:?}", view.label());
-
-                    #[cfg(feature = "trace")]
-                    if let Some(t) = self.device.trace.lock().as_mut() {
-                        t.add(trace::Action::DestroyTextureView(view.info.id()));
-                    }
-
-                    unsafe {
-                        use hal::Device;
-                        self.device.raw().destroy_texture_view(raw_view);
-                    }
-                }
-            }
+            deferred.push(DeferredDestroy::TextureView(view));
         }
+        for bind_group in self.bind_groups.drain(..) {
+            deferred.push(DeferredDestroy::BindGroup(bind_group));
+        }
+        drop(deferred);
+
         if let Some(raw) = self.raw.take() {
             resource_log!("Destroy raw Texture (destroyed) {:?}", self.label());
 
@@ -1155,7 +1127,7 @@ pub enum CreateTextureError {
     InvalidMultisampledStorageBinding,
     #[error("Format {0:?} does not support multisampling")]
     InvalidMultisampledFormat(wgt::TextureFormat),
-    #[error("Sample count {0} is not supported by format {1:?} on this device. The WebGPU spec guarentees {2:?} samples are supported by this format. With the TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES feature your device supports {3:?}.")]
+    #[error("Sample count {0} is not supported by format {1:?} on this device. The WebGPU spec guarantees {2:?} samples are supported by this format. With the TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES feature your device supports {3:?}.")]
     InvalidSampleCount(u32, wgt::TextureFormat, Vec<u32>, Vec<u32>),
     #[error("Multisampled textures must have RENDER_ATTACHMENT usage")]
     MultisampledNotRenderAttachment,

@@ -69,7 +69,7 @@ pub enum TransferError {
         dimension: TextureErrorDimension,
         side: CopySide,
     },
-    #[error("Unable to select texture aspect {aspect:?} from fromat {format:?}")]
+    #[error("Unable to select texture aspect {aspect:?} from format {format:?}")]
     InvalidTextureAspect {
         format: wgt::TextureFormat,
         aspect: wgt::TextureAspect,

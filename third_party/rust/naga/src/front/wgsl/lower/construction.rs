@@ -167,7 +167,7 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 | Constructor::PartialArray => {
                     
                     
-                    return Err(Error::TypeNotInferrable(ty_span));
+                    return Err(Error::TypeNotInferable(ty_span));
                 }
             },
 
