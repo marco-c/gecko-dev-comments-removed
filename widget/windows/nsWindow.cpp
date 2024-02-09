@@ -8210,6 +8210,19 @@ void nsWindow::PickerClosed() {
   NS_ASSERTION(mPickerDisplayCount > 0, "mPickerDisplayCount out of sync!");
   if (!mPickerDisplayCount) return;
   mPickerDisplayCount--;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mPickerDisplayCount) {
+    ::EnableWindow(::GetAncestor(GetWindowHandle(), GA_ROOT), TRUE);
+  }
+
   if (!mPickerDisplayCount && mDestroyCalled) {
     Destroy();
   }
