@@ -115,6 +115,16 @@ class NSSSocketControl final : public CommonSocketControl {
     return mEchExtensionStatus;
   }
 
+  void WillSendXyberShare() {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mSentXyberShare = true;
+  }
+
+  bool SentXyberShare() {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    return mSentXyberShare;
+  }
+
   bool GetJoined() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mJoined;
@@ -285,6 +295,7 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mIsFullHandshake;
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  
+  bool mSentXyberShare;
 
   
   
