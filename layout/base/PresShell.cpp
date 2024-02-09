@@ -13,6 +13,7 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/PerformanceMainThread.h"
+#include "mozilla/dom/HTMLAreaElement.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
@@ -1481,6 +1482,14 @@ bool PresShell::FixUpFocus() {
       Document::IncludeChromeOnly::Yes);
   if (!currentFocus) {
     return false;
+  }
+
+  
+  
+  if (auto* area = HTMLAreaElement::FromNode(currentFocus)) {
+    if (nsFocusManager::IsAreaElementFocusable(*area)) {
+      return false;
+    }
   }
 
   nsIFrame* f = currentFocus->GetPrimaryFrame();

@@ -26,6 +26,7 @@ namespace mozilla {
 class PresShell;
 namespace dom {
 class Element;
+class HTMLAreaElement;
 struct FocusOptions;
 class BrowserParent;
 class ContentChild;
@@ -866,6 +867,10 @@ class nsFocusManager final : public nsIFocusManager,
   
   static mozilla::dom::Element* GetTheFocusableArea(
       mozilla::dom::Element* aTarget, uint32_t aFlags);
+
+  
+  
+  static bool IsAreaElementFocusable(mozilla::dom::HTMLAreaElement& aArea);
 
  private:
   
