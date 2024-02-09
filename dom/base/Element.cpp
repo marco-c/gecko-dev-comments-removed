@@ -680,20 +680,23 @@ nsIScrollableFrame* Element::GetScrollFrame(nsIFrame** aFrame,
   Document* doc = OwnerDoc();
   
   
-  bool isScrollingElement = doc->IsScrollingElement(this);
-  
-  
-  if (aFrame) {
-    *aFrame = GetPrimaryFrame(FlushType::None);
-  }
-
+  const bool isScrollingElement = doc->IsScrollingElement(this);
   if (isScrollingElement) {
     
     if (PresShell* presShell = doc->GetPresShell()) {
-      return presShell->GetRootScrollFrameAsScrollable();
+      if ((frame = presShell->GetRootScrollFrame())) {
+        if (aFrame) {
+          *aFrame = frame;
+        }
+        return do_QueryFrame(frame);
+      }
     }
   }
-
+  if (aFrame) {
+    
+    
+    *aFrame = GetPrimaryFrame(FlushType::None);
+  }
   return nullptr;
 }
 
