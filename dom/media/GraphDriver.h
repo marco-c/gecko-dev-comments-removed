@@ -690,6 +690,9 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   AudioCallbackBufferWrapper<AudioDataValue> mBuffer;
   
+  
+  RefPtr<CubebUtils::CubebHandle> mCubeb;
+  
 
   nsAutoRef<cubeb_stream> mAudioStream;
   
