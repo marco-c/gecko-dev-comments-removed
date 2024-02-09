@@ -26,9 +26,12 @@ void ClearKeyCDM::Initialize(bool aAllowDistinctiveIdentifier,
 void ClearKeyCDM::GetStatusForPolicy(uint32_t aPromiseId,
                                      const Policy& aPolicy) {
   
-  
-  
-  assert(false);
+  const cdm::HdcpVersion kDeviceHdcpVersion = cdm::kHdcpVersion2_0;
+  if (aPolicy.min_hdcp_version <= kDeviceHdcpVersion) {
+    mHost->OnResolveKeyStatusPromise(aPromiseId, KeyStatus::kUsable);
+  } else {
+    mHost->OnResolveKeyStatusPromise(aPromiseId, KeyStatus::kOutputRestricted);
+  }
 }
 void ClearKeyCDM::SetServerCertificate(uint32_t aPromiseId,
                                        const uint8_t* aServerCertificateData,
