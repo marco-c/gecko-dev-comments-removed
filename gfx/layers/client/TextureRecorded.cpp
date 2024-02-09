@@ -5,6 +5,7 @@
 
 
 #include "TextureRecorded.h"
+#include "mozilla/gfx/DrawTargetRecording.h"
 #include "mozilla/layers/CompositableForwarder.h"
 
 #include "RecordedCanvasEventImpl.h"
@@ -30,6 +31,8 @@ RecordedTextureData::RecordedTextureData(
 RecordedTextureData::~RecordedTextureData() {
   
   
+  mSnapshot = nullptr;
+  mSnapshotWrapper = nullptr;
   mDT = nullptr;
   mCanvasChild->CleanupTexture(mTextureId);
   mCanvasChild->RecordEvent(RecordedTextureDestruction(
@@ -91,6 +94,7 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
 void RecordedTextureData::Unlock() {
   if ((mLockedMode == OpenMode::OPEN_READ_WRITE) &&
       mCanvasChild->ShouldCacheDataSurface()) {
+    mSnapshotWrapper = nullptr;
     mSnapshot = mDT->Snapshot();
     mDT->DetachAllSnapshots();
     mCanvasChild->RecordEvent(RecordedCacheDataSurface(mSnapshot.get()));
@@ -102,10 +106,12 @@ void RecordedTextureData::Unlock() {
 }
 
 already_AddRefed<gfx::DrawTarget> RecordedTextureData::BorrowDrawTarget() {
-  mSnapshot = nullptr;
-  if (RefPtr<gfx::SourceSurface> wrapper = do_AddRef(mSnapshotWrapper)) {
-    mCanvasChild->DetachSurface(wrapper);
-    mSnapshotWrapper = nullptr;
+  if (mLockedMode & OpenMode::OPEN_WRITE) {
+    mSnapshot = nullptr;
+    if (mSnapshotWrapper) {
+      mCanvasChild->DetachSurface(mSnapshotWrapper);
+      mSnapshotWrapper = nullptr;
+    }
   }
   return do_AddRef(mDT);
 }
@@ -115,14 +121,15 @@ void RecordedTextureData::EndDraw() {
   MOZ_ASSERT(mLockedMode == OpenMode::OPEN_READ_WRITE);
 
   if (mCanvasChild->ShouldCacheDataSurface()) {
+    mSnapshotWrapper = nullptr;
     mSnapshot = mDT->Snapshot();
     mCanvasChild->RecordEvent(RecordedCacheDataSurface(mSnapshot.get()));
   }
 }
 
 already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
-  if (RefPtr<gfx::SourceSurface> wrapper = do_AddRef(mSnapshotWrapper)) {
-    return wrapper.forget();
+  if (mSnapshotWrapper && (!mDT || !mDT->IsDirty())) {
+    return do_AddRef(mSnapshotWrapper);
   }
 
   
@@ -130,6 +137,8 @@ already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
   if (!mDT) {
     return nullptr;
   }
+
+  mDT->MarkClean();
 
   RefPtr<gfx::SourceSurface> wrapper = mCanvasChild->WrapSurface(
       mSnapshot ? mSnapshot : mDT->Snapshot(), mTextureId);
@@ -140,8 +149,8 @@ already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
 void RecordedTextureData::ReturnSnapshot(
     already_AddRefed<gfx::SourceSurface> aSnapshot) {
   RefPtr<gfx::SourceSurface> snapshot = aSnapshot;
-  if (RefPtr<gfx::SourceSurface> wrapper = do_AddRef(mSnapshotWrapper)) {
-    mCanvasChild->DetachSurface(wrapper);
+  if (mSnapshotWrapper) {
+    mCanvasChild->DetachSurface(mSnapshotWrapper);
   }
 }
 
