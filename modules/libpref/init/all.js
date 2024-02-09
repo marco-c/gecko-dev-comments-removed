@@ -3878,6 +3878,10 @@ pref("devtools.errorconsole.deprecation_warnings", true);
 pref("devtools.debugger.features.windowless-service-workers", false);
 
 
+
+pref("devtools.client-side-throttling.enable", false);
+
+
 pref("devtools.debugger.log", false);
 pref("devtools.debugger.log.verbose", false);
 

@@ -22,6 +22,9 @@
 
 
 
+
+
+
 function throttle(func, wait, scope) {
   let args, result;
   let timeout = null;
@@ -39,20 +42,32 @@ function throttle(func, wait, scope) {
     const remaining = wait - (now - previous);
     args = arguments;
     if (remaining <= 0) {
-      clearTimeout(timeout);
+      if (!isWorker) {
+        clearTimeout(timeout);
+      }
       timeout = null;
       previous = now;
       result = func.apply(scope, args);
       args = null;
     } else if (!timeout) {
-      timeout = setTimeout(later, remaining);
+      
+      
+      
+      if (isWorker) {
+        setImmediate(later);
+        timeout = true;
+      } else {
+        timeout = setTimeout(later, remaining);
+      }
     }
     return result;
   };
 
   function cancel() {
     if (timeout) {
-      clearTimeout(timeout);
+      if (!isWorker) {
+        clearTimeout(timeout);
+      }
       timeout = null;
     }
     previous = 0;
