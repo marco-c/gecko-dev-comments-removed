@@ -1300,6 +1300,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eARIAReadonlyOrEditable
   },
   { 
+    nsGkAtoms::time,
+    roles::TIME,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kNoReqStates
+  },
+  { 
     nsGkAtoms::timer,
     roles::NOTHING,
     kUseNativeRole,
