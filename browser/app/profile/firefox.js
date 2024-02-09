@@ -744,6 +744,10 @@ pref("browser.search.serpEventTelemetryCategorization.enabled", false);
 
 
 
+pref("browser.search.widget.removeAfterDaysUnused", 120);
+
+
+
 
 pref("browser.shopping.experience2023.enabled", false);
 
