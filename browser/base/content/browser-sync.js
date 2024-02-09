@@ -832,20 +832,6 @@ var gSync = {
     let fxaStatus = document.documentElement.getAttribute("fxastatus");
 
     if (fxaStatus == "not_configured") {
-      let extraParams = {};
-      let fxaButtonVisibilityExperiment =
-        ExperimentAPI.getExperimentMetaData({
-          featureId: "fxaButtonVisibility",
-        }) ??
-        ExperimentAPI.getRolloutMetaData({
-          featureId: "fxaButtonVisibility",
-        });
-      if (fxaButtonVisibilityExperiment) {
-        extraParams = {
-          entrypoint_experiment: fxaButtonVisibilityExperiment.slug,
-          entrypoint_variation: fxaButtonVisibilityExperiment.branch.slug,
-        };
-      }
       
       
       
@@ -854,11 +840,8 @@ var gSync = {
         this.updateCTAPanel();
         PanelUI.showSubView("PanelUI-fxa", anchor, aEvent);
       } else {
-        let panel =
-          anchor.id == "appMenu-fxa-label2"
-            ? PanelMultiView.getViewNode(document, "PanelUI-fxa")
-            : undefined;
-        this.openFxAEmailFirstPageFromFxaMenu(panel, extraParams);
+        this.emitFxaToolbarTelemetry("toolbar_icon", anchor);
+        openTrustedLinkIn("about:preferences#sync", "tab");
         PanelUI.hide();
       }
       return;
