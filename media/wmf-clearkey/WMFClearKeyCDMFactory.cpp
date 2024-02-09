@@ -4,6 +4,8 @@
 
 #include "WMFClearKeyCDMFactory.h"
 
+#include <string>
+
 #include <Mferror.h>
 
 #include "WMFClearKeyCDMAccess.h"
@@ -15,11 +17,36 @@ using Microsoft::WRL::MakeAndInitialize;
 
 ActivatableClass(WMFClearKeyCDMFactory);
 
+bool isRequiringHDCP22OrAbove(LPCWSTR aType) {
+  if (aType == nullptr || *aType == L'\0') {
+    return false;
+  }
+
+  
+  
+  
+  
+  std::wstring wstr(aType);
+  std::string hdcpStr(wstr.begin(), wstr.end());
+  return wstr.find(L"hdcp=2") != std::string::npos;
+}
+
 STDMETHODIMP_(BOOL)
 WMFClearKeyCDMFactory::IsTypeSupported(_In_ LPCWSTR aKeySystem,
                                        _In_opt_ LPCWSTR aContentType) {
   
   
+
+  bool needHDCP22OrAbove = isRequiringHDCP22OrAbove(aContentType);
+  ENTRY_LOG_ARGS("Need-HDCP2.2+=%d", needHDCP22OrAbove);
+
+  
+  
+  
+  
+  if (needHDCP22OrAbove) {
+    return false;
+  }
   return true;
 }
 
