@@ -800,12 +800,20 @@ void MediaKeys::GetSessionsInfo(nsString& sessionsInfo) {
   }
 }
 
+
 already_AddRefed<Promise> MediaKeys::GetStatusForPolicy(
     const MediaKeysPolicy& aPolicy, ErrorResult& aRv) {
   RefPtr<DetailedPromise> promise(
       MakePromise(aRv, "MediaKeys::GetStatusForPolicy()"_ns));
   if (aRv.Failed()) {
     return nullptr;
+  }
+
+  
+  
+  if (!aPolicy.mMinHdcpVersion.WasPassed()) {
+    promise->MaybeRejectWithTypeError("No minHdcpVersion in MediaKeysPolicy");
+    return promise.forget();
   }
 
   
@@ -828,8 +836,9 @@ already_AddRefed<Promise> MediaKeys::GetStatusForPolicy(
   }
 
   EME_LOG("GetStatusForPolicy minHdcpVersion = %s.",
-          NS_ConvertUTF16toUTF8(aPolicy.mMinHdcpVersion).get());
-  mProxy->GetStatusForPolicy(StorePromise(promise), aPolicy.mMinHdcpVersion);
+          HDCPVersionValues::GetString(aPolicy.mMinHdcpVersion.Value()).data());
+  mProxy->GetStatusForPolicy(StorePromise(promise),
+                             aPolicy.mMinHdcpVersion.Value());
   return promise.forget();
 }
 
