@@ -784,4 +784,10 @@ interface nsIAccessibleRole : nsISupports
 
   const unsigned long ROLE_SUPERSCRIPT = 134;
 
+  
+
+
+
+  const unsigned long ROLE_EMPHASIS = 135;
+
 };

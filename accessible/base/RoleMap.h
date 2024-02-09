@@ -1510,3 +1510,15 @@ ROLE(SUPERSCRIPT,
      java::SessionAccessibility::CLASSNAME_VIEW,
      eNameFromSubtreeIfReqRule)
 
+ROLE(EMPHASIS,
+     "emphasis",
+     nsGkAtoms::emphasis,
+     ATK_ROLE_STATIC,
+     NSAccessibilityGroupRole,
+     @"AXEmphasisStyleGroup",
+     ROLE_SYSTEM_GROUPING,
+     IA2_ROLE_TEXT_FRAME,
+     java::SessionAccessibility::CLASSNAME_VIEW,
+     eNameFromSubtreeIfReqRule)
+
+
