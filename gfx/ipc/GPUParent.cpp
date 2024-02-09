@@ -116,7 +116,8 @@ static void ReportHardwareMediaCodecSupportIfNeeded() {
   NS_GetCurrentThread()->Dispatch(NS_NewRunnableFunction(
       "GPUParent:ReportHardwareMediaCodecSupportIfNeeded", []() {
         
-        if (!gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+        if (!gfx::gfxVars::IsInitialized() ||
+            !gfx::gfxVars::CanUseHardwareVideoDecoding()) {
           return;
         }
         sReported = true;
