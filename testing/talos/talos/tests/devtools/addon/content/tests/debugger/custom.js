@@ -27,6 +27,7 @@ const {
   step,
   waitForSource,
   waitForText,
+  evalInFrame,
   waitUntil,
   addBreakpoint,
   waitForPaused,
@@ -58,6 +59,10 @@ module.exports = async function () {
 
   dump("Creating context\n");
   const dbg = await createContext(panel);
+
+  
+  
+  await testAddingSources(dbg, tab, toolbox);
 
   
   await selectSource(dbg, EXPECTED.file);
@@ -313,4 +318,45 @@ async function testPrettyPrint(dbg, toolbox) {
   await dbg.actions.closeTabs(sources);
 
   await garbageCollect();
+}
+
+async function testAddingSources(dbg, tab, toolbox) {
+  
+  
+  await selectSource(dbg, "js/testfile.js?id=0");
+  await selectSource(dbg, "js/subfolder/testsubfolder.js");
+
+  
+  
+  
+  toolbox.commands.resourceCommand.throttlingDisabled = true;
+  const test = runTest("custom.jsdebugger.adding-sources.DAMP");
+
+  for (let i = 0; i < 15; i++) {
+    
+    const sourceFilename =
+      (i % 2 == 0 ? "testfile.js" : "testsubfolder.js") + "?dynamic-" + i;
+    const sourcePath =
+      i % 2 == 0 ? sourceFilename : "subfolder/" + sourceFilename;
+
+    await evalInFrame(
+      tab,
+      `
+      const script = document.createElement("script");
+      script.src = "./js/${sourcePath}";
+      document.body.appendChild(script);
+    `
+    );
+    dump(`Wait for new source '${sourceFilename}'\n`);
+    
+    await waitUntil(() => findSource(dbg, sourceFilename));
+    await waitUntil(() => {
+      return Array.from(
+        dbg.win.document.querySelectorAll(".sources-list .tree-node")
+      ).some(e => e.textContent.includes(sourceFilename));
+    });
+  }
+
+  test.done();
+  toolbox.commands.resourceCommand.throttlingDisabled = false;
 }

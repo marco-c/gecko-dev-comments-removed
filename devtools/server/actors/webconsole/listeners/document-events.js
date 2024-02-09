@@ -122,16 +122,6 @@ DocumentEventsListener.prototype = {
       isFrameSwitching,
     });
 
-    
-    
-    
-    
-    if (window.docShell.currentDocumentChannel.loadInfo.loadErrorPage) {
-      this.onContentLoaded({ target: window.document }, isFrameSwitching);
-      this.onLoad({ target: window.document }, isFrameSwitching);
-      return;
-    }
-
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
       

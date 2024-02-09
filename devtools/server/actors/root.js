@@ -137,8 +137,6 @@ class RootActor extends Actor {
         : true,
       
       supportsReleaseActors: true,
-      
-      throttledResources: true,
     };
   }
 

@@ -64,23 +64,8 @@ class ResourceCommand {
     
     this._offTargetFrontListeners = new Map();
 
-    
-    
-    
-    const throttleDelay =
-      commands.client.mainRoot.traits.throttledResources &&
-      !Services.prefs.getBoolPref(
-        "devtools.client-side-throttling.enable",
-        false
-      )
-        ? 0
-        : 100;
-
     this._notifyWatchers = this._notifyWatchers.bind(this);
-    this._throttledNotifyWatchers = throttle(
-      this._notifyWatchers,
-      throttleDelay
-    );
+    this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
   }
 
   get watcherFront() {

@@ -6,13 +6,10 @@
 
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
-  TYPES: { DOCUMENT_EVENT, NETWORK_EVENT_STACKTRACE, CONSOLE_MESSAGE },
+  TYPES,
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
 const Targets = require("devtools/server/actors/targets/index");
-
-const { throttle } = require("resource://devtools/shared/throttle.js");
-const RESOURCES_THROTTLING_DELAY = 100;
 
 loader.lazyRequireGetter(
   this,
@@ -30,23 +27,7 @@ class BaseTargetActor extends Actor {
 
 
     this.targetType = targetType;
-
-    
-    
-    this.#throttledResources = {
-      available: [],
-      updated: [],
-      destroyed: [],
-    };
-
-    this.#throttledEmitResources = throttle(
-      this.emitResources.bind(this),
-      RESOURCES_THROTTLING_DELAY
-    );
   }
-
-  #throttledResources;
-  #throttledEmitResources;
 
   
 
@@ -100,8 +81,6 @@ class BaseTargetActor extends Actor {
 
 
 
-
-
   notifyResources(updateType, resources) {
     if (resources.length === 0 || this.isDestroyed()) {
       
@@ -113,48 +92,7 @@ class BaseTargetActor extends Actor {
       this.overrideResourceBrowsingContextForWebExtension(resources);
     }
 
-    const shouldEmitSynchronously = resources.some(
-      resource =>
-        (resource.resourceType == DOCUMENT_EVENT &&
-          resource.name == "will-navigate") ||
-        resource.resourceType == NETWORK_EVENT_STACKTRACE
-    );
-    this.#throttledResources[updateType].push.apply(
-      this.#throttledResources[updateType],
-      resources
-    );
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (shouldEmitSynchronously) {
-      this.emitResources();
-    } else {
-      this.#throttledEmitResources();
-    }
-  }
-
-  
-
-
-  emitResources() {
-    if (this.isDestroyed()) {
-      return;
-    }
-    for (const updateType of ["available", "updated", "destroyed"]) {
-      const resources = this.#throttledResources[updateType];
-      if (!resources.length) {
-        continue;
-      }
-      this.#throttledResources[updateType] = [];
-      this.emit(`resource-${updateType}-form`, resources);
-    }
+    this.emit(`resource-${updateType}-form`, resources);
   }
 
   
@@ -234,7 +172,7 @@ class BaseTargetActor extends Actor {
         if (this.isTopLevelTarget) {
           const consoleMessageWatcher = getResourceWatcher(
             this,
-            CONSOLE_MESSAGE
+            TYPES.CONSOLE_MESSAGE
           );
           if (consoleMessageWatcher) {
             consoleMessageWatcher.emitMessages([
