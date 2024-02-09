@@ -50,6 +50,7 @@
 #include "mozilla/dom/ImageBitmapSource.h"
 #include "mozilla/UniquePtr.h"
 #include "nsThreadUtils.h"
+#include "mozilla/MozPromise.h"
 
 class nsIArray;
 class nsIBaseWindow;
@@ -1106,7 +1107,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  void StorageAccessPermissionChanged();
+  RefPtr<mozilla::GenericPromise> StorageAccessPermissionChanged(bool aGranted);
 
  protected:
   static void NotifyDOMWindowDestroyed(nsGlobalWindowInner* aWindow);
