@@ -1145,7 +1145,7 @@ extern "C" fn C_WaitForSlotEvent(
 
 
 
-static mut FUNCTION_LIST: CK_FUNCTION_LIST = CK_FUNCTION_LIST {
+static FUNCTION_LIST: CK_FUNCTION_LIST = CK_FUNCTION_LIST {
     version: CK_VERSION { major: 2, minor: 2 },
     C_Initialize: Some(C_Initialize),
     C_Finalize: Some(C_Finalize),
@@ -1227,7 +1227,9 @@ pub unsafe extern "C" fn C_GetFunctionList(ppFunctionList: CK_FUNCTION_LIST_PTR_
     if ppFunctionList.is_null() {
         return CKR_ARGUMENTS_BAD;
     }
-    *ppFunctionList = &mut FUNCTION_LIST;
+    
+    
+    *ppFunctionList = std::ptr::addr_of!(FUNCTION_LIST) as CK_FUNCTION_LIST_PTR;
     CKR_OK
 }
 
