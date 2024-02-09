@@ -158,4 +158,9 @@ interface nsICookie : nsISupports {
 
 
     readonly attribute nsICookie_schemeType schemeMap;
+
+    
+
+
+    readonly attribute boolean isPartitioned;
 };
