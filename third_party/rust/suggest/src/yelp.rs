@@ -48,7 +48,7 @@ const MAX_QUERY_LENGTH: usize = 150;
 const MAX_MODIFIER_WORDS_NUMBER: usize = 2;
 
 
-const PREFIX_MATCH_THRESHOLD: usize = 6;
+const SUBJECT_PREFIX_MATCH_THRESHOLD: usize = 2;
 
 impl<'a> SuggestDao<'a> {
     
@@ -116,6 +116,15 @@ impl<'a> SuggestDao<'a> {
             )?;
         }
 
+        self.scope.err_if_interrupted()?;
+        self.conn.execute_cached(
+            "INSERT INTO yelp_custom_details(record_id, icon_id) VALUES(:record_id, :icon_id)",
+            named_params! {
+                ":record_id": record_id.as_str(),
+                ":icon_id": suggestion.icon_id
+            },
+        )?;
+
         Ok(())
     }
 
@@ -134,6 +143,7 @@ impl<'a> SuggestDao<'a> {
             let Some((subject, subject_exact_match)) = self.find_subject(query_string)? else {
                 return Ok(vec![]);
             };
+            let icon = self.fetch_icon()?;
             let builder = SuggestionBuilder {
                 subject: &subject,
                 subject_exact_match,
@@ -142,14 +152,13 @@ impl<'a> SuggestDao<'a> {
                 location_sign: None,
                 location: None,
                 need_location: false,
-                pre_yelp_modifier: None,
-                post_yelp_modifier: None,
+                icon,
             };
             return Ok(vec![builder.into()]);
         }
 
         
-        let (query_without_yelp_modifiers, pre_yelp_modifier, post_yelp_modifier) =
+        let (query_without_yelp_modifiers, _, _) =
             self.find_modifiers(query_string, Modifier::Yelp, Modifier::Yelp)?;
 
         
@@ -173,6 +182,8 @@ impl<'a> SuggestDao<'a> {
         let Some((subject, subject_exact_match)) = self.find_subject(&subject_candidate)? else {
             return Ok(vec![]);
         };
+
+        let icon = self.fetch_icon()?;
         let builder = SuggestionBuilder {
             subject: &subject,
             subject_exact_match,
@@ -181,10 +192,34 @@ impl<'a> SuggestDao<'a> {
             location_sign,
             location,
             need_location,
-            pre_yelp_modifier,
-            post_yelp_modifier,
+            icon,
         };
         Ok(vec![builder.into()])
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn fetch_icon(&self) -> Result<Option<Vec<u8>>> {
+        Ok(self.conn.try_query_one(
+            r#"
+            SELECT
+              i.data
+            FROM
+              yelp_custom_details y
+            JOIN
+              icons i
+              ON y.icon_id = i.id
+            LIMIT
+              1
+            "#,
+            (),
+            true,
+        )?)
     }
 
     
@@ -314,7 +349,7 @@ impl<'a> SuggestDao<'a> {
 
         
         
-        if candidate.len() < PREFIX_MATCH_THRESHOLD {
+        if candidate.len() < SUBJECT_PREFIX_MATCH_THRESHOLD {
             return Ok(if self.is_subject(candidate)? {
                 Some((candidate.to_string(), true))
             } else {
@@ -325,7 +360,11 @@ impl<'a> SuggestDao<'a> {
         
         Ok(
             match self.conn.query_row_and_then_cachable(
-                "SELECT keyword FROM yelp_subjects WHERE keyword BETWEEN :candidate AND :candidate || x'FFFF' ORDER BY LENGTH(keyword) ASC LIMIT 1",
+                "SELECT keyword
+                 FROM yelp_subjects
+                 WHERE keyword BETWEEN :candidate AND :candidate || x'FFFF'
+                 ORDER BY LENGTH(keyword) ASC, keyword ASC
+                 LIMIT 1",
                 named_params! {
                     ":candidate": candidate.to_lowercase(),
                 },
@@ -334,10 +373,13 @@ impl<'a> SuggestDao<'a> {
             ) {
                 Ok(keyword) => {
                     debug_assert!(candidate.len() <= keyword.len());
-                    Some((format!("{}{}", candidate, &keyword[candidate.len()..]), candidate.len() == keyword.len()))
-                },
-                Err(_) => None
-            }
+                    Some((
+                        format!("{}{}", candidate, &keyword[candidate.len()..]),
+                        candidate.len() == keyword.len(),
+                    ))
+                }
+                Err(_) => None,
+            },
         )
     }
 
@@ -385,8 +427,7 @@ struct SuggestionBuilder<'a> {
     location_sign: Option<String>,
     location: Option<String>,
     need_location: bool,
-    pre_yelp_modifier: Option<String>,
-    post_yelp_modifier: Option<String>,
+    icon: Option<Vec<u8>>,
 }
 
 impl<'a> From<SuggestionBuilder<'a>> for Suggestion {
@@ -419,13 +460,11 @@ impl<'a> From<SuggestionBuilder<'a>> for Suggestion {
         url.push_str(&parameters.finish());
 
         let title = [
-            builder.pre_yelp_modifier.as_deref(),
             builder.pre_modifier.as_deref(),
             Some(builder.subject),
             builder.post_modifier.as_deref(),
             builder.location_sign.as_deref(),
             builder.location.as_deref(),
-            builder.post_yelp_modifier.as_deref(),
         ]
         .iter()
         .flatten()
@@ -436,7 +475,8 @@ impl<'a> From<SuggestionBuilder<'a>> for Suggestion {
         Suggestion::Yelp {
             url,
             title,
-            is_top_pick: builder.subject_exact_match,
+            subject_exact_match: builder.subject_exact_match,
+            icon: builder.icon,
         }
     }
 }

@@ -17,6 +17,11 @@ const TIMESTAMP_TEMPLATE: &str = "%YYYYMMDDHH%";
 const TIMESTAMP_LENGTH: usize = 10;
 
 
+pub(crate) enum AmpSuggestionType {
+    Mobile,
+    Desktop,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Suggestion {
     Amp {
@@ -58,7 +63,8 @@ pub enum Suggestion {
     Yelp {
         url: String,
         title: String,
-        is_top_pick: bool,
+        subject_exact_match: bool,
+        icon: Option<Vec<u8>>,
     },
     Mdn {
         title: String,

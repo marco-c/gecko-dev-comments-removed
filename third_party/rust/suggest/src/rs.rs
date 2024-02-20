@@ -98,6 +98,8 @@ pub(crate) enum SuggestRecord {
     Weather(DownloadedWeatherData),
     #[serde(rename = "configuration")]
     GlobalConfig(DownloadedGlobalConfig),
+    #[serde(rename = "amp-mobile-suggestions")]
+    AmpMobile,
 }
 
 
@@ -294,6 +296,8 @@ pub(crate) struct DownloadedYelpSuggestion {
     pub location_signs: Vec<DownloadedYelpLocationSign>,
     #[serde(rename = "yelpModifiers")]
     pub yelp_modifiers: Vec<String>,
+    #[serde(rename = "icon")]
+    pub icon_id: String,
 }
 
 
