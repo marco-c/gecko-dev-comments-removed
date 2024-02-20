@@ -7,9 +7,13 @@
 #ifndef DOM_QUOTA_DIRECTORYLOCK_H_
 #define DOM_QUOTA_DIRECTORYLOCK_H_
 
+#include "nsTArrayForwardDeclare.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/PersistenceType.h"
+
+template <class T>
+class RefPtr;
 
 namespace mozilla::dom::quota {
 
@@ -25,6 +29,10 @@ class NS_NO_VTABLE DirectoryLock {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   virtual int64_t Id() const = 0;
+
+  virtual bool Acquired() const = 0;
+
+  virtual nsTArray<RefPtr<DirectoryLock>> LocksMustWaitFor() const = 0;
 
   
   
