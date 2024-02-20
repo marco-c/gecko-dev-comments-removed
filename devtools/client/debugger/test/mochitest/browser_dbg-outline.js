@@ -6,6 +6,41 @@
 
 "use strict";
 
+
+
+add_task(async function () {
+  const dbg = await initDebugger("doc-scripts.html", "simple1.js");
+  openOutlinePanel(dbg, false);
+  is(
+    findAllElements(dbg, "outlineItems").length,
+    0,
+    " There are no outline items when no source is selected"
+  );
+
+  await selectSource(dbg, "simple1.js", 1);
+
+  info("Wait for all the outline list to load");
+  await waitForElementWithSelector(dbg, ".outline-list");
+
+  assertOutlineItems(dbg, [
+    "λmain()",
+    "λdoEval()",
+    "λevaledFunc()",
+    "λdoNamedEval()",
+    
+    "λevaledFunc()",
+    "class MyClass",
+    "λconstructor(a, b)",
+    "λtest()",
+    "λ#privateFunc(a, b)",
+    "class Klass",
+    "λconstructor()",
+    "λtest()",
+  ]);
+});
+
+
+
 add_task(async function () {
   const dbg = await initDebugger("doc-scripts.html", "simple1.js");
 
