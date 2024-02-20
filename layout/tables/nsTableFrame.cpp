@@ -2702,14 +2702,11 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
       rowGroups = OrderedRowGroups(&thead, &tfoot);
     }
   }
-  
-  
   bool allowRepeatedFooter = false;
   for (size_t childX = 0; childX < rowGroups.Length(); childX++) {
     nsTableRowGroupFrame* kidFrame = rowGroups[childX];
     const nscoord rowSpacing =
         GetRowSpacing(kidFrame->GetStartRowIndex() + kidFrame->GetRowCount());
-    
     
     if (reflowAllKids || kidFrame->IsSubtreeDirty() ||
         (aReflowInput.mReflowInput.mFlags.mSpecialBSizeReflow &&
@@ -2729,6 +2726,9 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
 
       LogicalSize kidAvailSize = aReflowInput.AvailableSize();
       allowRepeatedFooter = false;
+
+      
+      
       if (isPaginated && (NS_UNCONSTRAINEDSIZE != kidAvailSize.BSize(wm))) {
         if (kidFrame != thead && kidFrame != tfoot && tfoot &&
             tfoot->IsRepeatable()) {
