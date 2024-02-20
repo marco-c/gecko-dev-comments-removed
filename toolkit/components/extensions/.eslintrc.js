@@ -136,9 +136,6 @@ module.exports = {
     "no-extend-native": "error",
 
     
-    "no-fallthrough": "error",
-
-    
     "no-inline-comments": "off",
 
     

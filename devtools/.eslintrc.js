@@ -245,8 +245,6 @@ module.exports = {
     
     "no-extend-native": "error",
     
-    "no-fallthrough": "error",
-    
     "no-multi-str": "error",
     
     "no-proto": "error",

@@ -31,9 +31,6 @@ module.exports = {
     "no-console": ["error", { allow: ["error", "info", "trace", "warn"] }],
 
     
-    "no-fallthrough": "error",
-
-    
     "no-multi-str": "error",
 
     

@@ -221,14 +221,12 @@ module.exports = {
     "no-console": "off",
 
     
+    
     "no-constant-binary-expression": "error",
 
     
     
     "no-constant-condition": "off",
-
-    
-    "no-dupe-keys": "error",
 
     
     "no-else-return": "error",
@@ -256,9 +254,6 @@ module.exports = {
     ],
 
     
-    "no-global-assign": "error",
-
-    
     "no-implied-eval": "error",
 
     
@@ -276,9 +271,6 @@ module.exports = {
 
     
     "no-lonely-if": "error",
-
-    
-    "no-loss-of-precision": "error",
 
     
     "no-nested-ternary": "error",
@@ -307,9 +299,6 @@ module.exports = {
 
     
     
-
-    
-    "no-shadow-restricted-names": "error",
 
     
     
@@ -348,9 +337,6 @@ module.exports = {
 
     
     "no-useless-return": "error",
-
-    
-    "no-with": "error",
 
     
     "object-shorthand": ["error", "always", { avoidQuotes: true }],

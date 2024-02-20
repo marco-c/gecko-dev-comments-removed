@@ -150,8 +150,6 @@ module.exports = {
     
     "no-dupe-args": 2,
     
-    "no-dupe-keys": 2,
-    
     "no-duplicate-case": 2,
     
     
@@ -179,8 +177,6 @@ module.exports = {
     "no-extra-boolean-cast": 2,
     
     "no-extra-strict": 0,
-    
-    "no-fallthrough": 2,
     
     "no-inline-comments": 2,
     
@@ -239,8 +235,6 @@ module.exports = {
     
     "no-shadow": 2,
     
-    "no-shadow-restricted-names": 2,
-    
     
     
     "no-sparse-arrays": 2,
@@ -273,8 +267,6 @@ module.exports = {
     "no-var": 0,
     
     "no-warning-comments": 0,
-    
-    "no-with": 2,
     
     
     

@@ -32,20 +32,10 @@ module.exports = {
     "no-extend-native": "error",
 
     
-    
-    "no-fallthrough": "error",
-
-    
-    "no-global-assign": "error",
-
-    
     "no-return-assign": ["error", "always"],
 
     
     "no-template-curly-in-string": "error",
-
-    
-    "no-this-before-super": "error",
 
     
     "no-unmodified-loop-condition": "error",
