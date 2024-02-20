@@ -299,18 +299,24 @@ PlanarYCbCrData ConstructPlanarYCbCrData(const VideoInfo& aInfo,
 }
 
 
-bool VideoData::SetVideoDataToImage(PlanarYCbCrImage* aVideoImage,
-                                    const VideoInfo& aInfo,
-                                    const YCbCrBuffer& aBuffer,
-                                    const IntRect& aPicture, bool aCopyData) {
+MediaResult VideoData::SetVideoDataToImage(PlanarYCbCrImage* aVideoImage,
+                                           const VideoInfo& aInfo,
+                                           const YCbCrBuffer& aBuffer,
+                                           const IntRect& aPicture,
+                                           bool aCopyData) {
   MOZ_ASSERT(aVideoImage);
 
   PlanarYCbCrData data = ConstructPlanarYCbCrData(aInfo, aBuffer, aPicture);
 
   if (aCopyData) {
-    return aVideoImage->CopyData(data);
+    
+    
+    return MediaResult(
+        aVideoImage->CopyData(data) ? NS_OK : NS_ERROR_OUT_OF_MEMORY,
+        RESULT_DETAIL("Failed to copy image data"));
   }
-  return aVideoImage->AdoptData(data);
+  return MediaResult(aVideoImage->AdoptData(data) ? NS_OK : NS_ERROR_UNEXPECTED,
+                     RESULT_DETAIL("Failed to adopt image data"));
 }
 
 
@@ -367,12 +373,10 @@ Result<already_AddRefed<VideoData>, MediaResult> VideoData::CreateAndCopyData(
   PlanarYCbCrImage* videoImage = v->mImage->AsPlanarYCbCrImage();
   MOZ_ASSERT(videoImage);
 
-  if (!VideoData::SetVideoDataToImage(videoImage, aInfo, aBuffer, aPicture,
-                                      true )) {
-    
-    
-    return Err(MediaResult(NS_ERROR_OUT_OF_MEMORY,
-                           "Failed to create a PlanarYCbCrImage"));
+  if (MediaResult r = VideoData::SetVideoDataToImage(
+          videoImage, aInfo, aBuffer, aPicture, true );
+      NS_FAILED(r)) {
+    return Err(r);
   }
 
   perfRecorder.Record();
