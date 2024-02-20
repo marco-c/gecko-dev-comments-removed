@@ -149,22 +149,19 @@ function run_generic_sensor_iframe_tests(sensorData, readingData) {
 
     
     
+    await test_driver.update_virtual_sensor(testDriverName, reading);
+
+    
+    
     
     iframe.contentWindow.focus();
 
     
     
-    await send_message_to_iframe(iframe, {command: 'start_sensor'});
     sensor.start();
     await sensorWatcher.wait_for('activate');
-    assert_false(
-        await send_message_to_iframe(iframe, {command: 'has_reading'}));
-    assert_false(sensor.hasReading);
-
-    const [serializedIframeSensor] = await Promise.all([
-      iframeSensorWatcher.wait_for_reading(),
-      test_driver.update_virtual_sensor(testDriverName, reading),
-    ]);
+    await send_message_to_iframe(iframe, {command: 'start_sensor'});
+    const serializedIframeSensor = await iframeSensorWatcher.wait_for_reading();
     assert_true(await send_message_to_iframe(iframe, {command: 'has_reading'}));
     assert_false(sensor.hasReading);
 
@@ -225,25 +222,17 @@ function run_generic_sensor_iframe_tests(sensorData, readingData) {
     
     
     for (const windowObject of [window, iframe.contentWindow]) {
+      await test_driver.update_virtual_sensor(
+          testDriverName, readings.next().value);
+
       windowObject.focus();
 
       iframeSensor.start();
       sensor.start();
-      await Promise.all([
-        iframeSensorWatcher.wait_for('activate'),
-        sensorWatcher.wait_for('activate')
-      ]);
 
-      assert_false(sensor.hasReading);
-      assert_false(iframeSensor.hasReading);
-
-      
-      
-      const reading = readings.next().value;
       await Promise.all([
-        test_driver.update_virtual_sensor(testDriverName, reading),
-        iframeSensorWatcher.wait_for('reading'),
-        sensorWatcher.wait_for('reading')
+        iframeSensorWatcher.wait_for(['activate', 'reading']),
+        sensorWatcher.wait_for(['activate', 'reading'])
       ]);
 
       assert_greater_than(
