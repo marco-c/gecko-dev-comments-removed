@@ -31,7 +31,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
 
   ContentAnalysisRequest(AnalysisType aAnalysisType, nsString aString,
                          bool aStringIsFilePath, nsCString aSha256Digest,
-                         nsString aUrl, OperationType aOperationType,
+                         nsCOMPtr<nsIURI> aUrl, OperationType aOperationType,
                          dom::WindowGlobalParent* aWindowGlobalParent);
   static nsresult GetFileDigest(const nsAString& aFilePath,
                                 nsCString& aDigestString);
@@ -53,7 +53,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
 
   
   
-  nsString mUrl;
+  nsCOMPtr<nsIURI> mUrl;
 
   
   nsCString mSha256Digest;
