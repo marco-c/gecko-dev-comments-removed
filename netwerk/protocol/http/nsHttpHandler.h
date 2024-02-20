@@ -386,11 +386,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   }
 
   
-  void OnDispatchingTransaction(nsIHttpChannel* chan) {
-    NotifyObservers(chan, NS_HTTP_ON_DISPATCHING_TRANSACTION);
-  }
-
-  
   void OnExamineResponse(nsIHttpChannel* chan) {
     NotifyObservers(chan, NS_HTTP_ON_EXAMINE_RESPONSE_TOPIC);
   }
