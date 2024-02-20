@@ -813,9 +813,10 @@ class PlanarYCbCrImage : public Image {
   
 
 
-  virtual bool CreateEmptyBuffer(const Data& aData, const gfx::IntSize& aYSize,
-                                 const gfx::IntSize& aCbCrSize) {
-    return false;
+  virtual nsresult CreateEmptyBuffer(const Data& aData,
+                                     const gfx::IntSize& aYSize,
+                                     const gfx::IntSize& aCbCrSize) {
+    return NS_ERROR_NOT_IMPLEMENTED;
   }
 
   
