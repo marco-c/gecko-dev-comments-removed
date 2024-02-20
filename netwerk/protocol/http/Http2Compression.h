@@ -13,7 +13,6 @@
 #include "nsDeque.h"
 #include "nsString.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/Mutex.h"
 
 namespace mozilla {
 namespace net {
@@ -48,18 +47,10 @@ class nvFIFO {
   size_t StaticLength() const;
   void Clear();
   const nvPair* operator[](size_t index) const;
-  size_t SizeOfDynamicTable(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  private:
   uint32_t mByteCount{0};
   nsDeque<nvPair> mTable;
-
-  
-  
-  
-  
-  
-  mutable Mutex mMutex{"nvFIFO"} MOZ_UNANNOTATED;
 };
 
 class HpackDynamicTableReporter;
