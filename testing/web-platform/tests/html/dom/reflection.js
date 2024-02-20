@@ -88,6 +88,90 @@ ReflectionTests.parseInt = function(input) {
 };
 
 
+
+
+
+ReflectionTests.parseFloat = function(input) {
+    var position = 0;
+    var value = 1;
+    var divisor = 1;
+    var exponent = 1;
+    
+    while (input.length > position && /^[ \t\n\f\r]$/.test(input[position])) {
+        position++;
+    }
+    if (position >= input.length) {
+        return false;
+    }
+    if (input[position] == "-") {
+        value = -1;
+        divisor = -1;
+        position++;
+    } else if (input[position] == "+") {
+        position++;
+    }
+    if (position >= input.length) {
+        return false;
+    }
+    if (input[position] == "." && position+1 < input.length && /^[0-9]$/.test(input[position+1])) {
+        value = 0;
+        
+    } else if (!/^[0-9]$/.test(input[position])) {
+        return false;
+    } else {
+        var val = 0;
+        while (input.length > position && /^[0-9]$/.test(input[position])) {
+            val *= 10;
+            
+            val += input.charCodeAt(position) - "0".charCodeAt(0);
+            position++;
+        }
+        value *= val;
+    }
+    
+    
+    if (input.length > position && input[position] == ".") {
+        position++;
+        while (input.length > position && /^[0-9]$/.test(input[position])) {
+            divisor *= 10;
+            
+            value += (input.charCodeAt(position) - "0".charCodeAt(0)) / divisor;
+            position++;
+        }
+    }
+    if (input.length > position && (input[position] == "e" || input[position] == "E")) {
+        position++;
+        if (input.length > position) {
+            if (input[position] == "-") {
+                exponent = -1;
+                position++;
+            } else if (input[position] == "+") {
+                position++;
+            }
+            if (input.length > position && /^[0-9]$/.test(input[position])) {
+                var exp = 0;
+                do {
+                    exp *= 10;
+                    
+                    exp += input.charCodeAt(position) - "0".charCodeAt(0);
+                    position++;
+                } while (input.length > position && /^[0-9]$/.test(input[position]));
+                exponent *= exp;
+                value *= Math.pow(10, exponent);
+            }
+        }
+    }
+    
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+    if (value === 0) {
+        return 0;
+    }
+    return value;
+}
+
+
 var binaryString = "\x00\x01\x02\x03\x04\x05\x06\x07 "
     + "\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f "
     + "\x10\x11\x12\x13\x14\x15\x16\x17 "
@@ -273,19 +357,19 @@ ReflectionTests.typeMap = {
         "jsType": "number",
         "defaultVal": 0,
         "domTests": [-36, -1, 0, 1, maxInt, minInt, maxInt + 1, minInt - 1,
-                     maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                     maxUnsigned, maxUnsigned + 1, "", "-", "+", "-1", "-0", "0", "1",
                      " " + binaryString + " foo ",
                      
                      
                      "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
                      "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
                      "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-                     "\u30007",
+                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+                     "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
                      undefined, 1.5, "5%", "+100", ".5", true, false, {"test": 6}, NaN, +Infinity,
                      -Infinity, "\0",
                      {toString:function() {return 2;}, valueOf: null},
-                     {valueOf:function() {return 3;}}],
+                     {valueOf:function() {return 3;}, toString: null}],
         "domExpected": function(val) {
             var parsed = ReflectionTests.parseInt(String(val));
             if (parsed === false || parsed > maxInt || parsed < minInt) {
@@ -314,17 +398,17 @@ ReflectionTests.typeMap = {
         "jsType": "number",
         "defaultVal": -1,
         "domTests": [minInt - 1, minInt, -36, -1, -0, 0, 1, maxInt, maxInt + 1,
-                     maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                     maxUnsigned, maxUnsigned + 1, "", "-", "+", "-1", "-0", "0", "1",
                      " " + binaryString + " foo ",
                      "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
                      "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
                      "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-                     "\u30007",
+                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+                     "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
                      undefined, 1.5, "5%", "+100", ".5", true, false, {"test": 6}, NaN, +Infinity,
                      -Infinity, "\0",
                      {toString:function() {return 2;}, valueOf: null},
-                     {valueOf:function() {return 3;}}],
+                     {valueOf:function() {return 3;}, toString: null}],
         "domExpected": function(val) {
             var parsed = ReflectionTests.parseNonneg(String(val));
             if (parsed === false || parsed > maxInt || parsed < minInt) {
@@ -351,16 +435,16 @@ ReflectionTests.typeMap = {
         "jsType": "number",
         "defaultVal": 0,
         "domTests": [minInt - 1, minInt, -36,  -1,   0, 1, 257, maxInt,
-                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-", "+", "-1", "-0", "0", "1",
                      "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
                      "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
                      "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-                     "\u30007",
+                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+                     "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
                      " " + binaryString + " foo ", undefined, 1.5, "5%", "+100", ".5", true, false,
                      {"test": 6}, NaN, +Infinity, -Infinity, "\0",
                      {toString:function() {return 2;}, valueOf: null},
-                     {valueOf:function() {return 3;}}],
+                     {valueOf:function() {return 3;}, toString: null}],
         "domExpected": function(val) {
             var parsed = ReflectionTests.parseNonneg(String(val));
             
@@ -393,16 +477,16 @@ ReflectionTests.typeMap = {
         "jsType": "number",
         "defaultVal": 1,
         "domTests": [minInt - 1, minInt, -36,  -1,   0,    1, maxInt,
-                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-", "+", "-1", "-0", "0", "1",
                      "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
                      "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
                      "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-                     "\u30007",
+                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+                     "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
                      " " + binaryString + " foo ", undefined, 1.5, "5%", "+100", ".5", true, false,
                      {"test": 6}, NaN, +Infinity, -Infinity, "\0",
                      {toString:function() {return 2;}, valueOf: null},
-                     {valueOf:function() {return 3;}}],
+                     {valueOf:function() {return 3;}, toString: null}],
         "domExpected": function(val) {
             var parsed = ReflectionTests.parseNonneg(String(val));
             
@@ -433,16 +517,16 @@ ReflectionTests.typeMap = {
     "limited unsigned long with fallback": {
         "jsType": "number",
             "domTests": [minInt - 1, minInt, -36,  -1,   0,    1, maxInt,
-                         maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                         maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-", "+", "-1", "-0", "0", "1",
                          "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
                          "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
                          "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-                         "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-                         "\u30007",
+                         "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+                         "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
                          " " + binaryString + " foo ", undefined, 1.5, "5%", "+100", ".5", true, false,
                          {"test": 6}, NaN, +Infinity, -Infinity, "\0",
                          {toString:function() {return 2;}, valueOf: null},
-                         {valueOf:function() {return 3;}}],
+                         {valueOf:function() {return 3;}, toString: null}],
             "domExpected": function(val) {
                 var parsed = ReflectionTests.parseNonneg(String(val));
                 
@@ -472,16 +556,16 @@ ReflectionTests.typeMap = {
     "clamped unsigned long": {
         "jsType": "number",
         "domTests": [minInt - 1, minInt, -36,  -1,   0,    1, maxInt,
-                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-1", "-0", "0", "1",
+                     maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-", "+", "-1", "-0", "0", "1",
                      "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
                      "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
                      "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-                     "\u30007",
+                     "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+                     "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
                      " " + binaryString + " foo ", undefined, 1.5, "5%", "+100", ".5", true, false,
                      {"test": 6}, NaN, +Infinity, -Infinity, "\0",
                      {toString:function() {return 2;}, valueOf: null},
-                     {valueOf:function() {return 3;}}],
+                     {valueOf:function() {return 3;}, toString: null}],
         "idlTests": [0, 1, 257, maxInt, "-0", maxInt + 1, maxUnsigned],
         "idlDomExpected": [0, 1, 257, maxInt, 0, null, null],
     },
@@ -502,44 +586,83 @@ ReflectionTests.typeMap = {
 
 
 
-
-
-
-
-
-
-
     "double": {
         "jsType": "number",
         "defaultVal": 0.0,
         "domTests": [minInt - 1, minInt, -36, -1, 0, 1, maxInt,
-            maxInt + 1, maxUnsigned, maxUnsigned + 1, "",
+            maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-", "+",
             "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
             "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
             "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
-            "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7",
-            "\u30007",
+            "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+            "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
             " " + binaryString + " foo ", undefined, 1.5, "5%", "+100", ".5", true, false,
+            "1.", "1e2", "1e+2", "1e-2", "1E2", "1E+2", "1E-2", "1.e2", "1.0e2",
+            "1. 1", "1 .1", "1. e2", "1 .e2", "1 e2", "1e 2", "1e -2", "1e- 2",
+            "1.8e308", "-1.8e308",
             {"test": 6}, NaN, +Infinity, -Infinity, "\0",
             {toString:function() {return 2;}, valueOf: null},
-            {valueOf:function() {return 3;}}],
-        "domExpected": [minInt - 1, minInt, -36, -1, 0, 1, maxInt,
-                        maxInt + 1, maxUnsigned, maxUnsigned + 1, null,
-                        
-                        7, null, 7, 7, null, null,
-                        7, 7, null, null, null, null,
-                        null, null, null, null, null, null,
-                        null, null, null, null, null, null,
-                        null,
-                        
-                        null, null, 1.5, 5, 100, 0.5, null, null,
-                        null, null, null, null, null,
-                        2, 3],
-        
-        
-        "idlTests":       [ -10000000000,   -1,  -0,   0,   1,   10000000000],
-        "idlDomExpected": ["-10000000000", "-1", "0", "0", "1", "10000000000"],
-        "idlIdlExpected": [ -10000000000,   -1,  -0,   0,   1,   10000000000]
+            {valueOf:function() {return 3;}, toString: null}],
+        "domExpected": function (val) {
+            var parsed = ReflectionTests.parseFloat(String(val));
+            if (parsed === false) {
+                return null;
+            }
+            return parsed;
+        },
+        "idlTests": [ -10000000000, -1, -0, 0, 1, 10000000000,
+            1e-10, 1e-4, 1.5, 1e25 ],
+        "idlIdlExpected": function (val) {
+            
+            
+            
+            return ReflectionTests.parseFloat(String(val));
+        }
+    },
+    
+
+
+
+
+
+
+
+
+    "limited double": {
+        "jsType": "number",
+        "defaultVal": 0.0,
+        "domTests": [minInt - 1, minInt, -36, -1, 0, 1, maxInt,
+            maxInt + 1, maxUnsigned, maxUnsigned + 1, "", "-", "+",
+            "\u00097", "\u000B7", "\u000C7", "\u00207", "\u00A07", "\uFEFF7",
+            "\u000A7", "\u000D7", "\u20287", "\u20297", "\u16807", "\u180E7",
+            "\u20007", "\u20017", "\u20027", "\u20037", "\u20047", "\u20057",
+            "\u20067", "\u20077", "\u20087", "\u20097", "\u200A7", "\u202F7", "\u30007",
+            "\t\u000B7", "\n\u000B7","\f\u000B7", "\r\u000B7", "\x20\u000B7", "7\u000B",
+            " " + binaryString + " foo ", undefined, 1.5, "5%", "+100", ".5", true, false,
+            "1.", "1e2", "1e+2", "1e-2", "1E2", "1E+2", "1E-2", "1.e2", "1.0e2",
+            "1. 1", "1 .1", "1. e2", "1 .e2", "1 e2", "1e 2", "1e -2", "1e- 2",
+            "1.8e308", "-1.8e308",
+            {"test": 6}, NaN, +Infinity, -Infinity, "\0",
+            {toString:function() {return 2;}, valueOf: null},
+            {valueOf:function() {return 3;}, toString: null}],
+        "domExpected": function (val) {
+            var parsed = ReflectionTests.parseFloat(String(val));
+            if (parsed === false || parsed <= 0) {
+                return null;
+            }
+            return parsed;
+        },
+        "idlTests": [ -10000000000, -1, -0, 0, 1, 10000000000,
+            1e-10, 1e-4, 1.5, 1e25 ],
+        "idlIdlExpected": function (val) {
+            
+            
+
+            
+            
+            
+            return ReflectionTests.parseFloat(String(val));
+        }
     }
 };
 
@@ -836,6 +959,13 @@ ReflectionTests.reflects = function(data, idlName, idlObj, domName, domObj) {
                 ReflectionHarness.assertThrows("IndexSizeError", function() {
                     idlObj[idlName] = idlTests[i];
                 });
+            } else if (data.type == "limited double" && idlTests[i] <= 0) {
+                domObj.setAttribute(domName, "previous value");
+                var previousIdl = idlObj[idlName]; 
+                idlObj[idlName] = idlTests[i];
+                ReflectionHarness.assertEquals(domObj.getAttribute(domName),
+                                               "previous value", "getAttribute()");
+                ReflectionHarness.assertEquals(idlObj[idlName], previousIdl, "IDL get");
             } else {
                 idlObj[idlName] = idlTests[i];
                 if (data.type == "boolean") {
