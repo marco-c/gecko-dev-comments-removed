@@ -2177,7 +2177,40 @@ class PresShell final : public nsStubDocumentObserver,
       Document* GetDocument() const {
         return mPresShell ? mPresShell->GetDocument() : nullptr;
       }
+
+      
+
+
+
+
       nsIContent* GetFrameContent() const;
+
+      nsIFrame* GetFrame() const { return mFrame; }
+      nsIContent* GetContent() const { return mContent; }
+
+      
+
+
+
+
+
+
+      void SetFrameAndContent(nsIFrame* aFrame, nsIContent* aContent = nullptr,
+                              const WidgetGUIEvent* aGUIEvent = nullptr) {
+        mFrame = aFrame;
+        mContent = aContent ? aContent : GetFrameContent();
+        AssertIfEventTargetContentAndFrameContentMismatch(aGUIEvent);
+      }
+
+      
+
+
+      void SetContent(nsIContent* aContent) {
+        mContent = aContent;
+        if (mFrame && GetFrameContent() != aContent) {
+          mFrame = nullptr;
+        }
+      }
 
       
 
@@ -2221,10 +2254,24 @@ class PresShell final : public nsStubDocumentObserver,
 
       void UpdateWheelEventTarget(WidgetGUIEvent* aGUIEvent);
 
+     private:
+      void AssertIfEventTargetContentAndFrameContentMismatch(
+          const WidgetGUIEvent* aGUIEvent = nullptr) const;
+
+     public:
       RefPtr<PresShell> mPresShell;
-      nsIFrame* mFrame = nullptr;
-      nsCOMPtr<nsIContent> mContent;
       nsCOMPtr<nsIContent> mOverrideClickTarget;
+
+     private:
+      nsIFrame* mFrame = nullptr;
+      
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIContent> mContent;
     };
 
     
@@ -2801,7 +2848,7 @@ class PresShell final : public nsStubDocumentObserver,
         MOZ_DIAGNOSTIC_ASSERT(!mEventHandler.mCurrentEventInfoSetter);
         mEventHandler.mCurrentEventInfoSetter = this;
         mEventHandler.mPresShell->PushCurrentEventInfo(
-            aEventTargetData.mFrame, aEventTargetData.mContent);
+            aEventTargetData.GetFrame(), aEventTargetData.GetContent());
       }
       ~AutoCurrentEventInfoSetter() {
         mEventHandler.mPresShell->PopCurrentEventInfo();
