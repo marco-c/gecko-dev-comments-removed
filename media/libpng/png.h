@@ -278,8 +278,8 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.42"
-#define PNG_HEADER_VERSION_STRING " libpng version " PNG_LIBPNG_VER_STRING "\n"
+#define PNG_LIBPNG_VER_STRING "1.6.39"
+#define PNG_HEADER_VERSION_STRING " libpng version 1.6.39 - November 20, 2022\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -287,7 +287,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 41
+#define PNG_LIBPNG_VER_RELEASE 39
 
 
 
@@ -318,7 +318,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10641 /* 1.6.42 */
+#define PNG_LIBPNG_VER 10639 /* 1.6.39 */
 
 
 
@@ -443,7 +443,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_42;
+typedef char* png_libpng_version_1_6_39;
 
 
 
@@ -872,7 +872,7 @@ PNG_FUNCTION(void, (PNGCAPI *png_longjmp_ptr), PNGARG((jmp_buf, int)), typedef);
 #define PNG_TRANSFORM_GRAY_TO_RGB   0x2000      /* read only */
 
 #define PNG_TRANSFORM_EXPAND_16     0x4000      /* read only */
-#if ~0U > 0xffffU 
+#if INT_MAX >= 0x8000 
 #define PNG_TRANSFORM_SCALE_16      0x8000      /* read only */
 #endif
 
@@ -939,7 +939,7 @@ PNG_EXPORT(3, int, png_sig_cmp, (png_const_bytep sig, size_t start,
 
 
 
-#define png_check_sig(sig, n) (png_sig_cmp((sig), 0, (n)) == 0) /* DEPRECATED */
+#define png_check_sig(sig, n) !png_sig_cmp((sig), 0, (n))
 
 
 PNG_EXPORTA(4, png_structp, png_create_read_struct,
@@ -1752,6 +1752,9 @@ PNG_EXPORT(97, void, png_free, (png_const_structrp png_ptr, png_voidp ptr));
 
 PNG_EXPORT(98, void, png_free_data, (png_const_structrp png_ptr,
     png_inforp info_ptr, png_uint_32 free_me, int num));
+
+
+
 
 
 
@@ -3227,18 +3230,11 @@ PNG_EXPORT(245, int, png_image_write_to_memory, (png_imagep image, void *memory,
 #ifdef PNG_MIPS_MSA_API_SUPPORTED
 #  define PNG_MIPS_MSA   6 /* HARDWARE: MIPS Msa SIMD instructions supported */
 #endif
-#ifdef PNG_DISABLE_ADLER32_CHECK_SUPPORTED
-#  define PNG_IGNORE_ADLER32 8 /* SOFTWARE: disable Adler32 check on IDAT */
-#endif
+#define PNG_IGNORE_ADLER32 8
 #ifdef PNG_POWERPC_VSX_API_SUPPORTED
-#  define PNG_POWERPC_VSX   10 /* HARDWARE: PowerPC VSX SIMD instructions
-                                * supported */
+#  define PNG_POWERPC_VSX   10 /* HARDWARE: PowerPC VSX SIMD instructions supported */
 #endif
-#ifdef PNG_MIPS_MMI_API_SUPPORTED
-#  define PNG_MIPS_MMI   12 /* HARDWARE: MIPS MMI SIMD instructions supported */
-#endif
-
-#define PNG_OPTION_NEXT  14 /* Next option - numbers must be even */
+#define PNG_OPTION_NEXT  12 /* Next option - numbers must be even */
 
 
 #define PNG_OPTION_UNSET   0 /* Unset - defaults to off */

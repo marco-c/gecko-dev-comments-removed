@@ -290,7 +290,7 @@ png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
    int compose = 0;
    png_fixed_point file_gamma;
 
-   png_debug(1, "in png_set_alpha_mode_fixed");
+   png_debug(1, "in png_set_alpha_mode");
 
    if (png_rtran_ok(png_ptr, 0) == 0)
       return;
@@ -970,7 +970,7 @@ void PNGFAPI
 png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
     png_fixed_point red, png_fixed_point green)
 {
-   png_debug(1, "in png_set_rgb_to_gray_fixed");
+   png_debug(1, "in png_set_rgb_to_gray");
 
    
    

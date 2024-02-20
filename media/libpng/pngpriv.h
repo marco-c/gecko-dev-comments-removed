@@ -36,7 +36,7 @@
 
 
 #ifndef _POSIX_SOURCE
-#  define _POSIX_SOURCE 1 /* Just the POSIX 1003.1 and C89 APIs */
+# define _POSIX_SOURCE 1 /* Just the POSIX 1003.1 and C89 APIs */
 #endif
 
 #ifndef PNG_VERSION_INFO_ONLY
@@ -190,24 +190,10 @@
 #endif 
 
 #ifndef PNG_MIPS_MSA_OPT
-#  if defined(__mips_msa) && (__mips_isa_rev >= 5) && \
-   defined(PNG_ALIGNED_MEMORY_SUPPORTED)
+#  if defined(__mips_msa) && (__mips_isa_rev >= 5) && defined(PNG_ALIGNED_MEMORY_SUPPORTED)
 #     define PNG_MIPS_MSA_OPT 2
 #  else
 #     define PNG_MIPS_MSA_OPT 0
-#  endif
-#endif
-
-#ifndef PNG_MIPS_MMI_OPT
-#  ifdef PNG_MIPS_MMI
-#    if defined(__mips_loongson_mmi) && (_MIPS_SIM == _ABI64) && \
-     defined(PNG_ALIGNED_MEMORY_SUPPORTED)
-#       define PNG_MIPS_MMI_OPT 1
-#    else
-#       define PNG_MIPS_MMI_OPT 0
-#    endif
-#  else
-#    define PNG_MIPS_MMI_OPT 0
 #  endif
 #endif
 
@@ -219,21 +205,13 @@
 #  endif
 #endif
 
-#ifndef PNG_LOONGARCH_LSX_OPT
-#  if defined(__loongarch_sx)
-#     define PNG_LOONGARCH_LSX_OPT 1
-#  else
-#     define PNG_LOONGARCH_LSX_OPT 0
-#  endif
-#endif
-
 #ifndef PNG_INTEL_SSE_OPT
 #   ifdef PNG_INTEL_SSE
       
 
 
 
-#      if defined(__SSE4_1__) || defined(__AVX__) || defined(__SSSE3__) || \
+#     if defined(__SSE4_1__) || defined(__AVX__) || defined(__SSSE3__) || \
        defined(__SSE2__) || defined(_M_X64) || defined(_M_AMD64) || \
        (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
 #         define PNG_INTEL_SSE_OPT 1
@@ -270,6 +248,7 @@
 #endif
 
 #if PNG_MIPS_MSA_OPT > 0
+#  define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_msa
 #  ifndef PNG_MIPS_MSA_IMPLEMENTATION
 #     if defined(__mips_msa)
 #        if defined(__clang__)
@@ -285,26 +264,9 @@
 
 #  ifndef PNG_MIPS_MSA_IMPLEMENTATION
 #     define PNG_MIPS_MSA_IMPLEMENTATION 1
-#     define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_mips
 #  endif
 #else
 #  define PNG_MIPS_MSA_IMPLEMENTATION 0
-#endif 
-
-#if PNG_MIPS_MMI_OPT > 0
-#  ifndef PNG_MIPS_MMI_IMPLEMENTATION
-#     if defined(__mips_loongson_mmi) && (_MIPS_SIM == _ABI64)
-#        define PNG_MIPS_MMI_IMPLEMENTATION 2
-#     else 
-#        define PNG_MIPS_MMI_IMPLEMENTATION 0
-#     endif 
-#  endif 
-
-#   if PNG_MIPS_MMI_IMPLEMENTATION > 0
-#      define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_mips
-#   endif
-#else
-#   define PNG_MIPS_MMI_IMPLEMENTATION 0
 #endif 
 
 #if PNG_POWERPC_VSX_OPT > 0
@@ -314,12 +276,6 @@
 #  define PNG_POWERPC_VSX_IMPLEMENTATION 0
 #endif
 
-#if PNG_LOONGARCH_LSX_OPT > 0
-#   define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_lsx
-#   define PNG_LOONGARCH_LSX_IMPLEMENTATION 1
-#else
-#   define PNG_LOONGARCH_LSX_IMPLEMENTATION 0
-#endif
 
 
 
@@ -558,8 +514,18 @@
 
 #  include <float.h>
 
-#  include <math.h>
+#  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
+    defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)
+   
 
+
+
+#    if !defined(__MATH_H__) && !defined(__MATH_H) && !defined(__cmath__)
+#      include <fp.h>
+#    endif
+#  else
+#    include <math.h>
+#  endif
 #  if defined(_AMIGA) && defined(__SASC) && defined(_M68881)
    
 
@@ -660,7 +626,7 @@
 #define PNG_BACKGROUND_IS_GRAY     0x800U
 #define PNG_HAVE_PNG_SIGNATURE    0x1000U
 #define PNG_HAVE_CHUNK_AFTER_IDAT 0x2000U /* Have another chunk after IDAT */
-#define PNG_WROTE_eXIf            0x4000U
+                   
 #define PNG_IS_READ_STRUCT        0x8000U /* Else is a write struct */
 #ifdef PNG_APNG_SUPPORTED
 #define PNG_HAVE_acTL            0x10000U
@@ -1354,7 +1320,7 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #endif
 
-#if PNG_MIPS_MSA_IMPLEMENTATION == 1
+#if PNG_MIPS_MSA_OPT > 0
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_msa,(png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_msa,(png_row_infop
@@ -1368,23 +1334,6 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_msa,(png_row_infop
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_msa,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-#endif
-
-#if PNG_MIPS_MMI_IMPLEMENTATION > 0
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_mmi,(png_row_infop row_info,
-    png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_mmi,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #endif
 
@@ -1417,23 +1366,6 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_sse2,(png_row_infop
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_sse2,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-#endif
-
-#if PNG_LOONGARCH_LSX_IMPLEMENTATION == 1
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_lsx,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #endif
 
@@ -2219,25 +2151,15 @@ PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_neon,
    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif
 
-#if PNG_MIPS_MSA_IMPLEMENTATION == 1
-PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_mips,
+#if PNG_MIPS_MSA_OPT > 0
+PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_msa,
    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif
-
-#  if PNG_MIPS_MMI_IMPLEMENTATION > 0
-PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_mips,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
-#  endif
 
 #  if PNG_INTEL_SSE_IMPLEMENTATION > 0
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_sse2,
    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #  endif
-#endif
-
-#if PNG_LOONGARCH_LSX_OPT > 0
-PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_lsx,
-    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif
 
 PNG_INTERNAL_FUNCTION(png_uint_32, png_check_keyword, (png_structrp png_ptr,

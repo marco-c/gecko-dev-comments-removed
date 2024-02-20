@@ -26,7 +26,7 @@ png_get_uint_31(png_const_structrp png_ptr, png_const_bytep buf)
    if (uval > PNG_UINT_31_MAX)
       png_error(png_ptr, "PNG unsigned integer out of range");
 
-   return uval;
+   return (uval);
 }
 
 #if defined(PNG_READ_gAMA_SUPPORTED) || defined(PNG_READ_cHRM_SUPPORTED)
@@ -140,7 +140,7 @@ png_read_sig(png_structrp png_ptr, png_inforp info_ptr)
    if (png_sig_cmp(info_ptr->signature, num_checked, num_to_check) != 0)
    {
       if (num_checked < 4 &&
-          png_sig_cmp(info_ptr->signature, num_checked, num_to_check - 4) != 0)
+          png_sig_cmp(info_ptr->signature, num_checked, num_to_check - 4))
          png_error(png_ptr, "Not a PNG file");
       else
          png_error(png_ptr, "PNG file corrupted by ASCII conversion");
@@ -171,7 +171,7 @@ png_read_chunk_header(png_structrp png_ptr)
    
    png_ptr->chunk_name = PNG_CHUNK_FROM_STRING(buf+4);
 
-   png_debug2(0, "Reading chunk typeid = 0x%lx, length = %lu",
+   png_debug2(0, "Reading %lx chunk, length = %lu",
        (unsigned long)png_ptr->chunk_name, (unsigned long)length);
 
    
@@ -238,10 +238,10 @@ png_crc_finish(png_structrp png_ptr, png_uint_32 skip)
       else
          png_chunk_error(png_ptr, "CRC error");
 
-      return 1;
+      return (1);
    }
 
-   return 0;
+   return (0);
 }
 
 
@@ -277,11 +277,11 @@ png_crc_error(png_structrp png_ptr)
    if (need_crc != 0)
    {
       crc = png_get_uint_32(crc_bytes);
-      return crc != png_ptr->crc;
+      return ((int)(crc != png_ptr->crc));
    }
 
    else
-      return 0;
+      return (0);
 }
 
 #if defined(PNG_READ_iCCP_SUPPORTED) || defined(PNG_READ_iTXt_SUPPORTED) ||\
@@ -421,7 +421,8 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
             png_ptr->flags |= PNG_FLAG_ZSTREAM_INITIALIZED;
       }
 
-#ifdef PNG_DISABLE_ADLER32_CHECK_SUPPORTED
+#if ZLIB_VERNUM >= 0x1290 && \
+   defined(PNG_SET_OPTION_SUPPORTED) && defined(PNG_IGNORE_ADLER32)
       if (((png_ptr->options >> PNG_IGNORE_ADLER32) & 3) == PNG_OPTION_ON)
          
          ret = inflateValidate(&png_ptr->zstream, 0);

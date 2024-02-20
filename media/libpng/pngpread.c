@@ -145,10 +145,10 @@ png_push_read_sig(png_structrp png_ptr, png_inforp info_ptr)
        num_to_check);
    png_ptr->sig_bytes = (png_byte)(png_ptr->sig_bytes + num_to_check);
 
-   if (png_sig_cmp(info_ptr->signature, num_checked, num_to_check) != 0)
+   if (png_sig_cmp(info_ptr->signature, num_checked, num_to_check))
    {
       if (num_checked < 4 &&
-          png_sig_cmp(info_ptr->signature, num_checked, num_to_check - 4) != 0)
+          png_sig_cmp(info_ptr->signature, num_checked, num_to_check - 4))
          png_error(png_ptr, "Not a PNG file");
 
       else
@@ -1258,7 +1258,7 @@ png_voidp PNGAPI
 png_get_progressive_ptr(png_const_structrp png_ptr)
 {
    if (png_ptr == NULL)
-      return NULL;
+      return (NULL);
 
    return png_ptr->io_ptr;
 }

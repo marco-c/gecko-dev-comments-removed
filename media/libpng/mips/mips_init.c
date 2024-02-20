@@ -13,7 +13,6 @@
 
 
 
-
 #define _POSIX_SOURCE 1
 
 #include <stdio.h>
@@ -21,8 +20,7 @@
 
 #ifdef PNG_READ_SUPPORTED
 
-#if PNG_MIPS_MSA_IMPLEMENTATION == 1 || PNG_MIPS_MMI_IMPLEMENTATION > 0
-
+#if PNG_MIPS_MSA_OPT > 0
 #ifdef PNG_MIPS_MSA_CHECK_SUPPORTED 
 
 
@@ -53,83 +51,13 @@ static int png_have_msa(png_structp png_ptr);
 #endif 
 #endif 
 
-#ifdef PNG_MIPS_MMI_CHECK_SUPPORTED 
-#ifndef PNG_MIPS_MMI_FILE
-#  ifdef __linux__
-#     define PNG_MIPS_MMI_FILE "contrib/mips-mmi/linux.c"
-#  endif
-#endif
-
-#ifdef PNG_MIPS_MMI_FILE
-
-#include <signal.h> 
-static int png_have_mmi();
-#include PNG_MIPS_MMI_FILE
-
-#else  
-#  error "PNG_MIPS_MMI_FILE undefined: no support for run-time MIPS MMI checks"
-#endif 
-#endif 
-
 #ifndef PNG_ALIGNED_MEMORY_SUPPORTED
 #  error "ALIGNED_MEMORY is required; set: -DPNG_ALIGNED_MEMORY_SUPPORTED"
 #endif
 
-
-
-
 void
-png_init_filter_functions_mips(png_structp pp, unsigned int bpp)
+png_init_filter_functions_msa(png_structp pp, unsigned int bpp)
 {
-#if PNG_MIPS_MMI_IMPLEMENTATION  > 0
-#ifdef PNG_MIPS_MMI_API_SUPPORTED
-   switch ((pp->options >> PNG_MIPS_MMI) & 3)
-   {
-      case PNG_OPTION_UNSET:
-#endif
-#ifdef PNG_MIPS_MMI_CHECK_SUPPORTED
-         {
-            static volatile sig_atomic_t no_mmi = -1; 
-
-            if (no_mmi < 0)
-               no_mmi = !png_have_mmi();
-
-            if (no_mmi)
-              goto MIPS_MSA_INIT;
-         }
-#ifdef PNG_MIPS_MMI_API_SUPPORTED
-         break;
-#endif
-#endif 
-
-#ifdef PNG_MIPS_MMI_API_SUPPORTED
-      default: 
-         goto MIPS_MSA_INIT;
-
-      case PNG_OPTION_ON:
-         
-         break;
-   }
-#endif
-   pp->read_filter[PNG_FILTER_VALUE_UP-1] = png_read_filter_row_up_mmi;
-   if (bpp == 3)
-   {
-      pp->read_filter[PNG_FILTER_VALUE_SUB-1] = png_read_filter_row_sub3_mmi;
-      pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg3_mmi;
-      pp->read_filter[PNG_FILTER_VALUE_PAETH-1] =
-         png_read_filter_row_paeth3_mmi;
-   }
-   else if (bpp == 4)
-   {
-      pp->read_filter[PNG_FILTER_VALUE_SUB-1] = png_read_filter_row_sub4_mmi;
-      pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg4_mmi;
-      pp->read_filter[PNG_FILTER_VALUE_PAETH-1] =
-          png_read_filter_row_paeth4_mmi;
-   }
-#endif
-
-MIPS_MSA_INIT:
-#if PNG_MIPS_MSA_IMPLEMENTATION == 1
    
 
 
@@ -197,8 +125,6 @@ MIPS_MSA_INIT:
       pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg4_msa;
       pp->read_filter[PNG_FILTER_VALUE_PAETH-1] = png_read_filter_row_paeth4_msa;
    }
-#endif
-   return;
 }
 #endif 
-#endif 
+#endif
