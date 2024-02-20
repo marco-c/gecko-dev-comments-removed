@@ -1065,17 +1065,6 @@ pref("privacy.cpd.offlineApps",             false);
 pref("privacy.cpd.siteSettings",            false);
 pref("privacy.cpd.openWindows",             false);
 
-
-
-pref("privacy.clearHistory.historyFormDataAndDownloads", true);
-pref("privacy.clearHistory.cookiesAndStorage", true);
-pref("privacy.clearHistory.cache", true);
-pref("privacy.clearHistory.siteSettings", false);
-pref("privacy.clearSiteData.historyFormDataAndDownloads", false);
-pref("privacy.clearSiteData.cookiesAndStorage", true);
-pref("privacy.clearSiteData.cache", true);
-pref("privacy.clearSiteData.siteSettings", false);
-
 pref("privacy.history.custom",              false);
 
 
