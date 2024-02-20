@@ -3406,9 +3406,26 @@ bool SharedContextWebgl::DrawPathAccel(
     Maybe<WGR::VertexBuffer> wgrVB;
     Maybe<AAStroke::VertexBuffer> strokeVB;
     if (!aStrokeOptions) {
-      wgrVB = GeneratePathVertexBuffer(
-          entry->GetPath(), IntRect(-intBounds.TopLeft(), mViewportSize),
-          mRasterizationTruncates, outputBuffer, outputBufferCapacity);
+      if (aPath == mUnitCirclePath) {
+        auto scaleFactors = pathXform.ScaleFactors();
+        if (scaleFactors.AreScalesSame()) {
+          Point center = pathXform.GetTranslation() - quantBounds.TopLeft();
+          float radius = scaleFactors.xScale;
+          AAStroke::VertexBuffer vb = AAStroke::aa_stroke_filled_circle(
+              center.x, center.y, radius, (AAStroke::OutputVertex*)outputBuffer,
+              outputBufferCapacity);
+          if (!vb.len || (outputBuffer && vb.len > outputBufferCapacity)) {
+            AAStroke::aa_stroke_vertex_buffer_release(vb);
+          } else {
+            strokeVB = Some(vb);
+          }
+        }
+      }
+      if (!strokeVB) {
+        wgrVB = GeneratePathVertexBuffer(
+            entry->GetPath(), IntRect(-intBounds.TopLeft(), mViewportSize),
+            mRasterizationTruncates, outputBuffer, outputBufferCapacity);
+      }
     } else {
       if (mPathAAStroke &&
           SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
@@ -3490,7 +3507,7 @@ bool SharedContextWebgl::DrawPathAccel(
         } else {
           AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
         }
-        if (strokeVB &&
+        if (strokeVB && aStrokeOptions &&
             SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
                              aAllowStrokeAlpha) == AAStrokeMode::Mask) {
           
@@ -3653,22 +3670,28 @@ void DrawTargetWebgl::DrawPath(const Path* aPath, const Pattern& aPattern,
 
 
 
+bool SharedContextWebgl::DrawCircleAccel(const Point& aCenter, float aRadius,
+                                         const Pattern& aPattern,
+                                         const DrawOptions& aOptions,
+                                         const StrokeOptions* aStrokeOptions) {
+  
+  if (!mUnitCirclePath) {
+    mUnitCirclePath = MakePathForCircle(*mCurrentTarget, Point(0, 0), 1);
+  }
+  
+  Matrix circleXform(aRadius, 0, 0, aRadius, aCenter.x, aCenter.y);
+  return DrawPathAccel(mUnitCirclePath, aPattern, aOptions, aStrokeOptions,
+                       true, nullptr, true, &circleXform);
+}
+
 void DrawTargetWebgl::DrawCircle(const Point& aOrigin, float aRadius,
                                  const Pattern& aPattern,
                                  const DrawOptions& aOptions,
                                  const StrokeOptions* aStrokeOptions) {
-  if (ShouldAccelPath(aOptions, aStrokeOptions)) {
-    
-    if (!mUnitCirclePath) {
-      mUnitCirclePath = MakePathForCircle(*this, Point(0, 0), 1);
-    }
-    
-    Matrix circleXform(aRadius, 0, 0, aRadius, aOrigin.x, aOrigin.y);
-    if (mSharedContext->DrawPathAccel(mUnitCirclePath, aPattern, aOptions,
-                                      aStrokeOptions, true, nullptr, true,
-                                      &circleXform)) {
-      return;
-    }
+  if (ShouldAccelPath(aOptions, aStrokeOptions) &&
+      mSharedContext->DrawCircleAccel(aOrigin, aRadius, aPattern, aOptions,
+                                      aStrokeOptions)) {
+    return;
   }
 
   MarkSkiaChanged(aOptions);

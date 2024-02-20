@@ -219,6 +219,9 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   
   Maybe<bool> mTlsScope;
 
+  
+  RefPtr<Path> mUnitCirclePath;
+
   bool Initialize();
   bool CreateShaders();
   void ResetPathVertexBuffer(bool aChanged = true);
@@ -308,6 +311,10 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
                      bool aCacheable = true,
                      const Matrix* aPathXform = nullptr);
 
+  bool DrawCircleAccel(const Point& aCenter, float aRadius,
+                       const Pattern& aPattern, const DrawOptions& aOptions,
+                       const StrokeOptions* aStrokeOptions = nullptr);
+
   bool DrawGlyphsAccel(ScaledFont* aFont, const GlyphBuffer& aBuffer,
                        const Pattern& aPattern, const DrawOptions& aOptions,
                        const StrokeOptions* aStrokeOptions,
@@ -385,9 +392,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   int32_t mLayerDepth = 0;
 
   RefPtr<TextureHandle> mSnapshotTexture;
-
-  
-  RefPtr<Path> mUnitCirclePath;
 
   
   
