@@ -82,7 +82,7 @@ async function runTrustedScoringSignalsDataVersionTest(
 
 
 
-function createScoringSignalsRenderUrlWithBody(uuid, responseBody) {
+function createScoringSignalsRenderURLWithBody(uuid, responseBody) {
   return createRenderURL(uuid, null,
                          `replace-body:${responseBody}`);
 }
@@ -93,13 +93,13 @@ function createScoringSignalsRenderUrlWithBody(uuid, responseBody) {
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const decisionLogicScriptUrl = createDecisionScriptURL(
+  const decisionLogicScriptURL = createDecisionScriptURL(
       uuid,
       { scoreAd: 'if (trustedScoringSignals !== null) throw "error";' });
   await joinGroupAndRunBasicFledgeTestExpectingWinner(
       test,
       { uuid: uuid,
-        auctionConfigOverrides: { decisionLogicURL: decisionLogicScriptUrl }
+        auctionConfigOverrides: { decisionLogicURL: decisionLogicScriptURL }
       });
 }, 'No trustedScoringSignalsURL.');
 
@@ -149,35 +149,35 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const renderURL = createScoringSignalsRenderUrlWithBody(
+  const renderURL = createScoringSignalsRenderURLWithBody(
       uuid, '');
   await runTrustedScoringSignalsTest(test, uuid, renderURL, 'trustedScoringSignals === null');
 }, 'Trusted scoring signals response has no body.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const renderURL = createScoringSignalsRenderUrlWithBody(
+  const renderURL = createScoringSignalsRenderURLWithBody(
       uuid, 'Not JSON');
   await runTrustedScoringSignalsTest(test, uuid, renderURL, 'trustedScoringSignals === null');
 }, 'Trusted scoring signals response is not JSON.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const renderURL = createScoringSignalsRenderUrlWithBody(
+  const renderURL = createScoringSignalsRenderURLWithBody(
       uuid, '[]');
   await runTrustedScoringSignalsTest(test, uuid, renderURL, 'trustedScoringSignals === null');
 }, 'Trusted scoring signals response is a JSON array.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const renderURL = createScoringSignalsRenderUrlWithBody(
+  const renderURL = createScoringSignalsRenderURLWithBody(
       uuid, '{JSON_keys_need_quotes: 1}');
   await runTrustedScoringSignalsTest(test, uuid, renderURL, 'trustedScoringSignals === null');
 }, 'Trusted scoring signals response is invalid JSON object.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const renderURL = createScoringSignalsRenderUrlWithBody(
+  const renderURL = createScoringSignalsRenderURLWithBody(
       uuid, '{}');
   await runTrustedScoringSignalsTest(
       test, uuid, renderURL,
@@ -444,7 +444,7 @@ subsetTest(promise_test, async test => {
   const renderURL = createRenderURL(uuid, null, 'num-value');
   
   
-  const componentURL = createScoringSignalsRenderUrlWithBody(
+  const componentURL = createScoringSignalsRenderURLWithBody(
     uuid, '{}');
   await runTrustedScoringSignalsTest(
       test, uuid, renderURL,
@@ -456,7 +456,7 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  const renderURL = createScoringSignalsRenderUrlWithBody(
+  const renderURL = createScoringSignalsRenderURLWithBody(
     uuid, '{}');
   const componentURL = createRenderURL(uuid, null);
   await runTrustedScoringSignalsTest(

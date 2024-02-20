@@ -36,7 +36,7 @@ def main(request, response):
             continue
         if pair[0] == "renderUrls" and renderUrls == None:
             renderUrls = list(map(unquote_plus, pair[1].split(",")))
-            urlLists.append({"type":"renderUrls", "urls":renderUrls})
+            urlLists.append({"type":"renderURLs", "urls":renderUrls})
             continue
         if pair[0] == "adComponentRenderUrls" and adComponentRenderURLs == None:
             adComponentRenderURLs = list(map(unquote_plus, pair[1].split(",")))

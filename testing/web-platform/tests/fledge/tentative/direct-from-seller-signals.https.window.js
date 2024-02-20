@@ -406,7 +406,7 @@ subsetTest(promise_test, async test => {
           test_instance, "${uuid}",
           directFromSellerSignalsValidatorCode(
               "${uuid}", 'sellerSignals/4', 'auctionSignals/4', 'perBuyerSignals/4'),
-          // expectedReportUrls
+          // expectedReportURLs
           [createSellerReportURL("${uuid}"), createBidderReportURL("${uuid}")],
           // renderURLOverride
           null,
@@ -425,7 +425,7 @@ subsetTest(promise_test, async test => {
           directFromSellerSignalsValidatorCode(
               "${uuid}", 'sellerSignals/4',
               'auctionSignals/4', 'perBuyerSignals/4'),
-          // expectedReportUrls
+          // expectedReportURLs
           [createSellerReportURL("${uuid}"), createBidderReportURL("${uuid}")],
           // renderURLOverride
           null,
@@ -447,7 +447,7 @@ subsetTest(promise_test, async test => {
           directFromSellerSignalsValidatorCode(
               "${uuid}", 'sellerSignals/4',
               'auctionSignals/4', 'perBuyerSignals/4'),
-          // expectedReportUrls
+          // expectedReportURLs
           [createSellerReportURL("${uuid}"), createBidderReportURL("${uuid}")],
           // renderURLOverride
           null,
