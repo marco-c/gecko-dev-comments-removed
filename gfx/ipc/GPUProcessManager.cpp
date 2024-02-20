@@ -215,8 +215,12 @@ bool GPUProcessManager::LaunchGPUProcess() {
 
   
   
+  
+  
   auto newTime = TimeStamp::Now();
-  if (!IsProcessStable(newTime)) {
+  if (IsProcessStable(newTime)) {
+    mUnstableProcessAttempts = 0;
+  } else {
     mUnstableProcessAttempts++;
     mozilla::glean::gpu_process::unstable_launch_attempts.Set(
         mUnstableProcessAttempts);
