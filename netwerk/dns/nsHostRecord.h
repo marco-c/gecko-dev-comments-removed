@@ -180,6 +180,9 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   virtual void ResolveComplete() = 0;
 
   
+  bool onQueue() { return LoadNative() && isInList(); }
+
+  
   mozilla::TimeStamp mValidStart;
 
   
@@ -320,9 +323,6 @@ class AddrHostRecord final : public nsHostRecord {
   void NotifyRetryingTrr();
 
   static DnsPriority GetPriority(nsIDNSService::DNSFlags aFlags);
-
-  
-  bool onQueue() { return LoadNative() && isInList(); }
 
   virtual void Reset() override {
     nsHostRecord::Reset();

@@ -620,10 +620,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
       rec->mCallbacks.insertBack(callback);
 
-      
-      
-      
-      if (addrRec && addrRec->onQueue()) {
+      if (rec && rec->onQueue()) {
         Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
                               METHOD_NETWORK_SHARED);
 
@@ -1259,14 +1256,12 @@ bool nsHostResolver::GetHostToLookup(nsHostRecord** result) {
 
     if (mActiveAnyThreadCount < MaxResolverThreadsAnyPriority()) {
       rec = mQueue.Dequeue(false, lock);
-      RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
-      if (addrRec) {
-        MOZ_ASSERT(IsMediumPriority(addrRec->flags) ||
-                   IsLowPriority(addrRec->flags));
+      if (rec) {
+        MOZ_ASSERT(IsMediumPriority(rec->flags) || IsLowPriority(rec->flags));
         mActiveAnyThreadCount++;
-        addrRec->StoreUsingAnyThread(true);
-        SET_GET_TTL(addrRec, true);
-        addrRec.forget(result);
+        rec->StoreUsingAnyThread(true);
+        SET_GET_TTL(rec, true);
+        rec.forget(result);
         return true;
       }
     }
@@ -1821,6 +1816,11 @@ void nsHostResolver::ThreadFunc() {
       TypeRecordResultType result = AsVariant(mozilla::Nothing());
       uint32_t ttl = UINT32_MAX;
       nsresult status = ResolveHTTPSRecord(rec->host, rec->flags, result, ttl);
+      mozilla::glean::networking::dns_native_count
+          .EnumGet(rec->pb
+                       ? glean::networking::DnsNativeCountLabel::eHttpsPrivate
+                       : glean::networking::DnsNativeCountLabel::eHttpsRegular)
+          .Add(1);
       CompleteLookupByType(rec, status, result, rec->mTRRSkippedReason, ttl,
                            rec->pb);
       rec = nullptr;
@@ -1835,6 +1835,11 @@ void nsHostResolver::ThreadFunc() {
                            getTtl);
     }
 #endif
+
+    mozilla::glean::networking::dns_native_count
+        .EnumGet(rec->pb ? glean::networking::DnsNativeCountLabel::ePrivate
+                         : glean::networking::DnsNativeCountLabel::eRegular)
+        .Add(1);
 
     if (RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec)) {
       
