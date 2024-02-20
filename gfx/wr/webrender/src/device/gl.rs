@@ -1480,7 +1480,10 @@ impl Device {
         
         
         
-        let supports_khr_debug = supports_extension(&extensions, "GL_KHR_debug");
+        
+        
+        let supports_khr_debug =
+            supports_extension(&extensions, "GL_KHR_debug") && !is_mali_valhall(&renderer_name);
         if panic_on_gl_error || cfg!(debug_assertions) {
             gl = gl::ErrorReactingGl::wrap(gl, move |gl, name, code| {
                 if supports_khr_debug {
