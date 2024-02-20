@@ -66,6 +66,9 @@ class JSONPrinter {
 
   void propertyName(const char* name);
 
+  GenericPrinter& beginStringPropertyName();
+  void endStringPropertyName();
+
   
   
   enum TimePrecision { SECONDS, MILLISECONDS, MICROSECONDS };
