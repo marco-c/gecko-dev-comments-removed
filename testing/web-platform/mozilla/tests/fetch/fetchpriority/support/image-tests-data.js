@@ -4,7 +4,7 @@ export const kTestFolderName = "image-tests";
 
 
 
-const kExpectedRequests = [
+const kExpectedRequestsOfInitialLoad = [
     {   fileNameAndSuffix: "square_25px_x_25px.png?1",
         internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOW
     },
@@ -19,7 +19,7 @@ const kExpectedRequests = [
     },
 ];
 
-const kExpectedRequestsDisabled = [
+const kExpectedRequestsOfInitialLoadDisabled = [
     {   fileNameAndSuffix: "square_25px_x_25px.png?1",
         internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOW
     },
@@ -34,14 +34,24 @@ const kExpectedRequestsDisabled = [
     },
 ];
 
+const kExpectedRequestsOfDynamicLoad = kExpectedRequestsOfInitialLoad;
+
+const kExpectedRequestsOfDynamicLoadDisabled = kExpectedRequestsOfInitialLoadDisabled;
+
 export const kTestData = [
+    {   testFileName: "image-initial-load.h2.html",
+        expectedRequests: kExpectedRequestsOfInitialLoad
+    },
     {   testFileName: "image-dynamic-load.h2.html",
-        expectedRequests: kExpectedRequests
+        expectedRequests: kExpectedRequestsOfDynamicLoad
     },
 ];
 
 export const kTestDataDisabled = [
+    {   testFileName: "image-initial-load.h2.html",
+        expectedRequests: kExpectedRequestsOfInitialLoadDisabled
+    },
     {   testFileName: "image-dynamic-load.h2.html",
-        expectedRequests: kExpectedRequestsDisabled
+        expectedRequests: kExpectedRequestsOfDynamicLoadDisabled
     },
 ];
