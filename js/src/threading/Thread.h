@@ -83,9 +83,18 @@ class Thread {
       return false;
     }
 
-    
-    LockGuard<Mutex> lock(trampoline->createMutex);
-    return create(Trampoline::Start, trampoline);
+    bool result;
+    {
+      
+      LockGuard<Mutex> lock(trampoline->createMutex);
+      result = create(Trampoline::Start, trampoline);
+    }
+    if (!result) {
+      
+      js_delete(trampoline);
+      return false;
+    }
+    return true;
   }
 
   
