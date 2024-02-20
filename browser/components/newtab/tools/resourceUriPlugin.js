@@ -2,18 +2,37 @@
 
 
 
-const path = require("path");
-
 
 
 
 
 module.exports = {
   ResourceUriPlugin: class ResourceUriPlugin {
-    #resourcePathRegEx;
+    
 
-    constructor({ resourcePathRegEx }) {
-      this.#resourcePathRegEx = resourcePathRegEx;
+
+
+
+
+
+
+
+    
+
+
+
+
+
+    #resourcePathRegExes;
+
+    
+
+
+
+
+
+    constructor({ resourcePathRegExes }) {
+      this.#resourcePathRegExes = resourcePathRegExes;
     }
 
     apply(compiler) {
@@ -24,14 +43,19 @@ module.exports = {
             .for("resource")
             .tap("ResourceUriPlugin", resourceData => {
               const url = new URL(resourceData.resource);
-              if (!url.href.match(this.#resourcePathRegEx)) {
+
+              for (let [regex, replacement] of this.#resourcePathRegExes) {
+                if (!url.href.match(regex)) {
+                  continue;
+                }
+                const pathname = url.href.replace(regex, replacement);
+                resourceData.path = pathname;
+                resourceData.query = url.search;
+                resourceData.fragment = url.hash;
+                resourceData.resource = pathname + url.search + url.hash;
                 return true;
               }
-              const pathname = path.join(__dirname, "..", url.pathname);
-              resourceData.path = pathname;
-              resourceData.query = url.search;
-              resourceData.fragment = url.hash;
-              resourceData.resource = pathname + url.search + url.hash;
+
               return true;
             });
         }

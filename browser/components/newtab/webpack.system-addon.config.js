@@ -24,7 +24,14 @@ module.exports = (env = {}) => ({
     
     
     
-    new ResourceUriPlugin({ resourcePathRegEx }),
+    new ResourceUriPlugin({
+      resourcePathRegExes: [
+        [
+          new RegExp("^resource://activity-stream/"),
+          path.join(__dirname, "./"),
+        ],
+      ],
+    }),
     new webpack.BannerPlugin(
       `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
     ),
