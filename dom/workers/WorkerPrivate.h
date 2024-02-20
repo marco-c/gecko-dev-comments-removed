@@ -354,7 +354,7 @@ class WorkerPrivate final
 
   void UnrootGlobalScopes();
 
-  bool InterruptCallback(JSContext* aCx);
+  MOZ_CAN_RUN_SCRIPT bool InterruptCallback(JSContext* aCx);
 
   bool IsOnCurrentThread();
 
@@ -535,6 +535,7 @@ class WorkerPrivate final
 
   void ClearPreStartRunnables();
 
+  MOZ_CAN_RUN_SCRIPT void ProcessSingleDebuggerRunnable();
   void ClearDebuggerEventQueue();
 
   void OnProcessNextEvent();
@@ -1056,6 +1057,7 @@ class WorkerPrivate final
       already_AddRefed<WorkerRunnable> aDebuggerRunnable);
 
   bool IsOnParentThread() const;
+  void DebuggerInterruptRequest();
 
 #ifdef DEBUG
   void AssertIsOnParentThread() const;
@@ -1512,6 +1514,13 @@ class WorkerPrivate final
     uint32_t mCurrentTimerNestingLevel;
 
     bool mFrozen;
+
+    
+    
+    
+    
+    bool mDebuggerInterruptRequested;
+
     bool mTimerRunning;
     bool mRunningExpiredTimeouts;
     bool mPeriodicGCTimerRunning;
@@ -1555,6 +1564,16 @@ class WorkerPrivate final
   bool mMainThreadObjectsForgotten;
   bool mIsChromeWorker;
   bool mParentFrozen;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsITimer> mDebuggerInterruptTimer MOZ_GUARDED_BY(mMutex);
 
   
   
