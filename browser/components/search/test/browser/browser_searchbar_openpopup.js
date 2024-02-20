@@ -267,10 +267,6 @@ add_no_popup_task(async function right_click_doesnt_open_popup() {
   context_click(textbox);
   let contextPopup = await promise;
 
-  
-  
-  context_click(contextPopup);
-
   is(
     Services.focus.focusedElement,
     textbox,
