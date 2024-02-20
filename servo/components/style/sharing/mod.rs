@@ -314,13 +314,11 @@ pub struct StyleSharingCandidate<E: TElement> {
     
     element: E,
     validation_data: ValidationData,
-    considered_relative_selector: bool,
 }
 
 struct FakeCandidate {
     _element: usize,
     _validation_data: ValidationData,
-    _considered_relative_selector: bool,
 }
 
 impl<E: TElement> Deref for StyleSharingCandidate<E> {
@@ -510,7 +508,6 @@ impl<E: TElement> SharingCache<E> {
     fn insert(
         &mut self,
         element: E,
-        considered_relative_selector: bool,
         validation_data_holder: Option<&mut StyleSharingTarget<E>>,
     ) {
         let validation_data = match validation_data_holder {
@@ -519,7 +516,6 @@ impl<E: TElement> SharingCache<E> {
         };
         self.entries.insert(StyleSharingCandidate {
             element,
-            considered_relative_selector,
             validation_data,
         });
     }
@@ -665,27 +661,6 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         
-        
-        
-        
-        
-        
-        if style
-            .style
-            .0
-            .flags
-            .intersects(ComputedValueFlags::ANCHORS_RELATIVE_SELECTOR)
-        {
-            debug!("Failing to insert to the cache: may anchor relative selector");
-            return;
-        }
-
-        
-        
-        
-        
-        
-        
         let ui_style = style.style().get_ui();
         if ui_style.specifies_transitions() {
             debug!("Failing to insert to the cache: transitions");
@@ -712,11 +687,6 @@ impl<E: TElement> StyleSharingCache<E> {
         }
         self.cache_mut().insert(
             *element,
-            style
-                .style
-                .0
-                .flags
-                .intersects(ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR),
             validation_data_holder,
         );
     }

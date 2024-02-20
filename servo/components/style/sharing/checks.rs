@@ -41,17 +41,6 @@ where
     
     
     
-    if candidate.considered_relative_selector {
-        return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
     
     
     
