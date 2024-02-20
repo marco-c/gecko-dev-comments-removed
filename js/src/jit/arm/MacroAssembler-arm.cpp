@@ -5935,10 +5935,12 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
     }
   } else {
     
-    MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal0));
-    MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal1));
+    LiveRegisterSet liveRegs = volatileLiveRegs;
+    liveRegs.addUnchecked(ReturnRegVal0);
+    liveRegs.addUnchecked(ReturnRegVal1);
 
-    masm.PushRegsInMask(volatileLiveRegs);
+    masm.PushRegsInMask(liveRegs);
+
     using Fn = int64_t (*)(int, int);
     {
       ScratchRegisterScope scratch(masm);
@@ -5961,7 +5963,7 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
 
     LiveRegisterSet ignore;
     ignore.add(lhsOutput);
-    masm.PopRegsInMaskIgnore(volatileLiveRegs, ignore);
+    masm.PopRegsInMaskIgnore(liveRegs, ignore);
   }
 }
 
@@ -5991,9 +5993,11 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
     quotient32(rhs, lhsOutput, isUnsigned);
   } else {
     
-    MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal0));
-    MOZ_ASSERT(volatileLiveRegs.has(ReturnRegVal1));
-    PushRegsInMask(volatileLiveRegs);
+    LiveRegisterSet liveRegs = volatileLiveRegs;
+    liveRegs.addUnchecked(ReturnRegVal0);
+    liveRegs.addUnchecked(ReturnRegVal1);
+
+    PushRegsInMask(liveRegs);
 
     using Fn = int64_t (*)(int, int);
     {
@@ -6014,7 +6018,7 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
     LiveRegisterSet ignore;
     ignore.add(remOutput);
     ignore.add(lhsOutput);
-    PopRegsInMaskIgnore(volatileLiveRegs, ignore);
+    PopRegsInMaskIgnore(liveRegs, ignore);
   }
 }
 
