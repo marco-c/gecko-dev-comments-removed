@@ -37,7 +37,6 @@ namespace IPC {
 
 
 
-bool IPCMessageTypeIsSync(uint32_t aMessageType);
 const char* StringFromIPCMessageType(uint32_t aMessageType);
 
 class Channel;
