@@ -1,7 +1,10 @@
 
 
 
+
 'use strict';
+
+
 
 
 
@@ -10,10 +13,17 @@
 
 async_test(t => {
     
-    const worker = new SharedWorker("/workers/same-site-cookies/resources/worker.js", {sameSiteCookies: "none"});
-    worker.port.onmessage = t.step_func(e => {
+    const cookie_set_window = window.open("/workers/same-site-cookies/resources/set_cookies.py");
+    cookie_set_window.onload =  t.step_func(_ => {
         
-        assert_equals(e.data, "DidStart", "Worker should have started");
-        t.done();
+        const worker = new SharedWorker("/workers/same-site-cookies/resources/worker_redirect.py", {sameSiteCookies: "none"});
+        worker.port.onmessage = t.step_func(e => {
+            
+            getCookieNames().then(t.step_func((cookies) => {
+                assert_equals(e.data + cookies, "ReadOnLoad:None,ReadOnFetch:None,SetOnRedirectLoad:None,SetOnLoad:None,SetOnRedirectFetch:None,SetOnFetch:None", "Worker should get/set SameSite=None cookies only");
+                cookie_set_window.close();
+                t.done();
+            }));
+        });
     });
 }, "Check SharedWorker sameSiteCookies option none for first-party");

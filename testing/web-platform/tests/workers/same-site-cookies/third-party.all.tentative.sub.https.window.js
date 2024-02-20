@@ -1,7 +1,10 @@
 
 
 
+
 'use strict';
+
+
 
 
 
@@ -13,12 +16,17 @@
 
 async_test(t => {
   
-  window.addEventListener("message", t.step_func(e => {
+  const cookie_set_window = window.open("/workers/same-site-cookies/resources/set_cookies.py");
+  cookie_set_window.onload =  t.step_func(_ => {
     
-    assert_equals(e.data, "DidNotStart", "Worker should not have started");
-    t.done();
-  }));
-  let iframe = document.createElement("iframe");
-  iframe.src = "https://{{hosts[alt][]}}:{{ports[https][0]}}/workers/same-site-cookies/resources/iframe.sub.html?type=all";
-  document.body.appendChild(iframe);
+    window.addEventListener("message", t.step_func(e => {
+      
+      assert_equals(e.data, "DidNotStart", "Worker should not have started");
+      cookie_set_window.close();
+      t.done();
+    }));
+    let iframe = document.createElement("iframe");
+    iframe.src = "https://{{hosts[alt][]}}:{{ports[https][0]}}/workers/same-site-cookies/resources/iframe.sub.html?type=all";
+    document.body.appendChild(iframe);
+  });
 }, "Check SharedWorker sameSiteCookies option all for third-party");
