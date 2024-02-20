@@ -5,6 +5,7 @@
 #ifndef CacheStorageService__h__
 #define CacheStorageService__h__
 
+#include "mozilla/LinkedList.h"
 #include "nsICacheStorageService.h"
 #include "nsIMemoryReporter.h"
 #include "nsINamed.h"
@@ -153,13 +154,9 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-
-
-
   void RegisterEntry(CacheEntry* aEntry);
 
   
-
 
 
   void UnregisterEntry(CacheEntry* aEntry);
@@ -307,7 +304,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-  void PurgeOverMemoryLimit();
+  void PurgeExpiredOrOverMemoryLimit();
 
  private:
   nsresult DoomStorageEntries(const nsACString& aContextKey,
@@ -342,8 +339,8 @@ class CacheStorageService final : public nsICacheStorageService,
     explicit MemoryPool(EType aType);
     ~MemoryPool();
 
-    nsTArray<RefPtr<CacheEntry>> mFrecencyArray;
-    nsTArray<RefPtr<CacheEntry>> mExpirationArray;
+    
+    LinkedList<RefPtr<CacheEntry>> mManagedEntries;
     Atomic<uint32_t, Relaxed> mMemorySize{0};
 
     bool OnMemoryConsumptionChange(uint32_t aSavedMemorySize,
@@ -351,10 +348,10 @@ class CacheStorageService final : public nsICacheStorageService,
     
 
 
-    void PurgeOverMemoryLimit();
-    void PurgeExpired();
-    void PurgeByFrecency(uint32_t aWhat);
-    void PurgeAll(uint32_t aWhat);
+    void PurgeExpiredOrOverMemoryLimit();
+    size_t PurgeExpired();
+    Result<size_t, nsresult> PurgeByFrecency();
+    size_t PurgeAll(uint32_t aWhat);
 
    private:
     uint32_t Limit() const;
