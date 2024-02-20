@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Scoped.h"
 
 
 
@@ -75,29 +74,15 @@ typedef le_to_cpu<unsigned char> le_uint16;
 typedef le_to_cpu<le_uint16> le_uint32;
 #endif
 
+struct AutoCloseFD {
+  const int fd;
 
-
-
-struct AutoCloseFDTraits {
-  typedef int type;
-  static int empty() { return -1; }
-  static void release(int fd) {
+  MOZ_IMPLICIT AutoCloseFD(int fd) : fd(fd) {}
+  ~AutoCloseFD() {
     if (fd != -1) close(fd);
   }
+  operator int() const { return fd; }
 };
-typedef mozilla::Scoped<AutoCloseFDTraits> AutoCloseFD;
-
-
-
-
-struct AutoCloseFILETraits {
-  typedef FILE* type;
-  static FILE* empty() { return nullptr; }
-  static void release(FILE* f) {
-    if (f) fclose(f);
-  }
-};
-typedef mozilla::Scoped<AutoCloseFILETraits> AutoCloseFILE;
 
 extern mozilla::Atomic<size_t, mozilla::ReleaseAcquire> gPageSize;
 
