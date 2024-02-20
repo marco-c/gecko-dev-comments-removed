@@ -97,6 +97,9 @@ class WebExtensionTest : BaseSessionTest() {
         assertBodyBorderEqualTo("red")
 
         
+        assertEquals(borderify.metaData.incognito, "spanning")
+
+        
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         mainSession.reload()
@@ -330,6 +333,7 @@ class WebExtensionTest : BaseSessionTest() {
                     extension.metaData.blocklistState,
                     WebExtension.BlocklistStateFlags.NOT_BLOCKED,
                 )
+                assertEquals(extension.metaData.incognito, "spanning")
 
                 return GeckoResult.allow()
             }

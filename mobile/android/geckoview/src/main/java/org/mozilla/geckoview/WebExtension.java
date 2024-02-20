@@ -1987,6 +1987,15 @@ public class WebExtension {
     public final @Nullable String amoListingUrl;
 
     
+
+
+
+
+
+
+    public final @Nullable String incognito;
+
+    
     protected MetaData() {
       icon = null;
       permissions = null;
@@ -2014,6 +2023,7 @@ public class WebExtension {
       updateDate = null;
       downloadUrl = null;
       amoListingUrl = null;
+      incognito = null;
     }
 
      MetaData(final GeckoBundle bundle) {
@@ -2041,6 +2051,7 @@ public class WebExtension {
       updateDate = bundle.getString("updateDate");
       downloadUrl = bundle.getString("downloadUrl");
       amoListingUrl = bundle.getString("amoListingURL");
+      incognito = bundle.getString("incognito");
 
       final int signedState = bundle.getInt("signedState", SignedStateFlags.UNKNOWN);
       if (signedState <= SignedStateFlags.LAST) {
