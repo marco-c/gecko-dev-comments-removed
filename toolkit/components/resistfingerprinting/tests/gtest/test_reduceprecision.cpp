@@ -47,6 +47,7 @@ using namespace mozilla;
 
 
 
+
 bool setupJitter(bool enabled) {
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
 
