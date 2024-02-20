@@ -259,6 +259,17 @@ enum class OnUTF8Error {
   Crash,
 };
 
+inline bool IsInvalidSecondByte(uint32_t first, uint8_t second) {
+  
+  
+  
+  
+  return (first == 0xE0 && (second & 0xE0) != 0xA0) ||  
+         (first == 0xED && (second & 0xE0) != 0x80) ||  
+         (first == 0xF0 && (second & 0xF0) == 0x80) ||  
+         (first == 0xF4 && (second & 0xF0) != 0x80);    
+}
+
 
 
 
@@ -311,16 +322,34 @@ static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
 
       
       if (i + n > srclen) {
-        INVALID(ReportBufferTooSmall,  0, 1);
+        
+        
+        if (i + 2 > srclen) {
+          INVALID(ReportBufferTooSmall,  0, 1);
+        }
+
+        if (IsInvalidSecondByte(v, (uint8_t)src[i + 1])) {
+          INVALID(ReportInvalidCharacter, i, 1);
+        }
+
+        if ((src[i + 1] & 0xC0) != 0x80) {
+          INVALID(ReportInvalidCharacter, i, 1);
+        }
+
+        if (n == 3) {
+          INVALID(ReportInvalidCharacter, i, 2);
+        } else {
+          if (i + 3 > srclen) {
+            INVALID(ReportBufferTooSmall,  0, 2);
+          }
+          if ((src[i + 2] & 0xC0) != 0x80) {
+            INVALID(ReportInvalidCharacter, i, 2);
+          }
+          INVALID(ReportInvalidCharacter, i, 3);
+        }
       }
 
-      
-      
-      if ((v == 0xE0 && ((uint8_t)src[i + 1] & 0xE0) != 0xA0) ||  
-          (v == 0xED && ((uint8_t)src[i + 1] & 0xE0) != 0x80) ||  
-          (v == 0xF0 && ((uint8_t)src[i + 1] & 0xF0) == 0x80) ||  
-          (v == 0xF4 && ((uint8_t)src[i + 1] & 0xF0) != 0x80))    
-      {
+      if (IsInvalidSecondByte(v, (uint8_t)src[i + 1])) {
         INVALID(ReportInvalidCharacter, i, 1);
       }
 
