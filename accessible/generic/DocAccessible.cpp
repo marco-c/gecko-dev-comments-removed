@@ -1863,6 +1863,12 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     return true;
   }
 
+  if (aAttribute == nsGkAtoms::popover && aElement->IsHTMLElement()) {
+    
+    RecreateAccessible(aElement);
+    return true;
+  }
+
   return false;
 }
 
