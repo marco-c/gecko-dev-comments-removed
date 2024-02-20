@@ -81,7 +81,6 @@ const links = {
     "Antarctica/DumontDUrville": "Antarctica/DumontDUrville",
     "Antarctica/McMurdo": "Antarctica/McMurdo",
     "Antarctica/Syowa": "Antarctica/Syowa",
-    "Antarctica/Vostok": "Antarctica/Vostok",
     "Asia/Aden": "Asia/Aden",
     "Asia/Bahrain": "Asia/Bahrain",
     "Asia/Brunei": "Asia/Brunei",
