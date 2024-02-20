@@ -9,7 +9,9 @@
 #include "nsGridContainerFrame.h"
 
 #include <functional>
+#include <limits>
 #include <stdlib.h>  
+#include <numeric>
 #include <type_traits>
 #include "gfxContext.h"
 #include "mozilla/AutoRestore.h"
@@ -22,14 +24,17 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"  
+#include "mozilla/Poison.h"
 #include "mozilla/PresShell.h"
 #include "nsAbsoluteContainingBlock.h"
 #include "nsAlgorithm.h"  
+#include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
+#include "nsTHashMap.h"
 #include "nsDisplayList.h"
 #include "nsHashKeys.h"
 #include "nsFieldSetFrame.h"
-#include "nsLayoutUtils.h"
+#include "nsIFrameInlines.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsReadableUtils.h"
@@ -589,55 +594,41 @@ struct nsGridContainerFrame::GridItemInfo {
 
   enum StateBits : uint16_t {
     
-    eIsFlexing = 0x1,
-
+    eIsFlexing =              0x1, 
+    eFirstBaseline =          0x2, 
     
-    
-    
-    
-    eFirstBaseline = 0x2,
-    eLastBaseline = 0x4,
+    eLastBaseline =           0x4,
     eIsBaselineAligned = eFirstBaseline | eLastBaseline,
-
     
-    eSelfBaseline = 0x8,  
+    eSelfBaseline =           0x8, 
     
-    eContentBaseline = 0x10,
-
+    eContentBaseline =       0x10,
     
     
     
     
-    eEndSideBaseline = 0x20,
+    eEndSideBaseline =       0x20,
     eAllBaselineBits = eIsBaselineAligned | eSelfBaseline | eContentBaseline |
                        eEndSideBaseline,
-
     
     
-    eApplyAutoMinSize = 0x40,
+    eApplyAutoMinSize =      0x40,
     
     eClampMarginBoxMinSize = 0x80,
-    eIsSubgrid = 0x100,
+    eIsSubgrid =            0x100,
     
     
-    eStartEdge = 0x200,
-    eEndEdge = 0x400,
+    eStartEdge =            0x200,
+    eEndEdge =              0x400,
     eEdgeBits = eStartEdge | eEndEdge,
     
-    eAutoPlacement = 0x800,
+    eAutoPlacement =        0x800,
     
-    eIsLastItemInMasonryTrack = 0x1000,
+    eIsLastItemInMasonryTrack =   0x1000,
+    
   };
 
   GridItemInfo(nsIFrame* aFrame, const GridArea& aArea);
-
-  GridItemInfo(const GridItemInfo& aOther)
-      : mFrame(aOther.mFrame), mArea(aOther.mArea) {
-    mBaselineOffset = aOther.mBaselineOffset;
-    mState = aOther.mState;
-  }
-
-  GridItemInfo& operator=(const GridItemInfo&) = delete;
 
   static bool BaselineAlignmentAffectsEndSide(StateBits state) {
     return state & StateBits::eEndSideBaseline;
@@ -663,12 +654,10 @@ struct nsGridContainerFrame::GridItemInfo {
 
   GridItemInfo Transpose() const {
     GridItemInfo info(mFrame, GridArea(mArea.mRows, mArea.mCols));
-    info.mState[eLogicalAxisBlock] = mState[eLogicalAxisInline];
-    info.mState[eLogicalAxisInline] = mState[eLogicalAxisBlock];
-    info.mBaselineOffset[eLogicalAxisBlock] =
-        mBaselineOffset[eLogicalAxisInline];
-    info.mBaselineOffset[eLogicalAxisInline] =
-        mBaselineOffset[eLogicalAxisBlock];
+    info.mState[0] = mState[1];
+    info.mState[1] = mState[0];
+    info.mBaselineOffset[0] = mBaselineOffset[1];
+    info.mBaselineOffset[1] = mBaselineOffset[0];
     return info;
   }
 
@@ -827,16 +816,13 @@ struct nsGridContainerFrame::GridItemInfo {
 
   nsIFrame* const mFrame;
   GridArea mArea;
-
   
   
   
-  
-  
-  mutable PerLogicalAxis<nscoord> mBaselineOffset;
-
-  
-  mutable PerLogicalAxis<StateBits> mState;
+  mutable nscoord mBaselineOffset[2];
+  mutable StateBits mState[2];  
+  static_assert(mozilla::eLogicalAxisBlock == 0, "unexpected index value");
+  static_assert(mozilla::eLogicalAxisInline == 1, "unexpected index value");
 };
 
 using GridItemInfo = nsGridContainerFrame::GridItemInfo;
@@ -844,12 +830,11 @@ using ItemState = GridItemInfo::StateBits;
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ItemState)
 
 GridItemInfo::GridItemInfo(nsIFrame* aFrame, const GridArea& aArea)
-    : mFrame(aFrame), mArea(aArea), mBaselineOffset{0, 0} {
+    : mFrame(aFrame), mArea(aArea) {
   mState[eLogicalAxisBlock] =
       StateBits(mArea.mRows.mStart == kAutoLine ? eAutoPlacement : 0);
   mState[eLogicalAxisInline] =
       StateBits(mArea.mCols.mStart == kAutoLine ? eAutoPlacement : 0);
-
   if (auto* gridFrame = GetGridContainerFrame(mFrame)) {
     auto parentWM = aFrame->GetParent()->GetWritingMode();
     bool isOrthogonal = parentWM.IsOrthogonalTo(gridFrame->GetWritingMode());
@@ -862,6 +847,8 @@ GridItemInfo::GridItemInfo(nsIFrame* aFrame, const GridArea& aArea)
           StateBits::eIsSubgrid;
     }
   }
+  mBaselineOffset[eLogicalAxisBlock] = nscoord(0);
+  mBaselineOffset[eLogicalAxisInline] = nscoord(0);
 }
 
 void GridItemInfo::ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd) {
@@ -2919,18 +2906,12 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
               mGridItems.AppendElement(GridItemInfo(child, itemInfo.mArea));
           
           
-          item->mState[eLogicalAxisBlock] |=
-              itemInfo.mState[eLogicalAxisBlock] & ItemState::eAllBaselineBits;
-          item->mState[eLogicalAxisInline] |=
-              itemInfo.mState[eLogicalAxisInline] & ItemState::eAllBaselineBits;
-          item->mBaselineOffset[eLogicalAxisBlock] =
-              itemInfo.mBaselineOffset[eLogicalAxisBlock];
-          item->mBaselineOffset[eLogicalAxisInline] =
-              itemInfo.mBaselineOffset[eLogicalAxisInline];
-          item->mState[eLogicalAxisBlock] |=
-              itemInfo.mState[eLogicalAxisBlock] & ItemState::eAutoPlacement;
-          item->mState[eLogicalAxisInline] |=
-              itemInfo.mState[eLogicalAxisInline] & ItemState::eAutoPlacement;
+          item->mState[0] |= itemInfo.mState[0] & ItemState::eAllBaselineBits;
+          item->mState[1] |= itemInfo.mState[1] & ItemState::eAllBaselineBits;
+          item->mBaselineOffset[0] = itemInfo.mBaselineOffset[0];
+          item->mBaselineOffset[1] = itemInfo.mBaselineOffset[1];
+          item->mState[0] |= itemInfo.mState[0] & ItemState::eAutoPlacement;
+          item->mState[1] |= itemInfo.mState[1] & ItemState::eAutoPlacement;
           break;
         }
       }
