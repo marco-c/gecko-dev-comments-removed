@@ -407,10 +407,10 @@ int Node::SetAcknowledgeRequestInterval(
   return OK;
 }
 
-int Node::AcceptEvent(ScopedEvent event) {
+int Node::AcceptEvent(const NodeName& from_node, ScopedEvent event) {
   switch (event->type()) {
     case Event::Type::kUserMessage:
-      return OnUserMessage(Event::Cast<UserMessageEvent>(&event));
+      return OnUserMessage(from_node, Event::Cast<UserMessageEvent>(&event));
     case Event::Type::kPortAccepted:
       return OnPortAccepted(Event::Cast<PortAcceptedEvent>(&event));
     case Event::Type::kObserveProxy:
@@ -487,7 +487,8 @@ int Node::LostConnectionToNode(const NodeName& node_name) {
   return OK;
 }
 
-int Node::OnUserMessage(mozilla::UniquePtr<UserMessageEvent> message) {
+int Node::OnUserMessage(const NodeName& from_node,
+                        mozilla::UniquePtr<UserMessageEvent> message) {
   PortName port_name = message->port_name();
 
 #ifdef DEBUG
@@ -509,25 +510,13 @@ int Node::OnUserMessage(mozilla::UniquePtr<UserMessageEvent> message) {
   
   
   
-  for (size_t i = 0; i < message->num_ports(); ++i) {
-    Event::PortDescriptor& descriptor = message->port_descriptors()[i];
-    if (descriptor.referring_node_name == kInvalidNodeName) {
-      
-      
-      PortRef port_ref;
-      if (GetPort(message->ports()[i], &port_ref) != OK) {
-        return ERROR_PORT_UNKNOWN;
-      }
-    } else {
+  if (from_node != name_) {
+    for (size_t i = 0; i < message->num_ports(); ++i) {
+      Event::PortDescriptor& descriptor = message->port_descriptors()[i];
       int rv = AcceptPort(message->ports()[i], descriptor);
       if (rv != OK) {
         return rv;
       }
-
-      
-      
-      
-      descriptor.referring_node_name = kInvalidNodeName;
     }
   }
 
@@ -1042,7 +1031,7 @@ int Node::SendUserMessageInternal(
     return OK;
   }
 
-  int accept_result = AcceptEvent(std::move(m));
+  int accept_result = AcceptEvent(name_, std::move(m));
   if (accept_result != OK) {
     
     DVLOG(2) << "AcceptEvent failed: " << accept_result;

@@ -153,7 +153,7 @@ class Node {
                                     uint64_t sequence_num_acknowledge_interval);
 
   
-  int AcceptEvent(ScopedEvent event);
+  int AcceptEvent(const NodeName& from_node, ScopedEvent event);
 
   
   
@@ -206,7 +206,8 @@ class Node {
     NodeDelegate* const delegate_;
   };
 
-  int OnUserMessage(mozilla::UniquePtr<UserMessageEvent> message);
+  int OnUserMessage(const NodeName& from_node,
+                    mozilla::UniquePtr<UserMessageEvent> message);
   int OnPortAccepted(mozilla::UniquePtr<PortAcceptedEvent> event);
   int OnObserveProxy(mozilla::UniquePtr<ObserveProxyEvent> event);
   int OnObserveProxyAck(mozilla::UniquePtr<ObserveProxyAckEvent> event);
