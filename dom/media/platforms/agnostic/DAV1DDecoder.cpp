@@ -178,7 +178,7 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
   DecodedData results;
   do {
     res = dav1d_send_data(mContext, &data);
-    if (res < 0 && res != -EAGAIN) {
+    if (res < 0 && res != DAV1D_ERR(EAGAIN)) {
       LOG("Decode error: %d", res);
       return DecodePromise::CreateAndReject(
           MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__), __func__);
@@ -186,12 +186,12 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
     
     
     MOZ_ASSERT((res == 0 && !data.sz) ||
-               (res == -EAGAIN && data.sz == aSample->Size()));
+               (res == DAV1D_ERR(EAGAIN) && data.sz == aSample->Size()));
 
     MediaResult rs(NS_OK);
     res = GetPicture(results, rs);
     if (res < 0) {
-      if (res == -EAGAIN) {
+      if (res == DAV1D_ERR(EAGAIN)) {
         
         
         
@@ -358,10 +358,10 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::Drain() {
     do {
       MediaResult rs(NS_OK);
       res = GetPicture(results, rs);
-      if (res < 0 && res != -EAGAIN) {
+      if (res < 0 && res != DAV1D_ERR(EAGAIN)) {
         return DecodePromise::CreateAndReject(rs, __func__);
       }
-    } while (res != -EAGAIN);
+    } while (res != DAV1D_ERR(EAGAIN));
     return DecodePromise::CreateAndResolve(std::move(results), __func__);
   });
 }
