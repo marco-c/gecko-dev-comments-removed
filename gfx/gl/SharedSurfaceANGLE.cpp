@@ -177,7 +177,8 @@ SharedSurface_ANGLEShareHandle::ToSurfaceDescriptor() {
       mSharedHandle,  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
       gfx::ColorRange::FULL,  true,
-       Nothing(),  Nothing()));
+       Nothing(),  Nothing(),
+       false));
 }
 
 
