@@ -8,6 +8,7 @@
 #define jit_CodeGenerator_h
 
 #include "jit/PerfSpewer.h"
+#include "js/Prefs.h"
 #include "js/ScalarType.h"  
 
 #if defined(JS_CODEGEN_X86)
@@ -457,7 +458,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   
   bool hasSeenObjectEmulateUndefinedFuseIntactAndDependencyNoted() {
-    if (!JitOptions.useHasSeenEmulatesUndefinedFuse) {
+    if (!JS::Prefs::use_emulates_undefined_fuse()) {
       
       return false;
     }
