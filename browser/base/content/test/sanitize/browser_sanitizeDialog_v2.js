@@ -663,6 +663,69 @@ add_task(async function test_cancel() {
 });
 
 
+add_task(async function test_pref_remembering() {
+  let dh = new DialogHelper("clearSiteData");
+  dh.onload = function () {
+    this.checkPrefCheckbox("siteSettings", true);
+    this.checkPrefCheckbox("cookiesAndStorage", false);
+
+    this.acceptDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  
+  dh = new DialogHelper("clearSiteData");
+  dh.onload = function () {
+    this.validateCheckbox("cookiesAndStorage", false);
+    this.validateCheckbox("siteSettings", true);
+
+    this.checkPrefCheckbox("siteSettings", false);
+    this.checkPrefCheckbox("cookiesAndStorage", true);
+
+    
+    
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  
+  dh = new DialogHelper("clearSiteData");
+  dh.onload = function () {
+    this.validateCheckbox("cookiesAndStorage", false);
+    this.validateCheckbox("siteSettings", true);
+
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  dh = new DialogHelper("clearHistory");
+  dh.onload = function () {
+    this.checkPrefCheckbox("siteSettings", false);
+    this.checkPrefCheckbox("cache", false);
+    this.checkPrefCheckbox("cookiesAndStorage", true);
+
+    this.acceptDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  
+  dh = new DialogHelper("browser");
+  dh.onload = function () {
+    this.validateCheckbox("cache", false);
+    this.validateCheckbox("cookiesAndStorage", true);
+    this.validateCheckbox("siteSettings", false);
+
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
+
+
 
 
 add_task(async function test_everything() {
@@ -769,12 +832,6 @@ add_task(async function testAcceptButtonDisabled() {
     this.uncheckAllCheckboxes();
     await new Promise(resolve => SimpleTest.executeSoon(resolve));
     is(clearButton.disabled, true, "Clear button should be disabled");
-    
-    
-    
-    
-    
-    
 
     this.checkPrefCheckbox("cache", true);
     await new Promise(resolve => SimpleTest.executeSoon(resolve));
@@ -1190,37 +1247,6 @@ add_task(async function test_clear_on_shutdown() {
 
   
   await SiteDataTestUtils.clear();
-});
-
-
-add_task(async function test_defaults_prefs() {
-  let dh = new DialogHelper("clearSiteData");
-  dh.onload = function () {
-    this.validateCheckbox("historyFormDataAndDownloads", false);
-    this.validateCheckbox("cache", true);
-    this.validateCheckbox("cookiesAndStorage", true);
-    this.validateCheckbox("siteSettings", false);
-
-    this.cancelDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
-
-  
-  
-
-  dh = new DialogHelper();
-  dh.onload = function () {
-    
-    this.validateCheckbox("historyFormDataAndDownloads", true);
-    this.validateCheckbox("cache", true);
-    this.validateCheckbox("cookiesAndStorage", true);
-    this.validateCheckbox("siteSettings", false);
-
-    this.cancelDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
 });
 
 
