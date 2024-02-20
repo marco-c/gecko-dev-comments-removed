@@ -173,7 +173,7 @@ let interfaceNamesInGlobalScope = [
   
   "DOMRectReadOnly",
   
-  "DOMRequest",
+  { name: "DOMRequest", disabled: true },
   
   "DOMStringList",
   
