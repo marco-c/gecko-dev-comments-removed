@@ -52,7 +52,7 @@ VideoCaptureFactory::CreateDeviceInfo(
     
     
     
-    if (!mCameraBackendInitialized) {
+    if (!mCameraBackendInitialized && mVideoCaptureOptions->allow_pipewire()) {
       MOZ_ASSERT(mCameraAvailability != Unknown);
       deviceInfo.reset(
           new PlaceholderDeviceInfo(mCameraAvailability == Available));
@@ -106,6 +106,28 @@ auto VideoCaptureFactory::InitCameraBackend()
 #if (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)) && !defined(WEBRTC_ANDROID)
     MOZ_ASSERT(mVideoCaptureOptions);
     mVideoCaptureOptions->Init(this);
+    mPromise = mPromise->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [this, self = RefPtr(this)](
+            const CameraBackendInitPromise::ResolveOrRejectValue& aValue) {
+          if (aValue.IsReject() &&
+              aValue.RejectValue() != NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR) {
+            
+            
+            
+            mVideoCaptureOptions->set_allow_pipewire(false);
+            mCameraBackendInitialized = true;
+
+            return CameraBackendInitPromise::CreateAndResolve(
+                NS_OK,
+                "VideoCaptureFactory::InitCameraBackend Resolve with "
+                "fallback to V4L2");
+          }
+
+          return CameraBackendInitPromise::CreateAndResolveOrReject(
+              aValue,
+              "VideoCaptureFactory::InitCameraBackend Resolve or Reject");
+        });
 #else
     mCameraBackendInitialized = true;
     mPromiseHolder.Resolve(NS_OK,
@@ -156,7 +178,7 @@ auto VideoCaptureFactory::HasCameraDevice()
   }
 #endif
   return HasCameraDevicePromise::CreateAndReject(
-      NS_ERROR_NOT_IMPLEMENTED, "VideoCaptureFactory::HasCameraDevice Resolve");
+      NS_ERROR_NOT_IMPLEMENTED, "VideoCaptureFactory::HasCameraDevice Reject");
 }
 
 auto VideoCaptureFactory::UpdateCameraAvailability()
@@ -173,7 +195,11 @@ auto VideoCaptureFactory::UpdateCameraAvailability()
               "VideoCaptureFactory::UpdateCameraAvailability Resolve");
         }
 
-        mCameraAvailability = Unknown;
+        
+        
+        
+        mCameraAvailability = Available;
+
         return HasCameraDevicePromise::CreateAndReject(
             aValue.RejectValue(),
             "VideoCaptureFactory::UpdateCameraAvailability Reject");
