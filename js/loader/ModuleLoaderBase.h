@@ -352,6 +352,21 @@ class ModuleLoaderBase : public nsISupports {
   void ResetOverride();
 
   
+  
+  
+  
+  
+  
+  void CopyModulesTo(ModuleLoaderBase* aDest);
+
+  
+  
+  
+  
+  
+  void MoveModulesTo(ModuleLoaderBase* aDest);
+
+  
 
  private:
   friend class JS::loader::ModuleLoadRequest;
