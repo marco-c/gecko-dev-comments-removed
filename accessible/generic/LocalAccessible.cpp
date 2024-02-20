@@ -1491,6 +1491,11 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
 
+  if (aAttribute == nsGkAtoms::popovertarget) {
+    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
+    return;
+  }
+
   if (aAttribute == nsGkAtoms::alt &&
       !nsAccUtils::HasARIAAttr(elm, nsGkAtoms::aria_label) &&
       !elm->HasAttr(nsGkAtoms::aria_labelledby)) {
@@ -2021,6 +2026,30 @@ nsIContent* LocalAccessible::GetAtomicRegion() const {
   return atomic.EqualsLiteral("true") ? loopContent : nullptr;
 }
 
+LocalAccessible* LocalAccessible::GetPopoverTargetDetailsRelation() const {
+  dom::Element* targetEl = mContent->GetEffectivePopoverTargetElement();
+  if (!targetEl) {
+    return nullptr;
+  }
+  LocalAccessible* targetAcc = mDoc->GetAccessible(targetEl);
+  if (!targetAcc) {
+    return nullptr;
+  }
+  
+  
+  if (const nsAttrValue* actionVal =
+          Elm()->GetParsedAttr(nsGkAtoms::popovertargetaction)) {
+    if (static_cast<PopoverTargetAction>(actionVal->GetEnumValue()) ==
+        PopoverTargetAction::Hide) {
+      return nullptr;
+    }
+  }
+  if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
+    return nullptr;
+  }
+  return targetAcc;
+}
+
 Relation LocalAccessible::RelationByType(RelationType aType) const {
   if (!HasOwnContent()) return Relation();
 
@@ -2301,13 +2330,35 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
     case RelationType::CONTAINING_APPLICATION:
       return Relation(ApplicationAcc());
 
-    case RelationType::DETAILS:
-      return Relation(
-          new IDRefsIterator(mDoc, mContent, nsGkAtoms::aria_details));
+    case RelationType::DETAILS: {
+      if (mContent->IsElement() &&
+          mContent->AsElement()->HasAttr(nsGkAtoms::aria_details)) {
+        return Relation(
+            new IDRefsIterator(mDoc, mContent, nsGkAtoms::aria_details));
+      }
+      if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
+        return Relation(target);
+      }
+      return Relation();
+    }
 
-    case RelationType::DETAILS_FOR:
-      return Relation(
+    case RelationType::DETAILS_FOR: {
+      Relation rel(
           new RelatedAccIterator(mDoc, mContent, nsGkAtoms::aria_details));
+      RelatedAccIterator invokers(mDoc, mContent, nsGkAtoms::popovertarget);
+      while (Accessible* invoker = invokers.Next()) {
+        
+        
+        
+        LocalAccessible* popoverTarget =
+            invoker->AsLocal()->GetPopoverTargetDetailsRelation();
+        if (popoverTarget) {
+          MOZ_ASSERT(popoverTarget == this);
+          rel.AppendTarget(invoker);
+        }
+      }
+      return rel;
+    }
 
     case RelationType::ERRORMSG:
       return Relation(
@@ -3848,6 +3899,11 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 dom::HTMLLabelElement::FromNode(mContent)) {
           rel.AppendTarget(mDoc, labelEl->GetControl());
         }
+      } else if (data.mType == RelationType::DETAILS) {
+        
+        
+        
+        rel = RelationByType(RelationType::DETAILS);
       } else {
         
         
