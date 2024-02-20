@@ -5,7 +5,6 @@
 
 #include "nsISupports.idl"
 
-interface nsIURI;
 webidl WindowGlobalParent;
 
 [scriptable, uuid(06e6a60f-3a2b-41fa-a63b-fea7a7f71649)]
@@ -133,7 +132,7 @@ interface nsIContentAnalysisRequest : nsISupports
 
   
   
-  readonly attribute nsIURI url;
+  readonly attribute AString url;
 
   
   
@@ -173,7 +172,7 @@ interface nsIContentAnalysis : nsISupports
 
 
 
-  readonly attribute boolean isActive;
+  readonly attribute bool isActive;
 
   
 
