@@ -56,31 +56,58 @@ function JSTracerTrace(props) {
     implementation,
     displayName,
     parameters,
+
+    
+    returnedValue,
+    relatedTraceId,
+    
+    why,
   } = message;
 
   
-  const messageBody = eventName
-    ? [dom.span({ className: "jstracer-dom-event" }, eventName)]
-    : [
-        dom.span({ className: "jstracer-implementation" }, implementation),
-        "⟶",
-        dom.span({ className: "jstracer-display-name" }, displayName),
-      ];
+  let messageBody;
+  if (eventName) {
+    messageBody = [dom.span({ className: "jstracer-dom-event" }, eventName)];
+  } else if (typeof relatedTraceId == "number") {
+    messageBody = [
+      dom.span({ className: "jstracer-io" }, "⟵ "),
+      dom.span({ className: "jstracer-display-name" }, displayName),
+    ];
+  } else {
+    messageBody = [
+      dom.span({ className: "jstracer-io" }, "⟶ "),
+      dom.span({ className: "jstracer-implementation" }, implementation),
+      
+      dom.span({ className: "jstracer-display-name" }, " " + displayName),
+    ];
+  }
 
-  
-  if (parameters) {
-    const messageBodyConfig = {
+  let messageBodyConfig;
+  if (parameters || why) {
+    messageBodyConfig = {
       dispatch,
-      parameters,
       serviceContainer,
-      type: "",
       maybeScrollToBottom,
       setExpanded,
+      type: "",
+      useQuotes: true,
 
       
       customFormat: false,
     };
-    messageBody.push("(", ...formatReps(messageBodyConfig), ")");
+  }
+  
+
+  if (parameters) {
+    messageBody.push("(", ...formatReps(messageBodyConfig, parameters), ")");
+  }
+  
+  if (why) {
+    messageBody.push(
+      
+      dom.span({ className: "jstracer-exit-frame-reason" }, " " + why + " "),
+      formatRep(messageBodyConfig, returnedValue)
+    );
   }
 
   if (prefix) {
@@ -117,45 +144,31 @@ function JSTracerTrace(props) {
   });
 }
 
-function formatReps(options = {}) {
-  const {
-    dispatch,
-    loadedObjectProperties,
-    loadedObjectEntries,
-    parameters,
-    serviceContainer,
-    type,
-    maybeScrollToBottom,
-    setExpanded,
-    customFormat,
-  } = options;
 
+
+
+
+function formatReps(messageBodyConfig, objects) {
   const elements = [];
-  const parametersLength = parameters.length;
-  for (let i = 0; i < parametersLength; i++) {
-    elements.push(
-      GripMessageBody({
-        dispatch,
-        grip: parameters[i],
-        key: i,
-        serviceContainer,
-        useQuotes: true,
-        loadedObjectProperties,
-        loadedObjectEntries,
-        type,
-        maybeScrollToBottom,
-        setExpanded,
-        customFormat,
-      })
-    );
+  const length = objects.length;
+  for (let i = 0; i < length; i++) {
+    elements.push(formatRep(messageBodyConfig, objects[i], i));
 
     
-    if (i !== parametersLength - 1) {
+    if (i !== length - 1) {
       elements.push(", ");
     }
   }
 
   return elements;
+}
+
+function formatRep(messageBodyConfig, grip, key) {
+  return GripMessageBody({
+    ...messageBodyConfig,
+    grip,
+    key,
+  });
 }
 
 module.exports = JSTracerTrace;

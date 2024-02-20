@@ -48,6 +48,7 @@ if (isNode()) {
   pref("devtools.debugger.javascript-tracing-values", false);
   pref("devtools.debugger.javascript-tracing-on-next-interaction", false);
   pref("devtools.debugger.javascript-tracing-on-next-load", false);
+  pref("devtools.debugger.javascript-tracing-function-return", false);
   pref("devtools.debugger.hide-ignored-sources", false);
   pref("devtools.debugger.source-map-ignore-list-enabled", true);
   pref("devtools.debugger.features.wasm", true);
@@ -58,6 +59,7 @@ if (isNode()) {
   pref("devtools.debugger.features.log-points", true);
   pref("devtools.debugger.features.inline-preview", true);
   pref("devtools.debugger.features.javascript-tracing", false);
+  pref("devtools.debugger.features.codemirror-next", false);
   pref("devtools.editor.tabsize", 2);
   pref("devtools.editor.expandtab", false);
   pref("devtools.editor.autoclosebrackets", false);
@@ -118,6 +120,10 @@ export const prefs = new PrefsHelper("devtools", {
     "Bool",
     "debugger.javascript-tracing-on-next-load",
   ],
+  javascriptTracingFunctionReturn: [
+    "Bool",
+    "debugger.javascript-tracing-function-return",
+  ],
   hideIgnoredSources: ["Bool", "debugger.hide-ignored-sources"],
   sourceMapIgnoreListEnabled: [
     "Bool",
@@ -141,6 +147,7 @@ export const features = new PrefsHelper("devtools.debugger.features", {
   inlinePreview: ["Bool", "inline-preview"],
   windowlessServiceWorkers: ["Bool", "windowless-service-workers"],
   javascriptTracing: ["Bool", "javascript-tracing"],
+  codemirrorNext: ["Bool", "codemirror-next"],
 });
 
 

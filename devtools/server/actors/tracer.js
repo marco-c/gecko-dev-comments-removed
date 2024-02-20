@@ -129,6 +129,7 @@ class TracerActor extends Actor {
 
     this.tracingListener = {
       onTracingFrame: this.onTracingFrame.bind(this),
+      onTracingFrameExit: this.onTracingFrameExit.bind(this),
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
       onTracingToggled: this.onTracingToggled.bind(this),
       onTracingPending: this.onTracingPending.bind(this),
@@ -144,6 +145,8 @@ class TracerActor extends Actor {
       traceValues: !!options.traceValues,
       
       traceOnNextInteraction: !!options.traceOnNextInteraction,
+      
+      traceFunctionReturn: !!options.traceFunctionReturn,
       
       maxDepth: options.maxDepth,
       
@@ -280,7 +283,11 @@ class TracerActor extends Actor {
 
 
 
+
+
+
   onTracingFrame({
+    frameId,
     frame,
     depth,
     formatedDisplayName,
@@ -330,7 +337,9 @@ class TracerActor extends Actor {
       let args = undefined;
       
       
-      if (this.traceValues) {
+      
+      
+      if (this.traceValues && frame.arguments) {
         args = [];
         for (let arg of frame.arguments) {
           
@@ -371,6 +380,104 @@ class TracerActor extends Actor {
         },
         depth
       );
+    }
+
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onTracingFrameExit({
+    frameId,
+    frame,
+    depth,
+    formatedDisplayName,
+    prefix,
+    why,
+    rv,
+  }) {
+    const { script } = frame;
+    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
+    const url = script.source.url;
+
+    
+    
+    
+    
+    const columnBase = script.format === "wasm" ? 0 : 1;
+
+    
+    if (
+      this.sourcesManager.isBlackBoxed(
+        url,
+        lineNumber,
+        columnNumber - columnBase
+      )
+    ) {
+      return false;
+    }
+
+    if (this.logMethod == LOG_METHODS.STDOUT) {
+      
+      return true;
+    }
+
+    if (this.logMethod == LOG_METHODS.CONSOLE) {
+      let returnedValue = undefined;
+      
+      
+      if (this.traceValues) {
+        
+        if (rv?.unsafeDereference) {
+          rv = rv.unsafeDereference();
+        }
+        
+        const dbgObj = makeDebuggeeValue(this.targetActor, rv);
+        returnedValue = createValueGripForTarget(this.targetActor, dbgObj);
+      }
+
+      
+      this.throttledTraces.push({
+        resourceType: JSTRACER_TRACE,
+        prefix,
+        timeStamp: ChromeUtils.dateNow(),
+
+        depth,
+        displayName: formatedDisplayName,
+        filename: url,
+        lineNumber,
+        columnNumber: columnNumber - columnBase,
+        sourceId: script.source.id,
+
+        relatedTraceId: frameId,
+        returnedValue,
+        why,
+      });
+      this.throttleEmitTraces();
+    } else if (this.logMethod == LOG_METHODS.PROFILER) {
+      
     }
 
     return false;

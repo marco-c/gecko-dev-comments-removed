@@ -30,6 +30,19 @@ const EXPORTED_SYMBOLS = [
 const NEXT_INTERACTION_MESSAGE =
   "Waiting for next user interaction before tracing (next mousedown or keydown event)";
 
+const FRAME_EXIT_REASONS = {
+  
+  TERMINATED: "terminated",
+  
+  RETURN: "return",
+  
+  YIELD: "yield",
+  
+  AWAIT: "await",
+  
+  THROW: "throw",
+};
+
 const listeners = new Set();
 
 
@@ -112,6 +125,9 @@ const customLazy = {
 
 
 
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -125,8 +141,12 @@ class JavaScriptTracer {
     
     this.dbg = this.makeDebugger();
 
-    this.depth = 0;
     this.prefix = options.prefix ? `${options.prefix}: ` : "";
+
+    
+    
+    
+    this.pendingAwaitFrames = new Set();
 
     this.loggingMethod = options.loggingMethod;
     if (!this.loggingMethod) {
@@ -143,9 +163,13 @@ class JavaScriptTracer {
 
     this.traceDOMEvents = !!options.traceDOMEvents;
     this.traceValues = !!options.traceValues;
+    this.traceFunctionReturn = !!options.traceFunctionReturn;
     this.maxDepth = options.maxDepth;
     this.maxRecords = options.maxRecords;
     this.records = 0;
+
+    
+    this.frameId = 0;
 
     
     if (options.traceOnNextInteraction && typeof isWorker !== "boolean") {
@@ -383,12 +407,23 @@ class JavaScriptTracer {
     }
     try {
       
-      if (this.maxDepth && this.depth >= this.maxDepth) {
+      
+      const depth = getFrameDepth(frame);
+
+      
+      if (this.maxDepth && depth >= this.maxDepth) {
         return;
       }
 
       
-      if (this.depth === 0 && this.maxRecords) {
+      
+      if (this.pendingAwaitFrames.has(frame)) {
+        this.pendingAwaitFrames.delete(frame);
+        return;
+      }
+
+      
+      if (depth === 0 && this.maxRecords) {
         if (this.records >= this.maxRecords) {
           this.stopTracing("max-records");
           return;
@@ -397,12 +432,13 @@ class JavaScriptTracer {
       }
 
       
-      if (this.depth == 100) {
+      if (depth == 100) {
         this.notifyInfiniteLoop();
         this.stopTracing("infinite-loop");
         return;
       }
 
+      const frameId = this.frameId++;
       let shouldLogToStdout = true;
 
       
@@ -414,8 +450,9 @@ class JavaScriptTracer {
           
           if (typeof listener.onTracingFrame == "function") {
             shouldLogToStdout |= listener.onTracingFrame({
+              frameId,
               frame,
-              depth: this.depth,
+              depth,
               formatedDisplayName,
               prefix: this.prefix,
               currentDOMEvent: this.currentDOMEvent,
@@ -427,12 +464,61 @@ class JavaScriptTracer {
       
       
       if (shouldLogToStdout) {
-        this.logFrameToStdout(frame);
+        this.logFrameEnteredToStdout(frame, depth);
       }
 
-      this.depth++;
-      frame.onPop = () => {
-        this.depth--;
+      frame.onPop = completion => {
+        
+        
+        
+        if (completion?.await) {
+          this.pendingAwaitFrames.add(frame);
+          return;
+        }
+
+        if (!this.traceFunctionReturn) {
+          return;
+        }
+
+        let why = "";
+        let rv = undefined;
+        if (!completion) {
+          why = FRAME_EXIT_REASONS.TERMINATED;
+        } else if ("return" in completion) {
+          why = FRAME_EXIT_REASONS.RETURN;
+          rv = completion.return;
+        } else if ("yield" in completion) {
+          why = FRAME_EXIT_REASONS.YIELD;
+          rv = completion.yield;
+        } else if ("await" in completion) {
+          why = FRAME_EXIT_REASONS.AWAIT;
+        } else {
+          why = FRAME_EXIT_REASONS.THROW;
+          rv = completion.throw;
+        }
+
+        shouldLogToStdout = true;
+        if (listeners.size > 0) {
+          shouldLogToStdout = false;
+          const formatedDisplayName = formatDisplayName(frame);
+          for (const listener of listeners) {
+            
+            if (typeof listener.onTracingFrameExit == "function") {
+              shouldLogToStdout |= listener.onTracingFrameExit({
+                frameId,
+                frame,
+                depth,
+                formatedDisplayName,
+                prefix: this.prefix,
+                why,
+                rv,
+              });
+            }
+          }
+        }
+        if (shouldLogToStdout) {
+          this.logFrameExitedToStdout(frame, depth, why, rv);
+        }
       };
     } catch (e) {
       console.error("Exception while tracing javascript", e);
@@ -444,29 +530,20 @@ class JavaScriptTracer {
 
 
 
-  logFrameToStdout(frame) {
-    const { script } = frame;
-    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
-    const padding = "—".repeat(this.depth + 1);
+
+  logFrameEnteredToStdout(frame, depth) {
+    const padding = "—".repeat(depth + 1);
 
     
     
     
-    if (this.currentDOMEvent && this.depth == 0) {
+    if (this.currentDOMEvent && depth == 0) {
       this.loggingMethod(this.prefix + padding + this.currentDOMEvent + "\n");
     }
 
-    
-    
-    const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
-
-    
-    
-    const urlLink = `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
-
-    let message = `${padding}[${
-      frame.implementation
-    }]—> ${urlLink} - ${formatDisplayName(frame)}`;
+    let message = `${padding}[${frame.implementation}]—> ${getTerminalHyperLink(
+      frame
+    )} - ${formatDisplayName(frame)}`;
 
     
     
@@ -493,6 +570,40 @@ class JavaScriptTracer {
         }
       }
       message += ")";
+    }
+
+    this.loggingMethod(this.prefix + message + "\n");
+  }
+
+  
+
+
+
+
+
+
+  logFrameExitedToStdout(frame, depth, why, rv) {
+    const padding = "—".repeat(depth + 1);
+
+    let message = `${padding}[${frame.implementation}]<— ${getTerminalHyperLink(
+      frame
+    )} - ${formatDisplayName(frame)} ${why}`;
+
+    
+    
+    if (this.traceValues) {
+      message += " ";
+      
+      if (rv?.unsafeDereference) {
+        
+        if (rv.isClassConstructor) {
+          message += "class " + rv.name;
+        } else {
+          message += objectToString(rv.unsafeDereference());
+        }
+      } else {
+        message += primitiveToString(rv);
+      }
     }
 
     this.loggingMethod(this.prefix + message + "\n");
@@ -636,6 +747,44 @@ function addTracingListener(listener) {
 
 function removeTracingListener(listener) {
   listeners.delete(listener);
+}
+
+function getFrameDepth(frame) {
+  if (typeof frame.depth !== "number") {
+    let depth = 0;
+    let f = frame;
+    while ((f = f.older)) {
+      depth++;
+    }
+    frame.depth = depth;
+  }
+
+  return frame.depth;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTerminalHyperLink(frame) {
+  const { script } = frame;
+  const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
+
+  
+  
+  const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
+
+  
+  
+  return `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
 }
 
 

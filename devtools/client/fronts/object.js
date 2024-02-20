@@ -346,7 +346,7 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
   
   
   const isPacketAnObject = packet && typeof packet === "object";
-  const isFront = !!packet.typeName;
+  const isFront = !!packet?.typeName;
   if (
     !isPacketAnObject ||
     packet.type == "symbol" ||
