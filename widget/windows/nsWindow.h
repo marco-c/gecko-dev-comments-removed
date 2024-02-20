@@ -593,7 +593,7 @@ class nsWindow final : public nsBaseWidget {
   DWORD WindowStyle();
   DWORD WindowExStyle();
 
-  static const wchar_t* ChooseWindowClass(WindowType, bool aForMenupopupFrame);
+  static const wchar_t* ChooseWindowClass(WindowType);
   
   static const wchar_t* RegisterWindowClass(const wchar_t* aClassName,
                                             UINT aExtraStyle, LPWSTR aIconID);
@@ -754,7 +754,10 @@ class nsWindow final : public nsBaseWidget {
   bool mIsEarlyBlankWindow = false;
   bool mIsShowingPreXULSkeletonUI = false;
   bool mResizable = false;
-  bool mForMenupopupFrame = false;
+  
+  
+  
+  bool mIsAlert = false;
   bool mIsPerformingDwmFlushHack = false;
   bool mDraggingWindowWithMouse = false;
   DWORD_PTR mOldStyle = 0;

@@ -91,7 +91,6 @@ struct InitData {
   
   bool mClipChildren = false;
   bool mClipSiblings = false;
-  bool mForMenupopupFrame = false;
   bool mRTL = false;
   bool mNoAutoHide = false;   
   bool mIsDragPopup = false;  
