@@ -82,7 +82,7 @@ impl SelfEncrypt {
         
         
         
-        let salt = random(Self::SALT_LENGTH);
+        let salt = random::<{ Self::SALT_LENGTH }>();
         let cipher = self.make_aead(&self.key, &salt)?;
         let encoded_len = 2 + salt.len() + plaintext.len() + cipher.expansion();
 
