@@ -40,6 +40,12 @@ add_task(async function test_verify_traffic_for_http2() {
     true
   );
 
+  
+  
+  
+  
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
