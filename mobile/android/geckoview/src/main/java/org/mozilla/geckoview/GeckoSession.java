@@ -685,11 +685,7 @@ public class GeckoSession {
               final GeckoBundle[] perms = message.getBundleArray("permissions");
               final List<PermissionDelegate.ContentPermission> permList =
                   PermissionDelegate.ContentPermission.fromBundleArray(perms);
-              delegate.onLocationChange(
-                  GeckoSession.this,
-                  message.getString("uri"),
-                  permList,
-                  message.getBoolean("hasUserGesture"));
+              delegate.onLocationChange(GeckoSession.this, message.getString("uri"), permList);
             }
             delegate.onCanGoBack(GeckoSession.this, message.getBoolean("canGoBack"));
             delegate.onCanGoForward(GeckoSession.this, message.getBoolean("canGoForward"));
@@ -4943,33 +4939,11 @@ public class GeckoSession {
 
 
 
-
-
     @UiThread
-    @Deprecated
-    @DeprecationSchedule(id = "geckoview-onlocationchange", version = 126)
     default void onLocationChange(
         @NonNull GeckoSession session,
         @Nullable String url,
         final @NonNull List<PermissionDelegate.ContentPermission> perms) {}
-
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    default void onLocationChange(
-        @NonNull GeckoSession session,
-        @Nullable String url,
-        final @NonNull List<PermissionDelegate.ContentPermission> perms,
-        final @NonNull Boolean hasUserGesture) {
-      session.getNavigationDelegate().onLocationChange(session, url, perms);
-    }
 
     
 
