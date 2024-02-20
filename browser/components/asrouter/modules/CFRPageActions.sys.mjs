@@ -1,8 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// XPCOMUtils and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -44,30 +50,30 @@ const CATEGORY_ICONS = {
   cfrHeartbeat: "highlights-icon",
 };
 
-
-
-
-
-
-
-
-
+/**
+ * A WeakMap from browsers to {host, recommendation} pairs. Recommendations are
+ * defined in the ExtensionDoorhanger.schema.json.
+ *
+ * A recommendation is specific to a browser and host and is active until the
+ * given browser is closed or the user navigates (within that browser) away from
+ * the host.
+ */
 let RecommendationMap = new WeakMap();
 
-
-
-
+/**
+ * A WeakMap from windows to their CFR PageAction.
+ */
 let PageActionMap = new WeakMap();
 
-
-
-
-class PageAction {
+/**
+ * We need one PageAction for each window
+ */
+export class PageAction {
   constructor(win, dispatchCFRAction) {
     this.window = win;
 
-    this.urlbar = win.gURLBar; 
-    this.urlbarinput = win.gURLBar.textbox; 
+    this.urlbar = win.gURLBar; // The global URLBar object
+    this.urlbarinput = win.gURLBar.textbox; // The URLBar DOM node
 
     this.container = win.document.getElementById(
       "contextual-feature-recommendation"
@@ -75,8 +81,8 @@ class PageAction {
     this.button = win.document.getElementById("cfr-button");
     this.label = win.document.getElementById("cfr-label");
 
-    
-    
+    // This should NOT be use directly to dispatch message-defined actions attached to buttons.
+    // Please use dispatchUserAction instead.
     this._dispatchCFRAction = dispatchCFRAction;
 
     this._popupStateChange = this._popupStateChange.bind(this);
@@ -85,7 +91,7 @@ class PageAction {
     this._executeNotifierAction = this._executeNotifierAction.bind(this);
     this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
-    
+    // Saved timeout IDs for scheduled state changes, so they can be cancelled
     this.stateTransitionTimeoutIDs = [];
 
     ChromeUtils.defineLazyGetter(this, "isDarkTheme", () => {
@@ -101,10 +107,10 @@ class PageAction {
 
   addImpression(recommendation) {
     this._dispatchImpression(recommendation);
-    
-    
-    
-    
+    // Only send an impression ping upon the first expansion.
+    // Note that when the user clicks on the "show" button on the asrouter admin
+    // page (both `bucket_id` and `id` will be set as null), we don't want to send
+    // the impression ping in that case.
     if (!!recommendation.id && !!recommendation.content.bucket_id) {
       this._sendTelemetry({
         message_id: recommendation.id,
@@ -130,7 +136,7 @@ class PageAction {
         "tooltiptext",
         notificationText.attributes.tooltiptext
       );
-      
+      // For a11y, we want the more descriptive text.
       this.container.setAttribute(
         "aria-label",
         notificationText.attributes.tooltiptext
@@ -154,23 +160,23 @@ class PageAction {
       );
     }
 
-    
-    
-    
+    // Wait for layout to flush to avoid a synchronous reflow then calculate the
+    // label width. We can safely get the width even though the recommendation is
+    // collapsed; the label itself remains full width (with its overflow hidden)
     let [{ width }] = await this.window.promiseDocumentFlushed(() =>
       this.label.getClientRects()
     );
     this.urlbarinput.style.setProperty("--cfr-label-width", `${width}px`);
 
     this.container.addEventListener("click", this._cfrUrlbarButtonClick);
-    
-    
+    // Collapse the recommendation on url bar focus in order to free up more
+    // space to display and edit the url
     this.urlbar.addEventListener("focus", this._collapse);
 
     if (shouldExpand) {
       this._clearScheduledStateChanges();
 
-      
+      // After one second, expand
       this._expand(DELAY_BEFORE_EXPAND_MS);
 
       this.addImpression(recommendation);
@@ -204,7 +210,7 @@ class PageAction {
         }, delay)
       );
     } else {
-      
+      // Non-delayed state change overrides any scheduled state changes
       this._clearScheduledStateChanges();
       this.urlbarinput.setAttribute("cfr-recommendation-state", "expanded");
     }
@@ -226,7 +232,7 @@ class PageAction {
         }, delay)
       );
     } else {
-      
+      // Non-delayed state change overrides any scheduled state changes
       this._clearScheduledStateChanges();
       if (
         this.urlbarinput.getAttribute("cfr-recommendation-state") === "expanded"
@@ -238,13 +244,13 @@ class PageAction {
 
   _clearScheduledStateChanges() {
     while (this.stateTransitionTimeoutIDs.length) {
-      
+      // clearTimeout is safe even with invalid/expired IDs
       this.window.clearTimeout(this.stateTransitionTimeoutIDs.pop());
     }
   }
 
-  
-  
+  // This is called when the popup closes as a result of interaction _outside_
+  // the popup, e.g. by hitting <esc>
   _popupStateChange(state) {
     if (state === "shown") {
       if (this._autoFocus) {
@@ -315,14 +321,14 @@ class PageAction {
     }
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * getStrings - Handles getting the localized strings vs message overrides.
+   *              If string_id is not defined it assumes you passed in an override
+   *              message and it just returns it.
+   *              If subAttribute is provided, the string for it is returned.
+   * @return A string. One of 1) passed in string 2) a String object with
+   *         attributes property if there are attributes 3) the sub attribute.
+   */
   async getStrings(string, subAttribute = "") {
     if (!string.string_id) {
       if (subAttribute) {
@@ -335,7 +341,7 @@ class PageAction {
       }
 
       if (typeof string.value === "string") {
-        const stringWithAttributes = new String(string.value); 
+        const stringWithAttributes = new String(string.value); // eslint-disable-line no-new-wrappers
         stringWithAttributes.attributes = string.attributes;
         return stringWithAttributes;
       }
@@ -350,7 +356,7 @@ class PageAction {
       },
     ]);
 
-    const mainString = new String(localeStrings.value); 
+    const mainString = new String(localeStrings.value); // eslint-disable-line no-new-wrappers
     if (localeStrings.attributes) {
       const attributes = localeStrings.attributes.reduce((acc, attribute) => {
         acc[attribute.name] = attribute.value;
@@ -407,7 +413,7 @@ class PageAction {
       footerUsers.setAttribute("value", users);
       footerUsers.hidden = false;
     } else {
-      
+      // Prevent whitespace around empty label from affecting other spacing
       footerUsers.hidden = true;
       footerUsers.removeAttribute("value");
     }
@@ -453,8 +459,8 @@ class PageAction {
       })
     );
 
-    
-    
+    // Use the message layout as a CSS selector to hide different parts of the
+    // notification template markup
     this.window.document
       .getElementById("contextual-feature-recommendation-notification")
       .setAttribute("data-notification-category", content.layout);
@@ -472,8 +478,8 @@ class PageAction {
       });
 
       RecommendationMap.delete(browser);
-      
-      
+      // Invalidate the pref after the user interacts with the button.
+      // We don't need to show the illustration in the privacy panel.
       Services.prefs.clearUserPref(
         "browser.contentblocking.cfr-milestone.milestone-shown-time"
       );
@@ -504,7 +510,7 @@ class PageAction {
       },
     ];
 
-    
+    // Actually show the notification
     this.currentNotification = this.window.PopupNotifications.show(
       browser,
       POPUP_NOTIFICATION_ID,
@@ -528,7 +534,7 @@ class PageAction {
     );
   }
 
-  
+  // eslint-disable-next-line max-statements
   async _renderPopup(message, browser) {
     this.maybeLoadCustomElement(this.window);
 
@@ -576,8 +582,8 @@ class PageAction {
         bucket_id: content.bucket_id,
         event: "RATIONALE",
       });
-    
-    
+    // Use the message layout as a CSS selector to hide different parts of the
+    // notification template markup
     this.window.document
       .getElementById("contextual-feature-recommendation-notification")
       .setAttribute("data-notification-category", content.layout);
@@ -594,7 +600,7 @@ class PageAction {
 
     switch (content.layout) {
       case "icon_and_message":
-        
+        //Clearing content and styles that may have been set by a prior addon_recommendation CFR
         this._setAddonRating(this.window.document, content);
         author.appendChild(
           lazy.RemoteL10n.createElement(this.window.document, "span", {
@@ -646,7 +652,7 @@ class PageAction {
           footerText.lastChild.remove();
         }
 
-        
+        // Main body content of the dropdown
         footerText.appendChild(
           lazy.RemoteL10n.createElement(this.window.document, "span", {
             content: content.text,
@@ -674,7 +680,7 @@ class PageAction {
 
         primaryActionCallback = async () => {
           primary.action.data.url =
-            
+            // eslint-disable-next-line no-use-before-define
             await CFRPageActions._fetchLatestAddonVersion(content.addon.id);
           this._blockMessage(id);
           this.dispatchUserAction(primary.action);
@@ -716,13 +722,13 @@ class PageAction {
             bucket_id: content.bucket_id,
             event,
           });
-          
+          // We want to collapse if needed when we dismiss
           this._collapse();
         },
       };
     };
 
-    
+    // For each secondary action, define default telemetry event
     const defaultSecondaryEvent = ["DISMISS", "BLOCK", "MANAGE"];
     const secondaryActions = await Promise.all(
       secondary.map((button, i) => {
@@ -733,16 +739,16 @@ class PageAction {
       })
     );
 
-    
-    
-    
-    
-    
-    
-    
+    // If the recommendation button is focused, it was probably activated via
+    // the keyboard. Therefore, focus the first element in the notification when
+    // it appears.
+    // We don't use the autofocus option provided by PopupNotifications.show
+    // because it doesn't focus the first element; i.e. the user still has to
+    // press tab once. That's not good enough, especially for screen reader
+    // users. Instead, we handle this ourselves in _popupStateChange.
     this._autoFocus = this.window.document.activeElement === this.container;
 
-    
+    // Actually show the notification
     this.currentNotification = this.window.PopupNotifications.show(
       browser,
       POPUP_NOTIFICATION_ID,
@@ -782,15 +788,15 @@ class PageAction {
     RecommendationMap.delete(browser);
   }
 
-  
-
-
-
+  /**
+   * Respond to a user click on the recommendation by showing a doorhanger/
+   * popup notification or running the action defined in the message
+   */
   async _cfrUrlbarButtonClick(event) {
     const browser = this.window.gBrowser.selectedBrowser;
     if (!RecommendationMap.has(browser)) {
-      
-      
+      // There's no recommendation for this browser, so the user shouldn't have
+      // been able to click
       this.hideAddressBarNotifier();
       return;
     }
@@ -804,8 +810,8 @@ class PageAction {
     });
 
     if (this.shouldShowDoorhanger(message)) {
-      
-      
+      // The recommendation should remain either collapsed or expanded while the
+      // doorhanger is showing
       this._clearScheduledStateChanges(browser, message);
       await this.showPopup();
     } else {
@@ -819,7 +825,7 @@ class PageAction {
         ? idOrEl && this.window.document.getElementById(idOrEl)
         : idOrEl;
     if (!element) {
-      return null; 
+      return null; // element doesn't exist at all
     }
     const { visibility, display } = this.window.getComputedStyle(element);
     if (
@@ -827,8 +833,8 @@ class PageAction {
       visibility !== "visible" ||
       display === "none"
     ) {
-      
-      
+      // CSS rules like visibility: hidden or display: none. these result in
+      // element being invisible and unclickable.
       return null;
     }
     let widget = lazy.CustomizableUI.getWidget(idOrEl);
@@ -837,11 +843,11 @@ class PageAction {
       (this.window.CustomizationHandler.isCustomizing() ||
         widget.areaType?.includes("panel"))
     ) {
-      
-      
-      
-      
-      
+      // The element is a customizable widget (a toolbar item, e.g. the
+      // reload button or the downloads button). Widgets can be in various
+      // areas, like the overflow panel or the customization palette.
+      // Widgets in the palette are present in the chrome's DOM during
+      // customization, but can't be used.
       return null;
     }
     return element;
@@ -852,8 +858,8 @@ class PageAction {
     const message = RecommendationMap.get(browser);
     const { content } = message;
 
-    
-    
+    // A hacky way of setting the popup anchor outside the usual url bar icon box
+    // See https://searchfox.org/mozilla-central/rev/eb07633057d66ab25f9db4c5900eeb6913da7579/toolkit/modules/PopupNotifications.sys.mjs#44
     browser.cfrpopupnotificationanchor =
       this._getVisibleElement(content.anchor_id) ||
       this._getVisibleElement(content.alt_anchor_id) ||
@@ -868,8 +874,8 @@ class PageAction {
     const message = RecommendationMap.get(browser);
     const { content } = message;
 
-    
-    
+    // A hacky way of setting the popup anchor outside the usual url bar icon box
+    // See https://searchfox.org/mozilla-central/rev/eb07633057d66ab25f9db4c5900eeb6913da7579/toolkit/modules/PopupNotifications.sys.mjs#44
     browser.cfrpopupnotificationanchor =
       this.window.document.getElementById(content.anchor_id) || this.container;
 
@@ -885,15 +891,15 @@ function isHostMatch(browser, host) {
   );
 }
 
-const CFRPageActions = {
-  
+export const CFRPageActions = {
+  // For testing purposes
   RecommendationMap,
   PageActionMap,
 
-  
-
-
-
+  /**
+   * To be called from browser.js on a location change, passing in the browser
+   * that's been updated
+   */
   updatePageActions(browser) {
     const win = browser.ownerGlobal;
     const pageAction = PageActionMap.get(win);
@@ -905,37 +911,37 @@ const CFRPageActions = {
       if (
         !recommendation.content.skip_address_bar_notifier &&
         (isHostMatch(browser, recommendation.host) ||
-          
-          
+          // If there is no host associated we assume we're back on a tab
+          // that had a CFR message so we should show it again
           !recommendation.host)
       ) {
-        
-        
+        // The browser has a recommendation specified with this host, so show
+        // the page action
         pageAction.showAddressBarNotifier(recommendation);
       } else if (!recommendation.content.persistent_doorhanger) {
         if (recommendation.retain) {
-          
-          
+          // Keep the recommendation first time the user navigates away just in
+          // case they will go back to the previous page
           pageAction.hideAddressBarNotifier();
           recommendation.retain = false;
         } else {
-          
-          
+          // The user has navigated away from the specified host in the given
+          // browser, so the recommendation is no longer valid and should be removed
           RecommendationMap.delete(browser);
           pageAction.hideAddressBarNotifier();
         }
       }
     } else {
-      
+      // There's no recommendation specified for this browser, so hide the page action
       pageAction.hideAddressBarNotifier();
     }
   },
 
-  
-
-
-
-
+  /**
+   * Fetch the URL to the latest add-on xpi so the recommendation can download it.
+   * @param id          The add-on ID
+   * @return            A string for the URL that was fetched
+   */
   async _fetchLatestAddonVersion(id) {
     let url = null;
     try {
@@ -954,18 +960,18 @@ const CFRPageActions = {
     return url;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Force a recommendation to be shown. Should only happen via the Admin page.
+   * @param browser                 The browser for the recommendation
+   * @param recommendation  The recommendation to show
+   * @param dispatchCFRAction      A function to dispatch resulting actions to
+   * @return                        Did adding the recommendation succeed?
+   */
   async forceRecommendation(browser, recommendation, dispatchCFRAction) {
     if (!browser) {
       return false;
     }
-    
+    // If we are forcing via the Admin page, the browser comes in a different format
     const win = browser.ownerGlobal;
     const { id, content } = recommendation;
     RecommendationMap.set(browser, {
@@ -991,14 +997,14 @@ const CFRPageActions = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Add a recommendation specific to the given browser and host.
+   * @param browser                 The browser for the recommendation
+   * @param host                    The host for the recommendation
+   * @param recommendation          The recommendation to show
+   * @param dispatchCFRAction       A function to dispatch resulting actions to
+   * @return                        Did adding the recommendation succeed?
+   */
   async addRecommendation(browser, host, recommendation, dispatchCFRAction) {
     if (!browser) {
       return false;
@@ -1006,13 +1012,13 @@ const CFRPageActions = {
     const win = browser.ownerGlobal;
     if (
       browser !== win.gBrowser.selectedBrowser ||
-      
+      // We can have recommendations without URL restrictions
       (host && !isHostMatch(browser, host))
     ) {
       return false;
     }
     if (RecommendationMap.has(browser)) {
-      
+      // Don't replace an existing message
       return false;
     }
     const { id, content } = recommendation;
@@ -1037,38 +1043,38 @@ const CFRPageActions = {
         await PageActionMap.get(win).showMilestonePopup();
         PageActionMap.get(win).addImpression(recommendation);
       } else {
-        
+        // Tracking protection messages
         await PageActionMap.get(win).showPopup();
         PageActionMap.get(win).addImpression(recommendation);
       }
     } else {
-      
+      // Doorhanger messages
       await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
     }
     return true;
   },
 
-  
-
-
+  /**
+   * Clear all recommendations and hide all PageActions
+   */
   clearRecommendations() {
-    
+    // WeakMaps aren't iterable so we have to test all existing windows
     for (const win of Services.wm.getEnumerator("navigator:browser")) {
       if (win.closed || !PageActionMap.has(win)) {
         continue;
       }
       PageActionMap.get(win).hideAddressBarNotifier();
     }
-    
+    // WeakMaps don't have a `clear` method
     PageActionMap = new WeakMap();
     RecommendationMap = new WeakMap();
     this.PageActionMap = PageActionMap;
     this.RecommendationMap = RecommendationMap;
   },
 
-  
-
-
+  /**
+   * Reload the l10n Fluent files for all PageActions
+   */
   reloadL10n() {
     for (const win of Services.wm.getEnumerator("navigator:browser")) {
       if (win.closed || !PageActionMap.has(win)) {
@@ -1078,5 +1084,3 @@ const CFRPageActions = {
     }
   },
 };
-
-const EXPORTED_SYMBOLS = ["CFRPageActions", "PageAction"];
