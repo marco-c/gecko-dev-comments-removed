@@ -61,8 +61,6 @@ class GeckoInstance(object):
         "datareporting.policy.dataSubmissionEnabled": False,
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
         
-        "dom.disable_beforeunload": True,
-        
         "dom.file.createInChild": True,
         
         "dom.input_events.security.minNumTicks": 0,
@@ -439,8 +437,6 @@ class FennecInstance(GeckoInstance):
         "browser.safebrowsing.update.enabled": False,
         
         "browser.sessionstore.resume_from_crash": False,
-        
-        "browser.tabs.remote.autostart": False,
     }
 
     def __init__(
