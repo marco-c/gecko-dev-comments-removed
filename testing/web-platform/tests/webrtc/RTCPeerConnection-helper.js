@@ -651,7 +651,7 @@ function findTransceiverForSender(pc, sender) {
 }
 
 function preferCodec(transceiver, mimeType, sdpFmtpLine) {
-  const {codecs} = RTCRtpSender.getCapabilities(transceiver.receiver.track.kind);
+  const {codecs} = RTCRtpReceiver.getCapabilities(transceiver.receiver.track.kind);
   
   const selectedCodecIndex = codecs.findIndex(c => {
     return c.mimeType === mimeType && (c.sdpFmtpLine === sdpFmtpLine || !sdpFmtpLine);
