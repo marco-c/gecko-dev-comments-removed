@@ -242,6 +242,12 @@ PlacesController.prototype = {
   },
 
   doCommand: function PC_doCommand(aCommand) {
+    if (aCommand != "cmd_delete" && aCommand != "placesCmd_delete") {
+      
+      
+      
+      this._lastRemoveOperationFingerprint = null;
+    }
     switch (aCommand) {
       case "cmd_undo":
         PlacesTransactions.undo().catch(console.error);
@@ -362,6 +368,22 @@ PlacesController.prototype = {
     }
 
     return true;
+  },
+
+  
+
+
+
+
+
+  _isRepeatedRemoveOperation() {
+    let lastRemoveOperationFingerprint = this._lastRemoveOperationFingerprint;
+    this._lastRemoveOperationFingerprint = PlacesUtils.sha256(
+      this._view.selectedNodes.map(n => n.guid ?? n.uri).join()
+    );
+    return (
+      lastRemoveOperationFingerprint == this._lastRemoveOperationFingerprint
+    );
   },
 
   
@@ -999,6 +1021,15 @@ PlacesController.prototype = {
 
   async remove() {
     if (!this._hasRemovableSelection()) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    if (this._isRepeatedRemoveOperation()) {
       return;
     }
 
