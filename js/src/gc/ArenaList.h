@@ -167,7 +167,7 @@ class SortedArenaList {
 
   
   
-  static const size_t SegmentCount = MaxThingsPerArena + 1;
+  static const size_t SegmentCount = HowMany(MaxThingsPerArena - 1, 2) + 2;
 
  private:
   using Segment = SinglyLinkedList<Arena>;
@@ -212,6 +212,10 @@ class SortedArenaList {
 #endif
 
  private:
+  inline size_t index(size_t nfree, bool* frontOut) const;
+  inline size_t emptyIndex() const;
+  inline size_t segmentsUsed() const;
+
   inline void check() const;
 };
 
