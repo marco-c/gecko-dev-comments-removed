@@ -853,7 +853,7 @@ void mozInlineSpellWordUtil::SoftText::AdjustBeginAndBuildText(
     if (!node->IsInclusiveDescendantOf(aRootNode)) {
       break;
     }
-    node = node->GetPreviousContent(aRootNode);
+    node = node->GetPrevNode(aRootNode);
   }
 
   

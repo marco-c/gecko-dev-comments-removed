@@ -1785,7 +1785,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIContent* GetPreviousContent(const nsINode* aRoot = nullptr) const {
+  nsIContent* GetPrevNode(const nsINode* aRoot = nullptr) const {
 #ifdef DEBUG
     if (aRoot) {
       

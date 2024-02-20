@@ -4171,7 +4171,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
       
       iterStartContent = aForward ? iterStartContent->GetNextNode()
-                                  : iterStartContent->GetPreviousContent();
+                                  : iterStartContent->GetPrevNode();
       if (!iterStartContent) {
         break;
       }
