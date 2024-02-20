@@ -1293,6 +1293,13 @@ impl<Impl: SelectorImpl> Selector<Impl> {
             std::iter::once(Component::Invalid(Arc::new(String::from(s.trim())))),
         ))
     }
+
+    
+    pub fn is_rightmost(&self, offset: usize) -> bool {
+        
+        
+        offset == 0 || matches!(self.combinator_at_match_order(offset - 1), Combinator::PseudoElement)
+    }
 }
 
 #[derive(Clone)]

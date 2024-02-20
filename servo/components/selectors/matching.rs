@@ -105,7 +105,7 @@ impl ElementSelectorFlags {
 
 struct LocalMatchingContext<'a, 'b: 'a, Impl: SelectorImpl> {
     shared: &'a mut MatchingContext<'b, Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
     quirks_data: Option<SelectorIter<'a, Impl>>,
 }
 
@@ -239,10 +239,10 @@ where
         selector.iter_from(offset),
         element,
         context,
-        if offset == 0 {
-            Rightmost::Yes
+        if selector.is_rightmost(offset) {
+            SubjectOrPseudoElement::Yes
         } else {
-            Rightmost::No
+            SubjectOrPseudoElement::No
         },
     )
 }
@@ -284,7 +284,7 @@ where
         
         
         
-        rightmost: Rightmost::No,
+        rightmost: SubjectOrPseudoElement::No,
         quirks_data: None,
     };
 
@@ -340,7 +340,7 @@ fn matches_complex_selector<E>(
     mut iter: SelectorIter<E::Impl>,
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool
 where
     E: Element,
@@ -387,7 +387,7 @@ fn matches_complex_selector_list<E: Element>(
     list: &[Selector<E::Impl>],
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool {
     for selector in list {
         if matches_complex_selector(selector.iter(), element, context, rightmost) {
@@ -401,7 +401,7 @@ fn matches_relative_selector<E: Element>(
     relative_selector: &RelativeSelector<E::Impl>,
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool {
     
     
@@ -525,7 +525,7 @@ fn match_relative_selectors<E: Element>(
     selectors: &[RelativeSelector<E::Impl>],
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool {
     if context.relative_selector_anchor().is_some() {
         
@@ -545,12 +545,12 @@ fn do_match_relative_selectors<E: Element>(
     selectors: &[RelativeSelector<E::Impl>],
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool {
     
     
     
-    if rightmost == Rightmost::Yes {
+    if rightmost == SubjectOrPseudoElement::Yes {
         context.considered_relative_selector.considered_anchor();
         if context.needs_selector_flags() {
             element.apply_selector_flags(ElementSelectorFlags::ANCHORS_RELATIVE_SELECTOR);
@@ -594,7 +594,7 @@ fn matches_relative_selector_subtree<E: Element>(
     selector: &Selector<E::Impl>,
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool {
     let mut current = element.first_element_child();
 
@@ -624,7 +624,7 @@ fn matches_relative_selector_subtree<E: Element>(
 fn hover_and_active_quirk_applies<Impl: SelectorImpl>(
     selector_iter: &SelectorIter<Impl>,
     context: &MatchingContext<Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool {
     if context.quirks_mode() != QuirksMode::Quirks {
         return false;
@@ -636,7 +636,7 @@ fn hover_and_active_quirk_applies<Impl: SelectorImpl>(
 
     
     
-    if rightmost == Rightmost::Yes &&
+    if rightmost == SubjectOrPseudoElement::Yes &&
         context.matching_mode() == MatchingMode::ForStatelessPseudoElement
     {
         return false;
@@ -660,7 +660,7 @@ fn hover_and_active_quirk_applies<Impl: SelectorImpl>(
 }
 
 #[derive(Clone, Copy, PartialEq)]
-enum Rightmost {
+enum SubjectOrPseudoElement {
     Yes,
     No,
 }
@@ -752,7 +752,7 @@ fn matches_complex_selector_internal<E>(
     mut selector_iter: SelectorIter<E::Impl>,
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> SelectorMatchingResult
 where
     E: Element,
@@ -781,15 +781,15 @@ where
         Some(c) => c,
     };
 
-    let candidate_not_found = match combinator {
+    let (candidate_not_found, mut rightmost) = match combinator {
         Combinator::NextSibling | Combinator::LaterSibling => {
-            SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant
+            (SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant, SubjectOrPseudoElement::No)
         },
         Combinator::Child |
         Combinator::Descendant |
         Combinator::SlotAssignment |
-        Combinator::Part |
-        Combinator::PseudoElement => SelectorMatchingResult::NotMatchedGlobally,
+        Combinator::Part => (SelectorMatchingResult::NotMatchedGlobally, SubjectOrPseudoElement::No),
+        Combinator::PseudoElement => (SelectorMatchingResult::NotMatchedGlobally, rightmost),
     };
 
     
@@ -817,9 +817,13 @@ where
                 selector_iter.clone(),
                 &element,
                 context,
-                Rightmost::No,
+                rightmost,
             )
         });
+
+        if !matches!(combinator, Combinator::PseudoElement) {
+            rightmost = SubjectOrPseudoElement::No;
+        }
 
         match (result, combinator) {
             
@@ -916,7 +920,7 @@ fn matches_host<E>(
     element: &E,
     selector: Option<&Selector<E::Impl>>,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool
 where
     E: Element,
@@ -938,7 +942,7 @@ fn matches_slotted<E>(
     element: &E,
     selector: &Selector<E::Impl>,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool
 where
     E: Element,
@@ -989,7 +993,7 @@ fn matches_compound_selector<E>(
     selector_iter: &mut SelectorIter<E::Impl>,
     element: &E,
     context: &mut MatchingContext<E::Impl>,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool
 where
     E: Element,
@@ -1158,7 +1162,7 @@ fn matches_generic_nth_child<E>(
     context: &mut MatchingContext<E::Impl>,
     nth_data: &NthSelectorData,
     selectors: &[Selector<E::Impl>],
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> bool
 where
     E: Element,
@@ -1286,7 +1290,7 @@ fn nth_child_index<E>(
     is_of_type: bool,
     is_from_end: bool,
     check_cache: bool,
-    rightmost: Rightmost,
+    rightmost: SubjectOrPseudoElement,
 ) -> i32
 where
     E: Element,
