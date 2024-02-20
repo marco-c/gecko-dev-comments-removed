@@ -27,6 +27,9 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ModuleLoadRequest)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ModuleLoadRequest,
                                                 ScriptLoadRequest)
+  if (tmp->mWaitingParentRequest) {
+    tmp->mWaitingParentRequest->ChildModuleUnlinked();
+  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLoader, mRootModule, mModuleScript, mImports,
                                   mWaitingParentRequest,
                                   mDynamicReferencingScript)
@@ -228,6 +231,18 @@ void ModuleLoadRequest::LoadFinished() {
   }
 
   mLoader->OnModuleLoadComplete(request);
+}
+
+void ModuleLoadRequest::ChildModuleUnlinked() {
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mAwaitingImports > 0);
+  mAwaitingImports--;
 }
 
 void ModuleLoadRequest::SetDynamicImport(LoadedScript* aReferencingScript,
