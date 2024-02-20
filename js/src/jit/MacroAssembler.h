@@ -3996,6 +3996,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  void branchWasmRefIsSubtypeExn(Register ref, wasm::RefType sourceType,
+                                 wasm::RefType destType, Label* label,
+                                 bool onSuccess);
+
+  
+  
   
   
   

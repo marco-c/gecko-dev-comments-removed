@@ -1571,7 +1571,7 @@ assertSame(get(mem, 16, 16), xs.map((x,i) => x+i))
 
 assertErrorMessage(() => insworker.exports.worker(),
                    TypeError,
-                   /cannot pass.*v128.*to or from JS/);
+                   /cannot pass.*value.*to or from JS/);
 
 
 
@@ -1586,7 +1586,7 @@ var badImporter = wasmEvalText(`
 
 assertErrorMessage(() => badImporter.exports.run(),
                    TypeError,
-                   /cannot pass.*v128.*to or from JS/);
+                   /cannot pass.*value.*to or from JS/);
 
 
 
@@ -1657,11 +1657,11 @@ assertSame(get(mem, 16, 16), iota(16));
 
 assertErrorMessage(() => insexporter.exports.myglobal.value = 0,
                    TypeError,
-                   /cannot pass.*v128.*to or from JS/);
+                   /cannot pass.*value.*to or from JS/);
 
 assertErrorMessage(function () { let v = insexporter.exports.myglobal.value },
                    TypeError,
-                   /cannot pass.*v128.*to or from JS/);
+                   /cannot pass.*value.*to or from JS/);
 
 
 
