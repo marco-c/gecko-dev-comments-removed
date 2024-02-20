@@ -29,6 +29,10 @@ public class GeckoDragAndDrop {
   
   private static final String MIMETYPE_NATIVE = "application/x-moz-draganddrop";
 
+  private static final String[] sSupportedMimeType = {
+    MIMETYPE_NATIVE, ClipDescription.MIMETYPE_TEXT_HTML, ClipDescription.MIMETYPE_TEXT_PLAIN
+  };
+
   private static ClipData sDragClipData;
   private static float sX;
   private static float sY;
@@ -69,6 +73,12 @@ public class GeckoDragAndDrop {
     public DropData() {
       this.mimeType = MIMETYPE_NATIVE;
       this.text = null;
+    }
+
+    @WrapForJNI(skip = true)
+    public DropData(final String mimeType) {
+      this.mimeType = mimeType;
+      this.text = "";
     }
 
     @WrapForJNI(skip = true)
@@ -141,15 +151,27 @@ public class GeckoDragAndDrop {
 
 
   public static DropData createDropData(final DragEvent event) {
+    final ClipDescription description = event.getClipDescription();
+
+    if (event.getAction() == DragEvent.ACTION_DRAG_ENTERED) {
+      
+      for (final String mimeType : sSupportedMimeType) {
+        if (description.hasMimeType(mimeType)) {
+          return new DropData(mimeType);
+        }
+      }
+      return null;
+    }
+
     if (event.getAction() != DragEvent.ACTION_DROP) {
       return null;
     }
+
     final ClipData clip = event.getClipData();
     if (clip == null || clip.getItemCount() == 0) {
       return null;
     }
 
-    final ClipDescription description = event.getClipDescription();
     if (description.hasMimeType(MIMETYPE_NATIVE)) {
       if (DEBUG) {
         Log.d(LOGTAG, "Drop data is native nsITransferable. Do nothing");

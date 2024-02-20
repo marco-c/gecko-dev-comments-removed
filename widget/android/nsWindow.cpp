@@ -2636,6 +2636,10 @@ void nsWindow::OnDragEvent(int32_t aAction, int64_t aTime, float aX, float aY,
 
   if (message == eDragEnter) {
     dragService->StartDragSession();
+    
+    auto dropData =
+        mozilla::java::GeckoDragAndDrop::DropData::Ref::From(aDropData);
+    nsDragService::SetDropData(dropData);
   }
 
   nsCOMPtr<nsIDragSession> dragSession;
