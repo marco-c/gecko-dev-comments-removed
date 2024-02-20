@@ -858,6 +858,11 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   uint32_t GetDimensionAttrAsUnsignedInt(nsAtom* aAttr,
                                          uint32_t aDefault) const;
 
+  enum class Reflection {
+    Unlimited,
+    OnlyPositive,
+  };
+
   
 
 
@@ -865,7 +870,19 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
+
+
+
+  template <Reflection Limited = Reflection::Unlimited>
   void SetDoubleAttr(nsAtom* aAttr, double aValue, mozilla::ErrorResult& aRv) {
+    
+    
+    if (Limited == Reflection::OnlyPositive && aValue <= 0) {
+      return;
+    }
+
+    
+    
     nsAutoString value;
     value.AppendFloat(aValue);
 

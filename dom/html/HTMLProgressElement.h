@@ -37,7 +37,10 @@ class HTMLProgressElement final : public nsGenericHTMLElement {
   }
   double Max() const;
   void SetMax(double aValue, ErrorResult& aRv) {
-    SetDoubleAttr(nsGkAtoms::max, aValue, aRv);
+    
+    
+    
+    SetDoubleAttr<Reflection::OnlyPositive>(nsGkAtoms::max, aValue, aRv);
   }
   double Position() const;
 
