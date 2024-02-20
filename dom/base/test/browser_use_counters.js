@@ -14,7 +14,7 @@ add_setup(async function test_initialize() {
 });
 
 async function grabCounters(counters, before) {
-  let result = { sentinel: await ensureData(before) };
+  let result = { sentinel: await ensureData(before?.sentinel) };
   await Services.fog.testFlushAllChildren();
   result.gleanPage = Object.fromEntries(
     counters.map(c => [
@@ -364,6 +364,11 @@ add_task(async function test_extension_counters() {
 });
 
 async function ensureData(prevSentinelValue = null) {
+  ok(
+    !prevSentinelValue ||
+      ("page" in prevSentinelValue && "doc" in prevSentinelValue),
+    `Sentinel's valid: ${JSON.stringify(prevSentinelValue)}`
+  );
   
   
   
