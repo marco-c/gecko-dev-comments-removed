@@ -1137,3 +1137,16 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   infoObject->NoteTimeUntilReady();
   infoObject->SetHandshakeCompleted();
 }
+
+void SecretCallback(PRFileDesc* fd, PRUint16 epoch, SSLSecretDirection dir,
+                    PK11SymKey* secret, void* arg) {
+  
+  MOZ_ASSERT(arg);
+  NSSSocketControl* infoObject = (NSSSocketControl*)arg;
+  if (epoch == 2 && dir == ssl_secret_read) {
+    
+    
+    
+    infoObject->SetHasTls13HandshakeSecrets();
+  }
+}
