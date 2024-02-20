@@ -5,6 +5,7 @@
 
 
 EXTRA_JS_MODULES += [
+    "ScreenshotsHelperChild.sys.mjs",
     "ScreenshotsOverlayChild.sys.mjs",
     "ScreenshotsUtils.sys.mjs",
 ]
