@@ -4032,16 +4032,6 @@ static void AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
       aAlignSelf == StyleAlignFlags::LAST_BASELINE) {
     aAlignSelf = aGridItem.GetSelfBaseline(aAlignSelf, eLogicalAxisBlock,
                                            &baselineAdjust);
-    
-    
-    auto state = aGridItem.mState[eLogicalAxisBlock];
-    if (aAlignSelf == StyleAlignFlags::LAST_BASELINE &&
-        !GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
-      aAlignSelf = StyleAlignFlags::BASELINE;
-    } else if (aAlignSelf == StyleAlignFlags::BASELINE &&
-               GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
-      aAlignSelf = StyleAlignFlags::LAST_BASELINE;
-    }
   }
 
   bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
@@ -4083,16 +4073,6 @@ static void JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
              aJustifySelf == StyleAlignFlags::LAST_BASELINE) {
     aJustifySelf = aGridItem.GetSelfBaseline(aJustifySelf, eLogicalAxisInline,
                                              &baselineAdjust);
-    
-    
-    auto state = aGridItem.mState[eLogicalAxisInline];
-    if (aJustifySelf == StyleAlignFlags::LAST_BASELINE &&
-        !GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
-      aJustifySelf = StyleAlignFlags::BASELINE;
-    } else if (aJustifySelf == StyleAlignFlags::BASELINE &&
-               GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
-      aJustifySelf = StyleAlignFlags::LAST_BASELINE;
-    }
   }
 
   bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
@@ -6000,6 +5980,12 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
   const WritingMode containerWM = aState.mWM;
   ComputedStyle* containerStyle = aState.mFrame->Style();
 
+  
+  
+  
+  auto containerBlockStartSide =
+      containerWM.PhysicalSide(MakeLogicalSide(mAxis, eLogicalEdgeStart));
+
   for (GridItemInfo& gridItem : aGridItems) {
     if (gridItem.IsSubgrid(mAxis)) {
       
@@ -6097,6 +6083,27 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
     if (state & ItemState::eIsBaselineAligned) {
       
       
+      BaselineSharingGroup baselineAlignment =
+          (state & ItemState::eFirstBaseline) ? BaselineSharingGroup::First
+                                              : BaselineSharingGroup::Last;
+
+      BaselineSharingGroup baselineSharingGroup = [&]() {
+        {
+          auto childAxis = isOrthogonal ? GetOrthogonalAxis(mAxis) : mAxis;
+          auto childBlockStartSide = childWM.PhysicalSide(
+              MakeLogicalSide(childAxis, eLogicalEdgeStart));
+          bool isFirstBaseline = (state & ItemState::eFirstBaseline) != 0;
+          const bool containerAndChildHasEqualBaselineSide =
+              containerBlockStartSide == childBlockStartSide;
+
+          return isFirstBaseline == containerAndChildHasEqualBaselineSide
+                     ? BaselineSharingGroup::First
+                     : BaselineSharingGroup::Last;
+        }
+      }();
+
+      
+      
 
       
       LogicalSize avail(childWM, INFINITE_ISIZE_COORD, NS_UNCONSTRAINEDSIZE);
@@ -6122,16 +6129,13 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
                                     : margin.BStartEnd(containerWM));
 
       Maybe<nscoord> baseline;
-      auto baselineSharingGroup = state & ItemState::eFirstBaseline
-                                      ? BaselineSharingGroup::First
-                                      : BaselineSharingGroup::Last;
       if (grid) {
         baseline.emplace((isOrthogonal == isInlineAxis)
-                             ? grid->GetBBaseline(baselineSharingGroup)
-                             : grid->GetIBaseline(baselineSharingGroup));
+                             ? grid->GetBBaseline(baselineAlignment)
+                             : grid->GetIBaseline(baselineAlignment));
       } else {
         baseline = child->GetNaturalBaselineBOffset(
-            childWM, baselineSharingGroup, BaselineExportContext::Other);
+            childWM, baselineAlignment, BaselineExportContext::Other);
 
         if (!baseline) {
           
@@ -6156,7 +6160,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
           if (!isTrackAutoSize ||
               !gridItem.IsBSizeDependentOnContainerSize(containerWM)) {
             baseline.emplace(Baseline::SynthesizeBOffsetFromBorderBox(
-                child, containerWM, baselineSharingGroup));
+                child, containerWM, baselineAlignment));
           }
         }
       }
@@ -6166,15 +6170,19 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
         NS_ASSERTION(finalBaseline != NS_INTRINSIC_ISIZE_UNKNOWN,
                      "about to use an unknown baseline");
 
+        nscoord marginAdjust = 0;
         if (baselineSharingGroup == BaselineSharingGroup::First) {
-          finalBaseline += isInlineAxis ? margin.IStart(containerWM)
-                                        : margin.BStart(containerWM);
-
+          marginAdjust = isInlineAxis ? margin.IStart(containerWM)
+                                      : margin.BStart(containerWM);
         } else {
-          finalBaseline += isInlineAxis ? margin.IEnd(containerWM)
-                                        : margin.BEnd(containerWM);
-          state |= ItemState::eEndSideBaseline;
+          marginAdjust = isInlineAxis ? margin.IEnd(containerWM)
+                                      : margin.BEnd(containerWM);
+
+          
+          
+          state |= GridItemInfo::eEndSideBaseline;
         }
+        finalBaseline += marginAdjust;
 
         auto& baselineItems =
             (baselineSharingGroup == BaselineSharingGroup::First)
@@ -7596,7 +7604,12 @@ void nsGridContainerFrame::ReflowInFlowChild(
         
         
         baselineAdjust = nscoord(0);
-      } else if (GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
+      } else if (state & ItemState::eLastBaseline) {
+        
+        
+        
+        
+        
         baselineAdjust = -baselineAdjust;
       }
       if (baselineAdjust != nscoord(0)) {
