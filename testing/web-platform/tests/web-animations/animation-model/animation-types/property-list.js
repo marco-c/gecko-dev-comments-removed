@@ -440,6 +440,12 @@ const gCSSProperties1 = {
       { type: 'discrete', options: [ [ 'show', 'hide' ] ] }
     ]
   },
+  'field-sizing': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'fixed', 'content' ] ] }
+    ]
+  },
   'fill': {
     
     types: [
