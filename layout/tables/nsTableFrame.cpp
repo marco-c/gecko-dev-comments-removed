@@ -5042,7 +5042,9 @@ void nsTableFrame::CalcBCBorders() {
   BCCellBorders lastBlockDirBorders(damageArea.ColCount() + 1,
                                     damageArea.StartCol());
   if (!lastBlockDirBorders.borders) ABORT0();
-  BCCellBorder lastBStartBorder, lastBEndBorder;
+  
+  Maybe<BCCellBorder> firstRowBStartEdgeBorder;
+  BCCellBorder lastBEndBorder;
   
   BCCellBorders lastBEndBorders(damageArea.ColCount() + 1,
                                 damageArea.StartCol());
@@ -5061,14 +5063,16 @@ void nsTableFrame::CalcBCBorders() {
   for (iter.First(info); !iter.mAtEnd; iter.Next(info)) {
     
     if (iter.IsNewRow()) {
-      lastBStartBorder.Reset(info.mRowIndex, info.mRowSpan);
+      if (info.mRowIndex == 0) {
+        BCCellBorder border;
+        border.Reset(info.mRowIndex, info.mRowSpan);
+        firstRowBStartEdgeBorder = Some(border);
+      } else {
+        firstRowBStartEdgeBorder = Nothing{};
+      }
       lastBEndBorder.Reset(info.GetCellEndRowIndex() + 1, info.mRowSpan);
     } else if (info.mColIndex > damageArea.StartCol()) {
       lastBEndBorder = lastBEndBorders[info.mColIndex - 1];
-      if (info.mRowIndex > (lastBEndBorder.rowIndex - lastBEndBorder.rowSpan)) {
-        
-        lastBStartBorder.Reset(info.mRowIndex, info.mRowSpan);
-      }
       if (lastBEndBorder.rowIndex > (info.GetCellEndRowIndex() + 1)) {
         
         lastBEndBorder.Reset(info.GetCellEndRowIndex() + 1, info.mRowSpan);
@@ -5101,9 +5105,13 @@ void nsTableFrame::CalcBCBorders() {
         }
         bStartCorners[colIdx + 1].Set(eLogicalSideIStart,
                                       currentBorder);  
+        MOZ_ASSERT(firstRowBStartEdgeBorder,
+                   "Inline start border tracking not set?");
         
-        startSeg =
-            SetInlineDirBorder(currentBorder, tlCorner, lastBStartBorder);
+        startSeg = firstRowBStartEdgeBorder
+                       ? SetInlineDirBorder(currentBorder, tlCorner,
+                                            firstRowBStartEdgeBorder.ref())
+                       : true;
         
         tableCellMap->SetBCBorderEdge(eLogicalSideBStart, *iter.mCellMap, 0, 0,
                                       colIdx, 1, currentBorder.owner,
