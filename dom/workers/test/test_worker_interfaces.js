@@ -180,8 +180,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "DOMRectReadOnly", insecureContext: true },
   
-  { name: "DOMRequest", insecureContext: true, disabled: true },
-  
   { name: "DOMStringList", insecureContext: true },
   
   { name: "EncodedVideoChunk", insecureContext: true, nightly: true },
