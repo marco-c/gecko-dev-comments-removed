@@ -416,8 +416,12 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
       
       
       
+      
+      
       static bool isSmpte432Buggy = areSmpte432ColorPrimariesBuggy();
-      bool forceBT709ColorSpace = isSmpte432Buggy && mColorSpace == Some(10);
+      bool forceBT709ColorSpace =
+          isSmpte432Buggy &&
+          (mColorSpace == Some(10) || mColorSpace == Some(65800));
 
       RefPtr<layers::Image> img = new layers::SurfaceTextureImage(
           mSurfaceHandle, inputInfo.mImageSize, false ,
