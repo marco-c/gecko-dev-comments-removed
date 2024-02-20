@@ -13,18 +13,26 @@ async function openPreview(tab) {
       return e.detail.tab === tab;
     }
   );
-  EventUtils.synthesizeMouseAtCenter(tab, { type: "mouseover" });
+
+  
+  
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("reload-button"), {
+    type: "mousemove",
+  });
+  EventUtils.synthesizeMouseAtCenter(tab, { type: "mousemove" });
   return previewShown;
 }
 
 async function closePreviews() {
-  const tabs = document.getElementById("tabbrowser-tabs");
   const previewHidden = BrowserTestUtils.waitForEvent(
     document.getElementById("tabbrowser-tab-preview"),
     "previewhidden"
   );
-  EventUtils.synthesizeMouse(tabs, 0, tabs.outerHeight + 1, {
-    type: "mouseout",
+
+  
+  
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("reload-button"), {
+    type: "mousemove",
   });
   return previewHidden;
 }
@@ -136,13 +144,11 @@ add_task(async () => {
 
   await openPreview(tab1);
 
-  const tabs = document.getElementById("tabbrowser-tabs");
   const previewHidden = BrowserTestUtils.waitForEvent(
     document.getElementById("tabbrowser-tab-preview"),
     "previewhidden"
   );
-  EventUtils.synthesizeMouse(tabs, 0, tabs.outerHeight + 1, {
-    wheel: true,
+  EventUtils.synthesizeWheel(tab1, 0, 0, {
     deltaY: -1,
     deltaMode: WheelEvent.DOM_DELTA_LINE,
   });
