@@ -2299,12 +2299,23 @@ impl Drop for EvalResult {
 }
 
 
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub(crate) enum ABIKind {
+    
+    GenericItanium,
+    
+    Microsoft,
+}
+
+
 #[derive(Debug)]
 pub(crate) struct TargetInfo {
     
     pub(crate) triple: String,
     
     pub(crate) pointer_width: usize,
+    
+    pub(crate) abi: ABIKind,
 }
 
 impl TargetInfo {
@@ -2320,9 +2331,17 @@ impl TargetInfo {
         }
         assert!(pointer_width > 0);
         assert_eq!(pointer_width % 8, 0);
+
+        let abi = if triple.contains("msvc") {
+            ABIKind::Microsoft
+        } else {
+            ABIKind::GenericItanium
+        };
+
         TargetInfo {
             triple,
             pointer_width: pointer_width as usize,
+            abi,
         }
     }
 }

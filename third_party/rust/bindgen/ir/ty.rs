@@ -559,6 +559,8 @@ impl TemplateParameters for TypeKind {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) enum FloatKind {
     
+    Float16,
+    
     Float,
     
     Double,

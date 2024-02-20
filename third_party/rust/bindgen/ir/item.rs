@@ -668,8 +668,11 @@ impl Item {
                 ItemKind::Function(..) => {
                     ctx.options().blocklisted_functions.matches(&name)
                 }
+                ItemKind::Var(..) => {
+                    ctx.options().blocklisted_vars.matches(&name)
+                }
                 
-                ItemKind::Var(..) | ItemKind::Module(..) => false,
+                ItemKind::Module(..) => false,
             }
     }
 

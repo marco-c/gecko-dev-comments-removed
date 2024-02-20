@@ -1,5 +1,7 @@
 
 
+use itertools::Itertools;
+
 use super::analysis::Sizedness;
 use super::annotations::Annotations;
 use super::context::{BindgenContext, FunctionId, ItemId, TypeId, VarId};
@@ -15,7 +17,6 @@ use crate::ir::derive::CanDeriveCopy;
 use crate::parse::ParseError;
 use crate::HashMap;
 use crate::NonCopyUnionStyle;
-use peeking_take_while::PeekableExt;
 use std::cmp;
 use std::io;
 use std::mem;
@@ -1639,6 +1640,26 @@ impl CompInfo {
         }
 
         false
+    }
+
+    
+    
+    
+    
+    pub(crate) fn already_packed(&self, ctx: &BindgenContext) -> Option<bool> {
+        let mut total_size: usize = 0;
+
+        for field in self.fields().iter() {
+            let layout = field.layout(ctx)?;
+
+            if layout.align != 0 && total_size % layout.align != 0 {
+                return Some(false);
+            }
+
+            total_size += layout.size;
+        }
+
+        Some(true)
     }
 
     
