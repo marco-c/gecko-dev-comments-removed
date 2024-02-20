@@ -181,6 +181,14 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
 
 
 
+
+#define NS_HTTP_ON_DISPATCHING_TRANSACTION "http-on-dispatching-transaction"
+
+
+
+
+
+
 #define NS_HTTP_ON_EXAMINE_RESPONSE_TOPIC "http-on-examine-response"
 
 
