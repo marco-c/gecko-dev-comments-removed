@@ -187,6 +187,9 @@ class Port {
   MessageQueue message_queue;
 
   
+  std::queue<std::pair<NodeName, ScopedEvent>> control_message_queue;
+
+  
   
   
   mozilla::UniquePtr<std::pair<NodeName, ScopedEvent>> send_on_proxy_removal;
