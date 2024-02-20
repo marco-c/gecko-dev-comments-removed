@@ -96,6 +96,8 @@ class ConsoleInstance final : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT
   void Clear(JSContext* aCx);
 
+  bool ShouldLog(ConsoleLogLevel aLevel);
+
   
   void ReportForServiceWorkerScope(const nsAString& aScope,
                                    const nsAString& aMessage,
