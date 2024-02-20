@@ -520,7 +520,8 @@ class HTMLFormElement final : public nsGenericHTMLElement {
   
   
 
-  nsTArray<HTMLImageElement*> mImageElements;  
+  
+  TreeOrderedArray<HTMLImageElement*> mImageElements;
 
   
   

@@ -5224,7 +5224,7 @@ class Document : public nsINode,
   
   
   
-  TreeOrderedArray<HTMLMetaElement> mColorSchemeMetaTags;
+  TreeOrderedArray<HTMLMetaElement*> mColorSchemeMetaTags;
 
   
   

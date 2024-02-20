@@ -227,21 +227,6 @@ class nsIContent : public nsINode {
     return IsMathMLElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
-  bool IsGeneratedContentContainerForBefore() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore;
-  }
-
-  bool IsGeneratedContentContainerForAfter() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentafter;
-  }
-
-  bool IsGeneratedContentContainerForMarker() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentmarker;
-  }
-
   
 
 
@@ -375,17 +360,6 @@ class nsIContent : public nsINode {
 
 
   inline nsIContent* GetFlattenedTreeParent() const;
-
-  
-
-
-
-
-
-
-
-  mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
-      const nsINode* aPossibleChild) const;
 
  protected:
   
