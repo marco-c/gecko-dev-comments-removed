@@ -3945,8 +3945,14 @@ pref("extensions.formautofill.addresses.enabled", true);
 #else
   pref("extensions.formautofill.addresses.capture.enabled", false);
 #endif
-
-pref("extensions.formautofill.addresses.experiments.enabled", false);
+#if defined(ANDROID)
+  
+  
+  pref("extensions.formautofill.addresses.experiments.enabled", true);
+#else
+  
+  pref("extensions.formautofill.addresses.experiments.enabled", false);
+#endif
 
 pref("extensions.formautofill.addresses.capture.requiredFields", "street-address,postal-code,address-level1,address-level2");
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
