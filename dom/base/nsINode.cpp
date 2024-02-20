@@ -359,7 +359,9 @@ bool nsINode::IsSelected(const uint32_t aStartOffset,
       
       if (range->IsInAnySelection()) {
         for (const WeakPtr<Selection>& selection : range->GetSelections()) {
-          ancestorSelections.Insert(selection);
+          if (selection) {
+            ancestorSelections.Insert(selection);
+          }
         }
       }
     }
