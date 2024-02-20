@@ -15,8 +15,6 @@
 
 
 
-
-
 class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
                                    public nsIFormControlFrame {
  public:
