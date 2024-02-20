@@ -431,9 +431,9 @@ bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
   mozilla::Maybe<uint64_t> maxByteLength;
 #ifdef NIGHTLY_BUILD
-  
   if (JS::Prefs::experimental_sharedarraybuffer_growable()) {
     
     if (args.get(1).isObject()) {
@@ -471,14 +471,18 @@ bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
   }
 
   
+  uint64_t allocLength = maxByteLength.valueOr(byteLength);
+
   
-  if (byteLength > ArrayBufferObject::ByteLengthLimit) {
+  
+  if (allocLength > ArrayBufferObject::ByteLengthLimit) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SHARED_ARRAY_BAD_LENGTH);
     return false;
   }
 
   if (maxByteLength) {
+    
     auto* bufobj = NewGrowable(cx, byteLength, *maxByteLength, proto);
     if (!bufobj) {
       return false;

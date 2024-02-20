@@ -749,6 +749,7 @@ bool ArrayBufferObject::fun_isView(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
 bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
                                           Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -764,9 +765,9 @@ bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
   mozilla::Maybe<uint64_t> maxByteLength;
 #ifdef NIGHTLY_BUILD
-  
   if (JS::Prefs::experimental_arraybuffer_resizable()) {
     
     if (args.get(1).isObject()) {
@@ -814,6 +815,7 @@ bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
       return false;
     }
 
+    
     auto* bufobj = ResizableArrayBufferObject::createZeroed(
         cx, byteLength, *maxByteLength, proto);
     if (!bufobj) {
