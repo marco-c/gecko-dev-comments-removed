@@ -282,11 +282,59 @@ BounceTrackingProtection::TestGetUserActivationHosts(
 }
 
 NS_IMETHODIMP
-BounceTrackingProtection::Reset() {
+BounceTrackingProtection::ClearAll() {
   BounceTrackingState::ResetAll();
-  mStorage->Clear();
+  return mStorage->Clear();
+}
 
-  return NS_OK;
+NS_IMETHODIMP
+BounceTrackingProtection::ClearBySiteHostAndOA(
+    const nsACString& aSiteHost, JS::Handle<JS::Value> aOriginAttributes,
+    JSContext* aCx) {
+  NS_ENSURE_ARG_POINTER(aCx);
+
+  OriginAttributes originAttributes;
+  if (!aOriginAttributes.isObject() ||
+      !originAttributes.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  BounceTrackingState::ResetAllForOriginAttributes(originAttributes);
+
+  return mStorage->ClearBySiteHost(aSiteHost, &originAttributes);
+}
+
+NS_IMETHODIMP
+BounceTrackingProtection::ClearBySiteHost(const nsACString& aSiteHost) {
+  BounceTrackingState::ResetAll();
+
+  return mStorage->ClearBySiteHost(aSiteHost, nullptr);
+}
+
+NS_IMETHODIMP
+BounceTrackingProtection::ClearByTimeRange(PRTime aFrom, PRTime aTo) {
+  NS_ENSURE_TRUE(aFrom >= 0, NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(aFrom < aTo, NS_ERROR_INVALID_ARG);
+
+  
+  BounceTrackingState::ResetAll();
+
+  return mStorage->ClearByTimeRange(aFrom, aTo);
+}
+
+NS_IMETHODIMP
+BounceTrackingProtection::ClearByOriginAttributesPattern(
+    const nsAString& aPattern) {
+  OriginAttributesPattern pattern;
+  if (!pattern.Init(aPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  BounceTrackingState::ResetAllForOriginAttributesPattern(pattern);
+
+  return mStorage->ClearByOriginAttributesPattern(pattern);
 }
 
 NS_IMETHODIMP
@@ -335,9 +383,13 @@ BounceTrackingProtection::TestAddBounceTrackerCandidate(
   MOZ_ASSERT(stateGlobal);
 
   
-  nsresult rv = stateGlobal->TestRemoveUserActivation(aHost);
+  nsAutoCString host(aHost);
+  ToLowerCase(host);
+
+  
+  nsresult rv = stateGlobal->TestRemoveUserActivation(host);
   NS_ENSURE_SUCCESS(rv, rv);
-  return stateGlobal->RecordBounceTracker(aHost, aBounceTime);
+  return stateGlobal->RecordBounceTracker(host, aBounceTime);
 }
 
 NS_IMETHODIMP
@@ -354,7 +406,11 @@ BounceTrackingProtection::TestAddUserActivation(
   BounceTrackingStateGlobal* stateGlobal = mStorage->GetOrCreateStateGlobal(oa);
   MOZ_ASSERT(stateGlobal);
 
-  return stateGlobal->RecordUserActivation(aHost, aActivationTime);
+  
+  nsAutoCString host(aHost);
+  ToLowerCase(host);
+
+  return stateGlobal->RecordUserActivation(host, aActivationTime);
 }
 
 RefPtr<BounceTrackingProtection::PurgeBounceTrackersMozPromise>

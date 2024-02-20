@@ -50,6 +50,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   static void ResetAll();
+  static void ResetAllForOriginAttributes(
+      const OriginAttributes& aOriginAttributes);
+  static void ResetAllForOriginAttributesPattern(
+      const OriginAttributesPattern& aPattern);
 
   BounceTrackingRecord* GetBounceTrackingRecord();
 
@@ -113,6 +117,12 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   RefPtr<nsITimer> mClientBounceDetectionTimeout;
+
+  
+  
+  
+  static void Reset(const OriginAttributes* aOriginAttributes,
+                    const OriginAttributesPattern* aPattern);
 
   
   
