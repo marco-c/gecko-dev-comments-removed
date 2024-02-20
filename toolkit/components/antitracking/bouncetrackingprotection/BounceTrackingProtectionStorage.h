@@ -4,6 +4,7 @@
 #ifndef mozilla_BounceTrackingProtectionStorage_h__
 #define mozilla_BounceTrackingProtectionStorage_h__
 
+#include "mozIStorageFunction.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ThreadSafety.h"
@@ -29,6 +30,8 @@ extern LazyLogModule gBounceTrackingProtectionLog;
 class BounceTrackingProtectionStorage final : public nsIObserver,
                                               public nsIAsyncShutdownBlocker,
                                               public SupportsWeakPtr {
+  friend class BounceTrackingStateGlobal;
+
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
@@ -39,7 +42,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
         mPendingWrites(0){};
 
   
-  nsresult Init();
+  [[nodiscard]] nsresult Init();
 
   
   BounceTrackingStateGlobal* GetOrCreateStateGlobal(
@@ -60,22 +63,19 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   enum class EntryType : uint8_t { BounceTracker = 0, UserActivation = 1 };
 
   
-  nsresult UpdateEntry(const OriginAttributes& aOriginAttributes,
-                       const nsACString& aSiteHost, EntryType aEntryType,
-                       PRTime aTimeStamp);
+  
+  [[nodiscard]] nsresult ClearBySiteHost(const nsACString& aSiteHost,
+                                         OriginAttributes* aOriginAttributes);
 
   
-  nsresult DeleteEntry(const OriginAttributes& aOriginAttributes,
-                       const nsACString& aSiteHost);
+  [[nodiscard]] nsresult ClearByTimeRange(PRTime aFrom, PRTime aTo);
 
   
-  
-  nsresult DeleteEntriesBefore(const OriginAttributes& aOriginAttributes,
-                               PRTime aTime,
-                               Maybe<EntryType> aEntryType = Nothing{});
+  [[nodiscard]] nsresult ClearByOriginAttributesPattern(
+      const OriginAttributesPattern& aOriginAttributesPattern);
 
   
-  nsresult Clear();
+  [[nodiscard]] nsresult Clear();
 
  private:
   ~BounceTrackingProtectionStorage() = default;
@@ -90,7 +90,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
 
   
   
-  nsresult WaitForInitialization();
+  [[nodiscard]] nsresult WaitForInitialization();
 
   
   
@@ -102,10 +102,10 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
   
-  nsresult CreateDatabaseConnection();
+  [[nodiscard]] nsresult CreateDatabaseConnection();
 
   
-  nsresult EnsureTable();
+  [[nodiscard]] nsresult EnsureTable();
 
   
   struct ImportEntry {
@@ -116,7 +116,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   };
 
   
-  nsresult LoadMemoryStateFromDisk();
+  [[nodiscard]] nsresult LoadMemoryStateFromDisk();
 
   
   
@@ -125,24 +125,33 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   void DecrementPendingWrites();
 
   
-  static nsresult UpsertData(mozIStorageConnection* aDatabaseConnection,
-                             const OriginAttributes& aOriginAttributes,
-                             const nsACString& aSiteHost, EntryType aEntryType,
-                             PRTime aTimeStamp);
+  [[nodiscard]] static nsresult UpsertData(
+      mozIStorageConnection* aDatabaseConnection,
+      const OriginAttributes& aOriginAttributes, const nsACString& aSiteHost,
+      EntryType aEntryType, PRTime aTimeStamp);
 
   
-  static nsresult DeleteData(mozIStorageConnection* aDatabaseConnection,
-                             const OriginAttributes& aOriginAttributes,
-                             const nsACString& aSiteHost);
+  [[nodiscard]] static nsresult DeleteData(
+      mozIStorageConnection* aDatabaseConnection,
+      Maybe<OriginAttributes> aOriginAttributes, const nsACString& aSiteHost);
 
   
   
-  static nsresult DeleteDataBefore(
-      mozIStorageConnection* aDatabaseConnection, PRTime aTime,
+  [[nodiscard]] static nsresult DeleteDataInTimeRange(
+      mozIStorageConnection* aDatabaseConnection,
+      Maybe<OriginAttributes> aOriginAttributes, PRTime aFrom,
+      Maybe<PRTime> aTo,
       Maybe<BounceTrackingProtectionStorage::EntryType> aEntryType = Nothing{});
 
   
-  static nsresult ClearData(mozIStorageConnection* aDatabaseConnection);
+  
+  [[nodiscard]] static nsresult DeleteDataByOriginAttributesPattern(
+      mozIStorageConnection* aDatabaseConnection,
+      const OriginAttributesPattern& aOriginAttributesPattern);
+
+  
+  [[nodiscard]] static nsresult ClearData(
+      mozIStorageConnection* aDatabaseConnection);
 
   
   
@@ -164,7 +173,48 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   
   
   StateGlobalMap mStateGlobal{};
+
+  
+  
+
+  
+  [[nodiscard]] nsresult UpdateDBEntry(
+      const OriginAttributes& aOriginAttributes, const nsACString& aSiteHost,
+      EntryType aEntryType, PRTime aTimeStamp);
+
+  
+  
+  [[nodiscard]] nsresult DeleteDBEntries(OriginAttributes* aOriginAttributes,
+                                         const nsACString& aSiteHost);
+
+  
+  
+  [[nodiscard]] nsresult DeleteDBEntriesInTimeRange(
+      OriginAttributes* aOriginAttributes, PRTime aFrom,
+      Maybe<PRTime> aTo = Nothing{}, Maybe<EntryType> aEntryType = Nothing{});
+
+  
+  [[nodiscard]] nsresult DeleteDBEntriesByOriginAttributesPattern(
+      const OriginAttributesPattern& aOriginAttributesPattern);
 };
+
+
+class OriginAttrsPatternMatchOASuffixSQLFunction final
+    : public mozIStorageFunction {
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  explicit OriginAttrsPatternMatchOASuffixSQLFunction(
+      OriginAttributesPattern const& aPattern)
+      : mPattern(aPattern) {}
+  OriginAttrsPatternMatchOASuffixSQLFunction() = delete;
+
+ private:
+  ~OriginAttrsPatternMatchOASuffixSQLFunction() = default;
+
+  OriginAttributesPattern mPattern;
+};
+
 }  
 
 #endif  

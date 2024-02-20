@@ -305,6 +305,11 @@ interface nsIClearDataService : nsISupports
   
 
 
+  const uint32_t CLEAR_BOUNCE_TRACKING_PROTECTION_STATE = 1 << 28;
+
+  
+
+
   const uint32_t CLEAR_ALL = 0xFFFFFFFF;
 
   
