@@ -15020,6 +15020,10 @@ void Document::HideAllPopoversUntil(nsINode& aEndpoint,
     }
   };
 
+  if (aEndpoint.IsElement() && !aEndpoint.AsElement()->IsPopoverOpen()) {
+    return;
+  }
+
   if (&aEndpoint == this) {
     closeAllOpenPopovers();
     return;
@@ -15127,6 +15131,16 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     popoverHTMLEl->FireToggleEvent(PopoverVisibilityState::Showing,
                                    PopoverVisibilityState::Hidden,
                                    u"beforetoggle"_ns);
+
+    
+    
+    
+    if (popoverHTMLEl->IsAutoPopover() &&
+        GetTopmostAutoPopover() != popoverHTMLEl &&
+        popoverHTMLEl->PopoverOpen()) {
+      HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, false);
+    }
+
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              nullptr, aRv)) {
       return;
