@@ -1,17 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// XPCOMUtils and AppConstants, and overrides importESModule
+// to be a no-op (which can't be done for a static import statement).
 
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+
+// eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
-const { FeatureCalloutMessages } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/FeatureCalloutMessages.sys.mjs"
-);
+
+import { FeatureCalloutMessages } from "resource:///modules/asrouter/FeatureCalloutMessages.sys.mjs";
 
 const lazy = {};
 
@@ -57,7 +64,7 @@ const BASE_MESSAGES = () => [
     id: "FXA_ACCOUNTS_BADGE",
     template: "toolbar_badge",
     content: {
-      delay: 10000, 
+      delay: 10000, // delay for 10 seconds
       target: "fxa-toolbar-menu-button",
     },
     targeting: "false",
@@ -585,12 +592,12 @@ const BASE_MESSAGES = () => [
       custom: [
         {
           cap: 3,
-          period: 604800000, 
+          period: 604800000, // Max 3 per week
         },
       ],
       lifetime: 12,
     },
-    
+    // Exclude the next 2 messages: 1) Klar for en 2) Klar for de
     targeting:
       "!(region in [ 'DE', 'AT', 'CH'] && localeLanguageCode == 'en') && localeLanguageCode != 'de'",
   },
@@ -688,7 +695,7 @@ const BASE_MESSAGES = () => [
       custom: [
         {
           cap: 3,
-          period: 604800000, 
+          period: 604800000, // Max 3 per week
         },
       ],
       lifetime: 12,
@@ -791,7 +798,7 @@ const BASE_MESSAGES = () => [
       custom: [
         {
           cap: 3,
-          period: 604800000, 
+          period: 604800000, // Max 3 per week
         },
       ],
       lifetime: 12,
@@ -860,7 +867,7 @@ const BASE_MESSAGES = () => [
       custom: [
         {
           cap: 3,
-          period: 604800000, 
+          period: 604800000, // Max 3 per week
         },
       ],
       lifetime: 12,
@@ -917,7 +924,7 @@ const BASE_MESSAGES = () => [
       custom: [
         {
           cap: 3,
-          period: 604800000, 
+          period: 604800000, // Max 3 per week
         },
       ],
       lifetime: 12,
@@ -1204,11 +1211,11 @@ const BASE_MESSAGES = () => [
   },
 ];
 
-
+// Eventually, move Feature Callout messages to their own provider
 const ONBOARDING_MESSAGES = () =>
   BASE_MESSAGES().concat(FeatureCalloutMessages.getMessages());
 
-const OnboardingMessageProvider = {
+export const OnboardingMessageProvider = {
   async getExtraAttributes() {
     const [header, button_label] = await L10N.formatMessages([
       { id: "onboarding-welcome-header" },
@@ -1221,7 +1228,7 @@ const OnboardingMessageProvider = {
     return messages;
   },
   async getUntranslatedMessages() {
-    
+    // This is helpful for jsonSchema testing - since we are localizing in the provider
     const messages = await ONBOARDING_MESSAGES();
     return messages;
   },
@@ -1230,13 +1237,13 @@ const OnboardingMessageProvider = {
     for (const msg of messages) {
       let translatedMessage = { ...msg };
 
-      
+      // If the message has no content, do not attempt to translate it
       if (!translatedMessage.content) {
         translatedMessages.push(translatedMessage);
         continue;
       }
 
-      
+      // Translate any secondary buttons separately
       if (msg.content.secondary_button) {
         const [secondary_button_string] = await L10N.formatMessages([
           { id: msg.content.secondary_button.label.string_id },
@@ -1267,7 +1274,7 @@ const OnboardingMessageProvider = {
     return checkDefault && !isDefault;
   },
   _shouldShowPrivacySegmentationScreen() {
-    
+    // Fall back to pref: browser.privacySegmentation.preferences.show
     return lazy.NimbusFeatures.majorRelease2022.getVariable(
       "feltPrivacyShowPreferencesSection"
     );
@@ -1285,7 +1292,7 @@ const OnboardingMessageProvider = {
     );
 
     let { content } = message;
-    
+    // Helper to find screens and remove them where applicable.
     function removeScreens(check) {
       const { screens } = content;
       for (let i = 0; i < screens?.length; i++) {
@@ -1295,7 +1302,7 @@ const OnboardingMessageProvider = {
       }
     }
 
-    
+    // Helper to prepare mobile download screen content
     function prepareMobileDownload() {
       let mobileContent = content.screens.find(
         screen => screen.id === "UPGRADE_MOBILE_DOWNLOAD"
@@ -1305,14 +1312,14 @@ const OnboardingMessageProvider = {
         return;
       }
       if (!lazy.BrowserUtils.sendToDeviceEmailsSupported()) {
-        
-        
+        // If send to device emails are not supported for a user's locale,
+        // remove the send to device link and update the screen text
         delete mobileContent.cta_paragraph.action;
         mobileContent.cta_paragraph.text = {
           string_id: "mr2022-onboarding-no-mobile-download-cta-text",
         };
       }
-      
+      // Update CN specific QRCode url
       if (AppConstants.isChinaRepack()) {
         mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
           0,
@@ -1330,18 +1337,18 @@ const OnboardingMessageProvider = {
       !lazy.hidePrivatePin && (await this._doesAppNeedPin(true));
     const showSegmentation = this._shouldShowPrivacySegmentationScreen();
 
-    
+    //If a user has Firefox as default remove import screen
     if (!needDefault) {
       removeScreens(screen =>
         screen.id?.startsWith("UPGRADE_IMPORT_SETTINGS_EMBEDDED")
       );
     }
 
-    
+    // If already pinned, convert "pin" screen to "welcome" with desired action.
     let removeDefault = !needDefault;
-    
+    // If user doesn't need pin, update screen to set "default" or "get started" configuration
     if (!needPin && pinScreen) {
-      
+      // don't need to show the checkbox
       delete pinScreen.content.checkbox;
 
       removeDefault = true;
@@ -1354,7 +1361,7 @@ const OnboardingMessageProvider = {
         primary.label.string_id =
           "mr2022-onboarding-set-default-primary-button-label";
 
-        
+        // The "pin" screen will now handle "default" so remove other "default."
         primary.action.type = "SET_DEFAULT_BROWSER";
       } else {
         pinScreen.id = "UPGRADE_GET_STARTED";
@@ -1368,9 +1375,9 @@ const OnboardingMessageProvider = {
       }
     }
 
-    
-    
-    
+    // If a user has Firefox private pinned remove pin private window screen
+    // We also remove standalone pin private window screen if a user doesn't have
+    // Firefox pinned in which case the option is shown as checkbox with UPGRADE_PIN_FIREFOX screen
     if (!needPrivatePin || needPin) {
       removeScreens(screen =>
         screen.id?.startsWith("UPGRADE_PIN_PRIVATE_WINDOW")
@@ -1383,7 +1390,7 @@ const OnboardingMessageProvider = {
       );
     }
 
-    
+    //If privatePin, remove checkbox from pinscreen
     if (!needPrivatePin) {
       delete content.screens?.find(
         screen => screen.id === "UPGRADE_PIN_FIREFOX"
@@ -1394,7 +1401,7 @@ const OnboardingMessageProvider = {
       removeScreens(screen => screen.id?.startsWith("UPGRADE_SET_DEFAULT"));
     }
 
-    
+    // Remove mobile download screen if user has sync enabled
     if (lazy.usesFirefoxSync && lazy.mobileDevices > 0) {
       removeScreens(screen => screen.id === "UPGRADE_MOBILE_DOWNLOAD");
     } else {
@@ -1404,5 +1411,3 @@ const OnboardingMessageProvider = {
     return message;
   },
 };
-
-const EXPORTED_SYMBOLS = ["OnboardingMessageProvider"];
