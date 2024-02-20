@@ -2394,6 +2394,14 @@ void GCRuntime::endSweepPhase(bool destroyingRuntime) {
 
   MOZ_ASSERT_IF(destroyingRuntime, !useBackgroundThreads);
 
+  
+  
+  
+  if (!rt->isMainRuntime()) {
+    MOZ_ASSERT_IF(useParallelMarking, reservedMarkingThreads != 0);
+    releaseMarkingThreads();
+  }
+
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DESTROY);
 

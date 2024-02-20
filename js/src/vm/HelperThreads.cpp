@@ -859,6 +859,8 @@ void GlobalHelperThreadState::finish(AutoLockHelperThreadState& lock) {
     return;
   }
 
+  MOZ_ASSERT_IF(!JSRuntime::hasLiveRuntimes(), gcParallelMarkingThreads == 0);
+
   finishThreads(lock);
 
   

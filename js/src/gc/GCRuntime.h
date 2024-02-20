@@ -640,6 +640,7 @@ class GCRuntime {
                          const AutoLockHelperThreadState& lock);
 
   
+  bool setParallelMarkingEnabled(bool enabled);
   bool initOrDisableParallelMarking();
   [[nodiscard]] bool updateMarkersVector();
   size_t markingWorkerCount() const;
@@ -799,8 +800,11 @@ class GCRuntime {
       ParallelMarking allowParallelMarking = SingleThreadedMarking,
       ShouldReportMarkTime reportTime = ReportMarkTime);
   bool canMarkInParallel() const;
-  bool initParallelMarkers();
+  bool initParallelMarking();
   void finishParallelMarkers();
+
+  bool reserveMarkingThreads(size_t count);
+  void releaseMarkingThreads();
 
   bool hasMarkingWork(MarkColor color) const;
 
@@ -1119,6 +1123,13 @@ class GCRuntime {
 
   
   MainThreadData<uint64_t> sliceNumber;
+
+  
+
+
+
+
+  MainThreadData<size_t> reservedMarkingThreads;
 
   
   MainThreadOrGCTaskData<bool> isIncremental;

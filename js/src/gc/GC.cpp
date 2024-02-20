@@ -930,6 +930,8 @@ void GCRuntime::finish() {
   }
 #endif
 
+  releaseMarkingThreads();
+
 #ifdef JS_GC_ZEAL
   
   finishVerifier();
@@ -1064,9 +1066,8 @@ bool GCRuntime::setParameter(JSGCParamKey key, uint32_t value,
       compactingEnabled = value != 0;
       break;
     case JSGC_PARALLEL_MARKING_ENABLED:
-      
-      parallelMarkingEnabled = rt->isMainRuntime() && value != 0;
-      return initOrDisableParallelMarking();
+      setParallelMarkingEnabled(value != 0);
+      break;
     case JSGC_INCREMENTAL_WEAKMAP_ENABLED:
       for (auto& marker : markers) {
         marker->incrementalWeakMapMarkingEnabled = value != 0;
@@ -1151,8 +1152,7 @@ void GCRuntime::resetParameter(JSGCParamKey key, AutoLockGC& lock) {
       compactingEnabled = TuningDefaults::CompactingEnabled;
       break;
     case JSGC_PARALLEL_MARKING_ENABLED:
-      parallelMarkingEnabled = TuningDefaults::ParallelMarkingEnabled;
-      initOrDisableParallelMarking();
+      setParallelMarkingEnabled(TuningDefaults::ParallelMarkingEnabled);
       break;
     case JSGC_INCREMENTAL_WEAKMAP_ENABLED:
       for (auto& marker : markers) {
@@ -1350,16 +1350,56 @@ void GCRuntime::assertNoMarkingWork() const {
 }
 #endif
 
+bool GCRuntime::setParallelMarkingEnabled(bool enabled) {
+  if (enabled == parallelMarkingEnabled) {
+    return true;
+  }
+
+  parallelMarkingEnabled = enabled;
+  return initOrDisableParallelMarking();
+}
+
 bool GCRuntime::initOrDisableParallelMarking() {
+  
   
 
   MOZ_ASSERT(markers.length() != 0);
 
-  if (!updateMarkersVector()) {
-    parallelMarkingEnabled = false;
+  if (updateMarkersVector()) {
+    return true;
+  }
+
+  
+  MOZ_ASSERT(parallelMarkingEnabled);
+  parallelMarkingEnabled = false;
+  MOZ_ALWAYS_TRUE(updateMarkersVector());
+  return false;
+}
+
+void GCRuntime::releaseMarkingThreads() {
+  MOZ_ALWAYS_TRUE(reserveMarkingThreads(0));
+}
+
+bool GCRuntime::reserveMarkingThreads(size_t newCount) {
+  if (reservedMarkingThreads == newCount) {
+    return true;
+  }
+
+  
+  
+  
+
+  AutoLockHelperThreadState lock;
+  auto& globalCount = HelperThreadState().gcParallelMarkingThreads;
+  MOZ_ASSERT(globalCount >= reservedMarkingThreads);
+  size_t newGlobalCount = globalCount - reservedMarkingThreads + newCount;
+  if (newGlobalCount > HelperThreadState().threadCount) {
+    
     return false;
   }
 
+  globalCount = newGlobalCount;
+  reservedMarkingThreads = newCount;
   return true;
 }
 
@@ -1377,6 +1417,16 @@ bool GCRuntime::updateMarkersVector() {
   
   
   size_t targetCount = std::min(markingWorkerCount(), getMaxParallelThreads());
+
+  if (rt->isMainRuntime()) {
+    
+    
+    
+    size_t threadsToReserve = targetCount > 1 ? targetCount : 0;
+    if (!reserveMarkingThreads(threadsToReserve)) {
+      return false;
+    }
+  }
 
   if (markers.length() > targetCount) {
     return markers.resize(targetCount);
@@ -2870,7 +2920,7 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
   stats().measureInitialHeapSize();
 
   useParallelMarking = SingleThreadedMarking;
-  if (canMarkInParallel() && initParallelMarkers()) {
+  if (canMarkInParallel() && initParallelMarking()) {
     useParallelMarking = AllowParallelMarking;
   }
 
@@ -2989,8 +3039,18 @@ inline bool GCRuntime::canMarkInParallel() const {
                                      tunables.parallelMarkingThresholdBytes();
 }
 
-bool GCRuntime::initParallelMarkers() {
+bool GCRuntime::initParallelMarking() {
+  
+
   MOZ_ASSERT(canMarkInParallel());
+
+  
+  
+  
+  
+  if (!rt->isMainRuntime() && !reserveMarkingThreads(markers.length())) {
+    return false;
+  }
 
   
   

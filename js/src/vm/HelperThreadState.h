@@ -122,6 +122,11 @@ class GlobalHelperThreadState {
   WriteOnceData<JS::RegisterThreadCallback> registerThread;
   WriteOnceData<JS::UnregisterThreadCallback> unregisterThread;
 
+  
+  
+  
+  HelperThreadLockData<size_t> gcParallelMarkingThreads;
+
  private:
   
 
