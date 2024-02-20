@@ -354,7 +354,7 @@ static double YearFromTime(double t) {
 
 
 static double DayWithinYear(double t, double year) {
-  MOZ_ASSERT_IF(std::isfinite(t), YearFromTime(t) == year);
+  MOZ_ASSERT_IF(std::isfinite(t), ::YearFromTime(t) == year);
   return Day(t) - ::DayFromYear(year);
 }
 
