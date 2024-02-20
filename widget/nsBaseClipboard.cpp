@@ -5,27 +5,21 @@
 
 #include "nsBaseClipboard.h"
 
-#include "ContentAnalysis.h"
-#include "mozilla/contentanalysis/ContentAnalysisIPCTypes.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/dom/WindowContext.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
-#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"
 #include "nsIClipboardOwner.h"
 #include "nsIPromptService.h"
-#include "nsISupportsPrimitives.h"
 #include "nsError.h"
 #include "nsXPCOM.h"
 
@@ -59,13 +53,11 @@ class UserConfirmationRequest final
   UserConfirmationRequest(int32_t aClipboardType,
                           Document* aRequestingChromeDocument,
                           nsIPrincipal* aRequestingPrincipal,
-                          nsBaseClipboard* aClipboard,
-                          mozilla::dom::WindowContext* aRequestingWindowContext)
+                          nsBaseClipboard* aClipboard)
       : mClipboardType(aClipboardType),
         mRequestingChromeDocument(aRequestingChromeDocument),
         mRequestingPrincipal(aRequestingPrincipal),
-        mClipboard(aClipboard),
-        mRequestingWindowContext(aRequestingWindowContext) {
+        mClipboard(aClipboard) {
     MOZ_ASSERT(
         mClipboard->nsIClipboard::IsClipboardTypeSupported(aClipboardType));
   }
@@ -77,13 +69,10 @@ class UserConfirmationRequest final
                         mozilla::ErrorResult& aRv) override;
 
   bool IsEqual(int32_t aClipboardType, Document* aRequestingChromeDocument,
-               nsIPrincipal* aRequestingPrincipal,
-               mozilla::dom::WindowContext* aRequestingWindowContext) const {
+               nsIPrincipal* aRequestingPrincipal) const {
     return ClipboardType() == aClipboardType &&
            RequestingChromeDocument() == aRequestingChromeDocument &&
-           RequestingPrincipal()->Equals(aRequestingPrincipal) &&
-           (mRequestingWindowContext && aRequestingWindowContext &&
-            mRequestingWindowContext->Id() == aRequestingWindowContext->Id());
+           RequestingPrincipal()->Equals(aRequestingPrincipal);
   }
 
   int32_t ClipboardType() const { return mClipboardType; }
@@ -119,7 +108,6 @@ class UserConfirmationRequest final
       MOZ_ASSERT(!request->mFlavorList.IsEmpty());
       MOZ_ASSERT(request->mCallback);
       mClipboard->AsyncGetDataInternal(request->mFlavorList, mClipboardType,
-                                       mRequestingWindowContext,
                                        request->mCallback);
     }
   }
@@ -135,7 +123,6 @@ class UserConfirmationRequest final
   RefPtr<Document> mRequestingChromeDocument;
   const nsCOMPtr<nsIPrincipal> mRequestingPrincipal;
   const RefPtr<nsBaseClipboard> mClipboard;
-  const RefPtr<mozilla::dom::WindowContext> mRequestingWindowContext;
   
   nsTArray<UniquePtr<ClipboardGetRequest>> mPendingClipboardGetRequests;
 };
@@ -300,228 +287,6 @@ NS_IMETHODIMP nsBaseClipboard::AsyncSetData(
   return NS_OK;
 }
 
-namespace {
-class SafeContentAnalysisResultCallback final
-    : public nsIContentAnalysisCallback {
- public:
-  explicit SafeContentAnalysisResultCallback(
-      std::function<void(RefPtr<nsIContentAnalysisResult>&&)> aResolver)
-      : mResolver(std::move(aResolver)) {}
-  void Callback(RefPtr<nsIContentAnalysisResult>&& aResult) {
-    MOZ_ASSERT(mResolver, "Called SafeContentAnalysisResultCallback twice!");
-    if (auto resolver = std::move(mResolver)) {
-      resolver(std::move(aResult));
-    }
-  }
-
-  NS_IMETHODIMP ContentResult(nsIContentAnalysisResponse* aResponse) {
-    using namespace mozilla::contentanalysis;
-    RefPtr<ContentAnalysisResult> result =
-        ContentAnalysisResult::FromContentAnalysisResponse(aResponse);
-    Callback(result);
-    return NS_OK;
-  }
-
-  NS_IMETHODIMP Error(nsresult aError) {
-    using namespace mozilla::contentanalysis;
-    Callback(ContentAnalysisResult::FromNoResult(
-        NoContentAnalysisResult::ERROR_OTHER));
-    return NS_OK;
-  }
-
-  NS_DECL_THREADSAFE_ISUPPORTS
- private:
-  
-  
-  ~SafeContentAnalysisResultCallback() {
-    MOZ_ASSERT(!mResolver, "SafeContentAnalysisResultCallback never called!");
-  }
-  mozilla::MoveOnlyFunction<void(RefPtr<nsIContentAnalysisResult>&&)> mResolver;
-};
-NS_IMPL_ISUPPORTS(SafeContentAnalysisResultCallback,
-                  nsIContentAnalysisCallback);
-}  
-
-
-
-
-
-static mozilla::Result<bool, mozilla::contentanalysis::NoContentAnalysisResult>
-CheckClipboardContentAnalysisAsText(
-    uint64_t aInnerWindowId, SafeContentAnalysisResultCallback* aResolver,
-    nsIURI* aDocumentURI, nsIContentAnalysis* aContentAnalysis,
-    nsITransferable* aTextTrans) {
-  using namespace mozilla::contentanalysis;
-
-  nsCOMPtr<nsISupports> transferData;
-  if (NS_FAILED(aTextTrans->GetTransferData(kTextMime,
-                                            getter_AddRefs(transferData)))) {
-    return false;
-  }
-  nsCOMPtr<nsISupportsString> textData = do_QueryInterface(transferData);
-  if (MOZ_UNLIKELY(!textData)) {
-    return false;
-  }
-  nsString text;
-  if (NS_FAILED(textData->GetData(text))) {
-    return mozilla::Err(NoContentAnalysisResult::ERROR_OTHER);
-  }
-  RefPtr<mozilla::dom::WindowGlobalParent> window =
-      mozilla::dom::WindowGlobalParent::GetByInnerWindowId(aInnerWindowId);
-  if (!window) {
-    
-    return mozilla::Err(NoContentAnalysisResult::ERROR_OTHER);
-  }
-  nsCOMPtr<nsIContentAnalysisRequest> contentAnalysisRequest =
-      new ContentAnalysisRequest(
-          nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
-          std::move(text), false, EmptyCString(), aDocumentURI,
-          nsIContentAnalysisRequest::OperationType::eClipboard, window);
-  nsresult rv = aContentAnalysis->AnalyzeContentRequestCallback(
-      contentAnalysisRequest,  true, aResolver);
-  if (NS_FAILED(rv)) {
-    return mozilla::Err(NoContentAnalysisResult::ERROR_OTHER);
-  }
-  return true;
-}
-
-
-
-
-
-static mozilla::Result<bool, mozilla::contentanalysis::NoContentAnalysisResult>
-CheckClipboardContentAnalysisAsFile(
-    uint64_t aInnerWindowId, SafeContentAnalysisResultCallback* aResolver,
-    nsIURI* aDocumentURI, nsIContentAnalysis* aContentAnalysis,
-    nsITransferable* aFileTrans) {
-  using namespace mozilla::contentanalysis;
-
-  nsCOMPtr<nsISupports> transferData;
-  nsresult rv =
-      aFileTrans->GetTransferData(kFileMime, getter_AddRefs(transferData));
-  nsString filePath;
-  if (NS_SUCCEEDED(rv)) {
-    if (nsCOMPtr<nsIFile> file = do_QueryInterface(transferData)) {
-      rv = file->GetPath(filePath);
-    } else {
-      MOZ_ASSERT_UNREACHABLE("clipboard data had kFileMime but no nsIFile!");
-      return mozilla::Err(NoContentAnalysisResult::ERROR_OTHER);
-    }
-  }
-  if (NS_FAILED(rv) || filePath.IsEmpty()) {
-    return false;
-  }
-  RefPtr<mozilla::dom::WindowGlobalParent> window =
-      mozilla::dom::WindowGlobalParent::GetByInnerWindowId(aInnerWindowId);
-  if (!window) {
-    
-    return mozilla::Err(NoContentAnalysisResult::ERROR_OTHER);
-  }
-  
-  nsCOMPtr<nsIContentAnalysisRequest> contentAnalysisRequest =
-      new ContentAnalysisRequest(
-          nsIContentAnalysisRequest::AnalysisType::eBulkDataEntry,
-          std::move(filePath), true, EmptyCString(), aDocumentURI,
-          nsIContentAnalysisRequest::OperationType::eCustomDisplayString,
-          window);
-  rv = aContentAnalysis->AnalyzeContentRequestCallback(
-      contentAnalysisRequest,
-       true, aResolver);
-  if (NS_FAILED(rv)) {
-    return mozilla::Err(NoContentAnalysisResult::ERROR_OTHER);
-  }
-  return true;
-}
-
-static void CheckClipboardContentAnalysis(
-    mozilla::dom::WindowGlobalParent* aWindow, nsITransferable* aTransferable,
-    SafeContentAnalysisResultCallback* aResolver) {
-  using namespace mozilla::contentanalysis;
-
-  
-  
-  
-  
-  
-  
-  
-  if (!aWindow || aWindow->GetBrowsingContext()->IsChrome() ||
-      aWindow->IsInProcess()) {
-    aResolver->Callback(ContentAnalysisResult::FromNoResult(
-        NoContentAnalysisResult::NO_PARENT_BROWSER));
-    return;
-  }
-  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
-      mozilla::components::nsIContentAnalysis::Service();
-  if (!contentAnalysis) {
-    aResolver->Callback(ContentAnalysisResult::FromNoResult(
-        NoContentAnalysisResult::ERROR_OTHER));
-    return;
-  }
-
-  bool contentAnalysisIsActive;
-  nsresult rv = contentAnalysis->GetIsActive(&contentAnalysisIsActive);
-  if (MOZ_LIKELY(NS_FAILED(rv) || !contentAnalysisIsActive)) {
-    aResolver->Callback(ContentAnalysisResult::FromNoResult(
-        NoContentAnalysisResult::AGENT_NOT_PRESENT));
-    return;
-  }
-
-  nsCOMPtr<nsIURI> currentURI = aWindow->Canonical()->GetDocumentURI();
-  uint64_t innerWindowId = aWindow->InnerWindowId();
-  nsTArray<nsCString> flavors;
-  rv = aTransferable->FlavorsTransferableCanExport(flavors);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aResolver->Callback(ContentAnalysisResult::FromNoResult(
-        NoContentAnalysisResult::ERROR_OTHER));
-    return;
-  }
-  bool keepChecking = true;
-  if (flavors.Contains(kFileMime)) {
-    auto fileResult = CheckClipboardContentAnalysisAsFile(
-        innerWindowId, aResolver, currentURI, contentAnalysis, aTransferable);
-
-    if (fileResult.isErr()) {
-      aResolver->Callback(
-          ContentAnalysisResult::FromNoResult(fileResult.unwrapErr()));
-      return;
-    }
-    keepChecking = !fileResult.unwrap();
-  }
-  if (keepChecking) {
-    
-    auto textResult = CheckClipboardContentAnalysisAsText(
-        innerWindowId, aResolver, currentURI, contentAnalysis, aTransferable);
-    if (textResult.isErr()) {
-      aResolver->Callback(
-          ContentAnalysisResult::FromNoResult(textResult.unwrapErr()));
-      return;
-    }
-    if (!textResult.unwrap()) {
-      
-      aResolver->Callback(ContentAnalysisResult::FromNoResult(
-          NoContentAnalysisResult::ERROR_COULD_NOT_GET_DATA));
-      return;
-    }
-  }
-}
-
-static bool CheckClipboardContentAnalysisSync(
-    mozilla::dom::WindowGlobalParent* aWindow,
-    const nsCOMPtr<nsITransferable>& trans) {
-  bool requestDone = false;
-  RefPtr<nsIContentAnalysisResult> result;
-  auto callback = mozilla::MakeRefPtr<SafeContentAnalysisResultCallback>(
-      [&requestDone, &result](RefPtr<nsIContentAnalysisResult>&& aResult) {
-        result = std::move(aResult);
-        requestDone = true;
-      });
-  CheckClipboardContentAnalysis(aWindow, trans, callback);
-  mozilla::SpinEventLoopUntil("CheckClipboardContentAnalysisSync"_ns,
-                              [&requestDone]() -> bool { return requestDone; });
-  return result->GetShouldAllowContent();
-}
-
 nsBaseClipboard::nsBaseClipboard(const ClipboardCapabilities& aClipboardCaps)
     : mClipboardCaps(aClipboardCaps) {
   using mozilla::MakeUnique;
@@ -627,9 +392,8 @@ nsresult nsBaseClipboard::GetDataFromClipboardCache(
 
 
 
-NS_IMETHODIMP nsBaseClipboard::GetData(
-    nsITransferable* aTransferable, int32_t aWhichClipboard,
-    mozilla::dom::WindowContext* aWindowContext) {
+NS_IMETHODIMP nsBaseClipboard::GetData(nsITransferable* aTransferable,
+                                       int32_t aWhichClipboard) {
   MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
 
   if (!aTransferable) {
@@ -650,33 +414,19 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
     if (NS_SUCCEEDED(
             GetDataFromClipboardCache(aTransferable, aWhichClipboard))) {
       
-      if (!CheckClipboardContentAnalysisSync(aWindowContext->Canonical(),
-                                             aTransferable)) {
-        aTransferable->ClearAllData();
-        return NS_ERROR_CONTENT_BLOCKED;
-      }
       return NS_OK;
     }
 
     
     
   }
-  nsresult rv = GetNativeClipboardData(aTransferable, aWhichClipboard);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!CheckClipboardContentAnalysisSync(aWindowContext->Canonical(),
-                                         aTransferable)) {
-    aTransferable->ClearAllData();
-    return NS_ERROR_CONTENT_BLOCKED;
-  }
-  return NS_OK;
+
+  return GetNativeClipboardData(aTransferable, aWhichClipboard);
 }
 
 void nsBaseClipboard::MaybeRetryGetAvailableFlavors(
     const nsTArray<nsCString>& aFlavorList, int32_t aWhichClipboard,
-    nsIAsyncClipboardGetCallback* aCallback, int32_t aRetryCount,
-    mozilla::dom::WindowContext* aRequestingWindowContext) {
+    nsIAsyncClipboardGetCallback* aCallback, int32_t aRetryCount) {
   
   
   
@@ -693,9 +443,8 @@ void nsBaseClipboard::MaybeRetryGetAvailableFlavors(
   AsyncHasNativeClipboardDataMatchingFlavors(
       aFlavorList, aWhichClipboard,
       [self = RefPtr{this}, callback = nsCOMPtr{aCallback}, aWhichClipboard,
-       aRetryCount, flavorList = aFlavorList.Clone(), sequenceNumber,
-       requestingWindowContext =
-           RefPtr{aRequestingWindowContext}](auto aFlavorsOrError) {
+       aRetryCount, flavorList = aFlavorList.Clone(),
+       sequenceNumber](auto aFlavorsOrError) {
         if (aFlavorsOrError.isErr()) {
           MOZ_CLIPBOARD_LOG(
               "%s: unable to get available flavors for clipboard %d.",
@@ -718,8 +467,7 @@ void nsBaseClipboard::MaybeRetryGetAvailableFlavors(
           auto asyncGetClipboardData =
               mozilla::MakeRefPtr<AsyncGetClipboardData>(
                   aWhichClipboard, sequenceNumber,
-                  std::move(aFlavorsOrError.unwrap()), false, self,
-                  requestingWindowContext);
+                  std::move(aFlavorsOrError.unwrap()), false, self);
           callback->OnSuccess(asyncGetClipboardData);
           return;
         }
@@ -730,8 +478,7 @@ void nsBaseClipboard::MaybeRetryGetAvailableFlavors(
               "doesn't match, retry (%d) ..",
               __FUNCTION__, aWhichClipboard, aRetryCount);
           self->MaybeRetryGetAvailableFlavors(flavorList, aWhichClipboard,
-                                              callback, aRetryCount - 1,
-                                              requestingWindowContext);
+                                              callback, aRetryCount - 1);
           return;
         }
 
@@ -763,8 +510,7 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetData(
           dom_events_testing_asyncClipboard_DoNotUseDirectly() ||
       nsContentUtils::PrincipalHasPermission(*aRequestingPrincipal,
                                              nsGkAtoms::clipboardRead)) {
-    AsyncGetDataInternal(aFlavorList, aWhichClipboard, aRequestingWindowContext,
-                         aCallback);
+    AsyncGetDataInternal(aFlavorList, aWhichClipboard, aCallback);
     return NS_OK;
   }
 
@@ -778,8 +524,7 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetData(
       if (aRequestingPrincipal->Subsumes(principal)) {
         MOZ_CLIPBOARD_LOG("%s: native clipboard data is from same-origin page.",
                           __FUNCTION__);
-        AsyncGetDataInternal(aFlavorList, aWhichClipboard,
-                             aRequestingWindowContext, aCallback);
+        AsyncGetDataInternal(aFlavorList, aWhichClipboard, aCallback);
         return NS_OK;
       }
     }
@@ -799,7 +544,6 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetData(
 
 void nsBaseClipboard::AsyncGetDataInternal(
     const nsTArray<nsCString>& aFlavorList, int32_t aClipboardType,
-    mozilla::dom::WindowContext* aRequestingWindowContext,
     nsIAsyncClipboardGetCallback* aCallback) {
   MOZ_ASSERT(nsIClipboard::IsClipboardTypeSupported(aClipboardType));
 
@@ -832,7 +576,7 @@ void nsBaseClipboard::AsyncGetDataInternal(
         
         auto asyncGetClipboardData = mozilla::MakeRefPtr<AsyncGetClipboardData>(
             aClipboardType, clipboardCache->GetSequenceNumber(),
-            std::move(results), true, this, aRequestingWindowContext);
+            std::move(results), true, this);
         aCallback->OnSuccess(asyncGetClipboardData);
         return;
       }
@@ -843,8 +587,7 @@ void nsBaseClipboard::AsyncGetDataInternal(
   }
 
   MaybeRetryGetAvailableFlavors(aFlavorList, aClipboardType, aCallback,
-                                kGetAvailableFlavorsRetryCount,
-                                aRequestingWindowContext);
+                                kGetAvailableFlavorsRetryCount);
 }
 
 NS_IMETHODIMP nsBaseClipboard::EmptyClipboard(int32_t aWhichClipboard) {
@@ -1047,8 +790,8 @@ void nsBaseClipboard::RequestUserConfirmation(
   
   
   if (sUserConfirmationRequest) {
-    if (sUserConfirmationRequest->IsEqual(
-            aClipboardType, chromeDoc, aRequestingPrincipal, aWindowContext)) {
+    if (sUserConfirmationRequest->IsEqual(aClipboardType, chromeDoc,
+                                          aRequestingPrincipal)) {
       sUserConfirmationRequest->AddClipboardGetRequest(aFlavorList, aCallback);
       return;
     }
@@ -1073,7 +816,7 @@ void nsBaseClipboard::RequestUserConfirmation(
   }
 
   sUserConfirmationRequest = new UserConfirmationRequest(
-      aClipboardType, chromeDoc, aRequestingPrincipal, this, aWindowContext);
+      aClipboardType, chromeDoc, aRequestingPrincipal, this);
   sUserConfirmationRequest->AddClipboardGetRequest(aFlavorList, aCallback);
   promise->AppendNativeHandler(sUserConfirmationRequest);
 }
@@ -1084,14 +827,12 @@ NS_IMPL_ISUPPORTS(nsBaseClipboard::AsyncGetClipboardData,
 nsBaseClipboard::AsyncGetClipboardData::AsyncGetClipboardData(
     int32_t aClipboardType, int32_t aSequenceNumber,
     nsTArray<nsCString>&& aFlavors, bool aFromCache,
-    nsBaseClipboard* aClipboard,
-    mozilla::dom::WindowContext* aRequestingWindowContext)
+    nsBaseClipboard* aClipboard)
     : mClipboardType(aClipboardType),
       mSequenceNumber(aSequenceNumber),
       mFlavors(std::move(aFlavors)),
       mFromCache(aFromCache),
-      mClipboard(aClipboard),
-      mRequestingWindowContext(aRequestingWindowContext) {
+      mClipboard(aClipboard) {
   MOZ_ASSERT(mClipboard);
   MOZ_ASSERT(
       mClipboard->nsIClipboard::IsClipboardTypeSupported(mClipboardType));
@@ -1138,19 +879,6 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetClipboardData::GetData(
 
   MOZ_ASSERT(mClipboard);
 
-  auto contentAnalysisCallback =
-      mozilla::MakeRefPtr<SafeContentAnalysisResultCallback>(
-          [transferable = nsCOMPtr{aTransferable},
-           callback = nsCOMPtr{aCallback}](
-              RefPtr<nsIContentAnalysisResult>&& aResult) {
-            if (aResult->GetShouldAllowContent()) {
-              callback->OnComplete(NS_OK);
-            } else {
-              transferable->ClearAllData();
-              callback->OnComplete(NS_ERROR_CONTENT_BLOCKED);
-            }
-          });
-
   if (mFromCache) {
     const auto* clipboardCache =
         mClipboard->GetClipboardCacheIfValid(mClipboardType);
@@ -1160,8 +888,7 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetClipboardData::GetData(
     MOZ_DIAGNOSTIC_ASSERT(clipboardCache->GetSequenceNumber() ==
                           mSequenceNumber);
     if (NS_SUCCEEDED(clipboardCache->GetData(aTransferable))) {
-      CheckClipboardContentAnalysis(mRequestingWindowContext->Canonical(),
-                                    aTransferable, contentAnalysisCallback);
+      aCallback->OnComplete(NS_OK);
       return NS_OK;
     }
 
@@ -1173,23 +900,10 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetClipboardData::GetData(
   
   mClipboard->AsyncGetNativeClipboardData(
       aTransferable, mClipboardType,
-      [callback = nsCOMPtr{aCallback}, self = RefPtr{this},
-       transferable = nsCOMPtr{aTransferable},
-       contentAnalysisCallback =
-           std::move(contentAnalysisCallback)](nsresult aResult) mutable {
-        if (NS_FAILED(aResult)) {
-          callback->OnComplete(aResult);
-          return;
-        }
+      [callback = nsCOMPtr{aCallback}, self = RefPtr{this}](nsresult aResult) {
         
         
-        if (!self->IsValid()) {
-          callback->OnComplete(NS_ERROR_FAILURE);
-          return;
-        }
-        CheckClipboardContentAnalysis(
-            self->mRequestingWindowContext->Canonical(), transferable,
-            contentAnalysisCallback);
+        callback->OnComplete(self->IsValid() ? aResult : NS_ERROR_FAILURE);
       });
   return NS_OK;
 }

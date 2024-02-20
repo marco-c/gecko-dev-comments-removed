@@ -197,7 +197,6 @@
 #include "nsICaptivePortalService.h"
 #include "nsICertOverrideService.h"
 #include "nsIClipboard.h"
-#include "nsIContentAnalysis.h"
 #include "nsIContentProcess.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsICookie.h"
@@ -3463,23 +3462,8 @@ static Result<nsCOMPtr<nsITransferable>, nsresult> CreateTransferable(
 
 mozilla::ipc::IPCResult ContentParent::RecvGetClipboard(
     nsTArray<nsCString>&& aTypes, const int32_t& aWhichClipboard,
-    const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
     IPCTransferableData* aTransferableData) {
   nsresult rv;
-  
-  
-  
-  
-  if (aRequestingWindowContext.IsDiscarded()) {
-    NS_WARNING(
-        "discarded window passed to RecvGetClipboard(); returning no clipboard "
-        "content");
-    return IPC_OK();
-  }
-  if (aRequestingWindowContext.IsNull()) {
-    return IPC_FAIL(this, "passed null window to RecvGetClipboard()");
-  }
-  RefPtr<WindowGlobalParent> window = aRequestingWindowContext.get_canonical();
   
   nsCOMPtr<nsIClipboard> clipboard(do_GetService(kCClipboardCID, &rv));
   if (NS_FAILED(rv)) {
@@ -3494,7 +3478,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetClipboard(
 
   
   nsCOMPtr<nsITransferable> trans = result.unwrap();
-  clipboard->GetData(trans, aWhichClipboard, window);
+  clipboard->GetData(trans, aWhichClipboard);
 
   nsContentUtils::TransferableToIPCTransferableData(
       trans, aTransferableData, true , this);
