@@ -55,6 +55,13 @@ function setupRangeTests() {
     paras[4].textContent = "Ghijklmn";
     testDiv.appendChild(paras[4]);
 
+    paras.push(document.createElement("p"));
+    const xmlDocument = new Document();
+    paras[5].appendChild(xmlDocument.createCDATASection("1234"));
+    paras[5].appendChild(xmlDocument.createCDATASection("5678"));
+    paras[5].append("9012");
+    testDiv.appendChild(paras[5]);
+
     detachedDiv = document.createElement("div");
     detachedPara1 = document.createElement("p");
     detachedPara1.appendChild(document.createTextNode("Opqrstuv"));
@@ -128,6 +135,8 @@ function setupRangeTests() {
         "[paras[0].firstChild, 2, paras[0].firstChild, 9]",
         "[paras[1].firstChild, 0, paras[1].firstChild, 0]",
         "[paras[1].firstChild, 2, paras[1].firstChild, 9]",
+        "[paras[5].firstChild, 2, paras[5].lastChild, 4]",
+        "[paras[5].firstChild, 1, paras[5].firstChild, 3]",
         "[detachedPara1.firstChild, 0, detachedPara1.firstChild, 0]",
         "[detachedPara1.firstChild, 2, detachedPara1.firstChild, 8]",
         "[foreignPara1.firstChild, 0, foreignPara1.firstChild, 0]",
@@ -210,6 +219,8 @@ function setupRangeTests() {
         "[paras[1].firstChild, 9]",
         "[paras[1].firstChild, 10]",
         "[paras[1].firstChild, 65535]",
+        "[paras[5].firstChild, 2]",
+        "[paras[5].firstChild, 20]",
         "[detachedPara1.firstChild, 0]",
         "[detachedPara1.firstChild, 1]",
         "[detachedPara1.firstChild, 8]",
@@ -290,6 +301,7 @@ function setupRangeTests() {
         "paras[0]",
         "paras[0].firstChild",
         "paras[1].firstChild",
+        "paras[5].firstChild",
         "foreignPara1",
         "foreignPara1.firstChild",
         "detachedPara1",
@@ -351,10 +363,7 @@ function nodeLength(node) {
     
     
     
-    
-    
-    
-    if (node.nodeType == Node.TEXT_NODE || node.nodeType == Node.PROCESSING_INSTRUCTION_NODE || node.nodeType == Node.COMMENT_NODE) {
+    if (isText(node) || node.nodeType == Node.PROCESSING_INSTRUCTION_NODE || node.nodeType == Node.COMMENT_NODE) {
         return node.data.length;
     }
     
@@ -594,9 +603,8 @@ function myExtractContents(range) {
     var originalEndOffset = range.endOffset;
 
     
-    
     if (range.startContainer == range.endContainer
-    && (range.startContainer.nodeType == Node.TEXT_NODE
+    && (isText(range.startContainer)
     || range.startContainer.nodeType == Node.PROCESSING_INSTRUCTION_NODE
     || range.startContainer.nodeType == Node.COMMENT_NODE)) {
         
@@ -710,9 +718,8 @@ function myExtractContents(range) {
     }
 
     
-    
     if (firstPartiallyContainedChild
-    && (firstPartiallyContainedChild.nodeType == Node.TEXT_NODE
+    && (isText(firstPartiallyContainedChild)
     || firstPartiallyContainedChild.nodeType == Node.PROCESSING_INSTRUCTION_NODE
     || firstPartiallyContainedChild.nodeType == Node.COMMENT_NODE)) {
         
@@ -769,9 +776,8 @@ function myExtractContents(range) {
     }
 
     
-    
     if (lastPartiallyContainedChild
-    && (lastPartiallyContainedChild.nodeType == Node.TEXT_NODE
+    && (isText(lastPartiallyContainedChild)
     || lastPartiallyContainedChild.nodeType == Node.PROCESSING_INSTRUCTION_NODE
     || lastPartiallyContainedChild.nodeType == Node.COMMENT_NODE)) {
         
@@ -833,7 +839,7 @@ function myInsertNode(range, node) {
     
     if (range.startContainer.nodeType == Node.PROCESSING_INSTRUCTION_NODE
             || range.startContainer.nodeType == Node.COMMENT_NODE
-            || (range.startContainer.nodeType == Node.TEXT_NODE
+            || (isText(range.startContainer)
                 && !range.startContainer.parentNode)
             || range.startContainer == node) {
                     return "HIERARCHY_REQUEST_ERR";
@@ -843,7 +849,7 @@ function myInsertNode(range, node) {
     var referenceNode = null;
 
     
-    if (range.startContainer.nodeType == Node.TEXT_NODE) {
+    if (isText(range.startContainer)) {
         referenceNode = range.startContainer;
 
         
@@ -870,7 +876,7 @@ function myInsertNode(range, node) {
 
     
     
-    if (range.startContainer.nodeType == Node.TEXT_NODE) {
+    if (isText(range.startContainer)) {
         referenceNode = range.startContainer.splitText(range.startOffset);
     }
 
@@ -911,7 +917,7 @@ function isElement(node) {
 }
 
 function isText(node) {
-    return node.nodeType == Node.TEXT_NODE;
+    return node.nodeType == Node.TEXT_NODE || node.nodeType == Node.CDATA_SECTION_NODE;
 }
 
 function isDoctype(node) {
@@ -946,7 +952,7 @@ function ensurePreInsertionValidity(node, parent_, child) {
     if (node.nodeType != Node.DOCUMENT_FRAGMENT_NODE
             && node.nodeType != Node.DOCUMENT_TYPE_NODE
             && node.nodeType != Node.ELEMENT_NODE
-            && node.nodeType != Node.TEXT_NODE
+            && !isText(node)
             && node.nodeType != Node.PROCESSING_INSTRUCTION_NODE
             && node.nodeType != Node.COMMENT_NODE) {
                 return "HIERARCHY_REQUEST_ERR";
@@ -954,7 +960,7 @@ function ensurePreInsertionValidity(node, parent_, child) {
 
     
     
-    if ((node.nodeType == Node.TEXT_NODE
+    if ((isText(node)
                 && parent_.nodeType == Node.DOCUMENT_NODE)
             || (node.nodeType == Node.DOCUMENT_TYPE_NODE
                 && parent_.nodeType != Node.DOCUMENT_NODE)) {
