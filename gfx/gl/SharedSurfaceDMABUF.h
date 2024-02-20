@@ -35,11 +35,11 @@ class SharedSurface_DMABUF final : public SharedSurface {
   virtual void UnlockProdImpl() override {}
 
   
-  virtual bool ProducerAcquireImpl() override { return true; }
+  virtual void ProducerAcquireImpl() override {}
   virtual void ProducerReleaseImpl() override;
 
   
-  virtual bool ProducerReadAcquireImpl() override { return true; }
+  virtual void ProducerReadAcquireImpl() override {}
   virtual void ProducerReadReleaseImpl() override {}
 
   Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() override;
