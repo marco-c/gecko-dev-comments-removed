@@ -333,7 +333,8 @@ struct Family {
 
   
   
-  std::pair<uint32_t, bool> FindIndex(FontList* aList) const;
+  
+  mozilla::Maybe<std::pair<uint32_t, bool>> FindIndex(FontList* aList) const;
 
  private:
   
