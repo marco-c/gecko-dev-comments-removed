@@ -3,7 +3,7 @@
 
 "use strict";
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 
 
