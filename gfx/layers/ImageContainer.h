@@ -808,7 +808,7 @@ class PlanarYCbCrImage : public Image {
   
 
 
-  virtual bool AdoptData(const Data& aData);
+  virtual nsresult AdoptData(const Data& aData);
 
   
 
