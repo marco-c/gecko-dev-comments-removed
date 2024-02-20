@@ -4,17 +4,19 @@
 
 #include "BounceTrackingProtection.h"
 
+#include "BounceTrackingProtectionStorage.h"
 #include "BounceTrackingState.h"
 #include "BounceTrackingRecord.h"
 
+#include "BounceTrackingStateGlobal.h"
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_privacy.h"
-#include "mozilla/dom/BrowsingContextBinding.h"
 #include "mozilla/dom/Promise.h"
+#include "nsDebug.h"
 #include "nsHashPropertyBag.h"
 #include "nsIClearDataService.h"
 #include "nsIObserverService.h"
@@ -66,6 +68,15 @@ BounceTrackingProtection::GetSingleton() {
 BounceTrackingProtection::BounceTrackingProtection() {
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug, ("constructor"));
 
+  mStorage = new BounceTrackingProtectionStorage();
+
+  nsresult rv = mStorage->Init();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Error,
+            ("storage init failed"));
+    return;
+  }
+
   
   
   uint32_t purgeTimerPeriod = StaticPrefs::
@@ -80,7 +91,7 @@ BounceTrackingProtection::BounceTrackingProtection() {
           ("Scheduling mBounceTrackingPurgeTimer. Interval: %d seconds.",
            purgeTimerPeriod));
 
-  DebugOnly<nsresult> rv = NS_NewTimerWithCallback(
+  rv = NS_NewTimerWithCallback(
       getter_AddRefs(mBounceTrackingPurgeTimer),
       [](auto) {
         if (!sBounceTrackingProtection) {
@@ -102,23 +113,6 @@ BounceTrackingProtection::BounceTrackingProtection() {
                        "Failed to schedule timer for RunPurgeBounceTrackers.");
 }
 
-BounceTrackingStateGlobal* BounceTrackingProtection::GetOrCreateStateGlobal(
-    nsIPrincipal* aPrincipal) {
-  MOZ_ASSERT(aPrincipal);
-  return GetOrCreateStateGlobal(aPrincipal->OriginAttributesRef());
-}
-
-BounceTrackingStateGlobal* BounceTrackingProtection::GetOrCreateStateGlobal(
-    BounceTrackingState* aBounceTrackingState) {
-  MOZ_ASSERT(aBounceTrackingState);
-  return GetOrCreateStateGlobal(aBounceTrackingState->OriginAttributesRef());
-}
-
-BounceTrackingStateGlobal* BounceTrackingProtection::GetOrCreateStateGlobal(
-    const OriginAttributes& aOriginAttributes) {
-  return mStateGlobal.GetOrInsertNew(aOriginAttributes);
-}
-
 nsresult BounceTrackingProtection::RecordStatefulBounces(
     BounceTrackingState* aBounceTrackingState) {
   NS_ENSURE_ARG_POINTER(aBounceTrackingState);
@@ -133,8 +127,8 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   NS_ENSURE_TRUE(record, NS_ERROR_FAILURE);
 
   
-  BounceTrackingStateGlobal* globalState =
-      GetOrCreateStateGlobal(aBounceTrackingState);
+  RefPtr<BounceTrackingStateGlobal> globalState =
+      mStorage->GetOrCreateStateGlobal(aBounceTrackingState);
   MOZ_ASSERT(globalState);
 
   
@@ -156,7 +150,7 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
     }
 
     
-    if (globalState->mUserActivation.Contains(host)) {
+    if (globalState->HasUserActivation(host)) {
       MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
               ("%s: Skip host with recent user activation: %s", __FUNCTION__,
                PromiseFlatCString(host).get()));
@@ -164,7 +158,7 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
     }
 
     
-    if (globalState->mBounceTrackers.Contains(host)) {
+    if (globalState->HasBounceTracker(host)) {
       MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
               ("%s: Skip already existing host: %s", __FUNCTION__,
                PromiseFlatCString(host).get()));
@@ -185,8 +179,11 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
     
     
     PRTime now = PR_Now();
-    MOZ_ASSERT(!globalState->mBounceTrackers.Contains(host));
-    globalState->mBounceTrackers.InsertOrUpdate(host, now);
+    MOZ_ASSERT(!globalState->HasBounceTracker(host));
+    nsresult rv = globalState->RecordBounceTracker(host, now);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
 
     MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Info,
             ("%s: Added candidate to mBounceTrackers: %s, Time: %" PRIu64,
@@ -235,40 +232,50 @@ nsresult BounceTrackingProtection::RecordUserActivation(
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Info,
           ("%s: siteHost: %s", __FUNCTION__, siteHost.get()));
 
-  BounceTrackingStateGlobal* globalState = GetOrCreateStateGlobal(aPrincipal);
+  RefPtr<BounceTrackingStateGlobal> globalState =
+      mStorage->GetOrCreateStateGlobal(aPrincipal);
   MOZ_ASSERT(globalState);
 
-  bool hasRemoved = globalState->mBounceTrackers.Remove(siteHost);
-  if (hasRemoved) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-            ("%s: Removed bounce tracking candidate due to user activation: %s",
-             __FUNCTION__, siteHost.get()));
-  }
-  MOZ_ASSERT(!globalState->mBounceTrackers.Contains(siteHost));
-
-  globalState->mUserActivation.InsertOrUpdate(siteHost, PR_Now());
-
-  return NS_OK;
+  return globalState->RecordUserActivation(siteHost, PR_Now());
 }
 
 NS_IMETHODIMP
-BounceTrackingProtection::GetBounceTrackerCandidateHosts(
+BounceTrackingProtection::TestGetBounceTrackerCandidateHosts(
+    JS::Handle<JS::Value> aOriginAttributes, JSContext* aCx,
     nsTArray<nsCString>& aCandidates) {
-  for (BounceTrackingStateGlobal* globalState : mStateGlobal.Values()) {
-    for (const nsACString& host : globalState->mBounceTrackers.Keys()) {
-      aCandidates.AppendElement(host);
-    }
+  MOZ_ASSERT(aCx);
+
+  OriginAttributes oa;
+  if (!aOriginAttributes.isObject() || !oa.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  BounceTrackingStateGlobal* globalState = mStorage->GetOrCreateStateGlobal(oa);
+  MOZ_ASSERT(globalState);
+
+  for (const nsACString& host : globalState->BounceTrackersMapRef().Keys()) {
+    aCandidates.AppendElement(host);
   }
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-BounceTrackingProtection::GetUserActivationHosts(nsTArray<nsCString>& aHosts) {
-  for (BounceTrackingStateGlobal* globalState : mStateGlobal.Values()) {
-    for (const nsACString& host : globalState->mUserActivation.Keys()) {
-      aHosts.AppendElement(host);
-    }
+BounceTrackingProtection::TestGetUserActivationHosts(
+    JS::Handle<JS::Value> aOriginAttributes, JSContext* aCx,
+    nsTArray<nsCString>& aHosts) {
+  MOZ_ASSERT(aCx);
+
+  OriginAttributes oa;
+  if (!aOriginAttributes.isObject() || !oa.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  BounceTrackingStateGlobal* globalState = mStorage->GetOrCreateStateGlobal(oa);
+  MOZ_ASSERT(globalState);
+
+  for (const nsACString& host : globalState->UserActivationMapRef().Keys()) {
+    aHosts.AppendElement(host);
   }
 
   return NS_OK;
@@ -277,7 +284,7 @@ BounceTrackingProtection::GetUserActivationHosts(nsTArray<nsCString>& aHosts) {
 NS_IMETHODIMP
 BounceTrackingProtection::Reset() {
   BounceTrackingState::ResetAll();
-  mStateGlobal.Clear();
+  mStorage->Clear();
 
   return NS_OK;
 }
@@ -315,34 +322,45 @@ BounceTrackingProtection::TestRunPurgeBounceTrackers(
 
 NS_IMETHODIMP
 BounceTrackingProtection::TestAddBounceTrackerCandidate(
-    const nsACString& aHost, const PRTime aBounceTime) {
-  const OriginAttributes oa;
-  BounceTrackingStateGlobal* stateGlobal = GetOrCreateStateGlobal(oa);
+    JS::Handle<JS::Value> aOriginAttributes, const nsACString& aHost,
+    const PRTime aBounceTime, JSContext* aCx) {
+  MOZ_ASSERT(aCx);
+
+  OriginAttributes oa;
+  if (!aOriginAttributes.isObject() || !oa.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  BounceTrackingStateGlobal* stateGlobal = mStorage->GetOrCreateStateGlobal(oa);
   MOZ_ASSERT(stateGlobal);
 
   
-  stateGlobal->mUserActivation.Remove(aHost);
-  stateGlobal->mBounceTrackers.InsertOrUpdate(aHost, aBounceTime);
-  return NS_OK;
+  nsresult rv = stateGlobal->TestRemoveUserActivation(aHost);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return stateGlobal->RecordBounceTracker(aHost, aBounceTime);
 }
 
 NS_IMETHODIMP
-BounceTrackingProtection::TestAddUserActivation(const nsACString& aHost,
-                                                const PRTime aActivationTime) {
-  const OriginAttributes oa;
-  BounceTrackingStateGlobal* stateGlobal = GetOrCreateStateGlobal(oa);
+BounceTrackingProtection::TestAddUserActivation(
+    JS::Handle<JS::Value> aOriginAttributes, const nsACString& aHost,
+    const PRTime aActivationTime, JSContext* aCx) {
+  MOZ_ASSERT(aCx);
+
+  OriginAttributes oa;
+  if (!aOriginAttributes.isObject() || !oa.Init(aCx, aOriginAttributes)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  BounceTrackingStateGlobal* stateGlobal = mStorage->GetOrCreateStateGlobal(oa);
   MOZ_ASSERT(stateGlobal);
 
-  
-  stateGlobal->mBounceTrackers.Remove(aHost);
-  stateGlobal->mUserActivation.InsertOrUpdate(aHost, aActivationTime);
-  return NS_OK;
+  return stateGlobal->RecordUserActivation(aHost, aActivationTime);
 }
 
 RefPtr<BounceTrackingProtection::PurgeBounceTrackersMozPromise>
 BounceTrackingProtection::PurgeBounceTrackers() {
   
-  for (auto& entry : mStateGlobal) {
+  for (const auto& entry : mStorage->StateGlobalMapRef()) {
     const OriginAttributes& originAttributes = entry.GetKey();
     BounceTrackingStateGlobal* stateGlobal = entry.GetData();
     MOZ_ASSERT(stateGlobal);
@@ -396,8 +414,8 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
   MOZ_ASSERT(aStateGlobal);
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
           ("%s: #mUserActivation: %d, #mBounceTrackers: %d", __FUNCTION__,
-           aStateGlobal->mUserActivation.Count(),
-           aStateGlobal->mBounceTrackers.Count()));
+           aStateGlobal->UserActivationMapRef().Count(),
+           aStateGlobal->BounceTrackersMapRef().Count()));
 
   
   if (!mClearPromises.IsEmpty()) {
@@ -418,27 +436,12 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
 
   
   
-  for (auto hostIter = aStateGlobal->mUserActivation.Iter(); !hostIter.Done();
-       hostIter.Next()) {
-    const nsACString& host = hostIter.Key();
-
-    
-    
-    MOZ_ASSERT(!aStateGlobal->mBounceTrackers.Contains(host));
-
-    
-    
-    const PRTime& activationTime = hostIter.Data();
-    if ((activationTime + activationLifetimeUsec) < now) {
-      MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-              ("%s: Remove expired user activation for %s", __FUNCTION__,
-               PromiseFlatCString(host).get()));
-      hostIter.Remove();
-    }
-  }
+  nsresult rv =
+      aStateGlobal->ClearUserActivationBefore(now - activationLifetimeUsec);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsresult rv = NS_OK;
+  rv = NS_OK;
   nsCOMPtr<nsIClearDataService> clearDataService =
       do_GetService("@mozilla.org/clear-data-service;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -446,8 +449,12 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
   mClearPromises.Clear();
   nsTArray<nsCString> purgedSiteHosts;
 
-  for (auto hostIter = aStateGlobal->mBounceTrackers.Iter(); !hostIter.Done();
-       hostIter.Next()) {
+  
+  
+  nsTArray<nsCString> bounceTrackerCandidatesToRemove;
+
+  for (auto hostIter = aStateGlobal->BounceTrackersMapRef().ConstIter();
+       !hostIter.Done(); hostIter.Next()) {
     const nsACString& host = hostIter.Key();
     const PRTime& bounceTime = hostIter.Data();
 
@@ -504,10 +511,12 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     
     
     
-    hostIter.Remove();
+    bounceTrackerCandidatesToRemove.AppendElement(host);
   }
 
-  return NS_OK;
+  
+  
+  return aStateGlobal->RemoveBounceTrackers(bounceTrackerCandidatesToRemove);
 }
 
 

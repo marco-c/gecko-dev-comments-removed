@@ -25,8 +25,8 @@ function initBounceTrackerState() {
   bounceTrackingProtection.reset();
 
   
-  bounceTrackingProtection.testAddBounceTrackerCandidate("example.com", 0);
-  bounceTrackingProtection.testAddBounceTrackerCandidate("example.net", 0);
+  bounceTrackingProtection.testAddBounceTrackerCandidate("example.com", 1);
+  bounceTrackingProtection.testAddBounceTrackerCandidate("example.net", 1);
 
   
   let timestampWithinGracePeriod =
