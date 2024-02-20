@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_loader_SyncModuleLoader_h
-#define mozilla_loader_SyncModuleLoader_h
+#ifndef mozilla_loader_ComponentModuleLoader_h
+#define mozilla_loader_ComponentModuleLoader_h
 
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ModuleLoaderBase.h"
@@ -17,12 +17,12 @@ class mozJSModuleLoader;
 namespace mozilla {
 namespace loader {
 
-class SyncScriptLoader : public JS::loader::ScriptLoaderInterface {
+class ComponentScriptLoader : public JS::loader::ScriptLoaderInterface {
  public:
   NS_DECL_ISUPPORTS
 
  private:
-  ~SyncScriptLoader() = default;
+  ~ComponentScriptLoader() = default;
 
   nsIURI* GetBaseURI() const override;
 
@@ -38,21 +38,21 @@ class SyncScriptLoader : public JS::loader::ScriptLoaderInterface {
       JS::MutableHandle<JSScript*> aIntroductionScript) override;
 };
 
-class SyncModuleLoader : public JS::loader::ModuleLoaderBase {
+class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
  public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SyncModuleLoader,
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ComponentModuleLoader,
                                            JS::loader::ModuleLoaderBase)
 
-  SyncModuleLoader(SyncScriptLoader* aScriptLoader,
-                   nsIGlobalObject* aGlobalObject);
+  ComponentModuleLoader(ComponentScriptLoader* aScriptLoader,
+                        nsIGlobalObject* aGlobalObject);
 
   [[nodiscard]] nsresult ProcessRequests();
 
   void MaybeReportLoadError(JSContext* aCx);
 
  private:
-  ~SyncModuleLoader();
+  ~ComponentModuleLoader();
 
   already_AddRefed<ModuleLoadRequest> CreateStaticImport(
       nsIURI* aURI, ModuleLoadRequest* aParent) override;
@@ -84,9 +84,10 @@ class SyncModuleLoader : public JS::loader::ModuleLoaderBase {
 
 
 
-class SyncLoadContext : public JS::loader::LoadContextBase {
+class ComponentLoadContext : public JS::loader::LoadContextBase {
  public:
-  SyncLoadContext() : LoadContextBase(JS::loader::ContextKind::Sync) {}
+  ComponentLoadContext()
+      : LoadContextBase(JS::loader::ContextKind::Component) {}
 
  public:
   

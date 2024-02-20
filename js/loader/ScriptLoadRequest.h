@@ -38,7 +38,7 @@ enum class RequestPriority : uint8_t;
 }  
 
 namespace mozilla::loader {
-class SyncLoadContext;
+class ComponentLoadContext;
 }  
 
 namespace JS {
@@ -194,7 +194,7 @@ class ScriptLoadRequest : public nsISupports,
 
   mozilla::dom::ScriptLoadContext* GetScriptLoadContext();
 
-  mozilla::loader::SyncLoadContext* GetSyncLoadContext();
+  mozilla::loader::ComponentLoadContext* GetComponentLoadContext();
 
   mozilla::dom::WorkerLoadContext* GetWorkerLoadContext();
 

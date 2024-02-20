@@ -7,21 +7,16 @@
 #ifndef mozJSModuleLoader_h
 #define mozJSModuleLoader_h
 
-#include "SyncModuleLoader.h"
-#include "mozilla/Attributes.h"  
+#include "ComponentModuleLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/FileLocation.h"
-#include "mozilla/Maybe.h"  
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/RefPtr.h"  
 #include "mozilla/StaticPtr.h"
-#include "mozilla/ThreadLocal.h"  
 #include "nsIMemoryReporter.h"
 #include "nsISupports.h"
 #include "nsIURI.h"
 #include "nsClassHashtable.h"
 #include "jsapi.h"
-#include "js/CompileOptions.h"
 #include "js/experimental/JSStencil.h"
 #include "SkipCheckForBrokenURLOrZeroSized.h"
 
@@ -41,12 +36,6 @@ class ModuleLoadRequest;
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
 #  define STARTUP_RECORDER_ENABLED
 #endif
-
-namespace mozilla::loader {
-
-class NonSharedGlobalSyncModuleLoaderScope;
-
-}  
 
 class mozJSModuleLoader final : public nsIMemoryReporter {
  public:
@@ -78,13 +67,6 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
 
   JSObject* GetSharedGlobal(JSContext* aCx);
 
- private:
-  void InitSyncModuleLoaderForGlobal(nsIGlobalObject* aGlobal);
-  void DisconnectSyncModuleLoaderFromGlobal();
-
-  friend class mozilla::loader::NonSharedGlobalSyncModuleLoaderScope;
-
- public:
   static mozJSModuleLoader* GetDevToolsLoader() { return sDevToolsLoader; }
   static mozJSModuleLoader* GetOrCreateDevToolsLoader();
 
@@ -135,26 +117,13 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
   bool IsLoaderGlobal(JSObject* aObj) { return mLoaderGlobal == aObj; }
   bool IsDevToolsLoader() const { return this == sDevToolsLoader; }
 
-  static bool IsSharedSystemGlobal(nsIGlobalObject* aGlobal);
-  static bool IsDevToolsLoaderGlobal(nsIGlobalObject* aGlobal);
-
   
   static bool IsTrustedScheme(nsIURI* aURI);
   static nsresult LoadSingleModuleScript(
-      mozilla::loader::SyncModuleLoader* aModuleLoader, JSContext* aCx,
+      mozilla::loader::ComponentModuleLoader* aModuleLoader, JSContext* aCx,
       JS::loader::ModuleLoadRequest* aRequest,
       JS::MutableHandleScript aScriptOut);
 
- private:
-  static nsresult ReadScriptOnMainThread(JSContext* aCx,
-                                         const nsCString& aLocation,
-                                         nsCString& aData);
-  static nsresult LoadSingleModuleScriptOnWorker(
-      mozilla::loader::SyncModuleLoader* aModuleLoader, JSContext* aCx,
-      JS::loader::ModuleLoadRequest* aRequest,
-      JS::MutableHandleScript aScriptOut);
-
- public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
   bool DefineJSServices(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
@@ -191,8 +160,6 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
                              JS::MutableHandleScript aTableScript,
                              char** aLocation, bool aCatchException,
                              JS::MutableHandleValue aException);
-
-  static void SetModuleOptions(JS::CompileOptions& aOptions);
 
   
   
@@ -291,60 +258,7 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
   JS::PersistentRooted<JSObject*> mLoaderGlobal;
   JS::PersistentRooted<JSObject*> mServicesObj;
 
-  RefPtr<mozilla::loader::SyncModuleLoader> mModuleLoader;
+  RefPtr<mozilla::loader::ComponentModuleLoader> mModuleLoader;
 };
 
-namespace mozilla::loader {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS NonSharedGlobalSyncModuleLoaderScope {
- public:
-  NonSharedGlobalSyncModuleLoaderScope(JSContext* aCx,
-                                       nsIGlobalObject* aGlobal);
-  ~NonSharedGlobalSyncModuleLoaderScope();
-
-  
-  
-  void Finish();
-
-  
-  
-  static bool IsActive();
-
-  static mozJSModuleLoader* ActiveLoader();
-
-  static void InitStatics();
-
- private:
-  RefPtr<mozJSModuleLoader> mLoader;
-
-  
-  
-  
-  static MOZ_THREAD_LOCAL(mozJSModuleLoader*) sTlsActiveLoader;
-
-  
-  RefPtr<JS::loader::ModuleLoaderBase> mAsyncModuleLoader;
-
-  mozilla::Maybe<JS::loader::AutoOverrideModuleLoader> mMaybeOverride;
-};
-
-}  
-
-#endif  
+#endif

@@ -21,7 +21,6 @@
 #include "nsINode.h"        
 #include "nsThreadUtils.h"  
 #include "nsURIHashKey.h"
-#include "mozilla/Attributes.h"  
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/JSExecutionContext.h"
 #include "mozilla/MaybeOneOf.h"
@@ -189,11 +188,6 @@ class ModuleLoaderBase : public nsISupports {
   
   
   
-  RefPtr<ModuleLoaderBase> mOverriddenBy;
-
-  
-  
-  
   bool mImportMapsAllowed = true;
 
  protected:
@@ -282,8 +276,6 @@ class ModuleLoaderBase : public nsISupports {
 
   nsIGlobalObject* GetGlobalObject() const { return mGlobalObject; }
 
-  bool HasFetchingModules() const;
-
   bool HasPendingDynamicImports() const;
   void CancelDynamicImport(ModuleLoadRequest* aRequest, nsresult aResult);
 #ifdef DEBUG
@@ -336,37 +328,6 @@ class ModuleLoaderBase : public nsISupports {
   
   
   bool RemoveFetchedModule(nsIURI* aURL);
-
-  
-  
-  
-  
-  
-  
-  void SetOverride(ModuleLoaderBase* aLoader);
-
-  
-  bool IsOverridden();
-
-  
-  bool IsOverriddenBy(ModuleLoaderBase* aLoader);
-
-  void ResetOverride();
-
-  
-  
-  
-  
-  
-  
-  void CopyModulesTo(ModuleLoaderBase* aDest);
-
-  
-  
-  
-  
-  
-  void MoveModulesTo(ModuleLoaderBase* aDest);
 
   
 
@@ -483,18 +444,6 @@ class ModuleLoaderBase : public nsISupports {
  public:
   static mozilla::LazyLogModule gCspPRLog;
   static mozilla::LazyLogModule gModuleLoaderBaseLog;
-};
-
-
-
-class MOZ_RAII AutoOverrideModuleLoader {
- public:
-  AutoOverrideModuleLoader(ModuleLoaderBase* aTarget,
-                           ModuleLoaderBase* aLoader);
-  ~AutoOverrideModuleLoader();
-
- private:
-  RefPtr<ModuleLoaderBase> mTarget;
 };
 
 }  
