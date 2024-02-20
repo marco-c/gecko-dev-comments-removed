@@ -1225,9 +1225,9 @@ const wchar_t* nsWindow::ChooseWindowClass(WindowType aWindowType) {
     case WindowType::Invisible:
       return RegisterWindowClass(kClassNameHidden, 0, gStockApplicationIcon);
     case WindowType::Dialog:
-      return RegisterWindowClass(kClassNameDialog, 0, 0);
+      return RegisterWindowClass(kClassNameDialog, 0, nullptr);
     case WindowType::Popup:
-      return RegisterWindowClass(kClassNameDropShadow, CS_DROPSHADOW,
+      return RegisterWindowClass(kClassNameDropShadow, 0,
                                  gStockApplicationIcon);
     default:
       return RegisterWindowClass(GetMainWindowClass(), 0,
@@ -1577,15 +1577,6 @@ void nsWindow::Show(bool bState) {
 
   if (mWindowType == WindowType::Popup) {
     MOZ_ASSERT(ChooseWindowClass(mWindowType) == kClassNameDropShadow);
-    const bool shouldUseDropShadow =
-        mTransparencyMode != TransparencyMode::Transparent;
-
-    static bool sShadowEnabled = true;
-    if (sShadowEnabled != shouldUseDropShadow) {
-      ::SetClassLongA(mWnd, GCL_STYLE, shouldUseDropShadow ? CS_DROPSHADOW : 0);
-      sShadowEnabled = shouldUseDropShadow;
-    }
-
     
     
     LONG_PTR exStyle = ::GetWindowLongPtrW(mWnd, GWL_EXSTYLE);
@@ -1720,26 +1711,6 @@ void nsWindow::Show(bool bState) {
 
 
 bool nsWindow::IsVisible() const { return mIsVisible; }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void nsWindow::ClearThemeRegion() {
-  if (mWindowType == WindowType::Popup && !IsPopupWithTitleBar() &&
-      (mPopupType == PopupType::Tooltip || mPopupType == PopupType::Panel)) {
-    SetWindowRgn(mWnd, nullptr, false);
-  }
-}
 
 
 
@@ -1915,8 +1886,6 @@ void nsWindow::Move(double aX, double aY) {
       pl.rcNormalPosition.bottom += deltaY;
       VERIFY(::SetWindowPlacement(mWnd, &pl));
     } else {
-      ClearThemeRegion();
-
       UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE;
       double oldScale = mDefaultScale;
       mResizeState = IN_SIZEMOVE;
@@ -1981,7 +1950,6 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
         flags |= SWP_NOREDRAW;
       }
 
-      ClearThemeRegion();
       double oldScale = mDefaultScale;
       mResizeState = RESIZING;
       VERIFY(
@@ -2059,8 +2027,6 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
       if (!aRepaint) {
         flags |= SWP_NOREDRAW;
       }
-
-      ClearThemeRegion();
 
       double oldScale = mDefaultScale;
       mResizeState = RESIZING;

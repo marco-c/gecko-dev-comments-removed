@@ -601,11 +601,6 @@ class nsWindow final : public nsBaseWidget {
   
 
 
-  void ClearThemeRegion();
-
-  
-
-
   static void ScheduleHookTimer(HWND aWnd, UINT aMsgId);
   static void RegisterSpecialDropdownHooks();
   static void UnregisterSpecialDropdownHooks();
