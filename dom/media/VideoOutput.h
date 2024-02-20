@@ -25,7 +25,7 @@ static bool SetImageToBlackPixel(layers::PlanarYCbCrImage* aImage) {
   
   data.mColorRange = gfx::ColorRange::LIMITED;
 
-  return aImage->CopyData(data);
+  return NS_SUCCEEDED(aImage->CopyData(data));
 }
 
 class VideoOutput : public DirectMediaTrackListener {
