@@ -238,7 +238,11 @@ addAccessibleTask(
       newTopBounds[0],
       "x of non-fixed element remains accurate."
     );
-    ok(newTopBounds[1] < 0, "y coordinate shows item scrolled off page");
+    Assert.less(
+      newTopBounds[1],
+      0,
+      "y coordinate shows item scrolled off page"
+    );
     is(
       origTopBounds[2],
       newTopBounds[2],
@@ -254,7 +258,11 @@ addAccessibleTask(
       newDBounds[0],
       "x of non-fixed container element remains accurate."
     );
-    ok(newDBounds[1] < 0, "y coordinate shows container scrolled off page");
+    Assert.less(
+      newDBounds[1],
+      0,
+      "y coordinate shows container scrolled off page"
+    );
     
     
     
@@ -481,7 +489,7 @@ addAccessibleTask(
         newBounds[0],
         `x coord of non-sticky element remains accurate.`
       );
-      ok(newBounds[1] < 0, "y coordinate shows item scrolled off page");
+      Assert.less(newBounds[1], 0, "y coordinate shows item scrolled off page");
 
       
       

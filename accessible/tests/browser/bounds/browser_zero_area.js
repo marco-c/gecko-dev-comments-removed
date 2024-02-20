@@ -67,10 +67,10 @@ addAccessibleTask(
     const radio = findAccessibleChildByID(accDoc, "radio");
     const contentDPR = await getContentDPR(browser);
     const [x, y, width, height] = getBounds(radio, contentDPR);
-    ok(x < 0, "X coordinate should be negative");
-    ok(y > 0, "Y coordinate should be positive");
-    ok(width > 0, "Width should be positive");
-    ok(height > 0, "Height should be positive");
+    Assert.less(x, 0, "X coordinate should be negative");
+    Assert.greater(y, 0, "Y coordinate should be positive");
+    Assert.greater(width, 0, "Width should be positive");
+    Assert.greater(height, 0, "Height should be positive");
     
     
     

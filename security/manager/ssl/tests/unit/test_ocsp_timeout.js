@@ -77,8 +77,9 @@ function add_one_test(useHardFail, timeoutPrefName, timeoutMilliseconds) {
     
     
     const FUZZ_MS = 300;
-    ok(
-      timeDifference + FUZZ_MS > timeoutMilliseconds,
+    Assert.greater(
+      timeDifference + FUZZ_MS,
+      timeoutMilliseconds,
       `OCSP timeout should be ~${timeoutMilliseconds}s for ` +
         `${useHardFail ? "hard" : "soft"}-fail`
     );
@@ -86,8 +87,9 @@ function add_one_test(useHardFail, timeoutPrefName, timeoutMilliseconds) {
     
     
     
-    ok(
-      timeDifference < 60000,
+    Assert.less(
+      timeDifference,
+      60000,
       "Automatic OCSP timeout shouldn't be more than 60s"
     );
 

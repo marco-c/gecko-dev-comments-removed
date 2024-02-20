@@ -940,7 +940,7 @@ add_bookmark_test(async function test_sync_dateAdded(engine) {
     
     
     
-    ok(Math.abs(Date.now() - record3.dateAdded) < 24 * 60 * 60 * 1000);
+    Assert.less(Math.abs(Date.now() - record3.dateAdded), 24 * 60 * 60 * 1000);
 
     let record4 = await store.createRecord(item4GUID);
     equal(
