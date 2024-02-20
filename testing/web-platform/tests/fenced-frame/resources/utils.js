@@ -250,6 +250,11 @@ function buildRemoteContextForObject(object, uuid, html) {
     }
   };
 
+  
+  
+  if (object == null) {
+    object = {};
+  }
   const proxy = new Proxy(object, handler);
   return proxy;
 }
