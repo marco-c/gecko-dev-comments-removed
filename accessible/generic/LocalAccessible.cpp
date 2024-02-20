@@ -1212,10 +1212,15 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   
   attributes->SetAttribute(nsGkAtoms::tag, mContent->NodeInfo()->NameAtom());
 
-  
   if (auto htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
+    
     if (htmlElement->Draggable()) {
       attributes->SetAttribute(nsGkAtoms::draggable, true);
+    }
+    nsString popover;
+    htmlElement->GetPopover(popover);
+    if (!popover.IsEmpty()) {
+      attributes->SetAttribute(nsGkAtoms::ispopup, std::move(popover));
     }
   }
 
@@ -3900,6 +3905,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
           nsAutoString role;
           nsAccUtils::GetARIAAttr(el, nsGkAtoms::role, role);
           fields->SetAttribute(CacheKey::ARIARole, std::move(role));
+        }
+      }
+
+      if (auto* htmlEl = nsGenericHTMLElement::FromNode(mContent)) {
+        
+        
+        nsAutoString popover;
+        htmlEl->GetPopover(popover);
+        if (!popover.IsEmpty()) {
+          fields->SetAttribute(CacheKey::PopupType,
+                               RefPtr{NS_Atomize(popover)});
         }
       }
     }

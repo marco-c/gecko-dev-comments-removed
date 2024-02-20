@@ -195,6 +195,9 @@ class CacheKey {
   static constexpr nsStaticAtom* ParentRelativeBounds =
       nsGkAtoms::relativeBounds;
   
+  
+  static constexpr nsStaticAtom* PopupType = nsGkAtoms::ispopup;
+  
   static constexpr nsStaticAtom* PrimaryAction = nsGkAtoms::action;
   
   
