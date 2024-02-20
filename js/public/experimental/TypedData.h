@@ -295,7 +295,6 @@ JS_PUBLIC_API bool IsResizableArrayBufferView(JSObject* obj);
 
 
 
-
 JS_PUBLIC_API bool PinArrayBufferOrViewLength(JSObject* obj, bool pin);
 
 
