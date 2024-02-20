@@ -3,67 +3,78 @@
 
 
 
-dumpValue(1);
-dumpValue(1.1);
-dumpValue(-0.1);
+function testDump(v) {
+  dumpValue(v);
 
-dumpValue(100n);
+  const s = dumpValueToString(v);
 
-dumpValue(true);
-dumpValue(false);
-
-dumpValue(null);
-
-dumpValue(undefined);
+  const result = JSON.parse(s);
+  assertEq(typeof result, "object");
+  assertEq(typeof result.type, "string");
+}
 
 
-dumpValue("foo");
+testDump(1);
+testDump(1.1);
+testDump(-0.1);
 
-dumpValue(/foo/ig);
+testDump(100n);
 
-dumpValue(Symbol.iterator);
-dumpValue(Symbol("hello"));
-dumpValue(Symbol.for("hello"));
+testDump(true);
+testDump(false);
 
-dumpValue({});
-dumpValue({ prop1: 10, prop2: 20 });
+testDump(null);
 
-dumpValue([]);
-dumpValue([1, , 3, 4]);
+testDump(undefined);
 
-dumpValue(function f() {});
-dumpValue(function* f() {});
-dumpValue(async function f() {});
-dumpValue(async function* f() {});
 
-dumpValue(Promise.withResolvers());
+testDump("foo");
+
+testDump(/foo/ig);
+
+testDump(Symbol.iterator);
+testDump(Symbol("hello"));
+testDump(Symbol.for("hello"));
+
+testDump({});
+testDump({ prop1: 10, prop2: 20 });
+
+testDump([]);
+testDump([1, , 3, 4]);
+
+testDump(function f() {});
+testDump(function* f() {});
+testDump(async function f() {});
+testDump(async function* f() {});
+
+testDump(Promise.withResolvers());
 
 var p1 = new Promise(() => {}); p1.then(() => {});
-dumpValue(p1);
+testDump(p1);
 var p2 = new Promise(() => {}); p2.then(() => {}); p2.then(() => {});
-dumpValue(p2);
+testDump(p2);
 var p3 = Promise.reject(10).catch(() => {});
-dumpValue(p3);
+testDump(p3);
 
-dumpValue(new ArrayBuffer([1, 2, 3]));
-dumpValue(new Int8Array([1, 2, 3]));
-dumpValue(new Int8Array(new Int8Array([1, 2, 3]).buffer, 1));
-dumpValue(new Int32Array([1, 2, 3]));
-dumpValue(new Int32Array(new Int32Array([1, 2, 3]).buffer, 4));
-dumpValue(new Float64Array([1, 2, 3]));
+testDump(new ArrayBuffer([1, 2, 3]));
+testDump(new Int8Array([1, 2, 3]));
+testDump(new Int8Array(new Int8Array([1, 2, 3]).buffer, 1));
+testDump(new Int32Array([1, 2, 3]));
+testDump(new Int32Array(new Int32Array([1, 2, 3]).buffer, 4));
+testDump(new Float64Array([1, 2, 3]));
 
-dumpValue(new Date());
-dumpValue(new Map([[1, 2]]));
-dumpValue(new Set([1, 2]));
-dumpValue(new WeakMap([ [{}, 10], [{}, 20] ]));
-dumpValue(new WeakSet([{}, {}]));
-dumpValue(new Proxy({}, {}));
+testDump(new Date());
+testDump(new Map([[1, 2]]));
+testDump(new Set([1, 2]));
+testDump(new WeakMap([ [{}, 10], [{}, 20] ]));
+testDump(new WeakSet([{}, {}]));
+testDump(new Proxy({}, {}));
 
-dumpValue(Array);
-dumpValue(Array.prototype);
-dumpValue(this);
+testDump(Array);
+testDump(Array.prototype);
+testDump(this);
 
-dumpValue([
+testDump([
   1,
   1.1,
   -0.1,
