@@ -42,6 +42,25 @@ class ArenaListIter {
   Arena* operator->() const { return get(); }
 };
 
+
+
+
+
+class ArenaIterInGC : public ChainedIterator<ArenaListIter, 2> {
+ public:
+  ArenaIterInGC(JS::Zone* zone, AllocKind kind)
+      : ChainedIterator(zone->arenas.getFirstArena(kind),
+                        zone->arenas.getFirstCollectingArena(kind)) {
+    MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+    MOZ_ASSERT(!zone->arenas.getFirstSweptArena(kind));
+  }
+};
+
+
+
+
+
+
 class ArenaIter : public ChainedIterator<ArenaListIter, 3> {
  public:
   ArenaIter(JS::Zone* zone, AllocKind kind)
