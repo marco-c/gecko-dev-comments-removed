@@ -663,9 +663,11 @@ class WebSocketServer(object):
         cmd = [sys.executable, script]
         if self.debuggerInfo and self.debuggerInfo.interactive:
             cmd += ["--interactive"]
+        
+        
         cmd += [
             "-H",
-            "127.0.0.1",
+            "0.0.0.0",
             "-p",
             str(self.port),
             "-w",
@@ -752,9 +754,12 @@ class SSLTunnel:
             config.write("httpproxy:1\n")
             config.write("certdbdir:%s\n" % self.certPath)
             config.write("forward:127.0.0.1:%s\n" % self.httpPort)
-            config.write(
-                "websocketserver:%s:%s\n" % (self.webServer, self.webSocketPort)
-            )
+
+            wsserver = self.webServer
+            if self.webServer == "10.0.2.2":
+                wsserver = "127.0.0.1"
+
+            config.write("websocketserver:%s:%s\n" % (wsserver, self.webSocketPort))
             
             
             
