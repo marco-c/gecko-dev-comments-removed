@@ -16,6 +16,9 @@
 
 
 
+
+
+
 module.exports = {
   env: {
     browser: true,
@@ -357,17 +360,6 @@ module.exports = {
 
     
     
-    "require-atomic-updates": "off",
-
-    
-    
     "require-yield": "off",
-  },
-
-  
-  
-  
-  settings: {
-    "html/xml-extensions": [".xhtml"],
   },
 };
