@@ -73,29 +73,38 @@ add_task(
     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
   },
   async function testRetryXyber() {
-    const retryDomain = "xyber-net-interrupt.example.com";
+    const retryDomains = [
+      "xyber-net-interrupt.example.com",
+      "xyber-alert-unexpected.example.com",
+    ];
 
     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
-    Services.prefs.setCharPref("network.dns.localDomains", [retryDomain]);
+    Services.prefs.setCharPref("network.dns.localDomains", retryDomains);
     Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
 
-    
-    
-    
-    let countOfXyber = handlerCount("/callback/25497");
-    let countOfX25519 = handlerCount("/callback/29");
-    let chan = makeChan(`https://${retryDomain}:8443`);
-    let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
-    ok(buf);
-    
-    
-    
-    equal(
-      handlerCount("/callback/25497"),
-      countOfXyber + 1,
-      "negotiated xyber768d00"
-    );
-    equal(handlerCount("/callback/29"), countOfX25519 + 1, "negotiated x25519");
+    for (let i = 0; i < retryDomains.length; i++) {
+      
+      
+      
+      let countOfXyber = handlerCount("/callback/25497");
+      let countOfX25519 = handlerCount("/callback/29");
+      let chan = makeChan(`https://${retryDomains[i]}:8443`);
+      let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
+      ok(buf);
+      
+      
+      
+      equal(
+        handlerCount("/callback/25497"),
+        countOfXyber + 1,
+        "negotiated xyber768d00"
+      );
+      equal(
+        handlerCount("/callback/29"),
+        countOfX25519 + 1,
+        "negotiated x25519"
+      );
+    }
     if (!mozinfo.socketprocess_networking) {
       
       equal(
@@ -103,40 +112,11 @@ add_task(
         await Glean.tls.xyberIntoleranceReason.PR_END_OF_FILE_ERROR.testGetValue(),
         "PR_END_OF_FILE_ERROR telemetry accumulated"
       );
+      equal(
+        1,
+        await Glean.tls.xyberIntoleranceReason.SSL_ERROR_RX_UNEXPECTED_RECORD_TYPE.testGetValue(),
+        "SSL_ERROR_RX_UNEXPECTED_RECORD_TYPE telemetry accumulated"
+      );
     }
-  }
-);
-
-add_task(
-  {
-    skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
-  },
-  async function testNoRetryXyber() {
-    const retryDomain = "xyber-alert-after-server-hello.example.com";
-
-    Services.prefs.setBoolPref("security.tls.enable_kyber", true);
-    Services.prefs.setCharPref("network.dns.localDomains", [retryDomain]);
-    Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
-
-    
-    
-    
-    let countOfXyber = handlerCount("/callback/25497");
-    let countOfX25519 = handlerCount("/callback/29");
-    let chan = makeChan(`https://${retryDomain}:8443`);
-    let [req] = await channelOpenPromise(chan, CL_EXPECT_FAILURE);
-    equal(req.status, 0x805a2f4d); 
-    
-    
-    equal(
-      handlerCount("/callback/25497"),
-      countOfXyber + 1,
-      "negotiated xyber768d00"
-    );
-    equal(
-      handlerCount("/callback/29"),
-      countOfX25519,
-      "did not negotiate x25519"
-    );
   }
 );

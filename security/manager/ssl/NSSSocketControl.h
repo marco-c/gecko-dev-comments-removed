@@ -125,16 +125,6 @@ class NSSSocketControl final : public CommonSocketControl {
     return mSentXyberShare;
   }
 
-  void SetHasTls13HandshakeSecrets() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mHasTls13HandshakeSecrets = true;
-  }
-
-  bool HasTls13HandshakeSecrets() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return mHasTls13HandshakeSecrets;
-  }
-
   bool GetJoined() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mJoined;
@@ -306,7 +296,6 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  
   bool mSentXyberShare;
-  bool mHasTls13HandshakeSecrets;
 
   
   
