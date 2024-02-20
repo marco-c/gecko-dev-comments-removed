@@ -779,6 +779,8 @@ class DocAccessible : public HyperTextAccessible,
 
   void MaybeHandleChangeToHiddenNameOrDescription(nsIContent* aChild);
 
+  void MaybeFireEventsForChangedPopover(LocalAccessible* aAcc);
+
   PresShell* mPresShell;
 
   
