@@ -1303,7 +1303,7 @@ TEST_F(PortsTest, MergePortWithClosedPeer2) {
   EXPECT_EQ(OK, node1.node().CreatePortPair(&C, &D));
 
   
-  EXPECT_EQ(OK, node0.SendStringMessage(D, "hey"));
+  EXPECT_EQ(OK, node1.SendStringMessage(D, "hey"));
   EXPECT_EQ(OK, node1.node().ClosePort(D));
 
   
