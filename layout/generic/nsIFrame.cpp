@@ -4735,7 +4735,9 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     return NS_ERROR_FAILURE;
   }
 
-  if (aMouseEvent->mButton == MouseButton::eSecondary &&
+  const bool isSecondaryButton =
+      aMouseEvent->mButton == MouseButton::eSecondary;
+  if (isSecondaryButton &&
       !MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
           *frameselection, *aMouseEvent, *offsets.content,
           
@@ -4833,7 +4835,14 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   const nsFrameSelection::FocusMode focusMode = [&]() {
     
     
-    if (aMouseEvent->IsShift()) {
+    const bool isShift =
+        aMouseEvent->IsShift() &&
+        
+        
+        
+        !(isSecondaryButton &&
+          StaticPrefs::dom_event_contextmenu_shift_suppresses_event());
+    if (isShift) {
       
       
       if (isEditor) {
