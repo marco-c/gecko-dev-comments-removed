@@ -153,20 +153,17 @@ class ArenaList {
 
 class SortedArenaList {
  public:
-  
-  static const size_t MinThingSize = 16;
-
   static_assert(ArenaSize <= 4096,
                 "When increasing the Arena size, please consider how"
                 " this will affect the size of a SortedArenaList.");
 
-  static_assert(MinThingSize >= 16,
+  static_assert(MinCellSize >= 16,
                 "When decreasing the minimum thing size, please consider"
                 " how this will affect the size of a SortedArenaList.");
 
   
   static const size_t MaxThingsPerArena =
-      (ArenaSize - ArenaHeaderSize) / MinThingSize;
+      (ArenaSize - ArenaHeaderSize) / MinCellSize;
 
   
   

@@ -34,13 +34,6 @@ class TenuredCell;
 
 const uintptr_t LargestTaggedNullCellPointer = (1 << CellAlignShift) - 1;
 
-
-
-
-
-
-const size_t MinCellSize = CellBytesPerMarkBit * MarkBitsPerCell;
-
 static_assert(ArenaSize % CellAlignBytes == 0,
               "Arena size must be a multiple of cell alignment");
 

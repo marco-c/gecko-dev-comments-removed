@@ -71,6 +71,13 @@ const size_t MarkBitsPerCell = 2;
 
 
 
+const size_t MinCellSize = CellBytesPerMarkBit * MarkBitsPerCell;
+
+
+
+
+
+
 const size_t ArenaBitmapBits = ArenaSize / CellBytesPerMarkBit;
 const size_t ArenaBitmapBytes = HowMany(ArenaBitmapBits, 8);
 const size_t ArenaBitmapWords = HowMany(ArenaBitmapBits, JS_BITS_PER_WORD);
