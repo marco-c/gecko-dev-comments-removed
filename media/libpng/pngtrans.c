@@ -103,10 +103,10 @@ png_set_interlace_handling(png_structrp png_ptr)
    if (png_ptr != 0 && png_ptr->interlaced != 0)
    {
       png_ptr->transformations |= PNG_INTERLACE;
-      return (7);
+      return 7;
    }
 
-   return (1);
+   return 1;
 }
 #endif
 
@@ -498,6 +498,8 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
    png_bytep dp = row; 
    png_bytep ep = row + row_info->rowbytes; 
 
+   png_debug(1, "in png_do_strip_channel");
+
    
 
 
@@ -698,6 +700,8 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
 void 
 png_do_check_palette_indexes(png_structrp png_ptr, png_row_infop row_info)
 {
+   png_debug(1, "in png_do_check_palette_indexes");
+
    if (png_ptr->num_palette < (1 << row_info->bit_depth) &&
       png_ptr->num_palette > 0) 
    {
@@ -708,7 +712,7 @@ png_do_check_palette_indexes(png_structrp png_ptr, png_row_infop row_info)
 
 
       int padding = PNG_PADBITS(row_info->pixel_depth, row_info->width);
-      png_bytep rp = png_ptr->row_buf + row_info->rowbytes - 1;
+      png_bytep rp = png_ptr->row_buf + row_info->rowbytes;
 
       switch (row_info->bit_depth)
       {
@@ -833,7 +837,7 @@ png_voidp PNGAPI
 png_get_user_transform_ptr(png_const_structrp png_ptr)
 {
    if (png_ptr == NULL)
-      return (NULL);
+      return NULL;
 
    return png_ptr->user_transform_ptr;
 }

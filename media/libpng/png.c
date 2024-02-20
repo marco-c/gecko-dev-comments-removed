@@ -14,27 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_39 Your_png_h_is_not_version_1_6_39;
-
-#ifdef __GNUC__
-
-
-
-
-
-
-
-
-
-
-
-#if __GNUC__ == 7 && __GNUC_MINOR__ == 1
-#define GCC_STRICT_OVERFLOW 1
-#endif 
-#endif 
-#ifndef GCC_STRICT_OVERFLOW
-#define GCC_STRICT_OVERFLOW 0
-#endif
+typedef png_libpng_version_1_6_42 Your_png_h_is_not_version_1_6_42;
 
 
 
@@ -73,21 +53,21 @@ png_set_sig_bytes(png_structrp png_ptr, int num_bytes)
 int PNGAPI
 png_sig_cmp(png_const_bytep sig, size_t start, size_t num_to_check)
 {
-   png_byte png_signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+   static const png_byte png_signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
    if (num_to_check > 8)
       num_to_check = 8;
 
    else if (num_to_check < 1)
-      return (-1);
+      return -1;
 
    if (start > 7)
-      return (-1);
+      return -1;
 
    if (start + num_to_check > 8)
       num_to_check = 8 - start;
 
-   return ((int)(memcmp(&sig[start], &png_signature[start], num_to_check)));
+   return memcmp(&sig[start], &png_signature[start], num_to_check);
 }
 
 #endif 
@@ -447,7 +427,6 @@ png_info_init_3,(png_infopp ptr_ptr, size_t png_info_struct_size),
    memset(info_ptr, 0, (sizeof *info_ptr));
 }
 
-
 void PNGAPI
 png_data_freer(png_const_structrp png_ptr, png_inforp info_ptr,
     int freer, png_uint_32 mask)
@@ -686,9 +665,9 @@ png_voidp PNGAPI
 png_get_io_ptr(png_const_structrp png_ptr)
 {
    if (png_ptr == NULL)
-      return (NULL);
+      return NULL;
 
-   return (png_ptr->io_ptr);
+   return png_ptr->io_ptr;
 }
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
@@ -752,7 +731,7 @@ png_convert_to_rfc1123_buffer(char out[29], png_const_timep ptime)
 
    {
       size_t pos = 0;
-      char number_buf[5]; 
+      char number_buf[5] = {0, 0, 0, 0, 0}; 
 
 #     define APPEND_STRING(string) pos = png_safecat(out, 29, pos, (string))
 #     define APPEND_NUMBER(format, value)\
@@ -815,8 +794,8 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.39" PNG_STRING_NEWLINE \
-      "Copyright (c) 2018-2022 Cosmin Truta" PNG_STRING_NEWLINE \
+      "libpng version 1.6.42" PNG_STRING_NEWLINE \
+      "Copyright (c) 2018-2024 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
@@ -977,7 +956,7 @@ png_reset_zstream(png_structrp png_ptr)
       return Z_STREAM_ERROR;
 
    
-   return (inflateReset(&png_ptr->zstream));
+   return inflateReset(&png_ptr->zstream);
 }
 #endif 
 
@@ -986,7 +965,7 @@ png_uint_32 PNGAPI
 png_access_version_number(void)
 {
    
-   return((png_uint_32)PNG_LIBPNG_VER);
+   return (png_uint_32)PNG_LIBPNG_VER;
 }
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
@@ -2891,14 +2870,6 @@ png_pow10(int power)
 
 
 
-#if GCC_STRICT_OVERFLOW
-#pragma GCC diagnostic push
-
-
-
-
-#pragma GCC diagnostic warning "-Wstrict-overflow=2"
-#endif 
 void 
 png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, size_t size,
     double fp, unsigned int precision)
@@ -3220,10 +3191,6 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, size_t size,
    
    png_error(png_ptr, "ASCII conversion buffer too small");
 }
-#if GCC_STRICT_OVERFLOW
-#pragma GCC diagnostic pop
-#endif 
-
 #  endif 
 
 #  ifdef PNG_FIXED_POINT_SUPPORTED
@@ -3251,7 +3218,7 @@ png_ascii_from_fixed(png_const_structrp png_ptr, png_charp ascii,
       if (num <= 0x80000000) 
       {
          unsigned int ndigits = 0, first = 16 ;
-         char digits[10];
+         char digits[10] = {0};
 
          while (num)
          {
@@ -3336,15 +3303,6 @@ png_fixed(png_const_structrp png_ptr, double fp, png_const_charp text)
 
 
 
-#if GCC_STRICT_OVERFLOW 
-
-
-
-
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wstrict-overflow=2"
-#endif 
 int
 png_muldiv(png_fixed_point_p res, png_fixed_point a, png_int_32 times,
     png_int_32 divisor)
@@ -3459,9 +3417,6 @@ png_muldiv(png_fixed_point_p res, png_fixed_point a, png_int_32 times,
 
    return 0;
 }
-#if GCC_STRICT_OVERFLOW
-#pragma GCC diagnostic pop
-#endif 
 #endif 
 
 #if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_INCH_CONVERSIONS_SUPPORTED)

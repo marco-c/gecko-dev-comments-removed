@@ -2418,7 +2418,7 @@ png_setup_sub_row(png_structrp png_ptr, png_uint_32 bpp,
         break;
    }
 
-   return (sum);
+   return sum;
 }
 
 static void 
@@ -2468,7 +2468,7 @@ png_setup_up_row(png_structrp png_ptr, size_t row_bytes, size_t lmins)
         break;
    }
 
-   return (sum);
+   return sum;
 }
 static void 
 png_setup_up_row_only(png_structrp png_ptr, size_t row_bytes)
@@ -2524,7 +2524,7 @@ png_setup_avg_row(png_structrp png_ptr, png_uint_32 bpp,
         break;
    }
 
-   return (sum);
+   return sum;
 }
 static void 
 png_setup_avg_row_only(png_structrp png_ptr, png_uint_32 bpp,
@@ -2607,7 +2607,7 @@ png_setup_paeth_row(png_structrp png_ptr, png_uint_32 bpp,
         break;
    }
 
-   return (sum);
+   return sum;
 }
 static void 
 png_setup_paeth_row_only(png_structrp png_ptr, png_uint_32 bpp,
