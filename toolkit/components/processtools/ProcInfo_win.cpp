@@ -13,6 +13,7 @@
 #include <windows.h>
 #include <psapi.h>
 #include <winternl.h>
+#include <xpcpublic.h>
 
 #ifndef STATUS_INFO_LENGTH_MISMATCH
 #  define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
@@ -34,7 +35,10 @@ static uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
 int GetCycleTimeFrequencyMHz() {
   static const int frequency = []() {
     
-    if (!mozilla::has_constant_tsc()) {
+    
+    
+    
+    if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
       return 0;
     }
 
