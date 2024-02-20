@@ -1353,11 +1353,11 @@ nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState,
 
 void Loader::AdjustPriority(const SheetLoadData& aLoadData,
                             nsIChannel* aChannel) {
-  if (!StaticPrefs::network_fetchpriority_enabled()) {
-    if (!aLoadData.ShouldDefer() && aLoadData.IsLinkRelPreload()) {
-      SheetLoadData::PrioritizeAsPreload(aChannel);
-    }
+  if (!aLoadData.ShouldDefer() && aLoadData.IsLinkRelPreload()) {
+    SheetLoadData::PrioritizeAsPreload(aChannel);
+  }
 
+  if (!StaticPrefs::network_fetchpriority_enabled()) {
     return;
   }
 
@@ -1369,30 +1369,25 @@ void Loader::AdjustPriority(const SheetLoadData& aLoadData,
 
   
   
-  
-  
-  const int32_t supportsPriority = [&]() {
+  const int32_t supportsPriorityDelta = [&]() {
     if (aLoadData.ShouldDefer()) {
-      return nsISupportsPriority::PRIORITY_LOW;
+      return FETCH_PRIORITY_ADJUSTMENT_FOR(deferred_style,
+                                           aLoadData.mFetchPriority);
     }
-    switch (aLoadData.mFetchPriority) {
-      case FetchPriority::Auto: {
-        return nsISupportsPriority::PRIORITY_HIGHEST;
-      }
-      case FetchPriority::High: {
-        return nsISupportsPriority::PRIORITY_HIGHEST;
-      }
-      case FetchPriority::Low: {
-        return nsISupportsPriority::PRIORITY_HIGH;
-      }
+    if (aLoadData.IsLinkRelPreload()) {
+      return FETCH_PRIORITY_ADJUSTMENT_FOR(link_preload_style,
+                                           aLoadData.mFetchPriority);
     }
-
-    MOZ_ASSERT_UNREACHABLE();
-    return nsISupportsPriority::PRIORITY_HIGHEST;
+    return FETCH_PRIORITY_ADJUSTMENT_FOR(non_deferred_style,
+                                         aLoadData.mFetchPriority);
   }();
 
-  LogPriorityMapping(sCssLoaderLog, aLoadData.mFetchPriority, supportsPriority);
-  sp->SetPriority(supportsPriority);
+  sp->AdjustPriority(supportsPriorityDelta);
+#ifdef DEBUG
+  int32_t adjustedPriority;
+  sp->GetPriority(&adjustedPriority);
+  LogPriorityMapping(sCssLoaderLog, aLoadData.mFetchPriority, adjustedPriority);
+#endif
 }
 
 nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
