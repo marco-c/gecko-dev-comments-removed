@@ -25,13 +25,14 @@ function initBounceTrackerState() {
   bounceTrackingProtection.reset();
 
   
-  bounceTrackingProtection.testAddBounceTrackerCandidate("example.com", 1);
-  bounceTrackingProtection.testAddBounceTrackerCandidate("example.net", 1);
+  bounceTrackingProtection.testAddBounceTrackerCandidate({}, "example.com", 1);
+  bounceTrackingProtection.testAddBounceTrackerCandidate({}, "example.net", 1);
 
   
   let timestampWithinGracePeriod =
     Date.now() - (BOUNCE_TRACKING_GRACE_PERIOD_SEC * 1000) / 2;
   bounceTrackingProtection.testAddBounceTrackerCandidate(
+    {},
     "example.org",
     timestampWithinGracePeriod * 1000
   );
