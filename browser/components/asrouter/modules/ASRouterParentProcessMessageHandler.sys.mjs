@@ -1,21 +1,15 @@
-
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["ASRouterParentProcessMessageHandler"];
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { ASRouterPreferences } = ChromeUtils.import(
   "resource:///modules/asrouter/ASRouterPreferences.jsm"
 );
 
-const { MESSAGE_TYPE_HASH: msg } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/ActorConstants.sys.mjs"
-);
+import { MESSAGE_TYPE_HASH as msg } from "resource:///modules/asrouter/ActorConstants.sys.mjs";
 
-class ASRouterParentProcessMessageHandler {
+export class ASRouterParentProcessMessageHandler {
   constructor({
     router,
     preferences,
@@ -63,8 +57,8 @@ class ASRouterParentProcessMessageHandler {
         );
         ASRouterPreferences.console.trace();
 
-        
-        
+        // Block the message but don't dismiss it in case the action taken has
+        // another state that needs to be visible
         return this._router
           .blockMessageById(data.id)
           .then(() => !data.preventDismiss);
@@ -90,7 +84,7 @@ class ASRouterParentProcessMessageHandler {
         });
       }
 
-      
+      // ADMIN Messages
       case msg.ADMIN_CONNECT_STATE: {
         if (data && data.endpoint) {
           return this._router.loadMessagesFromAllProviders();
