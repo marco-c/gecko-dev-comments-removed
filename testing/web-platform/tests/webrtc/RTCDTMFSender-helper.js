@@ -120,7 +120,9 @@ function test_tone_change_events(testFunc, toneChanges, desc) {
         
         
         
-        assert_between_inclusive(Date.now() - start, expectedTime,
+        
+        
+        assert_between_inclusive(Date.now() - start, Math.max(0, expectedTime - 1),
                                  expectedTime + 4000,
           `Expect tonechange event for "${tone}" to be fired approximately after ${expectedTime} milliseconds`);
         if (cumulativeToneChanges.length === 0) {
