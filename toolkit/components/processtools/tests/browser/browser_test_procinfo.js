@@ -25,7 +25,10 @@ function checkProcessCpuTime(proc) {
   for (let thread of proc.threads) {
     cpuThreads += Math.floor(thread.cpuTime / NS_PER_MS);
   }
-  let processCpuTime = Math.ceil(proc.cpuTime / NS_PER_MS);
+  
+  
+  
+  let processCpuTime = Math.floor(proc.cpuTime / NS_PER_MS) + 1;
   if (AppConstants.platform == "win" && processCpuTime < cpuThreads) {
     
     
