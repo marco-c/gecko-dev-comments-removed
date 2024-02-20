@@ -5090,26 +5090,27 @@ void nsTableFrame::CalcBCBorders() {
         info.SetColumn(colIdx);
         BCCellBorder currentBorder = info.GetBStartEdgeBorder();
         
-        BCCornerInfo& tlCorner = bStartCorners[colIdx];  
+        BCCornerInfo& bStartIStartCorner = bStartCorners[colIdx];
         if (0 == colIdx) {
           
-          tlCorner.Set(eLogicalSideIEnd, currentBorder);
+          bStartIStartCorner.Set(eLogicalSideIEnd, currentBorder);
         } else {
-          tlCorner.Update(eLogicalSideIEnd, currentBorder);
-          tableCellMap->SetBCBorderCorner(eLogicalCornerBStartIStart,
-                                          *iter.mCellMap, 0, 0, colIdx,
-                                          LogicalSide(tlCorner.ownerSide),
-                                          tlCorner.subWidth, tlCorner.bevel);
+          bStartIStartCorner.Update(eLogicalSideIEnd, currentBorder);
+          tableCellMap->SetBCBorderCorner(
+              eLogicalCornerBStartIStart, *iter.mCellMap, 0, 0, colIdx,
+              LogicalSide(bStartIStartCorner.ownerSide),
+              bStartIStartCorner.subWidth, bStartIStartCorner.bevel);
         }
         bStartCorners[colIdx + 1].Set(eLogicalSideIStart,
                                       currentBorder);  
         MOZ_ASSERT(firstRowBStartEdgeBorder,
                    "Inline start border tracking not set?");
         
-        bool startSeg = firstRowBStartEdgeBorder
-                            ? SetInlineDirBorder(currentBorder, tlCorner,
-                                                 firstRowBStartEdgeBorder.ref())
-                            : true;
+        bool startSeg =
+            firstRowBStartEdgeBorder
+                ? SetInlineDirBorder(currentBorder, bStartIStartCorner,
+                                     firstRowBStartEdgeBorder.ref())
+                : true;
         
         tableCellMap->SetBCBorderEdge(eLogicalSideBStart, *iter.mCellMap, 0, 0,
                                       colIdx, 1, currentBorder.owner,
@@ -5147,13 +5148,13 @@ void nsTableFrame::CalcBCBorders() {
            rowB++) {
         info.IncrementRow(rowB == info.mRowIndex);
         BCCellBorder currentBorder = info.GetIStartEdgeBorder();
-        BCCornerInfo& tlCorner =
+        BCCornerInfo& bStartIStartCorner =
             (0 == rowB) ? bStartCorners[0] : bEndCorners[0];
-        tlCorner.Update(eLogicalSideBEnd, currentBorder);
+        bStartIStartCorner.Update(eLogicalSideBEnd, currentBorder);
         tableCellMap->SetBCBorderCorner(
             eLogicalCornerBStartIStart, *iter.mCellMap, iter.mRowGroupStart,
-            rowB, 0, LogicalSide(tlCorner.ownerSide), tlCorner.subWidth,
-            tlCorner.bevel);
+            rowB, 0, LogicalSide(bStartIStartCorner.ownerSide),
+            bStartIStartCorner.subWidth, bStartIStartCorner.bevel);
         bEndCorners[0].Set(eLogicalSideBStart, currentBorder);  
 
         
@@ -5182,20 +5183,22 @@ void nsTableFrame::CalcBCBorders() {
         info.IncrementRow(rowB == info.mRowIndex);
         BCCellBorder currentBorder = info.GetIEndEdgeBorder();
         
-        BCCornerInfo& trCorner =
+        BCCornerInfo& bStartIEndCorner =
             (0 == rowB) ? bStartCorners[info.GetCellEndColIndex() + 1]
                         : bEndCorners[info.GetCellEndColIndex() + 1];
-        trCorner.Update(eLogicalSideBEnd, currentBorder);  
+        bStartIEndCorner.Update(eLogicalSideBEnd,
+                                currentBorder);  
         tableCellMap->SetBCBorderCorner(
             eLogicalCornerBStartIEnd, *iter.mCellMap, iter.mRowGroupStart, rowB,
-            info.GetCellEndColIndex(), LogicalSide(trCorner.ownerSide),
-            trCorner.subWidth, trCorner.bevel);
-        BCCornerInfo& brCorner = bEndCorners[info.GetCellEndColIndex() + 1];
-        brCorner.Set(eLogicalSideBStart, currentBorder);  
+            info.GetCellEndColIndex(), LogicalSide(bStartIEndCorner.ownerSide),
+            bStartIEndCorner.subWidth, bStartIEndCorner.bevel);
+        BCCornerInfo& bEndIEndCorner =
+            bEndCorners[info.GetCellEndColIndex() + 1];
+        bEndIEndCorner.Set(eLogicalSideBStart, currentBorder);  
         tableCellMap->SetBCBorderCorner(
             eLogicalCornerBEndIEnd, *iter.mCellMap, iter.mRowGroupStart, rowB,
-            info.GetCellEndColIndex(), LogicalSide(brCorner.ownerSide),
-            brCorner.subWidth, brCorner.bevel);
+            info.GetCellEndColIndex(), LogicalSide(bEndIEndCorner.ownerSide),
+            bEndIEndCorner.subWidth, bEndIEndCorner.bevel);
         
         bool startSeg = SetBorder(
             currentBorder, lastBlockDirBorders[info.GetCellEndColIndex() + 1]);
@@ -5238,11 +5241,11 @@ void nsTableFrame::CalcBCBorders() {
         
         bool hitsSpanOnIEnd = (rowB > ajaInfo.mRowIndex) &&
                               (rowB < ajaInfo.mRowIndex + ajaInfo.mRowSpan);
-        BCCornerInfo* trCorner =
+        BCCornerInfo* bStartIEndCorner =
             ((0 == rowB) || hitsSpanOnIEnd)
                 ? &bStartCorners[info.GetCellEndColIndex() + 1]
                 : &bEndCorners[info.GetCellEndColIndex() + 1];
-        trCorner->Update(eLogicalSideBEnd, currentBorder);
+        bStartIEndCorner->Update(eLogicalSideBEnd, currentBorder);
         
         
         if (rowB != info.mRowIndex) {
@@ -5250,7 +5253,7 @@ void nsTableFrame::CalcBCBorders() {
           BCCellBorder adjacentBorder = ajaInfo.GetBStartInternalBorder();
           currentBorder = CompareBorders(!CELL_CORNER, currentBorder,
                                          adjacentBorder, INLINE_DIR);
-          trCorner->Update(eLogicalSideIEnd, currentBorder);
+          bStartIEndCorner->Update(eLogicalSideIEnd, currentBorder);
         }
         
         if (info.GetCellEndColIndex() < damageArea.EndCol() &&
@@ -5259,24 +5262,25 @@ void nsTableFrame::CalcBCBorders() {
             tableCellMap->SetBCBorderCorner(
                 eLogicalCornerBStartIEnd, *iter.mCellMap, iter.mRowGroupStart,
                 rowB, info.GetCellEndColIndex(),
-                LogicalSide(trCorner->ownerSide), trCorner->subWidth,
-                trCorner->bevel);
+                LogicalSide(bStartIEndCorner->ownerSide),
+                bStartIEndCorner->subWidth, bStartIEndCorner->bevel);
           }
           
           for (int32_t rX = rowB + 1; rX < rowB + segLength; rX++) {
             tableCellMap->SetBCBorderCorner(
                 eLogicalCornerBEndIEnd, *iter.mCellMap, iter.mRowGroupStart, rX,
-                info.GetCellEndColIndex(), LogicalSide(trCorner->ownerSide),
-                trCorner->subWidth, false);
+                info.GetCellEndColIndex(),
+                LogicalSide(bStartIEndCorner->ownerSide),
+                bStartIEndCorner->subWidth, false);
           }
         }
         
         hitsSpanOnIEnd =
             (rowB + segLength < ajaInfo.mRowIndex + ajaInfo.mRowSpan);
-        BCCornerInfo& brCorner =
+        BCCornerInfo& bEndIEndCorner =
             (hitsSpanOnIEnd) ? bStartCorners[info.GetCellEndColIndex() + 1]
                              : bEndCorners[info.GetCellEndColIndex() + 1];
-        brCorner.Set(eLogicalSideBStart, currentBorder);
+        bEndIEndCorner.Set(eLogicalSideBStart, currentBorder);
         priorAjaInfo = ajaInfo;
       }
     }
@@ -5298,25 +5302,26 @@ void nsTableFrame::CalcBCBorders() {
         info.SetColumn(colIdx);
         BCCellBorder currentBorder = info.GetBEndEdgeBorder();
         
-        BCCornerInfo& blCorner = bEndCorners[colIdx];  
-        blCorner.Update(eLogicalSideIEnd, currentBorder);
+        BCCornerInfo& bEndIStartCorner = bEndCorners[colIdx];
+        bEndIStartCorner.Update(eLogicalSideIEnd, currentBorder);
         tableCellMap->SetBCBorderCorner(
             eLogicalCornerBEndIStart, *iter.mCellMap, iter.mRowGroupStart,
-            info.GetCellEndRowIndex(), colIdx, LogicalSide(blCorner.ownerSide),
-            blCorner.subWidth, blCorner.bevel);
-        BCCornerInfo& brCorner = bEndCorners[colIdx + 1];  
-        brCorner.Update(eLogicalSideIStart, currentBorder);
+            info.GetCellEndRowIndex(), colIdx,
+            LogicalSide(bEndIStartCorner.ownerSide), bEndIStartCorner.subWidth,
+            bEndIStartCorner.bevel);
+        BCCornerInfo& bEndIEndCorner = bEndCorners[colIdx + 1];  
+        bEndIEndCorner.Update(eLogicalSideIStart, currentBorder);
         if (info.mNumTableCols ==
             colIdx + 1) {  
           tableCellMap->SetBCBorderCorner(
               eLogicalCornerBEndIEnd, *iter.mCellMap, iter.mRowGroupStart,
               info.GetCellEndRowIndex(), colIdx,
-              LogicalSide(brCorner.ownerSide), brCorner.subWidth,
-              brCorner.bevel, true);
+              LogicalSide(bEndIEndCorner.ownerSide), bEndIEndCorner.subWidth,
+              bEndIEndCorner.bevel, true);
         }
         
         bool startSeg =
-            SetInlineDirBorder(currentBorder, blCorner, lastBEndBorder);
+            SetInlineDirBorder(currentBorder, bEndIStartCorner, lastBEndBorder);
         if (!startSeg) {
           
           
@@ -5353,7 +5358,7 @@ void nsTableFrame::CalcBCBorders() {
             std::min(segLength, info.mColIndex + info.mColSpan - colIdx);
 
         
-        BCCornerInfo& blCorner = bEndCorners[colIdx];  
+        BCCornerInfo& bEndIStartCorner = bEndCorners[colIdx];
         bool hitsSpanBelow = (colIdx > ajaInfo.mColIndex) &&
                              (colIdx < ajaInfo.mColIndex + ajaInfo.mColSpan);
         bool update = true;
@@ -5365,22 +5370,22 @@ void nsTableFrame::CalcBCBorders() {
             
           } else if (prevRowIndex < info.GetCellEndRowIndex() + 1) {
             
-            bStartCorners[colIdx] = blCorner;
-            blCorner.Set(eLogicalSideIEnd, currentBorder);
+            bStartCorners[colIdx] = bEndIStartCorner;
+            bEndIStartCorner.Set(eLogicalSideIEnd, currentBorder);
             update = false;
           }
         }
         if (update) {
-          blCorner.Update(eLogicalSideIEnd, currentBorder);
+          bEndIStartCorner.Update(eLogicalSideIEnd, currentBorder);
         }
         if (info.GetCellEndRowIndex() < damageArea.EndRow() &&
             colIdx >= damageArea.StartCol()) {
           if (hitsSpanBelow) {
-            tableCellMap->SetBCBorderCorner(eLogicalCornerBEndIStart,
-                                            *iter.mCellMap, iter.mRowGroupStart,
-                                            info.GetCellEndRowIndex(), colIdx,
-                                            LogicalSide(blCorner.ownerSide),
-                                            blCorner.subWidth, blCorner.bevel);
+            tableCellMap->SetBCBorderCorner(
+                eLogicalCornerBEndIStart, *iter.mCellMap, iter.mRowGroupStart,
+                info.GetCellEndRowIndex(), colIdx,
+                LogicalSide(bEndIStartCorner.ownerSide),
+                bEndIStartCorner.subWidth, bEndIStartCorner.bevel);
           }
           
           for (int32_t c = colIdx + 1; c < colIdx + segLength; c++) {
@@ -5394,7 +5399,7 @@ void nsTableFrame::CalcBCBorders() {
         }
         
         bool startSeg =
-            SetInlineDirBorder(currentBorder, blCorner, lastBEndBorder);
+            SetInlineDirBorder(currentBorder, bEndIStartCorner, lastBEndBorder);
         if (!startSeg) {
           
           
@@ -5419,8 +5424,8 @@ void nsTableFrame::CalcBCBorders() {
           ajaInfo.SetBStartBorderWidths(currentBorder.width);
         }
         
-        BCCornerInfo& brCorner = bEndCorners[colIdx + segLength];
-        brCorner.Update(eLogicalSideIStart, currentBorder);
+        BCCornerInfo& bEndIEndCorner = bEndCorners[colIdx + segLength];
+        bEndIEndCorner.Update(eLogicalSideIStart, currentBorder);
       }
     }
     
