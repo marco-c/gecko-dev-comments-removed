@@ -6982,12 +6982,20 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
         RefPtr<PresShell> rootPresShell =
             mPresContext->IsRoot() ? this : GetRootPresShell();
         if (rootPresShell && rootPresShell->mSynthMouseMoveEvent.IsPending()) {
+          AutoWeakFrame frameForPresShellWeak(aFrameForPresShell);
           RefPtr<nsSynthMouseMoveEvent> synthMouseMoveEvent =
               rootPresShell->mSynthMouseMoveEvent.get();
           synthMouseMoveEvent->Run();
-        }
-        if (IsDestroying()) {
-          return NS_OK;
+          if (IsDestroying()) {
+            return NS_OK;
+          }
+          
+          
+          
+          
+          if (MOZ_UNLIKELY(!frameForPresShellWeak.IsAlive())) {
+            return NS_OK;
+          }
         }
         break;
       }
