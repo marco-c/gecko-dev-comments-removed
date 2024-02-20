@@ -61,9 +61,8 @@ ffi::WGPURenderBundleEncoder* CreateRenderBundleEncoder(
   auto* bundle = ffi::wgpu_device_create_render_bundle_encoder(
       aDeviceId, &desc, ToFFI(&failureAction));
   
-  if (!bundle &&
-      !aBridge->SendDeviceAction(aDeviceId, std::move(failureAction))) {
-    MOZ_CRASH("IPC failure");
+  if (!bundle) {
+    aBridge->SendDeviceAction(aDeviceId, std::move(failureAction));
   }
   return bundle;
 }
