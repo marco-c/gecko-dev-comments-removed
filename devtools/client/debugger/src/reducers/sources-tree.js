@@ -210,18 +210,23 @@ function addThread(state, thread) {
   });
   if (!threadItem) {
     threadItem = createThreadTreeItem(threadActorID);
-    state.threadItems = [...state.threadItems, threadItem];
+    state.threadItems = [...state.threadItems];
+    threadItem.thread = thread;
+    addSortedItem(state.threadItems, threadItem, sortThreadItems);
   } else {
     
     
     
     state.threadItems = [...state.threadItems];
+
+    
+    
+    
+    threadItem.thread = thread;
+
+    
+    state.threadItems.sort(sortThreadItems);
   }
-  
-  
-  
-  threadItem.thread = thread;
-  state.threadItems.sort(sortThreadItems);
 }
 
 function updateBlackbox(state, sources, shouldBlackBox) {
@@ -290,6 +295,24 @@ function isSourceVisibleInSourceTree(
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+function addSortedItem(array, newValue, sortFunction) {
+  let index = array.findIndex(value => sortFunction(value, newValue) === 1);
+  index = index >= 0 ? index : array.length;
+  array.splice(index, 0, newValue);
+}
+
 function addSource(threadItems, source, sourceActor) {
   
   let threadItem = threadItems.find(item => {
@@ -299,8 +322,7 @@ function addSource(threadItems, source, sourceActor) {
     threadItem = createThreadTreeItem(sourceActor.thread);
     
     
-    threadItems.push(threadItem);
-    threadItems.sort(sortThreadItems);
+    addSortedItem(threadItems, threadItem, sortThreadItems);
   }
 
   
@@ -316,9 +338,9 @@ function addSource(threadItems, source, sourceActor) {
     groupItem = createGroupTreeItem(group, threadItem, source);
     
     
-    threadItem.children = [...threadItem.children, groupItem];
-    
-    threadItem.children.sort(sortItems);
+    threadItem.children = [...threadItem.children];
+
+    addSortedItem(threadItem.children, groupItem, sortItems);
   }
 
   
@@ -340,9 +362,8 @@ function addSource(threadItems, source, sourceActor) {
   const sourceItem = createSourceTreeItem(source, sourceActor, directoryItem);
   
   
-  directoryItem.children = [...directoryItem.children, sourceItem];
-  
-  directoryItem.children.sort(sortItems);
+  directoryItem.children = [...directoryItem.children];
+  addSortedItem(directoryItem.children, sourceItem, sortItems);
 
   return true;
 }
@@ -476,9 +497,9 @@ function addOrGetParentDirectory(groupItem, path) {
   const directory = createDirectoryTreeItem(path, parentDirectory);
   
   
-  parentDirectory.children = [...parentDirectory.children, directory];
-  
-  parentDirectory.children.sort(sortItems);
+  parentDirectory.children = [...parentDirectory.children];
+
+  addSortedItem(parentDirectory.children, directory, sortItems);
 
   
   
