@@ -8,9 +8,12 @@
 #define mozJSModuleLoader_h
 
 #include "SyncModuleLoader.h"
+#include "mozilla/Attributes.h"  
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/FileLocation.h"
+#include "mozilla/Maybe.h"  
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/RefPtr.h"  
 #include "mozilla/StaticPtr.h"
 #include "nsIMemoryReporter.h"
 #include "nsISupports.h"
@@ -36,6 +39,12 @@ class ModuleLoadRequest;
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
 #  define STARTUP_RECORDER_ENABLED
 #endif
+
+namespace mozilla::loader {
+
+class NonSharedGlobalSyncModuleLoaderScope;
+
+}  
 
 class mozJSModuleLoader final : public nsIMemoryReporter {
  public:
@@ -67,6 +76,13 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
 
   JSObject* GetSharedGlobal(JSContext* aCx);
 
+ private:
+  void InitSyncModuleLoaderForGlobal(nsIGlobalObject* aGlobal);
+  void DisconnectSyncModuleLoaderFromGlobal();
+
+  friend class mozilla::loader::NonSharedGlobalSyncModuleLoaderScope;
+
+ public:
   static mozJSModuleLoader* GetDevToolsLoader() { return sDevToolsLoader; }
   static mozJSModuleLoader* GetOrCreateDevToolsLoader();
 
@@ -116,6 +132,9 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
   nsresult IsESModuleLoaded(const nsACString& aResourceURI, bool* aRetval);
   bool IsLoaderGlobal(JSObject* aObj) { return mLoaderGlobal == aObj; }
   bool IsDevToolsLoader() const { return this == sDevToolsLoader; }
+
+  static bool IsSharedSystemGlobal(nsIGlobalObject* aGlobal);
+  static bool IsDevToolsLoaderGlobal(nsIGlobalObject* aGlobal);
 
   
   static bool IsTrustedScheme(nsIURI* aURI);
@@ -261,4 +280,55 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
   RefPtr<mozilla::loader::SyncModuleLoader> mModuleLoader;
 };
 
-#endif
+namespace mozilla::loader {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS NonSharedGlobalSyncModuleLoaderScope {
+ public:
+  NonSharedGlobalSyncModuleLoaderScope(JSContext* aCx,
+                                       nsIGlobalObject* aGlobal);
+  ~NonSharedGlobalSyncModuleLoaderScope();
+
+  
+  
+  void Finish();
+
+  
+  
+  static bool IsActive();
+
+  static mozJSModuleLoader* ActiveLoader();
+
+ private:
+  RefPtr<mozJSModuleLoader> mLoader;
+
+  
+  
+  
+  static mozJSModuleLoader* sActiveLoader;
+
+  
+  RefPtr<JS::loader::ModuleLoaderBase> mAsyncModuleLoader;
+
+  mozilla::Maybe<JS::loader::AutoOverrideModuleLoader> mMaybeOverride;
+};
+
+}  
+
+#endif  
