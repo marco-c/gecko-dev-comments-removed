@@ -692,6 +692,17 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
+      const nsINode* aPossibleChild) const;
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -1551,6 +1562,24 @@ class nsINode : public mozilla::dom::EventTarget {
   
   bool IsRootOfChromeAccessOnlySubtree() const {
     return IsRootOfNativeAnonymousSubtree();
+  }
+
+  
+  bool IsGeneratedContentContainerForBefore() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore;
+  }
+
+  
+  bool IsGeneratedContentContainerForAfter() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentafter;
+  }
+
+  
+  bool IsGeneratedContentContainerForMarker() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentmarker;
   }
 
   

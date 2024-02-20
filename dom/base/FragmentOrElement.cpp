@@ -1032,16 +1032,6 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 }
 
-bool nsIContent::IsFocusable(int32_t* aTabIndex, bool aWithMouse) {
-  bool focusable = IsFocusableInternal(aTabIndex, aWithMouse);
-  
-  
-  if (focusable || (aTabIndex && *aTabIndex != -1)) {
-    return focusable;
-  }
-  return false;
-}
-
 Element* nsIContent::GetAutofocusDelegate(bool aWithMouse) const {
   for (nsINode* node = GetFirstChild(); node; node = node->GetNextNode(this)) {
     auto* descendant = Element::FromNode(*node);
@@ -1068,7 +1058,7 @@ Element* nsIContent::GetFocusDelegate(bool aWithMouse) const {
     whereToLook = root;
   }
 
-  auto IsFocusable = [&](Element* aElement) -> nsIFrame::Focusable {
+  auto IsFocusable = [&](Element* aElement) -> Focusable {
     nsIFrame* frame = aElement->GetPrimaryFrame();
 
     if (!frame) {
@@ -1094,7 +1084,7 @@ Element* nsIContent::GetFocusDelegate(bool aWithMouse) const {
         return el;
       }
     } else if (!potentialFocus) {
-      if (nsIFrame::Focusable focusable = IsFocusable(el)) {
+      if (Focusable focusable = IsFocusable(el)) {
         if (IsHTMLElement(nsGkAtoms::dialog)) {
           if (focusable.mTabIndex >= 0) {
             
@@ -1134,51 +1124,14 @@ Element* nsIContent::GetFocusDelegate(bool aWithMouse) const {
   return potentialFocus;
 }
 
-bool nsIContent::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
-  if (aTabIndex) {
-    *aTabIndex = -1;  
-  }
-  return false;
+Focusable nsIContent::IsFocusableWithoutStyle(bool aWithMouse) {
+  
+  return {};
 }
 
 void nsIContent::SetAssignedSlot(HTMLSlotElement* aSlot) {
   MOZ_ASSERT(aSlot || GetExistingExtendedContentSlots());
   ExtendedContentSlots()->mAssignedSlot = aSlot;
-}
-
-static Maybe<uint32_t> DoComputeFlatTreeIndexOf(FlattenedChildIterator& aIter,
-                                                const nsINode* aPossibleChild) {
-  if (aPossibleChild->GetFlattenedTreeParentNode() != aIter.Parent()) {
-    return Nothing();
-  }
-
-  uint32_t index = 0u;
-  for (nsIContent* child = aIter.GetNextChild(); child;
-       child = aIter.GetNextChild()) {
-    if (child == aPossibleChild) {
-      return Some(index);
-    }
-
-    ++index;
-  }
-
-  return Nothing();
-}
-
-Maybe<uint32_t> nsIContent::ComputeFlatTreeIndexOf(
-    const nsINode* aPossibleChild) const {
-  if (!aPossibleChild) {
-    return Nothing();
-  }
-
-  FlattenedChildIterator iter(this);
-  if (!iter.ShadowDOMInvolved()) {
-    auto index = ComputeIndexOf(aPossibleChild);
-    MOZ_ASSERT(DoComputeFlatTreeIndexOf(iter, aPossibleChild) == index);
-    return index;
-  }
-
-  return DoComputeFlatTreeIndexOf(iter, aPossibleChild);
 }
 
 #ifdef MOZ_DOM_LIST

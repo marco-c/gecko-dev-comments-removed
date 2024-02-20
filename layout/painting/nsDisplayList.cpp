@@ -2544,8 +2544,8 @@ struct ContentComparator {
       
       return true;
     }
-    return nsLayoutUtils::CompareTreePosition(content1, content2,
-                                              mCommonAncestor) < 0;
+    return nsContentUtils::CompareTreePosition<TreeKind::Flat>(
+               content1, content2, mCommonAncestor) < 0;
   }
 };
 

@@ -30,6 +30,16 @@ struct IMEState;
 }  
 }  
 
+struct Focusable {
+  bool mFocusable = false;
+  
+  
+  
+  
+  int32_t mTabIndex = -1;
+  explicit operator bool() const { return mFocusable; }
+};
+
 
 
 #define NS_ICONTENT_IID                              \
@@ -217,21 +227,6 @@ class nsIContent : public nsINode {
     return IsMathMLElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
-  bool IsGeneratedContentContainerForBefore() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore;
-  }
-
-  bool IsGeneratedContentContainerForAfter() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentafter;
-  }
-
-  bool IsGeneratedContentContainerForMarker() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentmarker;
-  }
-
   
 
 
@@ -282,15 +277,7 @@ class nsIContent : public nsINode {
 
 
 
-
-
-
-
-
-
-
-  bool IsFocusable(int32_t* aTabIndex = nullptr, bool aWithMouse = false);
-  virtual bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse);
+  virtual Focusable IsFocusableWithoutStyle(bool aWithMouse = false);
 
   
   mozilla::dom::Element* GetFocusDelegate(bool aWithMouse) const;
@@ -373,17 +360,6 @@ class nsIContent : public nsINode {
 
 
   inline nsIContent* GetFlattenedTreeParent() const;
-
-  
-
-
-
-
-
-
-
-  mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
-      const nsINode* aPossibleChild) const;
 
  protected:
   
