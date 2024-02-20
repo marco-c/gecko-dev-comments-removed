@@ -37,7 +37,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["getCurrentZoom", "isWindowIncluded", "isFrameWithChildTarget"],
+  ["isWindowIncluded", "isFrameWithChildTarget"],
   "resource://devtools/shared/layout/utils.js",
   true
 );
@@ -1084,10 +1084,6 @@ class AccessibleWalkerActor extends Actor {
     return accessible;
   }
 
-  get pixelRatio() {
-    return this.rootWin.devicePixelRatio;
-  }
-
   
 
 
@@ -1102,16 +1098,15 @@ class AccessibleWalkerActor extends Actor {
     const win = target.ownerGlobal;
     
     const docAcc = this.getRawAccessibleFor(win.document);
-    const zoom = this.isXUL ? 1 : getCurrentZoom(win);
-    const scale = this.pixelRatio / zoom;
     
     
     
     const popup = win.isChromeWindow ? target.closest("panel") : null;
     const containerAcc = popup ? this.getRawAccessibleFor(popup) : docAcc;
+    const { devicePixelRatio } = this.rootWin;
     const rawAccessible = containerAcc.getDeepestChildAtPointInProcess(
-      event.screenX * scale,
-      event.screenY * scale
+      event.screenX * devicePixelRatio,
+      event.screenY * devicePixelRatio
     );
     return this.attachAccessible(rawAccessible, docAcc);
   }
