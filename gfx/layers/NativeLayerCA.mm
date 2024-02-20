@@ -1868,6 +1868,14 @@ bool NativeLayerCA::Representation::ApplyChanges(
     if (aSpecializeVideo) {
       
       
+      
+      
+      if (layerNeedsInitialization) {
+        mContentCALayer.contents = (id)surface;
+      }
+
+      
+      
       bool isEnqueued = EnqueueSurface(surface);
       if (!isEnqueued) {
         
