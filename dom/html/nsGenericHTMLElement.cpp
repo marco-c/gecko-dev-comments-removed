@@ -739,7 +739,10 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
       
       
       if (GetPopoverData()) {
-        OwnerDoc()->RemovePopoverFromTopLayer(*this);
+        if (auto* dialog = HTMLDialogElement::FromNode(this);
+            !dialog || !dialog->IsInTopLayer()) {
+          OwnerDoc()->RemovePopoverFromTopLayer(*this);
+        }
       }
       ClearPopoverData();
       RemoveStates(ElementState::POPOVER_OPEN);
