@@ -142,25 +142,19 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
 }
 
 already_AddRefed<PermissionStatus> Permissions::ParseSetParameters(
-    JSContext* aCx, JS::Handle<JSObject*> aParameters, ErrorResult& aRv) {
+    JSContext* aCx, const PermissionSetParameters& aParameters,
+    ErrorResult& aRv) {
   
   
   
   
-  JS::Rooted<JS::Value> parameters(aCx, JS::ObjectValue(*aParameters));
-  RootedDictionary<PermissionSetParameters> parametersDict(aCx);
-  if (!parametersDict.Init(aCx, parameters)) {
-    aRv.MightThrowJSException();
-    aRv.StealExceptionFromJSContext(aCx);
-    return nullptr;
-  }
-
-  
-  JS::Rooted<JSObject*> rootDesc(aCx, parametersDict.mDescriptor);
 
   
   
   
+
+  
+  JS::Rooted<JSObject*> rootDesc(aCx, aParameters.mDescriptor);
 
   
   
@@ -174,7 +168,7 @@ already_AddRefed<PermissionStatus> Permissions::ParseSetParameters(
   }
 
   
-  status->SetState(parametersDict.mState);
+  status->SetState(aParameters.mState);
 
   return status.forget();
 }

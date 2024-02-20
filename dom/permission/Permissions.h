@@ -19,6 +19,7 @@ namespace dom {
 
 class Promise;
 class PermissionStatus;
+struct PermissionSetParameters;
 
 class Permissions final : public nsISupports, public nsWrapperCache {
  public:
@@ -39,7 +40,8 @@ class Permissions final : public nsISupports, public nsWrapperCache {
   
   
   already_AddRefed<PermissionStatus> ParseSetParameters(
-      JSContext* aCx, JS::Handle<JSObject*> aParameters, ErrorResult& aRv);
+      JSContext* aCx, const PermissionSetParameters& aParameters,
+      ErrorResult& aRv);
 
  private:
   ~Permissions();
