@@ -3381,6 +3381,9 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       return GetToplevelWidget();
 
     case NS_NATIVE_WINDOW_WEBRTC_DEVICE_ID:
+      if (!mGdkWindow) {
+        return nullptr;
+      }
 #ifdef MOZ_X11
       if (GdkIsX11Display()) {
         return (void*)GDK_WINDOW_XID(gdk_window_get_toplevel(mGdkWindow));
@@ -4259,7 +4262,7 @@ static bool IsBogusLeaveNotifyEvent(GdkWindow* aWindow,
     }
   }();
 
-  if (!shouldCheck) {
+  if (!shouldCheck || !aWindow) {
     return false;
   }
   GdkDevice* pointer = GdkGetPointer();
@@ -4449,26 +4452,29 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
 
   if (mWindowShouldStartDragging) {
     mWindowShouldStartDragging = false;
-    
-    GdkWindow* gdk_window = gdk_window_get_toplevel(mGdkWindow);
-    MOZ_ASSERT(gdk_window, "gdk_window_get_toplevel should not return null");
+    GdkWindow* dragWindow = nullptr;
 
-    bool canDrag = true;
+    
+    if (mGdkWindow) {
+      dragWindow = gdk_window_get_toplevel(mGdkWindow);
+      MOZ_ASSERT(dragWindow, "gdk_window_get_toplevel should not return null");
+    }
+
 #ifdef MOZ_X11
-    if (GdkIsX11Display()) {
+    if (dragWindow && GdkIsX11Display()) {
       
       
       
-      GdkScreen* screen = gdk_window_get_screen(gdk_window);
+      GdkScreen* screen = gdk_window_get_screen(dragWindow);
       GdkAtom atom = gdk_atom_intern("_NET_WM_MOVERESIZE", FALSE);
       if (!gdk_x11_screen_supports_net_wm_hint(screen, atom)) {
-        canDrag = false;
+        dragWindow = nullptr;
       }
     }
 #endif
 
-    if (canDrag) {
-      gdk_window_begin_move_drag(gdk_window, 1, aEvent->x_root, aEvent->y_root,
+    if (dragWindow) {
+      gdk_window_begin_move_drag(dragWindow, 1, aEvent->x_root, aEvent->y_root,
                                  aEvent->time);
       return;
     }
@@ -5607,17 +5613,19 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       
       if (mWindowShouldStartDragging) {
         mWindowShouldStartDragging = false;
-        GdkWindow* gdk_window = gdk_window_get_toplevel(mGdkWindow);
-        MOZ_ASSERT(gdk_window,
-                   "gdk_window_get_toplevel should not return null");
+        if (mGdkWindow) {
+          GdkWindow* gdk_window = gdk_window_get_toplevel(mGdkWindow);
+          MOZ_ASSERT(gdk_window,
+                     "gdk_window_get_toplevel should not return null");
 
-        LOG("  start window dragging window\n");
-        gdk_window_begin_move_drag(gdk_window, 1, aEvent->x_root,
-                                   aEvent->y_root, aEvent->time);
+          LOG("  start window dragging window\n");
+          gdk_window_begin_move_drag(gdk_window, 1, aEvent->x_root,
+                                     aEvent->y_root, aEvent->time);
 
-        
-        
-        msg = eTouchCancel;
+          
+          
+          msg = eTouchCancel;
+        }
       }
       break;
     case GDK_TOUCH_END:
