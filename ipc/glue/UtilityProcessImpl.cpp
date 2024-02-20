@@ -7,6 +7,7 @@
 
 #include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/ProcInfo.h"
 
 #if defined(XP_WIN)
 #  include "nsExceptionHandler.h"
@@ -89,6 +90,10 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
   
   
   LoadLibraryOrCrash(L"winmm.dll");
+
+  
+  
+  GetCpuFrequencyMHz();
 
   if (*sandboxingKind == SandboxingKind::GENERIC_UTILITY) {
     

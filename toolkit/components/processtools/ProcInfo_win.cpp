@@ -32,16 +32,8 @@ static uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
   return usec.QuadPart * 100;
 }
 
-int GetCycleTimeFrequencyMHz() {
+int GetCpuFrequencyMHz() {
   static const int frequency = []() {
-    
-    
-    
-    
-    if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
-      return 0;
-    }
-
     
     HKEY key;
     static const WCHAR keyName[] =
@@ -59,6 +51,22 @@ int GetCycleTimeFrequencyMHz() {
     }
 
     return 0;
+  }();
+
+  return frequency;
+}
+
+int GetCycleTimeFrequencyMHz() {
+  static const int frequency = []() {
+    
+    
+    
+    
+    if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
+      return 0;
+    }
+
+    return GetCpuFrequencyMHz();
   }();
 
   return frequency;
