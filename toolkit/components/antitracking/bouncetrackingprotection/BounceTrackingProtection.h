@@ -8,6 +8,7 @@
 #include "mozilla/MozPromise.h"
 #include "nsIBounceTrackingProtection.h"
 #include "nsIClearDataService.h"
+#include "nsTHashMap.h"
 
 class nsIPrincipal;
 class nsITimer;
@@ -15,9 +16,6 @@ class nsITimer;
 namespace mozilla {
 
 class BounceTrackingState;
-class BounceTrackingStateGlobal;
-class BounceTrackingProtectionStorage;
-class OriginAttributes;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
 
@@ -43,19 +41,23 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   ~BounceTrackingProtection() = default;
 
   
-  nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
+  
+  
+  nsTHashMap<nsCStringHashKey, PRTime> mUserActivation{};
 
   
-  RefPtr<BounceTrackingProtectionStorage> mStorage;
+  
+  
+  
+  nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers{};
+
+  
+  nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
 
   
   using PurgeBounceTrackersMozPromise =
       MozPromise<nsTArray<nsCString>, nsresult, true>;
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
-
-  nsresult PurgeBounceTrackersForStateGlobal(
-      BounceTrackingStateGlobal* aStateGlobal,
-      const OriginAttributes& aOriginAttributes);
 
   
   using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;

@@ -8,8 +8,6 @@
 #define mozilla_BounceTrackingState_h
 
 #include "mozilla/WeakPtr.h"
-#include "mozilla/OriginAttributes.h"
-#include "nsIPrincipal.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsStringFwd.h"
 #include "nsIWebProgressListener.h"
@@ -50,10 +48,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   static void ResetAll();
-  static void ResetAllForOriginAttributes(
-      const OriginAttributes& aOriginAttributes);
-  static void ResetAllForOriginAttributesPattern(
-      const OriginAttributesPattern& aPattern);
 
   BounceTrackingRecord* GetBounceTrackingRecord();
 
@@ -94,8 +88,6 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   uint64_t GetBrowserId() { return mBrowserId; }
 
-  const OriginAttributes& OriginAttributesRef();
-
   
   nsCString Describe();
 
@@ -106,9 +98,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   uint64_t mBrowserId{};
 
   
-  OriginAttributes mOriginAttributes;
-
-  
   RefPtr<BounceTrackingProtection> mBounceTrackingProtection;
 
   
@@ -117,12 +106,6 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   RefPtr<nsITimer> mClientBounceDetectionTimeout;
-
-  
-  
-  
-  static void Reset(const OriginAttributes* aOriginAttributes,
-                    const OriginAttributesPattern* aPattern);
 
   
   

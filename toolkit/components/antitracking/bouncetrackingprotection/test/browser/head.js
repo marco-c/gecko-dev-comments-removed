@@ -146,130 +146,74 @@ async function waitForRecordBounces(browser) {
 
 
 
-
-
-
-
-
-
 async function runTestBounce(options = {}) {
   let {
     bounceType,
     setState = null,
     expectCandidate = true,
     expectPurge = true,
-    originAttributes = {},
-    postBounceCallback = () => {},
   } = options;
   info(`runTestBounce ${JSON.stringify(options)}`);
 
   Assert.equal(
-    bounceTrackingProtection.testGetBounceTrackerCandidateHosts(
-      originAttributes
-    ).length,
+    bounceTrackingProtection.bounceTrackerCandidateHosts.length,
     0,
     "No bounce tracker hosts initially."
   );
   Assert.equal(
-    bounceTrackingProtection.testGetUserActivationHosts(originAttributes)
-      .length,
+    bounceTrackingProtection.userActivationHosts.length,
     0,
     "No user activation hosts initially."
   );
 
-  let win = window;
-  let { privateBrowsingId, userContextId } = originAttributes;
-  let usePrivateWindow =
-    privateBrowsingId != null &&
-    privateBrowsingId !=
-      Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID;
-  if (userContextId != null && userContextId > 0 && usePrivateWindow) {
-    throw new Error("userContextId is not supported in private windows");
-  }
+  await BrowserTestUtils.withNewTab(
+    getBaseUrl(ORIGIN_A) + "file_start.html",
+    async browser => {
+      let promiseRecordBounces = waitForRecordBounces(browser);
 
-  if (usePrivateWindow) {
-    win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
-  }
+      
+      let targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html");
 
-  let tab = win.gBrowser.addTab(getBaseUrl(ORIGIN_A) + "file_start.html", {
-    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    userContextId,
-  });
-  win.gBrowser.selectedTab = tab;
+      
+      await navigateLinkClick(
+        browser,
+        getBounceURL({ bounceType, targetURL, setState })
+      );
 
-  let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
+      
+      await BrowserTestUtils.browserLoaded(browser, false, targetURL);
 
-  let promiseRecordBounces = waitForRecordBounces(browser);
+      
+      
+      
+      
+      await navigateLinkClick(
+        browser,
+        new URL(getBaseUrl(ORIGIN_C) + "file_start.html")
+      );
 
-  
-  let targetURL = new URL(getBaseUrl(ORIGIN_B) + "file_start.html");
+      await promiseRecordBounces;
 
-  
-  await navigateLinkClick(
-    browser,
-    getBounceURL({ bounceType, targetURL, setState })
+      Assert.deepEqual(
+        bounceTrackingProtection.bounceTrackerCandidateHosts,
+        expectCandidate ? [SITE_TRACKER] : [],
+        `Should ${
+          expectCandidate ? "" : "not "
+        }have identified ${SITE_TRACKER} as a bounce tracker.`
+      );
+      Assert.deepEqual(
+        bounceTrackingProtection.userActivationHosts.sort(),
+        [SITE_A, SITE_B].sort(),
+        "Should only have user activation for sites where we clicked links."
+      );
+
+      Assert.deepEqual(
+        await bounceTrackingProtection.testRunPurgeBounceTrackers(),
+        expectPurge ? [SITE_TRACKER] : [],
+        `Should ${expectPurge ? "" : "not "}purge state for ${SITE_TRACKER}.`
+      );
+
+      bounceTrackingProtection.reset();
+    }
   );
-
-  
-  await BrowserTestUtils.browserLoaded(browser, false, targetURL);
-
-  
-  
-  
-  
-  await navigateLinkClick(
-    browser,
-    new URL(getBaseUrl(ORIGIN_C) + "file_start.html")
-  );
-
-  await promiseRecordBounces;
-
-  Assert.deepEqual(
-    bounceTrackingProtection.testGetBounceTrackerCandidateHosts(
-      originAttributes
-    ),
-    expectCandidate ? [SITE_TRACKER] : [],
-    `Should ${
-      expectCandidate ? "" : "not "
-    }have identified ${SITE_TRACKER} as a bounce tracker.`
-  );
-  Assert.deepEqual(
-    bounceTrackingProtection
-      .testGetUserActivationHosts(originAttributes)
-      .sort(),
-    [SITE_A, SITE_B].sort(),
-    "Should only have user activation for sites where we clicked links."
-  );
-
-  
-  await postBounceCallback();
-
-  Assert.deepEqual(
-    await bounceTrackingProtection.testRunPurgeBounceTrackers(),
-    expectPurge ? [SITE_TRACKER] : [],
-    `Should ${expectPurge ? "" : "not "}purge state for ${SITE_TRACKER}.`
-  );
-
-  
-  BrowserTestUtils.removeTab(tab);
-  if (usePrivateWindow) {
-    await BrowserTestUtils.closeWindow(win);
-
-    info(
-      "Closing the last PBM window should trigger a purge of all PBM state."
-    );
-    Assert.ok(
-      !bounceTrackingProtection.testGetBounceTrackerCandidateHosts(
-        originAttributes
-      ).length,
-      "No bounce tracker hosts after closing private window."
-    );
-    Assert.ok(
-      !bounceTrackingProtection.testGetUserActivationHosts(originAttributes)
-        .length,
-      "No user activation hosts after closing private window."
-    );
-  }
-  bounceTrackingProtection.clearAll();
 }
