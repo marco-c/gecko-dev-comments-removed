@@ -577,7 +577,7 @@ void NodeController::OnBroadcast(const NodeName& aFromNode,
     
     
     
-    auto clone = event->Clone();
+    auto clone = event->CloneForBroadcast();
     if (!clone) {
       NODECONTROLLER_WARNING("Attempt to broadcast unsupported message");
       break;
