@@ -10,6 +10,8 @@
 #include "mpi-priv.h"
 #include "mplogic.h"
 
+#include <assert.h>
+
 #if defined(__arm__) && \
     ((defined(__thumb__) && !defined(__thumb2__)) || defined(__ARM_ARCH_3__))
 
@@ -809,8 +811,11 @@ CLEANUP:
 
 
 
+
+
+
 mp_err
-mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
+s_mp_mulg(const mp_int *a, const mp_int *b, mp_int *c, int constantTime)
 {
     mp_digit *pb;
     mp_int tmp;
@@ -846,7 +851,14 @@ mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
         goto CLEANUP;
 
 #ifdef NSS_USE_COMBA
-    if ((MP_USED(a) == MP_USED(b)) && IS_POWER_OF_2(MP_USED(b))) {
+    
+
+
+
+
+
+
+    if (!constantTime && (MP_USED(a) == MP_USED(b)) && IS_POWER_OF_2(MP_USED(b))) {
         if (MP_USED(a) == 4) {
             s_mp_mul_comba_4(a, b, c);
             goto CLEANUP;
@@ -876,13 +888,15 @@ mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
         mp_digit b_i = *pb++;
 
         
-        if (b_i)
+        if (constantTime || b_i)
             s_mpv_mul_d_add(MP_DIGITS(a), useda, b_i, MP_DIGITS(c) + ib);
         else
             MP_DIGIT(c, ib + useda) = b_i;
     }
 
-    s_mp_clamp(c);
+    if (!constantTime) {
+        s_mp_clamp(c);
+    }
 
     if (SIGN(a) == SIGN(b) || s_mp_cmp_d(c, 0) == MP_EQ)
         SIGN(c) = ZPOS;
@@ -891,6 +905,50 @@ mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
 
 CLEANUP:
     mp_clear(&tmp);
+    return res;
+} 
+
+
+
+
+
+
+
+
+
+
+
+mp_err
+mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
+{
+    return s_mp_mulg(a, b, c, 0);
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+mp_err
+mp_mulCT(mp_int *a, mp_int *b, mp_int *c, mp_size setSize)
+{
+    mp_err res;
+
+    
+
+
+
+    MP_CHECKOK(s_mp_pad(a, setSize));
+    MP_CHECKOK(s_mp_pad(b, setSize));
+    MP_CHECKOK(s_mp_pad(c, 2 * setSize));
+    MP_CHECKOK(s_mp_mulg(a, b, c, 1));
+CLEANUP:
     return res;
 } 
 
@@ -1275,6 +1333,138 @@ mp_mod(const mp_int *a, const mp_int *m, mp_int *c)
 
 
 
+mp_digit
+s_mp_subCT_d(mp_digit a, mp_digit b, mp_digit borrow, mp_digit *ret)
+{
+    *ret = a - b - borrow;
+    return MP_CT_LTU(a, *ret) | (MP_CT_EQ(a, *ret) & borrow);
+} 
+
+
+
+
+
+
+
+
+mp_err
+mp_subCT(const mp_int *a, mp_int *b, mp_int *ret, mp_digit *borrow)
+{
+    mp_size used_a = MP_USED(a);
+    mp_size i;
+    mp_err res;
+
+    MP_CHECKOK(s_mp_pad(b, used_a));
+    MP_CHECKOK(s_mp_pad(ret, used_a));
+    *borrow = 0;
+    for (i = 0; i < used_a; i++) {
+        *borrow = s_mp_subCT_d(MP_DIGIT(a, i), MP_DIGIT(b, i), *borrow,
+                               &MP_DIGIT(ret, i));
+    }
+
+    res = MP_OKAY;
+CLEANUP:
+    return res;
+} 
+
+
+
+
+
+
+
+
+mp_err
+mp_selectCT(mp_digit cond, const mp_int *a, const mp_int *b, mp_int *ret)
+{
+    mp_size used_a = MP_USED(a);
+    mp_err res;
+    mp_size i;
+
+    cond *= MP_DIGIT_MAX;
+
+    
+
+
+    if (used_a != MP_USED(b)) {
+        return MP_BADARG;
+    }
+
+    MP_CHECKOK(s_mp_pad(ret, used_a));
+    for (i = 0; i < used_a; i++) {
+        MP_DIGIT(ret, i) = MP_CT_SEL_DIGIT(cond, MP_DIGIT(a, i), MP_DIGIT(b, i));
+    }
+    res = MP_OKAY;
+CLEANUP:
+    return res;
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mp_err
+mp_reduceCT(const mp_int *a, const mp_int *m, mp_digit n0i, mp_int *c)
+{
+    mp_size used_m = MP_USED(m);
+    mp_size used_c = used_m * 2 + 1;
+    mp_digit *m_digits, *c_digits;
+    mp_size i;
+    mp_digit borrow, carry;
+    mp_err res;
+    mp_int sub;
+
+    MP_DIGITS(&sub) = 0;
+    MP_CHECKOK(mp_init_size(&sub, used_m));
+
+    if (a != c) {
+        MP_CHECKOK(mp_copy(a, c));
+    }
+    MP_CHECKOK(s_mp_pad(c, used_c));
+    m_digits = MP_DIGITS(m);
+    c_digits = MP_DIGITS(c);
+    for (i = 0; i < used_m; i++) {
+        mp_digit m_i = MP_DIGIT(c, i) * n0i;
+        s_mpv_mul_d_add_propCT(m_digits, used_m, m_i, c_digits++, used_c--);
+    }
+    s_mp_rshd(c, used_m);
+    
+
+
+    carry = MP_DIGIT(c, used_m);
+    MP_DIGIT(c, used_m) = 0;
+    MP_USED(c) = used_m;
+    
+
+
+    MP_CHECKOK(mp_subCT(c, (mp_int *)m, &sub, &borrow));
+
+    
+    MP_CHECKOK(mp_selectCT(borrow ^ carry, c, &sub, c));
+    res = MP_OKAY;
+CLEANUP:
+    mp_clear(&sub);
+    return res;
+} 
+
+
+
+
+
+
+
+
+
+
 mp_err
 mp_mod_d(const mp_int *a, mp_digit d, mp_digit *c)
 {
@@ -1377,6 +1567,37 @@ mp_mulmod(const mp_int *a, const mp_int *b, const mp_int *m, mp_int *c)
     if ((res = mp_mul(a, b, c)) != MP_OKAY)
         return res;
     if ((res = mp_mod(c, m, c)) != MP_OKAY)
+        return res;
+
+    return MP_OKAY;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mp_err
+mp_mulmontmodCT(mp_int *a, mp_int *b, const mp_int *m, mp_digit n0i,
+                mp_int *c)
+{
+    mp_err res;
+
+    ARGCHK(a != NULL && b != NULL && m != NULL && c != NULL, MP_BADARG);
+
+    if ((res = mp_mulCT(a, b, c, MP_USED(m))) != MP_OKAY)
+        return res;
+
+    if ((res = mp_reduceCT(c, m, n0i, c)) != MP_OKAY)
         return res;
 
     return MP_OKAY;
@@ -3941,14 +4162,62 @@ s_mp_mul(mp_int *a, const mp_int *b)
         a1b0 = (a >> MP_HALF_DIGIT_BIT) * (b & MP_HALF_DIGIT_MAX); \
         a1b0 += a0b1;                                              \
         Phi += a1b0 >> MP_HALF_DIGIT_BIT;                          \
-        if (a1b0 < a0b1)                                           \
-            Phi += MP_HALF_RADIX;                                  \
+        Phi += (MP_CT_LTU(a1b0, a0b1)) << MP_HALF_DIGIT_BIT;       \
         a1b0 <<= MP_HALF_DIGIT_BIT;                                \
         Plo += a1b0;                                               \
-        if (Plo < a1b0)                                            \
-            ++Phi;                                                 \
+        Phi += MP_CT_LTU(Plo, a1b0);                               \
     }
 #endif
+
+
+
+
+void
+s_mpv_mul_d_add_propCT(const mp_digit *a, mp_size a_len, mp_digit b,
+                       mp_digit *c, mp_size c_len)
+{
+#if !defined(MP_NO_MP_WORD) && !defined(MP_NO_MUL_WORD)
+    mp_digit d = 0;
+
+    c_len -= a_len;
+    
+    while (a_len--) {
+        mp_word w = ((mp_word)b * *a++) + *c + d;
+        *c++ = ACCUM(w);
+        d = CARRYOUT(w);
+    }
+
+    
+    while (c_len--) {
+        mp_word w = (mp_word)*c + d;
+        *c++ = ACCUM(w);
+        d = CARRYOUT(w);
+    }
+#else
+    mp_digit carry = 0;
+    c_len -= a_len;
+    while (a_len--) {
+        mp_digit a_i = *a++;
+        mp_digit a0b0, a1b1;
+        MP_MUL_DxD(a_i, b, a1b1, a0b0);
+
+        a0b0 += carry;
+        a1b1 += MP_CT_LTU(a0b0, carry);
+        a0b0 += a_i = *c;
+        a1b1 += MP_CT_LTU(a0b0, a_i);
+
+        *c++ = a0b0;
+        carry = a1b1;
+    }
+    
+    while (c_len--) {
+        mp_digit c_i = *c;
+        carry += c_i;
+        *c++ = carry;
+        carry = MP_CT_LTU(carry, c_i);
+    }
+#endif
+}
 
 #if !defined(MP_ASSEMBLY_MULTIPLY)
 
@@ -3974,8 +4243,7 @@ s_mpv_mul_d(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
         MP_MUL_DxD(a_i, b, a1b1, a0b0);
 
         a0b0 += carry;
-        if (a0b0 < carry)
-            ++a1b1;
+        a1b1 += MP_CT_LTU(a0b0, carry);
         *c++ = a0b0;
         carry = a1b1;
     }
@@ -4007,11 +4275,9 @@ s_mpv_mul_d_add(const mp_digit *a, mp_size a_len, mp_digit b,
         MP_MUL_DxD(a_i, b, a1b1, a0b0);
 
         a0b0 += carry;
-        if (a0b0 < carry)
-            ++a1b1;
+        a1b1 += MP_CT_LTU(a0b0, carry);
         a0b0 += a_i = *c;
-        if (a0b0 < a_i)
-            ++a1b1;
+        a1b1 += MP_CT_LTU(a0b0, a_i);
         *c++ = a0b0;
         carry = a1b1;
     }

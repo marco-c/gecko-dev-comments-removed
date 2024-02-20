@@ -44,8 +44,10 @@ static SECStatus tls13_HandleServerKeyShare(sslSocket *ss);
 static SECStatus tls13_HandleEncryptedExtensions(sslSocket *ss, PRUint8 *b,
                                                  PRUint32 length);
 static SECStatus tls13_SendCertificate(sslSocket *ss);
-static SECStatus tls13_HandleCertificate(
+static SECStatus tls13_HandleCertificateDecode(
     sslSocket *ss, PRUint8 *b, PRUint32 length);
+static SECStatus tls13_HandleCertificate(
+    sslSocket *ss, PRUint8 *b, PRUint32 length, PRBool alreadyHashed);
 static SECStatus tls13_ReinjectHandshakeTranscript(sslSocket *ss);
 static SECStatus tls13_SendCertificateRequest(sslSocket *ss);
 static SECStatus tls13_HandleCertificateRequest(sslSocket *ss, PRUint8 *b,
@@ -1005,6 +1007,48 @@ SSLExp_KeyUpdate(PRFileDesc *fd, PRBool requestUpdate)
     return rv;
 }
 
+SECStatus
+SSLExp_SetCertificateCompressionAlgorithm(PRFileDesc *fd, SSLCertificateCompressionAlgorithm alg)
+{
+    sslSocket *ss = ssl_FindSocket(fd);
+    if (!ss) {
+        return SECFailure; 
+    }
+
+    ssl_GetSSL3HandshakeLock(ss);
+    if (ss->ssl3.supportedCertCompressionAlgorithmsCount == MAX_SUPPORTED_CERTIFICATE_COMPRESSION_ALGS) {
+        goto loser;
+    }
+
+    
+    if (alg.id == 0) {
+        goto loser;
+    }
+
+    if (alg.encode == NULL && alg.decode == NULL) {
+        goto loser;
+    }
+
+    
+    for (int i = 0; i < ss->ssl3.supportedCertCompressionAlgorithmsCount; i++) {
+        if (ss->ssl3.supportedCertCompressionAlgorithms[i].id == alg.id) {
+            goto loser;
+        }
+    }
+
+    PORT_Memcpy(&ss->ssl3.supportedCertCompressionAlgorithms
+                     [ss->ssl3.supportedCertCompressionAlgorithmsCount],
+                &alg, sizeof(alg));
+    ss->ssl3.supportedCertCompressionAlgorithmsCount += 1;
+    ssl_ReleaseSSL3HandshakeLock(ss);
+    return SECSuccess;
+
+loser:
+    PORT_SetError(SEC_ERROR_INVALID_ARGS);
+    ssl_ReleaseSSL3HandshakeLock(ss);
+    return SECFailure;
+}
+
 
 
 
@@ -1162,8 +1206,9 @@ tls13_HandlePostHelloHandshakeMessage(sslSocket *ss, PRUint8 *b, PRUint32 length
     
     switch (ss->ssl3.hs.msg_type) {
         case ssl_hs_certificate:
-            return tls13_HandleCertificate(ss, b, length);
-
+            return tls13_HandleCertificate(ss, b, length, PR_FALSE);
+        case ssl_hs_compressed_certificate:
+            return tls13_HandleCertificateDecode(ss, b, length);
         case ssl_hs_certificate_request:
             return tls13_HandleCertificateRequest(ss, b, length);
 
@@ -3492,6 +3537,133 @@ loser:
     return SECFailure;
 }
 
+static PRBool
+tls13_FindCompressionAlgAndCheckIfSupportsEncoding(sslSocket *ss)
+{
+    PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    for (int j = 0; j < ss->ssl3.supportedCertCompressionAlgorithmsCount; j++) {
+        if (ss->ssl3.supportedCertCompressionAlgorithms[j].id == ss->xtnData.compressionAlg) {
+            if (ss->ssl3.supportedCertCompressionAlgorithms[j].encode != NULL) {
+                return PR_TRUE;
+            }
+            return PR_FALSE;
+        }
+    }
+
+    return PR_FALSE;
+}
+
+static SECStatus
+tls13_FindCompressionAlgAndEncodeCertificate(
+    sslSocket *ss, SECItem *certificateToEncode, SECItem *encodedCertificate)
+{
+    PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    SECStatus rv = SECFailure;
+    for (int j = 0; j < ss->ssl3.supportedCertCompressionAlgorithmsCount; j++) {
+        if (ss->ssl3.supportedCertCompressionAlgorithms[j].id == ss->xtnData.compressionAlg &&
+            ss->ssl3.supportedCertCompressionAlgorithms[j].encode != NULL) {
+            rv = ss->ssl3.supportedCertCompressionAlgorithms[j].encode(
+                certificateToEncode, encodedCertificate);
+            return rv;
+        }
+    }
+
+    PORT_SetError(SEC_ERROR_CERTIFICATE_COMPRESSION_ALGORITHM_NOT_SUPPORTED);
+    return SECFailure;
+}
+
+static SECStatus
+tls13_SendCompressedCertificate(sslSocket *ss, sslBuffer *bufferCertificate)
+{
+    
+    
+
+
+
+
+
+    SECItem encodedCertificate = { siBuffer, NULL, 0 };
+    SECItem certificateToEncode = { siBuffer, NULL, 0 };
+    SECStatus rv = SECFailure;
+
+    PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    SSL_TRC(30, ("%d: TLS13[%d]: %s is encoding the certificate using the %s compression algorithm",
+                 SSL_GETPID(), ss->fd, SSL_ROLE(ss),
+                 ssl3_mapCertificateCompressionAlgorithmToName(ss, ss->xtnData.compressionAlg)));
+
+    PRINT_BUF(50, (NULL, "The certificate before encoding:",
+                   bufferCertificate->buf, bufferCertificate->len));
+
+    PRUint32 lengthUnencodedMessage = bufferCertificate->len;
+    rv = ssl3_CopyToSECItem(bufferCertificate, &certificateToEncode);
+    if (rv != SECSuccess) {
+        SSL_TRC(50, ("%d: TLS13[%d]: %s has failed encoding the certificate.",
+                     SSL_GETPID(), ss->fd, SSL_ROLE(ss)));
+        goto loser; 
+    }
+
+    rv = tls13_FindCompressionAlgAndEncodeCertificate(ss, &certificateToEncode,
+                                                      &encodedCertificate);
+    if (rv != SECSuccess) {
+        SSL_TRC(50, ("%d: TLS13[%d]: %s has failed encoding the certificate.",
+                     SSL_GETPID(), ss->fd, SSL_ROLE(ss)));
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        goto loser; 
+    }
+
+    
+
+
+
+
+
+
+
+    if (encodedCertificate.len < 1) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        goto loser;
+    }
+
+    rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_compressed_certificate,
+                                    encodedCertificate.len + 2 + 3 + 3);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    rv = ssl3_AppendHandshakeNumber(ss, ss->xtnData.compressionAlg, 2);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    rv = ssl3_AppendHandshakeNumber(ss, lengthUnencodedMessage, 3);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    PRINT_BUF(30, (NULL, "The encoded certificate: ",
+                   encodedCertificate.data, encodedCertificate.len));
+
+    rv = ssl3_AppendHandshakeVariable(ss, encodedCertificate.data, encodedCertificate.len, 3);
+    if (rv != SECSuccess) {
+        goto loser; 
+    }
+
+    SECITEM_FreeItem(&certificateToEncode, PR_FALSE);
+    SECITEM_FreeItem(&encodedCertificate, PR_FALSE);
+    return SECSuccess;
+
+loser:
+    SECITEM_FreeItem(&certificateToEncode, PR_FALSE);
+    SECITEM_FreeItem(&encodedCertificate, PR_FALSE);
+    return SECFailure;
+}
+
 
 
 
@@ -3514,6 +3686,7 @@ tls13_SendCertificate(sslSocket *ss)
     int i;
     SECItem context = { siBuffer, NULL, 0 };
     sslBuffer extensionBuf = SSL_BUFFER_EMPTY;
+    sslBuffer bufferCertificate = SSL_BUFFER_EMPTY;
 
     SSL_TRC(3, ("%d: TLS1.3[%d]: send certificate handshake",
                 SSL_GETPID(), ss->fd));
@@ -3540,6 +3713,7 @@ tls13_SendCertificate(sslSocket *ss)
         PORT_Assert(ss->ssl3.hs.clientCertRequested);
         context = ss->xtnData.certReqContext;
     }
+
     if (certChain) {
         for (i = 0; i < certChain->len; i++) {
             
@@ -3556,51 +3730,66 @@ tls13_SendCertificate(sslSocket *ss)
         certChainLen += SSL_BUFFER_LEN(&extensionBuf);
     }
 
-    rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_certificate,
-                                    1 + context.len + 3 + certChainLen);
-    if (rv != SECSuccess) {
-        return SECFailure; 
-    }
-
-    rv = ssl3_AppendHandshakeVariable(ss, context.data,
-                                      context.len, 1);
+    rv = sslBuffer_AppendVariable(&bufferCertificate, context.data, context.len, 1);
     if (rv != SECSuccess) {
         goto loser; 
     }
 
-    rv = ssl3_AppendHandshakeNumber(ss, certChainLen, 3);
+    rv = sslBuffer_AppendNumber(&bufferCertificate, certChainLen, 3);
     if (rv != SECSuccess) {
         goto loser; 
     }
+
     if (certChain) {
         for (i = 0; i < certChain->len; i++) {
-            rv = ssl3_AppendHandshakeVariable(ss, certChain->certs[i].data,
-                                              certChain->certs[i].len, 3);
+            rv = sslBuffer_AppendVariable(&bufferCertificate, certChain->certs[i].data,
+                                          certChain->certs[i].len, 3);
             if (rv != SECSuccess) {
                 goto loser; 
             }
 
             if (i) {
                 
-                rv = ssl3_AppendHandshakeNumber(ss, 0, 2);
+                rv = sslBuffer_AppendNumber(&bufferCertificate, 0, 2);
                 if (rv != SECSuccess) {
                     goto loser; 
                 }
                 continue;
             }
 
-            
-            rv = ssl3_AppendBufferToHandshakeVariable(ss, &extensionBuf, 2);
+            rv = sslBuffer_AppendBufferVariable(&bufferCertificate, &extensionBuf, 2);
             if (rv != SECSuccess) {
                 goto loser; 
             }
         }
     }
 
+    
+
+
+    if (ss->xtnData.compressionAlg == 0 || !tls13_FindCompressionAlgAndCheckIfSupportsEncoding(ss)) {
+        rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_certificate,
+                                        1 + context.len + 3 + certChainLen);
+        if (rv != SECSuccess) {
+            goto loser; 
+        }
+        rv = ssl3_AppendBufferToHandshake(ss, &bufferCertificate);
+        if (rv != SECSuccess) {
+            goto loser; 
+        }
+    } else {
+        rv = tls13_SendCompressedCertificate(ss, &bufferCertificate);
+        if (rv != SECSuccess) {
+            goto loser; 
+        }
+    }
+
+    sslBuffer_Clear(&bufferCertificate);
     sslBuffer_Clear(&extensionBuf);
     return SECSuccess;
 
 loser:
+    sslBuffer_Clear(&bufferCertificate);
     sslBuffer_Clear(&extensionBuf);
     return SECFailure;
 }
@@ -3634,7 +3823,6 @@ tls13_HandleCertificateEntry(sslSocket *ss, SECItem *data, PRBool first,
         if (rv != SECSuccess) {
             return SECFailure;
         }
-
         
     }
 
@@ -3660,21 +3848,10 @@ tls13_HandleCertificateEntry(sslSocket *ss, SECItem *data, PRBool first,
     return SECSuccess;
 }
 
-
-
-
-
 static SECStatus
-tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length)
+tls13_EnsureCerticateExpected(sslSocket *ss)
 {
-    SECStatus rv;
-    SECItem context = { siBuffer, NULL, 0 };
-    SECItem certList;
-    PRBool first = PR_TRUE;
-    ssl3CertNode *lastCert = NULL;
-
-    SSL_TRC(3, ("%d: TLS13[%d]: handle certificate handshake",
-                SSL_GETPID(), ss->fd));
+    SECStatus rv = SECFailure;
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
@@ -3697,8 +3874,188 @@ tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length)
         rv = TLS13_CHECK_HS_STATE(ss, SSL_ERROR_RX_UNEXPECTED_CERTIFICATE,
                                   wait_cert_request, wait_server_cert);
     }
-    if (rv != SECSuccess) {
+    return rv;
+}
+
+
+
+
+
+
+
+
+static SECStatus
+tls13_HandleCertificateDecode(sslSocket *ss, PRUint8 *b, PRUint32 length)
+{
+    PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    SECStatus rv = SECFailure;
+
+    if (!ss->xtnData.certificateCompressionAdvertised) {
+        FATAL_ERROR(ss, SEC_ERROR_UNEXPECTED_COMPRESSED_CERTIFICATE, decode_error);
         return SECFailure;
+    }
+
+    rv = tls13_EnsureCerticateExpected(ss);
+    if (rv != SECSuccess) {
+        return SECFailure; 
+    }
+
+    if (ss->firstHsDone) {
+        rv = ssl_HashPostHandshakeMessage(ss, ssl_hs_compressed_certificate, b, length);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+    }
+
+    SSL_TRC(30, ("%d: TLS1.3[%d]: %s handles certificate compression handshake",
+                 SSL_GETPID(), ss->fd, SSL_ROLE(ss)));
+
+    PRINT_BUF(50, (NULL, "The certificate before decoding:", b, length));
+    
+    PRUint32 compressionAlg = 0;
+    rv = ssl3_ConsumeHandshakeNumber(ss, &compressionAlg, 2, &b, &length);
+    if (rv != SECSuccess) {
+        return SECFailure; 
+    }
+
+    PRBool compressionAlgorithmIsSupported = PR_FALSE;
+    SECStatus (*certificateDecodingFunc)(const SECItem *, SECItem *, size_t) = NULL;
+    for (int i = 0; i < ss->ssl3.supportedCertCompressionAlgorithmsCount; i++) {
+        if (ss->ssl3.supportedCertCompressionAlgorithms[i].id == compressionAlg) {
+            compressionAlgorithmIsSupported = PR_TRUE;
+            certificateDecodingFunc = ss->ssl3.supportedCertCompressionAlgorithms[i].decode;
+        }
+    }
+
+    
+    if (!compressionAlgorithmIsSupported) {
+        PORT_SetError(SEC_ERROR_CERTIFICATE_COMPRESSION_ALGORITHM_NOT_SUPPORTED);
+        FATAL_ERROR(ss, PORT_GetError(), illegal_parameter);
+        return SECFailure;
+    }
+
+    
+    if (certificateDecodingFunc == NULL) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        FATAL_ERROR(ss, PORT_GetError(), illegal_parameter);
+        return SECFailure;
+    }
+
+    SSL_TRC(30, ("%d: TLS13[%d]: %s is decoding the certificate using the %s compression algorithm",
+                 SSL_GETPID(), ss->fd, SSL_ROLE(ss),
+                 ssl3_mapCertificateCompressionAlgorithmToName(ss, compressionAlg)));
+    PRUint32 decodedCertificateLen = 0;
+    rv = ssl3_ConsumeHandshakeNumber(ss, &decodedCertificateLen, 3, &b, &length);
+    if (rv != SECSuccess) {
+        return SECFailure; 
+    }
+
+    
+
+
+    if (decodedCertificateLen == 0) {
+        SSL_TRC(50, ("%d: TLS13[%d]: %s decoded certificate length is incorrect",
+                     SSL_GETPID(), ss->fd, SSL_ROLE(ss),
+                     ssl3_mapCertificateCompressionAlgorithmToName(ss, compressionAlg)));
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CERTIFICATE, bad_certificate);
+        return SECFailure;
+    }
+
+    
+    PRUint32 compressedCertificateMessageLen = 0;
+    rv = ssl3_ConsumeHandshakeNumber(ss, &compressedCertificateMessageLen, 3, &b, &length);
+    if (rv != SECSuccess) {
+        return SECFailure; 
+    }
+
+    if (compressedCertificateMessageLen == 0 || compressedCertificateMessageLen != length) {
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CERTIFICATE, bad_certificate);
+        return SECFailure;
+    }
+
+    
+    SECItem decodedCertificate = { siBuffer, NULL, 0 };
+
+    SECItem encodedCertAsSecItem;
+    SECITEM_MakeItem(NULL, &encodedCertAsSecItem, b, compressedCertificateMessageLen);
+
+    rv = certificateDecodingFunc(&encodedCertAsSecItem, &decodedCertificate, decodedCertificateLen);
+    SECITEM_FreeItem(&encodedCertAsSecItem, PR_FALSE);
+
+    if (rv != SECSuccess) {
+        SSL_TRC(50, ("%d: TLS13[%d]: %s decoding of the certificate has failed",
+                     SSL_GETPID(), ss->fd, SSL_ROLE(ss),
+                     ssl3_mapCertificateCompressionAlgorithmToName(ss, compressionAlg)));
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CERTIFICATE, bad_certificate);
+        goto loser;
+    }
+    PRINT_BUF(60, (ss, "consume bytes:", b, compressedCertificateMessageLen));
+    *b += compressedCertificateMessageLen;
+    length -= compressedCertificateMessageLen;
+
+    
+
+
+
+    if (decodedCertificateLen != decodedCertificate.len) {
+        SSL_TRC(50, ("%d: TLS13[%d]: %s certificate length does not correspond to extension length",
+                     SSL_GETPID(), ss->fd, SSL_ROLE(ss),
+                     ssl3_mapCertificateCompressionAlgorithmToName(ss, compressionAlg)));
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CERTIFICATE, bad_certificate);
+        goto loser;
+    }
+
+    PRINT_BUF(50, (NULL, "Decoded certificate",
+                   decodedCertificate.data, decodedCertificate.len));
+
+    
+
+
+
+
+
+
+
+
+    rv = tls13_HandleCertificate(ss, decodedCertificate.data, decodedCertificate.len, PR_TRUE);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+    
+
+
+    ss->xtnData.certificateCompressionAdvertised = PR_FALSE;
+    SECITEM_FreeItem(&decodedCertificate, PR_FALSE);
+    return SECSuccess;
+
+loser:
+    SECITEM_FreeItem(&decodedCertificate, PR_FALSE);
+    return SECFailure;
+}
+
+
+
+
+
+static SECStatus
+tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length, PRBool alreadyHashed)
+{
+    SECStatus rv;
+    SECItem context = { siBuffer, NULL, 0 };
+    SECItem certList;
+    PRBool first = PR_TRUE;
+    ssl3CertNode *lastCert = NULL;
+
+    SSL_TRC(3, ("%d: TLS13[%d]: handle certificate handshake",
+                SSL_GETPID(), ss->fd));
+    PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    rv = tls13_EnsureCerticateExpected(ss);
+    if (rv != SECSuccess) {
+        return SECFailure; 
     }
 
     
@@ -3707,13 +4064,16 @@ tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length)
         dtls_ReceivedFirstMessageInFlight(ss);
     }
 
-    if (ss->firstHsDone) {
+    
+    if (ss->firstHsDone && !alreadyHashed) {
         rv = ssl_HashPostHandshakeMessage(ss, ssl_hs_certificate, b, length);
         if (rv != SECSuccess) {
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
             return SECFailure;
         }
-    } else if (ss->sec.isServer) {
+    }
+
+    if (!ss->firstHsDone && ss->sec.isServer) {
         
 
 
@@ -3732,7 +4092,6 @@ tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length)
             return SECFailure;
         }
     }
-
     rv = ssl3_ConsumeHandshakeVariable(ss, &certList, 3, &b, &length);
     if (rv != SECSuccess) {
         return SECFailure;
@@ -5950,7 +6309,8 @@ static const struct {
     { ssl_record_size_limit_xtn, _M2(client_hello, encrypted_extensions) },
     { ssl_tls13_encrypted_client_hello_xtn, _M3(client_hello, encrypted_extensions, hello_retry_request) },
     { ssl_tls13_outer_extensions_xtn, _M_NONE  },
-    { ssl_tls13_post_handshake_auth_xtn, _M1(client_hello) }
+    { ssl_tls13_post_handshake_auth_xtn, _M1(client_hello) },
+    { ssl_certificate_compression_xtn, _M2(client_hello, certificate_request) }
 };
 
 tls13ExtensionStatus

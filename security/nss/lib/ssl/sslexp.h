@@ -1074,6 +1074,18 @@ typedef struct SSLMaskingContextStr {
                          (fd, identity, identityLen))
 
 
+
+
+
+
+
+#define SSL_SetCertificateCompressionAlgorithm(fd, t)                \
+    SSL_EXPERIMENTAL_API("SSL_SetCertificateCompressionAlgorithm",   \
+                         (PRFileDesc * _fd,                          \
+                          SSLCertificateCompressionAlgorithmType t), \
+                         (fd, t))
+
+
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_InitAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API

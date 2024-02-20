@@ -70,6 +70,8 @@ struct RSABlindingParamsStr {
     SECItem modulus;           
     blindingParams *free, *bp; 
     blindingParams array[RSA_BLINDING_PARAMS_MAX_CACHE_SIZE];
+    
+    mp_digit n0i; 
 };
 typedef struct RSABlindingParamsStr RSABlindingParams;
 
@@ -1215,6 +1217,8 @@ generate_blinding_params(RSAPrivateKey *key, mp_int *f, mp_int *g, mp_int *n,
     CHECK_MPI_OK(mp_exptmod(&k, &e, n, f));
     
     CHECK_MPI_OK(mp_invmod(&k, n, g));
+    
+    CHECK_MPI_OK(mp_to_mont(g, n, g));
 cleanup:
     if (kb)
         PORT_ZFree(kb, modLen);
@@ -1252,12 +1256,15 @@ init_blinding_params(RSABlindingParams *rsabp, RSAPrivateKey *key,
     rsabp->free = bp;
 
     
+    rsabp->n0i = mp_calculate_mont_n0i(n);
+
+    
     return SECITEM_CopyItem(NULL, &rsabp->modulus, &key->modulus);
 }
 
 static SECStatus
 get_blinding_params(RSAPrivateKey *key, mp_int *n, unsigned int modLen,
-                    mp_int *f, mp_int *g)
+                    mp_int *f, mp_int *g, mp_digit *n0i)
 {
     RSABlindingParams *rsabp = NULL;
     blindingParams *bpUnlinked = NULL;
@@ -1317,6 +1324,7 @@ get_blinding_params(RSAPrivateKey *key, mp_int *n, unsigned int modLen,
         
 
 
+        *n0i = rsabp->n0i;
         while (0 != (bp = rsabp->bp)) {
 #ifdef UNSAFE_FUZZER_MODE
             
@@ -1431,6 +1439,7 @@ cleanup:
     if (err) {
         MP_TO_SEC_ERROR(err);
     }
+    *n0i = 0;
     return SECFailure;
 }
 
@@ -1450,6 +1459,7 @@ rsa_PrivateKeyOp(RSAPrivateKey *key,
     mp_err err;
     mp_int n, c, m;
     mp_int f, g;
+    mp_digit n0i;
     if (!key || !output || !input) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
@@ -1481,7 +1491,7 @@ rsa_PrivateKeyOp(RSAPrivateKey *key,
 
 
     if (nssRSAUseBlinding) {
-        CHECK_SEC_OK(get_blinding_params(key, &n, modLen, &f, &g));
+        CHECK_SEC_OK(get_blinding_params(key, &n, modLen, &f, &g, &n0i));
         
         CHECK_MPI_OK(mp_mulmod(&c, &f, &n, &c));
     }
@@ -1502,7 +1512,7 @@ rsa_PrivateKeyOp(RSAPrivateKey *key,
 
     if (nssRSAUseBlinding) {
         
-        CHECK_MPI_OK(mp_mulmod(&m, &g, &n, &m));
+        CHECK_MPI_OK(mp_mulmontmodCT(&m, &g, &n, n0i, &m));
     }
     err = mp_to_fixlen_octets(&m, output, modLen);
     if (err >= 0)

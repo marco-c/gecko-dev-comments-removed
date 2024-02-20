@@ -247,6 +247,8 @@ typedef struct {
 
 #define MAX_SIGNATURE_SCHEMES 18
 
+#define MAX_SUPPORTED_CERTIFICATE_COMPRESSION_ALGS 32
+
 typedef struct sslOptionsStr {
     
 
@@ -814,6 +816,13 @@ typedef struct SSL3HandshakeStateStr {
         PORT_Assert(ss->ssl3.hs.echInnerMessages.len == 0);          \
     } while (0)
 
+typedef struct SSLCertificateCompressionAlgorithmStr {
+    SSLCertificateCompressionAlgorithmID id;
+    const char *name;
+    SECStatus (*encode)(const SECItem *input, SECItem *output);
+    SECStatus (*decode)(const SECItem *input, SECItem *output, size_t expectedLenDecodedCertificate);
+} SSLCertificateCompressionAlgorithm;
+
 
 
 
@@ -878,6 +887,9 @@ struct ssl3StateStr {
 
 
     SSL3ProtocolVersion downgradeCheckVersion;
+    
+    SSLCertificateCompressionAlgorithm supportedCertCompressionAlgorithms[MAX_SUPPORTED_CERTIFICATE_COMPRESSION_ALGS];
+    PRUint8 supportedCertCompressionAlgorithmsCount;
 };
 
 
@@ -1956,7 +1968,7 @@ SECStatus SSLExp_AeadDecrypt(const SSLAeadContext *ctx, PRUint64 counter,
                              const PRUint8 *aad, unsigned int aadLen,
                              const PRUint8 *plaintext, unsigned int plaintextLen,
                              PRUint8 *out, unsigned int *outLen, unsigned int maxOut);
-
+SECStatus SSLExp_SetCertificateCompressionAlgorithm(PRFileDesc *fd, SSLCertificateCompressionAlgorithm alg);
 SECStatus SSLExp_HkdfExtract(PRUint16 version, PRUint16 cipherSuite,
                              PK11SymKey *salt, PK11SymKey *ikm, PK11SymKey **keyp);
 SECStatus SSLExp_HkdfExpandLabel(PRUint16 version, PRUint16 cipherSuite, PK11SymKey *prk,
