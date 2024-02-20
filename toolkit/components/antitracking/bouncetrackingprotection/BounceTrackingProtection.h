@@ -7,8 +7,12 @@
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 #include "nsIBounceTrackingProtection.h"
+#include "BounceTrackingStateGlobal.h"
 #include "nsIClearDataService.h"
 #include "nsTHashMap.h"
+
+#include "mozilla/OriginAttributes.h"
+#include "mozilla/OriginAttributesHashKey.h"
 
 class nsIPrincipal;
 class nsITimer;
@@ -43,13 +47,15 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   
   
   
-  nsTHashMap<nsCStringHashKey, PRTime> mUserActivation{};
+  nsTHashMap<OriginAttributesHashKey, RefPtr<BounceTrackingStateGlobal>>
+      mStateGlobal{};
 
   
-  
-  
-  
-  nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers{};
+  BounceTrackingStateGlobal* GetOrCreateStateGlobal(
+      const OriginAttributes& aOriginAttributes);
+  BounceTrackingStateGlobal* GetOrCreateStateGlobal(nsIPrincipal* aPrincipal);
+  BounceTrackingStateGlobal* GetOrCreateStateGlobal(
+      BounceTrackingState* aBounceTrackingState);
 
   
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
@@ -58,6 +64,10 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   using PurgeBounceTrackersMozPromise =
       MozPromise<nsTArray<nsCString>, nsresult, true>;
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
+
+  nsresult PurgeBounceTrackersForStateGlobal(
+      BounceTrackingStateGlobal* aStateGlobal,
+      const OriginAttributes& aOriginAttributes);
 
   
   using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;
