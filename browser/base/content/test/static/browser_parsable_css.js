@@ -12,10 +12,6 @@
 let ignoreList = [
   
   { sourceName: /codemirror\.css$/i, isFromDevTools: true },
-  {
-    sourceName: /devtools\/content\/debugger\/src\/components\/([A-z\/]+).css/i,
-    isFromDevTools: true,
-  },
   
   {
     sourceName: /\b(autocomplete-item)\.css$/,
