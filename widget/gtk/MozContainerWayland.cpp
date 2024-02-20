@@ -361,7 +361,9 @@ gboolean moz_container_wayland_map_event(GtkWidget* widget,
 
   
   
-  gtk_widget_set_mapped(widget, TRUE);
+  if (!gtk_widget_get_mapped(widget)) {
+    return false;
+  }
 
   
   
@@ -412,6 +414,9 @@ void moz_container_wayland_map(GtkWidget* widget) {
                (void*)moz_container_get_nsWindow(MOZ_CONTAINER(widget)));
 
   g_return_if_fail(IS_MOZ_CONTAINER(widget));
+
+  
+  
   gtk_widget_set_mapped(widget, TRUE);
 
   if (gtk_widget_get_has_window(widget)) {
