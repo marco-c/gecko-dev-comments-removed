@@ -52,7 +52,6 @@
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/RootedDictionary.h"
-#include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/UseCounterMetrics.h"
 #include "mozilla/dom/WorkerBinding.h"
@@ -119,12 +118,6 @@
 
 
 #define IDLE_GC_TIMER_DELAY_SEC 5
-
-
-
-
-
-#define DEBUGGER_RUNNABLE_INTERRUPT_AFTER_MS 250
 
 static mozilla::LazyLogModule sWorkerPrivateLog("WorkerPrivate");
 static mozilla::LazyLogModule sWorkerTimeoutsLog("WorkerTimeouts");
@@ -1691,13 +1684,6 @@ nsresult WorkerPrivate::DispatchControlRunnable(
   return NS_OK;
 }
 
-void DebuggerInterruptTimerCallback(nsITimer* aTimer, void* aClosure)
-    MOZ_NO_THREAD_SAFETY_ANALYSIS {
-  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-  MOZ_DIAGNOSTIC_ASSERT(workerPrivate);
-  workerPrivate->DebuggerInterruptRequest();
-}
-
 nsresult WorkerPrivate::DispatchDebuggerRunnable(
     already_AddRefed<WorkerRunnable> aDebuggerRunnable) {
   
@@ -1706,43 +1692,23 @@ nsresult WorkerPrivate::DispatchDebuggerRunnable(
 
   MOZ_ASSERT(runnable);
 
-  MutexAutoLock lock(mMutex);
-  if (!mDebuggerInterruptTimer) {
-    mDebuggerInterruptTimer = NS_NewTimer();
-    MOZ_ALWAYS_SUCCEEDS(
-        mDebuggerInterruptTimer->SetTarget(mWorkerControlEventTarget));
+  {
+    MutexAutoLock lock(mMutex);
+
+    if (mStatus == Dead) {
+      NS_WARNING(
+          "A debugger runnable was posted to a worker that is already "
+          "shutting down!");
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    mDebuggerQueue.Push(runnable.forget().take());
+
+    mCondVar.Notify();
   }
-
-  
-  
-  
-  
-  
-  MOZ_ALWAYS_SUCCEEDS(mDebuggerInterruptTimer->InitWithNamedFuncCallback(
-      DebuggerInterruptTimerCallback, nullptr,
-      DEBUGGER_RUNNABLE_INTERRUPT_AFTER_MS, nsITimer::TYPE_ONE_SHOT,
-      "dom:DebuggerInterruptTimer"));
-
-  if (mStatus == Dead) {
-    NS_WARNING(
-        "A debugger runnable was posted to a worker that is already "
-        "shutting down!");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  mDebuggerQueue.Push(runnable.forget().take());
-
-  mCondVar.Notify();
 
   return NS_OK;
-}
-
-void WorkerPrivate::DebuggerInterruptRequest() {
-  AssertIsOnWorkerThread();
-
-  auto data = mWorkerThreadAccessible.Access();
-  data->mDebuggerInterruptRequested = true;
 }
 
 already_AddRefed<WorkerRunnable> WorkerPrivate::MaybeWrapAsWorkerRunnable(
@@ -2324,7 +2290,6 @@ WorkerPrivate::WorkerThreadAccessible::WorkerThreadAccessible(
       mNextTimeoutId(1),
       mCurrentTimerNestingLevel(0),
       mFrozen(false),
-      mDebuggerInterruptRequested(false),
       mTimerRunning(false),
       mRunningExpiredTimeouts(false),
       mPeriodicGCTimerRunning(false),
@@ -3341,7 +3306,6 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
           mStatus = Dead;
           mJSContext = nullptr;
-          mDebuggerInterruptTimer = nullptr;
         }
 
         
@@ -3387,9 +3351,24 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
     }
 
     if (debuggerRunnablesPending) {
-      ProcessSingleDebuggerRunnable();
+      WorkerRunnable* runnable = nullptr;
 
-      debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+      {
+        MutexAutoLock lock(mMutex);
+
+        mDebuggerQueue.Pop(runnable);
+        debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+      }
+
+      {
+        MOZ_ASSERT(runnable);
+        AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
+        static_cast<nsIRunnable*>(runnable)->Run();
+      }
+      runnable->Release();
+
+      CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+      ccjs->PerformDebuggerMicroTaskCheckpoint();
 
       if (debuggerRunnablesPending) {
         WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
@@ -3863,24 +3842,6 @@ bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
   
   SetGCTimerMode(PeriodicTimer);
 
-  if (data->mDebuggerInterruptRequested) {
-    bool debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
-    if (debuggerRunnablesPending) {
-      
-      
-      WorkerGlobalScope* globalScope = GlobalScope();
-      if (globalScope) {
-        JSObject* global = JS::CurrentGlobalOrNull(aCx);
-        if (global && global == globalScope->GetGlobalJSObject()) {
-          while (!mDebuggerQueue.IsEmpty()) {
-            ProcessSingleDebuggerRunnable();
-          }
-        }
-      }
-    }
-    data->mDebuggerInterruptRequested = false;
-  }
-
   return true;
 }
 
@@ -4097,38 +4058,12 @@ void WorkerPrivate::ClearPreStartRunnables() {
   }
 }
 
-void WorkerPrivate::ProcessSingleDebuggerRunnable() {
-  WorkerRunnable* runnable = nullptr;
-
-  {
-    MutexAutoLock lock(mMutex);
-
-    mDebuggerQueue.Pop(runnable);
-
-    mDebuggerInterruptTimer = nullptr;
-  }
-
-  {
-    MOZ_ASSERT(runnable);
-    AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
-    static_cast<nsIRunnable*>(runnable)->Run();
-  }
-  runnable->Release();
-
-  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-  ccjs->PerformDebuggerMicroTaskCheckpoint();
-}
-
 void WorkerPrivate::ClearDebuggerEventQueue() {
   while (!mDebuggerQueue.IsEmpty()) {
     WorkerRunnable* runnable = nullptr;
     mDebuggerQueue.Pop(runnable);
     
     runnable->Release();
-    {
-      MutexAutoLock lock(mMutex);
-      mDebuggerInterruptTimer = nullptr;
-    }
   }
 }
 
@@ -4960,7 +4895,19 @@ void WorkerPrivate::EnterDebuggerEventLoop() {
       
       SetGCTimerMode(PeriodicTimer);
 
-      ProcessSingleDebuggerRunnable();
+      WorkerRunnable* runnable = nullptr;
+
+      {
+        MutexAutoLock lock(mMutex);
+
+        mDebuggerQueue.Pop(runnable);
+      }
+
+      MOZ_ASSERT(runnable);
+      static_cast<nsIRunnable*>(runnable)->Run();
+      runnable->Release();
+
+      ccjscx->PerformDebuggerMicroTaskCheckpoint();
 
       
       if (GetCurrentEventLoopGlobal()) {
