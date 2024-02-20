@@ -86,7 +86,7 @@ class SensorTestHelper {
     }
 
     this.#enabledSensors = new Set(options.enabledSensors || this.#sensorsEnabledByDefault);
-    
+    // Remove sensors from enabledSensors that are in disabledSensors
     for (const sensor of this.#disabledSensors) {
       this.#enabledSensors.delete(sensor);
     }
@@ -103,16 +103,16 @@ class SensorTestHelper {
     await Promise.all(createVirtualSensorPromises);
   }
 
-  
-  
-  
-  
+  // Updates virtual sensor with given data.
+  // @param {object} data - Generated data by generateMotionData or
+  //                        generateOrientationData which is passed to
+  //                        test_driver.update_virtual_sensor().
   async setData(data) {
-    
-    
-    
-    
-    
+    // WebDriver expects numbers for all values in the readings it receives. We
+    // convert null to zero here, but any other numeric value would work, as it
+    // is the presence of one or more sensors in initializeSensors()'
+    // options.disabledSensors that cause null to be reported in one or more
+    // event attributes.
     const nullToZero = x => (x === null ? 0 : x);
     if (this.#eventName === 'devicemotion') {
       const degToRad = Math.PI / 180;
@@ -144,11 +144,11 @@ class SensorTestHelper {
     }
   }
 
-  
-  
-  
+  // Grants permissions to sensors. Depending on |eventName|, requests
+  // permission to use either the DeviceMotionEvent or the
+  // DeviceOrientationEvent API.
   async grantSensorsPermissions() {
-    
+    // Required by all event types.
     await test_driver.set_permission({name: 'accelerometer'}, 'granted');
     await test_driver.set_permission({name: 'gyroscope'}, 'granted');
     if (this.#eventName == 'deviceorientationabsolute') {
@@ -164,8 +164,8 @@ class SensorTestHelper {
     });
   }
 
-  
-  
+  // Resets SensorTestHelper to default state. Removes all created virtual
+  // sensors.
   async reset() {
     const createdVirtualSensors =
       new Set([...this.#enabledSensors, ...this.#disabledSensors]);
@@ -203,9 +203,20 @@ function generateOrientationData(alpha, beta, gamma, absolute) {
   return orientationData;
 }
 
+function assertValueIsCoarsened(value) {
+  // Checks that the precision of the value is at most 0.1.
+  // https://www.w3.org/TR/orientation-event/ specification defines that all
+  // measurements are required to be coarsened to 0.1 degrees, 0.1 m/s^2 or
+  // 0.1 deg/s.
+  const resolution = 0.1;
+  const coarsenedValue = Math.round(value / resolution) * resolution;
+  assert_approx_equals(value, coarsenedValue, Number.EPSILON,
+                       `Expected ${value}'s precision to be at most ${resolution}`);
+}
+
 function assertEventEquals(actualEvent, expectedEvent) {
-  
-  
+  // If two doubles differ by less than this amount, we can consider them
+  // to be effectively equal.
   const EPSILON = 1e-8;
 
   for (let key1 of Object.keys(Object.getPrototypeOf(expectedEvent))) {
