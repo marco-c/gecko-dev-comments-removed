@@ -47,6 +47,14 @@ const MAX_BUFFER_SIZE_U32: u32 = MAX_BUFFER_SIZE as u32;
 
 const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
 
+
+
+
+
+
+
+const MAX_BINDINGS_PER_RESOURCE_TYPE: u32 = 64;
+
 fn restrict_limits(limits: wgt::Limits) -> wgt::Limits {
     wgt::Limits {
         max_buffer_size: limits.max_buffer_size.min(MAX_BUFFER_SIZE),
@@ -55,12 +63,19 @@ fn restrict_limits(limits: wgt::Limits) -> wgt::Limits {
         max_texture_dimension_3d: limits.max_texture_dimension_3d.min(MAX_TEXTURE_EXTENT),
         max_sampled_textures_per_shader_stage: limits
             .max_sampled_textures_per_shader_stage
-            .min(256),
-        max_samplers_per_shader_stage: limits.max_samplers_per_shader_stage.min(256),
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
+        max_samplers_per_shader_stage: limits
+            .max_samplers_per_shader_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_storage_textures_per_shader_stage: limits
             .max_storage_textures_per_shader_stage
-            .min(256),
-        max_uniform_buffers_per_shader_stage: limits.max_uniform_buffers_per_shader_stage.min(256),
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
+        max_uniform_buffers_per_shader_stage: limits
+            .max_uniform_buffers_per_shader_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
+        max_storage_buffers_per_shader_stage: limits
+            .max_storage_buffers_per_shader_stage
+            .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_uniform_buffer_binding_size: limits
             .max_uniform_buffer_binding_size
             .min(MAX_BUFFER_SIZE_U32),
