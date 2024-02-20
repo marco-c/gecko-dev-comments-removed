@@ -123,11 +123,13 @@ const CONFIG_SIMPLE_EVERYWHERE = [
   },
 ];
 
+let extension;
+let configStub;
 let notificationBoxStub;
 
 add_setup(async function () {
   SearchTestUtils.useMockIdleService();
-  await SearchTestUtils.useTestEngines("simple-engines");
+  configStub = await SearchTestUtils.useTestEngines("simple-engines");
   Services.locale.availableLocales = [
     ...Services.locale.availableLocales,
     "en",
@@ -145,6 +147,8 @@ add_setup(async function () {
     Services.search.wrappedJSObject,
     "_showRemovalOfSearchEngineNotificationBox"
   );
+
+  consoleAllowList.push("Failed to load");
 });
 
 
@@ -153,10 +157,17 @@ add_setup(async function () {
 
 
 add_task(async function test_app_provided_engine_deployment_extended() {
-  await assertCorrectlySwitchedWhenAdded(async () => {
-    info("Change configuration");
+  await assertCorrectlySwitchedWhenExtended(async () => {
+    info("Change configuration to include engine in user's environment");
 
     await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_SIMPLE_EVERYWHERE);
+  });
+
+  await assertCorrectlySwitchedWhenRemoved(async () => {
+    info("Change configuration to remove engine from user's environment");
+
+    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_SIMPLE_LOCALE_DE);
+    configStub.returns(CONFIG_SIMPLE_LOCALE_DE);
   });
 });
 
@@ -166,20 +177,36 @@ add_task(async function test_app_provided_engine_deployment_extended() {
 
 
 add_task(async function test_user_environment_changes() {
-  await assertCorrectlySwitchedWhenAdded(async () => {
+  await assertCorrectlySwitchedWhenExtended(async () => {
     info("Change locale to de");
 
     await promiseSetLocale("de");
   });
+
+  await assertCorrectlySwitchedWhenRemoved(async () => {
+    info("Change locale to en");
+
+    await promiseSetLocale("en");
+  });
 });
 
-async function assertCorrectlySwitchedWhenAdded(changeFn) {
+
+
+
+
+
+
+
+
+
+
+async function assertCorrectlySwitchedWhenExtended(changeFn) {
   await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_SIMPLE_LOCALE_DE);
   notificationBoxStub.resetHistory();
 
   info("Install WebExtension based engine and set as default");
 
-  let extension = await SearchTestUtils.installSearchExtension(
+  extension = await SearchTestUtils.installSearchExtension(
     {
       name: ENGINE_NAME,
       search_url: SEARCH_URL_BASE,
@@ -210,7 +237,7 @@ async function assertCorrectlySwitchedWhenAdded(changeFn) {
     "Should not have attempted to display a notification box"
   );
 
-  info("Test restarting search service");
+  info("Test restarting search service to add application provided engine");
 
   await promiseAfterSettings();
   Services.search.wrappedJSObject.reset();
@@ -229,6 +256,46 @@ async function assertCorrectlySwitchedWhenAdded(changeFn) {
   await assertEngineCorrectlySet({
     expectedId: "simple@search.mozilla.orgdefault",
     appEngineOverriden: true,
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertCorrectlySwitchedWhenRemoved(changeFn) {
+  notificationBoxStub.resetHistory();
+
+  await changeFn();
+
+  await assertEngineCorrectlySet({
+    expectedId: "simpleengine@tests.mozilla.orgdefault",
+    appEngineOverriden: false,
+  });
+
+  info("Test restarting search service to remove application provided engine");
+
+  await promiseAfterSettings();
+  Services.search.wrappedJSObject.reset();
+
+  let extensionData = {
+    ...extension.extension,
+    startupReason: "APP_STARTUP",
+  };
+  await Services.search.addEnginesFromExtension(extensionData);
+
+  await Services.search.init();
+
+  await assertEngineCorrectlySet({
+    expectedId: "simpleengine@tests.mozilla.orgdefault",
+    appEngineOverriden: false,
   });
 
   await extension.unload();
