@@ -192,12 +192,12 @@ AutoGatherSweptArenas::AutoGatherSweptArenas(JS::Zone* zone, AllocKind kind) {
 
   
   
-  linked = sortedList->convertToArenaList(segmentLastPointers);
+  linked = sortedList->convertToArenaList(bucketLastPointers);
 }
 
 AutoGatherSweptArenas::~AutoGatherSweptArenas() {
   if (sortedList) {
-    sortedList->restoreFromArenaList(linked, segmentLastPointers);
+    sortedList->restoreFromArenaList(linked, bucketLastPointers);
   }
   linked.clear();
 }

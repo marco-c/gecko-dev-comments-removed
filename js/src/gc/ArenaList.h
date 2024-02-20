@@ -167,13 +167,13 @@ class SortedArenaList {
 
   
   
-  static const size_t SegmentCount = HowMany(MaxThingsPerArena - 1, 2) + 2;
+  static const size_t BucketCount = HowMany(MaxThingsPerArena - 1, 2) + 2;
 
  private:
-  using Segment = SinglyLinkedList<Arena>;
+  using Bucket = SinglyLinkedList<Arena>;
 
   const size_t thingsPerArena_;
-  Segment segments[SegmentCount];
+  Bucket buckets[BucketCount];
 
 #ifdef DEBUG
   AllocKind allocKind_;
@@ -200,12 +200,12 @@ class SortedArenaList {
   
   
   inline ArenaList convertToArenaList(
-      Arena* maybeSegmentLastOut[SegmentCount] = nullptr);
+      Arena* maybeBucketLastOut[BucketCount] = nullptr);
 
   
   
   inline void restoreFromArenaList(ArenaList& list,
-                                   Arena* segmentLast[SegmentCount]);
+                                   Arena* bucketLast[BucketCount]);
 
 #ifdef DEBUG
   AllocKind allocKind() const { return allocKind_; }
@@ -214,7 +214,7 @@ class SortedArenaList {
  private:
   inline size_t index(size_t nfree, bool* frontOut) const;
   inline size_t emptyIndex() const;
-  inline size_t segmentsUsed() const;
+  inline size_t bucketsUsed() const;
 
   inline void check() const;
 };
@@ -224,7 +224,7 @@ class MOZ_RAII AutoGatherSweptArenas {
   SortedArenaList* sortedList = nullptr;
 
   
-  Arena* segmentLastPointers[SortedArenaList::SegmentCount];
+  Arena* bucketLastPointers[SortedArenaList::BucketCount];
 
   
   ArenaList linked;

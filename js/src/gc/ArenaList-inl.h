@@ -156,7 +156,7 @@ js::gc::SortedArenaList::SortedArenaList(js::gc::AllocKind allocKind)
     : thingsPerArena_(Arena::thingsPerArena(allocKind)) {
 #ifdef DEBUG
   MOZ_ASSERT(thingsPerArena_ <= MaxThingsPerArena);
-  MOZ_ASSERT(emptyIndex() < SegmentCount);
+  MOZ_ASSERT(emptyIndex() < BucketCount);
   allocKind_ = allocKind;
 #endif
 }
@@ -191,10 +191,10 @@ size_t js::gc::SortedArenaList::index(size_t nfree, bool* frontOut) const {
 size_t js::gc::SortedArenaList::emptyIndex() const {
   
   
-  return segmentsUsed() - 1;
+  return bucketsUsed() - 1;
 }
 
-size_t js::gc::SortedArenaList::segmentsUsed() const {
+size_t js::gc::SortedArenaList::bucketsUsed() const {
   
   return HowMany(thingsPerArena_ - 1, 2) + 2;
 }
@@ -205,11 +205,11 @@ void js::gc::SortedArenaList::insertAt(Arena* arena, size_t nfree) {
 
   bool front;
   size_t i = index(nfree, &front);
-  MOZ_ASSERT(i < SegmentCount);
+  MOZ_ASSERT(i < BucketCount);
   if (front) {
-    segments[i].pushFront(arena);
+    buckets[i].pushFront(arena);
   } else {
-    segments[i].pushBack(arena);
+    buckets[i].pushBack(arena);
   }
 }
 
@@ -217,45 +217,45 @@ void js::gc::SortedArenaList::extractEmptyTo(Arena** destListHeadPtr) {
   MOZ_ASSERT(!isConvertedToArenaList);
   check();
 
-  Segment& segment = segments[emptyIndex()];
-  if (!segment.isEmpty()) {
+  Bucket& bucket = buckets[emptyIndex()];
+  if (!bucket.isEmpty()) {
     Arena* tail = *destListHeadPtr;
-    Arena* segmentLast = segment.last();
-    *destListHeadPtr = segment.release();
-    segmentLast->next = tail;
+    Arena* bucketLast = bucket.last();
+    *destListHeadPtr = bucket.release();
+    bucketLast->next = tail;
   }
 
-  MOZ_ASSERT(segment.isEmpty());
+  MOZ_ASSERT(bucket.isEmpty());
 }
 
 js::gc::ArenaList js::gc::SortedArenaList::convertToArenaList(
-    Arena* maybeSegmentLastOut[SegmentCount]) {
+    Arena* maybeBucketLastOut[BucketCount]) {
 #ifdef DEBUG
   MOZ_ASSERT(!isConvertedToArenaList);
   isConvertedToArenaList = true;
   check();
 #endif
 
-  if (maybeSegmentLastOut) {
-    for (size_t i = 0; i < SegmentCount; i++) {
-      maybeSegmentLastOut[i] = segments[i].last();
+  if (maybeBucketLastOut) {
+    for (size_t i = 0; i < BucketCount; i++) {
+      maybeBucketLastOut[i] = buckets[i].last();
     }
   }
 
   
   
-  Arena* lastFullArena = segments[0].last();
+  Arena* lastFullArena = buckets[0].last();
 
-  Segment result;
-  for (size_t i = 0; i < segmentsUsed(); ++i) {
-    result.append(std::move(segments[i]));
+  Bucket result;
+  for (size_t i = 0; i < bucketsUsed(); ++i) {
+    result.append(std::move(buckets[i]));
   }
 
   return ArenaList(result.release(), lastFullArena);
 }
 
 void js::gc::SortedArenaList::restoreFromArenaList(
-    ArenaList& list, Arena* segmentLast[SegmentCount]) {
+    ArenaList& list, Arena* bucketLast[BucketCount]) {
 #ifdef DEBUG
   MOZ_ASSERT(isConvertedToArenaList);
   isConvertedToArenaList = false;
@@ -267,13 +267,13 @@ void js::gc::SortedArenaList::restoreFromArenaList(
   Arena* remaining = list.head();
   list.clear();
 
-  for (size_t i = 0; i < segmentsUsed(); i++) {
-    MOZ_ASSERT(segments[i].isEmpty());
-    if (segmentLast[i]) {
+  for (size_t i = 0; i < bucketsUsed(); i++) {
+    MOZ_ASSERT(buckets[i].isEmpty());
+    if (bucketLast[i]) {
       Arena* first = remaining;
-      Arena* last = segmentLast[i];
+      Arena* last = bucketLast[i];
       remaining = last->next;
-      new (&segments[i]) Segment(first, last);
+      new (&buckets[i]) Bucket(first, last);
     }
   }
 
@@ -282,16 +282,16 @@ void js::gc::SortedArenaList::restoreFromArenaList(
 
 void js::gc::SortedArenaList::check() const {
 #ifdef DEBUG
-  const auto& fullSegment = segments[0];
-  for (auto arena = fullSegment.iter(); !arena.done(); arena.next()) {
+  const auto& fullBucket = buckets[0];
+  for (auto arena = fullBucket.iter(); !arena.done(); arena.next()) {
     MOZ_ASSERT(arena->getAllocKind() == allocKind());
     MOZ_ASSERT(!arena->hasFreeThings());
   }
 
   for (size_t i = 1; i < emptyIndex(); i++) {
-    const auto& segment = segments[i];
+    const auto& bucket = buckets[i];
     size_t lastFree = 0;
-    for (auto arena = segment.iter(); !arena.done(); arena.next()) {
+    for (auto arena = bucket.iter(); !arena.done(); arena.next()) {
       MOZ_ASSERT(arena->getAllocKind() == allocKind());
       size_t nfree = arena->countFreeCells();
       MOZ_ASSERT(nfree == i * 2 - 1 || nfree == i * 2);
@@ -300,14 +300,14 @@ void js::gc::SortedArenaList::check() const {
     }
   }
 
-  const auto& emptySegment = segments[emptyIndex()];
-  for (auto arena = emptySegment.iter(); !arena.done(); arena.next()) {
+  const auto& emptyBucket = buckets[emptyIndex()];
+  for (auto arena = emptyBucket.iter(); !arena.done(); arena.next()) {
     MOZ_ASSERT(arena->getAllocKind() == allocKind());
     MOZ_ASSERT(arena->isEmpty());
   }
 
-  for (size_t i = emptyIndex() + 1; i < SegmentCount; i++) {
-    MOZ_ASSERT(segments[i].isEmpty());
+  for (size_t i = emptyIndex() + 1; i < BucketCount; i++) {
+    MOZ_ASSERT(buckets[i].isEmpty());
   }
 #endif
 }
