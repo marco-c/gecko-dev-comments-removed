@@ -8,8 +8,6 @@ const { ResourceUriPlugin } = require("./tools/resourceUriPlugin");
 
 const absolute = relPath => path.join(__dirname, relPath);
 
-const resourcePathRegEx = /^resource:\/\/activity-stream\//;
-
 module.exports = (env = {}) => ({
   mode: "none",
   entry: absolute("content-src/activity-stream.jsx"),
@@ -21,7 +19,6 @@ module.exports = (env = {}) => ({
   
   devtool: env.development ? "inline-source-map" : false,
   plugins: [
-    
     
     
     new ResourceUriPlugin({
@@ -45,24 +42,6 @@ module.exports = (env = {}) => ({
         loader: "babel-loader",
         options: {
           presets: ["@babel/preset-react"],
-        },
-      },
-      {
-        test: /\.jsm$/,
-        exclude: /node_modules/,
-        loader: "babel-loader",
-        
-        options: {
-          plugins: [
-            [
-              "./tools/babel-jsm-to-commonjs.js",
-              {
-                basePath: resourcePathRegEx,
-                removeOtherImports: true,
-                replace: true,
-              },
-            ],
-          ],
         },
       },
     ],

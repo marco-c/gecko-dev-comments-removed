@@ -147,7 +147,6 @@ module.exports = function (config) {
       plugins: [
         
         
-        
         new ResourceUriPlugin({
           resourcePathRegExes: [
             [
@@ -173,35 +172,6 @@ module.exports = function (config) {
       },
       module: {
         rules: [
-          
-          {
-            test: /\.jsm$/,
-            exclude: [/node_modules/],
-            use: [
-              {
-                loader: "babel-loader", 
-                options: {
-                  plugins: [
-                    
-                    [
-                      "../newtab/tools/babel-jsm-to-commonjs.js",
-                      {
-                        basePaths: [
-                          
-                          
-                          
-                          [PATHS.resourcePathRegEx, ""],
-                          [new RegExp("^resource:///modules/asrouter/"), "./"],
-                        ],
-                        removeOtherImports: true,
-                        replace: true,
-                      },
-                    ],
-                  ],
-                },
-              },
-            ],
-          },
           {
             test: /\.js$/,
             exclude: [/node_modules\/(?!@fluent\/).*/, /tests/],

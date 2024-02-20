@@ -158,12 +158,6 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            "lib/*.jsm": {
-              statements: 100,
-              lines: 100,
-              functions: 99,
-              branches: 84,
-            },
             "content-src/components/DiscoveryStreamComponents/**/*.jsx": {
               statements: 90.48,
               lines: 90.48,
@@ -221,7 +215,7 @@ module.exports = function (config) {
       },
       
       resolve: {
-        extensions: [".js", ".jsx", ".jsm"],
+        extensions: [".js", ".jsx"],
         modules: [PATHS.moduleResolveDirectory, "node_modules"],
         fallback: {
           stream: require.resolve("stream-browserify"),
@@ -232,7 +226,6 @@ module.exports = function (config) {
         },
       },
       plugins: [
-        
         
         
         new ResourceUriPlugin({
@@ -256,29 +249,6 @@ module.exports = function (config) {
       },
       module: {
         rules: [
-          
-          {
-            test: /\.jsm$/,
-            exclude: [/node_modules/],
-            use: [
-              {
-                loader: "babel-loader", 
-                options: {
-                  plugins: [
-                    
-                    [
-                      "./tools/babel-jsm-to-commonjs.js",
-                      {
-                        basePaths: [[PATHS.resourcePathRegEx, ""]],
-                        removeOtherImports: true,
-                        replace: true,
-                      },
-                    ],
-                  ],
-                },
-              },
-            ],
-          },
           {
             test: /\.js$/,
             exclude: [/node_modules\/(?!@fluent\/).*/, /test/],
