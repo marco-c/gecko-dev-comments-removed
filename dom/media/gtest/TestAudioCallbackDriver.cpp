@@ -13,7 +13,6 @@
 #include "MediaTrackGraphImpl.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/SyncRunnable.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 
@@ -21,8 +20,6 @@
 
 using namespace mozilla;
 using IterationResult = GraphInterface::IterationResult;
-using ::testing::_;
-using ::testing::AnyNumber;
 using ::testing::NiceMock;
 
 class MockGraphInterface : public GraphInterface {
@@ -33,9 +30,6 @@ class MockGraphInterface : public GraphInterface {
   MOCK_METHOD5(NotifyInputData, void(const AudioDataValue*, size_t, TrackRate,
                                      uint32_t, uint32_t));
   MOCK_METHOD0(DeviceChanged, void());
-#ifdef DEBUG
-  MOCK_CONST_METHOD1(InDriverIteration, bool(const GraphDriver*));
-#endif
   
 
   IterationResult OneIteration(GraphTime aStateComputedTime, GraphTime,
@@ -67,6 +61,12 @@ class MockGraphInterface : public GraphInterface {
     return IterationResult::CreateStillProcessing();
   }
   void SetEnsureNextIteration(bool aEnsure) { mEnsureNextIteration = aEnsure; }
+
+#ifdef DEBUG
+  bool InDriverIteration(const GraphDriver* aDriver) const override {
+    return aDriver->OnThread();
+  }
+#endif
 
   size_t IterationCount() const { return mIterationCount; }
 
@@ -227,148 +227,4 @@ MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
   TestSlowStart(1000);   
   TestSlowStart(8000);   
   TestSlowStart(44100);  
-}
-
-#ifdef DEBUG
-class AutoSetter {
-  std::atomic_bool& mVal;
-
- public:
-  explicit AutoSetter(std::atomic_bool& aVal) : mVal(aVal) {
-    DebugOnly<bool> old = mVal.exchange(true);
-    MOZ_ASSERT(!old);
-  }
-  ~AutoSetter() {
-    DebugOnly<bool> old = mVal.exchange(false);
-    MOZ_ASSERT(old);
-  }
-};
-#endif
-
-TEST(TestAudioCallbackDriver, SlowDeviceChange)
-MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-  constexpr TrackRate rate = 48000;
-  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
-  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
-
-  auto graph = MakeRefPtr<MockGraphInterface>(rate);
-  auto driver = MakeRefPtr<AudioCallbackDriver>(
-      graph, nullptr, rate, 2, 1, nullptr, (void*)1, AudioInputType::Voice);
-  EXPECT_FALSE(driver->ThreadRunning()) << "Verify thread is not running";
-  EXPECT_FALSE(driver->IsStarted()) << "Verify thread is not started";
-
-#ifdef DEBUG
-  std::atomic_bool inDriverIteration = false;
-  EXPECT_CALL(*graph, InDriverIteration(driver.get())).WillRepeatedly([&] {
-    return inDriverIteration.load();
-  });
-#endif
-  constexpr size_t ignoredFrameCount = 1337;
-  EXPECT_CALL(*graph, NotifyInputData(_, 0, rate, 1, _)).Times(AnyNumber());
-  EXPECT_CALL(*graph, NotifyInputData(_, ignoredFrameCount, _, _, _)).Times(0);
-  EXPECT_CALL(*graph, DeviceChanged);
-
-  graph->SetCurrentDriver(driver);
-  graph->SetEnsureNextIteration(true);
-  
-  driver->Start();
-  RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
-
-  
-  
-  
-  nsCOMPtr<nsIEventTarget> cubebOpThread = CUBEB_TASK_THREAD;
-  MOZ_ALWAYS_SUCCEEDS(SyncRunnable::DispatchToThread(
-      cubebOpThread, NS_NewRunnableFunction(__func__, [] {})));
-
-  
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-  {
-#ifdef DEBUG
-    AutoSetter as(inDriverIteration);
-#endif
-    while (driver->OnFallback()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-  }
-
-  const TimeStamp wallClockStart = TimeStamp::Now();
-  const GraphTime graphClockStart = graph->StateComputedTime();
-  const size_t iterationCountStart = graph->IterationCount();
-
-  
-  stream->NotifyDeviceChangedNow();
-
-  
-  {
-#ifdef DEBUG
-    AutoSetter as(inDriverIteration);
-#endif
-    EXPECT_TRUE(driver->OnFallback());
-  }
-
-  
-  
-  
-  auto start = TimeStamp::Now();
-  while (start + TimeDuration::FromMilliseconds(5) > TimeStamp::Now()) {
-    EXPECT_EQ(stream->ManualDataCallback(ignoredFrameCount),
-              MockCubebStream::KeepProcessing::Yes);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-
-  
-  std::this_thread::sleep_for(std::chrono::seconds(1));
-
-  
-  
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-
-  
-  {
-#ifdef DEBUG
-    AutoSetter as(inDriverIteration);
-#endif
-    while (driver->OnFallback()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-  }
-
-  TimeStamp wallClockEnd = TimeStamp::Now();
-  GraphTime graphClockEnd = graph->StateComputedTime();
-  size_t iterationCountEnd = graph->IterationCount();
-
-  auto wallClockDuration =
-      media::TimeUnit::FromTimeDuration(wallClockEnd - wallClockStart);
-  auto graphClockDuration =
-      media::TimeUnit(CheckedInt64(graphClockEnd) - graphClockStart, rate);
-
-  
-  
-  EXPECT_NEAR(
-      wallClockDuration.ToSeconds(), graphClockDuration.ToSeconds(),
-#ifdef XP_MACOSX
-      
-      
-      
-      wallClockDuration.ToSeconds() * 0.8
-#else
-      0.1
-#endif
-  );
-  
-  
-  
-  auto fallbackCadence =
-      graphClockDuration /
-      static_cast<int64_t>(iterationCountEnd - iterationCountStart);
-  EXPECT_LE(8, fallbackCadence.ToMilliseconds());
-  EXPECT_LE(fallbackCadence.ToMilliseconds(), 40.0);
-
-  
-  MOZ_KnownLive(driver)->Shutdown();
-  
-  NS_ProcessPendingEvents(nullptr);
 }

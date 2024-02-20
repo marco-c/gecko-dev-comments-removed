@@ -205,10 +205,6 @@ class MockCubebStream {
 
   
   
-  void NotifyDeviceChangedNow();
-
-  
-  
   void SetOutputRecordingEnabled(bool aEnabled);
   
   
@@ -243,7 +239,6 @@ class MockCubebStream {
 
  private:
   void NotifyState(cubeb_state aState);
-  void NotifyDeviceChanged();
 
   static constexpr long kMaxNrFrames = 1920;
   
