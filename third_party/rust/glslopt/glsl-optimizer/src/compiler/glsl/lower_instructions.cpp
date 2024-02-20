@@ -118,7 +118,7 @@
 
 
 
-#include <math.h>
+#include "c99_math.h"
 #include "program/prog_instruction.h" 
 #include "compiler/glsl_types.h"
 #include "ir.h"
