@@ -190,16 +190,6 @@ add_task(async function navigate_around() {
     },
   };
 
-  if (Services.prefs.getBoolPref("browser.translations.enable")) {
-    
-    
-    
-    knownProblematicPrefs["browser.translations.logLevel"] = {
-      min: 50,
-      max: 150,
-    };
-  }
-
   if (SpecialPowers.useRemoteSubframes) {
     
     
