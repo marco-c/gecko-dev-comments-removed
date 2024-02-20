@@ -26,6 +26,7 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
 
 
 
+
 function add_tasks_with_rust(...args) {
   let taskFnIndex = args.findIndex(a => typeof a == "function");
   let taskFn = args[taskFnIndex];
@@ -77,7 +78,9 @@ function add_tasks_with_rust(...args) {
     };
 
     Object.defineProperty(newTaskFn, "name", {
-      value: taskFn.name + (rustEnabled ? "_rustEnabled" : "_rustDisabled"),
+      value:
+        (taskFn.name || "anonymousTask") +
+        (rustEnabled ? "_rustEnabled" : "_rustDisabled"),
     });
     let addTaskArgs = [...args];
     addTaskArgs[taskFnIndex] = newTaskFn;
