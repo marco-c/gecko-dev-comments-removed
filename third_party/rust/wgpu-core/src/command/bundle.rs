@@ -261,20 +261,17 @@ impl RenderBundleEncoder {
         };
 
         
-        let max_color_attachments = hal::MAX_COLOR_ATTACHMENTS;
-
-        
         
         Ok(Self {
             base: base.unwrap_or_else(|| BasePass::new(&desc.label)),
             parent_id,
             context: RenderPassContext {
                 attachments: AttachmentData {
-                    colors: if desc.color_formats.len() > max_color_attachments {
+                    colors: if desc.color_formats.len() > hal::MAX_COLOR_ATTACHMENTS {
                         return Err(CreateRenderBundleError::ColorAttachment(
                             ColorAttachmentError::TooMany {
                                 given: desc.color_formats.len(),
-                                limit: max_color_attachments,
+                                limit: hal::MAX_COLOR_ATTACHMENTS,
                             },
                         ));
                     } else {
