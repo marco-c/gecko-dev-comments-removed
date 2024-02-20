@@ -7,7 +7,6 @@
 
 #include <map>
 #include <memory>
-#include <queue>
 #include <utility>
 #include <vector>
 
@@ -203,7 +202,7 @@ class Port {
   MessageQueue message_queue;
 
   
-  std::queue<std::pair<NodeName, ScopedEvent>> control_message_queue;
+  std::vector<std::pair<NodeName, ScopedEvent>> control_message_queue;
 
   
   
