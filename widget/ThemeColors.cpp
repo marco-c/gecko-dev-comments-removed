@@ -157,18 +157,25 @@ sRGBColor ThemeAccentColor::GetDarker() const {
   return sRGBColor::FromABGR(ColorPalette::GetDarker(*mAccentColor));
 }
 
-bool ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc) {
+auto ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc)
+    -> HighContrastInfo {
   
   
   
-  return aPc.GetBackgroundColorDraw() &&
-         PreferenceSheet::PrefsFor(*aPc.Document())
-             .NonNativeThemeShouldBeHighContrast();
+  if (!aPc.GetBackgroundColorDraw()) {
+    return {};
+  }
+  const auto& prefs = PreferenceSheet::PrefsFor(*aPc.Document());
+  return {prefs.NonNativeThemeShouldBeHighContrast(),
+          prefs.mMustUseLightSystemColors};
 }
 
 ColorScheme ThemeColors::ColorSchemeForWidget(const nsIFrame* aFrame,
                                               StyleAppearance aAppearance,
-                                              bool aHighContrast) {
+                                              const HighContrastInfo& aInfo) {
+  if (aInfo.mMustUseLightSystemColors) {
+    return ColorScheme::Light;
+  }
   if (!nsNativeTheme::IsWidgetScrollbarPart(aAppearance)) {
     return LookAndFeel::ColorSchemeForFrame(aFrame);
   }
@@ -179,9 +186,6 @@ ColorScheme ThemeColors::ColorSchemeForWidget(const nsIFrame* aFrame,
   
   
   
-  if (aHighContrast) {
-    return ColorScheme::Light;
-  }
   if (StaticPrefs::widget_disable_dark_scrollbar()) {
     return ColorScheme::Light;
   }
