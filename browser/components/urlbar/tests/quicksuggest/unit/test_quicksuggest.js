@@ -24,34 +24,18 @@ const TIMESTAMP_SUGGESTION_URL = `http://example.com/timestamp-${TIMESTAMP_TEMPL
 const TIMESTAMP_SUGGESTION_CLICK_URL = `http://click.reporting.test.com/timestamp-${TIMESTAMP_TEMPLATE}-foo`;
 
 const REMOTE_SETTINGS_RESULTS = [
-  {
-    id: 1,
-    url: "http://example.com/amp",
-    title: "AMP Suggestion",
+  QuickSuggestTestUtils.ampRemoteSettings({
     keywords: [
       SPONSORED_SEARCH_STRING,
       SPONSORED_AND_NONSPONSORED_SEARCH_STRING,
     ],
-    click_url: "http://example.com/amp-click",
-    impression_url: "http://example.com/amp-impression",
-    advertiser: "Amp",
-    iab_category: "22 - Shopping",
-    icon: "1234",
-  },
-  {
-    id: 2,
-    url: "http://example.com/wikipedia",
-    title: "Wikipedia Suggestion",
+  }),
+  QuickSuggestTestUtils.wikipediaRemoteSettings({
     keywords: [
       NONSPONSORED_SEARCH_STRING,
       SPONSORED_AND_NONSPONSORED_SEARCH_STRING,
     ],
-    click_url: "http://example.com/wikipedia-click",
-    impression_url: "http://example.com/wikipedia-impression",
-    advertiser: "Wikipedia",
-    iab_category: "5 - Education",
-    icon: "1234",
-  },
+  }),
   {
     id: 3,
     url: "http://" + PREFIX_SUGGESTIONS_STRIPPED_URL,
@@ -250,7 +234,7 @@ add_tasks_with_rust(async function sponsoredOnly_sponsored() {
   let result = context.results[0];
   Assert.equal(
     result.title,
-    `${SPONSORED_SEARCH_STRING} — AMP Suggestion`,
+    `${SPONSORED_SEARCH_STRING} — Amp Suggestion`,
     "result.title should be correct"
   );
   Assert.deepEqual(
@@ -767,148 +751,160 @@ async function doDedupeAgainstURLTest({
 }
 
 
-add_task(async function latencyTelemetry() {
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  await QuickSuggestTestUtils.forceSync();
+add_task(
+  {
+    
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function latencyTelemetry() {
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+    await QuickSuggestTestUtils.forceSync();
 
-  let histogram = Services.telemetry.getHistogramById(
-    TELEMETRY_REMOTE_SETTINGS_LATENCY
-  );
-  histogram.clear();
+    let histogram = Services.telemetry.getHistogramById(
+      TELEMETRY_REMOTE_SETTINGS_LATENCY
+    );
+    histogram.clear();
 
-  let context = createContext(SPONSORED_SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [expectedSponsoredResult()],
-  });
+    let context = createContext(SPONSORED_SEARCH_STRING, {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    });
+    await check_results({
+      context,
+      matches: [expectedSponsoredResult()],
+    });
 
-  
-  
-  Assert.deepEqual(
-    Object.values(histogram.snapshot().values).filter(v => v > 0),
-    [1],
-    "Latency histogram updated after search"
-  );
-  Assert.ok(
-    !TelemetryStopwatch.running(TELEMETRY_REMOTE_SETTINGS_LATENCY, context),
-    "Stopwatch not running after search"
-  );
-});
+    
+    
+    Assert.deepEqual(
+      Object.values(histogram.snapshot().values).filter(v => v > 0),
+      [1],
+      "Latency histogram updated after search"
+    );
+    Assert.ok(
+      !TelemetryStopwatch.running(TELEMETRY_REMOTE_SETTINGS_LATENCY, context),
+      "Stopwatch not running after search"
+    );
+  }
+);
 
 
 
-add_task(async function setupAndTeardown() {
-  Assert.ok(
-    QuickSuggest.jsBackend.isEnabled,
-    "Remote settings backend is enabled initially"
-  );
+add_task(
+  {
+    
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function setupAndTeardown() {
+    Assert.ok(
+      QuickSuggest.jsBackend.isEnabled,
+      "Remote settings backend is enabled initially"
+    );
 
-  
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-  Assert.ok(
-    !QuickSuggest.jsBackend.rs,
-    "Settings client is null after disabling suggest prefs"
-  );
-  Assert.ok(
-    QuickSuggest.jsBackend.isEnabled,
-    "Remote settings backend remains enabled"
-  );
+    
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+    Assert.ok(
+      !QuickSuggest.jsBackend.rs,
+      "Settings client is null after disabling suggest prefs"
+    );
+    Assert.ok(
+      QuickSuggest.jsBackend.isEnabled,
+      "Remote settings backend remains enabled"
+    );
 
-  
-  
-  
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
-  );
+    
+    
+    
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
+    );
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  Assert.ok(
-    !QuickSuggest.jsBackend.rs,
-    "Settings client is null after disabling suggest.quicksuggest.nonsponsored"
-  );
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+    Assert.ok(
+      !QuickSuggest.jsBackend.rs,
+      "Settings client is null after disabling suggest.quicksuggest.nonsponsored"
+    );
 
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client is non-null after enabling suggest.quicksuggest.sponsored"
-  );
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client is non-null after enabling suggest.quicksuggest.sponsored"
+    );
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client remains non-null after enabling suggest.quicksuggest.nonsponsored"
-  );
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client remains non-null after enabling suggest.quicksuggest.nonsponsored"
+    );
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client remains non-null after disabling suggest.quicksuggest.nonsponsored"
-  );
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client remains non-null after disabling suggest.quicksuggest.nonsponsored"
+    );
 
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-  Assert.ok(
-    !QuickSuggest.jsBackend.rs,
-    "Settings client is null after disabling suggest.quicksuggest.sponsored"
-  );
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+    Assert.ok(
+      !QuickSuggest.jsBackend.rs,
+      "Settings client is null after disabling suggest.quicksuggest.sponsored"
+    );
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
-  );
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
+    );
 
-  UrlbarPrefs.set("quicksuggest.enabled", false);
-  Assert.ok(
-    !QuickSuggest.jsBackend.rs,
-    "Settings client is null after disabling quicksuggest.enabled"
-  );
+    UrlbarPrefs.set("quicksuggest.enabled", false);
+    Assert.ok(
+      !QuickSuggest.jsBackend.rs,
+      "Settings client is null after disabling quicksuggest.enabled"
+    );
 
-  UrlbarPrefs.set("quicksuggest.enabled", true);
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client is non-null after re-enabling quicksuggest.enabled"
-  );
-  Assert.ok(
-    QuickSuggest.jsBackend.isEnabled,
-    "Remote settings backend is enabled after re-enabling quicksuggest.enabled"
-  );
+    UrlbarPrefs.set("quicksuggest.enabled", true);
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client is non-null after re-enabling quicksuggest.enabled"
+    );
+    Assert.ok(
+      QuickSuggest.jsBackend.isEnabled,
+      "Remote settings backend is enabled after re-enabling quicksuggest.enabled"
+    );
 
-  UrlbarPrefs.set("quicksuggest.rustEnabled", true);
-  Assert.ok(
-    !QuickSuggest.jsBackend.rs,
-    "Settings client is null after enabling the Rust backend"
-  );
-  Assert.ok(
-    !QuickSuggest.jsBackend.isEnabled,
-    "Remote settings backend is disabled after enabling the Rust backend"
-  );
+    UrlbarPrefs.set("quicksuggest.rustEnabled", true);
+    Assert.ok(
+      !QuickSuggest.jsBackend.rs,
+      "Settings client is null after enabling the Rust backend"
+    );
+    Assert.ok(
+      !QuickSuggest.jsBackend.isEnabled,
+      "Remote settings backend is disabled after enabling the Rust backend"
+    );
 
-  UrlbarPrefs.clear("quicksuggest.rustEnabled");
-  Assert.ok(
-    QuickSuggest.jsBackend.rs,
-    "Settings client is non-null after disabling the Rust backend"
-  );
-  Assert.ok(
-    QuickSuggest.jsBackend.isEnabled,
-    "Remote settings backend is enabled after disabling the Rust backend"
-  );
+    UrlbarPrefs.clear("quicksuggest.rustEnabled");
+    Assert.ok(
+      QuickSuggest.jsBackend.rs,
+      "Settings client is non-null after disabling the Rust backend"
+    );
+    Assert.ok(
+      QuickSuggest.jsBackend.isEnabled,
+      "Remote settings backend is enabled after disabling the Rust backend"
+    );
 
-  
-  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
-  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
-  UrlbarPrefs.set("quicksuggest.enabled", true);
-  Assert.ok(
-    !QuickSuggest.jsBackend.rs,
-    "Settings client remains null at end of task"
-  );
-});
+    
+    UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
+    UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+    UrlbarPrefs.set("quicksuggest.enabled", true);
+    Assert.ok(
+      !QuickSuggest.jsBackend.rs,
+      "Settings client remains null at end of task"
+    );
+  }
+);
 
 
 add_tasks_with_rust(async function timestamps() {
@@ -1353,41 +1349,47 @@ add_tasks_with_rust(async function block_timestamp() {
 
 
 
-add_task(async function remoteSettingsDataType() {
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  await QuickSuggestTestUtils.forceSync();
-
-  for (let dataType of [undefined, "test-data-type"]) {
+add_task(
+  {
     
-    let value = {};
-    if (dataType) {
-      value.quickSuggestRemoteSettingsDataType = dataType;
-    }
-    let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(value);
-
-    
-    let expected = expectedSponsoredResult();
-    if (dataType) {
-      expected = JSON.parse(JSON.stringify(expected));
-      expected.payload.title = dataType;
-    }
-
-    
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function remoteSettingsDataType() {
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
     await QuickSuggestTestUtils.forceSync();
 
-    let context = createContext(SPONSORED_SEARCH_STRING, {
-      providers: [UrlbarProviderQuickSuggest.name],
-      isPrivate: false,
-    });
-    await check_results({
-      context,
-      matches: [expected],
-    });
+    for (let dataType of [undefined, "test-data-type"]) {
+      
+      let value = {};
+      if (dataType) {
+        value.quickSuggestRemoteSettingsDataType = dataType;
+      }
+      let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(value);
 
-    await cleanUpNimbus();
+      
+      let expected = expectedSponsoredResult();
+      if (dataType) {
+        expected = JSON.parse(JSON.stringify(expected));
+        expected.payload.title = dataType;
+      }
+
+      
+      await QuickSuggestTestUtils.forceSync();
+
+      let context = createContext(SPONSORED_SEARCH_STRING, {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      });
+      await check_results({
+        context,
+        matches: [expected],
+      });
+
+      await cleanUpNimbus();
+    }
   }
-});
+);
 
 add_tasks_with_rust(async function sponsoredPriority_normal() {
   await doSponsoredPriorityTest({

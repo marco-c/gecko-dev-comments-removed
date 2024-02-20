@@ -8,6 +8,9 @@
 
 
 
+
+requestLongerTimeout(5);
+
 add_setup(async function () {
   await initGroupTest();
 });
@@ -194,7 +197,9 @@ add_task(async function suggest() {
       assertAbandonmentTelemetry([
         {
           groups: "heuristic,suggest",
-          results: "search_engine,rs_adm_nonsponsored",
+          results: UrlbarPrefs.get("quickSuggestRustEnabled")
+            ? "search_engine,rust_adm_nonsponsored"
+            : "search_engine,rs_adm_nonsponsored",
           n_results: 2,
         },
       ]),

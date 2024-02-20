@@ -89,32 +89,37 @@ add_tasks_with_rust(async function () {
 
 
 
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings only, keywords only",
-    settingsData: {
-      keywords: ["weather", "forecast"],
-    },
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: true,
-    },
-  });
-});
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function () {
+    await doKeywordsTest({
+      desc: "Settings only, keywords only",
+      settingsData: {
+        keywords: ["weather", "forecast"],
+      },
+      tests: {
+        "": false,
+        w: false,
+        we: false,
+        wea: false,
+        weat: false,
+        weath: false,
+        weathe: false,
+        weather: true,
+        f: false,
+        fo: false,
+        for: false,
+        fore: false,
+        forec: false,
+        foreca: false,
+        forecas: false,
+        forecast: true,
+      },
+    });
+  }
+);
 
 
 
@@ -123,33 +128,38 @@ add_task(async function () {
 
 
 
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings only, min keyword length = 0",
-    settingsData: {
-      keywords: ["weather", "forecast"],
-      min_keyword_length: 0,
-    },
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: true,
-    },
-  });
-});
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function () {
+    await doKeywordsTest({
+      desc: "Settings only, min keyword length = 0",
+      settingsData: {
+        keywords: ["weather", "forecast"],
+        min_keyword_length: 0,
+      },
+      tests: {
+        "": false,
+        w: false,
+        we: false,
+        wea: false,
+        weat: false,
+        weath: false,
+        weathe: false,
+        weather: true,
+        f: false,
+        fo: false,
+        for: false,
+        fore: false,
+        forec: false,
+        foreca: false,
+        forecas: false,
+        forecast: true,
+      },
+    });
+  }
+);
 
 
 
@@ -286,35 +296,40 @@ add_tasks_with_rust(async function () {
 
 
 
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings: keywords; Nimbus: keywords",
-    settingsData: {
-      keywords: ["weather"],
-    },
-    nimbusValues: {
-      weatherKeywords: ["forecast"],
-    },
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: true,
-    },
-  });
-});
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function () {
+    await doKeywordsTest({
+      desc: "Settings: keywords; Nimbus: keywords",
+      settingsData: {
+        keywords: ["weather"],
+      },
+      nimbusValues: {
+        weatherKeywords: ["forecast"],
+      },
+      tests: {
+        "": false,
+        w: false,
+        we: false,
+        wea: false,
+        weat: false,
+        weath: false,
+        weathe: false,
+        weather: false,
+        f: false,
+        fo: false,
+        for: false,
+        fore: false,
+        forec: false,
+        foreca: false,
+        forecas: false,
+        forecast: true,
+      },
+    });
+  }
+);
 
 
 
@@ -323,36 +338,41 @@ add_task(async function () {
 
 
 
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings: keywords, min keyword length = 0; Nimbus: keywords",
-    settingsData: {
-      keywords: ["weather"],
-      min_keyword_length: 0,
-    },
-    nimbusValues: {
-      weatherKeywords: ["forecast"],
-    },
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: false,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: true,
-    },
-  });
-});
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function () {
+    await doKeywordsTest({
+      desc: "Settings: keywords, min keyword length = 0; Nimbus: keywords",
+      settingsData: {
+        keywords: ["weather"],
+        min_keyword_length: 0,
+      },
+      nimbusValues: {
+        weatherKeywords: ["forecast"],
+      },
+      tests: {
+        "": false,
+        w: false,
+        we: false,
+        wea: false,
+        weat: false,
+        weath: false,
+        weathe: false,
+        weather: false,
+        f: false,
+        fo: false,
+        for: false,
+        fore: false,
+        forec: false,
+        foreca: false,
+        forecas: false,
+        forecast: true,
+      },
+    });
+  }
+);
 
 
 
@@ -558,32 +578,37 @@ add_tasks_with_rust(async function () {
 
 
 
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings: none; Nimbus: keywords",
-    nimbusValues: {
-      weatherKeywords: ["weather", "forecast"],
-    },
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: true,
-    },
-  });
-});
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function () {
+    await doKeywordsTest({
+      desc: "Settings: none; Nimbus: keywords",
+      nimbusValues: {
+        weatherKeywords: ["weather", "forecast"],
+      },
+      tests: {
+        "": false,
+        w: false,
+        we: false,
+        wea: false,
+        weat: false,
+        weath: false,
+        weathe: false,
+        weather: true,
+        f: false,
+        fo: false,
+        for: false,
+        fore: false,
+        forec: false,
+        foreca: false,
+        forecas: false,
+        forecast: true,
+      },
+    });
+  }
+);
 
 
 
@@ -593,33 +618,38 @@ add_task(async function () {
 
 
 
-add_task(async function () {
-  await doKeywordsTest({
-    desc: "Settings: none; Nimbus: keywords, min keyword length = 0",
-    nimbusValues: {
-      weatherKeywords: ["weather", "forecast"],
-      weatherKeywordsMinimumLength: 0,
-    },
-    tests: {
-      "": false,
-      w: false,
-      we: false,
-      wea: false,
-      weat: false,
-      weath: false,
-      weathe: false,
-      weather: true,
-      f: false,
-      fo: false,
-      for: false,
-      fore: false,
-      forec: false,
-      foreca: false,
-      forecas: false,
-      forecast: true,
-    },
-  });
-});
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function () {
+    await doKeywordsTest({
+      desc: "Settings: none; Nimbus: keywords, min keyword length = 0",
+      nimbusValues: {
+        weatherKeywords: ["weather", "forecast"],
+        weatherKeywordsMinimumLength: 0,
+      },
+      tests: {
+        "": false,
+        w: false,
+        we: false,
+        wea: false,
+        weat: false,
+        weath: false,
+        weathe: false,
+        weather: true,
+        f: false,
+        fo: false,
+        for: false,
+        fore: false,
+        forec: false,
+        foreca: false,
+        forecas: false,
+        forecast: true,
+      },
+    });
+  }
+);
 
 
 

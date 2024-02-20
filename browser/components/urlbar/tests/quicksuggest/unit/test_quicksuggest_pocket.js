@@ -214,38 +214,38 @@ add_tasks_with_rust(async function lowPrefixes() {
 
 
 
-add_task(async function lowPrefixes_howTo() {
-  Assert.ok(
-    !UrlbarPrefs.get("quicksuggest.rustEnabled"),
-    "The Rust implementation doesn't support the 'how to' special case"
-  );
-
-  
-  let tests = {
-    h: false,
-    ho: false,
-    how: false,
-    "how ": false,
-    "how t": false,
-    "how to": true,
-    "how to ": true,
-    "how to l": true,
-    "how to lo": true,
-    "how to low": true,
-  };
-  for (let [searchString, shouldMatch] of Object.entries(tests)) {
-    info("Doing search: " + JSON.stringify({ searchString, shouldMatch }));
-    await check_results({
-      context: createContext(searchString, {
-        providers: [UrlbarProviderQuickSuggest.name],
-        isPrivate: false,
-      }),
-      matches: shouldMatch
-        ? [makeExpectedResult({ searchString, fullKeyword: "how to low" })]
-        : [],
-    });
+add_task(
+  {
+    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+  },
+  async function lowPrefixes_howTo() {
+    
+    let tests = {
+      h: false,
+      ho: false,
+      how: false,
+      "how ": false,
+      "how t": false,
+      "how to": true,
+      "how to ": true,
+      "how to l": true,
+      "how to lo": true,
+      "how to low": true,
+    };
+    for (let [searchString, shouldMatch] of Object.entries(tests)) {
+      info("Doing search: " + JSON.stringify({ searchString, shouldMatch }));
+      await check_results({
+        context: createContext(searchString, {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        matches: shouldMatch
+          ? [makeExpectedResult({ searchString, fullKeyword: "how to low" })]
+          : [],
+      });
+    }
   }
-});
+);
 
 
 add_tasks_with_rust(async function highPrefixes() {

@@ -498,7 +498,7 @@ pref("browser.urlbar.quicksuggest.enabled", false);
 
 
 
-pref("browser.urlbar.quicksuggest.rustEnabled", false);
+pref("browser.urlbar.quicksuggest.rustEnabled", true);
 
 
 pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true);
