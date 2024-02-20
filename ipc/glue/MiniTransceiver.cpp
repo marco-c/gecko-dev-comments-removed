@@ -49,9 +49,13 @@ static void InitMsgHdr(msghdr* aHdr, int aIOVSize, size_t aMaxNumFds) {
   aHdr->msg_iovlen = aIOVSize;
 
   
-  auto* cbuf = new char[CMSG_SPACE(sizeof(int) * aMaxNumFds)];
+  const size_t cbufSize = CMSG_SPACE(sizeof(int) * aMaxNumFds);
+  auto* cbuf = new char[cbufSize];
+  
+  
+  memset(cbuf, 255, cbufSize);
   aHdr->msg_control = cbuf;
-  aHdr->msg_controllen = CMSG_SPACE(sizeof(int) * aMaxNumFds);
+  aHdr->msg_controllen = cbufSize;
 }
 
 
