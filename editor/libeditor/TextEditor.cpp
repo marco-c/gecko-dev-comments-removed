@@ -599,8 +599,13 @@ nsresult TextEditor::HandlePasteAsQuotation(
     return NS_OK;
   }
 
+  auto* windowContext = GetDocument()->GetWindowContext();
+  if (!windowContext) {
+    NS_WARNING("Editor didn't have document window context");
+    return NS_ERROR_FAILURE;
+  }
   
-  clipboard->GetData(trans, aClipboardType);
+  rv = clipboard->GetData(trans, aClipboardType, windowContext);
 
   
   
