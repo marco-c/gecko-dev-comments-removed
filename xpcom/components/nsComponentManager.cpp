@@ -58,6 +58,7 @@
 
 #include "mozilla/Logging.h"
 #include "LogModulePrefWatcher.h"
+#include "xpcpublic.h"
 
 #ifdef MOZ_MEMORY
 #  include "mozmemory.h"
@@ -356,6 +357,10 @@ nsresult nsComponentManagerImpl::Init() {
       }
     }
   }
+
+  
+  
+  xpc::ReadOnlyPage::Init();
 
   bool loadChromeManifests;
   switch (XRE_GetProcessType()) {
