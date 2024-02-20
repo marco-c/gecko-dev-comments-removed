@@ -3753,6 +3753,26 @@ void nsWindow::CreateCompositorVsyncDispatcher() {
 }
 #endif
 
+void nsWindow::RequestRepaint(LayoutDeviceIntRegion& aRepaintRegion) {
+  WindowRenderer* renderer = GetWindowRenderer();
+  WebRenderLayerManager* layerManager = renderer->AsWebRender();
+  KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
+
+  if (knowsCompositor && layerManager && mCompositorSession) {
+    if (!mConfiguredClearColor && !IsPopup()) {
+      layerManager->WrBridge()->SendSetDefaultClearColor(LookAndFeel::Color(
+          LookAndFeel::ColorID::Window, PreferenceSheet::ColorSchemeForChrome(),
+          LookAndFeel::UseStandins::No));
+      mConfiguredClearColor = true;
+    }
+
+    
+    
+    layerManager->SetNeedsComposite(true);
+    layerManager->SendInvalidRegion(aRepaintRegion.ToUnknownRegion());
+  }
+}
+
 gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   
   NotifyOcclusionState(OcclusionState::VISIBLE);
@@ -3777,8 +3797,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 #endif
 
-  nsIWidgetListener* listener = GetListener();
-  if (!listener) {
+  if (!GetListener()) {
     return FALSE;
   }
 
@@ -3795,44 +3814,29 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   LayoutDeviceIntRegion region = exposeRegion;
   region.ScaleRoundOut(scale, scale);
 
-  WindowRenderer* renderer = GetWindowRenderer();
-  WebRenderLayerManager* layerManager = renderer->AsWebRender();
-  KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
-
-  if (knowsCompositor && layerManager && mCompositorSession) {
-    if (!mConfiguredClearColor && !IsPopup()) {
-      layerManager->WrBridge()->SendSetDefaultClearColor(LookAndFeel::Color(
-          LookAndFeel::ColorID::Window, PreferenceSheet::ColorSchemeForChrome(),
-          LookAndFeel::UseStandins::No));
-      mConfiguredClearColor = true;
-    }
-
-    
-    
-    layerManager->SetNeedsComposite(true);
-    layerManager->SendInvalidRegion(region.ToUnknownRegion());
-  }
+  RequestRepaint(region);
 
   RefPtr<nsWindow> strongThis(this);
 
   
   
-  {
-    listener->WillPaintWindow(this);
+  
+  GetListener()->WillPaintWindow(this);
 
-    
-    
-    if (!mGdkWindow) {
-      return TRUE;
-    }
-
-    
-    
-    listener = GetListener();
-    if (!listener) {
-      return FALSE;
-    }
+  
+  
+  if (!mGdkWindow || mIsDestroyed) {
+    return TRUE;
   }
+
+  
+  
+  nsIWidgetListener* listener = GetListener();
+  if (!listener) return FALSE;
+
+  WindowRenderer* renderer = GetWindowRenderer();
+  WebRenderLayerManager* layerManager = renderer->AsWebRender();
+  KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
 
   if (knowsCompositor && layerManager && layerManager->NeedsComposite()) {
     layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
