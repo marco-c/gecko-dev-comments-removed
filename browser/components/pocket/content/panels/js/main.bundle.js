@@ -2,14 +2,14 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 140:
+ 720:
  ((__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
 
-var react = __webpack_require__(294);
+var react = __webpack_require__(504);
 
-var react_dom = __webpack_require__(935);
+var react_dom = __webpack_require__(104);
 ;
 
 
@@ -23,7 +23,6 @@ function Header(props) {
     className: "stp_header_logo"
   }), props.children);
 }
-
  const Header_Header = (Header);
 ;
 
@@ -98,7 +97,6 @@ function TelemetryLink(props) {
       });
     }
   }
-
   return react.createElement("a", {
     href: props.href,
     onClick: onClick,
@@ -106,7 +104,6 @@ function TelemetryLink(props) {
     className: props.className
   }, props.children);
 }
-
  const TelemetryLink_TelemetryLink = (TelemetryLink);
 ;
 
@@ -122,7 +119,6 @@ function ArticleUrl(props) {
       className: "stp_article_list_saved_article"
     }, props.children);
   }
-
   return react.createElement(TelemetryLink_TelemetryLink, {
     className: "stp_article_list_link",
     href: props.url,
@@ -131,12 +127,10 @@ function ArticleUrl(props) {
     model: props.model
   }, props.children);
 }
-
 function Article(props) {
   function encodeThumbnail(rawSource) {
     return rawSource ? `https://img-getpocket.cdn.mozilla.net/80x80/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(rawSource)}` : null;
   }
-
   const [thumbnailLoaded, setThumbnailLoaded] = (0,react.useState)(false);
   const [thumbnailLoadFailed, setThumbnailLoadFailed] = (0,react.useState)(false);
   const {
@@ -148,27 +142,23 @@ function Article(props) {
     utmParams,
     openInPocketReader
   } = props;
-
   if (!article.url && !article.resolved_url && !article.given_url) {
     return null;
   }
-
   const url = new URL(article.url || article.resolved_url || article.given_url);
   const urlSearchParams = new URLSearchParams(utmParams);
-
   if (openInPocketReader && article.item_id && !url.href.match(/getpocket\.com\/read/)) {
     url.href = `https://getpocket.com/read/${article.item_id}`;
   }
-
   for (let [key, val] of urlSearchParams.entries()) {
     url.searchParams.set(key, val);
-  } 
+  }
 
-
+  
   const thumbnail = article.thumbnail || encodeThumbnail(article?.top_image_url || article?.images?.["1"]?.src);
   const alt = article.alt || "thumbnail image";
-  const title = article.title || article.resolved_title || article.given_title; 
-
+  const title = article.title || article.resolved_title || article.given_title;
+  
   const publisher = article.publisher || article.domain_metadata?.name || article.resolved_domain;
   return react.createElement("li", {
     className: "stp_article_list_item"
@@ -204,7 +194,6 @@ function Article(props) {
     className: "stp_article_list_publisher"
   }, publisher)))));
 }
-
 function ArticleList(props) {
   return react.createElement("ul", {
     className: "stp_article_list"
@@ -218,7 +207,6 @@ function ArticleList(props) {
     openInPocketReader: props.openInPocketReader
   })));
 }
-
  const ArticleList_ArticleList = (ArticleList);
 ;
 
@@ -240,7 +228,6 @@ function PopularTopics(props) {
     position: position
   }, topic.title))));
 }
-
  const PopularTopics_PopularTopics = (PopularTopics);
 ;
 
@@ -257,7 +244,6 @@ function Button(props) {
     source: props.source
   }, props.children);
 }
-
  const Button_Button = (Button);
 ;
 
@@ -290,7 +276,8 @@ function Home(props) {
   });
   const utmParams = `utm_source=${utmSource}${utmCampaign && utmContent ? `&utm_campaign=${utmCampaign}&utm_content=${utmContent}` : ``}`;
   const loadingRecentSaves = (0,react.useCallback)(resp => {
-    setArticlesState(prevState => ({ ...prevState,
+    setArticlesState(prevState => ({
+      ...prevState,
       status: "loading"
     }));
   }, []);
@@ -298,14 +285,13 @@ function Home(props) {
     const {
       data
     } = resp;
-
     if (data.status === "error") {
-      setArticlesState(prevState => ({ ...prevState,
+      setArticlesState(prevState => ({
+        ...prevState,
         status: "error"
       }));
       return;
     }
-
     setArticlesState({
       articles: data,
       status: "success"
@@ -324,7 +310,6 @@ function Home(props) {
     messages.sendMessage("PKT_show_home");
   }, []);
   let recentSavesSection = null;
-
   if (status === "error" || hideRecentSaves) {
     recentSavesSection = react.createElement("h3", {
       className: "header_medium",
@@ -367,7 +352,6 @@ function Home(props) {
       }));
     }
   }
-
   return react.createElement("div", {
     className: "stp_panel_container"
   }, react.createElement("div", {
@@ -387,7 +371,6 @@ function Home(props) {
     source: "home_popular_topic"
   }))));
 }
-
  const Home_Home = (Home);
 ;
 
@@ -402,7 +385,6 @@ var HomeOverlay = function (options) {
   this.inited = false;
   this.active = false;
 };
-
 HomeOverlay.prototype = {
   create({
     pockethost
@@ -415,11 +397,9 @@ HomeOverlay.prototype = {
     const utmSource = searchParams.get(`utmSource`);
     const utmCampaign = searchParams.get(`utmCampaign`);
     const utmContent = searchParams.get(`utmContent`);
-
     if (this.active) {
       return;
     }
-
     this.active = true;
     react_dom.render( react.createElement(Home_Home, {
       locale: locale,
@@ -429,12 +409,10 @@ HomeOverlay.prototype = {
       utmCampaign: utmCampaign,
       utmContent: utmContent
     }), document.querySelector(`body`));
-
     if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
       document.querySelector(`body`).classList.add(`theme_dark`);
     }
   }
-
 };
  const overlay = (HomeOverlay);
 ;
@@ -498,7 +476,6 @@ function Signup(props) {
     "data-l10n-id": "pocket-panel-button-activate"
   })))));
 }
-
  const Signup_Signup = (Signup);
 ;
 
@@ -513,7 +490,6 @@ function Signup(props) {
 var SignupOverlay = function (options) {
   this.inited = false;
   this.active = false;
-
   this.create = function ({
     pockethost
   }) {
@@ -525,13 +501,12 @@ var SignupOverlay = function (options) {
     const utmSource = searchParams.get(`utmSource`);
     const utmCampaign = searchParams.get(`utmCampaign`);
     const utmContent = searchParams.get(`utmContent`);
-
     if (this.active) {
       return;
     }
+    this.active = true;
 
-    this.active = true; 
-
+    
     react_dom.render( react.createElement(Signup_Signup, {
       pockethost: pockethost,
       utmSource: utmSource,
@@ -539,16 +514,14 @@ var SignupOverlay = function (options) {
       utmContent: utmContent,
       locale: locale
     }), document.querySelector(`body`));
-
     if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
       document.querySelector(`body`).classList.add(`theme_dark`);
-    } 
+    }
 
-
+    
     messages.sendMessage("PKT_show_signup");
   };
 };
-
  const signup_overlay = (SignupOverlay);
 ;
 
@@ -559,14 +532,12 @@ var SignupOverlay = function (options) {
 
 function TagPicker(props) {
   const [tags, setTags] = (0,react.useState)(props.tags); 
-
   const [allTags, setAllTags] = (0,react.useState)([]); 
-
   const [recentTags, setRecentTags] = (0,react.useState)([]); 
-
   const [duplicateTag, setDuplicateTag] = (0,react.useState)(null);
-  const [inputValue, setInputValue] = (0,react.useState)(""); 
+  const [inputValue, setInputValue] = (0,react.useState)("");
 
+  
   const [{
     tagInputStatus,
     tagInputErrorMessage
@@ -574,17 +545,16 @@ function TagPicker(props) {
     tagInputStatus: "",
     tagInputErrorMessage: ""
   });
-
   let handleKeyDown = e => {
     const enterKey = e.keyCode === 13;
     const commaKey = e.keyCode === 188;
-    const tabKey = inputValue && e.keyCode === 9; 
-    
-    
+    const tabKey = inputValue && e.keyCode === 9;
 
+    
+    
+    
     if (commaKey || enterKey || tabKey) {
       e.preventDefault();
-
       if (inputValue) {
         addTag(inputValue.trim());
         setInputValue(``); 
@@ -593,14 +563,11 @@ function TagPicker(props) {
       }
     }
   };
-
   let addTag = tagToAdd => {
     if (!tagToAdd?.length) {
       return;
     }
-
     let newDuplicateTag = tags.find(item => item === tagToAdd);
-
     if (!newDuplicateTag) {
       setTags([...tags, tagToAdd]);
     } else {
@@ -610,30 +577,24 @@ function TagPicker(props) {
       }, 1000);
     }
   };
-
   let removeTag = index => {
     let updatedTags = tags.slice(0); 
-
     updatedTags.splice(index, 1);
     setTags(updatedTags);
   };
-
   let submitTags = () => {
     let tagsToSubmit = [];
-
     if (tags?.length) {
       tagsToSubmit = tags;
-    } 
+    }
 
-
+    
     if (inputValue?.trim().length) {
       tagsToSubmit.push(inputValue.trim());
     }
-
     if (!props.itemUrl || !tagsToSubmit?.length) {
       return;
     }
-
     setTagInputStatus({
       tagInputStatus: "waiting",
       tagInputErrorMessage: ""
@@ -645,7 +606,6 @@ function TagPicker(props) {
       const {
         data
       } = resp;
-
       if (data.status === "success") {
         setTagInputStatus({
           tagInputStatus: "success",
@@ -659,7 +619,6 @@ function TagPicker(props) {
       }
     });
   };
-
   (0,react.useEffect)(() => {
     messages.sendMessage("PKT_getTags", {}, resp => {
       setAllTags(resp?.data?.tags);
@@ -721,7 +680,6 @@ function TagPicker(props) {
     className: "header_small"
   }, tagInputErrorMessage));
 }
-
  const TagPicker_TagPicker = (TagPicker);
 ;
 
@@ -741,8 +699,8 @@ function Saved(props) {
     utmSource,
     utmCampaign,
     utmContent
-  } = props; 
-
+  } = props;
+  
   const [{
     savedStatus,
     savedErrorId,
@@ -750,8 +708,8 @@ function Saved(props) {
     itemUrl
   }, setSavedStatusState] = (0,react.useState)({
     savedStatus: "loading"
-  }); 
-
+  });
+  
   const [{
     removedStatus,
     removedErrorMessage
@@ -759,7 +717,6 @@ function Saved(props) {
   const [savedStory, setSavedStoryState] = (0,react.useState)();
   const [articleInfoAttempted, setArticleInfoAttempted] = (0,react.useState)();
   const utmParams = `utm_source=${utmSource}${utmCampaign && utmContent ? `&utm_campaign=${utmCampaign}&utm_content=${utmContent}` : ``}`;
-
   function removeItem(event) {
     event.preventDefault();
     setRemovedStatusState({
@@ -771,19 +728,17 @@ function Saved(props) {
       const {
         data
       } = resp;
-
       if (data.status == "success") {
         setRemovedStatusState({
           removedStatus: "removed"
         });
       } else if (data.status == "error") {
-        let errorMessage = ""; 
+        let errorMessage = "";
         
-
+        
         if (data.error.message && locale?.startsWith("en")) {
           errorMessage = data.error.message;
         }
-
         setRemovedStatusState({
           removedStatus: "error",
           removedErrorMessage: errorMessage
@@ -791,14 +746,12 @@ function Saved(props) {
       }
     });
   }
-
   (0,react.useEffect)(() => {
     
     messages.addMessageListener("PKT_saveLink", function (resp) {
       const {
         data
       } = resp;
-
       if (data.status == "error") {
         
         setSavedStatusState({
@@ -806,9 +759,9 @@ function Saved(props) {
           savedErrorId: data?.error?.localizedKey || "pocket-panel-saved-error-generic"
         });
         return;
-      } 
+      }
 
-
+      
       setSavedStatusState({
         savedStatus: "success",
         itemId: data.item?.item_id,
@@ -821,11 +774,11 @@ function Saved(props) {
     });
     messages.addMessageListener("PKT_getArticleInfoAttempted", function (resp) {
       setArticleInfoAttempted(true);
-    }); 
+    });
 
+    
     messages.sendMessage("PKT_show_saved");
   }, []);
-
   if (savedStatus === "error") {
     return react.createElement("div", {
       className: "stp_panel_container"
@@ -840,7 +793,6 @@ function Saved(props) {
       "data-l10n-id": savedErrorId
     })));
   }
-
   return react.createElement("div", {
     className: "stp_panel_container"
   }, react.createElement("div", {
@@ -881,7 +833,6 @@ function Saved(props) {
     "data-l10n-id": "pocket-panel-saved-error-remove"
   }), removedErrorMessage && react.createElement("p", null, removedErrorMessage))));
 }
-
  const Saved_Saved = (Saved);
 ;
 
@@ -896,7 +847,6 @@ var SavedOverlay = function (options) {
   this.inited = false;
   this.active = false;
 };
-
 SavedOverlay.prototype = {
   create({
     pockethost
@@ -904,7 +854,6 @@ SavedOverlay.prototype = {
     if (this.active) {
       return;
     }
-
     this.active = true;
     const {
       searchParams
@@ -920,12 +869,10 @@ SavedOverlay.prototype = {
       utmCampaign: utmCampaign,
       utmContent: utmContent
     }), document.querySelector(`body`));
-
     if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
       document.querySelector(`body`).classList.add(`theme_dark`);
     }
   }
-
 };
  const saved_overlay = (SavedOverlay);
 ;
@@ -936,9 +883,7 @@ SavedOverlay.prototype = {
 
 
 
-
 var StyleGuideOverlay = function (options) {};
-
 StyleGuideOverlay.prototype = {
   create() {
     
@@ -1036,7 +981,6 @@ StyleGuideOverlay.prototype = {
       className: "stp_styleguide_h4"
     }, "Horizontal Rule"), react.createElement("hr", null)), document.querySelector(`#stp_style_guide_components`));
   }
-
 };
  const style_guide_overlay = (StyleGuideOverlay);
 ;
@@ -1237,7 +1181,7 @@ window.pktPanelMessaging = messages;
  		
  		
  		var installedChunks = {
- 			179: 0
+ 			590: 0
  		};
  		
  		
@@ -1287,7 +1231,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(140)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [968], () => (__webpack_require__(720)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
