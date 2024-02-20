@@ -1,20 +1,34 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla PublicddonMa
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const FXA_ENABLED_PREF = "identity.fxaccounts.enabled";
 const DISTRIBUTION_ID_PREF = "distribution.id";
 const DISTRIBUTION_ID_CHINA_REPACK = "MozillaOnline";
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// XPCOMUtils, AppConstants, NewTabUtils and ShellService, and
+// overrides importESModule to be a no-op (which can't be done
+// for a static import statement).
+
+// eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+
+// eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
+
+// eslint-disable-next-line mozilla/use-static-import
 const { NewTabUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/NewTabUtils.sys.mjs"
 );
+
+// eslint-disable-next-line mozilla/use-static-import
 const { ShellService } = ChromeUtils.importESModule(
   "resource:///modules/ShellService.sys.mjs"
 );
@@ -157,8 +171,8 @@ const FXA_USERNAME_PREF = "services.sync.username";
 
 const { activityStreamProvider: asProvider } = NewTabUtils;
 
-const FXA_ATTACHED_CLIENTS_UPDATE_INTERVAL = 4 * 60 * 60 * 1000; 
-const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; 
+const FXA_ATTACHED_CLIENTS_UPDATE_INTERVAL = 4 * 60 * 60 * 1000; // Four hours
+const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // Six hours
 const FRECENT_SITES_IGNORE_BLOCKED = false;
 const FRECENT_SITES_NUM_ITEMS = 25;
 const FRECENT_SITES_MIN_FRECENCY = 100;
@@ -166,13 +180,13 @@ const FRECENT_SITES_MIN_FRECENCY = 100;
 const CACHE_EXPIRATION = 5 * 60 * 1000;
 const jexlEvaluationCache = new Map();
 
-
-
-
-
-
-
-function CachedTargetingGetter(
+/**
+ * CachedTargetingGetter
+ * @param property {string} Name of the method
+ * @param options {any=} Options passed to the method
+ * @param updateInterval {number?} Update interval for query. Defaults to FRECENT_SITES_UPDATE_INTERVAL
+ */
+export function CachedTargetingGetter(
   property,
   options = null,
   updateInterval = FRECENT_SITES_UPDATE_INTERVAL,
@@ -181,7 +195,7 @@ function CachedTargetingGetter(
   return {
     _lastUpdated: 0,
     _value: null,
-    
+    // For testing
     expire() {
       this._lastUpdated = 0;
       this._value = null;
@@ -229,7 +243,7 @@ function CheckBrowserNeedsUpdate(
   const checker = {
     _lastUpdated: 0,
     _value: null,
-    
+    // For testing. Avoid update check network call.
     setUp(value) {
       this._lastUpdated = Date.now();
       this._value = value;
@@ -269,7 +283,7 @@ function CheckBrowserNeedsUpdate(
   return checker;
 }
 
-const QueryCache = {
+export const QueryCache = {
   expireAll() {
     Object.keys(this.queries).forEach(query => {
       this.queries[query].expire();
@@ -315,7 +329,7 @@ const QueryCache = {
       "getAddonsByTypes",
       ["theme"],
       FRECENT_SITES_UPDATE_INTERVAL,
-      lazy.AddonManager 
+      lazy.AddonManager // eslint-disable-line mozilla/valid-lazy
     ),
     isDefaultHTMLHandler: new CachedTargetingGetter(
       "isDefaultHandlerFor",
@@ -338,25 +352,25 @@ const QueryCache = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * sortMessagesByWeightedRank
+ *
+ * Each message has an associated weight, which is guaranteed to be strictly
+ * positive. Sort the messages so that higher weighted messages are more likely
+ * to come first.
+ *
+ * Specifically, sort them so that the probability of message x_1 with weight
+ * w_1 appearing before message x_2 with weight w_2 is (w_1 / (w_1 + w_2)).
+ *
+ * This is equivalent to requiring that x_1 appearing before x_2 is (w_1 / w_2)
+ * "times" as likely as x_2 appearing before x_1.
+ *
+ * See Bug 1484996, Comment 2 for a justification of the method.
+ *
+ * @param {Array} messages - A non-empty array of messages to sort, all with
+ *                           strictly positive weights
+ * @returns the sorted array
+ */
 function sortMessagesByWeightedRank(messages) {
   return messages
     .map(message => ({
@@ -367,16 +381,16 @@ function sortMessagesByWeightedRank(messages) {
     .map(({ message }) => message);
 }
 
-
-
-
-
-
-
-
-
-
-function getSortedMessages(messages, options = {}) {
+/**
+ * getSortedMessages - Given an array of Messages, applies sorting and filtering rules
+ *                     in expected order.
+ *
+ * @param {Array<Message>} messages
+ * @param {{}} options
+ * @param {boolean} options.ordered - Should .order be used instead of random weighted sorting?
+ * @returns {Array<Message>}
+ */
+export function getSortedMessages(messages, options = {}) {
   let { ordered } = { ordered: false, ...options };
   let result = messages;
 
@@ -385,7 +399,7 @@ function getSortedMessages(messages, options = {}) {
   }
 
   result.sort((a, b) => {
-    
+    // Next, sort by priority
     if (a.priority > b.priority || (!isNaN(a.priority) && isNaN(b.priority))) {
       return -1;
     }
@@ -393,7 +407,7 @@ function getSortedMessages(messages, options = {}) {
       return 1;
     }
 
-    
+    // Sort messages with targeting expressions higher than those with none
     if (a.targeting && !b.targeting) {
       return -1;
     }
@@ -401,7 +415,7 @@ function getSortedMessages(messages, options = {}) {
       return 1;
     }
 
-    
+    // Next, sort by order *ascending* if ordered = true
     if (ordered) {
       if (a.order > b.order || (!isNaN(a.order) && isNaN(b.order))) {
         return 1;
@@ -417,17 +431,17 @@ function getSortedMessages(messages, options = {}) {
   return result;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * parseAboutPageURL - Parse a URL string retrieved from about:home and about:new, returns
+ *                    its type (web extenstion or custom url) and the parsed url(s)
+ *
+ * @param {string} url - A URL string for home page or newtab page
+ * @returns {Object} {
+ *   isWebExt: boolean,
+ *   isCustomUrl: boolean,
+ *   urls: Array<{url: string, host: string}>
+ * }
+ */
 function parseAboutPageURL(url) {
   let ret = {
     isWebExt: false,
@@ -438,9 +452,9 @@ function parseAboutPageURL(url) {
     ret.isWebExt = true;
     ret.urls.push({ url, host: "" });
   } else {
-    
-    
-    
+    // The home page URL could be either a single URL or a list of "|" separated URLs.
+    // Note that it should work with "about:home" and "about:blank", in which case the
+    // "host" is set as an empty string.
     for (const _url of url.split("|")) {
       if (!["about:home", "about:newtab", "about:blank"].includes(_url)) {
         ret.isCustomUrl = true;
@@ -451,7 +465,7 @@ function parseAboutPageURL(url) {
         ret.urls.push({ url: _url, host });
       } catch (e) {}
     }
-    
+    // If URL parsing failed, just return the given url with an empty host
     if (!ret.urls.length) {
       ret.urls.push({ url, host: "" });
     }
@@ -460,19 +474,19 @@ function parseAboutPageURL(url) {
   return ret;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Get the number of records in autofill storage, e.g. credit cards/addresses.
+ *
+ * @param  {Object} [data]
+ * @param  {string} [data.collectionName]
+ *         The name used to specify which collection to retrieve records.
+ * @param  {string} [data.searchString]
+ *         The typed string for filtering out the matched records.
+ * @param  {string} [data.info]
+ *         The input autocomplete property's information.
+ * @returns {Promise<number>} The number of matched records.
+ * @see FormAutofillParent._getRecords
+ */
 async function getAutofillRecords(data) {
   let actor;
   try {
@@ -482,9 +496,9 @@ async function getAutofillRecords(data) {
         "FormAutofill"
       );
   } catch (error) {
-    
-    
-    
+    // If the actor is not available, we can't get the records. We could import
+    // the records directly from FormAutofillStorage to avoid the messiness of
+    // JSActors, but that would import a lot of code for a targeting attribute.
     return 0;
   }
   let records = await actor?.receiveMessage({
@@ -494,8 +508,8 @@ async function getAutofillRecords(data) {
   return records?.records?.length ?? 0;
 }
 
-
-
+// Attribution data can be encoded multiple times so we need this function to
+// get a cleartext value.
 function decodeAttributionValue(value) {
   if (!value) {
     return null;
@@ -535,7 +549,7 @@ const TargetingGetters = {
     };
   },
   get attributionData() {
-    
+    // Attribution is determined at startup - so we can use the cached attribution at this point
     return lazy.AttributionCode.getCachedAttributionData();
   },
   get currentDate() {
@@ -575,7 +589,7 @@ const TargetingGetters = {
     };
   },
   get xpinstallEnabled() {
-    
+    // This is needed for all add-on recommendations, to know if we allow xpi installs in the first place
     return lazy.isXPIInstallEnabled;
   },
   get addonsInfo() {
@@ -617,7 +631,7 @@ const TargetingGetters = {
       return Promise.resolve(NONE);
     }
     return new Promise(resolve => {
-      
+      // Note: calling init ensures this code is only executed after Search has been initialized
       Services.search
         .getAppProvidedEngines()
         .then(engines => {
@@ -757,8 +771,8 @@ const TargetingGetters = {
     if (bts?.isBackgroundTaskMode) {
       return 0;
     }
-    
-    
+    // Counter starts at 1 when a profile is created, substract 1 so the value
+    // returned matches expectations
     return (
       lazy.TelemetrySession.getMetadata("targeting").profileSubsessionCounter -
       1
@@ -793,15 +807,15 @@ const TargetingGetters = {
       Ci.nsIBackgroundTasks
     );
     if (bts?.isBackgroundTaskMode) {
-      
-      
+      // This might need to hook into the alert service to enumerate relevant
+      // persistent native notifications.
       return false;
     }
 
     let window = lazy.BrowserWindowTracker.getTopWindow();
 
-    
-    
+    // Technically this doesn't mean we have active notifications,
+    // but because we use !activeNotifications to check for conflicts, this should return true
     if (!window) {
       return true;
     }
@@ -844,11 +858,11 @@ const TargetingGetters = {
     return lazy.WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
   },
 
-  
-
-
-
-
+  /**
+   * Is this invocation running in background task mode?
+   *
+   * @return {boolean} `true` if running in background task mode.
+   */
   get isBackgroundTaskMode() {
     let bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
       Ci.nsIBackgroundTasks
@@ -856,13 +870,13 @@ const TargetingGetters = {
     return !!bts?.isBackgroundTaskMode;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * A non-empty task name if this invocation is running in background
+   * task mode, or `null` if this invocation is not running in
+   * background task mode.
+   *
+   * @return {string|null} background task name or `null`.
+   */
   get backgroundTaskName() {
     let bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
       Ci.nsIBackgroundTasks
@@ -875,29 +889,29 @@ const TargetingGetters = {
     return window?.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
   },
 
-  
-
-
+  /**
+   * Whether or not the user is in the Major Release 2022 holdback study.
+   */
   get inMr2022Holdback() {
     return (
       lazy.NimbusFeatures.majorRelease2022.getVariable("onboarding") === false
     );
   },
 
-  
-
-
-
+  /**
+   * The distribution id, if any.
+   * @return {string}
+   */
   get distributionId() {
     return Services.prefs
       .getDefaultBranch(null)
       .getCharPref("distribution.id", "");
   },
 
-  
-
-
-
+  /** Where the Firefox View button is shown, if at all.
+   * @return {string} container of the button if it is shown in the toolbar/overflow menu
+   * @return {string} `null` if the button has been removed
+   */
   get fxViewButtonAreaType() {
     let button = lazy.CustomizableUI.getWidget("firefox-view-button");
     return button.areaType;
@@ -924,56 +938,56 @@ const TargetingGetters = {
     return getAutofillRecords({ collectionName: "addresses" });
   },
 
-  
-
-
-
+  /**
+   * Has the user ever used the Migration Wizard to migrate bookmarks?
+   * @return {boolean} `true` if bookmark migration has occurred.
+   */
   get hasMigratedBookmarks() {
     return lazy.hasMigratedBookmarks;
   },
 
-  
-
-
-
-
-
+  /**
+   * Has the user ever used the Migration Wizard to migrate passwords from
+   * a CSV file?
+   * @return {boolean} `true` if CSV passwords have been imported via the
+   *   migration wizard.
+   */
   get hasMigratedCSVPasswords() {
     return lazy.hasMigratedCSVPasswords;
   },
 
-  
-
-
-
+  /**
+   * Has the user ever used the Migration Wizard to migrate history?
+   * @return {boolean} `true` if history migration has occurred.
+   */
   get hasMigratedHistory() {
     return lazy.hasMigratedHistory;
   },
 
-  
-
-
-
+  /**
+   * Has the user ever used the Migration Wizard to migrate passwords?
+   * @return {boolean} `true` if password migration has occurred.
+   */
   get hasMigratedPasswords() {
     return lazy.hasMigratedPasswords;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns true if the user is configured to use the embedded migration
+   * wizard in about:welcome by having
+   * "browser.migrate.content-modal.about-welcome-behavior" be equal to
+   * "embedded".
+   * @return {boolean} `true` if the embedded migration wizard is enabled.
+   */
   get useEmbeddedMigrationWizard() {
     return lazy.useEmbeddedMigrationWizard;
   },
 
-  
-
-
-
-
+  /**
+   * Whether the user installed Firefox via the RTAMO flow.
+   * @return {boolean} `true` when RTAMO has been used to download Firefox,
+   * `false` otherwise.
+   */
   get isRTAMO() {
     const { attributionData } = this;
 
@@ -983,29 +997,29 @@ const TargetingGetters = {
     );
   },
 
-  
-
-
-
-
+  /**
+   * Whether the user installed via the device migration flow.
+   * @return {boolean} `true` when the link to download the browser was part
+   * of guidance for device migration. `false` otherwise.
+   */
   get isDeviceMigration() {
     const { attributionData } = this;
 
     return attributionData?.campaign === "migration";
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * The values of the height and width available to the browser to display
+   * web content. The available height and width are each calculated taking
+   * into account the presence of menu bars, docks, and other similar OS elements
+   * @returns {Object} resolution The resolution object containing width and height
+   * @returns {string} resolution.width The available width of the primary monitor
+   * @returns {string} resolution.height The available height of the primary monitor
+   */
   get primaryResolution() {
-    
-    
-    
+    // Using hidden dom window ensures that we have a window object
+    // to grab a screen from in certain edge cases such as targeting evaluation
+    // during first startup before the browser is available, and in MacOS
     let window = Services.appShell.hiddenDOMWindow;
     return {
       width: window?.screen.availWidth,
@@ -1018,7 +1032,7 @@ const TargetingGetters = {
     try {
       bits = Services.sysinfo.getProperty("archbits", null);
     } catch (_e) {
-      
+      // getProperty can throw if the memsize does not exist
     }
     if (bits) {
       bits = Number(bits);
@@ -1031,7 +1045,7 @@ const TargetingGetters = {
     try {
       memory = Services.sysinfo.getProperty("memsize", null);
     } catch (_e) {
-      
+      // getProperty can throw if the memsize does not exist
     }
     if (memory) {
       memory = Number(memory) / 1024 / 1024;
@@ -1040,19 +1054,19 @@ const TargetingGetters = {
   },
 };
 
-const ASRouterTargeting = {
+export const ASRouterTargeting = {
   Environment: TargetingGetters,
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Snapshot the current targeting environment.
+   *
+   * Asynchronous getters are handled.  Getters that throw or reject
+   * are ignored.
+   *
+   * @param {object} target - the environment to snapshot.
+   * @return {object} snapshot of target with `environment` object and `version`
+   * integer.
+   */
   async getEnvironmentSnapshot(target = ASRouterTargeting.Environment) {
     async function resolve(object) {
       if (typeof object === "object" && object !== null) {
@@ -1064,9 +1078,9 @@ const ASRouterTargeting = {
           return object;
         }
 
-        
+        // One promise for each named property. Label promises with property name.
         const promises = Object.keys(object).map(async key => {
-          
+          // Each promise needs to check if we're shutting down when it is evaluated.
           if (Services.startup.shuttingDown) {
             throw new Error(
               "shutting down, so not querying targeting environment"
@@ -1080,7 +1094,7 @@ const ASRouterTargeting = {
 
         const resolved = {};
         for (const result of await Promise.allSettled(promises)) {
-          
+          // Ignore properties that are rejected.
           if (result.status === "fulfilled") {
             const [key, value] = result.value;
             resolved[key] = value;
@@ -1095,7 +1109,7 @@ const ASRouterTargeting = {
 
     const environment = await resolve(target);
 
-    
+    // Should we need to migrate in the future.
     const snapshot = { environment, version: 1 };
 
     return snapshot;
@@ -1136,12 +1150,12 @@ const ASRouterTargeting = {
     );
   },
 
-  
-
-
-
-
-
+  /**
+   * getCachedEvaluation - Return a cached jexl evaluation if available
+   *
+   * @param {string} targeting JEXL expression to lookup
+   * @returns {obj|null} Object with value result or null if not available
+   */
   getCachedEvaluation(targeting) {
     if (jexlEvaluationCache.has(targeting)) {
       const { timestamp, value } = jexlEvaluationCache.get(targeting);
@@ -1154,22 +1168,22 @@ const ASRouterTargeting = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * checkMessageTargeting - Checks is a message's targeting parameters are satisfied
+   *
+   * @param {*} message An AS router message
+   * @param {obj} targetingContext a TargetingContext instance complete with eval environment
+   * @param {func} onError A function to handle errors (takes two params; error, message)
+   * @param {boolean} shouldCache Should the JEXL evaluations be cached and reused.
+   * @returns
+   */
   async checkMessageTargeting(message, targetingContext, onError, shouldCache) {
     lazy.ASRouterPreferences.console.debug(
       "in checkMessageTargeting, arguments = ",
-      Array.from(arguments) 
+      Array.from(arguments) // eslint-disable-line prefer-rest-params
     );
 
-    
+    // If no targeting is specified,
     if (!message.targeting) {
       return true;
     }
@@ -1181,8 +1195,8 @@ const ASRouterTargeting = {
           return result.value;
         }
       }
-      
-      
+      // Used to report the source of the targeting error in the case of
+      // undesired events
       targetingContext.setTelemetrySource(message.id);
       result = await targetingContext.evalWithDefault(message.targeting);
       if (shouldCache) {
@@ -1213,8 +1227,8 @@ const ASRouterTargeting = {
       (trigger
         ? this.isTriggerMatch(trigger, message.trigger)
         : !message.trigger) &&
-      
-      
+      // If a trigger expression was passed to this function, the message should match it.
+      // Otherwise, we should choose a message with no trigger property (i.e. a message that can show up at any time)
       this.checkMessageTargeting(
         message,
         targetingContext,
@@ -1224,19 +1238,19 @@ const ASRouterTargeting = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * findMatchingMessage - Given an array of messages, returns one message
+   *                       whos targeting expression evaluates to true
+   *
+   * @param {Array<Message>} messages An array of AS router messages
+   * @param {trigger} string A trigger expression if a message for that trigger is desired
+   * @param {obj|null} context A FilterExpression context. Defaults to TargetingGetters above.
+   * @param {func} onError A function to handle errors (takes two params; error, message)
+   * @param {func} ordered An optional param when true sort message by order specified in message
+   * @param {boolean} shouldCache Should the JEXL evaluations be cached and reused.
+   * @param {boolean} returnAll Should we return all matching messages, not just the first one found.
+   * @returns {obj|Array<Message>} If returnAll is false, a single message. If returnAll is true, an array of messages.
+   */
   async findMatchingMessage({
     messages,
     trigger = {},
@@ -1271,7 +1285,7 @@ const ASRouterTargeting = {
 
     for (const candidate of sortedMessages) {
       if (await isMatch(candidate)) {
-        
+        // If not returnAll, we should return the first message we find that matches.
         if (!returnAll) {
           return candidate;
         }
@@ -1282,10 +1296,3 @@ const ASRouterTargeting = {
     return matching;
   },
 };
-
-const EXPORTED_SYMBOLS = [
-  "ASRouterTargeting",
-  "QueryCache",
-  "CachedTargetingGetter",
-  "getSortedMessages",
-];

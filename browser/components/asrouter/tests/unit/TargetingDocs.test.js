@@ -1,4 +1,4 @@
-import { ASRouterTargeting } from "modules/ASRouterTargeting.jsm";
+import { ASRouterTargeting } from "modules/ASRouterTargeting.sys.mjs";
 import docs from "docs/targeting-attributes.md";
 
 
