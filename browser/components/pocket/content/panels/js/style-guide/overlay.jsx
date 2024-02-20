@@ -1,16 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import Header from "../components/Header/Header";
-import ArticleList from "../components/ArticleList/ArticleList";
-import Button from "../components/Button/Button";
-import PopularTopics from "../components/PopularTopics/PopularTopics";
-import TagPicker from "../components/TagPicker/TagPicker";
+import Header from "../components/Header/Header.jsx";
+import ArticleList from "../components/ArticleList/ArticleList.jsx";
+import Button from "../components/Button/Button.jsx";
+import PopularTopics from "../components/PopularTopics/PopularTopics.jsx";
+import TagPicker from "../components/TagPicker/TagPicker.jsx";
 
 var StyleGuideOverlay = function (options) {};
 
 StyleGuideOverlay.prototype = {
   create() {
-    
+    // TODO: Wrap popular topics component in JSX to work without needing an explicit container hierarchy for styling
     ReactDOM.render(
       <div>
         <h3>JSX Components:</h3>

@@ -1,13 +1,11 @@
-
-
-
-
-
-
+/*
+HomeOverlay is the view itself and contains all of the methods to manipute the overlay and messaging.
+It does not contain any logic for saving or communication with the extension or server.
+*/
 
 import React from "react";
 import ReactDOM from "react-dom";
-import Home from "../components/Home/Home";
+import Home from "../components/Home/Home.jsx";
 
 var HomeOverlay = function (options) {
   this.inited = false;

@@ -2,8 +2,8 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 299:
- ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
+ 140:
+ ((__unused_webpack___webpack_module__, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
 
@@ -27,6 +27,7 @@ function Header(props) {
  const Header_Header = (Header);
 ;
 
+
 var pktPanelMessaging = {
   removeMessageListener(messageId, callback) {
     RPMRemoveMessageListener(messageId, callback);
@@ -43,41 +44,39 @@ var pktPanelMessaging = {
       
       
       const responseMessageId = `${messageId}_response`;
-
       var responseListener = responsePayload => {
         callback(responsePayload);
         this.removeMessageListener(responseMessageId, responseListener);
       };
 
       this.addMessageListener(responseMessageId, responseListener);
-    } 
+    }
 
-
+    
     RPMSendAsyncMessage(messageId, payload);
   },
 
   
   
-  clickHelper(element, {
-    source = "",
-    position
-  }) {
+  clickHelper(element, { source = "", position }) {
     element?.addEventListener(`click`, event => {
       event.preventDefault();
+
       this.sendMessage("PKT_openTabWithUrl", {
         url: event.currentTarget.getAttribute(`href`),
         source,
-        position
+        position,
       });
     });
   },
 
   log() {
     RPMSendAsyncMessage("PKT_log", arguments);
-  }
-
+  },
 };
+
  const messages = (pktPanelMessaging);
+
 ;
 
 
@@ -391,8 +390,6 @@ function Home(props) {
 
  const Home_Home = (Home);
 ;
-
-
 
 
 
@@ -1078,13 +1075,13 @@ PKT_PANEL.prototype = {
   },
 
   setupObservers() {
-    this.setupMutationObserver(); 
+    this.setupMutationObserver();
     
     
     
     
     
-
+    
     this.setupIntersectionObserver();
   },
 
@@ -1092,25 +1089,23 @@ PKT_PANEL.prototype = {
     if (this.inited) {
       return;
     }
-
     this.setupObservers();
     this.inited = true;
   },
 
   resizeParent() {
     let clientHeight = document.body.clientHeight;
-
     if (this.overlay.tagsDropdownOpen) {
       clientHeight = Math.max(clientHeight, 252);
-    } 
+    }
+
     
     
-
-
+    
     if (clientHeight) {
       messages.sendMessage("PKT_resizePanel", {
         width: document.body.clientWidth,
-        height: clientHeight
+        height: clientHeight,
       });
     }
   },
@@ -1127,45 +1122,43 @@ PKT_PANEL.prototype = {
 
   setupMutationObserver() {
     
-    const targetNode = document.body; 
+    const targetNode = document.body;
 
-    const config = {
-      attributes: false,
-      childList: true,
-      subtree: true
-    }; 
+    
+    const config = { attributes: false, childList: true, subtree: true };
 
+    
     const callback = (mutationList, observer) => {
       mutationList.forEach(mutation => {
         switch (mutation.type) {
-          case "childList":
-            {
-              
+          case "childList": {
+            
 
 
-              this.resizeParent();
-              break;
-            }
+            this.resizeParent();
+            break;
+          }
         }
       });
-    }; 
+    };
 
+    
+    const observer = new MutationObserver(callback);
 
-    const observer = new MutationObserver(callback); 
-
+    
     observer.observe(targetNode, config);
   },
 
   create() {
-    const pockethost = RPMGetStringPref("extensions.pocket.site") || "getpocket.com";
-    this.overlay.create({
-      pockethost
-    });
-  }
-
+    const pockethost =
+      RPMGetStringPref("extensions.pocket.site") || "getpocket.com";
+    this.overlay.create({ pockethost });
+  },
 };
+
 window.PKT_PANEL = PKT_PANEL;
 window.pktPanelMessaging = messages;
+
 
  })
 
@@ -1294,7 +1287,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(299)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(140)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
