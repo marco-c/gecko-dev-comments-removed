@@ -6457,6 +6457,37 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
   }
 
   
+  let toolbarItem = popup.triggerNode;
+  while (toolbarItem) {
+    let localName = toolbarItem.localName;
+    if (localName == "toolbar") {
+      toolbarItem = null;
+      break;
+    }
+    if (localName == "toolbarpaletteitem") {
+      toolbarItem = toolbarItem.firstElementChild;
+      break;
+    }
+    if (localName == "menupopup") {
+      aEvent.preventDefault();
+      aEvent.stopPropagation();
+      return;
+    }
+    let parent = toolbarItem.parentElement;
+    if (parent) {
+      if (
+        parent.classList.contains("customization-target") ||
+        parent.getAttribute("overflowfortoolbar") || 
+        parent.localName == "toolbarpaletteitem" ||
+        parent.localName == "toolbar"
+      ) {
+        break;
+      }
+    }
+    toolbarItem = parent;
+  }
+
+  
   for (var i = popup.children.length - 1; i >= 0; --i) {
     var deadItem = popup.children[i];
     if (deadItem.hasAttribute("toolbarId")) {
@@ -6509,30 +6540,7 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
     return;
   }
 
-  
-  let toolbarItem = popup.triggerNode;
-
-  if (toolbarItem && toolbarItem.localName == "toolbarpaletteitem") {
-    toolbarItem = toolbarItem.firstElementChild;
-  } else if (toolbarItem && toolbarItem.localName != "toolbar") {
-    while (toolbarItem && toolbarItem.parentElement) {
-      let parent = toolbarItem.parentElement;
-      if (
-        (parent.classList &&
-          parent.classList.contains("customization-target")) ||
-        parent.getAttribute("overflowfortoolbar") || 
-        parent.localName == "toolbarpaletteitem" ||
-        parent.localName == "toolbar"
-      ) {
-        break;
-      }
-      toolbarItem = parent;
-    }
-  } else {
-    toolbarItem = null;
-  }
-
-  let showTabStripItems = toolbarItem && toolbarItem.id == "tabbrowser-tabs";
+  let showTabStripItems = toolbarItem?.id == "tabbrowser-tabs";
   for (let node of popup.querySelectorAll(
     'menuitem[contexttype="toolbaritem"]'
   )) {
@@ -6588,9 +6596,7 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
   }
 
   let movable =
-    toolbarItem &&
-    toolbarItem.id &&
-    CustomizableUI.isWidgetRemovable(toolbarItem);
+    toolbarItem?.id && CustomizableUI.isWidgetRemovable(toolbarItem);
   if (movable) {
     if (CustomizableUI.isSpecialWidget(toolbarItem.id)) {
       moveToPanel.setAttribute("disabled", true);
