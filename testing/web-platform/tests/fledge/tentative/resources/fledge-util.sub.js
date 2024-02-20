@@ -150,6 +150,35 @@ async function waitForObservedRequests(uuid, expectedRequests) {
 
 
 
+async function waitForObservedRequestsIgnoreDebugOnlyReports(
+  uuid, expectedRequests) {
+  
+  
+  expectedRequests =
+      expectedRequests.sort().map((url) => url.replace(uuid, '<uuid>'));
+
+  while (true) {
+    let numTrackedRequest = 0;
+    let trackedData = await fetchTrackedData(uuid);
+
+    
+    let trackedRequests = trackedData.trackedRequests.sort().map(
+        (url) => url.replace(uuid, '<uuid>'));
+
+    for (const trackedRequest of trackedRequests) {
+      
+      if (!trackedRequest.includes('forDebuggingOnly')) {
+        assert_in_array(trackedRequest, expectedRequests);
+        numTrackedRequest++;
+      }
+    }
+
+    if (numTrackedRequest == expectedRequests.length) break;
+  }
+}
+
+
+
 
 
 
@@ -157,17 +186,19 @@ async function waitForObservedRequests(uuid, expectedRequests) {
 function createBiddingScriptURL(params = {}) {
   let origin = params.origin ? params.origin : new URL(BASE_URL).origin;
   let url = new URL(`${origin}${RESOURCE_PATH}bidding-logic.sub.py`);
-  if (params.generateBid)
+  
+  
+  if (params.generateBid != null)
     url.searchParams.append('generateBid', params.generateBid);
-  if (params.reportWin)
+  if (params.reportWin != null)
     url.searchParams.append('reportWin', params.reportWin);
-  if (params.error)
+  if (params.error != null)
     url.searchParams.append('error', params.error);
-  if (params.bid)
+  if (params.bid != null)
     url.searchParams.append('bid', params.bid);
-  if (params.bidCurrency)
+  if (params.bidCurrency != null)
     url.searchParams.append('bidCurrency', params.bidCurrency);
-  if (params.allowComponentAuction !== undefined)
+  if (params.allowComponentAuction != null)
     url.searchParams.append('allowComponentAuction', JSON.stringify(params.allowComponentAuction))
   return url.toString();
 }
@@ -189,11 +220,13 @@ function createDecisionScriptURL(uuid, params = {}) {
   let origin = params.origin ? params.origin : new URL(BASE_URL).origin;
   let url = new URL(`${origin}${RESOURCE_PATH}decision-logic.sub.py`);
   url.searchParams.append('uuid', uuid);
-  if (params.scoreAd)
+  
+  
+  if (params.scoreAd != null)
     url.searchParams.append('scoreAd', params.scoreAd);
-  if (params.reportResult)
+  if (params.reportResult != null)
     url.searchParams.append('reportResult', params.reportResult);
-  if (params.error)
+  if (params.error != null)
     url.searchParams.append('error', params.error);
   return url.toString();
 }
@@ -204,12 +237,14 @@ function createDecisionScriptURL(uuid, params = {}) {
 
 
 function createRenderURL(uuid, script, signalsParams, origin) {
+  
+  
   if (origin == null)
     origin = new URL(BASE_URL).origin;
   let url = new URL(`${origin}${RESOURCE_PATH}fenced-frame.sub.py`);
-  if (script)
+  if (script != null)
     url.searchParams.append('script', script);
-  if (signalsParams)
+  if (signalsParams != null)
     url.searchParams.append('signalsParams', signalsParams);
   url.searchParams.append('uuid', uuid);
   return url.toString();
