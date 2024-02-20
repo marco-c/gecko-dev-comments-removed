@@ -213,59 +213,6 @@ already_AddRefed<Promise> Promise::All(
   return CreateFromExisting(global, result, aPropagateUserInteraction);
 }
 
-void Promise::Then(JSContext* aCx,
-                   
-                   
-                   JS::Handle<JSObject*> aCalleeGlobal,
-                   AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
-                   JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv) {
-  NS_ASSERT_OWNINGTHREAD(Promise);
-
-  
-  
-  
-  
-  
-  JS::Rooted<JSObject*> promise(aCx, PromiseObj());
-  if (!promise) {
-    
-    return;
-  }
-
-  if (!JS_WrapObject(aCx, &promise)) {
-    aRv.NoteJSContextException(aCx);
-    return;
-  }
-
-  JS::Rooted<JSObject*> resolveCallback(aCx);
-  if (aResolveCallback) {
-    resolveCallback = aResolveCallback->CallbackOrNull();
-    if (!JS_WrapObject(aCx, &resolveCallback)) {
-      aRv.NoteJSContextException(aCx);
-      return;
-    }
-  }
-
-  JS::Rooted<JSObject*> rejectCallback(aCx);
-  if (aRejectCallback) {
-    rejectCallback = aRejectCallback->CallbackOrNull();
-    if (!JS_WrapObject(aCx, &rejectCallback)) {
-      aRv.NoteJSContextException(aCx);
-      return;
-    }
-  }
-
-  JS::Rooted<JSObject*> retval(aCx);
-  retval = JS::CallOriginalPromiseThen(aCx, promise, resolveCallback,
-                                       rejectCallback);
-  if (!retval) {
-    aRv.NoteJSContextException(aCx);
-    return;
-  }
-
-  aRetval.setObject(*retval);
-}
-
 static void SettlePromise(Promise* aSettlingPromise, Promise* aCallbackPromise,
                           ErrorResult& aRv) {
   if (!aSettlingPromise) {
