@@ -276,10 +276,10 @@ module.exports = {
     "no-nested-ternary": "error",
 
     
-    "no-new-object": "error",
+    "no-new-wrappers": "error",
 
     
-    "no-new-wrappers": "error",
+    "no-object-constructor": "error",
 
     
     "no-prototype-builtins": "off",
