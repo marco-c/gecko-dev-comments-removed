@@ -9,7 +9,6 @@
 
 #include "nsIHTMLCollection.h"
 #include "nsInterfaceHashtable.h"
-#include "mozilla/dom/TreeOrderedArray.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 
@@ -96,14 +95,15 @@ class HTMLFormControlsCollection final : public nsIHTMLCollection,
 
   HTMLFormElement* mForm;  
 
-  
-  TreeOrderedArray<nsGenericHTMLFormElement*> mElements;
+  nsTArray<nsGenericHTMLFormElement*>
+      mElements;  
 
   
   
   
   
-  TreeOrderedArray<nsGenericHTMLFormElement*> mNotInElements;
+
+  nsTArray<nsGenericHTMLFormElement*> mNotInElements;  
 
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(HTMLFormControlsCollection)
 

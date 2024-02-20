@@ -262,7 +262,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   UniquePtr<StyleAuthorStyles> mServoStyles;
   UniquePtr<mozilla::ServoStyleRuleMap> mStyleRuleMap;
 
-  using SlotArray = TreeOrderedArray<HTMLSlotElement*>;
+  using SlotArray = TreeOrderedArray<HTMLSlotElement>;
   
   
   

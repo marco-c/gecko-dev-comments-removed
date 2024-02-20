@@ -9,34 +9,15 @@
 
 #include "nsTArray.h"
 
-class nsINode;
-template <typename T>
-class RefPtr;
-
 namespace mozilla::dom {
 
 
-template <typename NodePointer>
+template <typename Node>
 class TreeOrderedArray {
-  template <typename T>
-  struct RawTypeExtractor {};
-
-  template <typename T>
-  struct RawTypeExtractor<T*> {
-    using type = T;
-  };
-
-  template <typename T>
-  struct RawTypeExtractor<RefPtr<T>> {
-    using type = T;
-  };
-
-  using Node = typename RawTypeExtractor<NodePointer>::type;
-
  public:
-  operator const nsTArray<NodePointer>&() const { return mList; }
-  const nsTArray<NodePointer>& AsList() const { return mList; }
-  const nsTArray<NodePointer>* operator->() const { return &mList; }
+  operator const nsTArray<Node*>&() const { return mList; }
+
+  const nsTArray<Node*>* operator->() const { return &mList; }
 
   
   
@@ -45,17 +26,14 @@ class TreeOrderedArray {
   
   
   
-  
-  
-  inline size_t Insert(Node&, nsINode* aCommonAncestor = nullptr);
+  inline size_t Insert(Node&);
 
   bool RemoveElement(Node& aNode) { return mList.RemoveElement(&aNode); }
-  void RemoveElementAt(size_t aIndex) { mList.RemoveElementAt(aIndex); }
 
   void Clear() { mList.Clear(); }
 
  private:
-  AutoTArray<NodePointer, 1> mList;
+  AutoTArray<Node*, 1> mList;
 };
 
 }  

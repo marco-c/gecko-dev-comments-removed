@@ -230,8 +230,6 @@ enum EventNameType {
   EventNameType_All = 0xFFFF
 };
 
-enum class TreeKind : uint8_t { DOM, Flat };
-
 struct EventNameMapping {
   
   
@@ -3425,16 +3423,26 @@ class nsContentUtils {
 
 
 
+  template <typename ElementType, typename ElementPtr>
+  static bool AddElementToListByTreeOrder(nsTArray<ElementType>& aList,
+                                          ElementPtr aChild,
+                                          nsIContent* aCommonAncestor);
+
+  
 
 
 
 
 
 
-  template <TreeKind>
-  static int32_t CompareTreePosition(const nsINode* aNode1,
-                                     const nsINode* aNode2,
-                                     const nsINode* aCommonAncestor);
+
+
+
+
+
+  static int32_t CompareTreePosition(nsIContent* aContent1,
+                                     nsIContent* aContent2,
+                                     const nsIContent* aCommonAncestor);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsIContent* AttachDeclarativeShadowRoot(
