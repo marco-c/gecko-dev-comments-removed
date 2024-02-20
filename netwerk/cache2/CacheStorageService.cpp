@@ -240,6 +240,17 @@ class WalkMemoryCacheRunnable : public WalkCacheRunnable {
 
       if (!CacheStorageService::IsRunning()) return NS_ERROR_NOT_INITIALIZED;
 
+      
+      size_t numEntries = 0;
+      for (const auto& entries : sGlobalEntryTables->Values()) {
+        if (entries->Type() != CacheEntryTable::MEMORY_ONLY) {
+          continue;
+        }
+        numEntries += entries->Values().Count();
+      }
+      mEntryArray.SetCapacity(numEntries);
+
+      
       for (const auto& entries : sGlobalEntryTables->Values()) {
         if (entries->Type() != CacheEntryTable::MEMORY_ONLY) {
           continue;
@@ -280,16 +291,13 @@ class WalkMemoryCacheRunnable : public WalkCacheRunnable {
              (bool)mCancel));
 
         
-        if (!mEntryArray.Length() || mCancel) {
+        if (mNextEntryIdx >= mEntryArray.Length() || mCancel) {
           mCallback->OnCacheEntryVisitCompleted();
           return NS_OK;  
         }
 
         
-        
-        
-        RefPtr<CacheEntry> entry = mEntryArray[0];
-        mEntryArray.RemoveElementAt(0);
+        RefPtr<CacheEntry> entry = std::move(mEntryArray[mNextEntryIdx++]);
 
         
         
@@ -335,6 +343,7 @@ class WalkMemoryCacheRunnable : public WalkCacheRunnable {
  private:
   nsCString mContextKey;
   nsTArray<RefPtr<CacheEntry>> mEntryArray;
+  size_t mNextEntryIdx{0};
 };
 
 
