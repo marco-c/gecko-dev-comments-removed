@@ -26,32 +26,38 @@ export var LayoutUtils = {
   },
 
   _rectToClientRect(win, rect) {
-    let x = rect.left;
-    let y = rect.top;
+    
+    
+    
+    
+    let winDpr = win.devicePixelRatio;
+    let x = rect.left * winDpr;
+    let y = rect.top * winDpr;
 
-    
-    
     let parentFrame = win.browsingContext?.embedderElement;
     while (parentFrame) {
       win = parentFrame.ownerGlobal;
       let cstyle = win.getComputedStyle(parentFrame);
 
       let framerect = parentFrame.getBoundingClientRect();
-      x +=
+      let xDelta =
         framerect.left +
         parseFloat(cstyle.borderLeftWidth) +
         parseFloat(cstyle.paddingLeft);
-      y +=
+      let yDelta =
         framerect.top +
         parseFloat(cstyle.borderTopWidth) +
         parseFloat(cstyle.paddingTop);
+
+      x += xDelta * win.devicePixelRatio;
+      y += yDelta * win.devicePixelRatio;
 
       parentFrame = win.browsingContext?.embedderElement;
     }
 
     return {
-      x,
-      y,
+      x: x / winDpr,
+      y: y / winDpr,
       width: rect.width,
       height: rect.height,
     };
