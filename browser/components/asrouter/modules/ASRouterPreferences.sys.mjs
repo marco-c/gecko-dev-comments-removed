@@ -1,18 +1,17 @@
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const PROVIDER_PREF_BRANCH =
   "browser.newtabpage.activity-stream.asrouter.providers.";
 const DEVTOOLS_PREF =
   "browser.newtabpage.activity-stream.asrouter.devtoolsEnabled";
 
-
-
-
-
-
+/**
+ * Use `ASRouterPreferences.console.debug()` and friends from ASRouter files to
+ * log messages during development.  See LOG_LEVELS in ConsoleAPI.jsm for the
+ * available methods as well as the available values for this pref.
+ */
 const DEBUG_PREF = "browser.newtabpage.activity-stream.asrouter.debugLogLevel";
 
 const FXA_USERNAME_PREF = "services.sync.username";
@@ -31,11 +30,11 @@ const USER_PREFERENCES = {
     "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
 };
 
+// Preferences that influence targeting attributes. When these change we need
+// to re-evaluate if the message targeting still matches
+export const TARGETING_PREFERENCES = [FXA_USERNAME_PREF];
 
-
-const TARGETING_PREFERENCES = [FXA_USERNAME_PREF];
-
-const TEST_PROVIDERS = [
+export const TEST_PROVIDERS = [
   {
     id: "panel_local_testing",
     type: "local",
@@ -44,14 +43,14 @@ const TEST_PROVIDERS = [
   },
 ];
 
-class _ASRouterPreferences {
+export class _ASRouterPreferences {
   constructor() {
     Object.assign(this, DEFAULT_STATE);
     this._callbacks = new Set();
 
     ChromeUtils.defineLazyGetter(this, "console", () => {
       let { ConsoleAPI } = ChromeUtils.importESModule(
-        
+        /* eslint-disable mozilla/use-console-createInstance */
         "resource://gre/modules/Console.sys.mjs"
       );
       let consoleOptions = {
@@ -129,12 +128,12 @@ class _ASRouterPreferences {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Bug 1800087 - Migrate the ASRouter message provider prefs' values to the
+   * current format (provider.bucket -> provider.collection).
+   *
+   * TODO (Bug 1800937): Remove migration code after the next watershed release.
+   */
   _migrateProviderPrefs() {
     const prefList = Services.prefs.getChildList(this._providerPrefBranch);
     for (const pref of prefList) {
@@ -239,11 +238,4 @@ class _ASRouterPreferences {
   }
 }
 
-const ASRouterPreferences = new _ASRouterPreferences();
-
-const EXPORTED_SYMBOLS = [
-  "_ASRouterPreferences",
-  "ASRouterPreferences",
-  "TEST_PROVIDERS",
-  "TARGETING_PREFERENCES",
-];
+export const ASRouterPreferences = new _ASRouterPreferences();
