@@ -17,10 +17,9 @@ use crate::{
     },
     err::{Error, Res},
     p11::{
-        Item, PK11Origin, PK11SymKey, PK11_ImportDataKey, Slot, SymKey, CKA_DERIVE,
+        random, Item, PK11Origin, PK11SymKey, PK11_ImportDataKey, Slot, SymKey, CKA_DERIVE,
         CKM_HKDF_DERIVE, CK_ATTRIBUTE_TYPE, CK_MECHANISM_TYPE,
     },
-    random,
 };
 
 experimental_api!(SSL_HkdfExtract(
@@ -41,18 +40,15 @@ experimental_api!(SSL_HkdfExpandLabel(
     secret: *mut *mut PK11SymKey,
 ));
 
-const MAX_KEY_SIZE: usize = 48;
-const fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
+fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
     if version != TLS_VERSION_1_3 {
         return Err(Error::UnsupportedVersion);
     }
-    let size = match cipher {
+    Ok(match cipher {
         TLS_AES_128_GCM_SHA256 | TLS_CHACHA20_POLY1305_SHA256 => 32,
         TLS_AES_256_GCM_SHA384 => 48,
         _ => return Err(Error::UnsupportedCipher),
-    };
-    debug_assert!(size <= MAX_KEY_SIZE);
-    Ok(size)
+    })
 }
 
 
@@ -61,12 +57,7 @@ const fn key_size(version: Version, cipher: Cipher) -> Res<usize> {
 
 
 pub fn generate_key(version: Version, cipher: Cipher) -> Res<SymKey> {
-    
-    
-    import_key(
-        version,
-        &random::<MAX_KEY_SIZE>()[0..key_size(version, cipher)?],
-    )
+    import_key(version, &random(key_size(version, cipher)?))
 }
 
 
@@ -79,6 +70,7 @@ pub fn import_key(version: Version, buf: &[u8]) -> Res<SymKey> {
         return Err(Error::UnsupportedVersion);
     }
     let slot = Slot::internal()?;
+    #[allow(clippy::useless_conversion)] 
     let key_ptr = unsafe {
         PK11_ImportDataKey(
             *slot,
