@@ -2712,12 +2712,18 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
         (aReflowInput.mReflowInput.mFlags.mSpecialBSizeReflow &&
          (isPaginated ||
           kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)))) {
-      if (pageBreak) {
+      
+      
+      auto MaybePlaceRepeatedFooter = [&]() {
         if (allowRepeatedFooter) {
           PlaceRepeatedFooter(aReflowInput, tfoot, footerBSize);
         } else if (tfoot && tfoot->IsRepeatable()) {
           tfoot->SetRepeatable(false);
         }
+      };
+
+      if (pageBreak) {
+        MaybePlaceRepeatedFooter();
         PushChildrenToOverflow(rowGroups, childX);
         aStatus.Reset();
         aStatus.SetIncomplete();
@@ -2803,11 +2809,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
             PlaceChild(aReflowInput, kidFrame, kidReflowInput, kidPosition,
                        containerSize, desiredSize, oldKidRect,
                        oldKidInkOverflow);
-            if (allowRepeatedFooter) {
-              PlaceRepeatedFooter(aReflowInput, tfoot, footerBSize);
-            } else if (tfoot && tfoot->IsRepeatable()) {
-              tfoot->SetRepeatable(false);
-            }
+            MaybePlaceRepeatedFooter();
             aStatus.Reset();
             aStatus.SetIncomplete();
             PushChildrenToOverflow(rowGroups, childX + 1);
@@ -2816,11 +2818,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
           }
         } else {  
           if (prevKidFrame) {  
-            if (allowRepeatedFooter) {
-              PlaceRepeatedFooter(aReflowInput, tfoot, footerBSize);
-            } else if (tfoot && tfoot->IsRepeatable()) {
-              tfoot->SetRepeatable(false);
-            }
+            MaybePlaceRepeatedFooter();
             aStatus.Reset();
             aStatus.SetIncomplete();
             PushChildrenToOverflow(rowGroups, childX);
@@ -2830,11 +2828,8 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
             PlaceChild(aReflowInput, kidFrame, kidReflowInput, kidPosition,
                        containerSize, desiredSize, oldKidRect,
                        oldKidInkOverflow);
-            aLastChildReflowed = kidFrame;
-            if (allowRepeatedFooter) {
-              PlaceRepeatedFooter(aReflowInput, tfoot, footerBSize);
-              aLastChildReflowed = tfoot;
-            }
+            MaybePlaceRepeatedFooter();
+            aLastChildReflowed = allowRepeatedFooter ? tfoot : kidFrame;
             break;
           }
         }
@@ -2888,14 +2883,8 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
 
         
         
-        if (allowRepeatedFooter) {
-          PlaceRepeatedFooter(aReflowInput, tfoot, footerBSize);
-        } else if (tfoot && tfoot->IsRepeatable()) {
-          tfoot->SetRepeatable(false);
-        }
-
-        nsIFrame* nextSibling = kidFrame->GetNextSibling();
-        if (nextSibling) {
+        MaybePlaceRepeatedFooter();
+        if (kidFrame->GetNextSibling()) {
           PushChildrenToOverflow(rowGroups, childX + 1);
         }
         break;
