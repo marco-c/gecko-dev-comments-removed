@@ -5,6 +5,7 @@
 #ifndef MOJO_CORE_PORTS_PORT_H_
 #define MOJO_CORE_PORTS_PORT_H_
 
+#include <map>
 #include <memory>
 #include <queue>
 #include <utility>
@@ -147,7 +148,19 @@ class Port {
   PortName peer_port_name;
 
   
+  
+  
+  
+  
+  NodeName prev_node_name;
+  PortName prev_port_name;
+
+  
   bool pending_merge_peer;
+
+  
+  uint64_t next_control_sequence_num_to_send;
+  uint64_t next_control_sequence_num_to_receive;
 
   
   
@@ -227,7 +240,27 @@ class Port {
 
   void AssertLockAcquired() { lock_.AssertCurrentThreadOwns(); }
 
+  
+  
+  bool IsNextEvent(const NodeName& from_node, const Event& event);
+
+  
+  
+  void NextEvent(NodeName* from_node, ScopedEvent* event);
+
+  
+  void BufferEvent(const NodeName& from_node, ScopedEvent event);
+
+  
+  
+  void TakePendingMessages(
+      std::vector<mozilla::UniquePtr<UserMessageEvent>>& messages);
+
  private:
+  using NodePortPair = std::pair<NodeName, PortName>;
+  using EventQueue = std::vector<mozilla::UniquePtr<Event>>;
+  std::map<NodePortPair, EventQueue> control_event_queues_;
+
   friend class PortLocker;
 
   ~Port();

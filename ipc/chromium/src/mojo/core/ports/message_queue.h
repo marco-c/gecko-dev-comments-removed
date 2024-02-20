@@ -47,6 +47,9 @@ class MessageQueue {
                       MessageFilter* filter);
 
   
+  void MessageProcessed();
+
+  
   
   
   
