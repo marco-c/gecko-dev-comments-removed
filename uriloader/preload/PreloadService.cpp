@@ -139,44 +139,26 @@ void PreloadService::PreloadLinkHeader(
 
 
 
-
-
 class SupportsPriorityValueFor {
  public:
   static int32_t LinkRelPreloadFont(const FetchPriority aFetchPriority) {
+    int32_t priorityValue = nsISupportsPriority::PRIORITY_HIGH;
     if (!StaticPrefs::network_fetchpriority_enabled()) {
-      return nsISupportsPriority::PRIORITY_HIGH;
+      return priorityValue;
     }
 
-    switch (aFetchPriority) {
-      case FetchPriority::Auto:
-        return nsISupportsPriority::PRIORITY_HIGH;
-      case FetchPriority::High:
-        return nsISupportsPriority::PRIORITY_HIGH;
-      case FetchPriority::Low:
-        return nsISupportsPriority::PRIORITY_LOW;
-    }
-
-    MOZ_ASSERT_UNREACHABLE();
-    return nsISupportsPriority::PRIORITY_HIGH;
+    return priorityValue +
+           FETCH_PRIORITY_ADJUSTMENT_FOR(link_preload_font, aFetchPriority);
   }
 
   static int32_t LinkRelPreloadFetch(const FetchPriority aFetchPriority) {
+    int32_t priorityValue = nsISupportsPriority::PRIORITY_NORMAL;
     if (!StaticPrefs::network_fetchpriority_enabled()) {
-      return nsISupportsPriority::PRIORITY_NORMAL;
+      return priorityValue;
     }
 
-    switch (aFetchPriority) {
-      case FetchPriority::Auto:
-        return nsISupportsPriority::PRIORITY_NORMAL;
-      case FetchPriority::High:
-        return nsISupportsPriority::PRIORITY_HIGH;
-      case FetchPriority::Low:
-        return nsISupportsPriority::PRIORITY_LOW;
-    }
-
-    MOZ_ASSERT_UNREACHABLE();
-    return nsISupportsPriority::PRIORITY_NORMAL;
+    return priorityValue +
+           FETCH_PRIORITY_ADJUSTMENT_FOR(link_preload_fetch, aFetchPriority);
   }
 };
 
