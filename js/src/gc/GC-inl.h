@@ -51,8 +51,11 @@ class ArenaIterInGC : public ChainedIterator<ArenaListIter, 2> {
   ArenaIterInGC(JS::Zone* zone, AllocKind kind)
       : ChainedIterator(zone->arenas.getFirstArena(kind),
                         zone->arenas.getFirstCollectingArena(kind)) {
+#ifdef DEBUG
     MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
-    MOZ_ASSERT(!zone->arenas.getFirstSweptArena(kind));
+    GCRuntime& gc = zone->runtimeFromMainThread()->gc;
+    MOZ_ASSERT(!gc.maybeGetForegroundFinalizedArenas(zone, kind));
+#endif
   }
 };
 
@@ -61,12 +64,14 @@ class ArenaIterInGC : public ChainedIterator<ArenaListIter, 2> {
 
 
 
-class ArenaIter : public ChainedIterator<ArenaListIter, 3> {
+class ArenaIter : public AutoGatherSweptArenas,
+                  public ChainedIterator<ArenaListIter, 3> {
  public:
   ArenaIter(JS::Zone* zone, AllocKind kind)
-      : ChainedIterator(zone->arenas.getFirstArena(kind),
+      : AutoGatherSweptArenas(zone, kind),
+        ChainedIterator(zone->arenas.getFirstArena(kind),
                         zone->arenas.getFirstCollectingArena(kind),
-                        zone->arenas.getFirstSweptArena(kind)) {}
+                        sweptArenas()) {}
 };
 
 class ArenaCellIter {

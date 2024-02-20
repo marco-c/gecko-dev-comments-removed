@@ -29,6 +29,7 @@ struct Statistics;
 namespace gc {
 
 class Arena;
+class AutoGatherSweptArenas;
 class BackgroundUnmarkTask;
 struct FinalizePhase;
 class FreeSpan;
@@ -184,9 +185,10 @@ class SortedArenaList {
   
   static const size_t MaxThingsPerArena =
       (ArenaSize - ArenaHeaderSize) / MinThingSize;
+  static const size_t SegmentCount = MaxThingsPerArena + 1;
 
-  size_t thingsPerArena_;
-  SortedArenaListSegment segments[MaxThingsPerArena + 1];
+  const size_t thingsPerArena_;
+  SortedArenaListSegment segments[SegmentCount];
 
   
   Arena* headAt(size_t n) { return segments[n].head; }
@@ -195,10 +197,7 @@ class SortedArenaList {
  public:
   inline explicit SortedArenaList(size_t thingsPerArena = MaxThingsPerArena);
 
-  inline void setThingsPerArena(size_t thingsPerArena);
-
-  
-  inline void reset(size_t thingsPerArena = MaxThingsPerArena);
+  size_t thingsPerArena() const { return thingsPerArena_; }
 
   
   inline void insertAt(Arena* arena, size_t nfree);
@@ -214,6 +213,19 @@ class SortedArenaList {
   
   
   inline ArenaList toArenaList();
+
+  friend class AutoGatherSweptArenas;
+};
+
+
+class MOZ_RAII AutoGatherSweptArenas {
+  ArenaList linked;
+
+ public:
+  AutoGatherSweptArenas(JS::Zone* zone, AllocKind kind);
+  ~AutoGatherSweptArenas();
+
+  Arena* sweptArenas() const;
 };
 
 enum class ShouldCheckThresholds {
@@ -280,10 +292,6 @@ class ArenaLists {
   MainThreadOrGCTaskData<AllAllocKindArray<ArenaList>> collectingArenaLists_;
 
   
-  MainThreadOrGCTaskData<AllocKind> incrementalSweptArenaKind;
-  MainThreadOrGCTaskData<ArenaList> incrementalSweptArenas;
-
-  
   
   MainThreadData<Arena*> gcCompactPropMapArenasToUpdate;
   MainThreadData<Arena*> gcNormalPropMapArenasToUpdate;
@@ -305,7 +313,6 @@ class ArenaLists {
 
   inline Arena* getFirstArena(AllocKind thingKind) const;
   inline Arena* getFirstCollectingArena(AllocKind thingKind) const;
-  inline Arena* getFirstSweptArena(AllocKind thingKind) const;
   inline Arena* getArenaAfterCursor(AllocKind thingKind) const;
 
   inline bool arenaListsAreEmpty() const;
@@ -333,9 +340,6 @@ class ArenaLists {
   void queueForegroundThingsForSweep();
 
   Arena* takeSweptEmptyArenas();
-
-  void setIncrementalSweptArenas(AllocKind kind, SortedArenaList& arenas);
-  void clearIncrementalSweptArenas();
 
   void mergeFinalizedArenas(AllocKind thingKind,
                             SortedArenaList& finalizedArenas);

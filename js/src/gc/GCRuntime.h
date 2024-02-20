@@ -617,6 +617,13 @@ class GCRuntime {
   void markAllDelayedChildren(ShouldReportMarkTime reportTime);
 
   
+  
+  
+  
+  SortedArenaList* maybeGetForegroundFinalizedArenas(Zone* zone,
+                                                     AllocKind kind);
+
+  
 
 
   void startTask(GCParallelTask& task, AutoLockHelperThreadState& lock);
@@ -1207,6 +1214,15 @@ class GCRuntime {
   MainThreadData<bool> abortSweepAfterCurrentGroup;
   MainThreadOrGCTaskData<IncrementalProgress> sweepMarkResult;
 
+  
+
+
+
+
+  MainThreadOrGCTaskData<JS::Zone*> foregroundFinalizedZone;
+  MainThreadOrGCTaskData<AllocKind> foregroundFinalizedAllocKind;
+  MainThreadData<mozilla::Maybe<SortedArenaList>> foregroundFinalizedArenas;
+
 #ifdef DEBUG
   
 
@@ -1383,12 +1399,6 @@ class GCRuntime {
   BackgroundSweepTask sweepTask;
   BackgroundFreeTask freeTask;
   BackgroundDecommitTask decommitTask;
-
-  
-
-
-
-  MainThreadData<SortedArenaList> incrementalSweepList;
 
   MainThreadData<Nursery> nursery_;
 
