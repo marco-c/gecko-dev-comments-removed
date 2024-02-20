@@ -497,7 +497,8 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     
     let result = gfx_select!(buffer_id => global.buffer_map_async(
         buffer_id,
-        start .. start + size,
+        start,
+        Some(size),
         operation
     ));
 
