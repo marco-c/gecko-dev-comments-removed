@@ -17,6 +17,9 @@
 const { ASRouterTargeting } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterTargeting.sys.mjs"
 );
+const { ExperimentFakes } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
 
 
 
@@ -37,11 +40,12 @@ const BRANCH_MAP = {
 setupProfileService();
 
 let taskProfile;
+let manager;
 
 
 
 
-add_setup(() => {
+add_setup(async () => {
   info("Setting up profile service");
   let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
     Ci.nsIToolkitProfileService
@@ -57,6 +61,23 @@ add_setup(() => {
   registerCleanupFunction(() => {
     taskProfile.remove(true);
   });
+
+  
+  manager = ExperimentFakes.manager();
+
+  await manager.onStartup();
+  await manager.store.addEnrollment(ExperimentFakes.experiment("foo"));
+  manager.unenroll("foo", "some-reason");
+  await manager.store.addEnrollment(
+    ExperimentFakes.experiment("bar", { active: false })
+  );
+  await manager.store.addEnrollment(
+    ExperimentFakes.experiment("baz", { active: true })
+  );
+
+  manager.store.addEnrollment(ExperimentFakes.rollout("rol1"));
+  manager.unenroll("rol1", "some-reason");
+  manager.store.addEnrollment(ExperimentFakes.rollout("rol2"));
 });
 
 function resetProfile(profile) {
@@ -264,6 +285,14 @@ const TARGETING_LIST = [
   
   ["(currentDate|date - defaultProfile.currentDate|date) > 0", 1],
   ["(currentDate|date - defaultProfile.currentDate|date) > 999999", 0],
+  
+  ["'baz' in defaultProfile.activeExperiments", 1],
+  ["'bar' in defaultProfile.previousExperiments", 1],
+  ["'rol2' in defaultProfile.activeRollouts", 1],
+  ["'rol1' in defaultProfile.previousRollouts", 1],
+  ["defaultProfile.enrollmentsMap['baz'] == 'treatment'", 1],
+  ["defaultProfile.enrollmentsMap['bar'] == 'treatment'", 1],
+  ["'unknown' in defaultProfile.enrollmentsMap", 0],
 ];
 
 
@@ -278,7 +307,7 @@ add_task(async function test_backgroundtask_Nimbus_targeting() {
     firefoxVersion: ASRouterTargeting.Environment.firefoxVersion,
   };
   let targetSnapshot = await ASRouterTargeting.getEnvironmentSnapshot({
-    targets: [target],
+    targets: [manager.createTargetingContext(), target],
   });
 
   for (let [targeting, expectedLength] of TARGETING_LIST) {
@@ -334,7 +363,7 @@ add_task(async function test_backgroundtask_Messaging_targeting() {
     firefoxVersion: ASRouterTargeting.Environment.firefoxVersion,
   };
   let targetSnapshot = await ASRouterTargeting.getEnvironmentSnapshot({
-    targets: [target],
+    targets: [manager.createTargetingContext(), target],
   });
 
   for (let [targeting, expectedLength] of TARGETING_LIST) {
