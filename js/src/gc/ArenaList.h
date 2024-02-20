@@ -11,6 +11,7 @@
 #ifndef gc_ArenaList_h
 #define gc_ArenaList_h
 
+#include "ds/SinglyLinkedList.h"
 #include "gc/AllocKind.h"
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
@@ -39,28 +40,6 @@ class TenuringTracer;
 
 
 
-
-struct SortedArenaListSegment {
-  Arena* head;
-  Arena** tailp;
-
-  void clear() {
-    head = nullptr;
-    tailp = &head;
-  }
-
-  bool isEmpty() const { return tailp == &head; }
-
-  
-  inline void append(Arena* arena);
-
-  
-  
-  
-  
-  
-  void linkTo(Arena* arena) { *tailp = arena; }
-};
 
 
 
@@ -118,7 +97,7 @@ class ArenaList {
   ArenaList(const ArenaList& other) = delete;
   ArenaList& operator=(const ArenaList& other) = delete;
 
-  inline explicit ArenaList(const SortedArenaListSegment& segment);
+  inline ArenaList(Arena* head, Arena* arenaBeforeCursor);
 
   inline void check() const;
 
@@ -168,6 +147,10 @@ class ArenaList {
 
 
 
+
+
+
+
 class SortedArenaList {
  public:
   
@@ -181,18 +164,23 @@ class SortedArenaList {
                 "When decreasing the minimum thing size, please consider"
                 " how this will affect the size of a SortedArenaList.");
 
- private:
   
   static const size_t MaxThingsPerArena =
       (ArenaSize - ArenaHeaderSize) / MinThingSize;
-  static const size_t SegmentCount = MaxThingsPerArena + 1;
-
-  const size_t thingsPerArena_;
-  SortedArenaListSegment segments[SegmentCount];
 
   
-  Arena* headAt(size_t n) { return segments[n].head; }
-  Arena** tailAt(size_t n) { return segments[n].tailp; }
+  
+  static const size_t SegmentCount = MaxThingsPerArena + 1;
+
+ private:
+  using Segment = SinglyLinkedList<Arena>;
+
+  const size_t thingsPerArena_;
+  Segment segments[SegmentCount];
+
+#ifdef DEBUG
+  bool isConvertedToArenaList = false;
+#endif
 
  public:
   inline explicit SortedArenaList(size_t thingsPerArena = MaxThingsPerArena);
@@ -203,7 +191,8 @@ class SortedArenaList {
   inline void insertAt(Arena* arena, size_t nfree);
 
   
-  inline void extractEmpty(Arena** empty);
+  
+  inline void extractEmptyTo(Arena** destListHeadPtr);
 
   
   
@@ -212,13 +201,26 @@ class SortedArenaList {
   
   
   
-  inline ArenaList toArenaList();
+  inline ArenaList convertToArenaList(
+      Arena* maybeSegmentLastOut[SegmentCount] = nullptr);
 
-  friend class AutoGatherSweptArenas;
+  
+  
+  inline void restoreFromArenaList(ArenaList& list,
+                                   Arena* segmentLast[SegmentCount]);
+
+ private:
+  inline void check() const;
 };
 
 
 class MOZ_RAII AutoGatherSweptArenas {
+  SortedArenaList* sortedList = nullptr;
+
+  
+  Arena* segmentLastPointers[SortedArenaList::SegmentCount];
+
+  
   ArenaList linked;
 
  public:
