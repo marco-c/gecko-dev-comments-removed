@@ -668,53 +668,35 @@ static void AdjustPriorityAndClassOfServiceForLinkPreloadScripts(
     nsIChannel* aChannel, ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
 
-  if (!StaticPrefs::network_fetchpriority_enabled()) {
-    
-    
-    
-    
-    
-    ScriptLoadContext::PrioritizeAsPreload(aChannel);
-    return;
-  }
+  
+  
+  
+  
+  
+  ScriptLoadContext::PrioritizeAsPreload(aChannel);
 
-  if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(aChannel)) {
-    cos->AddClassFlags(nsIClassOfService::Unblocked);
+  if (!StaticPrefs::network_fetchpriority_enabled()) {
+    return;
   }
 
   if (nsCOMPtr<nsISupportsPriority> supportsPriority =
           do_QueryInterface(aChannel)) {
     LOG(("Is <link rel=[module]preload"));
 
-    const RequestPriority fetchPriority = aRequest->FetchPriority();
+    const auto fetchPriority = ToFetchPriority(aRequest->FetchPriority());
     
     
     
     
-    
-    
-    const int32_t supportsPriorityValue = [&]() {
-      switch (fetchPriority) {
-        case RequestPriority::Auto: {
-          return nsISupportsPriority::PRIORITY_HIGH;
-        }
-        case RequestPriority::High: {
-          return nsISupportsPriority::PRIORITY_HIGH;
-        }
-        case RequestPriority::Low: {
-          return nsISupportsPriority::PRIORITY_LOW;
-        }
-        default: {
-          MOZ_ASSERT_UNREACHABLE();
-          return nsISupportsPriority::PRIORITY_NORMAL;
-        }
-      }
-    }();
-
-    LogPriorityMapping(ScriptLoader::gScriptLoaderLog,
-                       ToFetchPriority(fetchPriority), supportsPriorityValue);
-
-    supportsPriority->SetPriority(supportsPriorityValue);
+    const int32_t supportsPriorityDelta =
+        FETCH_PRIORITY_ADJUSTMENT_FOR(link_preload_script, fetchPriority);
+    supportsPriority->AdjustPriority(supportsPriorityDelta);
+#ifdef DEBUG
+    int32_t adjustedPriority;
+    supportsPriority->GetPriority(&adjustedPriority);
+    LogPriorityMapping(ScriptLoader::gScriptLoaderLog, fetchPriority,
+                       adjustedPriority);
+#endif
   }
 }
 
