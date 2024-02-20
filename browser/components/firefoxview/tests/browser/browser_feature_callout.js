@@ -2,8 +2,8 @@
 
 
 "use strict";
-const { MessageLoaderUtils } = ChromeUtils.import(
-  "resource:///modules/asrouter/ASRouter.jsm"
+const { MessageLoaderUtils } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/ASRouter.sys.mjs"
 );
 
 const { BuiltInThemes } = ChromeUtils.importESModule(

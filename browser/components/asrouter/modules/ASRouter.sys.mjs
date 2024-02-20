@@ -1,15 +1,30 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// XPCOMUtils, AppConstants and RemoteSettings, and overrides
+// importESModule to be a no-op (which can't be done for a static import
+// statement).
 
-
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+
+// eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
+
+// eslint-disable-next-line mozilla/use-static-import
+const { RemoteSettings } = ChromeUtils.importESModule(
+  "resource://services-settings/remote-settings.sys.mjs"
+);
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -18,6 +33,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   ASRouterTriggerListeners:
     "resource:///modules/asrouter/ASRouterTriggerListeners.sys.mjs",
+  AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
   Downloader: "resource://services-settings/Attachments.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FeatureCalloutBroker:
@@ -51,34 +67,18 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
   );
   return new Logger("ASRouter");
 });
-const { actionCreators: ac } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { MESSAGING_EXPERIMENTS_DEFAULT_FEATURES } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/MessagingExperimentConstants.sys.mjs"
-);
-const { CFRMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
-);
-const { OnboardingMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/OnboardingMessageProvider.jsm"
-);
-const { RemoteSettings } = ChromeUtils.importESModule(
-  "resource://services-settings/remote-settings.sys.mjs"
-);
-const { CFRPageActions } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRPageActions.sys.mjs"
-);
-const { AttributionCode } = ChromeUtils.importESModule(
-  "resource:///modules/AttributionCode.sys.mjs"
-);
+import { actionCreators as ac } from "resource://activity-stream/common/Actions.sys.mjs";
+import { MESSAGING_EXPERIMENTS_DEFAULT_FEATURES } from "resource:///modules/asrouter/MessagingExperimentConstants.sys.mjs";
+import { CFRMessageProvider } from "resource:///modules/asrouter/CFRMessageProvider.sys.mjs";
+import { OnboardingMessageProvider } from "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs";
+import { CFRPageActions } from "resource:///modules/asrouter/CFRPageActions.sys.mjs";
 
-
-
+// List of hosts for endpoints that serve router messages.
+// Key is allowed host, value is a name for the endpoint host.
 const DEFAULT_ALLOWLIST_HOSTS = {
   "activity-stream-icons.services.mozilla.com": "production",
 };
-
+// Max possible impressions cap for any message
 const MAX_MESSAGE_LIFETIME_CAP = 100;
 
 const LOCAL_MESSAGE_PROVIDERS = {
@@ -87,28 +87,28 @@ const LOCAL_MESSAGE_PROVIDERS = {
 };
 const STARTPAGE_VERSION = "6";
 
-
+// Remote Settings
 const RS_MAIN_BUCKET = "main";
-const RS_COLLECTION_L10N = "ms-language-packs"; 
+const RS_COLLECTION_L10N = "ms-language-packs"; // "ms" stands for Messaging System
 const RS_PROVIDERS_WITH_L10N = ["cfr"];
 const RS_FLUENT_VERSION = "v1";
 const RS_FLUENT_RECORD_PREFIX = `cfr-${RS_FLUENT_VERSION}`;
 const RS_DOWNLOAD_MAX_RETRIES = 2;
-
-
-
+// This is the list of providers for which we want to cache the targeting
+// expression result and reuse between calls. Cache duration is defined in
+// ASRouterTargeting where evaluation takes place.
 const JEXL_PROVIDER_CACHE = new Set();
 
-
+// To observe the app locale change notification.
 const TOPIC_INTL_LOCALE_CHANGED = "intl:app-locales-changed";
 const TOPIC_EXPERIMENT_ENROLLMENT_CHANGED = "nimbus:enrollments-updated";
-
+// To observe the pref that controls if ASRouter should use the remote Fluent files for l10n.
 const USE_REMOTE_L10N_PREF =
   "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
 
-
-
-
+// Experiment groups that need to report the reach event in Messaging-Experiments.
+// If you're adding new groups to it, make sure they're also added in the
+// `messaging_experiments.reach.objects` defined in "toolkit/components/telemetry/Events.yaml"
 const REACH_EVENT_GROUPS = [
   "cfr",
   "moments-page",
@@ -119,7 +119,7 @@ const REACH_EVENT_GROUPS = [
 const REACH_EVENT_CATEGORY = "messaging_experiments";
 const REACH_EVENT_METHOD = "reach";
 
-const MessageLoaderUtils = {
+export const MessageLoaderUtils = {
   STARTPAGE_VERSION,
   REMOTE_LOADER_CACHE_KEY: "RemoteLoaderCache",
   _errors: [],
@@ -138,13 +138,13 @@ const MessageLoaderUtils = {
     return errors;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * _localLoader - Loads messages for a local provider (i.e. one that lives in mozilla central)
+   *
+   * @param {obj} provider An AS router provider
+   * @param {Array} provider.messages An array of messages
+   * @returns {Array} the array of messages
+   */
   _localLoader(provider) {
     return provider.messages;
   },
@@ -155,22 +155,22 @@ const MessageLoaderUtils = {
       allCached =
         (await storage.get(MessageLoaderUtils.REMOTE_LOADER_CACHE_KEY)) || {};
     } catch (e) {
-      
+      // istanbul ignore next
       MessageLoaderUtils.reportError(e);
-      
+      // istanbul ignore next
       allCached = {};
     }
     return allCached;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * _remoteLoader - Loads messages for a remote provider
+   *
+   * @param {obj} provider An AS router provider
+   * @param {string} provider.url An endpoint that returns an array of messages as JSON
+   * @param {obj} options.storage A storage object with get() and set() methods for caching.
+   * @returns {Promise} resolves with an array of messages, or an empty array if none could be fetched
+   */
   async _remoteLoader(provider, options) {
     let remoteMessages = [];
     if (provider.url) {
@@ -192,7 +192,7 @@ const MessageLoaderUtils = {
             lastUpdated: lastFetched,
           })
         ) {
-          
+          // Cached messages haven't expired, return early.
           return messages;
         }
         etag = cached.etag;
@@ -232,7 +232,7 @@ const MessageLoaderUtils = {
             provider_url: provider.url,
           }));
 
-          
+          // Cache the results if this isn't a preview URL.
           if (provider.updateCycleInMs > 0) {
             etag = response.headers.get("ETag");
             const cacheInfo = {
@@ -261,28 +261,28 @@ const MessageLoaderUtils = {
     return remoteMessages;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * _remoteSettingsLoader - Loads messages for a RemoteSettings provider
+   *
+   * Note:
+   * 1). The "cfr" provider requires the Fluent file for l10n, so there is
+   * another file downloading phase for those two providers after their messages
+   * are successfully fetched from Remote Settings. Currently, they share the same
+   * attachment of the record "${RS_FLUENT_RECORD_PREFIX}-${locale}" in the
+   * "ms-language-packs" collection. E.g. for "en-US" with version "v1",
+   * the Fluent file is attched to the record with ID "cfr-v1-en-US".
+   *
+   * 2). The Remote Settings downloader is able to detect the duplicate download
+   * requests for the same attachment and ignore the redundent requests automatically.
+   *
+   * @param {object} provider An AS router provider
+   * @param {string} provider.id The id of the provider
+   * @param {string} provider.collection Remote Settings collection name
+   * @param {object} options
+   * @param {function} options.dispatchCFRAction Action handler function
+   * @returns {Promise<object[]>} Resolves with an array of messages, or an
+   *                              empty array if none could be fetched
+   */
   async _remoteSettingsLoader(provider, options) {
     let messages = [];
     if (provider.collection) {
@@ -313,7 +313,7 @@ const MessageLoaderUtils = {
               "browser",
               "newtab"
             );
-            
+            // Await here in order to capture the exceptions for reporting.
             await downloader.downloadToDisk(record.data, {
               retries: RS_DOWNLOAD_MAX_RETRIES,
             });
@@ -338,33 +338,33 @@ const MessageLoaderUtils = {
     return messages;
   },
 
-  
-
-
-
-
-
+  /**
+   * Fetch messages from a given collection in Remote Settings.
+   *
+   * @param {string} collection The remote settings collection identifier
+   * @returns {Promise<object[]>} Resolves with an array of messages
+   */
   _getRemoteSettingsMessages(collection) {
     return RemoteSettings(collection).get();
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Return messages from active Nimbus experiments and rollouts.
+   *
+   * @param {object} provider A messaging experiments provider.
+   * @param {string[]?} provider.featureIds
+   *                    An optional array of Nimbus feature IDs to check for
+   *                    enrollments. If not provided, we will fall back to the
+   *                    set of default features. Otherwise, if provided and
+   *                    empty, we will not ingest messages from any features.
+   *
+   * @return {object[]} The list of messages from active enrollments, as well as
+   *                    the messages defined in unenrolled branches so that they
+   *                    reach events can be recorded (if we record reach events
+   *                    for that feature).
+   */
   async _experimentsAPILoader(provider) {
-    
+    // Allow tests to override the set of featureIds
     const featureIds = Array.isArray(provider.featureIds)
       ? provider.featureIds
       : MESSAGING_EXPERIMENTS_DEFAULT_FEATURES;
@@ -375,8 +375,8 @@ const MessageLoaderUtils = {
         featureId,
       });
 
-      
-      
+      // We are not enrolled in any experiment or rollout for this feature, so
+      // we can skip the feature.
       if (
         !experimentData &&
         !lazy.ExperimentAPI.getRolloutMetaData({ featureId })
@@ -386,10 +386,10 @@ const MessageLoaderUtils = {
 
       const featureValue = featureAPI.getAllVariables();
 
-      
-      
-      
-      
+      // If the value is a multi-message config, add each message in the
+      // messages array. Cache the Nimbus feature ID on each message, because
+      // there is not a 1-1 correspondance between templates and features.
+      // This is used when recording expose events (see |sendTriggerMessage|).
       const messages =
         featureValue?.template === "multi" &&
         Array.isArray(featureValue.messages)
@@ -402,16 +402,16 @@ const MessageLoaderUtils = {
         }
       }
 
-      
-      
-      
+      // Add Reach messages from unenrolled sibling branches, provided we are
+      // recording Reach events for this feature. If we are in a rollout, we do
+      // not have sibling branches.
       if (!REACH_EVENT_GROUPS.includes(featureId) || !experimentData) {
         continue;
       }
 
-      
-      
-      
+      // Check other sibling branches for triggers, add them to the return array
+      // if found any. The `forReachEvent` label is used to identify those
+      // branches so that they would only be used to record the Reach event.
       const branches =
         (await lazy.ExperimentAPI.getAllBranches(experimentData.slug)) || [];
       for (const branch of branches) {
@@ -454,12 +454,12 @@ const MessageLoaderUtils = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * _getMessageLoader - return the right loading function given the provider's type
+   *
+   * @param {obj} provider An AS Router provider
+   * @returns {func} A loading function
+   */
   _getMessageLoader(provider) {
     switch (provider.type) {
       case "remote":
@@ -474,15 +474,15 @@ const MessageLoaderUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * shouldProviderUpdate - Given the current time, should a provider update its messages?
+   *
+   * @param {any} provider An AS Router provider
+   * @param {int} provider.updateCycleInMs The number of milliseconds we should wait between updates
+   * @param {Date} provider.lastUpdated If the provider has been updated, the time the last update occurred
+   * @param {Date} currentTime The time we should check against. (defaults to Date.now())
+   * @returns {bool} Should an update happen?
+   */
   shouldProviderUpdate(provider, currentTime = Date.now()) {
     return (
       !(provider.lastUpdated >= 0) ||
@@ -493,7 +493,7 @@ const MessageLoaderUtils = {
   async _loadDataForProvider(provider, options) {
     const loader = this._getMessageLoader(provider);
     let messages = await loader(provider, options);
-    
+    // istanbul ignore if
     if (!messages) {
       messages = [];
       MessageLoaderUtils.reportError(
@@ -506,18 +506,18 @@ const MessageLoaderUtils = {
     return { messages };
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * loadMessagesForProvider - Load messages for a provider, given the provider's type.
+   *
+   * @param {obj} provider An AS Router provider
+   * @param {string} provider.type An AS Router provider type (defaults to "local")
+   * @param {obj} options.storage A storage object with get() and set() methods for caching.
+   * @param {func} options.dispatchCFRAction dispatch an action the main AS Store
+   * @returns {obj} Returns an object with .messages (an array of messages) and .lastUpdated (the time the messages were updated)
+   */
   async loadMessagesForProvider(provider, options) {
     let { messages } = await this._loadDataForProvider(provider, options);
-    
+    // Filter out messages we temporarily want to exclude
     if (provider.exclude && provider.exclude.length) {
       messages = messages.filter(
         message => !provider.exclude.includes(message.id)
@@ -542,11 +542,11 @@ const MessageLoaderUtils = {
     };
   },
 
-  
-
-
-
-
+  /**
+   * cleanupCache - Removes cached data of removed providers.
+   *
+   * @param {Array} providers A list of activer AS Router providers
+   */
   async cleanupCache(providers, storage) {
     const ids = providers.filter(p => p.type === "remote").map(p => p.id);
     const cache = await MessageLoaderUtils._remoteLoaderCache(storage);
@@ -562,19 +562,19 @@ const MessageLoaderUtils = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * The locale to use for RemoteL10n.
+   *
+   * This may map the app's actual locale into something that RemoteL10n
+   * supports.
+   */
   get locale() {
     const localeMap = {
       "ja-JP-macos": "ja-JP-mac",
 
-      
-      
-      
+      // While it's not a valid locale, "und" is commonly observed on
+      // Linux platforms. Per l10n team, it's reasonable to fallback to
+      // "en-US", therefore, we should allow the fetch for it.
       und: "en-US",
     };
 
@@ -583,15 +583,15 @@ const MessageLoaderUtils = {
   },
 };
 
-
-
-
-
-
-
-
-
-class _ASRouter {
+/**
+ * @class _ASRouter - Keeps track of all messages, UI surfaces, and
+ * handles blocking, rotation, etc. Inspecting ASRouter.state will
+ * tell you what the current displayed message is in all UI surfaces.
+ *
+ * Note: This is written as a constructor rather than just a plain object
+ * so that it can be more easily unit tested.
+ */
+export class _ASRouter {
   constructor(localProviders = LOCAL_MESSAGE_PROVIDERS) {
     this.initialized = false;
     this.clearChildMessages = null;
@@ -635,7 +635,7 @@ class _ASRouter {
   async onPrefChange(prefName) {
     if (lazy.TARGETING_PREFERENCES.includes(prefName)) {
       let invalidMessages = [];
-      
+      // Notify all tabs of messages that have become invalid after pref change
       const context = this._getMessagesContext();
       const targetingContext = new lazy.TargetingContext(context);
 
@@ -650,41 +650,41 @@ class _ASRouter {
       }
       this.clearChildMessages(invalidMessages);
     } else {
-      
+      // Update message providers and fetch new messages on pref change
       this._loadLocalProviders();
       let invalidProviders = await this._updateMessageProviders();
       if (invalidProviders.length) {
         this.clearChildProviders(invalidProviders);
       }
       await this.loadMessagesFromAllProviders();
-      
+      // Any change in user prefs can disable or enable groups
       await this.setState(state => ({
         groups: state.groups.map(this._checkGroupEnabled),
       }));
     }
   }
 
-  
+  // Fetch and decode the message provider pref JSON, and update the message providers
   async _updateMessageProviders() {
     lazy.ASRouterPreferences.console.debug("entering updateMessageProviders");
 
     const previousProviders = this.state.providers;
     const providers = await Promise.all(
       [
-        
+        // If we have added a `preview` provider, hold onto it
         ...previousProviders.filter(p => p.id === "preview"),
-        
+        // The provider should be enabled and not have a user preference set to false
         ...lazy.ASRouterPreferences.providers.filter(
           p =>
             p.enabled &&
             lazy.ASRouterPreferences.getUserPreference(p.id) !== false
         ),
       ].map(async _provider => {
-        
+        // make a copy so we don't modify the source of the pref
         const provider = { ..._provider };
 
         if (provider.type === "local" && !provider.messages) {
-          
+          // Get the messages from the local message provider
           const localProvider = this._localProviders[provider.localProvider];
           provider.messages = [];
           if (localProvider) {
@@ -699,13 +699,13 @@ class _ASRouter {
           provider.url = Services.urlFormatter.formatURL(provider.url);
         }
         if (provider.id === "messaging-experiments") {
-          
-          
+          // By default, the messaging-experiments provider lacks a featureIds
+          // property, so fall back to the list of default features.
           if (!provider.featureIds) {
             provider.featureIds = MESSAGING_EXPERIMENTS_DEFAULT_FEATURES;
           }
         }
-        
+        // Reset provider update timestamp to force message refresh
         provider.lastUpdated = undefined;
         return provider;
       })
@@ -714,7 +714,7 @@ class _ASRouter {
     const providerIDs = providers.map(p => p.id);
     let invalidProviders = [];
 
-    
+    // Clear old messages for providers that are no longer enabled
     for (const prevProvider of previousProviders) {
       if (!providerIDs.includes(prevProvider.id)) {
         invalidProviders.push(prevProvider.id);
@@ -723,7 +723,7 @@ class _ASRouter {
 
     return this.setState(prevState => ({
       providers,
-      
+      // Clear any messages from removed providers
       messages: [
         ...prevState.messages.filter(message =>
           providerIDs.includes(message.provider)
@@ -742,14 +742,14 @@ class _ASRouter {
     );
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * _resetInitialization - adds the following to the instance:
+   *  .initialized {bool}            Has AS Router been initialized?
+   *  .waitForInitialized {Promise}  A promise that resolves when initializion is complete
+   *  ._finishInitializing {func}    A function that, when called, resolves the .waitForInitialized
+   *                                 promise and sets .initialized to true.
+   * @memberof _ASRouter
+   */
   _resetInitialization() {
     this.initialized = false;
     this.initializing = false;
@@ -762,22 +762,22 @@ class _ASRouter {
     });
   }
 
-  
-
-
-
-
+  /**
+   * Check all provided groups are enabled.
+   * @param groups Set of groups to verify
+   * @returns bool
+   */
   hasGroupsEnabled(groups = []) {
     return this.state.groups
       .filter(({ id }) => groups.includes(id))
       .every(({ enabled }) => enabled);
   }
 
-  
-
-
-
-
+  /**
+   * Verify that the provider block the message through the `exclude` field
+   * @param message Message to verify
+   * @returns bool
+   */
   isExcludedByProvider(message) {
     const provider = this.state.providers.find(p => p.id === message.provider);
     if (!provider) {
@@ -789,20 +789,20 @@ class _ASRouter {
     return false;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Takes a group and sets the correct `enabled` state based on message config
+   * and user preferences
+   *
+   * @param {GroupConfig} group
+   * @returns {GroupConfig}
+   */
   _checkGroupEnabled(group) {
     return {
       ...group,
       enabled:
         group.enabled &&
-        
-        
+        // And if defined user preferences are true. If multiple prefs are
+        // defined then at least one has to be enabled.
         (Array.isArray(group.userPreferences)
           ? group.userPreferences.some(pref =>
               lazy.ASRouterPreferences.getUserPreference(pref)
@@ -811,13 +811,13 @@ class _ASRouter {
     };
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Fetch all message groups and update Router.state.groups.
+   * There are two cases to consider:
+   * 1. The provider needs to update as determined by the update cycle
+   * 2. Some pref change occured which could invalidate one of the existing
+   *    groups.
+   */
   async loadAllMessageGroups() {
     const provider = this.state.providers.find(
       p =>
@@ -835,18 +835,18 @@ class _ASRouter {
       remoteMessages = messages;
     }
     await this.setState(state => ({
-      
+      // If fetching remote messages fails we default to existing state.groups.
       groups: (remoteMessages || state.groups).map(this._checkGroupEnabled),
     }));
   }
 
-  
-
-
-
-
-
-
+  /**
+   * loadMessagesFromAllProviders - Loads messages from all providers if they require updates.
+   *                                Checks the .lastUpdated field on each provider to see if updates are needed
+   * @param toUpdate  An optional list of providers to update. This overrides
+   *                  the checks to determine which providers to update.
+   * @memberof _ASRouter
+   */
   async loadMessagesFromAllProviders(toUpdate = undefined) {
     const needsUpdate = Array.isArray(toUpdate)
       ? toUpdate
@@ -858,7 +858,7 @@ class _ASRouter {
     );
 
     await this.loadAllMessageGroups();
-    
+    // Don't do extra work if we don't need any updates
     if (needsUpdate.length) {
       let newState = { messages: [], providers: [] };
       for (const provider of this.state.providers) {
@@ -871,7 +871,7 @@ class _ASRouter {
           newState.providers.push({ ...provider, lastUpdated, errors });
           newState.messages = [...newState.messages, ...messages];
         } else {
-          
+          // Skip updating this provider's messages if no update is required
           let messages = this.state.messages.filter(
             msg => msg.provider === provider.id
           );
@@ -880,7 +880,7 @@ class _ASRouter {
         }
       }
 
-      
+      // Some messages have triggers that require us to initalise trigger listeners
       const unseenListeners = new Set(lazy.ASRouterTriggerListeners.keys());
       for (const { trigger } of newState.messages) {
         if (trigger && lazy.ASRouterTriggerListeners.has(trigger.id)) {
@@ -892,8 +892,8 @@ class _ASRouter {
           unseenListeners.delete(trigger.id);
         }
       }
-      
-      
+      // We don't need these listeners, but they may have previously been
+      // initialised, so uninitialise them
       for (const triggerID of unseenListeners) {
         lazy.ASRouterTriggerListeners.get(triggerID).uninit();
       }
@@ -910,9 +910,9 @@ class _ASRouter {
   async _fireMessagesLoadedTrigger() {
     const win = Services.wm.getMostRecentBrowserWindow() ?? null;
     const browser = win?.gBrowser?.selectedBrowser ?? null;
-    
-    
-    
+    // pass skipLoadingMessages to avoid infinite recursion. pass browser and
+    // window into context so messages that may need a window or browser can
+    // target accordingly.
     await this.sendTriggerMessage(
       {
         id: "messagesLoaded",
@@ -931,7 +931,7 @@ class _ASRouter {
       let needsUpdate = false;
       providers.forEach(provider => {
         if (RS_PROVIDERS_WITH_L10N.includes(provider.id)) {
-          
+          // Force to refresh the messages as well as the attachment.
           provider.lastUpdated = undefined;
           needsUpdate = true;
         }
@@ -963,12 +963,12 @@ class _ASRouter {
     return (...args) => this.waitForInitialized.then(() => func(...args));
   }
 
-  
-
-
-
-
-
+  /**
+   * init - Initializes the MessageRouter.
+   *
+   * @param {obj} parameters parameters to initialize ASRouter
+   * @memberof _ASRouter
+   */
   async init({
     storage,
     sendTelemetry,
@@ -985,7 +985,7 @@ class _ASRouter {
     this.ALLOWLIST_HOSTS = this._loadAllowHosts();
     this.clearChildMessages = this.toWaitForInitFunc(clearChildMessages);
     this.clearChildProviders = this.toWaitForInitFunc(clearChildProviders);
-    
+    // NOTE: This is only necessary to sync devtools when devtools is active.
     this.updateAdminState = this.toWaitForInitFunc(updateAdminState);
     this.sendTelemetry = sendTelemetry;
     this.dispatchCFRAction = this.toWaitForInitFunc(dispatchCFRAction);
@@ -1043,7 +1043,7 @@ class _ASRouter {
       TOPIC_EXPERIMENT_ENROLLMENT_CHANGED
     );
     Services.prefs.addObserver(USE_REMOTE_L10N_PREF, this);
-    
+    // sets .initialized to true and resolves .waitForInitialized promise
     this._finishInitializing();
     return this.state;
   }
@@ -1063,7 +1063,7 @@ class _ASRouter {
     lazy.ToolbarBadgeHub.uninit();
     lazy.MomentsPageHub.uninit();
 
-    
+    // Uninitialise all trigger listeners
     for (const listener of lazy.ASRouterTriggerListeners.values()) {
       listener.uninit();
     }
@@ -1076,7 +1076,7 @@ class _ASRouter {
       TOPIC_EXPERIMENT_ENROLLMENT_CHANGED
     );
     Services.prefs.removeObserver(USE_REMOTE_L10N_PREF, this);
-    
+    // If we added any CFR recommendations, they need to be removed
     CFRPageActions.clearRecommendations();
     this._resetInitialization();
   }
@@ -1123,7 +1123,7 @@ class _ASRouter {
   }
 
   _loadLocalProviders() {
-    
+    // If we're in ASR debug mode add the local test providers
     if (lazy.ASRouterPreferences.devtoolsEnabled) {
       this._localProviders = {
         ...this._localProviders,
@@ -1132,12 +1132,12 @@ class _ASRouter {
     }
   }
 
-  
-
-
-
+  /**
+   * Used by ASRouter Admin returns all ASRouterTargeting.Environment
+   * and ASRouter._getMessagesContext parameters and values
+   */
   async getTargetingParameters(environment, localContext) {
-    
+    // Resolve objects that may contain promises.
     async function resolve(object) {
       if (typeof object === "object" && object !== null) {
         if (Array.isArray(object)) {
@@ -1193,7 +1193,7 @@ class _ASRouter {
     );
   }
 
-  
+  // Return an object containing targeting parameters used to select messages
   _getMessagesContext() {
     const { messageImpressions, previousSessionEnd, screenImpressions } =
       this.state;
@@ -1240,7 +1240,7 @@ class _ASRouter {
     );
   }
 
-  
+  // Work out if a message can be shown based on its and its provider's frequency caps.
   isBelowFrequencyCaps(message) {
     const { messageImpressions, groupImpressions } = this.state;
     const impressionsForMessage = messageImpressions[message.id];
@@ -1282,8 +1282,8 @@ class _ASRouter {
     return _belowItemFrequencyCap && _belowGroupFrequencyCaps;
   }
 
-  
-  
+  // Helper for isBelowFrecencyCaps - work out if the frequency cap for the given
+  //                                  item has been exceeded or not
   _isBelowItemFrequencyCap(item, impressions, maxLifetimeCap = Infinity) {
     if (item && item.frequency && impressions && impressions.length) {
       if (
@@ -1334,10 +1334,10 @@ class _ASRouter {
       return { message: {} };
     }
 
-    
+    // filter out messages we want to exclude from tests
     if (
       message.skip_in_tests &&
-      
+      // `this.messagesEnabledInAutomation` should be stubbed in tests
       !this.messagesEnabledInAutomation?.includes(message.id) &&
       (Cu.isInAutomation ||
         Services.env.exists("XPCSHELL_TEST_PROFILE_DIR") ||
@@ -1411,10 +1411,10 @@ class _ASRouter {
         );
         break;
       case "feature_callout":
-        
-        
-        
-        
+        // featureCalloutCheck only comes from within FeatureCallout, where it
+        // is used to request a matching message. It is not a real trigger.
+        // pdfJsFeatureCalloutCheck is used for PDF.js feature callouts, which
+        // are managed by the trigger listener itself.
         switch (trigger.id) {
           case "featureCalloutCheck":
           case "pdfJsFeatureCalloutCheck":
@@ -1462,8 +1462,8 @@ class _ASRouter {
     const groupsWithFrequency = this.state.groups?.filter(
       ({ frequency, id }) => frequency && message.groups?.includes(id)
     );
-    
-    
+    // We only need to store impressions for messages that have frequency, or
+    // that have providers that have frequency
     if (message.frequency || groupsWithFrequency.length) {
       const time = Date.now();
       return this.setState(state => {
@@ -1473,10 +1473,10 @@ class _ASRouter {
           "messageImpressions",
           time
         );
-        
-        
-        
-        
+        // Initialize this with state.groupImpressions, and then assign the
+        // newly-updated copy to it during each iteration so that
+        // all the changes get captured and either returned or passed into the
+        // _addImpressionsForItem call on the next iteration.
         let { groupImpressions } = state;
         for (const group of groupsWithFrequency) {
           groupImpressions = this._addImpressionForItem(
@@ -1493,11 +1493,11 @@ class _ASRouter {
     return Promise.resolve();
   }
 
-  
-  
+  // Helper for addImpression - calculate the updated impressions object for the given
+  //                            item, then store it and return it
   _addImpressionForItem(currentImpressions, item, impressionsString, time) {
-    
-    
+    // The destructuring here is to avoid mutating passed parameters
+    // (see https://redux.js.org/recipes/structuring-reducers/prerequisite-concepts#immutable-data-management)
     const impressions = { ...currentImpressions };
     if (item.frequency) {
       impressions[item.id] = [...(impressions[item.id] ?? []), time];
@@ -1513,14 +1513,14 @@ class _ASRouter {
     return impressions;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * getLongestPeriod
+   *
+   * @param {obj} item Either an ASRouter message or an ASRouter provider
+   * @returns {int|null} if the item has custom frequency caps, the longest period found in the list of caps.
+                         if the item has no custom frequency caps, null
+   * @memberof _ASRouter
+   */
   getLongestPeriod(item) {
     if (!item.frequency || !item.frequency.custom) {
       return null;
@@ -1528,17 +1528,17 @@ class _ASRouter {
     return item.frequency.custom.sort((a, b) => b.period - a.period)[0].period;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * cleanupImpressions - this function cleans up obsolete impressions whenever
+   * messages are refreshed or fetched. It will likely need to be more sophisticated in the future,
+   * but the current behaviour for when both message impressions and provider impressions are
+   * cleared is as follows (where `item` is either `message` or `provider`):
+   *
+   * 1. If the item id for a list of item impressions no longer exists in the ASRouter state, it
+   *    will be cleared.
+   * 2. If the item has time-bound frequency caps but no lifetime cap, any item impressions older
+   *    than the longest time period will be cleared.
+   */
   cleanupImpressions() {
     return this.setState(state => {
       const messageImpressions = this._cleanupImpressionsForItems(
@@ -1555,19 +1555,19 @@ class _ASRouter {
     });
   }
 
-  
-
-
-
-
-
-
+  /** _cleanupImpressionsForItems - Helper for cleanupImpressions - calculate the updated
+  /*                                impressions object for the given items, then store it and return it
+   *
+   * @param {obj} state Reference to ASRouter internal state
+   * @param {array} items Can be messages, providers or groups that we count impressions for
+   * @param {string} impressionsString Key name for entry in state where impressions are stored
+   */
   _cleanupImpressionsForItems(state, items, impressionsString) {
     const impressions = { ...state[impressionsString] };
     let needsUpdate = false;
     Object.keys(impressions).forEach(id => {
       const [item] = items.filter(x => x.id === id);
-      
+      // Don't keep impressions for items that no longer exist
       if (!item || !item.frequency || !Array.isArray(impressions[id])) {
         lazy.ASRouterPreferences.console.debug(
           "_cleanupImpressionsForItem: removing impressions for deleted or changed item: ",
@@ -1581,7 +1581,7 @@ class _ASRouter {
       if (!impressions[id].length) {
         return;
       }
-      
+      // If we don't want to store impressions older than the longest period
       if (item.frequency.custom && !item.frequency.lifetime) {
         lazy.ASRouterPreferences.console.debug(
           "_cleanupImpressionsForItem: removing impressions older than longest period for item: ",
@@ -1613,7 +1613,7 @@ class _ASRouter {
     let shouldCache;
     lazy.ASRouterPreferences.console.debug(
       "in handleMessageRequest, arguments = ",
-      Array.from(arguments) 
+      Array.from(arguments) // eslint-disable-line prefer-rest-params
     );
     lazy.ASRouterPreferences.console.trace();
     const messages =
@@ -1666,8 +1666,8 @@ class _ASRouter {
 
     const context = this._getMessagesContext();
 
-    
-    
+    // Find a message that matches the targeting context as well as the trigger context (if one is provided)
+    // If no trigger is provided, we should find a message WITHOUT a trigger property defined.
     return lazy.ASRouterTargeting.findMatchingMessage({
       messages,
       trigger: triggerId && {
@@ -1707,7 +1707,7 @@ class _ASRouter {
           messageBlockList.push(idToBlock);
         }
 
-        
+        // When a message is blocked, its impressions should be cleared as well
         delete messageImpressions[id];
       });
 
@@ -1724,7 +1724,7 @@ class _ASRouter {
       const messageBlockList = [...state.messageBlockList];
       idsToUnblock
         .map(id => state.messages.find(m => m.id === id))
-        
+        // Remove all `id`s from the message block list
         .forEach(message => {
           const idToUnblock =
             message && message.campaign ? message.campaign : message.id;
@@ -1741,7 +1741,7 @@ class _ASRouter {
     for (let { id } of this.state.groups) {
       newGroupImpressions[id] = [];
     }
-    
+    // Update storage
     this._storage.set("groupImpressions", newGroupImpressions);
     return this.setState(({ groups }) => ({
       groupImpressions: newGroupImpressions,
@@ -1753,7 +1753,7 @@ class _ASRouter {
     for (let { id } of this.state.messages) {
       newMessageImpressions[id] = [];
     }
-    
+    // Update storage
     this._storage.set("messageImpressions", newMessageImpressions);
     return this.setState(() => ({
       messageImpressions: newMessageImpressions,
@@ -1766,17 +1766,17 @@ class _ASRouter {
     return this.setState(() => ({ screenImpressions: newScreenImpressions }));
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Edit the ASRouter state directly. For use by the ASRouter devtools.
+   * Requires browser.newtabpage.activity-stream.asrouter.devtoolsEnabled
+   * @param {string} key Key of the property to edit, one of:
+   *   | "groupImpressions"
+   *   | "messageImpressions"
+   *   | "screenImpressions"
+   *   | "messageBlockList"
+   * @param {object|string[]} value New value to set for state[key]
+   * @returns {Promise<unknown>} The new value in state
+   */
   async editState(key, value) {
     if (!lazy.ASRouterPreferences.devtoolsEnabled) {
       throw new Error("Editing state is only allowed in devtools mode");
@@ -1827,51 +1827,51 @@ class _ASRouter {
     return DEFAULT_ALLOWLIST_HOSTS;
   }
 
-  
+  // To be passed to ASRouterTriggerListeners
   _triggerHandler(browser, trigger) {
-    
+    // Disable ASRouterTriggerListeners in kiosk mode.
     if (lazy.BrowserHandler.kiosk) {
       return Promise.resolve();
     }
     return this.sendTriggerMessage({ ...trigger, browser });
   }
 
-  
-
-
-
-
+  /** Simple wrapper to make test mocking easier
+   *
+   * @returns {Promise} resolves when the attribution string has been set
+   * succesfully.
+   */
   setAttributionString(attrStr) {
     return lazy.MacAttribution.setAttributionString(attrStr);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * forceAttribution - this function should only be called from within about:newtab#asrouter.
+   * It forces the browser attribution to be set to something specified in asrouter admin
+   * tools, and reloads the providers in order to get messages that are dependant on this
+   * attribution data (see Return to AMO flow in bug 1475354 for example). Note - OSX and Windows only
+   * @param {data} Object an object containing the attribtion data that came from asrouter admin page
+   */
   async forceAttribution(data) {
-    
-    const attributionData = AttributionCode.allowedCodeKeys
+    // Extract the parameters from data that will make up the referrer url
+    const attributionData = lazy.AttributionCode.allowedCodeKeys
       .map(key => `${key}=${encodeURIComponent(data[key] || "")}`)
       .join("&");
     if (AppConstants.platform === "win") {
-      
-      await AttributionCode.writeAttributionFile(
+      // The whole attribution data is encoded (again) for windows
+      await lazy.AttributionCode.writeAttributionFile(
         encodeURIComponent(attributionData)
       );
     } else if (AppConstants.platform === "macosx") {
       await this.setAttributionString(encodeURIComponent(attributionData));
     }
 
-    
+    // Clear cache call is only possible in a testing environment
     Services.env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
 
-    
-    AttributionCode._clearCache();
-    await AttributionCode.getAttrDataAsync();
+    // Clear and refresh Attribution, and then fetch the messages again to update
+    lazy.AttributionCode._clearCache();
+    await lazy.AttributionCode.getAttrDataAsync();
     await this._updateMessageProviders();
     return this.loadMessagesFromAllProviders();
   }
@@ -1886,8 +1886,8 @@ class _ASRouter {
     };
     await this.loadMessagesFromAllProviders();
 
-    
-    
+    // If message has hideDefault property set to true
+    // remove from state all pb_newtab messages with type default
     if (hideDefault) {
       await this.setState(state => ({
         messages: state.messages.filter(
@@ -1896,7 +1896,7 @@ class _ASRouter {
       }));
     }
 
-    
+    // Remove from state pb_newtab messages with PromoType disabled
     await this.setState(state => ({
       messages: state.messages.filter(
         m =>
@@ -1917,7 +1917,7 @@ class _ASRouter {
     });
     TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
 
-    
+    // Format urls if any are defined
     ["infoLinkUrl"].forEach(key => {
       if (message?.content?.[key]) {
         message.content[key] = Services.urlFormatter.formatURL(
@@ -1931,7 +1931,7 @@ class _ASRouter {
 
   _recordReachEvent(message) {
     const messageGroup = message.forReachEvent.group;
-    
+    // Events telemetry only accepts understores for the event `object`
     const underscored = messageGroup.split("-").join("_");
     const extra = { branches: message.branchSlug };
     Services.telemetry.recordEvent(
@@ -1943,24 +1943,24 @@ class _ASRouter {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Fire a trigger, look for a matching message, and route it to the
+   * appropriate message handler/messaging surface.
+   * @param {object} trigger
+   * @param {string} trigger.id the name of the trigger, e.g. "openURL"
+   * @param {object} [trigger.param] an object with host, url, type, etc. keys
+   *   whose values are used to match against the message's trigger params
+   * @param {object} [trigger.context] an object with data about the source of
+   *   the trigger, matched against the message's targeting expression
+   * @param {MozBrowser} trigger.browser the browser to route messages to
+   * @param {number} [trigger.tabId] identifier used only for exposure testing
+   * @param {boolean} [skipLoadingMessages=false] pass true to skip looking for
+   *   new messages. use when calling from loadMessagesFromAllProviders to avoid
+   *   recursion. we call this from loadMessagesFromAllProviders in order to
+   *   fire the messagesLoaded trigger.
+   * @returns {Promise<object>}
+   * @resolves {message} an object with the routed message
+   */
   async sendTriggerMessage(
     { tabId, browser, ...trigger },
     skipLoadingMessages = false
@@ -1970,7 +1970,7 @@ class _ASRouter {
     }
     const telemetryObject = { tabId };
     TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-    
+    // Return all the messages so that it can record the Reach event
     const messages =
       (await this.handleMessageRequest({
         triggerId: trigger.id,
@@ -1980,8 +1980,8 @@ class _ASRouter {
       })) || [];
     TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
 
-    
-    
+    // Record the Reach event for all the messages with `forReachEvent`,
+    // only send the first message without forReachEvent to the target
     const nonReachMessages = [];
     for (const message of messages) {
       if (message.forReachEvent) {
@@ -2019,16 +2019,16 @@ class _ASRouter {
     );
 
     let panel = win.document.getElementById("customizationui-widget-panel");
-    
+    // Set the attribute to keep the panel open
     panel.setAttribute("noautohide", true);
   }
 
   async closeWNPanel(browser) {
     let win = browser.ownerGlobal;
     let panel = win.document.getElementById("customizationui-widget-panel");
-    
+    // Set the attribute to allow the panel to close
     panel.setAttribute("noautohide", false);
-    
+    // Removing the button is enough to close the panel.
     await lazy.ToolbarPanelHub._hideToolbarButton(win);
   }
 
@@ -2045,7 +2045,7 @@ class _ASRouter {
   async forcePBWindow(browser, msg) {
     const privateBrowserOpener = await new Promise(
       (
-        resolveOnContentBrowserCreated 
+        resolveOnContentBrowserCreated // wrap this in a promise to give back the right browser
       ) =>
         browser.ownerGlobal.openTrustedLinkIn(
           "about:privatebrowsing?debug",
@@ -2062,7 +2062,7 @@ class _ASRouter {
     );
 
     lazy.setTimeout(() => {
-      
+      // setTimeout is necessary to make sure the private browsing window has a chance to open before the message is sent
       privateBrowserOpener.browsingContext.currentWindowGlobal
         .getActor("AboutPrivateBrowsing")
         .sendAsyncMessage("ShowDevToolsMessage", msg);
@@ -2072,10 +2072,8 @@ class _ASRouter {
   }
 }
 
-
-
-
-
-const ASRouter = new _ASRouter();
-
-const EXPORTED_SYMBOLS = ["_ASRouter", "ASRouter", "MessageLoaderUtils"];
+/**
+ * ASRouter - singleton instance of _ASRouter that controls all messages
+ * in the new tab page.
+ */
+export const ASRouter = new _ASRouter();
