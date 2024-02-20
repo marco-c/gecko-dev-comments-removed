@@ -1,8 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// We use importESModule here instead of static import so that
+// the Karma test environment won't choke on this module. This
+// is because the Karma test environment already stubs out
+// XPCOMUtils, and overrides importESModule to be a no-op (which
+// can't be done for a static import statement).
 
-
-"use strict";
-
+// eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -23,7 +29,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 let notificationsByWindow = new WeakMap();
 
-class _ToolbarBadgeHub {
+export class _ToolbarBadgeHub {
   constructor() {
     this.id = "toolbar-badge-hub";
     this.state = {};
@@ -64,13 +70,13 @@ class _ToolbarBadgeHub {
     this._unblockMessageById = unblockMessageById;
     this._addImpression = addImpression;
     this._sendTelemetry = sendTelemetry;
-    
+    // Need to wait for ASRouter to initialize before trying to fetch messages
     await waitForInitialized;
     this.messageRequest({
       triggerId: "toolbarBadgeUpdate",
       template: "toolbar_badge",
     });
-    
+    // Listen for pref changes that could trigger new badges
     Services.prefs.addObserver(this.prefs.WHATSNEW_TOOLBAR_PANEL, this);
   }
 
@@ -106,14 +112,14 @@ class _ToolbarBadgeHub {
 
   removeAllNotifications(event) {
     if (event) {
-      
+      // ignore right clicks
       if (
         (event.type === "mousedown" || event.type === "click") &&
         event.button !== 0
       ) {
         return;
       }
-      
+      // ignore keyboard access that is not one of the usual accessor keys
       if (
         event.type === "keypress" &&
         event.key !== " " &&
@@ -127,13 +133,13 @@ class _ToolbarBadgeHub {
         this.removeAllNotifications
       );
       event.target.removeEventListener("keypress", this.removeAllNotifications);
-      
-      
+      // If we have an event it means the user interacted with the badge
+      // we should send telemetry
       if (this.state.notification) {
         this.sendUserEventTelemetry("CLICK", this.state.notification);
       }
     }
-    
+    // Will call uninit on every window
     lazy.EveryWindow.unregisterCallback(this.id);
     if (this.state.notification) {
       this._blockMessageById(this.state.notification.id);
@@ -143,12 +149,12 @@ class _ToolbarBadgeHub {
   }
 
   removeToolbarNotification(toolbarButton) {
-    
+    // Remove it from the element that displays the badge
     toolbarButton
       .querySelector(".toolbarbutton-badge")
       .classList.remove("feature-callout");
     toolbarButton.removeAttribute("badged");
-    
+    // Remove id used for for aria-label badge description
     const notificationDescription = toolbarButton.querySelector(
       "#toolbarbutton-notification-description"
     );
@@ -169,21 +175,21 @@ class _ToolbarBadgeHub {
       const badge = toolbarbutton.querySelector(".toolbarbutton-badge");
       badge.classList.add("feature-callout");
       toolbarbutton.setAttribute("badged", true);
-      
-      
-      
-      
+      // If we have additional aria-label information for the notification
+      // we add this content to the hidden `toolbarbutton-text` node.
+      // We then use `aria-labelledby` to link this description to the button
+      // that received the notification badge.
       if (message.content.badgeDescription) {
-        
+        // Insert strings as soon as we know we're showing them
         this.maybeInsertFTL(win);
         toolbarbutton.setAttribute(
           "aria-labelledby",
           `toolbarbutton-notification-description ${message.content.target}`
         );
-        
-        
-        
-        
+        // Because tooltiptext is different to the label, it gets duplicated as
+        // the description. Setting `describedby` to the same value as
+        // `labelledby` will be detected by the a11y code and the description
+        // will be removed.
         toolbarbutton.setAttribute(
           "aria-describedby",
           `toolbarbutton-notification-description ${message.content.target}`
@@ -200,16 +206,16 @@ class _ToolbarBadgeHub {
         );
         toolbarbutton.appendChild(descriptionEl);
       }
-      
-      
+      // `mousedown` event required because of the `onmousedown` defined on
+      // the button that prevents `click` events from firing
       toolbarbutton.addEventListener("mousedown", this.removeAllNotifications);
-      
+      // `keypress` event required for keyboard accessibility
       toolbarbutton.addEventListener("keypress", this.removeAllNotifications);
       this.state = { notification: { id: message.id } };
 
-      
+      // Impression should be added when the badge becomes visible
       this._addImpression(message);
-      
+      // Send a telemetry ping when adding the notification badge
       this.sendUserEventTelemetry("IMPRESSION", message);
 
       return toolbarbutton;
@@ -221,7 +227,7 @@ class _ToolbarBadgeHub {
   registerBadgeToAllWindows(message) {
     if (message.template === "update_action") {
       this.executeAction({ ...message.content.action, message_id: message.id });
-      
+      // No badge to set only an action to execute
       return;
     }
 
@@ -229,7 +235,7 @@ class _ToolbarBadgeHub {
       this.id,
       win => {
         if (notificationsByWindow.has(win)) {
-          
+          // nothing to do
           return;
         }
         const el = this.addToolbarNotification(win, message);
@@ -246,11 +252,11 @@ class _ToolbarBadgeHub {
   }
 
   registerBadgeNotificationListener(message, options = {}) {
-    
-    
+    // We need to clear any existing notifications and only show
+    // the one set by devtools
     if (options.force) {
       this.removeAllNotifications();
-      
+      // When debugging immediately show the badge
       this.registerBadgeToAllWindows(message);
       return;
     }
@@ -286,7 +292,7 @@ class _ToolbarBadgeHub {
 
   sendUserEventTelemetry(event, message) {
     const win = Services.wm.getMostRecentWindow("navigator:browser");
-    
+    // Only send pings for non private browsing windows
     if (
       win &&
       !lazy.PrivateBrowsingUtils.isBrowserPrivate(
@@ -309,10 +315,8 @@ class _ToolbarBadgeHub {
   }
 }
 
-
-
-
-
-const ToolbarBadgeHub = new _ToolbarBadgeHub();
-
-const EXPORTED_SYMBOLS = ["ToolbarBadgeHub", "_ToolbarBadgeHub"];
+/**
+ * ToolbarBadgeHub - singleton instance of _ToolbarBadgeHub that can initiate
+ * message requests and render messages.
+ */
+export const ToolbarBadgeHub = new _ToolbarBadgeHub();
