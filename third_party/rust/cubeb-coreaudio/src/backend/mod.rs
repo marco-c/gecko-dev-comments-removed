@@ -35,9 +35,9 @@ use self::utils::*;
 use atomic;
 use backend::ringbuf::RingBuffer;
 use cubeb_backend::{
-    ffi, ChannelLayout, Context, ContextOps, DeviceCollectionRef, DeviceId, DeviceRef, DeviceType,
-    Error, InputProcessingParams, Ops, Result, SampleFormat, State, Stream, StreamOps,
-    StreamParams, StreamParamsRef, StreamPrefs,
+    ffi, Context, ContextOps, DeviceCollectionRef, DeviceId, DeviceRef, DeviceType, Error,
+    InputProcessingParams, Ops, Result, SampleFormat, State, Stream, StreamOps, StreamParams,
+    StreamParamsRef, StreamPrefs,
 };
 use mach::mach_time::{mach_absolute_time, mach_timebase_info};
 use std::cmp;
@@ -312,6 +312,7 @@ fn set_input_processing_params(unit: AudioUnit, params: InputProcessingParams) -
     let ns = params.contains(InputProcessingParams::NOISE_SUPPRESSION);
 
     
+    
     let agc = params.contains(InputProcessingParams::AUTOMATIC_GAIN_CONTROL);
     assert!(!agc);
 
@@ -323,10 +324,7 @@ fn set_input_processing_params(unit: AudioUnit, params: InputProcessingParams) -
         return Err(Error::error());
     }
 
-    
-    
-    
-    let agc = u32::from(true);
+    let agc = u32::from(agc);
     let r = audio_unit_set_property(
         unit,
         kAUVoiceIOProperty_VoiceProcessingEnableAGC,
@@ -2938,6 +2936,7 @@ impl<'ctx> CoreStreamData<'ctx> {
                 let mut p = *self.input_stream_params.as_ptr();
                 p.channels = if using_voice_processing_unit {
                     
+                    
                     1
                 } else {
                     input_hw_desc.mChannelsPerFrame
@@ -3055,6 +3054,9 @@ impl<'ctx> CoreStreamData<'ctx> {
                 out_dev_info
             );
 
+            let device_channel_count =
+                get_channel_count(self.output_device.id, DeviceType::OUTPUT).unwrap_or(0);
+
             cubeb_log!(
                 "({:p}) Opening output side: rate {}, channels {}, format {:?}, layout {:?}, prefs {:?}, latency in frames {}, voice processing {}.",
                 self.stm_ptr,
@@ -3093,8 +3095,7 @@ impl<'ctx> CoreStreamData<'ctx> {
 
             
             
-            output_hw_desc.mChannelsPerFrame =
-                get_channel_count(self.output_device.id, DeviceType::OUTPUT).unwrap_or(0);
+            output_hw_desc.mChannelsPerFrame = device_channel_count;
 
             
             if output_hw_desc.mChannelsPerFrame == 0 {
@@ -3111,12 +3112,7 @@ impl<'ctx> CoreStreamData<'ctx> {
             
             let params = unsafe {
                 let mut p = *self.output_stream_params.as_ptr();
-                p.channels = if using_voice_processing_unit {
-                    
-                    1
-                } else {
-                    output_hw_desc.mChannelsPerFrame
-                };
+                p.channels = output_hw_desc.mChannelsPerFrame;
                 if using_voice_processing_unit {
                     
                     
@@ -3723,10 +3719,23 @@ impl<'ctx> CoreStreamData<'ctx> {
     fn get_output_channel_layout(&self) -> Result<Vec<mixer::Channel>> {
         self.debug_assert_is_on_stream_queue();
         assert!(!self.output_unit.is_null());
-        if self.using_voice_processing_unit() {
-            return Ok(get_channel_order(ChannelLayout::MONO));
+        if !self.using_voice_processing_unit() {
+            return get_channel_layout(self.output_unit);
         }
-        get_channel_layout(self.output_unit)
+
+        
+        
+        
+        
+        cubeb_log!(
+            "({:p}) get_output_channel_layout with a VoiceProcessingIO output unit. Trying a dedicated unit.",
+            self.stm_ptr
+        );
+        let mut dedicated_unit = create_audiounit(&self.output_device)?;
+        let res = get_channel_layout(dedicated_unit);
+        dispose_audio_unit(dedicated_unit);
+        dedicated_unit = ptr::null_mut();
+        res
     }
 }
 
