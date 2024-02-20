@@ -646,6 +646,9 @@ pref("browser.urlbar.suggest.addons", true);
 pref("browser.urlbar.suggest.mdn", true);
 
 
+pref("browser.urlbar.yelp.featureGate", false);
+
+
 
 pref("browser.urlbar.suggest.yelp", true);
 
