@@ -1,10 +1,16 @@
 import pytest
 from .. import create_cookie
 import webdriver.bidi.error as error
-from webdriver.bidi.modules.network import NetworkStringValue
+from webdriver.bidi.modules.network import NetworkBase64Value, NetworkStringValue
 from webdriver.bidi.modules.storage import BrowsingContextPartitionDescriptor, StorageKeyPartitionDescriptor
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest.mark.parametrize("cookie", [None, False, 42, "foo", []])
+async def test_cookie_invalid_type(set_cookie, cookie):
+    with pytest.raises(error.InvalidArgumentException):
+        await set_cookie(cookie=cookie)
 
 
 @pytest.mark.parametrize("domain", [None, False, 42, {}, []])
@@ -70,6 +76,14 @@ async def test_cookie_value_string_invalid_type(set_cookie, test_page, domain_va
         await set_cookie(cookie=create_cookie(domain=domain_value(), value=value))
 
 
+@pytest.mark.parametrize("base64", [None, False, 42, {}, []])
+async def test_cookie_value_base64_invalid_type(set_cookie, domain_value, base64):
+    value = NetworkBase64Value(base64)
+
+    with pytest.raises(error.InvalidArgumentException):
+        await set_cookie(cookie=create_cookie(domain=domain_value(), value=value))
+
+
 @pytest.mark.parametrize("partition", [42, False, "SOME_STRING_VALUE", {}, {"type": "SOME_INVALID_TYPE"}, []])
 async def test_partition_invalid_type(set_cookie, test_page, domain_value, partition):
     with pytest.raises(error.InvalidArgumentException):
@@ -107,10 +121,6 @@ async def test_partition_storage_key_user_context_invalid_type(set_cookie, test_
 
     with pytest.raises(error.InvalidArgumentException):
         await set_cookie(cookie=create_cookie(domain=domain_value()), partition=partition)
-
-
-
-
 
 
 
