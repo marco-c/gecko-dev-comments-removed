@@ -1079,7 +1079,7 @@ bool BackgroundDatabaseChild::EnsureDOMObject() {
   auto& factory =
       static_cast<BackgroundFactoryChild*>(Manager())->GetDOMObject();
 
-  if (!factory.GetParentObject()) {
+  if (!factory.GetOwnerGlobal()) {
     
 
     
