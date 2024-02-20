@@ -445,8 +445,10 @@ void WebTransport::RejectWaitingConnection(nsresult aRv) {
   
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED) {
-    mChild->Shutdown(true);
-    mChild = nullptr;
+    if (mChild) {
+      mChild->Shutdown(true);
+      mChild = nullptr;
+    }
     
     
     return;
