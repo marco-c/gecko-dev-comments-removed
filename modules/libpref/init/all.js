@@ -3975,8 +3975,11 @@ pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0"
 pref("extensions.formautofill.loglevel", "Warn");
 
 
-pref("extensions.formautofill.heuristics.captureOnFormRemoval", false);
-pref("extensions.formautofill.heuristics.captureOnPageNavigation", false);
+pref("extensions.formautofill.heuristics.captureOnFormRemoval", true);
+pref("extensions.formautofill.heuristics.captureOnPageNavigation", true);
+
+
+pref("extensions.formautofill.heuristics.interactivityCheckMode", "focusability");
 
 pref("toolkit.osKeyStore.loglevel", "Warn");
 
