@@ -94,6 +94,12 @@ const tests = {
       },
       "aboutwelcome.css": {
         path: path.join("../", "aboutwelcome", "content", "aboutwelcome.css"),
+        extraCheck: content => {
+          if (content.match(/^\s*@import/m)) {
+            return "aboutwelcome.css contains an @import statement. We should not import styles through the stylesheet, because it is loaded in multiple environments, including the browser chrome for feature callouts. To add other stylesheets to about:welcome or spotlight, add them to aboutwelcome.html or spotlight.html instead.";
+          }
+          return null;
+        },
       },
       
       "about:asrouter bundle": {
@@ -145,6 +151,13 @@ const tests = {
 
       if (item.before !== after) {
         errors.push(`${name} out of date`);
+      }
+
+      if (item.extraCheck) {
+        const extraError = item.extraCheck(after);
+        if (extraError) {
+          errors.push(extraError);
+        }
       }
     }
 
