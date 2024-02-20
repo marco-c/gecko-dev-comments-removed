@@ -994,9 +994,15 @@ static void ReadbackPresentCallback(ffi::WGPUBufferMapAsyncStatus status,
     ErrorBuffer getRangeError;
     const auto mapped = ffi::wgpu_server_buffer_get_mapped_range(
         req->mContext, bufferId, 0, bufferSize, getRangeError.ToFFI());
-    
-    
-    
+    if (auto innerError = getRangeError.GetError()) {
+      
+      
+      
+      MOZ_LOG(sLogger, LogLevel::Info,
+              ("WebGPU present: buffer get_mapped_range failed: %s\n",
+               innerError->message.get()));
+    }
+
     MOZ_RELEASE_ASSERT(mapped.length >= bufferSize);
     auto textureData =
         req->mRemoteTextureOwner->CreateOrRecycleBufferTextureData(
