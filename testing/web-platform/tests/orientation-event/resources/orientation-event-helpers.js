@@ -8,128 +8,213 @@
 
 
 
-async function loadChromiumResources() {
-  await import('/resources/chromium/generic_sensor_mocks.js');
-}
 
-async function initialize_generic_sensor_tests() {
-  if (typeof GenericSensorTest === 'undefined') {
-    const script = document.createElement('script');
-    script.src = '/resources/test-only-api.js';
-    script.async = false;
-    const p = new Promise((resolve, reject) => {
-      script.onload = () => { resolve(); };
-      script.onerror = e => { reject(e); };
-    })
-    document.head.appendChild(script);
-    await p;
 
-    if (isChromiumBased) {
-      await loadChromiumResources();
+
+class SensorTestHelper {
+  #eventName;
+  #sensorsEnabledByDefault;
+  #enabledSensors;
+  #disabledSensors;
+  #testObject;
+
+  
+  
+  
+  
+  constructor(t, eventName) {
+    this.#eventName = eventName;
+    this.#testObject = t;
+    this.#testObject.add_cleanup(() => this.reset());
+
+    switch (this.#eventName) {
+      case 'devicemotion':
+        this.#sensorsEnabledByDefault =
+            new Set(['accelerometer', 'gyroscope', 'linear-acceleration']);
+        break;
+      case 'deviceorientation':
+        this.#sensorsEnabledByDefault = new Set(['relative-orientation']);
+        break;
+      case 'deviceorientationabsolute':
+        this.#sensorsEnabledByDefault = new Set(['absolute-orientation']);
+        break;
+      default:
+        throw new Error(`Invalid event name ${this.#eventName}`);
     }
   }
-  assert_implements(GenericSensorTest, 'GenericSensorTest is unavailable.');
-  let sensorTest = new GenericSensorTest();
-  await sensorTest.initialize();
-  return sensorTest;
-}
 
-function sensor_test(func, name, properties) {
-  promise_test(async (t) => {
-    t.add_cleanup(() => {
-      if (sensorTest)
-        return sensorTest.reset();
+  // Creates virtual sensors that will be used in tests.
+  //
+  // This function must be called before event listeners are added or calls
+  // to setData() or waitForEvent() are made.
+  //
+  // The |options| parameter is an object that accepts the following entries:
+  // - enabledSensors: A list of virtual sensor names that will be created
+  //                   instead of the default ones for a given event type.
+  // - disabledSensors: A list of virtual sensor names that will be created
+  //                    in a disabled state, so that creating a sensor of
+  //                    a given type is guaranteed to fail.
+  // An Error is thrown if the same name is passed to both options.
+  //
+  // A default list of virtual sensors based on the |eventName| parameter passed
+  // to the constructor is used if |options| is not specified.
+  //
+  // Usage examples
+  // Use default sensors for the given event type:
+  //   await helper.initializeSensors()
+  // Enable specific sensors:
+  //   await helper.initializeSensors({
+  //     enabledSensors: ['accelerometer', 'gyroscope']
+  //   })
+  // Disable some sensors, make some report as not available:
+  //   await helper.initializeSensors({
+  //     disabledSensors: ['gyroscope']
+  //   })
+  // Enable some sensors, make some report as not available:
+  //   await helper.initializeSensors({
+  //     enabledSensors: ['accelerometer'],
+  //     disabledSensors: ['gyroscope']
+  //   })
+  async initializeSensors(options = {}) {
+    this.#disabledSensors = new Set(options.disabledSensors || []);
+    // Check that a sensor name is not in both |options.enabledSensors| and
+    // |options.disabledSensors|.
+    for (const sensor of (options.enabledSensors || [])) {
+      if (this.#disabledSensors.has(sensor)) {
+        throw new Error(`${sensor} can be defined only as enabledSensors or disabledSensors`);
+      }
+    }
+
+    this.#enabledSensors = new Set(options.enabledSensors || this.#sensorsEnabledByDefault);
+    
+    for (const sensor of this.#disabledSensors) {
+      this.#enabledSensors.delete(sensor);
+    }
+
+    const createVirtualSensorPromises = [];
+    for (const sensor of this.#enabledSensors) {
+      createVirtualSensorPromises.push(
+          test_driver.create_virtual_sensor(sensor));
+    }
+    for (const sensor of this.#disabledSensors) {
+      createVirtualSensorPromises.push(
+          test_driver.create_virtual_sensor(sensor, {connected: false}));
+    }
+    await Promise.all(createVirtualSensorPromises);
+  }
+
+  
+  
+  
+  
+  async setData(data) {
+    
+    
+    
+    
+    
+    const nullToZero = x => (x === null ? 0 : x);
+    if (this.#eventName === 'devicemotion') {
+      const degToRad = Math.PI / 180;
+      await Promise.all([
+        test_driver.update_virtual_sensor('accelerometer', {
+          'x': nullToZero(data.accelerationIncludingGravityX),
+          'y': nullToZero(data.accelerationIncludingGravityY),
+          'z': nullToZero(data.accelerationIncludingGravityZ),
+        }),
+        test_driver.update_virtual_sensor('linear-acceleration', {
+          'x': nullToZero(data.accelerationX),
+          'y': nullToZero(data.accelerationY),
+          'z': nullToZero(data.accelerationZ),
+        }),
+        test_driver.update_virtual_sensor('gyroscope', {
+          'x': nullToZero(data.rotationRateAlpha) * degToRad,
+          'y': nullToZero(data.rotationRateBeta) * degToRad,
+          'z': nullToZero(data.rotationRateGamma) * degToRad,
+        }),
+      ]);
+    } else {
+      const sensorType =
+          data.absolute ? 'absolute-orientation' : 'relative-orientation';
+      await test_driver.update_virtual_sensor(sensorType, {
+        alpha: nullToZero(data.alpha),
+        beta: nullToZero(data.beta),
+        gamma: nullToZero(data.gamma),
+      });
+    }
+  }
+
+  
+  
+  
+  async grantSensorsPermissions() {
+    
+    await test_driver.set_permission({name: 'accelerometer'}, 'granted');
+    await test_driver.set_permission({name: 'gyroscope'}, 'granted');
+    if (this.#eventName == 'deviceorientationabsolute') {
+      await test_driver.set_permission({name: 'magnetometer'}, 'granted');
+    }
+
+    const interfaceName = this.#eventName == 'devicemotion' ?
+        DeviceMotionEvent :
+        DeviceOrientationEvent;
+    await test_driver.bless('enable user activation', async () => {
+      const permission = await interfaceName.requestPermission();
+      assert_equals(permission, 'granted');
     });
+  }
 
-    let sensorTest = await initialize_generic_sensor_tests();
-    return func(t, sensorTest.getSensorProvider());
-  }, name, properties);
+  
+  
+  async reset() {
+    const createdVirtualSensors =
+      new Set([...this.#enabledSensors, ...this.#disabledSensors]);
+
+    const sensorRemovalPromises = [];
+    for (const sensor of createdVirtualSensors) {
+      sensorRemovalPromises.push(test_driver.remove_virtual_sensor(sensor));
+    }
+    await Promise.all(sensorRemovalPromises);
+  }
 }
 
-
-
-const EPSILON = 1e-8;
-
-function generateMotionData(accelerationX, accelerationY, accelerationZ,
-                            accelerationIncludingGravityX,
-                            accelerationIncludingGravityY,
-                            accelerationIncludingGravityZ,
-                            rotationRateAlpha, rotationRateBeta, rotationRateGamma,
-                            interval = 16) {
-  const motionData = {accelerationX: accelerationX,
-                    accelerationY: accelerationY,
-                    accelerationZ: accelerationZ,
-                    accelerationIncludingGravityX: accelerationIncludingGravityX,
-                    accelerationIncludingGravityY: accelerationIncludingGravityY,
-                    accelerationIncludingGravityZ: accelerationIncludingGravityZ,
-                    rotationRateAlpha: rotationRateAlpha,
-                    rotationRateBeta: rotationRateBeta,
-                    rotationRateGamma: rotationRateGamma,
-                    interval: interval};
+function generateMotionData(
+    accelerationX, accelerationY, accelerationZ, accelerationIncludingGravityX,
+    accelerationIncludingGravityY, accelerationIncludingGravityZ,
+    rotationRateAlpha, rotationRateBeta, rotationRateGamma, interval = 16) {
+  const motionData = {
+    accelerationX: accelerationX,
+    accelerationY: accelerationY,
+    accelerationZ: accelerationZ,
+    accelerationIncludingGravityX: accelerationIncludingGravityX,
+    accelerationIncludingGravityY: accelerationIncludingGravityY,
+    accelerationIncludingGravityZ: accelerationIncludingGravityZ,
+    rotationRateAlpha: rotationRateAlpha,
+    rotationRateBeta: rotationRateBeta,
+    rotationRateGamma: rotationRateGamma,
+    interval: interval
+  };
   return motionData;
 }
 
 function generateOrientationData(alpha, beta, gamma, absolute) {
-  const orientationData = {alpha: alpha,
-                         beta: beta,
-                         gamma: gamma,
-                         absolute: absolute};
+  const orientationData =
+      {alpha: alpha, beta: beta, gamma: gamma, absolute: absolute};
   return orientationData;
 }
 
-async function setMockSensorDataForType(sensorProvider, sensorType, mockDataArray) {
-  const createdSensor = await sensorProvider.getCreatedSensor(sensorType);
-  
-  
-  
-  
-  
-  
-  
-  
-  return createdSensor.setSensorReadingImmediately([mockDataArray]);
-}
-
-
-let nullToNan = x => (x === null ? NaN : x);
-
-function setMockMotionData(sensorProvider, motionData) {
-  const degToRad = Math.PI / 180;
-  return Promise.all([
-      setMockSensorDataForType(sensorProvider, "Accelerometer", [
-          nullToNan(motionData.accelerationIncludingGravityX),
-          nullToNan(motionData.accelerationIncludingGravityY),
-          nullToNan(motionData.accelerationIncludingGravityZ),
-      ]),
-      setMockSensorDataForType(sensorProvider, "LinearAccelerationSensor", [
-          nullToNan(motionData.accelerationX),
-          nullToNan(motionData.accelerationY),
-          nullToNan(motionData.accelerationZ),
-      ]),
-      setMockSensorDataForType(sensorProvider, "Gyroscope", [
-          nullToNan(motionData.rotationRateAlpha) * degToRad,
-          nullToNan(motionData.rotationRateBeta) * degToRad,
-          nullToNan(motionData.rotationRateGamma) * degToRad,
-      ]),
-  ]);
-}
-
-function setMockOrientationData(sensorProvider, orientationData) {
-  let sensorType = orientationData.absolute
-      ? "AbsoluteOrientationEulerAngles" : "RelativeOrientationEulerAngles";
-  return setMockSensorDataForType(sensorProvider, sensorType, [
-      nullToNan(orientationData.beta),
-      nullToNan(orientationData.gamma),
-      nullToNan(orientationData.alpha),
-  ]);
-}
-
 function assertEventEquals(actualEvent, expectedEvent) {
+  
+  
+  const EPSILON = 1e-8;
+
   for (let key1 of Object.keys(Object.getPrototypeOf(expectedEvent))) {
-    if (typeof expectedEvent[key1] === "object" && expectedEvent[key1] !== null) {
+    if (typeof expectedEvent[key1] === 'object' &&
+        expectedEvent[key1] !== null) {
       assertEventEquals(actualEvent[key1], expectedEvent[key1]);
-    } else if (typeof expectedEvent[key1] === "number") {
-      assert_approx_equals(actualEvent[key1], expectedEvent[key1], EPSILON, key1);
+    } else if (typeof expectedEvent[key1] === 'number') {
+      assert_approx_equals(
+          actualEvent[key1], expectedEvent[key1], EPSILON, key1);
     } else {
       assert_equals(actualEvent[key1], expectedEvent[key1], key1);
     }
@@ -184,6 +269,6 @@ function waitForEvent(expected_event) {
       } catch (e) {
         reject(e);
       }
-    }, { once: true });
+    }, {once: true});
   });
 }
