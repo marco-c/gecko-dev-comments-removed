@@ -1,9 +1,7 @@
 
 
 use std::borrow::Borrow;
-use std::cmp;
 use std::fmt;
-use std::hash;
 
 
 pub trait ToKey {
@@ -33,7 +31,9 @@ impl ToKey for str {
 }
 
 
-#[derive(Clone)]
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Key<'k> {
     key: &'k str,
 }
@@ -41,53 +41,24 @@ pub struct Key<'k> {
 impl<'k> Key<'k> {
     
     pub fn from_str(key: &'k str) -> Self {
-        Key { key: key }
+        Key { key }
     }
 
     
     pub fn as_str(&self) -> &str {
         self.key
     }
-}
 
-impl<'k> fmt::Debug for Key<'k> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.key.fmt(f)
+    
+    pub fn to_borrowed_str(&self) -> Option<&'k str> {
+        
+        Some(self.key)
     }
 }
 
 impl<'k> fmt::Display for Key<'k> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.key.fmt(f)
-    }
-}
-
-impl<'k> hash::Hash for Key<'k> {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: hash::Hasher,
-    {
-        self.as_str().hash(state)
-    }
-}
-
-impl<'k, 'ko> PartialEq<Key<'ko>> for Key<'k> {
-    fn eq(&self, other: &Key<'ko>) -> bool {
-        self.as_str().eq(other.as_str())
-    }
-}
-
-impl<'k> Eq for Key<'k> {}
-
-impl<'k, 'ko> PartialOrd<Key<'ko>> for Key<'k> {
-    fn partial_cmp(&self, other: &Key<'ko>) -> Option<cmp::Ordering> {
-        self.as_str().partial_cmp(other.as_str())
-    }
-}
-
-impl<'k> Ord for Key<'k> {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.as_str().cmp(other.as_str())
     }
 }
 
@@ -133,11 +104,25 @@ mod sval_support {
     use super::*;
 
     extern crate sval;
+    extern crate sval_ref;
 
-    use self::sval::value::{self, Value};
+    use self::sval::Value;
+    use self::sval_ref::ValueRef;
 
     impl<'a> Value for Key<'a> {
-        fn stream(&self, stream: &mut value::Stream) -> value::Result {
+        fn stream<'sval, S: sval::Stream<'sval> + ?Sized>(
+            &'sval self,
+            stream: &mut S,
+        ) -> sval::Result {
+            self.key.stream(stream)
+        }
+    }
+
+    impl<'a> ValueRef<'a> for Key<'a> {
+        fn stream_ref<S: self::sval::Stream<'a> + ?Sized>(
+            &self,
+            stream: &mut S,
+        ) -> self::sval::Result {
             self.key.stream(stream)
         }
     }

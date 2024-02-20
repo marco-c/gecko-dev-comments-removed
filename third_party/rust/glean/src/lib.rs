@@ -174,6 +174,12 @@ pub fn set_experiment_inactive(experiment_id: String) {
 
 
 
+pub fn set_experimentation_id(experimentation_id: String) {
+    glean_core::glean_set_experimentation_id(experimentation_id);
+}
+
+
+
 pub fn test_get_experimentation_id() -> Option<String> {
     glean_core::glean_test_get_experimentation_id()
 }

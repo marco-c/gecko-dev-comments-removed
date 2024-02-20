@@ -15,7 +15,7 @@ use tempfile::Builder;
 #[cfg(feature = "lmdb")]
 use rkv::backend::{Lmdb, LmdbEnvironment};
 use rkv::{
-    backend::{BackendEnvironmentBuilder, SafeMode, SafeModeEnvironment},
+    backend::{BackendEnvironmentBuilder, RecoveryStrategy, SafeMode, SafeModeEnvironment},
     CloseOptions, Rkv, StoreOptions, Value,
 };
 
@@ -247,7 +247,7 @@ fn test_safe_mode_corrupt_while_open_1() {
 
     
     let mut builder = Rkv::environment_builder::<SafeMode>();
-    builder.set_discard_if_corrupted(true);
+    builder.set_corruption_recovery_strategy(RecoveryStrategy::Discard);
     manager
         .get_or_create_from_builder(root.path(), builder, Rkv::from_builder::<SafeMode>)
         .expect("created");
@@ -376,5 +376,96 @@ fn test_safe_mode_corrupt_while_open_2() {
     assert_eq!(
         store.get(&reader, "baz2").expect("read"),
         Some(Value::Str("byé, yöu"))
+    );
+}
+
+
+
+#[test]
+fn test_safe_mode_corrupt_while_open_3() {
+    type Manager = rkv::Manager<SafeModeEnvironment>;
+
+    let root = Builder::new()
+        .prefix("test_safe_mode_corrupt_while_open_3")
+        .tempdir()
+        .expect("tempdir");
+    fs::create_dir_all(root.path()).expect("dir created");
+
+    let mut safebin = root.path().to_path_buf();
+    safebin.push("data.safe.bin");
+
+    
+    fs::write(&safebin, "bogus").expect("dbfile corrupted");
+    assert!(safebin.exists(), "Corrupted database file was written to");
+
+    
+    let mut manager = Manager::singleton().write().unwrap();
+
+    
+    manager
+        .get_or_create(root.path(), Rkv::new::<SafeMode>)
+        .expect_err("not created");
+    assert!(manager.get(root.path()).expect("success").is_none());
+
+    
+    let mut builder = Rkv::environment_builder::<SafeMode>();
+    builder.set_corruption_recovery_strategy(RecoveryStrategy::Rename);
+    manager
+        .get_or_create_from_builder(root.path(), builder, Rkv::from_builder::<SafeMode>)
+        .expect("created");
+    assert!(manager.get(root.path()).expect("success").is_some());
+
+    assert!(!safebin.exists(), "Database file was moved out of the way");
+
+    let mut corruptbin = root.path().to_path_buf();
+    corruptbin.push("data.safe.bin.corrupt");
+    assert!(corruptbin.exists(), "Corrupted database file exists");
+
+    let shared_env = manager
+        .get_or_create(root.path(), Rkv::new::<SafeMode>)
+        .expect("created");
+    let env = shared_env.read().unwrap();
+
+    
+    let store = env
+        .open_single("store", StoreOptions::create())
+        .expect("opened");
+
+    let reader = env.read().expect("reader");
+    assert_eq!(store.get(&reader, "foo").expect("read"), None, "Nothing to be read");
+
+    
+    let mut writer = env.write().expect("writer");
+    store
+        .put(&mut writer, "foo", &Value::I64(5678))
+        .expect("wrote");
+    writer.commit().expect("committed");
+    env.sync(true).expect("synced");
+
+    assert!(safebin.exists(), "Database file exists");
+
+    
+    drop(env);
+    drop(shared_env);
+    manager
+        .try_close(root.path(), CloseOptions::default())
+        .expect("closed without deleting");
+    assert!(manager.get(root.path()).expect("success").is_none());
+
+    
+    let shared_env = manager
+        .get_or_create(root.path(), Rkv::new::<SafeMode>)
+        .expect("created");
+    let env = shared_env.read().unwrap();
+
+    
+    let store = env
+        .open_single("store", StoreOptions::default())
+        .expect("opened");
+    let reader = env.read().expect("reader");
+    assert_eq!(
+        store.get(&reader, "foo").expect("read"),
+        Some(Value::I64(5678)),
+        "Database contains expected value"
     );
 }

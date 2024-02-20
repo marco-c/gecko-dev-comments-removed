@@ -42,3 +42,16 @@ pub enum WriteFlags {
     APPEND,
     APPEND_DUP,
 }
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RecoveryStrategy {
+    
+    Error,
+
+    
+    Discard,
+
+    
+    Rename,
+}
