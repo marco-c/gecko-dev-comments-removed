@@ -13,6 +13,7 @@
 #include "nsIObserver.h"
 #include <gtk/gtk.h>
 #include "nsITimer.h"
+#include "GUniquePtr.h"
 
 class nsICookieJarSettings;
 class nsWindow;
@@ -168,6 +169,8 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   uintptr_t mCachedDragContext;
 
+  nsTHashMap<nsCStringHashKey, mozilla::GUniquePtr<gchar*>> mCachedUris;
+
   guint mPendingTime;
 
   
@@ -199,6 +202,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void* mTargetDragData;
   uint32_t mTargetDragDataLen;
+  mozilla::GUniquePtr<gchar*> mTargetDragUris;
   
   bool IsTargetContextList(void);
   
