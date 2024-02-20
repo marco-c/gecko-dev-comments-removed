@@ -651,19 +651,3 @@ function setupCSP(csp, second_csp=null) {
     document.head.appendChild(second_meta);
   }
 }
-
-
-
-
-
-
-
-async function multiClick(x, y, click_origin, times = 3) {
-  for (let i = 0; i < times; i++) {
-    let actions = new test_driver.Actions();
-    await actions.pointerMove(x, y, {origin: click_origin})
-        .pointerDown()
-        .pointerUp()
-        .send();
-  }
-}
