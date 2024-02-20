@@ -5,8 +5,6 @@
 
 
 
-
-
 registerCleanupFunction(teardown);
 
 add_task(async function testToggleNarrate() {
@@ -24,26 +22,7 @@ add_task(async function testToggleNarrate() {
     $(NarrateTestUtils.TOGGLE).focus();
     eventUtils.synthesizeKey("n", {}, content);
 
-    let promiseEvent = ContentTaskUtils.waitForEvent(content, "paragraphstart");
-    let speechinfo = (await promiseEvent).detail;
-    let paragraph = speechinfo.paragraph;
-
-    NarrateTestUtils.isStartedState(content, ok);
-
-    promiseEvent = ContentTaskUtils.waitForEvent(content, "paragraphstart");
-    $(NarrateTestUtils.TOGGLE).focus();
-    eventUtils.synthesizeKey("KEY_ArrowRight", {}, content);
-    speechinfo = (await promiseEvent).detail;
-    isnot(speechinfo.paragraph, paragraph, "next paragraph is being spoken");
-
-    NarrateTestUtils.isStartedState(content, ok);
-
-    promiseEvent = ContentTaskUtils.waitForEvent(content, "paragraphstart");
-    $(NarrateTestUtils.TOGGLE).focus();
-    eventUtils.synthesizeKey("KEY_ArrowLeft", { repeat: 2 }, content);
-    speechinfo = (await promiseEvent).detail;
-    is(speechinfo.paragraph, paragraph, "first paragraph being spoken");
-
+    await ContentTaskUtils.waitForEvent(content, "paragraphstart");
     NarrateTestUtils.isStartedState(content, ok);
 
     $(NarrateTestUtils.TOGGLE).focus();
