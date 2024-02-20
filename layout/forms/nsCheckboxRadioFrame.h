@@ -25,15 +25,15 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
                                 nsPresContext* aPresContext);
 
   
-  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                const nsDisplayListSet& aLists) override;
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                        const nsDisplayListSet& aLists) override;
 
   
 
 
 
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
   
 
@@ -50,9 +50,9 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
 
 
 
-  virtual nsresult HandleEvent(nsPresContext* aPresContext,
-                               mozilla::WidgetGUIEvent* aEvent,
-                               nsEventStatus* aEventStatus) override;
+  nsresult HandleEvent(nsPresContext* aPresContext,
+                       mozilla::WidgetGUIEvent* aEvent,
+                       nsEventStatus* aEventStatus) override;
 
   Maybe<nscoord> GetNaturalBaselineBOffset(
       mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
@@ -62,17 +62,16 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
 
 
 
-  virtual void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus& aStatus) override;
+  void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
+              const ReflowInput& aReflowInput,
+              nsReflowStatus& aStatus) override;
 
   
 
-  virtual void SetFocus(bool aOn = true, bool aRepaint = false) override;
+  void SetFocus(bool aOn = true, bool aRepaint = false) override;
 
   
-  virtual nsresult SetFormProperty(nsAtom* aName,
-                                   const nsAString& aValue) override;
+  nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
 
  protected:
   virtual ~nsCheckboxRadioFrame();
