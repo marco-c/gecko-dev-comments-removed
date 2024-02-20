@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef DOM_QUOTA_DIRECTORYLOCKCATEGORY_H_
+#define DOM_QUOTA_DIRECTORYLOCKCATEGORY_H_
+
+namespace mozilla::dom::quota {
+
+enum class DirectoryLockCategory : uint8_t {
+  None = 0,
+};
+
+}  
+
+#endif  

@@ -22,6 +22,7 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
+#include "mozilla/dom/quota/DirectoryLockCategory.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
 #include "mozilla/dom/quota/InitializationTypes.h"
 #include "mozilla/dom/quota/PersistenceType.h"
@@ -145,10 +146,10 @@ class QuotaManager final : public BackgroundThreadObject {
     return mInitializedOrigins.Contains(aOrigin);
   }
 
-  bool IsTemporaryStorageInitialized() const {
+  bool IsTemporaryStorageInitializedInternal() const {
     AssertIsOnIOThread();
 
-    return mTemporaryStorageInitialized;
+    return mTemporaryStorageInitializedInternal;
   }
 
   
@@ -268,6 +269,7 @@ class QuotaManager final : public BackgroundThreadObject {
       const Nullable<PersistenceType>& aPersistenceType,
       const OriginScope& aOriginScope,
       const Nullable<Client::Type>& aClientType, bool aExclusive,
+      DirectoryLockCategory aCategory = DirectoryLockCategory::None,
       Maybe<RefPtr<UniversalDirectoryLock>&> aPendingDirectoryLockOut =
           Nothing());
 
@@ -297,7 +299,8 @@ class QuotaManager final : public BackgroundThreadObject {
   RefPtr<UniversalDirectoryLock> CreateDirectoryLockInternal(
       const Nullable<PersistenceType>& aPersistenceType,
       const OriginScope& aOriginScope,
-      const Nullable<Client::Type>& aClientType, bool aExclusive);
+      const Nullable<Client::Type>& aClientType, bool aExclusive,
+      DirectoryLockCategory aCategory = DirectoryLockCategory::None);
 
   
   uint64_t CollectOriginsForEviction(
@@ -322,6 +325,8 @@ class QuotaManager final : public BackgroundThreadObject {
   RefPtr<BoolPromise> InitializeStorage(
       RefPtr<UniversalDirectoryLock> aDirectoryLock);
 
+  RefPtr<BoolPromise> StorageInitialized();
+
   bool IsStorageInitialized() const {
     AssertIsOnOwningThread();
 
@@ -340,6 +345,8 @@ class QuotaManager final : public BackgroundThreadObject {
   {
   }
 #endif
+
+  RefPtr<BoolPromise> TemporaryStorageInitialized();
 
  private:
   nsresult EnsureStorageIsInitializedInternal();
@@ -376,7 +383,18 @@ class QuotaManager final : public BackgroundThreadObject {
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
   EnsureTemporaryClientIsInitialized(const ClientMetadata& aClientMetadata);
 
-  nsresult EnsureTemporaryStorageIsInitialized();
+  RefPtr<BoolPromise> InitializeTemporaryStorage();
+
+  RefPtr<BoolPromise> InitializeTemporaryStorage(
+      RefPtr<UniversalDirectoryLock> aDirectoryLock);
+
+  bool IsTemporaryStorageInitialized() const {
+    AssertIsOnOwningThread();
+
+    return mTemporaryStorageInitialized;
+  }
+
+  nsresult EnsureTemporaryStorageIsInitializedInternal();
 
   RefPtr<BoolPromise> ClearStoragesForOrigin(
       const Maybe<PersistenceType>& aPersistenceType,
@@ -780,6 +798,7 @@ class QuotaManager final : public BackgroundThreadObject {
   uint64_t mShutdownStorageOpCount;
   bool mStorageInitialized;
   bool mTemporaryStorageInitialized;
+  bool mTemporaryStorageInitializedInternal;
   bool mCacheUsable;
 };
 
