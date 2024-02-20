@@ -227,6 +227,14 @@ def split_chunks(config, tasks):
         
         chunked_manifests = None
         if "test-manifests" in task:
+            
+            if (
+                config.params["try_task_config"].get("new-test-config", False)
+                and task["chunks"] > 1
+            ):
+                task["chunks"] *= 2
+                task["max-run-time"] = int(task["max-run-time"] * 2)
+
             manifests = task["test-manifests"]
             chunked_manifests = chunk_manifests(
                 task["suite"],

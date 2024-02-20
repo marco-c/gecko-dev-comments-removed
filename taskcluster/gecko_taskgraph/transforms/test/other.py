@@ -17,6 +17,7 @@ from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.test.variant import TEST_VARIANTS
 from gecko_taskgraph.util.platforms import platform_family
+from gecko_taskgraph.util.templates import merge
 
 transforms = TransformSequence()
 
@@ -65,6 +66,14 @@ def handle_suite_category(config, tasks):
 
         
         task["suite"] = suite
+
+        
+        if "mochitest" in task["suite"] and config.params["try_task_config"].get(
+            "new-test-config", False
+        ):
+            task = merge(
+                task, {"mozharness": {"extra-options": ["--restartAfterFailure"]}}
+            )
         yield task
 
 
