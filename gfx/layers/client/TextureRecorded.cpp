@@ -129,6 +129,9 @@ void RecordedTextureData::EndDraw() {
 
 already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
   if (mSnapshotWrapper && (!mDT || !mDT->IsDirty())) {
+    
+    
+    mCanvasChild->AttachSurface(mSnapshotWrapper);
     return do_AddRef(mSnapshotWrapper);
   }
 

@@ -122,6 +122,12 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
   
 
 
+
+  void AttachSurface(const RefPtr<gfx::SourceSurface>& aSurface);
+
+  
+
+
   void DetachSurface(const RefPtr<gfx::SourceSurface>& aSurface);
 
   
