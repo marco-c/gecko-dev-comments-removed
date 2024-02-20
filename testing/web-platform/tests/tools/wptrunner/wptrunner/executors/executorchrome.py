@@ -46,7 +46,7 @@ def make_sanitizer_mixin(crashtest_executor_cls: Type[CrashtestExecutor]):
                         status = result["status"]
                         if status == "PASS":
                             status = "OK"
-                        harness_result = test.result_cls(status, result["message"])
+                        harness_result = test.make_result(status, result["message"])
                         
                         return harness_result, []
                     
