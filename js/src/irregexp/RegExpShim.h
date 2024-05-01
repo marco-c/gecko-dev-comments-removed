@@ -629,6 +629,27 @@ class HeapObject : public Object {
 
 
 
+
+
+
+
+template <typename T>
+class Tagged {
+ public:
+  Tagged() {}
+  MOZ_IMPLICIT Tagged(const T& value) : value_(value) {}
+  MOZ_IMPLICIT Tagged(T&& value) : value_(std::move(value)) {}
+
+  T* operator->() { return &value_; }
+  constexpr operator T() const { return value_; }
+
+ private:
+  T value_;
+};
+
+
+
+
 class FixedArray : public HeapObject {
  public:
   inline void set(uint32_t index, Object value) {
