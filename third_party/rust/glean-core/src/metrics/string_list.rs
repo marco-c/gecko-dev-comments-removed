@@ -171,13 +171,20 @@ impl StringListMetric {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Vec<String>> {
         crate::block_on_dispatcher();
         crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 
-    
-    
     
     
     

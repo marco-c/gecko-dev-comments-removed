@@ -110,7 +110,6 @@ impl CounterMetric {
     
     
     
-    
     pub fn add(&self, amount: i32) {
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.add_sync(glean, amount))
@@ -143,13 +142,20 @@ impl CounterMetric {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i32> {
         crate::block_on_dispatcher();
         crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 
-    
-    
     
     
     

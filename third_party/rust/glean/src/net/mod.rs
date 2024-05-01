@@ -20,6 +20,20 @@ use thread_state::{AtomicState, State};
 mod http_uploader;
 
 
+pub struct PingUploadRequest {
+    
+    pub url: String,
+    
+    pub body: Vec<u8>,
+    
+    pub headers: Vec<(String, String)>,
+    
+    pub body_has_info_sections: bool,
+    
+    pub ping_name: String,
+}
+
+
 pub trait PingUploader: std::fmt::Debug + Send + Sync {
     
     
@@ -29,7 +43,7 @@ pub trait PingUploader: std::fmt::Debug + Send + Sync {
     
     
     
-    fn upload(&self, url: String, body: Vec<u8>, headers: Vec<(String, String)>) -> UploadResult;
+    fn upload(&self, upload_request: PingUploadRequest) -> UploadResult;
 }
 
 
@@ -105,7 +119,14 @@ impl UploadManager {
                             let upload_url = format!("{}{}", inner.server_endpoint, request.path);
                             let headers: Vec<(String, String)> =
                                 request.headers.into_iter().collect();
-                            let result = inner.uploader.upload(upload_url, request.body, headers);
+                            let upload_request = PingUploadRequest {
+                                url: upload_url,
+                                body: request.body,
+                                headers,
+                                body_has_info_sections: request.body_has_info_sections,
+                                ping_name: request.ping_name,
+                            };
+                            let result = inner.uploader.upload(upload_request);
                             
                             match glean_core::glean_process_ping_upload_response(doc_id, result) {
                                 UploadTaskAction::Next => (),

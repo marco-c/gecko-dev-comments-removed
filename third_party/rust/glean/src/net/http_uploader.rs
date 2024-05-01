@@ -2,7 +2,7 @@
 
 
 
-use crate::net::{PingUploader, UploadResult};
+use crate::net::{PingUploadRequest, PingUploader, UploadResult};
 
 
 #[derive(Debug)]
@@ -14,11 +14,8 @@ impl PingUploader for HttpUploader {
     
     
     
-    
-    
-    
-    fn upload(&self, url: String, _body: Vec<u8>, _headers: Vec<(String, String)>) -> UploadResult {
-        log::debug!("TODO bug 1675468: submitting to {:?}", url);
+    fn upload(&self, upload_request: PingUploadRequest) -> UploadResult {
+        log::debug!("TODO bug 1675468: submitting to {:?}", upload_request.url);
         UploadResult::http_status(200)
     }
 }

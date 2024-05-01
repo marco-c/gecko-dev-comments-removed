@@ -2,8 +2,11 @@
 
 
 
+use std::sync::Arc;
+
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
+use crate::metrics::JsonValue;
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
@@ -13,12 +16,13 @@ use crate::Glean;
 
 
 
+
 #[derive(Clone, Debug)]
-pub struct QuantityMetric {
-    meta: CommonMetricDataInternal,
+pub struct ObjectMetric {
+    meta: Arc<CommonMetricDataInternal>,
 }
 
-impl MetricType for QuantityMetric {
+impl MetricType for ObjectMetric {
     fn meta(&self) -> &CommonMetricDataInternal {
         &self.meta
     }
@@ -28,10 +32,24 @@ impl MetricType for QuantityMetric {
 
 
 
-impl QuantityMetric {
+impl ObjectMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self { meta: meta.into() }
+        Self {
+            meta: Arc::new(meta.into()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn set_sync(&self, glean: &Glean, value: JsonValue) {
+        let value = Metric::Object(serde_json::to_string(&value).unwrap());
+        glean.storage().record(glean, &self.meta, &value)
     }
 
     
@@ -42,33 +60,22 @@ impl QuantityMetric {
     
     
     
-    
-    pub fn set(&self, value: i64) {
+    pub fn set(&self, value: JsonValue) {
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.set_sync(glean, value))
     }
 
     
-    #[doc(hidden)]
-    pub fn set_sync(&self, glean: &Glean, value: i64) {
-        if !self.should_record(glean) {
-            return;
-        }
-
-        if value < 0 {
-            record_error(
-                glean,
-                &self.meta,
-                ErrorType::InvalidValue,
-                format!("Set negative value {}", value),
-                None,
-            );
-            return;
-        }
-
-        glean
-            .storage()
-            .record(glean, &self.meta, &Metric::Quantity(value))
+    
+    
+    
+    
+    pub fn record_schema_error(&self) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| {
+            let msg = "Value did not match predefined schema";
+            record_error(glean, &metric.meta, ErrorType::InvalidValue, msg, None);
+        });
     }
 
     
@@ -77,7 +84,7 @@ impl QuantityMetric {
         &self,
         glean: &Glean,
         ping_name: S,
-    ) -> Option<i64> {
+    ) -> Option<String> {
         let queried_ping_name = ping_name
             .into()
             .unwrap_or_else(|| &self.meta().inner.send_in_pings[0]);
@@ -88,7 +95,7 @@ impl QuantityMetric {
             &self.meta.identifier(glean),
             self.meta.inner.lifetime,
         ) {
-            Some(Metric::Quantity(i)) => Some(i),
+            Some(Metric::Object(o)) => Some(o),
             _ => None,
         }
     }
@@ -98,20 +105,15 @@ impl QuantityMetric {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<JsonValue> {
         crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+        let value = crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()));
+        
+        value.map(|val| serde_json::from_str(&val).unwrap())
     }
 
+    
+    
     
     
     

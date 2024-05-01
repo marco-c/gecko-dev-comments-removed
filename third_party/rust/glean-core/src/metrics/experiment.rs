@@ -195,6 +195,15 @@ impl ExperimentMetric {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_value(&self, glean: &Glean) -> Option<RecordedExperiment> {
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),

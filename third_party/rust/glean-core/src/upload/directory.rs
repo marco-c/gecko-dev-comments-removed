@@ -9,15 +9,28 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::request::HeaderMap;
 use crate::{DELETION_REQUEST_PINGS_DIRECTORY, PENDING_PINGS_DIRECTORY};
 
 
-
-pub type PingPayload = (String, String, String, Option<HeaderMap>);
+#[derive(Clone, Debug, Default)]
+pub struct PingPayload {
+    
+    pub document_id: String,
+    
+    pub upload_path: String,
+    
+    pub json_body: String,
+    
+    pub headers: Option<HeaderMap>,
+    
+    pub body_has_info_sections: bool,
+    
+    pub ping_name: String,
+}
 
 
 #[derive(Clone, Debug, Default)]
@@ -65,17 +78,25 @@ fn get_file_name_as_str(path: &Path) -> Option<&str> {
 
 
 
+#[derive(Default, Deserialize, Serialize)]
+pub struct PingMetadata {
+    
+    pub headers: Option<HeaderMap>,
+    
+    pub body_has_info_sections: Option<bool>,
+    
+    pub ping_name: Option<String>,
+}
 
 
 
-fn process_metadata(path: &str, metadata: &str) -> Option<HeaderMap> {
-    #[derive(Deserialize)]
-    struct PingMetadata {
-        pub headers: HeaderMap,
-    }
 
+
+
+
+fn process_metadata(path: &str, metadata: &str) -> Option<PingMetadata> {
     if let Ok(metadata) = serde_json::from_str::<PingMetadata>(metadata) {
-        return Some(metadata.headers);
+        return Some(metadata);
     } else {
         log::warn!("Error while parsing ping metadata: {}", path);
     }
@@ -171,8 +192,23 @@ impl PingDirectoryManager {
         if let (Some(Ok(path)), Some(Ok(body)), Ok(metadata)) =
             (lines.next(), lines.next(), lines.next().transpose())
         {
-            let headers = metadata.and_then(|m| process_metadata(&path, &m));
-            return Some((document_id.into(), path, body, headers));
+            let PingMetadata {
+                headers,
+                body_has_info_sections,
+                ping_name,
+            } = metadata
+                .and_then(|m| process_metadata(&path, &m))
+                .unwrap_or_default();
+            let ping_name =
+                ping_name.unwrap_or_else(|| path.split('/').nth(3).unwrap_or("").into());
+            return Some(PingPayload {
+                document_id: document_id.into(),
+                upload_path: path,
+                json_body: body,
+                headers,
+                body_has_info_sections: body_has_info_sections.unwrap_or(true),
+                ping_name,
+            });
         } else {
             log::warn!(
                 "Error processing ping file: {}. Ping file is not formatted as expected.",
@@ -303,7 +339,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -320,7 +356,8 @@ mod test {
 
         
         let ping = &data.pending_pings[0].1;
-        let request_ping_type = ping.1.split('/').nth(3).unwrap();
+        let request_ping_type = ping.upload_path.split('/').nth(3).unwrap();
+        assert_eq!(request_ping_type, ping.ping_name);
         assert_eq!(request_ping_type, "test");
     }
 
@@ -329,7 +366,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -352,7 +389,8 @@ mod test {
 
         
         let ping = &data.pending_pings[0].1;
-        let request_ping_type = ping.1.split('/').nth(3).unwrap();
+        let request_ping_type = ping.upload_path.split('/').nth(3).unwrap();
+        assert_eq!(request_ping_type, ping.ping_name);
         assert_eq!(request_ping_type, "test");
 
         
@@ -364,7 +402,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true, true, true, vec![]);
+        let ping_type = PingType::new("test", true, true, true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -387,7 +425,8 @@ mod test {
 
         
         let ping = &data.pending_pings[0].1;
-        let request_ping_type = ping.1.split('/').nth(3).unwrap();
+        let request_ping_type = ping.upload_path.split('/').nth(3).unwrap();
+        assert_eq!(request_ping_type, ping.ping_name);
         assert_eq!(request_ping_type, "test");
 
         
@@ -414,7 +453,8 @@ mod test {
 
         
         let ping = &data.deletion_request_pings[0].1;
-        let request_ping_type = ping.1.split('/').nth(3).unwrap();
+        let request_ping_type = ping.upload_path.split('/').nth(3).unwrap();
+        assert_eq!(request_ping_type, ping.ping_name);
         assert_eq!(request_ping_type, "deletion-request");
     }
 }

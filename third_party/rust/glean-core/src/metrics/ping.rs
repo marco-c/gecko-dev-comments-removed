@@ -6,6 +6,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::ping::PingMaker;
+use crate::upload::PingPayload;
 use crate::Glean;
 
 use uuid::Uuid;
@@ -27,6 +28,8 @@ struct InnerPing {
     
     pub precise_timestamps: bool,
     
+    pub include_info_sections: bool,
+    
     pub reason_codes: Vec<String>,
 }
 
@@ -37,6 +40,7 @@ impl fmt::Debug for PingType {
             .field("include_client_id", &self.0.include_client_id)
             .field("send_if_empty", &self.0.send_if_empty)
             .field("precise_timestamps", &self.0.precise_timestamps)
+            .field("include_info_sections", &self.0.include_info_sections)
             .field("reason_codes", &self.0.reason_codes)
             .finish()
     }
@@ -61,6 +65,7 @@ impl PingType {
         include_client_id: bool,
         send_if_empty: bool,
         precise_timestamps: bool,
+        include_info_sections: bool,
         reason_codes: Vec<String>,
     ) -> Self {
         let this = Self(Arc::new(InnerPing {
@@ -68,6 +73,7 @@ impl PingType {
             include_client_id,
             send_if_empty,
             precise_timestamps,
+            include_info_sections,
             reason_codes,
         }));
 
@@ -92,6 +98,10 @@ impl PingType {
 
     pub(crate) fn precise_timestamps(&self) -> bool {
         self.0.precise_timestamps
+    }
+
+    pub(crate) fn include_info_sections(&self) -> bool {
+        self.0.include_info_sections
     }
 
     
@@ -186,13 +196,17 @@ impl PingType {
                     
                     let content =
                         ::serde_json::to_string(&ping.content).expect("ping serialization failed");
-                    glean.upload_manager.enqueue_ping(
-                        glean,
-                        ping.doc_id,
-                        ping.url_path,
-                        &content,
-                        Some(ping.headers),
-                    );
+                    
+                    let ping = PingPayload {
+                        document_id: ping.doc_id.to_string(),
+                        upload_path: ping.url_path.to_string(),
+                        json_body: content,
+                        headers: Some(ping.headers),
+                        body_has_info_sections: self.0.include_info_sections,
+                        ping_name: self.0.name.to_string(),
+                    };
+
+                    glean.upload_manager.enqueue_ping(glean, ping);
                     return true;
                 }
 

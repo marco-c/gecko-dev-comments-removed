@@ -62,6 +62,8 @@ pub struct Builder {
     body: Option<Vec<u8>>,
     headers: HeaderMap,
     body_max_size: usize,
+    body_has_info_sections: Option<bool>,
+    ping_name: Option<String>,
 }
 
 impl Builder {
@@ -87,6 +89,8 @@ impl Builder {
             body: None,
             headers,
             body_max_size,
+            body_has_info_sections: None,
+            ping_name: None,
         }
     }
 
@@ -139,6 +143,18 @@ impl Builder {
     }
 
     
+    pub fn body_has_info_sections(mut self, body_has_info_sections: bool) -> Self {
+        self.body_has_info_sections = Some(body_has_info_sections);
+        self
+    }
+
+    
+    pub fn ping_name<S: Into<String>>(mut self, ping_name: S) -> Self {
+        self.ping_name = Some(ping_name.into());
+        self
+    }
+
+    
     pub fn header<S: Into<String>>(mut self, key: S, value: S) -> Self {
         self.headers.insert(key.into(), value.into());
         self
@@ -174,6 +190,12 @@ impl Builder {
                 .expect("path must be set before attempting to build PingRequest"),
             body,
             headers: self.headers,
+            body_has_info_sections: self.body_has_info_sections.expect(
+                "body_has_info_sections must be set before attempting to build PingRequest",
+            ),
+            ping_name: self
+                .ping_name
+                .expect("ping_name must be set before attempting to build PingRequest"),
         })
     }
 }
@@ -192,6 +214,10 @@ pub struct PingRequest {
     pub body: Vec<u8>,
     
     pub headers: HeaderMap,
+    
+    pub body_has_info_sections: bool,
+    
+    pub ping_name: String,
 }
 
 impl PingRequest {
@@ -208,12 +234,7 @@ impl PingRequest {
 
     
     pub fn is_deletion_request(&self) -> bool {
-        
-        self.path
-            .split('/')
-            .nth(3)
-            .map(|url| url == "deletion-request")
-            .unwrap_or(false)
+        self.ping_name == "deletion-request"
     }
 
     
@@ -257,11 +278,15 @@ mod test {
             .document_id("woop")
             .path("/random/path/doesnt/matter")
             .body("{}")
+            .body_has_info_sections(false)
+            .ping_name("whatevs")
             .build()
             .unwrap();
 
         assert_eq!(request.document_id, "woop");
         assert_eq!(request.path, "/random/path/doesnt/matter");
+        assert!(!request.body_has_info_sections);
+        assert_eq!(request.ping_name, "whatevs");
 
         
         assert!(request.headers.contains_key("X-Telemetry-Agent"));

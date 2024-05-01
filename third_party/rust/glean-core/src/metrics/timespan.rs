@@ -253,6 +253,15 @@ impl TimespanMetric {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
         crate::block_on_dispatcher();
         crate::core::with_glean(|glean| {
@@ -285,8 +294,6 @@ impl TimespanMetric {
         }
     }
 
-    
-    
     
     
     

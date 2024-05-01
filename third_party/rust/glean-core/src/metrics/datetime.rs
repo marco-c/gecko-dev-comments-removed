@@ -315,8 +315,6 @@ impl DatetimeMetric {
     
     
     
-    
-    
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         crate::block_on_dispatcher();
 

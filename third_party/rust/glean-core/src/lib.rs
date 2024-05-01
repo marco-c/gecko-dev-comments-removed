@@ -91,12 +91,12 @@ pub(crate) const DELETION_REQUEST_PINGS_DIRECTORY: &str = "deletion_request";
 static INITIALIZE_CALLED: AtomicBool = AtomicBool::new(false);
 
 
-static PRE_INIT_DEBUG_VIEW_TAG: OnceCell<Mutex<String>> = OnceCell::new();
+static PRE_INIT_DEBUG_VIEW_TAG: Mutex<String> = Mutex::new(String::new());
 static PRE_INIT_LOG_PINGS: AtomicBool = AtomicBool::new(false);
-static PRE_INIT_SOURCE_TAGS: OnceCell<Mutex<Vec<String>>> = OnceCell::new();
+static PRE_INIT_SOURCE_TAGS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 
-static PRE_INIT_PING_REGISTRATION: OnceCell<Mutex<Vec<metrics::PingType>>> = OnceCell::new();
+static PRE_INIT_PING_REGISTRATION: Mutex<Vec<metrics::PingType>> = Mutex::new(Vec::new());
 
 
 
@@ -396,11 +396,9 @@ fn initialize_inner(
             core::with_glean_mut(|glean| {
                 
                 
-                if let Some(tag) = PRE_INIT_DEBUG_VIEW_TAG.get() {
-                    let lock = tag.try_lock();
-                    if let Ok(ref debug_tag) = lock {
-                        glean.set_debug_view_tag(debug_tag);
-                    }
+                let debug_tag = PRE_INIT_DEBUG_VIEW_TAG.lock().unwrap();
+                if debug_tag.len() > 0 {
+                    glean.set_debug_view_tag(&debug_tag);
                 }
 
                 
@@ -412,11 +410,9 @@ fn initialize_inner(
 
                 
                 
-                if let Some(tags) = PRE_INIT_SOURCE_TAGS.get() {
-                    let lock = tags.try_lock();
-                    if let Ok(ref source_tags) = lock {
-                        glean.set_source_tags(source_tags.to_vec());
-                    }
+                let source_tags = PRE_INIT_SOURCE_TAGS.lock().unwrap();
+                if source_tags.len() > 0 {
+                    glean.set_source_tags(source_tags.to_vec());
                 }
 
                 
@@ -428,13 +424,9 @@ fn initialize_inner(
 
                 
                 
-                if let Some(tags) = PRE_INIT_PING_REGISTRATION.get() {
-                    let lock = tags.try_lock();
-                    if let Ok(pings) = lock {
-                        for ping in &*pings {
-                            glean.register_ping_type(ping);
-                        }
-                    }
+                let pings = PRE_INIT_PING_REGISTRATION.lock().unwrap();
+                for ping in pings.iter() {
+                    glean.register_ping_type(ping);
                 }
 
                 
@@ -861,7 +853,7 @@ pub(crate) fn register_ping_type(ping: &PingType) {
         
         
         
-        let m = PRE_INIT_PING_REGISTRATION.get_or_init(Default::default);
+        let m = &PRE_INIT_PING_REGISTRATION;
         let mut lock = m.lock().unwrap();
         lock.push(ping.clone());
     }
@@ -956,7 +948,7 @@ pub fn glean_set_debug_view_tag(tag: String) -> bool {
         true
     } else {
         
-        let m = PRE_INIT_DEBUG_VIEW_TAG.get_or_init(Default::default);
+        let m = &PRE_INIT_DEBUG_VIEW_TAG;
         let mut lock = m.lock().unwrap();
         *lock = tag;
         
@@ -984,7 +976,7 @@ pub fn glean_set_source_tags(tags: Vec<String>) -> bool {
         true
     } else {
         
-        let m = PRE_INIT_SOURCE_TAGS.get_or_init(Default::default);
+        let m = &PRE_INIT_SOURCE_TAGS;
         let mut lock = m.lock().unwrap();
         *lock = tags;
         
