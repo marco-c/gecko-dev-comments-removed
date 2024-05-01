@@ -5,11 +5,9 @@
 
 
 
-#![deny(clippy::pedantic)]
 
 use std::{
     cmp::min,
-    convert::TryFrom,
     fmt::{Debug, Display},
     time::{Duration, Instant},
 };

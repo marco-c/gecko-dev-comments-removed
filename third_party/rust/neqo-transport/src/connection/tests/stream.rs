@@ -4,7 +4,7 @@
 
 
 
-use std::{cmp::max, collections::HashMap, convert::TryFrom, mem};
+use std::{cmp::max, collections::HashMap, mem};
 
 use neqo_common::{event::Provider, qdebug};
 use test_fixture::now;

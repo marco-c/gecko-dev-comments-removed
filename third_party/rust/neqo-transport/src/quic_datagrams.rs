@@ -6,7 +6,7 @@
 
 
 
-use std::{cmp::min, collections::VecDeque, convert::TryFrom};
+use std::{cmp::min, collections::VecDeque};
 
 use neqo_common::Encoder;
 

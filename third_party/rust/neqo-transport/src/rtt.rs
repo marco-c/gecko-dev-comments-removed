@@ -6,8 +6,6 @@
 
 
 
-#![deny(clippy::pedantic)]
-
 use std::{
     cmp::{max, min},
     time::{Duration, Instant},

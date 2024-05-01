@@ -9,7 +9,6 @@
 use std::{
     cell::RefCell,
     collections::HashMap,
-    convert::TryFrom,
     net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6},
     rc::Rc,
 };
@@ -87,6 +86,8 @@ impl PreferredAddress {
         Self { v4, v6 }
     }
 
+    
+    
     
     #[must_use]
     #[cfg(test)]
@@ -231,7 +232,7 @@ impl TransportParameter {
             if v == 0 {
                 Err(Error::TransportParameterError)
             } else {
-                Ok(v as WireVersion)
+                Ok(WireVersion::try_from(v)?)
             }
         }
 
@@ -353,6 +354,9 @@ impl TransportParameters {
     }
 
     
+    
+    
+    #[must_use]
     pub fn get_integer(&self, tp: TransportParameterId) -> u64 {
         let default = match tp {
             IDLE_TIMEOUT
@@ -378,6 +382,8 @@ impl TransportParameters {
     }
 
     
+    
+    
     pub fn set_integer(&mut self, tp: TransportParameterId, value: u64) {
         match tp {
             IDLE_TIMEOUT
@@ -399,6 +405,9 @@ impl TransportParameters {
         }
     }
 
+    
+    
+    #[must_use]
     pub fn get_bytes(&self, tp: TransportParameterId) -> Option<&[u8]> {
         match tp {
             ORIGINAL_DESTINATION_CONNECTION_ID
@@ -415,6 +424,8 @@ impl TransportParameters {
         }
     }
 
+    
+    
     pub fn set_bytes(&mut self, tp: TransportParameterId, value: Vec<u8>) {
         match tp {
             ORIGINAL_DESTINATION_CONNECTION_ID
@@ -427,6 +438,8 @@ impl TransportParameters {
         }
     }
 
+    
+    
     pub fn set_empty(&mut self, tp: TransportParameterId) {
         match tp {
             DISABLE_MIGRATION | GREASE_QUIC_BIT => {
@@ -437,11 +450,14 @@ impl TransportParameters {
     }
 
     
+    
+    
     pub fn set_versions(&mut self, role: Role, versions: &VersionConfig) {
         let rbuf = random::<4>();
         let mut other = Vec::with_capacity(versions.all().len() + 1);
         let mut dec = Decoder::new(&rbuf);
-        let grease = (dec.decode_uint(4).unwrap() as u32) & 0xf0f0_f0f0 | 0x0a0a_0a0a;
+        let grease =
+            (u32::try_from(dec.decode_uint(4).unwrap()).unwrap()) & 0xf0f0_f0f0 | 0x0a0a_0a0a;
         other.push(grease);
         for &v in versions.all() {
             if role == Role::Client && !versions.initial().is_compatible(v) {
@@ -467,6 +483,10 @@ impl TransportParameters {
         }
     }
 
+    
+    
+    
+    #[must_use]
     pub fn get_empty(&self, tipe: TransportParameterId) -> bool {
         match self.params.get(&tipe) {
             None => false,
@@ -568,6 +588,7 @@ pub struct TransportParametersHandler {
 }
 
 impl TransportParametersHandler {
+    #[must_use]
     pub fn new(role: Role, versions: VersionConfig) -> Self {
         let mut local = TransportParameters::default();
         local.set_versions(role, &versions);
@@ -588,6 +609,10 @@ impl TransportParametersHandler {
         self.local.set_versions(self.role, &self.versions);
     }
 
+    
+    
+    
+    #[must_use]
     pub fn remote(&self) -> &TransportParameters {
         match (self.remote.as_ref(), self.remote_0rtt.as_ref()) {
             (Some(tp), _) | (_, Some(tp)) => tp,
@@ -596,6 +621,7 @@ impl TransportParametersHandler {
     }
 
     
+    #[must_use]
     pub fn version(&self) -> Version {
         self.versions.initial()
     }
@@ -749,7 +775,24 @@ where
 #[cfg(test)]
 #[allow(unused_variables)]
 mod tests {
-    use super::*;
+    use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
+
+    use neqo_common::{Decoder, Encoder};
+
+    use super::PreferredAddress;
+    use crate::{
+        tparams::{
+            TransportParameter, TransportParameterId, TransportParameters,
+            ACTIVE_CONNECTION_ID_LIMIT, IDLE_TIMEOUT, INITIAL_MAX_DATA, INITIAL_MAX_STREAMS_BIDI,
+            INITIAL_MAX_STREAMS_UNI, INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
+            INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, INITIAL_MAX_STREAM_DATA_UNI,
+            INITIAL_SOURCE_CONNECTION_ID, MAX_ACK_DELAY, MAX_DATAGRAM_FRAME_SIZE,
+            MAX_UDP_PAYLOAD_SIZE, MIN_ACK_DELAY, ORIGINAL_DESTINATION_CONNECTION_ID,
+            PREFERRED_ADDRESS, RETRY_SOURCE_CONNECTION_ID, STATELESS_RESET_TOKEN,
+            VERSION_INFORMATION,
+        },
+        ConnectionId, Error, Version,
+    };
 
     #[test]
     fn basic_tps() {
@@ -843,7 +886,7 @@ mod tests {
     
     
     
-    fn assert_invalid_spa(spa: TransportParameter) {
+    fn assert_invalid_spa(spa: &TransportParameter) {
         let mut enc = Encoder::new();
         spa.encode(&mut enc, PREFERRED_ADDRESS);
         assert_eq!(
@@ -853,40 +896,40 @@ mod tests {
     }
 
     
-    fn assert_valid_spa(spa: TransportParameter) {
+    fn assert_valid_spa(spa: &TransportParameter) {
         let mut enc = Encoder::new();
         spa.encode(&mut enc, PREFERRED_ADDRESS);
         let mut dec = enc.as_decoder();
         let (id, decoded) = TransportParameter::decode(&mut dec).unwrap().unwrap();
         assert_eq!(id, PREFERRED_ADDRESS);
-        assert_eq!(decoded, spa);
+        assert_eq!(&decoded, spa);
     }
 
     #[test]
     fn preferred_address_zero_address() {
         
-        assert_invalid_spa(mutate_spa(|v4, _, _| {
+        assert_invalid_spa(&mutate_spa(|v4, _, _| {
             v4.as_mut().unwrap().set_port(0);
         }));
-        assert_invalid_spa(mutate_spa(|_, v6, _| {
+        assert_invalid_spa(&mutate_spa(|_, v6, _| {
             v6.as_mut().unwrap().set_port(0);
         }));
         
-        assert_invalid_spa(mutate_spa(|v4, _, _| {
+        assert_invalid_spa(&mutate_spa(|v4, _, _| {
             v4.as_mut().unwrap().set_ip(Ipv4Addr::from(0));
         }));
-        assert_invalid_spa(mutate_spa(|_, v6, _| {
+        assert_invalid_spa(&mutate_spa(|_, v6, _| {
             v6.as_mut().unwrap().set_ip(Ipv6Addr::from(0));
         }));
         
-        assert_valid_spa(mutate_spa(|v4, _, _| {
+        assert_valid_spa(&mutate_spa(|v4, _, _| {
             *v4 = None;
         }));
-        assert_valid_spa(mutate_spa(|_, v6, _| {
+        assert_valid_spa(&mutate_spa(|_, v6, _| {
             *v6 = None;
         }));
         
-        assert_invalid_spa(mutate_spa(|v4, v6, _| {
+        assert_invalid_spa(&mutate_spa(|v4, v6, _| {
             *v4 = None;
             *v6 = None;
         }));
@@ -894,10 +937,10 @@ mod tests {
 
     #[test]
     fn preferred_address_bad_cid() {
-        assert_invalid_spa(mutate_spa(|_, _, cid| {
+        assert_invalid_spa(&mutate_spa(|_, _, cid| {
             *cid = ConnectionId::from(&[]);
         }));
-        assert_invalid_spa(mutate_spa(|_, _, cid| {
+        assert_invalid_spa(&mutate_spa(|_, _, cid| {
             *cid = ConnectionId::from(&[0x0c; 21]);
         }));
     }
@@ -975,7 +1018,6 @@ mod tests {
 
     #[test]
     fn compatible_0rtt_integers() {
-        let mut tps_a = TransportParameters::default();
         const INTEGER_KEYS: &[TransportParameterId] = &[
             INITIAL_MAX_DATA,
             INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
@@ -987,6 +1029,8 @@ mod tests {
             MIN_ACK_DELAY,
             MAX_DATAGRAM_FRAME_SIZE,
         ];
+
+        let mut tps_a = TransportParameters::default();
         for i in INTEGER_KEYS {
             tps_a.set(*i, TransportParameter::Integer(12));
         }

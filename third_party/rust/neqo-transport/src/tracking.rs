@@ -6,12 +6,9 @@
 
 
 
-#![deny(clippy::pedantic)]
-
 use std::{
     cmp::min,
     collections::VecDeque,
-    convert::TryFrom,
     ops::{Index, IndexMut},
     time::{Duration, Instant},
 };

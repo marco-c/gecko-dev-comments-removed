@@ -4,7 +4,7 @@
 
 
 
-use std::{convert::TryFrom, ops::Deref};
+use std::ops::Deref;
 
 use neqo_common::Encoder;
 

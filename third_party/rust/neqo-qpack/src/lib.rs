@@ -4,11 +4,7 @@
 
 
 
-#![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::pedantic)]
-
-
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::module_name_repetitions)] 
 
 pub mod decoder;
 mod decoder_instructions;

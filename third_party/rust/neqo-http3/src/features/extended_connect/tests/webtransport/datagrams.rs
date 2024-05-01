@@ -4,8 +4,6 @@
 
 
 
-use std::convert::TryFrom;
-
 use neqo_common::Encoder;
 use neqo_transport::Error as TransportError;
 

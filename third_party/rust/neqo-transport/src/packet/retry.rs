@@ -4,8 +4,6 @@
 
 
 
-#![deny(clippy::pedantic)]
-
 use std::cell::RefCell;
 
 use neqo_common::qerror;

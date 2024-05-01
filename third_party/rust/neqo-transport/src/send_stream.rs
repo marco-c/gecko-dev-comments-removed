@@ -10,7 +10,6 @@ use std::{
     cell::RefCell,
     cmp::{max, min, Ordering},
     collections::{btree_map::Entry, BTreeMap, VecDeque},
-    convert::TryFrom,
     hash::{Hash, Hasher},
     mem,
     ops::Add,
@@ -111,7 +110,7 @@ impl Add<RetransmissionPriority> for TransmissionPriority {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum RetransmissionPriority {
     
     
@@ -123,16 +122,11 @@ pub enum RetransmissionPriority {
     Same,
     
     
+    #[default]
     Higher,
     
     
     MuchHigher,
-}
-
-impl Default for RetransmissionPriority {
-    fn default() -> Self {
-        Self::Higher
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -224,6 +218,7 @@ impl RangeTracker {
     
     
     
+    #[allow(clippy::missing_panics_doc)] 
     pub fn mark_acked(&mut self, new_off: u64, new_len: usize) {
         let end = new_off + u64::try_from(new_len).unwrap();
         let new_off = max(self.acked, new_off);
@@ -321,6 +316,7 @@ impl RangeTracker {
     
     
     
+    #[allow(clippy::missing_panics_doc)] 
     pub fn mark_sent(&mut self, mut new_off: u64, new_len: usize) {
         let new_end = new_off + u64::try_from(new_len).unwrap();
         new_off = max(self.acked, new_off);
@@ -474,6 +470,9 @@ impl RangeTracker {
     }
 
     
+    
+    
+    
     pub fn unmark_sent(&mut self) {
         self.unmark_range(0, usize::try_from(self.highest_offset()).unwrap());
     }
@@ -487,6 +486,7 @@ pub struct TxBuffer {
 }
 
 impl TxBuffer {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -496,11 +496,12 @@ impl TxBuffer {
         let can_buffer = min(SEND_BUFFER_SIZE - self.buffered(), buf.len());
         if can_buffer > 0 {
             self.send_buf.extend(&buf[..can_buffer]);
-            assert!(self.send_buf.len() <= SEND_BUFFER_SIZE);
+            debug_assert!(self.send_buf.len() <= SEND_BUFFER_SIZE);
         }
         can_buffer
     }
 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn next_bytes(&mut self) -> Option<(u64, &[u8])> {
         let (start, maybe_len) = self.ranges.first_unmarked_range();
 
@@ -534,9 +535,10 @@ impl TxBuffer {
     }
 
     pub fn mark_as_sent(&mut self, offset: u64, len: usize) {
-        self.ranges.mark_sent(offset, len)
+        self.ranges.mark_sent(offset, len);
     }
 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn mark_as_acked(&mut self, offset: u64, len: usize) {
         let prev_retired = self.retired();
         self.ranges.mark_acked(offset, len);
@@ -560,6 +562,7 @@ impl TxBuffer {
         self.ranges.unmark_sent();
     }
 
+    #[must_use]
     pub fn retired(&self) -> u64 {
         self.ranges.acked_from_zero()
     }
@@ -788,6 +791,7 @@ impl SendStream {
         self.fair = make_fair;
     }
 
+    #[must_use]
     pub fn is_fair(&self) -> bool {
         self.fair
     }
@@ -801,6 +805,7 @@ impl SendStream {
         self.retransmission_priority = retransmission;
     }
 
+    #[must_use]
     pub fn sendorder(&self) -> Option<SendOrder> {
         self.sendorder
     }
@@ -810,6 +815,7 @@ impl SendStream {
     }
 
     
+    #[must_use]
     pub fn final_size(&self) -> Option<u64> {
         match &self.state {
             SendStreamState::DataSent { send_buf, .. } => Some(send_buf.used()),
@@ -818,10 +824,13 @@ impl SendStream {
         }
     }
 
+    #[must_use]
     pub fn stats(&self) -> SendStreamStats {
         SendStreamStats::new(self.bytes_written(), self.bytes_sent, self.bytes_acked())
     }
 
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)] 
     pub fn bytes_written(&self) -> u64 {
         match &self.state {
             SendStreamState::Send { send_buf, .. } | SendStreamState::DataSent { send_buf, .. } => {
@@ -844,6 +853,7 @@ impl SendStream {
         }
     }
 
+    #[must_use]
     pub fn bytes_acked(&self) -> u64 {
         match &self.state {
             SendStreamState::Send { send_buf, .. } | SendStreamState::DataSent { send_buf, .. } => {
@@ -933,6 +943,7 @@ impl SendStream {
     }
 
     
+    #[allow(clippy::missing_panics_doc)] 
     pub fn write_stream_frame(
         &mut self,
         priority: TransmissionPriority,
@@ -1095,6 +1106,7 @@ impl SendStream {
         }
     }
 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn mark_as_sent(&mut self, offset: u64, len: usize, fin: bool) {
         self.bytes_sent = max(self.bytes_sent, offset + u64::try_from(len).unwrap());
 
@@ -1110,6 +1122,7 @@ impl SendStream {
         }
     }
 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn mark_as_acked(&mut self, offset: u64, len: usize, fin: bool) {
         match self.state {
             SendStreamState::Send {
@@ -1147,6 +1160,7 @@ impl SendStream {
         }
     }
 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn mark_as_lost(&mut self, offset: u64, len: usize, fin: bool) {
         self.retransmission_offset = max(
             self.retransmission_offset,
@@ -1175,6 +1189,7 @@ impl SendStream {
 
     
     
+    #[must_use]
     pub fn avail(&self) -> usize {
         if let SendStreamState::Ready { fc, conn_fc } | SendStreamState::Send { fc, conn_fc, .. } =
             &self.state
@@ -1200,6 +1215,7 @@ impl SendStream {
         }
     }
 
+    #[must_use]
     pub fn is_terminal(&self) -> bool {
         matches!(
             self.state,
@@ -1207,10 +1223,14 @@ impl SendStream {
         )
     }
 
+    
+    
     pub fn send(&mut self, buf: &[u8]) -> Res<usize> {
         self.send_internal(buf, false)
     }
 
+    
+    
     pub fn send_atomic(&mut self, buf: &[u8]) -> Res<usize> {
         self.send_internal(buf, true)
     }
@@ -1255,9 +1275,9 @@ impl SendStream {
             if atomic {
                 self.send_blocked_if_space_needed(buf.len());
                 return Ok(0);
-            } else {
-                &buf[..self.avail()]
             }
+
+            &buf[..self.avail()]
         } else {
             buf
         };
@@ -1302,6 +1322,7 @@ impl SendStream {
         }
     }
 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn reset(&mut self, err: AppError) {
         match &self.state {
             SendStreamState::Ready { fc, .. } => {
@@ -1396,6 +1417,7 @@ impl OrderGroup {
         }
     }
 
+    #[must_use]
     pub fn stream_ids(&self) -> &Vec<StreamId> {
         &self.vec
     }
@@ -1419,26 +1441,24 @@ impl OrderGroup {
         next
     }
 
+    
+    
     pub fn insert(&mut self, stream_id: StreamId) {
-        match self.vec.binary_search(&stream_id) {
-            Ok(_) => {
-                
-                panic!("Duplicate stream_id {}", stream_id)
-            }
-            Err(pos) => self.vec.insert(pos, stream_id),
-        }
+        let Err(pos) = self.vec.binary_search(&stream_id) else {
+            
+            panic!("Duplicate stream_id {stream_id}");
+        };
+        self.vec.insert(pos, stream_id);
     }
 
+    
+    
     pub fn remove(&mut self, stream_id: StreamId) {
-        match self.vec.binary_search(&stream_id) {
-            Ok(pos) => {
-                self.vec.remove(pos);
-            }
-            Err(_) => {
-                
-                panic!("Missing stream_id {}", stream_id)
-            }
-        }
+        let Ok(pos) = self.vec.binary_search(&stream_id) else {
+            
+            panic!("Missing stream_id {stream_id}");
+        };
+        self.vec.remove(pos);
     }
 }
 
@@ -1698,9 +1718,9 @@ impl SendStreams {
         for stream_id in stream_ids {
             let stream = self.map.get_mut(&stream_id).unwrap();
             if let Some(order) = stream.sendorder() {
-                qtrace!("   {} ({})", stream_id, order)
+                qtrace!("   {} ({})", stream_id, order);
             } else {
-                qtrace!("   None")
+                qtrace!("   None");
             }
             if !stream.write_frames_with_early_return(priority, builder, tokens, stats) {
                 break;
@@ -1709,7 +1729,7 @@ impl SendStreams {
     }
 
     pub fn update_initial_limit(&mut self, remote: &TransportParameters) {
-        for (id, ss) in self.map.iter_mut() {
+        for (id, ss) in &mut self.map {
             let limit = if id.is_bidi() {
                 assert!(!id.is_remote_initiated(Role::Client));
                 remote.get_integer(tparams::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE)
@@ -1740,10 +1760,23 @@ pub struct SendStreamRecoveryToken {
 
 #[cfg(test)]
 mod tests {
-    use neqo_common::{event::Provider, hex_with_len, qtrace};
+    use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
-    use super::*;
-    use crate::events::ConnectionEvent;
+    use neqo_common::{event::Provider, hex_with_len, qtrace, Encoder};
+
+    use super::SendStreamRecoveryToken;
+    use crate::{
+        connection::{RetransmissionPriority, TransmissionPriority},
+        events::ConnectionEvent,
+        fc::SenderFlowControl,
+        packet::PacketBuilder,
+        recovery::{RecoveryToken, StreamRecoveryToken},
+        send_stream::{
+            RangeState, RangeTracker, SendStream, SendStreamState, SendStreams, TxBuffer,
+        },
+        stats::FrameStats,
+        ConnectionEvents, StreamId, SEND_BUFFER_SIZE,
+    };
 
     fn connection_fc(limit: u64) -> Rc<RefCell<SenderFlowControl<()>>> {
         Rc::new(RefCell::new(SenderFlowControl::new((), limit)))
@@ -2213,14 +2246,15 @@ mod tests {
         assert_eq!(txb.avail(), SEND_BUFFER_SIZE);
 
         
-        assert_eq!(txb.send(&[1; SEND_BUFFER_SIZE * 2]), SEND_BUFFER_SIZE);
+        let big_buf = vec![1; SEND_BUFFER_SIZE * 2];
+        assert_eq!(txb.send(&big_buf), SEND_BUFFER_SIZE);
         assert!(matches!(txb.next_bytes(),
-                         Some((0, x)) if x.len()==SEND_BUFFER_SIZE
+                         Some((0, x)) if x.len() == SEND_BUFFER_SIZE
                          && x.iter().all(|ch| *ch == 1)));
 
         
         let one_byte_from_end = SEND_BUFFER_SIZE as u64 - 1;
-        txb.mark_as_sent(0, one_byte_from_end as usize);
+        txb.mark_as_sent(0, usize::try_from(one_byte_from_end).unwrap());
         assert!(matches!(txb.next_bytes(),
                          Some((start, x)) if x.len() == 1
                          && start == one_byte_from_end
@@ -2249,7 +2283,7 @@ mod tests {
         
         
         
-        txb.mark_as_acked(0, five_bytes_from_end as usize);
+        txb.mark_as_acked(0, usize::try_from(five_bytes_from_end).unwrap());
         assert_eq!(txb.send(&[2; 30]), 30);
         
         assert!(matches!(txb.next_bytes(),
@@ -2275,7 +2309,8 @@ mod tests {
         assert_eq!(txb.avail(), SEND_BUFFER_SIZE);
 
         
-        assert_eq!(txb.send(&[1; SEND_BUFFER_SIZE * 2]), SEND_BUFFER_SIZE);
+        let big_buf = vec![1; SEND_BUFFER_SIZE * 2];
+        assert_eq!(txb.send(&big_buf), SEND_BUFFER_SIZE);
         assert!(matches!(txb.next_bytes(),
                          Some((0, x)) if x.len()==SEND_BUFFER_SIZE
                          && x.iter().all(|ch| *ch == 1)));
@@ -2283,7 +2318,7 @@ mod tests {
         
         let forty_bytes_from_end = SEND_BUFFER_SIZE as u64 - 40;
 
-        txb.mark_as_acked(0, forty_bytes_from_end as usize);
+        txb.mark_as_acked(0, usize::try_from(forty_bytes_from_end).unwrap());
         assert!(matches!(txb.next_bytes(),
                  Some((start, x)) if x.len() == 40
                  && start == forty_bytes_from_end
@@ -2311,7 +2346,7 @@ mod tests {
 
         
         let ten_bytes_past_end = SEND_BUFFER_SIZE as u64 + 10;
-        txb.mark_as_acked(0, ten_bytes_past_end as usize);
+        txb.mark_as_acked(0, usize::try_from(ten_bytes_past_end).unwrap());
 
         
         assert!(matches!(txb.next_bytes(),
@@ -2349,22 +2384,23 @@ mod tests {
         }
 
         
-        let res = s.send(&[4; SEND_BUFFER_SIZE]).unwrap();
+        let big_buf = vec![4; SEND_BUFFER_SIZE + 100];
+        let res = s.send(&big_buf[..SEND_BUFFER_SIZE]).unwrap();
         assert_eq!(res, 1024 - 100);
 
         
         s.set_max_stream_data(1024);
-        let res = s.send(&[4; SEND_BUFFER_SIZE]).unwrap();
+        let res = s.send(&big_buf[..SEND_BUFFER_SIZE]).unwrap();
         assert_eq!(res, 0);
 
         
         s.set_max_stream_data(1_048_576);
-        let res = s.send(&[4; SEND_BUFFER_SIZE]).unwrap();
+        let res = s.send(&big_buf[..SEND_BUFFER_SIZE]).unwrap();
         assert_eq!(res, 3072);
 
         
         conn_fc.borrow_mut().update(SEND_BUFFER_SIZE as u64);
-        let res = s.send(&[4; SEND_BUFFER_SIZE + 100]).unwrap();
+        let res = s.send(&big_buf).unwrap();
         assert_eq!(res, SEND_BUFFER_SIZE - 4096);
 
         
@@ -2435,10 +2471,8 @@ mod tests {
         
         assert_eq!(s.avail(), SEND_BUFFER_SIZE - 4);
 
-        assert_eq!(
-            s.send(&[b'a'; SEND_BUFFER_SIZE]).unwrap(),
-            SEND_BUFFER_SIZE - 4
-        );
+        let big_buf = vec![b'a'; SEND_BUFFER_SIZE];
+        assert_eq!(s.send(&big_buf).unwrap(), SEND_BUFFER_SIZE - 4);
 
         
         s.set_max_stream_data(2_000_000_000);

@@ -5,9 +5,8 @@
 
 
 
-#![deny(clippy::pedantic)]
 
-use std::{cmp::max, convert::TryFrom, time::Duration};
+use std::{cmp::max, time::Duration};
 
 use neqo_common::qtrace;
 

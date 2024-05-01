@@ -5,7 +5,6 @@
 
 
 
-#![deny(clippy::pedantic)]
 
 use std::{
     fmt::{Debug, Display},

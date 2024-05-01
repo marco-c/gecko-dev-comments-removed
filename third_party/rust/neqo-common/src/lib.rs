@@ -4,8 +4,7 @@
 
 
 
-#![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)] 
 
 mod codec;
 mod datagram;
@@ -17,6 +16,8 @@ pub mod log;
 pub mod qlog;
 pub mod timer;
 pub mod tos;
+#[cfg(feature = "udp")]
+pub mod udp;
 
 use std::fmt::Write;
 

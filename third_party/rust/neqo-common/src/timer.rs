@@ -5,7 +5,6 @@
 
 
 use std::{
-    convert::TryFrom,
     mem,
     time::{Duration, Instant},
 };

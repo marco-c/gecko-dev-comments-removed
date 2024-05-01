@@ -4,8 +4,6 @@
 
 
 
-use std::convert::TryFrom;
-
 use neqo_common::{Decoder, Encoder};
 
 use crate::{frames::reader::FrameDecoder, Error, Res};

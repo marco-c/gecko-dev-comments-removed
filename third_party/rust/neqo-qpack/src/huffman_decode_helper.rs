@@ -4,7 +4,7 @@
 
 
 
-use std::{convert::TryFrom, sync::OnceLock};
+use std::sync::OnceLock;
 
 use crate::huffman_table::HUFFMAN_TABLE;
 

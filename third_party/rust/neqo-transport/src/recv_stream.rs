@@ -11,7 +11,6 @@ use std::{
     cell::RefCell,
     cmp::max,
     collections::BTreeMap,
-    convert::TryFrom,
     mem,
     rc::{Rc, Weak},
 };
@@ -34,6 +33,7 @@ use crate::{
 const RX_STREAM_DATA_WINDOW: u64 = 0x10_0000; 
 
 
+#[allow(clippy::cast_possible_truncation)] 
 pub const RECV_BUFFER_SIZE: usize = RX_STREAM_DATA_WINDOW as usize;
 
 #[derive(Debug, Default)]
@@ -130,10 +130,14 @@ pub struct RxStreamOrderer {
 }
 
 impl RxStreamOrderer {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    
+    
+    
     
     
     
@@ -275,6 +279,7 @@ impl RxStreamOrderer {
     }
 
     
+    #[must_use]
     pub fn data_ready(&self) -> bool {
         self.data_ranges
             .keys()
@@ -301,15 +306,19 @@ impl RxStreamOrderer {
                     false
                 }
             })
-            .map(|(_, data_len)| data_len as usize)
-            .sum()
+            
+            .fold(0, |acc: usize, (_, data_len)| {
+                acc.saturating_add(usize::try_from(data_len).unwrap_or(usize::MAX))
+            })
     }
 
     
+    #[must_use]
     pub fn retired(&self) -> u64 {
         self.retired
     }
 
+    #[must_use]
     pub fn received(&self) -> u64 {
         self.received
     }
@@ -588,6 +597,7 @@ impl RecvStream {
         self.state = new_state;
     }
 
+    #[must_use]
     pub fn stats(&self) -> RecvStreamStats {
         match &self.state {
             RecvStreamState::Recv { recv_buf, .. }
@@ -622,6 +632,11 @@ impl RecvStream {
         }
     }
 
+    
+    
+    
+    
+    
     pub fn inbound_stream_frame(&mut self, fin: bool, offset: u64, data: &[u8]) -> Res<()> {
         
         
@@ -691,6 +706,8 @@ impl RecvStream {
         Ok(())
     }
 
+    
+    
     pub fn reset(&mut self, application_error_code: AppError, final_size: u64) -> Res<()> {
         self.state.flow_control_consume_data(final_size, true)?;
         match &mut self.state {
@@ -773,6 +790,7 @@ impl RecvStream {
         }
     }
 
+    #[must_use]
     pub fn is_terminal(&self) -> bool {
         matches!(
             self.state,
@@ -793,7 +811,7 @@ impl RecvStream {
 
     
     
-    
+    #[allow(clippy::missing_panics_doc)] 
     pub fn read(&mut self, buf: &mut [u8]) -> Res<(usize, bool)> {
         let data_recvd_state = matches!(self.state, RecvStreamState::DataRecvd { .. });
         match &mut self.state {
@@ -967,6 +985,7 @@ impl RecvStream {
     }
 
     #[cfg(test)]
+    #[must_use]
     pub fn has_frames_to_write(&self) -> bool {
         if let RecvStreamState::Recv { fc, .. } = &self.state {
             fc.frame_needed()
@@ -976,6 +995,7 @@ impl RecvStream {
     }
 
     #[cfg(test)]
+    #[must_use]
     pub fn fc(&self) -> Option<&ReceiverFlowControl<StreamId>> {
         match &self.state {
             RecvStreamState::Recv { fc, .. }
@@ -990,11 +1010,18 @@ impl RecvStream {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Range;
+    use std::{cell::RefCell, ops::Range, rc::Rc};
 
-    use neqo_common::Encoder;
+    use neqo_common::{qtrace, Encoder};
 
-    use super::*;
+    use super::RecvStream;
+    use crate::{
+        fc::ReceiverFlowControl,
+        packet::PacketBuilder,
+        recv_stream::{RxStreamOrderer, RX_STREAM_DATA_WINDOW},
+        stats::FrameStats,
+        ConnectionEvents, Error, StreamId, RECV_BUFFER_SIZE,
+    };
 
     const SESSION_WINDOW: usize = 1024;
 
@@ -1444,8 +1471,8 @@ mod tests {
         let mut buf = vec![0u8; RECV_BUFFER_SIZE + 100]; 
 
         assert!(!s.has_frames_to_write());
-        s.inbound_stream_frame(false, 0, &[0; RECV_BUFFER_SIZE])
-            .unwrap();
+        let big_buf = vec![0; RECV_BUFFER_SIZE];
+        s.inbound_stream_frame(false, 0, &big_buf).unwrap();
         assert!(!s.has_frames_to_write());
         assert_eq!(s.read(&mut buf).unwrap(), (RECV_BUFFER_SIZE, false));
         assert!(!s.data_ready());
@@ -1476,8 +1503,8 @@ mod tests {
     fn stream_max_stream_data() {
         let mut s = create_stream(1024 * RX_STREAM_DATA_WINDOW);
         assert!(!s.has_frames_to_write());
-        s.inbound_stream_frame(false, 0, &[0; RECV_BUFFER_SIZE])
-            .unwrap();
+        let big_buf = vec![0; RECV_BUFFER_SIZE];
+        s.inbound_stream_frame(false, 0, &big_buf).unwrap();
         s.inbound_stream_frame(false, RX_STREAM_DATA_WINDOW, &[1; 1])
             .unwrap_err();
     }
@@ -1520,9 +1547,10 @@ mod tests {
     #[test]
     fn no_stream_flowc_event_after_exiting_recv() {
         let mut s = create_stream(1024 * RX_STREAM_DATA_WINDOW);
-        s.inbound_stream_frame(false, 0, &[0; RECV_BUFFER_SIZE])
-            .unwrap();
-        let mut buf = [0; RECV_BUFFER_SIZE];
+        let mut buf = vec![0; RECV_BUFFER_SIZE];
+        
+        s.inbound_stream_frame(false, 0, &buf).unwrap();
+        
         s.read(&mut buf).unwrap();
         assert!(s.has_frames_to_write());
         s.inbound_stream_frame(true, RX_STREAM_DATA_WINDOW, &[])

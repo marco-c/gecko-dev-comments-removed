@@ -7,7 +7,6 @@
 
 
 use std::{
-    convert::TryFrom,
     net::{IpAddr, SocketAddr},
     time::{Duration, Instant},
 };
@@ -210,10 +209,9 @@ impl AddressValidation {
             if self.validation == ValidateAddress::Never {
                 qinfo!("AddressValidation: no token; accepting");
                 return AddressValidationResult::Pass;
-            } else {
-                qinfo!("AddressValidation: no token; validating");
-                return AddressValidationResult::Validate;
             }
+            qinfo!("AddressValidation: no token; validating");
+            return AddressValidationResult::Validate;
         }
         if token.len() <= TOKEN_IDENTIFIER_RETRY.len() {
             
@@ -231,7 +229,7 @@ impl AddressValidation {
                     qinfo!("AddressValidation: valid Retry token for {}", cid);
                     AddressValidationResult::ValidRetry(cid)
                 } else {
-                    panic!("AddressValidation: Retry token with small CID {}", cid);
+                    panic!("AddressValidation: Retry token with small CID {cid}");
                 }
             } else if cid.is_empty() {
                 
@@ -243,7 +241,7 @@ impl AddressValidation {
                     AddressValidationResult::Pass
                 }
             } else {
-                panic!("AddressValidation: NEW_TOKEN token with CID {}", cid);
+                panic!("AddressValidation: NEW_TOKEN token with CID {cid}");
             }
         } else {
             
@@ -351,11 +349,10 @@ impl NewTokenState {
         builder: &mut PacketBuilder,
         tokens: &mut Vec<RecoveryToken>,
         stats: &mut FrameStats,
-    ) -> Res<()> {
+    ) {
         if let Self::Server(ref mut sender) = self {
-            sender.write_frames(builder, tokens, stats)?;
+            sender.write_frames(builder, tokens, stats);
         }
-        Ok(())
     }
 
     
@@ -426,8 +423,8 @@ impl NewTokenSender {
         builder: &mut PacketBuilder,
         tokens: &mut Vec<RecoveryToken>,
         stats: &mut FrameStats,
-    ) -> Res<()> {
-        for t in self.tokens.iter_mut() {
+    ) {
+        for t in &mut self.tokens {
             if t.needs_sending && t.len() <= builder.remaining() {
                 t.needs_sending = false;
 
@@ -438,11 +435,10 @@ impl NewTokenSender {
                 stats.new_token += 1;
             }
         }
-        Ok(())
     }
 
     pub fn lost(&mut self, seqno: usize) {
-        for t in self.tokens.iter_mut() {
+        for t in &mut self.tokens {
             if t.seqno == seqno {
                 t.needs_sending = true;
                 break;

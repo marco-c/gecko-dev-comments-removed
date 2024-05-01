@@ -4,10 +4,7 @@
 
 
 
-use std::{
-    convert::TryFrom,
-    ptr::{addr_of, NonNull},
-};
+use std::ptr::{addr_of, NonNull};
 
 use neqo_common::qerror;
 

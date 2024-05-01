@@ -4,8 +4,6 @@
 
 
 
-#![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::pedantic)]
 #![cfg(feature = "fuzzing")]
 
 use neqo_crypto::FIXED_TAG_FUZZING;

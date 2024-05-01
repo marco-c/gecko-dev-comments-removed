@@ -6,7 +6,7 @@
 
 
 
-use std::{convert::TryFrom, ops::RangeInclusive};
+use std::ops::RangeInclusive;
 
 use neqo_common::{qtrace, Decoder};
 
@@ -78,6 +78,7 @@ impl CloseError {
         }
     }
 
+    #[must_use]
     pub fn code(&self) -> u64 {
         match self {
             Self::Transport(c) | Self::Application(c) => *c,
@@ -387,6 +388,7 @@ impl<'a> Frame<'a> {
         }
     }
 
+    #[allow(clippy::too_many_lines)] 
     pub fn decode(dec: &mut Decoder<'a>) -> Res<Self> {
         
         
@@ -430,7 +432,7 @@ impl<'a> Frame<'a> {
                     }
                 })?;
                 let fa = dv(dec)?;
-                let mut arr: Vec<AckRange> = Vec::with_capacity(nr as usize);
+                let mut arr: Vec<AckRange> = Vec::with_capacity(usize::try_from(nr)?);
                 for _ in 0..nr {
                     let ar = AckRange {
                         gap: dv(dec)?,
@@ -615,7 +617,11 @@ impl<'a> Frame<'a> {
 mod tests {
     use neqo_common::{Decoder, Encoder};
 
-    use super::*;
+    use crate::{
+        cid::MAX_CONNECTION_ID_LEN,
+        frame::{AckRange, Frame, FRAME_TYPE_ACK},
+        CloseError, Error, StreamId, StreamType,
+    };
 
     fn just_dec(f: &Frame, s: &str) {
         let encoded = Encoder::from_hex(s);

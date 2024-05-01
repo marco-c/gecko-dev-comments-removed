@@ -1,4 +1,12 @@
+
+
+
+
+
+
 #![allow(dead_code)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::missing_errors_doc)]
 
 use std::{mem, time::Instant};
 
@@ -127,6 +135,7 @@ fn zero_rtt_setup(
     }
 }
 
+#[must_use]
 pub fn resumption_setup(mode: Resumption) -> (Option<AntiReplay>, ResumptionToken) {
     fixture_init();
 

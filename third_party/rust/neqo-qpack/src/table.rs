@@ -4,7 +4,7 @@
 
 
 
-use std::{collections::VecDeque, convert::TryFrom};
+use std::collections::VecDeque;
 
 use neqo_common::qtrace;
 

@@ -9,7 +9,6 @@
 use std::{
     cell::RefCell,
     cmp::{max, min},
-    convert::TryFrom,
     fmt::{self, Debug},
     mem,
     net::{IpAddr, SocketAddr},
@@ -48,6 +47,7 @@ use crate::{
     recovery::{LossRecovery, RecoveryToken, SendProfile},
     recv_stream::RecvStreamStats,
     rtt::GRANULARITY,
+    send_stream::SendStream,
     stats::{Stats, StatsCell},
     stream_id::StreamType,
     streams::{SendOrder, Streams},
@@ -118,6 +118,7 @@ impl Output {
     }
 
     
+    #[must_use]
     pub fn as_dgram_ref(&self) -> Option<&Datagram> {
         match self {
             Self::Datagram(dg) => Some(dg),
@@ -301,6 +302,8 @@ impl Connection {
     const LOOSE_TIMER_RESOLUTION: Duration = Duration::from_millis(50);
 
     
+    
+    
     pub fn new_client(
         server_name: impl Into<String>,
         protocols: &[impl AsRef<str>],
@@ -336,6 +339,8 @@ impl Connection {
         Ok(c)
     }
 
+    
+    
     
     pub fn new_server(
         certs: &[impl AsRef<str>],
@@ -426,6 +431,8 @@ impl Connection {
         Ok(c)
     }
 
+    
+    
     pub fn server_enable_0rtt(
         &mut self,
         anti_replay: &AntiReplay,
@@ -435,6 +442,8 @@ impl Connection {
             .server_enable_0rtt(self.tps.clone(), anti_replay, zero_rtt_checker)
     }
 
+    
+    
     pub fn server_enable_ech(
         &mut self,
         config: u8,
@@ -446,10 +455,13 @@ impl Connection {
     }
 
     
+    #[must_use]
     pub fn ech_config(&self) -> &[u8] {
         self.crypto.ech_config()
     }
 
+    
+    
     pub fn client_enable_ech(&mut self, ech_config_list: impl AsRef<[u8]>) -> Res<()> {
         self.crypto.client_enable_ech(ech_config_list)
     }
@@ -469,10 +481,12 @@ impl Connection {
     
     
     
+    #[must_use]
     pub fn odcid(&self) -> Option<&ConnectionId> {
         self.original_destination_cid.as_ref()
     }
 
+    
     
     
     
@@ -501,9 +515,9 @@ impl Connection {
     
     pub(crate) fn set_retry_cids(
         &mut self,
-        odcid: ConnectionId,
+        odcid: &ConnectionId,
         remote_cid: ConnectionId,
-        retry_cid: ConnectionId,
+        retry_cid: &ConnectionId,
     ) {
         debug_assert_eq!(self.role, Role::Server);
         qtrace!(
@@ -532,11 +546,15 @@ impl Connection {
 
     
     
+    
+    
     pub fn set_alpn(&mut self, protocols: &[impl AsRef<str>]) -> Res<()> {
         self.crypto.tls.set_alpn(protocols)?;
         Ok(())
     }
 
+    
+    
     
     pub fn set_ciphers(&mut self, ciphers: &[Cipher]) -> Res<()> {
         if self.state != State::Init {
@@ -548,6 +566,8 @@ impl Connection {
     }
 
     
+    
+    
     pub fn set_groups(&mut self, groups: &[Group]) -> Res<()> {
         if self.state != State::Init {
             qerror!([self], "Cannot enable groups in state {:?}", self.state);
@@ -557,6 +577,8 @@ impl Connection {
         Ok(())
     }
 
+    
+    
     
     pub fn send_additional_key_shares(&mut self, count: usize) -> Res<()> {
         if self.state != State::Init {
@@ -666,6 +688,8 @@ impl Connection {
     
     
     
+    
+    
     pub fn enable_resumption(&mut self, now: Instant, token: impl AsRef<[u8]>) -> Res<()> {
         if self.state != State::Init {
             qerror!([self], "set token in state {:?}", self.state);
@@ -682,8 +706,9 @@ impl Connection {
         );
         let mut dec = Decoder::from(token.as_ref());
 
-        let version =
-            Version::try_from(dec.decode_uint(4).ok_or(Error::InvalidResumptionToken)? as u32)?;
+        let version = Version::try_from(u32::try_from(
+            dec.decode_uint(4).ok_or(Error::InvalidResumptionToken)?,
+        )?)?;
         qtrace!([self], "  version {:?}", version);
         if !self.conn_params.get_versions().all().contains(&version) {
             return Err(Error::DisabledVersion);
@@ -731,12 +756,14 @@ impl Connection {
         Ok(())
     }
 
-    pub(crate) fn set_validation(&mut self, validation: Rc<RefCell<AddressValidation>>) {
+    pub(crate) fn set_validation(&mut self, validation: &Rc<RefCell<AddressValidation>>) {
         qtrace!([self], "Enabling NEW_TOKEN");
         assert_eq!(self.role, Role::Server);
-        self.address_validation = AddressValidationInfo::Server(Rc::downgrade(&validation));
+        self.address_validation = AddressValidationInfo::Server(Rc::downgrade(validation));
     }
 
+    
+    
     
     pub fn send_ticket(&mut self, now: Instant, extra: &[u8]) -> Res<()> {
         if self.role == Role::Client {
@@ -773,15 +800,19 @@ impl Connection {
         }
     }
 
+    #[must_use]
     pub fn tls_info(&self) -> Option<&SecretAgentInfo> {
         self.crypto.tls.info()
     }
 
+    
+    
     pub fn tls_preinfo(&self) -> Res<SecretAgentPreInfo> {
         Ok(self.crypto.tls.preinfo()?)
     }
 
     
+    #[must_use]
     pub fn peer_certificate(&self) -> Option<CertificateInfo> {
         self.crypto.tls.peer_certificate()
     }
@@ -801,26 +832,31 @@ impl Connection {
     }
 
     
+    #[must_use]
     pub fn role(&self) -> Role {
         self.role
     }
 
     
+    #[must_use]
     pub fn state(&self) -> &State {
         &self.state
     }
 
     
+    #[must_use]
     pub fn version(&self) -> Version {
         self.version
     }
 
     
+    #[must_use]
     pub fn zero_rtt_state(&self) -> ZeroRttState {
         self.zero_rtt_state
     }
 
     
+    #[must_use]
     pub fn stats(&self) -> Stats {
         let mut v = self.stats.borrow().clone();
         if let Some(p) = self.paths.primary_fallible() {
@@ -1233,6 +1269,7 @@ impl Connection {
 
     
     
+    #[allow(clippy::too_many_lines)] 
     fn preprocess_packet(
         &mut self,
         packet: &PublicPacket,
@@ -1345,17 +1382,17 @@ impl Connection {
             }
             State::WaitInitial => PreprocessResult::Continue,
             State::WaitVersion | State::Handshaking | State::Connected | State::Confirmed => {
-                if !self.cid_manager.is_valid(packet.dcid()) {
-                    self.stats
-                        .borrow_mut()
-                        .pkt_dropped(format!("Invalid DCID {:?}", packet.dcid()));
-                    PreprocessResult::Next
-                } else {
+                if self.cid_manager.is_valid(packet.dcid()) {
                     if self.role == Role::Server && packet.packet_type() == PacketType::Handshake {
                         
                         self.discard_keys(PacketNumberSpace::Initial, now);
                     }
                     PreprocessResult::Continue
+                } else {
+                    self.stats
+                        .borrow_mut()
+                        .pkt_dropped(format!("Invalid DCID {:?}", packet.dcid()));
+                    PreprocessResult::Next
                 }
             }
             State::Closing { .. } => {
@@ -1813,7 +1850,7 @@ impl Connection {
             State::Closing { .. } | State::Draining { .. } | State::Closed(_) => {
                 if let Some(details) = self.state_signaling.close_frame() {
                     let path = Rc::clone(details.path());
-                    let res = self.output_close(details);
+                    let res = self.output_close(&details);
                     self.capture_error(Some(path), now, 0, res)
                 } else {
                     Ok(SendOption::default())
@@ -1890,7 +1927,7 @@ impl Connection {
         }
     }
 
-    fn output_close(&mut self, close: ClosingFrame) -> Res<SendOption> {
+    fn output_close(&mut self, close: &ClosingFrame) -> Res<SendOption> {
         let mut encoder = Encoder::with_capacity(256);
         let grease_quic_bit = self.can_grease_quic_bit();
         let version = self.version();
@@ -1900,6 +1937,14 @@ impl Connection {
             };
 
             let path = close.path().borrow();
+            
+            
+            
+            
+            if path.is_temporary() {
+                assert!(!cfg!(test), "attempting to close with a temporary path");
+                return Err(Error::InternalError);
+            }
             let (_, mut builder) = Self::build_packet_header(
                 &path,
                 cspace,
@@ -1930,7 +1975,7 @@ impl Connection {
             };
             sanitized
                 .as_ref()
-                .unwrap_or(&close)
+                .unwrap_or(close)
                 .write_frame(&mut builder);
             encoder = builder.build(tx)?;
         }
@@ -1944,11 +1989,11 @@ impl Connection {
         &mut self,
         builder: &mut PacketBuilder,
         tokens: &mut Vec<RecoveryToken>,
-    ) -> Res<()> {
+    ) {
         let stats = &mut self.stats.borrow_mut();
         let frame_stats = &mut stats.frame_tx;
         if self.role == Role::Server {
-            if let Some(t) = self.state_signaling.write_done(builder)? {
+            if let Some(t) = self.state_signaling.write_done(builder) {
                 tokens.push(t);
                 frame_stats.handshake_done += 1;
             }
@@ -1957,7 +2002,7 @@ impl Connection {
         self.streams
             .write_frames(TransmissionPriority::Critical, builder, tokens, frame_stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         self.streams.write_frames(
@@ -1967,36 +2012,35 @@ impl Connection {
             frame_stats,
         );
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         
-        self.cid_manager
-            .write_frames(builder, tokens, frame_stats)?;
+        self.cid_manager.write_frames(builder, tokens, frame_stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
         self.paths.write_frames(builder, tokens, frame_stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         self.streams
             .write_frames(TransmissionPriority::High, builder, tokens, frame_stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         self.streams
             .write_frames(TransmissionPriority::Normal, builder, tokens, frame_stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         
         self.quic_datagrams.write_frames(builder, tokens, stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         let frame_stats = &mut stats.frame_tx;
@@ -2007,13 +2051,13 @@ impl Connection {
             builder,
             tokens,
             frame_stats,
-        )?;
+        );
         if builder.is_full() {
-            return Ok(());
+            return;
         }
-        self.new_token.write_frames(builder, tokens, frame_stats)?;
+        self.new_token.write_frames(builder, tokens, frame_stats);
         if builder.is_full() {
-            return Ok(());
+            return;
         }
 
         self.streams
@@ -2025,8 +2069,6 @@ impl Connection {
                 w.write_frames(builder);
             }
         }
-
-        Ok(())
     }
 
     
@@ -2087,7 +2129,7 @@ impl Connection {
         profile: &SendProfile,
         builder: &mut PacketBuilder,
         now: Instant,
-    ) -> Res<(Vec<RecoveryToken>, bool, bool)> {
+    ) -> (Vec<RecoveryToken>, bool, bool) {
         let mut tokens = Vec::new();
         let primary = path.borrow().is_primary();
         let mut ack_eliciting = false;
@@ -2123,16 +2165,15 @@ impl Connection {
 
         if profile.ack_only(space) {
             
-            return Ok((tokens, false, false));
+            return (tokens, false, false);
         }
 
         if primary {
             if space == PacketNumberSpace::ApplicationData {
-                self.write_appdata_frames(builder, &mut tokens)?;
+                self.write_appdata_frames(builder, &mut tokens);
             } else {
                 let stats = &mut self.stats.borrow_mut().frame_tx;
-                self.crypto
-                    .write_frame(space, builder, &mut tokens, stats)?;
+                self.crypto.write_frame(space, builder, &mut tokens, stats);
             }
         }
 
@@ -2156,11 +2197,12 @@ impl Connection {
         };
 
         stats.all += tokens.len();
-        Ok((tokens, ack_eliciting, padded))
+        (tokens, ack_eliciting, padded)
     }
 
     
     
+    #[allow(clippy::too_many_lines)] 
     fn output_path(&mut self, path: &PathRef, now: Instant) -> Res<SendOption> {
         let mut initial_sent = None;
         let mut needs_padding = false;
@@ -2215,7 +2257,7 @@ impl Connection {
             
             let payload_start = builder.len();
             let (tokens, ack_eliciting, padded) =
-                self.write_frames(path, *space, &profile, &mut builder, now)?;
+                self.write_frames(path, *space, &profile, &mut builder, now);
             if builder.packet_empty() {
                 
                 encoder = builder.abort();
@@ -2304,6 +2346,8 @@ impl Connection {
         }
     }
 
+    
+    
     pub fn initiate_key_update(&mut self) -> Res<()> {
         if self.state == State::Confirmed {
             let la = self
@@ -2317,6 +2361,7 @@ impl Connection {
     }
 
     #[cfg(test)]
+    #[must_use]
     pub fn get_epochs(&self) -> (Option<usize>, Option<usize>) {
         self.crypto.states.get_epochs()
     }
@@ -2375,6 +2420,7 @@ impl Connection {
         );
     }
 
+    #[must_use]
     pub fn is_stream_id_allowed(&self, stream_id: StreamId) -> bool {
         self.streams.is_stream_id_allowed(stream_id)
     }
@@ -2590,7 +2636,7 @@ impl Connection {
             HandshakeState::Authenticated(_) | HandshakeState::InProgress => (),
             HandshakeState::AuthenticationPending => {
                 if !was_authentication_pending {
-                    self.events.authentication_needed()
+                    self.events.authentication_needed();
                 }
             }
             HandshakeState::EchFallbackAuthenticationPending(public_name) => self
@@ -2627,6 +2673,7 @@ impl Connection {
         Ok(())
     }
 
+    #[allow(clippy::too_many_lines)] 
     fn input_frame(
         &mut self,
         path: &PathRef,
@@ -2644,7 +2691,7 @@ impl Connection {
         if frame.is_stream() {
             return self
                 .streams
-                .input_frame(frame, &mut self.stats.borrow_mut().frame_rx);
+                .input_frame(&frame, &mut self.stats.borrow_mut().frame_rx);
         }
         match frame {
             Frame::Padding => {
@@ -3013,7 +3060,6 @@ impl Connection {
     
     
     
-    
     pub fn stream_sendorder(
         &mut self,
         stream_id: StreamId,
@@ -3026,15 +3072,20 @@ impl Connection {
     
     
     
-    
     pub fn stream_fairness(&mut self, stream_id: StreamId, fairness: bool) -> Res<()> {
         self.streams.set_fairness(stream_id, fairness)
     }
 
+    
+    
     pub fn send_stream_stats(&self, stream_id: StreamId) -> Res<SendStreamStats> {
-        self.streams.get_send_stream(stream_id).map(|s| s.stats())
+        self.streams
+            .get_send_stream(stream_id)
+            .map(SendStream::stats)
     }
 
+    
+    
     pub fn recv_stream_stats(&mut self, stream_id: StreamId) -> Res<RecvStreamStats> {
         let stream = self.streams.get_recv_stream_mut(stream_id)?;
 
@@ -3082,16 +3133,22 @@ impl Connection {
     
     
     
+    
+    
     pub fn stream_avail_send_space(&self, stream_id: StreamId) -> Res<usize> {
         Ok(self.streams.get_send_stream(stream_id)?.avail())
     }
 
+    
+    
     
     pub fn stream_close_send(&mut self, stream_id: StreamId) -> Res<()> {
         self.streams.get_send_stream_mut(stream_id)?.close();
         Ok(())
     }
 
+    
+    
     
     pub fn stream_reset_send(&mut self, stream_id: StreamId, err: AppError) -> Res<()> {
         self.streams.get_send_stream_mut(stream_id)?.reset(err);
@@ -3112,6 +3169,8 @@ impl Connection {
         Ok(rb)
     }
 
+    
+    
     
     pub fn stream_stop_sending(&mut self, stream_id: StreamId, err: AppError) -> Res<()> {
         let stream = self.streams.get_recv_stream_mut(stream_id)?;
@@ -3146,10 +3205,12 @@ impl Connection {
         self.streams.keep_alive(stream_id, keep)
     }
 
+    #[must_use]
     pub fn remote_datagram_size(&self) -> u64 {
         self.quic_datagrams.remote_datagram_size()
     }
 
+    
     
     
     
@@ -3207,7 +3268,6 @@ impl Connection {
     
     
     
-
     pub fn send_datagram(&mut self, buf: &[u8], id: impl Into<DatagramTracking>) -> Res<()> {
         self.quic_datagrams
             .add_datagram(buf, id.into(), &mut self.stats.borrow_mut())

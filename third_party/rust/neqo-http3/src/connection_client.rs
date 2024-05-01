@@ -6,7 +6,6 @@
 
 use std::{
     cell::RefCell,
-    convert::TryFrom,
     fmt::{Debug, Display},
     mem,
     net::SocketAddr,
@@ -897,13 +896,6 @@ impl Http3Client {
     
     
     
-    pub fn conn(&mut self) -> &mut Connection {
-        &mut self.conn
-    }
-
-    
-    
-    
     
     
     fn process_http3(&mut self, now: Instant) {
@@ -1296,7 +1288,7 @@ impl EventProvider for Http3Client {
 
 #[cfg(test)]
 mod tests {
-    use std::{convert::TryFrom, mem, time::Duration};
+    use std::{mem, time::Duration};
 
     use neqo_common::{event::Provider, qtrace, Datagram, Decoder, Encoder};
     use neqo_crypto::{AllowZeroRtt, AntiReplay, ResumptionToken};
@@ -1997,7 +1989,7 @@ mod tests {
     
     
     fn check_push_response_header(header: &[Header]) {
-        let expected_push_response_header = vec![
+        let expected_push_response_header = [
             Header::new(":status", "200"),
             Header::new("content-length", "4"),
         ];
@@ -3953,7 +3945,7 @@ mod tests {
                 );
             }
             x => {
-                panic!("event {:?}", x);
+                panic!("event {x:?}");
             }
         }
 
@@ -3999,7 +3991,7 @@ mod tests {
                 assert!(fin);
             }
             x => {
-                panic!("event {:?}", x);
+                panic!("event {x:?}");
             }
         }
         
@@ -4072,7 +4064,7 @@ mod tests {
                     assert_eq!(stream_id, request_stream_id);
                 }
                 x => {
-                    panic!("event {:?}", x);
+                    panic!("event {x:?}");
                 }
             }
         }
@@ -4136,7 +4128,7 @@ mod tests {
                 assert!(!interim);
                 recv_header = true;
             } else {
-                panic!("event {:?}", e);
+                panic!("event {e:?}");
             }
         }
         assert!(recv_header);

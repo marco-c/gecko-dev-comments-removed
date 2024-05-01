@@ -4,12 +4,10 @@
 
 
 
-#![deny(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
 use std::{
     cell::RefCell,
-    convert::TryFrom,
     fmt::{self, Display},
     mem,
     net::{IpAddr, SocketAddr},
@@ -156,7 +154,7 @@ impl Paths {
 
     
     pub fn primary_fallible(&self) -> Option<PathRef> {
-        self.primary.as_ref().map(Rc::clone)
+        self.primary.clone()
     }
 
     
@@ -341,7 +339,7 @@ impl Paths {
                     None
                 }
             })
-            .or_else(|| self.primary.as_ref().map(Rc::clone))
+            .or_else(|| self.primary.clone())
     }
 
     

@@ -4,10 +4,7 @@
 
 
 
-use std::{
-    collections::{HashMap, VecDeque},
-    convert::TryFrom,
-};
+use std::collections::{HashMap, VecDeque};
 
 use neqo_common::{qtrace, Encoder};
 use neqo_transport::{Connection, StreamId, StreamType};

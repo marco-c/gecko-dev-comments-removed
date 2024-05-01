@@ -4,8 +4,7 @@
 
 
 
-#![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)] 
 
 
 
@@ -160,7 +159,7 @@ mod server_events;
 mod settings;
 mod stream_type_reader;
 
-use std::{any::Any, cell::RefCell, fmt::Debug, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use buffered_send_stream::BufferedStream;
 pub use client_events::{Http3ClientEvent, WebTransportEvent};
@@ -433,18 +432,13 @@ pub enum Http3StreamType {
 }
 
 #[must_use]
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Default, PartialEq, Eq, Debug)]
 enum ReceiveOutput {
+    #[default]
     NoOutput,
     ControlFrames(Vec<HFrame>),
     UnblockedStreams(Vec<StreamId>),
     NewStream(NewStreamType),
-}
-
-impl Default for ReceiveOutput {
-    fn default() -> Self {
-        Self::NoOutput
-    }
 }
 
 trait Stream: Debug {
@@ -509,8 +503,6 @@ trait HttpRecvStream: RecvStream {
     fn extended_connect_wait_for_response(&self) -> bool {
         false
     }
-
-    fn any(&self) -> &dyn Any;
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -572,8 +564,6 @@ trait SendStream: Stream {
     fn has_data_to_send(&self) -> bool;
     fn stream_writable(&self);
     fn done(&self) -> bool;
-    fn set_sendorder(&mut self, conn: &mut Connection, sendorder: Option<SendOrder>) -> Res<()>;
-    fn set_fairness(&mut self, conn: &mut Connection, fairness: bool) -> Res<()>;
 
     
     
@@ -627,7 +617,6 @@ trait HttpSendStream: SendStream {
     
     fn send_headers(&mut self, headers: &[Header], conn: &mut Connection) -> Res<()>;
     fn set_new_listener(&mut self, _conn_events: Box<dyn SendStreamEvents>) {}
-    fn any(&self) -> &dyn Any;
 }
 
 trait SendStreamEvents: Debug {
