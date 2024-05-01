@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+window.disableBFCache = () => {
+  return new Promise(resolve => {
+    navigator.locks.request("disablebfcache", () => {
+      resolve();
+      return new Promise(() => {});
+    });
+  });
+};

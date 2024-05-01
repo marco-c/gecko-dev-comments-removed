@@ -45,20 +45,3 @@ window.prepareNavigation = function(callback) {
     {once: true});
   executor.suspend(callback);
 }
-
-
-
-
-
-
-
-
-window.disableBFCache = () => {
-  return new Promise(resolve => {
-    
-    navigator.locks.request(uuid, () => {
-      resolve();
-      return new Promise(() => {});
-    });
-  });
-};
