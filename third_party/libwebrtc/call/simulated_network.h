@@ -36,7 +36,7 @@ namespace webrtc {
 
 
 
-class SimulatedNetwork : public SimulatedNetworkInterface {
+class RTC_EXPORT SimulatedNetwork : public SimulatedNetworkInterface {
  public:
   using Config = BuiltInNetworkBehaviorConfig;
   explicit SimulatedNetwork(Config config, uint64_t random_seed = 1);
