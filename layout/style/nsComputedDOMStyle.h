@@ -314,6 +314,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   bool NeedsToFlushLayout(nsCSSPropertyID) const;
   
   
+  
+  bool NeedsToFlushLayoutForContainerQuery() const;
+  
+  
   void Flush(Document&, mozilla::FlushType);
   nsIFrame* GetOuterFrame() const;
 
