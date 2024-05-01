@@ -91,7 +91,7 @@ function assertReceivedPings(aExpectedNum) {
 
 
 
-function pingHandler(aRequest) {
+function pingHandler() {
   gSeenPings++;
 }
 

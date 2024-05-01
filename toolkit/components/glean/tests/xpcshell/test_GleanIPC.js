@@ -127,10 +127,7 @@ add_task(
     
     Assert.equal(
       2,
-      Object.entries(times.values).reduce(
-        (acc, [bucket, count]) => acc + count,
-        0
-      )
+      Object.entries(times.values).reduce((acc, [, count]) => acc + count, 0)
     );
 
     const mabelsCounters = Glean.testOnly.mabelsKitchenCounters;

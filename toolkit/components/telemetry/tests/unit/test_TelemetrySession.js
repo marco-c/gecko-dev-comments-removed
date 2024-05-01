@@ -923,7 +923,7 @@ add_task(async function test_dailyDuplication() {
   Assert.equal(ping.payload.info.reason, REASON_DAILY);
 
   
-  PingServer.registerPingHandler((req, res) => {
+  PingServer.registerPingHandler(() => {
     Assert.ok(
       false,
       "No more daily pings should be sent/received in this test."
@@ -967,7 +967,7 @@ add_task(async function test_dailyOverdue() {
   fakeNow(now);
 
   
-  PingServer.registerPingHandler((req, res) => {
+  PingServer.registerPingHandler(() => {
     Assert.ok(false, "No daily ping should be received if not overdue!.");
   });
 
@@ -1396,7 +1396,7 @@ add_task(async function test_sendFirstShutdownPing() {
     
 
     
-    PingServer.registerPingHandler((req, res) => {
+    PingServer.registerPingHandler(req => {
       const receivedPing = decodeRequestPayload(req);
       Assert.ok(
         false,
@@ -2038,7 +2038,7 @@ add_task(async function test_schedulerEnvironmentReschedules() {
   );
 
   
-  PingServer.registerPingHandler((req, res) => {
+  PingServer.registerPingHandler(req => {
     const receivedPing = decodeRequestPayload(req);
     Assert.ok(
       false,
@@ -2072,7 +2072,7 @@ add_task(async function test_schedulerNothingDue() {
   await TelemetryController.testReset();
 
   
-  PingServer.registerPingHandler((req, res) => {
+  PingServer.registerPingHandler(req => {
     const receivedPing = decodeRequestPayload(req);
     Assert.ok(
       false,
