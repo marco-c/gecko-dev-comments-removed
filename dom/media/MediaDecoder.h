@@ -742,6 +742,12 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   bool mShouldDelaySeek = false;
   Maybe<SeekTarget> mDelayedSeekTarget;
 
+#  ifdef MOZ_WMF_MEDIA_ENGINE
+  
+  
+  bool mStateMachineRecreated = false;
+#  endif
+
  public:
   Canonical<double>& CanonicalVolume() { return mVolume; }
   Canonical<bool>& CanonicalPreservesPitch() { return mPreservesPitch; }
