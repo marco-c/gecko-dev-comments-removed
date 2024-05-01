@@ -12,12 +12,23 @@ namespace ETW {
 std::atomic<ULONGLONG> gETWCollectionMask = 0;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TRACELOGGING_DEFINE_PROVIDER(kFirefoxTraceLoggingProvider,
                              "Mozilla.FirefoxTraceLogger",
-                             
-                             
-                             
-                             (0xc923f508, 0x96e4, 0x5515, 0xe3, 0x3c, 0x75,
+                             (0xc923f508, 0x96e4, 0x5515, 0xe3, 0x2c, 0x75,
                               0x39, 0xd1, 0xb1, 0x05, 0x04));
 
 static void NTAPI ETWEnableCallback(LPCGUID aSourceId, ULONG aIsEnabled,
