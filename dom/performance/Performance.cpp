@@ -8,6 +8,11 @@
 
 #include <sstream>
 
+#if defined(XP_LINUX)
+#  include <fcntl.h>
+#  include <sys/mman.h>
+#endif
+
 #include "ETWTools.h"
 #include "GeckoProfiler.h"
 #include "nsRFPService.h"
@@ -593,14 +598,61 @@ std::pair<TimeStamp, TimeStamp> Performance::GetTimeStampsForMarker(
   return std::make_pair(startTimeStamp, endTimeStamp);
 }
 
+static FILE* MaybeOpenMarkerFile() {
+  if (!getenv("MOZ_USE_PERFORMANCE_MARKER_FILE")) {
+    return nullptr;
+  }
+
+#ifdef XP_LINUX
+  
+  
+  int fd = open(GetMarkerFilename().c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
+  FILE* markerFile = fdopen(fd, "w+");
+
+  if (!markerFile) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int protection = PROT_READ;
+#  ifndef ANDROID
+  protection |= PROT_EXEC;
+#  endif
+
+  
+  
+  long page_size = sysconf(_SC_PAGESIZE);
+  void* mmap_address = mmap(nullptr, page_size, protection, MAP_PRIVATE, fd, 0);
+  if (mmap_address == MAP_FAILED) {
+    fclose(markerFile);
+    return nullptr;
+  }
+  return markerFile;
+#else
+  
+  
+  
+  
+  
+  
+  return fopen(GetMarkerFilename().c_str(), "w+");
+#endif
+}
+
 
 
 void Performance::MaybeEmitExternalProfilerMarker(
     const nsAString& aName, Maybe<const PerformanceMeasureOptions&> aOptions,
     Maybe<const nsAString&> aStartMark, const Optional<nsAString>& aEndMark) {
-  static FILE* markerFile = getenv("MOZ_USE_PERFORMANCE_MARKER_FILE")
-                                ? fopen(GetMarkerFilename().c_str(), "w+")
-                                : nullptr;
+  static FILE* markerFile = MaybeOpenMarkerFile();
   if (!markerFile) {
     return;
   }
