@@ -150,6 +150,7 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     
     
     if kwargs["headless"] and ("--headless=new" not in chrome_options["args"] and
+                               "--headless=old" not in chrome_options["args"] and
                                "--headless" not in chrome_options["args"]):
         chrome_options["args"].append("--headless=new")
 
