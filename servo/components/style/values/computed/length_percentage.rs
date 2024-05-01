@@ -445,6 +445,19 @@ impl LengthPercentage {
 
     
     #[inline]
+    pub fn to_percentage_of(&self, basis: Length) -> Option<Percentage> {
+        if basis.px() == 0. {
+            return None;
+        }
+        Some(match self.unpack() {
+            Unpacked::Length(l) => Percentage(l.px() / basis.px()),
+            Unpacked::Percentage(p) => p,
+            Unpacked::Calc(ref c) => Percentage(c.resolve(basis).px() / basis.px()),
+        })
+    }
+
+    
+    #[inline]
     pub fn to_used_value(&self, containing_length: Au) -> Au {
         Au::from(self.to_pixel_length(containing_length))
     }
