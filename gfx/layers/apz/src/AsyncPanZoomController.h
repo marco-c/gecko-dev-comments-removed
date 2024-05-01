@@ -1305,6 +1305,8 @@ class AsyncPanZoomController {
 
   CSSRect GetCurrentScrollRangeInCssPixels() const;
 
+  bool AllowOneTouchPinch() const;
+
  private:
   
 

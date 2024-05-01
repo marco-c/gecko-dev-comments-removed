@@ -2248,6 +2248,11 @@ CSSRect AsyncPanZoomController::GetCurrentScrollRangeInCssPixels() const {
   return Metrics().CalculateScrollRange();
 }
 
+bool AsyncPanZoomController::AllowOneTouchPinch() const {
+  return StaticPrefs::apz_one_touch_pinch_enabled() &&
+         ZoomConstraintsAllowZoom();
+}
+
 
 bool AsyncPanZoomController::CanScroll(const InputData& aEvent) const {
   ParentLayerPoint delta = GetDeltaForEvent(aEvent);

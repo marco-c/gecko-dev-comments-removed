@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_GestureEventListener_h
 #define mozilla_layers_GestureEventListener_h
 
+#include <iosfwd>
 #include "InputData.h"  
 #include "Units.h"
 #include "mozilla/EventForwards.h"  
@@ -134,6 +135,8 @@ class GestureEventListener final {
     
     GESTURE_ONE_TOUCH_PINCH
   };
+
+  friend std::ostream& operator<<(std::ostream& os, GestureState aState);
 
   
 
