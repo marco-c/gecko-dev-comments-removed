@@ -36,30 +36,22 @@ import { prefs } from "../../utils/prefs";
 import sourceQueue from "../../utils/source-queue";
 import { validateSourceActor, ContextError } from "../../utils/context";
 
-function loadSourceMaps(sources) {
+function loadSourceMapsForSourceActors(sourceActors) {
   return async function ({ dispatch }) {
     try {
-      const sourceList = await Promise.all(
-        sources.map(async sourceActor => {
-          const originalSourcesInfo = await dispatch(
-            loadSourceMap(sourceActor)
-          );
-          originalSourcesInfo.forEach(
-            sourcesInfo => (sourcesInfo.sourceActor = sourceActor)
-          );
-          sourceQueue.queueOriginalSources(originalSourcesInfo);
-          return originalSourcesInfo;
-        })
+      await Promise.all(
+        sourceActors.map(sourceActor => dispatch(loadSourceMap(sourceActor)))
       );
-
-      await sourceQueue.flush();
-      return sourceList.flat();
     } catch (error) {
+      
       if (!(error instanceof ContextError)) {
         throw error;
       }
     }
-    return [];
+
+    
+    
+    await sourceQueue.flush();
   };
 }
 
@@ -70,7 +62,7 @@ function loadSourceMaps(sources) {
 function loadSourceMap(sourceActor) {
   return async function ({ dispatch, getState, sourceMapLoader, panel }) {
     if (!prefs.clientSourceMapsEnabled || !sourceActor.sourceMapURL) {
-      return [];
+      return;
     }
 
     let sources, ignoreListUrls, resolvedSourceMapURL, exception;
@@ -135,12 +127,20 @@ function loadSourceMap(sourceActor) {
         type: "CLEAR_SOURCE_ACTOR_MAP_URL",
         sourceActor,
       });
-      return [];
+      return;
     }
 
     
     validateSourceActor(getState(), sourceActor);
-    return sources;
+
+    for (const originalSource of sources) {
+      
+      
+      originalSource.sourceActor = sourceActor;
+    }
+
+    
+    sourceQueue.queueOriginalSources(sources);
   };
 }
 
@@ -341,7 +341,7 @@ export function newGeneratedSources(sourceResources) {
     await dispatch(checkNewSources(newSources));
 
     (async () => {
-      await dispatch(loadSourceMaps(newSourceActors));
+      await dispatch(loadSourceMapsForSourceActors(newSourceActors));
 
       
       

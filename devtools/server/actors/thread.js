@@ -1538,7 +1538,11 @@ class ThreadActor extends Actor {
     
     
 
-    return this.sourcesManager.iter().map(s => s.form());
+    const forms = [];
+    for (const source of this.sourcesManager.iter()) {
+      forms.push(source.form());
+    }
+    return forms;
   }
 
   

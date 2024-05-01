@@ -69,13 +69,13 @@ class SourceWatcher {
     
     
     
-    onAvailable(
-      threadActor.sourcesManager.iter().map(s => {
-        const resource = s.form();
-        resource.resourceType = SOURCE;
-        return resource;
-      })
-    );
+    const sources = [];
+    for (const sourceActor of threadActor.sourcesManager.iter()) {
+      const resource = sourceActor.form();
+      resource.resourceType = SOURCE;
+      sources.push(resource);
+    }
+    onAvailable(sources);
 
     
     threadActor.addAllSources();
