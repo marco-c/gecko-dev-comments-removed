@@ -57,8 +57,6 @@ ReassemblyQueue::ReassemblyQueue(absl::string_view log_prefix,
     : log_prefix_(log_prefix),
       max_size_bytes_(max_size_bytes),
       watermark_bytes_(max_size_bytes * kHighWatermarkLimit),
-      last_assembled_tsn_watermark_(
-          tsn_unwrapper_.Unwrap(TSN(*peer_initial_tsn - 1))),
       last_completed_reset_req_seq_nbr_(ReconfigRequestSN(0)),
       streams_(CreateStreams(
           log_prefix_,
@@ -180,31 +178,7 @@ void ReassemblyQueue::AddReassembledMessage(
                        << ", ppid=" << *message.ppid()
                        << ", payload=" << message.payload().size() << " bytes";
 
-  for (const UnwrappedTSN tsn : tsns) {
-    if (tsn == last_assembled_tsn_watermark_.next_value()) {
-      
-      last_assembled_tsn_watermark_.Increment();
-    } else {
-      delivered_tsns_.insert(tsn);
-    }
-  }
-
-  
-  MaybeMoveLastAssembledWatermarkFurther();
-
   reassembled_messages_.emplace_back(std::move(message));
-}
-
-void ReassemblyQueue::MaybeMoveLastAssembledWatermarkFurther() {
-  
-  
-  
-  while (!delivered_tsns_.empty() &&
-         *delivered_tsns_.begin() ==
-             last_assembled_tsn_watermark_.next_value()) {
-    last_assembled_tsn_watermark_.Increment();
-    delivered_tsns_.erase(delivered_tsns_.begin());
-  }
 }
 
 void ReassemblyQueue::HandleForwardTsn(
@@ -228,10 +202,6 @@ void ReassemblyQueue::HandleForwardTsn(
 
   RTC_DLOG(LS_VERBOSE) << log_prefix_ << "ForwardTSN to " << *tsn.Wrap()
                        << " - performing.";
-  last_assembled_tsn_watermark_ = std::max(last_assembled_tsn_watermark_, tsn);
-  delivered_tsns_.erase(delivered_tsns_.begin(),
-                        delivered_tsns_.upper_bound(tsn));
-  MaybeMoveLastAssembledWatermarkFurther();
   queued_bytes_ -= streams_->HandleForwardTsn(tsn, skipped_streams);
   RTC_DCHECK(IsConsistent());
 }
@@ -239,22 +209,12 @@ void ReassemblyQueue::HandleForwardTsn(
 bool ReassemblyQueue::IsConsistent() const {
   
   
-  if (!delivered_tsns_.empty() &&
-      last_assembled_tsn_watermark_.next_value() >= *delivered_tsns_.begin()) {
-    return false;
-  }
-
   
-  
-  
-  return (queued_bytes_ >= 0 && queued_bytes_ <= 2 * max_size_bytes_);
+  return (queued_bytes_ <= 2 * max_size_bytes_);
 }
 
 HandoverReadinessStatus ReassemblyQueue::GetHandoverReadiness() const {
   HandoverReadinessStatus status = streams_->GetHandoverReadiness();
-  if (!delivered_tsns_.empty()) {
-    status.Add(HandoverUnreadinessReason::kReassemblyQueueDeliveredTSNsGap);
-  }
   if (deferred_reset_streams_.has_value()) {
     status.Add(HandoverUnreadinessReason::kStreamResetDeferred);
   }
@@ -262,7 +222,6 @@ HandoverReadinessStatus ReassemblyQueue::GetHandoverReadiness() const {
 }
 
 void ReassemblyQueue::AddHandoverState(DcSctpSocketHandoverState& state) {
-  state.rx.last_assembled_tsn = last_assembled_tsn_watermark_.Wrap().value();
   state.rx.last_completed_deferred_reset_req_sn =
       last_completed_reset_req_seq_nbr_.value();
   streams_->AddHandoverState(state);
@@ -272,8 +231,6 @@ void ReassemblyQueue::RestoreFromState(const DcSctpSocketHandoverState& state) {
   
   RTC_DCHECK(last_completed_reset_req_seq_nbr_ == ReconfigRequestSN(0));
 
-  last_assembled_tsn_watermark_ =
-      tsn_unwrapper_.Unwrap(TSN(state.rx.last_assembled_tsn));
   last_completed_reset_req_seq_nbr_ =
       ReconfigRequestSN(state.rx.last_completed_deferred_reset_req_sn);
   streams_->RestoreFromState(state);
