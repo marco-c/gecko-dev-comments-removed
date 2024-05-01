@@ -96,7 +96,6 @@ bool WebRenderLayerManager::Initialize(
   }
 
   mWrChild = static_cast<WebRenderBridgeChild*>(bridge);
-  mHasFlushedThisChild = false;
 
   TextureFactoryIdentifier textureFactoryIdentifier;
   wr::MaybeIdNamespace idNamespace;
@@ -709,16 +708,12 @@ void WebRenderLayerManager::FlushRendering(wr::RenderReasons aReasons) {
 
   
   
-  
-  if (!mHasFlushedThisChild ||
-      (resizing && (mWidget->SynchronouslyRepaintOnResize() ||
-                    StaticPrefs::layers_force_synchronous_resize()))) {
+  if (resizing && (mWidget->SynchronouslyRepaintOnResize() ||
+                   StaticPrefs::layers_force_synchronous_resize())) {
     cBridge->SendFlushRendering(aReasons);
   } else {
     cBridge->SendFlushRenderingAsync(aReasons);
   }
-
-  mHasFlushedThisChild = true;
 }
 
 void WebRenderLayerManager::WaitOnTransactionProcessed() {
