@@ -44,6 +44,7 @@
 
 namespace dcsctp {
 namespace {
+using ::webrtc::TimeDelta;
 
 
 constexpr float kMinBytesRequiredToSendFactor = 0.9;
@@ -55,7 +56,7 @@ RetransmissionQueue::RetransmissionQueue(
     TSN my_initial_tsn,
     size_t a_rwnd,
     SendQueue& send_queue,
-    std::function<void(DurationMs rtt)> on_new_rtt,
+    std::function<void(TimeDelta rtt)> on_new_rtt,
     std::function<void()> on_clear_retransmission_counter,
     Timer& t3_rtx,
     const DcSctpOptions& options,
@@ -345,11 +346,10 @@ void RetransmissionQueue::UpdateRTT(TimeMs now,
   
   
 
-  absl::optional<DurationMs> rtt =
-      outstanding_data_.MeasureRTT(now, cumulative_tsn_ack);
+  TimeDelta rtt = outstanding_data_.MeasureRTT(now, cumulative_tsn_ack);
 
-  if (rtt.has_value()) {
-    on_new_rtt_(*rtt);
+  if (rtt.IsFinite()) {
+    on_new_rtt_(rtt);
   }
 }
 

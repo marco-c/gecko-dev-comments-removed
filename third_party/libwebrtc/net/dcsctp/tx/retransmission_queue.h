@@ -60,7 +60,7 @@ class RetransmissionQueue {
                       TSN my_initial_tsn,
                       size_t a_rwnd,
                       SendQueue& send_queue,
-                      std::function<void(DurationMs rtt)> on_new_rtt,
+                      std::function<void(webrtc::TimeDelta rtt)> on_new_rtt,
                       std::function<void()> on_clear_retransmission_counter,
                       Timer& t3_rtx,
                       const DcSctpOptions& options,
@@ -230,7 +230,7 @@ class RetransmissionQueue {
   
   const size_t data_chunk_header_size_;
   
-  const std::function<void(DurationMs rtt)> on_new_rtt_;
+  const std::function<void(webrtc::TimeDelta rtt)> on_new_rtt_;
   
   const std::function<void()> on_clear_retransmission_counter_;
   

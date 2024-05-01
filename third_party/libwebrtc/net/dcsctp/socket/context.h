@@ -40,7 +40,7 @@ class Context {
   virtual DcSctpSocketCallbacks& callbacks() const = 0;
 
   
-  virtual void ObserveRTT(DurationMs rtt_ms) = 0;
+  virtual void ObserveRTT(webrtc::TimeDelta rtt_ms) = 0;
 
   
   virtual DurationMs current_rto() const = 0;

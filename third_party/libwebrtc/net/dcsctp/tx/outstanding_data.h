@@ -148,7 +148,7 @@ class OutstandingData {
   
   
   
-  absl::optional<DurationMs> MeasureRTT(TimeMs now, UnwrappedTSN tsn) const;
+  webrtc::TimeDelta MeasureRTT(TimeMs now, UnwrappedTSN tsn) const;
 
   
   
