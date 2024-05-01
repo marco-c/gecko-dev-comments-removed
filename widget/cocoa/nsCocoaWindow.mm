@@ -718,7 +718,15 @@ bool nsCocoaWindow::IsVisible() const {
 void nsCocoaWindow::SetModal(bool aState) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  if (!mWindow) return;
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
