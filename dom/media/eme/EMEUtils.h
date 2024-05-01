@@ -89,6 +89,7 @@ const char* ToMediaKeyStatusStr(dom::MediaKeyStatus aStatus);
 
 bool IsHardwareDecryptionSupported(
     const dom::MediaKeySystemConfiguration& aConfig);
+bool IsHardwareDecryptionSupported(const KeySystemConfig& aConfig);
 
 const char* EncryptionSchemeStr(const CryptoScheme& aScheme);
 
