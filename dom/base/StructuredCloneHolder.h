@@ -165,6 +165,7 @@ class StructuredCloneHolderBase {
 };
 
 class BlobImpl;
+class EncodedAudioChunkData;
 class EncodedVideoChunkData;
 class MessagePort;
 class MessagePortIdentifier;
@@ -277,6 +278,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
     return mEncodedVideoChunks;
   }
 
+  nsTArray<EncodedAudioChunkData>& EncodedAudioChunks() {
+    return mEncodedAudioChunks;
+  }
+
   
   
 
@@ -387,6 +392,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   
   nsTArray<EncodedVideoChunkData> mEncodedVideoChunks;
+
+  
+  nsTArray<EncodedAudioChunkData> mEncodedAudioChunks;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
