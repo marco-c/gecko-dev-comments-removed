@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
+
 #[derive(Debug, Default, Clone)]
 pub struct MockFileContent(Arc<Mutex<Vec<u8>>>);
 
@@ -57,10 +58,14 @@ impl From<&[u8]> for MockFileContent {
     }
 }
 
+
 pub type MockDirEntries = HashMap<OsString, MockFSItem>;
 
+
 pub enum MockFSContent {
+    
     File(Result<MockFileContent>),
+    
     Dir(MockDirEntries),
 }
 
@@ -73,9 +78,12 @@ impl std::fmt::Debug for MockFSContent {
     }
 }
 
+
 #[derive(Debug)]
 pub struct MockFSItem {
+    
     pub content: MockFSContent,
+    
     pub modified: SystemTime,
 }
 
@@ -87,6 +95,7 @@ impl From<MockFSContent> for MockFSItem {
         }
     }
 }
+
 
 #[derive(Debug, Clone)]
 pub struct MockFiles {
@@ -102,19 +111,27 @@ impl Default for MockFiles {
 }
 
 impl MockFiles {
+    
     pub fn new() -> Self {
         Self::default()
     }
 
+    
+    
+    
     pub fn add_file<P: AsRef<Path>, C: Into<MockFileContent>>(&self, path: P, content: C) -> &Self {
         self.add_file_result(path, Ok(content.into()), SystemTime::UNIX_EPOCH)
     }
 
+    
     pub fn add_dir<P: AsRef<Path>>(&self, path: P) -> &Self {
         self.path(path, true, |_| ()).unwrap();
         self
     }
 
+    
+    
+    
     pub fn add_file_result<P: AsRef<Path>>(
         &self,
         path: P,
@@ -173,6 +190,8 @@ impl MockFiles {
         Ok(f(cur_entry))
     }
 
+    
+    
     pub fn parent_dir<P: AsRef<Path>, F, R>(&self, path: P, f: F) -> Result<R>
     where
         F: FnOnce(&mut MockDirEntries) -> R,
@@ -188,6 +207,7 @@ impl MockFiles {
         .and_then(|r| r)
     }
 
+    
     pub fn assert_files(&self) -> AssertFiles {
         let mut files = HashMap::new();
         let root = self.root.lock().unwrap();
@@ -210,6 +230,10 @@ impl MockFiles {
     }
 }
 
+
+
+
+
 #[derive(Debug)]
 pub struct AssertFiles {
     files: HashMap<PathBuf, MockFileContent>,
@@ -228,6 +252,7 @@ fn remove_prefix(p: &Path) -> &Path {
 }
 
 impl AssertFiles {
+    
     pub fn check<P: AsRef<Path>, S: AsRef<str>>(&mut self, path: P, content: S) -> &mut Self {
         let p = remove_prefix(path.as_ref());
         let Some(mfc) = self.files.remove(p) else {
@@ -243,6 +268,7 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn check_bytes<P: AsRef<Path>, B: AsRef<[u8]>>(
         &mut self,
         path: P,
@@ -262,11 +288,13 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn ignore<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
         self.files.remove(remove_prefix(path.as_ref()));
         self
     }
 
+    
     pub fn check_exists<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
         let p = remove_prefix(path.as_ref());
         if self.files.remove(p).is_none() {
@@ -275,6 +303,11 @@ impl AssertFiles {
         self
     }
 
+    
+    
+    
+    
+    
     pub fn finish(&mut self) {
         let files = std::mem::take(&mut self.files);
         if !files.is_empty() {
