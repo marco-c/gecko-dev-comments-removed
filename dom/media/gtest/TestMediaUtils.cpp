@@ -15,7 +15,7 @@ using namespace mozilla::gtest;
 using namespace mozilla::media;
 
 
-#if !defined(ANDROID)
+#if !defined(ANDROID) && defined(GTEST_HAS_DEATH_TEST)
 
 
 #  define DISABLE_CRASH_REPORTING  \
