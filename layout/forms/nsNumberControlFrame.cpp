@@ -64,29 +64,22 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
 
   nsTextControlFrame::CreateAnonymousContent(aElements);
 
-#if defined(MOZ_WIDGET_ANDROID)
-  
-  return NS_OK;
-#else
   
   
-  if (StyleDisplay()->EffectiveAppearance() == StyleAppearance::Textfield) {
-    return NS_OK;
+  if (StyleDisplay()->EffectiveAppearance() != StyleAppearance::Textfield) {
+    
+    mSpinBox = MakeAnonElement(PseudoStyleType::mozNumberSpinBox);
+
+    
+    mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mSpinBox);
+
+    
+    mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
+
+    aElements.AppendElement(mSpinBox);
   }
 
-  
-  mSpinBox = MakeAnonElement(PseudoStyleType::mozNumberSpinBox);
-
-  
-  mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mSpinBox);
-
-  
-  mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
-
-  aElements.AppendElement(mSpinBox);
-
   return NS_OK;
-#endif
 }
 
 
