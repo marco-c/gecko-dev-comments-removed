@@ -203,7 +203,7 @@ add_task(function test() {
     ["https://127.0.0.1", "A", 1, 0, 0],
   ];
 
-  let found = expected.map(it => 0);
+  let found = expected.map(() => 0);
 
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
