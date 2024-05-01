@@ -16,6 +16,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsIUUIDGenerator.h"
 #include "nsIThread.h"
+#include "nsTHashSet.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Attributes.h"
 
@@ -413,7 +414,7 @@ class PeerConnectionImpl final
 
   void RecordEndOfCallTelemetry();
 
-  nsresult InitializeDataChannel();
+  nsresult MaybeInitializeDataChannel();
 
   NS_IMETHODIMP_TO_ERRORRESULT_RETREF(nsDOMDataChannel, CreateDataChannel,
                                       ErrorResult& rv, const nsAString& aLabel,
@@ -483,6 +484,9 @@ class PeerConnectionImpl final
     aTransceiversOut = mTransceivers.Clone();
   }
 
+  RefPtr<dom::RTCRtpTransceiver> GetTransceiver(
+      const std::string& aTransceiverId);
+
   
   dom::RTCSignalingState GetSignalingState() const;
 
@@ -501,6 +505,12 @@ class PeerConnectionImpl final
   dom::RTCPeerConnectionState GetNewConnectionState() const;
   
   bool UpdateConnectionState();
+  dom::RTCIceConnectionState GetNewIceConnectionState() const;
+  
+  bool UpdateIceConnectionState();
+  dom::RTCIceGatheringState GetNewIceGatheringState() const;
+  
+  bool UpdateIceGatheringState();
 
   
   void StartCallTelem();
@@ -586,6 +596,9 @@ class PeerConnectionImpl final
       std::vector<RtpExtensionHeader>& aPreferredheaders);
 
   void BreakCycles();
+
+  using RTCDtlsTransportMap =
+      nsTHashMap<nsCStringHashKey, RefPtr<dom::RTCDtlsTransport>>;
 
  private:
   virtual ~PeerConnectionImpl();
@@ -807,10 +820,10 @@ class PeerConnectionImpl final
   
   void EnsureTransports(const JsepSession& aSession);
 
-  void UpdateRTCDtlsTransports(bool aMarkAsStable);
-  void RollbackRTCDtlsTransports();
-  void RemoveRTCDtlsTransportsExcept(
-      const std::set<std::string>& aTransportIds);
+  void UpdateRTCDtlsTransports();
+  void SaveStateForRollback();
+  void RestoreStateForRollback();
+  std::set<RefPtr<dom::RTCDtlsTransport>> GetActiveTransports() const;
 
   
   
@@ -863,9 +876,12 @@ class PeerConnectionImpl final
   std::set<std::pair<std::string, std::string>> mLocalIceCredentialsToReplace;
 
   nsTArray<RefPtr<dom::RTCRtpTransceiver>> mTransceivers;
-  std::map<std::string, RefPtr<dom::RTCDtlsTransport>>
-      mTransportIdToRTCDtlsTransport;
+  RTCDtlsTransportMap mTransportIdToRTCDtlsTransport;
   RefPtr<dom::RTCSctpTransport> mSctpTransport;
+  
+  
+  RefPtr<dom::RTCSctpTransport> mLastStableSctpTransport;
+  RefPtr<dom::RTCDtlsTransport> mLastStableSctpDtlsTransport;
 
   
   
