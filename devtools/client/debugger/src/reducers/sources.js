@@ -114,6 +114,13 @@ export function initialSourcesState(state) {
 
 
 
+    shouldHighlightSelectedLocation: true,
+
+    
+
+
+
+
 
 
 
@@ -149,6 +156,7 @@ function update(state = initialSourcesState(), action) {
         selectedOriginalLocation: UNDEFINED_LOCATION,
         pendingSelectedLocation,
         shouldSelectOriginalLocation: action.shouldSelectOriginalLocation,
+        shouldHighlightSelectedLocation: action.shouldHighlightSelectedLocation,
       };
     }
 

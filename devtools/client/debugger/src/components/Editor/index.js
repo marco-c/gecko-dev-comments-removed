@@ -453,6 +453,9 @@ class Editor extends PureComponent {
         
         
         keepContext: false,
+
+        
+        highlight: false,
       }
     );
   };
