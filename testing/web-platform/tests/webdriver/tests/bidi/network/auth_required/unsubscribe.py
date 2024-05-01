@@ -1,15 +1,22 @@
-import asyncio
-
 import pytest
 
-pytestmark = pytest.mark.asyncio
+import asyncio
+
+from webdriver.bidi.modules.script import ScriptEvaluateResultException
 
 from .. import AUTH_REQUIRED_EVENT, PAGE_EMPTY_HTML
 
+pytestmark = pytest.mark.asyncio
 
 
 
-async def test_unsubscribe(bidi_session, new_tab, url):
+async def test_unsubscribe(bidi_session, new_tab, url, fetch):
+    await bidi_session.browsing_context.navigate(
+        context=new_tab["context"],
+        url=url(PAGE_EMPTY_HTML),
+        wait="complete",
+    )
+
     await bidi_session.session.subscribe(events=[AUTH_REQUIRED_EVENT])
     await bidi_session.session.unsubscribe(events=[AUTH_REQUIRED_EVENT])
 
@@ -19,17 +26,13 @@ async def test_unsubscribe(bidi_session, new_tab, url):
     async def on_event(method, data):
         events.append(data)
 
-    remove_listener = bidi_session.add_event_listener(AUTH_REQUIRED_EVENT, on_event)
+    remove_listener = bidi_session.add_event_listener(
+        AUTH_REQUIRED_EVENT, on_event)
 
-    
-    await bidi_session.browsing_context.navigate(
-        context=new_tab["context"],
-        url=url(
-            "/webdriver/tests/support/http_handlers/authentication.py?realm=testrealm"
-        ),
-        wait="none",
-    )
-    await asyncio.sleep(0.5)
+    asyncio.ensure_future(fetch(url=url(
+        "/webdriver/tests/support/http_handlers/authentication.py?realm=testrealm"
+    ), context=new_tab))
+
     assert len(events) == 0
 
     remove_listener()
