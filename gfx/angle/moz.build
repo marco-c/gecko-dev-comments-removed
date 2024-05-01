@@ -4,7 +4,10 @@
 
 
 
-DIRS += ["targets/translator"]
+DIRS += [
+    "targets/angle_common",
+    "targets/translator",
+]
 
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
