@@ -30,7 +30,6 @@ class TargetPolicy {
     SUBSYS_PROCESS,          
     SUBSYS_REGISTRY,         
     SUBSYS_SYNC,             
-    SUBSYS_HANDLES,          
     SUBSYS_WIN32K_LOCKDOWN,  
     SUBSYS_SIGNED_BINARY,    
     SUBSYS_LINE_BREAK        
@@ -44,9 +43,6 @@ class TargetPolicy {
     FILES_ALLOW_QUERY,     
     FILES_ALLOW_DIR_ANY,   
                            
-    HANDLES_DUP_ANY,       
-                           
-    HANDLES_DUP_BROKER,    
     NAMEDPIPES_ALLOW_ANY,  
     PROCESS_MIN_EXEC,      
                            

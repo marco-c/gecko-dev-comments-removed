@@ -983,48 +983,6 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       "With these static arguments AddRule should never fail, what happened?");
 
   
-  
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                            sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"File");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                            sandbox::TargetPolicy::HANDLES_DUP_ANY, L"File");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-
-  
-  
-  result =
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                            sandbox::TargetPolicy::HANDLES_DUP_ANY, L"Section");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-
-  
-  
-  result =
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Semaphore");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-  result =
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_ANY, L"Semaphore");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-
-  
   result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_LINE_BREAK,
                             sandbox::TargetPolicy::LINE_BREAK_ALLOW, nullptr);
   MOZ_RELEASE_ASSERT(
@@ -1134,16 +1092,6 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
                      sProfileDir, u"\\shader-cache\\*"_ns);
   }
-
-  
-  
-  SANDBOX_SUCCEED_OR_CRASH(
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section"));
-
-  SANDBOX_SUCCEED_OR_CRASH(
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_ANY, L"Section"));
 }
 
 #define SANDBOX_ENSURE_SUCCESS(result, message)          \
@@ -1237,24 +1185,6 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       result,
       "With these static arguments AddRule should never fail, what happened?");
 
-  
-  
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                            sandbox::TargetPolicy::HANDLES_DUP_ANY, L"Section");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
-
-  
-  
-  
-  result =
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
-
   return true;
 }
 
@@ -1341,16 +1271,6 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
   result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
                             sandbox::TargetPolicy::FILES_ALLOW_ANY,
                             L"\\??\\pipe\\gecko-crash-server-pipe.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
-
-  
-  
-  
-  result =
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section");
   SANDBOX_ENSURE_SUCCESS(
       result,
       "With these static arguments AddRule should never fail, what happened?");
@@ -1869,19 +1789,6 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
       result,
       "With these static arguments AddRule should never fail, what happened?");
 
-  
-  
-  
-  
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                            aIsRemoteLaunch
-                                ? sandbox::TargetPolicy::HANDLES_DUP_ANY
-                                : sandbox::TargetPolicy::HANDLES_DUP_BROKER,
-                            L"Section");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
-
   return true;
 }
 #undef SANDBOX_ENSURE_SUCCESS
@@ -1900,16 +1807,6 @@ bool SandboxBroker::AllowReadFile(wchar_t const* file) {
   }
 
   return true;
-}
-
-
-bool SandboxBroker::AddTargetPeer(HANDLE aPeerProcess) {
-  if (!sBrokerService) {
-    return false;
-  }
-
-  sandbox::ResultCode result = sBrokerService->AddTargetPeer(aPeerProcess);
-  return (sandbox::SBOX_ALL_OK == result);
 }
 
 void SandboxBroker::AddHandleToShare(HANDLE aHandle) {
@@ -1936,8 +1833,6 @@ void SandboxBroker::ApplyLoggingPolicy() {
                    L"HKEY_CURRENT_USER\\dummy");
   mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_SYNC,
                    sandbox::TargetPolicy::EVENTS_ALLOW_READONLY, L"dummy");
-  mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                   sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"dummy");
 }
 
 SandboxBroker::~SandboxBroker() {

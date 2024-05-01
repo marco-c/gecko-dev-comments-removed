@@ -172,20 +172,6 @@ class TargetServices {
   
   virtual ProcessState* GetState() = 0;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual ResultCode DuplicateHandle(HANDLE source_handle,
-                                     DWORD target_process_id,
-                                     HANDLE* target_handle,
-                                     DWORD desired_access,
-                                     DWORD options) = 0;
-
   virtual ResultCode GetComplexLineBreaks(const WCHAR* text, uint32_t length,
                                           uint8_t* break_before) = 0;
 
