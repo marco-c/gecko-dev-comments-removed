@@ -4403,6 +4403,17 @@ HWND nsWindow::GetTopLevelForFocus(HWND aCurWnd) {
 }
 
 void nsWindow::DispatchFocusToTopLevelWindow(bool aIsActivate) {
+  if (aIsActivate && mPickerDisplayCount) {
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
   if (aIsActivate) {
     sJustGotActivate = false;
   }
@@ -8221,6 +8232,7 @@ void nsWindow::PickerClosed() {
   
   if (!mPickerDisplayCount) {
     ::EnableWindow(::GetAncestor(GetWindowHandle(), GA_ROOT), TRUE);
+    DispatchFocusToTopLevelWindow(true);
   }
 
   if (!mPickerDisplayCount && mDestroyCalled) {
