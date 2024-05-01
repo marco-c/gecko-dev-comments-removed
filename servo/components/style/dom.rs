@@ -208,6 +208,17 @@ pub trait TNode: Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     }
 
     
+    fn depth(&self) -> usize {
+        let mut depth = 0;
+        let mut curr = *self;
+        while let Some(parent) = curr.traversal_parent() {
+            depth += 1;
+            curr = parent.as_node();
+        }
+        depth
+    }
+
+    
     
     fn traversal_parent(&self) -> Option<Self::ConcreteElement>;
 
@@ -396,18 +407,6 @@ pub trait TElement:
     
     fn matches_user_and_content_rules(&self) -> bool {
         true
-    }
-
-    
-    fn depth(&self) -> usize {
-        let mut depth = 0;
-        let mut curr = *self;
-        while let Some(parent) = curr.traversal_parent() {
-            depth += 1;
-            curr = parent;
-        }
-
-        depth
     }
 
     
