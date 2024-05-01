@@ -233,6 +233,7 @@ already_AddRefed<AudioData> AudioData::Constructor(const GlobalObject& aGlobal,
   if (resource.isErr()) {
     LOGD("AudioData::Constructor failure (OOM)");
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return nullptr;
   }
 
   return MakeAndAddRef<mozilla::dom::AudioData>(global, resource.unwrap(),
@@ -634,23 +635,66 @@ JSObject* AudioData::ReadStructuredClone(JSContext* aCx,
                                          nsIGlobalObject* aGlobal,
                                          JSStructuredCloneReader* aReader,
                                          const AudioDataSerializedData& aData) {
+  JS::Rooted<JS::Value> value(aCx, JS::NullValue());
+  
+  
+  
+  
+  
+  {
+    RefPtr<AudioData> frame = MakeAndAddRef<AudioData>(aGlobal, aData);
+    if (!GetOrCreateDOMReflector(aCx, frame, &value) || !value.isObject()) {
+      LOGE("GetOrCreateDOMReflect failure");
+      return nullptr;
+    }
+  }
+  return value.toObjectOrNull();
 }
 
 
 bool AudioData::WriteStructuredClone(JSStructuredCloneWriter* aWriter,
                                      StructuredCloneHolder* aHolder) const {
   AssertIsOnOwningThread();
+
+  
+  if (!mResource) {
+    LOGD("AudioData was already close in WriteStructuredClone");
+    return false;
+  }
+  const uint32_t index = aHolder->AudioData().Length();
+  
+  
+  
+  aHolder->AudioData().AppendElement(AudioDataSerializedData(*this));
+
+  return !NS_WARN_IF(!JS_WriteUint32Pair(aWriter, SCTAG_DOM_AUDIODATA, index));
 }
 
 
 UniquePtr<AudioData::TransferredData> AudioData::Transfer() {
   AssertIsOnOwningThread();
+
+  if (!mResource) {
+    
+    LOGD("AudioData was already close in Transfer");
+    return nullptr;
+  }
+
+  
+  auto serialized = MakeUnique<AudioDataSerializedData>(*this);
+  
+  
+  Close();
+  return serialized;
 }
 
 
 
 already_AddRefed<AudioData> AudioData::FromTransferred(nsIGlobalObject* aGlobal,
                                                        TransferredData* aData) {
+  MOZ_ASSERT(aData);
+
+  return MakeAndAddRef<AudioData>(aGlobal, *aData);
 }
 
 void AudioData::CloseIfNeeded() {
