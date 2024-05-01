@@ -1531,7 +1531,7 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
   
   
-  if (!seg->bytes.empty()) {
+  if (numElements != 0) {
     memcpy(arrayObj->data_, &seg->bytes[segByteOffset],
            size_t(numBytesToCopy.value()));
   }
