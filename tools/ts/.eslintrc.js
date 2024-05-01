@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  plugins: ["eslint-plugin"],
+  extends: ["plugin:eslint-plugin/recommended"],
+  env: {
+    browser: false,
+    node: true,
+  },
+  rules: {
+    "no-console": "off",
+    strict: ["error", "global"],
+  },
+};
