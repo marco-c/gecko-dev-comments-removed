@@ -97,6 +97,33 @@ add_task(async function () {
       key.synthesizeKey();
       await onPickerStop;
       ok(true, "picker-stopped event received, highlighter stopped");
+
+      info(
+        `Run the keyboard shortcut for ${test.id} with picker shortcut disabled`
+      );
+      await pushPref("devtools.command-button-pick.enabled", false);
+
+      
+      await toolbox.selectTool("webconsole");
+      await waitUntil(() => toolbox.currentToolId === "webconsole");
+
+      
+      const onHasPickerStarted = Promise.race([
+        toolbox.nodePicker.once("picker-started").then(() => true),
+        wait(100).then(() => false),
+      ]);
+
+      key.synthesizeKey();
+      const hasPickerStarted = await onHasPickerStarted;
+
+      ok(!hasPickerStarted, "picker was not started on shortcut");
+      is(
+        toolbox.currentToolId,
+        "inspector",
+        "shortcut still switches tab to inspector"
+      );
+
+      await pushPref("devtools.command-button-pick.enabled", true);
     }
 
     await onSelectTool;
