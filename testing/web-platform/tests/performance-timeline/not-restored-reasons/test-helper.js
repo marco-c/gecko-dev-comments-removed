@@ -34,6 +34,15 @@ function assertReasonsStructEquals(
   }
 }
 
+function ReasonsInclude(reasons, targetReason) {
+  for (const reason of reasons) {
+    if (reason.reason == targetReason) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 
 
