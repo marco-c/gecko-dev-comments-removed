@@ -64,7 +64,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_middlemouse.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
@@ -2444,42 +2443,24 @@ bool nsWindowWatcher::IsWindowOpenLocationModified(
     int32_t* aLocation) {
   
   
-  
-  
 #ifdef XP_MACOSX
   bool metaKey = aModifiers.IsMeta();
 #else
   bool metaKey = aModifiers.IsControl();
 #endif
   bool shiftKey = aModifiers.IsShift();
-
-  bool middleMouse = aModifiers.IsMiddleMouse();
-  bool middleUsesTabs = StaticPrefs::browser_tabs_opentabfor_middleclick();
-  bool middleUsesNewWindow = StaticPrefs::middlemouse_openNewWindow();
-
-  if (metaKey || (middleMouse && middleUsesTabs)) {
-    bool loadInBackground = StaticPrefs::browser_tabs_loadInBackground();
+  if (metaKey) {
     if (shiftKey) {
-      loadInBackground = !loadInBackground;
+      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB;
+      return true;
     }
-    if (loadInBackground) {
-      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_BACKGROUND;
-    } else {
-      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_FOREGROUND;
-    }
+    *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_BACKGROUND;
     return true;
   }
-
-  if (shiftKey || (middleMouse && !middleUsesTabs && middleUsesNewWindow)) {
+  if (shiftKey) {
     *aLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
     return true;
   }
-
-  
-  
-  
-  
-  
 
   return false;
 }
