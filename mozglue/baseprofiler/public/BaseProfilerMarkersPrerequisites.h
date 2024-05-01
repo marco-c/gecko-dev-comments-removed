@@ -352,6 +352,13 @@ class MarkerTiming {
   [[nodiscard]] const TimeStamp& StartTime() const { return mStartTime; }
   [[nodiscard]] const TimeStamp& EndTime() const { return mEndTime; }
 
+  
+  
+  
+  
+  
+  
+  
   enum class Phase : uint8_t {
     Instant = 0,
     Interval = 1,
@@ -691,6 +698,7 @@ class MarkerSchema {
   enum class InputType {
     Uint64,
     Uint32,
+    Uint8,
     Boolean,
     CString,
     String,
