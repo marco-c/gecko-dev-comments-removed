@@ -54,7 +54,7 @@ async function scrollToAlignedElements(scroller, elements_x, elements_y) {
 
 
 
-function verifySelectedSnapTarget(scroller, expected_snap_target, axis) {
+function verifySelectedSnapTarget(t, scroller, expected_snap_target, axis) {
   
   const initial_left = getComputedStyle(expected_snap_target).left;
   const initial_top = getComputedStyle(expected_snap_target).top;
@@ -63,19 +63,26 @@ function verifySelectedSnapTarget(scroller, expected_snap_target, axis) {
     const initial_scroll_top = scroller.scrollTop;
     const target_top = expected_snap_target.offsetTop + 100;
     expected_snap_target.style.top = `${target_top}px`;
-    assert_equals(scroller.scrollTop, expected_snap_target.offsetTop,
-      `scroller followed ${expected_snap_target.id} in y axis after layout change`);
-    assert_not_equals(scroller.scrollTop, initial_scroll_top,
-      "scroller actually scrolled in y axis");
+    
+    
+    
+    t.step(() => {
+      assert_equals(scroller.scrollTop, expected_snap_target.offsetTop,
+        `scroller followed ${expected_snap_target.id} in y axis after layout change`);
+      assert_not_equals(scroller.scrollTop, initial_scroll_top,
+        "scroller actually scrolled in y axis");
+    });
   } else {
     
     const initial_scroll_left = scroller.scrollLeft;
     const target_left = expected_snap_target.offsetLeft + 100;
     expected_snap_target.style.left = `${target_left}px`;
-    assert_equals(scroller.scrollLeft, expected_snap_target.offsetLeft,
-      `scroller followed ${expected_snap_target.id} in x axis after layout change`);
-    assert_not_equals(scroller.scrollLeft, initial_scroll_left,
-      "scroller actually scrolled in x axis");
+    t.step(() => {
+      assert_equals(scroller.scrollLeft, expected_snap_target.offsetLeft,
+        `scroller followed ${expected_snap_target.id} in x axis after layout change`);
+      assert_not_equals(scroller.scrollLeft, initial_scroll_left,
+        "scroller actually scrolled in x axis");
+    });
   }
   
   expected_snap_target.style.top = initial_top;
@@ -94,10 +101,10 @@ async function runScrollSnapSelectionVerificationTest(t, scroller,
     aligned_elements_y);
   t.step(() => {
     if (axis == "y" || axis == "both") {
-      verifySelectedSnapTarget(scroller, expected_target_y, axis);
+      verifySelectedSnapTarget(t, scroller, expected_target_y, axis);
     }
     if (axis == "x" || axis == "both") {
-      verifySelectedSnapTarget(scroller, expected_target_x, axis);
+      verifySelectedSnapTarget(t, scroller, expected_target_x, axis);
     }
   });
   
@@ -133,7 +140,7 @@ async function runLayoutSnapSeletionVerificationTest(t, scroller, elements_to_al
   }
 
   shiftLayoutToAlignElements(elements_to_align, expected_target, axis);
-  verifySelectedSnapTarget(scroller, expected_target, axis);
+  verifySelectedSnapTarget(t, scroller, expected_target, axis);
 
   
   let num_elements = initial_tops.length;
