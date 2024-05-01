@@ -53,13 +53,18 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
       MozPromise<nsTArray<nsCString>, nsresult, true>;
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
 
-  nsresult PurgeBounceTrackersForStateGlobal(
-      BounceTrackingStateGlobal* aStateGlobal,
-      const OriginAttributes& aOriginAttributes);
-
   
   using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;
-  nsTArray<RefPtr<ClearDataMozPromise>> mClearPromises;
+
+  
+  
+  [[nodiscard]] nsresult PurgeBounceTrackersForStateGlobal(
+      BounceTrackingStateGlobal* aStateGlobal,
+      nsTArray<RefPtr<ClearDataMozPromise>>& aClearPromises);
+
+  
+  
+  bool mPurgeInProgress = false;
 
   
   class ClearDataCallback final : public nsIClearDataCallback {

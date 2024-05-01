@@ -416,6 +416,18 @@ BounceTrackingProtection::TestAddUserActivation(
 RefPtr<BounceTrackingProtection::PurgeBounceTrackersMozPromise>
 BounceTrackingProtection::PurgeBounceTrackers() {
   
+  if (mPurgeInProgress) {
+    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+            ("%s: Skip: Purge already in progress.", __FUNCTION__));
+    return PurgeBounceTrackersMozPromise::CreateAndReject(
+        nsresult::NS_ERROR_NOT_AVAILABLE, __func__);
+  }
+  mPurgeInProgress = true;
+
+  
+  nsTArray<RefPtr<ClearDataMozPromise>> clearPromises;
+
+  
   for (const auto& entry : mStorage->StateGlobalMapRef()) {
     const OriginAttributes& originAttributes = entry.GetKey();
     BounceTrackingStateGlobal* stateGlobal = entry.GetData();
@@ -429,13 +441,16 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                oaSuffix.get()));
     }
 
-    PurgeBounceTrackersForStateGlobal(stateGlobal, originAttributes);
+    nsresult rv = PurgeBounceTrackersForStateGlobal(stateGlobal, clearPromises);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return PurgeBounceTrackersMozPromise::CreateAndReject(rv, __func__);
+    }
   }
 
   
   
   return ClearDataMozPromise::AllSettled(GetCurrentSerialEventTarget(),
-                                         mClearPromises)
+                                         clearPromises)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [&](ClearDataMozPromise::AllSettledPromiseType::ResolveOrRejectValue&&
@@ -450,7 +465,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
             
             for (auto& result : aResults.ResolveValue()) {
               if (result.IsReject()) {
-                mClearPromises.Clear();
+                mPurgeInProgress = false;
                 return PurgeBounceTrackersMozPromise::CreateAndReject(
                     NS_ERROR_FAILURE, __func__);
               }
@@ -458,7 +473,8 @@ BounceTrackingProtection::PurgeBounceTrackers() {
             }
 
             
-            mClearPromises.Clear();
+
+            mPurgeInProgress = false;
             return PurgeBounceTrackersMozPromise::CreateAndResolve(
                 std::move(purgedSiteHosts), __func__);
           });
@@ -466,19 +482,12 @@ BounceTrackingProtection::PurgeBounceTrackers() {
 
 nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     BounceTrackingStateGlobal* aStateGlobal,
-    const OriginAttributes& aOriginAttributes) {
+    nsTArray<RefPtr<ClearDataMozPromise>>& aClearPromises) {
   MOZ_ASSERT(aStateGlobal);
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
           ("%s: #mUserActivation: %d, #mBounceTrackers: %d", __FUNCTION__,
            aStateGlobal->UserActivationMapRef().Count(),
            aStateGlobal->BounceTrackersMapRef().Count()));
-
-  
-  if (!mClearPromises.IsEmpty()) {
-    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
-            ("%s: Skip: Purge already in progress.", __FUNCTION__));
-    return NS_ERROR_NOT_AVAILABLE;
-  }
 
   const PRTime now = PR_Now();
   
@@ -502,7 +511,6 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       do_GetService("@mozilla.org/clear-data-service;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mClearPromises.Clear();
   nsTArray<nsCString> purgedSiteHosts;
 
   
@@ -562,7 +570,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       clearPromise->Reject(0, __func__);
     }
 
-    mClearPromises.AppendElement(clearPromise);
+    aClearPromises.AppendElement(clearPromise);
 
     
     
