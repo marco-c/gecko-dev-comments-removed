@@ -51,201 +51,38 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(html_root_url = "https://docs.rs/cc/1.0")]
 #![cfg_attr(test, deny(warnings))]
 #![allow(deprecated)]
 #![deny(missing_docs)]
 
-use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{hash_map, HashMap};
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display, Formatter};
 use std::fs;
-use std::io::{self, Write};
+use std::hash::Hasher;
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::{Component, Path, PathBuf};
-#[cfg(feature = "parallel")]
-use std::process::Child;
-use std::process::Command;
+use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
-
-#[cfg(feature = "parallel")]
-mod parallel;
-mod windows;
+use std::thread::{self, JoinHandle};
 
 
-pub use windows::find_tools as windows_registry;
 
-mod command_helpers;
-use command_helpers::*;
+#[cfg(windows)]
+mod registry;
+#[cfg(windows)]
+#[macro_use]
+mod winapi;
+#[cfg(windows)]
+mod com;
+#[cfg(windows)]
+mod setup_config;
+#[cfg(windows)]
+mod vs_instances;
 
-mod tool;
-pub use tool::Tool;
-use tool::ToolFamily;
+pub mod windows_registry;
 
 
 
@@ -254,34 +91,32 @@ use tool::ToolFamily;
 
 #[derive(Clone, Debug)]
 pub struct Build {
-    include_directories: Vec<Arc<Path>>,
-    definitions: Vec<(Arc<str>, Option<Arc<str>>)>,
-    objects: Vec<Arc<Path>>,
-    flags: Vec<Arc<str>>,
-    flags_supported: Vec<Arc<str>>,
+    include_directories: Vec<PathBuf>,
+    definitions: Vec<(String, Option<String>)>,
+    objects: Vec<PathBuf>,
+    flags: Vec<String>,
+    flags_supported: Vec<String>,
     known_flag_support_status: Arc<Mutex<HashMap<String, bool>>>,
-    ar_flags: Vec<Arc<str>>,
-    asm_flags: Vec<Arc<str>>,
+    ar_flags: Vec<String>,
+    asm_flags: Vec<String>,
     no_default_flags: bool,
-    files: Vec<Arc<Path>>,
+    files: Vec<PathBuf>,
     cpp: bool,
-    cpp_link_stdlib: Option<Option<Arc<str>>>,
-    cpp_set_stdlib: Option<Arc<str>>,
+    cpp_link_stdlib: Option<Option<String>>,
+    cpp_set_stdlib: Option<String>,
     cuda: bool,
-    cudart: Option<Arc<str>>,
-    std: Option<Arc<str>>,
-    target: Option<Arc<str>>,
-    host: Option<Arc<str>>,
-    out_dir: Option<Arc<Path>>,
-    opt_level: Option<Arc<str>>,
+    cudart: Option<String>,
+    target: Option<String>,
+    host: Option<String>,
+    out_dir: Option<PathBuf>,
+    opt_level: Option<String>,
     debug: Option<bool>,
     force_frame_pointer: Option<bool>,
-    env: Vec<(Arc<OsStr>, Arc<OsStr>)>,
-    compiler: Option<Arc<Path>>,
-    archiver: Option<Arc<Path>>,
-    ranlib: Option<Arc<Path>>,
-    cargo_output: CargoOutput,
-    link_lib_modifiers: Vec<Arc<str>>,
+    env: Vec<(OsString, OsString)>,
+    compiler: Option<PathBuf>,
+    archiver: Option<PathBuf>,
+    cargo_metadata: bool,
+    link_lib_modifiers: Vec<String>,
     pic: Option<bool>,
     use_plt: Option<bool>,
     static_crt: Option<bool>,
@@ -290,11 +125,9 @@ pub struct Build {
     warnings_into_errors: bool,
     warnings: Option<bool>,
     extra_warnings: Option<bool>,
-    env_cache: Arc<Mutex<HashMap<String, Option<Arc<str>>>>>,
+    env_cache: Arc<Mutex<HashMap<String, Option<String>>>>,
     apple_sdk_root_cache: Arc<Mutex<HashMap<String, OsString>>>,
-    apple_versions_cache: Arc<Mutex<HashMap<String, String>>>,
     emit_rerun_if_env_changed: bool,
-    cached_compiler_family: Arc<Mutex<HashMap<Box<Path>, ToolFamily>>>,
 }
 
 
@@ -320,21 +153,21 @@ pub struct Error {
     
     kind: ErrorKind,
     
-    message: Cow<'static, str>,
+    message: String,
 }
 
 impl Error {
-    fn new(kind: ErrorKind, message: impl Into<Cow<'static, str>>) -> Error {
+    fn new(kind: ErrorKind, message: &str) -> Error {
         Error {
-            kind,
-            message: message.into(),
+            kind: kind,
+            message: message.to_owned(),
         }
     }
 }
 
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Error {
-        Error::new(ErrorKind::IOError, format!("{}", e))
+        Error::new(ErrorKind::IOError, &format!("{}", e))
     }
 }
 
@@ -349,6 +182,97 @@ impl std::error::Error for Error {}
 
 
 
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct Tool {
+    path: PathBuf,
+    cc_wrapper_path: Option<PathBuf>,
+    cc_wrapper_args: Vec<OsString>,
+    args: Vec<OsString>,
+    env: Vec<(OsString, OsString)>,
+    family: ToolFamily,
+    cuda: bool,
+    removed_args: Vec<OsString>,
+}
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum ToolFamily {
+    
+    Gnu,
+    
+    
+    Clang,
+    
+    Msvc { clang_cl: bool },
+}
+
+impl ToolFamily {
+    
+    fn add_debug_flags(&self, cmd: &mut Tool, dwarf_version: Option<u32>) {
+        match *self {
+            ToolFamily::Msvc { .. } => {
+                cmd.push_cc_arg("-Z7".into());
+            }
+            ToolFamily::Gnu | ToolFamily::Clang => {
+                cmd.push_cc_arg(
+                    dwarf_version
+                        .map_or_else(|| "-g".into(), |v| format!("-gdwarf-{}", v))
+                        .into(),
+                );
+            }
+        }
+    }
+
+    
+    fn add_force_frame_pointer(&self, cmd: &mut Tool) {
+        match *self {
+            ToolFamily::Gnu | ToolFamily::Clang => {
+                cmd.push_cc_arg("-fno-omit-frame-pointer".into());
+            }
+            _ => (),
+        }
+    }
+
+    
+    fn warnings_flags(&self) -> &'static str {
+        match *self {
+            ToolFamily::Msvc { .. } => "-W4",
+            ToolFamily::Gnu | ToolFamily::Clang => "-Wall",
+        }
+    }
+
+    
+    fn extra_warnings_flags(&self) -> Option<&'static str> {
+        match *self {
+            ToolFamily::Msvc { .. } => None,
+            ToolFamily::Gnu | ToolFamily::Clang => Some("-Wextra"),
+        }
+    }
+
+    
+    fn warnings_to_errors_flag(&self) -> &'static str {
+        match *self {
+            ToolFamily::Msvc { .. } => "-WX",
+            ToolFamily::Gnu | ToolFamily::Clang => "-Werror",
+        }
+    }
+
+    fn verbose_stderr(&self) -> bool {
+        *self == ToolFamily::Clang
+    }
+}
+
+
+
+
 #[derive(Clone, Debug)]
 struct Object {
     src: PathBuf,
@@ -358,7 +282,7 @@ struct Object {
 impl Object {
     
     fn new(src: PathBuf, dst: PathBuf) -> Object {
-        Object { src, dst }
+        Object { src: src, dst: dst }
     }
 }
 
@@ -387,7 +311,6 @@ impl Build {
             cpp_set_stdlib: None,
             cuda: false,
             cudart: None,
-            std: None,
             target: None,
             host: None,
             out_dir: None,
@@ -397,8 +320,7 @@ impl Build {
             env: Vec::new(),
             compiler: None,
             archiver: None,
-            ranlib: None,
-            cargo_output: CargoOutput::new(),
+            cargo_metadata: true,
             link_lib_modifiers: Vec::new(),
             pic: None,
             use_plt: None,
@@ -408,9 +330,7 @@ impl Build {
             warnings_into_errors: false,
             env_cache: Arc::new(Mutex::new(HashMap::new())),
             apple_sdk_root_cache: Arc::new(Mutex::new(HashMap::new())),
-            apple_versions_cache: Arc::new(Mutex::new(HashMap::new())),
             emit_rerun_if_env_changed: true,
-            cached_compiler_family: Arc::default(),
         }
     }
 
@@ -430,7 +350,7 @@ impl Build {
     
     
     pub fn include<P: AsRef<Path>>(&mut self, dir: P) -> &mut Build {
-        self.include_directories.push(dir.as_ref().into());
+        self.include_directories.push(dir.as_ref().to_path_buf());
         self
     }
 
@@ -476,13 +396,13 @@ impl Build {
     
     pub fn define<'a, V: Into<Option<&'a str>>>(&mut self, var: &str, val: V) -> &mut Build {
         self.definitions
-            .push((var.into(), val.into().map(Into::into)));
+            .push((var.to_string(), val.into().map(|s| s.to_string())));
         self
     }
 
     
     pub fn object<P: AsRef<Path>>(&mut self, obj: P) -> &mut Build {
-        self.objects.push(obj.as_ref().into());
+        self.objects.push(obj.as_ref().to_path_buf());
         self
     }
 
@@ -497,25 +417,7 @@ impl Build {
     
     
     pub fn flag(&mut self, flag: &str) -> &mut Build {
-        self.flags.push(flag.into());
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    pub fn remove_flag(&mut self, flag: &str) -> &mut Build {
-        self.flags.retain(|other_flag| &**other_flag != flag);
+        self.flags.push(flag.to_string());
         self
     }
 
@@ -531,7 +433,7 @@ impl Build {
     
     
     pub fn ar_flag(&mut self, flag: &str) -> &mut Build {
-        self.ar_flags.push(flag.into());
+        self.ar_flags.push(flag.to_string());
         self
     }
 
@@ -550,7 +452,7 @@ impl Build {
     
     
     pub fn asm_flag(&mut self, flag: &str) -> &mut Build {
-        self.asm_flags.push(flag.into());
+        self.asm_flags.push(flag.to_string());
         self
     }
 
@@ -597,7 +499,6 @@ impl Build {
         let host = self.get_host()?;
         let mut cfg = Build::new();
         cfg.flag(flag)
-            .cargo_metadata(self.cargo_output.metadata)
             .target(&target)
             .opt_level(0)
             .host(&host)
@@ -614,34 +515,30 @@ impl Build {
         if compiler.family.verbose_stderr() {
             compiler.remove_arg("-v".into());
         }
-        if compiler.family == ToolFamily::Clang {
-            
-            
-            compiler.push_cc_arg("-Wno-unused-command-line-argument".into());
-        }
 
         let mut cmd = compiler.to_command();
         let is_arm = target.contains("aarch64") || target.contains("arm");
         let clang = compiler.family == ToolFamily::Clang;
-        let gnu = compiler.family == ToolFamily::Gnu;
         command_add_output_file(
             &mut cmd,
             &obj,
             self.cuda,
             target.contains("msvc"),
             clang,
-            gnu,
             false,
             is_arm,
         );
 
         
-        cmd.arg("-c");
+        
+        if target.contains("msvc") && !self.cuda {
+            cmd.arg("-c");
+        }
 
         cmd.arg(&src);
 
         let output = cmd.output()?;
-        let is_supported = output.status.success() && output.stderr.is_empty();
+        let is_supported = output.stderr.is_empty();
 
         known_status.insert(flag.to_owned(), is_supported);
         Ok(is_supported)
@@ -659,37 +556,8 @@ impl Build {
     
     
     pub fn flag_if_supported(&mut self, flag: &str) -> &mut Build {
-        self.flags_supported.push(flag.into());
+        self.flags_supported.push(flag.to_string());
         self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_flags_from_environment(&mut self, environ_key: &str) -> Result<&mut Build, Error> {
-        let flags = self.envflags(environ_key)?;
-        self.flags.extend(flags.into_iter().map(Into::into));
-        Ok(self)
     }
 
     
@@ -742,7 +610,7 @@ impl Build {
 
     
     pub fn file<P: AsRef<Path>>(&mut self, p: P) -> &mut Build {
-        self.files.push(p.as_ref().into());
+        self.files.push(p.as_ref().to_path_buf());
         self
     }
 
@@ -762,12 +630,6 @@ impl Build {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn cpp(&mut self, cpp: bool) -> &mut Build {
         self.cpp = cpp;
         self
@@ -781,13 +643,11 @@ impl Build {
     
     
     
-    
-    
     pub fn cuda(&mut self, cuda: bool) -> &mut Build {
         self.cuda = cuda;
         if cuda {
             self.cpp = true;
-            self.cudart = Some("static".into());
+            self.cudart = Some("static".to_string());
         }
         self
     }
@@ -800,39 +660,8 @@ impl Build {
     
     pub fn cudart(&mut self, cudart: &str) -> &mut Build {
         if self.cuda {
-            self.cudart = Some(cudart.into());
+            self.cudart = Some(cudart.to_string());
         }
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn std(&mut self, std: &str) -> &mut Build {
-        self.std = Some(std.into());
         self
     }
 
@@ -930,6 +759,8 @@ impl Build {
     
     
     
+    
+    
     pub fn cpp_link_stdlib<'a, V: Into<Option<&'a str>>>(
         &mut self,
         cpp_link_stdlib: V,
@@ -995,7 +826,7 @@ impl Build {
     
     
     pub fn target(&mut self, target: &str) -> &mut Build {
-        self.target = Some(target.into());
+        self.target = Some(target.to_string());
         self
     }
 
@@ -1013,7 +844,7 @@ impl Build {
     
     
     pub fn host(&mut self, host: &str) -> &mut Build {
-        self.host = Some(host.into());
+        self.host = Some(host.to_string());
         self
     }
 
@@ -1022,7 +853,7 @@ impl Build {
     
     
     pub fn opt_level(&mut self, opt_level: u32) -> &mut Build {
-        self.opt_level = Some(opt_level.to_string().into());
+        self.opt_level = Some(opt_level.to_string());
         self
     }
 
@@ -1031,7 +862,7 @@ impl Build {
     
     
     pub fn opt_level_str(&mut self, opt_level: &str) -> &mut Build {
-        self.opt_level = Some(opt_level.into());
+        self.opt_level = Some(opt_level.to_string());
         self
     }
 
@@ -1062,7 +893,7 @@ impl Build {
     
     
     pub fn out_dir<P: AsRef<Path>>(&mut self, out_dir: P) -> &mut Build {
-        self.out_dir = Some(out_dir.as_ref().into());
+        self.out_dir = Some(out_dir.as_ref().to_owned());
         self
     }
 
@@ -1072,7 +903,7 @@ impl Build {
     
     
     pub fn compiler<P: AsRef<Path>>(&mut self, compiler: P) -> &mut Build {
-        self.compiler = Some(compiler.as_ref().into());
+        self.compiler = Some(compiler.as_ref().to_owned());
         self
     }
 
@@ -1082,20 +913,9 @@ impl Build {
     
     
     pub fn archiver<P: AsRef<Path>>(&mut self, archiver: P) -> &mut Build {
-        self.archiver = Some(archiver.as_ref().into());
+        self.archiver = Some(archiver.as_ref().to_owned());
         self
     }
-
-    
-    
-    
-    
-    
-    pub fn ranlib<P: AsRef<Path>>(&mut self, ranlib: P) -> &mut Build {
-        self.ranlib = Some(ranlib.as_ref().into());
-        self
-    }
-
     
     
     
@@ -1108,27 +928,7 @@ impl Build {
     
     
     pub fn cargo_metadata(&mut self, cargo_metadata: bool) -> &mut Build {
-        self.cargo_output.metadata = cargo_metadata;
-        self
-    }
-
-    
-    
-    
-    
-    
-    pub fn cargo_warnings(&mut self, cargo_warnings: bool) -> &mut Build {
-        self.cargo_output.warnings = cargo_warnings;
-        self
-    }
-
-    
-    
-    
-    
-    
-    pub fn cargo_debug(&mut self, cargo_debug: bool) -> &mut Build {
-        self.cargo_output.debug = cargo_debug;
+        self.cargo_metadata = cargo_metadata;
         self
     }
 
@@ -1138,7 +938,7 @@ impl Build {
     
     
     pub fn link_lib_modifier(&mut self, link_lib_modifier: &str) -> &mut Build {
-        self.link_lib_modifiers.push(link_lib_modifier.into());
+        self.link_lib_modifiers.push(link_lib_modifier.to_string());
         self
     }
 
@@ -1191,7 +991,8 @@ impl Build {
         A: AsRef<OsStr>,
         B: AsRef<OsStr>,
     {
-        self.env.push((a.as_ref().into(), b.as_ref().into()));
+        self.env
+            .push((a.as_ref().to_owned(), b.as_ref().to_owned()));
         self
     }
 
@@ -1215,14 +1016,52 @@ impl Build {
         } else {
             let mut gnu = String::with_capacity(5 + output.len());
             gnu.push_str("lib");
-            gnu.push_str(output);
+            gnu.push_str(&output);
             gnu.push_str(".a");
             (output, gnu)
         };
         let dst = self.get_out_dir()?;
 
-        let objects = objects_from_files(&self.files, &dst)?;
+        let mut objects = Vec::new();
+        for file in self.files.iter() {
+            let obj = if file.has_root() {
+                
+                
+                let basename = file
+                    .file_name()
+                    .ok_or_else(|| Error::new(ErrorKind::InvalidArgument, "file_name() failure"))?
+                    .to_string_lossy();
+                let dirname = file
+                    .parent()
+                    .ok_or_else(|| Error::new(ErrorKind::InvalidArgument, "parent() failure"))?
+                    .to_string_lossy();
+                let mut hasher = hash_map::DefaultHasher::new();
+                hasher.write(dirname.to_string().as_bytes());
+                dst.join(format!("{:016x}-{}", hasher.finish(), basename))
+                    .with_extension("o")
+            } else {
+                dst.join(file).with_extension("o")
+            };
+            let obj = if !obj.starts_with(&dst) {
+                dst.join(obj.file_name().ok_or_else(|| {
+                    Error::new(ErrorKind::IOError, "Getting object file details failed.")
+                })?)
+            } else {
+                obj
+            };
 
+            match obj.parent() {
+                Some(s) => fs::create_dir_all(s)?,
+                None => {
+                    return Err(Error::new(
+                        ErrorKind::IOError,
+                        "Getting object file details failed.",
+                    ));
+                }
+            };
+
+            objects.push(Object::new(file.to_path_buf(), obj));
+        }
         self.compile_objects(&objects)?;
         self.assemble(lib_name, &dst.join(gnu_lib_name), &objects)?;
 
@@ -1231,8 +1070,8 @@ impl Build {
             let atlmfc_lib = compiler
                 .env()
                 .iter()
-                .find(|&(var, _)| var.as_os_str() == OsStr::new("LIB"))
-                .and_then(|(_, lib_paths)| {
+                .find(|&&(ref var, _)| var.as_os_str() == OsStr::new("LIB"))
+                .and_then(|&(_, ref lib_paths)| {
                     env::split_paths(lib_paths).find(|path| {
                         let sub = Path::new("atlmfc/lib");
                         path.ends_with(sub) || path.parent().map_or(false, |p| p.ends_with(sub))
@@ -1240,7 +1079,7 @@ impl Build {
                 });
 
             if let Some(atlmfc_lib) = atlmfc_lib {
-                self.cargo_output.print_metadata(&format_args!(
+                self.print(&format!(
                     "cargo:rustc-link-search=native={}",
                     atlmfc_lib.display()
                 ));
@@ -1248,34 +1087,26 @@ impl Build {
         }
 
         if self.link_lib_modifiers.is_empty() {
-            self.cargo_output
-                .print_metadata(&format_args!("cargo:rustc-link-lib=static={}", lib_name));
+            self.print(&format!("cargo:rustc-link-lib=static={}", lib_name));
         } else {
             let m = self.link_lib_modifiers.join(",");
-            self.cargo_output.print_metadata(&format_args!(
-                "cargo:rustc-link-lib=static:{}={}",
-                m, lib_name
-            ));
+            self.print(&format!("cargo:rustc-link-lib=static:{}={}", m, lib_name));
         }
-        self.cargo_output.print_metadata(&format_args!(
-            "cargo:rustc-link-search=native={}",
-            dst.display()
-        ));
+        self.print(&format!("cargo:rustc-link-search=native={}", dst.display()));
 
         
         if self.cpp {
             if let Some(stdlib) = self.get_cpp_link_stdlib()? {
-                self.cargo_output
-                    .print_metadata(&format_args!("cargo:rustc-link-lib={}", stdlib));
+                self.print(&format!("cargo:rustc-link-lib={}", stdlib));
             }
         }
 
         let cudart = match &self.cudart {
-            Some(opt) => &*opt, 
+            Some(opt) => opt.as_str(), 
             None => "none",
         };
         if cudart != "none" {
-            if let Some(nvcc) = which(&self.get_compiler().path, None) {
+            if let Some(nvcc) = which(&self.get_compiler().path) {
                 
                 
                 
@@ -1304,10 +1135,10 @@ impl Build {
                     }
                 }
                 if libtst && libdir.is_dir() {
-                    self.cargo_output.print_metadata(&format_args!(
+                    println!(
                         "cargo:rustc-link-search=native={}",
                         libdir.to_str().unwrap()
-                    ));
+                    );
                 }
 
                 
@@ -1316,8 +1147,7 @@ impl Build {
                     "static" => "cudart_static",
                     bad => panic!("unsupported cudart option: {}", bad),
                 };
-                self.cargo_output
-                    .print_metadata(&format_args!("cargo:rustc-link-lib={}", lib));
+                println!("cargo:rustc-link-lib={}", lib);
             }
         }
 
@@ -1367,215 +1197,178 @@ impl Build {
         }
     }
 
-    
-    
-    
-    
-    
-    pub fn compile_intermediates(&self) -> Vec<PathBuf> {
-        match self.try_compile_intermediates() {
-            Ok(v) => v,
-            Err(e) => fail(&e.message),
-        }
-    }
-
-    
-    
-    
-    
-    pub fn try_compile_intermediates(&self) -> Result<Vec<PathBuf>, Error> {
-        let dst = self.get_out_dir()?;
-        let objects = objects_from_files(&self.files, &dst)?;
-
-        self.compile_objects(&objects)?;
-
-        Ok(objects.into_iter().map(|v| v.dst).collect())
-    }
-
     #[cfg(feature = "parallel")]
-    fn compile_objects(&self, objs: &[Object]) -> Result<(), Error> {
-        use std::cell::Cell;
+    fn compile_objects<'me>(&'me self, objs: &[Object]) -> Result<(), Error> {
+        use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
+        use std::sync::Once;
 
-        use parallel::async_executor::{block_on, YieldOnce};
+        
+        
+        
+        
+        
+        let server = jobserver();
+        let reacquire = server.release_raw().is_ok();
 
-        if objs.len() <= 1 {
-            for obj in objs {
-                let (mut cmd, name) = self.create_compile_object_cmd(obj)?;
-                run(&mut cmd, &name, &self.cargo_output)?;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let error = AtomicBool::new(false);
+        let mut threads = Vec::new();
+        for obj in objs {
+            if error.load(SeqCst) {
+                break;
             }
-
-            return Ok(());
-        }
-
-        
-        let tokens = parallel::job_token::ActiveJobTokenServer::new()?;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        let pendings = Cell::new(Vec::<(
-            Command,
-            String,
-            KillOnDrop,
-            parallel::job_token::JobToken,
-        )>::new());
-        let is_disconnected = Cell::new(false);
-        let has_made_progress = Cell::new(false);
-
-        let wait_future = async {
-            let mut error = None;
-            
-            let mut stdout = io::BufWriter::with_capacity(128, io::stdout());
-
-            loop {
-                
-                
-                
-                
-                
-                
-
-                let mut pendings_is_empty = false;
-
-                cell_update(&pendings, |mut pendings| {
-                    
-                    parallel::retain_unordered_mut(
-                        &mut pendings,
-                        |(cmd, program, child, _token)| {
-                            match try_wait_on_child(
-                                cmd,
-                                program,
-                                &mut child.0,
-                                &mut stdout,
-                                &mut child.1,
-                            ) {
-                                Ok(Some(())) => {
-                                    
-                                    has_made_progress.set(true);
-                                    false
-                                }
-                                Ok(None) => true, 
-                                Err(err) => {
-                                    
-                                    
-                                    
-                                    has_made_progress.set(true);
-
-                                    if self.cargo_output.warnings {
-                                        let _ = writeln!(stdout, "cargo:warning={}", err);
-                                    }
-                                    error = Some(err);
-
-                                    false
-                                }
-                            }
-                        },
-                    );
-                    pendings_is_empty = pendings.is_empty();
-                    pendings
-                });
-
-                if pendings_is_empty && is_disconnected.get() {
-                    break if let Some(err) = error {
-                        Err(err)
-                    } else {
-                        Ok(())
-                    };
+            let token = server.acquire()?;
+            let state = State {
+                build: self,
+                obj,
+                error: &error,
+            };
+            let state = unsafe { std::mem::transmute::<State, State<'static>>(state) };
+            let thread = thread::spawn(|| {
+                let state: State<'me> = state; 
+                let result = state.build.compile_object(state.obj);
+                if result.is_err() {
+                    state.error.store(true, SeqCst);
                 }
+                drop(token); 
+                return result;
+            });
+            threads.push(JoinOnDrop(Some(thread)));
+        }
 
-                YieldOnce::default().await;
-            }
-        };
-        let spawn_future = async {
-            for obj in objs {
-                let (mut cmd, program) = self.create_compile_object_cmd(obj)?;
-                let token = loop {
-                    if let Some(token) = tokens.try_acquire()? {
-                        break token;
-                    } else {
-                        YieldOnce::default().await
-                    }
-                };
-                let mut child = spawn(&mut cmd, &program, &self.cargo_output)?;
-                let mut stderr_forwarder = StderrForwarder::new(&mut child);
-                stderr_forwarder.set_non_blocking()?;
-
-                cell_update(&pendings, |mut pendings| {
-                    pendings.push((cmd, program, KillOnDrop(child, stderr_forwarder), token));
-                    pendings
-                });
-
-                has_made_progress.set(true);
-            }
-            is_disconnected.set(true);
-
-            Ok::<_, Error>(())
-        };
-
-        return block_on(wait_future, spawn_future, &has_made_progress);
-
-        struct KillOnDrop(Child, StderrForwarder);
-
-        impl Drop for KillOnDrop {
-            fn drop(&mut self) {
-                let child = &mut self.0;
-
-                child.kill().ok();
+        for mut thread in threads {
+            if let Some(thread) = thread.0.take() {
+                thread.join().expect("thread should not panic")?;
             }
         }
 
-        fn cell_update<T, F>(cell: &Cell<T>, f: F)
-        where
-            T: Default,
-            F: FnOnce(T) -> T,
-        {
-            let old = cell.take();
-            let new = f(old);
-            cell.set(new);
+        
+        
+        if reacquire {
+            server.acquire_raw()?;
+        }
+
+        return Ok(());
+
+        
+        
+        
+        
+        struct State<'a> {
+            build: &'a Build,
+            obj: &'a Object,
+            error: &'a AtomicBool,
+        }
+
+        
+        
+        fn jobserver() -> &'static jobserver::Client {
+            static INIT: Once = Once::new();
+            static mut JOBSERVER: Option<jobserver::Client> = None;
+
+            fn _assert_sync<T: Sync>() {}
+            _assert_sync::<jobserver::Client>();
+
+            unsafe {
+                INIT.call_once(|| {
+                    let server = default_jobserver();
+                    JOBSERVER = Some(server);
+                });
+                JOBSERVER.as_ref().unwrap()
+            }
+        }
+
+        unsafe fn default_jobserver() -> jobserver::Client {
+            
+            
+            if let Some(client) = jobserver::Client::from_env() {
+                return client;
+            }
+
+            
+            
+            
+            
+            
+            
+            let mut parallelism = 4;
+            if let Ok(amt) = env::var("NUM_JOBS") {
+                if let Ok(amt) = amt.parse() {
+                    parallelism = amt;
+                }
+            }
+
+            
+            
+            let client = jobserver::Client::new(parallelism).expect("failed to create jobserver");
+            client.acquire_raw().expect("failed to acquire initial");
+            return client;
+        }
+
+        struct JoinOnDrop(Option<thread::JoinHandle<Result<(), Error>>>);
+
+        impl Drop for JoinOnDrop {
+            fn drop(&mut self) {
+                if let Some(thread) = self.0.take() {
+                    drop(thread.join());
+                }
+            }
         }
     }
 
     #[cfg(not(feature = "parallel"))]
     fn compile_objects(&self, objs: &[Object]) -> Result<(), Error> {
         for obj in objs {
-            let (mut cmd, name) = self.create_compile_object_cmd(obj)?;
-            run(&mut cmd, &name, &self.cargo_output)?;
+            self.compile_object(obj)?;
         }
-
         Ok(())
     }
 
-    fn create_compile_object_cmd(&self, obj: &Object) -> Result<(Command, String), Error> {
+    fn compile_object(&self, obj: &Object) -> Result<(), Error> {
         let asm_ext = AsmFileExt::from_path(&obj.src);
         let is_asm = asm_ext.is_some();
         let target = self.get_target()?;
         let msvc = target.contains("msvc");
         let compiler = self.try_get_compiler()?;
         let clang = compiler.family == ToolFamily::Clang;
-        let gnu = compiler.family == ToolFamily::Gnu;
 
-        let is_assembler_msvc = msvc && asm_ext == Some(AsmFileExt::DotAsm);
-        let (mut cmd, name) = if is_assembler_msvc {
+        let (mut cmd, name) = if msvc && asm_ext == Some(AsmFileExt::DotAsm) {
             self.msvc_macro_assembler()?
         } else {
             let mut cmd = compiler.to_command();
-            for (a, b) in self.env.iter() {
+            for &(ref a, ref b) in self.env.iter() {
                 cmd.env(a, b);
             }
             (
@@ -1589,20 +1382,18 @@ impl Build {
             )
         };
         let is_arm = target.contains("aarch64") || target.contains("arm");
-        command_add_output_file(
-            &mut cmd, &obj.dst, self.cuda, msvc, clang, gnu, is_asm, is_arm,
-        );
+        command_add_output_file(&mut cmd, &obj.dst, self.cuda, msvc, clang, is_asm, is_arm);
         
-        if !is_assembler_msvc || !is_arm {
+        if !msvc || !is_asm || !is_arm {
             cmd.arg("-c");
         }
         if self.cuda && self.cuda_file_count() > 1 {
             cmd.arg("--device-c");
         }
         if is_asm {
-            cmd.args(self.asm_flags.iter().map(std::ops::Deref::deref));
+            cmd.args(&self.asm_flags);
         }
-        if compiler.family == (ToolFamily::Msvc { clang_cl: true }) && !is_assembler_msvc {
+        if compiler.family == (ToolFamily::Msvc { clang_cl: true }) && !is_asm {
             
             
             
@@ -1614,14 +1405,15 @@ impl Build {
             self.fix_env_for_apple_os(&mut cmd)?;
         }
 
-        Ok((cmd, name))
+        run(&mut cmd, &name)?;
+        Ok(())
     }
 
     
     pub fn try_expand(&self) -> Result<Vec<u8>, Error> {
         let compiler = self.try_get_compiler()?;
         let mut cmd = compiler.to_command();
-        for (a, b) in self.env.iter() {
+        for &(ref a, ref b) in self.env.iter() {
             cmd.env(a, b);
         }
         cmd.arg("-E");
@@ -1631,22 +1423,9 @@ impl Build {
             "Expand may only be called for a single file"
         );
 
-        let is_asm = self
-            .files
-            .iter()
-            .map(std::ops::Deref::deref)
-            .find_map(AsmFileExt::from_path)
-            .is_some();
-
-        if compiler.family == (ToolFamily::Msvc { clang_cl: true }) && !is_asm {
-            
-            
-            
-            
-            cmd.arg("--");
+        for file in self.files.iter() {
+            cmd.arg(file);
         }
-
-        cmd.args(self.files.iter().map(std::ops::Deref::deref));
 
         let name = compiler
             .path
@@ -1655,7 +1434,7 @@ impl Build {
             .to_string_lossy()
             .into_owned();
 
-        Ok(run_output(&mut cmd, &name, &self.cargo_output)?)
+        Ok(run_output(&mut cmd, &name)?)
     }
 
     
@@ -1705,12 +1484,12 @@ impl Build {
     
     
     
-    
     pub fn try_get_compiler(&self) -> Result<Tool, Error> {
         let opt_level = self.get_opt_level()?;
         let target = self.get_target()?;
 
         let mut cmd = self.get_base_compiler()?;
+        let envflags = self.envflags(if self.cpp { "CXXFLAGS" } else { "CFLAGS" });
 
         
         let no_defaults = self.no_default_flags || self.getenv("CRATE_CC_NO_DEFAULTS").is_some();
@@ -1721,23 +1500,13 @@ impl Build {
             println!("Info: default compiler flags are disabled");
         }
 
-        if let Some(ref std) = self.std {
-            let separator = match cmd.family {
-                ToolFamily::Msvc { .. } => ':',
-                ToolFamily::Gnu | ToolFamily::Clang => '=',
-            };
-            cmd.push_cc_arg(format!("-std{}{}", separator, std).into());
-        }
-
-        if let Ok(flags) = self.envflags(if self.cpp { "CXXFLAGS" } else { "CFLAGS" }) {
-            for arg in flags {
-                cmd.push_cc_arg(arg.into());
-            }
+        for arg in envflags {
+            cmd.push_cc_arg(arg.into());
         }
 
         for directory in self.include_directories.iter() {
             cmd.args.push("-I".into());
-            cmd.args.push(directory.as_os_str().into());
+            cmd.args.push(directory.into());
         }
 
         
@@ -1745,28 +1514,34 @@ impl Build {
         
         
 
-        if self.warnings.unwrap_or(!self.has_flags()) {
+        if self
+            .warnings
+            .unwrap_or(if self.has_flags() { false } else { true })
+        {
             let wflags = cmd.family.warnings_flags().into();
             cmd.push_cc_arg(wflags);
         }
 
-        if self.extra_warnings.unwrap_or(!self.has_flags()) {
+        if self
+            .extra_warnings
+            .unwrap_or(if self.has_flags() { false } else { true })
+        {
             if let Some(wflags) = cmd.family.extra_warnings_flags() {
                 cmd.push_cc_arg(wflags.into());
             }
         }
 
         for flag in self.flags.iter() {
-            cmd.args.push((**flag).into());
+            cmd.args.push(flag.into());
         }
 
         for flag in self.flags_supported.iter() {
             if self.is_flag_supported(flag).unwrap_or(false) {
-                cmd.push_cc_arg((**flag).into());
+                cmd.push_cc_arg(flag.into());
             }
         }
 
-        for (key, value) in self.definitions.iter() {
+        for &(ref key, ref value) in self.definitions.iter() {
             if let Some(ref value) = *value {
                 cmd.args.push(format!("-D{}={}", key, value).into());
             } else {
@@ -1798,8 +1573,9 @@ impl Build {
                     Some(true) => "-MT",
                     Some(false) => "-MD",
                     None => {
-                        let features = self.getenv("CARGO_CFG_TARGET_FEATURE");
-                        let features = features.as_deref().unwrap_or_default();
+                        let features = self
+                            .getenv("CARGO_CFG_TARGET_FEATURE")
+                            .unwrap_or(String::new());
                         if features.contains("crt-static") {
                             "-MT"
                         } else {
@@ -1826,13 +1602,6 @@ impl Build {
                     cmd.push_opt_unless_duplicate(format!("-O{}", opt_level).into());
                 }
 
-                if cmd.family == ToolFamily::Clang && target.contains("windows") {
-                    
-                    
-                    
-                    cmd.push_cc_arg(format!("--target={}", target).into());
-                }
-
                 if cmd.family == ToolFamily::Clang && target.contains("android") {
                     
                     
@@ -1842,10 +1611,7 @@ impl Build {
                     cmd.push_opt_unless_duplicate("-DANDROID".into());
                 }
 
-                if !target.contains("apple-ios")
-                    && !target.contains("apple-watchos")
-                    && !target.contains("apple-tvos")
-                {
+                if !target.contains("apple-ios") && !target.contains("apple-watchos") {
                     cmd.push_cc_arg("-ffunction-sections".into());
                     cmd.push_cc_arg("-fdata-sections".into());
                 }
@@ -1879,20 +1645,12 @@ impl Build {
             family.add_force_frame_pointer(cmd);
         }
 
-        if !cmd.is_like_msvc() {
-            if target.contains("i686") || target.contains("i586") {
-                cmd.args.push("-m32".into());
-            } else if target == "x86_64-unknown-linux-gnux32" {
-                cmd.args.push("-mx32".into());
-            } else if target.contains("x86_64") || target.contains("powerpc64") {
-                cmd.args.push("-m64".into());
-            }
-        }
-
         
         match cmd.family {
             ToolFamily::Clang => {
-                if !(target.contains("android") && cmd.has_internal_target_arg) {
+                if !(target.contains("android")
+                    && android_clang_compiler_uses_target_arg_internally(&cmd.path))
+                {
                     if target.contains("darwin") {
                         if let Some(arch) =
                             map_darwin_target_from_rust_to_compiler_architecture(target)
@@ -1911,10 +1669,8 @@ impl Build {
                         if let Some(arch) =
                             map_darwin_target_from_rust_to_compiler_architecture(target)
                         {
-                            let sdk_details =
-                                apple_os_sdk_parts(AppleOs::Ios, &AppleArchSpec::Simulator(""));
-                            let deployment_target =
-                                self.apple_deployment_version(AppleOs::Ios, None, &sdk_details.sdk);
+                            let deployment_target = env::var("IPHONEOS_DEPLOYMENT_TARGET")
+                                .unwrap_or_else(|_| "7.0".into());
                             cmd.args.push(
                                 format!(
                                     "--target={}-apple-ios{}-simulator",
@@ -1927,53 +1683,14 @@ impl Build {
                         if let Some(arch) =
                             map_darwin_target_from_rust_to_compiler_architecture(target)
                         {
-                            let sdk_details =
-                                apple_os_sdk_parts(AppleOs::WatchOs, &AppleArchSpec::Simulator(""));
-                            let deployment_target = self.apple_deployment_version(
-                                AppleOs::WatchOs,
-                                None,
-                                &sdk_details.sdk,
-                            );
+                            let deployment_target = env::var("WATCHOS_DEPLOYMENT_TARGET")
+                                .unwrap_or_else(|_| "5.0".into());
                             cmd.args.push(
                                 format!(
                                     "--target={}-apple-watchos{}-simulator",
                                     arch, deployment_target
                                 )
                                 .into(),
-                            );
-                        }
-                    } else if target.contains("tvos-sim") || target.contains("x86_64-apple-tvos") {
-                        if let Some(arch) =
-                            map_darwin_target_from_rust_to_compiler_architecture(target)
-                        {
-                            let sdk_details =
-                                apple_os_sdk_parts(AppleOs::TvOs, &AppleArchSpec::Simulator(""));
-                            let deployment_target = self.apple_deployment_version(
-                                AppleOs::TvOs,
-                                None,
-                                &sdk_details.sdk,
-                            );
-                            cmd.args.push(
-                                format!(
-                                    "--target={}-apple-tvos{}-simulator",
-                                    arch, deployment_target
-                                )
-                                .into(),
-                            );
-                        }
-                    } else if target.contains("aarch64-apple-tvos") {
-                        if let Some(arch) =
-                            map_darwin_target_from_rust_to_compiler_architecture(target)
-                        {
-                            let sdk_details =
-                                apple_os_sdk_parts(AppleOs::TvOs, &AppleArchSpec::Device(""));
-                            let deployment_target = self.apple_deployment_version(
-                                AppleOs::TvOs,
-                                None,
-                                &sdk_details.sdk,
-                            );
-                            cmd.args.push(
-                                format!("--target={}-apple-tvos{}", arch, deployment_target).into(),
                             );
                         }
                     } else if target.starts_with("riscv64gc-") {
@@ -1992,30 +1709,6 @@ impl Build {
                         } else if target.contains("aarch64") {
                             cmd.args.push("--target=aarch64-unknown-windows-gnu".into())
                         }
-                    } else if target.ends_with("-freebsd") {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        if self.cpp && self.cpp_set_stdlib.is_none() {
-                            cmd.push_cc_arg("-stdlib=libc++".into());
-                        }
-
-                        cmd.push_cc_arg(format!("--target={}", target).into());
                     } else {
                         cmd.push_cc_arg(format!("--target={}", target).into());
                     }
@@ -2039,8 +1732,6 @@ impl Build {
                 } else {
                     if target.contains("i586") {
                         cmd.push_cc_arg("-arch:IA32".into());
-                    } else if target.contains("arm64ec") {
-                        cmd.push_cc_arg("-arm64EC".into());
                     }
                 }
 
@@ -2059,6 +1750,14 @@ impl Build {
                 }
             }
             ToolFamily::Gnu => {
+                if target.contains("i686") || target.contains("i586") {
+                    cmd.args.push("-m32".into());
+                } else if target == "x86_64-unknown-linux-gnux32" {
+                    cmd.args.push("-mx32".into());
+                } else if target.contains("x86_64") || target.contains("powerpc64") {
+                    cmd.args.push("-m64".into());
+                }
+
                 if target.contains("darwin") {
                     if let Some(arch) = map_darwin_target_from_rust_to_compiler_architecture(target)
                     {
@@ -2072,8 +1771,9 @@ impl Build {
                 }
 
                 if self.static_flag.is_none() {
-                    let features = self.getenv("CARGO_CFG_TARGET_FEATURE");
-                    let features = features.as_deref().unwrap_or_default();
+                    let features = self
+                        .getenv("CARGO_CFG_TARGET_FEATURE")
+                        .unwrap_or(String::new());
                     if features.contains("crt-static") {
                         cmd.args.push("-static".into());
                     }
@@ -2227,36 +1927,33 @@ impl Build {
                     let mut parts = target.split('-');
                     if let Some(arch) = parts.next() {
                         let arch = &arch[5..];
-                        if arch.starts_with("64") {
-                            if target.contains("linux")
-                                | target.contains("freebsd")
-                                | target.contains("netbsd")
-                                | target.contains("linux")
-                            {
-                                cmd.args.push(("-march=rv64gc").into());
-                                cmd.args.push("-mabi=lp64d".into());
-                            } else {
-                                cmd.args.push(("-march=rv".to_owned() + arch).into());
-                                cmd.args.push("-mabi=lp64".into());
-                            }
-                        } else if arch.starts_with("32") {
-                            if target.contains("linux") {
-                                cmd.args.push(("-march=rv32gc").into());
-                                cmd.args.push("-mabi=ilp32d".into());
-                            } else {
-                                cmd.args.push(("-march=rv".to_owned() + arch).into());
-                                cmd.args.push("-mabi=ilp32".into());
-                            }
+                        if target.contains("linux") && arch.starts_with("64") {
+                            cmd.args.push(("-march=rv64gc").into());
+                            cmd.args.push("-mabi=lp64d".into());
+                        } else if target.contains("freebsd") && arch.starts_with("64") {
+                            cmd.args.push(("-march=rv64gc").into());
+                            cmd.args.push("-mabi=lp64d".into());
+                        } else if target.contains("openbsd") && arch.starts_with("64") {
+                            cmd.args.push(("-march=rv64gc").into());
+                            cmd.args.push("-mabi=lp64d".into());
+                        } else if target.contains("linux") && arch.starts_with("32") {
+                            cmd.args.push(("-march=rv32gc").into());
+                            cmd.args.push("-mabi=ilp32d".into());
+                        } else if arch.starts_with("64") {
+                            cmd.args.push(("-march=rv".to_owned() + arch).into());
+                            cmd.args.push("-mabi=lp64".into());
                         } else {
-                            cmd.args.push("-mcmodel=medany".into());
+                            cmd.args.push(("-march=rv".to_owned() + arch).into());
+                            cmd.args.push("-mabi=ilp32".into());
                         }
+                        cmd.args.push("-mcmodel=medany".into());
                     }
                 }
             }
         }
 
-        if target.contains("-apple-") {
-            self.apple_flags(cmd)?;
+        if target.contains("apple-ios") || target.contains("apple-watchos") {
+            self.ios_watchos_flags(cmd)?;
         }
 
         if self.static_flag.unwrap_or(false) {
@@ -2273,7 +1970,11 @@ impl Build {
                     cmd.push_cc_arg(format!("-stdlib=lib{}", stdlib).into());
                 }
                 _ => {
-                    self.cargo_output.print_warning(&format_args!("cpp_set_stdlib is specified, but the {:?} compiler does not support this option, ignored", cmd.family));
+                    println!(
+                        "cargo:warning=cpp_set_stdlib is specified, but the {:?} compiler \
+                         does not support this option, ignored",
+                        cmd.family
+                    );
                 }
             }
         }
@@ -2283,7 +1984,7 @@ impl Build {
 
     fn has_flags(&self) -> bool {
         let flags_env_var_name = if self.cpp { "CXXFLAGS" } else { "CFLAGS" };
-        let flags_env_var_value = self.getenv_with_target_prefixes(flags_env_var_name);
+        let flags_env_var_value = self.get_var(flags_env_var_name);
         if let Ok(_) = flags_env_var_value {
             true
         } else {
@@ -2305,33 +2006,20 @@ impl Build {
         let mut cmd = windows_registry::find(&target, tool).unwrap_or_else(|| self.cmd(tool));
         cmd.arg("-nologo"); 
         for directory in self.include_directories.iter() {
-            cmd.arg("-I").arg(&**directory);
+            cmd.arg("-I").arg(directory);
         }
         if target.contains("aarch64") || target.contains("arm") {
             if self.get_debug() {
                 cmd.arg("-g");
             }
 
-            for (key, value) in self.definitions.iter() {
-                cmd.arg("-PreDefine");
-                if let Some(ref value) = *value {
-                    if let Ok(i) = value.parse::<i32>() {
-                        cmd.arg(&format!("{} SETA {}", key, i));
-                    } else if value.starts_with('"') && value.ends_with('"') {
-                        cmd.arg(&format!("{} SETS {}", key, value));
-                    } else {
-                        cmd.arg(&format!("{} SETS \"{}\"", key, value));
-                    }
-                } else {
-                    cmd.arg(&format!("{} SETL {}", key, "{TRUE}"));
-                }
-            }
+            println!("cargo:warning=The MSVC ARM assemblers do not support -D flags");
         } else {
             if self.get_debug() {
                 cmd.arg("-Zi");
             }
 
-            for (key, value) in self.definitions.iter() {
+            for &(ref key, ref value) in self.definitions.iter() {
                 if let Some(ref value) = *value {
                     cmd.arg(&format!("-D{}={}", key, value));
                 } else {
@@ -2343,6 +2031,9 @@ impl Build {
         if target.contains("i686") || target.contains("i586") {
             cmd.arg("-safeseh");
         }
+        for flag in self.flags.iter() {
+            cmd.arg(flag);
+        }
 
         Ok((cmd, tool.to_string()))
     }
@@ -2350,15 +2041,15 @@ impl Build {
     fn assemble(&self, lib_name: &str, dst: &Path, objs: &[Object]) -> Result<(), Error> {
         
         
-        let _ = fs::remove_file(dst);
+        let _ = fs::remove_file(&dst);
 
         
         
         
         let objs: Vec<_> = objs
             .iter()
-            .map(|o| o.dst.as_path())
-            .chain(self.objects.iter().map(std::ops::Deref::deref))
+            .map(|o| o.dst.clone())
+            .chain(self.objects.clone())
             .collect();
         for chunk in objs.chunks(100) {
             self.assemble_progressive(dst, chunk)?;
@@ -2371,9 +2062,12 @@ impl Build {
             let out_dir = self.get_out_dir()?;
             let dlink = out_dir.join(lib_name.to_owned() + "_dlink.o");
             let mut nvcc = self.get_compiler().to_command();
-            nvcc.arg("--device-link").arg("-o").arg(&dlink).arg(dst);
-            run(&mut nvcc, "nvcc", &self.cargo_output)?;
-            self.assemble_progressive(dst, &[dlink.as_path()])?;
+            nvcc.arg("--device-link")
+                .arg("-o")
+                .arg(dlink.clone())
+                .arg(dst);
+            run(&mut nvcc, "nvcc")?;
+            self.assemble_progressive(dst, &[dlink])?;
         }
 
         let target = self.get_target()?;
@@ -2384,9 +2078,9 @@ impl Build {
 
             let lib_dst = dst.with_file_name(format!("{}.lib", lib_name));
             let _ = fs::remove_file(&lib_dst);
-            match fs::hard_link(dst, &lib_dst).or_else(|_| {
+            match fs::hard_link(&dst, &lib_dst).or_else(|_| {
                 
-                fs::copy(dst, &lib_dst).map(|_| ())
+                fs::copy(&dst, &lib_dst).map(|_| ())
             }) {
                 Ok(_) => (),
                 Err(_) => {
@@ -2400,31 +2094,23 @@ impl Build {
             
             
             
-            let (mut ar, cmd, _any_flags) = self.get_ar()?;
-
-            
-            
-            
-            run(ar.arg("s").arg(dst), &cmd, &self.cargo_output)?;
+            let (mut ar, cmd) = self.get_ar()?;
+            run(ar.arg("s").arg(dst), &cmd)?;
         }
 
         Ok(())
     }
 
-    fn assemble_progressive(&self, dst: &Path, objs: &[&Path]) -> Result<(), Error> {
+    fn assemble_progressive(&self, dst: &Path, objs: &[PathBuf]) -> Result<(), Error> {
         let target = self.get_target()?;
 
         if target.contains("msvc") {
-            let (mut cmd, program, any_flags) = self.get_ar()?;
-            
-            
-            
-            
+            let (mut cmd, program) = self.get_ar()?;
             let mut out = OsString::from("-out:");
             out.push(dst);
-            cmd.arg(out);
-            if !any_flags {
-                cmd.arg("-nologo");
+            cmd.arg(out).arg("-nologo");
+            for flag in self.ar_flags.iter() {
+                cmd.arg(flag);
             }
             
             
@@ -2432,9 +2118,9 @@ impl Build {
                 cmd.arg(dst);
             }
             cmd.args(objs);
-            run(&mut cmd, &program, &self.cargo_output)?;
+            run(&mut cmd, &program)?;
         } else {
-            let (mut ar, cmd, _any_flags) = self.get_ar()?;
+            let (mut ar, cmd) = self.get_ar()?;
 
             
             
@@ -2459,36 +2145,46 @@ impl Build {
             
             
             ar.env("ZERO_AR_DATE", "1");
-
-            
-            
-            
-            run(ar.arg("cq").arg(dst).args(objs), &cmd, &self.cargo_output)?;
+            for flag in self.ar_flags.iter() {
+                ar.arg(flag);
+            }
+            run(ar.arg("cq").arg(dst).args(objs), &cmd)?;
         }
 
         Ok(())
     }
 
-    fn apple_flags(&self, cmd: &mut Tool) -> Result<(), Error> {
+    fn ios_watchos_flags(&self, cmd: &mut Tool) -> Result<(), Error> {
+        enum ArchSpec {
+            Device(&'static str),
+            Simulator(&'static str),
+            Catalyst(&'static str),
+        }
+
+        enum Os {
+            Ios,
+            WatchOs,
+        }
+        impl Display for Os {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                match self {
+                    Os::Ios => f.write_str("iOS"),
+                    Os::WatchOs => f.write_str("WatchOS"),
+                }
+            }
+        }
+
         let target = self.get_target()?;
-        let os = if target.contains("-darwin") {
-            AppleOs::MacOs
-        } else if target.contains("-watchos") {
-            AppleOs::WatchOs
-        } else if target.contains("-tvos") {
-            AppleOs::TvOs
+        let os = if target.contains("-watchos") {
+            Os::WatchOs
         } else {
-            AppleOs::Ios
-        };
-        let is_mac = match os {
-            AppleOs::MacOs => true,
-            _ => false,
+            Os::Ios
         };
 
-        let arch_str = target.split('-').nth(0).ok_or_else(|| {
+        let arch = target.split('-').nth(0).ok_or_else(|| {
             Error::new(
                 ErrorKind::ArchitectureInvalid,
-                format!("Unknown architecture for {:?} target.", os),
+                format!("Unknown architecture for {} target.", os).as_str(),
             )
         })?;
 
@@ -2497,27 +2193,16 @@ impl Build {
             None => false,
         };
 
-        let is_arm_sim = match target.split('-').nth(3) {
+        let is_sim = match target.split('-').nth(3) {
             Some(v) => v == "sim",
             None => false,
         };
 
-        let arch = if is_mac {
-            match arch_str {
-                "i686" => AppleArchSpec::Device("-m32"),
-                "x86_64" | "x86_64h" | "aarch64" => AppleArchSpec::Device("-m64"),
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::ArchitectureInvalid,
-                        "Unknown architecture for macOS target.",
-                    ));
-                }
-            }
-        } else if is_catalyst {
-            match arch_str {
-                "arm64e" => AppleArchSpec::Catalyst("arm64e"),
-                "arm64" | "aarch64" => AppleArchSpec::Catalyst("arm64"),
-                "x86_64" | "x86_64h" => AppleArchSpec::Catalyst("-m64"),
+        let arch = if is_catalyst {
+            match arch {
+                "arm64e" => ArchSpec::Catalyst("arm64e"),
+                "arm64" | "aarch64" => ArchSpec::Catalyst("arm64"),
+                "x86_64" => ArchSpec::Catalyst("-m64"),
                 _ => {
                     return Err(Error::new(
                         ErrorKind::ArchitectureInvalid,
@@ -2525,136 +2210,105 @@ impl Build {
                     ));
                 }
             }
-        } else if is_arm_sim {
-            match arch_str {
-                "arm64" | "aarch64" => AppleArchSpec::Simulator("arm64"),
-                "x86_64" | "x86_64h" => AppleArchSpec::Simulator("-m64"),
+        } else if is_sim {
+            match arch {
+                "arm64" | "aarch64" => ArchSpec::Simulator("-arch arm64"),
+                "x86_64" => ArchSpec::Simulator("-m64"),
                 _ => {
                     return Err(Error::new(
                         ErrorKind::ArchitectureInvalid,
-                        "Unknown architecture for simulator target.",
+                        "Unknown architecture for iOS simulator target.",
                     ));
                 }
             }
         } else {
-            match arch_str {
-                "arm" | "armv7" | "thumbv7" => AppleArchSpec::Device("armv7"),
-                "armv7k" => AppleArchSpec::Device("armv7k"),
-                "armv7s" | "thumbv7s" => AppleArchSpec::Device("armv7s"),
-                "arm64e" => AppleArchSpec::Device("arm64e"),
-                "arm64" | "aarch64" => AppleArchSpec::Device("arm64"),
-                "arm64_32" => AppleArchSpec::Device("arm64_32"),
-                "i386" | "i686" => AppleArchSpec::Simulator("-m32"),
-                "x86_64" | "x86_64h" => AppleArchSpec::Simulator("-m64"),
+            match arch {
+                "arm" | "armv7" | "thumbv7" => ArchSpec::Device("armv7"),
+                "armv7k" => ArchSpec::Device("armv7k"),
+                "armv7s" | "thumbv7s" => ArchSpec::Device("armv7s"),
+                "arm64e" => ArchSpec::Device("arm64e"),
+                "arm64" | "aarch64" => ArchSpec::Device("arm64"),
+                "arm64_32" => ArchSpec::Device("arm64_32"),
+                "i386" | "i686" => ArchSpec::Simulator("-m32"),
+                "x86_64" => ArchSpec::Simulator("-m64"),
                 _ => {
                     return Err(Error::new(
                         ErrorKind::ArchitectureInvalid,
-                        format!("Unknown architecture for {:?} target.", os),
+                        format!("Unknown architecture for {} target.", os).as_str(),
                     ));
                 }
             }
         };
 
-        let sdk_details = apple_os_sdk_parts(os, &arch);
-        let min_version = self.apple_deployment_version(os, Some(arch_str), &sdk_details.sdk);
-
-        match arch {
-            AppleArchSpec::Device(_) if is_mac => {
-                cmd.args
-                    .push(format!("-mmacosx-version-min={}", min_version).into());
-            }
-            AppleArchSpec::Device(arch) => {
-                cmd.args.push("-arch".into());
-                cmd.args.push(arch.into());
-                cmd.args.push(
-                    format!("-m{}os-version-min={}", sdk_details.sdk_prefix, min_version).into(),
-                );
-            }
-            AppleArchSpec::Simulator(arch) => {
-                if arch.starts_with('-') {
-                    
-                    cmd.args.push(arch.into());
-                } else {
-                    cmd.args.push("-arch".into());
-                    cmd.args.push(arch.into());
-                }
-                cmd.args.push(
-                    format!(
-                        "-m{}simulator-version-min={}",
-                        sdk_details.sim_prefix, min_version
-                    )
-                    .into(),
-                );
-            }
-            AppleArchSpec::Catalyst(_) => {}
+        let (sdk_prefix, sim_prefix, min_version) = match os {
+            Os::Ios => (
+                "iphone",
+                "ios-",
+                std::env::var("IPHONEOS_DEPLOYMENT_TARGET").unwrap_or_else(|_| "7.0".into()),
+            ),
+            Os::WatchOs => (
+                "watch",
+                "watch",
+                std::env::var("WATCHOS_DEPLOYMENT_TARGET").unwrap_or_else(|_| "2.0".into()),
+            ),
         };
 
+        let sdk = match arch {
+            ArchSpec::Device(arch) => {
+                cmd.args.push("-arch".into());
+                cmd.args.push(arch.into());
+                cmd.args
+                    .push(format!("-m{}os-version-min={}", sdk_prefix, min_version).into());
+                format!("{}os", sdk_prefix)
+            }
+            ArchSpec::Simulator(arch) => {
+                cmd.args.push(arch.into());
+                cmd.args
+                    .push(format!("-m{}simulator-version-min={}", sim_prefix, min_version).into());
+                format!("{}simulator", sdk_prefix)
+            }
+            ArchSpec::Catalyst(_) => "macosx".to_owned(),
+        };
+
+        self.print(&format!("Detecting {} SDK path for {}", os, sdk));
+        let sdk_path = if let Some(sdkroot) = env::var_os("SDKROOT") {
+            sdkroot
+        } else {
+            self.apple_sdk_root(sdk.as_str())?
+        };
+
+        cmd.args.push("-isysroot".into());
+        cmd.args.push(sdk_path);
+        cmd.args.push("-fembed-bitcode".into());
         
-        if cmd.is_xctoolchain_clang() || !target.ends_with("-darwin") {
-            self.cargo_output.print_metadata(&format_args!(
-                "Detecting {:?} SDK path for {}",
-                os, sdk_details.sdk
-            ));
-            let sdk_path = self.apple_sdk_root(&sdk_details.sdk)?;
 
-            cmd.args.push("-isysroot".into());
-            cmd.args.push(sdk_path);
-        }
 
-        if let AppleArchSpec::Catalyst(_) = arch {
-            
-            
-            
-            let sdk_path = self.apple_sdk_root(&sdk_details.sdk)?;
-            let ios_support = PathBuf::from(sdk_path).join("/System/iOSSupport");
 
-            cmd.args.extend([
-                
-                OsString::from("-isystem"),
-                ios_support.join("/usr/include").into(),
-                
-                OsString::from("-iframework"),
-                ios_support.join("/System/Library/Frameworks").into(),
-                
-                {
-                    let mut s = OsString::from("-L");
-                    s.push(&ios_support.join("/usr/lib"));
-                    s
-                },
-                
-                {
-                    
-                    
-                    
-                    let mut s = OsString::from("-F");
-                    s.push(&ios_support.join("/System/Library/Frameworks"));
-                    s
-                },
-            ]);
-        }
+
+
+        
+
+
+
+
 
         Ok(())
     }
 
     fn cmd<P: AsRef<OsStr>>(&self, prog: P) -> Command {
         let mut cmd = Command::new(prog);
-        for (a, b) in self.env.iter() {
+        for &(ref a, ref b) in self.env.iter() {
             cmd.env(a, b);
         }
         cmd
     }
 
     fn get_base_compiler(&self) -> Result<Tool, Error> {
-        if let Some(c) = &self.compiler {
-            return Ok(Tool::new(
-                (**c).to_owned(),
-                &self.cached_compiler_family,
-                &self.cargo_output,
-            ));
+        if let Some(ref c) = self.compiler {
+            return Ok(Tool::new(c.clone()));
         }
         let host = self.get_host()?;
         let target = self.get_target()?;
-        let target = &*target;
         let (env, msvc, gnu, traditional, clang) = if self.cpp {
             ("CXX", "cl.exe", "g++", "c++", "clang++")
         } else {
@@ -2671,7 +2325,7 @@ impl Build {
             traditional
         };
 
-        let cl_exe = windows_registry::find_tool(target, "cl.exe");
+        let cl_exe = windows_registry::find_tool(&target, "cl.exe");
 
         let tool_opt: Option<Tool> = self
             .env_tool(env)
@@ -2686,12 +2340,7 @@ impl Build {
                 
                 
                 
-                let mut t = Tool::with_clang_driver(
-                    tool,
-                    driver_mode,
-                    &self.cached_compiler_family,
-                    &self.cargo_output,
-                );
+                let mut t = Tool::with_clang_driver(PathBuf::from(tool.trim()), driver_mode);
                 if let Some(cc_wrapper) = wrapper {
                     t.cc_wrapper_path = Some(PathBuf::from(cc_wrapper));
                 }
@@ -2705,20 +2354,12 @@ impl Build {
                     let tool = if self.cpp { "em++" } else { "emcc" };
                     
                     if cfg!(windows) {
-                        let mut t = Tool::new(
-                            PathBuf::from("cmd"),
-                            &self.cached_compiler_family,
-                            &self.cargo_output,
-                        );
+                        let mut t = Tool::new(PathBuf::from("cmd"));
                         t.args.push("/c".into());
                         t.args.push(format!("{}.bat", tool).into());
                         Some(t)
                     } else {
-                        Some(Tool::new(
-                            PathBuf::from(tool),
-                            &self.cached_compiler_family,
-                            &self.cargo_output,
-                        ))
+                        Some(Tool::new(PathBuf::from(tool)))
                     }
                 } else {
                     None
@@ -2736,13 +2377,12 @@ impl Build {
                         let cc = if target.contains("llvm") { clang } else { gnu };
                         format!("{}.exe", cc)
                     }
-                } else if target.contains("apple-ios")
-                    | target.contains("apple-watchos")
-                    | target.contains("apple-tvos")
-                {
+                } else if target.contains("apple-ios") {
+                    clang.to_string()
+                } else if target.contains("apple-watchos") {
                     clang.to_string()
                 } else if target.contains("android") {
-                    autodetect_android_compiler(target, &host, gnu, clang)
+                    autodetect_android_compiler(&target, &host, gnu, clang)
                 } else if target.contains("cloudabi") {
                     format!("{}-{}", target, traditional)
                 } else if target == "wasm32-wasi"
@@ -2760,8 +2400,8 @@ impl Build {
                     format!("arm-kmc-eabi-{}", gnu)
                 } else if target.starts_with("aarch64-kmc-solid_") {
                     format!("aarch64-kmc-elf-{}", gnu)
-                } else if &*self.get_host()? != target {
-                    let prefix = self.prefix_for_target(target);
+                } else if self.get_host()? != target {
+                    let prefix = self.prefix_for_target(&target);
                     match prefix {
                         Some(prefix) => {
                             let cc = if target.contains("llvm") { clang } else { gnu };
@@ -2773,11 +2413,7 @@ impl Build {
                     default.to_string()
                 };
 
-                let mut t = Tool::new(
-                    PathBuf::from(compiler),
-                    &self.cached_compiler_family,
-                    &self.cargo_output,
-                );
+                let mut t = Tool::new(PathBuf::from(compiler));
                 if let Some(cc_wrapper) = Self::rustc_wrapper_fallback() {
                     t.cc_wrapper_path = Some(PathBuf::from(cc_wrapper));
                 }
@@ -2790,17 +2426,11 @@ impl Build {
                 tool.args.is_empty(),
                 "CUDA compilation currently assumes empty pre-existing args"
             );
-            let nvcc = match self.getenv_with_target_prefixes("NVCC") {
-                Err(_) => PathBuf::from("nvcc"),
-                Ok(nvcc) => PathBuf::from(&*nvcc),
+            let nvcc = match self.get_var("NVCC") {
+                Err(_) => "nvcc".into(),
+                Ok(nvcc) => nvcc,
             };
-            let mut nvcc_tool = Tool::with_features(
-                nvcc,
-                None,
-                self.cuda,
-                &self.cached_compiler_family,
-                &self.cargo_output,
-            );
+            let mut nvcc_tool = Tool::with_features(PathBuf::from(nvcc), None, self.cuda);
             nvcc_tool
                 .args
                 .push(format!("-ccbin={}", tool.path.display()).into());
@@ -2825,17 +2455,16 @@ impl Build {
         {
             if let Some(path) = tool.path.file_name() {
                 let file_name = path.to_str().unwrap().to_owned();
-                let (target, clang) = file_name.split_at(file_name.rfind('-').unwrap());
+                let (target, clang) = file_name.split_at(file_name.rfind("-").unwrap());
 
-                tool.has_internal_target_arg = true;
-                tool.path.set_file_name(clang.trim_start_matches('-'));
+                tool.path.set_file_name(clang.trim_start_matches("-"));
                 tool.path.set_extension("exe");
                 tool.args.push(format!("--target={}", target).into());
 
                 
                 
                 if target.contains("i686-linux-android") {
-                    let (_, version) = target.split_at(target.rfind('d').unwrap() + 1);
+                    let (_, version) = target.split_at(target.rfind("d").unwrap() + 1);
                     if let Ok(version) = version.parse::<u32>() {
                         if version > 15 && version < 25 {
                             tool.args.push("-mstackrealign".into());
@@ -2860,18 +2489,41 @@ impl Build {
                 && tool.env.len() == 0
                 && target.contains("msvc")
             {
-                for (k, v) in cl_exe.env.iter() {
+                for &(ref k, ref v) in cl_exe.env.iter() {
                     tool.env.push((k.to_owned(), v.to_owned()));
                 }
             }
         }
 
-        if target.contains("msvc") && tool.family == ToolFamily::Gnu {
-            self.cargo_output
-                .print_warning(&"GNU compiler is not supported for this target");
-        }
-
         Ok(tool)
+    }
+
+    fn get_var(&self, var_base: &str) -> Result<String, Error> {
+        let target = self.get_target()?;
+        let host = self.get_host()?;
+        let kind = if host == target { "HOST" } else { "TARGET" };
+        let target_u = target.replace("-", "_");
+        let res = self
+            .getenv(&format!("{}_{}", var_base, target))
+            .or_else(|| self.getenv(&format!("{}_{}", var_base, target_u)))
+            .or_else(|| self.getenv(&format!("{}_{}", kind, var_base)))
+            .or_else(|| self.getenv(var_base));
+
+        match res {
+            Some(res) => Ok(res),
+            None => Err(Error::new(
+                ErrorKind::EnvVarNotFound,
+                &format!("Could not find environment variable {}.", var_base),
+            )),
+        }
+    }
+
+    fn envflags(&self, name: &str) -> Vec<String> {
+        self.get_var(name)
+            .unwrap_or(String::new())
+            .split_ascii_whitespace()
+            .map(|slice| slice.to_string())
+            .collect()
     }
 
     
@@ -2893,8 +2545,8 @@ impl Build {
     }
 
     
-    fn env_tool(&self, name: &str) -> Option<(PathBuf, Option<String>, Vec<String>)> {
-        let tool = match self.getenv_with_target_prefixes(name) {
+    fn env_tool(&self, name: &str) -> Option<(String, Option<String>, Vec<String>)> {
+        let tool = match self.get_var(name) {
             Ok(tool) => tool,
             Err(_) => return None,
         };
@@ -2902,12 +2554,8 @@ impl Build {
         
         
         
-        if Path::new(&*tool).exists() {
-            return Some((
-                PathBuf::from(&*tool),
-                Self::rustc_wrapper_fallback(),
-                Vec::new(),
-            ));
+        if Path::new(&tool).exists() {
+            return Some((tool, None, Vec::new()));
         }
 
         
@@ -2946,7 +2594,7 @@ impl Build {
         if known_wrappers.contains(&file_stem) {
             if let Some(compiler) = parts.next() {
                 return Some((
-                    compiler.into(),
+                    compiler.to_string(),
                     Some(maybe_wrapper.to_string()),
                     parts.map(|s| s.to_string()).collect(),
                 ));
@@ -2954,7 +2602,7 @@ impl Build {
         }
 
         Some((
-            maybe_wrapper.into(),
+            maybe_wrapper.to_string(),
             Self::rustc_wrapper_fallback(),
             parts.map(|s| s.to_string()).collect(),
         ))
@@ -2966,25 +2614,24 @@ impl Build {
     
     
     fn get_cpp_link_stdlib(&self) -> Result<Option<String>, Error> {
-        match &self.cpp_link_stdlib {
-            Some(s) => Ok(s.as_ref().map(|s| (*s).to_string())),
+        match self.cpp_link_stdlib.clone() {
+            Some(s) => Ok(s),
             None => {
-                if let Ok(stdlib) = self.getenv_with_target_prefixes("CXXSTDLIB") {
+                if let Ok(stdlib) = self.get_var("CXXSTDLIB") {
                     if stdlib.is_empty() {
                         Ok(None)
                     } else {
-                        Ok(Some(stdlib.to_string()))
+                        Ok(Some(stdlib))
                     }
                 } else {
                     let target = self.get_target()?;
                     if target.contains("msvc") {
                         Ok(None)
-                    } else if target.contains("apple")
-                        | target.contains("freebsd")
-                        | target.contains("openbsd")
-                        | target.contains("aix")
-                        | target.contains("linux-ohos")
-                    {
+                    } else if target.contains("apple") {
+                        Ok(Some("c++".to_string()))
+                    } else if target.contains("freebsd") {
+                        Ok(Some("c++".to_string()))
+                    } else if target.contains("openbsd") {
                         Ok(Some("c++".to_string()))
                     } else if target.contains("android") {
                         Ok(Some("c++_shared".to_string()))
@@ -2996,239 +2643,101 @@ impl Build {
         }
     }
 
-    fn get_ar(&self) -> Result<(Command, String, bool), Error> {
-        self.try_get_archiver_and_flags()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_archiver(&self) -> Command {
-        match self.try_get_archiver() {
-            Ok(tool) => tool,
-            Err(e) => fail(&e.message),
+    fn get_ar(&self) -> Result<(Command, String), Error> {
+        if let Some(ref p) = self.archiver {
+            let name = p.file_name().and_then(|s| s.to_str()).unwrap_or("ar");
+            return Ok((self.cmd(p), name.to_string()));
         }
-    }
-
-    
-    
-    
-    
-    pub fn try_get_archiver(&self) -> Result<Command, Error> {
-        Ok(self.try_get_archiver_and_flags()?.0)
-    }
-
-    fn try_get_archiver_and_flags(&self) -> Result<(Command, String, bool), Error> {
-        let (mut cmd, name) = self.get_base_archiver()?;
-        let mut any_flags = false;
-        if let Ok(flags) = self.envflags("ARFLAGS") {
-            any_flags = any_flags | !flags.is_empty();
-            cmd.args(flags);
+        if let Ok(p) = self.get_var("AR") {
+            return Ok((self.cmd(&p), p));
         }
-        for flag in &self.ar_flags {
-            any_flags = true;
-            cmd.arg(&**flag);
-        }
-        Ok((cmd, name, any_flags))
-    }
-
-    fn get_base_archiver(&self) -> Result<(Command, String), Error> {
-        if let Some(ref a) = self.archiver {
-            return Ok((self.cmd(&**a), a.to_string_lossy().into_owned()));
-        }
-
-        self.get_base_archiver_variant("AR", "ar")
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_ranlib(&self) -> Command {
-        match self.try_get_ranlib() {
-            Ok(tool) => tool,
-            Err(e) => fail(&e.message),
-        }
-    }
-
-    
-    
-    
-    
-    pub fn try_get_ranlib(&self) -> Result<Command, Error> {
-        let mut cmd = self.get_base_ranlib()?;
-        if let Ok(flags) = self.envflags("RANLIBFLAGS") {
-            cmd.args(flags);
-        }
-        Ok(cmd)
-    }
-
-    fn get_base_ranlib(&self) -> Result<Command, Error> {
-        if let Some(ref r) = self.ranlib {
-            return Ok(self.cmd(&**r));
-        }
-
-        Ok(self.get_base_archiver_variant("RANLIB", "ranlib")?.0)
-    }
-
-    fn get_base_archiver_variant(&self, env: &str, tool: &str) -> Result<(Command, String), Error> {
         let target = self.get_target()?;
-        let mut name = String::new();
-        let tool_opt: Option<Command> = self
-            .env_tool(env)
-            .map(|(tool, _wrapper, args)| {
-                let mut cmd = self.cmd(tool);
-                cmd.args(args);
-                cmd
-            })
-            .or_else(|| {
-                if target.contains("emscripten") {
-                    
-                    if cfg!(windows) {
-                        let mut cmd = self.cmd("cmd");
-                        name = format!("em{}.bat", tool);
-                        cmd.arg("/c").arg(&name);
-                        Some(cmd)
-                    } else {
-                        name = format!("em{}", tool);
-                        Some(self.cmd(&name))
-                    }
-                } else if target.starts_with("wasm32") {
-                    
-                    
-                    
-                    
-                    
-                    let compiler = self.get_base_compiler().ok()?;
-                    if compiler.family == ToolFamily::Clang {
-                        name = format!("llvm-{}", tool);
-                        search_programs(&mut self.cmd(&compiler.path), &name, &self.cargo_output)
-                            .map(|name| self.cmd(name))
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            });
+        let default_ar = "ar".to_string();
+        let program = if target.contains("android") {
+            format!("{}-ar", target.replace("armv7", "arm"))
+        } else if target.contains("emscripten") {
+            
+            if cfg!(windows) {
+                let mut cmd = self.cmd("cmd");
+                cmd.arg("/c").arg("emar.bat");
+                return Ok((cmd, "emar.bat".to_string()));
+            }
 
-        let default = tool.to_string();
-        let tool = match tool_opt {
-            Some(t) => t,
-            None => {
-                if target.contains("android") {
-                    name = format!("{}-{}", target.replace("armv7", "arm"), tool);
-                    self.cmd(&name)
-                } else if target.contains("msvc") {
-                    
-                    
-                    
-                    
-
-                    let compiler = self.get_base_compiler()?;
-                    let mut lib = String::new();
-                    if compiler.family == (ToolFamily::Msvc { clang_cl: true }) {
-                        
-                        
-                        
-                        
-                        
-                        if let Some(mut cmd) = which(&compiler.path, None) {
-                            cmd.pop();
-                            cmd.push("llvm-lib.exe");
-                            if let Some(llvm_lib) = which(&cmd, None) {
-                                lib = llvm_lib.to_str().unwrap().to_owned();
-                            }
-                        }
+            "emar".to_string()
+        } else if target.contains("msvc") {
+            let compiler = self.get_base_compiler()?;
+            let mut lib = String::new();
+            if compiler.family == (ToolFamily::Msvc { clang_cl: true }) {
+                
+                
+                
+                
+                
+                if let Some(mut cmd) = which(&compiler.path) {
+                    cmd.pop();
+                    cmd.push("llvm-lib.exe");
+                    if let Some(llvm_lib) = which(&cmd) {
+                        lib = llvm_lib.to_str().unwrap().to_owned();
                     }
-
-                    if lib.is_empty() {
-                        name = String::from("lib.exe");
-                        let mut cmd = match windows_registry::find(&target, "lib.exe") {
-                            Some(t) => t,
-                            None => self.cmd("lib.exe"),
-                        };
-                        if target.contains("arm64ec") {
-                            cmd.arg("/machine:arm64ec");
-                        }
-                        cmd
-                    } else {
-                        name = lib;
-                        self.cmd(&name)
-                    }
-                } else if target.contains("illumos") {
-                    
-                    
-                    
-                    
-                    name = format!("g{}", tool);
-                    self.cmd(&name)
-                } else if self.get_host()? != target {
-                    match self.prefix_for_target(&target) {
-                        Some(p) => {
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            let mut chosen = default;
-                            for &infix in &["", "-gcc"] {
-                                let target_p = format!("{}{}-{}", p, infix, tool);
-                                if Command::new(&target_p).output().is_ok() {
-                                    chosen = target_p;
-                                    break;
-                                }
-                            }
-                            name = chosen;
-                            self.cmd(&name)
-                        }
-                        None => {
-                            name = default;
-                            self.cmd(&name)
-                        }
-                    }
-                } else {
-                    name = default;
-                    self.cmd(&name)
                 }
             }
+            if lib.is_empty() {
+                lib = match windows_registry::find(&target, "lib.exe") {
+                    Some(t) => return Ok((t, "lib.exe".to_string())),
+                    None => "lib.exe".to_string(),
+                }
+            }
+            lib
+        } else if target.contains("illumos") {
+            
+            
+            
+            
+            "gar".to_string()
+        } else if self.get_host()? != target {
+            match self.prefix_for_target(&target) {
+                Some(p) => {
+                    
+                    
+                    
+                    
+                    
+                    let mut ar = default_ar;
+                    for &infix in &["", "-gcc"] {
+                        let target_ar = format!("{}{}-ar", p, infix);
+                        if Command::new(&target_ar).output().is_ok() {
+                            ar = target_ar;
+                            break;
+                        }
+                    }
+                    ar
+                }
+                None => default_ar,
+            }
+        } else {
+            default_ar
         };
-
-        Ok((tool, name))
+        Ok((self.cmd(&program), program))
     }
 
     fn prefix_for_target(&self, target: &str) -> Option<String> {
         
-        let linker_prefix = self
-            .getenv("RUSTC_LINKER")
-            .and_then(|var| var.strip_suffix("-gcc").map(str::to_string));
+        let rustc_linker = self.getenv("RUSTC_LINKER").unwrap_or("".to_string());
+        
+        let linker_prefix = if rustc_linker.len() > 4 {
+            let (prefix, suffix) = rustc_linker.split_at(rustc_linker.len() - 4);
+            if suffix == "-gcc" {
+                Some(prefix)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         
         let cc_env = self.getenv("CROSS_COMPILE");
         let cross_compile = cc_env.as_ref().map(|s| s.trim_end_matches('-').to_owned());
-        cross_compile.or(linker_prefix).or(match &target[..] {
+        cross_compile.or(match &target[..] {
             
             "aarch64-pc-windows-gnullvm" => Some("aarch64-w64-mingw32"),
             "aarch64-uwp-windows-gnu" => Some("aarch64-w64-mingw32"),
@@ -3265,7 +2774,6 @@ impl Build {
             ]), 
             "i686-unknown-linux-musl" => Some("musl"),
             "i686-unknown-netbsd" => Some("i486--netbsdelf"),
-            "loongarch64-unknown-linux-gnu" => Some("loongarch64-linux-gnu"),
             "mips-unknown-linux-gnu" => Some("mips-linux-gnu"),
             "mips-unknown-linux-musl" => Some("mips-linux-musl"),
             "mipsel-unknown-linux-gnu" => Some("mipsel-linux-gnu"),
@@ -3286,7 +2794,6 @@ impl Build {
                 "riscv64-unknown-elf",
                 "riscv-none-embed",
             ]),
-            "riscv32imac-esp-espidf" => Some("riscv32-esp-elf"),
             "riscv32imac-unknown-none-elf" => self.find_working_gnu_prefix(&[
                 "riscv32-unknown-elf",
                 "riscv64-unknown-elf",
@@ -3297,7 +2804,6 @@ impl Build {
                 "riscv64-unknown-elf",
                 "riscv-none-embed",
             ]),
-            "riscv32imc-esp-espidf" => Some("riscv32-esp-elf"),
             "riscv32imc-unknown-none-elf" => self.find_working_gnu_prefix(&[
                 "riscv32-unknown-elf",
                 "riscv64-unknown-elf",
@@ -3317,7 +2823,6 @@ impl Build {
             "riscv32gc-unknown-linux-gnu" => Some("riscv32-linux-gnu"),
             "riscv64gc-unknown-linux-musl" => Some("riscv64-linux-musl"),
             "riscv32gc-unknown-linux-musl" => Some("riscv32-linux-musl"),
-            "riscv64gc-unknown-netbsd" => Some("riscv64--netbsd"),
             "s390x-unknown-linux-gnu" => Some("s390x-linux-gnu"),
             "sparc-unknown-linux-gnu" => Some("sparc-linux-gnu"),
             "sparc64-unknown-linux-gnu" => Some("sparc64-linux-gnu"),
@@ -3329,7 +2834,6 @@ impl Build {
             "armebv7r-none-eabihf" => Some("arm-none-eabi"),
             "armv7r-none-eabi" => Some("arm-none-eabi"),
             "armv7r-none-eabihf" => Some("arm-none-eabi"),
-            "armv8r-none-eabihf" => Some("arm-none-eabi"),
             "thumbv6m-none-eabi" => Some("arm-none-eabi"),
             "thumbv7em-none-eabi" => Some("arm-none-eabi"),
             "thumbv7em-none-eabihf" => Some("arm-none-eabi"),
@@ -3346,7 +2850,7 @@ impl Build {
             ]), 
             "x86_64-unknown-linux-musl" => Some("musl"),
             "x86_64-unknown-netbsd" => Some("x86_64--netbsd"),
-            _ => None,
+            _ => linker_prefix,
         }
         .map(|x| x.to_owned()))
     }
@@ -3383,30 +2887,30 @@ impl Build {
             prefixes.first().map(|prefix| *prefix))
     }
 
-    fn get_target(&self) -> Result<Arc<str>, Error> {
-        match &self.target {
-            Some(t) => Ok(t.clone()),
-            None => self.getenv_unwrap("TARGET"),
+    fn get_target(&self) -> Result<String, Error> {
+        match self.target.clone() {
+            Some(t) => Ok(t),
+            None => Ok(self.getenv_unwrap("TARGET")?),
         }
     }
 
-    fn get_host(&self) -> Result<Arc<str>, Error> {
-        match &self.host {
-            Some(h) => Ok(h.clone()),
-            None => self.getenv_unwrap("HOST"),
+    fn get_host(&self) -> Result<String, Error> {
+        match self.host.clone() {
+            Some(h) => Ok(h),
+            None => Ok(self.getenv_unwrap("HOST")?),
         }
     }
 
-    fn get_opt_level(&self) -> Result<Arc<str>, Error> {
-        match &self.opt_level {
-            Some(ol) => Ok(ol.clone()),
-            None => self.getenv_unwrap("OPT_LEVEL"),
+    fn get_opt_level(&self) -> Result<String, Error> {
+        match self.opt_level.as_ref().cloned() {
+            Some(ol) => Ok(ol),
+            None => Ok(self.getenv_unwrap("OPT_LEVEL")?),
         }
     }
 
     fn get_debug(&self) -> bool {
         self.debug.unwrap_or_else(|| match self.getenv("DEBUG") {
-            Some(s) => &*s != "false",
+            Some(s) => s != "false",
             None => false,
         })
     }
@@ -3434,22 +2938,19 @@ impl Build {
         self.force_frame_pointer.unwrap_or_else(|| self.get_debug())
     }
 
-    fn get_out_dir(&self) -> Result<Cow<'_, Path>, Error> {
-        match &self.out_dir {
-            Some(p) => Ok(Cow::Borrowed(&**p)),
-            None => env::var_os("OUT_DIR")
-                .map(PathBuf::from)
-                .map(Cow::Owned)
-                .ok_or_else(|| {
-                    Error::new(
-                        ErrorKind::EnvVarNotFound,
-                        "Environment variable OUT_DIR not defined.",
-                    )
-                }),
+    fn get_out_dir(&self) -> Result<PathBuf, Error> {
+        match self.out_dir.clone() {
+            Some(p) => Ok(p),
+            None => Ok(env::var_os("OUT_DIR").map(PathBuf::from).ok_or_else(|| {
+                Error::new(
+                    ErrorKind::EnvVarNotFound,
+                    "Environment variable OUT_DIR not defined.",
+                )
+            })?),
         }
     }
 
-    fn getenv(&self, v: &str) -> Option<Arc<str>> {
+    fn getenv(&self, v: &str) -> Option<String> {
         
         
         
@@ -3469,52 +2970,28 @@ impl Build {
             return val.clone();
         }
         if self.emit_rerun_if_env_changed && !provided_by_cargo(v) {
-            self.cargo_output
-                .print_metadata(&format_args!("cargo:rerun-if-env-changed={}", v));
+            self.print(&format!("cargo:rerun-if-env-changed={}", v));
         }
-        let r = env::var(v).ok().map(Arc::from);
-        self.cargo_output
-            .print_metadata(&format_args!("{} = {:?}", v, r));
+        let r = env::var(v).ok();
+        self.print(&format!("{} = {:?}", v, r));
         cache.insert(v.to_string(), r.clone());
         r
     }
 
-    fn getenv_unwrap(&self, v: &str) -> Result<Arc<str>, Error> {
+    fn getenv_unwrap(&self, v: &str) -> Result<String, Error> {
         match self.getenv(v) {
             Some(s) => Ok(s),
             None => Err(Error::new(
                 ErrorKind::EnvVarNotFound,
-                format!("Environment variable {} not defined.", v),
+                &format!("Environment variable {} not defined.", v.to_string()),
             )),
         }
     }
 
-    fn getenv_with_target_prefixes(&self, var_base: &str) -> Result<Arc<str>, Error> {
-        let target = self.get_target()?;
-        let host = self.get_host()?;
-        let kind = if host == target { "HOST" } else { "TARGET" };
-        let target_u = target.replace('-', "_");
-        let res = self
-            .getenv(&format!("{}_{}", var_base, target))
-            .or_else(|| self.getenv(&format!("{}_{}", var_base, target_u)))
-            .or_else(|| self.getenv(&format!("{}_{}", kind, var_base)))
-            .or_else(|| self.getenv(var_base));
-
-        match res {
-            Some(res) => Ok(res),
-            None => Err(Error::new(
-                ErrorKind::EnvVarNotFound,
-                format!("Could not find environment variable {}.", var_base),
-            )),
+    fn print(&self, s: &str) {
+        if self.cargo_metadata {
+            println!("{}", s);
         }
-    }
-
-    fn envflags(&self, name: &str) -> Result<Vec<String>, Error> {
-        Ok(self
-            .getenv_with_target_prefixes(name)?
-            .split_ascii_whitespace()
-            .map(|slice| slice.to_string())
-            .collect())
     }
 
     fn fix_env_for_apple_os(&self, cmd: &mut Command) -> Result<(), Error> {
@@ -3524,16 +3001,25 @@ impl Build {
             
             
             
+            
+            
+            
+            
+            if let Ok(sdkroot) = env::var("SDKROOT") {
+                if !sdkroot.contains("MacOSX") {
+                    let macos_sdk = self.apple_sdk_root("macosx")?;
+                    cmd.env("SDKROOT", macos_sdk);
+                }
+            }
+            
+            
+            
             cmd.env_remove("IPHONEOS_DEPLOYMENT_TARGET");
         }
         Ok(())
     }
 
     fn apple_sdk_root(&self, sdk: &str) -> Result<OsString, Error> {
-        if let Some(sdkroot) = env::var_os("SDKROOT") {
-            return Ok(sdkroot);
-        }
-
         let mut cache = self
             .apple_sdk_root_cache
             .lock()
@@ -3548,7 +3034,6 @@ impl Build {
                 .arg("--sdk")
                 .arg(sdk),
             "xcrun",
-            &self.cargo_output,
         )?;
 
         let sdk_path = match String::from_utf8(sdk_path) {
@@ -3565,129 +3050,6 @@ impl Build {
         Ok(ret)
     }
 
-    fn apple_deployment_version(&self, os: AppleOs, arch_str: Option<&str>, sdk: &str) -> String {
-        let default_deployment_from_sdk = || {
-            let mut cache = self
-                .apple_versions_cache
-                .lock()
-                .expect("apple_versions_cache lock failed");
-
-            if let Some(ret) = cache.get(sdk) {
-                return Some(ret.clone());
-            }
-
-            let version = run_output(
-                self.cmd("xcrun")
-                    .arg("--show-sdk-platform-version")
-                    .arg("--sdk")
-                    .arg(sdk),
-                "xcrun",
-                &self.cargo_output,
-            )
-            .ok()?;
-
-            let version = std::str::from_utf8(&version).ok()?.trim().to_owned();
-
-            cache.insert(sdk.into(), version.clone());
-            Some(version)
-        };
-
-        let deployment_from_env = |name: &str| {
-            
-            
-            if let Some((_, v)) = self.env.iter().find(|(k, _)| &**k == OsStr::new(name)) {
-                Some(v.to_str().unwrap().to_string())
-            } else {
-                env::var(name).ok()
-            }
-        };
-
-        
-        
-        
-        
-        let maybe_cpp_version_baseline = |deployment_target_ver: String| -> Option<String> {
-            if !self.cpp {
-                return Some(deployment_target_ver);
-            }
-
-            let mut deployment_target = deployment_target_ver
-                .split('.')
-                .map(|v| v.parse::<u32>().expect("integer version"));
-
-            match os {
-                AppleOs::MacOs => {
-                    let major = deployment_target.next().unwrap_or(0);
-                    let minor = deployment_target.next().unwrap_or(0);
-
-                    
-                    if major == 10 && minor < 9 {
-                        self.cargo_output.print_warning(&format_args!(
-                            "macOS deployment target ({}) too low, it will be increased",
-                            deployment_target_ver
-                        ));
-                        return None;
-                    }
-                }
-                AppleOs::Ios => {
-                    let major = deployment_target.next().unwrap_or(0);
-
-                    
-                    if major < 7 {
-                        self.cargo_output.print_warning(&format_args!(
-                            "iOS deployment target ({}) too low, it will be increased",
-                            deployment_target_ver
-                        ));
-                        return None;
-                    }
-                }
-                
-                _ => {}
-            }
-
-            
-            Some(deployment_target_ver)
-        };
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        match os {
-            AppleOs::MacOs => deployment_from_env("MACOSX_DEPLOYMENT_TARGET")
-                .and_then(maybe_cpp_version_baseline)
-                .or_else(default_deployment_from_sdk)
-                .unwrap_or_else(|| {
-                    if arch_str == Some("aarch64") {
-                        "11.0".into()
-                    } else {
-                        let default = "10.7";
-                        maybe_cpp_version_baseline(default.into()).unwrap_or_else(|| default.into())
-                    }
-                }),
-
-            AppleOs::Ios => deployment_from_env("IPHONEOS_DEPLOYMENT_TARGET")
-                .and_then(maybe_cpp_version_baseline)
-                .or_else(default_deployment_from_sdk)
-                .unwrap_or_else(|| "7.0".into()),
-
-            AppleOs::WatchOs => deployment_from_env("WATCHOS_DEPLOYMENT_TARGET")
-                .or_else(default_deployment_from_sdk)
-                .unwrap_or_else(|| "5.0".into()),
-
-            AppleOs::TvOs => deployment_from_env("TVOS_DEPLOYMENT_TARGET")
-                .or_else(default_deployment_from_sdk)
-                .unwrap_or_else(|| "9.0".into()),
-        }
-    }
-
     fn cuda_file_count(&self) -> usize {
         self.files
             .iter()
@@ -3702,62 +3064,348 @@ impl Default for Build {
     }
 }
 
+impl Tool {
+    fn new(path: PathBuf) -> Self {
+        Tool::with_features(path, None, false)
+    }
+
+    fn with_clang_driver(path: PathBuf, clang_driver: Option<&str>) -> Self {
+        Self::with_features(path, clang_driver, false)
+    }
+
+    #[cfg(windows)]
+    
+    fn with_family(path: PathBuf, family: ToolFamily) -> Self {
+        Self {
+            path: path,
+            cc_wrapper_path: None,
+            cc_wrapper_args: Vec::new(),
+            args: Vec::new(),
+            env: Vec::new(),
+            family: family,
+            cuda: false,
+            removed_args: Vec::new(),
+        }
+    }
+
+    fn with_features(path: PathBuf, clang_driver: Option<&str>, cuda: bool) -> Self {
+        
+        let family = if let Some(fname) = path.file_name().and_then(|p| p.to_str()) {
+            if fname.contains("clang-cl") {
+                ToolFamily::Msvc { clang_cl: true }
+            } else if fname.ends_with("cl") || fname == "cl.exe" {
+                ToolFamily::Msvc { clang_cl: false }
+            } else if fname.contains("clang") {
+                match clang_driver {
+                    Some("cl") => ToolFamily::Msvc { clang_cl: true },
+                    _ => ToolFamily::Clang,
+                }
+            } else {
+                ToolFamily::Gnu
+            }
+        } else {
+            ToolFamily::Gnu
+        };
+
+        Tool {
+            path: path,
+            cc_wrapper_path: None,
+            cc_wrapper_args: Vec::new(),
+            args: Vec::new(),
+            env: Vec::new(),
+            family: family,
+            cuda: cuda,
+            removed_args: Vec::new(),
+        }
+    }
+
+    
+    fn remove_arg(&mut self, flag: OsString) {
+        self.removed_args.push(flag);
+    }
+
+    
+    
+    
+    
+    
+    fn push_cc_arg(&mut self, flag: OsString) {
+        if self.cuda {
+            self.args.push("-Xcompiler".into());
+        }
+        self.args.push(flag);
+    }
+
+    fn is_duplicate_opt_arg(&self, flag: &OsString) -> bool {
+        let flag = flag.to_str().unwrap();
+        let mut chars = flag.chars();
+
+        
+        if self.is_like_msvc() {
+            if chars.next() != Some('/') {
+                return false;
+            }
+        } else if self.is_like_gnu() || self.is_like_clang() {
+            if chars.next() != Some('-') {
+                return false;
+            }
+        }
+
+        
+        if chars.next() == Some('O') {
+            return self
+                .args()
+                .iter()
+                .any(|ref a| a.to_str().unwrap_or("").chars().nth(1) == Some('O'));
+        }
+
+        
+        return false;
+    }
+
+    
+    fn push_opt_unless_duplicate(&mut self, flag: OsString) {
+        if self.is_duplicate_opt_arg(&flag) {
+            println!("Info: Ignoring duplicate arg {:?}", &flag);
+        } else {
+            self.push_cc_arg(flag);
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn to_command(&self) -> Command {
+        let mut cmd = match self.cc_wrapper_path {
+            Some(ref cc_wrapper_path) => {
+                let mut cmd = Command::new(&cc_wrapper_path);
+                cmd.arg(&self.path);
+                cmd
+            }
+            None => Command::new(&self.path),
+        };
+        cmd.args(&self.cc_wrapper_args);
+
+        let value = self
+            .args
+            .iter()
+            .filter(|a| !self.removed_args.contains(a))
+            .collect::<Vec<_>>();
+        cmd.args(&value);
+
+        for &(ref k, ref v) in self.env.iter() {
+            cmd.env(k, v);
+        }
+        cmd
+    }
+
+    
+    
+    
+    
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    
+    
+    pub fn args(&self) -> &[OsString] {
+        &self.args
+    }
+
+    
+    
+    
+    
+    pub fn env(&self) -> &[(OsString, OsString)] {
+        &self.env
+    }
+
+    
+    
+    
+    
+    pub fn cc_env(&self) -> OsString {
+        match self.cc_wrapper_path {
+            Some(ref cc_wrapper_path) => {
+                let mut cc_env = cc_wrapper_path.as_os_str().to_owned();
+                cc_env.push(" ");
+                cc_env.push(self.path.to_path_buf().into_os_string());
+                for arg in self.cc_wrapper_args.iter() {
+                    cc_env.push(" ");
+                    cc_env.push(arg);
+                }
+                cc_env
+            }
+            None => OsString::from(""),
+        }
+    }
+
+    
+    
+    
+    pub fn cflags_env(&self) -> OsString {
+        let mut flags = OsString::new();
+        for (i, arg) in self.args.iter().enumerate() {
+            if i > 0 {
+                flags.push(" ");
+            }
+            flags.push(arg);
+        }
+        flags
+    }
+
+    
+    pub fn is_like_gnu(&self) -> bool {
+        self.family == ToolFamily::Gnu
+    }
+
+    
+    pub fn is_like_clang(&self) -> bool {
+        self.family == ToolFamily::Clang
+    }
+
+    
+    pub fn is_like_msvc(&self) -> bool {
+        match self.family {
+            ToolFamily::Msvc { .. } => true,
+            _ => false,
+        }
+    }
+}
+
+fn run(cmd: &mut Command, program: &str) -> Result<(), Error> {
+    let (mut child, print) = spawn(cmd, program)?;
+    let status = match child.wait() {
+        Ok(s) => s,
+        Err(_) => {
+            return Err(Error::new(
+                ErrorKind::ToolExecError,
+                &format!(
+                    "Failed to wait on spawned child process, command {:?} with args {:?}.",
+                    cmd, program
+                ),
+            ));
+        }
+    };
+    print.join().unwrap();
+    println!("{}", status);
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(Error::new(
+            ErrorKind::ToolExecError,
+            &format!(
+                "Command {:?} with args {:?} did not execute successfully (status code {}).",
+                cmd, program, status
+            ),
+        ))
+    }
+}
+
+fn run_output(cmd: &mut Command, program: &str) -> Result<Vec<u8>, Error> {
+    cmd.stdout(Stdio::piped());
+    let (mut child, print) = spawn(cmd, program)?;
+    let mut stdout = vec![];
+    child
+        .stdout
+        .take()
+        .unwrap()
+        .read_to_end(&mut stdout)
+        .unwrap();
+    let status = match child.wait() {
+        Ok(s) => s,
+        Err(_) => {
+            return Err(Error::new(
+                ErrorKind::ToolExecError,
+                &format!(
+                    "Failed to wait on spawned child process, command {:?} with args {:?}.",
+                    cmd, program
+                ),
+            ));
+        }
+    };
+    print.join().unwrap();
+    println!("{}", status);
+
+    if status.success() {
+        Ok(stdout)
+    } else {
+        Err(Error::new(
+            ErrorKind::ToolExecError,
+            &format!(
+                "Command {:?} with args {:?} did not execute successfully (status code {}).",
+                cmd, program, status
+            ),
+        ))
+    }
+}
+
+fn spawn(cmd: &mut Command, program: &str) -> Result<(Child, JoinHandle<()>), Error> {
+    println!("running: {:?}", cmd);
+
+    
+    
+    
+    
+    match cmd.stderr(Stdio::piped()).spawn() {
+        Ok(mut child) => {
+            let stderr = BufReader::new(child.stderr.take().unwrap());
+            let print = thread::spawn(move || {
+                for line in stderr.split(b'\n').filter_map(|l| l.ok()) {
+                    print!("cargo:warning=");
+                    std::io::stdout().write_all(&line).unwrap();
+                    println!("");
+                }
+            });
+            Ok((child, print))
+        }
+        Err(ref e) if e.kind() == io::ErrorKind::NotFound => {
+            let extra = if cfg!(windows) {
+                " (see https://github.com/rust-lang/cc-rs#compile-time-requirements \
+                 for help)"
+            } else {
+                ""
+            };
+            Err(Error::new(
+                ErrorKind::ToolNotFound,
+                &format!("Failed to find tool. Is `{}` installed?{}", program, extra),
+            ))
+        }
+        Err(ref e) => Err(Error::new(
+            ErrorKind::ToolExecError,
+            &format!(
+                "Command {:?} with args {:?} failed to start: {:?}",
+                cmd, program, e
+            ),
+        )),
+    }
+}
+
 fn fail(s: &str) -> ! {
     eprintln!("\n\nerror occurred: {}\n\n", s);
     std::process::exit(1);
 }
 
-#[derive(Clone, Copy, PartialEq)]
-enum AppleOs {
-    MacOs,
-    Ios,
-    WatchOs,
-    TvOs,
-}
-impl std::fmt::Debug for AppleOs {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            AppleOs::MacOs => f.write_str("macOS"),
-            AppleOs::Ios => f.write_str("iOS"),
-            AppleOs::WatchOs => f.write_str("WatchOS"),
-            AppleOs::TvOs => f.write_str("AppleTVOS"),
-        }
+fn command_add_output_file(
+    cmd: &mut Command,
+    dst: &Path,
+    cuda: bool,
+    msvc: bool,
+    clang: bool,
+    is_asm: bool,
+    is_arm: bool,
+) {
+    if msvc && !clang && !cuda && !(is_asm && is_arm) {
+        let mut s = OsString::from("-Fo");
+        s.push(&dst);
+        cmd.arg(s);
+    } else {
+        cmd.arg("-o").arg(&dst);
     }
-}
-
-struct AppleSdkTargetParts {
-    sdk_prefix: &'static str,
-    sim_prefix: &'static str,
-    sdk: Cow<'static, str>,
-}
-
-fn apple_os_sdk_parts(os: AppleOs, arch: &AppleArchSpec) -> AppleSdkTargetParts {
-    let (sdk_prefix, sim_prefix) = match os {
-        AppleOs::MacOs => ("macosx", ""),
-        AppleOs::Ios => ("iphone", "ios-"),
-        AppleOs::WatchOs => ("watch", "watch"),
-        AppleOs::TvOs => ("appletv", "appletv"),
-    };
-    let sdk = match arch {
-        AppleArchSpec::Device(_) if os == AppleOs::MacOs => Cow::Borrowed("macosx"),
-        AppleArchSpec::Device(_) => format!("{}os", sdk_prefix).into(),
-        AppleArchSpec::Simulator(_) => format!("{}simulator", sdk_prefix).into(),
-        AppleArchSpec::Catalyst(_) => Cow::Borrowed("macosx"),
-    };
-
-    AppleSdkTargetParts {
-        sdk_prefix,
-        sim_prefix,
-        sdk,
-    }
-}
-
-#[allow(dead_code)]
-enum AppleArchSpec {
-    Device(&'static str),
-    Simulator(&'static str),
-    #[allow(dead_code)]
-    Catalyst(&'static str),
 }
 
 
@@ -3781,12 +3429,13 @@ static NEW_STANDALONE_ANDROID_COMPILERS: [&str; 4] = [
 fn android_clang_compiler_uses_target_arg_internally(clang_path: &Path) -> bool {
     if let Some(filename) = clang_path.file_name() {
         if let Some(filename_str) = filename.to_str() {
-            if let Some(idx) = filename_str.rfind('-') {
-                return filename_str.split_at(idx).0.contains("android");
-            }
+            filename_str.contains("android")
+        } else {
+            false
         }
+    } else {
+        false
     }
-    false
 }
 
 #[test]
@@ -3799,9 +3448,6 @@ fn test_android_clang_compiler_uses_target_arg_internally() {
             &PathBuf::from(format!("armv7a-linux-androideabi{}-clang++", version))
         ));
     }
-    assert!(!android_clang_compiler_uses_target_arg_internally(
-        &PathBuf::from("clang-i686-linux-android")
-    ));
     assert!(!android_clang_compiler_uses_target_arg_internally(
         &PathBuf::from("clang")
     ));
@@ -3859,9 +3505,7 @@ fn autodetect_android_compiler(target: &str, host: &str, gnu: &str, clang: &str)
 
 
 fn map_darwin_target_from_rust_to_compiler_architecture(target: &str) -> Option<&'static str> {
-    if target.contains("x86_64h") {
-        Some("x86_64h")
-    } else if target.contains("x86_64") {
+    if target.contains("x86_64") {
         Some("x86_64")
     } else if target.contains("arm64e") {
         Some("arm64e")
@@ -3878,7 +3522,7 @@ fn map_darwin_target_from_rust_to_compiler_architecture(target: &str) -> Option<
     }
 }
 
-fn which(tool: &Path, path_entries: Option<OsString>) -> Option<PathBuf> {
+fn which(tool: &Path) -> Option<PathBuf> {
     fn check_exe(exe: &mut PathBuf) -> bool {
         let exe_ext = std::env::consts::EXE_EXTENSION;
         exe.exists() || (!exe_ext.is_empty() && exe.set_extension(exe_ext) && exe.exists())
@@ -3891,35 +3535,11 @@ fn which(tool: &Path, path_entries: Option<OsString>) -> Option<PathBuf> {
     }
 
     
-    let path_entries = path_entries.or(env::var_os("PATH"))?;
+    let path_entries = env::var_os("PATH")?;
     env::split_paths(&path_entries).find_map(|path_entry| {
         let mut exe = path_entry.join(tool);
-        if check_exe(&mut exe) {
-            Some(exe)
-        } else {
-            None
-        }
+        return if check_exe(&mut exe) { Some(exe) } else { None };
     })
-}
-
-
-fn search_programs(cc: &mut Command, prog: &str, cargo_output: &CargoOutput) -> Option<PathBuf> {
-    let search_dirs = run_output(
-        cc.arg("-print-search-dirs"),
-        "cc",
-        
-        cargo_output,
-    )
-    .ok()?;
-    
-    
-    let search_dirs = std::str::from_utf8(&search_dirs).ok()?;
-    for dirs in search_dirs.split(|c| c == '\r' || c == '\n') {
-        if let Some(path) = dirs.strip_prefix("programs: =") {
-            return which(Path::new(prog), Some(OsString::from(path)));
-        }
-    }
-    None
 }
 
 #[derive(Clone, Copy, PartialEq)]
