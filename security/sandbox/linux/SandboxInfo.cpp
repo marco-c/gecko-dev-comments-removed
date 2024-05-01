@@ -134,11 +134,21 @@ static bool CanCreateUserNamespace() {
   
   
   
-  pid_t pid = syscall(__NR_clone, SIGCHLD | CLONE_NEWUSER | CLONE_NEWPID,
-                      nullptr, nullptr, nullptr, nullptr);
+  
+  
+  
+  
+  
+  pid_t pid = syscall(__NR_clone, SIGCHLD | CLONE_NEWUSER, nullptr, nullptr,
+                      nullptr, nullptr);
   if (pid == 0) {
     
-    _exit(0);
+    
+    
+    
+    int rv = unshare(CLONE_NEWPID);
+    
+    _exit(rv == 0 ? 0 : 1);
   }
   if (pid == -1) {
     
@@ -149,9 +159,15 @@ static bool CanCreateUserNamespace() {
     return false;
   }
   
-  bool waitpid_ok = HANDLE_EINTR(waitpid(pid, nullptr, 0)) == pid;
+  int wstatus;
+  bool waitpid_ok = HANDLE_EINTR(waitpid(pid, &wstatus, 0)) == pid;
   MOZ_ASSERT(waitpid_ok);
   if (!waitpid_ok) {
+    return false;
+  }
+  
+  if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+    setenv(kCacheEnvName, "0", 1);
     return false;
   }
   setenv(kCacheEnvName, "1", 1);
