@@ -59,7 +59,7 @@ def bootstrap_tasks(config, tasks):
                 f"python3 bootstrap.py --no-interactive --application-choice {app}",
                 "cd mozilla-unified",
                 
-                "./mach configure --disable-bootstrap",
+                "./mach configure --enable-bootstrap=no-update",
                 
                 "./mach build",
             ]
