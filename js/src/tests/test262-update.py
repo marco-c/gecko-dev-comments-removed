@@ -23,7 +23,6 @@ UNSUPPORTED_FEATURES = set(
         "Intl.DurationFormat",  
         "Atomics.waitAsync",  
         "legacy-regexp",  
-        "json-modules",  
         "regexp-duplicate-named-groups",  
         "json-parse-with-source",  
         "set-methods",  
