@@ -397,7 +397,11 @@ this.AccessibilityUtils = (function () {
     
     let foundFocusable = false;
     for (const tab of findNonGenericChildrenAccessible(tablist)) {
-      if (!tab || tab.role != Ci.nsIAccessibleRole.ROLE_PAGETAB) {
+      
+      const isWhitespace =
+        tab.role == Ci.nsIAccessibleRole.ROLE_TEXT_LEAF &&
+        tab.DOMNode.textContent.trim().length === 0;
+      if (tab.role != Ci.nsIAccessibleRole.ROLE_PAGETAB && !isWhitespace) {
         
         a11yFail("Only tabs should be included in a tablist", accessible);
       }
