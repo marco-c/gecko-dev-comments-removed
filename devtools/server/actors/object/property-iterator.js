@@ -75,6 +75,8 @@ class PropertyIteratorActor extends Actor {
           this.iterator = enumMidiInputMapEntries(objectActor);
         } else if (cls == "MIDIOutputMap") {
           this.iterator = enumMidiOutputMapEntries(objectActor);
+        } else if (cls == "CustomStateSet") {
+          this.iterator = enumCustomStateSetEntries(objectActor);
         } else {
           throw new Error(
             "Unsupported class to enumerate entries from: " + cls
@@ -658,6 +660,35 @@ function enumWeakSetEntries(objectActor) {
   };
 }
 
+function enumCustomStateSetEntries(objectActor) {
+  let raw = objectActor.obj.unsafeDereference();
+  
+  
+  
+  const values = Array.from(
+    waiveXrays(CustomStateSet.prototype.values.call(waiveXrays(raw)))
+  );
+
+  return {
+    [Symbol.iterator]: function*() {
+      for (const item of values) {
+        yield gripFromEntry(objectActor, item);
+      }
+    },
+    size: values.length,
+    propertyName(index) {
+      return index;
+    },
+    propertyDescription(index) {
+      const val = values[index];
+      return {
+        enumerable: true,
+        value: gripFromEntry(objectActor, val),
+      };
+    },
+  };
+}
+
 
 
 
@@ -672,6 +703,7 @@ function isUint32(num) {
 
 module.exports = {
   PropertyIteratorActor,
+  enumCustomStateSetEntries,
   enumMapEntries,
   enumMidiInputMapEntries,
   enumMidiOutputMapEntries,
