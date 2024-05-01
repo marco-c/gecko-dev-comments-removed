@@ -27,6 +27,7 @@
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/expand_uma_logger.h"
 #include "modules/audio_coding/neteq/packet.h"
+#include "modules/audio_coding/neteq/packet_buffer.h"
 #include "modules/audio_coding/neteq/random_vector.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -46,7 +47,6 @@ class Expand;
 class Merge;
 class NackTracker;
 class Normal;
-class PacketBuffer;
 class RedPayloadSplitter;
 class PostDecodeVad;
 class PreemptiveExpand;
@@ -213,6 +213,12 @@ class NetEqImpl : public webrtc::NetEq {
   
   int InsertPacketInternal(const RTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
+  
+  
+  
+  bool MaybeChangePayloadType(uint8_t payload_type)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   

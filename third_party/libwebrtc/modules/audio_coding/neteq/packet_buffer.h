@@ -62,20 +62,6 @@ class PacketBuffer {
   
   
   
-  
-  
-  
-  
-  virtual int InsertPacketList(
-      PacketList* packet_list,
-      const DecoderDatabase& decoder_database,
-      absl::optional<uint8_t>* current_rtp_payload_type,
-      absl::optional<uint8_t>* current_cng_rtp_payload_type);
-
-  
-  
-  
-  
   virtual int NextTimestamp(uint32_t* next_timestamp) const;
 
   

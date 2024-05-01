@@ -197,92 +197,6 @@ TEST(PacketBuffer, OverfillBuffer) {
 }
 
 
-TEST(PacketBuffer, InsertPacketList) {
-  TickTimer tick_timer;
-  StrictMock<MockStatisticsCalculator> mock_stats;
-  PacketBuffer buffer(10, &tick_timer, &mock_stats);  
-  PacketGenerator gen(0, 0, 0, 10);
-  PacketList list;
-  const int payload_len = 10;
-
-  
-  for (int i = 0; i < 10; ++i) {
-    list.push_back(gen.NextPacket(payload_len, nullptr));
-  }
-
-  MockDecoderDatabase decoder_database;
-  auto factory = CreateBuiltinAudioDecoderFactory();
-  const DecoderDatabase::DecoderInfo info(SdpAudioFormat("pcmu", 8000, 1),
-                                          absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
-      .WillRepeatedly(Return(&info));
-
-  absl::optional<uint8_t> current_pt;
-  absl::optional<uint8_t> current_cng_pt;
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacketList(
-                &list,
-                decoder_database,
-                &current_pt,
-                &current_cng_pt));
-  EXPECT_TRUE(list.empty());  
-  EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(0, current_pt);  
-  EXPECT_EQ(absl::nullopt, current_cng_pt);  
-
-  EXPECT_CALL(decoder_database, Die());  
-}
-
-
-
-
-TEST(PacketBuffer, InsertPacketListChangePayloadType) {
-  TickTimer tick_timer;
-  StrictMock<MockStatisticsCalculator> mock_stats;
-  PacketBuffer buffer(10, &tick_timer, &mock_stats);  
-  PacketGenerator gen(0, 0, 0, 10);
-  PacketList list;
-  const int payload_len = 10;
-
-  
-  for (int i = 0; i < 10; ++i) {
-    list.push_back(gen.NextPacket(payload_len, nullptr));
-  }
-  
-  {
-    Packet packet = gen.NextPacket(payload_len, nullptr);
-    packet.payload_type = 1;
-    list.push_back(std::move(packet));
-  }
-
-  MockDecoderDatabase decoder_database;
-  auto factory = CreateBuiltinAudioDecoderFactory();
-  const DecoderDatabase::DecoderInfo info0(SdpAudioFormat("pcmu", 8000, 1),
-                                           absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
-      .WillRepeatedly(Return(&info0));
-  const DecoderDatabase::DecoderInfo info1(SdpAudioFormat("pcma", 8000, 1),
-                                           absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(1))
-      .WillRepeatedly(Return(&info1));
-
-  absl::optional<uint8_t> current_pt;
-  absl::optional<uint8_t> current_cng_pt;
-  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(10);
-  EXPECT_EQ(PacketBuffer::kFlushed,
-            buffer.InsertPacketList(
-                &list,
-                decoder_database,
-                &current_pt,
-                &current_cng_pt));
-  EXPECT_TRUE(list.empty());  
-  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());  
-  EXPECT_EQ(1, current_pt);  
-  EXPECT_EQ(absl::nullopt, current_cng_pt);  
-
-  EXPECT_CALL(decoder_database, Die());  
-}
-
 TEST(PacketBuffer, ExtractOrderRedundancy) {
   TickTimer tick_timer;
   StrictMock<MockStatisticsCalculator> mock_stats;
@@ -434,21 +348,9 @@ TEST(PacketBuffer, Reordering) {
     }
   }
 
-  MockDecoderDatabase decoder_database;
-  auto factory = CreateBuiltinAudioDecoderFactory();
-  const DecoderDatabase::DecoderInfo info(SdpAudioFormat("pcmu", 8000, 1),
-                                          absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
-      .WillRepeatedly(Return(&info));
-  absl::optional<uint8_t> current_pt;
-  absl::optional<uint8_t> current_cng_pt;
-
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacketList(
-                &list,
-                decoder_database,
-                &current_pt,
-                &current_cng_pt));
+  for (Packet& packet : list) {
+    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(std::move(packet)));
+  }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
   
@@ -460,77 +362,6 @@ TEST(PacketBuffer, Reordering) {
     current_ts += ts_increment;
   }
   EXPECT_TRUE(buffer.Empty());
-
-  EXPECT_CALL(decoder_database, Die());  
-}
-
-
-
-
-
-TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
-  TickTimer tick_timer;
-  StrictMock<MockStatisticsCalculator> mock_stats;
-  PacketBuffer buffer(10, &tick_timer, &mock_stats);  
-  const uint8_t kCngPt = 13;
-  const int kPayloadLen = 10;
-  const uint8_t kSpeechPt = 100;
-
-  MockDecoderDatabase decoder_database;
-  auto factory = CreateBuiltinAudioDecoderFactory();
-  const DecoderDatabase::DecoderInfo info_cng(SdpAudioFormat("cn", 8000, 1),
-                                              absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(kCngPt))
-      .WillRepeatedly(Return(&info_cng));
-  const DecoderDatabase::DecoderInfo info_speech(
-      SdpAudioFormat("l16", 16000, 1), absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(kSpeechPt))
-      .WillRepeatedly(Return(&info_speech));
-
-  
-  PacketGenerator gen(0, 0, kCngPt, 10);
-  PacketList list;
-  list.push_back(gen.NextPacket(kPayloadLen, nullptr));
-  absl::optional<uint8_t> current_pt;
-  absl::optional<uint8_t> current_cng_pt;
-
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacketList(
-                &list,
-                decoder_database,
-                &current_pt,
-                &current_cng_pt));
-  EXPECT_TRUE(list.empty());
-  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  ASSERT_TRUE(buffer.PeekNextPacket());
-  EXPECT_EQ(kCngPt, buffer.PeekNextPacket()->payload_type);
-  EXPECT_EQ(current_pt, absl::nullopt);  
-  EXPECT_EQ(kCngPt, current_cng_pt);     
-
-  
-  {
-    Packet packet = gen.NextPacket(kPayloadLen, nullptr);
-    packet.payload_type = kSpeechPt;
-    list.push_back(std::move(packet));
-  }
-  
-  
-  EXPECT_CALL(mock_stats, PacketsDiscarded(1));
-  EXPECT_EQ(PacketBuffer::kFlushed,
-            buffer.InsertPacketList(
-                &list,
-                decoder_database,
-                &current_pt,
-                &current_cng_pt));
-  EXPECT_TRUE(list.empty());
-  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  ASSERT_TRUE(buffer.PeekNextPacket());
-  EXPECT_EQ(kSpeechPt, buffer.PeekNextPacket()->payload_type);
-
-  EXPECT_EQ(kSpeechPt, current_pt);          
-  EXPECT_EQ(absl::nullopt, current_cng_pt);  
-
-  EXPECT_CALL(decoder_database, Die());  
 }
 
 TEST(PacketBuffer, Failures) {
@@ -541,66 +372,26 @@ TEST(PacketBuffer, Failures) {
   PacketGenerator gen(start_seq_no, start_ts, 0, ts_increment);
   TickTimer tick_timer;
   StrictMock<MockStatisticsCalculator> mock_stats;
-  MockDecoderDatabase decoder_database;
 
-  PacketBuffer* buffer =
-      new PacketBuffer(100, &tick_timer, &mock_stats);  
+  PacketBuffer buffer(100, &tick_timer, &mock_stats);  
   {
     Packet packet = gen.NextPacket(payload_len, nullptr);
     packet.payload.Clear();
     EXPECT_EQ(PacketBuffer::kInvalidPacket,
-              buffer->InsertPacket(std::move(packet)));
+              buffer.InsertPacket(std::move(packet)));
   }
   
   uint32_t temp_ts;
-  EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->NextTimestamp(&temp_ts));
+  EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer.NextTimestamp(&temp_ts));
   EXPECT_EQ(PacketBuffer::kBufferEmpty,
-            buffer->NextHigherTimestamp(0, &temp_ts));
-  EXPECT_EQ(NULL, buffer->PeekNextPacket());
-  EXPECT_FALSE(buffer->GetNextPacket());
+            buffer.NextHigherTimestamp(0, &temp_ts));
+  EXPECT_EQ(NULL, buffer.PeekNextPacket());
+  EXPECT_FALSE(buffer.GetNextPacket());
 
   
   
-  EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket());
-  buffer->DiscardAllOldPackets(0);
-
-  
-  EXPECT_EQ(PacketBuffer::kOK, buffer->InsertPacket(gen.NextPacket(
-                                   payload_len, nullptr)));
-  EXPECT_EQ(PacketBuffer::kInvalidPointer, buffer->NextTimestamp(NULL));
-  EXPECT_EQ(PacketBuffer::kInvalidPointer,
-            buffer->NextHigherTimestamp(0, NULL));
-  delete buffer;
-
-  
-  
-  
-  buffer = new PacketBuffer(100, &tick_timer, &mock_stats);  
-  PacketList list;
-  list.push_back(gen.NextPacket(payload_len, nullptr));  
-  {
-    Packet packet = gen.NextPacket(payload_len, nullptr);
-    packet.payload.Clear();  
-    list.push_back(std::move(packet));
-  }
-  list.push_back(gen.NextPacket(payload_len, nullptr));  
-  auto factory = CreateBuiltinAudioDecoderFactory();
-  const DecoderDatabase::DecoderInfo info(SdpAudioFormat("pcmu", 8000, 1),
-                                          absl::nullopt, factory.get());
-  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
-      .WillRepeatedly(Return(&info));
-  absl::optional<uint8_t> current_pt;
-  absl::optional<uint8_t> current_cng_pt;
-  EXPECT_EQ(PacketBuffer::kInvalidPacket,
-            buffer->InsertPacketList(
-                &list,
-                decoder_database,
-                &current_pt,
-                &current_cng_pt));
-  EXPECT_TRUE(list.empty());  
-  EXPECT_EQ(1u, buffer->NumPacketsInBuffer());
-  delete buffer;
-  EXPECT_CALL(decoder_database, Die());  
+  EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer.DiscardNextPacket());
+  buffer.DiscardAllOldPackets(0);
 }
 
 

@@ -44,16 +44,6 @@ class NewTimestampIsLarger {
   const Packet& new_packet_;
 };
 
-
-
-bool EqualSampleRates(uint8_t pt1,
-                      uint8_t pt2,
-                      const DecoderDatabase& decoder_database) {
-  auto* di1 = decoder_database.GetDecoderInfo(pt1);
-  auto* di2 = decoder_database.GetDecoderInfo(pt2);
-  return di1 && di2 && di1->SampleRateHz() == di2->SampleRateHz();
-}
-
 }  
 
 PacketBuffer::PacketBuffer(size_t max_number_of_packets,
@@ -126,50 +116,6 @@ int PacketBuffer::InsertPacket(Packet&& packet) {
   buffer_.insert(it, std::move(packet));  
 
   return return_val;
-}
-
-int PacketBuffer::InsertPacketList(
-    PacketList* packet_list,
-    const DecoderDatabase& decoder_database,
-    absl::optional<uint8_t>* current_rtp_payload_type,
-    absl::optional<uint8_t>* current_cng_rtp_payload_type) {
-  bool flushed = false;
-  for (auto& packet : *packet_list) {
-    if (decoder_database.IsComfortNoise(packet.payload_type)) {
-      if (*current_cng_rtp_payload_type &&
-          **current_cng_rtp_payload_type != packet.payload_type) {
-        
-        *current_rtp_payload_type = absl::nullopt;
-        Flush();
-        flushed = true;
-      }
-      *current_cng_rtp_payload_type = packet.payload_type;
-    } else if (!decoder_database.IsDtmf(packet.payload_type)) {
-      
-      if ((*current_rtp_payload_type &&
-           **current_rtp_payload_type != packet.payload_type) ||
-          (*current_cng_rtp_payload_type &&
-           !EqualSampleRates(packet.payload_type,
-                             **current_cng_rtp_payload_type,
-                             decoder_database))) {
-        *current_cng_rtp_payload_type = absl::nullopt;
-        Flush();
-        flushed = true;
-      }
-      *current_rtp_payload_type = packet.payload_type;
-    }
-    int return_val = InsertPacket(std::move(packet));
-    if (return_val == kFlushed) {
-      
-      flushed = true;
-    } else if (return_val != kOK) {
-      
-      packet_list->clear();
-      return return_val;
-    }
-  }
-  packet_list->clear();
-  return flushed ? kFlushed : kOK;
 }
 
 int PacketBuffer::NextTimestamp(uint32_t* next_timestamp) const {
