@@ -113,6 +113,7 @@ class CurrentX11TimeGetter;
 #endif
 
 namespace widget {
+class DBusMenuBar;
 class Screen;
 }  
 }  
@@ -372,6 +373,8 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRect GetTitlebarRect();
   void UpdateWindowDraggingRegion(
       const LayoutDeviceIntRegion& aRegion) override;
+
+  void SetDBusMenuBar(RefPtr<mozilla::widget::DBusMenuBar> aDbusMenuBar);
 
   
   gint GdkCeiledScaleFactor();
@@ -904,6 +907,8 @@ class nsWindow final : public nsBaseWidget {
   
   RefPtr<nsWindow> mWaylandPopupNext;
   RefPtr<nsWindow> mWaylandPopupPrev;
+
+  RefPtr<mozilla::widget::DBusMenuBar> mDBusMenuBar;
 
   
   

@@ -55,6 +55,8 @@ class KeymapWrapper {
 
   static CodeNameIndex ComputeDOMCodeNameIndex(const GdkEventKey* aGdkKeyEvent);
 
+  static guint ConvertGeckoKeyCodeToGDKKeyval(const nsAString& aKeyCode);
+
   
 
 
