@@ -121,14 +121,10 @@ class RetransmissionQueue {
   uint64_t rtx_bytes_count() const { return rtx_bytes_count_; }
 
   
-  size_t outstanding_bytes() const {
-    return outstanding_data_.outstanding_bytes();
-  }
+  size_t unacked_bytes() const { return outstanding_data_.unacked_bytes(); }
 
   
-  size_t outstanding_items() const {
-    return outstanding_data_.outstanding_items();
-  }
+  size_t unacked_items() const { return outstanding_data_.unacked_items(); }
 
   
   bool can_send_data() const;
@@ -197,7 +193,7 @@ class RetransmissionQueue {
 
   
   
-  void HandleIncreasedCumulativeTsnAck(size_t outstanding_bytes,
+  void HandleIncreasedCumulativeTsnAck(size_t unacked_bytes,
                                        size_t total_bytes_acked);
   
   

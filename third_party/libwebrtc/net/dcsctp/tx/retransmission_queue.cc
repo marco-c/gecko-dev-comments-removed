@@ -115,12 +115,12 @@ void RetransmissionQueue::MaybeExitFastRecovery(
 }
 
 void RetransmissionQueue::HandleIncreasedCumulativeTsnAck(
-    size_t outstanding_bytes,
+    size_t unacked_bytes,
     size_t total_bytes_acked) {
   
   
   
-  bool is_fully_utilized = outstanding_bytes + options_.mtu >= cwnd_;
+  bool is_fully_utilized = unacked_bytes + options_.mtu >= cwnd_;
   size_t old_cwnd = cwnd_;
   if (phase() == CongestionAlgorithmPhase::kSlowStart) {
     if (is_fully_utilized && !is_in_fast_recovery()) {
@@ -205,9 +205,9 @@ void RetransmissionQueue::HandlePacketLoss(UnwrappedTSN highest_tsn_acked) {
 }
 
 void RetransmissionQueue::UpdateReceiverWindow(uint32_t a_rwnd) {
-  rwnd_ = outstanding_data_.outstanding_bytes() >= a_rwnd
+  rwnd_ = outstanding_data_.unacked_bytes() >= a_rwnd
               ? 0
-              : a_rwnd - outstanding_data_.outstanding_bytes();
+              : a_rwnd - outstanding_data_.unacked_bytes();
 }
 
 void RetransmissionQueue::StartT3RtxTimerIfOutstandingData() {
@@ -265,7 +265,7 @@ bool RetransmissionQueue::HandleSack(Timestamp now, const SackChunk& sack) {
 
   UnwrappedTSN old_last_cumulative_tsn_ack =
       outstanding_data_.last_cumulative_tsn_ack();
-  size_t old_outstanding_bytes = outstanding_data_.outstanding_bytes();
+  size_t old_unacked_bytes = outstanding_data_.unacked_bytes();
   size_t old_rwnd = rwnd_;
   UnwrappedTSN cumulative_tsn_ack =
       tsn_unwrapper_.Unwrap(sack.cumulative_tsn_ack());
@@ -302,9 +302,9 @@ bool RetransmissionQueue::HandleSack(Timestamp now, const SackChunk& sack) {
   RTC_DLOG(LS_VERBOSE) << log_prefix_ << "Received SACK, cum_tsn_ack="
                        << *cumulative_tsn_ack.Wrap() << " ("
                        << *old_last_cumulative_tsn_ack.Wrap()
-                       << "), outstanding_bytes="
-                       << outstanding_data_.outstanding_bytes() << " ("
-                       << old_outstanding_bytes << "), rwnd=" << rwnd_ << " ("
+                       << "), unacked_bytes="
+                       << outstanding_data_.unacked_bytes() << " ("
+                       << old_unacked_bytes << "), rwnd=" << rwnd_ << " ("
                        << old_rwnd << ")";
 
   if (cumulative_tsn_ack > old_last_cumulative_tsn_ack) {
@@ -316,8 +316,7 @@ bool RetransmissionQueue::HandleSack(Timestamp now, const SackChunk& sack) {
     
     t3_rtx_.Stop();
 
-    HandleIncreasedCumulativeTsnAck(old_outstanding_bytes,
-                                    ack_info.bytes_acked);
+    HandleIncreasedCumulativeTsnAck(old_unacked_bytes, ack_info.bytes_acked);
   }
 
   if (ack_info.has_packet_loss) {
@@ -355,7 +354,7 @@ void RetransmissionQueue::UpdateRTT(Timestamp now,
 
 void RetransmissionQueue::HandleT3RtxTimerExpiry() {
   size_t old_cwnd = cwnd_;
-  size_t old_outstanding_bytes = outstanding_bytes();
+  size_t old_unacked_bytes = unacked_bytes();
   
   
   
@@ -392,8 +391,8 @@ void RetransmissionQueue::HandleT3RtxTimerExpiry() {
 
   RTC_DLOG(LS_INFO) << log_prefix_ << "t3-rtx expired. new cwnd=" << cwnd_
                     << " (" << old_cwnd << "), ssthresh=" << ssthresh_
-                    << ", outstanding_bytes " << outstanding_bytes() << " ("
-                    << old_outstanding_bytes << ")";
+                    << ", unacked_bytes " << unacked_bytes() << " ("
+                    << old_unacked_bytes << ")";
   RTC_DCHECK(IsConsistent());
 }
 
@@ -402,7 +401,7 @@ RetransmissionQueue::GetChunksForFastRetransmit(size_t bytes_in_packet) {
   RTC_DCHECK(outstanding_data_.has_data_to_be_fast_retransmitted());
   RTC_DCHECK(IsDivisibleBy4(bytes_in_packet));
   std::vector<std::pair<TSN, Data>> to_be_sent;
-  size_t old_outstanding_bytes = outstanding_bytes();
+  size_t old_unacked_bytes = unacked_bytes();
 
   to_be_sent =
       outstanding_data_.GetChunksToBeFastRetransmitted(bytes_in_packet);
@@ -441,8 +440,8 @@ RetransmissionQueue::GetChunksForFastRetransmit(size_t bytes_in_packet) {
                                     sb << *c.first;
                                   })
                        << " - " << bytes_retransmitted
-                       << " bytes. outstanding_bytes=" << outstanding_bytes()
-                       << " (" << old_outstanding_bytes << ")";
+                       << " bytes. unacked_bytes=" << unacked_bytes() << " ("
+                       << old_unacked_bytes << ")";
 
   RTC_DCHECK(IsConsistent());
   return to_be_sent;
@@ -455,7 +454,7 @@ std::vector<std::pair<TSN, Data>> RetransmissionQueue::GetChunksToSend(
   RTC_DCHECK(IsDivisibleBy4(bytes_remaining_in_packet));
 
   std::vector<std::pair<TSN, Data>> to_be_sent;
-  size_t old_outstanding_bytes = outstanding_bytes();
+  size_t old_unacked_bytes = unacked_bytes();
   size_t old_rwnd = rwnd_;
 
   
@@ -527,8 +526,8 @@ std::vector<std::pair<TSN, Data>> RetransmissionQueue::GetChunksToSend(
                                 [&](size_t r, const std::pair<TSN, Data>& d) {
                                   return r + GetSerializedChunkSize(d.second);
                                 })
-                         << " bytes. outstanding_bytes=" << outstanding_bytes()
-                         << " (" << old_outstanding_bytes << "), cwnd=" << cwnd_
+                         << " bytes. unacked_bytes=" << unacked_bytes() << " ("
+                         << old_unacked_bytes << "), cwnd=" << cwnd_
                          << ", rwnd=" << rwnd_ << " (" << old_rwnd << ")";
   }
   RTC_DCHECK(IsConsistent());
@@ -551,9 +550,9 @@ bool RetransmissionQueue::ShouldSendForwardTsn(Timestamp now) {
 }
 
 size_t RetransmissionQueue::max_bytes_to_send() const {
-  size_t left = outstanding_bytes() >= cwnd_ ? 0 : cwnd_ - outstanding_bytes();
+  size_t left = unacked_bytes() >= cwnd_ ? 0 : cwnd_ - unacked_bytes();
 
-  if (outstanding_bytes() == 0) {
+  if (unacked_bytes() == 0) {
     
     
     
