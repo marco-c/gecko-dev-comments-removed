@@ -3,7 +3,7 @@
 
 
 """
-Decision task for pull requests
+Decision task for pull requests and pushes
 """
 
 import datetime
