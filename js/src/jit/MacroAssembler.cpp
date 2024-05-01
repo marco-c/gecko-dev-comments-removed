@@ -6877,6 +6877,11 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
 
   
+  branch32(Assembler::Above, numElements,
+           Imm32(WasmArrayObject::maxInlineElementsForElemSize(elemSize)),
+           fail);
+
+  
   
   Label popAndFail;
 #ifdef JS_CODEGEN_ARM64
@@ -6890,30 +6895,16 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 
   
   
+  
 
   
+  mul32(Imm32(elemSize), numElements);
+  
+  add32(Imm32(sizeof(WasmArrayObject::DataHeader)), numElements);
   
   
-  
-  
-  
-  
-  
-  
-  move32(Imm32(elemSize), temp);
-  branchMul32(Assembler::Overflow, temp, numElements, &popAndFail);
-  
-  branchAdd32(Assembler::Overflow, Imm32(sizeof(WasmArrayObject::DataHeader)),
-              numElements, &popAndFail);
-  
-  
-  branchAdd32(Assembler::Overflow, Imm32(gc::CellAlignBytes - 1), numElements,
-              &popAndFail);
+  add32(Imm32(gc::CellAlignBytes - 1), numElements);
   and32(Imm32(~int32_t(gc::CellAlignBytes - 1)), numElements);
-  
-  branch32(Assembler::Above, numElements, Imm32(WasmArrayObject_MaxInlineBytes),
-           &popAndFail);
-  
   
   static_assert(WasmArrayObject_MaxInlineBytes + sizeof(WasmArrayObject) <
                 INT32_MAX);
