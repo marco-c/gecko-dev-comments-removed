@@ -2148,7 +2148,6 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
       
       
       
-      document->UnobserveForLastRememberedSize(*this);
       document->ObserveForLastRememberedSize(*this);
     }
   }

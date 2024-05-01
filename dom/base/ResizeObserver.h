@@ -191,8 +191,21 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
 
   MOZ_CAN_RUN_SCRIPT uint32_t BroadcastActiveObservations();
 
-  static already_AddRefed<ResizeObserver> CreateLastRememberedSizeObserver(
-      Document&);
+  
+
+
+
+
+
+
+
+
+
+
+
+  static AutoTArray<LogicalPixelSize, 1> CalculateBoxSize(
+      Element* aTarget, ResizeObserverBoxOptions aBox,
+      bool aForceFragmentHandling = false);
 
  protected:
   ~ResizeObserver() { Disconnect(); }

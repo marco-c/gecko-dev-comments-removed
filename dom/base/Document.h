@@ -3723,12 +3723,12 @@ class Document : public nsINode,
   DOMIntersectionObserver* GetLazyLoadObserver() { return mLazyLoadObserver; }
   DOMIntersectionObserver& EnsureLazyLoadObserver();
 
-  ResizeObserver* GetLastRememberedSizeObserver() {
-    return mLastRememberedSizeObserver;
+  bool HasElementsWithLastRememberedSize() const {
+    return !mElementsObservedForLastRememberedSize.IsEmpty();
   }
-  ResizeObserver& EnsureLastRememberedSizeObserver();
   void ObserveForLastRememberedSize(Element&);
   void UnobserveForLastRememberedSize(Element&);
+  void UpdateLastRememberedSizes();
 
   
   nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const;
@@ -5169,7 +5169,7 @@ class Document : public nsINode,
 
   
   
-  RefPtr<ResizeObserver> mLastRememberedSizeObserver;
+  nsTHashSet<RefPtr<Element>> mElementsObservedForLastRememberedSize;
 
   
   nsTArray<nsWeakPtr> mTopLayer;
