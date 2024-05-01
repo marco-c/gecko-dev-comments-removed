@@ -590,8 +590,7 @@ class Loader final {
   
   
   
-  Completed ParseSheet(const nsACString&, const RefPtr<SheetLoadDataHolder>&,
-                       AllowAsyncParse);
+  Completed ParseSheet(const nsACString&, SheetLoadData&, AllowAsyncParse);
 
   
   
@@ -647,7 +646,7 @@ class Loader final {
   uint32_t mPendingLoadCount = 0;
 
   
-  Atomic<uint32_t, MemoryOrdering::Relaxed> mParsedSheetCount{0};
+  uint32_t mParsedSheetCount = 0;
 
   bool mEnabled = true;
 

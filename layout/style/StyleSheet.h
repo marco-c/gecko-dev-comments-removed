@@ -15,13 +15,11 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoTypes.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StyleSheetInfo.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsIPrincipal.h"
 #include "nsWrapperCache.h"
 #include "nsStringFwd.h"
-#include "nsProxyRelease.h"
 
 class nsIGlobalObject;
 class nsINode;
@@ -46,7 +44,6 @@ class Loader;
 class LoaderReusableStyleSheets;
 class Rule;
 class SheetLoadData;
-using SheetLoadDataHolder = nsMainThreadPtrHolder<SheetLoadData>;
 }  
 
 namespace dom {
@@ -82,12 +79,6 @@ enum class StyleSheetState : uint8_t {
   
   
   ModificationDisallowed = 1 << 5,
-  
-  
-  
-  ParsePromiseResolutionBlocked = 1 << 6,
-  
-  AsyncParseOngoing = 1 << 7
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StyleSheetState)
@@ -121,9 +112,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  RefPtr<StyleSheetParsePromise> ParseSheet(
-      css::Loader&, const nsACString& aBytes,
-      const RefPtr<css::SheetLoadDataHolder>& aLoadData);
+  RefPtr<StyleSheetParsePromise> ParseSheet(css::Loader&,
+                                            const nsACString& aBytes,
+                                            css::SheetLoadData&);
 
   
   
@@ -229,14 +220,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
     return bool(mState & State::ModifiedRulesForDevtools);
   }
 
-  bool IsAsyncParseOngoing() const {
-    return bool(mState & State::AsyncParseOngoing);
-  }
-
-  bool HasParsePromiseResolutionBlocked() const {
-    return bool(mState & State::ParsePromiseResolutionBlocked);
-  }
-
   bool HasUniqueInner() const { return Inner().mSheets.Length() == 1; }
 
   void AssertHasUniqueInner() const { MOZ_ASSERT(HasUniqueInner()); }
@@ -318,7 +301,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   void SetPrincipal(nsIPrincipal* aPrincipal) {
     StyleSheetInfo& info = Inner();
-    MOZ_ASSERT_IF(info.mPrincipalSet, info.mPrincipal == aPrincipal);
+    MOZ_ASSERT(!info.mPrincipalSet, "Should only set principal once");
     if (aPrincipal) {
       info.mPrincipal = aPrincipal;
 #ifdef DEBUG
@@ -483,27 +466,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void MaybeRejectReplacePromise();
 
   
-  void MayBeResolveParsePromise() {
-    if (!IsAsyncParseOngoing() && !HasParsePromiseResolutionBlocked() &&
-        !mParsePromise.IsEmpty()) {
-      mParsePromise.Resolve(true, __func__);
-    }
-  };
-
-  
   nsISupports* GetRelevantGlobal() const;
-
-  
-  void BlockOrUnblockParsePromise(bool aBlock) {
-    MOZ_ASSERT_IF(aBlock, !HasParsePromiseResolutionBlocked());
-    MOZ_ASSERT(NS_IsMainThread());
-    if (aBlock) {
-      mState |= State::ParsePromiseResolutionBlocked;
-    } else {
-      mState &= ~State::ParsePromiseResolutionBlocked;
-      MayBeResolveParsePromise();
-    }
-  }
 
  private:
   void SetModifiedRules() {
