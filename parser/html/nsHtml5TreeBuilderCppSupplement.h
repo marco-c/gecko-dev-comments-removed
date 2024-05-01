@@ -215,16 +215,9 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                 nsHtml5AttributeName::ATTR_REFERRERPOLICY);
             nsHtml5String sizes =
                 aAttributes->getValue(nsHtml5AttributeName::ATTR_SIZES);
-
-            
-            
-            
-            
-            auto fetchPriority = nsHtml5String::EmptyString();
-
             mSpeculativeLoadQueue.AppendElement()->InitImage(
                 url, crossOrigin,  nullptr, referrerPolicy,
-                srcset, sizes, false, fetchPriority);
+                srcset, sizes, false);
           }
         } else if (nsGkAtoms::source == aName) {
           nsHtml5String srcset =
@@ -442,7 +435,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                       nsHtml5AttributeName::ATTR_IMAGESIZES);
                   mSpeculativeLoadQueue.AppendElement()->InitImage(
                       url, crossOrigin, media, referrerPolicy, srcset, sizes,
-                      true, fetchPriority);
+                      true);
                 } else if (as.LowerCaseEqualsASCII("font")) {
                   mSpeculativeLoadQueue.AppendElement()->InitFont(
                       url, crossOrigin, media, referrerPolicy, fetchPriority);
@@ -494,14 +487,8 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
           nsHtml5String url =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_POSTER);
           if (url) {
-            
-            
-            
-            auto fetchPriority = nullptr;
-
             mSpeculativeLoadQueue.AppendElement()->InitImage(
-                url, nullptr, nullptr, nullptr, nullptr, nullptr, false,
-                fetchPriority);
+                url, nullptr, nullptr, nullptr, nullptr, nullptr, false);
           }
         } else if (nsGkAtoms::style == aName) {
           mImportScanner.Start();
@@ -556,15 +543,8 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
             url = aAttributes->getValue(nsHtml5AttributeName::ATTR_XLINK_HREF);
           }
           if (url) {
-            
-            
-            
-            
-            auto fetchPriority = nullptr;
-
             mSpeculativeLoadQueue.AppendElement()->InitImage(
-                url, nullptr, nullptr, nullptr, nullptr, nullptr, false,
-                fetchPriority);
+                url, nullptr, nullptr, nullptr, nullptr, nullptr, false);
           }
         } else if (nsGkAtoms::script == aName) {
           nsHtml5TreeOperation* treeOp =
