@@ -335,6 +335,7 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.peerconnection.ice.proxy_only", false);
   pref("media.peerconnection.ice.proxy_only_if_pbmode", false);
   pref("media.peerconnection.turn.disable", false);
+  pref("media.peerconnection.treat_warnings_as_errors", false);
 
   
 pref("media.peerconnection.dtls.version.min", 771);

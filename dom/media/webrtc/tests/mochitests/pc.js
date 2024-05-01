@@ -367,9 +367,7 @@ PeerConnectionTest.prototype.createDataChannel = function (options) {
 PeerConnectionTest.prototype.createAnswer = function (peer) {
   return peer.createAnswer().then(answer => {
     
-    this.originalAnswer = new RTCSessionDescription(
-      JSON.parse(JSON.stringify(answer))
-    );
+    this.originalAnswer = JSON.parse(JSON.stringify(answer));
     return answer;
   });
 };
@@ -384,9 +382,7 @@ PeerConnectionTest.prototype.createAnswer = function (peer) {
 PeerConnectionTest.prototype.createOffer = function (peer) {
   return peer.createOffer().then(offer => {
     
-    this.originalOffer = new RTCSessionDescription(
-      JSON.parse(JSON.stringify(offer))
-    );
+    this.originalOffer = JSON.parse(JSON.stringify(offer));
     return offer;
   });
 };
