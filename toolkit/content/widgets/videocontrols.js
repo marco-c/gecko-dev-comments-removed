@@ -64,11 +64,8 @@ this.VideoControlsWidget = class {
     
     
     
-    if (
-      this.impl &&
-      this.impl.constructor == newImpl &&
-      this.impl.elementStateMatches(this.element)
-    ) {
+    if (this.impl && this.impl.constructor == newImpl) {
+      this.impl.onchange();
       return;
     }
     if (this.impl) {
@@ -458,9 +455,9 @@ this.VideoControlsImplWidget = class {
           this.statusIcon.setAttribute("type", "error");
           this.updateErrorText();
           this.setupStatusFader(true);
-        } else if (VideoControlsWidget.isPictureInPictureVideo(this.video)) {
-          this.setShowPictureInPictureMessage(true);
         }
+
+        this.updatePictureInPictureMessage();
 
         if (this.video.readyState >= this.video.HAVE_METADATA) {
           
@@ -934,6 +931,8 @@ this.VideoControlsImplWidget = class {
             
             
             
+            
+            
             this.reflowTriggeringCallValidator.isReflowTriggeringPropsAllowed = true;
             this.updateReflowedDimensions();
             this.reflowTriggeringCallValidator.isReflowTriggeringPropsAllowed = false;
@@ -1095,7 +1094,10 @@ this.VideoControlsImplWidget = class {
         );
       },
 
-      setShowPictureInPictureMessage(showMessage) {
+      updatePictureInPictureMessage() {
+        let showMessage =
+          !this.hasError() &&
+          VideoControlsWidget.isPictureInPictureVideo(this.video);
         this.pictureInPictureOverlay.hidden = !showMessage;
         this.isShowingPictureInPictureMessage = showMessage;
       },
@@ -2899,9 +2901,8 @@ this.VideoControlsImplWidget = class {
     this.l10n.translateRoots();
   }
 
-  elementStateMatches(element) {
-    let elementInPiP = VideoControlsWidget.isPictureInPictureVideo(element);
-    return this.isShowingPictureInPictureMessage == elementInPiP;
+  onchange() {
+    this.Utils.updatePictureInPictureMessage();
   }
 
   teardown() {
@@ -3061,9 +3062,7 @@ this.NoControlsMobileImplWidget = class {
     this.Utils.init(this.shadowRoot);
   }
 
-  elementStateMatches() {
-    return true;
-  }
+  onchange() {}
 
   teardown() {
     this.Utils.terminate();
@@ -3111,9 +3110,7 @@ this.NoControlsPictureInPictureImplWidget = class {
     this.shadowRoot.firstElementChild.setAttribute("localedir", direction);
   }
 
-  elementStateMatches() {
-    return true;
-  }
+  onchange() {}
 
   teardown() {}
 
@@ -3288,9 +3285,7 @@ this.NoControlsDesktopImplWidget = class {
     this.Utils.init(this.shadowRoot, this.prefs);
   }
 
-  elementStateMatches() {
-    return true;
-  }
+  onchange() {}
 
   teardown() {
     this.Utils.terminate();
