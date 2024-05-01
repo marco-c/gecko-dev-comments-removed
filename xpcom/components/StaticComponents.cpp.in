@@ -86,6 +86,7 @@ const nsXPTInterface gInterfaces[] = {
 
 
 #ifdef HAS_COMPONENT_JSMS
+
 const StringOffset gComponentJSMs[] = {
 
 };
