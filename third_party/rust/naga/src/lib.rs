@@ -885,6 +885,7 @@ pub enum Literal {
     F32(f32),
     U32(u32),
     I32(i32),
+    U64(u64),
     I64(i64),
     Bool(bool),
     AbstractInt(i64),
@@ -1255,6 +1256,9 @@ pub enum SampleLevel {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum ImageQuery {
+    
+    
+    
     
     Size {
         
@@ -1684,6 +1688,10 @@ pub enum Statement {
     
     Block(Block),
     
+    
+    
+    
+    
     If {
         condition: Handle<Expression>, 
         accept: Block,
@@ -1706,11 +1714,19 @@ pub enum Statement {
     
     
     
+    
+    
+    
+    
     Switch {
         selector: Handle<Expression>,
         cases: Vec<SwitchCase>,
     },
 
+    
+    
+    
+    
     
     
     

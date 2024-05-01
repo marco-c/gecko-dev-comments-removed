@@ -251,6 +251,11 @@ struct AdapterShared {
     next_shader_id: AtomicU32,
     program_cache: Mutex<ProgramCache>,
     es: bool,
+
+    
+    
+    
+    max_msaa_samples: i32,
 }
 
 pub struct Adapter {
@@ -264,6 +269,11 @@ pub struct Device {
     render_doc: crate::auxil::renderdoc::RenderDoc,
 }
 
+pub struct ShaderClearProgram {
+    pub program: glow::Program,
+    pub color_uniform_location: glow::UniformLocation,
+}
+
 pub struct Queue {
     shared: Arc<AdapterShared>,
     features: wgt::Features,
@@ -271,9 +281,7 @@ pub struct Queue {
     copy_fbo: glow::Framebuffer,
     
     
-    shader_clear_program: glow::Program,
-    
-    shader_clear_program_color_uniform_location: glow::UniformLocation,
+    shader_clear_program: Option<ShaderClearProgram>,
     
     
     zero_buffer: glow::Buffer,

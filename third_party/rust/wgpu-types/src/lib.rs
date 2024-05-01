@@ -274,6 +274,7 @@ bitflags::bitflags! {
         /// - Vulkan (mostly)
         /// - DX12
         /// - Metal
+        /// - OpenGL
         ///
         /// This is a web and native feature.
         const DEPTH32FLOAT_STENCIL8 = 1 << 1;
@@ -370,7 +371,7 @@ bitflags::bitflags! {
 
         /// Allows shaders to acquire the FP16 ability
         ///
-        /// Note: this is not supported in `naga` yet，only through `spirv-passthrough` right now.
+        /// Note: this is not supported in `naga` yet, only through `spirv-passthrough` right now.
         ///
         /// Supported Platforms:
         /// - Vulkan
@@ -873,6 +874,15 @@ bitflags::bitflags! {
         /// - Vulkan (with dualSrcBlend)
         /// - DX12
         const DUAL_SOURCE_BLENDING = 1 << 54;
+        /// Allows shaders to use i64 and u64.
+        ///
+        /// Supported platforms:
+        /// - Vulkan
+        /// - DX12 (DXC only)
+        /// - Metal (with MSL 2.3+)
+        ///
+        /// This is a native only feature.
+        const SHADER_INT64 = 1 << 55;
     }
 }
 
@@ -1217,7 +1227,7 @@ impl Limits {
     
     
     
-    pub fn downlevel_defaults() -> Self {
+    pub const fn downlevel_defaults() -> Self {
         Self {
             max_texture_dimension_1d: 2048,
             max_texture_dimension_2d: 2048,
@@ -1295,7 +1305,7 @@ impl Limits {
     
     
     
-    pub fn downlevel_webgl2_defaults() -> Self {
+    pub const fn downlevel_webgl2_defaults() -> Self {
         Self {
             max_uniform_buffers_per_shader_stage: 11,
             max_storage_buffers_per_shader_stage: 0,
@@ -1323,7 +1333,7 @@ impl Limits {
     
     
     
-    pub fn using_resolution(self, other: Self) -> Self {
+    pub const fn using_resolution(self, other: Self) -> Self {
         Self {
             max_texture_dimension_1d: other.max_texture_dimension_1d,
             max_texture_dimension_2d: other.max_texture_dimension_2d,
@@ -1335,7 +1345,7 @@ impl Limits {
     
     
     
-    pub fn using_alignment(self, other: Self) -> Self {
+    pub const fn using_alignment(self, other: Self) -> Self {
         Self {
             min_uniform_buffer_offset_alignment: other.min_uniform_buffer_offset_alignment,
             min_storage_buffer_offset_alignment: other.min_storage_buffer_offset_alignment,
@@ -2127,6 +2137,9 @@ pub enum PolygonMode {
 pub struct PrimitiveState {
     
     pub topology: PrimitiveTopology,
+    
+    
+    
     
     
     #[cfg_attr(feature = "serde", serde(default))]

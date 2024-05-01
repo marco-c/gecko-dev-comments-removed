@@ -44,6 +44,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 use super::{super::FunctionCtx, BackendResult, Error};
 use crate::{
     proc::{Alignment, NameKey, TypeResolution},
@@ -161,20 +172,39 @@ impl<W: fmt::Write> super::Writer<'_, W> {
                 
                 let chain = mem::take(&mut self.temp_access_chain);
                 let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
-                let cast = scalar.kind.to_hlsl_cast();
-                write!(self.out, "{cast}({var_name}.Load(")?;
+                
+                if scalar.width == 4 {
+                    let cast = scalar.kind.to_hlsl_cast();
+                    write!(self.out, "{cast}({var_name}.Load(")?;
+                } else {
+                    let ty = scalar.to_hlsl_str()?;
+                    write!(self.out, "{var_name}.Load<{ty}>(")?;
+                };
                 self.write_storage_address(module, &chain, func_ctx)?;
-                write!(self.out, "))")?;
+                write!(self.out, ")")?;
+                if scalar.width == 4 {
+                    write!(self.out, ")")?;
+                }
                 self.temp_access_chain = chain;
             }
             crate::TypeInner::Vector { size, scalar } => {
                 
                 let chain = mem::take(&mut self.temp_access_chain);
                 let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
-                let cast = scalar.kind.to_hlsl_cast();
-                write!(self.out, "{}({}.Load{}(", cast, var_name, size as u8)?;
+                let size = size as u8;
+                
+                if scalar.width == 4 {
+                    let cast = scalar.kind.to_hlsl_cast();
+                    write!(self.out, "{cast}({var_name}.Load{size}(")?;
+                } else {
+                    let ty = scalar.to_hlsl_str()?;
+                    write!(self.out, "{var_name}.Load<{ty}{size}>(")?;
+                };
                 self.write_storage_address(module, &chain, func_ctx)?;
-                write!(self.out, "))")?;
+                write!(self.out, ")")?;
+                if scalar.width == 4 {
+                    write!(self.out, ")")?;
+                }
                 self.temp_access_chain = chain;
             }
             crate::TypeInner::Matrix {
@@ -288,26 +318,44 @@ impl<W: fmt::Write> super::Writer<'_, W> {
             }
         };
         match *ty_resolution.inner_with(&module.types) {
-            crate::TypeInner::Scalar(_) => {
+            crate::TypeInner::Scalar(scalar) => {
                 
                 let chain = mem::take(&mut self.temp_access_chain);
                 let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
-                write!(self.out, "{level}{var_name}.Store(")?;
-                self.write_storage_address(module, &chain, func_ctx)?;
-                write!(self.out, ", asuint(")?;
-                self.write_store_value(module, &value, func_ctx)?;
-                writeln!(self.out, "));")?;
+                
+                if scalar.width == 4 {
+                    write!(self.out, "{level}{var_name}.Store(")?;
+                    self.write_storage_address(module, &chain, func_ctx)?;
+                    write!(self.out, ", asuint(")?;
+                    self.write_store_value(module, &value, func_ctx)?;
+                    writeln!(self.out, "));")?;
+                } else {
+                    write!(self.out, "{level}{var_name}.Store(")?;
+                    self.write_storage_address(module, &chain, func_ctx)?;
+                    write!(self.out, ", ")?;
+                    self.write_store_value(module, &value, func_ctx)?;
+                    writeln!(self.out, ");")?;
+                }
                 self.temp_access_chain = chain;
             }
-            crate::TypeInner::Vector { size, .. } => {
+            crate::TypeInner::Vector { size, scalar } => {
                 
                 let chain = mem::take(&mut self.temp_access_chain);
                 let var_name = &self.names[&NameKey::GlobalVariable(var_handle)];
-                write!(self.out, "{}{}.Store{}(", level, var_name, size as u8)?;
-                self.write_storage_address(module, &chain, func_ctx)?;
-                write!(self.out, ", asuint(")?;
-                self.write_store_value(module, &value, func_ctx)?;
-                writeln!(self.out, "));")?;
+                
+                if scalar.width == 4 {
+                    write!(self.out, "{}{}.Store{}(", level, var_name, size as u8)?;
+                    self.write_storage_address(module, &chain, func_ctx)?;
+                    write!(self.out, ", asuint(")?;
+                    self.write_store_value(module, &value, func_ctx)?;
+                    writeln!(self.out, "));")?;
+                } else {
+                    write!(self.out, "{}{}.Store(", level, var_name)?;
+                    self.write_storage_address(module, &chain, func_ctx)?;
+                    write!(self.out, ", ")?;
+                    self.write_store_value(module, &value, func_ctx)?;
+                    writeln!(self.out, ");")?;
+                }
                 self.temp_access_chain = chain;
             }
             crate::TypeInner::Matrix {

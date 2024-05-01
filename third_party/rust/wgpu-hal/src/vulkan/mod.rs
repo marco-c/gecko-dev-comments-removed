@@ -101,6 +101,17 @@ pub struct DebugUtilsCreateInfo {
     callback_data: Box<DebugUtilsMessengerUserData>,
 }
 
+#[derive(Debug)]
+
+
+struct ValidationLayerProperties {
+    
+    layer_description: std::ffi::CString,
+
+    
+    layer_spec_version: u32,
+}
+
 
 
 
@@ -108,10 +119,7 @@ pub struct DebugUtilsCreateInfo {
 #[derive(Debug)]
 pub struct DebugUtilsMessengerUserData {
     
-    validation_layer_description: std::ffi::CString,
-
-    
-    validation_layer_spec_version: u32,
+    validation_layer_properties: Option<ValidationLayerProperties>,
 
     
     

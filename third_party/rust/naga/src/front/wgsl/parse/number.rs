@@ -13,6 +13,10 @@ pub enum Number {
     
     U32(u32),
     
+    I64(i64),
+    
+    U64(u64),
+    
     F32(f32),
     
     F64(f64),
@@ -31,6 +35,8 @@ enum Kind {
 enum IntKind {
     I32,
     U32,
+    I64,
+    U64,
 }
 
 #[derive(Debug)]
@@ -270,6 +276,8 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
                 let kind = consume_map!(bytes, [
                     b'i' => Kind::Int(IntKind::I32),
                     b'u' => Kind::Int(IntKind::U32),
+                    b'l', b'i' => Kind::Int(IntKind::I64),
+                    b'l', b'u' => Kind::Int(IntKind::U64),
                     b'h' => Kind::Float(FloatKind::F16),
                     b'f' => Kind::Float(FloatKind::F32),
                     b'l', b'f' => Kind::Float(FloatKind::F64),
@@ -414,6 +422,14 @@ fn parse_int(input: &str, kind: Option<IntKind>, radix: u32) -> Result<Number, N
         },
         Some(IntKind::U32) => match u32::from_str_radix(input, radix) {
             Ok(num) => Ok(Number::U32(num)),
+            Err(e) => Err(map_err(e)),
+        },
+        Some(IntKind::I64) => match i64::from_str_radix(input, radix) {
+            Ok(num) => Ok(Number::I64(num)),
+            Err(e) => Err(map_err(e)),
+        },
+        Some(IntKind::U64) => match u64::from_str_radix(input, radix) {
+            Ok(num) => Ok(Number::U64(num)),
             Err(e) => Err(map_err(e)),
         },
     }

@@ -5,6 +5,8 @@
 
 pub const RESERVED: &[&str] = &[
     
+    "assert", 
+    
     "and",
     "bitor",
     "or",

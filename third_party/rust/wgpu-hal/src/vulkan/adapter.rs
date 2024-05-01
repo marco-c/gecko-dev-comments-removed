@@ -189,7 +189,7 @@ impl PhysicalDeviceFeatures {
                 
                 
                 .shader_float64(requested_features.contains(wgt::Features::SHADER_F64))
-                
+                .shader_int64(requested_features.contains(wgt::Features::SHADER_INT64))
                 .shader_int16(requested_features.contains(wgt::Features::SHADER_I16))
                 
                 .geometry_shader(requested_features.contains(wgt::Features::SHADER_PRIMITIVE_INDEX))
@@ -469,7 +469,7 @@ impl PhysicalDeviceFeatures {
         
         
         features.set(F::SHADER_F64, self.core.shader_float64 != 0);
-        
+        features.set(F::SHADER_INT64, self.core.shader_int64 != 0);
         features.set(F::SHADER_I16, self.core.shader_int16 != 0);
 
         
@@ -1452,6 +1452,10 @@ impl super::Adapter {
 
             if features.contains(wgt::Features::RAY_QUERY) {
                 capabilities.push(spv::Capability::RayQueryKHR);
+            }
+
+            if features.contains(wgt::Features::SHADER_INT64) {
+                capabilities.push(spv::Capability::Int64);
             }
 
             let mut flags = spv::WriterFlags::empty();
