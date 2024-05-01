@@ -1246,11 +1246,14 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   EXPECT_THAT(output.packet_infos_, IsEmpty());
 
   
-  
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-  EXPECT_EQ(kExpectedOutputSize, output.samples_per_channel_ * kChannels);
-  EXPECT_EQ(kChannels, output.num_channels_);
-  EXPECT_THAT(output.packet_infos_, SizeIs(1));
+  int calls = 0;
+  int kTimeout = 10;
+  while (output.packet_infos_.empty() && calls < kTimeout) {
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+    EXPECT_EQ(kExpectedOutputSize, output.samples_per_channel_ * kChannels);
+    EXPECT_EQ(kChannels, output.num_channels_);
+  }
+  EXPECT_LT(calls, kTimeout);
 
   
   

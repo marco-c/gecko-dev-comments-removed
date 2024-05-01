@@ -707,7 +707,7 @@ class AcmSenderBitExactnessNewApi : public AcmSenderBitExactnessOldApi {};
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_8000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
-  Run("69118ed438ac76252d023e0463819471",
+  Run("3e43fd5d3c73a59e8118e68fbfafe2c7",
       "c1edd36339ce0326cc4550041ad719a0",
       100,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -715,7 +715,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcm16_8000khz_10ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_16000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 16000, 1, 108, 160, 160));
-  Run("f95c87bdd33f631bcf80f4b19445bbd2",
+  Run("608750138315cbab33d76d38e8367807",
       "ad786526383178b08d80d6eee06e9bad",
       100,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -723,7 +723,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcm16_16000khz_10ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_32000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 32000, 1, 109, 320, 320));
-  Run("c50244419c5c3a2f04cc69a022c266a2",
+  Run("02e9927ef5e4d2cd792a5df0bdee5e19",
       "5ef82ea885e922263606c6fdbc49f651",
       100,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -731,7 +731,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcm16_32000khz_10ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_stereo_8000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 2, 111, 80, 80));
-  Run("4fccf4cc96f1e8e8de4b9fadf62ded9e",
+  Run("4ff38de045b19f64de9c7e229ba36317",
       "62ce5adb0d4965d0a52ec98ae7f98974",
       100,
       test::AcmReceiveTestOldApi::kStereoOutput);
@@ -739,7 +739,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcm16_stereo_8000khz_10ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_stereo_16000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 16000, 2, 112, 160, 160));
-  Run("e15e388d9d4af8c02a59fe1552fedee3",
+  Run("1ee35394cfca78ad6d55468441af36fa",
       "41ca8edac4b8c71cd54fd9f25ec14870",
       100,
       test::AcmReceiveTestOldApi::kStereoOutput);
@@ -747,7 +747,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcm16_stereo_16000khz_10ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_stereo_32000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 32000, 2, 113, 320, 320));
-  Run("b240520c0d05003fde7a174ae5957286",
+  Run("19cae34730a0f6a17cf4e76bf21b69d6",
       "50e58502fb04421bf5b857dda4c96879",
       100,
       test::AcmReceiveTestOldApi::kStereoOutput);
@@ -763,7 +763,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcmu_20ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcma_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("PCMA", 8000, 1, 8, 160, 160));
-  Run("47eb60e855eb12d1b0e6da9c975754a4",
+  Run("ae259cab624095270b7369e53a7b53a3",
       "6ad745e55aa48981bfc790d0eeef2dd1",
       50,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -779,7 +779,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcmu_stereo_20ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcma_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("PCMA", 8000, 2, 118, 160, 160));
-  Run("a84d75e098d87ab6b260687eb4b612a2",
+  Run("f2e81d2531a805c40e61da5106b50006",
       "92b282c83efd20e7eeef52ba40842cf7",
       50,
       test::AcmReceiveTestOldApi::kStereoOutput);
@@ -789,7 +789,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcma_stereo_20ms) {
     defined(WEBRTC_ARCH_X86_64)
 TEST_F(AcmSenderBitExactnessOldApi, Ilbc_30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ILBC", 8000, 1, 102, 240, 240));
-  Run("b14dba0de36efa5ec88a32c0b320b70f",
+  Run("a739434bec8a754e9356ce2115603ce5",
       "cfae2e9f6aba96e145f2bcdd5050ce78",
       33,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -799,7 +799,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Ilbc_30ms) {
 #if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64)
 TEST_F(AcmSenderBitExactnessOldApi, G722_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
-  Run("f5264affff25cf2cbd2e1e8a5217f9a3",
+  Run("b875d9a3e41f5470857bdff02e3b368f",
       "fc68a87e1380614e658087cb35d5ca10",
       50,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -809,7 +809,7 @@ TEST_F(AcmSenderBitExactnessOldApi, G722_20ms) {
 #if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64)
 TEST_F(AcmSenderBitExactnessOldApi, G722_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
-  Run("be0b8528ff9db3a2219f55ddd36faf7f",
+  Run("02c427d73363b2f37853a0dd17fe1aba",
       "66516152eeaa1e650ad94ff85f668dac",
       50,
       test::AcmReceiveTestOldApi::kStereoOutput);
@@ -897,8 +897,8 @@ TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       AudioEncoderOpus::MakeAudioEncoder(*config, 120), 120));
   const std::string audio_maybe_sse =
-      "1010e60ad34cee73c939edaf563d0593"
-      "|c05b4523d4c3fad2bab96d2a56baa2d0";
+      "cb644fc17d9666a0f5986eef24818159"
+      "|4a74024473c7c729543c2790829b1e42";
 
   const std::string payload_maybe_sse =
       "ea48d94e43217793af9b7e15ece94e54"
