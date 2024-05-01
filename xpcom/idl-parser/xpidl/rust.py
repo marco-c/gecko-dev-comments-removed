@@ -364,7 +364,7 @@ def print_rust_bindings(idl, fd, relpath):
         if p.kind == "typedef":
             try:
                 
-                if p.name == "bool":
+                if p.substitute:
                     continue
 
                 if printdoccomments:
