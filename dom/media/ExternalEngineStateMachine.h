@@ -235,6 +235,7 @@ class ExternalEngineStateMachine final
   void PreservesPitchChanged() override;
   void PlayStateChanged() override;
   void LoopingChanged() override;
+  void PlaybackRateChanged();
 
   
   void SetIsLiveStream(bool aIsLiveStream) override {}
@@ -311,6 +312,11 @@ class ExternalEngineStateMachine final
 
   
   nsCString mKeySystem;
+
+  
+  
+  
+  nsTArray<RefPtr<nsIRunnable>> mPendingTasks;
 };
 
 class ExternalPlaybackEngine {
