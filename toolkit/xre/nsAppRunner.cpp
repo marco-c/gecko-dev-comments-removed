@@ -4769,6 +4769,21 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     if (gWaylandProxy) {
       gWaylandProxy->RestoreWaylandDisplay();
     }
+    if (PR_GetEnv("WAYLAND_DISPLAY") && GdkIsX11Display()) {
+      
+      
+      
+      
+      Output(true,
+             "Error: Failed to open Wayland display, fallback to X11. "
+             "WAYLAND_DISPLAY='%s' DISPLAY='%s'\n",
+             PR_GetEnv("WAYLAND_DISPLAY"), PR_GetEnv("DISPLAY"));
+
+      
+      
+      g_unsetenv("WAYLAND_DISPLAY");
+      gWaylandProxy = nullptr;
+    }
 #  endif
     if (!gdk_display_get_default()) {
       Output(true,
