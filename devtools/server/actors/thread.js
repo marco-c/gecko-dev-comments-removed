@@ -418,6 +418,12 @@ class ThreadActor extends Actor {
     this.alreadyAttached = true;
     this.dbg.enable();
 
+    
+    
+    
+    if (this.targetActor.onThreadAttached) {
+      this.targetActor.onThreadAttached();
+    }
     if (Services.obs) {
       
       
@@ -529,13 +535,6 @@ class ThreadActor extends Actor {
   }
 
   async setBreakpoint(location, options) {
-    
-    
-    if (this._state === STATES.DETACHED) {
-      this.attach({});
-      this.addAllSources();
-    }
-
     let actor = this.breakpointActorMap.get(location);
     
     if (actor && JSON.stringify(actor.options) == JSON.stringify(options)) {

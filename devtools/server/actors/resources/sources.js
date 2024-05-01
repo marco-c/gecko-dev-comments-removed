@@ -44,8 +44,6 @@ class SourceWatcher {
     this.sourcesManager = targetActor.sourcesManager;
     this.onAvailable = onAvailable;
 
-    threadActor.attach({});
-
     
     threadActor.disableNewSourceEvents();
 

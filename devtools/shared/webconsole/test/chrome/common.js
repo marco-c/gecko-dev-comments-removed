@@ -71,6 +71,9 @@ var _attachConsole = async function (listeners, attachToTab, attachToWorker) {
       }
     }
 
+    
+    await target.attachThread();
+
     const webConsoleFront = await target.getFront("console");
 
     

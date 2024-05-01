@@ -32,7 +32,9 @@ module.exports = {
       threadActor.removeAllBreakpoints();
     }
     const isTargetCreation = threadActor.state == THREAD_STATES.DETACHED;
-    if (isTargetCreation) {
+    if (isTargetCreation && !targetActor.targetType.endsWith("worker")) {
+      
+      
       
       
       await threadActor.attach({ breakpoints: entries });

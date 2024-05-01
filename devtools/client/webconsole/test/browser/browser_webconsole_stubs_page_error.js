@@ -71,11 +71,6 @@ async function generatePageErrorStubs() {
   const resourceCommand = commands.resourceCommand;
 
   
-  await resourceCommand.watchResources([resourceCommand.TYPES.SOURCE], {
-    onAvailable() {},
-  });
-
-  
   
   
   let handleErrorMessage = function () {};

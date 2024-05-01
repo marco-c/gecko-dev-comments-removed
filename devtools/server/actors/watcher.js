@@ -453,9 +453,9 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
-  getTargetActorsInParentProcess() {
-    if (TargetActorRegistry.xpcShellTargetActors.size) {
-      return TargetActorRegistry.xpcShellTargetActors;
+  getTargetActorInParentProcess() {
+    if (TargetActorRegistry.xpcShellTargetActor) {
+      return TargetActorRegistry.xpcShellTargetActor;
     }
 
     
@@ -467,18 +467,12 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
     switch (this.sessionContext.type) {
       case "all":
-        const parentProcessTargetActor = actors.find(
-          actor => actor.typeName === "parentProcessTarget"
-        );
-        if (parentProcessTargetActor) {
-          return new Set([parentProcessTargetActor]);
-        }
-        return new Set();
+        return actors.find(actor => actor.typeName === "parentProcessTarget");
       case "browser-element":
       case "webextension":
         
         
-        return new Set();
+        return null;
       default:
         throw new Error(
           "Unsupported session context type: " + this.sessionContext.type
@@ -557,8 +551,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
-    const targetActors = this.getTargetActorsInParentProcess();
-    for (const targetActor of targetActors) {
+    const targetActor = this.getTargetActorInParentProcess();
+    if (targetActor) {
       const targetActorResourceTypes = Resources.getResourceTypesForTargetType(
         resourceTypes,
         targetActor.targetType
@@ -630,8 +624,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
     }
 
     
-    const targetActors = this.getTargetActorsInParentProcess();
-    for (const targetActor of targetActors) {
+    const targetActor = this.getTargetActorInParentProcess();
+    if (targetActor) {
       const targetActorResourceTypes = Resources.getResourceTypesForTargetType(
         resourceTypes,
         targetActor.targetType
@@ -761,8 +755,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
     );
 
     
-    const targetActors = this.getTargetActorsInParentProcess();
-    for (const targetActor of targetActors) {
+    const targetActor = this.getTargetActorInParentProcess();
+    if (targetActor) {
       await targetActor.addOrSetSessionDataEntry(
         type,
         entries,
@@ -802,8 +796,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
       });
 
     
-    const targetActors = this.getTargetActorsInParentProcess();
-    for (const targetActor of targetActors) {
+    const targetActor = this.getTargetActorInParentProcess();
+    if (targetActor) {
       targetActor.removeSessionDataEntry(type, entries);
     }
   }

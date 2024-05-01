@@ -162,12 +162,6 @@ class WebExtensionTargetActor extends ParentProcessTargetActor {
     
     const extensionWindow = this._searchForExtensionWindow();
     this.setDocShell(extensionWindow.docShell);
-
-    
-    
-    
-    
-    this.threadActor.attach({});
   }
 
   

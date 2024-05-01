@@ -73,22 +73,20 @@ const DEBUGGER_L10N = new LocalizationHelper(
 
 
 
-function waitForState(dbg, predicate, msg = "") {
+
+function waitForState(dbg, predicate, msg) {
   return new Promise(resolve => {
-    info(`Waiting for state change: ${msg}`);
-    let result = predicate(dbg.store.getState());
-    if (result) {
-      info(
-        `--> The state was immediately correct (should rather do an immediate assertion?)`
-      );
-      resolve(result);
+    info(`Waiting for state change: ${msg || ""}`);
+    if (predicate(dbg.store.getState())) {
+      info(`Finished waiting for state change: ${msg || ""}`);
+      resolve();
       return;
     }
 
     const unsubscribe = dbg.store.subscribe(() => {
-      result = predicate(dbg.store.getState());
+      const result = predicate(dbg.store.getState());
       if (result) {
-        info(`Finished waiting for state change: ${msg}`);
+        info(`Finished waiting for state change: ${msg || ""}`);
         unsubscribe();
         resolve(result);
       }

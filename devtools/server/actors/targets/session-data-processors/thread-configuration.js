@@ -28,9 +28,12 @@ module.exports = {
       threadOptions[key] = value;
     }
 
-    if (targetActor.threadActor.state == THREAD_STATES.DETACHED) {
+    if (
+      !targetActor.targetType.endsWith("worker") &&
+      targetActor.threadActor.state == THREAD_STATES.DETACHED
+    ) {
       await targetActor.threadActor.attach(threadOptions);
-    } else if (!targetActor.threadActor.isDestroyed()) {
+    } else {
       
       
       

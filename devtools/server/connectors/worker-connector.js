@@ -46,7 +46,7 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
         onMessage: message => {
           message = JSON.parse(message);
           if (message.type !== "rpc") {
-            if (message.type == "session-data-processed") {
+            if (message.type == "worker-thread-attached") {
               
               
               dbg.setDebuggerReady(true);

@@ -17,7 +17,10 @@ module.exports = {
   ) {
     const { threadActor } = targetActor;
     
-    if (threadActor.state == THREAD_STATES.DETACHED) {
+    if (
+      threadActor.state == THREAD_STATES.DETACHED &&
+      !targetActor.targetType.endsWith("worker")
+    ) {
       threadActor.attach();
     }
     if (updateType == "set") {

@@ -37,7 +37,6 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
   }
 
   const threadFront = await targetFront.getFront("thread");
-  await threadFront.attach({});
 
   
   
