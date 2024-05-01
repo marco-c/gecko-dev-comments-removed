@@ -563,10 +563,14 @@ assert_trap(() => invoke($0, `i64.load32_u`, [-3]), `out of bounds memory access
 assert_trap(() => invoke($0, `i64.load32_u`, [-4]), `out of bounds memory access`);
 
 
-assert_return(() => invoke($0, `i64.load`, [65528]), [value("i64", 7523094288207667809n)]);
 
+if (!partialOobWriteMayWritePartialData()) {
+  
+  assert_return(() => invoke($0, `i64.load`, [65528]), [value("i64", 7523094288207667809n)]);
 
-assert_return(() => invoke($0, `i64.load`, [0]), [value("i64", 7523094288207667809n)]);
+  
+  assert_return(() => invoke($0, `i64.load`, [0]), [value("i64", 7523094288207667809n)]);
+}
 
 
 assert_return(() => invoke($0, `i64.store`, [65528, 0n]), []);
@@ -574,14 +578,18 @@ assert_return(() => invoke($0, `i64.store`, [65528, 0n]), []);
 
 assert_trap(() => invoke($0, `i32.store`, [65533, 305419896]), `out of bounds memory access`);
 
-
-assert_return(() => invoke($0, `i32.load`, [65532]), [value("i32", 0)]);
+if (!partialOobWriteMayWritePartialData()) {
+  
+  assert_return(() => invoke($0, `i32.load`, [65532]), [value("i32", 0)]);
+}
 
 
 assert_trap(() => invoke($0, `i64.store`, [65529, 1311768467294899695n]), `out of bounds memory access`);
 
-
-assert_return(() => invoke($0, `i64.load`, [65528]), [value("i64", 0n)]);
+if (!partialOobWriteMayWritePartialData()) {
+  
+  assert_return(() => invoke($0, `i64.load`, [65528]), [value("i64", 0n)]);
+}
 
 
 assert_trap(
@@ -589,8 +597,10 @@ assert_trap(
   `out of bounds memory access`,
 );
 
-
-assert_return(() => invoke($0, `f32.load`, [65532]), [value("f32", 0)]);
+if (!partialOobWriteMayWritePartialData()) {
+  
+  assert_return(() => invoke($0, `f32.load`, [65532]), [value("f32", 0)]);
+}
 
 
 assert_trap(
@@ -598,5 +608,7 @@ assert_trap(
   `out of bounds memory access`,
 );
 
-
-assert_return(() => invoke($0, `f64.load`, [65528]), [value("f64", 0)]);
+if (!partialOobWriteMayWritePartialData()) {
+  
+  assert_return(() => invoke($0, `f64.load`, [65528]), [value("f64", 0)]);
+}
