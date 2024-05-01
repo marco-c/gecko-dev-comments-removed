@@ -63,11 +63,8 @@ class FrameCadenceAdapterInterface
     
     
     
-    
-    
-    
     virtual void OnFrame(Timestamp post_time,
-                         int frames_scheduled_for_processing,
+                         bool queue_overload,
                          const VideoFrame& frame) = 0;
 
     
