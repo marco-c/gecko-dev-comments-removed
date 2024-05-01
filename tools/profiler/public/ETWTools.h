@@ -22,6 +22,8 @@ namespace ETW {
 
 extern std::atomic<ULONGLONG> gETWCollectionMask;
 
+constexpr const char* kNameKey = "MarkerName";
+
 
 
 TRACELOGGING_DECLARE_PROVIDER(kFirefoxTraceLoggingProvider);
@@ -29,9 +31,16 @@ TRACELOGGING_DECLARE_PROVIDER(kFirefoxTraceLoggingProvider);
 void Init();
 void Shutdown();
 
+template <typename T, typename = void>
+struct MarkerHasPayload : std::false_type {};
+template <typename T>
+struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields)>>
+    : std::true_type {};
+
 
 
 struct BaseMarkerDescription {
+  static constexpr bool StoreName = false;
   using MS = mozilla::MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
       {"StartTime", MS::InputType::TimeStamp, "Start Time"},
@@ -43,19 +52,25 @@ struct BaseMarkerDescription {
 
 
 
-struct SimpleMarkerType {
+struct SimpleMarkerType : public mozilla::BaseMarkerType<SimpleMarkerType> {
   using MS = mozilla::MarkerSchema;
+
   static constexpr const char* Name = "SimpleMarker";
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"MarkerName", MS::InputType::CString, "Simple Marker Name"}};
+  static constexpr bool StoreName = true;
 };
 
 
 template <typename T>
 constexpr std::size_t GetPackingSpace() {
   size_t length = 0;
-  for (size_t i = 0; i < std::size(T::PayloadFields); i++) {
-    length += std::string_view{T::PayloadFields[i].Key}.size() + 1;
+  if constexpr (MarkerHasPayload<T>::value) {
+    for (size_t i = 0; i < std::size(T::PayloadFields); i++) {
+      length += std::string_view{T::PayloadFields[i].Key}.size() + 1;
+      length += sizeof(uint8_t);
+    }
+  }
+  if (T::StoreName) {
+    length += std::string_view{kNameKey}.size() + 1;
     length += sizeof(uint8_t);
   }
   return length;
@@ -123,12 +138,20 @@ struct StaticMetaData {
       fieldStorage[pos++] =
           GetTlgInputType(BaseMarkerDescription::PayloadFields[i].InputTy);
     }
-    for (uint32_t i = 0; i < std::size(T::PayloadFields); i++) {
-      for (size_t c = 0;
-           c < std::string_view{T::PayloadFields[i].Key}.size() + 1; c++) {
-        fieldStorage[pos++] = T::PayloadFields[i].Key[c];
+    if (T::StoreName) {
+      for (size_t c = 0; c < std::string_view{kNameKey}.size() + 1; c++) {
+        fieldStorage[pos++] = kNameKey[c];
       }
-      fieldStorage[pos++] = GetTlgInputType(T::PayloadFields[i].InputTy);
+      fieldStorage[pos++] = TlgInANSISTRING;
+    }
+    if constexpr (MarkerHasPayload<T>::value) {
+      for (uint32_t i = 0; i < std::size(T::PayloadFields); i++) {
+        for (size_t c = 0;
+             c < std::string_view{T::PayloadFields[i].Key}.size() + 1; c++) {
+          fieldStorage[pos++] = T::PayloadFields[i].Key[c];
+        }
+        fieldStorage[pos++] = GetTlgInputType(T::PayloadFields[i].InputTy);
+      }
     }
   }
 };
@@ -228,8 +251,7 @@ void CreateDataDescForPayload(PayloadBuffer& aBuffer,
 template <typename T, typename = void>
 struct MarkerSupportsETW : std::false_type {};
 template <typename T>
-struct MarkerSupportsETW<T, std::void_t<decltype(T::PayloadFields)>>
-    : std::true_type {};
+struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
 
 template <typename T, typename = void>
 struct MarkerHasTranslator : std::false_type {};
@@ -273,32 +295,16 @@ static inline void StoreBaseEventDataDesc(
                       sizeof(uint32_t));
 }
 
-
-
-static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
-                                 const mozilla::MarkerCategory& aCategory,
-                                 const mozilla::MarkerOptions& aOptions = {}) {
-  if (!(gETWCollectionMask &
-        uint64_t(mozilla::MarkerSchema::ETWMarkerGroup::Generic))) {
-    return;
+template <typename MarkerType>
+constexpr size_t GetETWDescriptorCount() {
+  size_t count = 2 + std::size(BaseMarkerDescription::PayloadFields);
+  if (MarkerType::StoreName) {
+    count++;
   }
-
-  static const __declspec(allocate(_tlgSegMetadataEvents)) __declspec(
-      align(1)) constexpr StaticMetaData<SimpleMarkerType>
-      staticData;
-
-  std::array<EVENT_DATA_DESCRIPTOR, 8> descriptors = {};
-
-  
-  BaseEventStorage dataStorage = {};
-
-  StoreBaseEventDataDesc(dataStorage, descriptors.data(), aCategory,
-                         std::move(aOptions));
-
-  EventDataDescCreate(&descriptors[7], aName.StringView().data(),
-                      aName.StringView().size() + 1);
-  _tlgWriteTransfer(kFirefoxTraceLoggingProvider, &staticData.metaData.Channel,
-                    NULL, NULL, descriptors.size(), descriptors.data());
+  if constexpr (MarkerHasPayload<MarkerType>::value) {
+    count += std::size(MarkerType::PayloadFields);
+  }
+  return count;
 }
 
 template <typename MarkerType, typename... PayloadArguments>
@@ -310,7 +316,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   
   
   if constexpr (!MarkerSupportsETW<MarkerType>::value) {
-    return EmitETWMarker(aName, aCategory, aOptions);
+    return EmitETWMarker(aName, aCategory, aOptions, SimpleMarkerType{});
   } else {
     if (!(gETWCollectionMask & uint64_t(MarkerType::Group))) {
       return;
@@ -321,9 +327,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
         staticData;
 
     
-    std::array<EVENT_DATA_DESCRIPTOR,
-               2 + std::size(MarkerType::PayloadFields) +
-                   std::size(BaseMarkerDescription::PayloadFields)>
+    std::array<EVENT_DATA_DESCRIPTOR, GetETWDescriptorCount<MarkerType>()>
         descriptors = {};
 
     
@@ -333,23 +337,33 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
     StoreBaseEventDataDesc(dataStorage, descriptors.data(), aCategory,
                            aOptions);
 
-    if constexpr (MarkerHasTranslator<MarkerType>::value) {
-      
-      
-      
-      buffer.mDescriptors = descriptors.data() + 2 +
-                            std::size(BaseMarkerDescription::PayloadFields);
-      MarkerType::TranslateMarkerInputToSchema(&buffer, aPayloadArguments...);
-    } else {
-      const size_t argCount = sizeof...(PayloadArguments);
-      static_assert(
-          argCount == std::size(MarkerType::PayloadFields),
-          "Number and type of fields must be equal to number and type of "
-          "payload arguments. If this is not the case a "
-          "TranslateMarkerInputToSchema function must be defined.");
-      size_t i = 2 + std::size(BaseMarkerDescription::PayloadFields);
-      (CreateDataDescForPayload(buffer, descriptors[i++], aPayloadArguments),
-       ...);
+    if constexpr (MarkerType::StoreName) {
+      EventDataDescCreate(&descriptors[7], aName.StringView().data(),
+                          aName.StringView().size() + 1);
+    }
+
+    if constexpr (MarkerHasPayload<MarkerType>::value) {
+      if constexpr (MarkerHasTranslator<MarkerType>::value) {
+        
+        
+        
+        buffer.mDescriptors = descriptors.data() + 2 +
+                              std::size(BaseMarkerDescription::PayloadFields) +
+                              (MarkerType::StoreName ? 1 : 0);
+
+        MarkerType::TranslateMarkerInputToSchema(&buffer, aPayloadArguments...);
+      } else {
+        const size_t argCount = sizeof...(PayloadArguments);
+        static_assert(
+            argCount == std::size(MarkerType::PayloadFields),
+            "Number and type of fields must be equal to number and type of "
+            "payload arguments. If this is not the case a "
+            "TranslateMarkerInputToSchema function must be defined.");
+        size_t i = 2 + std::size(BaseMarkerDescription::PayloadFields) +
+                   (MarkerType::StoreName ? 1 : 0);
+        (CreateDataDescForPayload(buffer, descriptors[i++], aPayloadArguments),
+         ...);
+      }
     }
 
     _tlgWriteTransfer(kFirefoxTraceLoggingProvider,
@@ -381,9 +395,6 @@ void OutputMarkerSchema(void* aContext, MarkerType aMarkerType,
 namespace ETW {
 static inline void Init() {}
 static inline void Shutdown() {}
-static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
-                                 const mozilla::MarkerCategory& aCategory,
-                                 const mozilla::MarkerOptions& aOptions = {}) {}
 template <typename MarkerType, typename... PayloadArguments>
 static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
                                  const mozilla::MarkerCategory& aCategory,
@@ -397,4 +408,4 @@ void OutputMarkerSchema(void* aContext, MarkerType aMarkerType,
 }  
 #endif
 
-#endif
+#endif  

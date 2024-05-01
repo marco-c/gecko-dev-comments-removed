@@ -1018,6 +1018,10 @@ struct BaseMarkerType {
   static constexpr const char* TableLabel = nullptr;
   static constexpr const char* TooltipLabel = nullptr;
 
+  
+  
+  static constexpr bool StoreName = false;
+
   static constexpr MarkerSchema::ETWMarkerGroup Group =
       MarkerSchema::ETWMarkerGroup::Generic;
 
