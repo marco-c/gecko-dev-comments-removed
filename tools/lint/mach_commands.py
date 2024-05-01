@@ -56,7 +56,7 @@ def get_global_excludes(**lintargs):
         ]
     )
 
-    if lintargs.get("include_thirdparty"):
+    if lintargs.get("include_third-party"):
         
         
         return excludes
