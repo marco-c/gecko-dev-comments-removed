@@ -133,10 +133,12 @@ class MFMediaEngineStream
   
   virtual already_AddRefed<MediaData> OutputDataInternal() = 0;
 
-  void SendRequestSampleEvent(bool aIsEnough);
+  virtual void SendRequestSampleEvent(bool aIsEnough);
 
   HRESULT AddEncryptAttributes(IMFSample* aSample,
                                const CryptoSample& aCryptoConfig);
+
+  void NotifyEndEvent();
 
   void AssertOnTaskQueue() const;
   void AssertOnMFThreadPool() const;

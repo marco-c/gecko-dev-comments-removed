@@ -287,6 +287,16 @@ RefPtr<MediaDataDecoder::DecodePromise> MFMediaEngineVideoStream::Drain() {
   MediaDataDecoder::DecodedData outputs;
   if (!IsDCompImageReady()) {
     LOGV("Waiting for dcomp image for draining");
+    
+    
+    
+    
+    
+    
+    if (!mSampleRequestTokens.empty() &&
+        mRawDataQueueForFeedingEngine.GetSize() == 0) {
+      NotifyEndEvent();
+    }
     return mPendingDrainPromise.Ensure(__func__);
   }
   return MFMediaEngineStream::Drain();
@@ -388,6 +398,18 @@ void MFMediaEngineVideoStream::ShutdownCleanUpOnTaskQueue() {
   mPendingDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mVideoDecodeBeforeDcompPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED,
                                                 __func__);
+}
+
+void MFMediaEngineVideoStream::SendRequestSampleEvent(bool aIsEnough) {
+  AssertOnTaskQueue();
+  MFMediaEngineStream::SendRequestSampleEvent(aIsEnough);
+  
+  
+  if (!aIsEnough && !mVideoDecodeBeforeDcompPromise.IsEmpty()) {
+    LOG("Resolved pending input promise to allow more input be sent in");
+    mVideoDecodeBeforeDcompPromise.Resolve(MediaDataDecoder::DecodedData{},
+                                           __func__);
+  }
 }
 
 bool MFMediaEngineVideoStream::IsEnded() const {
