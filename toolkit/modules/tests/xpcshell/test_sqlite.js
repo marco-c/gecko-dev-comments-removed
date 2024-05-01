@@ -118,9 +118,8 @@ add_task(async function test_open_normal_error() {
 
   
   let path = PathUtils.join(PROFILE_DIR, "corrupt.sqlite");
-  await Assert.rejects(
-    IOUtils.stat(path),
-    /Could not stat file\(.*\) because it does not exist/,
+  Assert.ok(
+    !(await IOUtils.exists(path)),
     "Database file should not exist yet"
   );
 
