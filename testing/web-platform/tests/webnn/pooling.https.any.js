@@ -7,4 +7,4 @@
 
 
 
-testWebNNOperation(['averagePool2d', 'maxPool2d'], buildOperationWithSingleInput);
+testWebNNOperation(['averagePool2d', 'l2Pool2d', 'maxPool2d'], buildOperationWithSingleInput);

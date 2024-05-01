@@ -341,6 +341,7 @@ const PrecisionMetrics = {
   pad: {ULP: {float32: 0, float16: 0}},
   
   averagePool2d: {ULP: {float32: getAveragePool2dPrecisionTolerance, float16: getAveragePool2dPrecisionTolerance}},
+  l2Pool2d: {ULP: {float32: getAveragePool2dPrecisionTolerance, float16: getAveragePool2dPrecisionTolerance}},
   maxPool2d: {ULP: {float32: 0, float16: 0}},
   
   prelu: {ULP: {float32: 1, float16: 1}},
