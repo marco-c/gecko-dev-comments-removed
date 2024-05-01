@@ -126,6 +126,12 @@ struct NrIceCandidatePair {
 
 class NrIceMediaStream {
  public:
+  enum GatheringState {
+    ICE_STREAM_GATHER_INIT,
+    ICE_STREAM_GATHER_STARTED,
+    ICE_STREAM_GATHER_COMPLETE
+  };
+
   NrIceMediaStream(NrIceCtx* ctx, const std::string& id,
                    const std::string& name, size_t components);
 
@@ -182,6 +188,9 @@ class NrIceMediaStream {
   void Ready(nr_ice_media_stream* stream);
   void Failed();
 
+  void OnGatheringStarted(nr_ice_media_stream* stream);
+  void OnGatheringComplete(nr_ice_media_stream* stream);
+
   
   
   
@@ -192,9 +201,14 @@ class NrIceMediaStream {
   
   const std::string& GetId() const { return id_; }
 
+  bool AllGenerationsDoneGathering() const;
+  bool AnyGenerationIsConnected() const;
+
   sigslot::signal5<NrIceMediaStream*, const std::string&, const std::string&,
                    const std::string&, const std::string&>
       SignalCandidate;  
+  sigslot::signal2<const std::string&, NrIceMediaStream::GatheringState>
+      SignalGatheringStateChange;
 
   sigslot::signal1<NrIceMediaStream*> SignalReady;   
   sigslot::signal1<NrIceMediaStream*> SignalFailed;  

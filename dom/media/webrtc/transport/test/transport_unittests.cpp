@@ -586,16 +586,15 @@ class TransportTestPeer : public sigslot::has_slots<> {
   void InitIce() {
     nsresult res;
 
-    
-    ice_ctx_->SignalGatheringStateChange.connect(
-        this, &TransportTestPeer::GatheringStateChange);
-
     char name[100];
     snprintf(name, sizeof(name), "%s:stream%d", name_.c_str(),
              (int)streams_.size());
 
     
     RefPtr<NrIceMediaStream> stream = ice_ctx_->CreateStream(name, name, 1);
+    
+    stream->SignalGatheringStateChange.connect(
+        this, &TransportTestPeer::GatheringStateChange);
 
     ASSERT_TRUE(stream != nullptr);
     stream->SetIceCredentials("ufrag", "pass");
@@ -639,9 +638,12 @@ class TransportTestPeer : public sigslot::has_slots<> {
               << std::endl;
   }
 
-  void GatheringStateChange(NrIceCtx* ctx, NrIceCtx::GatheringState state) {
-    (void)ctx;
-    if (state == NrIceCtx::ICE_CTX_GATHER_COMPLETE) {
+  void GatheringStateChange(const std::string& aTransportId,
+                            NrIceMediaStream::GatheringState state) {
+    
+    
+    Unused << aTransportId;
+    if (state == NrIceMediaStream::ICE_STREAM_GATHER_COMPLETE) {
       GatheringComplete();
     }
   }

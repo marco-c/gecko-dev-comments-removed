@@ -85,6 +85,7 @@
 #include "mozilla/dom/RTCCertificate.h"
 #include "mozilla/dom/RTCSctpTransportBinding.h"  
 #include "mozilla/dom/RTCDtlsTransportBinding.h"  
+#include "mozilla/dom/RTCIceTransportBinding.h"   
 #include "mozilla/dom/RTCRtpReceiverBinding.h"
 #include "mozilla/dom/RTCRtpSenderBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
@@ -3290,7 +3291,8 @@ void PeerConnectionImpl::SendLocalIceCandidateToContent(
 }
 
 void PeerConnectionImpl::IceConnectionStateChange(
-    dom::RTCIceConnectionState domState) {
+    const std::string& aTransportId, dom::RTCIceTransportState domState) {
+  
   PC_AUTO_ENTER_API_CALL_VOID_RETURN(false);
 
   CSFLogDebug(LOGTAG, "%s: %d -> %d", __FUNCTION__,
@@ -3378,7 +3380,8 @@ void PeerConnectionImpl::OnCandidateFound(const std::string& aTransportId,
 }
 
 void PeerConnectionImpl::IceGatheringStateChange(
-    dom::RTCIceGatheringState state) {
+    const std::string& aTransportId, dom::RTCIceGathererState state) {
+  
   PC_AUTO_ENTER_API_CALL_VOID_RETURN(false);
 
   CSFLogDebug(LOGTAG, "%s %d", __FUNCTION__, static_cast<int>(state));
@@ -4468,32 +4471,31 @@ std::string PeerConnectionImpl::GetTransportIdMatchingSendTrack(
 }
 
 void PeerConnectionImpl::SignalHandler::IceGatheringStateChange_s(
-    dom::RTCIceGatheringState aState) {
+    const std::string& aTransportId, dom::RTCIceGathererState aState) {
   ASSERT_ON_THREAD(mSTSThread);
-
   GetMainThreadSerialEventTarget()->Dispatch(
       NS_NewRunnableFunction(__func__,
-                             [handle = mHandle, aState] {
+                             [handle = mHandle, aTransportId, aState] {
                                PeerConnectionWrapper wrapper(handle);
                                if (wrapper.impl()) {
                                  wrapper.impl()->IceGatheringStateChange(
-                                     aState);
+                                     aTransportId, aState);
                                }
                              }),
       NS_DISPATCH_NORMAL);
 }
 
 void PeerConnectionImpl::SignalHandler::IceConnectionStateChange_s(
-    dom::RTCIceConnectionState aState) {
+    const std::string& aTransportId, dom::RTCIceTransportState aState) {
   ASSERT_ON_THREAD(mSTSThread);
 
   GetMainThreadSerialEventTarget()->Dispatch(
       NS_NewRunnableFunction(__func__,
-                             [handle = mHandle, aState] {
+                             [handle = mHandle, aTransportId, aState] {
                                PeerConnectionWrapper wrapper(handle);
                                if (wrapper.impl()) {
                                  wrapper.impl()->IceConnectionStateChange(
-                                     aState);
+                                     aTransportId, aState);
                                }
                              }),
       NS_DISPATCH_NORMAL);
