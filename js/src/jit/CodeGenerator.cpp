@@ -9679,6 +9679,17 @@ void CodeGenerator::visitResizableDataViewByteLength(
                                              temp);
 }
 
+void CodeGenerator::visitGrowableSharedArrayBufferByteLength(
+    LGrowableSharedArrayBufferByteLength* lir) {
+  Register obj = ToRegister(lir->object());
+  Register out = ToRegister(lir->output());
+
+  
+  auto sync = Synchronization::Load();
+
+  masm.loadGrowableSharedArrayBufferByteLengthIntPtr(sync, obj, out);
+}
+
 void CodeGenerator::visitGuardResizableArrayBufferViewInBounds(
     LGuardResizableArrayBufferViewInBounds* lir) {
   Register obj = ToRegister(lir->object());

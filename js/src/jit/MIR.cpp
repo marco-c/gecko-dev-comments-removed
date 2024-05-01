@@ -6411,6 +6411,15 @@ bool MResizableDataViewByteLength::congruentTo(const MDefinition* ins) const {
   return congruentIfOperandsEqual(ins);
 }
 
+AliasSet MGrowableSharedArrayBufferByteLength::getAliasSet() const {
+  
+  
+  
+  return AliasSet::Store(AliasSet::FixedSlot |
+                         AliasSet::SharedArrayRawBufferLength |
+                         AliasSet::UnboxedElement);
+}
+
 AliasSet MGuardResizableArrayBufferViewInBounds::getAliasSet() const {
   
   
