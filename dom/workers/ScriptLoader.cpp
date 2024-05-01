@@ -517,7 +517,9 @@ already_AddRefed<WorkerScriptLoader> WorkerScriptLoader::Create(
   }
 
   
-  self->InitModuleLoader();
+  if (!aWorkerPrivate->IsServiceWorker()) {
+    self->InitModuleLoader();
+  }
 
   return self.forget();
 }
