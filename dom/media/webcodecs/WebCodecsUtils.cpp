@@ -57,6 +57,29 @@ nsTArray<nsCString> GuessContainers(const nsAString& aCodec) {
     return {"mp4"_ns, "3gpp"_ns, "3gpp2"_ns, "3gp2"_ns};
   }
 
+  if (IsAACCodecString(aCodec)) {
+    return {"adts"_ns, "mp4"_ns};
+  }
+
+  if (aCodec.EqualsLiteral("vorbis") || aCodec.EqualsLiteral("opus")) {
+    return {"ogg"_ns};
+  }
+
+  if (aCodec.EqualsLiteral("flac")) {
+    return {"flac"_ns};
+  }
+
+  if (aCodec.EqualsLiteral("mp3")) {
+    return {"mp3"_ns};
+  }
+
+  if (aCodec.EqualsLiteral("ulaw") || aCodec.EqualsLiteral("alaw") ||
+      aCodec.EqualsLiteral("pcm-u8") || aCodec.EqualsLiteral("pcm-s16") ||
+      aCodec.EqualsLiteral("pcm-s24") || aCodec.EqualsLiteral("pcm-s32") ||
+      aCodec.EqualsLiteral("pcm-f32")) {
+    return {"x-wav"_ns};
+  }
+
   return {};
 }
 
