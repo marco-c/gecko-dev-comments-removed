@@ -2394,15 +2394,14 @@ nsMargin nsTableFrame::GetUsedMargin() const {
 }
 
 
+
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(TableBCDataProperty, TableBCData)
 
 TableBCData* nsTableFrame::GetTableBCData() const {
-  return FirstInFlow()->GetProperty(TableBCDataProperty());
+  return GetProperty(TableBCDataProperty());
 }
 
 TableBCData* nsTableFrame::GetOrCreateTableBCData() {
-  MOZ_ASSERT(!GetPrevInFlow(),
-             "TableBCProperty should only be set on the first-in-flow!");
   TableBCData* value = GetProperty(TableBCDataProperty());
   if (!value) {
     value = new TableBCData();
