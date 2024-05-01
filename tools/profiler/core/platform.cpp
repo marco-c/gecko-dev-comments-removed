@@ -114,7 +114,7 @@
 #  include "mozilla/jni/Refs.h"
 #endif
 
-#if defined(GP_OS_darwin)
+#if defined(XP_MACOSX)
 #  include "nsCocoaFeatures.h"
 #endif
 
@@ -2805,7 +2805,7 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
       !NS_FAILED(res) && http) {
     Unused << http->GetPlatform(info.mHttpPlatform);
 
-#if defined(GP_OS_darwin)
+#if defined(XP_MACOSX)
     
     
     int major = 0;
