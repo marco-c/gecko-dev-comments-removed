@@ -76,6 +76,31 @@ pub trait TimingDistribution {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn accumulate_single_sample(&self, sample: i64);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>);
 
     

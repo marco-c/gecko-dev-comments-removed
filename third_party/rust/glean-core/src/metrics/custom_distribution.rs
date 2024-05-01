@@ -84,14 +84,33 @@ impl CustomDistributionMetric {
     
     pub fn accumulate_samples(&self, samples: Vec<i64>) {
         let metric = self.clone();
-        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, samples))
+        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, &samples))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn accumulate_single_sample(&self, sample: i64) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, &[sample]))
     }
 
     
     
     
     #[doc(hidden)]
-    pub fn accumulate_samples_sync(&self, glean: &Glean, samples: Vec<i64>) {
+    pub fn accumulate_samples_sync(&self, glean: &Glean, samples: &[i64]) {
         if !self.should_record(glean) {
             return;
         }
@@ -132,7 +151,7 @@ impl CustomDistributionMetric {
                             self.bucket_count as usize,
                         )
                     };
-                    accumulate(&samples, hist, Metric::CustomDistributionLinear)
+                    accumulate(samples, hist, Metric::CustomDistributionLinear)
                 }
                 HistogramType::Exponential => {
                     let hist = if let Some(Metric::CustomDistributionExponential(hist)) = old_value
@@ -145,7 +164,7 @@ impl CustomDistributionMetric {
                             self.bucket_count as usize,
                         )
                     };
-                    accumulate(&samples, hist, Metric::CustomDistributionExponential)
+                    accumulate(samples, hist, Metric::CustomDistributionExponential)
                 }
             };
 

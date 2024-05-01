@@ -293,7 +293,35 @@ impl TimingDistributionMetric {
     
     pub fn accumulate_samples(&self, samples: Vec<i64>) {
         let metric = self.clone();
-        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, samples))
+        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, &samples))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn accumulate_single_sample(&self, sample: i64) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, &[sample]))
     }
 
     
@@ -301,7 +329,7 @@ impl TimingDistributionMetric {
     
     
     #[doc(hidden)]
-    pub fn accumulate_samples_sync(&self, glean: &Glean, samples: Vec<i64>) {
+    pub fn accumulate_samples_sync(&self, glean: &Glean, samples: &[i64]) {
         if !self.should_record(glean) {
             return;
         }
