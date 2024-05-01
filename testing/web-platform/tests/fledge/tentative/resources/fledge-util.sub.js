@@ -120,21 +120,27 @@ async function fetchTrackedData(uuid) {
 
 
 
-async function waitForObservedRequests(uuid, expectedRequests) {
+
+
+async function waitForObservedRequests(uuid, expectedRequests, filter) {
   
   
-  expectedRequests = expectedRequests.sort().map((url) => url.replace(uuid, '<uuid>'));
+  expectedRequests = expectedRequests.map((url) => url.replace(uuid, '<uuid>')).sort();
 
   while (true) {
     let trackedData = await fetchTrackedData(uuid);
 
     
-    let trackedRequests = trackedData.trackedRequests.sort().map(
-                              (url) => url.replace(uuid, '<uuid>'));
+    let trackedRequests = trackedData.trackedRequests.map(
+                              (url) => url.replace(uuid, '<uuid>')).sort();
+
+    if (filter) {
+      trackedRequests = trackedRequests.filter(filter);
+    }
 
     
     
-    if (trackedRequests.length == expectedRequests.length) {
+    if (trackedRequests.length >= expectedRequests.length) {
       assert_array_equals(trackedRequests, expectedRequests);
       break;
     }
@@ -151,30 +157,11 @@ async function waitForObservedRequests(uuid, expectedRequests) {
 
 
 async function waitForObservedRequestsIgnoreDebugOnlyReports(
-  uuid, expectedRequests) {
-  
-  
-  expectedRequests =
-      expectedRequests.sort().map((url) => url.replace(uuid, '<uuid>'));
-
-  while (true) {
-    let numTrackedRequest = 0;
-    let trackedData = await fetchTrackedData(uuid);
-
-    
-    let trackedRequests = trackedData.trackedRequests.sort().map(
-        (url) => url.replace(uuid, '<uuid>'));
-
-    for (const trackedRequest of trackedRequests) {
-      
-      if (!trackedRequest.includes('forDebuggingOnly')) {
-        assert_in_array(trackedRequest, expectedRequests);
-        numTrackedRequest++;
-      }
-    }
-
-    if (numTrackedRequest == expectedRequests.length) break;
-  }
+    uuid, expectedRequests) {
+  return waitForObservedRequests(
+      uuid,
+      expectedRequests,
+      request => !request.includes('forDebuggingOnly'));
 }
 
 
