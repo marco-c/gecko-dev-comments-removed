@@ -294,6 +294,11 @@ class MessageChannel : HasResultCodes {
 
   
   
+  
+  void TestOnlyWaitForTransactionCompletion() const MOZ_EXCLUDES(*mMonitor);
+
+  
+  
   bool IsClosed() MOZ_EXCLUDES(*mMonitor) {
     MonitorAutoLock lock(*mMonitor);
     return IsClosedLocked();
