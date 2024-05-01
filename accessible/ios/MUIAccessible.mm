@@ -283,7 +283,49 @@ static bool isAccessibilityElementInternal(Accessible* aAccessible) {
 }
 
 - (NSString*)accessibilityValue {
-  return nil;
+  if (!mGeckoAccessible) {
+    return nil;
+  }
+
+  uint64_t state = mGeckoAccessible->State();
+  if (state & states::LINKED) {
+    
+    return nil;
+  }
+
+  if (state & states::CHECKABLE) {
+    if (state & states::CHECKED) {
+      return @"1";
+    }
+    if (state & states::MIXED) {
+      return @"2";
+    }
+    return @"0";
+  }
+
+  if (mGeckoAccessible->IsPassword()) {
+    
+    
+    Accessible* leaf = mGeckoAccessible->FirstChild();
+    if (!leaf) {
+      return nil;
+    }
+    nsAutoString masked;
+    leaf->AppendTextTo(masked);
+    return ToNSString(masked);
+  }
+
+  
+  
+  for (Accessible* acc = mGeckoAccessible; acc; acc = acc->Parent()) {
+    if (acc->Role() == roles::HEADING) {
+      return [NSString stringWithFormat:@"%d", acc->GroupPosition().level];
+    }
+  }
+
+  nsAutoString value;
+  mGeckoAccessible->Value(value);
+  return ToNSString(value);
 }
 
 static uint64_t GetAccessibilityTraits(Accessible* aAccessible) {
