@@ -528,15 +528,30 @@ void ModuleLoaderBase::SetModuleFetchFinishedAndResumeWaitingRequests(
        "%u)",
        aRequest, aRequest->mModuleScript.get(), unsigned(aResult)));
 
-  RefPtr<LoadingRequest> loadingRequest;
-  if (!mFetchingModules.Remove(aRequest->mURI,
-                               getter_AddRefs(loadingRequest))) {
+  auto entry = mFetchingModules.Lookup(aRequest->mURI);
+  if (!entry) {
     LOG(
         ("ScriptLoadRequest (%p): Key not found in mFetchingModules, "
          "assuming we have an inline module or have finished fetching already",
          aRequest));
     return;
   }
+
+  
+  
+  
+  
+  RefPtr<LoadingRequest> loadingRequest = entry.Data();
+  if (loadingRequest->mRequest != aRequest) {
+    MOZ_ASSERT(aRequest->IsCanceled());
+    LOG(
+        ("ScriptLoadRequest (%p): Ignoring completion of cancelled request "
+         "that was removed from the map",
+         aRequest));
+    return;
+  }
+
+  MOZ_ALWAYS_TRUE(mFetchingModules.Remove(aRequest->mURI));
 
   RefPtr<ModuleScript> moduleScript(aRequest->mModuleScript);
   MOZ_ASSERT(NS_FAILED(aResult) == !moduleScript);
@@ -1398,6 +1413,22 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
   mImportMap = std::move(aImportMap);
 
   
+  
+  
+  
+  
+  
+  for (const auto& entry : mFetchingModules) {
+    LoadingRequest* loadingRequest = entry.GetData();
+    MOZ_DIAGNOSTIC_ASSERT(loadingRequest->mRequest->mLoadContext->IsPreload());
+    loadingRequest->mRequest->Cancel();
+    for (const auto& request : loadingRequest->mWaiting) {
+      MOZ_DIAGNOSTIC_ASSERT(request->mLoadContext->IsPreload());
+      request->Cancel();
+    }
+  }
+  mFetchingModules.Clear();
+
   
   
   for (const auto& entry : mFetchedModules) {
