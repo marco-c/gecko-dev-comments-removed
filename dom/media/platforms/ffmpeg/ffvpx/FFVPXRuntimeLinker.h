@@ -8,28 +8,37 @@
 #define __FFVPXRuntimeLinker_h__
 
 #include "PlatformDecoderModule.h"
+#include "PlatformEncoderModule.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/ThreadSafety.h"
+#include "ffvpx/tx.h"
 
-struct FFmpegRDFTFuncs;
+struct FFmpegFFTFuncs {
+  decltype(av_tx_init)* init;
+  decltype(av_tx_uninit)* uninit;
+};
 
 namespace mozilla {
 
 class FFVPXRuntimeLinker {
  public:
-  
-  static bool Init();
-  
-  static already_AddRefed<PlatformDecoderModule> Create();
+  static bool Init() MOZ_EXCLUDES(sMutex);
+  static already_AddRefed<PlatformDecoderModule> CreateDecoder();
+  static already_AddRefed<PlatformEncoderModule> CreateEncoder();
 
   
-  static void GetRDFTFuncs(FFmpegRDFTFuncs* aOutFuncs);
+  static void GetFFTFuncs(FFmpegFFTFuncs* aOutFuncs);
 
  private:
+  
+  static StaticMutex sMutex;
+
   
   static enum LinkStatus {
     LinkStatus_INIT = 0,
     LinkStatus_FAILED,
     LinkStatus_SUCCEEDED
-  } sLinkStatus;
+  } sLinkStatus MOZ_GUARDED_BY(sMutex);
 };
 
 }  

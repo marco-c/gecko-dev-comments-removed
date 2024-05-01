@@ -24,7 +24,15 @@ class FFmpegDecoderModule {
   static already_AddRefed<PlatformDecoderModule> Create(FFmpegLibWrapper*);
 };
 
+template <int V>
+class FFmpegEncoderModule {
+ public:
+  static already_AddRefed<PlatformEncoderModule> Create(FFmpegLibWrapper*);
+};
+
 static FFmpegLibWrapper sFFVPXLib;
+
+StaticMutex FFVPXRuntimeLinker::sMutex;
 
 FFVPXRuntimeLinker::LinkStatus FFVPXRuntimeLinker::sLinkStatus =
     LinkStatus_INIT;
@@ -63,11 +71,13 @@ static PRLibrary* MozAVLink(nsIFile* aFile) {
 
 
 bool FFVPXRuntimeLinker::Init() {
+  
+  StaticMutexAutoLock lock(sMutex);
+
   if (sLinkStatus) {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
 
-  MOZ_ASSERT(NS_IsMainThread());
   sLinkStatus = LinkStatus_FAILED;
 
 #ifdef MOZ_WIDGET_GTK
@@ -109,7 +119,9 @@ bool FFVPXRuntimeLinker::Init() {
     return false;
   }
   sFFVPXLib.mAVCodecLib = MozAVLink(libFile);
-  if (sFFVPXLib.Link() == FFmpegLibWrapper::LinkResult::Success) {
+  FFmpegLibWrapper::LinkResult res = sFFVPXLib.Link();
+  FFMPEGP_LOG("Link result: %s", FFmpegLibWrapper::LinkResultToString(res));
+  if (res == FFmpegLibWrapper::LinkResult::Success) {
     sLinkStatus = LinkStatus_SUCCEEDED;
     return true;
   }
@@ -117,7 +129,7 @@ bool FFVPXRuntimeLinker::Init() {
 }
 
 
-already_AddRefed<PlatformDecoderModule> FFVPXRuntimeLinker::Create() {
+already_AddRefed<PlatformDecoderModule> FFVPXRuntimeLinker::CreateDecoder() {
   if (!Init()) {
     return nullptr;
   }
@@ -125,17 +137,21 @@ already_AddRefed<PlatformDecoderModule> FFVPXRuntimeLinker::Create() {
 }
 
 
-void FFVPXRuntimeLinker::GetRDFTFuncs(FFmpegRDFTFuncs* aOutFuncs) {
-  MOZ_ASSERT(sLinkStatus != LinkStatus_INIT);
-  if (sFFVPXLib.av_rdft_init && sFFVPXLib.av_rdft_calc &&
-      sFFVPXLib.av_rdft_end) {
-    aOutFuncs->init = sFFVPXLib.av_rdft_init;
-    aOutFuncs->calc = sFFVPXLib.av_rdft_calc;
-    aOutFuncs->end = sFFVPXLib.av_rdft_end;
-  } else {
-    NS_WARNING("RDFT functions expected but not found");
-    *aOutFuncs = FFmpegRDFTFuncs();  
+already_AddRefed<PlatformEncoderModule> FFVPXRuntimeLinker::CreateEncoder() {
+  if (!Init()) {
+    return nullptr;
   }
+  return FFmpegEncoderModule<FFVPX_VERSION>::Create(&sFFVPXLib);
+}
+
+
+void FFVPXRuntimeLinker::GetFFTFuncs(FFmpegFFTFuncs* aOutFuncs) {
+  []() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    MOZ_ASSERT(sLinkStatus != LinkStatus_INIT);
+  }();
+  MOZ_ASSERT(sFFVPXLib.av_tx_init && sFFVPXLib.av_tx_uninit);
+  aOutFuncs->init = sFFVPXLib.av_tx_init;
+  aOutFuncs->uninit = sFFVPXLib.av_tx_uninit;
 }
 
 }  
