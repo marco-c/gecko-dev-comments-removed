@@ -1301,8 +1301,6 @@ pref("browser.sessionstore.debug", false);
 
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
-pref("browser.sessionstore.collect_session_storage", true);
-
 
 pref("browser.sessionstore.persist_closed_tabs_between_sessions", true);
 
