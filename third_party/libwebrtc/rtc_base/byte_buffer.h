@@ -135,9 +135,16 @@ class ByteBufferReader {
   ByteBufferReader& operator=(const ByteBufferReader&) = delete;
 
   
-  const char* Data() const { return bytes_ + start_; }
+  
+  const char* Data() const {
+    return reinterpret_cast<const char*>(bytes_ + start_);
+  }
   
   size_t Length() const { return end_ - start_; }
+  
+  rtc::ArrayView<const uint8_t> DataView() {
+    return rtc::ArrayView<const uint8_t>(bytes_ + start_, end_ - start_);
+  }
 
   
   
@@ -160,9 +167,9 @@ class ByteBufferReader {
   bool Consume(size_t size);
 
  protected:
-  void Construct(const char* bytes, size_t size);
+  void Construct(const uint8_t* bytes, size_t size);
 
-  const char* bytes_;
+  const uint8_t* bytes_;
   size_t size_;
   size_t start_;
   size_t end_;
