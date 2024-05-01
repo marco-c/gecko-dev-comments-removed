@@ -784,10 +784,6 @@ class nsIWidget : public nsISupports {
   virtual void Resize(double aX, double aY, double aWidth, double aHeight,
                       bool aRepaint) = 0;
 
-  virtual mozilla::Maybe<bool> IsResizingNativeWidget() {
-    return mozilla::Nothing();
-  }
-
   
 
 
