@@ -26,24 +26,24 @@ macro_rules! unsafe_packed_field_access {
 
 
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const ENCODED_OID_BYTES_SECP256R1: &[u8] =
     &[0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07];
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const ENCODED_OID_BYTES_SECP384R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22];
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const ENCODED_OID_BYTES_SECP521R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23];
 
 
 
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const OID_BYTES_SHA_256: &[u8] = &[0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01];
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const OID_BYTES_SHA_384: &[u8] = &[0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02];
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const OID_BYTES_SHA_512: &[u8] = &[0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03];
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub const OID_BYTES_SHA_1: &[u8] = &[0x2b, 0x0e, 0x03, 0x02, 0x1a];
 
 
@@ -111,7 +111,7 @@ pub fn read_digest_info(digest_info: &[u8]) -> Result<(&[u8], &[u8]), Error> {
 
 
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn read_ec_sig_point(signature: &[u8]) -> Result<(&[u8], &[u8]), Error> {
     let mut sequence = Sequence::new(signature)?;
     let r = sequence.read_unsigned_integer()?;
@@ -459,7 +459,7 @@ mod tests {
     fn empty_input_fails() {
         let empty = Vec::new();
         assert!(read_rsa_modulus(&empty).is_err());
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         assert!(read_ec_sig_point(&empty).is_err());
         assert!(read_encoded_certificate_identifiers(&empty).is_err());
     }
@@ -468,7 +468,7 @@ mod tests {
     fn empty_sequence_fails() {
         let empty = vec![SEQUENCE | CONSTRUCTED];
         assert!(read_rsa_modulus(&empty).is_err());
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         assert!(read_ec_sig_point(&empty).is_err());
         assert!(read_encoded_certificate_identifiers(&empty).is_err());
     }
