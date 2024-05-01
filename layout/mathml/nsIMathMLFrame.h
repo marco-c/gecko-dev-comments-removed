@@ -292,11 +292,6 @@ struct nsPresentationData {
 #define NS_MATHML_DTLS 0x00000080U
 
 
-
-
-#define NS_MATHML_ERROR 0x80000000U
-
-
 #define NS_MATHML_STRETCH_DONE 0x20000000U
 
 
@@ -323,9 +318,6 @@ struct nsPresentationData {
 
 #define NS_MATHML_IS_DTLS_SET(_flags) \
   (NS_MATHML_DTLS == ((_flags) & NS_MATHML_DTLS))
-
-#define NS_MATHML_HAS_ERROR(_flags) \
-  (NS_MATHML_ERROR == ((_flags) & NS_MATHML_ERROR))
 
 #define NS_MATHML_STRETCH_WAS_DONE(_flags) \
   (NS_MATHML_STRETCH_DONE == ((_flags) & NS_MATHML_STRETCH_DONE))

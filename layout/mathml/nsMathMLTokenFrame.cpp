@@ -116,8 +116,6 @@ void nsMathMLTokenFrame::Reflow(nsPresContext* aPresContext,
   MarkInReflow();
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
-  mPresentationData.flags &= ~NS_MATHML_ERROR;
-
   
   aDesiredSize.ClearSize();
   aDesiredSize.SetBlockStartAscent(0);

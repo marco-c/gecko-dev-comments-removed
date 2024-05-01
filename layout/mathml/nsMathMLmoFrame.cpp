@@ -732,7 +732,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   
   
   nsresult rv = Place(aDrawTarget, true, aDesiredStretchSize);
-  if (NS_MATHML_HAS_ERROR(mPresentationData.flags) || NS_FAILED(rv)) {
+  if (NS_FAILED(rv)) {
     
     DidReflowChildren(mFrames.FirstChild());
   }
