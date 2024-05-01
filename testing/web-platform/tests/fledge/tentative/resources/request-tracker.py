@@ -110,4 +110,6 @@ def simple_response(request, response, status_code, status_message, body,
                     content_type=b"text/plain"):
     response.status = (status_code, status_message)
     response.headers.set(b"Content-Type", content_type)
+    
+    response.headers.set(b"Cache-control", b"no-store")
     return body

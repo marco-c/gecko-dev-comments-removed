@@ -260,7 +260,7 @@ subsetTest(promise_test, async test => {
 
   
   
-  fencedFrameConfigs =
+  let fencedFrameConfigs =
       await Promise.all([runBasicFledgeTestExpectingWinner(test, uuid),
                          runBasicFledgeTestExpectingWinner(test, uuid)]);
 
@@ -280,6 +280,40 @@ subsetTest(promise_test, async test => {
         biddingLogicURL: createBidCountBiddingScriptURL(2) });
   await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'browserSignals.bidCount two auctions at once.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  
+  let trackedRenderURL =
+      createTrackerURL(window.location.origin, uuid, 'track_get', 'ad');
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(0),
+        ads: [{ renderURL: trackedRenderURL }]
+      });
+
+  let fencedFrameConfig = await runBasicFledgeTestExpectingWinner(test, uuid);
+
+  
+  createAndNavigateFencedFrame(test, fencedFrameConfig);
+  createAndNavigateFencedFrame(test, fencedFrameConfig);
+
+  
+  
+  await waitForObservedRequests(uuid, [createSellerReportURL(uuid),
+                                       trackedRenderURL,
+                                       trackedRenderURL]);
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(1) });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount incremented once when winning ad used twice.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
@@ -684,7 +718,7 @@ subsetTest(promise_test, async test => {
 
   
   
-  fencedFrameConfigs =
+  let fencedFrameConfigs =
       await Promise.all([runBasicFledgeTestExpectingWinner(test, uuid),
                          runBasicFledgeTestExpectingWinner(test, uuid)]);
 
@@ -707,6 +741,41 @@ subsetTest(promise_test, async test => {
       });
   await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'browserSignals.prevWinsMs two auctions at once.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  
+  let trackedRenderURL =
+      createTrackerURL(window.location.origin, uuid, 'track_get', 'ad');
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([]),
+        ads: [{ renderURL: trackedRenderURL }]
+      });
+
+  let fencedFrameConfig = await runBasicFledgeTestExpectingWinner(test, uuid);
+
+  
+  createAndNavigateFencedFrame(test, fencedFrameConfig);
+  createAndNavigateFencedFrame(test, fencedFrameConfig);
+
+  
+  
+  await waitForObservedRequests(uuid, [createSellerReportURL(uuid),
+                                       trackedRenderURL,
+                                       trackedRenderURL]);
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL(
+          [[0, {renderURL: trackedRenderURL}]]) });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs has only one win when winning ad used twice.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
