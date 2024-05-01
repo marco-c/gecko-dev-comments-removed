@@ -42,8 +42,19 @@ add_task(async function test_controllers_subframes() {
 
   gURLBar.focus();
 
+  let canTabMoveFocusToRootElement = !SpecialPowers.getBoolPref(
+    "dom.disable_tab_focus_to_root_element"
+  );
   for (let stepNum = 0; stepNum < browsingContexts.length; stepNum++) {
-    await keyAndUpdate(stepNum > 0 ? "VK_TAB" : "VK_F6", {}, 6);
+    let useTab = stepNum > 0;
+    
+    
+    
+    await keyAndUpdate(
+      useTab ? "VK_TAB" : "VK_F6",
+      {},
+      canTabMoveFocusToRootElement ? 6 : 4
+    );
 
     
     
@@ -59,22 +70,35 @@ add_task(async function test_controllers_subframes() {
       goUpdateGlobalEditMenuItems(true);
     }
 
-    await SpecialPowers.spawn(browsingContexts[stepNum], [], () => {
-      
-      
-      let document = content.document;
-      Assert.equal(
-        document.activeElement,
-        document.documentElement,
-        "root focused"
-      );
-    });
-    
-    
-    checkCommandState("step " + stepNum + " root focused", false, true, false);
+    await SpecialPowers.spawn(
+      browsingContexts[stepNum],
+      [{ canTabMoveFocusToRootElement, useTab }],
+      args => {
+        
+        
+        
+        let document = content.document;
+        let expectedElement =
+          args.canTabMoveFocusToRootElement || !args.useTab
+            ? document.documentElement
+            : document.getElementById("input");
+        Assert.equal(document.activeElement, expectedElement, "root focused");
+      }
+    );
 
-    
-    await keyAndUpdate("VK_TAB", {}, 1);
+    if (canTabMoveFocusToRootElement || !useTab) {
+      
+      
+      checkCommandState(
+        "step " + stepNum + " root focused",
+        false,
+        true,
+        false
+      );
+
+      
+      await keyAndUpdate("VK_TAB", {}, 1);
+    }
 
     if (AppConstants.platform != "macosx") {
       goUpdateGlobalEditMenuItems(true);
