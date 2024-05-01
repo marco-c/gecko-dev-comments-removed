@@ -152,6 +152,7 @@ async function openAboutTranslations({
 
 
 
+
 function naivelyPrettify(html) {
   let result = "";
   let indent = 0;
@@ -355,6 +356,7 @@ async function closeAllOpenPanelsAndMenus() {
   await closeSelectTranslationsPanelIfOpen();
   await closeContextMenuIfOpen();
 }
+
 
 
 
@@ -652,6 +654,7 @@ async function captureTranslationsError(callback) {
   TranslationsParent.reportError = reportError;
   return errors;
 }
+
 
 
 
@@ -1343,6 +1346,7 @@ function getNeverTranslateSitesFromPerms() {
 
   return results;
 }
+
 
 
 
