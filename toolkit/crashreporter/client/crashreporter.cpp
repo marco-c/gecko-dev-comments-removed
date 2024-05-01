@@ -543,7 +543,12 @@ string GetProgramPath(const string& exename) {
   
   
   
-  path.append("../../../");
+  path.erase(pos - 1);
+  for (size_t i = 0; i < 3; i++) {
+    pos = path.rfind(UI_DIR_SEPARATOR, pos - 1);
+  }
+
+  path.erase(pos + 1);
 #endif  
   path.append(exename + BIN_SUFFIX);
 
