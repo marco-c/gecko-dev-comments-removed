@@ -421,10 +421,13 @@ class AliasSet {
     
     GlobalGenerationCounter = 1 << 26,
 
-    Last = GlobalGenerationCounter,
+    
+    SharedArrayRawBufferLength = 1 << 27,
+
+    Last = SharedArrayRawBufferLength,
 
     Any = Last | (Last - 1),
-    NumCategories = 27,
+    NumCategories = 28,
 
     
     Store_ = 1 << 31
@@ -1276,6 +1279,7 @@ class MVariadicT : public T {
 
 
 using MVariadicInstruction = MVariadicT<MInstruction>;
+
 
 
 
@@ -9388,6 +9392,23 @@ class MObjectToIterator : public MUnaryInstruction,
 
   bool wantsIndices() const { return wantsIndices_; }
   void setWantsIndices(bool value) { wantsIndices_ = value; }
+};
+
+class MPostIntPtrConversion : public MUnaryInstruction,
+                              public NoTypePolicy::Data {
+  explicit MPostIntPtrConversion(MDefinition* input)
+      : MUnaryInstruction(classOpcode, input) {
+    
+    setResultType(input->type());
+
+    
+  }
+
+ public:
+  INSTRUCTION_HEADER(PostIntPtrConversion)
+  TRIVIAL_NEW_WRAPPERS
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
 
