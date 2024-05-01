@@ -90,7 +90,6 @@ class KeyParser : protected Tokenizer {
         break;
       case 'b':
         
-        originAttribs.mInIsolatedMozBrowser = true;
         break;
       case 'a':
         isAnonymous = true;
