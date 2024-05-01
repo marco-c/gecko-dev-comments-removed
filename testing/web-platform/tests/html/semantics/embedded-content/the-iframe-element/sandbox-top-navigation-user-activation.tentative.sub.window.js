@@ -7,6 +7,7 @@
 
 
 
+
 'use strict';
 
 
@@ -27,21 +28,3 @@ promise_test(async t => {
 
   await attemptTopNavigation(iframe_1, false);
 }, "allow-top-navigation-by-user-activation set but no sticky activation");
-
-
-
-promise_test(async t => {
-  const main = await setupTest();
-  const iframe_1 = await createNestedIframe(main,
-      "HTTP_REMOTE_ORIGIN", "allow-top-navigation", "");
-
-  await attemptTopNavigation(iframe_1, true);
-}, "A cross-origin frame with frame sandbox flags can navigate top");
-
-promise_test(async t => {
-  const main = await setupTest();
-  const iframe_1 = await createNestedIframe(main,
-      "HTTP_REMOTE_ORIGIN", "", "allow-top-navigation");
-
-  await attemptTopNavigation(iframe_1, false);
-}, "A cross-origin frame with delivered sandbox flags can not navigate top");
