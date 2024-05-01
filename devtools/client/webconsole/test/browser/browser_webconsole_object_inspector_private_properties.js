@@ -30,9 +30,11 @@ add_task(async function () {
       }
 
       #privateProperty;
+      
       #privateMethod() {
         return Math.random();
       }
+      
       get #privateGetter() {
         return 42;
       }

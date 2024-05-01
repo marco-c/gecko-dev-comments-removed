@@ -321,6 +321,11 @@ module.exports = {
     "no-unsanitized/property": "error",
 
     
+    
+    
+    "no-unused-private-class-members": "error",
+
+    
     "no-unused-vars": [
       "error",
       {
