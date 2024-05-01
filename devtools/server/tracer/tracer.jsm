@@ -155,6 +155,9 @@ const customLazy = {
 
 
 
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -212,6 +215,12 @@ class JavaScriptTracer {
         throw new Error("'pauseOnStep' attribute should be a number");
       }
       this.pauseOnStep = options.pauseOnStep;
+    }
+    if ("filterFrameSourceUrl" in options) {
+      if (typeof options.filterFrameSourceUrl != "string") {
+        throw new Error("'filterFrameSourceUrl' attribute should be a string");
+      }
+      this.filterFrameSourceUrl = options.filterFrameSourceUrl;
     }
 
     
@@ -565,6 +574,14 @@ class JavaScriptTracer {
       return;
     }
     try {
+      
+      if (
+        this.filterFrameSourceUrl &&
+        !frame.script.source.url?.includes(this.filterFrameSourceUrl)
+      ) {
+        return;
+      }
+
       
       
       const depth = getFrameDepth(frame);
