@@ -566,6 +566,8 @@ pub enum Platform {
     
     Linux,
     
+    Ios,
+    
     Macos,
     
     Windows,
