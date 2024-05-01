@@ -362,6 +362,7 @@ static DataSourceSurface* FlipYDataSourceSurface(DataSourceSurface* aSurface) {
     return nullptr;
   }
 
+  const int bpp = BytesPerPixel(aSurface->GetFormat());
   const IntSize srcSize = aSurface->GetSize();
   uint8_t* srcBufferPtr = srcMap.GetData();
   const uint32_t stride = srcMap.GetStride();
@@ -372,7 +373,8 @@ static DataSourceSurface* FlipYDataSourceSurface(DataSourceSurface* aSurface) {
   }
 
   for (int i = 0; i < srcSize.height / 2; ++i) {
-    std::swap_ranges(srcBufferPtr + stride * i, srcBufferPtr + stride * (i + 1),
+    std::swap_ranges(srcBufferPtr + stride * i,
+                     srcBufferPtr + stride * i + srcSize.width * bpp,
                      srcBufferPtr + stride * (srcSize.height - 1 - i));
   }
 
@@ -1018,7 +1020,6 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateImageBitmapInternal(
   
 
   gfxAlphaType alphaType = aAlphaType;
-  bool mustCopy = aMustCopy;
   bool requiresPremultiply = false;
   bool requiresUnpremultiply = false;
 
@@ -1027,16 +1028,10 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateImageBitmapInternal(
         aOptions.mPremultiplyAlpha == PremultiplyAlpha::None) {
       requiresUnpremultiply = true;
       alphaType = gfxAlphaType::NonPremult;
-      if (!aAllocatedImageData) {
-        mustCopy = true;
-      }
     } else if (aAlphaType == gfxAlphaType::NonPremult &&
                aOptions.mPremultiplyAlpha == PremultiplyAlpha::Premultiply) {
       requiresPremultiply = true;
       alphaType = gfxAlphaType::Premult;
-      if (!aAllocatedImageData) {
-        mustCopy = true;
-      }
     }
   }
 
@@ -1047,9 +1042,12 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateImageBitmapInternal(
 
 
 
-  if ((aOptions.mImageOrientation == ImageOrientation::FlipY &&
-       (!aAllocatedImageData || aCropRect.isSome())) ||
-      mustCopy) {
+  bool willModify = aOptions.mImageOrientation == ImageOrientation::FlipY ||
+                    requiresPremultiply || requiresUnpremultiply;
+  if ((willModify && !aAllocatedImageData) ||
+      (aOptions.mImageOrientation == ImageOrientation::FlipY &&
+       aCropRect.isSome()) ||
+      aMustCopy) {
     dataSurface = surface->GetDataSurface();
 
     dataSurface = CropAndCopyDataSourceSurface(dataSurface, cropRect);
@@ -1430,7 +1428,7 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     return nullptr;
   }
 
-  bool needToReportMemoryAllocation = true;
+  bool needToReportMemoryAllocation = false;
 
   return CreateImageBitmapInternal(aGlobal, surface, aCropRect, aOptions,
                                    writeOnly, needToReportMemoryAllocation,
