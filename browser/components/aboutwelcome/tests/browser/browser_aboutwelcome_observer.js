@@ -70,4 +70,9 @@ add_task(async function test_About_Welcome_Location_Change() {
     aboutWelcomeActor.AboutWelcomeObserver.AWTerminate.ADDRESS_BAR_NAVIGATED,
     "Terminated due to location uri changed"
   );
+
+  
+  
+  
+  await new Promise(r => setTimeout(r, 100));
 });
