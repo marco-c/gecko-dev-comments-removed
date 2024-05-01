@@ -20,7 +20,6 @@
 #include "jit/JitRuntime.h"
 #include "jit/JitSpewer.h"
 #include "jit/LIR.h"
-#include "jit/PcScriptCache.h"
 #include "jit/Recover.h"
 #include "jit/Safepoints.h"
 #include "jit/ScriptFromCalleeToken.h"
@@ -1537,90 +1536,6 @@ JSScript* GetTopJitJSScript(JSContext* cx) {
 
   MOZ_ASSERT(frame.isScripted());
   return frame.script();
-}
-
-void GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes) {
-  JitSpew(JitSpew_IonSnapshots, "Recover PC & Script from the last frame.");
-
-  
-  
-  JitActivationIterator actIter(cx);
-  OnlyJSJitFrameIter it(actIter);
-  uint8_t* retAddr;
-  if (it.frame().isExitFrame()) {
-    ++it;
-
-    
-    
-    if (it.frame().isBaselineInterpreterEntry()) {
-      ++it;
-    }
-
-    
-    if (it.frame().isRectifier()) {
-      ++it;
-      MOZ_ASSERT(it.frame().isBaselineStub() || it.frame().isBaselineJS() ||
-                 it.frame().isIonJS());
-    }
-
-    
-    if (it.frame().isBaselineStub()) {
-      ++it;
-      MOZ_ASSERT(it.frame().isBaselineJS());
-    } else if (it.frame().isIonICCall()) {
-      ++it;
-      MOZ_ASSERT(it.frame().isIonJS());
-    }
-
-    MOZ_ASSERT(it.frame().isBaselineJS() || it.frame().isIonJS());
-
-    
-    
-    
-    
-    if (it.frame().isBaselineJS() &&
-        it.frame().baselineFrame()->runningInInterpreter()) {
-      it.frame().baselineScriptAndPc(scriptRes, pcRes);
-      return;
-    }
-
-    retAddr = it.frame().resumePCinCurrentFrame();
-  } else {
-    MOZ_ASSERT(it.frame().isBailoutJS());
-    retAddr = it.frame().returnAddress();
-  }
-
-  MOZ_ASSERT(retAddr);
-
-  uint32_t hash = PcScriptCache::Hash(retAddr);
-
-  
-  
-  if (MOZ_UNLIKELY(cx->ionPcScriptCache == nullptr)) {
-    cx->ionPcScriptCache =
-        MakeUnique<PcScriptCache>(cx->runtime()->gc.gcNumber());
-  }
-
-  if (cx->ionPcScriptCache.ref() &&
-      cx->ionPcScriptCache->get(cx->runtime(), hash, retAddr, scriptRes,
-                                pcRes)) {
-    return;
-  }
-
-  
-  if (it.frame().isIonJS() || it.frame().isBailoutJS()) {
-    InlineFrameIterator ifi(cx, &it.frame());
-    *scriptRes = ifi.script();
-    *pcRes = ifi.pc();
-  } else {
-    MOZ_ASSERT(it.frame().isBaselineJS());
-    it.frame().baselineScriptAndPc(scriptRes, pcRes);
-  }
-
-  
-  if (cx->ionPcScriptCache.ref()) {
-    cx->ionPcScriptCache->add(hash, retAddr, *pcRes, *scriptRes);
-  }
 }
 
 RInstructionResults::RInstructionResults(JitFrameLayout* fp)

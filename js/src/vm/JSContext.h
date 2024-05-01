@@ -20,7 +20,6 @@
 #include "gc/GCEnum.h"
 #include "gc/Memory.h"
 #include "irregexp/RegExpTypes.h"
-#include "jit/PcScriptCache.h"
 #include "js/ContextOptions.h"  
 #include "js/Exception.h"
 #include "js/GCVector.h"
@@ -563,9 +562,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::ContextData<uint32_t> debuggerMutations;
 
-  
-  js::ContextData<js::UniquePtr<js::jit::PcScriptCache>> ionPcScriptCache;
-
  private:
   
   js::ContextData<JS::ExceptionStatus> status;
@@ -693,9 +689,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
 
   enum class AllowCrossRealm { DontAllow = false, Allow = true };
-  inline JSScript* currentScript(
-      jsbytecode** pc = nullptr,
-      AllowCrossRealm allowCrossRealm = AllowCrossRealm::DontAllow) const;
+  JSScript* currentScript(
+      jsbytecode** ppc = nullptr,
+      AllowCrossRealm allowCrossRealm = AllowCrossRealm::DontAllow);
 
   inline void minorGC(JS::GCReason reason);
 

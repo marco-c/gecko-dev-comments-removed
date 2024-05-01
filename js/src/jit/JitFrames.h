@@ -771,8 +771,6 @@ class InvalidationBailoutStack {
   void checkInvariants() const;
 };
 
-void GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes);
-
 
 static const uint32_t MinJITStackSize = 1;
 
