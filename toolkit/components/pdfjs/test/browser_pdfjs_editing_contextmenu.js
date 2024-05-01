@@ -34,7 +34,7 @@ async function openContextMenuAt(browser, x, y) {
 
 
 
-async function getContextMenuItems(browser, box) {
+function getContextMenuItems(browser, box) {
   return new Promise(resolve => {
     setTimeout(async () => {
       const { x, y, width, height } = box;
@@ -48,6 +48,7 @@ async function getContextMenuItems(browser, box) {
         "context-pdfjs-delete",
         "context-pdfjs-selectall",
         "context-sep-pdfjs-selectall",
+        "context-pdfjs-highlight-selection",
       ];
 
       await openContextMenuAt(browser, x + width / 2, y + height / 2);
@@ -129,35 +130,36 @@ function assertMenuitems(menuitems, expected) {
         elmt =>
           !elmt.id.includes("-sep-") &&
           !elmt.hidden &&
-          elmt.getAttribute("disabled") === "false"
+          ["", "false"].includes(elmt.getAttribute("disabled"))
       )
       .map(elmt => elmt.id),
     expected
   );
 }
 
+async function waitAndCheckEmptyContextMenu(browser) {
+  
+  await waitForPdfJSAllLayers(browser, TESTROOT + "file_pdfjs_test.pdf", [
+    ["annotationEditorLayer", "annotationLayer", "textLayer", "canvasWrapper"],
+    ["annotationEditorLayer", "textLayer", "canvasWrapper"],
+  ]);
 
-
-add_task(async function test() {
-  let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  let handlerInfo = mimeService.getFromTypeAndExtension(
-    "application/pdf",
-    "pdf"
-  );
+  const spanBox = await getSpanBox(browser, "and found references");
+  const menuitems = await getContextMenuItems(browser, spanBox);
 
   
-  is(
-    handlerInfo.alwaysAskBeforeHandling,
-    false,
-    "pdf handler defaults to always-ask is false"
+  
+  Assert.ok(
+    [...menuitems.values()].every(elmt => elmt.hidden),
+    "No visible pdf menuitem"
   );
-  is(
-    handlerInfo.preferredAction,
-    Ci.nsIHandlerInfo.handleInternally,
-    "pdf handler defaults to internal"
-  );
+  await hideContextMenu(browser);
+}
 
-  info("Pref action: " + handlerInfo.preferredAction);
+
+
+add_task(async function test_copy_paste_undo_redo() {
+  makePDFJSHandler();
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
@@ -168,27 +170,8 @@ add_task(async function test() {
         set: [["pdfjs.annotationEditorMode", 0]],
       });
 
-      
-      await waitForPdfJSAllLayers(browser, TESTROOT + "file_pdfjs_test.pdf", [
-        [
-          "annotationEditorLayer",
-          "annotationLayer",
-          "textLayer",
-          "canvasWrapper",
-        ],
-        ["annotationEditorLayer", "textLayer", "canvasWrapper"],
-      ]);
-
+      await waitAndCheckEmptyContextMenu(browser);
       const spanBox = await getSpanBox(browser, "and found references");
-      let menuitems = await getContextMenuItems(browser, spanBox);
-
-      
-      
-      Assert.ok(
-        [...menuitems.values()].every(elmt => elmt.hidden),
-        "No visible pdf menuitem"
-      );
-      await hideContextMenu(browser);
 
       await enableEditor(browser, "FreeText");
       await addFreeText(browser, "hello", spanBox);
@@ -211,7 +194,7 @@ add_task(async function test() {
 
       Assert.equal(await countElements(browser, ".selectedEditor"), 0);
 
-      menuitems = await getContextMenuItems(browser, spanBox);
+      let menuitems = await getContextMenuItems(browser, spanBox);
       assertMenuitems(menuitems, [
         "context-pdfjs-undo", 
         "context-pdfjs-selectall", 
@@ -374,6 +357,73 @@ add_task(async function test() {
 
       await SpecialPowers.spawn(browser, [], async function () {
         var viewer = content.wrappedJSObject.PDFViewerApplication;
+        viewer.pdfDocument.annotationStorage.resetModified();
+        await viewer.close();
+      });
+    }
+  );
+});
+
+add_task(async function test_highlight_selection() {
+  makePDFJSHandler();
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function (browser) {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["pdfjs.annotationEditorMode", 0],
+          ["pdfjs.enableHighlightEditor", true],
+        ],
+      });
+
+      await waitAndCheckEmptyContextMenu(browser);
+      const spanBox = await getSpanBox(browser, "and found references");
+
+      const selectChangePromise = BrowserTestUtils.waitForEvent(
+        document,
+        "selectionchange",
+        false,
+        null,
+        true
+      );
+      await clickAt(
+        browser,
+        spanBox.x + spanBox.width / 2,
+        spanBox.y + spanBox.height / 2,
+        2
+      );
+      await selectChangePromise;
+      await TestUtils.waitForTick();
+
+      const mozBox = await getSpanBox(browser, "Mozilla automated testing");
+      const menuitems = await getContextMenuItems(browser, mozBox);
+
+      assertMenuitems(menuitems, ["context-pdfjs-highlight-selection"]);
+
+      const telemetryPromise = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "reporttelemetry",
+        false,
+        null,
+        true
+      );
+      await clickOnItem(
+        browser,
+        menuitems,
+        "context-pdfjs-highlight-selection"
+      );
+      await telemetryPromise;
+
+      Assert.equal(
+        await countElements(browser, ".highlightEditor"),
+        1,
+        "An highlight editor must have been added"
+      );
+
+      await SpecialPowers.spawn(browser, [], async function () {
+        var viewer = content.wrappedJSObject.PDFViewerApplication;
+        viewer.pdfDocument.annotationStorage.resetModified();
         await viewer.close();
       });
     }
