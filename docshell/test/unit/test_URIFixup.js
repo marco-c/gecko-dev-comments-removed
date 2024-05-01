@@ -1,3 +1,7 @@
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
 var pref = "browser.fixup.typo.scheme";
 
 var data = [
@@ -103,11 +107,20 @@ var dontFixURIs = [
 var len = data.length;
 
 add_task(async function setup() {
-  await setupSearchService();
   
   
   
-  Services.search.wrappedJSObject._engines.clear();
+  Services.search.wrappedJSObject.errorToThrowInTest = "Settings";
+
+  
+  
+  PromiseTestUtils.expectUncaughtRejection(
+    /Fake Settings error during search service initialization./
+  );
+
+  try {
+    await setupSearchService();
+  } catch {}
 });
 
 
