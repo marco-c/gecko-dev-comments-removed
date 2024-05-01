@@ -45,11 +45,7 @@ ServiceProvider::QueryService(REFGUID aGuidService, REFIID aIID,
   
   if (aGuidService == IID_IAccessibleEx &&
       StaticPrefs::accessibility_uia_enable() && localAcc) {
-    uiaRawElmProvider* accEx = new uiaRawElmProvider(localAcc);
-    HRESULT hr = accEx->QueryInterface(aIID, aInstancePtr);
-    if (FAILED(hr)) delete accEx;
-
-    return hr;
+    return mMsaa->QueryInterface(aIID, aInstancePtr);
   }
 
   
