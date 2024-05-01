@@ -335,14 +335,30 @@ add_task(async function test_double_click_modify() {
       EventUtils.synthesizeMouseAtCenter(target, opts, this.window);
     let doubleClick = target => {
       
+      
+      
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+      
       click(target, { clickCount: 1 });
       click(target, { clickCount: 2 });
+      AccessibilityUtils.resetEnv();
     };
     let tripleClick = target => {
+      
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
       
       click(target, { clickCount: 1 });
       click(target, { clickCount: 2 });
       click(target, { clickCount: 3 });
+      AccessibilityUtils.resetEnv();
     };
 
     

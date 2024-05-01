@@ -33,6 +33,14 @@ add_task(async function test_copy() {
 
       let selectText = async target => {
         let { width, height } = target.getBoundingClientRect();
+
+        
+        
+        
+        
+        
+        
+        AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
         EventUtils.synthesizeMouse(
           target,
           1,
@@ -54,6 +62,7 @@ add_task(async function test_copy() {
           { type: "mouseup" },
           this.browser.contentWindow
         );
+        AccessibilityUtils.resetEnv();
       };
 
       
@@ -107,6 +116,13 @@ add_task(async function test_copy_multiple() {
     let { width, height } = endRow.valueCell.getBoundingClientRect();
 
     
+    
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     EventUtils.synthesizeMouse(
       startRow.nameCell,
       1,
@@ -129,6 +145,7 @@ add_task(async function test_copy_multiple() {
       { type: "mouseup" },
       this.browser.contentWindow
     );
+    AccessibilityUtils.resetEnv();
 
     await SimpleTest.promiseClipboardChange(expectedString, async () => {
       await BrowserTestUtils.synthesizeKey(
