@@ -1436,6 +1436,11 @@ struct DebuggerObject::PromiseReactionRecordBuilder
       
       return true;
     }
+    if (!unwrappedGenerator->realm()->isDebuggee()) {
+      
+      
+      return true;
+    }
     return dbg->getFrame(cx, unwrappedGenerator, &frame) && push(cx, frame);
   }
 
