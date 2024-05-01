@@ -279,12 +279,13 @@ void RTCRtpTransceiver::Init(const RTCRtpTransceiverInit& aInit,
   mDirection = aInit.mDirection;
 }
 
-void RTCRtpTransceiver::SetDtlsTransport(dom::RTCDtlsTransport* aDtlsTransport,
-                                         bool aStable) {
+void RTCRtpTransceiver::SetDtlsTransport(
+    dom::RTCDtlsTransport* aDtlsTransport) {
   mDtlsTransport = aDtlsTransport;
-  if (aStable) {
-    mLastStableDtlsTransport = mDtlsTransport;
-  }
+}
+
+void RTCRtpTransceiver::SaveStateForRollback() {
+  mLastStableDtlsTransport = mDtlsTransport;
 }
 
 void RTCRtpTransceiver::RollbackToStableDtlsTransport() {
@@ -369,9 +370,14 @@ void RTCRtpTransceiver::Close() {
   
   
   
+  
   mShutdown = true;
   if (mDtlsTransport) {
     mDtlsTransport->UpdateStateNoEvent(TransportLayer::TS_CLOSED);
+    
+    if (mDtlsTransport->IceTransport()) {
+      mDtlsTransport->IceTransport()->SetState(RTCIceTransportState::Closed);
+    }
   }
   StopImpl();
 }
