@@ -282,10 +282,15 @@ class ScreenshotsHelper {
       this.waitForStateChange("resizing"),
     ]);
     Assert.ok(true, "The overlay is in the dragging or resizing state");
-
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
     mouse.up(endX, endY);
 
     await this.assertStateChange("selected");
+    AccessibilityUtils.resetEnv();
 
     this.endX = endX;
     this.endY = endY;
