@@ -42,10 +42,6 @@ struct JXLDecompressParams {
   bool allow_partial_input = false;
 
   
-  
-  bool need_icc = false;
-
-  
   uint32_t max_passes = std::numeric_limits<uint32_t>::max();
 
   

@@ -197,9 +197,11 @@ typedef struct {
 
 
 
+
   uint32_t num_color_channels;
 
   
+
 
 
 
@@ -388,6 +390,7 @@ typedef struct {
 
 typedef struct {
   
+
 
 
   uint32_t duration;

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "lib/jxl/base/override.h"
+#include "lib/jxl/common.h"
 #include "lib/jxl/enc_progressive_split.h"
 #include "lib/jxl/frame_dimensions.h"
 #include "lib/jxl/frame_header.h"
@@ -23,36 +24,6 @@
 #include "lib/jxl/splines.h"
 
 namespace jxl {
-
-enum class SpeedTier {
-  
-  
-  kGlacier = 0,
-  
-  kTortoise = 1,
-  
-  kKitten = 2,
-  
-  
-  kSquirrel = 3,
-  
-  
-  kWombat = 4,
-  
-  kHare = 5,
-  
-  
-  kCheetah = 6,
-  
-  
-  kFalcon = 7,
-  
-  
-  kThunder = 8,
-  
-  
-  kLightning = 9
-};
 
 
 struct CompressParams {
@@ -137,6 +108,7 @@ struct CompressParams {
   ModularOptions options;
   int responsive = -1;
   int colorspace = -1;
+  int move_to_front_from_channel = -1;
   
   float channel_colors_pre_transform_percent = 95.f;
   
@@ -159,9 +131,6 @@ struct CompressParams {
       if (f > 0) return false;
       if (f < 0 && butteraugli_distance != 0) return false;
     }
-    
-    
-    if (!modular_mode && ec_distance.empty()) return false;
     
     return true;
   }
@@ -194,7 +163,7 @@ struct CompressParams {
   int level = -1;
 
   
-  int buffering = 0;
+  int buffering = -1;
   
   bool use_full_image_heuristics = true;
 

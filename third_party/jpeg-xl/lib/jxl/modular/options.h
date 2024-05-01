@@ -11,6 +11,8 @@
 #include <array>
 #include <vector>
 
+#include "lib/jxl/enc_ans_params.h"
+
 namespace jxl {
 
 using PropertyVal = int32_t;
@@ -107,6 +109,8 @@ struct ModularOptions {
     kGradientFixedDC,
   };
   TreeKind tree_kind = TreeKind::kLearn;
+
+  HistogramParams histogram_params;
 
   
   bool zero_tokens = false;

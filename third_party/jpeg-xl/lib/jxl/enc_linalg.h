@@ -8,16 +8,16 @@
 
 
 
-#include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/image.h"
+#include <array>
 
 namespace jxl {
 
-using ImageD = Plane<double>;
+typedef std::array<double, 2> Vector2;
+
+typedef std::array<Vector2, 2> Matrix2x2;
 
 
-void ConvertToDiagonal(const ImageD& A, ImageD* JXL_RESTRICT diag,
-                       ImageD* JXL_RESTRICT U);
+void ConvertToDiagonal(const Matrix2x2& A, Vector2& diag, Matrix2x2& U);
 
 }  
 

@@ -15,8 +15,8 @@
 
 namespace jxl {
 
-void GaborishInverse(Image3F* in_out, const Rect& rect, float mul[3],
-                     ThreadPool* pool) {
+Status GaborishInverse(Image3F* in_out, const Rect& rect, const float mul[3],
+                       ThreadPool* pool) {
   WeightsSymmetric5 weights[3];
   
   
@@ -47,7 +47,9 @@ void GaborishInverse(Image3F* in_out, const Rect& rect, float mul[3],
   
   
   
-  ImageF temp(in_out->Plane(2).xsize(), in_out->Plane(2).ysize());
+  ImageF temp;
+  JXL_ASSIGN_OR_RETURN(
+      temp, ImageF::Create(in_out->Plane(2).xsize(), in_out->Plane(2).ysize()));
   CopyImageTo(in_out->Plane(2), &temp);
   Rect xrect = rect.Extend(3, Rect(*in_out));
   Symmetric5(in_out->Plane(0), xrect, weights[0], pool, &in_out->Plane(2),
@@ -59,6 +61,7 @@ void GaborishInverse(Image3F* in_out, const Rect& rect, float mul[3],
   in_out->Plane(0).Swap(in_out->Plane(1));
   
   in_out->Plane(0).Swap(in_out->Plane(2));
+  return true;
 }
 
 }  

@@ -99,6 +99,7 @@ typedef struct {
 
 
 
+
 typedef void* (*jpegxl_cms_init_func)(void* init_data, size_t num_threads,
                                       size_t pixels_per_thread,
                                       const JxlColorProfile* input_profile,

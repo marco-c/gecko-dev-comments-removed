@@ -31,10 +31,11 @@ struct AuxOut;
 
 
 
-ImageF InitialQuantField(float butteraugli_target, const Image3F& opsin,
-                         const Rect& rect, ThreadPool* pool, float rescale,
-                         ImageF* initial_quant_mask,
-                         ImageF* initial_quant_mask1x1);
+StatusOr<ImageF> InitialQuantField(float butteraugli_target,
+                                   const Image3F& opsin, const Rect& rect,
+                                   ThreadPool* pool, float rescale,
+                                   ImageF* initial_quant_mask,
+                                   ImageF* initial_quant_mask1x1);
 
 float InitialQuantDC(float butteraugli_target);
 
@@ -45,11 +46,11 @@ void AdjustQuantField(const AcStrategyImage& ac_strategy, const Rect& rect,
 
 
 
-void FindBestQuantizer(const FrameHeader& frame_header, const Image3F* linear,
-                       const Image3F& opsin, ImageF& quant_field,
-                       PassesEncoderState* enc_state,
-                       const JxlCmsInterface& cms, ThreadPool* pool,
-                       AuxOut* aux_out, double rescale = 1.0);
+Status FindBestQuantizer(const FrameHeader& frame_header, const Image3F* linear,
+                         const Image3F& opsin, ImageF& quant_field,
+                         PassesEncoderState* enc_state,
+                         const JxlCmsInterface& cms, ThreadPool* pool,
+                         AuxOut* aux_out, double rescale = 1.0);
 
 }  
 

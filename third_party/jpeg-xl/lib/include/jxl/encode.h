@@ -353,6 +353,7 @@ typedef enum {
 
 
 
+
   JXL_ENC_FRAME_SETTING_BUFFERING = 34,
 
   
@@ -527,6 +528,7 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderProcessOutput(JxlEncoder* enc,
 
 
 
+
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderSetFrameHeader(JxlEncoderFrameSettings* frame_settings,
                          const JxlFrameHeader* frame_header);
@@ -565,8 +567,11 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelBlendInfo(
 
 
 
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameName(
     JxlEncoderFrameSettings* frame_settings, const char* frame_name);
+
+
 
 
 
@@ -610,9 +615,17 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameBitDepth(
 
 
 
+
+
+
+
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderAddJPEGFrame(const JxlEncoderFrameSettings* frame_settings,
                        const uint8_t* buffer, size_t size);
+
+
+
+
 
 
 
@@ -1245,6 +1258,7 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelInfo(
 
 
 
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
                                                           size_t index,
                                                           const char* name,
@@ -1264,9 +1278,11 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
 
 
 
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderFrameSettingsSetOption(
     JxlEncoderFrameSettings* frame_settings, JxlEncoderFrameSettingId option,
     int64_t value);
+
 
 
 
@@ -1380,6 +1396,7 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetCodestreamLevel(JxlEncoder* enc,
 
 
 
+
 JXL_EXPORT int JxlEncoderGetRequiredCodestreamLevel(const JxlEncoder* enc);
 
 
@@ -1433,9 +1450,9 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameDistance(
 
 
 
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelDistance(
     JxlEncoderFrameSettings* frame_settings, size_t index, float distance);
-
 
 
 

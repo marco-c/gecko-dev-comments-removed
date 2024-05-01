@@ -29,7 +29,7 @@
 namespace jxl {
 
 
-size_t VectorSize();
+namespace detail {
 
 
 
@@ -40,8 +40,8 @@ struct PlaneBase {
         orig_xsize_(0),
         orig_ysize_(0),
         bytes_per_row_(0),
-        bytes_(nullptr) {}
-  PlaneBase(size_t xsize, size_t ysize, size_t sizeof_t);
+        bytes_(nullptr),
+        sizeof_t_(0) {}
 
   
   
@@ -88,6 +88,9 @@ struct PlaneBase {
   }
 
  protected:
+  PlaneBase(size_t xsize, size_t ysize, size_t sizeof_t);
+  Status Allocate();
+
   
   JXL_INLINE void* VoidRow(const size_t y) const {
 #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
@@ -102,21 +105,6 @@ struct PlaneBase {
     return JXL_ASSUME_ALIGNED(row, 64);
   }
 
-  enum class Padding {
-    
-    kRoundUp,
-    
-    
-    
-    
-    kUnaligned
-  };
-
-  
-  
-  
-  void InitializePadding(size_t sizeof_t, Padding padding);
-
   
   uint32_t xsize_;  
   uint32_t ysize_;
@@ -124,7 +112,10 @@ struct PlaneBase {
   uint32_t orig_ysize_;
   size_t bytes_per_row_;  
   CacheAlignedUniquePtr bytes_;
+  size_t sizeof_t_;
 };
+
+}  
 
 
 
@@ -148,17 +139,17 @@ struct PlaneBase {
 
 
 template <typename ComponentType>
-class Plane : public PlaneBase {
+class Plane : public detail::PlaneBase {
  public:
   using T = ComponentType;
   static constexpr size_t kNumPlanes = 1;
 
   Plane() = default;
-  Plane(const size_t xsize, const size_t ysize)
-      : PlaneBase(xsize, ysize, sizeof(T)) {}
 
-  void InitializePaddingForUnalignedAccesses() {
-    InitializePadding(sizeof(T), Padding::kUnaligned);
+  static StatusOr<Plane> Create(const size_t xsize, const size_t ysize) {
+    Plane plane(xsize, ysize, sizeof(T));
+    JXL_RETURN_IF_ERROR(plane.Allocate());
+    return plane;
   }
 
   JXL_INLINE T* Row(const size_t y) { return static_cast<T*>(VoidRow(y)); }
@@ -179,6 +170,10 @@ class Plane : public PlaneBase {
   JXL_INLINE intptr_t PixelsPerRow() const {
     return static_cast<intptr_t>(bytes_per_row_ / sizeof(T));
   }
+
+ private:
+  Plane(size_t xsize, size_t ysize, size_t sizeof_t)
+      : detail::PlaneBase(xsize, ysize, sizeof_t) {}
 };
 
 using ImageSB = Plane<int8_t>;
@@ -188,12 +183,6 @@ using ImageU = Plane<uint16_t>;
 using ImageI = Plane<int32_t>;
 using ImageF = Plane<float>;
 using ImageD = Plane<double>;
-
-
-template <class Image1, class Image2>
-bool SameSize(const Image1& image1, const Image2& image2) {
-  return image1.xsize() == image2.xsize() && image1.ysize() == image2.ysize();
-}
 
 template <typename T>
 class Image3;
@@ -394,22 +383,10 @@ class Image3 {
 
   Image3() : planes_{PlaneT(), PlaneT(), PlaneT()} {}
 
-  Image3(const size_t xsize, const size_t ysize)
-      : planes_{PlaneT(xsize, ysize), PlaneT(xsize, ysize),
-                PlaneT(xsize, ysize)} {}
-
   Image3(Image3&& other) noexcept {
     for (size_t i = 0; i < kNumPlanes; i++) {
       planes_[i] = std::move(other.planes_[i]);
     }
-  }
-
-  Image3(PlaneT&& plane0, PlaneT&& plane1, PlaneT&& plane2) {
-    JXL_CHECK(SameSize(plane0, plane1));
-    JXL_CHECK(SameSize(plane0, plane2));
-    planes_[0] = std::move(plane0);
-    planes_[1] = std::move(plane1);
-    planes_[2] = std::move(plane2);
   }
 
   
@@ -422,6 +399,17 @@ class Image3 {
       planes_[i] = std::move(other.planes_[i]);
     }
     return *this;
+  }
+
+  static StatusOr<Image3> Create(const size_t xsize, const size_t ysize) {
+    StatusOr<PlaneT> plane0 = PlaneT::Create(xsize, ysize);
+    JXL_RETURN_IF_ERROR(plane0.status());
+    StatusOr<PlaneT> plane1 = PlaneT::Create(xsize, ysize);
+    JXL_RETURN_IF_ERROR(plane1.status());
+    StatusOr<PlaneT> plane2 = PlaneT::Create(xsize, ysize);
+    JXL_RETURN_IF_ERROR(plane2.status());
+    return Image3(std::move(plane0).value(), std::move(plane1).value(),
+                  std::move(plane2).value());
   }
 
   
@@ -481,6 +469,12 @@ class Image3 {
   JXL_INLINE intptr_t PixelsPerRow() const { return planes_[0].PixelsPerRow(); }
 
  private:
+  Image3(PlaneT&& plane0, PlaneT&& plane1, PlaneT&& plane2) {
+    planes_[0] = std::move(plane0);
+    planes_[1] = std::move(plane1);
+    planes_[2] = std::move(plane2);
+  }
+
   void PlaneRowBoundsCheck(const size_t c, const size_t y) const {
 #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
     defined(THREAD_SANITIZER)
@@ -493,7 +487,6 @@ class Image3 {
 #endif
   }
 
- private:
   PlaneT planes_[kNumPlanes];
 };
 

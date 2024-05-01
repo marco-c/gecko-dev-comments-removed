@@ -12,12 +12,10 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include <tuple>
 #include <vector>
 
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_bit_reader.h"
-#include "lib/jxl/image.h"
 
 namespace jxl {
 
@@ -109,7 +107,8 @@ class PatchDictionary {
 
   
   
-  void AddOneRow(float* const* inout, size_t y, size_t x0, size_t xsize) const;
+  Status AddOneRow(float* const* inout, size_t y, size_t x0,
+                   size_t xsize) const;
 
   
   

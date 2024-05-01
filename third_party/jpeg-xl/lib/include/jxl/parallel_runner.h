@@ -74,6 +74,7 @@ typedef int JxlParallelRetCode;
 
 
 
+
 typedef JxlParallelRetCode (*JxlParallelRunInit)(void* jpegxl_opaque,
                                                  size_t num_threads);
 
@@ -92,8 +93,10 @@ typedef JxlParallelRetCode (*JxlParallelRunInit)(void* jpegxl_opaque,
 
 
 
+
 typedef void (*JxlParallelRunFunction)(void* jpegxl_opaque, uint32_t value,
                                        size_t thread_id);
+
 
 
 

@@ -9,6 +9,7 @@
 
 
 #include "lib/jxl/base/data_parallel.h"
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/image.h"
 
 namespace jxl {
@@ -16,8 +17,8 @@ namespace jxl {
 
 
 
-void GaborishInverse(Image3F* in_out, const Rect& rect, float mul[3],
-                     ThreadPool* pool);
+Status GaborishInverse(Image3F* in_out, const Rect& rect, const float mul[3],
+                       ThreadPool* pool);
 
 }  
 

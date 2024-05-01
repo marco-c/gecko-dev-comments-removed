@@ -12,19 +12,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <vector>
+#include <limits>
 
-#include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/cms/opsin_params.h"
 #include "lib/jxl/dec_bit_reader.h"
-#include "lib/jxl/entropy_coder.h"
 #include "lib/jxl/field_encodings.h"
 #include "lib/jxl/fields.h"
 #include "lib/jxl/frame_dimensions.h"
 #include "lib/jxl/image.h"
-#include "lib/jxl/quant_weights.h"
 
 namespace jxl {
 
@@ -55,7 +51,8 @@ struct ColorCorrelationMap {
   
   
   
-  ColorCorrelationMap(size_t xsize, size_t ysize, bool XYB = true);
+  static StatusOr<ColorCorrelationMap> Create(size_t xsize, size_t ysize,
+                                              bool XYB = true);
 
   float YtoXRatio(int32_t x_factor) const {
     return base_correlation_x_ + x_factor * color_scale_;
@@ -96,7 +93,7 @@ struct ColorCorrelationMap {
            color_factor_ == kDefaultColorFactor;
   }
 
-  int32_t RatioJPEG(int32_t factor) const {
+  static int32_t RatioJPEG(int32_t factor) {
     return factor * (1 << kCFLFixedPointPrecision) / kDefaultColorFactor;
   }
 

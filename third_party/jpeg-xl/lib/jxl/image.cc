@@ -6,108 +6,41 @@
 #include "lib/jxl/image.h"
 
 #include <algorithm>  
+#include <cstddef>
+#include <cstdint>
 
-#undef HWY_TARGET_INCLUDE
-#define HWY_TARGET_INCLUDE "lib/jxl/image.cc"
-#include <hwy/foreach_target.h>
-#include <hwy/highway.h>
+#include "lib/jxl/base/status.h"
+#include "lib/jxl/cache_aligned.h"
+#include "lib/jxl/simd_util.h"
 
+#if defined(MEMORY_SANITIZER)
 #include "lib/jxl/base/common.h"
-#include "lib/jxl/frame_dimensions.h"
-#include "lib/jxl/image_ops.h"
 #include "lib/jxl/sanitizers.h"
+#endif
 
-HWY_BEFORE_NAMESPACE();
 namespace jxl {
+namespace detail {
 
-namespace HWY_NAMESPACE {
-size_t GetVectorSize() { return HWY_LANES(uint8_t); }
-
-}  
-
-}  
-HWY_AFTER_NAMESPACE();
-
-#if HWY_ONCE
-namespace jxl {
 namespace {
 
-HWY_EXPORT(GetVectorSize);  
 
 
 
-size_t BytesPerRow(const size_t xsize, const size_t sizeof_t) {
-  const size_t vec_size = VectorSize();
-  size_t valid_bytes = xsize * sizeof_t;
+void InitializePadding(PlaneBase& plane, const size_t sizeof_t) {
+#if defined(MEMORY_SANITIZER)
+  size_t xsize = plane.xsize();
+  size_t ysize = plane.ysize();
+  if (xsize == 0 || ysize == 0) return;
 
-  
-  
-  
-  if (vec_size != 0) {
-    valid_bytes += vec_size - sizeof_t;
-  }
-
-  
-  const size_t align = std::max(vec_size, CacheAligned::kAlignment);
-  size_t bytes_per_row = RoundUpTo(valid_bytes, align);
-
-  
-  
-  
-  
-  
-  if (bytes_per_row % CacheAligned::kAlias == 0) {
-    bytes_per_row += align;
-  }
-
-  JXL_ASSERT(bytes_per_row % align == 0);
-  return bytes_per_row;
-}
-
-}  
-
-size_t VectorSize() {
-  static size_t bytes = HWY_DYNAMIC_DISPATCH(GetVectorSize)();
-  return bytes;
-}
-
-PlaneBase::PlaneBase(const size_t xsize, const size_t ysize,
-                     const size_t sizeof_t)
-    : xsize_(static_cast<uint32_t>(xsize)),
-      ysize_(static_cast<uint32_t>(ysize)),
-      orig_xsize_(static_cast<uint32_t>(xsize)),
-      orig_ysize_(static_cast<uint32_t>(ysize)) {
-  JXL_CHECK(xsize == xsize_);
-  JXL_CHECK(ysize == ysize_);
-
-  JXL_ASSERT(sizeof_t == 1 || sizeof_t == 2 || sizeof_t == 4 || sizeof_t == 8);
-
-  bytes_per_row_ = 0;
-  
-  
-  if (xsize != 0 && ysize != 0) {
-    bytes_per_row_ = BytesPerRow(xsize, sizeof_t);
-    bytes_ = AllocateArray(bytes_per_row_ * ysize);
-    JXL_CHECK(bytes_.get());
-    InitializePadding(sizeof_t, Padding::kRoundUp);
-  }
-}
-
-void PlaneBase::InitializePadding(const size_t sizeof_t, Padding padding) {
-#if defined(MEMORY_SANITIZER) || HWY_IDE
-  if (xsize_ == 0 || ysize_ == 0) return;
-
-  const size_t vec_size = VectorSize();
+  const size_t vec_size = MaxVectorSize();
   if (vec_size == 0) return;  
 
-  const size_t valid_size = xsize_ * sizeof_t;
-  const size_t initialize_size = padding == Padding::kRoundUp
-                                     ? RoundUpTo(valid_size, vec_size)
-                                     : valid_size + vec_size - sizeof_t;
+  const size_t valid_size = xsize * sizeof_t;
+  const size_t initialize_size = RoundUpTo(valid_size, vec_size);
   if (valid_size == initialize_size) return;
 
-  for (size_t y = 0; y < ysize_; ++y) {
-    uint8_t* JXL_RESTRICT row = static_cast<uint8_t*>(VoidRow(y));
+  for (size_t y = 0; y < ysize; ++y) {
+    uint8_t* JXL_RESTRICT row = plane.bytes() + y * plane.bytes_per_row();
 #if defined(__clang__) &&                                           \
     ((!defined(__apple_build_version__) && __clang_major__ <= 6) || \
      (defined(__apple_build_version__) &&                           \
@@ -124,6 +57,43 @@ void PlaneBase::InitializePadding(const size_t sizeof_t, Padding padding) {
 #endif  
 }
 
+}  
+
+PlaneBase::PlaneBase(const size_t xsize, const size_t ysize,
+                     const size_t sizeof_t)
+    : xsize_(static_cast<uint32_t>(xsize)),
+      ysize_(static_cast<uint32_t>(ysize)),
+      orig_xsize_(static_cast<uint32_t>(xsize)),
+      orig_ysize_(static_cast<uint32_t>(ysize)),
+      bytes_per_row_(BytesPerRow(xsize_, sizeof_t)),
+      bytes_(nullptr),
+      sizeof_t_(sizeof_t) {
+  
+  JXL_CHECK(xsize == xsize_);
+  JXL_CHECK(ysize == ysize_);
+
+  JXL_ASSERT(sizeof_t == 1 || sizeof_t == 2 || sizeof_t == 4 || sizeof_t == 8);
+}
+
+Status PlaneBase::Allocate() {
+  JXL_CHECK(!bytes_.get());
+
+  
+  
+  if (xsize_ == 0 || ysize_ == 0) {
+    return true;
+  }
+
+  bytes_ = AllocateArray(bytes_per_row_ * ysize_);
+  if (!bytes_.get()) {
+    
+    return JXL_FAILURE("Failed to allocate memory for image surface");
+  }
+  InitializePadding(*this, sizeof_t_);
+
+  return true;
+}
+
 void PlaneBase::Swap(PlaneBase& other) {
   std::swap(xsize_, other.xsize_);
   std::swap(ysize_, other.ysize_);
@@ -133,73 +103,5 @@ void PlaneBase::Swap(PlaneBase& other) {
   std::swap(bytes_, other.bytes_);
 }
 
-void PadImageToBlockMultipleInPlace(Image3F* JXL_RESTRICT in,
-                                    size_t block_dim) {
-  const size_t xsize_orig = in->xsize();
-  const size_t ysize_orig = in->ysize();
-  const size_t xsize = RoundUpTo(xsize_orig, block_dim);
-  const size_t ysize = RoundUpTo(ysize_orig, block_dim);
-  
-  in->ShrinkTo(xsize, ysize);
-  for (size_t c = 0; c < 3; c++) {
-    for (size_t y = 0; y < ysize_orig; y++) {
-      float* JXL_RESTRICT row = in->PlaneRow(c, y);
-      for (size_t x = xsize_orig; x < xsize; x++) {
-        row[x] = row[xsize_orig - 1];
-      }
-    }
-    const float* JXL_RESTRICT row_src = in->ConstPlaneRow(c, ysize_orig - 1);
-    for (size_t y = ysize_orig; y < ysize; y++) {
-      memcpy(in->PlaneRow(c, y), row_src, xsize * sizeof(float));
-    }
-  }
-}
-
-static void DownsampleImage(const ImageF& input, size_t factor,
-                            ImageF* output) {
-  JXL_ASSERT(factor != 1);
-  output->ShrinkTo(DivCeil(input.xsize(), factor),
-                   DivCeil(input.ysize(), factor));
-  size_t in_stride = input.PixelsPerRow();
-  for (size_t y = 0; y < output->ysize(); y++) {
-    float* row_out = output->Row(y);
-    const float* row_in = input.Row(factor * y);
-    for (size_t x = 0; x < output->xsize(); x++) {
-      size_t cnt = 0;
-      float sum = 0;
-      for (size_t iy = 0; iy < factor && iy + factor * y < input.ysize();
-           iy++) {
-        for (size_t ix = 0; ix < factor && ix + factor * x < input.xsize();
-             ix++) {
-          sum += row_in[iy * in_stride + x * factor + ix];
-          cnt++;
-        }
-      }
-      row_out[x] = sum / cnt;
-    }
-  }
-}
-
-void DownsampleImage(ImageF* image, size_t factor) {
-  
-  ImageF downsampled(DivCeil(image->xsize(), factor) + kBlockDim,
-                     DivCeil(image->ysize(), factor) + kBlockDim);
-  DownsampleImage(*image, factor, &downsampled);
-  *image = std::move(downsampled);
-}
-
-void DownsampleImage(Image3F* opsin, size_t factor) {
-  JXL_ASSERT(factor != 1);
-  
-  Image3F downsampled(DivCeil(opsin->xsize(), factor) + kBlockDim,
-                      DivCeil(opsin->ysize(), factor) + kBlockDim);
-  downsampled.ShrinkTo(downsampled.xsize() - kBlockDim,
-                       downsampled.ysize() - kBlockDim);
-  for (size_t c = 0; c < 3; c++) {
-    DownsampleImage(opsin->Plane(c), factor, &downsampled.Plane(c));
-  }
-  *opsin = std::move(downsampled);
-}
-
 }  
-#endif  
+}  

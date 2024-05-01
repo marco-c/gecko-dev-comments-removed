@@ -32,7 +32,7 @@ class RenderPipelineInput {
   }
 
   RenderPipelineInput() = default;
-  void Done();
+  Status Done();
 
   const std::pair<ImageF*, Rect>& GetBuffer(size_t c) const {
     JXL_ASSERT(c < buffers_.size());
@@ -63,7 +63,7 @@ class RenderPipeline {
 
     
     
-    std::unique_ptr<RenderPipeline> Finalize(
+    StatusOr<std::unique_ptr<RenderPipeline>> Finalize(
         FrameDimensions frame_dimensions) &&;
 
    private:
@@ -118,20 +118,20 @@ class RenderPipeline {
   friend class RenderPipelineInput;
 
  private:
-  void InputReady(size_t group_id, size_t thread_id,
-                  const std::vector<std::pair<ImageF*, Rect>>& buffers);
+  Status InputReady(size_t group_id, size_t thread_id,
+                    const std::vector<std::pair<ImageF*, Rect>>& buffers);
 
   virtual std::vector<std::pair<ImageF*, Rect>> PrepareBuffers(
       size_t group_id, size_t thread_id) = 0;
 
-  virtual void ProcessBuffers(size_t group_id, size_t thread_id) = 0;
+  virtual Status ProcessBuffers(size_t group_id, size_t thread_id) = 0;
 
   
   
-  virtual void PrepareForThreadsInternal(size_t num, bool use_group_ids) = 0;
+  virtual Status PrepareForThreadsInternal(size_t num, bool use_group_ids) = 0;
 
   
-  virtual void Init() {}
+  virtual Status Init() { return true; }
 };
 
 }  

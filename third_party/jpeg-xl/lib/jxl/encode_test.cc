@@ -33,6 +33,7 @@
 #include "lib/extras/packed_image.h"
 #include "lib/jxl/base/byte_order.h"
 #include "lib/jxl/base/c_callback_support.h"
+#include "lib/jxl/base/override.h"
 #include "lib/jxl/base/span.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/common.h"  
@@ -241,7 +242,7 @@ void VerifyFrameEncoding(size_t xsize, size_t ysize, JxlEncoder* enc,
 
 void VerifyFrameEncoding(JxlEncoder* enc,
                          const JxlEncoderFrameSettings* frame_settings) {
-  VerifyFrameEncoding(63, 129, enc, frame_settings, 2700,
+  VerifyFrameEncoding(63, 129, enc, frame_settings, 27000,
                       false);
 }
 
@@ -256,7 +257,7 @@ TEST(EncodeTest, EncoderResetTest) {
   JxlEncoderPtr enc = JxlEncoderMake(nullptr);
   EXPECT_NE(nullptr, enc.get());
   VerifyFrameEncoding(50, 200, enc.get(),
-                      JxlEncoderFrameSettingsCreate(enc.get(), nullptr), 4300,
+                      JxlEncoderFrameSettingsCreate(enc.get(), nullptr), 4550,
                       false);
   
   
@@ -346,7 +347,7 @@ TEST(EncodeTest, frame_settingsTest) {
         JXL_ENC_FRAME_SETTING_JPEG_KEEP_JUMBF};
     const int too_low[nb_options] = {0,  -2, -2, 3,  -2, -2, -2, -2,
                                      -2, -2, -2, -2, -2, -2, -2, -2,
-                                     -2, -1, -2, -1, -2, -2, -2};
+                                     -2, -1, -2, -2, -2, -2, -2};
     const int too_high[nb_options] = {11, 12, 5,     16, 6,  2, 4,  -3,
                                       -3, 3,  70914, 3,  42, 4, 16, 12,
                                       2,  2,  2,     4,  2,  2, 2};
@@ -370,11 +371,11 @@ TEST(EncodeTest, frame_settingsTest) {
     
     EXPECT_EQ(JXL_ENC_ERROR,
               JxlEncoderFrameSettingsSetOption(
-                  frame_settings, JXL_ENC_FRAME_SETTING_EFFORT, 10));
+                  frame_settings, JXL_ENC_FRAME_SETTING_EFFORT, 11));
     JxlEncoderAllowExpertOptions(enc.get());
     EXPECT_EQ(JXL_ENC_SUCCESS,
               JxlEncoderFrameSettingsSetOption(
-                  frame_settings, JXL_ENC_FRAME_SETTING_EFFORT, 10));
+                  frame_settings, JXL_ENC_FRAME_SETTING_EFFORT, 11));
 
     
     EXPECT_EQ(JXL_ENC_ERROR,
@@ -438,7 +439,7 @@ TEST(EncodeTest, frame_settingsTest) {
               JxlEncoderFrameSettingsSetOption(
                   frame_settings, JXL_ENC_FRAME_SETTING_PHOTON_NOISE, 50.0f));
 
-    VerifyFrameEncoding(63, 129, enc.get(), frame_settings, 2500, false);
+    VerifyFrameEncoding(63, 129, enc.get(), frame_settings, 3700, false);
   }
 
   {
@@ -458,7 +459,7 @@ TEST(EncodeTest, frame_settingsTest) {
     JxlEncoderFrameSettings* frame_settings =
         JxlEncoderFrameSettingsCreate(enc.get(), NULL);
     EXPECT_EQ(JXL_ENC_SUCCESS, JxlEncoderSetFrameDistance(frame_settings, 0.5));
-    VerifyFrameEncoding(63, 129, enc.get(), frame_settings, 3030, false);
+    VerifyFrameEncoding(63, 129, enc.get(), frame_settings, 3130, false);
     EXPECT_EQ(0.5, enc->last_used_cparams.butteraugli_distance);
   }
 
@@ -519,7 +520,7 @@ TEST(EncodeTest, frame_settingsTest) {
     EXPECT_EQ(JXL_ENC_SUCCESS,
               JxlEncoderFrameSettingsSetOption(
                   frame_settings, JXL_ENC_FRAME_SETTING_PROGRESSIVE_DC, 2));
-    VerifyFrameEncoding(63, 129, enc.get(), frame_settings, 2830,
+    VerifyFrameEncoding(63, 129, enc.get(), frame_settings, 3430,
                         false);
     EXPECT_EQ(false, enc->last_used_cparams.responsive);
     EXPECT_EQ(jxl::Override::kOn, enc->last_used_cparams.progressive_mode);

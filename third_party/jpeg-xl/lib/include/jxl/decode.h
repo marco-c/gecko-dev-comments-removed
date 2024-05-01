@@ -330,20 +330,34 @@ typedef enum {
 
 typedef enum {
   
+
+
   kFrames = 0,
   
+
+
   kDC = 1,
   
-  
+
+
+
   kLastPasses = 2,
   
-  
+
+
+
   kPasses = 3,
   
+
+
   kDCProgressive = 4,
   
+
+
   kDCGroups = 5,
   
+
+
   kGroups = 6,
 } JxlProgressiveDetail;
 
@@ -487,6 +501,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSubscribeEvents(JxlDecoder* dec,
 
 JXL_EXPORT JxlDecoderStatus
 JxlDecoderSetKeepOrientation(JxlDecoder* dec, JXL_BOOL skip_reorientation);
+
 
 
 
@@ -1368,6 +1383,22 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec,
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxSizeRaw(const JxlDecoder* dec,
                                                     uint64_t* size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxSizeContents(const JxlDecoder* dec,
+                                                         uint64_t* size);
 
 
 

@@ -43,10 +43,10 @@ class Comparator {
 
 
 
-float ComputeScore(const ImageBundle& rgb0, const ImageBundle& rgb1,
-                   Comparator* comparator, const JxlCmsInterface& cms,
-                   ImageF* diffmap = nullptr, ThreadPool* pool = nullptr,
-                   bool ignore_alpha = false);
+Status ComputeScore(const ImageBundle& rgb0, const ImageBundle& rgb1,
+                    Comparator* comparator, const JxlCmsInterface& cms,
+                    float* score, ImageF* diffmap = nullptr,
+                    ThreadPool* pool = nullptr, bool ignore_alpha = false);
 
 }  
 

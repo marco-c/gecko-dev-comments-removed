@@ -245,8 +245,20 @@ class PackedPixelFile {
 
   
   
-  std::vector<uint8_t> icc;
+  
+  
+  
+  
+  
+  
+  
+  
+  enum {
+    kColorEncodingIsPrimary,
+    kIccIsPrimary
+  } primary_color_representation = kColorEncodingIsPrimary;
   JxlColorEncoding color_encoding = {};
+  std::vector<uint8_t> icc;
   
   std::vector<uint8_t> orig_icc;
 
