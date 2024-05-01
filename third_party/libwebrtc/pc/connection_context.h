@@ -79,6 +79,11 @@ class ConnectionContext final
   
   
   
+  const Environment& env() const { return env_; }
+
+  
+  
+  
   
   const FieldTrialsView& field_trials() const { return env_.field_trials(); }
 
