@@ -2,7 +2,7 @@
 
 
 
-use glean::net::{PingUploader, UploadResult};
+use glean::net::{PingUploadRequest, PingUploader, UploadResult};
 use url::Url;
 use viaduct::{Error::*, Request};
 
@@ -20,10 +20,10 @@ impl PingUploader for ViaductUploader {
     
     
     
-    
-    
-    
-    fn upload(&self, url: String, body: Vec<u8>, headers: Vec<(String, String)>) -> UploadResult {
+    fn upload(&self, upload_request: PingUploadRequest) -> UploadResult {
+        let PingUploadRequest {
+            url, body, headers, ..
+        } = upload_request;
         log::trace!("FOG Ping Uploader uploading to {}", url);
         let url_clone = url.clone();
         let result: std::result::Result<UploadResult, viaduct::Error> = (move || {
