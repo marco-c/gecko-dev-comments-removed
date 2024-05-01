@@ -235,6 +235,10 @@ module.exports = {
       },
     },
     {
+      files: ["**/test/**", "**/tests/**"],
+      extends: ["plugin:mozilla/general-test"],
+    },
+    {
       
       
       
