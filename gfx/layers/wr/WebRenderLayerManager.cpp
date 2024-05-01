@@ -96,6 +96,7 @@ bool WebRenderLayerManager::Initialize(
   }
 
   mWrChild = static_cast<WebRenderBridgeChild*>(bridge);
+  mHasFlushedThisChild = false;
 
   TextureFactoryIdentifier textureFactoryIdentifier;
   wr::MaybeIdNamespace idNamespace;
@@ -696,7 +697,11 @@ void WebRenderLayerManager::FlushRendering(wr::RenderReasons aReasons) {
 
   
   
-  bool resizing = mWidget && mWidget->IsResizingNativeWidget().valueOr(true);
+  
+  
+  LayoutDeviceIntSize widgetSize = mWidget->GetClientSize();
+  bool resizing = widgetSize != mFlushWidgetSize;
+  mFlushWidgetSize = widgetSize;
 
   if (resizing) {
     aReasons = aReasons | wr::RenderReasons::RESIZE;
@@ -704,14 +709,16 @@ void WebRenderLayerManager::FlushRendering(wr::RenderReasons aReasons) {
 
   
   
-  if (WrBridge()->GetCompositorUseDComp() && !resizing) {
-    cBridge->SendFlushRenderingAsync(aReasons);
-  } else if (mWidget->SynchronouslyRepaintOnResize() ||
-             StaticPrefs::layers_force_synchronous_resize()) {
+  
+  if (!mHasFlushedThisChild ||
+      (resizing && (mWidget->SynchronouslyRepaintOnResize() ||
+                    StaticPrefs::layers_force_synchronous_resize()))) {
     cBridge->SendFlushRendering(aReasons);
   } else {
     cBridge->SendFlushRenderingAsync(aReasons);
   }
+
+  mHasFlushedThisChild = true;
 }
 
 void WebRenderLayerManager::WaitOnTransactionProcessed() {
