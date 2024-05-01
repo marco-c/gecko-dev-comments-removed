@@ -438,6 +438,11 @@ static const struct FREEBLVectorStr vector = {
     Kyber_Decapsulate,
 
     
+
+    ED_SignMessage,
+    ED_VerifyMessage,
+    ED_DerivePublicKey,
+    
 };
 
 const FREEBLVector*

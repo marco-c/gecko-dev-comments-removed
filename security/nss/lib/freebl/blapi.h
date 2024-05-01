@@ -1921,6 +1921,27 @@ extern SECStatus Kyber_Encapsulate(KyberParams params, const SECItem *seed, cons
 
 extern SECStatus Kyber_Decapsulate(KyberParams params, const SECItem *privKey, const SECItem *ciphertext, SECItem *secret);
 
+
+
+
+
+
+extern SECStatus ED_SignMessage(ECPrivateKey *key, SECItem *signature,
+                                const SECItem *msg);
+
+
+
+
+
+
+extern SECStatus ED_VerifyMessage(ECPublicKey *key, const SECItem *signature,
+                                  const SECItem *msg);
+
+
+
+
+extern SECStatus ED_DerivePublicKey(const SECItem *privateKey, SECItem *publicKey);
+
 SEC_END_PROTOS
 
 #endif 

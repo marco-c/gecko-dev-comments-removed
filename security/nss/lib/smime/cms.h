@@ -815,6 +815,9 @@ NSS_CMSEnvelopedData_Decode_AfterEnd(NSSCMSEnvelopedData *envd);
 
 
 
+extern PRBool
+NSS_CMSRecipient_IsSupported(CERTCertificate *cert);
+
 
 
 

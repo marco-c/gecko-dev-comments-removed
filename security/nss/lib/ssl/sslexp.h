@@ -1079,10 +1079,10 @@ typedef struct SSLMaskingContextStr {
 
 
 
-#define SSL_SetCertificateCompressionAlgorithm(fd, t)                \
-    SSL_EXPERIMENTAL_API("SSL_SetCertificateCompressionAlgorithm",   \
-                         (PRFileDesc * _fd,                          \
-                          SSLCertificateCompressionAlgorithmType t), \
+#define SSL_SetCertificateCompressionAlgorithm(fd, t)              \
+    SSL_EXPERIMENTAL_API("SSL_SetCertificateCompressionAlgorithm", \
+                         (PRFileDesc * _fd,                        \
+                          SSLCertificateCompressionAlgorithm t),   \
                          (fd, t))
 
 

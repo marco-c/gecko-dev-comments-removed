@@ -10,6 +10,7 @@
 #include "plhash.h"
 #include "nssrwlk.h"
 #include "nssutil.h"
+#include "secoidt.h"
 
 
 
@@ -611,6 +612,22 @@ CONST_OID evIncorporationCountry[] = { EV_NAME_ATTRIBUTE, 3 };
 
 
 CONST_OID curve25519[] = { 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CONST_OID ed25519PublicKey[] = { 0x2B, 0x65, 0x70 };
+CONST_OID ed25519Signature[] = { 0x2B, 0x65, 0x70 };
 
 #define OI(x)                                  \
     {                                          \
@@ -1818,6 +1835,13 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
 
     ODE(SEC_OID_XYBER768D00,
         "X25519+Kyber768 key exchange", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION),
+
+    OD(ed25519Signature, SEC_OID_ED25519_SIGNATURE, "X9.62 EDDSA signature", CKM_EDDSA,
+       INVALID_CERT_EXTENSION),
+
+    OD(ed25519PublicKey, SEC_OID_ED25519_PUBLIC_KEY,
+       "X9.62 elliptic edwards curve public key", CKM_EC_EDWARDS_KEY_PAIR_GEN, INVALID_CERT_EXTENSION),
+
 };
 
 
@@ -2091,6 +2115,9 @@ SECOID_Init(void)
         return SECSuccess; 
     }
 
+    
+    xOids[SEC_OID_XYBER768D00].notPolicyFlags = NSS_USE_ALG_IN_SSL_KX;
+
     if (!PR_GetEnvSecure("NSS_ALLOW_WEAK_SIGNATURE_ALG")) {
         
         xOids[SEC_OID_MD2].notPolicyFlags = ~0;
@@ -2129,10 +2156,9 @@ SECOID_Init(void)
 
     for (i = 0; i < SEC_OID_TOTAL; i++) {
         oid = &oids[i];
-
         PORT_Assert(oid->offset == i);
-
         entry = PL_HashTableAdd(oidhash, &oid->oid, (void *)oid);
+
         if (entry == NULL) {
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
             PORT_Assert(0); 
@@ -2192,7 +2218,6 @@ SECOID_FindOID(const SECItem *oid)
             PORT_SetError(SEC_ERROR_UNRECOGNIZED_OID);
         }
     }
-
     return (ret);
 }
 
@@ -2202,8 +2227,9 @@ SECOID_FindOIDTag(const SECItem *oid)
     SECOidData *oiddata;
 
     oiddata = SECOID_FindOID(oid);
-    if (oiddata == NULL)
+    if (oiddata == NULL) {
         return SEC_OID_UNKNOWN;
+    }
 
     return oiddata->offset;
 }

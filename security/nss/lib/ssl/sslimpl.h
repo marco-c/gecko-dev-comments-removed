@@ -26,6 +26,8 @@
 #include "pkcs11t.h"
 #if defined(XP_UNIX)
 #include "unistd.h"
+#elif defined(XP_WIN)
+#include <process.h>
 #endif
 #include "nssrwlk.h"
 #include "prthread.h"
@@ -815,14 +817,6 @@ typedef struct SSL3HandshakeStateStr {
         PORT_Assert(ss->ssl3.hs.messages.len == 0);                  \
         PORT_Assert(ss->ssl3.hs.echInnerMessages.len == 0);          \
     } while (0)
-
-typedef struct SSLCertificateCompressionAlgorithmStr {
-    SSLCertificateCompressionAlgorithmID id;
-    const char *name;
-    SECStatus (*encode)(const SECItem *input, SECItem *output);
-    SECStatus (*decode)(const SECItem *input, SECItem *output, size_t expectedLenDecodedCertificate);
-} SSLCertificateCompressionAlgorithm;
-
 
 
 
@@ -2039,7 +2033,6 @@ SEC_END_PROTOS
 #if defined(XP_UNIX) || defined(XP_OS2)
 #define SSL_GETPID getpid
 #elif defined(WIN32)
-extern int __cdecl _getpid(void);
 #define SSL_GETPID _getpid
 #else
 #define SSL_GETPID() 0

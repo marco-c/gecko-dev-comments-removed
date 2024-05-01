@@ -30,16 +30,6 @@ typedef struct {
     sslExtensionBuilderFunc ex_sender;
 } sslExtensionBuilder;
 
-
-
-
-
-
-
-
-
-typedef PRUint16 SSLCertificateCompressionAlgorithmID;
-
 struct TLSExtensionDataStr {
     
     sslExtensionBuilder serverHelloSenders[SSL_MAX_EXTENSIONS];

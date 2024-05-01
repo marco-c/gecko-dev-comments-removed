@@ -118,6 +118,8 @@ nss_cmsrecipientinfo_create(NSSCMSMessage *cmsg,
     certalgtag = SECOID_GetAlgorithmTag(&(spki->algorithm));
 
     rid = &ri->ri.keyTransRecipientInfo.recipientIdentifier;
+
+    
     switch (certalgtag) {
         case SEC_OID_PKCS1_RSA_ENCRYPTION:
             ri->recipientInfoType = NSSCMSRecipientInfoID_KeyTrans;
@@ -255,6 +257,28 @@ loser:
         NSS_CMSMessage_Destroy(cmsg);
     }
     return NULL;
+}
+
+
+
+
+
+
+
+
+PRBool
+NSS_CMSRecipient_IsSupported(CERTCertificate *cert)
+{
+    CERTSubjectPublicKeyInfo *spki = &(cert->subjectPublicKeyInfo);
+    SECOidTag certalgtag = SECOID_GetAlgorithmTag(&(spki->algorithm));
+
+    switch (certalgtag) {
+        case SEC_OID_PKCS1_RSA_ENCRYPTION:
+        case SEC_OID_X942_DIFFIE_HELMAN_KEY: 
+            return PR_TRUE;
+        default:
+            return PR_FALSE;
+    }
 }
 
 
