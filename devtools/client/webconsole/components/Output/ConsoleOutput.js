@@ -84,7 +84,7 @@ class ConsoleOutput extends Component {
     this.ref = createRef();
     this.lazyMessageListRef = createRef();
 
-    this.resizeObserver = new ResizeObserver(entries => {
+    this.resizeObserver = new ResizeObserver(() => {
       
       
       
@@ -141,7 +141,7 @@ class ConsoleOutput extends Component {
   }
 
   
-  UNSAFE_componentWillUpdate(nextProps, nextState) {
+  UNSAFE_componentWillUpdate(nextProps) {
     this.isUpdating = true;
     if (nextProps.cacheGeneration !== this.props.cacheGeneration) {
       this.messageIdsToKeepAlive = new Set();
@@ -356,7 +356,7 @@ class ConsoleOutput extends Component {
   }
 }
 
-function mapStateToProps(state, props) {
+function mapStateToProps(state) {
   const mutableMessages = getMutableMessagesById(state);
   return {
     initialized: state.ui.initialized,

@@ -79,7 +79,7 @@ class nsIConsoleListenerWatcher {
 
 
 
-  shouldHandleTarget(targetActor) {
+  shouldHandleTarget() {
     return true;
   }
 
@@ -91,7 +91,7 @@ class nsIConsoleListenerWatcher {
 
 
 
-  shouldHandleMessage(targetActor, message) {
+  shouldHandleMessage() {
     throw new Error(
       "'shouldHandleMessage' should be implemented in the class that extends nsIConsoleListenerWatcher"
     );
@@ -106,7 +106,7 @@ class nsIConsoleListenerWatcher {
 
 
 
-  buildResource(targetActor, message) {
+  buildResource(_targetActor, _message) {
     throw new Error(
       "'buildResource' should be implemented in the class that extends nsIConsoleListenerWatcher"
     );

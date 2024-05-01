@@ -589,8 +589,7 @@ HTMLBreadcrumbs.prototype = {
   
 
 
-
-  handleMouseOut(event) {
+  handleMouseOut() {
     this.inspector.highlighters.hideHighlighterType(
       this.inspector.highlighters.TYPES.BOXMODEL
     );

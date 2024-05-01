@@ -51,7 +51,7 @@ class ArrowExpander extends Component {
     };
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps) {
     return this.props.expanded !== nextProps.expanded;
   }
 
@@ -555,11 +555,11 @@ class Tree extends Component {
   }
 
   
-  UNSAFE_componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps() {
     this._autoExpand();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (this.props.focused && prevProps.focused !== this.props.focused) {
       this._scrollNodeIntoView(this.props.focused);
     }

@@ -27,7 +27,7 @@ class InlinePreview extends PureComponent {
     };
   }
 
-  showInScopes(variable) {
+  showInScopes() {
     
     
   }

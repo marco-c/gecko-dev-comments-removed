@@ -12,6 +12,8 @@ registerCleanupFunction(() => {
 
 function evalCode(debuggee) {
   debuggee.eval(
+    
+    
     function stopMe(obj) {
       debugger;
     }.toString()

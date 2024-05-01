@@ -8,7 +8,7 @@
 
 
 
-function baseCopyFormatter({ name, value, object, hasChildren }) {
+function baseCopyFormatter({ name, value, hasChildren }) {
   if (hasChildren) {
     return baseCopyAllFormatter({ [name]: value });
   }

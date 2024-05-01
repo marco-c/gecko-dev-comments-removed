@@ -48,6 +48,8 @@ function test_thread_lifetime() {
   gDebuggee.eval(
     "(" +
       function () {
+        
+        
         function stopMe(arg1) {
           debugger;
         }

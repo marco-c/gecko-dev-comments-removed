@@ -67,7 +67,7 @@ function _processRawManifestMembers(rawManifest) {
 
   
   const rawMembers = Object.entries(rawManifest).filter(
-    ([key, value]) => !key.startsWith("moz_") && !(key === "icons")
+    ([key]) => !key.startsWith("moz_") && !(key === "icons")
   );
 
   for (const [key, value] of rawMembers) {

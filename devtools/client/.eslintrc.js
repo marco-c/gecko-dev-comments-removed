@@ -14,4 +14,13 @@ module.exports = {
     
     "mozilla/use-ownerGlobal": "off",
   },
+  overrides: [
+    {
+      
+      files: ["inspector/markup/test/doc_markup_events_*.html"],
+      rules: {
+        "no-unused-vars": "off",
+      },
+    },
+  ],
 };

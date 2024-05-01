@@ -403,7 +403,7 @@ class StorageUI {
 
   
   
-  async _onTargetAvailable({ targetFront }) {}
+  async _onTargetAvailable() {}
 
   _onTargetDestroyed({ targetFront }) {
     
@@ -1574,7 +1574,7 @@ class StorageUI {
     }
   }
 
-  onVariableViewPopupShowing(event) {
+  onVariableViewPopupShowing() {
     const item = this.view.getFocusedItem();
     this._variableViewPopupCopy.setAttribute("disabled", !item);
   }

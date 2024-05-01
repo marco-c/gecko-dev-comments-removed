@@ -43,7 +43,7 @@ add_task(
     await client.waitForRequestsToSettle();
 
     done = true;
-    threadFront.once("paused", function (packet) {
+    threadFront.once("paused", function () {
       
       threadFront.resume().then(function () {
         Assert.ok(false);

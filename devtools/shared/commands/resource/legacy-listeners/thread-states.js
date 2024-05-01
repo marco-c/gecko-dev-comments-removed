@@ -56,7 +56,7 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
   };
   threadFront.on("paused", onPausedPacket);
 
-  threadFront.on("resumed", packet => {
+  threadFront.on("resumed", () => {
     
     
     

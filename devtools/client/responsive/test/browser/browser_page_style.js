@@ -8,7 +8,7 @@
 
 const TEST_URL = `${URL_ROOT}page_style.html`;
 
-addRDMTask(TEST_URL, async function ({ ui, manager }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   
   const rdmWindow = ui.toolWindow;
   const rdmTextColor = rdmWindow.getComputedStyle(

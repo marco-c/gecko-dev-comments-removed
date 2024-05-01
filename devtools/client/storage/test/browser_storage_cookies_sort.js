@@ -53,7 +53,7 @@ function checkCells(expected) {
   const cells = [
     ...gPanelWindow.document.querySelectorAll("#name .table-widget-cell"),
   ];
-  cells.forEach(function (cell, i, arr) {
+  cells.forEach(function (cell, i) {
     
     
     ok(

@@ -33,7 +33,7 @@ add_task(async function test() {
     );
 
     
-    await withWebChannelTestDocument(async browser => {
+    await withWebChannelTestDocument(async _browser => {
       await waitForTabTitle("WebChannel Page Ready");
       await waitForProfilerMenuButton();
       ok(true, "The profiler menu button was enabled by the WebChannel.");

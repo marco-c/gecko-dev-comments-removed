@@ -1551,7 +1551,7 @@ MarkupView.prototype = {
     }
   },
 
-  _onTargetAvailable({ targetFront }) {},
+  _onTargetAvailable() {},
 
   _onTargetDestroyed({ targetFront, isModeSwitching }) {
     
@@ -2104,9 +2104,7 @@ MarkupView.prototype = {
 
 
 
-
-
-  markNodeAsSelected(node, reason = "nodeselected") {
+  markNodeAsSelected(node) {
     const container = this.getContainer(node);
     return this._markContainerAsSelected(container);
   },

@@ -51,7 +51,7 @@ ContentObserver.prototype = {
   
 
 
-  _onContentGlobalCreated(subject, topic, data) {
+  _onContentGlobalCreated(subject) {
     if (subject == this._contentWindow) {
       EventEmitter.emit(this, "global-created", subject);
     }
@@ -60,7 +60,7 @@ ContentObserver.prototype = {
   
 
 
-  _onInnerWindowDestroyed(subject, topic, data) {
+  _onInnerWindowDestroyed(subject) {
     const id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
     EventEmitter.emit(this, "global-destroyed", id);
   },

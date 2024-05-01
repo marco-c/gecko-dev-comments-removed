@@ -168,7 +168,7 @@ add_task(async function () {
   await removeTab(gBrowser.selectedTab);
 });
 
-async function checkWorkerStatus(dbg, status) {
+async function checkWorkerStatus(_dbg, _status) {
   
 
 

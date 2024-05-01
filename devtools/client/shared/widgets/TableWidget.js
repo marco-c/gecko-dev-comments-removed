@@ -1667,7 +1667,7 @@ function Cell(column, item, nextCell) {
 
   if (column.table.cellContextMenuId) {
     this.label.setAttribute("context", column.table.cellContextMenuId);
-    this.label.addEventListener("contextmenu", event => {
+    this.label.addEventListener("contextmenu", () => {
       
       
       column.table.contextMenuRowId = this.id;

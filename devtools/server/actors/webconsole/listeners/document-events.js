@@ -90,13 +90,7 @@ DocumentEventsListener.prototype = {
     });
   },
 
-  onWillNavigate({
-    window,
-    isTopLevel,
-    newURI,
-    navigationStart,
-    isFrameSwitching,
-  }) {
+  onWillNavigate({ isTopLevel, newURI, navigationStart, isFrameSwitching }) {
     
     if (!isTopLevel) {
       return;
@@ -177,7 +171,7 @@ DocumentEventsListener.prototype = {
     });
   },
 
-  onStateChange(progress, request, flag, status) {
+  onStateChange(progress, request, flag) {
     progress.QueryInterface(Ci.nsIDocShell);
     
     if (progress.isBeingDestroyed() || progress != this.webProgress) {

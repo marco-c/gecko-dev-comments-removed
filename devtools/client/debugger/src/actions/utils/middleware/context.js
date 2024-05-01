@@ -27,7 +27,7 @@ function validateActionContext(getState, action) {
 
 
 
-function context({ dispatch, getState }) {
+function context({ getState }) {
   return next => action => {
     if ("cx" in action) {
       validateActionContext(getState, action);

@@ -526,7 +526,7 @@ class WalkerActor extends Actor {
 
 
 
-  onCustomElementDefined({ name, actors }) {
+  onCustomElementDefined({ actors }) {
     actors.forEach(actor =>
       this.queueMutation({
         target: actor.actorID,
@@ -536,7 +536,7 @@ class WalkerActor extends Actor {
     );
   }
 
-  _onReflows(reflows) {
+  _onReflows() {
     
     
     const containerTypeChanges = [];

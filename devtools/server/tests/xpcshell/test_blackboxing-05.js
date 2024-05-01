@@ -81,7 +81,7 @@ function evalCode(debuggee) {
     "" +
     function runTest() { 
       doStuff(           
-        function(n) {    
+        function() {    
           debugger;      
         }                
       );                 

@@ -14,7 +14,7 @@ const {
 
 
 function throttlingMiddleware(connector) {
-  return store => next => action => {
+  return () => next => action => {
     const res = next(action);
     if (action.type === CHANGE_NETWORK_THROTTLING) {
       connector.updateNetworkThrottling(action.enabled, action.profile);

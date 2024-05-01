@@ -41,7 +41,7 @@ function NetMonitorApp(api) {
 }
 
 NetMonitorApp.prototype = {
-  async bootstrap({ toolbox, document, win }) {
+  async bootstrap({ toolbox, document }) {
     
     this.mount = document.querySelector("#mount");
 

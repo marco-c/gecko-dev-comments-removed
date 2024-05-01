@@ -26,7 +26,7 @@ function formatMenuElement(labelString, click, disabled = false) {
   };
 }
 
-function isValidRestartFrame(frame, callbacks) {
+function isValidRestartFrame(frame) {
   
   
   
@@ -34,7 +34,7 @@ function isValidRestartFrame(frame, callbacks) {
 }
 
 function copyStackTrace() {
-  return async ({ dispatch, getState }) => {
+  return async ({ getState }) => {
     const frames = getCurrentThreadFrames(getState());
     const shouldDisplayOriginalLocation = getShouldSelectOriginalLocation(
       getState()

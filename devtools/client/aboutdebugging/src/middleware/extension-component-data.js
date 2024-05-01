@@ -18,7 +18,7 @@ const {
 
 
 
-const extensionComponentDataMiddleware = store => next => action => {
+const extensionComponentDataMiddleware = () => next => action => {
   switch (action.type) {
     case REQUEST_EXTENSIONS_SUCCESS: {
       action.installedExtensions = toComponentData(action.installedExtensions);

@@ -66,6 +66,8 @@ function test_longstring_grip() {
   });
 
   gDebuggee.eval(
+    
+    
     function stopMe(arg1) {
       debugger;
     }.toString()

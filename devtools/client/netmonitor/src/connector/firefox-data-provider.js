@@ -460,7 +460,7 @@ class FirefoxDataProvider {
 
 
 
-  async onWebSocketOpened(httpChannelId, effectiveURI, protocols, extensions) {}
+  async onWebSocketOpened() {}
 
   
 

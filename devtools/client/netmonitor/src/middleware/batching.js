@@ -20,7 +20,7 @@ const REQUESTS_REFRESH_RATE = 50;
 
 
 
-function batchingMiddleware(store) {
+function batchingMiddleware() {
   return next => {
     let queuedActions = [];
     let enabled = true;

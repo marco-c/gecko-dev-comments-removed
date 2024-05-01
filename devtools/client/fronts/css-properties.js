@@ -131,7 +131,7 @@ CssProperties.prototype = {
 
 
 
-  getNames(property) {
+  getNames() {
     return Object.keys(this.properties);
   },
 

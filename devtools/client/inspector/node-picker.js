@@ -23,10 +23,8 @@ loader.lazyRequireGetter(
 
 
 
-
-
 class NodePicker extends EventEmitter {
-  constructor(commands, selection) {
+  constructor(commands) {
     super();
     this.commands = commands;
     this.targetCommand = commands.targetCommand;
@@ -305,7 +303,7 @@ class NodePicker extends EventEmitter {
 
 
 
-  #onCanceled = data => {
+  #onCanceled = () => {
     return this.stop({ canceled: true });
   };
 }

@@ -41,7 +41,7 @@ DomDecorator.prototype = {
 
 
 
-  getValueRep(value, colId) {},
+  getValueRep() {},
 };
 
 

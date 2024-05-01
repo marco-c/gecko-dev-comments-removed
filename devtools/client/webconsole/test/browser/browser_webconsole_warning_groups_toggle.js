@@ -238,7 +238,7 @@ let cpt = 0;
 
 
 
-function emitContentBlockedMessage(hud) {
+function emitContentBlockedMessage() {
   const url = `${BLOCKED_URL}?${++cpt}`;
   SpecialPowers.spawn(gBrowser.selectedBrowser, [url], function (innerURL) {
     content.wrappedJSObject.loadImage(innerURL);

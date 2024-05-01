@@ -18,7 +18,7 @@ var uid = 1;
 
 
 const trace = {
-  log(...args) {},
+  log() {},
 };
 
 

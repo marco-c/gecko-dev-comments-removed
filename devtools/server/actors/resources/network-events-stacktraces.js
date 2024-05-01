@@ -58,10 +58,7 @@ class NetworkEventStackTracesWatcher {
   
 
 
-
-
-
-  destroy(targetActor) {
+  destroy() {
     this.clear();
     Services.obs.removeObserver(this, "http-on-opening-request");
     Services.obs.removeObserver(this, "document-on-opening-request");
@@ -69,7 +66,7 @@ class NetworkEventStackTracesWatcher {
     ChannelEventSinkFactory.getService().unregisterCollector(this);
   }
 
-  onChannelRedirect(oldChannel, newChannel, flags) {
+  onChannelRedirect(oldChannel, newChannel) {
     
     try {
       oldChannel.QueryInterface(Ci.nsIHttpChannel);

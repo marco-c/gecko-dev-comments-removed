@@ -826,7 +826,7 @@ class ResourceCommand {
 
 
 
-  async _onResourceDestroyed({ targetFront, watcherFront }, resources) {
+  async _onResourceDestroyed({ targetFront }, resources) {
     for (const resource of resources) {
       const { resourceType, resourceId } = resource;
       this._cache.delete(cacheKey(resourceType, resourceId));
@@ -923,7 +923,7 @@ class ResourceCommand {
     return null;
   }
 
-  _onWillNavigate(targetFront) {
+  _onWillNavigate() {
     
     
     
@@ -1243,11 +1243,7 @@ const WORKER_RESOURCE_TYPES = [
 
 
 const LegacyListeners = {
-  async [ResourceCommand.TYPES.DOCUMENT_EVENT]({
-    targetCommand,
-    targetFront,
-    onAvailable,
-  }) {
+  async [ResourceCommand.TYPES.DOCUMENT_EVENT]({ targetFront, onAvailable }) {
     
     if (!targetFront.isTopLevel) {
       return;

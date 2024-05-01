@@ -249,7 +249,7 @@ function withActiveServiceWorker(win, url, scope) {
     
     return new Promise(resolve => {
       const sw = swr.waiting || swr.installing;
-      sw.addEventListener("statechange", function stateHandler(evt) {
+      sw.addEventListener("statechange", function stateHandler() {
         if (sw.state === "activated") {
           sw.removeEventListener("statechange", stateHandler);
           resolve(swr);

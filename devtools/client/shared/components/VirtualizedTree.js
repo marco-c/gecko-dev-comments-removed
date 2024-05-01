@@ -300,7 +300,7 @@ class Tree extends Component {
   }
 
   
-  UNSAFE_componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps() {
     this._autoExpand();
     this._updateHeight();
   }
@@ -560,9 +560,7 @@ class Tree extends Component {
 
 
 
-
-
-  _onScroll(e) {
+  _onScroll() {
     this.setState({
       scroll: Math.max(this.refs.tree.scrollTop, 0),
       height: this.refs.tree.clientHeight,
@@ -882,7 +880,7 @@ class ArrowExpanderClass extends Component {
     };
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps) {
     return (
       this.props.item !== nextProps.item ||
       this.props.visible !== nextProps.visible ||

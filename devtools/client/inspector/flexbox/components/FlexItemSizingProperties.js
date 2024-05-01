@@ -93,9 +93,7 @@ class FlexItemSizingProperties extends PureComponent {
 
 
 
-
-
-  renderCssProperty(name, value, isDefaultValue) {
+  renderCssProperty(name, value) {
     return dom.span({ className: "css-property-link" }, `(${name}: ${value})`);
   }
 
@@ -115,7 +113,7 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  renderBaseSizeSection({ mainBaseSize, clampState }, properties, dimension) {
+  renderBaseSizeSection({ mainBaseSize }, properties, dimension) {
     const flexBasisValue = properties["flex-basis"];
     const dimensionValue = properties[dimension];
 

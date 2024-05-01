@@ -536,11 +536,7 @@ class WebConsoleUI {
 
 
 
-
-
-
-
-  async _onTargetAvailable({ targetFront }) {
+  async _onTargetAvailable() {
     
     
   }
@@ -687,7 +683,7 @@ class WebConsoleUI {
         this.hud.commands.targetCommand.reloadTopLevelTarget();
       });
     } else if (Services.prefs.getBoolPref(PREF_SIDEBAR_ENABLED)) {
-      shortcuts.on("Esc", event => {
+      shortcuts.on("Esc", () => {
         this.wrapper.dispatchSidebarClose();
         if (this.jsterm) {
           this.jsterm.focus();

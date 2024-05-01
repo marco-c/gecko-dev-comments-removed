@@ -29,7 +29,7 @@ exports.Visitor = Visitor;
 
 
 
-Visitor.prototype.enter = function (breakdown, report, edge) {};
+Visitor.prototype.enter = function () {};
 
 
 
@@ -44,7 +44,7 @@ Visitor.prototype.enter = function (breakdown, report, edge) {};
 
 
 
-Visitor.prototype.exit = function (breakdown, report, edge) {};
+Visitor.prototype.exit = function () {};
 
 
 
@@ -60,17 +60,17 @@ Visitor.prototype.exit = function (breakdown, report, edge) {};
 
 
 
-Visitor.prototype.count = function (breakdown, report, edge) {};
+Visitor.prototype.count = function () {};
 
 
 
 const EDGES = Object.create(null);
 
-EDGES.count = function (breakdown, report) {
+EDGES.count = function () {
   return [];
 };
 
-EDGES.bucket = function (breakdown, report) {
+EDGES.bucket = function () {
   return [];
 };
 
@@ -277,7 +277,7 @@ DiffVisitor.prototype.enter = function (breakdown, report, edge) {
 
 
 
-DiffVisitor.prototype.exit = function (breakdown, report, edge) {
+DiffVisitor.prototype.exit = function (breakdown) {
   
   
   const other = this._otherCensusStack[this._otherCensusStack.length - 1];
@@ -300,7 +300,7 @@ DiffVisitor.prototype.exit = function (breakdown, report, edge) {
 
 
 
-DiffVisitor.prototype.count = function (breakdown, report, edge) {
+DiffVisitor.prototype.count = function (breakdown, report) {
   const other = this._otherCensusStack[this._otherCensusStack.length - 1];
   const results = this._resultsStack[this._resultsStack.length - 1];
 
@@ -447,7 +447,7 @@ GetLeavesVisitor.prototype = Object.create(Visitor.prototype);
 
 
 
-GetLeavesVisitor.prototype.enter = function (breakdown, report, edge) {
+GetLeavesVisitor.prototype.enter = function (breakdown, report) {
   this._index++;
   if (this._targetIndices.has(this._index)) {
     this._leaves.push(report);

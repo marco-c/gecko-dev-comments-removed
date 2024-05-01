@@ -114,7 +114,7 @@ function evalCode() {
   Cu.evalInSandbox(
     "" + function runTest() { 
       doStuff(                
-        function (n) {        
+        function () {        
           (() => {})();       
           debugger;           
         }                     

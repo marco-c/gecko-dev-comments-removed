@@ -10,7 +10,7 @@ const SIDEBAR_WIDTH_PREF = "devtools.toolbox.sidebar.width";
 
 const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 
-add_task(async function (pickerEnable, commandsEnable) {
+add_task(async function () {
   
   
   Services.prefs.setIntPref(SIDEBAR_WIDTH_PREF, 74);

@@ -420,7 +420,7 @@ function RawPacket(transport, data) {
 
 RawPacket.prototype = Object.create(Packet.prototype);
 
-RawPacket.prototype.read = function (stream) {
+RawPacket.prototype.read = function () {
   
   throw Error("Not implmented.");
 };

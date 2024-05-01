@@ -10,7 +10,7 @@ const {
 
 const TEST_URL = "data:text/html;charset=utf-8,Network throttling test";
 
-addRDMTask(TEST_URL, async function ({ ui, manager }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   
   testNetworkThrottlingSelectorLabel(ui, "No Throttling", "No Throttling");
   await testNetworkThrottlingState(ui, null);

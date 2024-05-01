@@ -162,11 +162,11 @@ class Observable {
     }
   }
 
-  _startListeners(windows) {
+  _startListeners() {
     
   }
 
-  _stopListeners(windows) {
+  _stopListeners() {
     
   }
 

@@ -208,7 +208,7 @@ function toggleMessageFilterType(state, action) {
 
 
 
-function toggleControlFrames(state, action) {
+function toggleControlFrames(state) {
   return {
     ...state,
     showControlFrames: !state.showControlFrames,

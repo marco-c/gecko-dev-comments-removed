@@ -176,7 +176,7 @@ function clearSearchResults() {
 
 
 function clearSearchResultAndCancel() {
-  return ({ dispatch, getState }) => {
+  return ({ dispatch }) => {
     dispatch(stopOngoingSearch());
     dispatch(clearSearchResults());
   };
@@ -196,7 +196,7 @@ function updateSearchStatus(status) {
 
 
 function closeSearch() {
-  return ({ dispatch, getState }) => {
+  return ({ dispatch }) => {
     dispatch(stopOngoingSearch());
     dispatch({ type: OPEN_ACTION_BAR, open: false });
   };
@@ -207,7 +207,7 @@ function closeSearch() {
 
 
 function openSearch() {
-  return ({ dispatch, getState }) => {
+  return ({ dispatch }) => {
     dispatch({ type: OPEN_ACTION_BAR, open: true });
 
     dispatch({
@@ -222,7 +222,7 @@ function openSearch() {
 
 
 function toggleCaseSensitiveSearch() {
-  return ({ dispatch, getState }) => {
+  return ({ dispatch }) => {
     dispatch({ type: TOGGLE_SEARCH_CASE_SENSITIVE_SEARCH });
   };
 }
@@ -280,7 +280,7 @@ function stopOngoingSearch() {
 
 
 function navigate(searchResult) {
-  return ({ dispatch, getState }) => {
+  return ({ dispatch }) => {
     
     
     dispatch(setTargetSearchResult(searchResult));

@@ -202,9 +202,7 @@ class TracerActor extends Actor {
 
 
 
-
-
-  onTracingToggled(enabled, reason) {
+  onTracingToggled(enabled) {
     
     const shouldLogToStdout = this.logMethod == LOG_METHODS.STDOUT;
 
@@ -397,11 +395,7 @@ class TracerActor extends Actor {
 
 
 
-
-
-
   onTracingFrame({
-    frameId,
     frame,
     depth,
     formatedDisplayName,

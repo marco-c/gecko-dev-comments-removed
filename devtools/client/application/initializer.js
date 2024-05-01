@@ -55,7 +55,7 @@ const {
 
 
 window.Application = {
-  async bootstrap({ toolbox, commands, panel }) {
+  async bootstrap({ toolbox, commands }) {
     
     this.updateDomain = this.updateDomain.bind(this);
 

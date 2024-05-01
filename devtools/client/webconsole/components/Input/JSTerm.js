@@ -892,8 +892,7 @@ class JSTerm extends Component {
 
 
 
-
-  _onEditorKeyHandled(cm, key, e) {
+  _onEditorKeyHandled(cm, key) {
     
     
     

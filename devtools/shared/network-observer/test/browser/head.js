@@ -84,7 +84,7 @@ class NetworkEventOwner {
 
 
 
-function createNetworkEventOwner(event) {
+function createNetworkEventOwner() {
   return new NetworkEventOwner();
 }
 

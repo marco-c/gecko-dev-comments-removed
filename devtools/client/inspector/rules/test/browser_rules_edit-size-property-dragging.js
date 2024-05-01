@@ -339,8 +339,7 @@ async function runIncrementTest(editor, view, tests) {
 
 
 
-
-async function testIncrement(editor, options, view) {
+async function testIncrement(editor, options) {
   info("Running subtest: " + options.description);
 
   editor.valueSpan.scrollIntoView();

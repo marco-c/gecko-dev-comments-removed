@@ -149,7 +149,7 @@ function connectToFrame(
     trackMessageManager();
 
     
-    const onMessageManagerClose = function (subject, topic, data) {
+    const onMessageManagerClose = function (subject) {
       if (subject == mm) {
         destroy();
       }

@@ -138,8 +138,8 @@ export class Outline extends Component {
     }
 
     
-    const enclosedItems = [...classes, ...functions].filter(
-      ({ name, location }) => containsPosition(location, cursorPosition)
+    const enclosedItems = [...classes, ...functions].filter(({ location }) =>
+      containsPosition(location, cursorPosition)
     );
 
     if (!enclosedItems.length) {

@@ -202,7 +202,7 @@ class WebExtensionDescriptorActor extends Actor {
 
 
 
-  reloadDescriptor({ bypassCache }) {
+  reloadDescriptor() {
     return this.reload();
   }
 

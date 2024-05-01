@@ -52,6 +52,8 @@ add_task(
 function evaluateTestCode(debuggee) {
   Cu.evalInSandbox(
     "" +
+      
+      
       function stopMe(arg1) {
         debugger;
       },

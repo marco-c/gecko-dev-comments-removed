@@ -32,7 +32,7 @@ const CompatibilityApp = createFactory(
 );
 
 class CompatibilityView {
-  constructor(inspector, window) {
+  constructor(inspector) {
     this.inspector = inspector;
 
     this.inspector.store.injectReducer("compatibility", compatibilityReducer);
@@ -133,7 +133,7 @@ class CompatibilityView {
     );
   }
 
-  _parseMarkup(str) {
+  _parseMarkup() {
     
     
     throw new Error(

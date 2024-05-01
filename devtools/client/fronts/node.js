@@ -585,7 +585,7 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
 
 
 
-  rawNode(rawNode) {
+  rawNode() {
     if (!this.isLocalToBeDeprecated()) {
       console.warn("Tried to use rawNode on a remote connection.");
       return null;

@@ -29,7 +29,7 @@ add_task(async function () {
 
   
   
-  const onCssMessageAvailable = resources => {};
+  const onCssMessageAvailable = () => {};
 
   
   

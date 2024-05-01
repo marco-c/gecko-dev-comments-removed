@@ -102,7 +102,7 @@ class ServerSentEventWatcher {
   }
 
   
-  eventSourceConnectionOpened(httpChannelId) {}
+  eventSourceConnectionOpened() {}
 
   eventSourceConnectionClosed(httpChannelId) {
     const resource = ServerSentEventWatcher.createResource(

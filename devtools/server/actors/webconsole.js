@@ -1704,7 +1704,7 @@ class WebConsoleActor extends Actor {
 
 
 
-  _onWillNavigate({ window, isTopLevel }) {
+  _onWillNavigate({ isTopLevel }) {
     if (isTopLevel) {
       this._evalGlobal = null;
       EventEmitter.off(this.parentActor, "will-navigate", this._onWillNavigate);

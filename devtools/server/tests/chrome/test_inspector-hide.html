@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug </title>
@@ -40,7 +40,7 @@ addTest(function testRearrange() {
     const computed = gInspectee.defaultView.getComputedStyle(listNode);
     is(computed.visibility, "visible", "Node should be visible to start with");
     return gWalker.hideNode(listFront);
-  }).then(response => {
+  }).then(() => {
     const computed = gInspectee.defaultView.getComputedStyle(listNode);
     is(computed.visibility, "hidden", "Node should be hidden");
     return gWalker.unhideNode(listFront);

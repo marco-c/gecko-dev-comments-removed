@@ -35,7 +35,7 @@ add_task(
             Assert.equal(debuggee.b, undefined);
 
             
-            bpClient.remove(function (response) {
+            bpClient.remove(function () {
               threadFront.resume().then(resolve);
             });
           });

@@ -33,6 +33,8 @@ function evalCode(debuggee) {
   debuggee.eval(
     "(" +
       function () {
+        
+        
         function stopMe(number, bool, string, null_, undef, object) {
           debugger;
         }

@@ -1383,7 +1383,7 @@ class PropertyView {
   
 
 
-  mdnLinkClick(event) {
+  mdnLinkClick() {
     if (!this.link) {
       return;
     }

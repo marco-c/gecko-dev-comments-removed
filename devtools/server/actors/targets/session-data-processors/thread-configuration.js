@@ -10,12 +10,7 @@ const {
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 
 module.exports = {
-  async addOrSetSessionDataEntry(
-    targetActor,
-    entries,
-    isDocumentCreation,
-    updateType
-  ) {
+  async addOrSetSessionDataEntry(targetActor, entries) {
     
     
     
@@ -47,7 +42,7 @@ module.exports = {
     }
   },
 
-  removeSessionDataEntry(targetActor, entries, isDocumentCreation) {
+  removeSessionDataEntry() {
     
   },
 };

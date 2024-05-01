@@ -288,6 +288,8 @@ async function run_tests_in_principal(
 ) {
   const { debuggee } = options;
   debuggee.eval(
+    
+    
     function stopMe(arg1, arg2) {
       debugger;
     }.toString()

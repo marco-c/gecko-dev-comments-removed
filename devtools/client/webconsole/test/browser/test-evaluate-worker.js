@@ -2,6 +2,8 @@
 
 self.addEventListener("message", ({ data }) => foo(data));
 
+
+
 function foo(data) {
   
   debugger;

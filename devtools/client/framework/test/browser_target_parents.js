@@ -60,7 +60,7 @@ add_task(async function () {
   
   
   
-  await testGetTargetWithConcurrentCalls(processes, processTarget => {
+  await testGetTargetWithConcurrentCalls(processes, () => {
     
     
     return true;

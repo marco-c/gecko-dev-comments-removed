@@ -8,6 +8,8 @@ add_task(
     
     function evalCode() {
       debuggee.eval(
+        
+        
         function stopMe(arg1) {
           debugger;
         }.toString()

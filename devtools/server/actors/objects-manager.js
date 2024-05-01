@@ -14,7 +14,7 @@ const {
 
 
 class ObjectsManagerActor extends Actor {
-  constructor(conn, targetActor) {
+  constructor(conn) {
     super(conn, objectsManagerSpec);
   }
 

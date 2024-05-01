@@ -564,12 +564,7 @@ class NetworkEventActor extends Actor {
 
 
 
-
-
-  addResponseContent(
-    content,
-    { discardResponseBody, blockedReason, blockingExtension }
-  ) {
+  addResponseContent(content, { blockedReason, blockingExtension }) {
     
     if (this.isDestroyed()) {
       return;

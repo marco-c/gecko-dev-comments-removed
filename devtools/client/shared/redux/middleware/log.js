@@ -7,7 +7,7 @@
 
 
 
-function log({ dispatch, getState }) {
+function log() {
   return next => action => {
     try {
       

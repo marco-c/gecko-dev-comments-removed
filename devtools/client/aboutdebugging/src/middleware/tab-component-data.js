@@ -13,7 +13,7 @@ const {
 
 
 
-const tabComponentDataMiddleware = store => next => action => {
+const tabComponentDataMiddleware = () => next => action => {
   switch (action.type) {
     case REQUEST_TABS_SUCCESS: {
       action.tabs = toComponentData(action.tabs);

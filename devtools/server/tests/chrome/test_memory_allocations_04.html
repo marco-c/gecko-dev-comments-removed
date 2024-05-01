@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Bug 1068171 - Test controlling the memory actor's allocation sampling probability.
+-->
 <head>
   <meta charset="utf-8">
   <title>Memory monitoring actor test</title>
@@ -29,7 +29,7 @@ window.onload = function() {
       }
     }
 
-    const testProbability = async function(p, expected) {
+    const testProbability = async function(p) {
       info("probability = " + p);
       await memory.startRecordingAllocations({
         probability: p,

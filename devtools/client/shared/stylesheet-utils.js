@@ -5,7 +5,7 @@
 
 "use strict";
 
-function stylesheetLoadPromise(styleSheet, url) {
+function stylesheetLoadPromise(styleSheet) {
   return new Promise((resolve, reject) => {
     styleSheet.addEventListener("load", resolve, { once: true });
     styleSheet.addEventListener("error", reject, { once: true });

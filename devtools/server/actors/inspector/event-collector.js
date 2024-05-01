@@ -241,7 +241,7 @@ class MainEventCollector {
 
 
 
-  getListeners(node, { checkOnly }) {
+  getListeners(_node, { checkOnly: _checkOnly }) {
     throw new Error("You have to implement the method getListeners()!");
   }
 

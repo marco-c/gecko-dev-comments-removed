@@ -52,7 +52,7 @@ Menu.prototype.clear = function () {
 
 
 
-Menu.prototype.insert = function (pos, menuItem) {
+Menu.prototype.insert = function (_pos, _menuItem) {
   throw Error("Not implemented");
 };
 

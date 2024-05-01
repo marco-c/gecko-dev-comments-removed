@@ -10,7 +10,7 @@ const {
 
 
 const trace = {
-  log(...args) {},
+  log() {},
 };
 
 

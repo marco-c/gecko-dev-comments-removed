@@ -519,7 +519,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
-  handleEvent(event, id) {
+  handleEvent(event) {
     
     if (this.areShapesHidden()) {
       return;
@@ -1222,7 +1222,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     coordinates.splice(point, 1);
     let polygonDef = this.fillRule ? `${this.fillRule}, ` : "";
     polygonDef += coordinates
-      .map((coords, i) => {
+      .map(coords => {
         return `${coords[0]} ${coords[1]}`;
       })
       .join(", ");
@@ -2736,10 +2736,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   
 
 
-
-
-
-  _updatePolygonShape(width, height, zoom) {
+  _updatePolygonShape() {
     
     const points = this.coordinates.map(point => point.join(",")).join(" ");
 
@@ -2759,10 +2756,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   
 
 
-
-
-
-  _updateEllipseShape(width, height, zoom) {
+  _updateEllipseShape() {
     const { rx, ry, cx, cy } = this.coordinates;
     const ellipseEl = this.getElement("ellipse");
     ellipseEl.setAttribute("rx", rx);
@@ -2789,10 +2783,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   
 
 
-
-
-
-  _updateInsetShape(width, height, zoom) {
+  _updateInsetShape() {
     const { top, left, right, bottom } = this.coordinates;
     const rectEl = this.getElement("rect");
     rectEl.setAttribute("x", left);

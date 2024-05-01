@@ -95,9 +95,7 @@ class Actor extends Pool {
 
 
 
-
-
-  form(hint) {
+  form() {
     return { actor: this.actorID };
   }
 

@@ -332,7 +332,7 @@ function isNonEmpty(node) {
 
 
 
-CensusTreeNodeVisitor.prototype.exit = function (breakdown, report, edge) {
+CensusTreeNodeVisitor.prototype.exit = function () {
   
   
   
@@ -370,7 +370,7 @@ CensusTreeNodeVisitor.prototype.exit = function (breakdown, report, edge) {
 
 
 
-CensusTreeNodeVisitor.prototype.count = function (breakdown, report, edge) {
+CensusTreeNodeVisitor.prototype.count = function (breakdown, report) {
   const node = this._nodeStack[this._nodeStack.length - 1];
   node.reportLeafIndex = this._index;
 

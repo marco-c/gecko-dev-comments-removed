@@ -45,6 +45,8 @@ function evaluateTestCode(debuggee) {
   debuggee.eval(
     "(" +
       function () {
+        
+        
         function stopMe(arg1) {
           debugger;
           debugger;

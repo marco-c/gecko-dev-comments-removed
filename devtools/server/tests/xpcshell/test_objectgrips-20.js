@@ -17,6 +17,8 @@ registerCleanupFunction(() => {
 add_task(
   threadFrontTest(async ({ threadFront, debuggee, client }) => {
     debuggee.eval(
+      
+      
       function stopMe(arg1) {
         debugger;
       }.toString()

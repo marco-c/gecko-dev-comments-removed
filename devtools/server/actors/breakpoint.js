@@ -90,7 +90,7 @@ class BreakpointActor {
   
 
 
-  _newOffsetsOrOptions(script, offsets, oldOptions) {
+  _newOffsetsOrOptions(script, offsets) {
     
     
     for (const offset of offsets) {

@@ -752,7 +752,7 @@ var DebuggerObjectSupport = {
     }
   },
 
-  getProperty(obj, name, rootObj) {
+  getProperty() {
     
     throw new Error("Unimplemented!");
   },

@@ -15,7 +15,7 @@ const {
 
 
 
-const workerComponentDataMiddleware = store => next => action => {
+const workerComponentDataMiddleware = () => next => action => {
   switch (action.type) {
     case REQUEST_WORKERS_SUCCESS: {
       action.otherWorkers = toComponentData(action.otherWorkers);

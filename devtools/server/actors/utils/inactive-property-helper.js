@@ -1224,10 +1224,7 @@ class InactivePropertyHelper {
   
 
 
-
-
-
-  isGridItem(node) {
+  isGridItem() {
     return !!this.getParentGridElement(this.node);
   }
 

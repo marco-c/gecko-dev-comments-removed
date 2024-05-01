@@ -141,9 +141,7 @@ function identityWrite(v) {
 
 
 
-
-
-types.addType = function (name, typeObject = {}, options = {}) {
+types.addType = function (name, typeObject = {}) {
   if (registeredTypes.has(name)) {
     throw Error("Type '" + name + "' already exists.");
   }

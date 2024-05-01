@@ -413,7 +413,7 @@ PageHost.prototype = {
   raise() {},
 
   
-  setTitle(title) {},
+  setTitle() {},
 
   
   destroy() {

@@ -26,7 +26,7 @@ for (const childSpec of Object.values(childSpecs)) {
     }
 
     
-    async _onStoreUpdate({ changed, added, deleted }) {
+    async _onStoreUpdate({ added, deleted }) {
       
       
       const { resourceKey } = this;

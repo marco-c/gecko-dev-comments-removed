@@ -17,7 +17,7 @@ const TEST_URL =
   "data:text/html;charset=utf-8," +
   '<body id="body"><input id="input" type="text"/><p>text</body>';
 
-addRDMTask(TEST_URL, async function ({ ui, manager }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   
   await pushPref("accessibility.typeaheadfind", true);
 

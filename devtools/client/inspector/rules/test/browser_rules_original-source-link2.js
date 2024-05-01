@@ -61,7 +61,7 @@ async function testClickingLink(toolbox, view) {
 
 function waitForOriginalStyleSheetEditorSelection(toolbox) {
   const panel = toolbox.getCurrentPanel();
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const maybeContinue = editor => {
       
       

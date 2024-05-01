@@ -14,7 +14,7 @@ const {
 
 
 exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
-  return async function ({ dispatch, getState }) {
+  return async function ({ dispatch }) {
     
     dispatch(setLabelDisplay(display));
     await dispatch(refresh(heapWorker));

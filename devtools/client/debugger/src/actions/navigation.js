@@ -18,13 +18,7 @@ import { evaluateExpressionsForCurrentContext } from "../actions/expressions";
 
 
 export function willNavigate(event) {
-  return async function ({
-    dispatch,
-    getState,
-    client,
-    sourceMapLoader,
-    parserWorker,
-  }) {
+  return async function ({ dispatch, getState, sourceMapLoader }) {
     sourceQueue.clear();
     sourceMapLoader.clearSourceMaps();
     clearWasmStates();
@@ -42,7 +36,7 @@ export function willNavigate(event) {
 
 
 export function navigated() {
-  return async function ({ getState, dispatch, panel }) {
+  return async function ({ dispatch, panel }) {
     try {
       
       await dispatch(evaluateExpressionsForCurrentContext());

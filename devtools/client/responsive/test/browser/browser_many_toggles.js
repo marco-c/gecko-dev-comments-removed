@@ -21,7 +21,7 @@ addRDMTask(
       info(`Toggling RDM #${i + 1}`);
       
       
-      openRDM(tab).catch(e => {});
+      openRDM(tab).catch(() => {});
       
       
       if (i % 2 == 0) {

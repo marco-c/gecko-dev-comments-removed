@@ -63,6 +63,8 @@ add_task(
 
 function evalCode(debuggee) {
   debuggee.eval(
+    
+    
     function stopMe(arg1) {
       debugger;
     }.toString()

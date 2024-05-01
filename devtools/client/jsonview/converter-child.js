@@ -65,14 +65,14 @@ Converter.prototype = {
 
 
 
-  convert(fromStream, fromType, toType, ctx) {
+  convert(fromStream) {
     return fromStream;
   },
 
-  asyncConvertData(fromType, toType, listener, ctx) {
+  asyncConvertData(fromType, toType, listener) {
     this.listener = listener;
   },
-  getConvertedType(fromType, channel) {
+  getConvertedType() {
     return "text/html";
   },
 
@@ -395,7 +395,7 @@ function keepThemeUpdated(win) {
   addThemeObserver(listener);
   win.addEventListener(
     "unload",
-    function (event) {
+    function () {
       removeThemeObserver(listener);
       win = null;
     },

@@ -336,7 +336,7 @@ class Toolbar extends Component {
   
 
 
-  renderBlockingButton(toggleSearchPanel) {
+  renderBlockingButton() {
     const {
       networkActionBarOpen,
       toggleRequestBlockingPanel,

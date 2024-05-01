@@ -1387,7 +1387,7 @@ Scanner.prototype = {
 
 
 
-  Next(aToken, aSkip) {
+  Next(aToken) {
     
     aToken.mIdent = [];
     aToken.mType = eCSSToken_Symbol;

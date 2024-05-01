@@ -132,7 +132,7 @@ class BreakpointWatcher {
     ]);
   }
 
-  onResumed(packet) {
+  onResumed() {
     
     
     if (this.isInterrupted) {

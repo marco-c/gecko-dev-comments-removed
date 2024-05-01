@@ -36,8 +36,8 @@ add_task(async function () {
       
       validateValue: () =>
         Object.entries(getState().filters.requestFilterTypes)
-          .filter(([type, check]) => check)
-          .map(([type, check]) => type),
+          .filter(([, check]) => check)
+          .map(([type]) => type),
       
       
       modifyFrontend: value =>

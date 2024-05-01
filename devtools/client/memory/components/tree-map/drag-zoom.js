@@ -297,8 +297,7 @@ function setScrollHandlers(container, dragZoom, emitChanged, update) {
 
 
 
-
-function getScrollDelta(event, window) {
+function getScrollDelta(event) {
   if (event.deltaMode === LINE_SCROLL_MODE) {
     
     return event.deltaY * SCROLL_LINE_SIZE;

@@ -62,7 +62,7 @@ function resume_timeouts() {
 
 
 
-function handle_echo({ data }) {
+function handle_echo() {
   ok(
     resumeTimeouts_has_returned,
     "worker message delivered from main event loop"

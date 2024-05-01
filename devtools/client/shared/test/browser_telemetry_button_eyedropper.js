@@ -23,7 +23,7 @@ add_task(async function () {
   gBrowser.removeCurrentTab();
 });
 
-async function testButton(toolbox, Telemetry) {
+async function testButton(toolbox) {
   info("Calling the eyedropper button's callback");
   
   

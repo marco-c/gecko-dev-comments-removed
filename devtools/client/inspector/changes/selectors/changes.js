@@ -65,7 +65,7 @@ function getChangesTree(state, filter = {}) {
   }
 
   return Object.entries(state)
-    .filter(([sourceId, source]) => {
+    .filter(([sourceId]) => {
       
       if (sourceIdsFilter.length) {
         return sourceIdsFilter.includes(sourceId);
@@ -87,7 +87,7 @@ function getChangesTree(state, filter = {}) {
         ...source,
         
         rules: Object.entries(rules)
-          .filter(([ruleId, rule]) => {
+          .filter(([ruleId]) => {
             
             if (rulesIdsFilter.length) {
               return rulesIdsFilter.includes(ruleId);
@@ -237,22 +237,19 @@ function getChangesStylesheet(state, filter) {
   }
 
   
-  return Object.entries(changeTree).reduce(
-    (stylesheetText, [sourceId, source]) => {
-      const { href, rules } = source;
+  return Object.values(changeTree).reduce((stylesheetText, source) => {
+    const { href, rules } = source;
+    
+    stylesheetText += `\n/* ${getSourceForDisplay(source)} | ${href} */\n`;
+    
+    stylesheetText += Object.entries(rules).reduce((str, [ruleId, rule]) => {
       
-      stylesheetText += `\n/* ${getSourceForDisplay(source)} | ${href} */\n`;
-      
-      stylesheetText += Object.entries(rules).reduce((str, [ruleId, rule]) => {
-        
-        str += writeRule(ruleId, rule, 0) + "\n";
-        return str;
-      }, "");
+      str += writeRule(ruleId, rule, 0) + "\n";
+      return str;
+    }, "");
 
-      return stylesheetText;
-    },
-    ""
-  );
+    return stylesheetText;
+  }, "");
 }
 
 module.exports = {

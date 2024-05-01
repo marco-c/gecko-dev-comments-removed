@@ -410,7 +410,7 @@ RuleEditor.prototype = {
         this._ruleViewIsEditing = this.ruleView.isEditing;
       });
 
-      code.addEventListener("click", event => {
+      code.addEventListener("click", () => {
         const selection = this.doc.defaultView.getSelection();
         if (selection.isCollapsed && !this._ruleViewIsEditing) {
           this.newProperty();
@@ -906,9 +906,7 @@ RuleEditor.prototype = {
 
 
 
-
-
-  async _onSelectorDone(value, commit, direction, key) {
+  async _onSelectorDone(value, commit, direction) {
     if (
       !commit ||
       this.isEditing ||

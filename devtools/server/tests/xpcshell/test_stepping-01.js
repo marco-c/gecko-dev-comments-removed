@@ -8,7 +8,7 @@
 
 
 
-async function testFinish({ threadFront, devToolsClient }) {
+async function testFinish({ devToolsClient }) {
   await close(devToolsClient);
 
   do_test_finished();

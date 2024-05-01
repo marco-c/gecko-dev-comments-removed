@@ -39,7 +39,7 @@ class PerformancePanel {
 
 
 
-  emit(eventName) {}
+  emit(_eventName) {}
 
   
 

@@ -92,7 +92,7 @@ function serializeAction(action) {
 
 
 
-export function log({ dispatch, getState }) {
+export function log() {
   return next => action => {
     const asyncMsg = !action.status ? "" : `[${action.status}]`;
 

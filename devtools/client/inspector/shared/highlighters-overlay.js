@@ -794,12 +794,7 @@ class HighlightersOverlay {
   
 
 
-
-
-
-
-
-  onShapesHighlighterHidden(data) {
+  onShapesHighlighterHidden() {
     this.emit(
       "shapes-highlighter-hidden",
       this.shapesHighlighterShown,
@@ -1178,7 +1173,7 @@ class HighlightersOverlay {
   async restoreParentGridHighlighter(node) {
     
     const entry = Array.from(this.gridHighlighters.entries()).find(
-      ([key, value]) => {
+      ([, value]) => {
         return value?.parentGridNode === node;
       }
     );

@@ -47,6 +47,8 @@ function evaluateTestCode(debuggee) {
   debuggee.eval(
     "(" +
       function () {
+        
+        
         function stopMe(obj) {
           debugger;
         }

@@ -385,7 +385,7 @@ TextPropertyEditor.prototype = {
         }
       });
 
-      this.valueSpan.addEventListener("mouseup", event => {
+      this.valueSpan.addEventListener("mouseup", () => {
         
         if (this._hasDragged) {
           return;
@@ -1147,9 +1147,7 @@ TextPropertyEditor.prototype = {
 
 
 
-
-
-  _onNameDone(value, commit, direction, key) {
+  _onNameDone(value, commit, direction) {
     const isNameUnchanged =
       (!commit && !this.ruleEditor.isEditing) || this.committed.name === value;
     if (this.prop.value && isNameUnchanged) {
@@ -1234,9 +1232,7 @@ TextPropertyEditor.prototype = {
 
 
 
-
-
-  _onValueDone(value = "", commit, direction, key) {
+  _onValueDone(value = "", commit, direction) {
     const parsedProperties = this._getValueAndExtraProperties(value);
     const val = parseSingleValue(
       this.cssProperties.isKnown,

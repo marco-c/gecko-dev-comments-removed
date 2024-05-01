@@ -268,7 +268,7 @@ class Front extends Pool {
 
 
 
-  form(form) {}
+  form() {}
 
   
 
