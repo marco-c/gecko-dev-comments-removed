@@ -15,71 +15,7 @@
 
 
 
-const path = require("path");
-const fs = require("fs");
-
-const projectRoot = path.resolve(__dirname, "../../../../");
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getStoryTitle(filePath) {
-  let fileName = path.basename(filePath, ".stories.md");
-  if (fileName != "README") {
-    try {
-      let relatedFilePath = path.resolve(
-        "../../../",
-        filePath.replace(".md", ".mjs")
-      );
-      let relatedFile = fs.readFileSync(relatedFilePath).toString();
-      let relatedTitle = relatedFile.match(/title: "(.*)"/)[1];
-      if (relatedTitle) {
-        return relatedTitle + "/README";
-      }
-    } catch {}
-  }
-  return separateWords(fileName);
-}
-
-
-
-
-
-
-
-function separateWords(str) {
-  return (
-    str
-      .match(/[A-Z]?[a-z0-9]+/g)
-      ?.map(text => text[0].toUpperCase() + text.substring(1))
-      .join(" ") || str
-  );
-}
-
-
-
-
-
-
-
-function parseStoriesFromMarkdown(source) {
-  let storiesRegex = /```(?:js|html) story\n(?<code>[\s\S]*?)```/g;
-  
-  
-  return source.replace(
-    storiesRegex,
-    "<Canvas withSource='none'><with-common-styles>\n$<code></with-common-styles></Canvas>"
-  );
-}
+const { getStoryTitle, getMDXSource } = require("./markdown-story-utils.js");
 
 
 
@@ -90,60 +26,7 @@ function parseStoriesFromMarkdown(source) {
 
 module.exports = function markdownStoryLoader(source) {
   
-  let storyPath = "Docs";
-
-  
-  let relativePath = path
-    .relative(projectRoot, this.resourcePath)
-    .replaceAll(path.sep, "/");
-  let componentName;
-
-  if (relativePath.includes("toolkit/content/widgets")) {
-    let storyNameRegex = /(?<=\/widgets\/)(?<name>.*?)(?=\/)/g;
-    componentName = storyNameRegex.exec(relativePath)?.groups?.name;
-    if (componentName) {
-      
-      storyPath =
-        "UI Widgets/" + separateWords(componentName).replace(/^Moz/g, "");
-    }
-  }
-
-  let storyTitle = getStoryTitle(relativePath);
-  let title = storyTitle.includes("/")
-    ? storyTitle
-    : `${storyPath}/${storyTitle}`;
-
-  let componentStories;
-  if (componentName) {
-    componentStories = this.resourcePath
-      .replace("README", componentName)
-      .replace(".md", ".mjs");
-    try {
-      fs.statSync(componentStories);
-      componentStories = "./" + path.basename(componentStories);
-    } catch {
-      componentStories = null;
-    }
-  }
-
-  
-  
-  let mdxSource = `
-import { Meta, Description, Canvas, Story } from "@storybook/addon-docs";
-${componentStories ? `import * as Stories from "${componentStories}";` : ""}
-
-<Meta
-  title="${title}"
-  ${componentStories ? `of={Stories}` : ""}
-  parameters={{
-    previewTabs: {
-      canvas: { hidden: true },
-    },
-    viewMode: "docs",
-  }}
-/>
-
-${parseStoriesFromMarkdown(source)}`;
-
+  let title = getStoryTitle(this.resourcePath);
+  let mdxSource = getMDXSource(source, title, this.resourcePath);
   return mdxSource;
 };
