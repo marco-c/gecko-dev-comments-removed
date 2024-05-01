@@ -716,7 +716,7 @@ void CreateInterfaceObjects(
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, const char* name,
     bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,
-    const char* const* legacyWindowAliases, bool isNamespace);
+    const char* const* legacyWindowAliases);
 
 }  
 
@@ -794,7 +794,7 @@ inline void CreateInterfaceObjects(
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, const char* name,
     bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,
-    const char* const* legacyWindowAliases, bool isNamespace) {
+    const char* const* legacyWindowAliases) {
   static_assert(N < 3);
 
   return binding_detail::CreateInterfaceObjects(
@@ -802,8 +802,40 @@ inline void CreateInterfaceObjects(
       constructorClass, ctorNargs, isConstructorChromeOnly,
       legacyFactoryFunctions, constructorCache, properties,
       chromeOnlyProperties, name, defineOnGlobal, unscopableNames, isGlobal,
-      legacyWindowAliases, isNamespace);
+      legacyWindowAliases);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void CreateNamespaceObject(JSContext* cx, JS::Handle<JSObject*> global,
+                           JS::Handle<JSObject*> namespaceProto,
+                           const DOMIfaceAndProtoJSClass& namespaceClass,
+                           JS::Heap<JSObject*>* namespaceCache,
+                           const NativeProperties* properties,
+                           const NativeProperties* chromeOnlyProperties,
+                           const char* name, bool defineOnGlobal);
 
 
 
