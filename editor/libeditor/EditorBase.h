@@ -2533,6 +2533,25 @@ class EditorBase : public nsIEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
+  DeleteRangeWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
+                             nsIEditor::EStripWrappers aStripWrappers,
+                             nsRange& aRangeToDelete);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
                               nsIEditor::EStripWrappers aStripWrappers,
                               const AutoRangeArray& aRangesToDelete);
