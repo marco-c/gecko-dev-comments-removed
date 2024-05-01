@@ -70,8 +70,8 @@ auto TextRecognition::DoFindText(gfx::DataSourceSurface& aSurface,
 
                     
                     auto& quad = *pResult->quads().AppendElement();
-                    CopyCocoaStringToXPCOMString(recognizedText.string,
-                                                 quad.string());
+                    CopyNSStringToXPCOMString(recognizedText.string,
+                                              quad.string());
                     quad.confidence() = recognizedText.confidence;
 
                     auto ToImagePoint = [](CGPoint aPoint) -> ImagePoint {
