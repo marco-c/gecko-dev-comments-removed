@@ -1828,6 +1828,14 @@ constexpr auto overload(T&&... callables) {
 }
 } 
 
+namespace std{
+template <typename Config, typename Property, typename Alloc>
+struct uses_allocator<
+  ::fu2::detail::function<Config, Property>,
+  Alloc
+> : std::true_type {};
+} 
+
 #undef FU2_DETAIL_EXPAND_QUALIFIERS
 #undef FU2_DETAIL_EXPAND_QUALIFIERS_NOEXCEPT
 #undef FU2_DETAIL_EXPAND_CV
