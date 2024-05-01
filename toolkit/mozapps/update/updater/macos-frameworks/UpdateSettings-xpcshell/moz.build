@@ -5,6 +5,7 @@
 
 
 Framework("UpdateSettings-xpcshell")
+FINAL_TARGET = "_tests/xpcshell/toolkit/mozapps/update/tests"
 
 DEFINES["ACCEPTED_MAR_CHANNEL_IDS"] = '"xpcshell-test"'
 
