@@ -592,7 +592,7 @@ class ProfileBufferEntryWriter {
 
 template <typename T>
 struct ProfileBufferEntryWriter::Serializer {
-  static_assert(std::is_trivially_copyable<T>::value,
+  static_assert(std::is_trivially_copyable_v<T>,
                 "Serializer only works with trivially-copyable types by "
                 "default, use/add specialization for other types.");
 
@@ -609,7 +609,7 @@ struct ProfileBufferEntryWriter::Serializer {
 
 template <typename T>
 struct ProfileBufferEntryReader::Deserializer {
-  static_assert(std::is_trivially_copyable<T>::value,
+  static_assert(std::is_trivially_copyable_v<T>,
                 "Deserializer only works with trivially-copyable types by "
                 "default, use/add specialization for other types.");
 
