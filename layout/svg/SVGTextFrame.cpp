@@ -804,14 +804,14 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   
   
   
-  
-  
   nsRect self = mFrame->InkOverflowRectRelativeToSelf();
   nsRect rect = mFrame->GetRect();
   bool vertical = IsVertical();
-  nscoord above = vertical ? -self.x : -self.y;
-  nscoord below =
-      vertical ? self.XMost() - rect.width : self.YMost() - rect.height;
+  nsMargin inkOverflow(
+      vertical ? -self.x : -self.y,
+      vertical ? self.YMost() - rect.height : self.XMost() - rect.width,
+      vertical ? self.XMost() - rect.width : self.YMost() - rect.height,
+      vertical ? -self.y : -self.x);
 
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxSkipCharsIterator start = it;
@@ -839,7 +839,6 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
 
   
   
-  
   nscoord baseline =
       NSToCoordRoundWithClamp(metrics.mBoundingBox.y + metrics.mAscent);
   gfxFloat x, width;
@@ -854,10 +853,10 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
     x = metrics.mBoundingBox.x;
     width = metrics.mBoundingBox.width;
   }
-  nsRect fillInAppUnits(
-      NSToCoordRoundWithClamp(x), baseline - above,
-      NSToCoordRoundWithClamp(width),
-      NSToCoordRoundWithClamp(metrics.mBoundingBox.height) + above + below);
+  nsRect fillInAppUnits(NSToCoordRoundWithClamp(x), baseline,
+                        NSToCoordRoundWithClamp(width),
+                        NSToCoordRoundWithClamp(metrics.mBoundingBox.height));
+  fillInAppUnits.Inflate(inkOverflow);
   if (textRun->IsVertical()) {
     
     std::swap(fillInAppUnits.x, fillInAppUnits.y);
