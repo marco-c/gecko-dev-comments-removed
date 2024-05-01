@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { getCSSLexer } = require("resource://devtools/shared/css/lexer.js");
-
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const FONT_PREVIEW_TEXT = "Abc";
 const FONT_PREVIEW_FONT_SIZE = 40;
@@ -125,54 +123,16 @@ function getRuleText(initialText, line, column) {
     line,
     column
   );
-  const lexer = getCSSLexer(text);
 
-  
-  while (true) {
-    const token = lexer.nextToken();
-    if (!token) {
-      throw new Error("couldn't find start of the rule");
-    }
-    if (token.tokenType === "symbol" && token.text === "{") {
-      break;
-    }
+  if (text.trim() === "") {
+    throw new Error("Couldn't find rule at the given location");
   }
 
-  
-  let braceDepth = 1;
-  let startOffset, endOffset;
-  while (true) {
-    const token = lexer.nextToken();
-    if (!token) {
-      break;
-    }
-    if (startOffset === undefined) {
-      startOffset = token.startOffset;
-    }
-    if (token.tokenType === "symbol") {
-      if (token.text === "{") {
-        ++braceDepth;
-      } else if (token.text === "}") {
-        --braceDepth;
-        if (braceDepth == 0) {
-          break;
-        }
-      }
-    }
-    endOffset = token.endOffset;
+  const offsets = InspectorUtils.getRuleBodyTextOffsets(text);
+  if (offsets === null) {
+    throw new Error("Couldn't find rule");
   }
-
-  
-  
-  if (startOffset === undefined) {
-    return { offset: 0, text: "" };
-  }
-  
-  
-  
-  if (endOffset === undefined) {
-    endOffset = startOffset;
-  }
+  const { startOffset, endOffset } = offsets;
 
   
   
