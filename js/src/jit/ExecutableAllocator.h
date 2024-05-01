@@ -72,7 +72,7 @@ class ExecutablePool {
   bool m_mark : 1;
 
   
-  mozilla::EnumeratedArray<CodeKind, CodeKind::Count, size_t> m_codeBytes;
+  mozilla::EnumeratedArray<CodeKind, size_t, CodeKind::Count> m_codeBytes;
 
  public:
   void release(bool willDestroy = false);

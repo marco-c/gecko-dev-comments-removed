@@ -381,12 +381,11 @@ class Nursery {
         KeyCount
   };
 
-  using ProfileTimes =
-      mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount,
-                               mozilla::TimeStamp>;
+  using ProfileTimes = mozilla::EnumeratedArray<ProfileKey, mozilla::TimeStamp,
+                                                ProfileKey::KeyCount>;
   using ProfileDurations =
-      mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount,
-                               mozilla::TimeDuration>;
+      mozilla::EnumeratedArray<ProfileKey, mozilla::TimeDuration,
+                               ProfileKey::KeyCount>;
 
   
   

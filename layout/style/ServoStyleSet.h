@@ -686,8 +686,8 @@ class ServoStyleSet {
 
   
   
-  EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
-                  nsCSSAnonBoxes::NonInheriting::_Count, RefPtr<ComputedStyle>>
+  EnumeratedArray<nsCSSAnonBoxes::NonInheriting, RefPtr<ComputedStyle>,
+                  nsCSSAnonBoxes::NonInheriting::_Count>
       mNonInheritingComputedStyles;
 
  public:

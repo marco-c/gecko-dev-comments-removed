@@ -74,16 +74,15 @@ enum class BailoutReturnKind {
 
 class BaselineICFallbackCode {
   JitCode* code_ = nullptr;
-  using OffsetArray =
-      mozilla::EnumeratedArray<BaselineICFallbackKind,
-                               BaselineICFallbackKind::Count, uint32_t>;
+  using OffsetArray = mozilla::EnumeratedArray<BaselineICFallbackKind, uint32_t,
+                                               BaselineICFallbackKind::Count>;
   OffsetArray offsets_ = {};
 
   
   
   using BailoutReturnArray =
-      mozilla::EnumeratedArray<BailoutReturnKind, BailoutReturnKind::Count,
-                               uint32_t>;
+      mozilla::EnumeratedArray<BailoutReturnKind, uint32_t,
+                               BailoutReturnKind::Count>;
   BailoutReturnArray bailoutReturnOffsets_ = {};
 
  public:
@@ -175,13 +174,13 @@ class JitRuntime {
   WriteOnceData<uint32_t> doubleToInt32ValueStubOffset_{0};
 
   
-  mozilla::EnumeratedArray<IonGenericCallKind, IonGenericCallKind::Count,
-                           WriteOnceData<uint32_t>>
+  mozilla::EnumeratedArray<IonGenericCallKind, WriteOnceData<uint32_t>,
+                           IonGenericCallKind::Count>
       ionGenericCallStubOffset_;
 
   
-  mozilla::EnumeratedArray<DebugTrapHandlerKind, DebugTrapHandlerKind::Count,
-                           WriteOnceData<JitCode*>>
+  mozilla::EnumeratedArray<DebugTrapHandlerKind, WriteOnceData<JitCode*>,
+                           DebugTrapHandlerKind::Count>
       debugTrapHandlers_;
 
   

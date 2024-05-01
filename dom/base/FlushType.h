@@ -40,7 +40,7 @@ enum class FlushType : uint8_t {
 
 
 
-const EnumeratedArray<FlushType, FlushType::Count, const char*>
+const EnumeratedArray<FlushType, const char*, FlushType::Count>
     kFlushTypeNames = {
   "",
   "Event",

@@ -39,7 +39,7 @@ namespace mozilla {
 
 
 
-template <typename IndexType, IndexType SizeAsEnumValue, typename ValueType>
+template <typename IndexType, typename ValueType, IndexType SizeAsEnumValue>
 class EnumeratedArray {
  public:
   static const size_t kSize = size_t(SizeAsEnumValue);
