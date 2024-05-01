@@ -390,14 +390,14 @@ async function closeContextMenuIfOpen() {
 
 
 async function closeSettingsMenuIfOpen() {
-  await closePopupIfOpen("translations-panel-settings-menupopup");
+  await closePopupIfOpen("full-page-translations-panel-settings-menupopup");
 }
 
 
 
 
 async function closeTranslationsPanelIfOpen() {
-  await closePopupIfOpen("translations-panel");
+  await closePopupIfOpen("full-page-translations-panel");
 }
 
 
@@ -550,7 +550,7 @@ async function loadTestPage({
   if (autoOffer && TranslationsParent.shouldAlwaysOfferTranslations()) {
     info("Waiting for the popup to be automatically shown.");
     await waitForCondition(() => {
-      const panel = document.getElementById("translations-panel");
+      const panel = document.getElementById("full-page-translations-panel");
       return panel && panel.state === "open";
     });
   }
