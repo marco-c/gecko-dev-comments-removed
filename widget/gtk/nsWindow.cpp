@@ -9895,31 +9895,38 @@ void nsWindow::DisableRendering() {
     mGdkWindow = nullptr;
   }
 
+  
+  
+  if (mWindowType == WindowType::Popup) {
+    DestroyLayerManager();
+    mSurfaceProvider.CleanupResources();
+  } else {
 #ifdef MOZ_WAYLAND
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (moz_container_wayland_has_egl_window(mContainer) &&
-      mCompositorWidgetDelegate) {
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-      
-      
-      
-      mCompositorWidgetDelegate->DisableRendering();
-      remoteRenderer->SendResume();
-      mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
-                                                 GetShapedState());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (moz_container_wayland_has_egl_window(mContainer) &&
+        mCompositorWidgetDelegate) {
+      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+        
+        
+        
+        mCompositorWidgetDelegate->DisableRendering();
+        remoteRenderer->SendResume();
+        mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                                   GetShapedState());
+      }
     }
-  }
 #endif
+  }
 }
 
 
