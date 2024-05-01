@@ -105,7 +105,7 @@ class ExternalEngineStateMachine final
   bool IsExternalEngineStateMachine() const override { return true; }
 
  private:
-  ~ExternalEngineStateMachine() = default;
+  ~ExternalEngineStateMachine();
 
   void AssertOnTaskQueue() const { MOZ_ASSERT(OnTaskQueue()); }
 
@@ -296,6 +296,8 @@ class ExternalEngineStateMachine final
 
   void ReportTelemetry(const MediaResult& aError);
 
+  void DecodeError(const MediaResult& aError) override;
+
   UniquePtr<ExternalPlaybackEngine> mEngine;
 
   bool mHasEnoughAudio = false;
@@ -318,6 +320,8 @@ class ExternalEngineStateMachine final
   
   
   nsTArray<RefPtr<nsIRunnable>> mPendingTasks;
+
+  bool mHasFatalError = false;
 };
 
 class ExternalPlaybackEngine {
