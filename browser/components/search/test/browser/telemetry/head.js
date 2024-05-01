@@ -401,6 +401,30 @@ async function openSerpInNewTab(url, expectedAds = true) {
   return { tab, cleanup };
 }
 
+async function synthesizePageAction({
+  selector,
+  event = {},
+  tab,
+  expectEngagement = true,
+} = {}) {
+  let promise;
+  if (expectEngagement) {
+    promise = waitForPageWithAction();
+  } else {
+    
+    
+    
+    promise = new Promise(resolve => setTimeout(resolve, 50));
+  }
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    selector,
+    event,
+    tab.linkedBrowser
+  );
+
+  await promise;
+}
+
 function assertCategorizationValues(expectedResults) {
   
   let actualResults = [...fakeTelemetryStorage];
