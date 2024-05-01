@@ -43,6 +43,7 @@
 #include "rtc_base/memory/always_valid_pointer.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/network.h"
+#include "rtc_base/network/received_packet.h"
 #include "rtc_base/proxy_info.h"
 #include "rtc_base/rate_tracker.h"
 #include "rtc_base/socket_address.h"
@@ -313,10 +314,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   virtual bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
-                                    const char* data,
-                                    size_t size,
-                                    const rtc::SocketAddress& remote_addr,
-                                    int64_t packet_time_us);
+                                    const rtc::ReceivedPacket& packet);
 
   
   
@@ -422,10 +420,19 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  void OnReadPacket(const char* data,
-                    size_t size,
-                    const rtc::SocketAddress& addr,
-                    ProtocolType proto);
+  void OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType proto);
+
+  [[deprecated(
+      "Use OnReadPacket(const rtc::ReceivedPacket& packet, ProtocolType "
+      "proto)")]] void
+  OnReadPacket(const char* data,
+               size_t size,
+               const rtc::SocketAddress& addr,
+               ProtocolType proto) {
+    OnReadPacket(rtc::ReceivedPacket::CreateFromLegacy(
+                     data, size,  -1, addr),
+                 proto);
+  }
 
   
   
