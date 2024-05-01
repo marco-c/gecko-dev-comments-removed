@@ -1160,25 +1160,45 @@ void HttpChannelChild::CollectOMTTelemetry() {
       key, static_cast<LABELS_HTTP_CHILD_OMT_STATS>(mOMTResult));
 }
 
+
+
+
+
+
+
+
+
 void HttpChannelChild::CollectMixedContentTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsContentPolicyType internalLoadType;
-  mLoadInfo->GetInternalContentPolicyType(&internalLoadType);
-  bool statusIsSuccess = NS_SUCCEEDED(mStatus);
+  bool wasUpgraded = mLoadInfo->GetBrowserDidUpgradeInsecureRequests();
+  if (!wasUpgraded) {
+    
+    
+    if (!mURI->SchemeIs("https") &&
+        !mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
+      return;
+    }
+  }
+
+  
   RefPtr<Document> doc;
   mLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
   if (!doc) {
     return;
   }
-  if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE ||
-      internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD) {
-    if (mLoadInfo->GetBrowserUpgradeInsecureRequests()) {
+
+  nsContentPolicyType internalLoadType;
+  mLoadInfo->GetInternalContentPolicyType(&internalLoadType);
+  bool statusIsSuccess = NS_SUCCEEDED(mStatus);
+
+  if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_IMAGE) {
+    if (wasUpgraded) {
       doc->SetUseCounter(
           statusIsSuccess
               ? eUseCounter_custom_MixedContentUpgradedImageSuccess
               : eUseCounter_custom_MixedContentUpgradedImageFailure);
-    } else if (mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
+    } else {
       doc->SetUseCounter(
           statusIsSuccess
               ? eUseCounter_custom_MixedContentNotUpgradedImageSuccess
@@ -1187,12 +1207,12 @@ void HttpChannelChild::CollectMixedContentTelemetry() {
     return;
   }
   if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_VIDEO) {
-    if (mLoadInfo->GetBrowserUpgradeInsecureRequests()) {
+    if (wasUpgraded) {
       doc->SetUseCounter(
           statusIsSuccess
               ? eUseCounter_custom_MixedContentUpgradedVideoSuccess
               : eUseCounter_custom_MixedContentUpgradedVideoFailure);
-    } else if (mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
+    } else {
       doc->SetUseCounter(
           statusIsSuccess
               ? eUseCounter_custom_MixedContentNotUpgradedVideoSuccess
@@ -1201,12 +1221,12 @@ void HttpChannelChild::CollectMixedContentTelemetry() {
     return;
   }
   if (internalLoadType == nsIContentPolicy::TYPE_INTERNAL_AUDIO) {
-    if (mLoadInfo->GetBrowserUpgradeInsecureRequests()) {
+    if (wasUpgraded) {
       doc->SetUseCounter(
           statusIsSuccess
               ? eUseCounter_custom_MixedContentUpgradedAudioSuccess
               : eUseCounter_custom_MixedContentUpgradedAudioFailure);
-    } else if (mLoadInfo->GetBrowserWouldUpgradeInsecureRequests()) {
+    } else {
       doc->SetUseCounter(
           statusIsSuccess
               ? eUseCounter_custom_MixedContentNotUpgradedAudioSuccess
