@@ -137,6 +137,9 @@ class TestNoWindowUpdateRestart(MarionetteTestCase):
         )
         self.assertTrue(quit_flags_correct)
 
+        
+        
+        
         update_status_path = self.marionette.execute_script(
             """
             let statusFile = FileUtils.getDir("UpdRootD", ["updates", "0"]);
@@ -144,39 +147,14 @@ class TestNoWindowUpdateRestart(MarionetteTestCase):
             return statusFile.path;
         """
         )
-        try:
-            with open(update_status_path, "r") as f:
-                
-                
-                
-                
-                
-                
-                self.assertIn(f.read().strip(), ["succeeded", "failed: 19"])
-        except FileNotFoundError:
+        with open(update_status_path, "r") as f:
             
             
             
             
             
             
-            
-            
-            
-            update_status = self.marionette.execute_script(
-                """
-                let UM =
-                    Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager);
-                if (UM.getUpdateCount() == 0) {
-                    return null;
-                }
-                return UM.getUpdateAt(0).state;
-            """
-            )
-            
-            
-            
-            self.assertIn(update_status, ["succeeded", "failed"])
+            self.assertIn(f.read().strip(), ["succeeded", "failed: 19"])
 
     def resetUpdate(self):
         self.marionette.execute_script(
