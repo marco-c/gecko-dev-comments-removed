@@ -43,6 +43,7 @@ namespace js {
 
 class ArrayObject;
 class CyclicModuleFields;
+class SyntheticModuleFields;
 class ListObject;
 class ModuleEnvironmentObject;
 class ModuleObject;
@@ -61,6 +62,10 @@ class ModuleRequestObject : public NativeObject {
 
   JSAtom* specifier() const;
   ArrayObject* attributes() const;
+  bool hasAttributes() const;
+  static bool getModuleType(JSContext* cx,
+                            const Handle<ModuleRequestObject*> moduleRequest,
+                            JS::ModuleType& moduleType);
 };
 
 using ModuleRequestVector =
@@ -309,6 +314,10 @@ constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
 
 constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
 
+
+
+
+
 class ModuleObject : public NativeObject {
  public:
   
@@ -318,6 +327,8 @@ class ModuleObject : public NativeObject {
     EnvironmentSlot,
     NamespaceSlot,
     CyclicModuleFieldsSlot,
+    
+    SyntheticModuleFieldsSlot,
     SlotCount
   };
 
@@ -326,6 +337,9 @@ class ModuleObject : public NativeObject {
   static bool isInstance(HandleValue value);
 
   static ModuleObject* create(JSContext* cx);
+
+  static ModuleObject* createSynthetic(
+      JSContext* cx, MutableHandle<ExportNameVector> exportNames);
 
   
   void initScriptSlots(HandleScript script);
@@ -364,6 +378,8 @@ class ModuleObject : public NativeObject {
   mozilla::Span<const ExportEntry> localExportEntries() const;
   mozilla::Span<const ExportEntry> indirectExportEntries() const;
   mozilla::Span<const ExportEntry> starExportEntries() const;
+  const ExportNameVector& syntheticExportNames() const;
+
   IndirectBindingMap& importBindings();
 
   void setStatus(ModuleStatus newStatus);
@@ -390,6 +406,8 @@ class ModuleObject : public NativeObject {
   void clearAsyncEvaluatingPostOrder();
   void setCycleRoot(ModuleObject* cycleRoot);
   ModuleObject* getCycleRoot() const;
+  bool hasCyclicModuleFields() const;
+  bool hasSyntheticModuleFields() const;
 
   static void onTopLevelEvaluationFinished(ModuleObject* module);
 
@@ -413,6 +431,9 @@ class ModuleObject : public NativeObject {
       MutableHandle<UniquePtr<ExportNameVector>> exports);
 
   static bool createEnvironment(JSContext* cx, Handle<ModuleObject*> self);
+  static bool createSyntheticEnvironment(JSContext* cx,
+                                         Handle<ModuleObject*> self,
+                                         Handle<GCVector<Value>> values);
 
   void initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                       Handle<ListObject*> asyncParentModules);
@@ -423,9 +444,11 @@ class ModuleObject : public NativeObject {
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 
-  bool hasCyclicModuleFields() const;
   CyclicModuleFields* cyclicModuleFields();
   const CyclicModuleFields* cyclicModuleFields() const;
+
+  SyntheticModuleFields* syntheticModuleFields();
+  const SyntheticModuleFields* syntheticModuleFields() const;
 };
 
 JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);

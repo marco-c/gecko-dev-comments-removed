@@ -36,6 +36,8 @@ union Utf8Unit;
 
 namespace JS {
 
+enum class ModuleType : uint32_t { Unknown = 0, JavaScript, JSON };
+
 
 
 
@@ -168,6 +170,14 @@ extern JS_PUBLIC_API JSObject* CompileModule(
 extern JS_PUBLIC_API JSObject* CompileModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* CompileJsonModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf);
 
 
 

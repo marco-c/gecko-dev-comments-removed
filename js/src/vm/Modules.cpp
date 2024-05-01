@@ -15,7 +15,9 @@
 
 #include "jstypes.h"  
 
+#include "builtin/JSON.h"  
 #include "builtin/ModuleObject.h"  
+#include "builtin/Promise.h"  
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/FrontendContext.h"   
@@ -33,6 +35,8 @@
 
 #include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"    
+#include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
 
 using namespace js;
 
@@ -120,6 +124,46 @@ JS_PUBLIC_API JSObject* JS::CompileModule(JSContext* cx,
   return CompileModuleHelper(cx, options, srcBuf);
 }
 
+JS_PUBLIC_API JSObject* JS::CompileJsonModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
+  JS::RootedValue jsonValue(cx);
+  auto charRange =
+      mozilla::Range<const char16_t>(srcBuf.get(), srcBuf.length());
+  if (!js::ParseJSONWithReviver(cx, charRange, NullHandleValue, &jsonValue)) {
+    return nullptr;
+  }
+
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!exportNames.reserve(1)) {
+    return nullptr;
+  }
+  exportNames.infallibleAppend(cx->names().default_);
+
+  Rooted<ModuleObject*> moduleObject(
+      cx, ModuleObject::createSynthetic(cx, &exportNames));
+  if (!moduleObject) {
+    return nullptr;
+  }
+
+  Rooted<GCVector<Value>> exportValues(cx, GCVector<Value>(cx));
+  if (!exportValues.reserve(1)) {
+    return nullptr;
+  }
+  exportValues.infallibleAppend(jsonValue);
+
+  if (!ModuleObject::createSyntheticEnvironment(cx, moduleObject,
+                                                exportValues)) {
+    return nullptr;
+  }
+
+  return moduleObject;
+}
+
 JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
   JSRuntime* rt = module->zone()->runtimeFromMainThread();
   module->as<ModuleObject>().scriptSourceObject()->setPrivate(rt, value);
@@ -149,6 +193,10 @@ JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->releaseCheck(moduleRecord);
+
+  if (moduleRecord.as<ModuleObject>()->hasSyntheticModuleFields()) {
+    return SyntheticModuleEvaluate(cx, moduleRecord.as<ModuleObject>(), rval);
+  }
 
   return js::ModuleEvaluate(cx, moduleRecord.as<ModuleObject>(), rval);
 }
@@ -312,6 +360,10 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 Handle<JSAtom*> exportName,
                                 MutableHandle<ResolveSet> resolveSet,
                                 MutableHandle<Value> result);
+static bool SyntheticModuleResolveExport(JSContext* cx,
+                                         Handle<ModuleObject*> module,
+                                         Handle<JSAtom*> exportName,
+                                         MutableHandle<Value> result);
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports);
@@ -345,7 +397,7 @@ static const char* ModuleStatusName(ModuleStatus status) {
   }
 }
 
-static bool ContainsElement(Handle<ExportNameVector> list, JSAtom* atom) {
+static bool ContainsElement(const ExportNameVector& list, JSAtom* atom) {
   for (JSAtom* a : list) {
     if (a == atom) {
       return true;
@@ -379,6 +431,20 @@ static size_t CountElements(Handle<ModuleVector> stack, ModuleObject* module) {
 #endif
 
 
+static bool SyntheticModuleGetExportedNames(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ExportNameVector> exportedNames) {
+  MOZ_ASSERT(exportedNames.empty());
+
+  if (!exportedNames.appendAll(module->syntheticExportNames())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  return true;
+}
+
+
 
 static bool ModuleGetExportedNames(
     JSContext* cx, Handle<ModuleObject*> module,
@@ -386,6 +452,10 @@ static bool ModuleGetExportedNames(
     MutableHandle<ExportNameVector> exportedNames) {
   
   MOZ_ASSERT(exportedNames.empty());
+
+  if (module->hasSyntheticModuleFields()) {
+    return SyntheticModuleGetExportedNames(cx, module, exportedNames);
+  }
 
   
   if (exportStarSet.has(module)) {
@@ -482,12 +552,10 @@ static ModuleObject* HostResolveImportedModule(
   if (!requestedModule) {
     return nullptr;
   }
-
   if (requestedModule->status() < expectedMinimumStatus) {
     ThrowUnexpectedModuleStatus(cx, requestedModule->status());
     return nullptr;
   }
-
   return requestedModule;
 }
 
@@ -510,6 +578,10 @@ static ModuleObject* HostResolveImportedModule(
 bool js::ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                              Handle<JSAtom*> exportName,
                              MutableHandle<Value> result) {
+  if (module->hasSyntheticModuleFields()) {
+    return ::SyntheticModuleResolveExport(cx, module, exportName, result);
+  }
+
   
   Rooted<ResolveSet> resolveSet(cx);
 
@@ -681,6 +753,22 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
   
   result.setObjectOrNull(starResolution);
   return true;
+}
+
+
+static bool SyntheticModuleResolveExport(JSContext* cx,
+                                         Handle<ModuleObject*> module,
+                                         Handle<JSAtom*> exportName,
+                                         MutableHandle<Value> result) {
+  
+  if (!ContainsElement(module->syntheticExportNames(), exportName)) {
+    result.setNull();
+    return true;
+  }
+
+  
+  
+  return CreateResolvedBindingObject(cx, module, exportName, result);
 }
 
 
@@ -1098,6 +1186,14 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
                                MutableHandle<ModuleVector> stack, size_t index,
                                size_t* indexOut) {
   
+  if (!module->hasCyclicModuleFields()) {
+    
+    
+    *indexOut = index;
+    return true;
+  }
+
+  
   
   if (module->status() == ModuleStatus::Linking ||
       module->status() == ModuleStatus::Linked ||
@@ -1155,25 +1251,29 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     }
 
     
-    
-    
-    MOZ_ASSERT(requiredModule->status() == ModuleStatus::Linking ||
-               requiredModule->status() == ModuleStatus::Linked ||
-               requiredModule->status() == ModuleStatus::EvaluatingAsync ||
-               requiredModule->status() == ModuleStatus::Evaluated);
+    if (requiredModule->hasCyclicModuleFields()) {
+      
+      
+      
+      MOZ_ASSERT(requiredModule->status() == ModuleStatus::Linking ||
+                 requiredModule->status() == ModuleStatus::Linked ||
+                 requiredModule->status() == ModuleStatus::EvaluatingAsync ||
+                 requiredModule->status() == ModuleStatus::Evaluated);
 
-    
-    
-    MOZ_ASSERT((requiredModule->status() == ModuleStatus::Linking) ==
-               ContainsElement(stack, requiredModule));
+      
+      
+      
+      MOZ_ASSERT((requiredModule->status() == ModuleStatus::Linking) ==
+                 ContainsElement(stack, requiredModule));
 
-    
-    if (requiredModule->status() == ModuleStatus::Linking) {
       
-      
-      
-      module->setDfsAncestorIndex(std::min(module->dfsAncestorIndex(),
-                                           requiredModule->dfsAncestorIndex()));
+      if (requiredModule->status() == ModuleStatus::Linking) {
+        
+        
+        
+        module->setDfsAncestorIndex(std::min(
+            module->dfsAncestorIndex(), requiredModule->dfsAncestorIndex()));
+      }
     }
   }
 
@@ -1210,6 +1310,28 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
 
   
   *indexOut = index;
+  return true;
+}
+
+bool js::SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
+                                 MutableHandle<Value> result) {
+  
+
+  
+  Rooted<PromiseObject*> resultPromise(cx, CreatePromiseObjectForAsync(cx));
+  if (!resultPromise) {
+    return false;
+  }
+
+  
+
+  
+  if (!AsyncFunctionReturned(cx, resultPromise, result)) {
+    return false;
+  }
+
+  
+  result.set(ObjectValue(*resultPromise));
   return true;
 }
 
@@ -1350,6 +1472,17 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
                                   MutableHandle<ModuleVector> stack,
                                   size_t index, size_t* indexOut) {
   
+  if (!module->hasCyclicModuleFields()) {
+    
+    
+    
+    
+    
+    *indexOut = index;
+    return true;
+  }
+
+  
   if (module->status() == ModuleStatus::EvaluatingAsync ||
       module->status() == ModuleStatus::Evaluated) {
     
@@ -1419,55 +1552,59 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
     }
 
     
-    
-    
-    MOZ_ASSERT(requiredModule->status() == ModuleStatus::Evaluating ||
-               requiredModule->status() == ModuleStatus::EvaluatingAsync ||
-               requiredModule->status() == ModuleStatus::Evaluated);
-
-    
-    
-    MOZ_ASSERT((requiredModule->status() == ModuleStatus::Evaluating) ==
-               ContainsElement(stack, requiredModule));
-
-    
-    if (requiredModule->status() == ModuleStatus::Evaluating) {
+    if (requiredModule->hasCyclicModuleFields()) {
       
       
-      
-      module->setDfsAncestorIndex(std::min(module->dfsAncestorIndex(),
-                                           requiredModule->dfsAncestorIndex()));
-    } else {
-      
-      
-      requiredModule = requiredModule->getCycleRoot();
-
-      
-      
-      MOZ_ASSERT(requiredModule->status() >= ModuleStatus::EvaluatingAsync ||
+      MOZ_ASSERT(requiredModule->status() == ModuleStatus::Evaluating ||
+                 requiredModule->status() == ModuleStatus::EvaluatingAsync ||
                  requiredModule->status() == ModuleStatus::Evaluated);
 
       
       
-      if (requiredModule->hadEvaluationError()) {
-        Rooted<Value> error(cx, requiredModule->evaluationError());
-        cx->setPendingException(error, ShouldCaptureStack::Maybe);
-        return false;
-      }
-    }
-
-    
-    if (requiredModule->isAsyncEvaluating() &&
-        requiredModule->status() != ModuleStatus::Evaluated) {
-      
-      if (!ModuleObject::appendAsyncParentModule(cx, requiredModule, module)) {
-        return false;
-      }
+      MOZ_ASSERT((requiredModule->status() == ModuleStatus::Evaluating) ==
+                 ContainsElement(stack, requiredModule));
 
       
+      if (requiredModule->status() == ModuleStatus::Evaluating) {
+        
+        
+        
+        module->setDfsAncestorIndex(std::min(
+            module->dfsAncestorIndex(), requiredModule->dfsAncestorIndex()));
+      } else {
+        
+        
+        requiredModule = requiredModule->getCycleRoot();
+
+        
+        
+        MOZ_ASSERT(requiredModule->status() >= ModuleStatus::EvaluatingAsync ||
+                   requiredModule->status() == ModuleStatus::Evaluated);
+
+        
+        
+        if (requiredModule->hadEvaluationError()) {
+          Rooted<Value> error(cx, requiredModule->evaluationError());
+          cx->setPendingException(error, ShouldCaptureStack::Maybe);
+          return false;
+        }
+      }
+
       
-      module->setPendingAsyncDependencies(module->pendingAsyncDependencies() +
-                                          1);
+      if (requiredModule->isAsyncEvaluating() &&
+          requiredModule->status() != ModuleStatus::Evaluated) {
+        
+        
+        if (!ModuleObject::appendAsyncParentModule(cx, requiredModule,
+                                                   module)) {
+          return false;
+        }
+
+        
+        
+        module->setPendingAsyncDependencies(module->pendingAsyncDependencies() +
+                                            1);
+      }
     }
   }
 
