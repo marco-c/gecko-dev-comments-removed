@@ -40,7 +40,34 @@ public class HttpURLConnectionTelemetryClient implements TelemetryClient {
 
             Log.d(LOG_TAG, "Ping upload: " + responseCode);
 
-            return responseCode == 200;
+            if (responseCode >= 200 && responseCode <= 299) {
+                
+                
+
+                
+                return true;
+            } else if (responseCode >= 400 && responseCode <= 499) {
+                
+                
+                
+                
+                
+                
+                
+
+                
+                
+                
+                Log.e(LOG_TAG, "Server returned client error code: " + responseCode);
+                return true;
+            } else {
+                
+                
+
+                
+                Log.w(LOG_TAG, "Server returned response code: " + responseCode);
+                return false;
+            }
         } catch (MalformedURLException e) {
             
             
