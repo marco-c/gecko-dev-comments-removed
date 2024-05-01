@@ -675,16 +675,20 @@ enum ScriptCombo : int32_t {
 }  
 
 bool nsIDNService::isLabelSafe(const nsAString& label, const nsAString& tld) {
-  AutoReadLock lock(mLock);
+  restrictionProfile profile{eASCIIOnlyProfile};
+  {
+    AutoReadLock lock(mLock);
 
-  if (!isOnlySafeChars(PromiseFlatString(label), mIDNBlocklist)) {
-    return false;
-  }
+    if (!isOnlySafeChars(PromiseFlatString(label), mIDNBlocklist)) {
+      return false;
+    }
 
-  
-  NS_ASSERTION(!IsAscii(label), "ASCII label in IDN checking");
-  if (mRestrictionProfile == eASCIIOnlyProfile) {
-    return false;
+    
+    NS_ASSERTION(!IsAscii(label), "ASCII label in IDN checking");
+    if (mRestrictionProfile == eASCIIOnlyProfile) {
+      return false;
+    }
+    profile = mRestrictionProfile;
   }
 
   nsAString::const_iterator current, end;
@@ -719,7 +723,7 @@ bool nsIDNService::isLabelSafe(const nsAString& label, const nsAString& tld) {
     Script script = UnicodeProperties::GetScriptCode(ch);
     if (script != Script::COMMON && script != Script::INHERITED &&
         script != lastScript) {
-      if (illegalScriptCombo(script, savedScript)) {
+      if (illegalScriptCombo(profile, script, savedScript)) {
         return false;
       }
     }
@@ -884,7 +888,8 @@ static const ScriptCombo scriptComboTable[13][9] = {
      {FAIL, FAIL, FAIL, KORE, KORE, FAIL, FAIL, KORE, FAIL},
      {CHNA, FAIL, FAIL, KORE, HNLT, JPAN, JPAN, HNLT, FAIL}};
 
-bool nsIDNService::illegalScriptCombo(Script script, ScriptCombo& savedScript) {
+bool nsIDNService::illegalScriptCombo(restrictionProfile profile, Script script,
+                                      ScriptCombo& savedScript) {
   if (savedScript == ScriptCombo::UNSET) {
     savedScript = findScriptIndex(script);
     return false;
@@ -899,7 +904,6 @@ bool nsIDNService::illegalScriptCombo(Script script, ScriptCombo& savedScript) {
 
 
 
-  return ((savedScript == OTHR &&
-           mRestrictionProfile == eHighlyRestrictiveProfile) ||
+  return ((savedScript == OTHR && profile == eHighlyRestrictiveProfile) ||
           savedScript == FAIL);
 }

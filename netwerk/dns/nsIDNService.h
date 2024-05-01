@@ -143,6 +143,13 @@ class nsIDNService final : public nsIIDNService {
 
 
 
+  enum restrictionProfile {
+    eASCIIOnlyProfile,
+    eHighlyRestrictiveProfile,
+    eModeratelyRestrictiveProfile
+  };
+
+  
 
 
 
@@ -152,9 +159,13 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-  bool illegalScriptCombo(mozilla::intl::Script script,
-                          mozilla::net::ScriptCombo& savedScript)
-      MOZ_REQUIRES_SHARED(mLock);
+
+
+
+
+  bool illegalScriptCombo(restrictionProfile profile,
+                          mozilla::intl::Script script,
+                          mozilla::net::ScriptCombo& savedScript);
 
   
 
@@ -177,16 +188,6 @@ class nsIDNService final : public nsIIDNService {
   
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist MOZ_GUARDED_BY(mLock);
 
-  
-
-
-
-
-  enum restrictionProfile {
-    eASCIIOnlyProfile,
-    eHighlyRestrictiveProfile,
-    eModeratelyRestrictiveProfile
-  };
   
   restrictionProfile mRestrictionProfile MOZ_GUARDED_BY(mLock){
       eASCIIOnlyProfile};
