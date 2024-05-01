@@ -98,6 +98,8 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     
     chrome_options["args"].append("--use-fake-ui-for-fedcm")
     
+    chrome_options["args"].append("--use-fake-ui-for-digital-identity")
+    
     chrome_options["args"].append("--short-reporting-delay")
     
     chrome_options["args"].append("--host-resolver-rules=MAP nonexistent.*.test ^NOTFOUND, MAP *.test 127.0.0.1, MAP *.test. 127.0.0.1")
