@@ -501,8 +501,7 @@ class RegExpCompiler {
   
   
   
-  RegExpNode* PreprocessRegExp(RegExpCompileData* data, RegExpFlags flags,
-                               bool is_one_byte);
+  RegExpNode* PreprocessRegExp(RegExpCompileData* data, bool is_one_byte);
 
   
   
@@ -527,7 +526,8 @@ class RegExpCompiler {
   inline void IncrementRecursionDepth() { recursion_depth_++; }
   inline void DecrementRecursionDepth() { recursion_depth_--; }
 
-  RegExpFlags flags() const { return flags_; }
+  inline RegExpFlags flags() const { return flags_; }
+  inline void set_flags(RegExpFlags flags) { flags_ = flags; }
 
   void SetRegExpTooBig() { reg_exp_too_big_ = true; }
 
@@ -571,7 +571,7 @@ class RegExpCompiler {
   int unicode_lookaround_position_register_;
   ZoneVector<RegExpNode*>* work_list_;
   int recursion_depth_;
-  const RegExpFlags flags_;
+  RegExpFlags flags_;
   RegExpMacroAssembler* macro_assembler_;
   bool one_byte_;
   bool reg_exp_too_big_;
