@@ -517,9 +517,23 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
 #  endif
 
 #  ifdef QM_LOG_ERROR_TO_TELEMETRY_ENABLED
+  
+  
+  
+
   if (!context.IsEmpty()) {
     
+
     
+    
+
+    
+    
+
+    
+    
+    
+
     auto extra = Some([&] {
       auto res = CopyableTArray<EventExtraEntry>{};
       res.SetCapacity(9);
