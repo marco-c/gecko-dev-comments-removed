@@ -32,74 +32,102 @@ promise_test(async () => {
 
 
 promise_test(async () => {
-  const source = new Observable(subscriber => {});
+  const results = [];
+  const source = new Observable(subscriber => {
+    results.push('source subscribe callback');
+    subscriber.addTeardown(() => results.push('source teardown'));
+  });
 
-  let notifierSubscriberActiveBeforeNext;
-  let notifierSubscriberActiveAfterNext;
-  let teardownCalledAfterNext;
-  let notifierSignalAbortedAfterNext;
   const notifier = new Observable(subscriber => {
-    let teardownCalled;
-    subscriber.addTeardown(() => teardownCalled = true);
+    subscriber.addTeardown(() => results.push('notifier teardown'));
 
+    results.push('notifier subscribe callback');
     
-    notifierSubscriberActiveBeforeNext = subscriber.active;
+    results.push(`notifer active before next(): ${subscriber.active}`);
     subscriber.next('value');
-    notifierSubscriberActiveAfterNext = subscriber.active;
-    teardownCalledAfterNext = (teardownCalled === true);
-    notifierSignalAbortedAfterNext = subscriber.signal.aborted;
+    results.push(`notifer active after next(): ${subscriber.active}`);
   });
 
-  let nextOrErrorCalled = false;
-  let completeCalled = false;
   source.takeUntil(notifier).subscribe({
-    next: () => nextOrErrorCalled = true,
-    error: () => nextOrErrorCalled = true,
-    complete: () => completeCalled = true,
+    next: () => results.push('takeUntil() next callback'),
+    error: e => results.push(`takeUntil() error callback: ${error}`),
+    complete: () => results.push('takeUntil() complete callback'),
   });
-  assert_true(notifierSubscriberActiveBeforeNext);
-  assert_false(notifierSubscriberActiveAfterNext);
-  assert_true(teardownCalledAfterNext);
-  assert_true(notifierSignalAbortedAfterNext);
-  assert_false(nextOrErrorCalled);
-  assert_true(completeCalled);
-}, "takeUntil: notifier next() unsubscribes to notifier");
 
+  assert_array_equals(results, [
+    'notifier subscribe callback',
+    'notifer active before next(): true',
+    'notifier teardown',
+    'takeUntil() complete callback',
+    'notifer active after next(): false',
+  ]);
+}, "takeUntil: notifier next() unsubscribes from notifier");
 
 
 promise_test(async () => {
-  const source = new Observable(subscriber => {});
+  const results = [];
+  const source = new Observable(subscriber => {
+    results.push('source subscribe callback');
+    subscriber.addTeardown(() => results.push('source teardown'));
+  });
 
-  let notifierSubscriberActiveBeforeNext;
-  let notifierSubscriberActiveAfterNext;
-  let teardownCalledAfterNext;
-  let notifierSignalAbortedAfterNext;
   const notifier = new Observable(subscriber => {
-    let teardownCalled;
-    subscriber.addTeardown(() => teardownCalled = true);
+    subscriber.addTeardown(() => results.push('notifier teardown'));
 
+    results.push('notifier subscribe callback');
     
-    notifierSubscriberActiveBeforeNext = subscriber.active;
+    results.push(`notifer active before error(): ${subscriber.active}`);
     subscriber.error('error');
-    notifierSubscriberActiveAfterNext = subscriber.active;
-    teardownCalledAfterNext = (teardownCalled === true);
-    notifierSignalAbortedAfterNext = subscriber.signal.aborted;
+    results.push(`notifer active after error(): ${subscriber.active}`);
   });
 
-  let nextOrErrorCalled = false;
-  let completeCalled = false;
   source.takeUntil(notifier).subscribe({
-    next: () => nextOrErrorCalled = true,
-    error: () => nextOrErrorCalled = true,
-    complete: () => completeCalled = true,
+    next: () => results.push('takeUntil() next callback'),
+    error: e => results.push(`takeUntil() error callback: ${error}`),
+    complete: () => results.push('takeUntil() complete callback'),
   });
-  assert_true(notifierSubscriberActiveBeforeNext);
-  assert_false(notifierSubscriberActiveAfterNext);
-  assert_true(teardownCalledAfterNext);
-  assert_true(notifierSignalAbortedAfterNext);
-  assert_false(nextOrErrorCalled);
-  assert_true(completeCalled);
-}, "takeUntil: notifier error() unsubscribes to notifier");
+
+  assert_array_equals(results, [
+    'notifier subscribe callback',
+    'notifer active before error(): true',
+    'notifier teardown',
+    'takeUntil() complete callback',
+    'notifer active after error(): false',
+  ]);
+}, "takeUntil: notifier error() unsubscribes from notifier");
+
+
+promise_test(async () => {
+  const results = [];
+  const source = new Observable(subscriber => {
+    results.push('source subscribe callback');
+    subscriber.addTeardown(() => results.push('source teardown'));
+  });
+
+  const notifier = new Observable(subscriber => {
+    subscriber.addTeardown(() => results.push('notifier teardown'));
+
+    results.push('notifier subscribe callback');
+    
+    results.push(`notifer active before throw: ${subscriber.active}`);
+    throw new Error('custom error');
+    
+    results.push(`notifer active after throw: ${subscriber.active}`);
+  });
+
+  source.takeUntil(notifier).subscribe({
+    next: () => results.push('takeUntil() next callback'),
+    error: e => results.push(`takeUntil() error callback: ${error}`),
+    complete: () => results.push('takeUntil() complete callback'),
+  });
+
+  assert_array_equals(results, [
+    'notifier subscribe callback',
+    'notifer active before throw: true',
+    'notifier teardown',
+    'takeUntil() complete callback',
+  ]);
+}, "takeUntil: notifier throw Error unsubscribes from notifier");
 
 
 promise_test(async t => {
@@ -130,9 +158,10 @@ promise_test(async t => {
   let notifierTeardownCalledBeforeCompleteCallback;
   await new Promise(resolve => {
     source.takeUntil(notifier).subscribe({
-      next: () => nextOrErrorCalled = true,
-      error: () => nextOrErrorCalled = true,
+      next: () => {nextOrErrorCalled = true; results.push('next callback');},
+      error: () => {nextOrErrorCalled = true; results.push('error callback');},
       complete: () => {
+        results.push('complete callback');
         notifierTeardownCalledBeforeCompleteCallback = notifierTeardownCalled;
         resolve();
       },
@@ -145,7 +174,7 @@ promise_test(async t => {
   
   
   
-  assert_false(notifierTeardownCalledBeforeCompleteCallback);
+  assert_true(notifierTeardownCalledBeforeCompleteCallback);
   assert_true(notifierTeardownCalled);
   assert_array_equals(results, [
     "notifier subscribed",
@@ -153,7 +182,8 @@ promise_test(async t => {
     "notifier teardown",
     "notifier signal abort",
     "source teardown",
-    "source signal abort"
+    "source signal abort",
+    "complete callback",
   ]);
 }, "takeUntil: notifier next() unsubscribes from notifier & source observable");
 
