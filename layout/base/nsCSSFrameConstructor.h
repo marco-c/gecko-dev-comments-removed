@@ -726,10 +726,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
 
 
-#define FCDATA_FORCED_NON_SCROLLABLE_BLOCK 0x20000
-  
-
-
 
 #define FCDATA_CREATE_BLOCK_WRAPPER_FOR_ALL_KIDS 0x40000
   

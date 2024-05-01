@@ -41,7 +41,6 @@
 #include "nsPresContextInlines.h"
 #include "nsHTMLParts.h"
 #include "nsGkAtoms.h"
-#include "nsAttrValueInlines.h"
 #include "mozilla/Sprintf.h"
 #include "nsFloatManager.h"
 #include "prenv.h"
@@ -50,22 +49,15 @@
 #include <algorithm>
 #include "nsLayoutUtils.h"
 #include "nsDisplayList.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "TextOverflow.h"
 #include "nsIFrameInlines.h"
 #include "CounterStyleManager.h"
-#include "mozilla/dom/HTMLDetailsElement.h"
-#include "mozilla/dom/HTMLSummaryElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/Telemetry.h"
 #include "nsFlexContainerFrame.h"
-#include "nsFileControlFrame.h"
-#include "nsMathMLContainerFrame.h"
-#include "nsSelectsAreaFrame.h"
 
 #include "nsBidiPresUtils.h"
 
@@ -95,7 +87,7 @@ static void MarkAllDescendantLinesDirty(nsBlockFrame* aBlock) {
 
 static void MarkSameFloatManagerLinesDirty(nsBlockFrame* aBlock) {
   nsBlockFrame* blockWithFloatMgr = aBlock;
-  while (!blockWithFloatMgr->HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) {
+  while (!blockWithFloatMgr->HasAnyStateBits(NS_BLOCK_BFC)) {
     nsBlockFrame* bf = do_QueryFrame(blockWithFloatMgr->GetParent());
     if (!bf) {
       break;
@@ -434,13 +426,6 @@ NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BlockEndEdgeOfChildrenProperty, nscoord)
 
 nsBlockFrame* NS_NewBlockFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsBlockFrame(aStyle, aPresShell->GetPresContext());
-}
-
-nsBlockFrame* NS_NewBlockFormattingContext(PresShell* aPresShell,
-                                           ComputedStyle* aComputedStyle) {
-  nsBlockFrame* blockFrame = NS_NewBlockFrame(aPresShell, aComputedStyle);
-  blockFrame->AddStateBits(NS_BLOCK_STATIC_BFC);
-  return blockFrame;
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsBlockFrame)
@@ -1184,7 +1169,7 @@ static LogicalSize CalculateContainingBlockSizeForAbsolutes(
 
 static const nsBlockFrame* GetAsLineClampDescendant(const nsIFrame* aFrame) {
   if (const nsBlockFrame* block = do_QueryFrame(aFrame)) {
-    if (!block->HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) {
+    if (!block->HasAnyStateBits(NS_BLOCK_BFC)) {
       return block;
     }
   }
@@ -1201,7 +1186,7 @@ static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
     return false;
   }
 
-  if (!aFrame->HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) {
+  if (!aFrame->HasAnyStateBits(NS_BLOCK_BFC)) {
     return false;
   }
 
@@ -3925,7 +3910,7 @@ bool nsBlockFrame::IsSelfEmpty() {
   
   
   
-  if (HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) {
+  if (HasAnyStateBits(NS_BLOCK_BFC)) {
     return false;
   }
 
@@ -5249,7 +5234,7 @@ void nsBlockFrame::SplitFloat(BlockReflowState& aState, nsIFrame* aFloat,
   }
 
   aState.AppendPushedFloatChain(nextInFlow);
-  if (MOZ_LIKELY(!HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) ||
+  if (MOZ_LIKELY(!HasAnyStateBits(NS_BLOCK_BFC)) ||
       MOZ_UNLIKELY(IsTrueOverflowContainer())) {
     aState.mReflowStatus.SetOverflowIncomplete();
   } else {
@@ -6497,6 +6482,20 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   *aFoundValidLine = FindValidLine();
 }
 
+static bool AnonymousBoxIsBFC(const ComputedStyle* aStyle) {
+  switch (aStyle->GetPseudoType()) {
+    case PseudoStyleType::fieldsetContent:
+    case PseudoStyleType::columnContent:
+    case PseudoStyleType::buttonContent:
+    case PseudoStyleType::cellContent:
+    case PseudoStyleType::scrolledContent:
+    case PseudoStyleType::anonymousItem:
+      return true;
+    default:
+      return false;
+  }
+}
+
 static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   
   
@@ -6504,11 +6503,59 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   
   
   
-  return aStyle->StyleDisplay()->IsContainPaint() ||
-         aStyle->StyleDisplay()->IsContainLayout() ||
+  const auto* disp = aStyle->StyleDisplay();
+  return disp->IsContainPaint() || disp->IsContainLayout() ||
+         disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
+         disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
          aStyle->StylePosition()->mAlignContent.primary !=
              StyleAlignFlags::NORMAL ||
-         aStyle->GetPseudoType() == PseudoStyleType::columnContent;
+         aStyle->IsRootElementStyle() || AnonymousBoxIsBFC(aStyle);
+}
+
+static bool EstablishesBFC(const nsBlockFrame* aFrame) {
+  if (aFrame->HasAnyClassFlag(LayoutFrameClassFlags::BlockFormattingContext)) {
+    return true;
+  }
+
+  if (nsIFrame* parent = aFrame->GetParent()) {
+    if (parent->IsFieldSetFrame()) {
+      
+      
+      
+      return true;
+    }
+
+    const auto wm = aFrame->GetWritingMode();
+    const auto parentWM = parent->GetWritingMode();
+    if (wm.GetBlockDir() != parentWM.GetBlockDir() ||
+        wm.IsVerticalSideways() != parentWM.IsVerticalSideways()) {
+      
+      
+      
+      
+      return true;
+    }
+  }
+
+  if (aFrame->IsColumnSpan()) {
+    return true;
+  }
+
+  if (aFrame->IsSuppressedScrollableBlockForPrint()) {
+    return true;
+  }
+
+  const auto* style = aFrame->Style();
+  if (style->GetPseudoType() == PseudoStyleType::marker) {
+    if (aFrame->GetParent() &&
+        aFrame->GetParent()->StyleList()->mListStylePosition ==
+            StyleListStylePosition::Outside) {
+      
+      
+      return true;
+    }
+  }
+  return StyleEstablishesBFC(style);
 }
 
 void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
@@ -6517,24 +6564,16 @@ void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
     return;
   }
 
-  
-  
-  
-  
-  if (HasAnyStateBits(NS_BLOCK_STATIC_BFC)) {
-    return;
-  }
-
-  bool isBFC = StyleEstablishesBFC(Style());
-  if (StyleEstablishesBFC(aOldStyle) != isBFC) {
+  const bool isBFC = EstablishesBFC(this);
+  if (HasAnyStateBits(NS_BLOCK_BFC) != isBFC) {
     if (MaybeHasFloats()) {
       
       
       
-      RemoveStateBits(NS_BLOCK_DYNAMIC_BFC);
+      RemoveStateBits(NS_BLOCK_BFC);
       MarkSameFloatManagerLinesDirty(this);
     }
-    AddOrRemoveStateBits(NS_BLOCK_DYNAMIC_BFC, isBFC);
+    AddOrRemoveStateBits(NS_BLOCK_BFC, isBFC);
   }
 }
 
@@ -7837,35 +7876,15 @@ void nsBlockFrame::ChildIsDirty(nsIFrame* aChild) {
   nsContainerFrame::ChildIsDirty(aChild);
 }
 
-static bool AlwaysEstablishesBFC(const nsBlockFrame* aFrame) {
-  switch (aFrame->Type()) {
-    case LayoutFrameType::ColumnSetWrapper:
-      
-      
-      
-    case LayoutFrameType::ComboboxControl:
-      return true;
-    case LayoutFrameType::Block:
-      return static_cast<const nsFileControlFrame*>(do_QueryFrame(aFrame)) ||
-             
-             
-             static_cast<const nsSelectsAreaFrame*>(do_QueryFrame(aFrame)) ||
-             
-             static_cast<const nsMathMLmathBlockFrame*>(do_QueryFrame(aFrame));
-    default:
-      return false;
-  }
-}
-
 void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                         nsIFrame* aPrevInFlow) {
   
   
   
   constexpr nsFrameState NS_BLOCK_FLAGS_MASK =
-      NS_BLOCK_BFC_STATE_BITS | NS_BLOCK_CLIP_PAGINATED_OVERFLOW |
-      NS_BLOCK_HAS_FIRST_LETTER_STYLE | NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER |
-      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_FRAME_HAS_INSIDE_MARKER;
+      NS_BLOCK_BFC | NS_BLOCK_HAS_FIRST_LETTER_STYLE |
+      NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER | NS_BLOCK_HAS_FIRST_LETTER_CHILD |
+      NS_BLOCK_FRAME_HAS_INSIDE_MARKER;
 
   
   
@@ -7887,37 +7906,12 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     AddStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (StyleDisplay()->mDisplay == StyleDisplay::FlowRoot ||
-      (GetParent() &&
-       (GetWritingMode().GetBlockDir() !=
-            GetParent()->GetWritingMode().GetBlockDir() ||
-        GetWritingMode().IsVerticalSideways() !=
-            GetParent()->GetWritingMode().IsVerticalSideways())) ||
-      IsColumnSpan() || AlwaysEstablishesBFC(this)) {
-    AddStateBits(NS_BLOCK_STATIC_BFC);
-  }
-
-  if (StyleEstablishesBFC(Style())) {
-    AddStateBits(NS_BLOCK_DYNAMIC_BFC);
+  if (EstablishesBFC(this)) {
+    AddStateBits(NS_BLOCK_BFC);
   }
 
   if (HasAnyStateBits(NS_FRAME_FONT_INFLATION_CONTAINER) &&
-      HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) {
+      HasAnyStateBits(NS_BLOCK_BFC)) {
     AddStateBits(NS_FRAME_FONT_INFLATION_FLOW_ROOT);
   }
 }
@@ -7970,11 +7964,6 @@ void nsBlockFrame::SetMarkerFrameForListItem(nsIFrame* aMarkerFrame) {
     SetProperty(InsideMarkerProperty(), aMarkerFrame);
     AddStateBits(NS_BLOCK_FRAME_HAS_INSIDE_MARKER);
   } else {
-    if (nsBlockFrame* marker = do_QueryFrame(aMarkerFrame)) {
-      
-      
-      marker->AddStateBits(NS_BLOCK_STATIC_BFC);
-    }
     SetProperty(OutsideMarkerProperty(),
                 new (PresShell()) nsFrameList(aMarkerFrame, aMarkerFrame));
     AddStateBits(NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER);
@@ -8175,7 +8164,7 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
 void nsBlockFrame::IsMarginRoot(bool* aBStartMarginRoot,
                                 bool* aBEndMarginRoot) {
   nsIFrame* parent = GetParent();
-  if (!HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS)) {
+  if (!HasAnyStateBits(NS_BLOCK_BFC)) {
     if (!parent || parent->IsFloatContainingBlock()) {
       *aBStartMarginRoot = false;
       *aBEndMarginRoot = false;
@@ -8202,14 +8191,14 @@ bool nsBlockFrame::BlockNeedsFloatManager(nsIFrame* aBlock) {
   NS_ASSERTION(aBlock->IsBlockFrameOrSubclass(), "aBlock must be a block");
 
   nsIFrame* parent = aBlock->GetParent();
-  return aBlock->HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS) ||
+  return aBlock->HasAnyStateBits(NS_BLOCK_BFC) ||
          (parent && !parent->IsFloatContainingBlock());
 }
 
 
 bool nsBlockFrame::BlockCanIntersectFloats(nsIFrame* aFrame) {
   return aFrame->IsBlockFrameOrSubclass() && !aFrame->IsReplaced() &&
-         !aFrame->HasAnyStateBits(NS_BLOCK_BFC_STATE_BITS);
+         !aFrame->HasAnyStateBits(NS_BLOCK_BFC);
 }
 
 
