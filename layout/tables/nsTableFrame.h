@@ -634,7 +634,8 @@ class nsTableFrame : public nsContainerFrame {
   
   
   nscoord CalcDesiredBSize(const ReflowInput& aReflowInput,
-                           const LogicalMargin& aBorderPadding);
+                           const LogicalMargin& aBorderPadding,
+                           const nsReflowStatus& aStatus);
 
   
   void DistributeBSizeToRows(const ReflowInput& aReflowInput, nscoord aAmount);
