@@ -3147,37 +3147,43 @@ js::gc::AllocKind JSObject::allocKindForTenure(
 
   MOZ_ASSERT(IsInsideNursery(this));
 
-  if (canHaveFixedElements()) {
-    const NativeObject& nobj = as<NativeObject>();
-    MOZ_ASSERT(nobj.numFixedSlots() == 0);
+  if (is<NativeObject>()) {
+    if (canHaveFixedElements()) {
+      const NativeObject& nobj = as<NativeObject>();
+      MOZ_ASSERT(nobj.numFixedSlots() == 0);
+
+      
+      if (!nursery.isInside(nobj.getUnshiftedElementsHeader())) {
+        return gc::AllocKind::OBJECT0_BACKGROUND;
+      }
+
+      size_t nelements = nobj.getDenseCapacity();
+      return ForegroundToBackgroundAllocKind(GetGCArrayKind(nelements));
+    }
+
+    if (is<JSFunction>()) {
+      return as<JSFunction>().getAllocKind();
+    }
 
     
-    if (!nursery.isInside(nobj.getUnshiftedElementsHeader())) {
-      return gc::AllocKind::OBJECT0_BACKGROUND;
+    
+    
+    if (is<FixedLengthTypedArrayObject>() &&
+        !as<FixedLengthTypedArrayObject>().hasBuffer()) {
+      gc::AllocKind allocKind;
+      if (as<FixedLengthTypedArrayObject>().hasInlineElements()) {
+        size_t nbytes = as<FixedLengthTypedArrayObject>().byteLength();
+        allocKind = FixedLengthTypedArrayObject::AllocKindForLazyBuffer(nbytes);
+      } else {
+        allocKind = GetGCObjectKind(getClass());
+      }
+      return ForegroundToBackgroundAllocKind(allocKind);
     }
 
-    size_t nelements = nobj.getDenseCapacity();
-    return ForegroundToBackgroundAllocKind(GetGCArrayKind(nelements));
-  }
-
-  if (is<JSFunction>()) {
-    return as<JSFunction>().getAllocKind();
+    return as<NativeObject>().allocKindForTenure();
   }
 
   
-  
-  
-  if (is<FixedLengthTypedArrayObject>() &&
-      !as<FixedLengthTypedArrayObject>().hasBuffer()) {
-    gc::AllocKind allocKind;
-    if (as<FixedLengthTypedArrayObject>().hasInlineElements()) {
-      size_t nbytes = as<FixedLengthTypedArrayObject>().byteLength();
-      allocKind = FixedLengthTypedArrayObject::AllocKindForLazyBuffer(nbytes);
-    } else {
-      allocKind = GetGCObjectKind(getClass());
-    }
-    return ForegroundToBackgroundAllocKind(allocKind);
-  }
 
   
   if (is<ProxyObject>()) {
@@ -3194,13 +3200,9 @@ js::gc::AllocKind JSObject::allocKindForTenure(
 
   
   
-  if (is<WasmArrayObject>()) {
-    gc::AllocKind allocKind = as<WasmArrayObject>().allocKind();
-    return allocKind;
-  }
-
-  
-  return as<NativeObject>().allocKindForTenure();
+  MOZ_ASSERT(is<WasmArrayObject>());
+  gc::AllocKind allocKind = as<WasmArrayObject>().allocKind();
+  return allocKind;
 }
 
 void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
