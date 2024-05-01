@@ -10,7 +10,6 @@
 #  include <arpa/inet.h>
 #  include <arpa/nameser.h>
 #  include <resolv.h>
-#  define RES_RETRY_ON_FAILURE
 #endif
 
 #include <stdlib.h>
@@ -45,6 +44,9 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Preferences.h"
+#if defined(HAVE_RES_NINIT)
+#  include "mozilla/RWLock.h"
+#endif
 #include "mozilla/StaticPrefs_network.h"
 
 #include "DNSLogging.h"
@@ -98,46 +100,6 @@ LazyLogModule gHostResolverLog("nsHostResolver");
 
 
 
-#if defined(RES_RETRY_ON_FAILURE)
-
-
-
-
-
-
-
-
-class nsResState {
- public:
-  nsResState()
-      
-      
-      
-      
-      
-      
-      
-      : mLastReset(PR_IntervalNow()) {}
-
-  bool Reset() {
-    
-    if (PR_IntervalToSeconds(PR_IntervalNow() - mLastReset) < 1) {
-      return false;
-    }
-
-    mLastReset = PR_IntervalNow();
-    auto result = res_ninit(&_res);
-
-    LOG(("nsResState::Reset() > 'res_ninit' returned %d", result));
-    return (result == 0);
-  }
-
- private:
-  PRIntervalTime mLastReset;
-};
-
-#endif  
-
 class DnsThreadListener final : public nsIThreadPoolListener {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITHREADPOOLLISTENER
@@ -180,6 +142,12 @@ static void DnsPrefChanged(const char* aPref, void* aSelf) {
     gNativeIsLocalhost = Preferences::GetBool(kPrefNativeIsLocalhost);
   }
 }
+
+#if defined(HAVE_RES_NINIT)
+static mozilla::StaticRWLock sGetAddrInfoLock;
+static mozilla::Atomic<bool, mozilla::Relaxed> sResInitCalled{false};
+static mozilla::Atomic<PRIntervalTime> sLastReset{PR_IntervalNow()};
+#endif
 
 NS_IMPL_ISUPPORTS0(nsHostResolver)
 
@@ -232,8 +200,7 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   
   static int initCount = 0;
   if (initCount++ > 0) {
-    auto result = res_ninit(&_res);
-    LOG(("nsHostResolver::Init > 'res_ninit' returned %d", result));
+    ResetDNSConfigurations();
   }
 #endif
 
@@ -276,6 +243,43 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   mResolverThreads = ToRefPtr(std::move(threadPool));
 
   return NS_OK;
+}
+
+#if defined(HAVE_RES_NINIT)
+static void DoResetDNSConfigurations() {
+  
+  if (PR_IntervalToSeconds(PR_IntervalNow() - sLastReset) < 1) {
+    return;
+  }
+
+  sLastReset = PR_IntervalNow();
+
+  StaticAutoWriteLock lock(sGetAddrInfoLock);
+  if (sResInitCalled) {
+    res_nclose(&_res);
+    sResInitCalled = false;
+  }
+
+  auto result = res_ninit(&_res);
+  LOG(("DoResetDNSConfigurations 'res_ninit' returned %d", result));
+  if (result == 0) {
+    sResInitCalled = true;
+  }
+}
+#endif
+
+void nsHostResolver::ResetDNSConfigurations() {
+#if defined(HAVE_RES_NINIT)
+  LOG(("nsHostResolver::ResetDNSConfigurations"));
+  if (NS_IsMainThread()) {
+    NS_DispatchBackgroundTask(
+        NS_NewRunnableFunction("nsHostResolver::ResetDNSConfigurations",
+                               []() { DoResetDNSConfigurations(); }));
+    return;
+  }
+
+  DoResetDNSConfigurations();
+#endif
 }
 
 void nsHostResolver::ClearPendingQueue(
@@ -1803,12 +1807,18 @@ size_t nsHostResolver::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
   return n;
 }
 
+#if defined(HAVE_RES_NINIT)
+static nsresult GetAddrInfoLocked(const nsACString& aHost,
+                                  uint16_t aAddressFamily, uint16_t aFlags,
+                                  AddrInfo** aAddrInfo, bool aGetTtl) {
+  StaticAutoReadLock lock(sGetAddrInfoLock);
+  return GetAddrInfo(aHost, aAddressFamily, aFlags, aAddrInfo, aGetTtl);
+}
+#endif
+
 void nsHostResolver::ThreadFunc() {
   LOG(("DNS lookup thread - starting execution.\n"));
 
-#if defined(RES_RETRY_ON_FAILURE)
-  nsResState rs;
-#endif
   RefPtr<nsHostRecord> rec;
   RefPtr<AddrInfo> ai;
 
@@ -1848,13 +1858,12 @@ void nsHostResolver::ThreadFunc() {
       continue;
     }
 
+#if defined(HAVE_RES_NINIT)
+    nsresult status = GetAddrInfoLocked(rec->host, rec->af, rec->flags,
+                                        getter_AddRefs(ai), getTtl);
+#else
     nsresult status =
         GetAddrInfo(rec->host, rec->af, rec->flags, getter_AddRefs(ai), getTtl);
-#if defined(RES_RETRY_ON_FAILURE)
-    if (NS_FAILED(status) && rs.Reset()) {
-      status = GetAddrInfo(rec->host, rec->af, rec->flags, getter_AddRefs(ai),
-                           getTtl);
-    }
 #endif
 
     mozilla::glean::networking::dns_native_count

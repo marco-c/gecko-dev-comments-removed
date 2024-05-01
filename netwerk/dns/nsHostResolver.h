@@ -222,6 +222,8 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
   bool TRRServiceEnabledForRecord(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
 
+  void ResetDNSConfigurations();
+
  private:
   explicit nsHostResolver(uint32_t maxCacheEntries,
                           uint32_t defaultCacheEntryLifetime,
