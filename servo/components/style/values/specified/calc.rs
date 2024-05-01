@@ -524,13 +524,18 @@ impl CalcNode {
                     }
 
                     let value = Self::parse_argument(context, input, allowed_units)?;
-                    input.expect_comma()?;
-                    let step = Self::parse_argument(context, input, allowed_units)?;
+
+                    
+                    
+                    let step = input.try_parse(|input| {
+                        input.expect_comma()?;
+                        Self::parse_argument(context, input, allowed_units)
+                    });
 
                     Ok(Self::Round {
                         strategy: strategy.unwrap_or(RoundingStrategy::Nearest),
                         value: Box::new(value),
-                        step: Box::new(step),
+                        step: Box::new(step.unwrap_or(Self::Leaf(Leaf::Number(1.0)))),
                     })
                 },
                 MathFunction::Mod | MathFunction::Rem => {
