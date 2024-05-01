@@ -214,7 +214,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   void OnXPCOMShutdown();
   void OnPreferenceChange(const char16_t* aData);
-  void ScreenInformationChanged();
 
   bool CreateContentCompositorManager(
       base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
