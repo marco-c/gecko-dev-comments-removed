@@ -816,8 +816,7 @@ void Selection::SetAnchorFocusRange(size_t aIndex) {
 
 static int32_t CompareToRangeStart(const nsINode& aCompareNode,
                                    uint32_t aCompareOffset,
-                                   const AbstractRange& aRange,
-                                   nsContentUtils::NodeIndexCache* aCache) {
+                                   const AbstractRange& aRange) {
   MOZ_ASSERT(aRange.GetStartContainer());
   nsINode* start = aRange.GetStartContainer();
   
@@ -831,13 +830,7 @@ static int32_t CompareToRangeStart(const nsINode& aCompareNode,
 
   
   return *nsContentUtils::ComparePoints(&aCompareNode, aCompareOffset, start,
-                                        aRange.StartOffset(), aCache);
-}
-
-static int32_t CompareToRangeStart(const nsINode& aCompareNode,
-                                   uint32_t aCompareOffset,
-                                   const AbstractRange& aRange) {
-  return CompareToRangeStart(aCompareNode, aCompareOffset, aRange, nullptr);
+                                        aRange.StartOffset());
 }
 
 static int32_t CompareToRangeEnd(const nsINode& aCompareNode,
@@ -1469,45 +1462,10 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
     mInvalidStaticRanges.AppendElements(std::move(invalidStaticRanges));
   }
   if (domMutationHasHappened || mRangesMightHaveChanged) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsContentUtils::NodeIndexCache cache;
-    bool rangeOrderHasChanged = false;
-    const nsINode* prevStartContainer = nullptr;
-    uint32_t prevStartOffset = 0;
-    for (const StyledRange& range : mRanges) {
-      const nsINode* startContainer = range.mRange->GetStartContainer();
-      uint32_t startOffset = range.mRange->StartOffset();
-      if (!prevStartContainer) {
-        prevStartContainer = startContainer;
-        prevStartOffset = startOffset;
-        continue;
-      }
-      
-      
-      
-      if (*nsContentUtils::ComparePoints(startContainer, startOffset,
-                                         prevStartContainer, prevStartOffset,
-                                         &cache) != 1) {
-        rangeOrderHasChanged = true;
-        break;
-      }
-      prevStartContainer = startContainer;
-      prevStartOffset = startOffset;
-    }
-    if (rangeOrderHasChanged) {
-      mRanges.Sort([&cache](const StyledRange& a, const StyledRange& b) -> int {
-        return CompareToRangeStart(*a.mRange->GetStartContainer(),
-                                   a.mRange->StartOffset(), *b.mRange, &cache);
-      });
-    }
+    mRanges.Sort([](const StyledRange& a, const StyledRange& b) -> int {
+      return CompareToRangeStart(*a.mRange->GetStartContainer(),
+                                 a.mRange->StartOffset(), *b.mRange);
+    });
     mDocumentGeneration = currentDocumentGeneration;
     mRangesMightHaveChanged = false;
   }
