@@ -317,8 +317,12 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
     candidate_error_callback_ = std::move(callback);
   }
 
-  sigslot::signal2<IceTransportInternal*, const Candidates&>
-      SignalCandidatesRemoved;
+  void SetCandidatesRemovedCallback(
+      absl::AnyInvocable<void(IceTransportInternal*, const Candidates&)>
+          callback) {
+    RTC_DCHECK(!candidates_removed_callback_);
+    candidates_removed_callback_ = std::move(callback);
+  }
 
   
   
@@ -379,6 +383,9 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
   absl::AnyInvocable<void(IceTransportInternal*, const IceCandidateErrorEvent&)>
       candidate_error_callback_;
+
+  absl::AnyInvocable<void(IceTransportInternal*, const Candidates&)>
+      candidates_removed_callback_;
 };
 
 }  
