@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "api/call/call_factory_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/test/time_controller.h"
 
@@ -24,11 +23,6 @@ std::unique_ptr<TimeController> CreateTimeController(
 
 
 std::unique_ptr<TimeController> CreateSimulatedTimeController();
-
-
-
-[[deprecated("bugs.webrtc.org/15574")]] std::unique_ptr<CallFactoryInterface>
-CreateTimeControllerBasedCallFactory(TimeController* time_controller);
 
 
 
