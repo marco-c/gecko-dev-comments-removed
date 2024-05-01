@@ -67,7 +67,8 @@ mozilla::UniquePtr<wchar_t[]> GetAssociationKeyPath(const wchar_t* aExt);
 
 
 
-nsresult AppendAssociationKeyPath(const wchar_t* aExt, nsString& output);
+
+void AppendAssociationKeyPath(const wchar_t* aExt, nsAString& aOutput);
 
 
 
