@@ -13,7 +13,7 @@ use sql_support::open_database::{self, ConnectionInitializer};
 
 
 
-pub const VERSION: u32 = 13;
+pub const VERSION: u32 = 14;
 
 
 pub const SQL: &str = "
@@ -102,6 +102,7 @@ pub const SQL: &str = "
 
     CREATE TABLE yelp_custom_details(
         icon_id TEXT PRIMARY KEY,
+        score REAL NOT NULL,
         record_id TEXT NOT NULL
     ) WITHOUT ROWID;
 
@@ -140,7 +141,7 @@ impl ConnectionInitializer for SuggestConnectionInitializer {
 
     fn upgrade_from(&self, _db: &Transaction<'_>, version: u32) -> open_database::Result<()> {
         match version {
-            1..=12 => {
+            1..=13 => {
                 
                 
                 
