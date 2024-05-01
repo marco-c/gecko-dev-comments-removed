@@ -50,6 +50,7 @@ public class TelemetryEvent {
 
 
 
+    @CheckResult
     public static TelemetryEvent create(@NonNull String category, @NonNull String method, @Nullable String object, String value) {
         final TelemetryEvent event = new TelemetryEvent();
 
@@ -122,12 +123,8 @@ public class TelemetryEvent {
     
 
 
-    public Thread queue() {
-        final TelemetryEventPingBuilder builder = (TelemetryEventPingBuilder) TelemetryHolder.get()
-                .getBuilder(TelemetryEventPingBuilder.TYPE);
-
-        return builder.getEventsMeasurement()
-                .add(this);
+    public void queue() {
+        TelemetryHolder.get().queueEvent(this);
     }
 
     
