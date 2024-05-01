@@ -547,7 +547,7 @@ Object.assign(Assert, {
 const Expect = {
   any:
     () =>
-    actual => {} ,
+    () => {} ,
 };
 
 
