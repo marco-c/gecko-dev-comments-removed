@@ -36,7 +36,9 @@ class PacketBuffer {
 
   
   
-  PacketBuffer(size_t max_number_of_packets, const TickTimer* tick_timer);
+  PacketBuffer(size_t max_number_of_packets,
+               const TickTimer* tick_timer,
+               StatisticsCalculator* stats);
 
   
   virtual ~PacketBuffer();
@@ -45,7 +47,7 @@ class PacketBuffer {
   PacketBuffer& operator=(const PacketBuffer&) = delete;
 
   
-  virtual void Flush(StatisticsCalculator* stats);
+  virtual void Flush();
 
   
   virtual bool Empty() const;
@@ -54,7 +56,7 @@ class PacketBuffer {
   
   
   
-  virtual int InsertPacket(Packet&& packet, StatisticsCalculator* stats);
+  virtual int InsertPacket(Packet&& packet);
 
   
   
@@ -68,8 +70,7 @@ class PacketBuffer {
       PacketList* packet_list,
       const DecoderDatabase& decoder_database,
       absl::optional<uint8_t>* current_rtp_payload_type,
-      absl::optional<uint8_t>* current_cng_rtp_payload_type,
-      StatisticsCalculator* stats);
+      absl::optional<uint8_t>* current_cng_rtp_payload_type);
 
   
   
@@ -96,7 +97,7 @@ class PacketBuffer {
   
   
   
-  virtual int DiscardNextPacket(StatisticsCalculator* stats);
+  virtual int DiscardNextPacket();
 
   
   
@@ -104,16 +105,13 @@ class PacketBuffer {
   
   
   virtual void DiscardOldPackets(uint32_t timestamp_limit,
-                                 uint32_t horizon_samples,
-                                 StatisticsCalculator* stats);
+                                 uint32_t horizon_samples);
 
   
-  virtual void DiscardAllOldPackets(uint32_t timestamp_limit,
-                                    StatisticsCalculator* stats);
+  virtual void DiscardAllOldPackets(uint32_t timestamp_limit);
 
   
-  virtual void DiscardPacketsWithPayloadType(uint8_t payload_type,
-                                             StatisticsCalculator* stats);
+  virtual void DiscardPacketsWithPayloadType(uint8_t payload_type);
 
   
   
@@ -148,9 +146,12 @@ class PacketBuffer {
   }
 
  private:
+  void LogPacketDiscarded(int codec_level);
+
   size_t max_number_of_packets_;
   PacketList buffer_;
   const TickTimer* tick_timer_;
+  StatisticsCalculator* stats_;
 };
 
 }  
