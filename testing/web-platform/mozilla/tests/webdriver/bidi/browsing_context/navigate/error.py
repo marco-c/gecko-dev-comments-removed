@@ -1,4 +1,3 @@
-import os
 from copy import deepcopy
 
 import pytest
@@ -7,13 +6,12 @@ from tests.bidi.browsing_context.navigate import navigate_and_assert
 pytestmark = pytest.mark.asyncio
 
 
-async def test_insecure_certificate(configuration, url, custom_profile, geckodriver):
-    try:
-        
-        
-        os.remove(os.path.join(custom_profile.profile, "cert9.db"))
-    except Exception:
-        pass
+async def test_insecure_certificate(
+    configuration, url, create_custom_profile, geckodriver
+):
+    
+    
+    custom_profile = create_custom_profile(clone=False)
 
     config = deepcopy(configuration)
     config["capabilities"]["moz:firefoxOptions"]["args"] = [
