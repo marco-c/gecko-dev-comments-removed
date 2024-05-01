@@ -457,7 +457,10 @@ class nsDisplayListBuilder {
 
 
 
-  void ForceLayerForScrollParent() { mForceLayerForScrollParent = true; }
+  void ForceLayerForScrollParent();
+  uint32_t GetNumActiveScrollframesEncountered() const {
+    return mNumActiveScrollframesEncountered;
+  }
   
 
 
@@ -1847,6 +1850,8 @@ class nsDisplayListBuilder {
 
   nsDisplayListBuilderMode mMode;
   static uint32_t sPaintSequenceNumber;
+
+  uint32_t mNumActiveScrollframesEncountered = 0;
 
   bool mContainsBlendMode;
   bool mIsBuildingScrollbar;
@@ -6414,6 +6419,12 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
 
   bool CreatesStackingContextHelper() override { return true; }
 
+  void SetContainsASRs(bool aContainsASRs) { mContainsASRs = aContainsASRs; }
+  bool GetContainsASRs() const { return mContainsASRs; }
+  bool ShouldDeferTransform() const {
+    return !mFrame->ChildrenHavePerspective() && !mContainsASRs;
+  }
+
  private:
   void ComputeBounds(nsDisplayListBuilder* aBuilder);
   nsRect TransformUntransformedBounds(nsDisplayListBuilder* aBuilder,
@@ -6459,6 +6470,7 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   
   
   bool mHasAssociatedPerspective : 1;
+  bool mContainsASRs : 1;
 };
 
 

@@ -523,6 +523,17 @@ class MergeState {
     
     
     aOutItem->UpdateBounds(mBuilder->Builder());
+
+    if (aOutItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
+      MOZ_ASSERT(!aNewItem ||
+                 aNewItem->GetType() == DisplayItemType::TYPE_TRANSFORM);
+      MOZ_ASSERT(aOldItem->GetType() == DisplayItemType::TYPE_TRANSFORM);
+      static_cast<nsDisplayTransform*>(aOutItem)->SetContainsASRs(
+          static_cast<nsDisplayTransform*>(aOldItem)->GetContainsASRs() ||
+          (aNewItem
+               ? static_cast<nsDisplayTransform*>(aNewItem)->GetContainsASRs()
+               : false));
+    }
   }
 
   bool ShouldUseNewItem(nsDisplayItem* aNewItem) {

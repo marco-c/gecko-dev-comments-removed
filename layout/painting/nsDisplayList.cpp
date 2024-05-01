@@ -868,6 +868,11 @@ void nsDisplayListBuilder::SetIsRelativeToLayoutViewport() {
   UpdateShouldBuildAsyncZoomContainer();
 }
 
+void nsDisplayListBuilder::ForceLayerForScrollParent() {
+  mForceLayerForScrollParent = true;
+  mNumActiveScrollframesEncountered++;
+}
+
 void nsDisplayListBuilder::UpdateShouldBuildAsyncZoomContainer() {
   const Document* document = mReferenceFrame->PresContext()->Document();
   mBuildAsyncZoomContainer = !mIsRelativeToLayoutViewport &&
@@ -5974,7 +5979,8 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
       mPrerenderDecision(PrerenderDecision::No),
       mIsTransformSeparator(true),
       mHasTransformGetter(false),
-      mHasAssociatedPerspective(false) {
+      mHasAssociatedPerspective(false),
+      mContainsASRs(false) {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
   Init(aBuilder, aList);
@@ -5990,7 +5996,8 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
       mPrerenderDecision(aPrerenderDecision),
       mIsTransformSeparator(false),
       mHasTransformGetter(false),
-      mHasAssociatedPerspective(false) {
+      mHasAssociatedPerspective(false),
+      mContainsASRs(false) {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
   SetReferenceFrameToAncestor(aBuilder);
@@ -6007,7 +6014,8 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
       mPrerenderDecision(PrerenderDecision::No),
       mIsTransformSeparator(false),
       mHasTransformGetter(true),
-      mHasAssociatedPerspective(false) {
+      mHasAssociatedPerspective(false),
+      mContainsASRs(false) {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
   MOZ_ASSERT(aFrame->GetTransformGetter());
@@ -6640,7 +6648,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
                                key};
 
   nsDisplayTransform* deferredTransformItem = nullptr;
-  if (!mFrame->ChildrenHavePerspective()) {
+  if (ShouldDeferTransform()) {
     
     
     
@@ -6696,14 +6704,14 @@ bool nsDisplayTransform::CreateWebRenderCommands(
 
 bool nsDisplayTransform::UpdateScrollData(
     WebRenderScrollData* aData, WebRenderLayerScrollData* aLayerData) {
-  if (!mFrame->ChildrenHavePerspective()) {
+  if (ShouldDeferTransform()) {
     
     
     return false;
   }
   if (aLayerData) {
     aLayerData->SetTransform(GetTransform().GetMatrix());
-    aLayerData->SetTransformIsPerspective(true);
+    aLayerData->SetTransformIsPerspective(mFrame->ChildrenHavePerspective());
   }
   return true;
 }
