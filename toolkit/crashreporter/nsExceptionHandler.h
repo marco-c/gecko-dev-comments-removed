@@ -173,23 +173,19 @@ nsresult AppendObjCExceptionInfoToAppNotes(void* inException);
 nsresult GetSubmitReports(bool* aSubmitReport);
 nsresult SetSubmitReports(bool aSubmitReport);
 
-
-
 #ifdef XP_WIN
 
 
 
 struct WindowsErrorReportingData {
   
-  LPTHREAD_START_ROUTINE mWerNotifyProc;
-  
   DWORD mChildPid;
   
   char mMinidumpFile[40];
-  
-  size_t mOOMAllocationSize;
 };
 #endif  
+
+
 
 
 
@@ -311,11 +307,6 @@ void UnregisterInjectorCallback(DWORD processID);
 bool CreateNotificationPipeForChild(int* childCrashFd, int* childCrashRemapFd);
 
 #endif  
-
-
-#if defined(XP_WIN)
-DWORD WINAPI WerNotifyProc(LPVOID aParameter);
-#endif
 
 
 bool SetRemoteExceptionHandler(const char* aCrashPipe = nullptr);

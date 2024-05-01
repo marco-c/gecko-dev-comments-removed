@@ -3628,9 +3628,19 @@ bool FinalizeOrphanedMinidump(uint32_t aChildPid, GeckoProcessType aType,
 
 
 
-DWORD WINAPI WerNotifyProc(LPVOID aParameter) {
+
+
+
+#  pragma section("mozwerpt", read, executable, shared)
+
+__declspec(allocate("mozwerpt")) MOZ_EXPORT DWORD WINAPI
+    WerNotifyProc(LPVOID aParameter) {
   const WindowsErrorReportingData* werData =
       static_cast<const WindowsErrorReportingData*>(aParameter);
+
+  auto freeParameterOnExit = MakeScopeExit([&aParameter] {
+    VirtualFree(aParameter, sizeof(WindowsErrorReportingData), MEM_RELEASE);
+  });
 
   
   
@@ -3658,12 +3668,6 @@ DWORD WINAPI WerNotifyProc(LPVOID aParameter) {
     pd->sequence = ++crashSequence;
     pd->annotations = MakeUnique<AnnotationTable>();
     (*pd->annotations)[Annotation::WindowsErrorReporting] = "1"_ns;
-    if (werData->mOOMAllocationSize > 0) {
-      char buffer[32] = {};
-      XP_STOA(werData->mOOMAllocationSize, buffer);
-      (*pd->annotations)[Annotation::OOMAllocationSize] = buffer;
-    }
-
     AddSharedAnnotations(*(pd->annotations));
   }
 

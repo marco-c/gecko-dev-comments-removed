@@ -383,15 +383,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
   bool exceptionHandlerIsSet = false;
   if (!CrashReporter::IsDummy()) {
-#if defined(XP_WIN)
-    if (aArgc < 1) {
-      return NS_ERROR_FAILURE;
-    }
-    
-    
-    --aArgc;
-#endif
-
     if (aArgc < 1) return NS_ERROR_FAILURE;
     const char* const crashReporterArg = aArgv[--aArgc];
 
