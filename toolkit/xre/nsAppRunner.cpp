@@ -4769,7 +4769,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     if (gWaylandProxy) {
       gWaylandProxy->RestoreWaylandDisplay();
     }
-    if (PR_GetEnv("WAYLAND_DISPLAY") && GdkIsX11Display()) {
+    if (waylandEnabled && PR_GetEnv("WAYLAND_DISPLAY") && GdkIsX11Display()) {
       
       
       
