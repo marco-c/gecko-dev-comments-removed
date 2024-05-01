@@ -290,6 +290,9 @@ class LookAndFeel {
     TitlebarRadius,
 
     
+    TitlebarButtonSpacing,
+
+    
 
 
 

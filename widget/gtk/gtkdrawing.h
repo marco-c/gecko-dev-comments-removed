@@ -76,13 +76,9 @@ typedef struct {
 } ToggleGTKMetrics;
 
 typedef struct {
-  MozGtkSize minSizeWithBorderMargin;
-  GtkBorder buttonMargin;
+  MozGtkSize minSizeWithBorder;
   gint iconXPosition;
   gint iconYPosition;
-  bool visible;
-  bool firstButton;
-  bool lastButton;
 } ToolbarButtonGTKMetrics;
 
 #define TOOLBAR_BUTTONS 3
@@ -269,8 +265,6 @@ enum WidgetNodeType : int {
   MOZ_GTK_HEADER_BAR,
   
   MOZ_GTK_HEADER_BAR_MAXIMIZED,
-  
-  MOZ_GTK_HEADER_BAR_BUTTON_BOX,
   
 
 

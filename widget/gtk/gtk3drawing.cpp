@@ -264,7 +264,6 @@ static void CalculateToolbarButtonMetrics(WidgetNodeType aAppearance,
   gint iconWidth, iconHeight;
   if (!gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &iconWidth, &iconHeight)) {
     NS_WARNING("Failed to get Gtk+ icon size for titlebar button!");
-
     
     iconWidth = 16;
     iconHeight = 16;
@@ -292,37 +291,7 @@ static void CalculateToolbarButtonMetrics(WidgetNodeType aAppearance,
   
   aMetrics->iconXPosition = (width - iconWidth) / 2;
   aMetrics->iconYPosition = (height - iconHeight) / 2;
-
-  aMetrics->minSizeWithBorderMargin.width = width;
-  aMetrics->minSizeWithBorderMargin.height = height;
-}
-
-
-static void CalculateToolbarButtonSpacing(WidgetNodeType aAppearance,
-                                          ToolbarButtonGTKMetrics* aMetrics) {
-  GtkStyleContext* style = GetStyleContext(aAppearance);
-  gtk_style_context_get_margin(style, gtk_style_context_get_state(style),
-                               &aMetrics->buttonMargin);
-
-  
-  gint buttonSpacing = 6;
-  g_object_get(GetWidget(MOZ_GTK_HEADER_BAR), "spacing", &buttonSpacing,
-               nullptr);
-
-  
-  buttonSpacing /= 2;
-
-  if (!aMetrics->firstButton) {
-    aMetrics->buttonMargin.left += buttonSpacing;
-  }
-  if (!aMetrics->lastButton) {
-    aMetrics->buttonMargin.right += buttonSpacing;
-  }
-
-  aMetrics->minSizeWithBorderMargin.width +=
-      aMetrics->buttonMargin.right + aMetrics->buttonMargin.left;
-  aMetrics->minSizeWithBorderMargin.height +=
-      aMetrics->buttonMargin.top + aMetrics->buttonMargin.bottom;
+  aMetrics->minSizeWithBorder = {width, height};
 }
 
 size_t GetGtkHeaderBarButtonLayout(Span<ButtonLayout> aButtonLayout,
@@ -388,26 +357,14 @@ static void EnsureToolbarMetrics() {
   memset(&sToolbarMetrics, 0, sizeof(sToolbarMetrics));
 
   
-  ButtonLayout aButtonLayout[TOOLBAR_BUTTONS];
+  ButtonLayout buttonLayout[TOOLBAR_BUTTONS];
   size_t activeButtonNums =
-      GetGtkHeaderBarButtonLayout(Span(aButtonLayout), nullptr);
+      GetGtkHeaderBarButtonLayout(Span(buttonLayout), nullptr);
 
-  for (size_t i = 0; i < activeButtonNums; i++) {
-    int buttonIndex =
-        (aButtonLayout[i].mType - MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
-    ToolbarButtonGTKMetrics* metrics = sToolbarMetrics.button + buttonIndex;
-    metrics->visible = true;
-    
-    if (!i) {
-      metrics->firstButton = true;
-    }
-    
-    if (i == (activeButtonNums - 1)) {
-      metrics->lastButton = true;
-    }
-
-    CalculateToolbarButtonMetrics(aButtonLayout[i].mType, metrics);
-    CalculateToolbarButtonSpacing(aButtonLayout[i].mType, metrics);
+  for (const auto& layout : Span(buttonLayout, activeButtonNums)) {
+    int buttonIndex = layout.mType - MOZ_GTK_HEADER_BAR_BUTTON_CLOSE;
+    ToolbarButtonGTKMetrics* metrics = &sToolbarMetrics.button[buttonIndex];
+    CalculateToolbarButtonMetrics(layout.mType, metrics);
   }
 
   sToolbarMetrics.initialized = true;
@@ -506,26 +463,27 @@ static gint moz_gtk_button_paint(cairo_t* cr, const GdkRectangle* rect,
   return MOZ_GTK_SUCCESS;
 }
 
-static gint moz_gtk_header_bar_button_paint(cairo_t* cr,
-                                            const GdkRectangle* aRect,
+static gint moz_gtk_header_bar_button_paint(cairo_t* cr, GdkRectangle* aRect,
                                             GtkWidgetState* state,
                                             GtkReliefStyle relief,
                                             WidgetNodeType aIconWidgetType,
                                             GtkTextDirection direction) {
-  GdkRectangle rect = *aRect;
-  
-  
-  const ToolbarButtonGTKMetrics* metrics = GetToolbarButtonMetrics(
-      aIconWidgetType == MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE
-          ? MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE
-          : aIconWidgetType);
-  Inset(&rect, metrics->buttonMargin);
-
   GtkWidget* buttonWidget = GetWidget(aIconWidgetType);
   if (!buttonWidget) {
     return MOZ_GTK_UNKNOWN_WIDGET;
   }
-  moz_gtk_button_paint(cr, &rect, state, relief, buttonWidget, direction);
+
+  const ToolbarButtonGTKMetrics* metrics = GetToolbarButtonMetrics(
+      aIconWidgetType == MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE
+          ? MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE
+          : aIconWidgetType);
+  
+  if (aRect->height > metrics->minSizeWithBorder.height) {
+    gint diff = aRect->height - metrics->minSizeWithBorder.height;
+    aRect->y += diff / 2;
+    aRect->height = metrics->minSizeWithBorder.height;
+  }
+  moz_gtk_button_paint(cr, aRect, state, relief, buttonWidget, direction);
 
   GtkWidget* iconWidget =
       gtk_bin_get_child(GTK_BIN(GetWidget(aIconWidgetType)));
@@ -544,8 +502,9 @@ static gint moz_gtk_header_bar_button_paint(cairo_t* cr,
     gtk_style_context_set_state(style, state_flags);
 
     
-    gtk_render_icon_surface(style, cr, surface, rect.x + metrics->iconXPosition,
-                            rect.y + metrics->iconYPosition);
+    gtk_render_icon_surface(style, cr, surface,
+                            aRect->x + metrics->iconXPosition,
+                            aRect->y + metrics->iconYPosition);
     gtk_style_context_restore(style);
   }
 
@@ -1698,22 +1657,6 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
       GtkStyleContext* labelStyle = GetStyleContext(MOZ_GTK_TOOLTIP_BOX_LABEL);
       moz_gtk_add_margin_border_padding(labelStyle, left, top, right, bottom);
 
-      return MOZ_GTK_SUCCESS;
-    }
-    case MOZ_GTK_HEADER_BAR_BUTTON_BOX: {
-      style = GetStyleContext(MOZ_GTK_HEADER_BAR);
-      moz_gtk_add_border_padding(style, left, top, right, bottom);
-      *top = *bottom = 0;
-      bool leftButtonsPlacement = false;
-      GetGtkHeaderBarButtonLayout({}, &leftButtonsPlacement);
-      if (direction == GTK_TEXT_DIR_RTL) {
-        leftButtonsPlacement = !leftButtonsPlacement;
-      }
-      if (leftButtonsPlacement) {
-        *right = 0;
-      } else {
-        *left = 0;
-      }
       return MOZ_GTK_SUCCESS;
     }
     

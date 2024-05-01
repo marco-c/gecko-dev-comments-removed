@@ -555,15 +555,16 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   
   
   
-  if (mKind == Kind::XULImage) {
-    if (!mContent->AsElement()->HasNonEmptyAttr(nsGkAtoms::src) && aOldStyle &&
+  if (mKind == Kind::XULImage && aOldStyle) {
+    if (!mContent->AsElement()->HasNonEmptyAttr(nsGkAtoms::src) &&
         aOldStyle->StyleList()->mListStyleImage !=
             StyleList()->mListStyleImage) {
       UpdateXULImage();
     }
-    if (!mOwnedRequest && aOldStyle &&
-        aOldStyle->StyleDisplay()->EffectiveAppearance() !=
-            StyleDisplay()->EffectiveAppearance()) {
+    
+    
+    
+    if (!mOwnedRequest) {
       UpdateIntrinsicSize();
     }
   }
