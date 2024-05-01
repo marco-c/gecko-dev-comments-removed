@@ -1602,26 +1602,23 @@ void ContentParent::BroadcastThemeUpdate(widget::ThemeChangeKind aKind) {
 void ContentParent::BroadcastMediaCodecsSupportedUpdate(
     RemoteDecodeIn aLocation, const media::MediaCodecsSupported& aSupported) {
   
-  media::MCSInfo::AddSupport(aSupported);
-  auto support = media::MCSInfo::GetSupport();
-
-  
-  sCodecsSupported[aLocation] = support;
+  sCodecsSupported[aLocation] = aSupported;
   for (auto* cp : AllProcesses(eAll)) {
-    Unused << cp->SendUpdateMediaCodecsSupported(aLocation, support);
+    Unused << cp->SendUpdateMediaCodecsSupported(aLocation, aSupported);
   }
+  nsCString supportString;
+  media::MCSInfo::GetMediaCodecsSupportedString(supportString, aSupported);
+  LOGPDM("Broadcast support from '%s', support=%s",
+         RemoteDecodeInToStr(aLocation), supportString.get());
 
   
-  nsCString supportString;
-  media::MCSInfo::GetMediaCodecsSupportedString(supportString, support);
-  gfx::gfxVars::SetCodecSupportInfo(supportString);
+  media::MCSInfo::AddSupport(aSupported);
+  auto fullSupport = media::MCSInfo::GetSupport();
 
   
   supportString.Truncate();
-  media::MCSInfo::GetMediaCodecsSupportedString(supportString, aSupported);
-  supportString.ReplaceSubstring("\n"_ns, ", "_ns);
-  LOGPDM("Broadcast support from '%s', support=%s",
-         RemoteDecodeInToStr(aLocation), supportString.get());
+  media::MCSInfo::GetMediaCodecsSupportedString(supportString, fullSupport);
+  gfx::gfxVars::SetCodecSupportInfo(supportString);
 }
 
 const nsACString& ContentParent::GetRemoteType() const { return mRemoteType; }
