@@ -66,6 +66,14 @@ mozilla::UniquePtr<wchar_t[]> GetAssociationKeyPath(const wchar_t* aExt);
 
 
 
+
+nsresult AppendAssociationKeyPath(const wchar_t* aExt, nsString& output);
+
+
+
+
+
+
 mozilla::UniquePtr<wchar_t[]> GetCurrentUserStringSid();
 
 
