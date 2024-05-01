@@ -287,9 +287,11 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 
-[[nodiscard]] bool DecodeLocalEntries(Decoder& d, const TypeContext& types,
-                                      const FeatureArgs& features,
-                                      ValTypeVector* locals);
+
+[[nodiscard]] bool DecodeLocalEntriesWithParams(Decoder& d,
+                                                const ModuleEnvironment& env,
+                                                uint32_t funcIndex,
+                                                ValTypeVector* locals);
 
 
 
