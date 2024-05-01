@@ -1794,8 +1794,8 @@ impl<W: Write> Writer<W> {
                     Mf::CountLeadingZeros => "clz",
                     Mf::CountOneBits => "popcount",
                     Mf::ReverseBits => "reverse_bits",
-                    Mf::ExtractBits => "extract_bits",
-                    Mf::InsertBits => "insert_bits",
+                    Mf::ExtractBits => "",
+                    Mf::InsertBits => "",
                     Mf::FindLsb => "",
                     Mf::FindMsb => "",
                     
@@ -1891,6 +1891,52 @@ impl<W: Write> Writer<W> {
                     write!(self.out, "as_type<uint>(half2(")?;
                     self.put_expression(arg, context, false)?;
                     write!(self.out, "))")?;
+                } else if fun == Mf::ExtractBits {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    let scalar_bits = context.resolve_type(arg).scalar_width().unwrap();
+
+                    write!(self.out, "{NAMESPACE}::extract_bits(")?;
+                    self.put_expression(arg, context, true)?;
+                    write!(self.out, ", {NAMESPACE}::min(")?;
+                    self.put_expression(arg1.unwrap(), context, true)?;
+                    write!(self.out, ", {scalar_bits}u), {NAMESPACE}::min(")?;
+                    self.put_expression(arg2.unwrap(), context, true)?;
+                    write!(self.out, ", {scalar_bits}u - {NAMESPACE}::min(")?;
+                    self.put_expression(arg1.unwrap(), context, true)?;
+                    write!(self.out, ", {scalar_bits}u)))")?;
+                } else if fun == Mf::InsertBits {
+                    
+                    
+                    
+
+                    let scalar_bits = context.resolve_type(arg).scalar_width().unwrap();
+
+                    write!(self.out, "{NAMESPACE}::insert_bits(")?;
+                    self.put_expression(arg, context, true)?;
+                    write!(self.out, ", ")?;
+                    self.put_expression(arg1.unwrap(), context, true)?;
+                    write!(self.out, ", {NAMESPACE}::min(")?;
+                    self.put_expression(arg2.unwrap(), context, true)?;
+                    write!(self.out, ", {scalar_bits}u), {NAMESPACE}::min(")?;
+                    self.put_expression(arg3.unwrap(), context, true)?;
+                    write!(self.out, ", {scalar_bits}u - {NAMESPACE}::min(")?;
+                    self.put_expression(arg2.unwrap(), context, true)?;
+                    write!(self.out, ", {scalar_bits}u)))")?;
                 } else if fun == Mf::Radians {
                     write!(self.out, "((")?;
                     self.put_expression(arg, context, false)?;
@@ -2489,7 +2535,14 @@ impl<W: Write> Writer<W> {
                 }
             }
 
-            if let Expression::Math { fun, arg, arg1, .. } = *expr {
+            if let Expression::Math {
+                fun,
+                arg,
+                arg1,
+                arg2,
+                ..
+            } = *expr
+            {
                 match fun {
                     crate::MathFunction::Dot => {
                         
@@ -2513,6 +2566,14 @@ impl<W: Write> Writer<W> {
                     }
                     crate::MathFunction::FindMsb => {
                         self.need_bake_expressions.insert(arg);
+                    }
+                    crate::MathFunction::ExtractBits => {
+                        
+                        self.need_bake_expressions.insert(arg1.unwrap());
+                    }
+                    crate::MathFunction::InsertBits => {
+                        
+                        self.need_bake_expressions.insert(arg2.unwrap());
                     }
                     crate::MathFunction::Sign => {
                         
@@ -3048,7 +3109,7 @@ impl<W: Write> Writer<W> {
         for statement in statements {
             if let crate::Statement::Emit(ref range) = *statement {
                 for handle in range.clone() {
-                    self.named_expressions.remove(&handle);
+                    self.named_expressions.shift_remove(&handle);
                 }
             }
         }

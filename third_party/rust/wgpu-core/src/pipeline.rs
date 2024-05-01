@@ -92,6 +92,19 @@ impl<A: HalApi> ShaderModule<A> {
     pub(crate) fn raw(&self) -> &A::ShaderModule {
         self.raw.as_ref().unwrap()
     }
+
+    pub(crate) fn finalize_entry_point_name(
+        &self,
+        stage_bit: wgt::ShaderStages,
+        entry_point: Option<&str>,
+    ) -> Result<String, validation::StageError> {
+        match &self.interface {
+            Some(interface) => interface.finalize_entry_point_name(stage_bit, entry_point),
+            None => entry_point
+                .map(|ep| ep.to_string())
+                .ok_or(validation::StageError::NoEntryPointFound),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -215,7 +228,11 @@ pub struct ProgrammableStageDescriptor<'a> {
     pub module: ShaderModuleId,
     
     
-    pub entry_point: Cow<'a, str>,
+    
+    
+    
+    
+    pub entry_point: Option<Cow<'a, str>>,
 }
 
 

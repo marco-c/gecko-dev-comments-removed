@@ -817,6 +817,8 @@ pub const RESERVED: &[&str] = &[
     
     super::writer::MODF_FUNCTION,
     super::writer::FREXP_FUNCTION,
+    super::writer::EXTRACT_BITS_FUNCTION,
+    super::writer::INSERT_BITS_FUNCTION,
 ];
 
 

@@ -31,7 +31,7 @@ macro_rules! gen_component_wise_extractor {
             $(
                 #[doc = concat!(
                     "Maps to [`Literal::",
-                    stringify!($mapping),
+                    stringify!($literal),
                     "`]",
                 )]
                 $mapping([$ty; N]),
@@ -1877,6 +1877,95 @@ impl<'a> ConstantEvaluator<'a> {
     }
 }
 
+
+trait TryFromAbstract<T>: Sized {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_from_abstract(value: T) -> Result<Self, ConstantEvaluatorError>;
+}
+
+impl TryFromAbstract<i64> for i32 {
+    fn try_from_abstract(value: i64) -> Result<i32, ConstantEvaluatorError> {
+        i32::try_from(value).map_err(|_| ConstantEvaluatorError::AutomaticConversionLossy {
+            value: format!("{value:?}"),
+            to_type: "i32",
+        })
+    }
+}
+
+impl TryFromAbstract<i64> for u32 {
+    fn try_from_abstract(value: i64) -> Result<u32, ConstantEvaluatorError> {
+        u32::try_from(value).map_err(|_| ConstantEvaluatorError::AutomaticConversionLossy {
+            value: format!("{value:?}"),
+            to_type: "u32",
+        })
+    }
+}
+
+impl TryFromAbstract<i64> for f32 {
+    fn try_from_abstract(value: i64) -> Result<Self, ConstantEvaluatorError> {
+        let f = value as f32;
+        
+        
+        
+        Ok(f)
+    }
+}
+
+impl TryFromAbstract<f64> for f32 {
+    fn try_from_abstract(value: f64) -> Result<f32, ConstantEvaluatorError> {
+        let f = value as f32;
+        if f.is_infinite() {
+            return Err(ConstantEvaluatorError::AutomaticConversionLossy {
+                value: format!("{value:?}"),
+                to_type: "f32",
+            });
+        }
+        Ok(f)
+    }
+}
+
+impl TryFromAbstract<i64> for f64 {
+    fn try_from_abstract(value: i64) -> Result<Self, ConstantEvaluatorError> {
+        let f = value as f64;
+        
+        
+        
+        Ok(f)
+    }
+}
+
+impl TryFromAbstract<f64> for f64 {
+    fn try_from_abstract(value: f64) -> Result<f64, ConstantEvaluatorError> {
+        Ok(value)
+    }
+}
+
+impl TryFromAbstract<f64> for i32 {
+    fn try_from_abstract(_: f64) -> Result<Self, ConstantEvaluatorError> {
+        Err(ConstantEvaluatorError::AutomaticConversionFloatToInt { to_type: "i32" })
+    }
+}
+
+impl TryFromAbstract<f64> for u32 {
+    fn try_from_abstract(_: f64) -> Result<Self, ConstantEvaluatorError> {
+        Err(ConstantEvaluatorError::AutomaticConversionFloatToInt { to_type: "u32" })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;
@@ -2382,94 +2471,5 @@ mod tests {
         if !pass {
             panic!("unexpected evaluation result")
         }
-    }
-}
-
-
-trait TryFromAbstract<T>: Sized {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn try_from_abstract(value: T) -> Result<Self, ConstantEvaluatorError>;
-}
-
-impl TryFromAbstract<i64> for i32 {
-    fn try_from_abstract(value: i64) -> Result<i32, ConstantEvaluatorError> {
-        i32::try_from(value).map_err(|_| ConstantEvaluatorError::AutomaticConversionLossy {
-            value: format!("{value:?}"),
-            to_type: "i32",
-        })
-    }
-}
-
-impl TryFromAbstract<i64> for u32 {
-    fn try_from_abstract(value: i64) -> Result<u32, ConstantEvaluatorError> {
-        u32::try_from(value).map_err(|_| ConstantEvaluatorError::AutomaticConversionLossy {
-            value: format!("{value:?}"),
-            to_type: "u32",
-        })
-    }
-}
-
-impl TryFromAbstract<i64> for f32 {
-    fn try_from_abstract(value: i64) -> Result<Self, ConstantEvaluatorError> {
-        let f = value as f32;
-        
-        
-        
-        Ok(f)
-    }
-}
-
-impl TryFromAbstract<f64> for f32 {
-    fn try_from_abstract(value: f64) -> Result<f32, ConstantEvaluatorError> {
-        let f = value as f32;
-        if f.is_infinite() {
-            return Err(ConstantEvaluatorError::AutomaticConversionLossy {
-                value: format!("{value:?}"),
-                to_type: "f32",
-            });
-        }
-        Ok(f)
-    }
-}
-
-impl TryFromAbstract<i64> for f64 {
-    fn try_from_abstract(value: i64) -> Result<Self, ConstantEvaluatorError> {
-        let f = value as f64;
-        
-        
-        
-        Ok(f)
-    }
-}
-
-impl TryFromAbstract<f64> for f64 {
-    fn try_from_abstract(value: f64) -> Result<f64, ConstantEvaluatorError> {
-        Ok(value)
-    }
-}
-
-impl TryFromAbstract<f64> for i32 {
-    fn try_from_abstract(_: f64) -> Result<Self, ConstantEvaluatorError> {
-        Err(ConstantEvaluatorError::AutomaticConversionFloatToInt { to_type: "i32" })
-    }
-}
-
-impl TryFromAbstract<f64> for u32 {
-    fn try_from_abstract(_: f64) -> Result<Self, ConstantEvaluatorError> {
-        Err(ConstantEvaluatorError::AutomaticConversionFloatToInt { to_type: "u32" })
     }
 }

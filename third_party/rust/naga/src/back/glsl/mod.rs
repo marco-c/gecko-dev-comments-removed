@@ -1290,7 +1290,14 @@ impl<'a, W: Write> Writer<'a, W> {
 
             let inner = expr_info.ty.inner_with(&self.module.types);
 
-            if let Expression::Math { fun, arg, arg1, .. } = *expr {
+            if let Expression::Math {
+                fun,
+                arg,
+                arg1,
+                arg2,
+                ..
+            } = *expr
+            {
                 match fun {
                     crate::MathFunction::Dot => {
                         
@@ -1304,6 +1311,14 @@ impl<'a, W: Write> Writer<'a, W> {
                                 _ => {}
                             }
                         }
+                    }
+                    crate::MathFunction::ExtractBits => {
+                        
+                        self.need_bake_expressions.insert(arg1.unwrap());
+                    }
+                    crate::MathFunction::InsertBits => {
+                        
+                        self.need_bake_expressions.insert(arg2.unwrap());
                     }
                     crate::MathFunction::CountLeadingZeros => {
                         if let Some(crate::ScalarKind::Sint) = inner.scalar_kind() {
@@ -3375,8 +3390,59 @@ impl<'a, W: Write> Writer<'a, W> {
                     }
                     Mf::CountOneBits => "bitCount",
                     Mf::ReverseBits => "bitfieldReverse",
-                    Mf::ExtractBits => "bitfieldExtract",
-                    Mf::InsertBits => "bitfieldInsert",
+                    Mf::ExtractBits => {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let scalar_bits = ctx
+                            .resolve_type(arg, &self.module.types)
+                            .scalar_width()
+                            .unwrap();
+
+                        write!(self.out, "bitfieldExtract(")?;
+                        self.write_expr(arg, ctx)?;
+                        write!(self.out, ", int(min(")?;
+                        self.write_expr(arg1.unwrap(), ctx)?;
+                        write!(self.out, ", {scalar_bits}u)), int(min(",)?;
+                        self.write_expr(arg2.unwrap(), ctx)?;
+                        write!(self.out, ", {scalar_bits}u - min(")?;
+                        self.write_expr(arg1.unwrap(), ctx)?;
+                        write!(self.out, ", {scalar_bits}u))))")?;
+
+                        return Ok(());
+                    }
+                    Mf::InsertBits => {
+                        
+                        let scalar_bits = ctx
+                            .resolve_type(arg, &self.module.types)
+                            .scalar_width()
+                            .unwrap();
+
+                        write!(self.out, "bitfieldInsert(")?;
+                        self.write_expr(arg, ctx)?;
+                        write!(self.out, ", ")?;
+                        self.write_expr(arg1.unwrap(), ctx)?;
+                        write!(self.out, ", int(min(")?;
+                        self.write_expr(arg2.unwrap(), ctx)?;
+                        write!(self.out, ", {scalar_bits}u)), int(min(",)?;
+                        self.write_expr(arg3.unwrap(), ctx)?;
+                        write!(self.out, ", {scalar_bits}u - min(")?;
+                        self.write_expr(arg2.unwrap(), ctx)?;
+                        write!(self.out, ", {scalar_bits}u))))")?;
+
+                        return Ok(());
+                    }
                     Mf::FindLsb => "findLSB",
                     Mf::FindMsb => "findMSB",
                     

@@ -1153,7 +1153,7 @@ impl Global {
                     for &cmb_id in command_buffer_ids {
                         
                         
-                        used_surface_textures.set_size(hub.textures.read().len());
+                        used_surface_textures.set_size(device.tracker_indices.textures.size());
 
                         #[allow(unused_mut)]
                         let mut cmdbuf = match command_buffer_guard.replace_with_error(cmb_id) {
