@@ -1010,7 +1010,8 @@ static void ReadbackPresentCallback(ffi::WGPUBufferMapAsyncStatus status,
     getRangeError.CoerceValidationToInternal();
     if (req->mData->mParent) {
       req->mData->mParent->ForwardError(data->mDeviceId, getRangeError);
-    } else if (auto innerError = getRangeError.GetError()) {
+    }
+    if (auto innerError = getRangeError.GetError()) {
       
       
       
@@ -1046,7 +1047,8 @@ static void ReadbackPresentCallback(ffi::WGPUBufferMapAsyncStatus status,
     unmapError.CoerceValidationToInternal();
     if (req->mData->mParent) {
       req->mData->mParent->ForwardError(data->mDeviceId, unmapError);
-    } else if (auto innerError = unmapError.GetError()) {
+    }
+    if (auto innerError = unmapError.GetError()) {
       MOZ_LOG(sLogger, LogLevel::Info,
               ("WebGPU present: buffer unmap failed: %s\n",
                innerError->message.get()));
