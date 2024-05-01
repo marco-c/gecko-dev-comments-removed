@@ -7,6 +7,7 @@
 
 
 
+
 var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -56,7 +57,6 @@ Services.prefs.setBoolPref("dom.security.https_first", false);
 
 
 
-Services.prefs.setBoolPref("browser.tabs.remote.autostart", false);
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 const testEnv = {
   expectRemote: false,
@@ -81,6 +81,19 @@ var createHttpServer = (...args) => {
   AddonTestUtils.maybeInit(this);
   return AddonTestUtils.createHttpServer(...args);
 };
+
+async function makeRkvDatabaseDir(name, { mockCorrupted = false } = {}) {
+  const databaseDir = PathUtils.join(PathUtils.profileDir, name);
+  await IOUtils.makeDirectory(databaseDir);
+  if (mockCorrupted) {
+    
+    await IOUtils.write(
+      PathUtils.join(databaseDir, "data.safe.bin"),
+      new Uint8Array([0x00, 0x00, 0x00, 0x00])
+    );
+  }
+  return databaseDir;
+}
 
 
 
