@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_CacheIR_h
 #define jit_CacheIR_h
@@ -24,46 +24,46 @@ struct JS_PUBLIC_API JSContext;
 namespace js {
 namespace jit {
 
+// [SMDOC] CacheIR
+//
+// CacheIR is an (extremely simple) linear IR language for inline caches.
+// From this IR, we can generate machine code for Baseline or Ion IC stubs.
+//
+// IRWriter
+// --------
+// CacheIR bytecode is written using IRWriter. This class also records some
+// metadata that's used by the Baseline and Ion code generators to generate
+// (efficient) machine code.
+//
+// Sharing Baseline stub code
+// --------------------------
+// Baseline stores data (like Shape* and fixed slot offsets) inside the ICStub
+// structure, instead of embedding them directly in the JitCode. This makes
+// Baseline IC code slightly slower, but allows us to share IC code between
+// caches. CacheIR makes it easy to share code between stubs: stubs that have
+// the same CacheIR (and CacheKind), will have the same Baseline stub code.
+//
+// Baseline stubs that share JitCode also share a CacheIRStubInfo structure.
+// This class stores the CacheIR and the location of GC things stored in the
+// stub, for the GC.
+//
+// JitZone has a CacheIRStubInfo* -> JitCode* weak map that's used to share both
+// the IR and JitCode between Baseline CacheIR stubs. This HashMap owns the
+// stubInfo (it uses UniquePtr), so once there are no references left to the
+// shared stub code, we can also free the CacheIRStubInfo.
+//
+// Ion stubs
+// ---------
+// Unlike Baseline stubs, Ion stubs do not share stub code, and data stored in
+// the IonICStub is baked into JIT code. This is one of the reasons Ion stubs
+// are faster than Baseline stubs. Also note that Ion ICs contain more state
+// (see IonGetPropertyIC for example) and use dynamic input/output registers,
+// so sharing stub code for Ion would be much more difficult.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// An OperandId represents either a cache input or a value returned by a
+// CacheIR instruction. Most code should use the ValOperandId and ObjOperandId
+// classes below. The ObjOperandId class represents an operand that's known to
+// be an object, just as StringOperandId represents a known string, etc.
 class OperandId {
  protected:
   static const uint16_t InvalidId = UINT16_MAX;
@@ -213,8 +213,8 @@ enum class CacheOp : uint16_t {
       NumOpcodes,
 };
 
-
-
+// CacheIR opcode info that's read in performance-sensitive code. Stored as a
+// single byte per op for better cache locality.
 struct CacheIROpInfo {
   uint8_t argLength : 7;
   bool transpile : 1;
@@ -233,7 +233,7 @@ extern const uint32_t CacheIROpHealth[];
 class StubField {
  public:
   enum class Type : uint8_t {
-    
+    // These fields take up a single word.
     RawInt32,
     RawPointer,
     Shape,
@@ -249,7 +249,7 @@ class StubField {
     Id,
     AllocSite,
 
-    
+    // These fields take up 64 bits on all platforms.
     RawInt64,
     First64BitType = RawInt64,
     Value,
@@ -302,10 +302,10 @@ class StubField {
   }
 } JS_HAZ_GC_POINTER;
 
-
-
-
-
+// This class is used to wrap up information about a call to make it
+// easier to convey from one function to another. (In particular,
+// CacheIRWriter encodes the CallFlags in CacheIR, and CacheIRReader
+// decodes them and uses them for compilation.)
 class CallFlags {
  public:
   enum ArgFormat : uint8_t {
@@ -341,7 +341,7 @@ class CallFlags {
   void setNeedsUninitializedThis() { needsUninitializedThis_ = true; }
 
   uint8_t toByte() const {
-    
+    // See CacheIRReader::callFlags()
     MOZ_ASSERT(argFormat_ != ArgFormat::Unknown);
     uint8_t value = getArgFormat();
     if (isConstructing()) {
@@ -362,7 +362,7 @@ class CallFlags {
   bool isSameRealm_ = false;
   bool needsUninitializedThis_ = false;
 
-  
+  // Used for encoding/decoding
   static const uint8_t ArgFormatBits = 4;
   static const uint8_t ArgFormatMask = (1 << ArgFormatBits) - 1;
   static_assert(LastArgFormat <= ArgFormatMask, "Not enough arg format bits");
@@ -374,38 +374,38 @@ class CallFlags {
   friend class CacheIRWriter;
 };
 
-
-
-
+// In baseline, we have to copy args onto the stack. Below this threshold, we
+// will unroll the arg copy loop. We need to clamp this before providing it as
+// an arg to a CacheIR op so that everything 5 or greater can share an IC.
 const uint32_t MaxUnrolledArgCopy = 5;
 inline uint32_t ClampFixedArgc(uint32_t argc) {
   return std::min(argc, MaxUnrolledArgCopy);
 }
 
 enum class AttachDecision {
-  
+  // We cannot attach a stub.
   NoAction,
 
-  
+  // We can attach a stub.
   Attach,
 
-  
-  
+  // We cannot currently attach a stub, but we expect to be able to do so in the
+  // future. In this case, we do not call trackNotAttached().
   TemporarilyUnoptimizable,
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // We want to attach a stub, but the result of the operation is
+  // needed to generate that stub. For example, AddSlot needs to know
+  // the resulting shape. Note: the attached stub will inspect the
+  // inputs to the operation, so most input checks should be done
+  // before the actual operation, with only minimal checks remaining
+  // for the deferred portion. This prevents arbitrary scripted code
+  // run by the operation from interfering with the conditions being
+  // checked.
   Deferred
 };
 
-
-
+// If the input expression evaluates to an AttachDecision other than NoAction,
+// return that AttachDecision. If it is NoAction, do nothing.
 #define TRY_ATTACH(expr)                                    \
   do {                                                      \
     AttachDecision tryAttachTempResult_ = expr;             \
@@ -414,9 +414,9 @@ enum class AttachDecision {
     }                                                       \
   } while (0)
 
-
-
-
+// Set of arguments supported by GetIndexOfArgument.
+// Support for higher argument indices can be added easily, but is currently
+// unneeded.
 enum class ArgumentKind : uint8_t {
   Callee,
   This,
@@ -440,31 +440,31 @@ inline ArgumentKind ArgumentKindForArgIndex(uint32_t idx) {
   return ArgumentKind(uint32_t(ArgumentKind::Arg0) + idx);
 }
 
-
-
-
+// This function calculates the index of an argument based on the call flags.
+// addArgc is an out-parameter, indicating whether the value of argc should
+// be added to the return value to find the actual index.
 inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
                                   bool* addArgc) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // *** STACK LAYOUT (bottom to top) ***        ******** INDEX ********
+  //   Callee                                <-- argc+1 + isConstructing
+  //   ThisValue                             <-- argc   + isConstructing
+  //   Args: | Arg0 |        |  ArgArray  |  <-- argc-1 + isConstructing
+  //         | Arg1 | --or-- |            |  <-- argc-2 + isConstructing
+  //         | ...  |        | (if spread |  <-- ...
+  //         | ArgN |        |  call)     |  <-- 0      + isConstructing
+  //   NewTarget (only if constructing)      <-- 0 (if it exists)
+  //
+  // If this is a spread call, then argc is always 1, and we can calculate the
+  // index directly. If this is not a spread call, then the index of any
+  // argument other than NewTarget depends on argc.
 
-  
+  // First we determine whether the caller needs to add argc.
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
       *addArgc = true;
       break;
     case CallFlags::Spread:
-      
+      // Spread calls do not have Arg1 or higher.
       MOZ_ASSERT(kind <= ArgumentKind::Arg0);
       *addArgc = false;
       break;
@@ -477,7 +477,7 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
       break;
   }
 
-  
+  // Second, we determine the offset relative to argc.
   bool hasArgumentArray = !*addArgc;
   switch (kind) {
     case ArgumentKind::Callee:
@@ -509,8 +509,8 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
   }
 }
 
-
-
+// We use this enum as GuardClass operand, instead of storing Class* pointers
+// in the IR, to keep the IR compact and the same size on all platforms.
 enum class GuardClassKind : uint8_t {
   Array,
   PlainObject,
@@ -526,7 +526,9 @@ enum class GuardClassKind : uint8_t {
   Map,
 };
 
-}  
-}  
+const JSClass* ClassFor(GuardClassKind kind);
 
-#endif 
+}  // namespace jit
+}  // namespace js
+
+#endif /* jit_CacheIR_h */
