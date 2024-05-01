@@ -4,13 +4,6 @@
 "use strict";
 
 
-
-
-const { EngineProcess } = ChromeUtils.importESModule(
-  "chrome://global/content/ml/EngineProcess.sys.mjs"
-);
-
-
 const BLANK_PAGE =
   "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
 
@@ -141,7 +134,7 @@ async function openAboutTranslations({
   BrowserTestUtils.removeTab(tab);
 
   await removeMocks();
-  await EngineProcess.destroyTranslationsEngine();
+  await TranslationsParent.destroyEngineProcess();
 
   await SpecialPowers.popPrefEnv();
 }
@@ -450,7 +443,7 @@ async function setupActorTest({
     remoteClients,
     async cleanup() {
       await loadBlankPage();
-      await EngineProcess.destroyTranslationsEngine();
+      await TranslationsParent.destroyEngineProcess();
       await closeTranslationsPanelIfOpen();
       await closeContextMenuIfOpen();
       BrowserTestUtils.removeTab(tab);
@@ -507,7 +500,7 @@ async function loadTestPage({
 }) {
   info(`Loading test page starting at url: ${page}`);
   
-  await EngineProcess.destroyTranslationsEngine();
+  await TranslationsParent.destroyEngineProcess();
   Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -593,7 +586,7 @@ async function loadTestPage({
 
     async cleanup() {
       await loadBlankPage();
-      await EngineProcess.destroyTranslationsEngine();
+      await TranslationsParent.destroyEngineProcess();
       await closeTranslationsPanelIfOpen();
       await closeContextMenuIfOpen();
       await removeMocks();
@@ -681,10 +674,6 @@ async function autoTranslatePage(options) {
   await runInPage(options.runInPage);
   await cleanup();
 }
-
-
-
-
 
 
 
@@ -1078,7 +1067,7 @@ async function setupAboutPreferences(
 
   async function cleanup() {
     await loadBlankPage();
-    await EngineProcess.destroyTranslationsEngine();
+    await TranslationsParent.destroyEngineProcess();
     await closeTranslationsPanelIfOpen();
     await closeContextMenuIfOpen();
     BrowserTestUtils.removeTab(tab);
