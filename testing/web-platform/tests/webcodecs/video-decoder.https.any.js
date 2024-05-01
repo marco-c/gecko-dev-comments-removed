@@ -1,6 +1,10 @@
 
 
 
+
+const detachedArrayBuffer = new ArrayBuffer(4);
+var b = detachedArrayBuffer.transferToFixedLength();
+
 const invalidConfigs = [
   {
     comment: 'Missing codec',
@@ -9,6 +13,10 @@ const invalidConfigs = [
   {
     comment: 'Empty codec',
     config: {codec: ''},
+  },
+  {
+    comment: 'Valid codec, detached description',
+    config: {codec: 'vp8', description: detachedArrayBuffer},
   },
 ];  
 
