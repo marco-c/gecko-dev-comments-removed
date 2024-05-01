@@ -3,11 +3,8 @@
 
 "use strict";
 
-function assertPixel(actual, expected, message) {
-  info(message);
-  isfuzzy(actual[0], expected[0], 1, "R color value");
-  isfuzzy(actual[1], expected[1], 1, "G color value");
-  isfuzzy(actual[2], expected[2], 1, "B color value");
+function assertRange(lhs, rhsMin, rhsMax, msg) {
+  Assert.ok(lhs >= rhsMin && lhs <= rhsMax, msg);
 }
 
 add_task(async function test_fullpageScreenshot() {
@@ -69,35 +66,24 @@ add_task(async function test_fullpageScreenshot() {
       Assert.equal(result.height, expectedHeight, "Heights should be equal");
 
       
+      assertRange(result.color.topLeft[0], 110, 111, "R color value");
+      assertRange(result.color.topLeft[1], 110, 111, "G color value");
+      assertRange(result.color.topLeft[2], 110, 111, "B color value");
+
       
+      assertRange(result.color.topRight[0], 55, 56, "R color value");
+      assertRange(result.color.topRight[1], 155, 156, "G color value");
+      assertRange(result.color.topRight[2], 155, 156, "B color value");
+
       
-      if (AppConstants.platform === "macosx") {
-        assertPixel(result.color.topLeft, [130, 130, 130], "Top left pixel");
-        assertPixel(result.color.topRight, [66, 170, 171], "Top right pixel");
-        assertPixel(
-          result.color.bottomLeft,
-          [125, 75, 125],
-          "Bottom left pixel"
-        );
-        assertPixel(
-          result.color.bottomRight,
-          [64, 145, 169],
-          "Bottom right pixel"
-        );
-      } else {
-        assertPixel(result.color.topLeft, [111, 111, 111], "Top left pixel");
-        assertPixel(result.color.topRight, [55, 155, 155], "Top right pixel");
-        assertPixel(
-          result.color.bottomLeft,
-          [105, 55, 105],
-          "Bottom left pixel"
-        );
-        assertPixel(
-          result.color.bottomRight,
-          [52, 127, 152],
-          "Bottom right pixel"
-        );
-      }
+      assertRange(result.color.bottomLeft[0], 105, 106, "R color value");
+      assertRange(result.color.bottomLeft[1], 55, 56, "G color value");
+      assertRange(result.color.bottomLeft[2], 105, 106, "B color value");
+
+      
+      assertRange(result.color.bottomRight[0], 52, 53, "R color value");
+      assertRange(result.color.bottomRight[1], 127, 128, "G color value");
+      assertRange(result.color.bottomRight[2], 152, 153, "B color value");
     }
   );
 });
@@ -166,35 +152,24 @@ add_task(async function test_fullpageScreenshotScrolled() {
       Assert.equal(result.height, expectedHeight, "Heights should be equal");
 
       
+      assertRange(result.color.topLeft[0], 110, 111, "R color value");
+      assertRange(result.color.topLeft[1], 110, 111, "G color value");
+      assertRange(result.color.topLeft[2], 110, 111, "B color value");
+
       
+      assertRange(result.color.topRight[0], 55, 56, "R color value");
+      assertRange(result.color.topRight[1], 155, 156, "G color value");
+      assertRange(result.color.topRight[2], 155, 156, "B color value");
+
       
-      if (AppConstants.platform === "macosx") {
-        assertPixel(result.color.topLeft, [130, 130, 130], "Top left pixel");
-        assertPixel(result.color.topRight, [66, 170, 171], "Top right pixel");
-        assertPixel(
-          result.color.bottomLeft,
-          [125, 75, 125],
-          "Bottom left pixel"
-        );
-        assertPixel(
-          result.color.bottomRight,
-          [64, 145, 169],
-          "Bottom right pixel"
-        );
-      } else {
-        assertPixel(result.color.topLeft, [111, 111, 111], "Top left pixel");
-        assertPixel(result.color.topRight, [55, 155, 155], "Top right pixel");
-        assertPixel(
-          result.color.bottomLeft,
-          [105, 55, 105],
-          "Bottom left pixel"
-        );
-        assertPixel(
-          result.color.bottomRight,
-          [52, 127, 152],
-          "Bottom right pixel"
-        );
-      }
+      assertRange(result.color.bottomLeft[0], 105, 106, "R color value");
+      assertRange(result.color.bottomLeft[1], 55, 56, "G color value");
+      assertRange(result.color.bottomLeft[2], 105, 106, "B color value");
+
+      
+      assertRange(result.color.bottomRight[0], 52, 53, "R color value");
+      assertRange(result.color.bottomRight[1], 127, 128, "G color value");
+      assertRange(result.color.bottomRight[2], 152, 153, "B color value");
     }
   );
 });
