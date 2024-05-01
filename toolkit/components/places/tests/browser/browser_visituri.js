@@ -1,86 +1,78 @@
 
 
 
-function promiseObserve(name, checkFn) {
-  return new Promise(resolve => {
-    Services.obs.addObserver(function observer(subject) {
-      if (checkFn(subject)) {
-        Services.obs.removeObserver(observer, name);
-        resolve();
-      }
-    }, name);
-  });
-}
+"use strict";
 
-var conn = PlacesUtils.history.DBConnection;
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+});
 
-
-
-
-function getColumn(table, column, fromColumnName, fromColumnValue) {
-  let sql = `SELECT ${column}
-             FROM ${table}
-             WHERE ${fromColumnName} = :val
-             ${fromColumnName == "url" ? "AND url_hash = hash(:val)" : ""}
-             LIMIT 1`;
-  let stmt = conn.createStatement(sql);
-  try {
-    stmt.params.val = fromColumnValue;
-    ok(stmt.executeStep(), "Expect to get a row");
-    return stmt.row[column];
-  } finally {
-    stmt.reset();
-  }
-}
-
-add_task(async function () {
+add_task(async function test_basic() {
   
   
 
   
   
-  var expectedUrls = [
+  const expectedUrls = [
     "http://example.com/tests/toolkit/components/places/tests/browser/begin.html",
     "http://example.com/tests/toolkit/components/places/tests/browser/redirect_twice.sjs",
     "http://example.com/tests/toolkit/components/places/tests/browser/redirect_once.sjs",
     "http://test1.example.com/tests/toolkit/components/places/tests/browser/final.html",
   ];
-  var currentIndex = 0;
 
-  function checkObserver(subject) {
-    var uri = subject.QueryInterface(Ci.nsIURI);
-    var expected = expectedUrls[currentIndex];
-    is(uri.spec, expected, "Saved URL visit " + uri.spec);
+  let currentIndex = 0;
+  let visitUriPromise = lazy.TestUtils.topicObserved(
+    "uri-visit-saved",
+    async subject => {
+      let uri = subject.QueryInterface(Ci.nsIURI);
+      let expected = expectedUrls[currentIndex];
+      is(uri.spec, expected, "Saved URL visit " + uri.spec);
 
-    var placeId = getColumn("moz_places", "id", "url", uri.spec);
-    var fromVisitId = getColumn(
-      "moz_historyvisits",
-      "from_visit",
-      "place_id",
-      placeId
-    );
-
-    if (currentIndex == 0) {
-      is(fromVisitId, 0, "First visit has no from visit");
-    } else {
-      var lastVisitId = getColumn(
-        "moz_historyvisits",
-        "place_id",
+      let placeId = await lazy.PlacesTestUtils.getDatabaseValue(
+        "moz_places",
         "id",
-        fromVisitId
+        {
+          url: uri.spec,
+        }
       );
-      var fromVisitUrl = getColumn("moz_places", "url", "id", lastVisitId);
-      is(
-        fromVisitUrl,
-        expectedUrls[currentIndex - 1],
-        "From visit was " + expectedUrls[currentIndex - 1]
+      let fromVisitId = await lazy.PlacesTestUtils.getDatabaseValue(
+        "moz_historyvisits",
+        "from_visit",
+        {
+          place_id: placeId,
+        }
       );
-    }
 
-    currentIndex++;
-    return currentIndex >= expectedUrls.length;
-  }
-  let visitUriPromise = promiseObserve("uri-visit-saved", checkObserver);
+      if (currentIndex == 0) {
+        is(fromVisitId, 0, "First visit has no from visit");
+      } else {
+        let lastVisitId = await lazy.PlacesTestUtils.getDatabaseValue(
+          "moz_historyvisits",
+          "place_id",
+          {
+            id: fromVisitId,
+          }
+        );
+        let fromVisitUrl = await lazy.PlacesTestUtils.getDatabaseValue(
+          "moz_places",
+          "url",
+          {
+            id: lastVisitId,
+          }
+        );
+        is(
+          fromVisitUrl,
+          expectedUrls[currentIndex - 1],
+          "From visit was " + expectedUrls[currentIndex - 1]
+        );
+      }
+
+      currentIndex++;
+      return currentIndex >= expectedUrls.length;
+    }
+  );
 
   const testUrl =
     "http://example.com/tests/toolkit/components/places/tests/browser/begin.html";
@@ -94,7 +86,119 @@ add_task(async function () {
   );
   await visitUriPromise;
 
+  
   await PlacesUtils.history.clear();
+  gBrowser.removeCurrentTab();
+});
 
+add_task(async function test_userpass() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.auth.confirmAuth.enabled", false]],
+  });
+
+  
+  await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.org/tests/toolkit/components/places/tests/browser/userpass.html"
+  );
+
+  const clickedUrl =
+    "https://user:pass@example.org/tests/toolkit/components/places/tests/browser/favicon.html";
+  const exposablePageUrl =
+    "https://example.org/tests/toolkit/components/places/tests/browser/favicon.html";
+
+  let visitUriPromise = lazy.TestUtils.topicObserved(
+    "uri-visit-saved",
+    async subject => {
+      let uri = subject.QueryInterface(Ci.nsIURI);
+      if (uri.spec !== exposablePageUrl) {
+        return false;
+      }
+
+      let placeForExposable = await lazy.PlacesTestUtils.getDatabaseValue(
+        "moz_places",
+        "id",
+        {
+          url: exposablePageUrl,
+        }
+      );
+      Assert.ok(placeForExposable, "Found the place for exposable URL");
+
+      let placeForOriginal = await lazy.PlacesTestUtils.getDatabaseValue(
+        "moz_places",
+        "id",
+        {
+          url: clickedUrl,
+        }
+      );
+      Assert.ok(!placeForOriginal, "Not found the place for the original URL");
+
+      return true;
+    }
+  );
+
+  
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async args => {
+    let link = content.document.getElementById("target-userpass");
+    EventUtils.synthesizeMouseAtCenter(
+      link,
+      {
+        ctrlKey: true,
+        metaKey: true,
+      },
+      content
+    );
+    return link.href;
+  });
+
+  
+  await visitUriPromise;
+
+  
+  await BrowserTestUtils.waitForCondition(async () => {
+    let titleForExposable = await lazy.PlacesTestUtils.getDatabaseValue(
+      "moz_places",
+      "title",
+      {
+        url: exposablePageUrl,
+      }
+    );
+    return titleForExposable == "favicon page";
+  }, "Wait for the proper title is updated");
+
+  
+  const expectedResults = {
+    "target-userpass": true,
+    "no-userpass": true,
+    "another-userpass": false,
+    "another-url": false,
+  };
+
+  for (const [key, value] of Object.entries(expectedResults)) {
+    await ContentTask.spawn(
+      gBrowser.selectedBrowser,
+      [key, value],
+      async ([k, v]) => {
+        
+        const VISITED_STATE = 1 << 18;
+        await ContentTaskUtils.waitForCondition(() => {
+          const isVisited = !!(
+            content.InspectorUtils.getContentState(
+              content.document.getElementById(k)
+            ) & VISITED_STATE
+          );
+          return isVisited == v;
+        });
+      }
+    );
+    Assert.ok(true, `The status of ${key} is correct`);
+  }
+
+  
+  await PlacesUtils.history.clear();
+  
+  gBrowser.removeCurrentTab();
+  
   gBrowser.removeCurrentTab();
 });
