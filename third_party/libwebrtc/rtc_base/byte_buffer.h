@@ -157,6 +157,9 @@ class ByteBufferReader {
   bool ReadUInt32(uint32_t* val);
   bool ReadUInt64(uint64_t* val);
   bool ReadUVarint(uint64_t* val);
+  bool ReadBytes(rtc::ArrayView<uint8_t> val);
+  
+  
   bool ReadBytes(char* val, size_t len);
 
   
@@ -169,8 +172,9 @@ class ByteBufferReader {
   
   bool Consume(size_t size);
 
- protected:
+ private:
   void Construct(const uint8_t* bytes, size_t size);
+  bool ReadBytes(uint8_t* val, size_t len);
 
   const uint8_t* bytes_;
   size_t size_;
