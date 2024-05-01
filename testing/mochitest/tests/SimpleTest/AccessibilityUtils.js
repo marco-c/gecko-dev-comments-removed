@@ -388,19 +388,19 @@ this.AccessibilityUtils = (function () {
     if (accessible.role != Ci.nsIAccessibleRole.ROLE_PAGETAB) {
       return false; 
     }
-    
-    
-    const tablist = accessible.parent;
+    const tablist = findNonGenericParentAccessible(accessible);
     if (!tablist || tablist.role != Ci.nsIAccessibleRole.ROLE_PAGETABLIST) {
       return false; 
     }
     
     
     
-    const childCount = tablist.childCount;
     let foundFocusable = false;
-    for (let c = 0; c < childCount; c++) {
-      const tab = tablist.getChildAt(c);
+    for (const tab of findNonGenericChildrenAccessible(tablist)) {
+      if (!tab || tab.role != Ci.nsIAccessibleRole.ROLE_PAGETAB) {
+        
+        a11yFail("Only tabs should be included in a tablist", accessible);
+      }
       
       
       if (tab.DOMNode.tabIndex == 0) {
@@ -1080,6 +1080,36 @@ this.AccessibilityUtils = (function () {
     }
     
     return null;
+  }
+
+  
+
+
+
+  function findNonGenericParentAccessible(childAcc) {
+    for (let acc = childAcc.parent; acc; acc = acc.parent) {
+      if (acc.computedARIARole != "generic") {
+        return acc;
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+  function* findNonGenericChildrenAccessible(parentAcc) {
+    const count = parentAcc.childCount;
+    for (let c = 0; c < count; ++c) {
+      const child = parentAcc.getChildAt(c);
+      
+      if (child.computedARIARole == "generic") {
+        yield* findNonGenericChildrenAccessible(child);
+      } else {
+        yield child;
+      }
+    }
   }
 
   function runIfA11YChecks(task) {
