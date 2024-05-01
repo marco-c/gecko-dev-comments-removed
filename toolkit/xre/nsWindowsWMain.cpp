@@ -125,6 +125,22 @@ int wmain(int argc, WCHAR** argv) {
   }
 #endif  
 
+  
+  
+  
+  
+  
+  
+  for (int i = 0; i < argc; ++i) {
+    constexpr const wchar_t prefix[] = L"/prefetch:";
+    auto const cmp = wcsncmp(argv[i], prefix, ARRAYSIZE(prefix) - 1);
+    if (cmp == 0) {
+      std::copy(argv + i + 1, argv + argc, argv + i);
+      --argc;
+      break;  
+    }
+  }
+
   char** argvConverted = new char*[argc + 1];
   if (!argvConverted) return 127;
 

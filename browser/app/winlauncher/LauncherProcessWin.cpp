@@ -402,7 +402,11 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
 #endif  
 
   
-  UniquePtr<wchar_t[]> cmdLine(MakeCommandLine(argc, argv));
+  constexpr static const wchar_t* extraArgs[] = {
+      L"/prefetch:1",  
+  };
+  UniquePtr<wchar_t[]> cmdLine(
+      MakeCommandLine(argc, argv, ARRAYSIZE(extraArgs), extraArgs));
   if (!cmdLine) {
     HandleLauncherError(LAUNCHER_ERROR_GENERIC());
     return Nothing();
