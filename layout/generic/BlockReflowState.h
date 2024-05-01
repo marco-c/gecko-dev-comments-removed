@@ -106,6 +106,13 @@ class BlockReflowState {
 
 
 
+  void UndoAlignContentShift();
+
+  
+
+
+
+
 
 
 
@@ -406,6 +413,11 @@ class BlockReflowState {
   
   
   const nscoord mConsumedBSize;
+
+  
+  
+  
+  nscoord mAlignContentShift;
 
   
   

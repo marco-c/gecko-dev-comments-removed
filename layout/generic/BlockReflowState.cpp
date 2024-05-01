@@ -47,7 +47,8 @@ BlockReflowState::BlockReflowState(
       mMinLineHeight(aReflowInput.GetLineHeight()),
       mLineNumber(0),
       mTrailingClearFromPIF(StyleClear::None),
-      mConsumedBSize(aConsumedBSize) {
+      mConsumedBSize(aConsumedBSize),
+      mAlignContentShift(mBlock->GetAlignContentShift()) {
   NS_ASSERTION(mConsumedBSize != NS_UNCONSTRAINEDSIZE,
                "The consumed block-size should be constrained!");
 
@@ -87,8 +88,8 @@ BlockReflowState::BlockReflowState(
   
   
   
-  if (const nscoord availableBSize = aReflowInput.AvailableBSize();
-      availableBSize != NS_UNCONSTRAINEDSIZE) {
+  const nscoord availableBSize = aReflowInput.AvailableBSize();
+  if (availableBSize != NS_UNCONSTRAINEDSIZE) {
     
     
     
@@ -112,8 +113,32 @@ BlockReflowState::BlockReflowState(
   mContentArea.IStart(wm) = mBorderPadding.IStart(wm);
   mBCoord = mContentArea.BStart(wm) = mBorderPadding.BStart(wm);
 
+  
+  
+  if (mAlignContentShift) {
+    mBCoord += mAlignContentShift;
+    mContentArea.BStart(wm) += mAlignContentShift;
+
+    if (availableBSize != NS_UNCONSTRAINEDSIZE) {
+      mContentArea.BSize(wm) += mAlignContentShift;
+    }
+  }
+
   mPrevChild = nullptr;
   mCurrentLine = aFrame->LinesEnd();
+}
+
+void BlockReflowState::UndoAlignContentShift() {
+  if (!mAlignContentShift) {
+    return;
+  }
+
+  mBCoord -= mAlignContentShift;
+  mContentArea.BStart(mReflowInput.GetWritingMode()) -= mAlignContentShift;
+
+  if (mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+    mContentArea.BSize(mReflowInput.GetWritingMode()) -= mAlignContentShift;
+  }
 }
 
 void BlockReflowState::ComputeFloatAvoidingOffsets(

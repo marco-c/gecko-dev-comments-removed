@@ -494,6 +494,14 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
+  void AlignContent(BlockReflowState& aState, ReflowOutput& aMetrics,
+                    nscoord aBEndEdgeOfChildren);
+  
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(AlignContentShift, nscoord)
+
+  
+
+
 
   void ComputeOverflowAreas(mozilla::OverflowAreas& aOverflowAreas,
                             nscoord aBEndEdgeOfChildren,
@@ -539,6 +547,16 @@ class nsBlockFrame : public nsContainerFrame {
 
 
   bool IsVisualFormControl(nsPresContext* aPresContext);
+
+  
+  bool IsAligned() const {
+    return StylePosition()->mAlignContent.primary !=
+           mozilla::StyleAlignFlags::NORMAL;
+  }
+
+  nscoord GetAlignContentShift() const {
+    return IsAligned() ? GetProperty(AlignContentShift()) : 0;
+  }
 
   
 

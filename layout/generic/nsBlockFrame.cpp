@@ -2023,6 +2023,9 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
       ComputeFinalSize(aReflowInput, state, aMetrics);
   aTrialState.mContainerWidth = state.ContainerSize().width;
 
+  
+  AlignContent(state, aMetrics, aTrialState.mBlockEndEdgeOfChildren);
+
   return state.mReflowStatus;
 }
 
@@ -2190,6 +2193,11 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     std::tie(blockEndEdgeOfChildren, std::ignore) =
         aState.ClearFloats(blockEndEdgeOfChildren, StyleClear::Both);
   }
+
+  
+  
+  blockEndEdgeOfChildren -= aState.mAlignContentShift;
+  aState.UndoAlignContentShift();
 
   if (NS_UNCONSTRAINEDSIZE != aReflowInput.ComputedBSize()) {
     
@@ -2379,6 +2387,77 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 #endif
 
   return blockEndEdgeOfChildren;
+}
+
+void nsBlockFrame::AlignContent(BlockReflowState& aState,
+                                ReflowOutput& aMetrics,
+                                nscoord aBEndEdgeOfChildren) {
+  if (!StaticPrefs::layout_css_align_content_blocks_enabled()) {
+    return;
+  }
+
+  StyleAlignFlags alignment = StylePosition()->mAlignContent.primary;
+  alignment &= ~StyleAlignFlags::FLAG_BITS;
+
+  
+  const bool isCentered = alignment == StyleAlignFlags::CENTER ||
+                          alignment == StyleAlignFlags::SPACE_AROUND ||
+                          alignment == StyleAlignFlags::SPACE_EVENLY;
+  const bool isEndAlign = alignment == StyleAlignFlags::END ||
+                          alignment == StyleAlignFlags::FLEX_END ||
+                          alignment == StyleAlignFlags::LAST_BASELINE;
+  if (!isEndAlign && !isCentered && !aState.mAlignContentShift) {
+    
+    return;
+  }
+
+  
+  
+  
+  
+
+  
+  nscoord shift = 0;
+  WritingMode wm = aState.mReflowInput.GetWritingMode();
+  if ((isCentered || isEndAlign) && !mLines.empty() &&
+      aState.mReflowStatus.IsFullyComplete() && !GetPrevInFlow()) {
+    nscoord availB = aState.mReflowInput.AvailableBSize();
+    nscoord endB = aMetrics.BSize(wm) - aState.BorderPadding().BEnd(wm);
+    shift = std::min(availB, endB) - aBEndEdgeOfChildren;
+
+    
+    if (!(StylePosition()->mAlignContent.primary & StyleAlignFlags::UNSAFE)) {
+      shift = std::max(0, shift);
+    }
+    if (isCentered) {
+      shift = shift / 2;
+    }
+  }
+  
+
+  nscoord delta = shift - aState.mAlignContentShift;
+  if (delta) {
+    
+    LogicalPoint translation(wm, 0, delta);
+    for (nsLineBox& line : Lines()) {
+      SlideLine(aState, &line, delta);
+    }
+    for (nsIFrame* kid : GetChildList(FrameChildListID::Float)) {
+      kid->MovePositionBy(wm, translation);
+      nsContainerFrame::PlaceFrameView(kid);
+    }
+    if (HasOutsideMarker() && !mLines.empty()) {
+      nsIFrame* marker = GetOutsideMarker();
+      marker->MovePositionBy(wm, translation);
+    }
+  }
+
+  if (shift) {
+    
+    SetProperty(AlignContentShift(), shift);
+  } else {
+    RemoveProperty(AlignContentShift());
+  }
 }
 
 void nsBlockFrame::ConsiderBlockEndEdgeOfChildren(
@@ -6307,7 +6386,7 @@ nsContainerFrame* nsBlockFrame::GetRubyContentPseudoFrame() {
   auto* firstChild = PrincipalChildList().FirstChild();
   if (firstChild && firstChild->IsRubyFrame() &&
       firstChild->Style()->GetPseudoType() ==
-          mozilla::PseudoStyleType::blockRubyContent) {
+          PseudoStyleType::blockRubyContent) {
     return static_cast<nsContainerFrame*>(firstChild);
   }
   return nullptr;
@@ -6448,8 +6527,11 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   
   
   
+  
   return aStyle->StyleDisplay()->IsContainPaint() ||
          aStyle->StyleDisplay()->IsContainLayout() ||
+         aStyle->StylePosition()->mAlignContent.primary !=
+             StyleAlignFlags::NORMAL ||
          aStyle->GetPseudoType() == PseudoStyleType::columnContent;
 }
 
@@ -7844,7 +7926,7 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   
-  if (StyleDisplay()->mDisplay == mozilla::StyleDisplay::FlowRoot ||
+  if (StyleDisplay()->mDisplay == StyleDisplay::FlowRoot ||
       (GetParent() &&
        (GetWritingMode().GetBlockDir() !=
             GetParent()->GetWritingMode().GetBlockDir() ||
