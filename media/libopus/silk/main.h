@@ -252,7 +252,7 @@ void silk_NSQ_c(
     SideInfoIndices             *psIndices,                                   
     const opus_int16            x16[],                                        
     opus_int8                   pulses[],                                     
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            *PredCoef_Q12,                                
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
@@ -278,7 +278,7 @@ void silk_NSQ_del_dec_c(
     SideInfoIndices             *psIndices,                                   
     const opus_int16            x16[],                                        
     opus_int8                   pulses[],                                     
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            *PredCoef_Q12,                                
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
@@ -389,6 +389,10 @@ void silk_NLSF_decode(
 
 
 
+opus_int silk_reset_decoder(
+    silk_decoder_state          *psDec                          
+);
+
 opus_int silk_init_decoder(
     silk_decoder_state          *psDec                          
 );
@@ -410,6 +414,12 @@ opus_int silk_decode_frame(
     opus_int32                  *pN,                            
     opus_int                    lostFlag,                       
     opus_int                    condCoding,                     
+#ifdef ENABLE_DEEP_PLC
+    LPCNetPLCState              *lpcnet,
+#endif
+#ifdef ENABLE_OSCE
+    OSCEModel                   *osce_model,
+#endif
     int                         arch                            
 );
 

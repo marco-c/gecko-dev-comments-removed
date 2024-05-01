@@ -87,6 +87,16 @@ int ec_dec_icdf(ec_dec *_this,const unsigned char *_icdf,unsigned _ftb);
 
 
 
+
+
+int ec_dec_icdf16(ec_dec *_this,const opus_uint16 *_icdf,unsigned _ftb);
+
+
+
+
+
+
+
 opus_uint32 ec_dec_uint(ec_dec *_this,opus_uint32 _ft);
 
 

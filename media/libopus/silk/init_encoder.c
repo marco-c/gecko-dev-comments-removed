@@ -36,6 +36,10 @@
 #include "tuning_parameters.h"
 #include "cpu_support.h"
 
+#ifdef ENABLE_DRED
+#include "dred_encoder.h"
+#endif
+
 
 
 

@@ -26,8 +26,8 @@
 
 
 
-#ifndef __SILK_MACROS_MIPSR1_H__
-#define __SILK_MACROS_MIPSR1_H__
+#ifndef SILK_MACROS_MIPSR1_H__
+#define SILK_MACROS_MIPSR1_H__
 
 #define mips_clz(x) __builtin_clz(x)
 

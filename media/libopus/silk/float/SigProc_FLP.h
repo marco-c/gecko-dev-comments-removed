@@ -30,6 +30,7 @@
 
 #include "SigProc_FIX.h"
 #include "float_cast.h"
+#include "main.h"
 #include <math.h>
 
 #ifdef  __cplusplus
@@ -73,7 +74,8 @@ void silk_autocorrelation_FLP(
     silk_float          *results,           
     const silk_float    *inputData,         
     opus_int            inputDataSize,      
-    opus_int            correlationCount    
+    opus_int            correlationCount,    
+    int                 arch
 );
 
 opus_int silk_pitch_analysis_core_FLP(      
@@ -105,7 +107,8 @@ silk_float silk_burg_modified_FLP(
     const silk_float    minInvGain,         
     const opus_int      subfr_length,       
     const opus_int      nb_subfr,           
-    const opus_int      D                   
+    const opus_int      D,                  
+    int                 arch
 );
 
 
@@ -124,11 +127,16 @@ void silk_scale_copy_vector_FLP(
 );
 
 
-double silk_inner_product_FLP(
+double silk_inner_product_FLP_c(
     const silk_float    *data1,
     const silk_float    *data2,
     opus_int            dataSize
 );
+
+#ifndef OVERRIDE_inner_product_FLP
+#define silk_inner_product_FLP(data1, data2, dataSize, arch) ((void)arch,silk_inner_product_FLP_c(data1, data2, dataSize))
+#endif
+
 
 
 double silk_energy_FLP(

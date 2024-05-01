@@ -78,6 +78,9 @@ typedef struct {
     opus_int useInBandFEC;
 
     
+    opus_int useDRED;
+
+    
     opus_int LBRR_coded;
 
     
@@ -141,6 +144,14 @@ typedef struct {
 
     
     opus_int prevPitchLag;
+
+    
+    opus_int enable_deep_plc;
+
+#ifdef ENABLE_OSCE
+    
+    opus_int osce_method;
+#endif
 } silk_DecControlStruct;
 
 #ifdef __cplusplus

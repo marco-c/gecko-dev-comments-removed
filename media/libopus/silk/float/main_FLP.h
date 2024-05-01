@@ -138,7 +138,8 @@ void silk_find_LPC_FLP(
     silk_encoder_state              *psEncC,                            
     opus_int16                      NLSF_Q15[],                         
     const silk_float                x[],                                
-    const silk_float                minInvGain                          
+    const silk_float                minInvGain,                         
+    int                             arch
 );
 
 
@@ -148,7 +149,8 @@ void silk_find_LTP_FLP(
     const silk_float                r_ptr[],                            
     const opus_int                  lag[  MAX_NB_SUBFR ],               
     const opus_int                  subfr_length,                       
-    const opus_int                  nb_subfr                            
+    const opus_int                  nb_subfr,                           
+    int                             arch
 );
 
 void silk_LTP_analysis_filter_FLP(
@@ -221,7 +223,8 @@ void silk_corrMatrix_FLP(
     const silk_float                *x,                                 
     const opus_int                  L,                                  
     const opus_int                  Order,                              
-    silk_float                      *XX                                 
+    silk_float                      *XX,                                
+    int                             arch
 );
 
 
@@ -230,7 +233,8 @@ void silk_corrVector_FLP(
     const silk_float                *t,                                 
     const opus_int                  L,                                  
     const opus_int                  Order,                              
-    silk_float                      *Xt                                 
+    silk_float                      *Xt,                                
+    int                             arch
 );
 
 

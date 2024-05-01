@@ -77,7 +77,7 @@ void silk_NSQ_sse4_1(
     SideInfoIndices             *psIndices,                                   
     const opus_int16            x16[],                                        
     opus_int8                   pulses[],                                     
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            *PredCoef_Q12,                                
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
@@ -338,21 +338,21 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
     xmm_one = _mm_set_epi8( 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14 );
 
     
-    a_Q12_01234567 = _mm_loadu_si128( (__m128i *)(&a_Q12[ 0 ] ) );
+    a_Q12_01234567 = _mm_loadu_si128( (__m128i *)(void*)(&a_Q12[ 0 ] ) );
     
-    a_Q12_89ABCDEF = _mm_loadu_si128( (__m128i *)(&a_Q12[ 8 ] ) );
+    a_Q12_89ABCDEF = _mm_loadu_si128( (__m128i *)(void*)(&a_Q12[ 8 ] ) );
 
     a_Q12_01234567 = _mm_shuffle_epi8( a_Q12_01234567, xmm_one );
     a_Q12_89ABCDEF = _mm_shuffle_epi8( a_Q12_89ABCDEF, xmm_one );
 
     
-    AR_shp_Q13_76543210 = _mm_loadu_si128( (__m128i *)(&AR_shp_Q13[0] ) );
+    AR_shp_Q13_76543210 = _mm_loadu_si128( (__m128i *)(void*)(&AR_shp_Q13[0] ) );
 
     
     xmm_one = _mm_set_epi8(15, 14, 11, 10, 7, 6, 3, 2, 13, 12, 9, 8, 5, 4, 1, 0 );
 
-    xmm_tempa = _mm_loadu_si128( (__m128i *)(&psLPC_Q14[-16]) );
-    xmm_tempb = _mm_loadu_si128( (__m128i *)(&psLPC_Q14[-12]) );
+    xmm_tempa = _mm_loadu_si128( (__m128i *)(void*)(&psLPC_Q14[-16]) );
+    xmm_tempb = _mm_loadu_si128( (__m128i *)(void*)(&psLPC_Q14[-12]) );
 
     xmm_tempa = _mm_shuffle_epi8( xmm_tempa, xmm_one );
     xmm_tempb = _mm_shuffle_epi8( xmm_tempb, xmm_one );
@@ -360,8 +360,8 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
     psLPC_Q14_hi_89ABCDEF = _mm_unpackhi_epi64( xmm_tempa, xmm_tempb );
     psLPC_Q14_lo_89ABCDEF = _mm_unpacklo_epi64( xmm_tempa, xmm_tempb );
 
-    xmm_tempa = _mm_loadu_si128( (__m128i *)(&psLPC_Q14[ -8 ]) );
-    xmm_tempb = _mm_loadu_si128( (__m128i *)(&psLPC_Q14[ -4 ]) );
+    xmm_tempa = _mm_loadu_si128( (__m128i *)(void*)(&psLPC_Q14[ -8 ]) );
+    xmm_tempb = _mm_loadu_si128( (__m128i *)(void*)(&psLPC_Q14[ -4 ]) );
 
     xmm_tempa = _mm_shuffle_epi8( xmm_tempa, xmm_one );
     xmm_tempb = _mm_shuffle_epi8( xmm_tempb, xmm_one );
@@ -370,8 +370,8 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
     psLPC_Q14_lo_01234567 = _mm_unpacklo_epi64( xmm_tempa, xmm_tempb );
 
     
-    xmm_tempa = _mm_loadu_si128( (__m128i *)(&(NSQ->sAR2_Q14[ 0 ]) ) );
-    xmm_tempb = _mm_loadu_si128( (__m128i *)(&(NSQ->sAR2_Q14[ 4 ]) ) );
+    xmm_tempa = _mm_loadu_si128( (__m128i *)(void*)(&(NSQ->sAR2_Q14[ 0 ]) ) );
+    xmm_tempb = _mm_loadu_si128( (__m128i *)(void*)(&(NSQ->sAR2_Q14[ 4 ]) ) );
 
     xmm_tempa = _mm_shuffle_epi8( xmm_tempa, xmm_one );
     xmm_tempb = _mm_shuffle_epi8( xmm_tempb, xmm_one );
@@ -443,7 +443,7 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
                 b_Q14_0123 = _mm_shuffle_epi32( b_Q14_3210, 0x1B );
 
                 
-                pred_lag_ptr_0123 = _mm_loadu_si128( (__m128i *)(&pred_lag_ptr[ -3 ] ) );
+                pred_lag_ptr_0123 = _mm_loadu_si128( (__m128i *)(void*)(&pred_lag_ptr[ -3 ] ) );
                 
                 xmm_tempa = _mm_shuffle_epi32( pred_lag_ptr_0123, 0x1B );
                 
@@ -595,8 +595,8 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
     
     xmm_tempa = _mm_unpackhi_epi16( sAR2_Q14_lo_76543210, sAR2_Q14_hi_76543210 );
     xmm_tempb = _mm_unpacklo_epi16( sAR2_Q14_lo_76543210, sAR2_Q14_hi_76543210 );
-    _mm_storeu_si128( (__m128i *)(&NSQ->sAR2_Q14[ 4 ]), xmm_tempa );
-    _mm_storeu_si128( (__m128i *)(&NSQ->sAR2_Q14[ 0 ]), xmm_tempb );
+    _mm_storeu_si128( (__m128i *)(void*)(&NSQ->sAR2_Q14[ 4 ]), xmm_tempa );
+    _mm_storeu_si128( (__m128i *)(void*)(&NSQ->sAR2_Q14[ 0 ]), xmm_tempb );
 
     
     {
@@ -612,8 +612,8 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
         
         for (i = 0; i < length - 7; i += 8)
         {
-            xmm_xq_Q14_3210 = _mm_loadu_si128( (__m128i *)(&(psLPC_Q14[ i + 0 ] ) ) );
-            xmm_xq_Q14_7654 = _mm_loadu_si128( (__m128i *)(&(psLPC_Q14[ i + 4 ] ) ) );
+            xmm_xq_Q14_3210 = _mm_loadu_si128( (__m128i *)(void*)(&(psLPC_Q14[ i + 0 ] ) ) );
+            xmm_xq_Q14_7654 = _mm_loadu_si128( (__m128i *)(void*)(&(psLPC_Q14[ i + 4 ] ) ) );
 
             
             xmm_xq_Q14_x3x1 = _mm_shuffle_epi32( xmm_xq_Q14_3210, _MM_SHUFFLE( 0, 3, 2, 1 ) );
@@ -644,7 +644,7 @@ static OPUS_INLINE void silk_noise_shape_quantizer_10_16_sse4_1(
             xmm_xq_Q14_3210 = _mm_packs_epi32( xmm_xq_Q14_3210, xmm_xq_Q14_7654 );
 
             
-            _mm_storeu_si128( (__m128i *)(&xq[ i ] ), xmm_xq_Q14_3210 );
+            _mm_storeu_si128( (__m128i *)(void*)(&xq[ i ] ), xmm_xq_Q14_3210 );
         }
     }
     for ( ; i < length; i++)
@@ -698,7 +698,7 @@ static OPUS_INLINE void silk_nsq_scale_states_sse4_1(
 
         xmm_x16_x2x0 = _mm_blend_epi16( xmm_x16_x2x0, xmm_x16_x3x1, 0xCC );
 
-        _mm_storeu_si128( (__m128i *)(&(x_sc_Q10[ i ] ) ), xmm_x16_x2x0 );
+        _mm_storeu_si128( (__m128i *)(void*)(&(x_sc_Q10[ i ] ) ), xmm_x16_x2x0 );
     }
 
     for( ; i < psEncC->subfr_length; i++ ) {
@@ -729,7 +729,7 @@ static OPUS_INLINE void silk_nsq_scale_states_sse4_1(
 
         for( i = NSQ->sLTP_shp_buf_idx - psEncC->ltp_mem_length; i < NSQ->sLTP_shp_buf_idx - 3; i += 4 )
         {
-            xmm_sLTP_shp_Q14_x2x0 = _mm_loadu_si128( (__m128i *)(&(NSQ->sLTP_shp_Q14[ i ] ) ) );
+            xmm_sLTP_shp_Q14_x2x0 = _mm_loadu_si128( (__m128i *)(void*)(&(NSQ->sLTP_shp_Q14[ i ] ) ) );
             
             xmm_sLTP_shp_Q14_x3x1 = _mm_shuffle_epi32( xmm_sLTP_shp_Q14_x2x0, _MM_SHUFFLE( 0, 3, 2, 1 ) );
 
@@ -741,7 +741,7 @@ static OPUS_INLINE void silk_nsq_scale_states_sse4_1(
 
             xmm_sLTP_shp_Q14_x2x0 = _mm_blend_epi16( xmm_sLTP_shp_Q14_x2x0, xmm_sLTP_shp_Q14_x3x1, 0xCC );
 
-            _mm_storeu_si128( (__m128i *)(&(NSQ->sLTP_shp_Q14[ i ] ) ), xmm_sLTP_shp_Q14_x2x0 );
+            _mm_storeu_si128( (__m128i *)(void*)(&(NSQ->sLTP_shp_Q14[ i ] ) ), xmm_sLTP_shp_Q14_x2x0 );
         }
 
         for( ; i < NSQ->sLTP_shp_buf_idx; i++ ) {

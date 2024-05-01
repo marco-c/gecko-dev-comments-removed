@@ -49,6 +49,14 @@ static OPUS_INLINE void *opus_alloc (size_t size)
 }
 #endif
 
+#ifndef OVERRIDE_OPUS_REALLOC
+static OPUS_INLINE void *opus_realloc (void *ptr, size_t size)
+{
+   return realloc(ptr, size);
+}
+#endif
+
+
 
 #ifndef OVERRIDE_OPUS_ALLOC_SCRATCH
 static OPUS_INLINE void *opus_alloc_scratch (size_t size)

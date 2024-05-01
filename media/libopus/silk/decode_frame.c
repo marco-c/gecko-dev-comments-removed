@@ -33,6 +33,10 @@
 #include "stack_alloc.h"
 #include "PLC.h"
 
+#ifdef ENABLE_OSCE
+#include "osce.h"
+#endif
+
 
 
 
@@ -43,6 +47,12 @@ opus_int silk_decode_frame(
     opus_int32                  *pN,                            
     opus_int                    lostFlag,                       
     opus_int                    condCoding,                     
+#ifdef ENABLE_DEEP_PLC
+    LPCNetPLCState              *lpcnet,
+#endif
+#ifdef ENABLE_OSCE
+    OSCEModel                   *osce_model,
+#endif
     int                         arch                            
 )
 {
@@ -61,6 +71,10 @@ opus_int silk_decode_frame(
         ( lostFlag == FLAG_DECODE_LBRR && psDec->LBRR_flags[ psDec->nFramesDecoded ] == 1 ) )
     {
         VARDECL( opus_int16, pulses );
+#ifdef ENABLE_OSCE
+        opus_int32  ec_start;
+        ec_start = ec_tell(psRangeDec);
+#endif
         ALLOC( pulses, (L + SHELL_CODEC_FRAME_LENGTH - 1) &
                        ~(SHELL_CODEC_FRAME_LENGTH - 1), opus_int16 );
         
@@ -87,7 +101,26 @@ opus_int silk_decode_frame(
         
         
         
-        silk_PLC( psDec, psDecCtrl, pOut, 0, arch );
+        celt_assert( psDec->ltp_mem_length >= psDec->frame_length );
+        mv_len = psDec->ltp_mem_length - psDec->frame_length;
+        silk_memmove( psDec->outBuf, &psDec->outBuf[ psDec->frame_length ], mv_len * sizeof(opus_int16) );
+        silk_memcpy( &psDec->outBuf[ mv_len ], pOut, psDec->frame_length * sizeof( opus_int16 ) );
+
+#ifdef ENABLE_OSCE
+        
+        
+        
+        osce_enhance_frame( osce_model, psDec, psDecCtrl, pOut, ec_tell(psRangeDec) - ec_start, arch );
+#endif
+
+        
+        
+        
+        silk_PLC( psDec, psDecCtrl, pOut, 0,
+#ifdef ENABLE_DEEP_PLC
+            lpcnet,
+#endif
+            arch );
 
         psDec->lossCnt = 0;
         psDec->prevSignalType = psDec->indices.signalType;
@@ -97,16 +130,23 @@ opus_int silk_decode_frame(
         psDec->first_frame_after_reset = 0;
     } else {
         
-        silk_PLC( psDec, psDecCtrl, pOut, 1, arch );
-    }
+        silk_PLC( psDec, psDecCtrl, pOut, 1,
+#ifdef ENABLE_DEEP_PLC
+            lpcnet,
+#endif
+            arch );
 
-    
-    
-    
-    celt_assert( psDec->ltp_mem_length >= psDec->frame_length );
-    mv_len = psDec->ltp_mem_length - psDec->frame_length;
-    silk_memmove( psDec->outBuf, &psDec->outBuf[ psDec->frame_length ], mv_len * sizeof(opus_int16) );
-    silk_memcpy( &psDec->outBuf[ mv_len ], pOut, psDec->frame_length * sizeof( opus_int16 ) );
+#ifdef ENABLE_OSCE
+        osce_reset( &psDec->osce, psDec->osce.method );
+#endif
+        
+        
+        
+        celt_assert( psDec->ltp_mem_length >= psDec->frame_length );
+        mv_len = psDec->ltp_mem_length - psDec->frame_length;
+        silk_memmove( psDec->outBuf, &psDec->outBuf[ psDec->frame_length ], mv_len * sizeof(opus_int16) );
+        silk_memcpy( &psDec->outBuf[ mv_len ], pOut, psDec->frame_length * sizeof( opus_int16 ) );
+    }
 
     
     

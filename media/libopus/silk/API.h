@@ -34,6 +34,10 @@
 #include "entenc.h"
 #include "entdec.h"
 
+#ifdef ENABLE_DEEP_PLC
+#include "lpcnet_private.h"
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -91,12 +95,26 @@ opus_int silk_Encode(
 
 
 
+
+opus_int silk_LoadOSCEModels(
+    void *decState,                                     
+    const unsigned char *data,                          
+    int len                                             
+);
+
+
+
+
 opus_int silk_Get_Decoder_Size(                         
     opus_int                        *decSizeBytes       
 );
 
 
 
+
+opus_int silk_ResetDecoder(                              
+    void                            *decState            
+);
 
 opus_int silk_InitDecoder(                              
     void                            *decState           
@@ -113,6 +131,9 @@ opus_int silk_Decode(
     ec_dec                          *psRangeDec,        
     opus_int16                      *samplesOut,        
     opus_int32                      *nSamplesOut,       
+#ifdef ENABLE_DEEP_PLC
+    LPCNetPLCState                  *lpcnet,
+#endif
     int                             arch                
 );
 

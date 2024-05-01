@@ -27,8 +27,8 @@
 
 
 
-#ifndef __CELT_MIPSR1_H__
-#define __CELT_MIPSR1_H__
+#ifndef CELT_MIPSR1_H__
+#define CELT_MIPSR1_H__
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

@@ -26,8 +26,8 @@
 
 
 
-#ifndef __VQ_MIPSR1_H__
-#define __VQ_MIPSR1_H__
+#ifndef VQ_MIPSR1_H__
+#define VQ_MIPSR1_H__
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

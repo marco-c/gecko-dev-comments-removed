@@ -38,8 +38,8 @@
 
 
 
-#ifndef __MDCT_MIPSR1_H__
-#define __MDCT_MIPSR1_H__
+#ifndef MDCT_MIPSR1_H__
+#define MDCT_MIPSR1_H__
 
 #ifndef SKIP_CONFIG_H
 #ifdef HAVE_CONFIG_H

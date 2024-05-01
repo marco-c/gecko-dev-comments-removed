@@ -41,7 +41,8 @@ void silk_corrVector_FLP(
     const silk_float                *t,                                 
     const opus_int                  L,                                  
     const opus_int                  Order,                              
-    silk_float                      *Xt                                 
+    silk_float                      *Xt,                                
+    int                             arch
 )
 {
     opus_int lag;
@@ -50,7 +51,7 @@ void silk_corrVector_FLP(
     ptr1 = &x[ Order - 1 ];                     
     for( lag = 0; lag < Order; lag++ ) {
         
-        Xt[ lag ] = (silk_float)silk_inner_product_FLP( ptr1, t, L );
+        Xt[ lag ] = (silk_float)silk_inner_product_FLP( ptr1, t, L, arch );
         ptr1--;                                 
     }
 }
@@ -60,7 +61,8 @@ void silk_corrMatrix_FLP(
     const silk_float                *x,                                 
     const opus_int                  L,                                  
     const opus_int                  Order,                              
-    silk_float                      *XX                                 
+    silk_float                      *XX,                                
+    int                             arch
 )
 {
     opus_int j, lag;
@@ -79,7 +81,7 @@ void silk_corrMatrix_FLP(
     ptr2 = &x[ Order - 2 ];                     
     for( lag = 1; lag < Order; lag++ ) {
         
-        energy = silk_inner_product_FLP( ptr1, ptr2, L );
+        energy = silk_inner_product_FLP( ptr1, ptr2, L, arch );
         matrix_ptr( XX, lag, 0, Order ) = ( silk_float )energy;
         matrix_ptr( XX, 0, lag, Order ) = ( silk_float )energy;
         

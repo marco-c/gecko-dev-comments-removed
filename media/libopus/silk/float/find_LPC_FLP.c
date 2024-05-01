@@ -38,7 +38,8 @@ void silk_find_LPC_FLP(
     silk_encoder_state              *psEncC,                            
     opus_int16                      NLSF_Q15[],                         
     const silk_float                x[],                                
-    const silk_float                minInvGain                          
+    const silk_float                minInvGain,                         
+    int                             arch
 )
 {
     opus_int    k, subfr_length;
@@ -56,12 +57,12 @@ void silk_find_LPC_FLP(
     psEncC->indices.NLSFInterpCoef_Q2 = 4;
 
     
-    res_nrg = silk_burg_modified_FLP( a, x, minInvGain, subfr_length, psEncC->nb_subfr, psEncC->predictLPCOrder );
+    res_nrg = silk_burg_modified_FLP( a, x, minInvGain, subfr_length, psEncC->nb_subfr, psEncC->predictLPCOrder, arch );
 
     if( psEncC->useInterpolatedNLSFs && !psEncC->first_frame_after_reset && psEncC->nb_subfr == MAX_NB_SUBFR ) {
         
         
-        res_nrg -= silk_burg_modified_FLP( a_tmp, x + ( MAX_NB_SUBFR / 2 ) * subfr_length, minInvGain, subfr_length, MAX_NB_SUBFR / 2, psEncC->predictLPCOrder );
+        res_nrg -= silk_burg_modified_FLP( a_tmp, x + ( MAX_NB_SUBFR / 2 ) * subfr_length, minInvGain, subfr_length, MAX_NB_SUBFR / 2, psEncC->predictLPCOrder, arch );
 
         
         silk_A2NLSF_FLP( NLSF_Q15, a_tmp, psEncC->predictLPCOrder );

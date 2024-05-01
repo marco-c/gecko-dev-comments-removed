@@ -42,7 +42,8 @@ silk_float silk_burg_modified_FLP(
     const silk_float    minInvGain,         
     const opus_int      subfr_length,       
     const opus_int      nb_subfr,           
-    const opus_int      D                   
+    const opus_int      D,                  
+    int                 arch
 )
 {
     opus_int         k, n, s, reached_max_gain;
@@ -60,7 +61,7 @@ silk_float silk_burg_modified_FLP(
     for( s = 0; s < nb_subfr; s++ ) {
         x_ptr = x + s * subfr_length;
         for( n = 1; n < D + 1; n++ ) {
-            C_first_row[ n - 1 ] += silk_inner_product_FLP( x_ptr, x_ptr + n, subfr_length - n );
+            C_first_row[ n - 1 ] += silk_inner_product_FLP( x_ptr, x_ptr + n, subfr_length - n, arch );
         }
     }
     silk_memcpy( C_last_row, C_first_row, SILK_MAX_ORDER_LPC * sizeof( double ) );

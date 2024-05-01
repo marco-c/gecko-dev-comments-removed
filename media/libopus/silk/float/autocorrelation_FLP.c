@@ -37,7 +37,8 @@ void silk_autocorrelation_FLP(
     silk_float          *results,           
     const silk_float    *inputData,         
     opus_int            inputDataSize,      
-    opus_int            correlationCount    
+    opus_int            correlationCount,    
+    int                 arch
 )
 {
     opus_int i;
@@ -47,6 +48,6 @@ void silk_autocorrelation_FLP(
     }
 
     for( i = 0; i < correlationCount; i++ ) {
-        results[ i ] =  (silk_float)silk_inner_product_FLP( inputData, inputData + i, inputDataSize - i );
+        results[ i ] =  (silk_float)silk_inner_product_FLP( inputData, inputData + i, inputDataSize - i, arch );
     }
 }

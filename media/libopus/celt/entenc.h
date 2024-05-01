@@ -68,6 +68,15 @@ void ec_enc_icdf(ec_enc *_this,int _s,const unsigned char *_icdf,unsigned _ftb);
 
 
 
+
+
+
+void ec_enc_icdf16(ec_enc *_this,int _s,const opus_uint16 *_icdf,unsigned _ftb);
+
+
+
+
+
 void ec_enc_uint(ec_enc *_this,opus_uint32 _fl,opus_uint32 _ft);
 
 

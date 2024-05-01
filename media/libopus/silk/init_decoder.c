@@ -31,15 +31,21 @@
 
 #include "main.h"
 
+#ifdef ENABLE_OSCE
+#include "osce.h"
+#endif
+
+#include "structs.h"
 
 
 
-opus_int silk_init_decoder(
+
+opus_int silk_reset_decoder(
     silk_decoder_state          *psDec                          
 )
 {
     
-    silk_memset( psDec, 0, sizeof( silk_decoder_state ) );
+    silk_memset( &psDec->SILK_DECODER_STATE_RESET_START, 0, sizeof( silk_decoder_state ) - ((char*) &psDec->SILK_DECODER_STATE_RESET_START - (char*)psDec) );
 
     
     psDec->first_frame_after_reset = 1;
@@ -51,6 +57,27 @@ opus_int silk_init_decoder(
 
     
     silk_PLC_Reset( psDec );
+
+#ifdef ENABLE_OSCE
+    
+    osce_reset(&psDec->osce, OSCE_DEFAULT_METHOD);
+#endif
+
+    return 0;
+}
+
+
+
+
+
+opus_int silk_init_decoder(
+    silk_decoder_state          *psDec                          
+)
+{
+    
+    silk_memset( psDec, 0, sizeof( silk_decoder_state ) );
+
+    silk_reset_decoder( psDec );
 
     return(0);
 }

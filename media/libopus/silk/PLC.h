@@ -49,6 +49,9 @@ void silk_PLC(
     silk_decoder_control                *psDecCtrl,         
     opus_int16                          frame[],            
     opus_int                            lost,               
+#ifdef ENABLE_DEEP_PLC
+    LPCNetPLCState                      *lpcnet,
+#endif
     int                                 arch                
 );
 

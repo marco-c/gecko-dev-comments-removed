@@ -54,11 +54,13 @@ void silk_warped_autocorrelation_FLP(
         
         for( i = 0; i < order; i += 2 ) {
             
-            tmp2 = state[ i ] + warping * ( state[ i + 1 ] - tmp1 );
+            
+
+            tmp2 = state[ i ] + warping * state[ i + 1 ] - warping * tmp1;
             state[ i ] = tmp1;
             C[ i ] += state[ 0 ] * tmp1;
             
-            tmp1 = state[ i + 1 ] + warping * ( state[ i + 2 ] - tmp2 );
+            tmp1 = state[ i + 1 ] + warping * state[ i + 2 ] - warping * tmp2;
             state[ i + 1 ] = tmp2;
             C[ i + 1 ] += state[ 0 ] * tmp2;
         }

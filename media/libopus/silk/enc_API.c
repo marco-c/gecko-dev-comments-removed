@@ -41,6 +41,10 @@
 #include "main_FLP.h"
 #endif
 
+#ifdef ENABLE_DRED
+#include "dred_encoder.h"
+#endif
+
 
 
 

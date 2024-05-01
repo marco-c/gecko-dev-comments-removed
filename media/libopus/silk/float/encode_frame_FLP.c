@@ -107,7 +107,10 @@ opus_int silk_encode_frame_FLP(
     opus_int     gain_lock[ MAX_NB_SUBFR ] = {0};
     opus_int16   best_gain_mult[ MAX_NB_SUBFR ];
     opus_int     best_sum[ MAX_NB_SUBFR ];
+    opus_int     bits_margin;
 
+    
+    bits_margin = useCBR ? 5 : maxBits/4;
     
     LastGainIndex_copy2 = nBits_lower = nBits_upper = gainMult_lower = gainMult_upper = 0;
 
@@ -270,7 +273,7 @@ opus_int silk_encode_frame_FLP(
                     gainMult_upper = gainMult_Q8;
                     gainsID_upper = gainsID;
                 }
-            } else if( nBits < maxBits - 5 ) {
+            } else if( nBits < maxBits - bits_margin ) {
                 found_lower = 1;
                 nBits_lower = nBits;
                 gainMult_lower = gainMult_Q8;
@@ -306,15 +309,9 @@ opus_int silk_encode_frame_FLP(
             if( ( found_lower & found_upper ) == 0 ) {
                 
                 if( nBits > maxBits ) {
-                    if (gainMult_Q8 < 16384) {
-                        gainMult_Q8 *= 2;
-                    } else {
-                        gainMult_Q8 = 32767;
-                    }
+                    gainMult_Q8 = silk_min_32( 1024, gainMult_Q8*3/2 );
                 } else {
-                    opus_int32 gain_factor_Q16;
-                    gain_factor_Q16 = silk_log2lin( silk_LSHIFT( nBits - maxBits, 7 ) / psEnc->sCmn.frame_length + SILK_FIX_CONST( 16, 7 ) );
-                    gainMult_Q8 = silk_SMULWB( gain_factor_Q16, gainMult_Q8 );
+                    gainMult_Q8 = silk_max_32( 64, gainMult_Q8*4/5 );
                 }
             } else {
                 

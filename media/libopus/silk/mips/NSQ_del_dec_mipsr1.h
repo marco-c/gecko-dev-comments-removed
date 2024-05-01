@@ -25,8 +25,8 @@
 
 
 
-#ifndef __NSQ_DEL_DEC_MIPSR1_H__
-#define __NSQ_DEL_DEC_MIPSR1_H__
+#ifndef NSQ_DEL_DEC_MIPSR1_H__
+#define NSQ_DEL_DEC_MIPSR1_H__
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

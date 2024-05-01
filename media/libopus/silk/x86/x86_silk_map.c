@@ -32,10 +32,13 @@
 #include "celt/x86/x86cpu.h"
 #include "structs.h"
 #include "SigProc_FIX.h"
+#ifndef FIXED_POINT
+#include "SigProc_FLP.h"
+#endif
 #include "pitch.h"
 #include "main.h"
 
-#if defined(OPUS_HAVE_RTCD) && !defined(OPUS_X86_PRESUME_SSE4_1)
+#if defined(OPUS_HAVE_RTCD) && !defined(OPUS_X86_PRESUME_AVX2)
 
 #if defined(FIXED_POINT)
 
@@ -72,7 +75,7 @@ void (*const SILK_NSQ_IMPL[ OPUS_ARCHMASK + 1 ] )(
     SideInfoIndices             *psIndices,                                   
     const opus_int16            x16[],                                        
     opus_int8                   pulses[],                                     
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            *PredCoef_Q12,                                
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
@@ -117,7 +120,7 @@ void (*const SILK_NSQ_DEL_DEC_IMPL[ OPUS_ARCHMASK + 1 ] )(
     SideInfoIndices             *psIndices,                                   
     const opus_int16            x16[],                                        
     opus_int8                   pulses[],                                     
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            *PredCoef_Q12,                                
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
@@ -132,7 +135,7 @@ void (*const SILK_NSQ_DEL_DEC_IMPL[ OPUS_ARCHMASK + 1 ] )(
   silk_NSQ_del_dec_c,
   silk_NSQ_del_dec_c,
   MAY_HAVE_SSE4_1( silk_NSQ_del_dec ), 
-  MAY_HAVE_SSE4_1( silk_NSQ_del_dec )  
+  MAY_HAVE_AVX2( silk_NSQ_del_dec )  
 };
 
 #if defined(FIXED_POINT)
@@ -156,4 +159,21 @@ void (*const SILK_BURG_MODIFIED_IMPL[ OPUS_ARCHMASK + 1 ] )(
 };
 
 #endif
+
+#ifndef FIXED_POINT
+
+double (*const SILK_INNER_PRODUCT_FLP_IMPL[ OPUS_ARCHMASK + 1 ] )(
+    const silk_float    *data1,
+    const silk_float    *data2,
+    opus_int            dataSize
+) = {
+  silk_inner_product_FLP_c,                  
+  silk_inner_product_FLP_c,
+  silk_inner_product_FLP_c,
+  silk_inner_product_FLP_c, 
+  MAY_HAVE_AVX2( silk_inner_product_FLP )  
+};
+
+#endif
+
 #endif

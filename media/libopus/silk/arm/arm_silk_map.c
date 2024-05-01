@@ -49,6 +49,7 @@ void (*const SILK_BIQUAD_ALT_STRIDE2_IMPL[OPUS_ARCHMASK + 1])(
       silk_biquad_alt_stride2_c,    
       silk_biquad_alt_stride2_c,    
       silk_biquad_alt_stride2_neon, 
+      silk_biquad_alt_stride2_neon, 
 };
 
 opus_int32 (*const SILK_LPC_INVERSE_PRED_GAIN_IMPL[OPUS_ARCHMASK + 1])( 
@@ -59,6 +60,7 @@ opus_int32 (*const SILK_LPC_INVERSE_PRED_GAIN_IMPL[OPUS_ARCHMASK + 1])(
       silk_LPC_inverse_pred_gain_c,    
       silk_LPC_inverse_pred_gain_c,    
       silk_LPC_inverse_pred_gain_neon, 
+      silk_LPC_inverse_pred_gain_neon, 
 };
 
 void  (*const SILK_NSQ_DEL_DEC_IMPL[OPUS_ARCHMASK + 1])(
@@ -67,7 +69,7 @@ void  (*const SILK_NSQ_DEL_DEC_IMPL[OPUS_ARCHMASK + 1])(
         SideInfoIndices             *psIndices,                                 
         const opus_int16            x16[],                                      
         opus_int8                   pulses[],                                   
-        const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          
+        const opus_int16            *PredCoef_Q12,                              
         const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],    
         const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
         const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],          
@@ -81,6 +83,7 @@ void  (*const SILK_NSQ_DEL_DEC_IMPL[OPUS_ARCHMASK + 1])(
       silk_NSQ_del_dec_c,    
       silk_NSQ_del_dec_c,    
       silk_NSQ_del_dec_c,    
+      silk_NSQ_del_dec_neon, 
       silk_NSQ_del_dec_neon, 
 };
 
@@ -96,6 +99,7 @@ opus_int32
   silk_NSQ_noise_shape_feedback_loop_c,    
   silk_NSQ_noise_shape_feedback_loop_c,    
   silk_NSQ_noise_shape_feedback_loop_c,    
+  silk_NSQ_noise_shape_feedback_loop_neon, 
   silk_NSQ_noise_shape_feedback_loop_neon, 
 };
 
@@ -115,6 +119,7 @@ void (*const SILK_WARPED_AUTOCORRELATION_FIX_IMPL[OPUS_ARCHMASK + 1])(
       silk_warped_autocorrelation_FIX_c,    
       silk_warped_autocorrelation_FIX_c,    
       silk_warped_autocorrelation_FIX_c,    
+      silk_warped_autocorrelation_FIX_neon, 
       silk_warped_autocorrelation_FIX_neon, 
 };
 

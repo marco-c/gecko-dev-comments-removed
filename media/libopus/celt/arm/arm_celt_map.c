@@ -40,6 +40,7 @@ opus_val32 (*const CELT_INNER_PROD_IMPL[OPUS_ARCHMASK+1])(const opus_val16 *x, c
   celt_inner_prod_c,   
   celt_inner_prod_c,   
   celt_inner_prod_c,   
+  celt_inner_prod_neon,
   celt_inner_prod_neon 
 };
 
@@ -48,6 +49,7 @@ void (*const DUAL_INNER_PROD_IMPL[OPUS_ARCHMASK+1])(const opus_val16 *x, const o
   dual_inner_prod_c,   
   dual_inner_prod_c,   
   dual_inner_prod_c,   
+  dual_inner_prod_neon,
   dual_inner_prod_neon 
 };
 # endif
@@ -61,6 +63,7 @@ opus_val32 (*const CELT_PITCH_XCORR_IMPL[OPUS_ARCHMASK+1])(const opus_val16 *,
   celt_pitch_xcorr_c,               
   MAY_HAVE_EDSP(celt_pitch_xcorr),  
   MAY_HAVE_MEDIA(celt_pitch_xcorr), 
+  MAY_HAVE_NEON(celt_pitch_xcorr),  
   MAY_HAVE_NEON(celt_pitch_xcorr)   
 };
 
@@ -72,6 +75,7 @@ void (*const CELT_PITCH_XCORR_IMPL[OPUS_ARCHMASK+1])(const opus_val16 *,
   celt_pitch_xcorr_c,              
   celt_pitch_xcorr_c,              
   celt_pitch_xcorr_c,              
+  celt_pitch_xcorr_float_neon,     
   celt_pitch_xcorr_float_neon      
 };
 #  endif
@@ -90,6 +94,7 @@ void (*const XCORR_KERNEL_IMPL[OPUS_ARCHMASK + 1])(
   xcorr_kernel_c,                
   xcorr_kernel_c,                
   xcorr_kernel_neon_fixed,       
+  xcorr_kernel_neon_fixed        
 };
 
 #endif
@@ -101,6 +106,7 @@ int (*const OPUS_FFT_ALLOC_ARCH_IMPL[OPUS_ARCHMASK+1])(kiss_fft_state *st) = {
    opus_fft_alloc_arch_c,        
    opus_fft_alloc_arch_c,        
    opus_fft_alloc_arch_c,        
+   opus_fft_alloc_arm_neon,      
    opus_fft_alloc_arm_neon       
 };
 
@@ -108,6 +114,7 @@ void (*const OPUS_FFT_FREE_ARCH_IMPL[OPUS_ARCHMASK+1])(kiss_fft_state *st) = {
    opus_fft_free_arch_c,         
    opus_fft_free_arch_c,         
    opus_fft_free_arch_c,         
+   opus_fft_free_arm_neon,       
    opus_fft_free_arm_neon        
 };
 #   endif 
@@ -118,6 +125,7 @@ void (*const OPUS_FFT[OPUS_ARCHMASK+1])(const kiss_fft_state *cfg,
    opus_fft_c,                   
    opus_fft_c,                   
    opus_fft_c,                   
+   opus_fft_neon,                
    opus_fft_neon                 
 };
 
@@ -127,6 +135,7 @@ void (*const OPUS_IFFT[OPUS_ARCHMASK+1])(const kiss_fft_state *cfg,
    opus_ifft_c,                   
    opus_ifft_c,                   
    opus_ifft_c,                   
+   opus_ifft_neon,                
    opus_ifft_neon                 
 };
 
@@ -139,6 +148,7 @@ void (*const CLT_MDCT_FORWARD_IMPL[OPUS_ARCHMASK+1])(const mdct_lookup *l,
    clt_mdct_forward_c,           
    clt_mdct_forward_c,           
    clt_mdct_forward_c,           
+   clt_mdct_forward_neon,        
    clt_mdct_forward_neon         
 };
 
@@ -151,6 +161,7 @@ void (*const CLT_MDCT_BACKWARD_IMPL[OPUS_ARCHMASK+1])(const mdct_lookup *l,
    clt_mdct_backward_c,           
    clt_mdct_backward_c,           
    clt_mdct_backward_c,           
+   clt_mdct_backward_neon,        
    clt_mdct_backward_neon         
 };
 
