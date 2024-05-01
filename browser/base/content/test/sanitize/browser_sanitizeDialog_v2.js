@@ -20,32 +20,8 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   Timer: "resource://gre/modules/Timer.sys.mjs",
   PermissionTestUtils: "resource://testing-common/PermissionTestUtils.sys.mjs",
-  FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
 });
-
-const kMsecPerMin = 60 * 1000;
-const kUsecPerMin = 60 * 1000000;
-let today = Date.now() - new Date().setHours(0, 0, 0, 0);
-let nowMSec = Date.now();
-let nowUSec = nowMSec * 1000;
-let fileURL;
-
-const TEST_TARGET_FILE_NAME = "test-download.txt";
-const TEST_QUOTA_USAGE_HOST = "example.com";
-const TEST_QUOTA_USAGE_ORIGIN = "https://" + TEST_QUOTA_USAGE_HOST;
-const TEST_QUOTA_USAGE_URL =
-  getRootDirectory(gTestPath).replace(
-    "chrome://mochitests/content",
-    TEST_QUOTA_USAGE_ORIGIN
-  ) + "site_data_test.html";
-
-const siteOrigins = [
-  "https://www.example.com",
-  "https://example.org",
-  "http://localhost:8000",
-  "http://localhost:3000",
-];
 
 
 
@@ -167,90 +143,6 @@ async function addDownloadWithMinutesAgo(aExpectedPathList, aMinutesAgo) {
   aExpectedPathList.push(name);
 }
 
-
-
-
-async function addToDownloadList() {
-  const url = createFileURL();
-  const downloadsList = await Downloads.getList(Downloads.PUBLIC);
-  let timeOptions = [1, 2, 4, 24, 128, 128];
-  let buffer = 100000;
-
-  for (let i = 0; i < timeOptions.length; i++) {
-    let timeDownloaded = 60 * kMsecPerMin * timeOptions[i];
-    if (timeOptions[i] === 24) {
-      timeDownloaded = today;
-    }
-
-    let download = await Downloads.createDownload({
-      source: { url: url.spec, isPrivate: false },
-      target: { path: FileTestUtils.getTempFile(TEST_TARGET_FILE_NAME).path },
-      startTime: {
-        getTime: _ => {
-          return nowMSec - timeDownloaded + buffer;
-        },
-      },
-    });
-
-    Assert.ok(!!download);
-    downloadsList.add(download);
-  }
-  let items = await downloadsList.getAll();
-  Assert.equal(items.length, 6, "Items were added to the list");
-}
-
-async function addToSiteUsage() {
-  
-  
-  
-  
-  BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_QUOTA_USAGE_URL, false);
-  await BrowserTestUtils.waitForContentEvent(
-    gBrowser.selectedBrowser,
-    "test-indexedDB-done",
-    false,
-    null,
-    true
-  );
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-
-  let siteLastAccessed = [1, 2, 4, 24];
-
-  let staticUsage = 4096 * 6;
-  
-  const buffer = 10000;
-
-  
-  for (let index = 0; index < siteLastAccessed.length; index++) {
-    let lastAccessedTime = 60 * kMsecPerMin * siteLastAccessed[index];
-    if (siteLastAccessed[index] === 24) {
-      lastAccessedTime = today;
-    }
-
-    let site = SiteDataManager._testInsertSite(siteOrigins[index], {
-      quotaUsage: staticUsage,
-      lastAccessed: (nowMSec - lastAccessedTime + buffer) * 1000,
-    });
-    Assert.ok(site, "Site added successfully");
-  }
-}
-
-
-
-
-
-
-function createFileURL() {
-  if (!fileURL) {
-    let file = Services.dirsvc.get("TmpD", Ci.nsIFile);
-    file.append("foo.txt");
-    file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
-
-    fileURL = Services.io.newFileURI(file);
-  }
-  return fileURL;
-}
-
 add_setup(async function () {
   requestLongerTimeout(3);
   await blankSlate();
@@ -266,248 +158,6 @@ add_setup(async function () {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
-
-
-
-
-async function blankSlate() {
-  let publicList = await Downloads.getList(Downloads.PUBLIC);
-  let downloads = await publicList.getAll();
-  for (let download of downloads) {
-    await publicList.remove(download);
-    await download.finalize(true);
-  }
-
-  await FormHistory.update({ op: "remove" });
-  await PlacesUtils.history.clear();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function DialogHelper(openContext = "browser") {
-  this._browserWin = window;
-  this.win = null;
-  this._mode = openContext;
-  this.promiseClosed = new Promise(resolve => {
-    this._resolveClosed = resolve;
-  });
-}
-
-DialogHelper.prototype = {
-  
-
-
-  acceptDialog() {
-    let dialogEl = this.win.document.querySelector("dialog");
-    is(
-      dialogEl.getButton("accept").disabled,
-      false,
-      "Dialog's OK button should not be disabled"
-    );
-    dialogEl.acceptDialog();
-  },
-
-  
-
-
-  cancelDialog() {
-    this.win.document.querySelector("dialog").cancelDialog();
-  },
-
-  
-
-
-
-
-
-
-
-
-  checkPrefCheckbox(aPrefName, aCheckState) {
-    var cb = this.win.document.querySelectorAll(
-      "checkbox[id='" + aPrefName + "']"
-    );
-    is(cb.length, 1, "found checkbox for " + aPrefName + " id");
-    if (cb[0].checked != aCheckState) {
-      cb[0].click();
-    }
-  },
-
-  
-
-
-
-
-
-  validateCheckbox(aCheckboxId, aCheckState) {
-    let cb = this.win.document.querySelectorAll(
-      "checkbox[id='" + aCheckboxId + "']"
-    );
-    is(cb.length, 1, `found checkbox for id=${aCheckboxId}`);
-    is(
-      cb[0].checked,
-      aCheckState,
-      `checkbox for ${aCheckboxId} is ${aCheckState}`
-    );
-  },
-
-  
-
-
-  _checkAllCheckboxesCustom(check) {
-    var cb = this.win.document.querySelectorAll(".clearingItemCheckbox");
-    ok(cb.length, "found checkboxes for ids");
-    for (var i = 0; i < cb.length; ++i) {
-      if (cb[i].checked != check) {
-        cb[i].click();
-      }
-    }
-  },
-
-  checkAllCheckboxes() {
-    this._checkAllCheckboxesCustom(true);
-  },
-
-  uncheckAllCheckboxes() {
-    this._checkAllCheckboxesCustom(false);
-  },
-
-  
-
-
-  getDurationDropdown() {
-    return this.win.document.getElementById("sanitizeDurationChoice");
-  },
-
-  
-
-
-  getWarningPanel() {
-    return this.win.document.getElementById("sanitizeEverythingWarningBox");
-  },
-
-  
-
-
-
-  isWarningPanelVisible() {
-    return !this.getWarningPanel().hidden;
-  },
-
-  
-
-
-
-
-
-
-
-  async open() {
-    let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
-      null,
-      "chrome://browser/content/sanitize_v2.xhtml",
-      {
-        isSubDialog: true,
-      }
-    );
-
-    
-    
-    if (this._mode != "browser") {
-      await openPreferencesViaOpenPreferencesAPI("privacy", {
-        leaveOpen: true,
-      });
-      let tabWindow = gBrowser.selectedBrowser.contentWindow;
-      let clearDialogOpenButtonId = this._mode + "Button";
-      
-      if (this._mode == "clearOnShutdown") {
-        
-        let enableSettingsCheckbox =
-          tabWindow.document.getElementById("alwaysClear");
-        if (!enableSettingsCheckbox.checked) {
-          enableSettingsCheckbox.click();
-        }
-        clearDialogOpenButtonId = "clearDataSettings";
-      }
-      
-      tabWindow.document.getElementById(clearDialogOpenButtonId).click();
-    }
-    
-    else {
-      executeSoon(() => {
-        Sanitizer.showUI(this._browserWin, this._mode);
-      });
-    }
-
-    this.win = await dialogPromise;
-    this.win.addEventListener(
-      "load",
-      () => {
-        
-        executeSoon(async () => {
-          await this.win.gSanitizePromptDialog.dataSizesFinishedUpdatingPromise;
-          this.onload();
-        });
-      },
-      { once: true }
-    );
-    this.win.addEventListener(
-      "unload",
-      () => {
-        
-        
-        (async () => {
-          if (this.onunload) {
-            await this.onunload();
-          }
-          if (this._mode != "browser") {
-            BrowserTestUtils.removeTab(gBrowser.selectedTab);
-          }
-          await PlacesTestUtils.promiseAsyncUpdates();
-          this._resolveClosed();
-          this.win = null;
-        })();
-      },
-      { once: true }
-    );
-  },
-
-  
-
-
-
-
-
-  selectDuration(aDurVal) {
-    this.getDurationDropdown().value = aDurVal;
-    if (aDurVal === Sanitizer.TIMESPAN_EVERYTHING) {
-      is(
-        this.isWarningPanelVisible(),
-        true,
-        "Warning panel should be visible for TIMESPAN_EVERYTHING"
-      );
-    } else {
-      is(
-        this.isWarningPanelVisible(),
-        false,
-        "Warning panel should not be visible for non-TIMESPAN_EVERYTHING"
-      );
-    }
-  },
-};
 
 
 
@@ -533,58 +183,6 @@ function visitTimeForMinutesAgo(aMinutesAgo) {
   return nowUSec - aMinutesAgo * kUsecPerMin;
 }
 
-function promiseSanitizationComplete() {
-  return TestUtils.topicObserved("sanitizer-sanitization-complete");
-}
-
-
-
-
-
-
-async function validateDataSizes(dialogHelper) {
-  let timespans = [
-    "TIMESPAN_HOUR",
-    "TIMESPAN_2HOURS",
-    "TIMESPAN_4HOURS",
-    "TIMESPAN_TODAY",
-    "TIMESPAN_EVERYTHING",
-  ];
-
-  
-  let cacheUsage = await SiteDataManager.getCacheSize();
-  let quotaUsage = await SiteDataManager.getQuotaUsageForTimeRanges(timespans);
-
-  for (let i = 0; i < timespans.length; i++) {
-    
-    dialogHelper.selectDuration(Sanitizer[timespans[i]]);
-
-    
-    let clearCookiesAndSiteDataCheckbox =
-      dialogHelper.win.document.getElementById("cookiesAndStorage");
-    let clearCacheCheckbox = dialogHelper.win.document.getElementById("cache");
-
-    let [convertedQuotaUsage] = DownloadUtils.convertByteUnits(
-      quotaUsage[timespans[i]]
-    );
-    let [, convertedCacheUnit] = DownloadUtils.convertByteUnits(cacheUsage);
-
-    
-    await dialogHelper.win.document.l10n.translateElements([
-      clearCookiesAndSiteDataCheckbox,
-      clearCacheCheckbox,
-    ]);
-    ok(
-      clearCacheCheckbox.label.includes(convertedCacheUnit),
-      "Should show the cache usage"
-    );
-    ok(
-      clearCookiesAndSiteDataCheckbox.label.includes(convertedQuotaUsage),
-      `Should show the quota usage as ${convertedQuotaUsage}`
-    );
-  }
-}
-
 
 
 
@@ -602,7 +200,7 @@ async function performActionsOnDialog({
   cache = false,
   siteSettings = false,
 }) {
-  let dh = new DialogHelper(context);
+  let dh = new ClearHistoryDialogHelper(context);
   dh.onload = function () {
     this.selectDuration(timespan);
     this.checkPrefCheckbox(
@@ -622,7 +220,7 @@ async function performActionsOnDialog({
 
 
 add_task(async function default_state() {
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     
     this.selectDuration(Sanitizer.TIMESPAN_HOUR);
@@ -647,7 +245,7 @@ add_task(async function test_cancel() {
   }
   await PlacesTestUtils.addVisits(places);
 
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     this.selectDuration(Sanitizer.TIMESPAN_HOUR);
     this.checkPrefCheckbox("historyFormDataAndDownloads", false);
@@ -664,7 +262,7 @@ add_task(async function test_cancel() {
 
 
 add_task(async function test_pref_remembering() {
-  let dh = new DialogHelper("clearSiteData");
+  let dh = new ClearHistoryDialogHelper("clearSiteData");
   dh.onload = function () {
     this.checkPrefCheckbox("cookiesAndStorage", false);
     this.checkPrefCheckbox("siteSettings", true);
@@ -675,7 +273,7 @@ add_task(async function test_pref_remembering() {
   await dh.promiseClosed;
 
   
-  dh = new DialogHelper("clearSiteData");
+  dh = new ClearHistoryDialogHelper("clearSiteData");
   dh.onload = function () {
     this.validateCheckbox("cookiesAndStorage", false);
     this.validateCheckbox("siteSettings", true);
@@ -691,7 +289,7 @@ add_task(async function test_pref_remembering() {
   await dh.promiseClosed;
 
   
-  dh = new DialogHelper("clearSiteData");
+  dh = new ClearHistoryDialogHelper("clearSiteData");
   dh.onload = function () {
     this.validateCheckbox("cookiesAndStorage", false);
     this.validateCheckbox("siteSettings", true);
@@ -704,7 +302,7 @@ add_task(async function test_pref_remembering() {
   
   
   
-  dh = new DialogHelper("clearHistory");
+  dh = new ClearHistoryDialogHelper("clearHistory");
   dh.onload = function () {
     this.checkPrefCheckbox("cookiesAndStorage", true);
     this.checkPrefCheckbox("siteSettings", false);
@@ -716,7 +314,7 @@ add_task(async function test_pref_remembering() {
   await dh.promiseClosed;
 
   
-  dh = new DialogHelper("browser");
+  dh = new ClearHistoryDialogHelper("browser");
   dh.onload = function () {
     this.validateCheckbox("cookiesAndStorage", true);
     this.validateCheckbox("siteSettings", false);
@@ -747,7 +345,7 @@ add_task(async function test_everything() {
   let promiseSanitized = promiseSanitizationComplete();
 
   await PlacesTestUtils.addVisits(places);
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     is(
       this.isWarningPanelVisible(),
@@ -794,7 +392,7 @@ add_task(async function test_everything_warning() {
   let promiseSanitized = promiseSanitizationComplete();
 
   await PlacesTestUtils.addVisits(places);
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     is(
       this.isWarningPanelVisible(),
@@ -827,7 +425,7 @@ add_task(async function test_everything_warning() {
 
 
 add_task(async function testAcceptButtonDisabled() {
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = async function () {
     let clearButton = this.win.document
       .querySelector("dialog")
@@ -850,7 +448,7 @@ add_task(async function testAcceptButtonDisabled() {
 
 
 add_task(async function testWarningBoxInClearOnShutdown() {
-  let dh = new DialogHelper("clearSiteData");
+  let dh = new ClearHistoryDialogHelper("clearSiteData");
   dh.onload = function () {
     this.selectDuration(Sanitizer.TIMESPAN_EVERYTHING);
     is(
@@ -863,7 +461,7 @@ add_task(async function testWarningBoxInClearOnShutdown() {
   dh.open();
   await dh.promiseClosed;
 
-  dh = new DialogHelper("clearOnShutdown");
+  dh = new ClearHistoryDialogHelper("clearOnShutdown");
   dh.onload = function () {
     is(
       BrowserTestUtils.isVisible(this.getWarningPanel()),
@@ -913,7 +511,7 @@ add_task(async function test_history_downloads_checked() {
 
   await PlacesTestUtils.addVisits(places);
 
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     this.selectDuration(Sanitizer.TIMESPAN_HOUR);
     this.checkPrefCheckbox("historyFormDataAndDownloads", true);
@@ -965,7 +563,7 @@ add_task(async function test_cannot_clear_history() {
   });
   let uris = [pURI];
 
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     var cb = this.win.document.querySelectorAll(
       "checkbox[id='historyFormDataAndDownloads']"
@@ -992,7 +590,7 @@ add_task(async function test_cannot_clear_history() {
 
 add_task(async function test_no_formdata_history_to_clear() {
   let promiseSanitized = promiseSanitizationComplete();
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     var cb = this.win.document.querySelectorAll(
       "checkbox[id='historyFormDataAndDownloads']"
@@ -1015,7 +613,7 @@ add_task(async function test_form_entries() {
 
   let promiseSanitized = promiseSanitizationComplete();
 
-  let dh = new DialogHelper();
+  let dh = new ClearHistoryDialogHelper();
   dh.onload = function () {
     var cb = this.win.document.querySelectorAll(
       "checkbox[id='historyFormDataAndDownloads']"
@@ -1035,76 +633,13 @@ add_task(async function test_form_entries() {
   await dh.promiseClosed;
 });
 
-add_task(async function test_cookie_sizes() {
-  await clearAndValidateDataSizes({
-    clearCookies: true,
-    clearCache: false,
-    clearDownloads: false,
-    timespan: Sanitizer.TIMESPAN_HOUR,
-  });
-  await clearAndValidateDataSizes({
-    clearCookies: true,
-    clearCache: false,
-    clearDownloads: false,
-    timespan: Sanitizer.TIMESPAN_4HOURS,
-  });
-  await clearAndValidateDataSizes({
-    clearCookies: true,
-    clearCache: false,
-    clearDownloads: false,
-    timespan: Sanitizer.TIMESPAN_EVERYTHING,
-  });
-});
-
-add_task(async function test_cache_sizes() {
-  await clearAndValidateDataSizes({
-    clearCookies: false,
-    clearCache: true,
-    clearDownloads: false,
-    timespan: Sanitizer.TIMESPAN_HOUR,
-  });
-  await clearAndValidateDataSizes({
-    clearCookies: false,
-    clearCache: true,
-    clearDownloads: false,
-    timespan: Sanitizer.TIMESPAN_4HOURS,
-  });
-  await clearAndValidateDataSizes({
-    clearCookies: false,
-    clearCache: true,
-    clearDownloads: false,
-    timespan: Sanitizer.TIMESPAN_EVERYTHING,
-  });
-});
-
-add_task(async function test_all_data_sizes() {
-  await clearAndValidateDataSizes({
-    clearCookies: true,
-    clearCache: true,
-    clearDownloads: true,
-    timespan: Sanitizer.TIMESPAN_HOUR,
-  });
-  await clearAndValidateDataSizes({
-    clearCookies: true,
-    clearCache: true,
-    clearDownloads: true,
-    timespan: Sanitizer.TIMESPAN_4HOURS,
-  });
-  await clearAndValidateDataSizes({
-    clearCookies: true,
-    clearCache: true,
-    clearDownloads: true,
-    timespan: Sanitizer.TIMESPAN_EVERYTHING,
-  });
-});
-
 
 add_task(async function test_clear_on_shutdown() {
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.sanitize.sanitizeOnShutdown", true]],
   });
 
-  let dh = new DialogHelper("clearOnShutdown");
+  let dh = new ClearHistoryDialogHelper("clearOnShutdown");
   dh.onload = async function () {
     this.uncheckAllCheckboxes();
     this.checkPrefCheckbox("historyFormDataAndDownloads", false);
@@ -1173,7 +708,7 @@ add_task(async function test_clear_on_shutdown() {
   await ensureDownloadsClearedState(downloadIDs, false);
   await ensureDownloadsClearedState(olderDownloadIDs, false);
 
-  dh = new DialogHelper("clearOnShutdown");
+  dh = new ClearHistoryDialogHelper("clearOnShutdown");
   dh.onload = async function () {
     this.uncheckAllCheckboxes();
     this.checkPrefCheckbox("historyFormDataAndDownloads", true);
@@ -1230,58 +765,6 @@ add_task(async function test_clear_on_shutdown() {
   
   await SiteDataTestUtils.clear();
 });
-
-
-
-
-
-
-
-
-
-
-
-async function clearAndValidateDataSizes({
-  clearCache,
-  clearDownloads,
-  clearCookies,
-  timespan,
-}) {
-  await blankSlate();
-
-  await addToDownloadList();
-  await addToSiteUsage();
-  let promiseSanitized = promiseSanitizationComplete();
-
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-
-  let dh = new DialogHelper();
-  dh.onload = async function () {
-    await validateDataSizes(this);
-    this.checkPrefCheckbox("cache", clearCache);
-    this.checkPrefCheckbox("cookiesAndStorage", clearCookies);
-    this.checkPrefCheckbox("historyFormDataAndDownloads", clearDownloads);
-    this.selectDuration(timespan);
-    this.acceptDialog();
-  };
-  dh.onunload = async function () {
-    await promiseSanitized;
-  };
-  dh.open();
-  await dh.promiseClosed;
-
-  let dh2 = new DialogHelper();
-  
-  dh2.onload = async function () {
-    await validateDataSizes(this);
-    this.acceptDialog();
-  };
-  dh2.open();
-  await dh2.promiseClosed;
-
-  await SiteDataTestUtils.clear();
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-}
 
 add_task(async function testEntryPointTelemetry() {
   Services.fog.testResetFOG();
