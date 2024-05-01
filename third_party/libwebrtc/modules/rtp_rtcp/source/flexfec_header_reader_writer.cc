@@ -138,7 +138,7 @@ bool FlexfecHeaderReader::ReadFecHeader(
     mask_part0 <<= 1;
     ByteWriter<uint16_t>::WriteBigEndian(&data[byte_index], mask_part0);
     byte_index += kFlexfecPacketMaskSizes[0];
-    if (k_bit0) {
+    if (!k_bit0) {
       
       
       fec_packet->protected_streams[i].packet_mask_size =
@@ -162,7 +162,7 @@ bool FlexfecHeaderReader::ReadFecHeader(
       mask_part1 <<= 2;
       ByteWriter<uint32_t>::WriteBigEndian(&data[byte_index], mask_part1);
       byte_index += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
-      if (k_bit1) {
+      if (!k_bit1) {
         
         
         
@@ -273,6 +273,7 @@ void FlexfecHeaderWriter::FinalizeFecHeader(
 
       tmp_mask_part0 >>= 1;  
       ByteWriter<uint16_t>::WriteBigEndian(write_at, tmp_mask_part0);
+      *write_at |= 0x80;  
       write_at += kFlexfecPacketMaskSizes[0];
       tmp_mask_part1 >>= 2;  
       ByteWriter<uint32_t>::WriteBigEndian(write_at, tmp_mask_part1);
@@ -284,9 +285,9 @@ void FlexfecHeaderWriter::FinalizeFecHeader(
       bool bit46 = (protected_stream.packet_mask[5] & 0x02) != 0;
       bool bit47 = (protected_stream.packet_mask[5] & 0x01) != 0;
       if (!bit46 && !bit47) {
-        *write_at |= 0x80;  
         write_at += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
       } else {
+        *write_at |= 0x80;  
         write_at += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
         
         memset(write_at, 0,
@@ -307,14 +308,13 @@ void FlexfecHeaderWriter::FinalizeFecHeader(
       ByteWriter<uint16_t>::WriteBigEndian(write_at, tmp_mask_part0);
       bool bit15 = (protected_stream.packet_mask[1] & 0x01) != 0;
       if (!bit15) {
-        *write_at |= 0x80;  
         write_at += kFlexfecPacketMaskSizes[0];
       } else {
+        *write_at |= 0x80;  
         write_at += kFlexfecPacketMaskSizes[0];
         
         memset(write_at, 0U,
                kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0]);
-        *write_at |= 0x80;  
         *write_at |= 0x40;  
         write_at += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
       }
