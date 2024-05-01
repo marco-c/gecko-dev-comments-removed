@@ -2261,7 +2261,7 @@ AttachDecision GetPropIRGenerator::tryAttachArrayBufferMaybeShared(
   auto* buf = &obj->as<ArrayBufferObjectMaybeShared>();
 
   
-  if (buf->isResizable()) {
+  if (buf->is<GrowableSharedArrayBufferObject>()) {
     return AttachDecision::NoAction;
   }
 
@@ -10355,11 +10355,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength(
   MOZ_ASSERT(args_[0].toObject().is<ArrayBufferObject>());
 
   auto* buffer = &args_[0].toObject().as<ArrayBufferObject>();
-
-  
-  if (buffer->isResizable()) {
-    return AttachDecision::NoAction;
-  }
 
   
   initializeInputOperand();
