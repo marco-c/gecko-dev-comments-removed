@@ -19,6 +19,9 @@
 
 
 
+
+
+
 module.exports = {
   env: {
     browser: true,
@@ -150,10 +153,6 @@ module.exports = {
     "consistent-return": "error",
 
     
-    
-    "constructor-super": "off",
-
-    
     curly: ["error", "all"],
 
     
@@ -235,6 +234,11 @@ module.exports = {
     "no-empty": ["error", { allowEmptyCatch: true }],
 
     
+    
+    
+    "no-empty-static-block": "error",
+
+    
     "no-eval": "error",
 
     
@@ -257,7 +261,6 @@ module.exports = {
     "no-implied-eval": "error",
 
     
-    
     "no-inner-declarations": "off",
 
     
@@ -274,6 +277,11 @@ module.exports = {
 
     
     "no-nested-ternary": "error",
+
+    
+    
+    
+    "no-new-native-nonconstructor": "error",
 
     
     "no-new-wrappers": "error",

@@ -10,9 +10,6 @@ module.exports = {
     "array-callback-return": "error",
 
     
-    "constructor-super": "error",
-
-    
     "default-case": "error",
 
     
