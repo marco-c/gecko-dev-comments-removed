@@ -206,7 +206,7 @@ async function navigate(
   
   
   
-  await closeTranslationsPanelIfOpen();
+  await closeAllOpenPanelsAndMenus();
 
   info(message);
 
@@ -992,7 +992,7 @@ class FullPageTranslationsTestUtils {
     openWithKeyboard = false,
   }) {
     logAction();
-    await closeTranslationsPanelIfOpen();
+    await closeAllOpenPanelsAndMenus();
     if (openFromAppMenu) {
       await FullPageTranslationsTestUtils.#openTranslationsPanelViaAppMenu({
         onOpenPanel,
@@ -1210,8 +1210,7 @@ class SelectTranslationsTestUtils {
       info(message);
     }
 
-    await closeTranslationsPanelIfOpen();
-    await closeContextMenuIfOpen();
+    await closeAllOpenPanelsAndMenus();
 
     await SelectTranslationsTestUtils.openContextMenu(runInPage, {
       selectFirstParagraph,
