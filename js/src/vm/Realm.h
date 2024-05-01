@@ -436,9 +436,6 @@ class JS::Realm : public JS::shadow::Realm {
   
   bool isUnlimitedStacksCapturingEnabled = false;
 
-  
-  bool warnedAboutDateLateWeekday = false;
-
  private:
   void updateDebuggerObservesFlag(unsigned flag);
 
