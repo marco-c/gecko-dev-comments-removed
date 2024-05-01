@@ -417,72 +417,16 @@ var FullPageTranslationsPanel = new (class {
   
 
 
-  #langListsPhase = "uninitialized";
-
-  
-
-
-
-
-
 
 
   async #ensureLangListsBuilt() {
-    switch (this.#langListsPhase) {
-      case "initialized":
-        
-        return;
-      case "error":
-        
-        this.#langListsPhase = "uninitialized";
-        break;
-      case "uninitialized":
-        
-        break;
-      default:
-        this.console?.error("Unknown langList phase", this.#langListsPhase);
-    }
-
     try {
-      
-      const { languagePairs, fromLanguages, toLanguages } =
-        await TranslationsParent.getSupportedLanguages();
-
-      
-      if (languagePairs.length === 0) {
-        throw new Error("No translation languages were retrieved.");
-      }
-
-      const { panel } = this.elements;
-      const fromPopups = panel.querySelectorAll(
-        ".translations-panel-language-menupopup-from"
+      await TranslationsPanelShared.ensureLangListsBuilt(
+        document,
+        this.elements.panel
       );
-      const toPopups = panel.querySelectorAll(
-        ".translations-panel-language-menupopup-to"
-      );
-
-      for (const popup of fromPopups) {
-        for (const { langTag, displayName } of fromLanguages) {
-          const fromMenuItem = document.createXULElement("menuitem");
-          fromMenuItem.setAttribute("value", langTag);
-          fromMenuItem.setAttribute("label", displayName);
-          popup.appendChild(fromMenuItem);
-        }
-      }
-
-      for (const popup of toPopups) {
-        for (const { langTag, displayName } of toLanguages) {
-          const toMenuItem = document.createXULElement("menuitem");
-          toMenuItem.setAttribute("value", langTag);
-          toMenuItem.setAttribute("label", displayName);
-          popup.appendChild(toMenuItem);
-        }
-      }
-
-      this.#langListsPhase = "initialized";
     } catch (error) {
       this.console?.error(error);
-      this.#langListsPhase = "error";
     }
   }
 
@@ -608,7 +552,7 @@ var FullPageTranslationsPanel = new (class {
     
     intro.hidden = true;
 
-    if (this.#langListsPhase === "error") {
+    if (TranslationsPanelShared.getLangListsInitState(panel) === "error") {
       
       
       const { cancelButton, errorHintAction } = this.elements;

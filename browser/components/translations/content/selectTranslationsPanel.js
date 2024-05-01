@@ -98,7 +98,25 @@ var SelectTranslationsPanel = new (class {
   
 
 
+
+
+  async #ensureLangListsBuilt() {
+    try {
+      await TranslationsPanelShared.ensureLangListsBuilt(
+        document,
+        this.elements.panel
+      );
+    } catch (error) {
+      this.console?.error(error);
+    }
+  }
+
+  
+
+
   async open(event) {
+    await this.#ensureLangListsBuilt();
+
     
     
     
