@@ -6971,6 +6971,38 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
+    GuardClassKind kind) {
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
+
+  
+  const JSClass* clasp = ClassFor(kind);
+  if (args_[0].toObject().getClass() != clasp) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(argId);
+
+  
+  writer.guardClass(objId, kind);
+
+  
+  writer.loadObjectResult(objId);
+  writer.returnFromIC();
+
+  trackAttached("GuardToClass");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToArrayBuffer() {
   
   
@@ -11606,7 +11638,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
 
     
     case InlinableNative::IntrinsicGuardToMapObject:
-      return tryAttachGuardToClass(native);
+      return tryAttachGuardToClass(GuardClassKind::Map);
     case InlinableNative::IntrinsicGetNextMapEntryForIterator:
       return tryAttachGetNextMapSetEntryForIterator( true);
 
@@ -11634,7 +11666,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
 
     
     case InlinableNative::IntrinsicGuardToSetObject:
-      return tryAttachGuardToClass(native);
+      return tryAttachGuardToClass(GuardClassKind::Set);
     case InlinableNative::IntrinsicGetNextSetEntryForIterator:
       return tryAttachGetNextMapSetEntryForIterator( false);
 
