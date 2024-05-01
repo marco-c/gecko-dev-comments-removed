@@ -138,6 +138,8 @@ class MediaChangeMonitor final
   Maybe<MediaDataDecoder::ConversionRequired> mConversionRequired;
   bool mDecoderInitialized = false;
   const CreateDecoderParamsForAsync mParams;
+  
+  Maybe<media::TimeUnit> mPendingSeekThreshold;
 };
 
 }  
