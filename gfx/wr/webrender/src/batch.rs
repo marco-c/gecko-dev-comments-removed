@@ -16,7 +16,7 @@ use crate::gpu_types::{SplitCompositeInstance, QuadInstance};
 use crate::gpu_types::{PrimitiveInstanceData, RasterizationSpace, GlyphInstance};
 use crate::gpu_types::{PrimitiveHeader, PrimitiveHeaderIndex, TransformPaletteId, TransformPalette};
 use crate::gpu_types::{ImageBrushData, get_shader_opacity, BoxShadowData, MaskInstance};
-use crate::gpu_types::{ClipMaskInstanceCommon, ClipMaskInstanceImage, ClipMaskInstanceRect, ClipMaskInstanceBoxShadow};
+use crate::gpu_types::{ClipMaskInstanceCommon, ClipMaskInstanceRect, ClipMaskInstanceBoxShadow};
 use crate::internal_types::{FastHashMap, Swizzle, TextureSource, Filter};
 use crate::picture::{Picture3DContext, PictureCompositeMode, calculate_screen_uv};
 use crate::prim_store::{PrimitiveInstanceKind, ClipData};
@@ -3547,8 +3547,6 @@ pub struct ClipBatchList {
     
     pub slow_rectangles: Vec<ClipMaskInstanceRect>,
     pub fast_rectangles: Vec<ClipMaskInstanceRect>,
-    
-    pub images: FastHashMap<(TextureSource, Option<DeviceIntRect>), Vec<ClipMaskInstanceImage>>,
     pub box_shadows: FastHashMap<TextureSource, Vec<ClipMaskInstanceBoxShadow>>,
 }
 
@@ -3557,7 +3555,6 @@ impl ClipBatchList {
         ClipBatchList {
             slow_rectangles: Vec::new(),
             fast_rectangles: Vec::new(),
-            images: FastHashMap::default(),
             box_shadows: FastHashMap::default(),
         }
     }
@@ -3744,20 +3741,11 @@ impl ClipBatcher {
                 ctx.spatial_tree,
             );
 
-            
-            
-            
-            
-            let prim_transform_id = match clip_node.item.kind {
-                ClipItemKind::Image { .. } => { panic!("bug: old path not supported") }
-                _ => {
-                    transforms.get_id(
-                        root_spatial_node_index,
-                        ctx.root_spatial_node_index,
-                        ctx.spatial_tree,
-                    )
-                }
-            };
+            let prim_transform_id = transforms.get_id(
+                root_spatial_node_index,
+                ctx.root_spatial_node_index,
+                ctx.spatial_tree,
+            );
 
             let common = ClipMaskInstanceCommon {
                 sub_rect: DeviceRect::from_size(actual_rect.size()),
