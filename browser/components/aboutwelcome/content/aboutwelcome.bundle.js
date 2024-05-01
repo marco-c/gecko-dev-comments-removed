@@ -25,8 +25,8 @@ module.exports = ReactDOM;
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "AboutWelcomeUtils": () => ( AboutWelcomeUtils),
-   "DEFAULT_RTAMO_CONTENT": () => ( DEFAULT_RTAMO_CONTENT)
+   AboutWelcomeUtils: () => ( AboutWelcomeUtils),
+   DEFAULT_RTAMO_CONTENT: () => ( DEFAULT_RTAMO_CONTENT)
  });
 
 
@@ -158,11 +158,11 @@ const DEFAULT_RTAMO_CONTENT = {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "MultiStageAboutWelcome": () => ( MultiStageAboutWelcome),
-   "SecondaryCTA": () => ( SecondaryCTA),
-   "StepsIndicator": () => ( StepsIndicator),
-   "ProgressBar": () => ( ProgressBar),
-   "WelcomeScreen": () => ( WelcomeScreen)
+   MultiStageAboutWelcome: () => ( MultiStageAboutWelcome),
+   ProgressBar: () => ( ProgressBar),
+   SecondaryCTA: () => ( SecondaryCTA),
+   StepsIndicator: () => ( StepsIndicator),
+   WelcomeScreen: () => ( WelcomeScreen)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -646,8 +646,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "CONFIGURABLE_STYLES": () => ( CONFIGURABLE_STYLES),
-   "Localized": () => ( Localized)
+   CONFIGURABLE_STYLES: () => ( CONFIGURABLE_STYLES),
+   Localized: () => ( Localized)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -758,9 +758,9 @@ const Localized = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "MultiStageProtonScreen": () => ( MultiStageProtonScreen),
-   "ProtonScreenActionButtons": () => ( ProtonScreenActionButtons),
-   "ProtonScreen": () => ( ProtonScreen)
+   MultiStageProtonScreen: () => ( MultiStageProtonScreen),
+   ProtonScreen: () => ( ProtonScreen),
+   ProtonScreenActionButtons: () => ( ProtonScreenActionButtons)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1231,8 +1231,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "MarketplaceButtons": () => ( MarketplaceButtons),
-   "MobileDownloads": () => ( MobileDownloads)
+   MarketplaceButtons: () => ( MarketplaceButtons),
+   MobileDownloads: () => ( MobileDownloads)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1293,7 +1293,7 @@ const MobileDownloads = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "MultiSelect": () => ( MultiSelect)
+   MultiSelect: () => ( MultiSelect)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1392,7 +1392,7 @@ const MultiSelect = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "Themes": () => ( Themes)
+   Themes: () => ( Themes)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1447,8 +1447,8 @@ const Themes = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "useLanguageSwitcher": () => ( useLanguageSwitcher),
-   "LanguageSwitcher": () => ( LanguageSwitcher)
+   LanguageSwitcher: () => ( LanguageSwitcher),
+   useLanguageSwitcher: () => ( useLanguageSwitcher)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1705,7 +1705,7 @@ function LanguageSwitcher(props) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "CTAParagraph": () => ( CTAParagraph)
+   CTAParagraph: () => ( CTAParagraph)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1748,7 +1748,7 @@ const CTAParagraph = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "HeroImage": () => ( HeroImage)
+   HeroImage: () => ( HeroImage)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1787,7 +1787,7 @@ const HeroImage = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "OnboardingVideo": () => ( OnboardingVideo)
+   OnboardingVideo: () => ( OnboardingVideo)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1826,7 +1826,7 @@ const OnboardingVideo = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "AdditionalCTA": () => ( AdditionalCTA)
+   AdditionalCTA: () => ( AdditionalCTA)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -1875,7 +1875,7 @@ const AdditionalCTA = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "SubmenuButton": () => ( SubmenuButton)
+   SubmenuButton: () => ( SubmenuButton)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -2032,7 +2032,7 @@ const SubmenuButtonInner = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "EmbeddedMigrationWizard": () => ( EmbeddedMigrationWizard)
+   EmbeddedMigrationWizard: () => ( EmbeddedMigrationWizard)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -2084,9 +2084,9 @@ const EmbeddedMigrationWizard = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "Loader": () => ( Loader),
-   "InstallButton": () => ( InstallButton),
-   "AddonsPicker": () => ( AddonsPicker)
+   AddonsPicker: () => ( AddonsPicker),
+   InstallButton: () => ( InstallButton),
+   Loader: () => ( Loader)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -2210,7 +2210,7 @@ const AddonsPicker = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "LinkParagraph": () => ( LinkParagraph)
+   LinkParagraph: () => ( LinkParagraph)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -2264,8 +2264,8 @@ const LinkParagraph = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "BASE_PARAMS": () => ( BASE_PARAMS),
-   "addUtmParams": () => ( addUtmParams)
+   BASE_PARAMS: () => ( BASE_PARAMS),
+   addUtmParams: () => ( addUtmParams)
  });
 
 
@@ -2307,7 +2307,7 @@ function addUtmParams(url, utmTerm) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "ReturnToAMO": () => ( ReturnToAMO)
+   ReturnToAMO: () => ( ReturnToAMO)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
