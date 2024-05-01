@@ -134,6 +134,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AbortSignal", insecureContext: true },
   
+  { name: "AudioData", insecureContext: true, nightly: true },
+  
+  { name: "AudioDecoder", nightly: true },
+  
   { name: "Blob", insecureContext: true },
   
   { name: "BroadcastChannel", insecureContext: true },
@@ -183,6 +187,8 @@ let interfaceNamesInGlobalScope = [
   { name: "DOMRectReadOnly", insecureContext: true },
   
   { name: "DOMStringList", insecureContext: true },
+  
+  { name: "EncodedAudioChunk", insecureContext: true, nightly: true },
   
   { name: "EncodedVideoChunk", insecureContext: true, nightly: true },
   

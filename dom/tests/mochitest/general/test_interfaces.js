@@ -182,6 +182,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioContext", insecureContext: true },
   
+  { name: "AudioData", insecureContext: true, nightly: true },
+  
+  { name: "AudioDecoder" },
+  
   { name: "AudioBufferSourceNode", insecureContext: true },
   
   { name: "AudioDestinationNode", insecureContext: true },
@@ -399,6 +403,8 @@ let interfaceNamesInGlobalScope = [
   { name: "Element", insecureContext: true },
   
   { name: "ElementInternals", insecureContext: true },
+  
+  { name: "EncodedAudioChunk", insecureContext: true, nightly: true },
   
   { name: "EncodedVideoChunk", insecureContext: true, nightly: true },
   
