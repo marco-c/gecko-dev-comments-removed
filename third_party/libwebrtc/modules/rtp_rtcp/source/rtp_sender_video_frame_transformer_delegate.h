@@ -76,6 +76,8 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   void OnTransformedFrame(
       std::unique_ptr<TransformableFrameInterface> frame) override;
 
+  void StartShortCircuiting() override;
+
   
   void SendVideo(std::unique_ptr<TransformableFrameInterface> frame) const
       RTC_RUN_ON(transformation_queue_);
@@ -109,6 +111,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   
   
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> transformation_queue_;
+  bool short_circuit_ RTC_GUARDED_BY(sender_lock_) = false;
 };
 
 

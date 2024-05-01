@@ -95,6 +95,12 @@ class TransformedFrameCallback : public rtc::RefCountInterface {
   virtual void OnTransformedFrame(
       std::unique_ptr<TransformableFrameInterface> frame) = 0;
 
+  
+  
+  
+  
+  virtual void StartShortCircuiting() {}
+
  protected:
   ~TransformedFrameCallback() override = default;
 };
