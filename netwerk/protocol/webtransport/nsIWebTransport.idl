@@ -38,14 +38,12 @@ interface nsIWebTransport : nsISupports {
 
   
   void asyncConnect(in nsIURI aURI,
-                    in boolean aDedicated,
                     in Array<nsIWebTransportHash> aServerCertHashes,
                     in nsIPrincipal aLoadingPrincipal,
                     in unsigned long aSecurityFlags,
                     in WebTransportSessionEventListener aListener);
 
   void asyncConnectWithClient(in nsIURI aURI,
-                    in boolean aDedicated,
                     in Array<nsIWebTransportHash> aServerCertHashes,
                     in nsIPrincipal aLoadingPrincipal,
                     in unsigned long aSecurityFlags,
@@ -116,13 +114,6 @@ interface WebTransportSessionEventListener : nsISupports {
     in WebTransportSessionEventListener_DatagramOutcome aOutCome);
 
   
-};
-
-[uuid(faad75bd-83c6-420b-9fdb-a70bd70be449)]
-interface WebTransportConnectionSettings : nsISupports {
-  
-  readonly attribute bool dedicated;
-  void getServerCertificateHashes(out Array<nsIWebTransportHash> aServerCertHashes);
 };
 
 
