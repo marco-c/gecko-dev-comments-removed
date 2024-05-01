@@ -5,9 +5,9 @@
 #ifndef __FFmpegLibWrapper_h__
 #define __FFmpegLibWrapper_h__
 
-#include "FFmpegRDFTTypes.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
+#include "ffvpx/tx.h"
 
 struct AVCodec;
 struct AVCodecContext;
@@ -149,11 +149,6 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
   int (*avcodec_receive_frame)(AVCodecContext* avctx, AVFrame* frame);
 
   
-  AvRdftInitFn av_rdft_init;
-  AvRdftCalcFn av_rdft_calc;
-  AvRdftEndFn av_rdft_end;
-
-  
   void (*av_log_set_level)(int level);
   void* (*av_malloc)(size_t size);
   void (*av_freep)(void* ptr);
@@ -215,6 +210,14 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
   int (*vaTerminate)(void* dpy);
   void* (*vaGetDisplayDRM)(int fd);
 #endif
+
+  
+  
+  
+  
+  int (*av_tx_init)(AVTXContext **ctx, av_tx_fn *tx, enum AVTXType type,
+                    int inv, int len, const void *scale, uint64_t flags);
+  void (*av_tx_uninit)(AVTXContext **ctx);
 
   PRLibrary* mAVCodecLib;
   PRLibrary* mAVUtilLib;
