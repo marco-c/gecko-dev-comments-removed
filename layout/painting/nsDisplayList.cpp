@@ -1124,6 +1124,14 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
   
   if (state->mCaretFrame) {
     MOZ_ASSERT(state->mCaretFrame->PresShell() == state->mPresShell);
+    
+    
+    
+    
+    
+    
+    
+    caret->SetLastCaretFrame(state->mCaretFrame);
     MarkFrameForDisplay(state->mCaretFrame, aReferenceFrame);
   }
 }
