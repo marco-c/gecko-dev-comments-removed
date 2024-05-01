@@ -610,15 +610,16 @@ EventMessage PointerEventHandler::ToPointerEventMessage(
 
 
 void PointerEventHandler::DispatchPointerFromMouseOrTouch(
-    PresShell* aShell, nsIFrame* aFrame, nsIContent* aContent,
-    WidgetGUIEvent* aEvent, bool aDontRetargetEvents, nsEventStatus* aStatus,
-    nsIContent** aTargetContent) {
-  MOZ_ASSERT(aFrame || aContent);
-  MOZ_ASSERT(aEvent);
+    PresShell* aShell, nsIFrame* aEventTargetFrame,
+    nsIContent* aEventTargetContent, WidgetGUIEvent* aMouseOrTouchEvent,
+    bool aDontRetargetEvents, nsEventStatus* aStatus,
+    nsIContent** aMouseOrTouchEventTarget ) {
+  MOZ_ASSERT(aEventTargetFrame || aEventTargetContent);
+  MOZ_ASSERT(aMouseOrTouchEvent);
 
   EventMessage pointerMessage = eVoidEvent;
-  if (aEvent->mClass == eMouseEventClass) {
-    WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
+  if (aMouseOrTouchEvent->mClass == eMouseEventClass) {
+    WidgetMouseEvent* mouseEvent = aMouseOrTouchEvent->AsMouseEvent();
     
     
     Document* doc = aShell->GetDocument();
@@ -636,7 +637,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     
     
     if (!mouseEvent->convertToPointer ||
-        !aEvent->IsAllowedToDispatchDOMEvent()) {
+        !aMouseOrTouchEvent->IsAllowedToDispatchDOMEvent()) {
       return;
     }
 
@@ -648,20 +649,20 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     InitPointerEventFromMouse(&event, mouseEvent, pointerMessage);
     event.convertToPointer = mouseEvent->convertToPointer = false;
     RefPtr<PresShell> shell(aShell);
-    if (!aFrame) {
-      shell = PresShell::GetShellForEventTarget(nullptr, aContent);
+    if (!aEventTargetFrame) {
+      shell = PresShell::GetShellForEventTarget(nullptr, aEventTargetContent);
       if (!shell) {
         return;
       }
     }
-    PreHandlePointerEventsPreventDefault(&event, aEvent);
+    PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
     
     
-    shell->HandleEventWithTarget(&event, aFrame, aContent, aStatus, true,
-                                 aTargetContent);
-    PostHandlePointerEventsPreventDefault(&event, aEvent);
-  } else if (aEvent->mClass == eTouchEventClass) {
-    WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
+    shell->HandleEventWithTarget(&event, aEventTargetFrame, aEventTargetContent,
+                                 aStatus, true, aMouseOrTouchEventTarget);
+    PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+  } else if (aMouseOrTouchEvent->mClass == eTouchEventClass) {
+    WidgetTouchEvent* touchEvent = aMouseOrTouchEvent->AsTouchEvent();
     
     
     pointerMessage = PointerEventHandler::ToPointerEventMessage(touchEvent);
@@ -681,7 +682,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
       InitPointerEventFromTouch(event, *touchEvent, *touch, i == 0);
       event.convertToPointer = touch->convertToPointer = false;
       event.mCoalescedWidgetEvents = touch->mCoalescedWidgetEvents;
-      if (aEvent->mMessage == eTouchStart) {
+      if (aMouseOrTouchEvent->mMessage == eTouchStart) {
         
         
         nsCOMPtr<nsIContent> content =
@@ -696,18 +697,22 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
           continue;
         }
 
-        PreHandlePointerEventsPreventDefault(&event, aEvent);
+        PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
         shell->HandleEventWithTarget(&event, frame, content, aStatus, true,
-                                     nullptr);
-        PostHandlePointerEventsPreventDefault(&event, aEvent);
+                                     aMouseOrTouchEventTarget);
+        PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
       } else {
         
         
         
         
-        PreHandlePointerEventsPreventDefault(&event, aEvent);
-        shell->HandleEvent(aFrame, &event, aDontRetargetEvents, aStatus);
-        PostHandlePointerEventsPreventDefault(&event, aEvent);
+        
+        
+        
+        PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+        shell->HandleEvent(aEventTargetFrame, &event, aDontRetargetEvents,
+                           aStatus);
+        PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
       }
     }
   }

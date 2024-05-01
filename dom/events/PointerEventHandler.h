@@ -168,11 +168,39 @@ class PointerEventHandler final {
   static void PostHandlePointerEventsPreventDefault(
       WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent);
 
-  MOZ_CAN_RUN_SCRIPT
-  static void DispatchPointerFromMouseOrTouch(
-      PresShell* aShell, nsIFrame* aFrame, nsIContent* aContent,
-      WidgetGUIEvent* aEvent, bool aDontRetargetEvents, nsEventStatus* aStatus,
-      nsIContent** aTargetContent);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static void DispatchPointerFromMouseOrTouch(
+      PresShell* aShell, nsIFrame* aEventTargetFrame,
+      nsIContent* aEventTargetContent, WidgetGUIEvent* aMouseOrTouchEvent,
+      bool aDontRetargetEvents, nsEventStatus* aStatus,
+      nsIContent** aMouseOrTouchEventTarget = nullptr);
 
   static void InitPointerEventFromMouse(WidgetPointerEvent* aPointerEvent,
                                         WidgetMouseEvent* aMouseEvent,
