@@ -118,6 +118,13 @@ void PopulateMissingFonts() {
   mozilla::glean::characteristics::missing_fonts.Set(aMissingFonts);
 }
 
+void PopulatePrefs() {
+  nsAutoCString acceptLang;
+  mozilla::Preferences::GetLocalizedCString("intl.accept_languages",
+                                            acceptLang);
+  mozilla::glean::characteristics::prefs_intl_accept_languages.Set(acceptLang);
+}
+
 
 
 
@@ -241,6 +248,7 @@ nsresult nsUserCharacteristics::PopulateData(bool aTesting ) {
   PopulateMissingFonts();
   PopulateCSSProperties();
   PopulateScreenProperties();
+  PopulatePrefs();
 
   mozilla::glean::characteristics::target_frame_rate.Set(
       gfxPlatform::TargetFrameRate());
