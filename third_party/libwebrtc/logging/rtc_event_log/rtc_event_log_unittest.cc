@@ -19,8 +19,9 @@
 #include <utility>
 #include <vector>
 
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
-#include "api/task_queue/default_task_queue_factory.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
@@ -50,6 +51,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/random.h"
+#include "test/explicit_key_value_config.h"
 #include "test/gtest.h"
 #include "test/logging/memory_log_writer.h"
 #include "test/testsupport/file_utils.h"
@@ -57,6 +59,8 @@
 namespace webrtc {
 
 namespace {
+
+using test::ExplicitKeyValueConfig;
 
 struct EventCounts {
   size_t audio_send_streams = 0;
@@ -104,6 +108,21 @@ struct EventCounts {
     return total_nonconfig_events() + total_config_events();
   }
 };
+
+std::unique_ptr<FieldTrialsView> CreateFieldTrialsFor(
+    RtcEventLog::EncodingType encoding_type) {
+  switch (encoding_type) {
+    case RtcEventLog::EncodingType::Legacy:
+      return std::make_unique<ExplicitKeyValueConfig>(
+          "WebRTC-RtcEventLogNewFormat/Disabled/");
+    case RtcEventLog::EncodingType::NewFormat:
+      return std::make_unique<ExplicitKeyValueConfig>(
+          "WebRTC-RtcEventLogNewFormat/Enabled/");
+    case RtcEventLog::EncodingType::ProtoFree:
+      RTC_CHECK(false);
+      return nullptr;
+  }
+}
 
 class RtcEventLogSession
     : public ::testing::TestWithParam<
@@ -338,12 +357,11 @@ void RtcEventLogSession::WriteLog(EventCounts count,
                                   size_t num_events_before_start) {
   
   
-
-  auto task_queue_factory = CreateDefaultTaskQueueFactory();
-  RtcEventLogFactory rtc_event_log_factory(task_queue_factory.get());
   
-  std::unique_ptr<RtcEventLog> event_log =
-      rtc_event_log_factory.CreateRtcEventLog(encoding_type_);
+
+  
+  std::unique_ptr<RtcEventLog> event_log = RtcEventLogFactory().Create(
+      CreateEnvironment(CreateFieldTrialsFor(encoding_type_)));
 
   
   RTC_CHECK_GE(count.video_recv_streams, 1);
@@ -934,12 +952,9 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   int64_t start_time_us, utc_start_time_us, stop_time_us;
 
   {
-    auto task_queue_factory = CreateDefaultTaskQueueFactory();
-    RtcEventLogFactory rtc_event_log_factory(task_queue_factory.get());
     
-    
-    std::unique_ptr<RtcEventLog> log =
-        rtc_event_log_factory.CreateRtcEventLog(encoding_type_);
+    std::unique_ptr<RtcEventLog> log = RtcEventLogFactory().Create(
+        CreateEnvironment(CreateFieldTrialsFor(encoding_type_)));
 
     for (size_t i = 0; i < kNumEvents; i++) {
       
