@@ -60,7 +60,7 @@ function writeErrorSummary(input, expected, got, isTodo) {
 
 
 
-function makeTestChecker(input, expected, errors) {
+function makeTestChecker(input, expected) {
   return function (e) {
     var domAsString = docToTestOutput(e.target.contentDocument);
     if (html5Exceptions[input]) {
