@@ -68,24 +68,6 @@ if (!Services.prefs.getBoolPref("layout.css.zoom.enabled")) {
   });
 }
 
-if (!Services.prefs.getBoolPref("layout.css.math-depth.enabled")) {
-  
-  ignoreList.push({
-    sourceName: /\b(scrollbars|mathml)\.css$/i,
-    errorMessage: /Unknown property .*\bmath-depth\b/i,
-    isFromDevTools: false,
-  });
-}
-
-if (!Services.prefs.getBoolPref("layout.css.math-style.enabled")) {
-  
-  ignoreList.push({
-    sourceName: /(?:res|gre-resources)\/mathml\.css$/i,
-    errorMessage: /Unknown property .*\bmath-style\b/i,
-    isFromDevTools: false,
-  });
-}
-
 if (!Services.prefs.getBoolPref("layout.css.scroll-anchoring.enabled")) {
   ignoreList.push({
     sourceName: /webconsole\.css$/i,
