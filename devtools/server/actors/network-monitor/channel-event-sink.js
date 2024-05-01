@@ -5,7 +5,8 @@
 "use strict";
 
 const { ComponentUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/ComponentUtils.sys.mjs"
+  "resource://gre/modules/ComponentUtils.sys.mjs",
+  { global: "contextual" }
 );
 
 
