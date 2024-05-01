@@ -216,19 +216,17 @@ add_task(async function test() {
     
     
     
-    
 
     ["https://foo.com", "A", 1, 0, 0],
     ["https://foo.com", "C", 1, 0, 0],
-    ["https://foo.com^inBrowser=1", "A", 1, 0, 0],
     ["https://sub.foo.com", "B", 1, 0, 0],
     ["https://subber.sub.foo.com", "B", 1, 0, 0],
 
     
     ["http://bar.ca", "B", 1, 0, 0],
     ["https://bar.ca", "B", 1, 0, 0],
-    ["http://bar.ca^inBrowser=1", "A", 1, 0, 0],
-    ["https://bar.ca^inBrowser=1", "A", 1, 0, 0],
+    ["http://bar.ca", "A", 1, 0, 0],
+    ["https://bar.ca", "A", 1, 0, 0],
     ["file:///some/path/to/file.html", "A", 1, 0, 0],
     ["file:///another/file.html", "A", 1, 0, 0],
 
@@ -236,7 +234,6 @@ add_task(async function test() {
     
     ["ftp://foo.com:8000", "A", 1, 0, 0],
     ["ftp://foo.com:8000", "C", 1, 0, 0],
-    ["ftp://foo.com:8000^inBrowser=1", "A", 1, 0, 0],
 
     
     
