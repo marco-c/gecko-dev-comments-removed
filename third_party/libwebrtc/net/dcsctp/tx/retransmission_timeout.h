@@ -32,27 +32,29 @@ class RetransmissionTimeout {
   explicit RetransmissionTimeout(const DcSctpOptions& options);
 
   
-  void ObserveRTT(DurationMs measured_rtt);
+  void ObserveRTT(webrtc::TimeDelta measured_rtt);
 
   
-  DurationMs rto() const { return DurationMs(rto_); }
+  webrtc::TimeDelta rto() const { return webrtc::TimeDelta::Millis(rto_); }
 
   
-  DurationMs srtt() const { return DurationMs(scaled_srtt_ >> kRttShift); }
+  webrtc::TimeDelta srtt() const {
+    return webrtc::TimeDelta::Millis(scaled_srtt_ >> kRttShift);
+  }
 
  private:
-  const int32_t min_rto_;
-  const int32_t max_rto_;
-  const int32_t max_rtt_;
-  const int32_t min_rtt_variance_;
+  const webrtc::TimeDelta min_rto_;
+  const webrtc::TimeDelta max_rto_;
+  const webrtc::TimeDelta max_rtt_;
+  const int64_t min_rtt_variance_;
   
   bool first_measurement_ = true;
   
-  int32_t scaled_srtt_;
+  int64_t scaled_srtt_;
   
-  int32_t scaled_rtt_var_ = 0;
+  int64_t scaled_rtt_var_ = 0;
   
-  int32_t rto_;
+  int64_t rto_;
 };
 }  
 
