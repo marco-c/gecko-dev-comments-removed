@@ -7,11 +7,9 @@
 #include "EnterpriseRoots.h"
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Unused.h"
 #include "mozpkix/Result.h"
-#include "nsCRT.h"
 #include "nsNSSCertHelper.h"
 #include "nsThreadUtils.h"
 
@@ -62,19 +60,63 @@ bool EnterpriseCert::IsKnownRoot(UniqueSECMODModule& rootsModule) {
 }
 
 #ifdef XP_WIN
-struct CertStoreLocation {
-  const wchar_t* mName;
-  const bool mIsRoot;
-
-  CertStoreLocation(const wchar_t* name, bool isRoot)
-      : mName(name), mIsRoot(isRoot) {}
-};
+const wchar_t* kWindowsDefaultRootStoreNames[] = {L"ROOT", L"CA"};
 
 
 
 
-const CertStoreLocation kCertStoreLocations[] = {
-    CertStoreLocation(L"ROOT", true), CertStoreLocation(L"CA", false)};
+
+
+
+
+static void CertIsTrustAnchorForTLSServerAuth(PCCERT_CONTEXT certificate,
+                                              bool& isTrusted, bool& isRoot) {
+  isTrusted = false;
+  isRoot = false;
+  MOZ_ASSERT(certificate);
+  if (!certificate) {
+    return;
+  }
+
+  PCCERT_CHAIN_CONTEXT pChainContext = nullptr;
+  CERT_ENHKEY_USAGE enhkeyUsage;
+  memset(&enhkeyUsage, 0, sizeof(CERT_ENHKEY_USAGE));
+  LPCSTR identifiers[] = {
+      "1.3.6.1.5.5.7.3.1",  
+  };
+  enhkeyUsage.cUsageIdentifier = ArrayLength(identifiers);
+  enhkeyUsage.rgpszUsageIdentifier =
+      const_cast<LPSTR*>(identifiers);  
+  CERT_USAGE_MATCH certUsage;
+  memset(&certUsage, 0, sizeof(CERT_USAGE_MATCH));
+  certUsage.dwType = USAGE_MATCH_TYPE_AND;
+  certUsage.Usage = enhkeyUsage;
+  CERT_CHAIN_PARA chainPara;
+  memset(&chainPara, 0, sizeof(CERT_CHAIN_PARA));
+  chainPara.cbSize = sizeof(CERT_CHAIN_PARA);
+  chainPara.RequestedUsage = certUsage;
+  
+  DWORD flags = CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY |
+                CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL |
+                CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE |
+                CERT_CHAIN_DISABLE_AIA;
+  if (!CertGetCertificateChain(nullptr, certificate, nullptr, nullptr,
+                               &chainPara, flags, nullptr, &pChainContext)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("CertGetCertificateChain failed"));
+    return;
+  }
+  isTrusted = pChainContext->TrustStatus.dwErrorStatus == CERT_TRUST_NO_ERROR;
+  if (isTrusted && pChainContext->cChain > 0) {
+    
+    
+    CERT_SIMPLE_CHAIN* finalChain =
+        pChainContext->rgpChain[pChainContext->cChain - 1];
+    
+    
+    isRoot = finalChain->cElement == 1;
+  }
+  CertFreeCertificateChain(pChainContext);
+}
 
 
 
@@ -93,44 +135,6 @@ class ScopedCertStore final {
   ScopedCertStore& operator=(const ScopedCertStore&) = delete;
   HCERTSTORE certstore;
 };
-
-
-
-
-
-
-static bool CertCanBeUsedForTLSServerAuth(PCCERT_CONTEXT certificate) {
-  DWORD usageSize = 0;
-  if (!CertGetEnhancedKeyUsage(certificate, 0, NULL, &usageSize)) {
-    return false;
-  }
-  nsTArray<uint8_t> usageBytes;
-  usageBytes.SetLength(usageSize);
-  PCERT_ENHKEY_USAGE usage(
-      reinterpret_cast<PCERT_ENHKEY_USAGE>(usageBytes.Elements()));
-  if (!CertGetEnhancedKeyUsage(certificate, 0, usage, &usageSize)) {
-    return false;
-  }
-  
-  
-  
-  
-  
-  
-  
-  if (usage->cUsageIdentifier == 0) {
-    return GetLastError() == static_cast<DWORD>(CRYPT_E_NOT_FOUND);
-  }
-  for (DWORD i = 0; i < usage->cUsageIdentifier; i++) {
-    if (!nsCRT::strcmp(usage->rgpszUsageIdentifier[i],
-                       szOID_PKIX_KP_SERVER_AUTH) ||
-        !nsCRT::strcmp(usage->rgpszUsageIdentifier[i],
-                       szOID_ANY_ENHANCED_KEY_USAGE)) {
-      return true;
-    }
-  }
-  return false;
-}
 
 
 
@@ -169,27 +173,29 @@ static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
   
   
   
-  for (const auto& location : kCertStoreLocations) {
-    ScopedCertStore certStore(CertOpenStore(CERT_STORE_PROV_SYSTEM_REGISTRY_W,
-                                            0, NULL, flags, location.mName));
-    if (!certStore.get()) {
+  for (auto name : kWindowsDefaultRootStoreNames) {
+    ScopedCertStore enterpriseRootStore(
+        CertOpenStore(CERT_STORE_PROV_SYSTEM_REGISTRY_W, 0, NULL, flags, name));
+    if (!enterpriseRootStore.get()) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("failed to open certificate store"));
+              ("failed to open enterprise root store"));
       continue;
     }
     PCCERT_CONTEXT certificate = nullptr;
     uint32_t numImported = 0;
     while ((certificate = CertFindCertificateInStore(
-                certStore.get(), X509_ASN_ENCODING, 0, CERT_FIND_ANY, nullptr,
-                certificate))) {
-      if (!CertCanBeUsedForTLSServerAuth(certificate)) {
+                enterpriseRootStore.get(), X509_ASN_ENCODING, 0, CERT_FIND_ANY,
+                nullptr, certificate))) {
+      bool isTrusted;
+      bool isRoot;
+      CertIsTrustAnchorForTLSServerAuth(certificate, isTrusted, isRoot);
+      if (!isTrusted) {
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                ("skipping cert not relevant for TLS server auth"));
+                ("skipping cert not trusted for TLS server auth"));
         continue;
       }
       EnterpriseCert enterpriseCert(certificate->pbCertEncoded,
-                                    certificate->cbCertEncoded,
-                                    location.mIsRoot);
+                                    certificate->cbCertEncoded, isRoot);
       if (!enterpriseCert.IsKnownRoot(rootsModule)) {
         certs.AppendElement(std::move(enterpriseCert));
         numImported++;
@@ -198,7 +204,7 @@ static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
       }
     }
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("imported %u certs from %S", numImported, location.mName));
+            ("imported %u certs from %S", numImported, name));
   }
 }
 
