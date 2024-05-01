@@ -1010,6 +1010,17 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   nsIFrame* FindNearestAccessibleAncestorFrame();
 
+  
+
+
+
+
+
+
+
+  role FindNextValidARIARole(
+      std::initializer_list<nsStaticAtom*> aRolesToSkip) const;
+
   LocalAccessible* GetPopoverTargetDetailsRelation() const;
 };
 

@@ -1840,6 +1840,34 @@ bool LocalAccessible::SetCurValue(double aValue) {
       kNameSpaceID_None, nsGkAtoms::aria_valuenow, strValue, true));
 }
 
+role LocalAccessible::FindNextValidARIARole(
+    std::initializer_list<nsStaticAtom*> aRolesToSkip) const {
+  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
+  if (roleMapEntry && mContent && mContent->IsElement()) {
+    dom::Element* elem = mContent->AsElement();
+    if (!nsAccUtils::ARIAAttrValueIs(elem, nsGkAtoms::role,
+                                     roleMapEntry->roleAtom, eIgnoreCase)) {
+      
+      uint8_t roleMapIndex =
+          aria::GetFirstValidRoleMapIndexExcluding(elem, aRolesToSkip);
+      
+      if (roleMapIndex == aria::NO_ROLE_MAP_ENTRY_INDEX ||
+          roleMapIndex == aria::LANDMARK_ROLE_MAP_ENTRY_INDEX) {
+        return NativeRole();
+      }
+      const nsRoleMapEntry* fallbackRoleMapEntry =
+          aria::GetRoleMapFromIndex(roleMapIndex);
+      if (!fallbackRoleMapEntry) {
+        return NativeRole();
+      }
+      
+      return ARIATransformRole(fallbackRoleMapEntry->role);
+    }
+  }
+  
+  return NativeRole();
+}
+
 role LocalAccessible::ARIATransformRole(role aRole) const {
   
   
@@ -1854,7 +1882,17 @@ role LocalAccessible::ARIATransformRole(role aRole) const {
   
   
   if (aRole == roles::REGION || aRole == roles::FORM) {
-    return NameIsEmpty() ? NativeRole() : aRole;
+    if (NameIsEmpty()) {
+      
+      
+      
+      
+      
+      
+      
+      return FindNextValidARIARole({nsGkAtoms::region, nsGkAtoms::form});
+    }
+    return aRole;
   }
 
   

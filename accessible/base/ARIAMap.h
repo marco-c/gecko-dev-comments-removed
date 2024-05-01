@@ -243,6 +243,19 @@ const nsRoleMapEntry* GetRoleMap(dom::Element* aEl);
 
 
 
+
+uint8_t GetFirstValidRoleMapIndexExcluding(
+    dom::Element* aEl, std::initializer_list<nsStaticAtom*> aRolesToSkip);
+
+
+
+
+
+
+
+
+
+
 uint8_t GetRoleMapIndex(dom::Element* aEl);
 
 
