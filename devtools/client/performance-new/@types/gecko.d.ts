@@ -59,6 +59,8 @@ declare namespace MockedExports {
     addMessageListener: (event: string, listener: (event: any) => void) => void;
   }
 
+  
+  
   interface Browser {
     addWebTab: (url: string, options: any) => BrowserTab;
     contentPrincipal: any;
@@ -68,28 +70,19 @@ declare namespace MockedExports {
     ownerDocument?: ChromeDocument;
   }
 
+  
+  
   interface BrowserTab {
-    linkedBrowser: Browser;
+    linkedBrowser: ChromeBrowser;
   }
 
-  interface ChromeWindow {
+  interface BrowserWindow extends Window {
     gBrowser: Browser;
     focus(): void;
-    openWebLinkIn(
-      url: string,
-      where: "current" | "tab" | "window",
-      options: Partial<{
-        
-        userContextId: number;
-        forceNonPrivate: boolean;
-        relatedToCurrent: boolean;
-        resolveOnContentBrowserCreated: (
-          contentBrowser: ChromeBrowser
-        ) => unknown;
-      }>
-    ): void;
   }
 
+  
+  
   interface ChromeBrowser {
     browsingContext?: BrowsingContext;
   }
@@ -196,11 +189,11 @@ declare namespace MockedExports {
       removeObserver: (observer: object, type: string) => void;
     };
     wm: {
-      getMostRecentWindow: (name: string) => ChromeWindow;
-      getMostRecentNonPBWindow: (name: string) => ChromeWindow;
+      getMostRecentWindow: (name: string) => BrowserWindow;
+      getMostRecentNonPBWindow: (name: string) => BrowserWindow;
     };
     focus: {
-      activeWindow: ChromeWindow;
+      activeWindow: BrowserWindow;
     };
     io: {
       newURI(url: string): nsIURI;
@@ -249,7 +242,7 @@ declare namespace MockedExports {
   class nsIFilePicker {}
 
   interface FilePicker {
-    init: (window: Window, title: string, mode: number) => void;
+    init: (browsingContext: BrowsingContext, title: string, mode: number) => void;
     open: (callback: (rv: number) => unknown) => void;
     
     modeGetFolder: number;
@@ -404,22 +397,48 @@ declare interface XULElement extends HTMLElement {
 }
 
 declare interface XULIframeElement extends XULElement {
-  contentWindow: ChromeWindow;
+  contentWindow: Window;
   src: string;
 }
 
-declare interface ChromeWindow extends Window {
+
+
+
+
+
+
+
+
+
+
+
+declare interface Window {
+  browsingContext: MockedExports.BrowsingContext;
   openWebLinkIn: (
     url: string,
     where: "current" | "tab" | "tabshifted" | "window" | "save",
-    
-    params?: unknown
+    options?: Partial<{
+      
+      userContextId: number;
+      forceNonPrivate: boolean;
+      relatedToCurrent: boolean;
+      resolveOnContentBrowserCreated: (
+        contentBrowser: MockedExports.ChromeBrowser
+      ) => unknown;
+    }>
   ) => void;
   openTrustedLinkIn: (
     url: string,
     where: "current" | "tab" | "tabshifted" | "window" | "save",
-    
-    params?: unknown
+    options?: Partial<{
+      
+      userContextId: number;
+      forceNonPrivate: boolean;
+      relatedToCurrent: boolean;
+      resolveOnContentBrowserCreated: (
+        contentBrowser: MockedExports.ChromeBrowser
+      ) => unknown;
+    }>
   ) => void;
 }
 
