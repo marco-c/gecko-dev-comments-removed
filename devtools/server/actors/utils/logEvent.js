@@ -34,7 +34,7 @@ function logEvent({ threadActor, frame, level, expression, bindings }) {
 
   
   if (isWorker) {
-    threadActor._parent._consoleActor.evaluateJS({
+    threadActor.targetActor._consoleActor.evaluateJS({
       text: `console.log(...${expression})`,
       bindings: { displayName, ...bindings },
       url: sourceActor.url,
@@ -76,7 +76,7 @@ function logEvent({ threadActor, frame, level, expression, bindings }) {
     value = value.unsafeDereference();
   }
 
-  const targetActor = threadActor._parent;
+  const targetActor = threadActor.targetActor;
   const message = {
     filename: sourceActor.url,
     lineNumber: line,

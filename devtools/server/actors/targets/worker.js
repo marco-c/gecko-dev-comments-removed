@@ -72,7 +72,7 @@ class WorkerTargetActor extends BaseTargetActor {
     });
 
     
-    this.threadActor = new ThreadActor(this, this.workerGlobal);
+    this.threadActor = new ThreadActor(this);
 
     
     this._consoleActor = new WebConsoleActor(this.conn, this);

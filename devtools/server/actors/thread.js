@@ -172,20 +172,18 @@ class ThreadActor extends Actor {
 
 
 
+  constructor(targetActor) {
+    super(targetActor.conn, threadSpec);
 
-
-
-  constructor(parent, global) {
-    super(parent.conn, threadSpec);
+    
+    this.targetActor = targetActor;
 
     this._state = STATES.DETACHED;
-    this._parent = parent;
-    this.global = global;
     this._options = {
       skipBreakpoints: false,
     };
     this._gripDepth = 0;
-    this._parentClosed = false;
+    this._targetActorClosed = false;
     this._observingNetwork = false;
     this._frameActors = [];
     this._xhrBreakpoints = [];
@@ -233,9 +231,9 @@ class ThreadActor extends Actor {
     this._onWillNavigate = this._onWillNavigate.bind(this);
     this._onNavigate = this._onNavigate.bind(this);
 
-    this._parent.on("window-ready", this._onWindowReady);
-    this._parent.on("will-navigate", this._onWillNavigate);
-    this._parent.on("navigate", this._onNavigate);
+    this.targetActor.on("window-ready", this._onWindowReady);
+    this.targetActor.on("will-navigate", this._onWillNavigate);
+    this.targetActor.on("navigate", this._onNavigate);
 
     this._firstStatementBreakpoint = null;
     this._debuggerNotificationObserver = new DebuggerNotificationObserver();
@@ -246,7 +244,7 @@ class ThreadActor extends Actor {
 
   get dbg() {
     if (!this._dbg) {
-      this._dbg = this._parent.dbg;
+      this._dbg = this.targetActor.dbg;
       
       if (this._state === STATES.DETACHED) {
         this._dbg.disable();
@@ -289,11 +287,11 @@ class ThreadActor extends Actor {
   }
 
   get sourcesManager() {
-    return this._parent.sourcesManager;
+    return this.targetActor.sourcesManager;
   }
 
   get breakpoints() {
-    return this._parent.breakpoints;
+    return this.targetActor.breakpoints;
   }
 
   get youngestFrame() {
@@ -360,9 +358,9 @@ class ThreadActor extends Actor {
       } catch (e) {}
     }
 
-    this._parent.off("window-ready", this._onWindowReady);
-    this._parent.off("will-navigate", this._onWillNavigate);
-    this._parent.off("navigate", this._onNavigate);
+    this.targetActor.off("window-ready", this._onWindowReady);
+    this.targetActor.off("will-navigate", this._onWillNavigate);
+    this.targetActor.off("navigate", this._onNavigate);
 
     this.sourcesManager.off("newSource", this.onNewSourceEvent);
     this.clearDebuggees();
@@ -421,8 +419,8 @@ class ThreadActor extends Actor {
     
     
     
-    if (this._parent.onThreadAttached) {
-      this._parent.onThreadAttached();
+    if (this.targetActor.onThreadAttached) {
+      this.targetActor.onThreadAttached();
     }
     if (Services.obs) {
       
@@ -443,7 +441,7 @@ class ThreadActor extends Actor {
     }
 
     const env = new HighlighterEnvironment();
-    env.initFromTargetActor(this._parent);
+    env.initFromTargetActor(this.targetActor);
     const highlighter = new PausedDebuggerOverlay(env, {
       resume: () => this.resume(null),
       stepOver: () => this.resume({ type: "next" }),
@@ -453,7 +451,7 @@ class ThreadActor extends Actor {
   }
 
   _canShowOverlay() {
-    const { window } = this._parent;
+    const { window } = this.targetActor;
 
     
     
@@ -475,7 +473,7 @@ class ThreadActor extends Actor {
     if (
       this.isPaused() &&
       this._canShowOverlay() &&
-      this._parent.on &&
+      this.targetActor.on &&
       this.pauseOverlay
     ) {
       const reason = this._priorPause.why.type;
@@ -590,7 +588,7 @@ class ThreadActor extends Actor {
   }
 
   getAvailableEventBreakpoints() {
-    return getAvailableEventBreakpoints(this._parent.window);
+    return getAvailableEventBreakpoints(this.targetActor.window);
   }
   getActiveEventBreakpoints() {
     return Array.from(this._activeEventBreakpoints);
@@ -808,9 +806,9 @@ class ThreadActor extends Actor {
 
     if (
       "pauseWorkersUntilAttach" in options &&
-      this._parent.pauseWorkersUntilAttach
+      this.targetActor.pauseWorkersUntilAttach
     ) {
-      this._parent.pauseWorkersUntilAttach(options.pauseWorkersUntilAttach);
+      this.targetActor.pauseWorkersUntilAttach(options.pauseWorkersUntilAttach);
     }
 
     if (options.breakpoints) {
@@ -977,7 +975,7 @@ class ThreadActor extends Actor {
     
     
     
-    return this._parentClosed ? null : undefined;
+    return this._targetActorClosed ? null : undefined;
   }
 
   _makeOnEnterFrame({ pauseAndRespond }) {
@@ -1817,9 +1815,6 @@ class ThreadActor extends Actor {
       this.sourcesManager.reset();
       this.clearDebuggees();
       this.dbg.enable();
-      
-      
-      this.global = window;
     }
 
     
@@ -2119,7 +2114,7 @@ class ThreadActor extends Actor {
     
     
     if (
-      this._parent.sessionContext.type == "browser-element" &&
+      this.targetActor.sessionContext.type == "browser-element" &&
       source.url.endsWith("ExtensionContent.sys.mjs")
     ) {
       return false;
@@ -2208,7 +2203,7 @@ class ThreadActor extends Actor {
       
       
       
-      if (!this._parent.window) {
+      if (!this.targetActor.window) {
         return;
       }
 

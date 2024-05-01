@@ -1164,7 +1164,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   _createThreadActor() {
-    this.threadActor = new ThreadActor(this, this.window);
+    this.threadActor = new ThreadActor(this);
     this.manage(this.threadActor);
   }
 
