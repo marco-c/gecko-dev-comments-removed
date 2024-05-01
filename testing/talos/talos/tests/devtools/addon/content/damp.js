@@ -216,7 +216,7 @@ Damp.prototype = {
     return tab;
   },
 
-  async testTeardown(url) {
+  async testTeardown() {
     
     
     this._win.gBrowser.removeCurrentTab({ animate: false });

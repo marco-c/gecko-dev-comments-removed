@@ -14,7 +14,7 @@ function AboutPage(aboutHost, chromeURL, uriFlags) {
 
 AboutPage.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIAboutModule"]),
-  getURIFlags(aURI) {
+  getURIFlags() {
     
     return this.uriFlags;
   },

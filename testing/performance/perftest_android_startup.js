@@ -4,7 +4,7 @@
 
 "use strict";
 
-async function test(context, commands) {}
+async function test() {}
 
 module.exports = {
   test,

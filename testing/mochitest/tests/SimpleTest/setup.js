@@ -247,7 +247,7 @@ TestRunner.logger.addListener(
 var gTestList = [];
 var RunSet = {};
 
-RunSet.runall = function (e) {
+RunSet.runall = function () {
   
   
   
@@ -265,7 +265,7 @@ RunSet.runall = function (e) {
   }
 };
 
-RunSet.runtests = function (e) {
+RunSet.runtests = function () {
   
   var my_tests = gTestList;
 

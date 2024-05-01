@@ -100,7 +100,7 @@
 
   window.promiseAllPaintsDone = function (subdoc = null, flush = false) {
     var flushmode = flush ? FlushModes.FLUSH : FlushModes.NOFLUSH;
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
       
       
       waitForPaints((l, r, t, b) => resolve([l, r, t, b]), subdoc, flushmode);

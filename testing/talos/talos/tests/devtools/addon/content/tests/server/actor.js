@@ -12,7 +12,7 @@ class DampTestActor extends Actor {
     super(conn, dampTestSpec);
   }
 
-  testMethod(arg, { option }, arraySize) {
+  testMethod(arg, { option }) {
     
     this.emit("testEvent", option);
 
