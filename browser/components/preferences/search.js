@@ -38,11 +38,13 @@ const SEARCH_KEY = "defaultSearch";
 var gEngineView = null;
 
 var gSearchPane = {
-  init() {
-    let engineStore = new EngineStore();
-    gEngineView = new EngineView(engineStore);
+  _engineStore: null,
 
-    engineStore.init().catch(console.error);
+  init() {
+    this._engineStore = new EngineStore();
+    gEngineView = new EngineView(this._engineStore);
+
+    this._engineStore.init().catch(console.error);
 
     if (
       Services.policies &&
@@ -54,12 +56,7 @@ var gSearchPane = {
       addEnginesLink.setAttribute("href", lazy.SearchUIUtils.searchEnginesURL);
     }
 
-    window.addEventListener("click", this);
     window.addEventListener("command", this);
-    window.addEventListener("dragstart", this);
-    window.addEventListener("keypress", this);
-    window.addEventListener("select", this);
-    window.addEventListener("dblclick", this);
 
     Services.obs.addObserver(this, "browser-search-engine-modified");
     Services.obs.addObserver(this, "intl:app-locales-changed");
@@ -114,7 +111,6 @@ var gSearchPane = {
     this._initDefaultEngines();
     this._initShowSearchTermsCheckbox();
     this._updateSuggestionCheckboxes();
-    this._showAddEngineButton();
     this._initRecentSeachesCheckbox();
     this._initAddressBar();
   },
@@ -253,17 +249,6 @@ var gSearchPane = {
     permanentPBLabel.hidden = urlbarSuggests.hidden || !permanentPB;
 
     this._updateTrendingCheckbox(!suggestsPref.value || permanentPB);
-  },
-
-  _showAddEngineButton() {
-    let aliasRefresh = Services.prefs.getBoolPref(
-      "browser.urlbar.update2.engineAliasRefresh",
-      false
-    );
-    if (aliasRefresh) {
-      let addButton = document.getElementById("addEngineButton");
-      addButton.hidden = false;
-    }
   },
 
   _initRecentSeachesCheckbox() {
@@ -497,7 +482,7 @@ var gSearchPane = {
 
   async _buildEngineDropDown(list, currentEngine) {
     
-    let engines = gEngineView._engineStore._engines;
+    let engines = this._engineStore._engines;
     if (!engines.length) {
       return;
     }
@@ -507,7 +492,7 @@ var gSearchPane = {
 
     
     list.removeAllItems();
-    gEngineView._engineStore._engines.forEach(e => {
+    this._engineStore._engines.forEach(e => {
       let item = list.appendItem(e.name);
       item.setAttribute(
         "class",
@@ -524,86 +509,23 @@ var gSearchPane = {
   },
 
   handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "dblclick":
-        if (aEvent.target.id == "engineChildren") {
-          let cell = aEvent.target.parentNode.getCellAt(
-            aEvent.clientX,
-            aEvent.clientY
-          );
-          if (cell.col?.id == "engineKeyword") {
-            this.startEditingAlias(gEngineView.selectedIndex);
+    if (aEvent.type != "command") {
+      return;
+    }
+    switch (aEvent.target.id) {
+      case "":
+        if (aEvent.target.parentNode && aEvent.target.parentNode.parentNode) {
+          if (aEvent.target.parentNode.parentNode.id == "defaultEngine") {
+            gSearchPane.setDefaultEngine();
+          } else if (
+            aEvent.target.parentNode.parentNode.id == "defaultPrivateEngine"
+          ) {
+            gSearchPane.setDefaultPrivateEngine();
           }
         }
         break;
-      case "click":
-        if (
-          aEvent.target.id != "engineChildren" &&
-          !aEvent.target.classList.contains("searchEngineAction")
-        ) {
-          let engineList = document.getElementById("engineList");
-          
-          
-          
-          
-          
-          
-          if (engineList.inputField.hidden && engineList.view) {
-            let selection = engineList.view.selection;
-            if (selection?.count > 0) {
-              selection.toggleSelect(selection.currentIndex);
-            }
-            engineList.blur();
-          }
-        }
-        break;
-      case "command":
-        switch (aEvent.target.id) {
-          case "":
-            if (
-              aEvent.target.parentNode &&
-              aEvent.target.parentNode.parentNode
-            ) {
-              if (aEvent.target.parentNode.parentNode.id == "defaultEngine") {
-                gSearchPane.setDefaultEngine();
-              } else if (
-                aEvent.target.parentNode.parentNode.id == "defaultPrivateEngine"
-              ) {
-                gSearchPane.setDefaultPrivateEngine();
-              }
-            }
-            break;
-          case "restoreDefaultSearchEngines":
-            gSearchPane.onRestoreDefaults();
-            break;
-          case "removeEngineButton":
-            Services.search.removeEngine(
-              gEngineView.selectedEngine.originalEngine
-            );
-            break;
-          case "addEngineButton":
-            gSubDialog.open(
-              "chrome://browser/content/preferences/dialogs/addEngine.xhtml",
-              { features: "resizable=no, modal=yes" }
-            );
-            break;
-        }
-        break;
-      case "dragstart":
-        if (aEvent.target.id == "engineChildren") {
-          onDragEngineStart(aEvent);
-        }
-        break;
-      case "keypress":
-        if (aEvent.target.id == "engineList") {
-          gSearchPane.onTreeKeyPress(aEvent);
-        }
-        break;
-      case "select":
-        if (aEvent.target.id == "engineList") {
-          gSearchPane.onTreeSelect();
-        }
-        break;
+      default:
+        gEngineView.handleEvent(aEvent);
     }
   },
 
@@ -618,60 +540,6 @@ var gSearchPane = {
   
 
 
-
-
-
-
-  browserSearchEngineModified(engine, data) {
-    engine.QueryInterface(Ci.nsISearchEngine);
-    switch (data) {
-      case "engine-added":
-        gEngineView._engineStore.addEngine(engine);
-        gEngineView.rowCountChanged(gEngineView.lastEngineIndex, 1);
-        gSearchPane.buildDefaultEngineDropDowns();
-        break;
-      case "engine-changed":
-        gSearchPane.buildDefaultEngineDropDowns();
-        gEngineView._engineStore.updateEngine(engine);
-        gEngineView.invalidate();
-        break;
-      case "engine-removed":
-        gSearchPane.remove(engine);
-        break;
-      case "engine-default": {
-        
-        
-        
-        let selectedEngine =
-          document.getElementById("defaultEngine").selectedItem.engine;
-        if (selectedEngine.name != engine.name) {
-          gSearchPane.buildDefaultEngineDropDowns();
-        }
-        gSearchPane._updateSuggestionCheckboxes();
-        break;
-      }
-      case "engine-default-private": {
-        if (
-          this._separatePrivateDefaultEnabledPref.value &&
-          this._separatePrivateDefaultPref.value
-        ) {
-          
-          
-          
-          const selectedEngine = document.getElementById("defaultPrivateEngine")
-            .selectedItem.engine;
-          if (selectedEngine.name != engine.name) {
-            gSearchPane.buildDefaultEngineDropDowns();
-          }
-        }
-        break;
-      }
-    }
-  },
-
-  
-
-
   observe(subject, topic, data) {
     switch (topic) {
       case "intl:app-locales-changed": {
@@ -679,142 +547,46 @@ var gSearchPane = {
         break;
       }
       case "browser-search-engine-modified": {
-        this.browserSearchEngineModified(subject, data);
-        break;
+        let engine = subject.QueryInterface(Ci.nsISearchEngine);
+        switch (data) {
+          case "engine-default": {
+            
+            
+            
+            let selectedEngine =
+              document.getElementById("defaultEngine").selectedItem.engine;
+            if (selectedEngine.name != engine.name) {
+              gSearchPane.buildDefaultEngineDropDowns();
+            }
+            gSearchPane._updateSuggestionCheckboxes();
+            break;
+          }
+          case "engine-default-private": {
+            if (
+              this._separatePrivateDefaultEnabledPref.value &&
+              this._separatePrivateDefaultPref.value
+            ) {
+              
+              
+              
+              const selectedEngine = document.getElementById(
+                "defaultPrivateEngine"
+              ).selectedItem.engine;
+              if (selectedEngine.name != engine.name) {
+                gSearchPane.buildDefaultEngineDropDowns();
+              }
+            }
+            break;
+          }
+          default:
+            this._engineStore.browserSearchEngineModified(subject, data);
+        }
       }
     }
-  },
-
-  onTreeSelect() {
-    document.getElementById("removeEngineButton").disabled =
-      !gEngineView.isEngineSelectedAndRemovable();
-  },
-
-  onTreeKeyPress(aEvent) {
-    let index = gEngineView.selectedIndex;
-    let tree = document.getElementById("engineList");
-    if (tree.hasAttribute("editing")) {
-      return;
-    }
-
-    if (aEvent.charCode == KeyEvent.DOM_VK_SPACE) {
-      
-      let newValue = !gEngineView.getCellValue(
-        index,
-        tree.columns.getNamedColumn("engineShown")
-      );
-      gEngineView.setCellValue(
-        index,
-        tree.columns.getFirstColumn(),
-        newValue.toString()
-      );
-      
-      aEvent.preventDefault();
-    } else {
-      let isMac = Services.appinfo.OS == "Darwin";
-      if (
-        (isMac && aEvent.keyCode == KeyEvent.DOM_VK_RETURN) ||
-        (!isMac && aEvent.keyCode == KeyEvent.DOM_VK_F2)
-      ) {
-        this.startEditingAlias(index);
-      } else if (
-        aEvent.keyCode == KeyEvent.DOM_VK_DELETE ||
-        (isMac &&
-          aEvent.shiftKey &&
-          aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE &&
-          gEngineView.isEngineSelectedAndRemovable())
-      ) {
-        
-        Services.search.removeEngine(gEngineView.selectedEngine.originalEngine);
-      }
-    }
-  },
-
-  startEditingAlias(index) {
-    
-    if (gEngineView._getLocalShortcut(index)) {
-      return;
-    }
-
-    let tree = document.getElementById("engineList");
-    let engine = gEngineView._engineStore.engines[index];
-    tree.startEditing(index, tree.columns.getLastColumn());
-    tree.inputField.value = engine.alias || "";
-    tree.inputField.select();
-  },
-
-  async onRestoreDefaults() {
-    let num = await gEngineView._engineStore.restoreDefaultEngines();
-    gEngineView.rowCountChanged(0, num);
-    gEngineView.invalidate();
   },
 
   showRestoreDefaults(aEnable) {
     document.getElementById("restoreDefaultSearchEngines").disabled = !aEnable;
-  },
-
-  remove(aEngine) {
-    let index = gEngineView._engineStore.removeEngine(aEngine);
-    if (!gEngineView.tree) {
-      
-      return;
-    }
-
-    gEngineView.rowCountChanged(index, -1);
-    gEngineView.invalidate();
-
-    gEngineView.selection.select(Math.min(index, gEngineView.rowCount - 1));
-    gEngineView.ensureRowIsVisible(gEngineView.currentIndex);
-
-    document.getElementById("engineList").focus();
-  },
-
-  async editKeyword(aEngine, aNewKeyword) {
-    let keyword = aNewKeyword.trim();
-    if (keyword) {
-      let eduplicate = false;
-      let dupName = "";
-
-      
-      let bduplicate = !!(await PlacesUtils.keywords.fetch(keyword));
-
-      
-      let engines = gEngineView._engineStore.engines;
-      let lc_keyword = keyword.toLocaleLowerCase();
-      for (let engine of engines) {
-        if (
-          engine.alias &&
-          engine.alias.toLocaleLowerCase() == lc_keyword &&
-          engine.name != aEngine.name
-        ) {
-          eduplicate = true;
-          dupName = engine.name;
-          break;
-        }
-      }
-
-      
-      if (eduplicate || bduplicate) {
-        let msgids = [{ id: "search-keyword-warning-title" }];
-        if (eduplicate) {
-          msgids.push({
-            id: "search-keyword-warning-engine",
-            args: { name: dupName },
-          });
-        } else {
-          msgids.push({ id: "search-keyword-warning-bookmark" });
-        }
-
-        let [dtitle, msg] = await document.l10n.formatValues(msgids);
-
-        Services.prompt.alert(window, dtitle, msg);
-        return false;
-      }
-    }
-
-    gEngineView._engineStore.changeEngine(aEngine, "alias", keyword);
-    gEngineView.invalidate();
-    return true;
   },
 
   async setDefaultEngine() {
@@ -838,23 +610,6 @@ var gSearchPane = {
     );
   },
 };
-
-function onDragEngineStart(event) {
-  var selectedIndex = gEngineView.selectedIndex;
-
-  
-  if (gEngineView._getLocalShortcut(selectedIndex)) {
-    event.preventDefault();
-    return;
-  }
-
-  var tree = document.getElementById("engineList");
-  let cell = tree.getCellAt(event.clientX, event.clientY);
-  if (selectedIndex >= 0 && !gEngineView.isCheckBox(cell.row, cell.col)) {
-    event.dataTransfer.setData(ENGINE_FLAVOR, selectedIndex.toString());
-    event.dataTransfer.effectAllowed = "move";
-  }
-}
 
 class EngineStore {
   _engines = [];
@@ -964,8 +719,47 @@ class EngineStore {
     if (aEngine.isAppProvided) {
       gSearchPane.showRestoreDefaults(true);
     }
+
     gSearchPane.buildDefaultEngineDropDowns();
-    return index;
+
+    if (!gEngineView.tree) {
+      
+      return;
+    }
+
+    gEngineView.rowCountChanged(index, -1);
+    gEngineView.invalidate();
+
+    gEngineView.selection.select(Math.min(index, gEngineView.rowCount - 1));
+    gEngineView.ensureRowIsVisible(gEngineView.currentIndex);
+
+    document.getElementById("engineList").focus();
+  }
+
+  
+
+
+
+
+
+
+  browserSearchEngineModified(engine, data) {
+    engine.QueryInterface(Ci.nsISearchEngine);
+    switch (data) {
+      case "engine-added":
+        this.addEngine(engine);
+        gEngineView.rowCountChanged(gEngineView.lastEngineIndex, 1);
+        gSearchPane.buildDefaultEngineDropDowns();
+        break;
+      case "engine-changed":
+        gSearchPane.buildDefaultEngineDropDowns();
+        this.updateEngine(engine);
+        gEngineView.invalidate();
+        break;
+      case "engine-removed":
+        this.removeEngine(engine);
+        break;
+    }
   }
 
   async restoreDefaultEngines() {
@@ -1025,17 +819,21 @@ class EngineStore {
 }
 
 class EngineView {
+  _engineStore = null;
+  _engineList = null;
+  tree = null;
+
   constructor(aEngineStore) {
     this._engineStore = aEngineStore;
-    document.getElementById("engineList").view = this;
+    this._engineList = document.getElementById("engineList");
+    this._engineList.view = this;
 
     UrlbarPrefs.addObserver(this);
 
     this.loadL10nNames();
+    this.#addListeners();
+    this.#showAddEngineButton();
   }
-
-  _engineStore = null;
-  tree = null;
 
   loadL10nNames() {
     
@@ -1057,6 +855,28 @@ class EngineView {
         
         this.invalidate();
       });
+  }
+
+  #addListeners() {
+    this._engineList.addEventListener("click", this);
+    this._engineList.addEventListener("dragstart", this);
+    this._engineList.addEventListener("keypress", this);
+    this._engineList.addEventListener("select", this);
+    this._engineList.addEventListener("dblclick", this);
+  }
+
+  
+
+
+  #showAddEngineButton() {
+    let aliasRefresh = Services.prefs.getBoolPref(
+      "browser.urlbar.update2.engineAliasRefresh",
+      false
+    );
+    if (aliasRefresh) {
+      let addButton = document.getElementById("addEngineButton");
+      addButton.hidden = false;
+    }
   }
 
   get lastEngineIndex() {
@@ -1145,6 +965,163 @@ class EngineView {
     if (parts[0] == "shortcuts" && parts[1] && parts.length == 2) {
       this.invalidate();
     }
+  }
+
+  handleEvent(aEvent) {
+    switch (aEvent.type) {
+      case "dblclick":
+        if (aEvent.target.id == "engineChildren") {
+          let cell = aEvent.target.parentNode.getCellAt(
+            aEvent.clientX,
+            aEvent.clientY
+          );
+          if (cell.col?.id == "engineKeyword") {
+            this.#startEditingAlias(this.selectedIndex);
+          }
+        }
+        break;
+      case "click":
+        if (
+          aEvent.target.id != "engineChildren" &&
+          !aEvent.target.classList.contains("searchEngineAction")
+        ) {
+          
+          
+          
+          
+          
+          
+          if (this._engineList.inputField.hidden && this._engineList.view) {
+            let selection = this._engineList.view.selection;
+            if (selection?.count > 0) {
+              selection.toggleSelect(selection.currentIndex);
+            }
+            this._engineList.blur();
+          }
+        }
+        break;
+      case "command":
+        switch (aEvent.target.id) {
+          case "restoreDefaultSearchEngines":
+            this.#onRestoreDefaults();
+            break;
+          case "removeEngineButton":
+            Services.search.removeEngine(this.selectedEngine.originalEngine);
+            break;
+          case "addEngineButton":
+            gSubDialog.open(
+              "chrome://browser/content/preferences/dialogs/addEngine.xhtml",
+              { features: "resizable=no, modal=yes" }
+            );
+            break;
+        }
+        break;
+      case "dragstart":
+        if (aEvent.target.id == "engineChildren") {
+          this.#onDragEngineStart(aEvent);
+        }
+        break;
+      case "keypress":
+        if (aEvent.target.id == "engineList") {
+          this.#onTreeKeyPress(aEvent);
+        }
+        break;
+      case "select":
+        if (aEvent.target.id == "engineList") {
+          this.#onTreeSelect();
+        }
+        break;
+    }
+  }
+
+  
+
+
+
+  async #onRestoreDefaults() {
+    let num = await this._engineStore.restoreDefaultEngines();
+    this.rowCountChanged(0, num);
+    this.invalidate();
+  }
+
+  #onDragEngineStart(event) {
+    let selectedIndex = this.selectedIndex;
+
+    
+    if (this._getLocalShortcut(selectedIndex)) {
+      event.preventDefault();
+      return;
+    }
+
+    let tree = document.getElementById("engineList");
+    let cell = tree.getCellAt(event.clientX, event.clientY);
+    if (selectedIndex >= 0 && !this.isCheckBox(cell.row, cell.col)) {
+      event.dataTransfer.setData(ENGINE_FLAVOR, selectedIndex.toString());
+      event.dataTransfer.effectAllowed = "move";
+    }
+  }
+
+  #onTreeSelect() {
+    document.getElementById("removeEngineButton").disabled =
+      !this.isEngineSelectedAndRemovable();
+  }
+
+  #onTreeKeyPress(aEvent) {
+    let index = this.selectedIndex;
+    let tree = document.getElementById("engineList");
+    if (tree.hasAttribute("editing")) {
+      return;
+    }
+
+    if (aEvent.charCode == KeyEvent.DOM_VK_SPACE) {
+      
+      let newValue = !this.getCellValue(
+        index,
+        tree.columns.getNamedColumn("engineShown")
+      );
+      this.setCellValue(
+        index,
+        tree.columns.getFirstColumn(),
+        newValue.toString()
+      );
+      
+      aEvent.preventDefault();
+    } else {
+      let isMac = Services.appinfo.OS == "Darwin";
+      if (
+        (isMac && aEvent.keyCode == KeyEvent.DOM_VK_RETURN) ||
+        (!isMac && aEvent.keyCode == KeyEvent.DOM_VK_F2)
+      ) {
+        this.#startEditingAlias(index);
+      } else if (
+        aEvent.keyCode == KeyEvent.DOM_VK_DELETE ||
+        (isMac &&
+          aEvent.shiftKey &&
+          aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE &&
+          this.isEngineSelectedAndRemovable())
+      ) {
+        
+        Services.search.removeEngine(this.selectedEngine.originalEngine);
+      }
+    }
+  }
+
+  
+
+
+
+
+  #startEditingAlias(index) {
+    
+    if (this._getLocalShortcut(index)) {
+      return;
+    }
+
+    let tree = document.getElementById("engineList");
+    let engine = this._engineStore.engines[index];
+    tree.startEditing(index, tree.columns.getLastColumn());
+    tree.inputField.value = engine.alias || "";
+    tree.inputField.select();
   }
 
   
@@ -1306,18 +1283,77 @@ class EngineView {
       }
       this._engineStore.engines[index].originalEngine.hideOneOffButton =
         value != "true";
-      gEngineView.invalidate();
+      this.invalidate();
     }
   }
   setCellText(index, column, value) {
     if (column.id == "engineKeyword") {
-      gSearchPane
-        .editKeyword(this._engineStore.engines[index], value)
-        .then(valid => {
+      this.#changeKeyword(this._engineStore.engines[index], value).then(
+        valid => {
           if (!valid) {
-            gSearchPane.startEditingAlias(index);
+            this.#startEditingAlias(index);
           }
-        });
+        }
+      );
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async #changeKeyword(aEngine, aNewKeyword) {
+    let keyword = aNewKeyword.trim();
+    if (keyword) {
+      let eduplicate = false;
+      let dupName = "";
+
+      
+      let bduplicate = !!(await PlacesUtils.keywords.fetch(keyword));
+
+      
+      let engines = this._engineStore.engines;
+      let lc_keyword = keyword.toLocaleLowerCase();
+      for (let engine of engines) {
+        if (
+          engine.alias &&
+          engine.alias.toLocaleLowerCase() == lc_keyword &&
+          engine.name != aEngine.name
+        ) {
+          eduplicate = true;
+          dupName = engine.name;
+          break;
+        }
+      }
+
+      
+      if (eduplicate || bduplicate) {
+        let msgids = [{ id: "search-keyword-warning-title" }];
+        if (eduplicate) {
+          msgids.push({
+            id: "search-keyword-warning-engine",
+            args: { name: dupName },
+          });
+        } else {
+          msgids.push({ id: "search-keyword-warning-bookmark" });
+        }
+
+        let [dtitle, msg] = await document.l10n.formatValues(msgids);
+
+        Services.prompt.alert(window, dtitle, msg);
+        return false;
+      }
+    }
+
+    this._engineStore.changeEngine(aEngine, "alias", keyword);
+    this.invalidate();
+    return true;
   }
 }
