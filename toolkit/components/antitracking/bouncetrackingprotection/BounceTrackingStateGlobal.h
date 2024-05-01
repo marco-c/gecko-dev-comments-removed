@@ -83,6 +83,9 @@ class BounceTrackingStateGlobal final {
     return mBounceTrackers;
   }
 
+  
+  nsCString Describe();
+
  private:
   ~BounceTrackingStateGlobal() = default;
 
@@ -107,6 +110,10 @@ class BounceTrackingStateGlobal final {
   
   
   nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers{};
+
+  
+  static nsCString DescribeMap(
+      const nsTHashMap<nsCStringHashKey, PRTime>& aMap);
 };
 
 }  

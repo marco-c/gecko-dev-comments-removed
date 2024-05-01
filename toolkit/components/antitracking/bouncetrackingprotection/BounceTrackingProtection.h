@@ -33,10 +33,17 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   
   
   
-  nsresult RecordStatefulBounces(BounceTrackingState* aBounceTrackingState);
+  [[nodiscard]] nsresult RecordStatefulBounces(
+      BounceTrackingState* aBounceTrackingState);
 
   
-  nsresult RecordUserActivation(nsIPrincipal* aPrincipal);
+  [[nodiscard]] nsresult RecordUserActivation(nsIPrincipal* aPrincipal);
+
+  
+  
+  
+  [[nodiscard]] nsresult ClearExpiredUserInteractions(
+      BounceTrackingStateGlobal* aStateGlobal = nullptr);
 
  private:
   BounceTrackingProtection();
