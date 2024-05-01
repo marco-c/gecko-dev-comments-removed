@@ -201,23 +201,7 @@ DevTools.prototype = {
 
 
 
-
-  unregisterTool(tool, isQuitApplication) {
-    let toolId = null;
-    if (typeof tool == "string") {
-      toolId = tool;
-      tool = this._tools.get(tool);
-    } else {
-      const { Deprecated } = ChromeUtils.importESModule(
-        "resource://gre/modules/Deprecated.sys.mjs"
-      );
-      Deprecated.warning(
-        "Deprecation WARNING: gDevTools.unregisterTool(tool) is " +
-          "deprecated. You should unregister a tool using its toolId: " +
-          "gDevTools.unregisterTool(toolId)."
-      );
-      toolId = tool.id;
-    }
+  unregisterTool(toolId, isQuitApplication) {
     this._tools.delete(toolId);
 
     if (!isQuitApplication) {
