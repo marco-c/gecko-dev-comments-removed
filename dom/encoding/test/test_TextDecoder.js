@@ -59,7 +59,7 @@ function runTextDecoderOptions() {
 
 
 
-function testConstructorFatalOption(data, expectedString) {
+function testConstructorFatalOption() {
   
   testCharset({
     fatal: false,

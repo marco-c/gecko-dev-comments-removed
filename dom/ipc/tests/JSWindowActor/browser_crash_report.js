@@ -5,7 +5,7 @@
 declTest("crash actor", {
   allFrames: true,
 
-  async test(browser) {
+  async test() {
     if (!("@mozilla.org/toolkit/crash-reporter;1" in Cc)) {
       ok(true, "Cannot test crash annotations without a crash reporter");
       return;

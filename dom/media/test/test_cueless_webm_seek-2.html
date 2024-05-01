@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=657791
+-->
 <head>
   <title>Test for Bug 657791</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -91,7 +91,7 @@ function fetch(url, fetched_callback) {
   xhr.open("GET", url, true);
   xhr.responseType = "blob";
 
-  var loaded = function (event) {
+  var loaded = function () {
     if (xhr.status == 200 || xhr.status == 206) {
       // Request fulfilled. Note sometimes we get 206... Presumably because either
       // httpd.js or Necko cached the result.

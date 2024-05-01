@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=998076
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 998076</title>
@@ -16,7 +16,7 @@
 var worker = new Worker("../../../dom/xhr/tests/file_XHRResponseURL.js");
 
 var requestObserver = {
-  observe (aSubject, aTopic, aData) {
+  observe () {
     worker.postMessage("request");
   }
 };

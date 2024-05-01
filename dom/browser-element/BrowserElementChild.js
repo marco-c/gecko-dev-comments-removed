@@ -7,7 +7,7 @@
 
 "use strict";
 
-function debug(msg) {
+function debug(_msg) {
   
 }
 

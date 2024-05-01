@@ -19,7 +19,7 @@ add_task(function subclass_helper() {
   
   let stream = new PartyStreamer({
     
-    start(c) {
+    start() {
       started = true;
     },
   });

@@ -216,7 +216,7 @@ add_test(function test_getTestFailedConnect() {
   do_test_pending();
   
   fetch("http://localhost:4/should/fail")
-    .then(response => {
+    .then(() => {
       do_throw("Request should not succeed");
     })
     .catch(err => {
@@ -230,7 +230,7 @@ add_test(function test_mozError() {
   do_test_pending();
   
   fetch("http://localhost:4/should/fail", { mozErrors: true })
-    .then(response => {
+    .then(() => {
       do_throw("Request should not succeed");
     })
     .catch(err => {
@@ -245,7 +245,7 @@ add_test(function test_request_mozError() {
   
   const r = new Request("http://localhost:4/should/fail", { mozErrors: true });
   fetch(r)
-    .then(response => {
+    .then(() => {
       do_throw("Request should not succeed");
     })
     .catch(err => {

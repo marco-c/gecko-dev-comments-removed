@@ -7,16 +7,16 @@
 <link rel="stylesheet" href="./test_WebCrypto.css"/>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 
-
+<!-- Utilities for manipulating ABVs -->
 <script src="util.js"></script>
 
-
+<!-- A simple wrapper around IndexedDB -->
 <script src="simpledb.js"></script>
 
-
+<!-- Test vectors drawn from the literature -->
 <script src="./test-vectors.js"></script>
 
-
+<!-- General testing framework -->
 <script src="./test-array.js"></script>
 
 <script>/* <![CDATA[*/
@@ -76,7 +76,7 @@ TestArray.addTest(
     function doVerify(x) {
       return crypto.subtle.verify(alg.name, x, tv.rsassa.sig256, tv.rsassa.data);
     }
-    function fail(x) { error(that); }
+    function fail() { error(that); }
 
     crypto.subtle.importKey("jwk", tv.rsassa.jwk_pub, alg, false, ["verify"])
       .then( doVerify, fail )

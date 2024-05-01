@@ -3,7 +3,7 @@
 
 
 
-function ModuleLoader(base, depth, proto) {
+function ModuleLoader(base, depth) {
   const modules = {};
 
   const require = async function (id) {

@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -28,7 +28,7 @@ async function useBroadcastChannel(contentWindow) {
   outer.postMessage("foo");
 
   await new Promise(resolve => {
-    bc.onmessage = e => {
+    bc.onmessage = () => {
       contentWindow.messageCount += 1;
       resolve();
     };

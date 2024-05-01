@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=528566
+-->
 <head>
   <title>Test for Bug 528566</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -33,7 +33,7 @@ function startTest(test, token) {
   a.autoplay = true;
   document.body.appendChild(a);
   a.addEventListener("ended",
-                     function(e){
+                     function(){
                         ok(true, "[" + a.src + "]We should get to the end. Oh look we did.");
                         a.remove();
                         manager.finished(token);

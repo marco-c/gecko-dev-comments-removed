@@ -22,13 +22,13 @@ function addWindowListener(aURL) {
           resolve(domwindow);
         }, domwindow);
       },
-      onCloseWindow(aXULWindow) {},
+      onCloseWindow() {},
     });
   });
 }
 
 function waitDelay(delay) {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     
     window.setTimeout(resolve, delay);
   });

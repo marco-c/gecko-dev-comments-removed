@@ -8,7 +8,7 @@ function is(a, b, msg) {
   postMessage({ event: msg, test: "is", a, b });
 }
 
-self.onmessage = function onmessage(event) {
+self.onmessage = function onmessage() {
   
 
   const TEST_URL =

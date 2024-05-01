@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1107592
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1107592</title>
@@ -31,7 +31,7 @@
     is(exn.stack, stack, "Should have the right stack in test " + testNumber);
   }
 
-  function ensurePromiseFail(testNumber, value) {
+  function ensurePromiseFail(testNumber) {
     ok(false, "Test " + testNumber + " should not have a fulfilled promise");
   }
 

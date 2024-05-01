@@ -23,7 +23,7 @@ const REPORT_SERVER_URI = "http://localhost";
 
 
 function makeReportHandler(testpath, message, expectedJSON) {
-  return function (request, response) {
+  return function (request) {
     
     if (request.method !== "POST") {
       do_throw("violation report should be a POST request");

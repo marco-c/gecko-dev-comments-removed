@@ -20,7 +20,7 @@ add_task(async function test_principal_click() {
   });
   await BrowserTestUtils.withNewTab(
     "about:test-about-privileged-with-scripts",
-    async function (browser) {
+    async function () {
       
       info("Waiting for tab to be loaded..");
       

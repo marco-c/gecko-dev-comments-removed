@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=534571
+-->
 <head>
   <title>Test for Bug 534571</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -26,7 +26,7 @@
 var v = null;
 var s = null;
 
-function finish(event) {
+function finish() {
   ok(true, "Should have played both videos");
   SimpleTest.finish();
 }
@@ -34,7 +34,7 @@ function finish(event) {
 var first = null;
 var second = null;
 
-function ended(event) {
+function ended() {
   s.type = second.type;
   s.src = second.name;
   v.removeEventListener("ended", ended);

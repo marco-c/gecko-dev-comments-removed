@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=909670
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Media Recoder recording session</title>
@@ -44,7 +44,7 @@ function startTest(test, token) {
   }
 
   // data avaliable.
-  mediaRecorder.ondataavailable = function(evt) {}
+  mediaRecorder.ondataavailable = function() {}
 
   mediaRecorder.onerror = function(err) {
     ok(false, 'Unexpected error fired with:' + err);

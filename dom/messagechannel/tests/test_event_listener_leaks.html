@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -23,7 +23,7 @@ async function useMessagePort(contentWindow) {
   mc.port1.postMessage("foo");
 
   await new Promise(resolve => {
-    mc.port2.onmessage = e => {
+    mc.port2.onmessage = () => {
       contentWindow.messageCount += 1;
       resolve();
     };

@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html>
 <head>
   <title>Promise.resolve(anything) Test</title>
@@ -44,7 +44,7 @@ function runTest() {
 
   var test = tests.pop();
 
-  new Promise(function(resolve, reject) {
+  new Promise(function(resolve) {
     resolve(test);
   }).then(function(what) {
     ok(test === what, "What is: " + what);

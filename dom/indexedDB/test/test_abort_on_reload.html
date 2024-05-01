@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html>
 <head>
   <title>Indexed Database Test</title>
@@ -17,7 +17,7 @@
       openedWindow = window.open("abort_on_reload.html");
     }
 
-    function messageListener(event) {
+    function messageListener() {
       ok(true, "reload recorded");
 
       if (++reloads == 20) {

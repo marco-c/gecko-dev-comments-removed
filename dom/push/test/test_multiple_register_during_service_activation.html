@@ -1,14 +1,14 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+Bug 1150812: If service is in activating or no connection state it can not send
+request immediately, but the requests are queued. This test test the case of
+multiple subscription for the same scope during activation.
 
+Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/licenses/publicdomain/
 
-
-
-
-
-
-
-
+-->
 <head>
   <title>Test for Bug 1150812</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -25,7 +25,7 @@
 </pre>
 
 <script class="testbody" type="text/javascript">
-  function debug(str) {
+  function debug() {
   //  console.log(str + "\n");
   }
 

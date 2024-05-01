@@ -31,7 +31,7 @@ let msgCounter = 0;
 function shouldConsoleTryUpgradeAndError() {
   
   
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     function listener(msgObj) {
       let text = msgObj.message;
       

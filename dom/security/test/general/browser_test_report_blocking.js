@@ -108,7 +108,7 @@ async function testReporting(test) {
     return iframe.browsingContext;
   });
 
-  await SpecialPowers.spawn(frameBC, [type], async obj => {
+  await SpecialPowers.spawn(frameBC, [type], async () => {
     
     await ContentTaskUtils.waitForCondition(() => {
       let reportUI = content.document.getElementById("blockingErrorReporting");

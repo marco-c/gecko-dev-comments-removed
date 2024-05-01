@@ -779,7 +779,7 @@ async function waitForNotification(notificationId) {
   let observerPromise;
   if (notificationId !== "addon-webext-permissions") {
     observerPromise = new Promise(resolve => {
-      Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
+      Services.obs.addObserver(function observer(aSubject, aTopic) {
         
         if (
           notificationId != PROGRESS_NOTIFICATION &&

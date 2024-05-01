@@ -129,7 +129,7 @@ function listenForEventsOnSocket(socket, socketType) {
       }
 
       dump("(" + socketType + " waiting for event)\n");
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         pendingResolve = resolve;
       });
     },
@@ -149,7 +149,7 @@ function listenForEventsOnSocket(socket, socketType) {
         return promise;
       }
       dump("(" + socketType + " waiting for " + length + " bytes)\n");
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         pendingResolve = resolve;
         wantDataLength = length;
       });
@@ -159,7 +159,7 @@ function listenForEventsOnSocket(socket, socketType) {
         throw new Error("only one wait allowed at a time.");
       }
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         pendingResolve = resolve;
         
         
@@ -177,7 +177,7 @@ function listenForEventsOnSocket(socket, socketType) {
 
 
 function waitForConnection(listeningServer) {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     
     
     

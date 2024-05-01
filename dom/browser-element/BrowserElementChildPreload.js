@@ -6,7 +6,7 @@
 
 
 
-function debug(msg) {
+function debug() {
   
 }
 

@@ -3,7 +3,7 @@
 
 
 
-onmessage = function (event) {
+onmessage = function () {
   throw new Error("No messages should reach me!");
 };
 
