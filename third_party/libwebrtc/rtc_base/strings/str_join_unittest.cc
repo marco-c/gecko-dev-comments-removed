@@ -7,15 +7,15 @@
 
 
 
-#include "net/dcsctp/common/str_join.h"
+#include "rtc_base/strings/str_join.h"
 
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "test/gmock.h"
+#include "test/gtest.h"
 
-namespace dcsctp {
+namespace webrtc {
 namespace {
 
 TEST(StrJoinTest, CanJoinStringsFromVector) {
