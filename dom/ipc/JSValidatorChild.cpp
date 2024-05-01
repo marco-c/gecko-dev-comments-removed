@@ -179,7 +179,12 @@ JSValidatorChild::GetUTF8EncodedContent(
 
 JSValidatorChild::ValidatorResult JSValidatorChild::ShouldAllowJS(
     const mozilla::Span<const char>& aSpan) const {
-  MOZ_ASSERT(!aSpan.IsEmpty());
+  
+  
+  
+  if (aSpan.IsEmpty()) {
+    return ValidatorResult::Failure;
+  }
 
   MOZ_DIAGNOSTIC_ASSERT(IsUtf8(aSpan));
 
