@@ -27,7 +27,7 @@ enum class JpegReadMode {
 
 
 
-bool ReadJpeg(const uint8_t* data, const size_t len, JpegReadMode mode,
+bool ReadJpeg(const uint8_t* data, size_t len, JpegReadMode mode,
               JPEGData* jpg);
 
 }  

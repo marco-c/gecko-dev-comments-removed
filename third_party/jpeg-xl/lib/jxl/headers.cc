@@ -17,7 +17,7 @@ struct Rational {
 
   
   constexpr uint32_t MulTruncate(uint32_t multiplicand) const {
-    return uint64_t(multiplicand) * num / den;
+    return static_cast<uint64_t>(multiplicand) * num / den;
   }
 
   uint32_t num;

@@ -64,8 +64,8 @@ class Span {
 
   
   template <typename NCT>
-  void AppendTo(std::vector<NCT>* dst) const {
-    dst->insert(dst->end(), begin(), end());
+  void AppendTo(std::vector<NCT>& dst) const {
+    dst.insert(dst.end(), begin(), end());
   }
 
  private:

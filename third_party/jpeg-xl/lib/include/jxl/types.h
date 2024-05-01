@@ -34,6 +34,8 @@ extern "C" {
 
 #define TO_JXL_BOOL(C) (!!(C) ? JXL_TRUE : JXL_FALSE)
 
+#define FROM_JXL_BOOL(C) (static_cast<bool>(C))
+
 
 
 typedef enum {

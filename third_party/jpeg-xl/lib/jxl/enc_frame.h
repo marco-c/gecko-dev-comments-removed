@@ -57,7 +57,7 @@ struct FrameInfo {
   
   size_t source = 1;
   
-  size_t clamp = 1;
+  bool clamp = true;
   
   
   

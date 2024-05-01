@@ -6,6 +6,7 @@
 #include "lib/threads/thread_parallel_runner_internal.h"
 
 #include <jxl/parallel_runner.h>
+#include <jxl/types.h>
 
 #include <algorithm>
 #include <atomic>
@@ -120,9 +121,9 @@ void ThreadParallelRunner::RunRange(ThreadParallelRunner* self,
   
 
   for (;;) {
-#if 0
-      
-      const uint32_t my_size = std::max(num_tasks / (num_worker_threads * 4), 1);
+#if JXL_FALSE
+    
+    const uint32_t my_size = std::max(num_tasks / (num_worker_threads * 4), 1);
 #else
     
     const uint32_t num_reserved =

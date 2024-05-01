@@ -49,7 +49,7 @@ class CacheAligned {
 
 struct CacheAlignedDeleter {
   void operator()(uint8_t* aligned_pointer) const {
-    return CacheAligned::Free(aligned_pointer);
+    CacheAligned::Free(aligned_pointer);
   }
 };
 

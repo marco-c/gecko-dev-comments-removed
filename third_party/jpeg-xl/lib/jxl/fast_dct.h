@@ -1,9 +1,0 @@
-
-
-
-
-
-namespace jxl {
-void BenchmarkFloatIDCT32x32();
-void BenchmarkFastIDCT32x32();
-}  

@@ -39,12 +39,6 @@ struct ICCReader {
   PaddedBytes decompressed_;
 };
 
-
-Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result);
-
-
-Status UnpredictICC(const uint8_t* enc, size_t size, PaddedBytes* result);
-
 }  
 
 #endif  

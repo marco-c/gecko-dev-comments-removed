@@ -132,8 +132,8 @@ class ThreadParallelRunner {
 
   
   
-  static void RunRange(ThreadParallelRunner* self, const WorkerCommand command,
-                       const int thread);
+  static void RunRange(ThreadParallelRunner* self, WorkerCommand command,
+                       int thread);
 
   static void ThreadFunc(ThreadParallelRunner* self, int thread);
 

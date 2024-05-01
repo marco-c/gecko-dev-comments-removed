@@ -8,14 +8,6 @@
 
 
 
-
-
-#pragma push_macro("PRIdS")
-#pragma push_macro("PRIuS")
-#include "gmock/gmock.h"
-#pragma pop_macro("PRIuS")
-#pragma pop_macro("PRIdS")
-
 #include "gtest/gtest.h"
 
 #include "lib/jxl/common.h"
@@ -60,9 +52,26 @@
 
 
 
-MATCHER_P(IsSlightlyBelow, max, "") {
-  return max * 0.75 <= arg && arg <= max * 1.0;
-}
+#define EXPECT_SLIGHTLY_BELOW(A, E)       \
+  {                                       \
+    double _actual = (A);                 \
+    double _expected = (E);               \
+    EXPECT_LE(_actual, _expected);        \
+    EXPECT_GE(_actual, 0.75 * _expected); \
+  }
+
+#define EXPECT_ARRAY_NEAR(A, E, T)                                         \
+  {                                                                        \
+    const auto _actual = (A);                                              \
+    const auto _expected = (E);                                            \
+    const auto _tolerance = (T);                                           \
+    size_t _n = _expected.size();                                          \
+    ASSERT_EQ(_actual.size(), _n);                                         \
+    for (size_t _i = 0; _i < _n; ++_i) {                                   \
+      EXPECT_NEAR(_actual[_i], _expected[_i], _tolerance)                  \
+          << "@" << _i << ": " << _actual[_i] << " !~= " << _expected[_i]; \
+    }                                                                      \
+  }
 
 #define JXL_EXPECT_OK(F)       \
   {                            \

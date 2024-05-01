@@ -39,7 +39,7 @@ struct OutputEncodingInfo {
   
   float orig_intensity_target;
   
-  float orig_inverse_matrix[9];
+  Matrix3x3 orig_inverse_matrix;
   bool default_transform;
   bool xyb_encoded;
   
@@ -60,7 +60,7 @@ struct OutputEncodingInfo {
   
   
   
-  float luminances[3];
+  Vector3 luminances;
   
   float desired_intensity_target;
   bool cms_set = false;

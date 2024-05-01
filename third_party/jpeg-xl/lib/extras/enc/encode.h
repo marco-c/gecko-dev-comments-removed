@@ -56,7 +56,7 @@ class Encoder {
 
   
   virtual Status Encode(const PackedPixelFile& ppf, EncodedImage* encoded_image,
-                        ThreadPool* pool = nullptr) const = 0;
+                        ThreadPool* pool) const = 0;
 
   void SetOption(std::string name, std::string value) {
     options_[std::move(name)] = std::move(value);

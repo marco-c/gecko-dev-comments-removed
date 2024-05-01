@@ -55,7 +55,7 @@ struct MemoryMappedFileImpl {
 
 }  
 
-#elif __WIN32__
+#elif defined(_WIN32)
 #include <string.h>
 #include <windows.h>
 

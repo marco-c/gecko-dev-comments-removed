@@ -580,12 +580,9 @@ jxl::Status AppendData(JxlEncoderOutputProcessorWrapper& output_processor,
 
 
 struct JxlEncoderStruct {
-  JxlEncoderError error = JxlEncoderError::JXL_ENC_ERR_OK;
   JxlMemoryManager memory_manager;
   jxl::MemoryManagerUniquePtr<jxl::ThreadPool> thread_pool{
       nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)};
-  JxlCmsInterface cms;
-  bool cms_set;
   std::vector<jxl::MemoryManagerUniquePtr<JxlEncoderFrameSettings>>
       encoder_options;
 
@@ -603,6 +600,9 @@ struct JxlEncoderStruct {
   size_t codestream_bytes_written_end_of_frame;
   jxl::JxlEncoderFrameIndexBox frame_index_box;
 
+  JxlCmsInterface cms;
+  bool cms_set;
+
   
   bool use_container;
   
@@ -611,22 +611,25 @@ struct JxlEncoderStruct {
   
   
   
-  int32_t codestream_level;
   bool store_jpeg_metadata;
+  int32_t codestream_level;
   jxl::CodecMetadata metadata;
   std::vector<uint8_t> jpeg_metadata;
 
-  
-  
-  
-  bool wrote_bytes;
   jxl::CompressParams last_used_cparams;
   JxlBasicInfo basic_info;
+
+  JxlEncoderError error = JxlEncoderError::JXL_ENC_ERR_OK;
 
   
   
   
   size_t jxlp_counter;
+
+  
+  
+  
+  bool wrote_bytes;
 
   bool frames_closed;
   bool boxes_closed;

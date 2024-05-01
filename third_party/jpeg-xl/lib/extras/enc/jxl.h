@@ -58,8 +58,6 @@ struct JXLCompressParams {
   int32_t codestream_level = -1;
   int32_t premultiply = -1;
   
-  JxlBitDepth input_bitdepth = {JXL_BIT_DEPTH_FROM_PIXEL_FORMAT, 0, 0};
-  
   JxlParallelRunner runner = JxlThreadParallelRunner;
   void* runner_opaque = nullptr;
   JxlEncoderOutputProcessor output_processor = {};
@@ -69,10 +67,10 @@ struct JXLCompressParams {
   bool allow_expert_options = false;
 
   void AddOption(JxlEncoderFrameSettingId id, int64_t val) {
-    options.emplace_back(JXLOption(id, val, 0));
+    options.emplace_back(id, val, 0);
   }
   void AddFloatOption(JxlEncoderFrameSettingId id, float val) {
-    options.emplace_back(JXLOption(id, val, 0));
+    options.emplace_back(id, val, 0);
   }
   bool HasOutputProcessor() const {
     return (output_processor.get_buffer != nullptr &&

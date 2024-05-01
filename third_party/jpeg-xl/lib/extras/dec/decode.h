@@ -40,7 +40,7 @@ bool CanDecode(Codec codec);
 
 
 
-Codec CodecFromPath(std::string path,
+Codec CodecFromPath(const std::string& path,
                     size_t* JXL_RESTRICT bits_per_sample = nullptr,
                     std::string* extension = nullptr);
 

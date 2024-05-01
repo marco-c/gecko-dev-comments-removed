@@ -237,22 +237,22 @@ struct OrderLE {};
 
 static JXL_INLINE void Store16(OrderBE , const uint32_t native,
                                uint8_t* p) {
-  return StoreBE16(native, p);
+  StoreBE16(native, p);
 }
 
 static JXL_INLINE void Store16(OrderLE , const uint32_t native,
                                uint8_t* p) {
-  return StoreLE16(native, p);
+  StoreLE16(native, p);
 }
 
 static JXL_INLINE void Store32(OrderBE , const uint32_t native,
                                uint8_t* p) {
-  return StoreBE32(native, p);
+  StoreBE32(native, p);
 }
 
 static JXL_INLINE void Store32(OrderLE , const uint32_t native,
                                uint8_t* p) {
-  return StoreLE32(native, p);
+  StoreLE32(native, p);
 }
 
 static JXL_INLINE uint32_t Load16(OrderBE , const uint8_t* p) {

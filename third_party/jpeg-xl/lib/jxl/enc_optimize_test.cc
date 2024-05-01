@@ -12,7 +12,7 @@ namespace optimize {
 namespace {
 
 
-static const size_t kMaxTestIter = 100000;
+const size_t kMaxTestIter = 100000;
 
 
 struct SimpleQuadraticFunction {
