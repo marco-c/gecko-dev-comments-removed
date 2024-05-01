@@ -864,19 +864,6 @@ struct IsParameterStorageClass : public std::false_type {};
 
 
 template <typename T>
-struct StoreCopyPassByValue {
-  using stored_type = std::decay_t<T>;
-  typedef stored_type passed_type;
-  stored_type m;
-  template <typename A>
-  MOZ_IMPLICIT StoreCopyPassByValue(A&& a) : m(std::forward<A>(a)) {}
-  passed_type PassAsParameter() { return m; }
-};
-template <typename S>
-struct IsParameterStorageClass<StoreCopyPassByValue<S>>
-    : public std::true_type {};
-
-template <typename T>
 struct StoreCopyPassByConstLRef {
   using stored_type = std::decay_t<T>;
   typedef const stored_type& passed_type;
@@ -888,19 +875,6 @@ struct StoreCopyPassByConstLRef {
 template <typename S>
 struct IsParameterStorageClass<StoreCopyPassByConstLRef<S>>
     : public std::true_type {};
-
-template <typename T>
-struct StoreCopyPassByLRef {
-  using stored_type = std::decay_t<T>;
-  typedef stored_type& passed_type;
-  stored_type m;
-  template <typename A>
-  MOZ_IMPLICIT StoreCopyPassByLRef(A&& a) : m(std::forward<A>(a)) {}
-  passed_type PassAsParameter() { return m; }
-};
-template <typename S>
-struct IsParameterStorageClass<StoreCopyPassByLRef<S>> : public std::true_type {
-};
 
 template <typename T>
 struct StoreCopyPassByRRef {
@@ -979,32 +953,6 @@ template <typename S>
 struct IsParameterStorageClass<StoreConstPtrPassByConstPtr<S>>
     : public std::true_type {};
 
-template <typename T>
-struct StoreCopyPassByConstPtr {
-  typedef T stored_type;
-  typedef const T* passed_type;
-  stored_type m;
-  template <typename A>
-  MOZ_IMPLICIT StoreCopyPassByConstPtr(A&& a) : m(std::forward<A>(a)) {}
-  passed_type PassAsParameter() { return &m; }
-};
-template <typename S>
-struct IsParameterStorageClass<StoreCopyPassByConstPtr<S>>
-    : public std::true_type {};
-
-template <typename T>
-struct StoreCopyPassByPtr {
-  typedef T stored_type;
-  typedef T* passed_type;
-  stored_type m;
-  template <typename A>
-  MOZ_IMPLICIT StoreCopyPassByPtr(A&& a) : m(std::forward<A>(a)) {}
-  passed_type PassAsParameter() { return &m; }
-};
-template <typename S>
-struct IsParameterStorageClass<StoreCopyPassByPtr<S>> : public std::true_type {
-};
-
 namespace detail {
 
 template <typename>
@@ -1020,10 +968,6 @@ static auto HasRefCountMethodsTest(long) -> std::false_type;
 template <class T>
 constexpr static bool HasRefCountMethods =
     decltype(HasRefCountMethodsTest<T>(0))::value;
-
-
-
-
 
 
 
@@ -1080,6 +1024,12 @@ struct OtherParameterStorage<nsCOMPtr<T>> {
 template <typename T>
 struct OtherParameterStorage<T&&> {
   using Type = StoreCopyPassByRRef<T>;
+};
+
+template <typename T>
+struct OtherParameterStorage<const T&&> {
+  
+  static_assert(!SFINAE1True<T>::value, "please use a lambda function");
 };
 
 
