@@ -537,7 +537,8 @@ class TextInputDelegateTest : BaseSessionTest() {
             "Can commit text (select before)",
             ic,
             "foobarfoo",
-            5, 
+            5,
+            
             false,
         )
     }
@@ -641,7 +642,8 @@ class TextInputDelegateTest : BaseSessionTest() {
             "Can set new composing region text",
             ic,
             "frabar",
-            6, 
+            6,
+            
             false,
         )
 
@@ -826,7 +828,13 @@ class TextInputDelegateTest : BaseSessionTest() {
         }.joinToString("")
         setupContent(content)
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
-        assertText("Can set large initial text", ic, content,  false)
+        assertText(
+            "Can set large initial text",
+            ic,
+            content,
+            
+            false,
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N_MR1)
@@ -1294,7 +1302,14 @@ class TextInputDelegateTest : BaseSessionTest() {
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
-        assertSelection("IME caret is moved to top", ic, 0, 0,  false)
+        assertSelection(
+            "IME caret is moved to top",
+            ic,
+            0,
+            0,
+            
+            false,
+        )
 
         setComposingText(ic, "bar", 1)
         finishComposingText(ic)
