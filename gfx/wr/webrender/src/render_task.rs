@@ -588,7 +588,7 @@ impl RenderTaskKind {
     }
 
     pub fn new_mask(
-        outer_rect: DeviceIntRect,
+        outer_rect: DeviceRect,
         clip_node_range: ClipNodeRange,
         root_spatial_node_index: SpatialNodeIndex,
         clip_store: &mut ClipStore,
@@ -610,7 +610,7 @@ impl RenderTaskKind {
         
         
         
-        let task_size = outer_rect.size();
+        let task_size = outer_rect.size().to_i32();
 
         
         
@@ -620,7 +620,7 @@ impl RenderTaskKind {
             RenderTask::new_dynamic(
                 task_size,
                 RenderTaskKind::CacheMask(CacheMaskTask {
-                    actual_rect: outer_rect.to_f32(),
+                    actual_rect: outer_rect,
                     clip_node_range,
                     root_spatial_node_index,
                     device_pixel_scale,
