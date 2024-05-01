@@ -66,12 +66,6 @@ class SSLCertChain;
 
 
 
-
-
-
-
-RTC_EXPORT void SetAllowLegacyTLSProtocols(const absl::optional<bool>& allow);
-
 class OpenSSLStreamAdapter final : public SSLStreamAdapter,
                                    public sigslot::has_slots<> {
  public:
@@ -252,9 +246,6 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter,
   
   
   int dtls_handshake_timeout_ms_ = 50;
-
-  
-  const bool support_legacy_tls_protocols_flag_;
 };
 
 
