@@ -171,7 +171,8 @@ class ZeroHertzAdapterMode : public AdapterMode {
   
   void ResetQualityConvergenceInfo() RTC_RUN_ON(sequence_checker_);
   
-  void ProcessOnDelayedCadence() RTC_RUN_ON(sequence_checker_);
+  void ProcessOnDelayedCadence(Timestamp post_time)
+      RTC_RUN_ON(sequence_checker_);
   
   
   
@@ -184,7 +185,7 @@ class ZeroHertzAdapterMode : public AdapterMode {
   void ProcessRepeatedFrameOnDelayedCadence(int frame_id)
       RTC_RUN_ON(sequence_checker_);
   
-  void SendFrameNow(const VideoFrame& frame) const
+  void SendFrameNow(Timestamp post_time, const VideoFrame& frame) const
       RTC_RUN_ON(sequence_checker_);
   
   TimeDelta RepeatDuration(bool idle_repeat) const
@@ -382,7 +383,7 @@ void ZeroHertzAdapterMode::OnFrame(Timestamp post_time,
                            frame_id);
   queue_->PostDelayedHighPrecisionTask(
       SafeTask(safety_.flag(),
-               [this, frame_id, frame] {
+               [this, post_time, frame_id, frame] {
                  RTC_UNUSED(frame_id);
                  RTC_DCHECK_RUN_ON(&sequence_checker_);
                  TRACE_EVENT_ASYNC_END0(TRACE_DISABLED_BY_DEFAULT("webrtc"),
@@ -390,7 +391,7 @@ void ZeroHertzAdapterMode::OnFrame(Timestamp post_time,
                  TRACE_EVENT_ASYNC_END0(TRACE_DISABLED_BY_DEFAULT("webrtc"),
                                         "OnFrameToEncode",
                                         frame.video_frame_buffer().get());
-                 ProcessOnDelayedCadence();
+                 ProcessOnDelayedCadence(post_time);
                }),
       std::max(frame_delay_ - time_spent_since_post, TimeDelta::Zero()));
 }
@@ -475,7 +476,7 @@ void ZeroHertzAdapterMode::ResetQualityConvergenceInfo() {
   }
 }
 
-void ZeroHertzAdapterMode::ProcessOnDelayedCadence() {
+void ZeroHertzAdapterMode::ProcessOnDelayedCadence(Timestamp post_time) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_DCHECK(!queued_frames_.empty());
   TRACE_EVENT0("webrtc", __func__);
@@ -494,7 +495,7 @@ void ZeroHertzAdapterMode::ProcessOnDelayedCadence() {
     
     ScheduleRepeat(current_frame_id_, HasQualityConverged());
   }
-  SendFrameNow(front_frame);
+  SendFrameNow(post_time, front_frame);
 }
 
 void ZeroHertzAdapterMode::ScheduleRepeat(int frame_id, bool idle_repeat) {
@@ -551,16 +552,22 @@ void ZeroHertzAdapterMode::ProcessRepeatedFrameOnDelayedCadence(int frame_id) {
 
   
   ScheduleRepeat(frame_id, HasQualityConverged());
-  SendFrameNow(frame);
+  
+  SendFrameNow(Timestamp::Zero(), frame);
 }
 
-void ZeroHertzAdapterMode::SendFrameNow(const VideoFrame& frame) const {
+void ZeroHertzAdapterMode::SendFrameNow(Timestamp post_time,
+                                        const VideoFrame& frame) const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   TRACE_EVENT0("webrtc", __func__);
+  Timestamp now = clock_->CurrentTime();
   
-  
-  callback_->OnFrame(clock_->CurrentTime(),
-                     1, frame);
+  if (post_time != Timestamp::Zero()) {
+    TimeDelta delay = (now - post_time);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Screenshare.ZeroHz.DelayMs", delay.ms());
+  }
+  callback_->OnFrame(now,  1,
+                     frame);
 }
 
 TimeDelta ZeroHertzAdapterMode::RepeatDuration(bool idle_repeat) const {
