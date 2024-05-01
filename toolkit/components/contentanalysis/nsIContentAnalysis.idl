@@ -189,6 +189,13 @@ interface nsIContentAnalysis : nsISupports
 
 
 
+  attribute bool isSetByEnterprisePolicy;
+
+  
+
+
+
+
 
 
 
@@ -241,4 +248,10 @@ interface nsIContentAnalysis : nsISupports
 
 
   void cancelAllRequests();
+
+  
+
+
+
+  void testOnlySetCACmdLineArg(in boolean aVal);
 };

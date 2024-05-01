@@ -56,7 +56,7 @@ extern bool gIsGtest;
 
 extern bool gKioskMode;
 extern int gKioskMonitor;
-extern bool gAllowContentAnalysis;
+extern bool gAllowContentAnalysisArgPresent;
 
 namespace mozilla {
 nsresult AppInfoConstructor(const nsID& aIID, void** aResult);
@@ -125,6 +125,9 @@ void UnlockProfile();
 #ifdef XP_WIN
 
 BOOL WinLaunchChild(const wchar_t* exePath, int argc, char** argv,
+                    HANDLE userToken = nullptr, HANDLE* hProcess = nullptr);
+
+BOOL WinLaunchChild(const wchar_t* exePath, int argc, wchar_t** argv,
                     HANDLE userToken = nullptr, HANDLE* hProcess = nullptr);
 
 #  define PREF_WIN_REGISTER_APPLICATION_RESTART \

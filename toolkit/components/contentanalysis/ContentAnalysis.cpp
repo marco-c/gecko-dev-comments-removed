@@ -712,6 +712,7 @@ ContentAnalysis::ContentAnalysis()
     : mCaClientPromise(
           new ClientPromise::Private("ContentAnalysis::ContentAnalysis")),
       mClientCreationAttempted(false),
+      mSetByEnterprise(false),
       mCallbackMap("ContentAnalysis::mCallbackMap"),
       mWarnResponseDataMap("ContentAnalysis::mWarnResponseDataMap") {
   GenerateUserActionId();
@@ -733,10 +734,18 @@ ContentAnalysis::GetIsActive(bool* aIsActive) {
   MOZ_ASSERT(NS_IsMainThread());
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (!gAllowContentAnalysis || !Preferences::GetBool(kIsDLPEnabledPref)) {
+  if (!Preferences::GetBool(kIsDLPEnabledPref)) {
     LOGD("Local DLP Content Analysis is not active");
     return NS_OK;
   }
+  if (!gAllowContentAnalysisArgPresent && !mSetByEnterprise) {
+    LOGE(
+        "The content analysis pref is enabled but not by an enterprise "
+        "policy and -allow-content-analysis was not present on the "
+        "command-line.  Content Analysis will not be active.");
+    return NS_OK;
+  }
+
   *aIsActive = true;
   LOGD("Local DLP Content Analysis is active");
   
@@ -779,6 +788,29 @@ ContentAnalysis::GetMightBeActive(bool* aMightBeActive) {
   
   *aMightBeActive = sIsEnabled;
   return NS_OK;
+}
+
+NS_IMETHODIMP
+ContentAnalysis::GetIsSetByEnterprisePolicy(bool* aSetByEnterprise) {
+  *aSetByEnterprise = mSetByEnterprise;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ContentAnalysis::SetIsSetByEnterprisePolicy(bool aSetByEnterprise) {
+  mSetByEnterprise = aSetByEnterprise;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ContentAnalysis::TestOnlySetCACmdLineArg(bool aVal) {
+#ifdef ENABLE_TESTS
+  gAllowContentAnalysisArgPresent = aVal;
+  return NS_OK;
+#else
+  LOGE("ContentAnalysis::TestOnlySetCACmdLineArg is test-only");
+  return NS_ERROR_UNEXPECTED;
+#endif
 }
 
 nsresult ContentAnalysis::CancelWithError(nsCString aRequestToken,

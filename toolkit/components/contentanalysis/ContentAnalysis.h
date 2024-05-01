@@ -126,6 +126,8 @@ class ContentAnalysis final : public nsIContentAnalysis {
   
   bool mClientCreationAttempted;
 
+  bool mSetByEnterprise;
+
   class CallbackData final {
    public:
     CallbackData(
