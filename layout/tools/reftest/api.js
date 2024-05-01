@@ -110,7 +110,7 @@ this.reftest = class extends ExtensionAPI {
         
         
         
-        Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
+        Services.obs.addObserver(function observer(aSubject, aTopic) {
           Services.obs.removeObserver(observer, aTopic);
           startAndroid(GetMainWindow());
         }, "initial-document-element-inserted");
