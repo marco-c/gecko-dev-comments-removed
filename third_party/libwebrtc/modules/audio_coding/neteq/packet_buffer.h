@@ -21,14 +21,6 @@ namespace webrtc {
 class DecoderDatabase;
 class StatisticsCalculator;
 class TickTimer;
-struct SmartFlushingConfig {
-  
-  
-  int target_level_threshold_ms = 500;
-  
-  
-  int target_level_multiplier = 3;
-};
 
 
 class PacketBuffer {
@@ -36,7 +28,6 @@ class PacketBuffer {
   enum BufferReturnCodes {
     kOK = 0,
     kFlushed,
-    kPartialFlush,
     kNotFound,
     kBufferEmpty,
     kInvalidPacket,
@@ -57,24 +48,13 @@ class PacketBuffer {
   virtual void Flush(StatisticsCalculator* stats);
 
   
-  virtual void PartialFlush(int target_level_ms,
-                            size_t sample_rate,
-                            size_t last_decoded_length,
-                            StatisticsCalculator* stats);
-
-  
   virtual bool Empty() const;
 
   
   
   
   
-  virtual int InsertPacket(Packet&& packet,
-                           StatisticsCalculator* stats,
-                           size_t last_decoded_length,
-                           size_t sample_rate,
-                           int target_level_ms,
-                           const DecoderDatabase& decoder_database);
+  virtual int InsertPacket(Packet&& packet, StatisticsCalculator* stats);
 
   
   
@@ -89,10 +69,7 @@ class PacketBuffer {
       const DecoderDatabase& decoder_database,
       absl::optional<uint8_t>* current_rtp_payload_type,
       absl::optional<uint8_t>* current_cng_rtp_payload_type,
-      StatisticsCalculator* stats,
-      size_t last_decoded_length,
-      size_t sample_rate,
-      int target_level_ms);
+      StatisticsCalculator* stats);
 
   
   
@@ -171,7 +148,6 @@ class PacketBuffer {
   }
 
  private:
-  absl::optional<SmartFlushingConfig> smart_flushing_config_;
   size_t max_number_of_packets_;
   PacketList buffer_;
   const TickTimer* tick_timer_;
