@@ -108,6 +108,9 @@ class InProcessBrowserChildMessageManager final
   RefPtr<nsDocShell> mDocShell;
   bool mLoadingScript;
 
+  
+  
+  bool mIsBrowserFrame;
   bool mPreventEventsEscaping;
 
   

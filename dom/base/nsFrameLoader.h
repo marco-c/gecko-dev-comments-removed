@@ -264,6 +264,12 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   bool IsNetworkCreated() const { return mNetworkCreated; }
 
+  
+
+
+
+  bool OwnerIsMozBrowserFrame();
+
   nsIContent* GetParentObject() const;
 
   
@@ -474,6 +480,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   void AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
                               nsIDocShellTreeOwner* aOwner);
+
+  void InitializeBrowserAPI();
+  void DestroyBrowserFrameScripts();
 
   nsresult GetNewTabContext(mozilla::dom::MutableTabContext* aTabContext,
                             nsIURI* aURI = nullptr);

@@ -13,6 +13,7 @@
 #include "nsFrameLoaderOwner.h"
 #include "nsQueryObject.h"
 #include "xpcpublic.h"
+#include "nsIMozBrowserFrame.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/dom/ChromeMessageSender.h"
 #include "mozilla/dom/Document.h"
@@ -99,6 +100,15 @@ InProcessBrowserChildMessageManager::InProcessBrowserChildMessageManager(
       mOwner(aOwner),
       mChromeMessageManager(aChrome) {
   mozilla::HoldJSObjects(this);
+
+  
+  
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwner);
+  if (browserFrame) {
+    mIsBrowserFrame = browserFrame->GetReallyIsBrowser();
+  } else {
+    mIsBrowserFrame = false;
+  }
 }
 
 InProcessBrowserChildMessageManager::~InProcessBrowserChildMessageManager() {
@@ -226,7 +236,19 @@ void InProcessBrowserChildMessageManager::GetEventTargetParent(
     return;
   }
 
-  aVisitor.SetParentTarget(mOwner, false);
+  if (mIsBrowserFrame &&
+      (!mOwner || !nsContentUtils::IsInChromeDocshell(mOwner->OwnerDoc()))) {
+    if (mOwner) {
+      if (nsPIDOMWindowInner* innerWindow =
+              mOwner->OwnerDoc()->GetInnerWindow()) {
+        
+        
+        aVisitor.SetParentTarget(innerWindow->GetParentTarget(), false);
+      }
+    }
+  } else {
+    aVisitor.SetParentTarget(mOwner, false);
+  }
 }
 
 class nsAsyncScriptLoad : public Runnable {

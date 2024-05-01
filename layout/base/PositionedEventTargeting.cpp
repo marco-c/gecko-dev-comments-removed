@@ -251,6 +251,18 @@ static nsIContent* GetClickableAncestor(
 
     
     
+    
+    if (content->IsHTMLElement(nsGkAtoms::iframe) &&
+        content->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                          nsGkAtoms::mozbrowser,
+                                          nsGkAtoms::_true, eIgnoreCase) &&
+        content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
+                                          nsGkAtoms::_true, eIgnoreCase)) {
+      return content;
+    }
+
+    
+    
     if (content->IsAnyOfXULElements(
             nsGkAtoms::button, nsGkAtoms::checkbox, nsGkAtoms::radio,
             nsGkAtoms::menu, nsGkAtoms::menuitem, nsGkAtoms::menulist,
