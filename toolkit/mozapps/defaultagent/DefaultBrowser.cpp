@@ -184,17 +184,6 @@ BrowserResult TryGetReplacePreviousDefaultBrowser(Browser currentDefault) {
   return GetBrowserFromString(previousDefault);
 }
 
-DefaultBrowserResult GetDefaultBrowserInfo() {
-  DefaultBrowserInfo browserInfo;
-
-  MOZ_TRY_VAR(browserInfo.currentDefaultBrowser, TryGetDefaultBrowser());
-  MOZ_TRY_VAR(
-      browserInfo.previousDefaultBrowser,
-      TryGetReplacePreviousDefaultBrowser(browserInfo.currentDefaultBrowser));
-
-  return browserInfo;
-}
-
 
 
 
