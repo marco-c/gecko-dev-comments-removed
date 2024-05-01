@@ -768,9 +768,14 @@ var cosePolicies = [
 ];
 
 
+
+
+
+
+
 var coseTestcasesStage = [
   {
-    name: "autograph-714ba248-stage-tomato-clock-PKCS7-SHA1-ES256-ES384",
+    name: "addons-stage-tomato-clock-sha1-es256-es384",
     expectedResult: Cr.NS_OK,
     expectedSignatureAlgorithms: [
       Ci.nsIAppSignatureInfo.COSE_WITH_SHA256,
@@ -779,13 +784,14 @@ var coseTestcasesStage = [
     root: Ci.nsIX509CertDB.AddonsStageRoot,
   },
   {
-    name: "autograph-714ba248-stage-tomato-clock-PKCS7-SHA1-ES256-PS256",
+    name: "addons-stage-tomato-clock-sha1-es256-ps256",
+    
     expectedResult: Cr.NS_ERROR_SIGNED_JAR_MANIFEST_INVALID,
     expectedSignatureAlgorithms: [],
     root: Ci.nsIX509CertDB.AddonsStageRoot,
   },
   {
-    name: "autograph-714ba248-stage-tomato-clock-PKCS7-SHA1-ES256",
+    name: "addons-stage-tomato-clock-sha1-es256",
     expectedResult: Cr.NS_OK,
     expectedSignatureAlgorithms: [
       Ci.nsIAppSignatureInfo.COSE_WITH_SHA256,
@@ -794,7 +800,8 @@ var coseTestcasesStage = [
     root: Ci.nsIX509CertDB.AddonsStageRoot,
   },
   {
-    name: "autograph-714ba248-stage-tomato-clock-PKCS7-SHA1-PS256",
+    name: "addons-stage-tomato-clock-sha1-ps256",
+    
     expectedResult: Cr.NS_ERROR_SIGNED_JAR_MANIFEST_INVALID,
     expectedSignatureAlgorithms: [],
     root: Ci.nsIX509CertDB.AddonsStageRoot,
@@ -813,6 +820,7 @@ var coseTestcasesProd = [
   },
   {
     name: "autograph-714ba248-prod-tomato-clock-PKCS7-SHA1-ES256-PS256",
+    
     expectedResult: Cr.NS_ERROR_SIGNED_JAR_MANIFEST_INVALID,
     expectedSignatureAlgorithms: [],
     root: Ci.nsIX509CertDB.AddonsPublicRoot,
@@ -828,6 +836,7 @@ var coseTestcasesProd = [
   },
   {
     name: "autograph-714ba248-prod-tomato-clock-PKCS7-SHA1-PS256",
+    
     expectedResult: Cr.NS_ERROR_SIGNED_JAR_MANIFEST_INVALID,
     expectedSignatureAlgorithms: [],
     root: Ci.nsIX509CertDB.AddonsPublicRoot,
