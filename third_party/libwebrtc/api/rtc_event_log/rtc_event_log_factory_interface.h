@@ -28,13 +28,6 @@ class RtcEventLogFactoryInterface {
 
   virtual absl::Nonnull<std::unique_ptr<RtcEventLog>> Create(
       const Environment& env) const = 0;
-
-  
-  
-  virtual std::unique_ptr<RtcEventLog> Create(
-      RtcEventLog::EncodingType encoding_type) const = 0;
-  [[deprecated]] virtual std::unique_ptr<RtcEventLog> CreateRtcEventLog(
-      RtcEventLog::EncodingType encoding_type) = 0;
 };
 
 }  
