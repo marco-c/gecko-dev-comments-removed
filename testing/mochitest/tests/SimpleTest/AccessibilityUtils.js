@@ -563,6 +563,33 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+
+  function isUnlabeledImageButton(node) {
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const isShowAllButton = node.id == "show-all";
+    const isReplacedImageButton =
+      node.classList.contains("button-add") ||
+      node.classList.contains("button-delete") ||
+      node.classList.contains("button-reset");
+    const isCloseMozMessageBarButton =
+      node.classList.contains("close") &&
+      node.getAttribute("data-l10n-id") == "moz-message-bar-close-button";
+    return (
+      node.tagName.toLowerCase() == "button" &&
+      node.hasAttribute("data-l10n-id") &&
+      (isShowAllButton || isReplacedImageButton || isCloseMozMessageBarButton)
+    );
+  }
+
+  
+
+
+
+
   function shouldIgnoreTabIndex(node) {
     if (!XULElement.isInstance(node)) {
       return false;
@@ -787,7 +814,8 @@ this.AccessibilityUtils = (function () {
           
           if (
             isUnlabeledUrlBarOption(DOMNode) ||
-            isUnlabeledMenuitem(DOMNode)
+            isUnlabeledMenuitem(DOMNode) ||
+            isUnlabeledImageButton(DOMNode)
           ) {
             return;
           }
@@ -813,7 +841,10 @@ this.AccessibilityUtils = (function () {
               accessible.name;
             } catch (e) {
               
-              if (isUnlabeledUrlBarOption(DOMNode)) {
+              if (
+                isUnlabeledUrlBarOption(DOMNode) ||
+                isUnlabeledImageButton(DOMNode)
+              ) {
                 return;
               }
               a11yWarn("Unlabeled element removed before l10n finished", {
