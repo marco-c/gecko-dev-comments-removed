@@ -177,7 +177,7 @@ function waitForEvent(topic, status = null) {
 
 
 function testPostUpdateProcessing() {
-  gAUS.observe(null, "test-post-update-processing", "");
+  gAUS.observe(null, "post-update-processing", "");
 }
 
 
