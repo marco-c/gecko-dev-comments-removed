@@ -33,6 +33,7 @@
 #include "addons-public.inc"
 #include "addons-public-intermediate.inc"
 #include "addons-stage.inc"
+#include "addons-stage-intermediate.inc"
 
 #include "content-signature-dev.inc"
 #include "content-signature-local.inc"
@@ -86,8 +87,15 @@ nsresult AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot) {
 
   
   
+  
+  
   if (trustedRoot == nsIX509CertDB::AddonsPublicRoot) {
     mAddonsIntermediate = {addonsPublicIntermediate};
+  }
+  
+  
+  if (trustedRoot == nsIX509CertDB::AddonsStageRoot) {
+    mAddonsIntermediate = {addonsStageIntermediate};
   }
 
   return NS_OK;
