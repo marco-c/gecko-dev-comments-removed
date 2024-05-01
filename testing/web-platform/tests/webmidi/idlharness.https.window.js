@@ -20,7 +20,8 @@ idl_test(
       MIDIConnectionEvent: ['new MIDIConnectionEvent("type")'],
     })
 
-    await test_driver.set_permission({name: 'midi'}, 'granted');
+    
+    await test_driver.set_permission({name: 'midi', sysex: true}, 'granted');
 
     self.access = await navigator.requestMIDIAccess();
     self.inputs = access.inputs;
