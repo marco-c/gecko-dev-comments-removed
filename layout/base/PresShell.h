@@ -2443,6 +2443,14 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+    MOZ_CAN_RUN_SCRIPT void MaybeSynthesizeCompatMouseEventsForTouchEnd(
+        const WidgetTouchEvent* aTouchEndEvent,
+        const nsEventStatus* aStatus) const;
+
+    
+
+
+
 
 
 
@@ -2822,7 +2830,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT void FinalizeHandlingEvent(WidgetEvent* aEvent);
+
+    MOZ_CAN_RUN_SCRIPT void FinalizeHandlingEvent(WidgetEvent* aEvent,
+                                                  const nsEventStatus* aStatus);
 
     
 
