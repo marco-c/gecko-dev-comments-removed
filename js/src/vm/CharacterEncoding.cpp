@@ -287,7 +287,10 @@ static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
       }
     } else {
       
-      uint32_t n = mozilla::CountLeadingZeroes32(~int8_t(src[i])) - 24;
+      uint32_t n = 1;
+      while (v & (0x80 >> n)) {
+        n++;
+      }
 
 #define INVALID(report, arg, n2)                                    \
   do {                                                              \
