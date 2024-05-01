@@ -1,9 +1,9 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
-
-
+/**
+ * Checks the local shortcut rows in the engines list of the search pane.
+ */
 
 "use strict";
 
@@ -33,10 +33,10 @@ add_setup(async function () {
   gTree.focus();
 });
 
-
+// The rows should be visible and checked by default.
 add_task(async function visible() {
   await checkRowVisibility(true);
-  await forEachLocalShortcutRow(async row => {
+  await forEachLocalShortcutRow(async (row, shortcut) => {
     Assert.equal(
       gTree.view.getCellValue(row, gTree.columns.getNamedColumn("engineShown")),
       "true",
@@ -45,8 +45,8 @@ add_task(async function visible() {
   });
 });
 
-
-
+// Toggling the browser.urlbar.shortcuts.* prefs should toggle the corresponding
+// checkboxes in the rows.
 add_task(async function syncFromPrefs() {
   let col = gTree.columns.getNamedColumn("engineShown");
   await forEachLocalShortcutRow(async (row, shortcut) => {
@@ -72,8 +72,8 @@ add_task(async function syncFromPrefs() {
   });
 });
 
-
-
+// Pressing the space key while a row is selected should toggle its checkbox
+// and pref.
 add_task(async function syncToPrefs_spaceKey() {
   let col = gTree.columns.getNamedColumn("engineShown");
   await forEachLocalShortcutRow(async (row, shortcut) => {
@@ -101,8 +101,8 @@ add_task(async function syncToPrefs_spaceKey() {
   });
 });
 
-
-
+// Clicking the checkbox in a local shortcut row should toggle the checkbox and
+// pref.
 add_task(async function syncToPrefs_click() {
   let col = gTree.columns.getNamedColumn("engineShown");
   await forEachLocalShortcutRow(async (row, shortcut) => {
@@ -134,9 +134,9 @@ add_task(async function syncToPrefs_click() {
   });
 });
 
-
+// The keyword column should not be editable according to isEditable().
 add_task(async function keywordNotEditable_isEditable() {
-  await forEachLocalShortcutRow(async row => {
+  await forEachLocalShortcutRow(async (row, shortcut) => {
     Assert.ok(
       !gTree.view.isEditable(
         row,
@@ -147,8 +147,8 @@ add_task(async function keywordNotEditable_isEditable() {
   });
 });
 
-
-
+// Pressing the enter key while a row is selected shouldn't allow the keyword to
+// be edited.
 add_task(async function keywordNotEditable_enterKey() {
   let col = gTree.columns.getNamedColumn("engineKeyword");
   await forEachLocalShortcutRow(async (row, shortcut) => {
@@ -167,8 +167,8 @@ add_task(async function keywordNotEditable_enterKey() {
     EventUtils.sendString("newkeyword");
     EventUtils.synthesizeKey("KEY_Enter", {}, gTree.ownerGlobal);
 
-    
-    
+    // Wait a moment to allow for any possible asynchronicity.
+    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
     await new Promise(r => setTimeout(r, 500));
 
     Assert.equal(
@@ -179,7 +179,7 @@ add_task(async function keywordNotEditable_enterKey() {
   });
 });
 
-
+// Double-clicking the keyword column shouldn't allow the keyword to be edited.
 add_task(async function keywordNotEditable_click() {
   let col = gTree.columns.getNamedColumn("engineKeyword");
   await forEachLocalShortcutRow(async (row, shortcut) => {
@@ -199,7 +199,7 @@ add_task(async function keywordNotEditable_click() {
 
     let promise = BrowserTestUtils.waitForEvent(gTree, "dblclick");
 
-    
+    // Click once to select the row.
     EventUtils.synthesizeMouse(
       gTree.body,
       x,
@@ -208,7 +208,7 @@ add_task(async function keywordNotEditable_click() {
       gTree.ownerGlobal
     );
 
-    
+    // Now double-click the keyword column.
     EventUtils.synthesizeMouse(
       gTree.body,
       x,
@@ -222,8 +222,8 @@ add_task(async function keywordNotEditable_click() {
     EventUtils.sendString("newkeyword");
     EventUtils.synthesizeKey("KEY_Enter", {}, gTree.ownerGlobal);
 
-    
-    
+    // Wait a moment to allow for any possible asynchronicity.
+    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
     await new Promise(r => setTimeout(r, 500));
 
     Assert.equal(
@@ -234,9 +234,9 @@ add_task(async function keywordNotEditable_click() {
   });
 });
 
-
-
-
+/**
+ * Asserts that the engine and local shortcut rows are present in the tree.
+ */
 async function checkRowVisibility() {
   let engines = await Services.search.getVisibleEngines();
 
@@ -246,7 +246,7 @@ async function checkRowVisibility() {
     "Expected number of tree rows"
   );
 
-  
+  // Check the engine rows.
   for (let row = 0; row < engines.length; row++) {
     let engine = engines[row];
     let text = gTree.view.getCellText(
@@ -260,7 +260,7 @@ async function checkRowVisibility() {
     );
   }
 
-  
+  // Check the shortcut rows.
   await forEachLocalShortcutRow(async (row, shortcut) => {
     let text = gTree.view.getCellText(
       row,
@@ -275,20 +275,20 @@ async function checkRowVisibility() {
   });
 }
 
-
-
-
-
-
-
+/**
+ * Calls a callback for each local shortcut row in the tree.
+ *
+ * @param {function} callback
+ *   Called for each local shortcut row like: callback(rowIndex, shortcutObject)
+ */
 async function forEachLocalShortcutRow(callback) {
   let engines = await Services.search.getVisibleEngines();
   for (let i = 0; i < UrlbarUtils.LOCAL_SEARCH_MODES.length; i++) {
     let shortcut = UrlbarUtils.LOCAL_SEARCH_MODES[i];
     let row = engines.length + i;
-    
-    
-    
+    // These tests assume LOCAL_SEARCH_MODES are enabled, this can be removed
+    // when we enable QuickActions. We cant just enable the pref in browser.ini
+    // as this test calls clearUserPref.
     if (shortcut.pref == "shortcuts.quickactions") {
       continue;
     }
@@ -296,14 +296,14 @@ async function forEachLocalShortcutRow(callback) {
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Prepends the `browser.urlbar.` branch to the given relative pref.
+ *
+ * @param {string} relativePref
+ *   A pref name relative to the `browser.urlbar.`.
+ * @returns {string}
+ *   The full pref name with `browser.urlbar.` prepended.
+ */
 function getUrlbarPrefName(relativePref) {
   return `browser.urlbar.${relativePref}`;
 }

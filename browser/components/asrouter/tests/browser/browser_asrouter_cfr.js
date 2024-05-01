@@ -183,7 +183,7 @@ add_setup(async function () {
   
   const { _fetchLatestAddonVersion } = CFRPageActions;
   
-  CFRPageActions._fetchLatestAddonVersion = () => "http://example.com";
+  CFRPageActions._fetchLatestAddonVersion = x => "http://example.com";
 
   registerCleanupFunction(() => {
     CFRPageActions._fetchLatestAddonVersion = _fetchLatestAddonVersion;

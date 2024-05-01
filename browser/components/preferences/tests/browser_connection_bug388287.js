@@ -37,7 +37,7 @@ function test() {
 
 
 
-  open_preferences(async function tabOpened() {
+  open_preferences(async function tabOpened(aContentWindow) {
     let dialog, dialogClosingPromise, dialogElement;
     let proxyTypePref, sharePref, httpPref, httpPortPref;
 

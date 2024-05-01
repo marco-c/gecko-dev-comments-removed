@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -52,7 +52,7 @@ function is_element_hidden(aElement, aMsg) {
 }
 
 function promiseLoadSubDialog(aURL) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     content.gSubDialog._dialogStack.addEventListener(
       "dialogopen",
       function dialogopen(aEvent) {
@@ -72,10 +72,10 @@ function promiseLoadSubDialog(aURL) {
           "Check the proper URL is loaded"
         );
 
-        
+        // Check visibility
         is_element_visible(aEvent.detail.dialog._overlay, "Overlay is visible");
 
-        
+        // Check that stylesheets were injected
         let expectedStyleSheetURLs =
           aEvent.detail.dialog._injectedStyleSheets.slice(0);
         for (let styleSheet of aEvent.detail.dialog._frame.contentDocument
@@ -92,8 +92,8 @@ function promiseLoadSubDialog(aURL) {
           "All expectedStyleSheetURLs should have been found"
         );
 
-        
-        
+        // Wait for the next event tick to make sure the remaining part of the
+        // testcase runs after the dialog gets ready for input.
         executeSoon(() => resolve(aEvent.detail.dialog._frame.contentWindow));
       }
     );
@@ -190,8 +190,8 @@ function assertSitesListed(doc, hosts) {
   is(removeAllBtn.disabled, false, "Should enable the removeAllBtn button");
 }
 
-
-
+// Counter used by addTestData to generate unique cookie names across function
+// calls.
 let cookieID = 0;
 
 async function addTestData(data) {
