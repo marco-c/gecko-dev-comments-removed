@@ -12,7 +12,6 @@
 #define P2P_BASE_STUN_SERVER_H_
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <memory>
 
@@ -21,26 +20,22 @@
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/async_udp_socket.h"
 #include "rtc_base/socket_address.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
 
 const int STUN_SERVER_PORT = 3478;
 
-class StunServer : public sigslot::has_slots<> {
+class StunServer {
  public:
   
   explicit StunServer(rtc::AsyncUDPSocket* socket);
   
-  ~StunServer() override;
+  virtual ~StunServer();
 
  protected:
   
   void OnPacket(rtc::AsyncPacketSocket* socket,
-                const char* buf,
-                size_t size,
-                const rtc::SocketAddress& remote_addr,
-                const int64_t& packet_time_us);
+                const rtc::ReceivedPacket& packet);
 
   
   virtual void OnBindingRequest(StunMessage* msg,
@@ -64,6 +59,7 @@ class StunServer : public sigslot::has_slots<> {
                            StunMessage* response) const;
 
  private:
+  webrtc::SequenceChecker sequence_checker_;
   std::unique_ptr<rtc::AsyncUDPSocket> socket_;
 };
 
