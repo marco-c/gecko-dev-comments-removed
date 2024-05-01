@@ -275,6 +275,17 @@ class TestPythonHandler(TestUsingServer):
         self.assertEqual("text/plain", resp.info()["Content-Type"])
         self.assertEqual(b"PASS", resp.read())
 
+    def test_directory(self):
+        route = ("GET", "/defaultpy", wptserve.handlers.python_script_handler)
+        self.server.router.register(*route)
+        resp = self.request("/defaultpy")
+        self.assertEqual(200, resp.getcode())
+        self.assertEqual("text/plain", resp.info()["Content-Type"])
+        
+        
+        
+        self.assertEqual(b"default", resp.read())
+
     def test_no_main(self):
         with pytest.raises(HTTPError) as cm:
             self.request("/no_main.py")
@@ -324,6 +335,15 @@ class TestAsIsHandler(TestUsingServer):
         self.assertEqual("PASS", resp.info()["X-Test"])
         self.assertEqual(b"Content", resp.read())
         
+
+    def test_directory_fails(self):
+        route = ("GET", "/subdir", wptserve.handlers.as_is_handler)
+        self.server.router.register(*route)
+        with pytest.raises(HTTPError) as cm:
+            self.request("/subdir")
+
+        assert cm.value.code == 500
+        del cm
 
 
 class TestH2Handler(TestUsingH2Server):
