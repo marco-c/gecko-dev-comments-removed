@@ -289,7 +289,7 @@ struct Dav1dFrameContext {
         int prog_sz;
         int cbi_sz, pal_sz, pal_idx_sz, cf_sz;
         
-        int *tile_start_off;
+        unsigned *tile_start_off;
     } frame_thread;
 
     
