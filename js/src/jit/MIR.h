@@ -1302,6 +1302,7 @@ using MVariadicInstruction = MVariadicT<MInstruction>;
 
 
 
+
 enum class MemoryBarrierRequirement : bool {
   NotRequired,
   Required,
