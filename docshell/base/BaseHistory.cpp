@@ -94,15 +94,8 @@ void BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
       mTrackedURIs.WithEntryHandle(aURI, [&](auto&& entry) -> ObservingLinks* {
         MOZ_DIAGNOSTIC_ASSERT(!entry || !entry->mLinks.IsEmpty(),
                               "An empty key was kept around in our hashtable!");
-
         if (!entry) {
-          
-          
-          
-          bool hasUserPass;
-          if (NS_FAILED(aURI->GetHasUserPass(&hasUserPass)) || !hasUserPass) {
-            ScheduleVisitedQuery(aURI, nullptr);
-          }
+          ScheduleVisitedQuery(aURI, nullptr);
         }
 
         return &entry.OrInsertWith([] { return ObservingLinks{}; });

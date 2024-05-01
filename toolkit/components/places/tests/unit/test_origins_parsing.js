@@ -65,16 +65,7 @@ add_task(async function parsing() {
         
         for (let i = 0; i < uris.length; i++) {
           await PlacesUtils.history.remove(uris[i]);
-
-          let uri = Services.io.newURI(uris[i]);
-          if (uri.hasUserPass) {
-            
-          } else {
-            expectedOrigins = expectedOrigins.filter(
-              ([prefix, hostPort]) => !prefix.startsWith(uri.scheme + ":")
-            );
-          }
-          await checkDB(expectedOrigins);
+          await checkDB(expectedOrigins.slice(i + 1, expectedOrigins.length));
         }
         await cleanUp();
       }
