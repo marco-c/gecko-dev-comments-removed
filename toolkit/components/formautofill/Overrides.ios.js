@@ -7,7 +7,6 @@
 
 
 const ModuleOverrides = {
-  "AutofillTelemetry.sys.mjs": "Helpers.ios.mjs",
   "AppConstants.sys.mjs": "Helpers.ios.mjs",
   "XPCOMUtils.sys.mjs": "Helpers.ios.mjs",
   "Region.sys.mjs": "Helpers.ios.mjs",
