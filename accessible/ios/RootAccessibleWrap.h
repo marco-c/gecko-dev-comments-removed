@@ -12,6 +12,8 @@
 
 #include "RootAccessible.h"
 
+struct CGRect;
+
 namespace mozilla {
 
 class PresShell;
@@ -30,6 +32,8 @@ class RootAccessibleWrap : public RootAccessible {
   
   
   void GetNativeWidget(void** aOutView);
+
+  CGRect DevPixelsRectToUIKit(const LayoutDeviceIntRect& aRect);
 };
 
 }  
