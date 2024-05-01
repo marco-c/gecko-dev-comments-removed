@@ -636,6 +636,8 @@ function _assertGleanPing(ping) {
   }
 }
 
+let gAddTasksWithRustSetup;
+
 
 
 
@@ -659,6 +661,12 @@ function add_tasks_with_rust(...args) {
       info("add_tasks_with_rust: Forcing sync");
       await QuickSuggestTestUtils.forceSync();
       info("add_tasks_with_rust: Done forcing sync");
+
+      if (gAddTasksWithRustSetup) {
+        info("add_tasks_with_rust: Calling setup function");
+        await gAddTasksWithRustSetup();
+        info("add_tasks_with_rust: Done calling setup function");
+      }
 
       let rv;
       try {
@@ -690,4 +698,21 @@ function add_tasks_with_rust(...args) {
     addTaskArgs[taskFnIndex] = newTaskFn;
     add_task(...addTaskArgs);
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function registerAddTasksWithRustSetup(setupFn) {
+  gAddTasksWithRustSetup = setupFn;
+  registerCleanupFunction(() => (gAddTasksWithRustSetup = null));
 }

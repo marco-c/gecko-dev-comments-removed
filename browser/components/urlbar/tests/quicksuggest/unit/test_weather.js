@@ -34,6 +34,17 @@ add_setup(async () => {
   
   
   QuickSuggest.weather._test_fetchDelayAfterComingOnlineMs = 53;
+
+  
+  
+  
+  
+  
+  
+  registerAddTasksWithRustSetup(async () => {
+    QuickSuggest.weather._test_fetch();
+    await QuickSuggest.weather.waitForFetches();
+  });
 });
 
 

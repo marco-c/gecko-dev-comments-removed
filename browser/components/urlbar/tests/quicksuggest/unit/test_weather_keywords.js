@@ -23,6 +23,17 @@ add_setup(async () => {
     prefs: [["suggest.quicksuggest.nonsponsored", true]],
   });
   await MerinoTestUtils.initWeather();
+
+  
+  
+  
+  
+  
+  
+  registerAddTasksWithRustSetup(async () => {
+    QuickSuggest.weather._test_fetch();
+    await QuickSuggest.weather.waitForFetches();
+  });
 });
 
 

@@ -11,6 +11,11 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarProviderWeather: "resource:///modules/UrlbarProviderWeather.sys.mjs",
 });
 
+
+
+
+requestLongerTimeout(5);
+
 add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: [
@@ -21,6 +26,17 @@ add_setup(async function () {
     ],
   });
   await MerinoTestUtils.initWeather();
+
+  
+  
+  
+  
+  
+  
+  registerAddTasksWithRustSetup(async () => {
+    QuickSuggest.weather._test_fetch();
+    await QuickSuggest.weather.waitForFetches();
+  });
 });
 
 
@@ -462,11 +478,21 @@ add_tasks_with_rust(async function simpleUI() {
       resultIndex
     );
     assertIsWeatherResult(details.result, true);
-    let { row } = details.element;
 
+    let { row } = details.element;
+    let summary = row.querySelector(".urlbarView-dynamic-weather-summaryText");
+
+    
+    
+    
+    await TestUtils.waitForCondition(
+      () => summary.textContent == expectedSummary,
+      "Waiting for the row's summary text to be updated"
+    );
     Assert.equal(
-      row.querySelector(".urlbarView-dynamic-weather-summaryText").textContent,
-      expectedSummary
+      summary.textContent,
+      expectedSummary,
+      "The summary text should be correct"
     );
 
     await UrlbarTestUtils.promisePopupClose(window);
