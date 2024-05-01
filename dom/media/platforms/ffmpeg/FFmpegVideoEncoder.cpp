@@ -526,67 +526,42 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
     
   }
 
-  
-  nsAutoCString codecSpecificLog;
-  if (mConfig.mCodecSpecific) {
-    if (mConfig.mCodecSpecific->is<H264Specific>()) {
-      
-      if (mCodecName == "libx264") {
-        codecSpecificLog.Append(", H264:");
-
-        const H264Specific& specific =
-            mConfig.mCodecSpecific->as<H264Specific>();
-
-        
-        Maybe<H264Setting> profile = GetH264Profile(specific.mProfile);
-        if (!profile) {
-          FFMPEGV_LOG("failed to get h264 profile");
-          return MediaResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
-                             RESULT_DETAIL("H264 profile is unknown"));
-        }
-        codecSpecificLog.Append(
-            nsPrintfCString(" profile - %d", profile->mValue));
-        mCodecContext->profile = profile->mValue;
-        if (!profile->mString.IsEmpty()) {
-          codecSpecificLog.AppendPrintf(" (%s)", profile->mString.get());
-          mLib->av_opt_set(mCodecContext->priv_data, "profile",
-                           profile->mString.get(), 0);
-        }
-
-        
-        Maybe<H264Setting> level = GetH264Level(specific.mLevel);
-        if (!level) {
-          FFMPEGV_LOG("failed to get h264 level");
-          return MediaResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
-                             RESULT_DETAIL("H264 level is unknown"));
-        }
-        codecSpecificLog.AppendPrintf(", level %d (%s)", level->mValue,
-                                      level->mString.get());
-        mCodecContext->level = level->mValue;
-        MOZ_ASSERT(!level->mString.IsEmpty());
-        mLib->av_opt_set(mCodecContext->priv_data, "level",
-                         level->mString.get(), 0);
-
-        
-        if (specific.mFormat == H264BitStreamFormat::AVC) {
-          codecSpecificLog.Append(", AVCC");
-          mLib->av_opt_set(mCodecContext->priv_data, "x264-params", "annexb=0",
-                           0);
-          
-          
-          
-        } else {
-          codecSpecificLog.Append(", AnnexB");
-          
-          mLib->av_opt_set(mCodecContext->priv_data, "x264-params", "annexb=1",
-                           0);
-        }
-      } else {
-        FFMPEGV_LOG("H264 settings is not implemented for codec %s ",
-                    mCodecName.get());
+  nsAutoCString h264Log;
+  if (mConfig.mCodecSpecific && mConfig.mCodecSpecific->is<H264Specific>()) {
+    
+    if (mCodecName == "libx264") {
+      const H264Specific& h264Specific =
+          mConfig.mCodecSpecific->as<H264Specific>();
+      H264Settings s = GetH264Settings(h264Specific);
+      mCodecContext->profile = s.mProfile;
+      mCodecContext->level = s.mLevel;
+      for (const auto& pair : s.mSettingKeyValuePairs) {
+        mLib->av_opt_set(mCodecContext->priv_data, pair.first.get(),
+                         pair.second.get(), 0);
       }
+
+      
+      
+      
+      
+
+      MOZ_ASSERT_IF(
+          s.mSettingKeyValuePairs.Length() != 3,
+          h264Specific.mProfile == H264_PROFILE::H264_PROFILE_EXTENDED);
+      const char* profileStr = s.mSettingKeyValuePairs.Length() == 3
+                                   ? s.mSettingKeyValuePairs[0].second.get()
+                                   : "extended";
+      const char* levelStr = s.mSettingKeyValuePairs.Length() == 3
+                                 ? s.mSettingKeyValuePairs[1].second.get()
+                                 : s.mSettingKeyValuePairs[0].second.get();
+      const char* formatStr =
+          h264Specific.mFormat == H264BitStreamFormat::AVC ? "AVCC" : "AnnexB";
+      h264Log.AppendPrintf(", H264: profile - %d (%s), level %d (%s), %s",
+                           mCodecContext->profile, profileStr,
+                           mCodecContext->level, levelStr, formatStr);
     }
   }
+
   
   
   
@@ -618,7 +593,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
               static_cast<int64_t>(mCodecContext->bit_rate),
               mCodecContext->width, mCodecContext->height,
               mCodecContext->time_base.num, mCodecContext->time_base.den,
-              codecSpecificLog.IsEmpty() ? "" : codecSpecificLog.get());
+              h264Log.IsEmpty() ? "" : h264Log.get());
 
   return MediaResult(NS_OK);
 }
@@ -1169,6 +1144,43 @@ FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
   return Some(
       SVCSettings{std::move(svc->mLayerIds),
                   std::make_pair("ts-parameters"_ns, std::move(parameters))});
+}
+
+FFmpegVideoEncoder<LIBAV_VER>::H264Settings FFmpegVideoEncoder<
+    LIBAV_VER>::GetH264Settings(const H264Specific& aH264Specific) {
+  MOZ_ASSERT(mCodecName == "libx264",
+             "GetH264Settings is libx264-only for now");
+
+  nsTArray<std::pair<nsCString, nsCString>> keyValuePairs;
+
+  Maybe<H264Setting> profile = GetH264Profile(aH264Specific.mProfile);
+  MOZ_RELEASE_ASSERT(profile.isSome());
+  if (!profile->mString.IsEmpty()) {
+    keyValuePairs.AppendElement(std::make_pair("profile"_ns, profile->mString));
+  } else {
+    MOZ_RELEASE_ASSERT(aH264Specific.mProfile ==
+                       H264_PROFILE::H264_PROFILE_EXTENDED);
+  }
+
+  Maybe<H264Setting> level = GetH264Level(aH264Specific.mLevel);
+  MOZ_RELEASE_ASSERT(level.isSome());
+  MOZ_RELEASE_ASSERT(!level->mString.IsEmpty());
+  keyValuePairs.AppendElement(std::make_pair("level"_ns, level->mString));
+
+  
+  if (aH264Specific.mFormat == H264BitStreamFormat::AVC) {
+    keyValuePairs.AppendElement(std::make_pair("x264-params"_ns, "annexb=0"));
+    
+    
+    
+  } else {
+    
+    keyValuePairs.AppendElement(std::make_pair("x264-params"_ns, "annexb=1"));
+  }
+
+  return H264Settings{.mProfile = profile->mValue,
+                      .mLevel = level->mValue,
+                      .mSettingKeyValuePairs = std::move(keyValuePairs)};
 }
 
 }  

@@ -81,6 +81,13 @@ class FFmpegVideoEncoder<LIBAV_VER> final : public MediaDataEncoder {
     std::pair<nsCString, nsCString> mSettingKeyValue;
   };
   Maybe<SVCSettings> GetSVCSettings();
+  struct H264Settings {
+    int mProfile;
+    int mLevel;
+    
+    nsTArray<std::pair<nsCString, nsCString>> mSettingKeyValuePairs;
+  };
+  H264Settings GetH264Settings(const H264Specific& aH264Specific);
 
   
   const FFmpegLibWrapper* mLib;
