@@ -1220,7 +1220,8 @@ Maybe<int32_t> CanonicalBrowsingContext::HistoryGo(
     
     
     
-    if (!aRequireUserInteraction || index.value() >= shistory->Length() - 1 ||
+    if (!StaticPrefs::browser_navigation_requireUserInteraction() ||
+        !aRequireUserInteraction || index.value() >= shistory->Length() - 1 ||
         index.value() <= 0) {
       break;
     }

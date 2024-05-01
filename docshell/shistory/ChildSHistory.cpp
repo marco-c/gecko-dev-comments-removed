@@ -156,7 +156,8 @@ void ChildSHistory::Go(int32_t aOffset, bool aRequireUserInteraction,
     
     
     
-    if (!aRequireUserInteraction || index.value() >= Count() - 1 ||
+    if (!StaticPrefs::browser_navigation_requireUserInteraction() ||
+        !aRequireUserInteraction || index.value() >= Count() - 1 ||
         index.value() <= 0) {
       break;
     }
