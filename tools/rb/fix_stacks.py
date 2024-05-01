@@ -35,9 +35,6 @@ def autobootstrap():
     )
     moz_configure = os.path.join(buildconfig.topsrcdir, "build", "moz.configure")
     sandbox.include_file(os.path.join(moz_configure, "init.configure"))
-    
-    
-    sandbox["developer_options"] = sandbox["always"]
     sandbox.include_file(os.path.join(moz_configure, "bootstrap.configure"))
     
     

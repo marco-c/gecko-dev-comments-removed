@@ -38,7 +38,6 @@ class TestBootstrap(BaseConfigureTest):
     
     
     
-    
     def assertBootstrap(self, arg, states, bootstrapped, in_path):
         called_for = []
 
@@ -119,7 +118,7 @@ class TestBootstrap(BaseConfigureTest):
                 "--disable-bootstrap",
                 (True, "old", False),
                 (False, False, False),
-                (True, True, False),
+                (False, False, False),
             )
             self.assertBootstrap(
                 None,
@@ -133,13 +132,13 @@ class TestBootstrap(BaseConfigureTest):
                 "--disable-bootstrap",
                 (True, "old", False),
                 (False, False, False),
-                ("append", "append", False),
+                (False, False, False),
             )
             self.assertBootstrap(
                 None,
                 (True, "old", False),
                 (False, False, False),
-                ("append", "append", False),
+                (True, True, False),
             )
 
         for milestone in ("124.0a1", "124.0"):
@@ -149,6 +148,12 @@ class TestBootstrap(BaseConfigureTest):
                     "--enable-bootstrap",
                     (True, "old", False),
                     (False, True, True),
+                    (True, True, True),
+                )
+                self.assertBootstrap(
+                    "--enable-bootstrap=no-update",
+                    (True, "old", False),
+                    (False, False, True),
                     (True, True, True),
                 )
 
@@ -163,7 +168,19 @@ class TestBootstrap(BaseConfigureTest):
                     "--enable-bootstrap=foo",
                     (True, "old", True),
                     (False, False, False),
-                    (True, "append", "append"),
+                    (True, True, True),
+                )
+                self.assertBootstrap(
+                    "--enable-bootstrap=no-update,foo,bar",
+                    (False, "old", False),
+                    (True, False, False),
+                    (True, True, False),
+                )
+                self.assertBootstrap(
+                    "--enable-bootstrap=no-update,foo",
+                    (True, "old", True),
+                    (False, False, False),
+                    (True, True, True),
                 )
 
                 
@@ -171,12 +188,24 @@ class TestBootstrap(BaseConfigureTest):
                     "--enable-bootstrap=-foo",
                     (True, False, "old"),
                     (False, True, True),
-                    ("append", True, True),
+                    (True, True, True),
                 )
                 self.assertBootstrap(
                     "--enable-bootstrap=-foo",
                     (False, False, "old"),
                     (False, True, True),
+                    (False, True, True),
+                )
+                self.assertBootstrap(
+                    "--enable-bootstrap=no-update,-foo",
+                    (True, False, "old"),
+                    (False, True, False),
+                    (True, True, True),
+                )
+                self.assertBootstrap(
+                    "--enable-bootstrap=no-update,-foo",
+                    (False, False, "old"),
+                    (False, True, False),
                     (False, True, True),
                 )
 
@@ -185,7 +214,7 @@ class TestBootstrap(BaseConfigureTest):
                     "--enable-bootstrap=-foo,foo,bar",
                     (False, False, "old"),
                     (False, True, False),
-                    (False, True, "append"),
+                    (False, True, True),
                 )
 
 
