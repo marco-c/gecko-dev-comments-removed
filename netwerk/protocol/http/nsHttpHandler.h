@@ -376,6 +376,11 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   }
 
   
+  void OnBeforeStopRequest(nsIHttpChannel* chan) {
+    NotifyObservers(chan, NS_HTTP_ON_BEFORE_STOP_REQUEST_TOPIC);
+  }
+
+  
   void OnStopRequest(nsIHttpChannel* chan) {
     NotifyObservers(chan, NS_HTTP_ON_STOP_REQUEST_TOPIC);
   }

@@ -209,6 +209,12 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
 
 
 
+#define NS_HTTP_ON_BEFORE_STOP_REQUEST_TOPIC "http-on-before-stop-request"
+
+
+
+
+
 
 #define NS_HTTP_ON_STOP_REQUEST_TOPIC "http-on-stop-request"
 

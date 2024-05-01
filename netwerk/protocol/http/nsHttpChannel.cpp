@@ -8261,6 +8261,10 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     }
     mAuthRetryPending = false;
   }
+
+  
+  gHttpHandler->OnBeforeStopRequest(this);
+
   if (mListener) {
     LOG(("nsHttpChannel %p calling OnStopRequest\n", this));
     MOZ_ASSERT(LoadOnStartRequestCalled(),

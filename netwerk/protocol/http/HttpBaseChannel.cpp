@@ -4437,6 +4437,9 @@ void HttpBaseChannel::DoNotifyListener() {
   
   StoreIsPending(false);
 
+  
+  gHttpHandler->OnBeforeStopRequest(this);
+
   if (mListener && !LoadOnStopRequestCalled()) {
     nsCOMPtr<nsIStreamListener> listener = mListener;
     StoreOnStopRequestCalled(true);
