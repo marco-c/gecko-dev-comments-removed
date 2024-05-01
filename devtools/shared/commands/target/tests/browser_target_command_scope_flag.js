@@ -52,6 +52,25 @@ add_task(async function () {
     forceNewProcess: true,
   });
 
+  
+  
+  
+  
+  for (const target of targets) {
+    const threadFront = await target.getFront("thread");
+    const isAttached = await threadFront.isAttached();
+    if (target.targetType == TYPES.PROCESS) {
+      ok(isAttached, "All process targets are attached");
+    } else if (target.isTopLevel) {
+      ok(isAttached, "The top level target is attached");
+    } else {
+      ok(
+        !isAttached,
+        "The frame targets should not be attached in multiprocess mode"
+      );
+    }
+  }
+
   const newTabProcessID =
     gBrowser.selectedTab.linkedBrowser.browsingContext.currentWindowGlobal
       .osPid;

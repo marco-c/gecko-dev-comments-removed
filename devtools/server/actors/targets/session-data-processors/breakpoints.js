@@ -7,6 +7,7 @@
 const {
   STATES: THREAD_STATES,
 } = require("resource://devtools/server/actors/thread.js");
+const Targets = require("resource://devtools/server/actors/targets/index.js");
 
 module.exports = {
   async addOrSetSessionDataEntry(
@@ -15,6 +16,17 @@ module.exports = {
     isDocumentCreation,
     updateType
   ) {
+    
+    
+    
+    
+    if (
+      targetActor.sessionContext.type == "all" &&
+      targetActor.targetType === Targets.TYPES.FRAME &&
+      targetActor.typeName != "parentProcessTarget"
+    ) {
+      return;
+    }
     const { threadActor } = targetActor;
     if (updateType == "set") {
       threadActor.removeAllBreakpoints();

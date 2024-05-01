@@ -7,6 +7,7 @@
 const {
   TYPES: { THREAD_STATE },
 } = require("resource://devtools/server/actors/resources/index.js");
+const Targets = require("resource://devtools/server/actors/targets/index.js");
 
 const {
   PAUSE_REASONS,
@@ -48,6 +49,18 @@ class BreakpointWatcher {
 
 
   async watch(targetActor, { onAvailable }) {
+    
+    
+    
+    
+    if (
+      targetActor.sessionContext.type == "all" &&
+      targetActor.targetType === Targets.TYPES.FRAME &&
+      targetActor.typeName != "parentProcessTarget"
+    ) {
+      return;
+    }
+
     const { threadActor } = targetActor;
     this.threadActor = threadActor;
     this.onAvailable = onAvailable;
@@ -87,6 +100,9 @@ class BreakpointWatcher {
 
 
   destroy() {
+    if (!this.threadActor) {
+      return;
+    }
     this.threadActor.off("paused", this.onPaused);
     this.threadActor.off("resumed", this.onResumed);
   }
