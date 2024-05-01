@@ -147,7 +147,7 @@ var NewPrefDialog = {
 
   
   
-  create: function AC_create(aEvent) {
+  create: function AC_create() {
     if (this._positiveButton.getAttribute("disabled") == "true") {
       return;
     }
@@ -342,7 +342,7 @@ var AboutConfig = {
   },
 
   
-  onScroll: function AC_onScroll(aEvent) {
+  onScroll: function AC_onScroll() {
     if (
       this._prefsContainer.scrollHeight -
         (window.pageYOffset + window.innerHeight) <

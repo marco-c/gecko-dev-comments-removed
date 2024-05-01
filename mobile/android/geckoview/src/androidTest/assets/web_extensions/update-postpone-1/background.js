@@ -1,3 +1,3 @@
-browser.runtime.onUpdateAvailable.addListener(details => {
+browser.runtime.onUpdateAvailable.addListener(() => {
   
 });
