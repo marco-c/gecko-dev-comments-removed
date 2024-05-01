@@ -1826,6 +1826,28 @@ public class WebExtension {
 
 
 
+
+
+    public final @NonNull String[] optionalPermissions;
+
+    
+
+
+
+
+
+
+
+
+    public final @NonNull String[] optionalOrigins;
+
+    
+
+
+
+
+
+
     public final @NonNull String[] origins;
 
     
@@ -1999,6 +2021,8 @@ public class WebExtension {
     protected MetaData() {
       icon = null;
       permissions = null;
+      optionalPermissions = null;
+      optionalOrigins = null;
       origins = null;
       name = null;
       description = null;
@@ -2029,6 +2053,8 @@ public class WebExtension {
      MetaData(final GeckoBundle bundle) {
       
       permissions = bundle.getStringArray("promptPermissions");
+      optionalPermissions = bundle.getStringArray("optionalPermissions");
+      optionalOrigins = bundle.getStringArray("optionalOrigins");
       origins = bundle.getStringArray("origins");
       description = bundle.getString("description");
       version = bundle.getString("version");

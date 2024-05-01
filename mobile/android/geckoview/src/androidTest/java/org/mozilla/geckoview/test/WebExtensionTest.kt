@@ -90,6 +90,14 @@ class WebExtensionTest : BaseSessionTest() {
 
         assertTrue(borderify.isBuiltIn)
 
+        assertArrayEquals(
+            arrayOf("*://developer.mozilla.org/*"),
+            borderify.metaData.optionalOrigins,
+        )
+        assertArrayEquals(
+            arrayOf("clipboardRead"),
+            borderify.metaData.optionalPermissions,
+        )
         mainSession.reload()
         sessionRule.waitForPageStop()
 
@@ -98,6 +106,57 @@ class WebExtensionTest : BaseSessionTest() {
 
         
         assertEquals(borderify.metaData.incognito, "spanning")
+
+        
+        sessionRule.waitForResult(controller.uninstall(borderify))
+
+        mainSession.reload()
+        sessionRule.waitForPageStop()
+
+        
+        assertBodyBorderEqualTo("")
+    }
+
+    @Test
+    fun verifyOptionalAndOriginsPermissionsMV3() {
+        mainSession.loadUri("https://example.com")
+        sessionRule.waitForPageStop()
+
+        
+        
+        assertBodyBorderEqualTo("")
+
+        
+        val borderify = sessionRule.waitForResult(
+            controller.installBuiltIn(
+                "resource://android/assets/web_extensions/borderify-mv3/",
+            ),
+        )
+
+        assertArrayEquals(
+            arrayOf("clipboardRead"),
+            borderify.metaData.optionalPermissions,
+        )
+
+        val expectedOptionalOrigins = arrayOf(
+            "*://*.example.com/*",
+            "*://opt-host-perm.example.com/*",
+            "*://host-perm.example.com/*",
+        )
+
+        expectedOptionalOrigins.sort()
+        borderify.metaData.optionalOrigins.sort()
+
+        assertArrayEquals(
+            expectedOptionalOrigins,
+            borderify.metaData.optionalOrigins,
+        )
+
+        mainSession.reload()
+        sessionRule.waitForPageStop()
+
+        
+        assertBodyBorderEqualTo("red")
 
         
         sessionRule.waitForResult(controller.uninstall(borderify))
