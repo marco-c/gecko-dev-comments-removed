@@ -752,6 +752,13 @@ bool nsIDNService::isLabelSafe(const nsAString& label, const nsAString& tld) {
     }
 
     
+    
+    if ((ch == 0xFE || ch == 0xF0) && !tld.EqualsLiteral("is") &&
+        !tld.EqualsLiteral("fo")) {
+      return false;
+    }
+
+    
     auto genCat = GetGeneralCategory(ch);
     if (genCat == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER) {
       uint32_t zeroCharacter =
