@@ -1,3 +1,8 @@
+
+
+
+
+
 import {expectNotAssignable, expectNotType, expectType} from 'tsd';
 
 import type {ElementHandle, JSHandle} from 'puppeteer';

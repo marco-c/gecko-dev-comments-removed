@@ -4,8 +4,19 @@
 
 
 
+import {
+  firstValueFrom,
+  from,
+  merge,
+  raceWith,
+} from '../../third_party/rxjs/rxjs.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
-import {debugError} from '../common/util.js';
+import {
+  debugError,
+  fromEmitterEvent,
+  filterAsync,
+  timeout,
+} from '../common/util.js';
 import {asyncDisposeSymbol, disposeSymbol} from '../util/disposable.js';
 
 import type {Browser, Permission, WaitForTargetOptions} from './Browser.js';
@@ -38,13 +49,6 @@ export const enum BrowserContextEvent {
   TargetDestroyed = 'targetdestroyed',
 }
 
-export {
-  
-
-
-  BrowserContextEvent as BrowserContextEmittedEvents,
-};
-
 
 
 
@@ -53,6 +57,7 @@ export interface BrowserContextEvents extends Record<EventType, unknown> {
   [BrowserContextEvent.TargetCreated]: Target;
   [BrowserContextEvent.TargetDestroyed]: Target;
 }
+
 
 
 
@@ -114,10 +119,19 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
 
 
-  abstract waitForTarget(
+  async waitForTarget(
     predicate: (x: Target) => boolean | Promise<boolean>,
-    options?: WaitForTargetOptions
-  ): Promise<Target>;
+    options: WaitForTargetOptions = {}
+  ): Promise<Target> {
+    const {timeout: ms = 30000} = options;
+    return await firstValueFrom(
+      merge(
+        fromEmitterEvent(this, BrowserContextEvent.TargetCreated),
+        fromEmitterEvent(this, BrowserContextEvent.TargetChanged),
+        from(this.targets())
+      ).pipe(filterAsync(predicate), raceWith(timeout(ms)))
+    );
+  }
 
   
 
@@ -129,6 +143,18 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
   abstract pages(): Promise<Page[]>;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

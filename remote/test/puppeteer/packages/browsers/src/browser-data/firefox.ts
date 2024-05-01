@@ -236,10 +236,6 @@ function defaultProfilePreferences(
     'media.sanity-test.disabled': true,
 
     
-    
-    'network.cookie.cookieBehavior': 0,
-
-    
     'network.cookie.sameSite.laxByDefault': false,
 
     
@@ -327,4 +323,9 @@ async function writePreferences(options: ProfileOptions): Promise<void> {
     const prefsBackupPath = path.join(options.path, 'prefs.js.puppeteer');
     await fs.promises.copyFile(prefsPath, prefsBackupPath);
   }
+}
+
+export function compareVersions(a: string, b: string): number {
+  
+  return parseInt(a.replace('.', ''), 16) - parseInt(b.replace('.', ''), 16);
 }

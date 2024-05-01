@@ -109,24 +109,14 @@ export enum LocatorEvent {
 
   Action = 'action',
 }
-export {
-  
 
-
-  LocatorEvent as LocatorEmittedEvents,
-};
 
 
 
 export interface LocatorEvents extends Record<EventType, unknown> {
   [LocatorEvent.Action]: undefined;
 }
-export type {
-  
 
-
-  LocatorEvents as LocatorEventObject,
-};
 
 
 

@@ -34,6 +34,12 @@ export interface Configuration {
 
 
 
+
+
+
+
+
+
   browserRevision?: string;
   
 
@@ -56,14 +62,6 @@ export interface Configuration {
 
 
   downloadBaseUrl?: string;
-  
-
-
-
-
-
-
-  downloadPath?: string;
   
 
 

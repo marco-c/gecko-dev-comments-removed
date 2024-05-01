@@ -4,26 +4,25 @@
 
 
 
-import type {Readable} from 'stream';
-
 import type {Protocol} from 'devtools-protocol';
 
 import {
   concat,
   EMPTY,
   filter,
-  filterAsync,
   first,
   firstValueFrom,
   from,
   map,
   merge,
   mergeMap,
+  mergeScan,
   of,
-  race,
   raceWith,
+  ReplaySubject,
   startWith,
   switchMap,
+  take,
   takeUntil,
   timer,
   type Observable,
@@ -36,6 +35,11 @@ import type {DeviceRequestPrompt} from '../cdp/DeviceRequestPrompt.js';
 import type {Credentials, NetworkConditions} from '../cdp/NetworkManager.js';
 import type {Tracing} from '../cdp/Tracing.js';
 import type {ConsoleMessage} from '../common/ConsoleMessage.js';
+import type {
+  Cookie,
+  CookieParam,
+  DeleteCookiesRequest,
+} from '../common/Cookie.js';
 import type {Device} from '../common/Device.js';
 import {TargetCloseError} from '../common/Errors.js';
 import {
@@ -58,6 +62,7 @@ import type {
 import {
   debugError,
   fromEmitterEvent,
+  filterAsync,
   importFSPromises,
   isString,
   NETWORK_IDLE_TIME,
@@ -477,15 +482,6 @@ export const enum PageEvent {
   WorkerDestroyed = 'workerdestroyed',
 }
 
-export {
-  /**
-   * All the events that a page instance may emit.
-   *
-   * @deprecated Use {@link PageEvent}.
-   */
-  PageEvent as PageEmittedEvents,
-};
-
 /**
  * Denotes the objects received by callback functions for page events.
  *
@@ -515,13 +511,6 @@ export interface PageEvents extends Record<EventType, unknown> {
   [PageEvent.WorkerCreated]: WebWorker;
   [PageEvent.WorkerDestroyed]: WebWorker;
 }
-
-export type {
-  /**
-   * @deprecated Use {@link PageEvents}.
-   */
-  PageEvents as PageEventObject,
-};
 
 /**
  * @public
@@ -604,8 +593,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
   #requestHandlers = new WeakMap<Handler<HTTPRequest>, Handler<HTTPRequest>>();
 
-  #requestsInFlight = 0;
-  #inflight$: Observable<number>;
+  #inflight$ = new ReplaySubject<number>(1);
 
   /**
    * @internal
@@ -613,39 +601,37 @@ export abstract class Page extends EventEmitter<PageEvents> {
   constructor() {
     super();
 
-    this.#inflight$ = fromEmitterEvent(this, PageEvent.Request).pipe(
-      takeUntil(fromEmitterEvent(this, PageEvent.Close)),
-      mergeMap(request => {
-        return concat(
-          of(1),
-          race(
-            fromEmitterEvent(this, PageEvent.Response).pipe(
-              filter(response => {
-                return response.request()._requestId === request._requestId;
-              })
-            ),
-            fromEmitterEvent(this, PageEvent.RequestFailed).pipe(
-              filter(failure => {
-                return failure._requestId === request._requestId;
-              })
-            ),
-            fromEmitterEvent(this, PageEvent.RequestFinished).pipe(
-              filter(success => {
-                return success._requestId === request._requestId;
+    fromEmitterEvent(this, PageEvent.Request)
+      .pipe(
+        mergeMap(originalRequest => {
+          return concat(
+            of(1),
+            merge(
+              fromEmitterEvent(this, PageEvent.RequestFailed),
+              fromEmitterEvent(this, PageEvent.RequestFinished),
+              fromEmitterEvent(this, PageEvent.Response).pipe(
+                map(response => {
+                  return response.request();
+                })
+              )
+            ).pipe(
+              filter(request => {
+                return request.id === originalRequest.id;
+              }),
+              take(1),
+              map(() => {
+                return -1;
               })
             )
-          ).pipe(
-            map(() => {
-              return -1;
-            })
-          )
-        );
-      })
-    );
-
-    this.#inflight$.subscribe(count => {
-      this.#requestsInFlight += count;
-    });
+          );
+        }),
+        mergeScan((acc, addend) => {
+          return of(acc + addend);
+        }, 0),
+        takeUntil(fromEmitterEvent(this, PageEvent.Close)),
+        startWith(0)
+      )
+      .subscribe(this.#inflight$);
   }
 
   /**
@@ -771,6 +757,8 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
   /**
    * A target this page was created from.
+   *
+   * @deprecated Use {@link Page.createCDPSession} directly.
    */
   abstract target(): Target;
 
@@ -1287,28 +1275,12 @@ export abstract class Page extends EventEmitter<PageEvents> {
   }
 
   /**
-   * The method evaluates the XPath expression relative to the page document as
-   * its context node. If there are no such elements, the method resolves to an
-   * empty array.
-   *
-   * @remarks
-   * Shortcut for {@link Frame.$x | Page.mainFrame().$x(expression) }.
-   *
-   * @param expression - Expression to evaluate
-   */
-  async $x(expression: string): Promise<Array<ElementHandle<Node>>> {
-    return await this.mainFrame().$x(expression);
-  }
-
-  /**
    * If no URLs are specified, this method returns cookies for the current page
    * URL. If URLs are specified, only cookies for those URLs are returned.
    */
-  abstract cookies(...urls: string[]): Promise<Protocol.Network.Cookie[]>;
+  abstract cookies(...urls: string[]): Promise<Cookie[]>;
 
-  abstract deleteCookie(
-    ...cookies: Protocol.Network.DeleteCookiesRequest[]
-  ): Promise<void>;
+  abstract deleteCookie(...cookies: DeleteCookiesRequest[]): Promise<void>;
 
   /**
    * @example
@@ -1317,7 +1289,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
    * await page.setCookie(cookieObject1, cookieObject2);
    * ```
    */
-  abstract setCookie(...cookies: Protocol.Network.CookieParam[]): Promise<void>;
+  abstract setCookie(...cookies: CookieParam[]): Promise<void>;
 
   /**
    * Adds a `<script>` tag into the page with the desired URL or content.
@@ -1776,13 +1748,11 @@ export abstract class Page extends EventEmitter<PageEvents> {
     } = options;
 
     return this.#inflight$.pipe(
-      startWith(this.#requestsInFlight),
-      switchMap(() => {
-        if (this.#requestsInFlight > concurrency) {
+      switchMap(inflight => {
+        if (inflight > concurrency) {
           return EMPTY;
-        } else {
-          return timer(idleTime);
         }
+        return timer(idleTime);
       }),
       map(() => {}),
       raceWith(
@@ -2604,7 +2574,9 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
-  abstract createPDFStream(options?: PDFOptions): Promise<Readable>;
+  abstract createPDFStream(
+    options?: PDFOptions
+  ): Promise<ReadableStream<Uint8Array>>;
 
   
 
@@ -2805,31 +2777,6 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
 
 
-  waitForTimeout(milliseconds: number): Promise<void> {
-    return this.mainFrame().waitForTimeout(milliseconds);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2866,64 +2813,6 @@ export abstract class Page extends EventEmitter<PageEvents> {
     options: WaitForSelectorOptions = {}
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
     return await this.mainFrame().waitForSelector(selector, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForXPath(
-    xpath: string,
-    options?: WaitForSelectorOptions
-  ): Promise<ElementHandle<Node> | null> {
-    return this.mainFrame().waitForXPath(xpath, options);
   }
 
   

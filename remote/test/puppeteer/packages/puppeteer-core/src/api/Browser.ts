@@ -9,7 +9,6 @@ import type {ChildProcess} from 'child_process';
 import type {Protocol} from 'devtools-protocol';
 
 import {
-  filterAsync,
   firstValueFrom,
   from,
   merge,
@@ -17,7 +16,12 @@ import {
 } from '../../third_party/rxjs/rxjs.js';
 import type {ProtocolType} from '../common/ConnectOptions.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
-import {debugError, fromEmitterEvent, timeout} from '../common/util.js';
+import {
+  debugError,
+  fromEmitterEvent,
+  filterAsync,
+  timeout,
+} from '../common/util.js';
 import {asyncDisposeSymbol, disposeSymbol} from '../util/disposable.js';
 
 import type {BrowserContext} from './BrowserContext.js';
@@ -165,13 +169,6 @@ export const enum BrowserEvent {
   TargetDiscovered = 'targetdiscovered',
 }
 
-export {
-  
-
-
-  BrowserEvent as BrowserEmittedEvents,
-};
-
 
 
 
@@ -269,7 +266,7 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
-  abstract createIncognitoBrowserContext(
+  abstract createBrowserContext(
     options?: BrowserContextOptions
   ): Promise<BrowserContext>;
 

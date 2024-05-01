@@ -166,6 +166,18 @@ export interface PDFOptions {
 
 
 
+
+
+
+
+
+
+
+  outline?: boolean;
+  
+
+
+
   timeout?: number;
 }
 

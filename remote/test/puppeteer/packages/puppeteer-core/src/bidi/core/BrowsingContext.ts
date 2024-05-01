@@ -12,6 +12,7 @@ import {DisposableStack, disposeSymbol} from '../../util/disposable.js';
 
 import type {AddPreloadScriptOptions} from './Browser.js';
 import {Navigation} from './Navigation.js';
+import type {DedicatedWorkerRealm} from './Realm.js';
 import {WindowRealm} from './Realm.js';
 import {Request} from './Request.js';
 import type {UserContext} from './UserContext.js';
@@ -60,6 +61,14 @@ export type SetViewportOptions = Omit<
 
 
 
+export type GetCookiesOptions = Omit<
+  Bidi.Storage.GetCookiesParameters,
+  'partition'
+>;
+
+
+
+
 export class BrowsingContext extends EventEmitter<{
   
   closed: {
@@ -95,6 +104,11 @@ export class BrowsingContext extends EventEmitter<{
   DOMContentLoaded: void;
   
   load: void;
+  
+  worker: {
+    
+    realm: DedicatedWorkerRealm;
+  };
 }> {
   static from(
     userContext: UserContext,
@@ -135,7 +149,7 @@ export class BrowsingContext extends EventEmitter<{
     this.userContext = context;
     
 
-    this.defaultRealm = WindowRealm.from(this);
+    this.defaultRealm = this.#createWindowRealm();
   }
 
   #initialize() {
@@ -202,7 +216,16 @@ export class BrowsingContext extends EventEmitter<{
       }
       this.#url = info.url;
 
-      this.#requests.clear();
+      for (const [id, request] of this.#requests) {
+        if (request.disposed) {
+          this.#requests.delete(id);
+        }
+      }
+      
+      
+      if (this.#navigation !== undefined && !this.#navigation.disposed) {
+        return;
+      }
 
       
       this.#navigation = Navigation.from(this);
@@ -224,7 +247,8 @@ export class BrowsingContext extends EventEmitter<{
       if (event.context !== this.id) {
         return;
       }
-      if (this.#requests.has(event.request.request)) {
+      if (event.redirectCount !== 0) {
+        
         return;
       }
 
@@ -265,7 +289,12 @@ export class BrowsingContext extends EventEmitter<{
     return this.closed;
   }
   get realms(): Iterable<WindowRealm> {
-    return this.#realms.values();
+    
+    const self = this;
+    return (function* () {
+      yield self.defaultRealm;
+      yield* self.#realms.values();
+    })();
   }
   get top(): BrowsingContext {
     let context = this as BrowsingContext;
@@ -278,6 +307,14 @@ export class BrowsingContext extends EventEmitter<{
     return this.#url;
   }
   
+
+  #createWindowRealm(sandbox?: string) {
+    const realm = WindowRealm.from(this, sandbox);
+    realm.on('worker', realm => {
+      this.emit('worker', {realm});
+    });
+    return realm;
+  }
 
   @inertIfDisposed
   private dispose(reason?: string): void {
@@ -345,16 +382,11 @@ export class BrowsingContext extends EventEmitter<{
   async navigate(
     url: string,
     wait?: Bidi.BrowsingContext.ReadinessState
-  ): Promise<Navigation> {
+  ): Promise<void> {
     await this.#session.send('browsingContext.navigate', {
       context: this.id,
       url,
       wait,
-    });
-    return await new Promise(resolve => {
-      this.once('navigation', ({navigation}) => {
-        resolve(navigation);
-      });
     });
   }
 
@@ -362,15 +394,10 @@ export class BrowsingContext extends EventEmitter<{
     
     return context.#reason!;
   })
-  async reload(options: ReloadOptions = {}): Promise<Navigation> {
+  async reload(options: ReloadOptions = {}): Promise<void> {
     await this.#session.send('browsingContext.reload', {
       context: this.id,
       ...options,
-    });
-    return await new Promise(resolve => {
-      this.once('navigation', ({navigation}) => {
-        resolve(navigation);
-      });
     });
   }
 
@@ -436,7 +463,7 @@ export class BrowsingContext extends EventEmitter<{
     return context.#reason!;
   })
   createWindowRealm(sandbox: string): WindowRealm {
-    return WindowRealm.from(this, sandbox);
+    return this.#createWindowRealm(sandbox);
   }
 
   @throwIfDisposed<BrowsingContext>(context => {
@@ -464,6 +491,54 @@ export class BrowsingContext extends EventEmitter<{
     await this.userContext.browser.removePreloadScript(script);
   }
 
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async getCookies(
+    options: GetCookiesOptions = {}
+  ): Promise<Bidi.Network.Cookie[]> {
+    const {
+      result: {cookies},
+    } = await this.#session.send('storage.getCookies', {
+      ...options,
+      partition: {
+        type: 'context',
+        context: this.id,
+      },
+    });
+    return cookies;
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async setCookie(cookie: Bidi.Storage.PartialCookie): Promise<void> {
+    await this.#session.send('storage.setCookie', {
+      cookie,
+      partition: {
+        type: 'context',
+        context: this.id,
+      },
+    });
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async setFiles(
+    element: Bidi.Script.SharedReference,
+    files: string[]
+  ): Promise<void> {
+    await this.#session.send('input.setFiles', {
+      context: this.id,
+      element,
+      files,
+    });
+  }
+
   [disposeSymbol](): void {
     this.#reason ??=
       'Browsing context already closed, probably because the user context closed.';
@@ -471,5 +546,25 @@ export class BrowsingContext extends EventEmitter<{
 
     this.#disposables.dispose();
     super[disposeSymbol]();
+  }
+
+  @throwIfDisposed<BrowsingContext>(context => {
+    
+    return context.#reason!;
+  })
+  async deleteCookie(
+    ...cookieFilters: Bidi.Storage.CookieFilter[]
+  ): Promise<void> {
+    await Promise.all(
+      cookieFilters.map(async filter => {
+        await this.#session.send('storage.deleteCookies', {
+          filter: filter,
+          partition: {
+            type: 'context',
+            context: this.id,
+          },
+        });
+      })
+    );
   }
 }

@@ -94,7 +94,8 @@ export abstract class HTTPRequest {
   
 
 
-  _requestId = '';
+  abstract get id(): string;
+
   
 
 
@@ -392,13 +393,6 @@ export enum InterceptResolutionAction {
   None = 'none',
   AlreadyHandled = 'already-handled',
 }
-
-
-
-
-
-
-export type InterceptResolutionStrategy = InterceptResolutionAction;
 
 
 

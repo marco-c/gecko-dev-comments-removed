@@ -9,7 +9,7 @@
 
 
 
-export class CustomError extends Error {
+export class PuppeteerError extends Error {
   
 
 
@@ -36,14 +36,14 @@ export class CustomError extends Error {
 
 
 
-export class TimeoutError extends CustomError {}
+export class TimeoutError extends PuppeteerError {}
 
 
 
 
 
 
-export class ProtocolError extends CustomError {
+export class ProtocolError extends PuppeteerError {
   #code?: number;
   #originalMessage = '';
 
@@ -76,49 +76,9 @@ export class ProtocolError extends CustomError {
 
 
 
-export class UnsupportedOperation extends CustomError {}
+export class UnsupportedOperation extends PuppeteerError {}
 
 
 
 
 export class TargetCloseError extends ProtocolError {}
-
-
-
-
-
-
-export interface PuppeteerErrors {
-  TimeoutError: typeof TimeoutError;
-  ProtocolError: typeof ProtocolError;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export const errors: PuppeteerErrors = Object.freeze({
-  TimeoutError,
-  ProtocolError,
-});

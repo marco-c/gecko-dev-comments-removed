@@ -43,12 +43,20 @@ export class FirefoxLauncher extends ProductLauncher {
     return {
       ...extraPrefsFirefox,
       ...(protocol === 'webDriverBiDi'
-        ? {}
+        ? {
+            
+            'remote.active-protocols': 1,
+          }
         : {
             
             'browser.tabs.closeWindowWithLastTab': false,
             
+            
+            'network.cookie.cookieBehavior': 0,
+            
             'fission.bfcacheInParent': false,
+            
+            'remote.active-protocols': 2,
           }),
       
       

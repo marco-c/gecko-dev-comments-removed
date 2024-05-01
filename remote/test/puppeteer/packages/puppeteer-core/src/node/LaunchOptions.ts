@@ -23,7 +23,12 @@ export interface BrowserLaunchArgumentOptions {
 
 
 
-  headless?: boolean | 'new';
+
+
+
+
+
+  headless?: boolean | 'shell';
   
 
 

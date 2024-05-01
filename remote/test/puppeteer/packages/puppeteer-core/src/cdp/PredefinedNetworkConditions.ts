@@ -40,10 +40,3 @@ export const PredefinedNetworkConditions = Object.freeze({
     latency: 150 * 3.75,
   } as NetworkConditions,
 });
-
-
-
-
-
-
-export const networkConditions = PredefinedNetworkConditions;

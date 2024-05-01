@@ -150,7 +150,7 @@ module.exports = {
     
     'rulesdir/extensions': 'error',
     
-    'rulesdir/check-license': 'warn',
+    'rulesdir/check-license': 'error',
   },
   overrides: [
     {
@@ -172,8 +172,6 @@ module.exports = {
         curly: ['error', 'all'],
         
         'arrow-body-style': ['error', 'always'],
-        
-        'tsdoc/syntax': 'error',
         
         '@typescript-eslint/array-type': ['error', {default: 'array-simple'}],
         'no-unused-vars': 'off',
@@ -276,6 +274,15 @@ module.exports = {
           },
         },
       ],
+    },
+
+    {
+      
+      files: ['packages/**/*.ts'],
+      rules: {
+        
+        'tsdoc/syntax': 'error',
+      },
     },
   ],
 };

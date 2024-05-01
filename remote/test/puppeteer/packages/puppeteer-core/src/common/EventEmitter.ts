@@ -27,18 +27,6 @@ export interface CommonEventEmitter<Events extends Record<EventType, unknown>> {
     handler?: Handler<Events[Key]>
   ): this;
   emit<Key extends keyof Events>(type: Key, event: Events[Key]): boolean;
-  
-
-
-
-  addListener<Key extends keyof Events>(
-    type: Key,
-    handler: Handler<Events[Key]>
-  ): this;
-  removeListener<Key extends keyof Events>(
-    type: Key,
-    handler: Handler<Events[Key]>
-  ): this;
   once<Key extends keyof Events>(
     type: Key,
     handler: Handler<Events[Key]>
@@ -146,30 +134,6 @@ export class EventEmitter<Events extends Record<EventType, unknown>>
   ): boolean {
     this.#emitter.emit(type, event);
     return this.listenerCount(type) > 0;
-  }
-
-  
-
-
-
-
-  removeListener<Key extends keyof EventsWithWildcard<Events>>(
-    type: Key,
-    handler: Handler<EventsWithWildcard<Events>[Key]>
-  ): this {
-    return this.off(type, handler);
-  }
-
-  
-
-
-
-
-  addListener<Key extends keyof EventsWithWildcard<Events>>(
-    type: Key,
-    handler: Handler<EventsWithWildcard<Events>[Key]>
-  ): this {
-    return this.on(type, handler);
   }
 
   
