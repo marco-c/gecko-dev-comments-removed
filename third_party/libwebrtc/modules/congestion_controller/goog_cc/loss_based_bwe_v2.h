@@ -63,6 +63,9 @@ class LossBasedBweV2 {
   bool ReadyToUseInStartPhase() const;
 
   
+  bool UseInStartPhase() const;
+
+  
   Result GetLossBasedResult() const;
 
   void SetAcknowledgedBitrate(DataRate acknowledged_bitrate);
