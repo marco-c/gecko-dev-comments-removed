@@ -109,9 +109,6 @@ module.exports = {
     
     "handle-callback-err": 0,
     
-    
-    "max-depth": 0,
-    
     "max-nested-callbacks": [2, 4],
     
     "max-params": 0,

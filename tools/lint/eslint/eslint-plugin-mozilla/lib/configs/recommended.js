@@ -22,6 +22,9 @@
 
 
 
+
+
+
 module.exports = {
   env: {
     browser: true,
@@ -165,10 +168,6 @@ module.exports = {
     
     
     "getter-return": "off",
-
-    
-    
-    "max-depth": "off",
 
     
     "max-nested-callbacks": ["error", 10],
