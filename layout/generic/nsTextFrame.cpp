@@ -5374,9 +5374,8 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
 
   
   if (aIncludeShadows) {
-    nsRect shadowRect =
+    *aInkOverflowRect =
         nsLayoutUtils::GetTextShadowRectsUnion(*aInkOverflowRect, this);
-    aInkOverflowRect->UnionRect(*aInkOverflowRect, shadowRect);
   }
 
   
