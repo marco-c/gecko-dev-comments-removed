@@ -185,7 +185,7 @@ static void AddLoadFlags(nsIRequest* request, nsLoadFlags newFlags) {
 
 namespace {
 struct DebugWorkerRefs {
-  RefPtr<ThreadSafeWorkerRef>& mTSWorkerRef;
+  RefPtr<ThreadSafeWorkerRef> mTSWorkerRef;
   nsCString mPrev;
 
   DebugWorkerRefs(RefPtr<ThreadSafeWorkerRef>& aTSWorkerRef,
