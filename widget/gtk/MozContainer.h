@@ -26,29 +26,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define MOZ_CONTAINER_TYPE (moz_container_get_type())
 #define MOZ_CONTAINER(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST((obj), MOZ_CONTAINER_TYPE, MozContainer))
@@ -71,7 +48,6 @@ struct _MozContainer {
   GtkContainer container;
   gboolean destroyed;
   struct Data {
-    GList* children = nullptr;
     gboolean force_default_visual = false;
 #ifdef MOZ_WAYLAND
     MozContainerWayland wl_container;
