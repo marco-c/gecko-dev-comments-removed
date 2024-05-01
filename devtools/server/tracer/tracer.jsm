@@ -47,6 +47,12 @@ const listeners = new Set();
 
 
 
+const isWorker =
+  globalThis.isWorker ||
+  globalThis.constructor.name == "WorkerDebuggerGlobalScope";
+
+
+
 
 const customLazy = {
   get Debugger() {
@@ -60,7 +66,7 @@ const customLazy = {
     
     
     
-    if (typeof isWorker == "boolean") {
+    if (isWorker) {
       return require("Debugger");
     }
     const { addDebuggerToGlobal } = ChromeUtils.importESModule(
@@ -152,13 +158,7 @@ class JavaScriptTracer {
     if (!this.loggingMethod) {
       
       
-      
-      
-      this.loggingMethod =
-        typeof isWorker == "boolean" ||
-        globalThis.constructor.name == "WorkerDebuggerGlobalScope"
-          ? dump.bind(null)
-          : dump;
+      this.loggingMethod = isWorker ? dump.bind(null) : dump;
     }
 
     this.traceDOMEvents = !!options.traceDOMEvents;
@@ -172,36 +172,8 @@ class JavaScriptTracer {
     this.frameId = 0;
 
     
-    if (options.traceOnNextInteraction && typeof isWorker !== "boolean") {
-      this.abortController = new AbortController();
-      const listener = () => {
-        this.abortController.abort();
-        
-        if (this.dbg) {
-          this.#startTracing();
-        }
-      };
-      const eventOptions = {
-        signal: this.abortController.signal,
-        capture: true,
-      };
-      
-      
-      const eventHandler =
-        this.tracedGlobal.docShell.chromeEventHandler || this.tracedGlobal;
-      eventHandler.addEventListener("mousedown", listener, eventOptions);
-      eventHandler.addEventListener("keydown", listener, eventOptions);
-
-      
-      let shouldLogToStdout = listeners.size == 0;
-      for (const l of listeners) {
-        if (typeof l.onTracingPending == "function") {
-          shouldLogToStdout |= l.onTracingPending();
-        }
-      }
-      if (shouldLogToStdout) {
-        this.loggingMethod(this.prefix + NEXT_INTERACTION_MESSAGE + "\n");
-      }
+    if (options.traceOnNextInteraction && !isWorker) {
+      this.#waitForNextInteraction();
     } else {
       this.#startTracing();
     }
@@ -210,6 +182,44 @@ class JavaScriptTracer {
   
   
   isTracing = false;
+
+  
+
+
+  #waitForNextInteraction() {
+    
+    
+    this.nextInteractionAbortController = new AbortController();
+
+    const listener = () => {
+      this.nextInteractionAbortController.abort();
+      
+      if (this.dbg) {
+        this.#startTracing();
+      }
+    };
+    const eventOptions = {
+      signal: this.nextInteractionAbortController.signal,
+      capture: true,
+    };
+    
+    
+    const eventHandler =
+      this.tracedGlobal.docShell.chromeEventHandler || this.tracedGlobal;
+    eventHandler.addEventListener("mousedown", listener, eventOptions);
+    eventHandler.addEventListener("keydown", listener, eventOptions);
+
+    
+    let shouldLogToStdout = listeners.size == 0;
+    for (const l of listeners) {
+      if (typeof l.onTracingPending == "function") {
+        shouldLogToStdout |= l.onTracingPending();
+      }
+    }
+    if (shouldLogToStdout) {
+      this.loggingMethod(this.prefix + NEXT_INTERACTION_MESSAGE + "\n");
+    }
+  }
 
   
 
@@ -306,9 +316,9 @@ class JavaScriptTracer {
     this.depth = 0;
 
     
-    if (this.abortController) {
-      this.abortController.abort();
-      this.abortController = null;
+    if (this.nextInteractionAbortController) {
+      this.nextInteractionAbortController.abort();
+      this.nextInteractionAbortController = null;
     }
 
     if (this.traceDOMEvents) {
