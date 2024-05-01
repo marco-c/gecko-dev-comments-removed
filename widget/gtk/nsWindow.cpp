@@ -615,6 +615,8 @@ void nsWindow::Destroy() {
 
   DestroyLayerManager();
 
+  mSurfaceProvider.CleanupResources();
+
   g_signal_handlers_disconnect_by_data(gtk_settings_get_default(), this);
 
   if (mIMContext) {
@@ -4119,16 +4121,6 @@ void nsWindow::OnUnmap() {
     if (sGtkDragCancel) {
       sGtkDragCancel(mSourceDragContext);
       mSourceDragContext = nullptr;
-    }
-  }
-
-  
-  
-  
-  if (GdkIsX11Display()) {
-    mSurfaceProvider.CleanupResources();
-    if (mCompositorWidgetDelegate) {
-      mCompositorWidgetDelegate->DisableRendering();
     }
   }
 }
