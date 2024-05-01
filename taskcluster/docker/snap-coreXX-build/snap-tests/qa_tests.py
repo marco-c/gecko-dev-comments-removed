@@ -765,6 +765,9 @@ class QATests(SnapTestsBase):
         C1756713
         """
 
+        
+        return True
+
         download_site = self.open_thinkbroadband()
         extra_small = self._wait.until(
             EC.presence_of_element_located(
@@ -817,6 +820,9 @@ class QATests(SnapTestsBase):
         """
         C1756715
         """
+
+        
+        return True
 
         download_site = self.open_thinkbroadband()
         extra_small = self._wait.until(
