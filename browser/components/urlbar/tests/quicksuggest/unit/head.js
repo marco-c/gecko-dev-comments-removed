@@ -625,24 +625,30 @@ async function doMigrateTest({
 
 
 
+
+
+
+
+
 async function doShowLessFrequentlyTests({
   feature,
   expectedResult,
   showLessFrequentlyCountPref,
   nimbusCapVariable,
   keyword,
+  keywordBaseIndex = keyword.indexOf(" "),
 }) {
   
   
-  let spaceIndex = keyword.indexOf(" ");
-  if (spaceIndex < 0) {
-    throw new Error("keyword must contain a space");
+  if (keywordBaseIndex <= 0) {
+    throw new Error(
+      "keywordBaseIndex must be > 0, but it's " + keywordBaseIndex
+    );
   }
-  if (spaceIndex == 0) {
-    throw new Error("keyword must not start with a space");
-  }
-  if (keyword.length < spaceIndex + 3) {
-    throw new Error("keyword must have at least two chars after the space");
+  if (keyword.length < keywordBaseIndex + 3) {
+    throw new Error(
+      "keyword must have at least two chars after keywordBaseIndex"
+    );
   }
 
   let tests = [
@@ -650,32 +656,32 @@ async function doShowLessFrequentlyTests({
       showLessFrequentlyCount: 0,
       canShowLessFrequently: true,
       newSearches: {
-        [keyword.substring(0, spaceIndex - 1)]: false,
-        [keyword.substring(0, spaceIndex)]: true,
-        [keyword.substring(0, spaceIndex + 1)]: true,
-        [keyword.substring(0, spaceIndex + 2)]: true,
-        [keyword.substring(0, spaceIndex + 3)]: true,
+        [keyword.substring(0, keywordBaseIndex - 1)]: false,
+        [keyword.substring(0, keywordBaseIndex)]: true,
+        [keyword.substring(0, keywordBaseIndex + 1)]: true,
+        [keyword.substring(0, keywordBaseIndex + 2)]: true,
+        [keyword.substring(0, keywordBaseIndex + 3)]: true,
       },
     },
     {
       showLessFrequentlyCount: 1,
       canShowLessFrequently: true,
       newSearches: {
-        [keyword.substring(0, spaceIndex)]: false,
+        [keyword.substring(0, keywordBaseIndex)]: false,
       },
     },
     {
       showLessFrequentlyCount: 2,
       canShowLessFrequently: true,
       newSearches: {
-        [keyword.substring(0, spaceIndex + 1)]: false,
+        [keyword.substring(0, keywordBaseIndex + 1)]: false,
       },
     },
     {
       showLessFrequentlyCount: 3,
       canShowLessFrequently: false,
       newSearches: {
-        [keyword.substring(0, spaceIndex + 2)]: false,
+        [keyword.substring(0, keywordBaseIndex + 2)]: false,
       },
     },
     {
@@ -685,19 +691,16 @@ async function doShowLessFrequentlyTests({
     },
   ];
 
-  
-  if (!UrlbarPrefs.get("quicksuggest.rustEnabled")) {
-    info("Testing 'show less frequently' with cap in remote settings");
-    await doOneShowLessFrequentlyTest({
-      tests,
-      feature,
-      expectedResult,
-      showLessFrequentlyCountPref,
-      rs: {
-        show_less_frequently_cap: 3,
-      },
-    });
-  }
+  info("Testing 'show less frequently' with cap in remote settings");
+  await doOneShowLessFrequentlyTest({
+    tests,
+    feature,
+    expectedResult,
+    showLessFrequentlyCountPref,
+    rs: {
+      show_less_frequently_cap: 3,
+    },
+  });
 
   
   info("Testing 'show less frequently' with cap in Nimbus and remote settings");
