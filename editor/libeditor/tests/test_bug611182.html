@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=611182
+-->
 <head>
   <title>Test for Bug 611182</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -92,7 +92,7 @@ SimpleTest.waitForFocus(function() {
   // start running all tests.
   var myXHR = new XMLHttpRequest();
   myXHR.open("GET", "file_bug611182.sjs?queryTotalTests");
-  myXHR.onload = function(e) {
+  myXHR.onload = function() {
     totalTests = myXHR.responseText;
     runAllTests();
   };
