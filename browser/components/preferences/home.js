@@ -348,8 +348,11 @@ var gHomePane = {
 
 
 
-  _isTabAboutPreferences(aTab) {
-    return aTab.linkedBrowser.currentURI.spec.startsWith("about:preferences");
+  _isTabAboutPreferencesOrSettings(aTab) {
+    return (
+      aTab.linkedBrowser.currentURI.spec.startsWith("about:preferences") ||
+      aTab.linkedBrowser.currentURI.spec.startsWith("about:settings")
+    );
   },
 
   
@@ -367,7 +370,7 @@ var gHomePane = {
         "navigator:browser"
     ) {
       tabs = win.gBrowser.visibleTabs.slice(win.gBrowser._numPinnedTabs);
-      tabs = tabs.filter(tab => !this._isTabAboutPreferences(tab));
+      tabs = tabs.filter(tab => !this._isTabAboutPreferencesOrSettings(tab));
       
       tabs = tabs.filter(tab => !tab.closing);
     }

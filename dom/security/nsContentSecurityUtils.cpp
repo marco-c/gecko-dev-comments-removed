@@ -1365,6 +1365,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   MOZ_ASSERT(!foundScriptSrc ||
                  StringBeginsWith(aboutSpec, "about:preferences"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:settings"_ns) ||
                  StringBeginsWith(aboutSpec, "about:downloads"_ns) ||
                  StringBeginsWith(aboutSpec, "about:asrouter"_ns) ||
                  StringBeginsWith(aboutSpec, "about:newtab"_ns) ||
@@ -1383,6 +1384,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   MOZ_ASSERT(!foundWebScheme ||
                  StringBeginsWith(aboutSpec, "about:preferences"_ns) ||
+                 StringBeginsWith(aboutSpec, "about:settings"_ns) ||
                  StringBeginsWith(aboutSpec, "about:addons"_ns) ||
                  StringBeginsWith(aboutSpec, "about:newtab"_ns) ||
                  StringBeginsWith(aboutSpec, "about:debugging"_ns) ||
@@ -1411,6 +1413,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       
       
       "about:preferences"_ns,
+      "about:settings"_ns,
       
       "about:addons"_ns,
       
@@ -1553,7 +1556,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
       
       u"about:downloads"_ns,
       
-      u"about:preferences"_ns,
+      u"about:preferences"_ns, u"about:settings"_ns,
       
       
       
