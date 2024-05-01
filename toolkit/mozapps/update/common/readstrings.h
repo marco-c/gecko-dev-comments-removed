@@ -41,6 +41,15 @@ int ReadStrings(const NS_tchar* path, const char* keyList,
 
 
 
+int ReadStringsFromBuffer(char* stringBuffer, const char* keyList,
+                          unsigned int numStrings,
+                          mozilla::UniquePtr<char[]>* results,
+                          const char* section = nullptr);
+
+
+
+
+
 class IniReader {
  public:
   

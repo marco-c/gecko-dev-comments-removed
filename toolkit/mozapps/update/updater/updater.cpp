@@ -46,6 +46,7 @@
 
 #include "updatecommon.h"
 #ifdef XP_MACOSX
+#  include "UpdateSettingsUtil.h"
 #  include "updaterfileutils_osx.h"
 #endif  
 
@@ -2659,6 +2660,7 @@ static void WaitForServiceFinishThread(void* param) {
 #endif
 
 #ifdef MOZ_VERIFY_MAR_SIGNATURE
+#  ifndef XP_MACOSX
 
 
 
@@ -2666,16 +2668,30 @@ static void WaitForServiceFinishThread(void* param) {
 
 
 
-static int ReadMARChannelIDs(const NS_tchar* path,
-                             MARChannelStringTable* results) {
+static int ReadMARChannelIDsFromPath(const NS_tchar* aPath,
+                                     MARChannelStringTable* aResults) {
   const unsigned int kNumStrings = 1;
   const char* kUpdaterKeys = "ACCEPTED_MAR_CHANNEL_IDS\0";
-  int result = ReadStrings(path, kUpdaterKeys, kNumStrings,
-                           &results->MARChannelID, "Settings");
-
-  return result;
+  return ReadStrings(aPath, kUpdaterKeys, kNumStrings, &aResults->MARChannelID,
+                     "Settings");
 }
-#endif
+#  else   
+
+
+
+
+
+
+
+static int ReadMARChannelIDsFromBuffer(char* aChannels,
+                                       MARChannelStringTable* aResults) {
+  const unsigned int kNumStrings = 1;
+  const char* kUpdaterKeys = "ACCEPTED_MAR_CHANNEL_IDS\0";
+  return ReadStringsFromBuffer(aChannels, kUpdaterKeys, kNumStrings,
+                               &aResults->MARChannelID, "Settings");
+}
+#  endif  
+#endif    
 
 static int GetUpdateFileName(NS_tchar* fileName, int maxChars) {
   NS_tsnprintf(fileName, maxChars, NS_T("%s/update.mar"), gPatchDirPath);
@@ -2700,17 +2716,22 @@ static void UpdateThreadFunc(void* param) {
     }
 
     if (rv == OK) {
+      MARChannelStringTable MARStrings;
+#  ifndef XP_MACOSX
       NS_tchar updateSettingsPath[MAXPATHLEN];
       NS_tsnprintf(updateSettingsPath,
                    sizeof(updateSettingsPath) / sizeof(updateSettingsPath[0]),
-#  ifdef XP_MACOSX
-                   NS_T("%s/Contents/Resources/update-settings.ini"),
+                   NS_T("%s/update-settings.ini"), gInstallDirPath);
+      rv = ReadMARChannelIDsFromPath(updateSettingsPath, &MARStrings);
 #  else
-                   NS_T("%s/update-settings.ini"),
+      if (auto marChannels =
+              UpdateSettingsUtil::GetAcceptedMARChannelsValue()) {
+        rv = ReadMARChannelIDsFromBuffer(marChannels->data(), &MARStrings);
+      } else {
+        rv = UPDATE_SETTINGS_FILE_CHANNEL;
+      }
 #  endif
-                   gInstallDirPath);
-      MARChannelStringTable MARStrings;
-      if (ReadMARChannelIDs(updateSettingsPath, &MARStrings) != OK) {
+      if (rv != OK) {
         rv = UPDATE_SETTINGS_FILE_CHANNEL;
       } else {
         rv = gArchiveReader.VerifyProductInformation(

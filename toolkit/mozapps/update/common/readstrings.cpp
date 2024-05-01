@@ -38,16 +38,6 @@ class AutoFILE {
   FILE* fp_;
 };
 
-class AutoCharArray {
- public:
-  explicit AutoCharArray(size_t len) { ptr_ = new char[len]; }
-  ~AutoCharArray() { delete[] ptr_; }
-  operator char*() { return ptr_; }
-
- private:
-  char* ptr_;
-};
-
 static const char kNL[] = "\r\n";
 static const char kEquals[] = "=";
 static const char kWhitespace[] = " \t";
@@ -153,7 +143,8 @@ int ReadStrings(const NS_tchar* path, const char* keyList,
   }
 
   size_t flen = size_t(len);
-  AutoCharArray fileContents(flen + 1);
+
+  char* fileContents = new char[flen + 1];
   if (!fileContents) {
     return READ_STRINGS_MEM_ERROR;
   }
@@ -170,12 +161,53 @@ int ReadStrings(const NS_tchar* path, const char* keyList,
 
   fileContents[flen] = '\0';
 
-  char* buffer = fileContents;
+  int result = ReadStringsFromBuffer(fileContents, keyList, numStrings, results,
+                                     section);
+  delete[] fileContents;
+  return result;
+}
+
+
+
+int ReadStrings(const NS_tchar* path, StringTable* results) {
+  const unsigned int kNumStrings = 2;
+  const char* kUpdaterKeys = "Title\0Info\0";
+  mozilla::UniquePtr<char[]> updater_strings[kNumStrings];
+
+  int result = ReadStrings(path, kUpdaterKeys, kNumStrings, updater_strings);
+
+  if (result == OK) {
+    results->title.swap(updater_strings[0]);
+    results->info.swap(updater_strings[1]);
+  }
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int ReadStringsFromBuffer(char* stringBuffer, const char* keyList,
+                          unsigned int numStrings,
+                          mozilla::UniquePtr<char[]>* results,
+                          const char* section) {
   bool inStringsSection = false;
 
   unsigned int read = 0;
 
-  while (char* token = NS_strtok(kNL, &buffer)) {
+  while (char* token = NS_strtok(kNL, &stringBuffer)) {
     if (token[0] == '#' || token[0] == ';') {  
       continue;
     }
@@ -231,23 +263,6 @@ int ReadStrings(const NS_tchar* path, const char* keyList,
   }
 
   return (read == numStrings) ? OK : PARSE_ERROR;
-}
-
-
-
-int ReadStrings(const NS_tchar* path, StringTable* results) {
-  const unsigned int kNumStrings = 2;
-  const char* kUpdaterKeys = "Title\0Info\0";
-  mozilla::UniquePtr<char[]> updater_strings[kNumStrings];
-
-  int result = ReadStrings(path, kUpdaterKeys, kNumStrings, updater_strings);
-
-  if (result == OK) {
-    results->title.swap(updater_strings[0]);
-    results->info.swap(updater_strings[1]);
-  }
-
-  return result;
 }
 
 IniReader::IniReader(const NS_tchar* iniPath,
