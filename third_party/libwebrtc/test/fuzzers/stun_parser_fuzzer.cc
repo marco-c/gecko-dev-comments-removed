@@ -15,14 +15,13 @@
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  const char* message = reinterpret_cast<const char*>(data);
 
   
   
   
   
   std::unique_ptr<cricket::IceMessage> stun_msg(new cricket::IceMessage());
-  rtc::ByteBufferReader buf(message, size);
+  rtc::ByteBufferReader buf(rtc::MakeArrayView(data, size));
   stun_msg->Read(&buf);
   stun_msg->ValidateMessageIntegrity("");
 }

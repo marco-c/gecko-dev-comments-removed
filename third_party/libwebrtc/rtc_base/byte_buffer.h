@@ -124,7 +124,8 @@ class ByteBufferWriter : public ByteBufferWriterT<BufferT<char>> {
 
 class ByteBufferReader {
  public:
-  ByteBufferReader(const char* bytes, size_t len);
+  [[deprecated("Use ArrayView<uint8_t>")]] ByteBufferReader(const char* bytes,
+                                                            size_t len);
 
   explicit ByteBufferReader(
       rtc::ArrayView<const uint8_t> bytes ABSL_ATTRIBUTE_LIFETIME_BOUND);
@@ -160,7 +161,7 @@ class ByteBufferReader {
   bool ReadBytes(rtc::ArrayView<uint8_t> val);
   
   
-  bool ReadBytes(char* val, size_t len);
+  [[deprecated("Read using ArrayView")]] bool ReadBytes(char* val, size_t len);
 
   
   

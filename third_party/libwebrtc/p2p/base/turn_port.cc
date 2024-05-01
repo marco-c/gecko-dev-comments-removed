@@ -991,7 +991,8 @@ void TurnPort::HandleDataIndication(const char* data,
                                     size_t size,
                                     int64_t packet_time_us) {
   
-  rtc::ByteBufferReader buf(data, size);
+  rtc::ByteBufferReader buf(
+      rtc::MakeArrayView(reinterpret_cast<const uint8_t*>(data), size));
   TurnMessage msg;
   if (!msg.Read(&buf)) {
     RTC_LOG(LS_WARNING) << ToString()

@@ -454,7 +454,8 @@ bool Port::GetStunMessage(const char* data,
   
   
   std::unique_ptr<IceMessage> stun_msg(new IceMessage());
-  rtc::ByteBufferReader buf(data, size);
+  rtc::ByteBufferReader buf(
+      rtc::MakeArrayView(reinterpret_cast<const uint8_t*>(data), size));
   if (!stun_msg->Read(&buf) || (buf.Length() > 0)) {
     return false;
   }
