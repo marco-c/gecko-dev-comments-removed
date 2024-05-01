@@ -47,7 +47,7 @@ function test() {
 
 
 
-  open_preferences(async function tabOpened() {
+  open_preferences(async function tabOpened(aContentWindow) {
     is(
       gBrowser.currentURI.spec,
       "about:preferences",

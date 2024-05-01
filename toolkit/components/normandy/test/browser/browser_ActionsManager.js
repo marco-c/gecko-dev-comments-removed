@@ -14,7 +14,7 @@ const { ActionSchemas } = ChromeUtils.importESModule(
 );
 
 
-decorate_task(async function () {
+decorate_task(async function (reportActionStub, Stub) {
   let manager = new ActionsManager();
   const recipe = { id: 1, action: "test-local-action-used" };
 

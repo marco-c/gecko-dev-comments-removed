@@ -2,7 +2,7 @@
 
 
 
-export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
+export const selectLayoutRender = ({ state = {}, prefs = {}, locale = "" }) => {
   const { layout, feeds, spocs } = state;
   let spocIndexPlacementMap = {};
 

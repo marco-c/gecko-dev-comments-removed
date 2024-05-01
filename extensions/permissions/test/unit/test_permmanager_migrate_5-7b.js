@@ -108,7 +108,7 @@ add_task(function test() {
     ["http://localhost", "B", 2, 0, 0, 0],
   ];
 
-  let found = expected.map(() => 0);
+  let found = expected.map(it => 0);
 
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");

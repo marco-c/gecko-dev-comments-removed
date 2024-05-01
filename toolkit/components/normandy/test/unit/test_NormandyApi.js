@@ -199,7 +199,7 @@ decorate_task(
 
     
     const cookieExpectedDeferred = Promise.withResolvers();
-    function cookieExpectedObserver(aSubject, aTopic) {
+    function cookieExpectedObserver(aSubject, aTopic, aData) {
       equal(
         aTopic,
         "http-on-modify-request",
@@ -223,7 +223,7 @@ decorate_task(
 
     
     const cookieNotExpectedDeferred = Promise.withResolvers();
-    function cookieNotExpectedObserver(aSubject, aTopic) {
+    function cookieNotExpectedObserver(aSubject, aTopic, aData) {
       equal(
         aTopic,
         "http-on-modify-request",
