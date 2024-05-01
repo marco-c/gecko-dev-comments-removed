@@ -982,6 +982,9 @@ already_AddRefed<JS::Stencil> ScriptPreloader::WaitForCachedStencil(
     JSContext* cx, const JS::ReadOnlyDecodeOptions& options,
     CachedStencil* script) {
   if (!script->mReadyToExecute) {
+    
+    
+    
     MOZ_ASSERT(mDecodedStencils);
 
     
@@ -1066,7 +1069,12 @@ void ScriptPreloader::OnDecodeTaskFailed() {
 void ScriptPreloader::FinishPendingParses(MonitorAutoLock& aMal) {
   mMonitor.AssertCurrentThreadOwns();
 
-  MOZ_ASSERT_IF(!mDecodingScripts.isEmpty(), mDecodedStencils);
+  
+  
+  
+  if (!mDecodedStencils) {
+    return;
+  }
 
   
   while (!mDecodingScripts.isEmpty()) {
