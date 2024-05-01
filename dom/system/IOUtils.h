@@ -653,23 +653,15 @@ class IOUtils::EventQueue final {
 
 class IOUtils::IOError {
  public:
-  MOZ_IMPLICIT IOError(nsresult aCode) : mCode(aCode), mMessage(Nothing()) {}
+  IOError(nsresult aCode, const nsCString& aMsg)
+      : mCode(aCode), mMessage(aMsg) {}
 
-  
-
-
-  template <typename... Args>
-  IOError WithMessage(const char* const aMessage, Args... aArgs) {
-    mMessage.emplace(nsPrintfCString(aMessage, aArgs...));
-    return *this;
-  }
-  IOError WithMessage(const char* const aMessage) {
-    mMessage.emplace(nsCString(aMessage));
-    return *this;
-  }
-  IOError WithMessage(const nsCString& aMessage) {
-    mMessage.emplace(aMessage);
-    return *this;
+  IOError(nsresult aCode, const char* const aFmt, ...) MOZ_FORMAT_PRINTF(3, 4)
+      : mCode(aCode) {
+    va_list ap;
+    va_start(ap, aFmt);
+    mMessage.AppendVprintf(aFmt, ap);
+    va_end(ap);
   }
 
   
@@ -680,11 +672,11 @@ class IOUtils::IOError {
   
 
 
-  const Maybe<nsCString>& Message() const { return mMessage; }
+  const nsCString& Message() const { return mMessage; }
 
  private:
   nsresult mCode;
-  Maybe<nsCString> mMessage;
+  nsCString mMessage;
 };
 
 
