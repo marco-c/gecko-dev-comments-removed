@@ -191,7 +191,12 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
     
     
     
+    
+    
+    MOZ_ASSERT(cbFrame->GetUsedBorder() == nsMargin(),
+               "How did the ::-moz-scrolled-frame end up with border?");
     *aContain = cbFrame->ScrollableOverflowRectRelativeToSelf();
+    aContain->Deflate(cbFrame->GetUsedPadding());
     nsLayoutUtils::TransformRect(cbFrame, aFrame->GetParent(), *aContain);
   } else {
     *aContain = nsLayoutUtils::GetAllInFlowRectsUnion(
