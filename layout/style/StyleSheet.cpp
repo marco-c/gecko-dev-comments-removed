@@ -28,7 +28,6 @@
 #include "mozilla/css/SheetLoadData.h"
 
 #include "mozAutoDocUpdate.h"
-#include "SheetLoadData.h"
 
 namespace mozilla {
 
@@ -71,6 +70,10 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentSheetToUse,
     mState &= ~(State::ForcedUniqueInner | State::ModifiedRules |
                 State::ModifiedRulesForDevtools);
   }
+
+  
+  
+  mState &= ~State::AsyncParseOngoing;
 
   if (aCopy.mMedia) {
     
@@ -740,7 +743,9 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
   loadData->mIsBeingParsed = true;
   MOZ_ASSERT(!mReplacePromise);
   mReplacePromise = promise;
-  ParseSheet(*loader, aText, *loadData)
+  RefPtr<css::SheetLoadDataHolder> holder(
+      new css::SheetLoadDataHolder(__func__, loadData, false));
+  ParseSheet(*loader, aText, holder)
       ->Then(
           target, __func__,
           [loadData] { loadData->SheetFinishedParsingAsync(); },
@@ -1159,28 +1164,20 @@ already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(
   return child.forget();
 }
 
-
-
-static bool AllowParallelParse(css::Loader& aLoader, URLExtraData* aUrlData) {
-  Document* doc = aLoader.GetDocument();
-  if (doc && css::ErrorReporter::ShouldReportErrors(*doc)) {
-    return false;
-  }
-  
-  return true;
-}
-
 RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
     css::Loader& aLoader, const nsACString& aBytes,
-    css::SheetLoadData& aLoadData) {
+    const RefPtr<css::SheetLoadDataHolder>& aLoadData) {
   MOZ_ASSERT(mParsePromise.IsEmpty());
   RefPtr<StyleSheetParsePromise> p = mParsePromise.Ensure(__func__);
-  if (!aLoadData.ShouldDefer()) {
+  if (!aLoadData->get()->ShouldDefer()) {
     mParsePromise.SetTaskPriority(nsIRunnablePriority::PRIORITY_RENDER_BLOCKING,
                                   __func__);
   }
   SetURLExtraData();
+  MOZ_ASSERT(!IsAsyncParseOngoing());
+  mState |= State::AsyncParseOngoing;
 
+  MOZ_ASSERT_IF(NS_IsMainThread(), !HasParsePromiseResolutionBlocked());
   
   
   
@@ -1191,26 +1188,26 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
   const bool shouldRecordCounters =
       aLoader.GetDocument() && aLoader.GetDocument()->GetStyleUseCounters() &&
       !urlData->ChromeRulesEnabled();
-  if (!AllowParallelParse(aLoader, urlData)) {
+
+  if (aLoadData->get()->mRecordErrors) {
+    MOZ_ASSERT(NS_IsMainThread());
     UniquePtr<StyleUseCounters> counters;
     if (shouldRecordCounters) {
       counters.reset(Servo_UseCounters_Create());
     }
-
     RefPtr<StyleStylesheetContents> contents =
         Servo_StyleSheet_FromUTF8Bytes(
-            &aLoader, this, &aLoadData, &aBytes, mParsingMode, urlData,
-            aLoadData.mCompatMode,
+            &aLoader, this, aLoadData->get(), &aBytes, mParsingMode, urlData,
+            aLoadData->get()->mCompatMode,
              nullptr, counters.get(), allowImportRules,
             StyleSanitizationKind::None,
              nullptr)
             .Consume();
     FinishAsyncParse(contents.forget(), std::move(counters));
   } else {
-    auto holder = MakeRefPtr<css::SheetLoadDataHolder>(__func__, &aLoadData);
-    Servo_StyleSheet_FromUTF8BytesAsync(holder, urlData, &aBytes, mParsingMode,
-                                        aLoadData.mCompatMode,
-                                        shouldRecordCounters, allowImportRules);
+    Servo_StyleSheet_FromUTF8BytesAsync(
+        aLoadData, urlData, &aBytes, mParsingMode,
+        aLoadData->get()->mCompatMode, shouldRecordCounters, allowImportRules);
   }
 
   return p;
@@ -1219,12 +1216,13 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
 void StyleSheet::FinishAsyncParse(
     already_AddRefed<StyleStylesheetContents> aSheetContents,
     UniquePtr<StyleUseCounters> aUseCounters) {
+  mState &= ~State::AsyncParseOngoing;
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mParsePromise.IsEmpty());
   Inner().mContents = aSheetContents;
   Inner().mUseCounters = std::move(aUseCounters);
   FixUpRuleListAfterContentsChangeIfNeeded();
-  mParsePromise.Resolve(true, __func__);
+  MayBeResolveParsePromise();
 }
 
 void StyleSheet::ParseSheetSync(

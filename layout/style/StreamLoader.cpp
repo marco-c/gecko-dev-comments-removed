@@ -5,7 +5,7 @@
 
 
 #include "mozilla/css/StreamLoader.h"
-
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/TaskQueue.h"
 #include "nsContentUtils.h"
@@ -14,16 +14,21 @@
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIStreamTransportService.h"
 #include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::css {
 
 StreamLoader::StreamLoader(SheetLoadData& aSheetLoadData)
-    : mSheetLoadData(&aSheetLoadData), mStatus(NS_OK) {}
+    : mSheetLoadData(&aSheetLoadData),
+      mStatus(NS_OK),
+      mMainThreadSheetLoadData(new nsMainThreadPtrHolder<SheetLoadData>(
+          "StreamLoader::SheetLoadData", mSheetLoadData, false)) {}
 
 StreamLoader::~StreamLoader() {
 #ifdef NIGHTLY_BUILD
-  MOZ_RELEASE_ASSERT(mOnStopRequestCalled || mChannelOpenFailed);
+  MOZ_RELEASE_ASSERT(mOnStopProcessingDone || mChannelOpenFailed);
 #endif
 }
 
@@ -34,6 +39,7 @@ NS_IMPL_ISUPPORTS(StreamLoader, nsIStreamListener,
 NS_IMETHODIMP
 StreamLoader::OnStartRequest(nsIRequest* aRequest) {
   MOZ_ASSERT(aRequest);
+  mRequest = aRequest;
   mSheetLoadData->NotifyStart(aRequest);
 
   
@@ -52,6 +58,12 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
         return (mStatus = NS_ERROR_OUT_OF_MEMORY);
       }
     }
+    NS_GetFinalChannelURI(channel, getter_AddRefs(mFinalChannelURI));
+    nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
+    
+    
+    Unused << secMan->GetChannelResultPrincipal(
+        channel, getter_AddRefs(mChannelResultPrincipal));
   }
   if (nsCOMPtr<nsIThreadRetargetableRequest> rr = do_QueryInterface(aRequest)) {
     nsCOMPtr<nsIEventTarget> sts =
@@ -73,6 +85,12 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
     return *info.mExpirationTime;
   }();
 
+  
+  
+  
+  
+  mSheetLoadData->mSheet->BlockOrUnblockParsePromise(true);
+
   return NS_OK;
 }
 
@@ -81,31 +99,63 @@ StreamLoader::CheckListenerChain() { return NS_OK; }
 
 NS_IMETHODIMP
 StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
-#ifdef NIGHTLY_BUILD
-  MOZ_RELEASE_ASSERT(!mOnStopRequestCalled);
-  mOnStopRequestCalled = true;
-#endif
+  MOZ_ASSERT_IF(!StaticPrefs::network_send_OnDataFinished_cssLoader(),
+                !mOnStopProcessingDone);
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    mSheetLoadData->mSheet->BlockOrUnblockParsePromise(false);
+  }
+
+  if (mOnStopProcessingDone) {
+    return NS_OK;
+  }
+  mOnStopProcessingDone = true;
 
   nsresult rv = mStatus;
   
   nsCString utf8String;
   {
-    
-    
-    nsCString bytes = std::move(mBytes);
-
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
     if (NS_FAILED(mStatus)) {
-      mSheetLoadData->VerifySheetReadyToParse(mStatus, ""_ns, ""_ns, channel);
+      mSheetLoadData->VerifySheetReadyToParse(mStatus, ""_ns, ""_ns, channel,
+                                              mFinalChannelURI,
+                                              mChannelResultPrincipal);
+
+      if (!NS_IsMainThread()) {
+        
+        
+        
+        mOnStopProcessingDone = false;
+      }
       return mStatus;
     }
 
-    rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, bytes,
-                                                 channel);
+    rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, mBytes,
+                                                 channel, mFinalChannelURI,
+                                                 mChannelResultPrincipal);
     if (rv != NS_OK_PARSE_SHEET) {
+      if (!NS_IsMainThread()) {
+        mOnStopProcessingDone = false;
+      }
       return rv;
     }
+
+    
+    
 
     
     
@@ -113,7 +163,9 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       HandleBOM();
       MOZ_ASSERT(mEncodingFromBOM.isSome());
     }
-
+    
+    
+    nsCString bytes = std::move(mBytes);
     
     
     const Encoding* encoding = mEncodingFromBOM.value();
@@ -142,8 +194,10 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   
   
-  mSheetLoadData->mLoader->ParseSheet(utf8String, *mSheetLoadData,
+  mSheetLoadData->mLoader->ParseSheet(utf8String, mMainThreadSheetLoadData,
                                       Loader::AllowAsyncParse::Yes);
+
+  mRequest = nullptr;
 
   return NS_OK;
 }
@@ -159,9 +213,6 @@ StreamLoader::OnDataAvailable(nsIRequest*, nsIInputStream* aInputStream,
   return aInputStream->ReadSegments(WriteSegmentFun, this, aCount, &dummy);
 }
 
-NS_IMETHODIMP
-StreamLoader::OnDataFinished(nsresult aStatus) { return NS_OK; }
-
 void StreamLoader::HandleBOM() {
   MOZ_ASSERT(mEncodingFromBOM.isNothing());
   MOZ_ASSERT(mBytes.IsEmpty());
@@ -174,6 +225,15 @@ void StreamLoader::HandleBOM() {
   
   mBytes.Append(Substring(mBOMBytes, bomLength));
   mBOMBytes.Truncate(bomLength);
+}
+
+NS_IMETHODIMP
+StreamLoader::OnDataFinished(nsresult aResult) {
+  if (StaticPrefs::network_send_OnDataFinished_cssLoader()) {
+    return OnStopRequest(mRequest, aResult);
+  }
+
+  return NS_OK;
 }
 
 nsresult StreamLoader::WriteSegmentFun(nsIInputStream*, void* aClosure,
