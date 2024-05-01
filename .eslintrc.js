@@ -253,6 +253,12 @@ module.exports = {
       },
     },
     {
+      files: ["browser/base/content/browser.js"],
+      rules: {
+        "mozilla/no-more-globals": "error",
+      },
+    },
+    {
       
       
       
