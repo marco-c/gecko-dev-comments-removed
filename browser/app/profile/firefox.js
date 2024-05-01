@@ -440,11 +440,7 @@ pref("browser.search.param.search_rich_suggestions", "fen");
 pref("browser.urlbar.weather.featureGate", false);
 
 
-#ifdef NIGHTLY_BUILD
 pref("browser.urlbar.clipboard.featureGate", true);
-#else
-pref("browser.urlbar.clipboard.featureGate", false);
-#endif
 
 
 
