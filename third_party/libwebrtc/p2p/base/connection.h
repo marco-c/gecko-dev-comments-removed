@@ -156,7 +156,9 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   sigslot::signal1<Connection*> SignalReadyToSend;
 
   
-  void OnReadPacket(const char* data, size_t size, int64_t packet_time_us);
+  void OnReadPacket(const rtc::ReceivedPacket& packet);
+  [[deprecated("Pass a rtc::ReceivedPacket")]] void
+  OnReadPacket(const char* data, size_t size, int64_t packet_time_us);
 
   
   void OnReadyToSend();
