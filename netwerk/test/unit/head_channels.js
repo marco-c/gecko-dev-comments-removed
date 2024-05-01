@@ -525,3 +525,27 @@ function makeHTTPChannel(url, with_proxy) {
     loadUsingSystemPrincipal: true,
   }).QueryInterface(Ci.nsIHttpChannel);
 }
+
+
+
+class SimpleChannelListener {
+  constructor(callback) {
+    this._onStopCallback = callback;
+    this._buffer = "";
+  }
+  get QueryInterface() {
+    return ChromeUtils.generateQI(["nsIStreamListener", "nsIRequestObserver"]);
+  }
+
+  onStartRequest(request) {}
+
+  onDataAvailable(request, stream, offset, count) {
+    this._buffer = this._buffer.concat(read_stream(stream, count));
+  }
+
+  onStopRequest(request, status) {
+    if (this._onStopCallback) {
+      this._onStopCallback(request, this._buffer);
+    }
+  }
+}
