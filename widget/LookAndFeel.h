@@ -166,10 +166,6 @@ class LookAndFeel {
     
 
 
-    TooltipDelay,
-    
-
-
     SwipeAnimationEnabled,
 
     

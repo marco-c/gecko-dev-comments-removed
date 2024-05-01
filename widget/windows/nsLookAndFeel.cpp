@@ -409,9 +409,6 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       
       aResult = GetSystemParam(SPI_GETMENUSHOWDELAY, 400);
       break;
-    case IntID::TooltipDelay:
-      aResult = 500;
-      break;
     case IntID::MenusCanOverlapOSBar:
       
       aResult = 1;
