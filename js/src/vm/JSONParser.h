@@ -167,7 +167,7 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
 
   
   
-  using PropertyVector = IdValueVector;
+  using PropertyVector = JS::GCVector<IdValuePair, 10>;
 
   enum class ParseType {
     

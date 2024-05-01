@@ -692,9 +692,8 @@ inline bool JSONFullParseHandlerAnyChar::finishObject(
   if (gcHeap == gc::Heap::Tenured) {
     newKind = TenuredObject;
   }
-  
   JSObject* obj = NewPlainObjectWithMaybeDuplicateKeys(
-      cx, Handle<IdValueVector>::fromMarkedLocation(properties), newKind);
+      cx, properties->begin(), properties->length(), newKind);
   if (!obj) {
     return false;
   }
