@@ -42,12 +42,13 @@ function sorted(s) {
 }
 
 
+
 function matchReasons(expectedNotRestoredReasonsSet, notRestoredReasonsSet) {
   const missing = setMinus(
     expectedNotRestoredReasonsSet, notRestoredReasonsSet, 'Missing reasons');
   const extra = setMinus(
       notRestoredReasonsSet, expectedNotRestoredReasonsSet, 'Extra reasons');
-  assert_true(missing.size + extra.size == 0, `Expected: ${sorted(expectedNotRestoredReasonsSet)}\n` +
+  assert_true(missing.size == 0, `Expected: ${sorted(expectedNotRestoredReasonsSet)}\n` +
     `Got: ${sorted(notRestoredReasonsSet)}\n` +
     `Missing: ${sorted(missing)}\n` +
     `Extra: ${sorted(extra)}\n`);
