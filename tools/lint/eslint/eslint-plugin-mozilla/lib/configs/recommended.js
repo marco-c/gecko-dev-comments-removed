@@ -351,9 +351,5 @@ module.exports = {
 
     
     "prefer-arrow-callback": "off",
-
-    
-    
-    "require-yield": "off",
   },
 };

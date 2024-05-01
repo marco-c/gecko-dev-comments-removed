@@ -6,6 +6,7 @@
 
 var testGenerator = testSteps();
 
+
 function* testSteps() {
   const name = this.window ? window.location.pathname : "Splendid Test";
 
