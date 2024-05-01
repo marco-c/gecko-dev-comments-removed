@@ -135,7 +135,11 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
 
   
   sheet->SetDisabled(aOptions.mDisabled);
+  sheet->SetURLExtraData();
   sheet->SetComplete();
+
+  sheet->ReplaceSync(""_ns, aRv);
+  MOZ_ASSERT(!aRv.Failed());
 
   
   return sheet.forget();
@@ -770,7 +774,6 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
   
   
   auto* loader = mConstructorDocument->CSSLoader();
-  SetURLExtraData();
   RefPtr<const StyleStylesheetContents> rawContent =
       Servo_StyleSheet_FromUTF8Bytes(
           loader, this,
