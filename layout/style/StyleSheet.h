@@ -474,7 +474,10 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   void BlockParsePromise() {
-    uint32_t count = ++mAsyncParseBlockers;
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    uint32_t count =
+#endif
+        ++mAsyncParseBlockers;
     MOZ_DIAGNOSTIC_ASSERT(count);
   }
 
