@@ -113,6 +113,19 @@ nsHtml5TreeBuilder::~nsHtml5TreeBuilder() {
   mOpQueue.Clear();
 }
 
+static void getTypeString(nsHtml5String& aType, nsAString& aTypeString) {
+  aType.ToString(aTypeString);
+
+  
+  
+  
+
+  
+  
+  static const char kASCIIWhitespace[] = "\t\n\f\r ";
+  aTypeString.Trim(kASCIIWhitespace);
+}
+
 nsIContentHandle* nsHtml5TreeBuilder::createElement(
     int32_t aNamespace, nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
     nsIContentHandle* aIntendedParent, nsHtml5ContentCreatorFunction aCreator) {
@@ -239,16 +252,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
           nsHtml5String type =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
           nsAutoString typeString;
-          type.ToString(typeString);
-
-          
-          
-          
-
-          
-          
-          static const char kASCIIWhitespace[] = "\t\n\f\r ";
-          typeString.Trim(kASCIIWhitespace);
+          getTypeString(type, typeString);
 
           bool isModule = typeString.LowerCaseEqualsASCII("module");
           bool importmap = typeString.LowerCaseEqualsASCII("importmap");
@@ -556,36 +560,70 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
               tokenizer->getColumnNumber() + 1);
           treeOp->Init(mozilla::AsVariant(operation));
 
+          nsHtml5String type =
+              aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
+          nsAutoString typeString;
+          getTypeString(type, typeString);
+
+          bool isModule = typeString.LowerCaseEqualsASCII("module");
+          bool importmap = typeString.LowerCaseEqualsASCII("importmap");
+          bool async = false;
+          bool defer = false;
+
+          if (importmap) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            mHasSeenImportMap = true;
+          }
           nsHtml5String url =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_HREF);
           if (!url) {
             url = aAttributes->getValue(nsHtml5AttributeName::ATTR_XLINK_HREF);
           }
           if (url) {
-            nsHtml5String type =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
-            nsHtml5String crossOrigin =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
-            nsHtml5String nonce =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_NONCE);
-            nsHtml5String integrity =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
-            nsHtml5String referrerPolicy = aAttributes->getValue(
-                nsHtml5AttributeName::ATTR_REFERRERPOLICY);
+            async = aAttributes->contains(nsHtml5AttributeName::ATTR_ASYNC);
+            defer = aAttributes->contains(nsHtml5AttributeName::ATTR_DEFER);
+            if ((isModule && !mHasSeenImportMap) || (!isModule && !importmap)) {
+              nsHtml5String type =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
+              nsHtml5String crossOrigin =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
+              nsHtml5String nonce =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_NONCE);
+              nsHtml5String integrity =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
+              nsHtml5String referrerPolicy = aAttributes->getValue(
+                  nsHtml5AttributeName::ATTR_REFERRERPOLICY);
 
-            
-            
-            
-            
-            
-            
-            nsHtml5String fetchPriority = nsHtml5String::EmptyString();
+              
+              
+              
+              
+              
+              
+              nsHtml5String fetchPriority = nsHtml5String::EmptyString();
 
-            mSpeculativeLoadQueue.AppendElement()->InitScript(
-                url, nullptr, type, crossOrigin,  nullptr, nonce,
-                fetchPriority, integrity, referrerPolicy,
-                mode == nsHtml5TreeBuilder::IN_HEAD, false, false, false);
+              mSpeculativeLoadQueue.AppendElement()->InitScript(
+                  url, nullptr, type, crossOrigin,  nullptr,
+                  nonce, fetchPriority, integrity, referrerPolicy,
+                  mode == nsHtml5TreeBuilder::IN_HEAD, async, defer, false);
+            }
           }
+          
+          
+          
+          
+          mCurrentHtmlScriptCannotDocumentWriteOrBlock =
+              isModule || importmap || async || defer;
         } else if (nsGkAtoms::style == aName) {
           mImportScanner.Start();
           nsHtml5TreeOperation* treeOp =
@@ -638,16 +676,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
         nsHtml5String type =
             aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
         nsAutoString typeString;
-        type.ToString(typeString);
-
-        
-        
-        
-
-        
-        
-        static const char kASCIIWhitespace[] = "\t\n\f\r ";
-        typeString.Trim(kASCIIWhitespace);
+        getTypeString(type, typeString);
 
         mCurrentHtmlScriptCannotDocumentWriteOrBlock =
             typeString.LowerCaseEqualsASCII("module") ||
@@ -1224,8 +1253,9 @@ void nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsAtom* aName,
       return;
     }
     if (mCurrentHtmlScriptCannotDocumentWriteOrBlock) {
-      NS_ASSERTION(aNamespace == kNameSpaceID_XHTML,
-                   "Only HTML scripts may be async/defer.");
+      NS_ASSERTION(
+          aNamespace == kNameSpaceID_XHTML || aNamespace == kNameSpaceID_SVG,
+          "Only HTML and SVG scripts may be async/defer.");
       nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement(mozilla::fallible);
       if (MOZ_UNLIKELY(!treeOp)) {
         MarkAsBrokenAndRequestSuspensionWithoutBuilder(NS_ERROR_OUT_OF_MEMORY);
