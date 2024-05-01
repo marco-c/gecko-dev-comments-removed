@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "api/call/call_factory_interface.h"
+#include "api/peer_connection_interface.h"
 #include "api/test/time_controller.h"
 
 namespace webrtc {
@@ -26,8 +27,15 @@ std::unique_ptr<TimeController> CreateSimulatedTimeController();
 
 
 
-std::unique_ptr<CallFactoryInterface> CreateTimeControllerBasedCallFactory(
-    TimeController* time_controller);
+[[deprecated("bugs.webrtc.org/15574")]] std::unique_ptr<CallFactoryInterface>
+CreateTimeControllerBasedCallFactory(TimeController* time_controller);
+
+
+
+
+void EnableMediaWithDefaultsAndTimeController(
+    TimeController& time_controller,
+    PeerConnectionFactoryDependencies& deps);
 
 }  
 

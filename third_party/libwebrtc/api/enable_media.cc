@@ -69,6 +69,11 @@ class MediaFactoryImpl : public MediaFactory {
 }  
 
 void EnableMedia(PeerConnectionFactoryDependencies& deps) {
+  if (deps.media_factory != nullptr) {
+    
+    
+    return;
+  }
   deps.media_factory = std::make_unique<MediaFactoryImpl>();
 }
 
