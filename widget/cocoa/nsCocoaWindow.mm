@@ -187,7 +187,7 @@ void nsCocoaWindow::DestroyNativeWindow() {
   [mWindow releaseJSObjects];
   
   
-  [mWindow setDelegate:nil];
+  mWindow.delegate = nil;
   [mWindow close];
   mWindow = nil;
   [mDelegate autorelease];
@@ -260,7 +260,7 @@ DesktopToLayoutDeviceScale ParentBackingScaleFactor(nsIWidget* aParent,
   }
   NSWindow* parentWindow = [aParentView window];
   if (parentWindow) {
-    return DesktopToLayoutDeviceScale([parentWindow backingScaleFactor]);
+    return DesktopToLayoutDeviceScale(parentWindow.backingScaleFactor);
   }
   return DesktopToLayoutDeviceScale(1.0);
 }
@@ -477,29 +477,31 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     contentRect = aRect;
     contentRect.origin.y -= (newWindowFrame.size.height - aRect.size.height);
 
-    if (mWindowType != WindowType::Popup)
-      contentRect.origin.y -= [[NSApp mainMenu] menuBarHeight];
+    if (mWindowType != WindowType::Popup) {
+      contentRect.origin.y -= NSApp.mainMenu.menuBarHeight;
+    }
   }
 
   
   
 
   Class windowClass = [BaseWindow class];
-  
-  
-  
-  
   if ((mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog) &&
-      (features & NSWindowStyleMaskTitled))
+      (features & NSWindowStyleMaskTitled)) {
+    
+    
+    
+    
     windowClass = [ToolbarWindow class];
-  
-  else if (mWindowType == WindowType::Popup)
+  } else if (mWindowType == WindowType::Popup) {
     windowClass = [PopupWindow class];
-  
-  
-  else if (features == NSWindowStyleMaskBorderless)
+    
+  } else if (features == NSWindowStyleMaskBorderless) {
+    
+    
     windowClass = [BorderlessWindow class];
+  }
 
   
   mWindow = [[windowClass alloc] initWithContentRect:contentRect
@@ -509,65 +511,61 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
 
   
   
-  [mWindow setRestorable:!aIsPrivateBrowsing];
+  mWindow.restorable = !aIsPrivateBrowsing;
   if (aIsPrivateBrowsing) {
     [mWindow disableSnapshotRestoration];
   }
 
   
   mDelegate = [[WindowDelegate alloc] initWithGeckoWindow:this];
-  [mWindow setDelegate:mDelegate];
+  mWindow.delegate = mDelegate;
 
   
   NSRect wantedFrame = [mWindow frameRectForChildViewRect:contentRect];
-  if (!NSEqualRects([mWindow frame], wantedFrame)) {
+  if (!NSEqualRects(mWindow.frame, wantedFrame)) {
     
     [mWindow setFrame:wantedFrame display:NO];
   }
   UpdateBounds();
 
   if (mWindowType == WindowType::Invisible) {
-    [mWindow setLevel:kCGDesktopWindowLevelKey];
+    mWindow.level = kCGDesktopWindowLevelKey;
   }
 
   if (mWindowType == WindowType::Popup) {
     SetPopupWindowLevel();
-    [mWindow setBackgroundColor:NSColor.clearColor];
-    [mWindow setOpaque:NO];
+    mWindow.backgroundColor = NSColor.clearColor;
+    mWindow.opaque = NO;
 
     
     
     
     
-    if (!mAlwaysOnTop) {
-      NSWindowCollectionBehavior behavior = [mWindow collectionBehavior];
-      behavior |= NSWindowCollectionBehaviorMoveToActiveSpace;
-      [mWindow setCollectionBehavior:behavior];
-    }
+    mWindow.collectionBehavior = mWindow.collectionBehavior |
+                                 NSWindowCollectionBehaviorMoveToActiveSpace;
   } else {
     
-    [mWindow setOpaque:YES];
+    mWindow.opaque = YES;
   }
 
-  NSWindowCollectionBehavior newBehavior = [mWindow collectionBehavior];
+  NSWindowCollectionBehavior newBehavior = mWindow.collectionBehavior;
   if (mAlwaysOnTop) {
-    [mWindow setLevel:NSFloatingWindowLevel];
+    mWindow.level = NSFloatingWindowLevel;
     newBehavior |= NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
-  [mWindow setCollectionBehavior:newBehavior];
-
-  [mWindow setContentMinSize:NSMakeSize(60, 60)];
+  mWindow.collectionBehavior = newBehavior;
+  mWindow.contentMinSize = NSMakeSize(60, 60);
   [mWindow disableCursorRects];
 
   
   
-  [[mWindow contentView] setWantsLayer:YES];
+  mWindow.contentView.wantsLayer = YES;
 
   
   
-  [mWindow setMovableByWindowBackground:NO];
+  mWindow.movableByWindowBackground = NO;
 
-  [[WindowDataMap sharedWindowDataMap] ensureDataForWindow:mWindow];
+  [WindowDataMap.sharedWindowDataMap ensureDataForWindow:mWindow];
   mWindowMadeHere = true;
 
   
@@ -596,11 +594,11 @@ nsresult nsCocoaWindow::CreatePopupContentView(const LayoutDeviceIntRect& aRect,
     return rv;
   }
 
-  NSView* contentView = [mWindow contentView];
-  ChildView* childView =
-      (ChildView*)mPopupContentView->GetNativeData(NS_NATIVE_WIDGET);
-  [childView setFrame:[contentView bounds]];
-  [childView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+  NSView* contentView = mWindow.contentView;
+  auto* childView = static_cast<ChildView*>(
+      mPopupContentView->GetNativeData(NS_NATIVE_WIDGET));
+  childView.frame = contentView.bounds;
+  childView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
   [contentView addSubview:childView];
 
   return NS_OK;
@@ -670,7 +668,7 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
     
     
     case NS_NATIVE_WIDGET:
-      retVal = [mWindow contentView];
+      retVal = mWindow.contentView;
       break;
 
     case NS_NATIVE_WINDOW:
@@ -687,9 +685,9 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
       if (retVal) {
         break;
       }
-      NSView* view = mWindow ? [mWindow contentView] : nil;
+      NSView* view = mWindow ? mWindow.contentView : nil;
       if (view) {
-        retVal = [view inputContext];
+        retVal = view.inputContext;
       }
       
       
@@ -792,10 +790,11 @@ void nsCocoaWindow::SetModal(bool aState) {
         gGeckoAppModalWindowList = gGeckoAppModalWindowList->prev;
         delete saved;  
       }
-      if (mWindowType == WindowType::Popup)
+      if (mWindowType == WindowType::Popup) {
         SetPopupWindowLevel();
-      else
-        [mWindow setLevel:NSNormalWindowLevel];
+      } else {
+        mWindow.level = NSNormalWindowLevel;
+      }
     }
   }
 
@@ -810,43 +809,44 @@ void nsCocoaWindow::SetFakeModal(bool aState) {
 bool nsCocoaWindow::IsRunningAppModal() { return [NSApp _isRunningAppModal]; }
 
 
-void nsCocoaWindow::Show(bool bState) {
+void nsCocoaWindow::Show(bool aState) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  if (!mWindow) return;
+  if (!mWindow) {
+    return;
+  }
 
   if (!mSheetNeedsShow) {
     
     
-    if (bState == ([mWindow isVisible] || [mWindow isBeingShown])) {
+    if (aState == mWindow.isVisibleOrBeingShown) {
       return;
     }
   }
 
-  [mWindow setBeingShown:bState];
-  if (bState && !mWasShown) {
+  [mWindow setBeingShown:aState];
+  if (aState && !mWasShown) {
     mWasShown = true;
   }
 
   nsIWidget* parentWidget = mParent;
   nsCOMPtr<nsPIWidgetCocoa> piParentWidget(do_QueryInterface(parentWidget));
   NSWindow* nativeParentWindow =
-      (parentWidget) ? (NSWindow*)parentWidget->GetNativeData(NS_NATIVE_WINDOW)
-                     : nil;
+      parentWidget ? (NSWindow*)parentWidget->GetNativeData(NS_NATIVE_WINDOW)
+                   : nil;
 
-  if (bState && !mBounds.IsEmpty()) {
+  if (aState && !mBounds.IsEmpty()) {
     
     
     
-    if ([NSApp activationPolicy] != NSApplicationActivationPolicyRegular) {
-      [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    if (NSApp.activationPolicy != NSApplicationActivationPolicyRegular) {
+      NSApp.activationPolicy = NSApplicationActivationPolicyRegular;
       PR_SetEnv("MOZ_APP_NO_DOCK=");
     }
 
     
     if (mWindowType == WindowType::Popup && nativeParentWindow) {
-      if (![nativeParentWindow isVisible] ||
-          [nativeParentWindow isMiniaturized]) {
+      if (!nativeParentWindow.isVisible || nativeParentWindow.isMiniaturized) {
         return;
       }
     }
@@ -947,7 +947,7 @@ void nsCocoaWindow::Show(bool bState) {
       
       if ([mWindow isKindOfClass:[PopupWindow class]] &&
           [(PopupWindow*)mWindow isContextMenu]) {
-        [[NSDistributedNotificationCenter defaultCenter]
+        [NSDistributedNotificationCenter.defaultCenter
             postNotificationName:
                 @"com.apple.HIToolbox.beginMenuTrackingNotification"
                           object:@"org.mozilla.gecko.PopupWindow"];
@@ -958,8 +958,9 @@ void nsCocoaWindow::Show(bool bState) {
       
       
       
-      if (nativeParentWindow && mPopupLevel == PopupLevel::Parent)
+      if (nativeParentWindow && mPopupLevel == PopupLevel::Parent) {
         [nativeParentWindow addChildWindow:mWindow ordered:NSWindowAbove];
+      }
     } else {
       NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
       if (mWindowType == WindowType::TopLevel &&
@@ -1099,8 +1100,9 @@ void nsCocoaWindow::Show(bool bState) {
       
       
       
-      if (mWindowType == WindowType::Popup && nativeParentWindow)
+      if (mWindowType == WindowType::Popup && nativeParentWindow) {
         [nativeParentWindow removeChildWindow:mWindow];
+      }
 
       [mWindow orderOut:nil];
 
@@ -1129,8 +1131,8 @@ void nsCocoaWindow::Show(bool bState) {
 bool nsCocoaWindow::NeedsRecreateToReshow() {
   
   
-  return (mWindowType == WindowType::Popup) && mWasShown &&
-         ([[NSScreen screens] count] > 1);
+  return mWindowType == WindowType::Popup && mWasShown &&
+         NSScreen.screens.count > 1;
 }
 
 WindowRenderer* nsCocoaWindow::GetWindowRenderer() {
@@ -1143,8 +1145,8 @@ WindowRenderer* nsCocoaWindow::GetWindowRenderer() {
 TransparencyMode nsCocoaWindow::GetTransparencyMode() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return (!mWindow || [mWindow isOpaque]) ? TransparencyMode::Opaque
-                                          : TransparencyMode::Transparent;
+  return !mWindow || mWindow.isOpaque ? TransparencyMode::Opaque
+                                      : TransparencyMode::Transparent;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(TransparencyMode::Opaque);
 }
@@ -1162,9 +1164,9 @@ void nsCocoaWindow::SetTransparencyMode(TransparencyMode aMode) {
   if (isTransparent == currentTransparency) {
     return;
   }
-  [mWindow setOpaque:!isTransparent];
-  [mWindow setBackgroundColor:(isTransparent ? NSColor.clearColor
-                                             : NSColor.whiteColor)];
+  mWindow.opaque = !isTransparent;
+  mWindow.backgroundColor =
+      isTransparent ? NSColor.clearColor : NSColor.whiteColor;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -1184,7 +1186,7 @@ void nsCocoaWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
 
   int32_t width, height;
 
-  NSRect frame = [mWindow frame];
+  NSRect frame = mWindow.frame;
 
   
   width = std::max<int32_t>(frame.size.width, 1);
@@ -1243,7 +1245,7 @@ void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
   NSSize minSize = {
       nsCocoaUtils::DevPixelsToCocoaPoints(c.mMinSize.width, c.mScale.scale),
       nsCocoaUtils::DevPixelsToCocoaPoints(c.mMinSize.height, c.mScale.scale)};
-  [mWindow setMinSize:minSize];
+  mWindow.minSize = minSize;
 
   c.mMaxSize.width = std::max(
       nsCocoaUtils::CocoaPointsToDevPixels(c.mMaxSize.width, c.mScale.scale),
@@ -1259,8 +1261,7 @@ void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
       c.mMaxSize.height == NS_MAXSIZE ? FLT_MAX
                                       : nsCocoaUtils::DevPixelsToCocoaPoints(
                                             c.mMaxSize.height, c.mScale.scale)};
-  [mWindow setMaxSize:maxSize];
-
+  mWindow.maxSize = maxSize;
   nsBaseWidget::SetSizeConstraints(c);
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -1280,7 +1281,7 @@ void nsCocoaWindow::Move(double aX, double aY) {
       static_cast<float>(aX),
       static_cast<float>(nsCocoaUtils::FlippedScreenY(NSToIntRound(aY)))};
 
-  NSRect frame = [mWindow frame];
+  NSRect frame = mWindow.frame;
   if (frame.origin.x != coord.x ||
       frame.origin.y + frame.size.height != coord.y) {
     [mWindow setFrameTopLeftPoint:coord];
@@ -1488,13 +1489,9 @@ void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
 
 void nsCocoaWindow::SuppressAnimation(bool aSuppress) {
   if ([mWindow respondsToSelector:@selector(setAnimationBehavior:)]) {
-    if (aSuppress) {
-      [mWindow setIsAnimationSuppressed:YES];
-      [mWindow setAnimationBehavior:NSWindowAnimationBehaviorNone];
-    } else {
-      [mWindow setIsAnimationSuppressed:NO];
-      [mWindow setAnimationBehavior:mWindowAnimationBehavior];
-    }
+    mWindow.isAnimationSuppressed = aSuppress;
+    mWindow.animationBehavior =
+        aSuppress ? NSWindowAnimationBehaviorNone : mWindowAnimationBehavior;
   }
 }
 
@@ -1506,10 +1503,11 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
 
   if (!mWindow || !mWindowMadeHere ||
       (mWindowType != WindowType::TopLevel &&
-       mWindowType != WindowType::Dialog))
+       mWindowType != WindowType::Dialog)) {
     return;
+  }
 
-  BOOL isVisible = [mWindow isVisible];
+  const BOOL isVisible = mWindow.isVisible;
 
   
   NSArray* childWindows = [mWindow childWindows];
@@ -1530,7 +1528,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   NSMutableDictionary* state = [mWindow exportState];
 
   
-  NSRect frameRect = [mWindow frame];
+  NSRect frameRect = mWindow.frame;
   DestroyNativeWindow();
   nsresult rv = CreateNativeWindow(
       frameRect, aShouldHide ? BorderStyle::None : mBorderStyle, true,
@@ -1629,7 +1627,7 @@ static bool AlwaysUsesNativeFullScreen() {
   NSScreen* cocoaScreen = ScreenHelperCocoa::CocoaScreenForScreen(widgetScreen);
 
   NSWindow* win =
-      [[NSWindow alloc] initWithContentRect:[cocoaScreen frame]
+      [[NSWindow alloc] initWithContentRect:cocoaScreen.frame
                                   styleMask:NSWindowStyleMaskBorderless
                                     backing:NSBackingStoreBuffered
                                       defer:YES];
@@ -2075,7 +2073,7 @@ void nsCocoaWindow::DoResize(double aX, double aY, double aWidth,
   
   NSRect newFrame = nsCocoaUtils::GeckoRectToCocoaRect(newBounds);
 
-  NSRect frame = [mWindow frame];
+  NSRect frame = mWindow.frame;
   BOOL isMoving = newFrame.origin.x != frame.origin.x ||
                   newFrame.origin.y != frame.origin.y;
   BOOL isResizing = newFrame.size.width != frame.size.width ||
@@ -2114,7 +2112,7 @@ NSRect nsCocoaWindow::GetClientCocoaRect() {
     return NSZeroRect;
   }
 
-  return [mWindow childViewRectForFrameRect:[mWindow frame]];
+  return [mWindow childViewRectForFrameRect:mWindow.frame];
 }
 
 LayoutDeviceIntRect nsCocoaWindow::GetClientBounds() {
@@ -2130,7 +2128,7 @@ LayoutDeviceIntRect nsCocoaWindow::GetClientBounds() {
 void nsCocoaWindow::UpdateBounds() {
   NSRect frame = NSZeroRect;
   if (mWindow) {
-    frame = [mWindow frame];
+    frame = mWindow.frame;
   }
   mBounds =
       nsCocoaUtils::CocoaRectToGeckoRectDevPix(frame, BackingScaleFactor());
@@ -2145,7 +2143,7 @@ LayoutDeviceIntRect nsCocoaWindow::GetScreenBounds() {
 
 #ifdef DEBUG
   LayoutDeviceIntRect r = nsCocoaUtils::CocoaRectToGeckoRectDevPix(
-      [mWindow frame], BackingScaleFactor());
+      mWindow.frame, BackingScaleFactor());
   NS_ASSERTION(mWindow && mBounds == r, "mBounds out of sync!");
 #endif
 
@@ -2157,7 +2155,7 @@ LayoutDeviceIntRect nsCocoaWindow::GetScreenBounds() {
 double nsCocoaWindow::GetDefaultScaleInternal() { return BackingScaleFactor(); }
 
 static CGFloat GetBackingScaleFactor(NSWindow* aWindow) {
-  NSRect frame = [aWindow frame];
+  NSRect frame = aWindow.frame;
   if (frame.size.width > 0 && frame.size.height > 0) {
     return nsCocoaUtils::GetBackingScaleFactor(aWindow);
   }
@@ -2256,7 +2254,7 @@ nsresult nsCocoaWindow::SetTitle(const nsAString& aTitle) {
   const unichar* uniTitle = reinterpret_cast<const unichar*>(strTitle.get());
   NSString* title = [NSString stringWithCharacters:uniTitle
                                             length:strTitle.Length()];
-  if ([mWindow drawsContentsIntoWindowFrame] && ![mWindow wantsTitleDrawn]) {
+  if (mWindow.drawsContentsIntoWindowFrame && !mWindow.wantsTitleDrawn) {
     
     [mWindow disableSetNeedsDisplay];
     [mWindow setTitle:title];
@@ -2292,9 +2290,10 @@ bool nsCocoaWindow::DragEvent(unsigned int aMessage,
 NS_IMETHODIMP nsCocoaWindow::SendSetZLevelEvent() {
   nsWindowZ placement = nsWindowZTop;
   nsCOMPtr<nsIWidget> actualBelow;
-  if (mWidgetListener)
+  if (mWidgetListener) {
     mWidgetListener->ZLevelChanged(true, &placement, nullptr,
                                    getter_AddRefs(actualBelow));
+  }
   return NS_OK;
 }
 
@@ -2345,8 +2344,9 @@ nsresult nsCocoaWindow::DispatchEvent(WidgetGUIEvent* event,
   nsCOMPtr<nsIWidget> kungFuDeathGrip(event->mWidget);
   mozilla::Unused << kungFuDeathGrip;  
 
-  if (mWidgetListener)
+  if (mWidgetListener) {
     aStatus = mWidgetListener->HandleEvent(event, mUseAttachedEvents);
+  }
 
   return NS_OK;
 }
@@ -2356,10 +2356,15 @@ nsresult nsCocoaWindow::DispatchEvent(WidgetGUIEvent* event,
 
 
 static nsSizeMode GetWindowSizeMode(NSWindow* aWindow, bool aFullScreen) {
-  if (aFullScreen) return nsSizeMode_Fullscreen;
-  if ([aWindow isMiniaturized]) return nsSizeMode_Minimized;
-  if (([aWindow styleMask] & NSWindowStyleMaskResizable) && [aWindow isZoomed])
+  if (aFullScreen) {
+    return nsSizeMode_Fullscreen;
+  }
+  if (aWindow.isMiniaturized) {
+    return nsSizeMode_Minimized;
+  }
+  if ((aWindow.styleMask & NSWindowStyleMaskResizable) && aWindow.isZoomed) {
     return nsSizeMode_Maximized;
+  }
   return nsSizeMode_Normal;
 }
 
@@ -2380,7 +2385,7 @@ void nsCocoaWindow::ReportMoveEvent() {
   
   
   
-  if (mWindow && ((mSizeMode == nsSizeMode_Maximized) ^ [mWindow isZoomed])) {
+  if (mWindow && (mSizeMode == nsSizeMode_Maximized) ^ mWindow.isZoomed) {
     DispatchSizeModeEvent();
   }
 
@@ -2463,8 +2468,9 @@ void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
   
   if (mMenuBar && ((!gSomeMenuBarPainted &&
                     nsMenuUtilsX::GetHiddenWindowMenuBar() == mMenuBar) ||
-                   [mWindow isMainWindow]))
+                   mWindow.isMainWindow)) {
     mMenuBar->Paint();
+  }
 }
 
 void nsCocoaWindow::SetFocus(Raise aRaise,
@@ -2475,12 +2481,10 @@ void nsCocoaWindow::SetFocus(Raise aRaise,
     return mPopupContentView->SetFocus(aRaise, aCallerType);
   }
 
-  if (aRaise == Raise::Yes &&
-      ([mWindow isVisible] || [mWindow isMiniaturized])) {
-    if ([mWindow isMiniaturized]) {
+  if (aRaise == Raise::Yes && (mWindow.isVisible || mWindow.isMiniaturized)) {
+    if (mWindow.isMiniaturized) {
       [mWindow deminiaturize:nil];
     }
-
     [mWindow makeKeyAndOrderFront:nil];
     SendSetZLevelEvent();
   }
@@ -2534,7 +2538,7 @@ void nsCocoaWindow::CaptureRollupEvents(bool aDoCapture) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (aDoCapture) {
-    if (![NSApp isActive]) {
+    if (!NSApp.isActive) {
       
       
       
@@ -2554,14 +2558,17 @@ void nsCocoaWindow::CaptureRollupEvents(bool aDoCapture) {
     
     
     
-    if (mWindow && (mWindowType == WindowType::Popup)) SetPopupWindowLevel();
+    if (mWindowType == WindowType::Popup) {
+      SetPopupWindowLevel();
+    }
   } else {
     nsToolkit::GetToolkit()->StopMonitoringAllProcessMouseEvents();
 
     
     
-    if (mWindow && (mWindowType == WindowType::Popup))
-      [mWindow setLevel:NSModalPanelWindowLevel];
+    if (mWindow && mWindowType == WindowType::Popup) {
+      mWindow.level = NSModalPanelWindowLevel;
+    }
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -2645,7 +2652,7 @@ void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
 
   
   
-  if (![mWindow isVisible] || NSIsEmptyRect([mWindow frame])) {
+  if (!mWindow.isVisible || NSIsEmptyRect(mWindow.frame)) {
     return;
   }
 
@@ -2754,13 +2761,9 @@ void nsCocoaWindow::SetWindowAnimationType(
 void nsCocoaWindow::SetDrawsTitle(bool aDrawTitle) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  if (![mWindow drawsContentsIntoWindowFrame]) {
-    
-    
-    [mWindow setWantsTitleDrawn:YES];
-  } else {
-    [mWindow setWantsTitleDrawn:aDrawTitle];
-  }
+  
+  
+  mWindow.wantsTitleDrawn = aDrawTitle || !mWindow.drawsContentsIntoWindowFrame;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -2854,18 +2857,20 @@ void nsCocoaWindow::UpdateThemeGeometries(
 }
 
 void nsCocoaWindow::SetPopupWindowLevel() {
-  if (!mWindow) return;
+  if (!mWindow) {
+    return;
+  }
 
   
   
   if (mPopupLevel == PopupLevel::Floating) {
-    [mWindow setLevel:NSFloatingWindowLevel];
-    [mWindow setHidesOnDeactivate:YES];
+    mWindow.level = NSFloatingWindowLevel;
+    mWindow.hidesOnDeactivate = YES;
   } else {
     
     
-    [mWindow setLevel:NSPopUpMenuWindowLevel];
-    [mWindow setHidesOnDeactivate:NO];
+    mWindow.level = NSPopUpMenuWindowLevel;
+    mWindow.hidesOnDeactivate = NO;
   }
 }
 
@@ -2898,7 +2903,7 @@ bool nsCocoaWindow::GetEditCommands(NativeKeyBindingsType aType,
 
 void nsCocoaWindow::PauseOrResumeCompositor(bool aPause) {
   if (auto* mainChildView =
-          static_cast<nsIWidget*>([[mWindow mainChildView] widget])) {
+          static_cast<nsIWidget*>(mWindow.mainChildView.widget)) {
     mainChildView->PauseOrResumeCompositor(aPause);
   }
 }
@@ -2952,16 +2957,17 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   nsCocoaWindow* geckoWidget = [windowDelegate geckoWidget];
   NS_ASSERTION(geckoWidget, "Window delegate not returning a gecko widget!");
 
-  nsMenuBarX* geckoMenuBar = geckoWidget->GetMenuBar();
-  if (geckoMenuBar) {
+  if (nsMenuBarX* geckoMenuBar = geckoWidget->GetMenuBar()) {
     geckoMenuBar->Paint();
   } else {
     
-    if (!sApplicationMenu) return;
+    if (!sApplicationMenu) {
+      return;
+    }
 
-    NSMenu* mainMenu = [NSApp mainMenu];
+    NSMenu* mainMenu = NSApp.mainMenu;
     NS_ASSERTION(
-        [mainMenu numberOfItems] > 0,
+        mainMenu.numberOfItems > 0,
         "Main menu does not have any items, something is terribly wrong!");
 
     
@@ -2977,7 +2983,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     [firstMenuItem release];
 
     
-    [NSApp setMainMenu:newMenuBar];
+    NSApp.mainMenu = newMenuBar;
     [newMenuBar release];
   }
 
@@ -3098,8 +3104,8 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   
   
   
-  NSWindow* window = (NSWindow*)[notification object];
-  NSView* frameView = [[window contentView] superview];
+  NSWindow* window = notification.object;
+  NSView* frameView = window.contentView.superview;
   NSView* titlebarView = nil;
   NSView* titlebarContainerView = nil;
   if ([frameView respondsToSelector:@selector(titlebarView)]) {
@@ -3143,9 +3149,13 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 
   
   
-  if ([NSApp _isRunningAppModal]) return;
-  NSWindow* window = [aNotification object];
-  if (window) [WindowDelegate paintMenubarForWindow:window];
+  if (NSApp._isRunningAppModal) {
+    return;
+  }
+  NSWindow* window = aNotification.object;
+  if (window) {
+    [WindowDelegate paintMenubarForWindow:window];
+  }
 
   if ([window isKindOfClass:[ToolbarWindow class]]) {
     [(ToolbarWindow*)window windowMainStateChanged];
@@ -3255,8 +3265,9 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 }
 
 - (BOOL)windowShouldZoom:(NSWindow*)window toFrame:(NSRect)proposedFrame {
-  if (!mHasEverBeenZoomed && [window isZoomed]) return NO;  
-
+  if (!mHasEverBeenZoomed && window.isZoomed) {
+    return NO;  
+  }
   mHasEverBeenZoomed = YES;
   return YES;
 }
@@ -3299,7 +3310,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if ([window respondsToSelector:@selector(backingScaleFactor)]) {
     CGFloat oldFactor = [[[aNotification userInfo]
         objectForKey:@"NSBackingPropertyOldScaleFactorKey"] doubleValue];
-    if ([window backingScaleFactor] != oldFactor) {
+    if (window.backingScaleFactor != oldFactor) {
       mGeckoWindow->BackingScaleFactorChanged();
     }
   }
@@ -3350,7 +3361,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (![self.window isKindOfClass:[ToolbarWindow class]]) {
     return self.FrameView__closeButtonOrigin;
   }
-  ToolbarWindow* win = (ToolbarWindow*)[self window];
+  auto* win = static_cast<ToolbarWindow*>(self.window);
   if (win.drawsContentsIntoWindowFrame &&
       !(win.styleMask & NSWindowStyleMaskFullScreen) &&
       (win.styleMask & NSWindowStyleMaskTitled)) {
@@ -3361,8 +3372,9 @@ void nsCocoaWindow::CocoaWindowDidResize() {
       
       
       return NSMakePoint(buttonsRect.origin.x, win.frame.size.height);
-    } else if (win.windowTitlebarLayoutDirection ==
-               NSUserInterfaceLayoutDirectionRightToLeft) {
+    }
+    if (win.windowTitlebarLayoutDirection ==
+        NSUserInterfaceLayoutDirectionRightToLeft) {
       
       
       
@@ -3376,13 +3388,14 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 }
 
 - (CGFloat)FrameView__titlebarHeight {
+  
   CGFloat height = [self FrameView__titlebarHeight];
-  if ([[self window] isKindOfClass:[ToolbarWindow class]]) {
+  if ([self.window isKindOfClass:[ToolbarWindow class]]) {
     
     
     
-    ToolbarWindow* win = (ToolbarWindow*)[self window];
-    CGFloat frameHeight = [self frame].size.height;
+    auto* win = static_cast<ToolbarWindow*>(self.window);
+    CGFloat frameHeight = self.frame.size.height;
     CGFloat windowButtonY = frameHeight;
     if (!NSIsEmptyRect(win.windowButtonsRect) &&
         win.drawsContentsIntoWindowFrame &&
@@ -3507,8 +3520,8 @@ static NSImage* GetMenuMaskImage() {
 }
 
 - (void)swapOutChildViewWrapper:(NSView*)aNewWrapper {
-  [aNewWrapper setFrame:[[self contentView] frame]];
-  NSView* childView = [[self mainChildView] retain];
+  aNewWrapper.frame = self.contentView.frame;
+  NSView* childView = [self.mainChildView retain];
   [childView removeFromSuperview];
   [aNewWrapper addSubview:childView];
   [childView release];
@@ -3604,16 +3617,16 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 - (NSMutableDictionary*)exportState {
   NSMutableDictionary* state = [NSMutableDictionary dictionaryWithCapacity:10];
-  if (NSString* title = [self title]) {
+  if (NSString* title = self.title) {
     [state setObject:title forKey:kStateTitleKey];
   }
-  [state setObject:[NSNumber numberWithBool:[self drawsContentsIntoWindowFrame]]
+  [state setObject:[NSNumber numberWithBool:self.drawsContentsIntoWindowFrame]
             forKey:kStateDrawsContentsIntoWindowFrameKey];
-  [state setObject:[NSNumber numberWithBool:[self showsToolbarButton]]
+  [state setObject:[NSNumber numberWithBool:self.showsToolbarButton]
             forKey:kStateShowsToolbarButton];
-  [state setObject:[NSNumber numberWithUnsignedInt:[self collectionBehavior]]
+  [state setObject:[NSNumber numberWithUnsignedInt:self.collectionBehavior]
             forKey:kStateCollectionBehavior];
-  [state setObject:[NSNumber numberWithBool:[self wantsTitleDrawn]]
+  [state setObject:[NSNumber numberWithBool:self.wantsTitleDrawn]
             forKey:kStateWantsTitleDrawn];
   return state;
 }
@@ -3668,17 +3681,17 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 }
 
 - (NSView*)trackingAreaView {
-  NSView* contentView = [self contentView];
-  return [contentView superview] ? [contentView superview] : contentView;
+  NSView* contentView = self.contentView;
+  return contentView.superview ? contentView.superview : contentView;
 }
 
 - (NSArray<NSView*>*)contentViewContents {
-  return [[[[self contentView] subviews] copy] autorelease];
+  return [[self.contentView.subviews copy] autorelease];
 }
 
 - (ChildView*)mainChildView {
-  NSView* contentView = [self contentView];
-  NSView* lastView = [[contentView subviews] lastObject];
+  NSView* contentView = self.contentView;
+  NSView* lastView = contentView.subviews.lastObject;
   if ([lastView isKindOfClass:[ChildView class]]) {
     return (ChildView*)lastView;
   }
@@ -3687,7 +3700,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 - (void)removeTrackingArea {
   if (mTrackingArea) {
-    [[self trackingAreaView] removeTrackingArea:mTrackingArea];
+    [self.trackingAreaView removeTrackingArea:mTrackingArea];
     [mTrackingArea release];
     mTrackingArea = nil;
   }
@@ -3696,7 +3709,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 - (void)updateTrackingArea {
   [self removeTrackingArea];
 
-  NSView* view = [self trackingAreaView];
+  NSView* view = self.trackingAreaView;
   const NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited |
                                         NSTrackingMouseMoved |
                                         NSTrackingActiveAlways;
@@ -3742,7 +3755,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 
 - (void)reflowTitlebarElements {
-  NSView* frameView = [[self contentView] superview];
+  NSView* frameView = self.contentView.superview;
   if ([frameView respondsToSelector:@selector(_tileTitlebarAndRedisplay:)]) {
     [frameView _tileTitlebarAndRedisplay:NO];
   }
@@ -3853,15 +3866,15 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 }
 
 - (void)mouseUp:(NSEvent*)event {
-  if ([event clickCount] == 2) {
+  if (event.clickCount == 2) {
     
     
     
     
     if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
-      [[self window] performZoom:nil];
+      [self.window performZoom:nil];
     } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
-      [[self window] performMiniaturize:nil];
+      [self.window performMiniaturize:nil];
     }
   }
 }
@@ -4095,8 +4108,7 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 }
 
 - (NSArray<NSView*>*)contentViewContents {
-  NSMutableArray<NSView*>* contents =
-      [[[self contentView] subviews] mutableCopy];
+  NSMutableArray<NSView*>* contents = [[self.contentView subviews] mutableCopy];
   if (mTitlebarView) {
     
     [contents removeObject:mTitlebarView];
@@ -4106,16 +4118,16 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 
 - (void)updateTitlebarView {
   BOOL needTitlebarView =
-      ![self drawsContentsIntoWindowFrame] || mUnifiedToolbarHeight > 0;
+      !self.drawsContentsIntoWindowFrame || mUnifiedToolbarHeight > 0;
   if (needTitlebarView && !mTitlebarView) {
     mTitlebarView =
-        [[MOZTitlebarView alloc] initWithFrame:[self unifiedToolbarRect]];
+        [[MOZTitlebarView alloc] initWithFrame:self.unifiedToolbarRect];
     mTitlebarView.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
     [self.contentView addSubview:mTitlebarView
                       positioned:NSWindowBelow
                       relativeTo:nil];
   } else if (needTitlebarView && mTitlebarView) {
-    mTitlebarView.frame = [self unifiedToolbarRect];
+    mTitlebarView.frame = self.unifiedToolbarRect;
   } else if (!needTitlebarView && mTitlebarView) {
     [mTitlebarView removeFromSuperview];
     [mTitlebarView release];
@@ -4133,15 +4145,15 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 }
 
 - (NSRect)titlebarRect {
-  CGFloat titlebarHeight = [self titlebarHeight];
-  return NSMakeRect(0, [self frame].size.height - titlebarHeight,
-                    [self frame].size.width, titlebarHeight);
+  CGFloat titlebarHeight = self.titlebarHeight;
+  return NSMakeRect(0, self.frame.size.height - titlebarHeight,
+                    self.frame.size.width, titlebarHeight);
 }
 
 
 - (NSRect)unifiedToolbarRect {
-  return NSMakeRect(0, [self frame].size.height - mUnifiedToolbarHeight,
-                    [self frame].size.width, mUnifiedToolbarHeight);
+  return NSMakeRect(0, self.frame.size.height - mUnifiedToolbarHeight,
+                    self.frame.size.width, mUnifiedToolbarHeight);
 }
 
 
@@ -4153,8 +4165,8 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
   
   
   
-  NSRect frameRect = [self frame];
-  NSUInteger styleMask = [self styleMask];
+  NSRect frameRect = self.frame;
+  NSUInteger styleMask = self.styleMask;
   styleMask &= ~NSWindowStyleMaskFullSizeContentView;
   NSRect originalContentRect = [NSWindow contentRectForFrameRect:frameRect
                                                        styleMask:styleMask];
@@ -4173,16 +4185,15 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 
 
 - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState {
-  BOOL stateChanged = ([self drawsContentsIntoWindowFrame] != aState);
+  BOOL stateChanged = self.drawsContentsIntoWindowFrame != aState;
   [super setDrawsContentsIntoWindowFrame:aState];
-  if (stateChanged && [[self delegate] isKindOfClass:[WindowDelegate class]]) {
+  if (stateChanged && [self.delegate isKindOfClass:[WindowDelegate class]]) {
     
     
     
     
-    WindowDelegate* windowDelegate = (WindowDelegate*)[self delegate];
-    nsCocoaWindow* geckoWindow = [windowDelegate geckoWidget];
-    if (geckoWindow) {
+    auto* windowDelegate = static_cast<WindowDelegate*>(self.delegate);
+    if (nsCocoaWindow* geckoWindow = windowDelegate.geckoWidget) {
       
       geckoWindow->ReportSizeEvent();
     }
@@ -4234,13 +4245,16 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 
   RollUpPopups();
 
-  if ([[self delegate] isKindOfClass:[WindowDelegate class]]) {
-    WindowDelegate* windowDelegate = (WindowDelegate*)[self delegate];
-    nsCocoaWindow* geckoWindow = [windowDelegate geckoWidget];
-    if (!geckoWindow) return;
+  if ([self.delegate isKindOfClass:[WindowDelegate class]]) {
+    auto* windowDelegate = static_cast<WindowDelegate*>(self.delegate);
+    nsCocoaWindow* geckoWindow = windowDelegate.geckoWidget;
+    if (!geckoWindow) {
+      return;
+    }
 
-    nsIWidgetListener* listener = geckoWindow->GetWidgetListener();
-    if (listener) listener->OSToolbarButtonPressed();
+    if (nsIWidgetListener* listener = geckoWindow->GetWidgetListener()) {
+      listener->OSToolbarButtonPressed();
+    }
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -4279,14 +4293,17 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
       
       
       
-      id delegate = [self delegate];
+      id delegate = self.delegate;
       if (delegate && [delegate isKindOfClass:[WindowDelegate class]]) {
         nsCocoaWindow* widget = [(WindowDelegate*)delegate geckoWidget];
         if (widget) {
           if (gGeckoAppModalWindowList &&
-              (widget != gGeckoAppModalWindowList->window))
+              widget != gGeckoAppModalWindowList->window) {
             return;
-          if (widget->HasModalDescendents()) return;
+          }
+          if (widget->HasModalDescendents()) {
+            return;
+          }
         }
       }
       break;
@@ -4411,14 +4428,17 @@ static const NSUInteger kWindowShadowOptionsTooltip = 4;
       
       
       
-      id delegate = [self delegate];
+      id delegate = self.delegate;
       if (delegate && [delegate isKindOfClass:[WindowDelegate class]]) {
         nsCocoaWindow* widget = [(WindowDelegate*)delegate geckoWidget];
         if (widget) {
           if (gGeckoAppModalWindowList &&
-              (widget != gGeckoAppModalWindowList->window))
+              widget != gGeckoAppModalWindowList->window) {
             return;
-          if (widget->HasModalDescendents()) return;
+          }
+          if (widget->HasModalDescendents()) {
+            return;
+          }
         }
       }
       break;
@@ -4437,8 +4457,7 @@ static const NSUInteger kWindowShadowOptionsTooltip = 4;
 - (BOOL)canBecomeMainWindow {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  if (![self isVisible]) return NO;
-  return YES;
+  return self.isVisible;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NO);
 }
