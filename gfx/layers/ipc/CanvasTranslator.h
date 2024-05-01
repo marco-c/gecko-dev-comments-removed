@@ -76,7 +76,9 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
+
   ipc::IPCResult RecvInitTranslator(TextureType aTextureType,
+                                    TextureType aWebglTextureType,
                                     gfx::BackendType aBackendType,
                                     Handle&& aReadHandle,
                                     nsTArray<Handle>&& aBufferHandles,
@@ -358,6 +360,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   UniquePtr<CrossProcessSemaphore> mWriterSemaphore;
   UniquePtr<CrossProcessSemaphore> mReaderSemaphore;
   TextureType mTextureType = TextureType::Unknown;
+  TextureType mWebglTextureType = TextureType::Unknown;
   UniquePtr<TextureData> mReferenceTextureData;
   dom::ContentParentId mContentId;
   uint32_t mManagerId;
