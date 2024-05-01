@@ -104,6 +104,12 @@ namespace webrtc {
 
 namespace {
 
+using ::testing::AtLeast;
+using ::testing::InSequence;
+using ::testing::MockFunction;
+using ::testing::NiceMock;
+using ::testing::Return;
+
 class PeerConnectionIntegrationTest
     : public PeerConnectionIntegrationBaseTest,
       public ::testing::WithParamInterface<SdpSemantics> {
@@ -2812,18 +2818,70 @@ TEST_P(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
 
-  auto output = std::make_unique<testing::NiceMock<MockRtcEventLogOutput>>();
-  ON_CALL(*output, IsActive()).WillByDefault(::testing::Return(true));
-  ON_CALL(*output, Write(::testing::A<absl::string_view>()))
-      .WillByDefault(::testing::Return(true));
-  EXPECT_CALL(*output, Write(::testing::A<absl::string_view>()))
-      .Times(::testing::AtLeast(1));
+  auto output = std::make_unique<NiceMock<MockRtcEventLogOutput>>();
+  ON_CALL(*output, IsActive).WillByDefault(Return(true));
+  ON_CALL(*output, Write).WillByDefault(Return(true));
+  EXPECT_CALL(*output, Write).Times(AtLeast(1));
   EXPECT_TRUE(caller()->pc()->StartRtcEventLog(std::move(output),
                                                RtcEventLog::kImmediateOutput));
 
   caller()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+}
+
+TEST_P(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalledOnStop) {
+  
+  
+  
+  MockFunction<void()> test_is_complete;
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  auto output = std::make_unique<NiceMock<MockRtcEventLogOutput>>();
+  ON_CALL(*output, IsActive).WillByDefault(Return(true));
+  ON_CALL(*output, Write).WillByDefault(Return(true));
+  InSequence s;
+  EXPECT_CALL(*output, Write).Times(AtLeast(1));
+  EXPECT_CALL(test_is_complete, Call);
+
+  
+  EXPECT_TRUE(caller()->pc()->StartRtcEventLog(std::move(output),
+                                               100'000));
+
+  caller()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  caller()->pc()->StopRtcEventLog();
+  test_is_complete.Call();
+}
+
+TEST_P(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalledOnClose) {
+  
+  
+  
+  MockFunction<void()> test_is_complete;
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  auto output = std::make_unique<NiceMock<MockRtcEventLogOutput>>();
+  ON_CALL(*output, IsActive).WillByDefault(Return(true));
+  ON_CALL(*output, Write).WillByDefault(Return(true));
+  InSequence s;
+  EXPECT_CALL(*output, Write).Times(AtLeast(1));
+  EXPECT_CALL(test_is_complete, Call);
+
+  
+  EXPECT_TRUE(caller()->pc()->StartRtcEventLog(std::move(output),
+                                               100'000));
+
+  caller()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  caller()->pc()->Close();
+  test_is_complete.Call();
 }
 
 

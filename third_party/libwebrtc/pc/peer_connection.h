@@ -611,11 +611,8 @@ class PeerConnection : public PeerConnectionInternal,
   const bool is_unified_plan_;
 
   
-  std::unique_ptr<RtcEventLog> event_log_ RTC_GUARDED_BY(worker_thread());
-
-  
-  
-  RtcEventLog* const event_log_ptr_ RTC_PT_GUARDED_BY(worker_thread());
+  const std::unique_ptr<RtcEventLog> event_log_
+      RTC_PT_GUARDED_BY(worker_thread());
 
   IceConnectionState ice_connection_state_ RTC_GUARDED_BY(signaling_thread()) =
       kIceConnectionNew;
