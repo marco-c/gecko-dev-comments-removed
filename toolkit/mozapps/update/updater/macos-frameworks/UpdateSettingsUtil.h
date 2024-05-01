@@ -1,0 +1,17 @@
+
+
+
+
+
+#ifndef UpdateSettingsUtil_h_
+#define UpdateSettingsUtil_h_
+
+#include <optional>
+#include <string>
+
+class UpdateSettingsUtil {
+ public:
+  static std::optional<std::string> GetAcceptedMARChannelsValue();
+};
+
+#endif  

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+#import "UpdateSettings/UpdateSettings.h"
+
+#include "UpdateSettingsUtil.h"
+
+
+std::optional<std::string> UpdateSettingsUtil::GetAcceptedMARChannelsValue() {
+  
+  
+  if (UpdateSettingsGetAcceptedMARChannels) {
+    NSString* marChannels = UpdateSettingsGetAcceptedMARChannels();
+    return [marChannels UTF8String];
+  }
+  return {};
+}
