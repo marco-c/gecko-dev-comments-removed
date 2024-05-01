@@ -219,7 +219,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   nsTHashSet<RawId> mLostDeviceIds;
 
   
-  RefPtr<gfx::FileHandleWrapper> mFenceHandle;
+  std::unordered_map<RawId, RefPtr<gfx::FileHandleWrapper>> mDeviceFenceHandles;
 
   
   
