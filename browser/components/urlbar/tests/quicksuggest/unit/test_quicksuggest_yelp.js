@@ -6,8 +6,6 @@
 
 "use strict";
 
-const { GEOLOCATION } = MerinoTestUtils;
-
 const REMOTE_SETTINGS_RECORDS = [
   {
     type: "yelp-suggestions",
@@ -512,7 +510,7 @@ add_task(async function notRelevant() {
 
 
 
-add_task(async function notInterested() {
+add_tasks_with_rust(async function notInterested() {
   let result = makeExpectedResult({
     url: "https://www.yelp.com/search?find_desc=ramen&find_loc=tokyo",
     title: "ramen in tokyo",
@@ -541,7 +539,7 @@ add_task(async function notInterested() {
     matches: [],
   });
 
-  info("Doing search for another Yelp suggestion");
+  info("Doing search for another Pocket suggestion");
   await check_results({
     context: createContext("alongerkeyword in tokyo", {
       providers: [UrlbarProviderQuickSuggest.name],
@@ -552,31 +550,6 @@ add_task(async function notInterested() {
 
   UrlbarPrefs.clear("suggest.yelp");
   await QuickSuggestTestUtils.forceSync();
-});
-
-
-add_task(async function showLessFrequently() {
-  let location = `${GEOLOCATION.city}, ${GEOLOCATION.region}`;
-
-  let originalUrl = new URL("https://www.yelp.com/search");
-  originalUrl.searchParams.set("find_desc", "alongerkeyword");
-
-  let url = new URL(originalUrl);
-  url.searchParams.set("find_loc", location);
-
-  await doShowLessFrequentlyTests({
-    feature: QuickSuggest.getFeature("YelpSuggestions"),
-    showLessFrequentlyCountPref: "yelp.showLessFrequentlyCount",
-    nimbusCapVariable: "yelpShowLessFrequentlyCap",
-    expectedResult: () =>
-      makeExpectedResult({
-        url: url.toString(),
-        originalUrl: originalUrl.toString(),
-        title: `alongerkeyword in ${location}`,
-      }),
-    keyword: "alongerkeyword",
-    keywordBaseIndex: 5,
-  });
 });
 
 
@@ -613,10 +586,8 @@ function makeExpectedResult(expected) {
   let originalUrl = expected.originalUrl ?? expected.url;
   let displayUrl =
     (expected.displayUrl ??
-      expected.url
-        .replace(/^https:\/\/www[.]/, "")
-        .replace("%20", " ")
-        .replace("%2C", ",")) + utmParameters;
+      expected.url.replace(/^https:\/\/www[.]/, "").replace("%20", " ")) +
+    utmParameters;
 
   return {
     type: UrlbarUtils.RESULT_TYPE.URL,
