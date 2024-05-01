@@ -216,6 +216,25 @@ loader.lazyGetter(this, "ProfilerBackground", () => {
   );
 });
 
+const BOOLEAN_CONFIGURATION_PREFS = {
+  "devtools.cache.disabled": {
+    name: "cacheDisabled",
+  },
+  "devtools.custom-formatters.enabled": {
+    name: "customFormatters",
+  },
+  "devtools.serviceWorkers.testing.enabled": {
+    name: "serviceWorkersTestingEnabled",
+  },
+  "devtools.inspector.simple-highlighters-reduced-motion": {
+    name: "useSimpleHighlightersForReducedMotion",
+  },
+  "devtools.debugger.features.overlay": {
+    name: "pauseOverlay",
+    thread: true,
+  },
+};
+
 
 
 
@@ -284,14 +303,6 @@ function Toolbox(commands, selectedTool, hostType, contentWindow, frameId) {
   this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
   this.closeToolbox = this.closeToolbox.bind(this);
   this.destroy = this.destroy.bind(this);
-  this._applyCacheSettings = this._applyCacheSettings.bind(this);
-  this._applyCustomFormatterSetting =
-    this._applyCustomFormatterSetting.bind(this);
-  this._applyServiceWorkersTestingSettings =
-    this._applyServiceWorkersTestingSettings.bind(this);
-  this._applySimpleHighlightersSettings =
-    this._applySimpleHighlightersSettings.bind(this);
-  this._applyDebuggerOverlay = this._applyDebuggerOverlay.bind(this);
   this._saveSplitConsoleHeight = this._saveSplitConsoleHeight.bind(this);
   this._onFocus = this._onFocus.bind(this);
   this._onBlur = this._onBlur.bind(this);
@@ -890,15 +901,7 @@ Toolbox.prototype = {
 
       
       
-      
-      const options = await getThreadOptions();
-      await this.commands.threadConfigurationCommand.updateConfiguration(
-        options
-      );
-
-      
-      
-      await this._applyCustomFormatterSetting();
+      await this._listenAndApplyConfigurationPref();
 
       
       
@@ -961,26 +964,6 @@ Toolbox.prototype = {
       const framesPromise = this._listFrames();
 
       Services.prefs.addObserver(
-        "devtools.cache.disabled",
-        this._applyCacheSettings
-      );
-      Services.prefs.addObserver(
-        "devtools.custom-formatters.enabled",
-        this._applyCustomFormatterSetting
-      );
-      Services.prefs.addObserver(
-        "devtools.serviceWorkers.testing.enabled",
-        this._applyServiceWorkersTestingSettings
-      );
-      Services.prefs.addObserver(
-        "devtools.inspector.simple-highlighters-reduced-motion",
-        this._applySimpleHighlightersSettings
-      );
-      Services.prefs.addObserver(
-        "devtools.debugger.features.overlay",
-        this._applyDebuggerOverlay
-      );
-      Services.prefs.addObserver(
         BROWSERTOOLBOX_SCOPE_PREF,
         this._refreshHostTitle
       );
@@ -996,12 +979,6 @@ Toolbox.prototype = {
       this._buildDockOptions();
       this._buildInitialPanelDefinitions();
       this._setDebugTargetData();
-
-      
-      this._applyCacheSettings();
-      this._applyServiceWorkersTestingSettings();
-      this._applySimpleHighlightersSettings();
-      this._applyDebuggerOverlay();
 
       this._addWindowListeners();
       this._addChromeEventHandlerEvents();
@@ -2212,83 +2189,70 @@ Toolbox.prototype = {
       : L10N.getFormatStr(label, shortcut);
   },
 
+  async _listenAndApplyConfigurationPref() {
+    this._onBooleanConfigurationPrefChange =
+      this._onBooleanConfigurationPrefChange.bind(this);
+
+    
+    
+    
+    
+    
+    const targetConfiguration = {};
+
+    
+    const threadConfiguration = await getThreadOptions();
+
+    for (const prefName in BOOLEAN_CONFIGURATION_PREFS) {
+      const { name, thread } = BOOLEAN_CONFIGURATION_PREFS[prefName];
+      const value = Services.prefs.getBoolPref(prefName, false);
+
+      
+      if (thread) {
+        threadConfiguration[name] = value;
+      } else {
+        targetConfiguration[name] = value;
+      }
+
+      
+      Services.prefs.addObserver(
+        prefName,
+        this._onBooleanConfigurationPrefChange
+      );
+    }
+
+    
+    await this.commands.targetConfigurationCommand.updateConfiguration(
+      targetConfiguration
+    );
+    await this.commands.threadConfigurationCommand.updateConfiguration(
+      threadConfiguration
+    );
+  },
+
   
 
 
 
-  async _applyCacheSettings() {
-    const pref = "devtools.cache.disabled";
-    const cacheDisabled = Services.prefs.getBoolPref(pref);
 
-    await this.commands.targetConfigurationCommand.updateConfiguration({
-      cacheDisabled,
+
+
+
+
+
+  async _onBooleanConfigurationPrefChange(subject, topic, prefName) {
+    const { name, thread } = BOOLEAN_CONFIGURATION_PREFS[prefName];
+    const value = Services.prefs.getBoolPref(prefName, false);
+
+    const configurationCommand = thread
+      ? this.commands.threadConfigurationCommand
+      : this.commands.targetConfigurationCommand;
+    await configurationCommand.updateConfiguration({
+      [name]: value,
     });
 
     
-    if (flags.testing) {
-      this.emit("cache-reconfigured");
-    }
-  },
-
-  
-
-
-
-  async _applyCustomFormatterSetting() {
-    if (!this.commands) {
-      return;
-    }
-
-    const customFormatters = Services.prefs.getBoolPref(
-      "devtools.custom-formatters.enabled",
-      false
-    );
-
-    await this.commands.targetConfigurationCommand.updateConfiguration({
-      customFormatters,
-    });
-
-    this.emitForTests("custom-formatters-reconfigured");
-  },
-
-  
-
-
-
-  _applyServiceWorkersTestingSettings() {
-    const pref = "devtools.serviceWorkers.testing.enabled";
-    const serviceWorkersTestingEnabled = Services.prefs.getBoolPref(pref);
-    this.commands.targetConfigurationCommand.updateConfiguration({
-      serviceWorkersTestingEnabled,
-    });
-  },
-
-  
-
-
-  _applySimpleHighlightersSettings() {
-    const useSimpleHighlightersForReducedMotion = Services.prefs.getBoolPref(
-      "devtools.inspector.simple-highlighters-reduced-motion",
-      false
-    );
-    this.commands.targetConfigurationCommand.updateConfiguration({
-      useSimpleHighlightersForReducedMotion,
-    });
-  },
-
-  
-
-
-
-  async _applyDebuggerOverlay() {
-    const pauseOverlay = Services.prefs.getBoolPref(
-      "devtools.debugger.features.overlay",
-      false
-    );
-    await this.commands.threadConfigurationCommand.updateConfiguration({
-      pauseOverlay,
-    });
-    this.emitForTests("pause-overlay-applied");
+    this.emitForTests("new-configuration-applied", prefName);
   },
 
   
@@ -4074,26 +4038,12 @@ Toolbox.prototype = {
     gDevTools.off("tool-registered", this._toolRegistered);
     gDevTools.off("tool-unregistered", this._toolUnregistered);
 
-    Services.prefs.removeObserver(
-      "devtools.cache.disabled",
-      this._applyCacheSettings
-    );
-    Services.prefs.removeObserver(
-      "devtools.custom-formatters.enabled",
-      this._applyCustomFormatterSetting
-    );
-    Services.prefs.removeObserver(
-      "devtools.serviceWorkers.testing.enabled",
-      this._applyServiceWorkersTestingSettings
-    );
-    Services.prefs.removeObserver(
-      "devtools.inspector.simple-highlighters-reduced-motion",
-      this._applySimpleHighlightersSettings
-    );
-    Services.prefs.removeObserver(
-      "devtools.debugger.features.overlay",
-      this._applyDebuggerOverlay
-    );
+    for (const prefName in BOOLEAN_CONFIGURATION_PREFS) {
+      Services.prefs.removeObserver(
+        prefName,
+        this._onBooleanConfigurationPrefChange
+      );
+    }
     Services.prefs.removeObserver(
       BROWSERTOOLBOX_SCOPE_PREF,
       this._refreshHostTitle
