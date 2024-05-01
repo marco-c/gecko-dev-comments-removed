@@ -1393,6 +1393,9 @@ void MediaTrackGraphImpl::SelectOutputDeviceForAEC() {
   if (currentDeviceIndex == mOutputDevices.NoIndex) {
     
     
+    LOG(LogLevel::Info, ("%p: No remaining outputs to device %p. "
+                         "Switch to primary output device %p for AEC",
+                         this, mOutputDeviceForAEC, PrimaryOutputDeviceID()));
     mOutputDeviceForAEC = PrimaryOutputDeviceID();
     currentDeviceIndex = 0;
     MOZ_ASSERT(mOutputDevices[0].mDeviceID == mOutputDeviceForAEC);
@@ -1425,6 +1428,9 @@ void MediaTrackGraphImpl::SelectOutputDeviceForAEC() {
     for (const auto& output : outputDeviceEntry.mTrackOutputs) {
       if (HasNonNullAudio(output)) {
         
+        LOG(LogLevel::Info,
+            ("%p: Switch output device for AEC from silent %p to non-null %p",
+             this, mOutputDeviceForAEC, outputDeviceEntry.mDeviceID));
         mOutputDeviceForAEC = outputDeviceEntry.mDeviceID;
         return;
       }
