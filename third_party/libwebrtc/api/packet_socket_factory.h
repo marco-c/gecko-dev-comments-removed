@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "api/async_dns_resolver.h"
-#include "api/wrapping_async_dns_resolver.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/proxy_info.h"
 #include "rtc_base/system/rtc_export.h"
@@ -72,26 +71,8 @@ class RTC_EXPORT PacketSocketFactory {
       const std::string& user_agent,
       const PacketSocketTcpOptions& tcp_options) = 0;
 
-  
-  
-  
-  
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  [[deprecated]] virtual AsyncResolverInterface* CreateAsyncResolver() {
-    
-    
-    RTC_DCHECK_NOTREACHED();
-    return nullptr;
-  }
-
   virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface>
-  CreateAsyncDnsResolver() {
-    
-    return std::make_unique<webrtc::WrappingAsyncDnsResolver>(
-        CreateAsyncResolver());
-  }
-#pragma clang diagnostic pop
+  CreateAsyncDnsResolver() = 0;
 
  private:
   PacketSocketFactory(const PacketSocketFactory&) = delete;

@@ -578,31 +578,10 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
       configuration.sdp_semantics == SdpSemantics::kUnifiedPlan;
   bool dtls_enabled = DtlsEnabled(configuration, options, dependencies);
 
-  
-  
-  
-  
-  
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  if (dependencies.async_dns_resolver_factory &&
-      dependencies.async_resolver_factory) {
-    RTC_LOG(LS_ERROR)
-        << "Attempt to set both old and new type of DNS resolver factory";
-    return RTCError(RTCErrorType::INVALID_PARAMETER,
-                    "Both old and new type of DNS resolver given");
-  }
   if (!dependencies.async_dns_resolver_factory) {
-    if (dependencies.async_resolver_factory) {
-      dependencies.async_dns_resolver_factory =
-          std::make_unique<WrappingAsyncDnsResolverFactory>(
-              std::move(dependencies.async_resolver_factory));
-    } else {
       dependencies.async_dns_resolver_factory =
           std::make_unique<BasicAsyncDnsResolverFactory>();
-    }
   }
-#pragma clang diagnostic pop
 
   
   auto pc = rtc::make_ref_counted<PeerConnection>(
