@@ -21,6 +21,7 @@ for feature in gkrust_features:
 
 
 RUST_TESTS = [
+    "crashreporter",
     "firefox-on-glean",
     "l10nregistry",
     "selectors",
@@ -30,6 +31,8 @@ RUST_TESTS = [
     
     "gkrust",
 ]
+
+RUST_TEST_FEATURES.append("crashreporter/mock")
 
 
 
