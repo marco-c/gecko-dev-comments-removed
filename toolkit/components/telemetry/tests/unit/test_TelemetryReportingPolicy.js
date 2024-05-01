@@ -200,6 +200,12 @@ add_task(async function test_prefs() {
   );
 
   
+  
+  if (Services.prefs.getDefaultBranch("").prefIsLocked("app.update.channel")) {
+    Services.prefs.getDefaultBranch("").unlockPref("app.update.channel");
+  }
+
+  
   Services.prefs
     .getDefaultBranch("")
     .setStringPref("app.update.channel", TEST_CHANNEL);

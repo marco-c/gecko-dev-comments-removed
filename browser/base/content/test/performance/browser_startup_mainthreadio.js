@@ -189,6 +189,7 @@ const startupPhases = {
     {
       
       path: "PrfDef:channel-prefs.js",
+      condition: !MAC,
       stat: 1,
       read: 1,
       close: 1,
