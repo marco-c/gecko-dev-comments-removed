@@ -230,6 +230,12 @@ function doPageNavigation(params) {
         observers: observers.keys(),
       },
       allFrames: true,
+      
+      
+      
+      
+      
+      messageManagerGroups: ["browsers", ""],
     });
     DocShellHelpersParent.eventsToListenFor = eventsToListenFor;
     DocShellHelpersParent.observers = observers;
