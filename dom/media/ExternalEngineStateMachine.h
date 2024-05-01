@@ -306,6 +306,7 @@ class ExternalEngineStateMachine final
   
   MozPromiseHolder<SetCDMPromise> mSetCDMProxyPromise;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMProxyRequest;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mInitEngineForCDMRequest;
 
   
   gfx::IntSize mVideoDisplay;
