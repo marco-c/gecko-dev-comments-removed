@@ -1010,6 +1010,14 @@ pref("javascript.options.mem.gc_helper_thread_ratio", 50);
 
 pref("javascript.options.mem.gc_max_helper_threads", 8);
 
+
+
+pref("javascript.options.mem.nursery_eager_collection_threshold_kb", 256);
+
+pref("javascript.options.mem.nursery_eager_collection_threshold_percent", 25);
+
+pref("javascript.options.mem.nursery_eager_collection_timeout_ms", 5000);
+
 pref("javascript.options.shared_memory", true);
 
 pref("javascript.options.throw_on_debuggee_would_run", false);

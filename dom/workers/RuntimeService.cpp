@@ -372,6 +372,11 @@ void LoadJSGCMemoryOptions(const char* aPrefName, void* ) {
       PREF("gc_parallel_marking", JSGC_PARALLEL_MARKING_ENABLED),
       PREF("gc_parallel_marking_threshold_mb",
            JSGC_PARALLEL_MARKING_THRESHOLD_MB),
+      
+      
+      
+      
+      
   };
 #undef PREF
 
