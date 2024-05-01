@@ -332,7 +332,6 @@ public class EglRenderer implements VideoSink {
 
 
   public void setMirror(final boolean mirror) {
-    logD("setMirrorHorizontally: " + mirror);
     synchronized (layoutLock) {
       this.mirrorHorizontally = mirror;
     }
@@ -342,7 +341,6 @@ public class EglRenderer implements VideoSink {
 
 
   public void setMirrorVertically(final boolean mirrorVertically) {
-    logD("setMirrorVertically: " + mirrorVertically);
     synchronized (layoutLock) {
       this.mirrorVertically = mirrorVertically;
     }
@@ -353,7 +351,6 @@ public class EglRenderer implements VideoSink {
 
 
   public void setLayoutAspectRatio(float layoutAspectRatio) {
-    logD("setLayoutAspectRatio: " + layoutAspectRatio);
     synchronized (layoutLock) {
       this.layoutAspectRatio = layoutAspectRatio;
     }
@@ -366,7 +363,6 @@ public class EglRenderer implements VideoSink {
 
 
   public void setFpsReduction(float fps) {
-    logD("setFpsReduction: " + fps);
     synchronized (fpsReductionLock) {
       final long previousRenderPeriodNs = minRenderPeriodNs;
       if (fps <= 0) {
