@@ -24,7 +24,6 @@ this.pictureInPictureParent = class extends ExtensionAPI {
 
 
 
-
   getAPI() {
     return {
       pictureInPictureParent: {
