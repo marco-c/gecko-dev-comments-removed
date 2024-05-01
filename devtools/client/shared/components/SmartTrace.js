@@ -27,6 +27,9 @@ const {
 const {
   getDisplayURL,
 } = require("resource://devtools/client/debugger/src/utils/sources-tree/getURL.js");
+const {
+  getFormattedSourceId,
+} = require("resource://devtools/client/debugger/src/utils/source.js");
 
 class SmartTrace extends Component {
   static get propTypes() {
@@ -254,7 +257,9 @@ class SmartTrace extends Component {
             id: sourceId,
             url: sourceUrl,
             
-            displayURL: getDisplayURL(sourceUrl),
+            shortName: sourceUrl
+              ? getDisplayURL(sourceUrl).filename
+              : getFormattedSourceId(sourceId),
           },
         };
         let location = generatedLocation;
@@ -266,7 +271,7 @@ class SmartTrace extends Component {
             source: {
               url: originalLocation.url,
               
-              displayURL: getDisplayURL(originalLocation.url),
+              shortName: getDisplayURL(originalLocation.url).filename,
             },
           };
         }

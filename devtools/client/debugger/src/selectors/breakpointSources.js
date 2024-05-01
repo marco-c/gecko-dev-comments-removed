@@ -5,7 +5,6 @@
 import { createSelector } from "devtools/client/shared/vendor/reselect";
 import { getSelectedSource } from "./sources";
 import { getBreakpointsList } from "./breakpoints";
-import { getFilename } from "../utils/source";
 import { getSelectedLocation } from "../utils/selected-location";
 
 
@@ -37,7 +36,6 @@ export const getBreakpointSources = createSelector(
         sources.set(source, {
           source,
           breakpoints: [breakpoint],
-          filename: getFilename(source),
         });
       } else {
         sources.get(source).breakpoints.push(breakpoint);
@@ -46,7 +44,7 @@ export const getBreakpointSources = createSelector(
 
     
     return [...sources.values()].sort((a, b) =>
-      a.filename.localeCompare(b.filename)
+      a.source.shortName.localeCompare(b.source.shortName)
     );
   }
 );

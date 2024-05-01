@@ -216,23 +216,9 @@ export function getFormattedSourceId(id) {
 
 
 
-
-export function getFilename(source) {
-  const { id } = source;
-  if (!source.url) {
-    return getFormattedSourceId(id);
-  }
-
-  const { filename } = source.displayURL;
-  return getRawSourceURL(filename);
-}
-
-
-
-
 export function getTruncatedFileName(source) {
   return truncateMiddleText(
-    `${getFilename(source)}${source.displayURL.search}`,
+    `${source.shortName}${source.displayURL.search}`,
     30
   );
 }
@@ -246,13 +232,13 @@ export function getTruncatedFileName(source) {
 
 export function getDisplayPath(mySource, sources) {
   const rawSourceURL = getRawSourceURL(mySource.url);
-  const filename = getFilename(mySource);
+  const filename = mySource.shortName;
 
   
   
   const similarSources = sources.filter(source => {
     const rawSource = getRawSourceURL(source.url);
-    return rawSourceURL != rawSource && filename == getFilename(source);
+    return rawSourceURL != rawSource && filename == source.shortName;
   });
 
   if (!similarSources.length) {

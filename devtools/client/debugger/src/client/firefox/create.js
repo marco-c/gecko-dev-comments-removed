@@ -11,7 +11,11 @@ import {
   getSourceCount,
 } from "../../selectors/index";
 import { features } from "../../utils/prefs";
-import { isUrlExtension } from "../../utils/source";
+import {
+  isUrlExtension,
+  getRawSourceURL,
+  getFormattedSourceId,
+} from "../../utils/source";
 import { createLocation } from "../../utils/location";
 import { getDisplayURL } from "../../utils/sources-tree/getURL";
 
@@ -242,6 +246,7 @@ function createSourceObject({
   isOriginal = false,
   isHTML = false,
 }) {
+  const displayURL = getDisplayURL(url, extensionName);
   return {
     
     
@@ -254,7 +259,18 @@ function createSourceObject({
     
     
     
-    displayURL: getDisplayURL(url, extensionName),
+    displayURL,
+
+    
+    
+    
+    
+    
+    
+    
+    shortName: url
+      ? getRawSourceURL(displayURL.filename)
+      : getFormattedSourceId(id),
 
     
     

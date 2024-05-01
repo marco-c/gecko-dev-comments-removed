@@ -61,12 +61,16 @@ const def = {
 
 
 
+
+
+
 export function getDisplayURL(url, extensionName = null) {
   if (!url) {
     return def;
   }
 
   const { pathname, search, protocol, host } = parse(url);
+
   const filename = getUnicodeUrlPath(getFilenameFromPath(pathname));
 
   switch (protocol) {
