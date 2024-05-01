@@ -14,7 +14,6 @@ use cssparser::color::{
     clamp_floor_256_f32, clamp_unit_f32, parse_hash_color, PredefinedColorSpace, OPAQUE,
 };
 use cssparser::{match_ignore_ascii_case, CowRcStr, Parser, Token};
-use std::f32::consts::PI;
 use std::str::FromStr;
 use style_traits::ParseError;
 
@@ -486,53 +485,21 @@ pub trait ColorParser<'i> {
     fn parse_angle_or_number<'t>(
         &self,
         input: &mut Parser<'i, 't>,
-    ) -> Result<AngleOrNumber, ParseError<'i>> {
-        let location = input.current_source_location();
-        Ok(match *input.next()? {
-            Token::Number { value, .. } => AngleOrNumber::Number { value },
-            Token::Dimension {
-                value: v, ref unit, ..
-            } => {
-                let degrees = match_ignore_ascii_case! { unit,
-                    "deg" => v,
-                    "grad" => v * 360. / 400.,
-                    "rad" => v * 360. / (2. * PI),
-                    "turn" => v * 360.,
-                    _ => {
-                        return Err(location.new_unexpected_token_error(Token::Ident(unit.clone())))
-                    }
-                };
-
-                AngleOrNumber::Angle { degrees }
-            },
-            ref t => return Err(location.new_unexpected_token_error(t.clone())),
-        })
-    }
+    ) -> Result<AngleOrNumber, ParseError<'i>>;
 
     
     
     
-    fn parse_percentage<'t>(&self, input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i>> {
-        input.expect_percentage().map_err(From::from)
-    }
+    fn parse_percentage<'t>(&self, input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i>>;
 
     
-    fn parse_number<'t>(&self, input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i>> {
-        input.expect_number().map_err(From::from)
-    }
+    fn parse_number<'t>(&self, input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i>>;
 
     
     fn parse_number_or_percentage<'t>(
         &self,
         input: &mut Parser<'i, 't>,
-    ) -> Result<NumberOrPercentage, ParseError<'i>> {
-        let location = input.current_source_location();
-        Ok(match *input.next()? {
-            Token::Number { value, .. } => NumberOrPercentage::Number { value },
-            Token::Percentage { unit_value, .. } => NumberOrPercentage::Percentage { unit_value },
-            ref t => return Err(location.new_unexpected_token_error(t.clone())),
-        })
-    }
+    ) -> Result<NumberOrPercentage, ParseError<'i>>;
 }
 
 
