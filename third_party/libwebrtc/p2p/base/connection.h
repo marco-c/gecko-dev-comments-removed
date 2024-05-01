@@ -148,10 +148,6 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   virtual int GetError() = 0;
 
   
-  
-  sigslot::signal4<Connection*, const char*, size_t, int64_t> SignalReadPacket;
-
-  
   void RegisterReceivedPacketCallback(
       absl::AnyInvocable<void(Connection*, const rtc::ReceivedPacket&)>
           received_packet_callback);
