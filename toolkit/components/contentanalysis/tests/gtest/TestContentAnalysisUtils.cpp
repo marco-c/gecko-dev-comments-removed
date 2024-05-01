@@ -3,7 +3,7 @@
 
 
 
-#include "TestContentAnalysis.h"
+#include "TestContentAnalysisAgent.h"
 #include <combaseapi.h>
 #include <pathcch.h>
 #include <shlwapi.h>
