@@ -1070,23 +1070,6 @@ int FixupNonFullYear(int year) {
 }
 
 template <typename CharT>
-bool IsPrefixOfKeyword(const CharT* s, size_t len, const char* keyword) {
-  while (len > 0 && *keyword) {
-    MOZ_ASSERT(IsAsciiAlpha(*s));
-    MOZ_ASSERT(IsAsciiLowercaseAlpha(*keyword));
-
-    if (unicode::ToLowerCase(static_cast<Latin1Char>(*s)) != *keyword) {
-      break;
-    }
-
-    s++, keyword++;
-    len--;
-  }
-
-  return len == 0;
-}
-
-template <typename CharT>
 bool MatchesKeyword(const CharT* s, size_t len, const char* keyword) {
   while (len > 0) {
     MOZ_ASSERT(IsAsciiAlpha(*s));
@@ -1328,10 +1311,6 @@ struct CharsAndAction {
   int action;
 };
 
-static constexpr const char* const days_of_week[] = {
-    "monday", "tuesday",  "wednesday", "thursday",
-    "friday", "saturday", "sunday"};
-
 static constexpr CharsAndAction keywords[] = {
     
   
@@ -1364,8 +1343,7 @@ constexpr size_t MinKeywordLength(const CharsAndAction (&keywords)[N]) {
 
 template <typename CharT>
 static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
-                      size_t length, ClippedTime* result,
-                      bool* countLateWeekday) {
+                      size_t length, ClippedTime* result) {
   if (length == 0) {
     return false;
   }
@@ -1433,8 +1411,6 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
   bool negativeYear = false;
   
   bool seenGmtAbbr = false;
-  
-  bool seenLateWeekday = false;
 
   
   
@@ -1668,21 +1644,6 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
 
       
       
-      bool isLateWeekday = false;
-      for (const char* weekday : days_of_week) {
-        if (IsPrefixOfKeyword(s + start, index - start, weekday)) {
-          isLateWeekday = true;
-          seenLateWeekday = true;
-          break;
-        }
-      }
-      if (isLateWeekday) {
-        prevc = 0;
-        continue;
-      }
-
-      
-      
       
       
       int tryMonth;
@@ -1881,38 +1842,16 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     date += tzOffset * msPerMinute;
   }
 
-  
-  
-  if (seenLateWeekday) {
-    *countLateWeekday = true;
-  }
-
   *result = TimeClip(date);
   return true;
 }
 
 static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, JSLinearString* s,
-                      ClippedTime* result, JSContext* cx) {
-  bool countLateWeekday = false;
-  bool success;
-
-  {
-    AutoCheckCannotGC nogc;
-    success = s->hasLatin1Chars()
-                  ? ParseDate(forceUTC, s->latin1Chars(nogc), s->length(),
-                              result, &countLateWeekday)
-                  : ParseDate(forceUTC, s->twoByteChars(nogc), s->length(),
-                              result, &countLateWeekday);
-  }
-
-  
-  
-  
-  if (countLateWeekday) {
-    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::LATE_WEEKDAY);
-  }
-
-  return success;
+                      ClippedTime* result) {
+  AutoCheckCannotGC nogc;
+  return s->hasLatin1Chars()
+             ? ParseDate(forceUTC, s->latin1Chars(nogc), s->length(), result)
+             : ParseDate(forceUTC, s->twoByteChars(nogc), s->length(), result);
 }
 
 static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
@@ -1934,7 +1873,7 @@ static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   ClippedTime result;
-  if (!ParseDate(ForceUTC(cx->realm()), linearStr, &result, cx)) {
+  if (!ParseDate(ForceUTC(cx->realm()), linearStr, &result)) {
     args.rval().setNaN();
     return true;
   }
@@ -3778,7 +3717,7 @@ static bool DateOneArgument(JSContext* cx, const CallArgs& args) {
         return false;
       }
 
-      if (!ParseDate(ForceUTC(cx->realm()), linearStr, &t, cx)) {
+      if (!ParseDate(ForceUTC(cx->realm()), linearStr, &t)) {
         t = ClippedTime::invalid();
       }
     } else {
