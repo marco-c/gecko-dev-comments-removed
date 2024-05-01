@@ -266,7 +266,8 @@ class MinidumpGenerator {
   
   breakpad_mach_header* dyldImageLoadAddress_;
   ptrdiff_t dyldSlide_;
-  string dyldPath_;
+  
+  const char* dyldPath_;
 
   
   breakpad_ucontext_t *task_context_;
