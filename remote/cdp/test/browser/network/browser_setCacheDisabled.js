@@ -18,7 +18,7 @@ add_task(async function cacheEnabledAfterDisabled({ client }) {
   await waitForLoadFlags();
 });
 
-add_task(async function cacheEnabledByDefault({ Network }) {
+add_task(async function cacheEnabledByDefault() {
   await watchLoadFlags(LOAD_NORMAL, TEST_PAGE);
   await loadURL(TEST_PAGE);
   await waitForLoadFlags();
@@ -67,7 +67,7 @@ function watchLoadFlags(flags, url) {
             );
         },
 
-        onStateChange(webProgress, request, flags, status) {
+        onStateChange(webProgress, request, flags) {
           
           if (!request) {
             return;

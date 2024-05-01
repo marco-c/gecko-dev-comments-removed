@@ -178,7 +178,7 @@ async function runPageLifecycleTest(client, expectedEventSets, callback) {
 
     
     let lastTimestamp = frameEvents[0].payload.timestamp;
-    frameEvents.forEach(({ payload }, index) => {
+    frameEvents.forEach(({ payload }) => {
       Assert.greaterOrEqual(
         payload.timestamp,
         lastTimestamp,
