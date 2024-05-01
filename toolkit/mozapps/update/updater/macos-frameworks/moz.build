@@ -7,9 +7,7 @@
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Application Update")
 
-DIRS += [
-    "UpdateSettings",
-]
+DIRS += ["UpdateSettings", "UpdateSettings-xpcshell"]
 
 EXPORTS += [
     "UpdateSettingsUtil.h",
