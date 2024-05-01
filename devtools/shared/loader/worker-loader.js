@@ -528,8 +528,6 @@ this.worker = new WorkerDebuggerLoader({
     
     devtools: "resource://devtools",
     
-    promise: "resource://gre/modules/Promise-backend.js",
-    
     "xpcshell-test": "resource://test",
     
   },
