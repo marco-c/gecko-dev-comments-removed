@@ -1164,7 +1164,8 @@ class DatabaseConnection final : public CachingDatabaseConnection {
     return CheckpointInternal(CheckpointMode::Full);
   }
 
-  void DoIdleProcessing(bool aNeedsCheckpoint);
+  void DoIdleProcessing(bool aNeedsCheckpoint,
+                        const Atomic<bool>& aInterrupted);
 
   void Close();
 
@@ -1191,7 +1192,8 @@ class DatabaseConnection final : public CachingDatabaseConnection {
 
   Result<bool, nsresult> ReclaimFreePagesWhileIdle(
       CachedStatement& aFreelistStatement, CachedStatement& aRollbackStatement,
-      uint32_t aFreelistCount, bool aNeedsCheckpoint);
+      uint32_t aFreelistCount, bool aNeedsCheckpoint,
+      const Atomic<bool>& aInterrupted);
 
   Result<int64_t, nsresult> GetFileSize(const nsAString& aPath);
 };
@@ -1590,6 +1592,7 @@ class ConnectionPool::ConnectionRunnable : public Runnable {
 
 class ConnectionPool::IdleConnectionRunnable final : public ConnectionRunnable {
   const bool mNeedsCheckpoint;
+  Atomic<bool> mInterrupted;
 
  public:
   IdleConnectionRunnable(DatabaseInfo& aDatabaseInfo, bool aNeedsCheckpoint)
@@ -1597,6 +1600,8 @@ class ConnectionPool::IdleConnectionRunnable final : public ConnectionRunnable {
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(IdleConnectionRunnable,
                                        ConnectionRunnable)
+
+  void Interrupt() { mInterrupted = true; }
 
  private:
   ~IdleConnectionRunnable() override = default;
@@ -6887,7 +6892,8 @@ nsresult DatabaseConnection::CheckpointInternal(CheckpointMode aMode) {
   return NS_OK;
 }
 
-void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
+void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint,
+                                          const Atomic<bool>& aInterrupted) {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(mInReadTransaction);
   MOZ_ASSERT(!mInWriteTransaction);
@@ -6912,22 +6918,23 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
     mInReadTransaction = false;
   }
 
-  const bool freedSomePages = freelistCount && [this, &freelistStmt,
-                                                &rollbackStmt, freelistCount,
-                                                aNeedsCheckpoint] {
-    
-    
-    QM_TRY_INSPECT(const bool& res,
-                   ReclaimFreePagesWhileIdle(freelistStmt, rollbackStmt,
-                                             freelistCount, aNeedsCheckpoint),
-                   false);
+  const bool freedSomePages =
+      freelistCount && [this, &freelistStmt, &rollbackStmt, freelistCount,
+                        aNeedsCheckpoint, &aInterrupted] {
+        
+        
+        QM_TRY_INSPECT(
+            const bool& res,
+            ReclaimFreePagesWhileIdle(freelistStmt, rollbackStmt, freelistCount,
+                                      aNeedsCheckpoint, aInterrupted),
+            false);
 
-    
-    MOZ_ASSERT(!mInReadTransaction);
-    MOZ_ASSERT(!mInWriteTransaction);
+        
+        MOZ_ASSERT(!mInReadTransaction);
+        MOZ_ASSERT(!mInWriteTransaction);
 
-    return res;
-  }();
+        return res;
+      }();
 
   
   if (aNeedsCheckpoint || freedSomePages) {
@@ -6947,7 +6954,8 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
 
 Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
     CachedStatement& aFreelistStatement, CachedStatement& aRollbackStatement,
-    uint32_t aFreelistCount, bool aNeedsCheckpoint) {
+    uint32_t aFreelistCount, bool aNeedsCheckpoint,
+    const Atomic<bool>& aInterrupted) {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(aFreelistStatement);
   MOZ_ASSERT(aRollbackStatement);
@@ -6967,7 +6975,7 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
   nsIThread* currentThread = NS_GetCurrentThread();
   MOZ_ASSERT(currentThread);
 
-  if (NS_HasPendingEvents(currentThread)) {
+  if (aInterrupted) {
     return false;
   }
 
@@ -6999,7 +7007,7 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
   mInWriteTransaction = true;
 
-  bool freedSomePages = false, interrupted = false;
+  bool freedSomePages = false;
 
   const auto rollback = [&aRollbackStatement, this](const auto&) {
     MOZ_ASSERT(mInWriteTransaction);
@@ -7015,14 +7023,12 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
   uint64_t previousFreelistCount = (uint64_t)aFreelistCount + 1;
 
   QM_TRY(CollectWhile(
-             [&aFreelistCount, &previousFreelistCount, &interrupted,
-              currentThread]() -> Result<bool, nsresult> {
-               if (NS_HasPendingEvents(currentThread)) {
+             [&aFreelistCount, &previousFreelistCount,
+              &aInterrupted]() -> Result<bool, nsresult> {
+               if (aInterrupted) {
                  
                  
                  
-                 
-                 interrupted = true;
                  return false;
                }
                
@@ -7046,9 +7052,9 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
                return Ok{};
              })
-             .andThen([&commitStmt, &freedSomePages, &interrupted, &rollback,
+             .andThen([&commitStmt, &freedSomePages, &aInterrupted, &rollback,
                        this](Ok) -> Result<Ok, nsresult> {
-               if (interrupted) {
+               if (aInterrupted) {
                  rollback(Ok{});
                  freedSomePages = false;
                }
@@ -8091,20 +8097,13 @@ bool ConnectionPool::ScheduleTransaction(TransactionInfo& aTransactionInfo,
         
         
         
-        const nsCOMPtr<nsIRunnable> runnable =
-            new Runnable("IndexedDBDummyRunnable");
 
         for (uint32_t index = mDatabasesPerformingIdleMaintenance.Length();
              index > 0; index--) {
           const auto& performingIdleMaintenanceInfo =
               mDatabasesPerformingIdleMaintenance[index - 1];
 
-          const auto dbInfo = performingIdleMaintenanceInfo.mDatabaseInfo;
-
-          dbInfo->mThreadInfo.AssertValid();
-
-          MOZ_ALWAYS_SUCCEEDS(dbInfo->mThreadInfo.ThreadRef().Dispatch(
-              runnable, NS_DISPATCH_NORMAL));
+          performingIdleMaintenanceInfo.mIdleConnectionRunnable->Interrupt();
         }
       }
 
@@ -8476,7 +8475,8 @@ ConnectionPool::IdleConnectionRunnable::Run() {
     
     
     if (mDatabaseInfo.mConnection) {
-      mDatabaseInfo.mConnection->DoIdleProcessing(mNeedsCheckpoint);
+      mDatabaseInfo.mConnection->DoIdleProcessing(mNeedsCheckpoint,
+                                                  mInterrupted);
     }
 
     MOZ_ALWAYS_SUCCEEDS(owningThread->Dispatch(this, NS_DISPATCH_NORMAL));
@@ -16968,7 +16968,8 @@ TransactionBase::CommitOp::Run() {
       connection->FinishWriteTransaction();
 
       if (mTransaction->GetMode() == IDBTransaction::Mode::Cleanup) {
-        connection->DoIdleProcessing( true);
+        connection->DoIdleProcessing( true,
+                                      Atomic<bool>(false));
 
         connection->EnableQuotaChecks();
       }
