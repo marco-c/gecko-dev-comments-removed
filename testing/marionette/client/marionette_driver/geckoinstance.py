@@ -601,6 +601,8 @@ class DesktopInstance(GeckoInstance):
         
         "browser.startup.page": 0,
         
+        "browser.tabs.remote.unloadDelayMs": 0,
+        
         "browser.tabs.unloadOnLowMemory": False,
         
         "browser.tabs.warnOnClose": False,
