@@ -492,38 +492,54 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
     else if (currSrc.mSourceType == gfxFontFaceSrc::eSourceType_URL) {
       if (gfxPlatform::GetPlatform()->IsFontFormatSupported(
               currSrc.mFormatHint, currSrc.mTechFlags)) {
-        if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
-          
-          
-          
-          
-          
-          if (currSrc.mUseOriginPrincipal && IgnorePrincipal(currSrc.mURI)) {
-            set->AppendTask(PostTraversalTask::LoadFontEntry(this));
-            SetLoadState(STATUS_LOAD_PENDING);
+        
+        
+        const bool canCheckCache = [&] {
+          if (NS_IsMainThread()) {
+            return true;
+          }
+          if (gfxFontUtils::CurrentServoStyleSet()) {
+            
+            
+            
+            
+            return !currSrc.mUseOriginPrincipal ||
+                   !IgnorePrincipal(currSrc.mURI);
+          }
+          return false;
+        }();
+
+        
+        if (canCheckCache) {
+          gfxFontEntry* fe =
+              gfxUserFontSet::UserFontCache::GetFont(currSrc, *this);
+          if (fe) {
+            mPlatformFontEntry = fe;
+            SetLoadState(STATUS_LOADED);
+            LOG(
+                ("userfonts (%p) [src %d] "
+                 "loaded uri from cache: (%s) for (%s)\n",
+                 fontSet.get(), mCurrentSrcIndex,
+                 currSrc.mURI->GetSpecOrDefault().get(), mFamilyName.get()));
             return;
           }
         }
 
-        
-        gfxFontEntry* fe =
-            gfxUserFontSet::UserFontCache::GetFont(currSrc, *this);
-        if (fe) {
-          mPlatformFontEntry = fe;
-          SetLoadState(STATUS_LOADED);
-          LOG(
-              ("userfonts (%p) [src %d] "
-               "loaded uri from cache: (%s) for (%s)\n",
-               fontSet.get(), mCurrentSrcIndex,
-               currSrc.mURI->GetSpecOrDefault().get(), mFamilyName.get()));
-          return;
-        }
-
         if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
           
           
-          set->AppendTask(PostTraversalTask::LoadFontEntry(this));
           SetLoadState(STATUS_LOAD_PENDING);
+          set->AppendTask(PostTraversalTask::LoadFontEntry(this));
+          return;
+        }
+
+        if (dom::IsCurrentThreadRunningWorker()) {
+          
+          
+          SetLoadState(STATUS_LOAD_PENDING);
+          NS_DispatchToMainThread(
+              NewRunnableMethod("gfxUserFontEntry::ContinueLoad", this,
+                                &gfxUserFontEntry::ContinueLoad));
           return;
         }
 
@@ -551,9 +567,9 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
           fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
                               nsIScriptError::errorFlag, rv);
         } else if (!aIsContinue) {
-          RefPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-              "gfxUserFontSet::AsyncContinueLoad",
-              [loader = RefPtr{this}] { loader->ContinueLoad(); });
+          RefPtr<nsIRunnable> runnable =
+              NewRunnableMethod("gfxUserFontEntry::ContinueLoad", this,
+                                &gfxUserFontEntry::ContinueLoad);
           SetLoadState(STATUS_LOAD_PENDING);
           
           
@@ -815,13 +831,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 
 void gfxUserFontEntry::Load() {
   if (mUserFontLoadState != STATUS_NOT_LOADED) {
-    return;
-  }
-  if (dom::IsCurrentThreadRunningWorker()) {
-    
-    
-    NS_DispatchToMainThread(NewRunnableMethod("gfxUserFontEntry::Load", this,
-                                              &gfxUserFontEntry::Load));
     return;
   }
   LoadNextSrc();
