@@ -2032,13 +2032,13 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
   RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.ProvisionalAnswer", pranswer,
                             kProvisionalAnswerMax);
 
-  
-  
-  
-  
-  
   auto transport_infos = remote_description()->description()->transport_infos();
-  if (transport_infos.size() > 0) {
+  if (!transport_infos.empty()) {
+    
+    
+    
+    
+    
     auto ice_parameters = transport_infos[0].description.GetIceParameters();
     auto is_invalid_char = [](char c) {
       return c == '-' || c == '=' || c == '#' || c == '_';
@@ -2050,6 +2050,16 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
     RTC_HISTOGRAM_BOOLEAN(
         "WebRTC.PeerConnection.ValidIceChars",
         !(isUsingInvalidIceCharInUfrag || isUsingInvalidIceCharInPwd));
+
+    
+    
+    if (transport_infos[0].description.identity_fingerprint) {
+      RTC_HISTOGRAM_BOOLEAN(
+          "WebRTC.PeerConnection.DtlsFingerprintLegacySha1",
+          absl::EqualsIgnoreCase(
+              transport_infos[0].description.identity_fingerprint->algorithm,
+              "sha-1"));
+    }
   }
 
   
