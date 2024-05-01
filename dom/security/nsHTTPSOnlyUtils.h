@@ -100,8 +100,7 @@ class nsHTTPSOnlyUtils {
 
 
   static already_AddRefed<nsIURI> PotentiallyDowngradeHttpsFirstRequest(
-      mozilla::net::DocumentLoadListener* aDocumentLoadListener,
-      nsresult aStatus);
+      nsIChannel* aChannel, nsresult aStatus);
 
   
 
