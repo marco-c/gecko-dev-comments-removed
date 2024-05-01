@@ -7,7 +7,7 @@
 
 
 let MockFilePicker = SpecialPowers.MockFilePicker;
-MockFilePicker.init(window);
+MockFilePicker.init(window.browsingContext);
 add_task(async function () {
   
   const URL_FIREBIRD =

@@ -68,7 +68,7 @@ add_setup(async () => {
   
   
   
-  MockFilePicker.init(window);
+  MockFilePicker.init(window.browsingContext);
   registerCleanupFunction(() => {
     MockFilePicker.cleanup();
   });

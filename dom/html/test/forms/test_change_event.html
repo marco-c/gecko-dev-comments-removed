@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=722599
+-->
 <head>
 <title>Test for Bug 722599</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,7 +22,7 @@
 <input type="url" id="input_url" onchange="++textInputChange[4];"></input>
 <input type="password" id="input_password" onchange="++textInputChange[5];"></input>
  
-
+<!-- "Non-text" inputs-->
 <input type="button" id="input_button" onchange="++NonTextInputChange[0];"></input>
 <input type="submit" id="input_submit" onchange="++NonTextInputChange[1];"></input>
 <input type="image" id="input_image" onchange="++NonTextInputChange[2];"></input>
@@ -32,7 +32,7 @@
 <input type="number" id="input_number" onchange="++numberChange;"></input>
 <input type="range" id="input_range" onchange="++rangeChange;"></input>
 
-
+<!-- Input text with default value and blurs on focus-->
 <input type="text" id="input_text_value" onchange="++textInputValueChange"
   onfocus="this.blur();" value="foo"></input>
  
@@ -61,7 +61,7 @@
 
   SimpleTest.waitForExplicitFinish();
   var MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window);
+  MockFilePicker.init(SpecialPowers.wrap(window).browsingContext);
 
   function fileInputBlurTest() {
     var btn = document.getElementById('fileInput');

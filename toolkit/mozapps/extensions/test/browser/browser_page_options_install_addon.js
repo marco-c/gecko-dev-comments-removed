@@ -5,7 +5,7 @@
 
 
 var MockFilePicker = SpecialPowers.MockFilePicker;
-MockFilePicker.init(window);
+MockFilePicker.init(window.browsingContext);
 
 async function checkInstallConfirmation(...names) {
   let notificationCount = 0;
