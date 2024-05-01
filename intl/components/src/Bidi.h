@@ -7,7 +7,14 @@
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/intl/ICU4CGlue.h"
 
-#define USE_RUST_UNICODE_BIDI 1
+
+
+
+#ifdef NIGHTLY_BUILD
+#  define USE_RUST_UNICODE_BIDI 1
+#else
+#  define USE_RUST_UNICODE_BIDI 0
+#endif
 
 #if USE_RUST_UNICODE_BIDI
 #  include "mozilla/intl/unicode_bidi_ffi_generated.h"
