@@ -69,6 +69,8 @@ class AccIterator : public AccIterable {
 
 
 
+
+
 class RelatedAccIterator : public AccIterable {
  public:
   
@@ -97,9 +99,11 @@ class RelatedAccIterator : public AccIterable {
   RelatedAccIterator& operator=(const RelatedAccIterator&);
 
   DocAccessible* mDocument;
+  nsIContent* mDependentContent;
   nsAtom* mRelAttr;
   DocAccessible::AttrRelProviders* mProviders;
   uint32_t mIndex;
+  bool mIsWalkingDependentElements;
 };
 
 

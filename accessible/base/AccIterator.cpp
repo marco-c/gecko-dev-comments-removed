@@ -71,7 +71,12 @@ AccIterator::IteratorState::IteratorState(const LocalAccessible* aParent,
 RelatedAccIterator::RelatedAccIterator(DocAccessible* aDocument,
                                        nsIContent* aDependentContent,
                                        nsAtom* aRelAttr)
-    : mDocument(aDocument), mRelAttr(aRelAttr), mProviders(nullptr), mIndex(0) {
+    : mDocument(aDocument),
+      mDependentContent(aDependentContent),
+      mRelAttr(aRelAttr),
+      mProviders(nullptr),
+      mIndex(0),
+      mIsWalkingDependentElements(false) {
   nsAutoString id;
   if (aDependentContent->IsElement() &&
       aDependentContent->AsElement()->GetAttr(nsGkAtoms::id, id)) {
@@ -80,26 +85,57 @@ RelatedAccIterator::RelatedAccIterator(DocAccessible* aDocument,
 }
 
 LocalAccessible* RelatedAccIterator::Next() {
-  if (!mProviders) return nullptr;
+  if (!mProviders || mIndex == mProviders->Length()) {
+    if (mIsWalkingDependentElements) {
+      
+      
+      return nullptr;
+    }
+    
+    
+    mIsWalkingDependentElements = true;
+    mIndex = 0;
+    if (auto providers =
+            mDocument->mDependentElementsMap.Lookup(mDependentContent)) {
+      mProviders = &providers.Data();
+    } else {
+      mProviders = nullptr;
+      return nullptr;
+    }
+  }
 
   while (mIndex < mProviders->Length()) {
     const auto& provider = (*mProviders)[mIndex++];
 
     
-    if (provider->mRelAttr == mRelAttr) {
-      LocalAccessible* related = mDocument->GetAccessible(provider->mContent);
-      if (related) {
-        return related;
-      }
+    if (mRelAttr && provider->mRelAttr != mRelAttr) {
+      continue;
+    }
+    
+    
+    
+    if (mIsWalkingDependentElements &&
+        !nsCoreUtils::IsDescendantOfAnyShadowIncludingAncestor(
+            mDependentContent, provider->mContent)) {
+      continue;
+    }
+    LocalAccessible* related = mDocument->GetAccessible(provider->mContent);
+    if (related) {
+      return related;
+    }
 
-      
-      
-      if (provider->mContent == mDocument->GetContent()) {
-        return mDocument;
-      }
+    
+    
+    if (provider->mContent == mDocument->GetContent()) {
+      return mDocument;
     }
   }
 
+  
+  if (!mIsWalkingDependentElements) {
+    
+    return Next();
+  }
   return nullptr;
 }
 

@@ -492,6 +492,35 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
+
+
+
+
+
+
+
+
+  void AddDependentElementsFor(LocalAccessible* aRelProvider,
+                               nsAtom* aRelAttr = nullptr);
+
+  
+
+
+
+
+
+
+
+  void RemoveDependentElementsFor(LocalAccessible* aRelProvider,
+                                  nsAtom* aRelAttr = nullptr);
+
+  
+
+
+
+
+
+
   bool UpdateAccessibleOnAttrChange(mozilla::dom::Element* aElement,
                                     nsAtom* aAttribute);
 
@@ -729,9 +758,32 @@ class DocAccessible : public HyperTextAccessible,
   
 
 
+
+
+
+
+
+
+
+
   nsClassHashtable<nsPtrHashKey<dom::DocumentOrShadowRoot>,
                    DependentIDsHashtable>
       mDependentIDsHashes;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsTHashMap<nsIContent*, AttrRelProviders> mDependentElementsMap;
 
   friend class RelatedAccIterator;
 
