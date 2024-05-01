@@ -1,27 +1,20 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <html>
 <head>
   <title>GC uBench</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-  
+  <!-- Benchmark harness and UI -->
   <script src="harness.js"></script>
   <script src="perf.js"></script>
   <script src="sequencer.js"></script>
   <script src="ui.js"></script>
 
-  
+  <!-- List of garbage-creating test loads -->
   <script src="test_list.js"></script>
-
-  
-  <script>
-    var tests = new Map();
-    foreach_test_file(path => import("./" + path));
-  </script>
-
 </head>
 
 <body onload="onload()" onunload="onunload()">

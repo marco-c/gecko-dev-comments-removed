@@ -10,6 +10,8 @@ var stroke = {
 
 var numSamples = 500;
 
+var tests = new Map();
+
 var gHistogram = new Map(); 
 var gHistory = new FrameHistory(numSamples);
 var gPerf = new PerfTracker();
@@ -466,10 +468,17 @@ function reset_draw_state() {
 }
 
 function onunload() {
-  gLoadMgr.deactivateLoad();
+  if (gLoadMgr) {
+    gLoadMgr.deactivateLoad();
+  }
 }
 
-function onload() {
+async function onload() {
+  
+  let imports = [];
+  foreach_test_file(path => imports.push(import("./" + path)));
+  await Promise.all(imports);
+
   
   
   
