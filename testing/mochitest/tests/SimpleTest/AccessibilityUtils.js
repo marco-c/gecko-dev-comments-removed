@@ -590,6 +590,25 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+  function isUnlabeledXulButton(node) {
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const hasLabel = node.querySelector("label, xul\\:label");
+    const isButton =
+      node.getAttribute("role") == "button" ||
+      node.tagName == "button" ||
+      node.tagName == "xul:button";
+    return isButton && hasLabel && node.hasAttribute("data-l10n-id");
+  }
+
+  
+
+
+
+
   function shouldIgnoreTabIndex(node) {
     if (!XULElement.isInstance(node)) {
       return false;
@@ -843,7 +862,8 @@ this.AccessibilityUtils = (function () {
               
               if (
                 isUnlabeledUrlBarOption(DOMNode) ||
-                isUnlabeledImageButton(DOMNode)
+                isUnlabeledImageButton(DOMNode) ||
+                isUnlabeledXulButton(DOMNode)
               ) {
                 return;
               }
