@@ -7,6 +7,7 @@
 #include "CookieCommons.h"
 #include "CookieLogging.h"
 #include "CookieNotification.h"
+#include "mozilla/net/MozURL_ffi.h"
 #include "nsCOMPtr.h"
 #include "nsICookieNotification.h"
 #include "CookieStorage.h"
@@ -334,14 +335,83 @@ void CookieStorage::RemoveCookiesWithOriginAttributes(
   }
 }
 
+ bool CookieStorage::isIPv6BaseDomain(
+    const nsACString& aBaseDomain) {
+  return aBaseDomain.Contains(':');
+}
+
+ bool CookieStorage::SerializeIPv6BaseDomain(
+    nsACString& aBaseDomain) {
+  bool hasStartBracket = aBaseDomain.First() == '[';
+  bool hasEndBracket = aBaseDomain.Last() == ']';
+
+  
+  if (hasStartBracket != hasEndBracket) {
+    return false;
+  }
+
+  
+  
+  if (!hasStartBracket) {
+    aBaseDomain.Insert('[', 0);
+    aBaseDomain.Append(']');
+  }
+
+  
+  
+  nsAutoCString baseDomain;
+  nsresult rv = (nsresult)rusturl_parse_ipv6addr(&aBaseDomain, &baseDomain);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  
+  aBaseDomain = Substring(baseDomain, 1, baseDomain.Length() - 2);
+
+  return true;
+}
+
 void CookieStorage::RemoveCookiesFromExactHost(
     const nsACString& aHost, const nsACString& aBaseDomain,
     const OriginAttributesPattern& aPattern) {
   
+  
+  
+  
+  
+  
+  nsAutoCString removeBaseDomain;
+  bool isIPv6 = isIPv6BaseDomain(aBaseDomain);
+  if (isIPv6) {
+    MOZ_ASSERT(!aBaseDomain.IsEmpty());
+    
+    removeBaseDomain = aBaseDomain;
+    if (NS_WARN_IF(!SerializeIPv6BaseDomain(removeBaseDomain))) {
+      
+      return;
+    }
+  }
+
+  
   for (auto iter = mHostTable.Iter(); !iter.Done(); iter.Next()) {
     CookieEntry* entry = iter.Get();
 
-    if (!aBaseDomain.Equals(entry->mBaseDomain)) {
+    
+    if (isIPv6) {
+      
+      if (!isIPv6BaseDomain(entry->mBaseDomain)) {
+        continue;
+      }
+      
+      
+      nsAutoCString entryBaseDomain;
+      entryBaseDomain = entry->mBaseDomain;
+      if (NS_WARN_IF(!SerializeIPv6BaseDomain(entryBaseDomain))) {
+        continue;
+      }
+      if (!removeBaseDomain.Equals(entryBaseDomain)) {
+        continue;
+      }
+      
+    } else if (!aBaseDomain.Equals(entry->mBaseDomain)) {
       continue;
     }
 
@@ -354,7 +424,9 @@ void CookieStorage::RemoveCookiesFromExactHost(
       CookieListIter iter(entry, i - 1);
       RefPtr<Cookie> cookie = iter.Cookie();
 
-      if (!aHost.Equals(cookie->RawHost())) {
+      
+      
+      if (!isIPv6 && !aHost.Equals(cookie->RawHost())) {
         continue;
       }
 

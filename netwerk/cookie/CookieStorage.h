@@ -200,6 +200,14 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                                                   uint16_t aMaxNumberOfCookies,
                                                   int64_t aCookiePurgeAge) = 0;
 
+  
+  
+  static bool isIPv6BaseDomain(const nsACString& aBaseDomain);
+
+  
+  
+  static bool SerializeIPv6BaseDomain(nsACString& aBaseDomain);
+
   virtual void CollectCookieJarSizeData() = 0;
 
   int64_t mCookieOldestTime{INT64_MAX};
