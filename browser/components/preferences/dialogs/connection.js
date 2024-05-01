@@ -16,6 +16,7 @@ Preferences.addAll([
   
   
   { id: "network.proxy.autoconfig_url", type: "string" },
+  { id: "network.proxy.system_wpad", type: "bool" },
   { id: "network.proxy.type", type: "int" },
   { id: "network.proxy.http", type: "string" },
   { id: "network.proxy.http_port", type: "int" },
@@ -130,11 +131,20 @@ var gConnectionsDialog = {
   checkForSystemProxy() {
     if ("@mozilla.org/system-proxy-settings;1" in Cc) {
       document.getElementById("systemPref").removeAttribute("hidden");
+
+      var systemWpadAllowed = Preferences.get(
+        "network.proxy.system_wpad.allowed"
+      );
+      if (systemWpadAllowed) {
+        document.getElementById("systemWpad").removeAttribute("hidden");
+      }
     }
   },
 
   proxyTypeChanged() {
     var proxyTypePref = Preferences.get("network.proxy.type");
+    var systemWpadPref = Preferences.get("network.proxy.system_wpad");
+    systemWpadPref.updateControlDisabledState(proxyTypePref.value != 5);
 
     
     var httpProxyURLPref = Preferences.get("network.proxy.http");
