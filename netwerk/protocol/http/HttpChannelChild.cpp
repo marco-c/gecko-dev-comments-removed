@@ -89,7 +89,8 @@ HttpChannelChild::HttpChannelChild()
       mIsLastPartOfMultiPart(false),
       mSuspendForWaitCompleteRedirectSetup(false),
       mRecvOnStartRequestSentCalled(false),
-      mSuspendedByWaitingForPermissionCookie(false) {
+      mSuspendedByWaitingForPermissionCookie(false),
+      mAlreadyReleased(false) {
   LOG(("Creating HttpChannelChild @%p\n", this));
 
   mChannelCreationTime = PR_Now();
@@ -201,11 +202,15 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
     
     
     if (MOZ_LIKELY(LoadOnStartRequestCalled() && LoadOnStopRequestCalled()) ||
-        !mListener) {
+        !mListener || mAlreadyReleased) {
       NS_LOG_RELEASE(this, 0, "HttpChannelChild");
       delete this;
       return 0;
     }
+
+    
+    
+    mAlreadyReleased = true;
 
     
     if (NS_SUCCEEDED(mStatus)) {

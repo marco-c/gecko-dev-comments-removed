@@ -399,6 +399,12 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   uint8_t mSuspendedByWaitingForPermissionCookie : 1;
 
+  
+  
+  
+  
+  uint8_t mAlreadyReleased : 1;
+
   void CleanupRedirectingChannel(nsresult rv);
 
   
