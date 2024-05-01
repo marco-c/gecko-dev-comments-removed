@@ -10,6 +10,7 @@
 
 #include <inttypes.h>
 
+#include "gc/Cell.h"         
 #include "js/Conversions.h"  
 #include "js/Printer.h"      
 #include "vm/BigIntType.h"   
@@ -40,6 +41,12 @@ const HandleValue FalseHandleValue =
     HandleValue::fromMarkedLocation(&JSVAL_FALSE);
 const Handle<mozilla::Maybe<Value>> NothingHandleValue =
     Handle<mozilla::Maybe<Value>>::fromMarkedLocation(&JSVAL_NOTHING);
+
+#ifdef DEBUG
+void JS::Value::assertTraceKindMatches(js::gc::Cell* cell) const {
+  MOZ_ASSERT(traceKind() == cell->getTraceKind());
+}
+#endif
 
 }  
 
