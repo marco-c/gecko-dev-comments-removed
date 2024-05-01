@@ -2488,6 +2488,7 @@ void SVGTextDrawPathCallbacks::NotifySelectionBackgroundNeedsFill(
   }
 
   mColor = aColor;  
+  mPaintingShadows = false;
 
   GeneralPattern fillPattern;
   MakeFillPattern(&fillPattern);
