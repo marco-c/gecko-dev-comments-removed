@@ -330,10 +330,11 @@ class OutstandingData {
   
   
   
-  bool NackItem(UnwrappedTSN tsn,
-                Item& item,
-                bool retransmit_now,
-                bool do_fast_retransmit);
+  
+  
+  
+  
+  bool NackItem(UnwrappedTSN tsn, bool retransmit_now, bool do_fast_retransmit);
 
   
   

@@ -240,9 +240,8 @@ void OutstandingData::NackBetweenAckBlocks(
     for (UnwrappedTSN tsn = prev_block_last_acked.next_value();
          tsn < cur_block_first_acked && tsn <= max_tsn_to_nack;
          tsn = tsn.next_value()) {
-      Item& item = GetItem(tsn);
       ack_info.has_packet_loss |=
-          NackItem(tsn, item, false,
+          NackItem(tsn, false,
                    !is_in_fast_recovery);
     }
     prev_block_last_acked = UnwrappedTSN::AddTo(cumulative_tsn_ack, block.end);
@@ -255,9 +254,9 @@ void OutstandingData::NackBetweenAckBlocks(
 }
 
 bool OutstandingData::NackItem(UnwrappedTSN tsn,
-                               Item& item,
                                bool retransmit_now,
                                bool do_fast_retransmit) {
+  Item& item = GetItem(tsn);
   if (item.is_outstanding()) {
     unacked_bytes_ -= GetSerializedChunkSize(item.data());
     --unacked_items_;
@@ -446,13 +445,20 @@ absl::optional<UnwrappedTSN> OutstandingData::Insert(
 
 void OutstandingData::NackAll() {
   UnwrappedTSN tsn = last_cumulative_tsn_ack_;
+  
+  std::vector<UnwrappedTSN> tsns_to_nack;
   for (Item& item : outstanding_data_) {
     tsn.Increment();
     if (!item.is_acked()) {
-      NackItem(tsn, item, true,
-               false);
+      tsns_to_nack.push_back(tsn);
     }
   }
+
+  for (UnwrappedTSN tsn : tsns_to_nack) {
+    NackItem(tsn, true,
+             false);
+  }
+
   RTC_DCHECK(IsConsistent());
 }
 
