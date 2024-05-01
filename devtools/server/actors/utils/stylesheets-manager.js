@@ -640,14 +640,10 @@ class StyleSheetsManager extends EventEmitter {
       return win;
     };
 
+    const styleSheetRules =
+      InspectorUtils.getAllStyleSheetCSSStyleRules(styleSheet);
+    const ruleCount = styleSheetRules.length;
     
-    
-    
-    
-    
-    
-    const { atRules: styleSheetRules, ruleCount } =
-      InspectorUtils.getStyleSheetRuleCountAndAtRules(styleSheet);
     const atRules = [];
     for (const rule of styleSheetRules) {
       const className = ChromeUtils.getClassName(rule);
@@ -707,10 +703,7 @@ class StyleSheetsManager extends EventEmitter {
         });
       }
     }
-    return {
-      ruleCount,
-      atRules,
-    };
+    return { ruleCount, atRules };
   }
 
   

@@ -399,56 +399,21 @@ bool InspectorUtils::HasRulesModifiedByCSSOM(GlobalObject& aGlobal,
   return aSheet.HasModifiedRulesForDevtools();
 }
 
-static uint32_t CollectAtRules(ServoCSSRuleList& aRuleList,
-                               Sequence<OwningNonNull<css::Rule>>& aResult) {
-  uint32_t len = aRuleList.Length();
-  uint32_t rulesCount = len;
-  for (uint32_t i = 0; i < len; ++i) {
+static void CollectRules(ServoCSSRuleList& aRuleList,
+                         nsTArray<RefPtr<css::Rule>>& aResult) {
+  for (uint32_t i = 0, len = aRuleList.Length(); i < len; ++i) {
     css::Rule* rule = aRuleList.GetRule(i);
-    
-    
-    
-    
-    
-    
-    switch (rule->Type()) {
-      case StyleCssRuleType::Media:
-      case StyleCssRuleType::Supports:
-      case StyleCssRuleType::LayerBlock:
-      case StyleCssRuleType::Container: {
-        Unused << aResult.AppendElement(OwningNonNull(*rule), fallible);
-        break;
-      }
-      case StyleCssRuleType::Style:
-      case StyleCssRuleType::Import:
-      case StyleCssRuleType::Document:
-      case StyleCssRuleType::LayerStatement:
-      case StyleCssRuleType::FontFace:
-      case StyleCssRuleType::Page:
-      case StyleCssRuleType::Property:
-      case StyleCssRuleType::Keyframes:
-      case StyleCssRuleType::Keyframe:
-      case StyleCssRuleType::Margin:
-      case StyleCssRuleType::Namespace:
-      case StyleCssRuleType::CounterStyle:
-      case StyleCssRuleType::FontFeatureValues:
-      case StyleCssRuleType::FontPaletteValues:
-        break;
-    }
-
+    aResult.AppendElement(rule);
     if (rule->IsGroupRule()) {
-      rulesCount += CollectAtRules(
-          *static_cast<css::GroupRule*>(rule)->CssRules(), aResult);
+      CollectRules(*static_cast<css::GroupRule*>(rule)->CssRules(), aResult);
     }
   }
-  return rulesCount;
 }
 
-void InspectorUtils::GetStyleSheetRuleCountAndAtRules(
+void InspectorUtils::GetAllStyleSheetCSSStyleRules(
     GlobalObject& aGlobal, StyleSheet& aSheet,
-    InspectorStyleSheetRuleCountAndAtRulesResult& aResult) {
-  aResult.mRulesCount =
-      CollectAtRules(*aSheet.GetCssRulesInternal(), aResult.mAtRules);
+    nsTArray<RefPtr<css::Rule>>& aResult) {
+  CollectRules(*aSheet.GetCssRulesInternal(), aResult);
 }
 
 
