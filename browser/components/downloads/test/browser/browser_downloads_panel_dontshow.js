@@ -2,7 +2,7 @@
 
 
 let MockFilePicker = SpecialPowers.MockFilePicker;
-MockFilePicker.init(window.browsingContext);
+MockFilePicker.init(window);
 
 async function promiseDownloadFinished(list) {
   return new Promise(resolve => {

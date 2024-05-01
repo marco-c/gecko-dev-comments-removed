@@ -2469,11 +2469,7 @@ function saveReportsToFile() {
   };
 
   try {
-    fp.init(
-      window.browsingContext,
-      "Save Memory Reports",
-      Ci.nsIFilePicker.modeSave
-    );
+    fp.init(window, "Save Memory Reports", Ci.nsIFilePicker.modeSave);
   } catch (ex) {
     
     

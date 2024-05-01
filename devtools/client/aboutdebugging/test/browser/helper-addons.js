@@ -180,7 +180,7 @@ function prepareMockFilePicker(pathOrFile) {
 
   
   const MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init(window);
   MockFilePicker.setFiles([file]);
 }
 

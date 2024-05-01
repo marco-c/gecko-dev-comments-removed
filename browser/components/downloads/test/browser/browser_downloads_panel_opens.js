@@ -2,7 +2,7 @@
 
 
 let { MockFilePicker } = SpecialPowers;
-MockFilePicker.init(window.browsingContext);
+MockFilePicker.init(window);
 registerCleanupFunction(() => MockFilePicker.cleanup());
 
 

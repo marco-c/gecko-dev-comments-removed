@@ -72,7 +72,13 @@ interface nsIFilePicker : nsISupports
 
 
 
-  void init(in BrowsingContext browsingContext, in AString title, in nsIFilePicker_Mode mode);
+
+
+
+  void init(in mozIDOMWindowProxy parent,
+            in AString title,
+            in nsIFilePicker_Mode mode,
+            [optional] in BrowsingContext browsingContext);
 
   
 

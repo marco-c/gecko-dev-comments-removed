@@ -49,7 +49,7 @@ function waitForTransferComplete() {
 
 add_task(async function () {
   let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init(window);
 
   
   let destDir = createTemporarySaveDirectory();
