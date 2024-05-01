@@ -1670,25 +1670,37 @@ long nsContentSecurityUtils::ClassifyDownload(
   nsCOMPtr<nsIURI> contentLocation;
   aChannel->GetURI(getter_AddRefs(contentLocation));
 
-  if (StaticPrefs::dom_block_download_insecure()) {
-    
-    
-    bool isInsecureDownload =
-        !nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(
-            contentLocation) &&
-        !nsMixedContentBlocker::URISafeToBeLoadedInSecureContext(
-            contentLocation);
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
+  if (!loadingPrincipal) {
+    loadingPrincipal = loadInfo->TriggeringPrincipal();
+  }
+  
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
+      loadingPrincipal, loadInfo->TriggeringPrincipal(), nullptr,
+      nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+      nsIContentPolicy::TYPE_FETCH);
+  
+  
+  
+  secCheckLoadInfo->SetHttpsOnlyStatus(nsILoadInfo::HTTPS_ONLY_EXEMPT);
 
-    Telemetry::Accumulate(mozilla::Telemetry::INSECURE_DOWNLOADS,
-                          isInsecureDownload);
+  int16_t decission = nsIContentPolicy::ACCEPT;
+  nsMixedContentBlocker::ShouldLoad(false,  
+                                    contentLocation,   
+                                    secCheckLoadInfo,  
+                                    false,             
+                                    &decission         
+  );
+  Telemetry::Accumulate(mozilla::Telemetry::MIXED_CONTENT_DOWNLOADS,
+                        decission != nsIContentPolicy::ACCEPT);
 
-    if (isInsecureDownload) {
-      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-      if (httpChannel) {
-        LogMessageToConsole(httpChannel, "BlockedInsecureDownload");
-      }
-      return nsITransfer::DOWNLOAD_POTENTIALLY_UNSAFE;
+  if (StaticPrefs::dom_block_download_insecure() &&
+      decission != nsIContentPolicy::ACCEPT) {
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+    if (httpChannel) {
+      LogMessageToConsole(httpChannel, "MixedContentBlockedDownload");
     }
+    return nsITransfer::DOWNLOAD_POTENTIALLY_UNSAFE;
   }
 
   if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
