@@ -2549,6 +2549,10 @@ void LocalAccessible::Shutdown() {
 
 void LocalAccessible::ARIAName(nsString& aName) const {
   
+  if (mContent->IsHTMLElement(nsGkAtoms::slot)) {
+    return;
+  }
+  
   nsresult rv = nsTextEquivUtils::GetTextEquivFromIDRefs(
       this, nsGkAtoms::aria_labelledby, aName);
   if (NS_SUCCEEDED(rv)) {
