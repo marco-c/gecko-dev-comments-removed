@@ -38,6 +38,7 @@
 #include "mozilla/dom/DataTransferItemList.h"
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/dom/FileList.h"
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -622,51 +623,54 @@ already_AddRefed<DataTransfer> DataTransfer::MozCloneForEvent(
 
 
 
-static const char* kNonPlainTextExternalFormats[] = {
-    kCustomTypesMime, kFileMime, kHTMLMime,     kRTFMime,  kURLMime,
-    kURLDataMime,     kTextMime, kPNGImageMime, kPDFJSMime};
+static const nsCString kNonPlainTextExternalFormats[] = {
+    nsLiteralCString(kCustomTypesMime), nsLiteralCString(kFileMime),
+    nsLiteralCString(kHTMLMime),        nsLiteralCString(kRTFMime),
+    nsLiteralCString(kURLMime),         nsLiteralCString(kURLDataMime),
+    nsLiteralCString(kTextMime),        nsLiteralCString(kPNGImageMime),
+    nsLiteralCString(kPDFJSMime)};
 
-
-void DataTransfer::GetExternalClipboardFormats(const int32_t& aWhichClipboard,
-                                               const bool& aPlainTextOnly,
-                                               nsTArray<nsCString>* aResult) {
-  MOZ_ASSERT(aResult);
-
+void DataTransfer::GetExternalClipboardFormats(const bool& aPlainTextOnly,
+                                               nsTArray<nsCString>& aResult) {
   
   
   
+
+  MOZ_ASSERT(!mAsyncGetClipboardData);
+
+  RefPtr<WindowContext> wc = GetWindowContext();
+  if (NS_WARN_IF(!wc)) {
+    MOZ_ASSERT_UNREACHABLE(
+        "How could this DataTransfer be created with a non-window global?");
+    return;
+  }
 
   nsCOMPtr<nsIClipboard> clipboard =
       do_GetService("@mozilla.org/widget/clipboard;1");
-  if (!clipboard || aWhichClipboard < 0) {
+  if (!clipboard || mClipboardType < 0) {
     return;
   }
 
+  nsresult rv = NS_ERROR_FAILURE;
+  nsCOMPtr<nsIAsyncGetClipboardData> asyncGetClipboardData;
   if (aPlainTextOnly) {
-    bool hasType;
-    AutoTArray<nsCString, 1> textMime = {nsDependentCString(kTextMime)};
-    nsresult rv =
-        clipboard->HasDataMatchingFlavors(textMime, aWhichClipboard, &hasType);
-    NS_SUCCEEDED(rv);
-    if (hasType) {
-      aResult->AppendElement(kTextMime);
-    }
+    rv = clipboard->GetDataSnapshotSync(
+        AutoTArray<nsCString, 1>{nsLiteralCString(kTextMime)}, mClipboardType,
+        wc, getter_AddRefs(asyncGetClipboardData));
+  } else {
+    AutoTArray<nsCString, ArrayLength(kNonPlainTextExternalFormats)> formats;
+    formats.AppendElements(Span<const nsCString>(kNonPlainTextExternalFormats));
+    rv = clipboard->GetDataSnapshotSync(formats, mClipboardType, wc,
+                                        getter_AddRefs(asyncGetClipboardData));
+  }
+
+  if (NS_FAILED(rv) || !asyncGetClipboardData) {
     return;
   }
 
-  
-  for (uint32_t f = 0; f < mozilla::ArrayLength(kNonPlainTextExternalFormats);
-       ++f) {
-    bool hasType;
-    AutoTArray<nsCString, 1> format = {
-        nsDependentCString(kNonPlainTextExternalFormats[f])};
-    nsresult rv =
-        clipboard->HasDataMatchingFlavors(format, aWhichClipboard, &hasType);
-    NS_SUCCEEDED(rv);
-    if (hasType) {
-      aResult->AppendElement(kNonPlainTextExternalFormats[f]);
-    }
-  }
+  asyncGetClipboardData->GetFlavorList(aResult);
+
+  mAsyncGetClipboardData = asyncGetClipboardData;
 }
 
 
@@ -694,10 +698,10 @@ void DataTransfer::GetExternalTransferableFormats(
   }
 
   
-  for (const char* format : kNonPlainTextExternalFormats) {
-    auto index = flavors.IndexOf(nsCString(format));
+  for (const auto& format : kNonPlainTextExternalFormats) {
+    auto index = flavors.IndexOf(format);
     if (index != flavors.NoIndex) {
-      aResult->AppendElement(nsCString(format));
+      aResult->AppendElement(format);
     }
   }
 }
@@ -888,6 +892,17 @@ already_AddRefed<nsITransferable> DataTransfer::GetTransferable(
     return nullptr;
   }
   transferable->Init(aLoadContext);
+
+  
+  
+  
+  
+  
+  if (mMode == Mode::ReadWrite) {
+    if (nsCOMPtr<nsIGlobalObject> global = GetGlobal()) {
+      transferable->SetRequestingPrincipal(global->PrincipalOrNull());
+    }
+  }
 
   nsCOMPtr<nsIStorageStream> storageStream;
   nsCOMPtr<nsIObjectOutputStream> stream;
@@ -1180,7 +1195,10 @@ void DataTransfer::Disconnect() {
   }
 }
 
-void DataTransfer::ClearAll() { mItems->ClearAllItems(); }
+void DataTransfer::ClearAll() {
+  mItems->ClearAllItems();
+  mAsyncGetClipboardData = nullptr;
+}
 
 uint32_t DataTransfer::MozItemCount() const { return mItems->MozItemCount(); }
 
@@ -1234,6 +1252,36 @@ void DataTransfer::GetRealFormat(const nsAString& aInFormat,
   }
 
   aOutFormat.Assign(lowercaseFormat);
+}
+
+already_AddRefed<nsIGlobalObject> DataTransfer::GetGlobal() const {
+  nsCOMPtr<nsIGlobalObject> global;
+  
+  if (nsCOMPtr<EventTarget> target = do_QueryInterface(mParent)) {
+    global = target->GetOwnerGlobal();
+  } else if (RefPtr<Event> event = do_QueryObject(mParent)) {
+    global = event->GetParentObject();
+  }
+
+  return global.forget();
+}
+
+already_AddRefed<WindowContext> DataTransfer::GetWindowContext() const {
+  nsCOMPtr<nsIGlobalObject> global = GetGlobal();
+  if (!global) {
+    return nullptr;
+  }
+
+  const auto* innerWindow = global->GetAsInnerWindow();
+  if (!innerWindow) {
+    return nullptr;
+  }
+
+  return do_AddRef(innerWindow->GetWindowContext());
+}
+
+nsIAsyncGetClipboardData* DataTransfer::GetAsyncGetClipboardData() const {
+  return mAsyncGetClipboardData;
 }
 
 nsresult DataTransfer::CacheExternalData(const char* aFormat, uint32_t aIndex,
@@ -1333,20 +1381,13 @@ void DataTransfer::CacheExternalClipboardFormats(bool aPlainTextOnly) {
                "caching clipboard data for invalid event");
 
   nsCOMPtr<nsIPrincipal> sysPrincipal = nsContentUtils::GetSystemPrincipal();
-
   nsTArray<nsCString> typesArray;
-
-  if (XRE_IsContentProcess()) {
-    ContentChild::GetSingleton()->SendGetExternalClipboardFormats(
-        mClipboardType, aPlainTextOnly, &typesArray);
-  } else {
-    GetExternalClipboardFormats(mClipboardType, aPlainTextOnly, &typesArray);
-  }
-
+  GetExternalClipboardFormats(aPlainTextOnly, typesArray);
   if (aPlainTextOnly) {
     
     MOZ_ASSERT(typesArray.IsEmpty() || typesArray.Length() == 1);
     if (typesArray.Length() == 1) {
+      MOZ_ASSERT(typesArray.Contains(kTextMime));
       CacheExternalData(kTextMime, 0, sysPrincipal, false);
     }
     return;

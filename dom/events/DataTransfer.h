@@ -23,6 +23,7 @@
 #include "mozilla/dom/DataTransferItemList.h"
 #include "mozilla/dom/File.h"
 
+class nsIAsyncGetClipboardData;
 class nsINode;
 class nsITransferable;
 class nsILoadContext;
@@ -390,14 +391,6 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   
   
-  static void GetExternalClipboardFormats(const int32_t& aWhichClipboard,
-                                          const bool& aPlainTextOnly,
-                                          nsTArray<nsCString>* aResult);
-
-  
-  
-  
-  
   static void GetExternalTransferableFormats(nsITransferable* aTransferable,
                                              bool aPlainTextOnly,
                                              nsTArray<nsCString>* aResult);
@@ -426,7 +419,20 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                                                      kImageRequestMime,
                                                      kPDFJSMime};
 
+  already_AddRefed<nsIGlobalObject> GetGlobal() const;
+
+  already_AddRefed<WindowContext> GetWindowContext() const;
+
+  nsIAsyncGetClipboardData* GetAsyncGetClipboardData() const;
+
  protected:
+  
+  
+  
+  
+  void GetExternalClipboardFormats(const bool& aPlainTextOnly,
+                                   nsTArray<nsCString>& aResult);
+
   
   
   nsresult CacheExternalData(const char* aFormat, uint32_t aIndex,
@@ -503,6 +509,11 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   
   int32_t mClipboardType;
+
+  
+  
+  
+  nsCOMPtr<nsIAsyncGetClipboardData> mAsyncGetClipboardData;
 
   
   RefPtr<DataTransferItemList> mItems;
