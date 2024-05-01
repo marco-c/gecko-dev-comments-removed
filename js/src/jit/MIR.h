@@ -1277,6 +1277,32 @@ class MVariadicT : public T {
 
 using MVariadicInstruction = MVariadicT<MInstruction>;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class MemoryBarrierRequirement : bool {
+  NotRequired,
+  Required,
+};
+
 MIR_OPCODE_CLASS_GENERATED
 
 
@@ -7041,43 +7067,21 @@ class MArrayPopShift : public MUnaryInstruction,
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum MemoryBarrierRequirement {
-  DoesNotRequireMemoryBarrier,
-  DoesRequireMemoryBarrier
-};
-
-
-
-
 class MLoadUnboxedScalar : public MBinaryInstruction,
                            public NoTypePolicy::Data {
   int32_t offsetAdjustment_ = 0;
   Scalar::Type storageType_;
-  bool requiresBarrier_;
+  MemoryBarrierRequirement requiresBarrier_;
 
-  MLoadUnboxedScalar(
-      MDefinition* elements, MDefinition* index, Scalar::Type storageType,
-      MemoryBarrierRequirement requiresBarrier = DoesNotRequireMemoryBarrier)
+  MLoadUnboxedScalar(MDefinition* elements, MDefinition* index,
+                     Scalar::Type storageType,
+                     MemoryBarrierRequirement requiresBarrier =
+                         MemoryBarrierRequirement::NotRequired)
       : MBinaryInstruction(classOpcode, elements, index),
         storageType_(storageType),
-        requiresBarrier_(requiresBarrier == DoesRequireMemoryBarrier) {
+        requiresBarrier_(requiresBarrier) {
     setResultType(MIRType::Value);
-    if (requiresBarrier_) {
+    if (requiresBarrier_ == MemoryBarrierRequirement::Required) {
       setGuard();  
     } else {
       setMovable();
@@ -7097,7 +7101,7 @@ class MLoadUnboxedScalar : public MBinaryInstruction,
     
     return storageType_ == Scalar::Uint32 && type() == MIRType::Int32;
   }
-  bool requiresMemoryBarrier() const { return requiresBarrier_; }
+  auto requiresMemoryBarrier() const { return requiresBarrier_; }
   int32_t offsetAdjustment() const { return offsetAdjustment_; }
   void setOffsetAdjustment(int32_t offsetAdjustment) {
     offsetAdjustment_ = offsetAdjustment;
@@ -7105,14 +7109,14 @@ class MLoadUnboxedScalar : public MBinaryInstruction,
   AliasSet getAliasSet() const override {
     
     
-    if (requiresBarrier_) {
+    if (requiresBarrier_ == MemoryBarrierRequirement::Required) {
       return AliasSet::Store(AliasSet::UnboxedElement);
     }
     return AliasSet::Load(AliasSet::UnboxedElement);
   }
 
   bool congruentTo(const MDefinition* ins) const override {
-    if (requiresBarrier_) {
+    if (requiresBarrier_ == MemoryBarrierRequirement::Required) {
       return false;
     }
     if (!ins->isLoadUnboxedScalar()) {
@@ -7280,16 +7284,16 @@ class StoreUnboxedScalarBase {
 class MStoreUnboxedScalar : public MTernaryInstruction,
                             public StoreUnboxedScalarBase,
                             public StoreUnboxedScalarPolicy::Data {
-  bool requiresBarrier_;
+  MemoryBarrierRequirement requiresBarrier_;
 
-  MStoreUnboxedScalar(
-      MDefinition* elements, MDefinition* index, MDefinition* value,
-      Scalar::Type storageType,
-      MemoryBarrierRequirement requiresBarrier = DoesNotRequireMemoryBarrier)
+  MStoreUnboxedScalar(MDefinition* elements, MDefinition* index,
+                      MDefinition* value, Scalar::Type storageType,
+                      MemoryBarrierRequirement requiresBarrier =
+                          MemoryBarrierRequirement::NotRequired)
       : MTernaryInstruction(classOpcode, elements, index, value),
         StoreUnboxedScalarBase(storageType),
-        requiresBarrier_(requiresBarrier == DoesRequireMemoryBarrier) {
-    if (requiresBarrier_) {
+        requiresBarrier_(requiresBarrier) {
+    if (requiresBarrier_ == MemoryBarrierRequirement::Required) {
       setGuard();  
     }
     MOZ_ASSERT(elements->type() == MIRType::Elements);
@@ -7305,7 +7309,7 @@ class MStoreUnboxedScalar : public MTernaryInstruction,
   AliasSet getAliasSet() const override {
     return AliasSet::Store(AliasSet::UnboxedElement);
   }
-  bool requiresMemoryBarrier() const { return requiresBarrier_; }
+  auto requiresMemoryBarrier() const { return requiresBarrier_; }
   TruncateKind operandTruncateKind(size_t index) const override;
 
   bool canConsumeFloat32(MUse* use) const override {
