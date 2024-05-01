@@ -1,0 +1,7 @@
+
+
+"use strict";
+
+test(() => {
+  assert_equals(self.HighlightRegister, undefined);
+}, "HighlightRegister was renamed");
