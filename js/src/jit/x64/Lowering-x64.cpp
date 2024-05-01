@@ -208,8 +208,8 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
     
     
 
-    bool bitOp = !(ins->operation() == AtomicFetchAddOp ||
-                   ins->operation() == AtomicFetchSubOp);
+    bool bitOp = !(ins->operation() == AtomicOp::Add ||
+                   ins->operation() == AtomicOp::Sub);
 
     LInt64Definition temp1 = tempInt64();
     LInt64Definition temp2;
@@ -427,8 +427,8 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
   
   
 
-  bool bitOp = !(ins->operation() == AtomicFetchAddOp ||
-                 ins->operation() == AtomicFetchSubOp);
+  bool bitOp =
+      !(ins->operation() == AtomicOp::Add || ins->operation() == AtomicOp::Sub);
   bool reuseInput = false;
   LAllocation value;
 

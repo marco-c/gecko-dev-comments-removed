@@ -14,12 +14,12 @@ namespace jit {
 
 
 
-enum AtomicOp {
-  AtomicFetchAddOp,
-  AtomicFetchSubOp,
-  AtomicFetchAndOp,
-  AtomicFetchOrOp,
-  AtomicFetchXorOp
+enum class AtomicOp {
+  Add,
+  Sub,
+  And,
+  Or,
+  Xor,
 };
 
 

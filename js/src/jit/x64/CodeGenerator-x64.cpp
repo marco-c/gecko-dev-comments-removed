@@ -432,7 +432,7 @@ void CodeGenerator::visitAtomicTypedArrayElementBinop64(
 
   
   
-  if (atomicOp == AtomicFetchAddOp || atomicOp == AtomicFetchSubOp) {
+  if (atomicOp == AtomicOp::Add || atomicOp == AtomicOp::Sub) {
     fetchTemp = Register64::Invalid();
     fetchOut = temp1;
     createTemp = temp2.reg;
