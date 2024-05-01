@@ -2407,11 +2407,7 @@ pref("browser.suppress_first_window_animation", true);
 pref("extensions.screenshots.disabled", false);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("screenshots.browser.component.enabled", true);
-#else
-  pref("screenshots.browser.component.enabled", false);
-#endif
+pref("screenshots.browser.component.enabled", false);
 
 
 pref("screenshots.browser.component.last-saved-method", "download");
