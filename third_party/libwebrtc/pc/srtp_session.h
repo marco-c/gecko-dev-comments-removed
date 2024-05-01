@@ -97,6 +97,14 @@ class SrtpSession {
   
   bool IsExternalAuthActive() const;
 
+  
+  
+  
+  
+  
+  
+  bool RemoveSsrcFromSession(uint32_t ssrc);
+
  private:
   bool DoSetKey(int type,
                 int crypto_suite,

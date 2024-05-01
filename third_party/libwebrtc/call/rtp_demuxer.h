@@ -152,6 +152,9 @@ class RtpDemuxer {
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
   
+  flat_set<uint32_t> GetSsrcsForSink(const RtpPacketSinkInterface* sink) const;
+
+  
   
   bool OnRtpPacket(const RtpPacketReceived& packet);
 
