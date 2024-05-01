@@ -18,6 +18,7 @@
 
 
 
+
 window.__defineGetter__("_EU_Ci", function () {
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? Ci : SpecialPowers.Ci;
@@ -569,14 +570,86 @@ function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
     aWindow
   );
 }
-function synthesizeTouch(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
-  var rect = aTarget.getBoundingClientRect();
-  return synthesizeTouchAtPoint(
-    rect.left + aOffsetX,
-    rect.top + aOffsetY,
-    aEvent,
-    aWindow
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeTouch(
+  aTarget,
+  aOffsetX,
+  aOffsetY,
+  aEvent = {},
+  aWindow = window
+) {
+  let rectX, rectY;
+  if (Array.isArray(aTarget)) {
+    let lastTarget, lastTargetRect;
+    aTarget.forEach(target => {
+      const rect =
+        target == lastTarget ? lastTargetRect : target.getBoundingClientRect();
+      rectX.push(rect.left);
+      rectY.push(rect.top);
+      lastTarget = target;
+      lastTargetRect = rect;
+    });
+  } else {
+    const rect = aTarget.getBoundingClientRect();
+    rectX = [rect.left];
+    rectY = [rect.top];
+  }
+  const offsetX = (() => {
+    if (Array.isArray(aOffsetX)) {
+      let ret = [];
+      aOffsetX.forEach((value, index) => {
+        ret.push(value + rectX[Math.min(index, rectX.length - 1)]);
+      });
+      return ret;
+    }
+    return aOffsetX + rectX[0];
+  })();
+  const offsetY = (() => {
+    if (Array.isArray(aOffsetY)) {
+      let ret = [];
+      aOffsetY.forEach((value, index) => {
+        ret.push(value + rectY[Math.min(index, rectY.length - 1)]);
+      });
+      return ret;
+    }
+    return aOffsetY + rectY[0];
+  })();
+  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
 }
 
 
@@ -776,68 +849,160 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
   return defaultPrevented;
 }
 
-function synthesizeTouchAtPoint(left, top, aEvent, aWindow = window) {
-  var utils = _getDOMWindowUtils(aWindow);
-  let defaultPrevented = false;
 
-  if (utils) {
-    var id = aEvent.id || utils.DEFAULT_TOUCH_POINTER_ID;
-    var rx = aEvent.rx || 1;
-    var ry = aEvent.ry || 1;
-    var angle = aEvent.angle || 0;
-    var force = aEvent.force || (aEvent.type === "touchend" ? 0 : 1);
-    var tiltX = aEvent.tiltX || 0;
-    var tiltY = aEvent.tiltY || 0;
-    var twist = aEvent.twist || 0;
-    var modifiers = _parseModifiers(aEvent, aWindow);
 
-    if ("type" in aEvent && aEvent.type) {
-      defaultPrevented = utils.sendTouchEvent(
-        aEvent.type,
-        [id],
-        [left],
-        [top],
-        [rx],
-        [ry],
-        [angle],
-        [force],
-        [tiltX],
-        [tiltY],
-        [twist],
-        modifiers
-      );
-    } else {
-      utils.sendTouchEvent(
-        "touchstart",
-        [id],
-        [left],
-        [top],
-        [rx],
-        [ry],
-        [angle],
-        [force],
-        [tiltX],
-        [tiltY],
-        [twist],
-        modifiers
-      );
-      utils.sendTouchEvent(
-        "touchend",
-        [id],
-        [left],
-        [top],
-        [rx],
-        [ry],
-        [angle],
-        [force],
-        [tiltX],
-        [tiltY],
-        [twist],
-        modifiers
-      );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
+  let utils = _getDOMWindowUtils(aWindow);
+  if (!utils) {
+    return false;
+  }
+
+  if (
+    Array.isArray(aLeft) &&
+    Array.isArray(aTop) &&
+    aLeft.length != aTop.length
+  ) {
+    throw new Error(`aLeft and aTop should be same length array`);
+  }
+
+  const arrayLength = Array.isArray(aLeft)
+    ? aLeft.length
+    : Array.isArray(aTop)
+    ? aTop.length
+    : 1;
+
+  function throwExceptionIfDifferentLengthArray(aArray, aName) {
+    if (Array.isArray(aArray) && arrayLength !== aArray.length) {
+      throw new Error(`${aName} is different length array`);
     }
   }
-  return defaultPrevented;
+  const leftArray = (() => {
+    if (Array.isArray(aLeft)) {
+      return aLeft;
+    }
+    return new Array(arrayLength).fill(aLeft);
+  })();
+  const topArray = (() => {
+    if (Array.isArray(aTop)) {
+      throwExceptionIfDifferentLengthArray(aTop, "aTop");
+      return aTop;
+    }
+    return new Array(arrayLength).fill(aTop);
+  })();
+  const idArray = (() => {
+    if ("id" in aEvent && Array.isArray(aEvent.id)) {
+      throwExceptionIfDifferentLengthArray(aEvent.id, "aEvent.id");
+      return aEvent.id;
+    }
+    let id = aEvent.id || utils.DEFAULT_TOUCH_POINTER_ID;
+    let ret = [];
+    for (let i = 0; i < arrayLength; i++) {
+      ret.push(id++);
+    }
+    return ret;
+  })();
+  function getSameLengthArrayOfEventProperty(aProperty, aDefaultValue) {
+    if (aProperty in aEvent && Array.isArray(aEvent[aProperty])) {
+      throwExceptionIfDifferentLengthArray(
+        aEvent.rx,
+        arrayLength,
+        `aEvent.${aProperty}`
+      );
+      return aEvent[aProperty];
+    }
+    return new Array(arrayLength).fill(aEvent[aProperty] || aDefaultValue);
+  }
+  const rxArray = getSameLengthArrayOfEventProperty("rx", 1);
+  const ryArray = getSameLengthArrayOfEventProperty("ry", 1);
+  const angleArray = getSameLengthArrayOfEventProperty("angle", 0);
+  const forceArray = getSameLengthArrayOfEventProperty(
+    "force",
+    aEvent.type === "touchend" ? 0 : 1
+  );
+  const tiltXArray = getSameLengthArrayOfEventProperty("tiltX", 0);
+  const tiltYArray = getSameLengthArrayOfEventProperty("tiltY", 0);
+  const twistArray = getSameLengthArrayOfEventProperty("twist", 0);
+
+  const modifiers = _parseModifiers(aEvent, aWindow);
+
+  if ("type" in aEvent && aEvent.type) {
+    return utils.sendTouchEvent(
+      aEvent.type,
+      idArray,
+      leftArray,
+      topArray,
+      rxArray,
+      ryArray,
+      angleArray,
+      forceArray,
+      tiltXArray,
+      tiltYArray,
+      twistArray,
+      modifiers
+    );
+  }
+
+  utils.sendTouchEvent(
+    "touchstart",
+    idArray,
+    leftArray,
+    topArray,
+    rxArray,
+    ryArray,
+    angleArray,
+    forceArray,
+    tiltXArray,
+    tiltYArray,
+    twistArray,
+    modifiers
+  );
+  utils.sendTouchEvent(
+    "touchend",
+    idArray,
+    leftArray,
+    topArray,
+    rxArray,
+    ryArray,
+    angleArray,
+    forceArray,
+    tiltXArray,
+    tiltYArray,
+    twistArray,
+    modifiers
+  );
+  return false;
 }
 
 
@@ -851,7 +1016,7 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
     aWindow
   );
 }
-function synthesizeTouchAtCenter(aTarget, aEvent, aWindow) {
+function synthesizeTouchAtCenter(aTarget, aEvent = {}, aWindow = window) {
   var rect = aTarget.getBoundingClientRect();
   synthesizeTouchAtPoint(
     rect.left + rect.width / 2,
