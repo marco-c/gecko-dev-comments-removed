@@ -22,6 +22,10 @@
 #include "nsDebug.h"
 #include "nsGenericHTMLElement.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ElementInternals)
@@ -480,6 +484,46 @@ void ElementInternals::InitializeControlNumber() {
   MOZ_ASSERT(mControlNumber == -1,
              "FACE control number should only be initialized once!");
   mControlNumber = mTarget->OwnerDoc()->GetNextControlNumber();
+}
+
+void ElementInternals::SetAttrElement(nsAtom* aAttr, Element* aElement) {
+  
+  
+  
+  
+  
+  
+  nsAutoScriptBlocker scriptBlocker;
+
+#ifdef ACCESSIBILITY
+  
+  
+  
+  
+  nsAccessibilityService* accService =
+      !mTarget->HasAttr(aAttr) ? GetAccService() : nullptr;
+  if (accService) {
+    accService->NotifyAttrElementWillChange(mTarget, aAttr);
+  }
+#endif
+
+  if (aElement) {
+    mAttrElements.InsertOrUpdate(aAttr, do_GetWeakReference(aElement));
+  } else {
+    mAttrElements.Remove(aAttr);
+  }
+
+#ifdef ACCESSIBILITY
+  if (accService) {
+    accService->NotifyAttrElementChanged(mTarget, aAttr);
+  }
+#endif
+}
+
+Element* ElementInternals::GetAttrElement(nsAtom* aAttr) const {
+  nsWeakPtr weakAttrEl = mAttrElements.Get(aAttr);
+  nsCOMPtr<Element> attrEl = do_QueryReferent(weakAttrEl);
+  return attrEl;
 }
 
 }  

@@ -27,6 +27,13 @@
     aResult = ErrorResult(SetAttr(nsGkAtoms::attr, aValue));        \
   }
 
+#define ARIA_REFLECT_ATTR_ELEMENT(method, attr)                            \
+  Element* Get##method() const { return GetAttrElement(nsGkAtoms::attr); } \
+                                                                           \
+  void Set##method(Element* aElement) {                                    \
+    SetAttrElement(nsGkAtoms::attr, aElement);                             \
+  }
+
 class nsINodeList;
 class nsGenericHTMLElement;
 
@@ -119,6 +126,7 @@ class ElementInternals final : public nsIFormControl,
   ARIA_REFLECT_ATTR(Role, role)
 
   
+  ARIA_REFLECT_ATTR_ELEMENT(AriaActiveDescendantElement, aria_activedescendant)
   ARIA_REFLECT_ATTR(AriaAtomic, aria_atomic)
   ARIA_REFLECT_ATTR(AriaAutoComplete, aria_autocomplete)
   ARIA_REFLECT_ATTR(AriaBusy, aria_busy)
@@ -175,6 +183,18 @@ class ElementInternals final : public nsIFormControl,
   ~ElementInternals() = default;
 
   
+
+
+
+  Element* GetAttrElement(nsAtom* aAttr) const;
+
+  
+
+
+
+  void SetAttrElement(nsAtom* aAttr, Element* aElement);
+
+  
   RefPtr<HTMLElement> mTarget;
 
   
@@ -213,6 +233,12 @@ class ElementInternals final : public nsIFormControl,
   
   
   int32_t mControlNumber;
+
+  
+
+
+
+  nsTHashMap<RefPtr<nsAtom>, nsWeakPtr> mAttrElements;
 };
 
 }  
