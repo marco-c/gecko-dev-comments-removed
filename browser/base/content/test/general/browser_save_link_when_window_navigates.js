@@ -36,7 +36,7 @@ function triggerSave(aWindow, aCallback) {
   var fileName;
   let testBrowser = aWindow.gBrowser.selectedBrowser;
   let testURI =
-    "http://mochi.test:8888/browser/browser/base/content/test/general/navigating_window_with_download.html";
+    "https://example.com/browser/browser/base/content/test/general/navigating_window_with_download.html";
 
   
   if (Services.prefs.getBoolPref(ALWAYS_ASK_PREF)) {
