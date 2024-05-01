@@ -3319,6 +3319,31 @@ void MacroAssembler::loadResizableArrayBufferViewLengthIntPtr(
   bind(&done);
 }
 
+void MacroAssembler::loadResizableTypedArrayByteOffsetMaybeOutOfBoundsIntPtr(
+    Register obj, Register output, Register scratch) {
+  
+  
+
+  loadArrayBufferViewByteOffsetIntPtr(obj, output);
+
+  
+  Label done;
+  branchPtr(Assembler::NotEqual, output, ImmWord(0), &done);
+
+  
+  loadPrivate(Address(obj, ArrayBufferViewObject::initialByteOffsetOffset()),
+              output);
+  branchPtr(Assembler::Equal, output, ImmWord(0), &done);
+
+  
+  branchIfHasAttachedArrayBuffer(obj, scratch, &done);
+
+  
+  movePtr(ImmWord(0), output);
+
+  bind(&done);
+}
+
 void MacroAssembler::loadDOMExpandoValueGuardGeneration(
     Register obj, ValueOperand output,
     JS::ExpandoAndGeneration* expandoAndGeneration, uint64_t generation,
@@ -7988,30 +8013,51 @@ void MacroAssembler::branchIfClassIsNotFixedLengthTypedArray(
             notTypedArray);
 }
 
-void MacroAssembler::branchIfHasDetachedArrayBuffer(Register obj, Register temp,
+void MacroAssembler::branchIfClassIsNotResizableTypedArray(
+    Register clasp, Label* notTypedArray) {
+  
+
+  const auto* firstTypedArrayClass =
+      std::begin(TypedArrayObject::resizableClasses);
+  const auto* lastTypedArrayClass =
+      std::prev(std::end(TypedArrayObject::resizableClasses));
+
+  branchPtr(Assembler::Below, clasp, ImmPtr(firstTypedArrayClass),
+            notTypedArray);
+  branchPtr(Assembler::Above, clasp, ImmPtr(lastTypedArrayClass),
+            notTypedArray);
+}
+
+void MacroAssembler::branchIfHasDetachedArrayBuffer(BranchIfDetached branchIf,
+                                                    Register obj, Register temp,
                                                     Label* label) {
   
+
+  Label done;
+  Label* ifNotDetached = branchIf == BranchIfDetached::Yes ? &done : label;
+  Condition detachedCond =
+      branchIf == BranchIfDetached::Yes ? Assembler::NonZero : Assembler::Zero;
 
   
   loadPtr(Address(obj, NativeObject::offsetOfElements()), temp);
 
   
-  Label done;
   branchTest32(Assembler::NonZero,
                Address(temp, ObjectElements::offsetOfFlags()),
-               Imm32(ObjectElements::SHARED_MEMORY), &done);
+               Imm32(ObjectElements::SHARED_MEMORY), ifNotDetached);
 
   
   
   fallibleUnboxObject(Address(obj, ArrayBufferViewObject::bufferOffset()), temp,
-                      &done);
+                      ifNotDetached);
 
   
   unboxInt32(Address(temp, ArrayBufferObject::offsetOfFlagsSlot()), temp);
-  branchTest32(Assembler::NonZero, temp, Imm32(ArrayBufferObject::DETACHED),
-               label);
+  branchTest32(detachedCond, temp, Imm32(ArrayBufferObject::DETACHED), label);
 
-  bind(&done);
+  if (branchIf == BranchIfDetached::Yes) {
+    bind(&done);
+  }
 }
 
 void MacroAssembler::branchIfResizableArrayBufferViewOutOfBounds(Register obj,
