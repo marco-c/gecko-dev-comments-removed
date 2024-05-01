@@ -7,9 +7,6 @@ const ROW_DATE_ID = "fxview-tab-row-date";
 
 let gInitialTab;
 let gInitialTabURL;
-const { NonPrivateTabs } = ChromeUtils.importESModule(
-  "resource:///modules/OpenTabs.sys.mjs"
-);
 
 add_setup(function () {
   
