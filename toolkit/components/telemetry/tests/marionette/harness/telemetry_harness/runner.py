@@ -52,9 +52,6 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
                 
                 
                 "app.shield.optoutstudies.enabled": False,
-                
-                
-                "screenshots.browser.component.enabled": False,
             }
         )
 

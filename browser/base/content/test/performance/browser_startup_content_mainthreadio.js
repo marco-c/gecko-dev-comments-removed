@@ -152,13 +152,6 @@ const processes = {
       condition: WIN,
       stat: 1,
     },
-    {
-      
-      path: "*screenshots@mozilla.org.xpi",
-      condition: true,
-      ignoreIfUnused: true,
-      close: 1,
-    },
   ],
 };
 
