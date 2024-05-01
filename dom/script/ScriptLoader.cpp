@@ -1097,9 +1097,18 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     return false;
   }
 
-  
-  MOZ_ASSERT_IF(request && request->IsModuleRequest(),
-                !mModuleLoader->HasImportMapRegistered());
+  if (request && request->IsModuleRequest() &&
+      mModuleLoader->HasImportMapRegistered() &&
+      request->mState > ScriptLoadRequest::State::Compiling) {
+    
+    
+    
+    
+    
+    
+    request->Cancel();
+    request = nullptr;
+  }
 
   if (request) {
     
@@ -1389,16 +1398,6 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
       
       return false;
     }
-
-    
-    
-    mPreloads.RemoveElementsBy([](const PreloadInfo& info) {
-      if (info.mRequest->IsModuleRequest()) {
-        info.mRequest->Cancel();
-        return true;
-      }
-      return false;
-    });
 
     
     
