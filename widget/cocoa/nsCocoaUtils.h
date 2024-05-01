@@ -333,7 +333,9 @@ class nsCocoaUtils {
   
 
 
-  static NSString* ToNSString(const nsAString& aString);
+  static NSString* ToNSString(const nsAString& aString) {
+    return mozilla::XPCOMStringToNSString(aString);
+  }
 
   
 
@@ -343,7 +345,9 @@ class nsCocoaUtils {
   
 
 
-  static NSString* ToNSString(const nsACString& aCString);
+  static NSString* ToNSString(const nsACString& aCString) {
+    return mozilla::XPCOMStringToNSString(aCString);
+  }
 
   
 
