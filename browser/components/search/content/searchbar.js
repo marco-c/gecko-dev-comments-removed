@@ -53,7 +53,7 @@
       this._setupEventListeners();
       let searchbar = this;
       this.observer = {
-        observe(aEngine, aTopic, aVerb) {
+        observe(aEngine, aTopic) {
           if (aTopic == "browser-search-engine-modified") {
             
             searchbar._engines = null;
@@ -115,7 +115,7 @@
         window.requestIdleCallback(() => {
           Services.search
             .init()
-            .then(aStatus => {
+            .then(() => {
               
               if (!this._initialized) {
                 return;
@@ -470,7 +470,7 @@
     }
 
     _setupEventListeners() {
-      this.addEventListener("click", event => {
+      this.addEventListener("click", () => {
         this._maybeSelectAll();
       });
 
@@ -484,17 +484,17 @@
         true
       );
 
-      this.addEventListener("input", event => {
+      this.addEventListener("input", () => {
         this.updateGoButtonVisibility();
       });
 
-      this.addEventListener("drop", event => {
+      this.addEventListener("drop", () => {
         this.updateGoButtonVisibility();
       });
 
       this.addEventListener(
         "blur",
-        event => {
+        () => {
           
           
           this._needBrowserFocusAtEnterKeyUp = false;
@@ -508,7 +508,7 @@
 
       this.addEventListener(
         "focus",
-        event => {
+        () => {
           
           
           this.currentEngine.speculativeConnect({
@@ -576,7 +576,7 @@
     }
 
     _setupTextboxEventListeners() {
-      this.textbox.addEventListener("input", event => {
+      this.textbox.addEventListener("input", () => {
         this.textbox.popup.removeAttribute("showonlysettings");
       });
 
@@ -826,7 +826,7 @@
         }
       };
 
-      this.textbox.onkeyup = event => {
+      this.textbox.onkeyup = () => {
         
         
         

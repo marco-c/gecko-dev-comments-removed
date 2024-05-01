@@ -18,7 +18,7 @@
     constructor() {
       super();
 
-      this.addEventListener("popupshowing", event => {
+      this.addEventListener("popupshowing", () => {
         
         
         
@@ -47,7 +47,7 @@
         );
       });
 
-      this.addEventListener("popuphiding", event => {
+      this.addEventListener("popuphiding", () => {
         this._oneOffButtons.removeEventListener(
           "SelectedOneOffButtonChanged",
           this
