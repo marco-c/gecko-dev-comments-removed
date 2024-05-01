@@ -1511,8 +1511,8 @@ class MozPromiseRequestHolder {
   
   void Disconnect() {
     MOZ_ASSERT(Exists());
-    mRequest->Disconnect();
-    mRequest = nullptr;
+    RefPtr request = std::move(mRequest);
+    request->Disconnect();
   }
 
   void DisconnectIfExists() {
