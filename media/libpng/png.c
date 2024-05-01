@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_42 Your_png_h_is_not_version_1_6_42;
+typedef png_libpng_version_1_6_43 Your_png_h_is_not_version_1_6_43;
 
 
 
@@ -794,7 +794,7 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.42" PNG_STRING_NEWLINE \
+      "libpng version 1.6.43" PNG_STRING_NEWLINE \
       "Copyright (c) 2018-2024 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
@@ -1821,14 +1821,14 @@ png_icc_profile_error(png_const_structrp png_ptr, png_colorspacerp colorspace,
    }
 #  ifdef PNG_WARNINGS_SUPPORTED
    else
-      {
-         char number[PNG_NUMBER_BUFFER_SIZE]; 
+   {
+      char number[PNG_NUMBER_BUFFER_SIZE]; 
 
-         pos = png_safecat(message, (sizeof message), pos,
-             png_format_number(number, number+(sizeof number),
-             PNG_NUMBER_FORMAT_x, value));
-         pos = png_safecat(message, (sizeof message), pos, "h: "); 
-      }
+      pos = png_safecat(message, (sizeof message), pos,
+          png_format_number(number, number+(sizeof number),
+          PNG_NUMBER_FORMAT_x, value));
+      pos = png_safecat(message, (sizeof message), pos, "h: "); 
+   }
 #  endif
    
    pos = png_safecat(message, (sizeof message), pos, reason);
@@ -2511,17 +2511,6 @@ png_colorspace_set_rgb_coefficients(png_structrp png_ptr)
 
 #endif 
 
-#ifdef __GNUC__
-
-static int 
-png_gt(size_t a, size_t b)
-{
-   return a > b;
-}
-#else
-#   define png_gt(a,b) ((a) > (b))
-#endif
-
 void 
 png_check_IHDR(png_const_structrp png_ptr,
     png_uint_32 width, png_uint_32 height, int bit_depth,
@@ -2543,8 +2532,16 @@ png_check_IHDR(png_const_structrp png_ptr,
       error = 1;
    }
 
-   if (png_gt(((width + 7) & (~7U)),
-       ((PNG_SIZE_MAX
+   
+
+
+
+
+
+
+
+   if (((width + 7) & ~(png_alloc_size_t)7) >
+       (((PNG_SIZE_MAX
            - 48        
            - 1)        
            / 8)        
