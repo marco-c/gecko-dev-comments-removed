@@ -1249,6 +1249,16 @@ class Element : public FragmentOrElement {
 
   void ClearExplicitlySetAttrElement(nsAtom*);
 
+  
+
+
+
+
+
+
+
+  Element* GetExplicitlySetAttrElement(nsAtom* aAttr) const;
+
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;
     auto raw = GetProperty(nsGkAtoms::pseudoProperty, &rv);
