@@ -584,4 +584,4 @@ Result<RefPtr<MediaByteBuffer>, nsresult> GetExtraDataFromArrayBuffer(
   return data->Length() > 0 ? data : nullptr;
 }
 
-} 
+}  
