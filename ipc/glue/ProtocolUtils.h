@@ -341,9 +341,6 @@ class IProtocol : public HasResultCodes {
   mozilla::ipc::IPCResult::FailUnsafePrintfImpl(   \
       WrapNotNull(actor), __func__, nsPrintfCString(format, ##__VA_ARGS__))
 
-#define IPC_TEST_FAIL(actor) \
-  mozilla::ipc::IPCResult::FailForTesting(WrapNotNull(actor), __func__, "")
-
 
 
 
@@ -381,10 +378,6 @@ class IPCResult {
                                         nsPrintfCString const& aWhy) {
     return FailImpl(aActor, aWhere, aWhy.get());
   }
-
-  
-  static IPCResult FailForTesting(NotNull<IProtocol*> aActor,
-                                  const char* aWhere, const char* aWhy);
 
  private:
   static IPCResult FailImpl(NotNull<IProtocol*> aActor, const char* aWhere,
