@@ -315,8 +315,6 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
         }
         haveDefaultOutput = true;
         break;
-      case MediaDeviceKind::EndGuard_:
-        continue;
         
         
     }
@@ -334,8 +332,6 @@ bool MediaDevices::CanExposeInfo(MediaDeviceKind aKind) const {
     case MediaDeviceKind::Audiooutput:
       
       return true;
-    case MediaDeviceKind::EndGuard_:
-      break;
       
       
   }
