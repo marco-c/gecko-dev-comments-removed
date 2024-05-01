@@ -136,8 +136,8 @@ void AsyncUDPSocket::OnReadEvent(Socket* socket) {
 
   
   
-  SignalReadPacket(this, buf_, static_cast<size_t>(len), remote_addr,
-                   timestamp);
+  NotifyPacketReceived(
+      rtc::ReceivedPacket::CreateFromLegacy(buf_, len, timestamp, remote_addr));
 }
 
 void AsyncUDPSocket::OnWriteEvent(Socket* socket) {
