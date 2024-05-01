@@ -50,6 +50,25 @@ public class TelemetryEvent {
 
 
 
+    public static TelemetryEvent create(@NonNull String category, @NonNull String method, @Nullable String object, String value) {
+        final TelemetryEvent event = new TelemetryEvent();
+
+        event.category = category;
+        event.method = method;
+        event.object = object;
+        event.value = value;
+
+        return event;
+    }
+
+    
+
+
+
+
+
+
+
 
     @CheckResult
     public static TelemetryEvent create(@NonNull String category, @NonNull String method, @Nullable String object, String value, Map<String, Object> extras) {
