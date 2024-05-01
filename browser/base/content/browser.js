@@ -1694,12 +1694,10 @@ var gBrowserInit = {
 
     if (!gMultiProcessBrowser) {
       
-      Services.els.addSystemEventListener(
-        gBrowser.tabpanels,
-        "click",
-        contentAreaClick,
-        true
-      );
+      gBrowser.tabpanels.addEventListener("click", contentAreaClick, {
+        capture: true,
+        mozSystemGroup: true,
+      });
     }
 
     
