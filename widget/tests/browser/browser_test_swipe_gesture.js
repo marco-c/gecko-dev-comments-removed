@@ -1131,7 +1131,7 @@ add_task(async () => {
 
   
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-    content.document.documentElement.addEventListener("wheel", e => {}, {
+    content.document.documentElement.addEventListener("wheel", () => {}, {
       passive: false,
     });
     await content.wrappedJSObject.promiseApzFlushedRepaints();

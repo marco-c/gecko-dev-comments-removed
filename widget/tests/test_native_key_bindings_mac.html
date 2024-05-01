@@ -3,8 +3,8 @@
   <head>
     <meta charset='utf-8'/>
     <title>Native Key Bindings for Cocoa Test</title>
-    
-
+    <!-- Any copyright is dedicated to the Public Domain.
+         http://creativecommons.org/publicdomain/zero/1.0/ -->
     <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
     <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
     <script src="chrome://mochikit/content/tests/SimpleTest/NativeKeyCodes.js"></script>
@@ -292,7 +292,7 @@
            aElement.id + ": Incorrect selection end");
       }
 
-      function* testRun(aElement, aSelectionCheck, aCallback) {
+      function* testRun(aElement, aSelectionCheck) {
         if (document.activeElement) {
           document.activeElement.blur();
         }
