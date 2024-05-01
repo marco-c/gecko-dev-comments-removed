@@ -118,6 +118,7 @@ class FrameParser {
 
 
 void InitAudioSpecificConfig(const Frame& aFrame, MediaByteBuffer* aBuffer);
+bool StripHeader(MediaRawData* aSample);
 Result<uint8_t, bool> GetFrequencyIndex(uint32_t aSamplesPerSecond);
 bool ConvertSample(uint16_t aChannelCount, uint8_t aFrequencyIndex,
                    uint8_t aProfile, mozilla::MediaRawData* aSample);
