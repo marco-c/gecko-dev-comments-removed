@@ -1,0 +1,15 @@
+
+
+
+
+
+
+UNIFIED_SOURCES += [
+    "TestPositionState.cpp",
+]
+
+LOCAL_INCLUDES += [
+    "/dom/media/mediasession",
+]
+
+FINAL_LIBRARY = "xul-gtest"

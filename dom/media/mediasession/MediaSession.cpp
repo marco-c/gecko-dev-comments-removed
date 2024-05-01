@@ -20,6 +20,29 @@
 
 namespace mozilla::dom {
 
+double PositionState::CurrentPlaybackPosition(TimeStamp aNow) const {
+  
+
+  
+  
+  auto timeElapsed = aNow - mPositionUpdatedTime;
+  
+  timeElapsed = timeElapsed.MultDouble(mPlaybackRate);
+  
+  auto position = timeElapsed.ToSeconds() + mLastReportedPlaybackPosition;
+
+  
+  if (position < 0.0) {
+    return 0.0;
+  }
+  
+  if (position > mDuration) {
+    return mDuration;
+  }
+  
+  return position;
+}
+
 
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaSession)
@@ -176,8 +199,8 @@ void MediaSession::SetPositionState(const MediaPositionState& aState,
 
   
   MOZ_ASSERT(aState.mDuration.WasPassed());
-  mPositionState =
-      Some(PositionState(aState.mDuration.Value(), playbackRate, position));
+  mPositionState = Some(PositionState(aState.mDuration.Value(), playbackRate,
+                                      position, TimeStamp::Now()));
   NotifyPositionStateChanged();
 }
 
