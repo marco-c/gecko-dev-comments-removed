@@ -255,8 +255,12 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   MInstruction* emitTypedArrayLength(ArrayBufferViewKind viewKind,
                                      MDefinition* obj);
 
-  void addDataViewData(MDefinition* obj, Scalar::Type type,
-                       MDefinition** offset, MInstruction** elements);
+  MInstruction* emitDataViewLength(ArrayBufferViewKind viewKind,
+                                   MDefinition* obj);
+
+  void addDataViewData(ArrayBufferViewKind viewKind, MDefinition* obj,
+                       Scalar::Type type, MDefinition** offset,
+                       MInstruction** elements);
 
   [[nodiscard]] bool emitAtomicsBinaryOp(ObjOperandId objId,
                                          IntPtrOperandId indexId,
@@ -419,6 +423,7 @@ const JSClass* WarpCacheIRTranspiler::classForGuardClassKind(
     case GuardClassKind::FixedLengthSharedArrayBuffer:
     case GuardClassKind::GrowableSharedArrayBuffer:
     case GuardClassKind::FixedLengthDataView:
+    case GuardClassKind::ResizableDataView:
     case GuardClassKind::MappedArguments:
     case GuardClassKind::UnmappedArguments:
     case GuardClassKind::Set:
@@ -2797,11 +2802,34 @@ bool WarpCacheIRTranspiler::emitStoreTypedArrayElement(
   return resumeAfter(store);
 }
 
-void WarpCacheIRTranspiler::addDataViewData(MDefinition* obj, Scalar::Type type,
+MInstruction* WarpCacheIRTranspiler::emitDataViewLength(
+    ArrayBufferViewKind viewKind, MDefinition* obj) {
+  if (viewKind == ArrayBufferViewKind::FixedLength) {
+    auto* length = MArrayBufferViewLength::New(alloc(), obj);
+    add(length);
+
+    return length;
+  }
+
+  
+  
+  
+  auto barrier = MemoryBarrierRequirement::NotRequired;
+
+  
+  auto* length = MResizableDataViewByteLength::New(alloc(), obj, barrier);
+  length->setMovable();
+  length->setNotGuard();
+  add(length);
+
+  return length;
+}
+
+void WarpCacheIRTranspiler::addDataViewData(ArrayBufferViewKind viewKind,
+                                            MDefinition* obj, Scalar::Type type,
                                             MDefinition** offset,
                                             MInstruction** elements) {
-  MInstruction* length = MArrayBufferViewLength::New(alloc(), obj);
-  add(length);
+  auto* length = emitDataViewLength(viewKind, obj);
 
   
   if (size_t byteSize = Scalar::byteSize(type); byteSize > 1) {
@@ -2821,14 +2849,14 @@ void WarpCacheIRTranspiler::addDataViewData(MDefinition* obj, Scalar::Type type,
 bool WarpCacheIRTranspiler::emitLoadDataViewValueResult(
     ObjOperandId objId, IntPtrOperandId offsetId,
     BooleanOperandId littleEndianId, Scalar::Type elementType,
-    bool forceDoubleForUint32) {
+    bool forceDoubleForUint32, ArrayBufferViewKind viewKind) {
   MDefinition* obj = getOperand(objId);
   MDefinition* offset = getOperand(offsetId);
   MDefinition* littleEndian = getOperand(littleEndianId);
 
   
   MInstruction* elements;
-  addDataViewData(obj, elementType, &offset, &elements);
+  addDataViewData(viewKind, obj, elementType, &offset, &elements);
 
   
   MInstruction* load;
@@ -2850,7 +2878,8 @@ bool WarpCacheIRTranspiler::emitLoadDataViewValueResult(
 
 bool WarpCacheIRTranspiler::emitStoreDataViewValueResult(
     ObjOperandId objId, IntPtrOperandId offsetId, uint32_t valueId,
-    BooleanOperandId littleEndianId, Scalar::Type elementType) {
+    BooleanOperandId littleEndianId, Scalar::Type elementType,
+    ArrayBufferViewKind viewKind) {
   MDefinition* obj = getOperand(objId);
   MDefinition* offset = getOperand(offsetId);
   MDefinition* value = getOperand(ValOperandId(valueId));
@@ -2858,7 +2887,7 @@ bool WarpCacheIRTranspiler::emitStoreDataViewValueResult(
 
   
   MInstruction* elements;
-  addDataViewData(obj, elementType, &offset, &elements);
+  addDataViewData(viewKind, obj, elementType, &offset, &elements);
 
   
   MInstruction* store;
