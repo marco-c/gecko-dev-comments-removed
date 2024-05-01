@@ -9,6 +9,7 @@
 
 
 
+#[cfg(not(feature = "smallvec"))]
 use alloc::vec::Vec;
 use core::cmp::max;
 #[cfg(feature = "smallvec")]
@@ -250,6 +251,11 @@ pub fn resolve_weak<'a, T: TextSource<'a> + ?Sized>(
     }
 }
 
+#[cfg(feature = "smallvec")]
+type BracketPairVec = SmallVec<[BracketPair; 8]>;
+#[cfg(not(feature = "smallvec"))]
+type BracketPairVec = Vec<BracketPair>;
+
 
 
 
@@ -273,7 +279,14 @@ pub fn resolve_neutral<'a, D: BidiDataSource, T: TextSource<'a> + ?Sized>(
 
     
     
-    let bracket_pairs = identify_bracket_pairs(text, data_source, sequence, processing_classes);
+    let mut bracket_pairs = BracketPairVec::new();
+    identify_bracket_pairs(
+        text,
+        data_source,
+        sequence,
+        processing_classes,
+        &mut bracket_pairs,
+    );
 
     
     
@@ -493,8 +506,8 @@ fn identify_bracket_pairs<'a, T: TextSource<'a> + ?Sized, D: BidiDataSource>(
     data_source: &D,
     run_sequence: &IsolatingRunSequence,
     original_classes: &[BidiClass],
-) -> Vec<BracketPair> {
-    let mut ret = vec![];
+    bracket_pairs: &mut BracketPairVec,
+) {
     #[cfg(feature = "smallvec")]
     let mut stack = SmallVec::<[(char, usize, usize); 8]>::new();
     #[cfg(not(feature = "smallvec"))]
@@ -544,7 +557,7 @@ fn identify_bracket_pairs<'a, T: TextSource<'a> + ?Sized, D: BidiDataSource>(
                                 start_run: element.2,
                                 end_run: run_index,
                             };
-                            ret.push(pair);
+                            bracket_pairs.push(pair);
 
                             
                             stack.truncate(stack_index);
@@ -557,8 +570,7 @@ fn identify_bracket_pairs<'a, T: TextSource<'a> + ?Sized, D: BidiDataSource>(
     }
     
     
-    ret.sort_by_key(|r| r.start);
-    ret
+    bracket_pairs.sort_by_key(|r| r.start);
 }
 
 
@@ -567,11 +579,11 @@ fn identify_bracket_pairs<'a, T: TextSource<'a> + ?Sized, D: BidiDataSource>(
 
 
 #[cfg_attr(feature = "flame_it", flamer::flame)]
-pub fn resolve_levels(original_classes: &[BidiClass], levels: &mut [Level]) -> Level {
+pub fn resolve_levels(processing_classes: &[BidiClass], levels: &mut [Level]) -> Level {
     let mut max_level = Level::ltr();
-    assert_eq!(original_classes.len(), levels.len());
+    assert_eq!(processing_classes.len(), levels.len());
     for i in 0..levels.len() {
-        match (levels[i].is_rtl(), original_classes[i]) {
+        match (levels[i].is_rtl(), processing_classes[i]) {
             (false, AN) | (false, EN) => levels[i].raise(2).expect("Level number error"),
             (false, R) | (true, L) | (true, EN) | (true, AN) => {
                 levels[i].raise(1).expect("Level number error")

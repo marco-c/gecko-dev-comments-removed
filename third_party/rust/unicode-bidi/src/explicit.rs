@@ -11,12 +11,20 @@
 
 
 
+#[cfg(feature = "smallvec")]
+use smallvec::{smallvec, SmallVec};
+
 use super::char_data::{
     is_rtl,
     BidiClass::{self, *},
 };
 use super::level::Level;
+use super::prepare::removed_by_x9;
+use super::LevelRunVec;
 use super::TextSource;
+
+
+
 
 
 
@@ -29,10 +37,17 @@ pub fn compute<'a, T: TextSource<'a> + ?Sized>(
     original_classes: &[BidiClass],
     levels: &mut [Level],
     processing_classes: &mut [BidiClass],
+    runs: &mut LevelRunVec,
 ) {
     assert_eq!(text.len(), original_classes.len());
 
     
+    #[cfg(feature = "smallvec")]
+    let mut stack: SmallVec<[Status; 8]> = smallvec![Status {
+        level: para_level,
+        status: OverrideStatus::Neutral,
+    }];
+    #[cfg(not(feature = "smallvec"))]
     let mut stack = vec![Status {
         level: para_level,
         status: OverrideStatus::Neutral,
@@ -41,6 +56,9 @@ pub fn compute<'a, T: TextSource<'a> + ?Sized>(
     let mut overflow_isolate_count = 0u32;
     let mut overflow_embedding_count = 0u32;
     let mut valid_isolate_count = 0u32;
+
+    let mut current_run_level = Level::ltr();
+    let mut current_run_start = 0;
 
     for (i, len) in text.indices_lengths() {
         let last = stack.last().unwrap();
@@ -173,6 +191,26 @@ pub fn compute<'a, T: TextSource<'a> + ?Sized>(
             levels[i + j] = levels[i];
             processing_classes[i + j] = processing_classes[i];
         }
+
+        
+        if i == 0 {
+            
+            current_run_level = levels[i];
+        } else {
+            
+            
+            if !removed_by_x9(original_classes[i]) && levels[i] != current_run_level {
+                
+                runs.push(current_run_start..i);
+                current_run_level = levels[i];
+                current_run_start = i;
+            }
+        }
+    }
+
+    
+    if levels.len() > current_run_start {
+        runs.push(current_run_start..levels.len());
     }
 }
 
