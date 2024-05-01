@@ -261,13 +261,6 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
-
-
-  static const char* ReferrerPolicyToString(ReferrerPolicyEnum aPolicy);
-
-  
-
-
   HashNumber Hash() const;
 
   NS_DECL_THREADSAFE_ISUPPORTS
