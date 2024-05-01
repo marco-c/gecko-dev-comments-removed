@@ -2055,8 +2055,10 @@ static void MergeStacks(
       
       
       if (aIsSynchronous ||
-          jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
-        aCollector.CollectWasmFrame(jsFrame.label);
+          jsFrame.kind == JS::ProfilingFrameIterator::Frame_WasmIon ||
+          jsFrame.kind == JS::ProfilingFrameIterator::Frame_WasmBaseline ||
+          jsFrame.kind == JS::ProfilingFrameIterator::Frame_WasmOther) {
+        aCollector.CollectWasmFrame(jsFrame.profilingCategory(), jsFrame.label);
       } else if (jsFrame.kind ==
                  JS::ProfilingFrameIterator::Frame_BaselineInterpreter) {
         

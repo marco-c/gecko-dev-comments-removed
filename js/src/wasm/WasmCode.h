@@ -857,6 +857,7 @@ class Code : public ShareableBase<Code> {
   bool containsCodePC(const void* pc) const;
   bool lookupTrap(void* pc, Trap* trap, BytecodeOffset* bytecode) const;
   const CodeRangeUnwindInfo* lookupUnwindInfo(void* pc) const;
+  bool lookupFunctionTier(const CodeRange* codeRange, Tier* tier) const;
 
   
   
