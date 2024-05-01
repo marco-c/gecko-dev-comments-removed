@@ -219,10 +219,6 @@ module.exports = {
     "no-constant-binary-expression": "error",
 
     
-    
-    "no-constant-condition": "off",
-
-    
     "no-else-return": "error",
 
     

@@ -124,9 +124,6 @@ module.exports = {
     "no-console": "error",
 
     
-    "no-constant-condition": "off",
-
-    
     "no-continue": "off",
 
     

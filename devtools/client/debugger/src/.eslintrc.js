@@ -133,8 +133,6 @@ module.exports = {
     
     "no-console": 0,
     
-    "no-constant-condition": 0,
-    
     "no-continue": 0,
     
     "no-control-regex": 2,
