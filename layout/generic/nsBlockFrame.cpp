@@ -133,44 +133,34 @@ static bool BlockHasAnyFloats(nsIFrame* aFrame) {
 
 
 
-
-
-
-static bool FrameHasVisibleInlineContent(nsIFrame* aFrame) {
+static bool FrameHasVisibleInlineText(nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame, "Frame argument cannot be null");
-
-  if (aFrame->StyleVisibility()->IsVisible()) {
-    return true;
+  if (!aFrame->IsLineParticipant()) {
+    return false;
   }
-
-  if (aFrame->IsLineParticipant()) {
-    for (nsIFrame* kid : aFrame->PrincipalChildList()) {
-      if (kid->StyleVisibility()->IsVisible() ||
-          FrameHasVisibleInlineContent(kid)) {
-        return true;
-      }
+  if (aFrame->IsTextFrame()) {
+    return aFrame->StyleVisibility()->IsVisible() &&
+           NS_GET_A(aFrame->StyleText()->mWebkitTextFillColor.CalcColor(
+               aFrame)) != 0;
+  }
+  for (nsIFrame* kid : aFrame->PrincipalChildList()) {
+    if (FrameHasVisibleInlineText(kid)) {
+      return true;
     }
   }
   return false;
 }
 
 
-
-
-
-
-
-static bool LineHasVisibleInlineContent(nsLineBox* aLine) {
+static bool LineHasVisibleInlineText(nsLineBox* aLine) {
   nsIFrame* kid = aLine->mFirstChild;
   int32_t n = aLine->GetChildCount();
   while (n-- > 0) {
-    if (FrameHasVisibleInlineContent(kid)) {
+    if (FrameHasVisibleInlineText(kid)) {
       return true;
     }
-
     kid = kid->GetNextSibling();
   }
-
   return false;
 }
 
@@ -7557,8 +7547,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (StaticPrefs::browser_display_permit_backplate() &&
-      PresContext()->ForcingColors() &&
+  if (PresContext()->ForcingColors() &&
+      StaticPrefs::browser_display_permit_backplate() &&
       StyleText()->mForcedColorAdjust != StyleForcedColorAdjust::None) {
     backplateColor.emplace(GetBackplateColor(this));
   }
@@ -7650,7 +7640,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         }
         lastY = lineArea.y;
         lastYMost = lineArea.YMost();
-        if (lineInLine && backplateColor && LineHasVisibleInlineContent(line)) {
+        if (lineInLine && backplateColor && LineHasVisibleInlineText(line)) {
           nsRect lineBackplate = GetLineTextArea(line, aBuilder) +
                                  aBuilder->ToReferenceFrame(this);
           if (curBackplateArea.IsEmpty()) {
