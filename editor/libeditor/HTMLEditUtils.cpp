@@ -224,6 +224,12 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
   if (MOZ_UNLIKELY(!aContent.IsElement())) {
     return false;
   }
+  
+  
+  
+  if (aContent.IsHTMLElement(nsGkAtoms::br)) {
+    return false;
+  }
   if (!StaticPrefs::editor_block_inline_check_use_computed_style() ||
       aBlockInlineCheck == BlockInlineCheck::UseHTMLDefaultStyle) {
     return IsHTMLBlockElementByDefault(aContent);
@@ -269,6 +275,12 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
   MOZ_ASSERT(aBlockInlineCheck != BlockInlineCheck::Unused);
 
   if (!aContent.IsElement()) {
+    return true;
+  }
+  
+  
+  
+  if (aContent.IsHTMLElement(nsGkAtoms::br)) {
     return true;
   }
   if (!StaticPrefs::editor_block_inline_check_use_computed_style() ||
