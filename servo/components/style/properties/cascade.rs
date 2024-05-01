@@ -448,6 +448,8 @@ fn tweak_when_ignoring_colors(
 
     
     match **declaration {
+        
+        PropertyDeclaration::CSSWideKeyword(..) => return,
         PropertyDeclaration::BackgroundColor(ref color) => {
             
             
