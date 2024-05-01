@@ -3976,7 +3976,12 @@ impl SurfaceInfo {
         };
 
         let surface_rect = (raster_rect * self.device_pixel_scale).round_out().to_i32();
-        debug_assert!(!surface_rect.is_empty());
+        if surface_rect.is_empty() {
+            
+            
+            
+            return None;
+        }
 
         Some(surface_rect)
     }
