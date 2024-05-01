@@ -27,7 +27,10 @@ SKIP_TASKS_TRIGGER = '[ci skip]'
 
 
 def create_task(name, description, command, scopes = []):
-    return create_raw_task(name, description, "./gradlew --no-daemon clean %s" % command, scopes)
+    
+    
+    
+    return create_raw_task(name, description, "./gradlew --no-daemon clean && ./gradlew --no-daemon %s" % command, scopes)
 
 
 def create_raw_task(name, description, full_command, scopes = []):
