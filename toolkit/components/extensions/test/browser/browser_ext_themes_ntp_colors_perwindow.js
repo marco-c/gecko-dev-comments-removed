@@ -73,7 +73,6 @@ function test_ntp_theme(browser, theme, isBrightText) {
 
 
 
-
 function test_ntp_default_theme(browser) {
   Services.ppmm.sharedData.flush();
   return SpecialPowers.spawn(
