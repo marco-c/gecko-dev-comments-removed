@@ -1096,7 +1096,10 @@ pref("privacy.sanitize.useOldClearHistoryDialog", false);
 pref("privacy.sanitize.useOldClearHistoryDialog", true);
 #endif
 
-pref("privacy.sanitize.sanitizeOnShutdown.hasMigratedToNewPrefs", false);
+pref("privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs", false);
+
+
+pref("privacy.sanitize.cpd.hasMigratedToNewPrefs", false);
 
 pref("privacy.panicButton.enabled",         true);
 

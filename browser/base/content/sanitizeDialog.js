@@ -144,14 +144,19 @@ var gSanitizePromptDialog = {
       clearSiteDataGroupbox.remove();
       
       
-      Sanitizer.maybeMigrateSanitizeOnShutdownPrefs();
+      Sanitizer.maybeMigratePrefs("clearOnShutdown");
     } else if (!lazy.USE_OLD_DIALOG) {
       okButtonl10nID = "sanitize-button-ok2";
       clearOnShutdownGroupbox.remove();
       if (this._inClearSiteDataNewDialog) {
         clearPrivateDataGroupbox.remove();
+        
+        
+        
+        
       } else {
         clearSiteDataGroupbox.remove();
+        Sanitizer.maybeMigratePrefs("cpd");
       }
     }
     document.l10n.setAttributes(OKButton, okButtonl10nID);
