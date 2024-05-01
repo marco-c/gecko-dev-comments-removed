@@ -888,7 +888,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   mozilla::EnumeratedArray<WindowButtonType, LayoutDeviceIntRect,
-                           WindowButtonType::Count>
+                           size_t(WindowButtonType::Count)>
       mWindowBtnRect;
 
   mozilla::DataMutex<Desktop> mDesktopId;

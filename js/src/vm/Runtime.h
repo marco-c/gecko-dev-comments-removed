@@ -528,7 +528,7 @@ struct JSRuntime {
   
   js::MainThreadData<mozilla::EnumeratedArray<
       JS::RootKind, mozilla::LinkedList<js::PersistentRootedBase>,
-      JS::RootKind::Limit>>
+      size_t(JS::RootKind::Limit)>>
       heapRoots;
 
   void tracePersistentRoots(JSTracer* trc);

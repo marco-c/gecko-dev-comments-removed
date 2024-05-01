@@ -1011,12 +1011,13 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   
   mozilla::EnumeratedArray<FontVisibility, gfxSparseBitSet,
-                           FontVisibility::Count>
+                           size_t(FontVisibility::Count)>
       mCodepointsWithNoFonts MOZ_GUARDED_BY(mLock);
 
   
   
-  mozilla::EnumeratedArray<FontVisibility, FontFamily, FontVisibility::Count>
+  mozilla::EnumeratedArray<FontVisibility, FontFamily,
+                           size_t(FontVisibility::Count)>
       mReplacementCharFallbackFamily MOZ_GUARDED_BY(mLock);
 
   

@@ -981,12 +981,12 @@ enum class AutoGCRooterKind : uint8_t {
   Limit
 };
 
-using RootedListHeads =
-    mozilla::EnumeratedArray<RootKind, js::StackRootedBase*, RootKind::Limit>;
+using RootedListHeads = mozilla::EnumeratedArray<RootKind, js::StackRootedBase*,
+                                                 size_t(RootKind::Limit)>;
 
 using AutoRooterListHeads =
     mozilla::EnumeratedArray<AutoGCRooterKind, AutoGCRooter*,
-                             AutoGCRooterKind::Limit>;
+                             size_t(AutoGCRooterKind::Limit)>;
 
 
 

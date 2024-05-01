@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "mozilla/Array.h"
+#include "EnumTypeTraits.h"
 
 namespace mozilla {
 
@@ -39,13 +40,17 @@ namespace mozilla {
 
 
 
-template <typename IndexType, typename ValueType, IndexType SizeAsEnumValue>
-class EnumeratedArray {
- public:
-  static const size_t kSize = size_t(SizeAsEnumValue);
 
+
+
+template <typename Enum, typename ValueType,
+          size_t Size = ContiguousEnumSize<Enum>::value>
+class EnumeratedArray {
  private:
-  typedef Array<ValueType, kSize> ArrayType;
+  static_assert(UnderlyingValue(MinContiguousEnumValue<Enum>::value) == 0,
+                "All indexes would need to be corrected if min != 0");
+
+  using ArrayType = Array<ValueType, Size>;
 
   ArrayType mArray;
 
@@ -56,16 +61,16 @@ class EnumeratedArray {
   MOZ_IMPLICIT constexpr EnumeratedArray(Args&&... aArgs)
       : mArray{std::forward<Args>(aArgs)...} {}
 
-  ValueType& operator[](IndexType aIndex) { return mArray[size_t(aIndex)]; }
+  ValueType& operator[](Enum aIndex) { return mArray[size_t(aIndex)]; }
 
-  const ValueType& operator[](IndexType aIndex) const {
+  const ValueType& operator[](Enum aIndex) const {
     return mArray[size_t(aIndex)];
   }
 
-  typedef typename ArrayType::iterator iterator;
-  typedef typename ArrayType::const_iterator const_iterator;
-  typedef typename ArrayType::reverse_iterator reverse_iterator;
-  typedef typename ArrayType::const_reverse_iterator const_reverse_iterator;
+  using iterator = typename ArrayType::iterator;
+  using const_iterator = typename ArrayType::const_iterator;
+  using reverse_iterator = typename ArrayType::reverse_iterator;
+  using const_reverse_iterator = typename ArrayType::const_reverse_iterator;
 
   
   iterator begin() { return mArray.begin(); }

@@ -245,7 +245,7 @@ class EffectCompositor {
   
   
   EnumeratedArray<CascadeLevel, nsTHashMap<PseudoElementHashEntry, bool>,
-                  CascadeLevel(kCascadeLevelCount)>
+                  kCascadeLevelCount>
       mElementsToRestyle;
 
   bool mIsInPreTraverse = false;
