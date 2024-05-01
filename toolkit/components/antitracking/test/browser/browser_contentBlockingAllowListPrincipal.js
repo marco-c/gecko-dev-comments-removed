@@ -90,7 +90,7 @@ function createFrame(browser, src, id, sandboxAttr) {
   );
 }
 
-add_task(async setup => {
+add_task(async () => {
   
   
   
@@ -108,7 +108,7 @@ add_task(async setup => {
 
 
 
-add_task(async test_contentPrincipalHTTPS => {
+add_task(async () => {
   await runTestInNormalAndPrivateMode("https://example.com", browser => {
     checkAllowListPrincipal(browser, "content");
   });
@@ -118,7 +118,7 @@ add_task(async test_contentPrincipalHTTPS => {
 
 
 
-add_task(async test_contentPrincipalHTTP => {
+add_task(async () => {
   await runTestInNormalAndPrivateMode(
     "http://example.net",
     (browser, isPrivateBrowsing) => {
@@ -136,7 +136,7 @@ add_task(async test_contentPrincipalHTTP => {
 
 
 
-add_task(async test_systemPrincipal => {
+add_task(async () => {
   await runTestInNormalAndPrivateMode("about:preferences", browser => {
     checkAllowListPrincipal(browser, "system");
   });
@@ -146,7 +146,7 @@ add_task(async test_systemPrincipal => {
 
 
 
-add_task(async test_TopLevelSandbox => {
+add_task(async () => {
   await runTestInNormalAndPrivateMode(
     TEST_SANDBOX_URL,
     (browser, isPrivateBrowsing) => {
@@ -168,7 +168,7 @@ add_task(async test_TopLevelSandbox => {
 
 
 
-add_task(async test_windowOpen => {
+add_task(async () => {
   await runTestInNormalAndPrivateMode("https://example.com", async browser => {
     checkAllowListPrincipal(browser, "content");
 
@@ -195,7 +195,7 @@ add_task(async test_windowOpen => {
 
 
 
-add_task(async test_windowOpenFromSandboxedFrame => {
+add_task(async () => {
   await runTestInNormalAndPrivateMode(
     "https://example.com",
     async (browser, isPrivateBrowsing) => {

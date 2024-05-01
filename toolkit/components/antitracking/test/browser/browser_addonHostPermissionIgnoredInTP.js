@@ -28,7 +28,7 @@ add_task(async function () {
   let browser = tab.linkedBrowser;
 
   info("Verify the number of script nodes found");
-  await ContentTask.spawn(browser, [], async function (obj) {
+  await ContentTask.spawn(browser, [], async function () {
     
     await ContentTaskUtils.waitForCondition(
       () => content.document.documentElement.getAttribute("count") !== null,
