@@ -183,7 +183,7 @@ class nsObjectLoadingContent : public nsIStreamListener,
 
   void CreateStaticClone(nsObjectLoadingContent* aDest) const;
 
-  void UnbindFromTree(bool aNullParent = true);
+  void UnbindFromTree();
 
   
 

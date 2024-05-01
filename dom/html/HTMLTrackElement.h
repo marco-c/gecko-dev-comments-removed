@@ -86,7 +86,7 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
   
   
   virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  virtual void UnbindFromTree(bool aNullParent) override;
+  virtual void UnbindFromTree(UnbindContext&) override;
 
   virtual void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                             const nsAttrValue* aValue,

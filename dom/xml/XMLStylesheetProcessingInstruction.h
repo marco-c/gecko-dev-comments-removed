@@ -43,7 +43,7 @@ class XMLStylesheetProcessingInstruction final : public ProcessingInstruction,
 
   
   virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  virtual void UnbindFromTree(bool aNullParent = true) override;
+  virtual void UnbindFromTree(UnbindContext&) override;
 
   
 

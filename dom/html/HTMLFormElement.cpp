@@ -494,7 +494,7 @@ static void CollectOrphans(nsINode* aRemovalRoot,
   }
 }
 
-void HTMLFormElement::UnbindFromTree(bool aNullParent) {
+void HTMLFormElement::UnbindFromTree(UnbindContext& aContext) {
   MaybeFireFormRemoved();
 
   
@@ -506,7 +506,7 @@ void HTMLFormElement::UnbindFromTree(bool aNullParent) {
   MarkOrphans(mControls->mNotInElements.AsList());
   MarkOrphans(mImageElements.AsList());
 
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 
   nsINode* ancestor = this;
   nsINode* cur;

@@ -181,10 +181,10 @@ nsresult HTMLSharedElement::BindToTree(BindContext& aContext,
   return NS_OK;
 }
 
-void HTMLSharedElement::UnbindFromTree(bool aNullParent) {
+void HTMLSharedElement::UnbindFromTree(UnbindContext& aContext) {
   Document* doc = GetUncomposedDoc();
 
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 
   
   

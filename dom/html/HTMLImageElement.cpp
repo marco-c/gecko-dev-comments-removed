@@ -10,19 +10,17 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/HTMLImageElementBinding.h"
 #include "mozilla/dom/NameSpaceConstants.h"
+#include "mozilla/dom/UnbindContext.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
 #include "nsPresContext.h"
 #include "nsSize.h"
 #include "mozilla/dom/Document.h"
 #include "nsImageFrame.h"
-#include "nsIScriptContext.h"
 #include "nsContentUtils.h"
 #include "nsContainerFrame.h"
 #include "nsNodeInfoManager.h"
 #include "mozilla/MouseEvents.h"
-#include "nsContentPolicyUtils.h"
 #include "nsFocusManager.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/HTMLFormElement.h"
@@ -30,7 +28,6 @@
 #include "mozilla/dom/UserActivation.h"
 #include "nsAttrValueOrString.h"
 #include "imgLoader.h"
-#include "Image.h"
 
 
 #include "mozilla/dom/HTMLSourceElement.h"
@@ -492,22 +489,16 @@ bool HTMLImageElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   int32_t tabIndex = TabIndex();
 
   if (IsInComposedDoc() && FindImageMap()) {
-    if (aTabIndex) {
-      
-      *aTabIndex = (sTabFocusModel & eTabFocus_linksMask) ? 0 : -1;
-    }
+    
+    *aTabIndex = (sTabFocusModel & eTabFocus_linksMask) ? 0 : -1;
     
     
     *aIsFocusable = false;
-
     return false;
   }
 
-  if (aTabIndex) {
-    
-    *aTabIndex = (sTabFocusModel & eTabFocus_formElementsMask) ? tabIndex : -1;
-  }
-
+  
+  *aTabIndex = (sTabFocusModel & eTabFocus_formElementsMask) ? tabIndex : -1;
   *aIsFocusable = IsFormControlDefaultFocusable(aWithMouse) &&
                   (tabIndex >= 0 || GetTabIndexAttrValue().isSome());
 
@@ -570,9 +561,9 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return rv;
 }
 
-void HTMLImageElement::UnbindFromTree(bool aNullParent) {
+void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
   if (mForm) {
-    if (aNullParent || !FindAncestorForm(mForm)) {
+    if (aContext.IsUnbindRoot(this) || !FindAncestorForm(mForm)) {
       ClearForm(true);
     } else {
       UnsetFlags(MAYBE_ORPHAN_FORM_ELEMENT);
@@ -584,8 +575,8 @@ void HTMLImageElement::UnbindFromTree(bool aNullParent) {
     mInDocResponsiveContent = false;
   }
 
-  nsImageLoadingContent::UnbindFromTree(aNullParent);
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+  nsImageLoadingContent::UnbindFromTree();
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 }
 
 void HTMLImageElement::UpdateFormOwner() {

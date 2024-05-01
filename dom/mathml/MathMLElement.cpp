@@ -77,8 +77,8 @@ nsresult MathMLElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return rv;
 }
 
-void MathMLElement::UnbindFromTree(bool aNullParent) {
-  MathMLElementBase::UnbindFromTree(aNullParent);
+void MathMLElement::UnbindFromTree(UnbindContext& aContext) {
+  MathMLElementBase::UnbindFromTree(aContext);
   
   
   Link::UnbindFromTree();
@@ -612,43 +612,36 @@ void MathMLElement::SetIncrementScriptLevel(bool aIncrementScriptLevel,
 int32_t MathMLElement::TabIndexDefault() { return IsLink() ? 0 : -1; }
 
 
-bool MathMLElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
+Focusable MathMLElement::IsFocusableWithoutStyle(bool aWithMouse) {
   if (!IsInComposedDoc() || IsInDesignMode()) {
     
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-    return false;
+    return {};
   }
 
   int32_t tabIndex = TabIndex();
-  if (aTabIndex) {
-    *aTabIndex = tabIndex;
-  }
-
   if (!IsLink()) {
     
-    return GetTabIndexAttrValue().isSome();
+    if (GetTabIndexAttrValue().isSome()) {
+      return {true, tabIndex};
+    }
+    return {};
   }
 
   if (!OwnerDoc()->LinkHandlingEnabled()) {
-    return false;
+    return {};
   }
 
   
   
   if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    if (aTabIndex) {
-      *aTabIndex = -1;
-    }
-    return false;
+    return {};
   }
 
-  if (aTabIndex && (sTabFocusModel & eTabFocus_linksMask) == 0) {
-    *aTabIndex = -1;
+  if ((sTabFocusModel & eTabFocus_linksMask) == 0) {
+    tabIndex = -1;
   }
 
-  return true;
+  return {true, tabIndex};
 }
 
 already_AddRefed<nsIURI> MathMLElement::GetHrefURI() const {

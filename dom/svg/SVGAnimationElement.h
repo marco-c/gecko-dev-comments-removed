@@ -41,7 +41,7 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
 
   
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  void UnbindFromTree(bool aNullParent) override;
+  void UnbindFromTree(UnbindContext&) override;
 
   
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,

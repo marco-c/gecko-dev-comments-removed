@@ -75,14 +75,14 @@ nsresult HTMLAnchorElement::BindToTree(BindContext& aContext,
   return rv;
 }
 
-void HTMLAnchorElement::UnbindFromTree(bool aNullParent) {
+void HTMLAnchorElement::UnbindFromTree(UnbindContext& aContext) {
   
   
   
   
   CancelDNSPrefetch(*this);
 
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 
   
   

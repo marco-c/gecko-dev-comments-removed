@@ -56,14 +56,14 @@ nsresult HTMLMarqueeElement::BindToTree(BindContext& aContext,
   return rv;
 }
 
-void HTMLMarqueeElement::UnbindFromTree(bool aNullParent) {
+void HTMLMarqueeElement::UnbindFromTree(UnbindContext& aContext) {
   if (IsInComposedDoc()) {
     
     
     NotifyUAWidgetTeardown(UnattachShadowRoot::No);
   }
 
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 }
 
 void HTMLMarqueeElement::GetBehavior(nsAString& aValue) {

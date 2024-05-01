@@ -247,8 +247,8 @@ nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
   return NS_OK;
 }
 
-void HTMLOptionElement::UnbindFromTree(bool aNullParent) {
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+void HTMLOptionElement::UnbindFromTree(UnbindContext& aContext) {
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 
   
   UpdateDisabledState(false);

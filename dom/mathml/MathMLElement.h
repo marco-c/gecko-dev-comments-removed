@@ -34,7 +34,7 @@ class MathMLElement final : public MathMLElementBase, public Link {
   NS_IMPL_FROMNODE(MathMLElement, kNameSpaceID_MathML)
 
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  void UnbindFromTree(bool aNullParent = true) override;
+  void UnbindFromTree(UnbindContext&) override;
 
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
@@ -74,7 +74,7 @@ class MathMLElement final : public MathMLElementBase, public Link {
 
   int32_t TabIndexDefault() final;
 
-  bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) override;
+  Focusable IsFocusableWithoutStyle(bool aWithMouse) override;
   already_AddRefed<nsIURI> GetHrefURI() const override;
 
   void NodeInfoChanged(Document* aOldDoc) override {

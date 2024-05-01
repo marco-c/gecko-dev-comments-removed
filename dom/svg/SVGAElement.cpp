@@ -149,8 +149,8 @@ nsresult SVGAElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return NS_OK;
 }
 
-void SVGAElement::UnbindFromTree(bool aNullParent) {
-  SVGAElementBase::UnbindFromTree(aNullParent);
+void SVGAElement::UnbindFromTree(UnbindContext& aContext) {
+  SVGAElementBase::UnbindFromTree(aContext);
   
   
   Link::UnbindFromTree();

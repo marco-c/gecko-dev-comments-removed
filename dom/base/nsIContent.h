@@ -21,6 +21,7 @@ class HTMLEditor;
 struct URLExtraData;
 namespace dom {
 struct BindContext;
+struct UnbindContext;
 class ShadowRoot;
 class HTMLSlotElement;
 }  
@@ -58,6 +59,7 @@ class nsIContent : public nsINode {
   using IMEEnabled = mozilla::widget::IMEEnabled;
   using IMEState = mozilla::widget::IMEState;
   using BindContext = mozilla::dom::BindContext;
+  using UnbindContext = mozilla::dom::UnbindContext;
 
   void ConstructUbiNode(void* storage) override;
 
@@ -113,13 +115,8 @@ class nsIContent : public nsINode {
 
 
 
-
-
-
-
-
-
-  virtual void UnbindFromTree(bool aNullParent = true) = 0;
+  virtual void UnbindFromTree(UnbindContext&) = 0;
+  void UnbindFromTree();
 
   enum {
     

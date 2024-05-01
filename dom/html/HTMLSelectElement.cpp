@@ -1089,8 +1089,8 @@ nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
   return rv;
 }
 
-void HTMLSelectElement::UnbindFromTree(bool aNullParent) {
-  nsGenericHTMLFormControlElementWithState::UnbindFromTree(aNullParent);
+void HTMLSelectElement::UnbindFromTree(UnbindContext& aContext) {
+  nsGenericHTMLFormControlElementWithState::UnbindFromTree(aContext);
 
   
   

@@ -72,8 +72,8 @@ nsresult HTMLAreaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return rv;
 }
 
-void HTMLAreaElement::UnbindFromTree(bool aNullParent) {
-  nsGenericHTMLElement::UnbindFromTree(aNullParent);
+void HTMLAreaElement::UnbindFromTree(UnbindContext& aContext) {
+  nsGenericHTMLElement::UnbindFromTree(aContext);
   
   
   Link::UnbindFromTree();

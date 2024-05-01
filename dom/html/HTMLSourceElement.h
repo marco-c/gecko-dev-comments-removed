@@ -35,7 +35,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
   
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
 
-  void UnbindFromTree(bool aNullParent) override;
+  void UnbindFromTree(UnbindContext&) override;
 
   
   

@@ -223,7 +223,7 @@ already_AddRefed<nsIDocShell> nsObjectLoadingContent::SetupDocShell(
   return docShell.forget();
 }
 
-void nsObjectLoadingContent::UnbindFromTree(bool aNullParent) {
+void nsObjectLoadingContent::UnbindFromTree() {
   
   
   
