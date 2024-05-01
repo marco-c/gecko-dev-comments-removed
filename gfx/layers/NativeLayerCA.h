@@ -6,7 +6,7 @@
 #ifndef mozilla_layers_NativeLayerCA_h
 #define mozilla_layers_NativeLayerCA_h
 
-#include <IOSurface/IOSurfaceRef.h>
+#include <IOSurface/IOSurface.h>
 
 #include <deque>
 #include <unordered_map>
@@ -39,9 +39,7 @@ class RenderMacIOSurfaceTextureHost;
 
 namespace layers {
 
-#ifdef XP_MACOSX
 class NativeLayerRootSnapshotterCA;
-#endif
 class SurfacePoolHandleCA;
 
 enum class VideoLowPowerType {
@@ -104,10 +102,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
   bool CommitToScreen() override;
 
   void CommitOffscreen();
-#ifdef XP_MACOSX
   void OnNativeLayerRootSnapshotterDestroyed(
       NativeLayerRootSnapshotterCA* aNativeLayerRootSnapshotter);
-#endif
 
   
   
@@ -164,9 +160,7 @@ class NativeLayerRootCA : public NativeLayerRoot {
   Mutex mMutex MOZ_UNANNOTATED;  
   Representation mOnscreenRepresentation;
   Representation mOffscreenRepresentation;
-#ifdef XP_MACOSX
   NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
-#endif
   nsTArray<RefPtr<NativeLayerCA>> mSublayers;  
   float mBackingScale = 1.0f;
   bool mMutated = false;
@@ -194,7 +188,6 @@ class NativeLayerRootCA : public NativeLayerRoot {
 
 class RenderSourceNLRS;
 
-#ifdef XP_MACOSX
 class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
  public:
   static UniquePtr<NativeLayerRootSnapshotterCA> Create(
@@ -224,7 +217,6 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
   RefPtr<RenderSourceNLRS> mSnapshot;
   CARenderer* mRenderer = nullptr;  
 };
-#endif
 
 
 
