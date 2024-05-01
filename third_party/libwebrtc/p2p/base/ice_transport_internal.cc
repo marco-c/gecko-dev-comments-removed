@@ -123,7 +123,13 @@ int IceConfig::stun_keepalive_interval_or_default() const {
   return stun_keepalive_interval.value_or(STUN_KEEPALIVE_INTERVAL);
 }
 
-IceTransportInternal::IceTransportInternal() = default;
+IceTransportInternal::IceTransportInternal() {
+  
+  
+  
+  SignalGatheringState.connect(
+      this, &IceTransportInternal::SignalGatheringStateFired);
+}
 
 IceTransportInternal::~IceTransportInternal() = default;
 
