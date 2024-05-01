@@ -32,15 +32,18 @@ public abstract class TelemetryPingBuilder {
 
         
         addMeasurement(new VersionMeasurement(version));
-
-        
-        if (!type.equals(TelemetryPocketEventPingBuilder.TYPE)) {
+        if (shouldIncludeClientId()) {
             addMeasurement(new ClientIdMeasurement(configuration));
         }
     }
 
     public TelemetryConfiguration getConfiguration() {
         return configuration;
+    }
+
+    
+    protected boolean shouldIncludeClientId() {
+        return true;
     }
 
     @NonNull
