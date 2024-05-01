@@ -7009,19 +7009,52 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachGuardToEitherClass(
+    GuardClassKind kind1, GuardClassKind kind2) {
+  MOZ_ASSERT(kind1 != kind2,
+             "prefer tryAttachGuardToClass for the same class case");
+
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
+
+  
+  const JSClass* clasp1 = ClassFor(kind1);
+  const JSClass* clasp2 = ClassFor(kind2);
+  const JSClass* objClass = args_[0].toObject().getClass();
+  if (objClass != clasp1 && objClass != clasp2) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(argId);
+
+  
+  writer.guardEitherClass(objId, kind1, kind2);
+
+  
+  writer.loadObjectResult(objId);
+  writer.returnFromIC();
+
+  trackAttached("GuardToEitherClass");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToArrayBuffer() {
-  
-  
-  
-  return tryAttachGuardToClass(InlinableNative::IntrinsicGuardToArrayBuffer);
+  return tryAttachGuardToEitherClass(GuardClassKind::FixedLengthArrayBuffer,
+                                     GuardClassKind::ResizableArrayBuffer);
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToSharedArrayBuffer() {
-  
-  
-  
-  return tryAttachGuardToClass(
-      InlinableNative::IntrinsicGuardToSharedArrayBuffer);
+  return tryAttachGuardToEitherClass(
+      GuardClassKind::FixedLengthSharedArrayBuffer,
+      GuardClassKind::GrowableSharedArrayBuffer);
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachHasClass(
