@@ -1131,22 +1131,32 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
           frame->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER),
           "overflow container frame must have overflow container bit set");
       WritingMode wm = frame->GetWritingMode();
-      LogicalSize availSpace(wm, prevInFlow->ISize(wm),
-                             aReflowInput.AvailableSize(wm).BSize(wm));
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const LogicalSize availSpace = aReflowInput.AvailableSize(wm);
 
       StyleSizeOverrides sizeOverride;
-      if (frame->IsFlexItem()) {
-        
-        
-        
-        
-        
-        sizeOverride.mStyleISize.emplace(
-            StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(
-                frame->StylePosition()->mBoxSizing == StyleBoxSizing::Border
-                    ? prevInFlow->ISize(wm)
-                    : prevInFlow->ContentISize(wm))));
+      
+      
+      sizeOverride.mStyleISize.emplace(
+          StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(
+              frame->StylePosition()->mBoxSizing == StyleBoxSizing::Border
+                  ? prevInFlow->ISize(wm)
+                  : prevInFlow->ContentISize(wm))));
 
+      if (frame->IsFlexItem()) {
         
         sizeOverride.mStyleBSize.emplace(
             StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(0)));
