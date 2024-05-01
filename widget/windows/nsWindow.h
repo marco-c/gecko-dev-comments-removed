@@ -887,8 +887,8 @@ class nsWindow final : public nsBaseWidget {
   mozilla::UniquePtr<mozilla::widget::DirectManipulationOwner> mDmOwner;
 
   
-  mozilla::EnumeratedArray<WindowButtonType, WindowButtonType::Count,
-                           LayoutDeviceIntRect>
+  mozilla::EnumeratedArray<WindowButtonType, LayoutDeviceIntRect,
+                           WindowButtonType::Count>
       mWindowBtnRect;
 
   mozilla::DataMutex<Desktop> mDesktopId;

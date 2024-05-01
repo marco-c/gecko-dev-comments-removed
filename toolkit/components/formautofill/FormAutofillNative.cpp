@@ -200,14 +200,14 @@ enum class CCExpYearParams : uint8_t {
 };
 
 struct AutofillParams {
-  EnumeratedArray<CCNumberParams, CCNumberParams::Count, double>
+  EnumeratedArray<CCNumberParams, double, CCNumberParams::Count>
       mCCNumberParams;
-  EnumeratedArray<CCNameParams, CCNameParams::Count, double> mCCNameParams;
-  EnumeratedArray<CCTypeParams, CCTypeParams::Count, double> mCCTypeParams;
-  EnumeratedArray<CCExpParams, CCExpParams::Count, double> mCCExpParams;
-  EnumeratedArray<CCExpMonthParams, CCExpMonthParams::Count, double>
+  EnumeratedArray<CCNameParams, double, CCNameParams::Count> mCCNameParams;
+  EnumeratedArray<CCTypeParams, double, CCTypeParams::Count> mCCTypeParams;
+  EnumeratedArray<CCExpParams, double, CCExpParams::Count> mCCExpParams;
+  EnumeratedArray<CCExpMonthParams, double, CCExpMonthParams::Count>
       mCCExpMonthParams;
-  EnumeratedArray<CCExpYearParams, CCExpYearParams::Count, double>
+  EnumeratedArray<CCExpYearParams, double, CCExpYearParams::Count>
       mCCExpYearParams;
 };
 
@@ -667,13 +667,11 @@ class FormAutofillImpl {
   
   
   using RegexStringArray =
-      EnumeratedArray<RegexKey, RegexKey::Count, nsCString>;
+      EnumeratedArray<RegexKey, nsCString, RegexKey::Count>;
   RegexStringArray mRuleMap;
 
   
-  using RegexWrapperArray =
-      EnumeratedArray<RegexKey, RegexKey::Count,
-                      RustRegex>;
+  using RegexWrapperArray = EnumeratedArray<RegexKey, RustRegex, RegexKey::Count>;
   RegexWrapperArray mRegexes;
 };
 

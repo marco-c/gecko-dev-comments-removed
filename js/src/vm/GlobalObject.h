@@ -130,7 +130,7 @@ class GlobalObjectData {
     HeapPtr<JSObject*> prototype;
   };
   using CtorArray =
-      mozilla::EnumeratedArray<JSProtoKey, JSProto_LIMIT, ConstructorWithProto>;
+      mozilla::EnumeratedArray<JSProtoKey, ConstructorWithProto, JSProto_LIMIT>;
   CtorArray builtinConstructors;
 
   
@@ -155,7 +155,7 @@ class GlobalObjectData {
     Limit
   };
   using ProtoArray =
-      mozilla::EnumeratedArray<ProtoKind, ProtoKind::Limit, HeapPtr<JSObject*>>;
+      mozilla::EnumeratedArray<ProtoKind, HeapPtr<JSObject*>, ProtoKind::Limit>;
   ProtoArray builtinProtos;
 
   HeapPtr<GlobalScope*> emptyGlobalScope;
@@ -195,8 +195,9 @@ class GlobalObjectData {
 
   
   
-  using PlainObjectShapeArray = mozilla::EnumeratedArray<
-      PlainObjectSlotsKind, PlainObjectSlotsKind::Limit, HeapPtr<SharedShape*>>;
+  using PlainObjectShapeArray =
+      mozilla::EnumeratedArray<PlainObjectSlotsKind, HeapPtr<SharedShape*>,
+                               PlainObjectSlotsKind::Limit>;
   PlainObjectShapeArray plainObjectShapesWithDefaultProto;
 
   

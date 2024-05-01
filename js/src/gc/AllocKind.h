@@ -197,13 +197,13 @@ constexpr auto SomeAllocKinds(AllocKind first = AllocKind::FIRST,
 
 template <typename ValueType>
 using AllAllocKindArray =
-    mozilla::EnumeratedArray<AllocKind, AllocKind::LIMIT, ValueType>;
+    mozilla::EnumeratedArray<AllocKind, ValueType, AllocKind::LIMIT>;
 
 
 
 template <typename ValueType>
 using ObjectAllocKindArray =
-    mozilla::EnumeratedArray<AllocKind, AllocKind::OBJECT_LIMIT, ValueType>;
+    mozilla::EnumeratedArray<AllocKind, ValueType, AllocKind::OBJECT_LIMIT>;
 
 
 
