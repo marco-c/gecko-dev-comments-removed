@@ -657,6 +657,8 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   void Stop();
   
 
+  bool EnsureFallbackDriver();
+  
 
   void FallbackToSystemClockDriver();
   
@@ -739,6 +741,9 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
     Starting,
     
+
+    ChangingDevice,
+    
     Running,
     
     Stopping
@@ -764,6 +769,10 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   
 
   TimeStamp mNextReInitAttempt;
+  
+
+
+  TimeStamp mChangingDeviceStartTime;
 #ifdef XP_MACOSX
   
 
