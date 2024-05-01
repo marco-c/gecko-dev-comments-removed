@@ -7,9 +7,7 @@
 #ifndef __DEFAULT_BROWSER_NOTIFICATION_H__
 #define __DEFAULT_BROWSER_NOTIFICATION_H__
 
-#include <string>
-
-#include "nsStringFwd.h"
+#include "DefaultBrowser.h"
 
 namespace mozilla::default_agent {
 
@@ -40,6 +38,9 @@ struct NotificationActivities {
   NotificationShown shown;
   NotificationAction action;
 };
+
+NotificationActivities MaybeShowNotification(
+    const DefaultBrowserInfo& browserInfo, const wchar_t* aumi, bool force);
 
 
 std::string GetStringForNotificationType(NotificationType type);

@@ -7,8 +7,11 @@
 #include <windows.h>
 #include <shlwapi.h>
 #include <objbase.h>
+#include <string.h>
+#include <vector>
 
 #include "nsAutoRef.h"
+#include "nsDebug.h"
 #include "nsProxyRelease.h"
 #include "nsWindowsHelpers.h"
 #include "nsString.h"
@@ -298,6 +301,62 @@ DefaultAgent::Uninstall(const nsAString& aUniqueToken) {
 
   RemoveAllRegistryEntries();
   return NS_OK;
+}
+
+NS_IMETHODIMP
+DefaultAgent::DoTask(const nsAString& aUniqueToken, const bool aForce) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RegistryMutex regMutex;
+  if (!regMutex.Acquire()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  
+  bool ranRecently = false;
+  if (!aForce && (!CheckIfAppRanRecently(&ranRecently) || !ranRecently)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
+  DefaultBrowserInfo browserInfo{};
+  if (defaultBrowserResult.isOk()) {
+    browserInfo = defaultBrowserResult.unwrap();
+  } else {
+    browserInfo.currentDefaultBrowser = Browser::Error;
+    browserInfo.previousDefaultBrowser = Browser::Error;
+  }
+
+  DefaultPdfResult defaultPdfResult = GetDefaultPdfInfo();
+  DefaultPdfInfo pdfInfo{};
+  if (defaultPdfResult.isOk()) {
+    pdfInfo = defaultPdfResult.unwrap();
+  } else {
+    pdfInfo.currentDefaultPdf = PDFHandler::Error;
+  }
+
+  NotificationActivities activitiesPerformed;
+  
+  
+  
+  activitiesPerformed = MaybeShowNotification(
+      browserInfo, PromiseFlatString(aUniqueToken).get(), aForce);
+
+  HRESULT hr = SendDefaultAgentPing(browserInfo, pdfInfo, activitiesPerformed);
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
