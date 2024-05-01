@@ -1380,6 +1380,8 @@ class nsIFrame : public nsQueryFrame {
     return nullptr;
   }
 
+  bool HasUnreflowedContainerQueryAncestor() const;
+
  private:
   
   
