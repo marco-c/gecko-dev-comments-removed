@@ -1,6 +1,4 @@
 
-
-
 var ins = wasmEvalText(`(module
     (tag $exn)
     (func $f0 (result i32)

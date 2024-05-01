@@ -68,11 +68,6 @@ for (let [name, enabled, test] of releasedFeaturesMaybeDisabledAnyway) {
 let releasedFeatures = [
   ['threads', wasmThreadsEnabled(), `(module (memory 1 1 shared))`],
   [
-    'exceptions',
-    wasmExceptionsEnabled(),
-    `(module (type (func)) (tag (type 0)))`
-  ],
-  [
     'extended-const',
     wasmExtendedConstEnabled(),
     `(module
