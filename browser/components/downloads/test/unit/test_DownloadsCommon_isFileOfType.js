@@ -120,7 +120,7 @@ for (let testData of TESTCASES) {
 
 
 
-async function test_isFileOfType({ name, typeArg, downloadProps, expected }) {
+async function test_isFileOfType({ typeArg, downloadProps, expected }) {
   let download, result;
   if (downloadProps) {
     let downloadData = {

@@ -1458,7 +1458,7 @@ var DownloadsSummary = {
 
 
 
-  onClick(aEvent) {
+  onClick() {
     DownloadsPanel.showDownloadsHistory();
   },
 
