@@ -87,7 +87,7 @@ class RtpSenderInternal : public RtpSenderInterface {
 
   
   virtual RTCError CheckCodecParameters(const RtpParameters& parameters) {
-    return webrtc::RTCError::OK();
+    return RTCError::OK();
   }
 
   

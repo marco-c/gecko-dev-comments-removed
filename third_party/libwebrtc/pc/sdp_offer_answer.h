@@ -674,8 +674,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory_ RTC_GUARDED_BY(signaling_thread());
+  std::unique_ptr<VideoBitrateAllocatorFactory> video_bitrate_allocator_factory_
+      RTC_GUARDED_BY(signaling_thread());
 
   
   

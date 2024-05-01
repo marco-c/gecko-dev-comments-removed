@@ -67,7 +67,7 @@ class FakeClockForTest : public rtc::ScopedFakeClock {
     
     
     
-    AdvanceTime(webrtc::TimeDelta::Seconds(1000));
+    AdvanceTime(TimeDelta::Seconds(1000));
   }
 
   
@@ -170,20 +170,20 @@ TEST_P(PeerConnectionIntegrationTest,
   CreateTurnServer(turn_server_internal_address, turn_server_external_address,
                    cricket::PROTO_TLS, "88.88.88.0");
 
-  webrtc::PeerConnectionInterface::IceServer ice_server;
+  PeerConnectionInterface::IceServer ice_server;
   ice_server.urls.push_back("turns:88.88.88.0:3478?transport=tcp");
   ice_server.username = "test";
   ice_server.password = "test";
 
   PeerConnectionInterface::RTCConfiguration client_1_config;
   client_1_config.servers.push_back(ice_server);
-  client_1_config.type = webrtc::PeerConnectionInterface::kRelay;
+  client_1_config.type = PeerConnectionInterface::kRelay;
 
   PeerConnectionInterface::RTCConfiguration client_2_config;
   client_2_config.servers.push_back(ice_server);
   
   
-  client_2_config.type = webrtc::PeerConnectionInterface::kRelay;
+  client_2_config.type = PeerConnectionInterface::kRelay;
 
   
   rtc::TestCertificateVerifier* client_1_cert_verifier =
@@ -194,10 +194,10 @@ TEST_P(PeerConnectionIntegrationTest,
   client_2_cert_verifier->verify_certificate_ = false;
 
   
-  webrtc::PeerConnectionDependencies client_1_deps(nullptr);
+  PeerConnectionDependencies client_1_deps(nullptr);
   client_1_deps.tls_cert_verifier =
       std::unique_ptr<rtc::TestCertificateVerifier>(client_1_cert_verifier);
-  webrtc::PeerConnectionDependencies client_2_deps(nullptr);
+  PeerConnectionDependencies client_2_deps(nullptr);
   client_2_deps.tls_cert_verifier =
       std::unique_ptr<rtc::TestCertificateVerifier>(client_2_cert_verifier);
 

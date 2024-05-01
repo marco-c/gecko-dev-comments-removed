@@ -75,13 +75,13 @@ using ::testing::UnorderedElementsAre;
 using ::testing::Values;
 
 template <typename MethodFunctor>
-class OnSuccessObserver : public webrtc::SetRemoteDescriptionObserverInterface {
+class OnSuccessObserver : public SetRemoteDescriptionObserverInterface {
  public:
   explicit OnSuccessObserver(MethodFunctor on_success)
       : on_success_(std::move(on_success)) {}
 
   
-  void OnSetRemoteDescriptionComplete(webrtc::RTCError error) override {
+  void OnSetRemoteDescriptionComplete(RTCError error) override {
     RTC_CHECK(error.ok());
     on_success_();
   }
@@ -113,7 +113,7 @@ class PeerConnectionRtpBaseTest : public ::testing::Test {
                                             Dav1dDecoderTemplateAdapter>>(),
             nullptr ,
             nullptr )) {
-    webrtc::metrics::Reset();
+    metrics::Reset();
   }
 
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection() {
@@ -934,8 +934,8 @@ TEST_P(PeerConnectionRtpTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::MockSetSessionDescriptionObserver> observer =
-      rtc::make_ref_counted<webrtc::MockSetSessionDescriptionObserver>();
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer =
+      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
 
   auto offer = caller->CreateOfferAndSetAsLocal();
   callee->pc()->SetRemoteDescription(observer.get(), offer.release());

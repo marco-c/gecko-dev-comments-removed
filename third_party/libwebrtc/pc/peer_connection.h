@@ -163,7 +163,7 @@ class PeerConnection : public PeerConnectionInternal,
       const DataChannelInit* config) override;
   
   bool GetStats(StatsObserver* observer,
-                webrtc::MediaStreamTrackInterface* track,
+                MediaStreamTrackInterface* track,
                 StatsOutputLevel level) override;
   
   void GetStats(RTCStatsCollectorCallback* callback) override;
@@ -510,7 +510,7 @@ class PeerConnection : public PeerConnectionInternal,
       IceTransportsType type,
       int candidate_pool_size,
       PortPrunePolicy turn_port_prune_policy,
-      webrtc::TurnCustomizer* turn_customizer,
+      TurnCustomizer* turn_customizer,
       absl::optional<int> stun_candidate_keepalive_interval,
       bool have_local_description);
 
@@ -602,7 +602,7 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  const webrtc::AlwaysValidPointer<const FieldTrialsView, FieldTrialBasedConfig>
+  const AlwaysValidPointer<const FieldTrialsView, FieldTrialBasedConfig>
       trials_;
   const PeerConnectionFactoryInterface::Options options_;
   PeerConnectionObserver* observer_ RTC_GUARDED_BY(signaling_thread()) =
@@ -634,7 +634,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<cricket::PortAllocator>
       port_allocator_;  
                         
-  const std::unique_ptr<webrtc::IceTransportFactory>
+  const std::unique_ptr<IceTransportFactory>
       ice_transport_factory_;  
                                
                                

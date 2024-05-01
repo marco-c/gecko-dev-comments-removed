@@ -98,7 +98,7 @@ TEST_F(AudioRtpReceiverTest, VolumesSetBeforeStartingAreRespected) {
 
 
 TEST(AudioRtpReceiver, OnChangedNotificationsAfterConstruction) {
-  webrtc::test::RunLoop loop;
+  test::RunLoop loop;
   auto* thread = rtc::Thread::Current();  
   cricket::MockVoiceMediaReceiveChannelInterface receive_channel;
   auto receiver = rtc::make_ref_counted<AudioRtpReceiver>(
