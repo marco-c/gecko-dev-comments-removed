@@ -85,7 +85,7 @@ const float* FFTConvolver::process(FFTBlock* fftKernel, const float* sourceP) {
     
     m_frame.PerformFFT(m_inputBuffer.Elements());
     m_frame.Multiply(*fftKernel);
-    m_frame.GetInverse(m_outputBuffer.Elements());
+    m_frame.GetInverseWithoutScaling(m_outputBuffer.Elements());
 
     
     AudioBufferAddWithScale(m_lastOverlapBuffer.Elements(), 1.0f,
