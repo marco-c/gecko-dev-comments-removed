@@ -59,6 +59,7 @@ class IDBFactory final : public GlobalTeardownObserver, public nsWrapperCache {
 
   UniquePtr<PrincipalInfo> mPrincipalInfo;
 
+  
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
   
@@ -156,6 +157,8 @@ class IDBFactory final : public GlobalTeardownObserver, public nsWrapperCache {
   [[nodiscard]] RefPtr<IDBOpenDBRequest> DeleteDatabase(
       JSContext* aCx, const nsAString& aName, const IDBOpenDBOptions& aOptions,
       CallerType aCallerType, ErrorResult& aRv);
+
+  already_AddRefed<Promise> Databases(JSContext* aCx);
 
   int16_t Cmp(JSContext* aCx, JS::Handle<JS::Value> aFirst,
               JS::Handle<JS::Value> aSecond, ErrorResult& aRv);
