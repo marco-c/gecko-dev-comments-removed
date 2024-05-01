@@ -584,8 +584,6 @@ void nsWindow::Destroy() {
 
   MozClearHandleID(mCompositorPauseTimeoutID, g_source_remove);
 
-  ClearTransparencyBitmap();
-
 #ifdef MOZ_WAYLAND
   
   if (mWaylandVsyncSource) {
@@ -613,9 +611,9 @@ void nsWindow::Destroy() {
 
   ClearTransparencyBitmap();
 
-  
-  
-  DisableRendering();
+  DestroyLayerManager();
+
+  mSurfaceProvider.CleanupResources();
 
   g_signal_handlers_disconnect_by_data(gtk_settings_get_default(), this);
 
@@ -9874,8 +9872,6 @@ void nsWindow::ClearRenderingQueue() {
 void nsWindow::DisableRendering() {
   LOG("nsWindow::DisableRendering()");
 
-  DestroyLayerManager();
-
   if (mGdkWindow) {
     if (mIMContext) {
       mIMContext->SetGdkWindow(nullptr);
@@ -9884,7 +9880,31 @@ void nsWindow::DisableRendering() {
     mGdkWindow = nullptr;
   }
 
-  mSurfaceProvider.CleanupResources();
+#ifdef MOZ_WAYLAND
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (moz_container_wayland_has_egl_window(mContainer) &&
+      mCompositorWidgetDelegate) {
+    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+      
+      
+      
+      mCompositorWidgetDelegate->DisableRendering();
+      remoteRenderer->SendResume();
+      mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                                 GetShapedState());
+    }
+  }
+#endif
 }
 
 

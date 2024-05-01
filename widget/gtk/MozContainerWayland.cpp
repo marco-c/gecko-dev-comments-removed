@@ -155,8 +155,13 @@ bool moz_container_wayland_egl_window_set_size(MozContainer* container,
                                                nsIntSize aSize, int aScale) {
   MozContainerWayland* wl_container = &container->data.wl_container;
   MutexAutoLock lock(wl_container->container_lock);
+
+  
+  
+  
+  
   if (!wl_container->eglwindow) {
-    return false;
+    return true;
   }
 
   if (wl_container->buffer_scale != aScale) {
