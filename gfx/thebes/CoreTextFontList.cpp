@@ -917,6 +917,47 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING("CTFontFamily::FindStyleVariations",
                                         LAYOUT, mName);
 
+  if (mForSystemFont) {
+    MOZ_ASSERT(gfxPlatform::HasVariationFontSupport());
+
+    auto addToFamily = [&](CTFontRef aFont) MOZ_REQUIRES(mLock) {
+      AutoCFRelease<CFStringRef> psName = CTFontCopyPostScriptName(aFont);
+      nsAutoString nameUTF16;
+      nsAutoCString nameUTF8;
+      GetStringForCFString(psName, nameUTF16);
+      CopyUTF16toUTF8(nameUTF16, nameUTF8);
+
+      auto* fe =
+          new CTFontEntry(nameUTF8, WeightRange(FontWeight::NORMAL), true, 0.0);
+
+      
+      CTFontSymbolicTraits traits = CTFontGetSymbolicTraits(aFont);
+      fe->mStyleRange = SlantStyleRange((traits & kCTFontTraitItalic)
+                                            ? FontSlantStyle::ITALIC
+                                            : FontSlantStyle::NORMAL);
+
+      
+      fe->SetupVariationRanges();
+      AddFontEntryLocked(fe);
+    };
+
+    addToFamily(mForSystemFont);
+
+    
+    AutoCFRelease<CTFontRef> italicFont = CTFontCreateCopyWithSymbolicTraits(
+        mForSystemFont, 0.0, nullptr, kCTFontTraitItalic, kCTFontTraitItalic);
+    if (italicFont != mForSystemFont) {
+      addToFamily(italicFont);
+    }
+
+    CFRelease(mForSystemFont);
+    mForSystemFont = nullptr;
+
+    SetHasStyles(true);
+
+    return;
+  }
+
   struct Context {
     CTFontFamily* family;
     const void* prevValue = nullptr;
@@ -1820,6 +1861,41 @@ void CoreTextFontList::ReadFaceNamesForFamily(
       aliasData->mFaces.AppendElement(facePtrs[i]);
     }
   }
+}
+
+void CoreTextFontList::InitSystemFontNames() {
+  
+  AutoCFRelease<CTFontRef> font = CTFontCreateUIFontForLanguage(
+      kCTFontUIFontSystem, 0.0, nullptr);  
+  AutoCFRelease<CFStringRef> name = CTFontCopyFamilyName(font);
+
+  nsAutoString familyName;
+  GetStringForCFString(name, familyName);
+  CopyUTF16toUTF8(familyName, mSystemFontFamilyName);
+
+  
+  
+  
+  
+  RefPtr<gfxFontFamily> fam = new CTFontFamily(mSystemFontFamilyName, font);
+  if (fam) {
+    nsAutoCString key;
+    GenerateFontListKey(mSystemFontFamilyName, key);
+    mFontFamilies.InsertOrUpdate(key, std::move(fam));
+  }
+}
+
+FontFamily CoreTextFontList::GetDefaultFontForPlatform(
+    nsPresContext* aPresContext, const gfxFontStyle* aStyle,
+    nsAtom* aLanguage) {
+  AutoCFRelease<CTFontRef> font = CTFontCreateUIFontForLanguage(
+      kCTFontUIFontUser, 0.0, nullptr);  
+  AutoCFRelease<CFStringRef> name = CTFontCopyFamilyName(font);
+
+  nsAutoString familyName;
+  GetStringForCFString(name, familyName);
+
+  return FindFamily(aPresContext, NS_ConvertUTF16toUTF8(familyName));
 }
 
 #ifdef MOZ_BUNDLED_FONTS

@@ -118,6 +118,15 @@ class CTFontFamily : public gfxFontFamily {
   CTFontFamily(const nsACString& aName, FontVisibility aVisibility)
       : gfxFontFamily(aName, aVisibility) {}
 
+  CTFontFamily(const nsACString& aName, CTFontRef aSystemFont)
+      : gfxFontFamily(aName, FontVisibility::Unknown),
+        mForSystemFont(aSystemFont) {
+    
+    
+    
+    CFRetain(mForSystemFont);
+  }
+
   virtual ~CTFontFamily() = default;
 
   void LocalizedName(nsACString& aLocalizedName) override;
@@ -127,6 +136,15 @@ class CTFontFamily : public gfxFontFamily {
 
  protected:
   void AddFace(CTFontDescriptorRef aFace) MOZ_REQUIRES(mLock);
+
+  
+  
+  
+  CTFontRef mForSystemFont = nullptr;
+};
+
+class gfxMacFontFamily final : public CTFontFamily {
+ public:
 };
 
 class CoreTextFontList : public gfxPlatformFontList {
@@ -179,7 +197,13 @@ class CoreTextFontList : public gfxPlatformFontList {
   void PreloadNamesList() MOZ_REQUIRES(mLock);
 
   
-  virtual void InitSystemFontNames() = 0;
+  void InitSystemFontNames() MOZ_REQUIRES(mLock);
+
+  
+  FontFamily GetDefaultFontForPlatform(nsPresContext* aPresContext,
+                                       const gfxFontStyle* aStyle,
+                                       nsAtom* aLanguage = nullptr)
+      MOZ_REQUIRES(mLock) override;
 
   
   virtual void InitSingleFaceList() {}
