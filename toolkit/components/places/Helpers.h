@@ -170,6 +170,14 @@ PRTime RoundedPRNow();
 nsresult HashURL(const nsACString& aSpec, const nsACString& aMode,
                  uint64_t* _hash);
 
+
+
+
+
+
+
+already_AddRefed<nsIURI> GetExposableURI(nsIURI* aURI);
+
 class QueryKeyValuePair final {
  public:
   QueryKeyValuePair(const nsACString& aKey, const nsACString& aValue) {
