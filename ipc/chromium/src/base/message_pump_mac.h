@@ -144,11 +144,13 @@ class MessagePumpCFRunLoopBase : public MessagePump {
   
   virtual void EnterExitRunLoop(CFRunLoopActivity activity);
 
+#if !defined(XP_IOS)
   
   
   static void PowerStateNotification(void* info, io_service_t service,
                                      uint32_t message_type,
                                      void* message_argument);
+#endif
 
   
   CFRunLoopRef run_loop_;
@@ -241,6 +243,23 @@ class MessagePumpNSRunLoop : public MessagePumpCFRunLoopBase {
   DISALLOW_COPY_AND_ASSIGN(MessagePumpNSRunLoop);
 };
 
+#if defined(XP_IOS)
+
+
+
+class MessagePumpUIApplication : public MessagePumpCFRunLoopBase {
+ public:
+  MessagePumpUIApplication() {}
+
+  void DoRun(Delegate* delegate) override;
+  void Quit() override;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(MessagePumpUIApplication);
+};
+
+#else
+
 class MessagePumpNSApplication : public MessagePumpCFRunLoopBase {
  public:
   MessagePumpNSApplication();
@@ -264,6 +283,7 @@ class MessagePumpNSApplication : public MessagePumpCFRunLoopBase {
 
   DISALLOW_COPY_AND_ASSIGN(MessagePumpNSApplication);
 };
+#endif
 
 class MessagePumpMac {
  public:
