@@ -354,6 +354,8 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   
   void NotifyThemeChanged(mozilla::widget::ThemeChangeKind);
 
+  void NotifyAPZOfDPIChange();
+
 #ifdef ACCESSIBILITY
   
   mozilla::a11y::LocalAccessible* GetRootAccessible();
