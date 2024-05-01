@@ -16,6 +16,7 @@
 #include "api/array_view.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
@@ -23,7 +24,7 @@ namespace rtc {
 
 
 
-class ReceivedPacket {
+class RTC_EXPORT ReceivedPacket {
  public:
   
   
