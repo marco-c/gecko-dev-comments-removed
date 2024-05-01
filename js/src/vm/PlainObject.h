@@ -7,6 +7,7 @@
 #ifndef vm_PlainObject_h
 #define vm_PlainObject_h
 
+#include "ds/IdValuePair.h"
 #include "gc/AllocKind.h"     
 #include "js/Class.h"         
 #include "js/RootingAPI.h"    
@@ -98,13 +99,13 @@ extern PlainObject* NewPlainObjectWithProtoAndAllocKind(
 
 
 extern PlainObject* NewPlainObjectWithUniqueNames(
-    JSContext* cx, IdValuePair* properties, size_t nproperties,
+    JSContext* cx, Handle<IdValueVector> properties,
     NewObjectKind newKind = GenericObject);
 
 
 
 extern PlainObject* NewPlainObjectWithMaybeDuplicateKeys(
-    JSContext* cx, IdValuePair* properties, size_t nproperties,
+    JSContext* cx, Handle<IdValueVector> properties,
     NewObjectKind newKind = GenericObject);
 
 }  

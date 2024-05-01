@@ -1534,8 +1534,7 @@ static bool PlainYearMonth_getISOFields(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto* obj =
-      NewPlainObjectWithUniqueNames(cx, fields.begin(), fields.length());
+  auto* obj = NewPlainObjectWithUniqueNames(cx, fields);
   if (!obj) {
     return false;
   }
