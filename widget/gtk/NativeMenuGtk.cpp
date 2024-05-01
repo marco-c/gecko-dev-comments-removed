@@ -444,6 +444,8 @@ void NativeMenuGtk::CloseSubmenu(dom::Element*) {
   
 }
 
+#ifdef MOZ_ENABLE_DBUS
+
 class MenubarModelDBus final : public MenuModel {
  public:
   explicit MenubarModelDBus(dom::Element* aElement) : MenuModel(aElement) {
@@ -730,7 +732,7 @@ void DBusMenuBar::OnNameOwnerChanged() {
     return;
   }
 
-#ifdef MOZ_WAYLAND
+#  ifdef MOZ_WAYLAND
   if (auto* display = widget::WaylandDisplayGet()) {
     xdg_dbus_annotation_manager_v1* annotationManager =
         display->GetXdgDbusAnnotationManager();
@@ -757,8 +759,8 @@ void DBusMenuBar::OnNameOwnerChanged() {
                                        mObjectPath.get());
     return;
   }
-#endif
-#ifdef MOZ_X11
+#  endif
+#  ifdef MOZ_X11
   
   auto xid = GDK_WINDOW_XID(gdkWin);
   widget::DBusProxyCall(mProxy, "RegisterWindow",
@@ -774,7 +776,7 @@ void DBusMenuBar::OnNameOwnerChanged() {
                        aError->message);
             self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden, false);
           });
-#endif
+#  endif
 }
 
 static unsigned sID = 0;
@@ -812,5 +814,6 @@ RefPtr<DBusMenuBar> DBusMenuBar::Create(dom::Element* aElement) {
 }
 
 DBusMenuBar::~DBusMenuBar() = default;
+#endif
 
 }  
