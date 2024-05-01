@@ -1891,6 +1891,46 @@ var gEMETests = [
     sessionCount: 1,
     duration: 1.98,
   },
+  
+  
+  {
+    name: "MP4 av1 video clearkey",
+    tracks: [
+      {
+        name: "video",
+        type: 'video/mp4; codecs="av1"',
+        fragments: ["bipbop-clearkey-video-av1.mp4"],
+      },
+    ],
+    keys: {
+      
+      "8b5df745ad84145b5617c33116e35a67": "bddfd35dd9be033ee73bc18bc1885056",
+    },
+    sessionType: "temporary",
+    sessionCount: 1,
+    duration: 2.0,
+    skipTests: ["waitingforkey"],
+  },
+  
+  
+  {
+    name: "WebM av1 video clearkey",
+    tracks: [
+      {
+        name: "video",
+        type: 'video/webm; codecs="av1"',
+        fragments: ["bipbop-clearkey-video-av1.webm"],
+      },
+    ],
+    keys: {
+      
+      "8b5df745ad84145b5617c33116e35a67": "bddfd35dd9be033ee73bc18bc1885056",
+    },
+    sessionType: "temporary",
+    sessionCount: 1,
+    duration: 2.0,
+    skipTests: ["waitingforkey"],
+  },
   {
     name: "WebM vorbis audio & vp8 video clearkey",
     tracks: [
