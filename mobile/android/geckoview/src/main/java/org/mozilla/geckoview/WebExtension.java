@@ -1839,29 +1839,7 @@ public class WebExtension {
 
 
 
-    public final @NonNull String[] grantedOptionalPermissions;
-
-    
-
-
-
-
-
-
-
-
     public final @NonNull String[] optionalOrigins;
-
-    
-
-
-
-
-
-
-
-
-    public final @NonNull String[] grantedOptionalOrigins;
 
     
 
@@ -2044,8 +2022,6 @@ public class WebExtension {
       icon = null;
       permissions = null;
       optionalPermissions = null;
-      grantedOptionalPermissions = null;
-      grantedOptionalOrigins = null;
       optionalOrigins = null;
       origins = null;
       name = null;
@@ -2078,9 +2054,7 @@ public class WebExtension {
       
       permissions = bundle.getStringArray("promptPermissions");
       optionalPermissions = bundle.getStringArray("optionalPermissions");
-      grantedOptionalPermissions = bundle.getStringArray("grantedOptionalPermissions");
       optionalOrigins = bundle.getStringArray("optionalOrigins");
-      grantedOptionalOrigins = bundle.getStringArray("grantedOptionalOrigins");
       origins = bundle.getStringArray("origins");
       description = bundle.getString("description");
       version = bundle.getString("version");
