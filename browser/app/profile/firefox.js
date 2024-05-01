@@ -298,9 +298,6 @@ pref("browser.shell.checkDefaultPDF.silencedByUser", false);
 
 
 pref("browser.shell.defaultBrowserAgent.thanksURL", "https://www.mozilla.org/%LOCALE%/firefox/set-as-default/thanks/");
-
-
-pref("browser.shell.customProtocolsRegistered", false);
 #endif
 
 
