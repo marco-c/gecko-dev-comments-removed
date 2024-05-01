@@ -2272,13 +2272,19 @@ inline bool AddStringToIDVector(JSContext* cx,
 
 
 
+bool LegacyFactoryFunctionJSNative(JSContext* cx, unsigned argc, JS::Value* vp);
 
+inline bool IsLegacyFactoryFunction(JSObject* obj) {
+  return JS_IsNativeFunction(obj, LegacyFactoryFunctionJSNative);
+}
 
-
-
-enum { CONSTRUCTOR_NATIVE_HOLDER_RESERVED_SLOT = 0 };
-
-bool Constructor(JSContext* cx, unsigned argc, JS::Value* vp);
+inline const JSNativeHolder* NativeHolderFromLegacyFactoryFunction(
+    JSObject* obj) {
+  MOZ_ASSERT(IsLegacyFactoryFunction(obj));
+  const JS::Value& v = js::GetFunctionNativeReserved(
+      obj, LEGACY_FACTORY_FUNCTION_NATIVE_HOLDER_RESERVED_SLOT);
+  return static_cast<const JSNativeHolder*>(v.toPrivate());
+}
 
 
 
@@ -2350,7 +2356,7 @@ inline bool XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
         protop.set(JS::GetRealmObjectPrototype(cx));
       }
     } else if (JS_ObjectIsFunction(obj)) {
-      MOZ_ASSERT(JS_IsNativeFunction(obj, Constructor));
+      MOZ_ASSERT(IsLegacyFactoryFunction(obj));
       protop.set(JS::GetRealmFunctionPrototype(cx));
     } else {
       const JSClass* clasp = JS::GetClass(obj);
@@ -2432,12 +2438,12 @@ extern const js::ObjectOps sInterfaceObjectClassObjectOps;
 
 inline bool UseDOMXray(JSObject* obj) {
   const JSClass* clasp = JS::GetClass(obj);
-  return IsDOMClass(clasp) || JS_IsNativeFunction(obj, Constructor) ||
+  return IsDOMClass(clasp) || IsLegacyFactoryFunction(obj) ||
          IsDOMIfaceAndProtoClass(clasp);
 }
 
 inline bool IsDOMConstructor(JSObject* obj) {
-  if (JS_IsNativeFunction(obj, dom::Constructor)) {
+  if (IsLegacyFactoryFunction(obj)) {
     
     return true;
   }
@@ -2451,8 +2457,7 @@ inline bool IsDOMConstructor(JSObject* obj) {
 
 #ifdef DEBUG
 inline bool HasConstructor(JSObject* obj) {
-  return JS_IsNativeFunction(obj, Constructor) ||
-         JS::GetClass(obj)->getConstruct();
+  return IsLegacyFactoryFunction(obj) || JS::GetClass(obj)->getConstruct();
 }
 #endif
 
