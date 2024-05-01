@@ -165,12 +165,10 @@ class StructuredCloneHolderBase {
 };
 
 class BlobImpl;
-class EncodedAudioChunkData;
 class EncodedVideoChunkData;
 class MessagePort;
 class MessagePortIdentifier;
 struct VideoFrameSerializedData;
-struct AudioDataSerializedData;
 
 class StructuredCloneHolder : public StructuredCloneHolderBase {
  public:
@@ -272,14 +270,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   nsTArray<VideoFrameSerializedData>& VideoFrames() { return mVideoFrames; }
 
-  nsTArray<AudioDataSerializedData>& AudioData() { return mAudioData; }
-
   nsTArray<EncodedVideoChunkData>& EncodedVideoChunks() {
     return mEncodedVideoChunks;
-  }
-
-  nsTArray<EncodedAudioChunkData>& EncodedAudioChunks() {
-    return mEncodedAudioChunks;
   }
 
   
@@ -388,13 +380,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   nsTArray<VideoFrameSerializedData> mVideoFrames;
 
   
-  nsTArray<AudioDataSerializedData> mAudioData;
-
-  
   nsTArray<EncodedVideoChunkData> mEncodedVideoChunks;
-
-  
-  nsTArray<EncodedAudioChunkData> mEncodedAudioChunks;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
