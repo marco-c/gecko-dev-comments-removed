@@ -143,11 +143,9 @@ pref("browser.sessionstore.privacy_level", 0);
 pref("browser.sessionstore.resume_from_crash", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.translations.enable", true);
-  
-  pref("browser.translations.geckoview.enableAllTestMocks", false);
-#endif
+pref("browser.translations.enable", true);
+
+pref("browser.translations.geckoview.enableAllTestMocks", false);
 
 
 pref("browser.xul.error_pages.expert_bad_cert", false);
