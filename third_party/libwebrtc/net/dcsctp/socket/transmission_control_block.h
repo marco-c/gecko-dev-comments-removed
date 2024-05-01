@@ -149,9 +149,9 @@ class TransmissionControlBlock : public Context {
 
  private:
   
-  absl::optional<DurationMs> OnRtxTimerExpiry();
+  DurationMs OnRtxTimerExpiry();
   
-  absl::optional<DurationMs> OnDelayedAckTimerExpiry();
+  DurationMs OnDelayedAckTimerExpiry();
 
   const absl::string_view log_prefix_;
   const DcSctpOptions options_;

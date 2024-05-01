@@ -347,13 +347,13 @@ void StreamResetHandler::ResetStreams(
   }
 }
 
-absl::optional<DurationMs> StreamResetHandler::OnReconfigTimerExpiry() {
+DurationMs StreamResetHandler::OnReconfigTimerExpiry() {
   if (current_request_->has_been_sent()) {
     
     
     if (!ctx_->IncrementTxErrorCounter("RECONFIG timeout")) {
       
-      return absl::nullopt;
+      return DurationMs(0);
     }
   } else {
     

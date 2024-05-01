@@ -155,9 +155,9 @@ class DcSctpSocket : public DcSctpSocketInterface {
   
   void CloseConnectionBecauseOfTooManyTransmissionErrors();
   
-  absl::optional<DurationMs> OnInitTimerExpiry();
-  absl::optional<DurationMs> OnCookieTimerExpiry();
-  absl::optional<DurationMs> OnShutdownTimerExpiry();
+  DurationMs OnInitTimerExpiry();
+  DurationMs OnCookieTimerExpiry();
+  DurationMs OnShutdownTimerExpiry();
   void OnSentPacket(rtc::ArrayView<const uint8_t> packet,
                     SendPacketStatus status);
   

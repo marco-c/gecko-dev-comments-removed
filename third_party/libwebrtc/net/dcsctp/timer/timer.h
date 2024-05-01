@@ -105,7 +105,8 @@ class Timer {
   
   
   
-  using OnExpired = std::function<absl::optional<DurationMs>()>;
+  
+  using OnExpired = std::function<DurationMs()>;
 
   
   Timer(const Timer&) = delete;

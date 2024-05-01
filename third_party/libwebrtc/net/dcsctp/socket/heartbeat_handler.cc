@@ -164,7 +164,7 @@ void HeartbeatHandler::HandleHeartbeatAck(HeartbeatAckChunk chunk) {
   ctx_->ClearTxErrorCounter();
 }
 
-absl::optional<DurationMs> HeartbeatHandler::OnIntervalTimerExpiry() {
+DurationMs HeartbeatHandler::OnIntervalTimerExpiry() {
   if (ctx_->is_connection_established()) {
     HeartbeatInfo info(ctx_->callbacks().TimeMillis());
     timeout_timer_->set_duration(ctx_->current_rto());
@@ -183,14 +183,14 @@ absl::optional<DurationMs> HeartbeatHandler::OnIntervalTimerExpiry() {
         << log_prefix_
         << "Will not send HEARTBEAT when connection not established";
   }
-  return absl::nullopt;
+  return DurationMs(0);
 }
 
-absl::optional<DurationMs> HeartbeatHandler::OnTimeoutTimerExpiry() {
+DurationMs HeartbeatHandler::OnTimeoutTimerExpiry() {
   
   
   RTC_DCHECK(!timeout_timer_->is_running());
   ctx_->IncrementTxErrorCounter("HEARTBEAT timeout");
-  return absl::nullopt;
+  return DurationMs(0);
 }
 }  
