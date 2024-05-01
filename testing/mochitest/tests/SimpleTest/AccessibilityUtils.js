@@ -465,6 +465,72 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+
+
+
+  function isAccessibleGridcell(node) {
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const accessible = getAccessible(node);
+
+    if (!accessible || accessible.role != Ci.nsIAccessibleRole.ROLE_GRID_CELL) {
+      return false; 
+    }
+    
+    
+    const gridRow = accessible.parent;
+    if (!gridRow || gridRow.role != Ci.nsIAccessibleRole.ROLE_ROW) {
+      return false; 
+    }
+    let grid = gridRow.parent;
+    if (!grid) {
+      return false; 
+    }
+    if (grid.role == Ci.nsIAccessibleRole.ROLE_GROUPING) {
+      
+      grid = grid.parent;
+      if (!grid || grid.role != Ci.nsIAccessibleRole.ROLE_GRID) {
+        return false; 
+      }
+    }
+    
+    let foundFocusable = false;
+    for (const gridCell of grid.DOMNode.querySelectorAll(
+      "td, [role=gridcell]"
+    )) {
+      
+      
+      
+      if (gridCell.tabIndex == 0) {
+        if (foundFocusable) {
+          
+          
+          
+          
+          
+          
+          
+          
+          a11yFail(
+            "Only one grid cell should be focusable in a grid",
+            accessible
+          );
+          return false;
+        }
+        foundFocusable = true;
+      }
+    }
+    return foundFocusable;
+  }
+
+  
+
+
+
+
   function isInaccessibleXulTreecol(node) {
     if (!node || !node.ownerGlobal) {
       return false;
@@ -1033,7 +1099,7 @@ this.AccessibilityUtils = (function () {
       
       const acc = findInteractiveAccessible(node);
       if (!acc) {
-        if (isInaccessibleXulTreecol(node)) {
+        if (isAccessibleGridcell(node) || isInaccessibleXulTreecol(node)) {
           return;
         }
         if (gEnv.mustHaveAccessibleRule) {
