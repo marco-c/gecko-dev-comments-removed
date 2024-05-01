@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/packet/data.h"
 #include "net/dcsctp/public/types.h"
@@ -37,7 +38,7 @@ class SendQueue {
 
     
     MaxRetransmits max_retransmissions = MaxRetransmits::NoLimit();
-    TimeMs expires_at = TimeMs::InfiniteFuture();
+    webrtc::Timestamp expires_at = webrtc::Timestamp::PlusInfinity();
 
     
     
@@ -55,7 +56,8 @@ class SendQueue {
   
   
   
-  virtual absl::optional<DataToSend> Produce(TimeMs now, size_t max_size) = 0;
+  virtual absl::optional<DataToSend> Produce(webrtc::Timestamp now,
+                                             size_t max_size) = 0;
 
   
   

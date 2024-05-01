@@ -69,7 +69,7 @@ class RetransmissionQueue {
 
   
   
-  bool HandleSack(TimeMs now, const SackChunk& sack);
+  bool HandleSack(webrtc::Timestamp now, const SackChunk& sack);
 
   
   void HandleT3RtxTimerExpiry();
@@ -90,7 +90,7 @@ class RetransmissionQueue {
   
   
   std::vector<std::pair<TSN, Data>> GetChunksToSend(
-      TimeMs now,
+      webrtc::Timestamp now,
       size_t bytes_remaining_in_packet);
 
   
@@ -136,7 +136,7 @@ class RetransmissionQueue {
   
   
   
-  bool ShouldSendForwardTsn(TimeMs now);
+  bool ShouldSendForwardTsn(webrtc::Timestamp now);
 
   
   ForwardTsnChunk CreateForwardTsn() const {
@@ -185,7 +185,7 @@ class RetransmissionQueue {
 
   
   
-  void UpdateRTT(TimeMs now, UnwrappedTSN cumulative_tsn_ack);
+  void UpdateRTT(webrtc::Timestamp now, UnwrappedTSN cumulative_tsn_ack);
 
   
   

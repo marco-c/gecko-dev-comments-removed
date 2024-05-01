@@ -73,6 +73,8 @@ using ::testing::Not;
 using ::testing::Property;
 using ::testing::SizeIs;
 using ::testing::UnorderedElementsAre;
+using ::webrtc::TimeDelta;
+using ::webrtc::Timestamp;
 
 constexpr SendOptions kSendOptions;
 constexpr size_t kLargeMessageSize = DcSctpOptions::kMaxSafeMTUSize * 20;
@@ -269,7 +271,7 @@ void RunTimers(SocketUnderTest& s) {
   }
 }
 
-void AdvanceTime(SocketUnderTest& a, SocketUnderTest& z, DurationMs duration) {
+void AdvanceTime(SocketUnderTest& a, SocketUnderTest& z, TimeDelta duration) {
   a.cb.AdvanceTime(duration);
   z.cb.AdvanceTime(duration);
 
@@ -282,14 +284,14 @@ void AdvanceTime(SocketUnderTest& a, SocketUnderTest& z, DurationMs duration) {
 void ExchangeMessagesAndAdvanceTime(
     SocketUnderTest& a,
     SocketUnderTest& z,
-    DurationMs max_timeout = DurationMs(10000)) {
-  TimeMs time_started = a.cb.TimeMillis();
-  while (a.cb.TimeMillis() - time_started < max_timeout) {
+    TimeDelta max_timeout = TimeDelta::Seconds(10)) {
+  Timestamp time_started = a.cb.Now();
+  while (a.cb.Now() - time_started < max_timeout) {
     ExchangeMessages(a, z);
 
-    DurationMs time_to_next_timeout =
+    TimeDelta time_to_next_timeout =
         std::min(a.cb.GetTimeToNextTimeout(), z.cb.GetTimeToNextTimeout());
-    if (time_to_next_timeout == DurationMs::InfiniteDuration()) {
+    if (time_to_next_timeout.IsPlusInfinity()) {
       
       return;
     }
@@ -535,7 +537,7 @@ TEST(DcSctpSocketTest, EstablishConnectionLostCookieAck) {
   EXPECT_EQ(z.socket.state(), SocketState::kConnected);
 
   
-  AdvanceTime(a, z, DurationMs(a.options.t1_cookie_timeout));
+  AdvanceTime(a, z, a.options.t1_cookie_timeout.ToTimeDelta());
 
   
   z.socket.ReceivePacket(a.cb.ConsumeSentPacket());
@@ -555,7 +557,7 @@ TEST(DcSctpSocketTest, ResendInitAndEstablishConnection) {
   EXPECT_THAT(a.cb.ConsumeSentPacket(),
               HasChunks(ElementsAre(IsChunkType(InitChunk::kType))));
 
-  AdvanceTime(a, z, a.options.t1_init_timeout);
+  AdvanceTime(a, z, a.options.t1_init_timeout.ToTimeDelta());
 
   
   z.socket.ReceivePacket(a.cb.ConsumeSentPacket());
@@ -581,7 +583,7 @@ TEST(DcSctpSocketTest, ResendingInitTooManyTimesAborts) {
               HasChunks(ElementsAre(IsChunkType(InitChunk::kType))));
 
   for (int i = 0; i < *a.options.max_init_retransmits; ++i) {
-    AdvanceTime(a, z, a.options.t1_init_timeout * (1 << i));
+    AdvanceTime(a, z, a.options.t1_init_timeout.ToTimeDelta() * (1 << i));
 
     
     EXPECT_THAT(a.cb.ConsumeSentPacket(),
@@ -590,8 +592,9 @@ TEST(DcSctpSocketTest, ResendingInitTooManyTimesAborts) {
 
   
   EXPECT_CALL(a.cb, OnAborted).Times(1);
-  AdvanceTime(
-      a, z, a.options.t1_init_timeout * (1 << *a.options.max_init_retransmits));
+  AdvanceTime(a, z,
+              a.options.t1_init_timeout.ToTimeDelta() *
+                  (1 << *a.options.max_init_retransmits));
 
   EXPECT_EQ(a.socket.state(), SocketState::kClosed);
 }
@@ -611,7 +614,7 @@ TEST(DcSctpSocketTest, ResendCookieEchoAndEstablishConnection) {
   EXPECT_THAT(a.cb.ConsumeSentPacket(),
               HasChunks(ElementsAre(IsChunkType(CookieEchoChunk::kType))));
 
-  AdvanceTime(a, z, a.options.t1_init_timeout);
+  AdvanceTime(a, z, a.options.t1_init_timeout.ToTimeDelta());
 
   
   z.socket.ReceivePacket(a.cb.ConsumeSentPacket());
@@ -638,7 +641,7 @@ TEST(DcSctpSocketTest, ResendingCookieEchoTooManyTimesAborts) {
               HasChunks(ElementsAre(IsChunkType(CookieEchoChunk::kType))));
 
   for (int i = 0; i < *a.options.max_init_retransmits; ++i) {
-    AdvanceTime(a, z, a.options.t1_cookie_timeout * (1 << i));
+    AdvanceTime(a, z, a.options.t1_cookie_timeout.ToTimeDelta() * (1 << i));
 
     
     EXPECT_THAT(a.cb.ConsumeSentPacket(),
@@ -647,9 +650,9 @@ TEST(DcSctpSocketTest, ResendingCookieEchoTooManyTimesAborts) {
 
   
   EXPECT_CALL(a.cb, OnAborted).Times(1);
-  AdvanceTime(
-      a, z,
-      a.options.t1_cookie_timeout * (1 << *a.options.max_init_retransmits));
+  AdvanceTime(a, z,
+              a.options.t1_cookie_timeout.ToTimeDelta() *
+                  (1 << *a.options.max_init_retransmits));
 
   EXPECT_EQ(a.socket.state(), SocketState::kClosed);
 }
@@ -680,11 +683,13 @@ TEST(DcSctpSocketTest, DoesntSendMorePacketsUntilCookieAckHasBeenReceived) {
   
   
   ASSERT_TRUE(a.options.rto_initial < a.options.t1_cookie_timeout);
-  AdvanceTime(a, z, a.options.rto_initial);
+  AdvanceTime(a, z, a.options.rto_initial.ToTimeDelta());
   EXPECT_THAT(a.cb.ConsumeSentPacket(), IsEmpty());
 
   
-  AdvanceTime(a, z, a.options.t1_cookie_timeout - a.options.rto_initial);
+  AdvanceTime(a, z,
+              a.options.t1_cookie_timeout.ToTimeDelta() -
+                  a.options.rto_initial.ToTimeDelta());
 
   
   EXPECT_THAT(a.cb.ConsumeSentPacket(),
@@ -694,7 +699,7 @@ TEST(DcSctpSocketTest, DoesntSendMorePacketsUntilCookieAckHasBeenReceived) {
   EXPECT_THAT(a.cb.ConsumeSentPacket(), IsEmpty());
 
   
-  AdvanceTime(a, z, a.options.t1_cookie_timeout * 2);
+  AdvanceTime(a, z, a.options.t1_cookie_timeout.ToTimeDelta() * 2);
 
   
   z.socket.ReceivePacket(a.cb.ConsumeSentPacket());
@@ -747,7 +752,7 @@ TEST(DcSctpSocketTest, ShutdownTimerExpiresTooManyTimeClosesConnection) {
   EXPECT_EQ(a.socket.state(), SocketState::kShuttingDown);
 
   for (int i = 0; i < *a.options.max_retransmissions; ++i) {
-    AdvanceTime(a, z, DurationMs(a.options.rto_initial * (1 << i)));
+    AdvanceTime(a, z, a.options.rto_initial.ToTimeDelta() * (1 << i));
 
     
     EXPECT_THAT(a.cb.ConsumeSentPacket(),
@@ -757,7 +762,8 @@ TEST(DcSctpSocketTest, ShutdownTimerExpiresTooManyTimeClosesConnection) {
   
   EXPECT_CALL(a.cb, OnAborted).Times(1);
   AdvanceTime(a, z,
-              a.options.rto_initial * (1 << *a.options.max_retransmissions));
+              a.options.rto_initial.ToTimeDelta() *
+                  (1 << *a.options.max_retransmissions));
 
   EXPECT_EQ(a.socket.state(), SocketState::kClosed);
   EXPECT_THAT(a.cb.ConsumeSentPacket(),
@@ -815,7 +821,7 @@ TEST_P(DcSctpSocketParametrizedTest, TimeoutResendsPacket) {
   a.cb.ConsumeSentPacket();
 
   RTC_LOG(LS_INFO) << "Advancing time";
-  AdvanceTime(a, *z, a.options.rto_initial);
+  AdvanceTime(a, *z, a.options.rto_initial.ToTimeDelta());
 
   z->socket.ReceivePacket(a.cb.ConsumeSentPacket());
 
@@ -886,7 +892,7 @@ TEST_P(DcSctpSocketParametrizedTest, ExpectHeartbeatToBeSent) {
 
   EXPECT_THAT(a.cb.ConsumeSentPacket(), IsEmpty());
 
-  AdvanceTime(a, *z, a.options.heartbeat_interval);
+  AdvanceTime(a, *z, a.options.heartbeat_interval.ToTimeDelta());
 
   std::vector<uint8_t> packet = a.cb.ConsumeSentPacket();
   
@@ -920,7 +926,7 @@ TEST_P(DcSctpSocketParametrizedTest,
 
   for (int i = 0; i < *a.options.max_retransmissions; ++i) {
     RTC_LOG(LS_INFO) << "Letting HEARTBEAT interval timer expire - sending...";
-    AdvanceTime(a, *z, time_to_next_hearbeat);
+    AdvanceTime(a, *z, time_to_next_hearbeat.ToTimeDelta());
 
     
     ASSERT_HAS_VALUE_AND_ASSIGN(
@@ -929,20 +935,20 @@ TEST_P(DcSctpSocketParametrizedTest,
     EXPECT_EQ(hb_packet.descriptors()[0].type, HeartbeatRequestChunk::kType);
 
     RTC_LOG(LS_INFO) << "Letting the heartbeat expire.";
-    AdvanceTime(a, *z, DurationMs(1000));
+    AdvanceTime(a, *z, TimeDelta::Millis(1000));
 
     time_to_next_hearbeat = a.options.heartbeat_interval - DurationMs(1000);
   }
 
   RTC_LOG(LS_INFO) << "Letting HEARTBEAT interval timer expire - sending...";
-  AdvanceTime(a, *z, time_to_next_hearbeat);
+  AdvanceTime(a, *z, time_to_next_hearbeat.ToTimeDelta());
 
   
   EXPECT_THAT(a.cb.ConsumeSentPacket(), Not(IsEmpty()));
 
   EXPECT_CALL(a.cb, OnAborted).Times(1);
   
-  AdvanceTime(a, *z, DurationMs(1000));
+  AdvanceTime(a, *z, TimeDelta::Millis(1000));
 
   z = MaybeHandoverSocket(std::move(z));
 }
@@ -959,7 +965,7 @@ TEST_P(DcSctpSocketParametrizedTest, RecoversAfterASuccessfulAck) {
   
   z->socket.Close();
 
-  DurationMs time_to_next_hearbeat = a.options.heartbeat_interval;
+  TimeDelta time_to_next_hearbeat = a.options.heartbeat_interval.ToTimeDelta();
 
   for (int i = 0; i < *a.options.max_retransmissions; ++i) {
     AdvanceTime(a, *z, time_to_next_hearbeat);
@@ -968,9 +974,10 @@ TEST_P(DcSctpSocketParametrizedTest, RecoversAfterASuccessfulAck) {
     a.cb.ConsumeSentPacket();
 
     RTC_LOG(LS_INFO) << "Letting the heartbeat expire.";
-    AdvanceTime(a, *z, DurationMs(1000));
+    AdvanceTime(a, *z, TimeDelta::Seconds(1));
 
-    time_to_next_hearbeat = a.options.heartbeat_interval - DurationMs(1000);
+    time_to_next_hearbeat =
+        a.options.heartbeat_interval.ToTimeDelta() - TimeDelta::Seconds(1);
   }
 
   RTC_LOG(LS_INFO) << "Getting the last heartbeat - and acking it";
@@ -990,7 +997,7 @@ TEST_P(DcSctpSocketParametrizedTest, RecoversAfterASuccessfulAck) {
 
   
   EXPECT_CALL(a.cb, OnAborted).Times(0);
-  AdvanceTime(a, *z, DurationMs(1000));
+  AdvanceTime(a, *z, TimeDelta::Seconds(1));
 
   EXPECT_THAT(a.cb.ConsumeSentPacket(), IsEmpty());
 
@@ -1245,7 +1252,7 @@ TEST_P(DcSctpSocketParametrizedTest, SendMessageWithLimitedRtx) {
   a.socket.ReceivePacket(z->cb.ConsumeSentPacket());
 
   
-  AdvanceTime(a, *z, a.options.delayed_ack_max_timeout);
+  AdvanceTime(a, *z, a.options.delayed_ack_max_timeout.ToTimeDelta());
 
   
   a.socket.ReceivePacket(z->cb.ConsumeSentPacket());
@@ -1254,7 +1261,7 @@ TEST_P(DcSctpSocketParametrizedTest, SendMessageWithLimitedRtx) {
   
   
   
-  AdvanceTime(a, *z, a.options.rto_initial);
+  AdvanceTime(a, *z, a.options.rto_initial.ToTimeDelta());
 
   
   
@@ -1352,7 +1359,7 @@ TEST_P(DcSctpSocketParametrizedTest, SendManyFragmentedMessagesWithLimitedRtx) {
   ExchangeMessages(a, *z);
 
   
-  AdvanceTime(a, *z, a.options.rto_initial);
+  AdvanceTime(a, *z, a.options.rto_initial.ToTimeDelta());
 
   ExchangeMessages(a, *z);
 
@@ -1484,7 +1491,7 @@ TEST(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
           .Build());
 
   
-  AdvanceTime(a, z, z.options.rto_initial);
+  AdvanceTime(a, z, z.options.rto_initial.ToTimeDelta());
 
   EXPECT_THAT(z.cb.ConsumeSentPacket(),
               HasChunks(ElementsAre(IsSack(
@@ -1528,7 +1535,7 @@ TEST(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
           .Build());
 
   
-  AdvanceTime(a, z, z.options.rto_initial);
+  AdvanceTime(a, z, z.options.rto_initial.ToTimeDelta());
 
   EXPECT_THAT(z.cb.ConsumeSentPacket(),
               HasChunks(ElementsAre(IsSack(
@@ -1562,13 +1569,13 @@ TEST_P(DcSctpSocketParametrizedTest, SendsMessagesWithLowLifetime) {
   z = MaybeHandoverSocket(std::move(z));
 
   
-  TimeMs now(0);
-  EXPECT_CALL(a.cb, TimeMillis).WillRepeatedly([&]() {
-    now += DurationMs(3);
+  Timestamp now = Timestamp::Zero();
+  EXPECT_CALL(a.cb, Now).WillRepeatedly([&]() {
+    now += TimeDelta::Millis(3);
     return now;
   });
-  EXPECT_CALL(z->cb, TimeMillis).WillRepeatedly([&]() {
-    now += DurationMs(3);
+  EXPECT_CALL(z->cb, Now).WillRepeatedly([&]() {
+    now += TimeDelta::Millis(3);
     return now;
   });
 
@@ -1592,7 +1599,7 @@ TEST_P(DcSctpSocketParametrizedTest, SendsMessagesWithLowLifetime) {
   EXPECT_FALSE(z->cb.ConsumeReceivedMessage().has_value());
 
   
-  EXPECT_GE(*now, kIterations * 2);
+  EXPECT_GE(now.ms(), kIterations * 2);
 
   MaybeHandoverSocketAndSendMessage(a, std::move(z));
 }
@@ -1614,13 +1621,13 @@ TEST_P(DcSctpSocketParametrizedTest,
   lifetime_1.lifetime = DurationMs(1);
 
   
-  TimeMs now(0);
-  EXPECT_CALL(a.cb, TimeMillis).WillRepeatedly([&]() {
-    now += DurationMs(3);
+  Timestamp now = Timestamp::Zero();
+  EXPECT_CALL(a.cb, Now).WillRepeatedly([&]() {
+    now += TimeDelta::Millis(3);
     return now;
   });
-  EXPECT_CALL(z->cb, TimeMillis).WillRepeatedly([&]() {
-    now += DurationMs(3);
+  EXPECT_CALL(z->cb, Now).WillRepeatedly([&]() {
+    now += TimeDelta::Millis(3);
     return now;
   });
 
@@ -1944,7 +1951,7 @@ TEST(DcSctpSocketTest, RxAndTxPacketMetricsIncrease) {
   EXPECT_EQ(z.socket.GetMetrics()->rx_messages_count, 2u);
 
   
-  AdvanceTime(a, z, a.options.delayed_ack_max_timeout);
+  AdvanceTime(a, z, a.options.delayed_ack_max_timeout.ToTimeDelta());
 
   a.socket.ReceivePacket(z.cb.ConsumeSentPacket());  
   EXPECT_EQ(a.socket.GetMetrics()->unack_data_count, 0u);
@@ -1981,7 +1988,7 @@ TEST(DcSctpSocketTest, RetransmissionMetricsAreSetForNormalRetransmit) {
   a.socket.Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
 
   a.cb.ConsumeSentPacket();
-  AdvanceTime(a, z, a.options.rto_initial);
+  AdvanceTime(a, z, a.options.rto_initial.ToTimeDelta());
   ExchangeMessages(a, z);
 
   EXPECT_EQ(a.socket.GetMetrics()->rtx_packets_count, 1u);
@@ -2185,7 +2192,7 @@ TEST_P(DcSctpSocketParametrizedTest, CanLoseFirstOrderedMessage) {
 
   
   a.cb.ConsumeSentPacket();
-  AdvanceTime(a, *z, a.options.rto_initial);
+  AdvanceTime(a, *z, a.options.rto_initial.ToTimeDelta());
   ExchangeMessages(a, *z);
 
   
@@ -2574,7 +2581,7 @@ TEST(DcSctpSocketTest, LifecycleEventsAreGeneratedForAckedMessages) {
   EXPECT_CALL(a.cb, OnLifecycleEnd(LifecycleId(42)));
   ExchangeMessages(a, z);
   
-  AdvanceTime(a, z, a.options.delayed_ack_max_timeout);
+  AdvanceTime(a, z, a.options.delayed_ack_max_timeout.ToTimeDelta());
   ExchangeMessages(a, z);
 
   EXPECT_THAT(GetReceivedMessagePpids(z), ElementsAre(101, 102, 103));
@@ -2617,15 +2624,15 @@ TEST(DcSctpSocketTest, LifecycleEventsForFailMaxRetransmissions) {
   ExchangeMessages(a, z);
 
   
-  AdvanceTime(a, z, a.options.delayed_ack_max_timeout);
+  AdvanceTime(a, z, a.options.delayed_ack_max_timeout.ToTimeDelta());
   ExchangeMessages(a, z);
 
   
-  AdvanceTime(a, z, a.options.rto_initial);
+  AdvanceTime(a, z, a.options.rto_initial.ToTimeDelta());
   ExchangeMessages(a, z);
 
   
-  AdvanceTime(a, z, a.options.delayed_ack_max_timeout);
+  AdvanceTime(a, z, a.options.delayed_ack_max_timeout.ToTimeDelta());
   ExchangeMessages(a, z);
 
   EXPECT_THAT(GetReceivedMessagePpids(z), ElementsAre(51, 53));
@@ -2672,7 +2679,7 @@ TEST(DcSctpSocketTest, LifecycleEventsForExpiredMessageWithLifetimeLimit) {
                     .lifecycle_id = LifecycleId(1),
                 });
 
-  AdvanceTime(a, z, DurationMs(200));
+  AdvanceTime(a, z, TimeDelta::Millis(200));
 
   EXPECT_CALL(a.cb, OnLifecycleMessageExpired(LifecycleId(1),
                                               false));
@@ -2769,7 +2776,7 @@ TEST(DcSctpSocketTest, ResetStreamsDeferred) {
 
   
   
-  AdvanceTime(a, z, a.options.rto_initial);
+  AdvanceTime(a, z, a.options.rto_initial.ToTimeDelta());
 
   auto reconfig2 = a.cb.ConsumeSentPacket();
   EXPECT_THAT(reconfig2, HasChunks(ElementsAre(IsReConfig(HasParameters(
@@ -3018,7 +3025,7 @@ TEST(DcSctpSocketTest, HandlesForwardTsnOutOfOrderWithStreamResetting) {
               HasChunks(ElementsAre(
                   IsDataChunk(AllOf(Property(&DataChunk::ssn, SSN(0)),
                                     Property(&DataChunk::ppid, PPID(51)))))));
-  AdvanceTime(a, z, a.options.rto_initial);
+  AdvanceTime(a, z, a.options.rto_initial.ToTimeDelta());
 
   auto fwd_tsn_packet = a.cb.ConsumeSentPacket();
   EXPECT_THAT(fwd_tsn_packet,

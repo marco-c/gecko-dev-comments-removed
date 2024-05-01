@@ -326,7 +326,9 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual TimeMs TimeMillis() = 0;
+  
+  
+  virtual TimeMs TimeMillis() { return TimeMs(0); }
 
   
   

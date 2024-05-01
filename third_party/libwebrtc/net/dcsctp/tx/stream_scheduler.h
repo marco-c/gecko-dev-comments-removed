@@ -87,7 +87,7 @@ class StreamScheduler {
     
     
     
-    virtual absl::optional<SendQueue::DataToSend> Produce(TimeMs now,
+    virtual absl::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
                                                           size_t max_size) = 0;
 
     
@@ -132,7 +132,8 @@ class StreamScheduler {
 
     
     
-    absl::optional<SendQueue::DataToSend> Produce(TimeMs now, size_t max_size);
+    absl::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
+                                                  size_t max_size);
 
     void MakeActive(size_t bytes_to_send_next);
     void ForceMarkInactive();
@@ -180,7 +181,8 @@ class StreamScheduler {
   
   
   
-  absl::optional<SendQueue::DataToSend> Produce(TimeMs now, size_t max_size);
+  absl::optional<SendQueue::DataToSend> Produce(webrtc::Timestamp now,
+                                                size_t max_size);
 
   std::set<StreamID> ActiveStreamsForTesting() const;
 

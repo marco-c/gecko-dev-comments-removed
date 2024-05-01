@@ -71,6 +71,8 @@ std::unique_ptr<Timeout> CallbackDeferrer::CreateTimeout(
 
 TimeMs CallbackDeferrer::TimeMillis() {
   
+  RTC_DCHECK(false);
+  
   return underlying_.TimeMillis();
 }
 

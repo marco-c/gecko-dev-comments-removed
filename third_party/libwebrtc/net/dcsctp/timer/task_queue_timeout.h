@@ -15,6 +15,7 @@
 
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/timestamp.h"
 #include "net/dcsctp/public/timeout.h"
 
 namespace dcsctp {
@@ -74,13 +75,16 @@ class TaskQueueTimeoutFactory {
     rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> pending_task_safety_flag_;
     
     
-    TimeMs posted_task_expiration_ = TimeMs::InfiniteFuture();
+    webrtc::Timestamp posted_task_expiration_ =
+        webrtc::Timestamp::PlusInfinity();
     
     
-    TimeMs timeout_expiration_ = TimeMs::InfiniteFuture();
+    webrtc::Timestamp timeout_expiration_ = webrtc::Timestamp::PlusInfinity();
     
     TimeoutID timeout_id_ = TimeoutID(0);
   };
+
+  webrtc::Timestamp Now() { return webrtc::Timestamp::Millis(*get_time_()); }
 
   RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker thread_checker_;
   webrtc::TaskQueueBase& task_queue_;

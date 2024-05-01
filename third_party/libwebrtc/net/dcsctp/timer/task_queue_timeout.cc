@@ -14,6 +14,8 @@
 #include "rtc_base/logging.h"
 
 namespace dcsctp {
+using ::webrtc::TimeDelta;
+using ::webrtc::Timestamp;
 
 TaskQueueTimeoutFactory::TaskQueueTimeout::TaskQueueTimeout(
     TaskQueueTimeoutFactory& parent,
@@ -30,8 +32,8 @@ TaskQueueTimeoutFactory::TaskQueueTimeout::~TaskQueueTimeout() {
 void TaskQueueTimeoutFactory::TaskQueueTimeout::Start(DurationMs duration_ms,
                                                       TimeoutID timeout_id) {
   RTC_DCHECK_RUN_ON(&parent_.thread_checker_);
-  RTC_DCHECK(timeout_expiration_ == TimeMs::InfiniteFuture());
-  timeout_expiration_ = parent_.get_time_() + duration_ms;
+  RTC_DCHECK(timeout_expiration_.IsPlusInfinity());
+  timeout_expiration_ = parent_.Now() + duration_ms.ToTimeDelta();
   timeout_id_ = timeout_id;
 
   if (timeout_expiration_ >= posted_task_expiration_) {
@@ -43,7 +45,7 @@ void TaskQueueTimeoutFactory::TaskQueueTimeout::Start(DurationMs duration_ms,
     return;
   }
 
-  if (posted_task_expiration_ != TimeMs::InfiniteFuture()) {
+  if (!posted_task_expiration_.IsPlusInfinity()) {
     RTC_DLOG(LS_VERBOSE) << "New timeout duration is less than scheduled - "
                             "ghosting old delayed task.";
     
@@ -63,10 +65,10 @@ void TaskQueueTimeoutFactory::TaskQueueTimeout::Start(DurationMs duration_ms,
           [timeout_id, this]() {
             RTC_DLOG(LS_VERBOSE) << "Timout expired: " << timeout_id.value();
             RTC_DCHECK_RUN_ON(&parent_.thread_checker_);
-            RTC_DCHECK(posted_task_expiration_ != TimeMs::InfiniteFuture());
-            posted_task_expiration_ = TimeMs::InfiniteFuture();
+            RTC_DCHECK(!posted_task_expiration_.IsPlusInfinity());
+            posted_task_expiration_ = Timestamp::PlusInfinity();
 
-            if (timeout_expiration_ == TimeMs::InfiniteFuture()) {
+            if (timeout_expiration_.IsPlusInfinity()) {
               
             } else {
               
@@ -74,10 +76,10 @@ void TaskQueueTimeoutFactory::TaskQueueTimeout::Start(DurationMs duration_ms,
               
               
               
-              DurationMs remaining = timeout_expiration_ - parent_.get_time_();
-              timeout_expiration_ = TimeMs::InfiniteFuture();
-              if (*remaining > 0) {
-                Start(remaining, timeout_id_);
+              TimeDelta remaining = timeout_expiration_ - parent_.Now();
+              timeout_expiration_ = Timestamp::PlusInfinity();
+              if (remaining > TimeDelta::Zero()) {
+                Start(DurationMs(remaining.ms()), timeout_id_);
               } else {
                 
                 RTC_DLOG(LS_VERBOSE)
@@ -93,7 +95,7 @@ void TaskQueueTimeoutFactory::TaskQueueTimeout::Stop() {
   
   
   RTC_DCHECK_RUN_ON(&parent_.thread_checker_);
-  timeout_expiration_ = TimeMs::InfiniteFuture();
+  timeout_expiration_ = Timestamp::PlusInfinity();
 }
 
 }  

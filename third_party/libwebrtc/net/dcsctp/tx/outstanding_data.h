@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/units/timestamp.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/common/sequence_numbers.h"
 #include "net/dcsctp/packet/chunk/forward_tsn_chunk.h"
@@ -105,7 +106,7 @@ class OutstandingData {
 
   
   
-  void ExpireOutstandingChunks(TimeMs now);
+  void ExpireOutstandingChunks(webrtc::Timestamp now);
 
   bool empty() const { return outstanding_data_.empty(); }
 
@@ -131,9 +132,9 @@ class OutstandingData {
   absl::optional<UnwrappedTSN> Insert(
       OutgoingMessageId message_id,
       const Data& data,
-      TimeMs time_sent,
+      webrtc::Timestamp time_sent,
       MaxRetransmits max_retransmissions = MaxRetransmits::NoLimit(),
-      TimeMs expires_at = TimeMs::InfiniteFuture(),
+      webrtc::Timestamp expires_at = webrtc::Timestamp::PlusInfinity(),
       LifecycleId lifecycle_id = LifecycleId::NotSet());
 
   
@@ -148,7 +149,7 @@ class OutstandingData {
   
   
   
-  webrtc::TimeDelta MeasureRTT(TimeMs now, UnwrappedTSN tsn) const;
+  webrtc::TimeDelta MeasureRTT(webrtc::Timestamp now, UnwrappedTSN tsn) const;
 
   
   
@@ -179,9 +180,9 @@ class OutstandingData {
 
     Item(OutgoingMessageId message_id,
          Data data,
-         TimeMs time_sent,
+         webrtc::Timestamp time_sent,
          MaxRetransmits max_retransmissions,
-         TimeMs expires_at,
+         webrtc::Timestamp expires_at,
          LifecycleId lifecycle_id)
         : message_id_(message_id),
           time_sent_(time_sent),
@@ -195,7 +196,7 @@ class OutstandingData {
 
     OutgoingMessageId message_id() const { return message_id_; }
 
-    TimeMs time_sent() const { return time_sent_; }
+    webrtc::Timestamp time_sent() const { return time_sent_; }
 
     const Data& data() const { return data_; }
 
@@ -229,7 +230,7 @@ class OutstandingData {
 
     
     
-    bool has_expired(TimeMs now) const;
+    bool has_expired(webrtc::Timestamp now) const;
 
     LifecycleId lifecycle_id() const { return lifecycle_id_; }
 
@@ -258,7 +259,7 @@ class OutstandingData {
     const OutgoingMessageId message_id_;
 
     
-    const TimeMs time_sent_;
+    const webrtc::Timestamp time_sent_;
     
     
     
@@ -278,7 +279,7 @@ class OutstandingData {
 
     
     
-    const TimeMs expires_at_;
+    const webrtc::Timestamp expires_at_;
 
     
     const LifecycleId lifecycle_id_;

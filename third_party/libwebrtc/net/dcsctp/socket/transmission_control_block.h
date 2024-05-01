@@ -108,7 +108,7 @@ class TransmissionControlBlock : public Context {
   void MaybeSendSack();
 
   
-  void MaybeSendForwardTsn(SctpPacket::Builder& builder, TimeMs now);
+  void MaybeSendForwardTsn(SctpPacket::Builder& builder, webrtc::Timestamp now);
 
   
   
@@ -129,12 +129,12 @@ class TransmissionControlBlock : public Context {
   
   
   
-  void SendBufferedPackets(SctpPacket::Builder& builder, TimeMs now);
+  void SendBufferedPackets(SctpPacket::Builder& builder, webrtc::Timestamp now);
 
   
   
   
-  void SendBufferedPackets(TimeMs now) {
+  void SendBufferedPackets(webrtc::Timestamp now) {
     SctpPacket::Builder builder(peer_verification_tag_, options_);
     SendBufferedPackets(builder, now);
   }
@@ -172,7 +172,7 @@ class TransmissionControlBlock : public Context {
   const std::function<bool()> is_connection_established_;
   PacketSender& packet_sender_;
   
-  TimeMs limit_forward_tsn_until_ = TimeMs(0);
+  webrtc::Timestamp limit_forward_tsn_until_ = webrtc::Timestamp::Zero();
 
   RetransmissionTimeout rto_;
   RetransmissionErrorCounter tx_error_counter_;
