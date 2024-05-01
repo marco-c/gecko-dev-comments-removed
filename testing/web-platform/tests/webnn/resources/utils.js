@@ -1,7 +1,5 @@
 'use strict';
 
-const ExecutionArray = ['sync', 'async'];
-
 
 const TypedArrayDict = {
   
@@ -810,24 +808,6 @@ const buildGraph = (operationName, builder, resources, buildFunc) => {
 
 
 
-const runSync = (operationName, context, builder, resources, buildFunc) => {
-  
-  const [namedOutputOperands, inputs, outputs] = buildGraph(operationName, builder, resources, buildFunc);
-  
-  const graph = builder.buildSync(namedOutputOperands);
-  
-  context.computeSync(graph, inputs, outputs);
-  checkResults(operationName, namedOutputOperands, outputs, resources);
-};
-
-
-
-
-
-
-
-
-
 const run = async (operationName, context, builder, resources, buildFunc) => {
   
   const [namedOutputOperands, inputs, outputs] = buildGraph(operationName, builder, resources, buildFunc);
@@ -852,41 +832,18 @@ const testWebNNOperation = (operationName, buildFunc, deviceType = 'cpu') => {
     operationNameArray = operationName;
   }
 
-  ExecutionArray.forEach(executionType => {
-    const isSync = executionType === 'sync';
-    if (self.GLOBAL.isWindow() && isSync) {
-      return;
-    }
-    let context;
-    let builder;
-    if (isSync) {
-      
-      operationNameArray.forEach((subOperationName) => {
-        const tests = loadTests(subOperationName);
-        setup(() => {
-          context = navigator.ml.createContextSync({deviceType});
-          builder = new MLGraphBuilder(context);
-        });
-        for (const subTest of tests) {
-          test(() => {
-            runSync(subOperationName, context, builder, subTest, buildFunc);
-          }, `${subTest.name} / ${executionType}`);
-        }
-      });
-    } else {
-      
-      operationNameArray.forEach((subOperationName) => {
-        const tests = loadTests(subOperationName);
-        promise_setup(async () => {
-          context = await navigator.ml.createContext({deviceType});
-          builder = new MLGraphBuilder(context);
-        });
-        for (const subTest of tests) {
-          promise_test(async () => {
-            await run(subOperationName, context, builder, subTest, buildFunc);
-          }, `${subTest.name} / ${executionType}`);
-        }
-      });
+  let context;
+  let builder;
+  operationNameArray.forEach((subOperationName) => {
+    const tests = loadTests(subOperationName);
+    promise_setup(async () => {
+      context = await navigator.ml.createContext({deviceType});
+      builder = new MLGraphBuilder(context);
+    });
+    for (const subTest of tests) {
+      promise_test(async () => {
+        await run(subOperationName, context, builder, subTest, buildFunc);
+      }, `${subTest.name}`);
     }
   });
 };
