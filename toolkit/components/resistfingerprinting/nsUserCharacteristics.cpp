@@ -129,6 +129,7 @@ const int kSubmissionSchema = 0;
 void nsUserCharacteristics::MaybeSubmitPing() {
   MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Debug,
           ("In MaybeSubmitPing()"));
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   
 
@@ -212,6 +213,7 @@ const auto* const kUUIDPref =
 nsresult nsUserCharacteristics::PopulateData(bool aTesting ) {
   MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Warning,
           ("Populating Data"));
+  MOZ_ASSERT(XRE_IsParentProcess());
   mozilla::glean::characteristics::submission_schema.Set(kSubmissionSchema);
 
   nsAutoCString uuidString;
@@ -239,6 +241,9 @@ nsresult nsUserCharacteristics::PopulateData(bool aTesting ) {
   PopulateMissingFonts();
   PopulateCSSProperties();
   PopulateScreenProperties();
+
+  mozilla::glean::characteristics::target_frame_rate.Set(
+      gfxPlatform::TargetFrameRate());
 
   int32_t processorCount = 0;
 #if defined(XP_MACOSX)
