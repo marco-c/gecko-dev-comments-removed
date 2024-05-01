@@ -56,10 +56,6 @@
 #include "common/memory_allocator.h"
 #include "google_breakpad/common/minidump_format.h"
 
-#if defined(XP_LINUX)
-#  include "linux_utils.h"
-#endif 
-
 namespace google_breakpad {
 
 
@@ -217,12 +213,11 @@ class LinuxDumper {
   
   
   
-  void GetMappingEffectiveNamePathAndVersion(const MappingInfo& mapping,
+  void GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
                                       char* file_path,
                                       size_t file_path_size,
                                       char* file_name,
-                                      size_t file_name_size,
-                                      VersionComponents* version);
+                                      size_t file_name_size);
 
  protected:
   bool ReadAuxv();
