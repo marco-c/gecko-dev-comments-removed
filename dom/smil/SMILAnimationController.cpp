@@ -48,11 +48,11 @@ SMILAnimationController::SMILAnimationController(Document* aDoc)
 }
 
 SMILAnimationController::~SMILAnimationController() {
-  NS_ASSERTION(mAnimationElementTable.Count() == 0,
+  NS_ASSERTION(mAnimationElementTable.IsEmpty(),
                "Animation controller shouldn't be tracking any animation"
                " elements when it dies");
-  NS_ASSERTION(!mRegisteredWithRefreshDriver,
-               "Leaving stale entry in refresh driver's observer list");
+  MOZ_RELEASE_ASSERT(!mRegisteredWithRefreshDriver,
+                     "Leaving stale entry in refresh driver's observer list");
 }
 
 void SMILAnimationController::Disconnect() {
@@ -183,9 +183,8 @@ void SMILAnimationController::Traverse(
     nsCycleCollectionTraversalCallback* aCallback) {
   
   if (mLastCompositorTable) {
-    for (auto iter = mLastCompositorTable->Iter(); !iter.Done(); iter.Next()) {
-      SMILCompositor* compositor = iter.Get();
-      compositor->Traverse(aCallback);
+    for (SMILCompositor& compositor : *mLastCompositorTable) {
+      compositor.Traverse(aCallback);
     }
   }
 }
@@ -339,14 +338,20 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
   if (mLastCompositorTable) {
     
-    for (auto iter = currentCompositorTable->Iter(); !iter.Done();
-         iter.Next()) {
-      SMILCompositor* compositor = iter.Get();
+    for (SMILCompositor& compositor : *currentCompositorTable) {
       SMILCompositor* lastCompositor =
-          mLastCompositorTable->GetEntry(compositor->GetKey());
+          mLastCompositorTable->GetEntry(compositor.GetKey());
 
       if (lastCompositor) {
-        compositor->StealCachedBaseValue(lastCompositor);
+        compositor.StealCachedBaseValue(lastCompositor);
+        if (!lastCompositor->HasSameNumberOfAnimationFunctionsAs(compositor)) {
+          
+          
+          
+          
+          
+          compositor.ToggleForceCompositing();
+        }
       }
     }
 
@@ -359,13 +364,13 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
 
     
     
-    for (auto iter = mLastCompositorTable->Iter(); !iter.Done(); iter.Next()) {
-      iter.Get()->ClearAnimationEffects();
+    for (SMILCompositor& compositor : *mLastCompositorTable) {
+      compositor.ClearAnimationEffects();
     }
   }
 
   
-  if (currentCompositorTable->Count() == 0) {
+  if (currentCompositorTable->IsEmpty()) {
     mLastCompositorTable = nullptr;
     return;
   }
@@ -385,8 +390,8 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
   
   bool mightHavePendingStyleUpdates = false;
-  for (auto iter = currentCompositorTable->Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->ComposeAttribute(mightHavePendingStyleUpdates);
+  for (auto& compositor : *currentCompositorTable) {
+    compositor.ComposeAttribute(mightHavePendingStyleUpdates);
   }
 
   
@@ -458,15 +463,13 @@ void SMILAnimationController::DoMilestoneSamples() {
       break;
     }
 
-    nsTArray<RefPtr<mozilla::dom::SVGAnimationElement>> elements;
+    nsTArray<RefPtr<dom::SVGAnimationElement>> elements;
     for (SMILTimeContainer* container : mChildContainerTable.Keys()) {
       if (container->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN)) {
         continue;
       }
       container->PopMilestoneElementsAtMilestone(nextMilestone, elements);
     }
-
-    uint32_t length = elements.Length();
 
     
     
@@ -479,8 +482,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     
     sampleTime = std::max(nextMilestone.mTime, sampleTime);
 
-    for (uint32_t i = 0; i < length; ++i) {
-      SVGAnimationElement* elem = elements[i].get();
+    for (RefPtr<dom::SVGAnimationElement>& elem : elements) {
       MOZ_ASSERT(elem, "nullptr animation element in list");
       SMILTimeContainer* container = elem->GetTimeContainer();
       if (!container)
@@ -548,6 +550,7 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     
     
     SMILCompositor* result = aCompositorTable->PutEntry(key);
+    aStyleFlushNeeded |= func.ValueNeedsReparsingEverySample();
     result->AddAnimationFunction(&func);
 
   } else if (func.HasChanged()) {
@@ -557,6 +560,7 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     
     
     SMILCompositor* result = aCompositorTable->PutEntry(key);
+    aStyleFlushNeeded |= func.ValueNeedsReparsingEverySample();
     result->ToggleForceCompositing();
 
     
@@ -564,7 +568,6 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     
     func.ClearHasChanged();
   }
-  aStyleFlushNeeded |= func.ValueNeedsReparsingEverySample();
 }
 
 static inline bool IsTransformAttribute(int32_t aNamespaceID,
