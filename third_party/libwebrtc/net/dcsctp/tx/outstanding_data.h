@@ -10,6 +10,7 @@
 #ifndef NET_DCSCTP_TX_OUTSTANDING_DATA_H_
 #define NET_DCSCTP_TX_OUTSTANDING_DATA_H_
 
+#include <deque>
 #include <map>
 #include <set>
 #include <utility>
@@ -290,6 +291,9 @@ class OutstandingData {
   
   size_t GetSerializedChunkSize(const Data& data) const;
 
+  Item& GetItem(UnwrappedTSN tsn);
+  const Item& GetItem(UnwrappedTSN tsn) const;
+
   
   
   
@@ -313,7 +317,7 @@ class OutstandingData {
 
   
   
-  void AckChunk(AckInfo& ack_info, std::map<UnwrappedTSN, Item>::iterator iter);
+  void AckChunk(AckInfo& ack_info, UnwrappedTSN tsn, Item& item);
 
   
   
@@ -346,7 +350,10 @@ class OutstandingData {
   
   std::function<bool(StreamID, OutgoingMessageId)> discard_from_send_queue_;
 
-  std::map<UnwrappedTSN, Item> outstanding_data_;
+  
+  
+  
+  std::deque<Item> outstanding_data_;
   
   size_t outstanding_bytes_ = 0;
   
