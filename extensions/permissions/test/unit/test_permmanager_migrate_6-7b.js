@@ -104,7 +104,7 @@ add_task(function test() {
     ["http://foo.com^inBrowser=1", "A", 2, 0, 0, 0],
   ];
 
-  let found = expected.map(it => 0);
+  let found = expected.map(() => 0);
 
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
