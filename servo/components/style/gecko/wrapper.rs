@@ -865,7 +865,6 @@ impl<'le> GeckoElement<'le> {
         after_change_style: &ComputedValues,
         existing_transitions: &FxHashMap<OwnedPropertyDeclarationId, Arc<AnimationValue>>,
     ) -> bool {
-        use crate::values::animated::{Animate, Procedure};
         debug_assert!(!property_declaration_id.is_logical());
 
         
@@ -882,20 +881,17 @@ impl<'le> GeckoElement<'le> {
             return ***existing != after_value;
         }
 
+        if combined_duration_seconds <= 0.0f32 {
+            return false;
+        }
+
         let from =
             AnimationValue::from_computed_values(property_declaration_id, before_change_style);
         let to = AnimationValue::from_computed_values(property_declaration_id, after_change_style);
 
         debug_assert_eq!(to.is_some(), from.is_some());
 
-        combined_duration_seconds > 0.0f32 &&
-            from != to &&
-            from.unwrap()
-                .animate(
-                    to.as_ref().unwrap(),
-                    Procedure::Interpolate { progress: 0.5 },
-                )
-                .is_ok()
+        from != to
     }
 
     
