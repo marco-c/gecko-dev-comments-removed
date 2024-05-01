@@ -8,6 +8,11 @@
 
 add_task(async function openDebuggerFirst() {
   
+  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
+    return;
+  }
+
+  
   await pushPref("dom.max_script_run_time", 1);
   
   await pushPref("dom.max_script_run_time.require_critical_input", false);
@@ -41,6 +46,11 @@ add_task(async function openDebuggerFirst() {
 });
 
 add_task(async function openDebuggerFromDialog() {
+  
+  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
+    return;
+  }
+
   const tab = await addTab(EXAMPLE_URL + "doc-slow-script.html");
 
   const alert = BrowserTestUtils.waitForGlobalNotificationBar(

@@ -17,20 +17,10 @@ const {
 } = SessionDataHelpers;
 
 
+
 const SUPPORTED_OPTIONS = {
   
-  
-  shouldPauseOnDebuggerStatement: true,
-  
-  pauseOnExceptions: true,
-  
   ignoreCaughtExceptions: true,
-  
-  shouldIncludeSavedFrames: true,
-  
-  shouldIncludeAsyncLiveFrames: true,
-  
-  skipBreakpoints: true,
   
   logEventBreakpoints: true,
   
@@ -38,8 +28,22 @@ const SUPPORTED_OPTIONS = {
   observeAsmJS: true,
   observeWasm: true,
   
+  pauseOnExceptions: true,
+  
+  pauseOverlay: true,
+  
   pauseWorkersUntilAttach: true,
+  
+  shouldIncludeAsyncLiveFrames: true,
+  
+  shouldIncludeSavedFrames: true,
+  
+  
+  shouldPauseOnDebuggerStatement: true,
+  
+  skipBreakpoints: true,
 };
+
 
 
 
