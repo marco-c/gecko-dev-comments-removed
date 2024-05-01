@@ -56,7 +56,7 @@ using FrontendContext = js::FrontendContext;
 
 
 
-struct InstantiationStorage {
+struct JS_PUBLIC_API InstantiationStorage {
  private:
   
   
