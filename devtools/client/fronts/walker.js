@@ -148,6 +148,18 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     return response.node;
   }
 
+  async getIdrefNode(queryNode, id) {
+    
+    
+    if (!this.traits.hasGetIdrefNode) {
+      const doc = await this.document(queryNode);
+      return this.querySelector(doc, "#" + id);
+    }
+
+    const response = await super.getIdrefNode(queryNode, id);
+    return response.node;
+  }
+
   async getNodeActorFromWindowID(windowID) {
     const response = await super.getNodeActorFromWindowID(windowID);
     return response ? response.node : null;

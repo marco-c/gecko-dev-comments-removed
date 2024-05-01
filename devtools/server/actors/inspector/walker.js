@@ -339,7 +339,11 @@ class WalkerActor extends Actor {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
-      traits: {},
+      traits: {
+        
+        
+        hasGetIdrefNode: true,
+      },
     };
   }
 
@@ -1065,6 +1069,32 @@ class WalkerActor extends Actor {
     }
 
     return new NodeListActor(this, nodeList);
+  }
+
+  
+
+
+
+
+
+
+  getIdrefNode(baseNode, id) {
+    if (isNodeDead(baseNode)) {
+      return {};
+    }
+
+    
+    const rootNode = baseNode.rawNode.getRootNode({ composed: false });
+    if (!rootNode) {
+      return {};
+    }
+
+    const node = rootNode.getElementById(id);
+    if (!node) {
+      return {};
+    }
+
+    return this.attachElement(node);
   }
 
   
