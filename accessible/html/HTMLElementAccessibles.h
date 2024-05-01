@@ -138,6 +138,23 @@ class HTMLHeaderOrFooterAccessible : public HyperTextAccessible {
 
 
 
+class HTMLAsideAccessible : public HyperTextAccessible {
+ public:
+  HTMLAsideAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessible(aContent, aDoc) {}
+
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLAsideAccessible, HyperTextAccessible)
+
+  
+  virtual a11y::role NativeRole() const override;
+
+ protected:
+  virtual ~HTMLAsideAccessible() = default;
+};
+
+
+
+
 class HTMLSectionAccessible : public HyperTextAccessible {
  public:
   HTMLSectionAccessible(nsIContent* aContent, DocAccessible* aDoc)
