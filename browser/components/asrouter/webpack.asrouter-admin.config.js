@@ -25,7 +25,7 @@ module.exports = Object.assign({}, config(), {
   plugins: [new webpack.BannerPlugin(banner)],
   
   resolve: {
-    extensions: [".js", ".jsx"],
+    extensions: [".js", ".jsx", ".mjs"],
     alias: {
       newtab: absolute("../newtab"),
       common: absolute("../newtab/common"),

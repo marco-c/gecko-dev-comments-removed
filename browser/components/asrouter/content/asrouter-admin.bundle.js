@@ -10,14 +10,17 @@ var ASRouterAdminRenderUtils;
  	var __webpack_modules__ = ([
 ,
 
- ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "ASRouterUtils": () => ( ASRouterUtils)
  });
- var modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_Actions_sys_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
+ var _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var _newtab_common_Actions_sys_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
+
+
+
 
 
 
@@ -26,91 +29,77 @@ __webpack_require__.r(__webpack_exports__);
 
 const ASRouterUtils = {
   addListener(listener) {
-    if (__webpack_require__.g.ASRouterAddParentListener) {
-      __webpack_require__.g.ASRouterAddParentListener(listener);
+    if (globalThis.ASRouterAddParentListener) {
+      globalThis.ASRouterAddParentListener(listener);
     }
   },
   removeListener(listener) {
-    if (__webpack_require__.g.ASRouterRemoveParentListener) {
-      __webpack_require__.g.ASRouterRemoveParentListener(listener);
+    if (globalThis.ASRouterRemoveParentListener) {
+      globalThis.ASRouterRemoveParentListener(listener);
     }
   },
   sendMessage(action) {
-    if (__webpack_require__.g.ASRouterMessage) {
-      return __webpack_require__.g.ASRouterMessage(action);
+    if (globalThis.ASRouterMessage) {
+      return globalThis.ASRouterMessage(action);
     }
     throw new Error(`Unexpected call:\n${JSON.stringify(action, null, 3)}`);
   },
   blockById(id, options) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.BLOCK_MESSAGE_BY_ID,
-      data: {
-        id,
-        ...options
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.BLOCK_MESSAGE_BY_ID,
+      data: { id, ...options },
     });
   },
   modifyMessageJson(content) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.MODIFY_MESSAGE_JSON,
-      data: {
-        content
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.MODIFY_MESSAGE_JSON,
+      data: { content },
     });
   },
   executeAction(button_action) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.USER_ACTION,
-      data: button_action
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.USER_ACTION,
+      data: button_action,
     });
   },
   unblockById(id) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.UNBLOCK_MESSAGE_BY_ID,
-      data: {
-        id
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.UNBLOCK_MESSAGE_BY_ID,
+      data: { id },
     });
   },
   blockBundle(bundle) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.BLOCK_BUNDLE,
-      data: {
-        bundle
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.BLOCK_BUNDLE,
+      data: { bundle },
     });
   },
   unblockBundle(bundle) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.UNBLOCK_BUNDLE,
-      data: {
-        bundle
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.UNBLOCK_BUNDLE,
+      data: { bundle },
     });
   },
   overrideMessage(id) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.OVERRIDE_MESSAGE,
-      data: {
-        id
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.OVERRIDE_MESSAGE,
+      data: { id },
     });
   },
   editState(key, value) {
     return ASRouterUtils.sendMessage({
-      type: modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.EDIT_STATE,
-      data: {
-        [key]: value
-      }
+      type: _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__.MESSAGE_TYPE_HASH.EDIT_STATE,
+      data: { [key]: value },
     });
   },
   sendTelemetry(ping) {
-    return ASRouterUtils.sendMessage(common_Actions_sys_mjs__WEBPACK_IMPORTED_MODULE_1__.actionCreators.ASRouterUserEvent(ping));
+    return ASRouterUtils.sendMessage(_newtab_common_Actions_sys_mjs__WEBPACK_IMPORTED_MODULE_1__.actionCreators.ASRouterUserEvent(ping));
   },
   getPreviewEndpoint() {
     return null;
-  }
+  },
 };
+
 
  }),
 
