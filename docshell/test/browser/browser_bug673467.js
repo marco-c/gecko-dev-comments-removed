@@ -32,7 +32,7 @@ function test() {
             let iframe = content.document.getElementById("iframe");
             iframe.addEventListener(
               "load",
-              function listener(aEvent) {
+              function listener() {
                 
                 if (!iframe.src) {
                   return;

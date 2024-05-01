@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=680257
+-->
 <head>
   <title>Test for Bug 680257</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -20,7 +20,7 @@ var popup = window.open("file_bug680257.html");
 var gTestContinuation = null;
 function continueAsync() {
   popup.addEventListener("hashchange",
-    function(e) { gTestContinuation.next(); }, { once: true });
+    function() { gTestContinuation.next(); }, { once: true });
 }
 
 // The popup will call into popupLoaded() once it loads.

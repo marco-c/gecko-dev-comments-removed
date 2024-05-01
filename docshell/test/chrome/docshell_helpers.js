@@ -269,11 +269,7 @@ function doPageNavigation(params) {
   if (cleanup) {
     
     
-    Services.ww.registerNotification(function windowClosed(
-      subject,
-      topic,
-      data
-    ) {
+    Services.ww.registerNotification(function windowClosed(subject, topic) {
       if (topic == "domwindowclosed" && subject == window) {
         Services.ww.unregisterNotification(windowClosed);
         cleanup();
@@ -596,7 +592,7 @@ function finish() {
   let SimpleTest = opener.wrappedJSObject.SimpleTest;
 
   
-  Services.ww.registerNotification(function observer(subject, topic, data) {
+  Services.ww.registerNotification(function observer(subject, topic) {
     if (topic == "domwindowclosed") {
       Services.ww.unregisterNotification(observer);
       SimpleTest.waitForFocus(SimpleTest.finish, opener);

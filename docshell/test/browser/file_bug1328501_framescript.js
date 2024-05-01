@@ -4,13 +4,13 @@
 
 addEventListener(
   "frames-loaded",
-  e => sendAsyncMessage("test:frames-loaded"),
+  () => sendAsyncMessage("test:frames-loaded"),
   true,
   true
 );
 
 let requestObserver = {
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     if (topic == "http-on-opening-request") {
       
       
