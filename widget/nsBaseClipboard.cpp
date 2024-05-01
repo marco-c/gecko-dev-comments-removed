@@ -840,8 +840,8 @@ nsBaseClipboard::MaybeCreateGetRequestFromClipboardCache(
   }
 
   nsTArray<nsCString> results;
-  for (const auto& transferableFlavor : transferableFlavors) {
-    for (const auto& flavor : aFlavorList) {
+  for (const auto& flavor : aFlavorList) {
+    for (const auto& transferableFlavor : transferableFlavors) {
       
       
       if (transferableFlavor.Equals(flavor) ||
