@@ -462,6 +462,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    @Deprecated
+    @DeprecationSchedule(id = "geckoview-gvst", version = 127)
     public @NonNull Builder telemetryDelegate(final @NonNull RuntimeTelemetry.Delegate delegate) {
       getSettings().mTelemetryProxy = new RuntimeTelemetry.Proxy(delegate);
       getSettings().mTelemetryEnabled.set(true);
