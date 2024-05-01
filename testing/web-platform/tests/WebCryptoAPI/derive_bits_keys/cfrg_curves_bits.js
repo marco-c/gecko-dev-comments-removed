@@ -6,8 +6,6 @@ function define_tests() {
   
   
   
-  
-  
   Object.keys(kSmallOrderPoint).forEach(function(algorithmName) {
       kSmallOrderPoint[algorithmName].forEach(function(test) {
           promise_test(async() => {
@@ -23,8 +21,8 @@ function define_tests() {
                                                  false, [])
                   derived = await subtle.deriveBits({name: algorithmName, public: publicKey}, privateKey, 8 * sizes[algorithmName]);
               } catch (err) {
-                  assert_false(privateKey === undefined, "Private key should be valid.");
-                  assert_false(publicKey === undefined, "Public key should be valid.");
+                  assert_true(privateKey !== undefined, "Private key should be valid.");
+                  assert_true(publicKey !== undefined, "Public key should be valid.");
                   assert_equals(err.name, "OperationError", "Should throw correct error, not " + err.name + ": " + err.message + ".");
               }
               assert_equals(derived, undefined, "Operation succeeded, but should not have.");
