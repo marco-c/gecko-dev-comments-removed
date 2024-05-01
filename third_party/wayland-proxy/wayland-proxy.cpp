@@ -113,6 +113,10 @@ class ProxiedConnection {
   bool mCompositorConnected = false;
 
   
+  int mFailedCompositorConnections = 0;
+  static constexpr int sMaxFailedCompositorConnections = 100;
+
+  
   bool mFailed = false;
 
   int mCompositorSocket = -1;
@@ -343,6 +347,11 @@ bool ProxiedConnection::ConnectToCompositor() {
       case EINTR:
       case EISCONN:
       case ETIMEDOUT:
+        mFailedCompositorConnections++;
+        if (mFailedCompositorConnections > sMaxFailedCompositorConnections) {
+          Error("ConnectToCompositor() connect() failed repeatedly");
+          return false;
+        }
         
         Warning("ConnectToCompositor() try again");
         return true;
