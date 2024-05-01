@@ -13,7 +13,7 @@ class nsUserCharacteristics {
   static void MaybeSubmitPing();
 
   
-  static nsresult PopulateData();
+  static nsresult PopulateData(bool aTesting = false);
   static nsresult SubmitPing();
 };
 
