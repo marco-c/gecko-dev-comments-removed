@@ -137,10 +137,7 @@ void DelayedClearElementActivation::ClearGlobalActiveContent() {
 NS_IMPL_ISUPPORTS(DelayedClearElementActivation, nsITimerCallback, nsINamed)
 
 ActiveElementManager::ActiveElementManager()
-    : mCanBePan(false),
-      mCanBePanSet(false),
-      mSingleTapBeforeActivation(false),
-      mSetActiveTask(nullptr) {}
+    : mCanBePan(false), mCanBePanSet(false), mSetActiveTask(nullptr) {}
 
 ActiveElementManager::~ActiveElementManager() = default;
 
@@ -197,9 +194,6 @@ void ActiveElementManager::TriggerElementActivation() {
     SetActive(mTarget);
 
     if (mDelayedClearElementActivation) {
-      if (mSingleTapBeforeActivation) {
-        mDelayedClearElementActivation->MarkSingleTapProcessed();
-      }
       mDelayedClearElementActivation->StartTimer();
     }
   } else {
@@ -216,10 +210,6 @@ void ActiveElementManager::TriggerElementActivation() {
         task.forget(), StaticPrefs::ui_touch_activation_delay_ms());
     AEM_LOG("Scheduling mSetActiveTask %p\n", mSetActiveTask.get());
   }
-  AEM_LOG(
-      "Got both touch-end event and end touch notiication, clearing pan "
-      "state\n");
-  mCanBePanSet = false;
 }
 
 void ActiveElementManager::ClearActivation() {
@@ -228,37 +218,18 @@ void ActiveElementManager::ClearActivation() {
   ResetActive();
 }
 
-bool ActiveElementManager::HandleTouchEndEvent(bool aWasClick) {
+void ActiveElementManager::HandleTouchEndEvent(bool aWasClick) {
   AEM_LOG("Touch end event, aWasClick: %d\n", aWasClick);
 
   
   
   
   CancelTask();
-
-  mTouchEndState += TouchEndState::GotTouchEndEvent;
-  return MaybeChangeActiveState(aWasClick);
-}
-
-bool ActiveElementManager::HandleTouchEnd(bool aWasClick) {
-  AEM_LOG("Touch end\n");
-
-  mTouchEndState += TouchEndState::GotTouchEndNotification;
-  return MaybeChangeActiveState(aWasClick);
-}
-
-bool ActiveElementManager::MaybeChangeActiveState(bool aWasClick) {
-  if (mTouchEndState !=
-      TouchEndStates(TouchEndState::GotTouchEndEvent,
-                     TouchEndState::GotTouchEndNotification)) {
-    return false;
-  }
-
   if (aWasClick) {
     
     
     
-    if (mCanBePan && !(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
+    if (!(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
       SetActive(mTarget);
     }
   } else {
@@ -269,14 +240,15 @@ bool ActiveElementManager::MaybeChangeActiveState(bool aWasClick) {
   }
 
   ResetTouchBlockState();
-  return true;
+}
+
+void ActiveElementManager::HandleTouchEnd() {
+  AEM_LOG("Touch end, clearing pan state\n");
+  mCanBePanSet = false;
 }
 
 void ActiveElementManager::ProcessSingleTap() {
   if (!mDelayedClearElementActivation) {
-    
-    
-    mSingleTapBeforeActivation = true;
     return;
   }
 
@@ -326,8 +298,6 @@ void ActiveElementManager::ResetActive() {
 void ActiveElementManager::ResetTouchBlockState() {
   mTarget = nullptr;
   mCanBePanSet = false;
-  mTouchEndState.clear();
-  mSingleTapBeforeActivation = false;
 }
 
 void ActiveElementManager::SetActiveTask(

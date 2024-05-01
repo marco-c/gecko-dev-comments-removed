@@ -9,7 +9,6 @@
 
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/EnumSet.h"
 
 namespace mozilla {
 
@@ -58,12 +57,12 @@ class ActiveElementManager final {
 
 
 
-  bool HandleTouchEndEvent(bool aWasClick);
+  void HandleTouchEndEvent(bool aWasClick);
   
 
 
 
-  bool HandleTouchEnd(bool aWasClick);
+  void HandleTouchEnd();
   
 
 
@@ -88,21 +87,6 @@ class ActiveElementManager final {
 
 
   bool mCanBePanSet;
-
-  bool mSingleTapBeforeActivation;
-
-  enum class TouchEndState : uint8_t {
-    GotTouchEndNotification,
-    GotTouchEndEvent,
-  };
-  using TouchEndStates = EnumSet<TouchEndState>;
-
-  
-
-
-
-  TouchEndStates mTouchEndState;
-
   
 
 
@@ -119,7 +103,6 @@ class ActiveElementManager final {
   void ResetTouchBlockState();
   void SetActiveTask(const nsCOMPtr<dom::Element>& aTarget);
   void CancelTask();
-  bool MaybeChangeActiveState(bool aWasClick);
 };
 
 }  
