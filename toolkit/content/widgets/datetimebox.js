@@ -22,7 +22,9 @@ this.DateTimeBoxWidget = class {
     
     this.l10n = new this.window.DOMLocalization(
       ["toolkit/global/datetimebox.ftl"],
-       true
+       true,
+      undefined,
+      this.window.getWebExposedLocales()
     );
   }
 
