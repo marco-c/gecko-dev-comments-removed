@@ -10,7 +10,6 @@
 #include "VideoUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
-#include "Adts.h"
 #include <inttypes.h>
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
@@ -22,6 +21,227 @@ extern mozilla::LazyLogModule gMediaDemuxerLog;
   DDMOZ_LOG(gMediaDemuxerLog, LogLevel::Verbose, msg, ##__VA_ARGS__)
 
 namespace mozilla {
+namespace adts {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FrameHeader {
+ public:
+  uint32_t mFrameLength{};
+  uint32_t mSampleRate{};
+  uint32_t mSamples{};
+  uint32_t mChannels{};
+  uint8_t mObjectType{};
+  uint8_t mSamplingIndex{};
+  uint8_t mChannelConfig{};
+  uint8_t mNumAACFrames{};
+  bool mHaveCrc{};
+
+  
+  static bool MatchesSync(const uint8_t* aPtr) {
+    return aPtr[0] == 0xFF && (aPtr[1] & 0xF6) == 0xF0;
+  }
+
+  FrameHeader() { Reset(); }
+
+  
+  uint64_t HeaderSize() const { return (mHaveCrc) ? 9 : 7; }
+
+  bool IsValid() const { return mFrameLength > 0; }
+
+  
+  void Reset() { PodZero(this); }
+
+  
+  bool Parse(const uint8_t* aPtr) {
+    const uint8_t* p = aPtr;
+
+    if (!MatchesSync(p)) {
+      return false;
+    }
+
+    
+    mSamples = 1024;
+
+    mHaveCrc = !(p[1] & 0x01);
+    mObjectType = ((p[2] & 0xC0) >> 6) + 1;
+    mSamplingIndex = (p[2] & 0x3C) >> 2;
+    mChannelConfig = (p[2] & 0x01) << 2 | (p[3] & 0xC0) >> 6;
+    mFrameLength = static_cast<uint32_t>(
+        (p[3] & 0x03) << 11 | (p[4] & 0xFF) << 3 | (p[5] & 0xE0) >> 5);
+    mNumAACFrames = (p[6] & 0x03) + 1;
+
+    static const uint32_t SAMPLE_RATES[] = {96000, 88200, 64000, 48000, 44100,
+                                            32000, 24000, 22050, 16000, 12000,
+                                            11025, 8000,  7350};
+    if (mSamplingIndex >= ArrayLength(SAMPLE_RATES)) {
+      LOG(("ADTS: Init() failure: invalid sample-rate index value: %" PRIu32
+           ".",
+           mSamplingIndex));
+      return false;
+    }
+    mSampleRate = SAMPLE_RATES[mSamplingIndex];
+
+    MOZ_ASSERT(mChannelConfig < 8);
+    mChannels = (mChannelConfig == 7) ? 8 : mChannelConfig;
+
+    return true;
+  }
+};
+
+
+
+class Frame {
+ public:
+  Frame() : mOffset(0) {}
+
+  uint64_t Offset() const { return mOffset; }
+  size_t Length() const {
+    
+    
+    if (!mHeader.IsValid()) {
+      return 0;
+    }
+
+    return mHeader.mFrameLength;
+  }
+
+  
+  uint64_t PayloadOffset() const { return mOffset + mHeader.HeaderSize(); }
+
+  
+  size_t PayloadLength() const {
+    
+    
+    if (!mHeader.IsValid()) {
+      return 0;
+    }
+
+    return mHeader.mFrameLength - mHeader.HeaderSize();
+  }
+
+  
+  const FrameHeader& Header() const { return mHeader; }
+
+  bool IsValid() const { return mHeader.IsValid(); }
+
+  
+  void Reset() {
+    mHeader.Reset();
+    mOffset = 0;
+  }
+
+  
+  bool Parse(uint64_t aOffset, const uint8_t* aStart, const uint8_t* aEnd) {
+    MOZ_ASSERT(aStart && aEnd);
+
+    bool found = false;
+    const uint8_t* ptr = aStart;
+    
+    
+    while (ptr < aEnd - 7 && !found) {
+      found = mHeader.Parse(ptr);
+      ptr++;
+    }
+
+    mOffset = aOffset + (static_cast<size_t>(ptr - aStart)) - 1u;
+
+    return found;
+  }
+
+ private:
+  
+  uint64_t mOffset;
+
+  
+  FrameHeader mHeader;
+};
+
+class FrameParser {
+ public:
+  
+  const Frame& CurrentFrame() const { return mFrame; }
+
+  
+  const Frame& FirstFrame() const { return mFirstFrame; }
+
+  
+  void Reset() {
+    EndFrameSession();
+    mFirstFrame.Reset();
+  }
+
+  
+  
+  
+  
+  void EndFrameSession() { mFrame.Reset(); }
+
+  
+  
+  
+  
+  bool Parse(uint64_t aOffset, const uint8_t* aStart, const uint8_t* aEnd) {
+    const bool found = mFrame.Parse(aOffset, aStart, aEnd);
+
+    if (mFrame.Length() && !mFirstFrame.Length()) {
+      mFirstFrame = mFrame;
+    }
+
+    return found;
+  }
+
+ private:
+  
+  
+  Frame mFirstFrame;
+  Frame mFrame;
+};
+
+
+
+static void InitAudioSpecificConfig(const Frame& frame,
+                                    MediaByteBuffer* aBuffer) {
+  const FrameHeader& header = frame.Header();
+  MOZ_ASSERT(header.IsValid());
+
+  int audioObjectType = header.mObjectType;
+  int samplingFrequencyIndex = header.mSamplingIndex;
+  int channelConfig = header.mChannelConfig;
+
+  uint8_t asc[2];
+  asc[0] = (audioObjectType & 0x1F) << 3 | (samplingFrequencyIndex & 0x0E) >> 1;
+  asc[1] = (samplingFrequencyIndex & 0x01) << 7 | (channelConfig & 0x0F) << 3;
+
+  aBuffer->AppendElements(asc, 2);
+}
+
+}  
 
 using media::TimeUnit;
 
@@ -72,7 +292,7 @@ bool ADTSDemuxer::IsSeekable() const {
 
 ADTSTrackDemuxer::ADTSTrackDemuxer(MediaResource* aSource)
     : mSource(aSource),
-      mParser(new ADTS::FrameParser()),
+      mParser(new adts::FrameParser()),
       mOffset(0),
       mNumParsedFrames(0),
       mFrameIndex(0),
@@ -315,7 +535,7 @@ TimeUnit ADTSTrackDemuxer::Duration(int64_t aNumFrames) const {
   return TimeUnit(aNumFrames * mSamplesPerFrame, mSamplesPerSecond);
 }
 
-const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
+const adts::Frame& ADTSTrackDemuxer::FindNextFrame(
     bool findFirstFrame ) {
   static const int BUFFER_SIZE = 4096;
   static const int MAX_SKIPPED_BYTES = 10 * BUFFER_SIZE;
@@ -348,7 +568,7 @@ const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
       break;
     }
 
-    const ADTS::Frame& currentFrame = mParser->CurrentFrame();
+    const adts::Frame& currentFrame = mParser->CurrentFrame();
     foundFrame = mParser->Parse(frameHeaderOffset, buffer, buffer + read);
     if (findFirstFrame && foundFrame) {
       
@@ -359,7 +579,7 @@ const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
           currentFrame.Offset() + currentFrame.Length();
       uint32_t read =
           Read(buffer, AssertedCast<int64_t>(nextFrameHeaderOffset), 2);
-      if (read != 2 || !ADTS::FrameHeader::MatchesSync(buffer)) {
+      if (read != 2 || !adts::FrameHeader::MatchesSync(buffer)) {
         frameHeaderOffset = currentFrame.Offset() + 1;
         mParser->Reset();
         foundFrame = false;
@@ -401,7 +621,7 @@ const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
   return mParser->CurrentFrame();
 }
 
-bool ADTSTrackDemuxer::SkipNextFrame(const ADTS::Frame& aFrame) {
+bool ADTSTrackDemuxer::SkipNextFrame(const adts::Frame& aFrame) {
   if (!mNumParsedFrames || !aFrame.Length()) {
     RefPtr<MediaRawData> frame(GetNextFrame(aFrame));
     return frame;
@@ -419,7 +639,7 @@ bool ADTSTrackDemuxer::SkipNextFrame(const ADTS::Frame& aFrame) {
 }
 
 already_AddRefed<MediaRawData> ADTSTrackDemuxer::GetNextFrame(
-    const ADTS::Frame& aFrame) {
+    const adts::Frame& aFrame) {
   ADTSLOG("GetNext() Begin({mOffset=%" PRIu64 " HeaderSize()=%" PRIu64
           " Length()=%zu})",
           aFrame.Offset(), aFrame.Header().HeaderSize(),
@@ -515,7 +735,7 @@ int64_t ADTSTrackDemuxer::FrameIndexFromTime(const TimeUnit& aTime) const {
   return std::max<int64_t>(0, frameIndex);
 }
 
-void ADTSTrackDemuxer::UpdateState(const ADTS::Frame& aFrame) {
+void ADTSTrackDemuxer::UpdateState(const adts::Frame& aFrame) {
   uint32_t frameLength = aFrame.Length();
   
   if (mTotalFrameLen + frameLength < mTotalFrameLen) {
@@ -530,7 +750,7 @@ void ADTSTrackDemuxer::UpdateState(const ADTS::Frame& aFrame) {
   mTotalFrameLen += frameLength;
 
   if (!mSamplesPerFrame) {
-    const ADTS::FrameHeader& header = aFrame.Header();
+    const adts::FrameHeader& header = aFrame.Header();
     mSamplesPerFrame = header.mSamples;
     mSamplesPerSecond = header.mSampleRate;
     mChannels = header.mChannels;
@@ -575,15 +795,15 @@ bool ADTSDemuxer::ADTSSniffer(const uint8_t* aData, const uint32_t aLength) {
   if (aLength < 7) {
     return false;
   }
-  if (!ADTS::FrameHeader::MatchesSync(Span(aData, aLength))) {
+  if (!adts::FrameHeader::MatchesSync(aData)) {
     return false;
   }
-  auto parser = MakeUnique<ADTS::FrameParser>();
+  auto parser = MakeUnique<adts::FrameParser>();
 
   if (!parser->Parse(0, aData, aData + aLength)) {
     return false;
   }
-  const ADTS::Frame& currentFrame = parser->CurrentFrame();
+  const adts::Frame& currentFrame = parser->CurrentFrame();
   
   
   
@@ -592,8 +812,7 @@ bool ADTSDemuxer::ADTSSniffer(const uint8_t* aData, const uint32_t aLength) {
       currentFrame.Offset() + currentFrame.Length();
   return aLength > nextFrameHeaderOffset &&
          aLength - nextFrameHeaderOffset >= 2 &&
-         ADTS::FrameHeader::MatchesSync(Span(aData + nextFrameHeaderOffset,
-                                             aLength - nextFrameHeaderOffset));
+         adts::FrameHeader::MatchesSync(aData + nextFrameHeaderOffset);
 }
 
 }  
