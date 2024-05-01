@@ -212,8 +212,12 @@ class Pool extends EventEmitter {
         actor.destroy = destroy;
       }
     }
-    this.conn.removeActorPool(this);
-    this.conn = null;
+
+    
+    if (this.conn) {
+      this.conn.removeActorPool(this);
+      this.conn = null;
+    }
   }
 }
 
