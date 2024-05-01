@@ -206,8 +206,10 @@ add_task(async () => {
       is(rootChildCount(), baseRootChildCount + 1, "Root has another child");
 
       
+      let hide = waitForMacEvent("AXUIElementDestroyed");
       EventUtils.synthesizeKey("KEY_Escape");
       await BrowserTestUtils.waitForPopupEvent(identityPopup, "hidden");
+      await hide;
 
       
       is(rootChildCount(), baseRootChildCount, "Root has the base child count");
