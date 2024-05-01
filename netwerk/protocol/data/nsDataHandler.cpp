@@ -161,7 +161,7 @@ nsresult nsDataHandler::ParsePathWithoutRef(const nsACString& aPath,
                                             nsCString* aContentCharset,
                                             bool& aIsBase64,
                                             nsDependentCSubstring* aDataBuffer,
-                                            nsCString* aMimeType) {
+                                            RefPtr<CMimeType>* aMimeType) {
   static constexpr auto kCharset = "charset"_ns;
 
   
@@ -200,17 +200,17 @@ nsresult nsDataHandler::ParsePathWithoutRef(const nsACString& aPath,
   
   
   
-  if (mozilla::UniquePtr<CMimeType> parsed = CMimeType::Parse(mimeType)) {
+  if (RefPtr<CMimeType> parsed = CMimeType::Parse(mimeType)) {
     parsed->GetEssence(aContentType);
     if (aContentCharset) {
       parsed->GetParameterValue(kCharset, *aContentCharset);
     }
-    if (aMimeType) {
-      parsed->Serialize(*aMimeType);
-    }
     if (parsed->IsBase64() &&
         !StaticPrefs::network_url_strict_data_url_base64_placement()) {
       aIsBase64 = true;
+    }
+    if (aMimeType) {
+      *aMimeType = std::move(parsed);
     }
   } else {
     
@@ -220,7 +220,8 @@ nsresult nsDataHandler::ParsePathWithoutRef(const nsACString& aPath,
       aContentCharset->AssignLiteral("US-ASCII");
     }
     if (aMimeType) {
-      aMimeType->AssignLiteral("text/plain;charset=US-ASCII");
+      *aMimeType = new CMimeType("text"_ns, "plain"_ns);
+      (*aMimeType)->SetParameterValue("charset"_ns, "US-ASCII"_ns);
     }
   }
 
