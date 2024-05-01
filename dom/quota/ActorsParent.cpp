@@ -2376,7 +2376,7 @@ void QuotaManager::Shutdown() {
 
   
 
-  ScopedLogExtraInfo scope{ScopedLogExtraInfo::kTagContext,
+  ScopedLogExtraInfo scope{ScopedLogExtraInfo::kTagContextTainted,
                            "dom::quota::QuotaManager::Shutdown"_ns};
 
   
