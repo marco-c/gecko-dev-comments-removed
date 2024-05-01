@@ -12247,8 +12247,9 @@ nsresult QuotaClient::GetUsageForOriginInternal(
             
             
             QM_TRY(MOZ_TO_RESULT(RemoveDatabaseFilesAndDirectory(
-                       *directory, subdirNameBase, nullptr, aPersistenceType,
-                       aOriginMetadata, u""_ns)),
+                       *directory, subdirNameBase,  nullptr,
+                       aPersistenceType, aOriginMetadata,
+                        u""_ns)),
                    Err(NS_ERROR_UNEXPECTED));
 
             databaseFilenames.Remove(subdirNameBase);
