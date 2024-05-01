@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
+    "test-stepper.js",
     "thread-helpers.sys.mjs",
     "tracked-objects.sys.mjs",
 )

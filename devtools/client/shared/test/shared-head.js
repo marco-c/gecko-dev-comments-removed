@@ -54,6 +54,45 @@ if (DEBUG_ALLOCATIONS) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const DEBUG_STEP = Services.env.get("DEBUG_STEP");
+if (DEBUG_STEP) {
+  
+  
+  
+  const {
+    useDistinctSystemPrincipalLoader,
+    releaseDistinctSystemPrincipalLoader,
+  } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs"
+  );
+  const requester = {};
+  const loader = useDistinctSystemPrincipalLoader(requester);
+
+  const stepper = loader.require(
+    "resource://devtools/shared/test-helpers/test-stepper.js"
+  );
+  stepper.start(globalThis, gTestPath, DEBUG_STEP);
+  registerCleanupFunction(() => {
+    stepper.stop();
+    releaseDistinctSystemPrincipalLoader(requester);
+  });
+}
+
 const { loader, require } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
