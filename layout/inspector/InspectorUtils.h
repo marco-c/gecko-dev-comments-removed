@@ -268,6 +268,13 @@ class InspectorUtils {
   static void GetCSSRegisteredProperties(
       GlobalObject& aGlobal, Document& aDocument,
       nsTArray<InspectorCSSPropertyDefinition>& aResult);
+
+  
+
+
+  static void GetRuleBodyTextOffsets(
+      GlobalObject&, const nsACString& aInitialText,
+      Nullable<InspectorGetRuleBodyTextResult>& aResult);
 };
 
 }  
