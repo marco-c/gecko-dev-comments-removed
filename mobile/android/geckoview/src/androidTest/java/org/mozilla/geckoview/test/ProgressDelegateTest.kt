@@ -449,6 +449,11 @@ class ProgressDelegateTest : BaseSessionTest() {
     @Test
     fun saveAndRestoreStateNewSession() {
         
+        val geckoPrefs = sessionRule.getPrefs(
+            "fission.disableSessionHistoryInParent",
+        )
+        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
+        
         assumeThat(sessionRule.env.isFission, equalTo(false))
         val helloUri = createTestUrl(HELLO_HTML_PATH)
         val startUri = createTestUrl(SAVE_STATE_PATH)
@@ -534,6 +539,11 @@ class ProgressDelegateTest : BaseSessionTest() {
     @Test
     fun flushSessionState() {
         
+        val geckoPrefs = sessionRule.getPrefs(
+            "fission.disableSessionHistoryInParent",
+        )
+        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
+        
         assumeThat(sessionRule.env.isFission, equalTo(false))
         val startUri = createTestUrl(SAVE_STATE_PATH)
         mainSession.loadUri(startUri)
@@ -569,6 +579,11 @@ class ProgressDelegateTest : BaseSessionTest() {
     @NullDelegate(GeckoSession.HistoryDelegate::class)
     @Test
     fun noHistoryDelegateOnSessionStateChange() {
+        
+        val geckoPrefs = sessionRule.getPrefs(
+            "fission.disableSessionHistoryInParent",
+        )
+        assumeThat(geckoPrefs[0] as Boolean, equalTo(true))
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
         mainSession.loadTestPath(HELLO_HTML_PATH)
