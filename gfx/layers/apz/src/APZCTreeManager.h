@@ -191,9 +191,12 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void UpdateHitTestingTree(const WebRenderScrollDataWrapper& aRoot,
-                            bool aIsFirstPaint, LayersId aOriginatingLayersId,
-                            uint32_t aPaintSequenceNumber);
+
+
+  enum class OriginatingLayersIdUpdated : bool { No, Yes };
+  OriginatingLayersIdUpdated UpdateHitTestingTree(
+      const WebRenderScrollDataWrapper& aRoot, bool aIsFirstPaint,
+      LayersId aOriginatingLayersId, uint32_t aPaintSequenceNumber);
 
   
 

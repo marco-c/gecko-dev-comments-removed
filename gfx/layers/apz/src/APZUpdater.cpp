@@ -191,14 +191,38 @@ void APZUpdater::UpdateScrollDataAndTreeState(
             auto isFirstPaint = aScrollData.IsFirstPaint();
             auto paintSequenceNumber = aScrollData.GetPaintSequenceNumber();
 
+            auto previous = self->mScrollData.find(aOriginatingLayersId);
+            
+            
+            
+            if (previous != self->mScrollData.end()) {
+              WebRenderScrollData& previousData = previous->second;
+              if (previousData.GetWasUpdateSkipped()) {
+                MOZ_ASSERT(previousData.IsFirstPaint());
+                aScrollData.PrependUpdates(previousData);
+              }
+            }
+
             self->mScrollData[aOriginatingLayersId] = std::move(aScrollData);
             auto root = self->mScrollData.find(aRootLayerTreeId);
             if (root == self->mScrollData.end()) {
               return;
             }
-            self->mApz->UpdateHitTestingTree(
-                WebRenderScrollDataWrapper(*self, &(root->second)),
-                isFirstPaint, aOriginatingLayersId, paintSequenceNumber);
+            if ((self->mApz->UpdateHitTestingTree(
+                     WebRenderScrollDataWrapper(*self, &(root->second)),
+                     isFirstPaint, aOriginatingLayersId, paintSequenceNumber) ==
+                 APZCTreeManager::OriginatingLayersIdUpdated::No) &&
+                isFirstPaint) {
+              
+              
+              
+              
+              
+              
+              
+              
+              self->mScrollData[aOriginatingLayersId].SetWasUpdateSkipped();
+            }
           }));
 }
 

@@ -276,6 +276,13 @@ class WebRenderScrollData {
 
   void ApplyUpdates(ScrollUpdatesMap&& aUpdates, uint32_t aPaintSequenceNumber);
 
+  
+  
+  void PrependUpdates(const WebRenderScrollData& aPreviousData);
+
+  void SetWasUpdateSkipped() { mWasUpdateSkipped = true; }
+  bool GetWasUpdateSkipped() const { return mWasUpdateSkipped; }
+
   friend struct IPC::ParamTraits<WebRenderScrollData>;
 
   friend std::ostream& operator<<(std::ostream& aOut,
@@ -328,6 +335,12 @@ class WebRenderScrollData {
 
   bool mIsFirstPaint;
   uint32_t mPaintSequenceNumber;
+
+  
+  
+  
+  
+  bool mWasUpdateSkipped = false;
 };
 
 }  
