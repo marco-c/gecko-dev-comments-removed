@@ -27,8 +27,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/ref_count.h"
 #include "api/rtc_error.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
@@ -219,7 +219,7 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
 
 
 class RTC_EXPORT CreateSessionDescriptionObserver
-    : public rtc::RefCountInterface {
+    : public webrtc::RefCountInterface {
  public:
   
   
@@ -238,7 +238,8 @@ class RTC_EXPORT CreateSessionDescriptionObserver
 };
 
 
-class RTC_EXPORT SetSessionDescriptionObserver : public rtc::RefCountInterface {
+class RTC_EXPORT SetSessionDescriptionObserver
+    : public webrtc::RefCountInterface {
  public:
   virtual void OnSuccess() = 0;
   

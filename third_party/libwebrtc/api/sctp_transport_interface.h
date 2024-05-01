@@ -13,9 +13,9 @@
 
 #include "absl/types/optional.h"
 #include "api/dtls_transport_interface.h"
+#include "api/ref_count.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -75,7 +75,7 @@ class SctpTransportObserverInterface {
 
 
 
-class SctpTransportInterface : public rtc::RefCountInterface {
+class SctpTransportInterface : public webrtc::RefCountInterface {
  public:
   
   virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;

@@ -11,15 +11,15 @@
 #ifndef API_SET_LOCAL_DESCRIPTION_OBSERVER_INTERFACE_H_
 #define API_SET_LOCAL_DESCRIPTION_OBSERVER_INTERFACE_H_
 
+#include "api/ref_count.h"
 #include "api/rtc_error.h"
-#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
 
 
 
-class SetLocalDescriptionObserverInterface : public rtc::RefCountInterface {
+class SetLocalDescriptionObserverInterface : public webrtc::RefCountInterface {
  public:
   
   virtual void OnSetLocalDescriptionComplete(RTCError error) = 0;

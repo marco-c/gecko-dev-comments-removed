@@ -128,11 +128,11 @@
 
 
 
+#include "api/ref_count.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/network.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/network_monitor_factory.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/socket_address.h"
@@ -151,7 +151,7 @@ namespace webrtc {
 class MediaFactory;
 
 
-class StreamCollectionInterface : public rtc::RefCountInterface {
+class StreamCollectionInterface : public webrtc::RefCountInterface {
  public:
   
   virtual size_t count() = 0;
@@ -165,7 +165,7 @@ class StreamCollectionInterface : public rtc::RefCountInterface {
   ~StreamCollectionInterface() override = default;
 };
 
-class StatsObserver : public rtc::RefCountInterface {
+class StatsObserver : public webrtc::RefCountInterface {
  public:
   virtual void OnComplete(const StatsReports& reports) = 0;
 
@@ -180,7 +180,7 @@ enum class SdpSemantics {
   kUnifiedPlan,
 };
 
-class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
+class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
  public:
   
   enum SignalingState {
@@ -1487,7 +1487,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
 
 
 class RTC_EXPORT PeerConnectionFactoryInterface
-    : public rtc::RefCountInterface {
+    : public webrtc::RefCountInterface {
  public:
   class Options {
    public:

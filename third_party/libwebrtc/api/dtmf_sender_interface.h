@@ -14,7 +14,7 @@
 #include <string>
 
 #include "api/media_stream_interface.h"
-#include "rtc_base/ref_count.h"
+#include "api/ref_count.h"
 
 namespace webrtc {
 
@@ -42,7 +42,7 @@ class DtmfSenderObserverInterface {
 
 
 
-class DtmfSenderInterface : public rtc::RefCountInterface {
+class DtmfSenderInterface : public webrtc::RefCountInterface {
  public:
   
   static const int kDtmfDefaultCommaDelayMs = 2000;

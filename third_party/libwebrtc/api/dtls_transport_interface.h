@@ -16,9 +16,9 @@
 
 #include "absl/types/optional.h"
 #include "api/ice_transport_interface.h"
+#include "api/ref_count.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -107,7 +107,7 @@ class DtlsTransportObserverInterface {
 
 
 
-class DtlsTransportInterface : public rtc::RefCountInterface {
+class DtlsTransportInterface : public webrtc::RefCountInterface {
  public:
   
   virtual rtc::scoped_refptr<IceTransportInterface> ice_transport() = 0;
