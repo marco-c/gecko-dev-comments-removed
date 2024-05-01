@@ -110,7 +110,7 @@ JS_PUBLIC_API const JSErrorReport* GetFrontendWarningAt(
 
 
 
-struct CompilationStorage {
+struct JS_PUBLIC_API CompilationStorage {
  private:
   
   
