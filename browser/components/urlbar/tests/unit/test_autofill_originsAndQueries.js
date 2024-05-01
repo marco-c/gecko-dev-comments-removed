@@ -896,6 +896,9 @@ add_autofill_task(async function bookmarkBelowThreshold() {
 
 add_autofill_task(async function bookmarkAboveThreshold() {
   
+  
+  await PlacesTestUtils.addVisits(["http://" + url]);
+  
   await PlacesTestUtils.addBookmarkWithDetails({
     uri: "http://" + url,
   });
@@ -957,13 +960,10 @@ add_autofill_task(async function zeroThreshold() {
   );
   Assert.equal(placeFrecency, -1);
 
-  
   let originFrecency = await getOriginFrecency("http://", host);
-  Assert.equal(originFrecency, 0);
-
-  
+  Assert.equal(originFrecency, 1, "Check expected origin's frecency");
   let threshold = await getOriginAutofillThreshold();
-  Assert.equal(threshold, 0);
+  Assert.equal(threshold, 1, "Check expected origins threshold");
 
   let context = createContext(search, { isPrivate: false });
   await check_results({

@@ -324,6 +324,9 @@ add_task(async function withDnsFirstForSingleWordsPref() {
     url: "https://example.org/",
     title: "example",
   });
+  
+  
+  await PlacesUtils.history.clear();
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -333,13 +336,13 @@ add_task(async function withDnsFirstForSingleWordsPref() {
 
   const details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   const target = details.element.action;
-  EventUtils.synthesizeMouseAtCenter(target, { type: "mousedown" });
+
   const onLoaded = BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
     "https://example.org/"
   );
-  EventUtils.synthesizeMouseAtCenter(target, { type: "mouseup" });
+  EventUtils.synthesizeMouseAtCenter(target, {});
   await onLoaded;
   Assert.ok(true, "Expected page is opened");
 
