@@ -11,11 +11,13 @@
 #ifndef RTC_BASE_ASYNC_PACKET_SOCKET_H_
 #define RTC_BASE_ASYNC_PACKET_SOCKET_H_
 
+#include <cstdint>
 #include <vector>
 
 #include "api/sequence_checker.h"
 #include "rtc_base/callback_list.h"
 #include "rtc_base/dscp.h"
+#include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/system/no_unique_address.h"
@@ -115,6 +117,12 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
       std::function<void(AsyncPacketSocket*, int)> callback);
   void UnsubscribeCloseEvent(const void* removal_tag);
 
+  void RegisterReceivedPacketCallback(
+      absl::AnyInvocable<void(AsyncPacketSocket*, const rtc::ReceivedPacket&)>
+          received_packet_callback);
+  void DeregisterReceivedPacketCallback();
+
+  
   
   
   sigslot::signal5<AsyncPacketSocket*,
@@ -155,12 +163,26 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
     on_close_.Send(this, err);
   }
 
+  
+  void NotifyPacketReceived(AsyncPacketSocket*,
+                            const char* data,
+                            size_t size,
+                            const SocketAddress& address,
+                            const int64_t& packet_time_us) {
+    NotifyPacketReceived(
+        ReceivedPacket::CreateFromLegacy(data, size, packet_time_us, address));
+  }
+
+  void NotifyPacketReceived(const rtc::ReceivedPacket& packet);
+
   RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker network_checker_{
       webrtc::SequenceChecker::kDetached};
 
  private:
   webrtc::CallbackList<AsyncPacketSocket*, int> on_close_
       RTC_GUARDED_BY(&network_checker_);
+  absl::AnyInvocable<void(AsyncPacketSocket*, const rtc::ReceivedPacket&)>
+      received_packet_callback_ RTC_GUARDED_BY(&network_checker_);
 };
 
 
