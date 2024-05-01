@@ -147,12 +147,10 @@ CSSSize FrameMetrics::CalculateCompositedSizeInCssPixels(
   return aCompositionBounds.Size() / aZoom;
 }
 
-std::pair<bool, CSSPoint> FrameMetrics::ApplyAbsoluteScrollUpdateFrom(
-    const ScrollPositionUpdate& aUpdate) {
-  CSSPoint oldVisualOffset = GetVisualScrollOffset();
+bool FrameMetrics::ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
   
   
-  CSSPoint relativeOffset = oldVisualOffset - GetLayoutScrollOffset();
+  CSSPoint relativeOffset = GetVisualScrollOffset() - GetLayoutScrollOffset();
   MOZ_ASSERT(IsRootContent() || relativeOffset == CSSPoint());
   
   
@@ -160,7 +158,7 @@ std::pair<bool, CSSPoint> FrameMetrics::ApplyAbsoluteScrollUpdateFrom(
   bool offsetChanged = SetLayoutScrollOffset(aUpdate.GetDestination());
   offsetChanged |=
       ClampAndSetVisualScrollOffset(aUpdate.GetDestination() + relativeOffset);
-  return {offsetChanged, GetVisualScrollOffset() - oldVisualOffset};
+  return offsetChanged;
 }
 
 CSSPoint FrameMetrics::ApplyRelativeScrollUpdateFrom(

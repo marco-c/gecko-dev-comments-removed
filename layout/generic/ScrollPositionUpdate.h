@@ -34,9 +34,6 @@ enum class ScrollUpdateType {
   
   
   PureRelative,
-  
-  
-  MergeableAbsolute,
 };
 
 enum class ScrollTriggeredByScript : bool { No, Yes };
@@ -85,9 +82,6 @@ class ScrollPositionUpdate {
   static ScrollPositionUpdate NewPureRelativeScroll(ScrollOrigin aOrigin,
                                                     ScrollMode aMode,
                                                     const nsPoint& aDelta);
-
-  static ScrollPositionUpdate NewMergeableScroll(ScrollOrigin aOrigin,
-                                                 nsPoint aDestination);
 
   bool operator==(const ScrollPositionUpdate& aOther) const;
 
