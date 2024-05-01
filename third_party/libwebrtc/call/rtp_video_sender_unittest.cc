@@ -1092,7 +1092,7 @@ TEST(RtpVideoSenderTest, ClearsPendingPacketsOnInactivation) {
 
   
   test.router()->OnBitrateUpdated(
-      CreateBitrateAllocationUpdate(30'000),
+      CreateBitrateAllocationUpdate(10'000),
       30);
 
   
@@ -1119,7 +1119,7 @@ TEST(RtpVideoSenderTest, ClearsPendingPacketsOnInactivation) {
     EXPECT_FALSE(packet.Marker());
   }
   EXPECT_GT(transmittedPayload, DataSize::Zero());
-  EXPECT_LT(transmittedPayload, DataSize::Bytes(kImageSizeBytes / 4));
+  EXPECT_LT(transmittedPayload, DataSize::Bytes(kImageSizeBytes / 3));
 
   
   const uint32_t first_frame_timestamp = sent_packets[0].Timestamp();

@@ -44,9 +44,6 @@ struct RtpTransportConfig {
   
   
   const FieldTrialsView* trials = nullptr;
-
-  
-  absl::optional<TimeDelta> pacer_burst_interval;
 };
 }  
 

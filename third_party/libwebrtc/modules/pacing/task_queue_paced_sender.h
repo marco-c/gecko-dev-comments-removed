@@ -47,20 +47,18 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   
   
-  
-  
-  
-  
-  
-  TaskQueuePacedSender(
-      Clock* clock,
-      PacingController::PacketSender* packet_sender,
-      const FieldTrialsView& field_trials,
-      TimeDelta max_hold_back_window,
-      int max_hold_back_window_in_packets,
-      absl::optional<TimeDelta> burst_interval = absl::nullopt);
+  TaskQueuePacedSender(Clock* clock,
+                       PacingController::PacketSender* packet_sender,
+                       const FieldTrialsView& field_trials,
+                       TimeDelta max_hold_back_window,
+                       int max_hold_back_window_in_packets);
 
   ~TaskQueuePacedSender() override;
+
+  
+  
+  
+  void SetSendBurstInterval(TimeDelta burst_interval);
 
   
   void EnsureStarted();
@@ -145,15 +143,6 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   Stats GetStats() const;
 
   Clock* const clock_;
-  struct BurstyPacerFlags {
-    
-    
-    explicit BurstyPacerFlags(const FieldTrialsView& field_trials);
-    
-    
-    FieldTrialOptional<TimeDelta> burst;
-  };
-  const BurstyPacerFlags bursty_pacer_flags_;
 
   
   

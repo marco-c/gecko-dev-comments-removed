@@ -25,6 +25,7 @@
 #include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_size.h"
+#include "api/units/time_delta.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/prioritized_packet_queue.h"
@@ -92,6 +93,10 @@ class PacingController {
   
   
   static constexpr DataSize kMaxBurstSize = DataSize::Bytes(63 * 1000);
+  
+  
+  
+  static constexpr TimeDelta kDefaultBurstInterval = TimeDelta::Millis(40);
 
   PacingController(Clock* clock,
                    PacketSender* packet_sender,
