@@ -7,7 +7,9 @@
 #include "ScaledFontMac.h"
 #include "UnscaledFontMac.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "nsCocoaFeatures.h"
+#ifdef MOZ_WIDGET_COCOA
+#  include "nsCocoaFeatures.h"
+#endif
 #include "PathSkia.h"
 #include "skia/include/core/SkPaint.h"
 #include "skia/include/core/SkPath.h"
@@ -73,6 +75,7 @@ class AutoRelease final {
 CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
                                                bool aInstalledFont,
                                                CTFontDescriptorRef aFontDesc) {
+#ifdef MOZ_WIDGET_COCOA
   
   if (nsCocoaFeatures::OnVenturaOrLater()) {
     
@@ -96,6 +99,7 @@ CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
     
     return ctFont.forget();
   }
+#endif
 
   
   CTFontRef ctFont;
