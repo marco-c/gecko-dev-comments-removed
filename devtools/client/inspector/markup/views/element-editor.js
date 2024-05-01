@@ -878,7 +878,7 @@ ElementEditor.prototype = {
 
     
     for (const token of parsedLinksData) {
-      if (token.type === "string") {
+      if (token.type === "string" || token.value?.trim() === "") {
         attributeValueEl.appendChild(
           this.doc.createTextNode(this._truncateAttributeValue(token.value))
         );
