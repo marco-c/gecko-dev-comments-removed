@@ -17,6 +17,7 @@ namespace mozilla {
 class BounceTrackingState;
 class BounceTrackingStateGlobal;
 class BounceTrackingProtectionStorage;
+class ContentBlockingAllowListCache;
 class OriginAttributes;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
@@ -67,6 +68,7 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   
   [[nodiscard]] nsresult PurgeBounceTrackersForStateGlobal(
       BounceTrackingStateGlobal* aStateGlobal,
+      ContentBlockingAllowListCache& aContentBlockingAllowList,
       nsTArray<RefPtr<ClearDataMozPromise>>& aClearPromises);
 
   

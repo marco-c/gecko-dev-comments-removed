@@ -9,6 +9,8 @@
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "nsIContentBlockingAllowList.h"
+#include "nsIPermission.h"
+#include "nsTHashSet.h"
 
 class nsICookieJarSettings;
 class nsIHttpChannel;
@@ -19,7 +21,59 @@ class nsPIDOMWindowInner;
 namespace mozilla {
 
 class OriginAttributes;
-struct ContentBlockingAllowListCache;
+
+
+
+
+
+
+
+
+
+
+class ContentBlockingAllowListCache final {
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult CheckForBaseDomain(const nsACString& aBaseDomain,
+                              const OriginAttributes& aOriginAttributes,
+                              bool& aIsAllowListed);
+
+ private:
+  bool mIsInitialized = false;
+
+  
+  
+  nsTHashSet<nsCString> mEntries;
+  nsTHashSet<nsCString> mEntriesPrivateBrowsing;
+
+  
+
+
+
+
+  nsresult EnsureInit();
+};
 
 class ContentBlockingAllowList final : public nsIContentBlockingAllowList {
  public:

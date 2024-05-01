@@ -12,6 +12,7 @@
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -430,6 +431,10 @@ BounceTrackingProtection::PurgeBounceTrackers() {
   mPurgeInProgress = true;
 
   
+  
+  ContentBlockingAllowListCache contentBlockingAllowListCache;
+
+  
   nsTArray<RefPtr<ClearDataMozPromise>> clearPromises;
 
   
@@ -446,7 +451,8 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                oaSuffix.get()));
     }
 
-    nsresult rv = PurgeBounceTrackersForStateGlobal(stateGlobal, clearPromises);
+    nsresult rv = PurgeBounceTrackersForStateGlobal(
+        stateGlobal, contentBlockingAllowListCache, clearPromises);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return PurgeBounceTrackersMozPromise::CreateAndReject(rv, __func__);
     }
@@ -487,6 +493,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
 
 nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     BounceTrackingStateGlobal* aStateGlobal,
+    ContentBlockingAllowListCache& aContentBlockingAllowList,
     nsTArray<RefPtr<ClearDataMozPromise>>& aClearPromises) {
   MOZ_ASSERT(aStateGlobal);
   MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -544,6 +551,27 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
               ("%s: Skip host which is active %s", __FUNCTION__,
                PromiseFlatCString(host).get()));
+      continue;
+    }
+
+    
+    
+    bool isAllowListed = false;
+    rv = aContentBlockingAllowList.CheckForBaseDomain(
+        host, aStateGlobal->OriginAttributesRef(), isAllowListed);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+    if (isAllowListed) {
+      if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Debug)) {
+        nsAutoCString originAttributeSuffix;
+        aStateGlobal->OriginAttributesRef().CreateSuffix(originAttributeSuffix);
+        MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+                ("%s: Skip host on the content blocking allow-list: host: %s, "
+                 "originAttributes: %s",
+                 __FUNCTION__, PromiseFlatCString(host).get(),
+                 originAttributeSuffix.get()));
+      }
       continue;
     }
 
