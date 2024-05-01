@@ -951,7 +951,11 @@ this.AccessibilityUtils = (function () {
     if (gEnv.labelRule && !name) {
       
       
-      if (isUnlabeledUrlBarCombobox(DOMNode)) {
+      
+      if (
+        isUnlabeledUrlBarCombobox(DOMNode) ||
+        isUnlabeledUrlBarOption(DOMNode)
+      ) {
         return;
       }
       a11yFail("Interactive elements must be labeled", accessible);
