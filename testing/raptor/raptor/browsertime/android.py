@@ -126,6 +126,10 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
                 ]
             )
 
+        if self.config["app"] == "geckoview":
+            
+            args_list.extend(["--ignoreShutdownFailures", "true"])
+
         if self.config["app"] == "fenix":
             
             args_list.extend(["--ignoreShutdownFailures", "true"])
