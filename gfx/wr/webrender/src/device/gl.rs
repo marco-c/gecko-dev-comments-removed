@@ -138,13 +138,9 @@ pub enum UploadMethod {
 }
 
 
-pub unsafe trait Texel: Copy + Default {
-    fn image_format() -> ImageFormat;
-}
-
-unsafe impl Texel for u8 {
-    fn image_format() -> ImageFormat { ImageFormat::R8 }
-}
+pub unsafe trait Texel: Copy {}
+unsafe impl Texel for u8 {}
+unsafe impl Texel for f32 {}
 
 
 fn depth_target_size_in_bytes(dimensions: &DeviceIntSize) -> usize {
