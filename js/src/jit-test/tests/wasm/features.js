@@ -20,8 +20,6 @@
 
 
 
-
-
 let release_or_beta = getBuildConfiguration("release_or_beta");
 let nightly = !release_or_beta;
 
@@ -67,17 +65,6 @@ for (let [name, enabled, test] of releasedFeaturesMaybeDisabledAnyway) {
 
 let releasedFeatures = [
   ['threads', wasmThreadsEnabled(), `(module (memory 1 1 shared))`],
-  [
-    'extended-const',
-    wasmExtendedConstEnabled(),
-    `(module
-      (global i32
-        i32.const 0
-        i32.const 0
-        i32.add
-      )
-    )`
-  ],
   [
     'tail-calls',
     wasmTailCallsEnabled(),

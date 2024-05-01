@@ -1,6 +1,4 @@
 
-
-
 function testFancyZeroOffset(fancyZero, memType = 'i32') {
     try {
         const { mem } = wasmEvalText(`(module

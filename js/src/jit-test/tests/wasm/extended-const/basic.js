@@ -1,5 +1,3 @@
-
-
 function testPrivateGlobal(valtype, expr, result) {
   
   let { get } = wasmEvalText(`(module
