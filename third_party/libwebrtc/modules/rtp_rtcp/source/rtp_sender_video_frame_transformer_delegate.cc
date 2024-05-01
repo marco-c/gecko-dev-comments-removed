@@ -24,6 +24,12 @@
 namespace webrtc {
 namespace {
 
+
+
+
+
+const TimeDelta kDefaultRetransmissionsTime = TimeDelta::Millis(10);
+
 class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
  public:
   TransformableVideoSenderFrame(const EncodedImage& encoded_image,
@@ -217,15 +223,17 @@ void RTPSenderVideoFrameTransformerDelegate::SendVideo(
     auto* transformed_video_frame =
         static_cast<TransformableVideoFrameInterface*>(transformed_frame.get());
     VideoFrameMetadata metadata = transformed_video_frame->Metadata();
-    sender_->SendVideo(
-        transformed_video_frame->GetPayloadType(), metadata.GetCodec(),
-        transformed_video_frame->GetTimestamp(),
-        Timestamp::MinusInfinity(),
-        transformed_video_frame->GetData(),
-        transformed_video_frame->GetData().size(),
-        RTPVideoHeader::FromMetadata(metadata),
-        TimeDelta::PlusInfinity(),
-        metadata.GetCsrcs());
+    
+    
+    
+    sender_->SendVideo(transformed_video_frame->GetPayloadType(),
+                       metadata.GetCodec(),
+                       transformed_video_frame->GetTimestamp(),
+                       Timestamp::MinusInfinity(),
+                       transformed_video_frame->GetData(),
+                       transformed_video_frame->GetData().size(),
+                       RTPVideoHeader::FromMetadata(metadata),
+                       kDefaultRetransmissionsTime, metadata.GetCsrcs());
   }
 }
 
@@ -270,13 +278,14 @@ std::unique_ptr<TransformableVideoFrameInterface> CloneSenderVideoFrame(
                                  ? VideoFrameType::kVideoFrameKey
                                  : VideoFrameType::kVideoFrameDelta;
   
-
+  
+  
+  
   VideoFrameMetadata metadata = original->Metadata();
   RTPVideoHeader new_header = RTPVideoHeader::FromMetadata(metadata);
   return std::make_unique<TransformableVideoSenderFrame>(
       encoded_image, new_header, original->GetPayloadType(), new_header.codec,
-      original->GetTimestamp(),
-      TimeDelta::PlusInfinity(),
+      original->GetTimestamp(), kDefaultRetransmissionsTime,
       original->GetSsrc(), metadata.GetCsrcs(), original->GetRid());
 }
 
