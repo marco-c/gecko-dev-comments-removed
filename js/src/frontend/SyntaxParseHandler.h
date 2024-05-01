@@ -59,7 +59,6 @@ enum SyntaxParseHandlerNode {
 
   
   NodeArgumentsName,
-  NodeLengthName,
   NodeEvalName,
 
   
@@ -77,10 +76,6 @@ enum SyntaxParseHandlerNode {
   
   NodePrivateMemberAccess,
   NodeOptionalPrivateMemberAccess,
-
-  
-  
-  NodeArgumentsLength,
 
   
   
@@ -169,7 +164,7 @@ class SyntaxParseHandler {
 
   bool isPropertyOrPrivateMemberAccess(Node node) {
     return node == NodeDottedProperty || node == NodeElement ||
-           node == NodePrivateMemberAccess || node == NodeArgumentsLength;
+           node == NodePrivateMemberAccess;
   }
 
   bool isOptionalPropertyOrPrivateMemberAccess(Node node) {
@@ -577,18 +572,11 @@ class SyntaxParseHandler {
   NameNodeResult newPropertyName(TaggedParserAtomIndex name,
                                  const TokenPos& pos) {
     lastAtom = name;
-    if (name == TaggedParserAtomIndex::WellKnown::length()) {
-      return NodeLengthName;
-    }
     return NodeGeneric;
   }
 
   PropertyAccessResult newPropertyAccess(Node expr, NameNodeType key) {
     return NodeDottedProperty;
-  }
-
-  PropertyAccessResult newArgumentsLength(Node expr, NameNodeType key) {
-    return NodeArgumentsLength;
   }
 
   PropertyAccessResult newOptionalPropertyAccess(Node expr, NameNodeType key) {
@@ -789,16 +777,12 @@ class SyntaxParseHandler {
 
   bool isName(Node node) {
     return node == NodeName || node == NodeArgumentsName ||
-           node == NodeLengthName || node == NodeEvalName ||
-           node == NodePotentialAsyncKeyword;
+           node == NodeEvalName || node == NodePotentialAsyncKeyword;
   }
 
   bool isArgumentsName(Node node) { return node == NodeArgumentsName; }
-  bool isLengthName(Node node) { return node == NodeLengthName; }
   bool isEvalName(Node node) { return node == NodeEvalName; }
   bool isAsyncKeyword(Node node) { return node == NodePotentialAsyncKeyword; }
-
-  bool isArgumentsLength(Node node) { return node == NodeArgumentsLength; }
 
   bool isPrivateName(Node node) { return node == NodePrivateName; }
   bool isPrivateMemberAccess(Node node) {
@@ -811,8 +795,7 @@ class SyntaxParseHandler {
     
     
     
-    if (node != NodeDottedProperty && node != NodeOptionalDottedProperty &&
-        node != NodeArgumentsLength) {
+    if (node != NodeDottedProperty && node != NodeOptionalDottedProperty) {
       return TaggedParserAtomIndex::null();
     }
     return lastAtom;
