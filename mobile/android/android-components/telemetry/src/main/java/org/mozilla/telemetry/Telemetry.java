@@ -4,9 +4,12 @@
 
 package org.mozilla.telemetry;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.RestrictTo;
 
 import org.mozilla.telemetry.config.TelemetryConfiguration;
+import org.mozilla.telemetry.measurement.DefaultSearchMeasurement;
+import org.mozilla.telemetry.measurement.SearchesMeasurement;
 import org.mozilla.telemetry.net.TelemetryClient;
 import org.mozilla.telemetry.ping.TelemetryCorePingBuilder;
 import org.mozilla.telemetry.ping.TelemetryPing;
@@ -105,6 +108,48 @@ public class Telemetry {
 
         final TelemetryCorePingBuilder builder = (TelemetryCorePingBuilder) pingBuilders.get(TelemetryCorePingBuilder.TYPE);
         builder.getSessionDurationMeasurement().recordSessionEnd();
+
+        return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Telemetry recordSearch(@NonNull  String location, @NonNull String identifier) {
+        if (!configuration.isCollectionEnabled()) {
+            return this;
+        }
+
+        if (!pingBuilders.containsKey(TelemetryCorePingBuilder.TYPE)) {
+            throw new IllegalStateException("This configuration does not contain a core ping builder");
+        }
+
+        final TelemetryCorePingBuilder builder = (TelemetryCorePingBuilder) pingBuilders.get(TelemetryCorePingBuilder.TYPE);
+        builder.getSearchesMeasurement()
+                .recordSearch(location, identifier);
+
+        return this;
+    }
+
+    public Telemetry setDefaultSearchProvider(DefaultSearchMeasurement.DefaultSearchEngineProvider provider) {
+        if (!pingBuilders.containsKey(TelemetryCorePingBuilder.TYPE)) {
+            throw new IllegalStateException("This configuration does not contain a core ping builder");
+        }
+
+        final TelemetryCorePingBuilder builder = (TelemetryCorePingBuilder) pingBuilders.get(TelemetryCorePingBuilder.TYPE);
+        builder.getDefaultSearchMeasurement()
+                .setDefaultSearchEngineProvider(provider);
 
         return this;
     }

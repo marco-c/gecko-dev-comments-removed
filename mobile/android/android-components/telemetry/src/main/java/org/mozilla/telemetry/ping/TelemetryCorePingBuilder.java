@@ -5,11 +5,15 @@
 package org.mozilla.telemetry.ping;
 
 import org.mozilla.telemetry.config.TelemetryConfiguration;
+import org.mozilla.telemetry.measurement.ArchMeasurement;
 import org.mozilla.telemetry.measurement.CreatedDateMeasurement;
+import org.mozilla.telemetry.measurement.DefaultSearchMeasurement;
 import org.mozilla.telemetry.measurement.DeviceMeasurement;
+import org.mozilla.telemetry.measurement.FirstRunProfileDateMeasurement;
 import org.mozilla.telemetry.measurement.LocaleMeasurement;
 import org.mozilla.telemetry.measurement.OperatingSystemMeasurement;
 import org.mozilla.telemetry.measurement.OperatingSystemVersionMeasurement;
+import org.mozilla.telemetry.measurement.SearchesMeasurement;
 import org.mozilla.telemetry.measurement.SequenceMeasurement;
 import org.mozilla.telemetry.measurement.SessionCountMeasurement;
 import org.mozilla.telemetry.measurement.SessionDurationMeasurement;
@@ -29,6 +33,8 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
     private SessionCountMeasurement sessionCountMeasurement;
     private SessionDurationMeasurement sessionDurationMeasurement;
+    private DefaultSearchMeasurement defaultSearchMeasurement;
+    private SearchesMeasurement searchesMeasurement;
 
     public TelemetryCorePingBuilder(TelemetryConfiguration configuration) {
         super(configuration, TYPE, VERSION);
@@ -38,19 +44,14 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
         addMeasurement(new OperatingSystemMeasurement());
         addMeasurement(new OperatingSystemVersionMeasurement());
         addMeasurement(new DeviceMeasurement());
-
-        
-        
-        
-        
-
+        addMeasurement(new ArchMeasurement());
+        addMeasurement(new FirstRunProfileDateMeasurement(configuration));
+        addMeasurement(defaultSearchMeasurement = new DefaultSearchMeasurement());
         addMeasurement(new CreatedDateMeasurement());
         addMeasurement(new TimezoneOffsetMeasurement());
         addMeasurement(sessionCountMeasurement = new SessionCountMeasurement(configuration));
         addMeasurement(sessionDurationMeasurement = new SessionDurationMeasurement(configuration));
-
-        
-        
+        addMeasurement(searchesMeasurement = new SearchesMeasurement(configuration));
     }
 
     public SessionCountMeasurement getSessionCountMeasurement() {
@@ -59,6 +60,14 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
     public SessionDurationMeasurement getSessionDurationMeasurement() {
         return sessionDurationMeasurement;
+    }
+
+    public SearchesMeasurement getSearchesMeasurement() {
+        return searchesMeasurement;
+    }
+
+    public DefaultSearchMeasurement getDefaultSearchMeasurement() {
+        return defaultSearchMeasurement;
     }
 
     @Override
