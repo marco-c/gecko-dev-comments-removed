@@ -19,11 +19,6 @@ module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
     return;
   }
 
-  
-  
-  
-  await targetFront.onThreadAttached;
-
   if (targetFront.isDestroyed()) {
     return;
   }

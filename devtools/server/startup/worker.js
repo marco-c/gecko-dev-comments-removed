@@ -16,7 +16,6 @@
 
 
 
-
 let nextId = 0;
 this.rpc = function (method, ...params) {
   return new Promise((resolve, reject) => {
@@ -87,13 +86,6 @@ this.addEventListener("message", async function (event) {
       
       workerTargetActor.manage(workerTargetActor);
 
-      workerTargetActor.on(
-        "worker-thread-attached",
-        function onThreadAttached() {
-          postMessage(JSON.stringify({ type: "worker-thread-attached" }));
-        }
-      );
-
       
       
       connections.set(forwardingPrefix, {
@@ -101,6 +93,11 @@ this.addEventListener("message", async function (event) {
         workerTargetActor,
       });
 
+      
+      
+      
+      
+      
       postMessage(
         JSON.stringify({
           type: "connected",
@@ -126,6 +123,11 @@ this.addEventListener("message", async function (event) {
         }
         await Promise.all(promises);
       }
+
+      
+      
+      
+      postMessage(JSON.stringify({ type: "session-data-processed" }));
 
       break;
 

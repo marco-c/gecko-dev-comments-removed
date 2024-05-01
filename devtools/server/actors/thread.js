@@ -418,12 +418,6 @@ class ThreadActor extends Actor {
     this.alreadyAttached = true;
     this.dbg.enable();
 
-    
-    
-    
-    if (this.targetActor.onThreadAttached) {
-      this.targetActor.onThreadAttached();
-    }
     if (Services.obs) {
       
       

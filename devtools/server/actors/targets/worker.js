@@ -126,12 +126,6 @@ class WorkerTargetActor extends BaseTargetActor {
     return this._sourcesManager;
   }
 
-  
-  onThreadAttached() {
-    
-    this.emit("worker-thread-attached");
-  }
-
   destroy() {
     super.destroy();
 
