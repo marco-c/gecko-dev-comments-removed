@@ -4687,8 +4687,12 @@ already_AddRefed<dom::RTCRtpTransceiver> PeerConnectionImpl::CreateTransceiver(
         ctx->GetSharedWebrtcState());
     mRtcpReceiveListener = mSignalHandler->RtcpReceiveEvent().Connect(
         mCall->mCallThread, [call = mCall](MediaPacket aPacket) {
-          call->Call()->Receiver()->DeliverRtcpPacket(
-              rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()));
+          
+          
+          if (call->Call()) {
+            call->Call()->Receiver()->DeliverRtcpPacket(
+                rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()));
+          }
         });
   }
 
