@@ -128,7 +128,7 @@ addAccessibleTask(
 
     
     
-    evt = waitForMacEvent("AXValueChanged", (iface, data) => {
+    evt = waitForMacEvent("AXValueChanged", iface => {
       return (
         iface.getAttributeValue("AXDOMIdentifier") == "checkbox" &&
         iface.getAttributeValue("AXValue") == 2

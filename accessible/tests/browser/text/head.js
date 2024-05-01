@@ -142,7 +142,7 @@ function testBoundarySequence(
 
 
 async function waitForCopy(browser) {
-  await BrowserTestUtils.waitForContentEvent(browser, "copy", false, evt => {
+  await BrowserTestUtils.waitForContentEvent(browser, "copy", false, () => {
     return true;
   });
 

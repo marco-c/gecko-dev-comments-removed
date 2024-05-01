@@ -8,7 +8,7 @@
 
 addAccessibleTask(
   `test`,
-  async function testParagraphBoundaryWithRemoteDescendants(browser, accDoc) {
+  async function testParagraphBoundaryWithRemoteDescendants() {
     const root = getRootAccessible(document).QueryInterface(
       Ci.nsIAccessibleText
     );

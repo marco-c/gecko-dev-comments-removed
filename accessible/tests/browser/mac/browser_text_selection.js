@@ -82,7 +82,7 @@ addAccessibleTask(
   Hello <a href="#" id="link">World</a>,
   I <a href="#" style="user-select: none;" id="unselectable_link">love</a>
   <button id="button">you</button></p>`,
-  async (browser, accDoc) => {
+  async browser => {
     
     
     

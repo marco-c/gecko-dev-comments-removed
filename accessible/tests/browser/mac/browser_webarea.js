@@ -8,8 +8,8 @@
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 
-addAccessibleTask(``, async (browser, accDoc) => {
-  let evt = waitForMacEvent("AXLoadComplete", (iface, data) => {
+addAccessibleTask(``, async browser => {
+  let evt = waitForMacEvent("AXLoadComplete", iface => {
     return iface.getAttributeValue("AXDescription") == "webarea test";
   });
   await SpecialPowers.spawn(browser, [], () => {
@@ -29,16 +29,16 @@ addAccessibleTask(``, async (browser, accDoc) => {
 });
 
 
-addAccessibleTask(`<title>webarea test</title>`, async (browser, accDoc) => {
+addAccessibleTask(`<title>webarea test</title>`, async browser => {
   
   
   
   
   let eventPromise = Promise.race([
-    waitForMacEvent("AXLayoutComplete", (iface, data) => {
+    waitForMacEvent("AXLayoutComplete", iface => {
       return iface.getAttributeValue("AXDescription") == "iframe document";
     }),
-    waitForMacEvent("AXLoadComplete", (iface, data) => {
+    waitForMacEvent("AXLoadComplete", iface => {
       return iface.getAttributeValue("AXDescription") == "webarea test";
     }),
   ]);

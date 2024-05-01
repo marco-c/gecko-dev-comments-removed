@@ -11,7 +11,7 @@ loadScripts(
   { name: "role.js", dir: MOCHITESTS_DIR }
 );
 
-async function runTests(browser, accDoc) {
+async function runTests(browser) {
   await SpecialPowers.pushPrefEnv({
     
     set: [["fission.bfcacheInParent", true]],

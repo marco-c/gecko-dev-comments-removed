@@ -5,7 +5,7 @@
 
 
 
-addAccessibleTask(``, async function (browser, accDoc) {
+addAccessibleTask(``, async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.sessionstore.restore_on_demand", true]],
   });
