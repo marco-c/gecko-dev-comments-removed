@@ -112,7 +112,7 @@ var database_check = async function () {
   await new Promise(resolve => {
     PlacesUtils.favicons.getFaviconDataForPage(
       uri(TEST_FAVICON_PAGE_URL),
-      (aURI, aDataLen, aData, aMimeType) => {
+      (aURI, aDataLen) => {
         
         Assert.notEqual(aURI, null);
         

@@ -15,14 +15,14 @@
     constructor() {
       super();
 
-      this.addEventListener("focus", event => {
+      this.addEventListener("focus", () => {
         this._cachedInsertionPoint = undefined;
         
         
         document.commandDispatcher.updateCommands("focus");
       });
 
-      this.addEventListener("select", event => {
+      this.addEventListener("select", () => {
         this._cachedInsertionPoint = undefined;
 
         
@@ -125,7 +125,7 @@
         event.stopPropagation();
       });
 
-      this.addEventListener("dragend", event => {
+      this.addEventListener("dragend", () => {
         this._isDragSource = false;
         PlacesControllerDragHelper.currentDropTarget = null;
       });
@@ -841,7 +841,7 @@
       return this.controller.buildContextMenu(aPopup);
     }
 
-    destroyContextMenu(aPopup) {}
+    destroyContextMenu() {}
 
     disconnectedCallback() {
       window.removeEventListener("unload", this.disconnectedCallback);

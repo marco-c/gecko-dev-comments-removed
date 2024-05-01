@@ -115,7 +115,7 @@ async function checkObservers(expectPromises, expectedData) {
 
 
 
-async function teardown(file, begin, success, fail) {
+async function teardown(file) {
   
   await IOUtils.remove(file, { ignoreAbsent: true });
 

@@ -174,13 +174,13 @@ add_task(async function test_removeByFilter() {
   for (let callbackUse of [true, false]) {
     
     for (let bookmarkUse of [true, false]) {
-      let bookmarkedUri = arr => undefined;
+      let bookmarkedUri = () => undefined;
       let checkableArray = arr => arr;
       let checkClosure = assertNotInDB;
       if (bookmarkUse) {
         bookmarkedUri = arr => arr[0];
         checkableArray = arr => arr.slice(1);
-        checkClosure = function (aUri) {};
+        checkClosure = function () {};
       }
       
       await removeByFilterTester(

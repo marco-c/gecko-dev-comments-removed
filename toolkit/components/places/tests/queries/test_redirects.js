@@ -42,7 +42,7 @@ function check_results_callback(aSequence) {
   }
 
   
-  let expectedData = visits.filter(function (aVisit, aIndex, aArray) {
+  let expectedData = visits.filter(function (aVisit) {
     
     if (aVisit.transType == Ci.nsINavHistoryService.TRANSITION_EMBED) {
       return false;
@@ -154,7 +154,7 @@ function cartProd(aSequences, aCallback) {
 
   
   
-  let seqEltPtrs = aSequences.map(i => 0);
+  let seqEltPtrs = aSequences.map(() => 0);
 
   let numProds = 0;
   let done = false;
