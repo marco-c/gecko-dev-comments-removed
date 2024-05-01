@@ -513,22 +513,20 @@ class nsTextFrame : public nsIFrame {
 
 
 
-    virtual void PaintDecorationLine(Rect aPath, bool aPaintingShadows,
-                                     nscolor aColor) {}
+    virtual void PaintDecorationLine(Rect aPath, nscolor aColor) {}
 
     
 
 
 
 
-    virtual void PaintSelectionDecorationLine(Rect aPath, bool aPaintingShadows,
-                                              nscolor aColor) {}
+    virtual void PaintSelectionDecorationLine(Rect aPath, nscolor aColor) {}
 
     
 
 
 
-    virtual void NotifyBeforeText(bool aPaintingShadows, nscolor aColor) {}
+    virtual void NotifyBeforeText(nscolor aColor) {}
 
     
 
