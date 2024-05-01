@@ -62,6 +62,12 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
+  nsresult StoreServerCertHashes(
+      nsHttpConnectionInfo* aConnInfo, bool aNoSpdy, bool aNoHttp3,
+      nsTArray<RefPtr<nsIWebTransportHash>>&& aServerCertHashes);
+
+  
+  
   
 
   
@@ -142,6 +148,11 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   void NewIdleConnectionAdded(uint32_t timeToLive);
   void DecrementNumIdleConns();
+
+  const nsTArray<RefPtr<nsIWebTransportHash>>* GetServerCertHashes(
+      nsHttpConnectionInfo* aConnInfo);
+
+  uint64_t GenerateNewWebTransportId() { return mMaxWebTransportId++; }
 
  private:
   virtual ~nsHttpConnectionMgr();
@@ -334,6 +345,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void OnMsgPruneNoTraffic(int32_t, ARefBase*);
   void OnMsgUpdateCurrentBrowserId(int32_t, ARefBase*);
   void OnMsgClearConnectionHistory(int32_t, ARefBase*);
+  void OnMsgStoreServerCertHashes(int32_t, ARefBase*);
 
   
   
@@ -462,6 +474,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void NotifyConnectionOfBrowserIdChange(uint64_t previousId);
 
   void CheckTransInPendingQueue(nsHttpTransaction* aTrans);
+
+  
+  
+  Atomic<uint64_t> mMaxWebTransportId{1};
 };
 
 }  
