@@ -319,12 +319,13 @@ bool MediaSourceDecoder::CanPlayThroughImpl() {
   }
   
   
-  dom::SourceBufferList* sourceBuffers = mMediaSource->ActiveSourceBuffers();
-  TimeUnit bufferedEnd = sourceBuffers->GetHighestBufferedEndTime();
+  TimeIntervals buffered = GetBuffered();
+  buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ / 2);
   TimeUnit timeAhead =
       std::min(duration, currentPosition + TimeUnit::FromSeconds(3));
   TimeInterval interval(currentPosition, timeAhead);
-  return bufferedEnd >= timeAhead;
+  return buffered.ToMicrosecondResolution().ContainsWithStrictEnd(
+      ClampIntervalToEnd(interval));
 }
 
 TimeInterval MediaSourceDecoder::ClampIntervalToEnd(
