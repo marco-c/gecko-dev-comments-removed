@@ -6433,6 +6433,13 @@ AliasSet MGuardResizableArrayBufferViewInBounds::getAliasSet() const {
   return AliasSet::Load(AliasSet::ArrayBufferViewLengthOrOffset);
 }
 
+AliasSet MGuardResizableArrayBufferViewInBoundsOrDetached::getAliasSet() const {
+  
+  
+  return AliasSet::Load(AliasSet::ArrayBufferViewLengthOrOffset |
+                        AliasSet::ObjectFields | AliasSet::FixedSlot);
+}
+
 AliasSet MArrayPush::getAliasSet() const {
   return AliasSet::Store(AliasSet::ObjectFields | AliasSet::Element);
 }
