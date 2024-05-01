@@ -42,7 +42,7 @@ using mozilla::intl::Localization;
 
 
 
-#define NOTIFICATION_WAIT_TIMEOUT_MS (12 * 60 * 60 * 1000)
+#define NOTIFICATION_WAIT_TIMEOUT_MS (11 * 60 * 60 * 1000 + 55 * 60 * 1000)
 
 
 #define MUTEX_TIMEOUT_MS (10 * 60 * 1000)
