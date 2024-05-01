@@ -71,10 +71,20 @@ namespace internal {
 
 
 
+
+
+
+
+
+
+
+
+
 class RegExpCaseFolding final : public AllStatic {
  public:
   static const icu::UnicodeSet& IgnoreSet();
   static const icu::UnicodeSet& SpecialAddSet();
+  static const icu::UnicodeSet& UnicodeNonSimpleCloseOverSet();
 
   
   

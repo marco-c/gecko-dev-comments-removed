@@ -586,6 +586,15 @@ class Object {
   
   Object(uintptr_t raw) : asBits_(raw) { MOZ_CRASH("unused"); }
 
+  
+  
+  
+  
+  inline bool IsException(Isolate*) const {
+    MOZ_ASSERT(!value().toBoolean());
+    return true;
+  }
+
   JS::Value value() const { return JS::Value::fromRawBits(asBits_); }
 
   inline static Object cast(Object object) { return object; }
@@ -594,14 +603,6 @@ class Object {
   void setValue(const JS::Value& val) { asBits_ = val.asRawBits(); }
   uint64_t asBits_;
 } JS_HAZ_GC_POINTER;
-
-
-
-
-
-inline bool IsException(Object obj, Isolate*) {
-  return obj.value().isMagic(JS_INTERRUPT_REGEXP);
-}
 
 class Smi : public Object {
  public:
@@ -623,27 +624,6 @@ class HeapObject : public Object {
     h.setValue(object.value());
     return h;
   }
-};
-
-
-
-
-
-
-
-
-template <typename T>
-class Tagged {
- public:
-  Tagged() {}
-  MOZ_IMPLICIT Tagged(const T& value) : value_(value) {}
-  MOZ_IMPLICIT Tagged(T&& value) : value_(std::move(value)) {}
-
-  T* operator->() { return &value_; }
-  constexpr operator T() const { return value_; }
-
- private:
-  T value_;
 };
 
 
@@ -688,13 +668,13 @@ T* ByteArrayData::typedData() {
 
 template <typename T>
 T ByteArrayData::getTyped(uint32_t index) {
-  MOZ_ASSERT(index < length() / sizeof(T));
+  MOZ_ASSERT(index < length / sizeof(T));
   return typedData<T>()[index];
 }
 
 template <typename T>
 void ByteArrayData::setTyped(uint32_t index, T value) {
-  MOZ_ASSERT(index < length() / sizeof(T));
+  MOZ_ASSERT(index < length / sizeof(T));
   typedData<T>()[index] = value;
 }
 
@@ -704,7 +684,6 @@ class ByteArray : public HeapObject {
   ByteArrayData* inner() const {
     return static_cast<ByteArrayData*>(value().toPrivate());
   }
-  friend bool IsByteArray(Object obj);
 
  public:
   PseudoHandle<ByteArrayData> takeOwnership(Isolate* isolate);
@@ -713,8 +692,8 @@ class ByteArray : public HeapObject {
   uint8_t get(uint32_t index) { return inner()->get(index); }
   void set(uint32_t index, uint8_t val) { inner()->set(index, val); }
 
-  uint32_t length() const { return inner()->length(); }
-  uint8_t* begin() { return inner()->data(); }
+  uint32_t length() const { return inner()->length; }
+  uint8_t* GetDataStartAddress() { return inner()->data(); }
 
   static ByteArray cast(Object object) {
     ByteArray b;
@@ -722,16 +701,10 @@ class ByteArray : public HeapObject {
     return b;
   }
 
+  bool IsByteArray() const { return true; }
+
   friend class SMRegExpMacroAssembler;
 };
-
-
-
-inline bool IsByteArray(Object obj) {
-  MOZ_ASSERT(ByteArray::cast(obj).inner()->magic() ==
-             ByteArrayData::ExpectedMagic);
-  return true;
-}
 
 
 
@@ -1057,7 +1030,6 @@ class JSRegExp : public HeapObject {
 };
 
 using RegExpFlags = JS::RegExpFlags;
-using RegExpFlag = JS::RegExpFlags::Flag;
 
 inline bool IsUnicode(RegExpFlags flags) { return flags.unicode(); }
 inline bool IsGlobal(RegExpFlags flags) { return flags.global(); }
@@ -1068,22 +1040,6 @@ inline bool IsSticky(RegExpFlags flags) { return flags.sticky(); }
 inline bool IsUnicodeSets(RegExpFlags flags) { return flags.unicodeSets(); }
 inline bool IsEitherUnicode(RegExpFlags flags) {
   return flags.unicode() || flags.unicodeSets();
-}
-
-inline base::Optional<RegExpFlag> TryRegExpFlagFromChar(char c) {
-  RegExpFlag flag;
-
-  
-  MOZ_ALWAYS_TRUE(JS::MaybeParseRegExpFlag(c, &flag));
-
-  return base::Optional(flag);
-}
-
-inline bool operator==(const RegExpFlags& lhs, const int& rhs) {
-  return lhs.value() == rhs;
-}
-inline bool operator!=(const RegExpFlags& lhs, const int& rhs) {
-  return !(lhs == rhs);
 }
 
 class Histogram {
@@ -1172,9 +1128,7 @@ class Isolate {
   
   
   
-  Object HandleInterrupts() {
-    return Object(JS::MagicValue(JS_INTERRUPT_REGEXP));
-  }
+  Object HandleInterrupts() { return Object(JS::BooleanValue(false)); }
 
   JSContext* cx() const { return cx_; }
 
