@@ -531,6 +531,10 @@ def split_triplet(triplet, allow_wasi=False):
         
         
         sub_configure_alias = sub_configure_alias[: -len(os)] + "darwin"
+        
+        
+        if os == "ios-sim":
+            os = "ios-simulator"
     elif os.startswith("dragonfly"):
         canonical_os = canonical_kernel = "DragonFly"
     elif os.startswith("freebsd"):
@@ -659,6 +663,7 @@ def config_sub(shell, triplet):
     munging = {
         "-windows-msvc": "-mingw32",
         "-windows-gnu": "-mingw32",
+        "-ios-sim": "-ios",
     }
     for check_suffix, replacement in munging.items():
         if triplet.endswith(check_suffix):
