@@ -14,7 +14,7 @@ def assert_set_cookie_result(set_cookie_result, partition):
         
         
         
-        recursive_compare({'partitionKey': {}, }, set_cookie_result)
+        recursive_compare({'partitionKey': {"userContext": "default"}, }, set_cookie_result)
         return
     if isinstance(partition, StorageKeyPartitionDescriptor):
         expected_partition_key = {}
@@ -76,3 +76,18 @@ async def test_partition_storage_key_source_origin(bidi_session, set_cookie, tes
     await assert_cookie_is_set(bidi_session, domain=domain_value(), partition=partition)
 
 
+async def test_partition_user_context(
+    bidi_session,
+    domain_value,
+    create_user_context,
+    set_cookie
+):
+    user_context_1 = await create_user_context()
+
+    partition = StorageKeyPartitionDescriptor(user_context=user_context_1)
+    set_cookie_result = await set_cookie(
+        cookie=create_cookie(domain=domain_value()),
+        partition=partition)
+    assert_set_cookie_result(set_cookie_result, partition)
+
+    await assert_cookie_is_set(bidi_session, domain=domain_value(), partition=partition)
