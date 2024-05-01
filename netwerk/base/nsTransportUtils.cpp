@@ -24,24 +24,21 @@ class nsTransportEventSinkProxy : public nsITransportEventSink {
   nsTransportEventSinkProxy(nsITransportEventSink* sink, nsIEventTarget* target)
       : mSink(sink),
         mTarget(target),
-        mLock("nsTransportEventSinkProxy.mLock"),
-        mLastEvent(nullptr) {
-    NS_ADDREF(mSink);
-  }
+        mLock("nsTransportEventSinkProxy.mLock") {}
 
  private:
   virtual ~nsTransportEventSinkProxy() {
     
     
     NS_ProxyRelease("nsTransportEventSinkProxy::mSink", mTarget,
-                    dont_AddRef(mSink));
+                    mSink.forget());
   }
 
  public:
-  nsITransportEventSink* mSink;
+  nsCOMPtr<nsITransportEventSink> mSink;
   nsCOMPtr<nsIEventTarget> mTarget;
   Mutex mLock MOZ_UNANNOTATED;
-  nsTransportStatusEvent* mLastEvent;
+  RefPtr<nsTransportStatusEvent> mLastEvent;
 };
 
 class nsTransportStatusEvent : public Runnable {
@@ -69,11 +66,14 @@ class nsTransportStatusEvent : public Runnable {
     
     {
       MutexAutoLock lock(mProxy->mLock);
-      if (mProxy->mLastEvent == this) mProxy->mLastEvent = nullptr;
+      if (mProxy->mLastEvent == this) {
+        mProxy->mLastEvent = nullptr;
+      }
     }
 
     mProxy->mSink->OnTransportStatus(mTransport, mStatus, mProgress,
                                      mProgressMax);
+    mProxy = nullptr;
     return NS_OK;
   }
 
