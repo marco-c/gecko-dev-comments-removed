@@ -307,8 +307,8 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     
     
     
-    
-    if (NS_SUCCEEDED(rv) && !mUsedContentHandler && !m_targetStreamListener) {
+    if ((NS_SUCCEEDED(rv) || rv == NS_ERROR_WONT_HANDLE_CONTENT) &&
+        !mUsedContentHandler && !m_targetStreamListener) {
       m_targetStreamListener = mListener;
       return m_targetStreamListener->OnStartRequest(request);
     }
