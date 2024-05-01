@@ -48,6 +48,8 @@ def generate_build_task(version):
     checkout = ("git fetch origin --tags && "
                 "git config advice.detachedHead false && "
                 "git checkout {}".format(version))
+    bintray_publishing = (" && python automation/taskcluster/release/fetch-bintray-api-key.py"
+                          " && ./gradlew bintrayUpload --debug")
 
     assemble_task = 'assembleRelease'
     scopes = [
@@ -61,8 +63,8 @@ def generate_build_task(version):
         command=(checkout +
                  ' && ./gradlew --no-daemon clean test detektCheck ktlint '
                  + assemble_task +
-                 ' docs uploadArchives zipMavenArtifacts'),
-        
+                 ' docs uploadArchives zipMavenArtifacts' +
+                 bintray_publishing),
         features={
             "chainOfTrust": True
         },
