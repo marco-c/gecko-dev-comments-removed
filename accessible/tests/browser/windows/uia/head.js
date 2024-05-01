@@ -5,6 +5,8 @@
 "use strict";
 
 
+
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -16,3 +18,38 @@ loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
   { name: "promisified-events.js", dir: MOCHITESTS_DIR }
 );
+
+let gIsUiaEnabled = false;
+
+
+
+
+
+
+
+
+
+
+
+function addUiaTask(doc, task, options = {}) {
+  const { uiaEnabled = true, uiaDisabled = true } = options;
+
+  function addTask(shouldEnable) {
+    async function uiaTask(browser, docAcc, topDocAcc) {
+      await SpecialPowers.pushPrefEnv({
+        set: [["accessibility.uia.enable", shouldEnable]],
+      });
+      gIsUiaEnabled = shouldEnable;
+      info(shouldEnable ? "Gecko UIA enabled" : "Gecko UIA disabled");
+      await task(browser, docAcc, topDocAcc);
+    }
+    addAccessibleTask(doc, uiaTask, options);
+  }
+
+  if (uiaEnabled) {
+    addTask(true);
+  }
+  if (uiaDisabled) {
+    addTask(false);
+  }
+}
