@@ -92,6 +92,10 @@ class TenuringTracer final : public JSTracer {
   void traceBigInt(JS::BigInt* bi);
 
  private:
+  MOZ_ALWAYS_INLINE void onNurseryObjectEdge(JSObject** objp);
+  MOZ_ALWAYS_INLINE void onNurseryStringEdge(JSString** strp);
+  MOZ_ALWAYS_INLINE void onNurseryBigIntEdge(JS::BigInt** bip);
+
   
   
   template <typename CharT>
