@@ -835,6 +835,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   bool mPendingStatusUpdateForNewlyCreatedStateMachine = false;
 #  endif
+
+  
+  
+  
+  Maybe<TimeStamp> mMDSMCreationTime;
 };
 
 }  

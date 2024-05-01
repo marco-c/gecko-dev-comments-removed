@@ -616,6 +616,7 @@ nsresult MediaDecoder::CreateAndInitStateMachine(bool aIsLiveStream,
   NS_ENSURE_TRUE(GetStateMachine(), NS_ERROR_FAILURE);
   GetStateMachine()->DispatchIsLiveStream(aIsLiveStream);
 
+  mMDSMCreationTime = Some(TimeStamp::Now());
   nsresult rv = mDecoderStateMachine->Init(this);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -888,6 +889,14 @@ void MediaDecoder::FirstFrameLoaded(
   
   if (mPlayState == PLAY_STATE_LOADING) {
     ChangeState(mNextState);
+  }
+
+  
+  if (mInfo->HasVideo() && mMDSMCreationTime) {
+    mTelemetryProbesReporter->OntFirstFrameLoaded(
+        TimeStamp::Now() - *mMDSMCreationTime, IsMSE(),
+        mDecoderStateMachine->IsExternalEngineStateMachine());
+    mMDSMCreationTime.reset();
   }
 
   
