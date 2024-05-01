@@ -13,7 +13,6 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsStyleConsts.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
@@ -23,9 +22,7 @@
 #include "nsHTMLParts.h"
 #include "nsTableColGroupFrame.h"
 #include "nsTableColFrame.h"
-#include "nsCOMPtr.h"
 #include "nsDisplayList.h"
-#include "nsIFrameInlines.h"
 #include <algorithm>
 
 #ifdef ACCESSIBILITY
@@ -443,34 +440,35 @@ void nsTableRowFrame::UpdateBSize(nscoord aBSize, nscoord aAscent,
     return;
   }
 
-  if (aBSize != NS_UNCONSTRAINEDSIZE) {
-    if (!(aCellFrame->HasVerticalAlignBaseline())) {  
-                                                      
-      if (GetInitialBSize() < aBSize) {
-        int32_t rowSpan = aTableFrame->GetEffectiveRowSpan(*aCellFrame);
-        if (rowSpan == 1) {
-          SetContentBSize(aBSize);
-        }
+  if (aBSize == NS_UNCONSTRAINEDSIZE) {
+    return;
+  }
+  if (!aCellFrame->HasVerticalAlignBaseline()) {
+    
+    if (GetInitialBSize() < aBSize) {
+      int32_t rowSpan = aTableFrame->GetEffectiveRowSpan(*aCellFrame);
+      if (rowSpan == 1) {
+        SetContentBSize(aBSize);
       }
-    } else {  
-      NS_ASSERTION((aAscent != NS_UNCONSTRAINEDSIZE) &&
-                       (aDescent != NS_UNCONSTRAINEDSIZE),
-                   "invalid call");
-      
-      if (mMaxCellAscent < aAscent) {
-        mMaxCellAscent = aAscent;
+    }
+  } else {  
+    NS_ASSERTION(
+        aAscent != NS_UNCONSTRAINEDSIZE && aDescent != NS_UNCONSTRAINEDSIZE,
+        "invalid call");
+    
+    if (mMaxCellAscent < aAscent) {
+      mMaxCellAscent = aAscent;
+    }
+    
+    if (mMaxCellDescent < aDescent) {
+      int32_t rowSpan = aTableFrame->GetEffectiveRowSpan(*aCellFrame);
+      if (rowSpan == 1) {
+        mMaxCellDescent = aDescent;
       }
-      
-      if (mMaxCellDescent < aDescent) {
-        int32_t rowSpan = aTableFrame->GetEffectiveRowSpan(*aCellFrame);
-        if (rowSpan == 1) {
-          mMaxCellDescent = aDescent;
-        }
-      }
-      
-      if (GetInitialBSize() < mMaxCellAscent + mMaxCellDescent) {
-        SetContentBSize(mMaxCellAscent + mMaxCellDescent);
-      }
+    }
+    
+    if (GetInitialBSize() < mMaxCellAscent + mMaxCellDescent) {
+      SetContentBSize(mMaxCellAscent + mMaxCellDescent);
     }
   }
 }
@@ -497,7 +495,7 @@ nscoord nsTableRowFrame::CalcBSize(const ReflowInput& aReflowInput) {
        kidFrame = kidFrame->GetNextCell()) {
     MOZ_ASSERT(kidFrame->GetWritingMode() == wm);
     LogicalSize desSize = kidFrame->GetDesiredSize();
-    if ((NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize()) &&
+    if (NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize() &&
         !GetPrevInFlow()) {
       desSize.BSize(wm) = CalcCellActualBSize(kidFrame, desSize.BSize(wm), wm);
     }
@@ -706,19 +704,19 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
     bool doReflowChild = true;
     if (!aReflowInput.ShouldReflowAllKids() && !aTableFrame.IsGeometryDirty() &&
         !kidFrame->IsSubtreeDirty()) {
-      if (!aReflowInput.mFlags.mSpecialBSizeReflow) doReflowChild = false;
-    } else if ((NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize())) {
+      if (!aReflowInput.mFlags.mSpecialBSizeReflow) {
+        doReflowChild = false;
+      }
+    } else if (NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize()) {
       
       
       if (aTableFrame.GetEffectiveRowSpan(*kidFrame) > 1) {
         doReflowChild = false;
       }
     }
-    if (aReflowInput.mFlags.mSpecialBSizeReflow) {
-      if (!isPaginated &&
-          !kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
-        continue;
-      }
+    if (aReflowInput.mFlags.mSpecialBSizeReflow && !isPaginated &&
+        !kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+      continue;
     }
 
     uint32_t cellColIndex = kidFrame->ColIndex();
