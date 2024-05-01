@@ -584,4 +584,23 @@ Result<RefPtr<MediaByteBuffer>, nsresult> GetExtraDataFromArrayBuffer(
   return data->Length() > 0 ? data : nullptr;
 }
 
+bool IsSupportedVideoCodec(const nsAString& aCodec) {
+  LOG("IsSupportedVideoCodec: %s", NS_ConvertUTF16toUTF8(aCodec).get());
+  
+  if (!IsVP9CodecString(aCodec) && !IsH264CodecString(aCodec) &&
+      !IsAV1CodecString(aCodec) && !aCodec.EqualsLiteral("vp8")) {
+    return false;
+  }
+
+  
+  
+  
+  if (StringBeginsWith(aCodec, u"vp9"_ns) ||
+      StringBeginsWith(aCodec, u"av1"_ns)) {
+    return false;
+  }
+
+  return true;
+}
+
 }  

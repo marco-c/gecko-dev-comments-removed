@@ -208,24 +208,6 @@ static nsTArray<nsCString> GuessMIMETypes(const MIMECreateParam& aParam) {
   return types;
 }
 
-static bool IsSupportedCodec(const nsAString& aCodec) {
-  
-  if (!IsAV1CodecString(aCodec) && !IsVP9CodecString(aCodec) &&
-      !IsVP8CodecString(aCodec) && !IsH264CodecString(aCodec)) {
-    return false;
-  }
-
-  
-  
-  
-  if (StringBeginsWith(aCodec, u"vp9"_ns) ||
-      StringBeginsWith(aCodec, u"av1"_ns)) {
-    return false;
-  }
-
-  return true;
-}
-
 
 template <typename Config>
 static bool CanDecode(const Config& aConfig) {
@@ -234,7 +216,7 @@ static bool CanDecode(const Config& aConfig) {
   if (IsOnAndroid()) {
     return false;
   }
-  if (!IsSupportedCodec(param.mParsedCodec)) {
+  if (!IsSupportedVideoCodec(param.mParsedCodec)) {
     return false;
   }
   

@@ -333,27 +333,6 @@ VideoEncoderConfigInternal::Diff(
 }
 
 
-
-
-static bool IsEncodeSupportedCodec(const nsAString& aCodec) {
-  LOG("IsEncodeSupported: %s", NS_ConvertUTF16toUTF8(aCodec).get());
-  if (!IsVP9CodecString(aCodec) && !IsVP8CodecString(aCodec) &&
-      !IsH264CodecString(aCodec) && !IsAV1CodecString(aCodec)) {
-    return false;
-  }
-
-  
-  
-  
-  if (StringBeginsWith(aCodec, u"vp9"_ns) ||
-      StringBeginsWith(aCodec, u"av1"_ns)) {
-    return false;
-  }
-
-  return true;
-}
-
-
 static bool CanEncode(const RefPtr<VideoEncoderConfigInternal>& aConfig) {
   auto parsedCodecString =
       ParseCodecString(aConfig->mCodec).valueOr(EmptyString());
@@ -361,7 +340,7 @@ static bool CanEncode(const RefPtr<VideoEncoderConfigInternal>& aConfig) {
   if (IsOnAndroid()) {
     return false;
   }
-  if (!IsEncodeSupportedCodec(parsedCodecString)) {
+  if (!IsSupportedVideoCodec(parsedCodecString)) {
     return false;
   }
 
