@@ -512,10 +512,18 @@ function promiseSanitizationComplete() {
 
 
 
-function ClearHistoryDialogHelper(openContext = "browser") {
+
+
+
+
+function ClearHistoryDialogHelper({
+  mode = "browser",
+  checkingDataSizes = false,
+} = {}) {
   this._browserWin = window;
   this.win = null;
-  this._mode = openContext;
+  this._mode = mode;
+  this._checkingDataSizes = checkingDataSizes;
   this.promiseClosed = new Promise(resolve => {
     this._resolveClosed = resolve;
   });
@@ -673,7 +681,11 @@ ClearHistoryDialogHelper.prototype = {
       () => {
         
         executeSoon(async () => {
-          await this.win.gSanitizePromptDialog.dataSizesFinishedUpdatingPromise;
+          if (this._checkingDataSizes) {
+            
+            await this.win.gSanitizePromptDialog
+              .dataSizesFinishedUpdatingPromise;
+          }
           this.onload();
         });
       },
