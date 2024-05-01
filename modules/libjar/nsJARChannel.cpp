@@ -890,7 +890,8 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   } else if (StringEndsWith(fileName, ".properties"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Properties;
   } else if (StringEndsWith(fileName, ".js"_ns) ||
-             StringEndsWith(fileName, ".jsm"_ns)) {
+             StringEndsWith(fileName, ".jsm"_ns) ||
+             StringEndsWith(fileName, ".mjs"_ns)) {
     
     
     
