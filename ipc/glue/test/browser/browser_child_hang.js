@@ -24,7 +24,7 @@ add_task(async function () {
       url: "https://example.com/",
       forceNewProcess: true,
     },
-    async function (browser) {
+    async function () {
       
       
       

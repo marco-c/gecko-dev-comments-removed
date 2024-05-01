@@ -50,7 +50,7 @@ add_task(async function testKill() {
   );
 
   info("Waiting 15s to trigger mShutdownBlockers assertions");
-  await new Promise((resolve, reject) => {
+  await new Promise(resolve => {
     
     setTimeout(resolve, 15 * 1000);
   });
@@ -67,7 +67,7 @@ add_task(async function testShutdown() {
   await cleanUtilityProcessShutdown("audioDecoder_Generic");
 
   info("Waiting 15s to trigger mShutdownBlockers assertions");
-  await new Promise((resolve, reject) => {
+  await new Promise(resolve => {
     
     setTimeout(resolve, 15 * 1000);
   });
