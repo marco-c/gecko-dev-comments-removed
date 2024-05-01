@@ -23,7 +23,7 @@ class TextEventDispatcher;
 
 class TextInputHandler final : public TextEventDispatcherListener {
  public:
-  TextInputHandler(nsWindow* aWidget);
+  explicit TextInputHandler(nsWindow* aWidget);
   TextInputHandler() = delete;
 
   NS_DECL_ISUPPORTS
