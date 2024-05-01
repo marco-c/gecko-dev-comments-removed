@@ -360,6 +360,19 @@ function Intl_PluralRules_resolvedOptions() {
   var internals = getPluralRulesInternals(pluralRules);
 
   
+  var internalsPluralCategories = internals.pluralCategories;
+  if (internalsPluralCategories === null) {
+    internalsPluralCategories = intl_GetPluralCategories(pluralRules);
+    internals.pluralCategories = internalsPluralCategories;
+  }
+
+  
+  var pluralCategories = [];
+  for (var i = 0; i < internalsPluralCategories.length; i++) {
+    DefineDataProperty(pluralCategories, i, internalsPluralCategories[i]);
+  }
+
+  
   var result = {
     locale: internals.locale,
     type: internals.type,
@@ -406,34 +419,15 @@ function Intl_PluralRules_resolvedOptions() {
     );
   }
 
-  DefineDataProperty(result, "roundingMode", internals.roundingMode);
+  DefineDataProperty(result, "pluralCategories", pluralCategories);
   DefineDataProperty(result, "roundingIncrement", internals.roundingIncrement);
+  DefineDataProperty(result, "roundingMode", internals.roundingMode);
+  DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
   DefineDataProperty(
     result,
     "trailingZeroDisplay",
     internals.trailingZeroDisplay
   );
-
-  
-  var internalsPluralCategories = internals.pluralCategories;
-  if (internalsPluralCategories === null) {
-    internalsPluralCategories = intl_GetPluralCategories(pluralRules);
-    internals.pluralCategories = internalsPluralCategories;
-  }
-
-  var pluralCategories = [];
-  for (var i = 0; i < internalsPluralCategories.length; i++) {
-    DefineDataProperty(pluralCategories, i, internalsPluralCategories[i]);
-  }
-
-  
-  DefineDataProperty(result, "pluralCategories", pluralCategories);
-
-  
-  
-  
-  
-  DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
 
   
   return result;

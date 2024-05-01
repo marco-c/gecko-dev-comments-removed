@@ -216,15 +216,6 @@ function SetNumberFormatDigitOptions(
   lazyData.minimumIntegerDigits = mnid;
 
   
-  var roundingPriority = GetOption(
-    options,
-    "roundingPriority",
-    "string",
-    ["auto", "morePrecision", "lessPrecision"],
-    "auto"
-  );
-
-  
   var roundingIncrement = GetNumberOption(
     options,
     "roundingIncrement",
@@ -276,6 +267,15 @@ function SetNumberFormatDigitOptions(
       "halfEven",
     ],
     "halfExpand"
+  );
+
+  
+  var roundingPriority = GetOption(
+    options,
+    "roundingPriority",
+    "string",
+    ["auto", "morePrecision", "lessPrecision"],
+    "auto"
   );
 
   
@@ -1244,19 +1244,14 @@ function Intl_NumberFormat_resolvedOptions() {
   }
 
   DefineDataProperty(result, "signDisplay", internals.signDisplay);
-  DefineDataProperty(result, "roundingMode", internals.roundingMode);
   DefineDataProperty(result, "roundingIncrement", internals.roundingIncrement);
+  DefineDataProperty(result, "roundingMode", internals.roundingMode);
+  DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
   DefineDataProperty(
     result,
     "trailingZeroDisplay",
     internals.trailingZeroDisplay
   );
-
-  
-  
-  
-  
-  DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
 
   
   return result;
