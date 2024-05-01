@@ -232,7 +232,7 @@ where
     const LIGHTNESS_RANGE: f32 = 100.0;
     const SATURATION_RANGE: f32 = 100.0;
 
-    let maybe_hue = parse_none_or(arguments, |p| color_parser.parse_angle_or_number(p))?;
+    let maybe_hue = parse_none_or(arguments, |p| color_parser.parse_number_or_angle(p))?;
 
     
     
@@ -279,7 +279,7 @@ where
     let (hue, whiteness, blackness, alpha) = parse_components(
         color_parser,
         arguments,
-        P::parse_angle_or_number,
+        P::parse_number_or_angle,
         P::parse_number_or_percentage,
         P::parse_number_or_percentage,
     )?;
@@ -336,7 +336,7 @@ where
         arguments,
         P::parse_number_or_percentage,
         P::parse_number_or_percentage,
-        P::parse_angle_or_number,
+        P::parse_number_or_angle,
     )?;
 
     let lightness = lightness.map(|l| l.to_number(lightness_range));
@@ -447,7 +447,7 @@ impl NumberOrPercentage {
 }
 
 
-pub enum AngleOrNumber {
+pub enum NumberOrAngle {
     
     Number {
         
@@ -460,13 +460,13 @@ pub enum AngleOrNumber {
     },
 }
 
-impl AngleOrNumber {
+impl NumberOrAngle {
     
     
     pub fn degrees(&self) -> f32 {
         match *self {
-            AngleOrNumber::Number { value } => value,
-            AngleOrNumber::Angle { degrees } => degrees,
+            Self::Number { value } => value,
+            Self::Angle { degrees } => degrees,
         }
     }
 }
@@ -482,10 +482,10 @@ pub trait ColorParser<'i> {
     
     
     
-    fn parse_angle_or_number<'t>(
+    fn parse_number_or_angle<'t>(
         &self,
         input: &mut Parser<'i, 't>,
-    ) -> Result<AngleOrNumber, ParseError<'i>>;
+    ) -> Result<NumberOrAngle, ParseError<'i>>;
 
     
     
