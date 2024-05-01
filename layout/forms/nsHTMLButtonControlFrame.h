@@ -7,10 +7,9 @@
 #ifndef nsHTMLButtonControlFrame_h___
 #define nsHTMLButtonControlFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
+#include "nsCSSRenderingBorders.h"
 #include "nsIFormControlFrame.h"
-#include "nsButtonFrameRenderer.h"
 
 class gfxContext;
 class nsPresContext;
@@ -83,6 +82,14 @@ class nsHTMLButtonControlFrame : public nsContainerFrame,
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
+  mozilla::Maybe<nsCSSBorderRenderer> CreateInnerFocusBorderRenderer(
+      nsDisplayListBuilder* aBuilder, gfxContext* aRenderingContext,
+      const nsRect& aDirtyRect, const nsRect& aRect, bool* aBorderIsEmpty);
+
+  void PaintInnerFocusBorder(nsDisplayListBuilder* aBuilder,
+                             gfxContext& aRenderingContext,
+                             const nsRect& aDirtyRect, const nsRect& aRect);
+
  protected:
   nsHTMLButtonControlFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                            nsIFrame::ClassID aID);
@@ -90,7 +97,7 @@ class nsHTMLButtonControlFrame : public nsContainerFrame,
   
   
   
-  bool ShouldClipPaintingToBorderBox();
+  bool ShouldClipPaintingToBorderBox() const;
 
   
   
@@ -104,7 +111,7 @@ class nsHTMLButtonControlFrame : public nsContainerFrame,
       mozilla::WritingMode aWM,
       BaselineSharingGroup aBaselineGroup) const override;
 
-  nsButtonFrameRenderer mRenderer;
+  RefPtr<mozilla::ComputedStyle> mInnerFocusStyle;
 };
 
 #endif
