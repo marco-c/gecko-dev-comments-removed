@@ -22,5 +22,5 @@ promise_test(async t => {
 
   
   await assertBFCacheEligibility(rc1,  false);
-  await assertNotRestoredFromBFCache(rc1, ['error-document']);
+  await assertNotRestoredFromBFCache(rc1, ['navigation-failure']);
 });
