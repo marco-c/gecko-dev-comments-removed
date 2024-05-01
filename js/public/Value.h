@@ -384,6 +384,9 @@ enum JSWhyMagic {
   JS_MISSING_ARGUMENTS,
 
   
+  JS_INTERRUPT_REGEXP,
+
+  
   JS_GENERIC_MAGIC,
 
   

@@ -586,15 +586,6 @@ class Object {
   
   Object(uintptr_t raw) : asBits_(raw) { MOZ_CRASH("unused"); }
 
-  
-  
-  
-  
-  inline bool IsException(Isolate*) const {
-    MOZ_ASSERT(!value().toBoolean());
-    return true;
-  }
-
   JS::Value value() const { return JS::Value::fromRawBits(asBits_); }
 
   inline static Object cast(Object object) { return object; }
@@ -603,6 +594,14 @@ class Object {
   void setValue(const JS::Value& val) { asBits_ = val.asRawBits(); }
   uint64_t asBits_;
 } JS_HAZ_GC_POINTER;
+
+
+
+
+
+inline bool IsException(Object obj, Isolate*) {
+  return obj.value().isMagic(JS_INTERRUPT_REGEXP);
+}
 
 class Smi : public Object {
  public:
@@ -689,13 +688,13 @@ T* ByteArrayData::typedData() {
 
 template <typename T>
 T ByteArrayData::getTyped(uint32_t index) {
-  MOZ_ASSERT(index < length / sizeof(T));
+  MOZ_ASSERT(index < length() / sizeof(T));
   return typedData<T>()[index];
 }
 
 template <typename T>
 void ByteArrayData::setTyped(uint32_t index, T value) {
-  MOZ_ASSERT(index < length / sizeof(T));
+  MOZ_ASSERT(index < length() / sizeof(T));
   typedData<T>()[index] = value;
 }
 
@@ -705,6 +704,7 @@ class ByteArray : public HeapObject {
   ByteArrayData* inner() const {
     return static_cast<ByteArrayData*>(value().toPrivate());
   }
+  friend bool IsByteArray(Object obj);
 
  public:
   PseudoHandle<ByteArrayData> takeOwnership(Isolate* isolate);
@@ -713,7 +713,7 @@ class ByteArray : public HeapObject {
   uint8_t get(uint32_t index) { return inner()->get(index); }
   void set(uint32_t index, uint8_t val) { inner()->set(index, val); }
 
-  uint32_t length() const { return inner()->length; }
+  uint32_t length() const { return inner()->length(); }
   uint8_t* GetDataStartAddress() { return inner()->data(); }
 
   static ByteArray cast(Object object) {
@@ -722,10 +722,16 @@ class ByteArray : public HeapObject {
     return b;
   }
 
-  bool IsByteArray() const { return true; }
-
   friend class SMRegExpMacroAssembler;
 };
+
+
+
+inline bool IsByteArray(Object obj) {
+  MOZ_ASSERT(ByteArray::cast(obj).inner()->magic() ==
+             ByteArrayData::ExpectedMagic);
+  return true;
+}
 
 
 
@@ -1166,7 +1172,9 @@ class Isolate {
   
   
   
-  Object HandleInterrupts() { return Object(JS::BooleanValue(false)); }
+  Object HandleInterrupts() {
+    return Object(JS::MagicValue(JS_INTERRUPT_REGEXP));
+  }
 
   JSContext* cx() const { return cx_; }
 
