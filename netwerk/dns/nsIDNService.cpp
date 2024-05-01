@@ -759,6 +759,11 @@ bool nsIDNService::isLabelSafe(const nsAString& label, const nsAString& tld) {
     }
 
     
+    if (ch == 0x2BB || ch == 0x2BC) {
+      return false;
+    }
+
+    
     auto genCat = GetGeneralCategory(ch);
     if (genCat == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER) {
       uint32_t zeroCharacter =

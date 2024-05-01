@@ -708,9 +708,9 @@ let testCases = [
 
   
   
-  ["xn--ab-8nb.com", "a\u02bbb.com", kUnsafe, "DISABLED"],
+  ["xn--ab-8nb.com", "a\u02bbb.com", kUnsafe],
   
-  ["xn--ab-cob.com", "a\u02bcb.com", kUnsafe, "DISABLED"],
+  ["xn--ab-cob.com", "a\u02bcb.com", kUnsafe],
   
   ["xn--ab-jom.com", "a\u144ab.com", kUnsafe],
   ["xn--xcec9s.com", "\u1401\u144a\u1402.com", kUnsafe],
