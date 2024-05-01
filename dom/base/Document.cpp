@@ -17171,13 +17171,7 @@ bool Document::IsExtensionPage() const {
 
 void Document::AddResizeObserver(ResizeObserver& aObserver) {
   MOZ_ASSERT(!mResizeObservers.Contains(&aObserver));
-  
-  
-  if (aObserver.HasNativeCallback()) {
-    mResizeObservers.InsertElementAt(0, &aObserver);
-  } else {
-    mResizeObservers.AppendElement(&aObserver);
-  }
+  mResizeObservers.AppendElement(&aObserver);
 }
 
 void Document::RemoveResizeObserver(ResizeObserver& aObserver) {

@@ -121,9 +121,6 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
 
 
 class ResizeObserver final : public nsISupports, public nsWrapperCache {
-  using NativeCallback = void (*)(
-      const Sequence<OwningNonNull<ResizeObserverEntry>>&, ResizeObserver&);
-  ResizeObserver(Document& aDocument, NativeCallback aCallback);
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -131,9 +128,7 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
 
   ResizeObserver(nsCOMPtr<nsPIDOMWindowInner>&& aOwner, Document* aDocument,
                  ResizeObserverCallback& aCb)
-      : mOwner(std::move(aOwner)),
-        mDocument(aDocument),
-        mCallback(RefPtr<ResizeObserverCallback>(&aCb)) {
+      : mOwner(std::move(aOwner)), mDocument(aDocument), mCallback(&aCb) {
     MOZ_ASSERT(mOwner, "Need a non-null owner window");
     MOZ_ASSERT(mDocument, "Need a non-null doc");
     MOZ_ASSERT(mDocument == mOwner->GetExtantDoc());
@@ -179,11 +174,6 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
   
 
 
-  bool HasNativeCallback() const { return mCallback.is<NativeCallback>(); }
-
-  
-
-
 
 
 
@@ -213,7 +203,7 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mOwner;
   
   RefPtr<Document> mDocument;
-  Variant<RefPtr<ResizeObserverCallback>, NativeCallback> mCallback;
+  RefPtr<ResizeObserverCallback> mCallback;
   nsTArray<RefPtr<ResizeObservation>> mActiveTargets;
   
   
