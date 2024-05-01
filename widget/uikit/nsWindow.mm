@@ -4,6 +4,7 @@
 
 
 #import <UIKit/UIEvent.h>
+#import <UIKit/UIKit.h>
 #import <UIKit/UIGraphics.h>
 #import <UIKit/UIInterface.h>
 #import <UIKit/UIScreen.h>
@@ -31,6 +32,7 @@
 #include "nsRegion.h"
 #include "nsTArray.h"
 #include "TextInputHandler.h"
+#include "UIKitUtils.h"
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ProfilerLabels.h"
@@ -43,6 +45,7 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
 using mozilla::dom::Touch;
+using mozilla::widget::UIKitUtils;
 
 #define ALOG(args...)    \
   fprintf(stderr, args); \
@@ -492,6 +495,40 @@ class nsAutoRetainUIKitObject {
   return YES;
 }
 
+
+
+- (UIKeyboardType)keyboardType {
+  if (!mGeckoChild || mGeckoChild->Destroyed()) {
+    return UIKeyboardTypeDefault;
+  }
+  return UIKitUtils::GetUIKeyboardType(mGeckoChild->GetInputContext());
+}
+
+- (UIReturnKeyType)returnKeyType {
+  if (!mGeckoChild || mGeckoChild->Destroyed()) {
+    return UIReturnKeyDefault;
+  }
+  return UIKitUtils::GetUIReturnKeyType(mGeckoChild->GetInputContext());
+}
+
+- (UITextAutocapitalizationType)autocapitalizationType {
+  if (!mGeckoChild || mGeckoChild->Destroyed()) {
+    return UITextAutocapitalizationTypeNone;
+  }
+  return UIKitUtils::GetUITextAutocapitalizationType(
+      mGeckoChild->GetInputContext());
+}
+
+- (BOOL)isSecureTextEntry {
+  if (!mGeckoChild || mGeckoChild->Destroyed()) {
+    return NO;
+  }
+  if (mGeckoChild->GetInputContext().IsPasswordEditor()) {
+    return YES;
+  }
+  return NO;
+}
+
 @end
 
 nsWindow::nsWindow()
@@ -783,6 +820,9 @@ void nsWindow::SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
+  const bool changingEnabledState =
+      aContext.IsInputAttributeChanged(mInputContext);
+
   mInputContext = aContext;
 
   if (IsVirtualKeyboardDisabled()) {
@@ -792,7 +832,10 @@ void nsWindow::SetInputContext(const InputContext& aContext,
 
   [mNativeView becomeFirstResponder];
 
-  if (aAction.UserMightRequestOpenVKB()) {
+  if (aAction.UserMightRequestOpenVKB() || changingEnabledState) {
+    
+    
+    
     [mNativeView reloadInputViews];
   }
 

@@ -451,17 +451,19 @@ struct InputContext final {
 
   bool IsInputAttributeChanged(const InputContext& aOldContext) const {
     return mIMEState.mEnabled != aOldContext.mIMEState.mEnabled ||
-#if defined(ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_WIN)
+#if defined(ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_WIN) || \
+    defined(XP_IOS)
            
            
            mHTMLInputType != aOldContext.mHTMLInputType ||
            mHTMLInputMode != aOldContext.mHTMLInputMode ||
 #endif
-#if defined(ANDROID) || defined(MOZ_WIDGET_GTK)
+#if defined(ANDROID) || defined(MOZ_WIDGET_GTK) || defined(XP_IOS)
+           
            
            mAutocapitalize != aOldContext.mAutocapitalize ||
 #endif
-#if defined(ANDROID)
+#if defined(ANDROID) || defined(XP_IOS)
            
            mActionHint != aOldContext.mActionHint ||
 #endif
