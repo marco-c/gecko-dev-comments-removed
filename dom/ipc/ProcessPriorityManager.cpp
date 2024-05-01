@@ -834,8 +834,11 @@ void ParticularProcessPriorityManager::SetPriorityNow(
     
     
     
-    if (PriorityUsesLowPowerMainThread(mPriority) !=
-        (PriorityUsesLowPowerMainThread(oldPriority))) {
+    
+    
+    if (!mContentParent->IsShuttingDown() &&
+        PriorityUsesLowPowerMainThread(mPriority) !=
+            PriorityUsesLowPowerMainThread(oldPriority)) {
       if (PriorityUsesLowPowerMainThread(mPriority) &&
           PrefsUseLowPriorityThreads()) {
         mContentParent->SetMainThreadQoSPriority(nsIThread::QOS_PRIORITY_LOW);

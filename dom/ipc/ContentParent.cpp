@@ -78,6 +78,7 @@
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/StaticPrefs_threads.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StorageAccessAPIHelper.h"
 #include "mozilla/StyleSheet.h"
@@ -1794,6 +1795,14 @@ bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
         SetInputPriorityEventEnabled(false);
         
         SignalImpendingShutdownToContentJS();
+
+        
+        if (StaticPrefs::threads_use_low_power_enabled() &&
+            StaticPrefs::
+                threads_lower_mainthread_priority_in_background_enabled()) {
+          SetMainThreadQoSPriority(nsIThread::QOS_PRIORITY_NORMAL);
+        }
+
         
         
         Unused << SendShutdownConfirmedHP();
