@@ -13,31 +13,7 @@
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/GleanMetrics.h"
 
-#include "prsystem.h"
-#if defined(XP_WIN)
-#  include "WinUtils.h"
-#elif defined(MOZ_WIDGET_ANDROID)
-#  include "mozilla/java/GeckoAppShellWrappers.h"
-#endif
-
 static mozilla::LazyLogModule gUserCharacteristicsLog("UserCharacteristics");
-
-
-namespace testing {
-extern "C" {
-
-int MaxTouchPoints() {
-#if defined(XP_WIN)
-  return widget::WinUtils::GetMaxTouchPoints();
-#elif defined(MOZ_WIDGET_ANDROID)
-  return java::GeckoAppShell::GetMaxTouchPoints();
-#endif
-  return 0;
-}
-
-}  
-};  
-
 
 
 
@@ -146,9 +122,6 @@ nsresult nsUserCharacteristics::PopulateData() {
     mozilla::Preferences::SetCString(kUUIDPref, uuidString);
   }
   mozilla::glean::characteristics::client_identifier.Set(uuidString);
-
-  mozilla::glean::characteristics::max_touch_points.Set(
-      testing::MaxTouchPoints());
 
   return NS_OK;
 }

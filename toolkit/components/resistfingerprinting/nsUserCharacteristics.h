@@ -16,13 +16,4 @@ class nsUserCharacteristics {
   static nsresult PopulateData();
   static nsresult SubmitPing();
 };
-
-namespace testing {
-extern "C" {  
-
-int MaxTouchPoints();
-
-}  
-};  
-
 #endif 
