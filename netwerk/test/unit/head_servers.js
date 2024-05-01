@@ -327,21 +327,31 @@ class BaseProxyCode {
     
     const { port, hostname } = new URL(`https://${req.url}`);
     const serverSocket = net
-      .connect(port || 443, hostname, () => {
-        clientSocket.write(
-          "HTTP/1.1 200 Connection Established\r\n" +
-            "Proxy-agent: Node.js-Proxy\r\n" +
-            "\r\n"
-        );
-        serverSocket.write(head);
-        serverSocket.pipe(clientSocket);
-        clientSocket.pipe(serverSocket);
-      })
+      .connect(
+        {
+          port: port || 443,
+          host: hostname,
+          family: 4, 
+        },
+        () => {
+          clientSocket.write(
+            "HTTP/1.1 200 Connection Established\r\n" +
+              "Proxy-agent: Node.js-Proxy\r\n" +
+              "\r\n"
+          );
+          serverSocket.write(head);
+          serverSocket.pipe(clientSocket);
+          clientSocket.pipe(serverSocket);
+        }
+      )
       .on("error", e => {
+        console.log("error" + e);
         
         
       });
+
     clientSocket.on("error", e => {
+      console.log("client error" + e);
       
       
     });
