@@ -47,7 +47,7 @@ EPlatformDisabledState PlatformDisabledState();
 void PreInit();
 #endif
 
-#if defined(MOZ_ACCESSIBILITY_ATK) || defined(XP_MACOSX)
+#if defined(MOZ_ACCESSIBILITY_ATK) || defined(XP_DARWIN)
 
 
 
