@@ -141,6 +141,12 @@ impl TransitionBehavior {
     pub fn normal() -> Self {
         Self::Normal
     }
+
+    
+    #[inline]
+    pub fn is_normal(&self) -> bool {
+        matches!(*self, Self::Normal)
+    }
 }
 
 
