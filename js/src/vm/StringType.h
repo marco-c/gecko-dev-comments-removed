@@ -353,6 +353,9 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
 
 
+
+
+
   
   static_assert(js::gc::CellFlagBitsReservedForGC <= 3,
                 "JSString::flags must reserve enough bits for Cell");
@@ -385,6 +388,15 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static_assert((TYPE_FLAGS_MASK & js::gc::HeaderWord::RESERVED_MASK) == 0,
                 "GC reserved bits must not be used for Strings");
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static const uint32_t LATIN1_CHARS_BIT = js::Bit(9);
 
   

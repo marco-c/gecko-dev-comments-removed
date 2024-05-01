@@ -321,6 +321,10 @@ inline JSRope::JSRope(JSString* left, JSString* right, size_t length) {
   
   MOZ_ASSERT(left->length() + right->length() == length);
 
+  
+  
+  
+  
   bool isLatin1 = left->hasLatin1Chars() && right->hasLatin1Chars();
 
   
