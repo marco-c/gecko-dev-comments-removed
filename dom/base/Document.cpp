@@ -1430,7 +1430,6 @@ Document::Document(const char* aContentType)
       mHttpsOnlyStatus(nsILoadInfo::HTTPS_ONLY_UNINITIALIZED),
       mViewportType(Unknown),
       mViewportFit(ViewportFitType::Auto),
-      mSubDocuments(nullptr),
       mHeaderData(nullptr),
       mServoRestyleRootDirtyBits(0),
       mThrowOnDynamicMarkupInsertionCounter(0),
@@ -2333,7 +2332,6 @@ Document::~Document() {
 
   
   
-  delete mSubDocuments;
   mSubDocuments = nullptr;
 
   nsAutoScriptBlocker scriptBlocker;
@@ -2687,7 +2685,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
     tmp->mStyleSheetSetList = nullptr;
   }
 
-  delete tmp->mSubDocuments;
   tmp->mSubDocuments = nullptr;
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameRequestManager)
@@ -2848,7 +2845,6 @@ void Document::DisconnectNodeTree() {
   
   
   
-  delete mSubDocuments;
   mSubDocuments = nullptr;
 
   bool oldVal = mInUnlinkOrDeletion;
@@ -7207,7 +7203,8 @@ nsresult Document::SetSubDocumentFor(Element* aElement, Document* aSubDoc) {
           PLDHashTable::HashVoidPtrKeyStub, PLDHashTable::MatchEntryStub,
           PLDHashTable::MoveEntryStub, SubDocClearEntry, SubDocInitEntry};
 
-      mSubDocuments = new PLDHashTable(&hash_table_ops, sizeof(SubDocMapEntry));
+      mSubDocuments =
+          MakeUnique<PLDHashTable>(&hash_table_ops, sizeof(SubDocMapEntry));
     }
 
     

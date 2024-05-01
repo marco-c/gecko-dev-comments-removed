@@ -5126,7 +5126,11 @@ class Document : public nsINode,
   
   ViewportFitType mViewportFit;
 
-  PLDHashTable* mSubDocuments;
+  
+  
+  
+  
+  UniquePtr<PLDHashTable> mSubDocuments;
 
   class HeaderData;
   UniquePtr<HeaderData> mHeaderData;
