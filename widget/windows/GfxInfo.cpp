@@ -1820,6 +1820,16 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
     
     
+
+    APPEND_TO_DRIVER_BLOCKLIST(
+        OperatingSystem::Windows, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_OVERLAY_VP_SUPER_RESOLUTION,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN_OR_EQUAL,
+        V(31, 0, 15, 3000), "FEATURE_FAILURE_VP_AUTO_HDR",
+        "nVidia driver > 530.00");
+
+    
+    
     
     APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows, DeviceFamily::AtiAll,
                                 nsIGfxInfo::FEATURE_WEBRENDER,
