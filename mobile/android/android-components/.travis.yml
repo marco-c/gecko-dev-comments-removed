@@ -1,25 +1,19 @@
 language: android
-
 jdk:
   - oraclejdk8
-
 android:
   components:
     - tools
     - platform-tools
-    - build-tools-27.0.3
-    - android-27
-
+    - build-tools-25.0.2
+    - android-25
+    - extra-google-google_play_services
+    - extra-google-m2repository
+    - extra-android-m2repository
 sudo: false
-
 before_install:
   - touch local.properties
-  - yes | sdkmanager "platforms;android-27"
-
 script:
-  - ./gradlew --no-daemon clean test -Pcoverage
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
-  - python <(curl -s https://raw.githubusercontent.com/TouK/sputnik-ci/master/sputnik-ci.py)
-
+- ./gradlew clean assembleDebug lint test
+after_failure:
+- "cat $TRAVIS_BUILD_DIR/app/build/outputs/lint-results-debug.xml"
