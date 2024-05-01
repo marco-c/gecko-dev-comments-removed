@@ -718,6 +718,9 @@ static void MarkActiveICScriptsAndCopyStubs(
           ICCacheIRStub* newStub = stub->clone(cx->runtime(), newStubSpace);
           layout->setStubPtr(newStub);
 
+          
+          
+          
           JSJitFrameIter parentFrame(frame);
           ++parentFrame;
           BaselineFrame* blFrame = parentFrame.baselineFrame();

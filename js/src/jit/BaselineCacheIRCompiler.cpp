@@ -3451,6 +3451,9 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
   
   masm.PopRegsInMask(liveNonGCRegs);
+
+  
+  
   Address stubAddr(FramePointer, BaselineStubFrameLayout::ICStubOffsetFromFP);
   masm.loadPtr(stubAddr, ICStubReg);
 
