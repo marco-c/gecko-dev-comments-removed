@@ -582,13 +582,22 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
+
+
+
   MOZ_CAN_RUN_SCRIPT nsIContent* GetNextTabbableContentInScope(
       nsIContent* aOwner, nsIContent* aStartContent,
       nsIContent* aOriginalStartContent, bool aForward,
       int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
-      bool aForDocumentNavigation, bool aNavigateByKey, bool aSkipOwner);
+      bool aForDocumentNavigation, bool aNavigateByKey, bool aSkipOwner,
+      bool aReachedToEndForDocumentNavigation);
 
   
+
+
+
+
 
 
 
@@ -628,9 +637,14 @@ class nsFocusManager final : public nsIFocusManager,
       nsIContent* aStartOwner, nsCOMPtr<nsIContent>& aStartContent ,
       nsIContent* aOriginalStartContent, bool aForward,
       int32_t* aCurrentTabIndex, bool* aIgnoreTabIndex,
-      bool aForDocumentNavigation, bool aNavigateByKey);
+      bool aForDocumentNavigation, bool aNavigateByKey,
+      bool aReachedToEndForDocumentNavigation);
 
   
+
+
+
+
 
 
 
@@ -669,7 +683,7 @@ class nsFocusManager final : public nsIFocusManager,
       nsIContent* aOriginalStartContent, nsIContent* aStartContent,
       bool aForward, int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
       bool aForDocumentNavigation, bool aNavigateByKey, bool aSkipPopover,
-      nsIContent** aResultContent);
+      bool aReachedToEndForDocumentNavigation, nsIContent** aResultContent);
 
   
 
@@ -700,8 +714,12 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult FocusFirst(mozilla::dom::Element* aRootContent,
-                                         nsIContent** aNextContent);
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  FocusFirst(mozilla::dom::Element* aRootContent, nsIContent** aNextContent,
+             bool aReachedToEndForDocumentNavigation);
 
   
 
@@ -761,7 +779,7 @@ class nsFocusManager final : public nsIFocusManager,
   MOZ_CAN_RUN_SCRIPT bool TryToMoveFocusToSubDocument(
       nsIContent* aCurrentContent, nsIContent* aOriginalStartContent,
       bool aForward, bool aForDocumentNavigation, bool aNavigateByKey,
-      nsIContent** aResultContent);
+      bool aReachedToEndForDocumentNavigation, nsIContent** aResultContent);
 
   
   
