@@ -12,26 +12,63 @@ add_task(async function () {
   ok(isActive(), "Docshell should be active when starting the test");
   ok(!document.hidden, "Top level window should be visible");
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   info("Calling window.minimize");
   let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
     window,
     "sizemodechange"
   );
+  let promiseOcclusionStateChange = BrowserTestUtils.waitForEvent(
+    window,
+    "occlusionstatechange"
+  );
+  let promiseBrowserInactive = BrowserTestUtils.waitForCondition(
+    () => !isActive(),
+    "Docshell should be inactive."
+  );
   window.minimize();
-  await promiseSizeModeChange;
-  ok(!isActive(), "Docshell should be Inactive");
+  await Promise.all([
+    promiseSizeModeChange,
+    promiseOcclusionStateChange,
+    promiseBrowserInactive,
+  ]);
   ok(document.hidden, "Top level window should be hidden");
 
+  
+  
   info("Calling window.restore");
   promiseSizeModeChange = BrowserTestUtils.waitForEvent(
     window,
     "sizemodechange"
   );
+  promiseOcclusionStateChange = BrowserTestUtils.waitForEvent(
+    window,
+    "occlusionstatechange"
+  );
+  let promiseBrowserActive = BrowserTestUtils.waitForCondition(
+    () => isActive(),
+    "Docshell should be active."
+  );
   window.restore();
+
   
   
   await Promise.race([
-    promiseSizeModeChange,
+    Promise.all([
+      promiseSizeModeChange,
+      promiseOcclusionStateChange,
+      promiseBrowserActive,
+    ]),
     new Promise((resolve, reject) =>
       
       setTimeout(() => {
@@ -39,11 +76,5 @@ add_task(async function () {
       }, 5000)
     ),
   ]);
-  
-  
-  if (window.isFullyOccluded) {
-    await BrowserTestUtils.waitForEvent(window, "occlusionstatechange");
-  }
-  ok(isActive(), "Docshell should be active again");
   ok(!document.hidden, "Top level window should be visible");
 });
