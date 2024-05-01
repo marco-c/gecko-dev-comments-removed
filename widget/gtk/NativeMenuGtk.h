@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_widget_NativeMenuGtk_h
 #define mozilla_widget_NativeMenuGtk_h
 
@@ -65,10 +64,12 @@ class NativeMenuGtk : public NativeMenu {
 class DBusMenuBar final : public RefCounted<DBusMenuBar> {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(DBusMenuBar)
-  explicit DBusMenuBar(dom::Element* aElement);
+  static RefPtr<DBusMenuBar> Create(dom::Element*);
   ~DBusMenuBar();
 
  protected:
+  explicit DBusMenuBar(dom::Element* aElement);
+
   static void NameOwnerChangedCallback(GObject*, GParamSpec*, gpointer);
   void OnNameOwnerChanged();
 
