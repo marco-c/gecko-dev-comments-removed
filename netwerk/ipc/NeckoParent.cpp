@@ -123,7 +123,7 @@ const char* NeckoParent::GetValidatedOriginAttributes(
   if (!aSerialized.IsNotNull()) {
     
     
-    aAttrs = OriginAttributes(false);
+    aAttrs = OriginAttributes();
   } else {
     aAttrs = aSerialized.mOriginAttributes;
   }
