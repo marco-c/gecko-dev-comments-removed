@@ -486,18 +486,17 @@ this.AccessibilityUtils = (function () {
 
 
 
-  function isUnlabeledUrlBarCombobox(accessible) {
-    const node = accessible.DOMNode;
+  function isUnlabeledUrlBarCombobox(node) {
     if (!node || !node.ownerGlobal) {
       return false;
     }
-    const ariaRoles = getAriaRoles(accessible);
+    let ariaRole = node.getAttribute("role");
     
     const isMozInputBox =
       node.tagName == "moz-input-box" &&
       node.classList.contains("urlbar-input-box");
     const isSearchbar = node.tagName == "searchbar" && node.id == "searchbar";
-    return (isMozInputBox || isSearchbar) && ariaRoles.includes("combobox");
+    return (isMozInputBox || isSearchbar) && ariaRole == "combobox";
   }
 
   
@@ -507,18 +506,23 @@ this.AccessibilityUtils = (function () {
 
 
 
-  function isUnlabeledUrlBarOption(accessible) {
-    const node = accessible.DOMNode;
+  function isUnlabeledUrlBarOption(node) {
     if (!node || !node.ownerGlobal) {
       return false;
     }
-    const ariaRoles = getAriaRoles(accessible);
-    return (
+    const role = getAccessible(node)?.role;
+    const isOption =
       node.tagName == "span" &&
-      ariaRoles.includes("option") &&
-      node.classList.contains("urlbarView-row-inner") &&
-      node.hasAttribute("data-l10n-id")
-    );
+      node.getAttribute("role") == "option" &&
+      node.classList.contains("urlbarView-row-inner");
+    const isMenuItem =
+      node.tagName == "menuitem" &&
+      role == Ci.nsIAccessibleRole.ROLE_MENUITEM &&
+      node.classList.contains("urlbarView-result-menuitem");
+    
+    
+    
+    return isOption || isMenuItem;
   }
 
   
@@ -528,22 +532,29 @@ this.AccessibilityUtils = (function () {
 
 
 
-  function isUnlabeledMenuitem(accessible) {
-    const node = accessible.DOMNode;
+  function isUnlabeledMenuitem(node) {
     if (!node || !node.ownerGlobal) {
       return false;
     }
-    let hasLabel = false;
-    for (const child of node.childNodes) {
-      if (child.tagName == "label") {
-        hasLabel = true;
-      }
-    }
+    const hasLabel = node.querySelector("label, description");
+    const isMenuItem =
+      node.getAttribute("role") == "menuitem" ||
+      (node.tagName == "richlistitem" &&
+        node.classList.contains("autocomplete-richlistitem")) ||
+      (node.tagName == "menuitem" &&
+        node.classList.contains("urlbarView-result-menuitem"));
+
+    const isParentMenu =
+      node.parentNode.getAttribute("role") == "menu" ||
+      (node.parentNode.tagName == "richlistbox" &&
+        node.parentNode.classList.contains("autocomplete-richlistbox")) ||
+      (node.parentNode.tagName == "menupopup" &&
+        node.parentNode.classList.contains("urlbarView-result-menu"));
     return (
-      accessible.role == Ci.nsIAccessibleRole.ROLE_MENUITEM &&
-      accessible.parent.role == Ci.nsIAccessibleRole.ROLE_MENUPOPUP &&
+      isMenuItem &&
+      isParentMenu &&
       hasLabel &&
-      node.hasAttribute("data-l10n-id")
+      (node.hasAttribute("data-l10n-id") || node.tagName == "richlistitem")
     );
   }
 
@@ -758,13 +769,6 @@ this.AccessibilityUtils = (function () {
     const { DOMNode } = accessible;
     let name = accessible.name;
     if (!name) {
-      if (
-        isUnlabeledUrlBarCombobox(accessible) ||
-        isUnlabeledUrlBarOption(accessible) ||
-        isUnlabeledMenuitem(accessible)
-      ) {
-        return;
-      }
       
       
       forceRefreshDriverTick(DOMNode);
@@ -773,6 +777,20 @@ this.AccessibilityUtils = (function () {
       } catch (e) {
         
         if (gEnv.labelRule) {
+          
+          
+          
+          
+          
+          
+          
+          
+          if (
+            isUnlabeledUrlBarOption(DOMNode) ||
+            isUnlabeledMenuitem(DOMNode)
+          ) {
+            return;
+          }
           a11yWarn("Unlabeled element removed before l10n finished", {
             DOMNode,
           });
@@ -795,6 +813,9 @@ this.AccessibilityUtils = (function () {
               accessible.name;
             } catch (e) {
               
+              if (isUnlabeledUrlBarOption(DOMNode)) {
+                return;
+              }
               a11yWarn("Unlabeled element removed before l10n finished", {
                 DOMNode,
               });
@@ -811,6 +832,11 @@ this.AccessibilityUtils = (function () {
       name = name.trim();
     }
     if (gEnv.labelRule && !name) {
+      
+      
+      if (isUnlabeledUrlBarCombobox(DOMNode)) {
+        return;
+      }
       a11yFail("Interactive elements must be labeled", accessible);
 
       return;
