@@ -232,7 +232,12 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
   
   
   
-  Unused << NS_WARN_IF(!IndexedDatabaseManager::GetOrCreate());
+  IndexedDatabaseManager* idm = IndexedDatabaseManager::GetOrCreate();
+  if (idm) {
+    Unused << NS_WARN_IF(NS_FAILED(idm->EnsureLocale()));
+  } else {
+    NS_WARNING("Failed to get IndexedDatabaseManager!");
+  }
 
   auto scopeExit =
       MakeScopeExit([&] { ExceptionalErrorTransitionDuringExecWorker(); });

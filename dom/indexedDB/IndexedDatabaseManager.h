@@ -123,6 +123,9 @@ class IndexedDatabaseManager final {
 
   nsresult FlushPendingFileDeletions();
 
+  
+  nsresult EnsureLocale();
+
   static const nsCString& GetLocale();
 
   static bool ResolveSandboxBinding(JSContext* aCx);
