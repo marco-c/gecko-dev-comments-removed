@@ -614,7 +614,7 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
             
             
             
-            if not isinstance(result, list) or len(result) != 2:
+            if not isinstance(result, list) or len(result) != 3:
                 try:
                     is_alive = self.is_alive()
                 except error.WebDriverException:
@@ -622,6 +622,16 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
 
                 if not is_alive:
                     raise Exception("Browser crashed during script execution.")
+
+            
+            
+            
+            
+            
+            
+            
+            if result is None:
+                continue
 
             done, rv = handler(result)
             if done:
