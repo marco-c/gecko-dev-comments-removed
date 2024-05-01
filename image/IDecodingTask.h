@@ -53,13 +53,6 @@ class IDecodingTask : public IResumable {
   
   void NotifyDecodeComplete(NotNull<RasterImage*> aImage,
                             NotNull<Decoder*> aDecoder);
-
- private:
-  void EnsureHasEventTarget(NotNull<RasterImage*> aImage);
-
-  bool IsOnEventTarget() const;
-
-  nsCOMPtr<nsIEventTarget> mEventTarget;
 };
 
 

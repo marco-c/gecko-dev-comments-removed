@@ -180,9 +180,6 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
   uint32_t ObserverCount() const;
 
   
-  already_AddRefed<nsIEventTarget> GetEventTarget() const;
-
-  
   
   void ResetImage();
 

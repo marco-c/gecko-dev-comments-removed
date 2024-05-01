@@ -23,41 +23,9 @@ namespace image {
 
 
 
-void IDecodingTask::EnsureHasEventTarget(NotNull<RasterImage*> aImage) {
-  if (!mEventTarget) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<ProgressTracker> tracker = aImage->GetProgressTracker();
-    if (tracker) {
-      mEventTarget = tracker->GetEventTarget();
-    } else {
-      mEventTarget = GetMainThreadSerialEventTarget();
-    }
-  }
-}
-
-bool IDecodingTask::IsOnEventTarget() const {
-  
-  
-  
-  
-  bool current = false;
-  mEventTarget->IsOnCurrentThread(&current);
-  return current;
-}
-
 void IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
                                    NotNull<Decoder*> aDecoder) {
   MOZ_ASSERT(aDecoder->HasProgress() && !aDecoder->IsMetadataDecode());
-  EnsureHasEventTarget(aImage);
 
   
   
@@ -72,7 +40,7 @@ void IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
   SurfaceFlags surfaceFlags = aDecoder->GetSurfaceFlags();
 
   
-  if (IsOnEventTarget() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
+  if (NS_IsMainThread() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
     aImage->NotifyProgress(progress, invalidRect, frameCount, decoderFlags,
                            surfaceFlags);
     return;
@@ -86,21 +54,21 @@ void IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
 
   
   NotNull<RefPtr<RasterImage>> image = aImage;
-  mEventTarget->Dispatch(CreateRenderBlockingRunnable(NS_NewRunnableFunction(
-                             "IDecodingTask::NotifyProgress",
-                             [=]() -> void {
-                               image->NotifyProgress(progress, invalidRect,
-                                                     frameCount, decoderFlags,
-                                                     surfaceFlags);
-                             })),
-                         NS_DISPATCH_NORMAL);
+  nsCOMPtr<nsIEventTarget> eventTarget = GetMainThreadSerialEventTarget();
+  eventTarget->Dispatch(CreateRenderBlockingRunnable(NS_NewRunnableFunction(
+                            "IDecodingTask::NotifyProgress",
+                            [=]() -> void {
+                              image->NotifyProgress(progress, invalidRect,
+                                                    frameCount, decoderFlags,
+                                                    surfaceFlags);
+                            })),
+                        NS_DISPATCH_NORMAL);
 }
 
 void IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
                                          NotNull<Decoder*> aDecoder) {
   MOZ_ASSERT(aDecoder->HasError() || !aDecoder->InFrame(),
              "Decode complete in the middle of a frame?");
-  EnsureHasEventTarget(aImage);
 
   
   DecoderFinalStatus finalStatus = aDecoder->FinalStatus();
@@ -113,7 +81,7 @@ void IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
   SurfaceFlags surfaceFlags = aDecoder->GetSurfaceFlags();
 
   
-  if (IsOnEventTarget() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
+  if (NS_IsMainThread() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
     aImage->NotifyDecodeComplete(finalStatus, metadata, telemetry, progress,
                                  invalidRect, frameCount, decoderFlags,
                                  surfaceFlags);
@@ -128,15 +96,16 @@ void IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
 
   
   NotNull<RefPtr<RasterImage>> image = aImage;
-  mEventTarget->Dispatch(CreateRenderBlockingRunnable(NS_NewRunnableFunction(
-                             "IDecodingTask::NotifyDecodeComplete",
-                             [=]() -> void {
-                               image->NotifyDecodeComplete(
-                                   finalStatus, metadata, telemetry, progress,
-                                   invalidRect, frameCount, decoderFlags,
-                                   surfaceFlags);
-                             })),
-                         NS_DISPATCH_NORMAL);
+  nsCOMPtr<nsIEventTarget> eventTarget = GetMainThreadSerialEventTarget();
+  eventTarget->Dispatch(CreateRenderBlockingRunnable(NS_NewRunnableFunction(
+                            "IDecodingTask::NotifyDecodeComplete",
+                            [=]() -> void {
+                              image->NotifyDecodeComplete(
+                                  finalStatus, metadata, telemetry, progress,
+                                  invalidRect, frameCount, decoderFlags,
+                                  surfaceFlags);
+                            })),
+                        NS_DISPATCH_NORMAL);
 }
 
 

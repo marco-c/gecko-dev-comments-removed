@@ -1557,12 +1557,7 @@ void VectorImage::InvalidateObserversOnNextRefreshDriverTick() {
   
   
   
-  nsCOMPtr<nsIEventTarget> eventTarget;
-  if (mProgressTracker) {
-    eventTarget = mProgressTracker->GetEventTarget();
-  } else {
-    eventTarget = do_GetMainThread();
-  }
+  nsCOMPtr<nsIEventTarget> eventTarget = do_GetMainThread();
 
   RefPtr<VectorImage> self(this);
   nsCOMPtr<nsIRunnable> ev(NS_NewRunnableFunction(

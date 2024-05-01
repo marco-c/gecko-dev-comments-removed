@@ -334,8 +334,7 @@ void imgRequest::Cancel(nsresult aStatus) {
   if (NS_IsMainThread()) {
     ContinueCancel(aStatus);
   } else {
-    RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
-    nsCOMPtr<nsIEventTarget> eventTarget = progressTracker->GetEventTarget();
+    nsCOMPtr<nsIEventTarget> eventTarget = GetMainThreadSerialEventTarget();
     nsCOMPtr<nsIRunnable> ev = new imgRequestMainThreadCancel(this, aStatus);
     eventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
   }
@@ -1027,24 +1026,21 @@ imgRequest::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInStr,
 
     if (result.mImage) {
       image = result.mImage;
-      nsCOMPtr<nsIEventTarget> eventTarget;
 
       
       {
         MutexAutoLock lock(mMutex);
         mImage = image;
 
-        
-        
-        
-        
-        
-        if (!NS_IsMainThread()) {
-          eventTarget = mProgressTracker->GetEventTarget();
-          MOZ_ASSERT(eventTarget);
-        }
-
         mProgressTracker = nullptr;
+      }
+
+      
+      
+      nsCOMPtr<nsIEventTarget> eventTarget;
+      if (!NS_IsMainThread()) {
+        eventTarget = GetMainThreadSerialEventTarget();
+        MOZ_ASSERT(eventTarget);
       }
 
       
