@@ -255,6 +255,11 @@ class Accessible {
   
 
 
+  bool NameIsEmpty() const;
+
+  
+
+
   virtual void Description(nsString& aDescription) const = 0;
 
   
@@ -719,11 +724,6 @@ class Accessible {
 
 
   void ApplyImplicitState(uint64_t& aState) const;
-
-  
-
-
-  bool NameIsEmpty() const;
 
  private:
   static const uint8_t kTypeBits = 6;

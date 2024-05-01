@@ -12,6 +12,7 @@
 #include "LocalAccessible-inl.h"
 #include "mozilla/a11y/RemoteAccessible.h"
 #include "MsaaAccessible.h"
+#include "nsTextEquivUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -228,6 +229,12 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
 
       break;
     }
+
+    case UIA_IsControlElementPropertyId:
+    case UIA_IsContentElementPropertyId:
+      aPropertyValue->vt = VT_BOOL;
+      aPropertyValue->boolVal = IsControl() ? VARIANT_TRUE : VARIANT_FALSE;
+      return S_OK;
   }
 
   return S_OK;
@@ -241,4 +248,69 @@ uiaRawElmProvider::get_HostRawElementProvider(
   
   *aRawElmProvider = nullptr;
   return S_OK;
+}
+
+
+
+bool uiaRawElmProvider::IsControl() {
+  
+  
+  
+  Accessible* acc = Acc();
+  MOZ_ASSERT(acc);
+  if (acc->IsTextLeaf()) {
+    
+    
+    
+    for (Accessible* ancestor = acc->Parent(); ancestor && !ancestor->IsDoc();
+         ancestor = ancestor->Parent()) {
+      if (nsTextEquivUtils::HasNameRule(ancestor, eNameFromSubtreeRule)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (acc->HasNumericValue() || acc->ActionCount() > 0) {
+    return true;
+  }
+  uint64_t state = acc->State();
+  if (state & states::FOCUSABLE) {
+    return true;
+  }
+  if (state & states::EDITABLE) {
+    Accessible* parent = acc->Parent();
+    if (parent && !(parent->State() & states::EDITABLE)) {
+      
+      return true;
+    }
+  }
+
+  
+  
+  switch (acc->Role()) {
+    case roles::EMPHASIS:
+    case roles::MARK:
+    case roles::PARAGRAPH:
+    case roles::SECTION:
+    case roles::STRONG:
+    case roles::SUBSCRIPT:
+    case roles::SUPERSCRIPT:
+    case roles::TEXT:
+    case roles::TEXT_CONTAINER: {
+      if (!acc->NameIsEmpty()) {
+        return true;
+      }
+      nsAutoString text;
+      acc->Description(text);
+      if (!text.IsEmpty()) {
+        return true;
+      }
+      return false;
+    }
+    default:
+      break;
+  }
+
+  return true;
 }
