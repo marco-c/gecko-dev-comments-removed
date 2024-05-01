@@ -3,28 +3,51 @@
 
 
 use nsstring::nsCString;
-use std::{ffi::c_void, sync::Mutex};
+use std::{
+    alloc::{self, Layout},
+    cmp::min,
+    ffi::{c_char, c_void, CStr},
+    ptr::{copy_nonoverlapping, null_mut},
+    sync::Mutex,
+};
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use std::arch::global_asm;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AnnotationContents {
     Empty,
-    NSCString,
+    NSCStringPointer,
+    CStringPointer,
     CString,
-    CharBuffer,
-    USize,
     ByteBuffer(u32),
+    OwnedByteBuffer(u32),
 }
-
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct Annotation {
     pub id: u32,
     pub contents: AnnotationContents,
     pub address: usize,
+}
+
+impl Drop for Annotation {
+    fn drop(&mut self) {
+        match self.contents {
+            AnnotationContents::OwnedByteBuffer(len) => {
+                if (self.address != 0) && (len > 0) {
+                    let align = min(usize::next_power_of_two(len as usize), 32);
+                    unsafe {
+                        let layout = Layout::from_size_align_unchecked(len as usize, align);
+                        alloc::dealloc(self.address as *mut u8, layout);
+                    }
+                }
+            }
+            _ => {
+                
+            }
+        };
+    }
 }
 
 pub struct AnnotationTable {
@@ -222,49 +245,71 @@ pub struct MozAnnotationNote {
     pub ehdr: isize,
 }
 
+fn store_annotation<T>(id: u32, contents: AnnotationContents, address: *const T) -> *const T {
+    let address = match contents {
+        AnnotationContents::OwnedByteBuffer(len) => {
+            if !address.is_null() && (len > 0) {
+                
+                let len = len as usize;
+                let align = min(usize::next_power_of_two(len), 32);
+                unsafe {
+                    let layout = Layout::from_size_align_unchecked(len as usize, align);
+                    let src = address as *mut u8;
+                    let dst = alloc::alloc(layout);
+                    copy_nonoverlapping(src, dst, len);
+                    dst
+                }
+            } else {
+                null_mut()
+            }
+        }
+        _ => address as *mut u8,
+    };
 
-
-
-
-#[no_mangle]
-pub extern "C" fn mozannotation_register_nscstring(id: u32, address: *const nsCString) -> bool {
     let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
+    let old = if let Some(existing) = annotations.iter_mut().find(|e| e.id == id) {
+        let old = match existing.contents {
+            AnnotationContents::OwnedByteBuffer(len) => {
+                
+                if (existing.address != 0) && (len > 0) {
+                    let len = len as usize;
+                    let align = min(usize::next_power_of_two(len), 32);
+                    unsafe {
+                        let layout = Layout::from_size_align_unchecked(len, align);
+                        alloc::dealloc(existing.address as *mut u8, layout);
+                    }
+                }
+                null_mut::<T>()
+            }
+            _ => existing.address as *mut T,
+        };
 
-    if annotations.iter().any(|e| e.id == id) {
-        return false;
-    }
+        existing.contents = contents;
+        existing.address = address as usize;
+        old
+    } else {
+        annotations.push(Annotation {
+            id,
+            contents,
+            address: address as usize,
+        });
+        null_mut::<T>()
+    };
 
-    annotations.push(Annotation {
-        id,
-        contents: AnnotationContents::NSCString,
-        address: address as usize,
-    });
-
-    true
+    old
 }
 
 
 
 
 
+
 #[no_mangle]
-pub extern "C" fn mozannotation_register_cstring(
+pub extern "C" fn mozannotation_register_nscstring(
     id: u32,
-    address: *const *const std::ffi::c_char,
-) -> bool {
-    let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
-
-    if annotations.iter().any(|e| e.id == id) {
-        return false;
-    }
-
-    annotations.push(Annotation {
-        id,
-        contents: AnnotationContents::CString,
-        address: address as usize,
-    });
-
-    true
+    address: *const nsCString,
+) -> *const nsCString {
+    store_annotation(id, AnnotationContents::NSCStringPointer, address)
 }
 
 
@@ -272,23 +317,39 @@ pub extern "C" fn mozannotation_register_cstring(
 
 
 #[no_mangle]
-pub extern "C" fn mozannotation_register_char_buffer(
+pub extern "C" fn mozannotation_record_nscstring_from_raw_parts(
     id: u32,
-    address: *const std::ffi::c_char,
-) -> bool {
-    let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
-
-    if annotations.iter().any(|e| e.id == id) {
-        return false;
-    }
-
-    annotations.push(Annotation {
+    address: *const u8,
+    size: usize,
+) {
+    store_annotation(
         id,
-        contents: AnnotationContents::CharBuffer,
-        address: address as usize,
-    });
+        AnnotationContents::OwnedByteBuffer(size as u32),
+        address,
+    );
+}
 
-    true
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn mozannotation_register_cstring_ptr(
+    id: u32,
+    address: *const *const c_char,
+) -> *const *const c_char {
+    store_annotation(id, AnnotationContents::CStringPointer, address)
+}
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn mozannotation_register_cstring(id: u32, address: *const c_char) -> *const c_char {
+    store_annotation(id, AnnotationContents::CString, address)
 }
 
 
@@ -296,21 +357,11 @@ pub extern "C" fn mozannotation_register_char_buffer(
 
 
 #[no_mangle]
-pub extern "C" fn mozannotation_register_usize(id: u32, address: *const usize) -> bool {
-    let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
-
-    if annotations.iter().any(|e| e.id == id) {
-        return false;
-    }
-
-    annotations.push(Annotation {
-        id,
-        contents: AnnotationContents::USize,
-        address: address as usize,
-    });
-
-    true
+pub extern "C" fn mozannotation_record_cstring(id: u32, address: *const c_char) {
+    let len = unsafe { CStr::from_ptr(address).to_bytes().len() };
+    store_annotation(id, AnnotationContents::OwnedByteBuffer(len as u32), address);
 }
+
 
 
 
@@ -321,34 +372,50 @@ pub extern "C" fn mozannotation_register_bytebuffer(
     id: u32,
     address: *const c_void,
     size: u32,
-) -> bool {
-    let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
-
-    if annotations.iter().any(|e| e.id == id) {
-        return false;
-    }
-
-    annotations.push(Annotation {
-        id,
-        contents: AnnotationContents::ByteBuffer(size),
-        address: address as usize,
-    });
-
-    true
+) -> *const c_void {
+    store_annotation(id, AnnotationContents::ByteBuffer(size), address)
 }
 
 
 
 
-#[no_mangle]
-pub extern "C" fn mozannotation_unregister(id: u32) -> bool {
-    let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
-    let index = annotations.iter().position(|e| e.id == id);
 
-    if let Some(index) = index {
-        annotations.remove(index);
-        return true;
+#[no_mangle]
+pub extern "C" fn mozannotation_record_bytebuffer(id: u32, address: *const c_void, size: u32) {
+    store_annotation(id, AnnotationContents::OwnedByteBuffer(size), address);
+}
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn mozannotation_unregister(id: u32) -> *const c_void {
+    store_annotation(id, AnnotationContents::Empty, null_mut())
+}
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn mozannotation_get_contents(id: u32, contents: *mut AnnotationContents) -> usize {
+    let annotations = &MOZANNOTATIONS.lock().unwrap().data;
+    if let Some(annotation) = annotations.iter().find(|e| e.id == id) {
+        if annotation.contents == AnnotationContents::Empty {
+            return 0;
+        }
+
+        unsafe { *contents = annotation.contents };
+        return annotation.address;
     }
 
-    false
+    return 0;
+}
+
+#[no_mangle]
+pub extern "C" fn mozannotation_clear_all() {
+    let annotations = &mut MOZANNOTATIONS.lock().unwrap().data;
+    annotations.clear();
 }

@@ -18,12 +18,12 @@
 
 #include "CrashAnnotations.h"
 
-#include <stddef.h>
-#include <stdint.h>
 #include "nsError.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 #include "prio.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #if defined(XP_WIN)
 #  ifdef WIN32_LEAN_AND_MEAN
@@ -95,30 +95,42 @@ nsresult SetMinidumpPath(const nsAString& aPath);
 
 
 
-nsresult AnnotateCrashReport(Annotation key, bool data);
-nsresult AnnotateCrashReport(Annotation key, int data);
-nsresult AnnotateCrashReport(Annotation key, unsigned int data);
-nsresult AnnotateCrashReport(Annotation key, const nsACString& data);
-nsresult AppendToCrashReportAnnotation(Annotation key, const nsACString& data);
-nsresult RemoveCrashReportAnnotation(Annotation key);
+const bool* RegisterAnnotationBool(Annotation aKey, const bool* aData);
+const uint32_t* RegisterAnnotationU32(Annotation aKey, const uint32_t* aData);
+const uint64_t* RegisterAnnotationU64(Annotation aKey, const uint64_t* aData);
+const size_t* RegisterAnnotationUSize(Annotation aKey, const size_t* aData);
+const char* RegisterAnnotationCString(Annotation aKey, const char* aData);
+const nsCString* RegisterAnnotationNSCString(Annotation aKey,
+                                             const nsCString* aData);
+
+nsresult RecordAnnotationBool(Annotation aKey, bool aData);
+nsresult RecordAnnotationU32(Annotation aKey, uint32_t aData);
+nsresult RecordAnnotationU64(Annotation aKey, uint64_t aData);
+nsresult RecordAnnotationUSize(Annotation aKey, size_t aData);
+nsresult RecordAnnotationCString(Annotation aKey, const char* aData);
+nsresult RecordAnnotationNSCString(Annotation aKey, const nsACString& aData);
+nsresult RecordAnnotationNSString(Annotation aKey, const nsAString& aData);
+nsresult UnrecordAnnotation(Annotation aKey);
+
 nsresult AppendAppNotesToCrashReport(const nsACString& data);
 
 
 
 
 
-class MOZ_RAII AutoAnnotateCrashReport final {
+class MOZ_RAII AutoRecordAnnotation final {
  public:
-  AutoAnnotateCrashReport(Annotation key, bool data);
-  AutoAnnotateCrashReport(Annotation key, int data);
-  AutoAnnotateCrashReport(Annotation key, unsigned int data);
-  AutoAnnotateCrashReport(Annotation key, const nsACString& data);
-  ~AutoAnnotateCrashReport();
+  AutoRecordAnnotation(Annotation key, bool data);
+  AutoRecordAnnotation(Annotation key, int data);
+  AutoRecordAnnotation(Annotation key, unsigned int data);
+  AutoRecordAnnotation(Annotation key, const nsACString& data);
+  ~AutoRecordAnnotation();
 
 #ifdef MOZ_CRASHREPORTER
  private:
   Annotation mKey;
-  nsCString mPrevious;
+  const nsCString mCurrent;
+  const nsCString* mPrevious;
 #endif
 };
 

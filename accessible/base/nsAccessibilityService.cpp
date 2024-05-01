@@ -1522,8 +1522,8 @@ bool nsAccessibilityService::Init() {
   NS_ADDREF(gApplicationAccessible);  
   gApplicationAccessible->Init();
 
-  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Accessibility,
-                                     "Active"_ns);
+  CrashReporter::RecordAnnotationCString(
+      CrashReporter::Annotation::Accessibility, "Active");
 
   
   if (XRE_IsParentProcess()) PlatformInit();

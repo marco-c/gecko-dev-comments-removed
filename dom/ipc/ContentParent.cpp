@@ -4441,11 +4441,11 @@ void ContentParent::GeneratePairedMinidump(const char* aReason) {
     
     
     nsAutoCString additionalDumps("browser");
-    mCrashReporter->AddAnnotation(
+    mCrashReporter->AddAnnotationNSCString(
         CrashReporter::Annotation::additional_minidumps, additionalDumps);
     nsDependentCString reason(aReason);
-    mCrashReporter->AddAnnotation(CrashReporter::Annotation::ipc_channel_error,
-                                  reason);
+    mCrashReporter->AddAnnotationNSCString(
+        CrashReporter::Annotation::ipc_channel_error, reason);
 
     
     if (mCrashReporter->GenerateMinidumpAndPair(this, "browser"_ns)) {

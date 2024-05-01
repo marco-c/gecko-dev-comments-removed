@@ -473,9 +473,8 @@ MessageChannel::~MessageChannel() {
   
   
   if (!IsClosedLocked()) {
-    CrashReporter::AnnotateCrashReport(
-        CrashReporter::Annotation::IPCFatalErrorProtocol,
-        nsDependentCString(mName));
+    CrashReporter::RecordAnnotationCString(
+        CrashReporter::Annotation::IPCFatalErrorProtocol, mName);
     switch (mChannelState) {
       case ChannelConnected:
         MOZ_CRASH(

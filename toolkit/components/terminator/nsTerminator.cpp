@@ -606,9 +606,7 @@ void nsTerminator::UpdateTelemetry() {
 
 void nsTerminator::UpdateCrashReport(const char* aTopic) {
   
-  nsAutoCString report(aTopic);
-
-  Unused << CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::ShutdownProgress, report);
+  CrashReporter::RecordAnnotationCString(
+      CrashReporter::Annotation::ShutdownProgress, aTopic);
 }
 }  

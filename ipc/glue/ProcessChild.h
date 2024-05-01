@@ -48,6 +48,12 @@ class ProcessChild : public ChildProcess {
 
   static bool ExpectingShutdown();
 
+  static void AppendToIPCShutdownStateAnnotation(const nsCString& aStr) {
+    StaticMutexAutoLock lock(gIPCShutdownStateLock);
+    gIPCShutdownStateAnnotation.Append(" - "_ns);
+    gIPCShutdownStateAnnotation.Append(aStr);
+  }
+
   
 
 
@@ -63,6 +69,9 @@ class ProcessChild : public ChildProcess {
 
  private:
   static ProcessChild* gProcessChild;
+  static StaticMutex gIPCShutdownStateLock;
+  static nsCString gIPCShutdownStateAnnotation
+      MOZ_GUARDED_BY(gIPCShutdownStateLock);
 
   MessageLoop* mUILoop;
   ProcessId mParentPid;

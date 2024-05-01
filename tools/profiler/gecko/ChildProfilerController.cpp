@@ -77,9 +77,9 @@ void ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(
   }
   if (profilerChildThread) {
     if (profiler_is_active()) {
-      CrashReporter::AnnotateCrashReport(
+      CrashReporter::RecordAnnotationCString(
           CrashReporter::Annotation::ProfilerChildShutdownPhase,
-          "Profiling - Dispatching ShutdownProfilerChild"_ns);
+          "Profiling - Dispatching ShutdownProfilerChild");
       profilerChildThread->Dispatch(
           NewRunnableMethod<ProfileAndAdditionalInformation*>(
               "ChildProfilerController::ShutdownProfilerChild", this,
@@ -90,9 +90,9 @@ void ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(
       
       profilerChildThread->Shutdown();
     } else {
-      CrashReporter::AnnotateCrashReport(
+      CrashReporter::RecordAnnotationCString(
           CrashReporter::Annotation::ProfilerChildShutdownPhase,
-          "Not profiling - Running ShutdownProfilerChild"_ns);
+          "Not profiling - Running ShutdownProfilerChild");
       
       
       
@@ -148,23 +148,24 @@ void ChildProfilerController::ShutdownProfilerChild(
     ProfileAndAdditionalInformation* aOutShutdownProfileInformation) {
   const bool isProfiling = profiler_is_active();
   if (aOutShutdownProfileInformation) {
-    CrashReporter::AnnotateCrashReport(
+    CrashReporter::RecordAnnotationCString(
         CrashReporter::Annotation::ProfilerChildShutdownPhase,
-        isProfiling ? "Profiling - GrabShutdownProfile"_ns
-                    : "Not profiling - GrabShutdownProfile"_ns);
+        isProfiling ? "Profiling - GrabShutdownProfile"
+                    : "Not profiling - GrabShutdownProfile");
     *aOutShutdownProfileInformation = mProfilerChild->GrabShutdownProfile();
   }
-  CrashReporter::AnnotateCrashReport(
+  CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::ProfilerChildShutdownPhase,
-      isProfiling ? "Profiling - Destroying ProfilerChild"_ns
-                  : "Not profiling - Destroying ProfilerChild"_ns);
+      isProfiling ? "Profiling - Destroying ProfilerChild"
+                  : "Not profiling - Destroying ProfilerChild");
   mProfilerChild->Destroy();
   mProfilerChild = nullptr;
-  CrashReporter::AnnotateCrashReport(
+  CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::ProfilerChildShutdownPhase,
-      isProfiling
-          ? "Profiling - ShutdownProfilerChild complete, waiting for thread shutdown"_ns
-          : "Not Profiling - ShutdownProfilerChild complete, waiting for thread shutdown"_ns);
+      isProfiling ? "Profiling - ShutdownProfilerChild complete, waiting for "
+                    "thread shutdown"
+                  : "Not Profiling - ShutdownProfilerChild complete, waiting "
+                    "for thread shutdown");
 }
 
 }  

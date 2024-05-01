@@ -452,13 +452,12 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
       if (XRE_IsParentProcess()) {
         
         
-        nsCString note("xpcom_runtime_abort(");
+        nsAutoCString note("xpcom_runtime_abort(");
         note += nonPIDBuf.buffer;
         note += ")";
         CrashReporter::AppendAppNotesToCrashReport(note);
-        CrashReporter::AnnotateCrashReport(
-            CrashReporter::Annotation::AbortMessage,
-            nsDependentCString(nonPIDBuf.buffer));
+        CrashReporter::RecordAnnotationNSCString(
+            CrashReporter::Annotation::AbortMessage, note);
       }
 
 #if defined(DEBUG) && defined(_WIN32)

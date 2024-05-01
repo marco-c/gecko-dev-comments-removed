@@ -40,11 +40,8 @@ WinFileDialogChild::~WinFileDialogChild() {
 template <size_t N>
 WinFileDialogChild::IPCResult WinFileDialogChild::MakeIpcFailure(
     HRESULT hr, const char (&what)[N]) {
-  
-  
-  nsPrintfCString data("%lu", hr);
-  CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::WindowsFileDialogErrorCode, data);
+  CrashReporter::RecordAnnotationU32(
+      CrashReporter::Annotation::WindowsFileDialogErrorCode, hr);
 
   return IPC_FAIL(this, what);
 }

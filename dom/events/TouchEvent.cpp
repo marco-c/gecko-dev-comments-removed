@@ -233,7 +233,7 @@ bool TouchEvent::PrefEnabled(nsIDocShell* aDocShell) {
       
       
       if (firstTime && !XRE_IsParentProcess()) {
-        CrashReporter::AnnotateCrashReport(
+        CrashReporter::RecordAnnotationBool(
             CrashReporter::Annotation::HasDeviceTouchScreen, enabled);
         firstTime = false;
       }

@@ -560,12 +560,10 @@ mozilla::ipc::IPCResult HangMonitorChild::RecvRequestContentJSInterrupt() {
   
   
   if (mozilla::ipc::ProcessChild::ExpectingShutdown()) {
-    CrashReporter::AppendToCrashReportAnnotation(
-        CrashReporter::Annotation::IPCShutdownState,
+    ProcessChild::AppendToIPCShutdownStateAnnotation(
         "HangMonitorChild::RecvRequestContentJSInterrupt (expected)"_ns);
   } else {
-    CrashReporter::AppendToCrashReportAnnotation(
-        CrashReporter::Annotation::IPCShutdownState,
+    ProcessChild::AppendToIPCShutdownStateAnnotation(
         "HangMonitorChild::RecvRequestContentJSInterrupt (unexpected)"_ns);
   }
   JS_RequestInterruptCallback(mContext);
