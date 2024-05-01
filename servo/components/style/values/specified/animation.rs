@@ -117,6 +117,7 @@ impl TransitionProperty {
 
 #[derive(
     Clone,
+    Copy,
     Debug,
     MallocSizeOf,
     Parse,
