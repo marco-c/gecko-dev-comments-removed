@@ -4,6 +4,7 @@
 
 use crate::data::Property;
 
+
 #[derive(Default, Debug)]
 pub struct Checkbox {
     pub checked: Property<bool>,

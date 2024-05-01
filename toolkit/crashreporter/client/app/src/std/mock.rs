@@ -2,6 +2,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::any::{Any, TypeId};
 use std::collections::{hash_map::DefaultHasher, HashMap};
 use std::hash::{Hash, Hasher};
@@ -12,6 +30,7 @@ type MockDataMap = HashMap<Box<dyn MockKeyStored>, Box<dyn Any + Send + Sync>>;
 thread_local! {
     static MOCK_DATA: AtomicPtr<MockDataMap> = Default::default();
 }
+
 
 pub trait MockKeyStored: Any + std::fmt::Debug + Sync {
     fn eq(&self, other: &dyn MockKeyStored) -> bool;
@@ -45,9 +64,12 @@ impl dyn MockKeyStored {
     }
 }
 
+
 pub trait MockKey: MockKeyStored + Sized {
+    
     type Value: Any + Send + Sync;
 
+    
     fn try_get<F, R>(&self, f: F) -> Option<R>
     where
         F: FnOnce(&Self::Value) -> R,
@@ -64,6 +86,9 @@ pub trait MockKey: MockKeyStored + Sized {
         })
     }
 
+    
+    
+    
     fn get<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&Self::Value) -> R,
@@ -75,6 +100,7 @@ pub trait MockKey: MockKeyStored + Sized {
     }
 }
 
+
 pub struct SharedMockData(AtomicPtr<MockDataMap>);
 
 impl Clone for SharedMockData {
@@ -84,6 +110,7 @@ impl Clone for SharedMockData {
 }
 
 impl SharedMockData {
+    
     pub fn new() -> Self {
         MOCK_DATA.with(|ptr| SharedMockData(AtomicPtr::new(ptr.load(Relaxed))))
     }
@@ -103,21 +130,25 @@ pub fn builder() -> Builder {
     Builder::new()
 }
 
+
 #[derive(Default)]
 pub struct Builder {
     data: MockDataMap,
 }
 
 impl Builder {
+    
     pub fn new() -> Self {
         Default::default()
     }
 
+    
     pub fn set<K: MockKey>(&mut self, key: K, value: K::Value) -> &mut Self {
         self.data.insert(Box::new(key), Box::new(value));
         self
     }
 
+    
     pub fn run<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce() -> R,
@@ -128,6 +159,9 @@ impl Builder {
         ret
     }
 }
+
+
+
 
 pub struct MockHook<T> {
     name: &'static str,
@@ -157,6 +191,7 @@ impl<T: Any + Send + Sync + 'static> MockKey for MockHook<T> {
 }
 
 impl<T> MockHook<T> {
+    
     pub fn new(name: &'static str) -> Self {
         MockHook {
             name,
@@ -165,15 +200,25 @@ impl<T> MockHook<T> {
     }
 }
 
+
+
 pub fn hook<T: Any + Send + Sync + Clone>(_normally: T, name: &'static str) -> T {
     MockHook::new(name).get(|v: &T| v.clone())
 }
+
+
 
 pub fn try_hook<T: Any + Send + Sync + Clone>(fallback: T, name: &'static str) -> T {
     MockHook::new(name)
         .try_get(|v: &T| v.clone())
         .unwrap_or(fallback)
 }
+
+
+
+
+
+
 
 macro_rules! mock_key {
     ( $vis:vis struct $name:ident => $value:ty ) => {

@@ -3,10 +3,16 @@
 
 #![allow(dead_code)]
 
+
+
+
+
 #[inline(always)]
 pub fn hook<T: std::any::Any + Send + Sync + Clone>(normally: T, _name: &'static str) -> T {
     normally
 }
+
+
 
 #[inline(always)]
 pub fn try_hook<T: std::any::Any + Send + Sync + Clone>(fallback: T, _name: &'static str) -> T {

@@ -5,6 +5,7 @@
 use super::{Element, ElementBuilder};
 use crate::data::Event;
 
+
 #[derive(Default, Debug)]
 pub struct Button {
     pub content: Option<Box<Element>>,
