@@ -68,7 +68,6 @@ class VideoCodecTester {
     };
 
     struct Frame {
-      int frame_num = 0;
       uint32_t timestamp_rtp = 0;
       LayerId layer_id;
       bool encoded = false;
@@ -118,6 +117,7 @@ class VideoCodecTester {
       
       void LogMetrics(MetricsLogger* logger,
                       std::string test_case_name,
+                      std::string prefix,
                       std::map<std::string, std::string> metadata = {}) const;
     };
 
@@ -130,6 +130,12 @@ class VideoCodecTester {
 
     
     virtual Stream Aggregate(Filter filter) const = 0;
+
+    
+    virtual void LogMetrics(
+        absl::string_view csv_path,
+        std::vector<Frame> frames,
+        std::map<std::string, std::string> metadata) const = 0;
   };
 
   
