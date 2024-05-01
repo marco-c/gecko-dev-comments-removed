@@ -8168,8 +8168,23 @@ WPARAM nsWindow::wParamFromGlobalMouseState() {
   return result;
 }
 
+
+
+
+
+
+
+
+
 void nsWindow::PickerOpen() {
   AssertIsOnMainThread();
+
+  
+  
+  if (!mPickerDisplayCount) {
+    ::EnableWindow(::GetAncestor(GetWindowHandle(), GA_ROOT), FALSE);
+  }
+
   mPickerDisplayCount++;
 }
 
@@ -8179,13 +8194,6 @@ void nsWindow::PickerClosed() {
   if (!mPickerDisplayCount) return;
   mPickerDisplayCount--;
 
-  
-  
-  
-  
-  
-  
-  
   
   if (!mPickerDisplayCount) {
     ::EnableWindow(::GetAncestor(GetWindowHandle(), GA_ROOT), TRUE);
