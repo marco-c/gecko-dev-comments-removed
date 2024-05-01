@@ -120,9 +120,11 @@ function JSTracerTrace(props) {
   if (why) {
     messageBody.push(
       
-      dom.span({ className: "jstracer-exit-frame-reason" }, " " + why + " "),
-      formatRep(messageBodyConfig, returnedValue)
+      dom.span({ className: "jstracer-exit-frame-reason" }, " " + why + " ")
     );
+    if (returnedValue !== undefined) {
+      messageBody.push(formatRep(messageBodyConfig, returnedValue));
+    }
   }
 
   if (prefix) {
