@@ -29,11 +29,40 @@ let gAddTasksWithRustSetup;
 
 
 
+
+
+
+
+
+
+
+
+
+
 function add_tasks_with_rust(...args) {
+  let skipIfRustEnabled = false;
+  let i = args.findIndex(a => a.skip_if_rust_enabled);
+  if (i >= 0) {
+    skipIfRustEnabled = true;
+    args.splice(i, 1);
+  }
+
   let taskFnIndex = args.findIndex(a => typeof a == "function");
   let taskFn = args[taskFnIndex];
 
   for (let rustEnabled of [false, true]) {
+    let newTaskName =
+      (taskFn.name || "anonymousTask") +
+      (rustEnabled ? "_rustEnabled" : "_rustDisabled");
+
+    if (rustEnabled && skipIfRustEnabled) {
+      info(
+        "add_tasks_with_rust: Skipping due to skip_if_rust_enabled: " +
+          newTaskName
+      );
+      continue;
+    }
+
     let newTaskFn = async (...taskFnArgs) => {
       info("add_tasks_with_rust: Setting rustEnabled: " + rustEnabled);
       UrlbarPrefs.set("quicksuggest.rustEnabled", rustEnabled);
@@ -85,13 +114,15 @@ function add_tasks_with_rust(...args) {
       return rv;
     };
 
-    Object.defineProperty(newTaskFn, "name", {
-      value:
-        (taskFn.name || "anonymousTask") +
-        (rustEnabled ? "_rustEnabled" : "_rustDisabled"),
-    });
-    let addTaskArgs = [...args];
-    addTaskArgs[taskFnIndex] = newTaskFn;
+    Object.defineProperty(newTaskFn, "name", { value: newTaskName });
+
+    let addTaskArgs = [];
+    for (let j = 0; j < args.length; j++) {
+      addTaskArgs[j] =
+        j == taskFnIndex
+          ? newTaskFn
+          : Cu.cloneInto(args[j], this, { cloneFunctions: true });
+    }
     add_task(...addTaskArgs);
   }
 }
@@ -130,7 +161,7 @@ function makeWikipediaResult({
   iconBlob = new Blob([new Uint8Array([])]),
   impressionUrl = "http://example.com/wikipedia-impression",
   clickUrl = "http://example.com/wikipedia-click",
-  blockId = 1,
+  blockId = 2,
   advertiser = "Wikipedia",
   iabCategory = "5 - Education",
   suggestedIndex = -1,
@@ -931,4 +962,41 @@ async function doRustProvidersTests({ searchString, tests }) {
   info("Clearing rustEnabled pref and forcing sync");
   UrlbarPrefs.clear("quicksuggest.rustEnabled");
   await QuickSuggestTestUtils.forceSync();
+}
+
+
+
+
+
+
+
+
+
+
+
+async function waitForNewWeatherFetch() {
+  let { fetchPromise: oldFetchPromise } = QuickSuggest.weather;
+
+  
+  let newFetchPromise;
+  await TestUtils.waitForCondition(() => {
+    let { fetchPromise } = QuickSuggest.weather;
+    if (
+      (oldFetchPromise && fetchPromise != oldFetchPromise) ||
+      (!oldFetchPromise && fetchPromise)
+    ) {
+      newFetchPromise = fetchPromise;
+      return true;
+    }
+    return false;
+  }, "Waiting for a new weather fetch to start");
+
+  Assert.equal(
+    QuickSuggest.weather.fetchPromise,
+    newFetchPromise,
+    "Sanity check: fetchPromise hasn't changed since waitForCondition returned"
+  );
+
+  
+  await newFetchPromise;
 }

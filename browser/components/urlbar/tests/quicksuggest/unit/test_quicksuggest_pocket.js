@@ -214,9 +214,9 @@ add_tasks_with_rust(async function lowPrefixes() {
 
 
 
-add_task(
+add_tasks_with_rust(
   {
-    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+    skip_if_rust_enabled: true,
   },
   async function lowPrefixes_howTo() {
     

@@ -32,10 +32,8 @@ add_setup(async function () {
   
   
   
-  
   registerAddTasksWithRustSetup(async () => {
-    QuickSuggest.weather._test_fetch();
-    await QuickSuggest.weather.waitForFetches();
+    await QuickSuggest.weather._test_fetch();
   });
 });
 
@@ -357,11 +355,8 @@ async function doDismissTest(command) {
   await UrlbarTestUtils.promisePopupClose(window);
 
   
-  let fetchPromise = QuickSuggest.weather.waitForFetches();
   UrlbarPrefs.clear("suggest.weather");
-  info("Waiting for weather fetch after re-enabling the suggestion");
-  await fetchPromise;
-  info("Got weather fetch");
+  await QuickSuggest.weather._test_fetch();
 
   
   await QuickSuggestTestUtils.forceSync();

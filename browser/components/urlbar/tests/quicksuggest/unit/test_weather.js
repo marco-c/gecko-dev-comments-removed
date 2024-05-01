@@ -40,10 +40,8 @@ add_setup(async () => {
   
   
   
-  
   registerAddTasksWithRustSetup(async () => {
-    QuickSuggest.weather._test_fetch();
-    await QuickSuggest.weather.waitForFetches();
+    await QuickSuggest.weather._test_fetch();
   });
 });
 
@@ -63,17 +61,15 @@ add_tasks_with_rust(async function disableAndEnable_suggestPref() {
 
 async function doBasicDisableAndEnableTest(pref) {
   
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   
   UrlbarPrefs.set(pref, false);
   assertDisabled({
     message: "After disabling",
-    pendingFetchCount: 0,
   });
 
   
@@ -94,19 +90,17 @@ async function doBasicDisableAndEnableTest(pref) {
   
   
   info("Re-enable the feature");
-  let fetchPromise = QuickSuggest.weather.waitForFetches();
+  let fetchPromise = waitForNewWeatherFetch();
   UrlbarPrefs.set(pref, true);
-  assertEnabled({
+  await assertEnabled({
     message: "Immediately after re-enabling",
     hasSuggestion: false,
-    pendingFetchCount: 1,
   });
 
   await fetchPromise;
-  assertEnabled({
+  await assertEnabled({
     message: "After awaiting fetch",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   Assert.equal(
@@ -137,16 +131,15 @@ async function doBasicDisableAndEnableTest(pref) {
 
 
 
-add_task(
+add_tasks_with_rust(
   {
-    skip_if: () => UrlbarPrefs.get("quickSuggestRustEnabled"),
+    skip_if_rust_enabled: true,
   },
   async function keywordsNotDefined() {
     
-    assertEnabled({
+    await assertEnabled({
       message: "Sanity check initial state",
       hasSuggestion: true,
-      pendingFetchCount: 0,
     });
 
     
@@ -158,7 +151,6 @@ add_task(
     ]);
     assertDisabled({
       message: "After setting RS data without keywords",
-      pendingFetchCount: 0,
     });
 
     
@@ -173,24 +165,22 @@ add_task(
 
     
     info("Setting keywords");
-    let fetchPromise = QuickSuggest.weather.waitForFetches();
+    let fetchPromise = waitForNewWeatherFetch();
     await QuickSuggestTestUtils.setRemoteSettingsRecords([
       {
         type: "weather",
         weather: MerinoTestUtils.WEATHER_RS_DATA,
       },
     ]);
-    assertEnabled({
+    await assertEnabled({
       message: "Immediately after setting keywords",
       hasSuggestion: false,
-      pendingFetchCount: 1,
     });
 
     await fetchPromise;
-    assertEnabled({
+    await assertEnabled({
       message: "After awaiting fetch",
       hasSuggestion: true,
-      pendingFetchCount: 0,
     });
 
     Assert.equal(
@@ -222,27 +212,24 @@ add_task(
 
 add_tasks_with_rust(async function disableAndEnable_immediate1() {
   
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   
   UrlbarPrefs.set("weather.featureGate", false);
   assertDisabled({
     message: "After disabling",
-    pendingFetchCount: 0,
   });
 
   
   
-  let fetchPromise = QuickSuggest.weather.waitForFetches();
+  let fetchPromise = waitForNewWeatherFetch();
   UrlbarPrefs.set("weather.featureGate", true);
-  assertEnabled({
+  await assertEnabled({
     message: "Immediately after re-enabling",
     hasSuggestion: false,
-    pendingFetchCount: 1,
   });
 
   
@@ -250,7 +237,6 @@ add_tasks_with_rust(async function disableAndEnable_immediate1() {
   UrlbarPrefs.set("weather.featureGate", false);
   assertDisabled({
     message: "After disabling again",
-    pendingFetchCount: 1,
   });
 
   
@@ -260,21 +246,19 @@ add_tasks_with_rust(async function disableAndEnable_immediate1() {
   
   assertDisabled({
     message: "After awaiting fetch",
-    pendingFetchCount: 0,
   });
 
   
-  fetchPromise = QuickSuggest.weather.waitForFetches();
+  fetchPromise = waitForNewWeatherFetch();
   UrlbarPrefs.set("weather.featureGate", true);
   await fetchPromise;
 
   
   await QuickSuggestTestUtils.forceSync();
 
-  assertEnabled({
+  await assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 });
 
@@ -290,26 +274,23 @@ add_tasks_with_rust(async function disableAndEnable_immediate1() {
 
 add_tasks_with_rust(async function disableAndEnable_immediate2() {
   
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   
   UrlbarPrefs.set("weather.featureGate", false);
   assertDisabled({
     message: "After disabling",
-    pendingFetchCount: 0,
   });
 
   
   
   UrlbarPrefs.set("weather.featureGate", true);
-  assertEnabled({
+  await assertEnabled({
     message: "Immediately after re-enabling",
     hasSuggestion: false,
-    pendingFetchCount: 1,
   });
 
   
@@ -317,25 +298,21 @@ add_tasks_with_rust(async function disableAndEnable_immediate2() {
   UrlbarPrefs.set("weather.featureGate", false);
   assertDisabled({
     message: "After disabling again",
-    pendingFetchCount: 1,
   });
 
   
-  
-  let fetchPromise = QuickSuggest.weather.waitForFetches();
+  let fetchPromise = waitForNewWeatherFetch();
   UrlbarPrefs.set("weather.featureGate", true);
-  assertEnabled({
+  await assertEnabled({
     message: "Immediately after re-enabling again",
     hasSuggestion: false,
-    pendingFetchCount: 2,
   });
 
   
   await fetchPromise;
-  assertEnabled({
+  await assertEnabled({
     message: "Immediately after re-enabling again",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   
@@ -345,10 +322,9 @@ add_tasks_with_rust(async function disableAndEnable_immediate2() {
 
 
 add_tasks_with_rust(async function noSuggestion() {
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   let histograms = MerinoTestUtils.getAndClearHistograms({
@@ -361,10 +337,9 @@ add_tasks_with_rust(async function noSuggestion() {
 
   await QuickSuggest.weather._test_fetch();
 
-  assertEnabled({
+  await assertEnabled({
     message: "After fetch",
     hasSuggestion: false,
-    pendingFetchCount: 0,
   });
   Assert.equal(
     QuickSuggest.weather._test_merino.lastFetchStatus,
@@ -392,19 +367,17 @@ add_tasks_with_rust(async function noSuggestion() {
   
   
   await QuickSuggest.weather._test_fetch();
-  assertEnabled({
+  await assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 });
 
 
 add_tasks_with_rust(async function networkError() {
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   let histograms = MerinoTestUtils.getAndClearHistograms({
@@ -422,10 +395,9 @@ add_tasks_with_rust(async function networkError() {
 
   QuickSuggest.weather._test_setTimeoutMs(-1);
 
-  assertEnabled({
+  await assertEnabled({
     message: "After fetch",
     hasSuggestion: false,
-    pendingFetchCount: 0,
   });
   Assert.equal(
     QuickSuggest.weather._test_merino.lastFetchStatus,
@@ -451,19 +423,17 @@ add_tasks_with_rust(async function networkError() {
   
   
   await QuickSuggest.weather._test_fetch();
-  assertEnabled({
+  await assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 });
 
 
 add_tasks_with_rust(async function httpError() {
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   let histograms = MerinoTestUtils.getAndClearHistograms({
@@ -474,10 +444,9 @@ add_tasks_with_rust(async function httpError() {
   MerinoTestUtils.server.response = { status: 500 };
   await QuickSuggest.weather._test_fetch();
 
-  assertEnabled({
+  await assertEnabled({
     message: "After fetch",
     hasSuggestion: false,
-    pendingFetchCount: 0,
   });
   Assert.equal(
     QuickSuggest.weather._test_merino.lastFetchStatus,
@@ -505,20 +474,18 @@ add_tasks_with_rust(async function httpError() {
   MerinoTestUtils.server.reset();
   MerinoTestUtils.server.response.body.suggestions = [WEATHER_SUGGESTION];
   await QuickSuggest.weather._test_fetch();
-  assertEnabled({
+  await assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 });
 
 
 
 add_tasks_with_rust(async function clientTimeout() {
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   let histograms = MerinoTestUtils.getAndClearHistograms({
@@ -539,10 +506,9 @@ add_tasks_with_rust(async function clientTimeout() {
 
   await QuickSuggest.weather._test_fetch();
 
-  assertEnabled({
+  await assertEnabled({
     message: "After fetch",
     hasSuggestion: false,
-    pendingFetchCount: 0,
   });
   Assert.equal(
     QuickSuggest.weather._test_merino.lastFetchStatus,
@@ -584,10 +550,9 @@ add_tasks_with_rust(async function clientTimeout() {
   
   
   await QuickSuggest.weather._test_fetch();
-  assertEnabled({
+  await assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 });
 
@@ -673,10 +638,9 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
     return;
   }
 
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   
@@ -727,10 +691,9 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
 
 add_tasks_with_rust(async function block() {
   
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
   Assert.ok(
     UrlbarPrefs.get("suggest.weather"),
@@ -786,17 +749,16 @@ add_tasks_with_rust(async function block() {
   });
 
   
-  let fetchPromise = QuickSuggest.weather.waitForFetches();
+  let fetchPromise = waitForNewWeatherFetch();
   UrlbarPrefs.set("suggest.weather", true);
   await fetchPromise;
 
   
   await QuickSuggestTestUtils.forceSync();
 
-  assertEnabled({
+  await assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 });
 
@@ -860,15 +822,11 @@ async function doWakeTest({
 
   
   info("Sending wake notification");
+  let fetchPromise = waitForNewWeatherFetch();
   let nowOnWake = nowOnStart + sleepIntervalMs;
   dateNowStub.returns(nowOnWake);
   QuickSuggest.weather.observe(null, "wake_notification", "");
 
-  Assert.equal(
-    QuickSuggest.weather._test_pendingFetchCount,
-    0,
-    "After wake, next fetch should not have immediately started"
-  );
   Assert.equal(
     QuickSuggest.weather._test_lastFetchTimeMs,
     nowOnStart,
@@ -902,17 +860,12 @@ async function doWakeTest({
   
   
   info("Waiting for fetch after wake");
-  await QuickSuggest.weather.waitForFetches();
+  await fetchPromise;
 
   Assert.equal(
     QuickSuggest.weather._test_fetchTimerMs,
     QuickSuggest.weather._test_fetchIntervalMs,
     "After post-wake fetch, timer period should remain full fetch interval"
-  );
-  Assert.equal(
-    QuickSuggest.weather._test_pendingFetchCount,
-    0,
-    "After post-wake fetch, no more fetches should be pending"
   );
 
   dateNowStub.restore();
@@ -968,11 +921,6 @@ async function doOnlineTestWithSuggestion({ topic, dataValues }) {
     info("Sending notification: " + JSON.stringify({ topic, data }));
     QuickSuggest.weather.observe(null, topic, data);
 
-    Assert.equal(
-      QuickSuggest.weather._test_pendingFetchCount,
-      0,
-      "Fetch should not have started"
-    );
     Assert.equal(
       QuickSuggest.weather._test_fetchTimer,
       timer,
@@ -1044,11 +992,6 @@ async function doOnlineTestWithNullSuggestion({
       "Suggestion should remain null"
     );
     Assert.equal(
-      QuickSuggest.weather._test_pendingFetchCount,
-      0,
-      "Fetch should not have started"
-    );
-    Assert.equal(
       QuickSuggest.weather._test_fetchTimer,
       timer,
       "Timer should not have been recreated"
@@ -1066,13 +1009,9 @@ async function doOnlineTestWithNullSuggestion({
     Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should be null");
 
     info("Sending notification: " + JSON.stringify({ topic, data }));
+    let fetchPromise = waitForNewWeatherFetch();
     QuickSuggest.weather.observe(null, topic, data);
 
-    Assert.equal(
-      QuickSuggest.weather._test_pendingFetchCount,
-      0,
-      "Fetch should not have started yet"
-    );
     Assert.notEqual(
       QuickSuggest.weather._test_fetchTimer,
       0,
@@ -1092,13 +1031,8 @@ async function doOnlineTestWithNullSuggestion({
     timer = QuickSuggest.weather._test_fetchTimer;
 
     info("Waiting for fetch after notification");
-    await QuickSuggest.weather.waitForFetches();
+    await fetchPromise;
 
-    Assert.equal(
-      QuickSuggest.weather._test_pendingFetchCount,
-      0,
-      "Fetch should not be pending"
-    );
     Assert.notEqual(
       QuickSuggest.weather._test_fetchTimer,
       0,
@@ -1175,20 +1109,23 @@ async function doManyNotificationsTest(notifications) {
     MerinoTestUtils.WEATHER_SUGGESTION,
   ];
 
+  let { fetchPromise: oldFetchPromise } = QuickSuggest.weather;
+  let fetchPromise = waitForNewWeatherFetch();
+
   
   for (let [topic, data] of notifications) {
     info("Sending notification: " + JSON.stringify({ topic, data }));
     QuickSuggest.weather.observe(null, topic, data);
+    Assert.equal(
+      QuickSuggest.weather.fetchPromise,
+      oldFetchPromise,
+      "No new fetch should have started yet"
+    );
   }
 
   info("Waiting for fetch after notifications");
-  await QuickSuggest.weather.waitForFetches();
+  await fetchPromise;
 
-  Assert.equal(
-    QuickSuggest.weather._test_pendingFetchCount,
-    0,
-    "Fetch should not be pending"
-  );
   Assert.notEqual(
     QuickSuggest.weather._test_fetchTimer,
     0,
@@ -1252,7 +1189,7 @@ add_tasks_with_rust(async function vpn() {
 
   
   
-  let fetchPromise = QuickSuggest.weather.waitForFetches();
+  let fetchPromise = waitForNewWeatherFetch();
   QuickSuggest.weather.observe(null, "network:link-status-changed", "changed");
   await fetchPromise;
   Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should remain null");
@@ -1262,7 +1199,7 @@ add_tasks_with_rust(async function vpn() {
     Ci.nsINetworkLinkService.NONE_DETECTED;
 
   
-  fetchPromise = QuickSuggest.weather.waitForFetches();
+  fetchPromise = waitForNewWeatherFetch();
   QuickSuggest.weather.observe(null, "network:link-status-changed", "changed");
   await fetchPromise;
   Assert.ok(QuickSuggest.weather.suggestion, "Suggestion should be fetched");
@@ -1275,10 +1212,9 @@ add_tasks_with_rust(async function vpn() {
 
 add_tasks_with_rust(async function nimbusOverride() {
   
-  assertEnabled({
+  await assertEnabled({
     message: "Sanity check initial state",
     hasSuggestion: true,
-    pendingFetchCount: 0,
   });
 
   let defaultResult = makeWeatherResult();
@@ -1360,7 +1296,7 @@ add_tasks_with_rust(async function nimbusOverride() {
   });
 });
 
-function assertEnabled({ message, hasSuggestion, pendingFetchCount }) {
+async function assertEnabled({ message, hasSuggestion }) {
   info("Asserting feature is enabled");
   if (message) {
     info(message);
@@ -1371,20 +1307,20 @@ function assertEnabled({ message, hasSuggestion, pendingFetchCount }) {
     hasSuggestion,
     "Suggestion is null or non-null as expected"
   );
+  Assert.ok(QuickSuggest.weather._test_merino, "Merino client is non-null");
+
+  await TestUtils.waitForCondition(
+    () => QuickSuggest.weather._test_fetchTimer,
+    "Waiting for fetch timer to become non-zero"
+  );
   Assert.notEqual(
     QuickSuggest.weather._test_fetchTimer,
     0,
     "Fetch timer is non-zero"
   );
-  Assert.ok(QuickSuggest.weather._test_merino, "Merino client is non-null");
-  Assert.equal(
-    QuickSuggest.weather._test_pendingFetchCount,
-    pendingFetchCount,
-    "Expected pending fetch count"
-  );
 }
 
-function assertDisabled({ message, pendingFetchCount }) {
+function assertDisabled({ message }) {
   info("Asserting feature is disabled");
   if (message) {
     info(message);
@@ -1404,10 +1340,5 @@ function assertDisabled({ message, pendingFetchCount }) {
     QuickSuggest.weather._test_merino,
     null,
     "Merino client is null"
-  );
-  Assert.equal(
-    QuickSuggest.weather._test_pendingFetchCount,
-    pendingFetchCount,
-    "Expected pending fetch count"
   );
 }
