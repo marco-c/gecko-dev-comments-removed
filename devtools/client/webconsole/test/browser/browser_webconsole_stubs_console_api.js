@@ -69,6 +69,11 @@ async function generateConsoleApiStubs() {
   const resourceCommand = commands.resourceCommand;
 
   
+  await resourceCommand.watchResources([resourceCommand.TYPES.SOURCE], {
+    onAvailable() {},
+  });
+
+  
   
   
   let handleConsoleMessage = function () {};

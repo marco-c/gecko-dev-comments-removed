@@ -90,7 +90,7 @@ add_task(
       .pop();
     ok(backgroundPageFrame, "Found the frame for the background page");
 
-    const threadFront = await addonTarget.attachThread();
+    const threadFront = await addonTarget.getFront("thread");
 
     ok(threadFront, "Got a threadFront for the target addon");
     equal(threadFront.paused, false, "The addon threadActor isn't paused");

@@ -30,7 +30,7 @@ module.exports = {
 
     if (targetActor.threadActor.state == THREAD_STATES.DETACHED) {
       await targetActor.threadActor.attach(threadOptions);
-    } else {
+    } else if (!targetActor.threadActor.isDestroyed()) {
       
       
       

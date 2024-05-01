@@ -35,11 +35,17 @@ add_task(async function () {
   );
 
   
-  const targetDescriptor = await client.mainRoot.getMainProcess();
-  const front = await targetDescriptor.getTarget();
-  const watcher = await targetDescriptor.getWatcher();
+  const commands = await CommandsFactory.forMainProcess({ client });
+  await commands.targetCommand.startListening();
 
-  const threadFront = await front.attachThread();
+  
+  
+  await commands.threadConfigurationCommand.updateConfiguration({
+    skipBreakpoints: false,
+  });
+  const threadFront = await commands.targetCommand.targetFront.getFront(
+    "thread"
+  );
 
   
   
@@ -72,7 +78,7 @@ add_task(async function () {
   );
 
   info("Dynamically add a breakpoint after the debugger statement");
-  const breakpointsFront = await watcher.getBreakpointListActor();
+  const breakpointsFront = await commands.watcherFront.getBreakpointListActor();
   await breakpointsFront.setBreakpoint(
     { sourceUrl: testFile.path, line: 11, column: 0 },
     {}
