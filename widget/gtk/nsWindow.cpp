@@ -615,6 +615,10 @@ void nsWindow::Destroy() {
 
   DestroyLayerManager();
 
+  
+  
+  mSurfaceProvider.CleanupResources();
+
   g_signal_handlers_disconnect_by_data(gtk_settings_get_default(), this);
 
   if (mIMContext) {
