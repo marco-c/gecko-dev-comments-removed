@@ -38,6 +38,14 @@ window.createBlessedRecordingCloseWatcher = async (t, events, name, type, parent
   return createRecordingCloseWatcher(t, events, name, type, parentWatcher);
 };
 
+window.destroyCloseWatcher = (watcher) => {
+  if (watcher instanceof HTMLElement) {
+    watcher.remove();
+  } else {
+    watcher.destroy();
+  }
+};
+
 window.sendEscKey = () => {
   
   
@@ -58,4 +66,10 @@ window.maybeTopLayerBless = (watcher) => {
     return blessTopLayer(watcher);
   }
   return test_driver.bless();
+};
+
+window.waitForPotentialCloseEvent = () => {
+  
+  
+  return new Promise(requestAnimationFrame);
 };
