@@ -225,27 +225,11 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
 
     
     RefPtr<HttpChannelChild> channel = dont_AddRef(this);
-
-    
-    NS_DispatchToMainThread(
-        NewRunnableMethod("~HttpChannelChild>DoNotifyListener", channel,
-                          &HttpChannelChild::DoNotifyListener));
-
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "~HttpChannelChild>DoNotifyListener",
+        [chan = std::move(channel)] { chan->DoNotifyListener(); }));
     
     
-
-    
-    
-    
-    MOZ_ASSERT(!mKeptAlive || !CanSend());
-
-    
-    
-
-    
-    
-    channel = nullptr;
-
     return mRefCnt;
   }
 
@@ -1457,8 +1441,8 @@ void HttpChannelChild::DoNotifyListener() {
 
   if (mListener && !LoadOnStartRequestCalled()) {
     nsCOMPtr<nsIStreamListener> listener = mListener;
-    StoreOnStartRequestCalled(
-        true);  
+    
+    StoreOnStartRequestCalled(true);
     listener->OnStartRequest(this);
   }
   StoreOnStartRequestCalled(true);
