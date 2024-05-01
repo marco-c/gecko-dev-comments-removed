@@ -6129,21 +6129,27 @@ impl PicturePrimitive {
                         let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
 
                         
-                        
-                        
-                        
-                        let update_raster_scale =
-                            !frame_context.fb_config.low_quality_pinch_zoom ||
-                            !frame_context.spatial_tree.get_spatial_node(tile_cache.spatial_node_index).is_ancestor_or_self_zooming;
+                        let local_to_device = get_relative_scale_offset(
+                            tile_cache.spatial_node_index,
+                            frame_context.root_spatial_node_index,
+                            frame_context.spatial_tree,
+                        );
+                        let local_to_cur_raster_scale = local_to_device.scale.x / tile_cache.current_raster_scale;
 
-                        if update_raster_scale {
-                            
-                            let local_to_device = get_relative_scale_offset(
-                                tile_cache.spatial_node_index,
-                                frame_context.root_spatial_node_index,
-                                frame_context.spatial_tree,
-                            );
-
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        if !frame_context.fb_config.low_quality_pinch_zoom
+                            || !frame_context
+                                .spatial_tree.get_spatial_node(tile_cache.spatial_node_index)
+                                .is_ancestor_or_self_zooming
+                            || local_to_cur_raster_scale <= 0.5
+                            || local_to_cur_raster_scale >= 2.0
+                        {
                             tile_cache.current_raster_scale = local_to_device.scale.x;
                         }
 
