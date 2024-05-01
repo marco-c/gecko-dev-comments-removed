@@ -11,13 +11,9 @@
 #include "mozilla/Maybe.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
+#include "Adts.h"
 
 namespace mozilla {
-
-namespace adts {
-class Frame;
-class FrameParser;
-}  
 
 class ADTSTrackDemuxer;
 
@@ -87,16 +83,16 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   media::TimeUnit ScanUntil(const media::TimeUnit& aTime);
 
   
-  const adts::Frame& FindNextFrame(bool findFirstFrame = false);
+  const ADTS::Frame& FindNextFrame(bool findFirstFrame = false);
 
   
-  bool SkipNextFrame(const adts::Frame& aFrame);
+  bool SkipNextFrame(const ADTS::Frame& aFrame);
 
   
-  already_AddRefed<MediaRawData> GetNextFrame(const adts::Frame& aFrame);
+  already_AddRefed<MediaRawData> GetNextFrame(const ADTS::Frame& aFrame);
 
   
-  void UpdateState(const adts::Frame& aFrame);
+  void UpdateState(const ADTS::Frame& aFrame);
 
   
   int64_t FrameIndexFromOffset(uint64_t aOffset) const;
@@ -115,7 +111,7 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   MediaResourceIndex mSource;
 
   
-  adts::FrameParser* mParser;
+  ADTS::FrameParser* mParser;
 
   
   uint64_t mOffset;

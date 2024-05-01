@@ -6,17 +6,123 @@
 #define ADTS_H_
 
 #include <stdint.h>
+#include "MediaData.h"
+#include "mozilla/Result.h"
 
 namespace mozilla {
 class MediaRawData;
 
-class Adts {
+namespace ADTS {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FrameHeader {
  public:
-  static int8_t GetFrequencyIndex(uint32_t aSamplesPerSecond);
-  static bool ConvertSample(uint16_t aChannelCount, int8_t aFrequencyIndex,
-                            int8_t aProfile, mozilla::MediaRawData* aSample);
-  static bool RevertSample(MediaRawData* aSample);
+  uint32_t mFrameLength{};
+  uint32_t mSampleRate{};
+  uint32_t mSamples{};
+  uint32_t mChannels{};
+  uint8_t mObjectType{};
+  uint8_t mSamplingIndex{};
+  uint8_t mChannelConfig{};
+  uint8_t mNumAACFrames{};
+  bool mHaveCrc{};
+
+  
+  static bool MatchesSync(const Span<const uint8_t>& aData);
+  FrameHeader();
+  
+  uint64_t HeaderSize() const;
+  bool IsValid() const;
+  
+  void Reset();
+
+  
+  bool Parse(const Span<const uint8_t>& aData);
 };
+class Frame {
+ public:
+  Frame();
+
+  uint64_t Offset() const;
+  size_t Length() const;
+  
+  uint64_t PayloadOffset() const;
+
+  size_t PayloadLength() const;
+  
+  const FrameHeader& Header() const;
+  bool IsValid() const;
+  
+  void Reset();
+  
+  bool Parse(uint64_t aOffset, const uint8_t* aStart, const uint8_t* aEnd);
+
+ private:
+  
+  uint64_t mOffset;
+  
+  FrameHeader mHeader;
+};
+
+class FrameParser {
+ public:
+  
+  const Frame& CurrentFrame();
+  
+  const Frame& FirstFrame() const;
+  
+  void Reset();
+  
+  
+  
+  
+  void EndFrameSession();
+  
+  
+  
+  
+  bool Parse(uint64_t aOffset, const uint8_t* aStart, const uint8_t* aEnd);
+
+ private:
+  
+  
+  Frame mFirstFrame;
+  Frame mFrame;
+};
+
+
+void InitAudioSpecificConfig(const Frame& aFrame, MediaByteBuffer* aBuffer);
+Result<uint8_t, bool> GetFrequencyIndex(uint32_t aSamplesPerSecond);
+bool ConvertSample(uint16_t aChannelCount, uint8_t aFrequencyIndex,
+                   uint8_t aProfile, mozilla::MediaRawData* aSample);
+bool RevertSample(MediaRawData* aSample);
+}  
 }  
 
 #endif
