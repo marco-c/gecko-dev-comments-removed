@@ -71,6 +71,20 @@ class nsISerialEventTarget;
 class nsAutoOwningEventTarget {
  public:
   nsAutoOwningEventTarget();
+
+  nsAutoOwningEventTarget(const nsAutoOwningEventTarget& aOther);
+
+  
+  
+  
+
+  nsAutoOwningEventTarget& operator=(const nsAutoOwningEventTarget& aRhs);
+
+  
+  
+  
+  
+
   ~nsAutoOwningEventTarget();
 
   
@@ -88,6 +102,7 @@ class nsAutoOwningEventTarget {
  private:
   void AssertCurrentThreadOwnsMe(const char* aMsg) const;
 
+  
   nsISerialEventTarget* mTarget;
 };
 
