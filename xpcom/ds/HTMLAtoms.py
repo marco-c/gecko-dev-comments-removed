@@ -41,6 +41,8 @@ HTML_PARSER_ATOMS = [
     
     Atom("shadowrootmode", "shadowrootmode"),
     
+    Atom("shadowrootclonable", "shadowrootclonable"),
+    
     Atom("stddeviation", "stddeviation"),
     
     Atom("shadowrootdelegatesfocus", "shadowrootdelegatesfocus"),
