@@ -79,7 +79,7 @@ if CONFIG["OS_TARGET"] != "Android":
     ]
 
 
-if not (CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CPU_ARCH"] == "aarch64"):
+if not (CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] == "aarch64"):
     UNIFIED_SOURCES += ["TestThreadUtils.cpp"]
 
 
@@ -88,7 +88,7 @@ if CONFIG["OS_TARGET"] != "Darwin":
 
 
 if CONFIG["OS_TARGET"] != "Android" and not (
-    CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CPU_ARCH"] == "aarch64"
+    CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] == "aarch64"
 ):
     UNIFIED_SOURCES += ["TestTimers.cpp"]
 
@@ -120,8 +120,12 @@ else:
 if CONFIG["OS_TARGET"] == "Darwin":
     UNIFIED_SOURCES += [
         "TestAvailableMemoryWatcherMac.cpp",
-        "TestMacNSURLEscaping.mm",
         "TestThreads_mac.mm",
+    ]
+
+if CONFIG["TARGET_OS"] == "OSX":
+    UNIFIED_SOURCES += [
+        "TestMacNSURLEscaping.mm",
     ]
 
 if CONFIG["OS_TARGET"] == "Linux":
