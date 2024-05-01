@@ -66,26 +66,11 @@ function run_test() {
 
   pm = Services.perms;
 
-  let entries = [
-    { origin: "http://example.com", originAttributes: {} },
-    {
-      origin: "http://example.com",
-      originAttributes: { inIsolatedMozBrowser: true },
-    },
-  ];
+  let entries = [{ origin: "http://example.com", originAttributes: {} }];
 
   
   test(entries, getData({}), [
     pm.UNKNOWN_ACTION,
-    pm.UNKNOWN_ACTION,
-    pm.ALLOW_ACTION,
-    pm.ALLOW_ACTION,
-  ]);
-
-  
-  
-  test(entries, getData({ inIsolatedMozBrowser: true }), [
-    pm.ALLOW_ACTION,
     pm.UNKNOWN_ACTION,
     pm.ALLOW_ACTION,
     pm.ALLOW_ACTION,
