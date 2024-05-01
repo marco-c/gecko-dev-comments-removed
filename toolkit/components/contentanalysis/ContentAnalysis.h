@@ -7,24 +7,14 @@
 #define mozilla_contentanalysis_h
 
 #include "mozilla/DataMutex.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIContentAnalysis.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
 
 #include <atomic>
-#include <regex>
 #include <string>
-
-class nsIPrincipal;
-class ContentAnalysisTest;
-
-namespace mozilla::dom {
-class DataTransfer;
-class WindowGlobalParent;
-}  
 
 namespace content_analysis::sdk {
 class Client;
@@ -85,8 +75,6 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   nsString mOperationDisplayString;
 
   RefPtr<dom::WindowGlobalParent> mWindowGlobalParent;
-
-  friend class ::ContentAnalysisTest;
 };
 
 #define CONTENTANALYSIS_IID                          \
@@ -128,14 +116,6 @@ class ContentAnalysis final : public nsIContentAnalysis {
       nsCString aRequestToken,
       content_analysis::sdk::ContentAnalysisRequest&& aRequest,
       const std::shared_ptr<content_analysis::sdk::Client>& aClient);
-  void IssueResponse(RefPtr<ContentAnalysisResponse>& response);
-
-  
-  
-  enum UrlFilterResult { eCheck, eDeny, eAllow };
-
-  UrlFilterResult FilterByUrlLists(nsIContentAnalysisRequest* aRequest);
-  void EnsureParsedUrlFilters();
 
   using ClientPromise =
       MozPromise<std::shared_ptr<content_analysis::sdk::Client>, nsresult,
@@ -178,12 +158,7 @@ class ContentAnalysis final : public nsIContentAnalysis {
   };
   DataMutex<nsTHashMap<nsCString, WarnResponseData>> mWarnResponseDataMap;
 
-  std::vector<std::regex> mAllowUrlList;
-  std::vector<std::regex> mDenyUrlList;
-  bool mParsedUrlLists;
-
   friend class ContentAnalysisResponse;
-  friend class ::ContentAnalysisTest;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ContentAnalysis, CONTENTANALYSIS_IID)
@@ -197,7 +172,6 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
       Action aAction, const nsACString& aRequestToken);
 
   void SetOwner(RefPtr<ContentAnalysis> aOwner);
-  void DoNotAcknowledge() { mDoNotAcknowledge = true; }
 
  private:
   ~ContentAnalysisResponse() = default;
@@ -223,11 +197,7 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse {
   RefPtr<ContentAnalysis> mOwner;
 
   
-  bool mHasAcknowledged = false;
-
-  
-  
-  bool mDoNotAcknowledge = false;
+  bool mHasAcknowledged;
 
   friend class ContentAnalysis;
 };

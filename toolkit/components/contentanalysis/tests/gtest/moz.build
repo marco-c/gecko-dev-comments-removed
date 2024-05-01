@@ -12,10 +12,6 @@ LOCAL_INCLUDES += [
 if CONFIG["OS_TARGET"] == "WINNT":
     UNIFIED_SOURCES += [
         "TestContentAnalysis.cpp",
-    ]
-    SOURCES += [
-        
-        "TestContentAnalysisAgent.cpp",
         "TestContentAnalysisMisbehaving.cpp",
         "TestContentAnalysisUtils.cpp",
     ]
