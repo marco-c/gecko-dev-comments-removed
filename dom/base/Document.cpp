@@ -17232,6 +17232,18 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
     
     
     FlushLayoutForWholeBrowsingContextTree(*this);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UpdateLastRememberedSizes();
+
     if (PresShell* presShell = GetPresShell()) {
       auto result = presShell->DetermineProximityToViewport();
       if (result.mHadInitialDetermination) {
@@ -17252,11 +17264,6 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
         }
       }
     }
-
-    
-    
-    
-    UpdateLastRememberedSizes();
 
     
     
