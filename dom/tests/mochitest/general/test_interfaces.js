@@ -1068,6 +1068,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCIceCandidate", insecureContext: true },
   
+  { name: "RTCIceTransport", insecureContext: true },
+  
   { name: "RTCPeerConnection", insecureContext: true },
   
   { name: "RTCPeerConnectionIceEvent", insecureContext: true },
