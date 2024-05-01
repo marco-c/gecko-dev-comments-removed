@@ -82,7 +82,11 @@ add_task(async function firstRun() {
   
   UrlbarPrefs.set("quicksuggest.rustEnabled", false);
   UrlbarPrefs.set("quicksuggest.rustEnabled", true);
-  await assertNoNewIngestStarted(ingestPromise);
+  ({ ingestPromise } = await waitForIngestStart(ingestPromise));
+
+  info("Awaiting ingest promise");
+  await ingestPromise;
+  info("Done awaiting ingest promise");
 
   await checkSuggestions();
 
@@ -106,7 +110,11 @@ add_task(async function interval() {
   let intervalSecs = 1;
   UrlbarPrefs.set("quicksuggest.rustIngestIntervalSeconds", intervalSecs);
   UrlbarPrefs.set("quicksuggest.rustEnabled", true);
-  await assertNoNewIngestStarted(ingestPromise);
+  ({ ingestPromise } = await waitForIngestStart(ingestPromise));
+
+  info("Awaiting ingest promise");
+  await ingestPromise;
+  info("Done awaiting ingest promise");
 
   
   for (let i = 0; i < 3; i++) {
@@ -191,17 +199,6 @@ async function waitForIngestStart(oldIngestPromise) {
   
   
   return { ingestPromise: newIngestPromise };
-}
-
-async function assertNoNewIngestStarted(oldIngestPromise) {
-  for (let i = 0; i < 3; i++) {
-    await TestUtils.waitForTick();
-  }
-  Assert.equal(
-    QuickSuggest.rustBackend.ingestPromise,
-    oldIngestPromise,
-    "No new ingest started"
-  );
 }
 
 async function checkSuggestions(expected = [REMOTE_SETTINGS_SUGGESTION]) {
