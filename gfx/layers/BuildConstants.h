@@ -52,6 +52,13 @@ constexpr bool kIsAndroid =
     false;
 #endif
 
+constexpr bool kIsDmd =
+#ifdef MOZ_DMD
+    true;
+#else
+    false;
+#endif
+
 }  
 
 #endif  
