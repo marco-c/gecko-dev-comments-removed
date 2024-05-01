@@ -6,7 +6,7 @@
 
 
 async function doUrlbarNewTabTest({ trigger, assert }) {
-  await doTest(async browser => {
+  await doTest(async () => {
     await openPopup("x");
 
     await trigger();
@@ -15,7 +15,7 @@ async function doUrlbarNewTabTest({ trigger, assert }) {
 }
 
 async function doUrlbarTest({ trigger, assert }) {
-  await doTest(async browser => {
+  await doTest(async () => {
     await openPopup("x");
     await doEnter();
     await openPopup("y");

@@ -291,7 +291,7 @@ async function doDismissTest({ command, shouldBeSelected, resultIndex = -1 }) {
 
 
 class TestProvider extends UrlbarTestUtils.TestProvider {
-  getResultCommands(result) {
+  getResultCommands(_result) {
     
     return [
       {

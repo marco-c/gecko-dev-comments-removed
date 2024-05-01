@@ -99,7 +99,7 @@ add_task(async function viewUpdateAppendHidden() {
   
   let newExpectedRowCount = 2 * expectedRowCount - 2;
   let mutationPromise = new Promise(resolve => {
-    let observer = new MutationObserver(mutations => {
+    let observer = new MutationObserver(() => {
       let childCount = UrlbarTestUtils.getResultCount(window);
       info(`Rows mutation observer called, childCount now ${childCount}`);
       if (newExpectedRowCount <= childCount) {

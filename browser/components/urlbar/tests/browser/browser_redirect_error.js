@@ -67,7 +67,7 @@ var gWebProgressListener = {
   
   
 
-  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
+  onLocationChange(aWebProgress, aRequest, aLocation) {
     if (!aRequest) {
       
       return;

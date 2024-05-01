@@ -126,7 +126,7 @@ add_task(async function timerIsCancelled() {
   
   
   let resultsAddedPromise = new Promise(resolve => {
-    let observe = async (subject, topic, data) => {
+    let observe = async () => {
       Services.obs.removeObserver(observe, "results-added");
       
       await controller.startQuery(secondContext);

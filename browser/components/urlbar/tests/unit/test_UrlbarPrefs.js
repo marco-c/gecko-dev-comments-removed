@@ -363,10 +363,10 @@ add_task(async function onNimbusChanged() {
   
   
   UrlbarPrefs.addObserver({
-    onPrefChanged(pref) {
+    onPrefChanged() {
       throw new Error("From onPrefChanged");
     },
-    onNimbusChanged(pref) {
+    onNimbusChanged() {
       throw new Error("From onNimbusChanged");
     },
   });
@@ -407,10 +407,10 @@ add_task(async function onPrefChanged() {
   
   
   UrlbarPrefs.addObserver({
-    onPrefChanged(pref) {
+    onPrefChanged() {
       throw new Error("From onPrefChanged");
     },
-    onNimbusChanged(pref) {
+    onNimbusChanged() {
       throw new Error("From onNimbusChanged");
     },
   });

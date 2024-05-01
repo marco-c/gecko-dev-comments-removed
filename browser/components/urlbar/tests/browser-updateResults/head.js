@@ -386,7 +386,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   
   let mutationPromise = new Promise(resolve => {
     let lastRowState = duringUpdate[duringUpdate.length - 1];
-    let observer = new MutationObserver(mutations => {
+    let observer = new MutationObserver(() => {
       observer.disconnect();
       resolve();
     });
