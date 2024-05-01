@@ -33,6 +33,7 @@ def test_verify_options(filedir):
         benchmark_repository=None,
         benchmark_revision=None,
         benchmark_branch=None,
+        post_startup_delay=None,
     )
     parser = ArgumentParser()
 
@@ -61,6 +62,7 @@ def test_verify_options(filedir):
         benchmark_repository=None,
         benchmark_revision=None,
         benchmark_branch=None,
+        post_startup_delay=None,
     )
     verify_options(parser, args)  
 
@@ -83,6 +85,7 @@ def test_verify_options(filedir):
         benchmark_repository=None,
         benchmark_revision=None,
         benchmark_branch=None,
+        post_startup_delay=None,
     )
     verify_options(parser, args)  
 
@@ -105,6 +108,7 @@ def test_verify_options(filedir):
         benchmark_repository=None,
         benchmark_revision=None,
         benchmark_branch=None,
+        post_startup_delay=None,
     )
     verify_options(parser, args)  
 
@@ -127,6 +131,7 @@ def test_verify_options(filedir):
         benchmark_repository=None,
         benchmark_revision=None,
         benchmark_branch=None,
+        post_startup_delay=None,
     )
     verify_options(parser, args)  
 
@@ -149,6 +154,7 @@ def test_verify_options(filedir):
         benchmark_repository=None,
         benchmark_revision=None,
         benchmark_branch=None,
+        post_startup_delay=None,
     )
     parser = ArgumentParser()
 
