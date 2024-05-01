@@ -16,6 +16,7 @@
 #include "mozilla/UniquePtr.h"
 
 #include "nsString.h"
+#include "nsStringFwd.h"
 
 class nsIPrefBranch;
 
@@ -83,8 +84,8 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-  nsresult decodeACE(const nsACString& in, nsACString& out,
-                     stringPrepFlag flag);
+  nsresult decodeACE(const nsACString& in, nsACString& out, stringPrepFlag flag,
+                     const nsACString& tld);
 
   
 
@@ -134,7 +135,8 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-  bool isLabelSafe(const nsAString& label) MOZ_EXCLUDES(mLock);
+  bool isLabelSafe(const nsAString& label, const nsAString& tld)
+      MOZ_EXCLUDES(mLock);
 
   
 
