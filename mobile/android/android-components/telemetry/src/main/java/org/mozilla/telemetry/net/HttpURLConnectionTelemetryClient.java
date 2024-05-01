@@ -101,6 +101,11 @@ public class HttpURLConnectionTelemetryClient implements TelemetryClient {
             writer.close();
 
             return connection.getResponseCode();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            
+            
+            
+            throw new IOException(e);
         } finally {
             IOUtils.safeClose(stream);
         }
