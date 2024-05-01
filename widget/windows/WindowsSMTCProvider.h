@@ -46,9 +46,6 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
 
   void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override;
 
-  void SetPositionState(
-      const mozilla::Maybe<mozilla::dom::PositionState>& aState) override;
-
  private:
   ~WindowsSMTCProvider();
   void UnregisterEvents();
@@ -59,11 +56,9 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   bool EnableControl(bool aEnabled) const;
   
   
-  bool UpdateButtons();
+  bool UpdateButtons() const;
   bool IsKeySupported(mozilla::dom::MediaControlKey aKey) const;
   bool EnableKey(mozilla::dom::MediaControlKey aKey, bool aEnable) const;
-
-  void OnPositionChangeRequested(double aPosition) const;
 
   bool InitDisplayAndControls();
 
@@ -127,7 +122,6 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   
   
   EventRegistrationToken mButtonPressedToken;
-  EventRegistrationToken mSeekRegistrationToken;
 };
 
 #endif  

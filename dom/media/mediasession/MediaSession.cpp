@@ -20,29 +20,6 @@
 
 namespace mozilla::dom {
 
-double PositionState::CurrentPlaybackPosition(TimeStamp aNow) const {
-  
-
-  
-  
-  auto timeElapsed = aNow - mPositionUpdatedTime;
-  
-  timeElapsed = timeElapsed.MultDouble(mPlaybackRate);
-  
-  auto position = timeElapsed.ToSeconds() + mLastReportedPlaybackPosition;
-
-  
-  if (position < 0.0) {
-    return 0.0;
-  }
-  
-  if (position > mDuration) {
-    return mDuration;
-  }
-  
-  return position;
-}
-
 
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaSession)
@@ -161,7 +138,6 @@ void MediaSession::SetPositionState(const MediaPositionState& aState,
   
   if (!aState.IsAnyMemberPresent()) {
     mPositionState.reset();
-    NotifyPositionStateChanged();
     return;
   }
 
@@ -199,8 +175,8 @@ void MediaSession::SetPositionState(const MediaPositionState& aState,
 
   
   MOZ_ASSERT(aState.mDuration.WasPassed());
-  mPositionState = Some(PositionState(aState.mDuration.Value(), playbackRate,
-                                      position, TimeStamp::Now()));
+  mPositionState =
+      Some(PositionState(aState.mDuration.Value(), playbackRate, position));
   NotifyPositionStateChanged();
 }
 
@@ -352,7 +328,7 @@ void MediaSession::NotifyPositionStateChanged() {
   RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
   MOZ_ASSERT(currentBC, "Update action after context destroyed!");
   if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC)) {
-    updater->UpdatePositionState(currentBC->Id(), mPositionState);
+    updater->UpdatePositionState(currentBC->Id(), *mPositionState);
   }
 }
 

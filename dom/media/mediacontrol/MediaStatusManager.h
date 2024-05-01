@@ -53,7 +53,6 @@ class MediaSessionInfo {
   Maybe<MediaMetadataBase> mMetadata;
   MediaSessionPlaybackState mDeclaredPlaybackState =
       MediaSessionPlaybackState::None;
-  Maybe<PositionState> mPositionState;
   
   uint32_t mSupportedActions = 0;
 };
@@ -119,7 +118,7 @@ class IMediaInfoUpdater {
 
   
   virtual void UpdatePositionState(uint64_t aBrowsingContextId,
-                                   const Maybe<PositionState>& aState) = 0;
+                                   const PositionState& aState) = 0;
 };
 
 
@@ -164,7 +163,7 @@ class MediaStatusManager : public IMediaInfoUpdater {
   void DisableAction(uint64_t aBrowsingContextId,
                      MediaSessionAction aAction) override;
   void UpdatePositionState(uint64_t aBrowsingContextId,
-                           const Maybe<PositionState>& aState) override;
+                           const PositionState& aState) override;
 
   
   
@@ -181,7 +180,7 @@ class MediaStatusManager : public IMediaInfoUpdater {
     return mMetadataChangedEvent;
   }
 
-  MediaEventSource<Maybe<PositionState>>& PositionChangedEvent() {
+  MediaEventSource<PositionState>& PositionChangedEvent() {
     return mPositionStateChangedEvent;
   }
 
@@ -249,10 +248,6 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
   
   
-  Maybe<PositionState> GetCurrentPositionState() const;
-
-  
-  
   
   
   
@@ -271,7 +266,7 @@ class MediaStatusManager : public IMediaInfoUpdater {
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
   MediaEventProducer<nsTArray<MediaSessionAction>>
       mSupportedActionsChangedEvent;
-  MediaEventProducer<Maybe<PositionState>> mPositionStateChangedEvent;
+  MediaEventProducer<PositionState> mPositionStateChangedEvent;
   MediaEventProducer<MediaSessionPlaybackState> mPlaybackStateChangedEvent;
   MediaPlaybackStatus mPlaybackStatusDelegate;
 };
