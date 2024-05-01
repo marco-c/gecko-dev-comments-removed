@@ -9,6 +9,7 @@
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/FetchDriver.h"
 
+#include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "mozilla/dom/Document.h"
@@ -840,11 +841,20 @@ nsresult FetchDriver::HttpFetch(
                        nsIClassOfService::Tail);
   }
 
-  if (mIsTrackingFetch &&
-      StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
-    nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(chan);
-    if (p) {
+  if (nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(chan)) {
+    if (mIsTrackingFetch &&
+        StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
       p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
+    } else if (StaticPrefs::network_fetchpriority_enabled()) {
+      
+      
+      const auto fetchPriority = ToFetchPriority(mRequest->GetPriorityMode());
+      
+      
+      
+      const int32_t supportsPriorityDelta =
+          FETCH_PRIORITY_ADJUSTMENT_FOR(global_fetch_api, fetchPriority);
+      p->AdjustPriority(supportsPriorityDelta);
     }
   }
 

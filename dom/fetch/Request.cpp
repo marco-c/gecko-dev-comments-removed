@@ -430,6 +430,13 @@ SafeRefPtr<Request> Request::Constructor(nsIGlobalObject* aGlobal,
     signal = aInit.mSignal.Value();
   }
 
+  
+  
+  
+  if (aInit.mPriority.WasPassed()) {
+    request->SetPriorityMode(aInit.mPriority.Value());
+  }
+
   UniquePtr<mozilla::ipc::PrincipalInfo> principalInfo;
   nsILoadInfo::CrossOriginEmbedderPolicy coep =
       nsILoadInfo::EMBEDDER_POLICY_NULL;
