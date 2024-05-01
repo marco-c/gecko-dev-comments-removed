@@ -471,17 +471,6 @@ export class ContextMenuChild extends JSWindowActorChild {
     return this.contentWindow.HTMLTextAreaElement.isInstance(node);
   }
 
-  
-
-
-  _isTargetRDMFrame(node) {
-    return (
-      Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT &&
-      node.tagName === "iframe" &&
-      node.hasAttribute("mozbrowser")
-    );
-  }
-
   _isSpellCheckEnabled(aNode) {
     
     if (this._isTargetATextBox(aNode)) {
@@ -542,12 +531,6 @@ export class ContextMenuChild extends JSWindowActorChild {
     }
 
     if (defaultPrevented) {
-      return;
-    }
-
-    if (this._isTargetRDMFrame(aEvent.composedTarget)) {
-      
-      
       return;
     }
 
