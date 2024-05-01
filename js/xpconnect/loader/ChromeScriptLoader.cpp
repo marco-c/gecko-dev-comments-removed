@@ -18,7 +18,7 @@
 #include "js/CompilationAndEvaluation.h"
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"  
-#include "js/SourceText.h"              
+#include "js/SourceText.h"  
 #include "js/Utility.h"
 
 #include "mozilla/AlreadyAddRefed.h"  
@@ -119,9 +119,8 @@ class AsyncScriptCompileTask final : public Task {
     JS::SetNativeStackQuota(mFrontendContext,
                             JS::ThreadStackQuotaForSize(stackSize));
 
-    JS::CompilationStorage compileStorage;
-    mStencil = JS::CompileGlobalScriptToStencil(mFrontendContext, mOptions,
-                                                mSrcBuf, compileStorage);
+    mStencil =
+        JS::CompileGlobalScriptToStencil(mFrontendContext, mOptions, mSrcBuf);
   }
 
   

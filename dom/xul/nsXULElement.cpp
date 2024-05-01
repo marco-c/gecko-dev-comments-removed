@@ -1839,9 +1839,8 @@ class ScriptCompileTask final : public Task {
       return;
     }
 
-    JS::CompilationStorage compileStorage;
-    mStencil = JS::CompileGlobalScriptToStencil(mFrontendContext, mOptions,
-                                                srcBuf, compileStorage);
+    mStencil =
+        JS::CompileGlobalScriptToStencil(mFrontendContext, mOptions, srcBuf);
 #ifdef DEBUG
     
     CheckErrorsAndWarnings(mFrontendContext, mOptions);

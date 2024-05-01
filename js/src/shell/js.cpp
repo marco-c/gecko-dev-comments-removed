@@ -637,15 +637,11 @@ void OffThreadJob::run() {
 
   switch (kind_) {
     case Kind::CompileScript: {
-      JS::CompilationStorage compileStorage;
-      stencil_ = JS::CompileGlobalScriptToStencil(fc_, options_, srcBuf_,
-                                                  compileStorage);
+      stencil_ = JS::CompileGlobalScriptToStencil(fc_, options_, srcBuf_);
       break;
     }
     case Kind::CompileModule: {
-      JS::CompilationStorage compileStorage;
-      stencil_ = JS::CompileModuleScriptToStencil(fc_, options_, srcBuf_,
-                                                  compileStorage);
+      stencil_ = JS::CompileModuleScriptToStencil(fc_, options_, srcBuf_);
       break;
     }
     case Kind::Decode: {

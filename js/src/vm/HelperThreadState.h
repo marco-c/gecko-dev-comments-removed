@@ -26,13 +26,12 @@
 #include <stdint.h>  
 #include <utility>   
 
-#include "ds/Fifo.h"                        
-#include "frontend/CompilationStencil.h"    
-#include "gc/GCRuntime.h"                   
-#include "js/AllocPolicy.h"                 
-#include "js/CompileOptions.h"              
-#include "js/experimental/CompileScript.h"  
-#include "js/experimental/JSStencil.h"      
+#include "ds/Fifo.h"                      
+#include "frontend/CompilationStencil.h"  
+#include "gc/GCRuntime.h"                 
+#include "js/AllocPolicy.h"               
+#include "js/CompileOptions.h"            
+#include "js/experimental/JSStencil.h"    
 #include "js/HelperThreadAPI.h"  
 #include "js/MemoryMetrics.h"  
 #include "js/ProfilingStack.h"  
