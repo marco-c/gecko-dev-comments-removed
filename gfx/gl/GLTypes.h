@@ -55,6 +55,13 @@ typedef signed long int GLsizeiptr;
 
 #endif 
 
+#ifdef XP_IOS
+#  ifndef GLdouble_defined
+typedef double GLdouble;
+#  endif
+typedef double GLclampd;
+#endif
+
 #include <stdint.h>
 
 
