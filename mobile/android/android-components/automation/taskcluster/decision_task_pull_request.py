@@ -19,7 +19,7 @@ TASK_ID = os.environ.get('TASK_ID')
 REPO_URL = os.environ.get('GITHUB_HEAD_REPO_URL')
 BRANCH = os.environ.get('GITHUB_HEAD_BRANCH')
 COMMIT = os.environ.get('GITHUB_HEAD_SHA')
-PR_TITLE = os.environ.get('GITHUB_PULL_TITLE')
+PR_TITLE = os.environ.get('GITHUB_PULL_TITLE', '')
 
 
 SKIP_TASKS_TRIGGER = '[ci skip]'
