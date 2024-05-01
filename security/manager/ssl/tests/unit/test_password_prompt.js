@@ -16,7 +16,7 @@ var gMockPrompter = {
   
   
   
-  promptPassword(dialogTitle, text, password, checkMsg, checkValue) {
+  promptPassword(dialogTitle, text, password, checkMsg) {
     this.numPrompts++;
     if (this.numPrompts > 1) {
       

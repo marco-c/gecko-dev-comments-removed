@@ -234,7 +234,7 @@ function isContentFileIOSandboxed(level) {
 
 
 
-function minProfileReadSandboxLevel(level) {
+function minProfileReadSandboxLevel() {
   switch (Services.appinfo.OS) {
     case "WINNT":
       return 3;
@@ -250,7 +250,7 @@ function minProfileReadSandboxLevel(level) {
 
 
 
-function minHomeReadSandboxLevel(level) {
+function minHomeReadSandboxLevel() {
   switch (Services.appinfo.OS) {
     case "WINNT":
       return 3;

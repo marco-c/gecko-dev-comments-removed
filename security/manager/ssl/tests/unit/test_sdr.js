@@ -22,7 +22,7 @@ const gTokenPasswordDialogs = {
 };
 
 let gMockPrompter = {
-  promptPassword(dialogTitle, text, password, checkMsg, checkValue) {
+  promptPassword() {
     
     return false;
   },
