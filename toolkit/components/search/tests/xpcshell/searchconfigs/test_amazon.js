@@ -1,17 +1,17 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
 const test = new SearchConfigTest({
   identifier: "amazon",
   default: {
-    
+    // Not default anywhere.
   },
   available: {
     included: [
       {
-        
+        // The main regions we ship Amazon to. Below this are special cases.
         regions: ["us", "jp"],
       },
     ],
@@ -31,7 +31,7 @@ const test = new SearchConfigTest({
     },
     {
       domain: "amazon.com",
-      telemetryId: "amazondotcom-us",
+      telemetryId: "amazondotcom-us-adm",
       aliases: ["@amazon"],
       included: [
         {
@@ -39,12 +39,13 @@ const test = new SearchConfigTest({
         },
       ],
       noSuggestionsURL: true,
+      searchUrlCode: "tag=admarketus-20",
     },
   ],
 });
 
 add_setup(async function () {
-  
+  // We only need to do setup on one of the tests.
   await test.setup("89.0");
 });
 
@@ -62,11 +63,12 @@ add_task(
       version,
       version
     );
-    
+    // For pre-89, Amazon has a slightly different config.
     let details = test._config.details.find(
-      d => d.telemetryId == "amazondotcom-us"
+      d => d.telemetryId == "amazondotcom-us-adm"
     );
     details.telemetryId = "amazondotcom";
+    delete details.searchUrlCode;
 
     await test.run();
   }
