@@ -43,25 +43,22 @@ def parseInt(literal):
     return value * sign
 
 
-def enum(*names, **kw):
-    class Foo(object):
-        attrs = OrderedDict()
 
-        def __init__(self, names):
-            for v, k in enumerate(names):
-                self.attrs[k] = v
 
-        def __getattr__(self, attr):
-            if attr in self.attrs:
-                return self.attrs[attr]
-            raise AttributeError
+def enum(*names, base=None):
+    if base is not None:
+        names = base.attrs + names
+
+    class CustomEnumType(object):
+        attrs = names
 
         def __setattr__(self, name, value):  
             raise NotImplementedError
 
-    if "base" not in kw:
-        return Foo(names)
-    return Foo(chain(kw["base"].attrs.keys(), names))
+    for v, k in enumerate(names):
+        setattr(CustomEnumType, k, v)
+
+    return CustomEnumType()
 
 
 class WebIDLError(Exception):
