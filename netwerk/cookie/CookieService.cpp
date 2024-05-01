@@ -372,44 +372,14 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = aDocument->EffectiveCookiePrincipal();
-
-  if (!CookieCommons::IsSchemeSupported(principal)) {
-    return NS_OK;
-  }
-
-  CookieStorage* storage = PickStorage(principal->OriginAttributesRef());
-
-  nsAutoCString baseDomain;
-  rv = CookieCommons::GetBaseDomain(principal, baseDomain);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_OK;
-  }
-
-  nsAutoCString hostFromURI;
-  rv = nsContentUtils::GetHostOrIPv6WithBrackets(principal, hostFromURI);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_OK;
-  }
-
-  nsAutoCString pathFromURI;
-  rv = principal->GetFilePath(pathFromURI);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_OK;
-  }
-
-  int64_t currentTimeInUsec = PR_Now();
-  int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
-
-  const nsTArray<RefPtr<Cookie>>* cookies =
-      storage->GetCookiesFromHost(baseDomain, principal->OriginAttributesRef());
-  if (!cookies) {
-    return NS_OK;
-  }
+  nsCOMPtr<nsIPrincipal> cookiePrincipal =
+      aDocument->EffectiveCookiePrincipal();
 
   
   
-  bool potentiallyTrustworthy = principal->GetIsOriginPotentiallyTrustworthy();
+  
+  nsTArray<nsCOMPtr<nsIPrincipal>> principals;
+  principals.AppendElement(cookiePrincipal);
 
   bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
@@ -424,58 +394,103 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
     }
   }
 
-  bool stale = false;
   nsTArray<Cookie*> cookieList;
 
-  
-  for (Cookie* cookie : *cookies) {
-    
-    if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
+  for (auto& principal : principals) {
+    if (!CookieCommons::IsSchemeSupported(principal)) {
+      return NS_OK;
+    }
+
+    CookieStorage* storage = PickStorage(principal->OriginAttributesRef());
+
+    nsAutoCString baseDomain;
+    rv = CookieCommons::GetBaseDomain(principal, baseDomain);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return NS_OK;
+    }
+
+    nsAutoCString hostFromURI;
+    rv = nsContentUtils::GetHostOrIPv6WithBrackets(principal, hostFromURI);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return NS_OK;
+    }
+
+    nsAutoCString pathFromURI;
+    rv = principal->GetFilePath(pathFromURI);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return NS_OK;
+    }
+
+    int64_t currentTimeInUsec = PR_Now();
+    int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
+
+    const nsTArray<RefPtr<Cookie>>* cookies = storage->GetCookiesFromHost(
+        baseDomain, principal->OriginAttributesRef());
+    if (!cookies) {
       continue;
     }
 
     
     
-    if (cookie->IsHttpOnly()) {
-      continue;
+    bool potentiallyTrustworthy =
+        principal->GetIsOriginPotentiallyTrustworthy();
+
+    bool stale = false;
+
+    
+    for (Cookie* cookie : *cookies) {
+      
+      if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
+        continue;
+      }
+
+      
+      
+      if (cookie->IsHttpOnly()) {
+        continue;
+      }
+
+      if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
+                            cookie, aDocument)) {
+        continue;
+      }
+
+      
+      if (cookie->IsSecure() && !potentiallyTrustworthy) {
+        continue;
+      }
+
+      
+      if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
+        continue;
+      }
+
+      
+      if (cookie->Expiry() <= currentTime) {
+        continue;
+      }
+
+      
+      
+      cookieList.AppendElement(cookie);
+      if (cookie->IsStale()) {
+        stale = true;
+      }
     }
 
-    if (thirdParty && !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(
-                          cookie, aDocument)) {
+    if (cookieList.IsEmpty()) {
       continue;
     }
 
     
-    if (cookie->IsSecure() && !potentiallyTrustworthy) {
-      continue;
-    }
-
     
-    if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
-      continue;
-    }
-
-    
-    if (cookie->Expiry() <= currentTime) {
-      continue;
-    }
-
-    
-    
-    cookieList.AppendElement(cookie);
-    if (cookie->IsStale()) {
-      stale = true;
+    if (stale) {
+      storage->StaleCookies(cookieList, currentTimeInUsec);
     }
   }
 
   if (cookieList.IsEmpty()) {
     return NS_OK;
-  }
-
-  
-  
-  if (stale) {
-    storage->StaleCookies(cookieList, currentTimeInUsec);
   }
 
   
@@ -512,6 +527,12 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
   bool isSameSiteForeign = CookieCommons::IsSameSiteForeign(
       aChannel, aHostURI, &hadCrossSiteRedirects);
 
+  
+  
+  
+  nsTArray<OriginAttributes> originAttributesList;
+  originAttributesList.AppendElement(attrs);
+
   AutoTArray<Cookie*, 8> foundCookieList;
   GetCookiesForURI(
       aHostURI, aChannel, result.contains(ThirdPartyAnalysis::IsForeign),
@@ -519,7 +540,8 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
       result.contains(ThirdPartyAnalysis::IsThirdPartySocialTrackingResource),
       result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted),
       rejectedReason, isSafeTopLevelNav, isSameSiteForeign,
-      hadCrossSiteRedirects, true, false, attrs, foundCookieList);
+      hadCrossSiteRedirects, true, false, originAttributesList,
+      foundCookieList);
 
   ComposeCookieString(foundCookieList, aCookieString);
 
@@ -936,7 +958,8 @@ void CookieService::GetCookiesForURI(
     bool aIsSafeTopLevelNav, bool aIsSameSiteForeign,
     bool aHadCrossSiteRedirects, bool aHttpBound,
     bool aAllowSecureCookiesToInsecureOrigin,
-    const OriginAttributes& aOriginAttrs, nsTArray<Cookie*>& aCookieList) {
+    const nsTArray<OriginAttributes>& aOriginAttrsList,
+    nsTArray<Cookie*>& aCookieList) {
   NS_ASSERTION(aHostURI, "null host!");
 
   if (!CookieCommons::IsSchemeSupported(aHostURI)) {
@@ -947,152 +970,165 @@ void CookieService::GetCookiesForURI(
     return;
   }
 
-  CookieStorage* storage = PickStorage(aOriginAttrs);
-
-  
-  
-  
-  
-  
-  bool requireHostMatch;
-  nsAutoCString baseDomain;
-  nsAutoCString hostFromURI;
-  nsAutoCString pathFromURI;
-  nsresult rv = CookieCommons::GetBaseDomain(mTLDService, aHostURI, baseDomain,
-                                             requireHostMatch);
-  if (NS_SUCCEEDED(rv)) {
-    rv = nsContentUtils::GetHostOrIPv6WithBrackets(aHostURI, hostFromURI);
-  }
-  if (NS_SUCCEEDED(rv)) {
-    rv = aHostURI->GetFilePath(pathFromURI);
-  }
-  if (NS_FAILED(rv)) {
-    COOKIE_LOGFAILURE(GET_COOKIE, aHostURI, VoidCString(),
-                      "invalid host/path from URI");
-    return;
-  }
-
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
       CookieCommons::GetCookieJarSettings(aChannel);
 
-  nsAutoCString normalizedHostFromURI(hostFromURI);
-  rv = NormalizeHost(normalizedHostFromURI);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  nsAutoCString baseDomainFromURI;
-  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, normalizedHostFromURI,
-                                            baseDomainFromURI);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  
-  uint32_t rejectedReason = aRejectedReason;
-  uint32_t priorCookieCount = storage->CountCookiesFromHost(
-      baseDomainFromURI, aOriginAttrs.mPrivateBrowsingId);
-
   nsCOMPtr<nsIConsoleReportCollector> crc = do_QueryInterface(aChannel);
-  CookieStatus cookieStatus = CheckPrefs(
-      crc, cookieJarSettings, aHostURI, aIsForeign,
-      aIsThirdPartyTrackingResource, aIsThirdPartySocialTrackingResource,
-      aStorageAccessPermissionGranted, VoidCString(), priorCookieCount,
-      aOriginAttrs, &rejectedReason);
 
-  MOZ_ASSERT_IF(rejectedReason, cookieStatus == STATUS_REJECTED);
+  for (const auto& attrs : aOriginAttrsList) {
+    CookieStorage* storage = PickStorage(attrs);
 
-  
-  
-  switch (cookieStatus) {
-    case STATUS_REJECTED:
-      
-      if (priorCookieCount) {
-        CookieCommons::NotifyRejected(aHostURI, aChannel, rejectedReason,
-                                      OPERATION_READ);
-      }
+    
+    
+    
+    
+    
+    bool requireHostMatch;
+    nsAutoCString baseDomain;
+    nsAutoCString hostFromURI;
+    nsAutoCString pathFromURI;
+    nsresult rv = CookieCommons::GetBaseDomain(mTLDService, aHostURI,
+                                               baseDomain, requireHostMatch);
+    if (NS_SUCCEEDED(rv)) {
+      rv = nsContentUtils::GetHostOrIPv6WithBrackets(aHostURI, hostFromURI);
+    }
+    if (NS_SUCCEEDED(rv)) {
+      rv = aHostURI->GetFilePath(pathFromURI);
+    }
+    if (NS_FAILED(rv)) {
+      COOKIE_LOGFAILURE(GET_COOKIE, aHostURI, VoidCString(),
+                        "invalid host/path from URI");
       return;
-    default:
-      break;
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-  bool potentiallyTrustworthy =
-      nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
-
-  int64_t currentTimeInUsec = PR_Now();
-  int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
-  bool stale = false;
-
-  const nsTArray<RefPtr<Cookie>>* cookies =
-      storage->GetCookiesFromHost(baseDomain, aOriginAttrs);
-  if (!cookies) {
-    return;
-  }
-
-  bool laxByDefault =
-      StaticPrefs::network_cookie_sameSite_laxByDefault() &&
-      !nsContentUtils::IsURIInPrefList(
-          aHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
-
-  
-  for (Cookie* cookie : *cookies) {
-    
-    if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
-      continue;
     }
 
+    nsAutoCString normalizedHostFromURI(hostFromURI);
+    rv = NormalizeHost(normalizedHostFromURI);
+    NS_ENSURE_SUCCESS_VOID(rv);
+
+    nsAutoCString baseDomainFromURI;
+    rv = CookieCommons::GetBaseDomainFromHost(
+        mTLDService, normalizedHostFromURI, baseDomainFromURI);
+    NS_ENSURE_SUCCESS_VOID(rv);
+
     
-    
-    
-    
-    if (cookie->IsSecure() && !potentiallyTrustworthy &&
-        !aAllowSecureCookiesToInsecureOrigin) {
-      continue;
-    }
+    uint32_t rejectedReason = aRejectedReason;
+    uint32_t priorCookieCount = storage->CountCookiesFromHost(
+        baseDomainFromURI, attrs.mPrivateBrowsingId);
+
+    CookieStatus cookieStatus = CheckPrefs(
+        crc, cookieJarSettings, aHostURI, aIsForeign,
+        aIsThirdPartyTrackingResource, aIsThirdPartySocialTrackingResource,
+        aStorageAccessPermissionGranted, VoidCString(), priorCookieCount, attrs,
+        &rejectedReason);
+
+    MOZ_ASSERT_IF(rejectedReason, cookieStatus == STATUS_REJECTED);
 
     
     
-    if (cookie->IsHttpOnly() && !aHttpBound) {
-      continue;
-    }
-
-    
-    if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
-      continue;
-    }
-
-    
-    if (cookie->Expiry() <= currentTime) {
-      continue;
-    }
-
-    if (aHttpBound && aIsSameSiteForeign) {
-      bool blockCookie = !ProcessSameSiteCookieForForeignRequest(
-          aChannel, cookie, aIsSafeTopLevelNav, aHadCrossSiteRedirects,
-          laxByDefault);
-
-      if (blockCookie) {
-        if (aHadCrossSiteRedirects) {
-          CookieLogging::LogMessageToConsole(
-              crc, aHostURI, nsIScriptError::warningFlag,
-              CONSOLE_REJECTION_CATEGORY, "CookieBlockedCrossSiteRedirect"_ns,
-              AutoTArray<nsString, 1>{
-                  NS_ConvertUTF8toUTF16(cookie->Name()),
-              });
+    switch (cookieStatus) {
+      case STATUS_REJECTED:
+        
+        if (priorCookieCount) {
+          CookieCommons::NotifyRejected(aHostURI, aChannel, rejectedReason,
+                                        OPERATION_READ);
         }
+        return;
+      default:
+        break;
+    }
+
+    
+    
+    
+    
+
+    
+    
+    
+    bool potentiallyTrustworthy =
+        nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
+
+    int64_t currentTimeInUsec = PR_Now();
+    int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
+    bool stale = false;
+
+    const nsTArray<RefPtr<Cookie>>* cookies =
+        storage->GetCookiesFromHost(baseDomain, attrs);
+    if (!cookies) {
+      continue;
+    }
+
+    bool laxByDefault =
+        StaticPrefs::network_cookie_sameSite_laxByDefault() &&
+        !nsContentUtils::IsURIInPrefList(
+            aHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
+
+    
+    for (Cookie* cookie : *cookies) {
+      
+      if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
         continue;
       }
+
+      
+      
+      
+      
+      if (cookie->IsSecure() && !potentiallyTrustworthy &&
+          !aAllowSecureCookiesToInsecureOrigin) {
+        continue;
+      }
+
+      
+      
+      if (cookie->IsHttpOnly() && !aHttpBound) {
+        continue;
+      }
+
+      
+      if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
+        continue;
+      }
+
+      
+      if (cookie->Expiry() <= currentTime) {
+        continue;
+      }
+
+      if (aHttpBound && aIsSameSiteForeign) {
+        bool blockCookie = !ProcessSameSiteCookieForForeignRequest(
+            aChannel, cookie, aIsSafeTopLevelNav, aHadCrossSiteRedirects,
+            laxByDefault);
+
+        if (blockCookie) {
+          if (aHadCrossSiteRedirects) {
+            CookieLogging::LogMessageToConsole(
+                crc, aHostURI, nsIScriptError::warningFlag,
+                CONSOLE_REJECTION_CATEGORY, "CookieBlockedCrossSiteRedirect"_ns,
+                AutoTArray<nsString, 1>{
+                    NS_ConvertUTF8toUTF16(cookie->Name()),
+                });
+          }
+          continue;
+        }
+      }
+
+      
+      
+      aCookieList.AppendElement(cookie);
+      if (cookie->IsStale()) {
+        stale = true;
+      }
+    }
+
+    if (aCookieList.IsEmpty()) {
+      continue;
     }
 
     
     
-    aCookieList.AppendElement(cookie);
-    if (cookie->IsStale()) {
-      stale = true;
+    if (stale) {
+      storage->StaleCookies(aCookieList, currentTimeInUsec);
     }
   }
 
@@ -1103,12 +1139,6 @@ void CookieService::GetCookiesForURI(
   
   
   NotifyAccepted(aChannel);
-
-  
-  
-  if (stale) {
-    storage->StaleCookies(aCookieList, currentTimeInUsec);
-  }
 
   
   
