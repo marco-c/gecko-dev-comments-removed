@@ -2102,8 +2102,6 @@ pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,co
 
 pref("browser.contentblocking.customBlockList.preferences.ui.enabled", false);
 
-pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-issues.herokuapp.com/new");
-
 
 pref("browser.contentblocking.report.lockwise.enabled", true);
 

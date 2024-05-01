@@ -73,85 +73,16 @@ add_task(async function testToggleSwitch() {
   console.log(buttonEvents);
   is(buttonEvents.length, 1, "recorded telemetry for opening the popup");
 
-  
-  ok(
-    BrowserTestUtils.isVisible(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
-    ),
-    "The 'Site not working?' link should be visible."
-  );
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
-  
-  ok(
-    BrowserTestUtils.isHidden(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
-    ),
-    "The 'Site Fixed?' link should be hidden."
-  );
-
-  
-  
-  let siteNotWorkingView = document.getElementById(
-    "protections-popup-siteNotWorkingView"
-  );
-  let viewShown = BrowserTestUtils.waitForEvent(
-    siteNotWorkingView,
-    "ViewShown"
-  );
-  gProtectionsHandler._protectionsPopupTPSwitchBreakageLink.click();
-  await viewShown;
-
-  checkClickTelemetry("sitenotworking_link");
-
-  let sendReportButton = document.getElementById(
-    "protections-popup-siteNotWorkingView-sendReport"
-  );
-  let sendReportView = document.getElementById(
-    "protections-popup-sendReportView"
-  );
-  viewShown = BrowserTestUtils.waitForEvent(sendReportView, "ViewShown");
-  sendReportButton.click();
-  await viewShown;
-
-  checkClickTelemetry("send_report_link");
-
-  viewShown = BrowserTestUtils.waitForEvent(siteNotWorkingView, "ViewShown");
-  sendReportView.querySelector(".subviewbutton-back").click();
-  await viewShown;
-
-  let mainView = document.getElementById("protections-popup-mainView");
-
-  viewShown = BrowserTestUtils.waitForEvent(mainView, "ViewShown");
-  siteNotWorkingView.querySelector(".subviewbutton-back").click();
-  await viewShown;
-
-  ok(
-    gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("pressed"),
-    "TP Switch should be on"
-  );
   let popuphiddenPromise = BrowserTestUtils.waitForEvent(
     gProtectionsHandler._protectionsPopup,
     "popuphidden"
   );
-  let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+
   await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
-
-  
-  ok(
-    BrowserTestUtils.isHidden(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
-    ),
-    "The 'Site not working?' link should be hidden after TP switch turns to off."
-  );
-  
-  ok(
-    BrowserTestUtils.isHidden(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
-    ),
-    "The 'Site Fixed?' link should be hidden."
-  );
-
   await popuphiddenPromise;
+
   checkClickTelemetry("etp_toggle_off");
 
   
@@ -164,41 +95,13 @@ add_task(async function testToggleSwitch() {
   
   await toastShown;
 
+  
   await openProtectionsPanel();
   ok(
     !gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("pressed"),
     "TP Switch should be off"
   );
 
-  
-  ok(
-    BrowserTestUtils.isHidden(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
-    ),
-    "The 'Site not working?' link should be hidden if TP is off."
-  );
-
-  
-  ok(
-    BrowserTestUtils.isVisible(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
-    ),
-    "The 'Site Fixed?' link should be visible."
-  );
-
-  
-  viewShown = BrowserTestUtils.waitForEvent(sendReportView, "ViewShown");
-  gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink.click();
-  await viewShown;
-
-  checkClickTelemetry("sitenotworking_link", "sitefixed");
-
-  viewShown = BrowserTestUtils.waitForEvent(mainView, "ViewShown");
-  sendReportView.querySelector(".subviewbutton-back").click();
-  await viewShown;
-
-  
-  
   browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   popuphiddenPromise = BrowserTestUtils.waitForEvent(
@@ -207,20 +110,6 @@ add_task(async function testToggleSwitch() {
   );
 
   await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
-
-  ok(
-    BrowserTestUtils.isHidden(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageLink
-    ),
-    `The 'Site not working?' link should be still hidden after toggling TP
-     switch to on from off.`
-  );
-  ok(
-    BrowserTestUtils.isHidden(
-      gProtectionsHandler._protectionsPopupTPSwitchBreakageFixedLink
-    ),
-    "The 'Site Fixed?' link should be hidden."
-  );
 
   
   

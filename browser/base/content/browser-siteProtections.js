@@ -47,11 +47,9 @@ class ProtectionCategory {
 
 
 
-
-
   constructor(
     id,
-    { prefEnabled, reportBreakageLabel, l10nId },
+    { prefEnabled, l10nId },
     {
       load,
       block,
@@ -61,7 +59,6 @@ class ProtectionCategory {
   ) {
     this._id = id;
     this.prefEnabled = prefEnabled;
-    this._reportBreakageLabel = reportBreakageLabel || id;
 
     this._flags = { load, block, shim, allow };
 
@@ -110,10 +107,6 @@ class ProtectionCategory {
   
   get enabled() {
     return this._enabled;
-  }
-
-  get reportBreakageLabel() {
-    return this._reportBreakageLabel;
   }
 
   
@@ -333,7 +326,6 @@ let Fingerprinting =
         "fingerprinters",
         {
           prefEnabled: "privacy.trackingprotection.fingerprinting.enabled",
-          reportBreakageLabel: "fingerprinting",
         },
         {
           load: Ci.nsIWebProgressListener.STATE_LOADED_FINGERPRINTING_CONTENT,
@@ -411,7 +403,6 @@ let Cryptomining = new ProtectionCategory(
   "cryptominers",
   {
     prefEnabled: "privacy.trackingprotection.cryptomining.enabled",
-    reportBreakageLabel: "cryptomining",
   },
   {
     load: Ci.nsIWebProgressListener.STATE_LOADED_CRYPTOMINING_CONTENT,
@@ -427,7 +418,6 @@ let TrackingProtection =
         {
           l10nId: "trackingContent",
           prefEnabled: "privacy.trackingprotection.enabled",
-          reportBreakageLabel: "trackingprotection",
         },
         {
           load: null,
@@ -697,28 +687,6 @@ let ThirdPartyCookies =
         Ci.nsICookieService.BEHAVIOR_ACCEPT,
         this.updateCategoryItem.bind(this)
       );
-    }
-
-    get reportBreakageLabel() {
-      switch (this.behaviorPref) {
-        case Ci.nsICookieService.BEHAVIOR_ACCEPT:
-          return "nocookiesblocked";
-        case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
-          return "allthirdpartycookiesblocked";
-        case Ci.nsICookieService.BEHAVIOR_REJECT:
-          return "allcookiesblocked";
-        case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
-          return "cookiesfromunvisitedsitesblocked";
-        default:
-          console.error(
-            `Error: Unknown cookieBehavior pref observed: ${this.behaviorPref}`
-          );
-        
-        case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
-          return "cookierestrictions";
-        case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
-          return "cookierestrictionsforeignpartitioned";
-      }
     }
 
     isBlocking(state) {
@@ -1099,7 +1067,6 @@ let SocialTracking =
         {
           l10nId: "socialMediaTrackers",
           prefEnabled: "privacy.socialtracking.block_cookies.enabled",
-          reportBreakageLabel: "socialtracking",
         },
         {
           load: Ci.nsIWebProgressListener.STATE_LOADED_SOCIALTRACKING_CONTENT,
@@ -1406,7 +1373,6 @@ let cookieBannerHandling = new (class {
 
 
 var gProtectionsHandler = {
-  PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
   PREF_CB_CATEGORY: "browser.contentblocking.category",
 
   _protectionsPopup: null,
@@ -1455,18 +1421,6 @@ var gProtectionsHandler = {
     return (this._protectionsPopupMainViewHeaderLabel = document.getElementById(
       "protections-popup-mainView-panel-header-span"
     ));
-  },
-  get _protectionsPopupTPSwitchBreakageLink() {
-    delete this._protectionsPopupTPSwitchBreakageLink;
-    return (this._protectionsPopupTPSwitchBreakageLink =
-      document.getElementById("protections-popup-tp-switch-breakage-link"));
-  },
-  get _protectionsPopupTPSwitchBreakageFixedLink() {
-    delete this._protectionsPopupTPSwitchBreakageFixedLink;
-    return (this._protectionsPopupTPSwitchBreakageFixedLink =
-      document.getElementById(
-        "protections-popup-tp-switch-breakage-fixed-link"
-      ));
   },
   get _protectionsPopupTPSwitch() {
     delete this._protectionsPopupTPSwitch;
@@ -1524,28 +1478,6 @@ var gProtectionsHandler = {
         "protections-popup-footer-protection-type-label"
       ));
   },
-  get _protectionsPopupSiteNotWorkingTPSwitch() {
-    delete this._protectionsPopupSiteNotWorkingTPSwitch;
-    return (this._protectionsPopupSiteNotWorkingTPSwitch =
-      document.getElementById("protections-popup-siteNotWorking-tp-switch"));
-  },
-  get _protectionsPopupSiteNotWorkingReportError() {
-    delete this._protectionsPopupSiteNotWorkingReportError;
-    return (this._protectionsPopupSiteNotWorkingReportError =
-      document.getElementById("protections-popup-sendReportView-report-error"));
-  },
-  get _protectionsPopupSendReportURL() {
-    delete this._protectionsPopupSendReportURL;
-    return (this._protectionsPopupSendReportURL = document.getElementById(
-      "protections-popup-sendReportView-collection-url"
-    ));
-  },
-  get _protectionsPopupSendReportButton() {
-    delete this._protectionsPopupSendReportButton;
-    return (this._protectionsPopupSendReportButton = document.getElementById(
-      "protections-popup-sendReportView-submit"
-    ));
-  },
   get _trackingProtectionIconTooltipLabel() {
     delete this._trackingProtectionIconTooltipLabel;
     return (this._trackingProtectionIconTooltipLabel = document.getElementById(
@@ -1577,13 +1509,6 @@ var gProtectionsHandler = {
     delete this._notBlockingWhyLink;
     return (this._notBlockingWhyLink = document.getElementById(
       "protections-popup-not-blocking-section-why"
-    ));
-  },
-
-  get _siteNotWorkingIssueListFonts() {
-    delete this._siteNotWorkingIssueListFonts;
-    return (this._siteNotWorkingIssueListFonts = document.getElementById(
-      "protections-panel-site-not-working-view-issue-list-fonts"
     ));
   },
 
@@ -1811,10 +1736,6 @@ var gProtectionsHandler = {
 
       window.addEventListener("focus", this, true);
       this._protectionsPopupTPSwitch.addEventListener("toggle", this);
-      this._protectionsPopupSiteNotWorkingTPSwitch.addEventListener(
-        "toggle",
-        this
-      );
 
       
       
@@ -1834,10 +1755,6 @@ var gProtectionsHandler = {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
       this._protectionsPopupTPSwitch.removeEventListener("toggle", this);
-      this._protectionsPopupSiteNotWorkingTPSwitch.removeEventListener(
-        "toggle",
-        this
-      );
     }
   },
 
@@ -2163,7 +2080,7 @@ var gProtectionsHandler = {
 
     let currentlyEnabled = !this.hasException;
 
-    this.updateProtectionsToggles(currentlyEnabled);
+    this.updateProtectionsToggle(currentlyEnabled);
 
     this._notBlockingWhyLink.setAttribute(
       "tooltip",
@@ -2171,9 +2088,6 @@ var gProtectionsHandler = {
         ? "protections-popup-not-blocking-why-etp-on-tooltip"
         : "protections-popup-not-blocking-why-etp-off-tooltip"
     );
-
-    
-    this.toggleBreakageLink();
 
     
     this.maybeUpdateEarliestRecordedDateTooltip();
@@ -2201,23 +2115,18 @@ var gProtectionsHandler = {
 
 
 
-
-  updateProtectionsToggles(isPressed) {
+  updateProtectionsToggle(isPressed) {
     let host = gIdentityHandler.getHostForDisplay();
-    for (let toggle of [
-      this._protectionsPopupTPSwitch,
-      this._protectionsPopupSiteNotWorkingTPSwitch,
-    ]) {
-      toggle.toggleAttribute("pressed", isPressed);
-      toggle.toggleAttribute("disabled", !!this._TPSwitchCommanding);
-      document.l10n.setAttributes(
-        toggle,
-        isPressed
-          ? "protections-panel-etp-toggle-on"
-          : "protections-panel-etp-toggle-off",
-        { host }
-      );
-    }
+    let toggle = this._protectionsPopupTPSwitch;
+    toggle.toggleAttribute("pressed", isPressed);
+    toggle.toggleAttribute("disabled", !!this._TPSwitchCommanding);
+    document.l10n.setAttributes(
+      toggle,
+      isPressed
+        ? "protections-panel-etp-toggle-on"
+        : "protections-panel-etp-toggle-off",
+      { host }
+    );
   },
 
   
@@ -2313,10 +2222,7 @@ var gProtectionsHandler = {
     let newExceptionState =
       this._protectionsPopup.toggleAttribute("hasException");
 
-    this.updateProtectionsToggles(!newExceptionState);
-
-    
-    this.toggleBreakageLink();
+    this.updateProtectionsToggle(!newExceptionState);
 
     
     if (newExceptionState) {
@@ -2521,158 +2427,6 @@ var gProtectionsHandler = {
         triggerEvent: event,
       }
     ).catch(console.error);
-  },
-
-  showSiteNotWorkingView() {
-    
-    if (this._fontVisibilityTrackingProtection >= 3) {
-      this._siteNotWorkingIssueListFonts.setAttribute("hidden", "true");
-    } else {
-      this._siteNotWorkingIssueListFonts.removeAttribute("hidden");
-    }
-
-    this._protectionsPopupMultiView.showSubView(
-      "protections-popup-siteNotWorkingView"
-    );
-  },
-
-  showSendReportView() {
-    
-    
-    this.reportURI = gBrowser.currentURI;
-    let urlWithoutQuery = this.reportURI.asciiSpec.replace(
-      "?" + this.reportURI.query,
-      ""
-    );
-    let commentsTextarea = document.getElementById(
-      "protections-popup-sendReportView-collection-comments"
-    );
-    commentsTextarea.value = "";
-    this._protectionsPopupSendReportURL.value = urlWithoutQuery;
-    this._protectionsPopupSiteNotWorkingReportError.hidden = true;
-    this._protectionsPopupMultiView.showSubView(
-      "protections-popup-sendReportView"
-    );
-  },
-
-  toggleBreakageLink() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this._protectionsPopupTPSwitchBreakageLink.hidden =
-      ContentBlockingAllowList.includes(gBrowser.selectedBrowser) ||
-      !this.anyBlocking ||
-      !this._protectionsPopupTPSwitch.hasAttribute("pressed");
-    
-    this._protectionsPopupTPSwitchBreakageFixedLink.hidden =
-      !ContentBlockingAllowList.includes(gBrowser.selectedBrowser) ||
-      this._protectionsPopupTPSwitch.hasAttribute("pressed");
-  },
-
-  submitBreakageReport(uri) {
-    let reportEndpoint = Services.prefs.getStringPref(
-      this.PREF_REPORT_BREAKAGE_URL
-    );
-    if (!reportEndpoint) {
-      return;
-    }
-
-    let commentsTextarea = document.getElementById(
-      "protections-popup-sendReportView-collection-comments"
-    );
-
-    let formData = new FormData();
-    formData.set("title", uri.host);
-
-    
-    let urlWithoutQuery = uri.asciiSpec.replace(uri.query, "");
-    let body = `Full URL: ${urlWithoutQuery}\n`;
-    body += `userAgent: ${navigator.userAgent}\n`;
-
-    body += "\n**Preferences**\n";
-    body += `${TrackingProtection.prefEnabled}: ${Services.prefs.getBoolPref(
-      TrackingProtection.prefEnabled
-    )}\n`;
-    body += `${
-      TrackingProtection.prefEnabledInPrivateWindows
-    }: ${Services.prefs.getBoolPref(
-      TrackingProtection.prefEnabledInPrivateWindows
-    )}\n`;
-    body += `urlclassifier.trackingTable: ${Services.prefs.getStringPref(
-      "urlclassifier.trackingTable"
-    )}\n`;
-    body += `network.http.referer.defaultPolicy: ${Services.prefs.getIntPref(
-      "network.http.referer.defaultPolicy"
-    )}\n`;
-    body += `network.http.referer.defaultPolicy.pbmode: ${Services.prefs.getIntPref(
-      "network.http.referer.defaultPolicy.pbmode"
-    )}\n`;
-    body += `${ThirdPartyCookies.prefEnabled}: ${Services.prefs.getIntPref(
-      ThirdPartyCookies.prefEnabled
-    )}\n`;
-    body += `privacy.annotate_channels.strict_list.enabled: ${Services.prefs.getBoolPref(
-      "privacy.annotate_channels.strict_list.enabled"
-    )}\n`;
-    body += `privacy.restrict3rdpartystorage.expiration: ${Services.prefs.getIntPref(
-      "privacy.restrict3rdpartystorage.expiration"
-    )}\n`;
-    body += `${Fingerprinting.prefEnabled}: ${Services.prefs.getBoolPref(
-      Fingerprinting.prefEnabled
-    )}\n`;
-    body += `${Cryptomining.prefEnabled}: ${Services.prefs.getBoolPref(
-      Cryptomining.prefEnabled
-    )}\n`;
-    body += `privacy.globalprivacycontrol.enabled: ${Services.prefs.getBoolPref(
-      "privacy.globalprivacycontrol.enabled"
-    )}\n`;
-    body += `\nhasException: ${this.hasException}\n`;
-
-    body += "\n**Comments**\n" + commentsTextarea.value;
-
-    formData.set("body", body);
-
-    let activatedBlockers = [];
-    for (let blocker of Object.values(this.blockers)) {
-      if (blocker.activated) {
-        activatedBlockers.push(blocker.reportBreakageLabel);
-      }
-    }
-
-    formData.set("labels", activatedBlockers.join(","));
-
-    this._protectionsPopupSendReportButton.disabled = true;
-
-    fetch(reportEndpoint, {
-      method: "POST",
-      credentials: "omit",
-      body: formData,
-    })
-      .then(response => {
-        this._protectionsPopupSendReportButton.disabled = false;
-        if (!response.ok) {
-          console.error(
-            `Content Blocking report to ${reportEndpoint} failed with status ${response.status}`
-          );
-          this._protectionsPopupSiteNotWorkingReportError.hidden = false;
-        } else {
-          this._protectionsPopup.hidePopup();
-          ConfirmationHint.show(
-            this._trackingProtectionIconContainer,
-            "confirmation-hint-breakage-report-sent"
-          );
-        }
-      })
-      .catch(console.error);
-  },
-
-  onSendReportClicked() {
-    this.submitBreakageReport(this.reportURI);
   },
 
   async maybeUpdateEarliestRecordedDateTooltip(trackerCount) {
