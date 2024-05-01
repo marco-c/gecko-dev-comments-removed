@@ -97,17 +97,7 @@ add_task(async function do_test() {
     {}
   );
 
-  let attrs = { inIsolatedMozBrowser: true };
-  let principal4 = Services.scriptSecurityManager.createContentPrincipal(
-    TEST_ORIGIN,
-    attrs
-  );
-  let principal5 = Services.scriptSecurityManager.createContentPrincipal(
-    TEST_ORIGIN_3,
-    attrs
-  );
-
-  attrs = { userContextId: 1 };
+  let attrs = { userContextId: 1 };
   let principal1UserContext =
     Services.scriptSecurityManager.createContentPrincipal(TEST_ORIGIN, attrs);
   attrs = { privateBrowsingId: 1 };
@@ -140,10 +130,6 @@ add_task(async function do_test() {
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION)
   );
-  Assert.equal(
-    Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
-  );
   
   
   
@@ -153,12 +139,6 @@ add_task(async function do_test() {
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
-  );
-
-  
-  Assert.equal(
-    Ci.nsIPermissionManager.UNKNOWN_ACTION,
-    pm.testPermissionFromPrincipal(principal5, TEST_PERMISSION)
   );
 
   
@@ -189,10 +169,6 @@ add_task(async function do_test() {
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION)
   );
-  Assert.equal(
-    Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
-  );
 
   
   pm.removeAll();
@@ -208,10 +184,6 @@ add_task(async function do_test() {
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION)
-  );
-  Assert.equal(
-    Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
   );
   
   Assert.equal(
