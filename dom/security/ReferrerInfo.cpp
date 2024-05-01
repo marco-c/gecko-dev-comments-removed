@@ -132,18 +132,8 @@ ReferrerPolicy ReferrerPolicyFromToken(const nsAString& aContent,
   }
 
   
-  
-  for (size_t i = 0;
-       i < ArrayLength(binding_detail::EnumStrings<ReferrerPolicy>::Values);
-       i++) {
-    if (lowerContent.EqualsASCII(
-            binding_detail::EnumStrings<ReferrerPolicy>::Values[i].get())) {
-      return static_cast<enum ReferrerPolicy>(i);
-    }
-  }
-
-  
-  return ReferrerPolicy::_empty;
+  return StringToEnum<ReferrerPolicy>(lowerContent)
+      .valueOr(ReferrerPolicy::_empty);
 }
 
 
