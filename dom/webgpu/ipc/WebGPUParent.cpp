@@ -1012,12 +1012,10 @@ static void ReadbackPresentCallback(ffi::WGPUBufferMapAsyncStatus status,
       req->mData->mParent->ForwardError(data->mDeviceId, getRangeError);
     }
     if (auto innerError = getRangeError.GetError()) {
-      
-      
-      
       MOZ_LOG(sLogger, LogLevel::Info,
               ("WebGPU present: buffer get_mapped_range failed: %s\n",
                innerError->message.get()));
+      return;
     }
 
     MOZ_RELEASE_ASSERT(mapped.length >= bufferSize);
