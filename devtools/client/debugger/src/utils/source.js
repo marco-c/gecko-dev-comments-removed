@@ -17,7 +17,6 @@ const {
 import { getRelativePath } from "../utils/sources-tree/utils";
 import { endTruncateStr } from "./utils";
 import { truncateMiddleText } from "../utils/text";
-import { parse as parseURL } from "../utils/url";
 import { memoizeLast } from "../utils/memoizeLast";
 import { renderWasmText } from "./wasm";
 import { toEditorLine } from "./editor/index";
@@ -289,16 +288,6 @@ export function getFileURL(source, truncate = true) {
   return resolveFileURL(url, getUnicodeUrl, truncate);
 }
 
-export function getSourcePath(url) {
-  if (!url) {
-    return "";
-  }
-
-  const { path, href } = parseURL(url);
-  
-  return path || href;
-}
-
 
 
 
@@ -318,10 +307,6 @@ export function getSourceLineCount(content) {
   }
 
   return count + 1;
-}
-
-export function isInlineScript(source) {
-  return source.introductionType === "scriptElement";
 }
 
 function getNthLine(str, lineNum) {
@@ -427,43 +412,6 @@ export function getRelativeUrl(source, root) {
   
   const url = group + path;
   return url.slice(url.indexOf(root) + root.length + 1);
-}
-
-
-
-
-
-
-
-
-export function removeThreadActorId(root, threads) {
-  threads.forEach(thread => {
-    if (root.includes(thread.actor)) {
-      root = root.slice(thread.actor.length + 1);
-    }
-  });
-  return root;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-export function isDescendantOfRoot(source, rootUrlWithoutThreadActor) {
-  if (source.url && source.url.includes("chrome://")) {
-    const { group, path } = source.displayURL;
-    return (group + path).includes(rootUrlWithoutThreadActor);
-  }
-
-  return !!source.url && source.url.includes(rootUrlWithoutThreadActor);
 }
 
 export function isUrlExtension(url) {
