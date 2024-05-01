@@ -4,6 +4,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::data::Property;
 pub use button::Button;
 pub use checkbox::Checkbox;
@@ -24,6 +38,8 @@ mod scroll;
 mod textbox;
 mod vbox;
 mod window;
+
+
 
 
 #[derive(Debug)]
@@ -117,6 +133,8 @@ impl Default for ElementStyle {
         }
     }
 }
+
+
 
 
 #[derive(Debug, Default)]
@@ -216,6 +234,10 @@ impl<T> ElementBuilder<T> {
 }
 
 
+
+
+
+
 #[derive(Debug, Default)]
 pub struct TypedElement<T> {
     pub style: ElementStyle,
@@ -230,6 +252,9 @@ impl<T> From<ElementBuilder<T>> for TypedElement<T> {
         }
     }
 }
+
+
+
 
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -257,6 +282,9 @@ pub struct Margin {
     pub top: u32,
     pub bottom: u32,
 }
+
+
+
 
 
 
