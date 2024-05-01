@@ -204,7 +204,8 @@ already_AddRefed<MessagePort> MessagePort::Create(nsIGlobalObject* aGlobal,
                                                   ErrorResult& aRv) {
   MOZ_ASSERT(aGlobal);
 
-  RefPtr<MessagePort> mp = new MessagePort(aGlobal, eStateUnshippedEntangled);
+  RefPtr<MessagePort> mp =
+      new MessagePort(aGlobal, eStateInitializingUnshippedEntangled);
   mp->Initialize(aUUID, aDestinationUUID, 1 ,
                  false , aRv);
   return mp.forget();
@@ -223,11 +224,16 @@ already_AddRefed<MessagePort> MessagePort::Create(
   return mp.forget();
 }
 
-void MessagePort::UnshippedEntangle(MessagePort* aEntangledPort) {
+void MessagePort::UnshippedEntangle(RefPtr<MessagePort>& aEntangledPort) {
   MOZ_DIAGNOSTIC_ASSERT(aEntangledPort);
   MOZ_DIAGNOSTIC_ASSERT(!mUnshippedEntangledPort);
 
-  mUnshippedEntangledPort = aEntangledPort;
+  if (mState == eStateInitializingUnshippedEntangled) {
+    mUnshippedEntangledPort = aEntangledPort;
+    mState = eStateUnshippedEntangled;
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Should not have been called.");
+  }
 }
 
 void MessagePort::Initialize(const nsID& aUUID, const nsID& aDestinationUUID,
@@ -251,7 +257,7 @@ void MessagePort::Initialize(const nsID& aUUID, const nsID& aDestinationUUID,
       return;
     }
   } else {
-    MOZ_ASSERT(mState == eStateUnshippedEntangled);
+    MOZ_ASSERT(mState == eStateInitializingUnshippedEntangled);
   }
 
   
@@ -332,6 +338,12 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     return;
   }
 
+  if (mState == eStateInitializingUnshippedEntangled) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Should be eStateUnshippedEntangled or eStateDisentangled by now.");
+    return;
+  }
+
   
   if (mState == eStateUnshippedEntangled) {
     MOZ_DIAGNOSTIC_ASSERT(mUnshippedEntangledPort);
@@ -390,6 +402,11 @@ void MessagePort::Dispatch() {
   }
 
   switch (mState) {
+    case eStateInitializingUnshippedEntangled:
+      MOZ_ASSERT_UNREACHABLE(
+          "Should be eStateUnshippedEntangled or eStateDisentangled by now.");
+      break;
+
     case eStateUnshippedEntangled:
       
       
@@ -458,6 +475,17 @@ void MessagePort::CloseInternal(bool aSoftly) {
   
   
   mRefMessageBodyService->ForgetPort(mIdentifier->uuid());
+
+  if (mState == eStateInitializingUnshippedEntangled) {
+    
+    
+    
+    
+    mState = eStateDisentangledForClose;
+
+    UpdateMustKeepAlive();
+    return;
+  }
 
   if (mState == eStateUnshippedEntangled) {
     MOZ_DIAGNOSTIC_ASSERT(mUnshippedEntangledPort);

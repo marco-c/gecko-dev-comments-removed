@@ -110,7 +110,7 @@ class MessagePort final : public DOMEventTargetHelper {
 
   
 
-  void UnshippedEntangle(MessagePort* aEntangledPort);
+  void UnshippedEntangle(RefPtr<MessagePort>& aEntangledPort);
 
   bool CanBeCloned() const { return !mHasBeenTransferredOrClosed; }
 
@@ -127,6 +127,10 @@ class MessagePort final : public DOMEventTargetHelper {
 
  private:
   enum State {
+    
+    
+    eStateInitializingUnshippedEntangled,
+
     
     
     
