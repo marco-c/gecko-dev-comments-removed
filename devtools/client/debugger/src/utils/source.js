@@ -236,11 +236,11 @@ export function getFilename(
 
 
 
-
-
-
-export function getTruncatedFileName(source, querystring = "", length = 30) {
-  return truncateMiddleText(`${getFilename(source)}${querystring}`, length);
+export function getTruncatedFileName(source) {
+  return truncateMiddleText(
+    `${getFilename(source)}${source.displayURL.search}`,
+    30
+  );
 }
 
 
@@ -489,14 +489,6 @@ export function isDescendantOfRoot(source, rootUrlWithoutThreadActor) {
   }
 
   return !!source.url && source.url.includes(rootUrlWithoutThreadActor);
-}
-
-export function getSourceQueryString(source) {
-  if (!source) {
-    return "";
-  }
-
-  return parseURL(getRawSourceURL(source.url)).search;
 }
 
 export function isUrlExtension(url) {
