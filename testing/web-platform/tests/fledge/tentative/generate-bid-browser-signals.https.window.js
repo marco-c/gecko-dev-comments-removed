@@ -9,6 +9,9 @@
 
 
 
+
+
+
 "use strict;"
 
 
@@ -278,6 +281,184 @@ subsetTest(promise_test, async test => {
   await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'browserSignals.bidCount two auctions at once.');
 
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let bidderReportURL = createBidderReportURL(uuid, 'winner');
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBiddingScriptURL(
+          { bid: 0.1, reportWin: `sendReportTo('${createBidderReportURL(uuid, 'loser')}')` })
+      });
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { biddingLogicURL: createBiddingScriptURL(
+          { bid: 1, reportWin: `sendReportTo('${bidderReportURL}')` })
+      });
+
+  
+  
+  await runBasicFledgeAuctionAndNavigate(test, uuid);
+  
+  await waitForObservedRequests(uuid, [bidderReportURL, createSellerReportURL(uuid)]);
+
+  
+  await leaveInterestGroup();
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(1)
+      });
+
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount incremented when another interest group wins.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, { name: uuid });
+  
+  await runBasicFledgeTestExpectingNoWinner(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(uuid, {scoreAd: `return 0;`})});
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(1)
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount incremented when seller rejects bid.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, { name: uuid });
+  
+  await runBasicFledgeTestExpectingNoWinner(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(uuid, {scoreAd: `throw "a fit";`})});
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(1)
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount incremented when seller throws.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBiddingScriptURL(
+          { generateBid: 'return;' })
+      });
+  await runBasicFledgeTestExpectingNoWinner(test, uuid);
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(0)
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount not incremented when no bid.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let bidderReportURL = createBidderReportURL(uuid, 'winner');
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBiddingScriptURL(
+          { generateBid: 'return;' })
+      });
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { biddingLogicURL: createBiddingScriptURL(
+          { bid: 1, reportWin: `sendReportTo('${bidderReportURL}')` })
+      });
+
+  
+  await runBasicFledgeAuctionAndNavigate(test, uuid);
+  await waitForObservedRequests(uuid, [bidderReportURL, createSellerReportURL(uuid)]);
+
+  
+  await leaveInterestGroup();
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(0)
+      });
+
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount not incremented when no bid and another interest group wins.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let bidderReportURL = createBidderReportURL(uuid, 'winner');
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBiddingScriptURL(
+          { bid: 42, reportWin: `sendReportTo('${createBidderReportURL(uuid, 'loser')}')` })
+      });
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { biddingLogicURL: createBiddingScriptURL(
+          { bid: 1, reportWin: `sendReportTo('${bidderReportURL}')` })
+      });
+
+  
+  
+  await runBasicFledgeAuctionAndNavigate(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(
+          uuid,
+          { scoreAd: `if (bid === 42) return -1;`})});
+  
+  await waitForObservedRequests(uuid, [bidderReportURL]);
+
+  
+  await leaveInterestGroup();
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBidCountBiddingScriptURL(1)
+      });
+
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.bidCount incremented when makes largest bid, but seller rejects the bid.');
+
 
 
 
@@ -491,6 +672,181 @@ subsetTest(promise_test, async test => {
         biddingLogicURL: createPrevWinsMsBiddingScriptURL([])});
   await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'browserSignals.prevWinsMs leave and rejoin.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([])
+      });
+
+  
+  
+  fencedFrameConfigs =
+      await Promise.all([runBasicFledgeTestExpectingWinner(test, uuid),
+                         runBasicFledgeTestExpectingWinner(test, uuid)]);
+
+  
+  createAndNavigateFencedFrame(test, fencedFrameConfigs[0]);
+  createAndNavigateFencedFrame(test, fencedFrameConfigs[1]);
+
+  
+  
+  await waitForObservedRequests(uuid, [createSellerReportURL(uuid),
+                                       createSellerReportURL(uuid)]);
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL(
+          [[0, {renderURL: createRenderURL(uuid)}],
+           [0, {renderURL: createRenderURL(uuid)}]])
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs two auctions at once.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let bidderReportURL = createBidderReportURL(uuid, 'winner');
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBiddingScriptURL(
+          { bid: 0.1, reportWin: `sendReportTo('${createBidderReportURL(uuid, 'loser')}')` })
+      });
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { biddingLogicURL: createBiddingScriptURL(
+          { bid: 1, reportWin: `sendReportTo('${bidderReportURL}')` })
+      });
+
+  
+  await runBasicFledgeAuctionAndNavigate(test, uuid);
+  await waitForObservedRequests(uuid, [bidderReportURL, createSellerReportURL(uuid)]);
+
+  
+  await leaveInterestGroup();
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([])
+      });
+
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs not updated when another interest group wins.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, { name: uuid });
+  
+  await runBasicFledgeTestExpectingNoWinner(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(uuid, {scoreAd: `return 0;`})});
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([])
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs not updated when seller rejects bid.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, { name: uuid });
+  
+  await runBasicFledgeTestExpectingNoWinner(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(uuid, {scoreAd: `throw "a fit";`})});
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([])
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs not updated when seller throws.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(
+    test, uuid,
+    { name: uuid,
+      biddingLogicURL: createBiddingScriptURL(
+        { generateBid: 'return;' })
+    });
+  await runBasicFledgeTestExpectingNoWinner(test, uuid);
+
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([])
+      });
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs not updated when no bid.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let bidderReportURL = createBidderReportURL(uuid, 'winner');
+
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createBiddingScriptURL(
+          { bid: 42, reportWin: `sendReportTo('${createBidderReportURL(uuid, 'loser')}')` })
+      });
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { biddingLogicURL: createBiddingScriptURL(
+          { bid: 1, reportWin: `sendReportTo('${bidderReportURL}')` })
+      });
+
+  
+  
+  await runBasicFledgeAuctionAndNavigate(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(
+          uuid,
+          { scoreAd: `if (bid === 42) return 0.1;`})});
+  
+  await waitForObservedRequests(uuid, [bidderReportURL]);
+
+  
+  await leaveInterestGroup();
+
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      { name: uuid,
+        biddingLogicURL: createPrevWinsMsBiddingScriptURL([])
+      });
+
+  await runBasicFledgeTestExpectingWinner(test, uuid);
+}, 'browserSignals.prevWinsMs not updated when makes largest bid, but another interest group wins.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
