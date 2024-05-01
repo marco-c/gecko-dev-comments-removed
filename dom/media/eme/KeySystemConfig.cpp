@@ -57,9 +57,10 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
                       {nsCString(kWidevineExperimentKeySystemName)});
   }
 
-  if ((IsPlayReadyKeySystemAndSupported(aKeySystem) ||
-       IsWMFClearKeySystemAndSupported(aKeySystem)) &&
-      WMFCDMImpl::Supports(aKeySystem)) {
+  
+  
+  if (IsPlayReadyKeySystemAndSupported(aKeySystem) ||
+      IsWMFClearKeySystemAndSupported(aKeySystem)) {
     return true;
   }
 #endif
