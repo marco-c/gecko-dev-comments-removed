@@ -943,8 +943,8 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     
     
     
-    if (!goodElementsAllocationAmount(cx, reqCapacity + numShifted,
-                                      getElementsHeader()->length,
+    uint32_t length = is<ArrayObject>() ? as<ArrayObject>().length() : 0;
+    if (!goodElementsAllocationAmount(cx, reqCapacity + numShifted, length,
                                       &newAllocated)) {
       return false;
     }
