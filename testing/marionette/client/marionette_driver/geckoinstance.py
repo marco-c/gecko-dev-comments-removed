@@ -61,6 +61,8 @@ class GeckoInstance(object):
         "datareporting.policy.dataSubmissionEnabled": False,
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
         
+        "dom.disable_open_during_load": False,
+        
         "dom.file.createInChild": True,
         
         "dom.input_events.security.minNumTicks": 0,
