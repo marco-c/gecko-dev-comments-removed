@@ -45,8 +45,7 @@ async function run_test() {
   
   
   gTestFiles = gTestFilesPartialSuccess;
-  let channelPrefs = gTestFiles[gTestFiles.length - 1];
-  Assert.equal("channel-prefs.js", channelPrefs.fileName);
+  let channelPrefs = getTestFileByName(FILE_CHANNEL_PREFS);
   let f = gGREDirOrig.clone();
   f.append("defaults");
   f.append("pref");

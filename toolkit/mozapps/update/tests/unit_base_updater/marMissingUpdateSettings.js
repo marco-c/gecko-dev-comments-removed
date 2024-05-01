@@ -14,7 +14,17 @@ async function run_test() {
     return;
   }
   gTestFiles = gTestFilesCompleteSuccess;
-  gTestFiles[gTestFiles.length - 2].originalContents = null;
+  if (AppConstants.platform == "macosx") {
+    
+    const updateSettings = getTestFileByName(FILE_UPDATE_SETTINGS_FRAMEWORK);
+    updateSettings.removeOriginalFile = true;
+  } else {
+    
+    
+    
+    const updateSettings = getTestFileByName(FILE_UPDATE_SETTINGS_INI);
+    updateSettings.originalContents = null;
+  }
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
