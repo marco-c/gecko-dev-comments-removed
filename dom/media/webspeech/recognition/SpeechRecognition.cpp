@@ -437,12 +437,13 @@ uint32_t SpeechRecognition::ProcessAudioSegment(AudioSegment* aSegment,
   
   
   
-  nsresult rv = mEncodeTaskQueue->Dispatch(
-      NewRunnableMethod<StoreCopyPassByPtr<AudioSegment>, TrackRate>(
-          "nsISpeechRecognitionService::ProcessAudioSegment",
-          mRecognitionService,
-          &nsISpeechRecognitionService::ProcessAudioSegment,
-          std::move(*aSegment), aTrackRate));
+  nsresult rv = mEncodeTaskQueue->Dispatch(NS_NewRunnableFunction(
+      "nsISpeechRecognitionService::ProcessAudioSegment",
+      [=, service = mRecognitionService,
+       segment = std::move(*aSegment)]() mutable {
+        service->ProcessAudioSegment(&segment, aTrackRate);
+      }));
+
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
   Unused << rv;
   return samples;

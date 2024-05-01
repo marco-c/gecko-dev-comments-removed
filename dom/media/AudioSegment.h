@@ -318,7 +318,7 @@ struct AudioChunk {
 
 
 
-class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
+class AudioSegment final : public MediaSegmentBase<AudioSegment, AudioChunk> {
   
   uint32_t mMemoizedMaxChannelCount = 0;
 
