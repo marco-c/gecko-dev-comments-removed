@@ -25,7 +25,7 @@ class CsvImportHelper {
 
   static waitForOpenFilePicker(destFile) {
     return new Promise(resolve => {
-      MockFilePicker.showCallback = () => {
+      MockFilePicker.showCallback = _fp => {
         info("showCallback");
         info("fileName: " + destFile.path);
         MockFilePicker.setFiles([destFile]);
@@ -219,8 +219,6 @@ class CsvImportHelper {
 
 
 
-
-
   static async getDetailedReportData() {
     const data = await SpecialPowers.spawn(
       gBrowser.selectedBrowser,
@@ -357,7 +355,7 @@ add_task(async function test_open_import_all_four_detailed_report() {
       await CsvImportHelper.clickImportFromCsvMenu(browser, updatedCsvData);
       await CsvImportHelper.waitForImportToComplete();
       const reportTab = await CsvImportHelper.clickDetailedReport(browser);
-      const report = await CsvImportHelper.getDetailedReportData(browser);
+      const report = await CsvImportHelper.getDetailedReportData();
       BrowserTestUtils.removeTab(reportTab);
       const { added, modified, noChange, errors, rows } = report;
       Assert.equal(added, 1, "It should have one item as added");

@@ -108,7 +108,7 @@ class AutofillEditDialog {
   
 
 
-  handleInput() {
+  handleInput(_e) {
     this.updateSaveButtonState();
   }
 

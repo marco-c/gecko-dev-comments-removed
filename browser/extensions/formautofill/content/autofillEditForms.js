@@ -113,7 +113,7 @@ class EditAutofillForm {
   
 
 
-  handleInput() {}
+  handleInput(_e) {}
 
   
 
@@ -138,7 +138,9 @@ class EditAutofillForm {
   
 
 
-  updateCustomValidity() {}
+
+
+  updateCustomValidity(_field) {}
 }
 
 class EditAddress extends EditAutofillForm {

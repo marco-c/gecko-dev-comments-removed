@@ -13,12 +13,12 @@ function initProxy() {
     let proxyCallback = {
       QueryInterface: ChromeUtils.generateQI(["nsIProtocolProxyCallback"]),
 
-      onProxyAvailable() {
+      onProxyAvailable(_req, _uri, _pi, _status) {
         class ProxyChannelListener {
-          onStartRequest() {
+          onStartRequest(_request) {
             resolve(proxyChannel);
           }
-          onStopRequest() {}
+          onStopRequest(_request, _status) {}
         }
         
         
@@ -81,7 +81,7 @@ function getAuthPromptCallback() {
     callbackResolver = resolve;
   });
   let callback = {
-    onAuthAvailable(context, authInfo) {
+    onAuthAvailable(_context, authInfo) {
       callbackResolver(authInfo);
     },
   };

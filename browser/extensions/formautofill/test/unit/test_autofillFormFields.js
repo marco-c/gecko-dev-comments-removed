@@ -895,7 +895,7 @@ function do_test(testcases, testFn) {
         
         
         
-        let decryptHelper = async cipherText => {
+        let decryptHelper = async (cipherText, _reauth) => {
           return OSKeyStore.decrypt(cipherText, false);
         };
         handler.collectFormFields();

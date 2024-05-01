@@ -6,7 +6,7 @@
 
 "use strict";
 
-browser.runtime.onUpdateAvailable.addListener(() => {
+browser.runtime.onUpdateAvailable.addListener(_details => {
   
   
   
