@@ -12394,7 +12394,8 @@ already_AddRefed<nsIURI> Document::ResolvePreloadImage(
 
 void Document::PreLoadImage(nsIURI* aUri, const nsAString& aCrossOriginAttr,
                             ReferrerPolicyEnum aReferrerPolicy, bool aIsImgSet,
-                            bool aLinkPreload, uint64_t aEarlyHintPreloaderId) {
+                            bool aLinkPreload, uint64_t aEarlyHintPreloaderId,
+                            const nsAString& aFetchPriority) {
   nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL |
                           nsContentUtils::CORSModeToLoadImageFlags(
                               Element::StringToCORSMode(aCrossOriginAttr));
@@ -12415,7 +12416,8 @@ void Document::PreLoadImage(nsIURI* aUri, const nsAString& aCrossOriginAttr,
   nsresult rv = nsContentUtils::LoadImage(
       aUri, static_cast<nsINode*>(this), this, NodePrincipal(), 0, referrerInfo,
       nullptr , loadFlags, initiator, getter_AddRefs(request),
-      policyType, false , aLinkPreload, aEarlyHintPreloaderId);
+      policyType, false , aLinkPreload, aEarlyHintPreloaderId,
+      nsGenericHTMLElement::ToFetchPriority(aFetchPriority));
 
   
   
@@ -12428,7 +12430,8 @@ void Document::PreLoadImage(nsIURI* aUri, const nsAString& aCrossOriginAttr,
 void Document::MaybePreLoadImage(nsIURI* aUri,
                                  const nsAString& aCrossOriginAttr,
                                  ReferrerPolicyEnum aReferrerPolicy,
-                                 bool aIsImgSet, bool aLinkPreload) {
+                                 bool aIsImgSet, bool aLinkPreload,
+                                 const nsAString& aFetchPriority) {
   const CORSMode corsMode = dom::Element::StringToCORSMode(aCrossOriginAttr);
   if (aLinkPreload) {
     
@@ -12437,7 +12440,7 @@ void Document::MaybePreLoadImage(nsIURI* aUri,
         PreloadHashKey::CreateAsImage(aUri, NodePrincipal(), corsMode);
     if (!mPreloadService.PreloadExists(key)) {
       PreLoadImage(aUri, aCrossOriginAttr, aReferrerPolicy, aIsImgSet,
-                   aLinkPreload, 0);
+                   aLinkPreload, 0, aFetchPriority);
     }
     return;
   }
@@ -12451,7 +12454,7 @@ void Document::MaybePreLoadImage(nsIURI* aUri,
 
   
   PreLoadImage(aUri, aCrossOriginAttr, aReferrerPolicy, aIsImgSet, aLinkPreload,
-               0);
+               0, aFetchPriority);
 }
 
 void Document::MaybePreconnect(nsIURI* aOrigURI, mozilla::CORSMode aCORSMode) {

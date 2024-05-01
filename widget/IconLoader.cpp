@@ -9,6 +9,7 @@
 #include "imgLoader.h"
 #include "imgRequestProxy.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/FetchPriority.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
@@ -63,16 +64,17 @@ nsresult IconLoader::LoadIcon(nsIURI* aIconURI, nsINode* aNode,
         nullptr, nsIRequest::LOAD_NORMAL, nullptr,
         nsIContentPolicy::TYPE_INTERNAL_IMAGE, u""_ns,
          false,  false, 0,
-        getter_AddRefs(mIconRequest));
+        FetchPriority::Auto, getter_AddRefs(mIconRequest));
   } else {
     
     
-    rv = loader->LoadImage(
-        aIconURI, nullptr, nullptr, aNode->NodePrincipal(), 0, loadGroup, this,
-        aNode, document, nsIRequest::LOAD_NORMAL, nullptr,
-        nsIContentPolicy::TYPE_INTERNAL_IMAGE, u""_ns,
-         false,
-         false, 0, getter_AddRefs(mIconRequest));
+    rv = loader->LoadImage(aIconURI, nullptr, nullptr, aNode->NodePrincipal(),
+                           0, loadGroup, this, aNode, document,
+                           nsIRequest::LOAD_NORMAL, nullptr,
+                           nsIContentPolicy::TYPE_INTERNAL_IMAGE, u""_ns,
+                            false,
+                            false, 0, FetchPriority::Auto,
+                           getter_AddRefs(mIconRequest));
   }
   if (NS_FAILED(rv)) {
     return rv;
