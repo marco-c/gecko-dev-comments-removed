@@ -32,7 +32,11 @@ public abstract class TelemetryPingBuilder {
 
         
         addMeasurement(new VersionMeasurement(version));
-        addMeasurement(new ClientIdMeasurement(configuration));
+
+        
+        if (!type.equals(TelemetryPocketEventPingBuilder.TYPE)) {
+            addMeasurement(new ClientIdMeasurement(configuration));
+        }
     }
 
     public TelemetryConfiguration getConfiguration() {
