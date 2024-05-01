@@ -990,19 +990,6 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
   }
 }
 
-bool nsComputedDOMStyle::NeedsToFlushLayoutForContainerQuery() const {
-  const auto* outerFrame = GetOuterFrame();
-  if (!outerFrame) {
-    return false;
-  }
-  const auto* innerFrame = nsLayoutUtils::GetStyleFrame(outerFrame);
-  MOZ_ASSERT(innerFrame, "No valid inner frame?");
-  
-  
-  
-  return innerFrame->HasUnreflowedContainerQueryAncestor();
-}
-
 void nsComputedDOMStyle::Flush(Document& aDocument, FlushType aFlushType) {
   MOZ_ASSERT(mElement->IsInComposedDoc());
   MOZ_ASSERT(mDocumentWeak == &aDocument);
@@ -1064,9 +1051,8 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
     Flush(*document, FlushType::Frames);
   }
 
-  const bool needsToFlushLayoutForProp = NeedsToFlushLayout(aPropID);
-  if (needsToFlushLayoutForProp || NeedsToFlushLayoutForContainerQuery()) {
-    MOZ_ASSERT_IF(needsToFlushLayoutForProp, MayNeedToFlushLayout(aPropID));
+  if (NeedsToFlushLayout(aPropID)) {
+    MOZ_ASSERT(MayNeedToFlushLayout(aPropID));
     didFlush = true;
     Flush(*document, FlushType::Layout);
 #ifdef DEBUG
