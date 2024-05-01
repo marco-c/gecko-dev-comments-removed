@@ -1243,6 +1243,7 @@ interface HTMLTemplateElement : HTMLElement {
   readonly attribute DocumentFragment content;
   [CEReactions] attribute DOMString shadowRootMode;
   [CEReactions] attribute boolean shadowRootDelegatesFocus;
+  [CEReactions] attribute boolean shadowRootClonable;
 };
 
 [Exposed=Window]
@@ -2086,6 +2087,23 @@ interface BeforeUnloadEvent : Event {
   attribute DOMString returnValue;
 };
 
+[Exposed=Window]
+interface NotRestoredReasonDetails {
+  readonly attribute DOMString reason;
+  [Default] object toJSON();
+};
+
+[Exposed=Window]
+interface NotRestoredReasons {
+  readonly attribute DOMString? src;
+  readonly attribute DOMString? id;
+  readonly attribute DOMString? name;
+  readonly attribute DOMString? url;
+  readonly attribute FrozenArray<NotRestoredReasonDetails>? reasons;
+  readonly attribute FrozenArray<NotRestoredReasons>? children;
+  [Default] object toJSON();
+};
+
 [Exposed=*]
 interface ErrorEvent : Event {
   constructor(DOMString type, optional ErrorEventInit eventInitDict = {});
@@ -2472,6 +2490,7 @@ interface MessagePort : EventTarget {
   // event handlers
   attribute EventHandler onmessage;
   attribute EventHandler onmessageerror;
+  attribute EventHandler onclose;
 };
 
 dictionary StructuredSerializeOptions {
