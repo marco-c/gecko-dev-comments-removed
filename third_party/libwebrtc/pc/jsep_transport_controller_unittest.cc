@@ -265,9 +265,10 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     }
 
     auto description = CreateSessionDescriptionWithBundleGroup();
-    EXPECT_TRUE(transport_controller_
-                    ->SetLocalDescription(SdpType::kOffer, description.get())
-                    .ok());
+    EXPECT_TRUE(
+        transport_controller_
+            ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+            .ok());
 
     transport_controller_->MaybeStartGathering();
     auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
@@ -385,9 +386,10 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
 TEST_F(JsepTransportControllerTest, GetRtpTransport) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   auto audio_rtp_transport = transport_controller_->GetRtpTransport(kAudioMid1);
   auto video_rtp_transport = transport_controller_->GetRtpTransport(kVideoMid1);
   EXPECT_NE(nullptr, audio_rtp_transport);
@@ -402,9 +404,10 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransport) {
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
   CreateJsepTransportController(std::move(config));
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kAudioMid1));
   EXPECT_NE(nullptr, transport_controller_->GetRtcpDtlsTransport(kAudioMid1));
   EXPECT_NE(nullptr,
@@ -437,9 +440,10 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   CreateJsepTransportController(std::move(config));
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kAudioMid1));
   EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kAudioMid1));
   EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kVideoMid1));
@@ -449,9 +453,10 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
 TEST_F(JsepTransportControllerTest, SetIceConfig) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   transport_controller_->SetIceConfig(
       CreateIceConfig(kTimeout, cricket::GATHER_CONTINUALLY));
@@ -467,9 +472,10 @@ TEST_F(JsepTransportControllerTest, SetIceConfig) {
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
 
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid2));
   ASSERT_NE(nullptr, fake_audio_dtls);
@@ -482,11 +488,14 @@ TEST_F(JsepTransportControllerTest, SetIceConfig) {
 TEST_F(JsepTransportControllerTest, NeedIceRestart) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
+  
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, description.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, description.get(),
+                                         description.get())
                   .ok());
 
   
@@ -505,7 +514,8 @@ TEST_F(JsepTransportControllerTest, NeedIceRestart) {
   audio_transport_info->description.ice_ufrag = kIceUfrag2;
   audio_transport_info->description.ice_pwd = kIcePwd2;
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  ->SetLocalDescription(SdpType::kOffer, description.get(),
+                                        description.get())
                   .ok());
   
   
@@ -516,9 +526,10 @@ TEST_F(JsepTransportControllerTest, NeedIceRestart) {
 TEST_F(JsepTransportControllerTest, MaybeStartGathering) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithBundleGroup();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   
   
   transport_controller_->MaybeStartGathering();
@@ -529,10 +540,10 @@ TEST_F(JsepTransportControllerTest, MaybeStartGathering) {
 TEST_F(JsepTransportControllerTest, AddRemoveRemoteCandidates) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  transport_controller_->SetLocalDescription(SdpType::kOffer,
-                                             description.get());
-  transport_controller_->SetRemoteDescription(SdpType::kAnswer,
-                                              description.get());
+  transport_controller_->SetLocalDescription(SdpType::kOffer, description.get(),
+                                             nullptr);
+  transport_controller_->SetRemoteDescription(
+      SdpType::kAnswer, description.get(), description.get());
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
   ASSERT_NE(nullptr, fake_audio_dtls);
@@ -565,9 +576,10 @@ TEST_F(JsepTransportControllerTest, SetAndGetLocalCertificate) {
   
   EXPECT_TRUE(transport_controller_->SetLocalCertificate(certificate1));
   
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   returned_certificate = transport_controller_->GetLocalCertificate(kAudioMid1);
   EXPECT_TRUE(returned_certificate);
   EXPECT_EQ(certificate1->identity()->certificate().ToPEMString(),
@@ -586,9 +598,10 @@ TEST_F(JsepTransportControllerTest, SetAndGetLocalCertificate) {
 TEST_F(JsepTransportControllerTest, GetRemoteSSLCertChain) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithBundleGroup();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   rtc::FakeSSLCertificate fake_certificate("fake_data");
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
@@ -622,16 +635,18 @@ TEST_F(JsepTransportControllerTest, GetDtlsRole) {
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
                   answer_certificate);
 
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, offer_desc.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, offer_desc.get(), nullptr)
+          .ok());
 
   absl::optional<rtc::SSLRole> role =
       transport_controller_->GetDtlsRole(kAudioMid1);
   
   EXPECT_FALSE(role);
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, answer_desc.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, offer_desc.get(),
+                                         answer_desc.get())
                   .ok());
   role = transport_controller_->GetDtlsRole(kAudioMid1);
 
@@ -642,9 +657,10 @@ TEST_F(JsepTransportControllerTest, GetDtlsRole) {
 TEST_F(JsepTransportControllerTest, GetStats) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithBundleGroup();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   cricket::TransportStats stats;
   EXPECT_TRUE(transport_controller_->GetStats(kAudioMid1, &stats));
@@ -657,9 +673,10 @@ TEST_F(JsepTransportControllerTest, GetStats) {
 TEST_F(JsepTransportControllerTest, SignalConnectionStateFailed) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   auto fake_ice = static_cast<cricket::FakeIceTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1)->ice_transport());
@@ -681,9 +698,10 @@ TEST_F(JsepTransportControllerTest,
        SignalConnectionStateConnectedNoMediaTransport) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -729,9 +747,10 @@ TEST_F(JsepTransportControllerTest,
 TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -788,9 +807,10 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
 TEST_F(JsepTransportControllerTest, SignalIceGatheringStateGathering) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -803,9 +823,10 @@ TEST_F(JsepTransportControllerTest, SignalIceGatheringStateGathering) {
 TEST_F(JsepTransportControllerTest, SignalIceGatheringStateComplete) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -838,9 +859,10 @@ TEST_F(JsepTransportControllerTest,
        SignalingWhenLastIncompleteTransportDestroyed) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithBundleGroup();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -861,7 +883,8 @@ TEST_F(JsepTransportControllerTest,
 
   
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, description.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, description.get(),
+                                         description.get())
                   .ok());
   
   
@@ -887,11 +910,13 @@ TEST_F(JsepTransportControllerTest,
   AddAudioSection(description.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, description.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, description.get(),
+                                         description.get())
                   .ok());
 
   
@@ -914,7 +939,8 @@ TEST_F(JsepTransportControllerTest,
   
   description->contents()[0].rejected = true;
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kOffer, description.get())
+                  ->SetRemoteDescription(SdpType::kOffer, description.get(),
+                                         description.get())
                   .ok());
   EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionNew,
                  ice_connection_state_, kTimeout);
@@ -941,9 +967,10 @@ TEST_F(JsepTransportControllerTest,
 TEST_F(JsepTransportControllerTest, SignalCandidatesGathered) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithBundleGroup();
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, description.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, description.get(), nullptr)
+          .ok());
   transport_controller_->MaybeStartGathering();
 
   auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
@@ -998,11 +1025,13 @@ TEST_F(JsepTransportControllerTest, IceRoleNotRedetermined) {
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
                   nullptr);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetRemoteDescription(SdpType::kOffer, nullptr, remote_offer.get())
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kOffer, remote_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get())
+                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get(),
+                                        remote_offer.get())
                   .ok());
 
   auto fake_dtls = static_cast<FakeDtlsTransport*>(
@@ -1015,10 +1044,11 @@ TEST_F(JsepTransportControllerTest, IceRoleNotRedetermined) {
   AddAudioSection(restart_local_offer.get(), kAudioMid1, kIceUfrag3, kIcePwd3,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
-  EXPECT_TRUE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, restart_local_offer.get())
-          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer,
+                                        restart_local_offer.get(),
+                                        remote_offer.get())
+                  .ok());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLED,
             fake_dtls->fake_ice_transport()->GetIceRole());
 }
@@ -1030,9 +1060,10 @@ TEST_F(JsepTransportControllerTest, SetIceRoleWhenIceLiteInRemoteAnswer) {
   AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   auto fake_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING,
@@ -1045,7 +1076,8 @@ TEST_F(JsepTransportControllerTest, SetIceRoleWhenIceLiteInRemoteAnswer) {
                   cricket::ICEMODE_LITE, cricket::CONNECTIONROLE_PASSIVE,
                   nullptr);
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING,
             fake_dtls->fake_ice_transport()->GetIceRole());
@@ -1069,11 +1101,13 @@ TEST_F(JsepTransportControllerTest,
                   nullptr);
   
   
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetRemoteDescription(SdpType::kOffer, nullptr, remote_offer.get())
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kOffer, remote_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get())
+                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get(),
+                                        remote_offer.get())
                   .ok());
   auto fake_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -1085,15 +1119,17 @@ TEST_F(JsepTransportControllerTest,
   AddAudioSection(remote_offer2.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
                   cricket::ICEMODE_LITE, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, local_answer.get(),
+                                         remote_offer2.get())
+                  .ok());
   auto local_answer2 = std::make_unique<cricket::SessionDescription>();
   AddAudioSection(local_answer2.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
                   nullptr);
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kOffer, remote_offer2.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kAnswer, local_answer2.get())
+                  ->SetLocalDescription(SdpType::kAnswer, local_answer2.get(),
+                                        remote_offer2.get())
                   .ok());
   fake_dtls = static_cast<FakeDtlsTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1));
@@ -1145,11 +1181,13 @@ TEST_F(JsepTransportControllerTest, MultipleMediaSectionsOfSameTypeWithBundle) {
   local_offer->AddGroup(bundle_group);
   remote_answer->AddGroup(bundle_group);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
   
   auto transport1 = transport_controller_->GetRtpTransport(kAudioMid1);
@@ -1224,11 +1262,13 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroups) {
   remote_answer->AddGroup(bundle_group1);
   remote_answer->AddGroup(bundle_group2);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -1307,11 +1347,13 @@ TEST_F(JsepTransportControllerTest,
   
   remote_answer->AddGroup(bundle_group1);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -1382,12 +1424,14 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroupsIllegallyChangeGroup) {
   remote_answer->AddGroup(answer_bundle_group2);
 
   
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 }
 
@@ -1445,12 +1489,14 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroupsInvalidSubsets) {
   remote_answer->AddGroup(answer_bundle_group2);
 
   
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 }
 
@@ -1483,11 +1529,12 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroupsInvalidOverlap) {
   offer->AddGroup(offer_bundle_group2);
 
   
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer, offer.get(), nullptr)
+                   .ok());
   EXPECT_FALSE(
-      transport_controller_->SetLocalDescription(SdpType::kOffer, offer.get())
-          .ok());
-  EXPECT_FALSE(
-      transport_controller_->SetRemoteDescription(SdpType::kOffer, offer.get())
+      transport_controller_
+          ->SetRemoteDescription(SdpType::kOffer, offer.get(), offer.get())
           .ok());
 }
 
@@ -1563,11 +1610,13 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroupsUnbundleFirstMid) {
   remote_answer->AddGroup(answer_bundle_group1);
   remote_answer->AddGroup(answer_bundle_group2);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   auto mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
@@ -1659,9 +1708,10 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroupsChangeFirstMid) {
   remote_answer->AddGroup(answer_bundle_group1);
   remote_answer->AddGroup(answer_bundle_group2);
 
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
 
   
   
@@ -1669,7 +1719,8 @@ TEST_F(JsepTransportControllerTest, MultipleBundleGroupsChangeFirstMid) {
   
   
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
   auto mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
   auto mid2_transport = transport_controller_->GetRtpTransport(kMid2Audio);
@@ -1734,11 +1785,13 @@ TEST_F(JsepTransportControllerTest,
   remote_answer->AddGroup(bundle_group1);
   remote_answer->AddGroup(bundle_group2);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -1769,7 +1822,8 @@ TEST_F(JsepTransportControllerTest,
   subsequent_offer->AddGroup(bundle_group1);
   subsequent_offer->AddGroup(bundle_group2);
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, subsequent_offer.get())
+                  ->SetLocalDescription(SdpType::kOffer, subsequent_offer.get(),
+                                        remote_answer.get())
                   .ok());
   auto mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
   auto mid2_transport = transport_controller_->GetRtpTransport(kMid2Audio);
@@ -1832,11 +1886,13 @@ TEST_F(JsepTransportControllerTest,
   remote_answer->AddGroup(bundle_group1);
   remote_answer->AddGroup(bundle_group2);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -1861,10 +1917,11 @@ TEST_F(JsepTransportControllerTest,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
   subsequent_offer->AddGroup(new_bundle_group);
-  EXPECT_FALSE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, subsequent_offer.get())
-          .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer,
+                                         subsequent_offer.get(),
+                                         remote_answer.get())
+                   .ok());
 }
 
 TEST_F(JsepTransportControllerTest,
@@ -1912,11 +1969,13 @@ TEST_F(JsepTransportControllerTest,
                   nullptr);
   remote_answer->AddGroup(bundle_group);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -1943,10 +2002,11 @@ TEST_F(JsepTransportControllerTest,
                   nullptr);
   subsequent_offer->AddGroup(new_bundle_group1);
   subsequent_offer->AddGroup(new_bundle_group2);
-  EXPECT_FALSE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, subsequent_offer.get())
-          .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer,
+                                         subsequent_offer.get(),
+                                         remote_answer.get())
+                   .ok());
 }
 
 TEST_F(JsepTransportControllerTest,
@@ -1997,11 +2057,13 @@ TEST_F(JsepTransportControllerTest,
   remote_answer->AddGroup(bundle_group1);
   remote_answer->AddGroup(bundle_group2);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -2028,10 +2090,11 @@ TEST_F(JsepTransportControllerTest,
                   nullptr);
   subsequent_offer->AddGroup(new_bundle_group1);
   subsequent_offer->AddGroup(new_bundle_group2);
-  EXPECT_FALSE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, subsequent_offer.get())
-          .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer,
+                                         subsequent_offer.get(),
+                                         remote_answer.get())
+                   .ok());
 }
 
 
@@ -2065,11 +2128,13 @@ TEST_F(JsepTransportControllerTest, BundleSubsetOfMediaSections) {
 
   local_offer->AddGroup(bundle_group);
   remote_answer->AddGroup(bundle_group);
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -2106,11 +2171,13 @@ TEST_F(JsepTransportControllerTest, BundleOnDataSectionInSubsequentOffer) {
   local_offer->AddGroup(bundle_group);
   remote_answer->AddGroup(bundle_group);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
   auto data_transport = transport_controller_->GetRtpTransport(kDataMid1);
 
@@ -2132,15 +2199,17 @@ TEST_F(JsepTransportControllerTest, BundleOnDataSectionInSubsequentOffer) {
   bundle_group.AddContentName(kAudioMid1);
   bundle_group.AddContentName(kVideoMid1);
   local_offer->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
-  remote_answer->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
   local_offer->AddGroup(bundle_group);
-  remote_answer->AddGroup(bundle_group);
 
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get(),
+                                        remote_answer.get())
                   .ok());
+  remote_answer->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  remote_answer->AddGroup(bundle_group);
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   auto audio_transport = transport_controller_->GetRtpTransport(kAudioMid1);
@@ -2186,11 +2255,13 @@ TEST_F(JsepTransportControllerTest, VideoDataRejectedInAnswer) {
   local_offer->AddGroup(bundle_group);
   remote_answer->AddGroup(bundle_group);
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -2233,11 +2304,13 @@ TEST_F(JsepTransportControllerTest, ChangeBundledMidNotSupported) {
 
   local_offer->AddGroup(bundle_group);
   remote_answer->AddGroup(bundle_group);
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
   EXPECT_EQ(transport_controller_->GetRtpTransport(kAudioMid1),
             transport_controller_->GetRtpTransport(kVideoMid1));
@@ -2245,15 +2318,17 @@ TEST_F(JsepTransportControllerTest, ChangeBundledMidNotSupported) {
   
   EXPECT_TRUE(bundle_group.RemoveContentName(kAudioMid1));
   bundle_group.AddContentName(kAudioMid1);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get(),
+                                        remote_answer.get())
+                  .ok());
   
   
   remote_answer->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
   remote_answer->AddGroup(bundle_group);
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 }
 
@@ -2294,18 +2369,21 @@ TEST_F(JsepTransportControllerTest, RejectFirstContentInBundleGroup) {
   local_offer->AddGroup(bundle_group);
   remote_answer->AddGroup(bundle_group);
 
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 
   
   remote_answer->contents()[1].rejected = true;
   remote_answer->contents()[2].rejected = true;
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
   EXPECT_EQ(nullptr, transport_controller_->GetRtpTransport(kAudioMid1));
   EXPECT_EQ(nullptr, transport_controller_->GetRtpTransport(kVideoMid1));
@@ -2325,9 +2403,10 @@ TEST_F(JsepTransportControllerTest, ApplyNonRtcpMuxOfferWhenMuxingRequired) {
 
   local_offer->contents()[0].media_description()->set_rtcp_mux(false);
   
-  EXPECT_FALSE(transport_controller_
-                   ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                   .ok());
+  EXPECT_FALSE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
 }
 
 
@@ -2340,9 +2419,10 @@ TEST_F(JsepTransportControllerTest, ApplyNonRtcpMuxAnswerWhenMuxingRequired) {
   AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
 
   auto remote_answer = std::make_unique<cricket::SessionDescription>();
   AddAudioSection(remote_answer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
@@ -2351,7 +2431,8 @@ TEST_F(JsepTransportControllerTest, ApplyNonRtcpMuxAnswerWhenMuxingRequired) {
   
   remote_answer->contents()[0].media_description()->set_rtcp_mux(false);
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 }
 
@@ -2371,11 +2452,13 @@ TEST_F(JsepTransportControllerTest,
   answer_bundle_group.AddContentName(kAudioMid1);
   answer_bundle_group.AddContentName(kVideoMid1);
   remote_answer->AddGroup(answer_bundle_group);
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 }
 
@@ -2392,11 +2475,13 @@ TEST_F(JsepTransportControllerTest, RejectBundleGroupWithNonExistingMid) {
   local_offer->AddGroup(invalid_bundle_group);
   remote_answer->AddGroup(invalid_bundle_group);
 
+  EXPECT_FALSE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_FALSE(transport_controller_
-                   ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                   .ok());
-  EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          remote_answer.get())
                    .ok());
 }
 
@@ -2407,16 +2492,19 @@ TEST_F(JsepTransportControllerTest, RemoveContentFromBundleGroup) {
 
   auto local_offer = CreateSessionDescriptionWithBundleGroup();
   auto remote_answer = CreateSessionDescriptionWithBundleGroup();
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get(),
+                                        remote_answer.get())
                   .ok());
   auto new_answer = CreateSessionDescriptionWithoutBundle();
   cricket::ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
@@ -2427,7 +2515,8 @@ TEST_F(JsepTransportControllerTest, RemoveContentFromBundleGroup) {
 
   
   EXPECT_FALSE(transport_controller_
-                   ->SetRemoteDescription(SdpType::kAnswer, new_answer.get())
+                   ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                          new_answer.get())
                    .ok());
 
   
@@ -2435,7 +2524,8 @@ TEST_F(JsepTransportControllerTest, RemoveContentFromBundleGroup) {
   ASSERT_TRUE(video_content);
   video_content->rejected = true;
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, new_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         new_answer.get())
                   .ok());
 }
 
@@ -2453,14 +2543,16 @@ TEST_F(JsepTransportControllerTest, ChangeTaggedMediaSectionMaxBundle) {
   cricket::ContentGroup bundle_group(cricket::GROUP_TYPE_BUNDLE);
   bundle_group.AddContentName(kAudioMid1);
   local_offer->AddGroup(bundle_group);
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
 
   std::unique_ptr<cricket::SessionDescription> remote_answer(
       local_offer->Clone());
   EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   std::unique_ptr<cricket::SessionDescription> local_reoffer(
@@ -2475,14 +2567,15 @@ TEST_F(JsepTransportControllerTest, ChangeTaggedMediaSectionMaxBundle) {
   local_reoffer->AddGroup(new_bundle_group);
 
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get())
+                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get(),
+                                        remote_answer.get())
                   .ok());
   std::unique_ptr<cricket::SessionDescription> remote_reanswer(
       local_reoffer->Clone());
-  EXPECT_TRUE(
-      transport_controller_
-          ->SetRemoteDescription(SdpType::kAnswer, remote_reanswer.get())
-          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, local_reoffer.get(),
+                                         remote_reanswer.get())
+                  .ok());
 }
 
 TEST_F(JsepTransportControllerTest, RollbackRestoresRejectedTransport) {
@@ -2496,11 +2589,13 @@ TEST_F(JsepTransportControllerTest, RollbackRestoresRejectedTransport) {
                   nullptr);
   std::unique_ptr<cricket::SessionDescription> remote_answer(
       local_offer->Clone());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   auto mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
@@ -2514,7 +2609,8 @@ TEST_F(JsepTransportControllerTest, RollbackRestoresRejectedTransport) {
   local_reoffer->contents()[0].rejected = true;
 
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get())
+                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get(),
+                                        remote_answer.get())
                   .ok());
   auto old_mid1_transport = mid1_transport;
   mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
@@ -2556,11 +2652,13 @@ TEST_F(JsepTransportControllerTest, RollbackRestoresPreviousTransportMapping) {
   std::unique_ptr<cricket::SessionDescription> remote_answer(
       local_offer->Clone());
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   auto mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
@@ -2585,7 +2683,8 @@ TEST_F(JsepTransportControllerTest, RollbackRestoresPreviousTransportMapping) {
   local_reoffer->AddGroup(bundle_group);
 
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get())
+                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get(),
+                                        remote_answer.get())
                   .ok());
 
   
@@ -2633,11 +2732,13 @@ TEST_F(JsepTransportControllerTest, RollbackAndAddToDifferentBundleGroup) {
   std::unique_ptr<cricket::SessionDescription> remote_answer(
       local_offer->Clone());
 
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetLocalDescription(SdpType::kOffer, local_offer.get(), nullptr)
+          .ok());
   EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  ->SetRemoteDescription(SdpType::kAnswer, local_offer.get(),
+                                         remote_answer.get())
                   .ok());
 
   
@@ -2657,10 +2758,11 @@ TEST_F(JsepTransportControllerTest, RollbackAndAddToDifferentBundleGroup) {
   subsequent_offer_1->AddGroup(modified_bundle_group1);
   subsequent_offer_1->AddGroup(bundle_group2);
 
-  EXPECT_TRUE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, subsequent_offer_1.get())
-          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer,
+                                        subsequent_offer_1.get(),
+                                        remote_answer.get())
+                  .ok());
 
   auto mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
   auto mid2_transport = transport_controller_->GetRtpTransport(kMid2Audio);
@@ -2689,10 +2791,11 @@ TEST_F(JsepTransportControllerTest, RollbackAndAddToDifferentBundleGroup) {
   subsequent_offer_2->AddGroup(bundle_group1);
   subsequent_offer_2->AddGroup(modified_bundle_group2);
 
-  EXPECT_TRUE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, subsequent_offer_2.get())
-          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer,
+                                        subsequent_offer_2.get(),
+                                        remote_answer.get())
+                  .ok());
 
   mid1_transport = transport_controller_->GetRtpTransport(kMid1Audio);
   mid2_transport = transport_controller_->GetRtpTransport(kMid2Audio);
@@ -2722,9 +2825,9 @@ TEST_F(JsepTransportControllerTest, BundleOnlySectionDoesNotNeedRtcpMux) {
   offer->contents()[1].media_description()->set_rtcp_mux(false);
   offer->contents()[1].bundle_only = true;
 
-  EXPECT_TRUE(
-      transport_controller_->SetRemoteDescription(SdpType::kOffer, offer.get())
-          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, nullptr, offer.get())
+                  .ok());
 }
 
 
@@ -2738,9 +2841,9 @@ TEST_F(JsepTransportControllerTest,
   AddAudioSection(offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
                   nullptr);
-  EXPECT_TRUE(
-      transport_controller_->SetRemoteDescription(SdpType::kOffer, offer.get())
-          .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, nullptr, offer.get())
+                  .ok());
 }
 
 }  

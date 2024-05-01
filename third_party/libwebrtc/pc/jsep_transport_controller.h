@@ -161,11 +161,24 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   
   
+  
+  
+  
+  
+  
   RTCError SetLocalDescription(SdpType type,
-                               const cricket::SessionDescription* description);
+                               const cricket::SessionDescription* local_desc,
+                               const cricket::SessionDescription* remote_desc);
 
+  
+  
+  
+  
+  
+  
   RTCError SetRemoteDescription(SdpType type,
-                                const cricket::SessionDescription* description);
+                                const cricket::SessionDescription* local_desc,
+                                const cricket::SessionDescription* remote_desc);
 
   
   
@@ -325,14 +338,23 @@ class JsepTransportController : public sigslot::has_slots<> {
   CallbackList<const cricket::CandidatePairChangeEvent&>
       signal_ice_candidate_pair_changed_ RTC_GUARDED_BY(network_thread_);
 
+  
+  
+  
+  
+  
+  
   RTCError ApplyDescription_n(bool local,
                               SdpType type,
-                              const cricket::SessionDescription* description)
+                              const cricket::SessionDescription* local_desc,
+                              const cricket::SessionDescription* remote_desc)
       RTC_RUN_ON(network_thread_);
   RTCError ValidateAndMaybeUpdateBundleGroups(
       bool local,
       SdpType type,
-      const cricket::SessionDescription* description);
+      const cricket::SessionDescription* local_desc,
+      const cricket::SessionDescription* remote_desc)
+      RTC_RUN_ON(network_thread_);
   RTCError ValidateContent(const cricket::ContentInfo& content_info);
 
   void HandleRejectedContent(const cricket::ContentInfo& content_info)
@@ -481,8 +503,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   const Config config_;
   bool active_reset_srtp_params_ RTC_GUARDED_BY(network_thread_);
 
-  const cricket::SessionDescription* local_desc_ = nullptr;
-  const cricket::SessionDescription* remote_desc_ = nullptr;
   absl::optional<bool> initial_offerer_;
 
   cricket::IceConfig ice_config_;
