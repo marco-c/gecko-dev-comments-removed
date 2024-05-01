@@ -3947,11 +3947,7 @@ pref("security.external_protocol_requires_permission", true);
 pref("extensions.formautofill.available", "detect");
 pref("extensions.formautofill.addresses.supported", "detect");
 pref("extensions.formautofill.addresses.enabled", true);
-#if defined(NIGHTLY_BUILD)
-  pref("extensions.formautofill.addresses.capture.enabled", true);
-#else
-  pref("extensions.formautofill.addresses.capture.enabled", false);
-#endif
+pref("extensions.formautofill.addresses.capture.enabled", true);
 #if defined(ANDROID)
   
   
