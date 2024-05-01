@@ -75,6 +75,12 @@ class FFmpegVideoEncoder<LIBAV_VER> final : public MediaDataEncoder {
   Result<already_AddRefed<MediaByteBuffer>, nsresult> GetExtraData(
       AVPacket* aPacket);
   void ForceEnablingFFmpegDebugLogs();
+  struct SVCSettings {
+    nsTArray<uint8_t> mTemporalLayerIds;
+    
+    std::pair<nsCString, nsCString> mSettingKeyValue;
+  };
+  Maybe<SVCSettings> GetSVCSettings();
 
   
   const FFmpegLibWrapper* mLib;

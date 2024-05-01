@@ -504,67 +504,28 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitInternal() {
   mCodecContext->flags |= AV_CODEC_FLAG_FRAME_DURATION;
 #endif
   mCodecContext->gop_size = static_cast<int>(mConfig.mKeyframeInterval);
-  
-  
+
   if (mConfig.mUsage == MediaDataEncoder::Usage::Realtime) {
     mLib->av_opt_set(mCodecContext->priv_data, "deadline", "realtime", 0);
     
     
     mLib->av_opt_set(mCodecContext->priv_data, "lag-in-frames", "0", 0);
   }
-  
-  if (Maybe<VPXSVCSetting> svc =
-          GetVPXSVCSetting(mConfig.mScalabilityMode, mConfig.mBitrate)) {
+
+  if (Maybe<SVCSettings> settings = GetSVCSettings()) {
+    SVCSettings s = settings.extract();
+    mLib->av_opt_set(mCodecContext->priv_data, s.mSettingKeyValue.first.get(),
+                     s.mSettingKeyValue.second.get(), 0);
+
     
-    if (mCodecName == "libvpx" || mCodecName == "libvpx-vp9") {
-      
-      if (mConfig.mCodecSpecific) {
-        if (mConfig.mCodecSpecific->is<VP8Specific>() ||
-            mConfig.mCodecSpecific->is<VP9Specific>()) {
-          const uint8_t numTemporalLayers =
-              mConfig.mCodecSpecific->is<VP8Specific>()
-                  ? mConfig.mCodecSpecific->as<VP8Specific>().mNumTemporalLayers
-                  : mConfig.mCodecSpecific->as<VP9Specific>()
-                        .mNumTemporalLayers;
-          if (numTemporalLayers != svc->mNumberLayers) {
-            FFMPEGV_LOG(
-                "Force using %zu layers defined in scalability mode instead of "
-                "the %u layers defined in VP8/9Specific",
-                svc->mNumberLayers, numTemporalLayers);
-          }
-        }
-      }
+    
+    mSVCInfo.reset();
+    mSVCInfo.emplace(std::move(s.mTemporalLayerIds));
 
-      
-      nsPrintfCString parameters("ts_layering_mode=%u", svc->mLayeringMode);
-      
-      parameters.Append(":ts_target_bitrate=");
-      for (size_t i = 0; i < svc->mTargetBitrates.Length(); ++i) {
-        if (i > 0) {
-          parameters.Append(",");
-        }
-        parameters.AppendPrintf("%d", svc->mTargetBitrates[i]);
-      }
-      
-      
-      
-
-      
-      mLib->av_opt_set(mCodecContext->priv_data, "ts-parameters",
-                       parameters.get(), 0);
-
-      
-      
-      mSVCInfo.reset();
-      mSVCInfo.emplace(std::move(svc->mLayerIds));
-
-      
-      
-    } else {
-      FFMPEGV_LOG("SVC setting is not implemented for %s codec",
-                  mCodecName.get());
-    }
+    
+    
   }
+
   
   nsAutoCString codecSpecificLog;
   if (mConfig.mCodecSpecific) {
@@ -1150,6 +1111,64 @@ void FFmpegVideoEncoder<LIBAV_VER>::ForceEnablingFFmpegDebugLogs() {
     mLib->av_log_set_level(AV_LOG_DEBUG);
   }
 #endif  
+}
+
+Maybe<FFmpegVideoEncoder<LIBAV_VER>::SVCSettings>
+FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
+  MOZ_ASSERT(!mCodecName.IsEmpty());
+
+  
+  if (mCodecName != "libvpx" && mCodecName != "libvpx-vp9") {
+    FFMPEGV_LOG("SVC setting is not implemented for %s codec",
+                mCodecName.get());
+    return Nothing();
+  }
+
+  Maybe<VPXSVCSetting> svc =
+      GetVPXSVCSetting(mConfig.mScalabilityMode, mConfig.mBitrate);
+  if (!svc) {
+    FFMPEGV_LOG("No SVC settings obtained. Skip");
+    return Nothing();
+  }
+
+  
+  
+
+  auto GetNumTemporalLayers = [&]() -> uint8_t {
+    uint8_t layers = 0;
+    if (mConfig.mCodecSpecific) {
+      if (mConfig.mCodecSpecific->is<VP8Specific>()) {
+        layers = mConfig.mCodecSpecific->as<VP8Specific>().mNumTemporalLayers;
+        MOZ_ASSERT(layers > 0);
+      } else if (mConfig.mCodecSpecific->is<VP9Specific>()) {
+        layers = mConfig.mCodecSpecific->as<VP9Specific>().mNumTemporalLayers;
+        MOZ_ASSERT(layers > 0);
+      }
+    }
+    return layers;
+  };
+
+  DebugOnly<uint8_t> numTemporalLayers = GetNumTemporalLayers();
+  MOZ_ASSERT_IF(numTemporalLayers > 0, numTemporalLayers == svc->mNumberLayers);
+
+  
+
+  nsPrintfCString parameters("ts_layering_mode=%u", svc->mLayeringMode);
+  parameters.Append(":ts_target_bitrate=");
+  for (size_t i = 0; i < svc->mTargetBitrates.Length(); ++i) {
+    if (i > 0) {
+      parameters.Append(",");
+    }
+    parameters.AppendPrintf("%d", svc->mTargetBitrates[i]);
+  }
+
+  
+  
+  
+
+  return Some(
+      SVCSettings{std::move(svc->mLayerIds),
+                  std::make_pair("ts-parameters"_ns, std::move(parameters))});
 }
 
 }  
