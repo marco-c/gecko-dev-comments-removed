@@ -566,6 +566,12 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   void setDataPointer(BufferContents contents);
   void setByteLength(size_t length);
 
+  
+
+
+
+  inline size_t maxByteLength() const;
+
   size_t associatedBytes() const;
 
   uint32_t flags() const;
@@ -702,6 +708,13 @@ class ResizableArrayBufferObject : public ArrayBufferObject {
       JSContext* cx, size_t newByteLength,
       JS::Handle<ResizableArrayBufferObject*> source);
 };
+
+size_t ArrayBufferObject::maxByteLength() const {
+  if (isResizable()) {
+    return as<ResizableArrayBufferObject>().maxByteLength();
+  }
+  return byteLength();
+}
 
 
 
