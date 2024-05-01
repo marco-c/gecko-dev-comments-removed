@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
 import sys
@@ -47,8 +47,8 @@ class TestChecksConfigure(unittest.TestCase):
         data = ["foo", "bar"]
         test(data, "checking for a thing... %r\n" % data)
 
-        
-        
+        # When the function given to checking does nothing interesting, the
+        # behavior is not altered
         test = make_test(
             textwrap.dedent(
                 """
@@ -531,7 +531,7 @@ class TestChecksConfigure(unittest.TestCase):
             out,
             textwrap.dedent(
                 """\
-            checking for a... """  
+            checking for a... """  # noqa  # trailing whitespace...
                 """
             DEBUG: a: Looking for known-a
             ERROR: Paths provided to find_program must be a list of strings, not %r
@@ -559,7 +559,7 @@ class TestChecksConfigure(unittest.TestCase):
                 % {"topsrcdir": topsrcdir}
             )
 
-            
+            # Don't let system JAVA_HOME influence the test
             original_java_home = os.environ.pop("JAVA_HOME", None)
             configure_environ = {}
 
@@ -570,13 +570,13 @@ class TestChecksConfigure(unittest.TestCase):
             if mock_path:
                 configure_environ["PATH"] = mock_path
 
-            
-            
-            
-            
-            
-            
-            
+            # * Even if the real file sysphabtem has a symlink at the mocked path, don't let
+            #   realpath follow it, as it may influence the test.
+            # * When finding a binary, check the mock paths rather than the real filesystem.
+            # Note: Python doesn't allow the different "with" bits to be put in parenthesis,
+            # because then it thinks it's an un-with-able tuple. Additionally, if this is cleanly
+            # lined up with "\", black removes them and autoformats them to the block that is
+            # below.
             result = self.get_result(
                 args=args,
                 command=script,
@@ -592,7 +592,7 @@ class TestChecksConfigure(unittest.TestCase):
         javac = mozpath.abspath("/usr/bin/javac")
         paths = {java: None, javac: None}
         expected_error_message = (
-            "ERROR: Could not locate Java at /mozbuild/jdk/jdk-17.0.9+9/bin, "
+            "ERROR: Could not locate Java at /mozbuild/jdk/jdk-17.0.10+7/bin, "
             "please run ./mach bootstrap --no-system-changes\n"
         )
 
@@ -601,7 +601,7 @@ class TestChecksConfigure(unittest.TestCase):
         self.assertEqual(config, {})
         self.assertEqual(out, expected_error_message)
 
-        
+        # An alternative valid set of tools referred to by JAVA_HOME.
         alt_java = mozpath.abspath("/usr/local/bin/java")
         alt_javac = mozpath.abspath("/usr/local/bin/javac")
         alt_java_home = mozpath.dirname(mozpath.dirname(alt_java))
@@ -613,8 +613,8 @@ class TestChecksConfigure(unittest.TestCase):
         self.assertEqual(config, {})
         self.assertEqual(out, expected_error_message)
 
-        
-        
+        # We can use --with-java-bin-path instead of JAVA_HOME to similar
+        # effect.
         config, out, status = run_configure_java(
             paths,
             mock_path=mozpath.dirname(java),
@@ -632,8 +632,8 @@ class TestChecksConfigure(unittest.TestCase):
             ),
         )
 
-        
-        
+        # If --with-java-bin-path and JAVA_HOME are both set,
+        # --with-java-bin-path takes precedence.
         config, out, status = run_configure_java(
             paths,
             mock_java_home=mozpath.dirname(mozpath.dirname(java)),
@@ -652,7 +652,7 @@ class TestChecksConfigure(unittest.TestCase):
             ),
         )
 
-        
+        # --enable-java-coverage should set MOZ_JAVA_CODE_COVERAGE.
         alt_java_home = mozpath.dirname(mozpath.dirname(java))
         config, out, status = run_configure_java(
             paths,
@@ -663,7 +663,7 @@ class TestChecksConfigure(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertEqual(config, {})
 
-        
+        # Any missing tool is fatal when these checks run.
         paths = {}
         config, out, status = run_configure_java(
             mock_fs_paths={},
@@ -862,7 +862,7 @@ class TestChecksConfigure(unittest.TestCase):
         )
         self.assertEqual(config, {"PKG_CONFIG": mock_pkg_config_path})
 
-        
+        # allow_missing makes missing packages non-fatal.
         cmd = textwrap.dedent(
             """\
         have_new_module = pkg_check_modules('MOZ_NEW', 'new > 1.1', allow_missing=True)
