@@ -17,13 +17,20 @@ add_task(async () => {
      <iframe id="iframe-org" src="https://example.org/document-builder.sjs?delay=3000&html=${iframeOrgHtml}"></iframe>
      <iframe id="iframe-com" src="https://example.com/document-builder.sjs?delay=6000&html=${iframeComHtml}"></iframe>`
   );
-  const tab = await addTab(
-    "https://example.org/document-builder.sjs?html=" + html,
-    { waitForLoad: false }
-  );
+  const testUrl = "https://example.org/document-builder.sjs?html=" + html;
+
+  
+  const tab = await addTab(testUrl, { waitForLoad: false });
 
   const commands = await CommandsFactory.forTab(tab);
   await commands.targetCommand.startListening();
+
+  
+  
+  await waitFor(
+    () => commands.targetCommand.targetFront.url == testUrl,
+    "Waiting for the top level target to refer to the test page"
+  );
 
   info("Check that it returns null when no params are passed");
   let nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors();
