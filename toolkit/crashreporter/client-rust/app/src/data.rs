@@ -60,11 +60,6 @@ impl<T> Event<T> {
 
 
 
-
-
-
-
-
 #[derive(Default)]
 pub struct Synchronized<T> {
     inner: Rc<SynchronizedInner<T>>,
@@ -186,7 +181,12 @@ impl<T> OnDemand<T> {
     
     pub fn read(&self, value: &mut T) {
         match &*self.get.borrow() {
-            None => panic!("OnDemand not registered by renderer"),
+            None => {
+                
+                
+                #[cfg(not(test))]
+                panic!("OnDemand not registered by renderer")
+            }
             Some(f) => f(value),
         }
     }
