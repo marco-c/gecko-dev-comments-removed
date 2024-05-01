@@ -934,8 +934,12 @@ NS_IMETHODIMP CacheStorageService::PurgeFromMemoryRunnable::Run() {
 
   if (mService) {
     
-    mService->Pool(MemoryPool::EType::DISK).PurgeAll(mWhat);
-    mService->Pool(MemoryPool::EType::MEMORY).PurgeAll(mWhat);
+    
+    
+    
+    mService->Pool(MemoryPool::EType::MEMORY)
+        .PurgeAll(mWhat, StaticPrefs::network_cache_purge_minprogress_memory());
+    mService->Pool(MemoryPool::EType::DISK).PurgeAll(mWhat, 0);
     mService = nullptr;
   }
 
@@ -1349,24 +1353,37 @@ void CacheStorageService::PurgeExpiredOrOverMemoryLimit() {
 
   mLastPurgeTime = now;
 
-  Pool(MemoryPool::EType::DISK).PurgeExpiredOrOverMemoryLimit();
+  
+  
   Pool(MemoryPool::EType::MEMORY).PurgeExpiredOrOverMemoryLimit();
+  Pool(MemoryPool::EType::DISK).PurgeExpiredOrOverMemoryLimit();
 }
 
 void CacheStorageService::MemoryPool::PurgeExpiredOrOverMemoryLimit() {
   TimeStamp start(TimeStamp::Now());
 
   uint32_t const memoryLimit = Limit();
+  size_t minprogress =
+      (mType == EType::DISK)
+          ? StaticPrefs::network_cache_purge_minprogress_disk()
+          : StaticPrefs::network_cache_purge_minprogress_memory();
 
   
-  size_t numExpired = PurgeExpired();
+  size_t numExpired = PurgeExpired(minprogress);
   if (numExpired > 0) {
     LOG(("  found and purged %zu expired entries", numExpired));
   }
+  minprogress = (minprogress > numExpired) ? minprogress - numExpired : 0;
 
   
   if (mMemorySize > memoryLimit) {
-    auto r = PurgeByFrecency();
+    
+    
+    if (minprogress == 0 && CacheIOThread::YieldAndRerun()) {
+      return;
+    }
+
+    auto r = PurgeByFrecency(minprogress);
     if (MOZ_LIKELY(r.isOk())) {
       size_t numPurged = r.unwrap();
       LOG((
@@ -1374,7 +1391,7 @@ void CacheStorageService::MemoryPool::PurgeExpiredOrOverMemoryLimit() {
           numPurged));
     } else {
       
-      size_t numPurged = PurgeAll(CacheEntry::PURGE_WHOLE);
+      size_t numPurged = PurgeAll(CacheEntry::PURGE_WHOLE, minprogress);
       LOG(
           ("  memory data consumption over the limit, emergency purged all %zu "
            "entries",
@@ -1386,13 +1403,12 @@ void CacheStorageService::MemoryPool::PurgeExpiredOrOverMemoryLimit() {
 }
 
 
-size_t CacheStorageService::MemoryPool::PurgeExpired() {
+size_t CacheStorageService::MemoryPool::PurgeExpired(size_t minprogress) {
   MOZ_ASSERT(IsOnManagementThread());
 
   uint32_t now = NowInSeconds();
 
   size_t numPurged = 0;
-
   
   
   RefPtr<CacheEntry> entry = mManagedEntries.getFirst();
@@ -1413,7 +1429,7 @@ size_t CacheStorageService::MemoryPool::PurgeExpired() {
 
     
     
-    if ((numPurged > 0 || mMemorySize <= Limit()) &&
+    if ((numPurged >= minprogress || mMemorySize <= Limit()) &&
         CacheIOThread::YieldAndRerun()) {
       break;
     }
@@ -1422,7 +1438,8 @@ size_t CacheStorageService::MemoryPool::PurgeExpired() {
   return numPurged;
 }
 
-Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency() {
+Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency(
+    size_t minprogress) {
   MOZ_ASSERT(IsOnManagementThread());
 
   
@@ -1473,13 +1490,6 @@ Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency() {
 
   size_t numPurged = 0;
 
-  
-  
-  
-  size_t minprogress =
-      (mType == EType::DISK)
-          ? StaticPrefs::network_cache_purgebyfrecency_minprogress_disk()
-          : StaticPrefs::network_cache_purgebyfrecency_minprogress_memory();
   for (auto& checkPurge : mayPurgeSorted) {
     if (mMemorySize <= memoryLimit) {
       break;
@@ -1504,7 +1514,8 @@ Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency() {
   return numPurged;
 }
 
-size_t CacheStorageService::MemoryPool::PurgeAll(uint32_t aWhat) {
+size_t CacheStorageService::MemoryPool::PurgeAll(uint32_t aWhat,
+                                                 size_t minprogress) {
   LOG(("CacheStorageService::MemoryPool::PurgeAll aWhat=%d", aWhat));
   MOZ_ASSERT(IsOnManagementThread());
 
@@ -1512,7 +1523,7 @@ size_t CacheStorageService::MemoryPool::PurgeAll(uint32_t aWhat) {
 
   RefPtr<CacheEntry> entry = mManagedEntries.getFirst();
   while (entry) {
-    if (numPurged > 0 && CacheIOThread::YieldAndRerun()) break;
+    if (numPurged >= minprogress && CacheIOThread::YieldAndRerun()) break;
 
     
     RefPtr<CacheEntry> nextEntry = entry->getNext();
