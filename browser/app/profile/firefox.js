@@ -2494,8 +2494,6 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 pref("browser.privatebrowsing.felt-privacy-v1", false);
 
-pref("browser.toolbars.bookmarks.showInPrivateBrowsing", false);
-
 
 
 

@@ -528,13 +528,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "gBookmarksToolbarShowInPrivate",
-  "browser.toolbars.bookmarks.showInPrivateBrowsing",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "gFxaToolbarEnabled",
   "identity.fxaccounts.toolbar.enabled",
   false,
@@ -744,22 +737,13 @@ function browserWindows() {
 }
 
 function updateBookmarkToolbarVisibility() {
-  
-  if (
-    gUseFeltPrivacyUI &&
-    !gBookmarksToolbarShowInPrivate &&
-    PrivateBrowsingUtils.isWindowPrivate(window)
-  ) {
-    setToolbarVisibility(BookmarkingUI.toolbar, false, false, false);
-  } else {
-    BookmarkingUI.updateEmptyToolbarMessage();
-    setToolbarVisibility(
-      BookmarkingUI.toolbar,
-      gBookmarksToolbarVisibility,
-      false,
-      false
-    );
-  }
+  BookmarkingUI.updateEmptyToolbarMessage();
+  setToolbarVisibility(
+    BookmarkingUI.toolbar,
+    gBookmarksToolbarVisibility,
+    false,
+    false
+  );
 }
 
 
