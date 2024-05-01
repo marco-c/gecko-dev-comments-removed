@@ -16,8 +16,8 @@ pub type HRESULT = i32;
 pub const S_OK: i32 = 0;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GpPointR {
-    pub x: f64,
-    pub y: f64
+    pub x: f32,
+    pub y: f32
 }
 
 impl Sub for GpPointR {
@@ -48,32 +48,32 @@ impl SubAssign for GpPointR {
     }
 }
 
-impl MulAssign<f64> for GpPointR {
-    fn mul_assign(&mut self, rhs: f64) {
+impl MulAssign<f32> for GpPointR {
+    fn mul_assign(&mut self, rhs: f32) {
         *self = *self * rhs;
     }
 }
 
 
-impl Mul<f64> for GpPointR {
+impl Mul<f32> for GpPointR {
     type Output = Self;
 
-    fn mul(self, rhs: f64) -> Self::Output {
+    fn mul(self, rhs: f32) -> Self::Output {
         GpPointR { x: self.x * rhs, y: self.y * rhs }
     }
 }
 
-impl Div<f64> for GpPointR {
+impl Div<f32> for GpPointR {
     type Output = Self;
 
-    fn div(self, rhs: f64) -> Self::Output {
+    fn div(self, rhs: f32) -> Self::Output {
         GpPointR { x: self.x / rhs, y: self.y / rhs }
     }
 }
 
 
 impl Mul for GpPointR {
-    type Output = f64;
+    type Output = f32;
 
     fn mul(self, rhs: Self) -> Self::Output {
         self.x * rhs.x +  self.y * rhs.y
@@ -81,17 +81,17 @@ impl Mul for GpPointR {
 }
 
 impl GpPointR {
-    pub fn ApproxNorm(&self) -> f64 {
+    pub fn ApproxNorm(&self) -> f32 {
         self.x.abs().max(self.y.abs())
     }
-    pub fn Norm(&self) -> f64 {
+    pub fn Norm(&self) -> f32 {
         self.x.hypot(self.y)
     }
 }
 
 
 
-const  SQ_LENGTH_FUZZ: f64 = 1.0e-4;
+const  SQ_LENGTH_FUZZ: f32 = 1.0e-4;
 
 
 
@@ -103,7 +103,7 @@ const  SQ_LENGTH_FUZZ: f64 = 1.0e-4;
 
 
 
-const TWICE_MIN_BEZIER_STEP_SIZE: f64 = 1.0e-3; 
+const TWICE_MIN_BEZIER_STEP_SIZE: f32 = 1.0e-3; 
                                                  
 
 
@@ -318,7 +318,7 @@ pub trait CFlatteningSink {
         fn AcceptPoint(&mut self,
             pt: &GpPointR,
                 
-            t: f64,
+            t: f32,
                 
             fAborted: &mut bool,
             lastPoint: bool
@@ -339,16 +339,16 @@ pub struct CBezierFlattener<'a>
     bezier: CBezier,
         
         m_pSink: &'a mut dyn CFlatteningSink,           
-        m_rTolerance: f64,       
+        m_rTolerance: f32,       
         m_fWithTangents: bool,    
-        m_rQuarterTolerance: f64,
-        m_rFuzz: f64,            
+        m_rQuarterTolerance: f32,
+        m_rFuzz: f32,            
     
         
         m_ptE: [GpPointR; 4],           
         m_cSteps: i32,           
-        m_rParameter: f64,       
-        m_rStepSize: f64,        
+        m_rParameter: f32,       
+        m_rStepSize: f32,        
 }
 impl<'a> CBezierFlattener<'a> {
     
@@ -449,7 +449,7 @@ impl<'a> CBezierFlattener<'a> {
 pub fn new(bezier: &CBezier,
     pSink: &'a mut dyn CFlatteningSink,
         
-    rTolerance: f64)       
+    rTolerance: f32)       
     -> Self 
 {
     let mut result = CBezierFlattener {
