@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=601470
+-->
 <head>
   <title>Test for Bug 601470</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -26,7 +26,7 @@ window.onload = function() {
     .getService(SpecialPowers.Ci.nsIMemoryReporterManager);
 
   var amount = 0;
-  var handleReport = function(aProcess, aPath, aKind, aUnits, aAmount, aDesc) {
+  var handleReport = function(aProcess, aPath, aKind, aUnits, aAmount) {
     amount += aAmount;
   }
 

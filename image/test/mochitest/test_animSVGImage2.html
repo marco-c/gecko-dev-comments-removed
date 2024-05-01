@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=907503
+-->
 <head>
   <title>Test for Bug 907503</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -55,7 +55,7 @@ function takeReferenceSnapshot() {
      "reference div should disappear when it becomes display:none");
 }
 
-function myOnFrameUpdate(aRequest) {
+function myOnFrameUpdate() {
   if (gIsTestFinished) {
     return;
   }

@@ -50,7 +50,7 @@ function checkClone(other_listener, aRequest) {
   
   var listener = new ImageListener(
     null,
-    function (foo, bar) {
+    function () {
       do_test_finished();
     } 
   );
@@ -63,7 +63,7 @@ function checkClone(other_listener, aRequest) {
 }
 
 
-function checkSizeAndLoad(listener, aRequest) {
+function checkSizeAndLoad(listener) {
   Assert.notEqual(listener.state & SIZE_AVAILABLE, 0);
   Assert.notEqual(listener.state & LOAD_COMPLETE, 0);
 
@@ -127,7 +127,7 @@ function checkSecondLoad() {
   listener.synchronous = false;
 }
 
-function firstLoadDone(oldlistener, aRequest) {
+function firstLoadDone() {
   checkSecondLoad(uri);
 
   do_test_finished();
@@ -136,7 +136,7 @@ function firstLoadDone(oldlistener, aRequest) {
 
 
 function getChannelLoadImageStopCallback(streamlistener, next) {
-  return function channelLoadStop(imglistener, aRequest) {
+  return function channelLoadStop() {
     next();
 
     do_test_finished();
@@ -216,7 +216,7 @@ function startImageCallback(otherCb) {
   return function (listener, request) {
     
     do_test_pending();
-    var listener2 = new ImageListener(null, function (foo, bar) {
+    var listener2 = new ImageListener(null, function () {
       do_test_finished();
     });
     var outer = Cc["@mozilla.org/image/tools;1"]
