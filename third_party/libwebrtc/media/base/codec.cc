@@ -62,6 +62,58 @@ bool IsSameCodecSpecific(const std::string& name1,
   return true;
 }
 
+bool MatchesMediaSubtype(const Codec& lhs, const Codec& rhs) {
+  
+  
+
+  
+  
+  
+  
+  
+  auto id_in_dynamic_range = [](int id) {
+    const int kLowerDynamicRangeMin = 35;
+    const int kLowerDynamicRangeMax = 65;
+    const int kUpperDynamicRangeMin = 96;
+    const int kUpperDynamicRangeMax = 127;
+    return (id >= kLowerDynamicRangeMin && id <= kLowerDynamicRangeMax) ||
+           (id >= kUpperDynamicRangeMin && id <= kUpperDynamicRangeMax);
+  };
+
+  if (lhs.type != rhs.type) {
+    return false;
+  }
+
+  return (id_in_dynamic_range(lhs.id) && id_in_dynamic_range(rhs.id))
+             ? absl::EqualsIgnoreCase(lhs.name, rhs.name)
+             : lhs.id == rhs.id;
+}
+
+bool MatchesMediaParameters(const Codec& lhs, const Codec& rhs) {
+  switch (lhs.type) {
+    case Codec::Type::kAudio:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return ((rhs.clockrate == 0 ) ||
+              lhs.clockrate == rhs.clockrate) &&
+             (rhs.bitrate == 0 || lhs.bitrate <= 0 ||
+              lhs.bitrate == rhs.bitrate) &&
+             ((rhs.channels < 2 && lhs.channels < 2) ||
+              lhs.channels == rhs.channels);
+
+    case Codec::Type::kVideo:
+      return IsSameCodecSpecific(lhs.name, lhs.params, rhs.name, rhs.params);
+  }
+}
+
 }  
 
 FeedbackParams::FeedbackParams() = default;
@@ -159,55 +211,14 @@ bool Codec::operator==(const Codec& c) const {
 }
 
 bool Codec::Matches(const Codec& codec) const {
-  
-  
+  return MatchesMediaSubtype(*this, codec) &&
+         MatchesMediaParameters(*this, codec) &&
+         (packetization == codec.packetization);
+}
 
-  
-  
-  
-  
-  
-  const int kLowerDynamicRangeMin = 35;
-  const int kLowerDynamicRangeMax = 65;
-  const int kUpperDynamicRangeMin = 96;
-  const int kUpperDynamicRangeMax = 127;
-  const bool is_id_in_dynamic_range =
-      (id >= kLowerDynamicRangeMin && id <= kLowerDynamicRangeMax) ||
-      (id >= kUpperDynamicRangeMin && id <= kUpperDynamicRangeMax);
-  const bool is_codec_id_in_dynamic_range =
-      (codec.id >= kLowerDynamicRangeMin &&
-       codec.id <= kLowerDynamicRangeMax) ||
-      (codec.id >= kUpperDynamicRangeMin && codec.id <= kUpperDynamicRangeMax);
-  bool matches_id = is_id_in_dynamic_range && is_codec_id_in_dynamic_range
-                        ? (absl::EqualsIgnoreCase(name, codec.name))
-                        : (id == codec.id);
-
-  auto matches_type_specific = [&]() {
-    switch (type) {
-      case Type::kAudio:
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return ((codec.clockrate == 0 ) ||
-                clockrate == codec.clockrate) &&
-               (codec.bitrate == 0 || bitrate <= 0 ||
-                bitrate == codec.bitrate) &&
-               ((codec.channels < 2 && channels < 2) ||
-                channels == codec.channels);
-
-      case Type::kVideo:
-        return IsSameCodecSpecific(name, params, codec.name, codec.params);
-    }
-  };
-
-  return matches_id && matches_type_specific();
+bool Codec::MatchesWithoutPacketization(const Codec& codec) const {
+  return MatchesMediaSubtype(*this, codec) &&
+         MatchesMediaParameters(*this, codec);
 }
 
 bool Codec::MatchesRtpCodec(const webrtc::RtpCodec& codec_capability) const {

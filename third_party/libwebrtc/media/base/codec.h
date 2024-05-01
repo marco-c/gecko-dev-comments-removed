@@ -112,6 +112,10 @@ struct RTC_EXPORT Codec {
   
   
   bool Matches(const Codec& codec) const;
+
+  
+  bool MatchesWithoutPacketization(const Codec& codec) const;
+
   bool MatchesRtpCodec(const webrtc::RtpCodec& capability) const;
 
   
