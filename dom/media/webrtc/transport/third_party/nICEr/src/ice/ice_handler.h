@@ -57,13 +57,7 @@ int component_id, nr_ice_cand_pair **potentials,int potential_ct);
   int (*stream_ready)(void *obj, nr_ice_media_stream *stream);
 
   
-  int (*stream_checking)(void* obj, nr_ice_media_stream* stream);
-
-  
   int (*stream_failed)(void *obj, nr_ice_media_stream *stream);
-
-  
-  int (*stream_disconnected)(void* obj, nr_ice_media_stream* stream);
 
   
   int (*ice_connected)(void *obj, nr_ice_peer_ctx *pctx);

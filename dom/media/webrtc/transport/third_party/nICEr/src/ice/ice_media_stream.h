@@ -72,7 +72,6 @@ struct nr_ice_media_stream_ {
 
 
   int obsolete;
-  int actually_started_checking;
 
 #define NR_ICE_MEDIA_STREAM_UNPAIRED           1
 #define NR_ICE_MEDIA_STREAM_CHECKS_FROZEN      2
