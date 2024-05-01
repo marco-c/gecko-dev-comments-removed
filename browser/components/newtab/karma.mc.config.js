@@ -210,10 +210,6 @@ module.exports = function (config) {
       mode: "none",
       devtool: "inline-source-map",
       
-      resolveLoader: {
-        alias: { inject: path.join(__dirname, "loaders/inject-loader") },
-      },
-      
       resolve: {
         extensions: [".js", ".jsx"],
         modules: [PATHS.moduleResolveDirectory, "node_modules"],

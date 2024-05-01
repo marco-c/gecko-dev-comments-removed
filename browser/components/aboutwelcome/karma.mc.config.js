@@ -162,12 +162,6 @@ module.exports = function (config) {
       mode: "none",
       devtool: "inline-source-map",
       
-      resolveLoader: {
-        alias: {
-          inject: path.join(__dirname, "../newtab/loaders/inject-loader"),
-        },
-      },
-      
       resolve: {
         extensions: [".js", ".jsx"],
         modules: [
