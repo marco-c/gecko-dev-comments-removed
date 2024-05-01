@@ -4,8 +4,7 @@
 
 
 
-use crate::custom_properties::Name;
-use crate::properties_and_values::value::ComputedValue as ComputedRegisteredValue;
+use crate::custom_properties::{Name, VariableValue};
 use crate::selector_map::PrecomputedHasher;
 use indexmap::IndexMap;
 use servo_arc::Arc;
@@ -23,8 +22,7 @@ impl Default for CustomPropertiesMap {
 }
 
 
-type OwnMap =
-    IndexMap<Name, Option<ComputedRegisteredValue>, BuildHasherDefault<PrecomputedHasher>>;
+type OwnMap = IndexMap<Name, Option<Arc<VariableValue>>, BuildHasherDefault<PrecomputedHasher>>;
 
 
 
@@ -71,12 +69,12 @@ const ANCESTOR_COUNT_LIMIT: usize = 4;
 
 pub struct Iter<'a> {
     current: &'a Inner,
-    current_iter: indexmap::map::Iter<'a, Name, Option<ComputedRegisteredValue>>,
+    current_iter: indexmap::map::Iter<'a, Name, Option<Arc<VariableValue>>>,
     descendants: smallvec::SmallVec<[&'a Inner; ANCESTOR_COUNT_LIMIT]>,
 }
 
 impl<'a> Iterator for Iter<'a> {
-    type Item = (&'a Name, &'a Option<ComputedRegisteredValue>);
+    type Item = (&'a Name, &'a Option<Arc<VariableValue>>);
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -143,14 +141,14 @@ impl Inner {
         self.len
     }
 
-    fn get(&self, name: &Name) -> Option<&ComputedRegisteredValue> {
+    fn get(&self, name: &Name) -> Option<&Arc<VariableValue>> {
         if let Some(p) = self.own_properties.get(name) {
             return p.as_ref();
         }
         self.parent.as_ref()?.get(name)
     }
 
-    fn insert(&mut self, name: &Name, value: Option<ComputedRegisteredValue>) {
+    fn insert(&mut self, name: &Name, value: Option<Arc<VariableValue>>) {
         let new = self.own_properties.insert(name.clone(), value).is_none();
         if new && self.parent.as_ref().map_or(true, |p| p.get(name).is_none()) {
             self.len += 1;
@@ -179,7 +177,7 @@ impl CustomPropertiesMap {
     }
 
     
-    pub fn get_index(&self, index: usize) -> Option<(&Name, &Option<ComputedRegisteredValue>)> {
+    pub fn get_index(&self, index: usize) -> Option<(&Name, &Option<Arc<VariableValue>>)> {
         if index >= self.len() {
             return None;
         }
@@ -188,11 +186,11 @@ impl CustomPropertiesMap {
     }
 
     
-    pub fn get(&self, name: &Name) -> Option<&ComputedRegisteredValue> {
+    pub fn get(&self, name: &Name) -> Option<&Arc<VariableValue>> {
         self.0.get(name)
     }
 
-    fn do_insert(&mut self, name: &Name, value: Option<ComputedRegisteredValue>) {
+    fn do_insert(&mut self, name: &Name, value: Option<Arc<VariableValue>>) {
         if let Some(inner) = Arc::get_mut(&mut self.0) {
             return inner.insert(name, value);
         }
@@ -216,7 +214,7 @@ impl CustomPropertiesMap {
     }
 
     
-    pub fn insert(&mut self, name: &Name, value: ComputedRegisteredValue) {
+    pub fn insert(&mut self, name: &Name, value: Arc<VariableValue>) {
         self.do_insert(name, Some(value))
     }
 
