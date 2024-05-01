@@ -928,10 +928,17 @@ void ChannelReceive::SetAssociatedSendChannel(
 void ChannelReceive::SetDepacketizerToDecoderFrameTransformer(
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  
-  
-  if (!frame_transformer || frame_transformer_delegate_) {
+  if (!frame_transformer) {
     RTC_DCHECK_NOTREACHED() << "Not setting the transformer?";
+    return;
+  }
+  if (frame_transformer_delegate_) {
+    
+    
+    
+    
+    RTC_CHECK_EQ(frame_transformer_delegate_->FrameTransformer(),
+                 frame_transformer);
     return;
   }
 
