@@ -53,13 +53,6 @@ def register(graph_config):
     """
     from taskgraph import generator
 
-    
-    
-    
-    from taskgraph.optimize.base import registry
-
-    del registry["skip-unless-changed"]
-
     from gecko_taskgraph import (  
         morph,  
         target_tasks,
