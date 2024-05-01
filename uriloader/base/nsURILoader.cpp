@@ -274,12 +274,19 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
   
   
   
+  
+  
+  
+  
+  
   bool forceExternalHandling = false;
-  uint32_t disposition;
-  rv = aChannel->GetContentDisposition(&disposition);
+  if (!(mFlags & nsIURILoader::DONT_RETARGET)) {
+    uint32_t disposition;
+    rv = aChannel->GetContentDisposition(&disposition);
 
-  if (NS_SUCCEEDED(rv) && disposition == nsIChannel::DISPOSITION_ATTACHMENT) {
-    forceExternalHandling = true;
+    if (NS_SUCCEEDED(rv) && disposition == nsIChannel::DISPOSITION_ATTACHMENT) {
+      forceExternalHandling = true;
+    }
   }
 
   LOG(("  forceExternalHandling: %s", forceExternalHandling ? "yes" : "no"));

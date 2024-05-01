@@ -1249,7 +1249,11 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
         break;
       }
 
-      rv = uriLoader->OpenChannel(mChannel, nsIURILoader::DONT_RETARGET, req,
+      uint32_t uriLoaderFlags = nsDocShell::ComputeURILoaderFlags(
+          docShell->GetBrowsingContext(), LOAD_NORMAL,
+           false);
+
+      rv = uriLoader->OpenChannel(mChannel, uriLoaderFlags, req,
                                   getter_AddRefs(finalListener));
       
       

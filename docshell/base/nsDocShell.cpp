@@ -10590,7 +10590,8 @@ static nsresult AppendSegmentToString(nsIInputStream* aIn, void* aClosure,
 }
 
  uint32_t nsDocShell::ComputeURILoaderFlags(
-    BrowsingContext* aBrowsingContext, uint32_t aLoadType) {
+    BrowsingContext* aBrowsingContext, uint32_t aLoadType,
+    bool aIsDocumentLoad) {
   MOZ_ASSERT(aBrowsingContext);
 
   uint32_t openFlags = 0;
@@ -10598,6 +10599,13 @@ static nsresult AppendSegmentToString(nsIInputStream* aIn, void* aClosure,
     openFlags |= nsIURILoader::IS_CONTENT_PREFERRED;
   }
   if (!aBrowsingContext->GetAllowContentRetargeting()) {
+    openFlags |= nsIURILoader::DONT_RETARGET;
+  }
+
+  
+  
+  if (!aIsDocumentLoad &&
+      !StaticPrefs::dom_navigation_object_embed_allow_retargeting()) {
     openFlags |= nsIURILoader::DONT_RETARGET;
   }
 
