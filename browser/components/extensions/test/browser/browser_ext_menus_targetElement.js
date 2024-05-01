@@ -29,7 +29,7 @@ async function loadExtensionAndTab() {
   }
 
   async function background() {
-    browser.menus.onShown.addListener(async (info, tab) => {
+    browser.menus.onShown.addListener(async info => {
       browser.test.sendMessage("onShownMenu", info.targetElementId);
     });
     await browser.tabs.executeScript({ file: "contentScript.js" });
@@ -79,7 +79,7 @@ add_task(async function required_permission() {
   
   
   function background() {
-    browser.contextMenus.onShown.addListener((info, tab) => {
+    browser.contextMenus.onShown.addListener(info => {
       browser.test.assertEq(
         undefined,
         info.targetElementId,

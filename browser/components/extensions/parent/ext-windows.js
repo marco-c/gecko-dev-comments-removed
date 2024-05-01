@@ -112,7 +112,7 @@ this.windows = class extends ExtensionAPIPersistent {
       
       let lastOnFocusChangedWindowId;
 
-      let listener = event => {
+      let listener = () => {
         
         
         Promise.resolve().then(() => {

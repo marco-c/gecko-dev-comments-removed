@@ -88,7 +88,7 @@ async function runTest(stopLoadFunc) {
 
 
 add_task(async function test_click_stop_button() {
-  await runTest(async slowTab => {
+  await runTest(async () => {
     
     let stopButton = document.getElementById("stop-button");
     await TestUtils.waitForCondition(() => {

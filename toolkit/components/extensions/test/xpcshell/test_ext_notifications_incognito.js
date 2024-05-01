@@ -33,7 +33,7 @@ const mockAlertsService = {
     this.showAlert({ cookie, title, text, privateBrowsing }, alertListener);
   },
 
-  closeAlert(name) {
+  closeAlert() {
     
   },
 

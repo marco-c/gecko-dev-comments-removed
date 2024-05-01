@@ -73,7 +73,7 @@ function createTestExtPageScript(name) {
 
 
 
-async function triggerWebRequestListener(webPageURL, pause) {
+async function triggerWebRequestListener(webPageURL) {
   let webPageTab = await BrowserTestUtils.openNewForegroundTab(
     {
       gBrowser,

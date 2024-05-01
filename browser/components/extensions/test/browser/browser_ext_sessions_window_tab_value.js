@@ -134,7 +134,7 @@ add_task(async function test_sessions_tab_value_persistence() {
     
     
     browser.webNavigation.onCompleted.addListener(
-      async function newTabListener(details) {
+      async function newTabListener() {
         browser.webNavigation.onCompleted.removeListener(newTabListener);
 
         let tabs = await browser.tabs.query({ currentWindow: true });

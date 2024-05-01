@@ -31,7 +31,7 @@ add_task(async function test_suspend() {
 
     background() {
       browser.webRequest.onBeforeSendHeaders.addListener(
-        details => {
+        () => {
           
           
         },
@@ -40,7 +40,7 @@ add_task(async function test_suspend() {
       );
 
       browser.webRequest.onBeforeSendHeaders.addListener(
-        details => {
+        () => {
           return Promise.resolve();
         },
         { urls: ["<all_urls>"] },

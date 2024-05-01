@@ -150,7 +150,7 @@ class TestWorkerWatcher extends ExtensionCommon.EventEmitter {
     }
   }
 
-  observe(subject, topic, childIDString) {
+  observe() {
     
     
     this.getAndWatchExtensionProcess();

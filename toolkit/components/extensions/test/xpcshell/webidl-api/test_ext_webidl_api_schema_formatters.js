@@ -17,7 +17,7 @@ AddonTestUtils.createAppInfo(
 
 
 const API = class extends ExtensionAPI {
-  getAPI(context) {
+  getAPI() {
     return {
       mockExtensionAPI: {
         methodAsync: files => {

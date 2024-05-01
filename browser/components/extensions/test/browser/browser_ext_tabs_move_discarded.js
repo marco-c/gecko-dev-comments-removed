@@ -49,7 +49,7 @@ add_task(async function move_hidden_discarded_to_window() {
       
       
       browser.tabs.onUpdated.addListener(
-        (tabId, changeInfo, tab) => {
+        (tabId, changeInfo) => {
           browser.test.assertTrue(changeInfo.hidden, "tab was hidden");
           browser.test.sendMessage("onUpdated_urls_filter");
         },

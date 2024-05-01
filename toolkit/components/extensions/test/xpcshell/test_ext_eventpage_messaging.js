@@ -107,7 +107,7 @@ add_task(async function test_runtime_onConnect_cancels_suspend() {
       
       
       
-      browser.runtime.onConnect.addListener(port => {
+      browser.runtime.onConnect.addListener(() => {
         
         globalThis.notify_extensionPage_got_onConnect();
       });
@@ -162,7 +162,7 @@ add_task(async function test_runtime_Port_onMessage_cancels_suspend() {
       
       
       browser.runtime.onConnect.addListener(port => {
-        port.onMessage.addListener(msg => {
+        port.onMessage.addListener(() => {
           
           globalThis.notify_extensionPage_got_port_onMessage();
         });

@@ -40,7 +40,7 @@ async function test_mousewheel_zoom(test) {
 
   function contentScript() {
     
-    document.addEventListener("mousedown", e => {
+    document.addEventListener("mousedown", () => {
       
       const zoom = SpecialPowers.getFullZoom(window).toFixed(2);
       browser.test.sendMessage("zoom", zoom);
@@ -49,7 +49,7 @@ async function test_mousewheel_zoom(test) {
 
   function sidebarContentScript() {
     
-    document.addEventListener("mousedown", e => {
+    document.addEventListener("mousedown", () => {
       
       const zoom = SpecialPowers.getFullZoom(window).toFixed(2);
       browser.test.sendMessage("zoom", zoom);

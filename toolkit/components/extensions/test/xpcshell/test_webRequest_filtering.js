@@ -73,7 +73,7 @@ function compareLists(list1, list2, kind) {
   equal(String(list1), String(list2), `${kind} URLs correct`);
 }
 
-async function openAndCloseContentPage(url) {
+async function openAndCloseContentPage() {
   let contentPage = await ExtensionTestUtils.loadContentPage(URL);
   
   

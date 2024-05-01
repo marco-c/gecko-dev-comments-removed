@@ -340,7 +340,7 @@ add_task(async function test_contentscript_context_valid_during_execution() {
   await extension.startup();
   await extension.awaitMessage("content-script-ready");
 
-  await contentPage.legacySpawn(extension.id, async extensionId => {
+  await contentPage.legacySpawn(extension.id, async () => {
     
     this.content.location = "http://example.org/dummy?second";
   });

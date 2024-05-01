@@ -56,7 +56,7 @@ let gcExperimentFiles = {
     );
     
     this.gcHelper = class extends ExtensionAPI {
-      getAPI(context) {
+      getAPI() {
         let witnesses = new Map();
         return {
           gcHelper: {

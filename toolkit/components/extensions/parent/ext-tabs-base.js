@@ -1197,7 +1197,7 @@ class WindowBase {
 
 
 
-  static getState(window) {
+  static getState(_window) {
     throw new Error("Not implemented");
   }
 
@@ -1234,7 +1234,7 @@ class WindowBase {
 
 
 
-  getTabAtIndex(index) {
+  getTabAtIndex(_index) {
     throw new Error("Not implemented");
   }
   
@@ -1365,7 +1365,7 @@ class TabTrackerBase extends EventEmitter {
 
 
 
-  getId(nativeTab) {
+  getId(_nativeTab) {
     throw new Error("Not implemented");
   }
 
@@ -1383,7 +1383,7 @@ class TabTrackerBase extends EventEmitter {
 
 
 
-  getTab(tabId, default_ = undefined) {
+  getTab(_tabId, _default) {
     throw new Error("Not implemented");
   }
 
@@ -1398,7 +1398,7 @@ class TabTrackerBase extends EventEmitter {
 
 
   
-  getBrowserData(browser) {
+  getBrowserData() {
     throw new Error("Not implemented");
   }
 
@@ -1454,7 +1454,7 @@ class StatusListener {
     }
   }
 
-  onLocationChange(browser, webProgress, request, locationURI, flags) {
+  onLocationChange(browser, webProgress, request, locationURI) {
     if (webProgress.isTopLevel) {
       let status = webProgress.isLoadingDocument ? "loading" : "complete";
       this.listener({ browser, status, url: locationURI.spec });
@@ -1894,7 +1894,7 @@ class WindowTrackerBase extends EventEmitter {
 
 
 
-  addProgressListener(window, listener) {
+  addProgressListener(_window, _listener) {
     throw new Error("Not implemented");
   }
 
@@ -1907,7 +1907,7 @@ class WindowTrackerBase extends EventEmitter {
 
 
 
-  removeProgressListener(window, listener) {
+  removeProgressListener(_window, _listener) {
     throw new Error("Not implemented");
   }
 }
@@ -2041,7 +2041,7 @@ class TabManagerBase {
 
 
 
-  canAccessTab(nativeTab) {
+  canAccessTab(_nativeTab) {
     throw new Error("Not implemented");
   }
 
@@ -2143,7 +2143,7 @@ class TabManagerBase {
 
 
 
-  get(tabId) {
+  get(_tabId) {
     throw new Error("Not implemented");
   }
 
@@ -2157,8 +2157,7 @@ class TabManagerBase {
 
 
 
-  
-  wrapTab(nativeTab) {
+  wrapTab(_nativeTab) {
     throw new Error("Not implemented");
   }
 }
@@ -2287,7 +2286,7 @@ class WindowManagerBase {
 
 
 
-  get(windowId, context) {
+  get(_windowId, _context) {
     throw new Error("Not implemented");
   }
 
@@ -2312,7 +2311,7 @@ class WindowManagerBase {
 
 
 
-  wrapWindow(window) {
+  wrapWindow(_window) {
     throw new Error("Not implemented");
   }
   

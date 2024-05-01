@@ -146,7 +146,7 @@ async function test_clickData_reset(testAsNonPersistent = false) {
 
     files: {
       "background.js": async function background() {
-        function onBrowserActionClicked(tab, info) {
+        function onBrowserActionClicked() {
           
           browser.pageAction.openPopup();
         }

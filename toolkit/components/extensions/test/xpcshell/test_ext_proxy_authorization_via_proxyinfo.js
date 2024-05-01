@@ -73,7 +73,7 @@ add_task(async function test_webRequest_auth_proxy() {
     );
 
     browser.webRequest.onAuthRequired.addListener(
-      details => {
+      () => {
         
         browser.test.fail("onAuthRequired");
       },
