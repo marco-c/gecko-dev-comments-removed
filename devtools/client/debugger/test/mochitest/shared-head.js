@@ -54,8 +54,8 @@ const {
 } = require("devtools/client/debugger/src/utils/prefs");
 
 const {
-  safeDecodeItemName,
-} = require("devtools/client/debugger/src/utils/sources-tree/utils");
+  getUnicodeUrlPath,
+} = require("resource://devtools/client/shared/unicode-url.js");
 
 const {
   isGeneratedId,
@@ -737,7 +737,7 @@ function findSource(
   const source = sources.find(s => {
     
     const sourceFileName = s.url
-      ? safeDecodeItemName(s.url.substring(s.url.lastIndexOf("/") + 1))
+      ? getUnicodeUrlPath(s.url.substring(s.url.lastIndexOf("/") + 1))
       : "";
 
     
