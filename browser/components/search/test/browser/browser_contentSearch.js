@@ -50,14 +50,6 @@ add_setup(async function () {
   await SearchTestUtils.promiseNewSearchEngine({
     url: getRootDirectory(gTestPath) + "testEngine_chromeicon.xml",
   });
-
-  
-  
-  await SearchTestUtils.installSearchExtension({
-    icons: {
-      16: "favicon.ico",
-    },
-  });
 });
 
 add_task(async function GetState() {
@@ -499,7 +491,7 @@ function iconDataFromURI(uri) {
     );
   }
 
-  if (!uri.startsWith("data:") && !uri.startsWith("blob:")) {
+  if (!uri.startsWith("data:")) {
     plainURIIconTested = true;
     return Promise.resolve(uri);
   }
