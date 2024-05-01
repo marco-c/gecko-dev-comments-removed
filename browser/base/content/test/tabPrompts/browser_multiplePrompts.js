@@ -1,11 +1,5 @@
 "use strict";
 
-const CONTENT_PROMPT_SUBDIALOG = Services.prefs.getBoolPref(
-  "prompts.contentPromptSubDialog",
-  false
-);
-
-
 
 
 
@@ -65,64 +59,6 @@ async function closeDialogs(tab, dialogCount) {
 
 
 
-
-
-
-
-
-
-
-
-async function closeTabModals(tab, promptCount) {
-  let promptElementsCount = promptCount;
-  while (promptElementsCount--) {
-    let promptElements =
-      tab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
-    is(
-      promptElements.length,
-      promptElementsCount + 1,
-      "There should be " + (promptElementsCount + 1) + " prompt(s)."
-    );
-    
-    let i = 0;
-
-    for (let promptElement of promptElements) {
-      let prompt = tab.linkedBrowser.tabModalPromptBox.getPrompt(promptElement);
-      let expectedType = ["alert", "prompt", "confirm"][i % 3];
-      is(
-        prompt.Dialog.args.text,
-        expectedType + " countdown #" + i,
-        "The #" + i + " alert should be labelled as such."
-      );
-      if (i !== promptElementsCount) {
-        is(prompt.element.hidden, true, "This prompt should be hidden.");
-        i++;
-        continue;
-      }
-
-      is(prompt.element.hidden, false, "The last prompt should not be hidden.");
-      prompt.onButtonClick(0);
-
-      
-      
-      await new Promise(function (resolve) {
-        Services.tm.dispatchToMainThread(resolve);
-      });
-    }
-  }
-
-  let promptElements =
-    tab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
-  is(promptElements.length, 0, "Prompts should all be dismissed.");
-}
-
-
-
-
-
-
-
-
 add_task(async function () {
   const PROMPTCOUNT = 9;
 
@@ -161,11 +97,7 @@ add_task(async function () {
 
   await promptsOpenedPromise;
 
-  if (CONTENT_PROMPT_SUBDIALOG) {
-    await closeDialogs(tab, PROMPTCOUNT);
-  } else {
-    await closeTabModals(tab, PROMPTCOUNT);
-  }
+  await closeDialogs(tab, PROMPTCOUNT);
 
   BrowserTestUtils.removeTab(tab);
 });
