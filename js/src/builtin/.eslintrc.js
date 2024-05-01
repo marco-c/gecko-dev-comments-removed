@@ -121,6 +121,14 @@ module.exports = {
             message: "'const' declarations are disallowed to avoid TDZ checks, use 'var' instead",
           },
         ],
+        
+        "no-unused-vars": [
+          "error",
+          {
+            args: "none",
+            vars: "local",
+          },
+        ],
       },
 
       globals: {
