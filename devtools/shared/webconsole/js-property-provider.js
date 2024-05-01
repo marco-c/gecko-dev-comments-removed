@@ -650,7 +650,7 @@ function getMatchedPropsImpl(obj, match, { chainIterator, getProperties }) {
       
       
       
-      if (+prop != +prop) {
+      if (+prop != +prop || prop === "Infinity") {
         matches.add(prop);
       }
 
