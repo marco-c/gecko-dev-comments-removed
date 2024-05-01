@@ -35,7 +35,7 @@ export function clearDocumentsForSources(sources) {
   }
 }
 
-function resetLineNumberFormat(editor) {
+export function resetLineNumberFormat(editor) {
   const cm = editor.codeMirror;
   cm.setOption("lineNumberFormatter", number => number);
   resizeBreakpointGutter(cm);
@@ -54,57 +54,16 @@ function updateLineNumberFormat(editor, sourceId) {
   resizeToggleButton(cm);
 }
 
-export function updateDocument(editor, source) {
-  if (!source) {
-    return;
-  }
-
-  const sourceId = source.id;
-  const doc = getDocument(sourceId) || editor.createDocument();
-  editor.replaceDocument(doc);
-
-  updateLineNumberFormat(editor, sourceId);
-}
 
 
-export function updateDocuments(updater) {
+
+export function updateLineWrappingForAllDocuments(value) {
   for (const doc of sourceDocs.values()) {
     if (doc.cm == null) {
       continue;
-    } else {
-      updater(doc);
     }
+    doc.cm.setOption("lineWrapping", value);
   }
-}
-
-export function clearEditor(editor) {
-  const doc = editor.createDocument("", { name: "text" });
-  editor.replaceDocument(doc);
-  resetLineNumberFormat(editor);
-}
-
-export function showLoading(editor) {
-  
-  let doc = getDocument("loading");
-  if (!doc) {
-    doc = editor.createDocument(L10N.getStr("loadingText"), { name: "text" });
-    setDocument("loading", doc);
-  }
-  
-  
-  editor.replaceDocument(doc);
-}
-
-export function showErrorMessage(editor, msg) {
-  let error;
-  if (msg.includes("WebAssembly binary source is not available")) {
-    error = L10N.getStr("wasmIsNotAvailable");
-  } else {
-    error = L10N.getFormatStr("errorLoadingText3", msg);
-  }
-  const doc = editor.createDocument(error, { name: "text" });
-  editor.replaceDocument(doc);
-  resetLineNumberFormat(editor);
 }
 
 const contentTypeModeMap = new Map([

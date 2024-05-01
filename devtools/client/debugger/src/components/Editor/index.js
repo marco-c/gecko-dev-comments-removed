@@ -50,10 +50,9 @@ import BlackboxLines from "./BlackboxLines";
 
 import {
   showSourceText,
-  showLoading,
-  showErrorMessage,
+  setDocument,
+  resetLineNumberFormat,
   getEditor,
-  clearEditor,
   getCursorLine,
   getCursorColumn,
   lineAtHeight,
@@ -588,7 +587,7 @@ class Editor extends PureComponent {
     }
 
     if (!selectedSourceTextContent?.value) {
-      showLoading(editor);
+      this.showLoadingMessage(editor);
       return;
     }
 
@@ -611,7 +610,9 @@ class Editor extends PureComponent {
       return;
     }
 
-    clearEditor(editor);
+    const doc = editor.createDocument("", { name: "text" });
+    editor.replaceDocument(doc);
+    resetLineNumberFormat(editor);
   }
 
   showErrorMessage(msg) {
@@ -620,7 +621,27 @@ class Editor extends PureComponent {
       return;
     }
 
-    showErrorMessage(editor, msg);
+    let error;
+    if (msg.includes("WebAssembly binary source is not available")) {
+      error = L10N.getStr("wasmIsNotAvailable");
+    } else {
+      error = L10N.getFormatStr("errorLoadingText3", msg);
+    }
+    const doc = editor.createDocument(error, { name: "text" });
+    editor.replaceDocument(doc);
+    resetLineNumberFormat(editor);
+  }
+
+  showLoadingMessage(editor) {
+    
+    let doc = getDocument("loading");
+    if (!doc) {
+      doc = editor.createDocument(L10N.getStr("loadingText"), { name: "text" });
+      setDocument("loading", doc);
+    }
+    
+    
+    editor.replaceDocument(doc);
   }
 
   getInlineEditorStyles() {
