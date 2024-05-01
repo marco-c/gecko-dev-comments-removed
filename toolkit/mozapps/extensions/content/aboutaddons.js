@@ -1744,6 +1744,8 @@ class InlineOptionsBrowser extends HTMLElement {
       readyPromise = promiseEvent("load", browser, true);
     }
 
+    
+    
     let stack = document.createXULElement("stack");
     stack.classList.add("inline-options-stack");
     stack.appendChild(browser);
