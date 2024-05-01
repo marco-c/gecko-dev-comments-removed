@@ -197,7 +197,7 @@
 
 
 
-    radioUnattached(child) {
+    radioUnattached() {
       
       this._radioChildren = null;
     }
@@ -481,13 +481,13 @@
 
     constructor() {
       super();
-      this.addEventListener("click", event => {
+      this.addEventListener("click", () => {
         if (!this.disabled) {
           this.control.selectedItem = this;
         }
       });
 
-      this.addEventListener("mousedown", event => {
+      this.addEventListener("mousedown", () => {
         if (!this.disabled) {
           this.control.focusedItem = this;
         }

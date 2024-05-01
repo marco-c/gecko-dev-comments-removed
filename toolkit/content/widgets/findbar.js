@@ -164,7 +164,7 @@
 
       window.addEventListener("unload", this.destroy);
 
-      this._findField.addEventListener("input", event => {
+      this._findField.addEventListener("input", () => {
         
         
         
@@ -230,17 +230,17 @@
         }
       });
 
-      this._findField.addEventListener("blur", event => {
+      this._findField.addEventListener("blur", () => {
         
         
         this.browser.finder.enableSelection();
       });
 
-      this._findField.addEventListener("focus", event => {
+      this._findField.addEventListener("focus", () => {
         this._updateBrowserWithState();
       });
 
-      this._findField.addEventListener("compositionstart", event => {
+      this._findField.addEventListener("compositionstart", () => {
         
         let findbar = this;
         findbar._isIMEComposing = true;
@@ -251,7 +251,7 @@
         }
       });
 
-      this._findField.addEventListener("compositionend", event => {
+      this._findField.addEventListener("compositionend", () => {
         this._isIMEComposing = false;
         if (this.findMode != this.FIND_NORMAL) {
           this._setFindCloseTimeout();
@@ -1307,7 +1307,7 @@
       }
     }
 
-    onHighlightFinished(result) {
+    onHighlightFinished() {
       
     }
 

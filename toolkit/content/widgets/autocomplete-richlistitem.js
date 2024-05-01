@@ -21,7 +21,7 @@
 
 
 
-      this.addEventListener("mousedown", event => {
+      this.addEventListener("mousedown", () => {
         
         let control = this.control;
         if (!control || control.disabled) {
@@ -587,7 +587,7 @@
     
 
 
-    _getSearchTokens(aSearch) {
+    _getSearchTokens() {
       return [this._learnMoreString.toLowerCase()];
     }
   }
