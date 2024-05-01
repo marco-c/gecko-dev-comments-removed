@@ -20,15 +20,13 @@ import org.mozilla.telemetry.measurement.TimezoneOffsetMeasurement;
 
 
 
-
-@Deprecated
-public class TelemetryEventPingBuilder extends TelemetryPingBuilder {
-    public static final String TYPE = "focus-event";
+public class TelemetryMobileEventPingBuilder extends TelemetryPingBuilder {
+    public static final String TYPE = "mobile-event";
     private static final int VERSION = 1;
 
     private EventsMeasurement eventsMeasurement;
 
-    public TelemetryEventPingBuilder(TelemetryConfiguration configuration) {
+    public TelemetryMobileEventPingBuilder(TelemetryConfiguration configuration) {
         super(configuration, TYPE, VERSION);
 
         addMeasurement(new SequenceMeasurement(configuration, this));
