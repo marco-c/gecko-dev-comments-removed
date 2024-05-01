@@ -3233,6 +3233,13 @@ PBIResult PortableBaselineInterpret(JSContext* cx_, State& state, Stack& stack,
   }
   ret->setUndefined();
 
+  
+  
+  if (script->isDebuggee()) {
+    TRACE_PRINTF("Script is debuggee\n");
+    frame->setIsDebuggee();
+  }
+
   if (CalleeTokenIsFunction(frame->calleeToken())) {
     JSFunction* func = CalleeTokenToFunction(frame->calleeToken());
     frame->setEnvironmentChain(func->environment());
@@ -3247,11 +3254,7 @@ PBIResult PortableBaselineInterpret(JSContext* cx_, State& state, Stack& stack,
   }
 
   
-  
   if (script->isDebuggee()) {
-    TRACE_PRINTF("Script is debuggee\n");
-    frame->setIsDebuggee();
-
     PUSH_EXIT_FRAME();
     if (!DebugPrologue(cx, frame)) {
       goto error;
