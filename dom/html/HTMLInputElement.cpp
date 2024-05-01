@@ -6481,7 +6481,6 @@ bool HTMLInputElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   
   
-  
   auto* container = GetCurrentRadioGroupContainer();
   if (!container) {
     *aIsFocusable = defaultFocusable;
@@ -6491,8 +6490,7 @@ bool HTMLInputElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   nsAutoString name;
   GetAttr(nsGkAtoms::name, name);
 
-  if (container->GetCurrentRadioButton(name) ||
-      container->GetFirstRadioButton(name) != this) {
+  if (container->GetCurrentRadioButton(name)) {
     *aTabIndex = -1;
   }
   *aIsFocusable = defaultFocusable;
