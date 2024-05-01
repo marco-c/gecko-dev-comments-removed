@@ -217,10 +217,7 @@ export function getFormattedSourceId(id) {
 
 
 export function getTruncatedFileName(source) {
-  return truncateMiddleText(
-    `${source.shortName}${source.displayURL.search}`,
-    30
-  );
+  return truncateMiddleText(source.longName, 30);
 }
 
 

@@ -273,6 +273,11 @@ function createSourceObject({
       : getFormattedSourceId(id),
 
     
+    longName: url
+      ? getRawSourceURL(displayURL.filename + displayURL.search)
+      : getFormattedSourceId(id),
+
+    
     
     
     extensionName,
