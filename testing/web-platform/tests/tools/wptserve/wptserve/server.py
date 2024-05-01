@@ -130,7 +130,9 @@ class RequestRewriter:
 
 class WebTestServer(http.server.ThreadingHTTPServer):
     allow_reuse_address = True
-    acceptable_errors = (errno.EPIPE, errno.ECONNABORTED)
+    
+    
+    acceptable_errors = (errno.EPIPE, errno.ECONNABORTED, 0)
     request_queue_size = 2000
 
     
@@ -236,7 +238,11 @@ class WebTestServer(http.server.ThreadingHTTPServer):
              isinstance(error.args, tuple) and
              error.args[0] in self.acceptable_errors) or
             (isinstance(error, IOError) and
-             error.errno in self.acceptable_errors)):
+             error.errno in self.acceptable_errors) or
+            
+            
+            
+            isinstance(error, ssl.SSLEOFError) or isinstance(error, ssl.SSLError)):
             pass  
         else:
             msg = traceback.format_exc()
