@@ -22,10 +22,6 @@ class ObjectCommand {
 
   async releaseObjects(frontsToRelease) {
     
-    
-    const { supportsReleaseActors } = this.#commands.client.mainRoot.traits;
-
-    
     const actorsPerTarget = new Map();
     const promises = [];
     for (const frontToRelease of frontsToRelease) {
@@ -40,20 +36,14 @@ class ObjectCommand {
         actorIDsToRemove = [];
         actorsPerTarget.set(targetFront, actorIDsToRemove);
       }
-      if (supportsReleaseActors) {
-        actorIDsToRemove.push(frontToRelease.actorID);
-        frontToRelease.destroy();
-      } else {
-        promises.push(frontToRelease.release());
-      }
+      actorIDsToRemove.push(frontToRelease.actorID);
+      frontToRelease.destroy();
     }
 
-    if (supportsReleaseActors) {
-      
-      for (const [targetFront, actorIDs] of actorsPerTarget) {
-        const objectsManagerFront = await targetFront.getFront("objects-manager");
-        promises.push(objectsManagerFront.releaseObjects(actorIDs));
-      }
+    
+    for (const [targetFront, actorIDs] of actorsPerTarget) {
+      const objectsManagerFront = await targetFront.getFront("objects-manager");
+      promises.push(objectsManagerFront.releaseObjects(actorIDs));
     }
 
     await Promise.all(promises);
