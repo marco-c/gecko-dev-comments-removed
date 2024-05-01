@@ -14,7 +14,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mozilla.telemetry.TelemetryHolder;
 import org.mozilla.telemetry.ping.TelemetryEventPingBuilder;
+import org.mozilla.telemetry.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -23,6 +25,14 @@ import java.util.Map;
 
 public class TelemetryEvent {
     private static final long startTime = SystemClock.elapsedRealtime();
+
+    private static final int MAX_LENGTH_CATEGORY = 30;
+    private static final int MAX_LENGTH_METHOD = 20;
+    private static final int MAX_LENGTH_OBJECT = 20;
+    private static final int MAX_LENGTH_VALUE = 80;
+    private static final int MAX_EXTRA_KEYS = 10;
+    private static final int MAX_LENGTH_EXTRA_KEY = 15;
+    private static final int MAX_LENGTH_EXTRA_VALUE = 80;
 
     
 
@@ -33,13 +43,7 @@ public class TelemetryEvent {
 
     @CheckResult
     public static TelemetryEvent create(@NonNull String category, @NonNull String method, @Nullable String object) {
-        final TelemetryEvent event = new TelemetryEvent();
-
-        event.category = category;
-        event.method = method;
-        event.object = object;
-
-        return event;
+        return new TelemetryEvent(category, method, object, null);
     }
 
     
@@ -52,72 +56,62 @@ public class TelemetryEvent {
 
     @CheckResult
     public static TelemetryEvent create(@NonNull String category, @NonNull String method, @Nullable String object, String value) {
-        final TelemetryEvent event = new TelemetryEvent();
-
-        event.category = category;
-        event.method = method;
-        event.object = object;
-        event.value = value;
-
-        return event;
+        return new TelemetryEvent(category, method, object, value);
     }
 
     
 
 
 
+    private final long timestamp;
+
+    
 
 
+    private final String category;
+
+    
 
 
+    private final String method;
 
-    @CheckResult
-    public static TelemetryEvent create(@NonNull String category, @NonNull String method, @Nullable String object, String value, Map<String, Object> extras) {
-        final TelemetryEvent event = new TelemetryEvent();
+    
 
-        event.category = category;
-        event.method = method;
-        event.object = object;
-        event.value = value;
-        event.extras = extras;
 
-        return event;
-    }
+    private @Nullable final String object;
+
+    
+
+
+    private @Nullable String value;
 
     
 
 
 
-    private long timestamp;
+    private final Map<String, Object> extras;
 
-    
-
-
-    private String category;
-
-    
-
-
-    private String method;
-
-    
-
-
-    private String object;
-
-    
-
-
-    private @Nullable  String value;
-
-    
-
-
-
-    private @Nullable  Map<String, Object> extras;
-
-    private TelemetryEvent() {
+    private TelemetryEvent(@NonNull String category, @NonNull String method, @Nullable String object, @Nullable String value) {
         timestamp = SystemClock.elapsedRealtime() - startTime;
+
+        
+        
+        this.category = StringUtils.safeSubstring(category, 0, MAX_LENGTH_CATEGORY);
+        this.method = StringUtils.safeSubstring(method, 0, MAX_LENGTH_METHOD);
+        this.object = object == null ? null : StringUtils.safeSubstring(object, 0, MAX_LENGTH_OBJECT);
+        this.value = value == null ? null : StringUtils.safeSubstring(value, 0, MAX_LENGTH_VALUE);
+        this.extras = new HashMap<>();
+    }
+
+    public TelemetryEvent extra(String key, String value) {
+        if (extras.size() > MAX_EXTRA_KEYS) {
+            throw new IllegalArgumentException("Exceeding limit of " + MAX_EXTRA_KEYS + " extra keys");
+        }
+
+        extras.put(StringUtils.safeSubstring(key, 0, MAX_LENGTH_EXTRA_KEY),
+                StringUtils.safeSubstring(value, 0, MAX_LENGTH_EXTRA_VALUE));
+
+        return this;
     }
 
     
@@ -143,7 +137,7 @@ public class TelemetryEvent {
             array.put(value);
         }
 
-        if (extras != null) {
+        if (extras != null && !extras.isEmpty()) {
             if (value == null) {
                 array.put(null);
             }
