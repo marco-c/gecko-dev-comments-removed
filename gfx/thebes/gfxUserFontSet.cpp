@@ -18,6 +18,7 @@
 #include "mozilla/gfx/2D.h"
 #include "gfxPlatformFontList.h"
 #include "mozilla/PostTraversalTask.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "gfxOTSUtils.h"
 #include "nsIFontLoadCompleteCallback.h"
 #include "nsProxyRelease.h"
@@ -816,7 +817,7 @@ void gfxUserFontEntry::Load() {
   if (mUserFontLoadState != STATUS_NOT_LOADED) {
     return;
   }
-  if (!NS_IsMainThread()) {
+  if (dom::IsCurrentThreadRunningWorker()) {
     
     
     NS_DispatchToMainThread(NewRunnableMethod("gfxUserFontEntry::Load", this,
