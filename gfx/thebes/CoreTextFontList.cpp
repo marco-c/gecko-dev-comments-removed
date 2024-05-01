@@ -35,6 +35,15 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
+#ifdef MOZ_WIDGET_COCOA
+
+
+
+
+#  define USE_DEPRECATED_FONT_FAMILY_NAMES 1
+#endif
+
+#if USE_DEPRECATED_FONT_FAMILY_NAMES
 
 
 
@@ -198,6 +207,7 @@ constexpr nsLiteralCString kDeprecatedFontFamilies[] = {
     "Superclarendon"_ns,
     "Times"_ns,
 };
+#endif  
 
 static void GetStringForCFString(CFStringRef aSrc, nsAString& aDest) {
   auto len = CFStringGetLength(aSrc);
@@ -1134,11 +1144,13 @@ nsresult CoreTextFontList::InitFontListForPlatform() {
           (CFStringRef)CFArrayGetValueAtIndex(familyNames, i);
       AddFamily(familyName);
     }
+#if USE_DEPRECATED_FONT_FAMILY_NAMES
     for (const auto& name : kDeprecatedFontFamilies) {
       if (DeprecatedFamilyIsAvailable(name)) {
         AddFamily(name, GetVisibilityForFamily(name));
       }
     }
+#endif
   } else {
     
     
@@ -1196,8 +1208,11 @@ void CoreTextFontList::InitSharedFontListForPlatform() {
     AutoCFRelease<CFArrayRef> familyNames =
         CTFontManagerCopyAvailableFontFamilyNames();
     nsTArray<fontlist::Family::InitData> families;
-    families.SetCapacity(CFArrayGetCount(familyNames) +
-                         ArrayLength(kDeprecatedFontFamilies));
+    families.SetCapacity(CFArrayGetCount(familyNames)
+#if USE_DEPRECATED_FONT_FAMILY_NAMES
+                         + ArrayLength(kDeprecatedFontFamilies)
+#endif
+    );
     for (CFIndex i = 0; i < CFArrayGetCount(familyNames); ++i) {
       nsAutoString name16;
       CFStringRef familyName =
@@ -1209,6 +1224,7 @@ void CoreTextFontList::InitSharedFontListForPlatform() {
       families.AppendElement(fontlist::Family::InitData(
           key, name, fontlist::Family::kNoIndex, GetVisibilityForFamily(name)));
     }
+#if USE_DEPRECATED_FONT_FAMILY_NAMES
     for (const nsACString& name : kDeprecatedFontFamilies) {
       if (DeprecatedFamilyIsAvailable(name)) {
         nsAutoCString key;
@@ -1218,6 +1234,7 @@ void CoreTextFontList::InitSharedFontListForPlatform() {
                                        GetVisibilityForFamily(name)));
       }
     }
+#endif
     SharedFontList()->SetFamilyNames(families);
     InitAliasesForSingleFaceList();
     GetPrefsAndStartLoader();
