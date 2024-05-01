@@ -37,6 +37,27 @@ static NSString* ToNSString(const nsAString& aString) {
                                  length:aString.Length()];
 }
 
+
+
+
+enum class IsAccessibilityElementRule {
+  
+  Yes,
+  
+  No,
+  
+  
+  IfChildless,
+  
+  IfChildlessWithNameAndFocusable,
+  
+  
+  IfParentIsntElementWithName,
+  
+  
+  IfBrokenUp,
+};
+
 #pragma mark -
 
 @interface NSObject (AccessibilityPrivate)
@@ -69,16 +90,89 @@ static NSString* ToNSString(const nsAString& aString) {
   [super dealloc];
 }
 
+static bool isAccessibilityElementInternal(Accessible* aAccessible) {
+  MOZ_ASSERT(aAccessible);
+  IsAccessibilityElementRule rule = IsAccessibilityElementRule::No;
+
+#define ROLE(_geckoRole, stringRole, ariaRole, atkRole, macRole, macSubrole, \
+             msaaRole, ia2Role, androidClass, iosIsElement, nameRule)        \
+  case roles::_geckoRole:                                                    \
+    rule = iosIsElement;                                                     \
+    break;
+  switch (aAccessible->Role()) {
+#include "RoleMap.h"
+  }
+
+  switch (rule) {
+    case IsAccessibilityElementRule::Yes:
+      return true;
+    case IsAccessibilityElementRule::No:
+      return false;
+    case IsAccessibilityElementRule::IfChildless:
+      return aAccessible->ChildCount() == 0;
+    case IsAccessibilityElementRule::IfParentIsntElementWithName: {
+      nsAutoString name;
+      aAccessible->Name(name);
+      name.CompressWhitespace();
+      if (name.IsEmpty()) {
+        return false;
+      }
+
+      if (isAccessibilityElementInternal(aAccessible->Parent())) {
+        
+        
+        
+        return false;
+      }
+
+      return true;
+    }
+    case IsAccessibilityElementRule::IfChildlessWithNameAndFocusable:
+      if (aAccessible->ChildCount() == 0 &&
+          (aAccessible->State() & states::FOCUSABLE)) {
+        nsAutoString name;
+        aAccessible->Name(name);
+        name.CompressWhitespace();
+        return !name.IsEmpty();
+      }
+      return false;
+    case IsAccessibilityElementRule::IfBrokenUp: {
+      uint32_t childCount = aAccessible->ChildCount();
+      if (childCount == 1) {
+        
+        
+        return false;
+      }
+
+      for (uint32_t idx = 0; idx < childCount; idx++) {
+        Accessible* child = aAccessible->ChildAt(idx);
+        role accRole = child->Role();
+        if (accRole != roles::STATICTEXT && accRole != roles::TEXT_LEAF &&
+            accRole != roles::GRAPHIC) {
+          
+          
+          
+          return false;
+        }
+      }
+
+      return true;
+    }
+    default:
+      break;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Unhandled IsAccessibilityElementRule");
+
+  return false;
+}
+
 - (BOOL)isAccessibilityElement {
-  if (!mGeckoAccessible || mGeckoAccessible->ChildCount()) {
-    
-    
-    
-    
+  if (!mGeckoAccessible) {
     return NO;
   }
 
-  return YES;
+  return isAccessibilityElementInternal(mGeckoAccessible) ? YES : NO;
 }
 
 - (NSString*)accessibilityLabel {
