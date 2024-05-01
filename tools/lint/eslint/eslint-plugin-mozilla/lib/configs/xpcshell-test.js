@@ -12,6 +12,16 @@ module.exports = {
     {
       
       
+      files: ["*.html", "*.xhtml"],
+      
+      
+      rules: {
+        "mozilla/no-comparison-or-assignment-inside-ok": "off",
+      },
+    },
+    {
+      
+      
       
       
       files: "head*.js",
@@ -44,6 +54,7 @@ module.exports = {
     "mozilla/import-headjs-globals": "error",
     "mozilla/mark-test-function-used": "error",
     "mozilla/no-arbitrary-setTimeout": "error",
+    "mozilla/no-comparison-or-assignment-inside-ok": "error",
     "mozilla/no-useless-run-test": "error",
     "no-shadow": "error",
     

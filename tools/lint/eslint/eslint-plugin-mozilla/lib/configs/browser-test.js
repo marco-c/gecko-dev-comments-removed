@@ -57,6 +57,19 @@ module.exports = {
     waitForFocus: false,
   },
 
+  overrides: [
+    {
+      
+      
+      files: ["*.html", "*.xhtml"],
+      
+      
+      rules: {
+        "mozilla/no-comparison-or-assignment-inside-ok": "off",
+      },
+    },
+  ],
+
   plugins: ["mozilla", "@microsoft/sdl"],
 
   rules: {
@@ -83,6 +96,7 @@ module.exports = {
     "mozilla/mark-test-function-used": "error",
     "mozilla/no-addtask-setup": "error",
     "mozilla/no-arbitrary-setTimeout": "error",
+    "mozilla/no-comparison-or-assignment-inside-ok": "error",
     "mozilla/no-redeclare-with-import-autofix": [
       "error",
       { errorForNonImports: false },

@@ -191,7 +191,7 @@ module.exports = {
       },
     },
     {
-      ...browserTestConfig,
+      ...removeOverrides(browserTestConfig),
       files: testPaths.browser.map(path => `${path}**`),
       excludedFiles: ["**/*.jsm", "**/*.mjs"],
     },
@@ -220,6 +220,33 @@ module.exports = {
         ...testPaths.mochitest.map(path => `${path}/**/*.js`),
         ...testPaths.chrome.map(path => `${path}/**/*.js`),
       ],
+    },
+    {
+      
+      
+      files: testPaths.xpcshell
+        .concat(testPaths.browser)
+        .map(path => [`${path}/**/*.html`, `${path}/**/*.xhtml`])
+        .flat(),
+      rules: {
+        
+        
+        "mozilla/no-comparison-or-assignment-inside-ok": "off",
+      },
+    },
+    {
+      
+      
+      
+      files: [
+        
+        "dom/indexedDB/test/**",
+        
+        "toolkit/components/antitracking/test/**",
+      ],
+      rules: {
+        "mozilla/no-comparison-or-assignment-inside-ok": "off",
+      },
     },
     {
       
