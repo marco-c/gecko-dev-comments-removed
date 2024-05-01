@@ -30,8 +30,10 @@ TEST(UtilityProcessSandboxing, ParseEnvVar_DisableGenericOnly)
 #if defined(XP_DARWIN)
 TEST(UtilityProcessSandboxing, ParseEnvVar_DisableAppleAudioOnly)
 {
+#  if defined(MOZ_APPLEMEDIA)
   EXPECT_FALSE(IsUtilitySandboxEnabled(
       "utility:1", SandboxingKind::UTILITY_AUDIO_DECODING_APPLE_MEDIA));
+#  endif
   EXPECT_TRUE(
       IsUtilitySandboxEnabled("utility:1", SandboxingKind::GENERIC_UTILITY));
 }
@@ -51,7 +53,7 @@ TEST(UtilityProcessSandboxing, ParseEnvVar_DisableGenericOnly_Multiples)
 {
   EXPECT_FALSE(IsUtilitySandboxEnabled("utility:1,utility:0,utility:2",
                                        SandboxingKind::GENERIC_UTILITY));
-#if defined(XP_DARWIN)
+#if defined(MOZ_APPLEMEDIA)
   EXPECT_FALSE(IsUtilitySandboxEnabled(
       "utility:1,utility:0,utility:2",
       SandboxingKind::UTILITY_AUDIO_DECODING_APPLE_MEDIA));
