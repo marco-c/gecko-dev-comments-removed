@@ -10,21 +10,15 @@ import subprocess
 
 from collections import defaultdict
 from copy import deepcopy
+from taskgraph.files_changed import get_changed_files
 from taskgraph.loader.transform import loader as base_loader
 from taskgraph.util.taskcluster import get_session
 from taskgraph.util.templates import merge
 
-from ..files_changes import get_files_changed_pr, get_files_changed_push
 from ..build_config import get_components, ANDROID_COMPONENTS_DIR
 
 
 logger = logging.getLogger(__name__)
-
-
-_GIT_ZERO_HASHES = (
-    "0000000000000000000000000000000000000000", 
-    "0000000000000000000000000000000000000000000000000000000000000000", 
-)
 
 CONFIGURATIONS_WITH_DEPENDENCIES = (
     "api",
@@ -123,22 +117,15 @@ def loader(kind, path, config, params, loaded_tasks):
         for d in deps:
             downstream_component_dependencies[d].add(component)
 
-    if params["tasks_for"] == "github-pull-request":
-        logger.info("Processing pull request %s" % params["pull_request_number"])
-        files_changed = get_files_changed_pr(params["base_repository"], params["pull_request_number"])
+    if params["head_ref"] == "refs/heads/main":
+        
+        
+        
+        logger.info("head_ref is refs/heads/main. Building every component...")
+        affected_components = ALL_COMPONENTS
+    else:
+        files_changed = get_changed_files(params["head_repository"], params["head_rev"], params["base_rev"])
         affected_components = get_affected_components(files_changed, config.get("files-affecting-components"), upstream_component_dependencies, downstream_component_dependencies)
-    elif params["tasks_for"] == "github-push":
-        if params["base_rev"] in _GIT_ZERO_HASHES:
-            logger.warn("base_rev is a zero hash, meaning there is no previous push. Building every component...")
-        elif params["head_ref"] == "refs/heads/main":
-            
-            
-            
-            logger.info("head_ref is refs/heads/main. Building every component...")
-        else:
-            logger.info("Processing push for commit range {} -> {}".format(params["base_rev"], params["head_rev"]))
-            files_changed = get_files_changed_push(params["base_repository"], params["base_rev"], params["head_rev"])
-            affected_components = get_affected_components(files_changed, config.get("files-affecting-components"), upstream_component_dependencies, downstream_component_dependencies)
 
     logger.info("Files changed: %s" % " ".join(files_changed))
     if affected_components is ALL_COMPONENTS:
