@@ -179,16 +179,20 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
 
   
   
+  nsAutoString val;
+  nsresult rv = AppendFromValue(aAccessible, &val);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (rv == NS_OK) {
+    AppendString(aString, val);
+    return NS_OK;
+  }
+
+  
+  
   nsAutoString text;
   if (aAccessible->Name(text) != eNameFromTooltip) {
     isEmptyTextEquiv = !AppendString(aString, text);
   }
-
-  
-  nsresult rv = AppendFromValue(aAccessible, aString);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (rv != NS_OK_NO_NAME_CLAUSE_HANDLED) isEmptyTextEquiv = false;
 
   
   
@@ -230,6 +234,19 @@ nsresult nsTextEquivUtils::AppendFromValue(Accessible* aAccessible,
 
   nsAutoString text;
   if (aAccessible != sInitiatorAcc) {
+    
+    
+    if (aAccessible->IsListControl()) {
+      Accessible* selected = aAccessible->GetSelectedItem(0);
+      if (selected) {
+        nsresult rv = AppendFromAccessible(selected, &text);
+        NS_ENSURE_SUCCESS(rv, rv);
+        return AppendString(aString, text) ? NS_OK
+                                           : NS_OK_NO_NAME_CLAUSE_HANDLED;
+      }
+      return NS_ERROR_FAILURE;
+    }
+
     aAccessible->Value(text);
 
     return AppendString(aString, text) ? NS_OK : NS_OK_NO_NAME_CLAUSE_HANDLED;
