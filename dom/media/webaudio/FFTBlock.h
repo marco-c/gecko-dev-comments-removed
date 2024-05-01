@@ -32,7 +32,8 @@ class FFTBlock final {
       FFVPXRuntimeLinker::GetFFTFuncs(&sFFTFuncs);
     }
   }
-  explicit FFTBlock(uint32_t aFFTSize) {
+  explicit FFTBlock(uint32_t aFFTSize, float aInverseScaling = 1.0f)
+      : mInverseScaling(aInverseScaling) {
     MOZ_COUNT_CTOR(FFTBlock);
     SetFFTSize(aFFTSize);
   }
@@ -53,9 +54,7 @@ class FFTBlock final {
       return;
     }
 
-    PodCopy(mOutputBuffer.Elements()->f, aData, mFFTSize);
-    
-    mFn(mTxCtx, mOutputBuffer.Elements()->f, mOutputBuffer.Elements()->f,
+    mFn(mTxCtx, mOutputBuffer.Elements()->f, const_cast<float*>(aData),
         2 * sizeof(float));
 #ifdef DEBUG
     mInversePerformed = false;
@@ -63,14 +62,8 @@ class FFTBlock final {
   }
   
   
+  
   void GetInverse(float* aDataOut) {
-    GetInverseWithoutScaling(aDataOut);
-    AudioBufferInPlaceScale(aDataOut, 1.0f / mFFTSize, mFFTSize);
-  }
-  
-  
-  
-  void GetInverseWithoutScaling(float* aDataOut) {
     if (!EnsureIFFT()) {
       std::fill_n(aDataOut, mFFTSize, 0.0f);
       return;
@@ -109,8 +102,8 @@ class FFTBlock final {
     MOZ_ASSERT(dataSize <= FFTSize());
     AlignedTArray<float> paddedData;
     paddedData.SetLength(FFTSize());
-    AudioBufferCopyWithScale(aData, 1.0f / FFTSize(), paddedData.Elements(),
-                             dataSize);
+    AudioBufferCopyWithScale(aData, 1.0f / AssertedCast<float>(FFTSize()),
+                             paddedData.Elements(), dataSize);
     PodZero(paddedData.Elements() + dataSize, mFFTSize - dataSize);
     PerformFFT(paddedData.Elements());
   }
@@ -128,12 +121,18 @@ class FFTBlock final {
   double ExtractAverageGroupDelay();
 
   uint32_t FFTSize() const { return mFFTSize; }
-  float RealData(uint32_t aIndex) const { return mOutputBuffer[aIndex].r; }
+  float RealData(uint32_t aIndex) const {
+    MOZ_ASSERT(!mInversePerformed);
+    return mOutputBuffer[aIndex].r;
+  }
   float& RealData(uint32_t aIndex) {
     MOZ_ASSERT(!mInversePerformed);
     return mOutputBuffer[aIndex].r;
   }
-  float ImagData(uint32_t aIndex) const { return mOutputBuffer[aIndex].i; }
+  float ImagData(uint32_t aIndex) const {
+    MOZ_ASSERT(!mInversePerformed);
+    return mOutputBuffer[aIndex].i;
+  }
   float& ImagData(uint32_t aIndex) {
     MOZ_ASSERT(!mInversePerformed);
     return mOutputBuffer[aIndex].i;
@@ -159,6 +158,7 @@ class FFTBlock final {
  private:
   bool EnsureFFT() {
     if (!mTxCtx) {
+      
       float scale = 1.0f;
       int rv = sFFTFuncs.init(&mTxCtx, &mFn, AV_TX_FLOAT_RDFT, 0 ,
                               AssertedCast<int>(mFFTSize), &scale, 0);
@@ -169,10 +169,9 @@ class FFTBlock final {
   }
   bool EnsureIFFT() {
     if (!mITxCtx) {
-      float scale = 0.5f;
       int rv =
           sFFTFuncs.init(&mITxCtx, &mIFn, AV_TX_FLOAT_RDFT, 1 ,
-                         AssertedCast<int>(mFFTSize), &scale, 0);
+                         AssertedCast<int>(mFFTSize), &mInverseScaling, 0);
       MOZ_ASSERT(!rv, "av_tx_init: invalid parameters (inverse)");
       return !rv;
     }
@@ -202,6 +201,9 @@ class FFTBlock final {
   av_tx_fn mIFn{};
   AlignedTArray<ComplexU> mOutputBuffer;
   uint32_t mFFTSize{};
+  
+  
+  float mInverseScaling;
 #ifdef DEBUG
   bool mInversePerformed = false;
 #endif
