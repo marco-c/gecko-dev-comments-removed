@@ -19,6 +19,7 @@ class DcompSurfaceImage;
 }  
 
 class MFMediaSource;
+class MediaRawData;
 
 class MFMediaEngineVideoStream final : public MFMediaEngineStream {
  public:
@@ -50,7 +51,12 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   
   void SetConfig(const TrackInfo& aConfig);
 
+  RefPtr<MediaDataDecoder::DecodePromise> OutputData(
+      RefPtr<MediaRawData> aSample) override;
+
   RefPtr<MediaDataDecoder::DecodePromise> Drain() override;
+
+  RefPtr<MediaDataDecoder::FlushPromise> Flush() override;
 
   bool IsEncrypted() const override;
 
@@ -66,11 +72,22 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   bool IsDCompImageReady();
 
-  void ResolvePendingDrainPromiseIfNeeded();
+  
+  
+  void ResolvePendingPromisesIfNeeded();
 
   void ShutdownCleanUpOnTaskQueue() override;
 
   bool IsEnded() const override;
+
+  
+  
+  
+  
+  
+  
+  
+  bool ShouldDelayVideoDecodeBeforeDcompReady();
 
   
   HANDLE mDCompSurfaceHandle;
@@ -97,6 +114,12 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   
   
   MozPromiseHolder<MediaDataDecoder::DecodePromise> mPendingDrainPromise;
+
+  
+  
+  
+  MozPromiseHolder<MediaDataDecoder::DecodePromise>
+      mVideoDecodeBeforeDcompPromise;
 
   
   bool mIsEncrypted = false;
