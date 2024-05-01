@@ -65,150 +65,27 @@ DataViewObject* DataViewObject::create(
 }
 
 ResizableDataViewObject* ResizableDataViewObject::create(
-    JSContext* cx, size_t byteOffset, size_t byteLength, bool autoLength,
+    JSContext* cx, size_t byteOffset, size_t byteLength, AutoLength autoLength,
     Handle<ArrayBufferObjectMaybeShared*> arrayBuffer, HandleObject proto) {
   MOZ_ASSERT(arrayBuffer->isResizable());
   MOZ_ASSERT(!arrayBuffer->isDetached());
-  MOZ_ASSERT(!autoLength || byteLength == 0,
+  MOZ_ASSERT(autoLength == AutoLength::No || byteLength == 0,
              "byte length is zero for 'auto' length views");
 
   auto* obj = NewObjectWithClassProto<ResizableDataViewObject>(cx, proto);
-  if (!obj || !obj->init(cx, arrayBuffer, byteOffset, byteLength,
-                          1)) {
+  if (!obj || !obj->initResizable(cx, arrayBuffer, byteOffset, byteLength,
+                                   1, autoLength)) {
     return nullptr;
   }
-
-  obj->setFixedSlot(AUTO_LENGTH_SLOT, BooleanValue(autoLength));
 
   return obj;
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-mozilla::Maybe<size_t> DataViewObject::byteLength() {
-  if (MOZ_UNLIKELY(hasDetachedBuffer())) {
-    return mozilla::Nothing{};
-  }
-
-  if (MOZ_LIKELY(is<FixedLengthDataViewObject>())) {
-    size_t viewByteLength = rawByteLength();
-    return mozilla::Some(viewByteLength);
-  }
-
-  auto* buffer = bufferEither();
-  MOZ_ASSERT(buffer->isResizable());
-
-  size_t bufferByteLength = buffer->byteLength();
-  size_t byteOffsetStart = ArrayBufferViewObject::byteOffset();
-  if (byteOffsetStart > bufferByteLength) {
-    return mozilla::Nothing{};
-  }
-
-  if (as<ResizableDataViewObject>().isAutoLength()) {
-    return mozilla::Some(bufferByteLength - byteOffsetStart);
-  }
-
-  size_t viewByteLength = rawByteLength();
-  size_t byteOffsetEnd = byteOffsetStart + viewByteLength;
-  if (byteOffsetEnd > bufferByteLength) {
-    return mozilla::Nothing{};
-  }
-  return mozilla::Some(viewByteLength);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-mozilla::Maybe<size_t> DataViewObject::byteOffset() {
-  if (MOZ_UNLIKELY(hasDetachedBuffer())) {
-    return mozilla::Nothing{};
-  }
-
-  size_t byteOffsetStart = ArrayBufferViewObject::byteOffset();
-
-  if (MOZ_LIKELY(is<FixedLengthDataViewObject>())) {
-    return mozilla::Some(byteOffsetStart);
-  }
-
-  auto* buffer = bufferEither();
-  MOZ_ASSERT(buffer->isResizable());
-
-  size_t bufferByteLength = buffer->byteLength();
-  if (byteOffsetStart > bufferByteLength) {
-    return mozilla::Nothing{};
-  }
-
-  if (as<ResizableDataViewObject>().isAutoLength()) {
-    return mozilla::Some(byteOffsetStart);
-  }
-
-  size_t viewByteLength = rawByteLength();
-  size_t byteOffsetEnd = byteOffsetStart + viewByteLength;
-  if (byteOffsetEnd > bufferByteLength) {
-    return mozilla::Nothing{};
-  }
-  return mozilla::Some(byteOffsetStart);
-}
-
-
-
 bool DataViewObject::getAndCheckConstructorArgs(
     JSContext* cx, HandleObject bufobj, const CallArgs& args,
-    size_t* byteOffsetPtr, size_t* byteLengthPtr, bool* autoLengthPtr) {
+    size_t* byteOffsetPtr, size_t* byteLengthPtr, AutoLength* autoLengthPtr) {
   
   if (!bufobj->is<ArrayBufferObjectMaybeShared>()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -243,10 +120,10 @@ bool DataViewObject::getAndCheckConstructorArgs(
   MOZ_ASSERT(offset <= ArrayBufferObject::ByteLengthLimit);
 
   uint64_t viewByteLength = 0;
-  bool autoLength = false;
+  auto autoLength = AutoLength::No;
   if (!args.hasDefined(2)) {
     if (buffer->isResizable()) {
-      autoLength = true;
+      autoLength = AutoLength::Yes;
     } else {
       
       viewByteLength = bufferByteLength - offset;
@@ -305,7 +182,7 @@ bool DataViewObject::constructSameCompartment(JSContext* cx,
 
   size_t byteOffset = 0;
   size_t byteLength = 0;
-  bool autoLength = false;
+  auto autoLength = AutoLength::No;
   if (!getAndCheckConstructorArgs(cx, bufobj, args, &byteOffset, &byteLength,
                                   &autoLength)) {
     return false;
@@ -365,7 +242,7 @@ bool DataViewObject::constructWrapped(JSContext* cx, HandleObject bufobj,
   
   size_t byteOffset = 0;
   size_t byteLength = 0;
-  bool autoLength = false;
+  auto autoLength = AutoLength::No;
   if (!getAndCheckConstructorArgs(cx, unwrapped, args, &byteOffset, &byteLength,
                                   &autoLength)) {
     return false;

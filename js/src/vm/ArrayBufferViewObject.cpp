@@ -41,7 +41,7 @@ void ArrayBufferViewObject::trace(JSTracer* trc, JSObject* obj) {
           &gc::MaybeForwardedObjectAs<ResizableArrayBufferObject>(bufferObj);
     }
     if (buffer) {
-      size_t offset = view->byteOffset();
+      size_t offset = view->dataPointerOffset();
       MOZ_ASSERT_IF(!buffer->dataPointer(), offset == 0);
 
       
@@ -69,13 +69,22 @@ void ArrayBufferViewObject::notifyBufferDetached() {
   setFixedSlot(DATA_SLOT, UndefinedValue());
 }
 
+void ArrayBufferViewObject::notifyBufferResized() {
+  MOZ_ASSERT(!isSharedMemory());
+  MOZ_ASSERT(hasBuffer());
+  MOZ_ASSERT(!bufferUnshared()->isLengthPinned());
+  MOZ_ASSERT(bufferUnshared()->isResizable());
+
+  computeResizableLengthAndByteOffset(bytesPerElement());
+}
+
 void ArrayBufferViewObject::notifyBufferMoved(uint8_t* srcBufStart,
                                               uint8_t* dstBufStart) {
   MOZ_ASSERT(!isSharedMemory());
   MOZ_ASSERT(hasBuffer());
 
   if (srcBufStart != dstBufStart) {
-    void* data = dstBufStart + byteOffset();
+    void* data = dstBufStart + dataPointerOffset();
     getFixedSlotRef(DATA_SLOT).unbarrieredSet(PrivateValue(data));
   }
 }
@@ -183,11 +192,173 @@ bool ArrayBufferViewObject::init(JSContext* cx,
   return true;
 }
 
+bool ArrayBufferViewObject::initResizable(JSContext* cx,
+                                          ArrayBufferObjectMaybeShared* buffer,
+                                          size_t byteOffset, size_t length,
+                                          uint32_t bytesPerElement,
+                                          AutoLength autoLength) {
+  MOZ_ASSERT(buffer->isResizable());
+
+  if (!init(cx, buffer, byteOffset, length, bytesPerElement)) {
+    return false;
+  }
+
+  initFixedSlot(AUTO_LENGTH_SLOT, BooleanValue(static_cast<bool>(autoLength)));
+  initFixedSlot(INITIAL_LENGTH_SLOT, PrivateValue(length));
+  initFixedSlot(INITIAL_BYTE_OFFSET_SLOT, PrivateValue(byteOffset));
+
+  
+  if (!isSharedMemory()) {
+    computeResizableLengthAndByteOffset(bytesPerElement);
+  }
+
+  MOZ_ASSERT(!isOutOfBounds(), "can't create out-of-bounds views");
+
+  return true;
+}
+
+void ArrayBufferViewObject::computeResizableLengthAndByteOffset(
+    size_t bytesPerElement) {
+  MOZ_ASSERT(!isSharedMemory());
+  MOZ_ASSERT(hasBuffer());
+  MOZ_ASSERT(!bufferUnshared()->isLengthPinned());
+  MOZ_ASSERT(bufferUnshared()->isResizable());
+
+  size_t byteOffsetStart = initialByteOffset();
+  size_t bufferByteLength = bufferUnshared()->byteLength();
+
+  
+  if (byteOffsetStart > bufferByteLength) {
+    setFixedSlot(LENGTH_SLOT, PrivateValue(size_t(0)));
+    setFixedSlot(BYTEOFFSET_SLOT, PrivateValue(size_t(0)));
+    return;
+  }
+
+  size_t length;
+  if (isAutoLength()) {
+    length = (bufferByteLength - byteOffsetStart) / bytesPerElement;
+  } else {
+    length = initialLength();
+
+    
+    size_t byteOffsetEnd = byteOffsetStart + length * bytesPerElement;
+    if (byteOffsetEnd > bufferByteLength) {
+      setFixedSlot(LENGTH_SLOT, PrivateValue(size_t(0)));
+      setFixedSlot(BYTEOFFSET_SLOT, PrivateValue(size_t(0)));
+      return;
+    }
+  }
+
+  setFixedSlot(LENGTH_SLOT, PrivateValue(length));
+  setFixedSlot(BYTEOFFSET_SLOT, PrivateValue(byteOffsetStart));
+}
+
+size_t ArrayBufferViewObject::bytesPerElement() const {
+  if (is<TypedArrayObject>()) {
+    return as<TypedArrayObject>().bytesPerElement();
+  }
+
+  MOZ_ASSERT(is<DataViewObject>());
+  return 1;
+}
+
 bool ArrayBufferViewObject::hasResizableBuffer() const {
   if (auto* buffer = bufferEither()) {
     return buffer->isResizable();
   }
   return false;
+}
+
+size_t ArrayBufferViewObject::dataPointerOffset() const {
+  
+  if (!hasBuffer()) {
+    MOZ_ASSERT(byteOffsetSlotValue() == 0);
+    return 0;
+  }
+
+  
+  if (isSharedMemory()) {
+    return byteOffsetSlotValue();
+  }
+
+  
+  const auto* bufferObj = gc::MaybeForwarded(&bufferValue().toObject());
+
+  
+  MOZ_ASSERT(
+      gc::MaybeForwardedObjectIs<FixedLengthArrayBufferObject>(bufferObj) ||
+      gc::MaybeForwardedObjectIs<ResizableArrayBufferObject>(bufferObj));
+
+  
+  static_assert(
+      std::is_base_of_v<ArrayBufferObject, FixedLengthArrayBufferObject>);
+  static_assert(
+      std::is_base_of_v<ArrayBufferObject, ResizableArrayBufferObject>);
+
+  
+  const auto* buffer = static_cast<const ArrayBufferObject*>(bufferObj);
+
+  
+  if (buffer->isResizable() && !buffer->isDetached()) {
+    return initialByteOffsetValue();
+  }
+
+  
+  MOZ_ASSERT_IF(buffer->isDetached(), byteOffsetSlotValue() == 0);
+
+  
+  return byteOffsetSlotValue();
+}
+
+mozilla::Maybe<size_t> ArrayBufferViewObject::byteOffset() const {
+  
+  
+  size_t byteOffset = byteOffsetSlotValue();
+  if (byteOffset > 0) {
+    MOZ_ASSERT(!hasDetachedBuffer());
+    MOZ_ASSERT_IF(hasResizableBuffer(), !isOutOfBounds());
+    return mozilla::Some(byteOffset);
+  }
+  if (hasDetachedBufferOrIsOutOfBounds()) {
+    return mozilla::Nothing{};
+  }
+  return mozilla::Some(0);
+}
+
+mozilla::Maybe<size_t> ArrayBufferViewObject::length() const {
+  
+  
+  size_t length = lengthSlotValue();
+  if (MOZ_LIKELY(length > 0)) {
+    MOZ_ASSERT(!hasDetachedBuffer());
+    MOZ_ASSERT_IF(hasResizableBuffer(), !isOutOfBounds());
+    MOZ_ASSERT(!isSharedMemory() || !hasResizableBuffer() || !isAutoLength(),
+               "length is zero for auto-length growable shared buffers");
+    return mozilla::Some(length);
+  }
+
+  if (hasDetachedBufferOrIsOutOfBounds()) {
+    return mozilla::Nothing{};
+  }
+
+  if (isSharedMemory()) {
+    auto* buffer = bufferShared();
+    MOZ_ASSERT(buffer, "shared memory doesn't use inline data");
+
+    
+    
+    
+    if (buffer->isGrowable() && isAutoLength()) {
+      size_t bufferByteLength = buffer->byteLength();
+      size_t byteOffset = byteOffsetSlotValue();
+      MOZ_ASSERT(byteOffset <= bufferByteLength);
+      MOZ_ASSERT(byteOffset == initialByteOffset(),
+                 "views on growable shared buffers can't get out-of-bounds");
+
+      return mozilla::Some((bufferByteLength - byteOffset) / bytesPerElement());
+    }
+  }
+  return mozilla::Some(0);
 }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)

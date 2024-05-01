@@ -914,8 +914,6 @@ void ArrayBufferObject::detach(JSContext* cx,
 
   
   
-  
-  
 
   auto& innerViews = ObjectRealm::get(buffer).innerViews.get();
   if (InnerViewTable::ViewVector* views =
@@ -962,6 +960,20 @@ void ResizableArrayBufferObject::resize(size_t newByteLength) {
   }
 
   setByteLength(newByteLength);
+
+  
+  
+
+  auto& innerViews = ObjectRealm::get(this).innerViews.get();
+  if (InnerViewTable::ViewVector* views =
+          innerViews.maybeViewsUnbarriered(this)) {
+    for (auto& view : *views) {
+      view->notifyBufferResized();
+    }
+  }
+  if (auto* view = firstView()) {
+    view->as<ArrayBufferViewObject>().notifyBufferResized();
+  }
 }
 
 
