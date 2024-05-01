@@ -5,6 +5,8 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  LanguageDetector:
+    "resource://gre/modules/translation/LanguageDetector.sys.mjs",
   TranslationsPanelShared:
     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
 });
@@ -91,6 +93,30 @@ var SelectTranslationsPanel = new (class {
   
 
 
+
+
+
+
+
+
+  async getLangPairPromise(textToTranslate) {
+    const [fromLang, toLang] = await Promise.all([
+      LanguageDetector.detectLanguage(textToTranslate).then(
+        ({ language }) => language
+      ),
+      TranslationsParent.getTopPreferredSupportedToLang(),
+    ]);
+
+    return {
+      fromLang,
+      
+      toLang: fromLang === toLang ? undefined : toLang,
+    };
+  }
+
+  
+
+
   close() {
     PanelMultiView.hidePopup(this.elements.panel);
   }
@@ -114,8 +140,66 @@ var SelectTranslationsPanel = new (class {
   
 
 
-  async open(event) {
+
+
+
+
+  async #updateLanguageDropdown(langTag, menuList) {
+    const langTagIsSupported =
+      menuList.id === this.elements.fromMenuList.id
+        ? await TranslationsParent.isSupportedAsFromLang(langTag)
+        : await TranslationsParent.isSupportedAsToLang(langTag);
+
+    if (langTagIsSupported) {
+      
+      
+      menuList.value = langTag;
+      menuList.removeAttribute("data-l10n-id");
+    } else {
+      
+      
+      menuList.value = undefined;
+      document.l10n.setAttributes(
+        menuList,
+        "translations-panel-choose-language"
+      );
+      await document.l10n.translateElements([menuList]);
+    }
+  }
+
+  
+
+
+
+
+
+  async #updateLanguageDropdowns(langPairPromise) {
+    const { fromLang, toLang } = await langPairPromise;
+
+    this.console?.debug(`fromLang(${fromLang})`);
+    this.console?.debug(`toLang(${toLang})`);
+
+    const { fromMenuList, toMenuList } = this.elements;
+
+    await Promise.all([
+      this.#updateLanguageDropdown(fromLang, fromMenuList),
+      this.#updateLanguageDropdown(toLang, toMenuList),
+    ]);
+  }
+
+  
+
+
+
+
+
+
+
+  async open(event, langPairPromise) {
+    this.console?.log("Showing a translation panel.");
+
     await this.#ensureLangListsBuilt();
+    await this.#updateLanguageDropdowns(langPairPromise);
 
     
     

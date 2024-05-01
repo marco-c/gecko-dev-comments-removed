@@ -107,6 +107,14 @@ function openContextMenu(aMessage, aBrowser, aActor) {
 }
 
 class nsContextMenu {
+  
+
+
+
+
+
+  #translationsLangPairPromise;
+
   constructor(aXulMenu, aIsShift) {
     
     this.setContext();
@@ -2516,7 +2524,63 @@ class nsContextMenu {
   
 
 
-  async showTranslateSelectionItem() {
+
+
+  openSelectTranslationsPanel(event) {
+    SelectTranslationsPanel.open(event, this.#translationsLangPairPromise);
+  }
+
+  
+
+
+
+
+
+
+
+
+  async localizeTranslateSelectionItem(translateSelectionItem) {
+    const { toLang } = await this.#translationsLangPairPromise;
+
+    if (toLang) {
+      
+      let displayName;
+
+      try {
+        const displayNames = new Services.intl.DisplayNames(undefined, {
+          type: "language",
+        });
+        displayName = displayNames.of(toLang);
+      } catch {
+        
+      }
+
+      if (displayName) {
+        document.l10n.setAttributes(
+          translateSelectionItem,
+          this.isTextSelected
+            ? "main-context-menu-translate-selection-to-language"
+            : "main-context-menu-translate-link-text-to-language",
+          { language: displayName }
+        );
+        return;
+      }
+    }
+
+    
+    
+    document.l10n.setAttributes(
+      translateSelectionItem,
+      this.isTextSelected
+        ? "main-context-menu-translate-selection"
+        : "main-context-menu-translate-link-text"
+    );
+  }
+
+  
+
+
+  showTranslateSelectionItem() {
     const translateSelectionItem = document.getElementById(
       "context-translate-selection"
     );
@@ -2528,7 +2592,7 @@ class nsContextMenu {
     );
 
     
-    const translatableText = this.isTextSelected
+    const textToTranslate = this.isTextSelected
       ? this.selectedText.trim()
       : this.linkTextStr.trim();
 
@@ -2536,7 +2600,7 @@ class nsContextMenu {
       
       !(translationsEnabled && selectTranslationsEnabled) ||
       
-      translatableText.length === 0 ||
+      textToTranslate.length === 0 ||
       
       nsContextMenu.#isFullPageTranslationsActive();
 
@@ -2544,39 +2608,9 @@ class nsContextMenu {
       return;
     }
 
-    const preferredLanguages =
-      nsContextMenu.TranslationsParent.getPreferredLanguages();
-    const topPreferredLanguage = preferredLanguages[0];
-
-    if (topPreferredLanguage) {
-      const { language } = await nsContextMenu.LanguageDetector.detectLanguage(
-        translatableText
-      );
-      if (topPreferredLanguage !== language) {
-        try {
-          const dn = new Services.intl.DisplayNames(undefined, {
-            type: "language",
-          });
-          document.l10n.setAttributes(
-            translateSelectionItem,
-            this.isTextSelected
-              ? "main-context-menu-translate-selection-to-language"
-              : "main-context-menu-translate-link-text-to-language",
-            { language: dn.of(topPreferredLanguage) }
-          );
-          return;
-        } catch {
-          
-        }
-      }
-    }
-
-    document.l10n.setAttributes(
-      translateSelectionItem,
-      this.isTextSelected
-        ? "main-context-menu-translate-selection"
-        : "main-context-menu-translate-link-text"
-    );
+    this.#translationsLangPairPromise =
+      SelectTranslationsPanel.getLangPairPromise(textToTranslate);
+    this.localizeTranslateSelectionItem(translateSelectionItem);
   }
 
   
@@ -2681,8 +2715,6 @@ class nsContextMenu {
 
 ChromeUtils.defineESModuleGetters(nsContextMenu, {
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
-  LanguageDetector:
-    "resource://gre/modules/translation/LanguageDetector.sys.mjs",
   LoginManagerContextMenu:
     "resource://gre/modules/LoginManagerContextMenu.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
