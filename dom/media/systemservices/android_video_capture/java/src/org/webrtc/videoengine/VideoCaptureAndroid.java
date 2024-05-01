@@ -17,7 +17,6 @@ import android.content.Context;
 import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
-import androidx.annotation.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -38,8 +37,10 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
 
   private final String deviceName;
   private volatile long native_capturer;  
-  private final Context context;
+  private Context context;
   private CameraVideoCapturer cameraVideoCapturer;
+  private EglBase eglBase;
+  private SurfaceTextureHelper surfaceTextureHelper;
 
   
   
@@ -47,16 +48,8 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
   private boolean capturerStartedSucceeded = false;
   private final CountDownLatch capturerStopped = new CountDownLatch(1);
 
-  @WebRTCJNITarget
-  public static VideoCaptureAndroid create(@NonNull final String deviceName) {
-    final Context context = GetContext();
-    return new VideoCaptureAndroid(context, deviceName,
-                                   Camera2Enumerator.isSupported(context)
-                                       ? new Camera2Enumerator(context)
-                                       : new Camera1Enumerator());
-  }
-
-  private VideoCaptureAndroid(@NonNull final Context context, @NonNull final String deviceName, @NonNull final CameraEnumerator enumerator) {
+ @WebRTCJNITarget
+ public VideoCaptureAndroid(String deviceName) {
     
     String[] parts = deviceName.split("Facing (front|back):");
     if (parts.length == 2) {
@@ -65,14 +58,20 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
       Log.e(TAG, "VideoCaptureAndroid: Expected facing mode as part of name: " + deviceName);
       this.deviceName = deviceName;
     }
-    this.context = context;
+    this.context = GetContext();
 
+    CameraEnumerator enumerator;
+    if (Camera2Enumerator.isSupported(context)) {
+      enumerator = new Camera2Enumerator(context);
+    } else {
+      enumerator = new Camera1Enumerator();
+    }
     try {
       cameraVideoCapturer = enumerator.createCapturer(this.deviceName, this);
-      final EglBase eglBase = EglBase.create();
-      final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("VideoCaptureAndroidSurfaceTextureHelper", eglBase.getEglBaseContext());
+      eglBase = EglBase.create();
+      surfaceTextureHelper = SurfaceTextureHelper.create("VideoCaptureAndroidSurfaceTextureHelper", eglBase.getEglBaseContext());
       cameraVideoCapturer.initialize(surfaceTextureHelper, context, this);
-    } catch (java.lang.RuntimeException e) {
+    } catch (java.lang.IllegalArgumentException e) {
       Log.e(TAG, "VideoCaptureAndroid: Exception while creating capturer: " + e);
     }
   }
@@ -80,10 +79,6 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
   
   @WebRTCJNITarget
   private static native Context GetContext();
-
-  public boolean canCapture() {
-    return cameraVideoCapturer != null;
-  }
 
   
   
