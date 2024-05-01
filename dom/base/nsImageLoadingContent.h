@@ -40,6 +40,7 @@ namespace dom {
 struct BindContext;
 class Document;
 class Element;
+enum class FetchPriority : uint8_t;
 }  
 }  
 
@@ -235,6 +236,8 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   
   
   virtual nsIContent* AsContent() = 0;
+
+  virtual mozilla::dom::FetchPriority GetFetchPriorityForImage() const;
 
   
 

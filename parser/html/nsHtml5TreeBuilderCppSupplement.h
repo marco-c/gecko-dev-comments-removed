@@ -215,13 +215,8 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                 nsHtml5AttributeName::ATTR_REFERRERPOLICY);
             nsHtml5String sizes =
                 aAttributes->getValue(nsHtml5AttributeName::ATTR_SIZES);
-
-            
-            
-            
-            
-            auto fetchPriority = nsHtml5String::EmptyString();
-
+            nsHtml5String fetchPriority =
+                aAttributes->getValue(nsHtml5AttributeName::ATTR_FETCHPRIORITY);
             mSpeculativeLoadQueue.AppendElement()->InitImage(
                 url, crossOrigin,  nullptr, referrerPolicy,
                 srcset, sizes, false, fetchPriority);
