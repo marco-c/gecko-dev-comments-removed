@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1173171
+-->
 <head>
   <title>Test for Bug 1173171</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -21,7 +21,7 @@
 // A simple async XMLHttpRequest call.
 // Returns a promise with the response.
 let xhr = function(method, url, responseType) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve) {
     let xhrInstance = new XMLHttpRequest();
     xhrInstance.open(method, url, true);
     xhrInstance.onload = function() {
