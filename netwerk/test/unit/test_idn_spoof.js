@@ -243,9 +243,9 @@ let testCases = [
   
   ["xn--vek160nb2ay85atj0b.jp", "\u65e5\u672c\u30fb\u91ce\u7403.jp", kSafe],
   
-  ["xn--abcdef-k64e.jp", "abc\u30fbdef.jp", kUnsafe, "DISABLED"],
+  ["xn--abcdef-k64e.jp", "abc\u30fbdef.jp", kUnsafe],
   
-  ["xn--abc-os4b.jp", "\u30fbabc.jp", kUnsafe, "DISABLED"],
+  ["xn--abc-os4b.jp", "\u30fbabc.jp", kUnsafe],
 
   
   
