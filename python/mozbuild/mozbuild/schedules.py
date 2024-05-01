@@ -42,6 +42,7 @@ EXCLUSIVE_COMPONENTS = [
     "linux",
     "macosx",
     "windows",
+    "ios",
     
     "awsy",
     "condprofile",
