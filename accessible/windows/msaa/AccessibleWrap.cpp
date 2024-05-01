@@ -31,6 +31,8 @@ using namespace mozilla::a11y;
 AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
     : LocalAccessible(aContent, aDoc) {}
 
+AccessibleWrap::~AccessibleWrap() = default;
+
 NS_IMPL_ISUPPORTS_INHERITED0(AccessibleWrap, LocalAccessible)
 
 void AccessibleWrap::Shutdown() {
@@ -75,6 +77,24 @@ bool AccessibleWrap::IsRootForHWND() {
   return thisHwnd != parentHwnd;
 }
 
+static void UpdateSystemCaretForHwnd(HWND aCaretWnd,
+                                     const LayoutDeviceIntRect& aCaretRect) {
+  if (!aCaretWnd || aCaretRect.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  nsAutoBitmap caretBitMap(CreateBitmap(1, aCaretRect.Height(), 1, 1, nullptr));
+  if (::CreateCaret(aCaretWnd, caretBitMap, 1,
+                    aCaretRect.Height())) {  
+    ::ShowCaret(aCaretWnd);
+    POINT clientPoint{aCaretRect.X(), aCaretRect.Y()};
+    ::ScreenToClient(aCaretWnd, &clientPoint);
+    ::SetCaretPos(clientPoint.x, clientPoint.y);
+  }
+}
+
 
 void AccessibleWrap::UpdateSystemCaretFor(
     Accessible* aAccessible, const LayoutDeviceIntRect& aCaretRect) {
@@ -106,7 +126,7 @@ void AccessibleWrap::UpdateSystemCaretFor(LocalAccessible* aAccessible) {
 
   HWND caretWnd =
       reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
-  UpdateSystemCaretFor(caretWnd, caretRect);
+  UpdateSystemCaretForHwnd(caretWnd, caretRect);
 }
 
 
@@ -117,24 +137,5 @@ void AccessibleWrap::UpdateSystemCaretFor(
   
   
   LocalAccessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
-  UpdateSystemCaretFor(MsaaAccessible::GetHWNDFor(outerDoc), aCaretRect);
-}
-
-
-void AccessibleWrap::UpdateSystemCaretFor(
-    HWND aCaretWnd, const LayoutDeviceIntRect& aCaretRect) {
-  if (!aCaretWnd || aCaretRect.IsEmpty()) {
-    return;
-  }
-
-  
-  
-  nsAutoBitmap caretBitMap(CreateBitmap(1, aCaretRect.Height(), 1, 1, nullptr));
-  if (::CreateCaret(aCaretWnd, caretBitMap, 1,
-                    aCaretRect.Height())) {  
-    ::ShowCaret(aCaretWnd);
-    POINT clientPoint{aCaretRect.X(), aCaretRect.Y()};
-    ::ScreenToClient(aCaretWnd, &clientPoint);
-    ::SetCaretPos(clientPoint.x, clientPoint.y);
-  }
+  UpdateSystemCaretForHwnd(MsaaAccessible::GetHWNDFor(outerDoc), aCaretRect);
 }
