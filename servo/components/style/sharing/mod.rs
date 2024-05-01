@@ -908,12 +908,7 @@ impl<E: TElement> StyleSharingCache<E> {
             
             
             
-            debug_assert_eq!(
-                target.is_link(),
-                candidate.element.is_link(),
-                "Linkness mismatch"
-            );
-            if target.is_link() {
+            if target.is_link() || candidate.element.is_link() {
                 return None;
             }
 
