@@ -86,6 +86,8 @@ using namespace mozilla::ipc;
 
 namespace {
 
+LazyLogModule gQoSLog("QoSPriority");  
+
 
 
 class HangMonitorChild : public PProcessHangMonitorChild,
@@ -649,9 +651,21 @@ mozilla::ipc::IPCResult HangMonitorChild::RecvCancelContentJSExecutionIfRunning(
   return IPC_OK();
 }
 
+const char* DefineQoS(const nsIThread::QoSPriority& aQoSPriority) {
+  if (aQoSPriority == nsIThread::QOS_PRIORITY_LOW) {
+    return "BACKGROUND";
+  }
+  
+  
+  return "NORMAL";
+}
+
 mozilla::ipc::IPCResult HangMonitorChild::RecvSetMainThreadQoSPriority(
     const nsIThread::QoSPriority& aQoSPriority) {
   MOZ_RELEASE_ASSERT(IsOnThread());
+  MOZ_LOG(gQoSLog, LogLevel::Debug,
+          ("Priority change %s recieved by content process.",
+           DefineQoS(aQoSPriority)));
 
 #ifdef XP_MACOSX
   
@@ -670,14 +684,22 @@ mozilla::ipc::IPCResult HangMonitorChild::RecvSetMainThreadQoSPriority(
       pthread_override_qos_class_start_np(mMainPThread, qosClass, 0);
   if (NS_FAILED(NS_DispatchToMainThread(NS_NewRunnableFunction(
           "HangMonitorChild::RecvSetMainThreadQoSPriority",
-          [qosClass, qosOverride] {
+          [qosClass, qosOverride, aQoSPriority] {
+            MOZ_LOG(
+                gQoSLog, LogLevel::Debug,
+                ("Override %s sent to main thread.", DefineQoS(aQoSPriority)));
             pthread_set_qos_class_self_np(qosClass, 0);
             if (qosOverride) {
               pthread_override_qos_class_end_np(qosOverride);
+              MOZ_LOG(gQoSLog, LogLevel::Debug,
+                      ("Override %s removed from main thread.",
+                       DefineQoS(aQoSPriority)));
             }
           })))) {
     
     pthread_override_qos_class_end_np(qosOverride);
+    MOZ_LOG(gQoSLog, LogLevel::Debug,
+            ("Override %s removed from main thread.", DefineQoS(aQoSPriority)));
   }
 #endif
 
