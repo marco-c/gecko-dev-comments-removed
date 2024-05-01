@@ -1847,6 +1847,8 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 pref("pdfjs.handleOctetStream", true);
 
+pref("sidebar.companion", false);
+
 
 pref("sidebar.position_start", true);
 
