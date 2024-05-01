@@ -12,6 +12,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsGkAtoms.h"
 #include "nsMenuPopupFrame.h"
+#include "nsIContentInlines.h"
 #include "nsIDragService.h"
 #include "nsIDragSession.h"
 #include "nsITreeView.h"
@@ -184,14 +185,17 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
     
     
     
-    if (!sourceContent->IsElement() ||
-        !sourceContent->AsElement()->AttrValueIs(
-            kNameSpaceID_None, nsGkAtoms::popupsinherittooltip,
-            nsGkAtoms::_true, eCaseMatters)) {
+    const bool allowTooltipCrossingPopup =
+        !sourceContent->GetParent() ||
+        (sourceContent->IsElement() &&
+         sourceContent->AsElement()->AttrValueIs(
+             kNameSpaceID_None, nsGkAtoms::popupsinherittooltip,
+             nsGkAtoms::_true, eCaseMatters));
+    if (!allowTooltipCrossingPopup) {
       for (nsIContent* targetContent =
                nsIContent::FromEventTargetOrNull(eventTarget);
            targetContent && targetContent != sourceContent;
-           targetContent = targetContent->GetParent()) {
+           targetContent = targetContent->GetFlattenedTreeParent()) {
         if (targetContent->IsAnyOfXULElements(
                 nsGkAtoms::menupopup, nsGkAtoms::panel, nsGkAtoms::tooltip)) {
           mSourceNode = nullptr;
