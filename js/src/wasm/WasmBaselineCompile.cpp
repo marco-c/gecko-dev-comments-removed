@@ -9776,13 +9776,13 @@ bool BaseCompiler::emitCallBuiltinModuleFunc() {
     return true;
   }
 
-  if (builtinModuleFunc->usesMemory) {
+  if (builtinModuleFunc->usesMemory()) {
     
     pushHeapBase(0);
   }
 
   
-  return emitInstanceCall(builtinModuleFunc->signature);
+  return emitInstanceCall(*builtinModuleFunc->sig());
 }
 
 

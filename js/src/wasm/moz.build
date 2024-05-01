@@ -19,6 +19,7 @@ UNIFIED_SOURCES += [
     "WasmBCFrame.cpp",
     "WasmBCMemory.cpp",
     "WasmBinary.cpp",
+    "WasmBuiltinModule.cpp",
     "WasmBuiltins.cpp",
     "WasmCode.cpp",
     "WasmCodegenTypes.cpp",
@@ -33,7 +34,6 @@ UNIFIED_SOURCES += [
     "WasmGenerator.cpp",
     "WasmInitExpr.cpp",
     "WasmInstance.cpp",
-    "WasmIntrinsic.cpp",
     "WasmIonCompile.cpp",
     "WasmJS.cpp",
     "WasmLog.cpp",
@@ -45,6 +45,7 @@ UNIFIED_SOURCES += [
     "WasmRealm.cpp",
     "WasmSerialize.cpp",
     "WasmSignalHandlers.cpp",
+    "WasmStaticTypeDefs.cpp",
     "WasmStubs.cpp",
     "WasmSummarizeInsn.cpp",
     "WasmTable.cpp",
@@ -56,9 +57,9 @@ UNIFIED_SOURCES += [
 
 
 GeneratedFile(
-    "WasmIntrinsicGenerated.h",
-    script="GenerateIntrinsics.py",
-    inputs=["WasmIntrinsic.yaml"],
+    "WasmBuiltinModuleGenerated.h",
+    script="GenerateBuiltinModules.py",
+    inputs=["WasmBuiltinModule.yaml"],
 )
 
 
