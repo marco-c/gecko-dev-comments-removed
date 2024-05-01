@@ -29,7 +29,6 @@ TRANSFORMS = [
         
         "files": [
             "defaults/pref/channel-prefs.js",
-            "Contents/Resources/defaults/pref/channel-prefs.js",
         ],
         "channel_prefix": ["aurora", "beta", "release", "esr"],
         "side": "source",
@@ -39,7 +38,6 @@ TRANSFORMS = [
         
         "files": [
             "defaults/pref/channel-prefs.js",
-            "Contents/Resources/defaults/pref/channel-prefs.js",
         ],
         "channel_prefix": ["beta"],
         "side": "target",
@@ -52,7 +50,6 @@ TRANSFORMS = [
         
         "files": [
             "defaults/pref/channel-prefs.js",
-            "Contents/Resources/defaults/pref/channel-prefs.js",
         ],
         "channel_prefix": ["beta"],
         "side": "source",
@@ -69,7 +66,6 @@ TRANSFORMS = [
         
         "files": [
             "defaults/pref/channel-prefs.js",
-            "Contents/Resources/defaults/pref/channel-prefs.js",
         ],
         "channel_prefix": ["aurora", "beta", "release", "esr"],
         "side": "target",
@@ -80,7 +76,7 @@ TRANSFORMS = [
         
         
         
-        "files": ["update-settings.ini", "Contents/Resources/update-settings.ini"],
+        "files": ["update-settings.ini"],
         "channel_prefix": ["beta"],
         "side": "target",
         "substitution": [
@@ -88,19 +84,19 @@ TRANSFORMS = [
             "ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-beta,firefox-mozilla-release\n",
         ],
     },
-    {
-        
-        
-        
-        "files": ["Contents/Resources/update-settings.ini"],
-        "channel_prefix": ["beta"],
-        "side": "source",
-        "substitution": [
-            "ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-release\n",
-            "ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-beta,firefox-mozilla-release\n",
-        ],
-    },
 ]
+
+
+
+
+IGNORE_FILES = (
+    "Contents/MacOS/updater.app/Contents/Frameworks/UpdateSettings.framework/Resources/Info.plist",
+    "Contents/MacOS/updater.app/Contents/Frameworks/UpdateSettings.framework/_CodeSignature/CodeResources",
+    "Contents/MacOS/updater.app/Contents/Frameworks/UpdateSettings.framework/UpdateSettings",
+    "Contents/Frameworks/ChannelPrefs.framework/Resources/Info.plist",
+    "Contents/Frameworks/ChannelPrefs.framework/_CodeSignature/CodeResources",
+    "Contents/Frameworks/ChannelPrefs.framework/ChannelPrefs",
+)
 
 
 def walk_dir(path):
@@ -170,6 +166,14 @@ def compare_common_files(files, channel, source_dir, target_dir):
             source_file
         ) != hash_file(target_file):
             logging.info("Difference found in {}".format(filename))
+            if filename in IGNORE_FILES:
+                logging.info(
+                    "Ignoring difference in {} because it is listed in IGNORE_FILES".format(
+                        filename
+                    )
+                )
+                continue
+
             file_contents = {
                 "source": open(source_file).readlines(),
                 "target": open(target_file).readlines(),
