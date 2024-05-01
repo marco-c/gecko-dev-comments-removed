@@ -49,15 +49,6 @@ class DtlsSrtpTransport : public SrtpTransport {
 
   void SetOnDtlsStateChange(std::function<void(void)> callback);
 
-  RTCError SetSrtpSendKey(const cricket::CryptoParams& params) override {
-    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                    "Set SRTP keys for DTLS-SRTP is not supported.");
-  }
-  RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params) override {
-    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                    "Set SRTP keys for DTLS-SRTP is not supported.");
-  }
-
   
   
   void SetActiveResetSrtpParams(bool active_reset_srtp_params) {
