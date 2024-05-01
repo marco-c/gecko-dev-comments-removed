@@ -28,7 +28,6 @@ extern crate cstr;
 extern crate xpcom;
 
 mod init;
-mod ohttp_pings;
 
 pub use init::fog_init;
 
@@ -49,7 +48,6 @@ static mut PENDING_BUF: Vec<u8> = Vec::new();
 
 
 
-
 #[no_mangle]
 pub unsafe extern "C" fn fog_serialize_ipc_buf() -> usize {
     if let Some(buf) = ipc::take_buf() {
@@ -64,7 +62,6 @@ pub unsafe extern "C" fn fog_serialize_ipc_buf() -> usize {
 
 
 
-
 #[no_mangle]
 pub unsafe extern "C" fn fog_give_ipc_buf(buf: *mut u8, buf_len: usize) -> usize {
     let pending_len = PENDING_BUF.len();
@@ -75,7 +72,6 @@ pub unsafe extern "C" fn fog_give_ipc_buf(buf: *mut u8, buf_len: usize) -> usize
     PENDING_BUF = Vec::new();
     pending_len
 }
-
 
 
 
@@ -96,9 +92,9 @@ pub unsafe extern "C" fn fog_use_ipc_buf(buf: *const u8, buf_len: usize) {
 pub extern "C" fn fog_set_debug_view_tag(value: &nsACString) -> nsresult {
     let result = glean::set_debug_view_tag(&value.to_string());
     if result {
-        NS_OK
+        return NS_OK;
     } else {
-        NS_ERROR_FAILURE
+        return NS_ERROR_FAILURE;
     }
 }
 
@@ -141,7 +137,7 @@ pub extern "C" fn fog_set_experiment_active(
         extra_values.len(),
         "Experiment extra keys and values differ in length."
     );
-    let extra = if extra_keys.is_empty() {
+    let extra = if extra_keys.len() == 0 {
         None
     } else {
         Some(

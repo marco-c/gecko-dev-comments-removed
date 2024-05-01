@@ -57,13 +57,6 @@ constexpr glean::impl::Ping NotEvents(3);
 constexpr glean::impl::Ping NotMetrics(4);
 
 
-
-
-
-
-constexpr glean::impl::Ping NotOhttp(5);
-
-
 }  
 
 #endif  
