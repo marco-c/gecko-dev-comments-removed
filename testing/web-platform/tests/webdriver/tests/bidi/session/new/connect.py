@@ -16,17 +16,16 @@ async def test_websocket_url_connect(session):
 
 
 @pytest.mark.asyncio
-async def test_bidi_session_send(bidi_session, send_blocking_command):
-    await send_blocking_command("session.status", {})
+async def test_bidi_session_send(bidi_session):
+    await bidi_session.session.status()
 
 
 
 
 @pytest.mark.asyncio
 @pytest.mark.capabilities({"acceptInsecureCerts": True})
-async def test_bidi_session_with_different_capability(bidi_session,
-                                                      send_blocking_command):
-    await send_blocking_command("session.status", {})
+async def test_bidi_session_with_different_capability(bidi_session):
+    await bidi_session.session.status()
 
 
 
