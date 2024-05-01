@@ -236,9 +236,4 @@ interface nsIContentAnalysis : nsISupports
 
 
   void respondToWarnDialog(in ACString aRequestToken, in bool aAllowContent);
-
-  
-
-
-  void cancelAllRequests();
 };
