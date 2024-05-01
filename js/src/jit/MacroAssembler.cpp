@@ -8033,6 +8033,14 @@ void MacroAssembler::branchIfHasDetachedArrayBuffer(BranchIfDetached branchIf,
                                                     Label* label) {
   
 
+  
+  
+
+  
+  
+  
+  
+
   Label done;
   Label* ifNotDetached = branchIf == BranchIfDetached::Yes ? &done : label;
   Condition detachedCond =
@@ -8079,6 +8087,29 @@ void MacroAssembler::branchIfResizableArrayBufferViewOutOfBounds(Register obj,
   loadPrivate(Address(obj, ArrayBufferViewObject::initialByteOffsetOffset()),
               temp);
   branchPtr(Assembler::NotEqual, temp, ImmWord(0), label);
+
+  bind(&done);
+}
+
+void MacroAssembler::branchIfResizableArrayBufferViewInBounds(Register obj,
+                                                              Register temp,
+                                                              Label* label) {
+  
+
+  Label done;
+
+  loadArrayBufferViewLengthIntPtr(obj, temp);
+  branchPtr(Assembler::NotEqual, temp, ImmWord(0), label);
+
+  loadArrayBufferViewByteOffsetIntPtr(obj, temp);
+  branchPtr(Assembler::NotEqual, temp, ImmWord(0), label);
+
+  loadPrivate(Address(obj, ArrayBufferViewObject::initialLengthOffset()), temp);
+  branchPtr(Assembler::NotEqual, temp, ImmWord(0), &done);
+
+  loadPrivate(Address(obj, ArrayBufferViewObject::initialByteOffsetOffset()),
+              temp);
+  branchPtr(Assembler::Equal, temp, ImmWord(0), label);
 
   bind(&done);
 }
