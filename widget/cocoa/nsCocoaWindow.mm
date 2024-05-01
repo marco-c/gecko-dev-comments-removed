@@ -189,6 +189,7 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   [mWindow setDelegate:nil];
   [mWindow close];
+  [mWindow release];
   mWindow = nil;
   [mDelegate autorelease];
 
@@ -509,6 +510,10 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
 
   
   
+  mWindow.releasedWhenClosed = NO;
+
+  
+  
   [mWindow setRestorable:!aIsPrivateBrowsing];
   if (aIsPrivateBrowsing) {
     [mWindow disableSnapshotRestoration];
@@ -645,11 +650,8 @@ void nsCocoaWindow::Destroy() {
 
   
   
-  
-  
   if (mWindow && mWindowMadeHere) {
-    CancelAllTransitions();
-    DestroyNativeWindow();
+    [mWindow close];
   }
 }
 
