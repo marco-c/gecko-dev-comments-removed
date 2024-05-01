@@ -851,9 +851,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     if "speedometer" in try_name:
                         return True
                 if "safari" and "benchmark" in try_name:
-                    
-                    if "speedometer3" in try_name:
-                        return False
                     return True
         
         elif accept_raptor_android_build(platform):
