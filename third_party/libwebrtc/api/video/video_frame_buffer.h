@@ -14,8 +14,8 @@
 #include <stdint.h>
 
 #include "api/array_view.h"
+#include "api/ref_count.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -44,7 +44,7 @@ class NV12BufferInterface;
 
 
 
-class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
+class RTC_EXPORT VideoFrameBuffer : public webrtc::RefCountInterface {
  public:
   
   

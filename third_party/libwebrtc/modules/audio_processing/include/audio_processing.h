@@ -28,10 +28,10 @@
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
+#include "api/ref_count.h"
 #include "api/scoped_refptr.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -127,7 +127,7 @@ class CustomProcessing;
 
 
 
-class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
+class RTC_EXPORT AudioProcessing : public RefCountInterface {
  public:
   
   
@@ -912,7 +912,7 @@ class CustomProcessing {
 };
 
 
-class EchoDetector : public rtc::RefCountInterface {
+class EchoDetector : public RefCountInterface {
  public:
   
   virtual void Initialize(int capture_sample_rate_hz,

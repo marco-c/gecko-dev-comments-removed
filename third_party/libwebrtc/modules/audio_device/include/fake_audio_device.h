@@ -23,8 +23,8 @@ class FakeAudioDeviceModule
   
   
   void AddRef() const override {}
-  rtc::RefCountReleaseStatus Release() const override {
-    return rtc::RefCountReleaseStatus::kDroppedLastRef;
+  webrtc::RefCountReleaseStatus Release() const override {
+    return webrtc::RefCountReleaseStatus::kDroppedLastRef;
   }
 };
 

@@ -16,16 +16,16 @@
 #include <iterator>
 #include <string>
 
+#include "api/ref_count.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame_buffer.h"
-#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 namespace test {
 
 
 
-class Video : public rtc::RefCountInterface {
+class Video : public RefCountInterface {
  public:
   class Iterator {
    public:
