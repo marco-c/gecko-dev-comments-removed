@@ -62,28 +62,14 @@ function JSTracerTrace(props) {
     relatedTraceId,
     
     why,
+
+    
+    mutationType,
+    mutationElement,
   } = message;
 
-  
-  let messageBody;
-  if (eventName) {
-    messageBody = [dom.span({ className: "jstracer-dom-event" }, eventName)];
-  } else if (typeof relatedTraceId == "number") {
-    messageBody = [
-      dom.span({ className: "jstracer-io" }, "⟵ "),
-      dom.span({ className: "jstracer-display-name" }, displayName),
-    ];
-  } else {
-    messageBody = [
-      dom.span({ className: "jstracer-io" }, "⟶ "),
-      dom.span({ className: "jstracer-implementation" }, implementation),
-      
-      dom.span({ className: "jstracer-display-name" }, " " + displayName),
-    ];
-  }
-
   let messageBodyConfig;
-  if (parameters || why) {
+  if (parameters || why || mutationType) {
     messageBodyConfig = {
       dispatch,
       serviceContainer,
@@ -96,8 +82,35 @@ function JSTracerTrace(props) {
       customFormat: false,
     };
   }
-  
 
+  
+  let messageBody;
+  if (eventName) {
+    messageBody = [dom.span({ className: "jstracer-dom-event" }, eventName)];
+  } else if (typeof relatedTraceId == "number") {
+    messageBody = [
+      dom.span({ className: "jstracer-io" }, "⟵ "),
+      dom.span({ className: "jstracer-display-name" }, displayName),
+    ];
+  } else if (mutationType) {
+    messageBody = [
+      dom.span(
+        { className: "jstracer-dom-mutation" },
+        
+        "— DOM Mutation | " + mutationType + " "
+      ),
+    ];
+    messageBody.push(formatRep(messageBodyConfig, mutationElement));
+  } else {
+    messageBody = [
+      dom.span({ className: "jstracer-io" }, "⟶ "),
+      dom.span({ className: "jstracer-implementation" }, implementation),
+      
+      dom.span({ className: "jstracer-display-name" }, " " + displayName),
+    ];
+  }
+
+  
   if (parameters) {
     messageBody.push("(", ...formatReps(messageBodyConfig, parameters), ")");
   }

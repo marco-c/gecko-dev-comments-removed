@@ -25,6 +25,7 @@ const EXPORTED_SYMBOLS = [
   "addTracingListener",
   "removeTracingListener",
   "NEXT_INTERACTION_MESSAGE",
+  "DOM_MUTATIONS",
 ];
 
 const NEXT_INTERACTION_MESSAGE =
@@ -41,6 +42,15 @@ const FRAME_EXIT_REASONS = {
   AWAIT: "await",
   
   THROW: "throw",
+};
+
+const DOM_MUTATIONS = {
+  
+  ADD: "add",
+  
+  ATTRIBUTES: "attributes",
+  
+  REMOVE: "remove",
 };
 
 const listeners = new Set();
@@ -134,9 +144,20 @@ const customLazy = {
 
 
 
+
+
+
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
+
+    
+    if (!isWorker) {
+      this.abortController = new AbortController();
+    }
 
     
     
@@ -162,6 +183,19 @@ class JavaScriptTracer {
     }
 
     this.traceDOMEvents = !!options.traceDOMEvents;
+
+    if (options.traceDOMMutations) {
+      if (!Array.isArray(options.traceDOMMutations)) {
+        throw new Error("'traceDOMMutations' attribute should be an array");
+      }
+      const acceptedValues = Object.values(DOM_MUTATIONS);
+      if (!options.traceDOMMutations.every(e => acceptedValues.includes(e))) {
+        throw new Error(
+          `'traceDOMMutations' only accept array of strings whose values can be: ${acceptedValues}`
+        );
+      }
+      this.traceDOMMutations = options.traceDOMMutations;
+    }
     this.traceValues = !!options.traceValues;
     this.traceFunctionReturn = !!options.traceFunctionReturn;
     this.maxDepth = options.maxDepth;
@@ -235,6 +269,10 @@ class JavaScriptTracer {
     if (this.traceDOMEvents) {
       this.startTracingDOMEvents();
     }
+    
+    if (this.traceDOMMutations?.length > 0 && !isWorker) {
+      this.startTracingDOMMutations();
+    }
 
     
     this.notifyToggle(true);
@@ -257,6 +295,97 @@ class JavaScriptTracer {
     }
     this.currentDOMEvent = null;
   }
+
+  startTracingDOMMutations() {
+    this.tracedGlobal.document.devToolsWatchingDOMMutations = true;
+
+    const eventOptions = {
+      signal: this.abortController.signal,
+      capture: true,
+    };
+    if (this.traceDOMMutations.includes(DOM_MUTATIONS.ADD)) {
+      this.tracedGlobal.docShell.chromeEventHandler.addEventListener(
+        "devtoolschildinserted",
+        this.#onDOMMutation,
+        eventOptions
+      );
+    }
+    if (this.traceDOMMutations.includes(DOM_MUTATIONS.ATTRIBUTES)) {
+      this.tracedGlobal.docShell.chromeEventHandler.addEventListener(
+        "devtoolsattrmodified",
+        this.#onDOMMutation,
+        eventOptions
+      );
+    }
+    if (this.traceDOMMutations.includes(DOM_MUTATIONS.REMOVE)) {
+      this.tracedGlobal.docShell.chromeEventHandler.addEventListener(
+        "devtoolschildremoved",
+        this.#onDOMMutation,
+        eventOptions
+      );
+    }
+  }
+
+  stopTracingDOMMutations() {
+    this.tracedGlobal.document.devToolsWatchingDOMMutations = false;
+    
+  }
+
+  
+
+
+
+
+  #onDOMMutation = event => {
+    
+    if (event.target.isNativeAnonymous) {
+      return;
+    }
+
+    let type = "";
+    switch (event.type) {
+      case "devtoolschildinserted":
+        type = DOM_MUTATIONS.ADD;
+        break;
+      case "devtoolsattrmodified":
+        type = DOM_MUTATIONS.ATTRIBUTES;
+        break;
+      case "devtoolschildremoved":
+        type = DOM_MUTATIONS.REMOVE;
+        break;
+      default:
+        throw new Error("Unexpected DOM Mutation event type: " + event.type);
+    }
+
+    let shouldLogToStdout = true;
+    if (listeners.size > 0) {
+      shouldLogToStdout = false;
+      for (const listener of listeners) {
+        
+        if (typeof listener.onTracingDOMMutation == "function") {
+          shouldLogToStdout |= listener.onTracingDOMMutation({
+            depth: this.depth,
+            prefix: this.prefix,
+
+            type,
+            element: event.target,
+            caller: Components.stack.caller,
+          });
+        }
+      }
+    }
+
+    if (shouldLogToStdout) {
+      const padding = "—".repeat(this.depth + 1);
+      this.loggingMethod(
+        this.prefix +
+          padding +
+          `[DOM Mutation | ${type}] ` +
+          objectToString(event.target) +
+          "\n"
+      );
+    }
+  };
 
   
 
@@ -287,7 +416,7 @@ class JavaScriptTracer {
             .makeDebuggeeValue(notification.event)
             .getProperty("type").return;
         }
-        this.currentDOMEvent = `DOM(${type})`;
+        this.currentDOMEvent = `DOM | ${type}`;
       } else {
         this.currentDOMEvent = notification.type;
       }
@@ -323,6 +452,14 @@ class JavaScriptTracer {
 
     if (this.traceDOMEvents) {
       this.stopTracingDOMEvents();
+    }
+    if (this.traceDOMMutations?.length > 0 && !isWorker) {
+      this.stopTracingDOMMutations();
+    }
+
+    
+    if (this.abortController) {
+      this.abortController.abort();
     }
 
     this.tracedGlobal = null;
@@ -419,6 +556,9 @@ class JavaScriptTracer {
       
       
       const depth = getFrameDepth(frame);
+
+      
+      this.depth = depth;
 
       
       if (this.maxDepth && depth >= this.maxDepth) {

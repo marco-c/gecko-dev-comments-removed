@@ -133,25 +133,35 @@ class TracerActor extends Actor {
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
       onTracingToggled: this.onTracingToggled.bind(this),
       onTracingPending: this.onTracingPending.bind(this),
+      onTracingDOMMutation: this.onTracingDOMMutation.bind(this),
     };
     addTracingListener(this.tracingListener);
     this.traceValues = !!options.traceValues;
-    startTracing({
-      global: this.targetActor.window || this.targetActor.workerGlobal,
-      prefix: options.prefix || "",
+    try {
+      startTracing({
+        global: this.targetActor.window || this.targetActor.workerGlobal,
+        prefix: options.prefix || "",
+        
+        traceDOMEvents: true,
+        
+        traceDOMMutations: options.traceDOMMutations,
+        
+        traceValues: !!options.traceValues,
+        
+        traceOnNextInteraction: !!options.traceOnNextInteraction,
+        
+        traceFunctionReturn: !!options.traceFunctionReturn,
+        
+        maxDepth: options.maxDepth,
+        
+        maxRecords: options.maxRecords,
+      });
+    } catch (e) {
       
-      traceDOMEvents: true,
       
-      traceValues: !!options.traceValues,
-      
-      traceOnNextInteraction: !!options.traceOnNextInteraction,
-      
-      traceFunctionReturn: !!options.traceFunctionReturn,
-      
-      maxDepth: options.maxDepth,
-      
-      maxRecords: options.maxRecords,
-    });
+      this.stopTracing();
+      throw e;
+    }
   }
 
   stopTracing() {
@@ -262,6 +272,52 @@ class TracerActor extends Actor {
       },
     ]);
 
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onTracingDOMMutation({ depth, prefix, type, caller, element }) {
+    
+    if (this.logMethod == LOG_METHODS.STDOUT) {
+      return true;
+    }
+
+    if (this.logMethod == LOG_METHODS.CONSOLE) {
+      const dbgObj = makeDebuggeeValue(this.targetActor, element);
+      this.throttledTraces.push({
+        resourceType: JSTRACER_TRACE,
+        prefix,
+        timeStamp: ChromeUtils.dateNow(),
+
+        filename: caller?.filename,
+        lineNumber: caller?.lineNumber,
+        columnNumber: caller?.columnNumber,
+        sourceId: caller.sourceId,
+
+        depth,
+        mutationType: type,
+        mutationElement: createValueGripForTarget(this.targetActor, dbgObj),
+      });
+      this.throttleEmitTraces();
+      return false;
+    }
     return false;
   }
 
