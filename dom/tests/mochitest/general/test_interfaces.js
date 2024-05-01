@@ -1641,7 +1641,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onbeforeprint", insecureContext: true },
   
-  { name: "onbeforetoggle", insecureContext: true, nightly: true },
+  { name: "onbeforetoggle", insecureContext: true },
   
   { name: "onbeforeunload", insecureContext: true },
   
