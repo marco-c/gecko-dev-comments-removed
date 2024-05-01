@@ -244,7 +244,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
     return aFontKey.mNamespace == mIdNamespace;
   }
 
-  void FlushRendering(wr::RenderReasons aReasons, bool aWaitForPresent = true);
+  void FlushRendering(wr::RenderReasons aReasons, bool aBlocking = true);
 
   
 
