@@ -719,14 +719,33 @@ void HTMLEditor::UpdateRootElement() {
 
 nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
     Document& aDocument, Element* aElement) {
+  const bool isInDesignMode =
+      (IsInDesignMode() && (!aElement || aElement->IsInDesignMode()));
+
+  
   
   
   if (GetSelectionAncestorLimiter()) {
+    if (isInDesignMode) {
+      return NS_OK;
+    }
+    
+    
+    IMEState newState;
+    nsresult rv = GetPreferredIMEState(&newState);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::GetPreferredIMEState() failed");
+      return NS_OK;
+    }
+    if (const RefPtr<Element> focusedElement = GetFocusedElement()) {
+      MOZ_ASSERT(focusedElement == aElement);
+      IMEStateManager::UpdateIMEState(newState, focusedElement, *this);
+    }
     return NS_OK;
   }
   
   
-  if (IsInDesignMode() && (!aElement || aElement->IsInDesignMode())) {
+  if (isInDesignMode) {
     MOZ_ASSERT(&aDocument == GetDocument());
     nsresult rv = OnFocus(aDocument);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnFocus() failed");
