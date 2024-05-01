@@ -76,6 +76,8 @@ already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
   if (side.mModuleURI || side.mESModuleURI) {
     JS::Rooted<JSObject*> exports(aCx);
     if (side.mModuleURI) {
+      
+      
       JS::Rooted<JSObject*> global(aCx);
       aRv = loader->Import(aCx, side.mModuleURI.ref(), &global, &exports);
       if (aRv.Failed()) {
