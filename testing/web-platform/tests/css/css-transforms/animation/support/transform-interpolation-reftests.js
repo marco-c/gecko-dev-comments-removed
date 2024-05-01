@@ -128,13 +128,6 @@ const midpointOptions = {
 };
 
 
-const referenceOptions = {
-  easing: 'steps(1, jump-start)',
-  duration: duration,
-  delay: -duration/2
-}
-
-
 
 
 const negoneOptions = {
@@ -178,6 +171,7 @@ async function createTests(tests) {
 
 
 
+
 async function createRefs(tests) {
   styleBody();
   for (const obj of tests) {
@@ -187,8 +181,8 @@ async function createRefs(tests) {
     initialStyle(div);
     finalStyle(div);
     var anim = div.animate(
-        {transform: ['none', test[midIndex]]},
-        referenceOptions);
+        {transform: [test[midIndex], test[midIndex]]},
+        midpointOptions);
     await anim.ready;
   }
 
