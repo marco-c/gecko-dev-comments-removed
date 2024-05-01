@@ -2224,10 +2224,12 @@ void JSInlineString::dumpOwnRepresentationFields(js::JSONPrinter& json) const {}
 
 void JSLinearString::dumpOwnRepresentationFields(js::JSONPrinter& json) const {
   if (!isInline()) {
-    js::gc::StoreBuffer* sb = storeBuffer();
-    bool inNursery = sb && sb->nursery().isInside(nonInlineCharsRaw());
-
-    json.boolProperty("inNursery", inNursery);
+    
+    
+    
+    js::Nursery& nursery = runtimeFromMainThread()->gc.nursery();
+    bool inNursery = nursery.isInside(nonInlineCharsRaw());
+    json.boolProperty("charsInNursery", inNursery);
   }
 }
 #endif
