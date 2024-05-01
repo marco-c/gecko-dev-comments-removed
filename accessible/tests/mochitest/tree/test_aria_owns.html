@@ -96,7 +96,7 @@
       testAccessibleTree("ariaowns_container", tree);
 
       tree =
-        { TABLE: [
+        { GRID: [
           { ROW: [
             { GRID_CELL: [
               { TEXT_LEAF: [] },
@@ -138,31 +138,31 @@
   <pre id="test">
   </pre>
 
-  
+  <!-- simple loop -->
   <div id="t1_1" aria-owns="t1_2"></div>
   <div id="t1_2" aria-owns="t1_1" role="heading"></div>
 
-  
+  <!-- loop -->
   <div id="t2_2" aria-owns="t2_3" role="group"></div>
   <div id="t2_1" aria-owns="t2_2"></div>
   <div id="t2_3" aria-owns="t2_1" role="heading"></div>
 
-  
+  <!-- loop #2 -->
   <div id="t3_1" aria-owns="t3_2" role="group"></div>
   <div id="t3_2" role="note">
     <div aria-owns="t3_3" role="heading"></div>
   </div>
   <div id="t3_3" aria-owns="t3_1"></div>
 
-  
+  <!-- self loop -->
   <div id="t4_1"><div aria-owns="t4_1" role="group"></div></div>
 
-  
+  <!-- natural and aria-owns hierarchy -->
   <div id="t5_2" role="note"><div aria-owns="t5_3" role="heading"></div></div>
   <div id="t5_1"><div aria-owns="t5_2" role="group"></div></div>
   <div id="t5_3" role="form"><div aria-owns="t5_1" role="tooltip"></div></div>
 
-  
+  <!-- rearrange children -->
   <div id="t6_1" aria-owns="t6_3 t6_2">
     <div id="t6_2" role="button"></div>
     <div id="t6_3" role="checkbox"></div>
@@ -175,7 +175,7 @@
   </div>
   <div id="ariaowns_uncle"></div>
 
-  
+  <!-- grid -->
   <div aria-owns="grid-row2" role="grid" id="grid">
     <div role="row">
       <div role="gridcell">cell 1,1</div>
@@ -187,8 +187,8 @@
     <div role="gridcell">cell 2,2</div>
   </div>
 
-  
-
+  <!-- Owned child which is an ancestor of its owner but didn't yet exist when
+       aria-owns relocation was processed (bug 1485097). -->
   <div id="presentation" role="presentation">
     <div id="presentation_owner" aria-owns="presentation"></div>
   </div>
