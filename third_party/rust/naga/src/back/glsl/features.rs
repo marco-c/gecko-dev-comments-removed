@@ -1,8 +1,8 @@
 use super::{BackendResult, Error, Version, Writer};
 use crate::{
     back::glsl::{Options, WriterFlags},
-    AddressSpace, Binding, Expression, Handle, ImageClass, ImageDimension, Interpolation, Sampling,
-    Scalar, ScalarKind, ShaderStage, StorageFormat, Type, TypeInner,
+    AddressSpace, Binding, Expression, Handle, ImageClass, ImageDimension, Interpolation,
+    SampleLevel, Sampling, Scalar, ScalarKind, ShaderStage, StorageFormat, Type, TypeInner,
 };
 use std::fmt::Write;
 
@@ -48,6 +48,8 @@ bitflags::bitflags! {
         ///
         /// We can always support this, either through the language or a polyfill
         const INSTANCE_INDEX = 1 << 22;
+        /// Sample specific LODs of cube / array shadow textures
+        const TEXTURE_SHADOW_LOD = 1 << 23;
     }
 }
 
@@ -125,6 +127,7 @@ impl FeaturesManager {
         check_feature!(TEXTURE_SAMPLES, 150);
         check_feature!(TEXTURE_LEVELS, 130);
         check_feature!(IMAGE_SIZE, 430, 310);
+        check_feature!(TEXTURE_SHADOW_LOD, 200, 300);
 
         
         if missing.is_empty() {
@@ -249,6 +252,11 @@ impl FeaturesManager {
                 
                 writeln!(out, "#extension GL_ARB_shader_draw_parameters : require")?;
             }
+        }
+
+        if self.0.contains(Features::TEXTURE_SHADOW_LOD) {
+            
+            writeln!(out, "#extension GL_EXT_texture_shadow_lod : require")?;
         }
 
         Ok(())
@@ -466,6 +474,47 @@ impl<'a, W> Writer<'a, W> {
 
                         if level.is_some() {
                             features.request(Features::TEXTURE_LEVELS)
+                        }
+                    }
+                }
+                Expression::ImageSample { image, level, offset, .. } => {
+                    if let TypeInner::Image {
+                        dim,
+                        arrayed,
+                        class: ImageClass::Depth { .. },
+                    } = *info[image].ty.inner_with(&module.types) {
+                        let lod = matches!(level, SampleLevel::Zero | SampleLevel::Exact(_));
+                        let bias = matches!(level, SampleLevel::Bias(_));
+                        let auto = matches!(level, SampleLevel::Auto);
+                        let cube = dim == ImageDimension::Cube;
+                        let array2d = dim == ImageDimension::D2 && arrayed;
+                        let gles = self.options.version.is_es();
+
+                        
+                        
+                        
+                        
+                        let grad_workaround_applicable = (array2d || (cube && !arrayed)) && level == SampleLevel::Zero;
+                        let prefer_grad_workaround = grad_workaround_applicable && !self.options.writer_flags.contains(WriterFlags::TEXTURE_SHADOW_LOD);
+
+                        let mut ext_used = false;
+
+                        
+                        
+                        ext_used |= (array2d || cube && arrayed) && bias;
+
+                        
+                        
+                        ext_used |= array2d && (bias || (gles && auto)) && offset.is_some();
+
+                        
+                        
+                        
+                        
+                        ext_used |= (cube || array2d) && lod && !prefer_grad_workaround;
+
+                        if ext_used {
+                            features.request(Features::TEXTURE_SHADOW_LOD);
                         }
                     }
                 }

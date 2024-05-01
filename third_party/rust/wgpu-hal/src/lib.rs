@@ -329,6 +329,9 @@ pub trait Device<A: Api>: WasmNotSendSync {
     unsafe fn create_sampler(&self, desc: &SamplerDescriptor) -> Result<A::Sampler, DeviceError>;
     unsafe fn destroy_sampler(&self, sampler: A::Sampler);
 
+    
+    
+    
     unsafe fn create_command_encoder(
         &self,
         desc: &CommandEncoderDescriptor<A>,
@@ -433,12 +436,88 @@ pub trait Queue<A: Api>: WasmNotSendSync {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait CommandEncoder<A: Api>: WasmNotSendSync + fmt::Debug {
     
+    
+    
+    
+    
+    
+    
     unsafe fn begin_encoding(&mut self, label: Label) -> Result<(), DeviceError>;
+
+    
+    
+    
+    
+    
+    
     
     unsafe fn discard_encoding(&mut self);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn end_encoding(&mut self) -> Result<A::CommandBuffer, DeviceError>;
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
