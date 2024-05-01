@@ -14,12 +14,10 @@
 #include <memory>
 #include <sstream>  
 
-#include "rtc_base/ignore_wundef.h"
 #include "rtc_base/protobuf_utils.h"
 
-RTC_PUSH_IGNORING_WUNDEF()
+
 #include "modules/audio_processing/debug.pb.h"
-RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 

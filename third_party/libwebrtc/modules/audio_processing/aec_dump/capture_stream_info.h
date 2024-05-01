@@ -15,16 +15,13 @@
 #include <utility>
 
 #include "modules/audio_processing/include/aec_dump.h"
-#include "rtc_base/ignore_wundef.h"
 
 
-RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
 #include "modules/audio_processing/debug.pb.h"
 #endif
-RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 
