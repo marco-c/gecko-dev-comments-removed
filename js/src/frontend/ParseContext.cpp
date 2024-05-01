@@ -593,27 +593,12 @@ bool ParseContext::hasUsedName(const UsedNameTracker& usedNames,
   return false;
 }
 
-bool ParseContext::hasClosedOverName(const UsedNameTracker& usedNames,
-                                     TaggedParserAtomIndex name) {
-  if (auto p = usedNames.lookup(name)) {
-    return p->value().isClosedOver(scriptId());
-  }
-  return false;
-}
-
 bool ParseContext::hasUsedFunctionSpecialName(const UsedNameTracker& usedNames,
                                               TaggedParserAtomIndex name) {
   MOZ_ASSERT(name == TaggedParserAtomIndex::WellKnown::arguments() ||
              name == TaggedParserAtomIndex::WellKnown::dot_this_() ||
              name == TaggedParserAtomIndex::WellKnown::dot_newTarget_());
   return hasUsedName(usedNames, name) ||
-         functionBox()->bindingsAccessedDynamically();
-}
-
-bool ParseContext::hasClosedOverFunctionSpecialName(
-    const UsedNameTracker& usedNames, TaggedParserAtomIndex name) {
-  MOZ_ASSERT(name == TaggedParserAtomIndex::WellKnown::arguments());
-  return hasClosedOverName(usedNames, name) ||
          functionBox()->bindingsAccessedDynamically();
 }
 
@@ -659,41 +644,17 @@ bool ParseContext::declareFunctionArgumentsObject(
   ParseContext::Scope& funScope = functionScope();
   ParseContext::Scope& _varScope = varScope();
 
+  bool usesArguments = false;
   bool hasExtraBodyVarScope = &funScope != &_varScope;
 
   
   auto argumentsName = TaggedParserAtomIndex::WellKnown::arguments();
 
-  bool tryDeclareArguments = false;
-  bool needsArgsObject = false;
-
-  
+  bool tryDeclareArguments;
   if (canSkipLazyClosedOverBindings) {
     tryDeclareArguments = funbox->shouldDeclareArguments();
-    needsArgsObject = funbox->needsArgsObj();
   } else {
-    
-    
-    bool bindingClosedOver =
-        hasClosedOverFunctionSpecialName(usedNames, argumentsName);
-    bool bindingUsedOnlyHere =
-        hasUsedFunctionSpecialName(usedNames, argumentsName) &&
-        !bindingClosedOver;
-
-    
-    
-    
-    tryDeclareArguments =
-        !funbox->isEligibleForArgumentsLength() || bindingClosedOver;
-    
-    
-    if (bindingUsedOnlyHere && funbox->isEligibleForArgumentsLength()) {
-      
-      MOZ_ASSERT(!tryDeclareArguments);
-      funbox->setUsesArgumentsIntrinsics();
-    } else if (tryDeclareArguments) {
-      needsArgsObject = true;
-    }
+    tryDeclareArguments = hasUsedFunctionSpecialName(usedNames, argumentsName);
   }
 
   
@@ -709,19 +670,9 @@ bool ParseContext::declareFunctionArgumentsObject(
   DeclaredNamePtr p = _varScope.lookupDeclaredName(argumentsName);
   if (p && p->value()->kind() == DeclarationKind::Var) {
     if (hasExtraBodyVarScope) {
-      
-      
       tryDeclareArguments = true;
     } else {
-      
-      
-      if (needsArgsObject) {
-        funbox->setNeedsArgsObj();
-      }
-
-      
-      
-      return true;
+      usesArguments = true;
     }
   }
 
@@ -734,11 +685,17 @@ bool ParseContext::declareFunctionArgumentsObject(
         return false;
       }
       funbox->setShouldDeclareArguments();
-      if (needsArgsObject) {
-        funbox->setNeedsArgsObj();
-      }
+      usesArguments = true;
+    } else if (hasExtraBodyVarScope) {
+      
+      return true;
     }
   }
+
+  if (usesArguments) {
+    funbox->setNeedsArgsObj();
+  }
+
   return true;
 }
 

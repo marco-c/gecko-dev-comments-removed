@@ -181,10 +181,6 @@ class SharedContext {
   bool isScriptExtraFieldCopiedToStencil : 1;
 
   
-  
-  bool eligibleForArgumentsLength : 1;
-
-  
 
   enum class Kind : uint8_t { FunctionBox, Global, Eval, Module };
 
@@ -276,11 +272,6 @@ class SharedContext {
     localStrict = strict;
     return retVal;
   }
-
-  bool isEligibleForArgumentsLength() {
-    return eligibleForArgumentsLength && !bindingsAccessedDynamically();
-  }
-  void setIneligibleForArgumentsLength() { eligibleForArgumentsLength = false; }
 
   void copyScriptExtraFields(ScriptStencilExtra& scriptExtra);
 };

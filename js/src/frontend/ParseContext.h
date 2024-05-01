@@ -661,12 +661,8 @@ class ParseContext : public Nestable<ParseContext> {
 
   bool hasUsedName(const UsedNameTracker& usedNames,
                    TaggedParserAtomIndex name);
-  bool hasClosedOverName(const UsedNameTracker& usedNames,
-                         TaggedParserAtomIndex name);
   bool hasUsedFunctionSpecialName(const UsedNameTracker& usedNames,
                                   TaggedParserAtomIndex name);
-  bool hasClosedOverFunctionSpecialName(const UsedNameTracker& usedNames,
-                                        TaggedParserAtomIndex name);
 
   bool declareFunctionThis(const UsedNameTracker& usedNames,
                            bool canSkipLazyClosedOverBindings);
@@ -676,13 +672,6 @@ class ParseContext : public Nestable<ParseContext> {
                         bool canSkipLazyClosedOverBindings);
   bool declareDotGeneratorName();
   bool declareTopLevelDotGeneratorName();
-
-  
-  
-  
-  
-  
-  size_t numberOfArgumentsNames = 0;
 
  private:
   [[nodiscard]] bool isVarRedeclaredInInnermostScope(
