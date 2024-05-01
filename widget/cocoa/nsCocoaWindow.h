@@ -492,6 +492,7 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   bool mWindowTransformIsIdentity;
   bool mAlwaysOnTop;
   bool mAspectRatioLocked;
+  bool mIsAlert = false;  
 
   int32_t mNumModalDescendents;
   InputContext mInputContext;

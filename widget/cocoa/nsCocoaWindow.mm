@@ -322,6 +322,7 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   mParent = aParent;
   mAncestorLink = aParent;
   mAlwaysOnTop = aInitData->mAlwaysOnTop;
+  mIsAlert = aInitData->mIsAlert;
 
   
   
@@ -548,12 +549,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     mWindow.opaque = YES;
   }
 
-  NSWindowCollectionBehavior newBehavior = mWindow.collectionBehavior;
-  if (mAlwaysOnTop) {
+  if (mAlwaysOnTop || mIsAlert) {
     mWindow.level = NSFloatingWindowLevel;
-    newBehavior |= NSWindowCollectionBehaviorCanJoinAllSpaces;
+    mWindow.collectionBehavior =
+        mWindow.collectionBehavior | NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
-  mWindow.collectionBehavior = newBehavior;
   mWindow.contentMinSize = NSMakeSize(60, 60);
   [mWindow disableCursorRects];
 
@@ -986,7 +986,7 @@ void nsCocoaWindow::Show(bool aState) {
 
       
       
-      if (mAlwaysOnTop) {
+      if (mAlwaysOnTop || mIsAlert) {
         [mWindow orderFront:nil];
       } else {
         [mWindow makeKeyAndOrderFront:nil];
