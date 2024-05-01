@@ -87,6 +87,11 @@ class nsICSSDeclaration : public nsISupports, public nsWrapperCache {
   }
 
   
+  
+  
+  virtual float UsedFontSize() { return -1.0; }
+
+  
   virtual void SetCssText(const nsACString& aString,
                           nsIPrincipal* aSubjectPrincipal,
                           mozilla::ErrorResult& rv) = 0;
