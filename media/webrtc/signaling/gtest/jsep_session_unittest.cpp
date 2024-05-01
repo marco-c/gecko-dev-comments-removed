@@ -4985,10 +4985,13 @@ TEST_F(JsepSessionTest, TestRtcpFbStar) {
   }
 }
 
-TEST_F(JsepSessionTest, TestUniquePayloadTypes) {
+TEST_F(JsepSessionTest, TestUniqueReceivePayloadTypes) {
   
   
-  AddTracks(*mSessionOff, "audio,audio,video");
+  
+  
+  
+  AddTracks(*mSessionOff, "audio,audio,video,video");
   AddTracks(*mSessionAns, "audio,audio,video");
 
   std::string offer = CreateOffer();
@@ -5000,49 +5003,67 @@ TEST_F(JsepSessionTest, TestUniquePayloadTypes) {
 
   auto offerTransceivers = GetTransceivers(*mSessionOff);
   auto answerTransceivers = GetTransceivers(*mSessionAns);
-  ASSERT_EQ(3U, offerTransceivers.size());
-  ASSERT_EQ(3U, answerTransceivers.size());
+  ASSERT_EQ(4U, offerTransceivers.size());
+  ASSERT_EQ(4U, answerTransceivers.size());
 
   ASSERT_FALSE(IsNull(offerTransceivers[0].mRecvTrack));
   ASSERT_TRUE(offerTransceivers[0].mRecvTrack.GetNegotiatedDetails());
   ASSERT_EQ(0U, offerTransceivers[0]
                     .mRecvTrack.GetNegotiatedDetails()
-                    ->GetUniquePayloadTypes()
+                    ->GetUniqueReceivePayloadTypes()
                     .size());
 
   ASSERT_FALSE(IsNull(offerTransceivers[1].mRecvTrack));
   ASSERT_TRUE(offerTransceivers[1].mRecvTrack.GetNegotiatedDetails());
   ASSERT_EQ(0U, offerTransceivers[1]
                     .mRecvTrack.GetNegotiatedDetails()
-                    ->GetUniquePayloadTypes()
+                    ->GetUniqueReceivePayloadTypes()
                     .size());
 
+  
   ASSERT_FALSE(IsNull(offerTransceivers[2].mRecvTrack));
   ASSERT_TRUE(offerTransceivers[2].mRecvTrack.GetNegotiatedDetails());
   ASSERT_NE(0U, offerTransceivers[2]
                     .mRecvTrack.GetNegotiatedDetails()
-                    ->GetUniquePayloadTypes()
+                    ->GetUniqueReceivePayloadTypes()
+                    .size());
+
+  
+  ASSERT_TRUE(IsNull(offerTransceivers[3].mRecvTrack));
+  ASSERT_TRUE(offerTransceivers[3].mRecvTrack.GetNegotiatedDetails());
+  ASSERT_EQ(0U, offerTransceivers[3]
+                    .mRecvTrack.GetNegotiatedDetails()
+                    ->GetUniqueReceivePayloadTypes()
                     .size());
 
   ASSERT_FALSE(IsNull(answerTransceivers[0].mRecvTrack));
   ASSERT_TRUE(answerTransceivers[0].mRecvTrack.GetNegotiatedDetails());
   ASSERT_EQ(0U, answerTransceivers[0]
                     .mRecvTrack.GetNegotiatedDetails()
-                    ->GetUniquePayloadTypes()
+                    ->GetUniqueReceivePayloadTypes()
                     .size());
 
   ASSERT_FALSE(IsNull(answerTransceivers[1].mRecvTrack));
   ASSERT_TRUE(answerTransceivers[1].mRecvTrack.GetNegotiatedDetails());
   ASSERT_EQ(0U, answerTransceivers[1]
                     .mRecvTrack.GetNegotiatedDetails()
-                    ->GetUniquePayloadTypes()
+                    ->GetUniqueReceivePayloadTypes()
                     .size());
 
+  
+  
   ASSERT_FALSE(IsNull(answerTransceivers[2].mRecvTrack));
   ASSERT_TRUE(answerTransceivers[2].mRecvTrack.GetNegotiatedDetails());
-  ASSERT_NE(0U, answerTransceivers[2]
+  ASSERT_EQ(0U, answerTransceivers[2]
                     .mRecvTrack.GetNegotiatedDetails()
-                    ->GetUniquePayloadTypes()
+                    ->GetUniqueReceivePayloadTypes()
+                    .size());
+
+  ASSERT_FALSE(IsNull(answerTransceivers[3].mRecvTrack));
+  ASSERT_TRUE(answerTransceivers[3].mRecvTrack.GetNegotiatedDetails());
+  ASSERT_EQ(0U, answerTransceivers[3]
+                    .mRecvTrack.GetNegotiatedDetails()
+                    ->GetUniqueReceivePayloadTypes()
                     .size());
 }
 

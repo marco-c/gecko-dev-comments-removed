@@ -662,7 +662,7 @@ nsresult JsepTrack::Negotiate(const SdpMediaSection& answer,
 
 
 
-void JsepTrack::SetUniquePayloadTypes(std::vector<JsepTrack*>& tracks) {
+void JsepTrack::SetUniqueReceivePayloadTypes(std::vector<JsepTrack*>& tracks) {
   
   
   std::map<uint16_t, JsepTrackNegotiatedDetails*> payloadTypeToDetailsMap;
@@ -697,7 +697,7 @@ void JsepTrack::SetUniquePayloadTypes(std::vector<JsepTrack*>& tracks) {
     auto trackDetails = ptAndDetails.second;
 
     if (trackDetails) {
-      trackDetails->mUniquePayloadTypes.push_back(
+      trackDetails->mUniqueReceivePayloadTypes.push_back(
           static_cast<uint8_t>(uniquePt));
     }
   }

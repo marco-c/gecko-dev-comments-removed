@@ -709,9 +709,9 @@ void RTCRtpReceiver::UpdateTransport() {
     
     auto uniquePts = GetJsepTransceiver()
                          .mRecvTrack.GetNegotiatedDetails()
-                         ->GetUniquePayloadTypes();
+                         ->GetUniqueReceivePayloadTypes();
     for (unsigned char& uniquePt : uniquePts) {
-      filter->AddUniquePT(uniquePt);
+      filter->AddUniqueReceivePT(uniquePt);
     }
   }
 

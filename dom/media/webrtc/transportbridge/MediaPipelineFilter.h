@@ -66,7 +66,7 @@ class MediaPipelineFilter {
   void SetRemoteMediaStreamId(const Maybe<std::string>& aMid);
 
   
-  void AddUniquePT(uint8_t payload_type);
+  void AddUniqueReceivePT(uint8_t payload_type);
 
   void Update(const MediaPipelineFilter& filter_update);
 
@@ -76,7 +76,7 @@ class MediaPipelineFilter {
   
   
   std::set<uint32_t> remote_ssrc_set_;
-  std::set<uint8_t> payload_type_set_;
+  std::set<uint8_t> receive_payload_type_set_;
   Maybe<std::string> mRemoteMid;
   std::set<uint32_t> mRemoteMidBindings;
   

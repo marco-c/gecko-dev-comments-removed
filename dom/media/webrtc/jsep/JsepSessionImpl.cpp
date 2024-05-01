@@ -1121,11 +1121,17 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
 
   CopyBundleTransports();
 
-  std::vector<JsepTrack*> remoteTracks;
+  std::vector<JsepTrack*> receiveTracks;
   for (auto& transceiver : mTransceivers) {
-    remoteTracks.push_back(&transceiver.mRecvTrack);
+    
+    
+    
+    
+    if (transceiver.mRecvTrack.GetActive()) {
+      receiveTracks.push_back(&transceiver.mRecvTrack);
+    }
   }
-  JsepTrack::SetUniquePayloadTypes(remoteTracks);
+  JsepTrack::SetUniqueReceivePayloadTypes(receiveTracks);
 
   mNegotiations++;
 
