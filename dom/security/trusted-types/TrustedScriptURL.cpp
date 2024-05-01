@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#include "mozilla/dom/TrustedScriptURL.h"
+
+namespace mozilla::dom {
+
+
+IMPL_TRUSTED_TYPE_CLASS(TrustedScriptURL)
+
+}  

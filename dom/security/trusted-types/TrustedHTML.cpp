@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "mozilla/dom/TrustedHTML.h"
+
+namespace mozilla::dom {
+
+IMPL_TRUSTED_TYPE_CLASS(TrustedHTML)
+
+}  
