@@ -154,7 +154,20 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   SessionCacheInfo info;
   udpConn->ChangeConnectionState(ConnectionState::TLS_HANDSHAKING);
 
-  if (StaticPrefs::network_http_http3_enable_0rtt() &&
+  auto hasServCertHashes = [&]() -> bool {
+    if (!mConnInfo->GetWebTransport()) {
+      return false;
+    }
+    const nsTArray<RefPtr<nsIWebTransportHash>>* servCertHashes =
+        gHttpHandler->ConnMgr()->GetServerCertHashes(mConnInfo);
+    return servCertHashes && !servCertHashes->IsEmpty();
+  };
+
+  
+  
+  
+  
+  if (StaticPrefs::network_http_http3_enable_0rtt() && !hasServCertHashes() &&
       NS_SUCCEEDED(SSLTokensCache::Get(peerId, token, info))) {
     LOG(("Found a resumption token in the cache."));
     mHttp3Connection->SetResumptionToken(token);
