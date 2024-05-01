@@ -2020,32 +2020,8 @@ impl<Impl: SelectorImpl> Component<Impl> {
 
     
     
-    pub fn maybe_allowed_after_pseudo_element(&self) -> bool {
-        match *self {
-            Component::NonTSPseudoClass(..) => true,
-            Component::Negation(ref selectors) |
-            Component::Is(ref selectors) |
-            Component::Where(ref selectors) => selectors.slice().iter().all(|selector| {
-                selector
-                    .iter_raw_match_order()
-                    .all(|c| c.maybe_allowed_after_pseudo_element())
-            }),
-            _ => false,
-        }
-    }
-
-    
-    
-    
-    
-    
     
     fn matches_for_stateless_pseudo_element(&self) -> bool {
-        debug_assert!(
-            self.maybe_allowed_after_pseudo_element(),
-            "Someone messed up pseudo-element parsing: {:?}",
-            *self
-        );
         match *self {
             Component::Negation(ref selectors) => !selectors.slice().iter().all(|selector| {
                 selector
