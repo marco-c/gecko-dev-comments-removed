@@ -141,14 +141,32 @@ fn can_use_clip_chain_for_quad_path(
     true
 }
 
+
+
+
+
+
+
+
 #[derive(Debug, Copy, Clone)]
 pub enum QuadRenderStrategy {
+    
+    
     Direct,
+    
+    
     Indirect,
+    
+    
+    
+    
     NinePatch {
         radius: LayoutVector2D,
         clip_rect: LayoutRect,
     },
+    
+    
+    
     Tiled {
         x_tiles: u16,
         y_tiles: u16,
@@ -163,69 +181,67 @@ fn get_prim_render_strategy(
     can_use_nine_patch: bool,
     spatial_tree: &SpatialTree,
 ) -> QuadRenderStrategy {
-    if clip_chain.needs_mask {
-        fn tile_count_for_size(size: f32) -> u16 {
-            (size / MIN_BRUSH_SPLIT_SIZE).min(4.0).max(1.0).ceil() as u16
-        }
+    if !clip_chain.needs_mask {
+        return QuadRenderStrategy::Direct
+    }
 
-        let prim_coverage_size = clip_chain.pic_coverage_rect.size();
-        let x_tiles = tile_count_for_size(prim_coverage_size.width);
-        let y_tiles = tile_count_for_size(prim_coverage_size.height);
-        let try_split_prim = x_tiles > 1 || y_tiles > 1;
+    fn tile_count_for_size(size: f32) -> u16 {
+        (size / MIN_BRUSH_SPLIT_SIZE).min(4.0).max(1.0).ceil() as u16
+    }
 
-        if try_split_prim {
-            if can_use_nine_patch {
-                if clip_chain.clips_range.count == 1 {
-                    let clip_instance = clip_store.get_instance_from_range(&clip_chain.clips_range, 0);
-                    let clip_node = &data_stores.clip[clip_instance.handle];
+    let prim_coverage_size = clip_chain.pic_coverage_rect.size();
+    let x_tiles = tile_count_for_size(prim_coverage_size.width);
+    let y_tiles = tile_count_for_size(prim_coverage_size.height);
+    let try_split_prim = x_tiles > 1 || y_tiles > 1;
 
-                    if let ClipItemKind::RoundedRectangle { ref radius, mode: ClipMode::Clip, rect, .. } = clip_node.item.kind {
-                        let max_corner_width = radius.top_left.width
-                                                    .max(radius.bottom_left.width)
-                                                    .max(radius.top_right.width)
-                                                    .max(radius.bottom_right.width);
-                        let max_corner_height = radius.top_left.height
-                                                    .max(radius.bottom_left.height)
-                                                    .max(radius.top_right.height)
-                                                    .max(radius.bottom_right.height);
+    if !try_split_prim {
+        return QuadRenderStrategy::Indirect;
+    }
 
-                        if max_corner_width <= 0.5 * rect.size().width &&
-                           max_corner_height <= 0.5 * rect.size().height {
+    if can_use_nine_patch && clip_chain.clips_range.count == 1 {
+        let clip_instance = clip_store.get_instance_from_range(&clip_chain.clips_range, 0);
+        let clip_node = &data_stores.clip[clip_instance.handle];
 
-                            let clip_prim_coords_match = spatial_tree.is_matching_coord_system(
-                                prim_spatial_node_index,
-                                clip_node.item.spatial_node_index,
-                            );
+        if let ClipItemKind::RoundedRectangle { ref radius, mode: ClipMode::Clip, rect, .. } = clip_node.item.kind {
+            let max_corner_width = radius.top_left.width
+                                        .max(radius.bottom_left.width)
+                                        .max(radius.top_right.width)
+                                        .max(radius.bottom_right.width);
+            let max_corner_height = radius.top_left.height
+                                        .max(radius.bottom_left.height)
+                                        .max(radius.top_right.height)
+                                        .max(radius.bottom_right.height);
 
-                            if clip_prim_coords_match {
-                                let map_clip_to_prim = SpaceMapper::new_with_target(
-                                    prim_spatial_node_index,
-                                    clip_node.item.spatial_node_index,
-                                    LayoutRect::max_rect(),
-                                    spatial_tree,
-                                );
+            if max_corner_width <= 0.5 * rect.size().width &&
+                max_corner_height <= 0.5 * rect.size().height {
 
-                                if let Some(rect) = map_clip_to_prim.map(&rect) {
-                                    return QuadRenderStrategy::NinePatch {
-                                        radius: LayoutVector2D::new(max_corner_width, max_corner_height),
-                                        clip_rect: rect,
-                                    };
-                                }
-                            }
-                        }
+                let clip_prim_coords_match = spatial_tree.is_matching_coord_system(
+                    prim_spatial_node_index,
+                    clip_node.item.spatial_node_index,
+                );
+
+                if clip_prim_coords_match {
+                    let map_clip_to_prim = SpaceMapper::new_with_target(
+                        prim_spatial_node_index,
+                        clip_node.item.spatial_node_index,
+                        LayoutRect::max_rect(),
+                        spatial_tree,
+                    );
+
+                    if let Some(rect) = map_clip_to_prim.map(&rect) {
+                        return QuadRenderStrategy::NinePatch {
+                            radius: LayoutVector2D::new(max_corner_width, max_corner_height),
+                            clip_rect: rect,
+                        };
                     }
                 }
             }
-
-            QuadRenderStrategy::Tiled {
-                x_tiles,
-                y_tiles,
-            }
-        } else {
-            QuadRenderStrategy::Indirect
         }
-    } else {
-        QuadRenderStrategy::Direct
+    }
+
+    QuadRenderStrategy::Tiled {
+        x_tiles,
+        y_tiles,
     }
 }
 
