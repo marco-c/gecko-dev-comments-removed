@@ -90,6 +90,7 @@ class nsIDOMXULSelectControlElement;
 class nsIDOMXULSelectControlItemElement;
 class nsIFrame;
 class nsIHTMLCollection;
+class nsIMozBrowserFrame;
 class nsIPrincipal;
 class nsIScreen;
 class nsIScrollableFrame;
@@ -456,6 +457,16 @@ class Element : public FragmentOrElement {
 
 
   virtual bool IsInteractiveHTMLContent() const;
+
+  
+
+
+
+
+
+
+
+  virtual nsIMozBrowserFrame* GetAsMozBrowserFrame() { return nullptr; }
 
   
 

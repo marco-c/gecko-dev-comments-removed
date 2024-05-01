@@ -3452,6 +3452,9 @@ static inline bool AttributeInfluencesOtherPseudoClassState(
     const Element& aElement, const nsAtom* aAttribute) {
   
   
+  if (aAttribute == nsGkAtoms::mozbrowser) {
+    return aElement.IsAnyOfHTMLElements(nsGkAtoms::iframe, nsGkAtoms::frame);
+  }
 
   if (aAttribute == nsGkAtoms::border) {
     return aElement.IsHTMLElement(nsGkAtoms::table);

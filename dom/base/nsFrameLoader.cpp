@@ -39,6 +39,7 @@
 #include "nsSubDocumentFrame.h"
 #include "nsError.h"
 #include "nsIAppWindow.h"
+#include "nsIMozBrowserFrame.h"
 #include "nsIScriptError.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
@@ -261,6 +262,13 @@ static bool IsTopContent(BrowsingContext* aParent, Element* aOwner) {
     return false;
   }
 
+  
+  
+  nsCOMPtr<nsIMozBrowserFrame> mozbrowser = aOwner->GetAsMozBrowserFrame();
+  if (mozbrowser && mozbrowser->GetReallyIsBrowser()) {
+    return true;
+  }
+
   if (aParent->IsContent()) {
     
     
@@ -358,7 +366,16 @@ static bool InitialLoadIsRemote(Element* aOwner) {
   }
 
   
-  return (aOwner->GetNameSpaceID() == kNameSpaceID_XUL) &&
+  
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aOwner);
+  bool isMozBrowserFrame = browserFrame && browserFrame->GetReallyIsBrowser();
+  if (isMozBrowserFrame && !aOwner->HasAttr(nsGkAtoms::remote)) {
+    return Preferences::GetBool("dom.ipc.browser_frames.oop_by_default", false);
+  }
+
+  
+  
+  return (isMozBrowserFrame || aOwner->GetNameSpaceID() == kNameSpaceID_XUL) &&
          aOwner->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
                              nsGkAtoms::_true, eCaseMatters);
 }
@@ -689,6 +706,12 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
     
     int32_t flags = nsIWebNavigation::LOAD_FLAGS_NONE;
+
+    
+    if (OwnerIsMozBrowserFrame()) {
+      flags = nsIWebNavigation::LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP |
+              nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+    }
     loadState->SetLoadFlags(flags);
 
     loadState->SetFirstParty(false);
@@ -851,6 +874,14 @@ static bool CheckDocShellType(mozilla::dom::Element* aOwnerContent,
                               nsIDocShellTreeItem* aDocShell, nsAtom* aAtom) {
   bool isContent = aOwnerContent->AttrValueIs(kNameSpaceID_None, aAtom,
                                               nsGkAtoms::content, eIgnoreCase);
+
+  if (!isContent) {
+    nsCOMPtr<nsIMozBrowserFrame> mozbrowser =
+        aOwnerContent->GetAsMozBrowserFrame();
+    if (mozbrowser) {
+      mozbrowser->GetMozbrowser(&isContent);
+    }
+  }
 
   if (isContent) {
     return aDocShell->ItemType() == nsIDocShellTreeItem::typeContent;
@@ -1125,6 +1156,7 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
       if (nsCOMPtr<nsIObserverService> os = services::GetObserverService()) {
         os->NotifyObservers(ToSupports(this), "remote-browser-shown", nullptr);
       }
+      ProcessPriorityManager::RemoteBrowserFrameShown(this);
     }
   } else {
     nsIntRect dimensions;
@@ -1297,6 +1329,14 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
+  
+  if (OwnerIsMozBrowserFrame() && !aOther->OwnerIsMozBrowserFrame()) {
+    DestroyBrowserFrameScripts();
+  }
+  if (!OwnerIsMozBrowserFrame() && aOther->OwnerIsMozBrowserFrame()) {
+    aOther->DestroyBrowserFrameScripts();
+  }
+
   otherBrowserParent->SetBrowserDOMWindow(browserDOMWindow);
   browserParent->SetBrowserDOMWindow(otherBrowserDOMWindow);
 
@@ -1364,6 +1404,10 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
 
   ourPresShell->BackingScaleFactorChanged();
   otherPresShell->BackingScaleFactorChanged();
+
+  
+  InitializeBrowserAPI();
+  aOther->InitializeBrowserAPI();
 
   mInSwap = aOther->mInSwap = false;
 
@@ -1492,8 +1536,13 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  bool ourFullscreenAllowed = ourContent->IsXULElement();
-  bool otherFullscreenAllowed = otherContent->IsXULElement();
+  bool ourFullscreenAllowed = ourContent->IsXULElement() ||
+                              (OwnerIsMozBrowserFrame() &&
+                               ourContent->HasAttr(nsGkAtoms::allowfullscreen));
+  bool otherFullscreenAllowed =
+      otherContent->IsXULElement() ||
+      (aOther->OwnerIsMozBrowserFrame() &&
+       otherContent->HasAttr(nsGkAtoms::allowfullscreen));
   if (ourFullscreenAllowed != otherFullscreenAllowed) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -1684,6 +1733,14 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   }
 
   
+  if (OwnerIsMozBrowserFrame() && !aOther->OwnerIsMozBrowserFrame()) {
+    DestroyBrowserFrameScripts();
+  }
+  if (!OwnerIsMozBrowserFrame() && aOther->OwnerIsMozBrowserFrame()) {
+    aOther->DestroyBrowserFrameScripts();
+  }
+
+  
   
   ourParentItem->RemoveChild(ourDocshell);
   otherParentItem->RemoveChild(otherDocshell);
@@ -1779,6 +1836,10 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   ourFrame->PresShell()->BackingScaleFactorChanged();
   otherFrame->PresShell()->BackingScaleFactorChanged();
+
+  
+  InitializeBrowserAPI();
+  aOther->InitializeBrowserAPI();
 
   return NS_OK;
 }
@@ -2113,6 +2174,11 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
   }
 }
 
+bool nsFrameLoader::OwnerIsMozBrowserFrame() {
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
+  return browserFrame ? browserFrame->GetReallyIsBrowser() : false;
+}
+
 nsIContent* nsFrameLoader::GetParentObject() const { return mOwnerContent; }
 
 void nsFrameLoader::AssertSafeToInit() {
@@ -2272,7 +2338,16 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   MOZ_ALWAYS_SUCCEEDS(mPendingBrowsingContext->SetInitialSandboxFlags(
       mPendingBrowsingContext->GetSandboxFlags()));
 
+  if (OwnerIsMozBrowserFrame()) {
+    
+    nsAutoString name;
+    if (mOwnerContent->GetAttr(nsGkAtoms::name, name)) {
+      docShell->SetName(name);
+    }
+  }
+
   ReallyLoadFrameScripts();
+  InitializeBrowserAPI();
 
   
   
@@ -2513,8 +2588,11 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   
   
   
-
-  if (!mOwnerContent->GetPrimaryFrame()) {
+  
+  
+  
+  
+  if (!OwnerIsMozBrowserFrame() && !mOwnerContent->GetPrimaryFrame()) {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
@@ -2573,7 +2651,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   
   
   
-  if (!XRE_IsContentProcess()) {
+  
+  if (!OwnerIsMozBrowserFrame() && !XRE_IsContentProcess()) {
     if (parentDocShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
       
       
@@ -2738,6 +2817,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   }
 
   ReallyLoadFrameScripts();
+  InitializeBrowserAPI();
 
   return true;
 }
@@ -2973,7 +3053,7 @@ nsresult nsFrameLoader::EnsureMessageManager() {
     return NS_OK;
   }
 
-  if (!mIsTopLevelContent && !IsRemoteFrame() &&
+  if (!mIsTopLevelContent && !OwnerIsMozBrowserFrame() && !IsRemoteFrame() &&
       !(mOwnerContent->IsXULElement() &&
         mOwnerContent->AttrValueIs(kNameSpaceID_None,
                                    nsGkAtoms::forcemessagemanager,
@@ -3458,6 +3538,36 @@ BrowsingContext* nsFrameLoader::GetExtantBrowsingContext() {
   return mPendingBrowsingContext;
 }
 
+void nsFrameLoader::InitializeBrowserAPI() {
+  if (!OwnerIsMozBrowserFrame()) {
+    return;
+  }
+
+  nsresult rv = EnsureMessageManager();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+  mMessageManager->LoadFrameScript(
+      u"chrome://global/content/BrowserElementChild.js"_ns,
+       true,
+       true, IgnoreErrors());
+
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
+  if (browserFrame) {
+    browserFrame->InitializeBrowserAPI();
+  }
+}
+
+void nsFrameLoader::DestroyBrowserFrameScripts() {
+  if (!OwnerIsMozBrowserFrame()) {
+    return;
+  }
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
+  if (browserFrame) {
+    browserFrame->DestroyBrowserFrameScripts();
+  }
+}
+
 void nsFrameLoader::StartPersistence(
     BrowsingContext* aContext, nsIWebBrowserPersistDocumentReceiver* aRecv,
     ErrorResult& aRv) {
@@ -3565,7 +3675,7 @@ nsresult nsFrameLoader::PopulateOriginContextIdsFromAttributes(
     OriginAttributes& aAttr) {
   
   uint32_t namespaceID = mOwnerContent->GetNameSpaceID();
-  if (namespaceID != kNameSpaceID_XUL) {
+  if (namespaceID != kNameSpaceID_XUL && !OwnerIsMozBrowserFrame()) {
     return NS_OK;
   }
 
@@ -3789,7 +3899,8 @@ bool nsFrameLoader::EnsureBrowsingContextAttached() {
     
     
     if (parentContext->IsContent() &&
-        !parentDoc->NodePrincipal()->IsSystemPrincipal()) {
+        !parentDoc->NodePrincipal()->IsSystemPrincipal() &&
+        !OwnerIsMozBrowserFrame()) {
       OriginAttributes docAttrs =
           parentDoc->NodePrincipal()->OriginAttributesRef();
       
@@ -3806,6 +3917,15 @@ bool nsFrameLoader::EnsureBrowsingContextAttached() {
     rv = PopulateOriginContextIdsFromAttributes(attrs);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return false;
+    }
+
+    
+    
+    if (OwnerIsMozBrowserFrame()) {
+      if (mOwnerContent->HasAttr(nsGkAtoms::mozprivatebrowsing)) {
+        attrs.SyncAttributesWithPrivateBrowsing(true);
+        usePrivateBrowsing = true;
+      }
     }
   }
 

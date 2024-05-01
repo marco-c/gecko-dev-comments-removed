@@ -15,31 +15,11 @@ namespace mozilla {
 
 class StorageOriginAttributes {
  public:
-  StorageOriginAttributes() : mInIsolatedMozBrowser(false) {}
-
-  explicit StorageOriginAttributes(bool aInIsolatedMozBrowser)
-      : mInIsolatedMozBrowser(aInIsolatedMozBrowser) {}
-
   bool InIsolatedMozBrowser() const { return mInIsolatedMozBrowser; }
 
   uint32_t UserContextId() const { return mOriginAttributes.mUserContextId; }
 
   
-
-  void SetInIsolatedMozBrowser(bool aInIsolatedMozBrowser) {
-    mInIsolatedMozBrowser = aInIsolatedMozBrowser;
-  }
-
-  void SetUserContextId(uint32_t aUserContextId) {
-    mOriginAttributes.mUserContextId = aUserContextId;
-  }
-
-  
-
-  
-  
-  
-  void CreateSuffix(nsACString& aStr) const;
 
   [[nodiscard]] bool PopulateFromSuffix(const nsACString& aStr);
 
@@ -51,7 +31,7 @@ class StorageOriginAttributes {
  private:
   OriginAttributes mOriginAttributes;
 
-  bool mInIsolatedMozBrowser;
+  bool mInIsolatedMozBrowser = false;
 };
 
 }  

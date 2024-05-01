@@ -274,10 +274,12 @@ ChannelEventSink.prototype = {
 
 
 
-function OriginAttributes(privateId) {
+function OriginAttributes(inIsolatedMozBrowser, privateId) {
+  this.inIsolatedMozBrowser = inIsolatedMozBrowser;
   this.privateBrowsingId = privateId;
 }
 OriginAttributes.prototype = {
+  inIsolatedMozBrowser: false,
   privateBrowsingId: 0,
 };
 
