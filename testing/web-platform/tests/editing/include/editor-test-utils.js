@@ -32,7 +32,15 @@ class EditorTestUtils {
 
   sendKey(key, modifier) {
     if (!modifier) {
-      return this.window.test_driver.send_keys(this.editingHost, key)
+      
+      const elementInLightDOM = (e => {
+        const doc = e.ownerDocument;
+        while (e.getRootNode({composed:false}) !== doc) {
+          e = e.getRootNode({composed:false}).host;
+        }
+        return e;
+      })(this.editingHost);
+      return this.window.test_driver.send_keys(elementInLightDOM, key)
         .catch(() => {
           return new this.window.test_driver.Actions()
           .keyDown(key)
