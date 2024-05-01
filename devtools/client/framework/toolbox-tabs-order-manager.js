@@ -7,7 +7,7 @@
 const { AddonManager } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs",
   
-  { loadInDevToolsLoader: false }
+  { global: "shared" }
 );
 const {
   gDevTools,

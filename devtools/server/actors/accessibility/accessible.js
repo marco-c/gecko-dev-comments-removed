@@ -67,11 +67,9 @@ loader.lazyGetter(
   () =>
     ChromeUtils.importESModule(
       "resource://gre/modules/ContentDOMReference.sys.mjs",
-      {
-        
-        
-        loadInDevToolsLoader: false,
-      }
+      
+      
+      { global: "shared" }
     ).ContentDOMReference
 );
 

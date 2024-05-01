@@ -111,11 +111,9 @@ if (!isWorker) {
     () =>
       ChromeUtils.importESModule(
         "resource://gre/modules/ContentDOMReference.sys.mjs",
-        {
-          
-          
-          loadInDevToolsLoader: false,
-        }
+        
+        
+        { global: "shared" }
       ).ContentDOMReference
   );
 }

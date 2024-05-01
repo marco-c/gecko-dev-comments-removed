@@ -10,11 +10,9 @@ const { isWindowGlobalPartOfContext } = ChromeUtils.importESModule(
 );
 const { WatcherRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
-  {
-    
-    
-    loadInDevToolsLoader: false,
-  }
+  
+  
+  { global: "shared" }
 );
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 

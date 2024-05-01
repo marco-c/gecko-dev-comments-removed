@@ -6,11 +6,9 @@
 
 const { WatcherRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
-  {
-    
-    
-    loadInDevToolsLoader: false,
-  }
+  
+  
+  { global: "shared" }
 );
 
 loader.lazyRequireGetter(

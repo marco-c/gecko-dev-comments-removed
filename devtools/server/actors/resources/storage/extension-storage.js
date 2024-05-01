@@ -19,19 +19,19 @@ const {
 loader.lazyGetter(this, "ExtensionParent", () => {
   return ChromeUtils.importESModule(
     "resource://gre/modules/ExtensionParent.sys.mjs",
-    { loadInDevToolsLoader: false }
+    { global: "shared" }
   ).ExtensionParent;
 });
 loader.lazyGetter(this, "ExtensionProcessScript", () => {
   return ChromeUtils.importESModule(
     "resource://gre/modules/ExtensionProcessScript.sys.mjs",
-    { loadInDevToolsLoader: false }
+    { global: "shared" }
   ).ExtensionProcessScript;
 });
 loader.lazyGetter(this, "ExtensionStorageIDB", () => {
   return ChromeUtils.importESModule(
     "resource://gre/modules/ExtensionStorageIDB.sys.mjs",
-    { loadInDevToolsLoader: false }
+    { global: "shared" }
   ).ExtensionStorageIDB;
 });
 

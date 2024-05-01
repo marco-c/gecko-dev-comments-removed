@@ -50,11 +50,9 @@ DevToolsUtils.defineLazyGetter(
   () =>
     ChromeUtils.importESModule(
       "resource://devtools/shared/security/DevToolsSocketStatus.sys.mjs",
-      {
-        
-        
-        loadInDevToolsLoader: false,
-      }
+      
+      
+      { global: "shared" }
     ).DevToolsSocketStatus
 );
 

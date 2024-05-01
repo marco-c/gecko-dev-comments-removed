@@ -11,7 +11,7 @@ const {
 
 const { AddonManager } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs",
-  { loadInDevToolsLoader: false }
+  { global: "shared" }
 );
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
@@ -46,9 +46,10 @@ class AddonsActor extends Actor {
       
       
       
+      
       const loader = ChromeUtils.importESModule(
         "resource://devtools/shared/loader/Loader.sys.mjs",
-        { loadInDevToolsLoader: false }
+        { global: "shared" }
       );
       const {
         gDevTools,

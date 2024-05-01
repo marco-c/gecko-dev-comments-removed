@@ -6,11 +6,9 @@
 
 const { WatcherRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
-  {
-    
-    
-    loadInDevToolsLoader: false,
-  }
+  
+  
+  { global: "shared" }
 );
 const { WindowGlobalLogger } = ChromeUtils.importESModule(
   "resource://devtools/server/connectors/js-window-actor/WindowGlobalLogger.sys.mjs"

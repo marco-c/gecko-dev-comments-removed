@@ -33,9 +33,7 @@ var makeDebugger = require("resource://devtools/server/actors/utils/make-debugge
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 const { TargetActorRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs",
-  {
-    loadInDevToolsLoader: false,
-  }
+  { global: "shared" }
 );
 const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
@@ -82,7 +80,7 @@ loader.lazyGetter(lazy, "ExtensionContent", () => {
     
     
     
-    loadInDevToolsLoader: false,
+    global: "shared",
   }).ExtensionContent;
 });
 
