@@ -217,15 +217,9 @@ export function getFormattedSourceId(id) {
 
 
 
-
-
-
-export function getFilename(
-  source,
-  rawSourceURL = getRawSourceURL(source.url)
-) {
+export function getFilename(source) {
   const { id } = source;
-  if (!rawSourceURL) {
+  if (!source.url) {
     return getFormattedSourceId(id);
   }
 
@@ -252,15 +246,13 @@ export function getTruncatedFileName(source) {
 
 export function getDisplayPath(mySource, sources) {
   const rawSourceURL = getRawSourceURL(mySource.url);
-  const filename = getFilename(mySource, rawSourceURL);
+  const filename = getFilename(mySource);
 
   
   
   const similarSources = sources.filter(source => {
     const rawSource = getRawSourceURL(source.url);
-    return (
-      rawSourceURL != rawSource && filename == getFilename(source, rawSource)
-    );
+    return rawSourceURL != rawSource && filename == getFilename(source);
   });
 
   if (!similarSources.length) {
