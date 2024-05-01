@@ -720,6 +720,11 @@ class Accessible {
 
   void ApplyImplicitState(uint64_t& aState) const;
 
+  
+
+
+  bool NameIsEmpty() const;
+
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;

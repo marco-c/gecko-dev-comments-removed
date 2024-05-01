@@ -1851,10 +1851,10 @@ role LocalAccessible::ARIATransformRole(role aRole) const {
   
   
   
-  if (aRole == roles::REGION) {
-    nsAutoString name;
-    Name(name);
-    return name.IsEmpty() ? NativeRole() : aRole;
+  
+  
+  if (aRole == roles::REGION || aRole == roles::FORM) {
+    return NameIsEmpty() ? NativeRole() : aRole;
   }
 
   
