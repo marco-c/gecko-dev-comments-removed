@@ -77,6 +77,9 @@ var gExceptionPaths = [
   "resource://app/localization/en-US/browser/featureCallout.ftl",
 
   
+  "resource://gre/localization/en-US/toolkit/contentanalysis/",
+
+  
   "chrome://browser/content/aboutlogins/components/",
 ];
 
