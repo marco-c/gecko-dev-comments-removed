@@ -216,6 +216,9 @@ enum CheckedState {
 - (NSString*)moxARIARelevant;
 
 
+- (NSString*)moxPlaceholderValue;
+
+
 - (id)moxTitleUIElement;
 
 

@@ -336,6 +336,9 @@
 - (NSString* _Nullable)moxARIARelevant;
 
 
+- (NSString* _Nullable)moxPlaceholderValue;
+
+
 - (NSString* _Nullable)moxMozDebugDescription;
 
 #pragma mark - AttributeSetters
