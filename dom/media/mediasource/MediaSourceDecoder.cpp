@@ -59,6 +59,11 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
 #ifdef MOZ_WMF_MEDIA_ENGINE
   
   
+  
+  
+  
+  
+  
   if (StaticPrefs::media_wmf_media_engine_enabled() &&
       !aDisableExternalEngine) {
     return new ExternalEngineStateMachine(this, mReader);
