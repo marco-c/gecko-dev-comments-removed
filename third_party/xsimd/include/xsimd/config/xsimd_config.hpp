@@ -354,6 +354,17 @@
 
 
 
+#if defined(__ARM_FEATURE_MATMUL_INT8)
+#define XSIMD_WITH_I8MM_NEON64 1
+#else
+#define XSIMD_WITH_I8MM_NEON64 0
+#endif
+
+
+
+
+
+
 #if defined(__ARM_FEATURE_SVE) && defined(__ARM_FEATURE_SVE_BITS) && __ARM_FEATURE_SVE_BITS > 0
 #define XSIMD_WITH_SVE 1
 #define XSIMD_SVE_BITS __ARM_FEATURE_SVE_BITS

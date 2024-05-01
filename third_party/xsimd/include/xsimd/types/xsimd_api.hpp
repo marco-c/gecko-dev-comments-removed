@@ -209,6 +209,36 @@ namespace xsimd
 
 
 
+
+    template <class T, class A>
+    inline batch<T, A> avg(batch<T, A> const& x, batch<T, A> const& y) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::avg<A>(x, y, A {});
+    }
+
+    
+
+
+
+
+
+
+
+    template <class T, class A>
+    inline batch<T, A> avgr(batch<T, A> const& x, batch<T, A> const& y) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::avgr<A>(x, y, A {});
+    }
+
+    
+
+
+
+
+
+
     template <class T_out, class T_in, class A>
     inline batch_bool<T_out, A> batch_bool_cast(batch_bool<T_in, A> const& x) noexcept
     {
