@@ -139,6 +139,8 @@ class GeckoInstance(object):
         
         "network.sntp.pools": "%(server)s",
         
+        "network.dns.native_https_query": False,
+        
         "privacy.trackingprotection.enabled": False,
         
         "remote.prefs.recommended": False,
