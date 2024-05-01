@@ -149,9 +149,9 @@ class TransmissionControlBlock : public Context {
 
  private:
   
-  DurationMs OnRtxTimerExpiry();
+  webrtc::TimeDelta OnRtxTimerExpiry();
   
-  DurationMs OnDelayedAckTimerExpiry();
+  webrtc::TimeDelta OnDelayedAckTimerExpiry();
 
   const absl::string_view log_prefix_;
   const DcSctpOptions options_;

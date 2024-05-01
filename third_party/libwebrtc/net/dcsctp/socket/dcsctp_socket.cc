@@ -82,6 +82,7 @@
 
 namespace dcsctp {
 namespace {
+using ::webrtc::TimeDelta;
 
 
 constexpr uint32_t kMinVerificationTag = 1;
@@ -187,19 +188,19 @@ DcSctpSocket::DcSctpSocket(absl::string_view log_prefix,
       t1_init_(timer_manager_.CreateTimer(
           "t1-init",
           absl::bind_front(&DcSctpSocket::OnInitTimerExpiry, this),
-          TimerOptions(options.t1_init_timeout,
+          TimerOptions(options.t1_init_timeout.ToTimeDelta(),
                        TimerBackoffAlgorithm::kExponential,
                        options.max_init_retransmits))),
       t1_cookie_(timer_manager_.CreateTimer(
           "t1-cookie",
           absl::bind_front(&DcSctpSocket::OnCookieTimerExpiry, this),
-          TimerOptions(options.t1_cookie_timeout,
+          TimerOptions(options.t1_cookie_timeout.ToTimeDelta(),
                        TimerBackoffAlgorithm::kExponential,
                        options.max_init_retransmits))),
       t2_shutdown_(timer_manager_.CreateTimer(
           "t2-shutdown",
           absl::bind_front(&DcSctpSocket::OnShutdownTimerExpiry, this),
-          TimerOptions(options.t2_shutdown_timeout,
+          TimerOptions(options.t2_shutdown_timeout.ToTimeDelta(),
                        TimerBackoffAlgorithm::kExponential,
                        options.max_retransmissions))),
       packet_sender_(callbacks_,
@@ -631,7 +632,7 @@ void DcSctpSocket::MaybeSendShutdownOnPacketReceived(const SctpPacket& packet) {
       
       
       SendShutdown();
-      t2_shutdown_->set_duration(DurationMs(tcb_->current_rto()));
+      t2_shutdown_->set_duration(tcb_->current_rto());
       t2_shutdown_->Start();
     }
   }
@@ -921,7 +922,7 @@ bool DcSctpSocket::HandleUnrecognizedChunk(
   return continue_processing;
 }
 
-DurationMs DcSctpSocket::OnInitTimerExpiry() {
+TimeDelta DcSctpSocket::OnInitTimerExpiry() {
   RTC_DLOG(LS_VERBOSE) << log_prefix() << "Timer " << t1_init_->name()
                        << " has expired: " << t1_init_->expiration_count()
                        << "/" << t1_init_->options().max_restarts.value_or(-1);
@@ -933,10 +934,10 @@ DurationMs DcSctpSocket::OnInitTimerExpiry() {
     InternalClose(ErrorKind::kTooManyRetries, "No INIT_ACK received");
   }
   RTC_DCHECK(IsConsistent());
-  return DurationMs(0);
+  return TimeDelta::Zero();
 }
 
-DurationMs DcSctpSocket::OnCookieTimerExpiry() {
+TimeDelta DcSctpSocket::OnCookieTimerExpiry() {
   
   
   
@@ -957,10 +958,10 @@ DurationMs DcSctpSocket::OnCookieTimerExpiry() {
   }
 
   RTC_DCHECK(IsConsistent());
-  return DurationMs(0);
+  return TimeDelta::Zero();
 }
 
-DurationMs DcSctpSocket::OnShutdownTimerExpiry() {
+TimeDelta DcSctpSocket::OnShutdownTimerExpiry() {
   RTC_DLOG(LS_VERBOSE) << log_prefix() << "Timer " << t2_shutdown_->name()
                        << " has expired: " << t2_shutdown_->expiration_count()
                        << "/"
@@ -980,7 +981,7 @@ DurationMs DcSctpSocket::OnShutdownTimerExpiry() {
 
     InternalClose(ErrorKind::kTooManyRetries, "No SHUTDOWN_ACK received");
     RTC_DCHECK(IsConsistent());
-    return DurationMs(0);
+    return TimeDelta::Zero();
   }
 
   
@@ -988,7 +989,7 @@ DurationMs DcSctpSocket::OnShutdownTimerExpiry() {
   
   SendShutdown();
   RTC_DCHECK(IsConsistent());
-  return DurationMs(tcb_->current_rto());
+  return tcb_->current_rto();
 }
 
 void DcSctpSocket::OnSentPacket(rtc::ArrayView<const uint8_t> packet,
@@ -1731,7 +1732,7 @@ void DcSctpSocket::MaybeSendShutdownOrAck() {
     
 
     SendShutdown();
-    t2_shutdown_->set_duration(DurationMs(tcb_->current_rto()));
+    t2_shutdown_->set_duration(tcb_->current_rto());
     t2_shutdown_->Start();
     SetState(State::kShutdownSent, "No more outstanding data");
   } else if (state_ == State::kShutdownReceived) {
@@ -1754,7 +1755,7 @@ void DcSctpSocket::SendShutdown() {
 
 void DcSctpSocket::SendShutdownAck() {
   packet_sender_.Send(tcb_->PacketBuilder().Add(ShutdownAckChunk()));
-  t2_shutdown_->set_duration(DurationMs(tcb_->current_rto()));
+  t2_shutdown_->set_duration(tcb_->current_rto());
   t2_shutdown_->Start();
 }
 

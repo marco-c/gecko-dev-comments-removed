@@ -155,9 +155,9 @@ class DcSctpSocket : public DcSctpSocketInterface {
   
   void CloseConnectionBecauseOfTooManyTransmissionErrors();
   
-  DurationMs OnInitTimerExpiry();
-  DurationMs OnCookieTimerExpiry();
-  DurationMs OnShutdownTimerExpiry();
+  webrtc::TimeDelta OnInitTimerExpiry();
+  webrtc::TimeDelta OnCookieTimerExpiry();
+  webrtc::TimeDelta OnShutdownTimerExpiry();
   void OnSentPacket(rtc::ArrayView<const uint8_t> packet,
                     SendPacketStatus status);
   
