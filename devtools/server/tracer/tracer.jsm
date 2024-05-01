@@ -153,6 +153,8 @@ const customLazy = {
 
 
 
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -205,6 +207,12 @@ class JavaScriptTracer {
     this.maxDepth = options.maxDepth;
     this.maxRecords = options.maxRecords;
     this.records = 0;
+    if ("pauseOnStep" in options) {
+      if (typeof options.pauseOnStep != "number") {
+        throw new Error("'pauseOnStep' attribute should be a number");
+      }
+      this.pauseOnStep = options.pauseOnStep;
+    }
 
     
     this.frameId = 0;
@@ -647,6 +655,10 @@ class JavaScriptTracer {
           if (shouldLogToStdout) {
             this.logFrameStepToStdout(frame, depth);
           }
+          
+          if (typeof this.pauseOnStep == "number") {
+            syncPause(this.pauseOnStep);
+          }
         };
       }
 
@@ -703,6 +715,11 @@ class JavaScriptTracer {
           this.logFrameExitedToStdout(frame, depth, why, rv);
         }
       };
+
+      
+      if (typeof this.pauseOnStep == "number") {
+        syncPause(this.pauseOnStep);
+      }
     } catch (e) {
       console.error("Exception while tracing javascript", e);
     }
@@ -982,6 +999,27 @@ function getTerminalHyperLink(frame) {
   
   
   return `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
+}
+
+
+
+
+
+
+
+function syncPause(duration) {
+  let freeze = true;
+  const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  timer.initWithCallback(
+    () => {
+      freeze = false;
+    },
+    duration,
+    Ci.nsITimer.TYPE_ONE_SHOT
+  );
+  Services.tm.spinEventLoopUntil("debugger-slow-motion", function () {
+    return !freeze;
+  });
 }
 
 

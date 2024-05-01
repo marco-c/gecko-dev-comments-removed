@@ -334,6 +334,7 @@ class TracerActor extends Actor {
 
 
 
+
   onTracingFrameStep({ frame, depth, prefix }) {
     const { script } = frame;
     const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
