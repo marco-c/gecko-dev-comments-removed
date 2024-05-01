@@ -13,6 +13,13 @@
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/GleanMetrics.h"
 
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/PreferenceSheet.h"
+#include "mozilla/RelativeLuminanceUtils.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/ScreenBinding.h"
+#include "mozilla/widget/ScreenManager.h"
+
 #include "prsystem.h"
 #if defined(XP_WIN)
 #  include "WinUtils.h"
@@ -37,6 +44,60 @@ int MaxTouchPoints() {
 
 }  
 };  
+
+
+void PopulateCSSProperties() {
+  mozilla::glean::characteristics::video_dynamic_range.Set(
+      mozilla::LookAndFeel::GetInt(
+          mozilla::LookAndFeel::IntID::VideoDynamicRange));
+  mozilla::glean::characteristics::prefers_reduced_transparency.Set(
+      mozilla::LookAndFeel::GetInt(
+          mozilla::LookAndFeel::IntID::PrefersReducedTransparency));
+  mozilla::glean::characteristics::prefers_reduced_motion.Set(
+      mozilla::LookAndFeel::GetInt(
+          mozilla::LookAndFeel::IntID::PrefersReducedMotion));
+  mozilla::glean::characteristics::inverted_colors.Set(
+      mozilla::LookAndFeel::GetInt(
+          mozilla::LookAndFeel::IntID::InvertedColors));
+  mozilla::glean::characteristics::color_scheme.Set(
+      (int)mozilla::PreferenceSheet::ContentPrefs().mColorScheme);
+
+  mozilla::StylePrefersContrast prefersContrast = [] {
+    
+    if (!mozilla::PreferenceSheet::ContentPrefs().mUseAccessibilityTheme &&
+        mozilla::PreferenceSheet::ContentPrefs().mUseDocumentColors) {
+      return mozilla::StylePrefersContrast::NoPreference;
+    }
+
+    const auto& colors = mozilla::PreferenceSheet::ContentPrefs().ColorsFor(
+        mozilla::ColorScheme::Light);
+    float ratio = mozilla::RelativeLuminanceUtils::ContrastRatio(
+        colors.mDefaultBackground, colors.mDefault);
+    
+    if (ratio < 4.5f) {
+      return mozilla::StylePrefersContrast::Less;
+    }
+    
+    if (ratio >= 7.0f) {
+      return mozilla::StylePrefersContrast::More;
+    }
+    return mozilla::StylePrefersContrast::Custom;
+  }();
+  mozilla::glean::characteristics::prefers_contrast.Set((int)prefersContrast);
+
+  int32_t colorDepth;
+  mozilla::dom::ScreenColorGamut colorGamut;
+
+  auto& screenManager = mozilla::widget::ScreenManager::GetSingleton();
+  RefPtr<mozilla::widget::Screen> screen = screenManager.GetPrimaryScreen();
+  MOZ_ASSERT(screen);
+
+  screen->GetColorGamut(&colorGamut);
+  screen->GetColorDepth(&colorDepth);
+
+  mozilla::glean::characteristics::color_gamut.Set((int)colorGamut);
+  mozilla::glean::characteristics::color_depth.Set(colorDepth);
+}
 
 
 
@@ -129,7 +190,7 @@ const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
 
 
-nsresult nsUserCharacteristics::PopulateData() {
+nsresult nsUserCharacteristics::PopulateData(bool aTesting ) {
   MOZ_LOG(gUserCharacteristicsLog, mozilla::LogLevel::Warning,
           ("Populating Data"));
   mozilla::glean::characteristics::submission_schema.Set(kSubmissionSchema);
@@ -149,6 +210,14 @@ nsresult nsUserCharacteristics::PopulateData() {
 
   mozilla::glean::characteristics::max_touch_points.Set(
       testing::MaxTouchPoints());
+
+  if (aTesting) {
+    
+    
+    return NS_OK;
+  }
+
+  PopulateCSSProperties();
 
   return NS_OK;
 }
