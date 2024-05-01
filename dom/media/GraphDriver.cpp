@@ -482,11 +482,12 @@ AudioCallbackDriver::AudioCallbackDriver(
                        "Invalid output channel count");
   MOZ_ASSERT(mOutputChannelCount <= 8);
 
-  bool allowVoice = true;
+  bool allowVoice = StaticPrefs::
+      media_getusermedia_microphone_prefer_voice_stream_with_processing_enabled();
 #ifdef MOZ_WIDGET_COCOA
   
   
-  allowVoice = nsCocoaFeatures::macOSVersionMajor() != 12;
+  allowVoice = allowVoice && nsCocoaFeatures::macOSVersionMajor() != 12;
 #endif
 
   if (aAudioInputType == AudioInputType::Voice && allowVoice) {
