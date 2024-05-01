@@ -57,7 +57,6 @@ struct CallClientConfig {
   
   
   TimeDelta pacer_burst_interval = TimeDelta::Millis(40);
-  const FieldTrialsView* field_trials = nullptr;
 };
 
 struct PacketStreamConfig {
