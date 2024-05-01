@@ -2860,18 +2860,10 @@ void nsCocoaWindow::SetPopupWindowLevel() {
   if (!mWindow) {
     return;
   }
-
   
   
-  if (mPopupLevel == PopupLevel::Floating) {
-    mWindow.level = NSFloatingWindowLevel;
-    mWindow.hidesOnDeactivate = YES;
-  } else {
-    
-    
-    mWindow.level = NSPopUpMenuWindowLevel;
-    mWindow.hidesOnDeactivate = NO;
-  }
+  mWindow.level = NSPopUpMenuWindowLevel;
+  mWindow.hidesOnDeactivate = NO;
 }
 
 void nsCocoaWindow::SetInputContext(const InputContext& aContext,

@@ -39,11 +39,6 @@ enum class PopupLevel : uint8_t {
   Parent,
   
   
-  
-  
-  Floating,
-  
-  
   Top,
 };
 
