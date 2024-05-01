@@ -268,10 +268,6 @@ module.exports = {
     
     "no-warning-comments": 0,
     
-    
-    
-    "object-shorthand": 0,
-    
     "one-var": 0,
     
     radix: 2,

@@ -55,7 +55,7 @@ function searchOverlay(query, modifiers) {
   });
 
   return {
-    token: function (stream, state) {
+    token(stream, state) {
       
       
       regexQuery.lastIndex = stream.pos;
