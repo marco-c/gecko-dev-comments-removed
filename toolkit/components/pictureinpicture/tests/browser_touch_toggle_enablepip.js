@@ -30,7 +30,7 @@ add_task(async () => {
 
       
       
-      await SpecialPowers.spawn(browser, [], async args => {
+      await SpecialPowers.spawn(browser, [], async () => {
         info(
           "Removing other elements first to make the PiP toggle more visible"
         );

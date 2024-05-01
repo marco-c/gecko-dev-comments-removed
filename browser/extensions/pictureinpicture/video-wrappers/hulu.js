@@ -32,7 +32,7 @@ class PictureInPictureVideoWrapper {
 
     if (container) {
       updateCaptionsFunction("");
-      const callback = function (mutationsList, observer) {
+      const callback = function () {
         
         
         
@@ -63,7 +63,7 @@ class PictureInPictureVideoWrapper {
       });
     }
   }
-  getDuration(video) {
+  getDuration() {
     return this.player.duration;
   }
 }

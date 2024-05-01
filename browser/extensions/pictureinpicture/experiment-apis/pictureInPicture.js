@@ -25,7 +25,7 @@ this.pictureInPictureParent = class extends ExtensionAPI {
 
 
 
-  getAPI(context) {
+  getAPI() {
     return {
       pictureInPictureParent: {
         setOverrides(overrides) {

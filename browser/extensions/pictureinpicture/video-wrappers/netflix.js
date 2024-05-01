@@ -25,7 +25,7 @@ class PictureInPictureVideoWrapper {
 
 
 
-  getCurrentTime(video) {
+  getCurrentTime() {
     return this.player.getCurrentTime() / 1000;
   }
   
@@ -35,7 +35,7 @@ class PictureInPictureVideoWrapper {
 
 
 
-  getDuration(video) {
+  getDuration() {
     return this.player.getDuration() / 1000;
   }
   play() {
@@ -50,7 +50,7 @@ class PictureInPictureVideoWrapper {
 
     if (container) {
       updateCaptionsFunction("");
-      const callback = function (mutationsList, observer) {
+      const callback = function () {
         let text = container.querySelector(".player-timedtext").innerText;
         updateCaptionsFunction(text);
       };

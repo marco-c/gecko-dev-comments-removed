@@ -14,7 +14,7 @@ class PictureInPictureVideoWrapper {
       ? shortsPlayer
       : video.closest("#movie_player")?.wrappedJSObject;
   }
-  isLive(video) {
+  isLive() {
     return !!document.querySelector(".ytp-live");
   }
   setMuted(video, shouldMute) {
@@ -39,7 +39,7 @@ class PictureInPictureVideoWrapper {
 
     if (container) {
       updateCaptionsFunction("");
-      const callback = function (mutationsList, observer) {
+      const callback = function (mutationsList) {
         
         for (const mutation of mutationsList) {
           let textNodeList = container
