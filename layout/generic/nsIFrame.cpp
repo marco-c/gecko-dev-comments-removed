@@ -6994,15 +6994,7 @@ bool nsIFrame::IsContentRelevant() const {
   MOZ_ASSERT(element);
 
   Maybe<ContentRelevancy> relevancy = element->GetContentRelevancy();
-  if (relevancy.isSome()) {
-    return !relevancy->isEmpty();
-  }
-
-  
-  
-  
-  
-  return IsDescendantOfTopLayerElement();
+  return relevancy.isSome() && !relevancy->isEmpty();
 }
 
 bool nsIFrame::HidesContent(
@@ -7086,21 +7078,6 @@ bool nsIFrame::HasSelectionInSubtree() {
         range->GetRegisteredClosestCommonInclusiveAncestor();
     if (commonAncestorNode &&
         commonAncestorNode->IsInclusiveDescendantOf(GetContent())) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool nsIFrame::IsDescendantOfTopLayerElement() const {
-  if (!GetContent()) {
-    return false;
-  }
-
-  nsTArray<dom::Element*> topLayer = PresContext()->Document()->GetTopLayer();
-  for (auto* element : topLayer) {
-    if (GetContent()->IsInclusiveFlatTreeDescendantOf(element)) {
       return true;
     }
   }

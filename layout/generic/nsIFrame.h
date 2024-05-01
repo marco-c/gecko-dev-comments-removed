@@ -3315,13 +3315,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool IsDescendantOfTopLayerElement() const;
-
-  
-
-
-
-
   bool HasSelectionInSubtree();
 
   
