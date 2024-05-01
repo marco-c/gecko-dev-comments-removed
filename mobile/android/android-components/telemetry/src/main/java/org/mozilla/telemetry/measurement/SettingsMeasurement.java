@@ -14,6 +14,60 @@ import java.util.Map;
 import java.util.Set;
 
 public class SettingsMeasurement extends TelemetryMeasurement {
+    
+
+
+    public interface SettingsProvider {
+        
+
+
+
+        void update(TelemetryConfiguration configuration);
+
+        
+
+
+        boolean containsKey(String key);
+
+        
+
+
+        Object getValue(String key);
+
+        
+
+
+        void release();
+    }
+
+    
+
+
+    public static class SharedPreferenceSettingsProvider implements SettingsProvider {
+        private Map<String, ?> preferences;
+
+        @Override
+        public void update(TelemetryConfiguration configuration) {
+            preferences = PreferenceManager.getDefaultSharedPreferences(
+                    configuration.getContext()).getAll();
+        }
+
+        @Override
+        public boolean containsKey(String key) {
+            return preferences != null && preferences.containsKey(key);
+        }
+
+        @Override
+        public Object getValue(String key) {
+            return preferences.get(key);
+        }
+
+        @Override
+        public void release() {
+            preferences = null;
+        }
+    }
+
     private static final String FIELD_NAME = "settings";
 
     private final TelemetryConfiguration configuration;
@@ -26,6 +80,9 @@ public class SettingsMeasurement extends TelemetryMeasurement {
 
     @Override
     public Object flush() {
+        final SettingsProvider settingsProvider = configuration.getSettingsProvider();
+        settingsProvider.update(configuration);
+
         final JSONObject object = new JSONObject();
 
         final Set<String> preferenceKeys = configuration.getPreferencesImportantForTelemetry();
@@ -33,13 +90,10 @@ public class SettingsMeasurement extends TelemetryMeasurement {
             return object;
         }
 
-        final Map<String, ?> preferences = PreferenceManager.getDefaultSharedPreferences(
-                configuration.getContext()).getAll();
-
         for (String key : preferenceKeys) {
             try {
-                if (preferences.containsKey(key)) {
-                    object.put(key, String.valueOf(preferences.get(key)));
+                if (settingsProvider.containsKey(key)) {
+                    object.put(key, String.valueOf(settingsProvider.getValue(key)));
                 } else {
                     object.put(key, JSONObject.NULL);
                 }
@@ -47,6 +101,8 @@ public class SettingsMeasurement extends TelemetryMeasurement {
                 throw new AssertionError("Preference value can't be serialized to JSON", e);
             }
         }
+
+        settingsProvider.release();
 
         return object;
     }
