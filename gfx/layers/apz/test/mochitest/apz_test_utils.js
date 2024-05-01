@@ -309,7 +309,7 @@ function promiseAfterPaint() {
 
 
 function promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow = window) {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     var repaintDone = function () {
       dump("PromiseApzRepaintsFlushed: APZ flush done\n");
       SpecialPowers.Services.obs.removeObserver(
@@ -518,7 +518,7 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
         if (test.onload) {
           w.addEventListener(
             "load",
-            function (e) {
+            function () {
               test.onload(w);
             },
             { once: true }
