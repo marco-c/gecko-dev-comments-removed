@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+include!(mozbuild::objdir_path!(
+    "toolkit/components/glean/src/ohttp_pings.rs"
+));
