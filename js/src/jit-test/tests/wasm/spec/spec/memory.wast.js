@@ -33,14 +33,16 @@ let $4 = instantiate(`(module (memory 1 256))`);
 
 let $5 = instantiate(`(module (memory 0 65536))`);
 
+if (!wasmMultiMemoryEnabled()) {
+  
+  assert_invalid(() => instantiate(`(module (memory 0) (memory 0))`), `multiple memories`);
 
-assert_invalid(() => instantiate(`(module (memory 0) (memory 0))`), `multiple memories`);
-
-
-assert_invalid(
-  () => instantiate(`(module (memory (import "spectest" "memory") 0) (memory 0))`),
-  `multiple memories`,
-);
+  
+  assert_invalid(
+    () => instantiate(`(module (memory (import "spectest" "memory") 0) (memory 0))`),
+    `multiple memories`,
+  );
+}
 
 
 let $6 = instantiate(`(module (memory (data)) (func (export "memsize") (result i32) (memory.size)))`);
