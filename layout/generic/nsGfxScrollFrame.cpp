@@ -1173,9 +1173,15 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
 }
 
 nscoord nsHTMLScrollFrame::IntrinsicScrollbarGutterSizeAtInlineEdges() const {
-  const bool isVerticalWM = GetWritingMode().IsVertical();
+  const auto wm = GetWritingMode();
+  const LogicalMargin gutter(wm, IntrinsicScrollbarGutterSize());
+  return gutter.IStartEnd(wm);
+}
+
+nsMargin nsHTMLScrollFrame::IntrinsicScrollbarGutterSize() const {
   if (PresContext()->UseOverlayScrollbars()) {
-    return 0;
+    
+    return {};
   }
 
   const auto* styleForScrollbar = nsLayoutUtils::StyleForScrollbar(this);
@@ -1183,28 +1189,30 @@ nscoord nsHTMLScrollFrame::IntrinsicScrollbarGutterSizeAtInlineEdges() const {
       styleForScrollbar->StyleUIReset()->ScrollbarWidth();
   if (styleScrollbarWidth == StyleScrollbarWidth::None) {
     
-    return 0;
+    return {};
   }
 
   const auto& styleScrollbarGutter =
       styleForScrollbar->StyleDisplay()->mScrollbarGutter;
-  ScrollStyles ss = GetScrollStyles();
-  const StyleOverflow& inlineEndStyleOverflow =
-      isVerticalWM ? ss.mHorizontal : ss.mVertical;
-
-  
-  
-  
-  if (inlineEndStyleOverflow != StyleOverflow::Scroll &&
-      styleScrollbarGutter == StyleScrollbarGutter::AUTO) {
-    return 0;
+  nsMargin gutter =
+      ComputeStableScrollbarGutter(styleScrollbarWidth, styleScrollbarGutter);
+  if (gutter.LeftRight() == 0 || gutter.TopBottom() == 0) {
+    
+    
+    ScrollStyles scrollStyles = GetScrollStyles();
+    const nscoord scrollbarSize =
+        GetNonOverlayScrollbarSize(PresContext(), styleScrollbarWidth);
+    if (gutter.LeftRight() == 0 &&
+        scrollStyles.mVertical == StyleOverflow::Scroll) {
+      (IsScrollbarOnRight() ? gutter.right : gutter.left) = scrollbarSize;
+    }
+    if (gutter.TopBottom() == 0 &&
+        scrollStyles.mHorizontal == StyleOverflow::Scroll) {
+      
+      gutter.bottom = scrollbarSize;
+    }
   }
-
-  const nscoord scrollbarSize =
-      GetNonOverlayScrollbarSize(PresContext(), styleScrollbarWidth);
-  const auto bothEdges =
-      bool(styleScrollbarGutter & StyleScrollbarGutter::BOTH_EDGES);
-  return bothEdges ? scrollbarSize * 2 : scrollbarSize;
+  return gutter;
 }
 
 nsMargin nsHTMLScrollFrame::ComputeStableScrollbarGutter(

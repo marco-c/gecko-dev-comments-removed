@@ -116,6 +116,12 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
   
   
+  nsMargin IntrinsicScrollbarGutterSize() const;
+
+  
+  
+  
+  
   
   
   nsMargin ComputeStableScrollbarGutter(
