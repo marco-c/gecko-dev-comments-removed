@@ -10,6 +10,7 @@
 #include "AccessibleWrap.h"
 #include "ARIAMap.h"
 #include "LocalAccessible-inl.h"
+#include "mozilla/a11y/RemoteAccessible.h"
 #include "MsaaAccessible.h"
 
 using namespace mozilla;
@@ -19,8 +20,8 @@ using namespace mozilla::a11y;
 
 
 
-AccessibleWrap* uiaRawElmProvider::LocalAcc() {
-  return static_cast<MsaaAccessible*>(this)->LocalAcc();
+Accessible* uiaRawElmProvider::Acc() {
+  return static_cast<MsaaAccessible*>(this)->Acc();
 }
 
 
@@ -48,7 +49,7 @@ uiaRawElmProvider::GetObjectForChild(
 
   *aAccEx = nullptr;
 
-  return LocalAcc() ? S_OK : CO_E_OBJNOTCONNECTED;
+  return Acc() ? S_OK : CO_E_OBJNOTCONNECTED;
 }
 
 STDMETHODIMP
@@ -59,7 +60,7 @@ uiaRawElmProvider::GetIAccessiblePair(__RPC__deref_out_opt IAccessible** aAcc,
   *aAcc = nullptr;
   *aIdChild = 0;
 
-  if (!LocalAcc()) {
+  if (!Acc()) {
     return CO_E_OBJNOTCONNECTED;
   }
 
@@ -73,13 +74,12 @@ uiaRawElmProvider::GetIAccessiblePair(__RPC__deref_out_opt IAccessible** aAcc,
 STDMETHODIMP
 uiaRawElmProvider::GetRuntimeId(__RPC__deref_out_opt SAFEARRAY** aRuntimeIds) {
   if (!aRuntimeIds) return E_INVALIDARG;
-  AccessibleWrap* acc = LocalAcc();
+  Accessible* acc = Acc();
   if (!acc) {
     return CO_E_OBJNOTCONNECTED;
   }
 
-  int ids[] = {UiaAppendRuntimeId,
-               static_cast<int>(reinterpret_cast<intptr_t>(acc->UniqueID()))};
+  int ids[] = {UiaAppendRuntimeId, MsaaAccessible::GetChildIDFor(acc)};
   *aRuntimeIds = SafeArrayCreateVector(VT_I4, 0, 2);
   if (!*aRuntimeIds) return E_OUTOFMEMORY;
 
@@ -131,19 +131,24 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
                                     __RPC__out VARIANT* aPropertyValue) {
   if (!aPropertyValue) return E_INVALIDARG;
 
-  AccessibleWrap* acc = LocalAcc();
+  Accessible* acc = Acc();
   if (!acc) {
     return CO_E_OBJNOTCONNECTED;
   }
+  LocalAccessible* localAcc = acc->AsLocal();
 
   aPropertyValue->vt = VT_EMPTY;
 
   switch (aPropertyId) {
     
     case UIA_AcceleratorKeyPropertyId: {
+      if (!localAcc) {
+        
+        break;
+      }
       nsAutoString keyString;
 
-      acc->KeyboardShortcut().ToString(keyString);
+      localAcc->KeyboardShortcut().ToString(keyString);
 
       if (!keyString.IsEmpty()) {
         aPropertyValue->vt = VT_BSTR;
@@ -187,9 +192,16 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
 
     
     case UIA_AriaPropertiesPropertyId: {
+      if (!localAcc) {
+        
+        
+        
+        
+        break;
+      }
       nsAutoString ariaProperties;
 
-      aria::AttrIterator attribIter(acc->GetContent());
+      aria::AttrIterator attribIter(localAcc->GetContent());
       while (attribIter.Next()) {
         nsAutoString attribName, attribValue;
         nsAutoString value;
