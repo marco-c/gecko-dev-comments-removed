@@ -321,6 +321,8 @@ const MultiStageAboutWelcome = props => {
     return false;
   }, []); 
 
+  const [multiSelects, setMultiSelects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+
   
   
   
@@ -362,6 +364,10 @@ const MultiStageAboutWelcome = props => {
       ...prevState,
       [screen.id]: typeof valueOrFn === "function" ? valueOrFn(prevState[screen.id]) : valueOrFn
     }));
+    const setScreenMultiSelects = valueOrFn => setMultiSelects(prevState => ({
+      ...prevState,
+      [screen.id]: typeof valueOrFn === "function" ? valueOrFn(prevState[screen.id]) : valueOrFn
+    }));
     return index === order ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(WelcomeScreen, {
       key: screen.id + order,
       id: screen.id,
@@ -380,6 +386,8 @@ const MultiStageAboutWelcome = props => {
       initialTheme: initialTheme,
       setActiveTheme: setActiveTheme,
       setInitialTheme: setInitialTheme,
+      screenMultiSelects: multiSelects[screen.id],
+      setScreenMultiSelects: setScreenMultiSelects,
       activeMultiSelect: activeMultiSelects[screen.id],
       setActiveMultiSelect: setActiveMultiSelect,
       autoAdvance: screen.auto_advance,
@@ -620,6 +628,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       order: this.props.order,
       previousOrder: this.props.previousOrder,
       activeTheme: this.props.activeTheme,
+      screenMultiSelects: this.props.screenMultiSelects,
+      setScreenMultiSelects: this.props.setScreenMultiSelects,
       activeMultiSelect: this.props.activeMultiSelect,
       setActiveMultiSelect: this.props.setActiveMultiSelect,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
@@ -822,6 +832,8 @@ const MultiStageProtonScreen = props => {
     id: props.id,
     order: props.order,
     activeTheme: props.activeTheme,
+    screenMultiSelects: props.screenMultiSelects,
+    setScreenMultiSelects: props.setScreenMultiSelects,
     activeMultiSelect: props.activeMultiSelect,
     setActiveMultiSelect: props.setActiveMultiSelect,
     totalNumberOfScreens: props.totalNumberOfScreens,
@@ -1015,6 +1027,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       handleAction: this.props.handleAction
     }) : null, content.tiles && content.tiles.type === "multiselect" && content.tiles.data ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiSelect__WEBPACK_IMPORTED_MODULE_4__.MultiSelect, {
       content: content,
+      screenMultiSelects: this.props.screenMultiSelects,
+      setScreenMultiSelects: this.props.setScreenMultiSelects,
       activeMultiSelect: this.props.activeMultiSelect,
       setActiveMultiSelect: this.props.setActiveMultiSelect
     }) : null, content.tiles && content.tiles.type === "migration-wizard" ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_12__.EmbeddedMigrationWizard, {
@@ -1317,12 +1331,13 @@ function getValidStyle(style, validStyles, allowVars) {
 }
 const MultiSelect = ({
   content,
+  screenMultiSelects,
+  setScreenMultiSelects,
   activeMultiSelect,
   setActiveMultiSelect
 }) => {
   const {
-    data,
-    randomize
+    data
   } = content.tiles;
   const refs = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)({});
   const handleChange = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
@@ -1334,7 +1349,22 @@ const MultiSelect = ({
     });
     setActiveMultiSelect(newActiveMultiSelect);
   }, [setActiveMultiSelect]);
-  const items = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => randomize ? data.sort(() => 0.5 - Math.random()) : data, [] 
+  const items = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => {
+    function getOrderedIds() {
+      if (screenMultiSelects) {
+        return screenMultiSelects;
+      }
+      let orderedIds = data.map(item => ({
+        id: item.id,
+        rank: item.randomize ? Math.random() : NaN
+      })).sort((a, b) => b.rank - a.rank).map(({
+        id
+      }) => id);
+      setScreenMultiSelects(orderedIds);
+      return orderedIds;
+    }
+    return getOrderedIds().map(id => data.find(item => item.id === id));
+  }, [] 
   );
   const containerStyle = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => getValidStyle(content.tiles.style, MULTI_SELECT_STYLES, true), [content.tiles.style]);
 
@@ -1357,8 +1387,17 @@ const MultiSelect = ({
 
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "multi-select-container",
-    style: containerStyle
-  }, items.map(({
+    style: containerStyle,
+    role: items.some(({
+      type,
+      group
+    }) => type === "radio" && group) ? "radiogroup" : "group",
+    "aria-labelledby": "multi-stage-multi-select-label"
+  }, content.tiles.label ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: content.tiles.label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
+    id: "multi-stage-multi-select-label"
+  })) : null, items.map(({
     id,
     label,
     icon,
