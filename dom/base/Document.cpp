@@ -9311,7 +9311,7 @@ void Document::DoNotifyPossibleTitleChange() {
     return;
   }
   
-  mPendingTitleChangeEvent.Forget();
+  mPendingTitleChangeEvent.Revoke();
   mHaveFiredTitleChange = true;
 
   nsAutoString title;
