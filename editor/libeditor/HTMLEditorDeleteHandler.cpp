@@ -6668,21 +6668,29 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
 
   
   
-  
-  const Element* const maybeNonEditableBlockElement =
-      HTMLEditUtils::GetInclusiveAncestorElement(
-          *commonAncestor, HTMLEditUtils::ClosestBlockElement,
-          BlockInlineCheck::UseComputedDisplayOutsideStyle);
-  if (NS_WARN_IF(!maybeNonEditableBlockElement)) {
+  const RefPtr<Element> closestEditingHost =
+      aHTMLEditor.ComputeEditingHost(*commonAncestor, LimitInBodyElement::No);
+  if (NS_WARN_IF(!closestEditingHost)) {
     return Err(NS_ERROR_FAILURE);
   }
 
   
-  RefPtr<Element> editingHost = aHTMLEditor.ComputeEditingHost();
-  if (NS_WARN_IF(!editingHost)) {
-    return Err(NS_ERROR_FAILURE);
-  }
+  
+  
+  const RefPtr<Element> closestBlockAncestorOrInlineEditingHost = [&]() {
+    
+    
+    if (Element* const maybeEditableBlockElement =
+            HTMLEditUtils::GetInclusiveAncestorElement(
+                *commonAncestor, HTMLEditUtils::ClosestBlockElement,
+                BlockInlineCheck::UseComputedDisplayOutsideStyle,
+                closestEditingHost)) {
+      return maybeEditableBlockElement;
+    }
+    return closestEditingHost.get();
+  }();
 
+  
   
   
   
@@ -6712,18 +6720,18 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
 
   
   EditorRawDOMRange rangeToDelete(aRangeToDelete);
-  if (rangeToDelete.StartRef().GetContainer() != maybeNonEditableBlockElement &&
-      rangeToDelete.StartRef().GetContainer() != editingHost) {
+  if (rangeToDelete.StartRef().GetContainer() !=
+      closestBlockAncestorOrInlineEditingHost) {
     for (;;) {
       WSScanResult backwardScanFromStartResult =
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-              editingHost, rangeToDelete.StartRef(),
+              closestEditingHost, rangeToDelete.StartRef(),
               BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (!backwardScanFromStartResult.ReachedCurrentBlockBoundary()) {
         break;
       }
       MOZ_ASSERT(backwardScanFromStartResult.GetContent() ==
-                 WSRunScanner(editingHost, rangeToDelete.StartRef(),
+                 WSRunScanner(closestEditingHost, rangeToDelete.StartRef(),
                               BlockInlineCheck::UseComputedDisplayOutsideStyle)
                      .GetStartReasonContent());
       
@@ -6731,8 +6739,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
       if (HTMLEditUtils::IsAnyTableElement(
               backwardScanFromStartResult.GetContent()) ||
           backwardScanFromStartResult.GetContent() ==
-              maybeNonEditableBlockElement ||
-          backwardScanFromStartResult.GetContent() == editingHost) {
+              closestBlockAncestorOrInlineEditingHost ||
+          backwardScanFromStartResult.GetContent() == closestEditingHost) {
         break;
       }
       
@@ -6767,11 +6775,11 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
 
   
   EditorDOMPoint atFirstInvisibleBRElement;
-  if (rangeToDelete.EndRef().GetContainer() != maybeNonEditableBlockElement &&
-      rangeToDelete.EndRef().GetContainer() != editingHost) {
+  if (rangeToDelete.EndRef().GetContainer() !=
+      closestBlockAncestorOrInlineEditingHost) {
     for (;;) {
       WSRunScanner wsScannerAtEnd(
-          editingHost, rangeToDelete.EndRef(),
+          closestEditingHost, rangeToDelete.EndRef(),
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
       WSScanResult forwardScanFromEndResult =
           wsScannerAtEnd.ScanNextVisibleNodeOrBlockBoundaryFrom(
@@ -6806,8 +6814,7 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
         if (HTMLEditUtils::IsAnyTableElement(
                 forwardScanFromEndResult.GetContent()) ||
             forwardScanFromEndResult.GetContent() ==
-                maybeNonEditableBlockElement ||
-            forwardScanFromEndResult.GetContent() == editingHost) {
+                closestBlockAncestorOrInlineEditingHost) {
           break;
         }
         
