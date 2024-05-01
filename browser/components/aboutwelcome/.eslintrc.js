@@ -46,7 +46,7 @@ module.exports = {
     {
       
       
-      files: ["modules/*.jsm", "tests/**"],
+      files: ["tests/**"],
       rules: {
         "no-implicit-globals": "off",
       },

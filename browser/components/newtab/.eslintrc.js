@@ -58,7 +58,7 @@ module.exports = {
     {
       
       
-      files: ["*.jsm", "lib/cache.worker.js", "test/**"],
+      files: ["lib/cache.worker.js", "test/**"],
       rules: {
         "no-implicit-globals": "off",
       },
