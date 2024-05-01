@@ -174,6 +174,12 @@ enum class PostBarrierKind {
   Imprecise,
 };
 
+struct BranchIfRefSubtypeRegisters {
+  RegPtr superSTV;
+  RegI32 scratch1;
+  RegI32 scratch2;
+};
+
 
 
 
@@ -1747,15 +1753,10 @@ struct BaseCompiler final {
   template <typename T, typename NullCheckPolicy>
   void emitGcSetScalar(const T& dst, StorageType type, AnyReg value);
 
-  
-  void emitRefTestCommon(RefType sourceType, RefType destType);
-  
-  void emitRefCastCommon(RefType sourceType, RefType destType);
-
-  
-  
-  void branchIfRefSubtype(RegRef ref, RefType sourceType, RefType destType,
-                          Label* label, bool onSuccess);
+  BranchIfRefSubtypeRegisters allocRegistersForBranchIfRefSubtype(
+      RefType destType);
+  void freeRegistersForBranchIfRefSubtype(
+      const BranchIfRefSubtypeRegisters& regs);
 
   
   

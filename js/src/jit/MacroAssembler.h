@@ -314,6 +314,12 @@ struct ReturnCallAdjustmentInfo {
 };
 #endif  
 
+struct BranchWasmRefIsSubtypeRegisters {
+  bool needSuperSTV;
+  bool needScratch1;
+  bool needScratch2;
+};
+
 
 
 
@@ -3971,6 +3977,23 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  static BranchWasmRefIsSubtypeRegisters regsForBranchWasmRefIsSubtype(
+      wasm::RefType type);
+
+  
+  
+  
+  
+  
+  
+  void branchWasmRefIsSubtype(Register ref, wasm::RefType sourceType,
+                              wasm::RefType destType, Label* label,
+                              bool onSuccess, Register superSTV,
+                              Register scratch1, Register scratch2);
+
+  
+  
+  
   
   
   
@@ -3983,9 +4006,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                  wasm::RefType destType, Label* label,
                                  bool onSuccess, Register superSTV,
                                  Register scratch1, Register scratch2);
-  static bool needScratch1ForBranchWasmRefIsSubtypeAny(wasm::RefType type);
-  static bool needScratch2ForBranchWasmRefIsSubtypeAny(wasm::RefType type);
-  static bool needSuperSTVForBranchWasmRefIsSubtypeAny(wasm::RefType type);
 
   
   
@@ -4001,9 +4021,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                   wasm::RefType destType, Label* label,
                                   bool onSuccess, Register superSTV,
                                   Register scratch1, Register scratch2);
-  static bool needSuperSTVAndScratch1ForBranchWasmRefIsSubtypeFunc(
-      wasm::RefType type);
-  static bool needScratch2ForBranchWasmRefIsSubtypeFunc(wasm::RefType type);
 
   
   
