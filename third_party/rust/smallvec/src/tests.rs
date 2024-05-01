@@ -833,12 +833,9 @@ fn test_write() {
 }
 
 #[cfg(feature = "serde")]
-extern crate bincode;
-
-#[cfg(feature = "serde")]
 #[test]
 fn test_serde() {
-    use self::bincode::{config, deserialize};
+    use bincode::{config, deserialize};
     let mut small_vec: SmallVec<[i32; 2]> = SmallVec::new();
     small_vec.push(1);
     let encoded = config().limit(100).serialize(&small_vec).unwrap();
@@ -925,6 +922,12 @@ fn const_new() {
     assert_eq!(v.len(), 2);
     assert_eq!(v[0], 1);
     assert_eq!(v[1], 4);
+    let v = const_new_with_len();
+    assert_eq!(v.capacity(), 4);
+    assert_eq!(v.len(), 3);
+    assert_eq!(v[0], 2);
+    assert_eq!(v[1], 5);
+    assert_eq!(v[2], 7);
 }
 #[cfg(feature = "const_new")]
 const fn const_new_inner() -> SmallVec<[i32; 4]> {
@@ -937,6 +940,12 @@ const fn const_new_inline_sized() -> SmallVec<[i32; 4]> {
 #[cfg(feature = "const_new")]
 const fn const_new_inline_args() -> SmallVec<[i32; 2]> {
     crate::smallvec_inline![1, 4]
+}
+#[cfg(feature = "const_new")]
+const fn const_new_with_len() -> SmallVec<[i32; 4]> {
+    unsafe {
+        SmallVec::<[i32; 4]>::from_const_with_len_unchecked([2, 5, 7, 0], 3)
+    }
 }
 
 #[test]

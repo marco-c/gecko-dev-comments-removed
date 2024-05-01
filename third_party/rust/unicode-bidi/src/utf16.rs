@@ -551,12 +551,12 @@ impl<'text> ParagraphBidiInfo<'text> {
 
 
 
-fn reorder_line<'text>(
-    text: &'text [u16],
+fn reorder_line(
+    text: &[u16],
     line: Range<usize>,
     levels: Vec<Level>,
     runs: Vec<LevelRun>,
-) -> Cow<'text, [u16]> {
+) -> Cow<'_, [u16]> {
     
     if runs.iter().all(|run| levels[run.start].is_ltr()) {
         return text[line].into();
@@ -668,15 +668,15 @@ impl<'text> TextSource<'text> for [u16] {
     }
     #[inline]
     fn chars(&'text self) -> Self::CharIter {
-        Utf16CharIter::new(&self)
+        Utf16CharIter::new(self)
     }
     #[inline]
     fn char_indices(&'text self) -> Self::CharIndexIter {
-        Utf16CharIndexIter::new(&self)
+        Utf16CharIndexIter::new(self)
     }
     #[inline]
     fn indices_lengths(&'text self) -> Self::IndexLenIter {
-        Utf16IndexLenIter::new(&self)
+        Utf16IndexLenIter::new(self)
     }
     #[inline]
     fn char_len(ch: char) -> usize {
