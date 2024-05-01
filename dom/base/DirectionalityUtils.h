@@ -18,6 +18,7 @@ class nsTextNode;
 namespace mozilla::dom {
 class Element;
 class HTMLSlotElement;
+struct UnbindContext;
 }  
 
 namespace mozilla {
@@ -134,9 +135,7 @@ void SetDirectionFromNewTextNode(nsTextNode* aTextNode);
 
 
 
-
-
-void ResetDirectionSetByTextNode(nsTextNode* aTextNode);
+void ResetDirectionSetByTextNode(nsTextNode*, dom::UnbindContext&);
 
 
 

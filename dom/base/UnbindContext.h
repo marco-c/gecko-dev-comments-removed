@@ -19,11 +19,15 @@ struct MOZ_STACK_CLASS UnbindContext final {
   nsINode& Root() const { return mRoot; }
   
   bool IsUnbindRoot(const nsINode* aNode) const { return &mRoot == aNode; }
+  
+  nsINode* GetOriginalSubtreeParent() const { return mOriginalParent; }
 
-  explicit UnbindContext(nsINode& aRoot) : mRoot(aRoot) {}
+  explicit UnbindContext(nsINode& aRoot)
+      : mRoot(aRoot), mOriginalParent(aRoot.GetParentNode()) {}
 
  private:
   nsINode& mRoot;
+  nsINode* const mOriginalParent;
 };
 
 }  

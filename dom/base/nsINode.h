@@ -1897,11 +1897,7 @@ class nsINode : public mozilla::dom::EventTarget {
     NodeHasValidDirAttribute,
     
     
-    NodeHasDirAutoSet,
-    
-    
-    
-    NodeHasTextNodeDirectionalityMap,
+    NodeMaySetDirAuto,
     
     NodeAncestorHasDirAuto,
     
@@ -2028,31 +2024,19 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetHasValidDir() { SetBoolFlag(NodeHasValidDirAttribute); }
   void ClearHasValidDir() { ClearBoolFlag(NodeHasValidDirAttribute); }
   bool HasValidDir() const { return GetBoolFlag(NodeHasValidDirAttribute); }
-  void SetHasDirAutoSet() {
-    MOZ_ASSERT(NodeType() != TEXT_NODE, "SetHasDirAutoSet on text node");
-    SetBoolFlag(NodeHasDirAutoSet);
+  void SetMaySetDirAuto() {
+    
+    MOZ_ASSERT(NodeType() == TEXT_NODE);
+    SetBoolFlag(NodeMaySetDirAuto);
   }
-  void ClearHasDirAutoSet() {
-    MOZ_ASSERT(NodeType() != TEXT_NODE, "ClearHasDirAutoSet on text node");
-    ClearBoolFlag(NodeHasDirAutoSet);
+  bool MaySetDirAuto() const {
+    MOZ_ASSERT(NodeType() == TEXT_NODE);
+    return GetBoolFlag(NodeMaySetDirAuto);
   }
-  bool HasDirAutoSet() const { return GetBoolFlag(NodeHasDirAutoSet); }
-  void SetHasTextNodeDirectionalityMap() {
-    MOZ_ASSERT(NodeType() == TEXT_NODE,
-               "SetHasTextNodeDirectionalityMap on non-text node");
-    SetBoolFlag(NodeHasTextNodeDirectionalityMap);
+  void ClearMaySetDirAuto() {
+    MOZ_ASSERT(NodeType() == TEXT_NODE);
+    ClearBoolFlag(NodeMaySetDirAuto);
   }
-  void ClearHasTextNodeDirectionalityMap() {
-    MOZ_ASSERT(NodeType() == TEXT_NODE,
-               "ClearHasTextNodeDirectionalityMap on non-text node");
-    ClearBoolFlag(NodeHasTextNodeDirectionalityMap);
-  }
-  bool HasTextNodeDirectionalityMap() const {
-    MOZ_ASSERT(NodeType() == TEXT_NODE,
-               "HasTextNodeDirectionalityMap on non-text node");
-    return GetBoolFlag(NodeHasTextNodeDirectionalityMap);
-  }
-
   void SetAncestorHasDirAuto() { SetBoolFlag(NodeAncestorHasDirAuto); }
   void ClearAncestorHasDirAuto() { ClearBoolFlag(NodeAncestorHasDirAuto); }
   bool AncestorHasDirAuto() const {
