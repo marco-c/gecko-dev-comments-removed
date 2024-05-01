@@ -104,6 +104,8 @@ bool DoesKeySystemSupportClearLead(const nsAString& aKeySystem);
 bool CheckIfHarewareDRMConfigExists(
     const nsTArray<dom::MediaKeySystemConfiguration>& aConfigs);
 
+bool DoesKeySystemSupportHardwareDecryption(const nsAString& aKeySystem);
+
 }  
 
 #endif  
