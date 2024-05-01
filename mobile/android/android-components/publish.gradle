@@ -3,22 +3,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 def libRepoName = properties.libRepositoryName
+def libGroupId = properties.libGroupId
 def libUrl = properties.libUrl
 def libVcsUrl = properties.libVcsUrl
 def libLicense = properties.libLicense
 def libLicenseUrl = properties.libLicenseUrl
 
-ext.configurePublish = { groupIdArg, artifactIdArg, descriptionArg ->
+ext.configurePublish = { artifactIdArg, descriptionArg ->
     apply plugin: 'com.github.dcendents.android-maven'
 
-    group = groupIdArg
+    group = properties.libGroupId
 
     install {
         repositories.mavenInstaller {
             pom {
                 project {
                     packaging 'aar'
-                    groupId groupIdArg
+                    groupId libGroupId
                     artifactId artifactIdArg
 
                     name libRepoName
@@ -52,7 +53,7 @@ ext.configurePublish = { groupIdArg, artifactIdArg, descriptionArg ->
 
     apply plugin: 'com.jfrog.bintray'
 
-    version = rootProject.ext.library['version']
+    version = properties.libVersion
 
     task sourcesJar(type: Jar) {
         from android.sourceSets.main.java.srcDirs
@@ -74,15 +75,12 @@ ext.configurePublish = { groupIdArg, artifactIdArg, descriptionArg ->
         archives sourcesJar
     }
 
-    Properties localProperties = null;
-    if (project.rootProject.file('local.properties').canRead()) {
-        localProperties = new Properties()
-        localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
-    }
+    Properties localProperties = new Properties()
+    localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
 
     bintray {
-        user = localProperties != null ? localProperties.getProperty("bintray.user") : ""
-        key = localProperties != null ? localProperties.getProperty("bintray.apikey") : ""
+        user = localProperties.getProperty("bintray.user")
+        key = localProperties.getProperty("bintray.apikey")
 
         configurations = ['archives']
         pkg {
