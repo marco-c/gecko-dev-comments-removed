@@ -496,7 +496,7 @@ class WebIDLCodegenManager(LoggingMixin):
         for name in changedDictionaryNames:
             d = self._config.getDictionaryIfExists(name)
             if d:
-                changed_inputs.add(d.filename())
+                changed_inputs.add(d.filename)
 
         
         
