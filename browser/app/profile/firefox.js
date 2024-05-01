@@ -3011,7 +3011,6 @@ pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
 
 
 pref("browser.mailto.dualPrompt", false);
-pref("browser.mailto.dualPrompt.os", false);
 
 
 pref("browser.mailto.prompt.os", true);
