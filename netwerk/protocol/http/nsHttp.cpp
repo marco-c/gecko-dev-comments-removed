@@ -1020,10 +1020,12 @@ SupportedAlpnRank IsAlpnSupported(const nsACString& aAlpn) {
 
 
 
-bool SecurityErrorThatMayNeedRestart(nsresult aReason) {
+bool PossibleZeroRTTRetryError(nsresult aReason) {
   return (aReason ==
           psm::GetXPCOMFromNSSError(SSL_ERROR_PROTOCOL_VERSION_ALERT)) ||
-         (aReason == psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_MAC_ALERT));
+         (aReason == psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_MAC_ALERT)) ||
+         (aReason ==
+          psm::GetXPCOMFromNSSError(SSL_ERROR_HANDSHAKE_UNEXPECTED_ALERT));
 }
 
 nsresult MakeOriginURL(const nsACString& origin, nsCOMPtr<nsIURI>& url) {
