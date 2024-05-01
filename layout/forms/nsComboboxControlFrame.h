@@ -7,56 +7,30 @@
 #ifndef nsComboboxControlFrame_h___
 #define nsComboboxControlFrame_h___
 
-#ifdef DEBUG_evaughan
-
-#endif
-
-#ifdef DEBUG_rods
-
-
-
-
-
-#endif
-
-
-#define NS_SKIP_NOTIFY_INDEX -2
-
 #include "mozilla/Attributes.h"
-#include "nsBlockFrame.h"
 #include "nsIFormControlFrame.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsISelectControlFrame.h"
 #include "nsIRollupListener.h"
 #include "nsThreadUtils.h"
-
-class nsComboboxDisplayFrame;
-class nsTextNode;
+#include "nsHTMLButtonControlFrame.h"
 
 namespace mozilla {
 class PresShell;
 class HTMLSelectEventListener;
+class ComboboxLabelFrame;
 namespace dom {
 class HTMLSelectElement;
 }
-
-namespace gfx {
-class DrawTarget;
-}  
 }  
 
-class nsComboboxControlFrame final : public nsBlockFrame,
-                                     public nsIFormControlFrame,
+class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
                                      public nsIAnonymousContentCreator,
                                      public nsISelectControlFrame {
-  using DrawTarget = mozilla::gfx::DrawTarget;
   using Element = mozilla::dom::Element;
 
  public:
-  friend nsComboboxControlFrame* NS_NewComboboxControlFrame(
-      mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
-  friend class nsComboboxDisplayFrame;
-
+  friend class mozilla::ComboboxLabelFrame;
   explicit nsComboboxControlFrame(ComputedStyle* aStyle,
                                   nsPresContext* aPresContext);
   ~nsComboboxControlFrame();
@@ -69,16 +43,16 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                 uint32_t aFilter) final;
 
-  nsIContent* GetDisplayNode() const;
-  nsIFrame* CreateFrameForDisplayNode();
-
 #ifdef ACCESSIBILITY
   mozilla::a11y::AccType AccessibleType() final;
 #endif
 
   nscoord GetMinISize(gfxContext* aRenderingContext) final;
-
   nscoord GetPrefISize(gfxContext* aRenderingContext) final;
+
+  
+  
+  nsContainerFrame* GetContentInsertionFrame() override { return this; }
 
   void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput, nsReflowStatus& aStatus) final;
@@ -88,27 +62,15 @@ class nsComboboxControlFrame final : public nsBlockFrame,
                        mozilla::WidgetGUIEvent* aEvent,
                        nsEventStatus* aEventStatus) final;
 
-  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                        const nsDisplayListSet& aLists) final;
-
-  void PaintFocus(DrawTarget& aDrawTarget, nsPoint aPt);
-
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) final;
-
-#ifdef DEBUG_FRAME_DUMP
-  nsresult GetFrameName(nsAString& aResult) const final;
-#endif
   void Destroy(DestroyContext&) final;
 
-  void SetInitialChildList(ChildListID aListID, nsFrameList&& aChildList) final;
-  const nsFrameList& GetChildList(ChildListID aListID) const final;
-  void GetChildLists(nsTArray<ChildList>* aLists) const final;
-
-  nsContainerFrame* GetContentInsertionFrame() final;
-
-  
-  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) final;
+#ifdef DEBUG_FRAME_DUMP
+  nsresult GetFrameName(nsAString& aResult) const final {
+    return MakeFrameName(u"ComboboxControl"_ns, aResult);
+  }
+#endif
 
   
   nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) final {
@@ -118,30 +80,8 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void SetFocus(bool aOn, bool aRepaint) final;
-
-  
-
-
-
-
-
-  void GetAvailableDropdownSpace(mozilla::WritingMode aWM, nscoord* aBefore,
-                                 nscoord* aAfter,
-                                 mozilla::LogicalPoint* aTranslation);
-  int32_t GetIndexOfDisplayArea();
-  
-
-
+  void FireValueChangeEvent();
   nsresult RedisplaySelectedText();
-  int32_t UpdateRecentIndex(int32_t aIndex);
 
   bool IsDroppedDown() const;
 
@@ -192,53 +132,23 @@ class nsComboboxControlFrame final : public nsBlockFrame,
     nsComboboxControlFrame* mControlFrame;
   };
 
-  void CheckFireOnChange();
-  void FireValueChangeEvent();
   nsresult RedisplayText();
   void HandleRedisplayTextEvent();
   void ActuallyDisplayText(bool aNotify);
 
-  
-  
-  nsPoint GetCSSTransformTranslation();
-
   mozilla::dom::HTMLSelectElement& Select() const;
   void GetOptionText(uint32_t aIndex, nsAString& aText) const;
 
-  RefPtr<nsTextNode> mDisplayContent;  
-                                       
-  RefPtr<Element> mButtonContent;      
-  nsContainerFrame* mDisplayFrame;     
-  nsIFrame* mButtonFrame;              
-
-  
-  
-  nscoord mDisplayISize;
-  
-  
-  
-  
-  nscoord mMaxDisplayISize;
-
+  RefPtr<Element> mDisplayLabel;   
+  RefPtr<Element> mButtonContent;  
   nsRevocableEventPtr<RedisplayTextEvent> mRedisplayTextEvent;
 
-  int32_t mRecentSelectedIndex;
-  int32_t mDisplayedIndex;
+  
+  
+  nscoord mDisplayISize = 0;
+  int32_t mDisplayedIndex = -1;
   nsString mDisplayedOptionTextOrPreview;
-
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
-
-  
-  bool mInRedisplayText;
-  bool mIsOpenInParentProcess;
-
-  
-  
-  static nsComboboxControlFrame* sFocused;
-
-#ifdef DO_REFLOW_COUNTER
-  int32_t mReflowId;
-#endif
 };
 
 #endif

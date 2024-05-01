@@ -57,8 +57,8 @@ void nsHTMLButtonControlFrame::SetFocus(bool aOn, bool aRepaint) {}
 nsresult nsHTMLButtonControlFrame::HandleEvent(nsPresContext* aPresContext,
                                                WidgetGUIEvent* aEvent,
                                                nsEventStatus* aEventStatus) {
-  
-  if (mRenderer.isDisabled()) {
+  if (mContent->AsElement()->IsDisabled()) {
+    
     return NS_OK;
   }
 
@@ -240,9 +240,11 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
     
     
     
-    nscoord bSize = aButtonReflowInput.mFrame->ContainIntrinsicBSize().valueOr(
-        contentsDesiredSize.BSize(wm));
-
+    
+    
+    const Maybe<nscoord> containBSize = ContainIntrinsicBSize(
+        IsComboboxControlFrame() ? aButtonReflowInput.GetLineHeight() : 0);
+    const nscoord bSize = containBSize.valueOr(contentsDesiredSize.BSize(wm));
     
     
     

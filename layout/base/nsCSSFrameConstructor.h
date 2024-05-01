@@ -1390,19 +1390,17 @@ class nsCSSFrameConstructor final : public nsFrameManager {
  private:
   
   
-  nsIFrame* ConstructSelectFrame(nsFrameConstructorState& aState,
-                                 FrameConstructionItem& aItem,
-                                 nsContainerFrame* aParentFrame,
-                                 const nsStyleDisplay* aStyleDisplay,
-                                 nsFrameList& aFrameList);
-
-  
-  
   nsIFrame* ConstructFieldSetFrame(nsFrameConstructorState& aState,
                                    FrameConstructionItem& aItem,
                                    nsContainerFrame* aParentFrame,
                                    const nsStyleDisplay* aStyleDisplay,
                                    nsFrameList& aFrameList);
+
+  nsIFrame* ConstructListBoxSelectFrame(nsFrameConstructorState& aState,
+                                        FrameConstructionItem& aItem,
+                                        nsContainerFrame* aParentFrame,
+                                        const nsStyleDisplay* aStyleDisplay,
+                                        nsFrameList& aFrameList);
 
   
   nsIFrame* ConstructBlockRubyFrame(nsFrameConstructorState& aState,
@@ -1450,6 +1448,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                                    nsIFrame* aParentFrame,
                                                    ComputedStyle&);
   
+  static const FrameConstructionData* FindSelectData(const Element&,
+                                                     ComputedStyle&);
   static const FrameConstructionData* FindImgData(const Element&,
                                                   ComputedStyle&);
   static const FrameConstructionData* FindGeneratedImageData(const Element&,

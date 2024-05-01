@@ -2229,97 +2229,83 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     aMetrics.mCarriedOutBEndMargin.Zero();
-  } else {
-    Maybe<nscoord> containBSize = ContainIntrinsicBSize(
-        IsComboboxControlFrame() ? NS_UNCONSTRAINEDSIZE : 0);
-    if (containBSize && *containBSize != NS_UNCONSTRAINEDSIZE) {
+  } else if (Maybe<nscoord> containBSize = ContainIntrinsicBSize()) {
+    
+    
+    
+    
+    
+    nscoord contentBSize = *containBSize;
+    nscoord autoBSize =
+        aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
+    aMetrics.mCarriedOutBEndMargin.Zero();
+    autoBSize += borderPadding.BStartEnd(wm);
+    finalSize.BSize(wm) = autoBSize;
+  } else if (aState.mReflowStatus.IsInlineBreakBefore()) {
+    
+    
+    finalSize.BSize(wm) = aReflowInput.AvailableBSize();
+  } else if (aState.mReflowStatus.IsComplete()) {
+    const nscoord lineClampedContentBlockEndEdge =
+        ApplyLineClamp(aReflowInput, this, blockEndEdgeOfChildren);
+
+    const nscoord bpBStart = borderPadding.BStart(wm);
+    const nscoord contentBSize = blockEndEdgeOfChildren - bpBStart;
+    const nscoord lineClampedContentBSize =
+        lineClampedContentBlockEndEdge - bpBStart;
+
+    const nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(
+        lineClampedContentBSize, aState.mConsumedBSize);
+    if (autoBSize != contentBSize) {
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nscoord contentBSize = *containBSize;
-      nscoord autoBSize =
-          aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
       aMetrics.mCarriedOutBEndMargin.Zero();
-      autoBSize += borderPadding.BStartEnd(wm);
-      finalSize.BSize(wm) = autoBSize;
-    } else if (aState.mReflowStatus.IsInlineBreakBefore()) {
-      
-      
-      finalSize.BSize(wm) = aReflowInput.AvailableBSize();
-    } else if (aState.mReflowStatus.IsComplete()) {
-      const nscoord lineClampedContentBlockEndEdge =
-          ApplyLineClamp(aReflowInput, this, blockEndEdgeOfChildren);
-
-      const nscoord bpBStart = borderPadding.BStart(wm);
-      const nscoord contentBSize = blockEndEdgeOfChildren - bpBStart;
-      const nscoord lineClampedContentBSize =
-          lineClampedContentBlockEndEdge - bpBStart;
-
-      const nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(
-          lineClampedContentBSize, aState.mConsumedBSize);
-      if (autoBSize != contentBSize) {
-        
-        
-        aMetrics.mCarriedOutBEndMargin.Zero();
-      }
-      nscoord bSize = autoBSize + borderPadding.BStartEnd(wm);
-      if (MOZ_UNLIKELY(autoBSize > contentBSize &&
-                       bSize > aReflowInput.AvailableBSize() &&
-                       aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)) {
-        
-        
-        
-        bSize = aReflowInput.AvailableBSize();
-        if (ShouldAvoidBreakInside(aReflowInput)) {
-          aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-        } else {
-          aState.mReflowStatus.SetIncomplete();
-        }
-      }
-      finalSize.BSize(wm) = bSize;
-    } else {
-      NS_ASSERTION(
-          aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
-          "Shouldn't be incomplete if availableBSize is UNCONSTRAINED.");
-      nscoord bSize = std::max(aState.mBCoord, aReflowInput.AvailableBSize());
-      if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
-        
-        bSize = aState.mBCoord;
-      }
-      const nscoord maxBSize = aReflowInput.ComputedMaxBSize();
-      if (maxBSize != NS_UNCONSTRAINEDSIZE &&
-          aState.mConsumedBSize + bSize - borderPadding.BStart(wm) > maxBSize) {
-        
-        
-        const nscoord clampedBSizeWithoutEndBP =
-            std::max(0, maxBSize - aState.mConsumedBSize) +
-            borderPadding.BStart(wm);
-        const nscoord clampedBSize =
-            clampedBSizeWithoutEndBP + borderPadding.BEnd(wm);
-        if (clampedBSize <= aReflowInput.AvailableBSize()) {
-          
-          
-          bSize = clampedBSize;
-          aState.mReflowStatus.SetOverflowIncomplete();
-        } else {
-          
-          
-          bSize = clampedBSizeWithoutEndBP;
-        }
-      }
-      finalSize.BSize(wm) = bSize;
     }
+    nscoord bSize = autoBSize + borderPadding.BStartEnd(wm);
+    if (MOZ_UNLIKELY(autoBSize > contentBSize &&
+                     bSize > aReflowInput.AvailableBSize() &&
+                     aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)) {
+      
+      
+      
+      bSize = aReflowInput.AvailableBSize();
+      if (ShouldAvoidBreakInside(aReflowInput)) {
+        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+      } else {
+        aState.mReflowStatus.SetIncomplete();
+      }
+    }
+    finalSize.BSize(wm) = bSize;
+  } else {
+    NS_ASSERTION(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
+                 "Shouldn't be incomplete if availableBSize is UNCONSTRAINED.");
+    nscoord bSize = std::max(aState.mBCoord, aReflowInput.AvailableBSize());
+    if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
+      
+      bSize = aState.mBCoord;
+    }
+    const nscoord maxBSize = aReflowInput.ComputedMaxBSize();
+    if (maxBSize != NS_UNCONSTRAINEDSIZE &&
+        aState.mConsumedBSize + bSize - borderPadding.BStart(wm) > maxBSize) {
+      
+      
+      const nscoord clampedBSizeWithoutEndBP =
+          std::max(0, maxBSize - aState.mConsumedBSize) +
+          borderPadding.BStart(wm);
+      const nscoord clampedBSize =
+          clampedBSizeWithoutEndBP + borderPadding.BEnd(wm);
+      if (clampedBSize <= aReflowInput.AvailableBSize()) {
+        
+        
+        bSize = clampedBSize;
+        aState.mReflowStatus.SetOverflowIncomplete();
+      } else {
+        
+        
+        bSize = clampedBSizeWithoutEndBP;
+      }
+    }
+    finalSize.BSize(wm) = bSize;
   }
 
   if (IsTrueOverflowContainer()) {
@@ -7572,7 +7558,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   if (StaticPrefs::browser_display_permit_backplate() &&
-      PresContext()->ForcingColors() && !IsComboboxControlFrame() &&
+      PresContext()->ForcingColors() &&
       StyleText()->mForcedColorAdjust != StyleForcedColorAdjust::None) {
     backplateColor.emplace(GetBackplateColor(this));
   }
@@ -7970,8 +7956,7 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
          (pseudo == PseudoStyleType::scrolledContent &&
           !GetParent()->IsListControlFrame()) ||
          pseudo == PseudoStyleType::mozSVGText) &&
-        !IsComboboxControlFrame() && !IsMathMLFrame() &&
-        !IsColumnSetWrapperFrame() &&
+        !IsMathMLFrame() && !IsColumnSetWrapperFrame() &&
         RefPtr<ComputedStyle>(GetFirstLetterStyle(PresContext())) != nullptr;
     NS_ASSERTION(haveFirstLetterStyle ==
                      HasAnyStateBits(NS_BLOCK_HAS_FIRST_LETTER_STYLE),
