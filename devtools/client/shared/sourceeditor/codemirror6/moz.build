@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    "codemirror6.bundle.js",
+    "codemirror6.bundle.mjs",
 )
 
 with Files("**"):
