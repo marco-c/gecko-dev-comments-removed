@@ -659,13 +659,13 @@ bool ParseContext::declareFunctionArgumentsObject(
   ParseContext::Scope& funScope = functionScope();
   ParseContext::Scope& _varScope = varScope();
 
-  bool usesArguments = false;
   bool hasExtraBodyVarScope = &funScope != &_varScope;
 
   
   auto argumentsName = TaggedParserAtomIndex::WellKnown::arguments();
 
   bool tryDeclareArguments;
+  
   if (canSkipLazyClosedOverBindings) {
     tryDeclareArguments = funbox->shouldDeclareArguments();
   } else {
@@ -685,9 +685,17 @@ bool ParseContext::declareFunctionArgumentsObject(
   DeclaredNamePtr p = _varScope.lookupDeclaredName(argumentsName);
   if (p && p->value()->kind() == DeclarationKind::Var) {
     if (hasExtraBodyVarScope) {
+      
+      
       tryDeclareArguments = true;
     } else {
-      usesArguments = true;
+      
+      
+      funbox->setNeedsArgsObj();
+
+      
+      
+      return true;
     }
   }
 
@@ -700,17 +708,9 @@ bool ParseContext::declareFunctionArgumentsObject(
         return false;
       }
       funbox->setShouldDeclareArguments();
-      usesArguments = true;
-    } else if (hasExtraBodyVarScope) {
-      
-      return true;
+      funbox->setNeedsArgsObj();
     }
   }
-
-  if (usesArguments) {
-    funbox->setNeedsArgsObj();
-  }
-
   return true;
 }
 
