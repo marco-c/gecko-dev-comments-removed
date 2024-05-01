@@ -545,6 +545,19 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
       "MacOSWebAuthnService::MakeCredential",
       [self = RefPtr{this}, browsingContextId(aBrowsingContextId),
        aArgs = nsCOMPtr{aArgs}, aPromise = nsCOMPtr{aPromise}]() {
+        
+        
+        
+        
+        
+        
+        
+        if (self->mRegisterPromise) {
+          MOZ_LOG(gMacOSWebAuthnServiceLog, mozilla::LogLevel::Debug,
+                  ("MacOSAuthenticatorRequestDelegate::MakeCredential: "
+                   "platform failed to call callback"));
+          self->AbortTransaction(NS_ERROR_DOM_ABORT_ERR);
+        }
         self->mRegisterPromise = aPromise;
 
         nsAutoString rpId;
@@ -847,6 +860,14 @@ void MacOSWebAuthnService::DoGetAssertion(
       [self = RefPtr{this}, browsingContextId(aBrowsingContextId), aArgs,
        aPromise,
        aSelectedCredentialId = std::move(aSelectedCredentialId)]() mutable {
+        
+        
+        if (self->mSignPromise) {
+          MOZ_LOG(gMacOSWebAuthnServiceLog, mozilla::LogLevel::Debug,
+                  ("MacOSAuthenticatorRequestDelegate::DoGetAssertion: "
+                   "platform failed to call callback"));
+          self->AbortTransaction(NS_ERROR_DOM_ABORT_ERR);
+        }
         self->mSignPromise = aPromise;
 
         nsAutoString rpId;
