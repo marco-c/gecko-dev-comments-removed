@@ -1,0 +1,26 @@
+
+
+
+
+"use strict";
+
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
+
+
+
+
+
+
+setTimeout(function () {
+  
+
+
+
+  Services.obs.notifyObservers(null, "init-devtools-content-process-actor");
+  
+
+
+
+}, 0);

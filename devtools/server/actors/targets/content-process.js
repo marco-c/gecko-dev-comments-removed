@@ -216,7 +216,7 @@ class ContentProcessTargetActor extends BaseTargetActor {
     this.ensureWorkerList().workerPauser.setPauseServiceWorkers(request.origin);
   }
 
-  destroy() {
+  destroy({ isModeSwitching } = {}) {
     
     
     if (this.destroying) {
@@ -228,7 +228,7 @@ class ContentProcessTargetActor extends BaseTargetActor {
     
     Resources.unwatchAllResources(this);
 
-    this.emit("destroyed");
+    this.emit("destroyed", { isModeSwitching });
 
     super.destroy();
 

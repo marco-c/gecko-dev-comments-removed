@@ -4,285 +4,36 @@
 
 "use strict";
 
-const { WatcherRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
-  
-  
-  { global: "shared" }
-);
-
-loader.lazyRequireGetter(
-  this,
-  "ChildDebuggerTransport",
-  "resource://devtools/shared/transport/child-transport.js",
-  true
-);
-
-const CONTENT_PROCESS_SCRIPT =
-  "resource://devtools/server/startup/content-process-script.js";
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-const actors = new WeakMap();
-
-
-const watchers = new Set();
-
-function onContentProcessActorCreated(msg) {
-  const { watcherActorID, prefix, actor } = msg.data;
-  const watcher = WatcherRegistry.getWatcher(watcherActorID);
-  if (!watcher) {
-    throw new Error(
-      `Receiving a content process actor without a watcher actor ${watcherActorID}`
-    );
-  }
-  
-  
-  
-  
-  
-  if (!watchers.has(watcher)) {
-    return;
-  }
-  const messageManager = msg.target;
-  const connection = watcher.conn;
-
-  
-  const childTransport = new ChildDebuggerTransport(messageManager, prefix);
-  childTransport.hooks = {
-    onPacket: connection.send.bind(connection),
-  };
-  childTransport.ready();
-
-  connection.setForwarding(prefix, childTransport);
-
-  const list = actors.get(messageManager) || [];
-  list.push({
-    prefix,
-    childTransport,
-    actor,
-    watcher,
-  });
-  actors.set(messageManager, list);
-
-  watcher.notifyTargetAvailable(actor);
-}
-
-function onContentProcessActorDestroyed(msg) {
-  const { watcherActorID } = msg.data;
-  const watcher = WatcherRegistry.getWatcher(watcherActorID);
-  if (!watcher) {
-    throw new Error(
-      `Receiving a content process actor destruction without a watcher actor ${watcherActorID}`
-    );
-  }
-  
-  
-  
-  
-  
-  if (!watchers.has(watcher)) {
-    return;
-  }
-  const messageManager = msg.target;
-  unregisterWatcherForMessageManager(watcher, messageManager);
-}
-
-function onMessageManagerClose(messageManager, topic, data) {
-  const list = actors.get(messageManager);
-  if (!list || !list.length) {
-    return;
-  }
-  for (const { prefix, childTransport, actor, watcher } of list) {
-    watcher.notifyTargetDestroyed(actor);
-
-    
-    
-    childTransport.close();
-    watcher.conn.cancelForwarding(prefix);
-  }
-  actors.delete(messageManager);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function unregisterWatcherForMessageManager(watcher, messageManager, options) {
-  const targetActorDescriptions = actors.get(messageManager);
-  if (!targetActorDescriptions || !targetActorDescriptions.length) {
-    return;
-  }
-
-  
-  const matchingTargetActorDescriptions = targetActorDescriptions.filter(
-    item => item.watcher === watcher
+function getAllContentProcesses() {
+  return ChromeUtils.getAllDOMProcesses().filter(
+    process => process.childID !== 0
   );
-  for (const {
-    prefix,
-    childTransport,
-    actor,
-  } of matchingTargetActorDescriptions) {
-    watcher.notifyTargetDestroyed(actor, options);
-
-    childTransport.close();
-    watcher.conn.cancelForwarding(prefix);
-  }
-
-  
-  const remainingTargetActorDescriptions = targetActorDescriptions.filter(
-    item => item.watcher !== watcher
-  );
-  if (!remainingTargetActorDescriptions.length) {
-    actors.delete(messageManager);
-  } else {
-    actors.set(messageManager, remainingTargetActorDescriptions);
-  }
 }
 
 
 
 
 
-
-
-
-
-
-function closeWatcherTransports(watcher, options) {
-  for (let i = 0; i < Services.ppmm.childCount; i++) {
-    const messageManager = Services.ppmm.getChildAt(i);
-    unregisterWatcherForMessageManager(watcher, messageManager, options);
-  }
-}
-
-function maybeRegisterMessageListeners(watcher) {
-  const sizeBefore = watchers.size;
-  watchers.add(watcher);
-  if (sizeBefore == 0 && watchers.size == 1) {
-    Services.ppmm.addMessageListener(
-      "debug:content-process-actor",
-      onContentProcessActorCreated
-    );
-    Services.ppmm.addMessageListener(
-      "debug:content-process-actor-destroyed",
-      onContentProcessActorDestroyed
-    );
-    Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
-
-    
-    
-    
-    
-    
-    const isContentProcessScripLoaded = Services.ppmm
-      .getDelayedProcessScripts()
-      .some(([uri]) => uri === CONTENT_PROCESS_SCRIPT);
-    if (!isContentProcessScripLoaded) {
-      Services.ppmm.loadProcessScript(CONTENT_PROCESS_SCRIPT, true);
-    }
-  }
-}
-
-
-
-
-
-
-
-function maybeUnregisterMessageListeners(watcher, options = {}) {
-  const sizeBefore = watchers.size;
-  watchers.delete(watcher);
-  closeWatcherTransports(watcher, options);
-
-  if (sizeBefore == 1 && watchers.size == 0) {
-    Services.ppmm.removeMessageListener(
-      "debug:content-process-actor",
-      onContentProcessActorCreated
-    );
-    Services.ppmm.removeMessageListener(
-      "debug:content-process-actor-destroyed",
-      onContentProcessActorDestroyed
-    );
-    Services.obs.removeObserver(onMessageManagerClose, "message-manager-close");
-
-    
-    
-    
-    
-    
-    Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);
-
-    Services.ppmm.broadcastAsyncMessage("debug:destroy-process-script", {
-      options,
-    });
-  }
-}
 
 async function createTargets(watcher) {
-  
-  maybeRegisterMessageListeners(watcher);
-
-  
-  
-  
-  
-  
-  let contentProcessCount = Services.ppmm.childCount - 1;
-  if (contentProcessCount == 0) {
-    return;
+  const promises = [];
+  for (const domProcess of getAllContentProcesses()) {
+    const processActor = domProcess.getActor("DevToolsProcess");
+    promises.push(
+      processActor.instantiateTarget({
+        watcherActorID: watcher.actorID,
+        connectionPrefix: watcher.conn.prefix,
+        sessionContext: watcher.sessionContext,
+        sessionData: watcher.sessionData,
+      })
+    );
   }
-  const onTargetsCreated = new Promise(resolve => {
-    let receivedTargetCount = 0;
-    const listener = () => {
-      receivedTargetCount++;
-      mayBeResolve();
-    };
-    watcher.on("target-available-form", listener);
-    const onContentProcessClosed = () => {
-      
-      contentProcessCount--;
-      mayBeResolve();
-    };
-    Services.obs.addObserver(onContentProcessClosed, "message-manager-close");
-    function mayBeResolve() {
-      if (receivedTargetCount >= contentProcessCount) {
-        watcher.off("target-available-form", listener);
-        Services.obs.removeObserver(
-          onContentProcessClosed,
-          "message-manager-close"
-        );
-        resolve();
-      }
-    }
-  });
-
-  Services.ppmm.broadcastAsyncMessage("debug:instantiate-already-available", {
-    watcherActorID: watcher.actorID,
-    connectionPrefix: watcher.conn.prefix,
-    sessionData: watcher.sessionData,
-  });
-
-  await onTargetsCreated;
+  await Promise.all(promises);
 }
 
 
@@ -292,11 +43,13 @@ async function createTargets(watcher) {
 
 
 function destroyTargets(watcher, options) {
-  maybeUnregisterMessageListeners(watcher, options);
-
-  Services.ppmm.broadcastAsyncMessage("debug:destroy-target", {
-    watcherActorID: watcher.actorID,
-  });
+  for (const domProcess of getAllContentProcesses()) {
+    const processActor = domProcess.getActor("DevToolsProcess");
+    processActor.destroyTarget({
+      watcherActorID: watcher.actorID,
+      isModeSwitching: options.isModeSwitching,
+    });
+  }
 }
 
 
@@ -319,51 +72,19 @@ async function addOrSetSessionDataEntry({
   entries,
   updateType,
 }) {
-  let expectedCount = Services.ppmm.childCount - 1;
-  if (expectedCount == 0) {
-    return;
-  }
-  const onAllReplied = new Promise(resolve => {
-    let count = 0;
-    const listener = msg => {
-      if (msg.data.watcherActorID != watcher.actorID) {
-        return;
-      }
-      count++;
-      maybeResolve();
-    };
-    Services.ppmm.addMessageListener(
-      "debug:add-or-set-session-data-entry-done",
-      listener
+  const promises = [];
+  for (const domProcess of getAllContentProcesses()) {
+    const processActor = domProcess.getActor("DevToolsProcess");
+    promises.push(
+      processActor.addOrSetSessionDataEntry({
+        watcherActorID: watcher.actorID,
+        type,
+        entries,
+        updateType,
+      })
     );
-    const onContentProcessClosed = (messageManager, topic, data) => {
-      expectedCount--;
-      maybeResolve();
-    };
-    const maybeResolve = () => {
-      if (count == expectedCount) {
-        Services.ppmm.removeMessageListener(
-          "debug:add-or-set-session-data-entry-done",
-          listener
-        );
-        Services.obs.removeObserver(
-          onContentProcessClosed,
-          "message-manager-close"
-        );
-        resolve();
-      }
-    };
-    Services.obs.addObserver(onContentProcessClosed, "message-manager-close");
-  });
-
-  Services.ppmm.broadcastAsyncMessage("debug:add-or-set-session-data-entry", {
-    watcherActorID: watcher.actorID,
-    type,
-    entries,
-    updateType,
-  });
-
-  await onAllReplied;
+  }
+  await Promise.all(promises);
 }
 
 
@@ -371,12 +92,19 @@ async function addOrSetSessionDataEntry({
 
 
 
-function removeSessionDataEntry({ watcher, type, entries }) {
-  Services.ppmm.broadcastAsyncMessage("debug:remove-session-data-entry", {
-    watcherActorID: watcher.actorID,
-    type,
-    entries,
-  });
+async function removeSessionDataEntry({ watcher, type, entries }) {
+  const promises = [];
+  for (const domProcess of getAllContentProcesses()) {
+    const processActor = domProcess.getActor("DevToolsProcess");
+    promises.push(
+      processActor.removeSessionDataEntry({
+        watcherActorID: watcher.actorID,
+        type,
+        entries,
+      })
+    );
+  }
+  await Promise.all(promises);
 }
 
 module.exports = {

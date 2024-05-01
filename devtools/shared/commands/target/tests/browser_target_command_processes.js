@@ -178,11 +178,13 @@ async function testProcesses(targetCommand, target) {
       onAvailable: onAvailable2,
     });
   });
+  info("open new tab in new process");
   const tab1 = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: TEST_URL,
     forceNewProcess: true,
   });
+  info("wait for process target to be created");
   const createdTarget = await onProcessCreated;
   
   

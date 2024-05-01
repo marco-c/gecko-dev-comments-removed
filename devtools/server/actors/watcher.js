@@ -258,7 +258,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     
     if (!options.isModeSwitching) {
-      WatcherRegistry.maybeUnregisteringJSWindowActor();
+      WatcherRegistry.maybeUnregisterJSActors();
     }
   }
 
@@ -634,7 +634,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     }
 
     
-    WatcherRegistry.maybeUnregisteringJSWindowActor();
+    WatcherRegistry.maybeUnregisterJSActors();
   }
 
   clearResources(resourceTypes) {
