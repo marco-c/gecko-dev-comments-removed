@@ -172,7 +172,9 @@ Flow.prototype._read = function _read() {
 
   
   else {
-    this.once('window_update', this._read);
+    if (!this.listenerCount('window_update')) {
+      this.once('window_update', this._read);
+    }
   }
 };
 
