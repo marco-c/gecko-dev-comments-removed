@@ -241,6 +241,21 @@ EncoderConfig VideoEncoderConfigInternal::ToEncoderConfig() const {
       }
     }
   }
+  uint8_t numTemporalLayers = 1;
+  MediaDataEncoder::ScalabilityMode scalabilityMode;
+  if (mScalabilityMode) {
+    if (mScalabilityMode->EqualsLiteral("L1T2")) {
+      scalabilityMode = MediaDataEncoder::ScalabilityMode::L1T2;
+      numTemporalLayers = 2;
+    } else if (mScalabilityMode->EqualsLiteral("L1T3")) {
+      scalabilityMode = MediaDataEncoder::ScalabilityMode::L1T3;
+      numTemporalLayers = 3;
+    } else {
+      scalabilityMode = MediaDataEncoder::ScalabilityMode::None;
+    }
+  } else {
+    scalabilityMode = MediaDataEncoder::ScalabilityMode::None;
+  }
   
   if (codecType == CodecType::VP9) {
     uint8_t profile, level, bitdepth, chromasubsampling;
@@ -252,19 +267,17 @@ EncoderConfig VideoEncoderConfigInternal::ToEncoderConfig() const {
       LOGE("Error extracting VPX codec details, non fatal");
     }
 #endif
-    specific.emplace(VP9Specific());
-  }
-  MediaDataEncoder::ScalabilityMode scalabilityMode;
-  if (mScalabilityMode) {
-    if (mScalabilityMode->EqualsLiteral("L1T2")) {
-      scalabilityMode = MediaDataEncoder::ScalabilityMode::L1T2;
-    } else if (mScalabilityMode->EqualsLiteral("L1T3")) {
-      scalabilityMode = MediaDataEncoder::ScalabilityMode::L1T3;
-    } else {
-      scalabilityMode = MediaDataEncoder::ScalabilityMode::None;
-    }
-  } else {
-    scalabilityMode = MediaDataEncoder::ScalabilityMode::None;
+    specific.emplace(VP9Specific(
+        VPXComplexity::Normal, 
+        true,                  
+        numTemporalLayers,     
+        true,                  
+        false,                 
+        false,                 
+        true,                  
+        1,                     
+        false                  
+        ));
   }
   return EncoderConfig(codecType, {mWidth, mHeight}, usage,
                        ImageBitmapFormat::RGBA32, ImageBitmapFormat::RGBA32,
