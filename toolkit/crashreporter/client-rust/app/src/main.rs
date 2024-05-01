@@ -5,6 +5,25 @@
 
 
 #![cfg_attr(windows, windows_subsystem = "windows")]
+
+
+
+
+
+macro_rules! cc {
+    ( ($($c:ident),*) $e:expr ) => {
+        {
+            $(let $c = $c.clone();)*
+            $e
+        }
+    }
+}
+
+mod data;
+mod ui;
+
+use ui::*;
+
 fn main() {
-    todo!()
+    todo!();
 }
