@@ -1434,8 +1434,8 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   std::unique_ptr<TaskQueueFactory> task_queue_factory;
   
   
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine;
-  std::unique_ptr<CallFactoryInterface> call_factory;
+  [[deprecated]] std::unique_ptr<cricket::MediaEngineInterface> media_engine;
+  [[deprecated]] std::unique_ptr<CallFactoryInterface> call_factory;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
   std::unique_ptr<NetworkStatePredictorFactoryInterface>

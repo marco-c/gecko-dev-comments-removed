@@ -63,10 +63,9 @@ struct MediaEngineDependencies {
 
 
 
-
-
-RTC_EXPORT std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
-    MediaEngineDependencies dependencies);
+[[deprecated("bugs.webrtc.org/15574")]]  
+RTC_EXPORT std::unique_ptr<MediaEngineInterface>
+CreateMediaEngine(MediaEngineDependencies dependencies);
 
 
 
