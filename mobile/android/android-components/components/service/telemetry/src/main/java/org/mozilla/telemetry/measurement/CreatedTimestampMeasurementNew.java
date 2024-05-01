@@ -4,6 +4,9 @@
 
 package org.mozilla.telemetry.measurement;
 
+
+
+
 public class CreatedTimestampMeasurementNew extends TelemetryMeasurement {
     private static final String FIELD_NAME = "createdTimestamp";
 
