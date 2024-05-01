@@ -6772,6 +6772,20 @@ class TopSite extends (external_React_default()).PureComponent {
         }));
 
         
+        
+        
+        this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
+          event: "CLICK",
+          source: TOP_SITES_SOURCE,
+          action_position: this.props.link.pos,
+          value: {
+            card_type: "spoc",
+            tile_id: this.props.link.id,
+            shim: this.props.link.shim && this.props.link.shim.click
+          }
+        }));
+
+        
         const title = this.props.link.label || this.props.link.hostname;
         this.props.dispatch(actionCreators.OnlyToMain({
           type: actionTypes.TOP_SITES_SPONSORED_IMPRESSION_STATS,
