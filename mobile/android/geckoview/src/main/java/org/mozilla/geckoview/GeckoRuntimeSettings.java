@@ -623,8 +623,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<>("browser.ui.zoom.force-user-scalable", false);
    final Pref<Boolean> mAutofillLogins =
       new Pref<Boolean>("signon.autofillForms", true);
-   final PrefWithoutDefault<Boolean> mAutomaticallyOfferPopup =
-      new PrefWithoutDefault<Boolean>("browser.translations.automaticallyPopup");
+   final Pref<Boolean> mAutomaticallyOfferPopup =
+      new Pref<Boolean>("browser.translations.automaticallyPopup", true);
    final Pref<Boolean> mHttpsOnly =
       new Pref<Boolean>("dom.security.https_only_mode", false);
    final Pref<Boolean> mHttpsOnlyPrivateMode =
