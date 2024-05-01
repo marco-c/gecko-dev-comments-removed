@@ -818,6 +818,8 @@
     
     function importCustomElementFromESModule(name) {
       switch (name) {
+        case "moz-button":
+          return import("chrome://global/content/elements/moz-button.mjs");
         case "moz-button-group":
           return import(
             "chrome://global/content/elements/moz-button-group.mjs"
