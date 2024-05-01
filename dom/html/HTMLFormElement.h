@@ -216,7 +216,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
 
 
-
+  MOZ_CAN_RUN_SCRIPT
   bool CheckValidFormSubmission();
 
   
@@ -330,6 +330,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
 
   bool CheckValidity() { return CheckFormValidity(nullptr); }
 
+  MOZ_CAN_RUN_SCRIPT
   bool ReportValidity() { return CheckValidFormSubmission(); }
 
   Element* IndexedGetter(uint32_t aIndex, bool& aFound);
@@ -584,7 +585,8 @@ class HTMLFormElement final : public nsGenericHTMLElement {
   void MaybeFireFormRemoved();
 
   MOZ_CAN_RUN_SCRIPT
-  void ReportInvalidUnfocusableElements();
+  void ReportInvalidUnfocusableElements(
+      const nsTArray<RefPtr<Element>>&& aInvalidElements);
 
   ~HTMLFormElement();
 };

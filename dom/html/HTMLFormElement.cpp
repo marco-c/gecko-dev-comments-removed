@@ -209,22 +209,16 @@ void HTMLFormElement::GetMethod(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::method, kFormDefaultMethod->tag, aValue);
 }
 
-void HTMLFormElement::ReportInvalidUnfocusableElements() {
+void HTMLFormElement::ReportInvalidUnfocusableElements(
+    const nsTArray<RefPtr<Element>>&& aInvalidElements) {
   RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
   MOZ_ASSERT(focusManager);
 
-  
-  
-  AutoTArray<RefPtr<nsGenericHTMLFormElement>, 100> sortedControls;
-  if (NS_FAILED(mControls->GetSortedControls(sortedControls))) {
-    return;
-  }
-
-  for (auto& _e : sortedControls) {
-    
-    RefPtr<nsGenericHTMLFormElement> element = _e;
+  for (const auto& element : aInvalidElements) {
     bool isFocusable = false;
-    focusManager->ElementIsFocusable(element, 0, &isFocusable);
+    
+    
+    focusManager->ElementIsFocusable(MOZ_KnownLive(element), 0, &isFocusable);
     if (!isFocusable) {
       nsTArray<nsString> params;
       nsAutoCString messageName("InvalidFormControlUnfocusable");
@@ -291,7 +285,6 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
       HasAttr(nsGkAtoms::novalidate) ||
       (aSubmitter && aSubmitter->HasAttr(nsGkAtoms::formnovalidate));
   if (!noValidateState && !CheckValidFormSubmission()) {
-    ReportInvalidUnfocusableElements();
     return;
   }
 
@@ -1770,8 +1763,6 @@ bool HTMLFormElement::CheckValidFormSubmission() {
 
 
 
-  NS_ASSERTION(!HasAttr(nsGkAtoms::novalidate),
-               "We shouldn't be there if novalidate is set!");
 
   AutoTArray<RefPtr<Element>, 32> invalidElements;
   if (CheckFormValidity(&invalidElements)) {
@@ -1796,6 +1787,8 @@ bool HTMLFormElement::CheckValidFormSubmission() {
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
 
   DispatchEvent(*event);
+
+  ReportInvalidUnfocusableElements(std::move(invalidElements));
 
   return !event->DefaultPrevented();
 }
