@@ -5,6 +5,7 @@
 "use strict";
 
 const isWindows = Services.appinfo.OS === "WINNT";
+const isMacOS = Services.appinfo.OS === "Darwin";
 
 
 
@@ -232,6 +233,8 @@ module.exports = {
     {
       name: "browser-toolbox",
       path: "toolbox/browser-toolbox.js",
+      
+      disabled: isWindows || isMacOS,
     },
     {
       name: "server.protocoljs",
