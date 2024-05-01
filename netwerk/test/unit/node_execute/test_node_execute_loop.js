@@ -16,7 +16,7 @@ add_task(async function killOnEnd() {
   await NodeServer.execute(id, `console.log("hello");`);
   await NodeServer.execute(id, `console.error("hello");`);
   
-  NodeServer.execute(id, "while (true) {}").catch(e => {});
+  NodeServer.execute(id, "while (true) {}").catch(() => {});
   await new Promise(resolve => do_timeout(10, resolve));
   
 });

@@ -73,7 +73,7 @@ function run_gzip_test(num) {
       "nsIRequestObserver",
     ]),
 
-    onStartRequest(aRequest) {},
+    onStartRequest() {},
 
     onStopRequest(aRequest, aStatusCode) {
       
@@ -82,7 +82,7 @@ function run_gzip_test(num) {
       endTests();
     },
 
-    onDataAvailable(request, stream, offset, count) {},
+    onDataAvailable() {},
   };
 
   let listener = new StreamListener();
@@ -128,7 +128,7 @@ function handler1(metadata, response) {
 }
 
 
-function completeTest1(request, data, ctx) {
+function completeTest1(request) {
   Assert.equal(request.status, Cr.NS_ERROR_NET_PARTIAL_TRANSFER);
 
   run_test_number(11);
@@ -152,7 +152,7 @@ function handler11(metadata, response) {
 }
 
 
-function completeTest11(request, data, ctx) {
+function completeTest11(request) {
   Assert.equal(request.status, Cr.NS_OK);
   run_test_number(2);
 }
@@ -176,7 +176,7 @@ function handler2(metadata, response) {
 }
 
 
-function completeTest2(request, data, ctx) {
+function completeTest2(request) {
   Assert.equal(request.status, Cr.NS_OK);
 
   
@@ -207,7 +207,7 @@ function handler3(metadata, response) {
 }
 
 
-function completeTest3(request, data, ctx) {
+function completeTest3(request) {
   Assert.equal(request.status, Cr.NS_OK);
   prefs.setBoolPref("network.http.enforce-framing.soft", true);
   run_test_number(4);
@@ -249,7 +249,7 @@ function handler4(metadata, response) {
 }
 
 
-function completeTest4(request, data, ctx) {
+function completeTest4(request) {
   Assert.equal(request.status, Cr.NS_OK);
 
   prefs.setBoolPref("network.http.enforce-framing.http1", true);

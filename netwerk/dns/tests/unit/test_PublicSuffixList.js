@@ -71,7 +71,7 @@ const downloadToDiskBackup = CLIENT.attachments.downloadToDisk;
 
 function mockDownloadToDisk() {
   downloadToDiskCalled = false;
-  CLIENT.attachments.downloadToDisk = async rec => {
+  CLIENT.attachments.downloadToDisk = async () => {
     downloadToDiskCalled = true;
     return `file://${mockedFilePath}`; 
   };

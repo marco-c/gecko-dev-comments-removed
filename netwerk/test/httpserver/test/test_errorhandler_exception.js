@@ -78,18 +78,18 @@ function start_multiple_exceptions_500(ch) {
   checkStatusLine(ch, 1, 1, 500, "Internal Server Error");
 }
 
-function succeeded(ch, status, data) {
+function succeeded(ch, status) {
   Assert.ok(Components.isSuccessCode(status));
 }
 
-function register400Handler(ch) {
+function register400Handler() {
   srv.registerErrorHandler(400, throwsException);
 }
 
 
 
 
-function throwsException(metadata, response) {
+function throwsException() {
   throw new Error("this shouldn't cause an exit...");
   do_throw("Not reached!"); 
 }

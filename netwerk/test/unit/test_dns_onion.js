@@ -17,7 +17,7 @@ var listenerBlock = {
 
 
 var listenerDontBlock = {
-  onLookupComplete(inRequest, inRecord, inStatus) {
+  onLookupComplete(inRequest, inRecord) {
     inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
     var answer = inRecord.getNextAddrAsString();
     Assert.ok(answer == "127.0.0.1" || answer == "::1");

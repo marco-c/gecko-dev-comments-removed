@@ -29,7 +29,7 @@ TestListener.prototype.onStartRequest = function (request) {
     throw ex;
   }
 };
-TestListener.prototype.onStopRequest = function (request, status) {
+TestListener.prototype.onStopRequest = function () {
   try {
     change_content_type();
   } catch (ex) {
@@ -68,6 +68,6 @@ function run_test() {
 }
 
 
-function bug369787(metadata, response) {
+function bug369787() {
   
 }

@@ -210,7 +210,7 @@ tests.push(test);
 
 
 
-function setupFileMapping(ch) {
+function setupFileMapping() {
   srv.registerFile("/script.html", sjs);
 }
 

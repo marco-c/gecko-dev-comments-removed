@@ -213,11 +213,7 @@ function promiseCopyToSaver(aSourceString, aSaverOutputStream, aCloseWhenDone) {
 
 
 
-function promisePumpToSaver(
-  aSourceString,
-  aSaverStreamListener,
-  aCloseWhenDone
-) {
+function promisePumpToSaver(aSourceString, aSaverStreamListener) {
   return new Promise((resolve, reject) => {
     aSaverStreamListener.QueryInterface(Ci.nsIStreamListener);
     let inputStream = new StringInputStream(
@@ -603,7 +599,7 @@ add_task(async function test_enableAppend_hash() {
 add_task(async function test_finish_only() {
   
   let saver = new BackgroundFileSaverOutputStream();
-  function onTargetChange(aTarget) {
+  function onTargetChange() {
     do_throw("Should not receive the onTargetChange notification.");
   }
   let completionPromise = promiseSaverComplete(saver, onTargetChange);

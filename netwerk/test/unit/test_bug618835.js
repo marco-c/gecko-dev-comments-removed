@@ -29,8 +29,8 @@ function setupChannel(path) {
 
 function InitialListener() {}
 InitialListener.prototype = {
-  onStartRequest(request) {},
-  onStopRequest(request, status) {
+  onStartRequest() {},
+  onStopRequest() {
     Assert.equal(1, numberOfCLHandlerCalls);
     executeSoon(function () {
       var channel = setupChannel(
@@ -45,8 +45,8 @@ InitialListener.prototype = {
 
 function RedirectingListener() {}
 RedirectingListener.prototype = {
-  onStartRequest(request) {},
-  onStopRequest(request, status) {
+  onStartRequest() {},
+  onStopRequest() {
     Assert.equal(1, numberOfHandlerCalls);
     executeSoon(function () {
       var channel = setupChannel(
@@ -62,8 +62,8 @@ RedirectingListener.prototype = {
 
 function VerifyingListener() {}
 VerifyingListener.prototype = {
-  onStartRequest(request) {},
-  onStopRequest(request, status) {
+  onStartRequest() {},
+  onStopRequest() {
     Assert.equal(2, numberOfHandlerCalls);
     var channel = setupChannel(
       "http://localhost:" + httpserv.identity.primaryPort + "/cl"
@@ -76,8 +76,8 @@ VerifyingListener.prototype = {
 
 function FinalListener() {}
 FinalListener.prototype = {
-  onStartRequest(request) {},
-  onStopRequest(request, status) {
+  onStartRequest() {},
+  onStopRequest() {
     Assert.equal(2, numberOfCLHandlerCalls);
     httpserv.stop(do_test_finished);
   },

@@ -75,7 +75,7 @@ function handler1(metadata, response) {
 }
 
 
-function completeTest1(request, data, ctx) {
+function completeTest1(request) {
   Assert.equal(request.status, Cr.NS_ERROR_UNEXPECTED);
 
   run_test_number(2);
@@ -100,7 +100,7 @@ function handler2(metadata, response) {
 }
 
 
-function completeTest2(request, data, ctx) {
+function completeTest2(request) {
   Assert.equal(request.status, Cr.NS_ERROR_UNEXPECTED);
   run_test_number(3);
 }
@@ -124,7 +124,7 @@ function handler3(metadata, response) {
 }
 
 
-function completeTest3(request, data, ctx) {
+function completeTest3(request) {
   Assert.equal(request.status, 0);
   run_test_number(4);
 }
@@ -148,7 +148,7 @@ function handler4(metadata, response) {
 }
 
 
-function completeTest4(request, data, ctx) {
+function completeTest4(request) {
   Assert.equal(request.status, 0);
   run_test_number(5);
 }
@@ -173,7 +173,7 @@ function handler5(metadata, response) {
 }
 
 
-function completeTest5(request, data, ctx) {
+function completeTest5(request) {
   Assert.equal(request.status, Cr.NS_ERROR_UNEXPECTED);
   endTests();
   

@@ -88,7 +88,7 @@ function setCookie() {
   channel.asyncOpen(new ChannelListener(setNextCookie, null));
 }
 
-function setNextCookie(request, data, context) {
+function setNextCookie() {
   if (++i == tests.length) {
     
     i = 0;
@@ -106,7 +106,7 @@ function checkCookie() {
   channel.asyncOpen(new ChannelListener(completeCheckCookie, null));
 }
 
-function completeCheckCookie(request, data, context) {
+function completeCheckCookie(request) {
   
   
   var expectedCookie = tests[i].cookieName;

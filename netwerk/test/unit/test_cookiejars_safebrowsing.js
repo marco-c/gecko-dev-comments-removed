@@ -154,7 +154,7 @@ add_test(function test_safebrowsing_gethash() {
     URL + safebrowsingGethashPath,
     "test-phish-simple",
     {
-      completionV2(hash, table, chunkId) {},
+      completionV2() {},
 
       completionFinished(status) {
         Assert.equal(status, Cr.NS_OK);
@@ -181,7 +181,7 @@ add_test(function test_non_safebrowsing_cookie() {
     );
   }
 
-  function completeCheckNonSafeBrowsingCookie(request, data, context) {
+  function completeCheckNonSafeBrowsingCookie(request) {
     
     var expectedCookie = cookieName + "=1";
     request.QueryInterface(Ci.nsIHttpChannel);
@@ -212,7 +212,7 @@ add_test(function test_safebrowsing_cookie() {
     );
   }
 
-  function completeCheckSafeBrowsingCookie(request, data, context) {
+  function completeCheckSafeBrowsingCookie(request) {
     
     
     
