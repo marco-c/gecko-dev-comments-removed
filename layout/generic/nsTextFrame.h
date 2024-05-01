@@ -526,7 +526,7 @@ class nsTextFrame : public nsIFrame {
 
 
 
-    virtual void NotifyBeforeText(nscolor aColor) {}
+    virtual void NotifyBeforeText(bool aPaintingShadows, nscolor aColor) {}
 
     
 
