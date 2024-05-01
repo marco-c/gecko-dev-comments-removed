@@ -38,7 +38,7 @@ static float extractAverageGroupDelay(float* impulseP, size_t length) {
   
   MOZ_ASSERT(length && (length & (length - 1)) == 0);
 
-  FFTBlock estimationFrame(length, 1.f / length);
+  FFTBlock estimationFrame(length);
   estimationFrame.PerformFFT(impulseP);
 
   float frameDelay =

@@ -266,7 +266,7 @@ void PeriodicWave::createBandLimitedTables(float fundamentalFrequency,
 
   
   float* data = m_bandLimitedTables[rangeIndex]->Elements();
-  frame.GetInverse(data);
+  frame.GetInverseWithoutScaling(data);
 
   
   
