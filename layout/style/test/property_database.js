@@ -14088,6 +14088,20 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.transitions")) {
   });
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.transition-behavior.enabled")) {
+  Object.assign(gCSSProperties, {
+    "transition-behavior": {
+      domProp: "transitionBehavior",
+      inherited: false,
+      type: CSS_TYPE_LONGHAND,
+      applies_to_marker: true,
+      initial_values: ["normal"],
+      other_values: ["allow-discrete"],
+      invalid_values: ["none", "auto", "discrete"],
+    },
+  });
+}
+
 
 
 

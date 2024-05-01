@@ -113,6 +113,37 @@ impl TransitionProperty {
 }
 
 
+
+
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum TransitionBehavior {
+    
+    Normal,
+    
+    AllowDiscrete,
+}
+
+impl TransitionBehavior {
+    
+    #[inline]
+    pub fn normal() -> Self {
+        Self::Normal
+    }
+}
+
+
 #[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum AnimationIterationCount {
     
