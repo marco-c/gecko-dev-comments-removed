@@ -59,11 +59,6 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
 #ifdef MOZ_WMF_MEDIA_ENGINE
   
   
-  
-  
-  
-  
-  
   if (StaticPrefs::media_wmf_media_engine_enabled() &&
       !aDisableExternalEngine) {
     return new ExternalEngineStateMachine(this, mReader);
@@ -371,23 +366,6 @@ bool MediaSourceDecoder::HadCrossOriginRedirects() {
   MOZ_ASSERT(NS_IsMainThread());
   return false;
 }
-
-#ifdef MOZ_WMF_MEDIA_ENGINE
-void MediaSourceDecoder::MetadataLoaded(
-    UniquePtr<MediaInfo> aInfo, UniquePtr<MetadataTags> aTags,
-    MediaDecoderEventVisibility aEventVisibility) {
-  
-  
-  
-  if (mFiredMetadataLoaded && mStateMachineRecreated) {
-    MSE_DEBUG(
-        "Metadata already loaded and being informed by previous state machine");
-    return;
-  }
-  MediaDecoder::MetadataLoaded(std::move(aInfo), std::move(aTags),
-                               aEventVisibility);
-}
-#endif
 
 #undef MSE_DEBUG
 #undef MSE_DEBUGV

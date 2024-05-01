@@ -96,6 +96,8 @@ class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
 #ifdef MOZ_WMF_MEDIA_ENGINE
   mozilla::ipc::IPCResult RecvCompleteCreatedVideoBridge();
 
+  bool HasCreatedVideoBridge() const;
+
   void OnVarChanged(const gfx::GfxVarUpdate& aVar) override;
 
   void OnCompositorUnexpectedShutdown() override;
@@ -118,8 +120,7 @@ class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
 #ifdef MOZ_WMF_MEDIA_ENGINE
   
   
-  enum class State { None, Creating, Created };
-  State mHasCreatedVideoBridge = State::None;
+  bool mHasCreatedVideoBridge = false;
 #endif
 
   TimeStamp mAudioDecoderChildStart;
