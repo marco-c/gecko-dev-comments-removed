@@ -367,6 +367,7 @@ class nsWindow final : public nsBaseWidget {
 
   nsresult SetNonClientMargins(const LayoutDeviceIntMargin&) override;
   void SetDrawsInTitlebar(bool aState);
+  void SetTitlebarRect();
   mozilla::LayoutDeviceIntCoord GetTitlebarRadius();
   LayoutDeviceIntRect GetTitlebarRect();
   void UpdateWindowDraggingRegion(
@@ -622,14 +623,10 @@ class nsWindow final : public nsBaseWidget {
   static GdkCursor* gsGtkCursorCache[eCursorCount];
 
   
-  
-  
-  
-  
-  
-  
-  
-  mozilla::Atomic<bool, mozilla::Relaxed> mDrawInTitlebar{false};
+  bool mDrawInTitlebar = false;
+
+  mozilla::Mutex mTitlebarRectMutex;
+  LayoutDeviceIntRect mTitlebarRect MOZ_GUARDED_BY(mTitlebarRectMutex);
 
   mozilla::Mutex mDestroyMutex;
 
