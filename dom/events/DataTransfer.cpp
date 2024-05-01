@@ -623,6 +623,7 @@ already_AddRefed<DataTransfer> DataTransfer::MozCloneForEvent(
 
 
 
+
 static const nsCString kNonPlainTextExternalFormats[] = {
     nsLiteralCString(kCustomTypesMime), nsLiteralCString(kFileMime),
     nsLiteralCString(kHTMLMime),        nsLiteralCString(kRTFMime),
