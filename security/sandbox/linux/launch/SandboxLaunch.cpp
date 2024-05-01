@@ -511,6 +511,8 @@ static pid_t ForkWithFlags(int aFlags) {
   return ret;
 }
 
+
+
 static bool WriteStringToFile(const char* aPath, const char* aStr,
                               const size_t aLen) {
   int fd = open(aPath, O_WRONLY);
@@ -519,6 +521,11 @@ static bool WriteStringToFile(const char* aPath, const char* aStr,
   }
   ssize_t written = write(fd, aStr, aLen);
   if (close(fd) != 0 || written != ssize_t(aLen)) {
+    
+    
+    if (written >= 0) {
+      errno = EMSGSIZE;
+    }
     return false;
   }
   return true;
@@ -537,6 +544,7 @@ static void ConfigureUserNamespace(uid_t uid, gid_t gid) {
   len = static_cast<size_t>(SafeSPrintf(buf, "%d %d 1", uid, uid));
   MOZ_RELEASE_ASSERT(len < sizeof(buf));
   if (!WriteStringToFile("/proc/self/uid_map", buf, len)) {
+    SANDBOX_LOG_ERRNO("writing /proc/self/uid_map");
     MOZ_CRASH("Failed to write /proc/self/uid_map");
   }
 
@@ -549,6 +557,7 @@ static void ConfigureUserNamespace(uid_t uid, gid_t gid) {
   len = static_cast<size_t>(SafeSPrintf(buf, "%d %d 1", gid, gid));
   MOZ_RELEASE_ASSERT(len < sizeof(buf));
   if (!WriteStringToFile("/proc/self/gid_map", buf, len)) {
+    SANDBOX_LOG_ERRNO("writing /proc/self/gid_map");
     MOZ_CRASH("Failed to write /proc/self/gid_map");
   }
 }
@@ -641,6 +650,9 @@ void SandboxLaunch::StartChrootServer() {
 
   char msg;
   ssize_t msgLen = HANDLE_EINTR(read(mChrootServer, &msg, 1));
+  if (msgLen < 0) {
+    SANDBOX_LOG_ERRNO("chroot server couldn't read request");
+  }
   if (msgLen == 0) {
     
     _exit(0);
@@ -653,7 +665,10 @@ void SandboxLaunch::StartChrootServer() {
   
   
   int rv = chroot("/proc/self/fdinfo");
-  MOZ_RELEASE_ASSERT(rv == 0);
+  if (rv != 0) {
+    SANDBOX_LOG_ERRNO("chroot");
+    MOZ_CRASH("chroot failed");
+  }
 
   
   
@@ -664,10 +679,16 @@ void SandboxLaunch::StartChrootServer() {
   
   
   rv = chdir("/");
-  MOZ_RELEASE_ASSERT(rv == 0);
+  if (rv != 0) {
+    SANDBOX_LOG_ERRNO("chdir(\"/\")");
+    MOZ_CRASH("chdir(\"/\") failed");
+  }
 
   msg = kSandboxChrootResponse;
   msgLen = HANDLE_EINTR(write(mChrootServer, &msg, 1));
+  if (msgLen < 0) {
+    SANDBOX_LOG_ERRNO("chroot server couldn't send response");
+  }
   MOZ_RELEASE_ASSERT(msgLen == 1);
   _exit(0);
 }
