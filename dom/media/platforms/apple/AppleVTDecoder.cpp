@@ -7,7 +7,7 @@
 #include "AppleVTDecoder.h"
 
 #include <CoreVideo/CVPixelBufferIOSurface.h>
-#include <IOSurface/IOSurface.h>
+#include <IOSurface/IOSurfaceRef.h>
 #include <limits>
 
 #include "AppleDecoderModule.h"
@@ -486,7 +486,6 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
     
     CVPixelBufferUnlockBaseAddress(aImage, kCVPixelBufferLock_ReadOnly);
   } else {
-#ifndef MOZ_WIDGET_UIKIT
     
     
     
@@ -535,9 +534,6 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
         info.mDisplay, aFrameRef.byte_offset, aFrameRef.composition_timestamp,
         aFrameRef.duration, image.forget(), aFrameRef.is_sync_point,
         aFrameRef.decode_timestamp);
-#else
-    MOZ_ASSERT_UNREACHABLE("No MacIOSurface on iOS");
-#endif
   }
 
   if (!data) {
@@ -719,7 +715,6 @@ CFDictionaryRef AppleVTDecoder::CreateOutputConfiguration() {
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
   }
 
-#ifndef MOZ_WIDGET_UIKIT
   
 
   bool is10Bit = (gfx::BitDepthForColorDepth(mColorDepth) == 10);
@@ -754,9 +749,6 @@ CFDictionaryRef AppleVTDecoder::CreateOutputConfiguration() {
   return CFDictionaryCreate(
       kCFAllocatorDefault, outputKeys, outputValues, ArrayLength(outputKeys),
       &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-#else
-  MOZ_ASSERT_UNREACHABLE("No MacIOSurface on iOS");
-#endif
 }
 
 }  
