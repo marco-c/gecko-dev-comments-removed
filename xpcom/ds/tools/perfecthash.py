@@ -24,6 +24,18 @@ small dataset it was designed for. In the future we may want to optimize further
 import textwrap
 from collections import namedtuple
 
+import six
+from mozbuild.util import ensure_bytes
+
+
+
+
+
+def _ord(c):
+    if six.PY3:
+        return c
+    return ord(c)
+
 
 class PerfectHash(object):
     """PerfectHash objects represent a computed perfect hash function, which
@@ -76,7 +88,7 @@ class PerfectHash(object):
 
         for bucket in buckets:
             
-            if not bucket.entries:
+            if len(bucket.entries) == 0:
                 break
 
             
@@ -91,7 +103,7 @@ class PerfectHash(object):
                     
                     basis += 1
                     idx = 0
-                    slots.clear()
+                    del slots[:]
                     assert basis < self.U32_MAX, "table too small"
                 else:
                     slots.append(slot)
@@ -115,16 +127,15 @@ class PerfectHash(object):
         32-bit FNV is used for indexing into the first table, and the value
         stored in that table is used as the offset basis for indexing into the
         values table."""
-        FNV_PRIME = cls.FNV_PRIME
-        U32_MAX = cls.U32_MAX
-        for obyte in memoryview(key):
+        for byte in memoryview(ensure_bytes(key)):
+            obyte = _ord(byte)
             basis ^= obyte  
-            basis *= FNV_PRIME  
-            basis &= U32_MAX  
+            basis *= cls.FNV_PRIME  
+            basis &= cls.U32_MAX  
         return basis
 
     def key(self, entry):
-        return memoryview(self._key(entry))
+        return memoryview(ensure_bytes(self._key(entry)))
 
     def get_raw_index(self, key):
         """Determine the index in self.entries without validating"""
@@ -134,7 +145,7 @@ class PerfectHash(object):
     def get_index(self, key):
         """Given a key, determine the index in self.entries"""
         idx = self.get_raw_index(key)
-        if memoryview(key) != self.key(self.entries[idx]):
+        if memoryview(ensure_bytes(key)) != self.key(self.entries[idx]):
             return None
         return idx
 
@@ -323,7 +334,7 @@ class CGHelper(object):
                             not in the table."""
 
         assert all(
-            b <= 0x7F for e in self.phf.entries for b in self.phf.key(e)
+            _ord(b) <= 0x7F for e in self.phf.entries for b in self.phf.key(e)
         ), "non-ASCII key"
 
         if return_type is None:
