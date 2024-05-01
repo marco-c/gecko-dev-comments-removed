@@ -15,7 +15,7 @@ from taskgraph.util.taskcluster import get_session
 from taskgraph.util.templates import merge
 
 from ..files_changes import get_files_changed_pr, get_files_changed_push
-from ..build_config import get_components
+from ..build_config import get_components, ANDROID_COMPONENTS_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def get_upstream_deps_for_components(components):
         
         
         current_component = None
-        for line in subprocess.check_output(cmd, universal_newlines=True).splitlines():
+        for line in subprocess.check_output(cmd, universal_newlines=True, cwd=ANDROID_COMPONENTS_DIR).splitlines():
             
             if line.startswith("Project"):
                 current_component = line.split(":")[1].strip("'")
