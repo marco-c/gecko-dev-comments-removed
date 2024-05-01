@@ -4478,8 +4478,8 @@ Toolbox.prototype = {
 
 
 
-  viewSource(sourceURL, sourceLine) {
-    return viewSource.viewSource(this, sourceURL, sourceLine);
+  viewSource(sourceURL, sourceLine, sourceColumn) {
+    return viewSource.viewSource(this, sourceURL, sourceLine, sourceColumn);
   },
 
   
