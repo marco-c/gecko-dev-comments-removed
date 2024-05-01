@@ -286,11 +286,6 @@ static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
         break;
       }
     } else {
-      
-      uint32_t n = 1;
-      while (v & (0x80 >> n)) {
-        n++;
-      }
 
 #define INVALID(report, arg, n2)                                    \
   do {                                                              \
@@ -314,6 +309,14 @@ static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
       goto invalidMultiByteCodeUnit;                                \
     }                                                               \
   } while (0)
+
+      
+      
+      
+      
+      
+      
+      uint32_t n = mozilla::CountLeadingZeroes32(~int8_t(src[i]) | 0x1) - 24;
 
       
       if (n < 2 || n > 4) {
