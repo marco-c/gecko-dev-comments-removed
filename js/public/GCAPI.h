@@ -313,8 +313,7 @@ typedef enum JSGCParamKey {
 
 
 
-
-  JSGC_NURSERY_FREE_THRESHOLD_FOR_IDLE_COLLECTION = 27,
+  JSGC_NURSERY_EAGER_COLLECTION_THRESHOLD_KB = 27,
 
   
 
@@ -323,7 +322,7 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_NURSERY_FREE_THRESHOLD_FOR_IDLE_COLLECTION_PERCENT = 30,
+  JSGC_NURSERY_EAGER_COLLECTION_THRESHOLD_PERCENT = 30,
 
   
 
@@ -420,7 +419,7 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_NURSERY_TIMEOUT_FOR_IDLE_COLLECTION_MS = 46,
+  JSGC_NURSERY_EAGER_COLLECTION_TIMEOUT_MS = 46,
 
   
 
@@ -1287,9 +1286,25 @@ JS_GetExternalStringCallbacks(JSString* str);
 
 namespace JS {
 
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API GCReason WantEagerMinorGC(JSRuntime* rt);
 
 extern JS_PUBLIC_API GCReason WantEagerMajorGC(JSRuntime* rt);
+
+
+
+
+
+
+
 
 extern JS_PUBLIC_API void MaybeRunNurseryCollection(JSRuntime* rt,
                                                     JS::GCReason reason);

@@ -1058,7 +1058,7 @@ TimeStamp js::Nursery::lastCollectionEndTime() const {
   return previousGC.endTime;
 }
 
-bool js::Nursery::shouldCollect() const {
+bool js::Nursery::wantEagerCollection() const {
   if (!isEnabled()) {
     return false;
   }
@@ -1071,8 +1071,7 @@ bool js::Nursery::shouldCollect() const {
     return true;
   }
 
-  
-  if (isNearlyFull()) {
+  if (freeSpaceIsBelowEagerThreshold()) {
     return true;
   }
 
@@ -1081,32 +1080,27 @@ bool js::Nursery::shouldCollect() const {
   return isUnderused();
 }
 
-inline bool js::Nursery::isNearlyFull() const {
-  bool belowBytesThreshold =
-      freeSpace() < tunables().nurseryFreeThresholdForIdleCollection();
-  bool belowFractionThreshold =
-      double(freeSpace()) / double(capacity()) <
-      tunables().nurseryFreeThresholdForIdleCollectionFraction();
+inline bool js::Nursery::freeSpaceIsBelowEagerThreshold() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return belowBytesThreshold && belowFractionThreshold;
+  size_t freeBytes = freeSpace();
+  double freeFraction = double(freeBytes) / double(capacity());
+
+  size_t bytesThreshold = tunables().nurseryEagerCollectionThresholdBytes();
+  double fractionThreshold =
+      tunables().nurseryEagerCollectionThresholdPercent();
+
+  return freeBytes < bytesThreshold && freeFraction < fractionThreshold;
 }
 
 inline bool js::Nursery::isUnderused() const {
@@ -1124,7 +1118,7 @@ inline bool js::Nursery::isUnderused() const {
   
   TimeDuration timeSinceLastCollection =
       TimeStamp::NowLoRes() - previousGC.endTime;
-  return timeSinceLastCollection > tunables().nurseryTimeoutForIdleCollection();
+  return timeSinceLastCollection > tunables().nurseryEagerCollectionTimeout();
 }
 
 void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
@@ -1874,7 +1868,7 @@ size_t js::Nursery::targetSize(JS::GCOptions options, JS::GCReason reason) {
   
   if (hasRecentGrowthData && previousGC.nurseryUsedBytes == 0 &&
       now - lastCollectionEndTime() >
-          tunables().nurseryTimeoutForIdleCollection() &&
+          tunables().nurseryEagerCollectionTimeout() &&
       !js::SupportDifferentialTesting()) {
     clearRecentGrowthData();
     return 0;
