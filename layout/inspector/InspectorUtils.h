@@ -119,6 +119,11 @@ class InspectorUtils {
                           Nullable<InspectorRGBATuple>& aResult);
 
   
+  static void ColorTo(GlobalObject&, const nsACString& aFromColor,
+                      const nsACString& aToColorSpace,
+                      Nullable<InspectorColorToResult>& aResult);
+
+  
   static bool IsValidCSSColor(GlobalObject& aGlobal,
                               const nsACString& aColorString);
 

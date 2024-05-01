@@ -91,6 +91,27 @@ class ServoCSSParser {
 
 
 
+
+
+
+
+  static bool ColorTo(const nsACString& aFromColor,
+                      const nsACString& aToColorSpace, nsACString* aResultColor,
+                      nsTArray<float>* aResultComponents, bool* aResultAdjusted,
+                      css::Loader* aLoader = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
   static already_AddRefed<StyleLockedDeclarationBlock> ParseProperty(
       nsCSSPropertyID aProperty, const nsACString& aValue,
       const ParsingEnvironment& aParsingEnvironment,
