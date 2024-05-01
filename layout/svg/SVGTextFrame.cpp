@@ -2406,8 +2406,7 @@ class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks {
         mContext(aContext),
         mFrame(aFrame),
         mCanvasTM(aCanvasTM),
-        mImgParams(aImgParams),
-        mColor(0) {}
+        mImgParams(aImgParams) {}
 
   void NotifySelectionBackgroundNeedsFill(const Rect& aBackgroundRect,
                                           nscolor aColor,
@@ -2473,12 +2472,12 @@ class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks {
 
 
 
-  nscolor mColor;
+  nscolor mColor = NS_RGBA(0, 0, 0, 0);
 
   
 
 
-  bool mPaintingShadows;
+  bool mPaintingShadows = false;
 };
 
 void SVGTextDrawPathCallbacks::NotifySelectionBackgroundNeedsFill(
