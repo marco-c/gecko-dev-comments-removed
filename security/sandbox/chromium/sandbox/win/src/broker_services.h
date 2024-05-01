@@ -19,7 +19,6 @@
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/job.h"
 #include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_policy_base.h"
 #include "sandbox/win/src/sharedmem_ipc_server.h"
 #include "sandbox/win/src/win2k_threadpool.h"
 #include "sandbox/win/src/win_utils.h"
@@ -51,14 +50,6 @@ class BrokerServicesBase final : public BrokerServices,
                          DWORD* last_error,
                          PROCESS_INFORMATION* target) override;
   ResultCode WaitForAllTargets() override;
-  ResultCode AddTargetPeer(HANDLE peer_process) override;
-
-  
-  
-  
-  
-  bool IsSafeDuplicationTarget(DWORD process_id);
-
   ResultCode GetPolicyDiagnostics(
       std::unique_ptr<PolicyDiagnosticsReceiver> receiver) override;
 
@@ -83,19 +74,6 @@ class BrokerServicesBase final : public BrokerServices,
 
   
   std::unique_ptr<ThreadProvider> thread_pool_;
-
-  
-  
-  std::set<DWORD> active_targets_;
-
-  
-  
-  CRITICAL_SECTION lock_;
-
-  ResultCode AddTargetPeerInternal(HANDLE peer_process_handle,
-                                   DWORD peer_process_id,
-                                   scoped_refptr<PolicyBase> policy_base,
-                                   DWORD* last_error);
 
   DISALLOW_COPY_AND_ASSIGN(BrokerServicesBase);
 };

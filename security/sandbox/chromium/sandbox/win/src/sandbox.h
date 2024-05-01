@@ -108,14 +108,6 @@ class BrokerServices {
   
   
   
-  virtual ResultCode AddTargetPeer(HANDLE peer_process) = 0;
-
-  
-  
-  
-  
-  
-  
   
   
   
