@@ -9106,7 +9106,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachReflectGetPrototypeOf() {
   return AttachDecision::Attach;
 }
 
-static bool AtomicsMeetsPreconditions(FixedLengthTypedArrayObject* typedArray,
+static bool AtomicsMeetsPreconditions(TypedArrayObject* typedArray,
                                       const Value& index) {
   switch (typedArray->type()) {
     case Scalar::Int8:
@@ -9136,7 +9136,8 @@ static bool AtomicsMeetsPreconditions(FixedLengthTypedArrayObject* typedArray,
   if (!ValueIsInt64Index(index, &indexInt64)) {
     return false;
   }
-  if (indexInt64 < 0 || uint64_t(indexInt64) >= typedArray->length()) {
+  if (indexInt64 < 0 ||
+      uint64_t(indexInt64) >= typedArray->length().valueOr(0)) {
     return false;
   }
 
@@ -9154,16 +9155,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange() {
   }
 
   
-  
-  if (!args_[0].isObject() ||
-      !args_[0].toObject().is<FixedLengthTypedArrayObject>()) {
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
   if (!args_[1].isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   if (!AtomicsMeetsPreconditions(typedArray, args_[1])) {
     return AttachDecision::NoAction;
   }
@@ -9204,8 +9203,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange() {
   OperandId numericReplacementId =
       emitNumericGuard(replacementId, args_[3], elementType);
 
+  auto viewKind = ToArrayBufferViewKind(typedArray);
   writer.atomicsCompareExchangeResult(objId, intPtrIndexId, numericExpectedId,
-                                      numericReplacementId, typedArray->type());
+                                      numericReplacementId, typedArray->type(),
+                                      viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsCompareExchange");
@@ -9223,16 +9224,14 @@ bool InlinableNativeIRGenerator::canAttachAtomicsReadWriteModify() {
   }
 
   
-  
-  if (!args_[0].isObject() ||
-      !args_[0].toObject().is<FixedLengthTypedArrayObject>()) {
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
     return false;
   }
   if (!args_[1].isNumber()) {
     return false;
   }
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   if (!AtomicsMeetsPreconditions(typedArray, args_[1])) {
     return false;
   }
@@ -9246,7 +9245,7 @@ InlinableNativeIRGenerator::AtomicsReadWriteModifyOperands
 InlinableNativeIRGenerator::emitAtomicsReadWriteModifyOperands() {
   MOZ_ASSERT(canAttachAtomicsReadWriteModify());
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
 
   
   initializeInputOperand();
@@ -9281,10 +9280,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsExchange() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsExchangeResult(objId, intPtrIndexId, numericValueId,
-                               typedArray->type());
+                               typedArray->type(), viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsExchange");
@@ -9299,11 +9299,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsAdd() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
+  auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsAddResult(objId, intPtrIndexId, numericValueId,
-                          typedArray->type(), forEffect);
+                          typedArray->type(), forEffect, viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsAdd");
@@ -9318,11 +9319,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsSub() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
+  auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsSubResult(objId, intPtrIndexId, numericValueId,
-                          typedArray->type(), forEffect);
+                          typedArray->type(), forEffect, viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsSub");
@@ -9337,11 +9339,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsAnd() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
+  auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsAndResult(objId, intPtrIndexId, numericValueId,
-                          typedArray->type(), forEffect);
+                          typedArray->type(), forEffect, viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsAnd");
@@ -9356,11 +9359,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsOr() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
+  auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsOrResult(objId, intPtrIndexId, numericValueId,
-                         typedArray->type(), forEffect);
+                         typedArray->type(), forEffect, viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsOr");
@@ -9375,11 +9379,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsXor() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
+  auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsXorResult(objId, intPtrIndexId, numericValueId,
-                          typedArray->type(), forEffect);
+                          typedArray->type(), forEffect, viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsXor");
@@ -9397,16 +9402,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad() {
   }
 
   
-  
-  if (!args_[0].isObject() ||
-      !args_[0].toObject().is<FixedLengthTypedArrayObject>()) {
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
   if (!args_[1].isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   if (!AtomicsMeetsPreconditions(typedArray, args_[1])) {
     return AttachDecision::NoAction;
   }
@@ -9427,7 +9430,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad() {
   IntPtrOperandId intPtrIndexId =
       guardToIntPtrIndex(args_[1], indexId,  false);
 
-  writer.atomicsLoadResult(objId, intPtrIndexId, typedArray->type());
+  auto viewKind = ToArrayBufferViewKind(typedArray);
+  writer.atomicsLoadResult(objId, intPtrIndexId, typedArray->type(), viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsLoad");
@@ -9454,16 +9458,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   
 
   
-  
-  if (!args_[0].isObject() ||
-      !args_[0].toObject().is<FixedLengthTypedArrayObject>()) {
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
   if (!args_[1].isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  auto* typedArray = &args_[0].toObject().as<FixedLengthTypedArrayObject>();
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   if (!AtomicsMeetsPreconditions(typedArray, args_[1])) {
     return AttachDecision::NoAction;
   }
@@ -9505,8 +9507,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
     numericValueId = emitNumericGuard(valueId, args_[2], elementType);
   }
 
+  auto viewKind = ToArrayBufferViewKind(typedArray);
   writer.atomicsStoreResult(objId, intPtrIndexId, numericValueId,
-                            typedArray->type());
+                            typedArray->type(), viewKind);
   writer.returnFromIC();
 
   trackAttached("AtomicsStore");
