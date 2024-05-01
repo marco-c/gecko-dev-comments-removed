@@ -1288,6 +1288,25 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     
+    
+    @WithDisplay(width = 512, height = 512)
+    
+    @Test
+    fun inputConnection_multiple_commitText_into_batchEdit() {
+        setupContent("")
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+
+        
+        ic.beginBatchEdit()
+        ic.commitText("( ", 1)
+        ic.commitText(")", -1)
+        ic.endBatchEdit()
+        processChildEvents()
+
+        assertText("commit ()", ic, "( )")
+    }
+
+    
     @WithDisplay(width = 512, height = 512)
     
     @Test
