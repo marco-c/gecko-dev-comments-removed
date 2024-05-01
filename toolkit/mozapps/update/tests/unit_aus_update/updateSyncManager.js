@@ -79,7 +79,7 @@ add_task(async function () {
     await TestUtils.waitForCondition(
       () => syncManager.isOtherInstanceRunning(),
       "waiting for child process to take the lock"
-    ).catch(e => {
+    ).catch(_e => {
       
       
       Assert.ok(
@@ -93,7 +93,7 @@ add_task(async function () {
     await TestUtils.waitForCondition(
       () => !syncManager.isOtherInstanceRunning(),
       "waiting for child process to release the lock"
-    ).catch(e => {
+    ).catch(_e => {
       Assert.ok(
         !syncManager.isOtherInstanceRunning(),
         "child process has released the lock"
