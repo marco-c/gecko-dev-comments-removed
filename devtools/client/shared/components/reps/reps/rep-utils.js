@@ -548,12 +548,30 @@ define(function (require, exports, module) {
       }, {});
   }
 
+  
+
+
+
+
+
+
+
+
+
+  function appendRTLClassNameIfNeeded(className = "", strToCheck) {
+    if (!Services.intl.stringHasRTLChars(strToCheck)) {
+      return className;
+    }
+    return `${className} has-rtl-char`;
+  }
+
   module.exports = {
     interleave,
     isURL,
     cropString,
     containsURL,
     rawCropString,
+    appendRTLClassNameIfNeeded,
     sanitizeString,
     escapeString,
     wrapRender,
