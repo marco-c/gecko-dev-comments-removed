@@ -546,113 +546,24 @@ class nsContentUtils {
                                mozilla::Maybe<uint32_t>* aNode1Index = nullptr,
                                mozilla::Maybe<uint32_t>* aNode2Index = nullptr);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  template <size_t cache_size>
-  struct ResizableNodeIndexCache {
-    ResizableNodeIndexCache() { memset(mNodes, nullptr, cache_size); }
-
-    
-
-
-    void ComputeIndicesOf(const nsINode* aParent, const nsINode* aChild1,
-                          const nsINode* aChild2,
-                          mozilla::Maybe<uint32_t>& aChild1Index,
-                          mozilla::Maybe<uint32_t>& aChild2Index) {
-      bool foundChild1 = false;
-      bool foundChild2 = false;
-      for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
-        if (foundChild1 && foundChild2) {
-          return;
-        }
-        const nsINode* node = mNodes[cacheIndex];
-        if (!node) {
-          
-          break;
-        }
-        if (!foundChild1 && node == aChild1) {
-          aChild1Index = mIndices[cacheIndex];
-          foundChild1 = true;
-          continue;
-        }
-        if (!foundChild2 && node == aChild2) {
-          aChild2Index = mIndices[cacheIndex];
-          foundChild2 = true;
-          continue;
-        }
-      }
-      if (!foundChild1) {
-        aChild1Index = ComputeAndInsertIndexIntoCache(aParent, aChild1);
-      }
-      if (!foundChild2) {
-        aChild2Index = ComputeAndInsertIndexIntoCache(aParent, aChild2);
-      }
-    }
-    
-
-
+  struct ComparePointsCache {
     mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aParent,
                                             const nsINode* aChild) {
-      for (size_t cacheIndex = 0; cacheIndex < cache_size; ++cacheIndex) {
-        const nsINode* node = mNodes[cacheIndex];
-        if (!node) {
-          break;
-        }
-        if (node == aChild) {
-          return mIndices[cacheIndex];
-        }
+      if (aParent == mParent && aChild == mChild) {
+        return mIndex;
       }
-      return ComputeAndInsertIndexIntoCache(aParent, aChild);
+
+      mIndex = aParent->ComputeIndexOf(aChild);
+      mParent = aParent;
+      mChild = aChild;
+      return mIndex;
     }
 
    private:
-    
-
-
-
-    mozilla::Maybe<uint32_t> ComputeAndInsertIndexIntoCache(
-        const nsINode* aParent, const nsINode* aChild) {
-      mozilla::Maybe<uint32_t> childIndex = aParent->ComputeIndexOf(aChild);
-
-      mNodes[mNext] = aChild;
-      mIndices[mNext] = childIndex;
-
-      ++mNext;
-      if (mNext == cache_size) {
-        
-        
-        mNext = 0;
-      }
-      return childIndex;
-    }
-
-    const nsINode* mNodes[cache_size]{};
-
-    mozilla::Maybe<uint32_t> mIndices[cache_size];
-
-    
-    
-    
-    
-    size_t mNext{0};
+    const nsINode* mParent = nullptr;
+    const nsINode* mChild = nullptr;
+    mozilla::Maybe<uint32_t> mIndex;
   };
-
-  
-
-
-
-
-  using NodeIndexCache = ResizableNodeIndexCache<100>;
 
   
 
@@ -667,7 +578,7 @@ class nsContentUtils {
 
   static mozilla::Maybe<int32_t> ComparePoints(
       const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
-      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
+      uint32_t aOffset2, ComparePointsCache* aParent1Cache = nullptr);
   template <typename FPT, typename FRT, typename SPT, typename SRT>
   static mozilla::Maybe<int32_t> ComparePoints(
       const mozilla::RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
@@ -685,13 +596,10 @@ class nsContentUtils {
 
 
 
-
-
-
   static int32_t ComparePoints_Deprecated(
       const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
       uint32_t aOffset2, bool* aDisconnected = nullptr,
-      NodeIndexCache* aIndexCache = nullptr);
+      ComparePointsCache* aParent1Cache = nullptr);
   template <typename FPT, typename FRT, typename SPT, typename SRT>
   static int32_t ComparePoints_Deprecated(
       const mozilla::RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
