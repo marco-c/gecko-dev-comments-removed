@@ -138,6 +138,7 @@ class HTMLScriptElement final : public nsGenericHTMLElement,
   }
 
   nsDOMTokenList* Blocking();
+  bool IsPotentiallyRenderBlocking() override;
 
   
   using nsGenericHTMLElement::GetFetchPriority;

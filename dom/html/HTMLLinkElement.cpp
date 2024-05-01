@@ -164,6 +164,12 @@ bool HTMLLinkElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       ParseFetchPriority(aValue, aResult);
       return true;
     }
+
+    if (aAttribute == nsGkAtoms::blocking &&
+        StaticPrefs::dom_element_blocking_enabled()) {
+      aResult.ParseAtomArray(aValue);
+      return true;
+    }
   }
 
   return nsGenericHTMLElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
@@ -701,6 +707,16 @@ nsDOMTokenList* HTMLLinkElement::Blocking() {
         new nsDOMTokenList(this, nsGkAtoms::blocking, sSupportedBlockingValues);
   }
   return mBlocking;
+}
+
+bool HTMLLinkElement::IsPotentiallyRenderBlocking() {
+  return BlockingContainsRender();
+
+  
+  
+  
+  
+  
 }
 
 }  

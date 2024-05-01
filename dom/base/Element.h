@@ -1345,6 +1345,10 @@ class Element : public FragmentOrElement {
   bool ParseLoadingAttribute(const nsAString& aValue, nsAttrValue& aResult);
 
   
+  virtual bool IsPotentiallyRenderBlocking() { return false; }
+  bool BlockingContainsRender() const;
+
+  
   enum class ShadowRootDeclarative : bool { No, Yes };
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
