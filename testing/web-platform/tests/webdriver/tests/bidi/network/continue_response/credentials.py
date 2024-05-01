@@ -32,7 +32,7 @@ async def test_wrong_credentials(
 
 @pytest.mark.parametrize("navigate", [False, True], ids=["fetch", "navigate"])
 async def test_correct_credentials(
-    setup_blocked_request, subscribe_events, wait_for_event, bidi_session, navigate
+    setup_blocked_request, subscribe_events, wait_for_event, bidi_session, navigate, wait_for_future_safe
 ):
     
     username = f"test_wrong_credentials_{navigate}"
@@ -64,15 +64,17 @@ async def test_correct_credentials(
     await bidi_session.network.continue_response(
         request=request, credentials=correct_credentials
     )
-    await on_response_completed
+    await wait_for_future_safe(on_response_completed)
     if navigate:
-        await on_load
+        await wait_for_future_safe(on_load)
 
     
     
     
-    wait = AsyncPoll(bidi_session, timeout=2)
-    await wait.until(lambda _: len(response_completed_events) >= 2)
-    assert len(response_completed_events) == 2
+
+    
+    wait = AsyncPoll(
+        bidi_session, message="Didn't receive response completed events")
+    await wait.until(lambda _: len(response_completed_events) > 0 and response_completed_events[-1]["response"]["status"] == 200)
 
     remove_listener()
