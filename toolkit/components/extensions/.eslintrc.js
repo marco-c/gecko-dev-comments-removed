@@ -121,9 +121,6 @@ module.exports = {
     "no-bitwise": "off",
 
     
-    "no-console": "error",
-
-    
     "no-continue": "off",
 
     

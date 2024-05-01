@@ -28,9 +28,6 @@ module.exports = {
     "max-nested-callbacks": ["error", 4],
 
     
-    "no-console": ["error", { allow: ["error", "info", "trace", "warn"] }],
-
-    
     "no-multi-str": "error",
 
     

@@ -131,8 +131,6 @@ module.exports = {
     
     "no-cond-assign": 2,
     
-    "no-console": 0,
-    
     "no-continue": 0,
     
     "no-control-regex": 2,

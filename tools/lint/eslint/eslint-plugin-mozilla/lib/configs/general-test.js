@@ -8,6 +8,8 @@ module.exports = {
     "mozilla/no-arbitrary-setTimeout": "error",
 
     
+    "no-console": "off",
+    
     
     "no-unsanitized/method": "off",
     "no-unsanitized/property": "off",

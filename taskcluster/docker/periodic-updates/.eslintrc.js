@@ -25,9 +25,6 @@ module.exports = {
     "no-case-declarations": "error",
 
     
-    "no-console": "error",
-
-    
     "no-constant-condition": ["error", { checkLoops: false }],
 
     

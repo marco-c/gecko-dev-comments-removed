@@ -209,8 +209,7 @@ module.exports = {
     "no-caller": "error",
 
     
-    
-    "no-console": "off",
+    "no-console": ["error", { allow: ["createInstance", "error", "warn"] }],
 
     
     
