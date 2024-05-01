@@ -110,7 +110,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
   
   
-  nscoord IntrinsicScrollbarGutterSizeAtInlineEdges();
+  nscoord IntrinsicScrollbarGutterSizeAtInlineEdges() const;
 
   
   
