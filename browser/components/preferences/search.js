@@ -496,7 +496,7 @@ var gSearchPane = {
 
 
 
-  async _buildEngineDropDown(list, currentEngine, isPrivate) {
+  async _buildEngineDropDown(list, currentEngine) {
     
     let engines = gEngineView._engineStore._engines;
     if (!engines.length) {
@@ -1231,7 +1231,7 @@ EngineView.prototype = {
   },
 
   selection: null,
-  getRowProperties(index) {
+  getRowProperties() {
     return "";
   },
   getCellProperties(index, column) {
@@ -1245,31 +1245,31 @@ EngineView.prototype = {
     }
     return "";
   },
-  getColumnProperties(column) {
+  getColumnProperties() {
     return "";
   },
-  isContainer(index) {
+  isContainer() {
     return false;
   },
-  isContainerOpen(index) {
+  isContainerOpen() {
     return false;
   },
-  isContainerEmpty(index) {
+  isContainerEmpty() {
     return false;
   },
-  isSeparator(index) {
+  isSeparator() {
     return false;
   },
-  isSorted(index) {
+  isSorted() {
     return false;
   },
-  getParentIndex(index) {
+  getParentIndex() {
     return -1;
   },
-  hasNextSibling(parentIndex, index) {
+  hasNextSibling() {
     return false;
   },
-  getLevel(index) {
+  getLevel() {
     return 0;
   },
   getCellValue(index, column) {
@@ -1282,10 +1282,10 @@ EngineView.prototype = {
     }
     return undefined;
   },
-  toggleOpenState(index) {},
-  cycleHeader(column) {},
+  toggleOpenState() {},
+  cycleHeader() {},
   selectionChanged() {},
-  cycleCell(row, column) {},
+  cycleCell() {},
   isEditable(index, column) {
     return (
       column.id != "engineName" &&

@@ -435,7 +435,7 @@ var gPrivacyPane = {
     );
 
     let trackingProtectionObserver = {
-      observe(subject, topic, data) {
+      observe() {
         gPrivacyPane._updateTrackingProtectionUI();
       },
     };
@@ -3317,7 +3317,7 @@ var gPrivacyPane = {
 
 
 
-  initOptOutStudyCheckbox(doc) {
+  initOptOutStudyCheckbox() {
     
     
     
@@ -3361,7 +3361,7 @@ var gPrivacyPane = {
     });
   },
 
-  observe(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic) {
     switch (aTopic) {
       case "sitedatamanager:updating-sites":
         

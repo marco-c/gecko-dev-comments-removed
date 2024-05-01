@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
@@ -10,7 +10,7 @@ const { FxAccountsPairingFlow } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsPairing.sys.mjs"
 );
 
-// Use sinon for mocking.
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -19,7 +19,7 @@ let flowCounter = 0;
 
 add_setup(async function () {
   Services.prefs.setBoolPref("identity.fxaccounts.pairing.enabled", true);
-  // Sync start-up might interfere with our tests, don't let UIState send UI updates.
+  
   const origNotifyStateUpdated = UIState._internal.notifyStateUpdated;
   UIState._internal.notifyStateUpdated = () => {};
 
@@ -29,7 +29,7 @@ add_setup(async function () {
   };
 
   const origStart = FxAccountsPairingFlow.start;
-  FxAccountsPairingFlow.start = ({ emitter: e }) => {
+  FxAccountsPairingFlow.start = () => {
     return `https://foo.bar/${flowCounter++}`;
   };
 
@@ -50,14 +50,14 @@ add_task(async function testShowsQRCode() {
       () => qrWrapper.getAttribute("pairing-status") == "ready"
     );
 
-    // Verify that a QRcode is being shown.
+    
     Assert.ok(
       qrContainer.style.backgroundImage.startsWith(
         `url("data:image/gif;base64,R0lGODdhOgA6AIAAAAAAAP///ywAAAAAOgA6AAAC/4yPqcvtD6OctNqLs968+w+G4gKU5nkiJYO2JuW6KsDGKEw3a7AbPZ+r4Ry7nzFIQkKKN6Avlzowo78`
       )
     );
 
-    // Close the dialog.
+    
     let promiseUnloaded = BrowserTestUtils.waitForEvent(win, "unload");
     gBrowser.contentDocument.querySelector(".dialogClose").click();
 
@@ -79,7 +79,7 @@ add_task(async function testCantShowQrCode() {
       () => qrWrapper.getAttribute("pairing-status") == "error"
     );
 
-    // Close the dialog.
+    
     let promiseUnloaded = BrowserTestUtils.waitForEvent(win, "unload");
     gBrowser.contentDocument.querySelector(".dialogClose").click();
 
@@ -122,7 +122,7 @@ add_task(async function testError() {
       () => qrWrapper.getAttribute("pairing-status") == "error"
     );
 
-    // Close the dialog.
+    
     let promiseUnloaded = BrowserTestUtils.waitForEvent(win, "unload");
     gBrowser.contentDocument.querySelector(".dialogClose").click();
 

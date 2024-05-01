@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
@@ -7,9 +7,9 @@ const { UIState } = ChromeUtils.importESModule(
   "resource://services-sync/UIState.sys.mjs"
 );
 
-// This obj will be used in both tests
-// First test makes sure accepting the preferences matches these values
-// Second test makes sure the cancel dialog STILL matches these values
+
+
+
 const syncPrefs = {
   "services.sync.engine.addons": false,
   "services.sync.engine.bookmarks": true,
@@ -35,11 +35,11 @@ add_setup(async () => {
   });
 });
 
-/**
- * We don't actually enable sync here, but we just check that the preferences are correct
- * when the callback gets hit (accepting/cancelling the dialog)
- * See https://bugzilla.mozilla.org/show_bug.cgi?id=1584132.
- */
+
+
+
+
+
 
 add_task(async function testDialogAccept() {
   await SpecialPowers.pushPrefEnv({
@@ -50,10 +50,10 @@ add_task(async function testDialogAccept() {
     leaveOpen: true,
   });
 
-  // This will check if the callback was actually called during the test
+  
   let callbackCalled = false;
 
-  // Enabling all the sync UI is painful in tests, so we just open the dialog manually
+  
   let syncWindow = await openAndLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
     null,
@@ -77,7 +77,7 @@ add_task(async function testDialogAccept() {
     "checkbox[preference]"
   );
 
-  // Adjust the checkbox values to the expectedValues in the list
+  
   [...syncCheckboxes].forEach(checkbox => {
     if (syncPrefs[checkbox.getAttribute("preference")] !== checkbox.checked) {
       checkbox.click();
@@ -109,16 +109,16 @@ add_task(async function testDialogCancel() {
     leaveOpen: true,
   });
 
-  // This will check if the callback was actually called during the test
+  
   let callbackCalled = false;
 
-  // Enabling all the sync UI is painful in tests, so we just open the dialog manually
+  
   let syncWindow = await openAndLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
     null,
     {},
     () => {
-      // We want to test against our previously accepted values in the last test
+      
       for (const [prefKey, prefValue] of Object.entries(syncPrefs)) {
         Assert.equal(
           Services.prefs.getBoolPref(prefKey),
@@ -137,7 +137,7 @@ add_task(async function testDialogCancel() {
     "checkbox[preference]"
   );
 
-  // This time we're adjusting to the cancel list
+  
   [...syncCheckboxes].forEach(checkbox => {
     if (
       cancelSyncPrefs[checkbox.getAttribute("preference")] !== checkbox.checked
@@ -151,10 +151,10 @@ add_task(async function testDialogCancel() {
   Assert.ok(callbackCalled, "Cancel callback was called");
 });
 
-/**
- * Tests that this subdialog can be opened via
- * about:preferences?action=choose-what-to-sync#sync
- */
+
+
+
+
 add_task(async function testDialogLaunchFromURI() {
   await SpecialPowers.pushPrefEnv({
     set: [["identity.fxaccounts.enabled", true]],
@@ -167,7 +167,7 @@ add_task(async function testDialogLaunchFromURI() {
   );
   await BrowserTestUtils.withNewTab(
     "about:preferences?action=choose-what-to-sync#sync",
-    async browser => {
+    async () => {
       let dialogEvent = await dialogEventPromise;
       Assert.equal(
         dialogEvent.detail.dialog._frame.contentWindow.location,
