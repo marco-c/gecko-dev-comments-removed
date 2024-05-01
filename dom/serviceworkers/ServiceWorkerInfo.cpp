@@ -165,8 +165,6 @@ void ServiceWorkerInfo::UpdateState(ServiceWorkerState aState) {
   
   
   if (aState != ServiceWorkerState::Redundant) {
-    MOZ_ASSERT_IF(State() == ServiceWorkerState::EndGuard_,
-                  aState == ServiceWorkerState::Installing);
     MOZ_ASSERT_IF(State() == ServiceWorkerState::Installing,
                   aState == ServiceWorkerState::Installed);
     MOZ_ASSERT_IF(State() == ServiceWorkerState::Installed,

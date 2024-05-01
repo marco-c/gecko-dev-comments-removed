@@ -439,7 +439,6 @@ void FontFaceSet::MaybeResolve() {
           break;
         case FontFaceLoadStatus::Loading:
           
-        case FontFaceLoadStatus::EndGuard_:
           MOZ_ASSERT_UNREACHABLE("unexpected FontFaceLoadStatus");
           break;
       }
