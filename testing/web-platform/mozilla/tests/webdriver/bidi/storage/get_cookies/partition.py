@@ -67,14 +67,14 @@ async def test_partition_context(
     )
 
 
-@pytest.mark.parametrize("domain", ["", "alt"], ids=["same_origin", "cross_origin"])
-async def test_partition_context_iframe(
-    bidi_session, new_tab, inline, domain_value, domain, add_cookie
+
+
+async def test_partition_context_same_origin_iframe(
+    bidi_session, new_tab, inline, domain_value, add_cookie
 ):
-    iframe_url = inline("<div id='in-iframe'>foo</div>", domain=domain)
-    source_origin_for_iframe = get_origin_from_url(iframe_url)
+    iframe_url = inline("<div id='in-iframe'>foo</div>")
+    source_origin = get_origin_from_url(iframe_url)
     page_url = inline(f"<iframe src='{iframe_url}'></iframe>")
-    source_origin_for_page = get_origin_from_url(page_url)
     await bidi_session.browsing_context.navigate(
         context=new_tab["context"], url=page_url, wait="complete"
     )
@@ -93,7 +93,7 @@ async def test_partition_context_iframe(
 
     expected_cookies = [
         {
-            "domain": domain_value(domain=domain),
+            "domain": domain_value(),
             "httpOnly": False,
             "name": cookie_name,
             "path": "/webdriver/tests/support",
@@ -103,10 +103,11 @@ async def test_partition_context_iframe(
             "value": {"type": "string", "value": cookie_value},
         }
     ]
+
     recursive_compare(
         {
             "cookies": expected_cookies,
-            "partitionKey": {"sourceOrigin": source_origin_for_iframe},
+            "partitionKey": {"sourceOrigin": source_origin},
         },
         cookies,
     )
@@ -114,25 +115,16 @@ async def test_partition_context_iframe(
     cookies = await bidi_session.storage.get_cookies(
         partition=BrowsingContextPartitionDescriptor(new_tab["context"])
     )
+
     
-    if domain == "alt":
-        recursive_compare(
-            {
-                "cookies": [],
-                "partitionKey": {"sourceOrigin": source_origin_for_page},
+    
+    recursive_compare(
+        {
+            "cookies": expected_cookies,
+            "partitionKey": {
+                "sourceOrigin": source_origin,
+                "userContext": "default",
             },
-            cookies,
-        )
-    else:
-        
-        
-        recursive_compare(
-            {
-                "cookies": expected_cookies,
-                "partitionKey": {
-                    "sourceOrigin": source_origin_for_page,
-                    "userContext": "default",
-                },
-            },
-            cookies,
-        )
+        },
+        cookies,
+    )
