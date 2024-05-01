@@ -543,39 +543,35 @@ void gfxWindowsPlatform::UpdateSupportsHDR() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   DeviceManagerDx* dx = DeviceManagerDx::Get();
   nsTArray<DXGI_OUTPUT_DESC1> outputs = dx->EnumerateOutputs();
 
   for (auto& output : outputs) {
-    if (output.BitsPerColor <= 8) {
-      continue;
-    }
-
-    switch (output.ColorSpace) {
-      case DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020:
-      case DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020:
-      case DXGI_COLOR_SPACE_RGB_STUDIO_G2084_NONE_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_TOPLEFT_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_TOPLEFT_P2020:
-      case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020:
-#ifndef __MINGW32__
-      
-      
-      
-      
-      case DXGI_COLOR_SPACE_RGB_STUDIO_G24_NONE_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_LEFT_P2020:
-      case DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020:
-#endif
-        mSupportsHDR = true;
-        return;
-      default:
-        break;
+    if (output.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+      mSupportsHDR = true;
+      return;
     }
   }
 
