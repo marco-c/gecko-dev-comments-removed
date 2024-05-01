@@ -177,7 +177,8 @@ Maybe<gfx::YUVColorSpace> GetYUVColorSpace(IMFMediaType* aType) {
 }
 
 int32_t MFOffsetToInt32(const MFOffset& aOffset) {
-  return int32_t(aOffset.value + (aOffset.fract / 65536.0f));
+  return AssertedCast<int32_t>(AssertedCast<float>(aOffset.value) +
+                               (AssertedCast<float>(aOffset.fract) / 65536.0f));
 }
 
 TimeUnit GetSampleDuration(IMFSample* aSample) {
@@ -204,7 +205,7 @@ GetPictureRegion(IMFMediaType* aMediaType, gfx::IntRect& aOutPictureRegion) {
   
   
   BOOL panScan =
-      MFGetAttributeUINT32(aMediaType, MF_MT_PAN_SCAN_ENABLED, FALSE);
+      !!MFGetAttributeUINT32(aMediaType, MF_MT_PAN_SCAN_ENABLED, FALSE);
 
   
   HRESULT hr = E_FAIL;
@@ -300,11 +301,14 @@ const char* MFTMessageTypeToStr(MFT_MESSAGE_TYPE aMsg) {
 GUID AudioMimeTypeToMediaFoundationSubtype(const nsACString& aMimeType) {
   if (aMimeType.EqualsLiteral("audio/mpeg")) {
     return MFAudioFormat_MP3;
-  } else if (MP4Decoder::IsAAC(aMimeType)) {
+  }
+  if (MP4Decoder::IsAAC(aMimeType)) {
     return MFAudioFormat_AAC;
-  } else if (aMimeType.EqualsLiteral("audio/vorbis")) {
+  }
+  if (aMimeType.EqualsLiteral("audio/vorbis")) {
     return MFAudioFormat_Vorbis;
-  } else if (aMimeType.EqualsLiteral("audio/opus")) {
+  }
+  if (aMimeType.EqualsLiteral("audio/opus")) {
     return MFAudioFormat_Opus;
   }
   NS_WARNING("Unsupport audio mimetype");
@@ -314,17 +318,19 @@ GUID AudioMimeTypeToMediaFoundationSubtype(const nsACString& aMimeType) {
 GUID VideoMimeTypeToMediaFoundationSubtype(const nsACString& aMimeType) {
   if (MP4Decoder::IsH264(aMimeType)) {
     return MFVideoFormat_H264;
-  } else if (VPXDecoder::IsVP8(aMimeType)) {
+  }
+  if (VPXDecoder::IsVP8(aMimeType)) {
     return MFVideoFormat_VP80;
-  } else if (VPXDecoder::IsVP9(aMimeType)) {
+  }
+  if (VPXDecoder::IsVP9(aMimeType)) {
     return MFVideoFormat_VP90;
   }
 #ifdef MOZ_AV1
-  else if (AOMDecoder::IsAV1(aMimeType)) {
+  if (AOMDecoder::IsAV1(aMimeType)) {
     return MFVideoFormat_AV1;
   }
 #endif
-  else if (MP4Decoder::IsHEVC(aMimeType)) {
+  if (MP4Decoder::IsHEVC(aMimeType)) {
     return MFVideoFormat_HEVC;
   }
   NS_WARNING("Unsupport video mimetype");
@@ -377,10 +383,10 @@ void AACAudioSpecificConfigToUserData(uint8_t aAACProfileLevelIndication,
     
     
     
-    int8_t frequency =
+    uint8_t frequency =
         (aAudioSpecConfig[0] & 0x7) << 1 | (aAudioSpecConfig[1] & 0x80) >> 7;
-    int8_t channels = (aAudioSpecConfig[1] & 0x78) >> 3;
-    int8_t gasc = aAudioSpecConfig[1] & 0x7;
+    uint8_t channels = (aAudioSpecConfig[1] & 0x78) >> 3;
+    uint8_t gasc = aAudioSpecConfig[1] & 0x7;
     if (frequency != 0xf && channels && !gasc) {
       
       
