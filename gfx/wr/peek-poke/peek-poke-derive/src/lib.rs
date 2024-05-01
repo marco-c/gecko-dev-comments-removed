@@ -12,23 +12,6 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Ident, Index, TraitBound};
 use synstructure::{decl_derive, Structure, BindStyle, AddBounds};
-use unicode_xid::UnicodeXID;
-
-
-fn sanitize_ident(s: &str) -> Ident {
-    let mut res = String::with_capacity(s.len());
-    for mut c in s.chars() {
-        if !UnicodeXID::is_xid_continue(c) {
-            c = '_'
-        }
-        
-        if res.ends_with('_') && c == '_' {
-            continue;
-        }
-        res.push(c);
-    }
-    Ident::new(&res, Span::call_site())
-}
 
 
 fn get_discriminant_size_type(len: usize) -> TokenStream {
@@ -241,11 +224,9 @@ fn peek_poke_derive(mut s: Structure) -> TokenStream {
     s.add_trait_bounds(&default_trait, &mut where_clause, AddBounds::Generics);
     s.add_trait_bounds(&peek_trait, &mut where_clause, AddBounds::Generics);
 
-    let dummy_const: Ident = sanitize_ident(&format!("_DERIVE_peek_poke_Peek_FOR_{}", name));
-
     let peek_impl = quote! {
         #[allow(non_upper_case_globals)]
-        const #dummy_const: () = {
+        const _: () = {
             extern crate peek_poke;
 
             impl #impl_generics peek_poke::Peek for #name #ty_generics #where_clause {
