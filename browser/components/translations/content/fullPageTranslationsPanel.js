@@ -193,7 +193,7 @@ class CheckboxPageAction {
 
 
 
-var TranslationsPanel = new (class {
+var FullPageTranslationsPanel = new (class {
   
   #console;
 
@@ -972,7 +972,7 @@ var TranslationsPanel = new (class {
 
   onLearnMoreLink() {
     TranslationsParent.telemetry().panel().onLearnMoreLink();
-    TranslationsPanel.close();
+    FullPageTranslationsPanel.close();
   }
 
   
@@ -1533,7 +1533,7 @@ var TranslationsPanel = new (class {
         if (detectedLanguages) {
           // Ensure the cached detected languages are up to date, for instance whenever
           // the user switches tabs.
-          TranslationsPanel.detectedLanguages = detectedLanguages;
+          FullPageTranslationsPanel.detectedLanguages = detectedLanguages;
         }
 
         if (this.#isPopupOpen) {
@@ -1643,7 +1643,7 @@ var TranslationsPanel = new (class {
 })();
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  TranslationsPanel,
+  FullPageTranslationsPanel,
   "_hasShownPanel",
   "browser.translations.panelShown",
   false
