@@ -963,9 +963,8 @@ nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel, nsIURI* aURI,
   if (result.Failed()) {
     return NS_ERROR_NO_CONTENT;
   }
-  nsBaseChannel* bchan = static_cast<nsBaseChannel*>(aChannel);
-  MOZ_ASSERT(bchan);
-  if (!bchan->SetContentRange(aRangeHeader, size)) {
+  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(aChannel);
+  if (!baseChan || !baseChan->SetContentRangeFromHeader(aRangeHeader, size)) {
     return NS_ERROR_NET_PARTIAL_TRANSFER;
   }
   return NS_OK;

@@ -14,6 +14,7 @@
 #include "mozilla/net/PrivateBrowsingChannel.h"
 #include "nsHashPropertyBag.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIBaseChannel.h"
 #include "nsIChannel.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadGroup.h"
@@ -47,6 +48,7 @@ class nsICancelable;
 
 class nsBaseChannel
     : public nsHashPropertyBag,
+      public nsIBaseChannel,
       public nsIChannel,
       public nsIThreadRetargetableRequest,
       public nsIInterfaceRequestor,
@@ -59,6 +61,7 @@ class nsBaseChannel
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIREQUEST
   NS_DECL_NSICHANNEL
+  NS_DECL_NSIBASECHANNEL
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSITRANSPORTEVENTSINK
   NS_DECL_NSIASYNCVERIFYREDIRECTCALLBACK
@@ -199,26 +202,6 @@ class nsBaseChannel
   }
 
   
-  
-  
-  const mozilla::Maybe<mozilla::net::ContentRange>& GetContentRange() const {
-    return mContentRange;
-  }
-
-  void SetContentRange(uint64_t aStart, uint64_t aEnd, uint64_t aSize) {
-    mContentRange.emplace(mozilla::net::ContentRange(aStart, aEnd, aSize));
-  }
-
-  bool SetContentRange(const nsACString& aRangeHeader, uint64_t aSize) {
-    auto range = mozilla::net::ContentRange(aRangeHeader, aSize);
-    if (!range.IsValid()) {
-      return false;
-    }
-    mContentRange.emplace(range);
-    return true;
-  }
-
-  
   template <class T>
   void GetCallback(nsCOMPtr<T>& result) {
     GetInterface(NS_GET_TEMPLATE_IID(T), getter_AddRefs(result));
@@ -308,7 +291,7 @@ class nsBaseChannel
   bool mWaitingOnAsyncRedirect{false};
   bool mOpenRedirectChannel{false};
   uint32_t mRedirectFlags{0};
-  mozilla::Maybe<mozilla::net::ContentRange> mContentRange;
+  RefPtr<mozilla::net::ContentRange> mContentRange;
 
  protected:
   nsCString mContentType;

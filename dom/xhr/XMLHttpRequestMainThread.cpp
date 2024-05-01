@@ -49,6 +49,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/ProgressEvent.h"
 #include "nsDataChannel.h"
+#include "nsIBaseChannel.h"
 #include "nsIJARChannel.h"
 #include "nsIJARURI.h"
 #include "nsReadableUtils.h"
@@ -864,14 +865,28 @@ bool XMLHttpRequestMainThread::IsDeniedCrossSiteCORSRequest() {
   return false;
 }
 
-Maybe<mozilla::net::ContentRange>
+bool XMLHttpRequestMainThread::BadContentRangeRequested() {
+  if (!mChannel) {
+    return false;
+  }
+  
+  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
+  if (!baseChan) {
+    return false;
+  }
+  
+  
+  return !baseChan->ContentRange() && mAuthorRequestHeaders.Has("range");
+}
+
+RefPtr<mozilla::net::ContentRange>
 XMLHttpRequestMainThread::GetRequestedContentRange() const {
   MOZ_ASSERT(mChannel);
-  nsBaseChannel* baseChan = static_cast<nsBaseChannel*>(mChannel.get());
+  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(mChannel);
   if (!baseChan) {
-    return mozilla::Nothing();
+    return nullptr;
   }
-  return baseChan->GetContentRange();
+  return baseChan->ContentRange();
 }
 
 void XMLHttpRequestMainThread::GetContentRangeHeader(nsACString& out) const {
@@ -879,8 +894,8 @@ void XMLHttpRequestMainThread::GetContentRangeHeader(nsACString& out) const {
     out.SetIsVoid(true);
     return;
   }
-  Maybe<mozilla::net::ContentRange> range = GetRequestedContentRange();
-  if (range.isSome()) {
+  RefPtr<mozilla::net::ContentRange> range = GetRequestedContentRange();
+  if (range) {
     range->AsHeader(out);
   } else {
     out.SetIsVoid(true);
@@ -944,8 +959,7 @@ uint32_t XMLHttpRequestMainThread::GetStatus(ErrorResult& aRv) {
   nsCOMPtr<nsIHttpChannel> httpChannel = GetCurrentHttpChannel();
   if (!httpChannel) {
     
-    return IsBlobURI(mRequestURL) && GetRequestedContentRange().isSome() ? 206
-                                                                         : 200;
+    return GetRequestedContentRange() ? 206 : 200;
   }
 
   uint32_t status;
@@ -1956,8 +1970,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
 
   
   
-  if (IsBlobURI(mRequestURL) && GetRequestedContentRange().isNothing() &&
-      mAuthorRequestHeaders.Has("range")) {
+  if (BadContentRangeRequested()) {
     return NS_ERROR_NET_PARTIAL_TRANSFER;
   }
 
