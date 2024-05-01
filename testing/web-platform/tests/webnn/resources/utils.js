@@ -283,6 +283,32 @@ const getReductionPrecisionTolerance = (resources, operationName) => {
 };
 
 
+
+
+
+
+
+const getResample2dPrecisionTolerance = (resources, operationName) => {
+  const options = {...resources.options};
+  let tolerance;
+  if (options.mode && options.mode === 'linear') {
+    
+    const precisionType = resources.expected.type;
+    if (precisionType === 'float32') {
+      tolerance = 84;
+    } else if (precisionType === 'float16') {
+      tolerance = 10;
+    } else {
+      tolerance = 1;
+    }
+  } else {
+    
+    tolerance = 0;
+  }
+  return tolerance;
+};
+
+
 const PrecisionMetrics = {
   argMax: {ULP: {int64: 0}},
   argMin: {ULP: {int64: 0}},
@@ -356,6 +382,7 @@ const PrecisionMetrics = {
   reduceSumSquare: {ULP: {float32: getReductionPrecisionTolerance, float16: getReductionPrecisionTolerance}},
   
   relu: {ULP: {float32: 0, float16: 0}},
+  resample2d: {ULP: {float32: getResample2dPrecisionTolerance, float16: getResample2dPrecisionTolerance}},
   reshape: {ULP: {float32: 0, float16: 0}},
   sigmoid: {ULP: {float32: 32+2, float16: 3}}, 
   slice: {ULP: {float32: 0, float16: 0}},
