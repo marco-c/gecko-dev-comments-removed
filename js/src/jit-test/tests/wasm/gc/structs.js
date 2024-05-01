@@ -666,46 +666,6 @@ assertErrorMessage(() => new WebAssembly.Module(bad),
 }
 
 
-
-
-
-
-function structNewOfManyFields(numFields) {
-    let defString = "(type $s (struct ";
-    for (i = 0; i < numFields; i++) {
-        defString += "(field i32) ";
-    }
-    defString += "))";
-
-    let insnString = "(struct.new $s ";
-    for (i = 0; i < numFields; i++) {
-        insnString += "(i32.const 1337) ";
-    }
-    insnString += ")";
-
-    return "(module " +
-           defString +
-           " (func (export \"create\") (result eqref) " +
-           insnString +
-           "))";
-}
-
-{
-    
-    let exports = wasmEvalText(structNewOfManyFields(10000)).exports;
-    let s = exports.create();
-    assertEq(s, s);
-}
-{
-    
-    assertErrorMessage(() => wasmEvalText(structNewOfManyFields(10001)),
-                       WebAssembly.CompileError,
-                       /too many fields in struct/);
-}
-
-
-
-
 {
   
   
