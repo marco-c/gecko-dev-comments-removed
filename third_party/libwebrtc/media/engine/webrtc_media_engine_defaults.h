@@ -17,7 +17,13 @@
 namespace webrtc {
 
 
-RTC_EXPORT void SetMediaEngineDefaults(cricket::MediaEngineDependencies* deps);
+
+RTC_EXPORT void DeprecatedSetMediaEngineDefaults(
+    cricket::MediaEngineDependencies* deps);
+[[deprecated("bugs.webrc.org/15574")]] inline void SetMediaEngineDefaults(
+    cricket::MediaEngineDependencies* deps) {
+  DeprecatedSetMediaEngineDefaults(deps);
+}
 
 }  
 
