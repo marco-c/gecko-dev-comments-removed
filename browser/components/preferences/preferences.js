@@ -475,7 +475,7 @@ async function spotlight(subcategory, category) {
   }
 }
 
-async function scrollAndHighlight(subcategory, category) {
+async function scrollAndHighlight(subcategory) {
   let element = document.querySelector(`[data-subcategory="${subcategory}"]`);
   if (!element) {
     return;
@@ -643,7 +643,7 @@ async function ensureScrollPadding() {
   let stickyContainer = document.querySelector(".sticky-container");
   let height = await window.browsingContext.topChromeWindow
     .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(err => Cu.reportError); 
+    .catch(() => Cu.reportError); 
 
   
   
