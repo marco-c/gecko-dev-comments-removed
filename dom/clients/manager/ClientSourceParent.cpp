@@ -26,60 +26,6 @@ using mozilla::ipc::BackgroundParent;
 using mozilla::ipc::IPCResult;
 using mozilla::ipc::PrincipalInfo;
 
-namespace {
-
-
-
-
-class KillContentParentRunnable final : public Runnable {
-  RefPtr<ThreadsafeContentParentHandle> mHandle;
-
- public:
-  explicit KillContentParentRunnable(
-      RefPtr<ThreadsafeContentParentHandle>&& aHandle)
-      : Runnable("KillContentParentRunnable"), mHandle(std::move(aHandle)) {
-    MOZ_ASSERT(mHandle);
-  }
-
-  NS_IMETHOD
-  Run() override {
-    AssertIsOnMainThread();
-    if (RefPtr<ContentParent> contentParent = mHandle->GetContentParent()) {
-      contentParent->KillHard("invalid ClientSourceParent actor");
-    }
-    return NS_OK;
-  }
-};
-
-}  
-
-void ClientSourceParent::KillInvalidChild() {
-  
-  RefPtr<ThreadsafeContentParentHandle> process =
-      BackgroundParent::GetContentParentHandle(Manager()->Manager());
-
-  
-  
-  Unused << ClientSourceParent::Send__delete__(this);
-
-  
-  
-  
-  
-  if (!process) {
-    MOZ_DIAGNOSTIC_ASSERT(false, "invalid ClientSourceParent in non-e10s");
-    return;
-  }
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> r = new KillContentParentRunnable(std::move(process));
-  MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
-}
-
 mozilla::ipc::IPCResult ClientSourceParent::RecvWorkerSyncPing() {
   AssertIsOnBackgroundThread();
   
@@ -98,8 +44,7 @@ IPCResult ClientSourceParent::RecvExecutionReady(
   
   
   if (!ClientIsValidCreationURL(mClientInfo.PrincipalInfo(), aArgs.url())) {
-    KillInvalidChild();
-    return IPC_OK();
+    return IPC_FAIL(this, "Invalid creation URL!");
   }
 
   mClientInfo.SetURL(aArgs.url());
@@ -216,23 +161,23 @@ ClientSourceParent::~ClientSourceParent() {
   mExecutionReadyPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
 }
 
-void ClientSourceParent::Init() {
+IPCResult ClientSourceParent::Init() {
   
   
   
   if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
     mService->ForgetFutureSource(mClientInfo.ToIPC());
-    KillInvalidChild();
-    return;
+    return IPC_FAIL(Manager(), "Invalid PrincipalInfo!");
   }
 
   
   
   
   if (NS_WARN_IF(!mService->AddSource(this))) {
-    KillInvalidChild();
-    return;
+    return IPC_FAIL(Manager(), "Already registered!");
   }
+
+  return IPC_OK();
 }
 
 const ClientInfo& ClientSourceParent::Info() const { return mClientInfo; }
