@@ -6,6 +6,8 @@
 
 
 
+const path = require("path");
+
 module.exports = {
   ResourceUriPlugin: class ResourceUriPlugin {
     
@@ -48,7 +50,12 @@ module.exports = {
                 if (!url.href.match(regex)) {
                   continue;
                 }
-                const pathname = url.href.replace(regex, replacement);
+                
+                
+                
+                const pathname = path.join(
+                  url.href.replace(regex, replacement)
+                );
                 resourceData.path = pathname;
                 resourceData.query = url.search;
                 resourceData.fragment = url.hash;
