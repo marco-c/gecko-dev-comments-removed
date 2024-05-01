@@ -14,10 +14,6 @@ function run_test() {
   
   registerXPCTestComponents();
 
-  
-  test_simple("@mozilla.org/js/xpc/test/native/ReturnCodeParent;1");
-  test_nested("@mozilla.org/js/xpc/test/native/ReturnCodeParent;1");
-
   test_simple("@mozilla.org/js/xpc/test/native/ESMReturnCodeParent;1");
   test_nested("@mozilla.org/js/xpc/test/native/ESMReturnCodeParent;1");
 }
