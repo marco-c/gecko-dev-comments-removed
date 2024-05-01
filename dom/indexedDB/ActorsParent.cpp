@@ -292,7 +292,6 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
 
 
 
-
 const uint32_t kMaxConnectionThreadCount = 20;
 
 static_assert(kMaxConnectionThreadCount, "Must have at least one thread!");
@@ -303,7 +302,6 @@ const uint32_t kMaxIdleConnectionThreadCount = 2;
 
 static_assert(kMaxConnectionThreadCount >= kMaxIdleConnectionThreadCount,
               "Idle thread limit must be less than total thread limit!");
-
 
 
 
@@ -6934,12 +6932,6 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
   AUTO_PROFILER_LABEL("DatabaseConnection::ReclaimFreePagesWhileIdle", DOM);
 
-  uint32_t pauseOnConnectionThreadMs = StaticPrefs::
-      dom_indexedDB_connectionIdleMaintenance_pauseOnConnectionThreadMs();
-  if (pauseOnConnectionThreadMs > 0) {
-    PR_Sleep(PR_MillisecondsToInterval(pauseOnConnectionThreadMs));
-  }
-
   
   nsIThread* currentThread = NS_GetCurrentThread();
   MOZ_ASSERT(currentThread);
@@ -7009,7 +7001,7 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
                bool madeProgress = previousFreelistCount != aFreelistCount;
                previousFreelistCount = aFreelistCount;
                MOZ_ASSERT(madeProgress);
-               QM_WARNONLY_TRY(MOZ_TO_RESULT(madeProgress));
+               QM_WARNONLY_TRY(MOZ_TO_RESULT(!madeProgress));
                return madeProgress && (aFreelistCount != 0);
              },
              [&aFreelistStatement, &aFreelistCount, &incrementalVacuumStmt,
