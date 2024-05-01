@@ -1,0 +1,21 @@
+
+
+
+
+
+'use strict';
+
+[
+  'reduceL1',
+  'reduceL2',
+  'reduceLogSum',
+  'reduceLogSumExp',
+  'reduceMax',
+  'reduceMean',
+  'reduceMin',
+  'reduceProduct',
+  'reduceSum',
+  'reduceSumSquare',
+].forEach((operationName) => {
+  validateOptionsAxes(operationName);
+});

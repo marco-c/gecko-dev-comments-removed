@@ -1,0 +1,8 @@
+
+
+
+
+
+'use strict';
+
+validateOptionsAxes('resample2d', 4);

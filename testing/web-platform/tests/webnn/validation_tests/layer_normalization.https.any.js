@@ -1,0 +1,8 @@
+
+
+
+
+
+'use strict';
+
+validateOptionsAxes('layerNormalization', 4);

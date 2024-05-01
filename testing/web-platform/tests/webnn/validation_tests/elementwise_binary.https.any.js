@@ -1,0 +1,11 @@
+
+
+
+
+
+'use strict';
+
+['add', 'sub', 'mul', 'div', 'max', 'min', 'pow'].forEach((operationName) => {
+  validateTwoInputsOfSameDataType(operationName);
+  validateTwoInputsBroadcastable(operationName);
+});
