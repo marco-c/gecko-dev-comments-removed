@@ -517,7 +517,13 @@ void ICScript::purgeStubs(Zone* zone, ICStubSpace& newStubSpace) {
     if (fallback->trialInliningState() == TrialInliningState::Inlined &&
         hasInlinedChild(fallback->pcOffset())) {
       MOZ_ASSERT(active());
-      MOZ_ASSERT(findInlinedChild(fallback->pcOffset())->active());
+#ifdef DEBUG
+      
+      
+      ICScript* callee = findInlinedChild(fallback->pcOffset());
+      MOZ_ASSERT(callee->active());
+      MOZ_ASSERT(callee->bytecodeSize() < inliningRoot()->totalBytecodeSize());
+#endif
 
       JSRuntime* rt = zone->runtimeFromMainThread();
       ICCacheIRStub* prev = nullptr;
