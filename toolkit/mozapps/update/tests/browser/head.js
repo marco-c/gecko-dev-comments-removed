@@ -368,9 +368,15 @@ function copyTestUpdater(attempt = 0) {
       testUpdater.copyToFollowingLinks(greBinDir, FILE_UPDATER_BIN);
 
       let greDir = getGREDir();
-      let updateSettingsIni = greDir.clone();
-      updateSettingsIni.append(FILE_UPDATE_SETTINGS_INI);
-      writeFile(updateSettingsIni, UPDATE_SETTINGS_CONTENTS);
+
+      
+      
+      
+      if (AppConstants.platform != "macosx") {
+        let updateSettingsIni = greDir.clone();
+        updateSettingsIni.append(FILE_UPDATE_SETTINGS_INI);
+        writeFile(updateSettingsIni, UPDATE_SETTINGS_CONTENTS);
+      }
 
       let precomplete = greDir.clone();
       precomplete.append(FILE_PRECOMPLETE);
