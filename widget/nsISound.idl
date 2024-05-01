@@ -24,10 +24,6 @@ interface nsISound : nsISupports
 
 
 
-
-
-
-
   const unsigned long EVENT_NEW_MAIL_RECEIVED           = 0;
   const unsigned long EVENT_ALERT_DIALOG_OPEN           = 1;
   const unsigned long EVENT_CONFIRM_DIALOG_OPEN         = 2;
