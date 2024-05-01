@@ -134,8 +134,7 @@ SessionStoreChangeListener::HandleEvent(dom::Event* aEvent) {
 
  already_AddRefed<SessionStoreChangeListener>
 SessionStoreChangeListener::Create(BrowsingContext* aBrowsingContext) {
-  MOZ_RELEASE_ASSERT(
-      StaticPrefs::browser_sessionstore_platform_collection_AtStartup());
+  MOZ_RELEASE_ASSERT(SessionStorePlatformCollection());
   if (!aBrowsingContext) {
     return nullptr;
   }
