@@ -53,6 +53,7 @@ class MediaSessionInfo {
   Maybe<MediaMetadataBase> mMetadata;
   MediaSessionPlaybackState mDeclaredPlaybackState =
       MediaSessionPlaybackState::None;
+  Maybe<PositionState> mPositionState;
   
   uint32_t mSupportedActions = 0;
 };
@@ -245,6 +246,10 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   
   MediaSessionPlaybackState GetCurrentDeclaredPlaybackState() const;
+
+  
+  
+  Maybe<PositionState> GetCurrentPositionState() const;
 
   
   
