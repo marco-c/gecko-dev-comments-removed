@@ -2358,6 +2358,11 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
                    << (reason ? reason->Name() : std::string("<null>"))
                    << " to " << restrictions.ToString();
 
+  if (frame_cadence_adapter_) {
+    frame_cadence_adapter_->UpdateVideoSourceRestrictions(
+        restrictions.max_frame_rate());
+  }
+
   
   
   latest_restrictions_ = restrictions;

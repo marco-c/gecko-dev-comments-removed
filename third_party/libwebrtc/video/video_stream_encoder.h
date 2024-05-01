@@ -132,6 +132,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                                double cwnd_reduce_ratio);
 
  protected:
+  friend class VideoStreamEncoderFrameCadenceRestrictionTest;
+
   
   
   TaskQueueBase* encoder_queue() { return encoder_queue_.Get(); }

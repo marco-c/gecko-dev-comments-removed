@@ -111,6 +111,12 @@ class FrameCadenceAdapterInterface
 
   
   
+  
+  virtual void UpdateVideoSourceRestrictions(
+      absl::optional<double> max_frame_rate) = 0;
+
+  
+  
   virtual void ProcessKeyFrameRequest() = 0;
 };
 

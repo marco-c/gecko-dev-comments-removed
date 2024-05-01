@@ -731,6 +731,8 @@ class ZeroHertzLayerQualityConvergenceTest : public ::testing::Test {
   static constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(100);
   static constexpr TimeDelta kIdleFrameDelay =
       FrameCadenceAdapterInterface::kZeroHertzIdleRepeatRatePeriod;
+  
+  static constexpr int kRestrictedMaxFps = 5;
 
   ZeroHertzLayerQualityConvergenceTest() {
     adapter_->Initialize(&callback_);
@@ -830,6 +832,100 @@ TEST_F(ZeroHertzLayerQualityConvergenceTest,
       11 * kMinFrameDelay + kIdleFrameDelay,      
       11 * kMinFrameDelay + 2 * kIdleFrameDelay,  
                                                   
+  });
+}
+
+TEST_F(ZeroHertzLayerQualityConvergenceTest,
+       UnconvergedRepeatRateAdaptsDownWhenRestricted) {
+  PassFrame();
+  ScheduleDelayed(1.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateVideoSourceRestrictions(kRestrictedMaxFps);
+  });
+  ExpectFrameEntriesAtDelaysFromNow({
+      1 * kMinFrameDelay,  
+
+      
+      
+      2 * kMinFrameDelay,  
+      4 * kMinFrameDelay,  
+                           
+      6 * kMinFrameDelay,  
+  });
+}
+
+TEST_F(ZeroHertzLayerQualityConvergenceTest,
+       UnconvergedRepeatRateAdaptsUpWhenGoingFromRestrictedToUnrestricted) {
+  PassFrame();
+  ScheduleDelayed(1.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateVideoSourceRestrictions(kRestrictedMaxFps);
+  });
+  ScheduleDelayed(5.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateVideoSourceRestrictions(absl::nullopt);
+  });
+  ExpectFrameEntriesAtDelaysFromNow({
+      1 * kMinFrameDelay,  
+
+      
+      
+      2 * kMinFrameDelay,  
+      4 * kMinFrameDelay,  
+
+      
+      
+      6 * kMinFrameDelay,  
+      7 * kMinFrameDelay,  
+      8 * kMinFrameDelay,  
+      9 * kMinFrameDelay,  
+  });
+}
+
+TEST_F(ZeroHertzLayerQualityConvergenceTest,
+       UnconvergedRepeatRateMaintainsRestrictionOnReconfigureToHigherMaxFps) {
+  PassFrame();
+  ScheduleDelayed(1.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateVideoSourceRestrictions(kRestrictedMaxFps);
+  });
+  ScheduleDelayed(2.5 * kMinFrameDelay, [&] {
+    adapter_->OnConstraintsChanged(VideoTrackSourceConstraints{
+        0, 2 * TimeDelta::Seconds(1) / kMinFrameDelay});
+  });
+  ScheduleDelayed(3 * kMinFrameDelay, [&] { PassFrame(); });
+  ScheduleDelayed(8 * kMinFrameDelay, [&] {
+    adapter_->OnConstraintsChanged(VideoTrackSourceConstraints{
+        0,
+        0.2 * TimeDelta::Seconds(1) / kMinFrameDelay});
+  });
+  ScheduleDelayed(9 * kMinFrameDelay, [&] { PassFrame(); });
+  ExpectFrameEntriesAtDelaysFromNow({
+      1 * kMinFrameDelay,  
+
+      
+      
+      2 * kMinFrameDelay,  
+
+      
+      
+      
+
+      
+      
+      3.5 * kMinFrameDelay,  
+                             
+      5.5 * kMinFrameDelay,  
+                             
+      7.5 * kMinFrameDelay,  
+
+      
+      
+      
+      
+
+      
+      
+      14 * kMinFrameDelay,  
+                            
+      19 * kMinFrameDelay,  
+      24 * kMinFrameDelay,  
   });
 }
 

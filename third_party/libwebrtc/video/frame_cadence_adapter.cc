@@ -131,6 +131,10 @@ class ZeroHertzAdapterMode : public AdapterMode {
   
   void ProcessKeyFrameRequest();
 
+  
+  
+  void UpdateVideoSourceRestrictions(absl::optional<double> max_frame_rate);
+
  private:
   
   
@@ -173,6 +177,7 @@ class ZeroHertzAdapterMode : public AdapterMode {
   
   void ProcessOnDelayedCadence(Timestamp post_time)
       RTC_RUN_ON(sequence_checker_);
+  
   
   
   
@@ -221,6 +226,10 @@ class ZeroHertzAdapterMode : public AdapterMode {
   
   RepeatingTaskHandle refresh_frame_requester_
       RTC_GUARDED_BY(sequence_checker_);
+  
+  
+  absl::optional<TimeDelta> restricted_frame_delay_
+      RTC_GUARDED_BY(sequence_checker_);
 
   ScopedTaskSafety safety_;
 };
@@ -241,6 +250,8 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   void UpdateLayerQualityConvergence(size_t spatial_index,
                                      bool quality_converged) override;
   void UpdateLayerStatus(size_t spatial_index, bool enabled) override;
+  void UpdateVideoSourceRestrictions(
+      absl::optional<double> max_frame_rate) override;
   void ProcessKeyFrameRequest() override;
 
   
@@ -291,6 +302,11 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   
   absl::optional<VideoTrackSourceConstraints> source_constraints_
       RTC_GUARDED_BY(queue_);
+
+  
+  
+  
+  absl::optional<double> restricted_max_frame_rate_ RTC_GUARDED_BY(queue_);
 
   
   
@@ -410,6 +426,20 @@ void ZeroHertzAdapterMode::OnDiscardedFrame() {
 absl::optional<uint32_t> ZeroHertzAdapterMode::GetInputFrameRateFps() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   return max_fps_;
+}
+
+void ZeroHertzAdapterMode::UpdateVideoSourceRestrictions(
+    absl::optional<double> max_frame_rate) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("webrtc"), __func__,
+                       "max_frame_rate", max_frame_rate.value_or(-1));
+  if (max_frame_rate.value_or(0) > 0) {
+    
+    restricted_frame_delay_ = TimeDelta::Seconds(1) / *max_frame_rate;
+  } else {
+    
+    restricted_frame_delay_ = absl::nullopt;
+  }
 }
 
 void ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
@@ -574,9 +604,14 @@ void ZeroHertzAdapterMode::SendFrameNow(Timestamp post_time,
 
 TimeDelta ZeroHertzAdapterMode::RepeatDuration(bool idle_repeat) const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
+  
+  
+  
+  TimeDelta frame_delay =
+      std::max(frame_delay_, restricted_frame_delay_.value_or(frame_delay_));
   return idle_repeat
              ? FrameCadenceAdapterInterface::kZeroHertzIdleRepeatRatePeriod
-             : frame_delay_;
+             : frame_delay;
 }
 
 void ZeroHertzAdapterMode::MaybeStartRefreshFrameRequester() {
@@ -647,6 +682,17 @@ void FrameCadenceAdapterImpl::UpdateLayerStatus(size_t spatial_index,
                                                 bool enabled) {
   if (zero_hertz_adapter_.has_value())
     zero_hertz_adapter_->UpdateLayerStatus(spatial_index, enabled);
+}
+
+void FrameCadenceAdapterImpl::UpdateVideoSourceRestrictions(
+    absl::optional<double> max_frame_rate) {
+  RTC_DCHECK_RUN_ON(queue_);
+  
+  
+  restricted_max_frame_rate_ = max_frame_rate;
+  if (zero_hertz_adapter_) {
+    zero_hertz_adapter_->UpdateVideoSourceRestrictions(max_frame_rate);
+  }
 }
 
 void FrameCadenceAdapterImpl::ProcessKeyFrameRequest() {
@@ -742,11 +788,12 @@ void FrameCadenceAdapterImpl::MaybeReconfigureAdapters(
     bool max_fps_has_changed = GetInputFrameRateFps().value_or(-1) !=
                                source_constraints_->max_fps.value_or(-1);
     if (!was_zero_hertz_enabled || max_fps_has_changed) {
-      zero_hertz_adapter_.emplace(queue_, clock_, callback_,
-                                  source_constraints_->max_fps.value());
-      zero_hertz_adapter_is_active_.store(true, std::memory_order_relaxed);
       RTC_LOG(LS_INFO) << "Zero hertz mode enabled (max_fps="
                        << source_constraints_->max_fps.value() << ")";
+      zero_hertz_adapter_.emplace(queue_, clock_, callback_,
+                                  source_constraints_->max_fps.value());
+      zero_hertz_adapter_->UpdateVideoSourceRestrictions(
+          restricted_max_frame_rate_);
       zero_hertz_adapter_created_timestamp_ = clock_->CurrentTime();
     }
     zero_hertz_adapter_->ReconfigureParameters(zero_hertz_params_.value());
