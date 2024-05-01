@@ -43,7 +43,7 @@ class Context {
   virtual void ObserveRTT(webrtc::TimeDelta rtt_ms) = 0;
 
   
-  virtual DurationMs current_rto() const = 0;
+  virtual webrtc::TimeDelta current_rto() const = 0;
 
   
   virtual bool IncrementTxErrorCounter(absl::string_view reason) = 0;

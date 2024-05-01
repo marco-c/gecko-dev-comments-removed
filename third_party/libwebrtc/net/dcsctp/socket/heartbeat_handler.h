@@ -57,7 +57,7 @@ class HeartbeatHandler {
   Context* ctx_;
   TimerManager* timer_manager_;
   
-  const DurationMs interval_duration_;
+  const webrtc::TimeDelta interval_duration_;
   
   
   const bool interval_duration_should_include_rtt_;
