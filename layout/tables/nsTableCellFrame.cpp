@@ -761,17 +761,20 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      
-      
       auto ToScrolledBSize = [&](const nscoord aBSize) {
         return std::max(0, aBSize - padding.BStartEnd(kidWM));
       };
-      nscoord minBSize = aReflowInput.ComputedMinBSize();
       if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-        minBSize = std::max(minBSize, aReflowInput.ComputedBSize());
+        kidReflowInput.SetComputedBSize(
+            ToScrolledBSize(aReflowInput.ComputedBSize()));
       }
-      if (minBSize > 0) {
-        kidReflowInput.SetComputedMinBSize(ToScrolledBSize(minBSize));
+      if (aReflowInput.ComputedMinBSize() > 0) {
+        kidReflowInput.SetComputedMinBSize(
+            ToScrolledBSize(aReflowInput.ComputedMinBSize()));
+      }
+      if (aReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
+        kidReflowInput.SetComputedMaxBSize(
+            ToScrolledBSize(aReflowInput.ComputedMaxBSize()));
       }
     }
   }
