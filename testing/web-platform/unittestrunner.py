@@ -51,7 +51,7 @@ class ReplaceRequirements(object):
         with open(path) as f:
             parser.read_file(f)
         deps = parser.get("testenv", "deps")
-        dep_re = re.compile("(?:.*:\s*)?-r(.*)")
+        dep_re = re.compile(r"(?:.*:\s*)?-r(.*)")
 
         
         for dep in deps.splitlines():

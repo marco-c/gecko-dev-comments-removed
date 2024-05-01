@@ -16,7 +16,7 @@ from subprocess import PIPE, Popen
 
 
 
-line_re = re.compile("#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
+line_re = re.compile(r"#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
 
 fix_stacks = None
 

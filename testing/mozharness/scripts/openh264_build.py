@@ -363,7 +363,7 @@ class OpenH264Build(TransferMixin, VCSScript, TooltoolMixin):
         to_package = []
         for f in glob.glob(os.path.join(srcdir, "*gmpopenh264*")):
             if not re.search(
-                "(?:lib)?gmpopenh264(?!\.\d)\.(?:dylib|so|dll|info)(?!\.\d)", f
+                r"(?:lib)?gmpopenh264(?!\.\d)\.(?:dylib|so|dll|info)(?!\.\d)", f
             ):
                 
                 

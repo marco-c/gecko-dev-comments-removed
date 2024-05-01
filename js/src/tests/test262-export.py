@@ -237,7 +237,7 @@ def mergeMeta(reftest, frontmatter, includes):
     if info:
         
         if "info" in frontmatter:
-            frontmatter["info"] += "\n\n  \%s" % info
+            frontmatter["info"] += "\n\n  \\%s" % info
         else:
             frontmatter["info"] = info
 

@@ -11,7 +11,7 @@ LOG = get_proxy_logger("profiler")
 
 
 
-gLibNameRE = re.compile("[0-9a-zA-Z_+\-\.]*$")
+gLibNameRE = re.compile(r"[0-9a-zA-Z_+\-\.]*$")
 
 
 

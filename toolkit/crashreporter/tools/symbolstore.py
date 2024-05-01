@@ -578,7 +578,7 @@ class Dumper:
                 
                 (guid, debug_file) = (module_line.split())[3:5]
                 
-                sym_file = re.sub("\.pdb$", "", debug_file) + ".sym"
+                sym_file = re.sub(r"\.pdb$", "", debug_file) + ".sym"
                 
                 rel_path = os.path.join(debug_file, guid, sym_file).replace("\\", "/")
                 full_path = os.path.normpath(os.path.join(self.symbol_path, rel_path))

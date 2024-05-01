@@ -125,7 +125,7 @@ def main():
     else:
         if sys.platform == "win32":
             
-            m = re.match("^\/\w\/", extensionDir)
+            m = re.match(r"^\/\w\/", extensionDir)
             if m:
                 extensionDir = "%s:/%s" % (m.group(0)[1:2], extensionDir[3:])
                 extensionDir = extensionDir.replace("/", "\\")

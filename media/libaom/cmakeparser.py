@@ -83,7 +83,7 @@ def substs(variables, values):
 
         
         
-        new_values.append(re.sub('\$\{\w+\}', '', new_value))
+        new_values.append(re.sub(r'\$\{\w+\}', '', new_value))
     return new_values
 
 
@@ -240,7 +240,7 @@ def evaluate_boolean(variables, arguments):
         
         
         try:
-            if re.search('\$\{\w+\}', argument):
+            if re.search(r'\$\{\w+\}', argument):
                 try:
                     t = Template(argument)
                     value = t.substitute(variables)
