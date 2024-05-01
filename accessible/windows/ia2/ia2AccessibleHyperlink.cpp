@@ -5,11 +5,14 @@
 
 
 
+#include "ia2AccessibleHyperlink.h"
+
 #include "AccessibleHyperlink.h"
 #include "AccessibleHyperlink_i.c"
 
 #include "AccessibleWrap.h"
 #include "IUnknownImpl.h"
+#include "MsaaAccessible.h"
 #include "nsIURI.h"
 
 using namespace mozilla::a11y;
