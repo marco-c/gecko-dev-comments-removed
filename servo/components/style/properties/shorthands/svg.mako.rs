@@ -199,7 +199,16 @@
                 }
 
                 
-                if has_origin {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if has_origin || (has_clip && *clip != Clip::NoClip) {
                     writer.item(origin)?;
                 }
 
