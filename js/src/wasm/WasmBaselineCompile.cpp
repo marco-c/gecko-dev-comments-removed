@@ -1790,13 +1790,23 @@ void BaseCompiler::finishTryNote(size_t tryNoteIndex) {
 
   
   
-  if (tryNotes.length() > 0) {
-    const TryNote& previous = tryNotes.back();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (tryNoteIndex < mostRecentFinishedTryNoteIndex_) {
+    const TryNote& previous = tryNotes[mostRecentFinishedTryNoteIndex_];
     uint32_t currentOffset = masm.currentOffset();
     if (previous.tryBodyEnd() == currentOffset) {
       masm.nop();
     }
   }
+  mostRecentFinishedTryNoteIndex_ = tryNoteIndex;
 
   
   
@@ -11832,6 +11842,8 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& moduleEnv,
       stackMapGenerator_(stackMaps, trapExitLayout, trapExitLayoutNumWords,
                          *masm),
       deadCode_(false),
+      
+      mostRecentFinishedTryNoteIndex_(0),
       bceSafe_(0),
       latentOp_(LatentOp::None),
       latentType_(ValType::I32),

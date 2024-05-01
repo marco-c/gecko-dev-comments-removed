@@ -299,6 +299,10 @@ struct BaseCompiler final {
 
   
   
+  size_t mostRecentFinishedTryNoteIndex_;
+
+  
+  
   
 
   
