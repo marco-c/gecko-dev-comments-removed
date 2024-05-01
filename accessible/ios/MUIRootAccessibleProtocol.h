@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+#import <UIKit/UIAccessibility.h>
+
+
+
+
+
+
+
+
+
+
+
+@protocol MUIRootAccessibleProtocol <NSObject>
+
+- (BOOL)hasRepresentedView;
+
+- (nullable id)representedView;
+
+@end

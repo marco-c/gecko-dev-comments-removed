@@ -13,9 +13,24 @@
 #include "RootAccessible.h"
 
 namespace mozilla {
+
+class PresShell;
+
 namespace a11y {
 
-typedef RootAccessible RootAccessibleWrap;
+
+
+
+
+class RootAccessibleWrap : public RootAccessible {
+ public:
+  RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
+  virtual ~RootAccessibleWrap() = default;
+
+  
+  
+  void GetNativeWidget(void** aOutView);
+};
 
 }  
 }  
