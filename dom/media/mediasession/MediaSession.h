@@ -120,8 +120,7 @@ class MediaSession final : public nsIDocumentActivity, public nsWrapperCache {
 
   RefPtr<MediaMetadata> mMediaMetadata;
 
-  EnumeratedArray<MediaSessionAction, RefPtr<MediaSessionActionHandler>,
-                  size_t(MediaSessionAction::EndGuard_)>
+  EnumeratedArray<MediaSessionAction, RefPtr<MediaSessionActionHandler>>
       mActionHandlers;
 
   
