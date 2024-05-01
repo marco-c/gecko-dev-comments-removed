@@ -15,6 +15,7 @@
 #include <string>
 
 #include "api/call/call_factory_interface.h"
+#include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
@@ -39,8 +40,6 @@ class UniqueRandomIdGenerator;
 
 namespace webrtc {
 
-class RtcEventLog;
-
 
 
 
@@ -54,6 +53,7 @@ class ConnectionContext final
   
   
   static rtc::scoped_refptr<ConnectionContext> Create(
+      const Environment& env,
       PeerConnectionFactoryDependencies* dependencies);
 
   
@@ -80,7 +80,7 @@ class ConnectionContext final
   
   
   
-  const FieldTrialsView& field_trials() const { return *trials_.get(); }
+  const FieldTrialsView& field_trials() const { return env_.field_trials(); }
 
   
   rtc::NetworkManager* default_network_manager() {
@@ -106,7 +106,8 @@ class ConnectionContext final
   void set_use_rtx(bool use_rtx) { use_rtx_ = use_rtx; }
 
  protected:
-  explicit ConnectionContext(PeerConnectionFactoryDependencies* dependencies);
+  ConnectionContext(const Environment& env,
+                    PeerConnectionFactoryDependencies* dependencies);
 
   friend class rtc::RefCountedNonVirtual<ConnectionContext>;
   ~ConnectionContext();
@@ -122,8 +123,7 @@ class ConnectionContext final
   AlwaysValidPointer<rtc::Thread> const worker_thread_;
   rtc::Thread* const signaling_thread_;
 
-  
-  std::unique_ptr<FieldTrialsView> const trials_;
+  const Environment env_;
 
   
   
