@@ -1,0 +1,12 @@
+
+
+
+
+
+'use strict';
+
+
+
+testCreateWebNNBuffer("create", 4, 'gpu');
+
+testDestroyWebNNBuffer("destroyTwice", 'gpu');
