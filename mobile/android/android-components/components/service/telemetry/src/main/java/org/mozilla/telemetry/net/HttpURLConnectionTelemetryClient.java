@@ -22,8 +22,10 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import mozilla.components.support.base.log.logger.Logger;
+
 public class HttpURLConnectionTelemetryClient implements TelemetryClient {
-    private static final String LOG_TAG = "HttpURLTelemetryClient";
+    private Logger logger = new Logger("telemetry/client");
 
     @Override
     public boolean uploadPing(TelemetryConfiguration configuration, String path, String serializedPing) {
@@ -43,7 +45,7 @@ public class HttpURLConnectionTelemetryClient implements TelemetryClient {
 
             int responseCode = upload(connection, serializedPing);
 
-            Log.d(LOG_TAG, "Ping upload: " + responseCode);
+            logger.debug("Ping upload: " + responseCode, null);
 
             if (responseCode >= 200 && responseCode <= 299) {
                 
@@ -63,24 +65,24 @@ public class HttpURLConnectionTelemetryClient implements TelemetryClient {
                 
                 
                 
-                Log.e(LOG_TAG, "Server returned client error code: " + responseCode);
+                logger.error("Server returned client error code: " + responseCode, null);
                 return true;
             } else {
                 
                 
 
                 
-                Log.w(LOG_TAG, "Server returned response code: " + responseCode);
+                logger.warn("Server returned response code: " + responseCode, null);
                 return false;
             }
         } catch (MalformedURLException e) {
             
             
             
-            Log.e(LOG_TAG, "Could not upload telemetry due to malformed URL", e);
+            logger.error("Could not upload telemetry due to malformed URL", e);
             return true;
         } catch (IOException e) {
-            Log.w(LOG_TAG, "IOException while uploading ping", e);
+            logger.warn("IOException while uploading ping", e);
             return false;
         } finally {
             if (connection != null) {
