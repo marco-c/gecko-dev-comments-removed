@@ -132,7 +132,7 @@ class RTC_EXPORT DxgiDuplicatorController {
 
   
   
-  friend class rtc::scoped_refptr<DxgiDuplicatorController>;
+  friend class webrtc::scoped_refptr<DxgiDuplicatorController>;
 
   
   
