@@ -113,8 +113,6 @@ class EditAutofillForm {
   
 
 
-
-
   handleInput() {}
 
   
@@ -138,8 +136,6 @@ class EditAutofillForm {
   }
 
   
-
-
 
 
   updateCustomValidity() {}
