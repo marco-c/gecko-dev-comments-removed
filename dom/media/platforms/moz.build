@@ -48,10 +48,6 @@ if CONFIG["MOZ_WMF"]:
     DIRS += ["wmf"]
 
 if CONFIG["MOZ_FFVPX"] or CONFIG["MOZ_FFMPEG"]:
-    
-    EXPORTS += [
-        "ffmpeg/FFmpegRDFTTypes.h",
-    ]
     UNIFIED_SOURCES += [
         "ffmpeg/FFmpegLibWrapper.cpp",
     ]
