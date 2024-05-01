@@ -141,6 +141,7 @@ add_task(async function test_api_listener_call_exception() {
         
         
         const nonError = {
+          
           get message() {
             browser.test.fail(`Unexpected extension code executed`);
           },

@@ -73,14 +73,6 @@ DevToolsServerConnection.prototype = {
     return this._prefix;
   },
 
-  
-
-
-
-  get parentPrefix() {
-    this.prefix.replace(/child\d+\//, "");
-  },
-
   _transport: null,
   get transport() {
     return this._transport;

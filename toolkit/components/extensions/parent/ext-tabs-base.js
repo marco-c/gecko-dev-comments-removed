@@ -208,6 +208,7 @@ class TabBase {
     if (this.hasTabPermission) {
       return this._url;
     }
+    return undefined;
   }
 
   
@@ -239,6 +240,7 @@ class TabBase {
     if (this.hasTabPermission) {
       return this._title;
     }
+    return undefined;
   }
 
   
@@ -262,6 +264,7 @@ class TabBase {
     if (this.hasTabPermission) {
       return this._favIconUrl;
     }
+    return undefined;
   }
 
   
@@ -1176,6 +1179,7 @@ class WindowBase {
     if (this.activeTab && this.activeTab.hasTabPermission) {
       return this._title;
     }
+    return undefined;
   }
 
   

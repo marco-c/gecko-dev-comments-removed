@@ -166,10 +166,6 @@ module.exports = {
     "fetch-options/no-fetch-credentials": "off",
 
     
-    
-    "getter-return": "off",
-
-    
     "max-nested-callbacks": ["error", 10],
 
     "mozilla/avoid-removeChild": "error",
