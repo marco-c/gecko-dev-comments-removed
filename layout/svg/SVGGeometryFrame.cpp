@@ -358,13 +358,31 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
 
-  bool getFill = (aFlags & SVGUtils::eBBoxIncludeFillGeometry) ||
-                 ((aFlags & SVGUtils::eBBoxIncludeFill) &&
-                  !StyleSVG()->mFill.kind.IsNone());
+  const bool getFill = (aFlags & SVGUtils::eBBoxIncludeFillGeometry) ||
+                       ((aFlags & SVGUtils::eBBoxIncludeFill) &&
+                        !StyleSVG()->mFill.kind.IsNone());
 
-  bool getStroke =
-      (aFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||
-      ((aFlags & SVGUtils::eBBoxIncludeStroke) && SVGUtils::HasStroke(this));
+  const bool getStroke =
+      ((aFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||
+       ((aFlags & SVGUtils::eBBoxIncludeStroke) &&
+        SVGUtils::HasStroke(this))) &&
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      !(StyleSVGReset()->HasNonScalingStroke() &&
+        (aFlags & SVGUtils::eAvoidCycleIfNonScalingStroke));
 
   SVGContentUtils::AutoStrokeOptions strokeOptions;
   if (getStroke) {

@@ -9492,8 +9492,9 @@ nsRect nsLayoutUtils::ComputeSVGOriginBox(SVGViewportElement* aElement) {
 }
 
 
-nsRect nsLayoutUtils::ComputeSVGReferenceRect(nsIFrame* aFrame,
-                                              StyleGeometryBox aGeometryBox) {
+nsRect nsLayoutUtils::ComputeSVGReferenceRect(
+    nsIFrame* aFrame, StyleGeometryBox aGeometryBox,
+    MayHaveNonScalingStrokeCyclicDependency aMayHaveCyclicDependency) {
   MOZ_ASSERT(aFrame->GetContent()->IsSVGElement());
   nsRect r;
 
@@ -9502,9 +9503,12 @@ nsRect nsLayoutUtils::ComputeSVGReferenceRect(nsIFrame* aFrame,
       
       
       
-      gfxRect bbox =
-          SVGUtils::GetBBox(aFrame, SVGUtils::eBBoxIncludeFillGeometry |
-                                        SVGUtils::eBBoxIncludeStroke);
+      const uint32_t flags = SVGUtils::eBBoxIncludeFillGeometry |
+                             SVGUtils::eBBoxIncludeStroke |
+                             (bool(aMayHaveCyclicDependency)
+                                  ? SVGUtils::eAvoidCycleIfNonScalingStroke
+                                  : 0);
+      gfxRect bbox = SVGUtils::GetBBox(aFrame, flags);
       r = nsLayoutUtils::RoundGfxRectToAppRect(bbox, AppUnitsPerCSSPixel());
       break;
     }

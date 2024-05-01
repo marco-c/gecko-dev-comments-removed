@@ -2913,7 +2913,13 @@ class nsLayoutUtils {
 
   
   
-  static nsRect ComputeSVGReferenceRect(nsIFrame*, StyleGeometryBox);
+  
+  
+  enum class MayHaveNonScalingStrokeCyclicDependency : bool { No, Yes };
+  static nsRect ComputeSVGReferenceRect(
+      nsIFrame*, StyleGeometryBox,
+      MayHaveNonScalingStrokeCyclicDependency =
+          MayHaveNonScalingStrokeCyclicDependency::No);
 
   
   

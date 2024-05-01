@@ -346,6 +346,12 @@ class SVGUtils final {
     
     
     eDoNotClipToBBoxOfContentInsideClipPath = 1 << 10,
+    
+    
+    
+    
+    
+    eAvoidCycleIfNonScalingStroke = 1 << 11,
   };
   
 

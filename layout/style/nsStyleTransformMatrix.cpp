@@ -101,7 +101,8 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
       
       
       nsRect strokeBox = nsLayoutUtils::ComputeSVGReferenceRect(
-          const_cast<nsIFrame*>(aFrame), StyleGeometryBox::StrokeBox);
+          const_cast<nsIFrame*>(aFrame), StyleGeometryBox::StrokeBox,
+          nsLayoutUtils::MayHaveNonScalingStrokeCyclicDependency::Yes);
       
       
       return nsRect{strokeBox.x - aFrame->GetPosition().x,
