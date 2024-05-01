@@ -437,7 +437,9 @@ class HttpChannelChild final : public PHttpChannelChild,
                       const ResourceTimingStructArgs& timing);
   void Redirect3Complete();
   void DeleteSelf();
-  void DoNotifyListener();
+  
+  
+  void DoNotifyListener(bool aUseEventQueue = true);
   void ContinueDoNotifyListener();
   void OnAfterLastPart(const nsresult& aStatus);
   void MaybeConnectToSocketProcess();
