@@ -1694,36 +1694,6 @@ constexpr static bool IsRefPtrMozPromise = false;
 template <typename T, typename U, bool B>
 constexpr static bool IsRefPtrMozPromise<RefPtr<MozPromise<T, U, B>>> = true;
 
-
-
-
-
-
-
-
-struct AllowInvokeAsyncFunctionLVRef {};
-
-
-
-
-
-template <typename Function>
-static auto InvokeAsync(nsISerialEventTarget* aTarget, const char* aCallerName,
-                        AllowInvokeAsyncFunctionLVRef, Function&& aFunction)
-    -> decltype(aFunction()) {
-  static_assert(IsRefPtrMozPromise<decltype(aFunction())>,
-                "Function object must return RefPtr<MozPromise>");
-  MOZ_ASSERT(aTarget);
-  typedef RemoveSmartPointer<decltype(aFunction())> PromiseType;
-  typedef detail::ProxyFunctionRunnable<Function, PromiseType>
-      ProxyRunnableType;
-
-  auto p = MakeRefPtr<typename PromiseType::Private>(aCallerName);
-  auto r = MakeRefPtr<ProxyRunnableType>(p, std::forward<Function>(aFunction));
-  aTarget->Dispatch(r.forget());
-  return p;
-}
-
 }  
 
 
@@ -1734,9 +1704,18 @@ static auto InvokeAsync(nsISerialEventTarget* aTarget, const char* aCallerName,
   static_assert(!std::is_lvalue_reference_v<Function>,
                 "Function object must not be passed by lvalue-ref (to avoid "
                 "unplanned copies); Consider move()ing the object.");
-  return detail::InvokeAsync(aTarget, aCallerName,
-                             detail::AllowInvokeAsyncFunctionLVRef(),
-                             std::forward<Function>(aFunction));
+
+  static_assert(detail::IsRefPtrMozPromise<decltype(aFunction())>,
+                "Function object must return RefPtr<MozPromise>");
+  MOZ_ASSERT(aTarget);
+  typedef RemoveSmartPointer<decltype(aFunction())> PromiseType;
+  typedef detail::ProxyFunctionRunnable<Function, PromiseType>
+      ProxyRunnableType;
+
+  auto p = MakeRefPtr<typename PromiseType::Private>(aCallerName);
+  auto r = MakeRefPtr<ProxyRunnableType>(p, std::forward<Function>(aFunction));
+  aTarget->Dispatch(r.forget());
+  return p;
 }
 
 #  undef PROMISE_LOG
