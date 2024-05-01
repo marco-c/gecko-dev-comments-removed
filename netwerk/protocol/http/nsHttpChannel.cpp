@@ -888,14 +888,6 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
         Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::NotSent);
   }
 
-  
-  
-  
-  
-  if (mRaceCacheWithNetwork && mCachedContentIsValid) {
-    Unused << ReadFromCache(true);
-  }
-
   return TriggerNetwork();
 }
 
@@ -1000,11 +992,28 @@ nsresult nsHttpChannel::DoConnectActual(
   LOG(("nsHttpChannel::DoConnectActual [this=%p, aTransWithStickyConn=%p]\n",
        this, aTransWithStickyConn));
 
-  nsresult rv = SetupTransaction();
+  nsresult rv = SetupChannelForTransaction();
   if (NS_FAILED(rv)) {
     return rv;
   }
 
+  gHttpHandler->OnDispatchingTransaction(this);
+  
+
+  RefPtr<HttpTransactionShell> trans(aTransWithStickyConn);
+  return CallOrWaitForResume([trans{std::move(trans)}](auto* self) {
+    return self->DispatchTransaction(trans);
+  });
+}
+
+nsresult nsHttpChannel::DispatchTransaction(
+    HttpTransactionShell* aTransWithStickyConn) {
+  LOG(("nsHttpChannel::DispatchTransaction [this=%p, aTransWithStickyConn=%p]",
+       this, aTransWithStickyConn));
+  nsresult rv = InitTransaction();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
   if (aTransWithStickyConn) {
     rv = gHttpHandler->InitiateTransactionWithStickyConn(
         mTransaction, mPriority, aTransWithStickyConn);
@@ -1019,6 +1028,17 @@ nsresult nsHttpChannel::DoConnectActual(
   rv = mTransaction->AsyncRead(this, getter_AddRefs(mTransactionPump));
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mRaceCacheWithNetwork && mCachedContentIsValid) {
+    Unused << ReadFromCache(true);
   }
 
   uint32_t suspendCount = mSuspendCount;
@@ -1190,10 +1210,11 @@ void nsHttpChannel::HandleAsyncNotModified() {
   if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, mStatus);
 }
 
-nsresult nsHttpChannel::SetupTransaction() {
-  LOG(("nsHttpChannel::SetupTransaction [this=%p, cos=%lu, inc=%d prio=%d]\n",
-       this, mClassOfService.Flags(), mClassOfService.Incremental(),
-       mPriority));
+nsresult nsHttpChannel::SetupChannelForTransaction() {
+  LOG((
+      "nsHttpChannel::SetupChannelForTransaction [this=%p, cos=%lu, inc=%d "
+      "prio=%d]\n",
+      this, mClassOfService.Flags(), mClassOfService.Incremental(), mPriority));
 
   NS_ENSURE_TRUE(!mTransaction, NS_ERROR_ALREADY_INITIALIZED);
 
@@ -1370,6 +1391,30 @@ nsresult nsHttpChannel::SetupTransaction() {
   }
 
   
+  if (mLoadFlags & LOAD_ANONYMOUS) mCaps |= NS_HTTP_LOAD_ANONYMOUS;
+
+  if (LoadTimingEnabled()) mCaps |= NS_HTTP_TIMING_ENABLED;
+
+  if (mUpgradeProtocolCallback) {
+    rv = mRequestHead.SetHeader(nsHttp::Upgrade, mUpgradeProtocol, false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    rv = mRequestHead.SetHeaderOnce(nsHttp::Connection, nsHttp::Upgrade.get(),
+                                    true);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    mCaps |= NS_HTTP_STICKY_CONNECTION;
+    mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
+  }
+
+  if (mWebTransportSessionEventListener) {
+    mCaps |= NS_HTTP_STICKY_CONNECTION;
+  }
+
+  return NS_OK;
+}
+
+nsresult nsHttpChannel::InitTransaction() {
+  nsresult rv;
+  
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   NS_NewNotificationCallbacksAggregation(mCallbacks, mLoadGroup,
                                          getter_AddRefs(callbacks));
@@ -1418,25 +1463,6 @@ nsresult nsHttpChannel::SetupTransaction() {
   
   
   gHttpHandler->AddHttpChannel(mChannelId, ToSupports(this));
-
-  
-  if (mLoadFlags & LOAD_ANONYMOUS) mCaps |= NS_HTTP_LOAD_ANONYMOUS;
-
-  if (LoadTimingEnabled()) mCaps |= NS_HTTP_TIMING_ENABLED;
-
-  if (mUpgradeProtocolCallback) {
-    rv = mRequestHead.SetHeader(nsHttp::Upgrade, mUpgradeProtocol, false);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    rv = mRequestHead.SetHeaderOnce(nsHttp::Connection, nsHttp::Upgrade.get(),
-                                    true);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    mCaps |= NS_HTTP_STICKY_CONNECTION;
-    mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
-  }
-
-  if (mWebTransportSessionEventListener) {
-    mCaps |= NS_HTTP_STICKY_CONNECTION;
-  }
 
   nsCOMPtr<nsIHttpPushListener> pushListener;
   NS_QueryNotificationCallbacks(mCallbacks, mLoadGroup,
