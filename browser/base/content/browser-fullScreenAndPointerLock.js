@@ -275,11 +275,24 @@ var PointerlockFsWarning = {
 };
 
 var PointerLock = {
+  _isActive: false,
+
+  
+
+
+
+  get isActive() {
+    return this._isActive;
+  },
+
   entered(originNoSuffix) {
+    this._isActive = true;
+    Services.obs.notifyObservers(null, "pointer-lock-entered");
     PointerlockFsWarning.showPointerLock(originNoSuffix);
   },
 
   exited() {
+    this._isActive = false;
     PointerlockFsWarning.close("pointerlock-warning");
   },
 };
