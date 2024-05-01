@@ -659,6 +659,10 @@ class MacArtifactJob(ArtifactJob):
             
             "XUL",
         ],
+        "Contents/Frameworks",
+        [
+            "ChannelPrefs.framework/Versions/A/ChannelPrefs",
+        ],
     )
 
     @property

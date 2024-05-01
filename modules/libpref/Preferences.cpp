@@ -112,6 +112,10 @@
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif  
 
+#ifdef MOZ_WIDGET_COCOA
+#  include "ChannelPrefsUtil.h"
+#endif
+
 using namespace mozilla;
 
 using ipc::FileDescriptor;
@@ -4843,6 +4847,27 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
   if (NS_FAILED(rv)) {
     NS_WARNING("Error parsing application default preferences.");
   }
+
+#ifdef MOZ_WIDGET_COCOA
+  
+  
+  
+  
+  
+  nsAutoCString appUpdatePrefKey;
+  appUpdatePrefKey.Assign(kChannelPref);
+  nsAutoCString appUpdatePrefValue;
+  PrefValue channelPrefValue;
+  channelPrefValue.mStringVal = MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL);
+  if (ChannelPrefsUtil::GetChannelPrefValue(appUpdatePrefValue)) {
+    channelPrefValue.mStringVal = appUpdatePrefValue.get();
+  }
+  pref_SetPref(appUpdatePrefKey, PrefType::String, PrefValueKind::Default,
+               channelPrefValue,
+                false,
+                true,
+                true);
+#endif
 
   
   

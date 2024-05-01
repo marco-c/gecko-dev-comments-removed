@@ -1,0 +1,16 @@
+
+
+
+
+
+#ifndef ChannelPrefsUtil_h_
+#define ChannelPrefsUtil_h_
+
+#include "Units.h"
+
+class ChannelPrefsUtil {
+ public:
+  static bool GetChannelPrefValue(nsACString& aValue);
+};
+
+#endif  
