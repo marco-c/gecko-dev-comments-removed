@@ -1,3 +1,5 @@
+
+
 function getType(a) {
   if (a === null || a === undefined) {
     return "null";

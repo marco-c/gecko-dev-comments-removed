@@ -56,6 +56,8 @@ add_task(async function testSourceTreeNamesForWebExtensions() {
   });
 
   await ToolboxTask.spawn(null, async () => {
+    
+    
     try {
       
       

@@ -1,6 +1,8 @@
 let testingInterface;
 
 
+
+
 function test_deprecatedInterface() {
   info("Testing DeprecatedTestingInterface report");
   return new Promise(resolve => {
@@ -34,7 +36,7 @@ function test_deprecatedInterface() {
           .replace("worker_deprecated.js", "common_deprecated.js"),
         "We have a sourceFile"
       );
-      is(report.body.lineNumber, 48, "We have a lineNumber");
+      is(report.body.lineNumber, 50, "We have a lineNumber");
       is(report.body.columnNumber, 24, "We have a columnNumber");
 
       obs.disconnect();
@@ -86,7 +88,7 @@ function test_deprecatedMethod() {
           .replace("worker_deprecated.js", "common_deprecated.js"),
         "We have a sourceFile"
       );
-      is(report.body.lineNumber, 100, "We have a lineNumber");
+      is(report.body.lineNumber, 102, "We have a lineNumber");
       is(report.body.columnNumber, 22, "We have a columnNumber");
 
       obs.disconnect();
@@ -167,7 +169,7 @@ function test_deprecatedAttribute() {
           .replace("worker_deprecated.js", "common_deprecated.js"),
         "We have a sourceFile"
       );
-      is(report.body.lineNumber, 181, "We have a lineNumber");
+      is(report.body.lineNumber, 183, "We have a lineNumber");
       is(report.body.columnNumber, 8, "We have a columnNumber");
 
       obs.disconnect();

@@ -1,3 +1,5 @@
+
+
 self.importScripts("eventsource_worker_helper.js");
 
 self.addEventListener("fetch", function (event) {

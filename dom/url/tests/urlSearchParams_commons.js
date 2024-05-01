@@ -1,5 +1,9 @@
 
 
+
+
+
+
 function testSimpleURLSearchParams() {
   var u = new URLSearchParams();
   ok(u, "URLSearchParams created");

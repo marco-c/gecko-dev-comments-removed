@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 function ok(a, msg) {
   dump("OK: " + !!a + "  =>  " + a + " " + msg + "\n");
   postMessage({ type: "status", status: !!a, msg: a + ": " + msg });

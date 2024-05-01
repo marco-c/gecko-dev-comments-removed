@@ -32,6 +32,8 @@ AntiTracking._createTask({
   allowList: false,
   callback: async _ => {
     document.cookie = "name=value";
+    
+    
     ok(document.cookie != "", "Nothing is blocked");
 
     

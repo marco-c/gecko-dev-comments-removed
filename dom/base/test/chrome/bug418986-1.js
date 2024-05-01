@@ -1,5 +1,8 @@
 
 
+
+
+
 var test = function (isContent) {
   SimpleTest.waitForExplicitFinish();
 

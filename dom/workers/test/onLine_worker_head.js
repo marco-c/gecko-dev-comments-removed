@@ -3,6 +3,8 @@
 
 
 
+
+
 function info(text) {
   dump("Test for Bug 925437: worker: " + text + "\n");
 }

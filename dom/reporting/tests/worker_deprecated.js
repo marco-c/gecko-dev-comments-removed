@@ -1,6 +1,7 @@
 
 
 
+
 function ok(a, msg) {
   postMessage({ type: "check", check: !!a, msg });
 }

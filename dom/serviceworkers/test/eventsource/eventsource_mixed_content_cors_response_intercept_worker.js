@@ -1,3 +1,5 @@
+
+
 var prefix = "http://example.com/tests/dom/serviceworkers/test/eventsource/";
 
 self.importScripts("eventsource_worker_helper.js");

@@ -103,6 +103,10 @@ async function testCopyPaste(isPrivate) {
     document.execCommand("paste");
     return pastePromise;
   });
+
+  
+  
+  
   ok(readStr === Ipsum, "Read what we pasted");
 
   if (isPrivate) {

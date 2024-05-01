@@ -4,6 +4,8 @@
 
 
 
+
+
 function advance_clock(milliseconds) {
   SpecialPowers.DOMWindowUtils.advanceTimeAndRefresh(milliseconds);
 }

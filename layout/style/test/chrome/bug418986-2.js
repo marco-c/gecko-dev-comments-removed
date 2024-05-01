@@ -1,5 +1,7 @@
 
 
+
+
 const is_chrome_window = window.location.protocol === "chrome:";
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";

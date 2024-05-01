@@ -1,3 +1,5 @@
+
+
 function info(message) {
   dump("INFO: " + message + "\n");
 }

@@ -27,6 +27,8 @@
 
 
 
+
+
 let wasmGlobalEntry = {
   name: "WebAssembly",
   insecureContext: true,

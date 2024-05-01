@@ -82,7 +82,11 @@ function checkTelemetryEvent(expectedEvent, objectName = "application") {
   
   is(events.length, 1, "There was only 1 event logged");
   const [event] = events;
-  ok(event.session_id > 0, "There is a valid session_id in the event");
+  Assert.greater(
+    Number(event.session_id),
+    0,
+    "There is a valid session_id in the event"
+  );
 
   
   Assert.deepEqual(event, { ...expectedEvent, session_id: event.session_id });

@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 function ok(a, msg) {
   postMessage(JSON.stringify({ type: "status", what: !!a, msg }));
 }

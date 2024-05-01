@@ -5,6 +5,8 @@
 
 
 
+
+
 var inWorker = false;
 try {
   inWorker = !(self instanceof Window);

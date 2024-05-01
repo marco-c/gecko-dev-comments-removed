@@ -40,5 +40,6 @@ function getViewportInfo(aDisplayWidth, aDisplayHeight) {
 }
 
 function fuzzeq(a, b, msg) {
+  
   ok(Math.abs(a - b) < 1e-6, msg);
 }
