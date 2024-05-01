@@ -39,6 +39,11 @@ public class FirstRunProfileDateMeasurementTest {
         doReturn(1491487779305L).when(measurement).now();
 
         
+        
+        configuration.getSharedPreferences().edit().clear().apply();
+        measurement.ensureValueExists();
+
+        
         assertEquals(17262L, measurement.flush());
     }
 
