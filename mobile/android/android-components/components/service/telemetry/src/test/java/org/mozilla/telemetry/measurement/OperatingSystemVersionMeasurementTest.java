@@ -25,7 +25,7 @@ public class OperatingSystemVersionMeasurementTest {
 
         final String version = (String) value;
         assertFalse(TextUtils.isEmpty(version));
-        assertEquals("16", version); 
+        assertEquals("27", version); 
     }
 
     @Test
