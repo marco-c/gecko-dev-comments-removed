@@ -825,6 +825,10 @@ const run = async (operationName, context, builder, resources, buildFunc) => {
 
 
 const testWebNNOperation = (operationName, buildFunc, deviceType = 'cpu') => {
+  test(() => assert_not_equals(navigator.ml, undefined, "ml property is defined on navigator"));
+  if (navigator.ml === undefined) {
+    return;
+  }
   let operationNameArray;
   if (typeof operationName === 'string') {
     operationNameArray = [operationName];
