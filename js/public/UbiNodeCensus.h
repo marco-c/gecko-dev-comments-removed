@@ -7,6 +7,7 @@
 #ifndef js_UbiNodeCensus_h
 #define js_UbiNodeCensus_h
 
+#include "js/GCVector.h"
 #include "js/UbiNode.h"
 #include "js/UbiNodeBreadthFirst.h"
 
@@ -222,8 +223,9 @@ using CensusTraversal = BreadthFirst<CensusHandler>;
 
 
 
-JS_PUBLIC_API CountTypePtr ParseBreakdown(JSContext* cx,
-                                          HandleValue breakdownValue);
+JS_PUBLIC_API CountTypePtr
+ParseBreakdown(JSContext* cx, HandleValue breakdownValue,
+               MutableHandle<JS::GCVector<JSLinearString*>> seen);
 
 }  
 }  
