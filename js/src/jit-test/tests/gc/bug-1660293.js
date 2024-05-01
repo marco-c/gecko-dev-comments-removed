@@ -1,5 +1,3 @@
-
-
 try {
 function varying(mapColor, keyColor) {
   enqueueMark(`set-color-${keyColor}`);

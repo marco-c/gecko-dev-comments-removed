@@ -1,5 +1,3 @@
-
-
 lfLogBuffer = `this[''] = function() {}`;
 loadFile(lfLogBuffer);
 loadFile(lfLogBuffer);

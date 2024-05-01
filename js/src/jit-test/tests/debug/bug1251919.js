@@ -1,6 +1,4 @@
 
-
-
 fullcompartmentchecks(true);
 
 var dbg = new Debugger;

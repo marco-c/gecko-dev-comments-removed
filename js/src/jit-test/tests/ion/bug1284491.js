@@ -1,5 +1,3 @@
-
-
 loadFile(`
   function SwitchTest(){
     switch(value) {

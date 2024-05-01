@@ -1,4 +1,3 @@
-
 var x = [];
 function f() {
   Object.entries(x);

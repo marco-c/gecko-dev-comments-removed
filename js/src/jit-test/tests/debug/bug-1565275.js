@@ -1,5 +1,3 @@
-
-
 Object.defineProperty(this, "fuzzutils", {
     value: {
         evaluate: function() {},

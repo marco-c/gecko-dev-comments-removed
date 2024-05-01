@@ -1,5 +1,3 @@
-
-
 var lfLogBuffer = `
 evalInWorker(\`
         try { oomAfterAllocations(2); } catch(e) {}

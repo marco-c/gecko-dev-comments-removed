@@ -1,5 +1,3 @@
-
-
 loadFile(`
 try {
   Array.prototype.splice.call({ get length() {

@@ -1,5 +1,3 @@
-
-
 gczeal(7);
 for (let i = 0; i < 9999; ++i) {
     undefined + "y";

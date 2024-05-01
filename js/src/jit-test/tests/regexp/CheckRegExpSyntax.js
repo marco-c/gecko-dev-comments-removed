@@ -1,5 +1,3 @@
-
-
 load(libdir + "asserts.js");
 
 assertEq(checkRegExpSyntax("correct[reg]exp"), undefined);

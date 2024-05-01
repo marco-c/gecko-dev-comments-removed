@@ -1,5 +1,3 @@
-
-
 loadFile("");
 loadFile("");
 loadFile("Array.prototype.splice.call(1)");

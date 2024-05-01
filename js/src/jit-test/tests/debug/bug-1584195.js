@@ -2,7 +2,6 @@
 
 
 
-
 try {
   evaluate(`
     var g9 = newGlobal({newCompartment: true});

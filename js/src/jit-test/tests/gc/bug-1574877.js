@@ -1,5 +1,3 @@
-
-
 function parseModule(source) {
     offThreadCompileModuleToStencil(source);
     var stencil = finishOffThreadStencil();

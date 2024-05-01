@@ -1,5 +1,3 @@
-
-
 function loadFile(lfVarx) {
   oomTest(() => eval(lfVarx));
 }

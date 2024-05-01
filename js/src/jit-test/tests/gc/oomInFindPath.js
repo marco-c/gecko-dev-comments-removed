@@ -1,5 +1,3 @@
-
-
 var o = { w: { x: { y: { z: {} } } } };
 oomTest(() => findPath(o, o.w.x.y.z));
 

@@ -1,4 +1,3 @@
-
 stackTest(new Function(`
     var g = newGlobal();
     var dbg = new Debugger(g);

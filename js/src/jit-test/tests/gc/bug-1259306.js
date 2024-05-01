@@ -1,5 +1,3 @@
-
-
 let runCount = 0;
 oomTest(() => {
     if (runCount < 5) {

@@ -1,3 +1,1 @@
-
-
 oomTest(newGlobal);

@@ -1,4 +1,3 @@
-
 a = [];
 minorgc();
 Object.defineProperty(a, 12, {}).push(1);

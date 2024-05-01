@@ -1,5 +1,3 @@
-
-
 oomTest(function() {
     eval("\
 	function g() {\

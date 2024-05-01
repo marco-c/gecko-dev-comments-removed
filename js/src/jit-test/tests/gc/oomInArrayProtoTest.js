@@ -1,5 +1,3 @@
-
-
 function arrayProtoOutOfRange() {
     function f(obj) {
         return typeof obj[15];

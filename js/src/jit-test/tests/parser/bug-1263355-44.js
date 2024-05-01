@@ -1,6 +1,4 @@
 
-
-
 "use strict";
 enableGeckoProfiling();
 oomTest(function() {

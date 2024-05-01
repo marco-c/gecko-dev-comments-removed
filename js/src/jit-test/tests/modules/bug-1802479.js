@@ -1,5 +1,3 @@
-
-
 function test(lfVarx) {
     try {
         oomTest(function() {

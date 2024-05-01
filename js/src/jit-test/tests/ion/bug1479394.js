@@ -1,4 +1,3 @@
-
 var dbgGlobal = newGlobal({newCompartment: true});
 var dbg = new dbgGlobal.Debugger(this);
 function f1() {

@@ -1,5 +1,3 @@
-
-
 function f() {
   
   return [52, 10, 0, 0];

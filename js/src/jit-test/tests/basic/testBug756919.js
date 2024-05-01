@@ -1,4 +1,3 @@
-
 function test(x) {
     var upvar = "";
     function f() { upvar += ""; }

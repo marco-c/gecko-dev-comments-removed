@@ -1,5 +1,3 @@
-
-
 oomTest(function() {
   eval(`
     var argObj = function () { return arguments }()

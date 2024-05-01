@@ -1,5 +1,3 @@
-
-
 evaluate(`
   x = evalcx("lazy");
   oomTest(function () {

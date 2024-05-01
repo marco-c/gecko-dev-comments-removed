@@ -1,5 +1,3 @@
-
-
 load(libdir + "asserts.js");
 
 let stencil = compileToStencil('314;');

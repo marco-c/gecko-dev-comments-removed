@@ -1,5 +1,3 @@
-
-
 let i = 10000;
 oomTest(() => {
   let arr = [];

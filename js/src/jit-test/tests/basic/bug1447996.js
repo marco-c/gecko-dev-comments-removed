@@ -1,5 +1,3 @@
-
-
 var x = 0;
 function f() {
     var s = "abcdef(((((((a|b)a|b)a|b)a|b)a|b)a|b)a|b)" + x;

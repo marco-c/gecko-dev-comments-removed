@@ -1,5 +1,3 @@
-
-
 oomTest(() => {
   gcparam('parallelMarkingEnabled', false);
   assertEq(gcparam('parallelMarkingEnabled'), 0);

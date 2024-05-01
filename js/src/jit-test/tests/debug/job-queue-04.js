@@ -2,7 +2,6 @@
 
 
 
-
 Promise.resolve(42).then(() => {});
 
 var g = newGlobal({ newCompartment: true });

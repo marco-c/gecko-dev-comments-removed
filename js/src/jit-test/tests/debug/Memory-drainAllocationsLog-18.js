@@ -1,7 +1,5 @@
 
 
-
-
 gczeal(0);
 
 const root = newGlobal({newCompartment: true});

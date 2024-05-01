@@ -1,5 +1,3 @@
-
-
 function foo() {}
 function foooooooooooooooooooooooooooooooo() {}
 function fn(s) {

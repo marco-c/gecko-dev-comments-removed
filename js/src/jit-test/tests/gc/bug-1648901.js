@@ -1,5 +1,3 @@
-
-
 gczeal(15);
 enableShellAllocationMetadataBuilder();
 var registry = new FinalizationRegistry(x => 0);

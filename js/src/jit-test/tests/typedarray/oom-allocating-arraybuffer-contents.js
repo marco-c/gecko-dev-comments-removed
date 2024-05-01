@@ -1,7 +1,5 @@
 
 
-
-
 var AB = ArrayBuffer;
 
 function f()

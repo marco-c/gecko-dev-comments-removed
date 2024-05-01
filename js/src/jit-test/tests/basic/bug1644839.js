@@ -1,4 +1,3 @@
-
 var code = `
   (\`\${key}: \${args[1]?.toString()}\`)
 `;

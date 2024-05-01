@@ -1,8 +1,6 @@
 
 
 
-
-
 gczeal(0);
 
 function testCompacting(zoneCount, objectCount, sliceCount)

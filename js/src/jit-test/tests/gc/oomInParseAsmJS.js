@@ -1,5 +1,3 @@
-
-
 function parseAsmJS() {
     eval(`function m(stdlib)
           {

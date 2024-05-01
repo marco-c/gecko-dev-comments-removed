@@ -1,5 +1,3 @@
-
-
 function allocateSomeStuff() {
   return {a: "a fish", b: [1, 2, 3]};
 }

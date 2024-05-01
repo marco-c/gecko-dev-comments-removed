@@ -1,5 +1,3 @@
-
-
 var lfcode = new Array();
 function k(a, f_arg, b, c) {
     for (var i = 0; i < 5; ++i) {

@@ -1,7 +1,5 @@
 
 
-
-
 gczeal(2,21);
 
 var gi = newGlobal();

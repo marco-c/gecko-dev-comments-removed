@@ -1,7 +1,5 @@
 
 
-
-
 const sa =
 `export default 20;
  export let a = 22;

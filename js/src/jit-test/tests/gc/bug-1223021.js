@@ -1,5 +1,3 @@
-
-
 function f() {
     return this === null;
 };

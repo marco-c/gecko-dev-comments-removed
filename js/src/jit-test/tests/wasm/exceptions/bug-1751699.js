@@ -1,5 +1,3 @@
-
-
 oomTest(() => {
 	wasmEvalText(`
       (import "" "" (func $d))

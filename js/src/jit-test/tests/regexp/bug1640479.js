@@ -1,5 +1,3 @@
-
-
 var failures = 0;
 var i = 0;
 

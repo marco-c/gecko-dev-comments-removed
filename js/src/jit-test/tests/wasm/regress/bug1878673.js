@@ -1,7 +1,5 @@
 
 
-
-
 oomTest(function () {
     let x = wasmTextToBinary(`(module
         (memory 1 1)

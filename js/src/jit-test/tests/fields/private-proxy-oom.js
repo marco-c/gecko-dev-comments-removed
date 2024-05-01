@@ -1,6 +1,5 @@
 
 
-
 function assertThrowsTypeError(f) {
   assertThrowsInstanceOf(f, TypeError);
 }

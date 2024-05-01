@@ -1,5 +1,3 @@
-
-
 let lfPreamble = `
     value:{
 `;

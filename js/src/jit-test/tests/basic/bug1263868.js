@@ -1,4 +1,3 @@
-
 function g(f, params) {
     entryPoints(params);
 }

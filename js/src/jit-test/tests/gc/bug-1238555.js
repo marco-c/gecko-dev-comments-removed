@@ -1,5 +1,3 @@
-
-
 oomTest(
   function x() {
     try {

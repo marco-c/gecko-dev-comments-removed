@@ -1,5 +1,3 @@
-
-
 oomTest(() => {
   new AggregateError([]);
 });

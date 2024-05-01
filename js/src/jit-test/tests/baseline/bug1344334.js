@@ -1,5 +1,3 @@
-
-
 function f(s) {
     s + "x";
     s.indexOf("y") === 0;

@@ -1,4 +1,3 @@
-
 oomTest(function () {
     offThreadCompileModuleToStencil('');
     var stencil = finishOffThreadStencil();

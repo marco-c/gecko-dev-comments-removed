@@ -1,5 +1,3 @@
-
-
 var patchSet = new Set();
 
 function checkSet(str) {

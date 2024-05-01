@@ -1,5 +1,3 @@
-
-
 var g = newGlobal();
 
 var i = 0;

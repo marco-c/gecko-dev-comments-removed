@@ -1,5 +1,3 @@
-
-
 function oomTestEval(lfVarx) {
   oomTest(() => eval(lfVarx));
 }

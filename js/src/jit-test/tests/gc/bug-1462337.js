@@ -1,5 +1,3 @@
-
-
 oomTest(function() {
     grayRoot().x = Object.create((obj[name]++));
 });

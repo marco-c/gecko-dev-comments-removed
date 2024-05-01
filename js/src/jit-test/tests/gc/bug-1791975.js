@@ -1,5 +1,3 @@
-
-
 gczeal(10, 10);
 try {
   throw 0;

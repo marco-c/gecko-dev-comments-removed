@@ -1,4 +1,3 @@
-
 oomTest(() => {
     let x = 0;
     try {

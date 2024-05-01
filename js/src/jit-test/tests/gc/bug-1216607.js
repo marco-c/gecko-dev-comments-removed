@@ -1,5 +1,3 @@
-
-
 enableGeckoProfilingWithSlowAssertions();
 try {
 (function() {

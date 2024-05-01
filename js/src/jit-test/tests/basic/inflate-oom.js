@@ -1,4 +1,3 @@
-
 function test() {
     function foo() {
         return 1;

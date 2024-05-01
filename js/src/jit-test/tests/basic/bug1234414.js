@@ -1,5 +1,3 @@
-
-
 oomTest(() => {
     var max = 400;
     function f(b) {

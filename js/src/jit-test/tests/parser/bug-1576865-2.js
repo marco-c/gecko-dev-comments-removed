@@ -1,4 +1,3 @@
-
 var sourceText = `
   function Outer() {
     function LazyFunction() {

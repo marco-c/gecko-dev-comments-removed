@@ -1,5 +1,3 @@
-
-
 var lfGlobal = newGlobal();
 lfGlobal.evaluate(`
     for (var i = 0; i < 600; i++)

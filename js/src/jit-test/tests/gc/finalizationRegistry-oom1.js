@@ -1,6 +1,4 @@
 
-
-
 new FinalizationRegistry(x => 0);
 
 oomTest(() => {

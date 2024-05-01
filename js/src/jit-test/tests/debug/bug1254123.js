@@ -1,5 +1,3 @@
-
-
 evaluate(`
 function ERROR(msg) {
   throw new Error("boom");
