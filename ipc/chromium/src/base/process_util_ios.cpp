@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#include "base/process_util.h"
+
+namespace base {
+
+Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
+                                  LaunchOptions&& options,
+                                  ProcessHandle* process_handle) {
+  return Err(LaunchError("LaunchApp is not supported on iOS"));
+}
+
+}  
