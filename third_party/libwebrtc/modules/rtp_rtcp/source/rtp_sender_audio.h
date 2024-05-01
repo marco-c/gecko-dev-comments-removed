@@ -61,6 +61,9 @@ class RTPSenderAudio {
     
     
     absl::optional<int> audio_level_dbov;
+
+    
+    rtc::ArrayView<const uint32_t> csrcs;
   };
   bool SendAudio(const RtpAudioFrame& frame);
 
