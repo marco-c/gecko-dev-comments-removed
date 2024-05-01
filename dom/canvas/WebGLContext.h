@@ -969,7 +969,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   
 
   EnumeratedArray<WebGLExtensionID, std::unique_ptr<WebGLExtensionBase>,
-                  WebGLExtensionID::Max>
+                  size_t(WebGLExtensionID::Max)>
       mExtensions;
 
  public:
