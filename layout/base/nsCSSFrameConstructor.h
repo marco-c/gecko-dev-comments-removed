@@ -297,11 +297,38 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                   nsContainerFrame* aParentFrame,
                                   bool aIsFluid = true);
 
-  void SetNextPageContentFramePageName(const nsAtom* aAtom) {
+  
+
+
+
+
+
+
+
+
+
+
+  void SetNextPageContentFramePageName(const nsAtom* aPageName) {
+    MOZ_ASSERT(aPageName, "New page name should never be null");
     MOZ_ASSERT(!mNextPageContentFramePageName,
                "PageContentFrame page name was already set");
-    mNextPageContentFramePageName = aAtom;
+    mNextPageContentFramePageName = aPageName;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void MaybeSetNextPageContentFramePageName(const nsIFrame* aFrame);
 
   
   nsresult ReplicateFixedFrames(nsPageContentFrame* aParentFrame);

@@ -3153,9 +3153,12 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
         
         
         
-        PushTruncatedLine(aState, line, &keepGoing);
+        
+        
         PresShell()->FrameConstructor()->SetNextPageContentFramePageName(
             nextPageName ? nextPageName : GetAutoPageValue());
+        PushTruncatedLine(aState, line, &keepGoing,
+                          ComputeNewPageNameIfNeeded::No);
       } else {
         
         
@@ -4730,11 +4733,25 @@ void nsBlockFrame::SetBreakBeforeStatusBeforeLine(BlockReflowState& aState,
   *aKeepReflowGoing = false;
 }
 
-void nsBlockFrame::PushTruncatedLine(BlockReflowState& aState,
-                                     LineIterator aLine,
-                                     bool* aKeepReflowGoing) {
+void nsBlockFrame::PushTruncatedLine(
+    BlockReflowState& aState, LineIterator aLine, bool* aKeepReflowGoing,
+    ComputeNewPageNameIfNeeded aComputeNewPageName) {
   PushLines(aState, aLine.prev());
   *aKeepReflowGoing = false;
+
+  if (aComputeNewPageName == ComputeNewPageNameIfNeeded::Yes) {
+    
+    
+    
+    const WritingMode wm = GetWritingMode();
+    const bool canBreakForPageNames =
+        aState.mReflowInput.mFlags.mCanHaveClassABreakpoints &&
+        !PresShell()->GetRootFrame()->GetWritingMode().IsOrthogonalTo(wm);
+    if (canBreakForPageNames) {
+      PresShell()->FrameConstructor()->MaybeSetNextPageContentFramePageName(
+          aLine->mFirstChild);
+    }
+  }
   aState.mReflowStatus.SetIncomplete();
 }
 
