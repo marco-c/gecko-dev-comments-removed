@@ -392,7 +392,7 @@ var PlacesCommandHook = {
 
   async bookmarkPage() {
     let browser = gBrowser.selectedBrowser;
-    let url = URL.fromURI(browser.currentURI);
+    let url = URL.fromURI(Services.io.createExposableURI(browser.currentURI));
     let info = await PlacesUtils.bookmarks.fetch({ url });
     let isNewBookmark = !info;
     let showEditUI = !isNewBookmark || StarUI.showForNewBookmarks;
@@ -493,6 +493,21 @@ var PlacesCommandHook = {
 
 
 
+
+  async bookmarkTabs(tabs) {
+    tabs = tabs ?? gBrowser.visibleTabs.filter(tab => !tab.pinned);
+    let pages = PlacesCommandHook.getUniquePages(tabs).map(
+      
+      page =>
+        Object.assign(page, { uri: Services.io.createExposableURI(page.uri) })
+    );
+    await PlacesUIUtils.showBookmarkPagesDialog(pages);
+  },
+
+  
+
+
+
   getUniquePages(tabs) {
     let uniquePages = {};
     let URIs = [];
@@ -508,24 +523,6 @@ var PlacesCommandHook = {
       }
     });
     return URIs;
-  },
-
-  
-
-
-
-
-  get uniqueCurrentPages() {
-    let visibleUnpinnedTabs = gBrowser.visibleTabs.filter(tab => !tab.pinned);
-    return this.getUniquePages(visibleUnpinnedTabs);
-  },
-
-  
-
-
-
-  get uniqueSelectedPages() {
-    return this.getUniquePages(gBrowser.selectedTabs);
   },
 
   
