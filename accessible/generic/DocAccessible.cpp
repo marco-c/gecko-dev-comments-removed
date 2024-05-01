@@ -733,9 +733,26 @@ std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
 NS_IMPL_NSIDOCUMENTOBSERVER_CORE_STUB(DocAccessible)
 NS_IMPL_NSIDOCUMENTOBSERVER_LOAD_STUB(DocAccessible)
 
+
+
+
+
+
+
+
+
+
+
+
+static bool sIsAttrElementChanging = false;
+
 void DocAccessible::AttributeWillChange(dom::Element* aElement,
                                         int32_t aNameSpaceID,
                                         nsAtom* aAttribute, int32_t aModType) {
+  if (sIsAttrElementChanging) {
+    
+    return;
+  }
   LocalAccessible* accessible = GetAccessible(aElement);
   if (!accessible) {
     if (aElement != mContent) return;
@@ -748,6 +765,7 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
   
   if (aModType != dom::MutationEvent_Binding::ADDITION) {
     RemoveDependentIDsFor(accessible, aAttribute);
+    RemoveDependentElementsFor(accessible, aAttribute);
   }
 
   if (aAttribute == nsGkAtoms::id) {
@@ -782,6 +800,10 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
                                      int32_t aNameSpaceID, nsAtom* aAttribute,
                                      int32_t aModType,
                                      const nsAttrValue* aOldValue) {
+  if (sIsAttrElementChanging) {
+    
+    return;
+  }
   NS_ASSERTION(!IsDefunct(),
                "Attribute changed called on defunct document accessible!");
 
@@ -855,6 +877,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
   if (aModType == dom::MutationEvent_Binding::MODIFICATION ||
       aModType == dom::MutationEvent_Binding::ADDITION) {
     AddDependentIDsFor(accessible, aAttribute);
+    AddDependentElementsFor(accessible, aAttribute);
   }
 }
 
@@ -2905,4 +2928,23 @@ void DocAccessible::MaybeHandleChangeToHiddenNameOrDescription(
                        dependentAcc);
     }
   }
+}
+
+void DocAccessible::AttrElementWillChange(dom::Element* aElement,
+                                          nsAtom* aAttr) {
+  MOZ_ASSERT(!sIsAttrElementChanging);
+  AttributeWillChange(aElement, kNameSpaceID_None, aAttr,
+                      dom::MutationEvent_Binding::MODIFICATION);
+  
+  
+  sIsAttrElementChanging = true;
+}
+
+void DocAccessible::AttrElementChanged(dom::Element* aElement, nsAtom* aAttr) {
+  MOZ_ASSERT(sIsAttrElementChanging);
+  
+  
+  sIsAttrElementChanging = false;
+  AttributeChanged(aElement, kNameSpaceID_None, aAttr,
+                   dom::MutationEvent_Binding::MODIFICATION, nullptr);
 }

@@ -246,6 +246,19 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   
 
+
+
+  void NotifyAttrElementWillChange(mozilla::dom::Element* aElement,
+                                   nsAtom* aAttr);
+
+  
+
+
+
+  void NotifyAttrElementChanged(mozilla::dom::Element* aElement, nsAtom* aAttr);
+
+  
+
   
 
 
