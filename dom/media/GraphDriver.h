@@ -657,7 +657,8 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   void Stop();
   
 
-  bool EnsureFallbackDriver();
+
+  Result<bool, FallbackDriverState> TryStartingFallbackDriver();
   
 
   void FallbackToSystemClockDriver();
