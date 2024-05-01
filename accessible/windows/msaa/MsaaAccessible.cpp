@@ -608,7 +608,9 @@ MsaaAccessible::get_accChildCount(long __RPC_FAR* pcountChildren) {
 
   if (!mAcc) return CO_E_OBJNOTCONNECTED;
 
-  if (Compatibility::IsA11ySuppressedForClipboardCopy() && mAcc->IsRoot()) {
+  if ((Compatibility::A11ySuppressionReasons() &
+       SuppressionReasons::Clipboard) &&
+      mAcc->IsRoot()) {
     
     
     
@@ -617,7 +619,9 @@ MsaaAccessible::get_accChildCount(long __RPC_FAR* pcountChildren) {
     return S_OK;
   }
 
-  if (nsAccUtils::MustPrune(mAcc)) return S_OK;
+  if (nsAccUtils::MustPrune(mAcc)) {
+    return S_OK;
+  }
 
   *pcountChildren = mAcc->ChildCount();
   return S_OK;

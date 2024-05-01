@@ -249,11 +249,7 @@ bool LazyInstantiator::ShouldInstantiate(const DWORD aClientPid) {
 
 
 bool LazyInstantiator::ShouldInstantiate() {
-  if (Compatibility::IsA11ySuppressedForClipboardCopy()) {
-    
-    
-    
-    
+  if (Compatibility::IsA11ySuppressed()) {
     return false;
   }
   if (DWORD pid = GetRemoteMsaaClientPid()) {

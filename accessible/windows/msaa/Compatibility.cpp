@@ -142,9 +142,20 @@ void Compatibility::GetHumanReadableConsumersStr(nsAString& aResult) {
   }
 }
 
+struct SuppressionTimer {
+  constexpr SuppressionTimer() = default;
+  void Start() { mStart = ::GetTickCount(); }
+  bool IsActive(DWORD aTickCount) const {
+    return mStart && aTickCount - mStart < kSuppressTimeout;
+  }
+  
+  DWORD mStart = 0;
 
+  static constexpr DWORD kSuppressTimeout = 1500;  
+};
 
-static DWORD sA11yClipboardCopySuppressionStartTime = 0;
+static SuppressionTimer sClipboardSuppressionTimer;
+static SuppressionTimer sSnapLayoutsSuppressionTimer;
 
 
 void Compatibility::SuppressA11yForClipboardCopy() {
@@ -166,16 +177,40 @@ void Compatibility::SuppressA11yForClipboardCopy() {
   }();
 
   if (doSuppress) {
-    sA11yClipboardCopySuppressionStartTime = ::GetTickCount();
+    sClipboardSuppressionTimer.Start();
   }
 }
 
 
-bool Compatibility::IsA11ySuppressedForClipboardCopy() {
-  constexpr DWORD kSuppressTimeout = 1500;  
-  if (!sA11yClipboardCopySuppressionStartTime) {
-    return false;
+void Compatibility::SuppressA11yForSnapLayouts() {
+  
+  
+  bool doSuppress = [&] {
+    switch (StaticPrefs::accessibility_windows_suppress_for_snap_layout()) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        
+        return IsWin1122H2OrLater();
+    }
+  }();
+
+  if (doSuppress) {
+    sSnapLayoutsSuppressionTimer.Start();
   }
-  return ::GetTickCount() - sA11yClipboardCopySuppressionStartTime <
-         kSuppressTimeout;
+}
+
+
+SuppressionReasons Compatibility::A11ySuppressionReasons() {
+  const auto now = ::GetTickCount();
+  auto reasons = SuppressionReasons::None;
+  if (sClipboardSuppressionTimer.IsActive(now)) {
+    reasons |= SuppressionReasons::Clipboard;
+  }
+  if (sSnapLayoutsSuppressionTimer.IsActive(now)) {
+    reasons |= SuppressionReasons::SnapLayouts;
+  }
+  return reasons;
 }
