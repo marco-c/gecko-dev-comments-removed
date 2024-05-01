@@ -93,7 +93,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
           [&callback](std::unique_ptr<TransformableFrameInterface> frame) {
             callback->OnTransformedFrame(std::move(frame));
           });
-  delegate->Transform(packet, header, 1111 );
+  delegate->Transform(packet, header, 1111, "audio/opus");
   rtc::ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
@@ -126,7 +126,7 @@ TEST(ChannelReceiveFrameTransformerDelegateTest,
             static_cast<TransformableAudioFrameInterface*>(frame.get());
         callback->OnTransformedFrame(CloneSenderAudioFrame(transformed_frame));
       });
-  delegate->Transform(packet, header, 1111 );
+  delegate->Transform(packet, header, 1111, "audio/opus");
   rtc::ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
