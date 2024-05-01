@@ -62,7 +62,7 @@ MockedSecureStorage.prototype = {
   
   STORAGE_LOCKED: function () {},
   
-  async get(uid, email) {
+  async get() {
     this.fetchCount++;
     if (this.locked) {
       throw new this.STORAGE_LOCKED();

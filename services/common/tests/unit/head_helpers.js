@@ -91,7 +91,7 @@ function do_check_throws_message(aFunc, aResult) {
 
 
 
-var _ = function (some, debug, text, to) {
+var _ = function () {
   print(Array.from(arguments).join(" "));
 };
 
@@ -192,7 +192,7 @@ var PACSystemSettings = {
   
   mainThreadOnly: true,
   PACURI: null,
-  getProxyForURI: function getProxyForURI(aURI) {
+  getProxyForURI: function getProxyForURI() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 };
@@ -221,7 +221,7 @@ function getUptakeTelemetrySnapshot(component, source) {
   return (
     parentEvents
       
-      .map(([i, category, method, object, value, extras]) => {
+      .map(([, category, method, object, value, extras]) => {
         return { category, method, object, value, extras };
       })
       

@@ -51,7 +51,7 @@ add_task(async function setup() {
   
   
   
-  clientsEngine._removeRemoteClient = async id => {};
+  clientsEngine._removeRemoteClient = async () => {};
 });
 
 add_task(async function test_successful_sync_adjustSyncInterval() {

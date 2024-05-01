@@ -687,8 +687,8 @@ function track_collections_helper() {
 
 
 var SyncServerCallback = {
-  onCollectionDeleted: function onCollectionDeleted(user, collection) {},
-  onItemDeleted: function onItemDeleted(user, collection, wboID) {},
+  onCollectionDeleted: function onCollectionDeleted() {},
+  onItemDeleted: function onItemDeleted() {},
 
   
 
@@ -699,7 +699,7 @@ var SyncServerCallback = {
 
 
 
-  onRequest: function onRequest(request, response) {},
+  onRequest: function onRequest() {},
 };
 
 
