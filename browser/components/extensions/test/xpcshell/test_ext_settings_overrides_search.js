@@ -60,12 +60,12 @@ add_task(async function test_extension_adding_engine() {
 
   let { baseURI } = ext1.extension;
   equal(
-    engine.getIconURL(),
+    await engine.getIconURL(),
     baseURI.resolve("foo.ico"),
     "16x16 icon path matches"
   );
   equal(
-    engine.getIconURL(16),
+    await engine.getIconURL(16),
     baseURI.resolve("foo.ico"),
     "16x16 icon path matches"
   );

@@ -40,7 +40,7 @@ this.search = class extends ExtensionAPI {
           let defaultEngine = await Services.search.getDefault();
           return Promise.all(
             visibleEngines.map(async engine => {
-              let favIconUrl = engine.getIconURL();
+              let favIconUrl = await engine.getIconURL();
               
               
               

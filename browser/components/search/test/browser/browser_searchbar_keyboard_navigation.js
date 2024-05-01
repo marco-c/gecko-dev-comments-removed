@@ -29,18 +29,10 @@ async function checkHeader(engine) {
   
   
   let header = searchPopup.searchbarEngineName;
-  if (!header.getAttribute("value").includes(engine.name)) {
-    await new Promise(resolve => {
-      let observer = new MutationObserver(() => {
-        observer.disconnect();
-        resolve();
-      });
-      observer.observe(searchPopup.searchbarEngineName, {
-        attributes: true,
-        attributeFilter: ["value"],
-      });
-    });
-  }
+  await TestUtils.waitForCondition(
+    () => header.getAttribute("value").includes(engine.name),
+    "Should have the correct engine name displayed in the header"
+  );
   Assert.ok(
     header.getAttribute("value").includes(engine.name),
     "Should have the correct engine name displayed in the header"
