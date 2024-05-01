@@ -8,7 +8,6 @@
 #include <sstream>
 
 #include "irregexp/imported/special-case.h"
-#include "unicode/usetiter.h"
 
 namespace v8 {
 namespace internal {
@@ -126,52 +125,6 @@ void PrintSpecial(std::ofstream& out) {
   PrintSet(out, "SpecialAddSet", special_add);
 }
 
-void PrintUnicodeSpecial(std::ofstream& out) {
-  icu::UnicodeSet non_simple_folding;
-  icu::UnicodeSet current;
-  UErrorCode status = U_ZERO_ERROR;
-  
-  icu::UnicodeSet interestingCP(u"[^[:White_Space:]]", status);
-  CHECK_EQ(status, U_ZERO_ERROR);
-  icu::UnicodeSetIterator iter(interestingCP);
-  while (iter.next()) {
-    UChar32 c = iter.getCodepoint();
-    current.set(c, c);
-    current.closeOver(USET_CASE_INSENSITIVE).removeAllStrings();
-    CHECK(!current.isBogus());
-    
-    icu::UnicodeSet toRemove;
-    icu::UnicodeSetIterator closeOverIter(current);
-    while (closeOverIter.next()) {
-      UChar32 closeOverChar = closeOverIter.getCodepoint();
-      UChar32 closeOverSCF = u_foldCase(closeOverChar, U_FOLD_CASE_DEFAULT);
-      if (closeOverChar != closeOverSCF) {
-        toRemove.add(closeOverChar);
-      }
-    }
-    CHECK(!toRemove.isBogus());
-    current.removeAll(toRemove);
-
-    
-    UChar32 scf = u_foldCase(c, U_FOLD_CASE_DEFAULT);
-    current.remove(c);
-    current.remove(scf);
-
-    
-    
-    if (!current.isEmpty()) {
-      
-      
-      
-      CHECK_EQ(c, scf);
-      non_simple_folding.add(c);
-    }
-  }
-  CHECK(!non_simple_folding.isBogus());
-
-  PrintSet(out, "UnicodeNonSimpleCloseOverSet", non_simple_folding);
-}
-
 void WriteHeader(const char* header_filename) {
   std::ofstream out(header_filename);
   out << std::hex << std::setfill('0') << std::setw(4);
@@ -192,7 +145,6 @@ void WriteHeader(const char* header_filename) {
       << "namespace internal {\n\n";
 
   PrintSpecial(out);
-  PrintUnicodeSpecial(out);
 
   out << "\n"
       << "}  // namespace internal\n"

@@ -211,14 +211,16 @@ class RegExpResultsCache final : public AllStatic {
 
   
   
-  static Object Lookup(Heap* heap, String key_string, Object key_pattern,
-                       FixedArray* last_match_out, ResultsCacheType type);
+  static Tagged<Object> Lookup(Heap* heap, Tagged<String> key_string,
+                               Tagged<Object> key_pattern,
+                               Tagged<FixedArray>* last_match_out,
+                               ResultsCacheType type);
   
   
   static void Enter(Isolate* isolate, Handle<String> key_string,
                     Handle<Object> key_pattern, Handle<FixedArray> value_array,
                     Handle<FixedArray> last_match_cache, ResultsCacheType type);
-  static void Clear(FixedArray cache);
+  static void Clear(Tagged<FixedArray> cache);
 
   static constexpr int kRegExpResultsCacheSize = 0x100;
 
