@@ -853,19 +853,8 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-
-
-  enum class ComputeNewPageNameIfNeeded : uint8_t { Yes, No };
-
-  
-
-
-
-
   void PushTruncatedLine(BlockReflowState& aState, LineIterator aLine,
-                         bool* aKeepReflowGoing,
-                         ComputeNewPageNameIfNeeded aComputeNewPageName =
-                             ComputeNewPageNameIfNeeded::Yes);
+                         bool* aKeepReflowGoing);
 
   void SplitLine(BlockReflowState& aState, nsLineLayout& aLineLayout,
                  LineIterator aLine, nsIFrame* aFrame,

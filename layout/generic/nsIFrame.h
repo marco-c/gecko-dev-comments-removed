@@ -1643,13 +1643,7 @@ class nsIFrame : public nsQueryFrame {
   
   
   
-  
-  
-  
-  
-  
-  const nsAtom* ComputePageValue(const nsAtom* aAutoValue = nullptr) const
-      MOZ_NONNULL_RETURN;
+  const nsAtom* ComputePageValue() const MOZ_NONNULL_RETURN;
 
   
   
