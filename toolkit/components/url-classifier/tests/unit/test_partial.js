@@ -417,7 +417,7 @@ function setupCachedResults(addUrls, part2) {
 }
 
 function testCachedResults() {
-  setupCachedResults(["foo.com/a"], function (add) {
+  setupCachedResults(["foo.com/a"], function () {
     
     
 
