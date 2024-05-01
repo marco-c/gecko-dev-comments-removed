@@ -31,15 +31,6 @@ let authPromptModalType = SpecialPowers.Services.prefs.getIntPref(
 );
 
 
-let authPromptIsCommonDialog =
-  authPromptModalType === SpecialPowers.Services.prompt.MODAL_TYPE_WINDOW ||
-  (authPromptModalType === SpecialPowers.Services.prompt.MODAL_TYPE_TAB &&
-    SpecialPowers.Services.prefs.getBoolPref(
-      "prompts.tabChromePromptSubDialog",
-      false
-    ));
-
-
 
 
 
