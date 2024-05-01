@@ -156,11 +156,10 @@ class MarkStack {
   MarkStack();
   ~MarkStack();
 
-  explicit MarkStack(const MarkStack& other);
-  MarkStack& operator=(const MarkStack& other);
+  MarkStack(const MarkStack& other) = delete;
+  MarkStack& operator=(const MarkStack& other) = delete;
 
-  MarkStack(MarkStack&& other) noexcept;
-  MarkStack& operator=(MarkStack&& other) noexcept;
+  void swap(MarkStack& other);
 
   
   size_t capacity() { return stack().length(); }
