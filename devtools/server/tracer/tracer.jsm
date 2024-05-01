@@ -150,6 +150,9 @@ const customLazy = {
 
 
 
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -196,6 +199,7 @@ class JavaScriptTracer {
       }
       this.traceDOMMutations = options.traceDOMMutations;
     }
+    this.traceSteps = !!options.traceSteps;
     this.traceValues = !!options.traceValues;
     this.traceFunctionReturn = !!options.traceFunctionReturn;
     this.maxDepth = options.maxDepth;
@@ -617,6 +621,35 @@ class JavaScriptTracer {
         this.logFrameEnteredToStdout(frame, depth);
       }
 
+      if (this.traceSteps) {
+        frame.onStep = () => {
+          
+          
+          const { isStepStart } = frame.script.getOffsetMetadata(frame.offset);
+          if (!isStepStart) {
+            return;
+          }
+
+          shouldLogToStdout = true;
+          if (listeners.size > 0) {
+            shouldLogToStdout = false;
+            for (const listener of listeners) {
+              
+              if (typeof listener.onTracingFrameStep == "function") {
+                shouldLogToStdout |= listener.onTracingFrameStep({
+                  frame,
+                  depth,
+                  prefix: this.prefix,
+                });
+              }
+            }
+          }
+          if (shouldLogToStdout) {
+            this.logFrameStepToStdout(frame, depth);
+          }
+        };
+      }
+
       frame.onPop = completion => {
         
         
@@ -721,6 +754,20 @@ class JavaScriptTracer {
       }
       message += ")";
     }
+
+    this.loggingMethod(this.prefix + message + "\n");
+  }
+
+  
+
+
+
+
+
+  logFrameStepToStdout(frame, depth) {
+    const padding = "—".repeat(depth + 1);
+
+    const message = `${padding}— ${getTerminalHyperLink(frame)}`;
 
     this.loggingMethod(this.prefix + message + "\n");
   }

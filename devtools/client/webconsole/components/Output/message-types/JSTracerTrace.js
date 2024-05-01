@@ -99,15 +99,17 @@ function JSTracerTrace(props) {
         
         "— DOM Mutation | " + mutationType + " "
       ),
+      formatRep(messageBodyConfig, mutationElement),
     ];
-    messageBody.push(formatRep(messageBodyConfig, mutationElement));
-  } else {
+  } else if (displayName) {
     messageBody = [
       dom.span({ className: "jstracer-io" }, "⟶ "),
       dom.span({ className: "jstracer-implementation" }, implementation),
       
       dom.span({ className: "jstracer-display-name" }, " " + displayName),
     ];
+  } else {
+    messageBody = [dom.span({ className: "jstracer-io" }, "—")];
   }
 
   

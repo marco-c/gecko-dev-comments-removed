@@ -129,6 +129,7 @@ class TracerActor extends Actor {
 
     this.tracingListener = {
       onTracingFrame: this.onTracingFrame.bind(this),
+      onTracingFrameStep: this.onTracingFrameStep.bind(this),
       onTracingFrameExit: this.onTracingFrameExit.bind(this),
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
       onTracingToggled: this.onTracingToggled.bind(this),
@@ -321,6 +322,62 @@ class TracerActor extends Actor {
     return false;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  onTracingFrameStep({ frame, depth, prefix }) {
+    const { script } = frame;
+    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
+    const url = script.source.url;
+
+    
+    
+    
+    
+    const columnBase = script.format === "wasm" ? 0 : 1;
+
+    
+    if (
+      this.sourcesManager.isBlackBoxed(
+        url,
+        lineNumber,
+        columnNumber - columnBase
+      )
+    ) {
+      return false;
+    }
+
+    if (this.logMethod == LOG_METHODS.STDOUT) {
+      
+      return true;
+    }
+
+    if (this.logMethod == LOG_METHODS.CONSOLE) {
+      this.throttledTraces.push({
+        resourceType: JSTRACER_TRACE,
+        prefix,
+        timeStamp: ChromeUtils.dateNow(),
+
+        depth,
+        filename: url,
+        lineNumber,
+        columnNumber: columnNumber - columnBase,
+        sourceId: script.source.id,
+      });
+      this.throttleEmitTraces();
+    }
+
+    return false;
+  }
   
 
 
