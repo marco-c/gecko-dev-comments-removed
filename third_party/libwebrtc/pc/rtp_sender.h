@@ -86,9 +86,7 @@ class RtpSenderInternal : public RtpSenderInterface {
       const RtpParameters& parameters) = 0;
 
   
-  virtual RTCError CheckCodecParameters(const RtpParameters& parameters) {
-    return RTCError::OK();
-  }
+  virtual RTCError CheckCodecParameters(const RtpParameters& parameters) = 0;
 
   
   
