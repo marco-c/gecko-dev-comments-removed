@@ -50,8 +50,8 @@ using namespace gfx;
 
 
 StaticMutex sLaunchMutex;
-static EnumeratedArray<RemoteDecodeIn, StaticRefPtr<GenericNonExclusivePromise>,
-                       size_t(RemoteDecodeIn::SENTINEL)>
+static EnumeratedArray<RemoteDecodeIn, RemoteDecodeIn::SENTINEL,
+                       StaticRefPtr<GenericNonExclusivePromise>>
     sLaunchPromises MOZ_GUARDED_BY(sLaunchMutex);
 
 
@@ -61,8 +61,8 @@ static StaticDataMutex<StaticRefPtr<nsIThread>>
     sRemoteDecoderManagerChildThread("sRemoteDecoderManagerChildThread");
 
 
-static EnumeratedArray<RemoteDecodeIn, StaticRefPtr<RemoteDecoderManagerChild>,
-                       size_t(RemoteDecodeIn::SENTINEL)>
+static EnumeratedArray<RemoteDecodeIn, RemoteDecodeIn::SENTINEL,
+                       StaticRefPtr<RemoteDecoderManagerChild>>
     sRemoteDecoderManagerChildForProcesses;
 
 static StaticAutoPtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
@@ -70,8 +70,8 @@ static StaticAutoPtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
 
 
 StaticMutex sProcessSupportedMutex;
-static EnumeratedArray<RemoteDecodeIn, Maybe<media::MediaCodecsSupported>,
-                       size_t(RemoteDecodeIn::SENTINEL)>
+static EnumeratedArray<RemoteDecodeIn, RemoteDecodeIn::SENTINEL,
+                       Maybe<media::MediaCodecsSupported>>
     sProcessSupported MOZ_GUARDED_BY(sProcessSupportedMutex);
 
 class ShutdownObserver final : public nsIObserver {

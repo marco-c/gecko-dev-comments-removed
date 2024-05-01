@@ -169,7 +169,8 @@ fn eval_color_gamut(context: &Context, query_value: Option<ColorGamut>) -> bool 
     
     query_value <=
         match color_gamut {
-            ScreenColorGamut::Srgb => ColorGamut::Srgb,
+            
+            ScreenColorGamut::Srgb | ScreenColorGamut::EndGuard_ => ColorGamut::Srgb,
             ScreenColorGamut::P3 => ColorGamut::P3,
             ScreenColorGamut::Rec2020 => ColorGamut::Rec2020,
         }

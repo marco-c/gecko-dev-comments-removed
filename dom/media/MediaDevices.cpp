@@ -315,6 +315,8 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
         }
         haveDefaultOutput = true;
         break;
+      case MediaDeviceKind::EndGuard_:
+        continue;
         
         
     }
@@ -332,6 +334,8 @@ bool MediaDevices::CanExposeInfo(MediaDeviceKind aKind) const {
     case MediaDeviceKind::Audiooutput:
       
       return true;
+    case MediaDeviceKind::EndGuard_:
+      break;
       
       
   }
@@ -546,7 +550,7 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
   
   vc.mMediaSource.Reset();
   vc.mMediaSource.Construct().AssignASCII(
-      dom::GetEnumString(MediaSourceEnum::Screen));
+      dom::MediaSourceEnumValues::GetString(MediaSourceEnum::Screen));
 
   RefPtr<MediaDevices> self(this);
   MediaManager::Get()

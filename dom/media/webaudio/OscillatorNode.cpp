@@ -329,6 +329,8 @@ class OscillatorNodeEngine final : public AudioNodeEngine {
         case OscillatorType::Custom:
           ComputeCustom(output, start, end, frequency, detune);
           break;
+        case OscillatorType::EndGuard_:
+          MOZ_ASSERT_UNREACHABLE("end guard");
           
           
       };

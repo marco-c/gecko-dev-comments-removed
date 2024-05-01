@@ -181,10 +181,12 @@ already_AddRefed<Document> DOMParser::ParseFromStream(nsIInputStream* aStream,
 
   
   nsCOMPtr<nsIChannel> parserChannel;
-  NS_NewInputStreamChannel(getter_AddRefs(parserChannel), mDocumentURI,
-                           nullptr,  
-                           mPrincipal, nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
-                           nsIContentPolicy::TYPE_OTHER, GetEnumString(aType));
+  NS_NewInputStreamChannel(
+      getter_AddRefs(parserChannel), mDocumentURI,
+      nullptr,  
+      mPrincipal, nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
+      nsIContentPolicy::TYPE_OTHER,
+      nsDependentCSubstring(SupportedTypeValues::GetString(aType)));
   if (NS_WARN_IF(!parserChannel)) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;

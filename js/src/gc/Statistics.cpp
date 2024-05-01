@@ -154,11 +154,11 @@ struct PhaseInfo {
 };
 
 
-using PhaseTable = EnumeratedArray<Phase, PhaseInfo, size_t(Phase::LIMIT)>;
+using PhaseTable = EnumeratedArray<Phase, Phase::LIMIT, PhaseInfo>;
 
 
 using PhaseKindTable =
-    EnumeratedArray<PhaseKind, PhaseKindInfo, size_t(PhaseKind::LIMIT)>;
+    EnumeratedArray<PhaseKind, PhaseKind::LIMIT, PhaseKindInfo>;
 
 #include "gc/StatsPhasesGenerated.inc"
 

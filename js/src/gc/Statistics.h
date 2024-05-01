@@ -136,19 +136,19 @@ struct Statistics {
   template <typename T, size_t Length>
   using Array = mozilla::Array<T, Length>;
 
-  template <typename IndexType, typename ValueType, IndexType SizeAsEnumValue>
+  template <typename IndexType, IndexType SizeAsEnumValue, typename ValueType>
   using EnumeratedArray =
-      mozilla::EnumeratedArray<IndexType, ValueType, size_t(SizeAsEnumValue)>;
+      mozilla::EnumeratedArray<IndexType, SizeAsEnumValue, ValueType>;
 
   using TimeDuration = mozilla::TimeDuration;
   using TimeStamp = mozilla::TimeStamp;
 
   
-  using PhaseTimes = EnumeratedArray<Phase, TimeDuration, Phase::LIMIT>;
+  using PhaseTimes = EnumeratedArray<Phase, Phase::LIMIT, TimeDuration>;
   using PhaseKindTimes =
-      EnumeratedArray<PhaseKind, TimeDuration, PhaseKind::LIMIT>;
+      EnumeratedArray<PhaseKind, PhaseKind::LIMIT, TimeDuration>;
 
-  using PhaseTimeStamps = EnumeratedArray<Phase, TimeStamp, Phase::LIMIT>;
+  using PhaseTimeStamps = EnumeratedArray<Phase, Phase::LIMIT, TimeStamp>;
 
   [[nodiscard]] static bool initialize();
 
@@ -370,12 +370,12 @@ struct Statistics {
   TimeDuration totalGCTime_;
 
   
-  EnumeratedArray<Count, mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire>,
-                  COUNT_LIMIT>
+  EnumeratedArray<Count, COUNT_LIMIT,
+                  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire>>
       counts;
 
   
-  EnumeratedArray<Stat, uint32_t, STAT_LIMIT> stats;
+  EnumeratedArray<Stat, STAT_LIMIT, uint32_t> stats;
 
   
 
@@ -440,7 +440,7 @@ struct Statistics {
   };
 
   using ProfileDurations =
-      EnumeratedArray<ProfileKey, TimeDuration, ProfileKey::KeyCount>;
+      EnumeratedArray<ProfileKey, ProfileKey::KeyCount, TimeDuration>;
 
   bool enableProfiling_ = false;
   bool profileWorkers_ = false;

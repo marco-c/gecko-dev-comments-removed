@@ -79,22 +79,10 @@ struct EnumTypeFitsWithin
 
 
 
+
+
 template <typename T>
-inline constexpr auto UnderlyingValue(const T v) {
-  static_assert(std::is_enum_v<T>);
-  return static_cast<typename std::underlying_type<T>::type>(v);
-}
-
-
-
-
-
-
-
-
-
-
-
+struct MaxEnumValue;  
 
 
 
@@ -115,34 +103,10 @@ inline constexpr auto UnderlyingValue(const T v) {
 
 
 template <typename T>
-struct MinContiguousEnumValue {
-  static constexpr T value = static_cast<T>(0);
-};
-
-template <typename T>
-struct MaxContiguousEnumValue;
-
-template <typename T>
-struct MaxEnumValue {
-  static constexpr auto value = MaxContiguousEnumValue<T>::value;
-};
-
-
-
-template <typename T>
-struct ContiguousEnumValues {
-  static constexpr auto min = MinContiguousEnumValue<T>::value;
-  static constexpr auto max = MaxContiguousEnumValue<T>::value;
-};
-
-
-
-template <typename T>
-struct ContiguousEnumSize {
-  static constexpr size_t value =
-      UnderlyingValue(ContiguousEnumValues<T>::max) + 1 -
-      UnderlyingValue(ContiguousEnumValues<T>::min);
-};
+inline constexpr auto UnderlyingValue(const T v) {
+  static_assert(std::is_enum_v<T>);
+  return static_cast<typename std::underlying_type<T>::type>(v);
+}
 
 }  
 

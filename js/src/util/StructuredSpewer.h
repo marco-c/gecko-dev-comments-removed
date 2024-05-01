@@ -187,8 +187,8 @@ class StructuredSpewer {
   
   StructuredSpewFilter selectedChannel_;
 
-  using NameArray = mozilla::EnumeratedArray<SpewChannel, const char*,
-                                             size_t(SpewChannel::Count)>;
+  using NameArray =
+      mozilla::EnumeratedArray<SpewChannel, SpewChannel::Count, const char*>;
   
   static NameArray const names_;
 
