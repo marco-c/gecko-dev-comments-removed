@@ -15,15 +15,53 @@ public class LocaleMeasurement extends TelemetryMeasurement {
 
     @Override
     public Object flush() {
-        Locale locale = Locale.getDefault();
+        return getLanguageTag(Locale.getDefault());
+    }
+
+    
+
+
+
+
+
+
+
+
+    public String getLanguageTag(final Locale locale) {
+        
+        
+
+        final String language = getLanguage(locale);
+        final String country = locale.getCountry(); 
+        if (country.equals("")) {
+            return language;
+        }
+        return language + "-" + country;
+    }
+
+    
+
+
+
+
+
+    private String getLanguage(final Locale locale) {
+        
+        final String language = locale.getLanguage();
 
         
-        
-        
-        
-        
-        
-        
-        return locale.getLanguage() + "-" + locale.getCountry();
+        if (language.equals("iw")) {
+            return "he";
+        }
+
+        if (language.equals("in")) {
+            return "id";
+        }
+
+        if (language.equals("ji")) {
+            return "yi";
+        }
+
+        return language;
     }
 }
