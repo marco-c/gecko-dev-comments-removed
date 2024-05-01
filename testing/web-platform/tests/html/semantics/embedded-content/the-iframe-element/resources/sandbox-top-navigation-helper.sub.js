@@ -27,8 +27,7 @@ async function createNestedIframe(parent, origin, frame_sandbox, header_sandbox)
     origin: origin,
     scripts: [
       '/resources/testdriver.js',
-      '/resources/testdriver-driver.js',
-      '/resources/testdriver-vendor.js'
+      '/resources/testdriver-vendor.js',
     ],
     headers: headers,
   }, iframe_attributes);
@@ -39,8 +38,7 @@ async function navigateFrameTo(frame, origin) {
     origin: origin,
     scripts: [
       '/resources/testdriver.js',
-      '/resources/testdriver-driver.js',
-      '/resources/testdriver-vendor.js'
+      '/resources/testdriver-vendor.js',
     ],
   });
 }
@@ -49,7 +47,8 @@ async function attemptTopNavigation(iframe, should_succeed) {
   let did_succeed;
   try {
     await iframe.executeScript(() => {
-      window.top.location.href = "https://google.com";
+      window.top.location.href =
+          'http://{{hosts[alt][www2]}}:{{ports[http][0]}}';
     });
     did_succeed = true;
   } catch (e) {
