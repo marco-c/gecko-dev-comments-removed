@@ -12,24 +12,9 @@ async function getActiveServiceWorker(script) {
   return reg;
 }
 
+
 async function closeAllNotifications() {
   for (const n of await registration.getNotifications()) {
     n.close();
-  }
-}
-
-async function trySettingPermission(perm) {
-  try {
-    await test_driver.set_permission({ name: "notifications" }, perm);
-  } catch {
-    
-  }
-
-  
-  
-  
-  const permission = Notification.permission === "default" ? "prompt" : Notification.permission;
-  if (permission !== perm) {
-    throw new Error(`Should have the permission ${perm} to continue`);
   }
 }

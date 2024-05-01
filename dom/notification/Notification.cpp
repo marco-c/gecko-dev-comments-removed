@@ -714,12 +714,7 @@ Notification::Notification(nsIGlobalObject* aGlobal, const nsAString& aID,
   }
 }
 
-nsresult Notification::MaybeObserveWindowFrozenOrDestroyed() {
-  
-  
-  
-  
-  
+nsresult Notification::Init() {
   if (!mWorkerPrivate) {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     NS_ENSURE_TRUE(obs, NS_ERROR_FAILURE);
@@ -779,10 +774,6 @@ already_AddRefed<Notification> Notification::Constructor(
   RefPtr<Notification> notification =
       CreateAndShow(aGlobal.Context(), global, aTitle, aOptions, u""_ns, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-  if (NS_WARN_IF(
-          NS_FAILED(notification->MaybeObserveWindowFrozenOrDestroyed()))) {
     return nullptr;
   }
 
@@ -924,6 +915,8 @@ already_AddRefed<Notification> Notification::CreateInternal(
       aGlobal, id, aTitle, aOptions.mBody, aOptions.mDir, aOptions.mLang,
       aOptions.mTag, aOptions.mIcon, aOptions.mRequireInteraction, silent,
       std::move(vibrate), aOptions.mMozbehavior);
+  rv = notification->Init();
+  NS_ENSURE_SUCCESS(rv, nullptr);
   return notification.forget();
 }
 
@@ -1316,8 +1309,6 @@ bool Notification::IsInPrivateBrowsing() {
   return false;
 }
 
-
-
 void Notification::ShowInternal() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mTempRef,
@@ -1332,15 +1323,13 @@ void Notification::ShowInternal() {
   std::swap(ownership, mTempRef);
   MOZ_ASSERT(ownership->GetNotification() == this);
 
+  nsresult rv = PersistNotification();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Could not persist Notification");
+  }
+
   nsCOMPtr<nsIAlertsService> alertService = components::Alerts::Service();
 
-  
-  
-  
-  
-  
-  
-  
   ErrorResult result;
   NotificationPermission permission = NotificationPermission::Denied;
   if (mWorkerPrivate) {
@@ -1361,27 +1350,12 @@ void Notification::ShowInternal() {
     } else {
       DispatchTrustedEvent(u"error"_ns);
     }
-    mIsClosed = true;
     return;
   }
 
-  
-  
   nsAutoString iconUrl;
   nsAutoString soundUrl;
   ResolveIconAndSoundURL(iconUrl, soundUrl);
-
-  
-  
-  
-  
-  
-
-  
-  nsresult rv = PersistNotification();
-  if (NS_FAILED(rv)) {
-    NS_WARNING("Could not persist Notification");
-  }
 
   bool isPersistent = false;
   nsCOMPtr<nsIObserver> observer;
