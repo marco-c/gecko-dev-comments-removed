@@ -2,21 +2,16 @@
 
 
 use crate::{
-    binding_model::{BindGroup, LateMinBufferBindingSizeMismatch, PushConstantUploadError},
+    binding_model::{LateMinBufferBindingSizeMismatch, PushConstantUploadError},
     error::ErrorFormatter,
-    hal_api::HalApi,
     id,
-    pipeline::RenderPipeline,
-    resource::{Buffer, QuerySet},
     track::UsageConflict,
     validation::{MissingBufferUsageError, MissingTextureUsageError},
 };
 use wgt::{BufferAddress, BufferSize, Color, VertexStepMode};
 
-use std::{num::NonZeroU32, sync::Arc};
+use std::num::NonZeroU32;
 use thiserror::Error;
-
-use super::RenderBundle;
 
 
 #[derive(Clone, Debug, Error, Eq, PartialEq)]
@@ -249,116 +244,4 @@ pub enum RenderCommand {
     },
     EndPipelineStatisticsQuery,
     ExecuteBundle(id::RenderBundleId),
-}
-
-
-#[doc(hidden)]
-#[derive(Clone, Debug)]
-pub enum ArcRenderCommand<A: HalApi> {
-    SetBindGroup {
-        index: u32,
-        num_dynamic_offsets: usize,
-        bind_group: Arc<BindGroup<A>>,
-    },
-    SetPipeline(Arc<RenderPipeline<A>>),
-    SetIndexBuffer {
-        buffer: Arc<Buffer<A>>,
-        index_format: wgt::IndexFormat,
-        offset: BufferAddress,
-        size: Option<BufferSize>,
-    },
-    SetVertexBuffer {
-        slot: u32,
-        buffer: Arc<Buffer<A>>,
-        offset: BufferAddress,
-        size: Option<BufferSize>,
-    },
-    SetBlendConstant(Color),
-    SetStencilReference(u32),
-    SetViewport {
-        rect: Rect<f32>,
-        
-        depth_min: f32,
-        depth_max: f32,
-    },
-    SetScissor(Rect<u32>),
-
-    
-    
-    
-    
-    SetPushConstant {
-        
-        stages: wgt::ShaderStages,
-
-        
-        
-        offset: u32,
-
-        
-        size_bytes: u32,
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        values_offset: Option<u32>,
-    },
-    Draw {
-        vertex_count: u32,
-        instance_count: u32,
-        first_vertex: u32,
-        first_instance: u32,
-    },
-    DrawIndexed {
-        index_count: u32,
-        instance_count: u32,
-        first_index: u32,
-        base_vertex: i32,
-        first_instance: u32,
-    },
-    MultiDrawIndirect {
-        buffer: Arc<Buffer<A>>,
-        offset: BufferAddress,
-        
-        count: Option<NonZeroU32>,
-        indexed: bool,
-    },
-    MultiDrawIndirectCount {
-        buffer: Arc<Buffer<A>>,
-        offset: BufferAddress,
-        count_buffer: Arc<Buffer<A>>,
-        count_buffer_offset: BufferAddress,
-        max_count: u32,
-        indexed: bool,
-    },
-    PushDebugGroup {
-        color: u32,
-        len: usize,
-    },
-    PopDebugGroup,
-    InsertDebugMarker {
-        color: u32,
-        len: usize,
-    },
-    WriteTimestamp {
-        query_set: Arc<QuerySet<A>>,
-        query_index: u32,
-    },
-    BeginOcclusionQuery {
-        query_index: u32,
-    },
-    EndOcclusionQuery,
-    BeginPipelineStatisticsQuery {
-        query_set: Arc<QuerySet<A>>,
-        query_index: u32,
-    },
-    EndPipelineStatisticsQuery,
-    ExecuteBundle(Arc<RenderBundle<A>>),
 }

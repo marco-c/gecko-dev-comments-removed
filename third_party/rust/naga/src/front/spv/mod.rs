@@ -579,9 +579,6 @@ pub struct Frontend<I> {
     lookup_entry_point: FastHashMap<spirv::Word, EntryPoint>,
     
     
-    deferred_entry_points: Vec<(EntryPoint, spirv::Word)>,
-    
-    
     deferred_function_calls: Vec<spirv::Word>,
     dummy_functions: Arena<crate::Function>,
     
@@ -631,7 +628,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             lookup_function_type: FastHashMap::default(),
             lookup_function: FastHashMap::default(),
             lookup_entry_point: FastHashMap::default(),
-            deferred_entry_points: Vec::default(),
             deferred_function_calls: Vec::default(),
             dummy_functions: Arena::new(),
             function_call_graph: GraphMap::new(),
@@ -1565,10 +1561,12 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                                     span,
                                 );
 
-                                if let Some(crate::Binding::BuiltIn(built_in)) =
-                                    members[index as usize].binding
-                                {
-                                    self.gl_per_vertex_builtin_access.insert(built_in);
+                                if ty.name.as_deref() == Some("gl_PerVertex") {
+                                    if let Some(crate::Binding::BuiltIn(built_in)) =
+                                        members[index as usize].binding
+                                    {
+                                        self.gl_per_vertex_builtin_access.insert(built_in);
+                                    }
                                 }
 
                                 AccessExpression {
@@ -3958,12 +3956,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             }?;
         }
 
-        
-        
-        for (ep, fun_id) in core::mem::take(&mut self.deferred_entry_points) {
-            self.process_entry_point(&mut module, ep, fun_id)?;
-        }
-
         log::info!("Patching...");
         {
             let mut nodes = petgraph::algo::toposort(&self.function_call_graph, None)
@@ -5089,7 +5081,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             None
         };
         let span = self.span_from_with_op(start);
-        let dec = self.future_decor.remove(&id).unwrap_or_default();
+        let mut dec = self.future_decor.remove(&id).unwrap_or_default();
 
         let original_ty = self.lookup_type.lookup(type_id)?.handle;
         let mut ty = original_ty;
@@ -5134,6 +5126,17 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             Some(&access) => ExtendedClass::Global(crate::AddressSpace::Storage { access }),
             None => map_storage_class(storage_class)?,
         };
+
+        
+        if let crate::TypeInner::Pointer { .. } = module.types[original_ty].inner {
+            if ext_class == ExtendedClass::Input || ext_class == ExtendedClass::Output {
+                if let Some(ref dec_name) = dec.name {
+                    if dec_name.is_empty() {
+                        dec.name = Some("perVertexStruct".to_string())
+                    }
+                }
+            }
+        }
 
         let (inner, var) = match ext_class {
             ExtendedClass::Global(mut space) => {
