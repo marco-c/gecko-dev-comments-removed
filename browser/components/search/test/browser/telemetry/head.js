@@ -210,6 +210,11 @@ function assertSERPTelemetry(expectedEvents) {
   
   
   
+  expectedEvents = JSON.parse(JSON.stringify(expectedEvents));
+
+  
+  
+  
   const impressionIdsSet = new Set();
 
   let recordedImpressions = Glean.serp.impression.testGetValue() ?? [];
