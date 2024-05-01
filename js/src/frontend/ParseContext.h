@@ -677,6 +677,13 @@ class ParseContext : public Nestable<ParseContext> {
   bool declareDotGeneratorName();
   bool declareTopLevelDotGeneratorName();
 
+  
+  
+  
+  
+  
+  size_t numberOfArgumentsNames = 0;
+
  private:
   [[nodiscard]] bool isVarRedeclaredInInnermostScope(
       TaggedParserAtomIndex name, ParserBase* parser, DeclarationKind kind,
