@@ -704,68 +704,7 @@ struct LegacyFactoryFunction {
   unsigned mNargs;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+namespace binding_detail {
 
 void CreateInterfaceObjects(
     JSContext* cx, JS::Handle<JSObject*> global,
@@ -773,11 +712,98 @@ void CreateInterfaceObjects(
     JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> constructorProto,
     const DOMIfaceJSClass* constructorClass, unsigned ctorNargs,
     bool isConstructorChromeOnly,
-    const LegacyFactoryFunction* legacyFactoryFunctions,
+    const Span<const LegacyFactoryFunction>& legacyFactoryFunctions,
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, const char* name,
     bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,
     const char* const* legacyWindowAliases, bool isNamespace);
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <size_t N>
+inline void CreateInterfaceObjects(
+    JSContext* cx, JS::Handle<JSObject*> global,
+    JS::Handle<JSObject*> protoProto, const DOMIfaceAndProtoJSClass* protoClass,
+    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> constructorProto,
+    const DOMIfaceJSClass* constructorClass, unsigned ctorNargs,
+    bool isConstructorChromeOnly,
+    const Span<const LegacyFactoryFunction, N>& legacyFactoryFunctions,
+    JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
+    const NativeProperties* chromeOnlyProperties, const char* name,
+    bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,
+    const char* const* legacyWindowAliases, bool isNamespace) {
+  static_assert(N < 3);
+
+  return binding_detail::CreateInterfaceObjects(
+      cx, global, protoProto, protoClass, protoCache, constructorProto,
+      constructorClass, ctorNargs, isConstructorChromeOnly,
+      legacyFactoryFunctions, constructorCache, properties,
+      chromeOnlyProperties, name, defineOnGlobal, unscopableNames, isGlobal,
+      legacyWindowAliases, isNamespace);
+}
 
 
 
