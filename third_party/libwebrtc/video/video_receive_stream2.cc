@@ -568,10 +568,7 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
         rtp_receive_statistics_->GetStatistician(rtx_ssrc());
     if (rtx_statistician) {
       stats.total_bitrate_bps += rtx_statistician->BitrateReceived();
-      
-      if (!call_->trials().IsDisabled("WebRTC-Stats-RtxReceiveStats")) {
-        stats.rtx_rtp_stats = rtx_statistician->GetStats();
-      }
+      stats.rtx_rtp_stats = rtx_statistician->GetStats();
     }
   }
 
