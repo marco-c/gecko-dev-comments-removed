@@ -813,9 +813,17 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 }
 
 void gfxUserFontEntry::Load() {
-  if (mUserFontLoadState == STATUS_NOT_LOADED) {
-    LoadNextSrc();
+  if (mUserFontLoadState != STATUS_NOT_LOADED) {
+    return;
   }
+  if (!NS_IsMainThread()) {
+    
+    
+    NS_DispatchToMainThread(NewRunnableMethod("gfxUserFontEntry::Load", this,
+                                              &gfxUserFontEntry::Load));
+    return;
+  }
+  LoadNextSrc();
 }
 
 void gfxUserFontEntry::IncrementGeneration() {
