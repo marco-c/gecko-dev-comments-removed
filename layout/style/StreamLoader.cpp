@@ -90,7 +90,8 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  mSheetLoadData->mSheet->BlockOrUnblockParsePromise(true);
+  
+  mSheetLoadData->mSheet->BlockParsePromise();
 
   return NS_OK;
 }
@@ -124,7 +125,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       glean::networking::http_content_cssloader_ondatafinished_to_onstop_delay
           .AccumulateRawDuration(delta);
     }
-    mSheetLoadData->mSheet->BlockOrUnblockParsePromise(false);
+    mSheetLoadData->mSheet->UnblockParsePromise();
   }
 
   if (mOnStopProcessingDone) {
