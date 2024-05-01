@@ -9872,6 +9872,12 @@ static bool NeedsPrivateBrand(ParseNode* member) {
          !member->as<ClassMethod>().isStatic();
 }
 
+#ifdef ENABLE_DECORATORS
+static bool HasDecorators(ParseNode* member) {
+  return member->is<ClassMethod>() && member->as<ClassMethod>().decorators();
+}
+#endif
+
 mozilla::Maybe<MemberInitializers> BytecodeEmitter::setupMemberInitializers(
     ListNode* classMembers, FieldPlacement placement) {
   bool isStatic = placement == FieldPlacement::Static;
@@ -9879,6 +9885,9 @@ mozilla::Maybe<MemberInitializers> BytecodeEmitter::setupMemberInitializers(
   size_t numFields = 0;
   size_t numPrivateInitializers = 0;
   bool hasPrivateBrand = false;
+#ifdef ENABLE_DECORATORS
+  bool hasDecorators = false;
+#endif
   for (ParseNode* member : classMembers->contents()) {
     if (NeedsFieldInitializer(member, isStatic)) {
       numFields++;
@@ -9888,6 +9897,11 @@ mozilla::Maybe<MemberInitializers> BytecodeEmitter::setupMemberInitializers(
     } else if (NeedsPrivateBrand(member)) {
       hasPrivateBrand = true;
     }
+#ifdef ENABLE_DECORATORS
+    if (!hasDecorators && HasDecorators(member)) {
+      hasDecorators = true;
+    }
+#endif
   }
 
   
@@ -9895,8 +9909,11 @@ mozilla::Maybe<MemberInitializers> BytecodeEmitter::setupMemberInitializers(
       MemberInitializers::MaxInitializers) {
     return Nothing();
   }
-  return Some(
-      MemberInitializers(hasPrivateBrand, numFields + numPrivateInitializers));
+  return Some(MemberInitializers(hasPrivateBrand,
+#ifdef ENABLE_DECORATORS
+                                 hasDecorators,
+#endif
+                                 numFields + numPrivateInitializers));
 }
 
 
@@ -10704,119 +10721,122 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
       }
     }
 #ifdef ENABLE_DECORATORS
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_initializers_())) {
+    if (memberInitializers.hasDecorators) {
       
-      return false;
-    }
-
-    if (!emit1(JSOp::Dup)) {
       
-      return false;
-    }
-
-    if (!emitAtomOp(JSOp::GetProp,
-                    TaggedParserAtomIndex::WellKnown::length())) {
       
-      return false;
-    }
-
-    if (!emitNumberOp(static_cast<double>(numInitializers))) {
       
-      return false;
-    }
-
-    InternalWhileEmitter wh(this);
-    
-    
-    
-    if (!wh.emitCond()) {
       
-      return false;
-    }
-
-    if (!emit1(JSOp::Dup)) {
       
-      return false;
-    }
 
-    if (!emitDupAt(2)) {
       
-      return false;
-    }
-
-    if (!emit1(JSOp::Lt)) {
       
-      return false;
-    }
-
-    if (!wh.emitBody()) {
       
-      return false;
-    }
-
-    if (!emitDupAt(2)) {
       
-      return false;
-    }
-
-    if (!emitDupAt(1)) {
       
-      return false;
-    }
+      if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_initializers_())) {
+        
+        return false;
+      }
 
-    
-    if (!emit1(JSOp::GetElem)) {
+      if (!emit1(JSOp::Dup)) {
+        
+        return false;
+      }
+
+      if (!emitAtomOp(JSOp::GetProp,
+                      TaggedParserAtomIndex::WellKnown::length())) {
+        
+        return false;
+      }
+
+      if (!emitNumberOp(static_cast<double>(numInitializers))) {
+        
+        return false;
+      }
+
+      InternalWhileEmitter wh(this);
       
-      return false;
-    }
-
-    
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
       
-      return false;
-    }
-
-    if (!emit1(JSOp::Swap)) {
       
-      return false;
-    }
+      if (!wh.emitCond()) {
+        
+        return false;
+      }
 
-    DecoratorEmitter de(this);
-    if (!de.emitInitializeFieldOrAccessor()) {
+      if (!emit1(JSOp::Dup)) {
+        
+        return false;
+      }
+
+      if (!emitDupAt(2)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Lt)) {
+        
+        return false;
+      }
+
+      if (!wh.emitBody()) {
+        
+        return false;
+      }
+
+      if (!emitDupAt(2)) {
+        
+        return false;
+      }
+
+      if (!emitDupAt(1)) {
+        
+        return false;
+      }
+
       
-      return false;
-    }
+      if (!emit1(JSOp::GetElem)) {
+        
+        return false;
+      }
 
-    if (!emit1(JSOp::Inc)) {
       
-      return false;
-    }
+      if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
+        
+        return false;
+      }
 
-    if (!wh.emitEnd()) {
+      if (!emit1(JSOp::Swap)) {
+        
+        return false;
+      }
+
+      DecoratorEmitter de(this);
+      if (!de.emitInitializeFieldOrAccessor()) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Inc)) {
+        
+        return false;
+      }
+
+      if (!wh.emitEnd()) {
+        
+        return false;
+      }
+
+      if (!emitPopN(3)) {
+        
+        return false;
+      }
       
-      return false;
-    }
 
-    if (!emitPopN(3)) {
-      
-      return false;
-    }
-    
-
-    if (!de.emitCallExtraInitializers(TaggedParserAtomIndex::WellKnown::
-                                          dot_instanceExtraInitializers_())) {
-      return false;
+      if (!de.emitCallExtraInitializers(TaggedParserAtomIndex::WellKnown::
+                                            dot_instanceExtraInitializers_())) {
+        return false;
+      }
     }
 #endif
   }

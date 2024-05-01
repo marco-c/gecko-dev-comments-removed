@@ -7924,7 +7924,12 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
   bool hasPrivateBrand = classInitializedMembers.hasPrivateBrand();
   if (hasPrivateBrand || numMemberInitializers > 0) {
     
-    MemberInitializers initializers(hasPrivateBrand, numMemberInitializers);
+    MemberInitializers initializers(
+        hasPrivateBrand,
+#ifdef ENABLE_DECORATORS
+        classInitializedMembers.hasInstanceDecorators,
+#endif
+        numMemberInitializers);
     ctorbox->setMemberInitializers(initializers);
 
     
