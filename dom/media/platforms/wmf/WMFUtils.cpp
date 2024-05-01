@@ -374,7 +374,9 @@ void AACAudioSpecificConfigToUserData(uint8_t aAACProfileLevelIndication,
   
   BYTE heeInfo[heeInfoLen] = {0};
   WORD* w = (WORD*)heeInfo;
-  w[0] = 0x0;  
+  
+  
+  w[0] = aConfigLength ? 0 : 1;
   w[1] = aAACProfileLevelIndication;
 
   aOutUserData.AppendElements(heeInfo, heeInfoLen);
