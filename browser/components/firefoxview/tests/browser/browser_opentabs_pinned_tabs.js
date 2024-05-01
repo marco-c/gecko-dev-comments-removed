@@ -322,7 +322,15 @@ add_task(async function test_mute_unmute_pinned_tab() {
     );
 
     
+    
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ focusableRule: false });
     EventUtils.synthesizeMouseAtCenter(openTabEl.mediaButtonEl, {}, content);
+    AccessibilityUtils.resetEnv();
     info("Mute Tab button clicked.");
 
     tabChangeRaised = BrowserTestUtils.waitForEvent(
@@ -339,7 +347,15 @@ add_task(async function test_mute_unmute_pinned_tab() {
     );
 
     
+    
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({ focusableRule: false });
     EventUtils.synthesizeMouseAtCenter(openTabEl.mediaButtonEl, {}, content);
+    AccessibilityUtils.resetEnv();
     info("Unmute Tab button clicked.");
 
     tabChangeRaised = BrowserTestUtils.waitForEvent(
