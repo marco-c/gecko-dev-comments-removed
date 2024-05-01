@@ -41,9 +41,6 @@ module.exports = {
     "no-unused-expressions": "error",
 
     
-    "no-useless-escape": "error",
-
-    
     strict: ["error", "global"],
 
     

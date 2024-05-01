@@ -25,6 +25,8 @@
 
 
 
+
+
 module.exports = {
   env: {
     browser: true,
@@ -331,7 +333,6 @@ module.exports = {
     
     "no-useless-concat": "error",
 
-    
     
     "no-useless-escape": "off",
 
