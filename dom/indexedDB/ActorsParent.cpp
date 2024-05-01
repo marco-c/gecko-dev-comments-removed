@@ -292,6 +292,7 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
 
 
 
+
 const uint32_t kMaxConnectionThreadCount = 20;
 
 static_assert(kMaxConnectionThreadCount, "Must have at least one thread!");
