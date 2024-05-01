@@ -17,8 +17,11 @@ async_test(t => {
   let broadcasts = [];
   
   window.addEventListener("message", t.step_func(e => {
+    if (e.data.type != "result") {
+      return;
+    }
     
-    assert_equals(e.data, "HasAccess for BroadcastChannel", "Storage Access API should be accessible and return first-party data");
+    assert_equals(e.data.message, "HasAccess for BroadcastChannel", "Storage Access API should be accessible and return first-party data");
     assert_array_equals(broadcasts, ["Same-origin handle access"], "Should have only seen same-origin handle broadcasts");
     t.done();
   }));

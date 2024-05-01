@@ -16,8 +16,11 @@
 async_test(t => {
   
   window.addEventListener("message", t.step_func(e => {
+    if (e.data.type != "result") {
+      return;
+    }
     
-    assert_equals(e.data, "HasAccess for getDirectory", "Storage Access API should be accessible and return first-party data");
+    assert_equals(e.data.message, "HasAccess for getDirectory", "Storage Access API should be accessible and return first-party data");
     t.done();
   }));
 
