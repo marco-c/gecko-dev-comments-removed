@@ -1194,16 +1194,16 @@ HashFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
 
 
 
-nsresult MD5HexFunction::create(mozIStorageConnection* aDBConn) {
-  RefPtr<MD5HexFunction> function = new MD5HexFunction();
-  return aDBConn->CreateFunction("md5hex"_ns, -1, function);
+nsresult SHA256HexFunction::create(mozIStorageConnection* aDBConn) {
+  RefPtr<SHA256HexFunction> function = new SHA256HexFunction();
+  return aDBConn->CreateFunction("sha256hex"_ns, -1, function);
 }
 
-NS_IMPL_ISUPPORTS(MD5HexFunction, mozIStorageFunction)
+NS_IMPL_ISUPPORTS(SHA256HexFunction, mozIStorageFunction)
 
 NS_IMETHODIMP
-MD5HexFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
-                               nsIVariant** _result) {
+SHA256HexFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
+                                  nsIVariant** _result) {
   
   MOZ_ASSERT(aArguments);
 
@@ -1218,7 +1218,7 @@ MD5HexFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
   
-  rv = hasher->Init(nsICryptoHash::MD5);
+  rv = hasher->Init(nsICryptoHash::SHA256);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = hasher->Update(reinterpret_cast<const uint8_t*>(str.BeginReading()),
