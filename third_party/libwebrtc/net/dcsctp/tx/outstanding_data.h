@@ -75,11 +75,9 @@ class OutstandingData {
 
   OutstandingData(
       size_t data_chunk_header_size,
-      UnwrappedTSN next_tsn,
       UnwrappedTSN last_cumulative_tsn_ack,
       std::function<bool(StreamID, OutgoingMessageId)> discard_from_send_queue)
       : data_chunk_header_size_(data_chunk_header_size),
-        next_tsn_(next_tsn),
         last_cumulative_tsn_ack_(last_cumulative_tsn_ack),
         discard_from_send_queue_(std::move(discard_from_send_queue)) {}
 
@@ -122,7 +120,9 @@ class OutstandingData {
     return last_cumulative_tsn_ack_;
   }
 
-  UnwrappedTSN next_tsn() const { return next_tsn_; }
+  UnwrappedTSN next_tsn() const {
+    return highest_outstanding_tsn().next_value();
+  }
 
   UnwrappedTSN highest_outstanding_tsn() const;
 
@@ -160,8 +160,7 @@ class OutstandingData {
   bool ShouldSendForwardTsn() const;
 
   
-  void ResetSequenceNumbers(UnwrappedTSN next_tsn,
-                            UnwrappedTSN last_cumulative_tsn);
+  void ResetSequenceNumbers(UnwrappedTSN last_cumulative_tsn);
 
   
   
@@ -342,8 +341,6 @@ class OutstandingData {
 
   
   const size_t data_chunk_header_size_;
-  
-  UnwrappedTSN next_tsn_;
   
   UnwrappedTSN last_cumulative_tsn_ack_;
   
