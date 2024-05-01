@@ -81,6 +81,11 @@ public class EventsMeasurement extends TelemetryMeasurement {
             
             
             
+
+            
+            
+            
+            Log.w(LOG_TAG, "IOException while reading events from disk", e);
         } finally {
             IOUtils.safeClose(stream);
 
