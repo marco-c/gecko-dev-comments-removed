@@ -23,6 +23,9 @@ import org.mozilla.focus.utils.IntentUtils;
 import org.mozilla.focus.utils.UrlUtils;
 import org.mozilla.focus.web.IWebView;
 
+import static android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO;
+import static android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES;
+
 
 
 
@@ -35,6 +38,7 @@ import org.mozilla.focus.web.IWebView;
     private String restoredUrl;
     private SslCertificate restoredCertificate;
     private boolean errorReceived;
+    private boolean shouldReadURL = true; 
 
      FocusWebViewClient(Context context) {
         super(context);
@@ -143,6 +147,11 @@ import org.mozilla.focus.web.IWebView;
 
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
+
+        
+
+        view.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+
         if (errorReceived) {
             
             
@@ -154,7 +163,15 @@ import org.mozilla.focus.web.IWebView;
             errorReceived = false;
         } else if (callback != null) {
             callback.onPageStarted(url);
+
+            if (shouldReadURL) {
+                view.announceForAccessibility("Loading " + url);
+                shouldReadURL = false;
+            }
         }
+
+        
+        view.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 
         super.onPageStarted(view, url, favicon);
     }
@@ -177,6 +194,7 @@ import org.mozilla.focus.web.IWebView;
     @Override
     public void onPageFinished(WebView view, final String url) {
         SslCertificate certificate = view.getCertificate();
+        shouldReadURL = true;
 
         if (!TextUtils.isEmpty(restoredUrl)) {
             if (restoredUrl.equals(url) && certificate == null) {
