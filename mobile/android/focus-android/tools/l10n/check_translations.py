@@ -23,21 +23,21 @@ def etree_to_dict(tree):
 
 def missing_target_exception(lang, code):
     
-    print(" * [{lang}/strings.xml] missing placeholder in translation, key: {code}".format(
+    print("Error: * [{lang}/strings.xml] missing placeholder in translation, key: {code}".format(
         lang=lang,
         code=code
     ))
 
 def missing_source_exception(lang, code):
     
-    print(" * [{lang}/strings.xml] placeholder missing in source, key: {code}".format(
+    print("Error:  * [{lang}/strings.xml] placeholder missing in source, key: {code}".format(
         lang=lang,
         code=code
     ))
 
 def count_mismatch_warning(lang, code):
     
-    print(" * [{lang}/strings.xml] number of placeholders not matching, key: {code}".format(
+    print("Warning: * [{lang}/strings.xml] number of placeholders not matching, key: {code}".format(
         lang=lang,
         code=code
     ))
