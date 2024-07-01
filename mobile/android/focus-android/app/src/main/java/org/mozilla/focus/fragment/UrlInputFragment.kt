@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.fragment
 
@@ -36,9 +35,12 @@ import org.mozilla.focus.utils.ViewUtils
 import org.mozilla.focus.whatsnew.WhatsNew
 import org.mozilla.focus.widget.InlineAutocompleteEditText
 
-
-
-
+/**
+ * Fragment for displaying the URL input controls.
+ */
+// Refactoring the size and function count of this fragment is non-trivial at this point.
+// Therefore we ignore those violations for now.
+@Suppress("LargeClass", "TooManyFunctions")
 class UrlInputFragment :
         LocaleAwareFragment(),
         View.OnClickListener,
@@ -93,10 +95,10 @@ class UrlInputFragment :
             return fragment
         }
 
-        
-
-
-
+        /**
+         * Create a new UrlInputFragment with a gradient background (and the Focus logo). This configuration
+         * is usually shown if there's no content to be shown below (e.g. the current website).
+         */
         @JvmStatic
         fun createWithBackground(): UrlInputFragment {
             val arguments = Bundle()
@@ -121,7 +123,7 @@ class UrlInputFragment :
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        
+        // Get session from session manager if there's a session UUID in the fragment's arguments
         arguments?.getString(ARGUMENT_SESSION_UUID)?.let {
             session = SessionManager.getInstance().getSessionByUUID(it)
         }
@@ -206,7 +208,7 @@ class UrlInputFragment :
         super.onStart()
 
         if (!Settings.getInstance(context).shouldShowFirstrun()) {
-            
+            // Only show keyboard if we are not displaying the first run tour on top.
             showKeyboard()
         }
     }
@@ -214,7 +216,7 @@ class UrlInputFragment :
     override fun onStop() {
         super.onStop()
 
-        
+        // Reset the keyboard layout to avoid a jarring animation when the view is started again. (#1135)
         keyboardLinearLayout.reset()
     }
 
@@ -222,6 +224,8 @@ class UrlInputFragment :
         ViewUtils.showKeyboard(urlView)
     }
 
+    // This method triggers the complexity warning. However it's actually not that hard to understand.
+    @Suppress("ComplexMethod")
     override fun onClick(view: View) {
         when (view.id) {
             R.id.clearView -> clear()
@@ -269,9 +273,9 @@ class UrlInputFragment :
     override fun onDetach() {
         super.onDetach()
 
-        
-        
-        
+        // On detach, the PopupMenu is no longer relevant to other content (e.g. BrowserFragment) so dismiss it.
+        // Note: if we don't dismiss the PopupMenu, its onMenuItemClick method references the old Fragment, which now
+        // has a null Context and will cause crashes.
         displayedPopupMenu?.dismiss()
     }
 
@@ -285,14 +289,14 @@ class UrlInputFragment :
         ThreadUtils.assertOnUiThread()
 
         if (isAnimating) {
-            
+            // We are already animating some state change. Ignore all other requests.
             return
         }
 
-        
-        
-        
-        
+        // Don't allow any more clicks: dismissView is still visible until the animation ends,
+        // but we don't want to restart animations and/or trigger hiding again (which could potentially
+        // cause crashes since we don't know what state we're in). Ignoring further clicks is the simplest
+        // solution, since dismissView is about to disappear anyway.
         dismissView.isClickable = false
 
         if (ANIMATION_BROWSER_SCREEN == arguments?.getString(ARGUMENT_ANIMATION)) {
@@ -302,15 +306,18 @@ class UrlInputFragment :
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * This animation is quite complex. The 'reverse' flag controls whether we want to show the UI
+     * (false) or whether we are going to hide it (true). Additionally the animation is slightly
+     * different depending on whether this fragment is shown as an overlay on top of other fragments
+     * or if it draws its own background.
+     */
+    // This method correctly triggers a complexity warning. This method is indeed very and too complex.
+    // However refactoring it is not trivial at this point so we ignore the warning for now.
+    @Suppress("ComplexMethod")
     private fun playVisibilityAnimation(reverse: Boolean) {
         if (isAnimating) {
-            
+            // We are already animating, let's ignore another request.
             return
         }
 
@@ -345,7 +352,7 @@ class UrlInputFragment :
             clearView.alpha = 0f
         }
 
-        
+        // Let the URL input use the full width/height and then shrink to the actual size
         urlInputBackgroundView.animate()
                 .setDuration(ANIMATION_DURATION.toLong())
                 .scaleX(if (reverse) widthScale else 1f)
@@ -373,7 +380,7 @@ class UrlInputFragment :
                     }
                 })
 
-        
+        // We only need to animate the toolbar if we are an overlay.
         if (isOverlay) {
             val screenLocation = IntArray(2)
             urlView.getLocationOnScreen(screenLocation)
@@ -386,7 +393,7 @@ class UrlInputFragment :
                 urlView.translationX = leftDelta.toFloat()
             }
 
-            
+            // The URL moves from the right (at least if the lock is visible) to it's actual position
             urlView.animate()
                     .setDuration(ANIMATION_DURATION.toLong())
                     .translationX((if (reverse) leftDelta else 0).toFloat())
@@ -397,7 +404,7 @@ class UrlInputFragment :
             clearView.alpha = 0f
         }
 
-        
+        // The darker background appears with an alpha animation
         toolbarBackgroundView.animate()
                 .setDuration(ANIMATION_DURATION.toLong())
                 .alpha((if (reverse) 0 else 1).toFloat())
@@ -420,11 +427,11 @@ class UrlInputFragment :
     }
 
     private fun dismiss() {
-        
-        
-        
-        
-        
+        // This method is called from animation callbacks. In the short time frame between the animation
+        // starting and ending the activity can be paused. In this case this code can throw an
+        // IllegalStateException because we already saved the state (of the activity / fragment) before
+        // this transaction is committed. To avoid this we commit while allowing a state loss here.
+        // We do not save any state in this fragment (It's getting destroyed) so this should not be a problem.
         activity?.supportFragmentManager
                 ?.beginTransaction()
                 ?.remove(this)
@@ -469,18 +476,18 @@ class UrlInputFragment :
 
         val fragmentManager = activity!!.supportFragmentManager
 
-        
-        
-        
+        // Replace all fragments with a fresh browser fragment. This means we either remove the
+        // HomeFragment with an UrlInputFragment on top or an old BrowserFragment with an
+        // UrlInputFragment.
         val browserFragment = fragmentManager.findFragmentByTag(BrowserFragment.FRAGMENT_TAG)
 
         if (browserFragment != null && browserFragment is BrowserFragment && browserFragment.isVisible) {
-            
-            
-            
+            // Reuse existing visible fragment - in this case we know the user is already browsing.
+            // The fragment might exist if we "erased" a browsing session, hence we need to check
+            // for visibility in addition to existence.
             browserFragment.loadUrl(url)
 
-            
+            // And this fragment can be removed again.
             fragmentManager.beginTransaction()
                     .remove(this)
                     .commit()
@@ -494,10 +501,10 @@ class UrlInputFragment :
     }
 
     override fun onFilter(searchText: String, view: InlineAutocompleteEditText?) {
-        
-        
-        
-        
+        // If the UrlInputFragment has already been hidden, don't bother with filtering. Because of the text
+        // input architecture on Android it's possible for onFilter() to be called after we've already
+        // hidden the Fragment, see the relevant bug for more background:
+        // https://github.com/mozilla-mobile/focus-android/issues/441#issuecomment-293691141
         if (!isVisible) {
             return
         }
@@ -520,9 +527,9 @@ class UrlInputFragment :
                 dismissView.visibility = View.VISIBLE
             }
 
-            
-            
-            
+            // LTR languages sometimes have grammar where the search terms are displayed to the left
+            // of the hint string. To take care of LTR, RTL, and special LTR cases, we use a
+            // placeholder to know the start and end indices of where we should bold the search text
             val hint = getString(R.string.search_hint, PLACEHOLDER)
             val start = hint.indexOf(PLACEHOLDER)
 
