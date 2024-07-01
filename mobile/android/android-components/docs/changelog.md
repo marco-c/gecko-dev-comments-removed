@@ -4,21 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 58.0.0-SNAPSHOT (In Development)
+# 57.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v57.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/118?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v56.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/117?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-# 57.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v56.0.0...v57.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/117?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v57.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v57.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v57.0.0/buildSrc/src/main/java/Config.kt)
 
 * **feature-search**
   * ⚠️ **This is a breaking change**: `SearchFeature.performSearch` now takes a second parameter.
@@ -34,16 +26,10 @@ permalink: /changelog/
 
 * **lib-push-firebase**
   * Removed non-essential dependency on `com.google.firebase:firebase-core`.
-  
-* **lib-crash**
-  * Crash report timestamp is now set to when the crash occurred.
-  * When breadcrumbs limit is reached, oldest breadcrumbs are dropped.
 
 * **feature-toolbar**
-  * Added `ContainerToolbarFeature` to update the toolbar with the container page action whenever the selected tab changes.
-
-* **browser-state**
-  * Added `LastAccessMiddleware` to dispatch `TabSessionAction.UpdateLastAccessAction` when a tab is selected.
+  * Added `ContainerToolbarFeature` to update the toolbar with the container page action whenever
+    the selected tab changes.
 
 * **feature-prompts**
   * Replaced generic icon in `LoginDialogFragment` with site icon (keep the generic one as fallback)
@@ -60,6 +46,8 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: `BrowserState.downloads` has changed it's type from `Map<Long, DownloadState>` to `Map<String, DownloadState>`.
   * 🌟 Added support for persisting/restoring downloads see issue [#7762](https://github.com/mozilla-mobile/android-components/issues/7762).
   * 🌟 Added `DownloadStorage` for querying stored download metadata.
+  * 🚒 Bug [issue #8190](https://github.com/mozilla-mobile/android-components/issues/8190) ArithmeticException: divide by zero in Download notification.
+
 
 * **ui-widgets**
   * 🆕 New VerticalSwipeRefreshLayout that comes to resolve many of the issues of the platform SwipeRefreshLayout and filters out other gestures than swipe down/up.
