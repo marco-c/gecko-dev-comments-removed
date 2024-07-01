@@ -63,6 +63,8 @@ public class ResizableKeyboardLayout extends CoordinatorLayout {
         public void onGlobalLayout() {
             int difference = calculateDifferenceBetweenHeightAndUsableArea();
 
+            
+            
             if (difference > 0) {
                 
                 if (getPaddingBottom() != difference) {
