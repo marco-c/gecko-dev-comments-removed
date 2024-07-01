@@ -1,4 +1,4 @@
-componentsVersion: 42.0.0
+componentsVersion: 41.0.0
 projects:
   concept-awesomebar:
     path: components/concept/awesomebar
@@ -19,6 +19,10 @@ projects:
   concept-engine:
     path: components/concept/engine
     description: 'An abstract layer hiding the actual browser engine implementation.'
+    publish: true
+  concept-menu:
+    path: components/concept/menu
+    description: 'An abstract definition of a browser menu component.'
     publish: true
   concept-push:
     path: components/concept/push
