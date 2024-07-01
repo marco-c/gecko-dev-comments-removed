@@ -12,7 +12,6 @@ import subprocess
 from collections import defaultdict
 from copy import deepcopy
 from taskgraph.loader.transform import loader as base_loader
-from taskgraph.util.memoize import memoize
 from taskgraph.util.taskcluster import get_session
 from taskgraph.util.templates import merge
 
@@ -48,6 +47,8 @@ def get_upstream_deps_for_components(components):
     """Return the full list of local upstream dependencies of a component."""
     deps = set()
     cmd = ["./gradlew"]
+    
+    
     for c in sorted(components):
         cmd.extend(["%s:dependencies" % c, "--configuration", "implementation"])
     
