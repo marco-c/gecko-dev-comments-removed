@@ -33,8 +33,11 @@ import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 
+
+
+
 @RunWith(AndroidJUnit4.class)
-public class AddtoHSTest {
+public class AddToHomescreenTest {
     private static final String TEST_PATH = "/";
     private MockWebServer webServer;
     private int webServerPort;

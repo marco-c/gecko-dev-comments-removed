@@ -31,8 +31,9 @@ import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
+
 @RunWith(AndroidJUnit4.class)
-public class OpenwithDialogTest {
+public class ShareWebsiteTest {
     private static final String TEST_PATH = "/";
     private MockWebServer webServer;
 
@@ -66,6 +67,18 @@ public class OpenwithDialogTest {
                 throw new AssertionError("Could not start web server", e);
             }
         }
+
+        @Override
+        protected void afterActivityFinished() {
+            super.afterActivityFinished();
+
+            try {
+                webServer.close();
+                webServer.shutdown();
+            } catch (IOException e) {
+                throw new AssertionError("Could not stop web server", e);
+            }
+        }
     };
 
     @After
@@ -74,17 +87,10 @@ public class OpenwithDialogTest {
     }
 
     @Test
-    public void OpenTest() throws UiObjectNotFoundException {
+    public void ShareWebsiteTest() throws UiObjectNotFoundException {
 
-        UiObject openWithBtn = TestHelper.mDevice.findObject(new UiSelector()
-                .resourceId(TestHelper.getAppName() + ":id/open_select_browser")
-                .enabled(true));
-        UiObject openWithTitle = TestHelper.mDevice.findObject(new UiSelector()
-                .className("android.widget.TextView")
-                .text("Open in…")
-                .enabled(true));
-        UiObject openWithList = TestHelper.mDevice.findObject(new UiSelector()
-                .resourceId(TestHelper.getAppName() + ":id/apps")
+        UiObject shareBtn = TestHelper.mDevice.findObject(new UiSelector()
+                .resourceId(TestHelper.getAppName() + ":id/share")
                 .enabled(true));
 
         
@@ -93,15 +99,17 @@ public class OpenwithDialogTest {
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        TestHelper.waitForWebContent();
+        assertTrue(TestHelper.webView.waitForExists(waitingTime));
 
         
         TestHelper.menuButton.perform(click());
-        openWithBtn.waitForExists(waitingTime);
-        openWithBtn.click();
-        openWithTitle.waitForExists(waitingTime);
-        assertTrue(openWithTitle.exists());
-        assertTrue(openWithList.exists());
+        shareBtn.waitForExists(waitingTime);
+        shareBtn.click();
+
+        
+        TestHelper.shareMenuHeader.waitForExists(waitingTime);
+        assertTrue(TestHelper.shareMenuHeader.exists());
+        assertTrue(TestHelper.shareAppList.exists());
         TestHelper.pressBackKey();
     }
 }

@@ -32,8 +32,9 @@ import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 
 
+
 @RunWith(Parameterized.class)
-public class SearchEngineSelectionTest {
+public class ChangeSearchEngineTest {
     @Parameterized.Parameter
     public String mSearchEngine;
 

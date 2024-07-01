@@ -31,7 +31,8 @@ import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 @RunWith(AndroidJUnit4.class)
-public class DownloadTest {
+
+public class DownloadFileTest {
     private static final String TEST_PATH = "/";
 
     private MockWebServer webServer;

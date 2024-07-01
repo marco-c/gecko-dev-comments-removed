@@ -36,6 +36,7 @@ import static org.mozilla.focus.helpers.EspressoHelper.openSettings;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
+
 @RunWith(AndroidJUnit4.class)
 public class SwitchLocaleTest {
 

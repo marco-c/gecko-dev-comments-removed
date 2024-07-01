@@ -6,13 +6,14 @@
 package org.mozilla.focus.activity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.UiObject;
+import android.support.test.uiautomator.By;
 import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiSelector;
+import android.support.test.uiautomator.Until;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -26,13 +27,17 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
 import static android.support.test.espresso.action.ViewActions.click;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
+
 @RunWith(AndroidJUnit4.class)
-public class ShareDialogTest {
+public class EraseAllUserDataTest {
     private static final String TEST_PATH = "/";
     private MockWebServer webServer;
 
@@ -56,6 +61,8 @@ public class ShareDialogTest {
             webServer = new MockWebServer();
 
             try {
+                webServer.enqueue(new MockResponse()
+                        .setBody(TestHelper.readTestAsset("plain_test.html")));
                 webServer.enqueue(new MockResponse()
                         .setBody(TestHelper.readTestAsset("plain_test.html")));
                 webServer.enqueue(new MockResponse()
@@ -86,11 +93,7 @@ public class ShareDialogTest {
     }
 
     @Test
-    public void shareTest() throws UiObjectNotFoundException {
-
-        UiObject shareBtn = TestHelper.mDevice.findObject(new UiSelector()
-                .resourceId(TestHelper.getAppName() + ":id/share")
-                .enabled(true));
+    public void TrashTest() throws UiObjectNotFoundException {
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
@@ -98,17 +101,66 @@ public class ShareDialogTest {
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
+        TestHelper.waitForWebContent();
 
         
+        TestHelper.floatingEraseButton.perform(click());
+        TestHelper.erasedMsg.waitForExists(waitingTime);
+        assertTrue(TestHelper.erasedMsg.exists());
+        assertTrue(TestHelper.inlineAutocompleteEditText.exists());
+    }
+
+    @Test
+    public void systemBarTest() throws UiObjectNotFoundException {
+        
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
+        TestHelper.hint.waitForExists(waitingTime);
+        TestHelper.pressEnterKey();
+        TestHelper.waitForWebContent();
         TestHelper.menuButton.perform(click());
-        shareBtn.waitForExists(waitingTime);
-        shareBtn.click();
+        TestHelper.blockCounterItem.waitForExists(waitingTime);
 
         
-        TestHelper.shareMenuHeader.waitForExists(waitingTime);
-        assertTrue(TestHelper.shareMenuHeader.exists());
-        assertTrue(TestHelper.shareAppList.exists());
-        TestHelper.pressBackKey();
+        TestHelper.openNotification();
+        TestHelper.notificationBarDeleteItem.waitForExists(waitingTime);
+        TestHelper.notificationBarDeleteItem.click();
+        TestHelper.erasedMsg.waitForExists(waitingTime);
+        assertTrue(TestHelper.erasedMsg.exists());
+        assertTrue(TestHelper.inlineAutocompleteEditText.exists());
+        assertFalse(TestHelper.menulist.exists());
+    }
+
+    @Test
+    public void systemBarHomeViewTest() throws UiObjectNotFoundException  {
+
+        
+        final int LAUNCH_TIMEOUT = 5000;
+
+        
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
+        TestHelper.hint.waitForExists(waitingTime);
+        TestHelper.pressEnterKey();
+        TestHelper.waitForWebContent();
+        
+        TestHelper.pressHomeKey();
+        TestHelper.openNotification();
+        TestHelper.notificationBarDeleteItem.waitForExists(waitingTime);
+        TestHelper.notificationBarDeleteItem.click();
+
+        
+        final String launcherPackage = TestHelper.mDevice.getLauncherPackageName();
+        assertThat(launcherPackage, notNullValue());
+        TestHelper.mDevice.wait(Until.hasObject(By.pkg(launcherPackage).depth(0)),
+                LAUNCH_TIMEOUT);
+
+        
+        mActivityTestRule.launchActivity(new Intent(Intent.ACTION_MAIN));
+        
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        assertTrue(TestHelper.inlineAutocompleteEditText.exists());
     }
 }
