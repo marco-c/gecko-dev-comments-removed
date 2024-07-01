@@ -27,7 +27,7 @@ object Versions {
     const val disklrucache = "2.0.2"
     const val leakcanary = "1.6.3"
 
-    const val mozilla_appservices = "61.0.6"
+    const val mozilla_appservices = "61.0.7"
 
     const val mozilla_glean = "31.2.3"
 
@@ -65,7 +65,7 @@ object Versions {
 }
 
 // Synchronized dependencies used by (some) modules
-@Suppress("Unused", "MaxLineLength")
+@Suppress("MaxLineLength")
 object Dependencies {
     const val kotlin_stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${Versions.kotlin}"
     const val kotlin_coroutines = "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.coroutines}"
