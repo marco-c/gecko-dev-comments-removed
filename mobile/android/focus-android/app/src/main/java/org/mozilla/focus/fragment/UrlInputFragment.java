@@ -146,11 +146,18 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         
         
         
-        getActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.container, BrowserFragment.create(url), BrowserFragment.FRAGMENT_TAG)
-                .addToBackStack("browser")
-                .commit();
+        final BrowserFragment browserFragment = (BrowserFragment) getActivity().getSupportFragmentManager()
+                .findFragmentByTag(BrowserFragment.FRAGMENT_TAG);
+
+        if (browserFragment != null) {
+            browserFragment.loadURL(url);
+        } else {
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container, BrowserFragment.create(url), BrowserFragment.FRAGMENT_TAG)
+                    .addToBackStack("browser")
+                    .commit();
+        }
     }
 
     @Override
