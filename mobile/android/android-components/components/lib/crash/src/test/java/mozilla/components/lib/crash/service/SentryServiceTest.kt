@@ -7,11 +7,8 @@ package mozilla.components.lib.crash.service
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.SentryClient
 import io.sentry.SentryClientFactory
-import io.sentry.context.Context
 import io.sentry.dsn.Dsn
 import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.crash.Breadcrumb
-import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
@@ -23,8 +20,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.spy
-import org.mockito.Mockito.`when`
 
 @RunWith(AndroidJUnit4::class)
 class SentryServiceTest {
@@ -34,7 +29,7 @@ class SentryServiceTest {
         var usedDsn: Dsn? = null
 
         val client: SentryClient = mock()
-
+        val uncaughtExceptionCrash: Crash.UncaughtExceptionCrash = mock()
         val factory = object : SentryClientFactory() {
             override fun createSentryClient(dsn: Dsn?): SentryClient {
                 usedDsn = dsn
@@ -49,7 +44,7 @@ class SentryServiceTest {
             tags = mapOf(
                 "test" to "world",
                 "house" to "boat"
-            ))
+            )).report(uncaughtExceptionCrash)
 
         assertNotNull(usedDsn)
 
@@ -76,7 +71,7 @@ class SentryServiceTest {
             clientFactory = factory)
 
         val exception = RuntimeException("Hello World")
-        service.report(Crash.UncaughtExceptionCrash(exception, arrayListOf()))
+        service.report(Crash.UncaughtExceptionCrash(exception))
 
         verify(client).sendException(exception)
     }
@@ -93,7 +88,7 @@ class SentryServiceTest {
             },
             sendEventForNativeCrashes = true)
 
-        service.report(Crash.NativeCodeCrash("", true, "", false, arrayListOf()))
+        service.report(Crash.NativeCodeCrash("", true, "", false))
 
         verify(client).sendMessage(any())
     }
@@ -109,7 +104,7 @@ class SentryServiceTest {
                 override fun createSentryClient(dsn: Dsn?): SentryClient = client
             })
 
-        service.report(Crash.NativeCodeCrash("", true, "", false, arrayListOf()))
+        service.report(Crash.NativeCodeCrash("", true, "", false))
 
         verify(client, never()).sendMessage(any())
     }
@@ -117,13 +112,13 @@ class SentryServiceTest {
     @Test
     fun `SentryService adds default tags`() {
         val client: SentryClient = mock()
-
+        val uncaughtExceptionCrash: Crash.UncaughtExceptionCrash = mock()
         SentryService(
             testContext,
             "https://not:real6@sentry.prod.example.net/405",
             clientFactory = object : SentryClientFactory() {
                 override fun createSentryClient(dsn: Dsn?): SentryClient = client
-            })
+            }).report(uncaughtExceptionCrash)
 
         verify(client).addTag(eq("ac.version"), any())
         verify(client).addTag(eq("ac.git"), any())
@@ -134,64 +129,20 @@ class SentryServiceTest {
     fun `SentryService passes an environment or null`() {
         val client: SentryClient = mock()
         val environmentString = "production"
-
+        val uncaughtExceptionCrash: Crash.UncaughtExceptionCrash = mock()
         SentryService(testContext,
                 "https://fake:notreal@sentry.prod.example.net/405",
                 clientFactory = object : SentryClientFactory() {
                     override fun createSentryClient(dsn: Dsn?): SentryClient = client
                 },
-                environment = environmentString)
+                environment = environmentString).report(uncaughtExceptionCrash)
         verify(client).environment = eq(environmentString)
 
         SentryService(testContext,
                 "https://fake:notreal@sentry.prod.example.net/405",
                 clientFactory = object : SentryClientFactory() {
                     override fun createSentryClient(dsn: Dsn?): SentryClient = client
-                })
+                }).report(uncaughtExceptionCrash)
         verify(client).environment = null
-    }
-
-    @Test
-    fun `SentryService records breadcrumb when CrashReporterService report is called`() {
-        val client: SentryClient = mock()
-        val clientContext: Context = mock()
-        val testMessage = "test_Message"
-        val testData = hashMapOf("1" to "one", "2" to "two")
-        val testCategory = "testing_category"
-        val testLevel = Breadcrumb.Level.CRITICAL
-        val testType = Breadcrumb.Type.USER
-
-        val factory = object : SentryClientFactory() {
-            override fun createSentryClient(dsn: Dsn?): SentryClient {
-                return client
-            }
-        }
-
-        val service = SentryService(
-                testContext,
-                "https://not:real6@sentry.prod.example.net/405",
-                clientFactory = factory,
-                sendEventForNativeCrashes = true
-                )
-
-        val reporter = spy(CrashReporter(
-                services = listOf(service),
-                shouldPrompt = CrashReporter.Prompt.NEVER
-        ).install(testContext))
-
-        `when`(client.context).thenReturn(clientContext)
-
-        reporter.recordCrashBreadcrumb(
-                Breadcrumb(testMessage, testData, testCategory, testLevel, testType)
-        )
-        val nativeCrash = Crash.NativeCodeCrash(
-                "dump.path",
-                true,
-                "extras.path",
-                isFatal = false,
-                breadcrumbs = reporter.crashBreadcrumbs)
-
-        service.report(nativeCrash)
-        verify(clientContext).recordBreadcrumb(any())
     }
 }
