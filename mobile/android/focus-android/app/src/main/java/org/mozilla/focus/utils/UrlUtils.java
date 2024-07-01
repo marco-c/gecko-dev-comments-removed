@@ -54,12 +54,15 @@ public class UrlUtils {
     public static String stripUserInfo(String url) {
         try {
             URI uri = new URI(url);
+
             final String userInfo = uri.getUserInfo();
-            if (userInfo != null) {
-                
-                
-                uri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
+            if (userInfo == null) {
+                return url;
             }
+
+            
+            
+            uri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 
             return uri.toString();
         } catch (URISyntaxException e) {
