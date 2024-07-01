@@ -44,15 +44,6 @@ def target_tasks_nightly(full_task_graph, parameters, graph_config):
 @_target_task("release")
 def target_tasks_release(full_task_graph, parameters, graph_config):
     def filter(task, parameters):
-        
-        
-        
-        if (
-            task.kind == "mark-as-shipped"
-            and parameters["tasks_for"] == "github-release"
-        ):
-            return False
-
         return task.attributes.get("build-type", "") == "release"
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t, parameters)]
