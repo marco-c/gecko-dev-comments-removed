@@ -4,7 +4,6 @@
 
 package org.mozilla.focus.widget;
 
-
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
@@ -15,10 +14,6 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
 import org.mozilla.focus.R;
-import java.util.ArrayList;
-
-
-
 
 
 
@@ -34,8 +29,6 @@ import java.util.ArrayList;
     private final Rect rect;
     private final View delegateView;
     private View decorView;
-    private final int viewsToHideAttrId;
-    private final ArrayList<Integer> arrayOfViewsToHide = new ArrayList<>();
     private final boolean shouldAnimate;
     private boolean isAnimating;
 
@@ -54,13 +47,11 @@ import java.util.ArrayList;
                 
                 if (delegateView.getPaddingBottom() != difference) {
                     updateBottomPadding(difference);
-                    updateDynamicViewsVisibility(View.GONE);
                 }
             } else {
                 
                 if (delegateView.getPaddingBottom() != 0) {
                     updateBottomPadding(0);
-                    updateDynamicViewsVisibility(View.VISIBLE);
                 }
             }
         }
@@ -76,34 +67,17 @@ import java.util.ArrayList;
                 0, 0);
 
         try {
-             viewsToHideAttrId = styleAttributeArray.getResourceId(
-                    R.styleable.ResizableKeyboardViewDelegate_viewsToHideWhenActivated,
-                    0
-            );
             shouldAnimate = styleAttributeArray.getBoolean(R.styleable.ResizableKeyboardViewDelegate_animate, false);
         } finally {
             styleAttributeArray.recycle();
         }
     }
 
-    private void populateArrayOfViewsToHide(int viewsToHideAttrId) {
-        if (viewsToHideAttrId != 0) {
-            final TypedArray resourceArray = delegateView.getResources().obtainTypedArray(viewsToHideAttrId);
-            for (int index = 0; index < resourceArray.length(); index++) {
-                final int resourceId = resourceArray.getResourceId(index, 0);
-                arrayOfViewsToHide.add(resourceId);
-            }
-            resourceArray.recycle();
-        }
-    }
-
      void onAttachedToWindow() {
-        populateArrayOfViewsToHide(viewsToHideAttrId);
         delegateView.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
 
      void onDetachedFromWindow() {
-        arrayOfViewsToHide.clear();
         delegateView.getViewTreeObserver().removeOnGlobalLayoutListener(layoutListener);
     }
 
@@ -148,16 +122,5 @@ import java.util.ArrayList;
         decorView.getWindowVisibleDisplayFrame(rect);
 
         return delegateView.getResources().getDisplayMetrics().heightPixels - rect.bottom;
-    }
-
-    private void updateDynamicViewsVisibility(int visibility) {
-        if (!arrayOfViewsToHide.isEmpty()) {
-            for (Integer viewId : arrayOfViewsToHide) {
-                View viewToHide = delegateView.findViewById(viewId);
-                if (viewToHide != null) {
-                    viewToHide.setVisibility(visibility);
-                }
-            }
-        }
     }
 }
