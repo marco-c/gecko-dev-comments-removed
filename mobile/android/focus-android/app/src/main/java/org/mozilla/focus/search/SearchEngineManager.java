@@ -34,6 +34,12 @@ public class SearchEngineManager extends BroadcastReceiver {
 
     private List<SearchEngine> searchEngines;
 
+    
+
+
+
+    private boolean loadHasBeenTriggered = false;
+
     public static SearchEngineManager getInstance() {
         return instance;
     }
@@ -67,6 +73,7 @@ public class SearchEngineManager extends BroadcastReceiver {
 
     @WorkerThread
     private synchronized void loadFromDisk(Context context) {
+        loadHasBeenTriggered = true;
         final AssetManager assetManager = context.getAssets();
         final Locale locale = Locale.getDefault();
         final List<SearchEngine> searchEngines = new ArrayList<>();
@@ -157,6 +164,10 @@ public class SearchEngineManager extends BroadcastReceiver {
     }
 
     public void awaitLoadingSearchEnginesLocked() {
+        if (!loadHasBeenTriggered) {
+            throw new IllegalStateException("Attempting to retrieve search engines without a corresponding init()");
+        }
+
         while (searchEngines == null) {
             try {
                 wait();
