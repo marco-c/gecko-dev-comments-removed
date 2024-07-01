@@ -4,13 +4,67 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 22.0.0-SNAPSHOT (In Development)
+# 23.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v21.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/82?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v22.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/83?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+* **browser-state**
+  * ⚠️ **This is a breaking change**: `DownloadState` doesn't include the property `filePath` in its constructor anymore, now it is a computed property. As the previous behavior caused some situations where `fileName` was initially null and after assigned a value to produce `filePath` values like "/storage/emulated/0/Download/null" [for more info](https://sentry.prod.mozaws.net/operations/reference-browser/issues/6609701/).
+
+* **feature-prompts** and **feature-downloads**
+  * Fix [issue #6439](https://github.com/mozilla-mobile/fenix/issues/6439) "Crash when downloading Image"
+
+* **service-firefox-accounts**
+  * Account profile cache is now used, removing a network call from most instances of account manager instantiation.
+  * Fixed a bug where account would disappear after restarting an app which hit authentication problems.
+
+# 22.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v22.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/82?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v22.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v22.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v22.0.0/buildSrc/src/main/java/Config.kt)
+
+* **feature-addons**
+  *  ⚠️ **This is a breaking change**:
+  * Renamed to `AddOnsCollectionsProvider` to `AddOnCollectionProvider` and added caching support:
+  ```Kotlin
+  val addOnsProvider by lazy {
+    // Keeps addon collection response cached and valid for one day
+    AddOnCollectionProvider(applicationContext, client, maxCacheAgeInMinutes = 24 * 60)
+  }
+
+  // May return a cached result, if available
+  val addOns = addOnsProvider.getAvailableAddOns()
+
+  // Will never return a cached result
+  val addOns = addOnsProvider.getAvailableAddOns(allowCache = false)
+  ```
+
+* **lib-nearby**
+  * 🆕 New component for communicating directly between two devices
+  using Google Nearby API.
+
+* **sample-nearby-chat**
+  * 🆕 New sample program demonstrating use of `lib-nearby`.
+
+* **feature-customtabs**
+  * ⚠️ `CustomTabWindowFeature` now takes `Activity` instead of `Context`.
+
+* **concept-sync**, **service-firefox-accounts**
+  * `OAuthAccount@authorizeOAuthCode` method is now `authorizeOAuthCodeAsync`.
+
+* **service-firefox-accounts**
+  * For supported Android API levels (23+), `FxaAccountManager` can now be configured to encrypt persisted FxA state, via `secureStateAtRest` flag on passed-in `DeviceConfig`. Defaults to `false`. For lower API levels, setting `secureStateAtRest` will continue storing FxA state in plaintext. If the device is later upgraded to 23+, FxA state will be automatically migrated to an encrypted storage.
+  * FxA state is stored in application's data directory, in plaintext or encrypted-at-rest if configured via the `secureStateAtRest` flag. This state contains everything that's necessary to download and decrypt data stored in Firefox Sync.
+  * An instance of a `CrashReporter` may now be passed to the `FxaAccountManager`'s constructor. If configured, it will be used to report any detected abnormalities.
+  *  ⚠️ **This is a breaking change**:
+  * Several `FxaAccountManager` methods have been made internal, and are no longer part of the public API of this module: `createSyncManager`, `getAccountStorage`.
 
 # 21.0.0
 
@@ -45,6 +99,9 @@ permalink: /changelog/
 * **engine-gecko-nightly**
   * Adds setDynamicToolbarMaxHeight ApI.
 
+
+* **feature-push**
+  * Added `unsubscribeAll` support from the Rust native layer.
 
 # 20.0.0
 
@@ -82,7 +139,7 @@ permalink: /changelog/
 * **concept-engine**
   * Adds support for WebPush abstraction to the Engine.
   * Adds support for WebShare abstraction as a PromptRequest.
-  
+
 * **engine-gecko-nightly**
   * Adds support for WebPush in GeckoEngine.
 
@@ -97,7 +154,7 @@ permalink: /changelog/
 
 * **feature-prompts**
   * Adds support for Web Share API using `ShareDelegate`.
-  
+
 * **experiments**
   * Fixes a crash when the app version or the experiment's version specifiers are not in the expected format.
 
@@ -111,8 +168,8 @@ permalink: /changelog/
         store.dispatch(RemoveTabAction(tab.id))
       }
     }
-  }  
-  ```  
+  }
+  ```
 
 # 19.0.1
 
@@ -160,6 +217,16 @@ permalink: /changelog/
 
 * **feature-push**
   * The `AutoPushFeature` now checks (once every 24 hours) to verify and renew push subscriptions if expired after a cold boot.
+
+# 18.0.1
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v18.0.0...v18.0.1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v18.0.1/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v18.0.1/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v18.0.1/buildSrc/src/main/java/Config.kt)
+
+* **feature-prompts**
+  * Fixed a crash when showing the file picker.
 
 # 18.0.0
 
@@ -718,7 +785,7 @@ permalink: /changelog/
 
 * **feature-media**
   * `MediaFeature` is no longer showing a notification for playing media with a very short duration.
-  * Lowererd priority of media notification channel to avoid the media notification makign any sounds itself.
+  * Lowered priority of media notification channel to avoid the media notification making any sounds itself.
 
 # 7.0.0
 
