@@ -44,13 +44,14 @@ public class TelemetrySessionObserver extends NonNullObserver<List<Session>> {
                 TelemetryWrapper.openHomescreenShortcutEvent();
                 break;
 
-            case USER_ENTERED:
-                
-                
-                break;
-
             case CUSTOM_TAB:
                 TelemetryWrapper.customTabsIntentEvent(session.getCustomTabConfig().getOptionsList());
+                break;
+
+            case USER_ENTERED:
+            case MENU:
+                
+                
                 break;
 
             default:
