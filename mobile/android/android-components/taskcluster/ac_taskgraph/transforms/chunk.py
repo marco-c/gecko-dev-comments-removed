@@ -24,6 +24,7 @@ def build_task_definition(orig_task, deps, count):
         task['treeherder']['symbol'] = add_suffix(
             task['treeherder']['symbol'], "-{}".format(count))
 
+    task["attributes"]["is_final_chunked_task"] = False
     return task
 
 
@@ -39,7 +40,9 @@ def add_dependencies(config, tasks):
         chunked_labels = {}
 
         
-        dep_labels = sorted(task.pop('soft-dependencies', []))
+        dep_labels = task.pop('soft-dependencies', [])
+        dep_labels.extend(task.get('dependencies', {}).keys())
+        dep_labels = sorted(dep_labels)
 
         for dep_label in dep_labels:
             deps[dep_label] = dep_label
@@ -58,4 +61,9 @@ def add_dependencies(config, tasks):
             count += 1
 
         task['dependencies'] = chunked_labels
+        
+        
+        
+        
+        task["attributes"]["is_final_chunked_task"] = True
         yield task
