@@ -67,6 +67,21 @@ public class SessionManagerTest {
         assertTrue(sessionManager.hasSession());
     }
 
+    
+
+
+    @Test
+    public void testViewIntentWithNullURL() {
+        final SessionManager sessionManager = SessionManager.getInstance();
+        assertFalse(sessionManager.hasSession());
+
+        final SafeIntent intent = new SafeIntent(new Intent(Intent.ACTION_VIEW, null));
+        sessionManager.handleIntent(RuntimeEnvironment.application, intent, null);
+
+        
+        assertFalse(sessionManager.hasSession());
+    }
+
     @Test
     public void testCustomTabIntent() {
         final SessionManager sessionManager = SessionManager.getInstance();
