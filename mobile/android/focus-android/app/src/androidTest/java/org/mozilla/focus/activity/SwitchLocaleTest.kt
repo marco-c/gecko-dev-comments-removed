@@ -1,0 +1,254 @@
+
+
+
+
+package org.mozilla.focus.activity
+
+import android.os.Build.VERSION
+import androidx.test.espresso.action.ViewActions
+import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiObjectNotFoundException
+import androidx.test.uiautomator.UiScrollable
+import androidx.test.uiautomator.UiSelector
+import org.junit.After
+import org.junit.Assert
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TestRule
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
+import org.junit.runner.RunWith
+import org.mozilla.focus.helpers.EspressoHelper.openMenu
+import org.mozilla.focus.helpers.EspressoHelper.openSettings
+import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.TestHelper
+import org.mozilla.focus.helpers.TestHelper.pressBackKey
+import org.mozilla.focus.helpers.TestHelper.waitingTime
+import java.util.Locale
+
+
+
+@RunWith(AndroidJUnit4ClassRunner::class)
+class SwitchLocaleTest {
+    @get: Rule
+    var mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+
+    @get: Rule
+    var watcher: TestRule = object : TestWatcher() {
+        override fun starting(description: Description) {
+            println("Starting test: " + description.methodName)
+            if (description.methodName == "FrenchLocaleTest") {
+                changeLocale("fr")
+            }
+        }
+    }
+
+    @After
+    fun tearDown() {
+        changeLocale("en")
+        mActivityTestRule.activity.finishAndRemoveTask()
+    }
+
+    private val sysDefaultLocale = TestHelper.mDevice.findObject(
+        UiSelector()
+            .className("android.widget.CheckedTextView")
+            .instance(0)
+            .enabled(true)
+    )
+    private val languageHeading = TestHelper.settingsMenu.getChild(
+        UiSelector()
+            .className("android.widget.LinearLayout")
+            .instance(4)
+    )
+    private val englishHeading = TestHelper.mDevice.findObject(
+        UiSelector()
+            .className("android.widget.TextView")
+            .text("Language")
+    )
+    private val frenchHeading = TestHelper.mDevice.findObject(
+        UiSelector()
+            .className("android.widget.TextView")
+            .text("Langue")
+    )
+    private val englishGeneralHeading = TestHelper.mDevice.findObject(
+        UiSelector()
+            .text("General")
+            .resourceId("android:id/title")
+    )
+    private val frenchGeneralHeading = TestHelper.mDevice.findObject(
+        UiSelector()
+            .text("Général")
+            .resourceId("android:id/title")
+    )
+    private val englishMozillaHeading = TestHelper.mDevice.findObject(
+        UiSelector()
+            .text("Mozilla")
+            .resourceId("android:id/title")
+    )
+    private val showHomeScreenTips = TestHelper.mDevice.findObject(
+        UiSelector()
+            .className("android.widget.Switch")
+            .instance(0)
+    )
+
+    @Suppress("LongMethod")
+    @Test
+    @Throws(UiObjectNotFoundException::class)
+    fun EnglishSystemLocaleTest() {
+        val frenchMenuItem = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .text("Français")
+        )
+        val englishMenuItem = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .text("System default")
+        )
+        val frenchLocaleinEn = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.CheckedTextView")
+                .text("Français")
+        )
+
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime)
+        openSettings()
+
+        englishMozillaHeading.waitForExists(waitingTime)
+        englishMozillaHeading.click()
+        showHomeScreenTips.waitForExists(waitingTime)
+        showHomeScreenTips.click()
+        pressBackKey()
+
+        
+        englishGeneralHeading.waitForExists(waitingTime)
+        englishGeneralHeading.click()
+        languageHeading.waitForExists(waitingTime)
+
+        languageHeading.click()
+        sysDefaultLocale.waitForExists(waitingTime)
+        Assert.assertTrue(sysDefaultLocale.isChecked)
+
+        
+        val appViews = UiScrollable(UiSelector().scrollable(true))
+        appViews.scrollIntoView(frenchLocaleinEn)
+        Assert.assertTrue(frenchLocaleinEn.isClickable)
+        frenchLocaleinEn.click()
+        frenchHeading.waitForExists(waitingTime)
+        Assert.assertTrue(frenchHeading.exists())
+        Assert.assertTrue(frenchMenuItem.exists())
+
+        pressBackKey()
+        pressBackKey()
+        val frenchTitle = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .text("Navigation privée automatique.\nNaviguez. Effacez. Recommencez.")
+        )
+        frenchTitle.waitForExists(waitingTime)
+        Assert.assertTrue(frenchTitle.exists())
+        openMenu()
+        Assert.assertEquals(TestHelper.settingsMenuItem.text, "Paramètres")
+        Assert.assertEquals(TestHelper.HelpItem.text, "Aide")
+        TestHelper.settingsMenuItem.click()
+
+        frenchGeneralHeading.waitForExists(
+            waitingTime
+        )
+        frenchGeneralHeading.click()
+        languageHeading.waitForExists(waitingTime)
+        languageHeading.click()
+        Assert.assertTrue(frenchLocaleinEn.isChecked)
+        appViews.scrollToBeginning(10)
+        sysDefaultLocale.waitForExists(waitingTime)
+        sysDefaultLocale.click()
+        languageHeading.waitForExists(waitingTime)
+        Assert.assertTrue(englishHeading.exists())
+        Assert.assertTrue(englishMenuItem.exists())
+
+        
+        pressBackKey()
+        pressBackKey()
+        val englishTitle = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .text("Automatic private browsing.\nBrowse. Erase. Repeat.")
+        )
+        englishTitle.waitForExists(waitingTime)
+        Assert.assertTrue(englishTitle.exists())
+        openSettings()
+
+        englishMozillaHeading.waitForExists(waitingTime)
+        englishMozillaHeading.click()
+        showHomeScreenTips.waitForExists(waitingTime)
+        showHomeScreenTips.click()
+        pressBackKey()
+        pressBackKey()
+        TestHelper.menuButton.perform(ViewActions.click())
+        Assert.assertEquals(TestHelper.settingsMenuItem.text, "Settings")
+        Assert.assertEquals(TestHelper.HelpItem.text, "Help")
+        TestHelper.mDevice.pressBack()
+    }
+
+    @Suppress("LongMethod")
+    @Test
+    @Throws(UiObjectNotFoundException::class)
+    fun FrenchLocaleTest() {
+        val frenchMenuItem = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .text("Valeur par défaut du système")
+        )
+        val englishMenuItem = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .text("English (United States)")
+        )
+        val englishLocaleinFr = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.CheckedTextView")
+                .text("English (United States)")
+        )
+
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime)
+        openSettings()
+        frenchGeneralHeading.waitForExists(waitingTime)
+        frenchGeneralHeading.click()
+        languageHeading.waitForExists(waitingTime)
+
+        frenchHeading.waitForExists(
+            waitingTime
+        )
+        Assert.assertTrue(frenchHeading.exists())
+        Assert.assertTrue(frenchMenuItem.exists())
+        languageHeading.click()
+        Assert.assertTrue(sysDefaultLocale.isChecked)
+
+        
+        val appViews = UiScrollable(UiSelector().scrollable(true))
+        appViews.scrollIntoView(englishLocaleinFr)
+        Assert.assertTrue(englishLocaleinFr.isClickable)
+        englishLocaleinFr.click()
+        englishHeading.waitForExists(waitingTime)
+        Assert.assertTrue(englishHeading.exists())
+        Assert.assertTrue(englishMenuItem.exists())
+        TestHelper.mDevice.pressBack()
+    }
+
+    companion object {
+        @Suppress("Deprecation")
+        fun changeLocale(locale: String?) {
+            val context = InstrumentationRegistry.getInstrumentation()
+                .targetContext
+            val res = context.applicationContext.resources
+            val config = res.configuration
+            config.setLocale(Locale(locale!!))
+            if (VERSION.SDK_INT >= 25) {
+                context.createConfigurationContext(config)
+            } else {
+                res.updateConfiguration(config, res.displayMetrics)
+            }
+        }
+    }
+}

@@ -1,0 +1,265 @@
+
+
+
+
+package org.mozilla.focus.activity
+
+import android.os.Build
+import android.os.Build.VERSION
+import androidx.test.espresso.action.ViewActions
+import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.uiautomator.UiObjectNotFoundException
+import androidx.test.uiautomator.UiSelector
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
+import org.mozilla.focus.helpers.TestHelper
+import org.mozilla.focus.helpers.TestHelper.pressBackKey
+import org.mozilla.focus.helpers.TestHelper.pressEnterKey
+import org.mozilla.focus.helpers.TestHelper.pressHomeKey
+import org.mozilla.focus.helpers.TestHelper.readTestAsset
+import org.mozilla.focus.helpers.TestHelper.swipeScreenLeft
+import org.mozilla.focus.helpers.TestHelper.waitForIdle
+import org.mozilla.focus.helpers.TestHelper.waitForWebContent
+import org.mozilla.focus.helpers.TestHelper.waitingTime
+import org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime
+import java.io.IOException
+
+
+
+
+@RunWith(AndroidJUnit4ClassRunner::class)
+class AddToHomescreenTest {
+    private var webServer: MockWebServer? = null
+    private var webServerPort = 0
+    private var webServerBookmarkName: String? = null
+
+    @get: Rule
+    var mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+
+    @Before
+    fun setup() {
+        webServer = MockWebServer()
+        
+        
+        webServerPort = webServer!!.port
+        webServerBookmarkName = "localhost_" + Integer.toString(webServerPort)
+        try {
+            webServer!!.enqueue(
+                MockResponse()
+                    .setBody(readTestAsset("plain_test.html"))
+            )
+            webServer!!.enqueue(
+                MockResponse()
+                    .setBody(readTestAsset("plain_test.html"))
+            )
+        } catch (e: IOException) {
+            throw AssertionError("Could not start web server", e)
+        }
+    }
+
+    @After
+    fun tearDown() {
+        mActivityTestRule.activity.finishAndRemoveTask()
+        try {
+            webServer!!.close()
+            webServer!!.shutdown()
+        } catch (e: IOException) {
+            throw AssertionError("Could not stop web server", e)
+        }
+    }
+
+    private val welcomeBtn = TestHelper.mDevice.findObject(
+        UiSelector()
+            .resourceId("com.android.launcher3:id/cling_dismiss_longpress_info")
+            .text("GOT IT")
+            .enabled(true)
+    )
+
+    @Throws(UiObjectNotFoundException::class)
+    private fun handleShortcutLayoutDialog() {
+        TestHelper.AddautoBtn.waitForExists(waitingTime)
+        TestHelper.AddautoBtn.click()
+        TestHelper.AddautoBtn.waitUntilGone(waitingTime)
+        pressHomeKey()
+    }
+
+    @Throws(UiObjectNotFoundException::class)
+    private fun openAddtoHSDialog() {
+        TestHelper.menuButton.perform(ViewActions.click())
+        TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)
+        
+        while (!TestHelper.AddtoHSmenuItem.isClickable) {
+            pressBackKey()
+            TestHelper.menuButton.perform(ViewActions.click())
+        }
+        TestHelper.AddtoHSmenuItem.click()
+    }
+
+    @Test
+    @Throws(UiObjectNotFoundException::class)
+    @Suppress("LongMethod")
+    fun AddToHomeScreenTest() {
+        val shortcutIcon = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .description(webServerBookmarkName)
+                .enabled(true)
+        )
+
+        
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime)
+        TestHelper.inlineAutocompleteEditText.clearTextField()
+        TestHelper.inlineAutocompleteEditText.text = webServer!!.url(TEST_PATH).toString()
+        TestHelper.hint.waitForExists(waitingTime)
+        pressEnterKey()
+        TestHelper.progressBar.waitForExists(waitingTime)
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime))
+        openAddtoHSDialog()
+        
+        TestHelper.shortcutTitle.waitForExists(waitingTime)
+        Assert.assertTrue(TestHelper.shortcutTitle.isEnabled)
+        Assert.assertEquals(TestHelper.shortcutTitle.text, "gigantic experience")
+        Assert.assertTrue(TestHelper.AddtoHSOKBtn.isEnabled)
+        Assert.assertTrue(TestHelper.AddtoHSCancelBtn.isEnabled)
+
+        
+        TestHelper.shortcutTitle.click()
+        TestHelper.shortcutTitle.text = webServerBookmarkName
+        TestHelper.AddtoHSOKBtn.click()
+
+        
+        if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            handleShortcutLayoutDialog()
+        }
+
+        
+        if (welcomeBtn.exists()) {
+            welcomeBtn.click()
+        }
+        shortcutIcon.waitForExists(waitingTime)
+        Assert.assertTrue(shortcutIcon.isEnabled)
+        shortcutIcon.click()
+        TestHelper.browserURLbar.waitForExists(waitingTime)
+        Assert.assertTrue(
+            TestHelper.browserURLbar.text
+                    == webServer!!.url(TEST_PATH).toString()
+        )
+    }
+
+    @Test
+    @Throws(UiObjectNotFoundException::class)
+    @Suppress("LongMethod")
+    fun NonameTest() {
+        val shortcutIcon = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .description(webServerBookmarkName)
+                .enabled(true)
+        )
+
+        
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime)
+        TestHelper.inlineAutocompleteEditText.clearTextField()
+        TestHelper.inlineAutocompleteEditText.text =
+            webServer!!.url(TEST_PATH).toString()
+        TestHelper.hint.waitForExists(waitingTime)
+        pressEnterKey()
+        TestHelper.progressBar.waitForExists(waitingTime)
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime))
+        openAddtoHSDialog()
+
+        
+        TestHelper.shortcutTitle.waitForExists(waitingTime)
+        Assert.assertTrue(TestHelper.shortcutTitle.isEnabled)
+        Assert.assertEquals(TestHelper.shortcutTitle.text, "gigantic experience")
+        Assert.assertTrue(TestHelper.AddtoHSOKBtn.isEnabled)
+        Assert.assertTrue(TestHelper.AddtoHSCancelBtn.isEnabled)
+
+        
+        TestHelper.shortcutTitle.click()
+        TestHelper.shortcutTitle.text = webServerBookmarkName
+        TestHelper.AddtoHSOKBtn.click()
+
+        
+        if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            handleShortcutLayoutDialog()
+        }
+        if (welcomeBtn.exists()) {
+            welcomeBtn.click()
+        }
+        
+        
+        TestHelper.mDevice.pressHome()
+        swipeScreenLeft()
+        shortcutIcon.waitForExists(waitingTime)
+        Assert.assertTrue(shortcutIcon.isEnabled)
+        shortcutIcon.click()
+        TestHelper.browserURLbar.waitForExists(waitingTime)
+        Assert.assertTrue(
+            TestHelper.browserURLbar.text
+                    == webServer!!.url(TEST_PATH).toString()
+        )
+    }
+
+    @Test
+    @Throws(UiObjectNotFoundException::class)
+    @Suppress("LongMethod")
+    fun SearchTermShortcutTest() {
+        val shortcutIcon = TestHelper.mDevice.findObject(
+            UiSelector()
+                .className("android.widget.TextView")
+                .descriptionContains("helloworld")
+                .enabled(true)
+        )
+
+        
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime)
+        TestHelper.inlineAutocompleteEditText.clearTextField()
+        TestHelper.inlineAutocompleteEditText.text = "helloworld"
+        TestHelper.hint.waitForExists(waitingTime)
+        pressEnterKey()
+        
+        
+        
+        TestHelper.progressBar.waitForExists(waitingTime)
+        TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime)
+        openAddtoHSDialog()
+
+        
+        TestHelper.shortcutTitle.waitForExists(waitingTime)
+        TestHelper.AddtoHSOKBtn.click()
+
+        
+        if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            handleShortcutLayoutDialog()
+        }
+        if (welcomeBtn.exists()) {
+            welcomeBtn.click()
+        }
+
+        
+        
+        TestHelper.mDevice.pressHome()
+        swipeScreenLeft()
+        shortcutIcon.waitForExists(waitingTime)
+        Assert.assertTrue(shortcutIcon.isEnabled)
+        shortcutIcon.click()
+        waitForIdle()
+        waitForWebContent()
+
+        
+        TestHelper.browserURLbar.waitForExists(waitingTime)
+        Assert.assertTrue(TestHelper.browserURLbar.text.contains("helloworld"))
+    }
+
+    companion object {
+        private const val TEST_PATH = "/"
+    }
+}
