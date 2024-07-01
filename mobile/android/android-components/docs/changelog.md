@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-intent**
+  * Select existing tab by url when trying to open a new tab in `TabIntentProcessor`
+
 * **feature-media**
   * Adds `MediaFullscreenOrientationFeature` to autorotate activity while in fullscreen based on media aspect ratio.
 
@@ -19,9 +22,6 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: Extracts `AndroidIconDecoder`, `IconDecoder` and `DesiredSize` out of `browser-icons`
     into a new component `support-images`, which provides helpers for handling images. `AndroidIconDecoder` and `IconDecoder`
     are renamed to `AndroidImageDecoder` and `ImageDecoder` in `support-images`.
-
-* **browser-thumbnails**
-  * Adds `ThumbnailDiskCache` for storing and restoring thumbnail bitmaps into a disk cache.
 
 # 42.0.0
 
