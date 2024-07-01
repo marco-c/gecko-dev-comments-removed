@@ -5,6 +5,7 @@
 package mozilla.components.browser.state.action
 
 import android.graphics.Bitmap
+import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContainerState
 import mozilla.components.browser.state.state.ContentState
@@ -19,6 +20,7 @@ import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.content.FindResultState
 import mozilla.components.browser.state.state.MediaState
+import mozilla.components.browser.state.state.SearchState
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSessionState
 import mozilla.components.concept.engine.HitResult
@@ -570,24 +572,24 @@ sealed class MediaAction : BrowserAction() {
  */
 sealed class DownloadAction : BrowserAction() {
     /**
-     * Updates the [BrowserState] to track the provided [download] as added.
+     * Updates the [BrowserState] to track the provided [download] as queued.
      */
-    data class AddDownloadAction(val download: DownloadState) : DownloadAction()
+    data class QueueDownloadAction(val download: DownloadState) : DownloadAction()
 
     /**
-     * Updates the [BrowserState] to remove the download with the provided [downloadId].
+     * Updates the [BrowserState] to remove the queued download with the provided [downloadId].
      */
-    data class RemoveDownloadAction(val downloadId: Long) : DownloadAction()
+    data class RemoveQueuedDownloadAction(val downloadId: Long) : DownloadAction()
 
     /**
-     * Updates the [BrowserState] to remove all downloads.
+     * Updates the [BrowserState] to remove all queued downloads.
      */
-    object RemoveAllDownloadsAction : DownloadAction()
+    object RemoveAllQueuedDownloadsAction : DownloadAction()
 
     /**
      * Updates the provided [download] on the [BrowserState].
      */
-    data class UpdateDownloadAction(val download: DownloadState) : DownloadAction()
+    data class UpdateQueuedDownloadAction(val download: DownloadState) : DownloadAction()
 }
 
 /**
@@ -613,4 +615,29 @@ sealed class ContainerAction : BrowserAction() {
      * Removes all state of the removed container from [BrowserState.containers].
      */
     data class RemoveContainerAction(val contextId: String) : ContainerAction()
+}
+
+/**
+ * [BrowserAction] implementations related to updating search engines in [SearchState].
+ */
+sealed class SearchAction : BrowserAction() {
+    /**
+     * Updates [BrowserState.search] to add/modify [SearchState.searchEngines].
+     */
+    data class AddSearchEngineListAction(val searchEngineList: List<SearchEngine>) : SearchAction()
+
+    /**
+     * Updates [BrowserState.search] to add/modify a custom [SearchEngine].
+     */
+    data class SetCustomSearchEngineAction(val searchEngine: SearchEngine) : SearchAction()
+
+    /**
+     * Updates [BrowserState.search] to remove a custom [SearchEngine].
+     */
+    data class RemoveCustomSearchEngineAction(val searchEngineId: String) : SearchAction()
+
+    /**
+     * Updates [BrowserState.search] to update [SearchState.defaultSearchEngineId].
+     */
+    data class SetDefaultSearchEngineAction(val searchEngineId: String) : SearchAction()
 }
