@@ -285,6 +285,7 @@ def get_element_text(tag, name, warnfunc=dummy_warn):
                 value += "<%s%s>" % (tag_name, params_str)
             if elem.text is not None:
                 t = elem.text
+                raw = etree.tostring(elem)
                 
                 
                 
@@ -307,10 +308,15 @@ def get_element_text(tag, name, warnfunc=dummy_warn):
                     raise UnsupportedResourceError(
                         'resource references (%s) are not supported' % t)
 
-                converted_value, elem_formatted = convert_text(t)
-                if elem_formatted:
-                    formatted = True
-                value += converted_value
+                if "<![CDATA[" in raw:
+                    
+                    
+                    value += '<![CDATA[' + t.replace('\n', '') + ']]>'
+                else:
+                    converted_value, elem_formatted = convert_text(t)
+                    if elem_formatted:
+                        formatted = True
+                    value += converted_value
         elif ev == 'end':
             
             if not is_root:
@@ -339,8 +345,10 @@ def read_xml(xml_file, language=None, warnfunc=dummy_warn):
     result = ResourceTree(language)
     comment = []
 
+    parser = etree.XMLParser(strip_cdata=False)
+
     try:
-        doc = etree.parse(xml_file)
+        doc = etree.parse(xml_file, parser=parser)
     except etree.XMLSyntaxError as e:
         raise InvalidResourceError(e)
 
