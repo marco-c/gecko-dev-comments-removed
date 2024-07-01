@@ -6,8 +6,10 @@ package org.mozilla.focus.webkit.matcher;
 
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.BuildConfig;
@@ -32,6 +34,18 @@ import static junit.framework.Assert.assertTrue;
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class, packageName = "org.mozilla.focus")
 public class DisconnectTest {
+
+    @After
+    public void cleanup() {
+        
+        
+        
+        
+        
+        
+        
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().build());
+    }
 
     
     
