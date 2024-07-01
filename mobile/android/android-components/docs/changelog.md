@@ -55,14 +55,8 @@ permalink: /changelog/
   * Added `ContentState.pictureInPictureEnabled` to track if Picture in Picture mode is in use.
 
 * **feature-pwa**
-  * ⚠️ **This is a breaking change**: `WebAppHideToolbarFeature` now takes `BrowserStore` instead of `SessionManager`. `trustedScopes` is now derived from `CustomTabsServiceStore` and `WebAppManifest`.
+  * ⚠️ **This is a breaking change**: `WebAppHideToolbarFeature` now takes `BrowserStore` instead of `SessionManager`. `trustedScopes` is now derived from `CustomTabsServiceStore` and `WebAppManifest`. `setToolbarVisibility` should now be used set the visibility of the toolbar.
   * ⚠️ **This is a breaking change**: `onToolbarVisibilityChange` has been removed. You should now observe `BrowserStore` instead.
-
-* **feature-tab-collections**:
-  * ⚠️ **This is a breaking change**: `TabCollectionStorage.getCollections` now returns `Flow` instead of `LiveData`. Use `Flow.asLiveData` to convert the result into a `LiveData` again.
-
-* **feature-top-sites**:
-  * ⚠️ **This is a breaking change**: `TopSiteStorage.getTopSites` now returns `Flow` instead of `LiveData`. Use `Flow.asLiveData` to convert the result into a `LiveData` again.
 
 # 44.0.0
 
