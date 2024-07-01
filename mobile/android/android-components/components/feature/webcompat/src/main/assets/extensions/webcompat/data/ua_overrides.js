@@ -352,27 +352,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
-
-    id: "bug1621065",
-    platform: "android",
-    domain: "bracketchallenge.ncaa.com",
-    bug: "1621065",
-    config: {
-      matches: ["*://bracketchallenge.ncaa.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1622063",
     platform: "android",
     domain: "wp1-ext.usps.gov",
@@ -737,16 +716,24 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: [
         "*://*.wordpress.org/*", 
         "*://bethesda.net/*", 
+        "*://citoyens.telerecours.fr/*", 
         "*://genehmigung.ahs-vwa.at/*", 
         "*://moje.pzu.pl/*", 
+        "*://mon.allianzbanque.fr/*", 
+        "*://online.citi.com/*", 
         "*://simperium.com/*", 
         "*://wifi.sncf/*", 
         "*://www.brownells.com/*", 
+        "*://www.discoveryplus.in/*", 
         "*://www.eurosportplayer.com/*", 
+        "*://www.gismeteo.ru/*", 
         "*://www.hannaandersson.com/*", 
+        "*://www.imb.com.au/*", 
+        "*://www.manchestereveningnews.co.uk/*", 
+        "*://www.mirror.co.uk/*", 
         "*://www.petalmail.com/*", 
-        "*://www.sc.com/in/*", 
         "*://www.screwfix.com/*", 
+        "*://www.services.gov.on.ca/*", 
         "*://www.smsv.com.ar/*", 
       ],
       uaTransformer: originalUA => {
