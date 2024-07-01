@@ -126,4 +126,18 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
 
         super.onReceivedError(webView, errorCode, description, failingUrl);
     }
+
+    @Override
+    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+        handler.cancel();
+
+        
+        
+        
+        
+        
+        if (error.getUrl().equals(currentPageURL)) {
+            ErrorPage.loadErrorPage(view, error.getUrl(), WebViewClient.ERROR_FAILED_SSL_HANDSHAKE);
+        }
+    }
 }
