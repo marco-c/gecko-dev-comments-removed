@@ -21,15 +21,7 @@ permalink: /changelog/
 
 * **support-ktx**
   * Added property delegates to work with `SharedPreferences`.
-
-* **feature-customtabs**
-  * Added `CustomTabsServiceStore` to track custom tab data in `AbstractCustomTabsService`.
-
-* **feature-pwa**
-  * Added support for hiding the toolbar in a Trusted Web Activity.
-  * Added `TrustedWebActivityIntentProcessor` to process TWA intents.
-  * Added `CustomTabState.trustedOrigins` extension method to turn the verification state of a custom tab into a list of origins.
-  * Added `WebAppHideToolbarFeature.onTrustedScopesChange` to change the trusted scopes after the feature is created.
+  * Added `Flow.ifChanged()` operator for filtering a `Flow` based on whether a value has changed from the previous one (e.g. A, A, B, C, A -> A, B, C, A).
 
 # 10.0.1
 
