@@ -85,6 +85,10 @@ public class WebViewProvider {
         settings.setDisplayZoomControls(false);
 
         
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
+
+        
         
         settings.setAllowFileAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
