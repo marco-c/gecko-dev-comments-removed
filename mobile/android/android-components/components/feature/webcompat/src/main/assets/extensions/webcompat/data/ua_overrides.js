@@ -66,28 +66,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1577179",
-    platform: "all",
-    domain: "supportforms.embarcadero.com",
-    bug: "1577179",
-    config: {
-      matches: ["*://supportforms.embarcadero.com/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1577519",
     platform: "desktop",
     domain: "att.tv",
@@ -591,22 +569,14 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
-
-
-
-    id: "bug1622059",
+    id: "bug1622081",
     platform: "android",
-    domain: "img.weblogssl.com",
-    bug: "1622059",
+    domain: "m2.bmo.com",
+    bug: "1622081",
     config: {
-      matches: [
-        "*://www.genbeta.com/*",
-        "*://www.xataka.com/*",
-        "*://www.xatakandroid.com/*",
-      ],
+      matches: ["*://m2.bmo.com/*"],
       uaTransformer: originalUA => {
-        return originalUA + " Version/99.0";
+        return originalUA + " Chrome";
       },
     },
   },
@@ -618,14 +588,54 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1622081",
-    platform: "android",
-    domain: "m2.bmo.com",
-    bug: "1622081",
+    id: "bug1628462",
+    platform: "all",
+    domain: "app.pixton.com",
+    bug: "1628462",
     config: {
-      matches: ["*://m2.bmo.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome";
+      matches: ["https://*.pixton.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+    id: "bug1628455",
+    platform: "android",
+    domain: "autotrader.ca",
+    bug: "1628455",
+    config: {
+      matches: ["https://*.autotrader.ca/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+    id: "bug1630280",
+    platform: "android",
+    domain: "dominos.ch",
+    bug: "1630280",
+    config: {
+      matches: ["https://*.dominos.ch/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },

@@ -217,7 +217,7 @@ var InterventionHelpers = {
 
 
 
-  matchPatternsForTLDs: function(base, suffix, tlds) {
+  matchPatternsForTLDs(base, suffix, tlds) {
     return tlds.map(tld => base + tld + suffix);
   },
 
@@ -225,7 +225,7 @@ var InterventionHelpers = {
 
 
 
-  matchPatternsForGoogle: function(base, suffix = "/*") {
+  matchPatternsForGoogle(base, suffix = "/*") {
     return InterventionHelpers.matchPatternsForTLDs(base, suffix, GOOGLE_TLDS);
   },
 };
