@@ -49,6 +49,9 @@ public class LocaleListPreference extends ListPreference {
         private final Paint paint = new Paint();
         private final byte[] missingCharacter;
 
+        
+        
+        
         public CharacterValidator(String missing) {
             this.missingCharacter = getPixels(drawBitmap(missing));
         }
@@ -87,7 +90,7 @@ public class LocaleListPreference extends ListPreference {
     }
 
     private volatile Locale entriesLocale;
-    private final CharacterValidator characterValidator;
+    private CharacterValidator characterValidator;
 
     public LocaleListPreference(Context context) {
         this(context, null);
@@ -96,14 +99,15 @@ public class LocaleListPreference extends ListPreference {
     public LocaleListPreference(Context context, AttributeSet attributes) {
         super(context, attributes);
 
-        
-        
-        this.characterValidator = new CharacterValidator(" ");
     }
 
     @Override
     protected void onAttachedToActivity() {
         super.onAttachedToActivity();
+
+        
+        
+        this.characterValidator = new CharacterValidator(" ");
 
         buildList();
     }
