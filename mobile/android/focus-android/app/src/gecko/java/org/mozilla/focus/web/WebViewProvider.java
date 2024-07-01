@@ -103,6 +103,17 @@ public class WebViewProvider {
         }
 
         @Override
+        public void setBlockingEnabled(boolean enabled) {
+            
+        }
+
+        @Override
+        public boolean isBlockingEnabled() {
+            
+            return true;
+        }
+
+        @Override
         public void restoreWebviewState(Bundle savedInstanceState) {
             
         }

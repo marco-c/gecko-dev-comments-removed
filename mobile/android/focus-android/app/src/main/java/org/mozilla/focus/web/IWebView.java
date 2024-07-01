@@ -47,6 +47,13 @@ public interface IWebView {
         void onLongPress(final HitTarget hitTarget);
     }
 
+    
+
+
+    void setBlockingEnabled(boolean enabled);
+
+    boolean isBlockingEnabled();
+
     void setCallback(Callback callback);
 
     void onPause();

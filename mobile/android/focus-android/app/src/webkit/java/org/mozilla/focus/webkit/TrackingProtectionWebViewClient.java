@@ -20,9 +20,10 @@ import org.mozilla.focus.R;
 import org.mozilla.focus.webkit.matcher.UrlMatcher;
 
 public class TrackingProtectionWebViewClient extends WebViewClient {
-    protected String currentPageURL;
-
     private static volatile UrlMatcher MATCHER;
+
+    private boolean blockingEnabled;
+     String currentPageURL;
 
     public static void triggerPreload(final Context context) {
         
@@ -47,14 +48,28 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         return MATCHER;
     }
 
-    public TrackingProtectionWebViewClient(final Context context) {
+     TrackingProtectionWebViewClient(final Context context) {
         
         
         triggerPreload(context);
+
+        this.blockingEnabled = true;
+    }
+
+    public void setBlockingEnabled(boolean enabled) {
+        this.blockingEnabled = enabled;
+    }
+
+    public boolean isBlockingEnabled() {
+        return blockingEnabled;
     }
 
     @Override
     public WebResourceResponse shouldInterceptRequest(final WebView view, final WebResourceRequest request) {
+        if (!blockingEnabled) {
+            return super.shouldInterceptRequest(view, request);
+        }
+
         final Uri resourceUri = request.getUrl();
 
         
