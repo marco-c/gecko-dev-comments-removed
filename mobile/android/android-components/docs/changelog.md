@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-tabs**
+  * Makes `TabsAdapter` open to subclassing.
+
 * **feature-intent**
   * Select existing tab by url when trying to open a new tab in `TabIntentProcessor`
 
@@ -25,12 +28,6 @@ permalink: /changelog/
 
 * **browser-thumbnails**
   * Adds `ThumbnailDiskCache` for storing and restoring thumbnail bitmaps into a disk cache.
-
-* **concept-engine**
-  * Adds `onHistoryStateChanged` method and corresponding `HistoryItem` data class.
-
-* **browser-state**
-  * Adds `history` to `ContentState` to check the back and forward history list.
 
 # 42.0.0
 
