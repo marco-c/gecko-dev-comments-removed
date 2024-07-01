@@ -76,7 +76,7 @@ class TelemetrySwitchPreference extends Preference {
             public void onClick(View v) {
                 
                 
-                final String url = SupportUtils.getSumoURLForTopic(getContext(), "usage-data");
+                final String url = SupportUtils.getSumoURLForTopic(getContext(), SupportUtils.SumoTopic.USAGE_DATA);
                 final String title = getTitle().toString();
 
                 final Intent intent = InfoActivity.getIntentFor(getContext(), url, title);
