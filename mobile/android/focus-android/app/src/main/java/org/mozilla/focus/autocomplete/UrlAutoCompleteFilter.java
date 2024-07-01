@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class UrlAutoCompleteFilter implements InlineAutocompleteEditText.OnFilterListener {
     private List<String> domains;
@@ -20,21 +21,34 @@ public class UrlAutoCompleteFilter implements InlineAutocompleteEditText.OnFilte
         loadUrls(context);
     }
 
+    
+
+
+
+
+
+    private static String prepareAutocompleteResult(final String rawSearchText, final String lowerCaseResult) {
+        return rawSearchText + lowerCaseResult.substring(rawSearchText.length());
+    }
+
     @Override
-    public void onFilter(String searchText, InlineAutocompleteEditText view) {
+    public void onFilter(final String rawSearchText, InlineAutocompleteEditText view) {
         if (domains == null || view == null) {
             return;
         }
 
+        
+        final String searchText = rawSearchText.toLowerCase(Locale.US);
+
         for (final String domain : domains) {
             final String wwwDomain = "www." + domain;
             if (wwwDomain.startsWith(searchText)) {
-                view.onAutocomplete(wwwDomain);
+                view.onAutocomplete(prepareAutocompleteResult(rawSearchText, wwwDomain));
                 return;
             }
 
             if (domain.startsWith(searchText)) {
-                view.onAutocomplete(domain);
+                view.onAutocomplete(prepareAutocompleteResult(rawSearchText, domain));
                 return;
             }
         }
