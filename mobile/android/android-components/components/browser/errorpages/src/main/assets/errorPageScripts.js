@@ -18,23 +18,36 @@ function parseQuery(queryString) {
 
 
 function injectValues(queryMap) {
-   
-   document.title = queryMap.title
-   document.getElementById('errorTitleText').innerHTML = queryMap.title
-   document.getElementById('errorShortDesc').innerHTML = queryMap.description
-   document.getElementById('errorTryAgain').innerHTML = queryMap.button
-   document.getElementById('advancedButton').innerHTML = queryMap.badCertAdvanced
-   document.getElementById('badCertTechnicalInfo').innerHTML = queryMap.badCertTechInfo
-   document.getElementById('advancedPanelBackButton').innerHTML = queryMap.badCertGoBack
-   document.getElementById('advancedPanelAcceptButton').innerHTML = queryMap.badCertAcceptTemporary
+    const tryAgainButton = document.getElementById('errorTryAgain')
+    const continueHttpButton = document.getElementById("continueHttp")
 
-   
-   const errorImage = document.getElementById('errorImage')
-   if (!queryMap.image) {
-      errorImage.remove()
-   } else  {
-      errorImage.src = "resource://android/assets/" + queryMap.image
-   }
+
+    
+    document.title = queryMap.title
+    tryAgainButton.innerHTML = queryMap.button
+    continueHttpButton.innerHTML = queryMap.continueHttpButton
+    document.getElementById('errorTitleText').innerHTML = queryMap.title
+    document.getElementById('errorShortDesc').innerHTML = queryMap.description
+    document.getElementById('advancedButton').innerHTML = queryMap.badCertAdvanced
+    document.getElementById('badCertTechnicalInfo').innerHTML = queryMap.badCertTechInfo
+    document.getElementById('advancedPanelBackButton').innerHTML = queryMap.badCertGoBack
+    document.getElementById('advancedPanelAcceptButton').innerHTML = queryMap.badCertAcceptTemporary
+
+    
+    const errorImage = document.getElementById('errorImage');
+    if (!queryMap.image) {
+      errorImage.remove();
+    } else {
+      errorImage.src = "resource://android/assets/" + queryMap.image;
+    }
+
+    if (queryMap.showContinueHttp === "true") {
+       
+       
+       tryAgainButton.style.display = 'none';
+    } else {
+        continueHttpButton.style.display = 'none';
+    }
 }
 
 var advancedVisible = false;
@@ -90,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('errorTryAgain').addEventListener('click', () => window.location.reload());
     document.getElementById('advancedButton').addEventListener('click', toggleAdvanced);
     document.getElementById('advancedPanelAcceptButton').addEventListener('click', () => acceptAndContinue(true));
+    document.getElementById('continueHttp').addEventListener('click', () => document.reloadWithHttpsOnlyException());
 });
 
 parseQuery(document.documentURI);
