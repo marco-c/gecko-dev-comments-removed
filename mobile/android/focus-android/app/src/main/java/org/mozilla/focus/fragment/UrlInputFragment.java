@@ -418,6 +418,14 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
     @Override
     public void onFilter(String searchText, InlineAutocompleteEditText view) {
+        
+        
+        
+        
+        if (!isVisible()) {
+            return;
+        }
+
         urlAutoCompleteFilter.onFilter(searchText, view);
 
         if (searchText.length() == 0) {
