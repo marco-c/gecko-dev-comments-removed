@@ -17,7 +17,7 @@ class AssumptionsTestCase(unittest.TestCase):
 
     def testAcCheckoutFileFormatAndPathCorrect(self):
         
-        module.ac_checkout_to_gv_versions(AC_ROOT)
+        module.ac_checkout_to_gv_version(AC_ROOT)
 
     def testFenixCheckoutCorrectParse(self):
         
