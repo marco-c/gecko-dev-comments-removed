@@ -9,11 +9,13 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.StrictMode;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.WebSettings;
+import android.webkit.WebStorage;
 import android.webkit.WebView;
 
 import org.mozilla.focus.R;
@@ -36,6 +38,24 @@ public class WebViewProvider {
 
     public static void performCleanup(final Context context) {
         SystemWebView.deleteContentFromKnownLocations(context);
+    }
+
+    
+
+
+
+
+
+
+    public static void performNewBrowserSessionCleanup() {
+        
+        final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskWrites();
+
+        
+        
+        WebStorage.getInstance().deleteAllData();
+
+        StrictMode.setThreadPolicy(oldPolicy);
     }
 
     public static View create(Context context, AttributeSet attrs) {

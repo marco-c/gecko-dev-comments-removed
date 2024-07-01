@@ -65,13 +65,22 @@ public class MainActivity extends LocaleAwareAppCompatActivity {
         sessionManager.handleIntent(this, intent, savedInstanceState);
 
         sessionManager.getSessions().observe(this,  new NonNullObserver<List<Session>>() {
+            private boolean wasSessionsEmpty = false;
+
             @Override
             public void onValueChanged(@NonNull List<Session> sessions) {
                 if (sessions.isEmpty()) {
                     
                     
                     showUrlInputScreen();
+                    wasSessionsEmpty = true;
                 } else {
+                    
+                    if (wasSessionsEmpty) {
+                        WebViewProvider.performNewBrowserSessionCleanup();
+                        wasSessionsEmpty = false;
+                    }
+
                     
                     showBrowserScreenForCurrentSession();
                 }

@@ -36,6 +36,10 @@ public class WebViewProvider {
         
     }
 
+    public static void performNewBrowserSessionCleanup() {
+        
+    }
+
     public static class GeckoWebView extends NestedGeckoView implements IWebView {
         private Callback callback;
         private String currentUrl = "about:blank";
