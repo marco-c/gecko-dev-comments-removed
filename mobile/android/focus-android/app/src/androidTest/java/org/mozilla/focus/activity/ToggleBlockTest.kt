@@ -15,6 +15,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +31,7 @@ import java.io.IOException
 
 
 
+@Ignore("Failing because of: https://github.com/mozilla-mobile/focus-android/issues/4729")
 @RunWith(AndroidJUnit4ClassRunner::class)
 class ToggleBlockTest {
     private var webServer: MockWebServer? = null

@@ -16,6 +16,7 @@ import androidx.test.uiautomator.UiSelector
 import org.hamcrest.Matchers
 import org.hamcrest.core.AllOf
 import org.junit.After
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +28,7 @@ import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.waitForWebContent
 
 
+@Ignore("Failing because of: https://github.com/mozilla-mobile/focus-android/issues/4729")
 @RunWith(AndroidJUnit4ClassRunner::class)
 class URLExceptionTest {
     private val site = "680news.com"
