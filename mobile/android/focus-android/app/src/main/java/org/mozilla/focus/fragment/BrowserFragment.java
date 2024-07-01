@@ -698,6 +698,8 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             goBack();
         } else {
             if (session.getSource() == Source.VIEW || session.getSource() == Source.CUSTOM_TAB) {
+                TelemetryWrapper.eraseBackToAppEvent();
+
                 
                 
                 erase();
@@ -712,13 +714,11 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
                 
                 Toast.makeText(getContext(), R.string.feedback_erase, Toast.LENGTH_SHORT).show();
-
-                TelemetryWrapper.eraseBackToAppEvent();
             } else {
                 
-                erase();
-
                 TelemetryWrapper.eraseBackToHomeEvent();
+
+                erase();
             }
         }
 
@@ -755,9 +755,9 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                 break;
 
             case R.id.erase: {
-                erase();
-
                 TelemetryWrapper.eraseEvent();
+
+                erase();
                 break;
             }
 
@@ -766,6 +766,8 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                         .beginTransaction()
                         .add(R.id.container, new SessionsSheetFragment(), SessionsSheetFragment.FRAGMENT_TAG)
                         .commit();
+
+                TelemetryWrapper.openTabsTrayEvent();
                 break;
 
             case R.id.back: {
