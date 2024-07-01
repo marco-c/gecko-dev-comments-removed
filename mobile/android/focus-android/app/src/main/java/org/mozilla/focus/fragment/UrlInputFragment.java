@@ -55,6 +55,8 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
     private static final String ARGUMENT_WIDTH = "width";
     private static final String ARGUMENT_HEIGHT = "height";
 
+    private static final String placeHolder = "5981086f-9d45-4f64-be99-7d2ffa03befb";
+
     private static final String ARGUMENT_SESSION_UUID = "sesssion_uuid";
 
     private static final String ANIMATION_BROWSER_SCREEN = "browser_screen";
@@ -578,10 +580,15 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
                 dismissView.setVisibility(View.VISIBLE);
             }
 
-            final String hint = getString(R.string.search_hint, searchText);
+            
+            
+            
+            final String hint = getString(R.string.search_hint, placeHolder);
 
-            final SpannableString content = new SpannableString(hint);
-            content.setSpan(new StyleSpan(Typeface.BOLD), hint.length() - searchText.length(), hint.length(), 0);
+            final int start = hint.indexOf(placeHolder);
+
+            final SpannableString content = new SpannableString(hint.replaceAll(placeHolder, searchText));
+            content.setSpan(new StyleSpan(Typeface.BOLD), start, start + searchText.length(), 0);
 
             searchView.setText(content);
             searchViewContainer.setVisibility(View.VISIBLE);
