@@ -33,6 +33,12 @@ import mozilla.components.support.ktx.kotlin.isPhone
 import org.json.JSONObject
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.ContentBlocking
+import org.mozilla.geckoview.ContentBlocking.AT_AD
+import org.mozilla.geckoview.ContentBlocking.AT_ANALYTIC
+import org.mozilla.geckoview.ContentBlocking.AT_CONTENT
+import org.mozilla.geckoview.ContentBlocking.AT_CRYPTOMINING
+import org.mozilla.geckoview.ContentBlocking.AT_FINGERPRINTING
+import org.mozilla.geckoview.ContentBlocking.AT_SOCIAL
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
@@ -577,76 +583,34 @@ class GeckoEngineSession(
                 onTrackerBlocked(event.toTracker())
             }
         }
-
-        override fun onContentLoaded(session: GeckoSession, event: ContentBlocking.BlockEvent) {
-            notifyObservers {
-                onTrackerLoaded(event.toTracker())
-            }
-        }
     }
 
     private fun ContentBlocking.BlockEvent.toTracker(): Tracker {
-        val blockedContentCategories = mutableListOf<TrackingProtectionPolicy.TrackingCategory>()
+        val blockedContentCategories = ArrayList<Tracker.Category>()
 
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.AD)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.AD)
+        if (categories.contains(AT_AD)) {
+            blockedContentCategories.add(Tracker.Category.Ad)
         }
 
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.ANALYTIC)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.ANALYTICS)
+        if (categories.contains(AT_ANALYTIC)) {
+            blockedContentCategories.add(Tracker.Category.Analytic)
         }
 
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.SOCIAL)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.SOCIAL)
+        if (categories.contains(AT_SOCIAL)) {
+            blockedContentCategories.add(Tracker.Category.Social)
         }
 
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.FINGERPRINTING)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.FINGERPRINTING)
+        if (categories.contains(AT_FINGERPRINTING)) {
+            blockedContentCategories.add(Tracker.Category.Fingerprinting)
         }
 
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.CRYPTOMINING)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.CRYPTOMINING)
+        if (categories.contains(AT_CRYPTOMINING)) {
+            blockedContentCategories.add(Tracker.Category.Cryptomining)
         }
-
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.CONTENT)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.CONTENT)
+        if (categories.contains(AT_CONTENT)) {
+            blockedContentCategories.add(Tracker.Category.Content)
         }
-
-        if (antiTrackingCategory.contains(ContentBlocking.AntiTracking.TEST)) {
-            blockedContentCategories.add(TrackingProtectionPolicy.TrackingCategory.TEST)
-        }
-
-        return Tracker(
-            url = uri,
-            trackingCategories = blockedContentCategories,
-            cookiePolicies = getCookiePolicies()
-        )
-    }
-
-    private fun ContentBlocking.BlockEvent.getCookiePolicies(): List<TrackingProtectionPolicy.CookiePolicy> {
-        val cookiesPolicies = mutableListOf<TrackingProtectionPolicy.CookiePolicy>()
-
-        if (cookieBehaviorCategory == ContentBlocking.CookieBehavior.ACCEPT_ALL) {
-            cookiesPolicies.add(TrackingProtectionPolicy.CookiePolicy.ACCEPT_ALL)
-        }
-
-        if (cookieBehaviorCategory.contains(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY)) {
-            cookiesPolicies.add(TrackingProtectionPolicy.CookiePolicy.ACCEPT_ONLY_FIRST_PARTY)
-        }
-
-        if (cookieBehaviorCategory.contains(ContentBlocking.CookieBehavior.ACCEPT_NONE)) {
-            cookiesPolicies.add(TrackingProtectionPolicy.CookiePolicy.ACCEPT_NONE)
-        }
-
-        if (cookieBehaviorCategory.contains(ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS)) {
-            cookiesPolicies.add(TrackingProtectionPolicy.CookiePolicy.ACCEPT_NON_TRACKERS)
-        }
-
-        if (cookieBehaviorCategory.contains(ContentBlocking.CookieBehavior.ACCEPT_VISITED)) {
-            cookiesPolicies.add(TrackingProtectionPolicy.CookiePolicy.ACCEPT_VISITED)
-        }
-
-        return cookiesPolicies
+        return Tracker(uri, blockedContentCategories)
     }
 
     private operator fun Int.contains(mask: Int): Boolean {
@@ -698,7 +662,7 @@ class GeckoEngineSession(
     }
 
     @Suppress("ComplexMethod")
-    fun handleLongClick(elementSrc: String?, elementType: Int, uri: String? = null): HitResult? {
+    fun handleLongClick(elementSrc: String?, elementType: Int, uri: String? = null, title: String? = null): HitResult? {
         return when (elementType) {
             GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO ->
                 elementSrc?.let {
@@ -713,7 +677,7 @@ class GeckoEngineSession(
                     elementSrc != null && uri != null ->
                         HitResult.IMAGE_SRC(elementSrc, uri)
                     elementSrc != null ->
-                        HitResult.IMAGE(elementSrc)
+                        HitResult.IMAGE(elementSrc, title)
                     else -> HitResult.UNKNOWN("")
                 }
             }
