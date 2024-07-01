@@ -26,7 +26,6 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
 import mozilla.components.concept.engine.webextension.WebExtension
-import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R
 import mozilla.components.feature.addons.update.AddonUpdater.Frequency
@@ -81,19 +80,15 @@ interface AddonUpdater {
     )
 
     /**
-     * Registers the [extensions] for periodic updates, if applicable. Built-in and
-     * unsupported extensions will not update automatically.
-     *
+     * Registers the given [extensions] for periodic updates.
      * @param extensions The extensions to be registered for updates.
      */
     fun registerForFutureUpdates(extensions: List<WebExtension>) {
-        extensions
-            .filter { extension ->
-                !extension.isBuiltIn() && !extension.isUnsupported()
-            }
-            .forEach { extension ->
+        extensions.forEach { extension ->
+            if (!extension.isBuiltIn()) {
                 registerForFutureUpdates(extension.id)
             }
+        }
     }
 
     /**
@@ -191,12 +186,13 @@ class DefaultAddonUpdater(
     ) {
         logger.info("onUpdatePermissionRequest $current")
 
-        val wasPreviouslyAllowed =
-            updateStatusStorage.isPreviouslyAllowed(applicationContext, updated.id)
+        val shouldGrantWithoutPrompt = Addon.localizePermissions(newPermissions).isEmpty()
+        val shouldShowNotification =
+                updateStatusStorage.isPreviouslyAllowed(applicationContext, updated.id) || shouldGrantWithoutPrompt
 
-        onPermissionsGranted(wasPreviouslyAllowed)
+        onPermissionsGranted(shouldShowNotification)
 
-        if (!wasPreviouslyAllowed) {
+        if (!shouldShowNotification) {
             createNotification(updated, newPermissions)
         } else {
             updateStatusStorage.markAsUnallowed(applicationContext, updated.id)
@@ -287,13 +283,19 @@ class DefaultAddonUpdater(
         )
     }
 
-    private fun createContentText(newPermissions: List<String>): String {
-        val contentText = applicationContext.getString(
-            R.string.mozac_feature_addons_updater_notification_content, newPermissions.size
-        )
+    @VisibleForTesting
+    internal fun createContentText(newPermissions: List<String>): String {
+        val validNewPermissions = Addon.localizePermissions(newPermissions)
+
+        val string = if (validNewPermissions.size == 1) {
+            R.string.mozac_feature_addons_updater_notification_content_singular
+        } else {
+            R.string.mozac_feature_addons_updater_notification_content
+        }
+        val contentText = applicationContext.getString(string, validNewPermissions.size)
         var permissionIndex = 1
         val permissionsText =
-            Addon.localizePermissions(newPermissions).joinToString(separator = "\n") {
+                validNewPermissions.joinToString(separator = "\n") {
                 "${permissionIndex++}-${applicationContext.getString(it)}"
             }
         return "$contentText:\n $permissionsText"

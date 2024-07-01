@@ -19,8 +19,6 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import mozilla.components.concept.engine.webextension.DisabledFlags
-import mozilla.components.concept.engine.webextension.Metadata
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.feature.addons.update.AddonUpdater.Frequency
 import mozilla.components.feature.addons.update.AddonUpdaterWorker.Companion.KEY_DATA_EXTENSIONS_ID
@@ -130,7 +128,7 @@ class DefaultAddonUpdaterTest {
 
         updater.updateStatusStorage.clear(context)
 
-        updater.onUpdatePermissionRequest(currentExt, updatedExt, emptyList()) {
+        updater.onUpdatePermissionRequest(currentExt, updatedExt, listOf("privacy")) {
             allowedPreviously = it
         }
 
@@ -141,6 +139,57 @@ class DefaultAddonUpdaterTest {
         assertTrue(isNotificationVisible(notificationId))
 
         updater.updateStatusStorage.clear(context)
+    }
+
+    @Test
+    fun `onUpdatePermissionRequest - should not show a notification for unknown permissions`() {
+        val context = spy(testContext).also {
+            val packageManager: PackageManager = mock()
+            doReturn(Intent()).`when`(packageManager).getLaunchIntentForPackage(
+                    ArgumentMatchers.anyString()
+            )
+            doReturn(packageManager).`when`(it).packageManager
+        }
+
+        var allowedPreviously = false
+        val updater = DefaultAddonUpdater(context)
+        val currentExt: WebExtension = mock()
+        val updatedExt: WebExtension = mock()
+        whenever(currentExt.id).thenReturn("addonId")
+        whenever(updatedExt.id).thenReturn("addonId")
+
+        updater.updateStatusStorage.clear(context)
+
+        updater.onUpdatePermissionRequest(currentExt, updatedExt, listOf("normandyAddonStudy")) {
+            allowedPreviously = it
+        }
+
+        assertTrue(allowedPreviously)
+
+        val notificationId = SharedIdsHelper.getIdForTag(context, NOTIFICATION_TAG)
+
+        assertFalse(isNotificationVisible(notificationId))
+        assertFalse(updater.updateStatusStorage.isPreviouslyAllowed(testContext, currentExt.id))
+
+        updater.updateStatusStorage.clear(context)
+    }
+
+    @Test
+    fun `createContentText - notification content must adapt to the amount of valid permissions`() {
+
+        val updater = DefaultAddonUpdater(testContext)
+        val validPermissions = listOf("privacy", "management")
+
+        var content = updater.createContentText(validPermissions).split("\n")
+        assertEquals("2 new permissions are required:", content[0].trim())
+        assertEquals("1-Read and modify privacy settings", content[1].trim())
+        assertEquals("2-Monitor extension usage and manage themes", content[2].trim())
+
+        val validAndInvalidPermissions = listOf("privacy", "invalid")
+        content = updater.createContentText(validAndInvalidPermissions).split("\n")
+
+        assertEquals("A new permissions is required:", content[0].trim())
+        assertEquals("1-Read and modify privacy settings", content[1].trim())
     }
 
     @Test
@@ -248,36 +297,6 @@ class DefaultAddonUpdaterTest {
         }
     }
 
-    @Test
-    fun `registerForFutureUpdates - will not register built-in and unsupported extensions`() {
-        val updater = DefaultAddonUpdater(testContext)
-
-        val regularExt: WebExtension = mock()
-        whenever(regularExt.id).thenReturn("regularExt")
-
-        val builtInExt: WebExtension = mock()
-        whenever(builtInExt.id).thenReturn("builtInExt")
-        whenever(builtInExt.isBuiltIn()).thenReturn(true)
-
-        val unsupportedExt: WebExtension = mock()
-        whenever(unsupportedExt.id).thenReturn("unsupportedExt")
-        val metadata: Metadata = mock()
-        whenever(metadata.disabledFlags).thenReturn(DisabledFlags.select(DisabledFlags.APP_SUPPORT))
-        whenever(unsupportedExt.getMetadata()).thenReturn(metadata)
-
-        val extensions = listOf(regularExt, builtInExt, unsupportedExt)
-        updater.registerForFutureUpdates(extensions)
-
-        runBlocking {
-            assertExtensionIsRegisteredFoUpdates(updater, regularExt.id)
-        }
-
-        runBlocking {
-            assertExtensionIsNotRegisteredFoUpdates(updater, builtInExt.id)
-            assertExtensionIsNotRegisteredFoUpdates(updater, unsupportedExt.id)
-        }
-    }
-
     private suspend fun assertExtensionIsRegisteredFoUpdates(updater: DefaultAddonUpdater, extId: String) {
         val workId = updater.getUniquePeriodicWorkName(extId)
         val workManger = WorkManager.getInstance(testContext)
@@ -287,13 +306,6 @@ class DefaultAddonUpdaterTest {
         assertEquals(WorkInfo.State.ENQUEUED, work.state)
         assertTrue(work.tags.contains(workId))
         assertTrue(work.tags.contains(WORK_TAG_PERIODIC))
-    }
-
-    private suspend fun assertExtensionIsNotRegisteredFoUpdates(updater: DefaultAddonUpdater, extId: String) {
-        val workId = updater.getUniquePeriodicWorkName(extId)
-        val workManger = WorkManager.getInstance(testContext)
-        val workData = workManger.getWorkInfosForUniqueWork(workId).await()
-        assertTrue("$extId should not have been registered for updates", workData.isEmpty())
     }
 
     private fun isNotificationVisible(notificationId: Int): Boolean {
