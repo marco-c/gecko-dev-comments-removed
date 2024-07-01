@@ -197,6 +197,12 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     }
 
     private void animateAndDismiss() {
+        
+        
+        
+        
+        dismissView.setClickable(false);
+
         final String animation = getArguments().getString(ARGUMENT_ANIMATION);
 
         if (ANIMATION_HOME_SCREEN.equals(animation)) {
