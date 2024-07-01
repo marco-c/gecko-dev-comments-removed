@@ -82,7 +82,7 @@ class ToggleBlockTest {
     fun SimpleToggleTest() {
         
         TestHelper.inlineAutocompleteEditText.waitForExists(TestHelper.waitingTime)
-        Espresso.onView(ViewMatchers.withId(R.id.urlView))
+        Espresso.onView(ViewMatchers.withId(R.id.mozac_browser_toolbar_edit_url_view))
             .check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
             .check(ViewAssertions.matches(ViewMatchers.hasFocus()))
             .perform(
@@ -93,8 +93,10 @@ class ToggleBlockTest {
         TestHelper.progressBar.waitUntilGone(TestHelper.waitingTime)
 
         
-        Espresso.onView(ViewMatchers.withId(R.id.block))
-            .check(ViewAssertions.matches(Matchers.not(ViewMatchers.isDisplayed())))
+        Espresso.onView(ViewMatchers.withId(R.id.mozac_browser_toolbar_tracking_protection_indicator))
+            .check(ViewAssertions.matches(ViewMatchers.withContentDescription(
+                R.string.mozac_browser_toolbar_content_description_tracking_protection_on_no_trackers_blocked
+            )))
 
         
         Espresso.onView(ViewMatchers.withId(R.id.menuView))
@@ -110,8 +112,10 @@ class ToggleBlockTest {
         waitForWebContent()
 
         
-        Espresso.onView(ViewMatchers.withId(R.id.block))
-            .check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+        Espresso.onView(ViewMatchers.withId(R.id.mozac_browser_toolbar_tracking_protection_indicator))
+            .check(ViewAssertions.matches(ViewMatchers.withContentDescription(
+                R.string.mozac_browser_toolbar_content_description_tracking_protection_off_for_a_site1
+            )))
         Espresso.onView(ViewMatchers.withId(R.id.webview)).perform(ViewActions.click())
 
         
@@ -147,7 +151,7 @@ class ToggleBlockTest {
             throw AssertionError("Could not start web server", e)
         }
         TestHelper.inlineAutocompleteEditText.waitForExists(TestHelper.waitingTime)
-        Espresso.onView(ViewMatchers.withId(R.id.urlView))
+        Espresso.onView(ViewMatchers.withId(R.id.mozac_browser_toolbar_edit_url_view))
             .check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
             .check(ViewAssertions.matches(ViewMatchers.hasFocus()))
             .perform(
@@ -158,8 +162,10 @@ class ToggleBlockTest {
         TestHelper.progressBar.waitUntilGone(TestHelper.waitingTime)
 
         
-        Espresso.onView(ViewMatchers.withId(R.id.block))
-            .check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+        Espresso.onView(ViewMatchers.withId(R.id.mozac_browser_toolbar_tracking_protection_indicator))
+            .check(ViewAssertions.matches(ViewMatchers.withContentDescription(
+                R.string.mozac_browser_toolbar_content_description_tracking_protection_on_no_trackers_blocked
+            )))
 
         
         Espresso.onView(ViewMatchers.withId(R.id.menuView))

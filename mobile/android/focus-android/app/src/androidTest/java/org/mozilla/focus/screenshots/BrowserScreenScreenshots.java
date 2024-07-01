@@ -99,7 +99,7 @@ public class BrowserScreenScreenshots extends ScreenshotTest {
     }
 
     private void takeScreenshotsOfBrowsingView() {
-        onView(withId(R.id.urlView))
+        onView(withId(R.id.mozac_browser_toolbar_edit_url_view))
                 .check(matches(isDisplayed()));
 
         
@@ -142,7 +142,7 @@ public class BrowserScreenScreenshots extends ScreenshotTest {
                 .check(matches(isDisplayed()));
         device.pressBack();
 
-        onView(withId(R.id.urlView))
+        onView(withId(R.id.mozac_browser_toolbar_edit_url_view))
                 .check(matches(isDisplayed()))
                 .check(matches(hasFocus()))
                 .perform(click(), replaceText(webServer.url("/").toString()));
@@ -157,7 +157,7 @@ public class BrowserScreenScreenshots extends ScreenshotTest {
                     .perform(click());
         } catch (AssertionError dne) { }
 
-        onView(withId(R.id.urlView))
+        onView(withId(R.id.mozac_browser_toolbar_edit_url_view))
                 .check(matches(isDisplayed()))
                 .check(matches(hasFocus()))
                 .perform(pressImeActionButton());
@@ -167,19 +167,19 @@ public class BrowserScreenScreenshots extends ScreenshotTest {
                 .enabled(true))
                 .waitForExists(waitingTime);
 
-        onView(withId(R.id.display_url))
+        onView(withId(R.id.mozac_browser_toolbar_url_view))
                 .check(matches(isDisplayed()))
                 .check(matches(withText(containsString(webServer.getHostName()))));
 
         
-        onView(withId(R.id.display_url)).perform(click());
+        onView(withId(R.id.mozac_browser_toolbar_url_view)).perform(click());
         onView(withId(R.id.addToAutoComplete))
                 .check(matches(isDisplayed()));
         Screengrab.screenshot("Addlink_autocomplete");
         onView(withId(R.id.addToAutoComplete))
                 .perform(click());
         Screengrab.screenshot("new_customURL_popup");
-        onView(withId(R.id.display_url)).perform(click());
+        onView(withId(R.id.mozac_browser_toolbar_url_view)).perform(click());
         onView(withId(R.id.addToAutoComplete))
                 .perform(click());
         Screengrab.screenshot("customURL_alreadyexists_popup");
@@ -300,7 +300,7 @@ public class BrowserScreenScreenshots extends ScreenshotTest {
     private void takeScreenshotofSecureCon() throws Exception {
 
         
-        onView(withId(R.id.urlView))
+        onView(withId(R.id.mozac_browser_toolbar_edit_url_view))
                 .check(matches(isDisplayed()))
                 .check(matches(hasFocus()))
                 .perform(click(), replaceText("www.google.com"), pressImeActionButton());
