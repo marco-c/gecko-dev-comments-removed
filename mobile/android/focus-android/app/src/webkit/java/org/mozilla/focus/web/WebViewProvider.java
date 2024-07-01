@@ -86,7 +86,6 @@ public class WebViewProvider {
 
         
         settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
 
         
         
