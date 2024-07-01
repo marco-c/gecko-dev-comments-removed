@@ -13,13 +13,16 @@ import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.fragment.InfoFragment;
 import org.mozilla.focus.utils.HtmlLoader;
 import org.mozilla.focus.utils.SupportUtils;
+import org.mozilla.focus.web.IWebView;
+import org.mozilla.focus.web.WebViewProvider;
 
 import java.util.Map;
 
@@ -62,25 +65,9 @@ public class InfoActivity extends AppCompatActivity {
         final String url = getIntent().getStringExtra(EXTRA_URL);
         final String title = getIntent().getStringExtra(EXTRA_TITLE);
 
-        final WebView webView = (WebView) findViewById(R.id.webview);
-        
-        
-        
-        webView.setWebViewClient(new WebViewClient() {
-
-            
-            
-            
-            
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-
-                view.setVisibility(View.VISIBLE);
-            }
-        });
-
-        loadURL(url, webView);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.infofragment, InfoFragment.create(url))
+                .commit();
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle(title);
@@ -119,5 +106,14 @@ public class InfoActivity extends AppCompatActivity {
         } else {
             webView.loadUrl(url);
         }
+    }
+
+    @Override
+    public View onCreateView(String name, Context context, AttributeSet attrs) {
+        if (name.equals(IWebView.class.getName())) {
+            return WebViewProvider.create(this, attrs);
+        }
+
+        return super.onCreateView(name, context, attrs);
     }
 }
