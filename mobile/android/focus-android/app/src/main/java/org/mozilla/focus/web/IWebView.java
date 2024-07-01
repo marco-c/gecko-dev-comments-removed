@@ -19,6 +19,8 @@ public interface IWebView {
         
         boolean handleExternalUrl(String url);
         void onLinkLongPress(String url);
+
+        void onDownloadStart(Download download);
     }
 
     void setCallback(Callback callback);
