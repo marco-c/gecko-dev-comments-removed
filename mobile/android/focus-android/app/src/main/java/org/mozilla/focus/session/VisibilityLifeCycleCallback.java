@@ -28,7 +28,7 @@ public class VisibilityLifeCycleCallback implements Application.ActivityLifecycl
                 .finishAndRemoveTaskIfInBackground();
     }
 
-    private Context context;
+    private final Context context;
 
     
 

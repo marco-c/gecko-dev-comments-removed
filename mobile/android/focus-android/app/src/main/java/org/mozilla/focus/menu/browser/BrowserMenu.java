@@ -27,7 +27,7 @@ import org.mozilla.focus.utils.ViewUtils;
 
 
 public class BrowserMenu extends PopupWindow {
-    private BrowserMenuAdapter adapter;
+    private final BrowserMenuAdapter adapter;
 
     public BrowserMenu(Context context, BrowserFragment fragment, final @Nullable CustomTabConfig customTabConfig) {
         @SuppressLint("InflateParams") 

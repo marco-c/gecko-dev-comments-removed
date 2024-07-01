@@ -70,7 +70,7 @@ public class Browsers {
     
     
     
-    private ActivityInfo firefoxBrandedBrowser;
+    private final ActivityInfo firefoxBrandedBrowser;
 
     public Browsers(Context context, @NonNull String url) {
         final PackageManager packageManager = context.getPackageManager();

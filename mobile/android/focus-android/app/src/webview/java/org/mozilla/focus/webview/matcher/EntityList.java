@@ -14,7 +14,7 @@ import org.mozilla.focus.webview.matcher.util.FocusString;
 
  class EntityList {
 
-    private WhiteListTrie rootNode;
+    private final WhiteListTrie rootNode;
 
     public EntityList() {
         rootNode = WhiteListTrie.createRootNode();

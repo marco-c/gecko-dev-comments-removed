@@ -30,7 +30,7 @@ import java.util.Set;
 public class LocaleListPreference extends ListPreference {
     private static final String LOG_TAG = "GeckoLocaleList";
 
-    private static Map<String, String> languageCodeToNameMap = new HashMap<>();
+    private static final Map<String, String> languageCodeToNameMap = new HashMap<>();
     static {
         
         
