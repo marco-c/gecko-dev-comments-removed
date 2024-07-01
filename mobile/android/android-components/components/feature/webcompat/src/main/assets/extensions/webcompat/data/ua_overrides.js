@@ -225,28 +225,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1480710",
-    platform: "android",
-    domain: "m.imgur.com",
-    bug: "1480710",
-    config: {
-      matches: ["*://m.imgur.com/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.85 Mobile Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
 
     id: "bug945963",
     platform: "android",
@@ -254,8 +232,12 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "945963",
     config: {
       matches: [
+        "*://baike.baidu.com/*",
+        "*://image.baidu.com/*",
+        "*://news.baidu.com/*",
         "*://tieba.baidu.com/*",
         "*://tiebac.baidu.com/*",
+        "*://wenku.baidu.com/*",
         "*://zhidao.baidu.com/*",
       ],
       uaTransformer: originalUA => {
@@ -298,25 +280,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://*.nhk.or.jp/*"],
       uaTransformer: originalUA => {
         return originalUA + " AppleWebKit";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1338260",
-    platform: "android",
-    domain: "directv.com",
-    bug: "1338260",
-    config: {
-      matches: ["*://*.directv.com/*"],
-      uaTransformer: _ => {
-        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
   },
@@ -438,25 +401,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://posts.google.com/*"],
       uaTransformer: _ => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G900M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.101 Mobile Safari/537.36";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1567945",
-    platform: "android",
-    domain: "beeg.com",
-    bug: "1567945",
-    config: {
-      matches: ["*://beeg.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA.replace(/Firefox.+$/, "");
       },
     },
   },
@@ -644,6 +588,27 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://*.uniqlo.com/*"],
       uaTransformer: originalUA => {
         return originalUA + " Mobile Safari";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+
+    id: "bug1442050",
+    platform: "android",
+    domain: "nintendo.com",
+    bug: "1442050",
+    config: {
+      matches: ["*://my.nintendo.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " AppleWebKit";
       },
     },
   },
