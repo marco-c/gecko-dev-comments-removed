@@ -111,17 +111,22 @@ public class SwitchLocaleTest {
             .enabled(true));
     private UiObject languageHeading = TestHelper.settingsMenu.getChild(new UiSelector()
             .className("android.widget.LinearLayout")
-            .instance(0));
+            .instance(4));
     private UiObject englishHeading = TestHelper.mDevice.findObject(new UiSelector()
             .className("android.widget.TextView")
             .text("Language"));
     private UiObject frenchHeading = TestHelper.mDevice.findObject(new UiSelector()
             .className("android.widget.TextView")
-            .text("Paramètres"));
+            .text("Langue"));
+    private UiObject englishGeneralHeading = TestHelper.mDevice.findObject(new UiSelector()
+            .text("General")
+            .resourceId("android:id/title"));
+    private UiObject frenchGeneralHeading = TestHelper.mDevice.findObject(new UiSelector()
+            .text("Général")
+            .resourceId("android:id/title"));
 
     @Test
     public void EnglishSystemLocaleTest() throws UiObjectNotFoundException {
-
         UiObject frenchMenuItem = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.widget.TextView")
                 .text("Français"));
@@ -136,6 +141,11 @@ public class SwitchLocaleTest {
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
 
         openSettings();
+
+        
+        englishGeneralHeading.waitForExists(waitingTime);
+        englishGeneralHeading.click();
+
         languageHeading.waitForExists(waitingTime);
 
         
@@ -155,6 +165,8 @@ public class SwitchLocaleTest {
 
         
         TestHelper.pressBackKey();
+        TestHelper.pressBackKey();
+
         UiObject frenchTitle = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.widget.TextView")
                 .text("Navigation privée automatique.\nNaviguez. Effacez. Recommencez."));
@@ -167,6 +179,10 @@ public class SwitchLocaleTest {
         TestHelper.settingsMenuItem.click();
 
         
+        frenchGeneralHeading.waitForExists(waitingTime);
+        frenchGeneralHeading.click();
+        languageHeading.waitForExists(waitingTime);
+
         languageHeading.click();
         Assert.assertTrue(frenchLocaleinEn.isChecked());
         appViews.scrollToBeginning(10);
@@ -175,7 +191,11 @@ public class SwitchLocaleTest {
         languageHeading.waitForExists(waitingTime);
         Assert.assertTrue(englishHeading.exists());
         Assert.assertTrue(englishMenuItem.exists());
+
+        
         TestHelper.pressBackKey();
+        TestHelper.pressBackKey();
+
         UiObject englishTitle = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.widget.TextView")
                 .text("Automatic private browsing.\nBrowse. Erase. Repeat."));
@@ -203,6 +223,9 @@ public class SwitchLocaleTest {
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
 
         openSettings();
+        frenchGeneralHeading.waitForExists(waitingTime);
+        frenchGeneralHeading.click();
+
         languageHeading.waitForExists(waitingTime);
 
         
