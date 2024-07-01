@@ -255,9 +255,8 @@ def release_snapshot(components, is_snapshot, is_staging):
 
 
 def release(components, is_snapshot, is_staging):
-    
-    
     if is_snapshot:
+        
         return release_snapshot(components, is_snapshot, is_staging)
 
     version = components_version()
@@ -351,8 +350,8 @@ if __name__ == "__main__":
 
     components = components()
     if command == 'release':
-        
         if result.is_snapshot:
+            
             components = snapshot_components()
         components = [info for info in components if info['shouldPublish']]
 

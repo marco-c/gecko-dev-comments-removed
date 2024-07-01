@@ -30,7 +30,6 @@ class TaskBuilder(object):
                          is_snapshot=False, component=None, artifacts=None):
         if is_snapshot:
             
-            
             taskcluster_artifacts = {} if component is None else {
                 component['artifact']: {
                     'type': 'file',
@@ -63,12 +62,6 @@ class TaskBuilder(object):
         post_gradle_command = 'automation/taskcluster/action/upload_coverage_report.sh' if run_coverage else ''
 
         command = ' && '.join(cmd for cmd in (gradle_command, post_gradle_command) if cmd)
-
-        features = {}
-        if component is not None:
-            features['chainOfTrust'] = True
-        elif any(scope.startswith('secrets:') for scope in scopes):
-            features['taskclusterProxy'] = True
 
         return self._craft_build_ish_task(
             name='Android Components - Module {} {}'.format(module_name, subtitle),
@@ -239,7 +232,6 @@ class TaskBuilder(object):
             payload=payload
         )
 
-    
     
     def craft_snapshot_beetmover_task(
         self, build_task_id, wait_on_builds_task_id, version, artifact, artifact_name,
