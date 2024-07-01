@@ -4,21 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 10.0.0-SNAPSHOT  (In Development)
+# 9.0.0-SNAPSHOT  (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v9.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/69?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v8.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/68?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-# 9.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v8.0.0...v9.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/68?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v9.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v9.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v9.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-menu**
   * Updated the styling of the menu to not have padding on top or bottom. Also modified size of `BrowserMenuItemToolbar` to match `BrowserToolbar`'s height
@@ -35,6 +27,9 @@ permalink: /changelog/
 
 * **browser-toolbar**
   * HTTP sites are now marked as insecure with a broken padlock icon, rather than a globe icon. Apps can revert to the globe icon by using a custom `BrowserToolbar.siteSecurityIcon`.
+
+* **feature-toolbar**
+  * Toolbar Menu is now closed on exiting the app.
 
 * **service-firefox-accounts**, `concept-sync`
   * `FxaAccountManager`, if configured with `DeviceCapability.SEND_TAB`, will now automatically refresh device constellation state and poll for device events during initialization and login.
