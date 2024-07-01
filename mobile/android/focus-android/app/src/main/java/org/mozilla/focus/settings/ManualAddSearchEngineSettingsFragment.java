@@ -198,6 +198,9 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
             return false;
         } finally {
             if (connection != null) {
+                try {
+                    connection.getInputStream().close(); 
+                } catch (final IOException e) { } 
                 connection.disconnect();
             }
         }
