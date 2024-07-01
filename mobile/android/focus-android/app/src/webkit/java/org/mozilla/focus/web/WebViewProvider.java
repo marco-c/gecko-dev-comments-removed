@@ -90,6 +90,10 @@ public class WebViewProvider {
 
         
         
+        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+
+        
+        
         settings.setAllowFileAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
