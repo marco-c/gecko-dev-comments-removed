@@ -449,7 +449,12 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://rolb.santanderbank.com/*",
       ],
       uaTransformer: originalUA => {
-        return originalUA.replace("Gecko", "like Gecko");
+        
+        
+        return originalUA
+          .replace("Gecko", "like Gecko")
+          .replace("Firefox/100.0", "Firefox/96.0")
+          .replace("rv:100.0", "rv:96.0");
       },
     },
   },
@@ -680,6 +685,129 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://*.yebocasino.co.za/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1743627",
+    platform: "android",
+    domain: "renaud-bray.com",
+    bug: "1743627",
+    config: {
+      matches: ["*://*.renaud-bray.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Version/0";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1741892",
+    platform: "all",
+    domain: "goal.com",
+    bug: "1741892",
+    config: {
+      matches: ["*://goal.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome/98.0.1086.0";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1743745",
+    platform: "android",
+    domain: "automesseweb.jp",
+    bug: "1743745",
+    config: {
+      matches: ["*://*.automesseweb.jp/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1743751",
+    platform: "android",
+    domain: "slrclub.com",
+    bug: "1743751",
+    config: {
+      matches: ["*://*.slrclub.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1743754",
+    platform: "android",
+    domain: "workflow.base.vn",
+    bug: "1743754",
+    config: {
+      matches: ["*://workflow.base.vn/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1743429",
+    platform: "desktop",
+    domain: "Sites with known Version 100 User Agent breakage",
+    bug: "1743429",
+    config: {
+      matches: [
+        "*://*.wordpress.org/*", 
+      ],
+      uaTransformer: originalUA => {
+        if (!originalUA.includes("Firefox/100.0")) {
+          return originalUA;
+        }
+
+        
+        
+        
+        return originalUA
+          .replace("Firefox/100.0", "Firefox/96.0")
+          .replace("rv:100.0", "rv:96.0");
       },
     },
   },

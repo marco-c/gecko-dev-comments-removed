@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+browser.runtime.onMessage.addListener(request => {
+  let { requestStorageAccessOrigin, warning } = request;
+  if (!requestStorageAccessOrigin) {
+    return false;
+  }
+
+  
+  console.warn(warning);
+
+  
+  
+  
+  return document
+    .requestStorageAccessForOrigin(requestStorageAccessOrigin, false)
+    .then(() => {
+      return { success: true };
+    })
+    .catch(() => {
+      return { success: false };
+    });
+});
