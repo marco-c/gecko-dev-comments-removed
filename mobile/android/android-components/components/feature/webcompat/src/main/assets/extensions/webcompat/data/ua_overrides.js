@@ -715,7 +715,6 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://fpt.dfp.microsoft.com/*", 
         "*://ubank.com.au/*", 
         "*://wifi.sncf/*", 
-        "*://www.liveobserverpark.com/*", 
         "*://www.metrobyt-mobile.com/*", 
         "*://www.screwfix.com/*", 
       ],
@@ -893,6 +892,24 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://business.help.royalmail.com/app/webforms/*"],
       uaTransformer: originalUA => {
         return originalUA.replace("Firefox", "FireFox");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1790698",
+    platform: "android",
+    domain: "wolf777.com",
+    bug: "1790698",
+    config: {
+      matches: ["*://wolf777.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA.replace("Android", "Linux; Android");
       },
     },
   },

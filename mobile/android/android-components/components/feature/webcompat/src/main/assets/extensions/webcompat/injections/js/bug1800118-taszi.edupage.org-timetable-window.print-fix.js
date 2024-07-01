@@ -1,0 +1,16 @@
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(window.wrappedJSObject, "print", {
+  value: exportFunction(function() {}, window),
+});

@@ -1,0 +1,33 @@
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(window.wrappedJSObject, "ajaxRequestProcessing", {
+  get: exportFunction(function() {
+    return false;
+  }, window),
+
+  set: exportFunction(function() {}, window),
+});
