@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.widget;
 
@@ -21,13 +21,13 @@ import org.mozilla.focus.utils.SupportUtils;
 public class DefaultBrowserPreference extends Preference {
     private Switch switchView;
 
-    @SuppressWarnings("unused") 
+    @SuppressWarnings("unused") // Instantiated from XML
     public DefaultBrowserPreference(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
-    @SuppressWarnings("unused") 
+    @SuppressWarnings("unused") // Instantiated from XML
     public DefaultBrowserPreference(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
