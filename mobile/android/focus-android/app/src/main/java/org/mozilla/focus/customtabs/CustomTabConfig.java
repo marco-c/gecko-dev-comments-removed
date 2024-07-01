@@ -162,7 +162,11 @@ public class CustomTabConfig {
 
         
         
-        final boolean showShareMenuItem = intent.getBooleanExtra(CustomTabsIntent.EXTRA_DEFAULT_SHARE_MENU_ITEM, false);
+        final boolean showShareMenuItem = intent.getBooleanExtra(CustomTabsIntent.EXTRA_DEFAULT_SHARE_MENU_ITEM,
+                
+                
+                
+                true);
 
         final List<CustomTabMenuItem> menuItems = new LinkedList<>();
         if (intent.hasExtra(CustomTabsIntent.EXTRA_MENU_ITEMS)) {
