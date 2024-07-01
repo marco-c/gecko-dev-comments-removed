@@ -27,9 +27,9 @@ object Versions {
     const val disklrucache = "2.0.2"
     const val leakcanary = "1.6.3"
 
-    const val mozilla_appservices = "0.42.2"
+    const val mozilla_appservices = "0.44.0"
 
-    const val mozilla_glean = "21.2.0"
+    const val mozilla_glean = "21.3.0"
 
     const val material = "1.0.0"
     const val nearby = "17.0.0"
@@ -131,6 +131,8 @@ object Dependencies {
     const val mozilla_sync_manager = "org.mozilla.appservices:syncmanager:${Versions.mozilla_appservices}"
 
     const val mozilla_push = "org.mozilla.appservices:push:${Versions.mozilla_appservices}"
+
+    const val mozilla_remote_tabs = "org.mozilla.appservices:tabs:${Versions.mozilla_appservices}"
 
     const val mozilla_httpconfig = "org.mozilla.appservices:httpconfig:${Versions.mozilla_appservices}"
     const val mozilla_full_megazord = "org.mozilla.appservices:full-megazord:${Versions.mozilla_appservices}"
