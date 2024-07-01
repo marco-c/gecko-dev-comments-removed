@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-tabs**
+  * Fixed issue [#6907](https://github.com/mozilla-mobile/android-components/issues/6907). Dispatches tabsTray update when MediaState changes.
+  
 * **feature-session**
   * ⚠️ **This is a breaking change**: Added optional `crashReporting` param to [PictureInPictureFeature] so we can record caught exceptions.
 
@@ -34,9 +37,6 @@ permalink: /changelog/
 
 * **browser-toolbar**
   * It will only be animated for vertical scrolls inside the EngineView. Not for horizontal scrolls. Not for zoom gestures.
-
-* **browser-thumbnails**
-  * ⚠️ **This is a breaking change**: Migrated this component to use `browser-state` instead of `browser-session`. It is now required to pass a `BrowserStore` instance (instead of `SessionManager`) to `BrowserThumnails`.
 
 # 40.0.0
 
@@ -85,11 +85,7 @@ permalink: /changelog/
 * **feature-syncedtabs**
   * Moved `SyncedTabsFeature` to `SyncedTabsStorage`.
   * ⚠️ **This is a breaking change**: The new `SyncedTabsFeature` now orchestrates the correct state needed for consumers to handle by implementing the `SyncedTabsView`.
-  
-* **browser-thumbnails**
-  * 🆕 New component for capturing browser thumbnails.
-  * `ThumbnailsFeature` will be deprecated for the new `BrowserThumbnails` in a future.
-  
+
 # 39.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v38.0.0...v39.0.0)
