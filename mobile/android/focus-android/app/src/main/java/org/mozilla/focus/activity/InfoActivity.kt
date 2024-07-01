@@ -46,7 +46,7 @@ class InfoActivity : LocaleAwareAppCompatActivity() {
     override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
         if (name == IWebView::class.java.name) {
             
-            val view = if (url == LocalizedContent.URL_RIGHTS) {
+            val view = if (url in listOf(LocalizedContent.URL_RIGHTS, LocalizedContent.URL_ABOUT)) {
                 ClassicWebViewProvider().create(context, attrs)
             } else {
                 WebViewProvider.create(context, attrs)
