@@ -4,13 +4,21 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 53.0.0-SNAPSHOT (In Development)
+# 54.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/112?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v53.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/113?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+# 53.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...v53.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/112?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
   * **Merge day!**
@@ -36,6 +44,9 @@ permalink: /changelog/
   * Glean was updated to v31.6.0
     * Limit ping request body size to 1MB. ([#1098](https://github.com/mozilla/glean/pull/1098))
     * BUGFIX: Require activities executed via `GleanDebugView` to be exported.
+
+* **feature-downloads**
+  * ⚠️ **This is a breaking change**: `DownloadsFeature` is no longer accepting a custom download dialog but supporting customizations via the `promptStyling` parameter. The `dialog` parameter was unused so far. If it's required in the future it will need to be replaced with a lambda or factory so that the feature can create instances of the dialog itself, as needed.
 
 # 52.0.0
 
