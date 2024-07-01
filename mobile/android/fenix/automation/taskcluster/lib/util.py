@@ -1,4 +1,3 @@
-import json
 import re
 
 
@@ -6,22 +5,3 @@ def convert_camel_case_into_kebab_case(string):
     
     first_pass = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', string)
     return re.sub('([a-z0-9])([A-Z])', r'\1-\2', first_pass).lower()
-
-
-def populate_chain_of_trust_required_but_unused_files():
-    
-    
-    
-
-    for file_names in ('actions.json', 'parameters.yml'):
-        with open(file_names, 'w') as f:
-            json.dump({}, f)    
-
-
-def populate_chain_of_trust_task_graph(full_task_graph):
-    
-    
-    
-    
-    with open('task-graph.json', 'w') as f:
-        json.dump(full_task_graph, f)
