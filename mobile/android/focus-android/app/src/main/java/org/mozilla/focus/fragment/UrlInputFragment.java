@@ -207,6 +207,11 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     }
 
     private synchronized void animateAndDismiss() {
+        if (isAnimating) {
+            
+            return;
+        }
+
         
         
         
