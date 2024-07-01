@@ -164,7 +164,12 @@ public class WebViewProvider {
         }
 
         public void loadUrl(String url) {
-            super.loadUrl(url);
+            
+            
+            
+            if (!client.shouldOverrideUrlLoading(this, url)) {
+                super.loadUrl(url);
+            }
 
             client.notifyCurrentURL(url);
         }
