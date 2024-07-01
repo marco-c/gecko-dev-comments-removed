@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.focus.widget;
 
 import android.annotation.TargetApi;
@@ -21,27 +20,36 @@ import org.mozilla.focus.activity.InfoActivity;
 import org.mozilla.focus.utils.Browsers;
 import org.mozilla.focus.utils.SupportUtils;
 
-@TargetApi(Build.VERSION_CODES.N)
 public class DefaultBrowserPreference extends Preference {
     private Switch switchView;
 
     @SuppressWarnings("unused") 
     public DefaultBrowserPreference(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        setWidgetLayoutResource(R.layout.preference_default_browser);
+        init();
     }
 
     @SuppressWarnings("unused") 
     public DefaultBrowserPreference(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
+    }
+
+    private void init() {
         setWidgetLayoutResource(R.layout.preference_default_browser);
+
+        final String appName = getContext().getResources().getString(R.string.app_name);
+        final String title = getContext().getResources().getString(R.string.preference_default_browser2, appName);
+
+        setTitle(title);
     }
 
     @Override
     protected void onBindView(View view) {
         super.onBindView(view);
 
-        switchView = (Switch) view.findViewById(R.id.switch_widget);
+        switchView = view.findViewById(R.id.switch_widget);
+
         update();
     }
 
@@ -63,6 +71,7 @@ public class DefaultBrowserPreference extends Preference {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.N)
     private void openDefaultAppsSettings(Context context) {
         try {
             Intent intent = new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS);
