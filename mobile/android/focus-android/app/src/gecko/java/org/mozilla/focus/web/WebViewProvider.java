@@ -184,12 +184,12 @@ public class WebViewProvider {
         }
 
         @Override
-        public void restoreWebViewState(Session session, Bundle inState) {
+        public void restoreWebViewState(Session session) {
             
         }
 
         @Override
-        public void saveWebViewState(@NonNull Session session, @NonNull Bundle outState) {
+        public void saveWebViewState(@NonNull Session session) {
             
         }
 

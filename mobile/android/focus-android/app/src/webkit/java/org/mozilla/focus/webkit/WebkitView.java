@@ -11,6 +11,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -90,31 +92,24 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
     }
 
     @Override
-    public void restoreWebViewState(Session session, Bundle inBundle) {
-        
-        final String uuid = inBundle.getString(KEY_STATE_UUID);
-        if (!session.getUUID().equals(uuid)) {
-            
-            return;
-        }
-
+    public void restoreWebViewState(Session session) {
         final Bundle stateData = session.getWebViewState();
 
         final WebBackForwardList backForwardList = stateData != null
                 ? super.restoreState(stateData)
                 : null;
 
-        
-        
-        
-        
-        
-        
-        
-        
-
-        final String desiredURL = inBundle.getString(KEY_CURRENTURL);
+        final String desiredURL = session.getUrl().getValue();
         client.notifyCurrentURL(desiredURL);
+
+        
+        
+        
+        
+        
+        
+        
+        
 
         if (backForwardList != null &&
                 backForwardList.getCurrentItem().getUrl().equals(desiredURL)) {
@@ -127,7 +122,7 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
     }
 
     @Override
-    public void saveWebViewState(Session session, Bundle outState) {
+    public void saveWebViewState(@NonNull Session session) {
         
         
         
@@ -135,15 +130,6 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
         super.saveState(stateData);
 
         session.saveWebViewState(stateData);
-
-        
-        
-        
-        outState.putString(KEY_STATE_UUID, session.getUUID());
-
-        
-        
-        outState.putString(KEY_CURRENTURL, getUrl());
     }
 
     @Override

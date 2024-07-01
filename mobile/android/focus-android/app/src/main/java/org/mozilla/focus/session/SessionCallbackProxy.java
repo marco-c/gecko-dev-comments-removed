@@ -44,7 +44,13 @@ public class SessionCallbackProxy implements IWebView.Callback {
     @Override
     public void onProgress(int progress) {
         
-        session.setProgress(Math.max(MINIMUM_PROGRESS, progress));
+        progress = Math.max(MINIMUM_PROGRESS, progress);
+
+        
+        
+        progress = Math.min(99, progress);
+
+        session.setProgress(progress);
     }
 
     @Override
