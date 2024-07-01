@@ -85,8 +85,18 @@ open class FocusApplication : LocaleAwareApplication(), CoroutineScope {
 
             initializeWebExtensionSupport()
 
+            setupLeakCanary()
+
             ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
         }
+    }
+
+    protected open fun setupLeakCanary() {
+        
+    }
+
+    open fun updateLeakCanaryState(isEnabled: Boolean) {
+        
     }
 
     @OptIn(DelicateCoroutinesApi::class) 
