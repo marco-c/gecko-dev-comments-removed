@@ -66,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
             if (Intent.ACTION_VIEW.equals(intent.getAction())) {
                 final String url = intent.getDataString();
 
+                BrowsingSession.getInstance().loadCustomTabConfig(intent);
+
                 if (Settings.getInstance(this).shouldShowFirstrun()) {
                     pendingUrl = url;
                     showFirstrun();
@@ -115,10 +117,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onNewIntent(Intent unsafeIntent) {
-        
-        
-        if (Intent.ACTION_VIEW.equals(unsafeIntent.getAction())) {
-            final SafeIntent intent = new SafeIntent(unsafeIntent);
+        final SafeIntent intent = new SafeIntent(unsafeIntent);
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
             
             
             pendingUrl = intent.getDataString();
@@ -126,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
 
         
         setIntent(unsafeIntent);
+        BrowsingSession.getInstance().loadCustomTabConfig(intent);
     }
 
     @Override
