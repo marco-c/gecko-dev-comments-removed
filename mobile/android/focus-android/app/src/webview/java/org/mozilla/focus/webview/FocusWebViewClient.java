@@ -194,8 +194,11 @@ import org.mozilla.focus.web.IWebView;
         }
 
         if (callback != null) {
-            callback.onPageFinished(certificate != null);
-            callback.onSecurityChanged(certificate != null, null, (certificate != null) ? certificate.getIssuedBy().getOName() : null);
+            
+            final boolean isSecure = certificate != null || UrlUtils.isLocalizedContent(view.getUrl());
+
+            callback.onPageFinished(isSecure);
+            callback.onSecurityChanged(isSecure, null, (certificate != null) ? certificate.getIssuedBy().getOName() : null);
             
             
             final String viewURL = view.getUrl();

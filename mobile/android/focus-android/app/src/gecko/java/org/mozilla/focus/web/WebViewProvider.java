@@ -311,6 +311,11 @@ public class WebViewProvider {
                 public void onPageStop(GeckoSession session, boolean success) {
                     if (callback != null) {
                         if (success) {
+                            if (UrlUtils.isLocalizedContent(getUrl())) {
+                                
+                                isSecure = true;
+                            }
+
                             callback.onProgress(100);
                             callback.onPageFinished(isSecure);
                         }
@@ -321,6 +326,12 @@ public class WebViewProvider {
                 public void onSecurityChange(GeckoSession session,
                                              GeckoSession.ProgressDelegate.SecurityInformation securityInfo) {
                     isSecure = securityInfo.isSecure;
+
+                    if (UrlUtils.isLocalizedContent(getUrl())) {
+                        
+                        isSecure = true;
+                    }
+
                     if (callback != null) {
                         callback.onSecurityChanged(isSecure, securityInfo.host, securityInfo.issuerOrganization);
                     }
