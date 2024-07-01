@@ -4,13 +4,21 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 53.0.0-SNAPSHOT (In Development)
+# 54.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/112?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v53.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/113?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+# 53.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...v53.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/112?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
   * **Merge day!**
@@ -27,6 +35,7 @@ permalink: /changelog/
 
 * **browser-menu**
   * ⚠️ **This is a breaking change**: `BrowserMenuItemToolbar.Button.longClickListener` is now nullable and defaults to null.
+  * ⚠️ **This is a breaking change**: Removed `SimpleBrowserMenuHighlightableItem.itemType`. Use a WeakMap instead if you need to attach private data.
 
 * **concept-menu**
   * Added `SmallMenuCandidate.onLongClick` to handle long click of row menu buttons.
