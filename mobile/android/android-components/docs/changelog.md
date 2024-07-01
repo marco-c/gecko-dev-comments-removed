@@ -15,14 +15,11 @@ permalink: /changelog/
 * **service-accounts-push**
   * Fixed a bug where the push subscription was incorrectly cached and caused some `GeneralError`s.
 
-* **feature-addons**
-  * Added `DefaultAddonUpdater.UpdateAttemptStorage` allows to query the last known state for a previous attempt to update an add-on.
+  * **feature-addons**
+    * Added `DefaultAddonUpdater.UpdateAttemptStorage` allows to query the last known state for a previous attempt to update an add-on.
 
-* **feature-accounts-push**
-  * Re-subscribe for Sync push support when notified by `onSubscriptionChanged` events.
-
-* **support-migration**
-  * ⚠️ **This is a breaking change**: `FennecMigrator` now takes `Lazy` references to storage layers.
+* **concept-storage**, **service-sync-logins**
+  * 🆕 New API: `PlacesStorage#warmUp`, `SyncableLoginsStorage#warmUp` - allows consumers to ensure that underlying storage database connections are fully established.
 
 # 37.0.0
 
