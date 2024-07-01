@@ -194,17 +194,21 @@ class ReaderView {
     
     
     
-    var parts = new Intl.RelativeTimeFormat(lang).formatToParts(readingTimeMinsSlow, 'minute');
-
-    if (parts.length == 3) {
-      
-      var readingTime = parts[1].value; 
-      var minutesLiteral = parts[2].value; 
-      var readingTimeString = `${readingTime} ${minutesLiteral}`;
-      if (readingTimeMinsSlow != readingTimeMinsFast) {
-        readingTimeString = `${readingTimeMinsFast} - ${readingTimeString}`;
+    try {
+      var parts = new Intl.RelativeTimeFormat(lang).formatToParts(readingTimeMinsSlow, 'minute');
+      if (parts.length == 3) {
+        
+        var readingTime = parts[1].value; 
+        var minutesLiteral = parts[2].value; 
+        var readingTimeString = `${readingTime} ${minutesLiteral}`;
+        if (readingTimeMinsSlow != readingTimeMinsFast) {
+          readingTimeString = `${readingTimeMinsFast} - ${readingTimeString}`;
+        }
+        return readingTimeString;
       }
-      return readingTimeString;
+    }
+    catch(error) {
+      console.error(`Failed to format reading time: ${error}`);
     }
 
     return "";
