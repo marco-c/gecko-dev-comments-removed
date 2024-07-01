@@ -555,33 +555,31 @@ class GeckoWebViewProvider : IWebViewProvider {
             val stateData = session.savedWebViewState!!
             val savedSession = stateData.getParcelable<GeckoSession>(GECKO_SESSION)!!
 
-            if (geckoSession != savedSession) {
-                if (!restored) {
-                    
-                    geckoSession.close()
+            if (geckoSession != savedSession && !restored) {
+                
+                geckoSession.close()
 
-                    geckoSession = savedSession
-                    canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
-                    canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
-                    isSecure = stateData.getBoolean(IS_SECURE, false)
-                    webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
-                    currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
-                    applySettingsAndSetDelegates()
-                    if (!geckoSession.isOpen) {
-                        geckoSession.open(geckoRuntime!!)
-                    }
-                    setSession(geckoSession)
-                } else {
-                    
-                    
-                    canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
-                    canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
-                    isSecure = stateData.getBoolean(IS_SECURE, false)
-                    webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
-                    currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
-                    applySettingsAndSetDelegates()
-                    restored = false
+                geckoSession = savedSession
+                canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
+                canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
+                isSecure = stateData.getBoolean(IS_SECURE, false)
+                webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
+                currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
+                applySettingsAndSetDelegates()
+                if (!geckoSession.isOpen) {
+                    geckoSession.open(geckoRuntime!!)
                 }
+                setSession(geckoSession)
+            } else {
+                
+                
+                canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
+                canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
+                isSecure = stateData.getBoolean(IS_SECURE, false)
+                webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
+                currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
+                applySettingsAndSetDelegates()
+                restored = false
             }
         }
 
