@@ -24,10 +24,13 @@ private object Versions {
     const val androidx_navigation = "2.1.0-alpha02"
     const val androidx_recyclerview = "1.1.0-alpha04"
 
-    const val appservices_gradle_plugin = "0.4.2"
+    const val appservices_gradle_plugin = "0.4.4"
     const val mozilla_android_components = "0.50.0-SNAPSHOT"
-    const val mozilla_appservices = "0.23.0"
- 
+    const val mozilla_appservices = "0.25.2"
+
+    const val test_tools = "1.0.2"
+    const val espresso_core = "2.2.2"
+
     const val autodispose = "1.1.0"
     const val adjust = "4.11.4"
     const val installreferrer = "1.0"
@@ -38,13 +41,6 @@ private object Versions {
     const val glide = "4.9.0"
     const val flipper = "0.18.0"
     const val soLoader = "0.5.1"
-
-    const val espresso_core = "2.2.2"
-    const val espresso_version = "3.0.2"
-    const val orchestrator = "1.1.1"
-    const val tools_test_rules = "1.1.1"
-    const val tools_test_runner = "1.1.1"
-    const val uiautomator = "2.1.3"
 }
 
 @Suppress("unused")
@@ -123,6 +119,9 @@ object Deps {
 
     const val leanplum = "com.leanplum:leanplum-core:${Versions.leanplum}"
 
+    const val tools_test_runner = "com.android.support.test:runner:${Versions.test_tools}"
+    const val tools_espresso_core = "com.android.support.test.espresso:espresso-core:${Versions.espresso_core}"
+
     const val androidx_annotation = "androidx.annotation:annotation:${Versions.androidx_annotation}"
     const val androidx_fragment = "androidx.fragment:fragment:${Versions.androidx_fragment}"
     const val androidx_appcompat = "androidx.appcompat:appcompat:${Versions.androidx_appcompat}"
@@ -157,12 +156,4 @@ object Deps {
 
     const val flipper = "com.facebook.flipper:flipper:${Versions.flipper}"
     const val soLoader = "com.facebook.soloader:soloader:${Versions.soLoader}"
-
-    const val espresso_contrib = "com.android.support.test.espresso:espresso-contrib:${Versions.espresso_version}"
-    const val espresso_core = "com.android.support.test.espresso:espresso-core:${Versions.espresso_core}"
-    const val espresso_idling_resources = "com.android.support.test.espresso:espresso-idling-resource:${Versions.espresso_version}"
-    const val orchestrator =  "androidx.test:orchestrator:${Versions.orchestrator}"
-    const val tools_test_rules = "com.android.support.test:rules:${Versions.tools_test_rules}"
-    const val tools_test_runner = "com.android.support.test:runner:${Versions.tools_test_runner}"
-    const val uiautomator = "com.android.support.test.uiautomator:uiautomator-v18:${Versions.uiautomator}"
 }
