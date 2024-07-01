@@ -403,6 +403,9 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         } else {
             if (isStartedFromExternalApp()) {
                 
+                
+                
+                BrowsingSession.getInstance().stop();
                 getActivity().finish();
             } else {
                 
