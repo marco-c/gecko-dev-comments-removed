@@ -49,10 +49,7 @@ public class ToggleBlockTest {
 
     @Test
     public void SimpleToggleTest() throws UiObjectNotFoundException {
-
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText("mozilla");
@@ -81,9 +78,7 @@ public class ToggleBlockTest {
 
     @Test
     public void PreDisableTrackerTest() throws UiObjectNotFoundException {
-
         
-        TestHelper.urlBar.waitForExists(waitingTime);
         TestHelper.menuButton.perform(click());
         TestHelper.settingsMenuItem.click();
         TestHelper.settingsList.waitForExists(waitingTime);
@@ -91,10 +86,8 @@ public class ToggleBlockTest {
         TestHelper.toggleAnalyticBlock.click();
         assertTrue(!TestHelper.toggleAnalyticBlock.isChecked());
         TestHelper.navigateUp.click();
-        TestHelper.urlBar.waitForExists(waitingTime);
 
         
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText("mozilla");

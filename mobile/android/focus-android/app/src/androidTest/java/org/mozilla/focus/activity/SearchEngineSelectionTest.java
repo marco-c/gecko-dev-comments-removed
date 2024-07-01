@@ -85,7 +85,6 @@ public class SearchEngineSelectionTest {
         TestHelper.pressBackKey();
 
         
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText("   ");

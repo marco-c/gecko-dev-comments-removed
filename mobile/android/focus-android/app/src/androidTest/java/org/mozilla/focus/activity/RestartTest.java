@@ -99,8 +99,6 @@ public class RestartTest {
         final String FOCUS_DEBUG_APP = "org.mozilla.focus.debug";
 
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
@@ -138,9 +136,8 @@ public class RestartTest {
         context.startActivity(intent);
 
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        Assert.assertTrue(TestHelper.inlineAutocompleteEditText.exists());
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
         TestHelper.hint.waitForExists(waitingTime);

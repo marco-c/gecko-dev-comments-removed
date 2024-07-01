@@ -118,7 +118,7 @@ public class LocalSessionStorageTest {
         TestHelper.floatingEraseButton.perform(click());
         TestHelper.erasedMsg.waitForExists(waitingTime);
         Assert.assertTrue(TestHelper.erasedMsg.exists());
-        Assert.assertTrue(TestHelper.urlBar.exists());
+        Assert.assertTrue(TestHelper.inlineAutocompleteEditText.exists());
 
         
 
@@ -143,8 +143,6 @@ public class LocalSessionStorageTest {
 
     private void goToUrlFromHomeScreen(String url) throws Exception {
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(url).toString());

@@ -110,8 +110,6 @@ public class DownloadTest {
         final String imagePath = webServer.url(TEST_PATH).toString() + "rabbit.jpg";
 
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());

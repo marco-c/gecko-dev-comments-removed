@@ -97,9 +97,8 @@ public class SwitchContextTest {
     public void ForegroundTest() throws InterruptedException, UiObjectNotFoundException {
 
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        Assert.assertTrue(TestHelper.inlineAutocompleteEditText.exists());
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
         TestHelper.hint.waitForExists(waitingTime);
@@ -135,8 +134,6 @@ public class SwitchContextTest {
                 .enabled(true));
 
         
-        TestHelper.urlBar.waitForExists(waitingTime);
-        TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
