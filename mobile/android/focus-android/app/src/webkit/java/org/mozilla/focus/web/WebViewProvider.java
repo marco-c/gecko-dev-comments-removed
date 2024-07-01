@@ -17,7 +17,6 @@ import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
-import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -34,6 +33,8 @@ import org.mozilla.focus.webkit.TrackingProtectionWebViewClient;
 
 
 public class WebViewProvider {
+    private static final String KEY_CURRENTURL = "currenturl";
+
     
 
 
@@ -218,13 +219,32 @@ public class WebViewProvider {
 
             
             
-            client.notifyCurrentURL(backForwardList.getCurrentItem().getUrl());
-            reload();
+            
+            
+            
+            
+            
+            
+
+            final String desiredURL = savedInstanceState.getString(KEY_CURRENTURL);
+            client.notifyCurrentURL(desiredURL);
+
+            if (backForwardList != null &&
+                    backForwardList.getCurrentItem().getUrl().equals(desiredURL)) {
+                
+                
+                reload();
+            } else {
+                loadUrl(desiredURL);
+            }
         }
 
         @Override
         public void onSaveInstanceState(Bundle outState) {
             saveState(outState);
+            
+            
+            outState.putString(KEY_CURRENTURL, getUrl());
         }
 
         @Override
