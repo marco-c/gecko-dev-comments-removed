@@ -12,6 +12,13 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **service-glean**
+  * ⚠️ **This is a breaking change**: Glean's configuration now requires explicitly setting an http client. Users need to pass one at construction.
+    A default `lib-fetch-httpurlconnection` implementation is available.
+    Add it to the configuration object like this:
+    `val config = Configuration(httpClient = ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() as Client }))`.
+    See [PR #6875](https://github.com/mozilla-mobile/android-components/pull/6875) for details and full code examples.
+
 # 41.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v40.0.0...v41.0.0)
@@ -45,9 +52,6 @@ permalink: /changelog/
   * Glean was updated to v29.1.0
     * ⚠️ **This is a breaking change**: glinter errors found during code generation will now return an error code.
     * The minimum and maximum values of a timing distribution can now be controlled by the `time_unit` parameter. See [bug 1630997](https://bugzilla.mozilla.org/show_bug.cgi?id=1630997) for more details.
-
-* **feature-accounts**
-  *  ⚠️ **This is a breaking change**: Refactored component to use `browser-state` instead of `browser-session`. The `FxaWebChannelFeature`  now requires a `BrowserStore` instance instead of a `SessionManager`.    
 
 * **browser-toolbar**
   * It will only be animated for vertical scrolls inside the EngineView. Not for horizontal scrolls. Not for zoom gestures.
