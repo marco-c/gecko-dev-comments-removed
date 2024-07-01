@@ -7,15 +7,7 @@ package org.mozilla.focus.locale;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.os.LocaleList;
-import android.os.StrictMode;
-import android.text.TextUtils;
-
-import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Set;
-
-
 
 
 
@@ -25,23 +17,6 @@ import java.util.Set;
 
 
 public class Locales {
-    private static final String LOGTAG = "Locales";
-
-    
-
-
-
-
-    public static void initializeLocale(Context context) {
-        final LocaleManager localeManager = LocaleManager.getInstance();
-        final StrictMode.ThreadPolicy savedPolicy = StrictMode.allowThreadDiskReads();
-        StrictMode.allowThreadDiskWrites();
-        try {
-            localeManager.getAndApplyPersistedLocale(context);
-        } finally {
-            StrictMode.setThreadPolicy(savedPolicy);
-        }
-    }
 
     
 
@@ -108,35 +83,11 @@ public class Locales {
     
 
 
-    public static Set<String> getCountriesInDefaultLocaleList() {
-        final Set<String> countries = new LinkedHashSet<>();
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            final LocaleList list = LocaleList.getDefault();
-            for (int i = 0; i < list.size(); i++) {
-                final String country = list.get(i).getCountry();
-                if (!TextUtils.isEmpty(country)) {
-                    countries.add(country.toLowerCase(Locale.US));
-                }
-            }
-        } else {
-            final String country = Locale.getDefault().getCountry();
-            if (!TextUtils.isEmpty(country)) {
-                countries.add(country.toLowerCase(Locale.US));
-            }
-        }
-
-        return countries;
-    }
-
-    
-
-
     public static Resources getLocalizedResources(Context context) {
         final Resources currentResources = context.getResources();
 
         final Locale currentLocale = LocaleManager.getInstance().getCurrentLocale(context);
-        @SuppressWarnings("deprecation") final Locale viewLocale = currentResources.getConfiguration().locale;
+        final Locale viewLocale = currentResources.getConfiguration().locale;
 
         if (currentLocale == null || viewLocale == null) {
             return currentResources;
