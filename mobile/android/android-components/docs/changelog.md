@@ -4,21 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 37.0.0-SNAPSHOT (In Development)
+# 36.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v36.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/96?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v35.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/95?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-# 36.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v35.0.0...v36.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/95?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v36.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v36.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v36.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
   * **Merge day!**
@@ -28,6 +20,10 @@ permalink: /changelog/
 
 * **feature-addons**
   * Added `DefaultSupportedAddonsChecker` which checks for add-ons that were previously unsupported, and creates a notification to let the user known when they are available to be used.
+
+* **feature-push**
+  * `AutoPushFeature` now properly notifies observers that they have changed by the `Observer.onSubscriptionChanged` callback.
+  *  ⚠️ **This is a breaking change**: `RustPushConnection.verifyConnection` now returns a list of subscriptions that have changed.
 
 # 35.0.0
 
@@ -56,7 +52,7 @@ permalink: /changelog/
 
 * **feature-accounts-push**
   * Add known prefix to FxA push scope.
-  
+
 * **browser-toolbar**
   * Add the possibility to listen to menu dismissal through `setMenuDismissAction` in `DisplayToolbar`
 
