@@ -137,7 +137,22 @@ public class WebViewProvider {
 
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    if ((!url.startsWith("http://")) && (!url.startsWith("https://") && (!url.startsWith("file://")))) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if ((!url.startsWith("http://")) &&
+                            (!url.startsWith("https://")) &&
+                            (!url.startsWith("file://")) &&
+                            (!url.startsWith("data:"))) {
                         callback.handleExternalUrl(url);
                         return true;
                     }
