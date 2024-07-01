@@ -4,9 +4,7 @@
 
 package mozilla.components.browser.toolbar.display
 
-import android.graphics.Color
 import android.graphics.Rect
-import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -44,9 +42,18 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class DisplayToolbarTest {
+
+    @Test
+    fun `initialized with security icon`() {
+        val toolbar = mock(BrowserToolbar::class.java)
+        val displayToolbar = DisplayToolbar(testContext, toolbar)
+
+        assertNotNull(displayToolbar.siteSecurityIconView.drawable)
+    }
 
     @Test
     fun `clicking on the URL switches the toolbar to editing mode`() {
@@ -182,6 +189,14 @@ class DisplayToolbarTest {
         assertEquals(totalViewsWidth, view.measuredWidth)
 
         displayToolbar.setTrackingProtectionState(SiteTrackingProtection.ON_TRACKERS_BLOCKED)
+        displayToolbar.measure(widthSpec, heightSpec)
+
+        totalViewsWidth = urlView.measuredWidth + securityIcon.measuredWidth
+
+        // Tracking protection views MUST be measured
+        assertEquals(totalViewsWidth + trackingProtectionWidth + separatorWidth, view.measuredWidth)
+
+        displayToolbar.setTrackingProtectionState(SiteTrackingProtection.OFF_FOR_A_SITE)
         displayToolbar.measure(widthSpec, heightSpec)
 
         totalViewsWidth = urlView.measuredWidth + securityIcon.measuredWidth
@@ -953,64 +968,45 @@ class DisplayToolbarTest {
     }
 
     @Test
-    fun `iconView changes site secure state when site security changes`() {
+    fun `iconView changes image resource when site security changes`() {
         val toolbar = mock(BrowserToolbar::class.java)
         val displayToolbar = DisplayToolbar(testContext, toolbar)
-        assertEquals(SiteSecurity.INSECURE, displayToolbar.siteSecurityIconView.siteSecurity)
+        var shadowDrawable = shadowOf(displayToolbar.siteSecurityIconView.drawable)
+        assertEquals(R.drawable.mozac_ic_globe, shadowDrawable.createdFromResId)
 
         displayToolbar.setSiteSecurity(SiteSecurity.SECURE)
 
-        assertEquals(SiteSecurity.SECURE, displayToolbar.siteSecurityIconView.siteSecurity)
+        shadowDrawable = shadowOf(displayToolbar.siteSecurityIconView.drawable)
+        assertEquals(R.drawable.mozac_ic_lock, shadowDrawable.createdFromResId)
 
         displayToolbar.setSiteSecurity(SiteSecurity.INSECURE)
 
-        assertEquals(SiteSecurity.INSECURE, displayToolbar.siteSecurityIconView.siteSecurity)
+        shadowDrawable = shadowOf(displayToolbar.siteSecurityIconView.drawable)
+        assertEquals(R.drawable.mozac_ic_globe, shadowDrawable.createdFromResId)
     }
 
     @Test
-    fun `securityIcon is set when securityIcon changes`() {
+    fun `securityIcons is set when securityIcons changes`() {
         val toolbar = mock(BrowserToolbar::class.java)
         val displayToolbar = DisplayToolbar(testContext, toolbar)
 
-        val icon = testContext.getDrawable(R.drawable.mozac_ic_site_security)
-        displayToolbar.securityIcon = icon
+        val insecure = testContext.getDrawable(R.drawable.mozac_ic_globe)
+        val secure = testContext.getDrawable(R.drawable.mozac_ic_lock)
+        displayToolbar.securityIcons = SiteSecurityIcons(insecure, secure)
 
-        assertEquals(icon, displayToolbar.securityIcon)
+        assertEquals(insecure, displayToolbar.securityIcons.insecure)
+        assertEquals(secure, displayToolbar.securityIcons.secure)
     }
 
     @Test
-    fun `setImageDrawable is called when securityIcon changes`() {
+    fun `setSiteSecurity is called when securityIcons changes`() {
         val toolbar = BrowserToolbar(testContext)
 
-        val icon: Drawable = mock()
-        assertNotEquals(icon, toolbar.displayToolbar.siteSecurityIconView.drawable)
+        val icons = SiteSecurityIcons(mock(), mock())
+        assertNotEquals(icons, toolbar.displayToolbar.securityIcons)
 
-        toolbar.siteSecurityIcon = icon
-        assertEquals(icon, toolbar.displayToolbar.siteSecurityIconView.drawable)
-    }
-
-    @Test
-    fun `securityIconColor is set when securityIconColor changes`() {
-        val toolbar = BrowserToolbar(testContext)
-
-        assertNull(toolbar.displayToolbar.siteSecurityIconView.colorFilter)
-
-        toolbar.siteSecurityColor = Color.TRANSPARENT to Color.TRANSPARENT
-        assertNull(toolbar.displayToolbar.siteSecurityIconView.colorFilter)
-
-        toolbar.siteSecurityColor = Color.BLUE to Color.BLUE
-        assertNotNull(toolbar.displayToolbar.siteSecurityIconView.colorFilter)
-    }
-
-    @Test
-    fun `setSiteSecurity is called when securityIconColor changes`() {
-        val toolbar = BrowserToolbar(testContext)
-
-        val icon: Drawable = mock()
-        assertNotEquals(icon, toolbar.displayToolbar.securityIcon)
-
-        toolbar.siteSecurityIcon = icon
-        assertEquals(icon, toolbar.displayToolbar.securityIcon)
+        toolbar.siteSecurityIcons = icons
+        assertEquals(icons, toolbar.displayToolbar.securityIcons)
     }
 
     @Test
