@@ -5,23 +5,21 @@
 
 package org.mozilla.focus.shortcut;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ShortcutInfo;
-import android.content.pm.ShortcutManager;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.content.pm.ShortcutInfoCompat;
+import android.support.v4.content.pm.ShortcutManagerCompat;
+import android.support.v4.graphics.drawable.IconCompat;
 import android.text.TextUtils;
 
 import org.mozilla.focus.activity.MainActivity;
 import org.mozilla.focus.utils.UrlUtils;
 
 public class HomeScreen {
-    private static final String BROADCAST_INSTALL_SHORTCUT = "com.android.launcher.action.INSTALL_SHORTCUT";
     public static final String ADD_TO_HOMESCREEN_TAG = "add_to_homescreen";
     public static final String BLOCKING_ENABLED = "blocking_enabled";
 
@@ -32,31 +30,14 @@ public class HomeScreen {
         if (TextUtils.isEmpty(title.trim())) {
             title = generateTitleFromUrl(url);
         }
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-            installShortCutViaBroadcast(context, icon, url, title, blockingEnabled);
-        } else {
-            installShortCutViaManager(context, icon, url, title, blockingEnabled);
-        }
-    }
 
-    
-
-
-
-
-    private static void installShortCutViaBroadcast(Context context, Bitmap bitmap, String url, String title, boolean blockingEnabled) {
-        final Intent shortcutIntent = createShortcutIntent(context, url, blockingEnabled);
-
-        final Intent addIntent = new Intent();
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
-        addIntent.setAction(BROADCAST_INSTALL_SHORTCUT);
-
-        context.sendBroadcast(addIntent);
+        installShortCutViaManager(context, icon, url, title, blockingEnabled);
 
         
-        goToHomeScreen(context);
+        
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+            goToHomeScreen(context);
+        }
     }
 
     
@@ -64,21 +45,18 @@ public class HomeScreen {
 
 
 
-    @TargetApi(26)
-    private static void installShortCutViaManager(Context context, Bitmap bitmap, String url, String title, boolean blockingEnabled) {
-        final ShortcutManager shortcutManager = context.getSystemService(ShortcutManager.class);
-        if (shortcutManager == null) {
-            return;
-        }
 
-        if (shortcutManager.isRequestPinShortcutSupported()) {
-            final ShortcutInfo shortcut = new ShortcutInfo.Builder(context, url)
+
+
+    private static void installShortCutViaManager(Context context, Bitmap bitmap, String url, String title, boolean blockingEnabled) {
+        if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+            final ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(context, url)
                     .setShortLabel(title)
                     .setLongLabel(title)
-                    .setIcon(Icon.createWithBitmap(bitmap))
+                    .setIcon(IconCompat.createWithBitmap(bitmap))
                     .setIntent(createShortcutIntent(context, url, blockingEnabled))
                     .build();
-            shortcutManager.requestPinShortcut(shortcut, null);
+            ShortcutManagerCompat.requestPinShortcut(context, shortcut, null);
         }
     }
 
