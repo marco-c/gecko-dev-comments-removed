@@ -134,6 +134,11 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         
         
         
+        getActivity().getSupportFragmentManager().popBackStack();
+
+        
+        
+        
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.container, BrowserFragment.create(url), BrowserFragment.FRAGMENT_TAG)
