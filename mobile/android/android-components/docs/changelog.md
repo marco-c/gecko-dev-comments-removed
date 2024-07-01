@@ -43,6 +43,9 @@ permalink: /changelog/
   * Adds a new storage component to store containers (contextual identities) in a Room database and provides the
     necessary APIs to get, add and remove containers.
 
+* **feature-webnotifications**
+  * Adds support for displaying the `source` URL the WebNotification originated from.
+
 * **feature-tabs**
   * ⚠️ **This is a breaking change**: `TabsFeature` now supports providing custom use case implementations. Therefore, an instance of `SelectTabUseCase` and `RemoveTabUseCase` have to be provided.
 
@@ -63,18 +66,6 @@ permalink: /changelog/
 
 * **feature-top-sites**:
   * ⚠️ **This is a breaking change**: `TopSiteStorage.getTopSites` now returns `Flow` instead of `LiveData`. Use `Flow.asLiveData` to convert the result into a `LiveData` again.
-
-* **service-glean**
-  * Glean was updated to v31.1.1
-    * Smaller binary library after a big dependency was dropped
-    * Limit the number of upload retries in all implementations
-
-* **support-images**:
-  * Added `ImageLoader` API for loading images directly into an `ImageView`.
-
-* **browser-tabstray**:
-  * ⚠️ **This is a breaking change**: `TabsAdapter` and `DefaultTabViewHolder` take an optional `ImageLoader` for loading browser thumbnails.
-  * Fixed a bug in `TabsThumbnailView` where the `scaleFactor` was not applied all the time when expected.
 
 # 44.0.0
 
@@ -131,6 +122,7 @@ permalink: /changelog/
 
 * **feature-downloads**
   * ⚠️ **This is a breaking change**: DownloadManager and DownloadService are now using the browser store to keep track of queued downloads. Therefore, an instance of the store needs to be provided when constructing manager and service. There's also a new DownloadMiddleware which needs to be provided to the store.
+
   ```kotlin
    val store by lazy {
         BrowserStore(middleware = listOf(
@@ -165,6 +157,7 @@ permalink: /changelog/
     override val store: BrowserStore by lazy { components.core.store } // Store needs to be provided now
   }
   ```
+
   * Fixed issue [#6893](https://github.com/mozilla-mobile/android-components/issues/6893).
   * Add notification grouping to downloads Fenix issue [#4910](https://github.com/mozilla-mobile/android-components/issues/4910).
 
