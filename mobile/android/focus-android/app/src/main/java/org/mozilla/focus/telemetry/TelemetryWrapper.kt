@@ -3,6 +3,9 @@
 
 
 
+
+@file:Suppress("DEPRECATION")
+
 package org.mozilla.focus.telemetry
 
 import android.content.Context
