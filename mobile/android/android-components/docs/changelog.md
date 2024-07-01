@@ -12,9 +12,14 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **service-glean**
+* **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
+  * **Merge day!**
+    * `browser-engine-gecko-release`: GeckoView 72.0
+    * `browser-engine-gecko-beta`: GeckoView 73.0
+    * `browser-engine-gecko-nightly`: GeckoView 74.0
 
-  * Glean was updated to v23.0.0:
+* **service-glean**
+  * Glean was updated to v23.0.1:
     * The Glean Gradle Plugin correctly triggers docs and API updates when registry files
       change, without requiring them to be deleted.
     * `parseISOTimeString` has been made 4x faster. This had an impact on Glean
@@ -25,6 +30,19 @@ permalink: /changelog/
       * The public method `PingType.send()` (in all platforms) have been deprecated
         and renamed to `PingType.submit()`.
     * Rename `deletion_request` ping to `deletion-request` ping after glean_parser update
+    * BUGFIX: The Glean Gradle plugin will now work if an app or library doesn't
+      have a metrics.yaml or pings.yaml file.
+
+* **feature-app-links**
+  * AppLinksInterceptor can now be used without the AppLinksFeature. Set the new parameter launchFromInterceptor = true
+  ```kotlin
+  AppLinksInterceptor(
+      applicationContext,
+      interceptLinkClicks = true,
+      launchInApp = { true },
+      launchFromInterceptor = true
+  )
+  ```
 
 # 27.0.0
 
@@ -97,10 +115,10 @@ permalink: /changelog/
 
   ```kotlin
   // Get a unique id for the provided tag
-  val id = NotificationIds.getIdForTag(context, "mozac.my.feature")
+  val id = SharedIdsHelper.getIdForTag(context, "mozac.my.feature")
 
   // Get the next unique id for the provided tag
-  val id = NotificationIds.getNextIdForTag(context, "mozac.my.feature")
+  val id = SharedIdsHelper.getNextIdForTag(context, "mozac.my.feature")
   ```
 
 # 26.0.0
