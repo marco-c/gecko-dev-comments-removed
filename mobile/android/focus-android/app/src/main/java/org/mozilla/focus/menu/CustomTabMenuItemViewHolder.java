@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.telemetry.TelemetryWrapper;
 
 
 
@@ -45,6 +46,8 @@ import org.mozilla.focus.R;
         } catch (PendingIntent.CanceledException e) {
             
         }
+
+        TelemetryWrapper.customTabMenuEvent();
     }
 
      void bind(BrowserMenuAdapter.MenuItem menuItem) {

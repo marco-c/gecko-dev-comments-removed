@@ -222,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
         if (intent.getBooleanExtra(EXTRA_TEXT_SELECTION, false)) {
             TelemetryWrapper.textSelectionIntentEvent();
         } else if (BrowsingSession.getInstance().isCustomTab()) {
-            
+            TelemetryWrapper.customTabsIntentEvent(BrowsingSession.getInstance().getCustomTabConfig().getOptionsList());
         } else {
             TelemetryWrapper.browseIntentEvent();
         }
