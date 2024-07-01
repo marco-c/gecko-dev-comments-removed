@@ -26,6 +26,7 @@ RELEASE_LOCALES = [
 	"bg",
 	"bn-BD",
 	"bn-IN",
+        "bs",
 	"ca",
     "cak",
 	"cs",
@@ -59,6 +60,7 @@ RELEASE_LOCALES = [
 	"kk",
 	"ko",
 	"lo",
+        "meh",
     "mix",
 	"ms",
 	"my",
@@ -93,9 +95,7 @@ RELEASE_LOCALES = [
 
 
 ADDITIONAL_SCREENSHOT_LOCALES = [
-	"lt",
-	"meh",
-	"bs"
+	"lt"
 ]
 
 
