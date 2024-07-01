@@ -234,21 +234,21 @@ public class MainActivity extends AppCompatActivity {
         final FragmentManager fragmentManager = getSupportFragmentManager();
 
         final UrlInputFragment urlInputFragment = (UrlInputFragment) fragmentManager.findFragmentByTag(UrlInputFragment.FRAGMENT_TAG);
-        if (urlInputFragment != null && urlInputFragment.isVisible()) {
-            if (urlInputFragment.onBackPressed()) {
-                
-                
-                return;
-            }
+        if (urlInputFragment != null &&
+                urlInputFragment.isVisible() &&
+                urlInputFragment.onBackPressed()) {
+            
+            
+            return;
         }
 
         final BrowserFragment browserFragment = (BrowserFragment) fragmentManager.findFragmentByTag(BrowserFragment.FRAGMENT_TAG);
-        if (browserFragment != null && browserFragment.isVisible()) {
-            if (browserFragment.onBackPressed()) {
-                
-                
-                return;
-            }
+        if (browserFragment != null &&
+                browserFragment.isVisible() &&
+                browserFragment.onBackPressed()) {
+            
+            
+            return;
         }
 
         super.onBackPressed();
