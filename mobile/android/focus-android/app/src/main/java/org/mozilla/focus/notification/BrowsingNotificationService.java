@@ -97,6 +97,10 @@ public class BrowsingNotificationService extends Service {
                     activityIntent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 }
 
+                
+                
+                activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
                 startActivity(activityIntent);
                 return Service.START_NOT_STICKY;
 
