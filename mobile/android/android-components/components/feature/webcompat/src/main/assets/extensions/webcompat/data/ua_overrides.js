@@ -40,32 +40,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1564594",
-    platform: "android",
-    domain: "Enhanced Search",
-    bug: "1567945",
-    config: {
-      matches: [
-        ...getMatchPatternsForGoogleURL("images.google"),
-        ...getMatchPatternsForGoogleURL("maps.google"),
-        ...getMatchPatternsForGoogleURL("news.google"),
-        ...getMatchPatternsForGoogleURL("www.google"),
-      ],
-      blocks: [...getMatchPatternsForGoogleURL("www.google", "serviceworker")],
-      permanentPref: "enable_enhanced_search",
-      telemetryKey: "enhancedSearch",
-      experiment: ["enhanced-search", "enhanced-search-control"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
 
 
 
@@ -241,7 +215,7 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://zhidao.baidu.com/*",
       ],
       uaTransformer: originalUA => {
-        return originalUA + " AppleWebKit/537.36 (KHTML, like Gecko)";
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -609,6 +583,27 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://my.nintendo.com/*"],
       uaTransformer: originalUA => {
         return originalUA + " AppleWebKit";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+
+    id: "bug1621065",
+    platform: "android",
+    domain: "bracketchallenge.ncaa.com",
+    bug: "1621065",
+    config: {
+      matches: ["*://bracketchallenge.ncaa.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome";
       },
     },
   },
