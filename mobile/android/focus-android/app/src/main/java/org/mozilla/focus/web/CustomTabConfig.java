@@ -12,12 +12,16 @@ import org.mozilla.focus.utils.SafeIntent;
 public class CustomTabConfig {
     public final @Nullable @ColorInt Integer toolbarColor;
     public final @Nullable Bitmap closeButtonIcon;
+    public final boolean disableUrlbarHiding;
+
 
      CustomTabConfig(
             final @Nullable @ColorInt Integer toolbarColor,
-            final @Nullable Bitmap closeButtonIcon) {
+            final @Nullable Bitmap closeButtonIcon,
+            final boolean disableUrlbarHiding) {
         this.toolbarColor = toolbarColor;
         this.closeButtonIcon = closeButtonIcon;
+        this.disableUrlbarHiding = disableUrlbarHiding;
     }
 
      static boolean isCustomTabIntent(final @NonNull Intent intent) {
@@ -26,16 +30,21 @@ public class CustomTabConfig {
 
      static CustomTabConfig parseCustomTabIntent(final @NonNull SafeIntent intent) {
         @ColorInt Integer toolbarColor = null;
-        Bitmap closeButtonIcon = null;
-
         if (intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
             toolbarColor = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, -1);
         }
 
+        Bitmap closeButtonIcon = null;
         if (intent.hasExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)) {
             closeButtonIcon = intent.getParcelableExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON);
         }
 
-        return new CustomTabConfig(toolbarColor, closeButtonIcon);
+        
+        
+        
+        
+        boolean disableUrlbarHiding = !intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_URLBAR_HIDING, true);
+
+        return new CustomTabConfig(toolbarColor, closeButtonIcon, disableUrlbarHiding);
     }
 }
