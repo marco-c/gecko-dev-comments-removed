@@ -49,7 +49,11 @@ import org.mozilla.focus.webkit.matcher.util.FocusString;
     public Trie findNode(final FocusString string) {
         if (terminator) {
             
-            return this;
+            
+            
+            if (string.length() == 0 || string.charAt(0) == '.') {
+                return this;
+            }
         } else if (string.length() == 0) {
             
             return null;
