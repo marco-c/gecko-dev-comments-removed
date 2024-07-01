@@ -87,7 +87,7 @@ public class LocalSessionStorageTest {
 
 
     @Test
-    public void testLocaleAndSessionStorageIsWrittenAndRemoved() throws Exception {
+    public void testLocalAndSessionStorageIsWrittenAndRemoved() throws Exception {
         
 
         goToUrlFromHomeScreen("/sessionStorage_start");
