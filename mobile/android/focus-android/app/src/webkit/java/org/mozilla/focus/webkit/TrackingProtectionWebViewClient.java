@@ -8,6 +8,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.support.annotation.WorkerThread;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -50,20 +51,21 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         triggerPreload(context);
     }
 
-    
-
-
     @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        
         
         
         final UrlMatcher matcher = getMatcher(view.getContext());
 
-        if (matcher.matches(url, currentPageURL)) {
+        
+        
+        if ((!request.isForMainFrame()) &&
+                matcher.matches(request.getUrl().toString(), currentPageURL)) {
             return new WebResourceResponse(null, null, null);
         }
 
-        return super.shouldInterceptRequest(view, url);
+        return super.shouldInterceptRequest(view, request);
     }
 
     
