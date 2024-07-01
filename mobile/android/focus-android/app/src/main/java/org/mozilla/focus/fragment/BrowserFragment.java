@@ -28,6 +28,8 @@ import org.mozilla.focus.utils.ViewUtils;
 import org.mozilla.focus.utils.IntentUtils;
 import org.mozilla.focus.web.IWebView;
 
+import java.lang.ref.WeakReference;
+
 
 
 
@@ -56,6 +58,14 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
     private View forwardButton;
     private View backButton;
+    private View refreshButton;
+    private View stopButton;
+
+    private boolean isLoading = false;
+
+    
+    
+    private WeakReference<LoadStateListener> loadStateListenerWeakReference = new WeakReference<>(null);
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -81,9 +91,12 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
         backgroundTransition = (TransitionDrawable) view.findViewById(R.id.background).getBackground();
 
-        final View refreshButton = view.findViewById(R.id.refresh);
-        if (refreshButton != null) {
+        if ((refreshButton = view.findViewById(R.id.refresh)) != null) {
             refreshButton.setOnClickListener(this);
+        }
+
+        if ((stopButton = view.findViewById(R.id.stop)) != null) {
+            stopButton.setOnClickListener(this);
         }
 
         if ((forwardButton = view.findViewById(R.id.forward)) != null) {
@@ -106,11 +119,39 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         return view;
     }
 
+    public interface LoadStateListener {
+        void isLoadingChanged(boolean isLoading);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public void setIsLoadingListener(final LoadStateListener listener) {
+        loadStateListenerWeakReference = new WeakReference<>(listener);
+    }
+
+    private void updateIsLoading(final boolean isLoading) {
+        this.isLoading = isLoading;
+        final LoadStateListener currentListener = loadStateListenerWeakReference.get();
+        if (currentListener != null) {
+            currentListener.isLoadingChanged(isLoading);
+        }
+    }
+
     @Override
     public IWebView.Callback createCallback() {
         return new IWebView.Callback() {
             @Override
             public void onPageStarted(final String url) {
+                updateIsLoading(true);
+
                 lockView.setVisibility(View.GONE);
 
                 progressView.announceForAccessibility(getString(R.string.accessibility_announcement_loading));
@@ -124,6 +165,8 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
             @Override
             public void onPageFinished(boolean isSecure) {
+                updateIsLoading(false);
+
                 backgroundTransition.startTransition(ANIMATION_DURATION);
 
                 progressView.announceForAccessibility(getString(R.string.accessibility_announcement_loading_finished));
@@ -240,6 +283,14 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                 break;
             }
 
+            case R.id.stop: {
+                final IWebView webView = getWebView();
+                if (webView != null) {
+                    webView.stopLoading();
+                }
+                break;
+            }
+
             case R.id.share: {
                 final IWebView webView = getWebView();
                 if (webView == null) {
@@ -311,7 +362,7 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
     }
 
     private void updateToolbarButtonStates() {
-        if (forwardButton == null || backButton == null) {
+        if (forwardButton == null || backButton == null || refreshButton == null || stopButton == null) {
             return;
         }
 
@@ -327,6 +378,9 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         forwardButton.setAlpha(canGoForward ? 1.0f : 0.5f);
         backButton.setEnabled(canGoBack);
         backButton.setAlpha(canGoBack ? 1.0f : 0.5f);
+
+        refreshButton.setVisibility(isLoading ? View.GONE : View.VISIBLE);
+        stopButton.setVisibility(isLoading ? View.VISIBLE : View.GONE);
     }
 
     @Nullable
@@ -338,6 +392,10 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
     public boolean canGoForward() {
         final IWebView webView = getWebView();
         return webView != null && webView.canGoForward();
+    }
+
+    public boolean isLoading() {
+        return isLoading;
     }
 
     public boolean canGoBack() {
