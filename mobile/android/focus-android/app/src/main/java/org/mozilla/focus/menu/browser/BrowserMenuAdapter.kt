@@ -143,7 +143,6 @@ class BrowserMenuAdapter(
         }
 
         if (AppConstants.isGeckoBuild) {
-            items.add(MenuItem.RequestDesktopCheck)
             
             items.add(
                 MenuItem.Default(
