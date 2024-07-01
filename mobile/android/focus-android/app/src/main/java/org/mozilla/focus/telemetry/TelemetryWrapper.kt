@@ -131,6 +131,7 @@ object TelemetryWrapper {
         val WHATS_NEW = "whats_new"
         val RESUME = "resume"
         val RELOAD = "refresh"
+        val FULL_BROWSER = "full_browser"
     }
 
     private object Extra {
@@ -523,6 +524,14 @@ object TelemetryWrapper {
     @JvmStatic
     fun openDefaultAppEvent() {
         TelemetryEvent.create(Category.ACTION, Method.OPEN, Object.MENU, Value.DEFAULT).queue()
+    }
+
+    
+
+
+    @JvmStatic
+    fun openFullBrowser() {
+        TelemetryEvent.create(Category.ACTION, Method.OPEN, Object.MENU, Value.FULL_BROWSER)
     }
 
     @JvmStatic
