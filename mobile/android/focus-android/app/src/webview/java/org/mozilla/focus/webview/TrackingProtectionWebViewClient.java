@@ -103,9 +103,10 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
 
         
         
-        final Uri pageUri = Uri.parse(currentPageURL);
         if ((!request.isForMainFrame()) &&
-                matcher.matches(resourceUri, pageUri)) {
+                currentPageURL != null &&
+                matcher.matches(resourceUri, Uri.parse(currentPageURL))) {
+                
             if (callback != null) {
                 callback.countBlockedTracker();
             }

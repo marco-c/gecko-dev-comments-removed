@@ -123,7 +123,16 @@ public class UrlUtils {
         return "data:text/html;charset=utf-8;base64,".equals(url);
     }
 
-    public static boolean urlsMatchExceptForTrailingSlash(final @NonNull String url1, final @NonNull String url2) {
+    
+
+
+
+
+    public static boolean urlsMatchExceptForTrailingSlash(final String url1, final String url2) {
+        
+        if (url1 == null || url2 == null) {
+            return false;
+        }
         int lengthDifference = url1.length() - url2.length();
 
         if (lengthDifference == 0) {
