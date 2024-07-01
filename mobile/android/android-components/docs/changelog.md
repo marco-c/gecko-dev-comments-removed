@@ -41,6 +41,7 @@ permalink: /changelog/
 
 * **browser-menu**
   * ⚠️ **This is a breaking change**: `BrowserMenuItemToolbar.Button.longClickListener` is now nullable and defaults to null.
+  * ⚠️ **This is a breaking change**: Removed `SimpleBrowserMenuHighlightableItem.itemType`. Use a WeakMap instead if you need to attach private data.
 
 * **concept-menu**
   * Added `SmallMenuCandidate.onLongClick` to handle long click of row menu buttons.
@@ -52,6 +53,20 @@ permalink: /changelog/
 
 * **feature-downloads**
   * ⚠️ **This is a breaking change**: `DownloadsFeature` is no longer accepting a custom download dialog but supporting customizations via the `promptStyling` parameter. The `dialog` parameter was unused so far. If it's required in the future it will need to be replaced with a lambda or factory so that the feature can create instances of the dialog itself, as needed.
+
+* **feature-webcompat-reporter**
+  * Added a second parameter to the `install` method: `productName` allows to provide a unique product name per usage for automatic product-labelling on webcompat.com 
+
+* **feature-contextmenu**
+  * Do not show the "Download link" option for html URLs.
+  * Uses a speculative check, may not work in all cases.
+
+* **concept-awesomebar**
+  * Added `AwesomeBar.setOnEditSuggestionListener()` to register a callback when a search term is selected to be edited further.  
+* **browser-toolbar**
+  * `BrowserToolbar.setSearchTerms()` can now be called during `State.EDIT`
+* **browser-awesomebar**
+  * The view of `DefaultSuggestionViewHolder` now contains a button to select a search term for further editing. Clicking it will invoke the callback registered in `BrowserAwesomeBar.setOnEditSuggestionListener()`
 
 # 52.0.0
 
