@@ -9,11 +9,13 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageButton
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.browser.tabstray.thumbnail.TabThumbnailView
 import mozilla.components.concept.tabstray.Tab
 import mozilla.components.concept.tabstray.TabsTray
 import mozilla.components.support.base.observer.Observable
+import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 
 /**
  * A RecyclerView ViewHolder implementation for "tab" items.
@@ -22,6 +24,9 @@ class TabViewHolder(
     itemView: View,
     private val tabsTray: BrowserTabsTray
 ) : RecyclerView.ViewHolder(itemView) {
+    private val cardView: CardView = (itemView as CardView).apply {
+        elevation = tabsTray.styling.itemElevation
+    }
     private val iconView: ImageView = itemView.findViewById(R.id.mozac_browser_tabstray_icon)
     private val titleView: TextView = itemView.findViewById(R.id.mozac_browser_tabstray_title)
     private val closeView: AppCompatImageButton = itemView.findViewById(R.id.mozac_browser_tabstray_close)
@@ -43,7 +48,7 @@ class TabViewHolder(
         }
 
         titleView.text = title
-        urlView?.text = tab.url
+        urlView?.text = tab.url.tryGetHostFromUrl()
 
         itemView.setOnClickListener {
             observable.notifyObservers { onTabSelected(tab) }
@@ -55,11 +60,11 @@ class TabViewHolder(
 
         if (isSelected) {
             titleView.setTextColor(tabsTray.styling.selectedItemTextColor)
-            itemView.setBackgroundColor(tabsTray.styling.selectedItemBackgroundColor)
+            cardView.setCardBackgroundColor(tabsTray.styling.selectedItemBackgroundColor)
             closeView.imageTintList = ColorStateList.valueOf(tabsTray.styling.selectedItemTextColor)
         } else {
             titleView.setTextColor(tabsTray.styling.itemTextColor)
-            itemView.setBackgroundColor(tabsTray.styling.itemBackgroundColor)
+            cardView.setCardBackgroundColor(tabsTray.styling.itemBackgroundColor)
             closeView.imageTintList = ColorStateList.valueOf(tabsTray.styling.itemTextColor)
         }
 
