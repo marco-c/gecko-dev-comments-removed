@@ -26,12 +26,16 @@ import org.mozilla.focus.utils.AppConstants;
 import org.mozilla.focus.utils.FileUtils;
 import org.mozilla.focus.utils.ThreadUtils;
 import org.mozilla.focus.utils.UrlUtils;
+import org.mozilla.focus.web.BrowsingSession;
 import org.mozilla.focus.web.Download;
 import org.mozilla.focus.web.IWebView;
 import org.mozilla.focus.web.WebViewProvider;
 
+import java.util.UUID;
+
 public class WebkitView extends NestedWebView implements IWebView, SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String KEY_CURRENTURL = "currenturl";
+    private static final String KEY_STATE_UUID = "state_uuid";
 
     private IconHolder iconHolder;
     private Callback callback;
@@ -78,10 +82,15 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
     }
 
     @Override
-    public void restoreWebviewState(Bundle savedInstanceState) {
+    public void restoreWebViewState(Bundle inBundle) {
+        final BrowsingSession session = BrowsingSession.getInstance();
+
         
-        
-        final WebBackForwardList backForwardList = restoreState(savedInstanceState);
+        final String uuid = inBundle.getString(KEY_STATE_UUID);
+
+        final WebBackForwardList backForwardList = session.hasWebViewState(uuid)
+                ? super.restoreState(session.getWebViewState(uuid))
+                : null;
 
         
         
@@ -92,7 +101,7 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
         
         
 
-        final String desiredURL = savedInstanceState.getString(KEY_CURRENTURL);
+        final String desiredURL = inBundle.getString(KEY_CURRENTURL);
         client.notifyCurrentURL(desiredURL);
 
         if (backForwardList != null &&
@@ -106,8 +115,22 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
-        saveState(outState);
+    public void saveWebViewState(Bundle outState) {
+        
+        
+        
+        final Bundle stateData = new Bundle();
+        super.saveState(stateData);
+
+        
+        
+        
+        final String uuid = UUID.randomUUID().toString();
+
+        BrowsingSession.getInstance().putWebViewState(uuid, stateData);
+
+        outState.putString(KEY_STATE_UUID, uuid);
+
         
         
         outState.putString(KEY_CURRENTURL, getUrl());

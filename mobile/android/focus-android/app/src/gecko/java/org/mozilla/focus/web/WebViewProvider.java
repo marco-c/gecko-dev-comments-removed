@@ -113,12 +113,12 @@ public class WebViewProvider {
         }
 
         @Override
-        public void restoreWebviewState(Bundle savedInstanceState) {
+        public void saveWebViewState(Bundle outState) {
             
         }
 
         @Override
-        public void onSaveInstanceState(Bundle outState) {
+        public void restoreWebViewState(Bundle inState) {
             
         }
 
