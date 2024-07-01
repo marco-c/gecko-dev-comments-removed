@@ -4,7 +4,7 @@
 
 package org.mozilla.focus.webview.matcher.util;
 
-import android.support.annotation.CheckResult;
+import androidx.annotation.CheckResult;
 
 
 
