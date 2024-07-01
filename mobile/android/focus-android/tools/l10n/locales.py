@@ -124,7 +124,8 @@ ADDITIONAL_SCREENSHOT_LOCALES = [
 	"jv",
 	"bo",
 	"ace",
-	"zh-HK"
+	"zh-HK",
+	"nv"
 ]
 
 
