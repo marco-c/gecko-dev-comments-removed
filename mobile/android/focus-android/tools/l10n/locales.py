@@ -94,9 +94,10 @@ RELEASE_LOCALES = [
 	"uk",
 	"ur",
 	"vi",
+	"wo",
+	"zam",
 	"zh-CN",
-	"zh-TW",
-	"zam"
+	"zh-TW"
 ]
 
 
@@ -105,8 +106,7 @@ RELEASE_LOCALES = [
 
 ADDITIONAL_SCREENSHOT_LOCALES = [
 	"ixl",
-	"lt",
-	"wo"
+	"lt"
 ]
 
 
