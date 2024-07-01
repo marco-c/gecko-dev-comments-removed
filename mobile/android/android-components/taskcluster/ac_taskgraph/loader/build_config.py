@@ -124,7 +124,7 @@ def loader(kind, path, config, params, loaded_tasks):
     }
     
     
-    overridden_jobs = {k: v for k, v in config.pop('overriden-jobs', {}).items() if affected_components is ALL_COMPONENTS or k in affected_components}
+    overridden_jobs = {k: v for k, v in config.pop('overriden-jobs', {}).items() if affected_components is ALL_COMPONENTS or k in jobs.keys()}
     jobs = merge(jobs, overridden_jobs)
 
     config['jobs'] = jobs
