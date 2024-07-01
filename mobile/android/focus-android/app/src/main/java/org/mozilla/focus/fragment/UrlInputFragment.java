@@ -149,7 +149,10 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         final BrowserFragment browserFragment = (BrowserFragment) getActivity().getSupportFragmentManager()
                 .findFragmentByTag(BrowserFragment.FRAGMENT_TAG);
 
-        if (browserFragment != null) {
+        if (browserFragment != null && browserFragment.isVisible()) {
+            
+            
+            
             browserFragment.loadURL(url);
         } else {
             getActivity().getSupportFragmentManager()
