@@ -79,7 +79,7 @@ class TelemetrySwitchPreference extends Preference {
                 
                 final String url = SupportUtils.getSumoURLForTopic(getContext(), SupportUtils.SumoTopic.USAGE_DATA);
                 SessionManager.getInstance().createSession(Source.MENU, url);
-                ((Activity) getContext()).onBackPressed();
+                ((Activity) getContext()).finish();
             }
         });
 
