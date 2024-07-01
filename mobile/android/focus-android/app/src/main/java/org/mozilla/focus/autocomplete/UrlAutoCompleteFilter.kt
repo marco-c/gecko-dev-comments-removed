@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.autocomplete
 
@@ -28,7 +27,7 @@ class UrlAutoCompleteFilter : InlineAutocompleteEditText.OnFilterListener {
             return
         }
 
-        
+        // Search terms are all lowercase already, we just need to lowercase the search text
         val searchText = rawSearchText.toLowerCase(Locale.US)
 
         domains.forEach {
@@ -62,12 +61,13 @@ class UrlAutoCompleteFilter : InlineAutocompleteEditText.OnFilterListener {
         val domains = LinkedHashSet<String>()
         val availableLists = getAvailableDomainLists(context)
 
-        
+        // First load the country specific lists following the default locale order
         Locales.getCountriesInDefaultLocaleList()
+                .asSequence()
                 .filter { availableLists.contains(it) }
                 .forEach { loadDomainsForLanguage(context, domains, it) }
 
-        
+        // And then add domains from the global list
         loadDomainsForLanguage(context, domains, "global")
 
         return domains
@@ -98,12 +98,12 @@ class UrlAutoCompleteFilter : InlineAutocompleteEditText.OnFilterListener {
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * Our autocomplete list is all lower case, however the search text might be mixed case.
+     * Our autocomplete EditText code does more string comparison, which fails if the suggestion
+     * doesn't exactly match searchText (ie. if casing differs). It's simplest to just build a suggestion
+     * that exactly matches the search text - which is what this method is for:
+     */
     private fun prepareAutocompleteResult(rawSearchText: String, lowerCaseResult: String) =
             rawSearchText + lowerCaseResult.substring(rawSearchText.length)
 }
