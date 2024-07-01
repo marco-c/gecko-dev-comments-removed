@@ -186,9 +186,18 @@ class TaskBuilder(object):
                     artifact['taskcluster_path']: {
                         'checksums_path': '',  
                         'destinations': [artifact['maven_destination']]
-                    } for artifact in (build_artifacts + sign_artifacts)
+                    } for artifact in (build_artifacts)
                 },
                 "taskId": build_task_id,
+            }, {
+                "locale": "en-US",
+                "paths": {
+                    artifact['taskcluster_path']: {
+                        'checksums_path': '',  
+                        'destinations': [artifact['maven_destination']]
+                    } for artifact in (sign_artifacts)
+                },
+                "taskId": sign_task_id,
             }],
             "maxRunTime": 600,
             "upstreamArtifacts": [{
