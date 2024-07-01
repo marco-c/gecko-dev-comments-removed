@@ -7,22 +7,28 @@ package org.mozilla.focus.utils;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
-
 import org.mozilla.focus.R;
 
 import java.lang.ref.WeakReference;
 
 public class ViewUtils {
+
+    private static final int MENU_ITEM_ALPHA_ENABLED = 255;
+    private static final int MENU_ITEM_ALPHA_DISABLED = 130;
+
     
 
 
@@ -137,5 +143,20 @@ public class ViewUtils {
 
     public static boolean isRTL(View view) {
         return ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL;
+    }
+
+    
+
+
+
+
+
+
+    public static void setMenuItemEnabled(@NonNull MenuItem menuItem, boolean enabled) {
+        menuItem.setEnabled(enabled);
+        final Drawable icon = menuItem.getIcon();
+        if (icon != null) {
+            icon.mutate().setAlpha(enabled ? MENU_ITEM_ALPHA_ENABLED : MENU_ITEM_ALPHA_DISABLED);
+        }
     }
 }
