@@ -13,8 +13,6 @@ import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
 import android.support.test.uiautomator.UiScrollable;
 import android.support.test.uiautomator.UiSelector;
-import static android.support.test.espresso.Espresso.onView;
-
 import android.widget.RadioButton;
 
 import org.junit.After;
@@ -28,6 +26,7 @@ import org.mozilla.focus.utils.AppConstants;
 
 import java.util.Arrays;
 
+import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
@@ -105,10 +104,9 @@ public class ChangeSearchEngineTest {
         searchEngineSelectorLabel.click();
 
         
-        
-        UiObject defaultSearchEngineLabel = TestHelper.mDevice.findObject(new UiSelector()
-                .text("Default")
-                .resourceId("android:id/summary"));
+        UiObject defaultSearchEngineLabel = TestHelper.settingsMenu.getChild(new UiSelector()
+                .className("android.widget.LinearLayout")
+                .instance(0));
         defaultSearchEngineLabel.waitForExists(waitingTime);
         defaultSearchEngineLabel.click();
 
@@ -125,7 +123,7 @@ public class ChangeSearchEngineTest {
         TestHelper.settingsHeading.waitForExists(waitingTime);
         UiObject defaultSearchEngine = TestHelper.mDevice.findObject(new UiSelector()
                 .text(mSearchEngine)
-                .resourceId("android:id/title"));
+                .resourceId("android:id/summary"));
         assertTrue(defaultSearchEngine.getText().equals(mSearchEngine));
         TestHelper.pressBackKey();
         TestHelper.pressBackKey();
@@ -152,9 +150,12 @@ public class ChangeSearchEngineTest {
         TestHelper.suggestionList.waitForExists(waitingTime);
         assertTrue(TestHelper.suggestionList.getChildCount() >= 1);
 
+        onView(allOf(withText(containsString("mozilla")),
+                withId(R.id.searchView)))
+                .check(matches(isDisplayed()));
         
         int count = 0;
-        int maxCount = 5;
+        int maxCount = 3;
         
         while (count < maxCount) {
             onView(allOf(withText(containsString("mozilla")),
