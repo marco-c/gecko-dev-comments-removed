@@ -18,7 +18,7 @@ object Versions {
     const val android_gradle_plugin = "3.5.3"
     const val android_maven_publish_plugin = "3.6.2"
     const val lint = "26.3.2"
-    const val detekt = "1.0.1"
+    const val detekt = "1.2.2"
 
     const val sentry = "1.7.21"
     const val okhttp = "3.13.1"
@@ -29,7 +29,7 @@ object Versions {
 
     const val mozilla_appservices = "0.44.0"
 
-    const val mozilla_glean = "21.3.0"
+    const val mozilla_glean = "22.1.0"
 
     const val material = "1.0.0"
     const val nearby = "17.0.0"
@@ -37,7 +37,7 @@ object Versions {
     object AndroidX {
         const val annotation = "1.1.0"
         const val appcompat = "1.1.0"
-        const val browser = "1.2.0-alpha07"
+        const val browser = "1.2.0"
         const val cardview = "1.0.0"
         const val constraintlayout = "1.1.3"
         const val core = "1.1.0"
