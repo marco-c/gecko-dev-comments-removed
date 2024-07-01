@@ -52,8 +52,7 @@ contents_hash.update(b"\x00")
 
 
 
-
-changes = run_cmd_checked(["git", "status", "-v", "-v"], capture_output=True).stdout
+changes = run_cmd_checked(["git", "diff", "HEAD", "."], capture_output=True).stdout
 contents_hash.update(changes)
 contents_hash.update(b"\x00")
 
