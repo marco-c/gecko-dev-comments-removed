@@ -4,13 +4,57 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 48.0.0-SNAPSHOT (In Development)
+# 50.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v47.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/107?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v49.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/109?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+# 49.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v48.0.0...v49.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/108?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v49.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v49.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v49.0.0/buildSrc/src/main/java/Config.kt)
+
+* **feature-session**
+  * ⚠️ **This is a breaking change**: `FullScreenFeature`, `SettingsUseCases`, `SwipeRefreshFeature` and `SessionFeature` now require a `BrowserStore` instead of a `SessionManager`.
+  * ⚠️ **This is a breaking change**: `SessionFeature` now requires an `EngineSessionUseCases` instance.
+  * ⚠️ **This is a breaking change**: `TrackingProtectionUseCases` now requires a `BrowserStore` instead of a `SessionManager`.
+
+* **feature-tabs**
+  * ⚠️ **This is a breaking change**: `TabsUseCases.AddNewTabUseCase` and `TabsUseCases.AddNewPrivateTabUseCase` now require a `BrowserStore` instead of a `SessionManager`.
+
+* **browser-session**
+  * `SessionManager.getEngineSession()` is now deprecated. From now on please read `EngineSession` instances of tabs from `BrowserState`.
+
+* **service-sync-logins**
+  * ⚠️ **This is a breaking change**: removed `isAutofillEnabled` lambda from `GeckoLoginStorageDelegate` because setting has been exposed through GV
+
+* **concept-engine**
+  * Adds `profiler` property with `isProfilerActive`, `getProfilerTime` and `addMarker` Firefox Profiler APIs. These will allow to add profiler markers.
+
+* **support-ktx**
+  * Adds `Resources.getSpanned` to format strings using style spans.
+  * Adds `Resources.locale` to get the corresponding locale on all SDK versions.
+
+* **feature-logins**
+  * 🆕 New component for logins related features.
+  * Adds `LoginExceptionStorage` for storing and accessing save login prompt exceptions.
+
+* **feature-prompts**
+   * Added an optional `LoginExceptions` param that a storage layer can implement to check for exceptions before showing a save login prompt.
+
+# 48.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v47.0.0...v48.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/107?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v48.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v48.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v48.0.0/buildSrc/src/main/java/Config.kt)
 
 * **feature-intent**
    * ⚠️ **This is a breaking change**: `IntentProcessor.process` is not a suspend function anymore.
@@ -55,6 +99,7 @@ permalink: /changelog/
 
 * **feature-webnotifications**
   * `WebNotificationFeature` checks the site permissions first before showing a notification.
+  * Notifications with a long text body are now expandable to show the full text.
 
 * **feature-addons**
   * Add `Addon.createdAtDate` and `Addon.updatedAtDate` extensions to get `Addon.createdAt` and `Addon.updatedAt` as a `Date`.
