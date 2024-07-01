@@ -37,7 +37,10 @@ public class SessionCallbackProxy implements IWebView.Callback {
 
     @Override
     public void onPageFinished(boolean isSecure) {
-        session.setLoading(false);
+        if (session.getLoading().getValue()) {
+            
+            session.setLoading(false);
+        }
         session.setSecure(isSecure);
     }
 
