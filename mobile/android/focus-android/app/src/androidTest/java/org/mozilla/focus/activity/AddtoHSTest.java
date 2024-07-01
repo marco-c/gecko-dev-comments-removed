@@ -37,6 +37,8 @@ import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 public class AddtoHSTest {
     private static final String TEST_PATH = "/";
     private MockWebServer webServer;
+    private int webServerPort;
+    private String webServerBookmarkName;
 
     @Rule
     public ActivityTestRule<MainActivity> mActivityTestRule  = new ActivityTestRule<MainActivity>(MainActivity.class) {
@@ -53,14 +55,16 @@ public class AddtoHSTest {
                     .apply();
 
             webServer = new MockWebServer();
+            
+            
+            webServerPort = webServer.getPort();
+            webServerBookmarkName = "localhost_" + Integer.toString(webServerPort);
 
             try {
                 webServer.enqueue(new MockResponse()
                         .setBody(TestHelper.readTestAsset("plain_test.html")));
                 webServer.enqueue(new MockResponse()
                         .setBody(TestHelper.readTestAsset("plain_test.html")));
-
-                webServer.start();
             } catch (IOException e) {
                 throw new AssertionError("Could not start web server", e);
             }
@@ -112,7 +116,7 @@ public class AddtoHSTest {
 
         UiObject shortcutIcon = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.widget.TextView")
-                .description("For Testing Purpose")
+                .description(webServerBookmarkName)
                 .enabled(true));
 
         
@@ -138,7 +142,7 @@ public class AddtoHSTest {
 
         
         TestHelper.shortcutTitle.click();
-        TestHelper.shortcutTitle.setText("For Testing Purpose");
+        TestHelper.shortcutTitle.setText(webServerBookmarkName);
         TestHelper.AddtoHSOKBtn.click();
 
         
@@ -163,7 +167,7 @@ public class AddtoHSTest {
     public void NonameTest() throws UiObjectNotFoundException {
         UiObject shortcutIcon = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.widget.TextView")
-                .description("localhost")
+                .description(webServerBookmarkName)
                 .enabled(true));
 
         
@@ -190,7 +194,7 @@ public class AddtoHSTest {
 
         
         TestHelper.shortcutTitle.click();
-        TestHelper.shortcutTitle.setText("");
+        TestHelper.shortcutTitle.setText(webServerBookmarkName);
         TestHelper.AddtoHSOKBtn.click();
 
         
@@ -201,6 +205,9 @@ public class AddtoHSTest {
             welcomeBtn.click();
         }
         
+        
+        TestHelper.mDevice.pressHome();
+        TestHelper.swipeScreenLeft();
         shortcutIcon.waitForExists(waitingTime);
         Assert.assertTrue(shortcutIcon.isEnabled());
         shortcutIcon.click();
@@ -243,7 +250,11 @@ public class AddtoHSTest {
         if (welcomeBtn.exists()) {
             welcomeBtn.click();
         }
+
         
+        
+        TestHelper.mDevice.pressHome();
+        TestHelper.swipeScreenLeft();
         shortcutIcon.waitForExists(waitingTime);
         Assert.assertTrue(shortcutIcon.isEnabled());
         shortcutIcon.click();
