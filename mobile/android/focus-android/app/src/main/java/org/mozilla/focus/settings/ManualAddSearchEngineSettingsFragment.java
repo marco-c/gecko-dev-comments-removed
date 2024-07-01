@@ -42,6 +42,13 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
     
     private static int SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS = 4000;
 
+    
+
+
+
+    private @Nullable AsyncTask activeAsyncTask;
+    private @Nullable MenuItem menuItemForActiveAsyncTask;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +62,28 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
         
         ((ActionBarUpdater) getActivity()).updateIcon(R.drawable.ic_close);
    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (activeAsyncTask != null) {
+            activeAsyncTask.cancel(true);
+            setUiIsValidatingAsync(false, menuItemForActiveAsyncTask);
+
+            activeAsyncTask = null;
+            menuItemForActiveAsyncTask = null;
+        }
+    }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -92,7 +121,8 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
                     
                     ViewUtils.hideKeyboard(rootView);
                     setUiIsValidatingAsync(true, item);
-                    new ValidateSearchEngineAsyncTask(this, item, engineName, searchQuery).execute();
+                    activeAsyncTask = new ValidateSearchEngineAsyncTask(this, engineName, searchQuery).execute();
+                    menuItemForActiveAsyncTask = item;
                 } else {
                     TelemetryWrapper.saveCustomSearchEngineEvent(false);
                 }
@@ -113,14 +143,12 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
 
     private static class ValidateSearchEngineAsyncTask extends AsyncTask<Void, Void, Boolean> {
         private final WeakReference<ManualAddSearchEngineSettingsFragment> thatWeakReference;
-        private final WeakReference<MenuItem> saveMenuItemWeakReference;
         private final String engineName;
         private final String query;
 
-        private ValidateSearchEngineAsyncTask(final ManualAddSearchEngineSettingsFragment that, final MenuItem saveMenuItem,
-                final String engineName, final String query) {
+        private ValidateSearchEngineAsyncTask(final ManualAddSearchEngineSettingsFragment that, final String engineName,
+                final String query) {
             this.thatWeakReference = new WeakReference<>(that);
-            this.saveMenuItemWeakReference = new WeakReference<>(saveMenuItem); 
             this.engineName = engineName;
             this.query = query;
         }
@@ -136,9 +164,13 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
         protected void onPostExecute(final Boolean isValidSearchQuery) {
             super.onPostExecute(isValidSearchQuery);
 
+            if (isCancelled()) {
+                Log.d(LOGTAG, "ValidateSearchEngineAsyncTask has been cancelled");
+                return;
+            }
+
             final ManualAddSearchEngineSettingsFragment that = thatWeakReference.get();
-            final MenuItem saveMenuItem = saveMenuItemWeakReference.get();
-            if (that == null || saveMenuItem == null) {
+            if (that == null) {
                 Log.d(LOGTAG, "Fragment or menu item no longer exists when search query validation async task returned.");
                 return;
             }
@@ -152,7 +184,9 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
                 showServerError(that);
             }
 
-            that.setUiIsValidatingAsync(false, saveMenuItem);
+            that.setUiIsValidatingAsync(false, that.menuItemForActiveAsyncTask);
+            that.activeAsyncTask = null;
+            that.menuItemForActiveAsyncTask = null;
         }
 
         private void showServerError(final ManualAddSearchEngineSettingsFragment that) {
