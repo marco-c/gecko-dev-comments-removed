@@ -126,7 +126,18 @@ public class LocaleListPreference extends ListPreference {
         public LocaleDescriptor(Locale locale, String tag) {
             this.tag = tag;
 
-            final String displayName = locale.getDisplayName(locale);
+            final String displayName;
+
+            if (locale.getLanguage().equals("ast")) {
+                
+                
+                
+                
+                displayName = "Asturianu";
+            } else {
+                displayName = locale.getDisplayName(locale);
+            }
+
             if (TextUtils.isEmpty(displayName)) {
                 
                 Log.w(LOG_TAG, "Display name is empty. Using " + locale.toString());
