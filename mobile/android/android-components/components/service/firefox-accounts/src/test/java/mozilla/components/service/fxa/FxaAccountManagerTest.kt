@@ -483,7 +483,7 @@ class FxaAccountManagerTest {
         account.migrationResult = SignInWithShareableAccountResult.Failure
         assertEquals(
             SignInWithShareableAccountResult.Failure,
-            manager.signInWithShareableAccountAsync(migratableAccount, reuseSessionToken = true).await()
+            manager.signInWithShareableAccountAsync(migratableAccount, reuseAccount = true).await()
         )
 
         assertEquals("session", account.latestMigrateAuthInfo?.sessionToken)
@@ -503,7 +503,7 @@ class FxaAccountManagerTest {
 
         assertEquals(
             SignInWithShareableAccountResult.Success,
-            manager.signInWithShareableAccountAsync(migratableAccount, reuseSessionToken = true).await()
+            manager.signInWithShareableAccountAsync(migratableAccount, reuseAccount = true).await()
         )
 
         assertEquals("session2", account.latestMigrateAuthInfo?.sessionToken)
@@ -552,7 +552,7 @@ class FxaAccountManagerTest {
         account.migrationResult = SignInWithShareableAccountResult.WillRetry
         assertEquals(
             SignInWithShareableAccountResult.WillRetry,
-            manager.signInWithShareableAccountAsync(migratableAccount, reuseSessionToken = true).await()
+            manager.signInWithShareableAccountAsync(migratableAccount, reuseAccount = true).await()
         )
 
         assertEquals("session", account.latestMigrateAuthInfo?.sessionToken)
@@ -609,7 +609,6 @@ class FxaAccountManagerTest {
 
         // Assert that we do not refresh device state.
         verify(constellation, never()).refreshDevicesAsync()
-        verify(constellation, never()).pollForEventsAsync()
 
         // Finally, assert that we see an account with an inflight migration.
         assertNotNull(manager.authenticatedAccount())
@@ -678,7 +677,6 @@ class FxaAccountManagerTest {
 
         // Assert that we refresh device state.
         verify(constellation).refreshDevicesAsync()
-        verify(constellation).pollForEventsAsync()
 
         // Assert that persistence callback is interacting with the storage layer.
         account.persistenceCallback!!.persist("test")
@@ -1103,7 +1101,6 @@ class FxaAccountManagerTest {
 
         // Assert that we don't refresh device state for non-SEND_TAB enabled devices.
         verify(constellation, never()).refreshDevicesAsync()
-        verify(constellation, never()).pollForEventsAsync()
 
         // Make sure 'logoutAsync' clears out state and fires correct observers.
         reset(accountObserver)
@@ -1843,7 +1840,6 @@ class FxaAccountManagerTest {
     private fun mockDeviceConstellation(): DeviceConstellation {
         val c: DeviceConstellation = mock()
         `when`(c.refreshDevicesAsync()).thenReturn(CompletableDeferred(true))
-        `when`(c.pollForEventsAsync()).thenReturn(CompletableDeferred(true))
         return c
     }
 }
