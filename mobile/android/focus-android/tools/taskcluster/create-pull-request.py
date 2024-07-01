@@ -21,7 +21,7 @@ if len(sys.argv) != 2:
 	exit(1)
 
 
-secrets = taskcluster.Secrets({'baseUrl': 'http://taskcluster/secrets/v1'})
+secrets = taskcluster.Secrets({'rootUrl': os.environ['TASKCLUSTER_PROXY_URL']})
 data = secrets.get('project/focus/github')
 token = data['secret']['botAccountToken']
 
