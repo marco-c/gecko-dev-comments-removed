@@ -61,6 +61,12 @@ permalink: /changelog/
   * `SwipeRefreshLayout` will now trigger pull down to refresh only if the website is scrolled to top and it itself did not consume the swype event.
   * See above changes to browser-engine-*, concept-engine. 
 
+* **lib-crash**
+  * ⚠️ **This is a breaking change**: added `support-base` dependency.
+
+* **support-base**
+  * `CrashReporting` allowing adding support for `submitCaughtException` without `lib-crash` dependency.
+
 # 37.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v36.0.0...v37.0.0)
