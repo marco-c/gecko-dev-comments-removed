@@ -55,15 +55,21 @@ if (!window.googleImaVansAdapter) {
     dispose: () => {},
   };
 
-  
-  
-  
-  async function click(e) {
-    if (e.isTrusted && e.target.closest("#video-player")) {
-      document.documentElement.removeEventListener("click", click, true);
-      await sendMessageToAddon("optIn");
-      
+  if (document.domain === "www.nhl.com") {
+    
+    
+    
+    async function click(e) {
+      if (
+        e.isTrusted &&
+        e.target.closest(
+          "#video-player, .video-preview, article:not([data-video-url=''])"
+        )
+      ) {
+        document.documentElement.removeEventListener("click", click, true);
+        await sendMessageToAddon("optIn");
+      }
     }
+    document.documentElement.addEventListener("click", click, true);
   }
-  document.documentElement.addEventListener("click", click, true);
 }

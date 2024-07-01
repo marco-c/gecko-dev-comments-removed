@@ -638,6 +638,44 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1704663",
+    platform: "android",
+    domain: "automotivesuperstore.com.au",
+    bug: "1704663",
+    config: {
+      matches: ["*://automotivesuperstore.com.au/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1704673",
+    platform: "android",
+    domain: "app.xiaomi.com",
+    bug: "1704673",
+    config: {
+      matches: ["*://app.xiaomi.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 const UAHelpers = {
