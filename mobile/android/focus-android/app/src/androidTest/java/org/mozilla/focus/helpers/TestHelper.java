@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.activity;
+package org.mozilla.focus.helpers;
 
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
