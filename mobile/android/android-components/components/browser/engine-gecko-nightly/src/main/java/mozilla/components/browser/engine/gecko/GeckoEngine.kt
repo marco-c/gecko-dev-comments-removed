@@ -14,7 +14,6 @@ import mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
 import mozilla.components.browser.engine.gecko.webnotifications.GeckoWebNotificationDelegate
 import mozilla.components.browser.engine.gecko.webpush.GeckoWebPushDelegate
 import mozilla.components.browser.engine.gecko.webpush.GeckoWebPushHandler
-import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.SafeBrowsingPolicy
@@ -65,6 +64,7 @@ class GeckoEngine(
     private val executor by lazy { executorProvider.invoke() }
     private val localeUpdater = LocaleSettingUpdater(context, runtime)
     @VisibleForTesting internal var speculativeSession: GeckoEngineSession? = null
+    private val sharedPref = context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
 
     private var webExtensionDelegate: WebExtensionDelegate? = null
     private val webExtensionActionHandler = object : ActionHandler {
@@ -197,17 +197,17 @@ class GeckoEngine(
         supportActions: Boolean,
         onSuccess: ((WebExtension) -> Unit),
         onError: ((String, Throwable) -> Unit)
-    ): CancellableOperation {
+    ) {
         val ext = GeckoWebExtension(id, url, runtime, allowContentMessaging, supportActions)
-        return installWebExtension(ext, onSuccess, onError)
+        installWebExtension(ext, onSuccess, onError)
     }
 
     internal fun installWebExtension(
         ext: GeckoWebExtension,
         onSuccess: ((WebExtension) -> Unit) = { },
         onError: ((String, Throwable) -> Unit) = { _, _ -> }
-    ): CancellableOperation {
-        val geckoResult = if (ext.isBuiltIn()) {
+    ) {
+        if (ext.isBuiltIn()) {
             if (ext.supportActions) {
                 // We currently have to install the global action handler before we
                 // install the extension which is why this is done here directly.
@@ -223,32 +223,27 @@ class GeckoEngine(
 
             // For now we have to use registerWebExtension for builtin extensions until we get the
             // new installBuiltIn call on the controller: https://bugzilla.mozilla.org/show_bug.cgi?id=1601067
-            runtime.registerWebExtension(ext.nativeExtension).apply {
-                then({
-                    webExtensionDelegate?.onInstalled(ext)
-                    onSuccess(ext)
-                    GeckoResult<Void>()
-                }, { throwable ->
-                    onError(ext.id, throwable)
-                    GeckoResult<Void>()
-                })
-            }
+            runtime.registerWebExtension(ext.nativeExtension).then({
+                webExtensionDelegate?.onInstalled(ext)
+                onSuccess(ext)
+                GeckoResult<Void>()
+            }, { throwable ->
+                onError(ext.id, throwable)
+                GeckoResult<Void>()
+            })
         } else {
-            runtime.webExtensionController.install(ext.url).apply {
-                then({
-                    val installedExtension = GeckoWebExtension(it!!, runtime)
-                    webExtensionDelegate?.onInstalled(installedExtension)
-                    installedExtension.registerActionHandler(webExtensionActionHandler)
-                    installedExtension.registerTabHandler(webExtensionTabHandler)
-                    onSuccess(installedExtension)
-                    GeckoResult<Void>()
-                }, { throwable ->
-                    onError(ext.id, throwable)
-                    GeckoResult<Void>()
-                })
-            }
+            runtime.webExtensionController.install(ext.url).then({
+                val installedExtension = GeckoWebExtension(it!!, runtime)
+                webExtensionDelegate?.onInstalled(installedExtension)
+                installedExtension.registerActionHandler(webExtensionActionHandler)
+                installedExtension.registerTabHandler(webExtensionTabHandler)
+                onSuccess(installedExtension)
+                GeckoResult<Void>()
+            }, { throwable ->
+                onError(ext.id, throwable)
+                GeckoResult<Void>()
+            })
         }
-        return geckoResult.asCancellableOperation()
     }
 
     /**
@@ -351,10 +346,23 @@ class GeckoEngine(
                 extension -> GeckoWebExtension(extension, runtime)
             } ?: emptyList()
 
+            val privateBrowsingMigrated = sharedPref.getBoolean(MOZAC_HAS_RESET_WEBEXT_PRIVATE_BROWSING_DEFAULT, false)
             extensions.forEach { extension ->
+                // As a workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1621385,
+                // we set all installed extensions to be allowed in private browsing mode.
+                // We need to revert back to false which is now the default.
+                if (!extension.isBuiltIn() && extension.isAllowedInPrivateBrowsing() && !privateBrowsingMigrated) {
+                    setAllowedInPrivateBrowsing(extension, false)
+                }
+
                 extension.registerActionHandler(webExtensionActionHandler)
                 extension.registerTabHandler(webExtensionTabHandler)
             }
+
+            if (!privateBrowsingMigrated) {
+                sharedPref.edit().putBoolean(MOZAC_HAS_RESET_WEBEXT_PRIVATE_BROWSING_DEFAULT, true).apply()
+            }
+
             onSuccess(extensions)
             GeckoResult<Void>()
         }, { throwable ->
@@ -396,6 +404,29 @@ class GeckoEngine(
             val disabledExtension = GeckoWebExtension(it!!, runtime)
             webExtensionDelegate?.onDisabled(disabledExtension)
             onSuccess(disabledExtension)
+            GeckoResult<Void>()
+        }, { throwable ->
+            onError(throwable)
+            GeckoResult<Void>()
+        })
+    }
+
+    /**
+     * See [Engine.setAllowedInPrivateBrowsing].
+     */
+    override fun setAllowedInPrivateBrowsing(
+        extension: WebExtension,
+        allowed: Boolean,
+        onSuccess: (WebExtension) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        runtime.webExtensionController.setAllowedInPrivateBrowsing(
+            (extension as GeckoWebExtension).nativeExtension,
+            allowed
+        ).then({
+            val ext = GeckoWebExtension(it!!, runtime)
+            webExtensionDelegate?.onAllowedInPrivateBrowsingChanged(ext)
+            onSuccess(ext)
             GeckoResult<Void>()
         }, { throwable ->
             onError(throwable)
@@ -637,6 +668,13 @@ class GeckoEngine(
                 .distinct(),
             cookiesHasBeenBlocked = cookiesHasBeenBlocked
         )
+    }
+
+    companion object {
+        private const val PREFERENCE_NAME =
+            "MOZAC_GECKO_ENGINE"
+        private const val MOZAC_HAS_RESET_WEBEXT_PRIVATE_BROWSING_DEFAULT =
+            "MOZAC_HAS_RESET_WEBEXT_PRIVATE_BROWSING_DEFAULT"
     }
 }
 

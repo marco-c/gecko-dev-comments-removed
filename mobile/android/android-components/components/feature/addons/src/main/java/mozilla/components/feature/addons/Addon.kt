@@ -30,7 +30,6 @@ import kotlinx.android.parcel.Parcelize
  * @property updatedAt The date of the last time the add-on was updated by its developer(s).
  * @property installedState Holds the state of the installed web extension for this add-on. Null, if
  * the [Addon] is not installed.
- * @property defaultLocale Indicates which locale will be always available to display translatable fields.
  */
 @Parcelize
 data class Addon(
@@ -48,8 +47,7 @@ data class Addon(
     val rating: Rating? = null,
     val createdAt: String = "",
     val updatedAt: String = "",
-    val installedState: InstalledState? = null,
-    val defaultLocale: String = DEFAULT_LOCALE
+    val installedState: InstalledState? = null
 ) : Parcelable {
     /**
      * Represents an add-on author.
@@ -91,6 +89,8 @@ data class Addon(
      * to true.
      * @property optionsPageUrl the URL of the page displaying the
      * options page (options_ui in the extension's manifest).
+     * @property allowedInPrivateBrowsing true if this addon should be allowed to run in private
+     * browsing pages, false otherwise.
      */
     @Parcelize
     data class InstalledState(
@@ -100,7 +100,8 @@ data class Addon(
         val openOptionsPageInTab: Boolean = false,
         val enabled: Boolean = false,
         val supported: Boolean = true,
-        val disabledAsUnsupported: Boolean = false
+        val disabledAsUnsupported: Boolean = false,
+        val allowedInPrivateBrowsing: Boolean = false
     ) : Parcelable
 
     /**
@@ -134,18 +135,22 @@ data class Addon(
     fun isDisabledAsUnsupported() = installedState?.disabledAsUnsupported == true
 
     /**
+     * Returns whether or not this [Addon] is allowed in private browsing mode.
+     */
+    fun isAllowedInPrivateBrowsing() = installedState?.allowedInPrivateBrowsing == true
+
+    /**
      * Returns a copy of this [Addon] containing only translations (description,
      * name, summary) of the provided locales. All other translations
-     * except the [defaultLocale] will be removed.
+     * will be removed.
      *
      * @param locales list of locales to keep.
      * @return copy of the addon with all other translations removed.
      */
     fun filterTranslations(locales: List<String>): Addon {
-        val internalLocales = locales + defaultLocale
-        val descriptions = translatableDescription.filterKeys { internalLocales.contains(it) }
-        val names = translatableName.filterKeys { internalLocales.contains(it) }
-        val summaries = translatableSummary.filterKeys { internalLocales.contains(it) }
+        val descriptions = translatableDescription.filterKeys { locales.contains(it) }
+        val names = translatableName.filterKeys { locales.contains(it) }
+        val summaries = translatableSummary.filterKeys { locales.contains(it) }
         return copy(translatableName = names, translatableDescription = descriptions, translatableSummary = summaries)
     }
 
@@ -188,10 +193,5 @@ data class Addon(
         fun localizePermissions(permissions: List<String>): List<Int> {
             return permissions.mapNotNull { permissionToTranslation[it] }
         }
-
-        /**
-         * The default fallback locale in case the [Addon] does not have its own [Addon.defaultLocale].
-         */
-        const val DEFAULT_LOCALE = "en-US"
     }
 }
