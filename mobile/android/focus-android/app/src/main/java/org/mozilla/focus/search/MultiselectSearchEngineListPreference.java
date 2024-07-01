@@ -6,7 +6,6 @@ package org.mozilla.focus.search;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.CompoundButton;
 
 import org.mozilla.focus.R;
@@ -31,8 +30,11 @@ public class MultiselectSearchEngineListPreference extends SearchEngineListPrefe
 
     @Override
     protected void updateDefaultItem(CompoundButton defaultButton) {
+        defaultButton.setClickable(false);
         
-        defaultButton.setVisibility(View.GONE);
+        
+        
+        defaultButton.setActivated(true);
     }
 
     public Set<String> getCheckedEngineIds() {
