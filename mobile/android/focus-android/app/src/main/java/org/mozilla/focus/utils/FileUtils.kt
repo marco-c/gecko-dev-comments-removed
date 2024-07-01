@@ -25,12 +25,12 @@ class FileUtils {
         fun deleteWebViewDirectory(context: Context): Boolean {
             val webviewDirectory = File(context.applicationInfo.dataDir, WEBVIEW_DIRECTORY)
             return deleteContent(webviewDirectory, doNotEraseWhitelist = setOf(
-                    LOCAL_STORAGE_DIR 
+                    
+                    
+                    LOCAL_STORAGE_DIR
             ))
         }
 
-        @SuppressFBWarnings("BC_BAD_CAST_TO_ABSTRACT_COLLECTION",
-                "filter casts to Collection and storing in val casts back to List: https://youtrack.jetbrains.com/issue/KT-18311")
         private fun deleteContent(directory: File, doNotEraseWhitelist: Set<String> = emptySet()): Boolean {
             val filesToDelete = directory.listFiles()?.filter { !doNotEraseWhitelist.contains(it.name) } ?: return false
             return filesToDelete.all { it.deleteRecursively() }
