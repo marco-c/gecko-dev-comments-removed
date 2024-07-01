@@ -4,22 +4,15 @@
 
 package org.mozilla.focus.webkit;
 
-import android.content.Context;
 import android.content.res.Resources;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RawRes;
 import android.support.v4.util.ArrayMap;
 import android.support.v4.util.Pair;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.utils.HtmlLoader;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,50 +83,6 @@ public class ErrorPage {
         return (errorDescriptionMap.get(errorCode) != null);
     }
 
-    
-
-
-
-
-
-    private static String loadResourceFile(@NonNull final Context context,
-                                           @NonNull final @RawRes int resourceID,
-                                           @Nullable final Map<String, String> substitutionTable) {
-
-        BufferedReader fileReader = null;
-
-        try {
-            final InputStream fileStream = context.getResources().openRawResource(resourceID);
-            fileReader = new BufferedReader(new InputStreamReader(fileStream));
-
-            final StringBuilder outputBuffer = new StringBuilder();
-
-            String line;
-            while ((line = fileReader.readLine()) != null) {
-                if (substitutionTable != null) {
-                    for (final Map.Entry<String, String> entry : substitutionTable.entrySet()) {
-                        line = line.replace(entry.getKey(), entry.getValue());
-                    }
-                }
-
-                outputBuffer.append(line);
-            }
-
-            return outputBuffer.toString();
-        } catch (final IOException e) {
-            throw new IllegalStateException("Unable to load error page data");
-        } finally {
-            try {
-                if (fileReader != null) {
-                    fileReader.close();
-                }
-            } catch (IOException e) {
-                
-                
-            }
-        }
-    }
-
     public static void loadErrorPage(final WebView webView, final String desiredURL, final int errorCode) {
         final Pair<Integer, Integer> errorResourceIDs = errorDescriptionMap.get(errorCode);
 
@@ -153,7 +102,7 @@ public class ErrorPage {
         
         
         
-        final String cssString = loadResourceFile(webView.getContext(), R.raw.errorpage_style, null);
+        final String cssString = HtmlLoader.loadResourceFile(webView.getContext(), R.raw.errorpage_style, null);
 
         final Map<String, String> substitutionMap = new ArrayMap<>();
 
@@ -167,7 +116,7 @@ public class ErrorPage {
 
         substitutionMap.put("%css%", cssString);
 
-        final String errorPage = loadResourceFile(webView.getContext(), R.raw.errorpage, substitutionMap);
+        final String errorPage = HtmlLoader.loadResourceFile(webView.getContext(), R.raw.errorpage, substitutionMap);
 
         
         
