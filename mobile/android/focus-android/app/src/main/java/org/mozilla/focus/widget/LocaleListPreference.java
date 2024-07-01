@@ -156,6 +156,19 @@ public class LocaleListPreference extends ListPreference {
             return this.nativeName;
         }
 
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof  LocaleDescriptor) {
+                return compareTo((LocaleDescriptor) obj) == 0;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return tag.hashCode();
+        }
 
         @Override
         public int compareTo(LocaleDescriptor another) {
@@ -211,13 +224,7 @@ public class LocaleListPreference extends ListPreference {
 
 
     private LocaleDescriptor[] getUsableLocales() {
-        Collection<String> shippingLocales = LocaleManager.getPackagedLocaleTags(getContext());
-
-        
-        if (shippingLocales == null) {
-            final String fallbackTag = LocaleManager.getInstance().getFallbackLocaleTag();
-            return new LocaleDescriptor[] { new LocaleDescriptor(fallbackTag) };
-        }
+        final Collection<String> shippingLocales = LocaleManager.getPackagedLocaleTags(getContext());
 
         final int initialCount = shippingLocales.size();
         final Set<LocaleDescriptor> locales = new HashSet<>(initialCount);
