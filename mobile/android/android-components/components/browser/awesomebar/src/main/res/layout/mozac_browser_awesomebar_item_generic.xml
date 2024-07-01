@@ -11,7 +11,7 @@
     android:clickable="true"
     android:focusable="true"
     android:clipToPadding="false"
-    android:paddingStart="20dp"
+    android:paddingStart="16dp"
     android:paddingEnd="16dp">
 
     <ImageView
@@ -22,19 +22,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/mozac_browser_awesomebar_icon_indicator"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:visibility="gone"
-        android:elevation="2dp"
-        android:importantForAccessibility="no"
-        android:layout_marginStart="14dp"
-        android:layout_marginTop="30dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:src="@drawable/ic_search_results_bookmarks" />
 
     <TextView
         android:id="@+id/mozac_browser_awesomebar_title"
