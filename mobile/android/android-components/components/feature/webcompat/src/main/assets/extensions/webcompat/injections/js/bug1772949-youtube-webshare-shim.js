@@ -1,0 +1,14 @@
+"use strict";
+
+
+
+
+
+
+
+
+if (window !== window.top) {
+  Object.defineProperty(navigator.wrappedJSObject, "share", {
+    value: undefined,
+  });
+}

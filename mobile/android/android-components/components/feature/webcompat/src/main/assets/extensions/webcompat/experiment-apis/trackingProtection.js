@@ -6,6 +6,7 @@
 
 
 
+
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL", "ChannelWrapper"]);
 
 class AllowList {

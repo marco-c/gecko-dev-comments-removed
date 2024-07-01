@@ -332,7 +332,7 @@ if (!window.google?.ima?.VERSION) {
       
       
       
-      CheckCanAutoplay.then(
+      CheckCanAutoplay().then(
         () => {
           const { ADS_MANAGER_LOADED } = AdsManagerLoadedEvent.Type;
           this._dispatch(new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED));
