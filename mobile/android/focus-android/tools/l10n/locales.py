@@ -20,6 +20,7 @@
 
 
 RELEASE_LOCALES = [
+	"am"
 	"ar",
 	"ast",
 	"az",
@@ -47,6 +48,7 @@ RELEASE_LOCALES = [
 	"fy-NL",
 	"ga-IE",
 	"hi-IN",
+	"hr",
 	"hsb",
 	"hu",
 	"hy-AM",
