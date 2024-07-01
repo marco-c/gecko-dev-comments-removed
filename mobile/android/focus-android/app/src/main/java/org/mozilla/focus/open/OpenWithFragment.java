@@ -71,9 +71,13 @@ public class OpenWithFragment extends AppCompatDialogFragment implements AppAdap
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            int width = getContext().getResources().getDimensionPixelSize(R.dimen.bottom_sheet_width);
-            getWindow().setLayout(width > 0 ? width : ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT);
+
+            
+            
+            if (getContext().getResources().getBoolean(R.bool.is_tablet)) {
+                int width = getContext().getResources().getDimensionPixelSize(R.dimen.bottom_sheet_width);
+                getWindow().setLayout(width, ViewGroup.LayoutParams.MATCH_PARENT);
+            }
         }
 
         @Override
