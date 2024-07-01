@@ -8,7 +8,6 @@ def libVcsUrl = properties.libVcsUrl
 def libLicense = properties.libLicense
 def libLicenseUrl = properties.libLicenseUrl
 
-// Must match the implementation in components/tooling/glean-gradle-plugin/build.gradle
 static def getLocalPublicationTimestamp() {
     def date = new Date()
     return date.format('yyyyMMddHHmmss')
@@ -72,6 +71,15 @@ ext.configurePublish = { groupIdArg, artifactIdArg, descriptionArg ->
         def mavenBuildDir = "${project.buildDir}/maven"
 
         commandLine 'python', renameScript, '--path', mavenBuildDir, '--timestamp', (project.hasProperty('timestamp') ? timestamp : '')
+    }
+
+    task renameArtifacts(type: Exec) {
+        dependsOn publish
+
+        def renameScript = "${rootDir}/automation/taskcluster/rename_artifacts.py"
+        def mavenBuildDir = "${project.buildDir}/maven"
+
+        commandLine 'python', renameScript, '--path', mavenBuildDir, '--buildid', (project.hasProperty('buildid') ? buildid : '')
     }
 
 }
