@@ -36,6 +36,7 @@ CONFIGURATIONS_WITH_DEPENDENCIES = (
 
 
     "implementation",
+    "testImplementation"
 )
 ALL_COMPONENTS = object()
 
