@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-awesomebar**
+  * ⚠️ **This is a breaking change**: `AwesomeBar.Suggestion` now directly takes a Bitmap for the icon param rather than a Unit.
+
 * **feature-pwa**
   * ⚠️ **This is a breaking change**: Intent sent from the `WebAppShortcutManager` now require the consumption of the `SHORTCUT_CATEGORY` in your manifest
 
@@ -29,18 +32,6 @@ permalink: /changelog/
 
 * **firefox-accounts**, **service-fretboard**
   * ⚠️ **This is a breaking change**: Due to migration to WorkManager v2.2.0, some classes like `WorkManagerSyncScheduler` and `WorkManagerSyncDispatcher` now expects a `Context` in their constructors.
-
-* **engine**, **engine-gecko-nightly** and **engine-gecko-beta**
-  * Added `WebExtensionsTabsDelegate` to support `browser.tabs.create()` in web extensions.
-  ```kotlin
-  GeckoEngine(applicationContext, engineSettings).also {
-    it.registerWebExtensionTabDelegate(object : WebExtensionTabDelegate {
-        override fun onNewTab(webExtension: WebExtension?, url: String, engineSession: EngineSession) {
-          sessionManager.add(Session(url), true, engineSession)
-        }
-    })
-  }
-  ```
 
 # 15.0.0
 
