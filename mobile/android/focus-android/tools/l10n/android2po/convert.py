@@ -901,11 +901,18 @@ def write_xml(tree, warnfunc=dummy_warn):
             
             
             
-            if len(string_el) == 1:
-                text = etree.tostring(string_el[0], xml_declaration=False)
-                
+            
+            
+            
+            
+            
+            if len(string_el) > 0:
+                elements_text = [etree.tostring(child, xml_declaration=False) for child in string_el]
+                text = ''.join(elements_text)
+
                 if (tag in text for tag in ['<ul>', '<p>', '<br', '<strong>', '<li>']):
-                    del(string_el[0])
+                    
+                    del string_el[:]
                     string_el.text = etree.CDATA(text)
 
             root_tags.append(string_el)
