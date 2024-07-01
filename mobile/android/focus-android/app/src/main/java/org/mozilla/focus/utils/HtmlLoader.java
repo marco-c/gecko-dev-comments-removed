@@ -65,7 +65,7 @@ public class HtmlLoader {
         try (final InputStream pngInputStream = context.getResources().openRawResource(resourceID)) {
             
             
-            final byte[] data = new byte[3*100];
+            final byte[] data = new byte[3 * 100];
             int bytesRead;
             boolean headerVerified = false;
 

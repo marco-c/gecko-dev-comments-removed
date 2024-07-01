@@ -19,12 +19,12 @@ public class WebViewProviderTest {
         
         String focusToken = "Focus/1.0";
         final String existing = "Mozilla/5.0 (Linux; Android 5.0.2; Android SDK built for x86_64 Build/LSY66K) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36";
-        assertEquals("AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 " + focusToken +" Chrome/37.0.0.0 Mobile Safari/537.36",
+        assertEquals("AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 " + focusToken + " Chrome/37.0.0.0 Mobile Safari/537.36",
                 WebViewProvider.getUABrowserString(existing, focusToken));
 
         
         focusToken = "Klar/2.0";
-        assertEquals("AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 " + focusToken +" Chrome/37.0.0.0 Mobile Safari/537.36",
+        assertEquals("AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 " + focusToken + " Chrome/37.0.0.0 Mobile Safari/537.36",
                 WebViewProvider.getUABrowserString(existing, focusToken));
 
         
