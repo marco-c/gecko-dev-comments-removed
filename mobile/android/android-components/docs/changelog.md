@@ -4,34 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 27.0.0-SNAPSHOT (In Development)
+# 26.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v26.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/86?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v25.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/85?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-* **service-glean**
-  * Glean was updated to v22.1.0 ([Full changelog](https://github.com/mozilla/glean/compare/v21.3.0...v22.1.0))
-    * Attempt to re-send the deletion ping on init even if upload is disabled.
-    * Introduce the `InvalidOverflow` error for `TimingDistribution`s.
-
-* **feature-app-links**
-  * ⚠️ **This is a breaking change**:
-  * Feature now contains two parts.  One part is the AppLinksFeature, the other part is RequestInterceptor.
-  ```kotlin
-  // add this call in the RequestInterceptor
-  context.components.appLinksInterceptor.onLaunchIntentRequest(engineSession, uri, hasUserGesture, isSameDomain)
-  ```
-
-# 26.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v25.0.0...v26.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/85?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v26.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v26.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v26.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
   * **Merge day!**
@@ -55,10 +34,10 @@ permalink: /changelog/
     * `FxaPushSupportFeature` is now needed for integrating Firefox Accounts with Push support.
 
 * **support-test-libstate**
-  * 🆕 New component providing utilities to test functionality that relies on lib-state.    
-
-* **support-locale**
-    * Add `resetToSystemDefault` and `getSystemDefault` method to `LocaleManager`
+  * 🆕 New component providing utilities to test functionality that relies on lib-state.
+  
+* **browser-errorpages**
+  * Removed list items semantics to improve a11y for unordered lists, preventing items being read twice.
 
 # 25.0.0
 
@@ -167,7 +146,7 @@ permalink: /changelog/
 * **feature-addons**
   *  ⚠️ **This is a breaking change**:
   * Renamed to `AddOnsCollectionsProvider` to `AddOnCollectionProvider` and added caching support:
-  ```kotlin
+  ```Kotlin
   val addOnsProvider by lazy {
     // Keeps addon collection response cached and valid for one day
     AddOnCollectionProvider(applicationContext, client, maxCacheAgeInMinutes = 24 * 60)
@@ -222,7 +201,7 @@ permalink: /changelog/
 
 * **feature-sitepermissions**
   * Added a new get operator to `SitePermissions` to facilitate the retrieval of permissions.
-  ```kotlin
+  ```Kotlin
     val sitePermissions = SitePermissions(
             "dev.mozilla.org",
             notification = ALLOWED,
@@ -261,7 +240,7 @@ permalink: /changelog/
 
 * **feature-webnotifications**
   * Adds feature implementation for configuring and displaying web notifications to the user
-  ```kotlin
+  ```Kotlin
   WebNotificationFeature(
       applicationContext, engine, icons, R.mipmap.ic_launcher, BrowserActivity::class.java
   )
@@ -399,7 +378,7 @@ permalink: /changelog/
 
 * **lib-crash**
   * Now supports sending caught exceptions.  Use the 'submitCaughtException()' to send caught exceptions if the underlying crash reporter service supports it.
-  ```kotlin
+  ```Kotlin
   val job = crashReporter.submitCaughtException(e)
   ```
 
@@ -677,7 +656,7 @@ permalink: /changelog/
 
 * **lib-crash**
   * Now supports Breadcrumbs.  Use the 'recordCrashBreadcrumb()' to record Breadcrumbs if the underlying crash reporter service supports it.
-  ```kotlin
+  ```Kotlin
   crashReporter.recordCrashBreadcrumb(
       CrashBreadcrumb("Settings button clicked", data, "UI", Level.INFO, Type.USER)
   )
