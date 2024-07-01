@@ -4,21 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 60.0.0-SNAPSHOT (In Development)
+# 59.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v59.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/120?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v58.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/119?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/.config.yml)
-
-# 59.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v58.0.0...v59.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/119?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v59.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v59.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v59.0.0/buildSrc/src/main/java/Config.kt)
 
 * **feature-downloads**
   * 🚒 Bug fixed [issue #8354](https://github.com/mozilla-mobile/android-components/issues/8354) Do not restart FAILED downloads.
@@ -41,6 +33,10 @@ permalink: /changelog/
     * Handle ping registration off the main thread. This removes a potential blocking call ([#1132](https://github.com/mozilla/glean/pull/1132)).
 * **feature-syncedtabs**
   * Added support for indicators to synced tabs `AwesomeBar` suggestions.
+
+* **feature-addons**
+  * ⚠️ **This is a breaking change**: The `Addon.translatePermissions` now requires a `context` object and returns a list of localized strings instead of a list of id string resources.
+  * 🚒 Bug fixed [issue #8323](https://github.com/mozilla-mobile/android-components/issues/8323) Add-on permission dialog does not prompt for host permissions.
 
 # 58.0.0
 
