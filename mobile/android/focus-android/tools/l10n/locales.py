@@ -118,7 +118,10 @@ ADDITIONAL_SCREENSHOT_LOCALES = [
 	"ppl",
 	"su",
 	"mr",
-	"gl"
+	"gl",
+	"bo",
+	"yua",
+	"hus"
 ]
 
 
