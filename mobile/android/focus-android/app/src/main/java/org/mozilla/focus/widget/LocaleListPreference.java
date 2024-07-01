@@ -21,12 +21,30 @@ import java.nio.ByteBuffer;
 import java.text.Collator;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class LocaleListPreference extends ListPreference {
     private static final String LOG_TAG = "GeckoLocaleList";
+
+    private static Map<String, String> languageCodeToNameMap = new HashMap<>();
+    static {
+        
+        
+        
+        
+        languageCodeToNameMap.put("ast", "Asturianu");
+        
+        
+        languageCodeToNameMap.put("cak", "Kaqchikel");
+        languageCodeToNameMap.put("meh", "Tu´un savi ñuu Yasi'í Yuku Iti");
+        languageCodeToNameMap.put("mix", "Tu'un savi");
+        languageCodeToNameMap.put("trs", "Triqui");
+        languageCodeToNameMap.put("zam", "DíɁztè");
+    }
 
     
 
@@ -128,12 +146,8 @@ public class LocaleListPreference extends ListPreference {
 
             final String displayName;
 
-            if (locale.getLanguage().equals("ast")) {
-                
-                
-                
-                
-                displayName = "Asturianu";
+            if (languageCodeToNameMap.containsKey(locale.getLanguage())) {
+                displayName = languageCodeToNameMap.get(locale.getLanguage());
             } else {
                 displayName = locale.getDisplayName(locale);
             }
