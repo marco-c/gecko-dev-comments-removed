@@ -33,6 +33,16 @@ public class UrlMatcher implements  SharedPreferences.OnSharedPreferenceChangeLi
 
     private final Map<String, String> categoryPrefMap;
 
+    private static final String[] WEBFONT_EXTENSIONS = new String[]{
+            ".woff2",
+            ".woff",
+            ".eot",
+            ".ttf",
+            ".otf"
+    };
+
+    private static final String WEBFONTS = "Webfonts";
+
     private static Map<String, String> loadDefaultPrefMap(final Context context) {
         Map<String, String> tempMap = new HashMap<>(5);
 
@@ -41,7 +51,8 @@ public class UrlMatcher implements  SharedPreferences.OnSharedPreferenceChangeLi
         tempMap.put(context.getString(R.string.pref_key_privacy_block_social), "Social");
         tempMap.put(context.getString(R.string.pref_key_privacy_block_other), "Content");
 
-
+        
+        tempMap.put(context.getString(R.string.pref_key_performance_block_webfonts), WEBFONTS);
 
         return Collections.unmodifiableMap(tempMap);
     }
@@ -54,6 +65,8 @@ public class UrlMatcher implements  SharedPreferences.OnSharedPreferenceChangeLi
     private final HashSet<String> previouslyMatched = new HashSet<>();
     
     private final HashSet<String> previouslyUnmatched = new HashSet<>();
+
+    private boolean blockWebfonts = true;
 
     public static UrlMatcher loadMatcher(final Context context, final int blockListFile, final int[] blockListOverrides, final int entityListFile) {
         final Map<String, String> categoryPrefMap = loadDefaultPrefMap(context);
@@ -184,6 +197,11 @@ public class UrlMatcher implements  SharedPreferences.OnSharedPreferenceChangeLi
     }
 
     public void setCategoryEnabled(final String category, final boolean enabled) {
+        if (WEBFONTS.equals(category)) {
+            blockWebfonts = enabled;
+            return;
+        }
+
         if (!getCategories().contains(category)) {
             throw new IllegalArgumentException("Can't enable/disable inexistant category");
         }
@@ -213,10 +231,19 @@ public class UrlMatcher implements  SharedPreferences.OnSharedPreferenceChangeLi
         
 
         
+        
+        if (blockWebfonts) {
+            for (final String extension : WEBFONT_EXTENSIONS) {
+                if (resourceURLString.endsWith(extension)) {
+                    return true;
+                }
+            }
+        }
+
+        
         if (previouslyUnmatched.contains(resourceURLString)) {
             return false;
         }
-
 
         if (entityList != null &&
                 entityList.isWhiteListed(pageURLString, resourceURLString)) {
