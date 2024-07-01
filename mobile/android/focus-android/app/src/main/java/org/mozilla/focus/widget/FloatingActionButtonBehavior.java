@@ -74,7 +74,7 @@ public class FloatingActionButtonBehavior extends CoordinatorLayout.Behavior<Flo
         animate(button, true);
     }
 
-    private void animate(View child, final boolean hide) {
+    private void animate(final View child, final boolean hide) {
         animating = true;
 
         child.animate()
@@ -83,9 +83,25 @@ public class FloatingActionButtonBehavior extends CoordinatorLayout.Behavior<Flo
                 .setDuration(ANIMATION_DURATION)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
+                    public void onAnimationStart(Animator animation) {
+                        if (!hide) {
+                            
+                            
+                            child.setVisibility(View.VISIBLE);
+                        }
+                    }
+
+                    @Override
                     public void onAnimationEnd(Animator animation) {
                         animating = false;
                         visible = !hide;
+
+                        
+                        
+                        
+                        if (hide) {
+                            child.setVisibility(View.GONE);
+                        }
                     }
                 })
                 .start();
