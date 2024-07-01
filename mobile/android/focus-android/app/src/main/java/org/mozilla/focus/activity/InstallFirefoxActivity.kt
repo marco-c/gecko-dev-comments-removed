@@ -66,7 +66,9 @@ class InstallFirefoxActivity : Activity() {
             return if (!resolveInfo.activityInfo.exported) {
                 
                 null
-            } else resolveInfo.activityInfo
+            } else {
+                resolveInfo.activityInfo
+            }
         }
 
         private fun createStoreIntent(): Intent {
