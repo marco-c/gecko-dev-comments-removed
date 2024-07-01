@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.URLUtil;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -85,10 +86,22 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
     private ImageButton menuView;
     private WeakReference<BrowserMenu> menuWeakReference = new WeakReference<>(null);
 
+    
+
+
+    private ViewGroup videoContainer;
+
+    
+
+
+    private View browserContainer;
+
     private View forwardButton;
     private View backButton;
     private View refreshButton;
     private View stopButton;
+
+    private IWebView.FullscreenCallback fullscreenCallback;
 
     private boolean isLoading = false;
 
@@ -133,6 +146,9 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         }
 
         final View view = inflater.inflate(R.layout.fragment_browser, container, false);
+
+        videoContainer = (ViewGroup) view.findViewById(R.id.video_container);
+        browserContainer = view.findViewById(R.id.browser_container);
 
         urlView = (TextView) view.findViewById(R.id.display_url);
         updateURL(getInitialUrl());
@@ -353,6 +369,41 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             }
 
             @Override
+            public void onEnterFullScreen(@NonNull final IWebView.FullscreenCallback callback, @Nullable View view) {
+                fullscreenCallback = callback;
+
+                if (view != null) {
+                    
+                    browserContainer.setVisibility(View.INVISIBLE);
+
+                    
+                    final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                    videoContainer.addView(view, params);
+                    videoContainer.setVisibility(View.VISIBLE);
+
+                    
+                    switchToImmersiveMode();
+                }
+            }
+
+            @Override
+            public void onExitFullScreen() {
+                
+                videoContainer.removeAllViews();
+                videoContainer.setVisibility(View.GONE);
+
+                
+                browserContainer.setVisibility(View.VISIBLE);
+
+                
+                if (fullscreenCallback != null) {
+                    fullscreenCallback.fullScreenExited();
+                    fullscreenCallback = null;
+                }
+            }
+
+            @Override
             public void onDownloadStart(Download download) {
                 if (PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                     
@@ -371,6 +422,26 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                 }
             }
         };
+    }
+
+    
+
+
+
+
+    private void switchToImmersiveMode() {
+        final Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+
+        activity.getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
 
     @Override
