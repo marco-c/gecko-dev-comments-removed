@@ -6,11 +6,18 @@
 package org.mozilla.focus.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Rect;
+import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewTreeObserver;
+
+import org.mozilla.focus.R;
+
+
+
 
 
 
@@ -20,26 +27,35 @@ import android.view.ViewTreeObserver;
 
 
 public class ResizableKeyboardLayout extends CoordinatorLayout {
-    private Rect rect;
+    private final Rect rect;
     private View decorView;
 
+    private final int idOfViewToHide;
+    private @Nullable View viewToHide;
+
     public ResizableKeyboardLayout(Context context) {
-        super(context);
-        init();
+        this(context, null);
     }
 
     public ResizableKeyboardLayout(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public ResizableKeyboardLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
-    }
 
-    private void init() {
         rect = new Rect();
+
+        final TypedArray styleAttributeArray = getContext().getTheme().obtainStyledAttributes(
+                attrs,
+                R.styleable.ResizableKeyboardLayout,
+                0, 0);
+
+        try {
+            idOfViewToHide = styleAttributeArray.getResourceId(R.styleable.ResizableKeyboardLayout_viewToHideWhenActivated, -1);
+        } finally {
+            styleAttributeArray.recycle();
+        }
     }
 
     private ViewTreeObserver.OnGlobalLayoutListener layoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -51,11 +67,19 @@ public class ResizableKeyboardLayout extends CoordinatorLayout {
                 
                 if (getPaddingBottom() != difference) {
                     setPadding(0, 0, 0, difference);
+
+                    if (viewToHide != null) {
+                        viewToHide.setVisibility(View.GONE);
+                    }
                 }
             } else {
                 
                 if (getPaddingBottom() != 0) {
                     setPadding(0, 0, 0, 0);
+
+                    if (viewToHide != null) {
+                        viewToHide.setVisibility(View.VISIBLE);
+                    }
                 }
             }
         }
@@ -76,6 +100,10 @@ public class ResizableKeyboardLayout extends CoordinatorLayout {
         super.onAttachedToWindow();
 
         getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
+
+        if (idOfViewToHide != -1) {
+            viewToHide = findViewById(idOfViewToHide);
+        }
     }
 
     @Override
@@ -83,5 +111,7 @@ public class ResizableKeyboardLayout extends CoordinatorLayout {
         super.onDetachedFromWindow();
 
         getViewTreeObserver().removeOnGlobalLayoutListener(layoutListener);
+
+        viewToHide = null;
     }
 }
