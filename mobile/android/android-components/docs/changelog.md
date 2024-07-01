@@ -25,17 +25,30 @@ permalink: /changelog/
 
 * **feature-pwa**
   * ⚠️ **This is a breaking change**: `TrustedWebActivityIntentProcessor` now requires a `RelationChecker` instead of `httpClient` and `apiKey`.
+  * ⚠️ **This is a breaking change**: Removed unused API from `WebAppShortcutManager`: uninstallShortcuts
+  * `WebAppShortcutManager` gained a new API: recentlyUsedWebAppsCount. Allows counting recently used web apps.
 
 * **browser-thumbnails**
-  * Deletes the tab's thumbnail from the storage when the sessions are removed.
+  * The `ThumbnailMiddleware` deletes the tab's thumbnail from the storage when the sessions are removed.
+  * `BrowserThumbnails` waits for the `firstContentfulPaint` before requesting a screenshot.
+
+* **feature-tabs**
   * ⚠️ **This is a breaking change**: Removes unused `ThumbnailsUseCases` since we now load thumbnails via `ThumbnailLoader`. See [#7313](https://github.com/mozilla-mobile/android-components/issues/7313).
   * ⚠️ **This is a breaking change**: Removes `ThumbnailsUseCases` as a parameter in `TabsFeature` and `TabsTrayPresenter`.
+  * ⚠️ **This is a breaking change**: Change the id parameter to accept a new `ImageRequest` in `ImageLoader`, which
+    allows consumers of `ThumbnailLoader` to specify the preferred image size along with the id when loading an image.
+
+* **feature-privatemode**
+  * Add `PrivateNotificationFeature` to display a notification when private sessions are open.
 
 * **service-glean**
-  * Glean was updated to v31.2.1
+  * Glean was updated to v31.2.2
     * BUGFIX: Correctly format the date and time in the Date header
     * Feature: Add rate limiting capabilities to the upload manager
     * BUGFIX: baseline pings with reason "dirty startup" are no longer sent if Glean did not full initialize in the previous run
+    * BUGFIX: Compile dependencies with `NDEBUG` to avoid linking unavailable symbols.
+      This fixes a crash due to a missing `stderr` symbol on older Android.
+
 
 
 # 47.0.0
