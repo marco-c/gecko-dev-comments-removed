@@ -649,7 +649,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
         }
 
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-            textLengthBeforeChange = autoCompletePrefixLength
+            textLengthBeforeChange = s.length
         }
 
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
@@ -675,6 +675,14 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         windowFocusChangeListener?.invoke(hasFocus)
+    }
+
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        var newId = id
+        if (newId == android.R.id.paste && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            newId = android.R.id.pasteAsPlainText
+        }
+        return super.onTextContextMenuItem(newId)
     }
 
     @Suppress("ClickableViewAccessibility")
