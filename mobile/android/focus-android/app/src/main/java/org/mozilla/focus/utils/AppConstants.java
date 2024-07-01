@@ -26,4 +26,9 @@ public final class AppConstants {
     public static boolean isReleaseBuild() {
         return BUILD_TYPE_RELEASE.equals(BuildConfig.BUILD_TYPE);
     }
+
+    public static boolean supportsDownloadingFiles() {
+        
+        return isDevBuild();
+    }
 }
