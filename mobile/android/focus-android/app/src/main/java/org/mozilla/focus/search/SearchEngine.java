@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class SearchEngine {
     
     private static final String MOZ_PARAM_LOCALE = "\\{moz:locale\\}";
@@ -30,6 +32,10 @@ public class SearchEngine {
      String name;
      Bitmap icon;
      List<Uri> resultsUris;
+    
+    
+    
+    @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "Needed for future versions, reflects on-disk format")
      Uri suggestUri;
 
      SearchEngine(String identifier) {
