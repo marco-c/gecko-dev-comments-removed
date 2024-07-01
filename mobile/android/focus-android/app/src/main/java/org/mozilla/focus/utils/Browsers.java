@@ -61,6 +61,9 @@ public class Browsers {
         }
     }
 
+    
+    public static final String TRADITIONAL_BROWSER_URL = "http://www.mozilla.org";
+
     private final Map<String, ActivityInfo> browsers;
     private final ActivityInfo defaultBrowser;
     
