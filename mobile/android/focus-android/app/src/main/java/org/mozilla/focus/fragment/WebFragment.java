@@ -39,6 +39,11 @@ public abstract class WebFragment extends LocaleAwareFragment {
     @Nullable
     public abstract String getInitialUrl();
 
+    
+
+
+    public abstract void onCreateViewCalled();
+
     @Override
     public final View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View view = inflateLayout(inflater, container, savedInstanceState);
@@ -56,6 +61,7 @@ public abstract class WebFragment extends LocaleAwareFragment {
             webView.restoreWebviewState(savedInstanceState);
         }
 
+        onCreateViewCalled();
         return view;
     }
 
