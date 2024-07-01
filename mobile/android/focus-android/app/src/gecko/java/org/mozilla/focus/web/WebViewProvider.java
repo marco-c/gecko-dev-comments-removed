@@ -238,8 +238,8 @@ public class WebViewProvider {
                 @Override
                 public void onSecurityChange(GeckoSession session,
                                              GeckoSession.ProgressDelegate.SecurityInformation securityInfo) {
-                    
                     isSecure = securityInfo.isSecure;
+                    callback.onSecurityChanged(isSecure, securityInfo.host, securityInfo.issuerOrganization);
                 }
             };
         }

@@ -195,6 +195,7 @@ import org.mozilla.focus.web.IWebView;
 
         if (callback != null) {
             callback.onPageFinished(certificate != null);
+            callback.onSecurityChanged(certificate != null, null, (certificate != null) ? certificate.getIssuedBy().getOName() : null);
             
             
             final String viewURL = view.getUrl();
@@ -254,6 +255,9 @@ import org.mozilla.focus.web.IWebView;
     public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
         handler.cancel();
 
+        if (callback != null) {
+            callback.onSecurityChanged(error.getCertificate() != null, null, (error.getCertificate() != null) ? error.getCertificate().getIssuedBy().getOName() : null);
+        }
         
         
         

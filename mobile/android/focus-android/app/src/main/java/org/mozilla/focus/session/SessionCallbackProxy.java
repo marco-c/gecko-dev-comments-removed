@@ -42,6 +42,13 @@ public class SessionCallbackProxy implements IWebView.Callback {
     }
 
     @Override
+    public void onSecurityChanged(boolean isSecure, String host, String organization) {
+        session.setSecure(isSecure);
+        session.setSecurityOrigin(host);
+        session.setSecurityVerifier(organization);
+    }
+
+    @Override
     public void onProgress(int progress) {
         
         progress = Math.max(MINIMUM_PROGRESS, progress);
