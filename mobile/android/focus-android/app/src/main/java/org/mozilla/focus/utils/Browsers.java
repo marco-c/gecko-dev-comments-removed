@@ -194,6 +194,14 @@ public class Browsers {
         return browsers.containsKey(browser.packageName);
     }
 
+    
+
+
+    public boolean isDefaultBrowser(Context context) {
+        return defaultBrowser != null && context.getPackageName().equals(defaultBrowser.packageName);
+
+    }
+
     public ActivityInfo[] getInstalledBrowsers() {
         final Collection<ActivityInfo> collection = browsers.values();
 
