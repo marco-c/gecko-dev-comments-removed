@@ -7,9 +7,11 @@ package org.mozilla.focus.web;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.preference.PreferenceManager;
+import android.os.Build;
+import android.support.annotation.VisibleForTesting;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -20,6 +22,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewDatabase;
 
 import org.mozilla.focus.BuildConfig;
+import org.mozilla.focus.R;
+
 import org.mozilla.focus.utils.Settings;
 import org.mozilla.focus.webkit.NestedWebView;
 import org.mozilla.focus.webkit.TrackingProtectionWebViewClient;
@@ -68,6 +72,73 @@ public class WebViewProvider {
         settings.setAllowFileAccess(false);
 
         settings.setBlockNetworkImage(appSettings.shouldBlockImages());
+
+        settings.setUserAgentString(buildUserAgentString(context, settings));
+    }
+
+    
+
+
+    @VisibleForTesting static String getUABrowserString(final String existingUAString, final String focusToken) {
+        
+        
+        
+        
+        
+        int start = existingUAString.indexOf("AppleWebKit");
+        if (start == -1) {
+            
+            
+            
+            start = existingUAString.indexOf(")") + 2;
+
+            
+            
+            if (start >= existingUAString.length()) {
+                return focusToken;
+            }
+        }
+
+        final String[] tokens = existingUAString.substring(start).split(" ");
+
+        for (int i = 0; i < tokens.length; i++) {
+            if (tokens[i].startsWith("Chrome")) {
+                tokens[i] = focusToken + " " + tokens[i];
+
+                return TextUtils.join(" ", tokens);
+            }
+        }
+
+        
+        return TextUtils.join(" ", tokens) + focusToken;
+    }
+
+    private static String buildUserAgentString(final Context context, final WebSettings settings) {
+        final StringBuilder uaBuilder = new StringBuilder();
+
+        uaBuilder.append("Mozilla/5.0");
+
+        
+        
+        
+        
+        
+        uaBuilder.append(" (Linux; Android ").append(Build.VERSION.RELEASE).append(") ");
+
+        final String existingWebViewUA = settings.getUserAgentString();
+
+        final String appVersion;
+        try {
+            appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            
+            throw new IllegalStateException("Unable find package details for Focus", e);
+        }
+
+        final String focusToken = context.getResources().getString(R.string.useragent_appname) + "/" + appVersion;
+        uaBuilder.append(getUABrowserString(existingWebViewUA, focusToken));
+
+        return uaBuilder.toString();
     }
 
     private static class WebkitView extends NestedWebView implements IWebView {
