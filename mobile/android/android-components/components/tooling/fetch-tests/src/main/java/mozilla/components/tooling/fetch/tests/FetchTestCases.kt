@@ -10,7 +10,6 @@ import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.isSuccess
-import okhttp3.Headers
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
@@ -87,11 +86,9 @@ abstract class FetchTestCases {
                 println(request.headers.name(i) + " = " + request.headers.value(i))
             }
 
-            val headers = request.headers.filtered()
+            assertEquals(6, request.headers.size())
 
-            assertEquals(6, headers.size())
-
-            val names = headers.names()
+            val names = request.headers.names()
             assertTrue(names.contains("Host"))
             assertTrue(names.contains("User-Agent"))
             assertTrue(names.contains("Connection"))
@@ -494,6 +491,25 @@ abstract class FetchTestCases {
         }
     }
 
+    @Test
+    open fun getDataUri() {
+        val client = createNewClient()
+        val response = client.fetch(Request(url = "data:text/plain;charset=utf-8;base64,SGVsbG8sIFdvcmxkIQ=="))
+        assertEquals("13", response.headers["Content-Length"])
+        assertEquals("text/plain;charset=utf-8", response.headers["Content-Type"])
+        assertEquals("Hello, World!", response.body.string())
+
+        val responseNoCharset = client.fetch(Request(url = "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ=="))
+        assertEquals("13", responseNoCharset.headers["Content-Length"])
+        assertEquals("text/plain", responseNoCharset.headers["Content-Type"])
+        assertEquals("Hello, World!", responseNoCharset.body.string())
+
+        val responseNoContentType = client.fetch(Request(url = "data:;base64,SGVsbG8sIFdvcmxkIQ=="))
+        assertEquals("13", responseNoContentType.headers["Content-Length"])
+        assertNull(responseNoContentType.headers["Content-Type"])
+        assertEquals("Hello, World!", responseNoContentType.body.string())
+    }
+
     private inline fun withServerResponding(
         vararg responses: MockResponse,
         crossinline block: MockWebServer.(Client) -> Unit
@@ -529,20 +545,3 @@ private fun gzip(data: String): Buffer {
     sink.close()
     return result
 }
-
-private fun Headers.filtered(): Headers {
-    val builder = newBuilder()
-    ignoredHeaders.forEach { header ->
-        builder.removeAll(header)
-    }
-    return builder.build()
-}
-
-// The following headers are getting ignored when verifying headers sent by a Client implementation
-private val ignoredHeaders = listOf(
-    // GeckoView"s GeckoWebExecutor sends additional "Sec-Fetch-*" headers. Instead of
-    // adding those headers to all our implementations, we are just ignoring them in tests.
-    "Sec-Fetch-Dest",
-    "Sec-Fetch-Mode",
-    "Sec-Fetch-Site"
-)
