@@ -218,7 +218,7 @@ import org.mozilla.focus.web.IWebView;
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         
-        if (LocalizedContent.handleInternalContent(url, view)) {
+        if (LocalizedContent.handleInternalContent(url, (IWebView) view, view.getContext())) {
             return true;
         }
 
