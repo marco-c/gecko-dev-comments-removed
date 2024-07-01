@@ -676,6 +676,25 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1712807",
+    platform: "android",
+    domain: "www.dealnews.com",
+    bug: "1712807",
+    config: {
+      matches: ["*://www.dealnews.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 const UAHelpers = {
