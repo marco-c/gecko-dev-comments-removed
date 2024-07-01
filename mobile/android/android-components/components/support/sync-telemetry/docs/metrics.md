@@ -18,6 +18,14 @@ This means you might have to go searching through the dependency tree to get a f
 A ping sent for every bookmarks sync. It doesn't include the `client_id` because it reports a hashed version of the user's Firefox Account ID.
 
 
+**Data reviews for this ping:**
+
+- <https://github.com/mozilla-mobile/android-components/pull/3092>
+
+**Bugs related to this ping:**
+
+- <https://github.com/mozilla-mobile/android-components/pull/3092>
+
 The following metrics are added to the ping:
 
 | Name | Type | Description | Data reviews | Extras | Expiration |
@@ -37,6 +45,14 @@ The following metrics are added to the ping:
 A ping sent for every history sync. It doesn't include the `client_id` because it reports a hashed version of the user's Firefox Account ID.
 
 
+**Data reviews for this ping:**
+
+- <https://github.com/mozilla-mobile/android-components/pull/3092>
+
+**Bugs related to this ping:**
+
+- <https://github.com/mozilla-mobile/android-components/pull/3092>
+
 The following metrics are added to the ping:
 
 | Name | Type | Description | Data reviews | Extras | Expiration |
@@ -54,6 +70,14 @@ The following metrics are added to the ping:
 
 A ping sent for every logins/passwords sync. It doesn't include the `client_id` because it reports a hashed version of the user's Firefox Account ID.
 
+
+**Data reviews for this ping:**
+
+- <https://github.com/mozilla-mobile/android-components/pull/5294>
+
+**Bugs related to this ping:**
+
+- <https://github.com/mozilla-mobile/android-components/issues/4556>
 
 The following metrics are added to the ping:
 
