@@ -8,6 +8,7 @@ import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitAll
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.isUnsupported
@@ -65,7 +66,8 @@ class AddonManager(
 
             // Get all available/supported addons from provider and add state if
             // installed. NB: We're keeping only the translations of the default
-            val locales = listOf(Locale.getDefault().language)
+            // lang and the en-US fallback.
+            val locales = listOf(Locale.getDefault().language, "en-US")
             val supportedAddons = addonsProvider.getAvailableAddons()
                 .map { addon -> addon.filterTranslations(locales) }
                 .map { addon ->
@@ -82,12 +84,13 @@ class AddonManager(
                 .filterValues { !it.isBuiltIn() }
                 .map { extensionEntry ->
                     val extension: WebExtension = extensionEntry.value
+                    val lang = Locale.getDefault().language
                     val name = extension.getMetadata()?.name ?: extension.id
                     val installedState =
                         extension.toInstalledState().copy(enabled = false, supported = false)
                     Addon(
                         id = extension.id,
-                        translatableName = mapOf(Addon.DEFAULT_LOCALE to name),
+                        translatableName = mapOf(lang to name),
                         siteUrl = extension.url,
                         installedState = installedState
                     )
@@ -111,19 +114,19 @@ class AddonManager(
         addon: Addon,
         onSuccess: ((Addon) -> Unit) = { },
         onError: ((String, Throwable) -> Unit) = { _, _ -> }
-    ) {
+    ): CancellableOperation {
 
         // Verify the add-on doesn't require blocked permissions
         // only available to built-in extensions
         BLOCKED_PERMISSIONS.forEach { blockedPermission ->
             if (addon.permissions.any { it.equals(blockedPermission, ignoreCase = true) }) {
                 onError(addon.id, IllegalArgumentException("Addon requires invalid permission $blockedPermission"))
-                return
+                return CancellableOperation.Noop()
             }
         }
 
         val pendingAction = addPendingAddonAction()
-        engine.installWebExtension(
+        return engine.installWebExtension(
             id = addon.id,
             url = addon.downloadUrl,
             onSuccess = { ext ->
