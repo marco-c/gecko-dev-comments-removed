@@ -20,6 +20,9 @@ permalink: /changelog/
   * `RegionSearchLocalizationProvider` now accepts any `LocationService` implementation.
   * Added `LocationService.dummy()` which creates a dummy `LocationService` implementation that always returns `null` when asked for a `LocationService.Region`.
 
+* **feature-accounts-push**
+  * Add known prefix to FxA push scope.
+
 # 34.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v33.0.0...v34.0.0)
