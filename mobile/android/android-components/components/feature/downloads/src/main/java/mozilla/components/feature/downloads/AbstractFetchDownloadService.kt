@@ -55,7 +55,6 @@ import mozilla.components.feature.downloads.AbstractFetchDownloadService.Downloa
 import mozilla.components.feature.downloads.AbstractFetchDownloadService.DownloadJobStatus.PAUSED
 import mozilla.components.feature.downloads.DownloadNotification.NOTIFICATION_DOWNLOAD_GROUP_ID
 import mozilla.components.feature.downloads.ext.addCompletedDownload
-import mozilla.components.feature.downloads.ext.isScheme
 import mozilla.components.feature.downloads.ext.withResponse
 import mozilla.components.feature.downloads.facts.emitNotificationResumeFact
 import mozilla.components.feature.downloads.facts.emitNotificationPauseFact
@@ -68,6 +67,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.lang.Exception
 import java.lang.IllegalStateException
 import kotlin.random.Random
 
@@ -352,10 +352,11 @@ abstract class AbstractFetchDownloadService : Service() {
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     internal fun startDownloadJob(currentDownloadJobState: DownloadJobState) {
         try {
             performDownload(currentDownloadJobState)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             setDownloadJobStatus(currentDownloadJobState, FAILED)
         }
     }
@@ -376,8 +377,6 @@ abstract class AbstractFetchDownloadService : Service() {
             val fileName = download.fileName
                     ?: throw IllegalStateException("A fileName for a download is required")
             val file = File(download.filePath)
-            // addCompletedDownload can't handle any non http(s) urls
-            val url = if (!download.isScheme(listOf("http", "https"))) null else download.url.toUri()
 
             context.addCompletedDownload(
                     title = fileName,
@@ -388,7 +387,7 @@ abstract class AbstractFetchDownloadService : Service() {
                     length = download.contentLength ?: file.length(),
                     // Only show notifications if our channel is blocked
                     showNotification = !DownloadNotification.isChannelEnabled(context),
-                    uri = url,
+                    uri = download.url.toUri(),
                     referer = download.referrerUrl?.toUri()
             )
         }
