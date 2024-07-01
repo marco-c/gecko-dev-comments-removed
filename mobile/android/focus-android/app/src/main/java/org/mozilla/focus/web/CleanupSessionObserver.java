@@ -24,7 +24,7 @@ public class CleanupSessionObserver extends NonNullObserver<List<Session>> {
     protected void onValueChanged(@NonNull List<Session> sessions) {
         if (sessions.isEmpty()) {
             
-            WebViewProvider.performCleanup(context);
+            WebViewProvider.INSTANCE.performCleanup(context);
         }
     }
 }

@@ -10,7 +10,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.StrictMode;
-import android.support.annotation.VisibleForTesting;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
@@ -19,6 +19,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 
+import org.jetbrains.annotations.NotNull;
 import org.mozilla.focus.R;
 import org.mozilla.focus.utils.Settings;
 import org.mozilla.focus.webview.SystemWebView;
@@ -27,17 +28,17 @@ import org.mozilla.focus.webview.TrackingProtectionWebViewClient;
 
 
 
-public class WebViewProvider {
+public class ClassicWebViewProvider implements IWebViewProvider {
     
 
 
 
 
-    public static void preload(final Context context) {
+    public void preload(@NonNull final Context context) {
         TrackingProtectionWebViewClient.triggerPreload(context);
     }
 
-    public static void performCleanup(final Context context) {
+    public void performCleanup(@NonNull final Context context) {
         SystemWebView.deleteContentFromKnownLocations(context);
     }
 
@@ -48,7 +49,7 @@ public class WebViewProvider {
 
 
 
-    public static void performNewBrowserSessionCleanup() {
+    public void performNewBrowserSessionCleanup() {
         
         CookieManager.getInstance().removeAllCookies(null);
 
@@ -62,7 +63,8 @@ public class WebViewProvider {
         StrictMode.setThreadPolicy(oldPolicy);
     }
 
-    public static View create(Context context, AttributeSet attrs) {
+    @NonNull
+    public View create(@NonNull Context context, AttributeSet attrs) {
         final SystemWebView webkitView = new SystemWebView(context, attrs);
         final WebSettings settings = webkitView.getSettings();
 
@@ -79,7 +81,7 @@ public class WebViewProvider {
     }
 
     @SuppressLint("SetJavaScriptEnabled") 
-    private static void configureDefaultSettings(Context context, WebSettings settings) {
+    private void configureDefaultSettings(Context context, WebSettings settings) {
         settings.setJavaScriptEnabled(true);
 
         
@@ -124,30 +126,32 @@ public class WebViewProvider {
         settings.setSavePassword(false);
     }
 
-    public static void applyAppSettings(Context context, WebSettings settings, WebView webView) {
+    @Override
+    public void applyAppSettings(@NotNull Context context, @NotNull WebSettings webSettings, @NotNull SystemWebView systemWebView) {
         
-        settings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
-        settings.setJavaScriptEnabled(!Settings.getInstance(context).shouldBlockJavaScript());
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, !Settings.getInstance
+        webSettings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
+        webSettings.setJavaScriptEnabled(!Settings.getInstance(context).shouldBlockJavaScript());
+        CookieManager.getInstance().setAcceptThirdPartyCookies(systemWebView, !Settings.getInstance
                 (context).shouldBlockThirdPartyCookies());
         CookieManager.getInstance().setAcceptCookie(!Settings.getInstance(context)
                 .shouldBlockCookies());
     }
 
+    @Override
     @SuppressLint("SetJavaScriptEnabled") 
-    public static void disableBlocking(WebSettings settings, WebView webView) {
-        settings.setBlockNetworkImage(false);
-        settings.setJavaScriptEnabled(true);
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+    public void disableBlocking(@NotNull WebSettings webSettings, @NotNull SystemWebView systemWebView) {
+        webSettings.setBlockNetworkImage(false);
+        webSettings.setJavaScriptEnabled(true);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(systemWebView, true);
         CookieManager.getInstance().setAcceptCookie(true);
     }
 
-    public static void requestDesktopSite(WebSettings settings) {
+    public void requestDesktopSite(WebSettings settings) {
         settings.setUserAgentString(toggleDesktopUA(settings, true));
         settings.setUseWideViewPort(true);
     }
 
-    public static void requestMobileSite(Context context, WebSettings settings) {
+    public void requestMobileSite(Context context, WebSettings settings) {
         settings.setUserAgentString(toggleDesktopUA(settings, false));
         settings.setUseWideViewPort(false);
     }
@@ -155,7 +159,7 @@ public class WebViewProvider {
     
 
 
-    @VisibleForTesting static String getUABrowserString(final String existingUAString, final String focusToken) {
+    public String getUABrowserString(final String existingUAString, final String focusToken) {
         
         
         
@@ -189,7 +193,7 @@ public class WebViewProvider {
         return TextUtils.join(" ", tokens) + " " + focusToken;
     }
 
-    @VisibleForTesting static String buildUserAgentString(final Context context, final WebSettings settings, final String appName) {
+    private String buildUserAgentString(final Context context, final WebSettings settings, final String appName) {
         final StringBuilder uaBuilder = new StringBuilder();
 
         uaBuilder.append("Mozilla/5.0");

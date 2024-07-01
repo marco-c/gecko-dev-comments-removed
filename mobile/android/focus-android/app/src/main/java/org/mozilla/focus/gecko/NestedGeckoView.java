@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.web;
+package org.mozilla.focus.gecko;
 
 import android.content.Context;
 import android.support.v4.view.NestedScrollingChild;

@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.web;
+package org.mozilla.focus.gecko;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -50,7 +50,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-final class GeckoViewPrompt implements GeckoSession.PromptDelegate {
+public final class GeckoViewPrompt implements GeckoSession.PromptDelegate {
     protected static final String LOGTAG = "GeckoViewPrompt";
 
     private final Activity mActivity;

@@ -103,7 +103,7 @@ class BrowserMenuAdapter(
 
         items.add(MenuItem.RequestDesktopCheck)
 
-        if (AppConstants.isGeckoBuild()) {
+        if (AppConstants.isGeckoBuild(context)) {
             
             items.add(MenuItem.Default(R.id.report_site_issue, resources.getString(R.string.menu_report_site_issue)))
         }
