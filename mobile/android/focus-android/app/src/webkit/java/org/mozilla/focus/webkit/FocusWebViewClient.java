@@ -10,9 +10,12 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.net.http.SslCertificate;
 import android.net.http.SslError;
+import android.os.Bundle;
 import android.support.v4.util.ArrayMap;
 import android.support.v4.view.ViewCompat;
+import android.text.TextUtils;
 import android.view.View;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceRequest;
@@ -35,10 +38,15 @@ import java.util.Map;
 
 
  class FocusWebViewClient extends TrackingProtectionWebViewClient {
-    private final static String ERROR_PROTOCOL = "error:";
+    private static final String ERROR_PROTOCOL = "error:";
+    private static final String STATE_KEY_URL = "client_last_url";
+    private static final String STATE_KEY_CERTIFICATE = "client_last_certificate";
 
     private boolean errorReceived;
     private Context context;
+
+    private String restoredUrl;
+    private SslCertificate restoredCertificate;
 
      FocusWebViewClient(Context context) {
         super(context);
@@ -158,10 +166,42 @@ import java.util.Map;
         super.onPageStarted(view, url, favicon);
     }
 
+     void saveState(WebView view, Bundle bundle) {
+        final SslCertificate certificate = view.getCertificate();
+        if (certificate != null) {
+            bundle.putString(STATE_KEY_URL, view.getUrl());
+            bundle.putBundle(STATE_KEY_CERTIFICATE, SslCertificate.saveState(certificate));
+        }
+    }
+
+     void restoreState(Bundle bundle) {
+        if (bundle.containsKey(STATE_KEY_CERTIFICATE)) {
+            restoredUrl = bundle.getString(STATE_KEY_URL);
+            restoredCertificate = SslCertificate.restoreState(bundle.getBundle("client_last_certificate"));
+        }
+    }
+
     @Override
     public void onPageFinished(WebView view, final String url) {
+        SslCertificate certificate = view.getCertificate();
+
+        if (!TextUtils.isEmpty(restoredUrl)) {
+            if (restoredUrl.equals(url) && certificate == null) {
+                
+                
+                
+                
+                certificate = restoredCertificate;
+            } else {
+                
+                
+                restoredUrl = null;
+                restoredCertificate = null;
+            }
+        }
+
         if (callback != null) {
-            callback.onPageFinished(view.getCertificate() != null);
+            callback.onPageFinished(certificate != null);
             
             
             final String viewURL = view.getUrl();

@@ -103,6 +103,8 @@ public class SystemWebView extends NestedWebView implements IWebView, SharedPref
                 : null;
 
         final String desiredURL = session.getUrl().getValue();
+
+        client.restoreState(stateData);
         client.notifyCurrentURL(desiredURL);
 
         
@@ -130,7 +132,9 @@ public class SystemWebView extends NestedWebView implements IWebView, SharedPref
         
         
         final Bundle stateData = new Bundle();
+
         super.saveState(stateData);
+        client.saveState(this, stateData);
 
         session.saveWebViewState(stateData);
     }
