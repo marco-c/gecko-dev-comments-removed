@@ -7,53 +7,128 @@ package org.mozilla.focus.web;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.AppCompatTextView;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 
+import org.mozilla.gecko.BaseGeckoInterface;
+import org.mozilla.gecko.GeckoProfile;
+import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.GeckoView;
+
 
 
 
 public class WebViewProvider {
     public static View create(Context context, AttributeSet attrs) {
-        
+        final GeckoView geckoView = new GeckoWebView(context, attrs);
 
-        return new DummyGeckoView(context, attrs);
+        GeckoView.setGeckoInterface(new BaseGeckoInterface(context));
+
+        final GeckoProfile profile = GeckoProfile.get(context.getApplicationContext());
+
+        GeckoThread.init(profile,  null,  null,  false);
+        GeckoThread.launch();
+
+        return geckoView;
     }
 
-    private static class DummyGeckoView extends AppCompatTextView implements IWebView {
-        public DummyGeckoView(Context context, @Nullable AttributeSet attrs) {
+    public static class GeckoWebView extends GeckoView implements IWebView {
+        private Callback callback;
+
+        public GeckoWebView(Context context, AttributeSet attrs) {
             super(context, attrs);
 
-            setBackgroundColor(Color.BLACK);
-            setGravity(Gravity.CENTER);
+            setChromeDelegate(createChromeDelegate());
+            setContentListener(createContentListener());
+            setProgressListener(createProgressListener());
         }
 
         @Override
         public void setCallback(Callback callback) {
-
+            this.callback =  callback;
         }
 
         @Override
         public void reload() {
-
+            
         }
 
         @Override
         public String getUrl() {
-            return getText().toString();
+            
+            return null;
         }
 
         @Override
-        public void loadUrl(String url) {
-            setText(url);
+        public void loadUrl(final String url) {
+            
         }
 
         @Override
         public void cleanup() {
+            
+        }
 
+        private ChromeDelegate createChromeDelegate() {
+            return new ChromeDelegate() {
+                @Override
+                public void onAlert(GeckoView geckoView, String s, PromptResult promptResult) {
+
+                }
+
+                @Override
+                public void onConfirm(GeckoView geckoView, String s, PromptResult promptResult) {
+
+                }
+
+                @Override
+                public void onPrompt(GeckoView geckoView, String s, String s1, PromptResult promptResult) {
+
+                }
+
+                @Override
+                public void onDebugRequest(GeckoView geckoView, PromptResult promptResult) {
+
+                }
+            };
+        }
+
+        private ContentListener createContentListener() {
+            return new ContentListener() {
+                @Override
+                public void onTitleChanged(GeckoView geckoView, String s) {
+
+                }
+            };
+        }
+
+        private ProgressListener createProgressListener() {
+            return new ProgressListener() {
+                @Override
+                public void onPageStart(GeckoView geckoView, String url) {
+                    if (callback != null) {
+                        callback.onPageStarted(url);
+                        callback.onProgress(25);
+                    }
+                }
+
+                @Override
+                public void onPageStop(GeckoView geckoView, boolean success) {
+                    if (callback != null) {
+                        callback.onProgress(100);
+                        callback.onPageFinished(false);
+                    }
+                }
+
+                @Override
+                public void onSecurityChanged(GeckoView geckoView, int status) {
+                    
+                }
+            };
         }
 
         @Override
