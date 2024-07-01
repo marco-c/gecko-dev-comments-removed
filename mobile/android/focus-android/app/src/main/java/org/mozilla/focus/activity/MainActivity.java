@@ -5,7 +5,9 @@
 
 package org.mozilla.focus.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -14,11 +16,13 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.fragment.BrowserFragment;
 import org.mozilla.focus.fragment.HomeFragment;
 import org.mozilla.focus.web.IWebView;
 import org.mozilla.focus.web.WebViewProvider;
 
 public class MainActivity extends AppCompatActivity {
+    private String pendingUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +34,35 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        if (Intent.ACTION_VIEW.equals(getIntent().getAction())) {
+            showBrowserScreen(getIntent().getDataString());
+        } else {
+            showHomeScreen();
+        }
+    }
+
+    @Override
+    @SuppressLint("CommitTransaction")
+    protected void onNewIntent(Intent intent) {
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            
+            
+            pendingUrl = intent.getDataString();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (pendingUrl != null) {
+            
+            showBrowserScreen(pendingUrl);
+            pendingUrl = null;
+        }
+    }
+
+    private void showHomeScreen() {
         
         
         
@@ -37,9 +70,17 @@ public class MainActivity extends AppCompatActivity {
         if (fragmentManager.findFragmentByTag(HomeFragment.FRAGMENT_TAG) == null) {
             fragmentManager
                     .beginTransaction()
-                    .add(R.id.container, HomeFragment.create(), HomeFragment.FRAGMENT_TAG)
+                    .replace(R.id.container, HomeFragment.create(), HomeFragment.FRAGMENT_TAG)
                     .commit();
         }
+    }
+
+    private void showBrowserScreen(String url) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.container,
+                        BrowserFragment.create(url), BrowserFragment.FRAGMENT_TAG)
+                .commit();
     }
 
     @Override
