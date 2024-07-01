@@ -12,15 +12,15 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-downloads**
+  * Fixed issue [#6881](https://github.com/mozilla-mobile/android-components/issues/6881).
+
 * **feature-addons**
   * Added optional `addonAllowPrivateBrowsingLabelDrawableRes` DrawableRes parameter to `AddonPermissionsAdapter.Style` constructor to allow the clients to add their own drawable. This is used to clearly label the WebExtensions that run in private browsing.
 
 * **browser-menu**
   * BrowserMenu will now support dynamic width based on two new attributes: `mozac_browser_menu_width_min` and `mozac_browser_menu_width_max`.
 
-* **browser-tabstray**
-  * Added optional `itemDecoration` DividerItemDecoration parameter to `BrowserTabsTray` constructor to allow the clients to add their own dividers. This is used to ensure setting divider item decoration after setAdapter() is called.
-  
 # 40.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v39.0.0...v40.0.0)
