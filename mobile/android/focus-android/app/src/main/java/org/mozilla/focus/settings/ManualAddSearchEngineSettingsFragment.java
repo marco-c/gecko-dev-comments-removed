@@ -15,14 +15,25 @@ import org.mozilla.focus.R;
 public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
     public static final int FRAGMENT_CLASS_TYPE = 1; 
 
+    public static SettingsFragment newInstance(Bundle intentArgs, int prefsResId, int titleResId) {
+        SettingsFragment f = new ManualAddSearchEngineSettingsFragment();
+        f.setArguments(makeArgumentBundle(intentArgs, prefsResId, titleResId));
+        return f;
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
 
         
         ((ActionBarUpdater) getActivity()).updateIcon(R.drawable.ic_close);
-        setHasOptionsMenu(true);
-    }
+   }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
