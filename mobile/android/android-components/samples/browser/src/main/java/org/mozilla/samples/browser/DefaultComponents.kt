@@ -29,7 +29,7 @@ import mozilla.components.browser.session.Session
 import mozilla.components.browser.session.SessionManager
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.browser.storage.sync.PlacesHistoryStorage
+import mozilla.components.browser.storage.memory.InMemoryHistoryStorage
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.fetch.Client
@@ -44,6 +44,7 @@ import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.contextmenu.ContextMenuUseCases
 import mozilla.components.feature.customtabs.CustomTabIntentProcessor
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
+import mozilla.components.feature.downloads.DownloadMiddleware
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.feature.intent.processing.TabIntentProcessor
 import mozilla.components.feature.media.RecordingDevicesNotificationFeature
@@ -62,6 +63,7 @@ import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.lib.nearby.NearbyConnection
 import org.mozilla.samples.browser.addons.AddonsActivity
+import org.mozilla.samples.browser.downloads.DownloadService
 import org.mozilla.samples.browser.ext.components
 import org.mozilla.samples.browser.integration.FindInPageIntegration
 import org.mozilla.samples.browser.media.MediaService
@@ -104,7 +106,7 @@ open class DefaultComponents(private val applicationContext: Context) {
     val icons by lazy { BrowserIcons(applicationContext, client) }
 
     // Storage
-    private val lazyHistoryStorage = lazy { PlacesHistoryStorage(applicationContext) }
+    private val lazyHistoryStorage = lazy { InMemoryHistoryStorage() }
     val historyStorage by lazy { lazyHistoryStorage.value }
 
     private val sessionStorage by lazy { SessionStorage(applicationContext, engine) }
@@ -112,6 +114,7 @@ open class DefaultComponents(private val applicationContext: Context) {
     val store by lazy {
         BrowserStore(middleware = listOf(
             MediaMiddleware(applicationContext, MediaService::class.java),
+            DownloadMiddleware(applicationContext, DownloadService::class.java),
             ReaderViewMiddleware()
         ))
     }
