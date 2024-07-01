@@ -6,6 +6,7 @@ package org.mozilla.focus.webkit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.net.http.SslError;
 import android.os.AsyncTask;
 import android.support.annotation.WorkerThread;
@@ -53,11 +54,13 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
     }
 
     @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+    public WebResourceResponse shouldInterceptRequest(final WebView view, final WebResourceRequest request) {
+        final Uri resourceUri = request.getUrl();
+
         
         
         
-        final String scheme = request.getUrl().getScheme();
+        final String scheme = resourceUri.getScheme();
 
         if (!request.isForMainFrame() &&
                 !scheme.equals("http") && !scheme.equals("https")) {
@@ -68,13 +71,12 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
             return new WebResourceResponse(null, null, null);
         }
 
-        final String url = request.getUrl().toString();
-
         
         
         
         
-        if (url.endsWith("/favicon.ico")) {
+        final String path = resourceUri.getPath();
+        if (path != null && path.endsWith("/favicon.ico")) {
             return new WebResourceResponse(null, null, null);
         }
 
@@ -83,7 +85,7 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         
         
         if ((!request.isForMainFrame()) &&
-                matcher.matches(url, currentPageURL)) {
+                matcher.matches(resourceUri, currentPageURL)) {
             return new WebResourceResponse(null, null, null);
         }
 

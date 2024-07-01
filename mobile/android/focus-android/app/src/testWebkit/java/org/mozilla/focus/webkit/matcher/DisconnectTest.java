@@ -5,6 +5,7 @@
 package org.mozilla.focus.webkit.matcher;
 
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 
 import org.junit.Test;
@@ -51,19 +52,19 @@ public class DisconnectTest {
 
         
         
-        assertTrue(matcher.matches("http://admeld.com/foobar", "http://mozilla.org"));
+        assertTrue(matcher.matches(Uri.parse("http://admeld.com/foobar"), "http://mozilla.org"));
         
-        assertFalse(matcher.matches("http://admeld.com/foobar", "http://google.com"));
+        assertFalse(matcher.matches(Uri.parse("http://admeld.com/foobar"), "http://google.com"));
         
-        assertTrue(matcher.matches("http://google-analytics.com/foobar", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://google-analytics.com/foobar", "http://google.com"));
+        assertTrue(matcher.matches(Uri.parse("http://google-analytics.com/foobar"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://google-analytics.com/foobar"), "http://google.com"));
         
-        assertTrue(matcher.matches("http://plus.google.com/something", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://plus.google.com/something", "http://google.com"));
+        assertTrue(matcher.matches(Uri.parse("http://plus.google.com/something"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://plus.google.com/something"), "http://google.com"));
 
         
-        assertTrue(matcher.matches("http://facebook.fr", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://facebook.fr", "http://facebook.com"));
+        assertTrue(matcher.matches(Uri.parse("http://facebook.fr"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://facebook.fr"), "http://facebook.com"));
 
         
         prefs.edit()
@@ -74,18 +75,18 @@ public class DisconnectTest {
                 .commit();
 
         
-        assertTrue(matcher.matches("http://admeld.com/foobar", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://admeld.com/foobar", "http://google.com"));
+        assertTrue(matcher.matches(Uri.parse("http://admeld.com/foobar"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://admeld.com/foobar"), "http://google.com"));
         
-        assertTrue(matcher.matches("http://google-analytics.com/foobar", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://google-analytics.com/foobar", "http://google.com"));
+        assertTrue(matcher.matches(Uri.parse("http://google-analytics.com/foobar"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://google-analytics.com/foobar"), "http://google.com"));
         
-        assertFalse(matcher.matches("http://plus.google.com/something", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://plus.google.com/something", "http://google.com"));
+        assertFalse(matcher.matches(Uri.parse("http://plus.google.com/something"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://plus.google.com/something"), "http://google.com"));
 
         
-        assertFalse(matcher.matches("http://facebook.fr", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://facebook.fr", "http://facebook.com"));
+        assertFalse(matcher.matches(Uri.parse("http://facebook.fr"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://facebook.fr"), "http://facebook.com"));
 
         
         prefs.edit()
@@ -96,17 +97,17 @@ public class DisconnectTest {
                 .commit();
 
         
-        assertFalse(matcher.matches("http://admeld.com/foobar", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://admeld.com/foobar", "http://google.com"));
+        assertFalse(matcher.matches(Uri.parse("http://admeld.com/foobar"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://admeld.com/foobar"), "http://google.com"));
         
-        assertFalse(matcher.matches("http://google-analytics.com/foobar", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://google-analytics.com/foobar", "http://google.com"));
+        assertFalse(matcher.matches(Uri.parse("http://google-analytics.com/foobar"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://google-analytics.com/foobar"), "http://google.com"));
         
-        assertFalse(matcher.matches("http://plus.google.com/something", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://plus.google.com/something", "http://google.com"));
+        assertFalse(matcher.matches(Uri.parse("http://plus.google.com/something"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://plus.google.com/something"), "http://google.com"));
 
         
-        assertFalse(matcher.matches("http://facebook.fr", "http://mozilla.org"));
-        assertFalse(matcher.matches("http://facebook.fr", "http://facebook.com"));
+        assertFalse(matcher.matches(Uri.parse("http://facebook.fr"), "http://mozilla.org"));
+        assertFalse(matcher.matches(Uri.parse("http://facebook.fr"), "http://facebook.com"));
     }
 }
