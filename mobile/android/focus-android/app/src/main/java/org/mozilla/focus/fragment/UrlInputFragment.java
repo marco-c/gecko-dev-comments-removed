@@ -7,25 +7,29 @@ package org.mozilla.focus.fragment;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.widget.PopupMenu;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.activity.InfoActivity;
 import org.mozilla.focus.autocomplete.UrlAutoCompleteFilter;
+import org.mozilla.focus.locale.LocaleAwareAppCompatActivity;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
 import org.mozilla.focus.utils.ThreadUtils;
 import org.mozilla.focus.utils.UrlUtils;
@@ -36,7 +40,7 @@ import org.mozilla.focus.widget.InlineAutocompleteEditText;
 
 
 
-public class UrlInputFragment extends Fragment implements View.OnClickListener, InlineAutocompleteEditText.OnCommitListener, InlineAutocompleteEditText.OnFilterListener {
+public class UrlInputFragment extends Fragment implements View.OnClickListener, InlineAutocompleteEditText.OnCommitListener, InlineAutocompleteEditText.OnFilterListener, PopupMenu.OnMenuItemClickListener {
     public static final String FRAGMENT_TAG = "url_input";
 
     private static final String ARGUMENT_URL = "url";
@@ -45,8 +49,8 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     private static final String ARGUMENT_Y = "y";
     private static final String ARGUMENT_WIDTH = "width";
     private static final String ARGUMENT_HEIGHT = "height";
+    private static final String ARGUMENT_OVERLAY = "translucent";
 
-    private static final String ANIMATION_HOME_SCREEN = "home_screen";
     private static final String ANIMATION_BROWSER_SCREEN = "browser_screen";
 
     private static final int ANIMATION_DURATION = 200;
@@ -55,18 +59,11 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
 
 
-    public static UrlInputFragment createWithHomeScreenAnimation(View fakeUrlBarView) {
-        int[] screenLocation = new int[2];
-        fakeUrlBarView.getLocationOnScreen(screenLocation);
+    public static UrlInputFragment createWithBackground() {
+        final Bundle arguments = new Bundle();
+        arguments.putBoolean(ARGUMENT_OVERLAY, false);
 
-        Bundle arguments = new Bundle();
-        arguments.putString(ARGUMENT_ANIMATION, ANIMATION_HOME_SCREEN);
-        arguments.putInt(ARGUMENT_X, screenLocation[0]);
-        arguments.putInt(ARGUMENT_Y, screenLocation[1]);
-        arguments.putInt(ARGUMENT_WIDTH, fakeUrlBarView.getWidth());
-        arguments.putInt(ARGUMENT_HEIGHT, fakeUrlBarView.getHeight());
-
-        UrlInputFragment fragment = new UrlInputFragment();
+        final UrlInputFragment fragment = new UrlInputFragment();
         fragment.setArguments(arguments);
 
         return fragment;
@@ -76,10 +73,11 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
 
 
-    public static UrlInputFragment createWithBrowserScreenAnimation(String url, View urlView) {
+    public static UrlInputFragment createAsOverlay(String url, View urlView) {
         final Bundle arguments = new Bundle();
         arguments.putString(ARGUMENT_ANIMATION, ANIMATION_BROWSER_SCREEN);
         arguments.putString(ARGUMENT_URL, url);
+        arguments.putBoolean(ARGUMENT_OVERLAY, true);
 
         int[] screenLocation = new int[2];
         urlView.getLocationOnScreen(screenLocation);
@@ -105,6 +103,9 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     private HintFrameLayout urlInputContainerView;
     private View urlInputBackgroundView;
     private View toolbarBackgroundView;
+    private View menuView;
+
+    private @Nullable PopupMenu displayedPopupMenu;
 
     private volatile boolean isAnimating;
 
@@ -141,6 +142,8 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         toolbarBackgroundView = view.findViewById(R.id.toolbar_background);
         urlInputBackgroundView = view.findViewById(R.id.url_input_background);
 
+        menuView = view.findViewById(R.id.menu);
+
         urlInputContainerView = (HintFrameLayout) view.findViewById(R.id.url_input_container);
         urlInputContainerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
@@ -153,6 +156,16 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
             }
         });
 
+        if (isOverlay()) {
+            view.findViewById(R.id.brand_background).setVisibility(View.GONE);
+        } else {
+            dismissView.setVisibility(View.GONE);
+            toolbarBackgroundView.setVisibility(View.GONE);
+
+            menuView.setVisibility(View.VISIBLE);
+            menuView.setOnClickListener(this);
+        }
+
         urlView.setOnCommitListener(this);
 
         if (getArguments().containsKey(ARGUMENT_URL)) {
@@ -163,9 +176,17 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         return view;
     }
 
+    private boolean isOverlay() {
+        return getArguments().getBoolean(ARGUMENT_OVERLAY, false);
+    }
+
     public boolean onBackPressed() {
-        animateAndDismiss();
-        return true;
+        if (isOverlay()) {
+            animateAndDismiss();
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -179,8 +200,7 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.clear:
-                urlView.setText("");
-                urlView.requestFocus();
+                clear();
                 break;
 
             case R.id.search_hint:
@@ -188,7 +208,20 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                 break;
 
             case R.id.dismiss:
-                animateAndDismiss();
+                if (isOverlay()) {
+                    animateAndDismiss();
+                } else {
+                    clear();
+                }
+                break;
+
+            case R.id.menu:
+                final PopupMenu popupMenu = new PopupMenu(view.getContext(), view);
+                popupMenu.getMenuInflater().inflate(R.menu.menu_home, popupMenu.getMenu());
+                popupMenu.setOnMenuItemClickListener(this);
+                popupMenu.setGravity(Gravity.TOP);
+                popupMenu.show();
+                displayedPopupMenu = popupMenu;
                 break;
 
             default:
@@ -196,13 +229,28 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         }
     }
 
+    private void clear() {
+        urlView.setText("");
+        urlView.requestFocus();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+
+        
+        
+        
+        if (displayedPopupMenu != null) {
+            displayedPopupMenu.dismiss();
+        }
+    }
+
     private void animateFirstDraw() {
         final String animation = getArguments().getString(ARGUMENT_ANIMATION);
 
-        if (ANIMATION_HOME_SCREEN.equals(animation)) {
-            playHomeScreenAnimation(false);
-        } else if (ANIMATION_BROWSER_SCREEN.equals(animation)) {
-            playBrowserScreenAnimation(false);
+        if (ANIMATION_BROWSER_SCREEN.equals(animation)) {
+            playVisibilityAnimation(false);
         }
     }
 
@@ -222,10 +270,8 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
         final String animation = getArguments().getString(ARGUMENT_ANIMATION);
 
-        if (ANIMATION_HOME_SCREEN.equals(animation)) {
-            playHomeScreenAnimation(true);
-        } else if (ANIMATION_BROWSER_SCREEN.equals(animation)) {
-            playBrowserScreenAnimation(true);
+        if (ANIMATION_BROWSER_SCREEN.equals(animation)) {
+            playVisibilityAnimation(true);
         } else {
             dismiss();
         }
@@ -234,98 +280,10 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     
 
 
-    private void playHomeScreenAnimation(final boolean reverse) {
-        if (isAnimating) {
-            
-            return;
-        }
 
-        isAnimating = true;
 
-        int[] screenLocation = new int[2];
-        urlInputContainerView.getLocationOnScreen(screenLocation);
 
-        int leftDelta = getArguments().getInt(ARGUMENT_X) - screenLocation[0];
-        int topDelta = getArguments().getInt(ARGUMENT_Y) - screenLocation[1];
-
-        float widthScale = (float) getArguments().getInt(ARGUMENT_WIDTH) / urlInputContainerView.getWidth();
-        float heightScale = (float) getArguments().getInt(ARGUMENT_HEIGHT) / urlInputContainerView.getHeight();
-
-        if (!reverse) {
-            
-            
-            
-            urlInputContainerView.setAlpha(0);
-            urlInputContainerView.setPivotX(0);
-            urlInputContainerView.setPivotY(0);
-            urlInputContainerView.setScaleX(widthScale);
-            urlInputContainerView.setScaleY(heightScale);
-            urlInputContainerView.setTranslationX(leftDelta);
-            urlInputContainerView.setTranslationY(topDelta);
-            urlInputContainerView.setAnimationOffset(1.0f);
-
-            toolbarBackgroundView.setAlpha(0);
-
-            dismissView.setAlpha(0);
-        }
-
-        
-        urlInputContainerView.animate()
-                .setDuration(ANIMATION_DURATION)
-                .scaleX(reverse ? widthScale : 1)
-                .scaleY(reverse ? heightScale : 1)
-                .translationX(reverse ? leftDelta : 0)
-                .translationY(reverse ? topDelta : 0)
-                .setInterpolator(new DecelerateInterpolator())
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-                        ViewUtils.updateAlphaIfViewExists(getActivity(), R.id.fake_urlbar, 0f);
-
-                        urlInputContainerView.setAlpha(1);
-
-                        if (reverse) {
-                            urlView.setText("");
-                            urlView.setCursorVisible(false);
-                            urlView.clearFocus();
-                        }
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        if (reverse) {
-                            urlInputContainerView.setAlpha(0f);
-
-                            ViewUtils.updateAlphaIfViewExists(getActivity(), R.id.fake_urlbar, 1f);
-
-                            dismiss();
-                        } else {
-                            urlView.setCursorVisible(true);
-                        }
-
-                        isAnimating = false;
-                    }
-                });
-
-        final ObjectAnimator hintAnimator = ObjectAnimator.ofFloat(
-                urlInputContainerView, "animationOffset", reverse ? 0f : 1f, reverse ? 1f : 0f);
-
-        hintAnimator.setDuration(ANIMATION_DURATION);
-        hintAnimator.start();
-
-        
-        toolbarBackgroundView.animate()
-                .alpha(reverse ? 0 : 1)
-                .setDuration(ANIMATION_DURATION)
-                .setInterpolator(new DecelerateInterpolator());
-
-        
-        dismissView.animate()
-                .alpha(reverse ? 0 : 1)
-                .setDuration(ANIMATION_DURATION);
-    }
-
-    private void playBrowserScreenAnimation(final boolean reverse) {
+    private void playVisibilityAnimation(final boolean reverse) {
         if (isAnimating) {
             
             return;
@@ -334,21 +292,28 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         isAnimating = true;
 
         {
-            float containerMargin = ((FrameLayout.LayoutParams) urlInputContainerView.getLayoutParams()).bottomMargin;
+            float xyOffset = isOverlay() ?
+                    ((FrameLayout.LayoutParams) urlInputContainerView.getLayoutParams()).bottomMargin
+                    : 0;
 
             float width = urlInputBackgroundView.getWidth();
             float height = urlInputBackgroundView.getHeight();
 
-            float widthScale = (width + (2 * containerMargin)) / width;
-            float heightScale = (height + (2 * containerMargin)) / height;
+            float widthScale = isOverlay()
+                    ? (width + (2 * xyOffset)) / width
+                    : 1;
+
+            float heightScale = isOverlay()
+                    ? (height + (2 * xyOffset)) / height
+                    : 1;
 
             if (!reverse) {
                 urlInputBackgroundView.setPivotX(0);
                 urlInputBackgroundView.setPivotY(0);
                 urlInputBackgroundView.setScaleX(widthScale);
                 urlInputBackgroundView.setScaleY(heightScale);
-                urlInputBackgroundView.setTranslationX(-containerMargin);
-                urlInputBackgroundView.setTranslationY(-containerMargin);
+                urlInputBackgroundView.setTranslationX(-xyOffset);
+                urlInputBackgroundView.setTranslationY(-xyOffset);
                 urlInputContainerView.setAnimationOffset(0f);
 
                 clearView.setAlpha(0);
@@ -359,9 +324,9 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                     .setDuration(ANIMATION_DURATION)
                     .scaleX(reverse ? widthScale : 1)
                     .scaleY(reverse ? heightScale : 1)
-                    .alpha(reverse ? 0 : 1)
-                    .translationX(reverse ? -containerMargin : 0)
-                    .translationY(reverse ? -containerMargin : 0)
+                    .alpha(reverse && isOverlay() ? 0 : 1)
+                    .translationX(reverse ? -xyOffset : 0)
+                    .translationY(reverse ? -xyOffset : 0)
                     .setListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationStart(Animator animation) {
@@ -373,7 +338,9 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                         @Override
                         public void onAnimationEnd(Animator animation) {
                             if (reverse) {
-                                dismiss();
+                                if (isOverlay()) {
+                                    dismiss();
+                                }
                             } else {
                                 clearView.setAlpha(1);
                             }
@@ -382,7 +349,9 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                         }
                     });
         }
-        {
+
+        
+        if (isOverlay()) {
             int[] screenLocation = new int[2];
             urlView.getLocationOnScreen(screenLocation);
 
@@ -408,7 +377,25 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         
         toolbarBackgroundView.animate()
                 .setDuration(ANIMATION_DURATION)
-                .alpha(reverse ? 0 : 1);
+                .alpha(reverse ? 0 : 1)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        toolbarBackgroundView.setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        if (reverse) {
+                            toolbarBackgroundView.setVisibility(View.GONE);
+
+                            if (!isOverlay()) {
+                                dismissView.setVisibility(View.GONE);
+                                menuView.setVisibility(View.VISIBLE);
+                            }
+                        }
+                    }
+                });
     }
 
     private void dismiss() {
@@ -496,8 +483,18 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         if (searchText.trim().isEmpty()) {
             clearView.setVisibility(View.GONE);
             searchViewContainer.setVisibility(View.GONE);
+
+            if (!isOverlay()) {
+                playVisibilityAnimation(true);
+            }
         } else {
             clearView.setVisibility(View.VISIBLE);
+            menuView.setVisibility(View.GONE);
+
+            if (!isOverlay() && dismissView.getVisibility() != View.VISIBLE) {
+                playVisibilityAnimation(false);
+                dismissView.setVisibility(View.VISIBLE);
+            }
 
             final String hint = getString(R.string.search_hint, searchText);
 
@@ -506,6 +503,35 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
             searchView.setText(content);
             searchViewContainer.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        final int id = item.getItemId();
+
+        switch (id) {
+            case R.id.settings:
+                ((LocaleAwareAppCompatActivity) getActivity()).openPreferences();
+                return true;
+
+            case R.id.about:
+                Intent aboutIntent = InfoActivity.getAboutIntent(getActivity());
+                startActivity(aboutIntent);
+                return true;
+
+            case R.id.rights:
+                Intent rightsIntent = InfoActivity.getRightsIntent(getActivity());
+                startActivity(rightsIntent);
+                return true;
+
+            case R.id.help:
+                Intent helpIntent = InfoActivity.getHelpIntent(getActivity());
+                startActivity(helpIntent);
+                return true;
+
+            default:
+                throw new IllegalStateException("Unhandled view ID in onMenuItemClick()");
         }
     }
 }

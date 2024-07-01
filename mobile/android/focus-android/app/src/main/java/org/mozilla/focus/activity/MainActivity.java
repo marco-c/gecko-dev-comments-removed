@@ -17,7 +17,6 @@ import android.view.WindowManager;
 import org.mozilla.focus.R;
 import org.mozilla.focus.fragment.BrowserFragment;
 import org.mozilla.focus.fragment.FirstrunFragment;
-import org.mozilla.focus.fragment.HomeFragment;
 import org.mozilla.focus.fragment.UrlInputFragment;
 import org.mozilla.focus.locale.LocaleAwareAppCompatActivity;
 import org.mozilla.focus.notification.BrowsingNotificationService;
@@ -221,10 +220,10 @@ public class MainActivity extends LocaleAwareAppCompatActivity {
         
         
         final FragmentManager fragmentManager = getSupportFragmentManager();
-        if (fragmentManager.findFragmentByTag(HomeFragment.FRAGMENT_TAG) == null) {
+        if (fragmentManager.findFragmentByTag(UrlInputFragment.FRAGMENT_TAG) == null) {
             fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container, HomeFragment.create(), HomeFragment.FRAGMENT_TAG)
+                    .replace(R.id.container, UrlInputFragment.createWithBackground(), UrlInputFragment.FRAGMENT_TAG)
                     .commit();
         }
     }
