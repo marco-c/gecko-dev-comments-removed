@@ -85,6 +85,8 @@ class GeckoEngineSession(
 
     private var initialLoad = true
 
+    private var requestFromWebContent = false
+
     override val coroutineContext: CoroutineContext
         get() = context + job
 
@@ -96,6 +98,7 @@ class GeckoEngineSession(
      * See [EngineSession.loadUrl]
      */
     override fun loadUrl(url: String, parent: EngineSession?, flags: LoadUrlFlags) {
+        requestFromWebContent = false
         geckoSession.loadUri(url, (parent as? GeckoEngineSession)?.geckoSession, flags.value)
     }
 
@@ -103,6 +106,7 @@ class GeckoEngineSession(
      * See [EngineSession.loadData]
      */
     override fun loadData(data: String, mimeType: String, encoding: String) {
+        requestFromWebContent = false
         when (encoding) {
             "base64" -> geckoSession.loadData(data.toByteArray(), mimeType)
             else -> geckoSession.loadString(data, mimeType)
@@ -120,6 +124,7 @@ class GeckoEngineSession(
      * See [EngineSession.reload]
      */
     override fun reload() {
+        requestFromWebContent = false
         geckoSession.reload()
     }
 
@@ -127,6 +132,7 @@ class GeckoEngineSession(
      * See [EngineSession.goBack]
      */
     override fun goBack() {
+        requestFromWebContent = false
         geckoSession.goBack()
     }
 
@@ -134,6 +140,7 @@ class GeckoEngineSession(
      * See [EngineSession.goForward]
      */
     override fun goForward() {
+        requestFromWebContent = false
         geckoSession.goForward()
     }
 
@@ -182,7 +189,7 @@ class GeckoEngineSession(
         if (!enabled) {
             disableTrackingProtectionOnGecko()
         }
-        notifyObservers { onTrackerBlockingEnabledChange(enabled) }
+        notifyAtLeastOneObserver { onTrackerBlockingEnabledChange(enabled) }
     }
 
     /**
@@ -367,7 +374,7 @@ class GeckoEngineSession(
                     onLoadRequest(
                         url = request.uri,
                         triggeredByRedirect = request.isRedirect,
-                        triggeredByWebContent = request.hasUserGesture
+                        triggeredByWebContent = requestFromWebContent
                     )
                 }
 
@@ -447,6 +454,7 @@ class GeckoEngineSession(
             // by the time we reach here, any new request will come from web content.
             // If it comes from the chrome, loadUrl(url) or loadData(string) will set it to
             // false.
+            requestFromWebContent = true
             notifyObservers {
                 onProgress(PROGRESS_STOP)
                 onLoadingStateChange(false)
