@@ -49,7 +49,7 @@ object TelemetryWrapper {
     private const val TELEMETRY_APP_NAME_FOCUS = "Focus"
     private const val TELEMETRY_APP_NAME_KLAR = "Klar"
     private const val TELEMETRY_APP_ENGINE_GECKOVIEW = "GeckoView"
-    private const val lastMobileMetricsPing = "lastMobileMetricsPing"
+    private const val LAST_MOBILE_METRICS_PINGS = "LAST_MOBILE_METRICS_PINGS"
 
     private val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.US)
 
@@ -308,7 +308,7 @@ object TelemetryWrapper {
         
         PreferenceManager.getDefaultSharedPreferences(telemetry.configuration.context)
                 .edit()
-                .putLong(lastMobileMetricsPing, (dateFormat.format(Date()).toLong()))
+                .putLong(LAST_MOBILE_METRICS_PINGS, (dateFormat.format(Date()).toLong()))
                 .apply()
     }
 
@@ -803,7 +803,7 @@ object TelemetryWrapper {
     @JvmStatic
     fun dayPassedSinceLastUpload(context: Context): Boolean {
         val dateOfLastPing = PreferenceManager
-                .getDefaultSharedPreferences(context).getLong(lastMobileMetricsPing, 0)
+                .getDefaultSharedPreferences(context).getLong(LAST_MOBILE_METRICS_PINGS, 0)
         
         val currentDateLong = dateFormat.format(Date()).toLong()
         return currentDateLong > dateOfLastPing
