@@ -11,16 +11,15 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.browser.LocalizedContentGecko;
 import org.mozilla.focus.session.Session;
 import org.mozilla.gecko.GeckoView;
 import org.mozilla.gecko.GeckoSession;
 import org.mozilla.gecko.GeckoSession.*;
 import org.mozilla.gecko.GeckoSessionSettings;
-import org.mozilla.gecko.util.GeckoBundle;
 
 
 
@@ -147,9 +146,13 @@ public class WebViewProvider {
             if (enabled) {
                 updateBlocking();
             } else {
-                geckoSession.disableTrackingProtection();
+                if (geckoSession != null) {
+                    geckoSession.disableTrackingProtection();
+                }
             }
-            callback.onBlockingStateChanged(enabled);
+            if (callback != null) {
+                callback.onBlockingStateChanged(enabled);
+            }
         }
 
         @Override
@@ -182,7 +185,9 @@ public class WebViewProvider {
             if (contentTrackersBlocked) {
                 categories += TrackingProtectionDelegate.CATEGORY_CONTENT;
             }
-            geckoSession.enableTrackingProtection(categories);
+            if (geckoSession != null) {
+                geckoSession.enableTrackingProtection(categories);
+            }
         }
 
         private ContentListener createContentListener() {
@@ -276,6 +281,11 @@ public class WebViewProvider {
                     
                     if (where == TargetWindow.NEW) {
                         geckoSession.loadUri(uri);
+                        return true;
+                    }
+
+                    
+                    if (LocalizedContentGecko.handleInternalContent(uri, session, getContext())) {
                         return true;
                     }
 
