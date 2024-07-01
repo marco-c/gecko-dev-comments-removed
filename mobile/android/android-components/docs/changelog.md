@@ -12,12 +12,6 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
-  * **Merge day!**
-    * `browser-engine-gecko-release`: GeckoView 75.0
-    * `browser-engine-gecko-beta`: GeckoView 76.0
-    * `browser-engine-gecko-nightly`: GeckoView 77.0
-
 * **support-locale**
   * Updates `updateResources` to always update the context configuration
 
@@ -81,6 +75,9 @@ permalink: /changelog/
  * Added ability to let consumers pass a custom layout of `TabViewHolder` in order to control layout inflation and view binding.
  * Added an optional URL view to the `TabViewHolder` to display the URL.
  * Will expose a new `layout` parameter which allows consumers to change the tabs tray layout.
+
+* **browser-session**
+  * ⚠️ **This is a breaking change**: `SessionManager.runWithSessionIdOrSelected` now returns the result from the `block` it executes. This is consistent with `runWithSession`.
 
 # 37.0.0
 
