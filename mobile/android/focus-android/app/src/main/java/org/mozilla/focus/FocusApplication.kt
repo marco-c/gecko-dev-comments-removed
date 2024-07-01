@@ -65,7 +65,7 @@ open class FocusApplication : LocaleAwareApplication(), CoroutineScope {
     private fun enableStrictMode() {
         
         
-        if (AppConstants.isReleaseBuild) {
+        if (AppConstants.isReleaseBuild || AppConstants.isBetaBuild) {
             return
         }
 
