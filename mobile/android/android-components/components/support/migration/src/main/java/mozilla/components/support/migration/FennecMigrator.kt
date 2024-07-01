@@ -91,7 +91,7 @@ sealed class Migration(val currentVersion: Int) {
     /**
      * Migrates all Fennec settings backed by SharedPreferences.
      */
-    object Settings : Migration(currentVersion = 1)
+    object Settings : Migration(currentVersion = 2)
 
     /**
      * Migrates / Disables all currently unsupported Add-ons.
@@ -1085,12 +1085,14 @@ class FennecMigrator private constructor(
                 return when (val failure = migrationFailureWrapper.failure) {
                     is SearchEngineMigrationResult.Failure.NoDefault -> {
                         logger.error("Missing search engine default: $failure")
+                        crashReporter.submitCaughtException(migrationFailureWrapper)
                         MigrationSearch.failureReason.add(FailureReasonTelemetryCodes.SEARCH_NO_DEFAULT.code)
                         result
                     }
 
                     is SearchEngineMigrationResult.Failure.NoMatch -> {
                         logger.error("Could not find matching search engine: $failure")
+                        crashReporter.submitCaughtException(migrationFailureWrapper)
                         MigrationSearch.failureReason.add(FailureReasonTelemetryCodes.SEARCH_NO_MATCH.code)
                         result
                     }
