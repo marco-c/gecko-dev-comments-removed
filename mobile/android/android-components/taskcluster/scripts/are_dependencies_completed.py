@@ -24,7 +24,7 @@ def check_all_dependencies_are_completed(dependencies_task_ids):
     print('Statuses fetched.')
     non_completed_tasks = {
         task_id: state
-        for task_id, state in state_per_task_ids.iteritems()
+        for task_id, state in state_per_task_ids.items()
         if state != 'completed'
     }
 
