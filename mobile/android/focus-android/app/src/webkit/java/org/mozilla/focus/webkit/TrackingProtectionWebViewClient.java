@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.AsyncTask;
 import android.support.annotation.WorkerThread;
-import android.webkit.HttpAuthHandler;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -20,6 +19,8 @@ import org.mozilla.focus.R;
 import org.mozilla.focus.webkit.matcher.UrlMatcher;
 
 public class TrackingProtectionWebViewClient extends WebViewClient {
+
+    final static String ERROR_PROTOCOL = "error:";
 
     private String currentPageURL;
 
@@ -115,6 +116,32 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         
         
         
+
+        
+        
+        
+        
+        if (failingUrl.startsWith(ERROR_PROTOCOL)) {
+            
+            final int errorCodePosition = ERROR_PROTOCOL.length();
+            final String errorCodeString = failingUrl.substring(errorCodePosition);
+
+            int desiredErrorCode;
+            try {
+                desiredErrorCode = Integer.parseInt(errorCodeString);
+
+                if (!ErrorPage.supportsErrorCode(desiredErrorCode)) {
+                    
+                    
+                    desiredErrorCode = WebViewClient.ERROR_BAD_URL;
+                }
+            } catch (final NumberFormatException e) {
+                desiredErrorCode = WebViewClient.ERROR_BAD_URL;
+            }
+            ErrorPage.loadErrorPage(webView, failingUrl, desiredErrorCode);
+            return;
+        }
+
 
         
         
