@@ -57,20 +57,4 @@ public class IconGeneratorTest {
         
         assertEquals("1", IconGenerator.getRepresentativeCharacter("https://192.168.0.1"));
     }
-
-    @Test
-    public void testPickColor() {
-        final int color = IconGenerator.pickColor("http://m.facebook.com");
-
-        
-        for (int i = 0; i < 100; i++) {
-            assertEquals(color, IconGenerator.pickColor("http://m.facebook.com"));
-        }
-
-        
-        assertEquals(color, IconGenerator.pickColor("https://m.facebook.com"));
-        assertEquals(color, IconGenerator.pickColor("http://facebook.com"));
-        assertEquals(color, IconGenerator.pickColor("http://www.facebook.com"));
-        assertEquals(color, IconGenerator.pickColor("http://www.facebook.com/foo/bar/foobar?mobile=1"));
-    }
 }

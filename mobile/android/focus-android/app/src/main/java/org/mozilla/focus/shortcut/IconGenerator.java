@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
@@ -20,51 +19,28 @@ import android.util.TypedValue;
 import org.mozilla.focus.R;
 import org.mozilla.focus.utils.UrlUtils;
 
- class IconGenerator {
-    private static final int INNER_ICON_SIZE = 96;
-    private static final int TEXT_SIZE_DP = 16;
-    private static final int MINIMUM_INNER_ICON_SIZE = 32;
-    private static final int GENERATED_ICON_ROUNDED_CORNERS = 5;
-
-    
-    
-    private static final int[] COLORS = {
-            0xFF0060df, 
-            0xFF00c8d7, 
-            0xFFed00b5, 
-            0xFF12bc00, 
-            0xFFd7b600, 
-            0xFFd70022, 
-            0xFF8000d7, 
-    };
+public class IconGenerator {
+    private static final int ICON_SIZE = 96;
+    private static final int TEXT_SIZE_DP = 36;
 
     
 
 
 
 
-     static Bitmap generateLauncherIcon(Context context, Bitmap rawIcon, String url) {
+    public static Bitmap generateLauncherIcon(Context context, String url) {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inMutable = true;
 
         final Bitmap shape = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_homescreen_shape, options);
 
-        final Bitmap innerIcon;
+        final Bitmap icon = generateIcon(context, url);
 
-        if (rawIcon == null || rawIcon.getWidth() < MINIMUM_INNER_ICON_SIZE || rawIcon.getHeight() < MINIMUM_INNER_ICON_SIZE) {
-            innerIcon = generateInnerIcon(context, url);
-        } else {
-            final int targetWidth = Math.min(rawIcon.getWidth() * 2, INNER_ICON_SIZE);
-            final int targetHeight = Math.min(rawIcon.getHeight() * 2, INNER_ICON_SIZE);
-
-            innerIcon = Bitmap.createScaledBitmap(rawIcon, targetWidth, targetHeight, true);
-        }
-
-        int drawX = (shape.getWidth() / 2) - (innerIcon.getWidth() / 2);
-        int drawY = (shape.getHeight() / 2) - (innerIcon.getHeight() / 2);
+        int drawX = (shape.getWidth() / 2) - (icon.getWidth() / 2);
+        int drawY = (shape.getHeight() / 2) - (icon.getHeight() / 2);
 
         final Canvas canvas = new Canvas(shape);
-        canvas.drawBitmap(innerIcon, drawX, drawY, new Paint());
+        canvas.drawBitmap(icon, drawX, drawY, new Paint());
 
         return shape;
     }
@@ -72,15 +48,11 @@ import org.mozilla.focus.utils.UrlUtils;
     
 
 
-    private static Bitmap generateInnerIcon(Context context, String url) {
-        final Bitmap bitmap = Bitmap.createBitmap(INNER_ICON_SIZE, INNER_ICON_SIZE, Bitmap.Config.ARGB_8888);
+    private static Bitmap generateIcon(Context context, String url) {
+        final Bitmap bitmap = Bitmap.createBitmap(ICON_SIZE, ICON_SIZE, Bitmap.Config.ARGB_8888);
         final Canvas canvas = new Canvas(bitmap);
 
         final Paint paint = new Paint();
-        paint.setColor(pickColor(url));
-
-        canvas.drawRoundRect(new RectF(0, 0, INNER_ICON_SIZE, INNER_ICON_SIZE),
-                GENERATED_ICON_ROUNDED_CORNERS, GENERATED_ICON_ROUNDED_CORNERS, paint);
 
         final String character = getRepresentativeCharacter(url);
 
@@ -146,21 +118,5 @@ import org.mozilla.focus.utils.UrlUtils;
         snippet = UrlUtils.stripCommonSubdomains(snippet);
 
         return snippet;
-    }
-
-    
-
-
-
-    @VisibleForTesting
-    static int pickColor(String url) {
-        if (TextUtils.isEmpty(url)) {
-            return COLORS[0];
-        }
-
-        final String snippet = getRepresentativeSnippet(url);
-        final int color = Math.abs(snippet.hashCode() % COLORS.length);
-
-        return COLORS[color];
     }
 }

@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
@@ -51,7 +50,6 @@ import org.mozilla.focus.menu.BrowserMenu;
 import org.mozilla.focus.menu.WebContextMenu;
 import org.mozilla.focus.notification.BrowsingNotificationService;
 import org.mozilla.focus.open.OpenWithFragment;
-import org.mozilla.focus.shortcut.HomeScreen;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
 import org.mozilla.focus.utils.Browsers;
 import org.mozilla.focus.utils.ColorUtils;
@@ -541,6 +539,28 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         }
     }
 
+    void showAddToHomescreenDialog(String url, String title) {
+        final FragmentManager fragmentManager = getFragmentManager();
+
+        if (fragmentManager.findFragmentByTag(AddToHomescreenDialogFragment.FRAGMENT_TAG) != null) {
+            
+            
+            return;
+        }
+
+        final AddToHomescreenDialogFragment addToHomescreenDialogFragment = AddToHomescreenDialogFragment.newInstance(url, title);
+        addToHomescreenDialogFragment.setTargetFragment(BrowserFragment.this, 300);
+
+        try {
+            addToHomescreenDialogFragment.show(fragmentManager, AddToHomescreenDialogFragment.FRAGMENT_TAG);
+        } catch (IllegalStateException e) {
+            
+            
+            
+            
+        }
+    }
+
     @Override
     public void onFinishDownloadDialog(Download download, boolean shouldDownload) {
         if (shouldDownload) {
@@ -811,14 +831,12 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             case R.id.add_to_homescreen:
                 final IWebView webView = getWebView();
                 if (webView == null) {
-                    return;
+                    break;
                 }
 
-                final Bitmap icon = webView.getIcon();
                 final String url = webView.getUrl();
                 final String title = webView.getTitle();
-
-                HomeScreen.installShortCut(getContext(), icon, url, title);
+                showAddToHomescreenDialog(url, title);
                 break;
 
             default:
