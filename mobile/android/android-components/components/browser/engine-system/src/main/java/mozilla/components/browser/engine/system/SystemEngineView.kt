@@ -251,7 +251,7 @@ class SystemEngineView @JvmOverloads constructor(
             if (request.isForMainFrame) {
                 session?.let {
                     it.notifyObservers {
-                        onLoadRequest(request.url.toString(), request.hasGesture(), true, {})
+                        onLoadRequest(request.url.toString(), request.hasGesture(), true)
                     }
                 }
             }
@@ -651,6 +651,10 @@ class SystemEngineView @JvmOverloads constructor(
     }
 
     override fun setVerticalClipping(clippingHeight: Int) {
+        // no-op
+    }
+
+    override fun setDynamicToolbarMaxHeight(height: Int) {
         // no-op
     }
 
