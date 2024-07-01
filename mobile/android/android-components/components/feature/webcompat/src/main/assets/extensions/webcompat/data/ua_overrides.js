@@ -730,27 +730,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1754180",
-    platform: "android",
-    domain: "nordjyske.dk",
-    bug: "1754180",
-    config: {
-      matches: ["*://nordjyske.dk/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA({
-          androidDevice: "Pixel 4",
-        });
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1753461",
     platform: "desktop",
     domain: "serieson.naver.com",
