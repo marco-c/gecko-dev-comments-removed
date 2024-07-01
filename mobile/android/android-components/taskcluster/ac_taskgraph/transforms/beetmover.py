@@ -10,7 +10,7 @@ from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 
 from ..build_config import get_version
-from .build import _get_nightly_version
+from .build import get_nightly_version
 
 transforms = TransformSequence()
 
@@ -36,20 +36,21 @@ def set_artifact_map(config, tasks):
     def _craft_path_version(version, build_type, nightly_version):
         """Helper function to craft the correct version to bake in the artifacts full
         path section"""
-        ret = "{}{}".format(
+        path_version = "{}{}".format(
             version,
             "-SNAPSHOT" if build_type == "snapshot" else ''
         )
         
         
         
+        
+        
         if build_type == 'nightly':
-            if version in ret:
-                ret = ret.replace(version, nightly_version)
-        return ret
+            path_version = path_version.replace(version, nightly_version)
+        return path_version
 
     version = get_version()
-    nightly_version = _get_nightly_version(config, version)
+    nightly_version = get_nightly_version(config, version)
 
     for task in tasks:
         maven_destination = task.pop("maven-destination")
