@@ -50,7 +50,6 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoWebExecutor
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebExtensionController
-import org.mozilla.geckoview.WebPushController
 import org.robolectric.Robolectric
 import java.io.IOException
 import java.lang.Exception
@@ -474,7 +473,7 @@ class GeckoEngineTest {
     }
 
     @Test
-    fun `register web extension delegate`() {
+    fun `web extension delegate handles opening a new tab`() {
         val runtime: GeckoRuntime = mock()
         val webExtensionController: WebExtensionController = mock()
         whenever(runtime.webExtensionController).thenReturn(webExtensionController)
@@ -483,17 +482,16 @@ class GeckoEngineTest {
         val engine = GeckoEngine(context, runtime = runtime)
         engine.registerWebExtensionDelegate(webExtensionsDelegate)
 
-        // Verify we set the delegate and notify onNewTab
-        val captor = argumentCaptor<WebExtensionController.TabDelegate>()
-        verify(webExtensionController).tabDelegate = captor.capture()
+        val geckoDelegateCaptor = argumentCaptor<WebExtensionController.TabDelegate>()
+        verify(webExtensionController).tabDelegate = geckoDelegateCaptor.capture()
 
         val engineSessionCaptor = argumentCaptor<GeckoEngineSession>()
-        captor.value.onNewTab(null, null)
+        geckoDelegateCaptor.value.onNewTab(null, null)
         verify(webExtensionsDelegate).onNewTab(eq(null), eq(""), engineSessionCaptor.capture())
         assertNotNull(engineSessionCaptor.value)
         assertFalse(engineSessionCaptor.value.geckoSession.isOpen)
 
-        captor.value.onNewTab(null, "https://www.mozilla.org")
+        geckoDelegateCaptor.value.onNewTab(null, "https://www.mozilla.org")
         verify(webExtensionsDelegate).onNewTab(eq(null), eq("https://www.mozilla.org"),
             engineSessionCaptor.capture())
         assertNotNull(engineSessionCaptor.value)
@@ -501,15 +499,58 @@ class GeckoEngineTest {
 
         val webExt = org.mozilla.geckoview.WebExtension("test")
         val geckoExtCap = argumentCaptor<mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension>()
-        captor.value.onNewTab(webExt, "https://test-moz.org")
+        geckoDelegateCaptor.value.onNewTab(webExt, "https://test-moz.org")
         verify(webExtensionsDelegate).onNewTab(geckoExtCap.capture(), eq("https://test-moz.org"),
             engineSessionCaptor.capture())
         assertNotNull(geckoExtCap.value)
         assertEquals(geckoExtCap.value.id, webExt.id)
         assertNotNull(engineSessionCaptor.value)
         assertFalse(engineSessionCaptor.value.geckoSession.isOpen)
+    }
 
-        // Verify we notify onInstalled
+    @Test
+    fun `web extension delegate handles closing tab`() {
+        val runtime: GeckoRuntime = mock()
+        val webExtensionController: WebExtensionController = mock()
+        whenever(runtime.webExtensionController).thenReturn(webExtensionController)
+
+        val webExt = org.mozilla.geckoview.WebExtension("test")
+        val webExtensionsDelegate: WebExtensionDelegate = mock()
+        val engine = GeckoEngine(context, runtime = runtime)
+        engine.registerWebExtensionDelegate(webExtensionsDelegate)
+
+        val geckoDelegateCaptor = argumentCaptor<WebExtensionController.TabDelegate>()
+        verify(webExtensionController).tabDelegate = geckoDelegateCaptor.capture()
+
+        // Web extension never opened a tab so call will not be acted on
+        geckoDelegateCaptor.value.onCloseTab(webExt, mock())
+        verify(webExtensionsDelegate, never()).onCloseTab(eq(null), any())
+
+        // Let web extension open a new tab
+        val engineSessionCaptor = argumentCaptor<GeckoEngineSession>()
+        val geckoExtCap = argumentCaptor<mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension>()
+        geckoDelegateCaptor.value.onNewTab(webExt, "https://test-moz.org")
+        verify(webExtensionsDelegate).onNewTab(any(), eq("https://test-moz.org"), engineSessionCaptor.capture())
+        engineSessionCaptor.value.geckoSession.open(runtime)
+        assertTrue(engineSessionCaptor.value.geckoSession.isOpen)
+
+        // Web extension should be able to close tab it opened
+        geckoDelegateCaptor.value.onCloseTab(webExt, engineSessionCaptor.value.geckoSession)
+        verify(webExtensionsDelegate).onCloseTab(geckoExtCap.capture(), eq(engineSessionCaptor.value))
+        assertNotNull(geckoExtCap.value)
+        assertEquals(geckoExtCap.value.id, webExt.id)
+    }
+
+    @Test
+    fun `web extension delegate handles installation`() {
+        val runtime: GeckoRuntime = mock()
+        val webExtensionController: WebExtensionController = mock()
+        whenever(runtime.webExtensionController).thenReturn(webExtensionController)
+
+        val webExtensionsDelegate: WebExtensionDelegate = mock()
+        val engine = GeckoEngine(context, runtime = runtime)
+        engine.registerWebExtensionDelegate(webExtensionsDelegate)
+
         val result = GeckoResult<Void>()
         whenever(runtime.registerWebExtension(any())).thenReturn(result)
         engine.installWebExtension("test-webext", "resource://android/assets/extensions/test")
@@ -698,32 +739,6 @@ class GeckoEngineTest {
         )
 
         assertTrue(onErrorCalled)
-    }
-
-    @Test
-    fun `registerWebNotificationDelegate sets delegate`() {
-        val runtime = mock<GeckoRuntime>()
-        val engine = GeckoEngine(context, runtime = runtime)
-
-        engine.registerWebNotificationDelegate(mock())
-
-        verify(runtime).webNotificationDelegate = any()
-    }
-
-    @Test
-    fun `registerWebPushDelegate sets delegate and returns same handler`() {
-        val runtime = mock<GeckoRuntime>()
-        val controller: WebPushController = mock()
-        val engine = GeckoEngine(context, runtime = runtime)
-
-        whenever(runtime.webPushController).thenReturn(controller)
-
-        val handler1 = engine.registerWebPushDelegate(mock())
-        val handler2 = engine.registerWebPushDelegate(mock())
-
-        verify(controller, times(2)).setDelegate(any())
-
-        assert(handler1 == handler2)
     }
 
     private fun createDummyLogEntryList(): List<ContentBlockingController.LogEntry> {

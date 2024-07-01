@@ -4,24 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 21.0.0-SNAPSHOT (In Development)
+# 20.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v20.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/81?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v19.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/80?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-* **feature-downloads**
-  * Added `tryAgain` which can be called on the feature in order to restart a failed download.
-
-# 20.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v19.0.0...v20.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/80?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v20.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v20.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v20.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-session**, **feature-customtabs**, **feature-session**, **feature-tabs**
   *  ⚠️ **This is a breaking change**: The `WindowFeature` and `CustomTabWindowFeature` components have been migrated to `browser-state` from `browser-session`. Therefore creating these features now requires a `BrowserStore` instance (instead of a `SessionManager` instance). The `windowRequest` properties have been removed `Session` so window requests can now only be observed on a `BrowserStore` from the `browser-state` component. In addition, `WindowFeature` was moved from `feature-session` to `feature-tabs` because it now makes use of our `TabsUseCases` and this would otherwise cause a dependency cycle.
@@ -30,12 +19,11 @@ permalink: /changelog/
   * Added ability to pause, resume, cancel, and try again on a download through the `DownloadNotification`.
   * Added support for multiple, continuous downloads.
   * Added size of the file to the `DownloadNotification`.
-  * Added open file functionality to the `DownloadNotification`.
+  * Added open file funcitonality to the `DownloadNotification`.
     * Note: you must add a `FileProvider` to your manifest as well as `file_paths.xml`. See SampleBrowser for an example.
-    * To open .apk files, you must still add the permission `android.permission.INSTALL_PACKAGES` to your manifest.
+    * To open .apk files, you must still add the permisison `android.permission.INSTALL_PACKAGES` to your manifest.
   * Improved visuals of `SimpleDownloadDialogFragment` to better match `SitePermissionsDialogFragment`.
     * `SimpleDownloadDialogFragment` can similarly be themed by using `PromptsStyling` properties.
-  * Recreated download notification channel with lower importance for Android O+ so that the notification is not audibly intrusive.
 
 * **feature-webnotifications**
   * Adds feature implementation for configuring and displaying web notifications to the user
@@ -51,9 +39,6 @@ permalink: /changelog/
 * **concept-engine**
   * Adds support for WebPush abstraction to the Engine.
   * Adds support for WebShare abstraction as a PromptRequest.
-  
-* **engine-gecko-nightly**
-  * Adds support for WebPush in GeckoEngine.
 
 * **support-webextensions**
   * Adds support for sending messages to background pages and scripts in WebExtensions.
@@ -66,18 +51,19 @@ permalink: /changelog/
 
 * **feature-prompts**
   * Adds support for Web Share API using `ShareDelegate`.
-  
-* **experiments**
-  * Fixes a crash when the app version or the experiment's version specifiers are not in the expected format.
 
-* **lib-dataprotect**
-  * Added new `SecureAbove22Preferences` helper class, which is an encryption-aware wrapper for `SharedPreferences`. Only actually encrypts stored values when running on API23+.
-
-* **service-firefox-accounts**
-  * Support for keeping `SyncEngine.Passwords` engine unlocked during sync.
-
-* **concept-sync**
-  * Added new `LockableStore` to facilitate syncing of "lockable" stores (such as `SyncableLoginsStore`).
+* **engine**, **engine-gecko-***, **support-webextensions**
+  * Added support `browser.tabs.remove()` in web extensions.
+  ```kotlin
+  val engine = GeckoEngine(applicationContext, engineSettings)
+  engine.registerWebExtensionTabDelegate(object : WebExtensionTabDelegate {
+    override fun onCloseTab(webExtension: WebExtension?, engineSession: EngineSession) {
+      store.state.tabs.find { it.engineState.engineSession === engineSession }?.let {
+        store.dispatch(RemoveTabAction(tab.id))
+      }
+    }
+  }  
+  ```  
 
 # 19.0.1
 

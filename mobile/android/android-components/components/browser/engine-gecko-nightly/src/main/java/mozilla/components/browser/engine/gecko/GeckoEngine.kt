@@ -11,8 +11,6 @@ import mozilla.components.browser.engine.gecko.mediaquery.from
 import mozilla.components.browser.engine.gecko.mediaquery.toGeckoValue
 import mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
 import mozilla.components.browser.engine.gecko.webnotifications.GeckoWebNotificationDelegate
-import mozilla.components.browser.engine.gecko.webpush.GeckoWebPushDelegate
-import mozilla.components.browser.engine.gecko.webpush.GeckoWebPushHandler
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
@@ -29,9 +27,8 @@ import mozilla.components.concept.engine.utils.EngineVersion
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.WebExtensionDelegate
 import mozilla.components.concept.engine.webnotifications.WebNotificationDelegate
-import mozilla.components.concept.engine.webpush.WebPushDelegate
-import mozilla.components.concept.engine.webpush.WebPushHandler
 import org.json.JSONObject
+import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.ContentBlockingController
 import org.mozilla.geckoview.ContentBlockingController.Event
@@ -42,11 +39,11 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoWebExecutor
 import org.mozilla.geckoview.WebExtensionController
 import java.lang.IllegalStateException
+import java.util.WeakHashMap
 
 /**
  * Gecko-based implementation of Engine interface.
  */
-@Suppress("TooManyFunctions")
 class GeckoEngine(
     context: Context,
     private val defaultSettings: Settings? = null,
@@ -58,7 +55,6 @@ class GeckoEngine(
     private val executor by lazy { executorProvider.invoke() }
     private val localeUpdater = LocaleSettingUpdater(context, runtime)
     private var webExtensionDelegate: WebExtensionDelegate? = null
-    private var webPushHandler: WebPushHandler? = null
 
     init {
         runtime.delegate = GeckoRuntime.Delegate {
@@ -166,6 +162,13 @@ class GeckoEngine(
         this.webExtensionDelegate = webExtensionDelegate
 
         val tabsDelegate = object : WebExtensionController.TabDelegate {
+            // We use this map to find the engine session of a given gecko
+            // session, as we currently have no other way of accessing the
+            // list of engine sessions. This will change once the engine
+            // gets access to the browser store:
+            // https://github.com/mozilla-mobile/android-components/issues/4965
+            private val tabs = WeakHashMap<GeckoEngineSession, String>()
+
             override fun onNewTab(
                 webExtension: org.mozilla.geckoview.WebExtension?,
                 url: String?
@@ -174,7 +177,26 @@ class GeckoEngine(
                 val geckoWebExtension = webExtension?.let { GeckoWebExtension(it.id, it.location) }
                 webExtensionDelegate.onNewTab(geckoWebExtension, url ?: "", geckoEngineSession)
 
+                tabs[geckoEngineSession] = webExtension?.id
                 return GeckoResult.fromValue(geckoEngineSession.geckoSession)
+            }
+
+            override fun onCloseTab(
+                webExtension: org.mozilla.geckoview.WebExtension?,
+                session: GeckoSession
+            ): GeckoResult<AllowOrDeny> {
+                val geckoEngineSession = tabs.keys.find { it.geckoSession == session } ?: return GeckoResult.DENY
+
+                return if (webExtension != null && tabs[geckoEngineSession] == webExtension.id) {
+                    val geckoWebExtension = GeckoWebExtension(webExtension.id, webExtension.location)
+                    if (webExtensionDelegate.onCloseTab(geckoWebExtension, geckoEngineSession)) {
+                        GeckoResult.ALLOW
+                    } else {
+                        GeckoResult.DENY
+                    }
+                } else {
+                    GeckoResult.DENY
+                }
             }
         }
 
@@ -188,21 +210,6 @@ class GeckoEngine(
         webNotificationDelegate: WebNotificationDelegate
     ) {
         runtime.webNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate)
-    }
-
-    /**
-     * See [Engine.registerWebPushDelegate].
-     */
-    override fun registerWebPushDelegate(
-        webPushDelegate: WebPushDelegate
-    ): WebPushHandler {
-        runtime.webPushController.setDelegate(GeckoWebPushDelegate(webPushDelegate))
-
-        if (webPushHandler == null) {
-            webPushHandler = GeckoWebPushHandler(runtime)
-        }
-
-        return requireNotNull(webPushHandler)
     }
 
     /**
