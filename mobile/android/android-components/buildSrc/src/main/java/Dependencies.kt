@@ -18,7 +18,7 @@ object Versions {
     const val android_gradle_plugin = "3.5.3"
     const val android_maven_publish_plugin = "3.6.2"
     const val lint = "26.3.2"
-    const val detekt = "1.2.2"
+    const val detekt = "1.7.4"
 
     const val sentry = "1.7.21"
     const val okhttp = "3.13.1"
@@ -29,7 +29,7 @@ object Versions {
 
     const val mozilla_appservices = "0.59.0"
 
-    const val mozilla_glean = "29.1.1"
+    const val mozilla_glean = "29.1.0"
 
     const val material = "1.1.0"
     const val nearby = "17.0.0"
