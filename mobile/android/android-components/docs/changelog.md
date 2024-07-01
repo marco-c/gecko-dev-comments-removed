@@ -57,6 +57,7 @@ permalink: /changelog/
       launchFromInterceptor = true
   )
   ```
+  * Introduce a `ContextMenuCandidate` to open links in the corresponding external app, if installed
 
 * **concept-storage**
   * Added classes related to login autofill
