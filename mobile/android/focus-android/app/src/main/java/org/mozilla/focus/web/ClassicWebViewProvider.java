@@ -128,6 +128,10 @@ public class ClassicWebViewProvider implements IWebViewProvider {
 
     @Override
     public void applyAppSettings(@NotNull Context context, @NotNull WebSettings webSettings, @NotNull SystemWebView systemWebView) {
+
+        
+        systemWebView.clearCache(true);
+
         
         webSettings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
         webSettings.setJavaScriptEnabled(!Settings.getInstance(context).shouldBlockJavaScript());
