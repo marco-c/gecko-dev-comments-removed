@@ -39,10 +39,7 @@ repo = github.get_user(OWNER).get_repo(REPO)
 
 for request in repo.get_pulls(state='open'):
 	if request.user.login == USER:
-		print "There's already an unmerged pull request. Updating existing one."
-		BRANCH=request.head.ref
-		print subprocess.check_output(['git', 'checkout', '-b', BRANCH])
-		print subprocess.check_output(['git', 'push', URL, BRANCH, '-f'])
+		print "There's already an unmerged pull request. Doing nothing."
 		exit(0)
 
 
