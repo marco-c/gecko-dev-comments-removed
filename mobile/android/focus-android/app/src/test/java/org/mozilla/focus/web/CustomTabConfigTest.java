@@ -222,7 +222,7 @@ public class CustomTabConfigTest {
     
     @Test
     public void maxSizeCloseButton() throws Exception {
-        final int maxSize = RuntimeEnvironment.application.getResources().getDimensionPixelSize(R.dimen.customtabs_close_button_max_size);
+        final int maxSize = RuntimeEnvironment.application.getResources().getDimensionPixelSize(R.dimen.customtabs_toolbar_icon_size);
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
 
         {
@@ -243,7 +243,7 @@ public class CustomTabConfigTest {
     
     @Test
     public void oversizedCloseButton() throws Exception {
-        final int maxSize = RuntimeEnvironment.application.getResources().getDimensionPixelSize(R.dimen.customtabs_close_button_max_size);
+        final int maxSize = RuntimeEnvironment.application.getResources().getDimensionPixelSize(R.dimen.customtabs_toolbar_icon_size);
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
 
         {
