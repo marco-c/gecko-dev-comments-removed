@@ -5,6 +5,7 @@
 
 package org.mozilla.focus.menu;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -21,6 +22,7 @@ import org.mozilla.focus.utils.ViewUtils;
 
 public class BrowserMenu extends PopupWindow {
     public BrowserMenu(Context context, BrowserFragment fragment) {
+        @SuppressLint("InflateParams") 
         final View view = LayoutInflater.from(context).inflate(R.layout.menu, null);
         setContentView(view);
 
