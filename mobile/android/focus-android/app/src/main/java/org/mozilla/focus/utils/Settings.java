@@ -39,14 +39,14 @@ public class Settings {
 
     public boolean shouldBlockImages() {
         
-        return preferences.getBoolean(
-                resources.getString(R.string.pref_key_performance_block_images),
-                false);
+        
+
+
+        return false;
     }
 
     public boolean shouldShowFirstrun() {
-        return true;
-        
+        return !preferences.getBoolean(FirstrunFragment.FIRSTRUN_PREF, false);
     }
 
     public boolean shouldUseSecureMode() {
