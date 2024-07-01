@@ -11,6 +11,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.os.Parcelable
 import android.preference.PreferenceManager
 import android.text.TextUtils
 import android.util.AttributeSet
@@ -116,6 +117,7 @@ class GeckoWebViewProvider : IWebViewProvider {
         private var webViewTitle: String? = null
         private var isLoadingInternalUrl = false
         private lateinit var finder: SessionFinder
+        private var restored = false
 
         init {
             PreferenceManager.getDefaultSharedPreferences(context)
@@ -492,27 +494,42 @@ class GeckoWebViewProvider : IWebViewProvider {
 
         override fun restoreWebViewState(session: Session) {
             val stateData = session.webViewState
-            val desiredURL = session.url.value
-            val savedGeckoSession = stateData.getParcelable<GeckoSession>(GECKO_SESSION)
-            if (savedGeckoSession != null && geckoSession != savedGeckoSession) {
-                
-                geckoSession.close()
+            val savedSession = stateData.getParcelable<GeckoSession>(GECKO_SESSION)!!
 
-                geckoSession = savedGeckoSession
-                canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
-                canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
-                isSecure = stateData.getBoolean(IS_SECURE, false)
-                webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
-                currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
-                applySettingsAndSetDelegates()
-                if (!geckoSession.isOpen) {
-                    geckoSession.open(geckoRuntime!!)
+            if (geckoSession != savedSession) {
+                if (!restored) {
+                    
+                    geckoSession.close()
+
+                    geckoSession = savedSession
+                    canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
+                    canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
+                    isSecure = stateData.getBoolean(IS_SECURE, false)
+                    webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
+                    currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
+                    applySettingsAndSetDelegates()
+                    if (!geckoSession.isOpen) {
+                        geckoSession.open(geckoRuntime!!)
+                    }
+                    setSession(geckoSession)
+                    geckoSession.setActive(true)
+                } else {
+                    
+                    
+                    canGoBack = stateData.getBoolean(CAN_GO_BACK, false)
+                    canGoForward = stateData.getBoolean(CAN_GO_FORWARD, false)
+                    isSecure = stateData.getBoolean(IS_SECURE, false)
+                    webViewTitle = stateData.getString(WEBVIEW_TITLE, null)
+                    currentUrl = stateData.getString(CURRENT_URL, ABOUT_BLANK)
+                    applySettingsAndSetDelegates()
+                    restored = false
                 }
-                releaseSession()
-                setSession(geckoSession)
-            } else {
-                loadUrl(desiredURL)
             }
+        }
+
+        override fun onRestoreInstanceState(state: Parcelable?) {
+            restored = true
+            super.onRestoreInstanceState(state)
         }
 
         override fun saveWebViewState(session: Session) {
