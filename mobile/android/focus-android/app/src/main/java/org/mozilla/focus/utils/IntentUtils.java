@@ -70,7 +70,7 @@ public class IntentUtils {
             }
             final CharSequence externalAppTitle = info.loadLabel(packageManager);
 
-            showConfirmationDialog(activity, intent, uri, R.string.external_app_prompt, externalAppTitle);
+            showConfirmationDialog(activity, intent, activity.getString(R.string.external_app_prompt_title), R.string.external_app_prompt, externalAppTitle);
             return null;
         } else { 
             
