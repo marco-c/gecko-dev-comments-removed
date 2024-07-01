@@ -885,23 +885,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1751604",
-    platform: "desktop",
-    domain: "www.otsuka.co.jp",
-    bug: "1751604",
-    config: {
-      matches: ["*://www.otsuka.co.jp/fib/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
 
 
     id: "bug1771200",
@@ -968,6 +951,24 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1776897",
     config: {
       matches: ["*://www.edencast.fr/zoomcast*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1784361",
+    platform: "android",
+    domain: "coldwellbankerhomes.com",
+    bug: "1784361",
+    config: {
+      matches: ["*://*.coldwellbankerhomes.com/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
