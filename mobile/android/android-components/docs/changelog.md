@@ -12,18 +12,15 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **support-locale**
-  * Added fix for respecting RTL/LTR changes when activity is recreated in Android 8
-
-* **feature-sitepermissions**
-  * ⚠️ **This is a breaking change**: The `SitePermissionsFeature`'s constructor, now requires a new parameter `onShouldShowRequestPermissionRationale` a lambda to allow the feature to query [ActivityCompat.shouldShowRequestPermissionRationale](https://developer.android.com/reference/androidx/core/app/ActivityCompat#shouldShowRequestPermissionRationale(android.app.Activity,%20java.lang.String)) or [Fragment.shouldShowRequestPermissionRationale](https://developer.android.com/reference/androidx/fragment/app/Fragment#shouldShowRequestPermissionRationale(java.lang.String)). This allows the `SitePermissionsFeature` to handle when a user clicks "Deny & don't ask again" button in a system permission dialog, for more information see [issue #6565](https://github.com/mozilla-mobile/android-components/issues/6565).
-
 * **feature-addons**
   * Fixed [issue #6685](https://github.com/mozilla-mobile/android-components/issues/6685), now `DefaultSupportedAddonsChecker` will marked any newly supported add-on as enabled.
   * Added `Addon.translatedSummary` and `Addon.translatedDescription` to ease add-on translations.
   * Added `Addon.defaultLocale` Indicates which locale will be always available to display translatable fields.
   * ⚠️ **This is a breaking change**: `AddonManager.enableAddon` and `AddonManager.disableAddon` have a new optional parameter  `source` that indicates why the extension is enabled/disabled.
   * ⚠️ **This is a breaking change**: `Map<String, String>.translate` now is marked as internal, if you are trying to translate the summary or the description of an add-on, use `Addon.translatedSummary` and `Addon.translatedDescription`.
+
+* **feature-toolbar**
+  * Disabled autocompleting when updating url upon entering edit mode in BrowserToolbar.
 
 * **feature-media**
   * Muted media will not start the media service anymore, causing no media notification to be shown and no audio focus getting requested.
@@ -43,10 +40,6 @@ permalink: /changelog/
 
 * **browser-tabstray**
   * The iconView is no longer required in the template.
-  * The URL text for items may be styled.
-
-* **Developer ergonomics**
-  * Improved autoPublication workflow. See https://mozac.org/contributing/testing-components-inside-app for updated documentation.
 
 # 38.0.0
 
