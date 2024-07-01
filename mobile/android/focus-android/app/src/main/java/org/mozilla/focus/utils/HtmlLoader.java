@@ -66,15 +66,15 @@ public class HtmlLoader {
     public static String loadPngAsDataURI(@NonNull final Context context,
                                           @NonNull final @DrawableRes int resourceID) {
 
+        final StringBuilder builder = new StringBuilder();
+        builder.append("data:image/png;base64,");
+
         
         
         
         
         final InputStream pngInputStream = context.getResources().openRawResource(resourceID);
         final BufferedReader reader = new BufferedReader(new InputStreamReader(pngInputStream));
-
-        final StringBuilder builder = new StringBuilder();
-        builder.append("data:image/png;base64,");
 
         try {
             
@@ -103,6 +103,12 @@ public class HtmlLoader {
             }
         } catch (IOException e) {
             throw new IllegalStateException("Unable to load png data");
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                
+            }
         }
 
         return  builder.toString();
