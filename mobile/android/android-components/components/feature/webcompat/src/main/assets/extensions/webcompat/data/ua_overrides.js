@@ -235,6 +235,7 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
+
     id: "bug969844",
     platform: "android",
     domain: "mobile.de",
@@ -631,6 +632,25 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1654888",
     config: {
       matches: ["*://*.ebuyer.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1664174",
+    platform: "android",
+    domain: "indiatimes.com",
+    bug: "1664174",
+    config: {
+      matches: ["*://*.indiatimes.com/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
