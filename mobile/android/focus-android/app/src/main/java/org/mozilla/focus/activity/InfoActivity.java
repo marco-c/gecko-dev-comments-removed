@@ -61,7 +61,19 @@ public class InfoActivity extends AppCompatActivity {
         
         
         
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+
+            
+            
+            
+            
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                view.setVisibility(View.VISIBLE);
+            }
+        });
 
         loadURL(url, webView);
 
