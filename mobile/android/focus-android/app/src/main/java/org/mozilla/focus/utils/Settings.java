@@ -50,13 +50,7 @@ public class Settings {
     }
 
     public boolean shouldUseSecureMode() {
-        
-        
-        if (AppConstants.isDevBuild()) {
-            return false;
-        }
-
-        return preferences.getBoolean(getPreferenceKey(R.string.pref_key_secure), true);
+        return preferences.getBoolean(getPreferenceKey(R.string.pref_key_secure), false);
     }
 
     @Nullable
