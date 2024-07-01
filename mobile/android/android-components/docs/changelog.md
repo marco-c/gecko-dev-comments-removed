@@ -12,14 +12,14 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **browser-awesomebar**
-  * Adds ability to remove `SuggestionProvider`s with `removeProviders` and `removeAllProviders`
-
 * **browser-menu**
   * ⚠️ **This is a breaking API change!**: Removed redundant `BrowserMenuImageText` `contentDescription`
 
 * **feature-downloads**
   * Fixing bug #2265. In some occasions, when trying to download a file, the download failed and the download notification shows "Unsuccessful download".
+
+* **service-experiments**
+  * A new client-side experiments SDK for running segmenting user populations to run multi-branch experiments on them. This component is going to replace `service-fretboard`. The SDK is currently in development and the component is not ready to be used yet.
 
 # 0.45.0
 
