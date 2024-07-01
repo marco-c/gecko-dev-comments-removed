@@ -2,11 +2,11 @@
 
 
 
-package org.mozilla.focus.webkit.matcher;
+package org.mozilla.focus.webview.matcher;
 
 import android.util.SparseArray;
 
-import org.mozilla.focus.webkit.matcher.util.FocusString;
+import org.mozilla.focus.webview.matcher.util.FocusString;
 
  class Trie {
 

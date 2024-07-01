@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.webkit;
+package org.mozilla.focus.webview;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -16,7 +16,7 @@ import android.webkit.WebViewClient;
 
 import org.mozilla.focus.R;
 import org.mozilla.focus.web.IWebView;
-import org.mozilla.focus.webkit.matcher.UrlMatcher;
+import org.mozilla.focus.webview.matcher.UrlMatcher;
 
 public class TrackingProtectionWebViewClient extends WebViewClient {
     private static volatile UrlMatcher MATCHER;

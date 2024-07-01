@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.webkit;
+package org.mozilla.focus.webview;
 
 import android.content.Context;
 import android.graphics.Bitmap;

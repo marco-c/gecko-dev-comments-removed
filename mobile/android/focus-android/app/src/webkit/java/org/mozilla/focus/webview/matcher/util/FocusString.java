@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.webkit.matcher.util;
+package org.mozilla.focus.webview.matcher.util;
 
 import android.support.annotation.CheckResult;
 

@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.webkit.matcher;
+package org.mozilla.focus.webview.matcher;
 
 import android.content.SharedPreferences;
 import android.net.Uri;

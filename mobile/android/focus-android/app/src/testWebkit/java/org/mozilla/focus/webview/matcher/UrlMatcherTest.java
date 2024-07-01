@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.webkit.matcher;
+package org.mozilla.focus.webview.matcher;
 
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -12,7 +12,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mozilla.focus.webkit.matcher.util.FocusString;
+import org.mozilla.focus.webview.matcher.util.FocusString;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 

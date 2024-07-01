@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.webkit;
+package org.mozilla.focus.webview;
 
 import android.os.Bundle;
 import android.os.Handler;
