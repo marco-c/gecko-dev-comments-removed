@@ -4,17 +4,56 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 53.0.0-SNAPSHOT (In Development)
+# 54.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/112?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v53.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/113?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+# 53.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...v53.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/112?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v53.0.0/buildSrc/src/main/java/Config.kt)
+
+* **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
+  * **Merge day!**
+    * `browser-engine-gecko`: GeckoView 79.0
+    * `browser-engine-gecko-beta`: GeckoView 80.0
+    * `browser-engine-gecko-nightly`: GeckoView 81.0
+
 * **feature-downloads**
   * ⚠️ **This is a breaking change**: Removed the following properties from `DownloadJobState` in `AbstractFetchDownloadService` and added to `DownloadState`: `DownloadJobStatus` (now renamed to `DownloadStatus`) and `currentBytesCopied`. These properties can now be read from `DownloadState`.
   * ⚠️ **This is a breaking change**: Removed the enum class `DownloadJobStatus` from `AbstractFetchDownloadService` and moved into `DownloadState`, and removed the `ACTIVE` state while introducing two new states called `INITIATED` and `DOWNLOADING`.
+  * ⚠️ **This is a breaking change**: Renamed the following data classes from `BrowserAction`: `QueuedDownloadAction` to `AddDownloadAction`, `RemoveQueuedDownloadAction` to `RemoveDownloadAction`, `RemoveAllQueuedDownloadsAction` to `RemoveAllDownloadsAction`, and `UpdateQueuedDownloadAction` to `UpdateDownloadAction`.
+  * ⚠️ **This is a breaking change**: Renamed `queuedDownloads` from `BrowserState` to `downloads` .
+  * Removed automatic deletion of `downloads` upon a completed download.
+
+* **browser-menu**
+  * ⚠️ **This is a breaking change**: `BrowserMenuItemToolbar.Button.longClickListener` is now nullable and defaults to null.
+  * ⚠️ **This is a breaking change**: Removed `SimpleBrowserMenuHighlightableItem.itemType`. Use a WeakMap instead if you need to attach private data.
+
+* **concept-menu**
+  * Added `SmallMenuCandidate.onLongClick` to handle long click of row menu buttons.
+
+* **service-glean**
+  * Glean was updated to v31.6.0
+    * Limit ping request body size to 1MB. ([#1098](https://github.com/mozilla/glean/pull/1098))
+    * BUGFIX: Require activities executed via `GleanDebugView` to be exported.
+
+* **feature-downloads**
+  * ⚠️ **This is a breaking change**: `DownloadsFeature` is no longer accepting a custom download dialog but supporting customizations via the `promptStyling` parameter. The `dialog` parameter was unused so far. If it's required in the future it will need to be replaced with a lambda or factory so that the feature can create instances of the dialog itself, as needed.
+
+* **feature-webcompat-reporter**
+  * Added a second parameter to the `install` method: `productName` allows to provide a unique product name per usage for automatic product-labelling on webcompat.com 
+
+* **feature-contextmenu**
+  * Do not show the "Download link" option for html URLs.
+  * Uses a speculative check, may not work in all cases.
 
 * **concept-awesomebar**
   * Added `AwesomeBar.setOnEditSuggestionListener()` to register a callback when a search term is selected to be edited further.  
@@ -71,7 +110,7 @@ permalink: /changelog/
   * Added support for the new `MenuController` interface for menu2.
     When a menu controller is added to a toolbar, it will be used in place of the `BrowserMenuBuilder`.
     The builder will supply items to the `MenuController` in `invalidateMenu` if it is kept.
-      
+
 * **feature-containers**
   * Adds a `ContainerMiddleware` that connects container browser actions with the `ContainerStorage`.
 
