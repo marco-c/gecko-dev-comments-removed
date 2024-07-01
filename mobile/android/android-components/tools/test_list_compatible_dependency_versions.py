@@ -3,7 +3,7 @@
 
 
 
-import get_cross_repo_hashes as module
+import list_compatible_dependency_versions as module
 import os
 import unittest
 
