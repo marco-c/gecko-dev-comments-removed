@@ -9,12 +9,15 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.WebBackForwardList;
 import android.webkit.WebChromeClient;
+import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -205,6 +208,23 @@ public class WebViewProvider {
                     return false;
                 }
             });
+        }
+
+        @Override
+        public void restoreWebviewState(Bundle savedInstanceState) {
+            
+            
+            final WebBackForwardList backForwardList = restoreState(savedInstanceState);
+
+            
+            
+            client.notifyCurrentURL(backForwardList.getCurrentItem().getUrl());
+            reload();
+        }
+
+        @Override
+        public void onSaveInstanceState(Bundle outState) {
+            saveState(outState);
         }
 
         @Override

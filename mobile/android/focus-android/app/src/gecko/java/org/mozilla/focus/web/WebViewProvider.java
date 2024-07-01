@@ -7,6 +7,7 @@ package org.mozilla.focus.web;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.view.MotionEventCompat;
@@ -100,6 +101,16 @@ public class WebViewProvider {
 
         @Override
         public void cleanup() {
+            
+        }
+
+        @Override
+        public void restoreWebviewState(Bundle savedInstanceState) {
+            
+        }
+
+        @Override
+        public void onSaveInstanceState(Bundle outState) {
             
         }
 
