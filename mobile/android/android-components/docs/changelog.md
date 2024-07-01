@@ -28,24 +28,13 @@ permalink: /changelog/
   * Removed non-essential dependency on `com.google.firebase:firebase-core`.
 
 * **feature-toolbar**
-  * Added `ContainerToolbarFeature` to update the toolbar with the container page action whenever
-    the selected tab changes.
+  * Added `ContainerToolbarFeature` to update the toolbar with the container page action whenever the selected tab changes.
+
+* **browser-state**
+  * Added `LastAccessMiddleware` to dispatch `TabSessionAction.UpdateLastAccessAction` when a tab is selected.
 
 * **feature-prompts**
   * Replaced generic icon in `LoginDialogFragment` with site icon (keep the generic one as fallback)
-
-* **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
-  * 🚒 Bug fixed [issue #8240](https://github.com/mozilla-mobile/android-components/issues/8240) Crash when dismissing Share dialog.
-
-* **feature-downloads**
-  * ⚠️ **This is a breaking change**: `AndroidDownloadManager.download` returns a `Strings`, `AndroidDownloadManager.tryAgain` requires a `Strings` `id` parameter.
-  * ⚠️ **This is a breaking change**: `ConsumeDownloadAction` requires a `Strings` `id` parameter.
-  * ⚠️ **This is a breaking change**: `DownloadManager#onDownloadStopped` requires a `Strings` `(DownloadState, Long, Status) -> Unit`.
-  * ⚠️ **This is a breaking change**: `DownloadsUseCases.invoke` requires an `Strings` `downloadId` parameter.
-  * ⚠️ **This is a breaking change**: `DownloadState.id` has changed its type from `Long` to `String`.
-  * ⚠️ **This is a breaking change**: `BrowserState.downloads` has changed it's type from `Map<Long, DownloadState>` to `Map<String, DownloadState>`.
-  * 🌟 Added support for persisting/restoring downloads see issue [#7762](https://github.com/mozilla-mobile/android-components/issues/7762).
-  * 🌟 Added `DownloadStorage` for querying stored download metadata.
 
 * **ui-widgets**
   * 🆕 New VerticalSwipeRefreshLayout that comes to resolve many of the issues of the platform SwipeRefreshLayout and filters out other gestures than swipe down/up.

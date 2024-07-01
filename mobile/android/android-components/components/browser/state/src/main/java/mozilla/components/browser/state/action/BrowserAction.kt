@@ -80,7 +80,7 @@ sealed class TabListAction : BrowserAction() {
      *
      * @property tabId the ID of the tab to select.
      */
-    data class SelectTabAction(val tabId: String, val timeSelected: Long = System.currentTimeMillis()) : TabListAction()
+    data class SelectTabAction(val tabId: String) : TabListAction()
 
     /**
      * Removes the [TabSessionState] with the given [tabId] from the list of sessions.
@@ -113,6 +113,22 @@ sealed class TabListAction : BrowserAction() {
      * Removes all non-private [TabSessionState]s.
      */
     object RemoveAllNormalTabsAction : TabListAction()
+}
+
+/**
+ * [BrowserAction] implementations related to updating the [TabSessionState] inside [BrowserState].
+ */
+sealed class LastAccessAction : BrowserAction() {
+    /**
+     * Updates the timestamp of the [TabSessionState] with the given [tabId].
+     *
+     * @property tabId the ID of the tab to update.
+     * @property lastAccess the value to signify when the tab was last accessed; defaults to [System.currentTimeMillis].
+     */
+    data class UpdateLastAccessAction(
+        val tabId: String,
+        val lastAccess: Long = System.currentTimeMillis()
+    ) : LastAccessAction()
 }
 
 /**
@@ -207,7 +223,7 @@ sealed class ContentAction : BrowserAction() {
     /**
      * Removes the [DownloadState] of the [ContentState] with the given [sessionId].
      */
-    data class ConsumeDownloadAction(val sessionId: String, val downloadId: String) : ContentAction()
+    data class ConsumeDownloadAction(val sessionId: String, val downloadId: Long) : ContentAction()
 
     /**
      * Updates the [HitResult] of the [ContentState] with the given [sessionId].
@@ -700,7 +716,7 @@ sealed class DownloadAction : BrowserAction() {
     /**
      * Updates the [BrowserState] to remove the download with the provided [downloadId].
      */
-    data class RemoveDownloadAction(val downloadId: String) : DownloadAction()
+    data class RemoveDownloadAction(val downloadId: Long) : DownloadAction()
 
     /**
      * Updates the [BrowserState] to remove all downloads.
@@ -711,16 +727,6 @@ sealed class DownloadAction : BrowserAction() {
      * Updates the provided [download] on the [BrowserState].
      */
     data class UpdateDownloadAction(val download: DownloadState) : DownloadAction()
-
-    /**
-     * Restores the [BrowserState.downloads] state from the storage.
-     */
-    object RestoreDownloadsStateAction : DownloadAction()
-
-    /**
-     * Restores the given [download] from the storage.
-     */
-    data class RestoreDownloadStateAction(val download: DownloadState) : DownloadAction()
 }
 
 /**
