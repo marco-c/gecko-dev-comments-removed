@@ -273,13 +273,8 @@ import static android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES;
         
         
         final Uri uri = Uri.parse(url);
-        if (!UrlUtils.isSupportedProtocol(uri.getScheme()) &&
-                callback != null &&
-                IntentUtils.INSTANCE.handleExternalUri(view.getContext(), (IWebView) view, url)) {
-            return true;
-        }
+        return !UrlUtils.isSupportedProtocol(uri.getScheme()) && callback != null && IntentUtils.INSTANCE.handleExternalUri(view.getContext(), (IWebView) view, url) || super.shouldOverrideUrlLoading(view, url);
 
-        return super.shouldOverrideUrlLoading(view, url);
     }
 
     @Override
