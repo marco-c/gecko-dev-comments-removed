@@ -14,6 +14,7 @@ import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -48,6 +49,9 @@ public class WebViewProvider {
 
 
     public static void performNewBrowserSessionCleanup() {
+        
+        CookieManager.getInstance().removeAllCookies(null);
+
         
         final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskWrites();
 
