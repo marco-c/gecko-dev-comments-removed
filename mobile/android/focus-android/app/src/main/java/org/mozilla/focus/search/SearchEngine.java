@@ -146,6 +146,9 @@ public class SearchEngine {
                 .putStringSet(PREF_KEY_CUSTOM_SEARCH_ENGINES, newEngines)
                 .putString(engineName, searchEngineXml)
                 .apply();
+
+        
+        SearchEngineManager.getInstance().init(context);
         return true;
     }
 
