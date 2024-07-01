@@ -7,6 +7,7 @@ package org.mozilla.focus.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
@@ -17,7 +18,6 @@ import android.support.test.uiautomator.UiSelector;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,6 +29,7 @@ import okhttp3.mockwebserver.MockWebServer;
 
 import static android.support.test.espresso.action.ViewActions.click;
 import static org.mozilla.focus.activity.TestHelper.waitingTime;
+import static org.mozilla.focus.activity.TestHelper.webPageLoadwaitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 @RunWith(AndroidJUnit4.class)
@@ -111,6 +112,13 @@ public class AddtoHSTest {
         context.startActivity(intent);
     }
 
+    private void handleShortcutLayoutDialog() throws UiObjectNotFoundException {
+        TestHelper.AddautoBtn.waitForExists(waitingTime);
+        TestHelper.AddautoBtn.click();
+        TestHelper.AddautoBtn.waitUntilGone(waitingTime);
+        TestHelper.pressHomeKey();
+    }
+
     @Test
     public void AddToHomeScreenTest() throws InterruptedException, UiObjectNotFoundException, IOException {
 
@@ -127,11 +135,17 @@ public class AddtoHSTest {
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        TestHelper.webView.waitForExists(waitingTime);
+        TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
         Assert.assertTrue("Website title loaded", titleMsg.exists());
 
         TestHelper.menuButton.perform(click());
-        TestHelper.AddtoHSmenuItem.waitForExists(waitingTime);
+        
+        while (!TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)) {
+            TestHelper.pressBackKey();
+            Thread.sleep(waitingTime);
+            TestHelper.menuButton.perform(click());
+        }
         TestHelper.AddtoHSmenuItem.click();
 
         
@@ -148,11 +162,18 @@ public class AddtoHSTest {
         TestHelper.AddtoHSOKBtn.click();
 
         
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            handleShortcutLayoutDialog();
+        }
+
+        
         shortcutIcon.waitForExists(waitingTime);
         Assert.assertTrue(shortcutIcon.isEnabled());
         shortcutIcon.click();
-        TestHelper.webView.waitForExists(waitingTime);
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.browserURLbar.waitForExists(waitingTime);
+        Assert.assertTrue(
+                TestHelper.browserURLbar.getText()
+                        .equals(webServer.url(TEST_PATH).toString()));
     }
 
     @Test
@@ -170,11 +191,17 @@ public class AddtoHSTest {
         TestHelper.inlineAutocompleteEditText.setText(webServer.url(TEST_PATH).toString());
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        TestHelper.webView.waitForExists(waitingTime);
+        TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
         Assert.assertTrue("Website title loaded", titleMsg.exists());
 
         TestHelper.menuButton.perform(click());
-        TestHelper.AddtoHSmenuItem.waitForExists(waitingTime);
+        
+        while (!TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)) {
+            TestHelper.pressBackKey();
+            Thread.sleep(waitingTime);
+            TestHelper.menuButton.perform(click());
+        }
         TestHelper.AddtoHSmenuItem.click();
 
         
@@ -191,19 +218,25 @@ public class AddtoHSTest {
         TestHelper.AddtoHSOKBtn.click();
 
         
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            handleShortcutLayoutDialog();
+        }
+
+        
         shortcutIcon.waitForExists(waitingTime);
         Assert.assertTrue(shortcutIcon.isEnabled());
         shortcutIcon.click();
-        TestHelper.webView.waitForExists(waitingTime);
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.browserURLbar.waitForExists(waitingTime);
+        Assert.assertTrue(
+                TestHelper.browserURLbar.getText()
+                        .equals(webServer.url(TEST_PATH).toString()));
     }
 
     @Test
-    @Ignore("Feature has been disabled for the current milestone")
     public void SearchTermShortcutTest() throws InterruptedException, UiObjectNotFoundException, IOException {
         UiObject shortcutIcon = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.widget.TextView")
-                .descriptionContains("hello world")
+                .descriptionContains("helloworld")
                 .enabled(true));
 
         removeWelcomeOverlay();
@@ -211,13 +244,19 @@ public class AddtoHSTest {
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
-        TestHelper.inlineAutocompleteEditText.setText("hello world");
+        TestHelper.inlineAutocompleteEditText.setText("helloworld");
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        TestHelper.webView.waitForExists(waitingTime);
+        TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
 
         TestHelper.menuButton.perform(click());
-        TestHelper.AddtoHSmenuItem.waitForExists(waitingTime);
+        
+        while (!TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)) {
+            TestHelper.pressBackKey();
+            Thread.sleep(waitingTime);
+            TestHelper.menuButton.perform(click());
+        }
         TestHelper.AddtoHSmenuItem.click();
 
         
@@ -225,15 +264,19 @@ public class AddtoHSTest {
         TestHelper.AddtoHSOKBtn.click();
 
         
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            handleShortcutLayoutDialog();
+        }
+
+        
         shortcutIcon.waitForExists(waitingTime);
         Assert.assertTrue(shortcutIcon.isEnabled());
         shortcutIcon.click();
+        TestHelper.waitForIdle();
         TestHelper.webView.waitForExists(waitingTime);
 
         
         TestHelper.browserURLbar.waitForExists(waitingTime);
-        TestHelper.browserURLbar.click();
-        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-        Assert.assertEquals("hello world", TestHelper.inlineAutocompleteEditText.getText());
+        Assert.assertTrue(TestHelper.browserURLbar.getText().contains("helloworld"));
     }
 }

@@ -118,7 +118,7 @@ public class SwitchContextTest {
         
         TestHelper.pressHomeKey();
         TestHelper.openNotification();
-
+        TestHelper.waitForIdle();
         
         if (!TestHelper.notificationOpenItem.waitForExists(waitingTime)) {
             TestHelper.notificationExpandSwitch.click();
