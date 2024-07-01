@@ -56,6 +56,17 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         
         
         
+        final String scheme = request.getUrl().getScheme();
+
+        if (!request.isForMainFrame() &&
+                !scheme.equals("http") && !scheme.equals("https")) {
+            
+            
+            
+            
+            return new WebResourceResponse(null, null, null);
+        }
+
         final UrlMatcher matcher = getMatcher(view.getContext());
 
         
