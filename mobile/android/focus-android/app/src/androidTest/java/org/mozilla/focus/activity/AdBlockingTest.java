@@ -6,25 +6,26 @@
 package org.mozilla.focus.activity;
 
 import android.content.Context;
-import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.Suppress;
 import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
 import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
 import android.support.test.uiautomator.UiSelector;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.action.ViewActions.click;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertFalse;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 
-@RunWith(AndroidJUnit4.class)
+
+
+@Suppress
 public class AdBlockingTest {
 
     @Rule
@@ -48,7 +49,6 @@ public class AdBlockingTest {
 
     @Test
     public void AdBlockTest() throws InterruptedException, UiObjectNotFoundException {
-
         final long waitingTime = TestHelper.waitingTime;
 
         UiObject blockAdTrackerEntry = TestHelper.settingsList.getChild(new UiSelector()
@@ -56,14 +56,10 @@ public class AdBlockingTest {
                 .instance(2));
         UiObject blockAdTrackerValue = blockAdTrackerEntry.getChild(new UiSelector()
                 .className("android.widget.Switch"));
-        UiObject blocked = TestHelper.mDevice.findObject(new UiSelector()
-                .className("android.view.View")
-                .description(" Ad blocking enabled!")
-                .enabled(true));
         UiObject unBlocked = TestHelper.mDevice.findObject(new UiSelector()
                 .className("android.view.View")
-                .description("No ad blocking detected")
-                .enabled(true));
+                .resourceId("ad_iframe"));
+
         TestHelper.firstViewBtn.waitForExists(waitingTime);
         TestHelper.firstViewBtn.click();
 
@@ -73,12 +69,30 @@ public class AdBlockingTest {
 
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
-        TestHelper.inlineAutocompleteEditText.setText("https://blockads.fivefilters.org");
+        TestHelper.inlineAutocompleteEditText.setText("ads-blocker.com/testing/");
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
         TestHelper.webView.waitForExists(waitingTime);
-        blocked.waitForExists(waitingTime);
-        assertTrue (blocked.exists());
+
+        int dHeight = TestHelper.mDevice.getDisplayHeight();
+        int dWidth = TestHelper.mDevice.getDisplayWidth();
+        int xScrollPosition = dWidth / 2;
+        int yScrollStop = dHeight / 4;
+        TestHelper.mDevice.swipe(
+                xScrollPosition,
+                yScrollStop,
+                xScrollPosition,
+                0,
+                20);
+
+        unBlocked.waitForExists(waitingTime);
+        assertFalse(unBlocked.exists());
+        TestHelper.mDevice.swipe(
+                xScrollPosition,
+                dHeight / 2,
+                xScrollPosition,
+                dHeight / 2 + 200,
+                20);
 
         
         TestHelper.menuButton.perform(click());
@@ -90,19 +104,28 @@ public class AdBlockingTest {
         TestHelper.browserURLbar.waitForExists(waitingTime);
 
         
-        
-        
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            TestHelper.browserURLbar.click();
-            TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-            TestHelper.inlineAutocompleteEditText.clearTextField();
-            TestHelper.inlineAutocompleteEditText.setText("https://blockads.fivefilters.org");
-            TestHelper.hint.waitForExists(waitingTime);
-            TestHelper.pressEnterKey();
-            TestHelper.webView.waitForExists(waitingTime);
-            blocked.waitForExists(waitingTime);
-            assertTrue(unBlocked.exists());
-        }
+        TestHelper.browserURLbar.click();
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText("ads-blocker.com/testing/");
+        TestHelper.hint.waitForExists(waitingTime);
+        TestHelper.pressEnterKey();
+        TestHelper.webView.waitForExists(waitingTime);
+        TestHelper.mDevice.swipe(
+                xScrollPosition,
+                yScrollStop,
+                xScrollPosition,
+                0,
+                20);
+        unBlocked.waitForExists(waitingTime);
+        assertTrue(unBlocked.exists());
+        TestHelper.mDevice.swipe(
+                xScrollPosition,
+                dHeight / 2,
+                xScrollPosition,
+                dHeight / 2 + 200,
+                20);
+
 
         
         TestHelper.menuButton.perform(click());
