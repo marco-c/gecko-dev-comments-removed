@@ -18,4 +18,10 @@ public class UrlUtils {
 
         return uri.toString();
     }
+
+    public static boolean isHttps(String url) {
+        
+
+        return url.startsWith("https:");
+    }
 }
