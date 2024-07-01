@@ -69,10 +69,30 @@ public class WebViewProvider {
         
         
         settings.setAllowFileAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
 
+        
         settings.setBlockNetworkImage(appSettings.shouldBlockImages());
 
         settings.setUserAgentString(buildUserAgentString(context, settings));
+
+        
+        settings.setAllowContentAccess(false);
+
+        
+        settings.setAppCacheEnabled(false);
+        settings.setDatabaseEnabled(false);
+        settings.setDomStorageEnabled(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+
+        
+        settings.setGeolocationEnabled(false);
+
+        
+        settings.setSaveFormData(false);
+        
+        settings.setSavePassword(false);
     }
 
     
