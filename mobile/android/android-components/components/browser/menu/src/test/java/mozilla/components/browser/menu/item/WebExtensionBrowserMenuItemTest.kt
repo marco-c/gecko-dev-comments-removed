@@ -15,7 +15,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import mozilla.components.browser.menu.R
 import mozilla.components.browser.menu.WebExtensionBrowserMenu
-import mozilla.components.concept.engine.webextension.BrowserAction
+import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -61,14 +61,16 @@ class WebExtensionBrowserMenuItemTest {
         val imageView: ImageView = mock()
         val badgeView: TextView = mock()
         val labelView: TextView = mock()
+        val container = View(testContext)
         val view: View = mock()
 
         whenever(view.findViewById<ImageView>(R.id.action_image)).thenReturn(imageView)
         whenever(view.findViewById<TextView>(R.id.badge_text)).thenReturn(badgeView)
         whenever(view.findViewById<TextView>(R.id.action_label)).thenReturn(labelView)
+        whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(mock())
 
-        val browserAction = BrowserAction(
+        val browserAction = Action(
             title = "title",
             loadIcon = { icon },
             enabled = false,
@@ -90,14 +92,16 @@ class WebExtensionBrowserMenuItemTest {
         val imageView: ImageView = mock()
         val badgeView: TextView = mock()
         val labelView: TextView = mock()
+        val container = View(testContext)
         val view: View = mock()
 
         whenever(view.findViewById<ImageView>(R.id.action_image)).thenReturn(imageView)
         whenever(view.findViewById<TextView>(R.id.badge_text)).thenReturn(badgeView)
         whenever(view.findViewById<TextView>(R.id.action_label)).thenReturn(labelView)
+        whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(mock())
 
-        val browserAction = BrowserAction(
+        val browserAction = Action(
             title = "title",
             loadIcon = { icon },
             enabled = true,
@@ -126,14 +130,16 @@ class WebExtensionBrowserMenuItemTest {
         val imageView: ImageView = mock()
         val badgeView: TextView = mock()
         val labelView: TextView = mock()
+        val container = View(testContext)
         val view: View = mock()
 
         whenever(view.findViewById<ImageView>(R.id.action_image)).thenReturn(imageView)
         whenever(view.findViewById<TextView>(R.id.badge_text)).thenReturn(badgeView)
         whenever(view.findViewById<TextView>(R.id.action_label)).thenReturn(labelView)
+        whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(mock())
 
-        val browserAction = BrowserAction(
+        val browserAction = Action(
                 title = "title",
                 loadIcon = { throw IllegalArgumentException() },
                 enabled = true,
@@ -157,14 +163,16 @@ class WebExtensionBrowserMenuItemTest {
         val imageView: ImageView = mock()
         val badgeView: TextView = mock()
         val labelView = TextView(testContext)
+        val container = View(testContext)
         val view: View = mock()
 
         whenever(view.findViewById<ImageView>(R.id.action_image)).thenReturn(imageView)
         whenever(view.findViewById<TextView>(R.id.badge_text)).thenReturn(badgeView)
         whenever(view.findViewById<TextView>(R.id.action_label)).thenReturn(labelView)
+        whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(mock())
 
-        val browserAction = BrowserAction(
+        val browserAction = Action(
             title = "title",
             loadIcon = { icon },
             enabled = true,
@@ -182,7 +190,7 @@ class WebExtensionBrowserMenuItemTest {
         item.bind(menu, view)
         testDispatcher.advanceUntilIdle()
 
-        labelView.performClick()
+        container.performClick()
 
         assertTrue(callbackInvoked)
         verify(menu).dismiss()
@@ -194,14 +202,16 @@ class WebExtensionBrowserMenuItemTest {
         val imageView: ImageView = mock()
         val badgeView: TextView = mock()
         val labelView: TextView = mock()
+        val container = View(testContext)
         val view: View = mock()
 
         whenever(view.findViewById<ImageView>(R.id.action_image)).thenReturn(imageView)
         whenever(view.findViewById<TextView>(R.id.badge_text)).thenReturn(badgeView)
         whenever(view.findViewById<TextView>(R.id.action_label)).thenReturn(labelView)
+        whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(mock())
 
-        val browserAction = BrowserAction(
+        val browserAction = Action(
             title = "title",
             loadIcon = { icon },
             enabled = true,
@@ -220,7 +230,7 @@ class WebExtensionBrowserMenuItemTest {
         verify(labelView).setText("title")
         verify(badgeView).setText("badgeText")
 
-        val browserActionOverride = BrowserAction(
+        val browserActionOverride = Action(
                 title = "override",
                 loadIcon = { icon },
                 enabled = true,
@@ -229,7 +239,7 @@ class WebExtensionBrowserMenuItemTest {
                 badgeBackgroundColor = Color.BLUE
         ) {}
 
-        item.browserAction = browserActionOverride
+        item.action = browserActionOverride
         item.invalidate(view)
 
         verify(labelView).setText("override")
