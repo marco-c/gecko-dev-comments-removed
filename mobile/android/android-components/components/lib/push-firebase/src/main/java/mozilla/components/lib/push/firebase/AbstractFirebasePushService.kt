@@ -9,6 +9,7 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.firebase.FirebaseApp
 import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
@@ -36,12 +37,14 @@ abstract class AbstractFirebasePushService(
      */
     override fun start(context: Context) {
         FirebaseApp.initializeApp(context)
+        FirebaseMessaging.getInstance().isAutoInitEnabled = true
     }
 
     override fun onNewToken(newToken: String) {
         PushProcessor.requireInstance.onNewToken(newToken)
     }
 
+    @SuppressWarnings("TooGenericExceptionCaught")
     override fun onMessageReceived(remoteMessage: RemoteMessage?) {
         remoteMessage?.let {
             // This is not an AutoPush message we can handle.
@@ -49,19 +52,32 @@ abstract class AbstractFirebasePushService(
                 return
             }
 
-            try {
-                val message = EncryptedPushMessage(
+            val message = try {
+                EncryptedPushMessage(
                     channelId = it.data.getValue(MESSAGE_KEY_CHANNEL_ID),
                     body = it.data.getValue(MESSAGE_KEY_BODY),
                     encoding = it.data.getValue(MESSAGE_KEY_ENCODING),
                     salt = it.data[MESSAGE_KEY_SALT],
                     cryptoKey = it.data[MESSAGE_KEY_CRYPTO_KEY]
                 )
-                PushProcessor.requireInstance.onMessageReceived(message)
             } catch (e: NoSuchElementException) {
                 PushProcessor.requireInstance.onError(
                     PushError.MalformedMessage("parsing encrypted message failed: $e")
                 )
+                return
+            }
+
+            // In case of any errors, let the PushProcessor handle this exception. Instead of crashing
+            // here, just drop the message on the floor. This is fine, since we don't really need to
+            // "recover" from a bad incoming message.
+            // PushProcessor will submit relevant issues via a CrashReporter as appropriate.
+            try {
+                PushProcessor.requireInstance.onMessageReceived(message)
+            } catch (e: IllegalStateException) {
+                // Re-throw 'requireInstance' exceptions.
+                throw(e)
+            } catch (e: Exception) {
+                PushProcessor.requireInstance.onError(PushError.Rust(e))
             }
         }
     }
@@ -70,6 +86,7 @@ abstract class AbstractFirebasePushService(
      * Stops the Firebase messaging service and disables auto-start.
      */
     final override fun stop() {
+        FirebaseMessaging.getInstance().isAutoInitEnabled = false
         stopSelf()
     }
 
