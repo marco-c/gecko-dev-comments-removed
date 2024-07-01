@@ -31,7 +31,7 @@ def resolve_keys(config, tasks):
 @transforms.add
 def make_task_description(config, tasks):
     for task in tasks:
-        product = "Android-components"  
+        product = "Firefox-android"  
         
         
         version = config.params['version'] or "{ver}"
