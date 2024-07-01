@@ -147,14 +147,9 @@ def add_artifacts(config, tasks):
                         **apk
                     ),
                 })
-                
-                
-                    
-                    
-                    
-                    
-                    
-                
+                apks[apk["abi"]] = {
+                    "name": apk_name,
+                }
 
         yield task
 

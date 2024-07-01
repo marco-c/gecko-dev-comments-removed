@@ -13,11 +13,9 @@ def register(graph_config):
     """
     _import_modules([
         "job",
-        
-        
-        
-        
-        
+        "worker_types",
+        "routes",
+        "target_tasks",
     ])
 
 
