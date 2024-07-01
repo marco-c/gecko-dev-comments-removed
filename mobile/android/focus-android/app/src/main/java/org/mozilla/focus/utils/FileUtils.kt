@@ -15,12 +15,16 @@ private const val LOCAL_STORAGE_DIR = "Local Storage"
 
 private const val WEBVIEW_CACHE_DIR = "org.chromium.android_webview"
 
+
+private const val SENTRY_CACHE_DIR = "sentry-buffered-events"
+
 class FileUtils {
     companion object {
         @JvmStatic
         fun truncateCacheDirectory(context: Context) = deleteContent(context.cacheDir, doNotEraseWhitelist = setOf(
                 
-                WEBVIEW_CACHE_DIR
+                WEBVIEW_CACHE_DIR,
+                SENTRY_CACHE_DIR
         ))
 
         @JvmStatic
