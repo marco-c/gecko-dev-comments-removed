@@ -1,4 +1,4 @@
-componentsVersion: 33.0.0
+componentsVersion: 32.0.0
 projects:
   concept-awesomebar:
     path: components/concept/awesomebar
@@ -95,10 +95,6 @@ projects:
   feature-top-sites:
     path: components/feature/top-sites
     description: 'Feature implementation for saving and removing top sites.'
-    publish: true
-  feature-share:
-    path: components/feature/share
-    description: 'Feature implementation for saving and sorting recent apps used for sharing.'
     publish: true
   feature-downloads:
     path: components/feature/downloads
@@ -411,5 +407,5 @@ projects:
   tooling-glean-gradle:
     path: components/tooling/glean-gradle-plugin
     description: 'A Gradle plugin to generate code for Glean metrics.'
-    publish: false
+    publish: true
     artifact-type: jar
