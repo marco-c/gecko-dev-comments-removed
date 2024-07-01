@@ -5,12 +5,14 @@
 package org.mozilla.focus.activity;
 
 import android.content.Context;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.espresso.IdlingRegistry;
 import android.support.test.espresso.web.webdriver.Locator;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
+import android.support.test.uiautomator.By;
+import android.support.test.uiautomator.Until;
 
 import org.junit.After;
 import org.junit.Before;
@@ -18,6 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.R;
+import org.mozilla.focus.helpers.SessionLoadedIdlingResource;
 import org.mozilla.focus.helpers.TestHelper;
 import org.mozilla.focus.session.SessionManager;
 import org.mozilla.focus.utils.AppConstants;
@@ -36,6 +39,7 @@ import static android.support.test.espresso.web.assertion.WebViewAssertions.webM
 import static android.support.test.espresso.web.sugar.Web.onWebView;
 import static android.support.test.espresso.web.webdriver.DriverAtoms.findElement;
 import static android.support.test.espresso.web.webdriver.DriverAtoms.getText;
+import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -66,7 +70,8 @@ public class MultitaskingTest {
                     .getApplicationContext();
 
             
-            org.junit.Assume.assumeTrue(!AppConstants.INSTANCE.isGeckoBuild() && !AppConstants.INSTANCE.isKlarBuild());
+            org.junit.Assume.assumeFalse(AppConstants.INSTANCE.isGeckoBuild());
+            org.junit.Assume.assumeFalse(AppConstants.INSTANCE.isKlarBuild());
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()
@@ -76,6 +81,7 @@ public class MultitaskingTest {
     };
 
     private MockWebServer webServer;
+    private SessionLoadedIdlingResource loadingIdlingResource;
 
     @Before
     public void startWebServer() throws Exception {
@@ -87,10 +93,15 @@ public class MultitaskingTest {
         webServer.enqueue(createMockResponseFromAsset("tab2.html"));
 
         webServer.start();
+
+        loadingIdlingResource = new SessionLoadedIdlingResource();
+        IdlingRegistry.getInstance().register(loadingIdlingResource);
     }
 
     @After
     public void stopWebServer() throws Exception {
+        IdlingRegistry.getInstance().unregister(loadingIdlingResource);
+        mActivityTestRule.getActivity().finishAndRemoveTask();
         webServer.shutdown();
     }
 
@@ -99,28 +110,25 @@ public class MultitaskingTest {
         {
             
             TestHelper.inlineAutocompleteEditText.waitForExists(TestHelper.waitingTime);
-
             navigateToMockWebServer(webServer, "tab1.html");
 
             checkTabIsLoaded("Tab 1");
 
             onFloatingEraseButton()
                     .check(matches(isDisplayed()));
-
             onFloatingTabsButton()
                     .check(matches(not(isDisplayed())));
         }
 
         {
             
-
             longPressLink("tab2", "Tab 2", "tab2.html");
-
             openInNewTab();
 
+            
+            checkTabIsLoaded("Tab 1");
             onFloatingEraseButton()
                     .check(matches(not(isDisplayed())));
-
             onFloatingTabsButton()
                     .check(matches(isDisplayed()))
                     .check(matches(withContentDescription(is("Tabs open: 2"))));
@@ -130,12 +138,12 @@ public class MultitaskingTest {
             
 
             longPressLink("tab3", "Tab 3", "tab3.html");
-
             openInNewTab();
 
+            
+            checkTabIsLoaded("Tab 1");
             onFloatingEraseButton()
                     .check(matches(not(isDisplayed())));
-
             onFloatingTabsButton()
                     .check(matches(isDisplayed()))
                     .check(matches(withContentDescription(is("Tabs open: 3"))));
@@ -143,34 +151,29 @@ public class MultitaskingTest {
 
         {
             
-
             onFloatingTabsButton()
                     .perform(click());
 
-            final String expectedUrl = webServer.getHostName() + ":" + webServer.getPort() + "/tab2.html";
-
-            onView(withText(expectedUrl))
+            
+            onView(withText(webServer.getHostName() + "/tab2.html"))
                     .perform(click());
 
-            onWebView()
-                    .withElement(findElement(Locator.ID, "content"))
-                    .check(webMatches(getText(), equalTo("Tab 2")));
+            checkTabIsLoaded("Tab 2");
         }
 
         {
             
-
             onFloatingTabsButton()
                     .perform(click());
 
             onView(withText(R.string.tabs_tray_action_erase))
+                    .check(matches(isDisplayed()))
                     .perform(click());
 
+            
+            assertTrue(TestHelper.inlineAutocompleteEditText.waitForExists(TestHelper.waitingTime));
             assertFalse(SessionManager.getInstance().hasSession());
         }
-
-
-        SystemClock.sleep(5000);
     }
 
     private void checkTabIsLoaded(String title) {
@@ -197,5 +200,14 @@ public class MultitaskingTest {
     private void openInNewTab() {
         onView(withText(R.string.contextmenu_open_in_new_tab))
                 .perform(click());
+        checkNewTabPopup();
+    }
+
+    private void checkNewTabPopup() {
+        TestHelper.mDevice.wait(Until.findObject(
+                By.res(TestHelper.getAppName(), "snackbar_text")), 5000);
+
+        TestHelper.mDevice.wait(Until.gone(
+                By.res(TestHelper.getAppName(), "snackbar_text")), 5000);
     }
 }
