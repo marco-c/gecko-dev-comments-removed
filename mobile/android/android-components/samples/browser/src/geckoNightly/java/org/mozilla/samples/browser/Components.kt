@@ -5,8 +5,8 @@ package org.mozilla.samples.browser
 
 import android.content.Context
 import mozilla.components.browser.engine.gecko.GeckoEngine
-import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.engine.gecko.glean.GeckoAdapter
+import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.webcompat.WebCompatFeature
 import mozilla.components.support.base.log.Log
@@ -19,7 +19,7 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
 class Components(private val applicationContext: Context) : DefaultComponents(applicationContext) {
     private val runtime by lazy {
         // Allow for exfiltrating Gecko metrics through the Glean SDK.
-        val builder = GeckoRuntimeSettings.Builder()
+        val builder = GeckoRuntimeSettings.Builder().aboutConfigEnabled(true)
         builder.telemetryDelegate(GeckoAdapter())
         GeckoRuntime.create(applicationContext, builder.build())
     }
