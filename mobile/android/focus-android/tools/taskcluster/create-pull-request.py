@@ -20,6 +20,11 @@ if len(sys.argv) != 2:
 	print "Usage", sys.argv[0], "BRANCH"
 	exit(1)
 
+
+secrets = taskcluster.Secrets({'baseUrl': 'http://taskcluster/secrets/v1'})
+data = secrets.get('project/focus/github')
+token = data['secret']['botAccountToken']
+
 BRANCH = sys.argv[1]
 OWNER = 'mozilla-mobile'
 USER = 'MickeyMoz'
@@ -27,11 +32,6 @@ REPO = 'focus-android'
 BASE = 'master'
 HEAD = "MickeyMoz:%s" % BRANCH
 URL = "https://%s:%s@github.com/%s/%s/" % (USER, token, USER, REPO)
-
-
-secrets = taskcluster.Secrets({'baseUrl': 'http://taskcluster/secrets/v1'})
-data = secrets.get('project/focus/github')
-token = data['secret']['botAccountToken']
 
 
 for request in pull_requests:
