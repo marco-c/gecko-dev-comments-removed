@@ -6,6 +6,8 @@ package org.mozilla.focus.webkit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.support.annotation.WorkerThread;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -16,10 +18,36 @@ import org.mozilla.focus.webkit.matcher.UrlMatcher;
 public class TrackingProtectionWebViewClient extends WebViewClient {
 
     private String currentPageURL;
-    private final UrlMatcher matcher;
+
+    private static volatile UrlMatcher MATCHER;
+
+    public static void triggerPreload(final Context context) {
+        
+        
+        
+        if (MATCHER == null) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... voids) {
+                    
+                    getMatcher(context);
+                    return null;
+                }
+            }.execute();
+        }
+    }
+
+    @WorkerThread private static synchronized UrlMatcher getMatcher(final Context context) {
+        if (MATCHER == null) {
+            MATCHER = new UrlMatcher(context, R.raw.blocklist, R.raw.entitylist);
+        }
+        return MATCHER;
+    }
 
     public TrackingProtectionWebViewClient(final Context context) {
-        matcher = new UrlMatcher(context, R.raw.blocklist, R.raw.entitylist);
+        
+        
+        triggerPreload(context);
     }
 
     
@@ -27,6 +55,10 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
 
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+        
+        
+        final UrlMatcher matcher = getMatcher(view.getContext());
+
         if (matcher.matches(url, currentPageURL)) {
             return new WebResourceResponse(null, null, null);
         }

@@ -23,6 +23,10 @@ import org.mozilla.gecko.GeckoView;
 
 
 public class WebViewProvider {
+    public static void preload(final Context context) {
+        
+    }
+
     public static View create(Context context, AttributeSet attrs) {
         final GeckoView geckoView = new GeckoWebView(context, attrs);
 

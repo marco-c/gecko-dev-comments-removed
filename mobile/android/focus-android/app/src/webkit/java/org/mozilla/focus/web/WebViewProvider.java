@@ -20,6 +20,15 @@ import org.mozilla.focus.webkit.TrackingProtectionWebViewClient;
 
 
 public class WebViewProvider {
+    
+
+
+
+
+    public static void preload(final Context context) {
+        TrackingProtectionWebViewClient.triggerPreload(context);
+    }
+
     public static View create(Context context, AttributeSet attrs) {
         final WebkitView webkitView = new WebkitView(context, attrs);
 
