@@ -64,7 +64,7 @@ this.pictureInPictureChild = class extends ExtensionAPI {
           
           
           if (AppConstants.platform == "android") {
-            return {};
+            return Cu.cloneInto({}, context.cloneScope);
           }
 
           return Cu.cloneInto(TOGGLE_POLICIES, context.cloneScope);

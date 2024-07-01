@@ -464,28 +464,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1610370",
-    platform: "android",
-    domain: "answers.yahoo.com",
-    bug: "1610370",
-    config: {
-      matches: ["https://answers.yahoo.com/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Mobile Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1595215",
     platform: "android",
     domain: "uniqlo.com",
@@ -612,6 +590,33 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["https://*.dominos.ch/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+
+
+    id: "bug1563839",
+    platform: "all",
+    domain: "santanderbank.com",
+    bug: "1563839",
+    config: {
+      matches: [
+        "*://*.bancosantander.es*",
+        "*://*.santander.co.uk/*",
+        "*://bob.santanderbank.com/*",
+        "*://rolb.santanderbank.com/*",
+      ],
+      uaTransformer: originalUA => {
+        return originalUA.replace("Gecko", "like Gecko");
       },
     },
   },
