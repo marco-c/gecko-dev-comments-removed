@@ -321,7 +321,7 @@ public class InlineAutocompleteEditText extends android.support.v7.widget.AppCom
 
 
 
-    public final void onAutocomplete(final AutocompleteResult result) {
+    public void onAutocomplete(final AutocompleteResult result) {
         
         
         if (mDiscardAutoCompleteResult) {
