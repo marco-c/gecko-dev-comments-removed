@@ -12,12 +12,6 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **feature-awesomebar**
-  *  ⚠️ **This is a breaking change**: Refactored component to use `browser-state` instead of `browser-session`. Feature and `SuggestionProvider` implementations may require a `BrowserStore` instance instead of a `SessionManager` now.
-
-* **feature-intent**
-  * ⚠️ **This is a breaking change**: Removed `IntentProcessor.matches()` method from interface. Calling `process()` and examining the boolean return value is enough to know whether an `Intent` matched.
-
 * **feature-downloads**
   * Fixed APK downloads not prompting to install when the notification is clicked.
 
@@ -28,12 +22,9 @@ permalink: /changelog/
 
 * **feature-accounts-push**
   * Add known prefix to FxA push scope.
-
-* **concept-storage**
-  * New interface: `LoginsStorage`, describes a logins storage. A slightly cleaned-up version of what was in the `service-sync-logins`.
-
-* **service-sync-logins**
-  * ⚠️ **This is a breaking change**: Refactored `AsyncLoginsStorage`, which is now called `SyncableLoginsStorage`. New class caches the db connection, and removes lock/unlock operations from the public API.
+  
+* **browser-toolbar**
+  * Add the possibility to listen to menu dismissal through `setMenuDismissAction` in `DisplayToolbar`
 
 # 34.0.0
 
@@ -74,7 +65,6 @@ permalink: /changelog/
 * **concept-engine**
   * ⚠️ **This is a breaking change**: remove deprecated GeckoView setting `allowAutoplayMedia`
     * This should now be controlled for individual sites via `SitePermissionsRules`
-  * Fixed a bug that would cause `TrackingProtectionPolicyForSessionTypes` to lose some information during transformations.
 
 * **feature-downloads**
   * ⚠️ **This is a breaking change**: `customTabId` is renamed to `tabId`.
