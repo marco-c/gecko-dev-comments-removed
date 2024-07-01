@@ -12,6 +12,16 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-customtabs**
+  * Now the color of the tracking protection icon adapts to color of the toolbar.
+
+* **browser-toolbar**
+  * Added a way to customize the color of the tracking protection icon via BrowserToolbar.
+  ```kotlin
+  val toolbar = BrowserToolbar(context)
+  toolbar.trackingProtectionColor = Color.BLUE
+  ``
+
 * **All components**
   * Increased `androidx.browser` version to `1.2.0-alpha07`.
 
@@ -26,6 +36,9 @@ permalink: /changelog/
 
 * **support-webextensions**
   * 🆕 New component containing building blocks for features implemented as web extensions.
+
+* **lib-push-amazon**
+  * Fixed usage of cache version of registration ID in situations when app data is deleted.
 
 # 13.0.0
 
@@ -56,6 +69,9 @@ permalink: /changelog/
 
 * **feature-tabs**
   * ⚠️ **This is a breaking change**: Methods that have been accepting a parent `Session` parameter now expect the parent id (`String`).
+  
+* **browser-menu**
+   * Adds the ability to create a BrowserMenuImageSwitch, a BrowserMenuSwitch with icon
 
 * **feature-accounts**
   * Added ability to configure FxaWebChannelFeature with a set of `FxaCapability`. Currently there's just one: `CHOOSE_WHAT_TO_SYNC`. It defaults to `false`, so if you want "choose what to sync" selection during auth flows, please specify it.
