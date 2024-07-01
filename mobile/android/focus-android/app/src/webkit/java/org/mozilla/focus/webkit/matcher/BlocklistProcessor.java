@@ -35,6 +35,20 @@ public class BlocklistProcessor {
         IGNORED_CATEGORIES = Collections.unmodifiableSet(ignored);
     }
 
+    
+
+
+    private static final Set<String> DISCONNECT_MOVED;
+
+    static {
+        final Set<String> moved = new HashSet<>();
+
+        moved.add("Facebook");
+        moved.add("Twitter");
+
+        DISCONNECT_MOVED = Collections.unmodifiableSet(moved);
+    }
+
     public static Map<String, Trie> loadCategoryMap(final JsonReader reader) throws IOException {
         final Map<String, Trie> categoryMap = new HashMap<>(5);
 
@@ -59,19 +73,27 @@ public class BlocklistProcessor {
     }
 
     private interface UrlListCallback {
-        void put(final String url);
+        void put(final String url, final String siteOwner);
     }
 
     private static class ListCallback implements UrlListCallback {
         final List<String> list;
+        final Set<String> desiredOwners;
 
-        ListCallback(final List<String> list) {
+        
+
+
+
+        ListCallback(final List<String> list, final Set<String> desiredOwners) {
             this.list = list;
+            this.desiredOwners = desiredOwners;
         }
 
         @Override
-        public void put(final String url) {
-            list.add(url);
+        public void put(final String url, final String siteOwner) {
+            if (desiredOwners.contains(siteOwner)) {
+                list.add(url);
+            }
         }
     }
 
@@ -83,7 +105,7 @@ public class BlocklistProcessor {
         }
 
         @Override
-        public void put(String url) {
+        public void put(final String url, final String siteOwner) {
             trie.put(FocusString.create(url).reverse());
         }
     }
@@ -100,7 +122,7 @@ public class BlocklistProcessor {
                 reader.skipValue();
             } else if (categoryName.equals(DISCONNECT)) {
                 
-                ListCallback callback = new ListCallback(socialOverrides);
+                ListCallback callback = new ListCallback(socialOverrides, DISCONNECT_MOVED);
                 extractCategory(reader, callback);
             } else {
                 final Trie categoryTrie = Trie.createRootNode();
@@ -137,7 +159,7 @@ public class BlocklistProcessor {
     private static void extractSite(final JsonReader reader, final UrlListCallback callback) throws IOException {
         reader.beginObject();
 
-        final String siteName = reader.nextName();
+        final String siteOwner = reader.nextName();
         {
             reader.beginObject();
 
@@ -153,7 +175,7 @@ public class BlocklistProcessor {
 
                     while (reader.hasNext()) {
                         final String blockURL = reader.nextString();
-                        callback.put(blockURL);
+                        callback.put(blockURL, siteOwner);
                     }
 
                     reader.endArray();
