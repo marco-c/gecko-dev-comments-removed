@@ -262,6 +262,15 @@ class ReaderView {
 }
 
 
+let port = browser.runtime.connectNative("mozacReaderview");
+port.postMessage(`Hello from ReaderView on page ${location.hostname}`);
+
+port.onMessage.addListener((response) => {
+  console.log(`Received: ${JSON.stringify(response)} on page ${location.hostname}`);
+});
+
+
+
 
 if (ReaderView.isReaderable() && location.hostname.endsWith("blog.mozilla.org")) {
   
