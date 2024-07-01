@@ -6,20 +6,20 @@ internal object GeckoVersions {
     /**
      * GeckoView Nightly Version.
      */
-    const val nightly_version = "79.0.20200629094229"
+    const val nightly_version = "79.0.20200628092814"
 
     /**
      * GeckoView Beta Version.
      */
-    const val beta_version = "79.0.20200629224419"
+    const val beta_version = "78.0.20200619002543"
 
     /**
      * GeckoView Release Version.
      */
-    const val release_version = "78.0.20200625152958"
+    const val release_version = "77.0.20200603183750"
 }
 
-@Suppress("MaxLineLength")
+@Suppress("Unused", "MaxLineLength")
 object Gecko {
     const val geckoview_nightly = "org.mozilla.geckoview:geckoview-nightly:${GeckoVersions.nightly_version}"
     const val geckoview_beta = "org.mozilla.geckoview:geckoview-beta:${GeckoVersions.beta_version}"
