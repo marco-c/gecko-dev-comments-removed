@@ -33,7 +33,6 @@ public final class AppConstants {
     }
 
     public static boolean supportsDownloadingFiles() {
-        
-        return isDevBuild();
+        return true;
     }
 }
