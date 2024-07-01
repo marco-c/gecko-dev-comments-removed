@@ -639,25 +639,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1727100",
-    platform: "desktop",
-    domain: "slack.com",
-    bug: "1727100",
-    config: {
-      matches: ["*://app.slack.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA("95.0.4638.54");
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1738317",
     platform: "android",
     domain: "vmos.cn",
@@ -808,6 +789,35 @@ const AVAILABLE_UA_OVERRIDES = [
         return originalUA
           .replace("Firefox/100.0", "Firefox/96.0")
           .replace("rv:100.0", "rv:96.0");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1751232",
+    platform: "android",
+    domain: "Sites with desktop layout for Android 12",
+    bug: "1751232",
+    config: {
+      matches: [
+        "*://*.dw.com/*",
+        "*://*.abc10.com/*",
+        "*://*.wnep.com/*",
+        "*://*.dn.se/*",
+        "*://*.dailymail.co.uk/*",
+      ],
+      uaTransformer: originalUA => {
+        if (!originalUA.includes("Android 12;")) {
+          return originalUA;
+        }
+
+        return originalUA.replace("Android 12;", "Android 12.0;");
       },
     },
   },

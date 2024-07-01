@@ -10,17 +10,10 @@
 
 
 
-
-
-
-
-
 document.addEventListener("DOMContentLoaded", () => {
   
-  for (const elem of document.querySelectorAll(
-    ".ml-directions-time[disabled]"
-  )) {
-    elem.disabled = false;
+  for (const elem of document.querySelectorAll(".ml-icon-access-time")) {
+    elem.parentNode.disabled = false;
   }
   
   const moOptions = {
@@ -31,11 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const mo = new MutationObserver(function(records) {
     let restore = false;
     for (const { target } of records) {
-      if (target.classList.contains("ml-directions-time")) {
+      if (target.querySelector(".ml-icon-access-time")) {
         if (!restore) {
           restore = true;
           mo.disconnect();
         }
+
         target.disabled = false;
       }
     }
@@ -44,39 +38,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   mo.observe(document.body, moOptions);
-});
-
-
-const originalValueAsNumberGetter = Object.getOwnPropertyDescriptor(
-  HTMLInputElement.prototype.wrappedJSObject,
-  "valueAsNumber"
-).get;
-Object.defineProperty(
-  HTMLInputElement.prototype.wrappedJSObject,
-  "valueAsNumber",
-  {
-    configurable: true,
-    enumerable: true,
-    get: originalValueAsNumberGetter,
-    set: exportFunction(function(v) {
-      if (this.type === "datetime-local" && v) {
-        const d = new Date(v);
-        d.setSeconds(0);
-        d.setMilliseconds(0);
-        v = d.getTime();
-      }
-      this.valueAsNumber = v;
-    }, window),
-  }
-);
-
-
-
-
-
-
-document.addEventListener("focusin", ({ target }) => {
-  if (target.id === "ml-route-options-time-selector-time-input") {
-    target.blur();
-  }
 });

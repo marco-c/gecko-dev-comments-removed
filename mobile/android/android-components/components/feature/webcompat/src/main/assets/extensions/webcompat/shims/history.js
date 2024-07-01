@@ -12,11 +12,13 @@
 
 
 
-const STORAGE_ACCESS_ORIGIN = "https://hamropatro.firebaseapp.com";
 
 console.warn(
-  `When using oauth, Firefox calls the Storage Access API on behalf of the site. See https://bugzilla.mozilla.org/show_bug.cgi?id=1660446 for details.`
+  `When using oauth, Firefox calls the Storage Access API on behalf of the site. See https://bugzilla.mozilla.org/show_bug.cgi?id=1624853 for details.`
 );
+
+
+const STORAGE_ACCESS_ORIGIN = "https://sp.auth.adobe.com";
 
 document.documentElement.addEventListener(
   "click",
@@ -26,13 +28,13 @@ document.documentElement.addEventListener(
       return;
     }
 
-    const button = target.closest("button");
+    const button = target.closest("a");
     if (!button) {
       return;
     }
 
-    const buttonText = button.innerText?.toLowerCase();
-    if (buttonText?.includes("facebook") || buttonText?.includes("google")) {
+    const buttonLink = button.href;
+    if (buttonLink?.startsWith("https://www.history.com/mvpd-auth")) {
       button.disabled = true;
       button.style.opacity = 0.5;
       e.stopPropagation();
