@@ -12,17 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **browser-engine-gecko-nightly** and **browser-engine-gecko-beta**
-  * The `TrackingProtectionPolicy.select` function now allows you to indicate if `strictSocialTrackingProtection` should be activated or not. When it is active blocks trackers from the social-tracking-protection-digest256 list, for more details take a look at the [issue #4320](https://github.com/mozilla-mobile/android-components/issues/4320)
-  ```kotlin
-  val policy = TrackingProtectionPolicy.select(
-    strictSocialTrackingProtection = true
-  )
-  ```
-  
 * **context-menu**
   * Exposed title tag from GV in HitResult. Fixes [#1444]. If title is null or blank the src value is returned for title.
-
+  
 * **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
   * **Merge day!**
     * `browser-engine-gecko-release`: GeckoView 69.0
@@ -61,16 +53,12 @@ permalink: /changelog/
   * `begin*` OAuthAccount methods now return an `AuthFlowUrl`, which encapsulates an OAuth state identifier.
   * `AccountObserver:onAuthenticated` method now has `authType` parameter (instead of `newAccount`), which describes in detail what caused an authentication.
   * `GlobalSyncableStoreProvider.configureStore` now takes a pair of `Pair<SyncEngine, SyncableStore>`, instead of allowing arbitrary string names for engines.
-  * `GlobalSyncableStoreProvider.getStore` is no longer part of the public API.
+  * `GlobalSyncableStoreProvider.getStore` is no longer part of the public API.  
 
-* **feature-push**
-  * Added more logging into `AutoPushFeature` to aid in debugging in release builds.
-
-* **support-ktx**
-  * Added variant of `Flow.ifChanged()` that takes a mapping function in order to filter items where the mapped value has not changed.
-
-* **feature-pwa**
-  * Adds the ability to create a basic shortcut with a custom label
+* **support-utils**
+  * `Intent.asPendingIntentForLaunchService(Context)` extension method
+  to create pending intent for service that will play nicely with
+  background execution limitations introduced in Android O.
 
 # 11.0.0
 
@@ -108,9 +96,6 @@ permalink: /changelog/
 
 * **browser-session**, **feature-intent**
   * ⚠️ **This is a breaking change**: Moved `Intent` related code from `browser-session` to `feature-intent`.
-
-* **feature-media**
-  * The `Intent` launched from the media notification now has its action set to `MediaFeature.ACTION_SWITCH_TAB`. In addition to that the extra `MediaFeature.EXTRA_TAB_ID` contains the id of the tab the media notification is displayed for.
 
 # 10.0.1
 
