@@ -56,6 +56,10 @@ public class WebViewProvider {
 
         
         settings.setDisplayZoomControls(false);
+
+        
+        
+        settings.setAllowFileAccess(false);
     }
 
     private static class WebkitView extends NestedWebView implements IWebView {
