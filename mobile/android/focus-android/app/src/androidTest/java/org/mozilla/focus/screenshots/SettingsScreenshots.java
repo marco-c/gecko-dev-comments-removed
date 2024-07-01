@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.activity.screenshots;
+package org.mozilla.focus.screenshots;
 
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;

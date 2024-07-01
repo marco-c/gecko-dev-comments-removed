@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.activity.screenshots;
+package org.mozilla.focus.screenshots;
 
 import android.os.Build;
 import android.support.test.espresso.web.webdriver.Locator;

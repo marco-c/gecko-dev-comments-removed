@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.activity.screenshots;
+package org.mozilla.focus.screenshots;
 
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
