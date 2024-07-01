@@ -113,6 +113,8 @@ public interface IWebView {
 
     void saveWebViewState(@NonNull Session session);
 
+    void exitFullscreen();
+
     
 
 
