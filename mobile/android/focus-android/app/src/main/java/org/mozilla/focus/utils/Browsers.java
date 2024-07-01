@@ -76,7 +76,7 @@ public class Browsers {
 
         final Uri uri = Uri.parse(url);
 
-        final Map<String, ActivityInfo> browsers = resolveBrowsers(packageManager, uri);
+        final Map<String, ActivityInfo> browsers = resolveBrowsers(context, packageManager, uri);
 
         
         
@@ -102,7 +102,7 @@ public class Browsers {
         return null;
     }
 
-    private Map<String, ActivityInfo> resolveBrowsers(PackageManager packageManager, @NonNull Uri uri) {
+    private Map<String, ActivityInfo> resolveBrowsers(Context context, PackageManager packageManager, @NonNull Uri uri) {
         final Map<String, ActivityInfo> browsers = new HashMap<>();
 
         final Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -111,7 +111,9 @@ public class Browsers {
         final List<ResolveInfo> infos = packageManager.queryIntentActivities(intent, 0);
 
         for (ResolveInfo info : infos) {
-            browsers.put(info.activityInfo.packageName, info.activityInfo);
+            if (!context.getPackageName().equals(info.activityInfo.packageName)) {
+                browsers.put(info.activityInfo.packageName, info.activityInfo);
+            }
         }
 
         return browsers;
@@ -190,7 +192,7 @@ public class Browsers {
 
 
     public boolean hasMultipleThirdPartyBrowsers(Context context) {
-        if (browsers.size() > 2) {
+        if (browsers.size() > 1) {
             
             return true;
         }
