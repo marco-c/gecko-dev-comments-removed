@@ -50,6 +50,9 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
         
         
         
+        
+        
+        
         if (request.isForMainFrame()) {
 
             
@@ -91,6 +94,9 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
     public void onPageFinished(WebView view, final String url) {
         if (callback != null) {
             callback.onPageFinished(view.getCertificate() != null);
+            
+            
+            callback.onURLChanged(view.getUrl());
         }
         super.onPageFinished(view, url);
     }
