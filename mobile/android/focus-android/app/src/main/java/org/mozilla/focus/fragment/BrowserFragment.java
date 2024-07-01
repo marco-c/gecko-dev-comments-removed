@@ -530,9 +530,11 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             if (isStartedFromExternalApp()) {
                 
                 
+                erase();
+
                 
-                BrowsingSession.getInstance().stop();
-                getActivity().finish();
+                
+                getActivity().finishAndRemoveTask();
             } else {
                 
                 eraseAndShowHomeScreen();
