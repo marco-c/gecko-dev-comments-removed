@@ -1,0 +1,169 @@
+
+
+
+
+package org.mozilla.focus.utils
+
+import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
+import android.net.Uri
+import android.support.annotation.StringRes
+import android.support.v7.app.AlertDialog
+
+import org.mozilla.focus.R
+import org.mozilla.focus.web.IWebView
+
+import java.net.URISyntaxException
+
+object IntentUtils {
+
+    private val MARKET_INTENT_URI_PACKAGE_PREFIX = "market://details?id="
+    private val EXTRA_BROWSER_FALLBACK_URL = "browser_fallback_url"
+
+    
+
+
+
+
+
+
+
+
+
+
+    fun handleExternalUri(context: Context, webView: IWebView, uri: String): Boolean {
+        
+        val intent: Intent
+        try {
+            intent = Intent.parseUri(uri, 0)
+        } catch (e: URISyntaxException) {
+            
+            
+            return false
+        }
+
+        
+        intent.addCategory(Intent.CATEGORY_BROWSABLE)
+
+        val packageManager = context.packageManager
+
+        
+        
+        
+        val matchingActivities = packageManager.queryIntentActivities(intent, 0)
+
+        if (matchingActivities.size == 0) {
+            return handleUnsupportedLink(context, webView, intent)
+        } else if (matchingActivities.size == 1) {
+            val info: ResolveInfo
+
+            if (matchingActivities.size == 1) {
+                info = matchingActivities[0]
+            } else {
+                
+                
+                
+                
+                info = packageManager.resolveActivity(intent, 0)
+            }
+            val externalAppTitle = info.loadLabel(packageManager)
+
+            showConfirmationDialog(context, intent, context.getString(R.string.external_app_prompt_title), R.string.external_app_prompt, externalAppTitle)
+            return true
+        } else { 
+            
+            
+            
+            
+            
+            val chooserTitle = context.getString(R.string.external_multiple_apps_matched_exit)
+            val chooserIntent = Intent.createChooser(intent, chooserTitle)
+            context.startActivity(chooserIntent)
+
+            return true
+        }
+    }
+
+    private fun handleUnsupportedLink(context: Context, webView: IWebView, intent: Intent): Boolean {
+        val fallbackUrl = intent.getStringExtra(EXTRA_BROWSER_FALLBACK_URL)
+        if (fallbackUrl != null) {
+            webView.loadUrl(fallbackUrl)
+            return true
+        }
+
+        if (intent.getPackage() != null) {
+            
+            val marketUri = MARKET_INTENT_URI_PACKAGE_PREFIX + intent.getPackage()!!
+            val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse(marketUri))
+            marketIntent.addCategory(Intent.CATEGORY_BROWSABLE)
+
+            val packageManager = context.packageManager
+            val info = packageManager.resolveActivity(marketIntent, 0)
+            val marketTitle = info.loadLabel(packageManager)
+            showConfirmationDialog(context, marketIntent,
+                    context.getString(R.string.external_app_prompt_no_app_title),
+                    R.string.external_app_prompt_no_app, marketTitle)
+
+            
+            return true
+        }
+
+        
+        
+        return false
+    }
+
+    
+    
+    
+    private fun showConfirmationDialog(context: Context, targetIntent: Intent, title: String, @StringRes messageResource: Int, param: CharSequence) {
+        val builder = AlertDialog.Builder(context, R.style.DialogStyle)
+
+        val ourAppName = context.getString(R.string.app_name)
+
+        builder.setTitle(title)
+
+        builder.setMessage(context.resources.getString(messageResource, ourAppName, param))
+
+        builder.setPositiveButton(R.string.action_ok) { _, _ -> context.startActivity(targetIntent) }
+
+        builder.setNegativeButton(R.string.action_cancel) { dialog, _-> dialog.dismiss() }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        builder.show()
+    }
+
+    fun activitiesFoundForIntent(context: Context, intent: Intent?): Boolean {
+        if (intent == null) {
+            return false
+        }
+        val packageManager = context.packageManager
+        val resolveInfoList = packageManager.queryIntentActivities(intent, 0)
+        return resolveInfoList.size > 0
+    }
+
+    fun createOpenFileIntent(uriFile: Uri?, mimeType: String?): Intent? {
+        if (uriFile == null || mimeType == null) {
+            return null
+        }
+        val openFileIntent = Intent(Intent.ACTION_VIEW)
+        openFileIntent.setDataAndType(uriFile, mimeType)
+        openFileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return openFileIntent
+    }
+}
