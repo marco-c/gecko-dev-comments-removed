@@ -224,7 +224,7 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
             connection.setReadTimeout(SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS);
 
             
-            return connection.getResponseCode() < 400;
+            return connection.getResponseCode() < 300;
 
         } catch (final IOException e) {
             
