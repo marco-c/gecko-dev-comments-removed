@@ -8,7 +8,9 @@ import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitAll
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.concept.engine.Engine
+import mozilla.components.concept.engine.webextension.EnableSource
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.feature.addons.update.AddonUpdater
@@ -65,8 +67,7 @@ class AddonManager(
 
             // Get all available/supported addons from provider and add state if
             // installed. NB: We're keeping only the translations of the default
-            // lang and the en-US fallback.
-            val locales = listOf(Locale.getDefault().language, "en-US")
+            val locales = listOf(Locale.getDefault().language)
             val supportedAddons = addonsProvider.getAvailableAddons()
                 .map { addon -> addon.filterTranslations(locales) }
                 .map { addon ->
@@ -83,13 +84,12 @@ class AddonManager(
                 .filterValues { !it.isBuiltIn() }
                 .map { extensionEntry ->
                     val extension: WebExtension = extensionEntry.value
-                    val lang = Locale.getDefault().language
                     val name = extension.getMetadata()?.name ?: extension.id
                     val installedState =
                         extension.toInstalledState().copy(enabled = false, supported = false)
                     Addon(
                         id = extension.id,
-                        translatableName = mapOf(lang to name),
+                        translatableName = mapOf(Addon.DEFAULT_LOCALE to name),
                         siteUrl = extension.url,
                         installedState = installedState
                     )
@@ -113,19 +113,19 @@ class AddonManager(
         addon: Addon,
         onSuccess: ((Addon) -> Unit) = { },
         onError: ((String, Throwable) -> Unit) = { _, _ -> }
-    ) {
+    ): CancellableOperation {
 
         // Verify the add-on doesn't require blocked permissions
         // only available to built-in extensions
         BLOCKED_PERMISSIONS.forEach { blockedPermission ->
             if (addon.permissions.any { it.equals(blockedPermission, ignoreCase = true) }) {
                 onError(addon.id, IllegalArgumentException("Addon requires invalid permission $blockedPermission"))
-                return
+                return CancellableOperation.Noop()
             }
         }
 
         val pendingAction = addPendingAddonAction()
-        engine.installWebExtension(
+        return engine.installWebExtension(
             id = addon.id,
             url = addon.downloadUrl,
             onSuccess = { ext ->
@@ -178,11 +178,13 @@ class AddonManager(
      * Enables the provided [Addon].
      *
      * @param addon the [Addon] to enable.
+     * @param source [EnableSource] to indicate why the extension is enabled, default to EnableSource.USER.
      * @param onSuccess (optional) callback invoked with the enabled [Addon].
      * @param onError (optional) callback invoked if there was an error enabling
      */
     fun enableAddon(
         addon: Addon,
+        source: EnableSource = EnableSource.USER,
         onSuccess: ((Addon) -> Unit) = { },
         onError: ((Throwable) -> Unit) = { }
     ) {
@@ -195,6 +197,7 @@ class AddonManager(
         val pendingAction = addPendingAddonAction()
         engine.enableWebExtension(
             extension,
+            source = source,
             onSuccess = { ext ->
                 val enabledAddon = addon.copy(installedState = ext.toInstalledState())
                 completePendingAddonAction(pendingAction)
@@ -211,11 +214,13 @@ class AddonManager(
      * Disables the provided [Addon].
      *
      * @param addon the [Addon] to disable.
+     * @param source [EnableSource] to indicate why the addon is disabled, default to EnableSource.USER.
      * @param onSuccess (optional) callback invoked with the enabled [Addon].
      * @param onError (optional) callback invoked if there was an error enabling
      */
     fun disableAddon(
         addon: Addon,
+        source: EnableSource = EnableSource.USER,
         onSuccess: ((Addon) -> Unit) = { },
         onError: ((Throwable) -> Unit) = { }
     ) {
@@ -228,6 +233,7 @@ class AddonManager(
         val pendingAction = addPendingAddonAction()
         engine.disableWebExtension(
             extension,
+            source,
             onSuccess = { ext ->
                 val disabledAddon = addon.copy(installedState = ext.toInstalledState())
                 completePendingAddonAction(pendingAction)
