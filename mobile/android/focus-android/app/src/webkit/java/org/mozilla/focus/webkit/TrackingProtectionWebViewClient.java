@@ -84,8 +84,9 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
 
         
         
+        final Uri pageUri = Uri.parse(currentPageURL);
         if ((!request.isForMainFrame()) &&
-                matcher.matches(resourceUri, currentPageURL)) {
+                matcher.matches(resourceUri, pageUri)) {
             return new WebResourceResponse(null, null, null);
         }
 
