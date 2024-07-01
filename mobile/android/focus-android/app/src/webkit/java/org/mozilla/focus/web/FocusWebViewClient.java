@@ -10,6 +10,8 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.support.v4.util.ArrayMap;
 import android.webkit.SslErrorHandler;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -41,6 +43,39 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
     }
 
     @Override
+    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        
+        
+        
+        
+        
+        if (request.isForMainFrame()) {
+
+            
+            
+            
+            final String requestURL = request.getUrl().toString();
+            final boolean prefixMatches = requestURL.startsWith(currentPageURL);
+
+            final boolean exactMatch = prefixMatches && (currentPageURL.length() == requestURL.length());
+
+            final boolean matchExceptForTrailingSlash = (currentPageURL.length() == requestURL.length() + 1) &&
+                    (requestURL.charAt(requestURL.length() - 1) == '/');
+
+            if (exactMatch || matchExceptForTrailingSlash) {
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onURLChanged(currentPageURL);
+                    }
+                });
+            }
+        }
+
+        return super.shouldInterceptRequest(view, request);
+    }
+
+    @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         if (errorReceived) {
             
@@ -59,7 +94,7 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
     }
 
     @Override
-    public void onPageFinished(WebView view, String url) {
+    public void onPageFinished(WebView view, final String url) {
         if (callback != null) {
             callback.onPageFinished(view.getCertificate() != null);
         }
