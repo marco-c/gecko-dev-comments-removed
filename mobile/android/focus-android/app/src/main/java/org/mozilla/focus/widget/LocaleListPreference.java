@@ -9,7 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.AsyncTask;
-import android.preference.ListPreference;
+import android.support.v7.preference.ListPreference;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -61,6 +61,10 @@ public class LocaleListPreference extends ListPreference {
         languageCodeToNameMap.put("ay", "Aimara");
         languageCodeToNameMap.put("quc", "K'iche'");
         languageCodeToNameMap.put("tsz", "P'urhepecha");
+    }
+
+    public LocaleListPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     
@@ -138,9 +142,8 @@ public class LocaleListPreference extends ListPreference {
     }
 
     @Override
-    protected void onAttachedToActivity() {
-        super.onAttachedToActivity();
-
+    public void onAttached() {
+        super.onAttached();
         
         
         this.characterValidator = new CharacterValidator(" ");
@@ -297,9 +300,8 @@ public class LocaleListPreference extends ListPreference {
     }
 
     @Override
-    protected void onDialogClosed(boolean positiveResult) {
-        
-        super.onDialogClosed(positiveResult);
+    protected void onClick() {
+        super.onClick();
 
         
         
