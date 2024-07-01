@@ -98,6 +98,9 @@ public class MainActivity extends AppCompatActivity {
             
             
             pendingUrl = intent.getDataString();
+
+            
+            setIntent(intent);
         }
     }
 
