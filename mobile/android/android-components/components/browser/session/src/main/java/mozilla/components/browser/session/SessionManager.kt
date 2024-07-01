@@ -37,17 +37,14 @@ class SessionManager(
      * actions when an engine session is linked and unlinked.
      */
     class EngineSessionLinker(private val store: BrowserStore?) {
-        /**
-         * Links the provided [Session] and [EngineSession].
-         */
-        fun link(session: Session, engineSession: EngineSession, parentEngineSession: EngineSession?) {
+        fun link(session: Session, engineSession: EngineSession) {
             unlink(session)
 
             session.engineSessionHolder.apply {
                 this.engineSession = engineSession
                 this.engineObserver = EngineObserver(session, store).also { observer ->
                     engineSession.register(observer)
-                    engineSession.loadUrl(session.url, parentEngineSession)
+                    engineSession.loadUrl(session.url)
                 }
             }
 
@@ -134,6 +131,11 @@ class SessionManager(
     ) {
         // Add store to Session so that it can dispatch actions whenever it changes.
         session.store = store
+        if (parent != null) {
+            require(all.contains(parent)) { "The parent does not exist" }
+            session.parentId = parent.id
+        }
+
         if (session.isCustomTabSession()) {
             store?.syncDispatch(
                 CustomTabListAction.AddCustomTabAction(
