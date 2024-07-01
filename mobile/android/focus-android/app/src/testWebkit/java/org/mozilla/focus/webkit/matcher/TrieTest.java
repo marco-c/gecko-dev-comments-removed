@@ -26,15 +26,27 @@ public class TrieTest {
 
         
         assertNull(trie.findNode(FocusString.create("hell")));
-        assertNotNull(trie.findNode(FocusString.create("hellohello")));
+        assertNull(trie.findNode(FocusString.create("hellop")));
 
         trie.put(FocusString.create("hellohello"));
 
         
         assertNotNull(trie.findNode(FocusString.create("hello")));
         assertNotNull(trie.findNode(FocusString.create("hellohello")));
+
+        
         assertNull(trie.findNode(FocusString.create("hell")));
-        assertNull(trie.findNode(FocusString.create("hella")));
+        assertNull(trie.findNode(FocusString.create("hellop")));
+
+        
+        trie.put(FocusString.create("foo.com").reverse());
+
+        
+        assertNotNull(trie.findNode(FocusString.create("foo.com").reverse()));
+        assertNotNull(trie.findNode(FocusString.create("bar.foo.com").reverse()));
+        
+        assertNull(trie.findNode(FocusString.create("bar-foo.com").reverse()));
+        assertNull(trie.findNode(FocusString.create("oo.com").reverse()));
     }
 
     @Test
