@@ -83,8 +83,6 @@ abstract class AbstractMigrationService : Service() {
     private fun shutdown() {
         store.dispatch(MigrationAction.Completed)
 
-        emitCompletedFact()
-
         stopForeground(true)
 
         showMigrationCompleteNotification()
@@ -106,7 +104,9 @@ abstract class AbstractMigrationService : Service() {
         val channel: String = NOTIFICATION_CHANNEL_ID
         val titleRes: Int = R.string.mozac_support_migration_complete_notification_title
         val contentRes: Int = R.string.mozac_support_migration_complete_notification_text
-        val builder = getNotificationBuilder(titleRes, contentRes, channel)
+        val builder = getNotificationBuilder(titleRes, contentRes, channel).apply {
+            setAutoCancel(true)
+        }
 
         NotificationManagerCompat.from(this).notify(
             NOTIFICATION_TAG,
