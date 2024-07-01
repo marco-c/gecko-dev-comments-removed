@@ -29,6 +29,7 @@ import mozilla.components.support.rusthttp.RustHttpConfig
 import mozilla.components.support.rustlog.RustLog
 import mozilla.components.support.webextensions.WebExtensionSupport
 import org.mozilla.focus.biometrics.LockObserver
+import org.mozilla.focus.experiments.finishNimbusInitialization
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.navigation.StoreLink
 import org.mozilla.focus.nimbus.FocusNimbus
@@ -40,6 +41,7 @@ import org.mozilla.focus.utils.AdjustHelper
 import org.mozilla.focus.utils.AppConstants
 import kotlin.coroutines.CoroutineContext
 
+@Suppress("TooManyFunctions")
 open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope {
     private var job = Job()
     override val coroutineContext: CoroutineContext
@@ -61,7 +63,7 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
         components.crashReporter.install(this)
 
         if (isMainProcess()) {
-            initializeNativeComponents()
+            initializeNimbus()
 
             PreferenceManager.setDefaultValues(this, R.xml.settings, false)
 
@@ -71,6 +73,8 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
             TelemetryWrapper.init(this)
             components.metrics.initialize(this)
             FactsProcessor.initialize()
+            finishSetupMegazord()
+
             ProfilerMarkerFactProcessor.create { components.engine.profiler }.register()
 
             enableStrictMode()
@@ -102,21 +106,53 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
         
     }
 
+    protected open fun initializeNimbus() {
+        beginSetupMegazord()
+
+        
+        val nimbus = components.experiments
+        
+        FocusNimbus.initialize { nimbus }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private fun beginSetupMegazord() {
+        
+        
+
+        
+
+        
+        
+        
+        
+        RustLog.enable(components.crashReporter)
+    }
+
     @OptIn(DelicateCoroutinesApi::class) 
-    private fun initializeNativeComponents() {
+    private fun finishSetupMegazord() {
         GlobalScope.launch(Dispatchers.IO) {
             
             
             @Suppress("Deprecation")
             RustHttpConfig.setClient(lazy { components.client.unwrap() })
-            RustLog.enable(components.crashReporter)
+
             
             
-            
-            components.experiments.initialize()
-            
-            
-            FocusNimbus.initialize { components.experiments }
+            finishNimbusInitialization(components.experiments)
         }
     }
 
