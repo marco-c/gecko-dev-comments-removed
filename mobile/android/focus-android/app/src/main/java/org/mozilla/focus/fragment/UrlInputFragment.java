@@ -405,10 +405,15 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     }
 
     private void dismiss() {
+        
+        
+        
+        
+        
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .remove(this)
-                .commit();
+                .commitAllowingStateLoss();
     }
 
     @Override
