@@ -41,17 +41,17 @@ public class FirstrunCardView extends CardView {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         
         
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
+        final int availableWidth = MeasureSpec.getSize(widthMeasureSpec);
+        final int availableHeight = MeasureSpec.getSize(heightMeasureSpec);
 
         
         
+        final int measuredWidth = Math.min(availableWidth, maxWidth);
+        final int measuredHeight = Math.min(availableHeight, maxHeight);
 
-        widthMeasureSpec = MeasureSpec.makeMeasureSpec(
-                Math.min(width, maxWidth), MeasureSpec.AT_MOST);
-
-        heightMeasureSpec = MeasureSpec.makeMeasureSpec(
-                Math.min(height, maxHeight), MeasureSpec.AT_MOST);
+        
+        widthMeasureSpec = MeasureSpec.makeMeasureSpec(measuredWidth, MeasureSpec.EXACTLY);
+        heightMeasureSpec = MeasureSpec.makeMeasureSpec(measuredHeight, MeasureSpec.EXACTLY);
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
