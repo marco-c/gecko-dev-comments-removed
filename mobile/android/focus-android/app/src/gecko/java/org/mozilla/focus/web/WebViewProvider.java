@@ -45,6 +45,10 @@ public class WebViewProvider {
         return geckoView;
     }
 
+    public static void performCleanup(final Context context) {
+        
+    }
+
     public static class GeckoWebView extends NestedGeckoView implements IWebView {
         private Callback callback;
 

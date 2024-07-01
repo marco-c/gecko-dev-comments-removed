@@ -40,6 +40,16 @@ public class WebViewProvider {
         TrackingProtectionWebViewClient.triggerPreload(context);
     }
 
+    public static void performCleanup(final Context context) {
+        
+        
+        final WebkitView webView = new WebkitView(context, null);
+        
+        webView.cleanup();
+        
+        webView.destroy();
+    }
+
     public static View create(Context context, AttributeSet attrs) {
         final WebkitView webkitView = new WebkitView(context, attrs);
 
