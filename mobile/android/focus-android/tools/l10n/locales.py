@@ -121,7 +121,8 @@ ADDITIONAL_SCREENSHOT_LOCALES = [
 	"gl",
 	"bo",
 	"yua",
-	"hus"
+	"hus",
+	"ace"
 ]
 
 
