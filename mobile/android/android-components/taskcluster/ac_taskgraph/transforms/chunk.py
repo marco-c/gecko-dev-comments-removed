@@ -11,6 +11,8 @@ from taskgraph.util.treeherder import add_suffix
 from taskgraph import MAX_DEPENDENCIES
 
 
+MAX_REGULAR_DEPS = MAX_DEPENDENCIES - 1
+
 transforms = TransformSequence()
 
 
@@ -41,7 +43,7 @@ def add_dependencies(config, tasks):
 
         for dep_label in dep_labels:
             deps[dep_label] = dep_label
-            if len(deps) == MAX_DEPENDENCIES:
+            if len(deps) == MAX_REGULAR_DEPS:
                 chunked_task = build_task_definition(task, deps, count)
                 chunked_label = get_chunked_label(config, chunked_task)
                 chunked_labels[chunked_label] = chunked_label
