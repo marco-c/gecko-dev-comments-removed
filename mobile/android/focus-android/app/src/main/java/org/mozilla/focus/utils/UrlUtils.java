@@ -70,18 +70,7 @@ public class UrlUtils {
             
             
             
-            if (url.equals("http:") ||
-                    url.equals("https:") ||
-                    url.equals("file:")) {
-                return url;
-            }
-
-            if (BuildConfig.DEBUG) {
-                
-                throw new IllegalStateException("WebView is expected to always supply a valid URL");
-            } else {
-                return url;
-            }
+            return url;
         }
     }
 
