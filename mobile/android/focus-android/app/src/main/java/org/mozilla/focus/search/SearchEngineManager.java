@@ -241,6 +241,7 @@ public class SearchEngineManager extends BroadcastReceiver {
         try {
             for (String engine : engines) {
                 final InputStream engineInputStream = new ByteArrayInputStream(prefs.getString(engine, "").getBytes(StandardCharsets.UTF_8));
+                
                 customEngines.add(SearchEngineParser.load(engine, engineInputStream));
             }
         } catch (IOException e) {

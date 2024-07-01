@@ -61,6 +61,9 @@ import org.mozilla.telemetry.measurement.SettingsMeasurement;
                 
                 
                 value = SearchEngineManager.getInstance().getDefaultSearchEngine(context).getName();
+            } else if (SearchEngineManager.getInstance().isCustomSearchEngine((String) value, context)) {
+                
+                value = SearchEngineManager.ENGINE_TYPE_CUSTOM;
             }
             return value;
         }
