@@ -12,6 +12,8 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **service-accounts-push**
+  * Fixed a bug where the push subscription was incorrectly cached and caused some `GeneralError`s.
 
 # 37.0.0
 
@@ -51,10 +53,6 @@ permalink: /changelog/
 * **browser-menu**
   * Added `canPropagate` param to all `BrowserMenuHighlight`s, making it optional to be displayed in other components
   * Changed `BrowserMenuItem.getHighlight` to filter the highlights which should not propagate.
-
-* **feature-share**
-    * Changed primary key of RecentAppEntity to activityName instead of packageName
-      * ⚠️ **This is a breaking change**: all calls to app.packageName should now use app.activityName
 
 # 36.0.0
 
