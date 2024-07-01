@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.action.ViewActions.click;
 import static junit.framework.Assert.assertTrue;
+import static org.mozilla.focus.activity.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 
@@ -40,22 +41,17 @@ public class ShareDialogTest {
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()
-                    .putBoolean(FIRSTRUN_PREF, false)
+                    .putBoolean(FIRSTRUN_PREF, true)
                     .apply();
         }
     };
 
     @Test
     public void shareTest() throws InterruptedException, UiObjectNotFoundException {
-        final long waitingTime = TestHelper.waitingTime;
 
         UiObject shareBtn = TestHelper.mDevice.findObject(new UiSelector()
                 .resourceId("org.mozilla.focus.debug:id/share")
                 .enabled(true));
-
-        
-        TestHelper.firstViewBtn.waitForExists(waitingTime);
-        TestHelper.firstViewBtn.click();
 
         
         TestHelper.urlBar.waitForExists(waitingTime);

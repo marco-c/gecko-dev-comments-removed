@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.action.ViewActions.click;
 import static junit.framework.Assert.assertTrue;
+import static org.mozilla.focus.activity.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 
@@ -40,15 +41,13 @@ public class PageVisitTest {
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()
-                    .putBoolean(FIRSTRUN_PREF, false)
+                    .putBoolean(FIRSTRUN_PREF, true)
                     .apply();
         }
     };
 
     @Test
     public void visitPagesTest() throws InterruptedException, UiObjectNotFoundException {
-
-        long waitTime = TestHelper.waitingTime;
 
         
         UiObject rightsPartialText = TestHelper.mDevice.findObject(new UiSelector()
@@ -72,15 +71,11 @@ public class PageVisitTest {
                 .description("What is Firefox Focus for Android? - Mozilla Support Community"));
 
         
-        TestHelper.firstViewBtn.waitForExists(waitTime);
-        TestHelper.firstViewBtn.click();
-
-        
         TestHelper.menuButton.perform(click());
 
         
         TestHelper.RightsItem.click();
-        TestHelper.webView.waitForExists(waitTime);
+        TestHelper.webView.waitForExists(waitingTime);
         assertTrue(rightsHeading.exists());
         assertTrue(rightsPartialText.exists());
 
@@ -89,7 +84,7 @@ public class PageVisitTest {
         TestHelper.waitForIdle();
         TestHelper.menuButton.perform(click());
         TestHelper.AboutItem.click();
-        TestHelper.webView.waitForExists(waitTime);
+        TestHelper.webView.waitForExists(waitingTime);
         assertTrue(aboutHeading.exists());
         assertTrue(aboutPartialText.exists());
 
@@ -98,7 +93,7 @@ public class PageVisitTest {
         TestHelper.waitForIdle();
         TestHelper.menuButton.perform(click());
         TestHelper.HelpItem.click();
-        helpView.waitForExists(waitTime * 3);
+        helpView.waitForExists(waitingTime * 3);
         assertTrue(helpHeading.exists());
 
         
