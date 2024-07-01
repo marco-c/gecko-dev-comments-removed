@@ -4,22 +4,14 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 30.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v29.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/90?closed=1)
+# 29.0.0-SNAPSHOT (In Development)
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v28.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/89?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-
-# 29.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v28.0.0...v29.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/89?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v29.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v29.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v29.0.0/buildSrc/src/main/java/Config.kt)
 
 * **feature-error-pages**
   * ⚠️ **This is a breaking change**: ErrorResponse now has two data classes: Content (for data URI's) and Uri (for encoded URL's)
@@ -27,14 +19,9 @@ permalink: /changelog/
     * Return the corresponding ErrorResponse (ErrorResponse.Content or ErrorResponse.Uri) as ErrorResponse can no longer be directly instantiated.
   * Added support for loading images into error pages with `createUrlEncodedErrorPage`. These error pages load dynamically with javascript by parsing params in the URL
   * ⚠️ To use custom HTML & CSS with image error pages, resources **must** be located in the assets folder
-
-* **lib-crash**
-  * Glean reports now distinguishes between fatal and non-fatal native code crashes.
   
-* **feature-pwa**
-  * Added ability to query install state of an url.
-  * Added ability load all manifests that apply to a certain url.
-  * Added ability to track if an PWA is actively used.
+* **feature-prompts**
+  * Save login prompts will no longer be closed on page load
 
 # 28.0.0
 
