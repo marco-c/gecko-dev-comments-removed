@@ -863,6 +863,19 @@ def po2xml(catalog, with_untranslated=False, resfilter=None, warnfunc=dummy_warn
     return xml_tree
 
 
+
+
+
+
+def stringify_children(node):
+    from lxml.etree import tostring
+    from itertools import chain
+    parts = ([node.text] +
+            list(chain(*([tostring(c, with_tail=False), c.tail] for c in node.getchildren()))) +
+            [node.tail])
+    
+    return ''.join(filter(None, parts))
+
 def write_xml(tree, warnfunc=dummy_warn):
     """Takes a ``ResourceTree`` (our in-memory representation of an Android
     XML resource) and returns a XML DOM (via an etree.Element).
@@ -907,10 +920,9 @@ def write_xml(tree, warnfunc=dummy_warn):
             
             
             if len(string_el) > 0:
-                elements_text = [etree.tostring(child, xml_declaration=False) for child in string_el]
-                text = ''.join(elements_text)
+                text = stringify_children(string_el).strip()
 
-                if (tag in text for tag in ['<ul>', '<p>', '<br', '<strong>', '<li>']):
+                if (tag in text for tag in ['<ul>', '<p>', '<br', '<strong>', '<li>', '<b>']):
                     
                     del string_el[:]
                     string_el.text = etree.CDATA(text)
