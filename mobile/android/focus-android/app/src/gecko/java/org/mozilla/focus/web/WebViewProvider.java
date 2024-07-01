@@ -20,7 +20,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 
-import org.mozilla.gecko.BaseGeckoInterface;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.GeckoView;
@@ -82,12 +81,12 @@ public class WebViewProvider {
 
         @Override
         public void stopLoading() {
-            
+            this.stop();
+            callback.onPageFinished(isSecure);
         }
 
         @Override
         public String getUrl() {
-            
             return currentUrl;
         }
 
@@ -109,7 +108,6 @@ public class WebViewProvider {
 
         @Override
         public boolean isBlockingEnabled() {
-            
             return true;
         }
 
@@ -127,6 +125,10 @@ public class WebViewProvider {
             return new ContentListener() {
                 @Override
                 public void onTitleChange(GeckoView geckoView, String s) {
+                }
+
+                @Override
+                public void onFullScreen(GeckoView geckoView, boolean fullScreen) {
                 }
             };
         }
