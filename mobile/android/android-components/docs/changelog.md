@@ -12,10 +12,6 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **feature-share**
-  * Added database to store recent apps
-  * Added `RecentAppsStorage` to handle storing and retrieving most-recent apps
-
 # 32.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v31.0.0...v32.0.0)
@@ -75,6 +71,9 @@ permalink: /changelog/
 
 * **feature-awesomebar**
   * Added `showDescription` parameter (default to `true`) to `SearchSuggestionProvider` constructors to add the possibility of removing search suggestion description.
+
+* **support-migration**
+  * Emit facts during migration.
 
 # 31.0.0
 
