@@ -24,6 +24,7 @@ import static android.support.test.espresso.action.ViewActions.click;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mozilla.focus.activity.TestHelper.waitingTime;
+import static org.mozilla.focus.activity.helpers.EspressoHelper.openSettings;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 
@@ -79,9 +80,8 @@ public class SearchEngineSelectionTest {
 
         
         assertTrue(TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime));
-        TestHelper.menuButton.perform(click());
-        TestHelper.settingsMenuItem.click();
-        TestHelper.settingsHeading.waitForExists(waitingTime);
+
+        openSettings();
 
         
         SearchEngineSelection.click();
