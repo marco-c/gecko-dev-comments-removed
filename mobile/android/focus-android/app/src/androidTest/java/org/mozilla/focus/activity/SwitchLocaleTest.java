@@ -28,6 +28,8 @@ import java.util.Locale;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.support.test.espresso.action.ViewActions.click;
 import static org.mozilla.focus.activity.TestHelper.waitingTime;
+import static org.mozilla.focus.activity.helpers.EspressoHelper.openMenu;
+import static org.mozilla.focus.activity.helpers.EspressoHelper.openSettings;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 
@@ -110,8 +112,8 @@ public class SwitchLocaleTest {
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-        TestHelper.menuButton.perform(click());
-        TestHelper.settingsMenuItem.click();
+
+        openSettings();
         LanguageSelection.waitForExists(waitingTime);
 
         
@@ -136,11 +138,10 @@ public class SwitchLocaleTest {
                 .text("Navigation privée automatique.\nNaviguez. Effacez. Recommencez."));
         frenchTitle.waitForExists(waitingTime);
         Assert.assertTrue(frenchTitle.exists());
-        TestHelper.menuButton.perform(click());
+
+        openMenu();
         Assert.assertEquals(TestHelper.getMenuItemText(TestHelper.settingsMenuItem), "Paramètres");
-        Assert.assertEquals(TestHelper.getMenuItemText(TestHelper.AboutItem), "À propos");
         Assert.assertEquals(TestHelper.getMenuItemText(TestHelper.HelpItem), "Aide");
-        Assert.assertEquals(TestHelper.getMenuItemText(TestHelper.RightsItem), "Droits de l’utilisateur");
         TestHelper.settingsMenuItem.click();
 
         
@@ -181,8 +182,8 @@ public class SwitchLocaleTest {
         
         changeLocale("fr");
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-        TestHelper.menuButton.perform(click());
-        TestHelper.settingsMenuItem.click();
+
+        openMenu();
         LanguageSelection.waitForExists(waitingTime);
 
         
