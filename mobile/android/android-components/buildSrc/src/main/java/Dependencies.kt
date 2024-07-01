@@ -15,7 +15,7 @@ object Versions {
     const val mockwebserver = "3.10.0"
 
     const val dokka = "0.9.17"
-    const val android_gradle_plugin = "3.4.1"
+    const val android_gradle_plugin = "3.5.2"
     const val android_maven_publish_plugin = "3.6.2"
     const val lint = "26.3.2"
     const val detekt = "1.0.1"
@@ -27,9 +27,9 @@ object Versions {
     const val disklrucache = "2.0.2"
     const val leakcanary = "1.6.3"
 
-    const val mozilla_appservices = "0.44.0"
+    const val mozilla_appservices = "0.42.2"
 
-    const val mozilla_glean = "21.3.0"
+    const val mozilla_glean = "21.2.0"
 
     const val material = "1.0.0"
     const val nearby = "17.0.0"
@@ -131,8 +131,6 @@ object Dependencies {
     const val mozilla_sync_manager = "org.mozilla.appservices:syncmanager:${Versions.mozilla_appservices}"
 
     const val mozilla_push = "org.mozilla.appservices:push:${Versions.mozilla_appservices}"
-
-    const val mozilla_remote_tabs = "org.mozilla.appservices:tabs:${Versions.mozilla_appservices}"
 
     const val mozilla_httpconfig = "org.mozilla.appservices:httpconfig:${Versions.mozilla_appservices}"
     const val mozilla_full_megazord = "org.mozilla.appservices:full-megazord:${Versions.mozilla_appservices}"
