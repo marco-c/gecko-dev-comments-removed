@@ -1,0 +1,109 @@
+
+
+
+
+
+package org.mozilla.focus.autocomplete
+
+import android.content.Context
+import android.util.Log
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.launch
+import org.mozilla.focus.locale.Locales
+import org.mozilla.focus.widget.InlineAutocompleteEditText
+import java.io.IOException
+import java.util.*
+
+class UrlAutoCompleteFilter : InlineAutocompleteEditText.OnFilterListener {
+    companion object {
+        private val LOG_TAG = "UrlAutoCompleteFilter"
+    }
+
+    private val domains = LinkedHashSet<String>()
+
+    override fun onFilter(rawSearchText: String, view: InlineAutocompleteEditText?) {
+        if (view == null) {
+            return
+        }
+
+        
+        val searchText = rawSearchText.toLowerCase(Locale.US)
+
+        domains.forEach {
+            val wwwDomain = "www." + it
+            if (wwwDomain.startsWith(searchText)) {
+                view.onAutocomplete(prepareAutocompleteResult(rawSearchText, wwwDomain))
+                return
+            }
+
+            if (it.startsWith(searchText)) {
+                view.onAutocomplete(prepareAutocompleteResult(rawSearchText, it))
+                return
+            }
+        }
+    }
+
+    internal fun onDomainsLoaded(domains: Set<String>) {
+        this.domains.addAll(domains)
+    }
+
+    fun initialize(context: Context) {
+        launch(UI) {
+            val job = async(CommonPool) {
+                loadDomains(context)
+            }
+            onDomainsLoaded(job.await())
+        }
+    }
+
+    private suspend fun loadDomains(context: Context): Set<String> {
+        val domains = LinkedHashSet<String>()
+        val availableLists = getAvailableDomainLists(context)
+
+        
+        Locales.getCountriesInDefaultLocaleList()
+                .filter { availableLists.contains(it) }
+                .forEach { loadDomainsForLanguage(context, domains, it) }
+
+        
+        loadDomainsForLanguage(context, domains, "global")
+
+        return domains
+    }
+
+    private fun getAvailableDomainLists(context: Context): Set<String> {
+        val availableDomains = HashSet<String>()
+
+        val assetManager = context.assets
+
+        try {
+            Collections.addAll(availableDomains, *assetManager.list("domains"))
+        } catch (e: IOException) {
+            Log.w(LOG_TAG, "Could not list domain list directory")
+        }
+
+        return availableDomains
+    }
+
+    private fun loadDomainsForLanguage(context: Context, domains: MutableSet<String>, country: String) {
+        val assetManager = context.assets
+
+        try {
+            domains.addAll(
+                    assetManager.open("domains/" + country).bufferedReader().readLines())
+        } catch (e: IOException) {
+            Log.w(LOG_TAG, "Could not load domain list: " + country)
+        }
+    }
+
+    
+
+
+
+
+
+    private fun prepareAutocompleteResult(rawSearchText: String, lowerCaseResult: String) =
+            rawSearchText + lowerCaseResult.substring(rawSearchText.length)
+}
