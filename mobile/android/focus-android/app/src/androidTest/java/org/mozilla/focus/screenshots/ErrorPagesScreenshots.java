@@ -70,7 +70,7 @@ public class ErrorPagesScreenshots extends ScreenshotTest {
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 UiObject tryAgainBtn = device.findObject(new UiSelector()
-                        .resourceId("errorTryAgain")
+                        .descriptionContains(getString(R.string.errorpage_refresh))
                         .clickable(true));
                 assertTrue(tryAgainBtn.waitForExists(waitingTime));
             } else {
