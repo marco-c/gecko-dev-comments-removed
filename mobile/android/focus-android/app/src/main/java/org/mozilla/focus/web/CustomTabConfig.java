@@ -16,6 +16,7 @@ import org.mozilla.focus.utils.SafeBundle;
 import org.mozilla.focus.utils.SafeIntent;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -237,7 +238,7 @@ public class CustomTabConfig {
     
 
 
-    public String getOptionsList() {
+    public List<String> getOptionsList() {
         
         final List<String> featureList = new LinkedList<>(unsupportedFeatureList);
 
@@ -265,7 +266,6 @@ public class CustomTabConfig {
             featureList.add("hasCustomizedMenu");
         }
 
-        
-        return featureList.toString();
+        return Collections.unmodifiableList(featureList);
     }
 }
