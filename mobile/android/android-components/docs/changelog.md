@@ -16,13 +16,16 @@ permalink: /changelog/
   * Added support for [onbeforeunload prompt](https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload)
 
 * **feature-tabs**
-  * Added an optional `ThumbnailsUseCases` to `TabsFeature` and `TabsTrayPresenter` for loading a
-    tab's thumbnail.
+  * ⚠️ **This is a breaking change**: Added a dependency on `ThumbnailsUseCases` to `TabsFeature` and `TabsTrayPresenter`
+    for loading a tab's thumbnail.
 
 * **browser-thumbnails**
   * Adds `LoadThumbnailUseCase` in `ThumbnailsUseCases` for loading the thumbnail of a tab.
   * Adds `ThumbnailStorage` as a storage layer for handling saving and loading a thumbnail from the
     disk cache.
+
+* **feature-push**
+  * Adds the `getSubscription` call to check if a subscription exists.
 
 # 43.0.0
 
