@@ -39,9 +39,9 @@ public class FloatingEraseButton extends FloatingActionButton {
         if (behavior != null) {
             if (accessibilityManager != null && accessibilityManager.isTouchExplorationEnabled()) {
                 
-                behavior.setEnabled(false);
+                behavior.setAutoHideEnabled(false);
             } else {
-                behavior.setEnabled(!keepHidden);
+                behavior.setAutoHideEnabled(!keepHidden);
             }
         }
 
