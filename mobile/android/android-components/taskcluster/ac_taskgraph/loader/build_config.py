@@ -135,6 +135,11 @@ def loader(kind, path, config, params, loaded_tasks):
     elif params["tasks_for"] == "github-push":
         if params["base_rev"] in _GIT_ZERO_HASHES:
             logger.warn("base_rev is a zero hash, meaning there is no previous push. Building every component...")
+        elif params["head_ref"] == "refs/heads/master":
+            
+            
+            
+            logger.info("head_ref is refs/heads/master. Building every component...")
         else:
             logger.info("Processing push for commit range %s -> %s" % (params["base_rev"], params["head_rev"]))
             files_changed = get_files_changed_push(params["base_repository"], params["base_rev"], params["head_rev"])
