@@ -68,7 +68,7 @@ def get_upstream_deps_for_components(components):
         for line in subprocess.check_output(cmd, universal_newlines=True).splitlines():
             
             if line.startswith("Project"):
-                current_component = line.split(":")[1]
+                current_component = line.split(":")[1].strip("'")
 
             
             if line.startswith("+--- project") or line.startswith(r"\--- project"):
