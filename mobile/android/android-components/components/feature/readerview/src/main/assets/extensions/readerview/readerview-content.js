@@ -58,7 +58,20 @@ function connectNativePort() {
      }
   });
 
-  window.addEventListener("unload", (event) => { port.disconnect() }, false);
+  return port;
 }
 
-connectNativePort();
+let port = connectNativePort();
+
+
+
+
+
+window.addEventListener("pageshow", (event) => {
+  port = (port != null)? port : connectNativePort();
+});
+
+window.addEventListener("pagehide", (event) => {
+  port.disconnect();
+  port = null;
+});

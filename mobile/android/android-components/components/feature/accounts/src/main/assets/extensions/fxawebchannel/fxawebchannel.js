@@ -18,10 +18,6 @@ port.onMessage.addListener((event) => {
 
 
 
-window.addEventListener("unload", (event) => { port.disconnect() }, false);
-
-
-
 
 window.addEventListener('WebChannelMessageToChrome', function (e) {
   const detail = JSON.parse(e.detail);
