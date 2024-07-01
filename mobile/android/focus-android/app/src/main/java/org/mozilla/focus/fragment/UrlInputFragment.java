@@ -183,48 +183,15 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
 
         urlView.setOnCommitListener(this);
 
-        
         if (session != null) {
-            final String searchURL = session.getSearchUrl();
-            final String currentURL = session.getUrl().getValue();
-            final String searchTerms = session.getSearchTerms();
-            if (!TextUtils.isEmpty(currentURL)) {
-                
-                
-                
-                if (session.isSearch()) {
-                    showSearchTerms(urlView, session, searchTerms, currentURL);
-                } else if (!TextUtils.isEmpty(searchURL) && searchURL.equals(currentURL)) {
-                    
-                    
-                    showSearchTermsFromURLMatch(urlView, searchTerms, currentURL);
-                } else {
-                    
-                    urlView.setText(currentURL);
-                }
+                urlView.setText(session.isSearch()
+                    ? session.getSearchTerms()
+                    : session.getUrl().getValue());
+
                 clearView.setVisibility(View.VISIBLE);
-            }
         }
 
         return view;
-    }
-
-    private void showSearchTerms(InlineAutocompleteEditText urlView, Session session, String searchTerms, String currentURL) {
-        if (!TextUtils.isEmpty(searchTerms)) {
-            urlView.setText(searchTerms);
-            session.setSearch(false);
-            session.setSearchUrl(currentURL);
-        } else {
-            urlView.setText(currentURL);
-        }
-    }
-
-    private void showSearchTermsFromURLMatch(InlineAutocompleteEditText urlView, String searchTerms, String currentURL) {
-        if ((!TextUtils.isEmpty(searchTerms))) {
-            urlView.setText(searchTerms);
-        } else {
-            urlView.setText(currentURL);
-        }
     }
 
     @Override
@@ -526,7 +493,6 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
 
     private void openUrl(String url, boolean isSearch, String searchTerms) {
         if (session != null) {
-            session.setSearch(isSearch);
             session.setSearchTerms(searchTerms);
         }
 
@@ -550,7 +516,7 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
                     .commit();
         } else {
             if (!TextUtils.isEmpty(searchTerms)) {
-                SessionManager.getInstance().createSession(Source.USER_ENTERED, url, isSearch, searchTerms);
+                SessionManager.getInstance().createSearchSession(Source.USER_ENTERED, url, searchTerms);
             } else {
                 SessionManager.getInstance().createSession(Source.USER_ENTERED, url);
             }
