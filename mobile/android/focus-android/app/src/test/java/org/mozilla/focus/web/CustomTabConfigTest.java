@@ -1,5 +1,6 @@
 package org.mozilla.focus.web;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -10,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.utils.SafeIntent;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 import java.lang.reflect.Field;
 
@@ -23,10 +25,12 @@ public class CustomTabConfigTest {
 
 
     private static class UnparcelableParcel implements Parcelable {
-        UnparcelableParcel() {}
+        
+        UnparcelableParcel() {
+        }
 
+        
         protected UnparcelableParcel(Parcel in) {
-            
             throw new RuntimeException("Haha");
         }
 
@@ -43,7 +47,8 @@ public class CustomTabConfigTest {
         };
 
         @Override
-        public void writeToParcel(Parcel dest, int flags) {}
+        public void writeToParcel(Parcel dest, int flags) {
+        }
 
         @Override
         public int describeContents() {
@@ -60,6 +65,28 @@ public class CustomTabConfigTest {
     }
 
     @Test
+    public void menuTest() throws Exception {
+        final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+        final PendingIntent pendingIntent = PendingIntent.getActivity(null, 0, null, 0);
+
+        builder.addMenuItem("menuitem1", pendingIntent);
+        builder.addMenuItem("menuitem2", pendingIntent);
+        
+        builder.addMenuItem("menuitemIGNORED", null);
+
+        final CustomTabsIntent customTabsIntent = builder.build();
+
+        final CustomTabConfig config = CustomTabConfig.parseCustomTabIntent(RuntimeEnvironment.application, new SafeIntent(customTabsIntent.intent));
+
+        assertEquals("Menu should contain 2 items", 2, config.menuItems.size());
+        final String s = config.menuItems.get(0).name;
+        assertEquals("Unexpected menu item",
+                "menuitem1", config.menuItems.get(0).name);
+        assertEquals("Unexpected menu item",
+                "menuitem2", config.menuItems.get(1).name);
+    }
+
+    @Test
     public void malformedExtras() throws Exception {
         final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
 
@@ -67,7 +94,6 @@ public class CustomTabConfigTest {
 
         customTabsIntent.intent.putExtra("garbage", new UnparcelableParcel());
 
-        
         
         final Parcel parcel = Parcel.obtain();
         final Bundle extras = customTabsIntent.intent.getExtras();
@@ -89,12 +115,11 @@ public class CustomTabConfigTest {
         assertFalse(CustomTabConfig.isCustomTabIntent(new SafeIntent(customTabsIntent.intent)));
 
         
-        final CustomTabConfig c = CustomTabConfig.parseCustomTabIntent(new SafeIntent(customTabsIntent.intent));
+        final CustomTabConfig c = CustomTabConfig.parseCustomTabIntent(RuntimeEnvironment.application, new SafeIntent(customTabsIntent.intent));
 
         
         assertNull(c.actionButtonConfig);
     }
-
 
     @Test
     public void malformedActionButtonConfig() throws Exception {
@@ -109,7 +134,7 @@ public class CustomTabConfigTest {
         assertTrue(CustomTabConfig.isCustomTabIntent(new SafeIntent(customTabsIntent.intent)));
 
         
-        final CustomTabConfig c = CustomTabConfig.parseCustomTabIntent(new SafeIntent(customTabsIntent.intent));
+        final CustomTabConfig c = CustomTabConfig.parseCustomTabIntent(RuntimeEnvironment.application, new SafeIntent(customTabsIntent.intent));
 
         
         assertNull(c.actionButtonConfig);
