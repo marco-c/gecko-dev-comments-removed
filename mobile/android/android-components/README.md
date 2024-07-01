@@ -172,7 +172,7 @@ _Components and libraries to interact with backend services._
 
 * 🔵 [**Firefox Accounts (FxA)**](components/service/firefox-accounts/README.md) - A library for integrating with Firefox Accounts.
 
-* 🔵 [**Firefox Sync - Logins**](components/service/sync-logins/README.md) - A library for integrating with Firefox Sync - Logins.
+* 🔴 [**Firefox Sync - Logins**](components/service/sync-logins/README.md) - A library for integrating with Firefox Sync - Logins.
 
 * 🔵 [**Fretboard**](components/service/fretboard/README.md) - An Android framework for segmenting users in order to run A/B tests and roll out features gradually.
 
@@ -196,13 +196,13 @@ _Supporting components with generic helper code._
 
 * 🔵 [**Ktx**](components/support/ktx/README.md) - A set of Kotlin extensions on top of the Android framework and Kotlin standard library.
 
+* ⚪ [**Migration**](components/support/migration/README.md) - Helper code to migrate from a Fennec-based (Firefox for Android) app to an Android Components based app.
+
 * 🔵 [**Test**](components/support/test/README.md) - A collection of helpers for testing components in local unit tests (`src/test`).
 
 * 🔵 [**Test Appservices**](components/support/test-appservices/README.md) - A component for synchronizing Application Services' unit testing dependencies used in Android Components.
 
 * 🔵 [**Utils**](components/support/utils/README.md) - Generic utility classes to be shared between projects.
-
-* 🔵 [**Webextensions**](components/support/webextensions/README.md) - A component containing building blocks for features implemented as web extensions.
 
 ## Standalone libraries
 
@@ -247,28 +247,6 @@ _Sample apps using various components._
 * [**DataProtect**](samples/dataprotect) - An app demoing how to use the [**Dataprotect**](components/lib/dataprotect/README.md) component to load and store encrypted data in `SharedPreferences`.
 
 * [**Glean**](samples/glean) - An app demoing how to use the [**Glean**](components/service/glean/README.md) library to collect and send telemetry data.
-
-# Building #
-
-## Command line ##
-
-```
-$ git clone https://github.com/mozilla-mobile/android-components.git
-$ cd android-components
-$ ./gradlew assemble
-```
-
-## Android Studio ##
-
-If the environment variable `JAVA_HOME` is not defined, you will need to set it. If you would like to use the JDK installed by Android Studio, here's how to find it: 
-
-1. Open Android Studio.
-2. Select "Configure".
-3. Select "Default Project Structure". You should now see the Android JDK location. 
-4. Set the environment variable `JAVA_HOME` to the location. (How you set an environment variable depends on your OS.)
-5. Restart Android Studio.
-
-Once the environment variable is set, you can import the project into Android Studio with the default wizard options.
 
 # License
 
