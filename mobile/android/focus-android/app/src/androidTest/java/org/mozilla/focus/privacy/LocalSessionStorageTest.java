@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.activity.MainActivity;
 import org.mozilla.focus.helpers.TestHelper;
+import org.mozilla.focus.utils.AppConstants;
 
 import java.io.IOException;
 
@@ -52,6 +53,9 @@ public class LocalSessionStorageTest {
                     .edit()
                     .putBoolean(FIRSTRUN_PREF, true)
                     .apply();
+
+            
+            org.junit.Assume.assumeTrue(!AppConstants.isGeckoBuild(appContext) && !AppConstants.isKlarBuild());
 
             webServer = new MockWebServer();
 
