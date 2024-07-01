@@ -124,10 +124,6 @@ public class ClassicWebViewProvider implements IWebViewProvider {
         settings.setSaveFormData(false);
         
         settings.setSavePassword(false);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            settings.setSafeBrowsingEnabled(Settings.getInstance(context).shouldUseSafeBrowsing());
-        }
     }
 
     @Override
@@ -135,10 +131,6 @@ public class ClassicWebViewProvider implements IWebViewProvider {
 
         
         systemWebView.clearCache(true);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            webSettings.setSafeBrowsingEnabled(Settings.getInstance(context).shouldUseSafeBrowsing());
-        }
 
         
         webSettings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
