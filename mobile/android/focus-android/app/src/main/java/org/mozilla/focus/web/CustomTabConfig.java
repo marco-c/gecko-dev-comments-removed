@@ -207,7 +207,10 @@ public class CustomTabConfig {
         }
 
         if (intent.hasExtra(CustomTabsIntent.EXTRA_SECONDARY_TOOLBAR_COLOR)) {
-            unsupportedFeatureList.add("hasBottomToolbarColor");
+            
+            
+
+            
         }
 
         if (intent.hasExtra(CustomTabsIntent.EXTRA_EXIT_ANIMATION_BUNDLE)) {
@@ -215,7 +218,10 @@ public class CustomTabConfig {
         }
 
         if (intent.hasExtra(CustomTabsIntent.EXTRA_ENABLE_INSTANT_APPS)) {
-            unsupportedFeatureList.add("enablesInstantApps");
+            
+            
+
+            
         }
 
         if (intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE)) {
