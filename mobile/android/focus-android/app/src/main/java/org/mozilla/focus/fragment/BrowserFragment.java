@@ -526,7 +526,18 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
         final DialogFragment downloadDialogFragment = DownloadDialogFragment.newInstance(download);
         downloadDialogFragment.setTargetFragment(BrowserFragment.this, 300);
-        downloadDialogFragment.show(fragmentManager, DownloadDialogFragment.FRAGMENT_TAG);
+
+        try {
+            downloadDialogFragment.show(fragmentManager, DownloadDialogFragment.FRAGMENT_TAG);
+        } catch (IllegalStateException e) {
+            
+            
+            
+            
+            
+            
+            
+        }
     }
 
     @Override
