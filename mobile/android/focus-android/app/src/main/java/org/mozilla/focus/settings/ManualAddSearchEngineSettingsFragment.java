@@ -202,7 +202,7 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
     @WorkerThread 
     @VisibleForTesting static boolean isValidSearchQueryURL(final String query) {
         
-        final String encodedTestQuery = Uri.encode("F0cu5Ru1e5");
+        final String encodedTestQuery = Uri.encode("testSearchEngineValidation");
 
         final String normalizedHttpsSearchURLStr = UrlUtils.normalize(query);
         final String searchURLStr = normalizedHttpsSearchURLStr.replaceAll("%s", encodedTestQuery);
