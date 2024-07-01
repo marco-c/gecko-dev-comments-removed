@@ -119,6 +119,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (ACTION_ERASE.equals(intent.getAction())) {
             eraseFromNotification(intent.getBooleanExtra(EXTRA_FINISH, false));
+
+            
+            setIntent(new Intent(Intent.ACTION_MAIN));
         }
 
         if (pendingUrl != null && !new Settings(this).shouldShowFirstrun()) {
