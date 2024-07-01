@@ -28,6 +28,13 @@ public class ViewUtils {
     
 
 
+
+
+    public static final int IME_FLAG_NO_PERSONALIZED_LEARNING = 0x01000000;
+
+    
+
+
     private static class ShowKeyboard implements Runnable {
         private static final int INTERVAL_MS = 100;
 
