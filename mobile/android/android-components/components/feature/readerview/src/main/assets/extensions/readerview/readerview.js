@@ -193,13 +193,21 @@ class ReaderView {
 
     
     
-    moment.relativeTimeThreshold('m', Number.MAX_SAFE_INTEGER);
+    
+    var parts = new Intl.RelativeTimeFormat(lang).formatToParts(readingTimeMinsSlow, 'minute');
 
-    if (readingTimeMinsSlow == readingTimeMinsFast) {
-      return moment.duration(readingTimeMinsFast, 'minutes').locale(lang).humanize();
+    if (parts.length == 3) {
+      
+      var readingTime = parts[1].value; 
+      var minutesLiteral = parts[2].value; 
+      var readingTimeString = `${readingTime} ${minutesLiteral}`;
+      if (readingTimeMinsSlow != readingTimeMinsFast) {
+        readingTimeString = `${readingTimeMinsFast} - ${readingTimeString}`;
+      }
+      return readingTimeString;
     }
 
-    return `${readingTimeMinsFast} - ${moment.duration(readingTimeMinsSlow, 'minutes').locale(lang).humanize()}`;
+    return "";
   }
 
   
