@@ -12,9 +12,6 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **feature-intent**
-   * ⚠️ **This is a breaking change**: `IntentProcessor.process` is not a suspend function anymore.
-
 * **feature-contextmenu**
   * Add "Share image" to context menu.
 
@@ -49,7 +46,8 @@ permalink: /changelog/
     * BUGFIX: Compile dependencies with `NDEBUG` to avoid linking unavailable symbols.
       This fixes a crash due to a missing `stderr` symbol on older Android.
 
-
+* **feature-webnotifications**
+  * `WebNotificationFeature` checks the site permissions first before showing a notification.
 
 # 47.0.0
 
