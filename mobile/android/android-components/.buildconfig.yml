@@ -1,4 +1,4 @@
-componentsVersion: 26.0.0
+componentsVersion: 27.0.0
 projects:
   concept-awesomebar:
     path: components/concept/awesomebar
@@ -91,6 +91,10 @@ projects:
   feature-toolbar:
     path: components/feature/toolbar
     description: 'Feature implementation connecting a toolbar implementation with the session module.'
+    publish: true
+  feature-top-sites:
+    path: components/feature/top-sites
+    description: 'Feature implementation for saving and removing top sites.'
     publish: true
   feature-downloads:
     path: components/feature/downloads
@@ -397,3 +401,7 @@ projects:
     path: samples/dataprotect
     description: 'An app demoing how to use the Dataprotect component to load and store encrypted data in SharedPreferences.'
     publish: false
+  tooling-glean-gradle:
+    path: components/tooling/glean-gradle-plugin
+    description: 'A Gradle plugin to generate code for Glean metrics.'
+    publish: true
