@@ -4,7 +4,6 @@
 
 package org.mozilla.focus.webkit.matcher;
 
-import android.util.Pair;
 import android.util.SparseArray;
 
 import org.mozilla.focus.webkit.matcher.util.FocusString;
