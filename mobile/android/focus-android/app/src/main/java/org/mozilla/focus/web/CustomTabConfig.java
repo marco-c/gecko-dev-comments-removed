@@ -74,7 +74,7 @@ public class CustomTabConfig {
         return intent.hasExtra(CustomTabsIntent.EXTRA_SESSION);
     }
 
-    private static @Nullable Bitmap getCloseButtonIcon(final Context context, final @NonNull SafeIntent intent) {
+    private static @Nullable Bitmap getCloseButtonIcon(final @NonNull Context context, final @NonNull SafeIntent intent) {
         if (!intent.hasExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)) {
             return null;
         }
@@ -96,6 +96,47 @@ public class CustomTabConfig {
         }
     }
 
+    private static @Nullable ActionButtonConfig getActionButtonConfig(final @NonNull Context context, final @NonNull SafeIntent intent) {
+        if (!intent.hasExtra(CustomTabsIntent.EXTRA_ACTION_BUTTON_BUNDLE)) {
+            return null;
+        }
+
+        final SafeBundle actionButtonBundle = intent.getBundleExtra(CustomTabsIntent.EXTRA_ACTION_BUTTON_BUNDLE);
+
+        final String description = actionButtonBundle.getString(CustomTabsIntent.KEY_DESCRIPTION);
+        if (description == null) {
+            Log.w(LOGTAG, "Ignoring EXTRA_ACTION_BUTTON_BUNDLE due to missing description");
+            return null;
+        }
+
+
+        final Parcelable pendingIntentParcelable = actionButtonBundle.getParcelable(CustomTabsIntent.KEY_PENDING_INTENT);
+        final PendingIntent pendingIntent;
+        
+        if (pendingIntentParcelable instanceof  PendingIntent) {
+            pendingIntent = (PendingIntent) pendingIntentParcelable;
+        } else {
+            Log.w(LOGTAG, "Ignoring EXTRA_ACTION_BUTTON_BUNDLE due to missing pendingIntent");
+            return null;
+        }
+
+        
+        
+        
+        final Parcelable iconParcelable = actionButtonBundle.getParcelable(CustomTabsIntent.KEY_ICON);
+        final Bitmap icon;
+        
+        
+        if (iconParcelable instanceof Bitmap) {
+            icon = (Bitmap) iconParcelable;
+        } else {
+            Log.w(LOGTAG, "Ignoring EXTRA_ACTION_BUTTON_BUNDLE due to missing icon");
+            return null;
+        }
+
+        return new ActionButtonConfig(description, icon, pendingIntent);
+    }
+
      static CustomTabConfig parseCustomTabIntent(final @NonNull Context context, final @NonNull SafeIntent intent) {
         @ColorInt Integer toolbarColor = null;
         if (intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
@@ -110,22 +151,7 @@ public class CustomTabConfig {
         
         boolean disableUrlbarHiding = !intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_URLBAR_HIDING, true);
 
-        ActionButtonConfig actionButtonConfig = null;
-        if (intent.hasExtra(CustomTabsIntent.EXTRA_ACTION_BUTTON_BUNDLE)) {
-            final SafeBundle actionButtonBundle = intent.getBundleExtra(CustomTabsIntent.EXTRA_ACTION_BUTTON_BUNDLE);
-
-            final String description = actionButtonBundle.getString(CustomTabsIntent.KEY_DESCRIPTION);
-            final Bitmap icon = actionButtonBundle.getParcelable(CustomTabsIntent.KEY_ICON);
-            final PendingIntent pendingIntent = actionButtonBundle.getParcelable(CustomTabsIntent.KEY_PENDING_INTENT);
-
-            if (description != null &&
-                    icon != null &&
-                    pendingIntent != null) {
-                actionButtonConfig = new ActionButtonConfig(description, icon, pendingIntent);
-            } else {
-                Log.w(LOGTAG, "Ignoring EXTRA_ACTION_BUTTON_BUNDLE due to missing keys");
-            }
-        }
+        final ActionButtonConfig actionButtonConfig = getActionButtonConfig(context, intent);
 
         
         
