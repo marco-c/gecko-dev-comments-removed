@@ -1,0 +1,46 @@
+
+
+
+
+package org.mozilla.focus.session;
+
+
+
+
+
+public enum Source {
+    
+
+
+    VIEW,
+
+    
+
+
+    SHARE,
+
+    
+
+
+    TEXT_SELECTION,
+
+    
+
+
+    HOME_SCREEN,
+
+    
+
+
+    USER_ENTERED,
+
+    
+
+
+    CUSTOM_TAB,
+
+    
+
+
+    NONE
+}

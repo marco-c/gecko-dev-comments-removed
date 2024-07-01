@@ -2,8 +2,7 @@
 
 
 
-
-package org.mozilla.focus.notification;
+package org.mozilla.focus.session;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -18,106 +17,45 @@ import android.support.v4.content.ContextCompat;
 import org.mozilla.focus.R;
 import org.mozilla.focus.activity.MainActivity;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
-import org.mozilla.focus.web.BrowsingSession;
-import org.mozilla.focus.web.WebViewProvider;
 
 
 
 
-
-
-
-
-public class BrowsingNotificationService extends Service {
+public class SessionNotificationService extends Service {
     private static final int NOTIFICATION_ID = 83;
 
     private static final String ACTION_START = "start";
-    private static final String ACTION_STOP = "stop";
     private static final String ACTION_ERASE = "erase";
-    private static final String ACTION_FOREGROUND = "foreground";
-    private static final String ACTION_BACKGROUND = "background";
 
-    private static final String EXTRA_NOTIFICATION_ACTION = "notification_action";
-
-    private boolean foreground;
-
-    public static void start(Context context) {
-        final Intent intent = new Intent(context, BrowsingNotificationService.class);
+     static void start(Context context) {
+        final Intent intent = new Intent(context, SessionNotificationService.class);
         intent.setAction(ACTION_START);
 
         context.startService(intent);
     }
 
-    public static void foreground(Context context) {
-        final Intent intent = new Intent(context, BrowsingNotificationService.class);
-        intent.setAction(ACTION_FOREGROUND);
+     static void stop(Context context) {
+        final Intent intent = new Intent(context, SessionNotificationService.class);
 
-        context.startService(intent);
-    }
-
-    public static void background(Context context) {
-        final Intent intent = new Intent(context, BrowsingNotificationService.class);
-        intent.setAction(ACTION_BACKGROUND);
-
-        context.startService(intent);
-    }
-
-    public static void stop(Context context) {
-        final Intent intent = new Intent(context, BrowsingNotificationService.class);
-        intent.setAction(ACTION_STOP);
-
-        context.startService(intent);
+        context.stopService(intent);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        switch (intent.getAction()) {
+        final String action = intent.getAction();
+        if (action == null) {
+            return START_NOT_STICKY;
+        }
+
+        switch (action) {
             case ACTION_START:
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                foreground = true;
-                startBrowsingSession();
-                break;
-
-            case ACTION_STOP:
-                stopBrowsingSession();
-                break;
-
-            case ACTION_FOREGROUND:
-                foreground = true;
-                break;
-
-            case ACTION_BACKGROUND:
-                foreground = false;
+                startForeground(NOTIFICATION_ID, buildNotification());
                 break;
 
             case ACTION_ERASE:
-                final Intent activityIntent = new Intent(this, MainActivity.class);
-                activityIntent.setAction(MainActivity.ACTION_ERASE);
-                activityIntent.putExtra(MainActivity.EXTRA_FINISH, !foreground);
+                SessionManager.getInstance().removeAllSessions();
 
-                if (!foreground) {
-                    activityIntent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-                }
-
-                
-                
-                activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                startActivity(activityIntent);
-
-                if (intent.hasExtra(EXTRA_NOTIFICATION_ACTION)) {
-                    TelemetryWrapper.eraseNotificationActionEvent();
-                } else {
-                    TelemetryWrapper.eraseNotificationEvent();
-                }
+                TelemetryWrapper.eraseNotificationEvent();
                 break;
 
             default:
@@ -129,21 +67,7 @@ public class BrowsingNotificationService extends Service {
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        
-        
-        WebViewProvider.performCleanup(this);
-
-        stopBrowsingSession();
-    }
-
-    private void startBrowsingSession() {
-        BrowsingSession.getInstance().start();
-
-        startForeground(NOTIFICATION_ID, buildNotification());
-    }
-
-    private void stopBrowsingSession() {
-        BrowsingSession.getInstance().stop();
+        SessionManager.getInstance().removeAllSessions();
 
         stopForeground(true);
         stopSelf();
@@ -172,7 +96,7 @@ public class BrowsingNotificationService extends Service {
     }
 
     private PendingIntent createNotificationIntent() {
-        final Intent intent = new Intent(this, BrowsingNotificationService.class);
+        final Intent intent = new Intent(this, SessionNotificationService.class);
         intent.setAction(ACTION_ERASE);
 
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
@@ -187,8 +111,8 @@ public class BrowsingNotificationService extends Service {
 
     private PendingIntent createOpenAndEraseActionIntent() {
         final Intent intent = new Intent(this, MainActivity.class);
+
         intent.setAction(MainActivity.ACTION_ERASE);
-        intent.putExtra(MainActivity.EXTRA_FINISH, false);
         intent.putExtra(MainActivity.EXTRA_NOTIFICATION, true);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
