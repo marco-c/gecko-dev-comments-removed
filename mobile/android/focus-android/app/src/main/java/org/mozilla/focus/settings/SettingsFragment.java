@@ -87,6 +87,9 @@ public class SettingsFragment extends BaseSettingsFragment implements SharedPref
             
             localeUpdated = true;
 
+            
+            InstalledSearchEnginesSettingsFragment.Companion.setLanguageChanged(true);
+
             final ListPreference languagePreference = (ListPreference) findPreference(getString(R.string.pref_key_locale));
             final String value = languagePreference.getValue();
 
