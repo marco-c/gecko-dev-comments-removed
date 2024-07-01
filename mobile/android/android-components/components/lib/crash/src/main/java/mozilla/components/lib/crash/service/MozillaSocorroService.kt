@@ -12,7 +12,6 @@ import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.crash.Crash
 import mozilla.components.support.base.crash.Breadcrumb
 import mozilla.components.support.base.log.logger.Logger
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import org.mozilla.geckoview.BuildConfig
@@ -77,6 +76,14 @@ class MozillaSocorroService(
     private val logger = Logger("mozac/MozillaSocorroCrashHelperService")
     private val startTime = System.currentTimeMillis()
 
+    override val id: String = "socorro"
+
+    override val name: String = "Socorro"
+
+    override fun createCrashReportUrl(identifier: String): String? {
+        return "https://crash-stats.mozilla.org/report/index/$identifier"
+    }
+
     init {
         if (versionName == DEFAULT_VERSION_NAME) {
             try {
@@ -101,8 +108,7 @@ class MozillaSocorroService(
             miniDumpFilePath = null,
             extrasFilePath = null,
             isNativeCodeCrash = false,
-            isFatalCrash = true,
-            breadcrumbs = crash.breadcrumbs
+            isFatalCrash = true
         )
     }
 
@@ -112,8 +118,7 @@ class MozillaSocorroService(
             miniDumpFilePath = crash.minidumpPath,
             extrasFilePath = crash.extrasPath,
             isNativeCodeCrash = true,
-            isFatalCrash = crash.isFatal,
-            breadcrumbs = crash.breadcrumbs
+            isFatalCrash = crash.isFatal
         )
     }
 
@@ -123,29 +128,21 @@ class MozillaSocorroService(
             miniDumpFilePath = null,
             extrasFilePath = null,
             isNativeCodeCrash = false,
-            isFatalCrash = false,
-            breadcrumbs = breadcrumbs
+            isFatalCrash = false
         )
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    @Suppress("LongParameterList")
     internal fun sendReport(
         throwable: Throwable?,
         miniDumpFilePath: String?,
         extrasFilePath: String?,
         isNativeCodeCrash: Boolean,
-        isFatalCrash: Boolean,
-        breadcrumbs: ArrayList<Breadcrumb>
+        isFatalCrash: Boolean
     ): String? {
         val url = URL(serverUrl)
         val boundary = generateBoundary()
         var conn: HttpURLConnection? = null
-
-        val breadcrumbsJson = JSONArray()
-        for (breadcrumb in breadcrumbs) {
-            breadcrumbsJson.put(breadcrumb.toJson())
-        }
 
         try {
             conn = url.openConnection() as HttpURLConnection
@@ -155,12 +152,13 @@ class MozillaSocorroService(
             conn.setRequestProperty("Content-Encoding", "gzip")
 
             sendCrashData(conn.outputStream, boundary, throwable, miniDumpFilePath, extrasFilePath,
-                    isNativeCodeCrash, isFatalCrash, breadcrumbsJson.toString())
+                    isNativeCodeCrash, isFatalCrash)
 
             BufferedReader(InputStreamReader(conn.inputStream)).use { reader ->
                 val map = parseResponse(reader)
 
                 val id = map?.get(KEY_CRASH_ID)
+
                 if (id != null) {
                     logger.info("Crash reported to Socorro: $id")
                 } else {
@@ -200,8 +198,7 @@ class MozillaSocorroService(
         miniDumpFilePath: String?,
         extrasFilePath: String?,
         isNativeCodeCrash: Boolean,
-        isFatalCrash: Boolean,
-        breadcrumbs: String
+        isFatalCrash: Boolean
     ) {
         val nameSet = mutableSetOf<String>()
         val gzipOs = GZIPOutputStream(os)
@@ -214,7 +211,6 @@ class MozillaSocorroService(
         sendPart(gzipOs, boundary, "GeckoViewVersion", version, nameSet)
         sendPart(gzipOs, boundary, "BuildID", buildId, nameSet)
         sendPart(gzipOs, boundary, "Vendor", vendor, nameSet)
-        sendPart(gzipOs, boundary, "Breadcrumbs", breadcrumbs, nameSet)
 
         extrasFilePath?.let {
             val extrasFile = File(it)
