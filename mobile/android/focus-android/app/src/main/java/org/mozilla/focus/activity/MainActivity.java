@@ -75,8 +75,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onResumeFragments() {
+        super.onResumeFragments();
 
         if (pendingUrl != null && !new Settings(this).shouldShowFirstrun()) {
             
