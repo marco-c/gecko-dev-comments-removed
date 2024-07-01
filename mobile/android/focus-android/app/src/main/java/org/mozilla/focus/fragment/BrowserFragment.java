@@ -182,9 +182,19 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                 
                 
 
+                final int totalScrollRange = appBarLayout.getTotalScrollRange();
+                if (verticalOffset == 0 || Math.abs(verticalOffset) == totalScrollRange) {
+                    
+                    
+                    
+                    
+                    toolbarContent.setAlpha(1f);
+                    return;
+                }
+
                 
                 
-                float alpha = -1 * (((100f / (appBarLayout.getTotalScrollRange() * 0.5f)) * verticalOffset) / 100);
+                float alpha = -1 * (((100f / (totalScrollRange * 0.5f)) * verticalOffset) / 100);
 
                 
                 alpha = Math.max(0, alpha);
