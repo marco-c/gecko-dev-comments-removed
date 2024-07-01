@@ -111,21 +111,6 @@ const AVAILABLE_INJECTIONS = [
     customFunc: "noSniffFix",
   },
   {
-    id: "bug1768243",
-    platform: "desktop",
-    domain: "cloud.google.com",
-    bug: "1768243",
-    contentScripts: {
-      matches: ["*://cloud.google.com/terms/*"],
-      css: [
-        {
-          file:
-            "injections/css/bug1768243-cloud.google.com-allow-table-scrolling.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1570328",
     platform: "android",
     domain: "developer.apple.com",
@@ -414,20 +399,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1743614",
-    platform: "android",
-    domain: "storytel.com",
-    bug: "1743614",
-    contentScripts: {
-      matches: ["*://*.storytel.com/*"],
-      css: [
-        {
-          file: "injections/css/bug1743614-storytel.com-flex-min-width.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1754473",
     platform: "android",
     domain: "m.intl.taobao.com",
@@ -558,9 +529,10 @@ const AVAILABLE_INJECTIONS = [
         "*://*.pixiv.net/*", 
         "*://*.webex.com/*", 
         "*://business.help.royalmail.com/app/webforms/*", 
+        "*://ifcinema.institutfrancais.com/*", 
+        "*://mobilevikings.be/*/registration/*", 
         "*://www.northcountrypublicradio.org/contact/subscribe.html*", 
         "*://www.schoolnutritionandfitness.com/*", 
-        "*://mobilevikings.be/*/registration/*", 
       ],
       js: [
         {
@@ -708,11 +680,12 @@ const AVAILABLE_INJECTIONS = [
     contentScripts: {
       matches: [
         "*://*.aptsovation.com/*",
+        "*://*.liveatlasathens.com/*", 
+        "*://*.liveobserverpark.com/*", 
         "*://*.nhcalaska.com/*",
+        "*://*.prospectportal.com/*", 
         "*://*.securityproperties.com/*",
         "*://*.theloftsorlando.com/*",
-        "*://*.liveobserverpark.com/*", 
-        "*://*.liveatlasathens.com/*", 
       ],
       css: [
         {
