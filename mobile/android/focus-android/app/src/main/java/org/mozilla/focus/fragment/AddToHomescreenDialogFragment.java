@@ -61,7 +61,7 @@ public class AddToHomescreenDialogFragment extends DialogFragment {
 
         
         
-        final Bitmap iconBitmap = IconGenerator.generateLauncherIconPreOreo(getContext(), url);
+        final Bitmap iconBitmap = IconGenerator.generateLauncherIconPreOreo(getContext(), IconGenerator.getRepresentativeCharacter(url));
         final ImageView iconView = (ImageView) dialogView.findViewById(R.id.homescreen_icon);
         iconView.setImageBitmap(iconBitmap);
 
