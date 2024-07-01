@@ -257,7 +257,6 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                         
                         
                         backgroundTransitionGroup.startTransition(ANIMATION_DURATION);
-                        progressView.setProgress(progressView.getMax());
                         progressView.setVisibility(View.GONE);
                     }
                     swipeRefresh.setRefreshing(false);
