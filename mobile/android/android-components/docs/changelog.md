@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **browser-session**
+  * ⚠️ **This is a breaking change**: Removed the following properties from `Session`: `findResults`, `hitResult`, `fullScreenMode` and `layoutInDisplayCutoutMode`. The values still exist in `BrowserState` and can be read from there.
+
 * **support-images**
   * ⚠️ **This is a breaking change**: Removed `ImageRequest` in favor of `ImageSaveRequest` and `ImageLoadRequest` to separate the information passed to methods that load and save images.
   * ⚠️ **This is a breaking change**: `ImageLoader.loadIntoView()` now takes an `ImageSaveRequest` instead of an `ImageRequest`.
@@ -19,9 +22,6 @@ permalink: /changelog/
 * **browser-thumbnails**
   * ⚠️ **This is a breaking change**: `ThumbnailStorage.saveThumbnail()` now takes an `ImageSaveRequest` instead of an `ImageRequest`.
   * ⚠️ **This is a breaking change**: `ThumbnailStorage.loadThumbnail()` now takes an `ImageLoadRequest` instead of an `ImageRequest`.
-
-* **feature-addons**
-    * AddonManager now receives a `WebExtensionRuntime` instead of an `Engine`. This has no impact to consumers of `feature-addons` as `Engine` already implements `WebExtensionRuntime`.
 
 # 50.0.0
 
