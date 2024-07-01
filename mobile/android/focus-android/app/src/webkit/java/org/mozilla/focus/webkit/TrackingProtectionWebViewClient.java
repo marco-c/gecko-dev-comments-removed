@@ -6,8 +6,11 @@ package org.mozilla.focus.webkit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.http.SslError;
 import android.os.AsyncTask;
 import android.support.annotation.WorkerThread;
+import android.webkit.HttpAuthHandler;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -104,4 +107,23 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         return super.shouldOverrideUrlLoading(view, url);
     }
 
+    @Override
+    public void onReceivedError(final WebView webView, int errorCode,
+                                final String description, String failingUrl) {
+
+        
+        
+        
+        
+
+        
+        
+        if (failingUrl.equals(currentPageURL) &&
+                ErrorPage.supportsErrorCode(errorCode)) {
+            ErrorPage.loadErrorPage(webView, currentPageURL, errorCode);
+            return;
+        }
+
+        super.onReceivedError(webView, errorCode, description, failingUrl);
+    }
 }
