@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.utils;
+package org.mozilla.focus.locale;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
