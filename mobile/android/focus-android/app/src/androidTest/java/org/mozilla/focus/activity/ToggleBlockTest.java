@@ -18,6 +18,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.R;
+import org.mozilla.focus.exceptions.ExceptionDomains;
 import org.mozilla.focus.helpers.SessionLoadedIdlingResource;
 import org.mozilla.focus.helpers.TestHelper;
 
@@ -38,6 +39,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.not;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
 
@@ -60,6 +62,8 @@ public class ToggleBlockTest {
                     .edit()
                     .putBoolean(FIRSTRUN_PREF, true)
                     .apply();
+
+            ExceptionDomains.INSTANCE.remove(appContext, ExceptionDomains.INSTANCE.load(appContext));
 
             
             
@@ -137,6 +141,48 @@ public class ToggleBlockTest {
         onView(withId(R.id.blocking_switch))
                 .perform(click());
         TestHelper.waitForWebContent();
+
+        
+        onView(withId(R.id.block))
+                .check(matches(isDisplayed()));
+
+        onView(withId(R.id.webview)).perform(click());
+
+        
+        onView(withId(R.id.menuView))
+                .perform(click());
+        onView(withId(R.id.blocking_switch))
+                .check(matches(not(isChecked())));
+        onView(withId(R.id.trackers_count))
+                .check(matches(withText("-")));
+
+        
+        TestHelper.pressBackKey();
+
+        
+        TestHelper.floatingEraseButton.perform(click());
+        TestHelper.erasedMsg.waitForExists(waitingTime);
+
+        
+        try {
+            webServer.enqueue(new MockResponse()
+                    .setBody(TestHelper.readTestAsset("ad.html")));
+            webServer.enqueue(new MockResponse()
+                    .setBody(TestHelper.readTestAsset("ad.html")));
+            webServer.enqueue(new MockResponse()
+                    .setBody(TestHelper.readTestAsset("ad.html")));
+        } catch (IOException e) {
+            throw new AssertionError("Could not start web server", e);
+        }
+
+        TestHelper.inlineAutocompleteEditText.waitForExists(TestHelper.waitingTime);
+        onView(withId(R.id.urlView))
+                .check(matches(isDisplayed()))
+                .check(matches(hasFocus()))
+                .perform(typeText(webServer.url(TEST_PATH).toString()), pressImeActionButton());
+
+        TestHelper.waitForWebContent();
+        TestHelper.progressBar.waitUntilGone(TestHelper.waitingTime);
 
         
         onView(withId(R.id.block))
