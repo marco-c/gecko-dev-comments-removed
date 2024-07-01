@@ -290,7 +290,10 @@ class LegacySessionManager(
     }
 
     fun link(session: Session, engineSession: EngineSession) {
-        engineSessionLinker.link(session, engineSession)
+        val parent = values.find { it.id == session.parentId }?.let {
+            this.getEngineSession(it)
+        }
+        engineSessionLinker.link(session, engineSession, parent)
     }
 
     private fun unlink(session: Session) {
@@ -309,17 +312,15 @@ class LegacySessionManager(
             return
         }
 
-        val selectedBeforeRemove = selectedSession
-
         values.removeAt(indexToRemove)
 
         unlink(session)
 
-        recalculateSelectionIndex(
-            indexToRemove,
-            selectParentIfExists,
-            session.private,
-            session.parentId
+        val selectionUpdated = recalculateSelectionIndex(
+                indexToRemove,
+                selectParentIfExists,
+                session.private,
+                session.parentId
         )
 
         values.filter { it.parentId == session.id }
@@ -327,7 +328,7 @@ class LegacySessionManager(
 
         notifyObservers { onSessionRemoved(session) }
 
-        if (selectedBeforeRemove != selectedSession && selectedIndex != NO_SELECTION) {
+        if (selectionUpdated && selectedIndex != NO_SELECTION) {
             notifyObservers { onSessionSelected(selectedSessionOrThrow) }
         }
     }
@@ -342,7 +343,7 @@ class LegacySessionManager(
         selectParentIfExists: Boolean,
         private: Boolean,
         parentId: String?
-    ) {
+    ): Boolean {
         // Recalculate selection
         var newSelectedIndex = when {
             // All items have been removed
@@ -370,7 +371,13 @@ class LegacySessionManager(
                 if (selectParentIfExists) indexToRemove else newSelectedIndex)
         }
 
-        selectedIndex = newSelectedIndex
+        val selectionUpdated = newSelectedIndex != selectedIndex
+
+        if (selectionUpdated) {
+            selectedIndex = newSelectedIndex
+        }
+
+        return selectionUpdated
     }
 
     private fun newSelection(
