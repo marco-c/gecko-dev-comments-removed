@@ -5,23 +5,6 @@
 
 
 
-const supportedProtocols = ["http:", "https:"];
-
-
-
-const blockedHosts = [
-  "amazon.com",
-  "github.com",
-  "mail.google.com",
-  "pinterest.com",
-  "reddit.com",
-  "twitter.com",
-  "youtube.com"
-];
-
-
-
-
 const preservedClasses = [
   "caption",
   "emoji",
@@ -37,22 +20,6 @@ const preservedClasses = [
 
 class ReaderView {
 
-  static isReaderable() {
-    if (!supportedProtocols.includes(location.protocol)) {
-      return false;
-    }
-
-    if (blockedHosts.some(blockedHost => location.hostname.endsWith(blockedHost))) {
-      return false;
-    }
-
-    if (location.pathname == "/") {
-      return false;
-    }
-
-    return isProbablyReaderable(document, ReaderView._isNodeVisible);
-  }
-
   static get MIN_FONT_SIZE() {
     return 1;
   }
@@ -61,31 +28,34 @@ class ReaderView {
     return 9;
   }
 
-  static _isNodeVisible(node) {
-    return node.clientHeight > 0 && node.clientWidth > 0;
-  }
+  
 
-  show({fontSize = 4, fontType = "sans-serif", colorScheme = "light"} = {}) {
-    let result = new Readability(document, {classesToPreserve: preservedClasses}).parse();
-    result.language = document.documentElement.lang;
+
+
+
+
+
+
+
+  show(doc, url, options = {fontSize: 4, fontType: "sans-serif", colorScheme: "light"}) {
+    let result = new Readability(doc, {classesToPreserve: preservedClasses}).parse();
+    result.language = doc.documentElement.lang;
 
     let article = Object.assign(
       result,
-      {url: location.hostname},
+      {url: new URL(url).hostname},
       {readingTime: this.getReadingTime(result.length, result.language)},
       {byline: this.getByline()},
       {dir: this.getTextDirection(result)}
     );
 
-    document.documentElement.innerHTML = this.createHtml(article);
+    document.body.outerHTML = this.createHtmlBody(article);
 
-    this.setFontSize(fontSize);
-    this.setFontType(fontType);
-    this.setColorScheme(colorScheme);
-  }
+    this.setFontSize(options.fontSize);
+    this.setFontType(options.fontType);
+    this.setColorScheme(options.colorScheme);
 
-  hide() {
-    location.reload(false)
+    document.title = article.title;
   }
 
   
@@ -150,13 +120,13 @@ class ReaderView {
     bodyClasses.add(this.colorScheme)
   }
 
-  createHtml(article) {
+  
+
+
+
+
+  createHtmlBody(article) {
     return `
-      <head>
-        <meta content="text/html; charset=UTF-8" http-equiv="content-type">
-        <meta name="viewport" content="width=device-width; user-scalable=0">
-        <title>${article.title}</title>
-      </head>
       <body class="mozac-readerview-body">
         <div id="mozac-readerview-container" class="container" dir=${article.dir}>
           <div class="header">
@@ -315,17 +285,71 @@ class ReaderView {
    }
 }
 
-let readerView = new ReaderView();
+function fetchDocument(url) {
+  return new Promise((resolve, reject) => {
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onerror = evt => reject(evt.error);
+    xhr.responseType = "document";
+    xhr.onload = evt => {
+      if (xhr.status !== 200) {
+        reject("Reader mode XHR failed with status: " + xhr.status);
+        return;
+      }
+      let doc = xhr.responseXML;
+      if (!doc) {
+        reject("Reader mode XHR didn't return a document");
+        return;
+      }
+      resolve(doc);
+    };
+    xhr.send();
+  });
+}
 
-let port = browser.runtime.connectNative("mozacReaderview");
-port.onMessage.addListener((message) => {
+function getPreparedDocument(url) {
+  return new Promise((resolve, reject) => {
+    let id = url.searchParams.get("id");
+    browser.runtime.sendMessage({action: "getSerializedDoc", id: id}).then((serializedDoc) => {
+        if (serializedDoc) {
+          let doc = new JSDOMParser().parse(serializedDoc, url);
+          resolve(doc);
+        } else {
+          reject();
+        }
+      }
+    );
+  });
+}
+
+let readerView = new ReaderView();
+connectNativePort();
+
+function connectNativePort() {
+  let url = new URL(window.location.href);
+  let articleUrl = decodeURIComponent(url.searchParams.get("url"));
+  let baseUrl = browser.runtime.getURL("/");
+
+  let port = browser.runtime.connectNative("mozacReaderview");
+  port.onMessage.addListener((message) => {
     switch (message.action) {
       case 'show':
-        readerView.show(message.value);
+        async function showAsync(options) {
+          try {
+            let doc = await Promise.any([fetchDocument(articleUrl), getPreparedDocument(url)]);
+            readerView.show(doc, articleUrl, options);
+          } catch(e) {
+            console.log(e);
+            
+            
+            
+            window.location.href = articleUrl;
+          }
+        }
+        showAsync(message.value);
         break;
       case 'hide':
-        readerView.hide();
-        break;
+        window.location.href = articleUrl;
       case 'setColorScheme':
         readerView.setColorScheme(message.value.toLowerCase());
         break;
@@ -335,12 +359,13 @@ port.onMessage.addListener((message) => {
       case 'setFontType':
         readerView.setFontType(message.value.toLowerCase());
         break;
-      case 'checkReaderable':
-        port.postMessage({readerable: ReaderView.isReaderable()});
+      case 'checkReaderState':
+        port.postMessage({baseUrl: baseUrl, activeUrl: articleUrl, readerable: true});
         break;
       default:
         console.error(`Received invalid action ${message.action}`);
     }
-});
+  });
 
-window.addEventListener("unload", (event) => { port.disconnect() }, false);
+   window.addEventListener("unload", (event) => { port.disconnect() }, false);
+}
