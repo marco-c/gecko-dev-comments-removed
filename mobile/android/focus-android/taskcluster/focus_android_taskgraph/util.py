@@ -1,0 +1,10 @@
+
+
+
+
+
+import re
+
+
+def upper_case_first_letter(string):
+    return string[0].upper() + string[1:]
