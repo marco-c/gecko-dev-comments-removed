@@ -15,19 +15,16 @@ permalink: /changelog/
 * **feature-session**
   * ⚠️ **This is a breaking change**: `FullScreenFeature`, `SettingsUseCases`, `SwipeRefreshFeature` and `SessionFeature` now require a `BrowserStore` instead of a `SessionManager`.
   * ⚠️ **This is a breaking change**: `SessionFeature` now requires an `EngineSessionUseCases` instance.
-  * ⚠️ **This is a breaking change**: `TrackingProtectionUseCases` now requires a `BrowserStore` instead of a `SessionManager`.
-
-* **feature-tabs**
-  * ⚠️ **This is a breaking change**: `TabsUseCases.AddNewTabUseCase` and `TabsUseCases.AddNewPrivateTabUseCase` now require a `BrowserStore` instead of a `SessionManager`.
-
-* **browser-session**
-  * `SessionManager.getEngineSession()` is now deprecated. From now on please read `EngineSession` instances of tabs from `BrowserState`.
 
 * **service-sync-logins**
   * ⚠️ **This is a breaking change**: removed `isAutofillEnabled` lambda from `GeckoLoginStorageDelegate` because setting has been exposed through GV
 
 * **concept-engine**
   * Adds `profiler` property with `isProfilerActive`, `getProfilerTime` and `addMarker` Firefox Profiler APIs. These will allow to add profiler markers.
+
+* **support-ktx**
+  * Adds `Resources.getSpanned` to format strings using style spans.
+  * Adds `Resources.locale` to get the corresponding locale on all SDK versions.
 
 # 48.0.0
 
