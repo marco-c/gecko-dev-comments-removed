@@ -324,6 +324,8 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                 urlInputBackgroundView.setTranslationX(-containerMargin);
                 urlInputBackgroundView.setTranslationY(-containerMargin);
                 urlInputContainerView.setAnimationOffset(0f);
+
+                clearView.setAlpha(0);
             }
 
             
@@ -336,9 +338,18 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                     .translationY(reverse ? -containerMargin : 0)
                     .setListener(new AnimatorListenerAdapter() {
                         @Override
+                        public void onAnimationStart(Animator animation) {
+                            if (reverse) {
+                                clearView.setAlpha(0);
+                            }
+                        }
+
+                        @Override
                         public void onAnimationEnd(Animator animation) {
                             if (reverse) {
                                 dismiss();
+                            } else {
+                                clearView.setAlpha(1);
                             }
                         }
                     });
@@ -368,12 +379,6 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
         
         toolbarBackgroundView.animate()
-                .setDuration(ANIMATION_DURATION)
-                .alpha(reverse ? 0 : 1);
-
-        
-        clearView.animate()
-                .setStartDelay(100)
                 .setDuration(ANIMATION_DURATION)
                 .alpha(reverse ? 0 : 1);
     }
