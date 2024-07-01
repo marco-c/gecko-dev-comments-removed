@@ -38,17 +38,18 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        final Settings appSettings = new Settings(this);
         if (Intent.ACTION_VIEW.equals(getIntent().getAction())) {
             final String url = getIntent().getDataString();
 
-            if (Settings.shouldShowFirstrun(this)) {
+            if (appSettings.shouldShowFirstrun()) {
                 pendingUrl = url;
                 showFirstrun();
             } else {
                 showBrowserScreen(url);
             }
         } else {
-            if (Settings.shouldShowFirstrun(this)) {
+            if (appSettings.shouldShowFirstrun()) {
                 showFirstrun();
             } else {
                 showHomeScreen();
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        if (pendingUrl != null && !Settings.shouldShowFirstrun(this)) {
+        if (pendingUrl != null && !new Settings(this).shouldShowFirstrun()) {
             
             
             
