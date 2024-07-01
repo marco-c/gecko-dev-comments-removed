@@ -1501,7 +1501,7 @@ public class BrowserFragment extends WebFragment implements LifecycleObserver, V
             findInPagePrevious.setAlpha(1.0F);
             
             
-            if (!AppConstants.isGeckoBuild(context)) {
+            if (!AppConstants.INSTANCE.isGeckoBuild()) {
                 activeMatchOrdinal++;
             }
             final String visibleString = String.format(context.getString(R.string.find_in_page_result), activeMatchOrdinal, numberOfMatches);

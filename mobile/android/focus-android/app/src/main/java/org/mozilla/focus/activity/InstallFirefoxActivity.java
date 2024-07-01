@@ -49,7 +49,7 @@ public class InstallFirefoxActivity extends Activity {
     }
 
     public static void open(Context context) {
-        if (AppConstants.isKlarBuild()) {
+        if (AppConstants.INSTANCE.isKlarBuild()) {
             
             context.startActivity(createStoreIntent());
         } else {

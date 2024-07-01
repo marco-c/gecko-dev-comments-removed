@@ -142,7 +142,8 @@ class BrowserMenuAdapter(
             )
         }
 
-        if (AppConstants.isGeckoBuild(context)) {
+        if (AppConstants.isGeckoBuild) {
+            items.add(MenuItem.RequestDesktopCheck)
             
             items.add(
                 MenuItem.Default(

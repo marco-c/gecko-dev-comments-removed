@@ -55,7 +55,7 @@ public class URLMismatchTest {
 
             
             
-            if (AppConstants.isKlarBuild() && !AppConstants.isGeckoBuild(appContext)) {
+            if (AppConstants.INSTANCE.isKlarBuild() && !AppConstants.INSTANCE.isGeckoBuild()) {
                 PreferenceManager.getDefaultSharedPreferences(appContext)
                         .edit()
                         .putBoolean(ENGINE_PREF_STRING_KEY, true)

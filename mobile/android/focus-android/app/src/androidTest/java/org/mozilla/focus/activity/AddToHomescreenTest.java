@@ -60,7 +60,7 @@ public class AddToHomescreenTest {
 
             
             
-            if (AppConstants.isKlarBuild() && !AppConstants.isGeckoBuild(appContext)) {
+            if (AppConstants.INSTANCE.isKlarBuild() && !AppConstants.INSTANCE.isGeckoBuild()) {
                 PreferenceManager.getDefaultSharedPreferences(appContext)
                         .edit()
                         .putBoolean(ENGINE_PREF_STRING_KEY, true)
@@ -140,7 +140,7 @@ public class AddToHomescreenTest {
         TestHelper.pressEnterKey();
         TestHelper.progressBar.waitForExists(waitingTime);
         Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
-        if (!AppConstants.isGeckoBuild(mActivityTestRule.getActivity())) {
+        if (!AppConstants.INSTANCE.isGeckoBuild()) {
             TestHelper.waitForWebSiteTitleLoad();
         }
 
@@ -191,7 +191,7 @@ public class AddToHomescreenTest {
         TestHelper.pressEnterKey();
         TestHelper.progressBar.waitForExists(waitingTime);
         Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
-        if (!AppConstants.isGeckoBuild(mActivityTestRule.getActivity())) {
+        if (!AppConstants.INSTANCE.isGeckoBuild()) {
             TestHelper.waitForWebSiteTitleLoad();
         }
 
