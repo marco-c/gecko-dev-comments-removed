@@ -11,6 +11,7 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 
+import org.mozilla.focus.BuildConfig;
 import org.mozilla.focus.R;
 import org.mozilla.focus.fragment.FirstrunFragment;
 import org.mozilla.focus.search.SearchEngine;
@@ -38,6 +39,12 @@ public class Settings {
     }
 
     public boolean shouldUseSecureMode() {
+        
+        
+        if (BuildConfig.BUILD_TYPE.equals("debug")) {
+            return false;
+        }
+
         return preferences.getBoolean(
                 resources.getString(R.string.pref_key_secure),
                 true);
