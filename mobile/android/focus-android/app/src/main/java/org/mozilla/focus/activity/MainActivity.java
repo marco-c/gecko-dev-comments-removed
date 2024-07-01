@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         
         
         if (finishActivity) {
-            finish();
+            finishAndRemoveTask();
             overridePendingTransition(0, 0); 
         }
 
