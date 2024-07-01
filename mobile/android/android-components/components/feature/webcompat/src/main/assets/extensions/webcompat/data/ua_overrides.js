@@ -320,28 +320,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1577250",
-    platform: "android",
-    domain: "homebook.pl",
-    bug: "1577250",
-    config: {
-      matches: ["*://*.homebook.pl/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1577267",
     platform: "android",
     domain: "metfone.com.kh",
@@ -605,25 +583,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1679869",
-    platform: "android",
-    domain: "vh1.com",
-    bug: "1679869",
-    config: {
-      matches: ["*://*.vh1.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1693827",
     platform: "desktop",
     domain: "spectrum.net",
@@ -692,6 +651,83 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://www.dealnews.com/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1719841",
+    platform: "android",
+    domain: "appmedia.jp",
+    bug: "1719841",
+    config: {
+      matches: ["*://appmedia.jp/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1719842",
+    platform: "android",
+    domain: "gouletpens.com",
+    bug: "1719842",
+    config: {
+      matches: ["*://*.gouletpens.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+    id: "bug1719846",
+    platform: "all",
+    domain: "covid.cdc.gov",
+    bug: "1719846",
+    config: {
+      matches: ["*://covid.cdc.gov/covid-data-tracker/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1719859",
+    platform: "all",
+    domain: "saxoinvestor.fr",
+    bug: "1719859",
+    config: {
+      matches: ["*://*.saxoinvestor.fr/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome/91.0.4472.114";
       },
     },
   },
