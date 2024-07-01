@@ -29,7 +29,8 @@ import java.util.ArrayList;
         reader.beginObject();
 
         while (reader.hasNext()) {
-            final String siteName = reader.nextName();
+            
+            reader.skipValue();
 
             handleSite(reader);
         }
