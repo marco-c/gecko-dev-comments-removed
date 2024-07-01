@@ -24,4 +24,24 @@ public class UrlUtils {
 
         return url.startsWith("https:");
     }
+
+    
+
+
+
+
+    public static boolean isUrl(String url) {
+        if (url.contains(" ")) {
+            return false;
+        }
+
+        return url.contains(".");
+    }
+
+    public static String createSearchUrl(String rawUrl) {
+        return Uri.parse("https://duckduckgo.com/").buildUpon()
+                .appendQueryParameter("q", rawUrl)
+                .build()
+                .toString();
+    }
 }
