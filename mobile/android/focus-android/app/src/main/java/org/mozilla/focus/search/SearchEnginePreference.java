@@ -20,34 +20,34 @@ public class SearchEnginePreference extends DialogPreference {
     @SuppressWarnings("unused") 
     public SearchEnginePreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        init(context);
+        init();
     }
 
     @SuppressWarnings("unused") 
     public SearchEnginePreference(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
+        init();
     }
 
     @SuppressWarnings("unused") 
     public SearchEnginePreference(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
+        init();
     }
 
     @SuppressWarnings("unused") 
     public SearchEnginePreference(Context context) {
         super(context);
-        init(context);
+        init();
     }
 
-    private void init(Context context) {
-        setTitle(SearchEngineManager.getDefaultSearchEngine(context).getLabel());
+    private void init() {
+        setTitle(SearchEngineManager.getInstance().getDefaultSearchEngine().getName());
     }
 
     @Override
     protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
-        final SearchEngineAdapter adapter = new SearchEngineAdapter(getContext());
+        final SearchEngineAdapter adapter = new SearchEngineAdapter();
 
         builder.setTitle(R.string.preference_dialog_title_search_engine);
 
@@ -65,7 +65,7 @@ public class SearchEnginePreference extends DialogPreference {
     }
 
     private void persistSearchEngine(SearchEngine searchEngine) {
-        setTitle(searchEngine.getLabel());
+        setTitle(searchEngine.getName());
 
         
     }

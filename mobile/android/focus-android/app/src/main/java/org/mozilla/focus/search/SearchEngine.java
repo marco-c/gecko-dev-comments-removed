@@ -5,25 +5,19 @@
 
 package org.mozilla.focus.search;
 
-import android.support.annotation.DrawableRes;
-
-
-
+import android.graphics.Bitmap;
 
 public class SearchEngine {
-    private String label;
-    private int icon;
+     String name;
+     Bitmap icon;
 
-     SearchEngine(@DrawableRes int icon, String label) {
-        this.label = label;
-        this.icon = icon;
+     SearchEngine() {}
+
+    public String getName() {
+        return name;
     }
 
-    public String getLabel() {
-        return label;
-    }
-
-    public int getIcon() {
+    public Bitmap getIcon() {
         return icon;
     }
 }
