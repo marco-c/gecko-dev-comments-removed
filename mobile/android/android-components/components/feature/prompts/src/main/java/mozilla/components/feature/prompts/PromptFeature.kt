@@ -486,7 +486,8 @@ class PromptFeature private constructor(
                         message,
                         userName,
                         password,
-                        onlyShowPassword
+                        onlyShowPassword,
+                        session.content.url
                     )
                 }
             }
