@@ -4,37 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 22.0.0-SNAPSHOT (In Development)
+# 21.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v21.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/82?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v20.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/81?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-* **feature-addons**
-  *  ⚠️ **This is a breaking change**:
-  * Renamed to `AddOnsCollectionsProvider` to `AddOnCollectionProvider` and added caching support:
-  ```Kotlin
-  val addOnsProvider by lazy {
-    // Keeps addon collection response cached and valid for one day
-    AddOnCollectionProvider(applicationContext, client, maxCacheAgeInMinutes = 24 * 60)      
-  }
-
-  // May return a cached result, if available
-  val addOns = addOnsProvider.getAvailableAddOns()
-
-  // Will never return a cached result
-  val addOns = addOnsProvider.getAvailableAddOns(allowCache = false)
-  ```
-
-# 21.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v20.0.0...v21.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/81?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v21.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v21.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v21.0.0/buildSrc/src/main/java/Config.kt)
 
 * **feature-downloads**
   * Added `tryAgain` which can be called on the feature in order to restart a failed download.
@@ -58,6 +34,9 @@ permalink: /changelog/
 
     sitePermissions[Permission.LOCATION] //  ALLOWED will be returned
   ```
+
+* **feature-push**
+  * Added `unsubscribeAll` support from the Rust native layer.
 
 # 20.0.0
 
