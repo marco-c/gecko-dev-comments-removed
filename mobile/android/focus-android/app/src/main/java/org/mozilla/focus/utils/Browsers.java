@@ -115,8 +115,18 @@ public class Browsers {
     }
 
     private void findKnownBrowsers(PackageManager packageManager, Map<String, ActivityInfo> browsers, @NonNull Uri uri) {
-        for (KnownBrowser browser : KnownBrowser.values()) {
+        for (final KnownBrowser browser : KnownBrowser.values()) {
             if (browsers.containsKey(browser.packageName)) {
+                continue;
+            }
+
+            
+            
+            
+            try {
+                
+                packageManager.getPackageInfo(browser.packageName, 0);
+            } catch (PackageManager.NameNotFoundException e) {
                 continue;
             }
 
