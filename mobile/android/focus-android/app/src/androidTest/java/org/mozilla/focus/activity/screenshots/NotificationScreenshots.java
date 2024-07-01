@@ -94,7 +94,7 @@ public class NotificationScreenshots extends ScreenshotTest {
                 
                 device.findObject(new UiSelector()
                         .text(getString(R.string.app_name)))
-                        .swipeDown(5);
+                        .swipeDown(20);
 
                 assertTrue(openAction.waitForExists(waitingTime));
             }
