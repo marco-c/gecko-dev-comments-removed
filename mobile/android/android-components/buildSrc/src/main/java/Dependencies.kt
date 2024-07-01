@@ -26,14 +26,14 @@ object Versions {
     const val disklrucache = "2.0.2"
     const val leakcanary = "1.6.3"
 
-    const val mozilla_appservices = "0.38.2"
+    const val mozilla_appservices = "0.39.1"
 
     const val material = "1.0.0"
 
     object AndroidX {
         const val annotation = "1.1.0"
         const val appcompat = "1.1.0"
-        const val browser = "1.2.0-alpha07"
+        const val browser = "1.0.0"
         const val cardview = "1.0.0"
         const val constraintlayout = "1.1.3"
         const val core = "1.1.0"
