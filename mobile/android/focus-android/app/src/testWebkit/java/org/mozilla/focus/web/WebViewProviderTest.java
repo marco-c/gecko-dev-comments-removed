@@ -1,11 +1,16 @@
 package org.mozilla.focus.web;
 
+import android.os.Build;
+import android.webkit.WebSettings;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 import static org.junit.Assert.*;
-
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 public class WebViewProviderTest {
@@ -38,6 +43,20 @@ public class WebViewProviderTest {
         assertEquals("ImaginaryKit/-10 (KHTML, like Gecko) Version/4.0 Imaginary/37.0.0.0 Mobile Safari/537.36 " + focusToken,
                 WebViewProvider.getUABrowserString(chromelessImaginaryKit, focusToken));
 
+    }
+
+    @Test
+    public void buildUserAgentString() {
+        
+        
+        
+        
+        
+        WebSettings testSettings = mock(WebSettings.class);
+        when(testSettings.getUserAgentString()).thenReturn("Mozilla/5.0 (Linux; U; Android 4.0.3; ko-kr; LG-L160L Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+
+        assertEquals("Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + ") AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30 fakeappname/null",
+                WebViewProvider.buildUserAgentString(RuntimeEnvironment.application, testSettings, "fakeappname"));
     }
 
 }
