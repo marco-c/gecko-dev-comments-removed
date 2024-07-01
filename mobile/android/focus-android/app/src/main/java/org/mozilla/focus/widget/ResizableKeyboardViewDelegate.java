@@ -105,6 +105,10 @@ import org.mozilla.focus.R;
         viewToHide = null;
     }
 
+     void reset() {
+        updateBottomPadding(0);
+    }
+
     private void updateBottomPadding(int value) {
         if (shouldAnimate) {
             animateBottomPaddingTo(value);

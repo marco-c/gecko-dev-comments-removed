@@ -41,6 +41,7 @@ import org.mozilla.focus.utils.ThreadUtils;
 import org.mozilla.focus.utils.UrlUtils;
 import org.mozilla.focus.utils.ViewUtils;
 import org.mozilla.focus.widget.InlineAutocompleteEditText;
+import org.mozilla.focus.widget.ResizableKeyboardLinearLayout;
 
 
 
@@ -106,7 +107,7 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
     private View clearView;
     private View searchViewContainer;
     private TextView searchView;
-
+    private ResizableKeyboardLinearLayout keyboardLinearLayout;
     private UrlAutoCompleteFilter urlAutoCompleteFilter;
     private View dismissView;
     private View urlInputContainerView;
@@ -169,8 +170,10 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
             }
         });
 
+        keyboardLinearLayout = view.findViewById(R.id.brand_background);
+
         if (isOverlay()) {
-            view.findViewById(R.id.brand_background).setVisibility(View.GONE);
+            keyboardLinearLayout.setVisibility(View.GONE);
         } else {
             view.findViewById(R.id.background).setBackgroundResource(R.drawable.background_home);
 
@@ -230,6 +233,14 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
             
             showKeyboard();
         }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        
+        keyboardLinearLayout.reset();
     }
 
     public void showKeyboard() {
