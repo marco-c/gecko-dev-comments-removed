@@ -7,13 +7,29 @@
 
 
 
+
+
+
+function sizesToList(sizes) {
+    if (sizes == null) {
+        return []
+    }
+
+    if (!(sizes instanceof DOMTokenList)) {
+        return []
+    }
+
+    return Array.from(sizes)
+}
+
 function collect_link_icons(icons, rel) {
     document.querySelectorAll('link[rel="' + rel + '"]').forEach(
         function(currentValue, currentIndex, listObj) {
             icons.push({
                 'type': rel,
                 'href': currentValue.href,
-                'sizes': currentValue.sizes
+                'sizes': sizesToList(currentValue.sizes),
+                'mimeType': currentValue.type
             });
     })
 }
@@ -57,8 +73,9 @@ collect_meta_property_icons(icons, 'og:image:secure_url')
 collect_meta_name_icons(icons, 'twitter:image')
 collect_meta_name_icons(icons, 'msapplication-TileImage')
 
+let message = {
+    'url': document.location.href,
+    'icons': icons
+}
 
-
-
-
-console.log("browser-icons: (" + icons.length + ")", document.location.href, icons)
+browser.runtime.sendNativeMessage("MozacBrowserIcons", message);
