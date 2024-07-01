@@ -55,19 +55,23 @@ public class CustomTabConfig {
     public final boolean showShareMenuItem;
     public final @NonNull List<CustomTabMenuItem> menuItems;
 
+    private final @NonNull List<String> unsupportedFeatureList;
+
      CustomTabConfig(
             final @Nullable @ColorInt Integer toolbarColor,
             final @Nullable Bitmap closeButtonIcon,
             final boolean disableUrlbarHiding,
             final @Nullable ActionButtonConfig actionButtonConfig,
             final boolean showShareMenuItem,
-            final @NonNull List<CustomTabMenuItem> menuItems) {
+            final @NonNull List<CustomTabMenuItem> menuItems,
+            final @NonNull List<String> unsupportedFeatureList) {
         this.toolbarColor = toolbarColor;
         this.closeButtonIcon = closeButtonIcon;
         this.disableUrlbarHiding = disableUrlbarHiding;
         this.actionButtonConfig = actionButtonConfig;
         this.showShareMenuItem = showShareMenuItem;
         this.menuItems = menuItems;
+        this.unsupportedFeatureList = unsupportedFeatureList;
     }
 
      static boolean isCustomTabIntent(final @NonNull SafeIntent intent) {
@@ -187,10 +191,38 @@ public class CustomTabConfig {
             }
         }
 
+        
+        
+        final List<String> unsupportedFeatureList = new LinkedList<>();
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_TINT_ACTION_BUTTON)) {
+            unsupportedFeatureList.add("hasActionButtonTint");
+        }
+
+        
+        
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_REMOTEVIEWS) ||
+                intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_ITEMS)) {
+            unsupportedFeatureList.add("hasBottomToolbar");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_SECONDARY_TOOLBAR_COLOR)) {
+            unsupportedFeatureList.add("hasBottomToolbarColor");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_EXIT_ANIMATION_BUNDLE)) {
+            unsupportedFeatureList.add("hasExitAnimation");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_ENABLE_INSTANT_APPS)) {
+            unsupportedFeatureList.add("enablesInstantApps");
+        }
+
         if (intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE)) {
             final int titleVisibility = intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, 0);
             switch (titleVisibility) {
                 case CustomTabsIntent.SHOW_PAGE_TITLE:
+                    unsupportedFeatureList.add("hasPageTitle");
                     break;
                 case CustomTabsIntent.NO_TITLE:
                     break;
@@ -200,7 +232,7 @@ public class CustomTabConfig {
             }
         }
 
-        return new CustomTabConfig(toolbarColor, closeButtonIcon, disableUrlbarHiding, actionButtonConfig, showShareMenuItem, menuItems);
+        return new CustomTabConfig(toolbarColor, closeButtonIcon, disableUrlbarHiding, actionButtonConfig, showShareMenuItem, menuItems, unsupportedFeatureList);
     }
 
     
@@ -208,7 +240,7 @@ public class CustomTabConfig {
 
     public String getOptionsList() {
         
-        final List<String> featureList = new LinkedList<>();
+        final List<String> featureList = new LinkedList<>(unsupportedFeatureList);
 
         if (toolbarColor != null) {
             featureList.add("hasToolbarColor");
