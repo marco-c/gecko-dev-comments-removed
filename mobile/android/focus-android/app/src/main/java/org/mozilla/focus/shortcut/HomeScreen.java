@@ -5,9 +5,13 @@
 
 package org.mozilla.focus.shortcut;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.VisibleForTesting;
@@ -60,8 +64,20 @@ public class HomeScreen {
 
 
 
+    @TargetApi(26)
     private static void installShortCutViaManager(Context context, Bitmap bitmap, String url, String title) {
-        
+        final Intent shortcutIntent = createShortcutIntent(context, url);
+        ShortcutManager shortcutManager = context.getSystemService(ShortcutManager.class);
+        if (shortcutManager.isRequestPinShortcutSupported()) {
+            ShortcutInfo shortcut = new ShortcutInfo.Builder(context, url)
+                    .setShortLabel(title)
+                    .setLongLabel(url)
+                    .setIcon(Icon.createWithBitmap(bitmap))
+                    .setIntent(new Intent(shortcutIntent))
+                    .build();
+            shortcutManager.requestPinShortcut(shortcut, null);
+            MainActivity.requestShortcut(shortcutManager, shortcut);
+        }
     }
 
     private static Intent createShortcutIntent(Context context, String url) {
