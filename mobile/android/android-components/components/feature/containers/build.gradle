@@ -19,6 +19,12 @@ android {
                 arg("room.schemaLocation", "$projectDir/schemas".toString())
             }
         }
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += ["room.incremental": "true"]
+            }
+        }
     }
 
     buildTypes {
@@ -38,7 +44,6 @@ android {
 }
 
 dependencies {
-    implementation project(':browser-state')
     implementation project(':support-ktx')
     implementation project(':support-base')
 
