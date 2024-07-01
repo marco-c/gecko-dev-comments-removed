@@ -10,6 +10,9 @@ import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
+import android.support.test.uiautomator.UiObject;
+import android.support.test.uiautomator.UiObjectNotFoundException;
+import android.support.test.uiautomator.UiSelector;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -24,13 +27,17 @@ import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.action.ViewActions.pressImeActionButton;
 import static android.support.test.espresso.action.ViewActions.replaceText;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
-import static android.support.test.espresso.matcher.ViewMatchers.hasFocus;
-import static android.support.test.espresso.matcher.ViewMatchers.isClickable;
+import static android.support.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static android.view.KeyEvent.KEYCODE_SPACE;
+import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.EspressoHelper.childAtPosition;
+import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 import static org.mozilla.focus.web.WebViewProviderKt.ENGINE_PREF_STRING_KEY;
 
@@ -70,23 +77,36 @@ public class URLMismatchTest {
     }
 
     @Test
-    public void MismatchTest() {
-        
-        onView(withId(R.id.urlView))
-                .check(matches(isDisplayed()))
-                .check(matches(hasFocus()))
-                .perform(click(), replaceText("mozilla"));
+    public void MismatchTest() throws UiObjectNotFoundException {
+        String searchString = String.format("mozilla focus - %s Search", "google");
+        UiObject googleWebView = TestHelper.mDevice.findObject(new UiSelector()
+                .description(searchString)
+                .className("android.webkit.WebView"));
 
         
-        onView(withId(R.id.searchView))
-                .check(matches(isDisplayed()))
-                .check(matches(withText("Search for mozilla")))
-                .check(matches(isClickable()))
-                .perform(click());
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText("mozilla ");
+        
+        
+        if (TestHelper.searchSuggestionsTitle.exists()) {
+            TestHelper.searchSuggestionsButtonYes.waitForExists(waitingTime);
+            TestHelper.searchSuggestionsButtonYes.click();
+        }
 
         
-        onView(withId(R.id.webview))
+        TestHelper.mDevice.pressKeyCode(KEYCODE_SPACE);
+        TestHelper.suggestionList.waitForExists(waitingTime);
+        assertTrue(TestHelper.suggestionList.getChildCount() >= 1);
+
+        onView(allOf(withText(containsString("mozilla")),
+                withId(R.id.suggestion),
+                isDescendantOfA(childAtPosition(withId(R.id.suggestionList), 1))))
                 .check(matches(isDisplayed()));
+
+        
+        TestHelper.pressEnterKey();
+        googleWebView.waitForExists(waitingTime);
+        TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime);
 
         
         onView(withId(R.id.display_url))
