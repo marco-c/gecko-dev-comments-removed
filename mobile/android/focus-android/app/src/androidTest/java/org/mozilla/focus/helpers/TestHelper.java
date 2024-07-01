@@ -55,11 +55,7 @@ public final class TestHelper {
 
     
     public static void waitForWebContent() {
-        if (!AppConstants.INSTANCE.isGeckoBuild()) {
-            assertTrue(webView.waitForExists(waitingTime));
-        } else {
-            assertTrue(geckoView.waitForExists(waitingTime));
-        }
+        assertTrue(geckoView.waitForExists(waitingTime));
     }
 
     

@@ -16,6 +16,7 @@ import androidx.test.uiautomator.UiObjectNotFoundException;
 import androidx.test.uiautomator.UiSelector;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +36,7 @@ import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
 @RunWith(AndroidJUnit4.class)
+@Ignore("This test was written specifically for WebView and needs to be adapted for GeckoView")
 public class ShareWebsiteTest {
     private static final String TEST_PATH = "/";
     private MockWebServer webServer;
@@ -50,9 +52,6 @@ public class ShareWebsiteTest {
             Context appContext = InstrumentationRegistry.getInstrumentation()
                     .getTargetContext()
                     .getApplicationContext();
-
-            
-            org.junit.Assume.assumeTrue(!AppConstants.INSTANCE.isGeckoBuild() && !AppConstants.INSTANCE.isKlarBuild());
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()

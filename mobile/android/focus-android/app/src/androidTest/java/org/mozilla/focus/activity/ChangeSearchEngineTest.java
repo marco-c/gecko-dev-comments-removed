@@ -17,6 +17,7 @@ import androidx.test.uiautomator.UiSelector;
 import android.widget.RadioButton;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 
 
 @RunWith(Parameterized.class)
+@Ignore("This test was written specifically for WebView and needs to be adapted for GeckoView")
 public class ChangeSearchEngineTest {
     @Parameterized.Parameter
     public String mSearchEngine;
@@ -65,9 +67,6 @@ public class ChangeSearchEngineTest {
             Context appContext = InstrumentationRegistry.getInstrumentation()
                     .getTargetContext()
                     .getApplicationContext();
-
-            
-            org.junit.Assume.assumeTrue(!AppConstants.INSTANCE.isGeckoBuild() && !AppConstants.INSTANCE.isKlarBuild());
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()

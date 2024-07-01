@@ -15,6 +15,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +37,7 @@ import static org.mozilla.focus.helpers.EspressoHelper.openMenu;
 
 
 @RunWith(AndroidJUnit4.class)
+@Ignore("This test was written specifically for WebView and needs to be adapted for GeckoView")
 public class AccessAboutAndYourRightsPagesTest {
 
     @Rule
@@ -49,9 +51,6 @@ public class AccessAboutAndYourRightsPagesTest {
             Context appContext = InstrumentationRegistry.getInstrumentation()
                     .getTargetContext()
                     .getApplicationContext();
-
-            
-            org.junit.Assume.assumeTrue(!AppConstants.INSTANCE.isGeckoBuild() && !AppConstants.INSTANCE.isKlarBuild());
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()
