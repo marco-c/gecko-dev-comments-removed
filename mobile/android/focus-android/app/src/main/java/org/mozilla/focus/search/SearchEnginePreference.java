@@ -18,32 +18,18 @@ import org.mozilla.focus.utils.Settings;
 
 
 public class SearchEnginePreference extends DialogPreference {
-    @SuppressWarnings("unused") 
-    public SearchEnginePreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        init();
-    }
-
-    @SuppressWarnings("unused") 
-    public SearchEnginePreference(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
-
-    @SuppressWarnings("unused") 
     public SearchEnginePreference(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
     }
 
-    @SuppressWarnings("unused") 
-    public SearchEnginePreference(Context context) {
-        super(context);
-        init();
+    public SearchEnginePreference(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
     }
 
-    private void init() {
+    @Override
+    protected void onAttachedToActivity() {
         setTitle(SearchEngineManager.getInstance().getDefaultSearchEngine(getContext()).getName());
+        super.onAttachedToActivity();
     }
 
     @Override
