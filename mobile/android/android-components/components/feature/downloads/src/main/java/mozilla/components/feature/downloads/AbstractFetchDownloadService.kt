@@ -55,20 +55,19 @@ import mozilla.components.feature.downloads.AbstractFetchDownloadService.Downloa
 import mozilla.components.feature.downloads.AbstractFetchDownloadService.DownloadJobStatus.PAUSED
 import mozilla.components.feature.downloads.DownloadNotification.NOTIFICATION_DOWNLOAD_GROUP_ID
 import mozilla.components.feature.downloads.ext.addCompletedDownload
-import mozilla.components.feature.downloads.ext.isScheme
 import mozilla.components.feature.downloads.ext.withResponse
 import mozilla.components.feature.downloads.facts.emitNotificationResumeFact
 import mozilla.components.feature.downloads.facts.emitNotificationPauseFact
 import mozilla.components.feature.downloads.facts.emitNotificationCancelFact
 import mozilla.components.feature.downloads.facts.emitNotificationTryAgainFact
 import mozilla.components.feature.downloads.facts.emitNotificationOpenFact
+import mozilla.components.support.ktx.kotlin.sanitizeURL
 import mozilla.components.support.utils.DownloadUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.Exception
 import java.lang.IllegalStateException
 import kotlin.random.Random
 
@@ -353,11 +352,10 @@ abstract class AbstractFetchDownloadService : Service() {
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     internal fun startDownloadJob(currentDownloadJobState: DownloadJobState) {
         try {
             performDownload(currentDownloadJobState)
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             setDownloadJobStatus(currentDownloadJobState, FAILED)
         }
     }
@@ -378,8 +376,6 @@ abstract class AbstractFetchDownloadService : Service() {
             val fileName = download.fileName
                     ?: throw IllegalStateException("A fileName for a download is required")
             val file = File(download.filePath)
-            // addCompletedDownload can't handle any non http(s) urls
-            val url = if (!download.isScheme(listOf("http", "https"))) null else download.url.toUri()
 
             context.addCompletedDownload(
                     title = fileName,
@@ -390,7 +386,7 @@ abstract class AbstractFetchDownloadService : Service() {
                     length = download.contentLength ?: file.length(),
                     // Only show notifications if our channel is blocked
                     showNotification = !DownloadNotification.isChannelEnabled(context),
-                    uri = url,
+                    uri = download.url.toUri(),
                     referer = download.referrerUrl?.toUri()
             )
         }
@@ -551,7 +547,7 @@ abstract class AbstractFetchDownloadService : Service() {
             headers.append(RANGE, "bytes=${currentDownloadJobState.currentBytesCopied}-")
         }
 
-        val request = Request(download.url, headers = headers)
+        val request = Request(download.url.sanitizeURL(), headers = headers)
         val response = httpClient.fetch(request)
 
         // If we are resuming a download and the response does not contain a CONTENT_RANGE
@@ -630,22 +626,13 @@ abstract class AbstractFetchDownloadService : Service() {
         block: (OutputStream) -> Unit
     ) {
         val downloadWithUniqueFileName = makeUniqueFileNameIfNecessary(download, append)
-        updateDownloadState(downloadWithUniqueFileName)
+        downloadJobs[download.id]?.state = downloadWithUniqueFileName
 
         if (SDK_INT >= Build.VERSION_CODES.Q) {
             useFileStreamScopedStorage(downloadWithUniqueFileName, block)
         } else {
             useFileStreamLegacy(downloadWithUniqueFileName, append, block)
         }
-    }
-
-    /**
-     * Updates the given [updatedDownload] in the store and in the [downloadJobs].
-     */
-    @VisibleForTesting
-    internal fun updateDownloadState(updatedDownload: DownloadState) {
-        downloadJobs[updatedDownload.id]?.state = updatedDownload
-        store.dispatch(DownloadAction.UpdateQueuedDownloadAction(updatedDownload))
     }
 
     /**
