@@ -54,7 +54,19 @@ public class WebViewDataTest {
             "app_dxmaker_cache",
             "telemetry",
             "databases",
-            "app_webview"
+            "app_webview",
+
+            
+            
+            
+            
+            
+            
+            
+            
+            "libperfa_x86.so",
+            "perfa.jar",
+            "perfd"
     );
 
     
