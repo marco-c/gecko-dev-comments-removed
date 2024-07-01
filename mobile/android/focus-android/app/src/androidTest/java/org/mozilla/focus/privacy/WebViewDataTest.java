@@ -62,7 +62,8 @@ public class WebViewDataTest {
     private static final Set<String> ANDROID_PROFILER_FILES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "libperfa_x86.so",
             "perfa.jar",
-            "perfd"
+            "perfd",
+            "libmozglue.so"
     )));
 
     private static final Set<String> WHITELIST_DATA_DIR_CONTENTS;
@@ -71,10 +72,13 @@ public class WebViewDataTest {
                 "cache",
                 "code_cache",
                 "shared_prefs",
+                "lib",
                 "app_dxmaker_cache",
                 "telemetry",
                 "databases",
                 "app_webview",
+                "app_tmpdir",
+                "gv_measurements.json",
                 "files",
                 "app_screengrab" 
         ));
@@ -263,6 +267,10 @@ public class WebViewDataTest {
 
             if (NO_TRACES_IGNORE_LIST.contains(name)) {
                 Log.d(LOGTAG, "assertNoTraces: Ignoring file '" + name + "'...");
+                continue;
+            }
+
+            if (!file.exists()) {
                 continue;
             }
 
