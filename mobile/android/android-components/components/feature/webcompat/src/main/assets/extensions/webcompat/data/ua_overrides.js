@@ -275,29 +275,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1508516",
-    platform: "android",
-    domain: "cineflix.com.br",
-    bug: "1508516",
-    config: {
-      matches: ["*://*.cineflix.com.br/m/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
 
     id: "bug1509873",
     platform: "android",
@@ -604,19 +581,39 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1563839",
+    id: "bug1646791",
     platform: "all",
     domain: "santanderbank.com",
-    bug: "1563839",
+    bug: "1646791",
     config: {
       matches: [
-        "*://*.bancosantander.es*",
+        "*://*.bancosantander.es/*",
         "*://*.santander.co.uk/*",
         "*://bob.santanderbank.com/*",
         "*://rolb.santanderbank.com/*",
       ],
       uaTransformer: originalUA => {
         return originalUA.replace("Gecko", "like Gecko");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+    id: "bug1651292",
+    platform: "android",
+    domain: "www.jp.square-enix.com",
+    bug: "1651292",
+    config: {
+      matches: ["*://www.jp.square-enix.com/music/sem/page/FF7R/ost/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome/83";
       },
     },
   },
