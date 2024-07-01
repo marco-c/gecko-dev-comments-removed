@@ -9,8 +9,12 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import org.mozilla.focus.BuildConfig;
 import org.mozilla.focus.search.SearchEngine;
 import org.mozilla.focus.search.SearchEngineManager;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class UrlUtils {
     public static String normalize(String input) {
@@ -45,5 +49,26 @@ public class UrlUtils {
                 .getDefaultSearchEngine(context);
 
         return searchEngine.buildSearchUrl(searchTerm);
+    }
+
+    public static String stripUserInfo(String url) {
+        try {
+            URI uri = new URI(url);
+            final String userInfo = uri.getUserInfo();
+            if (userInfo != null) {
+                
+                
+                uri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
+            }
+
+            return uri.toString();
+        } catch (URISyntaxException e) {
+            if (BuildConfig.DEBUG) {
+                
+                throw new IllegalStateException("WebView is expected to always supply a valid URL");
+            } else {
+                return url;
+            }
+        }
     }
 }
