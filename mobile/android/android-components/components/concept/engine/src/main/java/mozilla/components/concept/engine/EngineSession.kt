@@ -345,7 +345,8 @@ abstract class EngineSession(
             trackingCategories = trackingCategories,
             useForPrivateSessions = true,
             useForRegularSessions = false,
-            cookiePolicy = cookiePolicy
+            cookiePolicy = cookiePolicy,
+            strictSocialTrackingProtection = strictSocialTrackingProtection
         )
 
         /**
@@ -355,7 +356,8 @@ abstract class EngineSession(
             trackingCategories = trackingCategories,
             useForPrivateSessions = false,
             useForRegularSessions = true,
-            cookiePolicy = cookiePolicy
+            cookiePolicy = cookiePolicy,
+            strictSocialTrackingProtection = strictSocialTrackingProtection
         )
     }
 
@@ -453,10 +455,8 @@ abstract class EngineSession(
      * Restores the engine state as provided by [saveState].
      *
      * @param state state retrieved from [saveState]
-     * @return true if the engine session has successfully been restored with the provided state,
-     * false otherwise.
      */
-    abstract fun restoreState(state: EngineSessionState): Boolean
+    abstract fun restoreState(state: EngineSessionState)
 
     /**
      * Enables tracking protection for this engine session.
