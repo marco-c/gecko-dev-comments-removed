@@ -41,7 +41,7 @@ public class Settings {
     public boolean shouldUseSecureMode() {
         
         
-        if (BuildConfig.BUILD_TYPE.equals("debug")) {
+        if (AppConstants.isDevBuild()) {
             return false;
         }
 

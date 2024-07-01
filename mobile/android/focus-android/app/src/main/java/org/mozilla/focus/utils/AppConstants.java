@@ -1,0 +1,16 @@
+
+
+
+
+
+package org.mozilla.focus.utils;
+
+import org.mozilla.focus.BuildConfig;
+
+public final class AppConstants {
+    private AppConstants() {}
+
+    public static boolean isDevBuild() {
+        return "debug".equals(BuildConfig.BUILD_TYPE);
+    }
+}
