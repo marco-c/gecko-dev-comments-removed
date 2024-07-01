@@ -2,9 +2,6 @@
 
 
 
-
-from six import text_type
-
 from voluptuous import Any, Required, Optional
 
 from taskgraph.util.schema import taskref_or_string
