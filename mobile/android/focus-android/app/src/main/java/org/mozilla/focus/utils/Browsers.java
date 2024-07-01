@@ -114,7 +114,13 @@ public class Browsers {
         intent.setData(Uri.parse(url));
 
         final ResolveInfo resolveInfo = packageManager.resolveActivity(intent, 0);
-        if (resolveInfo == null) {
+        if (resolveInfo == null || resolveInfo.activityInfo == null) {
+            return null;
+        }
+
+        if ("android".equals(resolveInfo.activityInfo.packageName)) {
+            
+            
             return null;
         }
 
