@@ -83,6 +83,11 @@ public class WebViewProvider {
         }
 
         @Override
+        public void stopLoading() {
+            
+        }
+
+        @Override
         public String getUrl() {
             
             return null;
