@@ -179,7 +179,6 @@ public class WebViewDataTest {
 
         assertPathsHaveBeenRequested(webServer,
                 "/copper/truck/destroy?smoke=violet", 
-                "/favicon.ico", 
                 "/copper/truck/service-worker.js"); 
 
         

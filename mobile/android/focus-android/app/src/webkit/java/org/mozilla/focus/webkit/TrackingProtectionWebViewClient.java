@@ -68,12 +68,22 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
             return new WebResourceResponse(null, null, null);
         }
 
+        final String url = request.getUrl().toString();
+
+        
+        
+        
+        
+        if (url.endsWith("/favicon.ico")) {
+            return new WebResourceResponse(null, null, null);
+        }
+
         final UrlMatcher matcher = getMatcher(view.getContext());
 
         
         
         if ((!request.isForMainFrame()) &&
-                matcher.matches(request.getUrl().toString(), currentPageURL)) {
+                matcher.matches(url, currentPageURL)) {
             return new WebResourceResponse(null, null, null);
         }
 
