@@ -27,7 +27,16 @@ _GIT_ZERO_HASHES = (
     "0000000000000000000000000000000000000000000000000000000000000000", 
 )
 
-CONFIGURATIONS_WITH_DEPENDENCIES = ("implementation", "api")
+CONFIGURATIONS_WITH_DEPENDENCIES = (
+    "api",
+    "compileOnly",
+
+
+
+
+
+    "implementation",
+)
 ALL_COMPONENTS = object()
 
 def get_components_changed(files_changed):
