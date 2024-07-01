@@ -161,7 +161,8 @@ public class SwitchContextTest {
         TestHelper.notificationEraseOpenItem.click();
 
         
-        assertTrue(TestHelper.erasedMsg.waitForExists(waitingTime));
+        TestHelper.erasedMsg.waitForExists(waitingTime);
+        assertTrue(TestHelper.erasedMsg.exists());
         assertTrue(TestHelper.inlineAutocompleteEditText.exists());
         assertTrue(TestHelper.initialView.exists());
         assertTrue(!rabbitImage.exists());

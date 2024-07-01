@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.action.ViewActions.click;
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mozilla.focus.activity.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
@@ -114,6 +115,16 @@ public class SearchEngineSelectionTest {
         assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
 
         
+        TestHelper.browserURLbar.click();
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        assertEquals(TestHelper.inlineAutocompleteEditText.getText(), "mozilla focus");
+        TestHelper.pressEnterKey();
+        googleWebView.waitForExists(waitingTime);
+        assertTrue (TestHelper.browserURLbar.getText().contains("google"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
+
+        
         TestHelper.menuButton.perform(click());
         TestHelper.browserViewSettingsMenuItem.click();
         TestHelper.settingsHeading.waitForExists(waitingTime);
@@ -140,5 +151,10 @@ public class SearchEngineSelectionTest {
         assertTrue (TestHelper.browserURLbar.getText().contains("yahoo"));
         assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
         assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
+
+        
+        TestHelper.browserURLbar.click();
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        assertEquals(TestHelper.inlineAutocompleteEditText.getText(), "mozilla focus");
     }
 }
