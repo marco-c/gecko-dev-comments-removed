@@ -67,6 +67,7 @@ import org.mozilla.focus.utils.UrlUtils;
 import org.mozilla.focus.web.Download;
 import org.mozilla.focus.web.IWebView;
 import org.mozilla.focus.widget.AnimatedProgressBar;
+import org.mozilla.focus.widget.FloatingEraseButton;
 import org.mozilla.focus.widget.FloatingSessionsButton;
 
 import java.lang.ref.WeakReference;
@@ -210,8 +211,6 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             }
         });
 
-        initialiseTabsButton((FloatingSessionsButton) view.findViewById(R.id.tabs));
-
         final View toolbarContent = view.findViewById(R.id.toolbar_content);
 
         final AppBarLayout appBarLayout = (AppBarLayout) view.findViewById(R.id.appbar);
@@ -325,28 +324,22 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         return view;
     }
 
-    private void initialiseTabsButton(final FloatingSessionsButton tabsButton) {
-        if (session.isCustomTab()) {
-            
-            tabsButton.updateTabsCount(0);
-            return;
-        }
+    private void initialiseNormalBrowserUi(final @NonNull View view) {
+        final FloatingEraseButton eraseButton = view.findViewById(R.id.erase);
+        eraseButton.setOnClickListener(this);
 
+        urlView.setOnClickListener(this);
+
+        final FloatingSessionsButton tabsButton = view.findViewById(R.id.tabs);
         tabsButton.setOnClickListener(this);
 
         sessionManager.getSessions().observe(this, new NonNullObserver<List<Session>>() {
             @Override
             protected void onValueChanged(@NonNull List<Session> sessions) {
-                tabsButton.updateTabsCount(sessions.size());
+                tabsButton.updateSessionsCount(sessions.size());
+                eraseButton.updateSessionsCount(sessions.size());
             }
         });
-    }
-
-    private void initialiseNormalBrowserUi(final @NonNull View view) {
-        final View erase = view.findViewById(R.id.erase);
-        erase.setOnClickListener(this);
-
-        urlView.setOnClickListener(this);
     }
 
     private void initialiseCustomTabUi(final @NonNull View view) {
@@ -358,9 +351,12 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
         
         
         
-        final View erase = view.findViewById(R.id.erase);
+        final FloatingEraseButton erase = view.findViewById(R.id.erase);
         final ViewGroup eraseContainer = (ViewGroup) erase.getParent();
         eraseContainer.removeView(erase);
+
+        final FloatingSessionsButton sessions = view.findViewById(R.id.tabs);
+        eraseContainer.removeView(sessions);
 
         final int textColor;
 
