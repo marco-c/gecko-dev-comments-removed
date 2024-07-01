@@ -26,6 +26,7 @@ public class SupportUtils {
         USAGE_DATA("usage-data"),
         WHATS_NEW("whats-new-focus-android-4");
 
+        
         @VisibleForTesting final String topicStr;
 
         SumoTopic(final String topicStr) {
