@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.activity.helpers;
+package org.mozilla.focus.helpers;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;

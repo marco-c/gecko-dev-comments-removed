@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.activity.helpers;
+package org.mozilla.focus.helpers;
 
 import android.content.Context;
 import android.graphics.Bitmap;
