@@ -191,7 +191,7 @@ class GeckoWebViewProvider : IWebViewProvider {
         }
 
         override fun cleanup() {
-            
+            geckoSession.close()
         }
 
         override fun setBlockingEnabled(enabled: Boolean) {
