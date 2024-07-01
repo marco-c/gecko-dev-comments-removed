@@ -52,11 +52,28 @@ class UAOverrides {
       return;
     }
 
-    const { matches, uaTransformer } = override.config;
+    const { blocks, matches, telemetryKey, uaTransformer } = override.config;
     const listener = details => {
-      for (const header of details.requestHeaders) {
-        if (header.name.toLowerCase() === "user-agent") {
-          header.value = uaTransformer(header.value);
+      
+      
+      if (!details.frameId && override.shouldSendDetailedTelemetry) {
+        
+        
+        
+        browser.sharedPreferences.setBoolPref(`${telemetryKey}Used`, true);
+      }
+
+      
+      
+      if (
+        !override.config.experiment ||
+        override.experimentActive ||
+        override.permanentPrefEnabled === true
+      ) {
+        for (const header of details.requestHeaders) {
+          if (header.name.toLowerCase() === "user-agent") {
+            header.value = uaTransformer(header.value);
+          }
         }
       }
       return { requestHeaders: details.requestHeaders };
@@ -68,8 +85,88 @@ class UAOverrides {
       ["blocking", "requestHeaders"]
     );
 
-    this._activeListeners.set(override, listener);
+    const listeners = { onBeforeSendHeaders: listener };
+    if (blocks) {
+      const blistener = details => {
+        return { cancel: true };
+      };
+
+      browser.webRequest.onBeforeRequest.addListener(
+        blistener,
+        { urls: blocks },
+        ["blocking"]
+      );
+
+      listeners.onBeforeRequest = blistener;
+    }
+    this._activeListeners.set(override, listeners);
     override.active = true;
+
+    
+    if (telemetryKey) {
+      const { version } = browser.runtime.getManifest();
+      browser.sharedPreferences.setCharPref(`${telemetryKey}Version`, version);
+    }
+
+    
+    if (override.shouldSendDetailedTelemetry) {
+      browser.sharedPreferences.setBoolPref(`${telemetryKey}Ready`, true);
+    }
+  }
+
+  onOverrideConfigChanged(override) {
+    
+    override.hidden = override.config.hidden;
+
+    
+    if (override.config.experiment && !override.experimentActive) {
+      override.hidden = true;
+    }
+
+    
+    if (override.permanentPrefEnabled !== undefined) {
+      override.hidden = !override.permanentPrefEnabled;
+    }
+
+    
+    let shouldBeActive = true;
+
+    
+    if (override.permanentPrefEnabled === false) {
+      shouldBeActive = false;
+    }
+
+    
+    
+    override.shouldSendDetailedTelemetry =
+      override.config.telemetryKey &&
+      (override.experimentActive || override.permanentPrefEnabled);
+
+    
+    
+    
+    if (
+      override.config.experiment &&
+      !override.experimentActive &&
+      !override.config.telemetryKey &&
+      override.permanentPrefEnabled !== true
+    ) {
+      shouldBeActive = false;
+    }
+
+    if (shouldBeActive) {
+      this.enableOverride(override);
+    } else {
+      this.disableOverride(override);
+    }
+
+    if (this._overridesEnabled) {
+      this._aboutCompatBroker.portsToAboutCompatTabs.broadcast({
+        overridesChanged: this._aboutCompatBroker.filterOverrides(
+          this._availableOverrides
+        ),
+      });
+    }
   }
 
   async registerUAOverrides() {
@@ -80,7 +177,44 @@ class UAOverrides {
     for (const override of this._availableOverrides) {
       if (platformMatches.includes(override.platform)) {
         override.availableOnPlatform = true;
-        this.enableOverride(override);
+
+        
+        override.experimentActive = false;
+        const experiment = override.config.experiment;
+        if (experiment) {
+          
+          
+          
+          const branches = Array.isArray(experiment)
+            ? experiment
+            : [experiment];
+          for (const branch of branches) {
+            if (await browser.experiments.isActive(branch)) {
+              override.experimentActive = true;
+              break;
+            }
+          }
+        }
+
+        
+        
+        const pref = override.config.permanentPref;
+        override.permanentPrefEnabled =
+          pref && (await browser.aboutConfigPrefs.getPref(pref));
+        if (pref) {
+          const checkOverridePref = () => {
+            browser.aboutConfigPrefs.getPref(pref).then(value => {
+              override.permanentPrefEnabled = value;
+              this.onOverrideConfigChanged(override);
+            });
+          };
+          browser.aboutConfigPrefs.onPrefChange.addListener(
+            checkOverridePref,
+            pref
+          );
+        }
+
+        this.onOverrideConfigChanged(override);
       }
     }
 
@@ -108,9 +242,10 @@ class UAOverrides {
       return;
     }
 
-    browser.webRequest.onBeforeSendHeaders.removeListener(
-      this._activeListeners.get(override)
-    );
+    const listeners = this._activeListeners.get(override);
+    for (const [name, listener] of Object.entries(listeners)) {
+      browser.webRequest[name].removeListener(listener);
+    }
     override.active = false;
     this._activeListeners.delete(override);
   }

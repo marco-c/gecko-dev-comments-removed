@@ -7,8 +7,10 @@
 
 
 
+
 const injections = new Injections(AVAILABLE_INJECTIONS, CUSTOM_FUNCTIONS);
 const uaOverrides = new UAOverrides(AVAILABLE_UA_OVERRIDES);
+const pipOverrides = new PictureInPictureOverrides(AVAILABLE_PIP_OVERRIDES);
 
 const aboutCompatBroker = new AboutCompatBroker({
   injections,
@@ -18,3 +20,4 @@ const aboutCompatBroker = new AboutCompatBroker({
 aboutCompatBroker.bootup();
 injections.bootup();
 uaOverrides.bootup();
+pipOverrides.bootup();
