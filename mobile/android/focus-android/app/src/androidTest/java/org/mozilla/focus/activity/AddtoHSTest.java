@@ -119,6 +119,16 @@ public class AddtoHSTest {
         TestHelper.pressHomeKey();
     }
 
+    private void openAddtoHSDialog() throws UiObjectNotFoundException {
+        TestHelper.menuButton.perform(click());
+        
+        while (!TestHelper.AddtoHSmenuItem.isClickable()) {
+            TestHelper.pressBackKey();
+            TestHelper.menuButton.perform(click());
+        }
+        TestHelper.AddtoHSmenuItem.click();
+    }
+
     @Test
     public void AddToHomeScreenTest() throws InterruptedException, UiObjectNotFoundException, IOException {
 
@@ -139,15 +149,7 @@ public class AddtoHSTest {
         Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
         Assert.assertTrue("Website title loaded", titleMsg.exists());
 
-        TestHelper.menuButton.perform(click());
-        
-        while (!TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)) {
-            TestHelper.pressBackKey();
-            Thread.sleep(waitingTime);
-            TestHelper.menuButton.perform(click());
-        }
-        TestHelper.AddtoHSmenuItem.click();
-
+        openAddtoHSDialog();
         
         TestHelper.shortcutTitle.waitForExists(waitingTime);
 
@@ -195,14 +197,7 @@ public class AddtoHSTest {
         Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
         Assert.assertTrue("Website title loaded", titleMsg.exists());
 
-        TestHelper.menuButton.perform(click());
-        
-        while (!TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)) {
-            TestHelper.pressBackKey();
-            Thread.sleep(waitingTime);
-            TestHelper.menuButton.perform(click());
-        }
-        TestHelper.AddtoHSmenuItem.click();
+        openAddtoHSDialog();
 
         
         TestHelper.shortcutTitle.waitForExists(waitingTime);
@@ -250,14 +245,7 @@ public class AddtoHSTest {
         TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
         Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
 
-        TestHelper.menuButton.perform(click());
-        
-        while (!TestHelper.AddtoHSmenuItem.waitForExists(waitingTime)) {
-            TestHelper.pressBackKey();
-            Thread.sleep(waitingTime);
-            TestHelper.menuButton.perform(click());
-        }
-        TestHelper.AddtoHSmenuItem.click();
+        openAddtoHSDialog();
 
         
         TestHelper.shortcutTitle.waitForExists(waitingTime);

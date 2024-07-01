@@ -152,6 +152,11 @@ public final class TestHelper {
     static UiObject shortcutTitle = TestHelper.mDevice.findObject(new UiSelector()
             .resourceId("org.mozilla.focus.debug:id/edit_title")
             .enabled(true));
+    static UiObject savedNotification = TestHelper.mDevice.findObject(new UiSelector()
+            .text("Download complete.")
+            .resourceId("android:id/text")
+            .enabled(true));
+
 
     
     public static UiObject RightsItem = mDevice.findObject(new UiSelector()
