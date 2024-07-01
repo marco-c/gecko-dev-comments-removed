@@ -175,7 +175,7 @@ public class WebViewProvider {
 
         @Override
         public void setRequestDesktop(boolean shouldRequestDesktop) {
-            
+            geckoSession.getSettings().setBoolean(GeckoSessionSettings.USE_DESKTOP_MODE, shouldRequestDesktop);
             if (callback != null) {
                 callback.onRequestDesktopStateChanged(shouldRequestDesktop);
             }
