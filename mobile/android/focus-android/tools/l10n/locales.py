@@ -104,6 +104,7 @@ RELEASE_LOCALES = [
 
 
 ADDITIONAL_SCREENSHOT_LOCALES = [
+	"ixl",
 	"lt",
 	"wo"
 ]
