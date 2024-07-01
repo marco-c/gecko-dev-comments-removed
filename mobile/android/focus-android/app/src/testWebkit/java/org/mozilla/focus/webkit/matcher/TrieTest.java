@@ -55,9 +55,9 @@ public class TrieTest {
         
         
         
-        final Trie foundWhitelist = trie.findNode(FocusString.create("def"));
+        final WhiteListTrie foundWhitelist = (WhiteListTrie) trie.findNode(FocusString.create("def"));
         assertNotNull(foundWhitelist);
 
-        assertNotNull(foundWhitelist.findNode(FocusString.create("abc")));
+        assertNotNull(foundWhitelist.whitelist.findNode(FocusString.create("abc")));
     }
 }
