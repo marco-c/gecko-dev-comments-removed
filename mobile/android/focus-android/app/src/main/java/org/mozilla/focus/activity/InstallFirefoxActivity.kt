@@ -1,0 +1,89 @@
+
+
+
+
+
+package org.mozilla.focus.activity
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.net.Uri
+import android.os.Bundle
+import android.webkit.WebView
+
+import org.mozilla.focus.telemetry.TelemetryWrapper
+import org.mozilla.focus.utils.AppConstants
+import org.mozilla.focus.utils.Browsers
+
+
+
+
+class InstallFirefoxActivity : Activity() {
+
+    private var webView: WebView? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        webView = WebView(this)
+
+        setContentView(webView)
+
+        webView!!.loadUrl(REDIRECT_URL)
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        if (webView != null) {
+            webView!!.onPause()
+        }
+
+        finish()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (webView != null) {
+            webView!!.destroy()
+        }
+    }
+
+    companion object {
+        private const val REDIRECT_URL = "https://app.adjust.com/gs1ao4"
+
+        fun resolveAppStore(context: Context): ActivityInfo? {
+            val resolveInfo = context.packageManager.resolveActivity(createStoreIntent(), 0)
+
+            if (resolveInfo?.activityInfo == null) {
+                return null
+            }
+
+            return if (!resolveInfo.activityInfo.exported) {
+                
+                null
+            } else resolveInfo.activityInfo
+        }
+
+        private fun createStoreIntent(): Intent {
+            return Intent(Intent.ACTION_VIEW,
+                    Uri.parse("market://details?id=" + Browsers.KnownBrowser.FIREFOX.packageName))
+        }
+
+        fun open(context: Context) {
+            if (AppConstants.isKlarBuild) {
+                
+                context.startActivity(createStoreIntent())
+            } else {
+                
+                val intent = Intent(context, InstallFirefoxActivity::class.java)
+                context.startActivity(intent)
+            }
+
+            TelemetryWrapper.installFirefoxEvent()
+        }
+    }
+}
