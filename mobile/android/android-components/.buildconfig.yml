@@ -1,4 +1,4 @@
-componentsVersion: 47.0.0
+componentsVersion: 45.0.0
 projects:
   concept-awesomebar:
     path: components/concept/awesomebar
@@ -271,6 +271,10 @@ projects:
   service-fretboard:
     path: components/service/fretboard
     description: 'An Android framework for segmenting users in order to run A/B tests and rollout features gradually.'
+    publish: true
+  service-digital-asset-links:
+    path: components/service/digital-asset-links
+    description: 'A library for communicating with the Digital Asset Links API.'
     publish: true
   service-experiments:
     path: components/service/experiments
