@@ -6,6 +6,7 @@ package mozilla.components.browser.engine.gecko
 
 import android.content.Context
 import android.util.AttributeSet
+import androidx.annotation.VisibleForTesting
 import mozilla.components.browser.engine.gecko.integration.LocaleSettingUpdater
 import mozilla.components.browser.engine.gecko.mediaquery.from
 import mozilla.components.browser.engine.gecko.mediaquery.toGeckoValue
@@ -35,6 +36,7 @@ import mozilla.components.concept.engine.webextension.WebExtensionRuntime
 import mozilla.components.concept.engine.webnotifications.WebNotificationDelegate
 import mozilla.components.concept.engine.webpush.WebPushDelegate
 import mozilla.components.concept.engine.webpush.WebPushHandler
+import mozilla.components.support.utils.ThreadUtils
 import org.json.JSONObject
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.ContentBlocking
@@ -63,6 +65,7 @@ class GeckoEngine(
 ) : Engine, WebExtensionRuntime {
     private val executor by lazy { executorProvider.invoke() }
     private val localeUpdater = LocaleSettingUpdater(context, runtime)
+    @VisibleForTesting internal var speculativeSession: GeckoEngineSession? = null
 
     private var webExtensionDelegate: WebExtensionDelegate? = null
     private val webExtensionActionHandler = object : ActionHandler {
@@ -133,10 +136,21 @@ class GeckoEngine(
     }
 
     /**
-     * Creates a new Gecko-based EngineSession.
+     * See [Engine.createSession].
      */
     override fun createSession(private: Boolean): EngineSession {
-        return GeckoEngineSession(runtime, private, defaultSettings)
+        ThreadUtils.assertOnUiThread()
+        val speculativeSession = this.speculativeSession?.let { speculativeSession ->
+            if (speculativeSession.geckoSession.settings.usePrivateMode == private) {
+                speculativeSession
+            } else {
+                speculativeSession.close()
+                null
+            }.also {
+                this.speculativeSession = null
+            }
+        }
+        return speculativeSession ?: GeckoEngineSession(runtime, private, defaultSettings)
     }
 
     /**
@@ -144,6 +158,17 @@ class GeckoEngine(
      */
     override fun createSessionState(json: JSONObject): EngineSessionState {
         return GeckoEngineSessionState.fromJSON(json)
+    }
+
+    /**
+     * See [Engine.speculativeCreateSession].
+     */
+    override fun speculativeCreateSession(private: Boolean) {
+        ThreadUtils.assertOnUiThread()
+        if (this.speculativeSession?.geckoSession?.settings?.usePrivateMode != private) {
+            this.speculativeSession?.geckoSession?.close()
+            this.speculativeSession = GeckoEngineSession(runtime, private, defaultSettings)
+        }
     }
 
     /**
@@ -239,20 +264,9 @@ class GeckoEngine(
         onSuccess: (WebExtension?) -> Unit,
         onError: (String, Throwable) -> Unit
     ) {
-        runtime.webExtensionController.update((extension as GeckoWebExtension).nativeExtension).then({ geckoExtension ->
-            val updatedExtension = if (geckoExtension != null) {
-                GeckoWebExtension(geckoExtension, runtime.webExtensionController).also {
-                    it.registerActionHandler(webExtensionActionHandler)
-                }
-            } else {
-                null
-            }
-            onSuccess(updatedExtension)
-            GeckoResult<Void>()
-        }, { throwable ->
-            onError(extension.id, throwable)
-            GeckoResult<Void>()
-        })
+        // GeckoView support for updating extensions hasn't been implemented yet
+        // TODO https://bugzilla.mozilla.org/show_bug.cgi?id=1599581
+        onSuccess(null)
     }
 
     /**
@@ -314,24 +328,9 @@ class GeckoEngine(
                     GeckoResult.DENY
                 }
             }
-
-            override fun onUpdatePrompt(
-                current: org.mozilla.geckoview.WebExtension,
-                updated: org.mozilla.geckoview.WebExtension,
-                newPermissions: Array<out String>,
-                newOrigins: Array<out String>
-            ): GeckoResult<AllowOrDeny>? {
-                // NB: We don't have a user flow for handling updated origins so we ignore them for now.
-                val result = GeckoResult<AllowOrDeny>()
-                webExtensionDelegate.onUpdatePermissionRequest(
-                    GeckoWebExtension(current, runtime.webExtensionController),
-                    GeckoWebExtension(updated, runtime.webExtensionController),
-                    newPermissions.toList()
-                ) {
-                    allow -> if (allow) result.complete(AllowOrDeny.ALLOW) else result.complete(AllowOrDeny.DENY)
-                }
-                return result
-            }
+            // TODO implement onUpdatePrompt:
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=1599581
+            // https://github.com/mozilla-mobile/android-components/issues/5143
         }
 
         runtime.webExtensionController.promptDelegate = promptDelegate
@@ -365,15 +364,9 @@ class GeckoEngine(
         onSuccess: (WebExtension) -> Unit,
         onError: (Throwable) -> Unit
     ) {
-        runtime.webExtensionController.enable((extension as GeckoWebExtension).nativeExtension, source.id).then({
-            val enabledExtension = GeckoWebExtension(it!!, runtime.webExtensionController)
-            webExtensionDelegate?.onEnabled(enabledExtension)
-            onSuccess(enabledExtension)
-            GeckoResult<Void>()
-        }, { throwable ->
-            onError(throwable)
-            GeckoResult<Void>()
-        })
+        // TODO https://bugzilla.mozilla.org/show_bug.cgi?id=1599585
+        webExtensionDelegate?.onEnabled(extension)
+        onSuccess(extension)
     }
 
     /**
@@ -385,15 +378,9 @@ class GeckoEngine(
         onSuccess: (WebExtension) -> Unit,
         onError: (Throwable) -> Unit
     ) {
-        runtime.webExtensionController.disable((extension as GeckoWebExtension).nativeExtension, source.id).then({
-            val disabledExtension = GeckoWebExtension(it!!, runtime.webExtensionController)
-            webExtensionDelegate?.onDisabled(disabledExtension)
-            onSuccess(disabledExtension)
-            GeckoResult<Void>()
-        }, { throwable ->
-            onError(throwable)
-            GeckoResult<Void>()
-        })
+        // TODO https://bugzilla.mozilla.org/show_bug.cgi?id=1599585
+        webExtensionDelegate?.onDisabled(extension)
+        onSuccess(extension)
     }
 
     /**
