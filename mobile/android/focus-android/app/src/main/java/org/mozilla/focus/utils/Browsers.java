@@ -107,20 +107,28 @@ public class Browsers {
                 continue;
             }
 
+            if (!info.activityInfo.exported) {
+                continue;
+            }
+
             browsers.put(info.activityInfo.packageName, info.activityInfo);
         }
     }
 
     private ActivityInfo findDefault(PackageManager packageManager, String url) {
-        final Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(url));
+        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
 
         final ResolveInfo resolveInfo = packageManager.resolveActivity(intent, 0);
         if (resolveInfo == null || resolveInfo.activityInfo == null) {
             return null;
         }
 
-        if ("android".equals(resolveInfo.activityInfo.packageName)) {
+        if (!resolveInfo.activityInfo.exported) {
+            
+            return null;
+        }
+
+        if (!browsers.containsKey(resolveInfo.activityInfo.packageName)) {
             
             
             return null;
