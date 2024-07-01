@@ -108,7 +108,8 @@ ADDITIONAL_SCREENSHOT_LOCALES = [
 	"ixl",
 	"lt",
 	"en-CA",
-	"af"
+	"af",
+	"pai"
 ]
 
 
