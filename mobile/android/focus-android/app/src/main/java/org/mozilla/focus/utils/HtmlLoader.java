@@ -50,14 +50,7 @@ public class HtmlLoader {
         } catch (final IOException e) {
             throw new IllegalStateException("Unable to load error page data");
         } finally {
-            try {
-                if (fileReader != null) {
-                    fileReader.close();
-                }
-            } catch (IOException e) {
-                
-                
-            }
+            IOUtils.safeClose(fileReader);
         }
     }
 
@@ -104,11 +97,7 @@ public class HtmlLoader {
         } catch (IOException e) {
             throw new IllegalStateException("Unable to load png data");
         } finally {
-            try {
-                reader.close();
-            } catch (IOException e) {
-                
-            }
+            IOUtils.safeClose(reader);
         }
 
         return  builder.toString();
