@@ -17,9 +17,12 @@ public class FocusApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        PreferenceManager.setDefaultValues(this, R.xml.settings, false);
-
+        
+        
+        
         SearchEngineManager.getInstance().init(this);
+
+        PreferenceManager.setDefaultValues(this, R.xml.settings, false);
 
         TelemetryWrapper.init(this);
         AdjustHelper.setupAdjustIfNeeded(this);
