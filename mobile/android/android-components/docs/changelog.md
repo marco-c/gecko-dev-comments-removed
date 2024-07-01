@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **support-locale**
+  * Updates `updateResources` to always update the context configuration
+
 * **feature-toolbar**
   * Added `forceExpand` to [BrowserToolbarBottomBehavior] so consumers can expand the BrowserToolbar on demand.
 
@@ -70,8 +73,6 @@ permalink: /changelog/
 
 * **browser-tabstray**
  * Added ability to let consumers pass a custom layout of `TabViewHolder` in order to control layout inflation and view binding.
- * Added an optional URL view to the `TabViewHolder` to display the URL.
- * Will expose a new `layout` parameter which allows consumers to change the tabs tray layout.
 
 # 37.0.0
 
