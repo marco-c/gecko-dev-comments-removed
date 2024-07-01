@@ -59,6 +59,9 @@ public class WebViewProvider {
         settings.setJavaScriptEnabled(true);
 
         
+        settings.setDomStorageEnabled(true);
+
+        
         settings.setBuiltInZoomControls(true);
 
         
@@ -86,7 +89,6 @@ public class WebViewProvider {
         
         settings.setAppCacheEnabled(false);
         settings.setDatabaseEnabled(false);
-        settings.setDomStorageEnabled(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
 
         
