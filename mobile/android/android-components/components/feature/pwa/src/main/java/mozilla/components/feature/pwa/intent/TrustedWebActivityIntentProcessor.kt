@@ -19,7 +19,7 @@ import mozilla.components.browser.session.Session
 import mozilla.components.browser.session.SessionManager
 import mozilla.components.browser.session.intent.IntentProcessor
 import mozilla.components.browser.session.intent.putSessionId
-import mozilla.components.browser.state.state.CustomTabConfig.Companion.EXTRA_ADDITIONAL_TRUSTED_ORIGINS
+import mozilla.components.browser.session.tab.CustomTabConfig.Companion.EXTRA_ADDITIONAL_TRUSTED_ORIGINS
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.customtabs.createCustomTabConfigFromIntent
@@ -39,10 +39,11 @@ class TrustedWebActivityIntentProcessor(
     private val loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase,
     httpClient: Client,
     packageManager: PackageManager,
+    apiKey: String?,
     private val store: CustomTabsServiceStore
 ) : IntentProcessor {
 
-    private val verifier = OriginVerifierFeature(httpClient, packageManager) { store.dispatch(it) }
+    private val verifier = OriginVerifierFeature(httpClient, packageManager, apiKey) { store.dispatch(it) }
     private val scope = MainScope()
 
     override fun matches(intent: Intent): Boolean {
