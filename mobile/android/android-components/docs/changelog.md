@@ -18,6 +18,10 @@ permalink: /changelog/
     * `browser-engine-gecko-beta`: GeckoView 73.0
     * `browser-engine-gecko-nightly`: GeckoView 74.0
 
+* **feature-session**
+  * * ⚠️ **This is a breaking change**: `TrackingProtectionUseCases.fetchExceptions`: now receives a `(List<TrackingProtectionException>) -> Unit` instead of a `(List<String>) -> Unit` to add support for deleting individual exceptions.
+    * **Added**: `TrackingProtectionUseCases.removeException(exception: TrackingProtectionException)`: now you can delete an exception without the need of having a `Session` by calling `removeException(trackingProtectionException)`.
+
 * **service-glean**
   * Glean was updated to v24.0.0:
     * **Breaking Change** An `enableUpload` parameter has been added to the `initialize()`
@@ -53,7 +57,6 @@ permalink: /changelog/
       launchFromInterceptor = true
   )
   ```
-  * Introduce a `ContextMenuCandidate` to open links in the corresponding external app, if installed
 
 * **concept-storage**
   * Added classes related to login autofill
