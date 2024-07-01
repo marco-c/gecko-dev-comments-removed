@@ -54,6 +54,8 @@ public class WebViewProvider {
             setChromeDelegate(createChromeDelegate());
             setContentListener(createContentListener());
             setProgressListener(createProgressListener());
+
+            
         }
 
         @Override

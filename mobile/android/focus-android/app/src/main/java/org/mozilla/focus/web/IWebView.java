@@ -12,6 +12,7 @@ public interface IWebView {
         void onProgress(int progress);
         
         boolean handleExternalUrl(String url);
+        void onLinkLongPress(String url);
     }
 
     void setCallback(Callback callback);
