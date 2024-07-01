@@ -97,8 +97,7 @@ public class FloatingSessionsButton extends FloatingActionButton {
     public void setVisibility(int visibility) {
         final boolean shouldBeVisible = shouldBeVisible();
 
-        if ((!shouldBeVisible && visibility == View.VISIBLE) ||
-                (shouldBeVisible && visibility != View.VISIBLE)) {
+        if (!shouldBeVisible && visibility == View.VISIBLE) {
             
             
         } else {
