@@ -88,6 +88,12 @@ public class SearchEngineSelectionTest {
         TestHelper.urlBar.click();
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText("   ");
+        TestHelper.pressEnterKey();
+        assertTrue(TestHelper.inlineAutocompleteEditText.exists());
+
+        
+        TestHelper.inlineAutocompleteEditText.clearTextField();
         TestHelper.inlineAutocompleteEditText.setText("mozilla focus");
         TestHelper.hint.waitForExists(waitingTime);
 
