@@ -134,7 +134,7 @@ public class SwitchContextTest {
     }
 
     @Test
-    public void EraseandOpenTest() throws InterruptedException, UiObjectNotFoundException {
+    public void eraseAndOpenTest() throws InterruptedException, UiObjectNotFoundException {
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
