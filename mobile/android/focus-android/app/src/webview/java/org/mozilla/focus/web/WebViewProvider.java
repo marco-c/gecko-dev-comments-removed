@@ -130,6 +130,12 @@ public class WebViewProvider {
         settings.setJavaScriptEnabled(!Settings.getInstance(context).shouldBlockJavaScript());
     }
 
+    @SuppressLint("SetJavaScriptEnabled") 
+    public static void disableBlocking(WebSettings settings) {
+        settings.setBlockNetworkImage(false);
+        settings.setJavaScriptEnabled(true);
+    }
+
     
 
 
