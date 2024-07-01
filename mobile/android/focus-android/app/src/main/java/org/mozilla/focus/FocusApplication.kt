@@ -21,6 +21,8 @@ import mozilla.components.support.base.facts.register
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.sink.AndroidLogSink
 import mozilla.components.support.ktx.android.content.isMainProcess
+import mozilla.components.support.rusthttp.RustHttpConfig
+import mozilla.components.support.rustlog.RustLog
 import mozilla.components.support.webextensions.WebExtensionSupport
 import org.mozilla.focus.biometrics.LockObserver
 import org.mozilla.focus.ext.settings
@@ -55,7 +57,7 @@ open class FocusApplication : LocaleAwareApplication(), CoroutineScope {
         components.crashReporter.install(this)
 
         if (isMainProcess()) {
-            initializeNimbus()
+            initializeNativeComponents()
 
             PreferenceManager.setDefaultValues(this, R.xml.settings, false)
 
@@ -87,8 +89,16 @@ open class FocusApplication : LocaleAwareApplication(), CoroutineScope {
     }
 
     @OptIn(DelicateCoroutinesApi::class) 
-    private fun initializeNimbus() {
+    private fun initializeNativeComponents() {
         GlobalScope.launch(Dispatchers.IO) {
+            
+            
+            @Suppress("Deprecation")
+            RustHttpConfig.setClient(lazy { components.client.unwrap() })
+            RustLog.enable(components.crashReporter)
+            
+            
+            
             components.experiments.initialize()
         }
     }
