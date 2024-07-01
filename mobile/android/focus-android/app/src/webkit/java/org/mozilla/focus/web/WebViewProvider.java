@@ -35,13 +35,7 @@ public class WebViewProvider {
     }
 
     public static void performCleanup(final Context context) {
-        
-        
-        final WebkitView webView = new WebkitView(context, null);
-        
-        webView.cleanup();
-        
-        webView.destroy();
+        WebkitView.deleteContentFromKnownLocations(context);
     }
 
     public static View create(Context context, AttributeSet attrs) {
