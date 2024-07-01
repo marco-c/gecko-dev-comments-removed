@@ -21,10 +21,9 @@ permalink: /changelog/
 * **service-firefox-accounts**
   * Account profile cache is now used, removing a network call from most instances of account manager instantiation.
   * Fixed a bug where account would disappear after restarting an app which hit authentication problems.
-  * Deprecated the `StorageSync` class. Please use the `SyncManager` class instead.
   
 * **service-glean**
-  * Glean was updated to v21.1.1
+  * Glean was updated to v21.2.0
     * Two new metrics were added to investigate sending of metrics and baseline pings.
       See [bug 1597980](https://bugzilla.mozilla.org/show_bug.cgi?id=1597980) for more information.
     * Glean's two lifecycle observers were refactored to avoid the use of reflection.
@@ -37,6 +36,11 @@ permalink: /changelog/
       API.
     * Metrics that can record errors now have a new testing method,
       `testGetNumRecordedErrors`.
+    * The experiments API is no longer ignored before the Glean SDK initialized. Calls are
+      recorded and played back once the Glean SDK is initialized.
+    * String list items were being truncated to 20, rather than 50, bytes when using
+      `.set()` (rather than `.add()`). This has been corrected, but it may result
+      in changes in the sent data if using string list items longer than 20 bytes.
 
 # 22.0.0
 
