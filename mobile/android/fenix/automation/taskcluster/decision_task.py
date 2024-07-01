@@ -137,43 +137,6 @@ def release(channel, is_staging, version_name):
     return (build_tasks, signing_tasks, push_tasks)
 
 
-def nightly_to_production_app(is_staging, version_name):
-    
-    
-    
-    channel = 'nightly'
-    variants = get_variants_for_build_type(channel)
-    architectures = [variant.abi for variant in variants]
-    apk_paths = ["public/target.{}.apk".format(arch) for arch in architectures]
-
-    build_tasks = {}
-    signing_tasks = {}
-    push_tasks = {}
-
-    build_task_id = taskcluster.slugId()
-    build_tasks[build_task_id] = BUILDER.craft_assemble_release_task(architectures, channel, is_staging, version_name)
-
-    signing_task_id = taskcluster.slugId()
-    signing_tasks[signing_task_id] = BUILDER.craft_release_signing_task(
-        build_task_id,
-        apk_paths=apk_paths,
-        channel='production',  
-        index_channel=channel,
-        is_staging=is_staging,
-    )
-
-    push_task_id = taskcluster.slugId()
-    push_tasks[push_task_id] = BUILDER.craft_push_task(
-        signing_task_id,
-        apks=apk_paths,
-        channel='production',  
-        override_google_play_track='nightly',
-        is_staging=is_staging,
-    )
-
-    return (build_tasks, signing_tasks, push_tasks)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Creates and submit a graph of tasks on Taskcluster.'
@@ -205,7 +168,7 @@ if __name__ == "__main__":
         ordered_groups_of_tasks = raptor(result.staging)
     elif command == 'nightly':
         formatted_date = datetime.datetime.now().strftime('%y%V')
-        ordered_groups_of_tasks = nightly_to_production_app(result.staging, '1.0.{}'.format(formatted_date))
+        ordered_groups_of_tasks = release('nightly', result.staging, '1.0.{}'.format(formatted_date))
     elif command == 'github-release':
         version = result.tag[1:]  
         beta_semver = re.compile(r'^v\d+\.\d+\.\d+-beta\.\d+$')
