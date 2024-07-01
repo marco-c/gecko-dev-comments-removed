@@ -94,7 +94,8 @@ RELEASE_LOCALES = [
 
 ADDITIONAL_SCREENSHOT_LOCALES = [
 	"lt",
-	"meh",	
+	"meh",
+	"bs"
 ]
 
 
