@@ -43,7 +43,7 @@ secrets = taskcluster.Secrets({'baseUrl': 'http://taskcluster/secrets/v1'})
 data = secrets.get('project/focus/nimbledroid')
 
 
-klar_file = {'apk': open('app/build/outputs/apk/klarArm/nightly/app-klar-arm-nightly-unsigned.apk')}
+klar_file = {'apk': open('app/build/outputs/apk/klar/nightly/app-klar-armeabi-v7a-nightly-unsigned.apk')}
 
 
 
