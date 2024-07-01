@@ -4,19 +4,32 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 28.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v27.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/87?closed=1)
+# 29.0.0-SNAPSHOT (In Development)
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v28.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/89?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+# 28.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v27.0.0...v28.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/88?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v28.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v28.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v28.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
   * **Merge day!**
     * `browser-engine-gecko-release`: GeckoView 72.0
     * `browser-engine-gecko-beta`: GeckoView 73.0
     * `browser-engine-gecko-nightly`: GeckoView 74.0
+
+* **feature-session**
+  * * ⚠️ **This is a breaking change**: `TrackingProtectionUseCases.fetchExceptions`: now receives a `(List<TrackingProtectionException>) -> Unit` instead of a `(List<String>) -> Unit` to add support for deleting individual exceptions.
+    * **Added**: `TrackingProtectionUseCases.removeException(exception: TrackingProtectionException)`: now you can delete an exception without the need of having a `Session` by calling `removeException(trackingProtectionException)`.
 
 * **service-glean**
   * Glean was updated to v24.1.0:
@@ -56,6 +69,7 @@ permalink: /changelog/
       launchFromInterceptor = true
   )
   ```
+  * Introduce a `ContextMenuCandidate` to open links in the corresponding external app, if installed
 
 * **concept-storage**
   * Added classes related to login autofill
@@ -83,6 +97,9 @@ permalink: /changelog/
   * Added a 'migration' ping, which contains telemetry data about migration via Glean. It's emitted whenever a migration is executed.
   * Added `MigrationIntentProcessor` for handling incoming intents when migration is in progress.
   * Added `AbstractMigrationProgressActivity` as a base activity to block user interactions during migration.
+
+* **browser-menu**
+  * Added `MenuButton` to let the browser menu be used outside of `BrowserToolbar`.
 
 # 27.0.0
 
