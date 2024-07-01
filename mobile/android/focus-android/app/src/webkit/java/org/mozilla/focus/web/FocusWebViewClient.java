@@ -43,6 +43,59 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
         this.callback = callback;
     }
 
+    
+
+
+
+
+    private static final String CLEAR_VISITED_CSS =
+            "let nSheets = document.styleSheets.length;" +
+            "for (s=0; s < nSheets; s++) {" +
+            "  let stylesheet = document.styleSheets[s];" +
+            "  let nRules = stylesheet.cssRules ? stylesheet.cssRules.length : 0;" +
+            
+            
+            
+            
+            
+            
+            "  for (i = nRules - 1; i >= 0; i--) {" +
+            "    let cssRule = stylesheet.cssRules[i];" +
+            
+            "    if (cssRule.selectorText && cssRule.selectorText.includes(':visited')) {" +
+            "      stylesheet.deleteRule(i);" +
+            "    }" +
+            "  }" +
+            "}";
+
+    @Override
+    public void onLoadResource(WebView view, String url) {
+        
+        
+        view.evaluateJavascript(
+                "(function() {" +
+
+                "function cleanupVisited() {" +
+                CLEAR_VISITED_CSS +
+                "}" +
+
+                
+                
+                "let links = document.getElementsByTagName('link');" +
+                "for (i = 0; i < links.length; i++) {" +
+                "  link = links[i];" +
+                "  if (link.rel == 'stylesheet') {" +
+                "    link.addEventListener('load', cleanupVisited, false);" +
+                "  }" +
+                "}" +
+
+                "})();",
+
+                null);
+
+        super.onLoadResource(view, url);
+    }
+
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         
@@ -99,6 +152,15 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
             callback.onURLChanged(view.getUrl());
         }
         super.onPageFinished(view, url);
+
+        view.evaluateJavascript(
+                "(function() {" +
+
+                CLEAR_VISITED_CSS +
+
+                "})();",
+
+                null);
     }
 
     @Override
