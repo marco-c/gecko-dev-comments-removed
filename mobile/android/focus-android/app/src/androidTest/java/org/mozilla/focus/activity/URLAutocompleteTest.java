@@ -115,11 +115,11 @@ public class URLAutocompleteTest {
     }
 
     @Test
+    
     public void CustomCompletionTest() throws UiObjectNotFoundException {
         OpenCustomCompleteDialog();
 
         
-        toggleAutocomplete();
         addAutoComplete(site);
         exitToTop();
 
@@ -132,20 +132,15 @@ public class URLAutocompleteTest {
 
         
         checkACOff(site.substring(0, 3));
-
-        
-        OpenCustomCompleteDialog();
-        toggleAutocomplete();
-    }
+     }
 
     @Test
     
     public void DisableCCwithSiteTest() throws UiObjectNotFoundException {
         OpenCustomCompleteDialog();
-        toggleAutocomplete();
         addAutoComplete(site);
         Espresso.pressBack();
-        toggleAutocomplete();       
+        toggleCustomAC();  
         Espresso.pressBack();
         Espresso.pressBack();
         Espresso.pressBack();
@@ -153,7 +148,7 @@ public class URLAutocompleteTest {
 
         
         OpenCustomCompleteDialog();
-        toggleAutocomplete();
+        toggleCustomAC();  
         Espresso.pressBack();
         Espresso.pressBack();
         Espresso.pressBack();
@@ -163,8 +158,6 @@ public class URLAutocompleteTest {
         
         OpenCustomCompleteDialog();
         removeACSite();
-        Espresso.pressBack();
-        toggleAutocomplete();
     }
 
     @Test
@@ -172,7 +165,6 @@ public class URLAutocompleteTest {
         OpenCustomCompleteDialog();
 
         
-        toggleAutocomplete();
         addAutoComplete(site);
         exitToTop();
 
@@ -192,7 +184,6 @@ public class URLAutocompleteTest {
         
         removeACSite();
         Espresso.pressBack();
-        toggleAutocomplete();       
     }
 
     
@@ -203,8 +194,13 @@ public class URLAutocompleteTest {
         Espresso.pressBack();
     }
 
-    private void toggleAutocomplete() {
-        onView(withText("Add and manage custom autocomplete URLs."))
+    private void toggleTopsiteAC() {
+        onView(withText("For Top sites"))
+                .perform(click());
+    }
+
+    private void toggleCustomAC() {
+        onView(withText("For Sites You Add"))
                 .perform(click());
     }
 
