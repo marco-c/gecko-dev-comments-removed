@@ -16,6 +16,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.mozilla.focus.activity.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
@@ -56,7 +57,11 @@ public class URLCompletionTest {
         assertTrue (TestHelper.inlineAutocompleteEditText.getText().equals("mozilla.org"));
 
         
-        TestHelper.inlineAutocompleteEditText.clearTextField();;
+        TestHelper.cleartextField.click();
+        assertTrue (TestHelper.inlineAutocompleteEditText.getText().equals(""));
+        assertFalse (TestHelper.hint.exists());
+
+        
         TestHelper.inlineAutocompleteEditText.setText("http://www.mozilla.org");
         TestHelper.hint.waitForExists(waitingTime);
         assertTrue (TestHelper.inlineAutocompleteEditText.getText().equals("http://www.mozilla.org"));
