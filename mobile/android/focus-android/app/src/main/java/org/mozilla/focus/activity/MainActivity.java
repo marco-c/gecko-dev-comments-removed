@@ -80,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    @SuppressLint("CommitTransaction")
     protected void onNewIntent(Intent intent) {
         if (Intent.ACTION_VIEW.equals(intent.getAction())) {
             
