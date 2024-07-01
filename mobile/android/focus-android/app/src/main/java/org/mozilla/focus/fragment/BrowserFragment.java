@@ -236,10 +236,13 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                     progressView.setProgress(5);
                     progressView.setVisibility(View.VISIBLE);
                 } else {
-                    backgroundTransitionGroup.startTransition(ANIMATION_DURATION);
-
-                    progressView.setProgress(progressView.getMax());
-                    progressView.setVisibility(View.GONE);
+                    if (progressView.getVisibility() == View.VISIBLE) {
+                        
+                        
+                        backgroundTransitionGroup.startTransition(ANIMATION_DURATION);
+                        progressView.setProgress(progressView.getMax());
+                        progressView.setVisibility(View.GONE);
+                    }
                     swipeRefresh.setRefreshing(false);
                 }
 
