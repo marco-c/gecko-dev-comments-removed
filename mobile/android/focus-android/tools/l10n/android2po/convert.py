@@ -902,11 +902,11 @@ def write_xml(tree, warnfunc=dummy_warn):
             
             
             if len(string_el) == 1:
-                text = etree.tostring(string_el[0])
-                if '<ul>' in text:
-                    text = "<![CDATA[" + text + "]]>"
+                text = etree.tostring(string_el[0], xml_declaration=False)
+                
+                if (tag in text for tag in ['<ul>', '<p>', '<br', '<strong>', '<li>']):
                     del(string_el[0])
-                    string_el.text = text
+                    string_el.text = etree.CDATA(text)
 
             root_tags.append(string_el)
 
