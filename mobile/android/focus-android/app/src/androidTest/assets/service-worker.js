@@ -1,0 +1,2 @@
+
+const KANGAROO = true;
