@@ -51,10 +51,10 @@ import java.util.Map;
 
 
     private static final String CLEAR_VISITED_CSS =
-            "let nSheets = document.styleSheets.length;" +
+            "var nSheets = document.styleSheets.length;" +
             "for (s=0; s < nSheets; s++) {" +
-            "  let stylesheet = document.styleSheets[s];" +
-            "  let nRules = stylesheet.cssRules ? stylesheet.cssRules.length : 0;" +
+            "  var stylesheet = document.styleSheets[s];" +
+            "  var nRules = stylesheet.cssRules ? stylesheet.cssRules.length : 0;" +
             
             
             
@@ -62,11 +62,11 @@ import java.util.Map;
             
             
             "  for (i = nRules - 1; i >= 0; i--) {" +
-            "    let cssRule = stylesheet.cssRules[i];" +
+            "    var cssRule = stylesheet.cssRules[i];" +
             
             "    if (cssRule.selectorText && cssRule.selectorText.includes(':visited')) {" +
-            "      let tokens = cssRule.selectorText.split(',');" +
-            "      let j = tokens.length;" +
+            "      var tokens = cssRule.selectorText.split(',');" +
+            "      var j = tokens.length;" +
             "      while (j--) {" +
             "        if (tokens[j].includes(':visited')) {" +
             "          tokens.splice(j, 1);" +
@@ -94,7 +94,7 @@ import java.util.Map;
 
                 
                 
-                "let links = document.getElementsByTagName('link');" +
+                "var links = document.getElementsByTagName('link');" +
                 "for (i = 0; i < links.length; i++) {" +
                 "  link = links[i];" +
                 "  if (link.rel == 'stylesheet') {" +
