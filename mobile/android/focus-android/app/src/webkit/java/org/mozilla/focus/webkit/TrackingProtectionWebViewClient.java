@@ -34,7 +34,6 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         return super.shouldInterceptRequest(view, url);
     }
 
-
     
 
 
