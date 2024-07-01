@@ -15,6 +15,9 @@ permalink: /changelog/
 * **browser-menu**
   * Updated the styling of the menu to not have padding on top or bottom. Also modified size of `BrowserMenuItemToolbar` to match `BrowserToolbar`'s height
 
+* **feature-media**
+  * Do not display title/url/icon of website in media notification if website is opened in private mode.
+
 # 8.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v7.0.0...v8.0.0)
@@ -28,9 +31,6 @@ permalink: /changelog/
 
 * **support-android-test**
   * Added `WebserverRule` - a junit rule that will run a webserver during tests serving content from assets in the test package ([#3893](https://github.com/mozilla-mobile/android-components/issues/3893)).
-
-* **browser-engine-gecko-nightly**
-  * The component now exposes an implementation of the Gecko runtime telemetry delegate, `glean.GeckoAdapter`, which can be used to collect Gecko metrics with the Glean SDK.
 
 * **browser-engine-gecko-beta**
   * The component now handles situations where the Android system kills the content process (without killing the main app process) in order to reclaim resources. In those situations the component will automatically recover and restore the last known state of those sessions.
