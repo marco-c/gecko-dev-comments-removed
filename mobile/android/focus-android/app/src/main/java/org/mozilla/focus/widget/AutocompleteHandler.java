@@ -1,0 +1,10 @@
+
+
+
+
+
+package org.mozilla.focus.widget;
+
+public interface AutocompleteHandler {
+    void onAutocomplete(String res);
+}
