@@ -36,6 +36,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
     private static String LOGTAG = "ManualAddSearchEngine";
 
@@ -196,6 +198,7 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
         }
     }
 
+    @SuppressFBWarnings("DE_MIGHT_IGNORE")
     @WorkerThread 
     @VisibleForTesting static boolean isValidSearchQueryURL(final String query) {
         
