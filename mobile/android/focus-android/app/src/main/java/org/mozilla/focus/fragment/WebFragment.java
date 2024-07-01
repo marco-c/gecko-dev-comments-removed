@@ -74,12 +74,15 @@ public abstract class WebFragment extends LocaleAwareFragment {
     @Override
     public void applyLocale() {
         Context context = getContext();
-        Locale currentLocale = LocaleManager.getInstance().getCurrentLocale(context);
-        Locale.setDefault(currentLocale);
-        final Resources resources = context.getResources();
-        final Configuration config = resources.getConfiguration();
-        config.setLocale(currentLocale);
-        context.getResources().updateConfiguration(config, null);
+        final LocaleManager localeManager = LocaleManager.getInstance();
+        if (!localeManager.isMirroringSystemLocale(context)) {
+            final Locale currentLocale = localeManager.getCurrentLocale(context);
+            Locale.setDefault(currentLocale);
+            final Resources resources = context.getResources();
+            final Configuration config = resources.getConfiguration();
+            config.setLocale(currentLocale);
+            context.getResources().updateConfiguration(config, null);
+        }
         
         
         final WebView unneeded = new WebView(getContext());
