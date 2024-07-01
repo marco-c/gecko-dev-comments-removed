@@ -12,9 +12,6 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **feature-tabs**
-  * Makes `TabsAdapter` open to subclassing.
-
 * **feature-intent**
   * Select existing tab by url when trying to open a new tab in `TabIntentProcessor`
 
@@ -34,6 +31,9 @@ permalink: /changelog/
 
 * **browser-state**
   * Adds `history` to `ContentState` to check the back and forward history list.
+  
+* **service-glean**
+  * BUGFIX: Fix a race condition that leads to a `ConcurrentModificationException`. [Bug 1635865](https://bugzilla.mozilla.org/1635865)
 
 # 42.0.0
 
