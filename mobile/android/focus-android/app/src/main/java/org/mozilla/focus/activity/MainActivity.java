@@ -29,8 +29,11 @@ import org.mozilla.focus.web.WebViewProvider;
 
 public class MainActivity extends LocaleAwareAppCompatActivity {
     public static final String ACTION_ERASE = "erase";
+    public static final String ACTION_OPEN = "open";
+
     public static final String EXTRA_FINISH = "finish";
     public static final String EXTRA_TEXT_SELECTION = "text_selection";
+
     private static final String EXTRA_SHORTCUT = "shortcut";
 
     private String pendingUrl;
@@ -138,6 +141,10 @@ public class MainActivity extends LocaleAwareAppCompatActivity {
             
             
             pendingUrl = intent.getDataString();
+        }
+
+        if (ACTION_OPEN.equals(intent.getAction())) {
+            TelemetryWrapper.openNotificationActionEvent();
         }
 
         
