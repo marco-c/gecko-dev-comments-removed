@@ -143,12 +143,12 @@ public class WebViewProvider {
 
     private static class WebkitView extends NestedWebView implements IWebView {
         private Callback callback;
-        private TrackingProtectionWebViewClient client;
+        private FocusWebViewClient client;
 
         public WebkitView(Context context, AttributeSet attrs) {
             super(context, attrs);
 
-            client = createWebViewClient();
+            client = new FocusWebViewClient(getContext().getApplicationContext());
 
             setWebViewClient(client);
             setWebChromeClient(createWebChromeClient());
@@ -160,7 +160,7 @@ public class WebViewProvider {
 
         @Override
         public void setCallback(Callback callback) {
-            this.callback = callback;
+            client.setCallback(callback);
         }
 
         public void loadUrl(String url) {
@@ -191,52 +191,6 @@ public class WebViewProvider {
             
             webViewDatabase.clearFormData();
             webViewDatabase.clearHttpAuthUsernamePassword();
-        }
-
-        private TrackingProtectionWebViewClient createWebViewClient() {
-            return new TrackingProtectionWebViewClient(getContext().getApplicationContext()) {
-                @Override
-                public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                    if (callback != null) {
-                        callback.onPageStarted(url);
-                    }
-                    super.onPageStarted(view, url, favicon);
-                }
-
-                @Override
-                public void onPageFinished(WebView view, String url) {
-                    if (callback != null) {
-                        callback.onPageFinished(view.getCertificate() != null);
-                    }
-                    super.onPageFinished(view, url);
-                }
-
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if ((!url.startsWith("http://")) &&
-                            (!url.startsWith("https://")) &&
-                            (!url.startsWith("file://")) &&
-                            (!url.startsWith("data:")) &&
-                            (!url.startsWith("error:"))) {
-                        callback.handleExternalUrl(url);
-                        return true;
-                    }
-
-                    return super.shouldOverrideUrlLoading(view, url);
-                }
-            };
         }
 
         private WebChromeClient createWebChromeClient() {

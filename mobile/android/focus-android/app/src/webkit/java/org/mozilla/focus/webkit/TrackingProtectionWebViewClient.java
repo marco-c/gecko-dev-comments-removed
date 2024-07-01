@@ -19,10 +19,7 @@ import org.mozilla.focus.R;
 import org.mozilla.focus.webkit.matcher.UrlMatcher;
 
 public class TrackingProtectionWebViewClient extends WebViewClient {
-
-    final static String ERROR_PROTOCOL = "error:";
-
-    private String currentPageURL;
+    protected String currentPageURL;
 
     private static volatile UrlMatcher MATCHER;
 
@@ -106,65 +103,5 @@ public class TrackingProtectionWebViewClient extends WebViewClient {
         currentPageURL = url;
 
         return super.shouldOverrideUrlLoading(view, url);
-    }
-
-    @Override
-    public void onReceivedError(final WebView webView, int errorCode,
-                                final String description, String failingUrl) {
-
-        
-        
-        
-        
-
-        
-        
-        
-        
-        if (failingUrl.startsWith(ERROR_PROTOCOL)) {
-            
-            final int errorCodePosition = ERROR_PROTOCOL.length();
-            final String errorCodeString = failingUrl.substring(errorCodePosition);
-
-            int desiredErrorCode;
-            try {
-                desiredErrorCode = Integer.parseInt(errorCodeString);
-
-                if (!ErrorPage.supportsErrorCode(desiredErrorCode)) {
-                    
-                    
-                    desiredErrorCode = WebViewClient.ERROR_BAD_URL;
-                }
-            } catch (final NumberFormatException e) {
-                desiredErrorCode = WebViewClient.ERROR_BAD_URL;
-            }
-            ErrorPage.loadErrorPage(webView, failingUrl, desiredErrorCode);
-            return;
-        }
-
-
-        
-        
-        if (failingUrl.equals(currentPageURL) &&
-                ErrorPage.supportsErrorCode(errorCode)) {
-            ErrorPage.loadErrorPage(webView, currentPageURL, errorCode);
-            return;
-        }
-
-        super.onReceivedError(webView, errorCode, description, failingUrl);
-    }
-
-    @Override
-    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-        handler.cancel();
-
-        
-        
-        
-        
-        
-        if (error.getUrl().equals(currentPageURL)) {
-            ErrorPage.loadErrorPage(view, error.getUrl(), WebViewClient.ERROR_FAILED_SSL_HANDSHAKE);
-        }
     }
 }
