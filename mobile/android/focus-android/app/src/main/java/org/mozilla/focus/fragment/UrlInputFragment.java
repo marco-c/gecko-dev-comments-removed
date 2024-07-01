@@ -8,6 +8,7 @@ package org.mozilla.focus.fragment;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -411,6 +412,11 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     }
 
     private void dismiss() {
+        final Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+
         
         
         
