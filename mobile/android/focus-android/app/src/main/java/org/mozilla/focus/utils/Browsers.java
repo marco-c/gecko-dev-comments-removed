@@ -66,13 +66,12 @@ public class Browsers {
         final PackageManager packageManager = context.getPackageManager();
 
         final Map<String, ActivityInfo> browsers = resolveBrowsers(packageManager, url);
-        if (browsers.size() <= 1) {
-            
-            
-            
-            
-            findKnownBrowsers(packageManager, browsers, url);
-        }
+
+        
+        
+        
+        
+        findKnownBrowsers(packageManager, browsers, url);
 
         this.browsers = browsers;
         this.defaultBrowser = findDefault(packageManager, url);
