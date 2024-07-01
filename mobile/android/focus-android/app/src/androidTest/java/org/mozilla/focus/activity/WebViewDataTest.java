@@ -14,6 +14,7 @@ import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
 import android.support.test.uiautomator.UiSelector;
 
+import android.util.Log;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -26,7 +27,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -47,32 +50,49 @@ import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 @RunWith(AndroidJUnit4.class)
 public class WebViewDataTest {
-    private static final List<String> WHITELIST_DATA_DIR_CONTENTS = Arrays.asList(
-            "cache", 
-            "code_cache",
-            "shared_prefs",
-            "app_dxmaker_cache",
-            "telemetry",
-            "databases",
-            "app_webview",
+    private static final String LOGTAG = "WebViewDataTest";
 
-            
-            
-            
-            
-            
-            
-            
-            
+    
+
+
+
+
+
+    private static final Set<String> ANDROID_PROFILER_FILES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "libperfa_x86.so",
             "perfa.jar",
             "perfd"
-    );
+    )));
+
+    private static final Set<String> WHITELIST_DATA_DIR_CONTENTS;
+    static {
+        final Set<String> whitelistDataDirContents = new HashSet<>(Arrays.asList(
+                "cache", 
+                "code_cache",
+                "shared_prefs",
+                "app_dxmaker_cache",
+                "telemetry",
+                "databases",
+                "app_webview"
+        ));
+
+        
+        
+        
+        whitelistDataDirContents.addAll(ANDROID_PROFILER_FILES);
+        WHITELIST_DATA_DIR_CONTENTS = Collections.unmodifiableSet(whitelistDataDirContents);
+    }
 
     
     private static final List<String> WHITELIST_EMPTY_FOLDERS = Collections.singletonList(
             "app_textures"
     );
+
+    
+    
+    
+    private static final Set<String> NO_TRACES_IGNORE_LIST =
+            Collections.unmodifiableSet(new HashSet<>(ANDROID_PROFILER_FILES));
 
     private static final String TEST_PATH = "/copper/truck/destroy?smoke=violet#bizarre";
 
@@ -244,6 +264,11 @@ public class WebViewDataTest {
 
             if (file.isDirectory()) {
                 assertNoTraces(file);
+                continue;
+            }
+
+            if (NO_TRACES_IGNORE_LIST.contains(name)) {
+                Log.d(LOGTAG, "assertNoTraces: Ignoring file '" + name + "'...");
                 continue;
             }
 
