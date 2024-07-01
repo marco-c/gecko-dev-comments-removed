@@ -426,7 +426,7 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
             
             
             
-            browserFragment.loadURL(url);
+            browserFragment.loadUrl(url);
 
             
             fragmentManager.beginTransaction()
