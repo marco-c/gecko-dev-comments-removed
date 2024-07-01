@@ -36,7 +36,7 @@ class EngineViewBottomBehaviorTest {
 
         doReturn(42f).`when`(toolbar).translationY
         behavior.onDependentViewChanged(mock(), engineView.asView(), toolbar)
-        verify(engineView).setVerticalClipping(58)
+        verify(engineView).setVerticalClipping(-42)
     }
 
     @Test
@@ -62,8 +62,6 @@ class FakeEngineView(context: Context) : TextView(context), EngineView {
     override fun captureThumbnail(onFinish: (Bitmap?) -> Unit) {}
 
     override fun setVerticalClipping(clippingHeight: Int) {}
-
-    override fun setDynamicToolbarMaxHeight(height: Int) {}
 
     override fun release() {}
 }

@@ -80,19 +80,9 @@ class GeckoEngineViewTest {
         val engineView = GeckoEngineView(context)
         engineView.currentGeckoView = mock()
 
-        engineView.setVerticalClipping(42)
+        engineView.setVerticalClipping(-42)
 
-        verify(engineView.currentGeckoView).setVerticalClipping(42)
-    }
-
-    @Test
-    fun `setDynamicToolbarMaxHeight is forwarded to GeckoView instance`() {
-        val engineView = GeckoEngineView(context)
-        engineView.currentGeckoView = mock()
-
-        engineView.setDynamicToolbarMaxHeight(42)
-
-        verify(engineView.currentGeckoView).setDynamicToolbarMaxHeight(42)
+        verify(engineView.currentGeckoView).setVerticalClipping(-42)
     }
 
     @Test
