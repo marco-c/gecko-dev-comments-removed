@@ -6,7 +6,6 @@ package mozilla.components.browser.toolbar.display
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.Gravity
 import android.view.View
@@ -30,10 +29,10 @@ import mozilla.components.browser.toolbar.internal.wrapAction
 import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.concept.toolbar.Toolbar.SiteSecurity
 import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection
-import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.OFF_FOR_A_SITE
-import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.OFF_GLOBALLY
 import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.ON_NO_TRACKERS_BLOCKED
 import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.ON_TRACKERS_BLOCKED
+import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.OFF_GLOBALLY
+import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.OFF_FOR_A_SITE
 
 /**
  * Sub-component of the browser toolbar responsible for displaying the URL and related controls.
@@ -128,13 +127,7 @@ internal class DisplayToolbar(
 
     private var siteTrackingProtection = OFF_GLOBALLY
 
-    internal var securityIcon = context.getDrawable(R.drawable.mozac_ic_site_security)
-        set(value) {
-            field = value
-            siteSecurityIconView.setImageDrawable(value)
-        }
-
-    internal var securityIconColor = defaultColor to defaultColor
+    internal var securityIcons = SiteSecurityIcons.getDefaultSecurityIcons(context, defaultColor)
         set(value) {
             field = value
             setSiteSecurity(currentSiteSecurity)
@@ -147,6 +140,7 @@ internal class DisplayToolbar(
         }
 
     internal val trackingProtectionIconView = TrackingProtectionIconView(context).apply {
+        id = R.id.mozac_browser_toolbar_tracking_protection_icon_view
         isVisible = false
         setImageResource(R.drawable.mozac_tracking_protection_state_list)
         setPadding(resources.getDimensionPixelSize(R.dimen.mozac_browser_toolbar_icon_padding))
@@ -167,8 +161,10 @@ internal class DisplayToolbar(
             setOnClickListener(null)
         }
 
-    internal val siteSecurityIconView = SiteSecurityIconView(context).apply {
+    internal val siteSecurityIconView = AppCompatImageView(context).apply {
         setPadding(resources.getDimensionPixelSize(R.dimen.mozac_browser_toolbar_icon_padding))
+
+        setImageDrawable(securityIcons.insecure)
 
         // Avoiding text behind the icon being selectable. If the listener is not set
         // with a value or null text behind the icon can be selectable.
@@ -310,17 +306,12 @@ internal class DisplayToolbar(
      * Sets the site's security icon as secure if true, else the regular globe.
      */
     fun setSiteSecurity(secure: SiteSecurity) {
-        @ColorInt val color = when (secure) {
-            SiteSecurity.INSECURE -> securityIconColor.first
-            SiteSecurity.SECURE -> securityIconColor.second
+        val drawable = when (secure) {
+            SiteSecurity.INSECURE -> securityIcons.insecure
+            SiteSecurity.SECURE -> securityIcons.secure
         }
-        if (color == Color.TRANSPARENT) {
-            siteSecurityIconView.clearColorFilter()
-        } else {
-            siteSecurityIconView.setColorFilter(color)
-        }
+        siteSecurityIconView.setImageDrawable(drawable)
 
-        siteSecurityIconView.siteSecurity = secure
         currentSiteSecurity = secure
     }
 
