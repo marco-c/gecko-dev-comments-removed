@@ -20,10 +20,9 @@ import org.junit.runner.RunWith;
 import org.mozilla.focus.R;
 
 import static android.support.test.espresso.Espresso.onView;
-import static android.support.test.espresso.action.ViewActions.clearText;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.action.ViewActions.pressImeActionButton;
-import static android.support.test.espresso.action.ViewActions.typeText;
+import static android.support.test.espresso.action.ViewActions.replaceText;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.hasFocus;
 import static android.support.test.espresso.matcher.ViewMatchers.isClickable;
@@ -71,7 +70,7 @@ public class URLMismatchTest {
         onView(withId(R.id.url_edit))
                 .check(matches(isDisplayed()))
                 .check(matches(hasFocus()))
-                .perform(typeText("mozilla"));
+                .perform(click(), replaceText("mozilla"));
 
         
         onView(withId(R.id.search_hint))
@@ -92,7 +91,7 @@ public class URLMismatchTest {
 
         
         onView(withId(R.id.url_edit))
-                .perform(clearText(), typeText("moz"))
+                .perform(click(), replaceText("mozilla"))
                 .check(matches(withText("mozilla.org")))
                 .perform(pressImeActionButton());
 
