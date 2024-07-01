@@ -4,13 +4,44 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 34.0.0-SNAPSHOT (In Development)
+# 35.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v32.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/93?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v34.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/94?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+* **feature-awesomebar**
+  *  ⚠️ **This is a breaking change**: Refactored component to use `browser-state` instead of `browser-session`. Feature and `SuggestionProvider` implementations may require a `BrowserStore` instance instead of a `SessionManager` now.
+
+* **feature-intent**
+  * ⚠️ **This is a breaking change**: Removed `IntentProcessor.matches()` method from interface. Calling `process()` and examining the boolean return value is enough to know whether an `Intent` matched.
+
+* **feature-downloads**
+  * Fixed APK downloads not prompting to install when the notification is clicked.
+
+* **service-location**
+  * Created `LocationService` interface and made `MozillaLocationService` implement it.
+  * `RegionSearchLocalizationProvider` now accepts any `LocationService` implementation.
+  * Added `LocationService.dummy()` which creates a dummy `LocationService` implementation that always returns `null` when asked for a `LocationService.Region`.
+
+* **feature-accounts-push**
+  * Add known prefix to FxA push scope.
+
+* **concept-storage**
+  * New interface: `LoginsStorage`, describes a logins storage. A slightly cleaned-up version of what was in the `service-sync-logins`.
+
+* **service-sync-logins**
+  * ⚠️ **This is a breaking change**: Refactored `AsyncLoginsStorage`, which is now called `SyncableLoginsStorage`. New class caches the db connection, and removes lock/unlock operations from the public API.
+
+# 34.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v33.0.0...v34.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/93?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v34.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v34.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v34.0.0/buildSrc/src/main/java/Config.kt)
 
 * **concept-tabstray**
   * ⚠️ **This is a breaking change**: Removed dependency on `browser-session` and introduced tabs tray specific data classes.
@@ -35,11 +66,11 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: `alwaysAllowedSchemes` is removed as a parameter for `AppLinksInterceptor`.
   * Added `engineSupportedSchemes` as a parameter for `AppLinksInterceptor`.  This allows the caller to specify which protocol is supported by the engine.
     * Using this information, app links can decide if a protocol should be launched in a third party app or not regardless of user preference.
-    
+
 * **feature-sitepermissions**
   * ⚠️ **This is a breaking change**: add parameters `autoplayAudible` and `autoplayInaudible` to `SitePermissionsRules`.
     * This allows autoplay settings to be controlled for specific sites, rather than globally.
-  
+
 * **concept-engine**
   * ⚠️ **This is a breaking change**: remove deprecated GeckoView setting `allowAutoplayMedia`
     * This should now be controlled for individual sites via `SitePermissionsRules`
@@ -51,6 +82,9 @@ permalink: /changelog/
 * **feature-contextmenu**
   * ⚠️ **This is a breaking change**: `customTabId` is renamed to `tabId`.
 
+* **browser-menu**
+  * Emit fact on the web extension id when a web extension menu item is clicked.
+
 * **feature-push**
   * ⚠️ **This is a breaking change**:
     * Removed APIs from AutoPushFeature: `subscribeForType`, `unsubscribeForType`, `subscribeAll`.
@@ -59,6 +93,15 @@ permalink: /changelog/
 
 * **feature-accounts-push**
   * Updated `FxaPushSupportFeature` to use the new `AutoPushFeature` APIs.
+
+* **concept-sync**
+ * ⚠️ **This is a breaking change**:
+  * `DeviceEvent` and related classes were expanded/refactored, and renamed to `AccountEvent`.
+  * `DeviceConstellation` "event" related APIs were renamed to be "command"-centric.
+
+* **service-firefox-accounts**
+ * ⚠️ **This is a breaking change**:
+  * `FxaAccountManager.registerForDeviceEvents` renamed to `FxaAccountManager.registerForAccountEvents`.
 
 # 33.0.0
 
