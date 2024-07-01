@@ -30,11 +30,6 @@ _GIT_ZERO_HASHES = (
 CONFIGURATIONS_WITH_DEPENDENCIES = (
     "api",
     "compileOnly",
-
-
-
-
-
     "implementation",
     "testImplementation"
 )
