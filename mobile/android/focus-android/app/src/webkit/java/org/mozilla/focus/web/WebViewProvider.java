@@ -25,7 +25,9 @@ import android.webkit.WebViewDatabase;
 import org.mozilla.focus.BuildConfig;
 import org.mozilla.focus.R;
 
+import org.mozilla.focus.utils.FileUtils;
 import org.mozilla.focus.utils.Settings;
+import org.mozilla.focus.utils.ThreadUtils;
 import org.mozilla.focus.webkit.NestedWebView;
 import org.mozilla.focus.webkit.TrackingProtectionWebViewClient;
 
@@ -265,6 +267,15 @@ public class WebViewProvider {
         }
 
         @Override
+        public void destroy() {
+            super.destroy();
+
+            
+            
+            deleteContentFromKnownLocations();
+        }
+
+        @Override
         public void cleanup() {
             clearFormData();
             clearHistory();
@@ -281,6 +292,25 @@ public class WebViewProvider {
             
             webViewDatabase.clearFormData();
             webViewDatabase.clearHttpAuthUsernamePassword();
+
+            deleteContentFromKnownLocations();
+        }
+
+        private void deleteContentFromKnownLocations() {
+            final Context context = getContext();
+
+            ThreadUtils.postToBackgroundThread(new Runnable() {
+                @Override
+                public void run() {
+                    
+                    
+                    FileUtils.deleteWebViewDirectory(context);
+
+                    
+                    
+                    FileUtils.truncateCacheDirectory(context);
+                }
+            });
         }
 
         private WebChromeClient createWebChromeClient() {

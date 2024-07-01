@@ -1,0 +1,17 @@
+
+
+
+
+
+package org.mozilla.focus.utils;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class ThreadUtils {
+    private static final ExecutorService backgroundExecutorService = Executors.newSingleThreadExecutor();
+
+    public static void postToBackgroundThread(final Runnable runnable) {
+        backgroundExecutorService.submit(runnable);
+    }
+}
