@@ -99,6 +99,7 @@ public class SwitchContextTest {
             .description("Smiley face")
             .enabled(true));
 
+
     @Test
     public void ForegroundTest() throws InterruptedException, UiObjectNotFoundException {
 
@@ -111,8 +112,7 @@ public class SwitchContextTest {
         TestHelper.pressEnterKey();
 
         
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.waitForWebSiteTitleLoad();
         assertTrue(rabbitImage.exists());
 
         
@@ -129,7 +129,7 @@ public class SwitchContextTest {
         
         TestHelper.browserURLbar.waitForExists(waitingTime);
         assertTrue(TestHelper.browserURLbar.exists());
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.waitForWebSiteTitleLoad();
         assertTrue(rabbitImage.exists());
     }
 
@@ -145,8 +145,7 @@ public class SwitchContextTest {
         TestHelper.pressEnterKey();
 
         
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.waitForWebSiteTitleLoad();
         assertTrue(rabbitImage.exists());
 
         
@@ -187,9 +186,7 @@ public class SwitchContextTest {
         TestHelper.pressEnterKey();
 
         
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
-        assertTrue(titleMsg.waitForExists(waitingTime));
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.waitForWebSiteTitleLoad();
         junit.framework.Assert.assertTrue(rabbitImage.exists());
 
         
@@ -224,7 +221,7 @@ public class SwitchContextTest {
         
         TestHelper.browserURLbar.waitForExists(waitingTime);
         assertTrue(TestHelper.browserURLbar.exists());
-        Assert.assertTrue("Website title loaded", titleMsg.exists());
+        TestHelper.waitForWebSiteTitleLoad();
         assertTrue(rabbitImage.exists());
     }
 }
