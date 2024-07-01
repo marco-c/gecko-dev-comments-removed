@@ -34,6 +34,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.mozilla.focus.R;
 import org.mozilla.focus.activity.InfoActivity;
@@ -535,6 +536,9 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                 
                 
                 getActivity().finishAndRemoveTask();
+
+                
+                Toast.makeText(getContext(), R.string.feedback_erase, Toast.LENGTH_SHORT).show();
             } else {
                 
                 eraseAndShowHomeScreen();
