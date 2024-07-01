@@ -126,7 +126,8 @@ ADDITIONAL_SCREENSHOT_LOCALES = [
 	"ace",
 	"zh-HK",
 	"nv",
-	"sn"
+	"sn",
+	"co"
 ]
 
 

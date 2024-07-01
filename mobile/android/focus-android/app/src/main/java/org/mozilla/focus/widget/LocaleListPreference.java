@@ -66,6 +66,7 @@ public class LocaleListPreference extends ListPreference {
         languageCodeToNameMap.put("ppl", "Náhuat Pipil");
         languageCodeToNameMap.put("su", "Basa Sunda");
         languageCodeToNameMap.put("hus", "Tének");
+        languageCodeToNameMap.put("co", "Corsu");
     }
     static {
         
