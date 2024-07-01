@@ -13,6 +13,7 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSessionState
 import mozilla.components.concept.engine.HitResult
 import mozilla.components.concept.engine.content.blocking.Tracker
+import mozilla.components.concept.engine.prompt.PromptRequest
 import mozilla.components.support.base.observer.Consumable
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
@@ -764,6 +765,30 @@ class SessionManagerMigrationTest {
     }
 
     @Test
+    fun `Session is added to store before engine session can be created and linked`() {
+        val store = BrowserStore()
+        val engine: Engine = mock()
+
+        val engineSession1: EngineSession = mock()
+        doReturn(engineSession1).`when`(engine).createSession(false)
+
+        val sessionManager = SessionManager(engine, store)
+        sessionManager.register(object : SessionManager.Observer {
+            override fun onSessionAdded(session: Session) {
+                sessionManager.getOrCreateEngineSession(session)
+            }
+        })
+
+        val session = Session(id = "session", initialUrl = "https://www.mozilla.org")
+        sessionManager.add(session)
+
+        assertEquals(engineSession1, sessionManager.getOrCreateEngineSession(session))
+        store.state.findTab("session")!!.also { tab ->
+            assertEquals(engineSession1, tab.engineState.engineSession)
+        }
+    }
+
+    @Test
     fun `Restoring engine session with state`() {
         val engine: Engine = mock()
         val store = BrowserStore()
@@ -795,6 +820,32 @@ class SessionManagerMigrationTest {
 
         store.state.findTab("session2")!!.also { tab ->
             assertEquals(engineSession, tab.engineState.engineSession)
+        }
+    }
+
+    @Test
+    fun `Adding a prompt request`() {
+        val store = BrowserStore()
+        val manager = SessionManager(engine = mock(), store = store)
+
+        val session = Session(id = "session", initialUrl = "https://www.mozilla.org")
+        manager.add(session)
+
+        assertNull(session.promptRequest.peek())
+        assertNull(store.state.findTab("session")!!.content.promptRequest)
+
+        val promptRequest: PromptRequest = mock()
+        session.promptRequest = Consumable.from(promptRequest)
+
+        assertEquals(promptRequest, session.promptRequest.peek())
+        store.state.findTab("session")!!.also { tab ->
+            assertNotNull(tab.content.promptRequest)
+            assertSame(promptRequest, tab.content.promptRequest)
+        }
+
+        session.promptRequest.consume { true }
+        store.state.findTab("session")!!.also { tab ->
+            assertNull(tab.content.promptRequest)
         }
     }
 
