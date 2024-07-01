@@ -189,6 +189,13 @@ import java.util.Map;
         
         
         
+        if (url.equals("about:blank")) {
+            return false;
+        }
+
+        
+        
+        
         
         
         
