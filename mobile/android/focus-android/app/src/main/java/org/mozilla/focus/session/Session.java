@@ -163,4 +163,11 @@ public class Session {
     public void setBlockingEnabled(boolean blockingEnabled) {
         this.isBlockingEnabled = blockingEnabled;
     }
+
+    
+
+
+    public void stripCustomTabConfiguration() {
+        customTabConfig = null;
+    }
 }
