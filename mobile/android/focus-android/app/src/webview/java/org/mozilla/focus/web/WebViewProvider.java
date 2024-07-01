@@ -127,6 +127,7 @@ public class WebViewProvider {
     public static void applyAppSettings(Context context, WebSettings settings) {
         
         settings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
+        settings.setJavaScriptEnabled(!Settings.getInstance(context).shouldBlockJavaScript());
     }
 
     
