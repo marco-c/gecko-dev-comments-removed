@@ -21,10 +21,6 @@ permalink: /changelog/
 * **service-location**
   * Added `RegionSearchLocalizationProvider` - A `SearchLocalizationProvider` implementation that uses a `MozillaLocationService` instance to do a region lookup via GeoIP.
   * ⚠️ **This is a breaking change**: An implementation of `SearchLocalizationProvider` now returns a `SearchLocalization` data class instead of multiple properties.
-  
-* **service-glean**
-  * ⚠️ **This is a breaking change**: `Glean.handleBackgroundEvent` is now an internal API.
-
 
 * **browser-engine-gecko(-beta/nightly)**, **concept-engine**
   * Added simplified `Media.state` derived from `Media.playbackState` events.
@@ -78,6 +74,11 @@ permalink: /changelog/
 * **support-ktx**
   * Removed deprecated methods that have equivalents in Android KTX.
 
+* **concept-sync**, **service-firefox-account**
+  * ⚠️ **This is a breaking change**
+  * In `OAuthAccount` (and by extension, `FirefoxAccount`) `beginOAuthFlowAsync` no longer need to specify `wantsKeys` parameter; it's automatically inferred from the requested `scopes`.
+  * Three new device types now available: `tablet`, `tv`, `vr`.
+
 # 8.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v7.0.0...v8.0.0)
@@ -118,11 +119,6 @@ permalink: /changelog/
 * **feature-media**
   * `MediaFeature` is no longer showing a notification for playing media with a very short duration.
   * Lowererd priority of media notification channel to avoid the media notification makign any sounds itself.
-
-* **concept-sync**, **service-firefox-account**
-  * ⚠️ **This is a breaking change**
-  * In `OAuthAccount` (and by extension, `FirefoxAccount`) `beginOAuthFlowAsync` no longer need to specify `wantsKeys` parameter; it's automatically inferred from the requested `scopes`.
-  * Three new device types now available: `tablet`, `tv`, `vr`.
 
 # 7.0.0
 
