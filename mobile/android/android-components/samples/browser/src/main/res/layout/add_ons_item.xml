@@ -24,8 +24,8 @@
 
         <ImageView
                 android:id="@+id/add_on_icon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center"
                 android:src="@drawable/mozac_ic_extensions"
                 android:importantForAccessibility="no"
@@ -90,7 +90,7 @@
             android:layout_height="24dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:contentDescription="@string/mozac_feature_addons_install_addon_content_description"
+            android:contentDescription="@string/install_add_on_content_description"
             android:tint="@android:color/black"
             android:src="@drawable/mozac_ic_new" />
 </RelativeLayout>

@@ -55,7 +55,6 @@ class AddonsFragment : Fragment(), View.OnClickListener {
         super.onStart()
         findPreviousDialogFragment()?.let { dialog ->
             dialog.onPositiveButtonClicked = onPositiveButtonClicked
-            dialog.onNegativeButtonClicked = onNegativeButtonClicked
         }
     }
 
@@ -155,9 +154,9 @@ class AddonsFragment : Fragment(), View.OnClickListener {
         private fun bindAddon(holder: AddonViewHolder, addon: Addon) {
             val context = holder.itemView.context
             addon.rating?.let {
-                val userCount = context.getString(R.string.mozac_feature_addons_user_rating_count)
+                val userCount = context.getString(R.string.add_on_user_rating_count)
                 val ratingContentDescription =
-                    context.getString(R.string.mozac_feature_addons_rating_content_description)
+                    context.getString(R.string.add_on_rating_content_description)
                 holder.ratingView.contentDescription =
                     String.format(ratingContentDescription, it.average)
                 holder.ratingView.rating = it.average
@@ -196,12 +195,12 @@ class AddonsFragment : Fragment(), View.OnClickListener {
             var isRecommendedSectionAdded = false
 
             if (shouldAddInstalledSection) {
-                itemsWithSections.add(Section(R.string.mozac_feature_addons_installed_section))
+                itemsWithSections.add(Section(R.string.addon_settings_installed_section))
             }
 
             sortedAddons.forEach { addon ->
                 if (!isRecommendedSectionAdded && !addon.isInstalled()) {
-                    itemsWithSections.add(Section(R.string.mozac_feature_addons_recommended_section))
+                    itemsWithSections.add(Section(R.string.addon_settings_recommended_section))
                     isRecommendedSectionAdded = true
                 }
 
@@ -245,9 +244,16 @@ class AddonsFragment : Fragment(), View.OnClickListener {
                 showPermissionDialog(addon)
             }
             R.id.add_on_item -> {
-                val intent = Intent(context, InstalledAddonDetailsActivity::class.java)
-                intent.putExtra("add_on", view.tag as Addon)
-                context.startActivity(intent)
+                val addon = view.tag as Addon
+                if (addon.isInstalled()) {
+                    val intent = Intent(context, InstalledAddonDetailsActivity::class.java)
+                    intent.putExtra("add_on", addon)
+                    context.startActivity(intent)
+                } else {
+                    val intent = Intent(context, AddonDetailsActivity::class.java)
+                    intent.putExtra("add_on", addon)
+                    this.startActivity(intent)
+                }
             }
             else -> {
             }
@@ -263,17 +269,15 @@ class AddonsFragment : Fragment(), View.OnClickListener {
     }
 
     private fun showPermissionDialog(addon: Addon) {
-
         val dialog = PermissionsDialogFragment.newInstance(
-            addonId = addon.id,
+            addon = addon,
             title = addon.translatableName.translate(),
             permissions = addon.translatePermissions(),
             promptsStyling = PromptsStyling(
                 gravity = Gravity.BOTTOM,
                 shouldWidthMatchParent = true
             ),
-            onPositiveButtonClicked = onPositiveButtonClicked,
-            onNegativeButtonClicked = onNegativeButtonClicked
+            onPositiveButtonClicked = onPositiveButtonClicked
         )
 
         if (!isAlreadyADialogCreated() && fragmentManager != null) {
@@ -281,15 +285,30 @@ class AddonsFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    private val onPositiveButtonClicked: ((String) -> Unit) = { addonId ->
-        Toast.makeText(this.requireContext(), "Installing add-on $addonId", Toast.LENGTH_SHORT)
-            .show()
+    private val onPositiveButtonClicked: ((Addon) -> Unit) = { addon ->
+        requireContext().components.addonManager.installAddon(
+            addon,
+            onSuccess = {
+                Toast.makeText(
+                    requireContext(),
+                    "Successfully installed: ${it.translatableName.translate()}",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                this@AddonsFragment.view?.let { view ->
+                    bindRecyclerView(view)
+                }
+            },
+            onError = { _, _ ->
+                Toast.makeText(
+                    requireContext(),
+                    "Failed to install: ${addon.translatableName.translate()}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        )
     }
 
-    private val onNegativeButtonClicked = {
-        Toast.makeText(this.requireContext(), "Cancel button clicked", Toast.LENGTH_SHORT)
-            .show()
-    }
     companion object {
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val VIEW_HOLDER_TYPE_SECTION = 0
