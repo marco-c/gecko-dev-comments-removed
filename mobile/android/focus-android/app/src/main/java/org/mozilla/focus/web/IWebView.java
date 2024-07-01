@@ -113,11 +113,5 @@ public interface IWebView {
     
 
 
-    @Nullable
-    Bitmap getIcon();
-
-    
-
-
     String getTitle();
 }
