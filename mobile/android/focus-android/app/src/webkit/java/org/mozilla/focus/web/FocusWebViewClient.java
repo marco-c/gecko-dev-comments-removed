@@ -120,7 +120,7 @@ public class FocusWebViewClient extends TrackingProtectionWebViewClient {
         
         
         
-        if (UrlUtils.focusSupportURLProtocol(url) &&
+        if (!UrlUtils.isSupportedProtocol(url) &&
                 callback.handleExternalUrl(url)) {
             return true;
         }
