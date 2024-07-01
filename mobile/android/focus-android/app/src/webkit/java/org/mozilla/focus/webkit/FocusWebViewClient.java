@@ -21,8 +21,6 @@ import org.mozilla.focus.utils.HtmlLoader;
 import org.mozilla.focus.utils.SupportUtils;
 import org.mozilla.focus.utils.UrlUtils;
 import org.mozilla.focus.web.IWebView;
-import org.mozilla.focus.webkit.ErrorPage;
-import org.mozilla.focus.webkit.TrackingProtectionWebViewClient;
 
 import java.util.Map;
 
@@ -163,7 +161,10 @@ import java.util.Map;
             callback.onPageFinished(view.getCertificate() != null);
             
             
-            callback.onURLChanged(view.getUrl());
+            final String viewURL = view.getUrl();
+            if (!UrlUtils.isInternalErrorURL(viewURL)) {
+                callback.onURLChanged(view.getUrl());
+            }
         }
         super.onPageFinished(view, url);
 

@@ -21,6 +21,7 @@ import android.webkit.WebViewDatabase;
 import org.mozilla.focus.BuildConfig;
 import org.mozilla.focus.utils.FileUtils;
 import org.mozilla.focus.utils.ThreadUtils;
+import org.mozilla.focus.utils.UrlUtils;
 import org.mozilla.focus.web.Download;
 import org.mozilla.focus.web.IWebView;
 import org.mozilla.focus.web.WebViewProvider;
@@ -189,7 +190,10 @@ public class WebkitView extends NestedWebView implements IWebView, SharedPrefere
                     
                     
                     
-                    callback.onURLChanged(view.getUrl());
+                    final String viewURL = view.getUrl();
+                    if (!UrlUtils.isInternalErrorURL(viewURL)) {
+                        callback.onURLChanged(viewURL);
+                    }
                     callback.onProgress(newProgress);
                 }
             }
