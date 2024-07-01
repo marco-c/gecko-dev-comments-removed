@@ -482,7 +482,11 @@ class ExportCommand(InitCommand):
                 
                 
                 
-                lang_catalog = read_catalog(target_po, locale=language.code)
+
+                
+                locale = language.code.replace('-', '_')
+
+                lang_catalog = read_catalog(target_po, locale=locale)
                 catalog, _ = self.make_or_get_template(kind, action)
                 if catalog is None:
                     
