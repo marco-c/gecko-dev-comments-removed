@@ -10,14 +10,7 @@ import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.By;
-import android.support.test.uiautomator.BySelector;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiSelector;
-import android.support.test.uiautomator.Until;
-import android.text.format.DateUtils;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,43 +42,25 @@ public class URLCompletionTest {
 
     @Test
     public void CompletionTest() throws InterruptedException, UiObjectNotFoundException {
-        
-        UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        final long waitingTime = DateUtils.SECOND_IN_MILLIS * 2;
-
-        UiObject firstViewBtn = mDevice.findObject(new UiSelector()
-                .resourceId("org.mozilla.focus.debug:id/firstrun_exitbutton")
-                .enabled(true));
-        UiObject urlBar = mDevice.findObject(new UiSelector()
-                .resourceId("org.mozilla.focus.debug:id/url")
-                .clickable(true));
-        UiObject inlineAutocompleteEditText = mDevice.findObject(new UiSelector()
-                .resourceId("org.mozilla.focus.debug:id/url_edit")
-                .focused(true)
-                .enabled(true));
-        BySelector hint = By.clazz("android.widget.TextView")
-                .res("org.mozilla.focus.debug","search_hint")
-                .clickable(true);
+        final long waitingTime = TestHelper.waitingTime;
 
         
-        firstViewBtn.waitForExists(waitingTime);
-        firstViewBtn.click();
+        TestHelper.firstViewBtn.waitForExists(waitingTime);
+        TestHelper.firstViewBtn.click();
+        TestHelper.urlBar.waitForExists(waitingTime);
+        TestHelper.urlBar.click();
 
         
-        urlBar.waitForExists(waitingTime);
-        urlBar.click();
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText("mozilla");
+        TestHelper.hint.waitForExists(waitingTime);
+        assertTrue (TestHelper.inlineAutocompleteEditText.getText().equals("mozilla.org"));
 
         
-        inlineAutocompleteEditText.waitForExists(waitingTime);
-        inlineAutocompleteEditText.clearTextField();
-        inlineAutocompleteEditText.setText("mozilla");
-        mDevice.wait(Until.hasObject(hint),waitingTime);
-        assertTrue (inlineAutocompleteEditText.getText().equals("mozilla.org"));
-
-        
-        inlineAutocompleteEditText.clearTextField();;
-        inlineAutocompleteEditText.setText("http://www.mozilla.org");
-        mDevice.wait(Until.hasObject(hint),waitingTime);
-        assertTrue (inlineAutocompleteEditText.getText().equals("http://www.mozilla.org"));
+        TestHelper.inlineAutocompleteEditText.clearTextField();;
+        TestHelper.inlineAutocompleteEditText.setText("http://www.mozilla.org");
+        TestHelper.hint.waitForExists(waitingTime);
+        assertTrue (TestHelper.inlineAutocompleteEditText.getText().equals("http://www.mozilla.org"));
     }
 }
