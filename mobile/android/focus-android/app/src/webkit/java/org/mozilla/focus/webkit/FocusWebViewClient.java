@@ -119,12 +119,14 @@ import org.mozilla.focus.web.IWebView;
             
             
             final String requestURL = request.getUrl().toString();
-            if (UrlUtils.urlsMatchExceptForTrailingSlash(currentPageURL, requestURL)) {
+            final String currentURL = currentPageURL;
+
+            if (UrlUtils.urlsMatchExceptForTrailingSlash(currentURL, requestURL)) {
                 view.post(new Runnable() {
                     @Override
                     public void run() {
                         if (callback != null) {
-                            callback.onURLChanged(currentPageURL);
+                            callback.onURLChanged(currentURL);
                         }
                     }
                 });
@@ -195,8 +197,8 @@ import org.mozilla.focus.web.IWebView;
             
             
             final String viewURL = view.getUrl();
-            if (!UrlUtils.isInternalErrorURL(viewURL)) {
-                callback.onURLChanged(view.getUrl());
+            if (!UrlUtils.isInternalErrorURL(viewURL) && viewURL != null) {
+                callback.onURLChanged(viewURL);
             }
         }
         super.onPageFinished(view, url);
