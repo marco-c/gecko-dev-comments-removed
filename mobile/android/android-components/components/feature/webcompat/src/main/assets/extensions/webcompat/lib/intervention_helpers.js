@@ -208,8 +208,26 @@ const GOOGLE_TLDS = [
   "co.zw",
 ];
 
-function getMatchPatternsForGoogleURL(url, path = "*") {
-  return GOOGLE_TLDS.map(domain => `*://${url}.${domain}/${path}`);
-}
+var InterventionHelpers = {
+  
 
-module.exports = getMatchPatternsForGoogleURL;
+
+
+
+
+
+
+  matchPatternsForTLDs: function(base, suffix, tlds) {
+    return tlds.map(tld => base + tld + suffix);
+  },
+
+  
+
+
+
+  matchPatternsForGoogle: function(base, suffix = "/*") {
+    return InterventionHelpers.matchPatternsForTLDs(base, suffix, GOOGLE_TLDS);
+  },
+};
+
+module.exports = InterventionHelpers;
