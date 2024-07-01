@@ -4,99 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 45.0.0-SNAPSHOT (In Development)
+# 43.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v44.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/105?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v42.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/103?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-# 44.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v43.0.0...v44.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/104?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v44.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v44.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v44.0.0/buildSrc/src/main/java/Config.kt)
-
-* **browser-engine-gecko-nightly**
-  * Added support for [onbeforeunload prompt](https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload)
-
-* **feature-tabs**
-  * Added an optional `ThumbnailsUseCases` to `TabsFeature` and `TabsTrayPresenter` for loading a
-    tab's thumbnail.
-
-* **browser-thumbnails**
-  * Adds `LoadThumbnailUseCase` in `ThumbnailsUseCases` for loading the thumbnail of a tab.
-  * Adds `ThumbnailStorage` as a storage layer for handling saving and loading a thumbnail from the
-    disk cache.
-
-* **feature-push**
-  * Adds the `getSubscription` call to check if a subscription exists.
-
-* **browser-engine-gecko-***
-  * Fixes GeckoWebPushDelegate to gracefully return when a subscription is not available.
-
-* **feature-session**
-  * Removes unused `ThumbnailsFeature` since this has been refactored into its own browser-thumbnails component in
-    [#6827](https://github.com/mozilla-mobile/android-components/issues/6827).
-
-* **browser-state**
-  * Adds `BrowserState.getNormalOrPrivateTabs(private: Boolean)` to get `normalTabs` or `privateTabs` based on a boolean condition.
-
-* **support-utils**
-  * `URLStringUtils.isURLLikeStrict`, deprecated in 40.0.0, was now removed due to performance issues. Use the less strict and much faster `isURLLike` instead or customize based on `:lib-publicsuffixlist`.
-
-* **support-ktx**
-  * `String.isUrlStrict`, deprecated in 40.0.0, was now removed due to performance issues. Use the less strict `isURL` instead or customize based on `:lib-publicsuffixlist`.
-
-# 43.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v42.0.0...v43.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/103?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v43.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v43.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v43.0.0/buildSrc/src/main/java/Config.kt)
-
-* **feature-downloads**
-  * ⚠️ **This is a breaking change**: DownloadManager and DownloadService are now using the browser store to keep track of queued downloads. Therefore, an instance of the store needs to be provided when constructing manager and service. There's also a new DownloadMiddleware which needs to be provided to the store.
-  ```kotlin
-   val store by lazy {
-        BrowserStore(middleware = listOf(
-            MediaMiddleware(applicationContext, MediaService::class.java),
-            DownloadMiddleware(applicationContext, DownloadService::class.java),
-            ...
-        ))
-    }
-  )
-
-  val feature = DownloadsFeature(
-      requireContext().applicationContext,
-      store = components.store,
-      useCases = components.downloadsUseCases,
-      fragmentManager = childFragmentManager,
-      onDownloadStopped = { download, id, status ->
-          Logger.debug("Download done. ID#$id $download with status $status")
-      },
-      downloadManager = FetchDownloadManager(
-          requireContext().applicationContext,
-          components.store, // Store needs to be provided now
-          DownloadService::class
-      ),
-      tabId = sessionId,
-      onNeedToRequestPermissions = { permissions ->
-          requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
-      }
-  )
-
-  class DownloadService : AbstractFetchDownloadService() {
-    override val httpClient by lazy { components.core.client }
-    override val store: BrowserStore by lazy { components.core.store } // Store needs to be provided now
-  }
-  ```
-  * Fixed issue [#6893](https://github.com/mozilla-mobile/android-components/issues/6893).
-  * Add notification grouping to downloads Fenix issue [#4910](https://github.com/mozilla-mobile/android-components/issues/4910).
 
 * **feature-tabs**
   * Makes `TabsAdapter` open to subclassing.
@@ -112,6 +26,9 @@ permalink: /changelog/
     into a new component `support-images`, which provides helpers for handling images. `AndroidIconDecoder` and `IconDecoder`
     are renamed to `AndroidImageDecoder` and `ImageDecoder` in `support-images`.
 
+* **support-utils**
+  * `URLStringUtils.isURLLike()` will now consider URLs containing double dash ("--") as valid.
+
 * **browser-thumbnails**
   * Adds `ThumbnailDiskCache` for storing and restoring thumbnail bitmaps into a disk cache.
 
@@ -120,18 +37,9 @@ permalink: /changelog/
 
 * **browser-state**
   * Adds `history` to `ContentState` to check the back and forward history list.
-
+  
 * **service-glean**
   * BUGFIX: Fix a race condition that leads to a `ConcurrentModificationException`. [Bug 1635865](https://bugzilla.mozilla.org/1635865)
-
-* **browser-menu**
-  * Added `AbstractParentBrowserMenuItem` and `ParentBrowserMenuItem` for handling nested sub menu items on view click.
-  * ⚠️ **This is a breaking change**: `WebExtensionBrowserMenuBuilder` now returns as a sub menu entry for add-ons. The sub
-    menu also contains an access entry for Add-ons Manager, for which `onAddonsManagerTapped` needs to be passed in the
-    constructor.
-
-* **feature-syncedtabs**
-  * When the SyncedTabsFeature is started it syncs the devices and account first.
 
 # 42.0.0
 
