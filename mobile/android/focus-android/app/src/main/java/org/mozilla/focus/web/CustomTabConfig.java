@@ -2,7 +2,6 @@ package org.mozilla.focus.web;
 
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -13,6 +12,7 @@ import android.support.customtabs.CustomTabsIntent;
 import android.util.Log;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.telemetry.TelemetryWrapper;
 import org.mozilla.focus.utils.SafeBundle;
 import org.mozilla.focus.utils.SafeIntent;
 
@@ -138,24 +138,44 @@ public class CustomTabConfig {
     }
 
      static CustomTabConfig parseCustomTabIntent(final @NonNull Context context, final @NonNull SafeIntent intent) {
+        
+        final List<String> featureList = new LinkedList<>();
+
         @ColorInt Integer toolbarColor = null;
         if (intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
             toolbarColor = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, -1);
+            featureList.add("hasToolbarColor");
         }
 
         final Bitmap closeButtonIcon = getCloseButtonIcon(context, intent);
+        if (closeButtonIcon != null) {
+            featureList.add("hasCloseButton");
+        }
 
         
         
         
         
         boolean disableUrlbarHiding = !intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_URLBAR_HIDING, true);
+        if (!disableUrlbarHiding) {
+            featureList.add("disablesUrlbarHiding");
+        }
 
         final ActionButtonConfig actionButtonConfig = getActionButtonConfig(context, intent);
+        if (actionButtonConfig != null) {
+            featureList.add("hasActionButton");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_TINT_ACTION_BUTTON)) {
+            featureList.add("hasActionButtonTint");
+        }
 
         
         
         final boolean showShareMenuItem = intent.getBooleanExtra(CustomTabsIntent.EXTRA_DEFAULT_SHARE_MENU_ITEM, false);
+        if (showShareMenuItem) {
+            featureList.add("hasShareItem");
+        }
 
         final List<CustomTabMenuItem> menuItems = new LinkedList<>();
         if (intent.hasExtra(CustomTabsIntent.EXTRA_MENU_ITEMS)) {
@@ -187,7 +207,45 @@ public class CustomTabConfig {
                 menuItems.add(new CustomTabMenuItem(name, pendingIntent));
             }
         }
+        if (menuItems.size() > 0) {
+            featureList.add("hasCustomizedMenu");
+        }
 
+
+        
+        
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_REMOTEVIEWS) ||
+                intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_ITEMS)) {
+            featureList.add("hasBottomToolbar");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_SECONDARY_TOOLBAR_COLOR)) {
+            featureList.add("hasBottomToolbarColor");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE)) {
+            final int titleVisibility = intent.getIntExtra(CustomTabsIntent.EXTRA_TITLE_VISIBILITY_STATE, 0);
+            switch (titleVisibility) {
+                case CustomTabsIntent.SHOW_PAGE_TITLE:
+                    featureList.add("hasPageTitle");
+                    break;
+                case CustomTabsIntent.NO_TITLE:
+                    break;
+                default:
+                    Log.w(LOGTAG, "Custom tab intent specified unknown EXTRA_TITLE_VISIBILITY_STATE");
+                    break;
+            }
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_EXIT_ANIMATION_BUNDLE)) {
+            featureList.add("hasExitAnimation");
+        }
+
+        if (intent.hasExtra(CustomTabsIntent.EXTRA_ENABLE_INSTANT_APPS)) {
+            featureList.add("enablesInstantApps");
+        }
+
+        TelemetryWrapper.customTabsIntentEvent(featureList);
         return new CustomTabConfig(toolbarColor, closeButtonIcon, disableUrlbarHiding, actionButtonConfig, showShareMenuItem, menuItems);
     }
 }
