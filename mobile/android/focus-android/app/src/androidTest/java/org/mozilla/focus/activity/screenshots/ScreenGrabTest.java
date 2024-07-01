@@ -148,7 +148,10 @@ public class ScreenGrabTest {
         takeScreenshotOfEraseSnackbar(device);
 
         takeScreenshotOfSettings(device);
-        takeScreenshotOfGooglePlayDialog(device);
+
+        
+        
+        
 
         takeScreenshotOfErrorPages(device);
     }
