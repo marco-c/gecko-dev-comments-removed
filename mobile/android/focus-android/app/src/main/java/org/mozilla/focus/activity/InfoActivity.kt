@@ -25,7 +25,7 @@ import org.mozilla.focus.web.WebViewProvider
 
 
 class InfoActivity : LocaleAwareAppCompatActivity() {
-    private lateinit var url: String
+    private var url: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
