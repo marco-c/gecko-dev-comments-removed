@@ -31,20 +31,25 @@ public class FocusApplication extends LocaleAwareApplication {
     }
 
     private void enableStrictMode() {
+        
+        
         if (AppConstants.isReleaseBuild()) {
             return;
         }
 
-        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                .penaltyDeath()
-                .build());
+        final StrictMode.ThreadPolicy.Builder threadPolicyBuilder = new StrictMode.ThreadPolicy.Builder().detectAll();
+        final StrictMode.VmPolicy.Builder vmPolicyBuilder = new StrictMode.VmPolicy.Builder().detectAll();
 
-        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                .penaltyDeath()
-                .build());
+        if (AppConstants.isBetaBuild()) {
+            threadPolicyBuilder.penaltyDialog();
+            vmPolicyBuilder.penaltyLog();
+        } else { 
+            threadPolicyBuilder.penaltyDialog();
+            
+            vmPolicyBuilder.penaltyLog().penaltyDeath();
+        }
+
+        StrictMode.setThreadPolicy(threadPolicyBuilder.build());
+        StrictMode.setVmPolicy(vmPolicyBuilder.build());
     }
 }
