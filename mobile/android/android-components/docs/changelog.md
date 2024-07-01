@@ -18,6 +18,9 @@ permalink: /changelog/
 * **feature-accounts**
   * Add new `FxaPushSupportFeature` for some underlying support when connecting push and fxa accounts together.
 
+* **browser-state**
+  * Added `externalAppType` to `CustomTabConfig` to indicate how the session is being used.
+
 # 18.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v17.0.0...v18.0.0)
