@@ -20,7 +20,7 @@
 
 
 RELEASE_LOCALES = [
-	"am"
+	"am",
 	"ar",
 	"ast",
 	"az",
@@ -97,8 +97,13 @@ RELEASE_LOCALES = [
 
 
 ADDITIONAL_SCREENSHOT_LOCALES = [
+	"an",
+	"anp",
+	"gu-IN",
 	"lt",
-	"gu-IN"
+	"oc",
+	"tt",
+	"wo"
 ]
 
 
