@@ -68,7 +68,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.Exception
 import java.lang.IllegalStateException
 import kotlin.random.Random
 
@@ -353,11 +352,10 @@ abstract class AbstractFetchDownloadService : Service() {
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     internal fun startDownloadJob(currentDownloadJobState: DownloadJobState) {
         try {
             performDownload(currentDownloadJobState)
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             setDownloadJobStatus(currentDownloadJobState, FAILED)
         }
     }
@@ -630,13 +628,22 @@ abstract class AbstractFetchDownloadService : Service() {
         block: (OutputStream) -> Unit
     ) {
         val downloadWithUniqueFileName = makeUniqueFileNameIfNecessary(download, append)
-        downloadJobs[download.id]?.state = downloadWithUniqueFileName
+        updateDownloadState(downloadWithUniqueFileName)
 
         if (SDK_INT >= Build.VERSION_CODES.Q) {
             useFileStreamScopedStorage(downloadWithUniqueFileName, block)
         } else {
             useFileStreamLegacy(downloadWithUniqueFileName, append, block)
         }
+    }
+
+    /**
+     * Updates the given [updatedDownload] in the store and in the [downloadJobs].
+     */
+    @VisibleForTesting
+    internal fun updateDownloadState(updatedDownload: DownloadState) {
+        downloadJobs[updatedDownload.id]?.state = updatedDownload
+        store.dispatch(DownloadAction.UpdateQueuedDownloadAction(updatedDownload))
     }
 
     /**
