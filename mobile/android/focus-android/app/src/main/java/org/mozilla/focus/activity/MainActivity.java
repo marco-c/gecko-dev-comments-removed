@@ -19,12 +19,16 @@ import org.mozilla.focus.fragment.BrowserFragment;
 import org.mozilla.focus.fragment.FirstrunFragment;
 import org.mozilla.focus.fragment.HomeFragment;
 import org.mozilla.focus.fragment.UrlInputFragment;
+import org.mozilla.focus.notification.BrowsingNotificationService;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
 import org.mozilla.focus.utils.Settings;
 import org.mozilla.focus.web.IWebView;
 import org.mozilla.focus.web.WebViewProvider;
 
 public class MainActivity extends AppCompatActivity {
+    public static final String ACTION_ERASE = "erase";
+    public static final String EXTRA_FINISH = "finish";
+
     private String pendingUrl;
 
     @Override
@@ -41,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
-
 
         if (savedInstanceState == null) {
             WebViewProvider.performCleanup(this);
@@ -71,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        BrowsingNotificationService.foreground(this);
+
         TelemetryWrapper.startSession();
     }
 
@@ -81,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         super.onPause();
+
+        BrowsingNotificationService.background(this);
 
         TelemetryWrapper.stopSession();
     }
@@ -98,15 +105,21 @@ public class MainActivity extends AppCompatActivity {
             
             
             pendingUrl = intent.getDataString();
-
-            
-            setIntent(intent);
         }
+
+        
+        setIntent(intent);
     }
 
     @Override
     protected void onResumeFragments() {
         super.onResumeFragments();
+
+        final Intent intent = getIntent();
+
+        if (ACTION_ERASE.equals(intent.getAction())) {
+            eraseFromNotification(intent.getBooleanExtra(EXTRA_FINISH, false));
+        }
 
         if (pendingUrl != null && !new Settings(this).shouldShowFirstrun()) {
             
@@ -114,6 +127,29 @@ public class MainActivity extends AppCompatActivity {
             
             showBrowserScreen(pendingUrl);
             pendingUrl = null;
+        }
+    }
+
+    private void eraseFromNotification(boolean finishActivity) {
+        final BrowserFragment browserFragment = (BrowserFragment) getSupportFragmentManager()
+                .findFragmentByTag(BrowserFragment.FRAGMENT_TAG);
+
+        if (browserFragment != null) {
+            
+            
+            browserFragment.eraseAndShowHomeScreen();
+        } else {
+            
+            
+            WebViewProvider.performCleanup(this);
+            BrowsingNotificationService.stop(this);
+        }
+
+        
+        
+        if (finishActivity) {
+            finish();
+            overridePendingTransition(0, 0); 
         }
     }
 
