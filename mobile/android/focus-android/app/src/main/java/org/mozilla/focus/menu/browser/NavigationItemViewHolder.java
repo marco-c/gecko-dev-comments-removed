@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.menu;
+package org.mozilla.focus.menu.browser;
 
 import android.view.View;
 

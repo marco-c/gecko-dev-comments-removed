@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.menu;
+package org.mozilla.focus.menu.browser;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

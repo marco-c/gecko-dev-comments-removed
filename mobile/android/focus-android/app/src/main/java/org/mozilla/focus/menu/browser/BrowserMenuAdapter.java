@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.menu;
+package org.mozilla.focus.menu.browser;
 
 import android.app.PendingIntent;
 import android.content.Context;

@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.focus.menu;
+package org.mozilla.focus.menu.context;
 
 import android.app.Dialog;
 import android.content.ClipData;
