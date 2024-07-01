@@ -14,15 +14,11 @@ permalink: /changelog/
 
 * **support-images**
   * ⚠️ **This is a breaking change**: Removed `ImageLoader.loadIntoView(view: ImageView, id: String)` extension function.
-* **service-glean**
-  * Glean was updated to v31.5.0
-    * Implement ping tagging (i.e. the `X-Source-Tags` header) ([#1074](https://github.com/mozilla/glean/pull/1074)). Note that this is not yet implemented for iOS.
-    * String values that are too long now record `invalid_overflow` rather than `invalid_value` through the Glean error reporting mechanism. This affects the string, event and string list metrics.
-    * `metrics.yaml` files now support a `data_sensitivity` field to all metrics for specifying the type of data collected in the field.
-    * Allow defining which `Activity` to run next when using the `GleanDebugActivity`.
 
-* **feature-syncedtabs**
-  * ⚠️ **This is a breaking change**: Adds context to the constructor of `SyncedTabsFeature`.
+* **browser-tabstray**
+  * ⚠️ **This is a breaking change**: The `BrowserTabsTray` is now deprecated. Using a `RecyclerView` directly is now recommended.
+  * ⚠️ **This is a breaking change**: `ViewHolderProvider` no longer has a second param.
+  * ⚠️ **This is a breaking change**: `TabsAdapter` has a `styling` field `TabsTrayStyling`.
 
 # 51.0.0
 
@@ -61,6 +57,9 @@ permalink: /changelog/
 
 * **support-ktx**
   * Add `Activity.reportFullyDrawnSafe`, a function to call `Activity.reportFullyDrawn` while catching crashes under some circumstances.
+
+* **feature-syncedtabs**
+  * ⚠️ **This is a breaking change**: Adds context to the constructor of `SyncedTabsFeature`.
 
 # 50.0.0
 
