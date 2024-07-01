@@ -37,7 +37,6 @@ public class SearchEngine {
     
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "Needed for future versions, reflects on-disk format")
      Uri suggestUri;
-     String searchTermsParamName;
 
      SearchEngine(String identifier) {
         this.identifier = identifier;
@@ -74,10 +73,6 @@ public class SearchEngine {
         } else {
             return null;
         }
-    }
-
-    public String getSearchTermsParamName() {
-        return searchTermsParamName;
     }
 
     

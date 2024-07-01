@@ -16,8 +16,8 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.PopupMenu;
 import android.text.SpannableString;
+import android.text.TextUtils;
 import android.text.style.StyleSpan;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -142,7 +142,7 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
 
         searchViewContainer = view.findViewById(R.id.search_hint_container);
 
-        searchView =  (TextView) view.findViewById(R.id.search_hint);
+        searchView = (TextView) view.findViewById(R.id.search_hint);
         searchView.setOnClickListener(this);
 
         urlAutoCompleteFilter = new UrlAutoCompleteFilter();
@@ -183,12 +183,48 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
 
         urlView.setOnCommitListener(this);
 
+        
         if (session != null) {
-            urlView.setText(session.getUrl().getValue());
-            clearView.setVisibility(View.VISIBLE);
+            final String searchURL = session.getSearchUrl();
+            final String currentURL = session.getUrl().getValue();
+            final String searchTerms = session.getSearchTerms();
+            if (!TextUtils.isEmpty(currentURL)) {
+                
+                
+                
+                if (session.isSearch()) {
+                    showSearchTerms(urlView, session, searchTerms, currentURL);
+                } else if (!TextUtils.isEmpty(searchURL) && searchURL.equals(currentURL)) {
+                    
+                    
+                    showSearchTermsFromURLMatch(urlView, searchTerms, currentURL);
+                } else {
+                    
+                    urlView.setText(currentURL);
+                }
+                clearView.setVisibility(View.VISIBLE);
+            }
         }
 
         return view;
+    }
+
+    private void showSearchTerms(InlineAutocompleteEditText urlView, Session session, String searchTerms, String currentURL) {
+        if (!TextUtils.isEmpty(searchTerms)) {
+            urlView.setText(searchTerms);
+            session.setSearch(false);
+            session.setSearchUrl(currentURL);
+        } else {
+            urlView.setText(currentURL);
+        }
+    }
+
+    private void showSearchTermsFromURLMatch(InlineAutocompleteEditText urlView, String searchTerms, String currentURL) {
+        if ((!TextUtils.isEmpty(searchTerms))) {
+            urlView.setText(searchTerms);
+        } else {
+            urlView.setText(currentURL);
+        }
     }
 
     @Override
@@ -463,21 +499,37 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
                     ? UrlUtils.normalize(input)
                     : UrlUtils.createSearchUrl(getContext(), input);
 
-            openUrl(url);
+            boolean isSearch;
+            String searchTerms = null;
+            if (!isUrl) {
+                isSearch = true;
+                searchTerms = input.trim();
+            } else {
+                isSearch = false;
+            }
+
+            openUrl(url, isSearch, searchTerms);
 
             TelemetryWrapper.urlBarEvent(isUrl);
         }
     }
 
     private void onSearch() {
-        final String searchUrl = UrlUtils.createSearchUrl(getContext(), urlView.getOriginalText());
+        final String searchTerms = urlView.getOriginalText();
+        final String searchUrl = UrlUtils.createSearchUrl(getContext(), searchTerms);
+        final boolean isSearch = true;
 
-        openUrl(searchUrl);
+        openUrl(searchUrl, isSearch, searchTerms);
 
         TelemetryWrapper.searchSelectEvent();
     }
 
-    private void openUrl(String url) {
+    private void openUrl(String url, boolean isSearch, String searchTerms) {
+        if (session != null) {
+            session.setSearch(isSearch);
+            session.setSearchTerms(searchTerms);
+        }
+
         final FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
 
         
@@ -497,7 +549,11 @@ public class UrlInputFragment extends LocaleAwareFragment implements View.OnClic
                     .remove(this)
                     .commit();
         } else {
-            SessionManager.getInstance().createSession(Source.USER_ENTERED, url);
+            if (!TextUtils.isEmpty(searchTerms)) {
+                SessionManager.getInstance().createSession(Source.USER_ENTERED, url, isSearch, searchTerms);
+            } else {
+                SessionManager.getInstance().createSession(Source.USER_ENTERED, url);
+            }
         }
     }
 
