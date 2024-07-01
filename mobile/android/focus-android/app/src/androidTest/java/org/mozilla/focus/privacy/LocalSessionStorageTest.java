@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.focus.activity;
+package org.mozilla.focus.privacy;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.mozilla.focus.activity.MainActivity;
 import org.mozilla.focus.helpers.TestHelper;
 
 import static android.support.test.espresso.action.ViewActions.click;
