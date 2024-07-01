@@ -13,11 +13,11 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 
 import org.mozilla.focus.R;
 import org.mozilla.focus.activity.MainActivity;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
+import org.mozilla.focus.web.BrowsingSession;
 import org.mozilla.focus.web.WebViewProvider;
 
 
@@ -70,12 +70,11 @@ public class BrowsingNotificationService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         switch (intent.getAction()) {
             case ACTION_START:
-                startForeground(NOTIFICATION_ID, buildNotification());
+                startBrowsingSession();
                 break;
 
             case ACTION_STOP:
-                stopForeground(true);
-                stopSelf();
+                stopBrowsingSession();
                 break;
 
             case ACTION_FOREGROUND:
@@ -116,6 +115,18 @@ public class BrowsingNotificationService extends Service {
         
         
         WebViewProvider.performCleanup(this);
+
+        stopBrowsingSession();
+    }
+
+    private void startBrowsingSession() {
+        BrowsingSession.getInstance().start();
+
+        startForeground(NOTIFICATION_ID, buildNotification());
+    }
+
+    private void stopBrowsingSession() {
+        BrowsingSession.getInstance().stop();
 
         stopForeground(true);
         stopSelf();

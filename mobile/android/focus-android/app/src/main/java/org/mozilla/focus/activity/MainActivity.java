@@ -22,6 +22,7 @@ import org.mozilla.focus.fragment.UrlInputFragment;
 import org.mozilla.focus.notification.BrowsingNotificationService;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
 import org.mozilla.focus.utils.Settings;
+import org.mozilla.focus.web.BrowsingSession;
 import org.mozilla.focus.web.IWebView;
 import org.mozilla.focus.web.WebViewProvider;
 
@@ -48,11 +49,22 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        Intent intent = getIntent();
+
+        if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+                && !BrowsingSession.getInstance().isActive()) {
+            
+            
+            
+            
+            setIntent(intent = new Intent(Intent.ACTION_MAIN));
+        }
+
         if (savedInstanceState == null) {
             WebViewProvider.performCleanup(this);
 
-            if (Intent.ACTION_VIEW.equals(getIntent().getAction())) {
-                final String url = getIntent().getDataString();
+            if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+                final String url = intent.getDataString();
 
                 if (appSettings.shouldShowFirstrun()) {
                     pendingUrl = url;
