@@ -126,7 +126,7 @@ class ToggleBlockTest {
                     )
                 )
             )
-        Espresso.onView(ViewMatchers.withId(R.id.webview)).perform(ViewActions.click())
+        Espresso.onView(ViewMatchers.withId(R.id.engineView)).perform(ViewActions.click())
 
         
         Espresso.onView(ViewMatchers.withId(R.id.menuView))
