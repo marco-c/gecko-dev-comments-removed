@@ -6,12 +6,12 @@ internal object GeckoVersions {
     /**
      * GeckoView Nightly Version.
      */
-    const val nightly_version = "72.0.20191118093852"
+    const val nightly_version = "72.0.20191117094823"
 
     /**
      * GeckoView Beta Version.
      */
-    const val beta_version = "71.0.20191114080046"
+    const val beta_version = "71.0.20191118090045"
 
     /**
      * GeckoView Release Version.
