@@ -539,12 +539,14 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
                 
                 Toast.makeText(getContext(), R.string.feedback_erase, Toast.LENGTH_SHORT).show();
+
+                TelemetryWrapper.eraseBackToAppEvent();
             } else {
                 
                 eraseAndShowHomeScreen();
-            }
 
-            TelemetryWrapper.eraseBackEvent();
+                TelemetryWrapper.eraseBackToHomeEvent();
+            }
         }
 
         return true;
