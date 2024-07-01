@@ -43,6 +43,7 @@ import org.mozilla.focus.web.WebViewProvider;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import mozilla.components.support.utils.ThreadUtils;
 
@@ -156,7 +157,7 @@ public class SystemWebView extends NestedWebView implements IWebView, SharedPref
     }
 
     @Override
-    public void saveWebViewState(@NonNull Session session) {
+    public void saveWebViewState(@NonNull Session session, CountDownLatch latch) {
         
         
         
