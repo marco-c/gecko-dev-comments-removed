@@ -1,18 +1,21 @@
+
+
+
+
 package org.mozilla.focus.activity;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import org.mozilla.focus.R;
-import org.mozilla.focus.locale.Locales;
+import org.mozilla.focus.locale.LocaleAwareAppCompatActivity;
 import org.mozilla.focus.settings.SettingsFragment;
 
-public class SettingsActivity extends Locales.LocaleAwareAppCompatActivity {
-    public static int ACTIVITY_RESULT_LOCALE_CHANGED = 1;
+public class SettingsActivity extends LocaleAwareAppCompatActivity {
+    public static final int ACTIVITY_RESULT_LOCALE_CHANGED = 1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -38,5 +41,15 @@ public class SettingsActivity extends Locales.LocaleAwareAppCompatActivity {
         getFragmentManager().beginTransaction()
                 .replace(R.id.container, new SettingsFragment())
                 .commit();
+
+        
+        
+        
+        applyLocale();
+    }
+
+    @Override
+    public void applyLocale() {
+        setTitle(R.string.menu_settings);
     }
 }
