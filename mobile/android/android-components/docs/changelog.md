@@ -12,6 +12,11 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-remotetabs** was renamed to **feature-syncedtabs**
+  * ⚠️ **This is a breaking change**:
+  * `RemoteTabsFeature` is now `SyncedTabsFeature`, and some method names have corresponding changes.
+  * `RemoteTabsStorageSuggestionProvider` is now `SyncedTabsStorageSuggestionProvider`.
+
 * **service-glean**
   * Glean was updated to v22.1.0 ([Full changelog](https://github.com/mozilla/glean/compare/v21.3.0...v22.1.0))
     * Attempt to re-send the deletion ping on init even if upload is disabled.
@@ -36,13 +41,6 @@ permalink: /changelog/
 * **sync-logins**
   * 🕵️  **New Telemetry Notice**
   * Added telemetry for password sync, via the new `passwords_sync` in **support-telemetry-sync**
-  * The `service-sync-logins` component now collects some basic performance and quality metrics via Glean.
-    Applications that send telemetry via Glean *must ensure* they have received appropriate data-review before integrating this component.
-  * ⚠️ **This is a breaking change**: The `ServerPassword` fields `username`, `usernameField` and `passwordField` can no longer by `null`.
-    Use the empty string to indicate an absent value for these fields.
-  * ⚠️ **This is a breaking change**: The `AsyncLoginsStorageAdapter.inMemory` method has been removed.
-    Use `AsyncLoginsStorageAdapter.forDatabase(":memory:")` instead.
-
 
 * **samples-sync**
   * Added support for password synchronization (not reflected in the UI, but demonstrates how to integrate the component).
