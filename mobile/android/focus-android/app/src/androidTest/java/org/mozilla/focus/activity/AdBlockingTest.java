@@ -1,0 +1,117 @@
+
+
+
+
+
+package org.mozilla.focus.activity;
+
+import android.content.Context;
+import android.os.Build;
+import android.preference.PreferenceManager;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.rule.ActivityTestRule;
+import android.support.test.runner.AndroidJUnit4;
+import android.support.test.uiautomator.UiObject;
+import android.support.test.uiautomator.UiObjectNotFoundException;
+import android.support.test.uiautomator.UiSelector;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static android.support.test.espresso.action.ViewActions.click;
+import static junit.framework.Assert.assertTrue;
+import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+
+
+@RunWith(AndroidJUnit4.class)
+public class AdBlockingTest {
+
+    @Rule
+    public ActivityTestRule<MainActivity> mActivityTestRule
+            = new ActivityTestRule<MainActivity>(MainActivity.class) {
+
+        @Override
+        protected void beforeActivityLaunched() {
+            super.beforeActivityLaunched();
+
+            Context appContext = InstrumentationRegistry.getInstrumentation()
+                    .getTargetContext()
+                    .getApplicationContext();
+
+            PreferenceManager.getDefaultSharedPreferences(appContext)
+                    .edit()
+                    .putBoolean(FIRSTRUN_PREF, false)
+                    .apply();
+        }
+    };
+
+    @Test
+    public void AdBlockTest() throws InterruptedException, UiObjectNotFoundException {
+
+        final long waitingTime = TestHelper.waitingTime;
+
+        UiObject blockAdTrackerEntry = TestHelper.settingsList.getChild(new UiSelector()
+                .className("android.widget.LinearLayout")
+                .instance(2));
+        UiObject blockAdTrackerValue = blockAdTrackerEntry.getChild(new UiSelector()
+                .className("android.widget.Switch"));
+        UiObject blocked = TestHelper.mDevice.findObject(new UiSelector()
+                .className("android.view.View")
+                .description(" Ad blocking enabled!")
+                .enabled(true));
+        UiObject unBlocked = TestHelper.mDevice.findObject(new UiSelector()
+                .className("android.view.View")
+                .description("No ad blocking detected")
+                .enabled(true));
+        TestHelper.firstViewBtn.waitForExists(waitingTime);
+        TestHelper.firstViewBtn.click();
+
+        
+        TestHelper.urlBar.waitForExists(waitingTime);
+        TestHelper.urlBar.click();
+
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText("https://blockads.fivefilters.org");
+        TestHelper.hint.waitForExists(waitingTime);
+        TestHelper.pressEnterKey();
+        TestHelper.webView.waitForExists(waitingTime);
+        blocked.waitForExists(waitingTime);
+        assertTrue (blocked.exists());
+
+        
+        TestHelper.menuButton.perform(click());
+        TestHelper.browserViewSettingsMenuItem.click();
+        TestHelper.settingsHeading.waitForExists(waitingTime);
+        blockAdTrackerEntry.click();
+        assertTrue(blockAdTrackerValue.getText().equals("OFF"));
+        TestHelper.navigateUp.click();
+        TestHelper.browserURLbar.waitForExists(waitingTime);
+
+        
+        
+        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            TestHelper.browserURLbar.click();
+            TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+            TestHelper.inlineAutocompleteEditText.clearTextField();
+            TestHelper.inlineAutocompleteEditText.setText("https://blockads.fivefilters.org");
+            TestHelper.hint.waitForExists(waitingTime);
+            TestHelper.pressEnterKey();
+            TestHelper.webView.waitForExists(waitingTime);
+            blocked.waitForExists(waitingTime);
+            assertTrue(unBlocked.exists());
+        }
+
+        
+        TestHelper.menuButton.perform(click());
+        TestHelper.browserViewSettingsMenuItem.click();
+        TestHelper.settingsHeading.waitForExists(waitingTime);
+        blockAdTrackerEntry.click();
+        assertTrue(blockAdTrackerValue.getText().equals("ON"));
+        TestHelper.navigateUp.click();
+        TestHelper.webView.waitForExists(waitingTime);
+        TestHelper.floatingEraseButton.perform(click());
+   }
+}
