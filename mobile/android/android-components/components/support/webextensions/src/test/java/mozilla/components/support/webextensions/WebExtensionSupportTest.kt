@@ -46,7 +46,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.never
-import org.mockito.Mockito.reset
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -324,9 +323,8 @@ class WebExtensionSupportTest {
 
         // Verify that we register action and tab handlers for all existing sessions on the extension
         val actionHandlerCaptor = argumentCaptor<ActionHandler>()
-        val webExtensionActionCaptor = argumentCaptor<WebExtensionAction>()
+        val actionCaptor = argumentCaptor<WebExtensionAction>()
         val tabHandlerCaptor = argumentCaptor<TabHandler>()
-        val selectTabActionCaptor = argumentCaptor<TabListAction.SelectTabAction>()
         verify(ext).registerActionHandler(eq(engineSession), actionHandlerCaptor.capture())
         verify(ext).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
         whenever(ext.hasActionHandler(engineSession)).thenReturn(true)
@@ -338,14 +336,11 @@ class WebExtensionSupportTest {
         verify(ext, times(1)).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
 
         actionHandlerCaptor.value.onBrowserAction(ext, engineSession, mock())
-        verify(store, times(4)).dispatch(webExtensionActionCaptor.capture())
-        assertEquals(ext.id, (webExtensionActionCaptor.allValues.last() as WebExtensionAction.UpdateTabBrowserAction).extensionId)
-
-        reset(store)
+        verify(store, times(4)).dispatch(actionCaptor.capture())
+        assertEquals(ext.id, (actionCaptor.allValues.last() as WebExtensionAction.UpdateTabBrowserAction).extensionId)
 
         tabHandlerCaptor.value.onUpdateTab(ext, engineSession, true, null)
-        verify(store).dispatch(selectTabActionCaptor.capture())
-        assertEquals("1", selectTabActionCaptor.value.tabId)
+        verify(store).dispatch(TabListAction.SelectTabAction("1"))
         tabHandlerCaptor.value.onUpdateTab(ext, engineSession, true, "url")
         verify(engineSession).loadUrl("url")
     }
@@ -627,18 +622,28 @@ class WebExtensionSupportTest {
     fun `invokes onExtensionsLoaded callback`() {
         var executed = false
         val engine: Engine = mock()
+
         val ext: WebExtension = mock()
         whenever(ext.id).thenReturn("test")
+        whenever(ext.isBuiltIn()).thenReturn(false)
+
+        val builtInExt: WebExtension = mock()
+        whenever(builtInExt.id).thenReturn("test2")
+        whenever(builtInExt.isBuiltIn()).thenReturn(true)
+
         val store = spy(BrowserStore(BrowserState(extensions = mapOf(ext.id to WebExtensionState(ext.id)))))
 
         val callbackCaptor = argumentCaptor<((List<WebExtension>) -> Unit)>()
         whenever(engine.listInstalledWebExtensions(callbackCaptor.capture(), any())).thenAnswer {
-            callbackCaptor.value.invoke(listOf())
+            callbackCaptor.value.invoke(listOf(ext, builtInExt))
         }
 
-        val onExtensionsLoaded: ((List<WebExtension>) -> Unit) = { executed = true }
+        val onExtensionsLoaded: ((List<WebExtension>) -> Unit) = {
+            assertEquals(1, it.size)
+            assertEquals(ext, it[0])
+            executed = true
+        }
         WebExtensionSupport.initialize(runtime = engine, store = store, onExtensionsLoaded = onExtensionsLoaded)
-
         assertTrue(executed)
     }
 

@@ -35,6 +35,11 @@ fun String.isUrl() = URLStringUtils.isURLLike(this)
  */
 fun String.isExtensionUrl() = this.startsWith("moz-extension://")
 
+/**
+ * Checks if this String is a URL of a resource.
+ */
+fun String.isResourceUrl() = this.startsWith("resource://")
+
 fun String.toNormalizedUrl() = URLStringUtils.toNormalizedURL(this)
 
 fun String.isPhone() = re.phoneish.matches(this)
@@ -109,7 +114,6 @@ fun String.tryGetHostFromUrl(): String = try {
 /**
  * Compares 2 URLs and returns true if they have the same origin,
  * which means: same protocol, same host, same port.
- * It will return false if either this or [other] is not a valid URL.
  */
 fun String.isSameOriginAs(other: String): Boolean {
     fun canonicalizeOrigin(urlStr: String): String {
@@ -118,11 +122,7 @@ fun String.isSameOriginAs(other: String): Boolean {
         val canonicalized = URL(url.protocol, url.host, port, "")
         return canonicalized.toString()
     }
-    return try {
-        canonicalizeOrigin(this) == canonicalizeOrigin(other)
-    } catch (e: MalformedURLException) {
-        false
-    }
+    return canonicalizeOrigin(this) == canonicalizeOrigin(other)
 }
 
 /**
