@@ -114,7 +114,7 @@ public class IntentUtils {
     
     
     private static void showConfirmationDialog(final Activity activity, final Intent targetIntent, final String title, final @StringRes int messageResource, final CharSequence param) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogStyle);
 
         final CharSequence ourAppName = activity.getResources().getString(R.string.app_name);
 
