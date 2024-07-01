@@ -79,8 +79,8 @@ public class TypicalUseScenarioTest {
         assertTrue(TestHelper.hint.getText().equals("Search for mozilla focus"));
         TestHelper.hint.click();
         TestHelper.webView.waitForExists(waitingTime);
-        assertTrue (TestHelper.urlBar.getText().contains("mozilla"));
-        assertTrue (TestHelper.urlBar.getText().contains("focus"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
 
         
         TestHelper.floatingEraseButton.perform(click());
@@ -97,7 +97,7 @@ public class TypicalUseScenarioTest {
         assertTrue(TestHelper.hint.getText().equals("Search for https://www.google.com"));
         TestHelper.pressEnterKey();
         TestHelper.webView.waitForExists(waitingTime);
-        assertTrue (TestHelper.urlBar.getText().contains("https://www.google"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("https://www.google"));
         assertTrue (TestHelper.lockIcon.exists());
 
         
@@ -115,7 +115,7 @@ public class TypicalUseScenarioTest {
         assertTrue(TestHelper.hint.getText().equals("Search for http://www.example.com"));
         TestHelper.pressEnterKey();
         TestHelper.webView.waitForExists(waitingTime);
-        assertTrue (TestHelper.urlBar.getText().contains("http://www.example.com"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("http://www.example.com"));
         assertTrue (!TestHelper.lockIcon.exists());
 
         
@@ -132,7 +132,7 @@ public class TypicalUseScenarioTest {
         
         TestHelper.navigateUp.click();
         TestHelper.webView.waitForExists(waitingTime);
-        assertTrue (TestHelper.urlBar.getText().contains("http://www.example.com"));
+        assertTrue (TestHelper.browserURLbar.getText().contains("http://www.example.com"));
         assertTrue (!TestHelper.lockIcon.exists());
     }
 }
