@@ -39,7 +39,7 @@ import java.net.URL;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
-    private static String LOGTAG = "ManualAddSearchEngine";
+    private static final String LOGTAG = "ManualAddSearchEngine";
 
     
     private static final int SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS = 4000;
