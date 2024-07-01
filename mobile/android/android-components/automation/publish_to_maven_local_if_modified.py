@@ -61,15 +61,13 @@ contents_hash.update(b"\x00")
 
 untracked_files = []
 
-changes_lines = iter(ln.strip() for ln in changes.split(b"\n"))
+
+
+
+changes_others = run_cmd_checked(["git", "ls-files", "-o", "--exclude-standard"], capture_output=True).stdout
+changes_lines = iter(ln.strip() for ln in changes_others.split(b"\n"))
+
 try:
-    ln = next(changes_lines)
-    
-    while not ln.startswith(b"Untracked files:"):
-        ln = next(changes_lines)
-    
-    ln = next(changes_lines)
-    
     ln = next(changes_lines)
     while ln:
         untracked_files.append(ln)
