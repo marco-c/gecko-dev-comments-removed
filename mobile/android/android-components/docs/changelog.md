@@ -12,6 +12,10 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **feature-search**
+  * ⚠️ **This is a breaking change**: `SearchFeature.performSearch` now takes a second parameter.
+  * `BrowserStoreSearchAdapter` and `SearchFeature` can now take a `tabId` parameter.
+
 # 56.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v55.0.0...v56.0.0)
@@ -82,9 +86,6 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: Renames `TopSiteEntity` to `PinnedSiteEntity`.
   * ⚠️ **This is a breaking change**: Replaces `TopSite` interface with a new generic `TopSite` data class.
   * Implements TopSitesFeature based on the RFC [0006-top-sites-feature.md](https://github.com/mozilla-mobile/android-components/blob/master/docs/rfcs/0006-top-sites-feature.md).
-
-* **feature-top-sites**
-  * Downloads, redirect targets, reloads, embedded resources, and frames are no longer considered for inclusion in top sites. Please see [this Application Services PR](https://github.com/mozilla/application-services/pull/3505) for more details.
 
 # 55.0.0
 
