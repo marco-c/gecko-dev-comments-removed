@@ -60,7 +60,6 @@ import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.session.HistoryDelegate
 import mozilla.components.feature.session.SessionUseCases
-import mozilla.components.feature.sitepermissions.SitePermissionsStorage
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
@@ -116,8 +115,6 @@ open class DefaultComponents(private val applicationContext: Context) {
 
     private val sessionStorage by lazy { SessionStorage(applicationContext, engine) }
 
-    private val permissionStorage by lazy { SitePermissionsStorage(applicationContext) }
-
     val thumbnailStorage by lazy { ThumbnailStorage(applicationContext) }
 
     val store by lazy {
@@ -150,7 +147,7 @@ open class DefaultComponents(private val applicationContext: Context) {
                 .enable()
 
             WebNotificationFeature(applicationContext, engine, icons, R.drawable.ic_notification,
-                permissionStorage, BrowserActivity::class.java)
+                BrowserActivity::class.java)
         }
     }
 
@@ -184,7 +181,15 @@ open class DefaultComponents(private val applicationContext: Context) {
     }
 
     val searchUseCases by lazy { SearchUseCases(applicationContext, searchEngineManager, sessionManager) }
-    val defaultSearchUseCase by lazy { { searchTerms: String -> searchUseCases.defaultSearch.invoke(searchTerms) } }
+    val defaultSearchUseCase by lazy {
+        { searchTerms: String ->
+            searchUseCases.defaultSearch.invoke(
+                searchTerms = searchTerms,
+                searchEngine = null,
+                parentSession = null
+            )
+        }
+    }
     val appLinksUseCases by lazy { AppLinksUseCases(applicationContext) }
 
     val appLinksInterceptor by lazy {
