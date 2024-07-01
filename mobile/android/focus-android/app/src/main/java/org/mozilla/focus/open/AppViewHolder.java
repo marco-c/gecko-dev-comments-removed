@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.focus.open;
 
 import android.support.v7.widget.RecyclerView;
@@ -13,19 +12,34 @@ import android.widget.TextView;
 import org.mozilla.focus.R;
 
 public class AppViewHolder extends RecyclerView.ViewHolder {
+    public static final int LAYOUT_ID = R.layout.item_app;
+
     private final TextView titleView;
     private final ImageView iconView;
 
-    public AppViewHolder(View itemView) {
+     AppViewHolder(View itemView) {
         super(itemView);
 
-        titleView = (TextView) itemView.findViewById(R.id.title);
-        iconView = (ImageView) itemView.findViewById(R.id.icon);
+        titleView = itemView.findViewById(R.id.title);
+        iconView = itemView.findViewById(R.id.icon);
     }
 
-    public void bind(AppAdapter.App app) {
+    public void bind(final AppAdapter.App app, final AppAdapter.OnAppSelectedListener listener) {
         titleView.setText(app.getLabel());
 
         iconView.setImageDrawable(app.loadIcon());
+
+        itemView.setOnClickListener(createListenerWrapper(app, listener));
+    }
+
+    private View.OnClickListener createListenerWrapper(final AppAdapter.App app, final AppAdapter.OnAppSelectedListener listener) {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (listener != null) {
+                    listener.onAppSelected(app);
+                }
+            }
+        };
     }
 }

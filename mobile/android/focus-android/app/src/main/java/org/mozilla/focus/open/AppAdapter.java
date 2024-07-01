@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.focus.open;
 
 import android.content.Context;
@@ -10,17 +9,14 @@ import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-
-import org.mozilla.focus.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class AppAdapter extends RecyclerView.Adapter<AppViewHolder> {
+public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
      static class App {
         private Context context;
         private ActivityInfo info;
@@ -49,10 +45,11 @@ public class AppAdapter extends RecyclerView.Adapter<AppViewHolder> {
         void onAppSelected(App app);
     }
 
-    private List<App> apps;
+    private final List<App> apps;
+    private final App store;
     private OnAppSelectedListener listener;
 
-    public AppAdapter(Context context, ActivityInfo[] infoArray) {
+    public AppAdapter(Context context, ActivityInfo[] infoArray, ActivityInfo store) {
         final List<App> apps = new ArrayList<>(infoArray.length);
 
         for (ActivityInfo info : infoArray) {
@@ -67,36 +64,62 @@ public class AppAdapter extends RecyclerView.Adapter<AppViewHolder> {
         });
 
         this.apps = apps;
+        this.store = store != null ? new App(context, store) : null;
     }
 
     @Override
-    public AppViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_app, parent, false);
-        return new AppViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        final LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+
+        if (viewType == AppViewHolder.LAYOUT_ID) {
+            return new AppViewHolder(
+                    inflater.inflate(AppViewHolder.LAYOUT_ID, parent, false));
+        } else if (viewType == InstallBannerViewHolder.LAYOUT_ID) {
+            return new InstallBannerViewHolder(
+                    inflater.inflate(InstallBannerViewHolder.LAYOUT_ID, parent, false));
+        }
+
+        throw new IllegalStateException("Unknown view type: " + viewType);
     }
 
-    public void setOnAppSelectedListener(OnAppSelectedListener listener) {
+     void setOnAppSelectedListener(OnAppSelectedListener listener) {
         this.listener = listener;
     }
 
     @Override
-    public void onBindViewHolder(AppViewHolder holder, int position) {
+    public int getItemViewType(int position) {
+        if (position < apps.size()) {
+            return AppViewHolder.LAYOUT_ID;
+        } else {
+            return InstallBannerViewHolder.LAYOUT_ID;
+        }
+    }
+
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        final int itemViewType = holder.getItemViewType();
+
+        if (itemViewType == AppViewHolder.LAYOUT_ID) {
+            bindApp(holder, position);
+        } else if (itemViewType == InstallBannerViewHolder.LAYOUT_ID) {
+            bindInstallBanner(holder);
+        }
+    }
+
+    private void bindApp(RecyclerView.ViewHolder holder, int position) {
+        final AppViewHolder appViewHolder = (AppViewHolder) holder;
         final App app = apps.get(position);
 
-        holder.bind(app);
+        appViewHolder.bind(app, listener);
+    }
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (listener != null) {
-                    listener.onAppSelected(app);
-                }
-            }
-        });
+    private void bindInstallBanner(RecyclerView.ViewHolder holder) {
+        final InstallBannerViewHolder installViewHolder = (InstallBannerViewHolder) holder;
+        installViewHolder.bind(store);
     }
 
     @Override
     public int getItemCount() {
-        return apps.size();
+        return apps.size() + (store != null ? 1 : 0);
     }
 }
