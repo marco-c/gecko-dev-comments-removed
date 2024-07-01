@@ -248,6 +248,11 @@ public class WebViewProvider {
                 @Override
                 public void onProgressChanged(WebView view, int newProgress) {
                     if (callback != null) {
+                        
+                        
+                        
+                        
+                        callback.onURLChanged(view.getUrl());
                         callback.onProgress(newProgress);
                     }
                 }
