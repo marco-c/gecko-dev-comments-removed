@@ -14,12 +14,9 @@ permalink: /changelog/
 
 * **feature-top-sites**
   * Added `isDefault` to the top site entity, which allows application to specify a default top site that is added by the application. This is called through `TopSiteStorage.addTopSite`.
-
-* **support-utils**
-  * `URLStringUtils.isURLLikeStrict` is now deprecated due to performance issues. Consider using the less strict `isURLLike` instead or creating a new method using `:lib-publicsuffixlist`.
-
-* **support-ktx**
-  * `String.isUrlStrict` is now deprecated due to performance issues. Consider using the less strict `isURL` instead or creating a new method using `:lib-publicsuffixlist`.
+  
+* **feature-push**
+  * Simplified error handling and reduced non-fatal exception reporting.
 
 # 39.0.0
 
@@ -121,7 +118,6 @@ permalink: /changelog/
 
 * **service-accounts-push**
   * Fixed a bug where the push subscription was incorrectly cached and caused some `GeneralError`s.
-
 * **feature-addons**
   * Added `DefaultAddonUpdater.UpdateAttemptStorage` allows to query the last known state for a previous attempt to update an add-on.
 
