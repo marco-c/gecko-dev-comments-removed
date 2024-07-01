@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 
@@ -124,6 +125,7 @@ public class SessionManager {
         return getSessionByUUID(currentSessionUUID);
     }
 
+    @Nullable
     public Session getCustomTabSessionByCustomTabId(String customTabId) {
         final List<Session> sessions = customTabSessions.getValue();
 
@@ -133,7 +135,37 @@ public class SessionManager {
             }
         }
 
-        throw new IllegalAccessError("There's no active custom tab session with id " + customTabId);
+        return null;
+    }
+
+    @NonNull
+    public Session getCustomTabSessionByCustomTabIdOrThrow(String customTabId) {
+        final Session session = getCustomTabSessionByCustomTabId(customTabId);
+
+        if (session == null) {
+            throw new IllegalAccessError("There's no active custom tab session with id " + customTabId);
+        }
+
+        return session;
+    }
+
+    
+
+
+
+    public void moveCustomTabToRegularSessions(Session session) {
+        
+        
+        session.stripCustomTabConfiguration();
+
+        
+        
+        session.clearSource();
+
+        
+        
+        removeCustomTabSession(session.getUUID());
+        addSession(session);
     }
 
     public boolean isCurrentSession(@NonNull Session session) {
@@ -270,10 +302,10 @@ public class SessionManager {
 
 
     public void removeCurrentSession() {
-        removeSession(currentSessionUUID);
+        removeRegularSession(currentSessionUUID);
     }
 
-    public void removeSession(String uuid) {
+    public void removeRegularSession(String uuid) {
         final List<Session> sessions = new ArrayList<>();
 
         int removedFromPosition = -1;
@@ -302,5 +334,21 @@ public class SessionManager {
         }
 
         this.sessions.setValue(sessions);
+    }
+
+    public void removeCustomTabSession(String uuid) {
+        final List<Session> sessions = new ArrayList<>();
+
+        for (int i = 0; i < this.customTabSessions.getValue().size(); i++) {
+            final Session currentSession = this.customTabSessions.getValue().get(i);
+
+            if (currentSession.getUUID().equals(uuid)) {
+                continue;
+            }
+
+            sessions.add(currentSession);
+        }
+
+        this.customTabSessions.setValue(sessions);
     }
 }

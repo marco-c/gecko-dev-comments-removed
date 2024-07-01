@@ -54,6 +54,11 @@ public class TelemetrySessionObserver extends NonNullObserver<List<Session>> {
                 
                 break;
 
+            case NONE:
+                
+                
+                break;
+
             default:
                 throw new IllegalStateException("Unknown session source: " + source);
         }

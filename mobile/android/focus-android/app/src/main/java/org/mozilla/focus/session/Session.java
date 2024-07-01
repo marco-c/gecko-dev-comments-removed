@@ -20,7 +20,7 @@ import java.util.UUID;
 
 
 public class Session {
-    private final Source source;
+    private Source source;
     private final String uuid;
     private final NonNullMutableLiveData<String> url;
     private final NonNullMutableLiveData<Integer> progress;
@@ -57,6 +57,10 @@ public class Session {
         this(Source.CUSTOM_TAB, url);
 
         this.customTabConfig = customTabConfig;
+    }
+
+     void clearSource() {
+        source = Source.NONE;
     }
 
     public Source getSource() {
@@ -190,7 +194,7 @@ public class Session {
     
 
 
-    public void stripCustomTabConfiguration() {
+     void stripCustomTabConfiguration() {
         customTabConfig = null;
     }
 }
