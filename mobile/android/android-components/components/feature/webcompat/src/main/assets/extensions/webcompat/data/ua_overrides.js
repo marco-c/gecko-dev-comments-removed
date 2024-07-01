@@ -234,26 +234,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1509831",
-    platform: "android",
-    domain: "cc.com",
-    bug: "1509831",
-    config: {
-      matches: ["*://*.cc.com/*"],
-      uaTransformer: _ => {
-        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
 
     id: "bug1509873",
     platform: "android",
@@ -505,26 +485,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1628455",
     config: {
       matches: ["https://*.autotrader.ca/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
-    id: "bug1630280",
-    platform: "android",
-    domain: "dominos.ch",
-    bug: "1630280",
-    config: {
-      matches: ["https://*.dominos.ch/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
