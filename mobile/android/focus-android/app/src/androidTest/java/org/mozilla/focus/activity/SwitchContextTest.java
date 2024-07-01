@@ -118,7 +118,12 @@ public class SwitchContextTest {
         
         TestHelper.pressHomeKey();
         TestHelper.openNotification();
-        TestHelper.notificationOpenItem.waitForExists(waitingTime);
+
+        
+        if (!TestHelper.notificationOpenItem.waitForExists(waitingTime)) {
+            TestHelper.notificationExpandSwitch.click();
+            assertTrue(TestHelper.notificationOpenItem.exists());
+        }
         TestHelper.notificationOpenItem.click();
 
         
@@ -147,12 +152,16 @@ public class SwitchContextTest {
         
         TestHelper.pressHomeKey();
         TestHelper.openNotification();
-        TestHelper.notificationEraseOpenItem.waitForExists(waitingTime);
+
+        
+        if (!TestHelper.notificationEraseOpenItem.waitForExists(waitingTime)) {
+            TestHelper.notificationExpandSwitch.click();
+            assertTrue(TestHelper.notificationEraseOpenItem.exists());
+        }
         TestHelper.notificationEraseOpenItem.click();
 
         
-        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-        assertTrue(TestHelper.erasedMsg.exists());
+        assertTrue(TestHelper.erasedMsg.waitForExists(waitingTime));
         assertTrue(TestHelper.inlineAutocompleteEditText.exists());
         assertTrue(TestHelper.initialView.exists());
         assertTrue(!rabbitImage.exists());
@@ -163,7 +172,7 @@ public class SwitchContextTest {
 
         
         final int LAUNCH_TIMEOUT = 5000;
-        final String FOCUS_DEBUG_APP = "com.android.settings";
+        final String SETTINGS_APP = "com.android.settings";
         final UiObject settingsTitle = TestHelper.mDevice.findObject(new UiSelector()
                 .text("Settings")
                 .packageName("com.android.settings")
@@ -195,14 +204,19 @@ public class SwitchContextTest {
                 .getTargetContext()
                 .getApplicationContext();
         final Intent intent = context.getPackageManager()
-                .getLaunchIntentForPackage(FOCUS_DEBUG_APP);
+                .getLaunchIntentForPackage(SETTINGS_APP);
         context.startActivity(intent);
 
         
         settingsTitle.waitForExists(waitingTime);
         assertTrue(settingsTitle.exists());
         TestHelper.openNotification();
-        TestHelper.notificationOpenItem.waitForExists(waitingTime);
+
+        
+        if (!TestHelper.notificationOpenItem.waitForExists(waitingTime)) {
+            TestHelper.notificationExpandSwitch.click();
+            assertTrue(TestHelper.notificationOpenItem.exists());
+        }
         TestHelper.notificationOpenItem.click();
 
         
