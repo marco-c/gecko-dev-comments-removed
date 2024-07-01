@@ -15,15 +15,6 @@ buildscript {
             google()
         }
 
-        if (project.hasProperty("centralRepo")) {
-            maven {
-                name "MavenCentral"
-                url project.property("centralRepo")
-            }
-        } else {
-            mavenCentral()
-        }
-
         if (project.hasProperty("jcenterRepo")) {
             maven {
                 name "BintrayJCenter"
@@ -55,15 +46,6 @@ allprojects {
             }
         } else {
             google()
-        }
-
-        if (project.hasProperty("centralRepo")) {
-            maven {
-                name "MavenCentral"
-                url project.property("centralRepo")
-            }
-        } else {
-            mavenCentral()
         }
 
         if (project.hasProperty("jcenterRepo")) {
@@ -253,7 +235,7 @@ task docs(type: org.jetbrains.dokka.gradle.DokkaAndroidTask, overwrite: true) {
     }.each {
         classpath += files(it.android.getBootClasspath().join(File.pathSeparator))
         it.android.libraryVariants.all { variant ->
-            classpath += files(variant.javaCompile.classpath.files)
+            classpath += files(variant.javaCompileProvider.get().classpath.files)
         }
     }
 
