@@ -42,30 +42,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
-    id: "bug1563839",
-    platform: "all",
-    domain: "rolb.santanderbank.com",
-    bug: "1563839",
-    config: {
-      matches: [
-        "*://*.santander.co.uk/*",
-        "*://bob.santanderbank.com/*",
-        "*://rolb.santanderbank.com/*",
-      ],
-      uaTransformer: originalUA => {
-        return originalUA.replace("Gecko", "like Gecko");
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1577519",
     platform: "desktop",
     domain: "att.tv",
