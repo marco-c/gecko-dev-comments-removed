@@ -47,12 +47,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyBoolean
-import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import java.util.Locale
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
@@ -78,7 +76,7 @@ class AddonManagerTest {
         val addon2 = Addon(id = "ext2")
         val addon3 = Addon(id = "ext3")
         val addonsProvider: AddonsProvider = mock()
-        whenever(addonsProvider.getAvailableAddons(anyBoolean(), eq(null))).thenReturn(listOf(addon1, addon2, addon3))
+        whenever(addonsProvider.getAvailableAddons(anyBoolean())).thenReturn(listOf(addon1, addon2, addon3))
 
         // Prepare engine
         val engine: Engine = mock()
@@ -149,7 +147,7 @@ class AddonManagerTest {
         // Verify the unsupported add-on was included in addons
         assertEquals("unsupported_ext", addons[3].id)
         assertEquals(1, addons[3].translatableName.size)
-        assertTrue(addons[3].translatableName.containsKey(Locale.getDefault().language))
+        assertNotNull(addons[3].translatableName[addons[3].defaultLocale])
         assertTrue(addons[3].translatableName.containsValue("name"))
         assertFalse(addons[3].installedState!!.supported)
     }
@@ -165,7 +163,7 @@ class AddonManagerTest {
         }
 
         val addonsProvider: AddonsProvider = mock()
-        whenever(addonsProvider.getAvailableAddons(anyBoolean(), anyLong())).thenThrow(IllegalStateException("test"))
+        whenever(addonsProvider.getAvailableAddons(anyBoolean())).thenThrow(IllegalStateException("test"))
         WebExtensionSupport.initialize(engine, store)
 
         AddonManager(store, mock(), addonsProvider, mock()).getAddons()
@@ -176,9 +174,9 @@ class AddonManagerTest {
     fun `getAddons - filters unneeded locales`() = runBlocking {
         val addon = Addon(
             id = "addon1",
-            translatableName = mapOf("en-US" to "name", "invalid1" to "Name", "invalid2" to "nombre"),
-            translatableDescription = mapOf("en-US" to "description", "invalid1" to "Beschreibung", "invalid2" to "descripción"),
-            translatableSummary = mapOf("en-US" to "summary", "invalid1" to "Kurzfassung", "invalid2" to "resumen")
+            translatableName = mapOf(Addon.DEFAULT_LOCALE to "name", "invalid1" to "Name", "invalid2" to "nombre"),
+            translatableDescription = mapOf(Addon.DEFAULT_LOCALE to "description", "invalid1" to "Beschreibung", "invalid2" to "descripción"),
+            translatableSummary = mapOf(Addon.DEFAULT_LOCALE to "summary", "invalid1" to "Kurzfassung", "invalid2" to "resumen")
         )
 
         val store = BrowserStore()
@@ -190,16 +188,16 @@ class AddonManagerTest {
         }
 
         val addonsProvider: AddonsProvider = mock()
-        whenever(addonsProvider.getAvailableAddons(anyBoolean(), eq(null))).thenReturn(listOf(addon))
+        whenever(addonsProvider.getAvailableAddons(anyBoolean())).thenReturn(listOf(addon))
         WebExtensionSupport.initialize(engine, store)
 
         val addons = AddonManager(store, mock(), addonsProvider, mock()).getAddons()
         assertEquals(1, addons[0].translatableName.size)
-        assertTrue(addons[0].translatableName.contains("en-US"))
+        assertTrue(addons[0].translatableName.contains(addons[0].defaultLocale))
         assertEquals(1, addons[0].translatableDescription.size)
-        assertTrue(addons[0].translatableDescription.contains("en-US"))
+        assertTrue(addons[0].translatableDescription.contains(addons[0].defaultLocale))
         assertEquals(1, addons[0].translatableSummary.size)
-        assertTrue(addons[0].translatableSummary.contains("en-US"))
+        assertTrue(addons[0].translatableSummary.contains(addons[0].defaultLocale))
     }
 
     @Test
@@ -222,7 +220,7 @@ class AddonManagerTest {
         val addonsProvider: AddonsProvider = mock()
 
         runBlocking {
-            whenever(addonsProvider.getAvailableAddons(anyBoolean(), eq(null))).thenReturn(listOf(addon))
+            whenever(addonsProvider.getAvailableAddons(anyBoolean())).thenReturn(listOf(addon))
             WebExtensionSupport.initialize(engine, store)
             WebExtensionSupport.installedExtensions[addon.id] = extension
         }
