@@ -28,19 +28,20 @@ class TaskBuilder(object):
 
     def craft_build_task(self, module_name, gradle_tasks, subtitle='', run_coverage=False,
                          is_snapshot=False, component=None, artifacts=None):
-        if is_snapshot:
-            
-            taskcluster_artifacts = {} if component is None else {
-                component['artifact']: {
-                    'type': 'file',
-                    'expires': taskcluster.stringDate(taskcluster.fromNow(DEFAULT_EXPIRES_IN)),
-                    'path': component['path']
+        taskcluster_artifacts = {}
+        
+        if component is not None:
+            if is_snapshot:
+                
+                taskcluster_artifacts = {
+                    component['artifact']: {
+                        'type': 'file',
+                        'expires': taskcluster.stringDate(taskcluster.fromNow(DEFAULT_EXPIRES_IN)),
+                        'path': component['path']
+                    }
                 }
-            }
-        else:
-            taskcluster_artifacts = {}
-            
-            if component is not None:
+            else:
+                
                 taskcluster_artifacts = {
                     artifact['taskcluster_path']: {
                         'type': 'file',
