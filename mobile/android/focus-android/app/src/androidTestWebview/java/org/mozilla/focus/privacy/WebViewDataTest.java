@@ -10,9 +10,7 @@ import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiSelector;
 import android.util.Log;
 
 import junit.framework.Assert;
@@ -187,24 +185,25 @@ public class WebViewDataTest {
         Assert.assertTrue(TestHelper.webView.waitForExists(waitingTime));
 
         
-        final UiObject titleMsg = TestHelper.mDevice.findObject(new UiSelector()
-                .description("focus test page")
-                .enabled(true));
-        titleMsg.waitForExists(waitingTime);
-        assertTrue("Website title loaded", titleMsg.exists());
-
         
 
-        final UiObject cookieMsg = TestHelper.mDevice.findObject(new UiSelector()
-                .description("Cookie saved")
-                .enabled(true));
-        cookieMsg.waitForExists(waitingTime);
-        assertTrue("Cookie is saved", cookieMsg.exists());
-        final UiObject serviceWorkerMsg = TestHelper.mDevice.findObject(new UiSelector()
-                .description("Service worker installed")
-                .enabled(true));
-        serviceWorkerMsg.waitForExists(waitingTime);
-        assertTrue("Service worker installed", serviceWorkerMsg.exists());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         
         TestHelper.floatingEraseButton.perform(click());

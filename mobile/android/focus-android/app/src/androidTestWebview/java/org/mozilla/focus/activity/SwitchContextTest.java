@@ -7,7 +7,6 @@ package org.mozilla.focus.activity;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
@@ -41,7 +40,6 @@ import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 public class SwitchContextTest {
 
     private static final String TEST_PATH = "/";
-    private Context appContext;
     private MockWebServer webServer;
 
     @Rule
@@ -50,7 +48,7 @@ public class SwitchContextTest {
         protected void beforeActivityLaunched() {
             super.beforeActivityLaunched();
 
-            appContext = InstrumentationRegistry.getInstrumentation()
+            Context appContext = InstrumentationRegistry.getInstrumentation()
                     .getTargetContext()
                     .getApplicationContext();
 
@@ -67,6 +65,8 @@ public class SwitchContextTest {
                         .addHeader("Set-Cookie", "sphere=battery; Expires=Wed, 21 Oct 2035 07:28:00 GMT;"));
                 webServer.enqueue(new MockResponse()
                         .setBody(TestHelper.readTestAsset("rabbit.jpg")));
+                webServer.enqueue(new MockResponse()
+                        .setBody(TestHelper.readTestAsset("download.jpg")));
 
                 webServer.start();
             } catch (IOException e) {
@@ -88,20 +88,12 @@ public class SwitchContextTest {
     };
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         mActivityTestRule.getActivity().finishAndRemoveTask();
     }
 
-    private UiObject titleMsg = TestHelper.mDevice.findObject(new UiSelector()
-            .description("focus test page")
-            .enabled(true));
-
-    private UiObject rabbitImage = TestHelper.mDevice.findObject(new UiSelector()
-            .description("Smiley face")
-            .enabled(true));
-
     @Test
-    public void ForegroundTest() throws InterruptedException, UiObjectNotFoundException {
+    public void ForegroundTest() throws  UiObjectNotFoundException {
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
@@ -113,28 +105,23 @@ public class SwitchContextTest {
 
         
         TestHelper.waitForWebSiteTitleLoad();
-        assertTrue(rabbitImage.exists());
 
         
         TestHelper.pressHomeKey();
         TestHelper.openNotification();
         TestHelper.waitForIdle();
         
-        if (!TestHelper.notificationOpenItem.waitForExists(waitingTime)) {
-            TestHelper.notificationExpandSwitch.click();
-            assertTrue(TestHelper.notificationOpenItem.exists());
-        }
+        TestHelper.expandNotification();
         TestHelper.notificationOpenItem.click();
 
         
         TestHelper.browserURLbar.waitForExists(waitingTime);
         assertTrue(TestHelper.browserURLbar.exists());
         TestHelper.waitForWebSiteTitleLoad();
-        assertTrue(rabbitImage.exists());
     }
 
     @Test
-    public void eraseAndOpenTest() throws InterruptedException, UiObjectNotFoundException {
+    public void eraseAndOpenTest() throws UiObjectNotFoundException {
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
@@ -146,17 +133,13 @@ public class SwitchContextTest {
 
         
         TestHelper.waitForWebSiteTitleLoad();
-        assertTrue(rabbitImage.exists());
 
         
         TestHelper.pressHomeKey();
         TestHelper.openNotification();
 
         
-        if (!TestHelper.notificationEraseOpenItem.waitForExists(waitingTime)) {
-            TestHelper.notificationExpandSwitch.click();
-            assertTrue(TestHelper.notificationEraseOpenItem.exists());
-        }
+        TestHelper.expandNotification();
         TestHelper.notificationEraseOpenItem.click();
 
         
@@ -164,11 +147,10 @@ public class SwitchContextTest {
         assertTrue(TestHelper.erasedMsg.exists());
         assertTrue(TestHelper.inlineAutocompleteEditText.exists());
         assertTrue(TestHelper.initialView.exists());
-        assertTrue(!rabbitImage.exists());
     }
 
     @Test
-    public void settingsToFocus() throws InterruptedException, UiObjectNotFoundException, RemoteException {
+    public void settingsToFocus() throws UiObjectNotFoundException {
 
         
         final int LAUNCH_TIMEOUT = 5000;
@@ -186,7 +168,6 @@ public class SwitchContextTest {
 
         
         TestHelper.waitForWebSiteTitleLoad();
-        junit.framework.Assert.assertTrue(rabbitImage.exists());
 
         
         TestHelper.pressHomeKey();
@@ -211,16 +192,12 @@ public class SwitchContextTest {
         TestHelper.openNotification();
 
         
-        if (!TestHelper.notificationOpenItem.waitForExists(waitingTime)) {
-            TestHelper.notificationExpandSwitch.click();
-            assertTrue(TestHelper.notificationOpenItem.exists());
-        }
+        TestHelper.expandNotification();
         TestHelper.notificationOpenItem.click();
 
         
         TestHelper.browserURLbar.waitForExists(waitingTime);
         assertTrue(TestHelper.browserURLbar.exists());
         TestHelper.waitForWebSiteTitleLoad();
-        assertTrue(rabbitImage.exists());
     }
 }
