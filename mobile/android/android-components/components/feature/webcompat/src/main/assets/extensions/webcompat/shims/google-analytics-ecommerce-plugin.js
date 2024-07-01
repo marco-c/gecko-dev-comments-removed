@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+if (!window.gaplugins) {
+  window.gaplugins = {};
+}
+
+if (!window.gaplugins.EC) {
+  window.gaplugins.EC = () => {};
+}

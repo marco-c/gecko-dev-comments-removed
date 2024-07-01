@@ -617,6 +617,25 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1654888",
+    platform: "android",
+    domain: "ebuyer.com",
+    bug: "1654888",
+    config: {
+      matches: ["*://*.ebuyer.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 const UAHelpers = {

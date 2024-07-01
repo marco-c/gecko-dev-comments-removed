@@ -11,6 +11,7 @@
 const injections = new Injections(AVAILABLE_INJECTIONS, CUSTOM_FUNCTIONS);
 const uaOverrides = new UAOverrides(AVAILABLE_UA_OVERRIDES);
 const pipOverrides = new PictureInPictureOverrides(AVAILABLE_PIP_OVERRIDES);
+const shims = new Shims(AVAILABLE_SHIMS);
 
 const aboutCompatBroker = new AboutCompatBroker({
   injections,
