@@ -26,6 +26,7 @@ USER = 'MickeyMoz'
 REPO = 'focus-android'
 BASE = 'master'
 HEAD = "MickeyMoz:%s" % BRANCH
+URL = "https://%s:%s@github.com/%s/%s/" % (USER, token, USER, REPO)
 
 
 secrets = taskcluster.Secrets({'baseUrl': 'http://taskcluster/secrets/v1'})
@@ -33,7 +34,15 @@ data = secrets.get('project/focus/github')
 token = data['secret']['botAccountToken']
 
 
-URL = "https://%s:%s@github.com/%s/%s/" % (USER, token, USER, REPO)
+for request in pull_requests:
+	if request.user.login == USER:
+		print "There's already an unmerged pull request. Updating existing one."
+		BRANCH=request.head.ref
+		print subprocess.check_output(['git', 'checkout', '-b', BRANCH])
+		print subprocess.check_output(['git', 'push', URL, BRANCH], '-f')
+		exit(0)
+
+
 print subprocess.check_output(['git', 'push', URL, BRANCH])
 
 
