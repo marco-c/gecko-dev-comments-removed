@@ -4,7 +4,7 @@
 
 package org.mozilla.focus.utils;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -14,6 +14,7 @@ import android.support.annotation.StringRes;
 import android.support.v7.app.AlertDialog;
 
 import org.mozilla.focus.R;
+import org.mozilla.focus.web.IWebView;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -33,7 +34,8 @@ public class IntentUtils {
 
 
 
-    public static String handleExternalUri(final Activity activity, final String uri) {
+
+    public static boolean handleExternalUri(final Context context, final IWebView webView, final String uri) {
         
         final Intent intent;
         try {
@@ -41,13 +43,13 @@ public class IntentUtils {
         } catch (URISyntaxException e) {
             
             
-            return null;
+            return false;
         }
 
         
         intent.addCategory(Intent.CATEGORY_BROWSABLE);
 
-        final PackageManager packageManager = activity.getPackageManager();
+        final PackageManager packageManager = context.getPackageManager();
 
         
         
@@ -55,7 +57,7 @@ public class IntentUtils {
         final List<ResolveInfo> matchingActivities = packageManager.queryIntentActivities(intent, 0);
 
         if (matchingActivities.size() == 0) {
-            return handleUnsupportedLink(activity, intent);
+            return handleUnsupportedLink(context, webView, intent);
         } else if (matchingActivities.size() == 1) {
             final ResolveInfo info;
 
@@ -70,27 +72,27 @@ public class IntentUtils {
             }
             final CharSequence externalAppTitle = info.loadLabel(packageManager);
 
-            showConfirmationDialog(activity, intent, activity.getString(R.string.external_app_prompt_title), R.string.external_app_prompt, externalAppTitle);
-            return "success:";
+            showConfirmationDialog(context, intent, context.getString(R.string.external_app_prompt_title), R.string.external_app_prompt, externalAppTitle);
+            return true;
         } else { 
             
             
             
             
             
-            final String chooserTitle = activity.getResources().getString(R.string.external_multiple_apps_matched_exit);
+            final String chooserTitle = context.getString(R.string.external_multiple_apps_matched_exit);
             final Intent chooserIntent = Intent.createChooser(intent, chooserTitle);
-            activity.startActivity(chooserIntent);
+            context.startActivity(chooserIntent);
 
-            
-            return "success:";
+            return true;
         }
     }
 
-    private static String handleUnsupportedLink(final Activity activity, final Intent intent) {
+    private static boolean handleUnsupportedLink(final Context context, final IWebView webView, final Intent intent) {
         final String fallbackUrl = intent.getStringExtra(EXTRA_BROWSER_FALLBACK_URL);
         if (fallbackUrl != null) {
-            return fallbackUrl;
+            webView.loadUrl(fallbackUrl);
+            return true;
         }
 
         if (intent.getPackage() != null) {
@@ -99,37 +101,38 @@ public class IntentUtils {
             final Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(marketUri));
             marketIntent.addCategory(Intent.CATEGORY_BROWSABLE);
 
-            final ResolveInfo info = activity.getPackageManager().resolveActivity(marketIntent, 0);
-            final CharSequence marketTitle = info.loadLabel(activity.getPackageManager());
-            showConfirmationDialog(activity, marketIntent,
-                    activity.getResources().getString(R.string.external_app_prompt_no_app_title),
+            final PackageManager packageManager = context.getPackageManager();
+            final ResolveInfo info = packageManager.resolveActivity(marketIntent, 0);
+            final CharSequence marketTitle = info.loadLabel(packageManager);
+            showConfirmationDialog(context, marketIntent,
+                    context.getString(R.string.external_app_prompt_no_app_title),
                     R.string.external_app_prompt_no_app, marketTitle);
 
             
-            return "success:";
+            return true;
         }
 
         
         
-        return null;
+        return false;
     }
 
     
     
     
-    private static void showConfirmationDialog(final Activity activity, final Intent targetIntent, final String title, final @StringRes int messageResource, final CharSequence param) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogStyle);
+    private static void showConfirmationDialog(final Context context, final Intent targetIntent, final String title, final @StringRes int messageResource, final CharSequence param) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(context, R.style.DialogStyle);
 
-        final CharSequence ourAppName = activity.getResources().getString(R.string.app_name);
+        final CharSequence ourAppName = context.getString(R.string.app_name);
 
         builder.setTitle(title);
 
-        builder.setMessage(activity.getResources().getString(messageResource, ourAppName, param));
+        builder.setMessage(context.getResources().getString(messageResource, ourAppName, param));
 
         builder.setPositiveButton(R.string.action_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int which) {
-                activity.startActivity(targetIntent);
+                context.startActivity(targetIntent);
             }
         });
 

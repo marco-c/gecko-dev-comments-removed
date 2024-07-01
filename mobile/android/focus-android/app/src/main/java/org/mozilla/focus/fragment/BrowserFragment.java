@@ -134,20 +134,7 @@ public class BrowserFragment extends Fragment implements View.OnClickListener {
 
             @Override
             public boolean handleExternalUrl(final String url) {
-                final String fallback = IntentUtils.handleExternalUri(getActivity(), url);
-
-                if (fallback != null) {
-                    
-                    
-                    if (!fallback.equals("success:")) {
-                        webView.loadUrl(fallback);
-                    }
-
-                    return true;
-                }
-
-                
-                return false;
+                return IntentUtils.handleExternalUri(getContext(), webView, url);
             }
         });
 
