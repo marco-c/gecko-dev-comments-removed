@@ -6,7 +6,7 @@ package org.mozilla.focus.webkit.matcher;
 
 import android.util.SparseArray;
 
-public class Trie {
+ class Trie {
 
     
 
@@ -25,6 +25,11 @@ public class Trie {
 
         public static WhiteListTrie createRootNode() {
             return new WhiteListTrie(Character.MIN_VALUE, null);
+        }
+
+        
+        public WhiteListTrie put(final String string) {
+            return (WhiteListTrie) super.put(string);
         }
     }
 
