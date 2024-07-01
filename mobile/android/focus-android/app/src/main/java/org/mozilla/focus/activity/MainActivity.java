@@ -108,4 +108,14 @@ public class MainActivity extends AppCompatActivity {
 
         super.onBackPressed();
     }
+
+    public void firstrunFinished() {
+        if (pendingUrl != null) {
+            
+            showBrowserScreen(pendingUrl);
+            pendingUrl = null;
+        } else {
+            showHomeScreen();
+        }
+    }
 }
