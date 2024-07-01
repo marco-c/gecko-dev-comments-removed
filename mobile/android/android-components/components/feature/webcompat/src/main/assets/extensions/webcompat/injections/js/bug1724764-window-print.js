@@ -9,10 +9,8 @@
 
 
 
-
-
 console.info(
-  "window.print has been shimmed for compatibility reasons. See https://webcompat.com/issues/81762 for details."
+  "window.print has been shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1659818 for details."
 );
 
 Object.defineProperty(window.wrappedJSObject, "print", {
