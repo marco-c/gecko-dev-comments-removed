@@ -53,7 +53,7 @@ import org.mozilla.focus.telemetry.TelemetryWrapper;
         TelemetryWrapper.customTabMenuEvent();
     }
 
-     void bind(BrowserMenuAdapter.MenuItem menuItem) {
+     void bind(BrowserMenuAdapter.MenuItem.Custom menuItem) {
         super.bind(menuItem);
 
         pendingIntent = menuItem.getPendingIntent();

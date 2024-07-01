@@ -21,7 +21,7 @@ import org.mozilla.focus.R;
         menuItemView = (TextView) itemView;
     }
 
-     void bind(BrowserMenuAdapter.MenuItem menuItem) {
+     void bind(BrowserMenuAdapter.MenuItem.Default menuItem) {
         menuItemView.setId(menuItem.getId());
         menuItemView.setText(menuItem.getLabel());
 
