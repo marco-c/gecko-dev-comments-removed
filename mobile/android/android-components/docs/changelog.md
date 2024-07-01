@@ -4,21 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 45.0.0-SNAPSHOT (In Development)
+# 44.0.0-SNAPSHOT (In Development)
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v44.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/105?closed=1)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/104?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-# 44.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v43.0.0...v44.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/104?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v44.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v44.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v44.0.0/buildSrc/src/main/java/Config.kt)
 
 * **browser-engine-gecko-nightly**
   * Added support for [onbeforeunload prompt](https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload)
@@ -50,6 +42,12 @@ permalink: /changelog/
 
 * **support-ktx**
   * `String.isUrlStrict`, deprecated in 40.0.0, was now removed due to performance issues. Use the less strict `isURL` instead or customize based on `:lib-publicsuffixlist`.
+
+* **service-glean**
+  * Glean was updated to v31.0.2
+    * Provide a new upload mechanism, now driven by internals. This has no impact to consumers of service-glean.
+    * Automatically Gzip-compress ping payloads before upload
+    * Upgrade `glean_parser` to v1.22.0
 
 # 43.0.0
 
@@ -111,9 +109,6 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: Extracts `AndroidIconDecoder`, `IconDecoder` and `DesiredSize` out of `browser-icons`
     into a new component `support-images`, which provides helpers for handling images. `AndroidIconDecoder` and `IconDecoder`
     are renamed to `AndroidImageDecoder` and `ImageDecoder` in `support-images`.
-
-* **support-utils**
-  * `URLStringUtils.isURLLike()` will now consider URLs containing double dash ("--") as valid.
 
 * **browser-thumbnails**
   * Adds `ThumbnailDiskCache` for storing and restoring thumbnail bitmaps into a disk cache.
