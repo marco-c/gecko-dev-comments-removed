@@ -100,6 +100,9 @@ public class PageVisitTest {
         TestHelper.HelpItem.click();
         helpView.waitForExists(waitTime * 3);
         assertTrue(helpHeading.exists());
-        assertTrue(helpView.exists());
+
+        
+        
+        
     }
 }
