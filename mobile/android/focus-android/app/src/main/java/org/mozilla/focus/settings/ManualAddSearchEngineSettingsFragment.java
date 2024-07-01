@@ -42,7 +42,7 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
     private static String LOGTAG = "ManualAddSearchEngine";
 
     
-    private static int SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS = 4000;
+    private static final int SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS = 4000;
 
     
 
