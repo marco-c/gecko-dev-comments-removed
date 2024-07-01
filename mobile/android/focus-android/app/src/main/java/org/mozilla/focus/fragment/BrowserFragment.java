@@ -846,7 +846,6 @@ public class BrowserFragment extends WebFragment implements LifecycleObserver, V
         }
     }
 
-    
     @Override
     public void onCreateNewSession() {
         erase();
@@ -907,12 +906,12 @@ public class BrowserFragment extends WebFragment implements LifecycleObserver, V
             biometricController.startAuthentication();
 
             
-            if (fragmentManager.findFragmentByTag(BiometricAuthenticationDialogFragment.FRAGMENT_TAG) != null) {
+            if (fragmentManager.findFragmentByTag(BiometricAuthenticationDialogFragment.Companion.getFRAGMENT_TAG()) != null) {
                 return;
             }
 
             biometricController.getBiometricFragment().setTargetFragment(BrowserFragment.this, 300);
-            biometricController.getBiometricFragment().show(fragmentManager, BiometricAuthenticationDialogFragment.FRAGMENT_TAG);
+            biometricController.getBiometricFragment().show(fragmentManager, BiometricAuthenticationDialogFragment.Companion.getFRAGMENT_TAG());
         } else {
             getView().setAlpha(1);
         }
