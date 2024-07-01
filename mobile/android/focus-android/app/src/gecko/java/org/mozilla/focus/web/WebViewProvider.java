@@ -58,9 +58,7 @@ public class WebViewProvider {
 
             final GeckoSessionSettings settings = new GeckoSessionSettings();
             settings.setBoolean(GeckoSessionSettings.USE_MULTIPROCESS, false);
-            
-            
-            
+            settings.setBoolean(GeckoSessionSettings.USE_PRIVATE_MODE, true);
 
             geckoSession = new GeckoSession(settings);
 
