@@ -6,12 +6,34 @@
 package org.mozilla.focus.search;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class SearchEngine {
+    
+    private static final String MOZ_PARAM_LOCALE = "\\{moz:locale\\}";
+    private static final String MOZ_PARAM_DIST_ID = "\\{moz:distributionID\\}";
+    private static final String MOZ_PARAM_OFFICIAL = "\\{moz:official\\}";
+
+    
+    
+    private static final String OS_PARAM_USER_DEFINED = "\\{searchTerms\\??\\}";
+    private static final String OS_PARAM_INPUT_ENCODING = "\\{inputEncoding\\??\\}";
+    private static final String OS_PARAM_LANGUAGE = "\\{language\\??\\}";
+    private static final String OS_PARAM_OUTPUT_ENCODING = "\\{outputEncoding\\??\\}";
+    private static final String OS_PARAM_OPTIONAL = "\\{(?:\\w+:)?\\w+\\?\\}";
+
      String name;
      Bitmap icon;
+     List<Uri> resultsUris;
+     Uri suggestUri;
 
-     SearchEngine() {}
+     SearchEngine() {
+         resultsUris = new ArrayList<>();
+    }
 
     public String getName() {
         return name;
@@ -19,5 +41,44 @@ public class SearchEngine {
 
     public Bitmap getIcon() {
         return icon;
+    }
+
+    public String buildSearchUrl(final String searchTerm) {
+        if (resultsUris.isEmpty()) {
+            return searchTerm;
+        }
+
+        
+        final Uri searchUri = resultsUris.get(0);
+
+        final String template = Uri.decode(searchUri.toString());
+        return paramSubstitution(template, Uri.encode(searchTerm));
+    }
+
+    
+
+
+
+
+
+
+
+    private String paramSubstitution(String template, String query) {
+        final String locale = Locale.getDefault().toString();
+
+        template = template.replaceAll(MOZ_PARAM_LOCALE, locale);
+        template = template.replaceAll(MOZ_PARAM_DIST_ID, "");
+        template = template.replaceAll(MOZ_PARAM_OFFICIAL, "unofficial");
+
+        template = template.replaceAll(OS_PARAM_USER_DEFINED, query);
+        template = template.replaceAll(OS_PARAM_INPUT_ENCODING, "UTF-8");
+
+        template = template.replaceAll(OS_PARAM_LANGUAGE, locale);
+        template = template.replaceAll(OS_PARAM_OUTPUT_ENCODING, "UTF-8");
+
+        
+        template = template.replaceAll(OS_PARAM_OPTIONAL, "");
+
+        return template;
     }
 }
