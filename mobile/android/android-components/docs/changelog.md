@@ -12,19 +12,6 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
-* **concept-tabstray**
-  * ⚠️ **This is a breaking change**: Removed dependency on `browser-session` and introduced tabs tray specific data classes.
-
-* **browser-tabstray**
-  * ⚠️ **This is a breaking change**: Refactored component to implement updated `concept-tabstray` interfaces.
-
-* **feature-tabs**
-  * ⚠️ **This is a breaking change**: Refactored component to use `browser-state` instead of `browser-session`.
-  * Added additional method to `TabsUseCases` to select a tab based on its id.
-
-* **feature-contextmenu**
-  * Adds optional `shareTextClicked` lambda to `DefaultSelectionActionDelegate` which allows adding and dispatching a text selection share action
-
 * **browser-icons**
   * ⚠️ **This is a breaking change**: Migrated this component to use `browser-state` instead of `browser-session`. It is now required to pass a `BrowserStore` instance (instead of `SessionManager`) to `BrowserIcons.install()`.
 
@@ -35,21 +22,14 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: `alwaysAllowedSchemes` is removed as a parameter for `AppLinksInterceptor`.
   * Added `engineSupportedSchemes` as a parameter for `AppLinksInterceptor`.  This allows the caller to specify which protocol is supported by the engine.
     * Using this information, app links can decide if a protocol should be launched in a third party app or not regardless of user preference.
-
-* **feature-downloads**
-  * ⚠️ **This is a breaking change**: `customTabId` is renamed to `tabId`.
-
-* **feature-contextmenu**
-  * ⚠️ **This is a breaking change**: `customTabId` is renamed to `tabId`.
-
-* **feature-push**
-  * ⚠️ **This is a breaking change**:
-    * Removed APIs from AutoPushFeature: `subscribeForType`, `unsubscribeForType`, `subscribeAll`.
-    * Removed `PushType` enum and it's internal uses.
-    * Use the new ✨ `subscribe` and `unsubscribe` APIs.
-
-* **feature-accounts-push**
-  * Updated `FxaPushSupportFeature` to use the new `AutoPushFeature` APIs.
+    
+* **feature-sitepermissions**
+  * ⚠️ **This is a breaking change**: add parameters `autoplayAudible` and `autoplayInaudible` to `SitePermissionsRules`.
+    * This allows autoplay settings to be controlled for specific sites, rather than globally.
+  
+* **concept-engine**
+  * ⚠️ **This is a breaking change**: remove deprecated GeckoView setting `allowAutoplayMedia`
+    * This should now be controlled for individual sites via `SitePermissionsRules`
 
 # 33.0.0
 
@@ -114,7 +94,7 @@ permalink: /changelog/
       nonFatalCrashIntent = pendingIntent
   )
   ```
-
+  
 * **feature-search**
   * Adds `DefaultSelectionActionDelegate`, which may be used to add new actions to text selection context menus.
     * It currently adds "Firefox Search" or "Firefox Private Search", depending on whether the selected tab is private.
@@ -133,7 +113,7 @@ permalink: /changelog/
               )
           }.asView()
       }
-
+      
   // Use `SearchFeature` to attach search requests to your own code
   private val searchFeature = ViewBoundFeatureWrapper<SearchFeature>()
   // ...
