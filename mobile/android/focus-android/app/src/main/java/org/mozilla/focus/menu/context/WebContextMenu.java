@@ -25,6 +25,7 @@ import org.mozilla.focus.R;
 import org.mozilla.focus.session.SessionManager;
 import org.mozilla.focus.session.Source;
 import org.mozilla.focus.telemetry.TelemetryWrapper;
+import org.mozilla.focus.telemetry.TelemetryWrapper.BrowserContextMenuValue;
 import org.mozilla.focus.utils.UrlUtils;
 import org.mozilla.focus.web.Download;
 import org.mozilla.focus.web.IWebView;
@@ -67,8 +68,18 @@ public class WebContextMenu {
             @Override
             public void onCancel(DialogInterface dialog) {
                 
+                final BrowserContextMenuValue value;
+                if (hitTarget.isImage && hitTarget.isLink) {
+                    value = BrowserContextMenuValue.ImageWithLink;
+                } else if (hitTarget.isImage) {
+                    value = BrowserContextMenuValue.Image;
+                } else {
+                    value = BrowserContextMenuValue.Link;
+                }
+
                 
-                TelemetryWrapper.cancelWebContextMenuEvent();
+                
+                TelemetryWrapper.cancelWebContextMenuEvent(value);
             }
         });
 
