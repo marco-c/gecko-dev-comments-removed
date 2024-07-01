@@ -144,6 +144,8 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
     private ViewGroup videoContainer;
 
+    private boolean isFullscreen;
+
     
 
 
@@ -613,6 +615,7 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             @Override
             public void onEnterFullScreen(@NonNull final IWebView.FullscreenCallback callback, @Nullable View view) {
                 fullscreenCallback = callback;
+                isFullscreen = true;
 
                 
                 if (view != null) {
@@ -637,6 +640,8 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
             @Override
             public void onExitFullScreen() {
+                isFullscreen = false;
+
                 
                 videoContainer.removeAllViews();
                 videoContainer.setVisibility(View.GONE);
@@ -894,6 +899,11 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
     public boolean onBackPressed() {
         if (findInPageView.getVisibility() == View.VISIBLE) {
             hideFindInPage();
+        } else if (isFullscreen) {
+            final IWebView webView = getWebView();
+            if (webView != null) {
+                webView.exitFullscreen();
+            }
         } else if (canGoBack()) {
             
             goBack();
