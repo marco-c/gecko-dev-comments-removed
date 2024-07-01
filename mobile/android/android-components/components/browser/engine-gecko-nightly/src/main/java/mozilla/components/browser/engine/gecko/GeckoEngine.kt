@@ -332,15 +332,8 @@ class GeckoEngine(
             }
         }
 
-        val debuggerDelegate = object : WebExtensionController.DebuggerDelegate {
-            override fun onExtensionListUpdated() {
-                webExtensionDelegate.onExtensionListUpdated()
-            }
-        }
-
         runtime.webExtensionController.promptDelegate = promptDelegate
         runtime.webExtensionController.tabDelegate = tabsDelegate
-        runtime.webExtensionController.setDebuggerDelegate(debuggerDelegate)
     }
 
     /**
@@ -543,10 +536,6 @@ class GeckoEngine(
             get() = PreferredColorScheme.from(runtime.settings.preferredColorScheme)
             set(value) { runtime.settings.preferredColorScheme = value.toGeckoValue() }
 
-        // TODO this setting was removed in GV. We'll refactor / remove this in
-        // https://github.com/mozilla-mobile/android-components/pull/5953
-        override var allowAutoplayMedia: Boolean = false
-
         override var suspendMediaWhenInactive: Boolean
             get() = defaultSettings?.suspendMediaWhenInactive ?: false
             set(value) { defaultSettings?.suspendMediaWhenInactive = value }
@@ -593,8 +582,6 @@ class GeckoEngine(
             this.testingModeEnabled = it.testingModeEnabled
             this.userAgentString = it.userAgentString
             this.preferredColorScheme = it.preferredColorScheme
-            this.allowAutoplayMedia = it.allowAutoplayMedia
-            this.suspendMediaWhenInactive = it.suspendMediaWhenInactive
             this.fontInflationEnabled = it.fontInflationEnabled
             this.fontSizeFactor = it.fontSizeFactor
             this.forceUserScalableContent = it.forceUserScalableContent

@@ -340,7 +340,6 @@ class GeckoEngineTest {
                 testingModeEnabled = true,
                 userAgentString = "test-ua",
                 preferredColorScheme = PreferredColorScheme.Light,
-                allowAutoplayMedia = false,
                 suspendMediaWhenInactive = true,
                 forceUserScalableContent = false
             ), runtime)
@@ -367,7 +366,6 @@ class GeckoEngineTest {
         assertTrue(engine.settings.testingModeEnabled)
         assertEquals("test-ua", engine.settings.userAgentString)
         assertEquals(PreferredColorScheme.Light, engine.settings.preferredColorScheme)
-        assertFalse(engine.settings.allowAutoplayMedia)
         assertTrue(engine.settings.suspendMediaWhenInactive)
 
         engine.settings.safeBrowsingPolicy = arrayOf(SafeBrowsingPolicy.PHISHING)
@@ -937,23 +935,6 @@ class GeckoEngineTest {
 
         actionCaptor.value.onClick()
         verify(pageAction).click()
-    }
-
-    @Test
-    fun `web extension delegate notified of extension list change`() {
-        val runtime: GeckoRuntime = mock()
-        val webExtensionController: WebExtensionController = mock()
-        whenever(runtime.webExtensionController).thenReturn(webExtensionController)
-
-        val webExtensionsDelegate: WebExtensionDelegate = mock()
-        val engine = GeckoEngine(context, runtime = runtime)
-        engine.registerWebExtensionDelegate(webExtensionsDelegate)
-
-        val debuggerDelegateCaptor = argumentCaptor<WebExtensionController.DebuggerDelegate>()
-        verify(webExtensionController).setDebuggerDelegate(debuggerDelegateCaptor.capture())
-
-        debuggerDelegateCaptor.value.onExtensionListUpdated()
-        verify(webExtensionsDelegate).onExtensionListUpdated()
     }
 
     @Test
