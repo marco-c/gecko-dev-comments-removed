@@ -104,6 +104,7 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     private View urlInputBackgroundView;
     private View toolbarBackgroundView;
 
+    private volatile boolean isAnimating;
     private boolean isBackPressed;
 
     @Override
@@ -205,7 +206,7 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
         }
     }
 
-    private void animateAndDismiss() {
+    private synchronized void animateAndDismiss() {
         
         
         
@@ -227,6 +228,13 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
 
 
     private void playHomeScreenAnimation(final boolean reverse) {
+        if (isAnimating) {
+            
+            return;
+        }
+
+        isAnimating = true;
+
         int[] screenLocation = new int[2];
         urlInputContainerView.getLocationOnScreen(screenLocation);
 
@@ -287,6 +295,8 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                         } else {
                             urlView.setCursorVisible(true);
                         }
+
+                        isAnimating = false;
                     }
                 });
 
@@ -309,6 +319,13 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
     }
 
     private void playBrowserScreenAnimation(final boolean reverse) {
+        if (isAnimating) {
+            
+            return;
+        }
+
+        isAnimating = true;
+
         {
             float containerMargin = ((FrameLayout.LayoutParams) urlInputContainerView.getLayoutParams()).bottomMargin;
 
@@ -353,6 +370,8 @@ public class UrlInputFragment extends Fragment implements View.OnClickListener, 
                             } else {
                                 clearView.setAlpha(1);
                             }
+
+                            isAnimating = false;
                         }
                     });
         }
