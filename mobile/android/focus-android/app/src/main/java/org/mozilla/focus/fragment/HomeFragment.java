@@ -39,6 +39,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Popu
         super.onAttach(context);
 
         final FragmentActivity activity = getActivity();
+        
         if (activity != null && Intent.ACTION_VIEW.equals(activity.getIntent().getAction())) {
             
             
