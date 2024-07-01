@@ -142,7 +142,7 @@ public class WebViewProvider {
         }
 
         
-        return TextUtils.join(" ", tokens) + focusToken;
+        return TextUtils.join(" ", tokens) + " " + focusToken;
     }
 
     private static String buildUserAgentString(final Context context, final WebSettings settings) {
