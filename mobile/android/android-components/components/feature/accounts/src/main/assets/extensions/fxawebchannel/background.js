@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+const WEB_CHANNEL_BACKGROUND_MESSAGING_ID = "mozacWebchannelBackground";
+let port = browser.runtime.connectNative(WEB_CHANNEL_BACKGROUND_MESSAGING_ID);
+
+
+
+port.onMessage.addListener( event => {
+  if(event.type == "overrideFxAServer"){
+    browser.contentScripts.register({
+      "matches": [ event.url+"/*" ],
+      "js": [{file: "fxawebchannel.js"}],
+      "runAt": "document_start"
+    });
+    port.disconnect();
+  }
+});
