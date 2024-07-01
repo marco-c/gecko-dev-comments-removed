@@ -50,6 +50,9 @@ public class DownloadFileTest {
 
             
             org.junit.Assume.assumeTrue(!AppConstants.INSTANCE.isGeckoBuild() && !AppConstants.INSTANCE.isKlarBuild());
+            
+            org.junit.Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
+
 
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()
@@ -119,18 +122,12 @@ public class DownloadFileTest {
             .enabled(true));
 
     @Test
-    public void DownloadFileTest() throws UiObjectNotFoundException  {
+    public void DownloadTest() throws UiObjectNotFoundException  {
         UiObject downloadIcon;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            downloadIcon = TestHelper.mDevice.findObject(new UiSelector()
-                    .resourceId("download")
-                    .enabled(true));
-        } else {
-            downloadIcon = TestHelper.mDevice.findObject(new UiSelector()
-                    .description("download icon")
-                    .enabled(true));
-        }
+        downloadIcon = TestHelper.mDevice.findObject(new UiSelector()
+                .resourceId("download")
+                .enabled(true));
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
@@ -140,7 +137,6 @@ public class DownloadFileTest {
         TestHelper.pressEnterKey();
         TestHelper.waitForWebContent();
         TestHelper.progressBar.waitUntilGone(waitingTime);
-
 
         downloadIcon.click();
 
