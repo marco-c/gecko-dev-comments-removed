@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 
@@ -54,7 +53,7 @@ def set_artifact_map(config, tasks):
                 }
                 for artifact_path in dep.attributes["artifacts"].values()
             },
-            "taskId": {"task-reference": "<{}>".format(dep.kind)},
+            "taskId": {"task-reference": f"<{dep.kind}>"},
         } for dep in deps]
 
         yield task

@@ -2,7 +2,6 @@
 
 
 
-from __future__ import print_function, unicode_literals
 
 import logging
 import os
@@ -44,7 +43,7 @@ def get_components_changed(files_changed):
         ->
         {service-sync-logins}
     """
-    return set(["-".join(f.split("/")[1:3]) for f in files_changed if f.startswith("components")])
+    return {"-".join(f.split("/")[1:3]) for f in files_changed if f.startswith("components")}
 
 
 cached_deps = {}
@@ -72,7 +71,7 @@ def get_upstream_deps_for_components(components):
                 current_component = line.split(":")[1]
 
             
-            if line.startswith("+--- project") or line.startswith("\--- project"):
+            if line.startswith("+--- project") or line.startswith(r"\--- project"):
                 component_dependencies[current_component].add(line.split(" ")[2])
 
     return [(k, sorted(component_dependencies[k])) for k in sorted(component_dependencies)]
@@ -99,10 +98,10 @@ def get_affected_components(files_changed, files_affecting_components, upstream_
     
     for c in affected_components.copy():
         if upstream_component_dependencies[c]:
-            logger.info("Adding direct upstream dependencies for '%s': %s" % (c, " ".join(sorted(upstream_component_dependencies[c]))))
+            logger.info("Adding direct upstream dependencies for '{}': {}".format(c, " ".join(sorted(upstream_component_dependencies[c]))))
             affected_components.update(upstream_component_dependencies[c])
         if downstream_component_dependencies[c]:
-            logger.info("Adding direct downstream dependencies for '%s': %s" % (c, " ".join(sorted(downstream_component_dependencies[c]))))
+            logger.info("Adding direct downstream dependencies for '{}': {}".format(c, " ".join(sorted(downstream_component_dependencies[c]))))
             affected_components.update(downstream_component_dependencies[c])
 
     return affected_components
@@ -117,7 +116,7 @@ def loader(kind, path, config, params, loaded_tasks):
 
     for component, deps in get_upstream_deps_for_components([c["name"] for c in get_components()]):
         if deps:
-            logger.info("Found direct upstream dependencies for component '%s': %s" % (component, deps))
+            logger.info(f"Found direct upstream dependencies for component '{component}': {deps}")
         else:
             logger.info("No direct upstream dependencies found for component '%s'" % component)
         upstream_component_dependencies[component] = deps
@@ -137,7 +136,7 @@ def loader(kind, path, config, params, loaded_tasks):
             
             logger.info("head_ref is refs/heads/master. Building every component...")
         else:
-            logger.info("Processing push for commit range %s -> %s" % (params["base_rev"], params["head_rev"]))
+            logger.info("Processing push for commit range {} -> {}".format(params["base_rev"], params["head_rev"]))
             files_changed = get_files_changed_push(params["base_repository"], params["base_rev"], params["head_rev"])
             affected_components = get_affected_components(files_changed, config.get("files-affecting-components"), upstream_component_dependencies, downstream_component_dependencies)
 

@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from copy import deepcopy
 
@@ -22,7 +21,7 @@ def build_task_definition(orig_task, deps, count):
     task['name'] = "{}-{}".format(orig_task['name'], count)
     if 'treeherder' in task:
         task['treeherder']['symbol'] = add_suffix(
-            task['treeherder']['symbol'], "-{}".format(count))
+            task['treeherder']['symbol'], f"-{count}")
 
     task["attributes"]["is_final_chunked_task"] = False
     return task
