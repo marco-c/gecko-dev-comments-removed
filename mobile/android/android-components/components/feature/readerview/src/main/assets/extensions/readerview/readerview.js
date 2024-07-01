@@ -9,7 +9,31 @@ const supportedProtocols = ["http:", "https:"];
 
 
 
-const blockedHosts = ["amazon.com", "github.com", "mail.google.com", "pinterest.com", "reddit.com", "twitter.com", "youtube.com"];
+const blockedHosts = [
+  "amazon.com",
+  "github.com",
+  "mail.google.com",
+  "pinterest.com",
+  "reddit.com",
+  "twitter.com",
+  "youtube.com"
+];
+
+
+
+
+const preservedClasses = [
+  "caption",
+  "emoji",
+  "hidden",
+  "invisble",
+  "sr-only",
+  "visually-hidden",
+  "visuallyhidden",
+  "wp-caption",
+  "wp-caption-text",
+  "wp-smiley"
+];
 
 class ReaderView {
 
@@ -42,7 +66,7 @@ class ReaderView {
   }
 
   show({fontSize = 4, fontType = "sans-serif", colorScheme = "light"} = {}) {
-    let result = new Readability(document).parse();
+    let result = new Readability(document, {classesToPreserve: preservedClasses}).parse();
     result.language = document.documentElement.lang;
 
     let article = Object.assign(
