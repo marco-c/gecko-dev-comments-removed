@@ -104,10 +104,8 @@ public class WebViewProvider {
     }
 
     public static void applyAppSettings(Context context, WebSettings settings) {
-        final Settings appSettings = new Settings(context);
-
         
-        settings.setBlockNetworkImage(appSettings.shouldBlockImages());
+        settings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
     }
 
     
