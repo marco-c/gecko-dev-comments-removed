@@ -53,7 +53,7 @@ function isProbablyReaderable(doc, options = {}) {
   var defaultOptions = { minScore: 20, minContentLength: 140, visibilityChecker: isNodeVisible };
   options = Object.assign(defaultOptions, options);
 
-  var nodes = doc.querySelectorAll("p, pre");
+  var nodes = doc.querySelectorAll("p, pre, article");
 
   
   
