@@ -6,9 +6,14 @@ package org.mozilla.focus.webkit.matcher;
 
 
 import android.content.Context;
-import android.support.v4.util.ArrayMap;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.JsonReader;
 
+import org.mozilla.focus.R;
 import org.mozilla.focus.webkit.matcher.util.FocusString;
 
 import java.io.IOException;
@@ -16,14 +21,32 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class UrlMatcher {
+public class UrlMatcher implements  SharedPreferences.OnSharedPreferenceChangeListener {
+    
 
-    private final Map<String, Trie> categories = new ArrayMap<>(5);
+
+    private final Map<String, String> categoryPrefMap;
+
+    private static Map<String, String> loadDefaultPrefMap(final Context context) {
+        Map<String, String> tempMap = new HashMap<>(5);
+
+        tempMap.put(context.getString(R.string.pref_key_privacy_block_ads), "Advertising");
+        tempMap.put(context.getString(R.string.pref_key_privacy_block_analytics), "Analytics");
+        tempMap.put(context.getString(R.string.pref_key_privacy_block_social), "Social");
+        tempMap.put(context.getString(R.string.pref_key_privacy_block_other), "Content");
+
+
+
+        return Collections.unmodifiableMap(tempMap);
+    }
+
+    private final Map<String, Trie> categories;
     private final Set<String> enabledCategories = new HashSet<>();
 
     private final EntityList entityList;
@@ -32,13 +55,16 @@ public class UrlMatcher {
     
     private final HashSet<String> previouslyUnmatched = new HashSet<>();
 
-    public UrlMatcher(final Context context, final int blockListFile, final int entityListFile) {
+    public static UrlMatcher loadMatcher(final Context context, final int blockListFile, final int entityListFile) {
+        final Map<String, String> categoryPrefMap = loadDefaultPrefMap(context);
+
+        final Map<String, Trie> categoryMap;
         {
             InputStream inputStream = context.getResources().openRawResource(blockListFile);
             JsonReader jsonReader = new JsonReader(new InputStreamReader(inputStream));
 
             try {
-                new BlocklistProcessor(jsonReader, this);
+                categoryMap = BlocklistProcessor.loadCategoryMap(jsonReader);
 
                 jsonReader.close();
             } catch (IOException e) {
@@ -46,6 +72,7 @@ public class UrlMatcher {
             }
         }
 
+        final EntityList entityList;
         {
             InputStream inputStream = context.getResources().openRawResource(entityListFile);
             JsonReader jsonReader = new JsonReader(new InputStreamReader(inputStream));
@@ -57,21 +84,74 @@ public class UrlMatcher {
             }
 
         }
+
+        return new UrlMatcher(context, categoryPrefMap, categoryMap, entityList);
     }
 
+     UrlMatcher(final Context context,
+                                     @NonNull final Map<String, String> categoryPrefMap,
+                                     @NonNull final Map<String, Trie> categoryMap,
+                                     @Nullable final EntityList entityList) {
+        this.categoryPrefMap = categoryPrefMap;
+        this.entityList = entityList;
+        this.categories = categoryMap;
 
-    
-     UrlMatcher(final String[] patterns) {
+        
+        
+        for (final Map.Entry<String, Trie> entry: categoryMap.entrySet()) {
+            if (!categoryPrefMap.values().contains(entry.getKey())) {
+                throw new IllegalArgumentException("categoryMap contains undeclared category");
+            }
+
+            
+            enabledCategories.add(entry.getKey());
+        }
+
+        loadPrefs(context);
+
+        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences, final String prefName) {
+        final boolean prefValue = sharedPreferences.getBoolean(prefName, false);
+
+        final String categoryName = categoryPrefMap.get(prefName);
+        if (categoryName != null) {
+            setCategoryEnabled(categoryName, prefValue);
+        }
+    }
+
+    private void loadPrefs(final Context context) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+        for (final Map.Entry<String, String> entry : categoryPrefMap.entrySet()) {
+            final boolean prefValue = prefs.getBoolean(entry.getKey(), true);
+            setCategoryEnabled(entry.getValue(), prefValue);
+        }
+    }
+
+    @VisibleForTesting UrlMatcher(final String[] patterns) {
+        final Map<String, String> map = new HashMap<>();
+        map.put("default", "default");
+        categoryPrefMap = Collections.unmodifiableMap(map);
+
+        categories = new HashMap<>();
+
         buildMatcher(patterns);
 
         entityList = null;
     }
 
+    
+
+
+
     private void buildMatcher(String[] patterns) {
-        
         final Trie defaultCategory;
         if (!categories.containsKey("default")) {
             defaultCategory = Trie.createRootNode();
+            categories.put("default", defaultCategory);
         } else {
             defaultCategory = categories.get("default");
         }
@@ -79,18 +159,8 @@ public class UrlMatcher {
         for (final String pattern : patterns) {
             defaultCategory.put(FocusString.create(pattern).reverse());
         }
-    }
 
-     void putCategories(final Map<String, Trie> categoryMap) {
-        for (final Map.Entry<String, Trie> entry: categoryMap.entrySet()) {
-            if (categories.containsKey(entry.getKey())) {
-                throw new IllegalStateException("Can't add existing category");
-            } else {
-                categories.put(entry.getKey(), entry.getValue());
-                
-                enabledCategories.add(entry.getKey());
-            }
-        }
+        enabledCategories.add("default");
     }
 
     public Set<String> getCategories() {
