@@ -12,7 +12,8 @@ public interface IWebView {
         void onPageStarted(String url);
         void onPageFinished(boolean isSecure);
         void onProgress(int progress);
-        void handleExternalUrl(String url);
+        
+        boolean handleExternalUrl(String url);
     }
 
     void setCallback(Callback callback);

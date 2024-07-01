@@ -41,7 +41,7 @@ public class IntentUtils {
         } catch (URISyntaxException e) {
             
             
-            return uri;
+            return null;
         }
 
         
@@ -71,7 +71,7 @@ public class IntentUtils {
             final CharSequence externalAppTitle = info.loadLabel(packageManager);
 
             showConfirmationDialog(activity, intent, activity.getString(R.string.external_app_prompt_title), R.string.external_app_prompt, externalAppTitle);
-            return null;
+            return "success:";
         } else { 
             
             
@@ -81,7 +81,9 @@ public class IntentUtils {
             final String chooserTitle = activity.getResources().getString(R.string.external_multiple_apps_matched_exit);
             final Intent chooserIntent = Intent.createChooser(intent, chooserTitle);
             activity.startActivity(chooserIntent);
-            return null;
+
+            
+            return "success:";
         }
     }
 
@@ -102,12 +104,14 @@ public class IntentUtils {
             showConfirmationDialog(activity, marketIntent,
                     activity.getResources().getString(R.string.external_app_prompt_no_app_title),
                     R.string.external_app_prompt_no_app, marketTitle);
-            return null;
+
+            
+            return "success:";
         }
 
         
         
-        return intent.toUri(0);
+        return null;
     }
 
     
