@@ -107,7 +107,8 @@ RELEASE_LOCALES = [
 ADDITIONAL_SCREENSHOT_LOCALES = [
 	"ixl",
 	"lt",
-	"en-CA"
+	"en-CA",
+	"af"
 ]
 
 
