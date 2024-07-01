@@ -4,13 +4,51 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 54.0.0-SNAPSHOT (In Development)
+# 56.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v53.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/113?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v55.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/116?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+* **concept-tabstray**
+  * Added `onTabsUpdated` to `TabsTray.Observer` for notifying observers when one or more tabs have been added/removed.
+
+* **browser-tabstray**
+  * Added the convenience function `TabsAdapter.doOnTabsUpdated` for performing actions only once when the tabs are updated.
+
+* **feature-app-links**
+  * Fixed [issue #8169](https://github.com/mozilla-mobile/android-components/issues/8169) App links dialog will now call `showNow` to immediately show the dialog.
+
+# 55.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v54.0.0...v55.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/115?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v55.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v55.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v55.0.0/buildSrc/src/main/java/Config.kt)
+
+* **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
+  * Fixed issue [#7983](https://github.com/mozilla-mobile/android-components/issues/7983), crash when a file name wasn't provided when uploading a file.
+  
+* **service-glean**
+  * Glean was updated to v32.1.0
+    * The rate limiter now allows 15, rather than 10, pings per minute.
+
+* **storage-sync**
+  * Fixed [issue #8011](https://github.com/mozilla-mobile/android-components/issues/8011) PlacesConnectionBusy: Error executing SQL: database is locked.
+
+* **feature-app-links**
+  * Fixed [issue #8122](https://github.com/mozilla-mobile/android-components/issues/8122) App link redirecting to Play Store, rather than to installed app.
+
+# 54.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v53.0.0...v54.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/113?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v54.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v54.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v54.0.0/buildSrc/src/main/java/Config.kt)
 
 * **concept-menu**
   * Added `orientation` parameter to `MenuController.show`. Passing null (the default) tells the menu to determine the best orientation itself.
@@ -36,6 +74,15 @@ permalink: /changelog/
 * **browser-menu**
   * For a11y, `BrowserMenuImageSwitch` now highlights the entire row, not just the switch
 
+* **concept-engine**
+  * Added the `cookiePurging` property to `TrackingProtectionPolicy` and `TrackingProtectionPolicyForSessionTypes` constructors to enable/disable cookie purging feature read more about it [here](https://blog.mozilla.org/blog/2020/08/04/latest-firefox-rolls-out-enhanced-tracking-protection-2-0-blocking-redirect-trackers-by-default/).
+
+* **browser-engine-nightly**
+  * Added `cookiePurging` to `TrackingProtectionPolicy.toContentBlockingSetting`.
+
+* **feature-addons**
+  * ⚠️ **This is a breaking change**: Unified addons icons design with the one of favicons used all throughout the app. Specifying a different background is not possible anymore.
+
 # 53.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v52.0.0...v53.0.0)
@@ -56,6 +103,7 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: Renamed the following data classes from `BrowserAction`: `QueuedDownloadAction` to `AddDownloadAction`, `RemoveQueuedDownloadAction` to `RemoveDownloadAction`, `RemoveAllQueuedDownloadsAction` to `RemoveAllDownloadsAction`, and `UpdateQueuedDownloadAction` to `UpdateDownloadAction`.
   * ⚠️ **This is a breaking change**: Renamed `queuedDownloads` from `BrowserState` to `downloads` .
   * Removed automatic deletion of `downloads` upon a completed download.
+  * 🆕 Added support for choosing a third party app to perform a download.
 
 * **browser-menu**
   * ⚠️ **This is a breaking change**: `BrowserMenuItemToolbar.Button.longClickListener` is now nullable and defaults to null.
