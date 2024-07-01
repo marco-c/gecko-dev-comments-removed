@@ -6,11 +6,22 @@ permalink: /changelog/
 
 # 43.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v42.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/103?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v43.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/104?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
+
+* **browser-engine-gecko-nightly**
+  * Added support for [onbeforeunload prompt](https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload)
+
+# 43.0.0
+
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v42.0.0...v43.0.0)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/103?closed=1)
+* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v43.0.0/buildSrc/src/main/java/Dependencies.kt)
+* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v43.0.0/buildSrc/src/main/java/Gecko.kt)
+* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v43.0.0/buildSrc/src/main/java/Config.kt)
 
 * **feature-downloads**
   * ⚠️ **This is a breaking change**: DownloadManager and DownloadService are now using the browser store to keep track of queued downloads. Therefore, an instance of the store needs to be provided when constructing manager and service. There's also a new DownloadMiddleware which needs to be provided to the store.
@@ -82,6 +93,9 @@ permalink: /changelog/
   * ⚠️ **This is a breaking change**: `WebExtensionBrowserMenuBuilder` now returns as a sub menu entry for add-ons. The sub 
     menu also contains an access entry for Add-ons Manager, for which `onAddonsManagerTapped` needs to be passed in the
     constructor.
+
+* **feature-syncedtabs**
+  * When the SyncedTabsFeature is started it syncs the devices and account first.
 
 # 42.0.0
 
