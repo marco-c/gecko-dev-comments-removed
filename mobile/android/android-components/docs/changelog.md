@@ -4,36 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 39.0.0-SNAPSHOT (In Development)
+# 38.0.0-SNAPSHOT (In Development)
 
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v38.0.0...master)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/98?closed=1)
+* [Commits](https://github.com/mozilla-mobile/android-components/compare/v37.0.0...master)
+* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/97?closed=1)
 * [Dependencies](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Dependencies.kt)
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
-
-* **feature-media**
-  * Muted media will not start the media service anymore, causing no media notification to be shown and no audio focus getting requested.
-
-* **feature-fullscreen**
-  * ⚠️ **This is a breaking change**: Added `viewportFitChanged` to support Android display cutouts.
-
-# 38.0.0
-
-* [Commits](https://github.com/mozilla-mobile/android-components/compare/v37.0.0...v38.0.0)
-* [Milestone](https://github.com/mozilla-mobile/android-components/milestone/97?closed=1)
-* [Dependencies](https://github.com/mozilla-mobile/android-components/blob/v38.0.0/buildSrc/src/main/java/Dependencies.kt)
-* [Gecko](https://github.com/mozilla-mobile/android-components/blob/v38.0.0/buildSrc/src/main/java/Gecko.kt)
-* [Configuration](https://github.com/mozilla-mobile/android-components/blob/v38.0.0/buildSrc/src/main/java/Config.kt)
-
-* **browser-engine-gecko**, **browser-engine-gecko-beta**, **browser-engine-gecko-nightly**
-  * **Merge day!**
-    * `browser-engine-gecko-release`: GeckoView 75.0
-    * `browser-engine-gecko-beta`: GeckoView 76.0
-    * `browser-engine-gecko-nightly`: GeckoView 77.0
-
-* **feature-session**
-  * ⚠️ **This is a breaking change**: Added optional `customTabSessionId` param to [PictureInPictureFeature] so consumers can use this feature for custom tab sessions.
 
 * **support-locale**
   * Updates `updateResources` to always update the context configuration
@@ -87,7 +64,6 @@ permalink: /changelog/
 * **feature-session**
   * `SwipeRefreshLayout` will now trigger pull down to refresh only if the website is scrolled to top and it itself did not consume the swype event.
   * See above changes to browser-engine-*, concept-engine.
-  * Added androidx_swiperefreshlayout as a dependency because google_materials dependency was incremented to version 1.1.0 which no longer includes SwipeRefreshLayout
 
 * **lib-crash**
   * ⚠️ **This is a breaking change**: added `support-base` dependency.
@@ -99,13 +75,15 @@ permalink: /changelog/
  * Added ability to let consumers pass a custom layout of `TabViewHolder` in order to control layout inflation and view binding.
  * Added an optional URL view to the `TabViewHolder` to display the URL.
  * Will expose a new `layout` parameter which allows consumers to change the tabs tray layout.
- * Will only display a URL's hostname instead of the entire URL
 
-* **browser-session**
-  * ⚠️ **This is a breaking change**: `SessionManager.runWithSessionIdOrSelected` now returns the result from the `block` it executes. This is consistent with `runWithSession`.
-
-* **feature-push**
-  * Allow nullable AutoPush messages to be delivered to observers.
+* **service-glean**
+  * Glean was updated to v26.0.0
+    * **Breaking change:** The regular expression used to validate labels is stricter and more correct.
+    * Add more information about pings to markdown documentation:
+      * State whether the ping includes client id;
+      * Add list of data review links;
+      * Add list of related bugs links.
+    * `gradlew clean` will no longer remove the Miniconda installation in `~/.gradle/glean`. Therefore `clean` can be used without reinstalling Miniconda afterward every time.
 
 # 37.0.0
 

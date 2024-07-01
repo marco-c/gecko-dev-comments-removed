@@ -29,9 +29,9 @@ object Versions {
 
     const val mozilla_appservices = "0.55.0"
 
-    const val mozilla_glean = "25.0.0"
+    const val mozilla_glean = "26.0.0"
 
-    const val material = "1.1.0"
+    const val material = "1.0.0"
     const val nearby = "17.0.0"
 
     object AndroidX {
@@ -55,7 +55,6 @@ object Versions {
         const val arch_core_testing = "2.1.0"
         const val uiautomator = "2.2.0"
         const val localbroadcastmanager = "1.0.0"
-        const val swiperefreshlayout = "1.0.0"
     }
 
     object Firebase {
@@ -107,7 +106,6 @@ object Dependencies {
     const val androidx_work_testing = "androidx.work:work-testing:${Versions.AndroidX.work}"
     const val androidx_espresso_core = "androidx.test.espresso:espresso-core:${Versions.AndroidX.espresso}"
     const val androidx_localbroadcastmanager = "androidx.localbroadcastmanager:localbroadcastmanager:${Versions.AndroidX.localbroadcastmanager}"
-    const val androidx_swiperefreshlayout = "androidx.swiperefreshlayout:swiperefreshlayout:${Versions.AndroidX.swiperefreshlayout}"
 
     const val google_material = "com.google.android.material:material:${Versions.material}"
     const val google_nearby = "com.google.android.gms:play-services-nearby:${Versions.nearby}"
