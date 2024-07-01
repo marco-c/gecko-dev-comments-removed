@@ -31,7 +31,6 @@ class TaskBuilder(object):
         taskcluster_artifacts = {}
         
         if component is not None:
-            
             taskcluster_artifacts = {
                 artifact['taskcluster_path']: {
                     'type': 'file',
