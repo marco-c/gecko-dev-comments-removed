@@ -12,6 +12,9 @@ permalink: /changelog/
 * [Gecko](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Gecko.kt)
 * [Configuration](https://github.com/mozilla-mobile/android-components/blob/master/buildSrc/src/main/java/Config.kt)
 
+* **lib-state**, **browser-state**
+  * Added the ability to add `Middleware` instances to a `Store`. A `Middleware` can rewrite or intercept an `Action`, as well as dispatch additional `Action`s or perform side-effects when an `Action` gets dispatched.
+
 # 36.0.0
 
 * [Commits](https://github.com/mozilla-mobile/android-components/compare/v35.0.0...v36.0.0)
@@ -28,10 +31,6 @@ permalink: /changelog/
 
 * **feature-addons**
   * Added `DefaultSupportedAddonsChecker` which checks for add-ons that were previously unsupported, and creates a notification to let the user known when they are available to be used.
-
-* **feature-push**
-  * `AutoPushFeature` now properly notifies observers that they have changed by the `Observer.onSubscriptionChanged` callback.
-  *  ⚠️ **This is a breaking change**: `RustPushConnection.verifyConnection` now returns a list of subscriptions that have changed.
 
 # 35.0.0
 
@@ -60,7 +59,7 @@ permalink: /changelog/
 
 * **feature-accounts-push**
   * Add known prefix to FxA push scope.
-
+  
 * **browser-toolbar**
   * Add the possibility to listen to menu dismissal through `setMenuDismissAction` in `DisplayToolbar`
 
