@@ -4,6 +4,7 @@
 
 package org.mozilla.focus.webkit.matcher;
 
+import android.util.Pair;
 import android.util.SparseArray;
 
  class Trie {
@@ -28,8 +29,14 @@ import android.util.SparseArray;
         }
 
         
-        public WhiteListTrie put(final String string) {
-            return (WhiteListTrie) super.put(string);
+        public void putWhiteList(final String string, final Trie whitelist) {
+            WhiteListTrie node = (WhiteListTrie) super.put(string);
+
+            if (node.whitelist != null) {
+                throw new IllegalStateException("Whitelist already set for node " + string);
+            }
+
+            node.whitelist = whitelist;
         }
     }
 
