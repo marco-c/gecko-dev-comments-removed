@@ -98,6 +98,8 @@ public class MainActivity extends LocaleAwareAppCompatActivity {
                         wasSessionsEmpty = false;
                     }
 
+                    getCurrentSessionForActivity().setRequestDesktopSite(Settings.getInstance(MainActivity.this).shouldRequestDesktopSite());
+
                     
                     showBrowserScreenForCurrentSession();
                 }
