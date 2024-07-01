@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.support.design.widget.Snackbar;
@@ -165,8 +166,12 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
     private static boolean isValidSearchQueryURL(final String query) {
         
         final String encodedTestQuery = Uri.encode("test");
-        final String normalizedSearchURLStr = UrlUtils.normalize(query);
-        final String searchURLStr = normalizedSearchURLStr.replaceAll("%s", encodedTestQuery);
+
+        
+        
+        
+        final String normalizedHttpsSearchURLStr = enforceHTTPS(UrlUtils.normalize(query));
+        final String searchURLStr = normalizedHttpsSearchURLStr.replaceAll("%s", encodedTestQuery);
 
         final URL searchURL;
         try {
@@ -185,7 +190,6 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
 
             
             
-            
             return connection.getResponseCode() == 200;
 
         } catch (final IOException e) {
@@ -196,6 +200,16 @@ public class ManualAddSearchEngineSettingsFragment extends SettingsFragment {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    private static String enforceHTTPS(@NonNull String input) {
+        if (input.startsWith("https://")) {
+            return input;
+        } else if (input.startsWith("http://")) {
+            return input.replace("http", "https");
+        } else { 
+            return input;
         }
     }
 }
