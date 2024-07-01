@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import json
 import urlparse
-
+import shutil
 
 def url_filter(resource):
     return "^https?://([^/]+\\.)?" + resource.replace(".", "\\.")
@@ -110,7 +110,7 @@ def generate_blacklists(blacklist="shavar-prod-lists/disconnect-blacklist.json",
         print("{cat} blacklist has {count} entries."
               .format(cat=category, count=len(blocklist)))
 
-        with open("Lists/disconnect-{0}.json".format(category.lower()),
+        with open("app/src/main/res/raw/disconnect_{0}.json".format(category.lower()),
                   "w") as fp:
             out = json.dumps(blocklist, indent=0,
                              separators=(',', ':')).replace('\n', '')
@@ -119,4 +119,7 @@ def generate_blacklists(blacklist="shavar-prod-lists/disconnect-blacklist.json",
 
 if __name__ == "__main__":
     
-    generate_blacklists()
+
+    
+    shutil.copy("shavar-prod-lists/disconnect-entitylist.json", "app/src/main/res/raw/entitylist.json")
+    shutil.copy("shavar-prod-lists/disconnect-blacklist.json", "app/src/main/res/raw/blocklist.json")
