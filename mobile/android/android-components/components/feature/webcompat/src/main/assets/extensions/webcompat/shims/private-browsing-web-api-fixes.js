@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+delete window.wrappedJSObject.caches;
+delete window.wrappedJSObject.indexedDB;
