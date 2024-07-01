@@ -453,6 +453,7 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             public void onEnterFullScreen(@NonNull final IWebView.FullscreenCallback callback, @Nullable View view) {
                 fullscreenCallback = callback;
 
+                
                 if (view != null) {
                     
                     browserContainer.setVisibility(View.INVISIBLE);
@@ -463,6 +464,11 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                     videoContainer.addView(view, params);
                     videoContainer.setVisibility(View.VISIBLE);
 
+                    
+                    switchToImmersiveMode();
+                } else {
+                    
+                    statusBar.setVisibility(View.GONE);
                     
                     switchToImmersiveMode();
                 }
@@ -476,6 +482,9 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
                 
                 browserContainer.setVisibility(View.VISIBLE);
+
+                
+                statusBar.setVisibility(View.VISIBLE);
 
                 exitImmersiveModeIfNeeded();
 
