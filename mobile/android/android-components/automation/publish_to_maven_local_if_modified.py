@@ -64,6 +64,8 @@ untracked_files = []
 
 
 
+
+
 changes_others = run_cmd_checked(["git", "ls-files", "-o", "--exclude-standard"], capture_output=True).stdout
 changes_lines = iter(ln.strip() for ln in changes_others.split(b"\n"))
 
@@ -75,18 +77,21 @@ try:
 except StopIteration:
     pass
 
+
 untracked_files.extend(GITIGNORED_FILES_THAT_AFFECT_THE_BUILD)
 
 
 
-for nm in untracked_files:
-    with open(nm, "rb") as f:
-        contents_hash.update(f.read())
-    contents_hash.update(b"\x00")
+
+filtered_untracked = [nm for nm in untracked_files if os.path.isfile(nm)]
+
+git_hash_object_cmd = ["git", "hash-object"]
+git_hash_object_cmd.extend(filtered_untracked)
+changes_untracked = run_cmd_checked(git_hash_object_cmd, capture_output=True).stdout
+contents_hash.update(changes_untracked)
 contents_hash.update(b"\x00")
 
 contents_hash = contents_hash.hexdigest()
-
 
 
 last_contents_hash = ""
