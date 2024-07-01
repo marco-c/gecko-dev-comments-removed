@@ -67,13 +67,13 @@ public class URLMismatchTest {
     @Test
     public void MismatchTest() throws InterruptedException, UiObjectNotFoundException {
         
-        onView(withId(R.id.url_edit))
+        onView(withId(R.id.urlView))
                 .check(matches(isDisplayed()))
                 .check(matches(hasFocus()))
                 .perform(click(), replaceText("mozilla"));
 
         
-        onView(withId(R.id.search_hint))
+        onView(withId(R.id.searchView))
                 .check(matches(isDisplayed()))
                 .check(matches(withText("Search for mozilla")))
                 .check(matches(isClickable()))
@@ -90,7 +90,7 @@ public class URLMismatchTest {
                 .perform(click());
 
         
-        onView(withId(R.id.url_edit))
+        onView(withId(R.id.urlView))
                 .perform(click(), replaceText("mozilla"))
                 .check(matches(withText("mozilla.org")))
                 .perform(pressImeActionButton());

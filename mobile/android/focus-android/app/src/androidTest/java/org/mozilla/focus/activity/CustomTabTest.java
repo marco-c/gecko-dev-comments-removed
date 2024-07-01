@@ -80,7 +80,7 @@ public class CustomTabTest {
                     .check(matches(isDisplayed()));
 
             
-            onView(withId(R.id.menu))
+            onView(withId(R.id.menuView))
                     .perform(click());
 
             
