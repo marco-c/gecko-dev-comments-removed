@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.focus.fragment;
 
 import android.Manifest;
@@ -204,44 +203,12 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
 
         urlView = (TextView) view.findViewById(R.id.display_url);
 
+        progressView = (AnimatedProgressBar) view.findViewById(R.id.progress);
+
         session.getUrl().observe(this, new Observer<String>() {
             @Override
             public void onChanged(@Nullable String url) {
                 urlView.setText(UrlUtils.stripUserInfo(url));
-            }
-        });
-
-        final View toolbarContent = view.findViewById(R.id.toolbar_content);
-
-        final AppBarLayout appBarLayout = (AppBarLayout) view.findViewById(R.id.appbar);
-        appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
-            @Override
-            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
-                
-                
-
-                final int totalScrollRange = appBarLayout.getTotalScrollRange();
-                if (verticalOffset == 0 || Math.abs(verticalOffset) == totalScrollRange) {
-                    
-                    
-                    
-                    
-                    toolbarContent.setAlpha(1f);
-                    return;
-                }
-
-                
-                
-                float alpha = -1 * (((100f / (totalScrollRange * 0.5f)) * verticalOffset) / 100);
-
-                
-                alpha = Math.max(0, alpha);
-                alpha = Math.min(1, alpha);
-
-                
-                alpha = 1 - alpha;
-
-                toolbarContent.setAlpha(alpha);
             }
         });
 
@@ -258,6 +225,7 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
                 } else {
                     backgroundTransitionGroup.startTransition(ANIMATION_DURATION);
 
+                    progressView.setProgress(progressView.getMax());
                     progressView.setVisibility(View.GONE);
                 }
 
@@ -301,7 +269,6 @@ public class BrowserFragment extends WebFragment implements View.OnClickListener
             }
         });
 
-        progressView = (AnimatedProgressBar) view.findViewById(R.id.progress);
         session.getProgress().observe(this, new Observer<Integer>() {
             @Override
             public void onChanged(Integer progress) {
