@@ -1,0 +1,14 @@
+
+
+
+
+package org.mozilla.focus.theme
+
+import android.content.res.Resources
+import android.util.TypedValue
+
+fun Resources.Theme.resolveAttribute(attribute: Int): Int {
+    val typedValue = TypedValue()
+    resolveAttribute(attribute, typedValue, true)
+    return typedValue.resourceId
+}
