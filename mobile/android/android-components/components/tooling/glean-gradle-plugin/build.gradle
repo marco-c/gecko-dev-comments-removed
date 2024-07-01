@@ -25,12 +25,6 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-// Must match the implementation in publish.gradle
-static def getLocalPublicationTimestamp() {
-    def date = new Date()
-    return date.format('yyyyMMddHHmmss')
-}
-
 publishing {
     publications {
         mavenJava(MavenPublication) {
@@ -96,6 +90,21 @@ task assembleAndroidTest {
     // behaves like our others and we do not need to special case it in automation.
   }
 }
+
+task assembleRelease {
+  doLast {
+    // Do nothing. Like the `lint` task above this is just a dummy task so that this module
+    // behaves like our others and we do not need to special case it in automation.
+  }
+}
+
+task testRelease {
+  doLast {
+    // Do nothing. Like the `lint` task above this is just a dummy task so that this module
+    // behaves like our others and we do not need to special case it in automation.
+  }
+}
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
