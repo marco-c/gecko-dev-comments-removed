@@ -66,6 +66,11 @@ public class SessionCallbackProxy implements IWebView.Callback {
     }
 
     @Override
+    public void onTitleChanged(String title) {
+        session.setPageTitle(title);
+    }
+
+    @Override
     public void onRequest(boolean isTriggeredByUserGesture) {
         if (isTriggeredByUserGesture && session.isSearch()) {
             
