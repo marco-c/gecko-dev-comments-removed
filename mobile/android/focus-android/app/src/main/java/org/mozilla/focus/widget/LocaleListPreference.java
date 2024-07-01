@@ -40,6 +40,7 @@ public class LocaleListPreference extends ListPreference {
         
         
         languageCodeToNameMap.put("cak", "Kaqchikel");
+        languageCodeToNameMap.put("ia", "Interlingua");
         languageCodeToNameMap.put("meh", "Tu´un savi ñuu Yasi'í Yuku Iti");
         languageCodeToNameMap.put("mix", "Tu'un savi");
         languageCodeToNameMap.put("trs", "Triqui");
