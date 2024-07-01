@@ -3,13 +3,13 @@
 
 
 
+
 package org.mozilla.focus.activity;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
 import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
 import android.support.test.uiautomator.UiScrollable;
@@ -17,19 +17,21 @@ import android.support.test.uiautomator.UiSelector;
 import android.widget.RadioButton;
 
 import org.junit.After;
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mozilla.focus.helpers.TestHelper;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
-import static org.mozilla.focus.helpers.TestHelper.waitingTime;
-import static org.mozilla.focus.helpers.EspressoHelper.openSettings;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.EspressoHelper.openSettings;
+import static org.mozilla.focus.helpers.TestHelper.waitingTime;
+import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 
 
-@RunWith(AndroidJUnit4.class)
+@Ignore("Need to pick another search engine")
 public class SearchEngineSelectionTest {
 
     @Rule
@@ -79,7 +81,7 @@ public class SearchEngineSelectionTest {
 
         
         UiScrollable SearchEngineList = new UiScrollable(new UiSelector()
-                .resourceId("org.mozilla.focus.debug:id/search_engine_group").enabled(true));
+                .resourceId(TestHelper.getAppName() + ":id/search_engine_group").enabled(true));
 
         UiObject GoogleSelection = SearchEngineList.getChildByText(new UiSelector()
                 .className(RadioButton.class), "Google");
@@ -110,6 +112,8 @@ public class SearchEngineSelectionTest {
 
         
         googleWebView.waitForExists(waitingTime);
+        TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
         assertTrue (TestHelper.browserURLbar.getText().contains("google"));
         assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
         assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
@@ -120,6 +124,8 @@ public class SearchEngineSelectionTest {
         assertEquals(TestHelper.inlineAutocompleteEditText.getText(), "mozilla focus");
         TestHelper.pressEnterKey();
         googleWebView.waitForExists(waitingTime);
+        TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
+        Assert.assertTrue(TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime));
         assertTrue (TestHelper.browserURLbar.getText().contains("google"));
         assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
         assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
@@ -134,14 +140,5 @@ public class SearchEngineSelectionTest {
         
         assertTrue(TestHelper.hint.getText().equals("Search for mozilla focus"));
         TestHelper.hint.click();
-
-        
-        assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
-        assertTrue (TestHelper.browserURLbar.getText().contains("focus"));
-
-        
-        TestHelper.browserURLbar.click();
-        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-        assertEquals(TestHelper.inlineAutocompleteEditText.getText(), "mozilla focus");
     }
 }

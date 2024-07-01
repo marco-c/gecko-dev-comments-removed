@@ -27,8 +27,8 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -69,7 +69,7 @@ public class TrashcanTest {
         TestHelper.inlineAutocompleteEditText.setText("mozilla");
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
+        TestHelper.waitForWebContent();
 
         
         TestHelper.floatingEraseButton.perform(click());
@@ -86,7 +86,7 @@ public class TrashcanTest {
         TestHelper.inlineAutocompleteEditText.setText("mozilla");
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
+        TestHelper.waitForWebContent();
         TestHelper.menuButton.perform(click());
         TestHelper.blockCounterItem.waitForExists(waitingTime);
 
@@ -105,7 +105,6 @@ public class TrashcanTest {
 
         
         final int LAUNCH_TIMEOUT = 5000;
-        final String FOCUS_DEBUG_APP = "org.mozilla.focus.debug";
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
@@ -113,8 +112,7 @@ public class TrashcanTest {
         TestHelper.inlineAutocompleteEditText.setText("mozilla");
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
-
+        TestHelper.waitForWebContent();
         
         TestHelper.pressHomeKey();
         TestHelper.openNotification();
@@ -128,13 +126,7 @@ public class TrashcanTest {
                 LAUNCH_TIMEOUT);
 
         
-        Context context = InstrumentationRegistry.getInstrumentation()
-                .getTargetContext()
-                .getApplicationContext();
-        final Intent intent = context.getPackageManager()
-                .getLaunchIntentForPackage(FOCUS_DEBUG_APP);
-        context.startActivity(intent);
-
+        mActivityTestRule.launchActivity(new Intent(Intent.ACTION_MAIN));
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         assertTrue(TestHelper.inlineAutocompleteEditText.exists());

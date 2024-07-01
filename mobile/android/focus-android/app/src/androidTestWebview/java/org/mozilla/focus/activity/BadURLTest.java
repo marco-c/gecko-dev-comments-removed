@@ -22,12 +22,12 @@ import org.mozilla.focus.helpers.TestHelper;
 
 import static android.support.test.espresso.action.ViewActions.click;
 import static junit.framework.Assert.assertTrue;
-import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
 @RunWith(AndroidJUnit4.class)
-public class ShareDialogTest {
+public class BadURLTest {
 
     @Rule
     public ActivityTestRule<MainActivity> mActivityTestRule
@@ -54,29 +54,42 @@ public class ShareDialogTest {
     }
 
     @Test
-    public void shareTest() throws InterruptedException, UiObjectNotFoundException {
+    public void BadURLcheckTest() throws InterruptedException, UiObjectNotFoundException {
 
-        UiObject shareBtn = TestHelper.mDevice.findObject(new UiSelector()
-                .resourceId("org.mozilla.focus.debug:id/share")
-                .enabled(true));
+        UiObject cancelOpenAppBtn = TestHelper.mDevice.findObject(new UiSelector()
+                .resourceId("android:id/button2"));
+        UiObject openAppalert = TestHelper.mDevice.findObject(new UiSelector()
+        .text("Open link in another app"));
 
         
         TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
         TestHelper.inlineAutocompleteEditText.clearTextField();
-        TestHelper.inlineAutocompleteEditText.setText("mozilla");
+        TestHelper.inlineAutocompleteEditText.setText("htps://www.mozilla.org");
         TestHelper.hint.waitForExists(waitingTime);
         TestHelper.pressEnterKey();
-        assertTrue(TestHelper.webView.waitForExists(waitingTime));
+        TestHelper.tryAgainBtn.waitForExists(waitingTime);
 
         
-        TestHelper.menuButton.perform(click());
-        shareBtn.waitForExists(waitingTime);
-        shareBtn.click();
+        assertTrue(TestHelper.notFoundMsg.exists());
+        assertTrue(TestHelper.notFounddetailedMsg.exists());
+        assertTrue(TestHelper.tryAgainBtn.exists());
+        TestHelper.floatingEraseButton.perform(click());
+
 
         
-        TestHelper.shareMenuHeader.waitForExists(waitingTime);
-        assertTrue(TestHelper.shareMenuHeader.exists());
-        assertTrue(TestHelper.shareAppList.exists());
-        TestHelper.pressBackKey();
+        TestHelper.floatingEraseButton.perform(click());
+        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
+        TestHelper.inlineAutocompleteEditText.clearTextField();
+        TestHelper.inlineAutocompleteEditText.setText("market://details?id=org.mozilla.firefox&referrer=" +
+                "utm_source%3Dmozilla%26utm_medium%3DReferral%26utm_campaign%3Dmozilla-org");
+        TestHelper.pressEnterKey();
+
+        
+        cancelOpenAppBtn.waitForExists(waitingTime);
+        assertTrue(openAppalert.exists());
+        assertTrue(cancelOpenAppBtn.exists());
+        cancelOpenAppBtn.click();
+        TestHelper.floatingEraseButton.perform(click());
+        TestHelper.erasedMsg.waitForExists(waitingTime);
     }
 }

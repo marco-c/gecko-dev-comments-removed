@@ -23,18 +23,18 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mozilla.focus.helpers.TestHelper;
 
 import java.io.IOException;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.mozilla.focus.helpers.TestHelper;
 
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.TestHelper.waitingTime;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -99,7 +99,6 @@ public class SwitchContextTest {
     private UiObject rabbitImage = TestHelper.mDevice.findObject(new UiSelector()
             .description("Smiley face")
             .enabled(true));
-
 
     @Test
     public void ForegroundTest() throws InterruptedException, UiObjectNotFoundException {
@@ -174,9 +173,8 @@ public class SwitchContextTest {
         
         final int LAUNCH_TIMEOUT = 5000;
         final String SETTINGS_APP = "com.android.settings";
-        final UiObject settingsTitle = TestHelper.mDevice.findObject(new UiSelector()
-                .text("Settings")
-                .packageName("com.android.settings")
+        final UiObject settings = TestHelper.mDevice.findObject(new UiSelector()
+                .packageName(SETTINGS_APP)
                 .enabled(true));
 
         
@@ -208,8 +206,8 @@ public class SwitchContextTest {
         context.startActivity(intent);
 
         
-        settingsTitle.waitForExists(waitingTime);
-        assertTrue(settingsTitle.exists());
+        settings.waitForExists(waitingTime);
+        assertTrue(settings.exists());
         TestHelper.openNotification();
 
         

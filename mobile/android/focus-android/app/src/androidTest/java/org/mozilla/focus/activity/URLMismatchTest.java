@@ -18,6 +18,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.R;
+import org.mozilla.focus.helpers.TestHelper;
+import org.mozilla.focus.utils.AppConstants;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
@@ -35,6 +37,7 @@ import static android.support.test.espresso.web.webdriver.DriverAtoms.findElemen
 import static android.support.test.espresso.web.webdriver.DriverAtoms.getText;
 import static org.hamcrest.Matchers.containsString;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
+import static org.mozilla.focus.helpers.TestHelper.webPageLoadwaitingTime;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -94,11 +97,14 @@ public class URLMismatchTest {
                 .perform(click(), replaceText("mozilla"))
                 .check(matches(withText("mozilla.org")))
                 .perform(pressImeActionButton());
-
-        
-        onWebView()
-                .withElement(findElement(Locator.CSS_SELECTOR, MOZILLA_WEBSITE_SLOGAN_SELECTOR))
-                .check(webMatches(getText(), containsString(MOZILLA_WEBSITE_SLOGAN_TEXT)));
+        if (!AppConstants.isGeckoBuild()) {
+            onWebView()
+                    .withElement(findElement(Locator.CSS_SELECTOR, MOZILLA_WEBSITE_SLOGAN_SELECTOR))
+                    .check(webMatches(getText(), containsString(MOZILLA_WEBSITE_SLOGAN_TEXT)));
+        } else {
+            TestHelper.progressBar.waitForExists(webPageLoadwaitingTime);
+            TestHelper.progressBar.waitUntilGone(webPageLoadwaitingTime);
+        }
 
         
         onView(withId(R.id.display_url))
