@@ -80,14 +80,19 @@ class Manager {
           } catch (_) {
             return;
           }
+          
+          for (const allowList of this._allowLists.values()) {
+            if (allowList.allows(url, topHost)) {
+              this._unblockedChannelIds.add(channelId);
+              channel.allow();
+              return;
+            }
+          }
+          
           for (const allowList of this._allowLists.values()) {
             if (allowList.shims(url, topHost)) {
               this._unblockedChannelIds.add(channelId);
-              channel.replace(); 
-              return;
-            } else if (allowList.allows(url, topHost)) {
-              this._unblockedChannelIds.add(channelId);
-              channel.allow(); 
+              channel.replace();
               return;
             }
           }
