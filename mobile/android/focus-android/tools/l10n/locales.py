@@ -95,7 +95,8 @@ RELEASE_LOCALES = [
 
 
 ADDITIONAL_SCREENSHOT_LOCALES = [
-	"lt"
+	"lt",
+	"gu-IN"
 ]
 
 
