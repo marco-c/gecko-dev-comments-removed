@@ -43,11 +43,11 @@ var advancedVisible = false;
 
 
 function updateShowSSL(queryMap) {
-    const showSSL = queryMap.showSSL
+    const showSSL = queryMap.showSSL;
     if (typeof document.addCertException === "undefined") {
         document.getElementById('advancedButton').style.display='none';
     } else {
-        if (showSSL) {
+        if (showSSL === 'true') {
             document.getElementById('advancedButton').style.display='block';
         } else {
             document.getElementById('advancedButton').style.display='none';
