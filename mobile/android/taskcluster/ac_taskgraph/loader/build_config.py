@@ -49,7 +49,7 @@ def get_upstream_deps_for_components(components):
     for configuration in CONFIGURATIONS_WITH_DEPENDENCIES:
         logger.info("Looking for dependencies in '%s' configuration" % configuration)
 
-        cmd = ["./gradlew"]
+        cmd = ["./gradlew", "--console=plain", "--parallel"]
         
         
         for c in sorted(components):
