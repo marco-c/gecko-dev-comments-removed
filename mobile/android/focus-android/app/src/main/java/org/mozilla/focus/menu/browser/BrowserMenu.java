@@ -22,6 +22,9 @@ import org.mozilla.focus.customtabs.CustomTabConfig;
 import org.mozilla.focus.fragment.BrowserFragment;
 import org.mozilla.focus.utils.ViewUtils;
 
+
+
+
 public class BrowserMenu extends PopupWindow {
     private BrowserMenuAdapter adapter;
 
