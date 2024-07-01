@@ -131,6 +131,45 @@ def release(channel, is_staging, version_name):
         signing_task_id,
         apks=apk_paths,
         channel=channel,
+        
+        override_google_play_track=None if channel != "nightly" else "internal",
+        is_staging=is_staging,
+    )
+
+    return (build_tasks, signing_tasks, push_tasks)
+
+
+def nightly_to_production_app(is_staging, version_name):
+    
+    
+    
+    build_type = 'nightlyLegacy'
+    variants = get_variants_for_build_type(build_type)
+    architectures = [variant.abi for variant in variants]
+    apk_paths = ["public/target.{}.apk".format(arch) for arch in architectures]
+
+    build_tasks = {}
+    signing_tasks = {}
+    push_tasks = {}
+
+    build_task_id = taskcluster.slugId()
+    build_tasks[build_task_id] = BUILDER.craft_assemble_release_task(architectures, build_type, is_staging, version_name, index_channel='nightly')
+
+    signing_task_id = taskcluster.slugId()
+    signing_tasks[signing_task_id] = BUILDER.craft_release_signing_task(
+        build_task_id,
+        apk_paths=apk_paths,
+        channel='production',  
+        index_channel='nightly',
+        is_staging=is_staging,
+    )
+
+    push_task_id = taskcluster.slugId()
+    push_tasks[push_task_id] = BUILDER.craft_push_task(
+        signing_task_id,
+        apks=apk_paths,
+        channel='production',  
+        override_google_play_track='nightly',
         is_staging=is_staging,
     )
 
@@ -168,7 +207,8 @@ if __name__ == "__main__":
         ordered_groups_of_tasks = raptor(result.staging)
     elif command == 'nightly':
         nightly_version = datetime.datetime.now().strftime('Nightly %y%m%d %H:%M')
-        ordered_groups_of_tasks = release('nightly', result.staging, nightly_version)
+        ordered_groups_of_tasks = release('nightly', result.staging, nightly_version) \
+            + nightly_to_production_app(result.staging, nightly_version)
     elif command == 'github-release':
         version = result.tag[1:]  
         beta_semver = re.compile(r'^v\d+\.\d+\.\d+-beta\.\d+$')
