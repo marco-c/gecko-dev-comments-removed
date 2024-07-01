@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+window.pSUPERFLY = {
+  activity() {},
+  virtualPage() {},
+};

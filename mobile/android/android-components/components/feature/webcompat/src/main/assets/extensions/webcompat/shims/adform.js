@@ -1,0 +1,30 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+if (!window.Adform) {
+  window.Adform = {
+    Opt: {
+      disableRedirect() {},
+      getStatus(clientID, callback) {
+        callback({
+          clientID,
+          errorMessage: undefined,
+          optIn() {},
+          optOut() {},
+          status: "nocookie",
+        });
+      },
+    },
+  };
+}
