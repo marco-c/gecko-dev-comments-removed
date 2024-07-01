@@ -9,6 +9,10 @@ package org.mozilla.telemetry;
 
 
 
+
+
+
+@Deprecated
 public class TelemetryHolder {
     private static Telemetry telemetry;
 

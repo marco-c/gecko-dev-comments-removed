@@ -35,6 +35,11 @@ import java.util.concurrent.Executors;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 
+
+
+
+
+@Deprecated
 public class Telemetry {
     private final TelemetryConfiguration configuration;
     private final TelemetryStorage storage;
