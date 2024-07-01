@@ -68,7 +68,7 @@ public class WebViewProvider {
 
         setupView(webkitView);
         configureDefaultSettings(context, settings);
-        applyAppSettings(context, settings);
+        applyAppSettings(context, settings, webkitView);
 
         return webkitView;
     }
@@ -124,16 +124,22 @@ public class WebViewProvider {
         settings.setSavePassword(false);
     }
 
-    public static void applyAppSettings(Context context, WebSettings settings) {
+    public static void applyAppSettings(Context context, WebSettings settings, WebView webView) {
         
         settings.setBlockNetworkImage(Settings.getInstance(context).shouldBlockImages());
         settings.setJavaScriptEnabled(!Settings.getInstance(context).shouldBlockJavaScript());
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, !Settings.getInstance
+                (context).shouldBlockThirdPartyCookies());
+        CookieManager.getInstance().setAcceptCookie(!Settings.getInstance(context)
+                .shouldBlockCookies());
     }
 
     @SuppressLint("SetJavaScriptEnabled") 
-    public static void disableBlocking(WebSettings settings) {
+    public static void disableBlocking(WebSettings settings, WebView webView) {
         settings.setBlockNetworkImage(false);
         settings.setJavaScriptEnabled(true);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        CookieManager.getInstance().setAcceptCookie(true);
     }
 
     
