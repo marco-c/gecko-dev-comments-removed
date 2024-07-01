@@ -15,7 +15,6 @@ import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.media.fullscreen.MediaFullscreenOrientationFeature
 import mozilla.components.feature.search.SearchFeature
 import mozilla.components.feature.session.FullScreenFeature
-import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.tabs.toolbar.TabsToolbarFeature
 import mozilla.components.feature.toolbar.ToolbarAutocompleteFeature
@@ -104,7 +103,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         fullScreenFeature.set(
             feature = FullScreenFeature(
                 components.store,
-                SessionUseCases(components.sessionManager),
+                components.sessionUseCases,
                 sessionId
             ) { inFullScreen ->
                 if (inFullScreen) {
@@ -142,11 +141,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         )
 
         searchFeature.set(
-            feature = SearchFeature(components.store) { request, _ ->
-                if (request.isPrivate) {
-                    components.searchUseCases.newPrivateTabSearch.invoke(request.query)
-                } else {
-                    components.searchUseCases.newTabSearch.invoke(request.query)
+            feature = SearchFeature(components.store) {
+                when (it.isPrivate) {
+                    true -> components.searchUseCases.newPrivateTabSearch.invoke(it.query)
+                    false -> components.searchUseCases.newTabSearch.invoke(it.query)
                 }
             },
             owner = this,

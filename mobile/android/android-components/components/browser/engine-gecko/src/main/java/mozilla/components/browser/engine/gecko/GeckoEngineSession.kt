@@ -105,24 +105,6 @@ class GeckoEngineSession(
     }
 
     /**
-     * Represents a request to load a [url].
-     *
-     * @param url the url to load.
-     * @param parent the parent (referring) [EngineSession] i.e. the session that
-     * triggered creating this one.
-     * @param flags the [LoadUrlFlags] to use when loading the provided url.
-     * @param additionalHeaders the extra headers to use when loading the provided url.
-     **/
-    data class LoadRequest(
-        val url: String,
-        val parent: EngineSession?,
-        val flags: LoadUrlFlags,
-        val additionalHeaders: Map<String, String>?
-    )
-    @VisibleForTesting
-    internal var initialLoadRequest: LoadRequest? = null
-
-    /**
      * See [EngineSession.loadUrl]
      */
     override fun loadUrl(
@@ -131,9 +113,6 @@ class GeckoEngineSession(
         flags: LoadUrlFlags,
         additionalHeaders: Map<String, String>?
     ) {
-        if (initialLoad) {
-            initialLoadRequest = LoadRequest(url, parent, flags, additionalHeaders)
-        }
         geckoSession.loadUri(url, (parent as? GeckoEngineSession)?.geckoSession, flags.value, additionalHeaders)
     }
 
@@ -158,12 +137,7 @@ class GeckoEngineSession(
      * See [EngineSession.reload]
      */
     override fun reload(flags: LoadUrlFlags) {
-        initialLoadRequest?.let {
-            // We have a pending initial load request, which means we never
-            // successfully loaded a page. Calling reload now would just reload
-            // about:blank. To prevent that we trigger the initial load again.
-            loadUrl(it.url, it.parent, it.flags, it.additionalHeaders)
-        } ?: geckoSession.reload(flags.value)
+        geckoSession.reload(flags.value)
     }
 
     /**
@@ -232,7 +206,15 @@ class GeckoEngineSession(
             policy.contains(TrackingProtectionPolicy.TrackingCategory.SCRIPTS_AND_SUB_RESOURCES)
 
         geckoSession.settings.useTrackingProtection = shouldBlockContent && enabled
-        notifyAtLeastOneObserver { onTrackerBlockingEnabledChange(enabled) }
+        notifyAtLeastOneObserver {
+            // We now register engine observers in a middleware using a dedicated
+            // store thread. Since this notification can be delayed until an observer
+            // is registered we switch to the main scope to make sure we're not notifying
+            // on the store thread.
+            MainScope().launch {
+                onTrackerBlockingEnabledChange(enabled)
+            }
+        }
     }
 
     /**
@@ -414,8 +396,6 @@ class GeckoEngineSession(
 
             currentUrl = url
             initialLoad = false
-            initialLoadRequest = null
-
             isIgnoredForTrackingProtection { ignored ->
                 notifyObservers {
                     onExcludedOnTrackingProtectionChange(ignored)
@@ -428,6 +408,10 @@ class GeckoEngineSession(
             session: GeckoSession,
             request: NavigationDelegate.LoadRequest
         ): GeckoResult<AllowOrDeny> {
+            if (request.target == NavigationDelegate.TARGET_WINDOW_NEW) {
+                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+            }
+
             // The process switch involved when loading extension pages will
             // trigger an initial load of about:blank which we want to
             // avoid:
@@ -437,22 +421,18 @@ class GeckoEngineSession(
                 initialLoad = true
             }
 
-            return when {
-                maybeInterceptRequest(request, false) != null ->
-                    GeckoResult.fromValue(AllowOrDeny.DENY)
-                request.target == NavigationDelegate.TARGET_WINDOW_NEW ->
-                    GeckoResult.fromValue(AllowOrDeny.ALLOW)
-                else -> {
-                    notifyObservers {
-                        onLoadRequest(
-                            url = request.uri,
-                            triggeredByRedirect = request.isRedirect,
-                            triggeredByWebContent = request.hasUserGesture
-                        )
-                    }
-
-                    GeckoResult.fromValue(AllowOrDeny.ALLOW)
+            return if (maybeInterceptRequest(request, false) != null) {
+                GeckoResult.fromValue(AllowOrDeny.DENY)
+            } else {
+                notifyObservers {
+                    onLoadRequest(
+                        url = request.uri,
+                        triggeredByRedirect = request.isRedirect,
+                        triggeredByWebContent = request.hasUserGesture
+                    )
                 }
+
+                GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
         }
 
@@ -680,15 +660,7 @@ class GeckoEngineSession(
             session: GeckoSession,
             historyList: GeckoSession.HistoryDelegate.HistoryList
         ) {
-            val items = historyList.map {
-                // title is sometimes null despite the @NotNull annotation
-                // https://bugzilla.mozilla.org/show_bug.cgi?id=1660286
-                val title: String? = it.title
-                HistoryItem(
-                    title = title ?: it.uri,
-                    uri = it.uri
-                )
-            }
+            val items = historyList.map { HistoryItem(title = it.title, uri = it.uri) }
             notifyObservers { onHistoryStateChanged(items, historyList.currentIndex) }
         }
     }
