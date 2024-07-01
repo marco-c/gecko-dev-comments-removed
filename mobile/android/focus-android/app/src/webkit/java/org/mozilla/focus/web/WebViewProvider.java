@@ -10,9 +10,12 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.AttributeSet;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebStorage;
 import android.webkit.WebView;
+import android.webkit.WebViewDatabase;
 
 import org.mozilla.focus.webkit.NestedWebView;
 import org.mozilla.focus.webkit.TrackingProtectionWebViewClient;
@@ -86,6 +89,16 @@ public class WebViewProvider {
             clearMatches();
             clearSslPreferences();
             clearCache(true);
+
+            
+            CookieManager.getInstance().removeAllCookies(null);
+
+            WebStorage.getInstance().deleteAllData();
+
+            final WebViewDatabase webViewDatabase = WebViewDatabase.getInstance(getContext());
+            
+            webViewDatabase.clearFormData();
+            webViewDatabase.clearHttpAuthUsernamePassword();
         }
 
         private TrackingProtectionWebViewClient createWebViewClient() {
