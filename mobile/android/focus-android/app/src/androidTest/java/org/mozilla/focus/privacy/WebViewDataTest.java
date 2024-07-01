@@ -75,7 +75,9 @@ public class WebViewDataTest {
                 "app_dxmaker_cache",
                 "telemetry",
                 "databases",
-                "app_webview"
+                "app_webview",
+                "files",
+                "app_screengrab" 
         ));
 
         
