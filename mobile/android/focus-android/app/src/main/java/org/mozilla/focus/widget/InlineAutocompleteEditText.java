@@ -7,6 +7,7 @@ package org.mozilla.focus.widget;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.NoCopySpan;
@@ -18,6 +19,7 @@ import android.text.style.BackgroundColorSpan;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.BaseInputConnection;
@@ -678,5 +680,33 @@ public class InlineAutocompleteEditText extends android.support.v7.widget.AppCom
         super.onWindowFocusChanged(hasFocus);
         if (mOnWindowFocusChangeListener != null)
             mOnWindowFocusChangeListener.onWindowFocusChanged(hasFocus);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (android.os.Build.VERSION.SDK_INT == Build.VERSION_CODES.M &&
+                event.getActionMasked() == MotionEvent.ACTION_UP) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            try {
+                return super.onTouchEvent(event);
+            } catch (NullPointerException ignored) {
+                
+                
+                clearFocus();
+                return true;
+            }
+        } else {
+            return super.onTouchEvent(event);
+
+        }
     }
 }
