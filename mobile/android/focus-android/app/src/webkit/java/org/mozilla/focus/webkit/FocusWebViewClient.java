@@ -64,7 +64,18 @@ import java.util.Map;
             "    let cssRule = stylesheet.cssRules[i];" +
             
             "    if (cssRule.selectorText && cssRule.selectorText.includes(':visited')) {" +
-            "      stylesheet.deleteRule(i);" +
+            "      let tokens = cssRule.selectorText.split(',');" +
+            "      let j = tokens.length;" +
+            "      while (j--) {" +
+            "        if (tokens[j].includes(':visited')) {" +
+            "          tokens.splice(j, 1);" +
+            "        }" +
+            "      }" +
+            "      if (tokens.length == 0) {" +
+            "        stylesheet.deleteRule(i);" +
+            "      } else {" +
+            "        cssRule.selectorText = tokens.join(',');" +
+            "      }" +
             "    }" +
             "  }" +
             "}";
