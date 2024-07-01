@@ -71,6 +71,11 @@ public class SessionCallbackProxy implements IWebView.Callback {
     }
 
     @Override
+    public void onBlockingStateChanged(boolean isBlockingEnabled) {
+        session.setBlockingEnabled(isBlockingEnabled);
+    }
+
+    @Override
     public void onDownloadStart(Download download) {
         
         delegate.onDownloadStart(download);

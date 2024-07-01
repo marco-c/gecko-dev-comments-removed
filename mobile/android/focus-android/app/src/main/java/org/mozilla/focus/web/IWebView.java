@@ -69,6 +69,8 @@ public interface IWebView {
         void countBlockedTracker();
 
         void resetBlockedTrackers();
+
+        void onBlockingStateChanged(boolean isBlockingEnabled);
     }
 
     interface FullscreenCallback {
@@ -79,8 +81,6 @@ public interface IWebView {
 
 
     void setBlockingEnabled(boolean enabled);
-
-    boolean isBlockingEnabled();
 
     void setCallback(Callback callback);
 
