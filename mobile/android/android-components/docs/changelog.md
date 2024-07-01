@@ -19,7 +19,17 @@ permalink: /changelog/
     * `browser-engine-gecko-nightly`: GeckoView 74.0
 
 * **service-glean**
-  * Glean was updated to v23.0.1:
+  * Glean was updated to v24.0.0:
+    * **Breaking Change** An `enableUpload` parameter has been added to the `initialize()`
+      function. This removes the requirement to call `setUploadEnabled()` prior to calling
+      the `initialize()` function.
+    * The metrics ping scheduler will now only send metrics pings while the
+      application is running. The application will no longer "wake up" at 4am
+      using the Work Manager.
+    * The code for migrating data from Glean SDK before version 19 was removed.
+    * When using the `GleanTestLocalServer` rule in instrumented tests, pings are
+      immediately flushed by the `WorkManager` and will reach the test endpoint as
+      soon as possible.
     * The Glean Gradle Plugin correctly triggers docs and API updates when registry files
       change, without requiring them to be deleted.
     * `parseISOTimeString` has been made 4x faster. This had an impact on Glean
@@ -43,20 +53,20 @@ permalink: /changelog/
       launchFromInterceptor = true
   )
   ```
-
+  
 * **concept-storage**
   * Added classes related to login autofill
     * `LoginStorageDelegate` may be attached to an `Engine`, where it can be used to save logins.
     * `LoginValidationDelegate` may be used to read and update currently saved logins.
-
+    
 * **feature-prompts**
-  * `PromptFeature` may now optionally accept a `LoginValidationDelegate`. If present, it users
+  * `PromptFeature` may now optionally accept a `LoginValidationDelegate`. If present, it users 
   will be prompted to save their information after logging in to a website.
   * `PromptFeature` now accepts a false by default `isSaveLoginEnabled` lambda to be invoked before showing prompts. If true, users
     will be prompted to save their information after logging in to a website.
-
+  
 * **service-sync-logins**
-  * Added `GeckoLoginStorageDelegate`. This can be attached to a GeckoEngine, where it will be used
+  * Added `GeckoLoginStorageDelegate`. This can be attached to a GeckoEngine, where it will be used 
   to save user login credentials.
   * `GeckoLoginStorageDelegate` now accepts a false by default `isAutofillEnabled` lambda to be invoked before fetching logins. If false,
    logins will not be fetched to autofill.
@@ -68,8 +78,6 @@ permalink: /changelog/
 * **support-migration**
   * **New Telemetry Notice**
   * Added a 'migration' ping, which contains telemetry data about migration via Glean. It's emitted whenever a migration is executed.
-  * Added `MigrationIntentProcessor` for handling incoming intents when migration is in progress.
-  * Added `AbstractMigrationProgressActivity` as a base activity to block user interactions during migration.
 
 # 27.0.0
 
