@@ -35,7 +35,7 @@ import org.mozilla.focus.R;
 
 
 
-public class BrowserLocaleManager {
+public class LocaleManager {
     private static final String LOG_TAG = "GeckoLocales";
 
     private static String PREF_LOCALE = null;
@@ -51,15 +51,15 @@ public class BrowserLocaleManager {
     private boolean systemLocaleDidChange;
     private BroadcastReceiver receiver;
 
-    private static final AtomicReference<BrowserLocaleManager> instance = new AtomicReference<BrowserLocaleManager>();
+    private static final AtomicReference<LocaleManager> instance = new AtomicReference<LocaleManager>();
 
-    public static BrowserLocaleManager getInstance() {
-        BrowserLocaleManager localeManager = instance.get();
+    public static LocaleManager getInstance() {
+        LocaleManager localeManager = instance.get();
         if (localeManager != null) {
             return localeManager;
         }
 
-        localeManager = new BrowserLocaleManager();
+        localeManager = new LocaleManager();
         if (instance.compareAndSet(null, localeManager)) {
             return localeManager;
         } else {
@@ -174,31 +174,6 @@ public class BrowserLocaleManager {
         return changed;
     }
 
-    
-
-
-
-
-
-
-
-    public static void storeAndNotifyOSLocale(final SharedPreferences prefs,
-                                              final Locale osLocale) {
-        if (osLocale == null) {
-            return;
-        }
-
-        final String lastOSLocale = prefs.getString("osLocale", null);
-        final String osLocaleString = osLocale.toString();
-
-        if (osLocaleString.equals(lastOSLocale)) {
-            return;
-        }
-
-        
-        prefs.edit().putString("osLocale", osLocaleString).apply();
-    }
-
     public String getAndApplyPersistedLocale(Context context) {
         initialize(context);
 
@@ -261,7 +236,7 @@ public class BrowserLocaleManager {
         
         
         config.locale = locale;
-        
+
         config.setLayoutDirection(locale);
 
         res.updateConfiguration(config, null);
@@ -354,31 +329,8 @@ public class BrowserLocaleManager {
     
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public static Collection<String> getPackagedLocaleTags(final Context context) {
-        return Arrays.asList(new String[] { "en-US", "en-GB", "de", "pl"});
-    }
-
-    
-
-
-
-    @SuppressWarnings("static-method")
-    public String getFallbackLocaleTag() {
-        return FALLBACK_LOCALE_TAG;
+        
+        return Arrays.asList(new String[] { "system", "en-US", "en-GB", "de", "pl", "ar", "zh-TW", "zh-CN", "ru", "ko"});
     }
 }
