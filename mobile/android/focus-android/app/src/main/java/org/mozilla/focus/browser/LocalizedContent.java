@@ -69,7 +69,7 @@ public class LocalizedContent {
 
         final String data = HtmlLoader.loadResourceFile(context, R.raw.about, substitutionMap);
         
-        webView.loadDataWithBaseURL("file:///android_res/raw/about.html", data, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL(URL_ABOUT, data, "text/html", "UTF-8", URL_ABOUT);
     }
 
     
@@ -107,7 +107,7 @@ public class LocalizedContent {
 
         final String data = HtmlLoader.loadResourceFile(context, R.raw.rights, substitutionMap);
         
-        webView.loadDataWithBaseURL("file:///android_asset/rights.html", data, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL(URL_RIGHTS, data, "text/html", "UTF-8", URL_RIGHTS);
     }
 
     private static void putLayoutDirectionIntoMap(WebView webView, Map<String, String> substitutionMap) {
