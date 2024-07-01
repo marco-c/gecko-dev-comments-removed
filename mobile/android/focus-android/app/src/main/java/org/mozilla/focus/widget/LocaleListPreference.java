@@ -99,6 +99,12 @@ public class LocaleListPreference extends ListPreference {
         
         
         this.characterValidator = new CharacterValidator(" ");
+    }
+
+    @Override
+    protected void onAttachedToActivity() {
+        super.onAttachedToActivity();
+
         buildList();
     }
 
