@@ -311,7 +311,7 @@ def get_element_text(tag, name, warnfunc=dummy_warn):
                 if "<![CDATA[" in raw:
                     
                     
-                    value += t.replace('\n', '')
+                    value += t
                 else:
                     converted_value, elem_formatted = convert_text(t)
                     if elem_formatted:
