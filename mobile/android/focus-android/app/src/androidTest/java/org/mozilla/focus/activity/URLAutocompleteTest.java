@@ -21,7 +21,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.R;
 import org.mozilla.focus.helpers.TestHelper;
-import org.mozilla.focus.utils.AppConstants;
 
 import static android.support.test.espresso.Espresso.onData;
 import static android.support.test.espresso.Espresso.onView;
@@ -45,7 +44,6 @@ import static org.mozilla.focus.helpers.EspressoHelper.childAtPosition;
 import static org.mozilla.focus.helpers.EspressoHelper.openSettings;
 import static org.mozilla.focus.helpers.TestHelper.mDevice;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
-import static org.mozilla.focus.web.WebViewProviderKt.ENGINE_PREF_STRING_KEY;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -88,12 +86,7 @@ public class URLAutocompleteTest {
 
             
             
-            if (AppConstants.INSTANCE.isKlarBuild() && !AppConstants.INSTANCE.isGeckoBuild()) {
-                PreferenceManager.getDefaultSharedPreferences(appContext)
-                        .edit()
-                        .putBoolean(ENGINE_PREF_STRING_KEY, true)
-                        .apply();
-            }
+            TestHelper.selectGeckoForKlar();
         }
     };
 

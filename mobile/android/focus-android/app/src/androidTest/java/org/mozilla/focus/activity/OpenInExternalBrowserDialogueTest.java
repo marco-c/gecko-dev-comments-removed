@@ -19,7 +19,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.focus.helpers.TestHelper;
-import org.mozilla.focus.utils.AppConstants;
 
 import java.io.IOException;
 
@@ -30,7 +29,6 @@ import static android.support.test.espresso.action.ViewActions.click;
 import static junit.framework.Assert.assertTrue;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 import static org.mozilla.focus.helpers.TestHelper.waitingTime;
-import static org.mozilla.focus.web.WebViewProviderKt.ENGINE_PREF_STRING_KEY;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -57,12 +55,7 @@ public class OpenInExternalBrowserDialogueTest {
 
             
             
-            if (AppConstants.INSTANCE.isKlarBuild() && !AppConstants.INSTANCE.isGeckoBuild()) {
-                PreferenceManager.getDefaultSharedPreferences(appContext)
-                        .edit()
-                        .putBoolean(ENGINE_PREF_STRING_KEY, true)
-                        .apply();
-            }
+            TestHelper.selectGeckoForKlar();
 
             webServer = new MockWebServer();
 
