@@ -8,41 +8,51 @@ package org.mozilla.focus.activity;
 import android.content.Context;
 import android.preference.PreferenceManager;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.espresso.web.webdriver.Locator;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiSelector;
 
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mozilla.focus.R;
 
-import static android.view.KeyEvent.KEYCODE_A;
-import static android.view.KeyEvent.KEYCODE_I;
-import static android.view.KeyEvent.KEYCODE_L;
-import static android.view.KeyEvent.KEYCODE_M;
-import static android.view.KeyEvent.KEYCODE_O;
-import static android.view.KeyEvent.KEYCODE_Z;
-import static junit.framework.Assert.assertTrue;
+import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.clearText;
+import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.action.ViewActions.pressImeActionButton;
+import static android.support.test.espresso.action.ViewActions.typeText;
+import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.hasFocus;
+import static android.support.test.espresso.matcher.ViewMatchers.isClickable;
+import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static android.support.test.espresso.web.assertion.WebViewAssertions.webMatches;
+import static android.support.test.espresso.web.sugar.Web.onWebView;
+import static android.support.test.espresso.web.webdriver.DriverAtoms.findElement;
+import static android.support.test.espresso.web.webdriver.DriverAtoms.getText;
+import static org.hamcrest.Matchers.containsString;
 import static org.mozilla.focus.fragment.FirstrunFragment.FIRSTRUN_PREF;
 
 
 @RunWith(AndroidJUnit4.class)
 public class URLMismatchTest {
+    private static final String MOZILLA_WEBSITE_SLOGAN_SELECTOR = ".content h2";
+    private static final String MOZILLA_WEBSITE_SLOGAN_TEXT = "Internet for people,\nnot profit.";
 
     @Rule
-    public ActivityTestRule<MainActivity> mActivityTestRule
-            = new ActivityTestRule<MainActivity>(MainActivity.class) {
-
+    public ActivityTestRule<MainActivity> mActivityTestRule = new ActivityTestRule<MainActivity>(MainActivity.class) {
         @Override
         protected void beforeActivityLaunched() {
             super.beforeActivityLaunched();
 
-            Context appContext = InstrumentationRegistry.getInstrumentation()
+            final Context appContext = InstrumentationRegistry.getInstrumentation()
                     .getTargetContext()
                     .getApplicationContext();
+
             PreferenceManager.getDefaultSharedPreferences(appContext)
                     .edit()
                     .putBoolean(FIRSTRUN_PREF, true)
@@ -57,40 +67,43 @@ public class URLMismatchTest {
 
     @Test
     public void MismatchTest() throws InterruptedException, UiObjectNotFoundException {
-        final long waitingTime = TestHelper.waitingTime * 3;
-
-        UiObject mozillaLogo = TestHelper.mDevice.findObject(new UiSelector()
-                .className("android.webkit.WebView")
-                .description("Internet for people, not profit — Mozilla"));
+        
+        onView(withId(R.id.url_edit))
+                .check(matches(isDisplayed()))
+                .check(matches(hasFocus()))
+                .perform(typeText("mozilla"));
 
         
-        TestHelper.inlineAutocompleteEditText.waitForExists(waitingTime);
-        TestHelper.inlineAutocompleteEditText.clearTextField();
-        TestHelper.mDevice.pressKeyCode(KEYCODE_M);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_O);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_Z);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_I);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_L);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_L);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_A);
-        assertTrue(TestHelper.hint.getText().equals("Search for mozilla"));
-        TestHelper.hint.click();
-        TestHelper.webView.waitForExists(waitingTime);
-        assertTrue (TestHelper.browserURLbar.getText().contains("mozilla"));
+        onView(withId(R.id.search_hint))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("Search for mozilla")))
+                .check(matches(isClickable()))
+                .perform(click());
 
         
-        TestHelper.browserURLbar.click();
-        TestHelper.inlineAutocompleteEditText.clearTextField();;
-        TestHelper.mDevice.pressKeyCode(KEYCODE_M);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_O);
-        TestHelper.mDevice.pressKeyCode(KEYCODE_Z);
-        TestHelper.hint.waitForExists(waitingTime);
-        assertTrue (TestHelper.inlineAutocompleteEditText.getText().equals("mozilla.org"));
-        TestHelper.pressEnterKey();
+        onView(withId(R.id.webview))
+                .check(matches(isDisplayed()));
 
-        TestHelper.webView.waitForExists(waitingTime);
-        mozillaLogo.waitForExists(waitingTime);
-        assertTrue(TestHelper.browserURLbar.getText().contains("www.mozilla.org"));
-        assertTrue(mozillaLogo.exists());
+        
+        onView(withId(R.id.display_url))
+                .check(matches(isDisplayed()))
+                .check(matches(withText(containsString("mozilla"))))
+                .perform(click());
+
+        
+        onView(withId(R.id.url_edit))
+                .perform(clearText(), typeText("moz"))
+                .check(matches(withText("mozilla.org")))
+                .perform(pressImeActionButton());
+
+        
+        onWebView()
+                .withElement(findElement(Locator.CSS_SELECTOR, MOZILLA_WEBSITE_SLOGAN_SELECTOR))
+                .check(webMatches(getText(), containsString(MOZILLA_WEBSITE_SLOGAN_TEXT)));
+
+        
+        onView(withId(R.id.display_url))
+                .check(matches(isDisplayed()))
+                .check(matches(withText(containsString("www.mozilla.org"))));
     }
 }
