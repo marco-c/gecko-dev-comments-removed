@@ -11,12 +11,12 @@ internal object GeckoVersions {
     /**
      * GeckoView Beta Version.
      */
-    const val beta_version = "79.0.20200629224419"
+    const val beta_version = "79.0.20200630191632"
 
     /**
      * GeckoView Release Version.
      */
-    const val release_version = "78.0.20200630195452"
+    const val release_version = "78.0.20200625152958"
 }
 
 @Suppress("Unused", "MaxLineLength")
