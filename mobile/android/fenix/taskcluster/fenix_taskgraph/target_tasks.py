@@ -19,6 +19,7 @@ def target_tasks_default(full_task_graph, parameters, graph_config):
 @_target_task('release')
 def target_tasks_default(full_task_graph, parameters, graph_config):
 
+    
     def filter(task, parameters):
         return task.attributes.get("release-type", "") == parameters["release_type"]
 
