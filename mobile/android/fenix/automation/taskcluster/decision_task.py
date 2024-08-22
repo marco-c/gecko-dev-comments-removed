@@ -59,25 +59,17 @@ def raptor(builder, is_staging):
 
     variant = get_variant('forPerformanceTest', 'geckoNightly')
     build_task = builder.craft_assemble_raptor_task(variant)
-    signing_task = builder.craft_raptor_signing_task(build_task['label'], variant, is_staging)
 
     
-    return [build_task, signing_task]
+    return [build_task]
 
 
 def release(builder, channel, engine, is_staging, version_name):
     variant = get_variant('fenix' + channel.capitalize(), engine)
     build_task = builder.craft_assemble_release_task(variant, channel, is_staging, version_name)
 
-    signing_task = builder.craft_release_signing_task(
-        build_task['label'],
-        variant,
-        channel=channel,
-        is_staging=is_staging,
-    )
-
     
-    return [build_task, signing_task]
+    return [build_task]
 
 
 def release_as_fennec(builder, is_staging, version_name):
@@ -85,15 +77,9 @@ def release_as_fennec(builder, is_staging, version_name):
     channel = 'fennec-production'
 
     build_task = builder.craft_assemble_release_task(variant, channel, is_staging, version_name)
-    signing_task = builder.craft_release_signing_task(
-        build_task['label'],
-        variant,
-        channel,
-        variant,
-        is_staging,
-    )
 
-    return [build_task, signing_task]
+    
+    return [build_task]
 
 
 def nightly_to_production_app(builder, is_staging, version_name):
@@ -106,16 +92,8 @@ def nightly_to_production_app(builder, is_staging, version_name):
     build_task = builder.craft_assemble_release_task(
         variant, 'nightly-legacy', is_staging, version_name)
 
-    signing_task = builder.craft_release_signing_task(
-        build_task['label'],
-        variant,
-        channel='production',  
-        is_staging=is_staging,
-        publish_to_index=False,
-    )
-
     
-    tasks = [build_task, signing_task]
+    tasks = [build_task]
     if not is_staging:
         tasks.append(builder.craft_upload_apk_nimbledroid_task(build_task['label']))
 
