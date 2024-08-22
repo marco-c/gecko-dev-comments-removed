@@ -9,7 +9,6 @@ kind.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
-import os
 
 from taskgraph.transforms.base import TransformSequence
 from fenix_taskgraph.gradle import get_variant
@@ -92,11 +91,9 @@ def add_nightly_version(config, tasks):
 def add_release_version(config, tasks):
     for task in tasks:
         if task.pop("include-release-version", False):
-            
-            git_tag = os.environ.get('GIT_TAG', 'vUNSET')
-            version = git_tag[1:]  
-
-            task["run"]["gradlew"].append('-PversionName={}'.format(version))
+            task["run"]["gradlew"].append(
+                '-PversionName="{}"'.format(config.params["release_version"])
+            )
         yield task
 
 
