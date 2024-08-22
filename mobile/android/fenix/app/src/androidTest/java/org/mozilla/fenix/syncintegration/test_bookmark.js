@@ -12,7 +12,7 @@ var phases = { "phase1": "profile1" };
 
 
 
-var bookmarksExpected = {
+var bookmarksCreated = {
 "mobile": [{
   uri: "http://www.example.com/",
   title: "Example Domain"}]
@@ -21,5 +21,6 @@ var bookmarksExpected = {
 
 Phase("phase1", [
   [Sync],
-  [Bookmarks.verify, bookmarksExpected],
+  [Bookmarks.add, bookmarksCreated],
+  [Sync]
 ]);
