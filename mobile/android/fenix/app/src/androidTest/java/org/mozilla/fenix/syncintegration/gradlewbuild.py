@@ -19,15 +19,8 @@ class GradlewBuild(object):
     def test(self, identifier):
         self.adbrun.launch()
         
-        
         os.chdir('../../../../../../../..')
         args = './gradlew ' + 'app:connectedGeckoNightlyDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.syncintegration.SyncIntegrationTest#{}'.format(identifier)
-        
-        
-        
-        
-
-        
 
         self.logger.info('Running: {}'.format(' '.join(args)))
         try:
