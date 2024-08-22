@@ -93,8 +93,4 @@ def nightly_to_production_app(builder, is_staging, version_name):
         variant, 'nightly-legacy', is_staging, version_name)
 
     
-    tasks = [build_task]
-    if not is_staging:
-        tasks.append(builder.craft_upload_apk_nimbledroid_task(build_task['label']))
-
-    return tasks
+    return [build_task]
