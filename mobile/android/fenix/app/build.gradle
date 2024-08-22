@@ -125,6 +125,12 @@ android {
 
     flavorDimensions "engine"
 
+    sourceSets {
+        androidTest {
+           resources.srcDirs += ['src/androidTest/resources']
+        }
+    }
+
     productFlavors {
         geckoNightly {
             dimension "engine"
@@ -362,7 +368,6 @@ dependencies {
 
     implementation Deps.sentry
     implementation Deps.leanplum
-    implementation Deps.leanplumMessaging
     implementation Deps.osslicenses_library
 
     implementation Deps.mozilla_concept_engine
