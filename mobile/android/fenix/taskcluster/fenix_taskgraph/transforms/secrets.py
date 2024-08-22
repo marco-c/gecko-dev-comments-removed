@@ -2,8 +2,7 @@
 
 
 """
-Apply some defaults and minor modifications to the jobs defined in the nimbledroid
-kind.
+Resolve secrets and dummy secrets
 """
 
 from __future__ import absolute_import, print_function, unicode_literals
