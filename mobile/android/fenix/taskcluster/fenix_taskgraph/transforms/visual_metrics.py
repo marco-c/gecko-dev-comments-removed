@@ -65,10 +65,6 @@ def run_visual_metrics(config, jobs):
             }]
 
             
-            job.setdefault('attributes', {})
-            job['attributes']['artifact_prefix'] = 'public/test_info'
-
-            
             
             
             job['label'] = LABEL.format(platform=platform, label=dep_job.label)
