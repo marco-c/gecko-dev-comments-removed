@@ -120,6 +120,12 @@ android {
 
     flavorDimensions "engine"
 
+    sourceSets {
+        androidTest {
+           resources.srcDirs += ['src/androidTest/resources']
+        }
+    }
+
     productFlavors {
         geckoNightly {
             dimension "engine"
