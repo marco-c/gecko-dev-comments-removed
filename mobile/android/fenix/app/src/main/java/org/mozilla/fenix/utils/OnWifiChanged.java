@@ -1,0 +1,14 @@
+package org.mozilla.fenix.utils;
+
+
+
+
+
+
+
+
+
+@FunctionalInterface
+public interface OnWifiChanged {
+    void invoke(boolean Connected);
+}
