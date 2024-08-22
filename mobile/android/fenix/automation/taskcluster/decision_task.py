@@ -47,9 +47,9 @@ def pr(builder):
 
     return tasks
 
-def push():
+def push(builder):
     
-    return pr()
+    return pr(builder)
 
 def raptor(builder, is_staging):
     mozharness_task_id = fetch_mozharness_task_id()
