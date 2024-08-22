@@ -21,13 +21,16 @@ class GradlewBuild(object):
 
         
         os.chdir('../../../../../../../..')
-        args = './gradlew ' + 'app:connectedGeckoNightlyDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.syncintegration.SyncIntegrationTest#{}'.format(identifier)
+        cmd = './gradlew ' + 'app:connectedGeckoNightlyDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.syncintegration.SyncIntegrationTest#{}'.format(identifier)
 
-        self.logger.info('Running: {}'.format(' '.join(args)))
+        self.logger.info('Running cmd: {}'.format(cmd))
 
+        out = ""
         try:
             out = subprocess.check_output(
-                args, shell=True)
+                cmd,
+                shell=True,
+                stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             out = e.output
             raise
@@ -37,4 +40,4 @@ class GradlewBuild(object):
             os.chdir(testsPath)
 
             with open(self.log, 'w') as f:
-                f.writelines(out)
+                f.write(out)
