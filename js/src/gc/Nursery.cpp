@@ -1229,7 +1229,7 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
     
     gc->storeBuffer().clear();
 
-    MOZ_ASSERT(!pretenuringNursery.hasAllocatedSites());
+    MOZ_ASSERT_IF(!semispaceEnabled_, !pretenuringNursery.hasAllocatedSites());
   }
 
   if (!isEnabled()) {

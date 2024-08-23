@@ -83,7 +83,7 @@ class AllocSite {
   uint32_t nurseryAllocCount = 0;
 
   
-  uint32_t nurseryTenuredCount : 24;
+  uint32_t nurseryPromotedCount : 24;
 
   
   uint32_t invalidationCount : 4;
@@ -103,12 +103,12 @@ class AllocSite {
   uintptr_t rawScript() const { return scriptAndState & ~STATE_MASK; }
 
  public:
-  AllocSite() : nurseryTenuredCount(0), invalidationCount(0), traceKind_(0) {}
+  AllocSite() : nurseryPromotedCount(0), invalidationCount(0), traceKind_(0) {}
 
   
   explicit AllocSite(JS::Zone* zone, JS::TraceKind kind)
       : zone_(zone),
-        nurseryTenuredCount(0),
+        nurseryPromotedCount(0),
         invalidationCount(0),
         traceKind_(uint32_t(kind)) {
     MOZ_ASSERT(traceKind_ < NurseryTraceKinds);
@@ -126,7 +126,7 @@ class AllocSite {
   void initUnknownSite(JS::Zone* zone, JS::TraceKind kind) {
     MOZ_ASSERT(!zone_ && scriptAndState == uintptr_t(State::Unknown));
     zone_ = zone;
-    nurseryTenuredCount = 0;
+    nurseryPromotedCount = 0;
     invalidationCount = 0;
     traceKind_ = uint32_t(kind);
     MOZ_ASSERT(traceKind_ < NurseryTraceKinds);
@@ -137,7 +137,7 @@ class AllocSite {
     MOZ_ASSERT(!zone_ && scriptAndState == uintptr_t(State::Unknown));
     zone_ = zone;
     setScript(WasmScript);
-    nurseryTenuredCount = 0;
+    nurseryPromotedCount = 0;
     invalidationCount = 0;
     traceKind_ = uint32_t(JS::TraceKind::Object);
   }
@@ -179,24 +179,24 @@ class AllocSite {
   }
 
   bool hasNurseryAllocations() const {
-    return nurseryAllocCount != 0 || nurseryTenuredCount != 0;
+    return nurseryAllocCount != 0 || nurseryPromotedCount != 0;
   }
   void resetNurseryAllocations() {
     nurseryAllocCount = 0;
-    nurseryTenuredCount = 0;
+    nurseryPromotedCount = 0;
   }
 
   uint32_t incAllocCount() { return ++nurseryAllocCount; }
   uint32_t* nurseryAllocCountAddress() { return &nurseryAllocCount; }
 
-  void incTenuredCount() {
+  void incPromotedCount() {
     
-    nurseryTenuredCount++;
-    MOZ_ASSERT(nurseryTenuredCount != 0);
+    nurseryPromotedCount++;
+    MOZ_ASSERT(nurseryPromotedCount != 0);
   }
 
   size_t allocCount() const {
-    return std::max(nurseryAllocCount, nurseryTenuredCount);
+    return std::max(nurseryAllocCount, nurseryPromotedCount);
   }
 
   
@@ -261,6 +261,10 @@ class PretenuringZone {
 
   
   
+  AllocSite promotedAllocSites[NurseryTraceKinds];
+
+  
+  
   uint32_t allocCountInNewlyCreatedArenas = 0;
   uint32_t survivorCountInNewlyCreatedArenas = 0;
 
@@ -282,6 +286,7 @@ class PretenuringZone {
       : optimizedAllocSite(zone, JS::TraceKind::Object) {
     for (uint32_t i = 0; i < NurseryTraceKinds; i++) {
       unknownAllocSites[i].initUnknownSite(zone, JS::TraceKind(i));
+      promotedAllocSites[i].initUnknownSite(zone, JS::TraceKind(i));
     }
   }
 
@@ -289,6 +294,12 @@ class PretenuringZone {
     size_t i = size_t(kind);
     MOZ_ASSERT(i < NurseryTraceKinds);
     return unknownAllocSites[i];
+  }
+
+  AllocSite& promotedAllocSite(JS::TraceKind kind) {
+    size_t i = size_t(kind);
+    MOZ_ASSERT(i < NurseryTraceKinds);
+    return promotedAllocSites[i];
   }
 
   void clearCellCountsInNewlyCreatedArenas() {

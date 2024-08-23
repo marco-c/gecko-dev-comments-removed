@@ -95,7 +95,7 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, JS::GCReason reason,
     for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
       bool highNurserySurvivalRate =
           promotionRate > HighNurserySurvivalPromotionThreshold &&
-          zone->optimizedAllocSite()->nurseryTenuredCount >=
+          zone->optimizedAllocSite()->nurseryPromotedCount >=
               HighNurserySurvivalOptimizedAllocThreshold;
       zone->pretenuring.noteHighNurserySurvivalRate(highNurserySurvivalRate);
       if (highNurserySurvivalRate) {
@@ -136,6 +136,7 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, JS::GCReason reason,
 
   
   
+
   for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
     for (auto& site : zone->pretenuring.unknownAllocSites) {
       updateTotalAllocCounts(&site);
@@ -150,6 +151,11 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, JS::GCReason reason,
     updateTotalAllocCounts(zone->optimizedAllocSite());
     zone->optimizedAllocSite()->processCatchAllSite(reportInfo,
                                                     reportThreshold);
+
+    
+    for (AllocSite& site : zone->pretenuring.promotedAllocSites) {
+      site.resetNurseryAllocations();
+    }
   }
 
   if (reportInfo) {
@@ -171,7 +177,7 @@ AllocSite::SiteResult AllocSite::processSite(GCRuntime* gc,
                                              bool reportInfo,
                                              size_t reportThreshold) {
   MOZ_ASSERT(kind() != Kind::Optimized);
-  MOZ_ASSERT(nurseryAllocCount >= nurseryTenuredCount);
+  MOZ_ASSERT(nurseryAllocCount >= nurseryPromotedCount);
 
   SiteResult result = NoChange;
 
@@ -180,7 +186,7 @@ AllocSite::SiteResult AllocSite::processSite(GCRuntime* gc,
   bool wasInvalidated = false;
 
   if (nurseryAllocCount > attentionThreshold) {
-    promotionRate = double(nurseryTenuredCount) / double(nurseryAllocCount);
+    promotionRate = double(nurseryPromotedCount) / double(nurseryAllocCount);
     hasPromotionRate = true;
 
     AllocSite::State prevState = state();
@@ -402,7 +408,7 @@ bool PretenuringZone::shouldResetPretenuredAllocSites() {
 
 void AllocSite::printInfoHeader(JS::GCReason reason, double promotionRate) {
   fprintf(stderr, "  %-16s %-16s %-20s %-8s %-8s %-6s %-10s\n", "site", "zone",
-          "script/kind", "nallocs", "tenures", "prate", "state");
+          "script/kind", "nallocs", "promotes", "prate", "state");
 }
 
 
@@ -456,7 +462,7 @@ void AllocSite::printInfo(bool hasPromotionRate, double promotionRate,
   fprintf(stderr, " %8s", buffer);
 
   
-  fprintf(stderr, " %8" PRIu32, nurseryTenuredCount);
+  fprintf(stderr, " %8" PRIu32, nurseryPromotedCount);
 
   
   buffer[0] = '\0';
