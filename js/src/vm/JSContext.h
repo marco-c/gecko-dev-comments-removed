@@ -89,6 +89,7 @@ class InternalJobQueue : public JS::JobQueue {
                          JS::HandleObject incumbentGlobal) override;
   void runJobs(JSContext* cx) override;
   bool empty() const override;
+  bool isDrainingStopped() const override { return interrupted_; }
 
   
   
