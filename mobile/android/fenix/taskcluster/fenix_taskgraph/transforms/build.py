@@ -95,14 +95,11 @@ def add_disable_optimization(config, tasks):
 
 @transforms.add
 def add_nightly_version(config, tasks):
-    push_date_string = config.params["moz_build_date"]
-    push_date_time = datetime.datetime.strptime(push_date_string, "%Y%m%d%H%M%S")
-    formated_date_time = 'Nightly {}'.format(push_date_time.strftime('%y%m%d %H:%M'))
-
     for task in tasks:
         if task.pop("include-nightly-version", False):
             task["run"]["gradlew"].extend([
-                '-PversionName={}'.format(formated_date_time),
+                
+                
                 '-Pofficial'
             ])
         yield task
