@@ -1222,7 +1222,11 @@ add_task(async function test_hover_message_when_button_updates_itself() {
 
   
   
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {});
+  AccessibilityUtils.resetEnv();
 
   await extension.unload();
 });
