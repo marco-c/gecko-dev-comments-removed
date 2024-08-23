@@ -696,11 +696,7 @@ void WebRenderLayerManager::FlushRendering(wr::RenderReasons aReasons) {
 
   
   
-  
-  
-  LayoutDeviceIntSize widgetSize = mWidget->GetClientSize();
-  bool resizing = widgetSize != mFlushWidgetSize;
-  mFlushWidgetSize = widgetSize;
+  bool resizing = mWidget && mWidget->IsResizingNativeWidget().valueOr(true);
 
   if (resizing) {
     aReasons = aReasons | wr::RenderReasons::RESIZE;
@@ -708,8 +704,10 @@ void WebRenderLayerManager::FlushRendering(wr::RenderReasons aReasons) {
 
   
   
-  if (resizing && (mWidget->SynchronouslyRepaintOnResize() ||
-                   StaticPrefs::layers_force_synchronous_resize())) {
+  if (WrBridge()->GetCompositorUseDComp() && !resizing) {
+    cBridge->SendFlushRenderingAsync(aReasons);
+  } else if (mWidget->SynchronouslyRepaintOnResize() ||
+             StaticPrefs::layers_force_synchronous_resize()) {
     cBridge->SendFlushRendering(aReasons);
   } else {
     cBridge->SendFlushRenderingAsync(aReasons);

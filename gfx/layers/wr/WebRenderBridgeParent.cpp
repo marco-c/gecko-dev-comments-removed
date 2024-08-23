@@ -2618,17 +2618,17 @@ void WebRenderBridgeParent::ScheduleGenerateFrame(wr::RenderReasons aReasons) {
 }
 
 void WebRenderBridgeParent::FlushRendering(wr::RenderReasons aReasons,
-                                           bool aBlocking) {
+                                           bool aWaitForPresent) {
   if (mDestroyed) {
     return;
   }
 
-  if (aBlocking) {
-    FlushSceneBuilds();
-    FlushFrameGeneration(aReasons);
+  
+  
+  FlushSceneBuilds();
+  FlushFrameGeneration(aReasons);
+  if (aWaitForPresent) {
     FlushFramePresentation();
-  } else {
-    ScheduleGenerateFrame(aReasons);
   }
 }
 
