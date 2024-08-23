@@ -99,15 +99,8 @@ class Nursery {
 
   
   
-  MOZ_ALWAYS_INLINE bool isInside(gc::Cell* cellp) const = delete;
-  MOZ_ALWAYS_INLINE bool isInside(const void* p) const {
-    for (auto* chunk : chunks_) {
-      if (uintptr_t(p) - uintptr_t(chunk) < gc::ChunkSize) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool isInside(gc::Cell* cellp) const = delete;
+  inline bool isInside(const void* p) const;
 
   template <typename T>
   inline bool isInside(const SharedMem<T>& p) const;
@@ -273,22 +266,6 @@ class Nursery {
     return std::min(capacity_, allocatedChunkCount() * gc::ChunkSize);
   }
 
-  
-  
-  
-  
-  
-  MOZ_ALWAYS_INLINE size_t usedSpace() const {
-    return capacity() - freeSpace();
-  }
-  MOZ_ALWAYS_INLINE size_t freeSpace() const {
-    MOZ_ASSERT(isEnabled());
-    MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
-    MOZ_ASSERT(currentChunk_ < maxChunkCount());
-    return (currentEnd_ - position_) +
-           (maxChunkCount() - currentChunk_ - 1) * gc::ChunkSize;
-  }
-
 #ifdef JS_GC_ZEAL
   void enterZealMode();
   void leaveZealMode();
@@ -303,9 +280,10 @@ class Nursery {
   
   void printTotalProfileTimes();
 
-  void* addressOfPosition() const { return (void**)&position_; }
+  void* addressOfPosition() const { return (void**)&toSpace.position_; }
   static constexpr int32_t offsetOfCurrentEndFromPosition() {
-    return offsetof(Nursery, currentEnd_) - offsetof(Nursery, position_);
+    return offsetof(Nursery, toSpace.currentEnd_) -
+           offsetof(Nursery, toSpace.position_);
   }
 
   void* addressOfNurseryAllocatedSites() {
@@ -365,6 +343,8 @@ class Nursery {
   mozilla::TimeStamp lastCollectionEndTime() const;
 
  private:
+  struct Space;
+
   enum class ProfileKey {
 #define DEFINE_TIME_KEY(name, text) name,
     FOR_EACH_NURSERY_PROFILE_TIME(DEFINE_TIME_KEY)
@@ -379,15 +359,32 @@ class Nursery {
                                size_t(ProfileKey::KeyCount)>;
 
   
-  unsigned allocatedChunkCount() const { return chunks_.length(); }
-
-  
   
   
   
   uint32_t maxChunkCount() const {
-    MOZ_ASSERT(maxChunkCount_);
-    return maxChunkCount_;
+    MOZ_ASSERT(toSpace.maxChunkCount_);
+    return toSpace.maxChunkCount_;
+  }
+
+  
+  unsigned allocatedChunkCount() const { return toSpace.chunks_.length(); }
+
+  uint32_t currentChunk() const { return toSpace.currentChunk_; }
+  uint32_t startChunk() const { return toSpace.startChunk_; }
+  uintptr_t startPosition() const { return toSpace.startPosition_; }
+
+  
+  
+  MOZ_ALWAYS_INLINE size_t usedSpace() const {
+    return capacity() - freeSpace();
+  }
+  MOZ_ALWAYS_INLINE size_t freeSpace() const {
+    MOZ_ASSERT(isEnabled());
+    MOZ_ASSERT(currentEnd() - position() <= NurseryChunkUsableSize);
+    MOZ_ASSERT(currentChunk() < maxChunkCount());
+    return (currentEnd() - position()) +
+           (maxChunkCount() - currentChunk() - 1) * gc::ChunkSize;
   }
 
   
@@ -400,7 +397,7 @@ class Nursery {
 
   void freeTrailerBlocks();
 
-  NurseryChunk& chunk(unsigned index) const { return *chunks_[index]; }
+  NurseryChunk& chunk(unsigned index) const { return *toSpace.chunks_[index]; }
 
   
   
@@ -421,9 +418,8 @@ class Nursery {
   [[nodiscard]] bool allocateNextChunk(unsigned chunkno,
                                        AutoLockGCBgAlloc& lock);
 
-  uintptr_t currentEnd() const { return currentEnd_; }
-
-  uintptr_t position() const { return position_; }
+  uintptr_t position() const { return toSpace.position_; }
+  uintptr_t currentEnd() const { return toSpace.currentEnd_; }
 
   MOZ_ALWAYS_INLINE bool isSubChunkMode() const;
 
@@ -499,7 +495,7 @@ class Nursery {
 
   
   
-  void freeChunksFrom(unsigned firstFreeChunk);
+  void freeChunksFrom(Space& space, unsigned firstFreeChunk);
 
   void sendTelemetry(JS::GCReason reason, mozilla::TimeDuration totalTime,
                      bool wasEmpty, double promotionRate,
@@ -518,32 +514,37 @@ class Nursery {
   mozilla::TimeStamp collectionStartTime() const;
 
  private:
-  
+  struct Space {
+    
 
-  
-  uintptr_t position_;
+    
+    uintptr_t position_ = 0;
 
-  
-  uintptr_t currentEnd_;
+    
+    uintptr_t currentEnd_ = 0;
 
-  
+    
+    Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
+
+    
+    uint32_t currentChunk_ = 0;
+
+    
+    uint32_t maxChunkCount_ = 0;
+
+    
+    
+    
+    uint32_t startChunk_ = 0;
+    uintptr_t startPosition_ = 0;
+
+    inline bool isEmpty() const;
+    inline bool isInside(const void* p) const;
+  };
+
+  Space toSpace;
 
   gc::GCRuntime* const gc;
-
-  
-  Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
-
-  
-  uint32_t currentChunk_;
-
-  
-  uint32_t maxChunkCount_;
-
-  
-  
-  
-  uint32_t startChunk_;
-  uintptr_t startPosition_;
 
   
   
@@ -662,6 +663,19 @@ class Nursery {
   friend class gc::TenuringTracer;
   friend struct NurseryChunk;
 };
+
+MOZ_ALWAYS_INLINE bool Nursery::isInside(const void* p) const {
+  return toSpace.isInside(p);
+}
+
+MOZ_ALWAYS_INLINE bool Nursery::Space::isInside(const void* p) const {
+  for (auto* chunk : chunks_) {
+    if (uintptr_t(p) - uintptr_t(chunk) < gc::ChunkSize) {
+      return true;
+    }
+  }
+  return false;
+}
 
 }  
 
