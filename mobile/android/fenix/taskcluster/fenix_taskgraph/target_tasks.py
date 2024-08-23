@@ -33,8 +33,7 @@ def target_tasks_nightly(full_task_graph, parameters, graph_config):
     def filter(task, parameters):
         
         
-        return task.attributes.get("nightly", False) and task.kind != "push-apk" or \
-            task.kind in ('browsertime', 'visual-metrics', 'raptor')
+        return task.attributes.get("nightly", False) and task.kind != "push-apk"
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t, parameters)]
 
@@ -44,7 +43,13 @@ def target_tasks_nightly_on_google_play(full_task_graph, parameters, graph_confi
     """Select the set of tasks required for a nightly build that goes on Google Play."""
 
     def filter(task, parameters):
-        return task.attributes.get("nightly", False)
+        return (
+            task.attributes.get("nightly", False) and
+            
+            
+            
+            task.kind not in ("browsertime", "visual-metrics", "raptor")
+        )
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t, parameters)]
 
