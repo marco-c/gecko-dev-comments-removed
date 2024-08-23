@@ -646,9 +646,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static mozilla::LogModule* GetLog(eGfxLog aWhichLog);
 
-  int GetScreenDepth() const { return mScreenDepth; }
-  mozilla::gfx::IntSize GetScreenSize() const { return mScreenSize; }
-
   static void PurgeSkiaFontCache();
 
   static bool UsesOffMainThreadCompositing();
@@ -979,11 +976,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static void InitializeCMS();
   static void ShutdownCMS();
 
-  
-
-
-  void PopulateScreenInfo();
-
   void InitCompositorAccelerationPrefs();
   void InitGPUProcessPrefs();
   virtual void InitPlatformGPUProcessPrefs() {}
@@ -1024,9 +1016,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   
   mozilla::layers::LayersBackend mCompositorBackend;
-
-  int32_t mScreenDepth;
-  mozilla::gfx::IntSize mScreenSize;
 
   mozilla::Maybe<mozilla::layers::OverlayInfo> mOverlayInfo;
   mozilla::Maybe<mozilla::layers::SwapChainInfo> mSwapChainInfo;
