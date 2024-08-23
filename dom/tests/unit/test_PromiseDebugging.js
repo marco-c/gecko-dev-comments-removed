@@ -1,5 +1,4 @@
 function run_test() {
-  
   Assert.equal(false, PromiseDebugging === undefined);
   var res;
   var p = new Promise(function (resolve) {
