@@ -236,6 +236,17 @@ pub enum AnimationDirection {
     AlternateReverse,
 }
 
+impl AnimationDirection {
+    
+    #[inline]
+    pub fn match_keywords(name: &AnimationName) -> bool {
+        if let Some(name) = name.as_atom() {
+            return name.with_str(|n| Self::from_ident(n).is_ok());
+        }
+        false
+    }
+}
+
 
 #[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
 #[repr(u8)]
@@ -243,6 +254,17 @@ pub enum AnimationDirection {
 pub enum AnimationPlayState {
     Running,
     Paused,
+}
+
+impl AnimationPlayState {
+    
+    #[inline]
+    pub fn match_keywords(name: &AnimationName) -> bool {
+        if let Some(name) = name.as_atom() {
+            return name.with_str(|n| Self::from_ident(n).is_ok());
+        }
+        false
+    }
 }
 
 
@@ -254,6 +276,18 @@ pub enum AnimationFillMode {
     Forwards,
     Backwards,
     Both,
+}
+
+impl AnimationFillMode {
+    
+    
+    #[inline]
+    pub fn match_keywords(name: &AnimationName) -> bool {
+        if let Some(atom) = name.as_atom() {
+            return !name.is_none() && atom.with_str(|n| Self::from_ident(n).is_ok());
+        }
+        false
+    }
 }
 
 
