@@ -1531,8 +1531,6 @@ class Datastore final
 
   bool IsPersistent() const {
     
-    
-    
     return mPrivateBrowsingId == 0;
   }
 

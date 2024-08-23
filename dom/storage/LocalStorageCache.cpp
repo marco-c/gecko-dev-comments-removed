@@ -37,8 +37,11 @@ inline uint32_t GetDataSetIndex(bool aPrivateBrowsing,
 }
 
 inline uint32_t GetDataSetIndex(const LocalStorage* aStorage) {
+  
+  
+  
   return GetDataSetIndex(aStorage->IsPrivateBrowsing(),
-                         aStorage->IsSessionScopedOrLess());
+                         aStorage->IsPrivateBrowsingOrLess());
 }
 
 }  
@@ -167,8 +170,8 @@ void LocalStorageCache::NotifyObservers(const LocalStorage* aStorage,
 }
 
 inline bool LocalStorageCache::Persist(const LocalStorage* aStorage) const {
-  return mPersistent &&
-         (aStorage->IsPrivateBrowsing() || !aStorage->IsSessionScopedOrLess());
+  return mPersistent && (aStorage->IsPrivateBrowsing() ||
+                         !aStorage->IsPrivateBrowsingOrLess());
 }
 
 const nsCString LocalStorageCache::Origin() const {

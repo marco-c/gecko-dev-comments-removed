@@ -41,8 +41,6 @@ enum class StorageAccess {
   
   ePrivateBrowsing = 1,
   
-  eSessionScoped = 2,
-  
   eAllow = 3,
   
   eNumValues = 4,
