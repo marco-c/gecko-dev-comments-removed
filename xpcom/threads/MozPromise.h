@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "mozilla/Attributes.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
@@ -1057,8 +1058,12 @@ class MozPromise : public MozPromiseBase {
 
 
 
+
+
+
+
   template <typename ThenValueType>
-  class ThenCommand {
+  class MOZ_TEMPORARY_CLASS ThenCommand {
     
     
     template <typename, typename, bool>
