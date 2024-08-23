@@ -38,6 +38,9 @@ absl::optional<uint32_t> QpParser::Parse(VideoCodecType codec_type,
     return h264_parsers_[spatial_idx].Parse(frame_data, frame_size);
   } else if (codec_type == kVideoCodecH265) {
     
+#ifdef RTC_ENABLE_H265
+    return h265_parsers_[spatial_idx].Parse(frame_data, frame_size);
+#endif
   }
 
   return absl::nullopt;
@@ -51,5 +54,16 @@ absl::optional<uint32_t> QpParser::H264QpParser::Parse(
       rtc::ArrayView<const uint8_t>(frame_data, frame_size));
   return bitstream_parser_.GetLastSliceQp();
 }
+
+#ifdef RTC_ENABLE_H265
+absl::optional<uint32_t> QpParser::H265QpParser::Parse(
+    const uint8_t* frame_data,
+    size_t frame_size) {
+  MutexLock lock(&mutex_);
+  bitstream_parser_.ParseBitstream(
+      rtc::ArrayView<const uint8_t>(frame_data, frame_size));
+  return bitstream_parser_.GetLastSliceQp();
+}
+#endif
 
 }  
