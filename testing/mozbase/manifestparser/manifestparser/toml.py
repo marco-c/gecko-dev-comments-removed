@@ -163,14 +163,8 @@ def read_toml(
         
         sections = [(i, combine_fields(defaults, j)) for i, j in sections]
 
-    if document:
-        
-        for i, _ in enumerate(sections):
-            line = contents.split(sections[i][0])[0].count(os.linesep) + 1
-            manifest.setdefault(sections[i][0], {})["lineno"] = str(line)
-    else:
+    if not document:
         manifest = None
-
     return sections, defaults, manifest
 
 
