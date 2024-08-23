@@ -380,9 +380,13 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         static_assert(JSString::LINEAR_IS_EXTENSIBLE_BIT ==
                       JSString::INLINE_IS_FAT_BIT);
         if (str->isLinear()) {
-          known("EXTENSIBLE");
-        } else if (str->isInline()) {
-          known("FAT");
+          if (str->isInline()) {
+            known("FAT");
+          } else if (!str->isAtom()) {
+            known("EXTENSIBLE");
+          } else {
+            unknown(i);
+          }
         } else {
           unknown(i);
         }
@@ -817,15 +821,30 @@ static bool UpdateNurseryBuffersOnTransfer(js::Nursery& nursery, JSString* from,
   return true;
 }
 
-static bool CanReuseLeftmostBuffer(JSString* leftmostChild, size_t wholeLength,
+static bool CanReuseLeftmostBuffer(JSRope* root, JSString* leftmostChild,
                                    bool hasTwoByteChars) {
   if (!leftmostChild->isExtensible()) {
     return false;
   }
 
   JSExtensibleString& str = leftmostChild->asExtensible();
-  return str.capacity() >= wholeLength &&
-         str.hasTwoByteChars() == hasTwoByteChars;
+  if (str.capacity() < root->length() ||
+      str.hasTwoByteChars() != hasTwoByteChars) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (!root->isTenured() && leftmostChild->isTenured()) {
+    return false;
+  }
+
+  return true;
 }
 
 JSLinearString* JSRope::flatten(JSContext* maybecx) {
@@ -915,6 +934,19 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   const size_t wholeLength = root->length();
   size_t wholeCapacity;
   CharT* wholeChars;
@@ -931,7 +963,7 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   JSString* leftmostChild = leftmostRope->leftChild();
 
   bool reuseLeftmostBuffer = CanReuseLeftmostBuffer(
-      leftmostChild, wholeLength, std::is_same_v<CharT, char16_t>);
+      root, leftmostChild, std::is_same_v<CharT, char16_t>);
 
   if (reuseLeftmostBuffer) {
     JSExtensibleString& left = leftmostChild->asExtensible();
@@ -1455,15 +1487,17 @@ uint32_t JSAtom::getIndexSlow() const {
                           : AtomCharsToIndex(twoByteChars(nogc), len);
 }
 
-static void MarkStringAndBasesNonDeduplicatable(JSLinearString* s) {
-  while (true) {
-    if (!s->isTenured()) {
-      s->setNonDeduplicatable();
-    }
-    if (!s->hasBase()) {
-      break;
-    }
+
+
+
+
+
+void PreventRootBaseDeduplication(JSLinearString* s) {
+  while (s->hasBase()) {
     s = s->base();
+  }
+  if (!s->isTenured()) {
+    s->setNonDeduplicatable();
   }
 }
 
@@ -1492,7 +1526,7 @@ bool AutoStableStringChars::init(JSContext* cx, JSString* s) {
     twoByteChars_ = linearString->rawTwoByteChars();
   }
 
-  MarkStringAndBasesNonDeduplicatable(linearString);
+  PreventRootBaseDeduplication(linearString);
 
   s_ = linearString;
   return true;
@@ -1518,7 +1552,7 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
   state_ = TwoByte;
   twoByteChars_ = linearString->rawTwoByteChars();
 
-  MarkStringAndBasesNonDeduplicatable(linearString);
+  PreventRootBaseDeduplication(linearString);
 
   s_ = linearString;
   return true;

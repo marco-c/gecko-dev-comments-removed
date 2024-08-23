@@ -338,87 +338,21 @@ void js::gc::StoreBuffer::SlotsEdge::trace(TenuringTracer& mover) const {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static inline void PreventDeduplicationOfReachableStrings(JSString* str) {
-  MOZ_ASSERT(str->isTenured());
-  MOZ_ASSERT(!str->isForwarded());
-
-  JSLinearString* baseOrRelocOverlay = str->nurseryBaseOrRelocOverlay();
-
-  
-  
-  while (true) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (baseOrRelocOverlay->isForwarded()) {
-      JSLinearString* tenuredBase = Forwarded(baseOrRelocOverlay);
-      if (!tenuredBase->hasBase()) {
-        break;
-      }
-      baseOrRelocOverlay = StringRelocationOverlay::fromCell(baseOrRelocOverlay)
-                               ->savedNurseryBaseOrRelocOverlay();
-    } else {
-      JSLinearString* base = baseOrRelocOverlay;
-      if (base->isTenured()) {
-        break;
-      }
-      if (base->isDeduplicatable()) {
-        base->setNonDeduplicatable();
-      }
-      if (!base->hasBase()) {
-        break;
-      }
-      baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
-    }
-  }
-}
-
 static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
   MOZ_ASSERT_IF(object->storeBuffer(),
-                !object->storeBuffer()->markingNondeduplicatable);
-
+                !object->storeBuffer()->markingStringWholeCells);
   mover.traceObject(object);
 }
 
 
 static inline bool TraceWholeCell(TenuringTracer& mover, JSString* str) {
   MOZ_ASSERT_IF(str->storeBuffer(),
-                str->storeBuffer()->markingNondeduplicatable);
+                str->storeBuffer()->markingStringWholeCells);
 
-  
-  
-  
   if (str->hasBase()) {
-    PreventDeduplicationOfReachableStrings(str);
-
+    
+    
+    
     
     
     
@@ -533,8 +467,8 @@ void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover,
 #ifdef DEBUG
   
   
-  MOZ_ASSERT(!owner->markingNondeduplicatable);
-  owner->markingNondeduplicatable = true;
+  MOZ_ASSERT(!owner->markingStringWholeCells);
+  owner->markingStringWholeCells = true;
 #endif
   
   
@@ -542,7 +476,7 @@ void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover,
     stringHead_->traceStrings(mover);
   }
 #ifdef DEBUG
-  owner->markingNondeduplicatable = false;
+  owner->markingStringWholeCells = false;
 #endif
   if (nonStringHead_) {
     nonStringHead_->traceNonStrings(mover);
