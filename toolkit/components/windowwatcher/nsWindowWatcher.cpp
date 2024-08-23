@@ -1431,7 +1431,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
     if (parentWidget &&
         ((!newWindowShouldBeModal && parentIsModal) || isAppModal)) {
-      parentWidget->SetFakeModal(true);
+      parentWidget->SetModal(true);
     } else {
       
       

@@ -670,12 +670,6 @@ class nsIWidget : public nsISupports {
   
 
 
-
-  virtual void SetFakeModal(bool aModal) { SetModal(aModal); }
-
-  
-
-
   virtual bool IsRunningAppModal() { return false; }
 
   
