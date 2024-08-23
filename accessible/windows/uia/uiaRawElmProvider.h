@@ -22,10 +22,13 @@ class Accessible;
 class uiaRawElmProvider : public IAccessibleEx,
                           public IRawElementProviderSimple,
                           public IRawElementProviderFragment,
-                          public IInvokeProvider {
+                          public IInvokeProvider,
+                          public IToggleProvider {
  public:
   static void RaiseUiaEventForGeckoEvent(Accessible* aAcc,
                                          uint32_t aGeckoEvent);
+  static void RaiseUiaEventForStateChange(Accessible* aAcc, uint64_t aState,
+                                          bool aEnabled);
 
   
   STDMETHODIMP QueryInterface(REFIID aIid, void** aInterface);
@@ -85,10 +88,18 @@ class uiaRawElmProvider : public IAccessibleEx,
   
   virtual HRESULT STDMETHODCALLTYPE Invoke(void);
 
+  
+  virtual HRESULT STDMETHODCALLTYPE Toggle(void);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_ToggleState(
+       __RPC__out enum ToggleState* aRetVal);
+
  private:
   Accessible* Acc() const;
   bool IsControl();
   long GetControlType() const;
+  bool HasTogglePattern();
+  static ToggleState ToToggleState(uint64_t aState);
 };
 
 }  

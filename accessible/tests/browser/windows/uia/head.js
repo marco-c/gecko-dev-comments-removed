@@ -102,3 +102,14 @@ function waitForUiaEvent() {
     onEvent.wait()
   `);
 }
+
+
+
+
+async function testPatternAbsent(id, patternName) {
+  const hasPattern = await runPython(`
+    el = findUiaByDomId(doc, "${id}")
+    return bool(getUiaPattern(el, "${patternName}"))
+  `);
+  ok(!hasPattern, `${id} doesn't have ${patternName} pattern`);
+}
