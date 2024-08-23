@@ -243,6 +243,38 @@ add_task(async () => {
 
 
 add_task(async () => {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      
+      url: "http://example.com",
+    },
+    async () => {
+      let root = await getMacAccessible(document);
+      let navBar = await getMacAccessible("nav-bar");
+      let elemRange = root.getParameterizedAttributeValue(
+        "AXTextMarkerRangeForUIElement",
+        navBar
+      );
+      let attributedString = root.getParameterizedAttributeValue(
+        "AXAttributedStringForTextMarkerRange",
+        elemRange
+      );
+      let attachmentRoles = attributedString.map(s =>
+        s.AXAttachment ? s.AXAttachment.getAttributeValue("AXRole") : null
+      );
+      ok(
+        !attachmentRoles.includes("AXMenu"),
+        "Collapsed menu should be embedded in attributed text"
+      );
+    }
+  );
+});
+
+
+
+
+add_task(async () => {
   if (Services.prefs.getBoolPref("widget.macos.native-context-menus", false)) {
     ok(true, "We cannot inspect native context menu contents; skip this test.");
     return;

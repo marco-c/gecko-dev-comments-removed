@@ -88,6 +88,13 @@ GeckoTextMarker GeckoTextMarker::MarkerFromIndex(Accessible* aRoot,
   
   
   for (TextLeafRange segment : range) {
+    if (segment.Start().mAcc->IsMenuPopup() &&
+        (segment.Start().mAcc->State() & states::COLLAPSED)) {
+      
+      
+      continue;
+    }
+
     if (segment.End().mAcc->Role() == roles::LISTITEM_MARKER) {
       
       
@@ -392,6 +399,12 @@ NSString* GeckoTextMarkerRange::Text() const {
 
   for (TextLeafRange segment : range) {
     TextLeafPoint start = segment.Start();
+    if (start.mAcc->IsMenuPopup() &&
+        (start.mAcc->State() & states::COLLAPSED)) {
+      
+      
+      continue;
+    }
     if (start.mAcc->IsTextField() && start.mAcc->ChildCount() == 0) {
       continue;
     }
@@ -441,6 +454,12 @@ NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
   for (TextLeafRange segment : range) {
     TextLeafPoint start = segment.Start();
     TextLeafPoint attributesNext;
+    if (start.mAcc->IsMenuPopup() &&
+        (start.mAcc->State() & states::COLLAPSED)) {
+      
+      
+      continue;
+    }
     do {
       if (start.mAcc->IsText()) {
         attributesNext = start.FindTextAttrsStart(eDirNext, false);
