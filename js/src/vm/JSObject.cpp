@@ -3165,19 +3165,8 @@ js::gc::AllocKind JSObject::allocKindForTenure(
       return as<JSFunction>().getAllocKind();
     }
 
-    
-    
-    
-    if (is<FixedLengthTypedArrayObject>() &&
-        !as<FixedLengthTypedArrayObject>().hasBuffer()) {
-      gc::AllocKind allocKind;
-      if (as<FixedLengthTypedArrayObject>().hasInlineElements()) {
-        size_t nbytes = as<FixedLengthTypedArrayObject>().byteLength();
-        allocKind = FixedLengthTypedArrayObject::AllocKindForLazyBuffer(nbytes);
-      } else {
-        allocKind = GetGCObjectKind(getClass());
-      }
-      return ForegroundToBackgroundAllocKind(allocKind);
+    if (is<FixedLengthTypedArrayObject>()) {
+      return as<FixedLengthTypedArrayObject>().allocKindForTenure();
     }
 
     return as<NativeObject>().allocKindForTenure();

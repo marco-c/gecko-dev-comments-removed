@@ -760,6 +760,26 @@ class ElementSpecific {
   }
 };
 
+inline gc::AllocKind js::FixedLengthTypedArrayObject::allocKindForTenure()
+    const {
+  
+  
+  
+
+  if (hasBuffer()) {
+    return NativeObject::allocKindForTenure();
+  }
+
+  gc::AllocKind allocKind;
+  if (hasInlineElements()) {
+    allocKind = AllocKindForLazyBuffer(byteLength());
+  } else {
+    allocKind = gc::GetGCObjectKind(getClass());
+  }
+
+  return gc::ForegroundToBackgroundAllocKind(allocKind);
+}
+
  gc::AllocKind
 js::FixedLengthTypedArrayObject::AllocKindForLazyBuffer(size_t nbytes) {
   MOZ_ASSERT(nbytes <= INLINE_BUFFER_LIMIT);
