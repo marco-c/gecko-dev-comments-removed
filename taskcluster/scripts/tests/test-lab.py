@@ -145,13 +145,16 @@ def process_results(flank_config: str, test_type: str = "instrumentation") -> No
     parse_ui_test_fromfile_script = os.path.join(
         ANDROID_TEST, "parse-ui-test-fromfile.py"
     )
+    copy_robo_crash_artifacts_script = os.path.join(
+        ANDROID_TEST, "copy-robo-crash-artifacts.py"
+    )
 
     os.chmod(parse_ui_test_script, 0o755)
     os.chmod(parse_ui_test_fromfile_script, 0o755)
+    os.chmod(copy_robo_crash_artifacts_script, 0o755)
 
     
 
-    
     
     exit_code = 0
     if test_type == "instrumentation":
@@ -159,6 +162,10 @@ def process_results(flank_config: str, test_type: str = "instrumentation") -> No
             [parse_ui_test_fromfile_script, "--results", Worker.RESULTS_DIR.value],
             "flank.log",
         )
+
+    
+    if test_type == "robo":
+        exit_code = run_command([copy_robo_crash_artifacts_script])
 
     command = [
         parse_ui_test_script,
