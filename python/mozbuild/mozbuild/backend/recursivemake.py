@@ -1840,6 +1840,9 @@ class RecursiveMakeBackend(MakeBackend):
             )
         )
 
+        ipdl_srcs_path = mozpath.join(ipdl_dir, "ipdlsrcs.txt")
+        mk.add_statement("ALL_IPDLSRCS_FILE := {}".format(ipdl_srcs_path))
+
         
         mk.add_statement(
             "IPDLDIRS := %s %s"
@@ -1850,6 +1853,16 @@ class RecursiveMakeBackend(MakeBackend):
                 ),
             )
         )
+
+        
+        
+        
+        with self._write_file(ipdl_srcs_path) as srcs:
+            for filename in sorted_nonstatic_ipdl_basenames:
+                srcs.write("{}\n".format(filename))
+
+            for filename in sorted_static_ipdl_sources:
+                srcs.write("{}\n".format(filename))
 
         with self._write_file(mozpath.join(ipdl_dir, "ipdlsrcs.mk")) as ipdls:
             mk.dump(ipdls, removal_guard=False)

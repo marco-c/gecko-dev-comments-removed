@@ -804,15 +804,39 @@ class TestRecursiveMakeBackend(BackendTester):
 
         
         topsrcdir = mozpath.normsep(env.topsrcdir)
+        ipdlsrcs_file_path = mozpath.join(ipdl_root, "ipdlsrcs.txt")
 
+        ipdlsrcs = ["bar1.ipdl", "foo1.ipdl"]
+        ipdlsrcs.extend(
+            "%s/%s" % (topsrcdir, path)
+            for path in (
+                "bar/bar.ipdl",
+                "bar/bar2.ipdlh",
+                "foo/foo.ipdl",
+                "foo/foo2.ipdlh",
+            )
+        )
+
+        self.maxDiff = None
         expected = [
-            "ALL_IPDLSRCS := bar1.ipdl foo1.ipdl %s/bar/bar.ipdl %s/bar/bar2.ipdlh %s/foo/foo.ipdl %s/foo/foo2.ipdlh"  
-            % tuple([topsrcdir] * 4),
+            "ALL_IPDLSRCS := %s" % (" ".join(ipdlsrcs)),
+            "ALL_IPDLSRCS_FILE := %s" % ipdlsrcs_file_path,
             "IPDLDIRS := %s %s/bar %s/foo" % (ipdl_root, topsrcdir, topsrcdir),
         ]
 
         found = [str for str in lines if str.startswith(("ALL_IPDLSRCS", "IPDLDIRS"))]
         self.assertEqual(found, expected)
+
+        
+        self.assertTrue(ipdlsrcs_file_path, "ipdlsrcs.txt was written")
+        with open(ipdlsrcs_file_path) as f:
+            ipdlsrcs_file_contents = f.read().splitlines()
+
+        self.assertEqual(
+            ipdlsrcs_file_contents,
+            ipdlsrcs,
+            "ipdlsrcs.txt contains all IPDL sources",
+        )
 
         
         
