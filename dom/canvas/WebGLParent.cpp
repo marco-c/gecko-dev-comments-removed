@@ -56,21 +56,39 @@ IPCResult WebGLParent::RecvDispatchCommands(BigBuffer&& shmem,
     MOZ_ALWAYS_TRUE(!initialOffset);
   }
 
+  std::optional<std::string> fatalError;
+
   while (true) {
     view.AlignTo(kUniversalAlignment);
     size_t id = 0;
     if (!view.ReadParam(&id)) break;
 
-    const auto ok = WebGLMethodDispatcher<0>::DispatchCommand(*mHost, id, view);
+    
+    
+    
+    const auto pfn =
+        WebGLMethodDispatcher<0>::DispatchCommandFuncById<HostWebGLContext>(id);
+    if (!pfn) {
+      const nsPrintfCString cstr(
+          "MethodDispatcher<%zu> not found. Please file a bug!", id);
+      fatalError = ToString(cstr);
+      gfxCriticalError() << *fatalError;
+      break;
+    };
+
+    const auto ok = (*pfn)(*mHost, view);
     if (!ok) {
       const nsPrintfCString cstr(
-          "DispatchCommand(id: %i) failed. Please file a bug!", int(id));
-      const auto str = ToString(cstr);
-      gfxCriticalError() << str;
-      mHost->JsWarning(str);
-      mHost->OnContextLoss(webgl::ContextLossReason::None);
+          "DispatchCommand(id: %zu) failed. Please file a bug!", id);
+      fatalError = ToString(cstr);
+      gfxCriticalError() << *fatalError;
       break;
     }
+  }
+
+  if (fatalError) {
+    mHost->JsWarning(*fatalError);
+    mHost->OnContextLoss(webgl::ContextLossReason::None);
   }
 
   return IPC_OK();
@@ -444,7 +462,7 @@ IPCResult WebGLParent::RecvGetVertexAttrib(GLuint index, GLenum pname,
   return IPC_OK();
 }
 
-IPCResult WebGLParent::RecvIsEnabled(GLenum cap, bool* const ret) {
+IPCResult WebGLParent::RecvIsEnabled(GLenum cap, Maybe<bool>* const ret) {
   if (!mHost) {
     return IPC_FAIL(this, "HostWebGLContext is not initialized.");
   }
