@@ -1386,14 +1386,13 @@ const AVAILABLE_UA_OVERRIDES = [
 
     id: "bug1858664",
     platform: "all",
-    domain: "Sites with known breakage with rv: segment higher than 109",
+    domain: "tesco.com",
     bug: "1858664",
     config: {
-      matches: [
-        "*://*.tesco.com/*", 
-      ],
+      matches: ["*://*.tesco.com/*"],
       uaTransformer: originalUA => {
-        return UAHelpers.capRvTo109(originalUA);
+        const cappedRv = UAHelpers.capRvTo109(originalUA);
+        return UAHelpers.capVersionToNumber(cappedRv);
       },
     },
   },
