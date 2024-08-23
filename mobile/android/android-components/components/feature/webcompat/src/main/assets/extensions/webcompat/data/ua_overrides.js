@@ -296,25 +296,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1595215",
-    platform: "android",
-    domain: "uniqlo.com",
-    bug: "1595215",
-    config: {
-      matches: ["*://*.uniqlo.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Mobile Safari";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1622063",
     platform: "android",
     domain: "wp1-ext.usps.gov",
@@ -690,42 +671,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1790698",
-    platform: "android",
-    domain: "wolf777.com",
-    bug: "1790698",
-    config: {
-      matches: ["*://wolf777.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA.replace("Android", "Linux; Android");
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-    id: "bug1800936",
-    platform: "all",
-    domain: "cov19ent.kdca.go.kr",
-    bug: "1800936",
-    config: {
-      matches: ["*://cov19ent.kdca.go.kr/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
 
     id: "bug1819702",
     platform: "android",
@@ -919,22 +864,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1827678-webc84932",
-    platform: "android",
-    domain: "f2bbs.com",
-    bug: "1827678",
-    config: {
-      matches: ["*://f2bbs.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
     id: "bug1827678-webc119012",
     platform: "all",
     domain: "kt.com",
@@ -957,22 +886,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.oirsa.org/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-    id: "bug1827678-webc119785",
-    platform: "all",
-    domain: "sistema.ibglbrasil.com.br",
-    bug: "1827678",
-    config: {
-      matches: ["*://sistema.ibglbrasil.com.br/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -1046,23 +959,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1830821",
     config: {
       matches: ["*://enjoy.point.auone.jp/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-    id: "bug1829126",
-    platform: "android",
-    domain: "www.otsuka.co.jp",
-    bug: "1829126",
-    config: {
-      matches: ["*://www.otsuka.co.jp/fib/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -1298,6 +1194,8 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://thematiques.metro.fr/*",
         "*://volantino.metro.it/*",
         "*://view.publitas.com/*",
+        "*://magazine.kruidvat.be/*",
+        "*://folder.kruidvat.nl/*",
       ],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
@@ -1372,6 +1270,24 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1865007",
     config: {
       matches: ["*://*.circle.ms/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1884779",
+    platform: "android",
+    domain: "memurlar.net",
+    bug: "1884779",
+    config: {
+      matches: ["*://*.memurlar.net/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },

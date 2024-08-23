@@ -186,20 +186,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1654877",
-    platform: "android",
-    domain: "preev.com",
-    bug: "1654877",
-    contentScripts: {
-      matches: ["*://preev.com/*"],
-      css: [
-        {
-          file: "injections/css/bug1654877-preev.com-moz-appearance-fix.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1654907",
     platform: "android",
     domain: "reactine.ca",
@@ -211,24 +197,6 @@ const AVAILABLE_INJECTIONS = [
           file: "injections/css/bug1654907-reactine.ca-hide-unsupported.css",
         },
       ],
-    },
-  },
-  {
-    id: "bug1631811",
-    platform: "all",
-    domain: "datastudio.google.com",
-    bug: "1631811",
-    contentScripts: {
-      matches: [
-        "https://datastudio.google.com/embed/reporting/*",
-        "https://lookerstudio.google.com/embed/reporting/*",
-      ],
-      js: [
-        {
-          file: "injections/js/bug1631811-datastudio.google.com-indexedDB.js",
-        },
-      ],
-      allFrames: true,
     },
   },
   {
@@ -540,11 +508,12 @@ const AVAILABLE_INJECTIONS = [
         "*://*.avanabayview.com/*", 
         "*://*.breakpointeandcoronado.com/*", 
         "*://*.courtsatspringmill.com/*", 
+        "*://*.fieldstoneamherst.com/*", 
         "*://*.gslbriarcreek.com/*", 
+        "*://*.hpixeniatrails.com/*", 
         "*://*.liveatlasathens.com/*", 
         "*://*.liveobserverpark.com/*", 
         "*://*.liveupark.com/*", 
-        "*://*.metropolisapt.com/*", 
         "*://*.midwayurban.com/*", 
         "*://*.nhcalaska.com/*",
         "*://*.prospectportal.com/*", 
@@ -552,7 +521,6 @@ const AVAILABLE_INJECTIONS = [
         "*://*.thefoundryat41st.com/*", 
         "*://*.theloftsorlando.com/*",
         "*://*.vanallenapartments.com/*", 
-        "*://*.waterfordapartmentstulsa.com/*", 
       ],
       css: [
         {
@@ -941,20 +909,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1848716",
-    platform: "desktop",
-    domain: "elal.com",
-    bug: "1848716",
-    contentScripts: {
-      matches: ["*://*.elal.com/*"],
-      css: [
-        {
-          file: "injections/css/bug1848716-elal.com-unsupported-banner.css",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1848849",
     platform: "all",
     domain: "theaa.com",
@@ -1070,6 +1024,34 @@ const AVAILABLE_INJECTIONS = [
       css: [
         {
           file: "injections/css/bug1868345-tvmovie.de-scroll-fix.css",
+        },
+      ],
+    },
+  },
+  {
+    id: "bug1877346",
+    platform: "android",
+    domain: "offerup.com",
+    bug: "1877346",
+    contentScripts: {
+      matches: ["*://offerup.com/*"],
+      css: [
+        {
+          file: "injections/css/bug1877346-offerup.com-infinite-scroll-fix.css",
+        },
+      ],
+    },
+  },
+  {
+    id: "bug1884842",
+    platform: "android",
+    domain: "foodora.cz",
+    bug: "1884842",
+    contentScripts: {
+      matches: ["*://*.foodora.cz/*"],
+      css: [
+        {
+          file: "injections/css/bug1884842-foodora.cz-height-fix.css",
         },
       ],
     },
