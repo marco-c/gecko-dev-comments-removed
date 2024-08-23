@@ -61,8 +61,9 @@ class HLSDecoder final : public MediaDecoder {
     return true;
   }
 
-  void UpdateCurrentPrincipal(nsCString aMediaUrl);
-  already_AddRefed<nsIPrincipal> GetContentPrincipal(nsCString aMediaUrl);
+  void UpdateCurrentPrincipal(nsIURI* aMediaUri);
+  already_AddRefed<nsIPrincipal> GetContentPrincipal(nsIURI* aMediaUri);
+  void RecordMediaUsage(nsIURI* aMediaUri);
 
   static size_t sAllocatedInstances;  
 
@@ -72,6 +73,9 @@ class HLSDecoder final : public MediaDecoder {
   java::GeckoHLSResourceWrapper::Callbacks::GlobalRef mJavaCallbacks;
   RefPtr<HLSResourceCallbacksSupport> mCallbackSupport;
   nsCOMPtr<nsIPrincipal> mContentPrincipal;
+  
+  
+  bool mUsageRecorded;
 };
 
 }  
