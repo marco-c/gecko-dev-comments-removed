@@ -418,9 +418,6 @@ class PeerConnection : public PeerConnectionInternal,
       bool fire_callback = true) override;
 
   
-  RtpTransportInternal* GetRtpTransport(const std::string& mid);
-
-  
   
   bool SrtpRequired() const override;
 
