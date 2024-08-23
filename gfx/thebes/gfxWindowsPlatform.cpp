@@ -259,8 +259,7 @@ class D3DSharedTexturesReporter final : public nsIMemoryReporter {
 
 NS_IMPL_ISUPPORTS(D3DSharedTexturesReporter, nsIMemoryReporter)
 
-gfxWindowsPlatform::gfxWindowsPlatform()
-    : mRenderMode(RENDER_GDI), mSupportsHDR(false) {
+gfxWindowsPlatform::gfxWindowsPlatform() : mRenderMode(RENDER_GDI) {
   
   
   if (!IsWin32kLockedDown()) {
@@ -401,7 +400,6 @@ void gfxWindowsPlatform::InitAcceleration() {
   
   
   UpdateCanUseHardwareVideoDecoding();
-  UpdateSupportsHDR();
 
   
   if (XRE_IsParentProcess() && !gfxPlatform::IsHeadless()) {
@@ -535,53 +533,6 @@ void gfxWindowsPlatform::UpdateRenderMode() {
           "GFX: Failed to update reference draw target after device reset");
     }
   }
-}
-
-void gfxWindowsPlatform::UpdateSupportsHDR() {
-  
-  
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  DeviceManagerDx* dx = DeviceManagerDx::Get();
-  nsTArray<DXGI_OUTPUT_DESC1> outputs = dx->EnumerateOutputs();
-
-  for (auto& output : outputs) {
-    if (output.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
-      mSupportsHDR = true;
-      return;
-    }
-  }
-
-  mSupportsHDR = false;
 }
 
 mozilla::gfx::BackendType gfxWindowsPlatform::GetContentBackendFor(

@@ -336,18 +336,20 @@ StyleDynamicRange Gecko_MediaFeatures_DynamicRange(const Document* aDocument) {
 
 StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
     const Document* aDocument) {
-  if (aDocument->ShouldResistFingerprinting(RFPTarget::CSSVideoDynamicRange)) {
+  if (aDocument->ShouldResistFingerprinting(RFPTarget::CSSVideoDynamicRange) ||
+      !StaticPrefs::layout_css_video_dynamic_range_allows_high()) {
     return StyleDynamicRange::Standard;
   }
   
   
   
   
+
   
   
   if (nsDeviceContext* dx = GetDeviceContextFor(aDocument)) {
-    if (dx->GetDepth() > 24 &&
-        LookAndFeel::GetInt(LookAndFeel::IntID::VideoDynamicRange)) {
+    if (dx->GetScreenIsHDR()) {
+      
       return StyleDynamicRange::High;
     }
   }
