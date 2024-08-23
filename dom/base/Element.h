@@ -1496,6 +1496,8 @@ class Element : public FragmentOrElement {
     return CSSPixel::FromAppUnits(GetClientAreaRect().Width());
   }
 
+  MOZ_CAN_RUN_SCRIPT double CurrentCSSZoom();
+
   
   
   
