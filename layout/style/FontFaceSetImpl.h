@@ -94,7 +94,8 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   
   
-  virtual void RemoveLoader(nsFontFaceLoader* aLoader);
+  
+  void RemoveLoader(nsFontFaceLoader* aLoader) override;
 
   virtual bool UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules) {
     MOZ_ASSERT_UNREACHABLE("Not implemented!");

@@ -521,6 +521,9 @@ class gfxUserFontSet {
   virtual void DoRebuildUserFontSet() = 0;
 
   
+  virtual void RemoveLoader(nsFontFaceLoader* aLoader) = 0;
+
+  
   gfxUserFontEntry* FindExistingUserFontEntry(
       gfxUserFontFamily* aFamily,
       const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList,
