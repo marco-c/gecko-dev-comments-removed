@@ -706,6 +706,10 @@ class Nursery {
   
   gc::MallocedBlockCache mallocedBlockCache_;
 
+  
+  
+  bool tenuredEverything;
+
   friend class gc::GCRuntime;
   friend class gc::TenuringTracer;
   friend struct NurseryChunk;

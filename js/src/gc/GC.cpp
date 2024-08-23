@@ -444,7 +444,9 @@ GCRuntime::GCRuntime(JSRuntime* rt)
 #endif
       requestSliceAfterBackgroundTask(false),
       lifoBlocksToFree((size_t)JSContext::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
-      lifoBlocksToFreeAfterMinorGC(
+      lifoBlocksToFreeAfterFullMinorGC(
+          (size_t)JSContext::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
+      lifoBlocksToFreeAfterNextMinorGC(
           (size_t)JSContext::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
       sweepGroupIndex(0),
       sweepGroups(nullptr),
@@ -2147,7 +2149,7 @@ void GCRuntime::queueUnusedLifoBlocksForFree(LifoAlloc* lifo) {
 }
 
 void GCRuntime::queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo) {
-  lifoBlocksToFreeAfterMinorGC.ref().transferFrom(lifo);
+  lifoBlocksToFreeAfterFullMinorGC.ref().transferFrom(lifo);
 }
 
 void GCRuntime::queueBuffersForFreeAfterMinorGC(Nursery::BufferSet& buffers) {
@@ -2753,24 +2755,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
   MOZ_ASSERT(unmarkTask.isIdle());
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    
-
-
-
-
-    zone->arenas.clearFreeLists();
-
     zone->setPreservingCode(false);
-
-#ifdef JS_GC_ZEAL
-    if (hasZealMode(ZealMode::YieldBeforeRootMarking)) {
-      for (auto kind : AllAllocKinds()) {
-        for (ArenaIterInGC arena(zone, kind); !arena.done(); arena.next()) {
-          arena->checkNoMarkedCells();
-        }
-      }
-    }
-#endif
   }
 
   
@@ -2812,7 +2797,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
 
   {
-    gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::PREPARE);
+    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::PREPARE);
 
     AutoLockHelperThreadState helperLock;
 
@@ -2836,24 +2821,27 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
 
 
+
+    purgeRuntime();
+  }
+
+  
+  
+  collectNurseryFromMajorGC(reason);
+
+  {
+    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::PREPARE);
+    
+    
+    
+    
+    
+    
     if (isShrinkingGC()) {
       relazifyFunctionsForShrinkingGC();
       purgePropMapTablesForShrinkingGC();
       purgeSourceURLsForShrinkingGC();
     }
-
-    
-
-
-
-
-
-
-
-
-    purgeRuntime();
-
-    startBackgroundFreeAfterMinorGC();
 
     if (isShutdownGC()) {
       
@@ -2915,6 +2903,21 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
 #endif
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+    
+    
+    
+    zone->arenas.clearFreeLists();
+
+#ifdef JS_GC_ZEAL
+    if (hasZealMode(ZealMode::YieldBeforeRootMarking)) {
+      for (auto kind : AllAllocKinds()) {
+        for (ArenaIter arena(zone, kind); !arena.done(); arena.next()) {
+          arena->checkNoMarkedCells();
+        }
+      }
+    }
+#endif
+
     
     zone->changeGCState(Zone::Prepare, zone->initialMarkingState());
 
@@ -3727,11 +3730,8 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       [[fallthrough]];
 
     case State::MarkRoots:
-      if (NeedToCollectNursery(this)) {
-        collectNurseryFromMajorGC(reason);
-      }
-
       endPreparePhase(reason);
+
       beginMarkPhase(session);
       incrementalState = State::Mark;
 
@@ -4749,9 +4749,7 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
 
   nursery().collect(options, reason);
 
-  if (nursery().isEmpty()) {
-    startBackgroundFreeAfterMinorGC();
-  }
+  startBackgroundFreeAfterMinorGC();
 
   
   
@@ -4767,20 +4765,26 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
 }
 
 void GCRuntime::startBackgroundFreeAfterMinorGC() {
-  MOZ_ASSERT(nursery().isEmpty());
+  
 
-  {
-    AutoLockHelperThreadState lock;
+  AutoLockHelperThreadState lock;
 
-    lifoBlocksToFree.ref().transferFrom(&lifoBlocksToFreeAfterMinorGC.ref());
+  lifoBlocksToFree.ref().transferFrom(&lifoBlocksToFreeAfterNextMinorGC.ref());
 
-    if (lifoBlocksToFree.ref().isEmpty() &&
-        buffersToFreeAfterMinorGC.ref().empty()) {
-      return;
-    }
+  if (nursery().tenuredEverything) {
+    lifoBlocksToFree.ref().transferFrom(
+        &lifoBlocksToFreeAfterFullMinorGC.ref());
+  } else {
+    lifoBlocksToFreeAfterNextMinorGC.ref().transferFrom(
+        &lifoBlocksToFreeAfterFullMinorGC.ref());
   }
 
-  startBackgroundFree();
+  if (lifoBlocksToFree.ref().isEmpty() &&
+      buffersToFreeAfterMinorGC.ref().empty()) {
+    return;
+  }
+
+  freeTask.startOrRunIfIdle(lock);
 }
 
 bool GCRuntime::gcIfRequestedImpl(bool eagerOk) {
