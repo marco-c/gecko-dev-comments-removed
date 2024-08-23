@@ -80,7 +80,11 @@ int H264DecoderImpl::AVGetBuffer2(AVCodecContext* context,
       kPixelFormatsSupported.begin(), kPixelFormatsSupported.end(),
       [context](AVPixelFormat format) { return context->pix_fmt == format; });
 
-  RTC_CHECK(pixelFormatSupported != kPixelFormatsSupported.end());
+  if (pixelFormatSupported == kPixelFormatsSupported.end()) {
+    RTC_LOG(LS_ERROR) << "Unsupported pixel format: " << context->pix_fmt;
+    decoder->ReportError();
+    return -1;
+  }
 
   
   
