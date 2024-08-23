@@ -33,17 +33,23 @@ IncomingVideoStream::IncomingVideoStream(
 
 IncomingVideoStream::~IncomingVideoStream() {
   RTC_DCHECK(main_thread_checker_.IsCurrent());
+  
+  
+  
+  
+  incoming_render_queue_.get_deleter()(incoming_render_queue_.get());
+  incoming_render_queue_.release();
 }
 
 void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
   TRACE_EVENT0("webrtc", "IncomingVideoStream::OnFrame");
   RTC_CHECK_RUNS_SERIALIZED(&decoder_race_checker_);
-  RTC_DCHECK(!incoming_render_queue_.IsCurrent());
+  RTC_DCHECK(!incoming_render_queue_->IsCurrent());
   
   
   
-  incoming_render_queue_.PostTask([this, video_frame = video_frame]() mutable {
-    RTC_DCHECK_RUN_ON(&incoming_render_queue_);
+  incoming_render_queue_->PostTask([this, video_frame = video_frame]() mutable {
+    RTC_DCHECK_RUN_ON(incoming_render_queue_.get());
     if (render_buffers_.AddFrame(std::move(video_frame)) == 1)
       Dequeue();
   });
@@ -51,14 +57,14 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
 
 void IncomingVideoStream::Dequeue() {
   TRACE_EVENT0("webrtc", "IncomingVideoStream::Dequeue");
-  RTC_DCHECK_RUN_ON(&incoming_render_queue_);
+  RTC_DCHECK_RUN_ON(incoming_render_queue_.get());
   absl::optional<VideoFrame> frame_to_render = render_buffers_.FrameToRender();
   if (frame_to_render)
     callback_->OnFrame(*frame_to_render);
 
   if (render_buffers_.HasPendingFrames()) {
     uint32_t wait_time = render_buffers_.TimeToNextFrameRelease();
-    incoming_render_queue_.PostDelayedHighPrecisionTask(
+    incoming_render_queue_->PostDelayedHighPrecisionTask(
         [this]() { Dequeue(); }, TimeDelta::Millis(wait_time));
   }
 }
