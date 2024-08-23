@@ -21,6 +21,11 @@ const TEXT_WRAP_BALANCE_LIMIT = Services.prefs.getIntPref(
   10
 );
 
+const ALIGN_CONTENT_BLOCKS = Services.prefs.getBoolPref(
+  "layout.css.align-content.blocks.enabled",
+  false
+);
+
 const VISITED_MDN_LINK = "https://developer.mozilla.org/docs/Web/CSS/:visited";
 const VISITED_INVALID_PROPERTIES = allCssPropertiesExcept([
   "all",
@@ -227,12 +232,29 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: ["align-content"],
-        when: () =>
-          !this.style["align-content"].includes("baseline") &&
-          !this.gridContainer &&
-          !this.flexContainer,
-        fixId: "inactive-css-not-grid-or-flex-container-fix",
-        msgId: "inactive-css-not-grid-or-flex-container",
+        when: () => {
+          if (this.style["align-content"].includes("baseline")) {
+            return false;
+          }
+          const supportedDisplay = [
+            "flex",
+            "inline-flex",
+            "grid",
+            "inline-grid",
+            
+            
+          ];
+          if (ALIGN_CONTENT_BLOCKS) {
+            supportedDisplay.push("block", "inline-block");
+          }
+          return !this.checkComputedStyle("display", supportedDisplay);
+        },
+        fixId: ALIGN_CONTENT_BLOCKS
+          ? "inactive-css-not-grid-or-flex-or-block-container-fix"
+          : "inactive-css-not-grid-or-flex-container-fix",
+        msgId: ALIGN_CONTENT_BLOCKS
+          ? "inactive-css-property-because-of-display"
+          : "inactive-css-not-grid-or-flex-container",
       },
       
       {
