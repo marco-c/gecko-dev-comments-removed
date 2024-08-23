@@ -53,7 +53,7 @@ def main():
 
     
     
-    release_version = "125.0b4"
+    release_version = "125.0b6"
     release_type = get_release_type(release_version)
 
     
