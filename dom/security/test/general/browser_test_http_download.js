@@ -101,7 +101,7 @@ const CONSOLE_ERROR_MESSAGE = "We blocked a download that’s not secure";
 
 function shouldConsoleError() {
   
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     function listener(msgObj) {
       let text = msgObj.message;
       if (text.includes(CONSOLE_ERROR_MESSAGE)) {
