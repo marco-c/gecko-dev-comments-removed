@@ -87,9 +87,18 @@ macro_rules! expanded {
 #[allow(missing_docs)]
 pub mod longhands {
     % for style_struct in data.style_structs:
-    include!("${repr(os.path.join(OUT_DIR, 'longhands/{}.rs'.format(style_struct.name_lower)))[1:-1]}");
+    <% data.current_style_struct = style_struct %>
+    <%include file="/longhands/${style_struct.name_lower}.mako.rs" />
     % endfor
 }
+
+
+#[cfg(feature = "gecko")]
+#[allow(unsafe_code, missing_docs)]
+pub mod gecko {
+    <%include file="/gecko.mako.rs" />
+}
+
 
 macro_rules! unwrap_or_initial {
     ($prop: ident) => (unwrap_or_initial!($prop, $prop));
@@ -107,7 +116,7 @@ pub mod shorthands {
     use crate::values::specified;
 
     % for style_struct in data.style_structs:
-    include!("${repr(os.path.join(OUT_DIR, 'shorthands/{}.rs'.format(style_struct.name_lower)))[1:-1]}");
+    <%include file="/shorthands/${style_struct.name_lower}.mako.rs" />
     % endfor
 
     
@@ -143,7 +152,7 @@ pub mod shorthands {
             "all",
             logical_longhands + other_longhands,
             engines="gecko servo",
-            spec="https:
+            spec="https://drafts.csswg.org/css-cascade-3/#all-shorthand"
         )
         ALL_SHORTHAND_LEN = len(logical_longhands) + len(other_longhands);
     %>

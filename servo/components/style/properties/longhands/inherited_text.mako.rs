@@ -3,8 +3,6 @@
 
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
-<% from data import Keyword %>
-<% data.new_style_struct("InheritedText", inherited=True, gecko_name="Text") %>
 
 ${helpers.predefined_type(
     "color",

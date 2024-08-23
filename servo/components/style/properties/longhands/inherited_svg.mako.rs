@@ -6,10 +6,6 @@
 
 
 
-<% data.new_style_struct("InheritedSVG", inherited=True, gecko_name="SVG") %>
-
-
-
 ${helpers.single_keyword(
     "dominant-baseline",
     """auto ideographic alphabetic hanging mathematical central middle

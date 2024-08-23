@@ -2,11 +2,8 @@
 
 
 
-<%! from data import to_rust_ident %>
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import ALL_SIZES, PHYSICAL_SIDES, LOGICAL_SIDES %>
-
-<% data.new_style_struct("Position", inherited=False) %>
 
 
 % for side in PHYSICAL_SIDES:

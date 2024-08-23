@@ -3,11 +3,7 @@
 
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
-<% from data import DEFAULT_RULES_EXCEPT_KEYFRAME, Method %>
-
-
-
-<% data.new_style_struct("UI", inherited=False, gecko_name="UIReset") %>
+<% from data import DEFAULT_RULES_EXCEPT_KEYFRAME %>
 
 
 

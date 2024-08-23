@@ -3,11 +3,7 @@
 
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
-<% from data import ALL_AXES, Keyword, Method, to_rust_ident, to_camel_case%>
-
-<% data.new_style_struct("Box",
-                         inherited=False,
-                         gecko_name="Display") %>
+<% from data import ALL_AXES %>
 
 ${helpers.predefined_type(
     "display",

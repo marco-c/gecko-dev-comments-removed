@@ -3,9 +3,6 @@
 
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
-<% from data import Method %>
-
-<% data.new_style_struct("Text", inherited=False, gecko_name="TextReset") %>
 
 ${helpers.predefined_type(
     "text-overflow",
