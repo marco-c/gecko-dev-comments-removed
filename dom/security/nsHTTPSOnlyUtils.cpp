@@ -398,8 +398,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
 
   
   uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST ||
-      httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
     return false;
   }
 
