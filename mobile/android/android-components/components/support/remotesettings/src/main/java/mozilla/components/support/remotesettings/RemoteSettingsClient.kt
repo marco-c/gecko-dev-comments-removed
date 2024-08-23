@@ -62,7 +62,6 @@ class RemoteSettingsClient(
     /**
      * Fetches a response that includes Remote Settings records and the last time the collection was modified.
      */
-    @Suppress("TooGenericExceptionCaught")
     suspend fun fetch(): RemoteSettingsResult = withContext(Dispatchers.IO) {
         try {
             val serverRecords = RemoteSettings(config).use {
@@ -72,7 +71,7 @@ class RemoteSettingsClient(
         } catch (e: RemoteSettingsException) {
             Logger.error(e.message.toString())
             RemoteSettingsResult.NetworkFailure(e)
-        } catch (e: NullPointerException) {
+        } catch (e : NullPointerException) {
             Logger.error(e.message.toString())
             RemoteSettingsResult.NetworkFailure(e)
         }
