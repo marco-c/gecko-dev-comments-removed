@@ -1,10 +1,10 @@
 gczeal(0);
+gcparam("semispaceNurseryEnabled", 0);
 
 function setAndTest(param, value) {
   gcparam(param, value);
   assertEq(gcparam(param), value);
 }
-
 
 
 setAndTest("maxNurseryBytes", 1024*1024);

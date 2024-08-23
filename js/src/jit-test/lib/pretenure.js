@@ -22,6 +22,9 @@ function setupPretenureTest() {
   gczeal(0);
 
   
+  gcparam("semispaceNurseryEnabled", 0);
+
+  
   gcparam("minNurseryBytes", 1024 * 1024);
   gcparam("maxNurseryBytes", 1024 * 1024);
 
