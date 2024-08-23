@@ -19,7 +19,8 @@ class Accessible;
 
 
 class uiaRawElmProvider : public IAccessibleEx,
-                          public IRawElementProviderSimple {
+                          public IRawElementProviderSimple,
+                          public IRawElementProviderFragment {
  public:
   
   STDMETHODIMP QueryInterface(REFIID aIid, void** aInterface);
@@ -55,6 +56,26 @@ class uiaRawElmProvider : public IAccessibleEx,
   virtual  HRESULT STDMETHODCALLTYPE get_HostRawElementProvider(
        __RPC__deref_out_opt IRawElementProviderSimple**
           aRawElmProvider);
+
+  
+  virtual HRESULT STDMETHODCALLTYPE Navigate(
+       enum NavigateDirection aDirection,
+       __RPC__deref_out_opt IRawElementProviderFragment**
+          aRetVal);
+
+  
+
+  virtual HRESULT STDMETHODCALLTYPE get_BoundingRectangle(
+       __RPC__out struct UiaRect* aRetVal);
+
+  virtual HRESULT STDMETHODCALLTYPE GetEmbeddedFragmentRoots(
+       __RPC__deref_out_opt SAFEARRAY** aRetVal);
+
+  virtual HRESULT STDMETHODCALLTYPE SetFocus(void);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_FragmentRoot(
+       __RPC__deref_out_opt IRawElementProviderFragmentRoot**
+          aRetVal);
 
  private:
   Accessible* Acc();
