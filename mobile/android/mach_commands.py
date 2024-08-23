@@ -947,11 +947,40 @@ def _get_export_import_commands(command_context, revset):
             "format-patch",
             "--relative=mobile/android",
             "--stdout",
-            revset,
-            "--",
         ]
+        
+        
+        
+        
+        
+        if _is_single_revision(command_context, revset):
+            export_command.append("-1")
+
+        export_command.extend(
+            [
+                revset,
+                "--",
+            ]
+        )
         import_command = [str(which("git")), "am"]
     else:
         raise NotImplementedError()
 
     return export_command, import_command
+
+
+def _is_single_revision(command_context, revset):
+    if conditions.is_git(command_context):
+        command = [
+            str(which("git")),
+            "show",
+            "--no-patch",
+            "--format='%H'",
+            revset,
+            "--",
+        ]
+    else:
+        raise NotImplementedError()
+
+    revisions = subprocess.check_output(command, text=True)
+    return len(revisions.splitlines()) == 1
