@@ -64,15 +64,14 @@ class nsCaret final : public nsISelectionListener {
   
 
 
+
   void SetVisible(bool aVisible);
   
 
 
 
 
-
-
-  bool IsVisible();
+  bool IsVisible() const;
 
   
 
@@ -190,6 +189,7 @@ class nsCaret final : public nsISelectionListener {
   static void CaretBlinkCallback(nsITimer* aTimer, void* aClosure);
 
   void CheckSelectionLanguageChange();
+  void CaretVisibilityMaybeChanged();
 
   void ResetBlinking();
   void StopBlinking();
@@ -202,16 +202,6 @@ class nsCaret final : public nsISelectionListener {
                                 nscoord aCaretHeight);
   void ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,
                          nsRect* aCaretRect, nsRect* aHookRect);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool IsMenuPopupHidingCaret();
 
   
   
@@ -274,6 +264,12 @@ class nsCaret final : public nsISelectionListener {
 
 
   bool mFixedCaretPosition = false;
+
+  
+
+
+
+  bool mHiddenDuringSelection = false;
 };
 
 #endif  

@@ -61,10 +61,6 @@ nsresult nsCaret::Init(PresShell* aPresShell) {
       do_GetWeakReference(aPresShell);  
   NS_ASSERTION(mPresShell, "Hey, pres shell should support weak refs");
 
-  mShowDuringSelection =
-      LookAndFeel::GetInt(LookAndFeel::IntID::ShowCaretDuringSelection,
-                          mShowDuringSelection ? 1 : 0) != 0;
-
   RefPtr<Selection> selection =
       aPresShell->GetSelection(nsISelectionController::SELECTION_NORMAL);
   if (!selection) {
@@ -145,25 +141,24 @@ void nsCaret::SetSelection(Selection* aDOMSel) {
 }
 
 void nsCaret::SetVisible(bool aVisible) {
+  const bool wasVisible = mVisible;
   mVisible = aVisible;
   mIgnoreUserModify = aVisible;
-  ResetBlinking();
-  SchedulePaint();
+  if (mVisible != wasVisible) {
+    CaretVisibilityMaybeChanged();
+  }
 }
 
-bool nsCaret::IsVisible() {
-  if (!mVisible || mHideCount) {
-    return false;
-  }
+bool nsCaret::IsVisible() const { return mVisible && !mHideCount; }
 
-  if (!mShowDuringSelection) {
-    Selection* selection = GetSelection();
-    if (!selection || !selection->IsCollapsed()) {
-      return false;
-    }
+void nsCaret::CaretVisibilityMaybeChanged() {
+  ResetBlinking();
+  SchedulePaint();
+  if (IsVisible()) {
+    
+    
+    UpdateCaretPositionFromSelectionIfNeeded();
   }
-
-  return !IsMenuPopupHidingCaret();
 }
 
 void nsCaret::AddForceHide() {
@@ -171,16 +166,14 @@ void nsCaret::AddForceHide() {
   if (++mHideCount > 1) {
     return;
   }
-  ResetBlinking();
-  SchedulePaint();
+  CaretVisibilityMaybeChanged();
 }
 
 void nsCaret::RemoveForceHide() {
   if (!mHideCount || --mHideCount) {
     return;
   }
-  ResetBlinking();
-  SchedulePaint();
+  CaretVisibilityMaybeChanged();
 }
 
 void nsCaret::SetCaretReadOnly(bool aReadOnly) {
@@ -408,7 +401,14 @@ void nsCaret::SchedulePaint() {
 }
 
 void nsCaret::SetVisibilityDuringSelection(bool aVisibility) {
+  if (mShowDuringSelection == aVisibility) {
+    return;
+  }
   mShowDuringSelection = aVisibility;
+  if (mHiddenDuringSelection && aVisibility) {
+    RemoveForceHide();
+    mHiddenDuringSelection = false;
+  }
   SchedulePaint();
 }
 
@@ -562,24 +562,30 @@ nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel, int16_t aReason,
   
   
   
-  if ((aReason & nsISelectionListener::MOUSEUP_REASON) || !IsVisible()) {
-    
+  
+  
+  
+  if (mDomSelectionWeak != aDomSel) {
     return NS_OK;
   }
 
   
   
-  
-  
-  
-  
-  
-  if (mFixedCaretPosition || mDomSelectionWeak != aDomSel) {
-    return NS_OK;
+  if (!mShowDuringSelection &&
+      !aDomSel->IsCollapsed() != mHiddenDuringSelection) {
+    if (mHiddenDuringSelection) {
+      RemoveForceHide();
+    } else {
+      AddForceHide();
+    }
+    mHiddenDuringSelection = !mHiddenDuringSelection;
   }
 
-  ResetBlinking();
-  UpdateCaretPositionFromSelectionIfNeeded();
+  
+  
+  if (IsVisible()) {
+    UpdateCaretPositionFromSelectionIfNeeded();
+  }
 
   return NS_OK;
 }
@@ -594,7 +600,7 @@ void nsCaret::ResetBlinking() {
 
   mIsBlinkOn = true;
 
-  if (mReadOnly || !mVisible || mHideCount) {
+  if (mReadOnly || !IsVisible()) {
     StopBlinking();
     return;
   }
@@ -650,48 +656,6 @@ size_t nsCaret::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     total += mBlinkTimer->SizeOfIncludingThis(aMallocSizeOf);
   }
   return total;
-}
-
-
-
-bool nsCaret::IsMenuPopupHidingCaret() {
-  
-  nsXULPopupManager* popMgr = nsXULPopupManager::GetInstance();
-  nsTArray<nsIFrame*> popups;
-  popMgr->GetVisiblePopups(popups);
-  if (popups.IsEmpty()) {
-    return false;  
-  }
-
-  nsCOMPtr<nsIContent> caretContent =
-      nsIContent::FromNodeOrNull(mCaretPosition.mContent);
-  if (!caretContent) {
-    return true;  
-  }
-
-  
-  
-  for (uint32_t i = 0; i < popups.Length(); i++) {
-    auto* popupFrame = static_cast<nsMenuPopupFrame*>(popups[i]);
-    nsIContent* popupContent = popupFrame->GetContent();
-
-    if (caretContent->IsInclusiveDescendantOf(popupContent)) {
-      
-      
-      return false;
-    }
-
-    if (popupFrame->GetPopupType() == widget::PopupType::Menu &&
-        !popupFrame->IsContextMenu()) {
-      
-      
-      
-      return true;
-    }
-  }
-
-  
-  return false;
 }
 
 void nsCaret::ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,

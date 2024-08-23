@@ -54,8 +54,6 @@ class LookAndFeel {
     
     CaretWidth,
     
-    ShowCaretDuringSelection,
-    
     SelectTextfieldsOnKeyFocus,
     
     SubmenuDelay,
