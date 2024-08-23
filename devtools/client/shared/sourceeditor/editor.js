@@ -167,7 +167,6 @@ class Editor extends EventEmitter {
   #prefObserver;
   #win;
   #lineGutterMarkers = new Map();
-  #lineContentMarkers = new Map();
 
   #updateListener = null;
 
@@ -626,7 +625,6 @@ class Editor extends EventEmitter {
     const lineWrapCompartment = new Compartment();
     const lineNumberCompartment = new Compartment();
     const lineNumberMarkersCompartment = new Compartment();
-    const lineContentMarkerCompartment = new Compartment();
 
     this.#compartments = {
       tabSizeCompartment,
@@ -634,7 +632,6 @@ class Editor extends EventEmitter {
       lineWrapCompartment,
       lineNumberCompartment,
       lineNumberMarkersCompartment,
-      lineContentMarkerCompartment,
     };
 
     const indentStr = (this.config.indentWithTabs ? "\t" : " ").repeat(
@@ -676,7 +673,6 @@ class Editor extends EventEmitter {
         }
       }),
       lineNumberMarkersCompartment.of([]),
-      lineContentMarkerCompartment.of(this.#lineContentMarkersExtension([])),
       
       codemirror.minimalSetup,
     ];
@@ -691,98 +687,6 @@ class Editor extends EventEmitter {
     });
 
     editors.set(this, cm);
-  }
-
-  
-
-
-
-
-
-
-  #lineContentMarkersExtension(markers) {
-    const {
-      codemirrorView: { Decoration, ViewPlugin },
-      codemirrorState: { RangeSetBuilder },
-    } = this.#CodeMirror6;
-
-    
-    function buildDecorations(view) {
-      const builder = new RangeSetBuilder();
-      for (const { from, to } of view.visibleRanges) {
-        for (let pos = from; pos <= to; ) {
-          const line = view.state.doc.lineAt(pos);
-          for (const { lineClassName, condition } of markers) {
-            if (condition(line.number)) {
-              builder.add(
-                line.from,
-                line.from,
-                Decoration.line({ class: lineClassName })
-              );
-            }
-          }
-          pos = line.to + 1;
-        }
-      }
-      return builder.finish();
-    }
-
-    
-    
-    const showLineContentDecorations = ViewPlugin.fromClass(
-      class {
-        decorations;
-        constructor(view) {
-          this.decorations = buildDecorations(view);
-        }
-        update(update) {
-          if (update.docChanged || update.viewportChanged) {
-            this.decorations = buildDecorations(update.view);
-          }
-        }
-      },
-      { decorations: v => v.decorations }
-    );
-
-    return [showLineContentDecorations];
-  }
-
-  
-
-
-
-
-
-
-
-  setLineContentMarker(marker) {
-    const cm = editors.get(this);
-    this.#lineContentMarkers.set(marker.id, marker);
-
-    cm.dispatch({
-      effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension(
-          Array.from(this.#lineContentMarkers.values())
-        )
-      ),
-    });
-  }
-
-  
-
-
-
-  removeLineContentMarker(markerId) {
-    const cm = editors.get(this);
-    this.#lineContentMarkers.delete(markerId);
-
-    cm.dispatch({
-      effects: this.#compartments.lineContentMarkerCompartment.reconfigure(
-        this.#lineContentMarkersExtension(
-          Array.from(this.#lineContentMarkers.values())
-        )
-      ),
-    });
   }
 
   
