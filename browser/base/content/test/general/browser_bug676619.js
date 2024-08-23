@@ -116,8 +116,8 @@ async function runTest(url) {
   await BrowserTestUtils.browserLoaded(browser);
 
   await testLink("link1", "test.txt");
-  await testLink("link2", "video.ogg");
-  await testLink("link3", "just some video.ogg");
+  await testLink("link2", "video.webm");
+  await testLink("link3", "just some video.webm");
   await testLink("link4", "with-target.txt");
   await testLink("link5", "javascript.html");
   await testLink("link6", "test.blob");
@@ -132,8 +132,8 @@ async function runTest(url) {
   
   
   
-  let oggExtension = getMIMEInfoForType("application/ogg").primaryExtension;
-  await testLink("link13", "no file extension." + oggExtension);
+  let webmExtension = getMIMEInfoForType("video/webm").primaryExtension;
+  await testLink("link13", "no file extension." + webmExtension);
 
   
   if (AppConstants.platform != "win") {

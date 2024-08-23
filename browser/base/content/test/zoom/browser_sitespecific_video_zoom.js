@@ -8,7 +8,7 @@ const TEST_PAGE =
   "http://example.org/browser/browser/base/content/test/zoom/zoom_test.html";
 const TEST_VIDEO =
   
-  "http://example.org/browser/browser/base/content/test/general/video.ogg";
+  "http://example.org/browser/browser/base/content/test/general/video.webm";
 
 var gTab1, gTab2, gLevel1;
 
