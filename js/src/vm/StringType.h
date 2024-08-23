@@ -659,6 +659,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   inline bool canOwnDependentChars() const;
 
+  
   inline void setBase(JSLinearString* newBase);
 
   void traceBase(JSTracer* trc);

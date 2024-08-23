@@ -20,7 +20,8 @@ void StoreBuffer::checkAccess() const {
   
   
   
-  if (runtime_->heapState() != JS::HeapState::Idle) {
+  if (runtime_->heapState() != JS::HeapState::Idle &&
+      runtime_->heapState() != JS::HeapState::MinorCollecting) {
     MOZ_ASSERT(!CurrentThreadIsGCMarking());
     runtime_->gc.assertCurrentThreadHasLockedStoreBuffer();
   } else {

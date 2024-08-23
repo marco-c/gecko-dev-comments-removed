@@ -21,6 +21,7 @@ namespace gc {
 class AllocSite;
 struct Cell;
 class TenuredCell;
+class TenuringTracer;
 
 
 
@@ -82,6 +83,7 @@ class CellAllocator {
   static void* AllocNurseryOrTenuredCell(JSContext* cx, gc::AllocKind allocKind,
                                          size_t thingSize, gc::Heap heap,
                                          AllocSite* site);
+  friend class TenuringTracer;
 
   
   template <AllowGC allowGC>

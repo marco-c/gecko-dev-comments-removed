@@ -207,6 +207,7 @@ class Nursery {
 
   
   void removeMallocedBuffer(void* buffer, size_t nbytes) {
+    MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
     MOZ_ASSERT(mallocedBuffers.has(buffer));
     MOZ_ASSERT(nbytes > 0);
     MOZ_ASSERT(mallocedBufferBytes >= nbytes);
@@ -219,8 +220,8 @@ class Nursery {
   
   void removeMallocedBufferDuringMinorGC(void* buffer) {
     MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
-    MOZ_ASSERT(mallocedBuffers.has(buffer));
-    mallocedBuffers.remove(buffer);
+    MOZ_ASSERT(prevMallocedBuffers.has(buffer));
+    prevMallocedBuffers.remove(buffer);
   }
 
   [[nodiscard]] bool addedUniqueIdToCell(gc::Cell* cell) {
@@ -329,6 +330,14 @@ class Nursery {
 
   void setAllocFlagsForZone(JS::Zone* zone);
 
+  bool shouldTenureEverything(JS::GCReason reason);
+
+  inline bool inCollectedRegion(gc::Cell* cell) const;
+  inline bool inCollectedRegion(void* ptr) const;
+
+  void trackMallocedBufferOnPromotion(void* buffer, gc::Cell* owner,
+                                      size_t nbytes, MemoryUse use);
+
   
   static size_t roundSize(size_t size);
 
@@ -406,9 +415,7 @@ class Nursery {
   bool initFirstChunk(AutoLockGCBgAlloc& lock);
   void setCapacity(size_t newCapacity);
 
-  
-  
-  void poisonAndInitCurrentChunk(size_t extent = gc::ChunkSize);
+  void poisonAndInitCurrentChunk();
 
   void setCurrentEnd();
   void setStartToCurrentPosition();
@@ -467,7 +474,7 @@ class Nursery {
                                            uint32_t capacity);
 
 #ifdef DEBUG
-  bool checkForwardingPointerLocation(void* ptr, bool expectedInside);
+  bool checkForwardingPointerInsideNursery(void* ptr);
 #endif
 
   
@@ -475,6 +482,9 @@ class Nursery {
   void sweep();
 
   
+  
+  void setNewExtentAndPosition();
+
   
   void clear();
 
@@ -498,6 +508,8 @@ class Nursery {
   
   
   void freeChunksFrom(Space& space, unsigned firstFreeChunk);
+
+  inline bool shouldTenure(gc::Cell* cell);
 
   void sendTelemetry(JS::GCReason reason, mozilla::TimeDuration totalTime,
                      bool wasEmpty, double promotionRate,
@@ -543,6 +555,11 @@ class Nursery {
     inline bool isEmpty() const;
     inline bool isInside(const void* p) const;
 
+    
+    
+    inline size_t offsetFromAddress(uintptr_t addr) const;
+    inline size_t offsetFromExclusiveAddress(uintptr_t addr) const;
+
     void clear(Nursery* nursery);
     void moveToStartOfChunk(Nursery* nursery, unsigned chunkno);
     void setCurrentEnd(Nursery* nursery);
@@ -561,6 +578,8 @@ class Nursery {
   
   
   size_t capacity_;
+
+  uintptr_t tenureThreshold_ = 0;
 
   gc::PretenuringNursery pretenuringNursery;
 
@@ -623,6 +642,7 @@ class Nursery {
   using BufferRelocationOverlay = void*;
   using BufferSet = HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
   BufferSet mallocedBuffers;
+  BufferSet prevMallocedBuffers;
   size_t mallocedBufferBytes = 0;
 
   

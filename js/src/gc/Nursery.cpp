@@ -58,7 +58,7 @@ struct NurseryChunk : public ChunkBase {
   explicit NurseryChunk(JSRuntime* runtime)
       : ChunkBase(runtime, &runtime->gc.storeBuffer()) {}
 
-  void poisonAndInit(JSRuntime* rt, size_t size = ChunkSize);
+  void init(JSRuntime* rt);
   void poisonRange(size_t start, size_t end, uint8_t value,
                    MemCheckKind checkKind);
   void poisonAfterEvict(size_t extent = ChunkSize);
@@ -115,16 +115,14 @@ class NurseryDecommitTask : public GCParallelTask {
 
 }  
 
-inline void js::NurseryChunk::poisonAndInit(JSRuntime* rt, size_t size) {
-  MOZ_ASSERT(size >= sizeof(ChunkBase));
-  MOZ_ASSERT(size <= ChunkSize);
-  poisonRange(0, size, JS_FRESH_NURSERY_PATTERN, MemCheckKind::MakeUndefined);
+inline void js::NurseryChunk::init(JSRuntime* rt) {
   new (this) NurseryChunk(rt);
 }
 
 inline void js::NurseryChunk::poisonRange(size_t start, size_t end,
                                           uint8_t value,
                                           MemCheckKind checkKind) {
+  MOZ_ASSERT(start >= sizeof(ChunkBase));
   MOZ_ASSERT((start % gc::CellAlignBytes) == 0);
   MOZ_ASSERT((end % gc::CellAlignBytes) == 0);
   MOZ_ASSERT(end >= start);
@@ -379,6 +377,8 @@ bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
   
   clearRecentGrowthData();
 
+  tenureThreshold_ = 0;
+
   return true;
 }
 
@@ -533,7 +533,6 @@ bool js::Nursery::isEmpty() const {
 bool js::Nursery::Space::isEmpty() const { return position_ == startPosition_; }
 
 static size_t AdjustSizeForSemispace(size_t size, bool semispaceEnabled) {
-  
   if (!semispaceEnabled) {
     return size;
   }
@@ -805,27 +804,21 @@ void js::Nursery::freeBuffer(void* buffer, size_t nbytes) {
 
 #ifdef DEBUG
 
-inline bool Nursery::checkForwardingPointerLocation(void* ptr,
-                                                    bool expectedInside) {
-  if (isInside(ptr) == expectedInside) {
-    return true;
+inline bool Nursery::checkForwardingPointerInsideNursery(void* ptr) {
+  
+  
+  
+  if ((uintptr_t(ptr) & ChunkMask) == 0) {
+    return isInside(reinterpret_cast<uint8_t*>(ptr) - 1);
   }
 
-  
-  
-  
-  if ((uintptr_t(ptr) & ChunkMask) == 0 &&
-      isInside(reinterpret_cast<uint8_t*>(ptr) - 1) == expectedInside) {
-    return true;
-  }
-
-  return false;
+  return isInside(ptr);
 }
 #endif
 
 void Nursery::setIndirectForwardingPointer(void* oldData, void* newData) {
-  MOZ_ASSERT(checkForwardingPointerLocation(oldData, true));
-  MOZ_ASSERT(checkForwardingPointerLocation(newData, false));
+  MOZ_ASSERT(checkForwardingPointerInsideNursery(oldData));
+  
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
 #ifdef DEBUG
@@ -873,7 +866,7 @@ void js::Nursery::forwardBufferPointer(uintptr_t* pSlotsElems) {
     MOZ_ASSERT(IsWriteableAddress(buffer));
   }
 
-  MOZ_ASSERT(!isInside(buffer));
+  MOZ_ASSERT_IF(isInside(buffer), !inCollectedRegion(buffer));
   *pSlotsElems = reinterpret_cast<uintptr_t>(buffer);
 }
 
@@ -1270,18 +1263,8 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   
   maybeResizeNursery(options, reason);
 
-  
-  if (previousGC.nurseryUsedBytes) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    poisonAndInitCurrentChunk(previousGC.nurseryUsedBytes);
+  if (!semispaceEnabled()) {
+    poisonAndInitCurrentChunk();
   }
 
   bool validPromotionRate;
@@ -1294,13 +1277,6 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
         doPretenuring(rt, reason, validPromotionRate, promotionRate);
   }
   endProfile(ProfileKey::Pretenure);
-
-  
-  
-  
-  if (gc->heapSize.bytes() >= tunables().gcMaxBytes()) {
-    disable();
-  }
 
   previousGC.endTime =
       TimeStamp::Now();  
@@ -1479,10 +1455,17 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   if (semispaceEnabled_) {
     std::swap(toSpace, fromSpace);
     MOZ_ASSERT(toSpace.isEmpty());
+
+    poisonAndInitCurrentChunk();
   }
 
   
-  TenuringTracer mover(rt, this);
+  MOZ_ASSERT(prevMallocedBuffers.empty());
+  std::swap(mallocedBuffers, prevMallocedBuffers);
+  mallocedBufferBytes = 0;
+
+  
+  TenuringTracer mover(rt, this, shouldTenureEverything(reason));
 
   
   traceRoots(session, mover);
@@ -1521,8 +1504,7 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
 
   
   startProfile(ProfileKey::FreeMallocedBuffers);
-  gc->queueBuffersForFreeAfterMinorGC(mallocedBuffers);
-  mallocedBufferBytes = 0;
+  gc->queueBuffersForFreeAfterMinorGC(prevMallocedBuffers);
   endProfile(ProfileKey::FreeMallocedBuffers);
 
   
@@ -1553,6 +1535,11 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   }
 #endif
   endProfile(ProfileKey::CheckHashTables);
+
+  if (semispaceEnabled_) {
+    
+    tenureThreshold_ = toSpace.offsetFromExclusiveAddress(position());
+  }
 
   return {mover.getTenuredSize(), mover.getTenuredCells()};
 }
@@ -1611,14 +1598,21 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
     endProfile(ProfileKey::MarkRuntime);
   }
 
-  MOZ_ASSERT(gc->storeBuffer().isEmpty());
-
   startProfile(ProfileKey::MarkDebugger);
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_ROOTS);
     DebugAPI::traceAllForMovingGC(&mover);
   }
   endProfile(ProfileKey::MarkDebugger);
+}
+
+bool js::Nursery::shouldTenureEverything(JS::GCReason reason) {
+  if (!semispaceEnabled()) {
+    return true;
+  }
+
+  return reason == JS::GCReason::EVICT_NURSERY ||
+         reason == JS::GCReason::DISABLE_GENERATIONAL_GC;
 }
 
 size_t js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,
@@ -1678,6 +1672,7 @@ bool js::Nursery::registerMallocedBuffer(void* buffer, size_t nbytes) {
   MOZ_ASSERT(buffer);
   MOZ_ASSERT(nbytes > 0);
   MOZ_ASSERT(!isInside(buffer));
+
   if (!mallocedBuffers.putNew(buffer)) {
     return false;
   }
@@ -1701,21 +1696,19 @@ bool js::Nursery::registerMallocedBuffer(void* buffer, size_t nbytes) {
 Nursery::WasBufferMoved js::Nursery::maybeMoveRawBufferOnPromotion(
     void** bufferp, gc::Cell* owner, size_t nbytes, MemoryUse use,
     arena_id_t arena) {
-  MOZ_ASSERT(!IsInsideNursery(owner));
-
   void* buffer = *bufferp;
   if (!isInside(buffer)) {
     
     
     removeMallocedBufferDuringMinorGC(buffer);
-    AddCellMemory(owner, nbytes, use);
+    trackMallocedBufferOnPromotion(buffer, owner, nbytes, use);
     return BufferNotMoved;
   }
 
   
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
-  Zone* zone = owner->asTenured().zone();
+  Zone* zone = owner->zone();
   void* movedBuffer = zone->pod_arena_malloc<uint8_t>(arena, nbytes);
   if (!movedBuffer) {
     oomUnsafe.crash("Nursery::updateBufferOnPromotion");
@@ -1723,10 +1716,25 @@ Nursery::WasBufferMoved js::Nursery::maybeMoveRawBufferOnPromotion(
 
   memcpy(movedBuffer, buffer, nbytes);
 
-  AddCellMemory(owner, nbytes, use);
+  trackMallocedBufferOnPromotion(movedBuffer, owner, nbytes, use);
 
   *bufferp = movedBuffer;
   return BufferMoved;
+}
+
+void js::Nursery::trackMallocedBufferOnPromotion(void* buffer, gc::Cell* owner,
+                                                 size_t nbytes, MemoryUse use) {
+  if (owner->isTenured()) {
+    
+    AddCellMemory(owner, nbytes, use);
+    return;
+  }
+
+  
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!registerMallocedBuffer(buffer, nbytes)) {
+    oomUnsafe.crash("Nursery::maybeMoveRawBufferOnPromotion");
+  }
 }
 
 void Nursery::requestMinorGC(JS::GCReason reason) {
@@ -1735,6 +1743,13 @@ void Nursery::requestMinorGC(JS::GCReason reason) {
   MOZ_ASSERT(isEnabled());
 
   if (minorGCRequested()) {
+    return;
+  }
+
+  if (JS::RuntimeHeapIsMinorCollecting()) {
+    
+    
+    
     return;
   }
 
@@ -1859,13 +1874,13 @@ void js::Nursery::Space::moveToStartOfChunk(Nursery* nursery,
   MOZ_ASSERT(currentEnd_ > position_);  
 }
 
-void js::Nursery::poisonAndInitCurrentChunk(size_t extent) {
-  if (gc->hasZealMode(ZealMode::GenerationalGC) || !isSubChunkMode()) {
-    chunk(currentChunk()).poisonAndInit(runtime());
-  } else {
-    extent = std::min(capacity_, extent);
-    chunk(currentChunk()).poisonAndInit(runtime(), extent);
-  }
+void js::Nursery::poisonAndInitCurrentChunk() {
+  NurseryChunk& chunk = this->chunk(currentChunk());
+  size_t start = position() - uintptr_t(&chunk);
+  size_t end = isSubChunkMode() ? capacity_ : ChunkSize;
+  chunk.poisonRange(start, end, JS_FRESH_NURSERY_PATTERN,
+                    MemCheckKind::MakeUndefined);
+  chunk.init(runtime());
 }
 
 void js::Nursery::setCurrentEnd() { toSpace.setCurrentEnd(this); }
@@ -2161,21 +2176,13 @@ void js::Nursery::freeChunksFrom(Space& space, const unsigned firstFreeChunk) {
 }
 
 void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
-#ifdef JS_GC_ZEAL
-  if (gc->hasZealMode(ZealMode::GenerationalGC)) {
-    return;
-  }
-#endif
-
-  
-  
-  
-  MOZ_ASSERT(newCapacity != 0);
-  
-  if (newCapacity == capacity_) {
-    return;
-  }
+  MOZ_ASSERT(!gc->hasZealMode(ZealMode::GenerationalGC));
   MOZ_ASSERT(newCapacity < capacity_);
+
+  if (semispaceEnabled() && usedSpace() >= newCapacity) {
+    
+    return;
+  }
 
   unsigned newCount = HowMany(newCapacity, ChunkSize);
   if (newCount < allocatedChunkCount()) {
