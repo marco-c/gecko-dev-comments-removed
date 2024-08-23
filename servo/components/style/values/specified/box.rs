@@ -1569,16 +1569,10 @@ pub enum Appearance {
     TabScrollArrowForward,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Toolbar,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Toolbarbutton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     ToolbarbuttonDropdown,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Toolbox,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Tooltip,
