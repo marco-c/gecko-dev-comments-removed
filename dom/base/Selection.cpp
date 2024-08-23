@@ -2501,11 +2501,15 @@ void Selection::CollapseInternal(InLimiter aInLimiter,
   
   if (frameSelection->GetHint() == CaretAssociationHint::Before &&
       aPoint.Container()->IsContent()) {
-    int32_t frameOffset;
-    nsTextFrame* f = do_QueryFrame(nsCaret::GetFrameAndOffset(
-        this, aPoint.Container(),
-        *aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets),
-        &frameOffset));
+    const nsCaret::CaretPosition pos{
+        aPoint.Container(),
+        int32_t(*aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets)),
+        frameSelection->GetHint(), frameSelection->GetCaretBidiLevel()};
+    CaretFrameData frameData = nsCaret::GetFrameAndOffset(pos);
+    if (frameData.mFrame) {
+      frameSelection->SetHint(frameData.mHint);
+    }
+    nsTextFrame* f = do_QueryFrame(frameData.mFrame);
     if (f && f->IsAtEndOfLine() && f->HasSignificantTerminalNewline()) {
       
       

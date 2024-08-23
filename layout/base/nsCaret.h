@@ -10,7 +10,7 @@
 #define nsCaret_h__
 
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/dom/Selection.h"
+#include "mozilla/SelectionMovementUtils.h"
 #include "nsCoord.h"
 #include "nsIFrame.h"
 #include "nsISelectionListener.h"
@@ -47,10 +47,10 @@ class nsCaret final : public nsISelectionListener {
 
   using CaretAssociationHint = mozilla::CaretAssociationHint;
 
-  nsresult Init(mozilla::PresShell* aPresShell);
+  nsresult Init(mozilla::PresShell*);
   void Terminate();
 
-  void SetSelection(mozilla::dom::Selection* aDOMSel);
+  void SetSelection(mozilla::dom::Selection*);
   mozilla::dom::Selection* GetSelection();
 
   
@@ -65,7 +65,7 @@ class nsCaret final : public nsISelectionListener {
   
 
 
-  void SetVisible(bool intMakeVisible);
+  void SetVisible(bool aVisible);
   
 
 
@@ -73,29 +73,8 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-  bool IsVisible(mozilla::dom::Selection* aSelection = nullptr) {
-    if (!mVisible || mHideCount) {
-      return false;
-    }
+  bool IsVisible();
 
-    if (!mShowDuringSelection) {
-      mozilla::dom::Selection* selection;
-      if (aSelection) {
-        selection = aSelection;
-      } else {
-        selection = GetSelection();
-      }
-      if (!selection || !selection->IsCollapsed()) {
-        return false;
-      }
-    }
-
-    if (IsMenuPopupHidingCaret()) {
-      return false;
-    }
-
-    return true;
-  }
   
 
 
@@ -115,7 +94,7 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-  void SetCaretReadOnly(bool inMakeReadonly);
+  void SetCaretReadOnly(bool aReadOnly);
   
 
 
@@ -133,7 +112,7 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-  void SchedulePaint(mozilla::dom::Selection* aSelection = nullptr);
+  void SchedulePaint();
 
   
 
@@ -167,6 +146,22 @@ class nsCaret final : public nsISelectionListener {
   NS_DECL_NSISELECTIONLISTENER
 
   
+  struct CaretPosition {
+    nsCOMPtr<nsINode> mContent;
+    int32_t mOffset = 0;
+    CaretAssociationHint mHint{0};
+    mozilla::intl::BidiEmbeddingLevel mBidiLevel;
+
+    bool operator==(const CaretPosition& aOther) const {
+      return mContent == aOther.mContent && mOffset == aOther.mOffset &&
+             mHint == aOther.mHint && mBidiLevel == aOther.mBidiLevel;
+    }
+    explicit operator bool() const { return !!mContent; }
+  };
+
+  static CaretPosition CaretPositionFor(const mozilla::dom::Selection*);
+
+  
 
 
 
@@ -183,17 +178,8 @@ class nsCaret final : public nsISelectionListener {
                                     nscoord* aBidiIndicatorSize);
 
   
-  
-  
-  
-  
-  
-  
-  static nsIFrame* GetFrameAndOffset(const mozilla::dom::Selection* aSelection,
-                                     nsINode* aOverrideNode,
-                                     int32_t aOverrideOffset,
-                                     int32_t* aFrameOffset,
-                                     nsIFrame** aUnadjustedFrame = nullptr);
+  static mozilla::CaretFrameData GetFrameAndOffset(
+      const CaretPosition& aPosition);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -224,67 +210,64 @@ class nsCaret final : public nsISelectionListener {
   
   bool IsMenuPopupHidingCaret();
 
+  
+  
+  void UpdateCaretPositionFromSelectionIfNeeded();
+
   nsWeakPtr mPresShell;
   mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
 
   nsCOMPtr<nsITimer> mBlinkTimer;
 
-  
+  CaretPosition mCaretPosition;
 
-
-
-  nsCOMPtr<nsINode> mOverrideContent;
-  
-
-
-
-  int32_t mOverrideOffset;
   
 
 
 
 
-  int32_t mBlinkCount;
+  int32_t mBlinkCount = -1;
   
 
 
 
 
-  int32_t mBlinkRate;
+  int32_t mBlinkRate = 0;
   
 
 
 
-  uint32_t mHideCount;
+  uint32_t mHideCount = 0;
 
   
 
 
-  bool mIsBlinkOn;
+  bool mIsBlinkOn = false;
   
 
 
-  bool mVisible;
-  
-
-
-
-  bool mReadOnly;
+  bool mVisible = false;
   
 
 
 
-  bool mShowDuringSelection;
+  bool mReadOnly = false;
   
 
 
 
-  bool mIgnoreUserModify;
+  bool mShowDuringSelection = false;
+  
+
+
+
+  bool mIgnoreUserModify = true;
 
   
 
 
-  WeakFrame mLastCaretFrame;
+
+  bool mFixedCaretPosition = false;
 };
 
 #endif  

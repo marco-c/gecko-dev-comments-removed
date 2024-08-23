@@ -50,16 +50,7 @@ using BidiEmbeddingLevel = mozilla::intl::BidiEmbeddingLevel;
 
 static const int32_t kMinBidiIndicatorPixels = 2;
 
-nsCaret::nsCaret()
-    : mOverrideOffset(0),
-      mBlinkCount(-1),
-      mBlinkRate(0),
-      mHideCount(0),
-      mIsBlinkOn(false),
-      mVisible(false),
-      mReadOnly(false),
-      mShowDuringSelection(false),
-      mIgnoreUserModify(true) {}
+nsCaret::nsCaret() = default;
 
 nsCaret::~nsCaret() { StopBlinking(); }
 
@@ -82,6 +73,7 @@ nsresult nsCaret::Init(PresShell* aPresShell) {
 
   selection->AddSelectionListener(this);
   mDomSelectionWeak = selection;
+  UpdateCaretPositionFromSelectionIfNeeded();
 
   return NS_OK;
 }
@@ -137,8 +129,7 @@ void nsCaret::Terminate() {
   }
   mDomSelectionWeak = nullptr;
   mPresShell = nullptr;
-
-  mOverrideContent = nullptr;
+  mCaretPosition = {};
 }
 
 NS_IMPL_ISUPPORTS(nsCaret, nsISelectionListener)
@@ -148,15 +139,31 @@ Selection* nsCaret::GetSelection() { return mDomSelectionWeak; }
 void nsCaret::SetSelection(Selection* aDOMSel) {
   MOZ_ASSERT(aDOMSel);
   mDomSelectionWeak = aDOMSel;
-  ResetBlinking();
-  SchedulePaint(aDOMSel);
-}
-
-void nsCaret::SetVisible(bool inMakeVisible) {
-  mVisible = inMakeVisible;
-  mIgnoreUserModify = mVisible;
+  UpdateCaretPositionFromSelectionIfNeeded();
   ResetBlinking();
   SchedulePaint();
+}
+
+void nsCaret::SetVisible(bool aVisible) {
+  mVisible = aVisible;
+  mIgnoreUserModify = aVisible;
+  ResetBlinking();
+  SchedulePaint();
+}
+
+bool nsCaret::IsVisible() {
+  if (!mVisible || mHideCount) {
+    return false;
+  }
+
+  if (!mShowDuringSelection) {
+    Selection* selection = GetSelection();
+    if (!selection || !selection->IsCollapsed()) {
+      return false;
+    }
+  }
+
+  return !IsMenuPopupHidingCaret();
 }
 
 void nsCaret::AddForceHide() {
@@ -176,8 +183,8 @@ void nsCaret::RemoveForceHide() {
   SchedulePaint();
 }
 
-void nsCaret::SetCaretReadOnly(bool inMakeReadonly) {
-  mReadOnly = inMakeReadonly;
+void nsCaret::SetCaretReadOnly(bool aReadOnly) {
+  mReadOnly = aReadOnly;
   ResetBlinking();
   SchedulePaint();
 }
@@ -333,61 +340,48 @@ nsRect nsCaret::GetGeometryForFrame(nsIFrame* aFrame, int32_t aFrameOffset,
   return rect;
 }
 
-nsIFrame* nsCaret::GetFrameAndOffset(const Selection* aSelection,
-                                     nsINode* aOverrideNode,
-                                     int32_t aOverrideOffset,
-                                     int32_t* aFrameOffset,
-                                     nsIFrame** aUnadjustedFrame) {
-  if (aUnadjustedFrame) {
-    *aUnadjustedFrame = nullptr;
+auto nsCaret::CaretPositionFor(const Selection* aSelection) -> CaretPosition {
+  if (!aSelection) {
+    return {};
   }
-
-  nsINode* focusNode;
-  int32_t focusOffset;
-
-  if (aOverrideNode) {
-    focusNode = aOverrideNode;
-    focusOffset = aOverrideOffset;
-  } else if (aSelection) {
-    focusNode = aSelection->GetFocusNode();
-    focusOffset = aSelection->FocusOffset();
-  } else {
-    return nullptr;
+  const nsFrameSelection* frameSelection = aSelection->GetFrameSelection();
+  if (!frameSelection) {
+    return {};
   }
+  nsINode* node = aSelection->GetFocusNode();
+  if (!node) {
+    return {};
+  }
+  return {
+      node,
+      int32_t(aSelection->FocusOffset()),
+      frameSelection->GetHint(),
+      frameSelection->GetCaretBidiLevel(),
+  };
+}
 
-  if (!focusNode || !focusNode->IsContent() || !aSelection) {
-    return nullptr;
+CaretFrameData nsCaret::GetFrameAndOffset(const CaretPosition& aPosition) {
+  nsINode* focusNode = aPosition.mContent;
+  int32_t focusOffset = aPosition.mOffset;
+
+  if (!focusNode || !focusNode->IsContent()) {
+    return {};
   }
 
   nsIContent* contentNode = focusNode->AsContent();
-  nsFrameSelection* frameSelection = aSelection->GetFrameSelection();
-  BidiEmbeddingLevel bidiLevel = frameSelection->GetCaretBidiLevel();
-  const CaretFrameData result =
-      SelectionMovementUtils::GetCaretFrameForNodeOffset(
-          frameSelection, contentNode, focusOffset, frameSelection->GetHint(),
-          bidiLevel, ForceEditableRegion::No);
-  
-  
-  if (result.mFrame) {
-    frameSelection->SetHint(result.mHint);
-  }
-  if (aUnadjustedFrame) {
-    *aUnadjustedFrame = result.mUnadjustedFrame;
-  }
-  if (aFrameOffset) {
-    *aFrameOffset = result.mOffsetInFrameContent;
-  }
-  return result.mFrame;
+  return SelectionMovementUtils::GetCaretFrameForNodeOffset(
+      nullptr, contentNode, focusOffset, aPosition.mHint, aPosition.mBidiLevel,
+      ForceEditableRegion::No);
 }
 
 
 nsIFrame* nsCaret::GetGeometry(const Selection* aSelection, nsRect* aRect) {
-  int32_t frameOffset;
-  nsIFrame* frame = GetFrameAndOffset(aSelection, nullptr, 0, &frameOffset);
-  if (frame) {
-    *aRect = GetGeometryForFrame(frame, frameOffset, nullptr);
+  auto data = GetFrameAndOffset(CaretPositionFor(aSelection));
+  if (data.mFrame) {
+    *aRect =
+        GetGeometryForFrame(data.mFrame, data.mOffsetInFrameContent, nullptr);
   }
-  return frame;
+  return data.mFrame;
 }
 
 [[nodiscard]] static nsIFrame* GetContainingBlockIfNeeded(nsIFrame* aFrame) {
@@ -397,31 +391,15 @@ nsIFrame* nsCaret::GetGeometry(const Selection* aSelection, nsRect* aRect) {
   return aFrame->GetContainingBlock();
 }
 
-void nsCaret::SchedulePaint(Selection* aSelection) {
-  if (mLastCaretFrame) {
-    mLastCaretFrame->MarkNeedsDisplayItemRebuild();
-  }
-
-  Selection* selection;
-  if (aSelection) {
-    selection = aSelection;
-  } else {
-    selection = GetSelection();
-  }
-
-  int32_t frameOffset;
-  nsIFrame* frame = GetFrameAndOffset(selection, mOverrideContent,
-                                      mOverrideOffset, &frameOffset);
-  if (!frame) {
-    mLastCaretFrame = nullptr;
+void nsCaret::SchedulePaint() {
+  auto data = GetFrameAndOffset(mCaretPosition);
+  if (!data.mFrame) {
     return;
   }
-
+  nsIFrame* frame = data.mFrame;
   if (nsIFrame* cb = GetContainingBlockIfNeeded(frame)) {
     frame = cb;
   }
-
-  mLastCaretFrame = frame;
   frame->SchedulePaint();
 }
 
@@ -430,12 +408,32 @@ void nsCaret::SetVisibilityDuringSelection(bool aVisibility) {
   SchedulePaint();
 }
 
-void nsCaret::SetCaretPosition(nsINode* aNode, int32_t aOffset) {
-  mOverrideContent = aNode;
-  mOverrideOffset = aOffset;
-
-  ResetBlinking();
+void nsCaret::UpdateCaretPositionFromSelectionIfNeeded() {
+  if (mFixedCaretPosition) {
+    return;
+  }
+  CaretPosition newPos = CaretPositionFor(GetSelection());
+  if (newPos == mCaretPosition) {
+    return;
+  }
+  
+  
   SchedulePaint();
+  mCaretPosition = newPos;
+  SchedulePaint();
+}
+
+void nsCaret::SetCaretPosition(nsINode* aNode, int32_t aOffset) {
+  
+  mFixedCaretPosition = !!aNode;
+  if (mFixedCaretPosition) {
+    SchedulePaint();
+    mCaretPosition = {aNode, aOffset};
+    SchedulePaint();
+  } else {
+    UpdateCaretPositionFromSelectionIfNeeded();
+  }
+  ResetBlinking();
 }
 
 void nsCaret::CheckSelectionLanguageChange() {
@@ -484,16 +482,15 @@ nsIFrame* nsCaret::GetPaintGeometry(nsRect* aCaretRect, nsRect* aHookRect,
   
   CheckSelectionLanguageChange();
 
-  int32_t frameOffset;
-  nsIFrame* unadjustedFrame = nullptr;
-  nsIFrame* frame =
-      GetFrameAndOffset(GetSelection(), mOverrideContent, mOverrideOffset,
-                        &frameOffset, &unadjustedFrame);
-  MOZ_ASSERT(!!frame == !!unadjustedFrame);
-  if (!frame) {
+  auto data = GetFrameAndOffset(mCaretPosition);
+  MOZ_ASSERT(!!data.mFrame == !!data.mUnadjustedFrame);
+  if (!data.mFrame) {
     return nullptr;
   }
 
+  nsIFrame* frame = data.mFrame;
+  nsIFrame* unadjustedFrame = data.mUnadjustedFrame;
+  int32_t frameOffset(data.mOffsetInFrameContent);
   
   
   
@@ -561,16 +558,14 @@ void nsCaret::PaintCaret(DrawTarget& aDrawTarget, nsIFrame* aForFrame,
 NS_IMETHODIMP
 nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel, int16_t aReason,
                                 int32_t aAmount) {
-  if (mLastCaretFrame) {
-    mLastCaretFrame->MarkNeedsDisplayItemRebuild();
-  }
   
   
   
   
-  if ((aReason & nsISelectionListener::MOUSEUP_REASON) ||
-      !IsVisible(aDomSel))  
+  if ((aReason & nsISelectionListener::MOUSEUP_REASON) || !IsVisible()) {
+    
     return NS_OK;
+  }
 
   
   
@@ -579,11 +574,12 @@ nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel, int16_t aReason,
   
   
   
-
-  if (mDomSelectionWeak != aDomSel) return NS_OK;
+  if (mFixedCaretPosition || mDomSelectionWeak != aDomSel) {
+    return NS_OK;
+  }
 
   ResetBlinking();
-  SchedulePaint(aDomSel);
+  UpdateCaretPositionFromSelectionIfNeeded();
 
   return NS_OK;
 }
@@ -656,28 +652,27 @@ size_t nsCaret::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   return total;
 }
 
+
+
 bool nsCaret::IsMenuPopupHidingCaret() {
   
   nsXULPopupManager* popMgr = nsXULPopupManager::GetInstance();
   nsTArray<nsIFrame*> popups;
   popMgr->GetVisiblePopups(popups);
-
-  if (popups.Length() == 0)
+  if (popups.IsEmpty()) {
     return false;  
+  }
 
-  
-  
-  if (!mDomSelectionWeak) {
+  nsCOMPtr<nsIContent> caretContent =
+      nsIContent::FromNodeOrNull(mCaretPosition.mContent);
+  if (!caretContent) {
     return true;  
   }
-  nsCOMPtr<nsIContent> caretContent =
-      nsIContent::FromNodeOrNull(mDomSelectionWeak->GetFocusNode());
-  if (!caretContent) return true;  
 
   
   
   for (uint32_t i = 0; i < popups.Length(); i++) {
-    nsMenuPopupFrame* popupFrame = static_cast<nsMenuPopupFrame*>(popups[i]);
+    auto* popupFrame = static_cast<nsMenuPopupFrame*>(popups[i]);
     nsIContent* popupContent = popupFrame->GetContent();
 
     if (caretContent->IsInclusiveDescendantOf(popupContent)) {
