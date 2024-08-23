@@ -245,9 +245,6 @@ def wantsGetWrapperCache(desc):
     )
 
 
-
-
-
 def indent(s, indentLevel=2):
     """
     Indent C++ code.
@@ -255,9 +252,16 @@ def indent(s, indentLevel=2):
     Weird secret feature: this doesn't indent lines that start with # (such as
     #include lines or #ifdef/#endif).
     """
-    if not s or s[0] in "\n#":
-        return s
-    return (indentLevel * " ") + s
+
+    
+    
+    padding = indentLevel * " "
+    return "\n".join(
+        [
+            (padding + line) if line and line[0] != "#" else line
+            for line in s.split("\n")
+        ]
+    )
 
 
 
