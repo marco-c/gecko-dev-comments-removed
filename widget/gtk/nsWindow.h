@@ -460,6 +460,8 @@ class nsWindow final : public nsBaseWidget {
   
   void ClearRenderingQueue();
 
+  void DisableRendering();
+
   bool ApplyEnterLeaveMutterWorkaround();
 
   void NotifyOcclusionState(mozilla::widget::OcclusionState aState) override;
@@ -630,12 +632,8 @@ class nsWindow final : public nsBaseWidget {
   mozilla::Mutex mTitlebarRectMutex;
   LayoutDeviceIntRect mTitlebarRect MOZ_GUARDED_BY(mTitlebarRectMutex);
 
-  
-  mozilla::Mutex mWindowVisibilityMutex;
+  mozilla::Mutex mDestroyMutex;
 
-  
-  
-  mozilla::Atomic<bool, mozilla::Relaxed> mIsMapped;
   
   bool mIsDestroyed : 1;
   
@@ -647,6 +645,9 @@ class nsWindow final : public nsBaseWidget {
   
   
   bool mNeedsShow : 1;
+  
+  
+  bool mIsMapped : 1;
   
   bool mEnabled : 1;
   

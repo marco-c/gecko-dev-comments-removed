@@ -187,6 +187,8 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor);
 
 static gboolean expose_event_cb(GtkWidget* widget, cairo_t* cr);
 static gboolean configure_event_cb(GtkWidget* widget, GdkEventConfigure* event);
+static void widget_map_cb(GtkWidget* widget);
+static void widget_unmap_cb(GtkWidget* widget);
 static void size_allocate_cb(GtkWidget* widget, GtkAllocation* allocation);
 static void toplevel_window_size_allocate_cb(GtkWidget* widget,
                                              GtkAllocation* allocation);
@@ -390,11 +392,11 @@ static void GtkWindowSetTransientFor(GtkWindow* aWindow, GtkWindow* aParent) {
 
 nsWindow::nsWindow()
     : mTitlebarRectMutex("nsWindow::mTitlebarRectMutex"),
-      mWindowVisibilityMutex("nsWindow::mWindowVisibilityMutex"),
-      mIsMapped(false),
+      mDestroyMutex("nsWindow::mDestroyMutex"),
       mIsDestroyed(false),
       mIsShown(false),
       mNeedsShow(false),
+      mIsMapped(false),
       mEnabled(true),
       mCreated(false),
       mHandleTouchEvent(false),
@@ -579,6 +581,7 @@ void nsWindow::Destroy() {
 
   LOG("nsWindow::Destroy\n");
 
+  MutexAutoLock lock(mDestroyMutex);
   mIsDestroyed = true;
   mCreated = false;
 
@@ -608,9 +611,6 @@ void nsWindow::Destroy() {
   }
 
   NativeShow(false);
-
-  MOZ_ASSERT(!gtk_widget_get_mapped(mShell));
-  MOZ_ASSERT(!gtk_widget_get_mapped(GTK_WIDGET(mContainer)));
 
   ClearTransparencyBitmap();
 
@@ -3399,10 +3399,15 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 
       
       
-      if (mWindowVisibilityMutex.TryLock()) {
-        
-        
-        if (mIsMapped) {
+      
+      
+      
+      
+      
+      
+      
+      if (mDestroyMutex.TryLock()) {
+        if (mGdkWindow && !mIsDestroyed) {
 #ifdef MOZ_X11
           if (GdkIsX11Display()) {
             eglWindow = (void*)GDK_WINDOW_XID(mGdkWindow);
@@ -3410,13 +3415,20 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 #endif
 #ifdef MOZ_WAYLAND
           if (GdkIsWaylandDisplay()) {
-            eglWindow = moz_container_wayland_get_egl_window(
-                mContainer, FractionalScaleFactor());
+            bool hiddenWindow =
+                mCompositorWidgetDelegate &&
+                mCompositorWidgetDelegate->AsGtkCompositorWidget() &&
+                mCompositorWidgetDelegate->AsGtkCompositorWidget()->IsHidden();
+            if (!hiddenWindow) {
+              eglWindow = moz_container_wayland_get_egl_window(
+                  mContainer, FractionalScaleFactor());
+            }
           }
 #endif
         }
-        mWindowVisibilityMutex.Unlock();
+        mDestroyMutex.Unlock();
       }
+
       LOG("Get NS_NATIVE_EGL_WINDOW mGdkWindow %p returned eglWindow %p",
           mGdkWindow, eglWindow);
       return eglWindow;
@@ -4089,6 +4101,41 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
   NotifyWindowMoved(mBounds.x, mBounds.y);
 
   return FALSE;
+}
+
+void nsWindow::OnMap() {
+  LOG("nsWindow::OnMap");
+  
+  
+  
+  
+  mIsMapped = true;
+  ConfigureGdkWindow();
+}
+
+void nsWindow::OnUnmap() {
+  LOG("nsWindow::OnUnmap");
+
+  mIsMapped = false;
+
+  if (mSourceDragContext) {
+    static auto sGtkDragCancel =
+        (void (*)(GdkDragContext*))dlsym(RTLD_DEFAULT, "gtk_drag_cancel");
+    if (sGtkDragCancel) {
+      sGtkDragCancel(mSourceDragContext);
+      mSourceDragContext = nullptr;
+    }
+  }
+
+  
+  
+  
+  if (GdkIsX11Display()) {
+    mSurfaceProvider.CleanupResources();
+    if (mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->DisableRendering();
+    }
+  }
 }
 
 void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
@@ -5778,8 +5825,8 @@ bool nsWindow::GetShapedState() {
 }
 
 void nsWindow::ConfigureCompositor() {
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
   MOZ_DIAGNOSTIC_ASSERT(mCompositorState == COMPOSITOR_ENABLED);
+  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
 
   LOG("nsWindow::ConfigureCompositor()");
   auto startCompositing = [self = RefPtr{this}, this]() -> void {
@@ -5788,8 +5835,8 @@ void nsWindow::ConfigureCompositor() {
 
     
     if (mIsDestroyed || !mIsMapped) {
-      LOG("  quit, mIsDestroyed = %d mIsMapped = %d", mIsDestroyed,
-          !!mIsMapped);
+      LOG("  quit, mIsDestroyed = %d mIsMapped = %d", !!mIsDestroyed,
+          mIsMapped);
       return;
     }
     
@@ -6311,6 +6358,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                          G_CALLBACK(settings_xft_dpi_changed_cb), this);
 
   
+  g_signal_connect(mContainer, "map", G_CALLBACK(widget_map_cb), nullptr);
+  g_signal_connect(mContainer, "unmap", G_CALLBACK(widget_unmap_cb), nullptr);
   g_signal_connect_after(mContainer, "size_allocate",
                          G_CALLBACK(size_allocate_cb), nullptr);
   g_signal_connect(mContainer, "hierarchy-changed",
@@ -6657,8 +6706,7 @@ void nsWindow::ResumeCompositorImpl() {
   LOG("nsWindow::ResumeCompositorImpl()\n");
 
   MOZ_DIAGNOSTIC_ASSERT(mCompositorWidgetDelegate);
-  mCompositorWidgetDelegate->SetRenderingSurface(GetX11Window(),
-                                                 GetShapedState());
+  mCompositorWidgetDelegate->EnableRendering(GetX11Window(), GetShapedState());
 
   
   
@@ -8242,6 +8290,25 @@ static gboolean configure_event_cb(GtkWidget* widget,
   return window->OnConfigureEvent(widget, event);
 }
 
+
+
+
+static void widget_map_cb(GtkWidget* widget) {
+  RefPtr<nsWindow> window = get_window_for_gtk_widget(widget);
+  if (!window) {
+    return;
+  }
+  window->OnMap();
+}
+
+static void widget_unmap_cb(GtkWidget* widget) {
+  RefPtr<nsWindow> window = get_window_for_gtk_widget(widget);
+  if (!window) {
+    return;
+  }
+  window->OnUnmap();
+}
+
 static void size_allocate_cb(GtkWidget* widget, GtkAllocation* allocation) {
   RefPtr<nsWindow> window = get_window_for_gtk_widget(widget);
   if (!window) {
@@ -9060,7 +9127,7 @@ void nsWindow::DidGetNonBlankPaint() {
 void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
   LOG("nsWindow::SetCompositorWidgetDelegate %p mIsMapped %d "
       "mCompositorWidgetDelegate %p\n",
-      delegate, !!mIsMapped, mCompositorWidgetDelegate);
+      delegate, mIsMapped, mCompositorWidgetDelegate);
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (delegate) {
@@ -9977,28 +10044,41 @@ nsWindow* nsWindow::GetFocusedWindow() { return gFocusWindow; }
 #ifdef MOZ_WAYLAND
 bool nsWindow::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
-  if (!GdkIsWaylandDisplay() || !mIsMapped) {
+  if (!GdkIsWaylandDisplay()) {
     return true;
   }
 
-  gint scale = GdkCeiledScaleFactor();
+  
+  
+  bool paint = false;
+
+  
+  if (mDestroyMutex.TryLock()) {
+    if (!mIsDestroyed) {
+      gint scale = GdkCeiledScaleFactor();
 #  ifdef MOZ_LOGGING
-  if (LOG_ENABLED()) {
-    static uintptr_t lastSizeLog = 0;
-    uintptr_t sizeLog =
-        uintptr_t(this) + aEGLWindowSize.width + aEGLWindowSize.height + scale +
-        aEGLWindowSize.width / scale + aEGLWindowSize.height / scale;
-    if (lastSizeLog != sizeLog) {
-      lastSizeLog = sizeLog;
-      LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled "
-          "%d x %d)",
-          aEGLWindowSize.width, aEGLWindowSize.height, scale,
-          aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
-    }
-  }
+      if (LOG_ENABLED()) {
+        static uintptr_t lastSizeLog = 0;
+        uintptr_t sizeLog = uintptr_t(this) + aEGLWindowSize.width +
+                            aEGLWindowSize.height + scale +
+                            aEGLWindowSize.width / scale +
+                            aEGLWindowSize.height / scale;
+        if (lastSizeLog != sizeLog) {
+          lastSizeLog = sizeLog;
+          LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled "
+              "%d x "
+              "%d)",
+              aEGLWindowSize.width, aEGLWindowSize.height, scale,
+              aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
+        }
+      }
 #  endif
-  return moz_container_wayland_egl_window_set_size(
-      mContainer, aEGLWindowSize.ToUnknownSize(), scale);
+      paint = moz_container_wayland_egl_window_set_size(
+          mContainer, aEGLWindowSize.ToUnknownSize(), scale);
+    }
+    mDestroyMutex.Unlock();
+  }
+  return paint;
 }
 #endif
 
@@ -10015,34 +10095,8 @@ void nsWindow::ClearRenderingQueue() {
   DestroyLayerManager();
 }
 
-
-
-void nsWindow::OnMap() {
-  LOG("nsWindow::OnMap");
-  
-  
-  
-  
-  MutexAutoLock lock(mWindowVisibilityMutex);
-  mIsMapped = true;
-
-  ConfigureGdkWindow();
-}
-
-void nsWindow::OnUnmap() {
-  LOG("nsWindow::OnUnmap");
-
-  MutexAutoLock lock(mWindowVisibilityMutex);
-  mIsMapped = false;
-
-  if (mSourceDragContext) {
-    static auto sGtkDragCancel =
-        (void (*)(GdkDragContext*))dlsym(RTLD_DEFAULT, "gtk_drag_cancel");
-    if (sGtkDragCancel) {
-      sGtkDragCancel(mSourceDragContext);
-      mSourceDragContext = nullptr;
-    }
-  }
+void nsWindow::DisableRendering() {
+  LOG("nsWindow::DisableRendering()");
 
   if (mGdkWindow) {
     if (mIMContext) {
@@ -10054,19 +10108,11 @@ void nsWindow::OnUnmap() {
 
   
   
-  
-  if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->CleanupResources();
-  }
-
-  
-  mSurfaceProvider.CleanupResources();
-
-  
-  
   if (mWindowType == WindowType::Popup) {
     DestroyLayerManager();
+    mSurfaceProvider.CleanupResources();
   } else {
+#ifdef MOZ_WAYLAND
     
     
     
@@ -10078,16 +10124,19 @@ void nsWindow::OnUnmap() {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-      remoteRenderer->SendResume();
+    if (moz_container_wayland_has_egl_window(mContainer) &&
+        mCompositorWidgetDelegate) {
+      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+        
+        
+        
+        mCompositorWidgetDelegate->DisableRendering();
+        remoteRenderer->SendResume();
+        mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                                   GetShapedState());
+      }
     }
+#endif
   }
 }
 

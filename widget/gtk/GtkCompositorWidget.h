@@ -28,9 +28,9 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
       const LayoutDeviceIntSize& aClientSize) = 0;
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
-  virtual void CleanupResources() = 0;
-  virtual void SetRenderingSurface(const uintptr_t aXWindow,
-                                   const bool aShaped) = 0;
+  virtual void DisableRendering() = 0;
+  virtual void EnableRendering(const uintptr_t aXWindow,
+                               const bool aShaped) = 0;
 
   
 
@@ -74,11 +74,10 @@ class GtkCompositorWidget : public CompositorWidget,
 
   
   
-  void CleanupResources() override;
+  void DisableRendering() override;
 
   
-  void SetRenderingSurface(const uintptr_t aXWindow,
-                           const bool aShaped) override;
+  void EnableRendering(const uintptr_t aXWindow, const bool aShaped) override;
 
   
   
@@ -91,6 +90,11 @@ class GtkCompositorWidget : public CompositorWidget,
   RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
 #endif
 
+  bool PreRender(WidgetRenderingContext* aContext) override {
+    return !mIsRenderingSuspended;
+  }
+  bool IsHidden() const override { return mIsRenderingSuspended; }
+
   
 
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
@@ -98,10 +102,10 @@ class GtkCompositorWidget : public CompositorWidget,
 
  private:
 #if defined(MOZ_WAYLAND)
-  void ConfigureWaylandBackend();
+  bool ConfigureWaylandBackend();
 #endif
 #if defined(MOZ_X11)
-  void ConfigureX11Backend(Window aXWindow, bool aShaped);
+  bool ConfigureX11Backend(Window aXWindow, bool aShaped);
 #endif
 #ifdef MOZ_LOGGING
   bool IsPopup();
@@ -125,6 +129,7 @@ class GtkCompositorWidget : public CompositorWidget,
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::layers::NativeLayerRootWayland> mNativeLayerRoot;
 #endif
+  Atomic<bool> mIsRenderingSuspended{true};
 };
 
 }  
