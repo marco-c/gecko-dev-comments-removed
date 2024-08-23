@@ -3491,6 +3491,12 @@ pref("browser.search.newSearchConfig.enabled", false);
 
 
 
+
+
+
+pref("media.gmp-manager.allowLocalSources", true);
+
+
 pref("media.gmp-manager.url", "https://aus5.mozilla.org/update/3/GMP/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
 
 
