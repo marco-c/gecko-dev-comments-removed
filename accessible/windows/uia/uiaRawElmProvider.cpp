@@ -113,8 +113,9 @@ uiaRawElmProvider::get_ProviderOptions(
     __RPC__out enum ProviderOptions* aOptions) {
   if (!aOptions) return E_INVALIDARG;
 
-  
-  *aOptions = ProviderOptions_ServerSideProvider;
+  *aOptions = ProviderOptions_ServerSideProvider |
+              ProviderOptions_UseComThreading |
+              ProviderOptions_HasNativeIAccessible;
   return S_OK;
 }
 
