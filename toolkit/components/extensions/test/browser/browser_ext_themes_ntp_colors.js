@@ -26,50 +26,43 @@ async function test_ntp_theme(theme, isBrightText) {
   });
 
   let browser = gBrowser.selectedBrowser;
-  let systemDarkMode = matchMedia("(prefers-color-scheme: dark)").matches;
-
   let { originalBackground, originalCardBackground, originalColor } =
-    await SpecialPowers.spawn(
-      browser,
-      [{ systemDarkMode }],
-      function ({ systemDarkMode }) {
-        let doc = content.document;
-        ok(
-          !doc.documentElement.hasAttribute("lwt-newtab"),
-          `New tab page should not have lwt-newtab attribute`
-        );
-        ok(
-          !doc.documentElement.hasAttribute("lwtheme"),
-          `New tab page should not have lwtheme attribute`
-        );
-        is(
-          doc.documentElement.hasAttribute("lwt-newtab-brighttext"),
-          systemDarkMode,
-          `New tab page should have lwt-newtab-brighttext attribute if in dark mode`
-        );
+    await SpecialPowers.spawn(browser, [], function () {
+      let doc = content.document;
+      ok(
+        !doc.documentElement.hasAttribute("lwt-newtab"),
+        `New tab page should not have lwt-newtab attribute`
+      );
+      ok(
+        !doc.documentElement.hasAttribute("lwtheme"),
+        `New tab page should not have lwtheme attribute`
+      );
+      ok(
+        !doc.documentElement.hasAttribute("lwt-newtab-brighttext"),
+        `New tab page not should have lwt-newtab-brighttext attribute`
+      );
 
-        return {
-          originalBackground: content.getComputedStyle(doc.body)
-            .backgroundColor,
-          originalCardBackground: content.getComputedStyle(
-            doc.querySelector(".top-site-outer .tile")
-          ).backgroundColor,
-          originalColor: content.getComputedStyle(
-            doc.querySelector(".outer-wrapper")
-          ).color,
-          
-          
-          
-          
-          
-          
-          
-          originalLinks: content
-            .getComputedStyle(doc.documentElement)
-            .getPropertyValue("--newtab-link-primary-color"),
-        };
-      }
-    );
+      return {
+        originalBackground: content.getComputedStyle(doc.body)
+          .backgroundColor,
+        originalCardBackground: content.getComputedStyle(
+          doc.querySelector(".top-site-outer .tile")
+        ).backgroundColor,
+        originalColor: content.getComputedStyle(
+          doc.querySelector(".outer-wrapper")
+        ).color,
+        
+        
+        
+        
+        
+        
+        
+        originalLinks: content
+          .getComputedStyle(doc.documentElement)
+          .getPropertyValue("--newtab-link-primary-color"),
+      };
+    });
 
   await extension.startup();
 
@@ -195,6 +188,7 @@ add_task(async function test_support_ntp_colors() {
       
       
       ["layout.css.prefers-color-scheme.content-override", 1],
+      
       
       
       ["ui.systemUsesDarkTheme", 0],
