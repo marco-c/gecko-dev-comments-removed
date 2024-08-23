@@ -54,8 +54,9 @@ class nsAutoCompleteController final : public nsIAutoCompleteController,
   MOZ_CAN_RUN_SCRIPT nsresult OpenPopup();
   MOZ_CAN_RUN_SCRIPT nsresult ClosePopup();
 
-  nsresult StartSearch(uint16_t aSearchType);
+  nsresult StartSearch();
 
+  MOZ_CAN_RUN_SCRIPT nsresult DoSearches();
   nsresult BeforeSearches();
   MOZ_CAN_RUN_SCRIPT nsresult StartSearches();
   MOZ_CAN_RUN_SCRIPT void AfterSearches();
@@ -183,15 +184,11 @@ class nsAutoCompleteController final : public nsIAutoCompleteController,
   bool mPopupClosedByCompositionStart;
 
   
-  
   bool mProhibitAutoFill;
 
   
   
   bool mUserClearedAutoFill;
-
-  
-  bool mClearingAutoFillSearchesAgain;
 
   enum CompositionState {
     eCompositionState_None,
@@ -203,7 +200,6 @@ class nsAutoCompleteController final : public nsIAutoCompleteController,
   uint32_t mMatchCount;
   uint32_t mSearchesOngoing;
   uint32_t mSearchesFailed;
-  uint32_t mImmediateSearchesCount;
   
   
   

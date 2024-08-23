@@ -49,13 +49,11 @@ nsAutoCompleteController::nsAutoCompleteController()
       mPopupClosedByCompositionStart(false),
       mProhibitAutoFill(false),
       mUserClearedAutoFill(false),
-      mClearingAutoFillSearchesAgain(false),
       mCompositionState(eCompositionState_None),
       mSearchStatus(nsAutoCompleteController::STATUS_NONE),
       mMatchCount(0),
       mSearchesOngoing(0),
       mSearchesFailed(0),
-      mImmediateSearchesCount(0),
       mCompletedSelectionIndex(-1) {}
 
 nsAutoCompleteController::~nsAutoCompleteController() { SetInput(nullptr); }
@@ -130,9 +128,6 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput* aInput) {
   nsAutoString value;
   input->GetTextValue(value);
   SetSearchStringInternal(value);
-
-  
-  mClearingAutoFillSearchesAgain = false;
 
   return NS_OK;
 }
@@ -243,20 +238,16 @@ nsAutoCompleteController::HandleText(bool* _retval) {
       newValue.Length() < mPlaceholderCompletionString.Length() &&
       Substring(mPlaceholderCompletionString, 0, newValue.Length())
           .Equals(newValue);
-  bool searchAgainOnAutoFillClear =
-      mUserClearedAutoFill && mClearingAutoFillSearchesAgain;
 
-  if (!handlingCompositionCommit && !searchAgainOnAutoFillClear &&
-      newValue.Length() > 0 && repeatingPreviousSearch) {
+  if (!handlingCompositionCommit && newValue.Length() > 0 &&
+      repeatingPreviousSearch) {
     return NS_OK;
   }
 
-  if (userRemovedText || searchAgainOnAutoFillClear) {
-    if (userRemovedText) {
-      
-      
-      ClearResults();
-    }
+  if (userRemovedText) {
+    
+    
+    ClearResults();
     mProhibitAutoFill = true;
     mPlaceholderCompletionString.Truncate();
   } else {
@@ -848,16 +839,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY
 NS_IMETHODIMP
 nsAutoCompleteController::Notify(nsITimer* timer) {
   mTimer = nullptr;
-
-  if (mImmediateSearchesCount == 0) {
-    
-    
-    nsresult rv = BeforeSearches();
-    if (NS_FAILED(rv)) return rv;
-  }
-  StartSearch(nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED);
-  AfterSearches();
-  return NS_OK;
+  return DoSearches();
 }
 
 
@@ -928,7 +910,7 @@ nsresult nsAutoCompleteController::BeforeSearches() {
   return NS_OK;
 }
 
-nsresult nsAutoCompleteController::StartSearch(uint16_t aSearchType) {
+nsresult nsAutoCompleteController::StartSearch() {
   NS_ENSURE_STATE(mInput);
   nsCOMPtr<nsIAutoCompleteInput> input = mInput;
 
@@ -939,14 +921,6 @@ nsresult nsAutoCompleteController::StartSearch(uint16_t aSearchType) {
   nsCOMArray<nsIAutoCompleteSearch> searchesCopy(mSearches);
   for (uint32_t i = 0; i < searchesCopy.Length(); ++i) {
     nsCOMPtr<nsIAutoCompleteSearch> search = searchesCopy[i];
-
-    
-    
-    uint16_t searchType = nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED;
-    nsCOMPtr<nsIAutoCompleteSearchDescriptor> searchDesc =
-        do_QueryInterface(search);
-    if (searchDesc) searchDesc->GetSearchType(&searchType);
-    if (searchType != aSearchType) continue;
 
     nsIAutoCompleteResult* result = mResultCache.SafeObjectAt(i);
 
@@ -962,13 +936,6 @@ nsresult nsAutoCompleteController::StartSearch(uint16_t aSearchType) {
     nsAutoString searchParam;
     nsresult rv = input->GetSearchParam(searchParam);
     if (NS_FAILED(rv)) return rv;
-
-    
-    
-    
-    if (mProhibitAutoFill && mClearingAutoFillSearchesAgain) {
-      searchParam.AppendLiteral(" prohibit-autofill");
-    }
 
     uint32_t userContextId;
     rv = input->GetUserContextId(&userContextId);
@@ -1078,7 +1045,6 @@ nsresult nsAutoCompleteController::StartSearches() {
     input->GetSearchCount(&searchCount);
     mResults.SetCapacity(searchCount);
     mSearches.SetCapacity(searchCount);
-    mImmediateSearchesCount = 0;
 
     const char* searchCID = kAutoCompleteSearchCID;
 
@@ -1095,24 +1061,6 @@ nsresult nsAutoCompleteController::StartSearches() {
       nsCOMPtr<nsIAutoCompleteSearch> search = do_GetService(cid.get());
       if (search) {
         mSearches.AppendObject(search);
-
-        
-        nsCOMPtr<nsIAutoCompleteSearchDescriptor> searchDesc =
-            do_QueryInterface(search);
-        if (searchDesc) {
-          uint16_t searchType =
-              nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED;
-          if (NS_SUCCEEDED(searchDesc->GetSearchType(&searchType)) &&
-              searchType ==
-                  nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_IMMEDIATE) {
-            mImmediateSearchesCount++;
-          }
-
-          if (!mClearingAutoFillSearchesAgain) {
-            searchDesc->GetClearingAutoFillSearchesAgain(
-                &mClearingAutoFillSearchesAgain);
-          }
-        }
       }
     }
   }
@@ -1125,34 +1073,26 @@ nsresult nsAutoCompleteController::StartSearches() {
   uint32_t timeout;
   input->GetTimeout(&timeout);
 
-  uint32_t immediateSearchesCount = mImmediateSearchesCount;
   if (timeout == 0) {
     
-    immediateSearchesCount = mSearches.Length();
+    
+    return DoSearches();
   }
-
-  if (immediateSearchesCount > 0) {
-    nsresult rv = BeforeSearches();
-    if (NS_FAILED(rv)) return rv;
-    StartSearch(nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_IMMEDIATE);
-
-    if (mSearches.Length() == immediateSearchesCount) {
-      
-      
-      
-      StartSearch(nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED);
-
-      
-      AfterSearches();
-      return NS_OK;
-    }
-  }
-
-  MOZ_ASSERT(timeout > 0, "Trying to delay searches with a 0 timeout!");
 
   
   return NS_NewTimerWithCallback(getter_AddRefs(mTimer), this, timeout,
                                  nsITimer::TYPE_ONE_SHOT);
+}
+
+nsresult nsAutoCompleteController::DoSearches() {
+  nsresult rv = BeforeSearches();
+  if (NS_FAILED(rv)) return rv;
+
+  StartSearch();
+
+  
+  AfterSearches();
+  return NS_OK;
 }
 
 nsresult nsAutoCompleteController::ClearSearchTimer() {
