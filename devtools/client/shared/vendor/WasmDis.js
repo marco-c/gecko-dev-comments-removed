@@ -256,7 +256,7 @@ var DefaultNameResolver =  (function () {
         return "$elem".concat(index);
     };
     DefaultNameResolver.prototype.getTagName = function (index, isRef) {
-        return "$event".concat(index);
+        return "$tag".concat(index);
     };
     DefaultNameResolver.prototype.getFunctionName = function (index, isImport, isRef) {
         return (isImport ? "$import" : "$func") + index;
@@ -476,6 +476,8 @@ var WasmDisassembler =  (function () {
                 return "eq";
             case -20 :
                 return "i31";
+            case -23 :
+                return "exnref";
             case -21 :
                 return "struct";
             case -22 :
@@ -486,7 +488,12 @@ var WasmDisassembler =  (function () {
                 return "noextern";
             case -15 :
                 return "none";
+            case -12 :
+                return "noexnref";
         }
+    };
+    WasmDisassembler.prototype.refTypeToString = function (typeIndex, nullable) {
+        return this.typeToString(new WasmParser_js_1.RefType(nullable ? -29  : -28 , typeIndex));
     };
     WasmDisassembler.prototype.typeToString = function (type) {
         switch (type.kind) {
@@ -508,6 +515,8 @@ var WasmDisassembler =  (function () {
                 return "funcref";
             case -17 :
                 return "externref";
+            case -23 :
+                return "exnref";
             case -18 :
                 return "anyref";
             case -19 :
@@ -522,6 +531,8 @@ var WasmDisassembler =  (function () {
                 return "nullfuncref";
             case -14 :
                 return "nullexternref";
+            case -12 :
+                return "nullexnref";
             case -15 :
                 return "nullref";
             case -28 :
@@ -647,6 +658,7 @@ var WasmDisassembler =  (function () {
             case 3 :
             case 4 :
             case 6 :
+            case 31 :
                 if (this._labelMode !== LabelMode.Depth) {
                     var backrefLabel_1 = {
                         line: this._lines.length,
@@ -665,6 +677,31 @@ var WasmDisassembler =  (function () {
                     this._backrefLabels.push(backrefLabel_1);
                 }
                 this.printBlockType(operator.blockType);
+                if (operator.tryTable) {
+                    for (var i = 0; i < operator.tryTable.length; i++) {
+                        this.appendBuffer(" (");
+                        switch (operator.tryTable[i].kind) {
+                            case WasmParser_js_1.CatchHandlerKind.Catch:
+                                this.appendBuffer("catch ");
+                                break;
+                            case WasmParser_js_1.CatchHandlerKind.CatchRef:
+                                this.appendBuffer("catch_ref ");
+                                break;
+                            case WasmParser_js_1.CatchHandlerKind.CatchAll:
+                                this.appendBuffer("catch_all ");
+                                break;
+                            case WasmParser_js_1.CatchHandlerKind.CatchAllRef:
+                                this.appendBuffer("catch_all_ref ");
+                                break;
+                        }
+                        if (operator.tryTable[i].tagIndex != null) {
+                            var tagName = this._nameResolver.getTagName(operator.tryTable[i].tagIndex, true);
+                            this.appendBuffer("".concat(tagName, " "));
+                        }
+                        this.appendBuffer(this.useLabel(operator.tryTable[i].depth + 1));
+                        this.appendBuffer(")");
+                    }
+                }
                 break;
             case 11 :
                 if (this._labelMode === LabelMode.Depth) {
@@ -947,9 +984,17 @@ var WasmDisassembler =  (function () {
                 break;
             }
             case 64278 :
+            case 64276 : {
+                var refType = this.refTypeToString(operator.refType, false);
+                this.appendBuffer(" ".concat(refType));
+                break;
+            }
             case 64279 :
-            case 64276 :
-            case 64277 :
+            case 64277 : {
+                var refType = this.refTypeToString(operator.refType, true);
+                this.appendBuffer(" ".concat(refType));
+                break;
+            }
             case 64257 :
             case 64256 :
             case 64263 :
@@ -1496,7 +1541,6 @@ var WasmDisassembler =  (function () {
                         case 5 :
                         case 7 :
                         case 25 :
-                        case 10 :
                         case 24 :
                             this.decreaseIndent();
                             break;
@@ -1510,9 +1554,9 @@ var WasmDisassembler =  (function () {
                         case 3 :
                         case 5 :
                         case 6 :
+                        case 31 :
                         case 7 :
                         case 25 :
-                        case 10 :
                             this.increaseIndent();
                             break;
                     }
