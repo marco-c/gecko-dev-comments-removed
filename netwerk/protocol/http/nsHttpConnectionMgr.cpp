@@ -817,35 +817,10 @@ HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnection(
   for (uint32_t i = 0; i < keyLen; ++i) {
     conn = FindCoalescableConnectionByHashKey(ent, ent->mCoalescingKeys[i],
                                               justKidding, aNoHttp2, aNoHttp3);
-
-    auto usableEntry = [&](HttpConnectionBase* conn) {
-      
-      
-      if (StaticPrefs::network_http_http2_aggressive_coalescing()) {
-        return true;
-      }
-
-      
-      
-      NetAddr addr;
-      nsresult rv = conn->GetPeerAddr(&addr);
-      if (NS_FAILED(rv)) {
-        
-        return false;
-      }
-      
-      addr.inet.port = 0;
-      return ent->mAddresses.Contains(addr);
-    };
-
     if (conn) {
-      LOG(("Found connection with matching hash"));
-      if (usableEntry(conn)) {
-        LOG(("> coalescing"));
-        return conn;
-      } else {
-        LOG(("> not coalescing as remote address not present in DNS records"));
-      }
+      LOG(("FindCoalescableConnection(%s) match conn %p on dns key %s\n",
+           ci->HashKey().get(), conn, ent->mCoalescingKeys[i].get()));
+      return conn;
     }
   }
 
