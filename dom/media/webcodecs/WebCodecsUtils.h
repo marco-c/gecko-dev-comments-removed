@@ -219,7 +219,7 @@ struct WebCodecsConfigurationChangeList {
 
   
   RefPtr<EncoderConfigurationChangeList> ToPEMChangeList() const;
-  nsString ToString() const;
+  nsCString ToString() const;
 
   nsTArray<WebCodecsEncoderConfigurationItem> mChanges;
 
@@ -236,7 +236,7 @@ VideoColorSpaceInit FallbackColorSpaceForWebContent();
 
 Maybe<CodecType> CodecStringToCodecType(const nsAString& aCodecString);
 
-nsString ConfigToString(const VideoDecoderConfig& aConfig);
+nsCString ConfigToString(const VideoDecoderConfig& aConfig);
 
 
 bool IsSupportedVideoCodec(const nsAString& aCodec);
