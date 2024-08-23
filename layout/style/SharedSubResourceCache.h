@@ -58,6 +58,9 @@ struct SharedSubResourceCacheLoadingValueBase {
   virtual void SetLoadCompleted() = 0;
   virtual void Cancel() = 0;
 
+  
+  Derived* GetNextSubResource() { return mNext; }
+
   ~SharedSubResourceCacheLoadingValueBase() {
     
     RefPtr<Derived> next = std::move(mNext);
