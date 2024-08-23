@@ -261,7 +261,10 @@ void RemoteEstimatorProxy::SendFeedbackOnRequest(
       sequence_number + 1, false);
 
   
-  RTC_DCHECK(feedback_packet != nullptr);
+  
+  if (feedback_packet == nullptr) {
+    return;
+  }
 
   
   packet_arrival_times_.EraseTo(first_sequence_number);
