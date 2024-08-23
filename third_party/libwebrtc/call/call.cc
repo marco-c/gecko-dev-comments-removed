@@ -973,11 +973,10 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
   
   
   VideoReceiveStream2* receive_stream = new VideoReceiveStream2(
-      &env_.task_queue_factory(), this, num_cpu_cores_,
-      transport_send_->packet_router(), std::move(configuration),
-      call_stats_.get(), &env_.clock(),
+      env_, this, num_cpu_cores_, transport_send_->packet_router(),
+      std::move(configuration), call_stats_.get(),
       std::make_unique<VCMTiming>(&env_.clock(), trials()),
-      &nack_periodic_processor_, decode_sync_.get(), &env_.event_log());
+      &nack_periodic_processor_, decode_sync_.get());
   
   
   receive_stream->RegisterWithTransport(&video_receiver_controller_);
