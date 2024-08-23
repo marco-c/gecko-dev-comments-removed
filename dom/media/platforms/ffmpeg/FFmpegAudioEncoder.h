@@ -60,6 +60,9 @@ class FFmpegAudioEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
   int mInputSampleRate = 0;
   UniquePtr<SpeexResamplerState, ResamplerDestroy> mResampler;
   uint64_t mPacketsDelivered = 0;
+  
+  
+  int mDtxThreshold = 0;
 };
 
 }  

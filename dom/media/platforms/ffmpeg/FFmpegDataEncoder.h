@@ -74,6 +74,9 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   Result<EncodedData, nsresult> EncodeWithModernAPIs();
   virtual Result<EncodedData, nsresult> DrainWithModernAPIs();
 #endif
+  
+  
+  
   virtual RefPtr<MediaRawData> ToMediaRawData(AVPacket* aPacket) = 0;
   RefPtr<MediaRawData> ToMediaRawDataCommon(AVPacket* aPacket);
   virtual Result<already_AddRefed<MediaByteBuffer>, nsresult> GetExtraData(

@@ -162,7 +162,16 @@ nsresult FFmpegAudioEncoder<LIBAV_VER>::InitSpecific() {
         }
         FFMPEG_LOGV("In-band FEC enabled for Opus encoder.");
       }
-      
+      if (specific.mUseDTX) {
+        if (mLib->av_opt_set(mCodecContext->priv_data, "dtx", "on", 0)) {
+          FFMPEG_LOG("Error %s DTX on Opus encoder",
+                      specific.mUseDTX ? "enabling" : "disabling");
+          return NS_ERROR_FAILURE;
+        }
+        
+        
+        mDtxThreshold = 3;
+      }
       
       
     }
@@ -381,6 +390,13 @@ RefPtr<MediaRawData> FFmpegAudioEncoder<LIBAV_VER>::ToMediaRawData(
     AVPacket* aPacket) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   MOZ_ASSERT(aPacket);
+
+  if (aPacket->size < mDtxThreshold) {
+    FFMPEG_LOG(
+        "DTX enabled and packet is %d bytes (threshold %d), not returning.",
+        aPacket->size, mDtxThreshold);
+    return nullptr;
+  }
 
   RefPtr<MediaRawData> data = ToMediaRawDataCommon(aPacket);
 

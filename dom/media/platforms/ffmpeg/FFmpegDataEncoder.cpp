@@ -240,7 +240,7 @@ MediaResult FFmpegDataEncoder<LIBAV_VER>::FinishInitCommon(AVCodec* aCodec) {
   AVDictionary* options = nullptr;
   if (int ret = OpenCodecContext(aCodec, &options); ret < 0) {
     FFMPEG_LOG("failed to open %s avcodec: %s", aCodec->name,
-                MakeErrorString(mLib, ret).get());
+               MakeErrorString(mLib, ret).get());
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("avcodec_open2 error"));
   }
@@ -337,7 +337,7 @@ FFmpegDataEncoder<LIBAV_VER>::EncodeWithModernAPIs() {
     
     
     FFMPEG_LOG("avcodec_send_frame error: %s",
-                MakeErrorString(mLib, ret).get());
+               MakeErrorString(mLib, ret).get());
     return Err(NS_ERROR_DOM_MEDIA_FATAL_ERR);
   }
 
@@ -354,16 +354,16 @@ FFmpegDataEncoder<LIBAV_VER>::EncodeWithModernAPIs() {
       
       
       FFMPEG_LOG("avcodec_receive_packet error: %s",
-                  MakeErrorString(mLib, ret).get());
+                 MakeErrorString(mLib, ret).get());
       return Err(NS_ERROR_DOM_MEDIA_FATAL_ERR);
     }
 
     RefPtr<MediaRawData> d = ToMediaRawData(pkt);
     mLib->av_packet_unref(pkt);
     if (!d) {
-      FFMPEGV_LOG("failed to create a MediaRawData from the AVPacket");
-      return Result<MediaDataEncoder::EncodedData, nsresult>(
-          NS_ERROR_DOM_MEDIA_FATAL_ERR);
+      
+      FFMPEG_LOG("No encoded packet output");
+      continue;
     }
     output.AppendElement(std::move(d));
   }
@@ -404,7 +404,7 @@ FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs() {
     }
 
     FFMPEG_LOG("avcodec_send_frame error: %s",
-                MakeErrorString(mLib, ret).get());
+               MakeErrorString(mLib, ret).get());
     return Err(NS_ERROR_DOM_MEDIA_FATAL_ERR);
   }
 
@@ -420,7 +420,7 @@ FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs() {
       
       
       FFMPEG_LOG("avcodec_receive_packet error: %s",
-                  MakeErrorString(mLib, ret).get());
+                 MakeErrorString(mLib, ret).get());
       return Err(NS_ERROR_DOM_MEDIA_FATAL_ERR);
     }
 
