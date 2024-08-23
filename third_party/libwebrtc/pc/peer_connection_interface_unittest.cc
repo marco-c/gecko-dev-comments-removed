@@ -641,8 +641,7 @@ class PeerConnectionFactoryForTest : public PeerConnectionFactory {
     
     dependencies.adm = FakeAudioCaptureModule::Create();
     EnableMediaWithDefaults(dependencies);
-    dependencies.event_log_factory = std::make_unique<RtcEventLogFactory>(
-        dependencies.task_queue_factory.get());
+    dependencies.event_log_factory = std::make_unique<RtcEventLogFactory>();
 
     return rtc::make_ref_counted<PeerConnectionFactoryForTest>(
         std::move(dependencies));

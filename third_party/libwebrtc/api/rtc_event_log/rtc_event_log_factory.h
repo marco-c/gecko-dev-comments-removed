@@ -26,10 +26,9 @@ class RTC_EXPORT RtcEventLogFactory : public RtcEventLogFactoryInterface {
  public:
   RtcEventLogFactory() = default;
 
-  
-  
-  
+  [[deprecated("Use default constructor")]]  
   explicit RtcEventLogFactory(TaskQueueFactory* task_queue_factory) {}
+
   ~RtcEventLogFactory() override = default;
 
   absl::Nonnull<std::unique_ptr<RtcEventLog>> Create(
