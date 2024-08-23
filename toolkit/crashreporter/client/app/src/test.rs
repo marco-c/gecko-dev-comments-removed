@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 use super::*;
 use crate::config::{test::MINIDUMP_PRUNE_SAVE_COUNT, Config};
 use crate::settings::Settings;
@@ -18,22 +22,28 @@ use crate::std::{
 };
 use crate::ui::{self, test::model, ui_impl::Interact};
 
+
+
 #[derive(Clone, Default)]
 struct Counter(Arc<AtomicUsize>);
 
 impl Counter {
+    
     pub fn new() -> Self {
         Self::default()
     }
 
+    
     pub fn inc(&self) {
         self.0.fetch_add(1, Relaxed);
     }
 
+    
     pub fn count(&self) -> usize {
         self.0.load(Relaxed)
     }
 
+    
     pub fn assert_one(&self) {
         assert_eq!(self.count(), 1);
     }
@@ -119,6 +129,7 @@ fn current_system_time() -> ::std::time::SystemTime {
     current_datetime().into()
 }
 
+
 fn test_config() -> Config {
     let mut cfg = Config::default();
     cfg.data_dir = Some("data_dir".into());
@@ -129,13 +140,19 @@ fn test_config() -> Config {
     cfg
 }
 
+
 struct GuiTest {
+    
     pub config: Config,
+    
+    
     pub mock: mock::Builder,
+    
     pub files: MockFiles,
 }
 
 impl GuiTest {
+    
     pub fn new() -> Self {
         
         let mock_files = MockFiles::new();
@@ -184,6 +201,9 @@ impl GuiTest {
         }
     }
 
+    
+    
+    
     pub fn try_run<F: FnOnce(Interact) + Send + 'static>(
         &mut self,
         interact: F,
@@ -199,6 +219,10 @@ impl GuiTest {
         mock.run(move || gui_interact(move || try_run(&mut config), interact))
     }
 
+    
+    
+    
+    
     pub fn run<F: FnOnce(Interact) + Send + 'static>(&mut self, interact: F) {
         if let Err(e) = self.try_run(interact) {
             panic!(
@@ -208,6 +232,7 @@ impl GuiTest {
         }
     }
 
+    
     pub fn assert_files(&self) -> AssertFiles {
         AssertFiles {
             data_dir: "data_dir".into(),
@@ -216,6 +241,11 @@ impl GuiTest {
         }
     }
 }
+
+
+
+
+
 
 struct AssertFiles {
     data_dir: String,
@@ -232,6 +262,7 @@ impl AssertFiles {
         format!("{}/{rest}", &self.events_dir)
     }
 
+    
     pub fn set_data_dir<S: ToString>(&mut self, data_dir: S) -> &mut Self {
         let data_dir = data_dir.to_string();
         
@@ -239,11 +270,13 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn ignore_log(&mut self) -> &mut Self {
         self.inner.ignore(self.data("submit.log"));
         self
     }
 
+    
     pub fn submitted(&mut self) -> &mut Self {
         self.inner.check(
             self.data(&format!("submitted/{MOCK_REMOTE_CRASH_ID}.txt")),
@@ -252,6 +285,7 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn saved_settings(&mut self, settings: Settings) -> &mut Self {
         self.inner.check(
             self.data("crashreporter_settings.json"),
@@ -260,6 +294,7 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn pending(&mut self) -> &mut Self {
         let dmp = self.data("pending/minidump.dmp");
         self.inner
@@ -268,6 +303,7 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn ping(&mut self) -> &mut Self {
         self.inner.check(
             format!("ping_dir/{MOCK_PING_UUID}.json"),
@@ -310,6 +346,7 @@ impl AssertFiles {
         self
     }
 
+    
     pub fn submission_event(&mut self, success: bool) -> &mut Self {
         self.inner.check(
             self.events("minidump-submission"),
@@ -1039,11 +1076,20 @@ fn response_stop_sending_reports() {
         .check_exists("data_dir/EndOfLife100.0");
 }
 
+
+
+
+
+
+
 struct TempDir {
     path: ::std::path::PathBuf,
 }
 
 impl TempDir {
+    
+    
+    
     pub fn new(name: &str) -> Self {
         let path = ::std::env::temp_dir().join(format!(
             "{}-test-{}-{name}",
@@ -1054,6 +1100,7 @@ impl TempDir {
         TempDir { path }
     }
 
+    
     pub fn path(&self) -> &::std::path::Path {
         &self.path
     }
@@ -1066,6 +1113,9 @@ impl Drop for TempDir {
     }
 }
 
+
+
+
 struct TestCrashReportServer {
     addr: ::std::net::SocketAddr,
     shutdown_and_thread: Option<(
@@ -1075,6 +1125,8 @@ struct TestCrashReportServer {
 }
 
 impl TestCrashReportServer {
+    
+    
     pub fn run() -> Self {
         let (shutdown, rx) = tokio::sync::oneshot::channel();
 
@@ -1130,6 +1182,7 @@ impl TestCrashReportServer {
         }
     }
 
+    
     pub fn submit_url(&self) -> String {
         format!("http://{}/submit", self.addr)
     }
