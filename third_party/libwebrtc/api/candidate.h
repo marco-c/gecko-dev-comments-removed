@@ -81,27 +81,6 @@ class RTC_EXPORT Candidate {
   void set_priority(const uint32_t priority) { priority_ = priority; }
 
   
-  
-  
-  
-  
-  
-  float preference() const {
-    
-    return static_cast<float>(((priority_ >> 24) * 100 / 127) / 100.0);
-  }
-
-  
-  
-  void set_preference(float preference) {
-    
-    
-    uint64_t prio_val = static_cast<uint64_t>(preference * 127) << 24;
-    priority_ = static_cast<uint32_t>(
-        std::min(prio_val, static_cast<uint64_t>(UINT_MAX)));
-  }
-
-  
   const std::string& username() const { return username_; }
   void set_username(absl::string_view username) { Assign(username_, username); }
 
