@@ -53,3 +53,41 @@ function addUiaTask(doc, task, options = {}) {
     addTask(false);
   }
 }
+
+
+
+
+function definePyVar(varName, expression) {
+  return runPython(`
+    global ${varName}
+    ${varName} = ${expression}
+  `);
+}
+
+
+
+
+
+function assignPyVarToUiaWithId(id) {
+  return definePyVar(id, `findUiaByDomId(doc, "${id}")`);
+}
+
+
+
+
+
+function setUpWaitForUiaEvent(eventName, id) {
+  return definePyVar(
+    "onEvent",
+    `WaitForUiaEvent(eventId=UIA_${eventName}EventId, match="${id}")`
+  );
+}
+
+
+
+
+function waitForUiaEvent() {
+  return runPython(`
+    onEvent.wait()
+  `);
+}

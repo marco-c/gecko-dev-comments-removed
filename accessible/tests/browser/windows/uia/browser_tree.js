@@ -13,24 +13,6 @@ async function testIsControl(pyVar, isControl) {
   }
 }
 
-
-
-
-function definePyVar(varName, expression) {
-  return runPython(`
-    global ${varName}
-    ${varName} = ${expression}
-  `);
-}
-
-
-
-
-
-function assignPyVarToUiaWithId(id) {
-  return definePyVar(id, `findUiaByDomId(doc, "${id}")`);
-}
-
 addUiaTask(
   `
 <p id="p">paragraph</p>
