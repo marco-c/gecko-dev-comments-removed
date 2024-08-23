@@ -53,14 +53,15 @@ Measurements to first frame are a reimplementation of
 https://medium.com/androiddevelopers/testing-app-startup-performance-36169c27ee55
 
 See https://wiki.mozilla.org/Performance/Fenix#Terminology for descriptions of cold/warm/hot and main/view""".format(
-    cold_main_ff=TEST_COLD_MAIN_FF, cold_main_restore=TEST_COLD_MAIN_RESTORE,
-    cold_view_ff=TEST_COLD_VIEW_FF, cold_view_nav_start=TEST_COLD_VIEW_NAV_START,
-))
+            cold_main_ff=TEST_COLD_MAIN_FF, cold_main_restore=TEST_COLD_MAIN_RESTORE,
+            cold_view_ff=TEST_COLD_VIEW_FF, cold_view_nav_start=TEST_COLD_VIEW_NAV_START,
+        ))
     parser.add_argument("path", help="the path to save the measurement results; will abort if file exists")
 
     parser.add_argument("-c", "--iter-count", default=DEFAULT_ITER_COUNT, type=int,
                         help="the number of iterations to run. defaults to {}".format(DEFAULT_ITER_COUNT))
-    parser.add_argument("-f", "--force", action="store_true", help="overwrite the given path rather than stopping on file existence")
+    parser.add_argument("-f", "--force", action="store_true",
+                        help="overwrite the given path rather than stopping on file existence")
 
     return parser.parse_args()
 
@@ -137,7 +138,6 @@ def get_measurement(test_name, pkg_id, stdout):
         time.sleep(4)  
         proc = subprocess.run(['adb', 'logcat', '-d'], check=True, capture_output=True)
         measurement = get_measurement_from_nav_start_logcat(pkg_id, proc.stdout)
-    else: raise NotImplementedError('method unexpectedly undefined for test_name {}'.format(test_name))
     return measurement
 
 
@@ -175,7 +175,7 @@ def get_measurement_from_nav_start_logcat(pkg_id, logcat_bytes):
     def get_proc_start_datetime():
         
         
-        proc_start_re = re.compile('ActivityManager: Start proc \d+:{}/'.format(pkg_id))
+        proc_start_re = re.compile(r'ActivityManager: Start proc \d+:{}/'.format(pkg_id))
         proc_start_lines = [line for line in lines if proc_start_re.search(line)]
         assert len(proc_start_lines) == 1
         return line_to_datetime(proc_start_lines[0])
@@ -194,7 +194,9 @@ def get_measurement_from_nav_start_logcat(pkg_id, logcat_bytes):
     
     
     
-    elapsed_seconds = (get_page_start_datetime() - get_proc_start_datetime()).total_seconds()  
+    
+    
+    elapsed_seconds = (get_page_start_datetime() - get_proc_start_datetime()).total_seconds()
     elapsed_millis = round(elapsed_seconds * 1000)
     return elapsed_millis
 
