@@ -105,6 +105,24 @@ class RTC_EXPORT Candidate {
   bool is_prflx() const;
   bool is_relay() const;
 
+  
+  
+  
+  int type_preference() const {
+    
+    
+    
+    
+    
+    if (is_local())
+      return 1;  
+    if (is_stun())
+      return 2;  
+    if (is_relay())
+      return 3;  
+    return 0;    
+  }
+
   const std::string& network_name() const { return network_name_; }
   void set_network_name(absl::string_view network_name) {
     Assign(network_name_, network_name);

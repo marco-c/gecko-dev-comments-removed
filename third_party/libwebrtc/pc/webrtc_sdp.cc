@@ -766,29 +766,6 @@ void GetMediaStreamIds(const ContentInfo* content,
 
 
 
-static const int kPreferenceUnknown = 0;
-static const int kPreferenceHost = 1;
-static const int kPreferenceReflexive = 2;
-static const int kPreferenceRelayed = 3;
-
-static int GetCandidatePreferenceFromType(const Candidate& candidate) {
-  int preference = kPreferenceUnknown;
-  if (candidate.is_local()) {
-    preference = kPreferenceHost;
-  } else if (candidate.is_stun()) {
-    preference = kPreferenceReflexive;
-  } else if (candidate.is_relay()) {
-    preference = kPreferenceRelayed;
-  } else {
-    RTC_DCHECK_NOTREACHED();
-  }
-  return preference;
-}
-
-
-
-
-
 
 
 
@@ -800,7 +777,7 @@ static void GetDefaultDestination(const std::vector<Candidate>& candidates,
   *addr_type = kConnectionIpv4Addrtype;
   *port = kDummyPort;
   *ip = kDummyAddress;
-  int current_preference = kPreferenceUnknown;
+  int current_preference = 0;  
   int current_family = AF_UNSPEC;
   for (const Candidate& candidate : candidates) {
     if (candidate.component() != component_id) {
@@ -810,7 +787,7 @@ static void GetDefaultDestination(const std::vector<Candidate>& candidates,
     if (candidate.protocol() != cricket::UDP_PROTOCOL_NAME) {
       continue;
     }
-    const int preference = GetCandidatePreferenceFromType(candidate);
+    const int preference = candidate.type_preference();
     const int family = candidate.address().ipaddr().family();
     
     
