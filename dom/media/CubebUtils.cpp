@@ -300,12 +300,10 @@ RefPtr<CubebHandle> GetCubeb() {
 
 
 void ForceSetCubebContext(cubeb* aCubebContext) {
+  RefPtr<CubebHandle> oldHandle;  
   StaticMutexAutoLock lock(sMutex);
-  if (aCubebContext) {
-    sCubebHandle = new CubebHandle(aCubebContext);
-  } else {
-    sCubebHandle = nullptr;
-  }
+  oldHandle = sCubebHandle.forget();
+  sCubebHandle = aCubebContext ? new CubebHandle(aCubebContext) : nullptr;
   sCubebState = CubebState::Initialized;
 }
 
