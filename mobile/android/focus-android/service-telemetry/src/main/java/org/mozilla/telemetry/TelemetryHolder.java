@@ -13,6 +13,7 @@ package org.mozilla.telemetry;
 
 
 
+@SuppressWarnings("deprecation")
 public class TelemetryHolder {
     private static Telemetry telemetry;
 

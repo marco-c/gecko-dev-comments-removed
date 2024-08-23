@@ -40,6 +40,7 @@ import kotlin.jvm.functions.Function0;
 
 
 
+@SuppressWarnings("deprecation")
 public class Telemetry {
     private final TelemetryConfiguration configuration;
     private final TelemetryStorage storage;
