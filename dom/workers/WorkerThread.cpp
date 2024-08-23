@@ -13,6 +13,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/EventQueue.h"
+#include "mozilla/Logging.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/ThreadEventQueue.h"
@@ -25,7 +26,14 @@
 #include "nsIRunnable.h"
 #include "nsIThreadInternal.h"
 #include "nsString.h"
+#include "nsThreadUtils.h"
 #include "prthread.h"
+
+static mozilla::LazyLogModule gWorkerThread("WorkerThread");
+#ifdef LOGV
+#  undef LOGV
+#endif
+#define LOGV(msg) MOZ_LOG(gWorkerThread, LogLevel::Verbose, msg);
 
 namespace mozilla {
 
@@ -143,7 +151,11 @@ void WorkerThread::SetWorker(const WorkerThreadFriendKey& ,
       while (mOtherThreadsDispatchingViaEventTarget) {
         mWorkerPrivateCondVar.Wait();
       }
-
+      
+      
+      if (NS_HasPendingEvents(nullptr)) {
+        NS_ProcessPendingEvents(nullptr);
+      }
 #ifdef DEBUG
       mAcceptingNonWorkerRunnables = true;
 #endif
@@ -223,6 +235,8 @@ WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
   
   nsCOMPtr<nsIRunnable> runnable(aRunnable);  
 
+  LOGV(("WorkerThread::Dispatch [%p] runnable: %p", this, runnable.get()));
+
   
   if (NS_WARN_IF(aFlags != NS_DISPATCH_NORMAL)) {
     return NS_ERROR_UNEXPECTED;
@@ -282,6 +296,8 @@ WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
   }
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    LOGV(("WorkerThread::Dispatch [%p] failed, runnable: %p", this,
+          runnable.get()));
     return rv;
   }
 

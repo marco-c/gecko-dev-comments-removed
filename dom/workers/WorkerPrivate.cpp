@@ -1574,8 +1574,6 @@ nsresult WorkerPrivate::DispatchLockHeld(
   MOZ_ASSERT_IF(aSyncLoopTarget, mThread);
 
   if (mStatus == Dead || (!aSyncLoopTarget && ParentStatus() > Canceling)) {
-    LOGV(("WorkerPrivate::DispatchLockHeld [%p] runnable %p, parent status: %u",
-          this, runnable.get(), (uint8_t)(ParentStatus())));
     NS_WARNING(
         "A runnable was posted to a worker that is already shutting "
         "down!");
@@ -1624,6 +1622,7 @@ nsresult WorkerPrivate::DispatchLockHeld(
   }
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    LOGV(("WorkerPrivate::Dispatch Failed [%p]", this));
     return rv;
   }
 
@@ -3104,10 +3103,33 @@ void WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
 
 void WorkerPrivate::RunLoopNeverRan() {
   LOG(WorkerLog(), ("WorkerPrivate::RunLoopNeverRan [%p]", this));
+  
+  
+  
+  
+  
+  
+  
+  
+
+  auto data = mWorkerThreadAccessible.Access();
+  RefPtr<WorkerThread> thread;
   {
     MutexAutoLock lock(mMutex);
-
+    
+    
+    
+    
+    MOZ_ASSERT(!data->mCancelBeforeWorkerScopeConstructed);
+    data->mCancelBeforeWorkerScopeConstructed.Flip();
+    
     mStatus = Dead;
+    thread = mThread;
+  }
+
+  
+  if (thread && NS_HasPendingEvents(thread)) {
+    NS_ProcessPendingEvents(nullptr);
   }
 
   
@@ -3230,11 +3252,6 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
     {
       MutexAutoLock lock(mMutex);
-
-      LOGV(
-          ("WorkerPrivate::DoRunLoop [%p] mStatus %u before getting events"
-           " to run",
-           this, (uint8_t)mStatus));
       if (checkFinalGCCC && currentStatus != mStatus) {
         
         
@@ -3268,6 +3285,25 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
       }
 
       currentStatus = mStatus;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (currentStatus >= Closing &&
+        !data->mPerformedShutdownAfterLastContentTaskExecuted) {
+      data->mPerformedShutdownAfterLastContentTaskExecuted.Flip();
+      if (data->mScope) {
+        data->mScope->NoteTerminating();
+        data->mScope->DisconnectGlobalTeardownObservers();
+        if (data->mScope->GetExistingScheduler()) {
+          data->mScope->GetExistingScheduler()->Disconnect();
+        }
+      }
     }
 
     
@@ -3332,21 +3368,6 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
         UnlinkTimeouts();
 
         return;
-      }
-    }
-
-    
-    
-    
-    if (currentStatus >= Closing &&
-        !data->mPerformedShutdownAfterLastContentTaskExecuted) {
-      data->mPerformedShutdownAfterLastContentTaskExecuted.Flip();
-      if (data->mScope) {
-        data->mScope->NoteTerminating();
-        data->mScope->DisconnectGlobalTeardownObservers();
-        if (data->mScope->GetExistingScheduler()) {
-          data->mScope->GetExistingScheduler()->Disconnect();
-        }
       }
     }
 
@@ -4324,7 +4345,6 @@ void WorkerPrivate::AdjustNonblockingCCBackgroundActorCount(int32_t aCount) {
 }
 
 void WorkerPrivate::UpdateCCFlag(const CCFlag aFlag) {
-  LOGV(("WorkerPrivate::UpdateCCFlag [%p]", this));
   AssertIsOnWorkerThread();
 
   auto data = mWorkerThreadAccessible.Access();
@@ -4984,17 +5004,6 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
     MOZ_ASSERT_IF(aStatus == Killing,
                   mStatus == Canceling && mParentStatus == Canceling);
 
-    if (aStatus >= Canceling) {
-      MutexAutoUnlock unlock(mMutex);
-      if (data->mScope) {
-        if (aStatus == Canceling) {
-          data->mScope->NoteTerminating();
-        } else {
-          data->mScope->NoteShuttingDown();
-        }
-      }
-    }
-
     mStatus = aStatus;
 
     
@@ -5005,8 +5014,20 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
 
     
     
-    if (aStatus == Killing) {
-      mParentStatus = Killing;
+    if (aStatus >= Killing) {
+      mParentStatus = aStatus;
+    }
+  }
+
+  
+  
+  if (aStatus >= Canceling) {
+    if (data->mScope) {
+      if (aStatus == Canceling) {
+        data->mScope->NoteTerminating();
+      } else {
+        data->mScope->NoteShuttingDown();
+      }
     }
   }
 
