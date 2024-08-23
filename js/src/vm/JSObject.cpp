@@ -2215,9 +2215,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
        id == NameToId(cx->names().symmetricDifference))) {
     return true;
   }
-#endif
 
-#ifdef NIGHTLY_BUILD
   if (key == JSProto_ArrayBuffer && !JS::Prefs::arraybuffer_transfer() &&
       (id == NameToId(cx->names().transfer) ||
        id == NameToId(cx->names().transferToFixedLength) ||
@@ -2238,6 +2236,24 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       (id == NameToId(cx->names().maxByteLength) ||
        id == NameToId(cx->names().growable) ||
        id == NameToId(cx->names().grow))) {
+    return true;
+  }
+
+  if (key == JSProto_Uint8Array &&
+      !JS::Prefs::experimental_uint8array_base64() &&
+      (id == NameToId(cx->names().setFromBase64) ||
+       id == NameToId(cx->names().setFromHex) ||
+       id == NameToId(cx->names().toBase64) ||
+       id == NameToId(cx->names().toHex))) {
+    return true;
+  }
+
+  
+  
+  
+  if (key == JSProto_Function && !JS::Prefs::experimental_uint8array_base64() &&
+      (id == NameToId(cx->names().fromBase64) ||
+       id == NameToId(cx->names().fromHex))) {
     return true;
   }
 #endif
