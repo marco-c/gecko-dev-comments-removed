@@ -139,6 +139,7 @@ task_description_schema = Schema(
                 "android-shippable",
                 "android-shippable-with-multi-l10n",
                 "shippable-with-multi-l10n",
+                "signing",
             ),
             
             
