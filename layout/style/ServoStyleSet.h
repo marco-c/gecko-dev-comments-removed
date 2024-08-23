@@ -480,6 +480,14 @@ class ServoStyleSet {
 
 
 
+  void MaybeInvalidateRelativeSelectorCustomStateDependency(
+      const dom::Element&, nsAtom* state,
+      const ServoElementSnapshotTable& aSnapshots);
+
+  
+
+
+
   void MaybeInvalidateRelativeSelectorAttributeDependency(
       const dom::Element&, nsAtom* aAttribute,
       const ServoElementSnapshotTable& aSnapshots);

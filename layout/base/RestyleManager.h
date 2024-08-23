@@ -361,6 +361,9 @@ class RestyleManager {
 
   void ElementStateChanged(Element*, dom::ElementState);
 
+  void CustomStatesWillChange(Element&);
+  void CustomStateChanged(Element&, nsAtom* aState);
+
   
 
 

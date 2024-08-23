@@ -73,6 +73,18 @@ pub trait ElementSnapshot: Sized {
     where
         F: FnMut(&AtomIdent);
 
+
+    
+    fn has_custom_states(&self) -> bool;
+
+    
+    fn has_custom_state(&self, state: &AtomIdent) -> bool;
+
+    
+    fn each_custom_state<F>(&self, callback: F)
+    where
+        F: FnMut(&AtomIdent);
+
     
     fn lang_attr(&self) -> Option<AttrValue>;
 }
@@ -211,6 +223,11 @@ where
                 return self
                     .element
                     .match_element_lang(Some(self.get_lang()), lang_arg);
+            },
+
+            
+            NonTSPseudoClass::CustomState(ref state) => {
+                return self.has_custom_state(&state.0)
             },
 
             _ => {},
@@ -354,6 +371,13 @@ where
         match self.snapshot() {
             Some(snapshot) if snapshot.has_attrs() => snapshot.has_class(name, case_sensitivity),
             _ => self.element.has_class(name, case_sensitivity),
+        }
+    }
+
+    fn has_custom_state(&self, state: &AtomIdent) -> bool {
+        match self.snapshot() {
+            Some(snapshot) if snapshot.has_custom_states() => snapshot.has_custom_state(state),
+            _ => self.element.has_custom_state(state),
         }
     }
 

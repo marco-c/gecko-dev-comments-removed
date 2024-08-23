@@ -134,6 +134,11 @@ pub trait Element: Sized + Clone + Debug {
         case_sensitivity: CaseSensitivity,
     ) -> bool;
 
+    fn has_custom_state(
+        &self,
+        name: &<Self::Impl as SelectorImpl>::Identifier,
+    ) -> bool;
+
     
     
     fn imported_part(
