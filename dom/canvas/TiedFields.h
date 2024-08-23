@@ -139,26 +139,34 @@ constexpr bool AssertTiedFieldsAreExhaustive() {
 
 
 
-template <class T, size_t N = 1>
-struct PaddingField {
-  static_assert(!std::is_array_v<T>, "Use PaddingField<T,N> not <T[N]>.");
 
-  std::array<T, N> ignored = {};
 
-  PaddingField() {}
 
-  friend constexpr bool operator==(const PaddingField&, const PaddingField&) {
+
+
+
+
+
+
+
+
+
+
+
+template <class T>
+struct Padding {
+  T ignored;
+
+  friend constexpr bool operator==(const Padding&, const Padding&) {
     return true;
   }
-  friend constexpr bool operator<(const PaddingField&, const PaddingField&) {
+  friend constexpr bool operator<(const Padding&, const Padding&) {
     return false;
   }
-
-  auto MutTiedFields() { return std::tie(ignored); }
 };
-static_assert(sizeof(PaddingField<bool>) == 1);
-static_assert(sizeof(PaddingField<bool, 2>) == 2);
-static_assert(sizeof(PaddingField<int>) == 4);
+static_assert(sizeof(Padding<bool>) == 1);
+static_assert(sizeof(Padding<bool[2]>) == 2);
+static_assert(sizeof(Padding<int>) == 4);
 
 
 
@@ -194,7 +202,7 @@ static_assert(AreAllBytesTiedFields<Fish>());
 
 struct Eel {  
   bool b;
-  PaddingField<bool, 3> padding;
+  Padding<bool> padding[3];
   int i;
 
   constexpr auto MutTiedFields() { return std::tie(i, b, padding); }
