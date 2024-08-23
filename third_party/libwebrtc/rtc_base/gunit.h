@@ -154,16 +154,4 @@
   } else                                                 \
     GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_EQ(v1, v2)
 
-
-testing::AssertionResult AssertStartsWith(const char* text_expr,
-                                          const char* prefix_expr,
-                                          absl::string_view text,
-                                          absl::string_view prefix);
-
-
-testing::AssertionResult AssertStringContains(const char* str_expr,
-                                              const char* substr_expr,
-                                              absl::string_view str,
-                                              absl::string_view substr);
-
 #endif  
