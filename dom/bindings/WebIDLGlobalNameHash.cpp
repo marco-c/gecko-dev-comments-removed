@@ -41,7 +41,7 @@ static JSObject* FindNamedConstructorForXray(
   
   
   
-  for (unsigned slot = DOM_INTERFACE_SLOTS_BASE;
+  for (unsigned slot = INTERFACE_OBJECT_FIRST_LEGACY_FACTORY_FUNCTION;
        slot < JSCLASS_RESERVED_SLOTS(JS::GetClass(interfaceObject)); ++slot) {
     JSObject* constructor =
         &JS::GetReservedSlot(interfaceObject, slot).toObject();
