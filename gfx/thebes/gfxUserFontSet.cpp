@@ -20,6 +20,7 @@
 #include "mozilla/PostTraversalTask.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "gfxOTSUtils.h"
+#include "nsFontFaceLoader.h"
 #include "nsIFontLoadCompleteCallback.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
@@ -1111,7 +1112,15 @@ void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
     
     
     if (ufe->mSeenLocalSource) {
-      ufe->LoadCanceled();
+      if (ufe->GetLoader()) {
+        
+        
+        ufe->GetLoader()->Cancel();
+      } else {
+        
+        
+        ufe->LoadCanceled();
+      }
     }
   }
   aFontFamily->ReadUnlock();
