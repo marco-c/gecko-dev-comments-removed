@@ -570,10 +570,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   void OnShutdown();
 
-  bool IsContextLost() const { return mIsContextLost; }
-  void OnRemoteCanvasLost();
-  void OnRemoteCanvasRestored();
-
   
 
 
@@ -766,7 +762,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
 
   bool IsTargetValid() const {
-    return !!mTarget && mTarget != sErrorTarget.get() && !mIsContextLost;
+    return !!mTarget && mTarget != sErrorTarget.get();
   }
 
   
@@ -849,10 +845,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   bool mWillReadFrequently = false;
   
   bool mHasShutdown = false;
-  
-  bool mIsContextLost = false;
-  
-  bool mAllowContextRestore = true;
 
   bool AddShutdownObserver();
   void RemoveShutdownObserver();
