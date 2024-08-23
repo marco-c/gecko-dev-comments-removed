@@ -7,7 +7,7 @@
 
 
 this.systemManufacturer = class extends ExtensionAPI {
-  getAPI(context) {
+  getAPI() {
     return {
       systemManufacturer: {
         getManufacturer() {

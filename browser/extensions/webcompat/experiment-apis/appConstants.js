@@ -7,7 +7,7 @@
 
 
 this.appConstants = class extends ExtensionAPI {
-  getAPI(context) {
+  getAPI() {
     return {
       appConstants: {
         getReleaseBranch: () => {
