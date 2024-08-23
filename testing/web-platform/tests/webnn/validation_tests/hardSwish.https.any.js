@@ -5,3 +5,6 @@
 'use strict';
 
 validateInputFromAnotherBuilder('hardSwish');
+
+validateUnaryOperation(
+    'hardSwish', floatingPointTypes,  true);
