@@ -81,7 +81,7 @@ class WindowSurfaceProvider final {
 
   mozilla::Mutex mMutex MOZ_UNANNOTATED;
   
-  mozilla::Atomic<bool> mWindowSurfaceValid;
+  bool mWindowSurfaceValid;
 #ifdef MOZ_WAYLAND
   RefPtr<nsWindow> mWidget;
   
@@ -91,7 +91,12 @@ class WindowSurfaceProvider final {
 #ifdef MOZ_X11
   bool mIsShaped;
   int mXDepth;
-  Window mXWindow;
+  
+  
+  
+  
+  
+  Atomic<Window, Relaxed> mXWindow;
   Visual* mXVisual;
 #endif
 };
