@@ -214,8 +214,9 @@ void ExternalEngineStateMachine::InitEngine() {
   mEngine.reset(new MFMediaEngineWrapper(this, mFrameStats));
 #endif
   if (mEngine) {
+    MOZ_ASSERT(mInfo);
     auto* state = mState.AsInitEngine();
-    state->mInitPromise = mEngine->Init(!mMinimizePreroll);
+    state->mInitPromise = mEngine->Init(*mInfo, !mMinimizePreroll);
     state->mInitPromise
         ->Then(OwnerThread(), __func__, this,
                &ExternalEngineStateMachine::OnEngineInitSuccess,
@@ -235,16 +236,10 @@ void ExternalEngineStateMachine::OnEngineInitSuccess() {
   mReader->UpdateMediaEngineId(mEngine->Id());
   state->mInitPromise = nullptr;
   if (mState.IsInitEngine()) {
-    
-    MOZ_ASSERT(mInfo);
-    mEngine->SetMediaInfo(*mInfo);
     StartRunningEngine();
     return;
   }
   
-  
-  MOZ_ASSERT(mInfo);
-  mEngine->SetMediaInfo(*mInfo);
   SeekTarget target(mCurrentPosition.Ref(), SeekTarget::Type::Accurate);
   Seek(target);
 }
