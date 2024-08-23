@@ -410,8 +410,6 @@ void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
 
 
 size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
-  MOZ_ASSERT(!IsInsideNursery(obj));
-
   
   WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
   WasmArrayObject& oldArrayObj = old->as<WasmArrayObject>();
@@ -422,25 +420,19 @@ size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
   }
   MOZ_ASSERT(arrayObj.isDataInline() == oldArrayObj.isDataInline());
 
-  if (IsInsideNursery(old) && !IsInsideNursery(obj)) {
+  if (IsInsideNursery(old)) {
+    Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
     
-    MOZ_ASSERT(obj->isTenured());
     if (!arrayObj.isDataInline()) {
-      
-      
-      
-      Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
-      nursery.unregisterTrailer(arrayObj.dataHeader());
-      
-      
       const TypeDef& typeDef = arrayObj.typeDef();
       MOZ_ASSERT(typeDef.isArrayType());
       size_t trailerSize = calcStorageBytes(
           typeDef.arrayType().elementType_.size(), arrayObj.numElements_);
       
       MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
-      AddCellMemory(&arrayObj, trailerSize + TrailerBlockOverhead,
-                    MemoryUse::WasmTrailerBlock);
+      nursery.trackTrailerOnPromotion(arrayObj.dataHeader(), obj, trailerSize,
+                                      TrailerBlockOverhead,
+                                      MemoryUse::WasmTrailerBlock);
     }
   }
 
@@ -563,14 +555,9 @@ void WasmStructObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
 
 size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
   
-  if (!IsInsideNursery(obj) && IsInsideNursery(old)) {
-    
-    WasmStructObject& structObj = obj->as<WasmStructObject>();
-    
-    
-    MOZ_ASSERT(structObj.outlineData_);
+  if (IsInsideNursery(old)) {
     Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
-    nursery.unregisterTrailer(structObj.outlineData_);
+    WasmStructObject& structObj = obj->as<WasmStructObject>();
     const TypeDef& typeDef = structObj.typeDef();
     MOZ_ASSERT(typeDef.isStructType());
     uint32_t totalBytes = typeDef.structType().size_;
@@ -578,9 +565,11 @@ size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
     WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
     MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
     MOZ_ASSERT(outlineBytes > 0);
-    AddCellMemory(&structObj, outlineBytes + TrailerBlockOverhead,
-                  MemoryUse::WasmTrailerBlock);
+    nursery.trackTrailerOnPromotion(structObj.outlineData_, obj, outlineBytes,
+                                    TrailerBlockOverhead,
+                                    MemoryUse::WasmTrailerBlock);
   }
+
   return 0;
 }
 

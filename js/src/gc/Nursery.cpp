@@ -1349,7 +1349,23 @@ void js::Nursery::printDeduplicationData(js::StringStats& prev,
   }
 }
 
-void js::Nursery::freeTrailerBlocks(void) {
+void js::Nursery::freeTrailerBlocks(JS::GCOptions options,
+                                    JS::GCReason reason) {
+  prevSpace->freeTrailerBlocks(mallocedBlockCache_);
+
+  if (options == JS::GCOptions::Shrink || gc::IsOOMReason(reason)) {
+    mallocedBlockCache_.clear();
+    return;
+  }
+
+  
+  
+  
+  mallocedBlockCache_.preen(0.05 * double(capacity()) / (1024.0 * 1024.0));
+}
+
+void js::Nursery::Space::freeTrailerBlocks(
+    MallocedBlockCache& mallocedBlockCache) {
   
   
   
@@ -1381,7 +1397,7 @@ void js::Nursery::freeTrailerBlocks(void) {
       if (!std::binary_search(trailersRemoved_.begin(),
                               trailersRemoved_.begin() + trailersRemovedUsed_,
                               blockPointer)) {
-        mallocedBlockCache_.free(block);
+        mallocedBlockCache.free(block);
       }
     }
   } else {
@@ -1408,7 +1424,7 @@ void js::Nursery::freeTrailerBlocks(void) {
       const PointerAndUint7 blockAdded = trailersAdded_[iAdded];
       const void* blockRemoved = trailersRemoved_[iRemoved];
       if (blockAdded.pointer() < blockRemoved) {
-        mallocedBlockCache_.free(blockAdded);
+        mallocedBlockCache.free(blockAdded);
         continue;
       }
       
@@ -1422,7 +1438,7 @@ void js::Nursery::freeTrailerBlocks(void) {
     
     for (; iAdded < nAdded; iAdded++) {
       const PointerAndUint7 block = trailersAdded_[iAdded];
-      mallocedBlockCache_.free(block);
+      mallocedBlockCache.free(block);
     }
   }
 
@@ -1431,17 +1447,14 @@ void js::Nursery::freeTrailerBlocks(void) {
   trailersRemoved_.clear();
   trailersRemovedUsed_ = 0;
   trailerBytes_ = 0;
-
-  
-  
-  
-  mallocedBlockCache_.preen(0.05 * double(capacity()) / (1024.0 * 1024.0));
 }
 
 size_t Nursery::sizeOfTrailerBlockSets(
     mozilla::MallocSizeOf mallocSizeOf) const {
-  return trailersAdded_.sizeOfExcludingThis(mallocSizeOf) +
-         trailersRemoved_.sizeOfExcludingThis(mallocSizeOf);
+  MOZ_ASSERT(fromSpace.trailersAdded_.empty());
+  MOZ_ASSERT(fromSpace.trailersRemoved_.empty());
+  return toSpace.trailersAdded_.sizeOfExcludingThis(mallocSizeOf) +
+         toSpace.trailersRemoved_.sizeOfExcludingThis(mallocSizeOf);
 }
 
 js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
@@ -1509,10 +1522,7 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   
   
   startProfile(ProfileKey::FreeTrailerBlocks);
-  freeTrailerBlocks();
-  if (options == JS::GCOptions::Shrink || gc::IsOOMReason(reason)) {
-    mallocedBlockCache_.clear();
-  }
+  freeTrailerBlocks(options, reason);
   endProfile(ProfileKey::FreeTrailerBlocks);
 
   startProfile(ProfileKey::ClearNursery);
@@ -1732,7 +1742,28 @@ void js::Nursery::trackMallocedBufferOnPromotion(void* buffer, gc::Cell* owner,
   
   AutoEnterOOMUnsafeRegion oomUnsafe;
   if (!registerMallocedBuffer(buffer, nbytes)) {
-    oomUnsafe.crash("Nursery::maybeMoveRawBufferOnPromotion");
+    oomUnsafe.crash("Nursery::trackMallocedBufferOnPromotion");
+  }
+}
+
+void js::Nursery::trackTrailerOnPromotion(void* buffer, gc::Cell* owner,
+                                          size_t nbytes, size_t overhead,
+                                          MemoryUse use) {
+  MOZ_ASSERT(!isInside(buffer));
+  unregisterTrailer(buffer);
+
+  if (owner->isTenured()) {
+    
+    AddCellMemory(owner, nbytes + overhead, use);
+    return;
+  }
+
+  
+  PointerAndUint7 blockAndListID(buffer,
+                                 MallocedBlockCache::listIDForSize(nbytes));
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!registerTrailer(blockAndListID, nbytes)) {
+    oomUnsafe.crash("Nursery::trackTrailerOnPromotion");
   }
 }
 

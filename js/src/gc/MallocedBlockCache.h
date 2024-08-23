@@ -70,6 +70,8 @@ class MallocedBlockCache {
 
   ~MallocedBlockCache();
 
+  static inline size_t listIDForSize(size_t size);
+
   
   
   
@@ -89,7 +91,8 @@ class MallocedBlockCache {
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
-inline PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
+
+inline size_t MallocedBlockCache::listIDForSize(size_t size) {
   
   
   
@@ -122,11 +125,23 @@ inline PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
   size_t i = size / STEP;
   MOZ_ASSERT(i > 0);
 
+  if (i >= NUM_LISTS) {
+    return OVERSIZE_BLOCK_LIST_ID;
+  }
+
+  return i;
+}
+
+inline PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
+  size_t i = listIDForSize(size);
+  MOZ_ASSERT(i < NUM_LISTS);
+
   
-  if (MOZ_LIKELY(i < NUM_LISTS &&       
-                 !lists[i].empty())) {  
+  if (MOZ_LIKELY(
+          i != OVERSIZE_BLOCK_LIST_ID &&  
+          !lists[i].empty())) {           
     
-    MOZ_ASSERT(i * STEP == size);
+    MOZ_ASSERT(i * STEP == js::RoundUp(size, STEP));
     void* block = lists[i].popCopy();
     return PointerAndUint7(block, i);
   }
