@@ -28,7 +28,7 @@ function test() {
   );
 }
 
-function download_progress(addon, value, maxValue) {
+function download_progress() {
   try {
     
     

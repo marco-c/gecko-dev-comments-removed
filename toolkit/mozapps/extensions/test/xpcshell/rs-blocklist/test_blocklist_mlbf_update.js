@@ -25,7 +25,7 @@ add_task(async function collapse_multiple_pending_update_requests() {
   
   
   const originalClientGet = ExtensionBlocklistMLBF._client.get;
-  const spyClientGet = (tag, returnValue) => {
+  const spyClientGet = tag => {
     ExtensionBlocklistMLBF._client.get = async function () {
       
       observed.push(tag);

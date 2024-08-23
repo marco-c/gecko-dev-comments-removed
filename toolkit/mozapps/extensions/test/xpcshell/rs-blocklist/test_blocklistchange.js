@@ -40,7 +40,7 @@ const useMLBF = Services.prefs.getBoolPref(
 
 var testserver = createHttpServer({ hosts: ["example.com"] });
 
-function permissionPromptHandler(subject, topic, data) {
+function permissionPromptHandler(subject) {
   ok(
     subject?.wrappedJSObject?.info?.resolve,
     "Got a permission prompt notification as expected"
@@ -343,16 +343,16 @@ function Pload_blocklist(aId) {
 
 
 function Pbackground_update() {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     let installCount = 0;
     let backgroundCheckCompleted = false;
 
     AddonManager.addInstallListener({
-      onNewInstall(aInstall) {
+      onNewInstall() {
         installCount++;
       },
 
-      onInstallEnded(aInstall) {
+      onInstallEnded() {
         installCount--;
         
         if (installCount) {

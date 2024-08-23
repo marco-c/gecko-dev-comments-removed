@@ -3,14 +3,14 @@
 
 <html>
 
-
+<!-- This page will attempt an install and then try to load a new page in the tab -->
 
 <head>
 <title>InstallTrigger tests</title>
 <script type="text/javascript">
 /* globals InstallTrigger */
 /* exported startInstall */
-function installCallback(url, status) {
+function installCallback() {
   document.location = "#foo";
 
   dump("Sending InstallComplete\n");

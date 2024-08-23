@@ -451,7 +451,7 @@ add_task(async function test_pt4() {
   await promiseRestartManager();
   await checkInitialState();
 
-  await loadBlocklist("empty", args => {
+  await loadBlocklist("empty", () => {
     dump("Checking notification pt 4\n");
     
     ok(false, "Should not get a notification as there are no blocked addons.");

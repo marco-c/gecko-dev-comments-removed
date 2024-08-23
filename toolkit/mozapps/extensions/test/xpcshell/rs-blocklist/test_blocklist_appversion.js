@@ -227,7 +227,7 @@ function createAddon(addon) {
 
 
 
-async function checkState(test, lastTest, callback) {
+async function checkState(test) {
   let addons = await AddonManager.getAddonsByIDs(ADDONS.map(a => a.id));
 
   const bls = Ci.nsIBlocklistService;

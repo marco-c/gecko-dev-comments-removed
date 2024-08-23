@@ -185,7 +185,7 @@ async function openAbuseReport({ addonId, reportEntryPoint }) {
 
 
 
-async function openAbuseReportAMOForm({ addonId, reportEntryPoint }) {
+async function openAbuseReportAMOForm({ addonId }) {
   const amoUrl = AbuseReporter.getAMOFormURL({ addonId });
   windowRoot.ownerGlobal.openTrustedLinkIn(amoUrl, "tab", {
     

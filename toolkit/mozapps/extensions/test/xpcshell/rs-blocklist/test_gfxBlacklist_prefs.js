@@ -53,7 +53,7 @@ async function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "8");
   await promiseStartupManager();
 
-  function blacklistAdded(aSubject, aTopic, aData) {
+  function blacklistAdded() {
     
     
     executeSoon(ensureBlacklistSet);
@@ -95,7 +95,7 @@ async function run_test() {
     ]);
   }
 
-  function blacklistRemoved(aSubject, aTopic, aData) {
+  function blacklistRemoved() {
     
     
     executeSoon(ensureBlacklistUnset);

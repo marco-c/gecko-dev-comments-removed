@@ -57,7 +57,7 @@ async function run_test() {
     do_test_finished();
   }
 
-  Services.obs.addObserver(function (aSubject, aTopic, aData) {
+  Services.obs.addObserver(function () {
     
     
     executeSoon(checkBlacklist);
