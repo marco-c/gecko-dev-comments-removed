@@ -310,8 +310,7 @@ void EncoderTemplate<EncoderType>::CopyExtradataToDescriptionIfNeeded(
     AutoEntryScript aes(aGlobal, "EncoderConfigToaConfigConfig");
     size_t lengthBytes = aConfigInternal.mDescription.value()->Length();
     UniquePtr<uint8_t[], JS::FreePolicy> extradata(new uint8_t[lengthBytes]);
-    PodCopy(extradata.get(),
-            aConfigInternal.mDescription.value()->Elements(),
+    PodCopy(extradata.get(), aConfigInternal.mDescription.value()->Elements(),
             lengthBytes);
     JS::Rooted<JSObject*> description(
         aes.cx(), JS::NewArrayBufferWithContents(aes.cx(), lengthBytes,
@@ -803,7 +802,9 @@ void EncoderTemplate<EncoderType>::Reconfigure(
       config->Diff(*mActiveConfig);
 
   
+  
   if (configDiff->Empty()) {
+    mOutputNewDecoderConfig = true;
     LOG("Reconfigure with identical config, returning.");
     mProcessingMessage = nullptr;
     StopBlockingMessageQueue();
