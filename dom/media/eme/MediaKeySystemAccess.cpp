@@ -235,38 +235,50 @@ static nsTArray<KeySystemConfig> GetSupportedKeySystems(
     const nsAString& aKeySystem, bool aIsHardwareDecryption) {
   using DecryptionInfo = KeySystemConfig::DecryptionInfo;
   nsTArray<KeySystemConfig> keySystemConfigs;
+  
   if (IsWidevineKeySystem(aKeySystem) || IsClearkeyKeySystem(aKeySystem)) {
     Unused << KeySystemConfig::CreateKeySystemConfigs(
         aKeySystem, DecryptionInfo::Software, keySystemConfigs);
   }
 #ifdef MOZ_WMF_CDM
-  if (IsPlayReadyKeySystem(aKeySystem)) {
-    Unused << KeySystemConfig::CreateKeySystemConfigs(
-        NS_ConvertUTF8toUTF16(kPlayReadyKeySystemName),
-        DecryptionInfo::Software, keySystemConfigs);
-    if (aIsHardwareDecryption) {
+  if (IsPlayReadyEnabled()) {
+    
+    if (aKeySystem.EqualsLiteral(kPlayReadyKeySystemName) ||
+        aKeySystem.EqualsLiteral(kPlayReadyKeySystemHardware)) {
       Unused << KeySystemConfig::CreateKeySystemConfigs(
           NS_ConvertUTF8toUTF16(kPlayReadyKeySystemName),
-          DecryptionInfo::Hardware, keySystemConfigs);
-      Unused << KeySystemConfig::CreateKeySystemConfigs(
-          NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware),
-          DecryptionInfo::Hardware, keySystemConfigs);
+          DecryptionInfo::Software, keySystemConfigs);
+      if (aIsHardwareDecryption) {
+        Unused << KeySystemConfig::CreateKeySystemConfigs(
+            NS_ConvertUTF8toUTF16(kPlayReadyKeySystemName),
+            DecryptionInfo::Hardware, keySystemConfigs);
+        Unused << KeySystemConfig::CreateKeySystemConfigs(
+            NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware),
+            DecryptionInfo::Hardware, keySystemConfigs);
+      }
+    }
+    
+    if (aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName)) {
       Unused << KeySystemConfig::CreateKeySystemConfigs(
           NS_ConvertUTF8toUTF16(kPlayReadyHardwareClearLeadKeySystemName),
           DecryptionInfo::Hardware, keySystemConfigs);
     }
   }
-  
-  
-  
-  if (IsWidevineExperimentKeySystem(aKeySystem) ||
-      (IsWidevineKeySystem(aKeySystem) && aIsHardwareDecryption)) {
-    Unused << KeySystemConfig::CreateKeySystemConfigs(
-        NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName),
-        DecryptionInfo::Hardware, keySystemConfigs);
-    Unused << KeySystemConfig::CreateKeySystemConfigs(
-        NS_ConvertUTF8toUTF16(kWidevineExperiment2KeySystemName),
-        DecryptionInfo::Hardware, keySystemConfigs);
+
+  if (IsWidevineHardwareDecryptionEnabled()) {
+    
+    if (aKeySystem.EqualsLiteral(kWidevineExperimentKeySystemName) ||
+        (IsWidevineKeySystem(aKeySystem) && aIsHardwareDecryption)) {
+      Unused << KeySystemConfig::CreateKeySystemConfigs(
+          NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName),
+          DecryptionInfo::Hardware, keySystemConfigs);
+    }
+    
+    if (aKeySystem.EqualsLiteral(kWidevineExperiment2KeySystemName)) {
+      Unused << KeySystemConfig::CreateKeySystemConfigs(
+          NS_ConvertUTF8toUTF16(kWidevineExperiment2KeySystemName),
+          DecryptionInfo::Hardware, keySystemConfigs);
+    }
   }
 #endif
   return keySystemConfigs;
