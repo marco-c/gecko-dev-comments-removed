@@ -49,9 +49,16 @@ class RtpPacketToSend : public RtpPacket {
   webrtc::Timestamp capture_time() const { return capture_time_; }
   void set_capture_time(webrtc::Timestamp time) { capture_time_ = time; }
 
-  void set_packet_type(RtpPacketMediaType type) { packet_type_ = type; }
+  void set_packet_type(RtpPacketMediaType type);
+
   absl::optional<RtpPacketMediaType> packet_type() const {
     return packet_type_;
+  }
+
+  enum class OriginalType { kAudio, kVideo };
+  
+  absl::optional<OriginalType> original_packet_type() const {
+    return original_packet_type_;
   }
 
   
@@ -133,6 +140,7 @@ class RtpPacketToSend : public RtpPacket {
  private:
   webrtc::Timestamp capture_time_ = webrtc::Timestamp::Zero();
   absl::optional<RtpPacketMediaType> packet_type_;
+  absl::optional<OriginalType> original_packet_type_;
   bool allow_retransmission_ = false;
   absl::optional<uint16_t> retransmitted_sequence_number_;
   rtc::scoped_refptr<rtc::RefCountedBase> additional_data_;

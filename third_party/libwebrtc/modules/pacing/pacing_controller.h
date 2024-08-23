@@ -70,11 +70,6 @@ class PacingController {
   
   
   
-  
-  static const TimeDelta kMaxExpectedQueueLength;
-  
-  
-  
   static const TimeDelta kPausedProcessInterval;
   
   static const TimeDelta kMinSleepTime;
@@ -93,14 +88,45 @@ class PacingController {
   
   
   static constexpr DataSize kMaxBurstSize = DataSize::Bytes(63 * 1000);
-  
-  
+
   
   static constexpr TimeDelta kDefaultBurstInterval = TimeDelta::Millis(40);
+  static constexpr TimeDelta kMaxExpectedQueueLength = TimeDelta::Millis(2000);
+
+  struct Configuration {
+    
+    
+    
+    bool drain_large_queues = true;
+    
+    
+    
+    
+    
+    TimeDelta queue_time_limit = kMaxExpectedQueueLength;
+    
+    
+    
+    bool keyframe_flushing = false;
+    
+    bool prioritize_audio_retransmission = false;
+    
+    
+    
+    
+    PacketQueueTTL packet_queue_ttl;
+    
+    
+    
+    TimeDelta send_burst_interval = kDefaultBurstInterval;
+  };
+
+  static Configuration DefaultConfiguration() { return Configuration{}; }
 
   PacingController(Clock* clock,
                    PacketSender* packet_sender,
-                   const FieldTrialsView& field_trials);
+                   const FieldTrialsView& field_trials,
+                   Configuration configuration = DefaultConfiguration());
 
   ~PacingController();
 

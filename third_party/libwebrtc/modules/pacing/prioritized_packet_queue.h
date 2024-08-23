@@ -18,8 +18,8 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
-#include <vector>
 
+#include "absl/container/inlined_vector.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -27,9 +27,19 @@
 
 namespace webrtc {
 
+
+struct PacketQueueTTL {
+  TimeDelta audio_retransmission = TimeDelta::PlusInfinity();
+  TimeDelta video_retransmission = TimeDelta::PlusInfinity();
+  TimeDelta video = TimeDelta::PlusInfinity();
+};
+
 class PrioritizedPacketQueue {
  public:
-  explicit PrioritizedPacketQueue(Timestamp creation_time);
+  explicit PrioritizedPacketQueue(
+      Timestamp creation_time,
+      bool prioritize_audio_retransmission = false,
+      PacketQueueTTL packet_queue_ttl = PacketQueueTTL());
   PrioritizedPacketQueue(const PrioritizedPacketQueue&) = delete;
   PrioritizedPacketQueue& operator=(const PrioritizedPacketQueue&) = delete;
 
@@ -63,6 +73,7 @@ class PrioritizedPacketQueue {
   
   
   Timestamp LeadingPacketEnqueueTime(RtpPacketMediaType type) const;
+  Timestamp LeadingPacketEnqueueTimeForRetransmission() const;
 
   
   
@@ -90,7 +101,7 @@ class PrioritizedPacketQueue {
   bool HasKeyframePackets(uint32_t ssrc) const;
 
  private:
-  static constexpr int kNumPriorityLevels = 4;
+  static constexpr int kNumPriorityLevels = 5;
 
   class QueuedPacket {
    public:
@@ -138,6 +149,15 @@ class PrioritizedPacketQueue {
   
   
   void MaybeUpdateTopPrioLevel();
+
+  void PurgeOldPacketsAtPriorityLevel(int prio_level, Timestamp now);
+
+  static absl::InlinedVector<TimeDelta, kNumPriorityLevels> ToTtlPerPrio(
+      PacketQueueTTL);
+
+  const bool prioritize_audio_retransmission_;
+  const absl::InlinedVector<TimeDelta, kNumPriorityLevels>
+      time_to_live_per_prio_;
 
   
   TimeDelta queue_time_sum_;
