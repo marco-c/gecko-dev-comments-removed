@@ -1078,6 +1078,22 @@ this.AccessibilityUtils = (function () {
     }
     
     for (; acc; acc = acc.parent) {
+      const relation = acc.getRelationByType(
+        Ci.nsIAccessibleRelation.RELATION_LABEL_FOR
+      );
+      if (
+        acc.role === Ci.nsIAccessibleRole.ROLE_LABEL &&
+        relation.targetsCount > 0
+      ) {
+        
+        
+        
+        
+        
+        
+        const targetAcc = relation.getTarget(0);
+        return targetAcc;
+      }
       if (INTERACTIVE_ROLES.has(acc.role)) {
         return acc;
       }
