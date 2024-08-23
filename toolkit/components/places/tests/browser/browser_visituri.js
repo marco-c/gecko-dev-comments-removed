@@ -139,7 +139,7 @@ add_task(async function test_userpass() {
   );
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async args => {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
     let link = content.document.getElementById("target-userpass");
     EventUtils.synthesizeMouseAtCenter(
       link,

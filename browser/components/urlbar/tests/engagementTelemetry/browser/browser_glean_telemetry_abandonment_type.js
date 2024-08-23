@@ -19,7 +19,7 @@ function checkUrlbarFocus(win, focusState) {
 
 
 add_task(async function tabSwitchFocusedToFocused() {
-  await doTest(async browser => {
+  await doTest(async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: "test search",
@@ -45,7 +45,7 @@ add_task(async function tabSwitchFocusedToFocused() {
 
 
 add_task(async function tabSwitchFocusedToUnfocused() {
-  await doTest(async browser => {
+  await doTest(async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: "test search",
@@ -65,7 +65,7 @@ add_task(async function tabSwitchFocusedToUnfocused() {
 
 
 add_task(async function tabSwitchUnFocusedToFocused() {
-  await doTest(async browser => {
+  await doTest(async () => {
     checkUrlbarFocus(window, false);
 
     let promiseTabOpened = BrowserTestUtils.waitForEvent(
@@ -91,7 +91,7 @@ add_task(async function tabSwitchUnFocusedToFocused() {
 
 
 add_task(async function tabSwitchUnFocusedToUnFocused() {
-  await doTest(async browser => {
+  await doTest(async () => {
     checkUrlbarFocus(window, false);
 
     let tab2 = await BrowserTestUtils.openNewForegroundTab(window.gBrowser);

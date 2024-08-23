@@ -275,7 +275,7 @@ add_task(async function testClearingBeforeDataSizesLoad() {
       info("stub called");
 
       info("This promise should never resolve");
-      await new Promise(resolve => {});
+      await new Promise(() => {});
     });
   dh.onload = async function () {
     
