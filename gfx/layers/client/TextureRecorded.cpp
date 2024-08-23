@@ -33,7 +33,7 @@ RecordedTextureData::~RecordedTextureData() {
   
   
   mSnapshot = nullptr;
-  mSnapshotWrapper = nullptr;
+  DetachSnapshotWrapper();
   mDT = nullptr;
   mCanvasChild->CleanupTexture(mTextureId);
   mCanvasChild->RecordEvent(RecordedTextureDestruction(
@@ -92,10 +92,25 @@ bool RecordedTextureData::Lock(OpenMode aMode) {
   return true;
 }
 
+void RecordedTextureData::DetachSnapshotWrapper(bool aInvalidate,
+                                                bool aRelease) {
+  if (mSnapshotWrapper) {
+    
+    
+    
+    
+    mCanvasChild->DetachSurface(mSnapshotWrapper,
+                                aInvalidate && !mSnapshotWrapper->hasOneRef());
+    if (aRelease) {
+      mSnapshotWrapper = nullptr;
+    }
+  }
+}
+
 void RecordedTextureData::Unlock() {
   if ((mLockedMode == OpenMode::OPEN_READ_WRITE) &&
       mCanvasChild->ShouldCacheDataSurface()) {
-    mSnapshotWrapper = nullptr;
+    DetachSnapshotWrapper();
     mSnapshot = mDT->Snapshot();
     mDT->DetachAllSnapshots();
     mCanvasChild->RecordEvent(RecordedCacheDataSurface(mSnapshot.get()));
@@ -108,11 +123,9 @@ void RecordedTextureData::Unlock() {
 
 already_AddRefed<gfx::DrawTarget> RecordedTextureData::BorrowDrawTarget() {
   if (mLockedMode & OpenMode::OPEN_WRITE) {
+    
     mSnapshot = nullptr;
-    if (mSnapshotWrapper) {
-      mCanvasChild->DetachSurface(mSnapshotWrapper);
-      mSnapshotWrapper = nullptr;
-    }
+    DetachSnapshotWrapper(true);
   }
   return do_AddRef(mDT);
 }
@@ -122,18 +135,22 @@ void RecordedTextureData::EndDraw() {
   MOZ_ASSERT(mLockedMode == OpenMode::OPEN_READ_WRITE);
 
   if (mCanvasChild->ShouldCacheDataSurface()) {
-    mSnapshotWrapper = nullptr;
+    DetachSnapshotWrapper();
     mSnapshot = mDT->Snapshot();
     mCanvasChild->RecordEvent(RecordedCacheDataSurface(mSnapshot.get()));
   }
 }
 
 already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
-  if (mSnapshotWrapper && (!mDT || !mDT->IsDirty())) {
-    
-    
-    mCanvasChild->AttachSurface(mSnapshotWrapper);
-    return do_AddRef(mSnapshotWrapper);
+  if (mSnapshotWrapper) {
+    if (!mDT || !mDT->IsDirty()) {
+      
+      
+      mCanvasChild->AttachSurface(mSnapshotWrapper);
+      return do_AddRef(mSnapshotWrapper);
+    }
+
+    DetachSnapshotWrapper();
   }
 
   
@@ -153,9 +170,10 @@ already_AddRefed<gfx::SourceSurface> RecordedTextureData::BorrowSnapshot() {
 void RecordedTextureData::ReturnSnapshot(
     already_AddRefed<gfx::SourceSurface> aSnapshot) {
   RefPtr<gfx::SourceSurface> snapshot = aSnapshot;
-  if (mSnapshotWrapper) {
-    mCanvasChild->DetachSurface(mSnapshotWrapper);
-  }
+  
+  
+  
+  DetachSnapshotWrapper(false, false);
 }
 
 void RecordedTextureData::Deallocate(LayersIPCChannel* aAllocator) {}

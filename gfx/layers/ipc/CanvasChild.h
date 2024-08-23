@@ -22,7 +22,7 @@ class ThreadSafeWorkerRef;
 namespace gfx {
 class DrawTargetRecording;
 class SourceSurface;
-}
+}  
 
 namespace layers {
 class CanvasDrawEventRecorder;
@@ -132,7 +132,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
   
 
 
-  void DetachSurface(const RefPtr<gfx::SourceSurface>& aSurface);
+  void DetachSurface(const RefPtr<gfx::SourceSurface>& aSurface,
+                     bool aInvalidate = false);
 
   
 
@@ -144,8 +145,10 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
+
   already_AddRefed<gfx::DataSourceSurface> GetDataSurface(
-      int64_t aTextureId, const gfx::SourceSurface* aSurface, bool aDetached);
+      int64_t aTextureId, const gfx::SourceSurface* aSurface, bool aDetached,
+      bool& aMayInvalidate);
 
   bool RequiresRefresh(int64_t aTextureId) const;
 
