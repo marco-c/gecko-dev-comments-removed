@@ -18,7 +18,7 @@ add_task(async function test_with_rs_messages() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [
-        "browser.newtabpage.activity-stream.asrouter.providers.whats-new-panel",
+        "browser.newtabpage.activity-stream.asrouter.providers.cfr",
         `{"id":"cfr","enabled":true,"type":"remote-settings","collection":"cfr","updateCycleInMs":0}`,
       ],
     ],
