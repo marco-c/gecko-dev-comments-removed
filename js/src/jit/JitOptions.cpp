@@ -448,7 +448,6 @@ void DefaultJitOptions::resetNormalIonWarmUpThreshold() {
 void DefaultJitOptions::maybeSetWriteProtectCode(bool val) {
 #ifdef JS_USE_APPLE_FAST_WX
   
-  
   MOZ_ASSERT(!writeProtectCode);
 #else
   writeProtectCode = val;
