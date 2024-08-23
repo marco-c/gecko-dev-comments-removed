@@ -973,6 +973,7 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
 #ifdef DEBUG
       inUnsafeCallWithABI(this, false),
       hasAutoUnsafeCallWithABI(this, false),
+      liveArraySortDataInstances(this, 0),
 #endif
 #ifdef JS_SIMULATOR
       simulator_(this, nullptr),
@@ -1044,6 +1045,9 @@ JSContext::~JSContext() {
 
   
   MOZ_ASSERT(!resolvingList);
+
+  
+  MOZ_ASSERT(liveArraySortDataInstances == 0);
 
   if (dtoaState) {
     DestroyDtoaState(dtoaState);
