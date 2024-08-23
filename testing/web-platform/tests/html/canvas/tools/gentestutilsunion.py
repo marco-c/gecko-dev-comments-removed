@@ -478,17 +478,11 @@ def _recursive_expand_variant_matrix(original_test: Mapping[str, Any],
         
         test = dict(original_test)
         variant_name_list = []
-        should_append_variant_names = original_test.get(
-            'append_variants_to_name', True)
         for variant_name, variant_params in current_selection:
-            variant_name_list.append(variant_name)
-            
-            
-            
-            if (should_append_variant_names
-                    and not variant_name.startswith('_')):
-                test['name'] += '.' + variant_name
             test.update(variant_params)
+            variant_name_list.append(variant_name)
+            if test.get('append_variants_to_name', True):
+                test['name'] += '.' + variant_name
         
         
         test.update({'variant_names': variant_name_list})
