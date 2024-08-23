@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
 import sys
@@ -21,8 +21,8 @@ NIMBUS_FALLBACK_PREFS = (
     "NIMBUS_FALLBACK_PREFS[]{{{}}};"
 )
 
-
-
+# Do not add new feature IDs to this list! isEarlyStartup is being deprecated.
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1875331 for details.
 ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "abouthomecache",
     "aboutwelcome",
@@ -34,7 +34,6 @@ ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "searchConfiguration",
     "shellService",
     "testFeature",
-    "updatePrompt",
     "upgradeDialog",
 }
 
@@ -150,8 +149,8 @@ def generate_feature_manifest(fd, input_file):
 def platform_feature_manifest_array(features):
     entries = []
     for feature, featureData in features.items():
-        
-        
+        # Features have to be tagged isEarlyStartup to be accessible
+        # to Nimbus platform API
         if not featureData.get("isEarlyStartup", False):
             continue
         entries.extend(
