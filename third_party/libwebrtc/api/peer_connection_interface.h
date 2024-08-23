@@ -1441,6 +1441,11 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   std::unique_ptr<FieldTrialsView> trials;
   std::unique_ptr<RtpTransportControllerSendFactoryInterface>
       transport_controller_send_factory;
+  
+  std::unique_ptr<Metronome> decode_metronome;
+  
+  
+  
   std::unique_ptr<Metronome> metronome;
 
   
