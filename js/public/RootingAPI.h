@@ -232,7 +232,7 @@ struct SafelyInitialized {
     
     
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || \
+#if defined(XP_WIN) || defined(XP_DARWIN) || \
     (defined(XP_UNIX) && !defined(__clang__))
 
     
