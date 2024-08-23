@@ -22,7 +22,12 @@ class RepoFilter(git_filter_repo.RepoFilter):
             old_hash = matchobj_or_oldhash.group(2)
         new_hash = super()._translate_commit_hash(old_hash)
         if new_hash == old_hash:
-            return new_hash
+            
+            if isinstance(matchobj_or_oldhash, bytes):
+                return matchobj_or_oldhash
+            
+            return matchobj_or_oldhash.group(0)
+        
         return b"https://github.com/mozilla-mobile/firefox-android/commit/" + old_hash
 
 
