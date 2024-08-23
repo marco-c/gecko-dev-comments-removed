@@ -8,7 +8,7 @@
 
 #include "HttpLog.h"
 
-#include "nsError.h"
+#include "mozilla/net/PBackgroundDataBridge.h"
 #include "nsHttp.h"
 #include "nsICacheEntry.h"
 #include "mozilla/BasePrincipal.h"
@@ -34,7 +34,6 @@
 #include "nsContentPolicyUtils.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsIThreadRetargetableStreamListener.h"
-#include "nsIStreamTransportService.h"
 #include "nsStringStream.h"
 #include "nsHttpChannel.h"
 #include "nsHttpHandler.h"
@@ -599,17 +598,6 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest) {
   } else if (listener) {
     mListener = listener;
     mCompressListener = listener;
-
-    
-    
-    
-    if (nsCOMPtr<nsIStreamConverter> conv =
-            do_QueryInterface((mCompressListener))) {
-      rv = conv->MaybeRetarget(this);
-      if (NS_SUCCEEDED(rv)) {
-        mOMTResult = LABELS_HTTP_CHILD_OMT_STATS_2::successOnlyDecomp;
-      }
-    }
   }
 }
 
@@ -1169,7 +1157,7 @@ void HttpChannelChild::CollectOMTTelemetry() {
       NS_CP_ContentTypeName(mLoadInfo->InternalContentPolicyType()));
 
   Telemetry::AccumulateCategoricalKeyed(
-      key, static_cast<LABELS_HTTP_CHILD_OMT_STATS_2>(mOMTResult));
+      key, static_cast<LABELS_HTTP_CHILD_OMT_STATS>(mOMTResult));
 }
 
 
@@ -3067,7 +3055,7 @@ HttpChannelChild::RetargetDeliveryTo(nsISerialEventTarget* aNewTarget) {
   NS_ENSURE_ARG(aNewTarget);
   if (aNewTarget->IsOnCurrentThread()) {
     NS_WARNING("Retargeting delivery to same thread");
-    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS_2::successMainThread;
+    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::successMainThread;
     return NS_OK;
   }
 
@@ -3075,7 +3063,7 @@ HttpChannelChild::RetargetDeliveryTo(nsISerialEventTarget* aNewTarget) {
     
     
     
-    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS_2::failListener;
+    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::failListener;
     return NS_ERROR_NO_INTERFACE;
   }
 
@@ -3086,32 +3074,25 @@ HttpChannelChild::RetargetDeliveryTo(nsISerialEventTarget* aNewTarget) {
       do_QueryInterface(mListener, &rv);
   if (!retargetableListener || NS_FAILED(rv)) {
     NS_WARNING("Listener is not retargetable");
-    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS_2::failListener;
+    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::failListener;
     return NS_ERROR_NO_INTERFACE;
   }
 
   rv = retargetableListener->CheckListenerChain();
   if (NS_FAILED(rv)) {
     NS_WARNING("Subsequent listeners are not retargetable");
-    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS_2::failListenerChain;
+    mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::failListenerChain;
     return rv;
   }
 
   {
     MutexAutoLock lock(mEventTargetMutex);
     MOZ_ASSERT(!mODATarget);
-    RetargetDeliveryToImpl(aNewTarget, lock);
+    mODATarget = aNewTarget;
   }
 
-  mOMTResult = LABELS_HTTP_CHILD_OMT_STATS_2::success;
+  mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::success;
   return NS_OK;
-}
-
-void HttpChannelChild::RetargetDeliveryToImpl(nsISerialEventTarget* aNewTarget,
-                                              MutexAutoLock& aLockRef) {
-  aLockRef.AssertOwns(mEventTargetMutex);
-
-  mODATarget = aNewTarget;
 }
 
 NS_IMETHODIMP
