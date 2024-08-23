@@ -79,18 +79,6 @@ class Nursery {
 
   [[nodiscard]] bool init(AutoLockGCBgAlloc& lock);
 
-  
-  unsigned allocatedChunkCount() const { return chunks_.length(); }
-
-  
-  
-  
-  
-  unsigned maxChunkCount() const {
-    MOZ_ASSERT(capacity());
-    return HowMany(capacity(), gc::ChunkSize);
-  }
-
   void enable();
   void disable();
   bool isEnabled() const { return capacity() != 0; }
@@ -391,6 +379,18 @@ class Nursery {
                                size_t(ProfileKey::KeyCount)>;
 
   
+  unsigned allocatedChunkCount() const { return chunks_.length(); }
+
+  
+  
+  
+  
+  uint32_t maxChunkCount() const {
+    MOZ_ASSERT(maxChunkCount_);
+    return maxChunkCount_;
+  }
+
+  
   
   
   
@@ -407,6 +407,7 @@ class Nursery {
   void moveToStartOfChunk(unsigned chunkno);
 
   bool initFirstChunk(AutoLockGCBgAlloc& lock);
+  void setCapacity(size_t newCapacity);
 
   
   
@@ -534,6 +535,9 @@ class Nursery {
 
   
   uint32_t currentChunk_;
+
+  
+  uint32_t maxChunkCount_;
 
   
   
