@@ -28,10 +28,10 @@
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
-using ::webrtc::TimeDelta;
+
 
 
 
@@ -51,12 +51,6 @@ class EnableHighResTimers {
 #endif
 };
 
-void CheckCurrent(Event* signal, TaskQueue* queue) {
-  EXPECT_TRUE(queue->IsCurrent());
-  if (signal)
-    signal->Set();
-}
-
 }  
 
 
@@ -65,14 +59,18 @@ TEST(TaskQueueTest, DISABLED_PostDelayedHighRes) {
   EnableHighResTimers high_res_scope;
 
   static const char kQueueName[] = "PostDelayedHighRes";
-  Event event;
-  webrtc::TaskQueueForTest queue(kQueueName, TaskQueue::Priority::HIGH);
+  rtc::Event event;
+  TaskQueueForTest queue(kQueueName, TaskQueueFactory::Priority::HIGH);
 
-  uint32_t start = Time();
-  queue.PostDelayedTask([&event, &queue] { CheckCurrent(&event, &queue); },
-                        TimeDelta::Millis(3));
-  EXPECT_TRUE(event.Wait(webrtc::TimeDelta::Seconds(1)));
-  uint32_t end = TimeMillis();
+  uint32_t start = rtc::TimeMillis();
+  queue.PostDelayedTask(
+      [&event, &queue] {
+        EXPECT_TRUE(queue.IsCurrent());
+        event.Set();
+      },
+      TimeDelta::Millis(3));
+  EXPECT_TRUE(event.Wait(TimeDelta::Seconds(1)));
+  uint32_t end = rtc::TimeMillis();
   
   
   
