@@ -435,16 +435,6 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
   NS_ASSERTION(!m_targetStreamListener,
                "If we found a listener, why are we not using it?");
 
-  if (mFlags & nsIURILoader::DONT_RETARGET) {
-    LOG(
-        ("  External handling forced or (listener not interested and no "
-         "stream converter exists), and retargeting disallowed -> aborting"));
-    return NS_ERROR_WONT_HANDLE_CONTENT;
-  }
-
-  
-  
-  
   
   
   
@@ -453,8 +443,18 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
     bool requestSucceeded;
     rv = httpChannel->GetRequestSucceeded(&requestSucceeded);
     if (NS_FAILED(rv) || !requestSucceeded) {
-      return NS_OK;
+      LOG(
+          ("  Returning NS_ERROR_FILE_NOT_FOUND from "
+           "nsDocumentOpenInfo::DispatchContent due to failed HTTP response"));
+      return NS_ERROR_FILE_NOT_FOUND;
     }
+  }
+
+  if (mFlags & nsIURILoader::DONT_RETARGET) {
+    LOG(
+        ("  External handling forced or (listener not interested and no "
+         "stream converter exists), and retargeting disallowed -> aborting"));
+    return NS_ERROR_WONT_HANDLE_CONTENT;
   }
 
   
