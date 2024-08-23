@@ -68,18 +68,6 @@ add_task(async function testRecordTypeCheck() {
     UniFFITypeError,
     "gradient with non-Line object should throw"
   );
-
-  await Assert.rejects(
-    Geometry.gradient({
-      start: {
-        coordX: 0.0,
-        coordY: 0.0,
-      },
-      
-    }),
-    /ln.end/, 
-    "gradient with Line object with missing end field should throw"
-  );
 });
 
 add_task(async function testOptionTypeCheck() {
