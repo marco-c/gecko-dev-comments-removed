@@ -108,11 +108,11 @@ class AudioData final : public nsISupports, public nsWrapperCache {
   static already_AddRefed<AudioData> FromTransferred(nsIGlobalObject* aGlobal,
                                                      TransferredData* aData);
 
+  nsCString ToString() const;
+
  private:
   size_t ComputeCopyElementCount(const AudioDataCopyToOptions& aOptions,
                                  ErrorResult& aRv);
-
-  nsCString ToString() const;
   
   void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(AudioData); }
   void CloseIfNeeded();
