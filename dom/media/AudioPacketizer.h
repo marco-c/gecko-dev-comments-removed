@@ -100,11 +100,15 @@ class AudioPacketizer {
     return out;
   }
 
-  void Output(OutputType* aOutputBuffer) {
+  
+  
+  size_t Output(OutputType* aOutputBuffer) {
     uint32_t samplesNeeded = mPacketSize * mChannels;
+    size_t rv = 0;
 
     
     if (AvailableSamples() < samplesNeeded) {
+      rv = AvailableSamples() / mChannels;
 #ifdef LOG_PACKETIZER_UNDERRUN
       char buf[256];
       snprintf(buf, 256,
@@ -115,6 +119,8 @@ class AudioPacketizer {
       uint32_t zeros = samplesNeeded - AvailableSamples();
       PodZero(aOutputBuffer + AvailableSamples(), zeros);
       samplesNeeded -= zeros;
+    } else {
+      rv = mPacketSize;
     }
     if (ReadIndex() + samplesNeeded <= mLength) {
       ConvertAudioSamples<InputType, OutputType>(mStorage.get() + ReadIndex(),
@@ -128,6 +134,7 @@ class AudioPacketizer {
           mStorage.get(), aOutputBuffer + firstPartLength, secondPartLength);
     }
     mReadIndex += samplesNeeded;
+    return rv;
   }
 
   void Clear() {
