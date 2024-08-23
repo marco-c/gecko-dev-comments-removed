@@ -140,7 +140,8 @@ nsHTTPCompressConv::MaybeRetarget(nsIRequest* request) {
 
   nsCOMPtr<nsISerialEventTarget> target;
   rv = req->GetDeliveryTarget(getter_AddRefs(target));
-  if (NS_FAILED(rv) || !target || target->IsOnCurrentThread()) {
+  if ((NS_FAILED(rv) || !target || target->IsOnCurrentThread()) &&
+      StaticPrefs::network_decompression_off_mainthread()) {
     
     
     nsCOMPtr<nsISerialEventTarget> backgroundThread;
