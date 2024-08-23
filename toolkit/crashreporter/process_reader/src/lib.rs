@@ -2,12 +2,78 @@
 
 
 
+use std::{ffi::CString, mem::size_of};
+
+use error::ReadError;
+
+pub mod error;
+mod platform;
+
 #[cfg(target_os = "windows")]
-type ProcessHandle = windows_sys::Win32::Foundation::HANDLE;
+pub type ProcessHandle = windows_sys::Win32::Foundation::HANDLE;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub type ProcessHandle = libc::pid_t;
+
+#[cfg(any(target_os = "macos"))]
+pub type ProcessHandle = mach2::mach_types::task_t;
 
 pub struct ProcessReader {
     process: ProcessHandle,
 }
 
-mod error;
-mod process_reader;
+impl ProcessReader {
+    pub fn copy_null_terminated_string(&self, address: usize) -> Result<CString, ReadError> {
+        
+        
+        if let Ok(string) = self.copy_null_terminated_string_word_by_word(address) {
+            return Ok(string);
+        }
+
+        
+        
+        
+        
+        let mut length = 0;
+        let mut string = Vec::<u8>::new();
+
+        loop {
+            let char = self.copy_object::<u8>(address + length)?;
+            length += 1;
+            string.push(char);
+
+            if char == 0 {
+                break;
+            }
+        }
+
+        
+        
+        Ok(unsafe { CString::from_vec_with_nul_unchecked(string) })
+    }
+
+    fn copy_null_terminated_string_word_by_word(
+        &self,
+        address: usize,
+    ) -> Result<CString, ReadError> {
+        const WORD_SIZE: usize = size_of::<usize>();
+        let mut length = 0;
+        let mut string = Vec::<u8>::new();
+
+        loop {
+            let array = self.copy_array::<u8>(address + length, WORD_SIZE)?;
+            let null_terminator = array.iter().position(|&e| e == 0);
+            length += null_terminator.unwrap_or(WORD_SIZE);
+            string.extend(array.into_iter());
+
+            if null_terminator.is_some() {
+                string.truncate(length + 1);
+                break;
+            }
+        }
+
+        
+        
+        Ok(unsafe { CString::from_vec_with_nul_unchecked(string) })
+    }
+}
