@@ -196,21 +196,6 @@ function showPermissionsPrompt(addon) {
   });
 }
 
-
-
-
-var gBrowser = {
-  getTabModalPromptBox(browser) {
-    const parentWindow = window.docShell.chromeEventHandler.ownerGlobal;
-
-    if (parentWindow.gBrowser) {
-      return parentWindow.gBrowser.getTabModalPromptBox(browser);
-    }
-
-    return null;
-  },
-};
-
 function isCorrectlySigned(addon) {
   
   
