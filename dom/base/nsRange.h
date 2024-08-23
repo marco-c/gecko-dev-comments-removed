@@ -13,6 +13,7 @@
 
 #include "nsCOMPtr.h"
 #include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/StaticRange.h"
 #include "prmon.h"
 #include "nsStubMutationObserver.h"
 #include "nsWrapperCache.h"
@@ -351,6 +352,59 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   nsINode* GetRegisteredClosestCommonInclusiveAncestor();
 
+  
+
+
+
+
+
+
+
+
+  nsIContent* GetMayCrossBoundaryChildAtStartOffset() const {
+    return mCrossShadowBoundaryRange
+               ? mCrossShadowBoundaryRange->GetChildAtStartOffset()
+               : mStart.GetChildAtOffset();
+  }
+
+  nsIContent* GetMayCrossBoundaryChildAtEndOffset() const {
+    return mCrossShadowBoundaryRange
+               ? mCrossShadowBoundaryRange->GetChildAtEndOffset()
+               : mEnd.GetChildAtOffset();
+  }
+
+  nsINode* GetMayCrossBoundaryStartContainer() const {
+    return mCrossShadowBoundaryRange
+               ? mCrossShadowBoundaryRange->GetStartContainer()
+               : mStart.Container();
+  }
+
+  nsINode* GetMayCrossBoundaryEndContainer() const {
+    return mCrossShadowBoundaryRange
+               ? mCrossShadowBoundaryRange->GetEndContainer()
+               : mEnd.Container();
+  }
+
+  uint32_t MayCrossBoundaryStartOffset() const {
+    return mCrossShadowBoundaryRange ? mCrossShadowBoundaryRange->StartOffset()
+                                     : StartOffset();
+  }
+
+  uint32_t MayCrossBoundaryEndOffset() const {
+    return mCrossShadowBoundaryRange ? mCrossShadowBoundaryRange->EndOffset()
+                                     : EndOffset();
+  }
+
+  const RangeBoundary& MayCrossBoundaryStartRef() const {
+    return mCrossShadowBoundaryRange ? mCrossShadowBoundaryRange->StartRef()
+                                     : StartRef();
+  }
+
+  const RangeBoundary& MayCrossBoundaryEndRef() const {
+    return mCrossShadowBoundaryRange ? mCrossShadowBoundaryRange->EndRef()
+                                     : EndRef();
+  }
+
  protected:
   
 
@@ -423,6 +477,22 @@ class nsRange final : public mozilla::dom::AbstractRange,
   nsIContent* MOZ_NON_OWNING_REF mNextEndRef;
 
   static nsTArray<RefPtr<nsRange>>* sCachedRanges;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<mozilla::dom::StaticRange> mCrossShadowBoundaryRange;
 
   friend class mozilla::dom::AbstractRange;
 };
