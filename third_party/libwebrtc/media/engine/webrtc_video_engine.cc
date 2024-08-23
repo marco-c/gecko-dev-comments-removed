@@ -1038,13 +1038,19 @@ bool WebRtcVideoSendChannel::GetChangedSenderParameters(
     return false;
   }
 
-  std::vector<VideoCodecSettings> negotiated_codecs =
-      SelectSendVideoCodecs(MapCodecs(params.codecs));
-
-  
-  if (params.is_stream_active && negotiated_codecs.empty()) {
-    RTC_LOG(LS_ERROR) << "No video codecs supported.";
+  std::vector<VideoCodecSettings> mapped_codecs = MapCodecs(params.codecs);
+  if (mapped_codecs.empty()) {
+    
     return false;
+  }
+
+  std::vector<VideoCodecSettings> negotiated_codecs =
+      SelectSendVideoCodecs(mapped_codecs);
+
+  if (params.is_stream_active && negotiated_codecs.empty()) {
+    
+    RTC_LOG(LS_ERROR) << "No video codecs in common.";
+    return true;
   }
 
   

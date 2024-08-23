@@ -1709,7 +1709,8 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpusBadClockrate) {
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs[0].bitrate = 0;
   parameters.codecs[0].clockrate = 50000;
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
 
 
@@ -1719,7 +1720,8 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpusBad0ChannelsNoStereo) {
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs[0].bitrate = 0;
   parameters.codecs[0].channels = 0;
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
 
 
@@ -1730,8 +1732,10 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpusBad0Channels1Stereo) {
   parameters.codecs[0].bitrate = 0;
   parameters.codecs[0].channels = 0;
   parameters.codecs[0].params["stereo"] = "1";
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
+
 
 
 TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpus1ChannelNoStereo) {
@@ -1740,7 +1744,8 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpus1ChannelNoStereo) {
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs[0].bitrate = 0;
   parameters.codecs[0].channels = 1;
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
 
 
@@ -1751,7 +1756,8 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpusBad1Channel0Stereo) {
   parameters.codecs[0].bitrate = 0;
   parameters.codecs[0].channels = 1;
   parameters.codecs[0].params["stereo"] = "0";
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
 
 
@@ -1762,7 +1768,8 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecOpusBad1Channel1Stereo) {
   parameters.codecs[0].bitrate = 0;
   parameters.codecs[0].channels = 1;
   parameters.codecs[0].params["stereo"] = "1";
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
 
 
@@ -2039,7 +2046,8 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsBitrate) {
 TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsNoCodecs) {
   EXPECT_TRUE(SetupSendStream());
   cricket::AudioSenderParameter parameters;
-  EXPECT_FALSE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(send_channel_->GetSendCodec(), absl::nullopt);
 }
 
 
