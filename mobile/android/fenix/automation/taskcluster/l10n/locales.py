@@ -11,11 +11,21 @@ import re
 OPEN_LOCALES = "locales = ["
 CLOSE_LOCALES = "]"
 
+
+
+ANDROID_LEGACY_MAP = {
+    'he': 'iw',
+    'id': 'in',
+    'yi': 'ji'
+}
+
 def trim_to_locale(str):
     match = re.search('\s*"([a-z]+-?[A-Z]*)",\s*', str)
     if not match:
         raise Exception("Failed parsing locale found in l10n.toml: " + str)
-    return match.group(1)
+
+    locale = match.group(1)
+    return ANDROID_LEGACY_MAP.get(locale, locale)
 
 
 
