@@ -20,6 +20,7 @@
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
 #include "builtin/ParseRecordObject.h"
+#include "builtin/RawJSONObject.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Object.h"                
@@ -437,6 +438,16 @@ class CycleDetector {
   bool appended_;
 };
 
+static inline JSString* MaybeGetRawJSON(JSContext* cx, JSObject* obj) {
+  if (!obj->is<RawJSONObject>()) {
+    return nullptr;
+  }
+
+  JSString* rawJSON = obj->as<js::RawJSONObject>().rawJSON(cx);
+  MOZ_ASSERT(rawJSON);
+  return rawJSON;
+}
+
 #ifdef ENABLE_RECORD_TUPLE
 enum class JOType { Record, Object };
 template <JOType type = JOType::Object>
@@ -783,6 +794,12 @@ static bool SerializeJSONProperty(JSContext* cx, const Value& v,
   
   MOZ_ASSERT(v.hasObjectPayload());
   RootedObject obj(cx, &v.getObjectPayload());
+
+  
+
+  if (JSString* rawJSON = MaybeGetRawJSON(cx, obj)) {
+    return scx->sb.append(rawJSON);
+  }
 
   MOZ_ASSERT(
       !scx->maybeSafely || obj->is<PlainObject>() || obj->is<ArrayObject>(),
@@ -1234,6 +1251,10 @@ static bool FastSerializeJSONProperty(JSContext* cx, Handle<Value> v,
   MOZ_ASSERT(*whySlow == BailReason::NO_REASON);
   MOZ_ASSERT(v.isObject());
 
+  if (JSString* rawJSON = MaybeGetRawJSON(cx, &v.toObject())) {
+    return scx->sb.append(rawJSON);
+  }
+
   
 
 
@@ -1357,19 +1378,24 @@ static bool FastSerializeJSONProperty(JSContext* cx, Handle<Value> v,
         }
 
         if (val.isObject()) {
-          if (stack.length() >= MAX_STACK_DEPTH - 1) {
-            *whySlow = BailReason::DEEP_RECURSION;
-            return true;
+          if (JSString* rawJSON = MaybeGetRawJSON(cx, &val.toObject())) {
+            if (!scx->sb.append(rawJSON)) {
+              return false;
+            }
+          } else {
+            if (stack.length() >= MAX_STACK_DEPTH - 1) {
+              *whySlow = BailReason::DEEP_RECURSION;
+              return true;
+            }
+            
+            
+            stack.infallibleAppend(std::move(top));
+            top = FastStackEntry(&val.toObject().as<NativeObject>());
+            wroteMember = false;
+            nestedObject = true;  
+            break;
           }
-          
-          
-          stack.infallibleAppend(std::move(top));
-          top = FastStackEntry(&val.toObject().as<NativeObject>());
-          wroteMember = false;
-          nestedObject = true;  
-          break;
-        }
-        if (!EmitSimpleValue(cx, scx->sb, val)) {
+        } else if (!EmitSimpleValue(cx, scx->sb, val)) {
           return false;
         }
       }
@@ -1434,19 +1460,24 @@ static bool FastSerializeJSONProperty(JSContext* cx, Handle<Value> v,
           return false;
         }
         if (val.isObject()) {
-          if (stack.length() >= MAX_STACK_DEPTH - 1) {
-            *whySlow = BailReason::DEEP_RECURSION;
-            return true;
+          if (JSString* rawJSON = MaybeGetRawJSON(cx, &val.toObject())) {
+            if (!scx->sb.append(rawJSON)) {
+              return false;
+            }
+          } else {
+            if (stack.length() >= MAX_STACK_DEPTH - 1) {
+              *whySlow = BailReason::DEEP_RECURSION;
+              return true;
+            }
+            
+            
+            stack.infallibleAppend(std::move(top));
+            top = FastStackEntry(&val.toObject().as<NativeObject>());
+            wroteMember = false;
+            nesting = true;  
+            break;
           }
-          
-          
-          stack.infallibleAppend(std::move(top));
-          top = FastStackEntry(&val.toObject().as<NativeObject>());
-          wroteMember = false;
-          nesting = true;  
-          break;
-        }
-        if (!EmitSimpleValue(cx, scx->sb, val)) {
+        } else if (!EmitSimpleValue(cx, scx->sb, val)) {
           return false;
         }
       }
@@ -2153,6 +2184,71 @@ static bool json_parseImmutable(JSContext* cx, unsigned argc, Value* vp) {
 }
 #endif
 
+#ifdef ENABLE_JSON_PARSE_WITH_SOURCE
+
+static bool json_isRawJSON(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "JSON", "isRawJSON");
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (args.get(0).isObject()) {
+    Rooted<JSObject*> obj(cx, &args[0].toObject());
+#  ifdef DEBUG
+    if (obj->is<RawJSONObject>()) {
+      bool objIsFrozen = false;
+      MOZ_ASSERT(js::TestIntegrityLevel(cx, obj, IntegrityLevel::Frozen,
+                                        &objIsFrozen));
+      MOZ_ASSERT(objIsFrozen);
+    }
+#  endif  
+    args.rval().setBoolean(obj->is<RawJSONObject>());
+    return true;
+  }
+
+  
+  args.rval().setBoolean(false);
+  return true;
+}
+
+
+static bool json_rawJSON(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "JSON", "rawJSON");
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  JSString* jsonString = ToString<CanGC>(cx, args.get(0));
+  if (!jsonString) {
+    return false;
+  }
+
+  Rooted<JSLinearString*> linear(cx, jsonString->ensureLinear(cx));
+  if (!linear) {
+    return false;
+  }
+
+  AutoStableStringChars linearChars(cx);
+  if (!linearChars.init(cx, linear)) {
+    return false;
+  }
+
+  
+
+  
+  Rooted<RawJSONObject*> obj(cx, RawJSONObject::create(cx, linear));
+  if (!obj) {
+    return false;
+  }
+
+  
+  if (!js::FreezeObject(cx, obj)) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+#endif  
+
 
 bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "JSON", "stringify");
@@ -2191,10 +2287,15 @@ bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static const JSFunctionSpec json_static_methods[] = {
-    JS_FN("toSource", json_toSource, 0, 0), JS_FN("parse", json_parse, 2, 0),
+    JS_FN("toSource", json_toSource, 0, 0),
+    JS_FN("parse", json_parse, 2, 0),
     JS_FN("stringify", json_stringify, 3, 0),
 #ifdef ENABLE_RECORD_TUPLE
     JS_FN("parseImmutable", json_parseImmutable, 2, 0),
+#endif
+#ifdef ENABLE_JSON_PARSE_WITH_SOURCE
+    JS_FN("isRawJSON", json_isRawJSON, 1, 0),
+    JS_FN("rawJSON", json_rawJSON, 1, 0),
 #endif
     JS_FS_END};
 
