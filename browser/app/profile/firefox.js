@@ -817,6 +817,10 @@ pref("browser.shopping.experience2023.sidebarClosedCount", 0);
 pref("browser.shopping.experience2023.showKeepSidebarClosedMessage", true);
 
 
+
+
+
+
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
 
 
