@@ -126,10 +126,20 @@ function getBrowser(panel) {
 }
 
 
-
 var gBrowser = {
   get selectedBrowser() {
     return document.getElementById("webext-panels-browser");
+  },
+
+  getTabForBrowser() {
+    return null;
+  },
+
+  getTabModalPromptBox(browser) {
+    if (!browser.tabModalPromptBox) {
+      browser.tabModalPromptBox = new TabModalPromptBox(browser);
+    }
+    return browser.tabModalPromptBox;
   },
 };
 
