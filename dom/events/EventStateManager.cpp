@@ -3453,6 +3453,13 @@ void EventStateManager::PostHandleKeyboardEvent(
   }
 }
 
+static bool NeedsActiveContentChange(const WidgetMouseEvent* aMouseEvent) {
+  
+  
+  return !aMouseEvent ||
+         aMouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+}
+
 nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
                                             WidgetEvent* aEvent,
                                             nsIFrame* aTargetFrame,
@@ -3696,7 +3703,9 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       }
       
       
-      SetActiveManager(this, activeContent);
+      if (NeedsActiveContentChange(mouseEvent)) {
+        SetActiveManager(this, activeContent);
+      }
     } break;
     case ePointerCancel:
     case ePointerUp: {
@@ -3724,10 +3733,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       PresShell::ReleaseCapturingContent();
 
       WidgetMouseEvent* mouseUpEvent = aEvent->AsMouseEvent();
-      
-      
-      if (!mouseUpEvent || mouseUpEvent->mInputSource !=
-                               dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+      if (NeedsActiveContentChange(mouseUpEvent)) {
         ClearGlobalActiveContent(this);
       }
       if (mouseUpEvent && EventCausesClickEvents(*mouseUpEvent)) {
