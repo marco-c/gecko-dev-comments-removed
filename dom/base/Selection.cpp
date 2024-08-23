@@ -2676,6 +2676,19 @@ AbstractRange* Selection::GetAbstractRangeAt(uint32_t aIndex) const {
   return mStyledRanges.mRanges.SafeElementAt(aIndex, empty).mRange;
 }
 
+void Selection::GetDirection(nsAString& aDirection) const {
+  if (mStyledRanges.mRanges.IsEmpty() ||
+      (mFrameSelection && (mFrameSelection->IsDoubleClickSelection() ||
+                           mFrameSelection->IsTripleClickSelection()))) {
+    
+    aDirection.AssignLiteral("none");
+  } else if (mDirection == nsDirection::eDirPrevious) {
+    aDirection.AssignLiteral("backward");
+  } else {
+    aDirection.AssignLiteral("forward");
+  }
+}
+
 nsRange* Selection::GetRangeAt(uint32_t aIndex) const {
   
   
@@ -3610,7 +3623,8 @@ void Selection::NotifySelectionListeners() {
 
   
   
-  frameSelection->SetIsDoubleClickSelection(false);
+  
+  frameSelection->SetClickSelectionType(ClickSelectionType::NotApplicable);
 
   if (frameSelection->IsBatching()) {
     frameSelection->SetChangesDuringBatchingFlag();

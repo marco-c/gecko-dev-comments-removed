@@ -1496,8 +1496,8 @@ void nsFrameSelection::SetDragState(bool aState) {
     
     
     
-    AutoRestore<bool> restoreIsDoubleClickSelectionFlag(
-        mIsDoubleClickSelection);
+    AutoRestore<ClickSelectionType> restoreClickSelectionType(
+        mClickSelectionType);
     
     NotifySelectionListeners(SelectionType::eNormal);
   }
