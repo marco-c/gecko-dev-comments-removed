@@ -8,7 +8,7 @@ var gStartTime2;
 var timer;
 
 var observer1 = {
-  observe: function observeTC1(subject, topic, data) {
+  observe: function observeTC1(subject, topic) {
     if (topic == "timer-callback") {
       
       timer.cancel();
@@ -30,7 +30,7 @@ var observer1 = {
 };
 
 var observer2 = {
-  observe: function observeTC2(subject, topic, data) {
+  observe: function observeTC2(subject, topic) {
     if (topic == "timer-callback") {
       
       timer.cancel();
