@@ -758,18 +758,9 @@ bool DefineLegacyUnforgeableAttributes(
   return DefinePrefable(cx, obj, props);
 }
 
-
-
-
-
-
-JSString* InterfaceObjectToString(JSContext* aCx, JS::Handle<JSObject*> aObject,
-                                  bool ) {
-  const JSClass* clasp = JS::GetClass(aObject);
-  MOZ_ASSERT(IsDOMIfaceAndProtoClass(clasp));
-
-  const DOMIfaceJSClass* ifaceJSClass = DOMIfaceJSClass::FromJSClass(clasp);
-  return JS_NewStringCopyZ(aCx, ifaceJSClass->mFunToString);
+bool InterfaceObjectJSNative(JSContext* cx, unsigned argc, JS::Value* vp) {
+  JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+  return NativeHolderFromInterfaceObject(&args.callee())->mNative(cx, argc, vp);
 }
 
 bool LegacyFactoryFunctionJSNative(JSContext* cx, unsigned argc,
@@ -856,20 +847,16 @@ static bool InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp) {
     return true;
   }
 
-  const JSClass* thisClass = JS::GetClass(thisObj);
-
-  if (!IsDOMIfaceAndProtoClass(thisClass)) {
+  if (!IsInterfaceObject(thisObj)) {
     args.rval().setBoolean(false);
     return true;
   }
 
-  const DOMIfaceAndProtoJSClass* clasp =
-      DOMIfaceAndProtoJSClass::FromJSClass(thisClass);
+  const DOMInterfaceInfo* interfaceInfo = InterfaceInfoFromObject(thisObj);
 
   
   
-  if (clasp->mType != eInterface ||
-      clasp->mPrototypeID == prototypes::id::_ID_Count) {
+  if (interfaceInfo->mPrototypeID == prototypes::id::_ID_Count) {
     args.rval().setBoolean(false);
     return true;
   }
@@ -878,13 +865,13 @@ static bool InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp) {
   const DOMJSClass* domClass = GetDOMClass(
       js::UncheckedUnwrap(instance,  false));
 
-  if (domClass &&
-      domClass->mInterfaceChain[clasp->mDepth] == clasp->mPrototypeID) {
+  if (domClass && domClass->mInterfaceChain[interfaceInfo->mDepth] ==
+                      interfaceInfo->mPrototypeID) {
     args.rval().setBoolean(true);
     return true;
   }
 
-  if (IsRemoteObjectProxy(instance, clasp->mPrototypeID)) {
+  if (IsRemoteObjectProxy(instance, interfaceInfo->mPrototypeID)) {
     args.rval().setBoolean(true);
     return true;
   }
@@ -937,35 +924,41 @@ bool InitInterfaceOrNamespaceObject(
 
 static JSObject* CreateInterfaceObject(
     JSContext* cx, JS::Handle<JSObject*> global,
-    JS::Handle<JSObject*> constructorProto,
-    const DOMIfaceJSClass* constructorClass, unsigned ctorNargs,
+    JS::Handle<JSObject*> interfaceProto, const DOMInterfaceInfo* interfaceInfo,
+    unsigned ctorNargs,
     const Span<const LegacyFactoryFunction>& legacyFactoryFunctions,
     JS::Handle<JSObject*> proto, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, JS::Handle<JSString*> name,
     bool isChrome, bool defineOnGlobal,
     const char* const* legacyWindowAliases) {
+  MOZ_ASSERT(interfaceProto);
+  MOZ_ASSERT(interfaceInfo);
+
+  JS::Rooted<jsid> nameId(cx, JS::PropertyKey::NonIntAtom(name));
+
   JS::Rooted<JSObject*> constructor(cx);
-  MOZ_ASSERT(constructorProto);
-  MOZ_ASSERT(constructorClass);
-  constructor = JS_NewObjectWithGivenProto(cx, constructorClass->ToJSClass(),
-                                           constructorProto);
-  if (!constructor) {
-    return nullptr;
+  {
+    JSFunction* fun = js::NewFunctionByIdWithReservedAndProto(
+        cx, InterfaceObjectJSNative, interfaceProto, ctorNargs,
+        JSFUN_CONSTRUCTOR, nameId);
+    if (!fun) {
+      return nullptr;
+    }
+
+    constructor = JS_GetFunctionObject(fun);
   }
 
-  if (!JS_DefineProperty(cx, constructor, "length", ctorNargs,
-                         JSPROP_READONLY)) {
-    return nullptr;
-  }
+  js::SetFunctionNativeReserved(
+      constructor, INTERFACE_OBJECT_INFO_RESERVED_SLOT,
+      JS::PrivateValue(const_cast<DOMInterfaceInfo*>(interfaceInfo)));
 
-  if (!JS_DefineProperty(cx, constructor, "name", name, JSPROP_READONLY)) {
-    return nullptr;
-  }
-
-  if (constructorClass->wantsInterfaceIsInstance && isChrome &&
-      !JS_DefineFunction(cx, constructor, "isInstance", InterfaceIsInstance, 1,
-                         
-                         0)) {
+  
+  
+  
+  
+  bool unused;
+  if (!JS_HasProperty(cx, constructor, "length", &unused) ||
+      !JS_HasProperty(cx, constructor, "name", &unused)) {
     return nullptr;
   }
 
@@ -978,8 +971,14 @@ static JSObject* CreateInterfaceObject(
     return nullptr;
   }
 
-  JS::Rooted<jsid> nameId(cx, JS::PropertyKey::NonIntAtom(name));
   if (defineOnGlobal && !DefineConstructor(cx, global, nameId, constructor)) {
+    return nullptr;
+  }
+
+  if (interfaceInfo->wantsInterfaceIsInstance && isChrome &&
+      !JS_DefineFunction(cx, constructor, "isInstance", InterfaceIsInstance, 1,
+                         
+                         0)) {
     return nullptr;
   }
 
@@ -1010,8 +1009,8 @@ static JSObject* CreateInterfaceObject(
          !DefineConstructor(cx, global, nameId, legacyFactoryFunction))) {
       return nullptr;
     }
-    JS::SetReservedSlot(constructor, legacyFactoryFunctionSlot,
-                        JS::ObjectValue(*legacyFactoryFunction));
+    js::SetFunctionNativeReserved(constructor, legacyFactoryFunctionSlot,
+                                  JS::ObjectValue(*legacyFactoryFunction));
     ++legacyFactoryFunctionSlot;
   }
 
@@ -1110,15 +1109,15 @@ namespace binding_detail {
 void CreateInterfaceObjects(
     JSContext* cx, JS::Handle<JSObject*> global,
     JS::Handle<JSObject*> protoProto, const DOMIfaceAndProtoJSClass* protoClass,
-    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> constructorProto,
-    const DOMIfaceJSClass* constructorClass, unsigned ctorNargs,
+    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> interfaceProto,
+    const DOMInterfaceInfo* interfaceInfo, unsigned ctorNargs,
     bool isConstructorChromeOnly,
     const Span<const LegacyFactoryFunction>& legacyFactoryFunctions,
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, const char* name,
     bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,
     const char* const* legacyWindowAliases) {
-  MOZ_ASSERT(protoClass || constructorClass, "Need at least one class!");
+  MOZ_ASSERT(protoClass || interfaceInfo, "Need at least a class or info!");
   MOZ_ASSERT(
       !((properties &&
          (properties->HasMethods() || properties->HasAttributes())) ||
@@ -1131,16 +1130,16 @@ void CreateInterfaceObjects(
                (chromeOnlyProperties &&
                 (chromeOnlyProperties->HasStaticMethods() ||
                  chromeOnlyProperties->HasStaticAttributes()))) ||
-                 constructorClass,
-             "Static methods but no constructorClass!");
+                 interfaceInfo,
+             "Static methods but no info!");
   MOZ_ASSERT(!protoClass == !protoCache,
              "If, and only if, there is an interface prototype object we need "
              "to cache it");
-  MOZ_ASSERT(bool(constructorClass) == bool(constructorCache),
+  MOZ_ASSERT(bool(interfaceInfo) == bool(constructorCache),
              "If, and only if, there is an interface object we need to cache "
              "it");
-  MOZ_ASSERT(constructorProto || !constructorClass,
-             "Must have a constructor proto if we plan to create a constructor "
+  MOZ_ASSERT(interfaceProto || !interfaceInfo,
+             "Must have a interface proto if we plan to create an interface "
              "object");
 
   bool isChrome = nsContentUtils::ThreadsafeIsSystemCaller(cx);
@@ -1166,9 +1165,9 @@ void CreateInterfaceObjects(
   }
 
   JSObject* interface;
-  if (constructorClass) {
+  if (interfaceInfo) {
     interface = CreateInterfaceObject(
-        cx, global, constructorProto, constructorClass,
+        cx, global, interfaceProto, interfaceInfo,
         (isChrome || !isConstructorChromeOnly) ? ctorNargs : 0,
         legacyFactoryFunctions, proto, properties, chromeOnlyProperties,
         nameStr, isChrome, defineOnGlobal, legacyWindowAliases);
@@ -1508,7 +1507,7 @@ bool ThrowConstructorWithoutNew(JSContext* cx, const char* name) {
 
 inline const NativePropertyHooks* GetNativePropertyHooksFromJSNative(
     JS::Handle<JSObject*> obj) {
-  return NativeHolderFromLegacyFactoryFunction(obj)->mPropertyHooks;
+  return NativeHolderFromObject(obj)->mPropertyHooks;
 }
 
 inline const NativePropertyHooks* GetNativePropertyHooks(
@@ -1895,23 +1894,20 @@ static bool ResolvePrototypeOrConstructor(
     }
 
     if (id.get() == GetJSIDByIndex(cx, XPCJSContext::IDX_ISINSTANCE)) {
-      const JSClass* objClass = JS::GetClass(obj);
-      if (IsDOMIfaceAndProtoClass(objClass)) {
-        const DOMIfaceJSClass* clazz = DOMIfaceJSClass::FromJSClass(objClass);
-        if (clazz->wantsInterfaceIsInstance) {
-          cacheOnHolder = true;
+      if (IsInterfaceObject(obj) &&
+          InterfaceInfoFromObject(obj)->wantsInterfaceIsInstance) {
+        cacheOnHolder = true;
 
-          JSObject* funObj = XrayCreateFunction(
-              cx, wrapper, {InterfaceIsInstance, nullptr}, 1, id);
-          if (!funObj) {
-            return false;
-          }
-
-          desc.set(Some(JS::PropertyDescriptor::Data(
-              JS::ObjectValue(*funObj), {JS::PropertyAttribute::Configurable,
-                                         JS::PropertyAttribute::Writable})));
-          return true;
+        JSObject* funObj = XrayCreateFunction(
+            cx, wrapper, {InterfaceIsInstance, nullptr}, 1, id);
+        if (!funObj) {
+          return false;
         }
+
+        desc.set(Some(JS::PropertyDescriptor::Data(
+            JS::ObjectValue(*funObj), {JS::PropertyAttribute::Configurable,
+                                       JS::PropertyAttribute::Writable})));
+        return true;
       }
     }
   } else if (type == eNamespace) {
@@ -2226,31 +2222,6 @@ NativePropertyHooks sEmptyNativePropertyHooks = {
     prototypes::id::_ID_Count,
     constructors::id::_ID_Count,
     nullptr};
-
-const JSClassOps sBoringInterfaceObjectClassClassOps = {
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    nullptr,             
-    ThrowingConstructor, 
-    ThrowingConstructor, 
-    nullptr,             
-};
-
-const js::ObjectOps sInterfaceObjectClassObjectOps = {
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    InterfaceObjectToString, 
-};
 
 bool GetPropertyOnPrototype(JSContext* cx, JS::Handle<JSObject*> proxy,
                             JS::Handle<JS::Value> receiver, JS::Handle<jsid> id,
@@ -3612,14 +3583,7 @@ bool ForEachHandler(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
 
 static inline prototypes::ID GetProtoIdForNewtarget(
     JS::Handle<JSObject*> aNewTarget) {
-  const JSClass* newTargetClass = JS::GetClass(aNewTarget);
-  if (IsDOMIfaceAndProtoClass(newTargetClass)) {
-    const DOMIfaceAndProtoJSClass* newTargetIfaceClass =
-        DOMIfaceAndProtoJSClass::FromJSClass(newTargetClass);
-    if (newTargetIfaceClass->mType == eInterface) {
-      return newTargetIfaceClass->mPrototypeID;
-    }
-  } else if (IsLegacyFactoryFunction(aNewTarget)) {
+  if (IsDOMConstructor(aNewTarget)) {
     return GetNativePropertyHooksFromJSNative(aNewTarget)->mPrototypeID;
   }
 
