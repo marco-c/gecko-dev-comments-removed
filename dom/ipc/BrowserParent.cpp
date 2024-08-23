@@ -826,8 +826,6 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader(true);
   if (frameLoader) {
-    ReceiveMessage(CHILD_PROCESS_SHUTDOWN_MESSAGE, false, nullptr);
-
     if (mBrowsingContext->IsTop()) {
       
       
