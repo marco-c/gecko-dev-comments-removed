@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.utils;
 
@@ -20,14 +20,14 @@ import java.util.Map;
 
 public class HtmlLoader {
 
-    
-
-
-
-
-
-
-
+    /**
+     * Load a given (html or css) resource file into a String. The input can contain tokens that will
+     * be replaced with localised strings.
+     *
+     * @param substitutionTable A table of substitions, e.g. %shortMessage% -> "Error loading page..."
+     *                          Can be null, in which case no substitutions will be made.
+     * @return The file content, with all substitutions having being made.
+     */
     public static String loadResourceFile(@NonNull final Context context,
                                            @NonNull final @RawRes int resourceID,
                                            @Nullable final Map<String, String> substitutionTable) {
@@ -62,20 +62,20 @@ public class HtmlLoader {
         final StringBuilder builder = new StringBuilder();
         builder.append("data:image/png;base64,");
 
-        
-        
-        
-        
+        // We are copying the approach BitmapFactory.decodeResource(Resources, int, Options)
+        // uses - you are explicitly allowed to open Drawables, but the method has a @RawRes
+        // annotation (despite officially supporting Drawables).
+        //noinspection ResourceType
         try (final InputStream pngInputStream = context.getResources().openRawResource(resourceID)) {
-            
-            
+            // Base64 encodes 3 bytes at a time, make sure we have a multiple of 3 here
+            // I don't know what a sensible chunk size is, let's just go with 300b.
             final byte[] data = new byte[3 * 100];
             int bytesRead;
             boolean headerVerified = false;
 
             while ((bytesRead = pngInputStream.read(data)) > 0) {
-                
-                
+                // Sanity check: lets make sure this is still a png (i.e. make sure the build system
+                // or Android haven't broken / change the image format).
                 if (!headerVerified) {
                     if (bytesRead < 8) {
                         throw new IllegalStateException("Loaded drawable is improbably small");
