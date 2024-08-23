@@ -698,6 +698,23 @@ struct JSNativeHolder {
   const NativePropertyHooks* mPropertyHooks;
 };
 
+
+
+
+struct DOMInterfaceInfo {
+  JSNativeHolder nativeHolder;
+
+  ProtoGetter mGetParentProto;
+
+  const prototypes::ID mPrototypeID;  
+  const uint32_t mDepth;
+
+  
+  
+  
+  bool wantsInterfaceIsInstance;
+};
+
 struct LegacyFactoryFunction {
   const char* mName;
   const JSNativeHolder mHolder;
@@ -709,8 +726,8 @@ namespace binding_detail {
 void CreateInterfaceObjects(
     JSContext* cx, JS::Handle<JSObject*> global,
     JS::Handle<JSObject*> protoProto, const DOMIfaceAndProtoJSClass* protoClass,
-    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> constructorProto,
-    const DOMIfaceJSClass* constructorClass, unsigned ctorNargs,
+    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> interfaceProto,
+    const DOMInterfaceInfo* interfaceInfo, unsigned ctorNargs,
     bool isConstructorChromeOnly,
     const Span<const LegacyFactoryFunction>& legacyFactoryFunctions,
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
@@ -778,31 +795,28 @@ void CreateInterfaceObjects(
 
 
 
-
-
-
-
-
 template <size_t N>
 inline void CreateInterfaceObjects(
     JSContext* cx, JS::Handle<JSObject*> global,
     JS::Handle<JSObject*> protoProto, const DOMIfaceAndProtoJSClass* protoClass,
-    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> constructorProto,
-    const DOMIfaceJSClass* constructorClass, unsigned ctorNargs,
+    JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> interfaceProto,
+    const DOMInterfaceInfo* interfaceInfo, unsigned ctorNargs,
     bool isConstructorChromeOnly,
     const Span<const LegacyFactoryFunction, N>& legacyFactoryFunctions,
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, const char* name,
     bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,
     const char* const* legacyWindowAliases) {
-  static_assert(N < 3);
+  
+  
+  static_assert(N <= INTERFACE_OBJECT_MAX_SLOTS -
+                         INTERFACE_OBJECT_FIRST_LEGACY_FACTORY_FUNCTION);
 
   return binding_detail::CreateInterfaceObjects(
-      cx, global, protoProto, protoClass, protoCache, constructorProto,
-      constructorClass, ctorNargs, isConstructorChromeOnly,
-      legacyFactoryFunctions, constructorCache, properties,
-      chromeOnlyProperties, name, defineOnGlobal, unscopableNames, isGlobal,
-      legacyWindowAliases);
+      cx, global, protoProto, protoClass, protoCache, interfaceProto,
+      interfaceInfo, ctorNargs, isConstructorChromeOnly, legacyFactoryFunctions,
+      constructorCache, properties, chromeOnlyProperties, name, defineOnGlobal,
+      unscopableNames, isGlobal, legacyWindowAliases);
 }
 
 
@@ -2330,6 +2344,30 @@ inline bool AddStringToIDVector(JSContext* cx,
 
 
 
+
+bool InterfaceObjectJSNative(JSContext* cx, unsigned argc, JS::Value* vp);
+
+inline bool IsInterfaceObject(JSObject* obj) {
+  return JS_IsNativeFunction(obj, InterfaceObjectJSNative);
+}
+
+inline const DOMInterfaceInfo* InterfaceInfoFromObject(JSObject* obj) {
+  MOZ_ASSERT(IsInterfaceObject(obj));
+  const JS::Value& v =
+      js::GetFunctionNativeReserved(obj, INTERFACE_OBJECT_INFO_RESERVED_SLOT);
+  return static_cast<const DOMInterfaceInfo*>(v.toPrivate());
+}
+
+inline const JSNativeHolder* NativeHolderFromInterfaceObject(JSObject* obj) {
+  MOZ_ASSERT(IsInterfaceObject(obj));
+  return &InterfaceInfoFromObject(obj)->nativeHolder;
+}
+
+
+
+
+
+
 bool LegacyFactoryFunctionJSNative(JSContext* cx, unsigned argc, JS::Value* vp);
 
 inline bool IsLegacyFactoryFunction(JSObject* obj) {
@@ -2342,6 +2380,11 @@ inline const JSNativeHolder* NativeHolderFromLegacyFactoryFunction(
   const JS::Value& v = js::GetFunctionNativeReserved(
       obj, LEGACY_FACTORY_FUNCTION_NATIVE_HOLDER_RESERVED_SLOT);
   return static_cast<const JSNativeHolder*>(v.toPrivate());
+}
+
+inline const JSNativeHolder* NativeHolderFromObject(JSObject* obj) {
+  return IsInterfaceObject(obj) ? NativeHolderFromInterfaceObject(obj)
+                                : NativeHolderFromLegacyFactoryFunction(obj);
 }
 
 
@@ -2414,8 +2457,11 @@ inline bool XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
         protop.set(JS::GetRealmObjectPrototype(cx));
       }
     } else if (JS_ObjectIsFunction(obj)) {
-      MOZ_ASSERT(IsLegacyFactoryFunction(obj));
-      protop.set(JS::GetRealmFunctionPrototype(cx));
+      if (IsLegacyFactoryFunction(obj)) {
+        protop.set(JS::GetRealmFunctionPrototype(cx));
+      } else {
+        protop.set(InterfaceInfoFromObject(obj)->mGetParentProto(cx));
+      }
     } else {
       const JSClass* clasp = JS::GetClass(obj);
       MOZ_ASSERT(IsDOMIfaceAndProtoClass(clasp));
@@ -2490,34 +2536,15 @@ inline JSObject* GetCachedSlotStorageObject(JSContext* cx,
 
 extern NativePropertyHooks sEmptyNativePropertyHooks;
 
-extern const JSClassOps sBoringInterfaceObjectClassClassOps;
-
-extern const js::ObjectOps sInterfaceObjectClassObjectOps;
+inline bool IsDOMConstructor(JSObject* obj) {
+  return IsInterfaceObject(obj) || IsLegacyFactoryFunction(obj);
+}
 
 inline bool UseDOMXray(JSObject* obj) {
   const JSClass* clasp = JS::GetClass(obj);
-  return IsDOMClass(clasp) || IsLegacyFactoryFunction(obj) ||
+  return IsDOMClass(clasp) || IsDOMConstructor(obj) ||
          IsDOMIfaceAndProtoClass(clasp);
 }
-
-inline bool IsDOMConstructor(JSObject* obj) {
-  if (IsLegacyFactoryFunction(obj)) {
-    
-    return true;
-  }
-
-  const JSClass* clasp = JS::GetClass(obj);
-  
-  return dom::IsDOMIfaceAndProtoClass(clasp) &&
-         dom::DOMIfaceAndProtoJSClass::FromJSClass(clasp)->mType ==
-             dom::eInterface;
-}
-
-#ifdef DEBUG
-inline bool HasConstructor(JSObject* obj) {
-  return IsLegacyFactoryFunction(obj) || JS::GetClass(obj)->getConstruct();
-}
-#endif
 
 
 template <typename T>
@@ -3269,10 +3296,6 @@ void DeprecationWarning(JSContext* aCx, JSObject* aObject,
 
 void DeprecationWarning(const GlobalObject& aGlobal,
                         DeprecatedOperations aOperation);
-
-
-JSString* InterfaceObjectToString(JSContext* aCx, JS::Handle<JSObject*> aObject,
-                                  unsigned );
 
 namespace binding_detail {
 
