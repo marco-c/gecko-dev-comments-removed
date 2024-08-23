@@ -140,8 +140,8 @@ void DelayedClearElementActivation::ClearGlobalActiveContent() {
 NS_IMPL_ISUPPORTS(DelayedClearElementActivation, nsITimerCallback, nsINamed)
 
 ActiveElementManager::ActiveElementManager()
-    : mCanBePan(false),
-      mCanBePanSet(false),
+    : mCanBePanOrZoom(false),
+      mCanBePanOrZoomSet(false),
       mSingleTapBeforeActivation(false),
       mSingleTapState(apz::SingleTapState::NotClick),
       mSetActiveTask(nullptr) {}
@@ -163,9 +163,9 @@ void ActiveElementManager::SetTargetElement(dom::EventTarget* aTarget) {
   TriggerElementActivation();
 }
 
-void ActiveElementManager::HandleTouchStart(bool aCanBePan) {
-  AEM_LOG("Touch start, aCanBePan: %d\n", aCanBePan);
-  if (mCanBePanSet) {
+void ActiveElementManager::HandleTouchStart(bool aCanBePanOrZoom) {
+  AEM_LOG("Touch start, aCanBePanOrZoom: %d\n", aCanBePanOrZoom);
+  if (mCanBePanOrZoomSet) {
     
     AEM_LOG("Multiple fingers on-screen, clearing touch block state\n");
     CancelTask();
@@ -174,8 +174,8 @@ void ActiveElementManager::HandleTouchStart(bool aCanBePan) {
     return;
   }
 
-  mCanBePan = aCanBePan;
-  mCanBePanSet = true;
+  mCanBePanOrZoom = aCanBePanOrZoom;
+  mCanBePanOrZoomSet = true;
   TriggerElementActivation();
 }
 
@@ -196,7 +196,7 @@ void ActiveElementManager::TriggerElementActivation() {
   
   
   
-  if (!(mTarget && mCanBePanSet)) {
+  if (!(mTarget && mCanBePanOrZoomSet)) {
     return;
   }
 
@@ -210,7 +210,7 @@ void ActiveElementManager::TriggerElementActivation() {
 
   
   
-  if (!mCanBePan) {
+  if (!mCanBePanOrZoom) {
     SetActive(mTarget);
 
     if (mDelayedClearElementActivation) {
@@ -236,7 +236,7 @@ void ActiveElementManager::TriggerElementActivation() {
   AEM_LOG(
       "Got both touch-end event and end touch notiication, clearing pan "
       "state\n");
-  mCanBePanSet = false;
+  mCanBePanOrZoomSet = false;
 }
 
 void ActiveElementManager::ClearActivation() {
@@ -274,7 +274,8 @@ bool ActiveElementManager::MaybeChangeActiveState(apz::SingleTapState aState) {
     
     
     
-    if (mCanBePan && !(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
+    if (mCanBePanOrZoom &&
+        !(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
       SetActive(mTarget);
     }
   } else {
@@ -307,7 +308,7 @@ void ActiveElementManager::ProcessSingleTap() {
   }
   mDelayedClearElementActivation->MarkSingleTapProcessed();
 
-  if (mCanBePan) {
+  if (mCanBePanOrZoom) {
     
     
     mDelayedClearElementActivation->StartTimer();
@@ -350,7 +351,7 @@ void ActiveElementManager::ResetActive() {
 
 void ActiveElementManager::ResetTouchBlockState() {
   mTarget = nullptr;
-  mCanBePanSet = false;
+  mCanBePanOrZoomSet = false;
   mTouchEndState.clear();
   mSingleTapBeforeActivation = false;
   

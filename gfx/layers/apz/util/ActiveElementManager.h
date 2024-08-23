@@ -53,7 +53,7 @@ class ActiveElementManager final {
 
 
 
-  void HandleTouchStart(bool aCanBePan);
+  void HandleTouchStart(bool aCanBePanOrZoom);
   
 
 
@@ -85,13 +85,14 @@ class ActiveElementManager final {
   
 
 
-  bool mCanBePan;
+
+  bool mCanBePanOrZoom;
   
 
 
 
 
-  bool mCanBePanSet;
+  bool mCanBePanOrZoomSet;
 
   bool mSingleTapBeforeActivation;
 
