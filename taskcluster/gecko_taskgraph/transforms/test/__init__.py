@@ -265,11 +265,14 @@ test_description_schema = Schema(
                 str,
                 None,
                 {Required("index"): str, Required("name"): str},
+                {Required("upstream-task"): str, Required("name"): str},
             ),
         ),
         
         
         Optional("fetches"): object,
+        
+        Optional("dependencies"): object,
         
         
         Optional("raptor"): object,
@@ -483,6 +486,9 @@ def make_job_description(config, tasks):
 
         if task["mozharness"]["requires-signed-builds"] is True:
             jobdesc["dependencies"]["build-signing"] = task["build-signing-label"]
+
+        if "dependencies" in task:
+            jobdesc["dependencies"].update(task["dependencies"])
 
         if "expires-after" in task:
             jobdesc["expires-after"] = task["expires-after"]
