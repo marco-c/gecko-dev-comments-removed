@@ -668,6 +668,11 @@ class JavaScriptTracer {
               currentDOMEvent: this.currentDOMEvent,
             });
           }
+          
+          
+          if (!this.isTracing) {
+            return;
+          }
         }
       }
 
