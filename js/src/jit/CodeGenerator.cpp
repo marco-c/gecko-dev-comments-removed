@@ -20660,9 +20660,20 @@ void CodeGenerator::visitWasmAnyRefFromJSString(LWasmAnyRefFromJSString* lir) {
 }
 
 void CodeGenerator::visitWasmNewI31Ref(LWasmNewI31Ref* lir) {
-  Register value = ToRegister(lir->value());
-  Register output = ToRegister(lir->output());
-  masm.truncate32ToWasmI31Ref(value, output);
+  if (lir->value()->isConstant()) {
+    
+    
+    
+    Register output = ToRegister(lir->output());
+    uint32_t value =
+        static_cast<uint32_t>(lir->value()->toConstant()->toInt32());
+    uintptr_t ptr = wasm::AnyRef::fromUint32Truncate(value).rawValue();
+    masm.movePtr(ImmWord(ptr), output);
+  } else {
+    Register value = ToRegister(lir->value());
+    Register output = ToRegister(lir->output());
+    masm.truncate32ToWasmI31Ref(value, output);
+  }
 }
 
 void CodeGenerator::visitWasmI31RefGet(LWasmI31RefGet* lir) {
