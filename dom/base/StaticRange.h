@@ -8,7 +8,6 @@
 #define mozilla_dom_StaticRange_h
 
 #include "mozilla/RangeBoundary.h"
-#include "mozilla/RangeUtils.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/StaticRangeBinding.h"
 #include "nsTArray.h"
@@ -70,21 +69,6 @@ class StaticRange final : public AbstractRange {
 
 
   bool IsValid() const;
-
-  void NotifyNodeBecomesShadowHost(nsINode* aNode) {
-    if (aNode == mStart.Container()) {
-      mStart.NotifyParentBecomesShadowHost();
-    }
-
-    if (aNode == mEnd.Container()) {
-      mEnd.NotifyParentBecomesShadowHost();
-    }
-  }
-
- private:
-  
-  
-  bool mAreStartAndEndInSameTree = false;
 
  protected:
   explicit StaticRange(nsINode* aNode)

@@ -200,7 +200,6 @@ class SelectionChangeEventDispatcher;
 namespace dom {
 class Highlight;
 class Selection;
-enum class ClickSelectionType { NotApplicable, Double, Triple };
 }  
 
 
@@ -266,11 +265,8 @@ class nsFrameSelection final {
 
 
 
-
-
-  void SetClickSelectionType(
-      mozilla::dom::ClickSelectionType aClickSelectionType) {
-    mClickSelectionType = aClickSelectionType;
+  void SetIsDoubleClickSelection(bool aIsDoubleClickSelection) {
+    mIsDoubleClickSelection = aIsDoubleClickSelection;
   }
 
   
@@ -278,14 +274,7 @@ class nsFrameSelection final {
 
 
   [[nodiscard]] bool IsDoubleClickSelection() const {
-    return mClickSelectionType == mozilla::dom::ClickSelectionType::Double;
-  }
-
-  
-
-
-  [[nodiscard]] bool IsTripleClickSelection() const {
-    return mClickSelectionType == mozilla::dom::ClickSelectionType::Triple;
+    return mIsDoubleClickSelection;
   }
 
   
@@ -1117,8 +1106,7 @@ class nsFrameSelection final {
   
   
   
-  mozilla::dom::ClickSelectionType mClickSelectionType =
-      mozilla::dom::ClickSelectionType::NotApplicable;
+  bool mIsDoubleClickSelection{false};
 };
 
 

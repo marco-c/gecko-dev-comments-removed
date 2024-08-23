@@ -82,26 +82,15 @@ class ContentIteratorBase {
   
   
   static nsINode* GetDeepFirstChild(nsINode* aRoot);
-  
-  
-  static nsIContent* GetDeepFirstChild(nsIContent* aRoot,
-                                       bool aAllowCrossShadowBoundary);
+  static nsIContent* GetDeepFirstChild(nsIContent* aRoot);
   static nsINode* GetDeepLastChild(nsINode* aRoot);
-  
-  
-  static nsIContent* GetDeepLastChild(nsIContent* aRoot,
-                                      bool aAllowCrossShadowBoundary);
+  static nsIContent* GetDeepLastChild(nsIContent* aRoot);
 
   
   
   
-  
-  
-  
-  static nsIContent* GetNextSibling(nsINode* aNode,
-                                    bool aAllowCrossShadowBoundary = false);
-  static nsIContent* GetPrevSibling(nsINode* aNode,
-                                    bool aAllowCrossShadowBoundary = false);
+  static nsIContent* GetNextSibling(nsINode* aNode);
+  static nsIContent* GetPrevSibling(nsINode* aNode);
 
   nsINode* NextNode(nsINode* aNode);
   nsINode* PrevNode(nsINode* aNode);
@@ -230,29 +219,6 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   virtual nsresult Init(nsINode* aRoot) override;
 
   virtual nsresult Init(dom::AbstractRange* aRange) override;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult InitWithAllowCrossShadowBoundary(dom::AbstractRange* aRange);
   virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
                         nsINode* aEndContainer, uint32_t aEndOffset) override;
   virtual nsresult Init(const RawRangeBoundary& aStartBoundary,
@@ -310,18 +276,10 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   
   nsIContent* GetTopAncestorInRange(nsINode* aNode) const;
 
-  bool IterAllowCrossShadowBoundary() const {
-    return mAllowCrossShadowBoundary == dom::AllowRangeCrossShadowBoundary::Yes;
-  }
-
   RefPtr<dom::AbstractRange> mRange;
 
   
   AutoTArray<nsIContent*, 8> mInclusiveAncestorsOfEndContainer;
-
-  
-  dom::AllowRangeCrossShadowBoundary mAllowCrossShadowBoundary =
-      dom::AllowRangeCrossShadowBoundary::No;
 };
 
 }  

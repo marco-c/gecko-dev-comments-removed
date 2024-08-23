@@ -539,11 +539,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
 
   NS_ENSURE_STATE(mPresShell);
   RefPtr<PresShell> presShell = mPresShell;
-  nsIContent* anchorRoot =
-      anchorContent
-          ->GetSelectionRootContent(
-              presShell,
-              StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() );
+  nsIContent* anchorRoot = anchorContent->GetSelectionRootContent(presShell);
   NS_ENSURE_TRUE(anchorRoot, NS_ERROR_UNEXPECTED);
 
   
@@ -553,10 +549,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   nsCOMPtr<nsIContent> content = aFrame->GetContent();
 
   if (content) {
-    nsIContent* contentRoot =
-        content->GetSelectionRootContent(
-            presShell, StaticPrefs::
-                           dom_shadowdom_selection_across_boundary_enabled() );
+    nsIContent* contentRoot = content->GetSelectionRootContent(presShell);
     NS_ENSURE_TRUE(contentRoot, NS_ERROR_UNEXPECTED);
 
     if (anchorRoot == contentRoot) {
@@ -580,9 +573,8 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
       if (cursorFrame && cursorFrame->PresShell() == presShell) {
         nsCOMPtr<nsIContent> cursorContent = cursorFrame->GetContent();
         NS_ENSURE_TRUE(cursorContent, NS_ERROR_FAILURE);
-        nsIContent* cursorContentRoot = cursorContent->GetSelectionRootContent(
-            presShell, StaticPrefs::
-                           dom_shadowdom_selection_across_boundary_enabled() );
+        nsIContent* cursorContentRoot =
+            cursorContent->GetSelectionRootContent(presShell);
         NS_ENSURE_TRUE(cursorContentRoot, NS_ERROR_UNEXPECTED);
         if (cursorContentRoot == anchorRoot) {
           *aRetFrame = cursorFrame;
@@ -1504,8 +1496,8 @@ void nsFrameSelection::SetDragState(bool aState) {
     
     
     
-    AutoRestore<ClickSelectionType> restoreClickSelectionType(
-        mClickSelectionType);
+    AutoRestore<bool> restoreIsDoubleClickSelectionFlag(
+        mIsDoubleClickSelection);
     
     NotifySelectionListeners(SelectionType::eNormal);
   }

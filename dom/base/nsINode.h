@@ -1629,7 +1629,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   MOZ_CAN_RUN_SCRIPT nsIContent* GetSelectionRootContent(
-      mozilla::PresShell* aPresShell, bool aAllowCrossShadowBoundary = false);
+      mozilla::PresShell* aPresShell);
 
   nsINodeList* ChildNodes();
 
@@ -2073,14 +2073,6 @@ class nsINode : public mozilla::dom::EventTarget {
   void ClearElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
     ClearBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
   }
-
-  mozilla::dom::ShadowRoot* GetShadowRoot() const;
-
-  
-  
-  
-  
-  mozilla::dom::ShadowRoot* GetShadowRootForSelection() const;
 
  protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }

@@ -1270,14 +1270,8 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeToString(
     const nsRange* aRange) {
   if (!aRange || aRange->Collapsed()) return NS_OK;
 
-  
-  
-  
-  
-  
   mClosestCommonInclusiveAncestorOfRange =
-      aRange->GetClosestCommonInclusiveAncestor(
-          AllowRangeCrossShadowBoundary::No);
+      aRange->GetClosestCommonInclusiveAncestor();
 
   if (!mClosestCommonInclusiveAncestorOfRange) {
     return NS_OK;
