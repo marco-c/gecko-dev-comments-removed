@@ -135,9 +135,8 @@ class PDMInitializer final {
   }
 
   static void InitContentPDMs() {
-#if !defined(MOZ_WIDGET_ANDROID)  
-    if (StaticPrefs::media_allow_audio_non_utility()) {
-#endif
+    if (StaticPrefs::media_allow_audio_non_utility() ||
+        !StaticPrefs::media_rdd_process_enabled()) {
 #ifdef XP_WIN
 #  ifdef MOZ_WMF
       if (!StaticPrefs::media_rdd_process_enabled() ||
@@ -158,9 +157,7 @@ class PDMInitializer final {
 #ifdef MOZ_FFMPEG
       FFmpegRuntimeLinker::Init();
 #endif
-#if !defined(MOZ_WIDGET_ANDROID)  
     }
-#endif  
 
     RemoteDecoderManagerChild::Init();
   }
@@ -623,9 +620,8 @@ void PDMFactory::CreateContentPDMs() {
   }
 #endif
 
-#if !defined(MOZ_WIDGET_ANDROID)  
-  if (StaticPrefs::media_allow_audio_non_utility()) {
-#endif
+  if (StaticPrefs::media_allow_audio_non_utility() ||
+      !StaticPrefs::media_rdd_process_enabled()) {
 #ifdef XP_WIN
     if (StaticPrefs::media_wmf_enabled()) {
 #  ifdef MOZ_WMF
@@ -659,9 +655,7 @@ void PDMFactory::CreateContentPDMs() {
 #endif
 
     CreateAndStartupPDM<AgnosticDecoderModule>();
-#if !defined(MOZ_WIDGET_ANDROID)  
   }
-#endif  
 
   
 #ifdef MOZ_WIDGET_ANDROID
