@@ -14,8 +14,10 @@
 #include <memory>
 #include <vector>
 
+#include "api/environment/environment.h"
 #include "api/video/video_frame_type.h"
 #include "modules/include/module_fec_types.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -87,8 +89,23 @@ class FecController {
 
 class FecControllerFactoryInterface {
  public:
-  virtual std::unique_ptr<FecController> CreateFecController() = 0;
   virtual ~FecControllerFactoryInterface() = default;
+
+  
+  
+  virtual std::unique_ptr<FecController> CreateFecController(
+      const Environment& env) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return CreateFecController();
+#pragma clang diagnostic pop
+  }
+
+  
+  
+  [[deprecated]] virtual std::unique_ptr<FecController> CreateFecController() {
+    RTC_CHECK_NOTREACHED();
+  }
 };
 
 }  
