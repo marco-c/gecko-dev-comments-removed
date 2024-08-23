@@ -75,7 +75,8 @@ class SandboxBroker : public AbstractSandboxBroker {
  public:
   SandboxBroker();
 
-  static void Initialize(sandbox::BrokerServices* aBrokerServices);
+  static void Initialize(sandbox::BrokerServices* aBrokerServices,
+                         const nsAString& aBinDir);
 
   static void EnsureLpacPermsissionsOnDir(const nsString& aDir);
 
@@ -108,12 +109,6 @@ class SandboxBroker : public AbstractSandboxBroker {
 
   
   bool AllowReadFile(wchar_t const* file) override;
-
-  
-
-
-
-  static bool AddTargetPeer(HANDLE aPeerProcess);
 
   
 

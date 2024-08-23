@@ -1084,6 +1084,10 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
   
   
   mscom::ProcessRuntime mscom;
+
+#  ifdef MOZ_SANDBOX
+  nsAutoString binDirPath;
+#  endif
 #endif
 
   
@@ -1102,6 +1106,11 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       printf("Couldn't get application directory.\n");
       return 1;
     }
+
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+    
+    MOZ_ALWAYS_SUCCEEDS(appDir->GetPath(binDirPath));
+#endif
 
     dirprovider.SetAppFile(appFile);
 
@@ -1301,7 +1310,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 #  if defined(MOZ_SANDBOX)
     
     if (aShellData->sandboxBrokerServices) {
-      SandboxBroker::Initialize(aShellData->sandboxBrokerServices);
+      SandboxBroker::Initialize(aShellData->sandboxBrokerServices, binDirPath);
       SandboxBroker::GeckoDependentInitialize();
     } else {
       NS_WARNING(
