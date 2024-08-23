@@ -9934,10 +9934,9 @@ void TransactionBase::CommitOrAbort() {
   
   
   
-  
   if (NS_SUCCEEDED(mResultCode) && mLastFailedRequest &&
       *mLastRequestBeforeCommit &&
-      *mLastFailedRequest >= **mLastRequestBeforeCommit) {
+      *mLastFailedRequest == **mLastRequestBeforeCommit) {
     mResultCode = NS_ERROR_DOM_INDEXEDDB_ABORT_ERR;
   }
 
@@ -16595,9 +16594,6 @@ TransactionDatabaseOperationBase::~TransactionDatabaseOperationBase() {
   MOZ_ASSERT(!mTransaction,
              "TransactionDatabaseOperationBase::Cleanup() was not called by a "
              "subclass!");
-
-  
-  (void)mRequestId;
 }
 
 #ifdef DEBUG
@@ -16813,7 +16809,7 @@ void TransactionDatabaseOperationBase::SendPreprocessInfoOrResults(
     mWaitingForContinue = true;
   } else {
     if (mLoggingSerialNumber) {
-      (*mTransaction)->NoteFinishedRequest(mLoggingSerialNumber, ResultCode());
+      (*mTransaction)->NoteFinishedRequest(mRequestId, ResultCode());
     }
 
     Cleanup();
