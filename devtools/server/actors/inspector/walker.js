@@ -384,7 +384,6 @@ class WalkerActor extends Actor {
       this.layoutHelpers = null;
       this._orphaned = null;
       this._retainedOrphans = null;
-      this._nodeActorsMap = null;
 
       this.targetActor.off("will-navigate", this.onFrameUnload);
       this.targetActor.off("window-ready", this.onFrameLoad);
@@ -433,6 +432,9 @@ class WalkerActor extends Actor {
         this._onEventListenerChange
       );
 
+      
+      
+      this._nodeActorsMap = null;
       this.onMutations = null;
 
       this.layoutActor = null;

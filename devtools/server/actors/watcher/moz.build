@@ -4,10 +4,6 @@
 
 
 
-DIRS += [
-    "target-helpers",
-]
-
 DevToolsModules(
     "browsing-context-helpers.sys.mjs",
     "session-context.js",

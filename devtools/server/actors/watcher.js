@@ -17,7 +17,6 @@ const { WatcherRegistry } = ChromeUtils.importESModule(
   
   { global: "shared" }
 );
-const Targets = require("resource://devtools/server/actors/targets/index.js");
 const { getAllBrowsingContextsForContext } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
   { global: "contextual" }
@@ -25,28 +24,6 @@ const { getAllBrowsingContextsForContext } = ChromeUtils.importESModule(
 const {
   SESSION_TYPES,
 } = require("resource://devtools/server/actors/watcher/session-context.js");
-
-const TARGET_HELPERS = {};
-loader.lazyRequireGetter(
-  TARGET_HELPERS,
-  Targets.TYPES.FRAME,
-  "resource://devtools/server/actors/watcher/target-helpers/frame-helper.js"
-);
-loader.lazyRequireGetter(
-  TARGET_HELPERS,
-  Targets.TYPES.PROCESS,
-  "resource://devtools/server/actors/watcher/target-helpers/process-helper.js"
-);
-loader.lazyRequireGetter(
-  TARGET_HELPERS,
-  Targets.TYPES.SERVICE_WORKER,
-  "devtools/server/actors/watcher/target-helpers/service-worker-helper"
-);
-loader.lazyRequireGetter(
-  TARGET_HELPERS,
-  Targets.TYPES.WORKER,
-  "resource://devtools/server/actors/watcher/target-helpers/worker-helper.js"
-);
 
 loader.lazyRequireGetter(
   this,
@@ -137,6 +114,14 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     
     this._currentWindowGlobalTargets = new Map();
+
+    
+    
+    
+    this._jsActorName =
+      sessionContext.type == SESSION_TYPES.ALL
+        ? "BrowserToolboxDevToolsProcess"
+        : "DevToolsProcess";
   }
 
   get sessionContext() {
@@ -178,13 +163,30 @@ exports.WatcherActor = class WatcherActor extends Actor {
   destroy() {
     
     
-    for (const targetType of Object.values(Targets.TYPES)) {
-      this.unwatchTargets(targetType);
+    
+    if (WatcherRegistry.getWatcher(this.actorID)) {
+      
+      const domProcesses = ChromeUtils.getAllDOMProcesses();
+      for (const domProcess of domProcesses) {
+        domProcess.getActor(this._jsActorName).destroyWatcher({
+          watcherActorID: this.actorID,
+        });
+      }
     }
-    this.unwatchResources(Object.values(Resources.TYPES));
 
-    WatcherRegistry.unregisterWatcher(this);
+    
+    Resources.unwatchResources(
+      this,
+      Resources.getParentProcessResourceTypes(Object.values(Resources.TYPES))
+    );
 
+    WatcherRegistry.unregisterWatcher(this.actorID);
+
+    
+    this._browserElement = null;
+
+    
+    
     
     super.destroy();
   }
@@ -227,9 +229,42 @@ exports.WatcherActor = class WatcherActor extends Actor {
   async watchTargets(targetType) {
     WatcherRegistry.watchTargets(this, targetType);
 
-    const targetHelperModule = TARGET_HELPERS[targetType];
     
-    await targetHelperModule.createTargets(this);
+    
+    
+    let topLevelTargetProcess;
+    if (this.sessionContext.type == SESSION_TYPES.BROWSER_ELEMENT) {
+      topLevelTargetProcess =
+        this.browserElement.browsingContext.currentWindowGlobal?.domProcess;
+      if (topLevelTargetProcess) {
+        await topLevelTargetProcess.getActor(this._jsActorName).watchTargets({
+          watcherActorID: this.actorID,
+          targetType,
+        });
+        
+        if (this.isDestroyed()) {
+          return;
+        }
+      }
+    }
+
+    
+    
+    
+    const domProcesses = ChromeUtils.getAllDOMProcesses();
+    const promises = [];
+    for (const domProcess of domProcesses) {
+      if (domProcess == topLevelTargetProcess) {
+        continue;
+      }
+      promises.push(
+        domProcess.getActor(this._jsActorName).watchTargets({
+          watcherActorID: this.actorID,
+          targetType,
+        })
+      );
+    }
+    await Promise.all(promises);
   }
 
   
@@ -251,8 +286,14 @@ exports.WatcherActor = class WatcherActor extends Actor {
       return;
     }
 
-    const targetHelperModule = TARGET_HELPERS[targetType];
-    targetHelperModule.destroyTargets(this, options);
+    const domProcesses = ChromeUtils.getAllDOMProcesses();
+    for (const domProcess of domProcesses) {
+      domProcess.getActor(this._jsActorName).unwatchTargets({
+        watcherActorID: this.actorID,
+        targetType,
+        options,
+      });
+    }
 
     
     
@@ -301,7 +342,12 @@ exports.WatcherActor = class WatcherActor extends Actor {
       this._flushIframeTargets(actor.innerWindowId);
 
       if (this.sessionContext.type == SESSION_TYPES.BROWSER_ELEMENT) {
-        this.updateDomainSessionDataForServiceWorkers(actor.url);
+        
+        
+        
+        this.updateDomainSessionDataForServiceWorkers(actor.url).catch(
+          () => {}
+        );
       }
     } else if (this._currentWindowGlobalTargets.has(actor.topInnerWindowId)) {
       
@@ -511,33 +557,24 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
     WatcherRegistry.watchResources(this, resourceTypes);
 
-    
-    for (const targetType in TARGET_HELPERS) {
-      
-      
-      
-      
-      
-      if (
-        !WatcherRegistry.isWatchingTargets(this, targetType) &&
-        targetType != Targets.TYPES.FRAME
-      ) {
-        continue;
-      }
-      const targetResourceTypes = Resources.getResourceTypesForTargetType(
-        resourceTypes,
-        targetType
+    const promises = [];
+    const domProcesses = ChromeUtils.getAllDOMProcesses();
+    for (const domProcess of domProcesses) {
+      promises.push(
+        domProcess.getActor(this._jsActorName).addOrSetSessionDataEntry({
+          watcherActorID: this.actorID,
+          sessionContext: this.sessionContext,
+          type: "resources",
+          entries: resourceTypes,
+          updateType: "add",
+        })
       );
-      if (!targetResourceTypes.length) {
-        continue;
-      }
-      const targetHelperModule = TARGET_HELPERS[targetType];
-      await targetHelperModule.addOrSetSessionDataEntry({
-        watcher: this,
-        type: "resources",
-        entries: targetResourceTypes,
-        updateType: "add",
-      });
+    }
+    await Promise.all(promises);
+
+    
+    if (this.isDestroyed()) {
+      return;
     }
 
     
@@ -604,27 +641,13 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     
     if (!this.isContextDestroyed()) {
-      for (const targetType in TARGET_HELPERS) {
-        
-        
-        if (
-          !WatcherRegistry.isWatchingTargets(this, targetType) &&
-          targetType != Targets.TYPES.FRAME
-        ) {
-          continue;
-        }
-        const targetResourceTypes = Resources.getResourceTypesForTargetType(
-          resourceTypes,
-          targetType
-        );
-        if (!targetResourceTypes.length) {
-          continue;
-        }
-        const targetHelperModule = TARGET_HELPERS[targetType];
-        targetHelperModule.removeSessionDataEntry({
-          watcher: this,
+      const domProcesses = ChromeUtils.getAllDOMProcesses();
+      for (const domProcess of domProcesses) {
+        domProcess.getActor(this._jsActorName).removeSessionDataEntry({
+          watcherActorID: this.actorID,
+          sessionContext: this.sessionContext,
           type: "resources",
-          entries: targetResourceTypes,
+          entries: resourceTypes,
         });
       }
     }
@@ -737,28 +760,25 @@ exports.WatcherActor = class WatcherActor extends Actor {
   async addOrSetDataEntry(type, entries, updateType) {
     WatcherRegistry.addOrSetSessionDataEntry(this, type, entries, updateType);
 
-    await Promise.all(
-      Object.values(Targets.TYPES)
-        .filter(
-          targetType =>
-            
-            
-            
-            
-            
-            WatcherRegistry.isWatchingTargets(this, targetType) ||
-            targetType === Targets.TYPES.FRAME
-        )
-        .map(async targetType => {
-          const targetHelperModule = TARGET_HELPERS[targetType];
-          await targetHelperModule.addOrSetSessionDataEntry({
-            watcher: this,
-            type,
-            entries,
-            updateType,
-          });
+    const promises = [];
+    const domProcesses = ChromeUtils.getAllDOMProcesses();
+    for (const domProcess of domProcesses) {
+      promises.push(
+        domProcess.getActor(this._jsActorName).addOrSetSessionDataEntry({
+          watcherActorID: this.actorID,
+          sessionContext: this.sessionContext,
+          type,
+          entries,
+          updateType,
         })
-    );
+      );
+    }
+    await Promise.all(promises);
+
+    
+    if (this.isDestroyed()) {
+      return;
+    }
 
     
     const targetActors = this.getTargetActorsInParentProcess();
@@ -785,21 +805,15 @@ exports.WatcherActor = class WatcherActor extends Actor {
   removeDataEntry(type, entries) {
     WatcherRegistry.removeSessionDataEntry(this, type, entries);
 
-    Object.values(Targets.TYPES)
-      .filter(
-        targetType =>
-          
-          WatcherRegistry.isWatchingTargets(this, targetType) ||
-          targetType === Targets.TYPES.FRAME
-      )
-      .forEach(targetType => {
-        const targetHelperModule = TARGET_HELPERS[targetType];
-        targetHelperModule.removeSessionDataEntry({
-          watcher: this,
-          type,
-          entries,
-        });
+    const domProcesses = ChromeUtils.getAllDOMProcesses();
+    for (const domProcess of domProcesses) {
+      domProcess.getActor(this._jsActorName).removeSessionDataEntry({
+        watcherActorID: this.actorID,
+        sessionContext: this.sessionContext,
+        type,
+        entries,
       });
+    }
 
     
     const targetActors = this.getTargetActorsInParentProcess();
@@ -840,28 +854,6 @@ exports.WatcherActor = class WatcherActor extends Actor {
       "set"
     );
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (
-      !WatcherRegistry.isWatchingTargets(this, Targets.TYPES.SERVICE_WORKER)
-    ) {
-      return;
-    }
-
-    const targetHelperModule = TARGET_HELPERS[Targets.TYPES.SERVICE_WORKER];
-    await targetHelperModule.addOrSetSessionDataEntry({
-      watcher: this,
-      type: "browser-element-host",
-      entries: [host],
-      updateType: "set",
-    });
+    return this.addOrSetDataEntry("browser-element-host", [host], "set");
   }
 };
