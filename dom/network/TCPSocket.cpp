@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TCPServerSocket.h"
 #include "TCPSocket.h"
@@ -48,9 +48,6 @@
 #include "nsStringStream.h"
 #include "secerr.h"
 #include "sslerr.h"
-
-#define BUFFER_SIZE 65536
-#define NETWORK_STATS_THRESHOLD 65536
 
 using namespace mozilla::dom;
 
@@ -185,9 +182,9 @@ nsresult TCPSocket::CreateStream() {
                                     getter_AddRefs(mSocketOutputStream));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
+  // If the other side is not listening, we will
+  // get an onInputStreamReady callback where available
+  // raises to indicate the connection was refused.
   nsCOMPtr<nsIAsyncInputStream> asyncStream =
       do_QueryInterface(mSocketInputStream);
   NS_ENSURE_TRUE(asyncStream, NS_ERROR_NOT_AVAILABLE);
@@ -235,8 +232,8 @@ nsresult TCPSocket::Init(nsIProxyInfo* aProxyInfo) {
       do_GetService("@mozilla.org/observer-service;1");
   if (obs) {
     mObserversActive = true;
-    obs->AddObserver(this, "inner-window-destroyed", true);  
-    obs->AddObserver(this, "profile-change-net-teardown", true);  
+    obs->AddObserver(this, "inner-window-destroyed", true);  // weak reference
+    obs->AddObserver(this, "profile-change-net-teardown", true);  // weak ref
   }
 
   if (XRE_IsContentProcess()) {
@@ -344,10 +341,10 @@ CopierCallbacks::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   mOwner = nullptr;
   return NS_OK;
 }
-}  
+}  // unnamed namespace
 
 void TCPSocket::CalculateBufferedAmount() {
-  
+  // Let's update the buffered amount of data.
   uint64_t bufferedAmount = 0;
   for (uint32_t i = 0, len = mPendingData.Length(); i < len; ++i) {
     nsCOMPtr<nsIInputStream> stream = mPendingData[i];
@@ -389,10 +386,10 @@ nsresult TCPSocket::EnsureCopying() {
 
   nsCOMPtr<nsISerialEventTarget> target = do_QueryInterface(sts);
   rv = copier->Init(stream, mSocketOutputStream, target,
-                    true,               
-                    false,              
-                    BUFFER_SIZE, false, 
-                    false);             
+                    true,               /* source buffered */
+                    false,              /* sink buffered */
+                    BUFFER_SIZE, false, /* close source */
+                    false);             /* close sink */
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<CopierCallbacks> callbacks = new CopierCallbacks(this);
@@ -421,16 +418,16 @@ void TCPSocket::NotifyCopyComplete(nsresult aStatus) {
     return;
   }
 
-  
+  // Maybe we have some empty stream. We want to have an empty queue now.
   mPendingData.Clear();
 
-  
-  
+  // If we are waiting for initiating starttls, we can begin to
+  // activate tls now.
   if (mWaitingForStartTLS && mReadyState == TCPReadyState::Open) {
     ActivateTLS();
     mWaitingForStartTLS = false;
-    
-    
+    // If we have pending data, we should send them, or fire
+    // a drain event if we are waiting for it.
     if (!mPendingDataAfterStartTLS.IsEmpty()) {
       mPendingData = std::move(mPendingDataAfterStartTLS);
       EnsureCopying();
@@ -438,8 +435,8 @@ void TCPSocket::NotifyCopyComplete(nsresult aStatus) {
     }
   }
 
-  
-  
+  // If we have a connected child, we let the child decide whether
+  // ondrain should be dispatched.
   if (mWaitingForDrain && !mSocketBridgeParent) {
     mWaitingForDrain = false;
     FireEvent(u"drain"_ns);
@@ -617,27 +614,27 @@ void TCPSocket::Resume(mozilla::ErrorResult& aRv) {
 }
 
 nsresult TCPSocket::MaybeReportErrorAndCloseIfOpen(nsresult status) {
-  
-  
+  // If we're closed, we've already reported the error or just don't need to
+  // report the error.
   if (mReadyState == TCPReadyState::Closed) {
     return NS_OK;
   }
 
-  
+  // go through ::Closing state and then mark ::Closed
   Close();
   mReadyState = TCPReadyState::Closed;
 
   if (NS_FAILED(status)) {
-    
+    // Convert the status code to an appropriate error message.
 
     nsString errorType, errName;
 
-    
+    // security module? (and this is an error)
     if ((static_cast<uint32_t>(status) & 0xFF0000) == 0x5a0000) {
       nsCOMPtr<nsINSSErrorsService> errSvc =
           do_GetService("@mozilla.org/nss_errors_service;1");
-      
-      
+      // getErrorClass will throw a generic NS_ERROR_FAILURE if the error code
+      // is somehow not in the set of covered errors.
       uint32_t errorClass;
       nsresult rv = errSvc->GetErrorClass(status, &errorClass);
       if (NS_FAILED(rv)) {
@@ -653,7 +650,7 @@ nsresult TCPSocket::MaybeReportErrorAndCloseIfOpen(nsresult status) {
         }
       }
 
-      
+      // NSS_SEC errors (happen below the base value because of negative vals)
       if ((static_cast<int32_t>(status) & 0xFFFF) <
           abs(nsINSSErrorsService::NSS_SEC_ERROR_BASE)) {
         switch (static_cast<SECErrorCodes>(status)) {
@@ -663,8 +660,8 @@ nsresult TCPSocket::MaybeReportErrorAndCloseIfOpen(nsresult status) {
           case SEC_ERROR_REVOKED_CERTIFICATE:
             errName.AssignLiteral("SecurityRevokedCertificateError");
             break;
-            
-            
+            // per bsmith, we will be unable to tell these errors apart very
+            // soon, so it makes sense to just folder them all together already.
           case SEC_ERROR_UNKNOWN_ISSUER:
           case SEC_ERROR_UNTRUSTED_ISSUER:
           case SEC_ERROR_UNTRUSTED_CERT:
@@ -683,7 +680,7 @@ nsresult TCPSocket::MaybeReportErrorAndCloseIfOpen(nsresult status) {
             break;
         }
       } else {
-        
+        // NSS_SSL errors
         switch (static_cast<SSLErrorCodes>(status)) {
           case SSL_ERROR_NO_CERTIFICATE:
             errName.AssignLiteral("SecurityNoCertificateError");
@@ -706,19 +703,19 @@ nsresult TCPSocket::MaybeReportErrorAndCloseIfOpen(nsresult status) {
         }
       }
     } else {
-      
+      // must be network
       errorType.AssignLiteral("Network");
 
       switch (status) {
-        
+        // connect to host:port failed
         case NS_ERROR_CONNECTION_REFUSED:
           errName.AssignLiteral("ConnectionRefusedError");
           break;
-          
+          // network timeout error
         case NS_ERROR_NET_TIMEOUT:
           errName.AssignLiteral("NetworkTimeoutError");
           break;
-          
+          // hostname lookup failed
         case NS_ERROR_UNKNOWN_HOST:
           errName.AssignLiteral("DomainNotFoundError");
           break;
@@ -850,28 +847,28 @@ bool TCPSocket::Send(nsIInputStream* aStream, uint32_t aByteLength) {
   uint64_t newBufferedAmount = BufferedAmount() + aByteLength;
   bool bufferFull = newBufferedAmount > BUFFER_SIZE;
   if (bufferFull) {
-    
-    
-    
-    
-    
+    // If we buffered more than some arbitrary amount of data,
+    // (65535 right now) we should tell the caller so they can
+    // wait until ondrain is called if they so desire. Once all the
+    // buffered data has been written to the socket, ondrain is
+    // called.
     mWaitingForDrain = true;
   }
 
   if (mSocketBridgeChild) {
-    
-    
+    // In the child, we just add the buffer length to our bufferedAmount and let
+    // the parent update our bufferedAmount when the data have been sent.
     mBufferedAmount = newBufferedAmount;
     return !bufferFull;
   }
 
-  
-  
-  
+  // This is used to track how many packets we have been told to send. Signaling
+  // this back to the user of this API allows the user to know how many packets
+  // are currently in flight over IPC.
   ++mTrackingNumber;
   if (mWaitingForStartTLS) {
-    
-    
+    // When we are waiting for starttls, newStream is added to pendingData
+    // and will be appended to multiplexStream after tls had been set up.
     mPendingDataAfterStartTLS.AppendElement(aStream);
   } else {
     mPendingData.AppendElement(aStream);
@@ -976,7 +973,7 @@ TCPSocket::OnProxyAvailable(nsICancelable* aRequest, nsIChannel* aChannel,
       Close();
       return rv;
     }
-    
+    // Only supports SOCKS proxy for now.
     if (proxyType == "socks" || proxyType == "socks4") {
       return Init(aProxyInfo);
     }
@@ -1024,7 +1021,7 @@ TCPSocket::OnTransportStatus(nsITransport* aTransport, nsresult aStatus,
 
 NS_IMETHODIMP
 TCPSocket::OnInputStreamReady(nsIAsyncInputStream* aStream) {
-  
+  // Only used for detecting if the connection was refused.
 
   uint64_t dummy;
   nsresult rv = aStream->Available(&dummy);
@@ -1098,15 +1095,15 @@ TCPSocket::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   mInputStreamPump = nullptr;
 
   if (mAsyncCopierActive && NS_SUCCEEDED(aStatus)) {
-    
-    
-    
-    
-    
+    // If we have some buffered output still, and status is not an
+    // error, the other side has done a half-close, but we don't
+    // want to be in the close state until we are done sending
+    // everything that was buffered. We also don't want to call onclose
+    // yet.
     return NS_OK;
   }
 
-  
+  // We call this even if there is no error.
   MaybeReportErrorAndCloseIfOpen(aStatus);
   return NS_OK;
 }
@@ -1162,7 +1159,7 @@ TCPSocket::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-
+/* static */
 bool TCPSocket::ShouldTCPSocketExist(JSContext* aCx, JSObject* aGlobal) {
   JS::Rooted<JSObject*> global(aCx, aGlobal);
   return nsContentUtils::ObjectPrincipal(global)->IsSystemPrincipal();
