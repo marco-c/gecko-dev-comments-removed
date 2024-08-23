@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -576,6 +577,16 @@ class DcSctpSocketInterface {
   
   virtual SendStatus Send(DcSctpMessage message,
                           const SendOptions& send_options) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual std::vector<SendStatus> SendMany(
+      rtc::ArrayView<DcSctpMessage> messages,
+      const SendOptions& send_options) = 0;
 
   
   

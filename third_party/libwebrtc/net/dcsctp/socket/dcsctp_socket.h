@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
@@ -91,6 +92,8 @@ class DcSctpSocket : public DcSctpSocketInterface {
   void Close() override;
   SendStatus Send(DcSctpMessage message,
                   const SendOptions& send_options) override;
+  std::vector<SendStatus> SendMany(rtc::ArrayView<DcSctpMessage> messages,
+                                   const SendOptions& send_options) override;
   ResetStreamsStatus ResetStreams(
       rtc::ArrayView<const StreamID> outgoing_streams) override;
   SocketState state() const override;
@@ -165,6 +168,9 @@ class DcSctpSocket : public DcSctpSocketInterface {
   void MaybeSendShutdownOnPacketReceived(const SctpPacket& packet);
   
   void MaybeSendResetStreamsRequest();
+  
+  SendStatus InternalSend(const DcSctpMessage& message,
+                          const SendOptions& send_options);
   
   void SendInit();
   
