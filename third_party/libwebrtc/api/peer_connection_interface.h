@@ -1442,6 +1442,10 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
       transport_controller_send_factory;
   
   std::unique_ptr<Metronome> decode_metronome;
+  
+  
+  
+  std::unique_ptr<Metronome> encode_metronome;
 
   
   rtc::scoped_refptr<AudioDeviceModule> adm;
