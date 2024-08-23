@@ -12,7 +12,7 @@ add_task(async function () {
   await pushPref("devtools.debugger.features.map-await-expression", true);
 
   
-  await pushPref("devtools.toolbox.splitconsoleEnabled", false);
+  await pushPref("devtools.toolbox.splitconsole.open", false);
   const hud = await openNewTabAndConsole(TEST_URI);
 
   const pauseExpression = `(() => {

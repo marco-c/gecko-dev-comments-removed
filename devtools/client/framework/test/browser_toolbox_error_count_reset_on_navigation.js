@@ -23,7 +23,7 @@ add_task(async function () {
 
   
   
-  await pushPref("devtools.toolbox.splitconsoleEnabled", false);
+  await pushPref("devtools.toolbox.splitconsole.open", false);
   const tab = await addTab(TEST_URI);
 
   const toolbox = await openToolboxForTab(
