@@ -31,7 +31,7 @@ use crate::rule_collector::RuleCollector;
 use crate::rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
 use crate::sharing::RevalidationResult;
 use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet, SelectorMap, SelectorMapEntry};
-use crate::selector_parser::{PerPseudoElementMap, PseudoElement, SelectorImpl, SnapshotMap};
+use crate::selector_parser::{PerPseudoElementMap, PseudoElement, SelectorImpl, NonTSPseudoClass, SnapshotMap};
 use crate::shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use crate::stylesheet_set::{DataValidity, DocumentStylesheetSet, SheetRebuildKind};
 use crate::stylesheet_set::{DocumentStylesheetFlusher, SheetCollectionFlusher};
@@ -48,7 +48,7 @@ use crate::stylesheets::{
     PerOriginIter,
 };
 use crate::stylesheets::{StyleRule, StylesheetContents, StylesheetInDocument};
-use crate::values::computed;
+use crate::values::{computed, AtomIdent};
 use crate::AllocErr;
 use crate::{Atom, LocalName, Namespace, ShrinkIfNeeded, WeakAtom};
 use dom::{DocumentState, ElementState};
@@ -2024,6 +2024,11 @@ struct StylistSelectorVisitor<'a> {
     nth_of_attribute_dependencies: &'a mut PrecomputedHashSet<LocalName>,
 
     
+    
+    
+    nth_of_custom_state_dependencies: &'a mut PrecomputedHashSet<AtomIdent>,
+
+    
     state_dependencies: &'a mut ElementState,
 
     
@@ -2144,6 +2149,16 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
             component_needs_revalidation(s, self.passed_rightmost_selector);
 
         match *s {
+            Component::NonTSPseudoClass(NonTSPseudoClass::CustomState(ref name)) => {
+                
+                
+                
+                
+                
+                if self.in_selector_list_of.relevant_to_nth_of_dependencies() {
+                    self.nth_of_custom_state_dependencies.insert(name.0.clone());
+                }
+            },
             Component::NonTSPseudoClass(ref p) => {
                 self.state_dependencies.insert(p.state_flag());
                 self.document_state_dependencies
@@ -2380,6 +2395,11 @@ pub struct CascadeData {
     
     
     
+    nth_of_custom_state_dependencies: PrecomputedHashSet<AtomIdent>,
+
+    
+    
+    
     state_dependencies: ElementState,
 
     
@@ -2456,6 +2476,7 @@ impl CascadeData {
             nth_of_mapped_ids: PrecomputedHashSet::default(),
             nth_of_class_dependencies: PrecomputedHashSet::default(),
             nth_of_attribute_dependencies: PrecomputedHashSet::default(),
+            nth_of_custom_state_dependencies: PrecomputedHashSet::default(),
             nth_of_state_dependencies: ElementState::empty(),
             attribute_dependencies: PrecomputedHashSet::default(),
             state_dependencies: ElementState::empty(),
@@ -2533,6 +2554,13 @@ impl CascadeData {
     #[inline]
     pub fn has_state_dependency(&self, state: ElementState) -> bool {
         self.state_dependencies.intersects(state)
+    }
+
+    
+    
+    #[inline]
+    pub fn has_nth_of_custom_state_dependency(&self, state: &AtomIdent) -> bool {
+        self.nth_of_custom_state_dependencies.contains(state)
     }
 
     
@@ -2664,6 +2692,7 @@ impl CascadeData {
         self.relative_selector_invalidation_map.shrink_if_needed();
         self.attribute_dependencies.shrink_if_needed();
         self.nth_of_attribute_dependencies.shrink_if_needed();
+        self.nth_of_custom_state_dependencies.shrink_if_needed();
         self.nth_of_class_dependencies.shrink_if_needed();
         self.nth_of_mapped_ids.shrink_if_needed();
         self.mapped_ids.shrink_if_needed();
@@ -2859,6 +2888,8 @@ impl CascadeData {
                                 nth_of_class_dependencies: &mut self.nth_of_class_dependencies,
                                 nth_of_attribute_dependencies: &mut self
                                     .nth_of_attribute_dependencies,
+                                nth_of_custom_state_dependencies: &mut self
+                                    .nth_of_custom_state_dependencies,
                                 state_dependencies: &mut self.state_dependencies,
                                 nth_of_state_dependencies: &mut self.nth_of_state_dependencies,
                                 document_state_dependencies: &mut self.document_state_dependencies,
@@ -3324,6 +3355,7 @@ impl CascadeData {
         self.relative_selector_invalidation_map.clear();
         self.attribute_dependencies.clear();
         self.nth_of_attribute_dependencies.clear();
+        self.nth_of_custom_state_dependencies.clear();
         self.nth_of_class_dependencies.clear();
         self.state_dependencies = ElementState::empty();
         self.nth_of_state_dependencies = ElementState::empty();
@@ -3483,6 +3515,7 @@ pub fn needs_revalidation_for_testing(s: &Selector<SelectorImpl>) -> bool {
     let mut attribute_dependencies = Default::default();
     let mut nth_of_class_dependencies = Default::default();
     let mut nth_of_attribute_dependencies = Default::default();
+    let mut nth_of_custom_state_dependencies = Default::default();
     let mut state_dependencies = ElementState::empty();
     let mut nth_of_state_dependencies = ElementState::empty();
     let mut document_state_dependencies = DocumentState::empty();
@@ -3495,6 +3528,7 @@ pub fn needs_revalidation_for_testing(s: &Selector<SelectorImpl>) -> bool {
         attribute_dependencies: &mut attribute_dependencies,
         nth_of_class_dependencies: &mut nth_of_class_dependencies,
         nth_of_attribute_dependencies: &mut nth_of_attribute_dependencies,
+        nth_of_custom_state_dependencies: &mut nth_of_custom_state_dependencies,
         state_dependencies: &mut state_dependencies,
         nth_of_state_dependencies: &mut nth_of_state_dependencies,
         document_state_dependencies: &mut document_state_dependencies,

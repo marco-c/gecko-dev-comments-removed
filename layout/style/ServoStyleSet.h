@@ -561,6 +561,12 @@ class ServoStyleSet {
 
 
 
+  bool HasNthOfCustomStateDependency(const dom::Element&, nsAtom*) const;
+
+  
+
+
+
   void RestyleSiblingsForNthOf(const dom::Element&, uint32_t) const;
 
   

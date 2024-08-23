@@ -361,6 +361,8 @@ class RestyleManager {
 
   void CustomStatesWillChange(Element&);
   void CustomStateChanged(Element&, nsAtom* aState);
+  void MaybeRestyleForNthOfCustomState(ServoStyleSet&, Element&,
+                                       nsAtom* aState);
 
   
 
