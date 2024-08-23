@@ -677,18 +677,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 #endif
 
   
-
-  
-  
-  
-  
-  
-  
-  
-  
-  js::Vector<js::DependentScriptSet, 1, js::SystemAllocPolicy> fuseDependencies;
-  js::DependentScriptSet* getOrCreateDependentScriptSet(
-      JSContext* cx, js::InvalidatingFuse* fuse);
+  js::DependentScriptGroup fuseDependencies;
 
  private:
   js::jit::JitZone* createJitZone(JSContext* cx);
