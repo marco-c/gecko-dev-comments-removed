@@ -3,12 +3,14 @@
 
 
 
-import list_compatible_dependency_versions as module
 import os
 import unittest
 
-SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
-AC_ROOT=os.path.join(SCRIPT_DIR, '..')
+import list_compatible_dependency_versions as module
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+AC_ROOT = os.path.join(SCRIPT_DIR, "..")
+
 
 class AssumptionsTestCase(unittest.TestCase):
     """A class to test that some assumptions we've made in the code,
@@ -29,5 +31,6 @@ class AssumptionsTestCase(unittest.TestCase):
         
         pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
