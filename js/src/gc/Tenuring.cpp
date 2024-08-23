@@ -920,6 +920,7 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   
   
   
+  MOZ_ASSERT(!src->isAtom());
   if (src->isLinear() && src->inStringToAtomCache() &&
       src->isDeduplicatable() && !src->hasBase()) {
     JSLinearString* linear = &src->asLinear();
@@ -963,6 +964,7 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   if (shouldTenure(zone, JS::TraceKind::String, src) &&
       src->length() < MAX_DEDUPLICATABLE_STRING_LENGTH && src->isLinear() &&
       src->isDeduplicatable() && stringDeDupSet.isSome()) {
+    src->clearBitsOnTenure();
     auto p = stringDeDupSet->lookupForAdd(src);
     if (p) {
       
@@ -987,14 +989,15 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   } else {
     dst = allocString(src, zone, dstKind);
     if (dst->isTenured()) {
-      dst->clearNonDeduplicatable();
+      src->clearBitsOnTenure();
+      dst->clearBitsOnTenure();
     }
   }
 
   zone->stringStats.ref().noteTenured(src->allocSize());
 
   auto* overlay = StringRelocationOverlay::forwardCell(src, dst);
-  MOZ_ASSERT_IF(dst->isTenured(), dst->isDeduplicatable());
+  MOZ_ASSERT_IF(dst->isTenured() && dst->isLinear(), dst->isDeduplicatable());
 
   if (dst->hasBase() || dst->isRope()) {
     
@@ -1114,7 +1117,8 @@ void js::gc::TenuringTracer::collectToStringFixedPoint() {
     MOZ_ASSERT_IF(IsInsideNursery(str), !nursery().inCollectedRegion(str));
 
     
-    MOZ_ASSERT_IF(str->isTenured(), str->isDeduplicatable());
+    MOZ_ASSERT(!str->isAtom());
+    MOZ_ASSERT_IF(str->isTenured() && str->isLinear(), str->isDeduplicatable());
 
     
     
