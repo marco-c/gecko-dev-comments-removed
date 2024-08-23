@@ -1940,10 +1940,113 @@ static const JSFunctionSpec iterator_methods_with_helpers[] = {
     JS_FS_END,
 };
 
+
+static bool SetterThatIgnoresPrototypeProperties(JSContext* cx,
+                                                 Handle<Value> thisv,
+                                                 Handle<PropertyKey> prop,
+                                                 Handle<Value> value) {
+  
+  Rooted<JSObject*> thisObj(cx,
+                            RequireObject(cx, JSMSG_OBJECT_REQUIRED, thisv));
+  if (!thisObj) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> home(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, cx->global()));
+  if (!home) {
+    return false;
+  }
+  if (thisObj == home) {
+    UniqueChars propName =
+        IdToPrintableUTF8(cx, prop, IdToPrintableBehavior::IdIsPropertyKey);
+    if (!propName) {
+      return false;
+    }
+
+    
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_READ_ONLY,
+                              propName.get());
+    return false;
+  }
+
+  
+  Rooted<Maybe<PropertyDescriptor>> desc(cx);
+  if (!GetOwnPropertyDescriptor(cx, thisObj, prop, &desc)) {
+    return false;
+  }
+
+  
+  if (desc.isNothing()) {
+    
+    return DefineDataProperty(cx, thisObj, prop, value, JSPROP_ENUMERATE);
+  }
+
+  
+  return SetProperty(cx, thisObj, prop, value);
+}
+
+
+static bool toStringTagGetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  args.rval().setString(cx->names().Iterator);
+  return true;
+}
+
+
+static bool toStringTagSetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Rooted<PropertyKey> prop(
+      cx, PropertyKey::Symbol(cx->wellKnownSymbols().toStringTag));
+  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), prop,
+                                            args.get(0))) {
+    return false;
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
+}
+
+
+static bool constructorGetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Rooted<JSObject*> constructor(
+      cx, GlobalObject::getOrCreateConstructor(cx, JSProto_Iterator));
+  if (!constructor) {
+    return false;
+  }
+  args.rval().setObject(*constructor);
+  return true;
+}
+
+
+static bool constructorSetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Rooted<PropertyKey> prop(cx, NameToId(cx->names().constructor));
+  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), prop,
+                                            args.get(0))) {
+    return false;
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
+}
+
 static const JSPropertySpec iterator_properties[] = {
     
     
-    JS_STRING_SYM_PS(toStringTag, "Iterator", 0),
+    JS_SYM_GETSET(toStringTag, toStringTagGetter, toStringTagSetter, 0),
     JS_PS_END,
 };
 
@@ -2081,7 +2184,7 @@ static const ClassSpec IteratorObjectClassSpec = {
     nullptr,
     iterator_methods_with_helpers,
     iterator_properties,
-    nullptr,
+    IteratorObject::finishInit,
 };
 
 const JSClass IteratorObject::class_ = {
@@ -2097,6 +2200,13 @@ const JSClass IteratorObject::protoClass_ = {
     JS_NULL_CLASS_OPS,
     &IteratorObjectClassSpec,
 };
+
+ bool IteratorObject::finishInit(JSContext* cx, HandleObject ctor,
+                                             HandleObject proto) {
+  Rooted<PropertyKey> id(cx, NameToId(cx->names().constructor));
+  return JS_DefinePropertyById(cx, proto, id, constructorGetter,
+                               constructorSetter, 0);
+}
 
 
 static const JSFunctionSpec wrap_for_valid_iterator_methods[] = {

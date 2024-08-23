@@ -10,14 +10,5 @@ assertEq(propDesc.writable, false);
 assertEq(propDesc.enumerable, false);
 assertEq(propDesc.configurable, false);
 
-
-const toStringTagDesc = Reflect.getOwnPropertyDescriptor(Iterator.prototype, Symbol.toStringTag);
-assertDeepEq(toStringTagDesc, {
-  value: "Iterator",
-  writable: true,
-  enumerable: false,
-  configurable: true,
-});
-
 if (typeof reportCompare === 'function')
   reportCompare(0, 0);
