@@ -1211,6 +1211,11 @@ fn is_transitionable(prop: PropertyDeclarationId, behavior: computed::Transition
     if !prop.is_animatable() {
         return false;
     }
+    
+    
+    if matches!(prop, PropertyDeclarationId::Custom(..)) {
+        return true;
+    }
 
     match behavior {
         computed::TransitionBehavior::Normal => !prop.is_discrete_animatable(),
