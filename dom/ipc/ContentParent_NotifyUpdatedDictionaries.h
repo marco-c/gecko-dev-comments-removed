@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_ContentParent_NotifyUpdatedDictionaries_h
+#define mozilla_dom_ContentParent_NotifyUpdatedDictionaries_h
+
+
+
+
+namespace mozilla::dom {
+void ContentParent_NotifyUpdatedDictionaries();
+}  
+
+#endif  
