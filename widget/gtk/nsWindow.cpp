@@ -9699,8 +9699,19 @@ void nsWindow::GetCompositorWidgetInitData(
 
   LOG("nsWindow::GetCompositorWidgetInitData");
 
+  Window window = GetX11Window();
+#ifdef MOZ_X11
+  
+  
+  
+  
+  if (!window && !gfxVars::UseEGL()) {
+    window =
+        gdk_x11_window_get_xid(gtk_widget_get_window(GTK_WIDGET(mContainer)));
+  }
+#endif
   *aInitData = mozilla::widget::GtkCompositorWidgetInitData(
-      GetX11Window(), displayName, GetShapedState(), GdkIsX11Display(),
+      window, displayName, GetShapedState(), GdkIsX11Display(),
       GetClientSize());
 
 #ifdef MOZ_X11
