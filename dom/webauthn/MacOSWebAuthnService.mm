@@ -338,6 +338,12 @@ nsTArray<uint8_t> NSDataToArray(NSData* data) {
       }
 #endif
     } else {
+      
+      
+      
+      
+      
+      transports.AppendElement(u"usb"_ns);
       authenticatorAttachment.emplace(u"cross-platform"_ns);
     }
     mCallback->FinishMakeCredential(rawAttestationObject, credentialId,
