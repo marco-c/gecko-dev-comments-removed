@@ -173,15 +173,14 @@ void nsTextControlFrame::Destroy(DestroyContext& aContext) {
   nsContainerFrame::Destroy(aContext);
 }
 
-LogicalSize nsTextControlFrame::CalcIntrinsicSize(
-    gfxContext* aRenderingContext, WritingMode aWM,
-    float aFontSizeInflation) const {
+LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
+                                                  WritingMode aWM) const {
   LogicalSize intrinsicSize(aWM);
+  const float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   RefPtr<nsFontMetrics> fontMet =
-      nsLayoutUtils::GetFontMetricsForFrame(this, aFontSizeInflation);
-  const nscoord lineHeight =
-      ReflowInput::CalcLineHeight(*Style(), PresContext(), GetContent(),
-                                  NS_UNCONSTRAINEDSIZE, aFontSizeInflation);
+      nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
+  const nscoord lineHeight = ReflowInput::CalcLineHeight(
+      *Style(), PresContext(), GetContent(), NS_UNCONSTRAINEDSIZE, inflation);
   
   
   const nscoord charWidth =
@@ -556,9 +555,8 @@ void nsTextControlFrame::AppendAnonymousContentTo(
 nscoord nsTextControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
   DISPLAY_PREF_INLINE_SIZE(this, result);
-  float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   WritingMode wm = GetWritingMode();
-  result = CalcIntrinsicSize(aRenderingContext, wm, inflation).ISize(wm);
+  result = CalcIntrinsicSize(aRenderingContext, wm).ISize(wm);
   return result;
 }
 
@@ -568,44 +566,6 @@ nscoord nsTextControlFrame::GetMinISize(gfxContext* aRenderingContext) {
   DISPLAY_MIN_INLINE_SIZE(this, result);
   result = GetPrefISize(aRenderingContext);
   return result;
-}
-
-LogicalSize nsTextControlFrame::ComputeAutoSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
-  float inflation = nsLayoutUtils::FontSizeInflationFor(this);
-  LogicalSize autoSize = CalcIntrinsicSize(aRenderingContext, aWM, inflation);
-
-  
-  
-  const auto& styleISize = aSizeOverrides.mStyleISize
-                               ? *aSizeOverrides.mStyleISize
-                               : StylePosition()->ISize(aWM);
-  if (styleISize.IsAuto()) {
-    if (aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
-      
-      
-      
-      autoSize.ISize(aWM) =
-          nsContainerFrame::ComputeAutoSize(
-              aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
-              aBorderPadding, aSizeOverrides, aFlags)
-              .ISize(aWM);
-    }
-#ifdef DEBUG
-    else {
-      LogicalSize ancestorAutoSize = nsContainerFrame::ComputeAutoSize(
-          aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
-          aBorderPadding, aSizeOverrides, aFlags);
-      MOZ_ASSERT(inflation != 1.0f ||
-                     ancestorAutoSize.ISize(aWM) == autoSize.ISize(aWM),
-                 "Incorrect size computed by ComputeAutoSize?");
-    }
-#endif
-  }
-  return autoSize;
 }
 
 Maybe<nscoord> nsTextControlFrame::ComputeBaseline(
@@ -646,7 +606,12 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
 
   
   WritingMode wm = aReflowInput.GetWritingMode();
-  aDesiredSize.SetSize(wm, aReflowInput.ComputedSizeWithBorderPadding(wm));
+  const auto contentBoxSize = aReflowInput.ComputedSizeWithBSizeFallback([&] {
+    return CalcIntrinsicSize(aReflowInput.mRenderingContext, wm).BSize(wm);
+  });
+  aDesiredSize.SetSize(
+      wm,
+      contentBoxSize + aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
 
   {
     
@@ -674,7 +639,7 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
   nscoord buttonBoxISize = 0;
   if (buttonBox) {
     ReflowTextControlChild(buttonBox, aPresContext, aReflowInput, aStatus,
-                           aDesiredSize, buttonBoxISize);
+                           aDesiredSize, contentBoxSize, buttonBoxISize);
   }
 
   
@@ -684,7 +649,7 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
       MOZ_ASSERT(!IsButtonBox(kid),
                  "Should only have one button box, and should be last");
       ReflowTextControlChild(kid, aPresContext, aReflowInput, aStatus,
-                             aDesiredSize, buttonBoxISize);
+                             aDesiredSize, contentBoxSize, buttonBoxISize);
     }
     kid = kid->GetNextSibling();
   }
@@ -698,22 +663,28 @@ void nsTextControlFrame::Reflow(nsPresContext* aPresContext,
 void nsTextControlFrame::ReflowTextControlChild(
     nsIFrame* aKid, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
-    ReflowOutput& aParentDesiredSize, nscoord& aButtonBoxISize) {
+    ReflowOutput& aParentDesiredSize, const LogicalSize& aParentContentBoxSize,
+    nscoord& aButtonBoxISize) {
   const WritingMode outerWM = aReflowInput.GetWritingMode();
   
   const WritingMode wm = aKid->GetWritingMode();
-  LogicalSize availSize = aReflowInput.ComputedSizeWithPadding(wm);
+  const auto parentPadding = aReflowInput.ComputedLogicalPadding(wm);
+  const LogicalSize contentBoxSize =
+      aParentContentBoxSize.ConvertTo(wm, outerWM);
+  const LogicalSize paddingBoxSize = contentBoxSize + parentPadding.Size(wm);
+  const LogicalSize borderBoxSize =
+      paddingBoxSize + aReflowInput.ComputedLogicalBorder(wm).Size(wm);
+  LogicalSize availSize = paddingBoxSize;
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
 
-  bool isButtonBox = IsButtonBox(aKid);
+  const bool isButtonBox = IsButtonBox(aKid);
 
   ReflowInput kidReflowInput(aPresContext, aReflowInput, aKid, availSize,
                              Nothing(), ReflowInput::InitFlag::CallerWillInit);
 
   
   
-  auto overridePadding =
-      isButtonBox ? Nothing() : Some(aReflowInput.ComputedLogicalPadding(wm));
+  auto overridePadding = isButtonBox ? Nothing() : Some(parentPadding);
   if (!isButtonBox && aButtonBoxISize) {
     
     overridePadding->IEnd(outerWM) = 0;
@@ -722,8 +693,7 @@ void nsTextControlFrame::ReflowTextControlChild(
   
   
   
-  auto overrideCBSize =
-      isButtonBox ? Some(aReflowInput.ComputedSizeWithPadding(wm)) : Nothing();
+  auto overrideCBSize = isButtonBox ? Some(paddingBoxSize) : Nothing();
   kidReflowInput.Init(aPresContext, overrideCBSize, Nothing(), overridePadding);
 
   LogicalPoint position(wm);
@@ -746,14 +716,12 @@ void nsTextControlFrame::ReflowTextControlChild(
     
     kidReflowInput.SetComputedISize(
         std::max(0, aReflowInput.ComputedISize() - aButtonBoxISize));
-    kidReflowInput.SetComputedBSize(aReflowInput.ComputedBSize());
+    kidReflowInput.SetComputedBSize(contentBoxSize.BSize(wm));
   }
 
   
   ReflowOutput desiredSize(aReflowInput);
-  const nsSize containerSize =
-      aReflowInput.ComputedSizeWithBorderPadding(outerWM).GetPhysicalSize(
-          outerWM);
+  const nsSize containerSize = borderBoxSize.GetPhysicalSize(wm);
   ReflowChild(aKid, aPresContext, desiredSize, kidReflowInput, wm, position,
               containerSize, ReflowChildFlags::Default, aStatus);
 
@@ -767,7 +735,7 @@ void nsTextControlFrame::ReflowTextControlChild(
     buttonRect.ISize(outerWM) = size.ISize(outerWM);
     buttonRect.BStart(outerWM) =
         bp.BStart(outerWM) +
-        (aReflowInput.ComputedBSize() - size.BSize(outerWM)) / 2;
+        (aParentContentBoxSize.BSize(outerWM) - size.BSize(outerWM)) / 2;
     
     buttonRect.IStart(outerWM) =
         bp.IStart(outerWM) + aReflowInput.ComputedISize() - size.ISize(outerWM);

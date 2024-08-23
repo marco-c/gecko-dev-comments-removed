@@ -13,10 +13,8 @@
 #include "CounterStyleManager.h"
 #include "LayoutLogging.h"
 #include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/WritingModes.h"
 #include "nsBlockFrame.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsFlexContainerFrame.h"
 #include "nsFontInflationData.h"
 #include "nsFontMetrics.h"
@@ -31,7 +29,6 @@
 #include "nsLineBox.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"
-#include "nsTableCellFrame.h"
 #include "nsTableFrame.h"
 #include "StickyScrollContainer.h"
 
@@ -1292,7 +1289,6 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     
-
   } else {
     
 
@@ -1311,7 +1307,6 @@ void ReflowInput::CalculateHypotheticalPosition(
         boxISize.emplace(LogicalSize(wm, *intrinsicSize).ISize(wm) +
                          outsideBoxISizing + insideBoxISizing);
       }
-
     } else if (isAutoISize) {
       
       boxISize.emplace(blockContentSize.ISize(wm));
@@ -2239,7 +2234,7 @@ void ReflowInput::InitConstraints(
         
         if (mFlags.mIsReplaced && mStyleDisplay->IsInlineOutsideStyle()) {
           
-          NS_ASSERTION(nullptr != cbri, "no containing block");
+          NS_ASSERTION(cbri, "no containing block");
           
           if (!wm.IsVertical() &&
               eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
@@ -2359,41 +2354,74 @@ void ReflowInput::InitConstraints(
     } else {
       AutoMaybeDisableFontInflation an(mFrame);
 
-      const bool isBlockLevel =
-          ((!mStyleDisplay->IsInlineOutsideStyle() &&
-            
-            
-            
-            
-            
-            !(mFlags.mIsReplaced && (mStyleDisplay->IsInnerTableStyle() ||
-                                     mStyleDisplay->DisplayOutside() ==
-                                         StyleDisplayOutside::TableCaption))) ||
-           
-           
-           mFrame->IsTableFrame()) &&
-          
-          
-          (!mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) ||
-           mStyleDisplay->IsAbsolutelyPositionedStyle());
-
-      if (!isBlockLevel) {
-        mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
-      }
-
-      nsIFrame* alignCB = mFrame->GetParent();
-      if (alignCB->IsTableWrapperFrame()) {
-        nsIFrame* alignCBParent = alignCB->GetParent();
-        if (alignCBParent && alignCBParent->IsGridContainerFrame()) {
-          alignCB = alignCBParent;
+      nsIFrame* const alignCB = [&] {
+        nsIFrame* cb = mFrame->GetParent();
+        if (cb->IsTableWrapperFrame()) {
+          nsIFrame* alignCBParent = cb->GetParent();
+          if (alignCBParent && alignCBParent->IsGridContainerFrame()) {
+            return alignCBParent;
+          }
         }
-      }
-      if (!alignCB->IsGridContainerFrame()) {
-        
-        if (isBlockLevel && mCBReflowInput &&
+        return cb;
+      }();
+
+      const bool isInlineLevel = [&] {
+        if (mFrame->IsTableFrame()) {
+          
+          
+          
+          return false;
+        }
+        if (mStyleDisplay->IsInlineOutsideStyle()) {
+          return true;
+        }
+        if (mFlags.mIsReplaced && (mStyleDisplay->IsInnerTableStyle() ||
+                                   mStyleDisplay->DisplayOutside() ==
+                                       StyleDisplayOutside::TableCaption)) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          return true;
+        }
+        if (mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+            !mStyleDisplay->IsAbsolutelyPositionedStyle()) {
+          
+          return true;
+        }
+        return false;
+      }();
+
+      const bool shouldShrinkWrap = [&] {
+        if (isInlineLevel) {
+          return true;
+        }
+        if (mFlags.mIsReplaced && !alignCB->IsFlexOrGridContainer()) {
+          
+          
+          
+          
+          
+          
+          return true;
+        }
+        if (!alignCB->IsGridContainerFrame() && mCBReflowInput &&
             mCBReflowInput->GetWritingMode().IsOrthogonalTo(mWritingMode)) {
-          mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
+          
+          
+          return true;
         }
+        return false;
+      }();
+
+      if (shouldShrinkWrap) {
+        mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
       }
 
       if (cbSize.ISize(wm) == NS_UNCONSTRAINEDSIZE) {
@@ -2418,10 +2446,7 @@ void ReflowInput::InitConstraints(
           size.mAspectRatioUsage == nsIFrame::AspectRatioUsage::ToComputeBSize;
 
       const bool shouldCalculateBlockSideMargins = [&]() {
-        if (!isBlockLevel) {
-          return false;
-        }
-        if (mStyleDisplay->mDisplay == StyleDisplay::InlineTable) {
+        if (isInlineLevel) {
           return false;
         }
         if (mFrame->IsTableFrame()) {

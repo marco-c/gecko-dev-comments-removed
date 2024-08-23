@@ -1588,6 +1588,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  nscoord OneEmInAppUnits() const;
+
+  
+
+
 
 
 
