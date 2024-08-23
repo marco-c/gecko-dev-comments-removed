@@ -18,7 +18,43 @@ const asyncStore = asyncStoreHelper("debugger", {
 });
 exports.asyncStore = asyncStore;
 
-exports.getThreadOptions = async function () {
+
+
+
+
+
+
+async function getBreakpointConfiguration() {
+  
+  const breakpoints = sanitizeBreakpoints(await asyncStore.pendingBreakpoints);
+
+  for (const key in breakpoints) {
+    const breakpoint = breakpoints[key];
+
+    
+    
+    if (breakpoint.disabled) {
+      delete breakpoints[key];
+      continue;
+    }
+
+    
+    
+    breakpoints[key] = {
+      location: breakpoint.generatedLocation,
+      options: breakpoint.options,
+    };
+  }
+  return breakpoints;
+}
+
+
+
+
+
+
+
+exports.getThreadConfiguration = async function () {
   return {
     shouldPauseOnDebuggerStatement: Services.prefs.getBoolPref(
       "devtools.debugger.pause-on-debugger-statement"
@@ -43,7 +79,9 @@ exports.getThreadOptions = async function () {
     ),
     
     observeAsmJS: true,
-    breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
+
+    breakpoints: await getBreakpointConfiguration(),
+
     
     
     

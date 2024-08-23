@@ -25,21 +25,6 @@ const {
   sanitizeBreakpoints,
 } = require("resource://devtools/client/shared/thread-utils.js");
 
-async function syncBreakpoints() {
-  const breakpoints = await asyncStore.pendingBreakpoints;
-  const breakpointValues = Object.values(sanitizeBreakpoints(breakpoints));
-  return Promise.all(
-    breakpointValues.map(({ disabled, options, generatedLocation }) => {
-      if (disabled) {
-        return Promise.resolve();
-      }
-      
-      
-      return firefox.clientCommands.setBreakpoint(generatedLocation, options);
-    })
-  );
-}
-
 async function syncXHRBreakpoints() {
   const breakpoints = await asyncStore.xhrBreakpoints;
   return Promise.all(
@@ -120,7 +105,6 @@ export async function bootstrap({
     store
   );
 
-  await syncBreakpoints();
   await syncXHRBreakpoints();
   await setPauseOnDebuggerStatement();
   await setPauseOnExceptions();

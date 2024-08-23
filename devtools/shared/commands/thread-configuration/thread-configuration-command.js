@@ -32,7 +32,7 @@ class ThreadConfigurationCommand {
       
       const filteredConfiguration = Object.fromEntries(
         Object.entries(configuration).filter(
-          ([key]) => !["breakpoints", "eventBreakpoints"].includes(key)
+          ([key]) => !["eventBreakpoints"].includes(key)
         )
       );
 
