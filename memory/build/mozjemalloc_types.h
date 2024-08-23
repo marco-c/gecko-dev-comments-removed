@@ -115,8 +115,7 @@ typedef struct {
   size_t waste;           
                           
                           
-  size_t page_cache;      
-                          
+  size_t pages_dirty;     
   size_t pages_fresh;     
   size_t pages_madvised;  
   size_t bookkeeping;     
