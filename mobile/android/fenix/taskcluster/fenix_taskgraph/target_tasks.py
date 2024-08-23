@@ -21,6 +21,12 @@ def target_tasks_default(full_task_graph, parameters, graph_config):
 
     
     def filter(task, parameters):
+        
+        
+        
+        if task.kind == "mark-as-shipped" and parameters["tasks_for"] == "github-release":
+            return False
+
         return task.attributes.get("release-type", "") == parameters["release_type"]
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t, parameters)]
