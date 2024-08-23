@@ -1805,7 +1805,8 @@ Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
     
     if (allowFrameSwitch) {
       AdjustWindowFocus(newBrowsingContext, true, IsWindowVisible(newWindow),
-                        actionId);
+                        actionId, false ,
+                        nullptr );
     }
 
     
@@ -1978,7 +1979,9 @@ mozilla::dom::BrowsingContext* nsFocusManager::GetCommonAncestor(
 
 bool nsFocusManager::AdjustInProcessWindowFocus(
     BrowsingContext* aBrowsingContext, bool aCheckPermission, bool aIsVisible,
-    uint64_t aActionId) {
+    uint64_t aActionId, bool aShouldClearAncestorFocus,
+    BrowsingContext* aAncestorBrowsingContextToFocus) {
+  MOZ_ASSERT_IF(aAncestorBrowsingContextToFocus, aShouldClearAncestorFocus);
   if (ActionIdComparableAndLower(aActionId,
                                  mActionIdForFocusedBrowsingContextInContent)) {
     LOGFOCUS(
@@ -2029,6 +2032,17 @@ bool nsFocusManager::AdjustInProcessWindowFocus(
       break;
     }
 
+    if (aShouldClearAncestorFocus) {
+      
+      
+      if (window->GetBrowsingContext() == aAncestorBrowsingContextToFocus) {
+        break;
+      }
+
+      window->SetFocusedElement(nullptr);
+      continue;
+    }
+
     if (frameElement != window->GetFocusedElement()) {
       window->SetFocusedElement(frameElement);
 
@@ -2044,18 +2058,22 @@ bool nsFocusManager::AdjustInProcessWindowFocus(
   return needToNotifyOtherProcess;
 }
 
-void nsFocusManager::AdjustWindowFocus(BrowsingContext* aBrowsingContext,
-                                       bool aCheckPermission, bool aIsVisible,
-                                       uint64_t aActionId) {
+void nsFocusManager::AdjustWindowFocus(
+    BrowsingContext* aBrowsingContext, bool aCheckPermission, bool aIsVisible,
+    uint64_t aActionId, bool aShouldClearAncestorFocus,
+    BrowsingContext* aAncestorBrowsingContextToFocus) {
+  MOZ_ASSERT_IF(aAncestorBrowsingContextToFocus, aShouldClearAncestorFocus);
   if (AdjustInProcessWindowFocus(aBrowsingContext, aCheckPermission, aIsVisible,
-                                 aActionId)) {
+                                 aActionId, aShouldClearAncestorFocus,
+                                 aAncestorBrowsingContextToFocus)) {
     
     
     mozilla::dom::ContentChild* contentChild =
         mozilla::dom::ContentChild::GetSingleton();
     MOZ_ASSERT(contentChild);
-    contentChild->SendAdjustWindowFocus(aBrowsingContext, aIsVisible,
-                                        aActionId);
+    contentChild->SendAdjustWindowFocus(aBrowsingContext, aIsVisible, aActionId,
+                                        aShouldClearAncestorFocus,
+                                        aAncestorBrowsingContextToFocus);
   }
 }
 
@@ -2426,6 +2444,22 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       if (ancestorWindowToFocus) {
         ancestorWindowToFocus->SetFocusedElement(nullptr, 0, true);
       }
+
+      
+      
+      
+      
+      
+      
+      
+      if (aBrowsingContextToClear &&
+          aBrowsingContextToClear != aAncestorBrowsingContextToFocus) {
+        AdjustWindowFocus(
+            aBrowsingContextToClear, false,
+            IsWindowVisible(aBrowsingContextToClear->GetDOMWindow()), aActionId,
+            true ,
+            aAncestorBrowsingContextToFocus);
+      }
     }
 
     SetFocusedWindowInternal(nullptr, aActionId);
@@ -2572,7 +2606,9 @@ void nsFocusManager::Focus(
     
     
     RefPtr<BrowsingContext> bc = aWindow->GetBrowsingContext();
-    AdjustWindowFocus(bc, false, IsWindowVisible(aWindow), aActionId);
+    AdjustWindowFocus(bc, false, IsWindowVisible(aWindow), aActionId,
+                      false ,
+                      nullptr );
   }
 
   

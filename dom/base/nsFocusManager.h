@@ -354,12 +354,16 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT bool AdjustInProcessWindowFocus(
       mozilla::dom::BrowsingContext* aBrowsingContext, bool aCheckPermission,
-      bool aIsVisible, uint64_t aActionId);
+      bool aIsVisible, uint64_t aActionId, bool aShouldClearAncestorFocus,
+      mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus);
+
   MOZ_CAN_RUN_SCRIPT void AdjustWindowFocus(
       mozilla::dom::BrowsingContext* aBrowsingContext, bool aCheckPermission,
-      bool aIsVisible, uint64_t aActionId);
+      bool aIsVisible, uint64_t aActionId, bool aShouldClearAncestorFocus,
+      mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus);
 
   
 
