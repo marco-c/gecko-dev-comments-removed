@@ -242,6 +242,12 @@ void Realm::traceRoots(JSTracer* trc,
     if (shouldTraceGlobal() && global_) {
       TraceRoot(trc, global_.unbarrieredAddress(), "on-stack realm global");
     }
+
+    
+    
+    if (shouldTraceGlobal() && initializingGlobal_) {
+      allocatedDuringIncrementalGC_ = true;
+    }
   }
 
   
