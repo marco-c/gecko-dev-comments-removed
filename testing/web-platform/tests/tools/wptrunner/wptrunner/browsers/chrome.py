@@ -98,6 +98,9 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     
     chrome_options["args"].append("--use-fake-ui-for-fedcm")
     
+    
+    chrome_options["args"].append("--enable-features=FedCmWithoutWellKnownEnforcement")
+    
     chrome_options["args"].append("--use-fake-ui-for-digital-identity")
     
     chrome_options["args"].append("--short-reporting-delay")
