@@ -190,7 +190,8 @@ template <typename T>
 
   
   
-  if (!cx->zone()->suppressAllocationMetadataBuilder) {
+  if (!cx->zone()->suppressAllocationMetadataBuilder &&
+      !cx->isThrowingOverRecursed()) {
     
     
     AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
