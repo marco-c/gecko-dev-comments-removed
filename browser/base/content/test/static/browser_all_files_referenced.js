@@ -81,6 +81,9 @@ var gExceptionPaths = [
 
   
   "chrome://browser/content/aboutlogins/components/",
+
+  
+  "chrome://global/content/antitracking/",
 ];
 
 
