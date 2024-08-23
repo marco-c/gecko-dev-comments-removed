@@ -651,9 +651,11 @@ already_AddRefed<IDXGIAdapter1> DeviceManagerDx::GetDXGIAdapter() {
 }
 
 IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
-  if (mAdapter) {
+  if (mAdapter && mFactory && mFactory->IsCurrent()) {
     return mAdapter;
   }
+  mAdapter = nullptr;
+  mFactory = nullptr;
 
   nsModuleHandle dxgiModule(LoadLibrarySystem32(L"dxgi.dll"));
   decltype(CreateDXGIFactory1)* createDXGIFactory1 =
@@ -668,50 +670,32 @@ IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
 
   
   
-  RefPtr<IDXGIFactory1> factory1;
   if (StaticPrefs::gfx_direct3d11_enable_debug_layer_AtStartup()) {
-    RefPtr<IDXGIFactory2> factory2;
     if (fCreateDXGIFactory2) {
       auto hr = fCreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG,
                                     __uuidof(IDXGIFactory2),
-                                    getter_AddRefs(factory2));
+                                    getter_AddRefs(mFactory));
       MOZ_ALWAYS_TRUE(!FAILED(hr));
     } else {
       NS_WARNING(
           "fCreateDXGIFactory2 not loaded, cannot create debug IDXGIFactory2.");
     }
-    factory1 = factory2;
   }
-  if (!factory1) {
+  if (!mFactory) {
     HRESULT hr =
-        createDXGIFactory1(__uuidof(IDXGIFactory1), getter_AddRefs(factory1));
-    if (FAILED(hr) || !factory1) {
+        createDXGIFactory1(__uuidof(IDXGIFactory1), getter_AddRefs(mFactory));
+    if (FAILED(hr) || !mFactory) {
       
       
       return nullptr;
     }
   }
 
-  if (!mDeviceStatus) {
-    
-    
-    if (FAILED(factory1->EnumAdapters1(0, getter_AddRefs(mAdapter)))) {
-      return nullptr;
-    }
-  } else {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(XRE_IsContentProcess() || XRE_IsRDDProcess());
-
-    
+  if (mDeviceStatus) {
     
     for (UINT index = 0;; index++) {
       RefPtr<IDXGIAdapter1> adapter;
-      if (FAILED(factory1->EnumAdapters1(index, getter_AddRefs(adapter)))) {
+      if (FAILED(mFactory->EnumAdapters1(index, getter_AddRefs(adapter)))) {
         break;
       }
 
@@ -730,7 +714,9 @@ IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
   }
 
   if (!mAdapter) {
-    return nullptr;
+    mDeviceStatus.reset();
+    
+    mFactory->EnumAdapters1(0, getter_AddRefs(mAdapter));
   }
 
   
