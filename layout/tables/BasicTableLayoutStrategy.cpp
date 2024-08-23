@@ -97,15 +97,7 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
 
     
     nsIFrame::IntrinsicSizeOffsetData offsets = aFrame->IntrinsicISizeOffsets();
-
-    
-    
-    
-    
-    
-    
-    
-    if (isQuirks || stylePos->mBoxSizing == StyleBoxSizing::Content) {
+    if (stylePos->mBoxSizing == StyleBoxSizing::Content) {
       boxSizingToBorderEdge = offsets.padding + offsets.border;
     } else {
       

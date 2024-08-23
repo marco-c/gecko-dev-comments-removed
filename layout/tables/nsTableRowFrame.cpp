@@ -583,9 +583,6 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
   if (bsizeStyleCoord.ConvertsToLength()) {
     
     
-    
-    
-    
     specifiedBSize = bsizeStyleCoord.ToLength();
     if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
         position->mBoxSizing == StyleBoxSizing::Content) {
