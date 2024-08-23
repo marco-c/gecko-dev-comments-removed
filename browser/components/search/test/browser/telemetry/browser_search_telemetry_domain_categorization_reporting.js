@@ -69,10 +69,6 @@ add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
 
-  
-  let oldCanRecord = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
-
   let { record, attachment } = await insertRecordIntoCollection();
   categorizationRecord = record;
   categorizationAttachment = attachment;
@@ -87,7 +83,6 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
-    Services.telemetry.canRecordExtended = oldCanRecord;
     resetTelemetry();
     await db.clear();
   });
@@ -152,7 +147,6 @@ add_task(async function test_no_reporting_if_download_failure() {
   await promise;
 
   await BrowserTestUtils.removeTab(tab);
-  
   assertCategorizationValues([]);
 
   
@@ -183,7 +177,6 @@ add_task(async function test_no_reporting_if_no_records() {
   await promise;
 
   await BrowserTestUtils.removeTab(tab);
-  
   assertCategorizationValues([]);
 });
 
