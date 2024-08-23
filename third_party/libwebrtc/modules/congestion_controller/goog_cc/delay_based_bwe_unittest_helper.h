@@ -15,12 +15,11 @@
 #include <stdint.h>
 
 #include <memory>
-#include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_types.h"
+#include "api/units/timestamp.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "system_wrappers/include/clock.h"
@@ -61,6 +60,7 @@ class RtpStream {
   
   
   int64_t GenerateFrame(int64_t time_now_us,
+                        int64_t* next_sequence_number,
                         std::vector<PacketResult>* packets);
 
   
@@ -102,8 +102,9 @@ class StreamGenerator {
 
   
   
-  int64_t GenerateFrame(std::vector<PacketResult>* packets,
-                        int64_t time_now_us);
+  int64_t GenerateFrame(int64_t time_now_us,
+                        int64_t* next_sequence_number,
+                        std::vector<PacketResult>* packets);
 
  private:
   
