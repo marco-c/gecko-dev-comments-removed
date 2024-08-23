@@ -98,7 +98,7 @@ var SidebarUI = {
     return this._inited;
   },
 
-  init() {
+  async init() {
     this._box = document.getElementById("sidebar-box");
     this._splitter = document.getElementById("sidebar-splitter");
     this._reversePositionButton = document.getElementById(
@@ -108,12 +108,18 @@ var SidebarUI = {
     this._switcherTarget = document.getElementById("sidebar-switcher-target");
     this._switcherArrow = document.getElementById("sidebar-switcher-arrow");
 
-    this._switcherTarget.addEventListener("command", () => {
-      this.toggleSwitcherPanel();
-    });
-    this._switcherTarget.addEventListener("keydown", event => {
-      this.handleKeydown(event);
-    });
+    if (this.sidebarRevampEnabled) {
+      await import("chrome://browser/content/sidebar/sidebar-launcher.mjs");
+      document.getElementById("sidebar-launcher").hidden = false;
+      document.getElementById("sidebar-header").hidden = true;
+    } else {
+      this._switcherTarget.addEventListener("command", () => {
+        this.toggleSwitcherPanel();
+      });
+      this._switcherTarget.addEventListener("keydown", event => {
+        this.handleKeydown(event);
+      });
+    }
 
     this._inited = true;
 
@@ -292,6 +298,7 @@ var SidebarUI = {
     [...browser.children].forEach((node, i) => {
       node.style.order = i + 1;
     });
+    let sidebarLauncher = document.querySelector("sidebar-launcher");
 
     if (!this._positionStart) {
       
@@ -300,11 +307,16 @@ var SidebarUI = {
       let appcontent = document.getElementById("appcontent");
       let boxOrdinal = this._box.style.order;
       this._box.style.order = appcontent.style.order;
+
       appcontent.style.order = boxOrdinal;
       
+      sidebarLauncher.style.order = parseInt(this._box.style.order) + 1;
+      
       this._box.setAttribute("positionend", true);
+      sidebarLauncher.setAttribute("positionend", true);
     } else {
       this._box.removeAttribute("positionend");
+      sidebarLauncher.removeAttribute("positionend");
     }
 
     this.hideSwitcherPanel();
@@ -563,21 +575,30 @@ var SidebarUI = {
 
   _show(commandID) {
     return new Promise(resolve => {
+      if (this.sidebarRevampEnabled) {
+        this._box.dispatchEvent(
+          new CustomEvent("sidebar-show", { detail: { viewId: commandID } })
+        );
+      } else {
+        this.hideSwitcherPanel();
+      }
+
       this.selectMenuItem(commandID);
-
       this._box.hidden = this._splitter.hidden = false;
+      
       this.setPosition();
-
-      this.hideSwitcherPanel();
 
       this._box.setAttribute("checked", "true");
       this._box.setAttribute("sidebarcommand", commandID);
-      this.lastOpenedId = commandID;
 
       let { url, title, sourceL10nEl } = this.sidebars.get(commandID);
+
+      
+      this.lastOpenedId = commandID;
       this.title = title;
       
       this.observeTitleChanges(sourceL10nEl);
+
       this.browser.setAttribute("src", url); 
 
       if (this.browser.contentDocument.location.href != url) {
@@ -616,7 +637,9 @@ var SidebarUI = {
     }
 
     this.hideSwitcherPanel();
-
+    if (this.sidebarRevampEnabled) {
+      this._box.dispatchEvent(new CustomEvent("sidebar-hide"));
+    }
     this.selectMenuItem("");
 
     
@@ -671,4 +694,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
   SidebarUI.POSITION_START_PREF,
   true,
   SidebarUI.setPosition.bind(SidebarUI)
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarUI,
+  "sidebarRevampEnabled",
+  "sidebar.revamp",
+  false
 );
