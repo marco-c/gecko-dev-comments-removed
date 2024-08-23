@@ -121,7 +121,13 @@ class ConnectionEntry {
   
   
   
+
   nsTArray<nsCString> mCoalescingKeys;
+
+  
+  
+  
+  nsTArray<NetAddr> mAddresses;
 
   
   
