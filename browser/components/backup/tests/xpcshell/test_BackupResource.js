@@ -3,15 +3,11 @@
 
 "use strict";
 
-const { BackupResource, bytesToFuzzyKilobytes } = ChromeUtils.importESModule(
+const { bytesToFuzzyKilobytes } = ChromeUtils.importESModule(
   "resource:///modules/backup/BackupResource.sys.mjs"
 );
 
 const EXPECTED_KILOBYTES_FOR_XULSTORE = 1;
-
-add_setup(() => {
-  do_get_profile();
-});
 
 
 
