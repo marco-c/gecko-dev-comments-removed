@@ -178,6 +178,9 @@ class ByteBufferReader {
   
   
   bool ReadString(std::string* val, size_t len);
+  
+  
+  bool ReadStringView(absl::string_view* val, size_t len);
 
   
   
