@@ -12,12 +12,14 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/Utf8.h"  
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIMemoryReporter.h"
 
 #include "jsapi.h"
 #include "ScriptKind.h"
@@ -39,7 +41,17 @@ class ModuleScript;
 class EventScript;
 class LoadContextBase;
 
-class LoadedScript : public nsISupports {
+
+
+
+
+
+
+
+
+
+
+class LoadedScript : public nsIMemoryReporter {
   ScriptKind mKind;
   const mozilla::dom::ReferrerPolicy mReferrerPolicy;
   RefPtr<ScriptFetchOptions> mFetchOptions;
@@ -53,7 +65,17 @@ class LoadedScript : public nsISupports {
   virtual ~LoadedScript();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  
+  
+  
+  
+  
+  void RegisterMemoryReport();
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS;
+  NS_DECL_NSIMEMORYREPORTER;
   NS_DECL_CYCLE_COLLECTION_CLASS(LoadedScript)
 
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
