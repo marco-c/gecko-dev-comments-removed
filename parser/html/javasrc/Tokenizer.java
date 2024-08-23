@@ -511,8 +511,6 @@ public class Tokenizer implements Locator, Locator2 {
 
     private boolean shouldSuspend;
 
-    private boolean keepBuffer;
-
     protected boolean confident;
 
     private int line;
@@ -572,7 +570,6 @@ public class Tokenizer implements Locator, Locator2 {
         this.systemIdentifier = null;
         this.attributes = null;
         this.shouldSuspend = false;
-        this.keepBuffer = false;
         this.confident = false;
         this.line = 0;
         
@@ -635,7 +632,6 @@ public class Tokenizer implements Locator, Locator2 {
         
         
         this.shouldSuspend = false;
-        this.keepBuffer = false;
         this.confident = false;
         this.line = 0;
         
@@ -656,18 +652,6 @@ public class Tokenizer implements Locator, Locator2 {
     
     
     
-
-    public void setKeepBuffer(boolean keepBuffer) {
-        this.keepBuffer = keepBuffer;
-    }
-
-    public boolean dropBufferIfLongerThan(int length) {
-        if (strBuf.length > length) {
-            strBuf = null;
-            return true;
-        }
-        return false;
-    }
 
     
 
@@ -7241,9 +7225,7 @@ public class Tokenizer implements Locator, Locator2 {
     }
 
     public void end() throws SAXException {
-        if (!keepBuffer) {
-            strBuf = null;
-        }
+        strBuf = null;
         doctypeName = null;
         if (systemIdentifier != null) {
             Portability.releaseString(systemIdentifier);
@@ -7433,9 +7415,7 @@ public class Tokenizer implements Locator, Locator2 {
 
     public void initializeWithoutStarting() throws SAXException {
         confident = false;
-        if (!keepBuffer) {
-            strBuf = null;
-        }
+        strBuf = null;
         line = 1;
         
         
