@@ -137,10 +137,6 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
       
       
       mDocument->ResetDocumentDirection();
-    } else if (aName == nsGkAtoms::lwtheme) {
-      
-      
-      mDocument->ResetDocumentLWTheme();
     }
   } else {
     if (aName == nsGkAtoms::hidechrome) {
@@ -151,9 +147,6 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
       
       
       mDocument->ResetDocumentDirection();
-    } else if (aName == nsGkAtoms::lwtheme) {
-      
-      mDocument->ResetDocumentLWTheme();
     } else if (aName == nsGkAtoms::drawtitle) {
       SetDrawsTitle(false);
     }

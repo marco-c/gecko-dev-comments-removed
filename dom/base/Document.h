@@ -2993,15 +2993,6 @@ class Document : public nsINode,
   }
 
   
-
-
-
-  bool ComputeDocumentLWTheme() const;
-  void ResetDocumentLWTheme() {
-    UpdateDocumentStates(DocumentState::LWTHEME, true);
-  }
-
-  
   enum class MediaDocumentKind {
     NotMedia,
     Video,
