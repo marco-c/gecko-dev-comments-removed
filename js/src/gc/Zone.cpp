@@ -622,7 +622,7 @@ void Zone::fixupAfterMovingGC() {
 }
 
 void Zone::purgeAtomCache() {
-  atomCache().clearAndCompact();
+  atomCache_.ref().reset();
 
   
   
