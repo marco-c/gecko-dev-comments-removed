@@ -140,7 +140,6 @@ class GlobalSimulatedTimeController : public TimeController {
 
   
   
-  
   void SkipForwardBy(TimeDelta duration);
 
   

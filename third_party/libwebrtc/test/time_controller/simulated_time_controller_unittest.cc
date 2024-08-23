@@ -159,6 +159,8 @@ TEST(SimulatedTimeControllerTest, SkipsDelayedTaskForward) {
   }));
   main_thread->PostDelayedTask(fun.AsStdFunction(), shorter_duration);
   sim.SkipForwardBy(duration_during_which_nothing_runs);
+  
+  sim.AdvanceTime(TimeDelta::Zero());
 }
 
 }  
