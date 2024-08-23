@@ -39,11 +39,26 @@ class CustomDistributionMetric {
 
 
 
+  void AccumulateSingleSample(uint64_t aSample) const;
+
+  
+
+
+
+
 
 
 
 
   void AccumulateSamplesSigned(const nsTArray<int64_t>& aSamples) const;
+
+  
+
+
+
+
+
+  void AccumulateSingleSampleSigned(int64_t aSample) const;
 
   
 
