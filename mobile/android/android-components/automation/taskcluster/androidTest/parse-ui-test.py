@@ -62,6 +62,12 @@ def main():
                 **matrix_result
             )
         )
+        if matrix_result["outcome"] != "success":
+            
+            sys.stdout.write(
+                f"TEST-UNEXPECTED-FAIL | {matrix_result['outcome']} | {matrix_result['webLink']} | {matrix_result['axes'][0]['details']}\n"
+            )
+
     print("---\n")
     print("# References & Documentation\n")
     print(
