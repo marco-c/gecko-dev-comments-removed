@@ -1,0 +1,8 @@
+
+
+oomTest(function () {
+  new WebAssembly.Instance(
+    new WebAssembly.Module(wasmTextToBinary('(import "m" "f" (func $f))')),
+    {}
+  );
+});
