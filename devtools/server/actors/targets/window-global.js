@@ -381,15 +381,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     
     this._docShellsObserved = false;
     DevToolsUtils.executeSoon(() => this._watchDocshells());
-
-    
-    
-    
-    
-    
-    if (!this.browsingContext.parent) {
-      this.browsingContext.watchedByDevTools = true;
-    }
   }
 
   get docShell() {
@@ -487,10 +478,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
   get browsingContextID() {
     return this.browsingContext?.id;
-  }
-
-  get innerWindowId() {
-    return this.window?.windowGlobalChild.innerWindowId;
   }
 
   get browserId() {
@@ -742,17 +729,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     if (this._touchSimulator) {
       this._touchSimulator.stop();
       this._touchSimulator = null;
-    }
-
-    
-    
-    
-    
-    if (
-      this.browsingContext?.watchedByDevTools &&
-      !this.browsingContext.parent
-    ) {
-      this.browsingContext.watchedByDevTools = false;
     }
 
     
@@ -1408,14 +1384,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
   _restoreTargetConfiguration() {
     if (this._restoreFocus && this.browsingContext?.isActive) {
-      try {
-        this.window.focus();
-      } catch (e) {
-        
-        if (e.result != Cr.NS_ERROR_XPC_SECURITY_MANAGER_VETO) {
-          throw e;
-        }
-      }
+      this.window.focus();
     }
   }
 
@@ -1721,6 +1690,17 @@ class DebuggerProgressListener {
 
     
     
+    
+    
+    
+    
+    
+    
+    if (this._targetActor.typeName === "parentProcessTarget") {
+      docShell.browsingContext.watchedByDevTools = true;
+    }
+    
+    
     if (
       this._targetActor.isRootActor &&
       this._targetActor.docShell.cssErrorReportingEnabled
@@ -1760,6 +1740,12 @@ class DebuggerProgressListener {
       : this._getWindowsInDocShell(docShell);
     for (const win of windows) {
       this._knownWindowIDs.delete(getWindowID(win));
+    }
+
+    
+    
+    if (this._targetActor.typeName === "parentProcessTarget") {
+      docShell.browsingContext.watchedByDevTools = false;
     }
   }
 

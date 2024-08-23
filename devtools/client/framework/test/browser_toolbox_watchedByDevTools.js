@@ -64,11 +64,6 @@ add_task(async function () {
 
   info("Check that the flag is reset when the toolbox is closed");
   await gDevTools.closeToolboxForTab(tab);
-
-  
-  
-  await waitFor(() => !tab.linkedBrowser.browsingContext.watchedByDevTools);
-
   is(
     tab.linkedBrowser.browsingContext.watchedByDevTools,
     false,

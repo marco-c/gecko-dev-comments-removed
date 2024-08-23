@@ -4,13 +4,7 @@
 
 
 
-DIRS += [
-    "target-watchers",
-]
-
 DevToolsModules(
-    "content-process-jsprocessactor-startup.js",
-    "ContentProcessWatcherRegistry.sys.mjs",
     "DevToolsProcessChild.sys.mjs",
     "DevToolsProcessParent.sys.mjs",
 )

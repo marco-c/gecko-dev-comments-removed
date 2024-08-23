@@ -1,0 +1,13 @@
+
+
+
+
+
+
+DevToolsModules(
+    "DevToolsFrameChild.sys.mjs",
+    "DevToolsFrameParent.sys.mjs",
+    "DevToolsWorkerChild.sys.mjs",
+    "DevToolsWorkerParent.sys.mjs",
+    "WindowGlobalLogger.sys.mjs",
+)

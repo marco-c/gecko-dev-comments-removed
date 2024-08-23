@@ -390,14 +390,6 @@ exports.hasResourceTypesForTargets = hasResourceTypesForTargets;
 
 
 function unwatchResources(rootOrWatcherOrTargetActor, resourceTypes) {
-  
-  
-  const { targetType } = rootOrWatcherOrTargetActor;
-  
-  
-  if (targetType) {
-    resourceTypes = getResourceTypesForTargetType(resourceTypes, targetType);
-  }
   for (const resourceType of resourceTypes) {
     
     const { watchers } = getResourceTypeEntry(
@@ -423,14 +415,6 @@ exports.unwatchResources = unwatchResources;
 
 
 function clearResources(rootOrWatcherOrTargetActor, resourceTypes) {
-  
-  
-  const { targetType } = rootOrWatcherOrTargetActor;
-  
-  
-  if (targetType) {
-    resourceTypes = getResourceTypesForTargetType(resourceTypes, targetType);
-  }
   for (const resourceType of resourceTypes) {
     const { watchers } = getResourceTypeEntry(
       rootOrWatcherOrTargetActor,
