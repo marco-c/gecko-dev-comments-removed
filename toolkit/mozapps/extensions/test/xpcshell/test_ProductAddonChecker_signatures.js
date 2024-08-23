@@ -98,7 +98,8 @@ add_task(async function test_valid_content_signature() {
       signedBaseUri + goodXmlPath + "?" + validSignatureQuery,
        false,
        false,
-       true
+       true,
+       Ci.nsIX509CertDB.AppXPCShellRoot
     );
     Assert.ok(true, "Should successfully get addon list");
 
@@ -122,7 +123,8 @@ add_task(async function test_invalid_content_signature() {
       signedBaseUri + goodXmlPath + "?" + invalidSignatureQuery,
        false,
        false,
-       true
+       true,
+       Ci.nsIX509CertDB.AppXPCShellRoot
     );
     Assert.ok(false, "Should fail to get addon list");
   } catch (e) {
@@ -143,7 +145,8 @@ add_task(async function test_missing_content_signature_header() {
       signedBaseUri + goodXmlPath + "?" + missingSignatureQuery,
        false,
        false,
-       true
+       true,
+       Ci.nsIX509CertDB.AppXPCShellRoot
     );
     Assert.ok(false, "Should fail to get addon list");
   } catch (e) {
@@ -165,7 +168,8 @@ add_task(async function test_incomplete_content_signature_header() {
       signedBaseUri + goodXmlPath + "?" + incompleteSignatureQuery,
        false,
        false,
-       true
+       true,
+       Ci.nsIX509CertDB.AppXPCShellRoot
     );
     Assert.ok(false, "Should fail to get addon list");
   } catch (e) {
@@ -187,7 +191,8 @@ add_task(async function test_bad_x5u_content_signature_header() {
       signedBaseUri + goodXmlPath + "?" + badX5uSignatureQuery,
        false,
        false,
-       true
+       true,
+       Ci.nsIX509CertDB.AppXPCShellRoot
     );
     Assert.ok(false, "Should fail to get addon list");
   } catch (e) {
