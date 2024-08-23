@@ -305,7 +305,7 @@ static nscoord GetBSizeOfRowsSpannedBelowFirst(
 
 
 
-void nsTableRowFrame::DidResize() {
+void nsTableRowFrame::DidResize(ForceAlignTopForTableCell aForceAlignTop) {
   
   nsTableFrame* tableFrame = GetTableFrame();
 
@@ -369,7 +369,7 @@ void nsTableRowFrame::DidResize() {
 
     
     
-    cellFrame->BlockDirAlignChild(wm, mMaxCellAscent);
+    cellFrame->BlockDirAlignChild(wm, mMaxCellAscent, aForceAlignTop);
 
     
     
@@ -996,17 +996,14 @@ void nsTableRowFrame::Reflow(nsPresContext* aPresContext,
   PushDirtyBitToAbsoluteFrames();
 }
 
-
-
-
-
-
 nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
                                          const ReflowInput& aReflowInput,
                                          bool aIsTopOfPage,
                                          nsTableCellFrame* aCellFrame,
                                          nscoord aAvailableBSize,
                                          nsReflowStatus& aStatus) {
+  MOZ_ASSERT(aPresContext->IsPaginated(),
+             "ReflowCellFrame currently supports only paged media!");
   MOZ_ASSERT(aAvailableBSize != NS_UNCONSTRAINEDSIZE,
              "Why split cell frame if available bsize is unconstrained?");
   WritingMode wm = aReflowInput.GetWritingMode();
@@ -1046,7 +1043,8 @@ nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
   
   
   if (isCompleteAndNotTruncated) {
-    aCellFrame->BlockDirAlignChild(wm, mMaxCellAscent);
+    aCellFrame->BlockDirAlignChild(wm, mMaxCellAscent,
+                                   ForceAlignTopForTableCell::Yes);
   }
 
   nsTableFrame::InvalidateTableFrame(

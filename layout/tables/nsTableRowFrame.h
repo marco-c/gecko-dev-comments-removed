@@ -15,6 +15,11 @@ class nsTableCellFrame;
 namespace mozilla {
 class PresShell;
 struct TableCellReflowInput;
+
+
+
+
+enum class ForceAlignTopForTableCell : uint8_t { No, Yes };
 }  
 
 
@@ -104,7 +109,8 @@ class nsTableRowFrame : public nsContainerFrame {
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
-  void DidResize();
+  void DidResize(mozilla::ForceAlignTopForTableCell aForceAlignTop =
+                     mozilla::ForceAlignTopForTableCell::No);
 
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
@@ -146,6 +152,10 @@ class nsTableRowFrame : public nsContainerFrame {
   void AddDeletedRowIndex();
 
   
+
+
+
+
   nscoord ReflowCellFrame(nsPresContext* aPresContext,
                           const ReflowInput& aReflowInput, bool aIsTopOfPage,
                           nsTableCellFrame* aCellFrame, nscoord aAvailableBSize,

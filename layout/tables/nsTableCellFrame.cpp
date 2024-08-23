@@ -389,9 +389,14 @@ LogicalSides nsTableCellFrame::GetLogicalSkipSides() const {
 
 nsMargin nsTableCellFrame::GetBorderOverflow() { return nsMargin(0, 0, 0, 0); }
 
+void nsTableCellFrame::BlockDirAlignChild(
+    WritingMode aWM, nscoord aMaxAscent,
+    ForceAlignTopForTableCell aForceAlignTop) {
+  MOZ_ASSERT(aForceAlignTop != ForceAlignTopForTableCell::Yes ||
+                 PresContext()->IsPaginated(),
+             "We shouldn't force table-cells to do 'vertical-align:top' if "
+             "we're not in printing!");
 
-
-void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
   
   const LogicalMargin border = GetLogicalUsedBorder(GetWritingMode())
                                    .ApplySkipSides(GetLogicalSkipSides())
@@ -410,8 +415,11 @@ void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
   nscoord childBSize = kidRect.BSize(aWM);
 
   
+  const auto verticalAlign = aForceAlignTop == ForceAlignTopForTableCell::Yes
+                                 ? StyleVerticalAlignKeyword::Top
+                                 : GetVerticalAlign();
   nscoord kidBStart = 0;
-  switch (GetVerticalAlign()) {
+  switch (verticalAlign) {
     case StyleVerticalAlignKeyword::Baseline:
       if (!GetContentEmpty()) {
         

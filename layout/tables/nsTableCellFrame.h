@@ -114,7 +114,9 @@ class nsTableCellFrame : public nsContainerFrame,
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  void BlockDirAlignChild(mozilla::WritingMode aWM, nscoord aMaxAscent);
+  
+  void BlockDirAlignChild(mozilla::WritingMode aWM, nscoord aMaxAscent,
+                          mozilla::ForceAlignTopForTableCell aForceAlignTop);
 
   
 
