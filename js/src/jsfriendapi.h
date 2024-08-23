@@ -246,6 +246,12 @@ extern JS_PUBLIC_API bool EnqueueJob(JSContext* cx, JS::HandleObject job);
 
 extern JS_PUBLIC_API void StopDrainingJobQueue(JSContext* cx);
 
+
+
+
+
+extern JS_PUBLIC_API void RestartDrainingJobQueue(JSContext* cx);
+
 extern JS_PUBLIC_API void RunJobs(JSContext* cx);
 
 extern JS_PUBLIC_API JS::Zone* GetRealmZone(JS::Realm* realm);

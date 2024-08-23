@@ -95,6 +95,8 @@ class InternalJobQueue : public JS::JobQueue {
   
   void interrupt() { interrupted_ = true; }
 
+  void uninterrupt() { interrupted_ = false; }
+
   
   
   JSObject* maybeFront() const;
