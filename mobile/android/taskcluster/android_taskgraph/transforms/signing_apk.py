@@ -2,8 +2,8 @@
 
 
 """
-Apply some defaults and minor modifications to the jobs defined in the
-APK and AAB signing kinds.
+Apply some defaults and minor modifications to the jobs defined in the build
+kind.
 """
 
 from taskgraph.transforms.base import TransformSequence
