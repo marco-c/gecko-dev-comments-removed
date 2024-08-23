@@ -66,13 +66,11 @@ class ServoRestyleState {
   
   
   
-  enum class Type {
-    InFlow,
-    OutOfFlow,
-  };
+  enum class CanUseHandledHints : bool { No = false, Yes };
 
   ServoRestyleState(const nsIFrame& aOwner, ServoRestyleState& aParentState,
-                    nsChangeHint aHintForThisFrame, Type aType,
+                    nsChangeHint aHintForThisFrame,
+                    CanUseHandledHints aCanUseHandledHints,
                     bool aAssertWrapperRestyleLength = true)
       : mStyleSet(aParentState.mStyleSet),
         mChangeList(aParentState.mChangeList),
@@ -81,7 +79,7 @@ class ServoRestyleState {
             aParentState.mPendingScrollAnchorSuppressions),
         mPendingWrapperRestyleOffset(
             aParentState.mPendingWrapperRestyles.Length()),
-        mChangesHandled(aType == Type::InFlow
+        mChangesHandled(bool(aCanUseHandledHints)
                             ? aParentState.mChangesHandled | aHintForThisFrame
                             : aHintForThisFrame)
 #ifdef DEBUG
@@ -90,7 +88,7 @@ class ServoRestyleState {
         mAssertWrapperRestyleLength(aAssertWrapperRestyleLength)
 #endif
   {
-    if (aType == Type::InFlow) {
+    if (bool(aCanUseHandledHints)) {
       AssertOwner(aParentState);
     }
   }

@@ -10928,7 +10928,7 @@ void nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   
   
   ServoRestyleState childrenState(*aChildFrame, aRestyleState, childHint,
-                                  ServoRestyleState::Type::InFlow);
+                                  ServoRestyleState::CanUseHandledHints::Yes);
   aChildFrame->UpdateStyleOfOwnedAnonBoxes(childrenState);
 
   

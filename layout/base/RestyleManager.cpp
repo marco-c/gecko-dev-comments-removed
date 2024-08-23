@@ -2087,6 +2087,28 @@ void RestyleManager::AnimationsWithDestroyedFrame ::StopAnimationsWithoutFrame(
   }
 }
 
+
+
+
+
+static bool CanUseHandledHintsFromAncestors(const nsIFrame* aFrame) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    
+    return false;
+  }
+  if (aFrame->IsColumnSpanInMulticolSubtree()) {
+    
+    return false;
+  }
+  if (aFrame->IsTableCaption()) {
+    
+    
+    
+    return false;
+  }
+  return true;
+}
+
 #ifdef DEBUG
 static bool IsAnonBox(const nsIFrame* aFrame) {
   return aFrame->Style()->IsAnonBox();
@@ -2185,8 +2207,7 @@ static bool IsInReplicatedFixedPosTree(const nsIFrame* aFrame) {
 
 void ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const {
   MOZ_ASSERT(mOwner);
-  MOZ_ASSERT(!mOwner->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
-  MOZ_ASSERT(!mOwner->IsColumnSpanInMulticolSubtree());
+  MOZ_ASSERT(CanUseHandledHintsFromAncestors(mOwner));
   
   
   
@@ -2309,7 +2330,7 @@ size_t ServoRestyleState::ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent,
       nsLayoutUtils::FirstContinuationOrIBSplitSibling(parent);
   if (parentForRestyle != aParent) {
     parentRestyleState.emplace(*parentForRestyle, *this, nsChangeHint_Empty,
-                               Type::InFlow);
+                               CanUseHandledHints::Yes);
   }
   ServoRestyleState& curRestyleState =
       parentRestyleState ? *parentRestyleState : *this;
@@ -2332,7 +2353,7 @@ size_t ServoRestyleState::ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent,
       
       
       ServoRestyleState childState(*cur, curRestyleState, nsChangeHint_Empty,
-                                   Type::InFlow,
+                                   CanUseHandledHints::Yes,
                                     false);
       numProcessed +=
           childState.ProcessMaybeNestedWrapperRestyle(cur, aIndex + 1);
@@ -2652,8 +2673,7 @@ static void UpdateOneAdditionalComputedStyle(nsIFrame* aFrame, uint32_t aIndex,
   uint32_t equalStructs;  
   nsChangeHint childHint =
       aOldContext.CalcStyleDifference(*newStyle, &equalStructs);
-  if (!aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
-      !aFrame->IsColumnSpanInMulticolSubtree()) {
+  if (CanUseHandledHintsFromAncestors(aFrame)) {
     childHint = NS_RemoveSubsumedHints(childHint,
                                        aRestyleState.ChangesHandledFor(aFrame));
   }
@@ -2812,11 +2832,8 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   const bool isOutOfFlow =
       primaryFrame && primaryFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
 
-  
-  
-  
-  const bool isColumnSpan =
-      primaryFrame && primaryFrame->IsColumnSpanInMulticolSubtree();
+  const bool canUseHandledHints =
+      primaryFrame && CanUseHandledHintsFromAncestors(primaryFrame);
 
   
   bool wasRestyled = false;
@@ -2848,11 +2865,12 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
       maybeAnonBoxChild = primaryFrame->GetPlaceholderFrame();
     } else {
       maybeAnonBoxChild = primaryFrame;
-      
-      if (!isColumnSpan) {
-        changeHint = NS_RemoveSubsumedHints(
-            changeHint, aRestyleState.ChangesHandledFor(styleFrame));
-      }
+    }
+
+    
+    if (canUseHandledHints) {
+      changeHint = NS_RemoveSubsumedHints(
+          changeHint, aRestyleState.ChangesHandledFor(styleFrame));
     }
 
     
@@ -2944,10 +2962,9 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
 
   Maybe<ServoRestyleState> thisFrameRestyleState;
   if (styleFrame) {
-    auto type = isOutOfFlow || isColumnSpan ? ServoRestyleState::Type::OutOfFlow
-                                            : ServoRestyleState::Type::InFlow;
-
-    thisFrameRestyleState.emplace(*styleFrame, aRestyleState, changeHint, type);
+    thisFrameRestyleState.emplace(
+        *styleFrame, aRestyleState, changeHint,
+        ServoRestyleState::CanUseHandledHints(canUseHandledHints));
   }
 
   
