@@ -8,7 +8,9 @@ export function open_and_wait_for_popup(origin, path) {
 
     
     const popup_message_handler = (event) => {
-      if (event.origin == origin) {
+      
+      
+      if (new URL(event.origin).toString() == new URL(origin).toString()) {
         popup_window.close();
         window.removeEventListener('message', popup_message_handler);
         resolve();
