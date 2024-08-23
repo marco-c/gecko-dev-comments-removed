@@ -407,17 +407,29 @@ add_task(async function background_click_should_close_dialog() {
   
   
   info("clicking the dialog title bar");
+  
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   BrowserTestUtils.synthesizeMouseAtCenter(
     ".dialogTitle",
     {},
     tab.linkedBrowser
   );
+  AccessibilityUtils.resetEnv();
 
   
   
   
   
   info("clicking the overlay background");
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   await close_subdialog_and_test_generic_end_state(
     tab.linkedBrowser,
     function () {
@@ -432,6 +444,7 @@ add_task(async function background_click_should_close_dialog() {
     0,
     { runClosingFnOutsideOfContentTask: true }
   );
+  AccessibilityUtils.resetEnv();
 });
 
 add_task(async function escape_should_close_dialog() {
