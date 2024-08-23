@@ -48,17 +48,17 @@ class TrustedTypePolicy : public nsWrapperCache {
   
   UniquePtr<TrustedHTML> CreateHTML(
       JSContext* aJSContext, const nsAString& aInput,
-      const Sequence<JS::Value>& aArguments) const;
+      const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
 
   
   UniquePtr<TrustedScript> CreateScript(
       JSContext* aJSContext, const nsAString& aInput,
-      const Sequence<JS::Value>& aArguments) const;
+      const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
 
   
   UniquePtr<TrustedScriptURL> CreateScriptURL(
       JSContext* aJSContext, const nsAString& aInput,
-      const Sequence<JS::Value>& aArguments) const;
+      const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
 
  private:
   
