@@ -4,7 +4,7 @@
 
 
 """
-This Python script automates creating milestones and test runs in TestRail and updating 
+This Python script automates creating milestones and test runs in TestRail and updating
 test cases based on the results of automated smoke tests for different product releases.
 
 Functionality includes:
