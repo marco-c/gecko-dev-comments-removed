@@ -79,10 +79,6 @@ class RtcEventLog;
 
 namespace cricket {
 
-
-
-enum class IceRestartState { CONNECTING, CONNECTED, DISCONNECTED, MAX_VALUE };
-
 static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
 bool IceCredentialsChanged(absl::string_view old_ufrag,
