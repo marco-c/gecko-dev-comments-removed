@@ -3017,7 +3017,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
     return self.FrameView__closeButtonOrigin;
   }
   auto* win = static_cast<ToolbarWindow*>(self.window);
-  if (win.drawsContentsIntoWindowFrame &&
+  if (win.drawsContentsIntoWindowFrame && !win.wantsTitleDrawn &&
       !(win.styleMask & NSWindowStyleMaskFullScreen) &&
       (win.styleMask & NSWindowStyleMaskTitled)) {
     const NSRect buttonsRect = win.windowButtonsRect;
@@ -3287,7 +3287,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 }
 
 - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState {
-  bool changed = (aState != mDrawsIntoWindowFrame);
+  bool changed = aState != mDrawsIntoWindowFrame;
   mDrawsIntoWindowFrame = aState;
   if (changed) {
     [self reflowTitlebarElements];
@@ -3494,48 +3494,6 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 - (void)_maskCorners:(NSUInteger)aFlags clipRect:(NSRect)aRect;
 @end
 
-@implementation MOZTitlebarView
-
-- (instancetype)initWithFrame:(NSRect)aFrame {
-  self = [super initWithFrame:aFrame];
-
-  self.material = NSVisualEffectMaterialTitlebar;
-  self.blendingMode = NSVisualEffectBlendingModeWithinWindow;
-
-  
-  
-  
-  
-  NSBox* separatorLine =
-      [[NSBox alloc] initWithFrame:NSMakeRect(0, 0, aFrame.size.width, 1)];
-  separatorLine.autoresizingMask = NSViewWidthSizable | NSViewMaxYMargin;
-  separatorLine.boxType = NSBoxSeparator;
-  [self addSubview:separatorLine];
-  [separatorLine release];
-
-  return self;
-}
-
-- (BOOL)mouseDownCanMoveWindow {
-  return YES;
-}
-
-- (void)mouseUp:(NSEvent*)event {
-  if (event.clickCount == 2) {
-    
-    
-    
-    
-    if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
-      [self.window performZoom:nil];
-    } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
-      [self.window performMiniaturize:nil];
-    }
-  }
-}
-
-@end
-
 @interface MOZTitlebarAccessoryView : NSView
 @end
 
@@ -3602,37 +3560,6 @@ static bool MaybeDropEventForModalWindow(NSEvent* aEvent, id aDelegate) {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @implementation ToolbarWindow
 
 - (id)initWithContentRect:(NSRect)aChildViewRect
@@ -3671,16 +3598,12 @@ static bool MaybeDropEventForModalWindow(NSEvent* aEvent, id aDelegate) {
                                styleMask:aStyle
                                  backing:aBufferingType
                                    defer:aFlag])) {
-    mTitlebarView = nil;
-    mUnifiedToolbarHeight = 22.0f;
     mWindowButtonsRect = NSZeroRect;
-    mInitialTitlebarHeight = [self titlebarHeight];
 
-    [self setTitlebarAppearsTransparent:YES];
+    self.titlebarAppearsTransparent = YES;
     if (@available(macOS 11.0, *)) {
       self.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
     }
-    [self updateTitlebarView];
 
     mFullscreenTitlebarTracker = [[FullscreenTitlebarTracker alloc] init];
     
@@ -3746,8 +3669,7 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 }
 
 - (void)updateTitlebarShownAmount:(CGFloat)aShownAmount {
-  NSInteger styleMask = [self styleMask];
-  if (!(styleMask & NSWindowStyleMaskFullScreen)) {
+  if (!(self.styleMask & NSWindowStyleMaskFullScreen)) {
     
     
     return;
@@ -3771,8 +3693,9 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
     if (nsIWidgetListener* listener = geckoWindow->GetWidgetListener()) {
       
       
-      
-      CGFloat shiftByPixels = mInitialTitlebarHeight * aShownAmount;
+      CGFloat shiftByPixels =
+          LookAndFeel::GetInt(LookAndFeel::IntID::MacTitlebarHeight) *
+          aShownAmount;
       if (ShouldShiftByMenubarHeightInFullscreen(geckoWindow)) {
         shiftByPixels += mMenuBarHeight * aShownAmount;
       }
@@ -3789,7 +3712,6 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 }
 
 - (void)dealloc {
-  [mTitlebarView release];
   [mFullscreenTitlebarTracker removeObserver:self forKeyPath:@"revealAmount"];
   [mFullscreenTitlebarTracker removeFromParentViewController];
   [mFullscreenTitlebarTracker release];
@@ -3798,57 +3720,11 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 }
 
 - (NSArray<NSView*>*)contentViewContents {
-  NSMutableArray<NSView*>* contents = [[self.contentView subviews] mutableCopy];
-  if (mTitlebarView) {
-    
-    [contents removeObject:mTitlebarView];
-  }
-  return [contents autorelease];
-}
-
-- (void)updateTitlebarView {
-  BOOL needTitlebarView =
-      !self.drawsContentsIntoWindowFrame || mUnifiedToolbarHeight > 0;
-  if (needTitlebarView && !mTitlebarView) {
-    mTitlebarView =
-        [[MOZTitlebarView alloc] initWithFrame:self.unifiedToolbarRect];
-    mTitlebarView.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
-    [self.contentView addSubview:mTitlebarView
-                      positioned:NSWindowBelow
-                      relativeTo:nil];
-  } else if (needTitlebarView && mTitlebarView) {
-    mTitlebarView.frame = self.unifiedToolbarRect;
-  } else if (!needTitlebarView && mTitlebarView) {
-    [mTitlebarView removeFromSuperview];
-    [mTitlebarView release];
-    mTitlebarView = nil;
-  }
+  return [self.contentView subviews];
 }
 
 - (void)windowMainStateChanged {
-  [self setTitlebarNeedsDisplay];
   [[self mainChildView] ensureNextCompositeIsAtomicWithMainThreadPaint];
-}
-
-- (void)setTitlebarNeedsDisplay {
-  [mTitlebarView setNeedsDisplay:YES];
-}
-
-- (NSRect)titlebarRect {
-  CGFloat titlebarHeight = self.titlebarHeight;
-  return NSMakeRect(0, self.frame.size.height - titlebarHeight,
-                    self.frame.size.width, titlebarHeight);
-}
-
-
-- (NSRect)unifiedToolbarRect {
-  return NSMakeRect(0, self.frame.size.height - mUnifiedToolbarHeight,
-                    self.frame.size.width, mUnifiedToolbarHeight);
-}
-
-
-- (CGFloat)unifiedToolbarHeight {
-  return mUnifiedToolbarHeight;
 }
 
 - (CGFloat)titlebarHeight {
@@ -3861,15 +3737,6 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
   NSRect originalContentRect = [NSWindow contentRectForFrameRect:frameRect
                                                        styleMask:styleMask];
   return NSMaxY(frameRect) - NSMaxY(originalContentRect);
-}
-
-
-- (void)setUnifiedToolbarHeight:(CGFloat)aHeight {
-  if (aHeight == mUnifiedToolbarHeight) return;
-
-  mUnifiedToolbarHeight = aHeight;
-
-  [self updateTitlebarView];
 }
 
 
@@ -3895,13 +3762,6 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
     
     ChildViewMouseTracker::ResendLastMouseMoveEvent();
   }
-
-  [self updateTitlebarView];
-}
-
-- (void)setWantsTitleDrawn:(BOOL)aDrawTitle {
-  [super setWantsTitleDrawn:aDrawTitle];
-  [self setTitlebarNeedsDisplay];
 }
 
 - (void)placeWindowButtons:(NSRect)aRect {
