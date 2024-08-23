@@ -1,5 +1,6 @@
 
 
+
 load(libdir + 'eqArrayHelper.js');
 
 var g = newGlobal({newCompartment: true});
@@ -18,13 +19,22 @@ dbg.onNativeCall = f => {
 
 gdbg.executeInGlobal(`
   var x = [1,3,2];
+  x.forEach((a) => {print(a)});
   x.sort((a, b) => {print(a)});
+  x.sort(print);
 `);
 
 assertEqArray(rv, [
-  "EnterFrame", "sort",
-  "ArraySortCompare/<",
+  "EnterFrame", "forEach",
   "EnterFrame", "print",
-  "ArraySortCompare/<",
   "EnterFrame", "print",
+  "EnterFrame", "print",
+
+  "sort",
+  "EnterFrame","print",
+  "EnterFrame","print",
+
+  "sort",
+  "print",
+  "print"
 ]);
