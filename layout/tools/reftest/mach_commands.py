@@ -162,10 +162,6 @@ class ReftestRunner(MozbuildObject):
 
         
         
-        args.disableFission = True
-
-        
-        
         
         if args.suite == "jstestbrowser":
             staged_js_dir = os.path.join(
