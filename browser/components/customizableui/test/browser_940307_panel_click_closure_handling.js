@@ -124,18 +124,17 @@ add_task(async function disabled_button_in_panel() {
   button.remove();
 });
 
-registerCleanupFunction(function () {
+registerCleanupFunction(async function () {
   if (button && button.parentNode) {
     button.remove();
   }
   if (menuButton && menuButton.parentNode) {
     menuButton.remove();
   }
-  
-  
-  
   if (isOverflowOpen()) {
+    let panelHiddenPromise = promiseOverflowHidden(window);
     PanelUI.overflowPanel.hidePopup();
+    await panelHiddenPromise;
   }
   CustomizableUI.reset();
 });

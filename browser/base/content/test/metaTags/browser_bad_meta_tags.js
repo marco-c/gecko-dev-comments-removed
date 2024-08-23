@@ -15,6 +15,7 @@ const TEST_PATH =
 
 
 
+
 add_task(async function test_bad_meta_tags() {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH);
 

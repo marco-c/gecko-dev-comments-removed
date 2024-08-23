@@ -120,6 +120,7 @@ add_task(async function () {
   let promise = BrowserTestUtils.waitForMessage(mm, "Test:LoadedScripts");
 
   
+  
   mm.loadFrameScript(
     "data:text/javascript,(" +
       function () {

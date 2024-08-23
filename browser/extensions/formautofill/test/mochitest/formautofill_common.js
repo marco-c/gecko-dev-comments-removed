@@ -82,6 +82,7 @@ function clickOnElement(selector) {
 
 
 
+
 function _getAdaptedProfile(profile) {
   const adaptedProfile = Object.assign({}, profile);
 
