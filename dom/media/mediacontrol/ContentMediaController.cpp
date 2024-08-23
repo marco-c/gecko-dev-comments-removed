@@ -325,7 +325,7 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
   if (mReceivers.IsEmpty()) {
     return;
   }
-  LOG("Handle '%s' event, receiver num=%zu", ToMediaControlKeyStr(aKey),
+  LOG("Handle '%s' event, receiver num=%zu", GetEnumString(aKey).get(),
       mReceivers.Length());
   
   
