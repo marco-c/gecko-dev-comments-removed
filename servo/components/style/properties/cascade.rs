@@ -763,6 +763,11 @@ impl<'b> Cascade<'b> {
 
         if apply!(Zoom) {
             self.compute_zoom(context);
+            
+            
+            
+            
+            self.recompute_font_size_for_zoom_change(&mut context.builder);
         }
 
         
@@ -1226,8 +1231,6 @@ impl<'b> Cascade<'b> {
     
     
     
-    
-    
     #[cfg(feature = "gecko")]
     fn unzoom_fonts_if_needed(&self, builder: &mut StyleBuilder) {
         debug_assert!(self.seen.contains(LonghandId::XTextScale));
@@ -1248,6 +1251,19 @@ impl<'b> Cascade<'b> {
         );
         let device = builder.device;
         builder.mutate_font().unzoom_fonts(device);
+    }
+
+    fn recompute_font_size_for_zoom_change(&self, builder: &mut StyleBuilder) {
+        debug_assert!(self.seen.contains(LonghandId::Zoom));
+        
+        
+        let zoom = builder.get_box().clone_zoom();
+        let old_size = builder.get_font().clone_font_size();
+        let new_size = old_size.zoom(zoom);
+        if old_size == new_size {
+            return;
+        }
+        builder.mutate_font().set_font_size(new_size);
     }
 
     
