@@ -356,6 +356,10 @@ pref("browser.overlink-delay", 80);
 
 pref("browser.theme.colorway-closet", true);
 
+#ifdef XP_MACOSX
+pref("browser.theme.macos.native-theme", false);
+#endif
+
 
 
 
