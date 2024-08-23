@@ -390,11 +390,11 @@ static void GtkWindowSetTransientFor(GtkWindow* aWindow, GtkWindow* aParent) {
 
 nsWindow::nsWindow()
     : mTitlebarRectMutex("nsWindow::mTitlebarRectMutex"),
-      mDestroyMutex("nsWindow::mDestroyMutex"),
+      mWindowVisibilityMutex("nsWindow::mWindowVisibilityMutex"),
+      mIsMapped(false),
       mIsDestroyed(false),
       mIsShown(false),
       mNeedsShow(false),
-      mIsMapped(false),
       mEnabled(true),
       mCreated(false),
       mHandleTouchEvent(false),
@@ -579,7 +579,6 @@ void nsWindow::Destroy() {
 
   LOG("nsWindow::Destroy\n");
 
-  MutexAutoLock lock(mDestroyMutex);
   mIsDestroyed = true;
   mCreated = false;
 
@@ -3400,15 +3399,10 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 
       
       
-      
-      
-      
-      
-      
-      
-      
-      if (mDestroyMutex.TryLock()) {
-        if (mGdkWindow && !mIsDestroyed) {
+      if (mWindowVisibilityMutex.TryLock()) {
+        
+        
+        if (mIsMapped) {
 #ifdef MOZ_X11
           if (GdkIsX11Display()) {
             eglWindow = (void*)GDK_WINDOW_XID(mGdkWindow);
@@ -3416,20 +3410,13 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 #endif
 #ifdef MOZ_WAYLAND
           if (GdkIsWaylandDisplay()) {
-            bool hiddenWindow =
-                mCompositorWidgetDelegate &&
-                mCompositorWidgetDelegate->AsGtkCompositorWidget() &&
-                mCompositorWidgetDelegate->AsGtkCompositorWidget()->IsHidden();
-            if (!hiddenWindow) {
-              eglWindow = moz_container_wayland_get_egl_window(
-                  mContainer, FractionalScaleFactor());
-            }
+            eglWindow = moz_container_wayland_get_egl_window(
+                mContainer, FractionalScaleFactor());
           }
 #endif
         }
-        mDestroyMutex.Unlock();
+        mWindowVisibilityMutex.Unlock();
       }
-
       LOG("Get NS_NATIVE_EGL_WINDOW mGdkWindow %p returned eglWindow %p",
           mGdkWindow, eglWindow);
       return eglWindow;
@@ -5791,8 +5778,8 @@ bool nsWindow::GetShapedState() {
 }
 
 void nsWindow::ConfigureCompositor() {
-  MOZ_DIAGNOSTIC_ASSERT(mCompositorState == COMPOSITOR_ENABLED);
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
+  MOZ_DIAGNOSTIC_ASSERT(mCompositorState == COMPOSITOR_ENABLED);
 
   LOG("nsWindow::ConfigureCompositor()");
   auto startCompositing = [self = RefPtr{this}, this]() -> void {
@@ -5801,8 +5788,8 @@ void nsWindow::ConfigureCompositor() {
 
     
     if (mIsDestroyed || !mIsMapped) {
-      LOG("  quit, mIsDestroyed = %d mIsMapped = %d", !!mIsDestroyed,
-          mIsMapped);
+      LOG("  quit, mIsDestroyed = %d mIsMapped = %d", mIsDestroyed,
+          !!mIsMapped);
       return;
     }
     
@@ -9072,7 +9059,7 @@ void nsWindow::DidGetNonBlankPaint() {
 void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
   LOG("nsWindow::SetCompositorWidgetDelegate %p mIsMapped %d "
       "mCompositorWidgetDelegate %p\n",
-      delegate, mIsMapped, mCompositorWidgetDelegate);
+      delegate, !!mIsMapped, mCompositorWidgetDelegate);
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (delegate) {
@@ -9989,41 +9976,28 @@ nsWindow* nsWindow::GetFocusedWindow() { return gFocusWindow; }
 #ifdef MOZ_WAYLAND
 bool nsWindow::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
-  if (!GdkIsWaylandDisplay()) {
+  if (!GdkIsWaylandDisplay() || !mIsMapped) {
     return true;
   }
 
-  
-  
-  bool paint = false;
-
-  
-  if (mDestroyMutex.TryLock()) {
-    if (!mIsDestroyed) {
-      gint scale = GdkCeiledScaleFactor();
+  gint scale = GdkCeiledScaleFactor();
 #  ifdef MOZ_LOGGING
-      if (LOG_ENABLED()) {
-        static uintptr_t lastSizeLog = 0;
-        uintptr_t sizeLog = uintptr_t(this) + aEGLWindowSize.width +
-                            aEGLWindowSize.height + scale +
-                            aEGLWindowSize.width / scale +
-                            aEGLWindowSize.height / scale;
-        if (lastSizeLog != sizeLog) {
-          lastSizeLog = sizeLog;
-          LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled "
-              "%d x "
-              "%d)",
-              aEGLWindowSize.width, aEGLWindowSize.height, scale,
-              aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
-        }
-      }
-#  endif
-      paint = moz_container_wayland_egl_window_set_size(
-          mContainer, aEGLWindowSize.ToUnknownSize(), scale);
+  if (LOG_ENABLED()) {
+    static uintptr_t lastSizeLog = 0;
+    uintptr_t sizeLog =
+        uintptr_t(this) + aEGLWindowSize.width + aEGLWindowSize.height + scale +
+        aEGLWindowSize.width / scale + aEGLWindowSize.height / scale;
+    if (lastSizeLog != sizeLog) {
+      lastSizeLog = sizeLog;
+      LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled "
+          "%d x %d)",
+          aEGLWindowSize.width, aEGLWindowSize.height, scale,
+          aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
     }
-    mDestroyMutex.Unlock();
   }
-  return paint;
+#  endif
+  return moz_container_wayland_egl_window_set_size(
+      mContainer, aEGLWindowSize.ToUnknownSize(), scale);
 }
 #endif
 
@@ -10048,13 +10022,16 @@ void nsWindow::OnMap() {
   
   
   
+  MutexAutoLock lock(mWindowVisibilityMutex);
   mIsMapped = true;
+
   ConfigureGdkWindow();
 }
 
 void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
 
+  MutexAutoLock lock(mWindowVisibilityMutex);
   mIsMapped = false;
 
   if (mSourceDragContext) {
