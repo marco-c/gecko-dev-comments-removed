@@ -1,0 +1,56 @@
+"""
+Event beacon store server.
+
+- When a request body is specified, stores the data in the body for the 'type'
+  specified in the query parameters and serves a 200 response without body.
+- When a request body is not specified and the request is not served with an
+  'expected_body' parameter, stores an empty body for the 'type' specified in
+  the query parameters and serves a 200 response without body.
+- When a request body is not specified and the request is served with an
+  'expected_body' parameter, serves a 200 response whose body contains the
+  stored value from the automatic beacon. Since the data is stored using a hash
+  of the data as the key, it uses the `expected_body` query parameter to know
+  what key to look up. If the stored value doesn't exist, serves a 200 response
+  with an empty body.
+"""
+import uuid
+import hashlib
+
+NO_DATA_STRING = b"<No data>"
+NOT_SET_STRING = b"<Not set>"
+
+
+
+def string_to_uuid(input):
+    hash_value = hashlib.md5(str(input).encode("UTF-8")).hexdigest()
+    return str(uuid.UUID(hex=hash_value))
+
+def main(request, response):
+    stash = request.server.stash;
+    event_type = request.GET.first(b"type", NO_DATA_STRING)
+
+    
+    
+    with stash.lock:
+        
+        
+        if request.method == "GET" and b"expected_body" in request.GET:
+          expected_body = request.GET.first(b"expected_body", NO_DATA_STRING)
+          data = stash.take(string_to_uuid(event_type + expected_body)) or NOT_SET_STRING
+          return (200, [], data)
+
+        
+        
+        if request.method == "POST" and event_type:
+            request_body = request.body or NO_DATA_STRING
+            request_headers = request.headers.get("Origin") or NO_DATA_STRING
+            stash.put(string_to_uuid(event_type + request_body),
+                request_headers)
+            return (200, [], b"")
+        
+        
+        if request.method == "GET" and event_type:
+            stash.put(string_to_uuid(event_type + NO_DATA_STRING), NO_DATA_STRING)
+            return (200, [], b"")
+
+        return (400, [], u"")
