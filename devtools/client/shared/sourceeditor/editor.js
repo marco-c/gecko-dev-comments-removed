@@ -167,6 +167,8 @@ class Editor extends EventEmitter {
   #prefObserver;
   #win;
 
+  #updateListener = null;
+
   constructor(config) {
     super();
 
@@ -413,6 +415,12 @@ class Editor extends EventEmitter {
   }
 
   
+  
+  setUpdateListener(listener = null) {
+    this.#updateListener = listener;
+  }
+
+  
 
 
 
@@ -645,6 +653,11 @@ class Editor extends EventEmitter {
         },
       }),
       codemirrorLanguage.syntaxHighlighting(lezerHighlight.classHighlighter),
+      EditorView.updateListener.of(v => {
+        if (typeof this.#updateListener == "function") {
+          this.#updateListener(v);
+        }
+      }),
       
       codemirror.minimalSetup,
     ];
@@ -1658,6 +1671,7 @@ class Editor extends EventEmitter {
     this.config = null;
     this.version = null;
     this.#ownerDoc = null;
+    this.#updateListener = null;
 
     if (this.#prefObserver) {
       this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);
