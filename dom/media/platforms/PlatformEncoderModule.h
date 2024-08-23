@@ -8,8 +8,6 @@
 #  define PlatformEncoderModule_h_
 
 #  include "MP4Decoder.h"
-#  include "MediaData.h"
-#  include "MediaInfo.h"
 #  include "MediaResult.h"
 #  include "VPXDecoder.h"
 #  include "mozilla/Maybe.h"
@@ -19,96 +17,13 @@
 #  include "mozilla/dom/ImageBitmapBinding.h"
 #  include "nsISupportsImpl.h"
 #  include "VideoUtils.h"
+#  include "EncoderConfig.h"
 
 namespace mozilla {
 
 class MediaDataEncoder;
-class EncoderConfig;
+class MediaData;
 struct EncoderConfigurationChangeList;
-
-enum class CodecType {
-  _BeginVideo_,
-  H264,
-  VP8,
-  VP9,
-  AV1,
-  _EndVideo_,
-  _BeginAudio_ = _EndVideo_,
-  Opus,
-  Vorbis,
-  Flac,
-  AAC,
-  PCM,
-  G722,
-  _EndAudio_,
-  Unknown,
-};
-
-
-const char* GetCodecTypeString(const CodecType& aCodecType);
-
-enum class H264BitStreamFormat { AVC, ANNEXB };
-
-struct H264Specific final {
-  const H264_PROFILE mProfile;
-  const H264_LEVEL mLevel;
-  const H264BitStreamFormat mFormat;
-
-  H264Specific(H264_PROFILE aProfile, H264_LEVEL aLevel,
-               H264BitStreamFormat aFormat)
-      : mProfile(aProfile), mLevel(aLevel), mFormat(aFormat) {}
-};
-
-struct OpusSpecific final {
-  enum class Application { Voip, Audio, RestricedLowDelay };
-
-  const Application mApplication;
-  const uint8_t mComplexity;  
-
-  OpusSpecific(const Application aApplication, const uint8_t aComplexity)
-      : mApplication(aApplication), mComplexity(aComplexity) {
-    MOZ_ASSERT(mComplexity <= 10);
-  }
-};
-
-enum class VPXComplexity { Normal, High, Higher, Max };
-struct VP8Specific {
-  VP8Specific() = default;
-  
-  
-  VP8Specific(const VPXComplexity aComplexity, const bool aResilience,
-              const uint8_t aNumTemporalLayers, const bool aDenoising,
-              const bool aAutoResize, const bool aFrameDropping)
-      : mComplexity(aComplexity),
-        mResilience(aResilience),
-        mNumTemporalLayers(aNumTemporalLayers),
-        mDenoising(aDenoising),
-        mAutoResize(aAutoResize),
-        mFrameDropping(aFrameDropping) {}
-  const VPXComplexity mComplexity{VPXComplexity::Normal};
-  const bool mResilience{true};
-  const uint8_t mNumTemporalLayers{1};
-  const bool mDenoising{true};
-  const bool mAutoResize{false};
-  const bool mFrameDropping{false};
-};
-
-struct VP9Specific : public VP8Specific {
-  VP9Specific() = default;
-  VP9Specific(const VPXComplexity aComplexity, const bool aResilience,
-              const uint8_t aNumTemporalLayers, const bool aDenoising,
-              const bool aAutoResize, const bool aFrameDropping,
-              const bool aAdaptiveQp, const uint8_t aNumSpatialLayers,
-              const bool aFlexible)
-      : VP8Specific(aComplexity, aResilience, aNumTemporalLayers, aDenoising,
-                    aAutoResize, aFrameDropping),
-        mAdaptiveQp(aAdaptiveQp),
-        mNumSpatialLayers(aNumSpatialLayers),
-        mFlexible(aFlexible) {}
-  const bool mAdaptiveQp{true};
-  const uint8_t mNumSpatialLayers{1};
-  const bool mFlexible{false};
-};
 
 class PlatformEncoderModule {
  public:
@@ -146,18 +61,6 @@ class PlatformEncoderModule {
 class MediaDataEncoder {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataEncoder)
-
-  enum class Usage {
-    Realtime,  
-    Record
-  };
-  using PixelFormat = dom::ImageBitmapFormat;
-  enum class BitrateMode { Constant, Variable };
-  
-  
-  enum class ScalabilityMode { None, L1T2, L1T3 };
-
-  enum class HardwarePreference { RequireHardware, RequireSoftware, None };
 
   static bool IsVideo(const CodecType aCodec) {
     return aCodec > CodecType::_BeginVideo_ && aCodec < CodecType::_EndVideo_;
@@ -234,96 +137,6 @@ class MediaDataEncoder {
 
 
 
-class EncoderConfig final {
- public:
-  using CodecSpecific =
-      Variant<H264Specific, OpusSpecific, VP8Specific, VP9Specific>;
-
-  EncoderConfig(const EncoderConfig& aConfig) = default;
-
-  
-  EncoderConfig(const CodecType aCodecType, gfx::IntSize aSize,
-                const MediaDataEncoder::Usage aUsage,
-                const MediaDataEncoder::PixelFormat aPixelFormat,
-                const MediaDataEncoder::PixelFormat aSourcePixelFormat,
-                const uint8_t aFramerate, const size_t aKeyframeInterval,
-                const uint32_t aBitrate,
-                const MediaDataEncoder::BitrateMode aBitrateMode,
-                const MediaDataEncoder::HardwarePreference aHardwarePreference,
-                const MediaDataEncoder::ScalabilityMode aScalabilityMode,
-                const Maybe<CodecSpecific>& aCodecSpecific)
-      : mCodec(aCodecType),
-        mSize(aSize),
-        mBitrateMode(aBitrateMode),
-        mBitrate(aBitrate),
-        mUsage(aUsage),
-        mHardwarePreference(aHardwarePreference),
-        mPixelFormat(aPixelFormat),
-        mSourcePixelFormat(aSourcePixelFormat),
-        mScalabilityMode(aScalabilityMode),
-        mFramerate(aFramerate),
-        mKeyframeInterval(aKeyframeInterval),
-        mCodecSpecific(aCodecSpecific) {
-    MOZ_ASSERT(IsVideo());
-  }
-
-  
-  EncoderConfig(const CodecType aCodecType, uint32_t aNumberOfChannels,
-                const MediaDataEncoder::BitrateMode aBitrateMode,
-                uint32_t aSampleRate, uint32_t aBitrate,
-                const Maybe<CodecSpecific>& aCodecSpecific)
-      : mCodec(aCodecType),
-        mBitrateMode(aBitrateMode),
-        mBitrate(aBitrate),
-        mNumberOfChannels(aNumberOfChannels),
-        mSampleRate(aSampleRate),
-        mCodecSpecific(aCodecSpecific) {
-    MOZ_ASSERT(IsAudio());
-  }
-
-  static CodecType CodecTypeForMime(const nsACString& aMimeType) {
-    if (MP4Decoder::IsH264(aMimeType)) {
-      return CodecType::H264;
-    }
-    if (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP8)) {
-      return CodecType::VP8;
-    }
-    if (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP9)) {
-      return CodecType::VP9;
-    }
-    MOZ_ASSERT_UNREACHABLE("Unsupported Mimetype");
-    return CodecType::Unknown;
-  }
-
-  bool IsVideo() const {
-    return mCodec > CodecType::_BeginVideo_ && mCodec < CodecType::_EndVideo_;
-  }
-
-  bool IsAudio() const {
-    return mCodec > CodecType::_BeginAudio_ && mCodec < CodecType::_EndAudio_;
-  }
-
-  CodecType mCodec{};
-  gfx::IntSize mSize{};
-  MediaDataEncoder::BitrateMode mBitrateMode{};
-  uint32_t mBitrate{};
-  MediaDataEncoder::Usage mUsage{};
-  
-  MediaDataEncoder::HardwarePreference mHardwarePreference{};
-  MediaDataEncoder::PixelFormat mPixelFormat{};
-  MediaDataEncoder::PixelFormat mSourcePixelFormat{};
-  MediaDataEncoder::ScalabilityMode mScalabilityMode{};
-  uint8_t mFramerate{};
-  size_t mKeyframeInterval{};
-  
-  uint32_t mNumberOfChannels{};
-  uint32_t mSampleRate{};
-  Maybe<CodecSpecific> mCodecSpecific{};
-};
-
-
-
-
 
 
 
@@ -354,10 +167,10 @@ using FramerateChange =
     StrongTypedef<Maybe<double>, struct FramerateChangeType>;
 
 using BitrateModeChange =
-    StrongTypedef<MediaDataEncoder::BitrateMode, struct BitrateModeChangeType>;
+    StrongTypedef<BitrateMode, struct BitrateModeChangeType>;
 
 using UsageChange =
-    StrongTypedef<MediaDataEncoder::Usage, struct UsageChangeType>;
+    StrongTypedef<Usage, struct UsageChangeType>;
 
 
 
