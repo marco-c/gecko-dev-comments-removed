@@ -416,7 +416,7 @@ add_task(async function test_all_patterns() {
       let expectedItemLength = expectedValue.items.length;
       
       
-      if (actual.getStyleAt(actual.matchCount - 1) == "autofill-footer") {
+      if (actual.getStyleAt(actual.matchCount - 1) == "action") {
         expectedItemLength++;
       }
 
