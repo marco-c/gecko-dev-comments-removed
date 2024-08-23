@@ -284,6 +284,12 @@ var allowlist = [
   { file: "chrome://global/content/ml/SummarizerModel.sys.mjs" },
 
   
+  {
+    file: "chrome://global/content/ml/tests/acme/bert/resolve/main/config.json",
+  },
+  { file: "chrome://global/content/ml/ModelHub.sys.mjs" },
+
+  
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 
   
