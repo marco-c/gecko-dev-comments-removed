@@ -23,10 +23,14 @@ void CallbackDeferrer::TriggerDeferred() {
   
   
   RTC_DCHECK(prepared_);
-  std::vector<std::pair<Callback, CallbackData>> deferred;
-  deferred.swap(deferred_);
   prepared_ = false;
-
+  if (deferred_.empty()) {
+    return;
+  }
+  std::vector<std::pair<Callback, CallbackData>> deferred;
+  
+  deferred.reserve(8);
+  deferred.swap(deferred_);
   for (auto& [cb, data] : deferred) {
     cb(std::move(data), underlying_);
   }
