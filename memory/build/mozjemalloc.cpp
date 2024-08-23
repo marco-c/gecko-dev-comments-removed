@@ -2694,16 +2694,6 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
 
 void arena_t::InitChunk(arena_chunk_t* aChunk) {
   size_t i;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   size_t flags = CHUNK_MAP_DECOMMITTED | CHUNK_MAP_ZEROED;
 
   mStats.mapped += kChunkSize;
