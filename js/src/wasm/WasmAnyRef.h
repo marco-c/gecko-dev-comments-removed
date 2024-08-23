@@ -215,11 +215,9 @@ class AnyRef {
     defined(JS_CODEGEN_RISCV64)
     
     uintptr_t wideValue = uintptr_t(int64_t((uint64_t(value) << 33)) >> 33);
-#elif !defined(JS_64BIT)
+#else
     
     uintptr_t wideValue = (uintptr_t)value;
-#else
-#  error "unknown architecture"
 #endif
 
     
