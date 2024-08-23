@@ -52,6 +52,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     
     
     r"-shippable(?!.*(awsy|browsertime|marionette-headless|mochitest-devtools-chrome-fis|raptor|talos|web-platform-tests-wdspec-headless|mochitest-plain-headless))",  
+    r"nightly-simulation",
 ]
 
 
