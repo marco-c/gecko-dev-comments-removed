@@ -123,18 +123,6 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   void DeregisterReceivedPacketCallback();
 
   
-  
-  
-  sigslot::signal5<AsyncPacketSocket*,
-                   const char*,
-                   size_t,
-                   const SocketAddress&,
-                   
-                   
-                   const int64_t&>
-      SignalReadPacket;
-
-  
   sigslot::signal2<AsyncPacketSocket*, const SentPacket&> SignalSentPacket;
 
   
