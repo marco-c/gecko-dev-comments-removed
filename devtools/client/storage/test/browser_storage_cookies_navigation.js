@@ -115,6 +115,12 @@ add_task(async function () {
     "host of iframe in previous document (example.org) is not in the tree anymore"
   );
 
+  
+  
+  
+  
+  await waitUntil(() => isInTree(doc, ["indexedDB", "https://example.com"]));
+
   info("Navigate backward to test bfcache navigation");
   gBrowser.goBack();
   await waitUntil(
