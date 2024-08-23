@@ -717,12 +717,14 @@ struct wl_egl_window* moz_container_wayland_get_egl_window(
                (void*)wl_container->eglwindow, (int)scale);
 
   MutexAutoLock lock(wl_container->container_lock);
-  if (!wl_container->surface || !wl_container->ready_to_draw) {
-    LOGCONTAINER(
-        "  quit, wl_container->surface %p wl_container->ready_to_draw %d\n",
-        wl_container->surface, wl_container->ready_to_draw);
-    return nullptr;
-  }
+
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(wl_container->surface,
+                        "We're missing wayland surface!");
+  MOZ_DIAGNOSTIC_ASSERT(wl_container->ready_to_draw,
+                        "We can't draw to surface!");
 
   GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(container));
   nsIntSize requestedSize((int)round(gdk_window_get_width(window) * scale),
