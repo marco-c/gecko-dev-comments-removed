@@ -146,6 +146,10 @@ class MsaaAccessible : public ia2Accessible,
                                            EXCEPINFO* pExcepInfo,
                                            UINT* puArgErr) override;
 
+  
+  
+  using uiaRawElmProvider::Invoke;
+
  protected:
   explicit MsaaAccessible(Accessible* aAcc);
   virtual ~MsaaAccessible();
