@@ -12,6 +12,12 @@ from taskgraph.transforms.task import index_builder
 
 
 SIGNING_ROUTE_TEMPLATES = [
+    "index.{trust-domain}.v2.{project}.{variant}.latest.{abi}",
+    "index.{trust-domain}.v2.{project}.{variant}.{build_date}.revision.{head_rev}.{abi}",
+    "index.{trust-domain}.v2.{project}.{variant}.{build_date}.latest.{abi}",
+    "index.{trust-domain}.v2.{project}.{variant}.revision.{head_rev}.{abi}",
+
+    
     "index.project.{trust-domain}.{project}.v2.{variant}.{build_date}.revision.{head_rev}",
     "index.project.{trust-domain}.{project}.v2.{variant}.{build_date}.latest",
     "index.project.{trust-domain}.{project}.v2.{variant}.latest",
@@ -20,8 +26,6 @@ SIGNING_ROUTE_TEMPLATES = [
 
 @index_builder("signing")
 def add_signing_indexes(config, task):
-    routes = task.setdefault("routes", [])
-
     if config.params["level"] != "3":
         return task
 
@@ -32,6 +36,11 @@ def add_signing_indexes(config, task):
     subs["trust-domain"] = config.graph_config["trust-domain"]
     subs["variant"] = task["attributes"]["build-type"]
 
+    unique_routes = set()
     for tpl in SIGNING_ROUTE_TEMPLATES:
-        routes.append(tpl.format(**subs))
+        for abi in task["attributes"]["apks"].keys():
+            subs["abi"] = abi
+            unique_routes.add(tpl.format(**subs))
+
+    task.setdefault("routes", sorted(list(unique_routes)))
     return task
