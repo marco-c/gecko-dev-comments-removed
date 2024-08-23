@@ -6365,7 +6365,7 @@ void ContentParent::UpdateCookieStatus(nsIChannel* aChannel) {
   }
 }
 
-nsresult ContentParent::AboutToLoadHttpFtpDocumentForChild(
+nsresult ContentParent::AboutToLoadHttpDocumentForChild(
     nsIChannel* aChannel, bool* aShouldWaitForPermissionCookieUpdate) {
   MOZ_ASSERT(aChannel);
 

@@ -556,7 +556,7 @@ class ContentParent final : public PContentParent,
   
   
   
-  nsresult AboutToLoadHttpFtpDocumentForChild(
+  nsresult AboutToLoadHttpDocumentForChild(
       nsIChannel* aChannel,
       bool* aShouldWaitForPermissionCookieUpdate = nullptr);
 
