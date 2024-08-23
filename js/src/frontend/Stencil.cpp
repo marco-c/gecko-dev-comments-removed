@@ -759,6 +759,29 @@ void ScopeContext::cacheEnclosingScope(const InputScope& enclosingScope) {
   MOZ_CRASH("Malformed scope chain");
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 InputScope ScopeContext::determineEffectiveScope(InputScope& scope,
                                                  JSObject* environment) {
   MOZ_ASSERT(effectiveScopeHops == 0);
