@@ -76,6 +76,12 @@ add_task(async function eventsForTopFrameNavigation({ client }) {
     "The same loaderId is used for dependent responses (Bug 1637838)"
   );
   is(scriptResponse.response.url, FRAMESET_JS_URL, "Got the Script response");
+
+  
+  
+  
+  delete scriptResponse.response.requestHeaders.priority;
+
   Assert.deepEqual(
     scriptResponse.response.requestHeaders,
     scriptRequest.request.headers,
@@ -125,6 +131,10 @@ add_task(async function eventsForTopFrameNavigation({ client }) {
     subscriptResponse.loaderId === subdocRequest.loaderId,
     "The same loaderId is used for dependent responses (Bug 1637838)"
   );
+
+  
+  delete subscriptResponse.response.requestHeaders.priority;
+
   Assert.deepEqual(
     subscriptResponse.response.requestHeaders,
     subscriptRequest.request.headers,

@@ -60,14 +60,23 @@ async function testResendRequest() {
     "The resent request has the same url and query parameters and the first request"
   );
 
+  
+  
+  
   is(
     firstResend.originalResource.requestHeaders.headers.length,
-    firstResend.newResource.requestHeaders.headers.length,
+    firstResend.newResource.requestHeaders.headers.length - 1,
     "The no of headers are the same"
   );
 
+  
+  
+  
   firstResend.originalResource.requestHeaders.headers.forEach(
     ({ name, value }) => {
+      if (name === "Priority") {
+        return;
+      }
       const foundHeader = firstResend.newResource.requestHeaders.headers.find(
         header => header.name == name
       );

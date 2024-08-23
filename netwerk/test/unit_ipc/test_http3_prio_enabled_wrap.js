@@ -4,6 +4,7 @@
 
 registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("network.http.http3.priority");
+  Services.prefs.clearUserPref("network.http.priority_header.enabled");
   http3_clear_prefs();
 });
 
@@ -15,6 +16,7 @@ add_task(async function setup() {
 async function run_test() {
   
   Services.prefs.setBoolPref("network.http.http3.priority", true);
+  Services.prefs.setBoolPref("network.http.priority_header.enabled", true);
   run_test_in_child("../unit/test_http3_prio_enabled.js");
   run_next_test(); 
 }

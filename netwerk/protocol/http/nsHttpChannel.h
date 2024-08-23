@@ -566,6 +566,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void PerformBackgroundCacheRevalidationNow();
 
+  void SetPriorityHeader();
+
  private:
   nsCOMPtr<nsICancelable> mProxyRequest;
 
