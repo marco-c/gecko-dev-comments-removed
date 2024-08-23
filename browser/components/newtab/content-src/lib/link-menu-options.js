@@ -2,10 +2,7 @@
 
 
 
-import {
-  actionCreators as ac,
-  actionTypes as at,
-} from "common/Actions.sys.mjs";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 
 const _OpenInPrivateWindow = site => ({
   id: "newtab-menu-open-new-private-window",

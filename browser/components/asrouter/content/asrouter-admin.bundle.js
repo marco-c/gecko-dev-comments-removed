@@ -17,8 +17,7 @@ __webpack_require__.r(__webpack_exports__);
    ASRouterUtils: () => ( ASRouterUtils)
  });
  var _modules_ActorConstants_sys_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _newtab_common_Actions_sys_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
-
+ var _newtab_common_Actions_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
 
 
 
@@ -93,7 +92,7 @@ const ASRouterUtils = {
     });
   },
   sendTelemetry(ping) {
-    return ASRouterUtils.sendMessage(_newtab_common_Actions_sys_mjs__WEBPACK_IMPORTED_MODULE_1__.actionCreators.ASRouterUserEvent(ping));
+    return ASRouterUtils.sendMessage(_newtab_common_Actions_mjs__WEBPACK_IMPORTED_MODULE_1__.actionCreators.ASRouterUserEvent(ping));
   },
   getPreviewEndpoint() {
     return null;
@@ -177,6 +176,8 @@ __webpack_require__.r(__webpack_exports__);
    actionUtils: () => ( actionUtils),
    globalImportContext: () => ( globalImportContext)
  });
+
+
 
 
 
@@ -550,8 +551,11 @@ function DiscoveryStreamLoadedContent(
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
-function SetPref(name, value, importContext = globalImportContext) {
-  const action = { type: actionTypes.SET_PREF, data: { name, value } };
+function SetPref(prefName, value, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.SET_PREF,
+    data: { name: prefName, value },
+  };
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 

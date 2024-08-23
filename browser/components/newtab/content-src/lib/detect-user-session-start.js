@@ -2,10 +2,7 @@
 
 
 
-import {
-  actionCreators as ac,
-  actionTypes as at,
-} from "common/Actions.sys.mjs";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { perfService as perfSvc } from "content-src/lib/perf-service";
 
 const VISIBLE = "visible";

@@ -75,6 +75,8 @@ __webpack_require__.d(__webpack_exports__, {
 
 
 
+
+
 const MAIN_MESSAGE_TYPE = "ActivityStream:Main";
 const CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
 const PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
@@ -444,8 +446,11 @@ function DiscoveryStreamLoadedContent(
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
-function SetPref(name, value, importContext = globalImportContext) {
-  const action = { type: actionTypes.SET_PREF, data: { name, value } };
+function SetPref(prefName, value, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.SET_PREF,
+    data: { name: prefName, value },
+  };
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
