@@ -377,9 +377,8 @@ void WebRtcVoiceEngine::Init() {
 
   
   RTC_DCHECK(!low_priority_worker_queue_);
-  low_priority_worker_queue_.reset(
-      new rtc::TaskQueue(task_queue_factory_->CreateTaskQueue(
-          "rtc-low-prio", webrtc::TaskQueueFactory::Priority::LOW)));
+  low_priority_worker_queue_ = task_queue_factory_->CreateTaskQueue(
+      "rtc-low-prio", webrtc::TaskQueueFactory::Priority::LOW);
 
   
   RTC_LOG(LS_VERBOSE) << "Supported send codecs in order of preference:";
