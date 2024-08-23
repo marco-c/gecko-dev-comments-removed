@@ -51,25 +51,15 @@ class TrustedTypePolicyFactory : public nsWrapperCache {
       const TrustedTypePolicyOptions& aPolicyOptions);
 
   
-  bool IsHTML(JSContext* aJSContext,
-              const JS::Handle<JS::Value>& aValue) const {
-    
-    return false;
-  }
+  bool IsHTML(JSContext* aJSContext, const JS::Handle<JS::Value>& aValue) const;
 
   
   bool IsScript(JSContext* aJSContext,
-                const JS::Handle<JS::Value>& aValue) const {
-    
-    return false;
-  }
+                const JS::Handle<JS::Value>& aValue) const;
 
   
   bool IsScriptURL(JSContext* aJSContext,
-                   const JS::Handle<JS::Value>& aValue) const {
-    
-    return false;
-  }
+                   const JS::Handle<JS::Value>& aValue) const;
 
   
   UniquePtr<TrustedHTML> EmptyHTML();
