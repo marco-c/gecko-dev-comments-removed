@@ -101,9 +101,6 @@ extern "C" {
 #[cfg(target_os = "windows")]
 pub const ANNOTATION_SECTION: &'static [u8; 8] = b"mozannot";
 
-#[cfg(target_os = "macos")]
-pub const ANNOTATION_SECTION: &'static [u8; 16] = b"mozannotation\0\0\0";
-
 
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

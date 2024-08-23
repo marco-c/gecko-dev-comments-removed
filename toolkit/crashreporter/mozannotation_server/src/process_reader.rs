@@ -2,6 +2,12 @@
 
 
 
+use crate::ProcessHandle;
+
+pub struct ProcessReader {
+    process: ProcessHandle,
+}
+
 #[cfg(target_os = "windows")]
 mod windows;
 
