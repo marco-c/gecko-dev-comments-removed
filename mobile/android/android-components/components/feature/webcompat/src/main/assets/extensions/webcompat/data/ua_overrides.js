@@ -1142,23 +1142,8 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.heapsowins.com/*", 
         "*://*.planet7casino.com/*", 
         "*://*.yebocasino.co.za/*", 
+        "*://*.yabbycasino.com/*", 
       ],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-    id: "bug1830821-webc118998",
-    platform: "android",
-    domain: "m.tworld.co.kr",
-    bug: "1830821",
-    config: {
-      matches: ["*://m.tworld.co.kr/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -1360,9 +1345,9 @@ const AVAILABLE_UA_OVERRIDES = [
     domain: "www.flatsatshadowglen.com",
     bug: "1836182",
     config: {
-      matches: ["*://www.flatsatshadowglen.com/*"],
+      matches: ["*://*.flatsatshadowglen.com/*"],
       uaTransformer: originalUA => {
-        return originalUA + " Chrome/113.0.0.0";
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
