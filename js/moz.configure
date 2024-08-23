@@ -175,10 +175,16 @@ set_define("ENABLE_DECORATORS", enable_decorators)
 
 
 
+option(
+    "--enable-json-parse-with-source",
+    default=False,
+    help="Enable experimental JS JSON.parse with source support",
+)
 
-@depends(milestone.is_nightly)
-def enable_json_parse_with_source(is_nightly):
-    if is_nightly:
+
+@depends("--enable-json-parse-with-source")
+def enable_json_parse_with_source(value):
+    if value:
         return True
 
 

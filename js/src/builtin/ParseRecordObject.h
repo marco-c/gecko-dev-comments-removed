@@ -7,8 +7,7 @@
 #ifndef builtin_ParseRecordObject_h
 #define builtin_ParseRecordObject_h
 
-#include "js/HashTable.h"
-#include "js/TracingAPI.h"
+#include "js/TraceKind.h"
 #include "vm/JSContext.h"
 
 namespace js {
@@ -17,40 +16,24 @@ using JSONParseNode = JSString;
 
 class ParseRecordObject {
  public:
-  using EntryMap = js::GCHashMap<PropertyKey, ParseRecordObject>;
-
-  
-  
   JSONParseNode* parseNode;
-  
-  
   JS::PropertyKey key;
-  
-  
   Value value;
-  
-  
-  
-  UniquePtr<EntryMap> entries;
 
   ParseRecordObject();
   ParseRecordObject(Handle<js::JSONParseNode*> parseNode, const Value& val);
   ParseRecordObject(ParseRecordObject&& other)
       : parseNode(std::move(other.parseNode)),
         key(std::move(other.key)),
-        value(std::move(other.value)),
-        entries(std::move(other.entries)) {}
+        value(std::move(other.value)) {}
 
   bool isEmpty() const { return value.isUndefined(); }
-
-  bool addEntries(JSContext* cx, EntryMap&& appendEntries);
 
   
   ParseRecordObject& operator=(ParseRecordObject&& other) noexcept {
     parseNode = other.parseNode;
     key = other.key;
     value = other.value;
-    entries = std::move(other.entries);
     return *this;
   }
 
