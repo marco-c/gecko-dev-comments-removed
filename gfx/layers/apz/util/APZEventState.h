@@ -39,6 +39,10 @@ namespace layers {
 
 class ActiveElementManager;
 
+namespace apz {
+enum class SingleTapState : uint8_t;
+}  
+
 typedef std::function<void(uint64_t ,
                            bool )>
     ContentReceivedInputBlockCallback;
@@ -106,7 +110,7 @@ class APZEventState final {
   bool mPendingTouchPreventedResponse;
   ScrollableLayerGuid mPendingTouchPreventedGuid;
   uint64_t mPendingTouchPreventedBlockId;
-  bool mEndTouchIsClick;
+  apz::SingleTapState mEndTouchState;
   bool mFirstTouchCancelled;
   bool mTouchEndCancelled;
   

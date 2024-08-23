@@ -233,6 +233,14 @@ bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
 
 SideBits GetOverscrollSideBits(const ParentLayerPoint& aOverscrollAmount);
 
+
+enum class SingleTapState : uint8_t {
+  NotClick,          
+  WasClick,          
+  NotYetDetermined,  
+                     
+};
+
 }  
 
 }  

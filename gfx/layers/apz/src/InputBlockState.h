@@ -457,11 +457,9 @@ class TouchBlockState : public CancelableBlockState {
 
 
 
-  void SetSingleTapOccurred();
-  
 
-
-  bool SingleTapOccurred() const;
+  void SetSingleTapState(apz::SingleTapState aState);
+  apz::SingleTapState SingleTapState() const { return mSingleTapState; }
 
   
 
@@ -537,7 +535,6 @@ class TouchBlockState : public CancelableBlockState {
   nsTArray<TouchBehaviorFlags> mAllowedTouchBehaviors;
   bool mAllowedTouchBehaviorSet;
   bool mDuringFastFling;
-  bool mSingleTapOccurred;
   bool mInSlop;
   
   
@@ -557,6 +554,7 @@ class TouchBlockState : public CancelableBlockState {
   
   
   bool mNeedsWaitTouchMove;
+  apz::SingleTapState mSingleTapState;
   ScreenIntPoint mSlopOrigin;
   
   TouchCounter& mTouchCounter;

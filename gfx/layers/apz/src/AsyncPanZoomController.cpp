@@ -3112,7 +3112,7 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(
         
         
         if (aType != TapType::eLongTapUp) {
-          touch->SetSingleTapOccurred();
+          touch->SetSingleTapState(apz::SingleTapState::WasClick);
         }
       }
       
@@ -3143,7 +3143,7 @@ void AsyncPanZoomController::OnTouchEndOrCancel() {
     MOZ_ASSERT(GetCurrentTouchBlock());
     controller->NotifyAPZStateChange(
         GetGuid(), APZStateChange::eEndTouch,
-        GetCurrentTouchBlock()->SingleTapOccurred(),
+        static_cast<int>(GetCurrentTouchBlock()->SingleTapState()),
         Some(GetCurrentTouchBlock()->GetBlockId()));
   }
 }
@@ -3159,6 +3159,21 @@ nsEventStatus AsyncPanZoomController::OnSingleTapUp(
         GetCurrentTouchBlock()->TouchActionAllowsDoubleTapZoom())) {
     return GenerateSingleTap(TapType::eSingleTap, aEvent.mPoint,
                              aEvent.modifiers);
+  }
+
+  
+  
+  if (!ConvertToGecko(aEvent.mPoint)) {
+    return nsEventStatus_eIgnore;
+  }
+
+  
+  
+  
+  if (TouchBlockState* touch = GetCurrentTouchBlock()) {
+    if (!touch->IsDuringFastFling()) {
+      touch->SetSingleTapState(apz::SingleTapState::NotYetDetermined);
+    }
   }
   return nsEventStatus_eIgnore;
 }

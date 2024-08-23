@@ -24,6 +24,10 @@ namespace layers {
 
 class DelayedClearElementActivation;
 
+namespace apz {
+enum class SingleTapState : uint8_t;
+}  
+
 
 
 
@@ -58,12 +62,12 @@ class ActiveElementManager final {
 
 
 
-  bool HandleTouchEndEvent(bool aWasClick);
+  bool HandleTouchEndEvent(apz::SingleTapState aState);
   
 
 
 
-  bool HandleTouchEnd(bool aWasClick);
+  bool HandleTouchEnd(apz::SingleTapState aState);
   
 
 
@@ -77,7 +81,7 @@ class ActiveElementManager final {
   
 
 
-  nsCOMPtr<dom::Element> mTarget;
+  RefPtr<dom::Element> mTarget;
   
 
 
@@ -106,6 +110,12 @@ class ActiveElementManager final {
   
 
 
+
+  apz::SingleTapState mSingleTapState;
+
+  
+
+
   RefPtr<CancelableRunnable> mSetActiveTask;
 
   
@@ -119,7 +129,8 @@ class ActiveElementManager final {
   void ResetTouchBlockState();
   void SetActiveTask(const nsCOMPtr<dom::Element>& aTarget);
   void CancelTask();
-  bool MaybeChangeActiveState(bool aWasClick);
+  
+  bool MaybeChangeActiveState(apz::SingleTapState aState);
 };
 
 }  
