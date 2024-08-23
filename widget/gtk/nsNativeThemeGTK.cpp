@@ -882,6 +882,11 @@ LayoutDeviceIntMargin nsNativeThemeGTK::GetWidgetBorder(
   CSSIntMargin result;
   GtkTextDirection direction = GetTextDirection(aFrame);
   switch (aAppearance) {
+    case StyleAppearance::Toolbox:
+      
+      
+      
+      break;
     case StyleAppearance::Dualbutton:
       
       
@@ -1162,7 +1167,9 @@ nsNativeThemeGTK::WidgetStateChanged(nsIFrame* aFrame,
   }
 
   
-  if (aAppearance == StyleAppearance::Progresschunk ||
+  if (aAppearance == StyleAppearance::Toolbox ||
+      aAppearance == StyleAppearance::Toolbar ||
+      aAppearance == StyleAppearance::Progresschunk ||
       aAppearance == StyleAppearance::ProgressBar ||
       aAppearance == StyleAppearance::Tooltip ||
       aAppearance == StyleAppearance::MozWindowDecorations) {
@@ -1235,6 +1242,7 @@ nsNativeThemeGTK::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::Button:
     case StyleAppearance::Radio:
     case StyleAppearance::Checkbox:
+    case StyleAppearance::Toolbox:  
     case StyleAppearance::Toolbarbutton:
     case StyleAppearance::Dualbutton:  
     case StyleAppearance::ToolbarbuttonDropdown:

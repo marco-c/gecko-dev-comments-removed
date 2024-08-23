@@ -484,6 +484,9 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
       return Some(eUXEdit);
+    case StyleAppearance::Toolbox:
+      return Some(eUXRebar);
+    case StyleAppearance::Toolbar:
     case StyleAppearance::Toolbarbutton:
     case StyleAppearance::Separator:
       return Some(eUXToolbar);
@@ -713,6 +716,27 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
           aState = TS_HOVER;
         else
           aState = TS_NORMAL;
+      }
+      return NS_OK;
+    }
+    case StyleAppearance::Toolbox: {
+      aState = 0;
+      aPart = RP_BACKGROUND;
+      return NS_OK;
+    }
+    case StyleAppearance::Toolbar: {
+      
+      
+      
+      aPart = -1;
+      aState = 0;
+      if (aFrame) {
+        nsIContent* content = aFrame->GetContent();
+        nsIContent* parent = content->GetParent();
+        
+        if (parent && parent->GetFirstChild() == content) {
+          aState = 1;
+        }
       }
       return NS_OK;
     }
@@ -1007,6 +1031,16 @@ RENDER_AGAIN:
         ::DeleteObject(hPen);
       }
     }
+  } else if (aAppearance == StyleAppearance::Toolbar && state == 0) {
+    
+    
+    
+    theme = GetTheme(StyleAppearance::Toolbox);
+    if (!theme) return NS_ERROR_FAILURE;
+
+    widgetRect.bottom = widgetRect.top + TB_SEPARATOR_HEIGHT;
+    DrawThemeEdge(theme, hdc, RP_BAND, 0, &widgetRect, EDGE_ETCHED, BF_TOP,
+                  nullptr);
   }
 
   nativeDrawing.EndNativeDrawing();
@@ -1067,12 +1101,19 @@ LayoutDeviceIntMargin nsNativeThemeWin::GetWidgetBorder(
   }
 
   if (!WidgetIsContainer(aAppearance) ||
+      aAppearance == StyleAppearance::Toolbox ||
       aAppearance == StyleAppearance::Tabpanel)
     return result;  
 
   int32_t part, state;
   nsresult rv = GetThemePartAndState(aFrame, aAppearance, part, state);
   if (NS_FAILED(rv)) return result;
+
+  if (aAppearance == StyleAppearance::Toolbar) {
+    
+    if (state == 0) result.top = TB_SEPARATOR_HEIGHT;
+    return result;
+  }
 
   result = GetCachedWidgetBorder(theme, themeClass.value(), aAppearance, part,
                                  state);
@@ -1237,6 +1278,8 @@ LayoutDeviceIntSize nsNativeThemeWin::GetMinimumWidgetSize(
   switch (aAppearance) {
     case StyleAppearance::NumberInput:
     case StyleAppearance::Textfield:
+    case StyleAppearance::Toolbox:
+    case StyleAppearance::Toolbar:
     case StyleAppearance::Progresschunk:
     case StyleAppearance::Tabpanels:
     case StyleAppearance::Tabpanel:
@@ -1309,7 +1352,9 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
                                      nsAtom* aAttribute, bool* aShouldRepaint,
                                      const nsAttrValue* aOldValue) {
   
-  if (aAppearance == StyleAppearance::Progresschunk ||
+  if (aAppearance == StyleAppearance::Toolbox ||
+      aAppearance == StyleAppearance::Toolbar ||
+      aAppearance == StyleAppearance::Progresschunk ||
       aAppearance == StyleAppearance::ProgressBar ||
       aAppearance == StyleAppearance::Tabpanels ||
       aAppearance == StyleAppearance::Tabpanel ||
