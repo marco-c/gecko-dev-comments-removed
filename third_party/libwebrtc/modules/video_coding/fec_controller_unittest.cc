@@ -14,6 +14,7 @@
 
 #include <vector>
 
+#include "api/environment/environment_factory.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/video_coding/fec_controller_default.h"
 #include "system_wrappers/include/clock.h"
@@ -50,7 +51,8 @@ class ProtectionBitrateCalculatorTest : public ::testing::Test {
   
   
   ProtectionBitrateCalculatorTest()
-      : clock_(1000), fec_controller_(&clock_, &protection_callback_) {}
+      : clock_(1000),
+        fec_controller_(CreateEnvironment(&clock_), &protection_callback_) {}
 
   SimulatedClock clock_;
   ProtectionCallback protection_callback_;
