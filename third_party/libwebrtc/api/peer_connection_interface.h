@@ -686,7 +686,6 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     PortAllocatorConfig port_allocator_config;
 
     
-    
     absl::optional<TimeDelta> pacer_burst_interval;
 
     
