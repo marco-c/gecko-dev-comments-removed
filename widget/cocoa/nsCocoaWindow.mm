@@ -779,7 +779,9 @@ void nsCocoaWindow::Show(bool aState) {
       
       NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
       [[mWindow contentView] setNeedsDisplay:YES];
-      [mWindow orderFront:nil];
+      if (!nativeParentWindow || mPopupLevel != PopupLevel::Parent) {
+        [mWindow orderFront:nil];
+      }
       NS_OBJC_END_TRY_IGNORE_BLOCK;
       SendSetZLevelEvent();
       
@@ -793,8 +795,6 @@ void nsCocoaWindow::Show(bool aState) {
                           object:@"org.mozilla.gecko.PopupWindow"];
       }
 
-      
-      
       
       
       
