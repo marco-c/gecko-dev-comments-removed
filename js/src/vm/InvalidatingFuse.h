@@ -10,7 +10,7 @@
 #include "gc/Barrier.h"
 #include "gc/SweepingAPI.h"
 #include "vm/GuardFuse.h"
-class JSScript;
+#include "vm/JSScript.h"
 
 namespace js {
 
@@ -42,6 +42,10 @@ class InvalidatingRuntimeFuse : public InvalidatingFuse {
 
 
 
+
+
+
+
 class DependentScriptSet {
  public:
   DependentScriptSet(JSContext* cx, InvalidatingFuse* fuse);
@@ -55,24 +59,6 @@ class DependentScriptSet {
                                   StableCellHasher<WeakHeapPtr<JSScript*>>,
                                   js::SystemAllocPolicy>;
   js::WeakCache<WeakScriptSet> weakScripts;
-};
-
-class DependentScriptGroup {
-  
-  
-  
-  
-  
-  
-  
-  
-  Vector<DependentScriptSet, 1, SystemAllocPolicy> dependencies;
-
- public:
-  DependentScriptSet* getOrCreateDependentScriptSet(JSContext* cx,
-                                                    InvalidatingFuse* fuse);
-  DependentScriptSet* begin() { return dependencies.begin(); }
-  DependentScriptSet* end() { return dependencies.end(); }
 };
 
 }  
