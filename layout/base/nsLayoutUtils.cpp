@@ -7449,7 +7449,7 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
 
 SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
     HTMLVideoElement* aElement, uint32_t aSurfaceFlags,
-    RefPtr<DrawTarget>& aTarget) {
+    RefPtr<DrawTarget>& aTarget, bool aOptimizeSourceSurface) {
   SurfaceFromElementResult result;
   result.mAlphaType = gfxAlphaType::Opaque;  
 
@@ -7484,7 +7484,7 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
   result.mIsWriteOnly = CanvasUtils::CheckWriteOnlySecurity(
       result.mCORSUsed, result.mPrincipal, result.mHadCrossOriginRedirects);
 
-  if (aTarget) {
+  if (aTarget && aOptimizeSourceSurface) {
     
     
     
