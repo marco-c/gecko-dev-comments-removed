@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=604067
+-->
 <head>
   <title>Test for Bug 604067</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -31,7 +31,7 @@ function check() {
 
   // Debug info for Bug 608634
   ok(true, "iframe src=" + document.body.getElementsByTagName("iframe")[0].src);
-  is(v.readyState, v.HAVE_NOTHING, "Ready state");
+  is(v.readyState, v.HAVE_NOTHING, "Ready state for " + document.body.getElementsByTagName("iframe")[0].src);
 
   isnot(v.error, null, "Error object");
   is(v.networkState, v.NETWORK_NO_SOURCE, "Network state");

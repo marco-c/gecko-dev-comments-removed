@@ -1,8 +1,8 @@
 hg diff<!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=479863
+-->
 <head>
   <title>Test for Bug 479863 --- loading many connections</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -32,7 +32,7 @@ window.onload = function() {
      we've got the first frame.
 */
 
-var resource = getPlayableVideo(gClosingConnectionsTest);
+var resource = getPlayableVideo(gPlayTests);
 
 SimpleTest.waitForExplicitFinish();
 function beginTest() {
