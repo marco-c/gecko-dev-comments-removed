@@ -105,16 +105,30 @@ template nsresult nsRange::SetStartAndEnd(
 
 template void nsRange::DoSetRange(const RangeBoundary& aStartBoundary,
                                   const RangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet);
+                                  nsINode* aRootNode, bool aNotInsertedYet,
+                                  CollapsePolicy aCollapsePolicy);
 template void nsRange::DoSetRange(const RangeBoundary& aStartBoundary,
                                   const RawRangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet);
+                                  nsINode* aRootNode, bool aNotInsertedYet,
+                                  CollapsePolicy aCollapsePolicy);
 template void nsRange::DoSetRange(const RawRangeBoundary& aStartBoundary,
                                   const RangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet);
+                                  nsINode* aRootNode, bool aNotInsertedYet,
+                                  CollapsePolicy aCollapsePolicy);
 template void nsRange::DoSetRange(const RawRangeBoundary& aStartBoundary,
                                   const RawRangeBoundary& aEndBoundary,
-                                  nsINode* aRootNode, bool aNotInsertedYet);
+                                  nsINode* aRootNode, bool aNotInsertedYet,
+                                  CollapsePolicy aCollapsePolicy);
+
+template void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+    const RangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary);
+template void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+    const RangeBoundary& aStartBoundary, const RawRangeBoundary& aEndBoundary);
+template void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+    const RawRangeBoundary& aStartBoundary, const RangeBoundary& aEndBoundary);
+template void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+    const RawRangeBoundary& aStartBoundary,
+    const RawRangeBoundary& aEndBoundary);
 
 JSObject* nsRange::WrapObject(JSContext* aCx,
                               JS::Handle<JSObject*> aGivenProto) {
@@ -205,6 +219,101 @@ already_AddRefed<nsRange> nsRange::Create(
 
 
 
+
+
+
+
+
+
+
+
+static CollapsePolicy ShouldCollapseBoundary(
+    const nsRange* aRange, const nsINode* aNewRoot,
+    const RawRangeBoundary& aNewBoundary, const bool aIsSetStart,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+  if (!aRange->IsPositioned()) {
+    return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+  }
+
+  MOZ_ASSERT(aRange->GetRoot());
+  if (aNewRoot != aRange->GetRoot()) {
+    
+    
+    if (aNewRoot->GetComposedDoc() != aRange->GetRoot()->GetComposedDoc()) {
+      return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+    }
+
+    
+    
+    return aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
+               ? CollapsePolicy::DefaultRange
+               : CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+  }
+
+  const RangeBoundary& otherSideExistingBoundary =
+      aIsSetStart ? aRange->EndRef() : aRange->StartRef();
+
+  
+  const Maybe<int32_t> order =
+      aIsSetStart ? nsContentUtils::ComparePoints(aNewBoundary,
+                                                  otherSideExistingBoundary)
+                  : nsContentUtils::ComparePoints(otherSideExistingBoundary,
+                                                  aNewBoundary);
+
+  if (order) {
+    if (*order != 1) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return CollapsePolicy::No;
+    }
+
+    if (!aRange->MayCrossShadowBoundary() ||
+        aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::No) {
+      return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+    }
+
+    const RangeBoundary& otherSideExistingCrossShadowBoundaryBoundary =
+        aIsSetStart ? aRange->MayCrossShadowBoundaryEndRef()
+                    : aRange->MayCrossShadowBoundaryStartRef();
+
+    
+    
+    
+    
+    
+    
+    const Maybe<int32_t> withCrossShadowBoundaryOrder =
+        aIsSetStart
+            ? nsContentUtils::ComparePoints(
+                  aNewBoundary, otherSideExistingCrossShadowBoundaryBoundary)
+            : nsContentUtils::ComparePoints(
+                  otherSideExistingCrossShadowBoundaryBoundary, aNewBoundary);
+
+    
+    if (withCrossShadowBoundaryOrder && *withCrossShadowBoundaryOrder != 1) {
+      return CollapsePolicy::DefaultRange;
+    }
+
+    
+    return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+  }
+
+  MOZ_ASSERT_UNREACHABLE();
+  return CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges;
+}
+
+
+
+
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsRange)
 NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_INTERRUPTABLE_LAST_RELEASE(
     nsRange, DoSetRange(RawRangeBoundary(), RawRangeBoundary(), nullptr),
@@ -233,6 +342,7 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 bool nsRange::MaybeInterruptLastRelease() {
   bool interrupt = AbstractRange::MaybeCacheToReuse(*this);
+  ResetCrossShadowBoundaryRange();
   MOZ_ASSERT(!interrupt || IsCleared());
   return interrupt;
 }
@@ -575,6 +685,15 @@ void nsRange::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling) {
   nsINode* startContainer = mStart.Container();
   nsINode* endContainer = mEnd.Container();
 
+  
+  
+  
+  if (mCrossShadowBoundaryRange &&
+      (mCrossShadowBoundaryRange->GetStartContainer() == aChild ||
+       mCrossShadowBoundaryRange->GetEndContainer() == aChild)) {
+    ResetCrossShadowBoundaryRange();
+  }
+
   RawRangeBoundary newStart;
   RawRangeBoundary newEnd;
   Maybe<bool> gravitateStart;
@@ -883,10 +1002,12 @@ void nsRange::AssertIfMismatchRootAndRangeBoundaries(
 
 
 template <typename SPT, typename SRT, typename EPT, typename ERT>
-void nsRange::DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-                         const RangeBoundaryBase<EPT, ERT>& aEndBoundary,
-                         nsINode* aRootNode,
-                         bool aNotInsertedYet ) {
+void nsRange::DoSetRange(
+    const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
+    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, nsINode* aRootNode,
+    bool aNotInsertedYet ,
+    CollapsePolicy
+        aCollapsePolicy ) {
   mIsPositioned = aStartBoundary.IsSetAndValid() &&
                   aEndBoundary.IsSetAndValid() && aRootNode;
   MOZ_ASSERT_IF(!mIsPositioned, !aStartBoundary.IsSet());
@@ -914,6 +1035,11 @@ void nsRange::DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
   
   mStart.CopyFrom(aStartBoundary, RangeBoundaryIsMutationObserved::Yes);
   mEnd.CopyFrom(aEndBoundary, RangeBoundaryIsMutationObserved::Yes);
+
+  if (aCollapsePolicy ==
+      CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges) {
+    ResetCrossShadowBoundaryRange();
+  }
 
   if (checkCommonAncestor) {
     UpdateCommonAncestorIfNecessary();
@@ -967,17 +1093,21 @@ bool nsRange::CanAccess(const nsINode& aNode) const {
   return nsContentUtils::CanCallerAccess(&aNode);
 }
 
-void nsRange::SetStart(nsINode& aNode, uint32_t aOffset, ErrorResult& aRv) {
+void nsRange::SetStart(
+    nsINode& aNode, uint32_t aOffset, ErrorResult& aRv,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (!CanAccess(aNode)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
 
   AutoInvalidateSelection atEndOfBlock(this);
-  SetStart(RawRangeBoundary(&aNode, aOffset), aRv);
+  SetStart(RawRangeBoundary(&aNode, aOffset), aRv, aAllowCrossShadowBoundary);
 }
 
-void nsRange::SetStart(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
+void nsRange::SetStart(
+    const RawRangeBoundary& aPoint, ErrorResult& aRv,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   nsINode* newRoot = RangeUtils::ComputeRootNode(aPoint.Container());
   if (!newRoot) {
     aRv.Throw(NS_ERROR_DOM_INVALID_NODE_TYPE_ERR);
@@ -989,28 +1119,46 @@ void nsRange::SetStart(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
     return;
   }
 
-  
-  
-  const bool collapse = [&]() {
-    if (!mIsPositioned || (newRoot != mRoot)) {
-      return true;
-    }
+  CollapsePolicy policy =
+      ShouldCollapseBoundary(this, newRoot, aPoint, true ,
+                             aAllowCrossShadowBoundary);
 
-    const Maybe<int32_t> order = nsContentUtils::ComparePoints(aPoint, mEnd);
-    if (order) {
-      return *order == 1;
-    }
-
-    MOZ_ASSERT_UNREACHABLE();
-    return true;
-  }();
-
-  if (collapse) {
-    DoSetRange(aPoint, aPoint, newRoot);
-    return;
+  switch (policy) {
+    case CollapsePolicy::No:
+      
+      
+      
+      if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
+        if (MayCrossShadowBoundaryEndRef() != mEnd) {
+          CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+              aPoint, MayCrossShadowBoundaryEndRef());
+        } else {
+          
+          ResetCrossShadowBoundaryRange();
+        }
+      }
+      DoSetRange(aPoint, mEnd, mRoot, false, policy);
+      break;
+    case CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges:
+      DoSetRange(aPoint, aPoint, newRoot, false, policy);
+      break;
+    case CollapsePolicy::DefaultRange:
+      MOZ_ASSERT(aAllowCrossShadowBoundary ==
+                 AllowRangeCrossShadowBoundary::Yes);
+      CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+          aPoint, MayCrossShadowBoundaryEndRef());
+      DoSetRange(aPoint, aPoint, newRoot, false, policy);
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE();
   }
+}
 
-  DoSetRange(aPoint, mEnd, mRoot);
+void nsRange::SetStartAllowCrossShadowBoundary(nsINode& aNode, uint32_t aOffset,
+                                               ErrorResult& aErr) {
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
+  SetStart(aNode, aOffset, aErr, AllowRangeCrossShadowBoundary::Yes);
 }
 
 void nsRange::SetStartBeforeJS(nsINode& aNode, ErrorResult& aErr) {
@@ -1019,7 +1167,9 @@ void nsRange::SetStartBeforeJS(nsINode& aNode, ErrorResult& aErr) {
   SetStartBefore(aNode, aErr);
 }
 
-void nsRange::SetStartBefore(nsINode& aNode, ErrorResult& aRv) {
+void nsRange::SetStartBefore(
+    nsINode& aNode, ErrorResult& aRv,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (!CanAccess(aNode)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
@@ -1029,7 +1179,8 @@ void nsRange::SetStartBefore(nsINode& aNode, ErrorResult& aRv) {
   
   
   
-  SetStart(RangeUtils::GetRawRangeBoundaryBefore(&aNode), aRv);
+  SetStart(RangeUtils::GetRawRangeBoundaryBefore(&aNode), aRv,
+           aAllowCrossShadowBoundary);
 }
 
 void nsRange::SetStartAfterJS(nsINode& aNode, ErrorResult& aErr) {
@@ -1057,16 +1208,18 @@ void nsRange::SetEndJS(nsINode& aNode, uint32_t aOffset, ErrorResult& aErr) {
   SetEnd(aNode, aOffset, aErr);
 }
 
-void nsRange::SetEnd(nsINode& aNode, uint32_t aOffset, ErrorResult& aRv) {
+void nsRange::SetEnd(nsINode& aNode, uint32_t aOffset, ErrorResult& aRv,
+                     AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (!CanAccess(aNode)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
   AutoInvalidateSelection atEndOfBlock(this);
-  SetEnd(RawRangeBoundary(&aNode, aOffset), aRv);
+  SetEnd(RawRangeBoundary(&aNode, aOffset), aRv, aAllowCrossShadowBoundary);
 }
 
-void nsRange::SetEnd(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
+void nsRange::SetEnd(const RawRangeBoundary& aPoint, ErrorResult& aRv,
+                     AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   nsINode* newRoot = RangeUtils::ComputeRootNode(aPoint.Container());
   if (!newRoot) {
     aRv.Throw(NS_ERROR_DOM_INVALID_NODE_TYPE_ERR);
@@ -1078,28 +1231,47 @@ void nsRange::SetEnd(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
     return;
   }
 
-  
-  
-  const bool collapse = [&]() {
-    if (!mIsPositioned || (newRoot != mRoot)) {
-      return true;
-    }
+  CollapsePolicy policy =
+      ShouldCollapseBoundary(this, newRoot, aPoint, false ,
+                             aAllowCrossShadowBoundary);
 
-    const Maybe<int32_t> order = nsContentUtils::ComparePoints(mStart, aPoint);
-    if (order) {
-      return *order == 1;
-    }
-
-    MOZ_ASSERT_UNREACHABLE();
-    return true;
-  }();
-
-  if (collapse) {
-    DoSetRange(aPoint, aPoint, newRoot);
-    return;
+  switch (policy) {
+    case CollapsePolicy::No:
+      
+      
+      
+      if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
+        if (MayCrossShadowBoundaryStartRef() != mStart) {
+          CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+              MayCrossShadowBoundaryStartRef(), aPoint);
+        } else {
+          
+          ResetCrossShadowBoundaryRange();
+        }
+      }
+      DoSetRange(mStart, aPoint, mRoot, false, policy);
+      break;
+    case CollapsePolicy::DefaultRangeAndCrossShadowBoundaryRanges:
+      DoSetRange(aPoint, aPoint, newRoot, false, policy);
+      break;
+    case CollapsePolicy::DefaultRange:
+      MOZ_ASSERT(aAllowCrossShadowBoundary ==
+                 AllowRangeCrossShadowBoundary::Yes);
+      CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+          MayCrossShadowBoundaryStartRef(), aPoint);
+      DoSetRange(aPoint, aPoint, newRoot, false, policy);
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE();
   }
+}
 
-  DoSetRange(mStart, aPoint, mRoot);
+void nsRange::SetEndAllowCrossShadowBoundary(nsINode& aNode, uint32_t aOffset,
+                                             ErrorResult& aErr) {
+  AutoCalledByJSRestore calledByJSRestorer(*this);
+  mCalledByJS = true;
+  SetEnd(aNode, aOffset, aErr,
+         AllowRangeCrossShadowBoundary::Yes );
 }
 
 void nsRange::SelectNodesInContainer(nsINode* aContainer,
@@ -1129,7 +1301,9 @@ void nsRange::SetEndBeforeJS(nsINode& aNode, ErrorResult& aErr) {
   SetEndBefore(aNode, aErr);
 }
 
-void nsRange::SetEndBefore(nsINode& aNode, ErrorResult& aRv) {
+void nsRange::SetEndBefore(
+    nsINode& aNode, ErrorResult& aRv,
+    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
   if (!CanAccess(aNode)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
@@ -1139,7 +1313,8 @@ void nsRange::SetEndBefore(nsINode& aNode, ErrorResult& aRv) {
   
   
   
-  SetEnd(RangeUtils::GetRawRangeBoundaryBefore(&aNode), aRv);
+  SetEnd(RangeUtils::GetRawRangeBoundaryBefore(&aNode), aRv,
+         aAllowCrossShadowBoundary);
 }
 
 void nsRange::SetEndAfterJS(nsINode& aNode, ErrorResult& aErr) {
@@ -2203,6 +2378,11 @@ already_AddRefed<DocumentFragment> nsRange::CloneContents(ErrorResult& aRv) {
 already_AddRefed<nsRange> nsRange::CloneRange() const {
   RefPtr<nsRange> range = nsRange::Create(mOwner);
   range->DoSetRange(mStart, mEnd, mRoot);
+  if (mCrossShadowBoundaryRange) {
+    range->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+        mCrossShadowBoundaryRange->StartRef(),
+        mCrossShadowBoundaryRange->EndRef());
+  }
   return range.forget();
 }
 
@@ -3265,4 +3445,53 @@ void nsRange::GetInnerTextNoFlush(DOMString& aValue, ErrorResult& aError,
 
   
   
+}
+
+template <typename SPT, typename SRT, typename EPT, typename ERT>
+void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+    const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
+    const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary) {
+  if (!StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+    return;
+  }
+
+  MOZ_ASSERT(aStartBoundary.IsSetAndValid() && aEndBoundary.IsSetAndValid());
+
+  nsINode* startNode = aStartBoundary.Container();
+  nsINode* endNode = aEndBoundary.Container();
+
+  if (!startNode && !endNode) {
+    ResetCrossShadowBoundaryRange();
+    return;
+  }
+
+  auto CanBecomeCrossShadowBoundaryPoint = [](nsINode* aContainer) -> bool {
+    if (!aContainer) {
+      return true;
+    }
+
+    
+    
+    if (!aContainer->IsInComposedDoc()) {
+      return false;
+    }
+
+    
+    
+    return aContainer->IsDocument() || aContainer->IsContent();
+  };
+
+  if (!CanBecomeCrossShadowBoundaryPoint(startNode) ||
+      !CanBecomeCrossShadowBoundaryPoint(endNode)) {
+    ResetCrossShadowBoundaryRange();
+    return;
+  }
+
+  if (!mCrossShadowBoundaryRange) {
+    mCrossShadowBoundaryRange =
+        StaticRange::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
+    return;
+  }
+
+  mCrossShadowBoundaryRange->SetStartAndEnd(aStartBoundary, aEndBoundary);
 }
