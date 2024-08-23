@@ -336,23 +336,29 @@ EGLSurface GLContextEGL::CreateEGLSurfaceForCompositorWidget(
   }
 
   MOZ_ASSERT(aCompositorWidget);
-#ifdef MOZ_WAYLAND
-  
-  
-  
-  
-  
-  
-  if (widget::GdkIsWaylandDisplay() && aCompositorWidget->IsHidden()) {
-    mozilla::gfx::IntSize pbSize(16, 16);
-    return CreateWaylandOffscreenSurface(*egl, aConfig, pbSize);
-  }
-#endif
   EGLNativeWindowType window =
       GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aCompositorWidget);
   if (!window) {
+#ifdef MOZ_WIDGET_GTK
+    
+    
+    
+    
+    
+    mozilla::gfx::IntSize pbSize(16, 16);
+#  ifdef MOZ_WAYLAND
+    if (GdkIsWaylandDisplay()) {
+      return CreateWaylandOffscreenSurface(*egl, aConfig, pbSize);
+    } else
+#  endif
+    {
+      return CreatePBufferSurfaceTryingPowerOfTwo(*egl, aConfig, LOCAL_EGL_NONE,
+                                                  pbSize);
+    }
+#else
     gfxCriticalNote << "window is null";
     return EGL_NO_SURFACE;
+#endif
   }
 
   return mozilla::gl::CreateSurfaceFromNativeWindow(*egl, window, aConfig);
@@ -486,16 +492,6 @@ bool GLContextEGL::RenewSurface(CompositorWidget* aWidget) {
 
   EGLNativeWindowType nativeWindow =
       GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aWidget);
-#ifdef MOZ_WAYLAND
-  
-  
-  
-  
-  if (GdkIsWaylandDisplay()) {
-    NS_WARNING("Failed to get native window");
-    return false;
-  }
-#endif
   if (nativeWindow) {
     mSurface = mozilla::gl::CreateSurfaceFromNativeWindow(*mEgl, nativeWindow,
                                                           mSurfaceConfig);
