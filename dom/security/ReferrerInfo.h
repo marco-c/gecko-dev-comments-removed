@@ -14,7 +14,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 
-#define REFERRERINFOF_CONTRACTID "@mozilla.org/referrer-info;1"
+#define REFERRERINFO_CONTRACTID "@mozilla.org/referrer-info;1"
 
 #define REFERRERINFO_CID                             \
   {                                                  \
