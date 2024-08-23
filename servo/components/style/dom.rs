@@ -19,7 +19,7 @@ use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylist::CascadeData;
 use crate::values::computed::Display;
 use crate::values::AtomIdent;
-use crate::WeakAtom;
+use crate::{LocalName, WeakAtom};
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 use dom::ElementState;
 use selectors::matching::{ElementSelectorFlags, QuirksMode, VisitedHandlingMode};
@@ -540,7 +540,7 @@ pub trait TElement:
     
     fn each_attr_name<F>(&self, callback: F)
     where
-        F: FnMut(&AtomIdent);
+        F: FnMut(&LocalName);
 
     
     
