@@ -6012,7 +6012,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
 
   
   FlattenedChildIterator iter(aInsertion->mContainer);
-  if (iter.ShadowDOMInvolved() || !aChild->IsRootOfNativeAnonymousSubtree()) {
+  if (!aChild->IsRootOfNativeAnonymousSubtree()) {
     
     
     
