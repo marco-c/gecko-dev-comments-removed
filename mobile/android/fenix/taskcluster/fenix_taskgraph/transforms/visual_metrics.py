@@ -76,6 +76,10 @@ def run_visual_metrics(config, jobs):
             )
 
             
+            
+            job['worker'].setdefault('env', {})['TC_PLATFORM'] = platform
+
+            
             attributes = dict(dep_job.attributes)
             job['run-on-projects'] = attributes['run_on_projects']
 
