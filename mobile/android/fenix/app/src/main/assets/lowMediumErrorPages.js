@@ -76,19 +76,12 @@ function updateShowSSL(queryMap) {
 
 
 function updateShowHSTS(queryMap) {
-    
     const showHSTS = queryMap.showHSTS;
-    if (typeof document.addCertException === "undefined") {
-        document.getElementById('advancedButton').style.display='none';
-    } else {
-        if (showHSTS === 'true') {
-            document.getElementById('advancedButton').style.display='block';
-            document.getElementById('advancedPanelAcceptButton').style.display='none';
-        } else {
-            document.getElementById('advancedButton').style.display='none';
-        }
+    if (showHSTS === 'true') {
+        document.getElementById('advancedButton').style.display='block';
+        document.getElementById('advancedPanelAcceptButton').style.display='none';
     }
-}
+};
 
 
 
