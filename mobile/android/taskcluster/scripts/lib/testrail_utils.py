@@ -24,6 +24,7 @@ Functions:
 
 from datetime import datetime
 import json
+import os
 import textwrap
 
 
@@ -51,8 +52,31 @@ def build_milestone_description(milestone_name):
 
 
 def get_release_version():
-    with open("version.txt", "r") as file:
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    
+    root_dir = script_dir
+
+    
+    while root_dir != os.path.dirname(
+        root_dir
+    ):  
+        version_file_path = os.path.join(root_dir, "version.txt")
+        if os.path.isfile(version_file_path):
+            break
+        root_dir = os.path.dirname(root_dir)  
+
+    
+    if not os.path.isfile(version_file_path):
+        raise FileNotFoundError(
+            "version.txt not found in any of the parent directories."
+        )
+
+    
+    with open(version_file_path, "r") as file:
         version = file.readline().strip()
+
     return version
 
 
