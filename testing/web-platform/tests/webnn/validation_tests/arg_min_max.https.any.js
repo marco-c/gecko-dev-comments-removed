@@ -1,8 +1,0 @@
-
-
-
-
-
-'use strict';
-
-validateOptionsAxes(['argMin', 'argMax']);

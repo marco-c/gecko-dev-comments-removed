@@ -1,0 +1,16 @@
+
+
+
+
+
+'use strict';
+
+const kArgMinMaxOperators = [
+  'argMin',
+  'argMax',
+];
+
+kArgMinMaxOperators.forEach((operatorName) => {
+  validateOptionsAxes(operatorName);
+  validateInputFromAnotherBuilder(operatorName);
+});

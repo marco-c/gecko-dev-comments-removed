@@ -357,3 +357,59 @@ function validateOptionsAxes(operationName, inputRank) {
     }, `[${subOperationName}] DataError is expected if two or more values are same in the axes sequence`);
   }
 }
+
+
+
+
+
+
+
+
+function validateInputFromAnotherBuilder(operatorName, operatorDescriptor = {
+  dataType: 'float32',
+  dimensions: [2, 2]
+}) {
+  multi_builder_test(async (t, builder, otherBuilder) => {
+    const inputFromOtherBuilder =
+        otherBuilder.input('input', operatorDescriptor);
+    assert_throws_js(
+        TypeError, () => builder[operatorName](inputFromOtherBuilder));
+  }, `[${operatorName}] throw if input is from another builder`);
+};
+
+
+
+
+
+
+
+function validateTwoInputsFromMultipleBuilders(operatorName) {
+  const opDescriptor = {dataType: 'float32', dimensions: [2, 2]};
+
+  multi_builder_test(async (t, builder, otherBuilder) => {
+    const inputFromOtherBuilder = otherBuilder.input('other', opDescriptor);
+
+    const input = builder.input('input', opDescriptor);
+    assert_throws_js(
+        TypeError, () => builder[operatorName](inputFromOtherBuilder, input));
+  }, `[${operatorName}] throw if first input is from another builder`);
+
+  multi_builder_test(async (t, builder, otherBuilder) => {
+    const inputFromOtherBuilder = otherBuilder.input('other', opDescriptor);
+
+    const input = builder.input('input', opDescriptor);
+    assert_throws_js(
+        TypeError, () => builder[operatorName](input, inputFromOtherBuilder));
+  }, `[${operatorName}] throw if second input is from another builder`);
+};
+
+function multi_builder_test(func, description) {
+  promise_test(async t => {
+    const context = await navigator.ml.createContext();
+
+    const builder = new MLGraphBuilder(context);
+    const otherBuilder = new MLGraphBuilder(context);
+
+    await func(t, builder, otherBuilder);
+  }, description);
+}

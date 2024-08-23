@@ -1,0 +1,7 @@
+
+
+
+
+'use strict';
+
+validateTwoInputsFromMultipleBuilders('matmul');

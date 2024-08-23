@@ -1,0 +1,22 @@
+
+
+
+
+
+'use strict';
+
+const kElementwiseBinaryOperators = [
+  'add',
+  'sub',
+  'mul',
+  'div',
+  'max',
+  'min',
+  'pow',
+];
+
+kElementwiseBinaryOperators.forEach((operatorName) => {
+  validateTwoInputsOfSameDataType(operatorName);
+  validateTwoInputsBroadcastable(operatorName);
+  validateTwoInputsFromMultipleBuilders(operatorName);
+});

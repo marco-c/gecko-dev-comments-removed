@@ -2,10 +2,9 @@
 
 
 
-
 'use strict';
 
-[
+const kReductionOperators = [
   'reduceL1',
   'reduceL2',
   'reduceLogSum',
@@ -16,6 +15,9 @@
   'reduceProduct',
   'reduceSum',
   'reduceSumSquare',
-].forEach((operationName) => {
-  validateOptionsAxes(operationName);
+];
+
+kReductionOperators.forEach((operatorName) => {
+  validateOptionsAxes(operatorName);
+  validateInputFromAnotherBuilder(operatorName);
 });

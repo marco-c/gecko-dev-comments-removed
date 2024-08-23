@@ -1,0 +1,20 @@
+
+
+
+
+'use strict';
+
+const kElementwiseLogicalBinaryOperators = [
+  'equal',
+  'greater',
+  'greaterOrEqual',
+  'lesser',
+  'lesserOrEqual',
+];
+
+kElementwiseLogicalBinaryOperators.forEach((operatorName) => {
+  validateTwoInputsFromMultipleBuilders(operatorName);
+});
+
+
+validateInputFromOtherBuilder('not');

@@ -1,0 +1,14 @@
+
+
+
+
+'use strict';
+
+const kElementwiseUnaryOperators = [
+  'abs', 'ceil', 'cos', 'erf', 'exp', 'floor', 'identity', 'log', 'neg',
+  'reciprocal', 'sin', 'sqrt', 'tan'
+];
+
+kElementwiseUnaryOperators.forEach((operatorName) => {
+  validateInputFromAnotherBuilder(operatorName);
+});
