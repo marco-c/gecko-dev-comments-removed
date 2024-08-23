@@ -1167,6 +1167,11 @@ struct arena_t {
   size_t mNumDirty;
 
   
+  
+  size_t mNumMAdvised;
+  size_t mNumFresh;
+
+  
   size_t mMaxDirty;
 
   int32_t mMaxDirtyIncreaseOverride;
@@ -2680,6 +2685,8 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
             (chunk->map[run_ind + i + k].bits & ~CHUNK_MAP_DECOMMITTED) |
             CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
       }
+
+      mNumFresh += j;
     }
   }
 #endif
@@ -2712,15 +2719,21 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
       chunk->ndirty--;
       mNumDirty--;
       
-    } else if (chunk->map[run_ind + i].bits &
-               (CHUNK_MAP_MADVISED | CHUNK_MAP_FRESH)) {
+    } else if (chunk->map[run_ind + i].bits & CHUNK_MAP_MADVISED) {
       mStats.committed++;
+      mNumMAdvised--;
+    }
+
+    if (chunk->map[run_ind + i].bits & CHUNK_MAP_FRESH) {
+      mStats.committed++;
+      mNumFresh--;
     }
 #ifdef MALLOC_DOUBLE_PURGE
     
     
     else if (chunk->map[run_ind + i].bits & CHUNK_MAP_DECOMMITTED) {
       mStats.committed++;
+      mNumFresh--;
     }
 #else
     
@@ -2791,6 +2804,7 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
     aChunk->map[i + j].bits = CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
   }
   i += n_fresh_pages;
+  mNumFresh += n_fresh_pages;
 
 #ifndef MALLOC_DECOMMIT
   
@@ -2829,14 +2843,29 @@ arena_chunk_t* arena_t::DeallocChunk(arena_chunk_t* aChunk) {
       mStats.committed -= mSpare->ndirty;
     }
 
-#ifdef MOZ_DEBUG
     
-    
+    size_t madvised = 0;
+    size_t fresh = 0;
     for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
+      
+      
       MOZ_ASSERT(mSpare->map[i].bits &
                  (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY));
-    }
+
+#ifdef MALLOC_DOUBLE_PURGE
+      size_t fresh_test_bits = CHUNK_MAP_FRESH | CHUNK_MAP_DECOMMITTED;
+#else
+      size_t fresh_test_bits = CHUNK_MAP_FRESH;
 #endif
+      if (mSpare->map[i].bits & CHUNK_MAP_MADVISED) {
+        madvised++;
+      } else if (mSpare->map[i].bits & fresh_test_bits) {
+        fresh++;
+      }
+    }
+
+    mNumMAdvised -= madvised;
+    mNumFresh -= fresh;
 
 #ifdef MALLOC_DOUBLE_PURGE
     if (mChunksMAdvised.ElementProbablyInList(mSpare)) {
@@ -2925,7 +2954,8 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
   const size_t max_page_cache = EffectiveMaxDirty();
 
   
-  const size_t page_cache = mNumDirty;
+  
+  const size_t page_cache = mNumDirty + mNumFresh + mNumMAdvised;
 
   if (page_cache > max_page_cache) {
     
@@ -3057,6 +3087,7 @@ void arena_t::Purge(size_t aMaxDirty) {
         madvise((void*)(uintptr_t(chunk) + (i << gPageSize2Pow)),
                 (npages << gPageSize2Pow), MADV_FREE);
 #  endif
+        mNumMAdvised += npages;
 #  ifdef MALLOC_DOUBLE_PURGE
         madvised = true;
 #  endif
@@ -4162,6 +4193,8 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   mIsPrivate = aIsPrivate;
 
   mNumDirty = 0;
+  mNumFresh = 0;
+  mNumMAdvised = 0;
   
   
   mMaxDirty = (aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
@@ -4866,6 +4899,8 @@ inline void MozJemalloc::jemalloc_stats_internal(
   aStats->allocated = 0;
   aStats->waste = 0;
   aStats->page_cache = 0;
+  aStats->pages_fresh = 0;
+  aStats->pages_madvised = 0;
   aStats->bookkeeping = 0;
   aStats->bin_unused = 0;
 
@@ -4898,8 +4933,8 @@ inline void MozJemalloc::jemalloc_stats_internal(
     
     MOZ_ASSERT(arena->mLock.SafeOnThisThread());
 
-    size_t arena_mapped, arena_allocated, arena_committed, arena_dirty, j,
-        arena_unused, arena_headers;
+    size_t arena_mapped, arena_allocated, arena_committed, arena_dirty,
+        arena_fresh, arena_madvised, j, arena_unused, arena_headers;
 
     arena_headers = 0;
     arena_unused = 0;
@@ -4916,6 +4951,8 @@ inline void MozJemalloc::jemalloc_stats_internal(
           arena->mStats.allocated_small + arena->mStats.allocated_large;
 
       arena_dirty = arena->mNumDirty << gPageSize2Pow;
+      arena_fresh = arena->mNumFresh << gPageSize2Pow;
+      arena_madvised = arena->mNumMAdvised << gPageSize2Pow;
 
       for (j = 0; j < NUM_SMALL_CLASSES; j++) {
         arena_bin_t* bin = &arena->mBins[j];
@@ -4955,6 +4992,8 @@ inline void MozJemalloc::jemalloc_stats_internal(
     aStats->mapped += arena_mapped;
     aStats->allocated += arena_allocated;
     aStats->page_cache += arena_dirty;
+    aStats->pages_fresh += arena_fresh;
+    aStats->pages_madvised += arena_madvised;
     
     
     
@@ -4994,7 +5033,8 @@ inline void MozJemalloc::jemalloc_set_main_thread() {
 #ifdef MALLOC_DOUBLE_PURGE
 
 
-static void hard_purge_chunk(arena_chunk_t* aChunk) {
+static size_t hard_purge_chunk(arena_chunk_t* aChunk) {
+  size_t total_npages = 0;
   
   for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages; i++) {
     
@@ -5017,8 +5057,11 @@ static void hard_purge_chunk(arena_chunk_t* aChunk) {
       Unused << pages_commit(((char*)aChunk) + (i << gPageSize2Pow),
                              npages << gPageSize2Pow);
     }
+    total_npages += npages;
     i += npages;
   }
+
+  return total_npages;
 }
 
 
@@ -5027,7 +5070,9 @@ void arena_t::HardPurge() {
 
   while (!mChunksMAdvised.isEmpty()) {
     arena_chunk_t* chunk = mChunksMAdvised.popFront();
-    hard_purge_chunk(chunk);
+    size_t npages = hard_purge_chunk(chunk);
+    mNumMAdvised -= npages;
+    mNumFresh += npages;
   }
 }
 

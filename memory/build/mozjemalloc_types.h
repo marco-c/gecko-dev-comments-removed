@@ -110,16 +110,18 @@ typedef struct {
   size_t dirty_max;         
 
   
-  size_t mapped;       
-  size_t allocated;    
-  size_t waste;        
-                       
-                       
-  size_t page_cache;   
-                       
-  size_t bookkeeping;  
-                       
-  size_t bin_unused;   
+  size_t mapped;          
+  size_t allocated;       
+  size_t waste;           
+                          
+                          
+  size_t page_cache;      
+                          
+  size_t pages_fresh;     
+  size_t pages_madvised;  
+  size_t bookkeeping;     
+                          
+  size_t bin_unused;      
 } jemalloc_stats_t;
 
 typedef struct {
