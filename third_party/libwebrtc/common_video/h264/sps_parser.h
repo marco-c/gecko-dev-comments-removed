@@ -13,15 +13,16 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/bitstream_reader.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
-class SpsParser {
+class RTC_EXPORT SpsParser {
  public:
   
   
-  struct SpsState {
+  struct RTC_EXPORT SpsState {
     SpsState();
     SpsState(const SpsState&);
     ~SpsState();
