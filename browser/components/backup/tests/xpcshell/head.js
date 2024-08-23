@@ -17,3 +17,25 @@ async function createKilobyteSizedFile(path, sizeInKB) {
   let bytes = new Uint8Array(sizeInKB * BYTES_IN_KB);
   await IOUtils.write(path, bytes);
 }
+
+
+
+
+
+
+async function maybeRemoveFile(path) {
+  if (await IOUtils.exists(path)) {
+    return;
+  }
+
+  try {
+    await IOUtils.remove(path);
+  } catch (error) {
+    
+    
+    if (error.name == "NS_ERROR_FILE_IS_LOCKED") {
+      return;
+    }
+    throw error;
+  }
+}
