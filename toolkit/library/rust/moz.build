@@ -21,6 +21,7 @@ for feature in gkrust_features:
 
 
 RUST_TESTS = [
+    "crashreporter",
     "firefox-on-glean",
     "l10nregistry",
     "selectors",
@@ -33,6 +34,8 @@ RUST_TESTS = [
 
 if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
     RUST_TESTS += ["nmhproxy"]
+
+RUST_TEST_FEATURES.append("crashreporter/mock")
 
 
 
