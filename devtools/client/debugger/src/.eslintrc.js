@@ -252,7 +252,8 @@ module.exports = {
     
     "no-unreachable": 2,
     
-    "no-unused-vars": [2, { vars: "all", args: "none" }],
+    
+    "no-unused-vars": [2, { vars: "all", argsIgnorePattern: "^_" }],
     
     "no-use-before-define": 0,
     

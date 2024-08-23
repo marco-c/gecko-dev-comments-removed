@@ -64,7 +64,7 @@ module.exports = {
       
       files: ["**/head*.js"],
       rules: {
-        "no-unused-vars": ["error", { args: "none", vars: "local" }],
+        "no-unused-vars": ["error", { argsIgnorePattern: "^_", vars: "local" }],
       },
     },
     {
@@ -235,7 +235,7 @@ module.exports = {
     "no-shadow": "error",
     
     
-    "no-unused-vars": ["error", { args: "none", vars: "all" }],
+    "no-unused-vars": ["error", { argsIgnorePattern: "^_", vars: "all" }],
     
     "prefer-const": ["error", { destructuring: "all" }],
     
