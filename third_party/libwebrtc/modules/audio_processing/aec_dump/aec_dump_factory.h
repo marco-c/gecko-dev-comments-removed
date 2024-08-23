@@ -13,14 +13,13 @@
 
 #include <memory>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
+#include "api/task_queue/task_queue_base.h"
 #include "modules/audio_processing/include/aec_dump.h"
 #include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/system/rtc_export.h"
-
-namespace rtc {
-class TaskQueue;
-}  
+#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
@@ -31,16 +30,27 @@ class RTC_EXPORT AecDumpFactory {
   
   
   
+  static absl::Nullable<std::unique_ptr<AecDump>> Create(
+      FileWrapper file,
+      int64_t max_log_size_bytes,
+      absl::Nonnull<TaskQueueBase*> worker_queue);
+  static absl::Nullable<std::unique_ptr<AecDump>> Create(
+      absl::string_view file_name,
+      int64_t max_log_size_bytes,
+      absl::Nonnull<TaskQueueBase*> worker_queue);
+  static absl::Nullable<std::unique_ptr<AecDump>> Create(
+      absl::Nonnull<FILE*> handle,
+      int64_t max_log_size_bytes,
+      absl::Nonnull<TaskQueueBase*> worker_queue);
+
   
-  static std::unique_ptr<AecDump> Create(webrtc::FileWrapper file,
-                                         int64_t max_log_size_bytes,
-                                         rtc::TaskQueue* worker_queue);
-  static std::unique_ptr<AecDump> Create(absl::string_view file_name,
-                                         int64_t max_log_size_bytes,
-                                         rtc::TaskQueue* worker_queue);
-  static std::unique_ptr<AecDump> Create(FILE* handle,
-                                         int64_t max_log_size_bytes,
-                                         rtc::TaskQueue* worker_queue);
+  
+  static absl::Nullable<std::unique_ptr<AecDump>> Create(
+      absl::Nonnull<FILE*> handle,
+      int64_t max_log_size_bytes,
+      absl::Nonnull<rtc::TaskQueue*> worker_queue) {
+    return Create(handle, max_log_size_bytes, worker_queue->Get());
+  }
 };
 
 }  
