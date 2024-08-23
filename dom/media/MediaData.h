@@ -389,6 +389,8 @@ class AudioData : public MediaData {
   static const Type sType = Type::AUDIO_DATA;
   static const char* sTypeName;
 
+  nsCString ToString() const;
+
   
   Span<AudioDataValue> Data() const;
 
