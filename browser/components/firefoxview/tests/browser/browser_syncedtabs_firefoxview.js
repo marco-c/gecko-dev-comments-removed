@@ -276,9 +276,12 @@ add_task(async function test_tabs() {
   });
 
   await withFirefoxView({ openNewWindow: true }, async browser => {
+    
+    
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+
     const { document } = browser.contentWindow;
     await navigateToViewAndWait(document, "syncedtabs");
-    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
 
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
