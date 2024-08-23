@@ -8,6 +8,7 @@
 #define js_experimental_JitInfo_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -72,7 +73,7 @@ struct JSJitMethodCallArgsTraits;
 
 
 
-class JSJitMethodCallArgs
+class MOZ_NON_PARAM JSJitMethodCallArgs
     : protected JS::detail::CallArgsBase<JS::detail::NoUsedRval> {
  private:
   using Base = JS::detail::CallArgsBase<JS::detail::NoUsedRval>;
