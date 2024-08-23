@@ -3188,7 +3188,7 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
           
           
           IgnoredErrorResult err;
-          range->SetStartBefore(*node, err);
+          range->SetStartBefore(*node, err, AllowRangeCrossShadowBoundary::Yes);
           if (err.Failed()) {
             return;
           }
@@ -3202,7 +3202,8 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
 
         
         IgnoredErrorResult err;
-        range->SetEndBefore(*firstNonSelectableContent, err);
+        range->SetEndBefore(*firstNonSelectableContent, err,
+                            AllowRangeCrossShadowBoundary::Yes);
 
         
         
