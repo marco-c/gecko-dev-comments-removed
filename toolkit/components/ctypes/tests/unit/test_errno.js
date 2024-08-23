@@ -6,7 +6,6 @@ function run_test() {
   main_test();
 
   
-  Cu.unload("resource://gre/modules/ctypes.jsm");
   let scope = ChromeUtils.importESModule(
     "resource://gre/modules/ctypes.sys.mjs"
   );

@@ -103,6 +103,7 @@ class FakeAPIManager extends ExtensionCommon.SchemaAPIManager {
 
 
 
+
 class FakeChildProcessAPIManager extends FakeAPIManager {
   constructor({ processType, categoryScripts }) {
     super(processType, Schemas);

@@ -363,7 +363,6 @@ add_task(async function log_template_literal_message() {
 
 
 
-
 add_task(async function format_errors() {
   let pFormat = new Log.ParameterFormatter();
 
@@ -386,8 +385,6 @@ add_task(async function format_errors() {
     
     Assert.ok(str.includes(":1:12)"));
     
-    
-    Assert.ok(!str.includes("Task.jsm"));
     Assert.ok(str.includes("format_errors"));
   }
 });
