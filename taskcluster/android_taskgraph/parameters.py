@@ -2,10 +2,9 @@
 
 
 
-import os
 
 from gecko_taskgraph.parameters import extend_parameters_schema
-from voluptuous import All, Any, Range, Required
+from voluptuous import Any, Required
 
 
 def get_defaults(repo_root):
