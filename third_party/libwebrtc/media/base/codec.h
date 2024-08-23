@@ -99,6 +99,9 @@ struct RTC_EXPORT Codec {
       scalability_modes;
 
   
+  absl::optional<std::string> tx_mode;
+
+  
   
   CodecParameterMap params;
   FeedbackParams feedback_params;
@@ -108,6 +111,8 @@ struct RTC_EXPORT Codec {
 
   virtual ~Codec();
 
+  
+  
   
   
   

@@ -36,6 +36,18 @@ void H264GenerateProfileLevelIdForAnswer(
     const SdpVideoFormat::Parameters& remote_offered_params,
     SdpVideoFormat::Parameters* answer_params);
 
+#ifdef RTC_ENABLE_H265
+
+
+
+
+
+void H265GenerateProfileTierLevelForAnswer(
+    const SdpVideoFormat::Parameters& local_supported_params,
+    const SdpVideoFormat::Parameters& remote_offered_params,
+    SdpVideoFormat::Parameters* answer_params);
+#endif
+
 
 
 absl::optional<int> ParseSdpForVPxMaxFrameRate(

@@ -33,6 +33,8 @@ constexpr bool kH264Enabled = true;
 #else
 constexpr bool kH264Enabled = false;
 #endif
+constexpr bool kH265Enabled = false;
+
 constexpr VideoEncoderFactory::CodecSupport kSupported = {
     true, false};
 constexpr VideoEncoderFactory::CodecSupport kUnsupported = {
@@ -76,6 +78,17 @@ TEST(InternalEncoderFactoryTest, H264) {
         factory.GetSupportedFormats(),
         Not(Contains(Field(&SdpVideoFormat::name, cricket::kH264CodecName))));
   }
+}
+
+
+TEST(InternalEncoderFactoryTest, H265IsNotEnabled) {
+  InternalEncoderFactory factory;
+  std::unique_ptr<VideoEncoder> encoder =
+      factory.CreateVideoEncoder(SdpVideoFormat(cricket::kH265CodecName));
+  EXPECT_EQ(static_cast<bool>(encoder), kH265Enabled);
+  EXPECT_THAT(
+      factory.GetSupportedFormats(),
+      Not(Contains(Field(&SdpVideoFormat::name, cricket::kH265CodecName))));
 }
 
 TEST(InternalEncoderFactoryTest, QueryCodecSupportWithScalabilityMode) {
