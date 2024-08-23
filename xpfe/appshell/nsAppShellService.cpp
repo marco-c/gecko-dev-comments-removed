@@ -579,26 +579,11 @@ nsresult nsAppShellService::JustCreateTopWindow(
       !!(aChromeMask & nsIWebBrowserChrome::CHROME_ALERT) &&
       widgetInitData.mWindowType == widget::WindowType::Dialog;
 
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  
-  
-  uint32_t sheetMask = nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
-                       nsIWebBrowserChrome::CHROME_MODAL |
-                       nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
-  if (parent && (parent != mHiddenWindow) &&
-      ((aChromeMask & sheetMask) == sheetMask)) {
-    widgetInitData.mWindowType = widget::WindowType::Sheet;
-  }
-#endif
-
 #if defined(XP_WIN)
   if (widgetInitData.mWindowType == widget::WindowType::TopLevel ||
-      widgetInitData.mWindowType == widget::WindowType::Dialog)
+      widgetInitData.mWindowType == widget::WindowType::Dialog) {
     widgetInitData.mClipChildren = true;
+  }
 #endif
 
   

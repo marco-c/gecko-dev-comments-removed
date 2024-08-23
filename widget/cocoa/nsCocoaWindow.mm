@@ -105,13 +105,6 @@ extern CGError CGSSetWindowTransform(CGSConnection cid, CGSWindow wid,
 
 #define NS_APPSHELLSERVICE_CONTRACTID "@mozilla.org/appshell/appShellService;1"
 
-NS_IMPL_ISUPPORTS_INHERITED(nsCocoaWindow, Inherited, nsPIWidgetCocoa)
-
-
-
-
-
-
 static void RollUpPopups(nsIRollupListener::AllowAnimations aAllowAnimations =
                              nsIRollupListener::AllowAnimations::Yes) {
   if (RefPtr pm = nsXULPopupManager::GetInstance()) {
@@ -139,14 +132,12 @@ nsCocoaWindow::nsCocoaWindow()
       mAncestorLink(nullptr),
       mWindow(nil),
       mDelegate(nil),
-      mSheetWindowParent(nil),
       mPopupContentView(nil),
       mFullscreenTransitionAnimation(nil),
       mShadowStyle(WindowShadow::None),
       mBackingScaleFactor(0.0),
       mAnimationType(nsIWidget::eGenericWindowAnimation),
       mWindowMadeHere(false),
-      mSheetNeedsShow(false),
       mSizeMode(nsSizeMode_Normal),
       mInFullScreenMode(false),
       mInNativeFullScreenMode(false),
@@ -432,15 +423,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     case WindowType::Dialog:
       features = WindowMaskForBorderStyle(aBorderStyle);
       break;
-    case WindowType::Sheet:
-      if (mParent->GetWindowType() != WindowType::Invisible &&
-          aBorderStyle & BorderStyle::ResizeH) {
-        features = NSWindowStyleMaskResizable;
-      } else {
-        features = NSWindowStyleMaskMiniaturizable;
-      }
-      features |= NSWindowStyleMaskTitled;
-      break;
     default:
       NS_ERROR("Unhandled window type!");
       return NS_ERROR_FAILURE;
@@ -651,14 +633,6 @@ void nsCocoaWindow::Destroy() {
   }
 }
 
-nsIWidget* nsCocoaWindow::GetSheetWindowParent(void) {
-  if (mWindowType != WindowType::Sheet) return nullptr;
-  nsCocoaWindow* parent = static_cast<nsCocoaWindow*>(mParent);
-  while (parent && (parent->mWindowType == WindowType::Sheet))
-    parent = static_cast<nsCocoaWindow*>(parent->mParent);
-  return parent;
-}
-
 void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -708,7 +682,7 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
 bool nsCocoaWindow::IsVisible() const {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return (mWindow && ([mWindow isVisibleOrBeingShown] || mSheetNeedsShow));
+  return mWindow && mWindow.isVisibleOrBeingShown;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(false);
 }
@@ -733,7 +707,7 @@ void nsCocoaWindow::SetModal(bool aState) {
   nsAutoreleasePool localPool;
 
   mModal = aState;
-  nsCocoaWindow* ancestor = static_cast<nsCocoaWindow*>(mAncestorLink);
+  auto* ancestor = static_cast<nsCocoaWindow*>(mAncestorLink);
   if (aState) {
     ++gXULModalLevel;
     
@@ -743,58 +717,54 @@ void nsCocoaWindow::SetModal(bool aState) {
     
     
     
-    if (mWindowType != WindowType::Sheet) {
-      while (ancestor) {
-        if (ancestor->mNumModalDescendents++ == 0) {
-          NSWindow* aWindow = ancestor->GetCocoaWindow();
-          if (ancestor->mWindowType != WindowType::Invisible) {
-            [[aWindow standardWindowButton:NSWindowCloseButton] setEnabled:NO];
-            [[aWindow standardWindowButton:NSWindowMiniaturizeButton]
-                setEnabled:NO];
-            [[aWindow standardWindowButton:NSWindowZoomButton] setEnabled:NO];
-          }
+    while (ancestor) {
+      if (ancestor->mNumModalDescendents++ == 0) {
+        NSWindow* aWindow = ancestor->GetCocoaWindow();
+        if (ancestor->mWindowType != WindowType::Invisible) {
+          [[aWindow standardWindowButton:NSWindowCloseButton] setEnabled:NO];
+          [[aWindow standardWindowButton:NSWindowMiniaturizeButton]
+              setEnabled:NO];
+          [[aWindow standardWindowButton:NSWindowZoomButton] setEnabled:NO];
         }
-        ancestor = static_cast<nsCocoaWindow*>(ancestor->mParent);
       }
-      [mWindow setLevel:NSModalPanelWindowLevel];
-      nsCocoaWindowList* windowList = new nsCocoaWindowList;
-      if (windowList) {
-        windowList->window = this;  
-        windowList->prev = gGeckoAppModalWindowList;
-        gGeckoAppModalWindowList = windowList;
-      }
+      ancestor = static_cast<nsCocoaWindow*>(ancestor->mParent);
+    }
+    [mWindow setLevel:NSModalPanelWindowLevel];
+    nsCocoaWindowList* windowList = new nsCocoaWindowList;
+    if (windowList) {
+      windowList->window = this;  
+      windowList->prev = gGeckoAppModalWindowList;
+      gGeckoAppModalWindowList = windowList;
     }
   } else {
     --gXULModalLevel;
     NS_ASSERTION(gXULModalLevel >= 0,
                  "Mismatched call to nsCocoaWindow::SetModal(false)!");
-    if (mWindowType != WindowType::Sheet) {
-      while (ancestor) {
-        if (--ancestor->mNumModalDescendents == 0) {
-          NSWindow* aWindow = ancestor->GetCocoaWindow();
-          if (ancestor->mWindowType != WindowType::Invisible) {
-            [[aWindow standardWindowButton:NSWindowCloseButton] setEnabled:YES];
-            [[aWindow standardWindowButton:NSWindowMiniaturizeButton]
-                setEnabled:YES];
-            [[aWindow standardWindowButton:NSWindowZoomButton] setEnabled:YES];
-          }
+    while (ancestor) {
+      if (--ancestor->mNumModalDescendents == 0) {
+        NSWindow* aWindow = ancestor->GetCocoaWindow();
+        if (ancestor->mWindowType != WindowType::Invisible) {
+          [[aWindow standardWindowButton:NSWindowCloseButton] setEnabled:YES];
+          [[aWindow standardWindowButton:NSWindowMiniaturizeButton]
+              setEnabled:YES];
+          [[aWindow standardWindowButton:NSWindowZoomButton] setEnabled:YES];
         }
-        NS_ASSERTION(ancestor->mNumModalDescendents >= 0,
-                     "Widget hierarchy changed while modal!");
-        ancestor = static_cast<nsCocoaWindow*>(ancestor->mParent);
       }
-      if (gGeckoAppModalWindowList) {
-        NS_ASSERTION(gGeckoAppModalWindowList->window == this,
-                     "Widget hierarchy changed while modal!");
-        nsCocoaWindowList* saved = gGeckoAppModalWindowList;
-        gGeckoAppModalWindowList = gGeckoAppModalWindowList->prev;
-        delete saved;  
-      }
-      if (mWindowType == WindowType::Popup) {
-        SetPopupWindowLevel();
-      } else {
-        mWindow.level = NSNormalWindowLevel;
-      }
+      NS_ASSERTION(ancestor->mNumModalDescendents >= 0,
+                   "Widget hierarchy changed while modal!");
+      ancestor = static_cast<nsCocoaWindow*>(ancestor->mParent);
+    }
+    if (gGeckoAppModalWindowList) {
+      NS_ASSERTION(gGeckoAppModalWindowList->window == this,
+                   "Widget hierarchy changed while modal!");
+      nsCocoaWindowList* saved = gGeckoAppModalWindowList;
+      gGeckoAppModalWindowList = gGeckoAppModalWindowList->prev;
+      delete saved;  
+    }
+    if (mWindowType == WindowType::Popup) {
+      SetPopupWindowLevel();
+    } else {
+      mWindow.level = NSNormalWindowLevel;
     }
   }
 
@@ -816,12 +786,10 @@ void nsCocoaWindow::Show(bool aState) {
     return;
   }
 
-  if (!mSheetNeedsShow) {
-    
-    
-    if (aState == mWindow.isVisibleOrBeingShown) {
-      return;
-    }
+  
+  
+  if (aState == mWindow.isVisibleOrBeingShown) {
+    return;
   }
 
   [mWindow setBeingShown:aState];
@@ -829,11 +797,8 @@ void nsCocoaWindow::Show(bool aState) {
     mWasShown = true;
   }
 
-  nsIWidget* parentWidget = mParent;
-  nsCOMPtr<nsPIWidgetCocoa> piParentWidget(do_QueryInterface(parentWidget));
   NSWindow* nativeParentWindow =
-      parentWidget ? (NSWindow*)parentWidget->GetNativeData(NS_NATIVE_WINDOW)
-                   : nil;
+      mParent ? (NSWindow*)mParent->GetNativeData(NS_NATIVE_WINDOW) : nil;
 
   if (aState && !mBounds.IsEmpty()) {
     
@@ -856,82 +821,7 @@ void nsCocoaWindow::Show(bool aState) {
       mPopupContentView->Show(true);
     }
 
-    if (mWindowType == WindowType::Sheet) {
-      
-      if (!nativeParentWindow || !piParentWidget) return;
-
-      NSWindow* topNonSheetWindow = nativeParentWindow;
-
-      
-      
-      
-      
-      bool parentIsSheet = false;
-      if (NS_SUCCEEDED(piParentWidget->GetIsSheet(&parentIsSheet)) &&
-          parentIsSheet) {
-        piParentWidget->GetSheetWindowParent(&topNonSheetWindow);
-#ifdef MOZ_THUNDERBIRD
-        [NSApp endSheet:nativeParentWindow];
-#else
-        [nativeParentWindow.sheetParent endSheet:nativeParentWindow];
-#endif
-      }
-
-      nsCOMPtr<nsIWidget> sheetShown;
-      if (NS_SUCCEEDED(piParentWidget->GetChildSheet(
-              true, getter_AddRefs(sheetShown))) &&
-          (!sheetShown || sheetShown == this)) {
-        
-        
-#ifdef MOZ_THUNDERBIRD
-        
-#else
-        
-#endif
-        if (![mWindow isVisible]) {
-          mSheetNeedsShow = false;
-          mSheetWindowParent = topNonSheetWindow;
-#ifdef MOZ_THUNDERBIRD
-          
-          NSWindow* contextInfo = parentIsSheet ? nil : mSheetWindowParent;
-          [TopLevelWindowData deactivateInWindow:mSheetWindowParent];
-          [NSApp beginSheet:mWindow
-              modalForWindow:mSheetWindowParent
-               modalDelegate:mDelegate
-              didEndSelector:@selector(didEndSheet:returnCode:contextInfo:)
-                 contextInfo:contextInfo];
-#else
-          NSWindow* sheet = mWindow;
-          NSWindow* nonSheetParent = parentIsSheet ? nil : mSheetWindowParent;
-          [TopLevelWindowData deactivateInWindow:mSheetWindowParent];
-          [mSheetWindowParent beginSheet:sheet
-                       completionHandler:^(NSModalResponse returnCode) {
-                         
-                         
-                         
-                         
-                         
-                         
-                         
-                         
-                         
-                         [TopLevelWindowData deactivateInWindow:sheet];
-                         [sheet orderOut:nil];
-                         if (nonSheetParent) {
-                           [TopLevelWindowData activateInWindow:nonSheetParent];
-                         }
-                       }];
-#endif
-          [TopLevelWindowData activateInWindow:mWindow];
-          SendSetZLevelEvent();
-        }
-      } else {
-        
-        
-        
-        mSheetNeedsShow = true;
-      }
-    } else if (mWindowType == WindowType::Popup) {
+    if (mWindowType == WindowType::Popup) {
       
       
       
@@ -1002,119 +892,21 @@ void nsCocoaWindow::Show(bool aState) {
     }
 
     
-    if (mWindowType == WindowType::Sheet) {
-      if (mSheetNeedsShow) {
-        
-        
-        
-        mSheetNeedsShow = false;
-      } else {
-        
-        
-        NSWindow* sheetParent = mSheetWindowParent;
+    
+    
+    if (mWindowType == WindowType::Popup && nativeParentWindow) {
+      [nativeParentWindow removeChildWindow:mWindow];
+    }
 
-        
-#ifdef MOZ_THUNDERBIRD
-        [NSApp endSheet:mWindow];
-#else
-        [mSheetWindowParent endSheet:mWindow];
-#endif
-        [TopLevelWindowData deactivateInWindow:mWindow];
-
-        nsCOMPtr<nsIWidget> siblingSheetToShow;
-        bool parentIsSheet = false;
-
-        if (nativeParentWindow && piParentWidget &&
-            NS_SUCCEEDED(piParentWidget->GetChildSheet(
-                false, getter_AddRefs(siblingSheetToShow))) &&
-            siblingSheetToShow) {
-          
-          siblingSheetToShow->Show(true);
-        } else if (nativeParentWindow && piParentWidget &&
-                   NS_SUCCEEDED(piParentWidget->GetIsSheet(&parentIsSheet)) &&
-                   parentIsSheet) {
-#ifdef MOZ_THUNDERBIRD
-          
-          
-          NSWindow* contextInfo = sheetParent;
-#else
-          
-          
-          NSWindow* nonSheetGrandparent = sheetParent;
-#endif
-          nsIWidget* grandparentWidget = nil;
-          if (NS_SUCCEEDED(piParentWidget->GetRealParent(&grandparentWidget)) &&
-              grandparentWidget) {
-            nsCOMPtr<nsPIWidgetCocoa> piGrandparentWidget(
-                do_QueryInterface(grandparentWidget));
-            bool grandparentIsSheet = false;
-            if (piGrandparentWidget &&
-                NS_SUCCEEDED(
-                    piGrandparentWidget->GetIsSheet(&grandparentIsSheet)) &&
-                grandparentIsSheet) {
-#ifdef MOZ_THUNDERBIRD
-              contextInfo = nil;
-#else
-              nonSheetGrandparent = nil;
-#endif
-            }
-          }
-          
-          
-          
-#ifdef MOZ_THUNDERBIRD
-          [NSApp beginSheet:nativeParentWindow
-              modalForWindow:sheetParent
-               modalDelegate:[nativeParentWindow delegate]
-              didEndSelector:@selector(didEndSheet:returnCode:contextInfo:)
-                 contextInfo:contextInfo];
-#else
-          [nativeParentWindow
-                     beginSheet:sheetParent
-              completionHandler:^(NSModalResponse returnCode) {
-                
-                
-                
-                
-                
-                
-                
-                
-                [TopLevelWindowData deactivateInWindow:sheetParent];
-                [sheetParent orderOut:nil];
-                if (nonSheetGrandparent) {
-                  [TopLevelWindowData activateInWindow:nonSheetGrandparent];
-                }
-              }];
-#endif
-        } else {
-          
-          
-          NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-          [sheetParent makeKeyAndOrderFront:nil];
-          NS_OBJC_END_TRY_IGNORE_BLOCK;
-        }
-        SendSetZLevelEvent();
-      }
-    } else {
-      
-      
-      
-      if (mWindowType == WindowType::Popup && nativeParentWindow) {
-        [nativeParentWindow removeChildWindow:mWindow];
-      }
-
-      [mWindow orderOut:nil];
-
-      
-      
-      if ([mWindow isKindOfClass:[PopupWindow class]] &&
-          [(PopupWindow*)mWindow isContextMenu]) {
-        [[NSDistributedNotificationCenter defaultCenter]
-            postNotificationName:
-                @"com.apple.HIToolbox.endMenuTrackingNotification"
-                          object:@"org.mozilla.gecko.PopupWindow"];
-      }
+    [mWindow orderOut:nil];
+    
+    
+    if ([mWindow isKindOfClass:[PopupWindow class]] &&
+        [(PopupWindow*)mWindow isContextMenu]) {
+      [NSDistributedNotificationCenter.defaultCenter
+          postNotificationName:
+              @"com.apple.HIToolbox.endMenuTrackingNotification"
+                        object:@"org.mozilla.gecko.PopupWindow"];
     }
   }
 
@@ -2287,53 +2079,13 @@ bool nsCocoaWindow::DragEvent(unsigned int aMessage,
   return false;
 }
 
-NS_IMETHODIMP nsCocoaWindow::SendSetZLevelEvent() {
-  nsWindowZ placement = nsWindowZTop;
-  nsCOMPtr<nsIWidget> actualBelow;
+void nsCocoaWindow::SendSetZLevelEvent() {
   if (mWidgetListener) {
+    nsWindowZ placement = nsWindowZTop;
+    nsCOMPtr<nsIWidget> actualBelow;
     mWidgetListener->ZLevelChanged(true, &placement, nullptr,
                                    getter_AddRefs(actualBelow));
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsCocoaWindow::GetChildSheet(bool aShown, nsIWidget** _retval) {
-  nsIWidget* child = GetFirstChild();
-
-  while (child) {
-    if (child->GetWindowType() == WindowType::Sheet) {
-      
-      nsCocoaWindow* cocoaWindow = static_cast<nsCocoaWindow*>(child);
-      if (cocoaWindow->mWindow &&
-          ((aShown && [cocoaWindow->mWindow isVisible]) ||
-           (!aShown && cocoaWindow->mSheetNeedsShow))) {
-        nsCOMPtr<nsIWidget> widget = cocoaWindow;
-        widget.forget(_retval);
-        return NS_OK;
-      }
-    }
-    child = child->GetNextSibling();
-  }
-
-  *_retval = nullptr;
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsCocoaWindow::GetRealParent(nsIWidget** parent) {
-  *parent = mParent;
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsCocoaWindow::GetIsSheet(bool* isSheet) {
-  mWindowType == WindowType::Sheet ? * isSheet = true : * isSheet = false;
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsCocoaWindow::GetSheetWindowParent(
-    NSWindow** sheetWindowParent) {
-  *sheetWindowParent = mSheetWindowParent;
-  return NS_OK;
 }
 
 
@@ -3184,9 +2936,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
 
   NSWindow* window = [aNotification object];
-  if ([window isSheet]) [WindowDelegate paintMenubarForWindow:window];
-
-  nsChildView* mainChildView =
+  auto* mainChildView =
       static_cast<nsChildView*>([[(BaseWindow*)window mainChildView] widget]);
   if (mainChildView) {
     if (mainChildView->GetInputContext().IsPasswordEditor()) {
@@ -3205,13 +2955,6 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   RollUpPopups(nsIRollupListener::AllowAnimations::No);
 
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
-
-  
-  
-  NSWindow* window = [aNotification object];
-  if ([window isSheet])
-    [WindowDelegate paintMenubarForWindow:[NSApp mainWindow]];
-
   TextInputHandler::EnsureSecureEventInputDisabled();
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -3263,36 +3006,6 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   mHasEverBeenZoomed = YES;
   return YES;
 }
-
-- (NSRect)window:(NSWindow*)window
-    willPositionSheet:(NSWindow*)sheet
-            usingRect:(NSRect)rect {
-  if ([window isKindOfClass:[ToolbarWindow class]]) {
-    rect.origin.y = [(ToolbarWindow*)window sheetAttachmentPosition];
-  }
-  return rect;
-}
-
-#ifdef MOZ_THUNDERBIRD
-- (void)didEndSheet:(NSWindow*)sheet
-         returnCode:(int)returnCode
-        contextInfo:(void*)contextInfo {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  
-  
-  
-  
-  
-  
-  
-  [TopLevelWindowData deactivateInWindow:sheet];
-  [sheet orderOut:self];
-  if (contextInfo) [TopLevelWindowData activateInWindow:(NSWindow*)contextInfo];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-#endif
 
 - (void)windowDidChangeBackingProperties:(NSNotification*)aNotification {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
@@ -3974,7 +3687,6 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
                                    defer:aFlag])) {
     mTitlebarView = nil;
     mUnifiedToolbarHeight = 22.0f;
-    mSheetAttachmentPosition = aChildViewRect.size.height;
     mWindowButtonsRect = NSZeroRect;
     mInitialTitlebarHeight = [self titlebarHeight];
 
@@ -4204,14 +3916,6 @@ static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
 - (void)setWantsTitleDrawn:(BOOL)aDrawTitle {
   [super setWantsTitleDrawn:aDrawTitle];
   [self setTitlebarNeedsDisplay];
-}
-
-- (void)setSheetAttachmentPosition:(CGFloat)aY {
-  mSheetAttachmentPosition = aY;
-}
-
-- (CGFloat)sheetAttachmentPosition {
-  return mSheetAttachmentPosition;
 }
 
 - (void)placeWindowButtons:(NSRect)aRect {

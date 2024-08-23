@@ -17,7 +17,6 @@ enum class WindowType : uint8_t {
   TopLevel,   
   Dialog,     
               
-  Sheet,      
   Popup,      
   Child,      
               
