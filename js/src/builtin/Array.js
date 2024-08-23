@@ -77,29 +77,6 @@ function ArraySome(callbackfn ) {
 SetIsInlinableLargeFunction(ArraySome);
 
 
-
-function ArraySortCompare(comparefn) {
-  return function(x, y) {
-    
-    if (x === undefined) {
-      if (y === undefined) {
-        return 0;
-      }
-      return 1;
-    }
-    if (y === undefined) {
-      return -1;
-    }
-
-    
-    var v = ToNumber(callContentFunction(comparefn, undefined, x, y));
-
-    
-    return v !== v ? 0 : v;
-  };
-}
-
-
 function ArrayForEach(callbackfn ) {
   
   var O = ToObject(this);
@@ -1280,21 +1257,7 @@ function ArrayToSorted(comparefn) {
   }
 
   
-  
-  if (callFunction(ArrayNativeSort, items, comparefn)) {
-    return items;
-  }
-
-  
-  var wrappedCompareFn = ArraySortCompare(comparefn);
-
-  
-  var sorted = MergeSort(items, len, wrappedCompareFn);
-
-  assert(IsPackedArray(sorted), "sorted is a packed array");
-  assert(sorted.length === len, "sorted array has the correct length");
-
-  return sorted;
+  return callFunction(std_Array_sort, items, comparefn);
 }
 
 
