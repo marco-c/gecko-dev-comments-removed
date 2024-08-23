@@ -1209,7 +1209,7 @@ struct arena_t {
   ~arena_t();
 
  private:
-  void InitChunk(arena_chunk_t* aChunk);
+  void InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages);
 
   
   
@@ -2724,10 +2724,7 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
   return true;
 }
 
-void arena_t::InitChunk(arena_chunk_t* aChunk) {
-  size_t i;
-  size_t flags = CHUNK_MAP_DECOMMITTED | CHUNK_MAP_ZEROED;
-
+void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
   mStats.mapped += kChunkSize;
 
   aChunk->arena = this;
@@ -2736,43 +2733,57 @@ void arena_t::InitChunk(arena_chunk_t* aChunk) {
   aChunk->ndirty = 0;
 
   
-  arena_run_t* run = (arena_run_t*)(uintptr_t(aChunk) +
-                                    (gChunkHeaderNumPages << gPageSize2Pow));
+  
+  
 
   
+  size_t i;
   for (i = 0; i < gChunkHeaderNumPages - 1; i++) {
     aChunk->map[i].bits = 0;
   }
-  
-  aChunk->map[i++].bits = CHUNK_MAP_DECOMMITTED;
-
-  
-  aChunk->map[i++].bits = gMaxLargeClass | flags;
-  for (; i < gChunkNumPages - 2; i++) {
-    aChunk->map[i].bits = flags;
-  }
-  aChunk->map[gChunkNumPages - 2].bits = gMaxLargeClass | flags;
-
-  
-  aChunk->map[gChunkNumPages - 1].bits = CHUNK_MAP_DECOMMITTED;
-
-#ifdef MALLOC_DECOMMIT
-  
-  
-  
-  pages_decommit((void*)(uintptr_t(run) - gPageSize),
-                 gMaxLargeClass + 2 * gPageSize);
-#else
-  
-  pages_decommit((void*)(uintptr_t(run) - gPageSize), gPageSize);
-  
-  pages_decommit((void*)(uintptr_t(aChunk) + kChunkSize - gPageSize),
-                 gPageSize);
-#endif
-
   mStats.committed += gChunkHeaderNumPages - 1;
 
   
+  pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)), gPageSize);
+  aChunk->map[i++].bits = CHUNK_MAP_DECOMMITTED;
+
+  
+  
+#ifdef MALLOC_DECOMMIT
+  size_t n_fresh_pages = aMinCommittedPages;
+#else
+  size_t n_fresh_pages = gChunkNumPages - 1 - gChunkHeaderNumPages;
+#endif
+
+  
+  
+  for (size_t j = 0; j < n_fresh_pages; j++) {
+    aChunk->map[i + j].bits = CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
+  }
+  i += n_fresh_pages;
+
+#ifndef MALLOC_DECOMMIT
+  
+  
+  MOZ_ASSERT(i == gChunkNumPages - 1);
+#endif
+
+  
+  
+  
+  pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)),
+                 (gChunkNumPages - i) << gPageSize2Pow);
+  for (; i < gChunkNumPages; i++) {
+    aChunk->map[i].bits = CHUNK_MAP_DECOMMITTED;
+  }
+
+  
+  MOZ_ASSERT(aMinCommittedPages > 0);
+  MOZ_ASSERT(aMinCommittedPages <= gChunkNumPages - gChunkHeaderNumPages - 1);
+
+  
+  aChunk->map[gChunkHeaderNumPages].bits |= gMaxLargeClass;
+  aChunk->map[gChunkNumPages - 2].bits |= gMaxLargeClass;
   mRunsAvail.Insert(&aChunk->map[gChunkHeaderNumPages]);
 
 #ifdef MALLOC_DOUBLE_PURGE
@@ -2851,7 +2862,7 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
       return nullptr;
     }
 
-    InitChunk(chunk);
+    InitChunk(chunk, aSize >> gPageSize2Pow);
     run = (arena_run_t*)(uintptr_t(chunk) +
                          (gChunkHeaderNumPages << gPageSize2Pow));
   }
