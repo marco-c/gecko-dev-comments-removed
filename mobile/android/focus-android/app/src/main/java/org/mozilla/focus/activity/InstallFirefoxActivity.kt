@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.activity
 
@@ -19,9 +18,9 @@ import org.mozilla.focus.GleanMetrics.OpenWith
 import org.mozilla.focus.telemetry.TelemetryWrapper
 import org.mozilla.focus.utils.AppConstants
 
-
-
-
+/**
+ * Helper activity that will open the Google Play store by following a redirect URL.
+ */
 class InstallFirefoxActivity : Activity() {
 
     private var webView: WebView? = null
@@ -65,7 +64,7 @@ class InstallFirefoxActivity : Activity() {
             }
 
             return if (!resolveInfo.activityInfo.exported) {
-                
+                // We are not allowed to launch this activity.
                 null
             } else {
                 resolveInfo.activityInfo
@@ -81,10 +80,10 @@ class InstallFirefoxActivity : Activity() {
 
         fun open(context: Context) {
             if (AppConstants.isKlarBuild) {
-                
+                // Redirect to Google Play directly
                 context.startActivity(createStoreIntent())
             } else {
-                
+                // Start this activity to load the redirect URL in a WebView.
                 val intent = Intent(context, InstallFirefoxActivity::class.java)
                 context.startActivity(intent)
             }

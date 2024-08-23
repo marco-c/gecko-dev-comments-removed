@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.fragment
 
@@ -36,8 +36,8 @@ class FirstrunFragment : Fragment(), View.OnClickListener {
 
         exitTransition = transition
 
-        
-        
+        // We will send a telemetry event whenever a new firstrun page is shown. However this page
+        // listener won't fire for the initial page we are showing. So we are going to firing here.
         Onboarding.pageDisplayed.record(Onboarding.PageDisplayedExtra(0))
         TelemetryWrapper.showFirstRunPageEvent(0)
     }

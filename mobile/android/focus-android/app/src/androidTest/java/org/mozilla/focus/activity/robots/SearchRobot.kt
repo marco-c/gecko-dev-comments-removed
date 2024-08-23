@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.activity.robots
 
@@ -27,8 +26,8 @@ class SearchRobot {
         searchBar.text = searchString
     }
 
-    
-    
+    // Would you like to turn on search suggestions? Yes No
+    // fresh install only
     fun allowEnableSearchSuggestions() {
         if (searchSuggestionsTitle.waitForExists(waitingTime)) {
             searchSuggestionsButtonYes.waitForExists(waitingTime)
@@ -36,8 +35,8 @@ class SearchRobot {
         }
     }
 
-    
-    
+    // Would you like to turn on search suggestions? Yes No
+    // fresh install only
     fun denyEnableSearchSuggestions() {
         if (searchSuggestionsTitle.waitForExists(waitingTime)) {
             searchSuggestionsButtonNo.waitForExists(waitingTime)

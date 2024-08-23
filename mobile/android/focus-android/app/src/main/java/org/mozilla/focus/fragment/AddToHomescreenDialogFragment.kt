@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.fragment
 
@@ -28,9 +27,9 @@ import org.mozilla.focus.shortcut.HomeScreen
 import org.mozilla.focus.shortcut.IconGenerator
 import org.mozilla.focus.telemetry.TelemetryWrapper
 
-
-
-
+/**
+ * Fragment displaying a dialog where a user can change the title for a homescreen shortcut
+ */
 class AddToHomescreenDialogFragment : DialogFragment() {
 
     @Suppress("LongMethod")

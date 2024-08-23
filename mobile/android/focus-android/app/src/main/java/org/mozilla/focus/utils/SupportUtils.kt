@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.utils
 
@@ -33,7 +32,7 @@ object SupportUtils {
     const val PRIVACY_NOTICE_URL = "https://www.mozilla.org/privacy/firefox-focus/"
     const val PRIVACY_NOTICE_KLAR_URL = "https://www.mozilla.org/de/privacy/firefox-klar/"
 
-    const val OPEN_WITH_DEFAULT_BROWSER_URL = "https://www.mozilla.org/openGeneralSettings" 
+    const val OPEN_WITH_DEFAULT_BROWSER_URL = "https://www.mozilla.org/openGeneralSettings" // Fake URL
     val manifestoURL: String
         get() {
             val langTag = Locales.getLanguageTag(Locale.getDefault())
@@ -41,7 +40,7 @@ object SupportUtils {
         }
 
     enum class SumoTopic(
-        
+        /** The final path segment for a SUMO URL - see {@see #getSumoURLForTopic}  */
         internal val topicStr: String,
     ) {
         ADD_SEARCH_ENGINE("add-search-engine"),
@@ -61,9 +60,9 @@ object SupportUtils {
         return "https://support.mozilla.org/$langTag/kb/$escapedTopic"
     }
 
-    
-
-
+    /**
+     * Returns the SUMO URL for a specific topic
+     */
     fun getSumoURLForTopic(appVersion: String, topic: SumoTopic): String {
         val escapedTopic = getEncodedTopicUTF8(topic.topicStr)
         val osTarget = "Android"
@@ -71,7 +70,7 @@ object SupportUtils {
         return "https://support.mozilla.org/1/mobile/$appVersion/$osTarget/$langTag/$escapedTopic"
     }
 
-    
+    // For some reason this URL has a different format than the other SUMO URLs
     fun getSafeBrowsingURL(): String {
         val langTag = Locales.getLanguageTag(Locale.getDefault())
         return "https://support.mozilla.org/$langTag/kb/how-does-phishing-and-malware-protection-work"
@@ -85,14 +84,14 @@ object SupportUtils {
         }
     }
 
-    
-
-
+    /**
+     * Returns the version name of this package.
+     */
     fun getAppVersion(context: Context): String {
         try {
             return context.packageManager.getPackageInfoCompat(context.packageName, 0).versionName
         } catch (e: PackageManager.NameNotFoundException) {
-            
+            // This should be impossible - we should always be able to get information about ourselves:
             throw IllegalStateException("Unable find package details for Focus", e)
         }
     }

@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus
 
@@ -104,59 +103,59 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
     }
 
     protected open fun setupLeakCanary() {
-        
+        // no-op, LeakCanary is disabled by default
     }
 
     open fun updateLeakCanaryState(isEnabled: Boolean) {
-        
+        // no-op, LeakCanary is disabled by default
     }
 
     protected open fun initializeNimbus() {
         beginSetupMegazord()
 
-        
+        // This lazily constructs the Nimbus object…
         val nimbus = components.experiments
-        
+        // … which we then can populate the feature configuration.
         FocusNimbus.initialize { nimbus }
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Initiate Megazord sequence! Megazord Battle Mode!
+     *
+     * The application-services combined libraries are known as the "megazord". We use the default `full`
+     * megazord - it contains everything that fenix needs, and (currently) nothing more.
+     *
+     * Documentation on what megazords are, and why they're needed:
+     * - https://github.com/mozilla/application-services/blob/master/docs/design/megazords.md
+     * - https://mozilla.github.io/application-services/docs/applications/consuming-megazord-libraries.html
+     *
+     * This is the initialization of the megazord without setting up networking, i.e. needing the
+     * engine for networking. This should do the minimum work necessary as it is done on the main
+     * thread, early in the app startup sequence.
+     */
     private fun beginSetupMegazord() {
-        
-        
+        // Note: Megazord.init() must be called as soon as possible ...
+        // Megazord.init()
 
-        
+        // ... but RustHttpConfig.setClient() and RustLog.enable() can be called later.
 
-        
-        
-        
-        
+        // Once application-services has switched to using the new
+        // error reporting system, RustLog shouldn't input a CrashReporter
+        // anymore.
+        // (https://github.com/mozilla/application-services/issues/4981).
         RustLog.enable(components.crashReporter)
     }
 
-    @OptIn(DelicateCoroutinesApi::class) 
+    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun finishSetupMegazord() {
         GlobalScope.launch(Dispatchers.IO) {
-            
-            
+            // We need to use an unwrapped client because native components do not support private
+            // requests.
             @Suppress("Deprecation")
             RustHttpConfig.setClient(lazy { components.client.unwrap() })
 
-            
-            
+            // Now viaduct (the RustHttp client) is initialized we can ask Nimbus to fetch
+            // experiments recipes from the server.
             finishNimbusInitialization(components.experiments)
         }
     }
@@ -180,7 +179,7 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
                 setDefaultTheme()
             }
 
-            
+            // No theme setting selected, select the default value, follow device theme.
             else -> {
                 setDefaultTheme()
                 settings.useDefaultThemeSelected = true
@@ -201,8 +200,8 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
     }
 
     private fun enableStrictMode() {
-        
-        
+        // Android/WebView sometimes commit strict mode violations, see e.g.
+        // https://github.com/mozilla-mobile/focus-android/issues/660
         if (AppConstants.isReleaseBuild || AppConstants.isBetaBuild) {
             return
         }

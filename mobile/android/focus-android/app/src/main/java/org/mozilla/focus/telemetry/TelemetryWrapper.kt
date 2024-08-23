@@ -1,9 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+// We haven't migrated from TelemetryEventPingBuilder to MobileEventPingBuilder yet.
 @file:Suppress("DEPRECATION")
 
 package org.mozilla.focus.telemetry
@@ -45,7 +44,7 @@ import java.util.Date
 import java.util.Locale
 
 @Suppress(
-    
+    // Yes, this a large class with a lot of functions. But it's very simple and still easy to read.
     "TooManyFunctions",
     "LargeClass",
 )
@@ -172,7 +171,7 @@ object TelemetryWrapper {
     fun isTelemetryEnabled(context: Context): Boolean {
         if (isDeviceWithTelemetryDisabled()) { return false }
 
-        
+        // The first access to shared preferences will require a disk read.
         val threadPolicy = StrictMode.allowThreadDiskReads()
         try {
             val resources = context.resources
@@ -190,8 +189,8 @@ object TelemetryWrapper {
     @JvmStatic
     @Suppress("LongMethod")
     fun init(context: Context) {
-        
-        
+        // When initializing the telemetry library it will make sure that all directories exist and
+        // are readable/writable.
         val threadPolicy = StrictMode.allowThreadDiskWrites()
         try {
             val resources = context.resources
@@ -249,7 +248,7 @@ object TelemetryWrapper {
                             )
                         }
 
-                        
+                        // Record new edited date
                         PreferenceManager.getDefaultSharedPreferences(context)
                             .edit()
                             .putLong(LAST_MOBILE_METRICS_PINGS, (dateFormat.format(Date()).toLong()))
@@ -273,10 +272,10 @@ object TelemetryWrapper {
         }
     }
 
-    
-
-
-
+    /**
+     * Add the position of the current session and total number of sessions as extras to the event
+     * and return it.
+     */
     @CheckResult
     private fun withSessionCounts(event: TelemetryEvent): TelemetryEvent {
         val context = TelemetryHolder.get().configuration.context
@@ -319,7 +318,7 @@ object TelemetryWrapper {
 
             histogram[histogramLoadIndex]++
         } catch (e: MalformedURLException) {
-            
+            // ignore invalid URLs
         }
     }
 
@@ -333,7 +332,7 @@ object TelemetryWrapper {
         }
         histogramEvent.queue()
 
-        
+        // Clear histogram array after queueing it
         histogram = IntArray(HISTOGRAM_SIZE)
 
         TelemetryEvent.create(Category.ACTION, Method.OPEN, Object.BROWSER).extra(
@@ -601,9 +600,9 @@ object TelemetryWrapper {
             .queue()
     }
 
-    
-
-
+    /**
+     * Switching from a custom tab to the full-featured browser (regular tab).
+     */
     @JvmStatic
     fun openFullBrowser() {
         TelemetryEvent.create(Category.ACTION, Method.OPEN, Object.MENU, Value.FULL_BROWSER).queue()
@@ -790,7 +789,7 @@ object TelemetryWrapper {
     fun dayPassedSinceLastUpload(context: Context): Boolean {
         val dateOfLastPing = PreferenceManager
             .getDefaultSharedPreferences(context).getLong(LAST_MOBILE_METRICS_PINGS, 0)
-        
+        // Make sure a minimum of 1 day has passed since we collected data
         val currentDateLong = dateFormat.format(Date()).toLong()
         return currentDateLong > dateOfLastPing
     }
