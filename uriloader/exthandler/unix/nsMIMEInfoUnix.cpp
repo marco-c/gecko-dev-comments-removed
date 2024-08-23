@@ -9,12 +9,25 @@
 #include "nsIGIOService.h"
 #include "nsNetCID.h"
 #include "nsIIOService.h"
+#include "nsLocalFile.h"
+
 #ifdef MOZ_ENABLE_DBUS
 #  include "nsDBusHandlerApp.h"
 #endif
 
 nsresult nsMIMEInfoUnix::LoadUriInternal(nsIURI* aURI) {
   return nsGNOMERegistry::LoadURL(aURI);
+}
+
+NS_IMETHODIMP nsMIMEInfoUnix::GetDefaultExecutable(nsIFile** aExecutable) {
+  
+  
+  
+  
+  
+  
+
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
