@@ -332,7 +332,7 @@ TalosPowersService.prototype = {
     let mm = message.target.messageManager;
     let startupInfo = Services.startup.getStartupInfo();
 
-    if (!startupInfo.firstPaint) {
+    if (!startupInfo.firstPaint2) {
       
       
       
