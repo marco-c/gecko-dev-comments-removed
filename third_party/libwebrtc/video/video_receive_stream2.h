@@ -20,6 +20,7 @@
 #include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/recordable_encoded_frame.h"
@@ -31,7 +32,6 @@
 #include "modules/video_coding/nack_requester.h"
 #include "modules/video_coding/video_receiver2.h"
 #include "rtc_base/system/no_unique_address.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "video/receive_statistics_proxy.h"
 #include "video/rtp_streams_synchronizer2.h"
@@ -224,7 +224,7 @@ class VideoReceiveStream2
   DecodeFrameResult HandleEncodedFrameOnDecodeQueue(
       std::unique_ptr<EncodedFrame> frame,
       bool keyframe_request_is_due,
-      bool keyframe_required) RTC_RUN_ON(decode_queue_);
+      bool keyframe_required) RTC_RUN_ON(decode_sequence_checker_);
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_sequence_checker_);
   void RequestKeyFrame(Timestamp now) RTC_RUN_ON(packet_sequence_checker_);
@@ -236,9 +236,11 @@ class VideoReceiveStream2
   bool IsReceivingKeyFrame(Timestamp timestamp) const
       RTC_RUN_ON(packet_sequence_checker_);
   int DecodeAndMaybeDispatchEncodedFrame(std::unique_ptr<EncodedFrame> frame)
-      RTC_RUN_ON(decode_queue_);
+      RTC_RUN_ON(decode_sequence_checker_);
 
   void UpdateHistograms();
+
+  const Environment env_;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
   
@@ -250,7 +252,7 @@ class VideoReceiveStream2
   
   RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
 
-  const Environment env_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker decode_sequence_checker_;
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStreamInterface::Config config_;
@@ -260,7 +262,7 @@ class VideoReceiveStream2
   CallStats* const call_stats_;
 
   bool decoder_running_ RTC_GUARDED_BY(worker_sequence_checker_) = false;
-  bool decoder_stopped_ RTC_GUARDED_BY(decode_queue_) = true;
+  bool decoder_stopped_ RTC_GUARDED_BY(decode_sequence_checker_) = true;
 
   SourceTracker source_tracker_;
   ReceiveStatisticsProxy stats_proxy_;
@@ -296,7 +298,7 @@ class VideoReceiveStream2
   bool keyframe_required_ RTC_GUARDED_BY(packet_sequence_checker_) = true;
 
   
-  bool frame_decoded_ RTC_GUARDED_BY(decode_queue_) = false;
+  bool frame_decoded_ RTC_GUARDED_BY(decode_sequence_checker_) = false;
 
   absl::optional<Timestamp> last_keyframe_request_
       RTC_GUARDED_BY(packet_sequence_checker_);
@@ -325,7 +327,7 @@ class VideoReceiveStream2
 
   
   std::function<void(const RecordableEncodedFrame&)>
-      encoded_frame_buffer_function_ RTC_GUARDED_BY(decode_queue_);
+      encoded_frame_buffer_function_ RTC_GUARDED_BY(decode_sequence_checker_);
   
   bool keyframe_generation_requested_ RTC_GUARDED_BY(packet_sequence_checker_) =
       false;
@@ -338,13 +340,16 @@ class VideoReceiveStream2
       RTC_GUARDED_BY(pending_resolution_mutex_);
   
   std::vector<std::unique_ptr<EncodedFrame>> buffered_encoded_frames_
-      RTC_GUARDED_BY(decode_queue_);
-
-  
-  rtc::TaskQueue decode_queue_;
+      RTC_GUARDED_BY(decode_sequence_checker_);
 
   
   ScopedTaskSafety task_safety_;
+
+  
+  
+  
+  
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> decode_queue_;
 };
 
 }  
