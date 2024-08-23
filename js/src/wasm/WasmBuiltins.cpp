@@ -614,9 +614,18 @@ static WasmExceptionObject* GetOrWrapWasmException(JitActivation* activation,
       }
     } else {
       
+      Rooted<SavedFrame*> stack(cx, cx->getPendingExceptionStack());
+      cx->clearPendingException();
+
+      
       
       
       wasmExn = WasmExceptionObject::wrapJSValue(cx, exn);
+
+      if (wasmExn) {
+        cx->setPendingException(exn, stack);
+      }
+      MOZ_ASSERT(cx->isExceptionPending());
     }
 
     if (wasmExn) {
