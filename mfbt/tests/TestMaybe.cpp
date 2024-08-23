@@ -533,6 +533,7 @@ static bool TestCopyAndMove() {
     
     
     
+    
   }
 
   MOZ_RELEASE_ASSERT(0 == sUndestroyedObjects);
