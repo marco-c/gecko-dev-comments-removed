@@ -322,7 +322,7 @@ add_task(async function () {
     "tab change when selected tab element was focused"
   );
 
-  let switchWaiter = new Promise((resolve, reject) => {
+  let switchWaiter = new Promise(resolve => {
     gBrowser.addEventListener(
       "TabSwitchDone",
       function () {
@@ -516,7 +516,7 @@ add_task(async function () {
   
   gURLBar.focus();
 
-  await new Promise((resolve, reject) => {
+  await new Promise(resolve => {
     BrowserTestUtils.waitForContentEvent(
       window.gBrowser.selectedBrowser,
       "pageshow",

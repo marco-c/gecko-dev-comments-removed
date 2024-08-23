@@ -44,7 +44,7 @@ add_task(async function () {
   let expectations = {
     expectedReflows: EXPECTED_REFLOWS,
     frames: {
-      filter(rects, frame, previousFrame) {
+      filter(rects, frame) {
         
         
         if (!alreadyFocused && isLikelyFocusChange(rects, frame)) {

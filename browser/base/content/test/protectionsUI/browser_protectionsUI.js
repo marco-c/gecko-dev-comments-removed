@@ -500,7 +500,7 @@ add_task(async function testNumberOfBlockedTrackers() {
   
   
   let updateCounterPromise = new Promise(resolve => {
-    let mut = new MutationObserver(mutations => {
+    let mut = new MutationObserver(() => {
       resolve();
       mut.disconnect();
     });

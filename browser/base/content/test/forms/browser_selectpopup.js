@@ -186,7 +186,7 @@ async function doSelectTests(contentType, content) {
   );
 
   
-  let handleKeyPress = function (event) {
+  let handleKeyPress = function () {
     ok(false, "Should not get keypress event");
   };
   window.addEventListener("keypress", handleKeyPress);

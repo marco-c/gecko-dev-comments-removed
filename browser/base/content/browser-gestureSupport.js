@@ -269,7 +269,7 @@ var gGestureSupport = {
       gHistorySwipeAnimation.updateAnimation(aEvent.delta);
     };
 
-    this._doEnd = function GS__doEnd(aEvent) {
+    this._doEnd = function GS__doEnd() {
       gHistorySwipeAnimation.swipeEndEventReceived();
 
       this._doUpdate = function () {};
@@ -393,7 +393,7 @@ var gGestureSupport = {
 
 
 
-  _doUpdate(aEvent) {},
+  _doUpdate() {},
 
   
 
@@ -401,7 +401,7 @@ var gGestureSupport = {
 
 
 
-  _doEnd(aEvent) {},
+  _doEnd() {},
 
   
 
@@ -874,7 +874,7 @@ var gHistorySwipeAnimation = {
     }
   },
 
-  _completeFadeOut: function HSA__completeFadeOut(aEvent) {
+  _completeFadeOut: function HSA__completeFadeOut() {
     if (!this._isStoppingAnimation) {
       
       
@@ -943,7 +943,7 @@ var gHistorySwipeAnimation = {
     return element;
   },
 
-  observe(subj, topic, data) {
+  observe(subj, topic) {
     switch (topic) {
       case "nsPref:changed":
         this._initPrefValues();

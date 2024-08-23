@@ -71,7 +71,7 @@ async function testHandlingUserInputOnChange(aTriggerFn) {
 
 
 add_task(async function test_handling_user_input_key() {
-  return testHandlingUserInputOnChange(async function (popup) {
+  return testHandlingUserInputOnChange(async function () {
     EventUtils.synthesizeKey("KEY_ArrowDown");
     await hideSelectPopup();
   });

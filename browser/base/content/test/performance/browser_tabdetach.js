@@ -59,7 +59,7 @@ add_task(async function test_detach_not_overflowed() {
       expectedReflows: EXPECTED_REFLOWS,
       
       
-      frames: { filter: rects => [] },
+      frames: { filter: () => [] },
     }
   );
 
@@ -87,7 +87,7 @@ add_task(async function test_detach_overflowed() {
       expectedReflows: EXPECTED_REFLOWS,
       
       
-      frames: { filter: rects => [] },
+      frames: { filter: () => [] },
     }
   );
 

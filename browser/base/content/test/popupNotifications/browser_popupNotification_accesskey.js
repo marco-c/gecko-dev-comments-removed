@@ -36,7 +36,7 @@ var tests = [
       
       isnot(popup.state, "hiding", "popup is not hiding");
     },
-    onHidden(popup) {
+    onHidden() {
       window.removeEventListener("command", commandTriggered, true);
       ok(buttonPressed, "button pressed");
     },

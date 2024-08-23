@@ -844,14 +844,14 @@ add_task(async function testLoadtimeTelemetry() {
   let loadTimeDistribution = Glean.privacySanitize.loadTime.testGetValue();
 
   let expectedNumberOfCounts = Object.entries(EXPECTED_CONTEXT_COUNTS).reduce(
-    (acc, [key, value]) => acc + value,
+    (acc, [, value]) => acc + value,
     0
   );
   
   
   is(
     Object.entries(loadTimeDistribution.values).reduce(
-      (acc, [bucket, count]) => acc + count,
+      (acc, [, count]) => acc + count,
       0
     ),
     expectedNumberOfCounts,

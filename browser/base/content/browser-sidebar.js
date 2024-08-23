@@ -583,7 +583,7 @@ var SidebarUI = {
       if (this.browser.contentDocument.location.href != url) {
         this.browser.addEventListener(
           "load",
-          event => {
+          () => {
             
             
             setTimeout(() => {

@@ -284,7 +284,7 @@ var ctrlTab = {
       this.uninit();
     }
   },
-  observe(aSubject, aTopic, aPrefName) {
+  observe() {
     this.readPref();
   },
 
@@ -654,7 +654,7 @@ var ctrlTab = {
         
         
         if (
-          event.detail.changed.some((elem, ind, arr) =>
+          event.detail.changed.some(elem =>
             ["label", "busy", "image"].includes(elem)
           )
         ) {

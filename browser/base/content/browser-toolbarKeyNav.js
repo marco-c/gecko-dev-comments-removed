@@ -137,7 +137,7 @@ ToolbarKeyboardNavigator = {
   },
 
   
-  onWidgetAdded(aWidgetId, aArea, aPosition) {
+  onWidgetAdded(aWidgetId, aArea) {
     if (!this.kToolbars.includes(aArea)) {
       return;
     }

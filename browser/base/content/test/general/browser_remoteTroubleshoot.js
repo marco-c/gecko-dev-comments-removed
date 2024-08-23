@@ -19,9 +19,9 @@ const TEST_URI_GOOD_OBJECT = Services.io.newURI(
 
 
 function promiseChannelResponse(channelID, originOrPermission) {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     let channel = new WebChannel(channelID, originOrPermission);
-    channel.listen((id, data, target) => {
+    channel.listen((id, data) => {
       channel.stopListening();
       resolve(data);
     });

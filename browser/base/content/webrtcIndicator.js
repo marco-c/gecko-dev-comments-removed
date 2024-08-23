@@ -47,7 +47,7 @@ function closingInternally() {
 
 
 const WebRTCIndicator = {
-  init(event) {
+  init() {
     addEventListener("load", this);
     addEventListener("unload", this);
 

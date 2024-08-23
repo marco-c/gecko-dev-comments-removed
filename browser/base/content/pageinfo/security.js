@@ -399,7 +399,7 @@ function realmHasPasswords(uri) {
 
 
 
-function previousVisitCount(host, endTimeReference) {
+function previousVisitCount(host) {
   if (!host) {
     return 0;
   }

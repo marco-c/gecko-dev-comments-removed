@@ -98,7 +98,7 @@ add_task(async function testWithNotifications() {
 
 add_task(async function testInvalidPageProxyState() {
   await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
-  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function () {
     
     
     if (document.activeElement != gURLBar.inputField) {
