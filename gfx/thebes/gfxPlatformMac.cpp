@@ -965,27 +965,6 @@ gfxPlatformMac::CreateGlobalHardwareVsyncSource() {
 #endif
 }
 
-bool gfxPlatformMac::SupportsHDR() {
-  
-  
-  
-  
-  if (GetScreenDepth() <= 24) {
-    return false;
-  }
-
-#ifdef MOZ_WIDGET_UIKIT
-  return false;
-#elif defined(EARLY_BETA_OR_EARLIER)
-  
-  
-  return true;
-#else
-  
-  return nsCocoaFeatures::OnBigSurOrLater();
-#endif
-}
-
 nsTArray<uint8_t> gfxPlatformMac::GetPlatformCMSOutputProfileData() {
   nsTArray<uint8_t> prefProfileData = GetPrefCMSOutputProfileData();
   if (!prefProfileData.IsEmpty()) {
