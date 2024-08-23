@@ -8,7 +8,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::PostQuitMessage;
 
 
 #[derive(Clone, Default)]
-pub struct QuitToken(Rc<QuitTokenInternal>);
+pub struct QuitToken(#[allow(dead_code)] Rc<QuitTokenInternal>);
 
 impl QuitToken {
     pub fn new() -> Self {
