@@ -1799,11 +1799,6 @@ bool DOMXrayTraits::call(JSContext* cx, HandleObject wrapper,
   
   
   
-  if (IsDOMConstructor(obj)) {
-    const JSNativeHolder* holder = NativeHolderFromObject(obj);
-    return holder->mNative(cx, args.length(), args.base());
-  }
-
   if (js::IsProxy(obj)) {
     if (JS::IsCallable(obj)) {
       
@@ -1827,28 +1822,22 @@ bool DOMXrayTraits::construct(JSContext* cx, HandleObject wrapper,
                               const JS::CallArgs& args,
                               const js::Wrapper& baseInstance) {
   RootedObject obj(cx, getTargetObject(wrapper));
+  MOZ_ASSERT(mozilla::dom::HasConstructor(obj));
+  const JSClass* clasp = JS::GetClass(obj);
   
-  if (IsDOMConstructor(obj)) {
-    const JSNativeHolder* holder = NativeHolderFromObject(obj);
-    if (!holder->mNative(cx, args.length(), args.base())) {
-      return false;
-    }
-  } else {
-    const JSClass* clasp = JS::GetClass(obj);
-    if (clasp->flags & JSCLASS_IS_DOMIFACEANDPROTOJSCLASS) {
-      if (JSNative construct = clasp->getConstruct()) {
-        if (!construct(cx, args.length(), args.base())) {
-          return false;
-        }
-      } else {
-        RootedValue v(cx, ObjectValue(*wrapper));
-        js::ReportIsNotFunction(cx, v);
+  if (clasp->flags & JSCLASS_IS_DOMIFACEANDPROTOJSCLASS) {
+    if (JSNative construct = clasp->getConstruct()) {
+      if (!construct(cx, args.length(), args.base())) {
         return false;
       }
     } else {
-      if (!baseInstance.construct(cx, wrapper, args)) {
-        return false;
-      }
+      RootedValue v(cx, ObjectValue(*wrapper));
+      js::ReportIsNotFunction(cx, v);
+      return false;
+    }
+  } else {
+    if (!baseInstance.construct(cx, wrapper, args)) {
+      return false;
     }
   }
   if (!args.rval().isObject() || !JS_WrapValue(cx, args.rval())) {

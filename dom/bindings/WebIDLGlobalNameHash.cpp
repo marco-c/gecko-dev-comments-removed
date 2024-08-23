@@ -38,21 +38,16 @@ static JSObject* FindNamedConstructorForXray(
     return nullptr;
   }
 
-  if (IsInterfaceObject(interfaceObject)) {
-    
-    
-    
-    for (unsigned slot = INTERFACE_OBJECT_FIRST_LEGACY_FACTORY_FUNCTION;
-         slot < INTERFACE_OBJECT_MAX_SLOTS; ++slot) {
-      const JS::Value& v = js::GetFunctionNativeReserved(interfaceObject, slot);
-      if (!v.isObject()) {
-        break;
-      }
-      JSObject* constructor = &v.toObject();
-      if (JS_GetMaybePartialFunctionId(JS_GetObjectFunction(constructor)) ==
-          aId.toString()) {
-        return constructor;
-      }
+  
+  
+  
+  for (unsigned slot = DOM_INTERFACE_SLOTS_BASE;
+       slot < JSCLASS_RESERVED_SLOTS(JS::GetClass(interfaceObject)); ++slot) {
+    JSObject* constructor =
+        &JS::GetReservedSlot(interfaceObject, slot).toObject();
+    if (JS_GetMaybePartialFunctionId(JS_GetObjectFunction(constructor)) ==
+        aId.toString()) {
+      return constructor;
     }
   }
 

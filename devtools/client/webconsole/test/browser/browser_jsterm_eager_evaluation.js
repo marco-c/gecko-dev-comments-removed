@@ -310,7 +310,7 @@ add_task(async function () {
 
   EventUtils.synthesizeKey("KEY_ArrowDown");
   
-  await waitForEagerEvaluationResult(hud, `function XMLDocument()`);
+  await waitForEagerEvaluationResult(hud, `function ()`);
 
   onPopupClose = popup.once("popup-closed");
   EventUtils.sendString(" ");

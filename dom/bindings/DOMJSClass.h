@@ -589,6 +589,25 @@ struct DOMIfaceAndProtoJSClass {
   const JSClass* ToJSClass() const { return &mBase; }
 };
 
+
+struct DOMIfaceJSClass : public DOMIfaceAndProtoJSClass {
+  
+  
+  
+  bool wantsInterfaceIsInstance;
+
+  
+  
+  const char* mFunToString;
+
+  static const DOMIfaceJSClass* FromJSClass(const JSClass* base) {
+    const DOMIfaceAndProtoJSClass* clazz =
+        DOMIfaceAndProtoJSClass::FromJSClass(base);
+    MOZ_ASSERT(clazz->mType == eInterface || clazz->mType == eNamespace);
+    return static_cast<const DOMIfaceJSClass*>(clazz);
+  }
+};
+
 class ProtoAndIfaceCache;
 
 inline bool DOMGlobalHasProtoAndIFaceCache(JSObject* global) {
