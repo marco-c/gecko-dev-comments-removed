@@ -764,11 +764,15 @@ class InnerViewTable {
   
   
   
-  
-  Vector<ArrayBufferObject*, 0, SystemAllocPolicy> nurseryKeys;
+  using NurseryKeysVector =
+      GCVector<UnsafeBarePtr<ArrayBufferObject*>, 0, SystemAllocPolicy>;
+  NurseryKeysVector nurseryKeys;
 
   
   bool nurseryKeysValid = true;
+
+  bool sweepMapEntryAfterMinorGC(UnsafeBarePtr<JSObject*>& buffer,
+                                 ViewVector& views);
 
  public:
   explicit InnerViewTable(Zone* zone) : map(zone) {}
@@ -793,6 +797,9 @@ class InnerViewTable {
                ArrayBufferViewObject* view);
   ViewVector* maybeViewsUnbarriered(ArrayBufferObject* buffer);
   void removeViews(ArrayBufferObject* buffer);
+
+  bool sweepViewsAfterMinorGC(JSTracer* trc, ArrayBufferObject* buffer,
+                              Views& views);
 };
 
 template <typename Wrapper>
