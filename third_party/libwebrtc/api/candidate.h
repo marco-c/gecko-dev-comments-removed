@@ -28,6 +28,13 @@ namespace cricket {
 
 
 
+RTC_EXPORT extern const char LOCAL_PORT_TYPE[];
+RTC_EXPORT extern const char STUN_PORT_TYPE[];
+RTC_EXPORT extern const char PRFLX_PORT_TYPE[];
+RTC_EXPORT extern const char RELAY_PORT_TYPE[];
+
+
+
 static constexpr size_t kMaxTurnServers = 32;
 
 
@@ -110,6 +117,14 @@ class RTC_EXPORT Candidate {
   void set_type(absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND) {
     Assign(type_, type);
   }
+
+  
+  
+  
+  bool is_local() const;
+  bool is_stun() const;
+  bool is_prflx() const;
+  bool is_relay() const;
 
   const std::string& network_name() const { return network_name_; }
   void set_network_name(absl::string_view network_name) {
