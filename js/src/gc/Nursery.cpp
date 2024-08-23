@@ -1485,6 +1485,8 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
     poisonAndInitCurrentChunk();
   }
 
+  clearMapAndSetNurseryRanges();
+
   
   TenuringTracer mover(rt, this, shouldTenureEverything(reason));
 
@@ -1855,16 +1857,23 @@ void js::Nursery::sweep() {
 
   
   
-  for (Cell* cell : cellsWithUid_) {
+  cellsWithUid_.mutableEraseIf([](Cell*& cell) {
     auto* obj = static_cast<JSObject*>(cell);
     if (!IsForwarded(obj)) {
       gc::RemoveUniqueId(obj);
-    } else {
-      JSObject* dst = Forwarded(obj);
-      gc::TransferUniqueId(dst, obj);
+      return true;
     }
-  }
-  cellsWithUid_.clear();
+
+    JSObject* dst = Forwarded(obj);
+    gc::TransferUniqueId(dst, obj);
+
+    if (!IsInsideNursery(dst)) {
+      return true;
+    }
+
+    cell = dst;
+    return false;
+  });
 
   for (ZonesIter zone(runtime(), SkipAtoms); !zone.done(); zone.next()) {
     zone->sweepAfterMinorGC(&trc);
@@ -2341,18 +2350,55 @@ bool js::Nursery::isSubChunkMode() const {
   return capacity() <= NurseryChunkUsableSize;
 }
 
+void js::Nursery::clearMapAndSetNurseryRanges() {
+  
+  
+  
+  for (auto* map : mapsWithNurseryMemory_) {
+    map->clearNurseryRangesBeforeMinorGC();
+  }
+  for (auto* set : setsWithNurseryMemory_) {
+    set->clearNurseryRangesBeforeMinorGC();
+  }
+}
+
 void js::Nursery::sweepMapAndSetObjects() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   auto* gcx = runtime()->gcContext();
 
-  for (auto* mapobj : mapsWithNurseryMemory_) {
-    MapObject::sweepAfterMinorGC(gcx, mapobj);
-  }
-  mapsWithNurseryMemory_.clearAndFree();
+  AutoEnterOOMUnsafeRegion oomUnsafe;
 
-  for (auto* setobj : setsWithNurseryMemory_) {
-    SetObject::sweepAfterMinorGC(gcx, setobj);
+  MapObjectVector maps;
+  std::swap(mapsWithNurseryMemory_, maps);
+  for (auto* mapobj : maps) {
+    mapobj = MapObject::sweepAfterMinorGC(gcx, mapobj);
+    if (mapobj) {
+      if (!mapsWithNurseryMemory_.append(mapobj)) {
+        oomUnsafe.crash("sweepAfterMinorGC");
+      }
+    }
   }
-  setsWithNurseryMemory_.clearAndFree();
+
+  SetObjectVector sets;
+  std::swap(setsWithNurseryMemory_, sets);
+  for (auto* setobj : sets) {
+    setobj = SetObject::sweepAfterMinorGC(gcx, setobj);
+    if (setobj) {
+      if (!setsWithNurseryMemory_.append(setobj)) {
+        oomUnsafe.crash("sweepAfterMinorGC");
+      }
+    }
+  }
 }
 
 void js::Nursery::joinDecommitTask() { decommitTask->join(); }

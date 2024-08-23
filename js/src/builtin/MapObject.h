@@ -168,7 +168,14 @@ class MapObject : public NativeObject {
       OrderedHashMap<Value, Value, UnbarrieredHashPolicy, CellAllocPolicy>;
   friend class OrderedHashTableRef<MapObject>;
 
-  static void sweepAfterMinorGC(JS::GCContext* gcx, MapObject* mapobj);
+  void clearNurseryRangesBeforeMinorGC();
+
+  
+  
+  
+  
+  
+  static MapObject* sweepAfterMinorGC(JS::GCContext* gcx, MapObject* mapobj);
 
   size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf);
 
@@ -276,6 +283,7 @@ class MapIteratorObject : public NativeObject {
 
  private:
   inline MapObject::IteratorKind kind() const;
+  MapObject* target() const;
 };
 
 class SetObject : public NativeObject {
@@ -326,7 +334,14 @@ class SetObject : public NativeObject {
       OrderedHashSet<Value, UnbarrieredHashPolicy, CellAllocPolicy>;
   friend class OrderedHashTableRef<SetObject>;
 
-  static void sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj);
+  void clearNurseryRangesBeforeMinorGC();
+
+  
+  
+  
+  
+  
+  static SetObject* sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj);
 
   size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf);
 
@@ -414,6 +429,7 @@ class SetIteratorObject : public NativeObject {
 
  private:
   inline SetObject::IteratorKind kind() const;
+  SetObject* target() const;
 };
 
 using SetInitGetPrototypeOp = NativeObject* (*)(JSContext*,

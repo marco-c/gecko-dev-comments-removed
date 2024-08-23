@@ -39,6 +39,7 @@
 
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TemplateLib.h"
 
@@ -85,9 +86,16 @@ class OrderedHashTable {
   uint32_t dataCapacity;  
   uint32_t liveCount;     
   uint32_t hashShift;     
-  Range* ranges;  
-  Range*
-      nurseryRanges;  
+
+  
+  
+  Range* ranges;
+
+  
+  
+  
+  Range* nurseryRanges;
+
   AllocPolicy alloc;
   mozilla::HashCodeScrambler hcs;  
 
@@ -382,22 +390,28 @@ class OrderedHashTable {
         next->prevp = &next;
       }
       seek();
+      MOZ_ASSERT(valid());
     }
 
    public:
-    Range(const Range& other)
+    Range(const Range& other, bool inNursery)
         : ht(other.ht),
           i(other.i),
           count(other.count),
-          prevp(&ht->ranges),
-          next(ht->ranges) {
+          prevp(inNursery ? &ht->nurseryRanges : &ht->ranges),
+          next(*prevp) {
       *prevp = this;
       if (next) {
         next->prevp = &next;
       }
+      MOZ_ASSERT(valid());
     }
 
     ~Range() {
+      if (!prevp) {
+        
+        return;
+      }
       *prevp = next;
       if (next) {
         next->prevp = prevp;
@@ -446,12 +460,17 @@ class OrderedHashTable {
       i = count = 0;
     }
 
-    bool valid() const { return next != this; }
+#ifdef DEBUG
+    bool valid() const {
+      return  next != this;
+    }
+#endif
 
     void onTableDestroyed() {
       MOZ_ASSERT(valid());
       prevp = &next;
       next = this;
+      MOZ_ASSERT(!valid());
     }
 
    public:
@@ -560,9 +579,6 @@ class OrderedHashTable {
 
 
 
-
-
-
   Range* createRange(void* buffer, bool inNursery) const {
     auto* self = const_cast<OrderedHashTable*>(this);
     Range** listp = inNursery ? &self->nurseryRanges : &self->ranges;
@@ -570,7 +586,16 @@ class OrderedHashTable {
     return static_cast<Range*>(buffer);
   }
 
-  void destroyNurseryRanges() { nurseryRanges = nullptr; }
+  void destroyNurseryRanges() {
+    if (nurseryRanges) {
+      nurseryRanges->prevp = nullptr;
+    }
+    nurseryRanges = nullptr;
+  }
+
+#ifdef DEBUG
+  bool hasNurseryRanges() const { return nurseryRanges; }
+#endif
 
   
 
@@ -959,13 +984,17 @@ class OrderedHashMap {
   HashNumber hash(const Lookup& key) const { return impl.prepareHash(key); }
 
   template <typename GetNewKey>
-  void rekeyOneEntry(const Lookup& current, const GetNewKey& getNewKey) {
+  mozilla::Maybe<Key> rekeyOneEntry(Lookup& current, GetNewKey&& getNewKey) {
+    
+    
     const Entry* e = get(current);
     if (!e) {
-      return;
+      return mozilla::Nothing();
     }
+
     Key newKey = getNewKey(current);
-    return impl.rekeyOneEntry(current, newKey, Entry(newKey, e->value));
+    impl.rekeyOneEntry(current, newKey, Entry(newKey, e->value));
+    return mozilla::Some(newKey);
   }
 
   Range* createRange(void* buffer, bool inNursery) const {
@@ -973,6 +1002,9 @@ class OrderedHashMap {
   }
 
   void destroyNurseryRanges() { impl.destroyNurseryRanges(); }
+#ifdef DEBUG
+  bool hasNurseryRanges() const { return impl.hasNurseryRanges(); }
+#endif
 
   void trace(JSTracer* trc) { impl.trace(trc); }
 
@@ -1048,12 +1080,16 @@ class OrderedHashSet {
   HashNumber hash(const Lookup& value) const { return impl.prepareHash(value); }
 
   template <typename GetNewKey>
-  void rekeyOneEntry(const Lookup& current, const GetNewKey& getNewKey) {
+  mozilla::Maybe<T> rekeyOneEntry(Lookup& current, GetNewKey&& getNewKey) {
+    
+    
     if (!has(current)) {
-      return;
+      return mozilla::Nothing();
     }
+
     T newKey = getNewKey(current);
-    return impl.rekeyOneEntry(current, newKey, newKey);
+    impl.rekeyOneEntry(current, newKey, newKey);
+    return mozilla::Some(newKey);
   }
 
   Range* createRange(void* buffer, bool inNursery) const {
@@ -1061,6 +1097,9 @@ class OrderedHashSet {
   }
 
   void destroyNurseryRanges() { impl.destroyNurseryRanges(); }
+#ifdef DEBUG
+  bool hasNurseryRanges() const { return impl.hasNurseryRanges(); }
+#endif
 
   void trace(JSTracer* trc) { impl.trace(trc); }
 
