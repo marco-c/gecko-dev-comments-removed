@@ -14,7 +14,7 @@ import subprocess
 import argparse
 
 
-MAIN_BRANCH="master"
+MAIN_BRANCH="main"
 L10N_AUTHOR="release+l10n-automation-bot@mozilla.com"
 
 def run_cmd_checked(*args, **kwargs):
