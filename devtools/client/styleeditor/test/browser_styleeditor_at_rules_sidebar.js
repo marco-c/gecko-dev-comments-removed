@@ -39,6 +39,8 @@ waitForExplicitFinish();
 
 add_task(async function () {
   await pushPref("layout.css.container-queries.enabled", true);
+  
+  await pushPref("layout.css.properties-and-values.enabled", true);
 
   const { ui } = await openStyleEditorForURL(TESTCASE_URI);
 
@@ -88,7 +90,7 @@ async function testInlineMediaEditor(ui, editor) {
   is(sidebar.hidden, false, "sidebar is showing on editor with @media");
 
   const entries = sidebar.querySelectorAll(".at-rule-label");
-  is(entries.length, 6, "6 @media rules displayed in sidebar");
+  is(entries.length, 7, "7 at-rules displayed in sidebar");
 
   await testRule({
     ui,
@@ -123,7 +125,6 @@ async function testInlineMediaEditor(ui, editor) {
     ui,
     editor,
     rule: entries[3],
-    conditionText: "",
     line: 16,
     type: "layer",
     layerName: "myLayer",
@@ -145,6 +146,15 @@ async function testInlineMediaEditor(ui, editor) {
     conditionText: "selector(&)",
     line: 21,
     type: "support",
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[6],
+    line: 30,
+    type: "property",
+    propertyName: "--my-property",
   });
 }
 
@@ -280,20 +290,28 @@ async function testMediaRuleAdded(ui, editor) {
 
 
 
+
 async function testRule({
   ui,
   editor,
   rule,
-  conditionText,
+  conditionText = "",
   matches,
   layerName,
+  propertyName,
   line,
   type = "media",
 }) {
   const atTypeEl = rule.querySelector(".at-rule-type");
+  let name;
+  if (type === "layer") {
+    name = layerName;
+  } else if (type === "property") {
+    name = propertyName;
+  }
   is(
     atTypeEl.textContent,
-    `@${type}\u00A0${layerName ? `${layerName}\u00A0` : ""}`,
+    `@${type}\u00A0${name ? `${name}\u00A0` : ""}`,
     "label for at-rule type is correct"
   );
 
