@@ -340,8 +340,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CustomEvent", insecureContext: true },
   
-  { name: "CustomStateSet", insecureContext: true },
-  
   { name: "DecompressionStream", insecureContext: true },
   
   { name: "DataTransfer", insecureContext: true },
