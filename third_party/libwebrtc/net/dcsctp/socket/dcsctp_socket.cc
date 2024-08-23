@@ -296,20 +296,15 @@ void DcSctpSocket::SendInit() {
   packet_sender_.Send(b, true);
 }
 
-void DcSctpSocket::MakeConnectionParameters() {
-  VerificationTag new_verification_tag(
-      callbacks_.GetRandomInt(kMinVerificationTag, kMaxVerificationTag));
-  TSN initial_tsn(callbacks_.GetRandomInt(kMinInitialTsn, kMaxInitialTsn));
-  connect_params_.initial_tsn = initial_tsn;
-  connect_params_.verification_tag = new_verification_tag;
-}
-
 void DcSctpSocket::Connect() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   CallbackDeferrer::ScopedDeferrer deferrer(callbacks_);
 
   if (state_ == State::kClosed) {
-    MakeConnectionParameters();
+    connect_params_.initial_tsn =
+        TSN(callbacks_.GetRandomInt(kMinInitialTsn, kMaxInitialTsn));
+    connect_params_.verification_tag = VerificationTag(
+        callbacks_.GetRandomInt(kMinVerificationTag, kMaxVerificationTag));
     RTC_DLOG(LS_INFO)
         << log_prefix()
         << rtc::StringFormat(
@@ -1153,11 +1148,16 @@ void DcSctpSocket::HandleInit(const CommonHeader& header,
   }
 
   TieTag tie_tag(0);
+  VerificationTag my_verification_tag;
+  TSN my_initial_tsn;
   if (state_ == State::kClosed) {
     RTC_DLOG(LS_VERBOSE) << log_prefix()
                          << "Received Init in closed state (normal)";
 
-    MakeConnectionParameters();
+    my_verification_tag = VerificationTag(
+        callbacks_.GetRandomInt(kMinVerificationTag, kMaxVerificationTag));
+    my_initial_tsn =
+        TSN(callbacks_.GetRandomInt(kMinInitialTsn, kMaxInitialTsn));
   } else if (state_ == State::kCookieWait || state_ == State::kCookieEchoed) {
     
     
@@ -1170,6 +1170,8 @@ void DcSctpSocket::HandleInit(const CommonHeader& header,
     
     RTC_DLOG(LS_VERBOSE) << log_prefix()
                          << "Received Init indicating simultaneous connections";
+    my_verification_tag = connect_params_.verification_tag;
+    my_initial_tsn = connect_params_.initial_tsn;
   } else {
     RTC_DCHECK(tcb_ != nullptr);
     
@@ -1184,17 +1186,16 @@ void DcSctpSocket::HandleInit(const CommonHeader& header,
                          << "Received Init indicating restarted connection";
     
     for (int tries = 0; tries < 10; ++tries) {
-      connect_params_.verification_tag = VerificationTag(
+      my_verification_tag = VerificationTag(
           callbacks_.GetRandomInt(kMinVerificationTag, kMaxVerificationTag));
-      if (connect_params_.verification_tag != tcb_->my_verification_tag()) {
+      if (my_verification_tag != tcb_->my_verification_tag()) {
         break;
       }
     }
 
     
     
-    connect_params_.initial_tsn =
-        TSN(*tcb_->retransmission_queue().next_tsn() + 1000000);
+    my_initial_tsn = TSN(*tcb_->retransmission_queue().next_tsn() + 1000000);
     tie_tag = tcb_->tie_tag();
   }
 
@@ -1204,8 +1205,8 @@ void DcSctpSocket::HandleInit(const CommonHeader& header,
              "Proceeding with connection. my_verification_tag=%08x, "
              "my_initial_tsn=%u, peer_verification_tag=%08x, "
              "peer_initial_tsn=%u",
-             *connect_params_.verification_tag, *connect_params_.initial_tsn,
-             *chunk->initiate_tag(), *chunk->initial_tsn());
+             *my_verification_tag, *my_initial_tsn, *chunk->initiate_tag(),
+             *chunk->initial_tsn());
 
   Capabilities capabilities =
       ComputeCapabilities(options_, chunk->nbr_outbound_streams(),
@@ -1214,16 +1215,17 @@ void DcSctpSocket::HandleInit(const CommonHeader& header,
   SctpPacket::Builder b(chunk->initiate_tag(), options_);
   Parameters::Builder params_builder =
       Parameters::Builder().Add(StateCookieParameter(
-          StateCookie(chunk->initiate_tag(), chunk->initial_tsn(),
-                      chunk->a_rwnd(), tie_tag, capabilities)
+          StateCookie(chunk->initiate_tag(), my_verification_tag,
+                      chunk->initial_tsn(), my_initial_tsn, chunk->a_rwnd(),
+                      tie_tag, capabilities)
               .Serialize()));
   AddCapabilityParameters(options_, params_builder);
 
-  InitAckChunk init_ack(connect_params_.verification_tag,
+  InitAckChunk init_ack(my_verification_tag,
                         options_.max_receiver_window_buffer_size,
                         options_.announced_maximum_outgoing_streams,
                         options_.announced_maximum_incoming_streams,
-                        connect_params_.initial_tsn, params_builder.Build());
+                        my_initial_tsn, params_builder.Build());
   b.Add(init_ack);
   
   
@@ -1309,13 +1311,13 @@ void DcSctpSocket::HandleCookieEcho(
       return;
     }
   } else {
-    if (header.verification_tag != connect_params_.verification_tag) {
+    if (header.verification_tag != cookie->my_tag()) {
       callbacks_.OnError(
           ErrorKind::kParseFailed,
           rtc::StringFormat(
               "Received CookieEcho with invalid verification tag: %08x, "
               "expected %08x",
-              *header.verification_tag, *connect_params_.verification_tag));
+              *header.verification_tag, *cookie->my_tag()));
       return;
     }
   }
@@ -1340,10 +1342,10 @@ void DcSctpSocket::HandleCookieEcho(
     
     send_queue_.Reset();
 
-    CreateTransmissionControlBlock(
-        cookie->capabilities(), connect_params_.verification_tag,
-        connect_params_.initial_tsn, cookie->initiate_tag(),
-        cookie->initial_tsn(), cookie->a_rwnd(), MakeTieTag(callbacks_));
+    CreateTransmissionControlBlock(cookie->capabilities(), cookie->my_tag(),
+                                   cookie->my_initial_tsn(), cookie->peer_tag(),
+                                   cookie->peer_initial_tsn(), cookie->a_rwnd(),
+                                   MakeTieTag(callbacks_));
   }
 
   SctpPacket::Builder b = tcb_->PacketBuilder();
@@ -1363,13 +1365,13 @@ bool DcSctpSocket::HandleCookieEchoWithTCB(const CommonHeader& header,
                        << *tcb_->my_verification_tag()
                        << ", peer_tag=" << *header.verification_tag
                        << ", tcb_tag=" << *tcb_->peer_verification_tag()
-                       << ", cookie_tag=" << *cookie.initiate_tag()
+                       << ", peer_tag=" << *cookie.peer_tag()
                        << ", local_tie_tag=" << *tcb_->tie_tag()
                        << ", peer_tie_tag=" << *cookie.tie_tag();
   
   
   if (header.verification_tag != tcb_->my_verification_tag() &&
-      tcb_->peer_verification_tag() != cookie.initiate_tag() &&
+      tcb_->peer_verification_tag() != cookie.peer_tag() &&
       cookie.tie_tag() == tcb_->tie_tag()) {
     
     if (state_ == State::kShutdownAckSent) {
@@ -1377,7 +1379,7 @@ bool DcSctpSocket::HandleCookieEchoWithTCB(const CommonHeader& header,
       
       
       
-      SctpPacket::Builder b(cookie.initiate_tag(), options_);
+      SctpPacket::Builder b(cookie.peer_tag(), options_);
       b.Add(ShutdownAckChunk());
       b.Add(ErrorChunk(Parameters::Builder()
                            .Add(CookieReceivedWhileShuttingDownCause())
@@ -1394,7 +1396,7 @@ bool DcSctpSocket::HandleCookieEchoWithTCB(const CommonHeader& header,
     tcb_ = nullptr;
     callbacks_.OnConnectionRestarted();
   } else if (header.verification_tag == tcb_->my_verification_tag() &&
-             tcb_->peer_verification_tag() != cookie.initiate_tag()) {
+             tcb_->peer_verification_tag() != cookie.peer_tag()) {
     
     
     
@@ -1404,7 +1406,7 @@ bool DcSctpSocket::HandleCookieEchoWithTCB(const CommonHeader& header,
         << "Received COOKIE-ECHO indicating simultaneous connections";
     tcb_ = nullptr;
   } else if (header.verification_tag != tcb_->my_verification_tag() &&
-             tcb_->peer_verification_tag() == cookie.initiate_tag() &&
+             tcb_->peer_verification_tag() == cookie.peer_tag() &&
              cookie.tie_tag() == TieTag(0)) {
     
     
@@ -1417,7 +1419,7 @@ bool DcSctpSocket::HandleCookieEchoWithTCB(const CommonHeader& header,
         << "Received COOKIE-ECHO indicating a late COOKIE-ECHO. Discarding";
     return false;
   } else if (header.verification_tag == tcb_->my_verification_tag() &&
-             tcb_->peer_verification_tag() == cookie.initiate_tag()) {
+             tcb_->peer_verification_tag() == cookie.peer_tag()) {
     
     
     

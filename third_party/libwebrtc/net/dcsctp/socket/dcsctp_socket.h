@@ -149,8 +149,6 @@ class DcSctpSocket : public DcSctpSocketInterface {
   
   void SetState(State state, absl::string_view reason);
   
-  void MakeConnectionParameters();
-  
   void InternalClose(ErrorKind error, absl::string_view message);
   
   void CloseConnectionBecauseOfTooManyTransmissionErrors();
