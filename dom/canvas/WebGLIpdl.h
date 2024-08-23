@@ -247,45 +247,6 @@ struct ParamTraits<mozilla::dom::PredefinedColorSpace> final
 
 
 
-
-
-
-
-
-
-
-template <class T>
-struct ParamTraits_IsEnumCase {
-  static bool Write(MessageWriter* const writer, const T& in) {
-    MOZ_ASSERT(IsEnumCase(in));
-    const auto shadow = static_cast<std::underlying_type_t<T>>(in);
-    WriteParam(writer, shadow);
-    return true;
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    auto shadow = std::underlying_type_t<T>{};
-    if (!ReadParam(reader, &shadow)) return false;
-    const auto e = mozilla::AsValidEnum<T>(shadow);
-    if (!e) return false;
-    *out = *e;
-    return true;
-  }
-};
-
-
-
-#define USE_IS_ENUM_CASE(T) \
-  template <>               \
-  struct ParamTraits<T> : public ParamTraits_IsEnumCase<T> {};
-
-USE_IS_ENUM_CASE(mozilla::webgl::OptionalRenderableFormatBits)
-
-#undef USE_IS_ENUM_CASE
-
-
-
-
 template <class T>
 struct ParamTraits_TiedFields {
   static_assert(mozilla::AssertTiedFieldsAreExhaustive<T>());
@@ -310,10 +271,6 @@ struct ParamTraits_TiedFields {
     return ok;
   }
 };
-
-template <class U, size_t N>
-struct ParamTraits<mozilla::PaddingField<U, N>> final
-    : public ParamTraits_TiedFields<mozilla::PaddingField<U, N>> {};
 
 
 
@@ -651,6 +608,35 @@ struct ParamTraits<mozilla::avec3<U>> final {
            ReadParam(reader, &out->z);
   }
 };
+
+
+
+template <class TT>
+struct ParamTraits_IsEnumCase {
+  using T = TT;
+
+  static void Write(IPC::MessageWriter* const writer, const T& in) {
+    MOZ_RELEASE_ASSERT(IsEnumCase(in));
+    WriteParam(writer, mozilla::UnderlyingValue(in));
+  }
+
+  static bool Read(IPC::MessageReader* const reader, T* const out) {
+    std::underlying_type_t<T> rawVal;
+    if (!ReadParam(reader, &rawVal)) return false;
+    *out = static_cast<T>(rawVal);
+    return IsEnumCase(*out);
+  }
+};
+
+
+
+#define USE_IS_ENUM_CASE(T) \
+  template <>               \
+  struct ParamTraits<T> : public ParamTraits_IsEnumCase<T> {};
+
+USE_IS_ENUM_CASE(mozilla::webgl::OptionalRenderableFormatBits)
+
+#undef USE_IS_ENUM_CASE
 
 }  
 
