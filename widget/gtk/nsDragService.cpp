@@ -607,6 +607,14 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
   mTargetDragContextForRemote = nullptr;
   mTargetWindow = nullptr;
   mPendingWindow = nullptr;
+  mPendingDragContext = nullptr;
+  mPendingWindowPoint = {};
+  mScheduledTask = eDragTaskNone;
+  if (mTaskSource) {
+    g_source_remove(mTaskSource);
+    mTaskSource = 0;
+  }
+  mPendingTime = 0;
   mCachedDragContext = 0;
 
   return nsBaseDragService::EndDragSession(aDoneDrag, aKeyModifiers);
@@ -2554,6 +2562,7 @@ gboolean nsDragService::RunScheduledTask() {
     
     
     mTaskSource = 0;
+    mPendingDragContext = nullptr;
     return FALSE;
   }
 
