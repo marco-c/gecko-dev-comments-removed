@@ -22,7 +22,6 @@
 #include "api/units/time_delta.h"
 #include "call/call.h"
 #include "call/degraded_call.h"
-#include "call/rtp_transport_config.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_list.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -85,24 +84,15 @@ std::unique_ptr<Call> CreateCall(const CallConfig& config) {
       receive_degradation_configs =
           GetNetworkConfigs(config.env.field_trials(), false);
 
-  RtpTransportConfig transportConfig = config.ExtractTransportConfig();
+  std::unique_ptr<Call> call = Call::Create(config);
 
-  RTC_CHECK(false);
-  return nullptr;
-  
+  if (!send_degradation_configs.empty() ||
+      !receive_degradation_configs.empty()) {
+    return std::make_unique<DegradedCall>(
+        std::move(call), send_degradation_configs, receive_degradation_configs);
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
+  return call;
 }
 
 }  
