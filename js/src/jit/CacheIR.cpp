@@ -1199,7 +1199,8 @@ static ObjOperandId GuardAndLoadWindowProxyWindow(CacheIRWriter& writer,
                                                   ObjOperandId objId,
                                                   GlobalObject* windowObj) {
   writer.guardClass(objId, GuardClassKind::WindowProxy);
-  ObjOperandId windowObjId = writer.loadWrapperTarget(objId);
+  ObjOperandId windowObjId = writer.loadWrapperTarget(objId,
+                                                       false);
   writer.guardSpecificObject(windowObjId, windowObj);
   return windowObjId;
 }
@@ -1357,7 +1358,8 @@ AttachDecision GetPropIRGenerator::tryAttachCrossCompartmentWrapper(
   writer.guardHasProxyHandler(objId, Wrapper::wrapperHandler(obj));
 
   
-  ObjOperandId wrapperTargetId = writer.loadWrapperTarget(objId);
+  ObjOperandId wrapperTargetId =
+      writer.loadWrapperTarget(objId,  false);
 
   
   writer.guardCompartment(wrapperTargetId, wrappedTargetGlobal,
@@ -1468,7 +1470,8 @@ AttachDecision GetPropIRGenerator::tryAttachXrayCrossCompartmentWrapper(
   writer.guardHasProxyHandler(objId, GetProxyHandler(obj));
 
   
-  ObjOperandId wrapperTargetId = writer.loadWrapperTarget(objId);
+  ObjOperandId wrapperTargetId =
+      writer.loadWrapperTarget(objId,  false);
 
   
   
@@ -1580,7 +1583,8 @@ AttachDecision GetPropIRGenerator::tryAttachScriptedProxy(
   writer.guardHasProxyHandler(objId, &ScriptedProxyHandler::singleton);
   ValOperandId handlerValId = writer.loadScriptedProxyHandler(objId);
   ObjOperandId handlerObjId = writer.guardToObject(handlerValId);
-  ObjOperandId targetObjId = writer.loadWrapperTarget(objId);
+  ObjOperandId targetObjId =
+      writer.loadWrapperTarget(objId, true);
 
   writer.guardIsNativeObject(targetObjId);
 
