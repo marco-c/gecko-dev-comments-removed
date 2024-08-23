@@ -226,6 +226,43 @@ add_task(async function () {
   await toggleEventBreakpoint(dbg, "Load", "event.load.unload");
 });
 
+
+add_task(async function testRestoreOnStartup() {
+  let dbg = await initDebugger(
+    "doc-event-breakpoints.html",
+    "event-breakpoints.js"
+  );
+  await selectSource(dbg, "event-breakpoints.js");
+  await waitForSelectedSource(dbg, "event-breakpoints.js");
+  let eventBreakpointsSource = findSource(dbg, "event-breakpoints.js");
+
+  await toggleEventBreakpoint(dbg, "Mouse", "event.mouse.click");
+
+  
+  invokeInTab("clickHandler");
+  await waitForPaused(dbg);
+  assertPausedAtSourceAndLine(dbg, eventBreakpointsSource.id, 12);
+  await resume(dbg);
+
+  
+  await dbg.toolbox.closeToolbox();
+
+  
+  const toolbox = await openToolboxForTab(gBrowser.selectedTab, "webconsole");
+
+  
+  const onSelected = toolbox.once("jsdebugger-selected");
+  invokeInTab("clickHandler");
+  await onSelected;
+
+  
+  dbg = createDebuggerContext(toolbox);
+  await waitForPaused(dbg);
+  eventBreakpointsSource = findSource(dbg, "event-breakpoints.js");
+  assertPausedAtSourceAndLine(dbg, eventBreakpointsSource.id, 12);
+  await resume(dbg);
+});
+
 function getEventListenersPanel(dbg) {
   return findElementWithSelector(dbg, ".event-listeners-pane .event-listeners");
 }
