@@ -169,8 +169,7 @@ using FramerateChange =
 using BitrateModeChange =
     StrongTypedef<BitrateMode, struct BitrateModeChangeType>;
 
-using UsageChange =
-    StrongTypedef<Usage, struct UsageChangeType>;
+using UsageChange = StrongTypedef<Usage, struct UsageChangeType>;
 
 
 
