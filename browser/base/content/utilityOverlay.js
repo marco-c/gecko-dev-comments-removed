@@ -294,7 +294,7 @@ function closeMenus(node) {
 
 
 function eventMatchesKey(aEvent, aKey) {
-  let keyPressed = aKey.getAttribute("key").toLowerCase();
+  let keyPressed = (aKey.getAttribute("key") || "").toLowerCase();
   let keyModifiers = aKey.getAttribute("modifiers");
   let modifiers = ["Alt", "Control", "Meta", "Shift"];
 
@@ -341,7 +341,7 @@ function gatherTextUnder(root) {
     } else if (HTMLImageElement.isInstance(node)) {
       
       var altText = node.getAttribute("alt");
-      if (altText && altText != "") {
+      if (altText) {
         text += " " + altText;
       }
     }

@@ -378,7 +378,7 @@ add_task(async function () {
   
   node = node.nextElementSibling;
   is(node.nodeName, "label", "node is a label");
-  is(node.getAttribute("itemtype"), "", "node is neither a tab nor a client");
+  is(node.getAttribute("itemtype"), null, "node is neither a tab nor a client");
 
   node = node.nextElementSibling;
   is(node, null, "no more siblings");

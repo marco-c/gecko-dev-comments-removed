@@ -2,7 +2,7 @@
 
 
 
-async function testVal(aExpected, overflowSide = "") {
+async function testVal(aExpected, overflowSide = null) {
   info(`Testing ${aExpected}`);
   try {
     gURLBar.setURI(makeURI(aExpected));
