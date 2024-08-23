@@ -167,18 +167,28 @@ class ModuleLoaderBase : public nsISupports {
   
 
 
-  class WaitingRequests final : public nsISupports {
-    virtual ~WaitingRequests() = default;
+
+
+
+  class LoadingRequest final : public nsISupports {
+    virtual ~LoadingRequest() = default;
 
    public:
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_CYCLE_COLLECTION_CLASS(WaitingRequests)
+    NS_DECL_CYCLE_COLLECTION_CLASS(LoadingRequest)
 
+    
+    
+    RefPtr<ModuleLoadRequest> mRequest;
+
+    
+    
+    
     nsTArray<RefPtr<ModuleLoadRequest>> mWaiting;
   };
 
   
-  nsRefPtrHashtable<nsURIHashKey, WaitingRequests> mFetchingModules;
+  nsRefPtrHashtable<nsURIHashKey, LoadingRequest> mFetchingModules;
   nsRefPtrHashtable<nsURIHashKey, ModuleScript> mFetchedModules;
 
   
@@ -421,7 +431,7 @@ class ModuleLoaderBase : public nsISupports {
 
   void SetModuleFetchFinishedAndResumeWaitingRequests(
       ModuleLoadRequest* aRequest, nsresult aResult);
-  void ResumeWaitingRequests(WaitingRequests* aWaitingRequests, bool aSuccess);
+  void ResumeWaitingRequests(LoadingRequest* aLoadingRequest, bool aSuccess);
   void ResumeWaitingRequest(ModuleLoadRequest* aRequest, bool aSuccess);
 
   void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
