@@ -12,6 +12,11 @@ const allWebNNOperandDataTypes = [
   'uint8'
 ];
 
+
+
+
+
+const kMaxUnsignedLong = 2 ** 32 - 1;
 const unsignedLongType = 'unsigned long';
 
 const dimensions0D = [];
@@ -173,9 +178,7 @@ function generateOutOfRangeValuesArray(type) {
   let range, outsideValueArray;
   switch (type) {
     case 'unsigned long':
-      
-      
-      range = [0, 4294967295];
+      range = [0, kMaxUnsignedLong];
       break;
     default:
       throw new Error(`Unsupport ${type}`);
