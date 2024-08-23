@@ -205,7 +205,7 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
   
   mMustUseLightColorSet = mUsePrefColors && !mUseDocumentColors;
 #ifdef XP_WIN
-  if (mUseAccessibilityTheme) {
+  if (mUseAccessibilityTheme && !mUseDocumentColors) {
     
     
     
