@@ -162,6 +162,9 @@ enum class NativeKeyBindingsType : uint8_t;
 - (void)sendToplevelDeactivateEvents;
 @end
 
+@interface MOZTitlebarView : NSVisualEffectView
+@end
+
 @interface FullscreenTitlebarTracker : NSTitlebarAccessoryViewController
 - (FullscreenTitlebarTracker*)init;
 @end
@@ -171,11 +174,26 @@ enum class NativeKeyBindingsType : uint8_t;
   
   
   
+  
+  MOZTitlebarView* mTitlebarView;  
+  
+  
+  
   FullscreenTitlebarTracker* mFullscreenTitlebarTracker;
 
+  CGFloat mUnifiedToolbarHeight;
   CGFloat mMenuBarHeight;
+  
+
+
+  CGFloat mInitialTitlebarHeight;
   NSRect mWindowButtonsRect;
 }
+- (void)setUnifiedToolbarHeight:(CGFloat)aHeight;
+- (CGFloat)unifiedToolbarHeight;
+- (CGFloat)titlebarHeight;
+- (NSRect)titlebarRect;
+- (void)setTitlebarNeedsDisplay;
 - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState;
 - (void)placeWindowButtons:(NSRect)aRect;
 - (NSRect)windowButtonsRect;
