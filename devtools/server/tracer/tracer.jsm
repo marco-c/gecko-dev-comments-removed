@@ -156,8 +156,6 @@ const customLazy = {
 
 
 
-
-
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -167,10 +165,29 @@ class JavaScriptTracer {
       this.abortController = new AbortController();
     }
 
-    
-    
-    
-    this.tracedGlobal = options.global || Cu.getGlobalForObject(options);
+    if (options.traceAllGlobals) {
+      this.traceAllGlobals = true;
+      if (options.traceOnNextInteraction) {
+        throw new Error(
+          "Tracing all globals and waiting for next user interaction are not yet compatible"
+        );
+      }
+      if (this.traceDOMEvents) {
+        throw new Error(
+          "Tracing all globals and DOM Events are not yet compatible"
+        );
+      }
+      if (options.global) {
+        throw new Error(
+          "'global' option should be omitted when using 'traceAllGlobals'"
+        );
+      }
+    } else {
+      
+      
+      
+      this.tracedGlobal = options.global || Cu.getGlobalForObject(options);
+    }
 
     
     
@@ -495,6 +512,20 @@ class JavaScriptTracer {
 
 
   makeDebugger() {
+    if (this.traceAllGlobals) {
+      const dbg = new customLazy.DistinctCompartmentDebugger();
+      dbg.addAllGlobalsAsDebuggees();
+
+      
+      
+      
+      dbg.removeDebuggee(globalThis);
+
+      
+      dbg.onNewGlobalObject = g => dbg.addDebuggee(g);
+      return dbg;
+    }
+
     
     
     const { isSystemPrincipal } =
