@@ -20,6 +20,11 @@ import jsonschema
 from jsonschema import _utils  
 import yaml
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader  
+
 
 def date_fromisoformat(datestr: str) -> datetime.date:
     return datetime.date.fromisoformat(datestr)
@@ -44,7 +49,7 @@ class DictWrapper(dict):
     pass
 
 
-class _NoDatesSafeLoader(yaml.SafeLoader):
+class _NoDatesSafeLoader(SafeLoader):
     @classmethod
     def remove_implicit_resolver(cls, tag_to_remove):
         """
