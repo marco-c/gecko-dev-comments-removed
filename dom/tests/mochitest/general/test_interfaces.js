@@ -1669,7 +1669,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onclose", insecureContext: true },
   
+  { name: "oncontextlost", insecureContext: true },
+  
   { name: "oncontextmenu", insecureContext: true },
+  
+  { name: "oncontextrestored", insecureContext: true },
   
   { name: "oncopy", insecureContext: true },
   

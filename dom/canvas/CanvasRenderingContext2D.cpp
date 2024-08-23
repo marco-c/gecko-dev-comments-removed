@@ -1227,6 +1227,64 @@ void CanvasRenderingContext2D::RemoveShutdownObserver() {
   canvasManager->RemoveShutdownObserver(this);
 }
 
+void CanvasRenderingContext2D::OnRemoteCanvasLost() {
+  
+  
+  if (!mBufferProvider || !mBufferProvider->IsAccelerated() || mIsContextLost) {
+    return;
+  }
+
+  
+  mIsContextLost = mAllowContextRestore = true;
+
+  
+  ClearTarget();
+
+  
+  
+  NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
+      "CanvasRenderingContext2D::OnRemoteCanvasLost", [self = RefPtr{this}] {
+        
+        
+        
+        self->mAllowContextRestore = self->DispatchEvent(
+            u"contextlost"_ns, CanBubble::eNo, Cancelable::eYes);
+      }));
+}
+
+void CanvasRenderingContext2D::OnRemoteCanvasRestored() {
+  
+  
+  if (mHasShutdown || !mIsContextLost || !mAllowContextRestore) {
+    return;
+  }
+
+  
+  
+  NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
+      "CanvasRenderingContext2D::OnRemoteCanvasRestored",
+      [self = RefPtr{this}] {
+        
+        if (!self->mHasShutdown && self->mIsContextLost &&
+            self->mAllowContextRestore) {
+          
+          self->mIsContextLost = false;
+
+          
+          
+          
+          if (!self->EnsureTarget()) {
+            self->mIsContextLost = true;
+            return;
+          }
+
+          
+          self->DispatchEvent(u"contextrestored"_ns, CanBubble::eNo,
+                              Cancelable::eNo);
+        }
+      }));
+}
+
 void CanvasRenderingContext2D::SetStyleFromString(const nsACString& aStr,
                                                   Style aWhichStyle) {
   MOZ_ASSERT(!aStr.IsVoid());
@@ -1451,6 +1509,17 @@ bool CanvasRenderingContext2D::EnsureTarget(ErrorResult& aError,
     SetErrorState();
     aError.ThrowInvalidStateError(
         "Cannot use canvas after shutdown initiated.");
+    return false;
+  }
+
+  
+  
+  
+  if (NS_WARN_IF(mIsContextLost)) {
+    if (!mAllowContextRestore) {
+      aError.ThrowInvalidStateError(
+          "Cannot use canvas as context is lost forever.");
+    }
     return false;
   }
 
@@ -2026,7 +2095,7 @@ CanvasRenderingContext2D::GetOptimizedSnapshot(DrawTarget* aTarget,
   
   if (!EnsureTarget()) {
     MOZ_ASSERT(
-        mTarget == sErrorTarget.get(),
+        mTarget == sErrorTarget.get() || mIsContextLost,
         "On EnsureTarget failure mTarget should be set to sErrorTarget.");
     
     return mTarget ? mTarget->Snapshot() : nullptr;
