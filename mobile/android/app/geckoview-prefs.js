@@ -29,7 +29,7 @@ pref("app.update.timerFirstInterval", 30000);
 pref("app.update.timerMinimumDelay", 30); 
 
 
-pref("apz.axis_lock.breakout_angle", "0.7853982");
+pref("apz.axis_lock.breakout_angle", "0.5235988");
 
 
 pref("apz.content_response_timeout", 600);
