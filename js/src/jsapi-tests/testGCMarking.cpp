@@ -344,6 +344,7 @@ BEGIN_TEST(testIncrementalRoots) {
 
   
   
+  AutoGCParameter disableSemispace(cx, JSGC_SEMISPACE_NURSERY_ENABLED, 0);
   cx->runtime()->gc.minorGC(JS::GCReason::API);
 
   

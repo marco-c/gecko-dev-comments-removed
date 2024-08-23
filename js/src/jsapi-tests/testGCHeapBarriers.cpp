@@ -169,6 +169,7 @@ static void MakeGray(const JS::ArrayBufferOrView& view) {
 
 BEGIN_TEST(testGCHeapPostBarriers) {
   AutoLeaveZeal nozeal(cx);
+  AutoGCParameter disableSemispace(cx, JSGC_SEMISPACE_NURSERY_ENABLED, 0);
 
   
   JS_GC(cx);
