@@ -6,7 +6,7 @@
 'use strict';
 
 pressure_test(async (t, mockPressureService) => {
-  const sampleRateInHz = 10;
+  const sampleIntervalInMs = 100;
   const readings = ['nominal', 'fair', 'serious', 'critical'];
   
   
@@ -17,10 +17,10 @@ pressure_test(async (t, mockPressureService) => {
     const observerChanges = [];
     const observer = new PressureObserver(changes => {
       observerChanges.push(changes);
-    }, {sampleRate: sampleRateInHz});
+    }, {sampleInterval: sampleIntervalInMs});
 
     observer.observe('cpu');
-    mockPressureService.startPlatformCollector(sampleRateInHz);
+    mockPressureService.startPlatformCollector(sampleIntervalInMs);
     let i = 0;
     
     

@@ -7,7 +7,7 @@ pressure_test(async (t, mockPressureService) => {
     const observer = new PressureObserver(resolve);
     observer.observe('cpu');
     mockPressureService.setPressureUpdate('cpu', 'critical');
-    mockPressureService.startPlatformCollector( 5.0);
+    mockPressureService.startPlatformCollector( 200);
   });
   assert_true(changes.length === 1);
   const json = changes[0].toJSON();
