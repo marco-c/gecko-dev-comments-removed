@@ -2061,8 +2061,15 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
     
     
     int msid_signaling = offer->msid_signaling();
-    if (msid_signaling == cricket::kMsidSignalingNotUsed ||
-        msid_signaling == cricket::kMsidSignalingSemantic) {
+    if (msid_signaling ==
+        (cricket::kMsidSignalingSemantic | cricket::kMsidSignalingMediaSection |
+         cricket::kMsidSignalingSsrcAttribute)) {
+      
+      
+      
+      answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                                 cricket::kMsidSignalingMediaSection);
+    } else if (msid_signaling == cricket::kMsidSignalingSemantic) {
       
       
       
@@ -2074,15 +2081,8 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
       answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
                                  cricket::kMsidSignalingMediaSection |
                                  cricket::kMsidSignalingSsrcAttribute);
-    } else if (msid_signaling == (cricket::kMsidSignalingSemantic |
-                                  cricket::kMsidSignalingMediaSection |
-                                  cricket::kMsidSignalingSsrcAttribute)) {
-      
-      
-      
-      answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
-                                 cricket::kMsidSignalingMediaSection);
     } else {
+      
       
       
       answer->set_msid_signaling(msid_signaling);

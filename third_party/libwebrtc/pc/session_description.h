@@ -589,9 +589,7 @@ class SessionDescription {
   ContentInfos contents_;
   TransportInfos transport_infos_;
   ContentGroups content_groups_;
-  
-  
-  int msid_signaling_ = kMsidSignalingSsrcAttribute | kMsidSignalingSemantic;
+  int msid_signaling_ = kMsidSignalingMediaSection | kMsidSignalingSemantic;
   bool extmap_allow_mixed_ = true;
 };
 

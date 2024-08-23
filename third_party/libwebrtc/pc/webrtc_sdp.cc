@@ -921,25 +921,30 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   }
 
   
-  InitAttrLine(kAttributeMsidSemantics, &os);
-  os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
-
   
   
   
-  std::set<std::string> media_stream_ids;
-  const ContentInfo* audio_content = GetFirstAudioContent(desc);
-  if (audio_content)
-    GetMediaStreamIds(audio_content, &media_stream_ids);
+  if (desc->msid_signaling() != cricket::kMsidSignalingNotUsed) {
+    InitAttrLine(kAttributeMsidSemantics, &os);
+    os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
 
-  const ContentInfo* video_content = GetFirstVideoContent(desc);
-  if (video_content)
-    GetMediaStreamIds(video_content, &media_stream_ids);
+    
+    
+    
+    std::set<std::string> media_stream_ids;
+    const ContentInfo* audio_content = GetFirstAudioContent(desc);
+    if (audio_content)
+      GetMediaStreamIds(audio_content, &media_stream_ids);
 
-  for (const std::string& id : media_stream_ids) {
-    os << " " << id;
+    const ContentInfo* video_content = GetFirstVideoContent(desc);
+    if (video_content)
+      GetMediaStreamIds(video_content, &media_stream_ids);
+
+    for (const std::string& id : media_stream_ids) {
+      os << " " << id;
+    }
+    AddLine(os.str(), &message);
   }
-  AddLine(os.str(), &message);
 
   
   
