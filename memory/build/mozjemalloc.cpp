@@ -393,8 +393,6 @@ struct arena_chunk_map_t {
 
 
 
-
-
 #define CHUNK_MAP_FRESH ((size_t)0x80U)
 #define CHUNK_MAP_MADVISED ((size_t)0x40U)
 #define CHUNK_MAP_DECOMMITTED ((size_t)0x20U)
@@ -2728,17 +2726,9 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
       mStats.committed++;
       mNumFresh--;
     }
-#ifdef MALLOC_DOUBLE_PURGE
-    
-    
-    else if (chunk->map[run_ind + i].bits & CHUNK_MAP_DECOMMITTED) {
-      mStats.committed++;
-      mNumFresh--;
-    }
-#else
+
     
     MOZ_ASSERT(!(chunk->map[run_ind + i].bits & CHUNK_MAP_DECOMMITTED));
-#endif
 
     
     
@@ -2852,14 +2842,9 @@ arena_chunk_t* arena_t::DeallocChunk(arena_chunk_t* aChunk) {
       MOZ_ASSERT(mSpare->map[i].bits &
                  (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY));
 
-#ifdef MALLOC_DOUBLE_PURGE
-      size_t fresh_test_bits = CHUNK_MAP_FRESH | CHUNK_MAP_DECOMMITTED;
-#else
-      size_t fresh_test_bits = CHUNK_MAP_FRESH;
-#endif
       if (mSpare->map[i].bits & CHUNK_MAP_MADVISED) {
         madvised++;
-      } else if (mSpare->map[i].bits & fresh_test_bits) {
+      } else if (mSpare->map[i].bits & CHUNK_MAP_FRESH) {
         fresh++;
       }
     }
@@ -5046,7 +5031,7 @@ static size_t hard_purge_chunk(arena_chunk_t* aChunk) {
       
       MOZ_DIAGNOSTIC_ASSERT(!(aChunk->map[i + npages].bits &
                               (CHUNK_MAP_FRESH | CHUNK_MAP_DECOMMITTED)));
-      aChunk->map[i + npages].bits ^= CHUNK_MAP_MADVISED_OR_DECOMMITTED;
+      aChunk->map[i + npages].bits ^= (CHUNK_MAP_MADVISED | CHUNK_MAP_FRESH);
     }
 
     
