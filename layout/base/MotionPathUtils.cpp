@@ -731,6 +731,9 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
       
       
       return BuildSVGPath(aBasicShape.AsPath().path, aPathBuilder);
+    case StyleBasicShape::Tag::Shape:
+      
+      return nullptr;
   }
 
   return nullptr;

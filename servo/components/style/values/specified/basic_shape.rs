@@ -14,6 +14,7 @@ use crate::values::generics::basic_shape as generic;
 use crate::values::generics::basic_shape::{Path, PolygonCoord};
 use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
 use crate::values::generics::rect::Rect;
+use crate::values::specified::angle::Angle;
 use crate::values::specified::border::BorderRadius;
 use crate::values::specified::image::Image;
 use crate::values::specified::length::LengthPercentageOrAuto;
@@ -40,6 +41,7 @@ pub type ShapePosition = GenericPosition<LengthPercentage, LengthPercentage>;
 
 
 pub type BasicShape = generic::GenericBasicShape<
+    Angle,
     ShapePosition,
     LengthPercentage,
     NonNegativeLengthPercentage,
@@ -60,6 +62,9 @@ pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthPercentage>;
 
 
 pub type Polygon = generic::GenericPolygon<LengthPercentage>;
+
+
+pub type ShapeCommand = generic::GenericShapeCommand<Angle, LengthPercentage>;
 
 
 
@@ -168,8 +173,8 @@ bitflags! {
         const POLYGON = 1 << 5;
         /// path().
         const PATH = 1 << 6;
-        // TODO: Bug 1823463. Add shape().
-        // const SHAPE = 1 << 7;
+        /// shape().
+        const SHAPE = 1 << 7;
 
         /// All flags.
         const ALL =
@@ -248,7 +253,9 @@ impl Parse for ClipPath {
             input,
             ClipPath::Shape,
             ClipPath::Box,
-            AllowedBasicShapes::ALL,
+            
+            
+            AllowedBasicShapes::ALL | AllowedBasicShapes::SHAPE,
         )
     }
 }
@@ -330,6 +337,13 @@ impl BasicShape {
                 },
                 "path" if flags.contains(AllowedBasicShapes::PATH) => {
                     Path::parse_function_arguments(i, shape_type).map(BasicShape::Path)
+                },
+                "shape"
+                    if flags.contains(AllowedBasicShapes::SHAPE)
+                        && static_prefs::pref!("layout.css.basic-shape-shape.enabled") =>
+                {
+                    generic::Shape::parse_function_arguments(context, i, shape_type)
+                        .map(BasicShape::Shape)
                 },
                 _ => Err(location
                     .new_custom_error(StyleParseErrorKind::UnexpectedFunction(function.clone()))),
@@ -490,7 +504,11 @@ impl Ellipse {
     }
 }
 
-fn parse_fill_rule<'i, 't>(input: &mut Parser<'i, 't>, shape_type: ShapeType) -> FillRule {
+fn parse_fill_rule<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    shape_type: ShapeType,
+    expect_comma: bool,
+) -> FillRule {
     match shape_type {
         
         
@@ -508,7 +526,9 @@ fn parse_fill_rule<'i, 't>(input: &mut Parser<'i, 't>, shape_type: ShapeType) ->
         ShapeType::Filled => input
             .try_parse(|i| -> Result<_, ParseError> {
                 let fill = FillRule::parse(i)?;
-                i.expect_comma()?;
+                if expect_comma {
+                    i.expect_comma()?;
+                }
                 Ok(fill)
             })
             .unwrap_or_default(),
@@ -532,7 +552,7 @@ impl Polygon {
         input: &mut Parser<'i, 't>,
         shape_type: ShapeType,
     ) -> Result<Self, ParseError<'i>> {
-        let fill = parse_fill_rule(input, shape_type);
+        let fill = parse_fill_rule(input, shape_type, true );
         let coordinates = input
             .parse_comma_separated(|i| {
                 Ok(PolygonCoord(
@@ -554,7 +574,7 @@ impl Path {
     ) -> Result<Self, ParseError<'i>> {
         use crate::values::specified::svg_path::AllowEmpty;
 
-        let fill = parse_fill_rule(input, shape_type);
+        let fill = parse_fill_rule(input, shape_type, true );
         let path = SVGPathData::parse(input, AllowEmpty::No)?;
         Ok(Path { fill, path })
     }
@@ -715,5 +735,170 @@ impl ToComputedValue for BasicShapeRect {
     #[inline]
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
         Self::Inset(ToComputedValue::from_computed_value(computed))
+    }
+}
+
+impl generic::Shape<Angle, LengthPercentage> {
+    
+    
+    fn parse_function_arguments<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        shape_type: ShapeType,
+    ) -> Result<Self, ParseError<'i>> {
+        let fill = parse_fill_rule(input, shape_type, false );
+
+        let mut first = true;
+        let commands = input.parse_comma_separated(|i| {
+            if first {
+                first = false;
+
+                
+                
+                
+                i.expect_ident_matching("from")?;
+                Ok(ShapeCommand::Move {
+                    by_to: generic::ByTo::To,
+                    point: generic::CoordinatePair::parse(context, i)?,
+                })
+            } else {
+                
+                ShapeCommand::parse(context, i)
+            }
+        })?;
+
+        
+        if commands.len() < 2 {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+
+        Ok(Self {
+            fill,
+            commands: commands.into(),
+        })
+    }
+}
+
+impl Parse for ShapeCommand {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        use crate::values::generics::basic_shape::{ArcSize, ArcSweep, ByTo, CoordinatePair};
+
+        
+        
+        Ok(try_match_ident_ignore_ascii_case! { input,
+            "close" => Self::Close,
+            "move" => {
+                let by_to = ByTo::parse(input)?;
+                let point = CoordinatePair::parse(context, input)?;
+                Self::Move { by_to, point }
+            },
+            "line" => {
+                let by_to = ByTo::parse(input)?;
+                let point = CoordinatePair::parse(context, input)?;
+                Self::Line { by_to, point }
+            },
+            "hline" => {
+                let by_to = ByTo::parse(input)?;
+                let x = LengthPercentage::parse(context, input)?;
+                Self::HLine { by_to, x }
+            },
+            "vline" => {
+                let by_to = ByTo::parse(input)?;
+                let y = LengthPercentage::parse(context, input)?;
+                Self::VLine { by_to, y }
+            },
+            "curve" => {
+                let by_to = ByTo::parse(input)?;
+                let point = CoordinatePair::parse(context, input)?;
+                input.expect_ident_matching("via")?;
+                let control1 = CoordinatePair::parse(context, input)?;
+                match input.try_parse(|i| CoordinatePair::parse(context, i)) {
+                    Ok(control2) => Self::CubicCurve {
+                        by_to,
+                        point,
+                        control1,
+                        control2,
+                    },
+                    Err(_) => Self::QuadCurve {
+                        by_to,
+                        point,
+                        control1,
+                    },
+                }
+            },
+            "smooth" => {
+                let by_to = ByTo::parse(input)?;
+                let point = CoordinatePair::parse(context, input)?;
+                if input.try_parse(|i| i.expect_ident_matching("via")).is_ok() {
+                    let control2 = CoordinatePair::parse(context, input)?;
+                    Self::SmoothCubic {
+                        by_to,
+                        point,
+                        control2,
+                    }
+                } else {
+                    Self::SmoothQuad { by_to, point }
+                }
+            },
+            "arc" => {
+                let by_to = ByTo::parse(input)?;
+                let point = CoordinatePair::parse(context, input)?;
+                input.expect_ident_matching("of")?;
+                let rx = LengthPercentage::parse(context, input)?;
+                let ry = input
+                    .try_parse(|i| LengthPercentage::parse(context, i))
+                    .unwrap_or(rx.clone());
+                let radii = CoordinatePair::new(rx, ry);
+
+                // [<arc-sweep> || <arc-size> || rotate <angle>]?
+                let mut arc_sweep = None;
+                let mut arc_size = None;
+                let mut rotate = None;
+                loop {
+                    if arc_sweep.is_none() {
+                        arc_sweep = input.try_parse(ArcSweep::parse).ok();
+                    }
+
+                    if arc_size.is_none() {
+                        arc_size = input.try_parse(ArcSize::parse).ok();
+                        if arc_size.is_some() {
+                            continue;
+                        }
+                    }
+
+                    if rotate.is_none()
+                        && input
+                            .try_parse(|i| i.expect_ident_matching("rotate"))
+                            .is_ok()
+                    {
+                        rotate = Some(Angle::parse(context, input)?);
+                        continue;
+                    }
+                    break;
+                }
+                Self::Arc {
+                    by_to,
+                    point,
+                    radii,
+                    arc_sweep: arc_sweep.unwrap_or(ArcSweep::Ccw),
+                    arc_size: arc_size.unwrap_or(ArcSize::Small),
+                    rotate: rotate.unwrap_or(Angle::zero()),
+                }
+            },
+        })
+    }
+}
+
+impl Parse for generic::CoordinatePair<LengthPercentage> {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let x = LengthPercentage::parse(context, input)?;
+        let y = LengthPercentage::parse(context, input)?;
+        Ok(Self::new(x, y))
     }
 }

@@ -7,6 +7,7 @@
 
 
 
+use crate::values::computed::angle::Angle;
 use crate::values::computed::url::ComputedUrl;
 use crate::values::computed::{Image, LengthPercentage, NonNegativeLengthPercentage, Position};
 use crate::values::generics::basic_shape as generic;
@@ -21,8 +22,13 @@ pub type ClipPath = generic::GenericClipPath<BasicShape, ComputedUrl>;
 pub type ShapeOutside = generic::GenericShapeOutside<BasicShape, Image>;
 
 
-pub type BasicShape =
-    generic::GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercentage, InsetRect>;
+pub type BasicShape = generic::GenericBasicShape<
+    Angle,
+    Position,
+    LengthPercentage,
+    NonNegativeLengthPercentage,
+    InsetRect,
+>;
 
 
 pub type InsetRect = generic::GenericInsetRect<LengthPercentage, NonNegativeLengthPercentage>;
@@ -35,3 +41,9 @@ pub type Ellipse = generic::Ellipse<Position, NonNegativeLengthPercentage>;
 
 
 pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;
+
+
+pub type Shape = generic::Shape<Angle, LengthPercentage>;
+
+
+pub type ShapeCommand = generic::GenericShapeCommand<Angle, LengthPercentage>;
