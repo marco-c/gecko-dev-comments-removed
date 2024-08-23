@@ -537,6 +537,9 @@ static const bool ParallelMarkingEnabled = false;
 static const bool IncrementalWeakMapMarkingEnabled = true;
 
 
+static const bool SemispaceNurseryEnabled = false;
+
+
 static const double HelperThreadRatio = 0.5;
 
 

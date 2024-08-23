@@ -459,6 +459,15 @@ typedef enum JSGCParamKey {
 
 
   JSGC_PARALLEL_MARKING_THRESHOLD_MB = 50,
+
+  
+
+
+
+
+
+  JSGC_SEMISPACE_NURSERY_ENABLED = 51,
+
 } JSGCParamKey;
 
 
