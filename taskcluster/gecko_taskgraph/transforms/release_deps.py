@@ -44,6 +44,17 @@ def add_dependencies(config, jobs):
                     != job["attributes"]["build_platform"]
                 ):
                     continue
+
+            
+            if product == "firefox-android":
+                
+                from android_taskgraph.release_type import does_task_match_release_type
+
+                if not does_task_match_release_type(
+                    dep_task, config.params["release_type"]
+                ):
+                    continue
+
             
             if (
                 dep_task.task.get("shipping-product") == product
