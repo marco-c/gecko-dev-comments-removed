@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Class names to preserve in the readerized output. We preserve these class
-// names so that rules in readerview.css can match them. This list is taken from Fennec:
-// https://dxr.mozilla.org/mozilla-central/rev/7d47e7fa2489550ffa83aae67715c5497048923f/toolkit/components/reader/ReaderMode.jsm#21
+
+
+
+
+
+
 const preservedClasses = [
   "caption",
   "emoji",
@@ -28,15 +28,15 @@ class ReaderView {
     return 9;
   }
 
-  /**
-   * Shows a reader view for the provided document. This method is used when activating
-   * reader view on the original page. In this case, we already have the DOM (passed
-   * through in the message from the background script) and can parse it directly.
-   *
-   * @param doc the document to make readerable.
-   * @param url the url of the article.
-   * @param options the fontSize, fontType and colorScheme to use.
-   */
+  
+
+
+
+
+
+
+
+
   show(doc, url, options = {fontSize: 4, fontType: "sans-serif", colorScheme: "light"}) {
     let result = new Readability(doc, {classesToPreserve: preservedClasses}).parse();
     result.language = doc.documentElement.lang;
@@ -56,25 +56,28 @@ class ReaderView {
     this.setFontSize(options.fontSize);
     this.setFontType(options.fontType);
     this.setColorScheme(options.colorScheme);
+    if (options.scrollY) {
+      window.scrollTo({top: options.scrollY, left: 0, behavior: "instant"});
+    }
   }
 
-  /**
-   * Allows adjusting the font size in discrete steps between ReaderView.MIN_FONT_SIZE
-   * and ReaderView.MAX_FONT_SIZE.
-   *
-   * @param changeAmount e.g. +1, or -1.
-   */
+  
+
+
+
+
+
   changeFontSize(changeAmount) {
     var size = Math.max(ReaderView.MIN_FONT_SIZE, Math.min(ReaderView.MAX_FONT_SIZE, this.fontSize + changeAmount));
     this.setFontSize(size);
   }
 
-  /**
-   * Sets the font size.
-   *
-   * @param fontSize must be value between ReaderView.MIN_FONT_SIZE
-   * and ReaderView.MAX_FONT_SIZE.
-   */
+  
+
+
+
+
+
   setFontSize(fontSize) {
     let size = (10 + 2 * fontSize) + "px";
     let readerView = document.getElementById("mozac-readerview-container");
@@ -82,11 +85,11 @@ class ReaderView {
     this.fontSize = fontSize;
   }
 
-  /**
-   * Sets the font type.
-   *
-   * @param fontType the font type to use.
-   */
+  
+
+
+
+
   setFontType(fontType) {
     let bodyClasses = document.body.classList;
 
@@ -98,12 +101,12 @@ class ReaderView {
     bodyClasses.add(this.fontType);
   }
 
-  /**
-   * Sets the color scheme.
-   *
-   * @param colorScheme the color scheme to use, must be either light, dark
-   * or sepia.
-   */
+  
+
+
+
+
+
   setColorScheme(colorScheme) {
     if(!['light', 'sepia', 'dark'].includes(colorScheme)) {
       console.error(`Invalid color scheme specified: ${colorScheme}`)
@@ -120,11 +123,11 @@ class ReaderView {
     bodyClasses.add(this.colorScheme);
   }
 
-  /**
-   * Create the reader view HTML body.
-   *
-   * @param article a JSONObject representing the article to show.
-   */
+  
+
+
+
+
   createHtmlBody(article) {
     const safeDir = this.escapeHTML(article.dir);
     const safeTitle = this.escapeHTML(article.title);
@@ -152,12 +155,12 @@ class ReaderView {
     `
   }
 
-  /**
-   * Returns the estimated reading time as localized string.
-   *
-   * @param length of the article (number of chars).
-   * @param optional language of the article, defaults to en.
-   */
+  
+
+
+
+
+
   getReadingTime(length, lang = "en") {
     const [readingSpeed, readingSpeedLang] = this.getReadingSpeedForLanguage(lang);
     const charactersPerMinuteLow = readingSpeed.cpm - readingSpeed.variance;
@@ -165,15 +168,15 @@ class ReaderView {
     const readingTimeMinsSlow = Math.ceil(length / charactersPerMinuteLow);
     const readingTimeMinsFast  = Math.ceil(length / charactersPerMinuteHigh);
 
-    // Construct a localized and "humanized" reading time in minutes.
-    // If we have both a fast and slow reading time we'll show both e.g.
-    // "2 - 4 minutes", otherwise we'll just show "4 minutes".
+    
+    
+    
     try {
       var parts = new Intl.RelativeTimeFormat(readingSpeedLang).formatToParts(readingTimeMinsSlow, 'minute');
       if (parts.length == 3) {
-        // No need to use part[0] which represents the literal "in".
-        var readingTime = parts[1].value; // reading time in minutes
-        var minutesLiteral = parts[2].value; // localized singular or plural literal of 'minute'
+        
+        var readingTime = parts[1].value; 
+        var minutesLiteral = parts[2].value; 
         var readingTimeString = `${readingTime} ${minutesLiteral}`;
         if (readingTimeMinsSlow != readingTimeMinsFast) {
           readingTimeString = `${readingTimeMinsFast} - ${readingTimeString}`;
@@ -188,15 +191,15 @@ class ReaderView {
     return "";
   }
 
-  /**
-   * Returns the reading speed of a selection of languages with likely variance.
-   *
-   * Reading speed estimated from a study done on reading speeds in various languages.
-   * study can be found here: http://iovs.arvojournals.org/article.aspx?articleid=2166061
-   *
-   * @return object with characters per minute and variance. Defaults to English
-   * if no suitable language is found in the collection.
-   */
+  
+
+
+
+
+
+
+
+
   getReadingSpeedForLanguage(lang) {
     const readingSpeed = new Map([
       [ "en", {cpm: 987,  variance: 118 } ],
@@ -225,10 +228,10 @@ class ReaderView {
      return article.byline || "";
    }
 
-   /**
-    * Attempts to read the optional text direction from the article and uses
-    * language mapping to detect rtl, if missing.
-    */
+   
+
+
+
    getTextDirection(article) {
      if (article.dir) {
        return article.dir;
@@ -321,9 +324,9 @@ function connectNativePort() {
             readerView.show(doc, articleUrl, options);
           } catch(e) {
             console.log(e);
-            // We weren't able to find the prepared document and also
-            // failed to fetch it. Let's load the original page which
-            // will make sure we show an appropriate error page.
+            
+            
+            
             window.location.href = articleUrl;
           }
         }
@@ -349,10 +352,10 @@ function connectNativePort() {
   });
 }
 
-/**
- * Applies the configured color scheme to the HTML body while reader view is loading. This is to
- * prevent "flashes" caused by having to change the color later.
- */
+
+
+
+
 function prepareBody() {
   let url = new URL(window.location.href);
   let colorScheme = url.searchParams.get("colorScheme");
