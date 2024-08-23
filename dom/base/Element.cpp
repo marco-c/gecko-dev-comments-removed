@@ -1234,14 +1234,13 @@ bool Element::CanAttachShadowDOM() const {
 }
 
 
-already_AddRefed<ShadowRoot> Element::AttachShadow(
-    const ShadowRootInit& aInit, ErrorResult& aError,
-    ShadowRootDeclarative aNewShadowIsDeclarative) {
+already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
+                                                   ErrorResult& aError) {
   
 
 
   if (!CanAttachShadowDOM()) {
-    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    aError.ThrowNotSupportedError("Unable to attach ShadowDOM");
     return nullptr;
   }
 
@@ -1253,17 +1252,23 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(
 
 
 
-    if (!root->IsDeclarative()) {
-      aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+
+
+
+
+    if (!root->IsDeclarative() || root->Mode() != aInit.mMode) {
+      aError.ThrowNotSupportedError(
+          "Unable to re-attach to existing ShadowDOM");
       return nullptr;
     }
     
-    root->SetIsDeclarative(aNewShadowIsDeclarative);
-    
+
+
 
 
 
     root->ReplaceChildren(nullptr, aError);
+    root->SetIsDeclarative(ShadowRootDeclarative::No);
     return root.forget();
   }
 
@@ -1273,14 +1278,12 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(
 
   return AttachShadowWithoutNameChecks(
       aInit.mMode, DelegatesFocus(aInit.mDelegatesFocus), aInit.mSlotAssignment,
-      ShadowRootClonable(aInit.mClonable),
-      ShadowRootDeclarative(aNewShadowIsDeclarative));
+      ShadowRootClonable(aInit.mClonable));
 }
 
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
     ShadowRootMode aMode, DelegatesFocus aDelegatesFocus,
-    SlotAssignmentMode aSlotAssignment, ShadowRootClonable aClonable,
-    ShadowRootDeclarative aDeclarative) {
+    SlotAssignmentMode aSlotAssignment, ShadowRootClonable aClonable) {
   nsAutoScriptBlocker scriptBlocker;
 
   auto* nim = mNodeInfo->NodeInfoManager();
@@ -1304,9 +1307,9 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
 
 
 
-  RefPtr<ShadowRoot> shadowRoot =
-      new (nim) ShadowRoot(this, aMode, aDelegatesFocus, aSlotAssignment,
-                           aClonable, aDeclarative, nodeInfo.forget());
+  RefPtr<ShadowRoot> shadowRoot = new (nim)
+      ShadowRoot(this, aMode, aDelegatesFocus, aSlotAssignment, aClonable,
+                 ShadowRootDeclarative::No, nodeInfo.forget());
 
   if (NodeOrAncestorHasDirAuto()) {
     shadowRoot->SetAncestorHasDirAuto();
