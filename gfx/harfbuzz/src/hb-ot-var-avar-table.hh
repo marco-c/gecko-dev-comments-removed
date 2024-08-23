@@ -57,7 +57,7 @@ struct avarV2Tail
 
   protected:
   Offset32To<DeltaSetIndexMap>	varIdxMap;	
-  Offset32To<VariationStore>	varStore;	
+  Offset32To<ItemVariationStore>	varStore;	
 
   public:
   DEFINE_SIZE_STATIC (8);
@@ -230,7 +230,7 @@ struct SegmentMaps : Array16Of<AxisValueMap>
 
       if (mapping.must_include ())
         continue;
-      value_mappings.push (std::move (mapping));
+      value_mappings.push (mapping);
     }
 
     AxisValueMap m;
@@ -343,7 +343,7 @@ struct avar
     for (unsigned i = 0; i < coords_length; i++)
       coords[i] = out[i];
 
-    OT::VariationStore::destroy_cache (var_store_cache);
+    OT::ItemVariationStore::destroy_cache (var_store_cache);
 #endif
   }
 

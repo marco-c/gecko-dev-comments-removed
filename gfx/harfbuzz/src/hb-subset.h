@@ -81,6 +81,8 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 
 
+
+
 typedef enum { 
   HB_SUBSET_FLAGS_DEFAULT =		     0x00000000u,
   HB_SUBSET_FLAGS_NO_HINTING =		     0x00000001u,
@@ -95,6 +97,7 @@ typedef enum {
   HB_SUBSET_FLAGS_NO_LAYOUT_CLOSURE =        0x00000200u,
 #ifdef HB_EXPERIMENTAL_API
   HB_SUBSET_FLAGS_IFTB_REQUIREMENTS       =  0x00000400u,
+  HB_SUBSET_FLAGS_OPTIMIZE_IUP_DELTAS	  =  0x00000800u,
 #endif
 } hb_subset_flags_t;
 
@@ -171,6 +174,10 @@ hb_subset_input_set_flags (hb_subset_input_t *input,
 			   unsigned value);
 
 HB_EXTERN hb_bool_t
+hb_subset_input_pin_all_axes_to_default (hb_subset_input_t  *input,
+					 hb_face_t          *face);
+
+HB_EXTERN hb_bool_t
 hb_subset_input_pin_axis_to_default (hb_subset_input_t  *input,
 				     hb_face_t          *face,
 				     hb_tag_t            axis_tag);
@@ -183,12 +190,19 @@ hb_subset_input_pin_axis_location (hb_subset_input_t  *input,
 
 #ifdef HB_EXPERIMENTAL_API
 HB_EXTERN hb_bool_t
+hb_subset_input_get_axis_range (hb_subset_input_t  *input,
+				hb_tag_t            axis_tag,
+				float              *axis_min_value,
+				float              *axis_max_value,
+				float              *axis_def_value);
+
+HB_EXTERN hb_bool_t
 hb_subset_input_set_axis_range (hb_subset_input_t  *input,
 				hb_face_t          *face,
 				hb_tag_t            axis_tag,
 				float               axis_min_value,
 				float               axis_max_value,
-				float              *axis_def_value);
+				float               axis_def_value);
 
 HB_EXTERN hb_bool_t
 hb_subset_input_override_name_table (hb_subset_input_t  *input,

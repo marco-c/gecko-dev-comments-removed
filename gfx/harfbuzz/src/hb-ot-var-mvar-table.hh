@@ -106,7 +106,7 @@ struct MVAR
     out->valueRecordCount = valueRecordCount;
 
     item_variations_t item_vars;
-    const VariationStore& src_var_store = this+varStore;
+    const ItemVariationStore& src_var_store = this+varStore;
 
     if (!item_vars.instantiate (src_var_store, c->plan))
       return_trace (false);
@@ -159,7 +159,7 @@ protected:
   HBUINT16	valueRecordSize;
 
   HBUINT16	valueRecordCount;
-  Offset16To<VariationStore>
+  Offset16To<ItemVariationStore>
 		varStore;	
   UnsizedArrayOf<HBUINT8>
 		valuesZ;	

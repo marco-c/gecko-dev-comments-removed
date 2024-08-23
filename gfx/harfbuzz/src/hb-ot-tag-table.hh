@@ -465,6 +465,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('c','l','d',' '),	HB_TAG('S','Y','R',' ')},	
   {HB_TAG('c','l','e',' '),	HB_TAG('C','C','H','N')},	
   {HB_TAG('c','l','j',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','l','s',' '),	HB_TAG('S','A','N',' ')},	
   {HB_TAG('c','l','t',' '),	HB_TAG('Q','I','N',' ')},	
   {HB_TAG('c','m','n',' '),	HB_TAG('Z','H','S',' ')},	
   {HB_TAG('c','m','r',' '),	HB_TAG('Q','I','N',' ')},	
@@ -1533,6 +1534,7 @@ static const LangTag ot_languages3[] = {
   {HB_TAG('v','l','s',' '),	HB_TAG('F','L','E',' ')},	
   {HB_TAG('v','m','w',' '),	HB_TAG('M','A','K',' ')},	
 	
+  {HB_TAG('v','s','n',' '),	HB_TAG('S','A','N',' ')},	
   {HB_TAG('w','a','g',' '),	HB_TAG_NONE	       },	
 	
   {HB_TAG('w','b','m',' '),	HB_TAG('W','A',' ',' ')},	
@@ -2958,6 +2960,8 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("ro", -1);  
   case HB_TAG('R','O','Y',' '):  
     return hb_language_from_string ("rom", -1);  
+  case HB_TAG('S','A','N',' '):  
+    return hb_language_from_string ("sa", -1);  
   case HB_TAG('S','Q','I',' '):  
     return hb_language_from_string ("sq", -1);  
   case HB_TAG('S','R','B',' '):  

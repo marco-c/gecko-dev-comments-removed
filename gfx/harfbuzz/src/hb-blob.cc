@@ -603,12 +603,22 @@ _open_resource_fork (const char *file_name, hb_mapped_file_t *file)
 
 
 
+
+
+
+
+
 hb_blob_t *
 hb_blob_create_from_file (const char *file_name)
 {
   hb_blob_t *blob = hb_blob_create_from_file_or_fail (file_name);
   return likely (blob) ? blob : hb_blob_get_empty ();
 }
+
+
+
+
+
 
 
 
@@ -672,10 +682,19 @@ fail_without_close:
   if (unlikely (!file)) return nullptr;
 
   HANDLE fd;
+  int conversion;
   unsigned int size = strlen (file_name) + 1;
   wchar_t * wchar_file_name = (wchar_t *) hb_malloc (sizeof (wchar_t) * size);
   if (unlikely (!wchar_file_name)) goto fail_without_close;
-  mbstowcs (wchar_file_name, file_name, size);
+
+  
+  conversion = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, file_name, -1, wchar_file_name, size);
+  if (conversion <= 0)
+  {
+    
+
+    mbstowcs(wchar_file_name, file_name, size);
+  }
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
   {
     CREATEFILE2_EXTENDED_PARAMETERS ceparams = { 0 };

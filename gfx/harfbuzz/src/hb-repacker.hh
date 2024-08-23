@@ -239,6 +239,54 @@ bool _try_isolating_subgraphs (const hb_vector_t<graph::overflow_record_t>& over
 }
 
 static inline
+bool _resolve_shared_overflow(const hb_vector_t<graph::overflow_record_t>& overflows,
+                              int overflow_index,
+                              graph_t& sorted_graph)
+{
+  const graph::overflow_record_t& r = overflows[overflow_index];
+
+  
+  
+  
+  hb_set_t parents;
+  parents.add(r.parent);
+  for (int i = overflow_index - 1; i >= 0; i--) {
+    const graph::overflow_record_t& r2 = overflows[i];
+    if (r2.child == r.child) {
+      parents.add(r2.parent);
+    }
+  }
+
+  unsigned result = sorted_graph.duplicate(&parents, r.child);
+  if (result == (unsigned) -1 && parents.get_population() > 2) {
+    
+    
+    
+    parents.del(parents.get_min());
+    result = sorted_graph.duplicate(&parents, r.child);
+  }
+
+  if (result == (unsigned) -1) return result;
+
+  if (parents.get_population() > 1) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    sorted_graph.vertices_[result].give_max_priority();
+  }
+
+  return result;
+}
+
+static inline
 bool _process_overflows (const hb_vector_t<graph::overflow_record_t>& overflows,
                          hb_set_t& priority_bumped_parents,
                          graph_t& sorted_graph)
@@ -254,7 +302,7 @@ bool _process_overflows (const hb_vector_t<graph::overflow_record_t>& overflows,
     {
       
       
-      if (sorted_graph.duplicate (r.parent, r.child) == (unsigned) -1) continue;
+      if (!_resolve_shared_overflow(overflows, i, sorted_graph)) continue;
       return true;
     }
 
@@ -388,7 +436,7 @@ template<typename T>
 inline hb_blob_t*
 hb_resolve_overflows (const T& packed,
                       hb_tag_t table_tag,
-                      unsigned max_rounds = 20,
+                      unsigned max_rounds = 32,
                       bool recalculate_extensions = false) {
   graph_t sorted_graph (packed);
   if (sorted_graph.in_error ())
