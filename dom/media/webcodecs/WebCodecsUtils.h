@@ -9,17 +9,18 @@
 
 #include "ErrorList.h"
 #include "MediaData.h"
+#include "PlatformEncoderModule.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/dom/AudioDataBinding.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/VideoEncoderBinding.h"
 #include "mozilla/dom/VideoFrameBinding.h"
-#include "PlatformEncoderModule.h"
 
 namespace mozilla {
 
@@ -237,10 +238,18 @@ Maybe<CodecType> CodecStringToCodecType(const nsAString& aCodecString);
 
 nsString ConfigToString(const VideoDecoderConfig& aConfig);
 
+
 bool IsSupportedVideoCodec(const nsAString& aCodec);
+bool IsSupportedAudioCodec(const nsAString& aCodec);
 
+
+
+
+nsCString ConvertCodecName(const nsCString& aContainer,
+                           const nsCString& aCodec);
+
+uint32_t BytesPerSamples(const mozilla::dom::AudioSampleFormat& aFormat);
 }  
-
 }  
 
 #endif  
