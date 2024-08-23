@@ -644,10 +644,6 @@ static const char* sObserverTopics[] = {
     DEFAULT_TIMEZONE_CHANGED_OBSERVER_TOPIC,
 };
 
-void ContentParent_NotifyUpdatedDictionaries() {
-  ContentParent::NotifyUpdatedDictionaries();
-}
-
 
 
  already_AddRefed<ContentParent>
