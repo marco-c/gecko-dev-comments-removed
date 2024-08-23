@@ -68,7 +68,7 @@ class nsMIMEInfoWin : public nsMIMEInfoBase, public nsIPropertyBag {
 
   
   void ProcessPath(nsCOMPtr<nsIMutableArray>& appList,
-                   nsTArray<nsString>& trackList,
+                   nsTArray<nsString>& trackList, const nsAutoString& appId,
                    const nsAString& appFilesystemCommand);
 
   
