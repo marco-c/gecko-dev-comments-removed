@@ -1298,9 +1298,6 @@ pref("network.http.enforce-framing.soft", true);
 pref("network.http.enforce-framing.strict_chunked_encoding", true);
 
 
-pref("network.http.max_response_header_size", 393216);
-
-
 
 pref("network.http.focused_window_transaction_ratio", "0.9");
 
