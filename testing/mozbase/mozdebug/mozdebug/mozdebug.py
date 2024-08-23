@@ -6,9 +6,9 @@
 
 import json
 import os
+import shutil
 import sys
 from collections import namedtuple
-from distutils.spawn import find_executable
 from subprocess import check_output
 
 import mozinfo
@@ -125,7 +125,7 @@ def get_debugger_path(debugger):
             
             pass
 
-    return find_executable(debugger)
+    return shutil.which(debugger)
 
 
 def get_debugger_info(debugger, debuggerArgs=None, debuggerInteractive=False):
