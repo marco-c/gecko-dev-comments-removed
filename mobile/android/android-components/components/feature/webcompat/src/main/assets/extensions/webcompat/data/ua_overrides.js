@@ -136,44 +136,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
-    id: "bug1177298-2",
-    platform: "android",
-    domain: "lohaco.jp",
-    bug: "1177298",
-    config: {
-      matches: ["*://*.lohaco.jp/*"],
-      uaTransformer: _ => {
-        return "Mozilla/5.0 (Linux; Android 5.0.2; Galaxy Nexus Build/IMM76B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1177298-3",
-    platform: "android",
-    domain: "nhk.or.jp",
-    bug: "1177298",
-    config: {
-      matches: ["*://*.nhk.or.jp/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " AppleWebKit";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
     id: "bug1385206",
     platform: "android",
     domain: "rakuten.co.jp",
@@ -520,25 +482,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1719841",
-    platform: "android",
-    domain: "appmedia.jp",
-    bug: "1719841",
-    config: {
-      matches: ["*://appmedia.jp/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
 
     id: "bug1719846",
     platform: "all",
@@ -616,25 +559,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1738319",
-    platform: "android",
-    domain: "yebocasino.co.za",
-    bug: "1738319",
-    config: {
-      matches: ["*://*.yebocasino.co.za/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1743627",
     platform: "android",
     domain: "renaud-bray.com",
@@ -696,11 +620,11 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1743429",
     config: {
       matches: [
+        "*://411.ca/", 
         "*://*.commerzbank.de/*", 
+        "*://*.mms.telekom.de/*", 
         "*://ubank.com.au/*", 
         "*://wifi.sncf/*", 
-        "*://www.metrobyt-mobile.com/*", 
-        "*://*.mms.telekom.de/*", 
       ],
       uaTransformer: originalUA => {
         return UAHelpers.capVersionTo99(originalUA);
@@ -1113,22 +1037,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1827678-webc79490",
-    platform: "android",
-    domain: "captainjackcasino.com",
-    bug: "1827678",
-    config: {
-      matches: ["*://*.captainjackcasino.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
     id: "bug1827678-webc80180",
     platform: "all",
     domain: "viewer-ebook.books.com.tw",
@@ -1193,22 +1101,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1827678-webc119307",
-    platform: "all",
-    domain: "dns-shop.ru",
-    bug: "1827678",
-    config: {
-      matches: ["*://www.dns-shop.ru/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
     id: "bug1827678-webc119402",
     platform: "all",
     domain: "oirsa.org",
@@ -1247,6 +1139,95 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://onp.cloud.waterloo.ca/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+    id: "bug1830739",
+    platform: "android",
+    domain: "casino sites",
+    bug: "1830739",
+    config: {
+      matches: [
+        "*://*.captainjackcasino.com/*", 
+        "*://*.casinoextreme.eu/*", 
+        "*://*.cryptoloko.com/*", 
+        "*://*.heapsowins.com/*", 
+        "*://*.planet7casino.com/*", 
+        "*://*.yebocasino.co.za/*", 
+      ],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+    id: "bug1830821-webc118998",
+    platform: "android",
+    domain: "m.tworld.co.kr",
+    bug: "1830821",
+    config: {
+      matches: ["*://m.tworld.co.kr/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+    id: "bug1830821-webc113663",
+    platform: "android",
+    domain: "webcartop.jp",
+    bug: "1830821",
+    config: {
+      matches: ["*://*.webcartop.jp/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+    id: "bug1830821-webc90981",
+    platform: "android",
+    domain: "enjoy.point.auone.jp",
+    bug: "1830821",
+    config: {
+      matches: ["*://enjoy.point.auone.jp/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+    id: "bug1829126",
+    platform: "android",
+    domain: "www.otsuka.co.jp",
+    bug: "1829126",
+    config: {
+      matches: ["*://www.otsuka.co.jp/fib/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
