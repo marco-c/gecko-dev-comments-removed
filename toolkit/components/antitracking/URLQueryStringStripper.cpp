@@ -17,7 +17,6 @@
 #include "nsIURIMutator.h"
 #include "nsUnicharUtils.h"
 #include "nsURLHelper.h"
-#include "nsNetUtil.h"
 #include "mozilla/dom/StripOnShareRuleBinding.h"
 
 namespace {
@@ -85,15 +84,63 @@ URLQueryStringStripper::StripForCopyOrShare(nsIURI* aURI,
   NS_ENSURE_ARG_POINTER(strippedURI);
   int aStripCount = 0;
 
-  nsresult rv =
-      StripForCopyOrShareInternal(aURI, strippedURI, aStripCount, false);
+  nsAutoCString query;
+  nsresult rv = aURI->GetQuery(query);
   NS_ENSURE_SUCCESS(rv, rv);
+  
+  if (query.IsEmpty()) {
+    Telemetry::Accumulate(Telemetry::STRIP_ON_SHARE_PARAMS_REMOVED, 0);
+    return NS_OK;
+  }
+  nsAutoCString host;
+  rv = aURI->GetHost(host);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  URLParams params;
+
+  URLParams::Parse(query, [&](nsString&& name, nsString&& value) {
+    nsAutoString lowerCaseName;
+    ToLowerCase(name, lowerCaseName);
+    
+    dom::StripRule globalRule;
+    bool keyExists = mStripOnShareMap.Get("*"_ns, &globalRule);
+    
+    MOZ_ASSERT(keyExists);
+    for (const auto& param : globalRule.mQueryParams) {
+      if (param == lowerCaseName) {
+        aStripCount++;
+        return true;
+      }
+    }
+
+    
+    dom::StripRule siteSpecificRule;
+    keyExists = mStripOnShareMap.Get(host, &siteSpecificRule);
+    if (keyExists) {
+      for (const auto& param : siteSpecificRule.mQueryParams) {
+        if (param == lowerCaseName) {
+          aStripCount++;
+          return true;
+        }
+      }
+    }
+
+    params.Append(name, value);
+    return true;
+  });
 
   Telemetry::Accumulate(Telemetry::STRIP_ON_SHARE_PARAMS_REMOVED, aStripCount);
 
   if (!aStripCount) {
     return NS_OK;
   }
+
+  nsAutoString newQuery;
+  params.Serialize(newQuery, false);
+
+  Unused << NS_MutateURI(aURI)
+                .SetQuery(NS_ConvertUTF16toUTF8(newQuery))
+                .Finalize(strippedURI);
 
   
   
@@ -261,7 +308,7 @@ nsresult URLQueryStringStripper::StripQueryString(nsIURI* aURI,
 
   URLParams params;
 
-  URLParams::Parse(query, false, [&](nsString&& name, nsString&& value) {
+  URLParams::Parse(query, [&](nsString&& name, nsString&& value) {
     nsAutoString lowerCaseName;
 
     ToLowerCase(name, lowerCaseName);
@@ -377,109 +424,6 @@ URLQueryStringStripper::Observe(nsISupports*, const char* aTopic,
   MOZ_ASSERT(strcmp(aTopic, "profile-after-change") == 0);
 
   return NS_OK;
-}
-
-nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
-    nsIURI* aURI, nsIURI** strippedURI, int& aStripCount,
-    bool aStripNestedURIs) {
-  nsAutoCString query;
-  nsresult rv = aURI->GetQuery(query);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (query.IsEmpty()) {
-    Telemetry::Accumulate(Telemetry::STRIP_ON_SHARE_PARAMS_REMOVED, 0);
-    return NS_OK;
-  }
-
-  nsAutoCString host;
-  rv = aURI->GetHost(host);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  URLParams params;
-
-  URLParams::Parse(query, false, [&](nsString&& name, nsString&& value) {
-    nsAutoString lowerCaseName;
-    ToLowerCase(name, lowerCaseName);
-
-    
-    dom::StripRule globalRule;
-    bool keyExists = mStripOnShareMap.Get("*"_ns, &globalRule);
-    
-    MOZ_ASSERT(keyExists);
-
-    
-    for (const auto& param : globalRule.mQueryParams) {
-      if (param == lowerCaseName) {
-        aStripCount++;
-        return true;
-      }
-    }
-
-    
-    dom::StripRule siteSpecificRule;
-    keyExists = mStripOnShareMap.Get(host, &siteSpecificRule);
-    if (keyExists) {
-      for (const auto& param : siteSpecificRule.mQueryParams) {
-        if (param == lowerCaseName) {
-          aStripCount++;
-          return true;
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    if (!aStripNestedURIs) {
-      nsAutoString decodeValue;
-      URLParams::DecodeString(NS_ConvertUTF16toUTF8(value), decodeValue);
-
-      nsCOMPtr<nsIURI> nestedURI;
-      rv = NS_NewURI(getter_AddRefs(nestedURI), decodeValue);
-
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        if (rv == NS_ERROR_NOT_AVAILABLE) {
-          LOG(("Unable to obtain ioService"));
-          return false;
-        }
-        params.Append(name, value);
-        return true;
-      }
-
-      nsCOMPtr<nsIURI> strippedNestedURI;
-      rv = StripForCopyOrShareInternal(
-          nestedURI, getter_AddRefs(strippedNestedURI), aStripCount, true);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return false;
-      }
-
-      nsAutoCString nestedURIString;
-      rv = strippedNestedURI->GetSpec(nestedURIString);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return false;
-      }
-
-      
-      nsAutoString encodedURI;
-      URLParams::SerializeString(nestedURIString, encodedURI);
-
-      params.Append(name, encodedURI);
-      return true;
-    }
-
-    params.Append(name, value);
-    return true;
-  });
-
-  nsAutoString newQuery;
-  params.Serialize(newQuery, false);
-
-  return NS_MutateURI(aURI)
-      .SetQuery(NS_ConvertUTF16toUTF8(newQuery))
-      .Finalize(strippedURI);
 }
 
 }  
