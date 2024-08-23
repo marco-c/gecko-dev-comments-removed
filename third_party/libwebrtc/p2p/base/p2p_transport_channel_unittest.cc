@@ -1537,10 +1537,6 @@ TEST_F(P2PTransportChannelTest,
   SIMULATED_WAIT(false, kNetworkFailureTimeout, clock);
   EXPECT_LE(1, GetEndpoint(0)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::NETWORK_FAILURE));
-  EXPECT_METRIC_LE(
-      1, webrtc::metrics::NumEvents(
-             "WebRTC.PeerConnection.IceRegatheringReason",
-             static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
   EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::NETWORK_FAILURE));
 

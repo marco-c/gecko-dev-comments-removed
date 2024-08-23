@@ -199,21 +199,6 @@ BasicPortAllocator::BasicPortAllocator(
                    webrtc::NO_PRUNE, nullptr);
 }
 
-void BasicPortAllocator::OnIceRegathering(PortAllocatorSession* session,
-                                          IceRegatheringReason reason) {
-  
-  
-  for (auto& allocator_session : pooled_sessions()) {
-    if (allocator_session.get() == session) {
-      return;
-    }
-  }
-
-  RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.IceRegatheringReason",
-                            static_cast<int>(reason),
-                            static_cast<int>(IceRegatheringReason::MAX_VALUE));
-}
-
 BasicPortAllocator::~BasicPortAllocator() {
   CheckRunOnValidThreadIfInitialized();
   
@@ -251,12 +236,9 @@ PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     absl::string_view ice_ufrag,
     absl::string_view ice_pwd) {
   CheckRunOnValidThreadAndInitialized();
-  PortAllocatorSession* session = new BasicPortAllocatorSession(
-      this, std::string(content_name), component, std::string(ice_ufrag),
-      std::string(ice_pwd));
-  session->SignalIceRegathering.connect(this,
-                                        &BasicPortAllocator::OnIceRegathering);
-  return session;
+  return new BasicPortAllocatorSession(this, std::string(content_name),
+                                       component, std::string(ice_ufrag),
+                                       std::string(ice_pwd));
 }
 
 void BasicPortAllocator::AddTurnServerForTesting(
