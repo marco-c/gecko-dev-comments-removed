@@ -1881,11 +1881,13 @@ MediaSessionDescriptionFactory::CreateOfferOrError(
     
     
     
-    offer->set_msid_signaling(cricket::kMsidSignalingMediaSection |
+    offer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                              cricket::kMsidSignalingMediaSection |
                               cricket::kMsidSignalingSsrcAttribute);
   } else {
     
-    offer->set_msid_signaling(cricket::kMsidSignalingSsrcAttribute);
+    offer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                              cricket::kMsidSignalingSsrcAttribute);
   }
 
   offer->set_extmap_allow_mixed(session_options.offer_extmap_allow_mixed);
@@ -2058,7 +2060,9 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
   if (is_unified_plan_) {
     
     
-    if (offer->msid_signaling() == 0) {
+    int msid_signaling = offer->msid_signaling();
+    if (msid_signaling == cricket::kMsidSignalingNotUsed ||
+        msid_signaling == cricket::kMsidSignalingSemantic) {
       
       
       
@@ -2067,23 +2071,26 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
       
       
       
-      answer->set_msid_signaling(cricket::kMsidSignalingMediaSection |
+      answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                                 cricket::kMsidSignalingMediaSection |
                                  cricket::kMsidSignalingSsrcAttribute);
-    } else if (offer->msid_signaling() ==
-               (cricket::kMsidSignalingMediaSection |
-                cricket::kMsidSignalingSsrcAttribute)) {
+    } else if (msid_signaling == (cricket::kMsidSignalingSemantic |
+                                  cricket::kMsidSignalingMediaSection |
+                                  cricket::kMsidSignalingSsrcAttribute)) {
       
       
       
-      answer->set_msid_signaling(cricket::kMsidSignalingMediaSection);
+      answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                                 cricket::kMsidSignalingMediaSection);
     } else {
       
       
-      answer->set_msid_signaling(offer->msid_signaling());
+      answer->set_msid_signaling(msid_signaling);
     }
   } else {
     
-    answer->set_msid_signaling(cricket::kMsidSignalingSsrcAttribute);
+    answer->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                               cricket::kMsidSignalingSsrcAttribute);
   }
 
   return answer;

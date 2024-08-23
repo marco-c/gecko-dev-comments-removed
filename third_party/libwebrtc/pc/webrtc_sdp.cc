@@ -722,7 +722,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
       
       stream_ids.push_back(ssrc_info.stream_id);
       track_id = ssrc_info.track_id;
-    } else {
+    } else if (msid_signaling == cricket::kMsidSignalingNotUsed) {
       
       
       stream_ids.push_back(kDefaultMsid);
@@ -924,6 +924,9 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   InitAttrLine(kAttributeMsidSemantics, &os);
   os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
 
+  
+  
+  
   std::set<std::string> media_stream_ids;
   const ContentInfo* audio_content = GetFirstAudioContent(desc);
   if (audio_content)
@@ -2131,7 +2134,7 @@ bool ParseSessionDescription(absl::string_view message,
                              SdpParseError* error) {
   absl::optional<absl::string_view> line;
 
-  desc->set_msid_supported(false);
+  desc->set_msid_signaling(cricket::kMsidSignalingNotUsed);
   desc->set_extmap_allow_mixed(false);
   
   
@@ -2273,8 +2276,9 @@ bool ParseSessionDescription(absl::string_view message,
       if (!GetValue(*aline, kAttributeMsidSemantics, &semantics, error)) {
         return false;
       }
-      desc->set_msid_supported(
-          CaseInsensitiveFind(semantics, kMediaStreamSemantic));
+      if (CaseInsensitiveFind(semantics, kMediaStreamSemantic)) {
+        desc->set_msid_signaling(cricket::kMsidSignalingSemantic);
+      }
     } else if (HasAttribute(*aline, kAttributeExtmapAllowMixed)) {
       desc->set_extmap_allow_mixed(true);
     } else if (HasAttribute(*aline, kAttributeExtmap)) {
@@ -2694,7 +2698,7 @@ bool ParseMediaDescription(
     SdpParseError* error) {
   RTC_DCHECK(desc != NULL);
   int mline_index = -1;
-  int msid_signaling = 0;
+  int msid_signaling = desc->msid_signaling();
 
   
   
@@ -2746,7 +2750,7 @@ bool ParseMediaDescription(
     std::unique_ptr<MediaContentDescription> content;
     std::string content_name;
     bool bundle_only = false;
-    int section_msid_signaling = 0;
+    int section_msid_signaling = cricket::kMsidSignalingNotUsed;
     absl::string_view media_type = fields[0];
     if ((media_type == kMediaTypeVideo || media_type == kMediaTypeAudio) &&
         !cricket::IsRtpProtocol(protocol)) {

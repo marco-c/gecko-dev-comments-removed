@@ -472,9 +472,19 @@ const ContentInfo* FindContentInfoByType(const ContentInfos& contents,
 
 enum MsidSignaling {
   
+  
+  kMsidSignalingNotUsed = 0x0,
+  
+  
   kMsidSignalingMediaSection = 0x1,
   
-  kMsidSignalingSsrcAttribute = 0x2
+  
+  
+  kMsidSignalingSsrcAttribute = 0x2,
+  
+  
+  
+  kMsidSignalingSemantic = 0x4
 };
 
 
@@ -548,9 +558,6 @@ class SessionDescription {
   void RemoveGroupByName(const std::string& name);
 
   
-  void set_msid_supported(bool supported) { msid_supported_ = supported; }
-  bool msid_supported() const { return msid_supported_; }
-
   
   
   void set_msid_signaling(int msid_signaling) {
@@ -582,10 +589,9 @@ class SessionDescription {
   ContentInfos contents_;
   TransportInfos transport_infos_;
   ContentGroups content_groups_;
-  bool msid_supported_ = true;
   
   
-  int msid_signaling_ = kMsidSignalingSsrcAttribute;
+  int msid_signaling_ = kMsidSignalingSsrcAttribute | kMsidSignalingSemantic;
   bool extmap_allow_mixed_ = true;
 };
 

@@ -1836,14 +1836,16 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
 
   
   auto* offer = callee->pc()->remote_description();
-  EXPECT_EQ((cricket::kMsidSignalingMediaSection |
-             cricket::kMsidSignalingSsrcAttribute),
-            offer->description()->msid_signaling());
+  EXPECT_EQ(
+      (cricket::kMsidSignalingSemantic | cricket::kMsidSignalingMediaSection |
+       cricket::kMsidSignalingSsrcAttribute),
+      offer->description()->msid_signaling());
 
   
   auto* answer = caller->pc()->remote_description();
-  EXPECT_EQ(cricket::kMsidSignalingMediaSection,
-            answer->description()->msid_signaling());
+  EXPECT_EQ(
+      cricket::kMsidSignalingSemantic | cricket::kMsidSignalingMediaSection,
+      answer->description()->msid_signaling());
 }
 
 TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
@@ -1856,13 +1858,15 @@ TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
 
   
   auto* offer = callee->pc()->remote_description();
-  EXPECT_EQ(cricket::kMsidSignalingSsrcAttribute,
-            offer->description()->msid_signaling());
+  EXPECT_EQ(
+      cricket::kMsidSignalingSemantic | cricket::kMsidSignalingSsrcAttribute,
+      offer->description()->msid_signaling());
 
   
   auto* answer = caller->pc()->remote_description();
-  EXPECT_EQ(cricket::kMsidSignalingSsrcAttribute,
-            answer->description()->msid_signaling());
+  EXPECT_EQ(
+      cricket::kMsidSignalingSemantic | cricket::kMsidSignalingSsrcAttribute,
+      answer->description()->msid_signaling());
 }
 
 
@@ -1884,9 +1888,10 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanToPlanBAnswer) {
 
   
   auto* offer = callee->pc()->remote_description();
-  EXPECT_EQ((cricket::kMsidSignalingMediaSection |
-             cricket::kMsidSignalingSsrcAttribute),
-            offer->description()->msid_signaling());
+  EXPECT_EQ(
+      (cricket::kMsidSignalingSemantic | cricket::kMsidSignalingMediaSection |
+       cricket::kMsidSignalingSsrcAttribute),
+      offer->description()->msid_signaling());
 
   
   const auto& track_events = callee->observer()->add_track_events_;
@@ -1907,7 +1912,8 @@ TEST_F(PeerConnectionMsidSignalingTest, PureUnifiedPlanToUs) {
   auto offer = caller->CreateOffer();
   
   
-  offer->description()->set_msid_signaling(cricket::kMsidSignalingMediaSection);
+  offer->description()->set_msid_signaling(cricket::kMsidSignalingSemantic |
+                                           cricket::kMsidSignalingMediaSection);
 
   ASSERT_TRUE(
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
@@ -1915,8 +1921,9 @@ TEST_F(PeerConnectionMsidSignalingTest, PureUnifiedPlanToUs) {
 
   
   auto answer = callee->CreateAnswer();
-  EXPECT_EQ(cricket::kMsidSignalingMediaSection,
-            answer->description()->msid_signaling());
+  EXPECT_EQ(
+      cricket::kMsidSignalingSemantic | cricket::kMsidSignalingMediaSection,
+      answer->description()->msid_signaling());
 }
 
 
