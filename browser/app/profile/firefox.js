@@ -3032,3 +3032,6 @@ pref("browser.profiles.enabled", false);
 
 pref("startup.homepage_override_url_nimbus", "");
 pref("startup.homepage_override_nimbus_maxVersion", "");
+
+
+pref("toolkit.contentRelevancy.enabled", false);
