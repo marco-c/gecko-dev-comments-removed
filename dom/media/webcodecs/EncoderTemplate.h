@@ -175,6 +175,9 @@ class EncoderTemplate : public DOMEventTargetHelper {
   virtual OutputConfigType EncoderConfigToDecoderConfig(
       nsIGlobalObject* aGlobalObject, const RefPtr<MediaRawData>& aData,
       const ConfigTypeInternal& aOutputConfig) const = 0;
+  template <typename T, typename U>
+  void CopyExtradataToDescriptionIfNeeded(nsIGlobalObject* aGlobal,
+                                          const T& aConfigInternal, U& aConfig);
   
  protected:
   
