@@ -13,26 +13,21 @@
 
 #include <memory>
 
-#include "api/field_trials_view.h"
+#include "absl/types/optional.h"
+#include "api/environment/environment.h"
 #include "api/network_state_predictor.h"
-#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
-#include "rtc_base/task_queue.h"
+#include "api/units/time_delta.h"
 
 namespace webrtc {
 
 struct RtpTransportConfig {
+  Environment env;
+
   
   
   BitrateConstraints bitrate_config;
-
-  
-  
-  RtcEventLog* event_log = nullptr;
-
-  
-  TaskQueueFactory* task_queue_factory = nullptr;
 
   
   NetworkStatePredictorFactoryInterface* network_state_predictor_factory =
@@ -40,10 +35,6 @@ struct RtpTransportConfig {
 
   
   NetworkControllerFactoryInterface* network_controller_factory = nullptr;
-
-  
-  
-  const FieldTrialsView* trials = nullptr;
 
   
   absl::optional<TimeDelta> pacer_burst_interval;
