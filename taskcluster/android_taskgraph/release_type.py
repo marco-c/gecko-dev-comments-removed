@@ -4,8 +4,9 @@
 
 
 def does_task_match_release_type(task, release_type):
-    return (
-        
-        task.attributes.get("build-type") == release_type
-        or task.attributes.get("release-type") == release_type
+    if task.attributes.get("build-type", task.attributes.get("release-type")) is None:
+        return True
+    return bool(
+        {task.attributes.get("build-type"), task.attributes.get("release-type")}
+        & {release_type}
     )
