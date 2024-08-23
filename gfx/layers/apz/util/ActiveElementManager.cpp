@@ -231,11 +231,6 @@ void ActiveElementManager::ClearActivation() {
 bool ActiveElementManager::HandleTouchEndEvent(bool aWasClick) {
   AEM_LOG("Touch end event, aWasClick: %d\n", aWasClick);
 
-  
-  
-  
-  CancelTask();
-
   mTouchEndState += TouchEndState::GotTouchEndEvent;
   return MaybeChangeActiveState(aWasClick);
 }
@@ -254,6 +249,7 @@ bool ActiveElementManager::MaybeChangeActiveState(bool aWasClick) {
     return false;
   }
 
+  CancelTask();
   if (aWasClick) {
     
     
