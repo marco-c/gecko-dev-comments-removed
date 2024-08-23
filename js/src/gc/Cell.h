@@ -209,6 +209,8 @@ struct Cell {
   inline JS::Zone* nurseryZone() const;
   inline JS::Zone* nurseryZoneFromAnyThread() const;
 
+  inline ChunkBase* chunk() const;
+
   
   
   MOZ_ALWAYS_INLINE bool isPermanentAndMayBeShared() const { return false; }
@@ -222,7 +224,6 @@ struct Cell {
 
  protected:
   uintptr_t address() const;
-  inline ChunkBase* chunk() const;
 
  private:
   

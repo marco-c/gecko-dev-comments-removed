@@ -542,7 +542,7 @@ TenuredChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
     
     
     SetMemCheckKind(chunk, sizeof(ChunkBase), MemCheckKind::MakeUndefined);
-    chunk->initBase(rt, nullptr);
+    chunk->initBaseForTenuredChunk(rt);
     MOZ_ASSERT(chunk->unused());
   } else {
     void* ptr = TenuredChunk::allocate(this);
