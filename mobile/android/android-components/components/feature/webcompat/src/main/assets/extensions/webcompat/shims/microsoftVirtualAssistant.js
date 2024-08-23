@@ -15,7 +15,7 @@
 
 
 
-(function() {
+(function () {
   const win = window.wrappedJSObject;
 
   try {

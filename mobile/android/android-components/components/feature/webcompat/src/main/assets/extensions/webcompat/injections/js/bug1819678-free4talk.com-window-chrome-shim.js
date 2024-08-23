@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 
@@ -13,9 +17,9 @@ console.info(
 );
 
 Object.defineProperty(window.wrappedJSObject, "chrome", {
-  get: exportFunction(function() {
+  get: exportFunction(function () {
     return true;
   }, window),
 
-  set: exportFunction(function() {}, window),
+  set: exportFunction(function () {}, window),
 });
