@@ -3164,23 +3164,31 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   LOG("  widget now has focus in SetFocus()");
 }
 
+void nsWindow::ResetScreenBounds() { mGdkWindowRootOrigin.reset(); }
+
 LayoutDeviceIntRect nsWindow::GetScreenBounds() {
   if (!mGdkWindow) {
     return mBounds;
   }
 
   const LayoutDeviceIntPoint origin = [&] {
-    gint x, y;
-    gdk_window_get_root_origin(mGdkWindow, &x, &y);
+    GdkPoint origin;
+
+    if (mGdkWindowRootOrigin.isSome()) {
+      origin = mGdkWindowRootOrigin.value();
+    } else {
+      gdk_window_get_root_origin(mGdkWindow, &origin.x, &origin.y);
+      mGdkWindowRootOrigin = Some(origin);
+    }
 
     
     
     
     if (gtk_check_version(3, 24, 35) != nullptr && GdkIsX11Display() &&
         gdk_window_get_window_type(mGdkWindow) == GDK_WINDOW_TEMP) {
-      return LayoutDeviceIntPoint(x, y);
+      return LayoutDeviceIntPoint(origin.x, origin.y);
     }
-    return GdkPointToDevicePixels({x, y});
+    return GdkPointToDevicePixels(origin);
   }();
 
   
@@ -3236,6 +3244,7 @@ void nsWindow::RecomputeClientOffset(bool aNotify) {
 gboolean nsWindow::OnPropertyNotifyEvent(GtkWidget* aWidget,
                                          GdkEventProperty* aEvent) {
   if (aEvent->atom == gdk_atom_intern("_NET_FRAME_EXTENTS", FALSE)) {
+    ResetScreenBounds();
     RecomputeClientOffset( true);
     return FALSE;
   }
@@ -4045,6 +4054,8 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     mPendingConfigures--;
   }
 
+  ResetScreenBounds();
+
   
   
   if (mGdkWindow && IsTopLevelWindowType()) {
@@ -4103,6 +4114,8 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
   LOG("nsWindow::OnSizeAllocate %d,%d -> %d x %d\n", aAllocation->x,
       aAllocation->y, aAllocation->width, aAllocation->height);
+
+  ResetScreenBounds();
 
   
   
@@ -6529,6 +6542,10 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
 
   LOG("nsWindow::NativeMoveResize move %d resize %d to %d,%d -> %d x %d\n",
       aMoved, aResized, topLeft.x, topLeft.y, size.width, size.height);
+
+  if (aMoved) {
+    ResetScreenBounds();
+  }
 
   if (aResized && !AreBoundsSane()) {
     LOG("  bounds are insane, hidding the window");
