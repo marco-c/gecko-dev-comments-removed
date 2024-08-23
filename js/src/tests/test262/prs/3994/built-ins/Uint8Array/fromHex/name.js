@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Uint8Array.fromHex, 'name', {
+  value: 'fromHex',
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

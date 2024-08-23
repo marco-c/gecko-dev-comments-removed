@@ -38,6 +38,7 @@ FEATURE_CHECK_NEEDED = {
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "Intl.Segmenter": "!Intl.Segmenter",  
     "resizable-arraybuffer": "!ArrayBuffer.prototype.resize",  
+    "uint8array-base64": "!Uint8Array.fromBase64",  
 }
 RELEASE_OR_BETA = set(
     [
@@ -51,6 +52,7 @@ SHELL_OPTIONS = {
     "iterator-helpers": "--enable-iterator-helpers",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
     "resizable-arraybuffer": "--enable-arraybuffer-resizable",
+    "uint8array-base64": "--enable-uint8array-base64",
 }
 
 
