@@ -239,40 +239,39 @@ class nsLineBox final : public nsLineLink {
   }
 
   
-  
-  
   void ClearForcedLineBreak() {
-    mFlags.mHasForcedLineBreak = false;
+    mFlags.mHasForcedLineBreakAfter = false;
     mFlags.mFloatClearType = mozilla::StyleClear::None;
   }
 
   bool HasFloatClearTypeBefore() const {
-    return IsBlock() && HasForcedLineBreak();
+    return FloatClearTypeBefore() != mozilla::StyleClear::None;
   }
   void SetFloatClearTypeBefore(mozilla::StyleClear aClearType) {
-    MOZ_ASSERT(IsBlock(), "Only blocks have break-before");
+    MOZ_ASSERT(IsBlock(), "Only block lines have break-before status!");
     MOZ_ASSERT(aClearType != mozilla::StyleClear::None,
                "Only StyleClear:Left/Right/Both are allowed before a line");
-    mFlags.mHasForcedLineBreak = true;
     mFlags.mFloatClearType = aClearType;
   }
   mozilla::StyleClear FloatClearTypeBefore() const {
-    return IsBlock() ? FloatClearType() : mozilla::StyleClear::None;
+    return IsBlock() ? mFlags.mFloatClearType : mozilla::StyleClear::None;
   }
 
   bool HasForcedLineBreakAfter() const {
-    return IsInline() && HasForcedLineBreak();
+    MOZ_ASSERT(IsInline() || !mFlags.mHasForcedLineBreakAfter,
+               "A block line shouldn't set mHasForcedLineBreakAfter bit!");
+    return IsInline() && mFlags.mHasForcedLineBreakAfter;
   }
   void SetForcedLineBreakAfter(mozilla::StyleClear aClearType) {
-    MOZ_ASSERT(IsInline(), "Only inlines have break-after");
-    mFlags.mHasForcedLineBreak = true;
+    MOZ_ASSERT(IsInline(), "Only inline lines have break-after status!");
+    mFlags.mHasForcedLineBreakAfter = true;
     mFlags.mFloatClearType = aClearType;
   }
   bool HasFloatClearTypeAfter() const {
-    return IsInline() && FloatClearType() != mozilla::StyleClear::None;
+    return FloatClearTypeAfter() != mozilla::StyleClear::None;
   }
   mozilla::StyleClear FloatClearTypeAfter() const {
-    return IsInline() ? FloatClearType() : mozilla::StyleClear::None;
+    return IsInline() ? mFlags.mFloatClearType : mozilla::StyleClear::None;
   }
 
   
@@ -521,7 +520,11 @@ class nsLineBox final : public nsLineLink {
     bool mMovedFragments : 1;
     
     
-    bool mHasForcedLineBreak : 1;
+    
+    
+    
+    
+    bool mHasForcedLineBreakAfter : 1;
     
     
     mozilla::StyleClear mFloatClearType;
@@ -568,9 +571,6 @@ class nsLineBox final : public nsLineLink {
     uint32_t mAllFlags;
     FlagBits mFlags;
   };
-
-  bool HasForcedLineBreak() const { return mFlags.mHasForcedLineBreak; }
-  mozilla::StyleClear FloatClearType() const { return mFlags.mFloatClearType; };
 
   union {
     ExtraData* mData;
