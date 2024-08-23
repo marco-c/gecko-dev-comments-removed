@@ -1,5 +1,6 @@
 export const manifest_origin = "https://{{host}}:{{ports[https][0]}}";
 export const alt_manifest_origin = 'https://{{hosts[alt][]}}:{{ports[https][0]}}';
+export const same_site_manifest_origin = 'https://{{hosts[][www1]}}:{{ports[https][0]}}';
 
 export function open_and_wait_for_popup(origin, path) {
   return new Promise(resolve => {
@@ -21,7 +22,7 @@ export function open_and_wait_for_popup(origin, path) {
 
 export function set_fedcm_cookie(host) {
   if (host == undefined) {
-    document.cookie = 'cookie=1; SameSite=Strict; Path=/credential-management/support; Secure';
+    document.cookie = 'cookie=1; SameSite=None; Path=/credential-management/support; Secure';
     return Promise.resolve();
   } else {
     return open_and_wait_for_popup(host, '/credential-management/support/set_cookie');
@@ -43,11 +44,11 @@ export function mark_signed_out(origin = manifest_origin) {
 
 
 
-export function request_options_with_mediation_required(manifest_filename) {
+export function request_options_with_mediation_required(manifest_filename, origin = manifest_origin) {
   if (manifest_filename === undefined) {
     manifest_filename = "manifest.py";
   }
-  const manifest_path = `${manifest_origin}/\
+  const manifest_path = `${origin}/\
 credential-management/support/fedcm/${manifest_filename}`;
   return {
     identity: {
@@ -64,21 +65,7 @@ credential-management/support/fedcm/${manifest_filename}`;
 
 
 export function alt_request_options_with_mediation_required(manifest_filename) {
-  if (manifest_filename === undefined) {
-    manifest_filename = "manifest.py";
-  }
-  const manifest_path = `${alt_manifest_origin}/\
-credential-management/support/fedcm/${manifest_filename}`;
-  return {
-    identity: {
-      providers: [{
-        configURL: manifest_path,
-        clientId: '1',
-        nonce: '2'
-      }]
-    },
-    mediation: 'required'
-  };
+  return request_options_with_mediation_required(manifest_filename, alt_manifest_origin);
 }
 
 
