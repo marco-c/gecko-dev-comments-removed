@@ -2628,49 +2628,40 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
   MOZ_ASSERT(need_pages <= total_pages);
   size_t rem_pages = total_pages - need_pages;
 
+#ifdef MALLOC_DECOMMIT
   for (size_t i = 0; i < need_pages; i++) {
     
     
     
     
-    if (chunk->map[run_ind + i].bits &
-        CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) {
-      
+    if (chunk->map[run_ind + i].bits & CHUNK_MAP_DECOMMITTED) {
       
       
       size_t j;
-      for (j = 0;
-           i + j < need_pages && (chunk->map[run_ind + i + j].bits &
-                                  CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED);
+      for (j = 0; i + j < need_pages &&
+                  (chunk->map[run_ind + i + j].bits & CHUNK_MAP_DECOMMITTED);
            j++) {
         
-        size_t bits = chunk->map[run_ind + i + j].bits;
-        MOZ_ASSERT(((bits & CHUNK_MAP_DECOMMITTED ? 1 : 0) +
-                    (bits & CHUNK_MAP_MADVISED ? 1 : 0) +
-                    (bits & CHUNK_MAP_FRESH ? 1 : 0)) == 1);
-
-        chunk->map[run_ind + i + j].bits &=
-            ~CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED;
+        MOZ_ASSERT((chunk->map[run_ind + i + j].bits &
+                    (CHUNK_MAP_FRESH | CHUNK_MAP_MADVISED)) == 0);
       }
 
-#ifdef MALLOC_DECOMMIT
-      bool committed = pages_commit(
-          (void*)(uintptr_t(chunk) + ((run_ind + i) << gPageSize2Pow)),
-          j << gPageSize2Pow);
+      if (!pages_commit(
+              (void*)(uintptr_t(chunk) + ((run_ind + i) << gPageSize2Pow)),
+              j << gPageSize2Pow)) {
+        return false;
+      }
+
       
       
       for (size_t k = 0; k < j; k++) {
-        chunk->map[run_ind + i + k].bits |=
-            committed ? CHUNK_MAP_ZEROED : CHUNK_MAP_DECOMMITTED;
+        chunk->map[run_ind + i + k].bits =
+            (chunk->map[run_ind + i + k].bits & ~CHUNK_MAP_DECOMMITTED) |
+            CHUNK_MAP_ZEROED | CHUNK_MAP_FRESH;
       }
-      if (!committed) {
-        return false;
-      }
-#endif
-
-      mStats.committed += j;
     }
   }
+#endif
 
   mRunsAvail.Remove(&chunk->map[run_ind]);
 
@@ -2700,8 +2691,22 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
       chunk->ndirty--;
       mNumDirty--;
       
+    } else if (chunk->map[run_ind + i].bits &
+               (CHUNK_MAP_MADVISED | CHUNK_MAP_FRESH)) {
+      mStats.committed++;
     }
+#ifdef MALLOC_DOUBLE_PURGE
+    
+    
+    else if (chunk->map[run_ind + i].bits & CHUNK_MAP_DECOMMITTED) {
+      mStats.committed++;
+    }
+#else
+    
+    MOZ_ASSERT(!(chunk->map[run_ind + i].bits & CHUNK_MAP_DECOMMITTED));
+#endif
 
+    
     
     if (aLarge) {
       chunk->map[run_ind + i].bits = CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
