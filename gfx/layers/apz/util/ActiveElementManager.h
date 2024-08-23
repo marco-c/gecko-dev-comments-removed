@@ -58,12 +58,12 @@ class ActiveElementManager final {
 
 
 
-  void HandleTouchEndEvent(bool aWasClick);
+  bool HandleTouchEndEvent(bool aWasClick);
   
 
 
 
-  void HandleTouchEnd(bool aWasClick);
+  bool HandleTouchEnd(bool aWasClick);
   
 
 
@@ -117,7 +117,7 @@ class ActiveElementManager final {
   void ResetTouchBlockState();
   void SetActiveTask(const nsCOMPtr<dom::Element>& aTarget);
   void CancelTask();
-  void MaybeChangeActiveState(bool aWasClick);
+  bool MaybeChangeActiveState(bool aWasClick);
 };
 
 }  
