@@ -53,6 +53,7 @@ namespace webrtc {
 
 
 
+
 class RTC_EXPORT RTCStats {
  public:
   RTCStats(const std::string& id, Timestamp timestamp)
@@ -87,10 +88,6 @@ class RTC_EXPORT RTCStats {
   
   
   
-  std::vector<const RTCStatsMemberInterface*> Members() const;
-  
-  
-  
   bool operator==(const RTCStats& other) const;
   bool operator!=(const RTCStats& other) const;
 
@@ -112,15 +109,7 @@ class RTC_EXPORT RTCStats {
 
   std::string const id_;
   Timestamp timestamp_;
-
-  
-  
-  
-  
-  
-  mutable std::vector<Attribute> cached_attributes_;
 };
-
 
 
 
@@ -195,25 +184,6 @@ class RTC_EXPORT RTCStats {
           webrtc::Attribute::FromMemberInterface(this_members[i]));            \
     }                                                                          \
     return attributes;                                                         \
-  }
-
-
-
-
-#define WEBRTC_RTCSTATS_IMPL_NO_MEMBERS(this_class, parent_class, type_str) \
-  const char this_class::kType[] = type_str;                                \
-                                                                            \
-  std::unique_ptr<webrtc::RTCStats> this_class::copy() const {              \
-    return std::make_unique<this_class>(*this);                             \
-  }                                                                         \
-                                                                            \
-  const char* this_class::type() const {                                    \
-    return this_class::kType;                                               \
-  }                                                                         \
-                                                                            \
-  std::vector<webrtc::Attribute> this_class::AttributesImpl(                \
-      size_t additional_capacity) const {                                   \
-    return parent_class::AttributesImpl(0);                                 \
   }
 
 }  
