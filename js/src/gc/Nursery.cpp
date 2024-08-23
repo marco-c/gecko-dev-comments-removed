@@ -1603,9 +1603,6 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
     MOZ_ASSERT(gc->storeBuffer().isEnabled());
     MOZ_ASSERT(gc->storeBuffer().isEmpty());
 
-    
-    
-    
     startProfile(ProfileKey::TraceWholeCells);
     sb.traceWholeCells(mover);
     endProfile(ProfileKey::TraceWholeCells);
