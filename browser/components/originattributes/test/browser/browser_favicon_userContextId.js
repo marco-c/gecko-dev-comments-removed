@@ -57,7 +57,7 @@ function clearAllPlacesFavicons() {
 
   return new Promise(resolve => {
     let observer = {
-      observe(aSubject, aTopic, aData) {
+      observe(aSubject, aTopic) {
         if (aTopic === "places-favicons-expired") {
           resolve();
           Services.obs.removeObserver(observer, "places-favicons-expired");
@@ -80,7 +80,7 @@ function FaviconObserver(
 }
 
 FaviconObserver.prototype = {
-  observe(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic) {
     
     if (aTopic === "http-on-modify-request") {
       

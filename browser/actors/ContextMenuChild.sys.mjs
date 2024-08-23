@@ -371,7 +371,7 @@ export class ContextMenuChild extends JSWindowActorChild {
   }
 
   
-  _isLinkSaveable(aLink) {
+  _isLinkSaveable() {
     
     
     return (
@@ -696,7 +696,7 @@ export class ContextMenuChild extends JSWindowActorChild {
 
 
 
-  _cleanContext(aEvent) {
+  _cleanContext() {
     const context = this.context;
     const cleanTarget = Object.create(null);
 

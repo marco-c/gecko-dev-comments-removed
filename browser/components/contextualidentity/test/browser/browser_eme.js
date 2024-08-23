@@ -121,7 +121,7 @@ add_task(async function test() {
 
       
       await new Promise(resolve => {
-        session.addEventListener("message", function (event) {
+        session.addEventListener("message", function () {
           session
             .update(aKeyInfo.keyObj)
             .then(() => {

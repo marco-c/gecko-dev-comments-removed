@@ -21,7 +21,7 @@ add_task(async function test_PanelMultiView_toggle_with_other_popup() {
       gBrowser,
       url: TEST_URL,
     },
-    async function (browser) {
+    async function () {
       
       await gCUITestUtils.openMainMenu();
 

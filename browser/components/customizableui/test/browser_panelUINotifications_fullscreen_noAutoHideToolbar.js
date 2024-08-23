@@ -20,7 +20,7 @@ function waitForDocshellActivated() {
       content.document,
       "visibilitychange",
       true ,
-      aEvent => {
+      () => {
         return content.browsingContext.isActive;
       }
     );

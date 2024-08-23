@@ -72,12 +72,12 @@ async function doBefore() {
 }
 
 
-function doTest(aBrowser) {
+function doTest() {
   return 0;
 }
 
 
-function doCheck(shouldIsolate, a, b) {
+function doCheck(shouldIsolate) {
   
   
   

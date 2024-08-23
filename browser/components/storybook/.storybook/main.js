@@ -50,7 +50,7 @@ module.exports = {
     };
     return [...existingIndexers, customIndexer];
   },
-  webpackFinal: async (config, { configType }) => {
+  webpackFinal: async config => {
     
     
     

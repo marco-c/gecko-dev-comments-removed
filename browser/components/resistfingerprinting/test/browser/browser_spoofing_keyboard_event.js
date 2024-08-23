@@ -2081,7 +2081,7 @@ async function testKeyEvent(aTab, aTestCase) {
         
         
         await new Promise(resolve => {
-          function eventHandler(aEvent) {
+          function eventHandler() {
             verifyKeyboardEvent(
               JSON.parse(resElement.value),
               result,

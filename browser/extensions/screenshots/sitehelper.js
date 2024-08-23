@@ -30,7 +30,7 @@ this.sitehelper = (function () {
 
   registerListener(
     "delete-everything",
-    catcher.watchFunction(event => {
+    catcher.watchFunction(() => {
       
     }, false)
   );

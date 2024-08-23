@@ -194,14 +194,7 @@ function hideInfoPromise(...args) {
 
 
 
-function showInfoPromise(
-  target,
-  title,
-  text,
-  icon,
-  buttonsFunctionName,
-  optionsFunctionName
-) {
+function showInfoPromise() {
   let popup = document.getElementById("UITourTooltip");
   let shownPromise = promisePanelElementShown(window, popup);
   return SpecialPowers.spawn(gTestTab.linkedBrowser, [[...arguments]], args => {
@@ -271,7 +264,7 @@ function promisePanelElementEvent(win, aPanel, aEvent) {
       reject(aEvent + " event did not happen within 5 seconds.");
     }, 5000);
 
-    function onPanelEvent(e) {
+    function onPanelEvent() {
       aPanel.removeEventListener(aEvent, onPanelEvent);
       win.clearTimeout(timeoutId);
       
@@ -321,7 +314,7 @@ async function loadUITourTestPage(callback, host = "https://example.org/") {
   
   
   let UITourHandler = {
-    get(target, prop, receiver) {
+    get(target, prop) {
       return (...args) => {
         let browser = gTestTab.linkedBrowser;
         
