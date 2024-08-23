@@ -299,11 +299,6 @@ class ElementStyle {
   updateDeclarations(pseudo = "") {
     
     const textProps = this._getDeclarations(pseudo);
-    
-    let computedProps = [];
-    for (const textProp of textProps) {
-      computedProps = computedProps.concat(textProp.computed);
-    }
 
     
     const variables = new Map(pseudo ? this.variablesMap.get("") : null);
@@ -332,58 +327,62 @@ class ElementStyle {
     
     
     const taken = new Map();
-    for (const computedProp of computedProps) {
-      const earlier = taken.get(computedProp.name);
-
-      
-      
-      
-      
-      
-      if (!computedProp.textProp.isValid()) {
-        computedProp.overridden = true;
-        continue;
-      }
-
-      let overridden;
-      if (
-        earlier &&
-        computedProp.priority === "important" &&
-        (earlier.priority !== "important" ||
-          
-          
-          (computedProp.textProp.rule?.isInLayer() &&
-            computedProp.textProp.rule.isInDifferentLayer(
-              earlier.textProp.rule
-            ))) &&
-        
-        computedProp.textProp.rule.inherited == earlier.textProp.rule.inherited
-      ) {
-        
-        
-        earlier._overriddenDirty = !earlier._overriddenDirty;
-        earlier.overridden = true;
-        overridden = false;
-      } else {
-        overridden = !!earlier;
-      }
-
-      computedProp._overriddenDirty = !!computedProp.overridden !== overridden;
-      computedProp.overridden = overridden;
-
-      if (!computedProp.overridden && computedProp.textProp.enabled) {
-        taken.set(computedProp.name, computedProp);
+    for (const textProp of textProps) {
+      for (const computedProp of textProp.computed) {
+        const earlier = taken.get(computedProp.name);
 
         
         
         
         
         
+        if (!computedProp.textProp.isValid()) {
+          computedProp.overridden = true;
+          continue;
+        }
+
+        let overridden;
         if (
-          isCssVariable(computedProp.name) &&
-          !computedProp.textProp.invisible
+          earlier &&
+          computedProp.priority === "important" &&
+          (earlier.priority !== "important" ||
+            
+            
+            (computedProp.textProp.rule?.isInLayer() &&
+              computedProp.textProp.rule.isInDifferentLayer(
+                earlier.textProp.rule
+              ))) &&
+          
+          computedProp.textProp.rule.inherited ==
+            earlier.textProp.rule.inherited
         ) {
-          variables.set(computedProp.name, computedProp.value);
+          
+          
+          earlier._overriddenDirty = !earlier._overriddenDirty;
+          earlier.overridden = true;
+          overridden = false;
+        } else {
+          overridden = !!earlier;
+        }
+
+        computedProp._overriddenDirty =
+          !!computedProp.overridden !== overridden;
+        computedProp.overridden = overridden;
+
+        if (!computedProp.overridden && computedProp.textProp.enabled) {
+          taken.set(computedProp.name, computedProp);
+
+          
+          
+          
+          
+          
+          if (
+            isCssVariable(computedProp.name) &&
+            !computedProp.textProp.invisible
+          ) {
+            variables.set(computedProp.name, computedProp.value);
+          }
         }
       }
     }
