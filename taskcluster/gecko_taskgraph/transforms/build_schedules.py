@@ -27,7 +27,7 @@ def set_build_schedules_optimization(config, tasks):
                 
                 schedules.append("firefox")
 
-        elif config.kind == "build-components":
+        elif config.kind in ("build-components", "build-samples-browser"):
             
             schedules = ["android", "fenix", "focus-android"]
 
