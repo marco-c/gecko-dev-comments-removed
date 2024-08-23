@@ -439,6 +439,9 @@ pub enum ParseRelative {
     
     ForNesting,
     
+    
+    ForScope,
+    
     No,
 }
 
@@ -2619,9 +2622,14 @@ where
                 
                 builder.push_combinator(combinator.unwrap_or(Combinator::Descendant));
             },
-            ParseRelative::ForNesting => {
+            ParseRelative::ForNesting | ParseRelative::ForScope => {
                 if let Ok(combinator) = combinator {
-                    builder.push_simple_selector(Component::ParentSelector);
+                    let selector = match parse_relative {
+                        ParseRelative::ForHas | ParseRelative::No => unreachable!(),
+                        ParseRelative::ForNesting => Component::ParentSelector,
+                        ParseRelative::ForScope => Component::Scope,
+                    };
+                    builder.push_simple_selector(selector);
                     builder.push_combinator(combinator);
                 }
             },

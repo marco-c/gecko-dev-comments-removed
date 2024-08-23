@@ -119,8 +119,7 @@ fn parse_scope<'a>(
                 for_supports_rule: false,
             };
             let parse_relative = if for_end {
-                
-                ParseRelative::No
+                ParseRelative::ForScope
             } else if in_style_rule {
                 ParseRelative::ForNesting
             } else {
