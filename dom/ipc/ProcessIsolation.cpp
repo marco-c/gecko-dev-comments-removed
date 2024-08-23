@@ -343,6 +343,7 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
           browser_tabs_remote_separatePrivilegedMozillaWebContentProcess()) {
     nsAutoCString host;
     if (NS_SUCCEEDED(aURI->GetAsciiHost(host))) {
+      
       for (const auto& separatedDomain : sSeparatedMozillaDomains) {
         
         
