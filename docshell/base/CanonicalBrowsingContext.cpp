@@ -2245,9 +2245,19 @@ bool CanonicalBrowsingContext::SupportsLoadingInParent(
         return false;
       }
     }
+
     
     
-    if (global->HasBeforeUnload()) {
+    
+    if (PreOrderWalkFlag([&](BrowsingContext* aBC) {
+          WindowContext* wc = aBC->GetCurrentWindowContext();
+          if (wc && wc->HasBeforeUnload()) {
+            
+            
+            return WalkFlag::Stop;
+          }
+          return WalkFlag::Next;
+        }) == WalkFlag::Stop) {
       return false;
     }
 
