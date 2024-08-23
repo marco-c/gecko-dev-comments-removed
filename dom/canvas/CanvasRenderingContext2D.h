@@ -846,7 +846,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   
   bool mHasShutdown = false;
 
-  RefPtr<CanvasShutdownObserver> mShutdownObserver;
   bool AddShutdownObserver();
   void RemoveShutdownObserver();
   bool AlreadyShutDown() const { return mHasShutdown; }
