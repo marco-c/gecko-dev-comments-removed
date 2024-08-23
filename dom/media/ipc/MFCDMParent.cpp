@@ -841,14 +841,19 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
       KeySystemConfig::EME_CODEC_VORBIS,
   });
   for (const auto& codec : kAudioCodecs) {
-    if (FactorySupports(
-            factory, aKeySystem, convertCodecToFourCC(supportedVideoCodecs[0]),
-            convertCodecToFourCC(codec), nsString(u""), isHardwareDecryption)) {
+    
+    
+    
+    
+    if (FactorySupports(factory, aKeySystem,
+                        convertCodecToFourCC(supportedVideoCodecs[0]),
+                        convertCodecToFourCC(codec), nsString(u""),
+                        false )) {
       MFCDMMediaCapability* c =
           aCapabilitiesOut.audioCapabilities().AppendElement();
       c->contentType() = NS_ConvertUTF8toUTF16(codec);
       c->robustness() = GetRobustnessStringForKeySystem(
-          aKeySystem, isHardwareDecryption, false );
+          aKeySystem, false , false );
       MFCDM_PARENT_SLOG("%s: +audio:%s", __func__, codec.get());
     }
   }
