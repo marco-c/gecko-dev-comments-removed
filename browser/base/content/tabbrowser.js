@@ -893,14 +893,6 @@
         : "";
     },
 
-    getTabModalPromptBox(aBrowser) {
-      let browser = aBrowser || this.selectedBrowser;
-      if (!browser.tabModalPromptBox) {
-        browser.tabModalPromptBox = new TabModalPromptBox(browser);
-      }
-      return browser.tabModalPromptBox;
-    },
-
     getTabDialogBox(aBrowser) {
       if (!aBrowser) {
         throw new Error("aBrowser is required");
@@ -1320,31 +1312,6 @@
           this.addToMultiSelectedTabs(oldTab);
         }
 
-        if (oldBrowser != newBrowser && oldBrowser.getInPermitUnload) {
-          oldBrowser.getInPermitUnload(inPermitUnload => {
-            if (!inPermitUnload) {
-              return;
-            }
-            
-            
-            
-            
-            
-            
-            let promptBox = this.getTabModalPromptBox(oldBrowser);
-            let prompts = promptBox.listPrompts();
-            
-            
-            
-            
-            if (prompts.length) {
-              
-              
-              prompts[prompts.length - 1].abortPrompt();
-            }
-          });
-        }
-
         if (!gMultiProcessBrowser) {
           this._adjustFocusBeforeTabSwitch(oldTab, newTab);
           this._adjustFocusAfterTabSwitch(newTab);
@@ -1439,19 +1406,6 @@
         newBrowser.tabDialogBox.focus();
         return;
       }
-      if (newBrowser.hasAttribute("tabmodalPromptShowing")) {
-        
-        let prompts = newBrowser.tabModalPromptBox.listPrompts();
-        let prompt = prompts[prompts.length - 1];
-        
-        
-        
-        if (prompt) {
-          prompt.Dialog.setDefaultFocus();
-          return;
-        }
-      }
-
       
       
       
@@ -6103,12 +6057,7 @@
               );
               if (permission != Services.perms.ALLOW_ACTION) {
                 
-                let tabPrompt = Services.prefs.getBoolPref(
-                  "prompts.contentPromptSubDialog"
-                )
-                  ? this.getTabDialogBox(tabForEvent.linkedBrowser)
-                  : this.getTabModalPromptBox(tabForEvent.linkedBrowser);
-
+                let tabPrompt = this.getTabDialogBox(tabForEvent.linkedBrowser);
                 tabPrompt.onNextPromptShowAllowFocusCheckboxFor(
                   promptPrincipal
                 );
