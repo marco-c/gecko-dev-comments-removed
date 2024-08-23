@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { BackupResource, bytesToFuzzyKilobytes } = ChromeUtils.importESModule(
+const { BackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/BackupResource.sys.mjs"
 );
 
@@ -60,22 +60,4 @@ add_task(async function test_getDirectorySize() {
   );
 
   await IOUtils.remove(testDir, { recursive: true });
-});
-
-
-
-
-
-add_task(async function test_bytesToFuzzyKilobytes() {
-  let largeSize = bytesToFuzzyKilobytes(1234000);
-
-  Assert.equal(
-    largeSize,
-    1230,
-    "1234 bytes is rounded up to the nearest tenth kilobyte, 1230"
-  );
-
-  let smallSize = bytesToFuzzyKilobytes(3);
-
-  Assert.equal(smallSize, 1, "Sizes under 10 kilobytes return 1 kilobyte");
 });
