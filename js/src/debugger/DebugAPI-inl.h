@@ -96,6 +96,14 @@ bool DebugAPI::onNewGenerator(JSContext* cx, AbstractFramePtr frame,
 }
 
 
+void DebugAPI::onGeneratorClosed(JSContext* cx,
+                                 AbstractGeneratorObject* genObj) {
+  if (cx->realm()->isDebuggee()) {
+    slowPathOnGeneratorClosed(cx, genObj);
+  }
+}
+
+
 bool DebugAPI::checkNoExecute(JSContext* cx, HandleScript script) {
   if (!cx->realm()->isDebuggee() || !cx->noExecuteDebuggerTop) {
     return true;

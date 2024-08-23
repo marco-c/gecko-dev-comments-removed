@@ -1794,7 +1794,7 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
     }
 
     
-    genObj->setClosed();
+    genObj->setClosed(cx);
 
     
     
@@ -1823,7 +1823,7 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
       vp.setObject(*promise);
 
       
-      generator->setClosed();
+      generator->setClosed(cx);
     } else {
       
 
@@ -2852,6 +2852,20 @@ void DebugAPI::slowPathOnNewGlobalObject(JSContext* cx,
     }
   }
   MOZ_ASSERT(!cx->isExceptionPending());
+}
+
+
+void DebugAPI::slowPathOnGeneratorClosed(JSContext* cx,
+                                         AbstractGeneratorObject* genObj) {
+  JS::AutoAssertNoGC nogc;
+  for (Realm::DebuggerVectorEntry& entry : cx->global()->getDebuggers(nogc)) {
+    Debugger* dbg = entry.dbg;
+    if (Debugger::GeneratorWeakMap::Ptr frameEntry =
+            dbg->generatorFrames.lookup(genObj)) {
+      DebuggerFrame* frameObj = frameEntry->value();
+      frameObj->onGeneratorClosed(cx->gcContext());
+    }
+  }
 }
 
 

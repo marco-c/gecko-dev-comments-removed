@@ -439,6 +439,24 @@ void DebuggerFrame::terminate(JS::GCContext* gcx, AbstractFramePtr frame) {
   gcx->delete_(this, info, MemoryUse::DebuggerFrameGeneratorInfo);
 }
 
+void DebuggerFrame::onGeneratorClosed(JS::GCContext* gcx) {
+  GeneratorInfo* info = generatorInfo();
+
+  
+  
+  
+  
+  if (!info->isGeneratorScriptAboutToBeFinalized()) {
+    JSScript* generatorScript = info->generatorScript();
+    OnStepHandler* handler = onStepHandler();
+    if (handler) {
+      decrementStepperCounter(gcx, generatorScript);
+      setReservedSlot(ONSTEP_HANDLER_SLOT, UndefinedValue());
+      handler->drop(gcx, this);
+    }
+  }
+}
+
 void DebuggerFrame::suspend(JS::GCContext* gcx) {
   
   
