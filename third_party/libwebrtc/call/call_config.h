@@ -10,15 +10,11 @@
 #ifndef CALL_CALL_CONFIG_H_
 #define CALL_CALL_CONFIG_H_
 
-#include "absl/types/optional.h"
 #include "api/environment/environment.h"
 #include "api/fec_controller.h"
-#include "api/field_trials_view.h"
 #include "api/metronome/metronome.h"
 #include "api/neteq/neteq_factory.h"
 #include "api/network_state_predictor.h"
-#include "api/rtc_error.h"
-#include "api/task_queue/task_queue_factory.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
 #include "call/audio_state.h"
@@ -28,7 +24,6 @@
 namespace webrtc {
 
 class AudioProcessing;
-class RtcEventLog;
 
 struct CallConfig {
   
@@ -37,19 +32,13 @@ struct CallConfig {
   explicit CallConfig(const Environment& env,
                       TaskQueueBase* network_task_queue = nullptr);
 
-  
-  explicit CallConfig(RtcEventLog* event_log,
-                      TaskQueueBase* network_task_queue = nullptr);
-
   CallConfig(const CallConfig&);
 
   ~CallConfig();
 
   RtpTransportConfig ExtractTransportConfig() const;
 
-  
-  
-  absl::optional<Environment> env;
+  Environment env;
 
   
   
@@ -62,14 +51,7 @@ struct CallConfig {
   AudioProcessing* audio_processing = nullptr;
 
   
-  
-  RtcEventLog* const event_log = nullptr;
-
-  
   FecControllerFactoryInterface* fec_controller_factory = nullptr;
-
-  
-  TaskQueueFactory* task_queue_factory = nullptr;
 
   
   NetworkStatePredictorFactoryInterface* network_state_predictor_factory =
@@ -80,10 +62,6 @@ struct CallConfig {
 
   
   NetEqFactory* neteq_factory = nullptr;
-
-  
-  
-  const FieldTrialsView* trials = nullptr;
 
   TaskQueueBase* const network_task_queue_ = nullptr;
   
