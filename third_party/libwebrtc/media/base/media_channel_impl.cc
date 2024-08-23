@@ -58,18 +58,6 @@ int MediaChannelUtil::GetRtpSendTimeExtnId() const {
   return -1;
 }
 
-void MediaChannelUtil::SetFrameEncryptor(
-    uint32_t ssrc,
-    rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
-  
-}
-
-void MediaChannelUtil::SetFrameDecryptor(
-    uint32_t ssrc,
-    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
-  
-}
-
 bool MediaChannelUtil::SendPacket(rtc::CopyOnWriteBuffer* packet,
                                   const rtc::PacketOptions& options) {
   return transport_.DoSendPacket(packet, false, options);
@@ -101,14 +89,6 @@ bool MediaChannelUtil::ExtmapAllowMixed() const {
 bool MediaChannelUtil::HasNetworkInterface() const {
   return transport_.HasNetworkInterface();
 }
-
-void MediaChannelUtil::SetEncoderToPacketizerFrameTransformer(
-    uint32_t ssrc,
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {}
-
-void MediaChannelUtil::SetDepacketizerToDecoderFrameTransformer(
-    uint32_t ssrc,
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {}
 
 bool MediaChannelUtil::DscpEnabled() const {
   return transport_.DscpEnabled();
