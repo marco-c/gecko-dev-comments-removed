@@ -11,8 +11,8 @@ const { TargetActorRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs",
   { global: "shared" }
 );
-const { WatcherRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
+const { ParentProcessWatcherRegistry } = ChromeUtils.importESModule(
+  "resource://devtools/server/actors/watcher/ParentProcessWatcherRegistry.sys.mjs",
   
   
   { global: "shared" }
@@ -164,7 +164,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     
     
-    if (WatcherRegistry.getWatcher(this.actorID)) {
+    if (ParentProcessWatcherRegistry.getWatcher(this.actorID)) {
       
       const domProcesses = ChromeUtils.getAllDOMProcesses();
       for (const domProcess of domProcesses) {
@@ -180,7 +180,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
       Resources.getParentProcessResourceTypes(Object.values(Resources.TYPES))
     );
 
-    WatcherRegistry.unregisterWatcher(this.actorID);
+    ParentProcessWatcherRegistry.unregisterWatcher(this.actorID);
 
     
     this._browserElement = null;
@@ -198,7 +198,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   get sessionData() {
-    return WatcherRegistry.getSessionData(this);
+    return ParentProcessWatcherRegistry.getSessionData(this);
   }
 
   form() {
@@ -227,7 +227,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   async watchTargets(targetType) {
-    WatcherRegistry.watchTargets(this, targetType);
+    ParentProcessWatcherRegistry.watchTargets(this, targetType);
 
     
     
@@ -277,7 +277,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   unwatchTargets(targetType, options = {}) {
-    const isWatchingTargets = WatcherRegistry.unwatchTargets(
+    const isWatchingTargets = ParentProcessWatcherRegistry.unwatchTargets(
       this,
       targetType,
       options
@@ -299,7 +299,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     
     if (!options.isModeSwitching) {
-      WatcherRegistry.maybeUnregisterJSActors();
+      ParentProcessWatcherRegistry.maybeUnregisterJSActors();
     }
   }
 
@@ -555,7 +555,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
       return;
     }
 
-    WatcherRegistry.watchResources(this, resourceTypes);
+    ParentProcessWatcherRegistry.watchResources(this, resourceTypes);
 
     const promises = [];
     const domProcesses = ChromeUtils.getAllDOMProcesses();
@@ -630,7 +630,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
       return;
     }
 
-    const isWatchingResources = WatcherRegistry.unwatchResources(
+    const isWatchingResources = ParentProcessWatcherRegistry.unwatchResources(
       this,
       resourceTypes
     );
@@ -663,7 +663,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     }
 
     
-    WatcherRegistry.maybeUnregisterJSActors();
+    ParentProcessWatcherRegistry.maybeUnregisterJSActors();
   }
 
   clearResources(resourceTypes) {
@@ -758,7 +758,12 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   async addOrSetDataEntry(type, entries, updateType) {
-    WatcherRegistry.addOrSetSessionDataEntry(this, type, entries, updateType);
+    ParentProcessWatcherRegistry.addOrSetSessionDataEntry(
+      this,
+      type,
+      entries,
+      updateType
+    );
 
     const promises = [];
     const domProcesses = ChromeUtils.getAllDOMProcesses();
@@ -803,7 +808,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   removeDataEntry(type, entries) {
-    WatcherRegistry.removeSessionDataEntry(this, type, entries);
+    ParentProcessWatcherRegistry.removeSessionDataEntry(this, type, entries);
 
     const domProcesses = ChromeUtils.getAllDOMProcesses();
     for (const domProcess of domProcesses) {
@@ -847,7 +852,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
       host = new URL(newTargetUrl).host;
     } catch (e) {}
 
-    WatcherRegistry.addOrSetSessionDataEntry(
+    ParentProcessWatcherRegistry.addOrSetSessionDataEntry(
       this,
       "browser-element-host",
       [host],

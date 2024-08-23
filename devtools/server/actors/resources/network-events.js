@@ -9,8 +9,8 @@ const { isWindowGlobalPartOfContext } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
   { global: "contextual" }
 );
-const { WatcherRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
+const { ParentProcessWatcherRegistry } = ChromeUtils.importESModule(
+  "resource://devtools/server/actors/watcher/ParentProcessWatcherRegistry.sys.mjs",
   
   
   { global: "shared" }
@@ -253,7 +253,7 @@ class NetworkEventWatcher {
     
     const isParentProcessOnlyBrowserToolbox =
       this.watcherActor.sessionContext.type == "all" &&
-      !WatcherRegistry.isWatchingTargets(
+      !ParentProcessWatcherRegistry.isWatchingTargets(
         this.watcherActor,
         Targets.TYPES.FRAME
       );
