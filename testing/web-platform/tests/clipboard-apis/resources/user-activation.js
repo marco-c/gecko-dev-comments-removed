@@ -23,3 +23,22 @@ async function waitForUserActivation() {
   test_driver.click(document.body);
   await clickedPromise;
 }
+
+async function trySetPermission(perm, state) {
+  try {
+    await test_driver.set_permission({ name: perm }, state)
+  } catch {
+    
+    
+    
+  }
+}
+
+async function tryGrantReadPermission(state) {
+  await trySetPermission("clipboard-read", "granted");
+}
+
+async function tryGrantWritePermission() {
+  await trySetPermission("clipboard-write", "granted");
+}
+
