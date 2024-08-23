@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Uint8Array.prototype.setFromHex, 'length', {
+  value: 1,
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);
