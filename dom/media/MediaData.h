@@ -23,6 +23,7 @@
 #  include "mozilla/gfx/Rect.h"
 #  include "nsString.h"
 #  include "nsTArray.h"
+#  include "EncoderConfig.h"
 
 namespace mozilla {
 
@@ -722,6 +723,9 @@ class MediaRawData final : public MediaData {
   
   
   bool mShouldCopyCryptoToRemoteRawData = false;
+
+  
+  UniquePtr<const EncoderConfig> mConfig;
 
   
   CryptoSample& GetWritableCrypto() { return mCryptoInternal; }

@@ -14,6 +14,7 @@
 
 
 #include "FFmpegLibs.h"
+#include "speex/speex_resampler.h"
 
 namespace mozilla {
 
@@ -34,8 +35,6 @@ class FFmpegAudioEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
   virtual nsresult InitSpecific() override;
 #if LIBAVCODEC_VERSION_MAJOR >= 58
   Result<EncodedData, nsresult> EncodeOnePacket(Span<float> aSamples,
-                                                uint32_t aChannels,
-                                                uint32_t aRate,
                                                 media::TimeUnit aPts);
   Result<EncodedData, nsresult> EncodeInputWithModernAPIs(
       RefPtr<const MediaData> aSample) override;
@@ -48,10 +47,19 @@ class FFmpegAudioEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
   
   Maybe<TimedPacketizer<float, float>> mPacketizer;
   
+  
   nsTArray<float> mTempBuffer;
   
   
   media::TimeUnit mFirstPacketPts{media::TimeUnit::Invalid()};
+  struct ResamplerDestroy {
+    void operator()(SpeexResamplerState* aResampler);
+  };
+  
+  
+  int mInputSampleRate = 0;
+  UniquePtr<SpeexResamplerState, ResamplerDestroy> mResampler;
+  uint64_t mPacketsDelivered = 0;
 };
 
 }  

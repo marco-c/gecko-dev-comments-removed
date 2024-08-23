@@ -464,9 +464,18 @@ AudioDecoderConfigInternal AudioEncoder::EncoderConfigToDecoderConfig(
     const AudioEncoderConfigInternal& aOutputConfig) const {
   MOZ_ASSERT(aOutputConfig.mSampleRate.isSome());
   MOZ_ASSERT(aOutputConfig.mNumberOfChannels.isSome());
+  uint32_t sampleRate = aOutputConfig.mSampleRate.value();
+  uint32_t channelCount = aOutputConfig.mNumberOfChannels.value();
+  
+  
+  
+  
+  if (aRawData->mConfig) {
+    sampleRate = aRawData->mConfig->mSampleRate;
+    channelCount = aRawData->mConfig->mNumberOfChannels;
+  }
   return AudioDecoderConfigInternal(
-      aOutputConfig.mCodec, aOutputConfig.mSampleRate.value(),
-      aOutputConfig.mNumberOfChannels.value(),
+      aOutputConfig.mCodec, sampleRate, channelCount,
       aRawData->mExtraData ? Some(aRawData->mExtraData) : Nothing());
 }
 

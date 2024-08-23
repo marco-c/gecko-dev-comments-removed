@@ -9,6 +9,7 @@
 #include "FFmpegRuntimeLinker.h"
 #include "FFmpegLog.h"
 #include "FFmpegUtils.h"
+#include "MediaData.h"
 
 #include "AudioSegment.h"
 
@@ -34,6 +35,11 @@ nsCString FFmpegAudioEncoder<LIBAV_VER>::GetDescriptionName() const {
 #endif
 }
 
+void FFmpegAudioEncoder<LIBAV_VER>::ResamplerDestroy::operator()(
+    SpeexResamplerState* aResampler) {
+  speex_resampler_destroy(aResampler);
+}
+
 nsresult FFmpegAudioEncoder<LIBAV_VER>::InitSpecific() {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 
@@ -44,6 +50,54 @@ nsresult FFmpegAudioEncoder<LIBAV_VER>::InitSpecific() {
   if (!codec) {
     FFMPEG_LOG("FFmpegDataEncoder::InitCommon failed");
     return NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR;
+  }
+
+  
+  
+  mInputSampleRate = AssertedCast<int>(mConfig.mSampleRate);
+  if (codec->supported_samplerates) {
+    
+    
+    
+    
+    
+    
+    AutoTArray<int, 16> supportedSampleRates;
+    IterateZeroTerminated(codec->supported_samplerates,
+                          [&supportedSampleRates](int aRate) mutable {
+                            supportedSampleRates.AppendElement(aRate);
+                          });
+    supportedSampleRates.Sort();
+
+    for (const auto& rate : supportedSampleRates) {
+      if (mInputSampleRate == rate) {
+        mConfig.mSampleRate = rate;
+        break;
+      }
+      if (mInputSampleRate < rate) {
+        
+        mConfig.mSampleRate = rate;
+        break;
+      }
+      if (mInputSampleRate > rate) {
+        mConfig.mSampleRate = rate;
+      }
+    }
+  }
+
+  if (mConfig.mSampleRate != AssertedCast<uint32_t>(mInputSampleRate)) {
+    
+    int err;
+    SpeexResamplerState* resampler = speex_resampler_init(
+        mConfig.mNumberOfChannels, mInputSampleRate, mConfig.mSampleRate,
+        SPEEX_RESAMPLER_QUALITY_DEFAULT, &err);
+    if (!err) {
+      mResampler.reset(resampler);
+    } else {
+      FFMPEG_LOG(
+          "Error creating resampler in FFmpegAudioEncoder %dHz -> %dHz (%dch)",
+          mInputSampleRate, mConfig.mSampleRate, mConfig.mNumberOfChannels);
+    }
   }
 
   
@@ -99,8 +153,6 @@ nsresult FFmpegAudioEncoder<LIBAV_VER>::InitSpecific() {
 
 Result<MediaDataEncoder::EncodedData, nsresult>
 FFmpegAudioEncoder<LIBAV_VER>::EncodeOnePacket(Span<float> aSamples,
-                                               uint32_t aChannels,
-                                               uint32_t aRate,
                                                media::TimeUnit aPts) {
   
   if (!PrepareFrame()) {
@@ -108,13 +160,13 @@ FFmpegAudioEncoder<LIBAV_VER>::EncodeOnePacket(Span<float> aSamples,
     return Err(NS_ERROR_OUT_OF_MEMORY);
   }
 
-  uint32_t frameCount = aFrames.Length() / aChannels;
+  uint32_t frameCount = aSamples.Length() / mConfig.mNumberOfChannels;
 
   
   
   MOZ_ASSERT(AssertedCast<int>(frameCount) <= mCodecContext->frame_size);
 
-  mFrame->channels = AssertedCast<int>(aChannels);
+  mFrame->channels = AssertedCast<int>(mConfig.mNumberOfChannels);
 
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
   int rv = mLib->av_channel_layout_copy(&mFrame->ch_layout,
@@ -126,16 +178,17 @@ FFmpegAudioEncoder<LIBAV_VER>::EncodeOnePacket(Span<float> aSamples,
   }
 #  endif
 
-  mFrame->sample_rate = AssertedCast<int>(aRate);
+  mFrame->sample_rate = AssertedCast<int>(mConfig.mSampleRate);
   
   mFrame->nb_samples = AssertedCast<int>(frameCount);
   
   mFrame->format = mCodecContext->sample_fmt;
   
 #  if LIBAVCODEC_VERSION_MAJOR >= 59
-  mFrame->time_base = AVRational{.num = 1, .den = static_cast<int>(aRate)};
+  mFrame->time_base =
+      AVRational{.num = 1, .den = static_cast<int>(mConfig.mSampleRate)};
 #  endif
-  mFrame->pts = aPts.ToTicksAtRate(aRate);
+  mFrame->pts = aPts.ToTicksAtRate(mConfig.mSampleRate);
   mFrame->pkt_duration = frameCount;
 #  if LIBAVCODEC_VERSION_MAJOR >= 60
   mFrame->duration = frameCount;
@@ -163,9 +216,9 @@ FFmpegAudioEncoder<LIBAV_VER>::EncodeOnePacket(Span<float> aSamples,
             aSamples.Length());
   } else {
     MOZ_ASSERT(mCodecContext->sample_fmt == AV_SAMPLE_FMT_FLTP);
-    for (uint32_t i = 0; i < aChannels; i++) {
+    for (uint32_t i = 0; i < mConfig.mNumberOfChannels; i++) {
       DeinterleaveAndConvertBuffer(aSamples.data(), mFrame->nb_samples,
-                                   aChannels, mFrame->data);
+                                   mFrame->channels, mFrame->data);
     }
   }
 
@@ -184,14 +237,13 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegAudioEncoder<
   FFMPEG_LOG("Encoding %" PRIu32 " frames of audio at pts: %s",
               sample->Frames(), sample->mTime.ToString().get());
 
-  
-  
-
-  if (sample->mRate != mConfig.mSampleRate ||
+  if ((!mResampler && sample->mRate != mConfig.mSampleRate) ||
+      (mResampler &&
+       sample->mRate != AssertedCast<uint32_t>(mInputSampleRate)) ||
       sample->mChannels != mConfig.mNumberOfChannels) {
     FFMPEG_LOG(
-        "Rate or sample-rate mismatch at the input of the audio encoder, "
-        "erroring out");
+        "Rate or sample-rate at the inputof the encoder different from what "
+        "has been configured initially, erroring out");
     return Result<MediaDataEncoder::EncodedData, nsresult>(
         NS_ERROR_DOM_ENCODING_NOT_SUPPORTED_ERR);
   }
@@ -213,10 +265,32 @@ Result<MediaDataEncoder::EncodedData, nsresult> FFmpegAudioEncoder<
     mFirstPacketPts = sample->mTime;
   }
 
+  Span<float> audio = sample->Data();
+
+  if (mResampler) {
+    
+    
+    int bufferLengthGuess = std::ceil(2. * static_cast<float>(audio.size()) *
+                                      mConfig.mSampleRate / mInputSampleRate);
+    mTempBuffer.SetLength(bufferLengthGuess);
+    uint32_t inputFrames = audio.size() / mConfig.mNumberOfChannels;
+    uint32_t inputFramesProcessed = inputFrames;
+    uint32_t outputFrames = bufferLengthGuess / mConfig.mNumberOfChannels;
+    DebugOnly<int> rv = speex_resampler_process_interleaved_float(
+        mResampler.get(), audio.data(), &inputFramesProcessed,
+        mTempBuffer.Elements(), &outputFrames);
+    audio = Span<float>(mTempBuffer.Elements(),
+                        outputFrames * mConfig.mNumberOfChannels);
+    MOZ_ASSERT(inputFrames == inputFramesProcessed,
+               "increate the buffer to consume all input each time");
+    MOZ_ASSERT(rv == RESAMPLER_ERR_SUCCESS);
+  }
+
   EncodedData output;
   MediaResult rv = NS_OK;
 
-  mPacketizer->Input(sample->Data().data(), sample->Frames());
+  mPacketizer->Input(audio.data(),
+                     audio.Length() / mConfig.mNumberOfChannels);
 
   
   while (mPacketizer->PacketsAvailable() && rv.Code() == NS_OK) {
@@ -252,8 +326,7 @@ FFmpegAudioEncoder<LIBAV_VER>::DrainWithModernAPIs() {
   media::TimeUnit pts = mPacketizer->Drain(mTempBuffer.Elements(), written);
   auto audio =
       Span(mTempBuffer.Elements(), written * mPacketizer->ChannelCount());
-  auto encodeResult = EncodeOnePacket(audio, mPacketizer->ChannelCount(),
-                                      mConfig.mSampleRate, pts);
+  auto encodeResult = EncodeOnePacket(audio, pts);
   if (encodeResult.isOk()) {
     auto array = encodeResult.unwrap();
     output.AppendElements(std::move(array));
@@ -283,6 +356,7 @@ RefPtr<MediaRawData> FFmpegAudioEncoder<LIBAV_VER>::ToMediaRawData(
   data->mTimecode = data->mTime;
   data->mDuration =
       media::TimeUnit(mCodecContext->frame_size, mConfig.mSampleRate);
+  
 
   
   
@@ -299,8 +373,13 @@ RefPtr<MediaRawData> FFmpegAudioEncoder<LIBAV_VER>::ToMediaRawData(
     data->mTime = mFirstPacketPts;
   }
 
-  if (auto r = GetExtraData(aPacket); r.isOk()) {
-    data->mExtraData = r.unwrap();
+  if (mPacketsDelivered++ == 0) {
+    
+    
+    if (auto r = GetExtraData(aPacket); r.isOk()) {
+      data->mExtraData = r.unwrap();
+    }
+    data->mConfig = MakeUnique<EncoderConfig>(mConfig);
   }
 
   if (data->mExtraData) {
@@ -318,13 +397,16 @@ RefPtr<MediaRawData> FFmpegAudioEncoder<LIBAV_VER>::ToMediaRawData(
 }
 
 Result<already_AddRefed<MediaByteBuffer>, nsresult>
-FFmpegAudioEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
-  MOZ_ASSERT(aPacket);
-
+FFmpegAudioEncoder<LIBAV_VER>::GetExtraData(AVPacket* ) {
+  if (!mCodecContext->extradata_size) {
+    return Err(NS_ERROR_NOT_AVAILABLE);
+  }
   
   auto extraData = MakeRefPtr<MediaByteBuffer>();
   extraData->SetLength(mCodecContext->extradata_size);
   MOZ_ASSERT(extraData);
+  PodCopy(extraData->Elements(), mCodecContext->extradata,
+          mCodecContext->extradata_size);
   return extraData.forget();
 }
 
