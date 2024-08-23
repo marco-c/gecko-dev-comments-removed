@@ -330,7 +330,7 @@ Decimal nsRangeFrame::GetValueAtEventPoint(WidgetGUIEvent* aEvent) {
         ->GetValueAsDecimal();
   }
 
-  nsRect rangeContentRect = GetContentRectRelativeToSelf();
+  const nsRect rangeContentRect = GetContentRectRelativeToSelf();
   nsSize thumbSize;
 
   if (IsThemed()) {
@@ -397,11 +397,12 @@ void nsRangeFrame::UpdateForValueChange() {
   if (!rangeProgressFrame && !thumbFrame) {
     return;  
   }
+  const nsSize contentBoxSize = GetContentRect().Size();
   if (rangeProgressFrame) {
-    DoUpdateRangeProgressFrame(rangeProgressFrame, GetSize());
+    DoUpdateRangeProgressFrame(rangeProgressFrame, contentBoxSize);
   }
   if (thumbFrame) {
-    DoUpdateThumbPosition(thumbFrame, GetSize());
+    DoUpdateThumbPosition(thumbFrame, contentBoxSize);
   }
   if (IsThemed()) {
     
