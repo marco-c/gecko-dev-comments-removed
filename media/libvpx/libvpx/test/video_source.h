@@ -236,7 +236,6 @@ class RandomVideoSource : public DummyVideoSource {
   RandomVideoSource(int seed = ACMRandom::DeterministicSeed())
       : rnd_(seed), seed_(seed) {}
 
- protected:
   
   void Begin() override {
     frame_ = 0;
@@ -244,6 +243,7 @@ class RandomVideoSource : public DummyVideoSource {
     FillFrame();
   }
 
+ protected:
   
   
   void FillFrame() override {

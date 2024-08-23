@@ -32,19 +32,21 @@ extern "C" {
 
 
 
-#define VPX_TPL_ABI_VERSION (2) /**<\hideinitializer*/
+#define VPX_TPL_ABI_VERSION (3) /**<\hideinitializer*/
 
 
 typedef struct VpxTplBlockStats {
-  int16_t row;         
-  int16_t col;         
-  int64_t intra_cost;  
-  int64_t inter_cost;  
-  int16_t mv_r;        
-  int16_t mv_c;        
-  int64_t recrf_rate;  
-  int64_t recrf_dist;  
-  int ref_frame_index; 
+  int16_t row;            
+  int16_t col;            
+  int64_t intra_cost;     
+  int64_t inter_cost;     
+  int16_t mv_r;           
+  int16_t mv_c;           
+  int64_t srcrf_rate;     
+  int64_t srcrf_dist;     
+  int64_t inter_pred_err; 
+  int64_t intra_pred_err; 
+  int ref_frame_index;    
 } VpxTplBlockStats;
 
 

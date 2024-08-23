@@ -99,12 +99,15 @@ static int arm_get_cpu_caps(void) {
 
 #define VPX_AARCH64_HWCAP_ASIMDDP (1 << 20)
 #define VPX_AARCH64_HWCAP_SVE (1 << 22)
+#define VPX_AARCH64_HWCAP2_SVE2 (1 << 1)
 #define VPX_AARCH64_HWCAP2_I8MM (1 << 13)
 
 static int arm_get_cpu_caps(void) {
   int flags = 0;
+#if HAVE_NEON_DOTPROD || HAVE_SVE
   unsigned long hwcap = getauxval(AT_HWCAP);
-#if HAVE_NEON_I8MM
+#endif  
+#if HAVE_NEON_I8MM || HAVE_SVE2
   unsigned long hwcap2 = getauxval(AT_HWCAP2);
 #endif  
 #if HAVE_NEON
@@ -123,6 +126,11 @@ static int arm_get_cpu_caps(void) {
 #if HAVE_SVE
   if (hwcap & VPX_AARCH64_HWCAP_SVE) {
     flags |= HAS_SVE;
+  }
+#endif  
+#if HAVE_SVE2
+  if (hwcap2 & VPX_AARCH64_HWCAP2_SVE2) {
+    flags |= HAS_SVE2;
   }
 #endif  
   return flags;
@@ -193,6 +201,11 @@ int arm_cpu_caps(void) {
   }
   if (!(flags & HAS_NEON_I8MM)) {
     flags &= ~HAS_SVE;
+  }
+
+  
+  if (!(flags & HAS_SVE)) {
+    flags &= ~HAS_SVE2;
   }
 
   return flags;

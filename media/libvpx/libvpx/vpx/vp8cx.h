@@ -775,6 +775,8 @@ enum vp8e_enc_control_id {
 
 
 
+
+
   VP9E_ENABLE_EXTERNAL_RC_TPL,
 };
 

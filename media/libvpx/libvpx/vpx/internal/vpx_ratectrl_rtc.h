@@ -22,8 +22,14 @@ enum class FrameDropDecision {
   kDrop,  
 };
 
+struct UVDeltaQP {
+  
+  
+  int uvdc_delta_q;
+  int uvac_delta_q;
+};
+
 struct VpxRateControlRtcConfig {
- public:
   VpxRateControlRtcConfig() {
     width = 1280;
     height = 720;

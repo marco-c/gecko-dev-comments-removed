@@ -1157,11 +1157,12 @@ int main(int argc, const char **argv) {
       vpx_codec_control(&encoder, VP9E_GET_SVC_LAYER_ID, &layer_id);
       
       
+      
       if ((enc_cfg.ss_number_layers > 1 || enc_cfg.ts_number_layers > 1) &&
+          cx_pkt->data.frame
+              .spatial_layer_encoded[enc_cfg.ss_number_layers - 1] &&
           !(layer_id.temporal_layer_id > 0 &&
-            layer_id.temporal_layer_id == (int)enc_cfg.ts_number_layers - 1 &&
-            cx_pkt->data.frame
-                .spatial_layer_encoded[enc_cfg.ss_number_layers - 1])) {
+            layer_id.temporal_layer_id == (int)enc_cfg.ts_number_layers - 1)) {
         test_decode(&encoder, &decoder, frame_cnt, &mismatch_seen);
       }
 #endif

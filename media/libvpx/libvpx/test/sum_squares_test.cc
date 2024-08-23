@@ -119,6 +119,13 @@ INSTANTIATE_TEST_SUITE_P(
                                  &vpx_sum_squares_2d_i16_neon)));
 #endif  
 
+#if HAVE_SVE
+INSTANTIATE_TEST_SUITE_P(
+    SVE, SumSquaresTest,
+    ::testing::Values(make_tuple(&vpx_sum_squares_2d_i16_c,
+                                 &vpx_sum_squares_2d_i16_sve)));
+#endif  
+
 #if HAVE_SSE2
 INSTANTIATE_TEST_SUITE_P(
     SSE2, SumSquaresTest,

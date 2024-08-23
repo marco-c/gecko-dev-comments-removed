@@ -26,7 +26,7 @@ extern "C" {
 
 
 
-#define VPX_EXT_RATECTRL_ABI_VERSION (7)
+#define VPX_EXT_RATECTRL_ABI_VERSION (5 + VPX_TPL_ABI_VERSION)
 
 
 
@@ -82,16 +82,9 @@ typedef void *vpx_rc_model_t;
 
 
 
-
-
-
-
-
-
-
 typedef struct vpx_rc_encodeframe_decision {
-  int q_index;        
-  int max_frame_size; 
+  int q_index; 
+  int rdmult;  
 } vpx_rc_encodeframe_decision_t;
 
 
@@ -322,6 +315,7 @@ typedef struct vpx_rc_config {
   vpx_ext_rc_mode_t rc_mode; 
   int overshoot_percent;     
   int undershoot_percent;    
+  int base_qp;               
 } vpx_rc_config_t;
 
 
@@ -400,6 +394,7 @@ typedef struct vpx_rc_gop_info {
 typedef struct vpx_rc_gop_decision {
   int gop_coding_frames; 
   int use_alt_ref;       
+  int use_key_frame;     
 } vpx_rc_gop_decision_t;
 
 
@@ -450,8 +445,7 @@ typedef vpx_rc_status_t (*vpx_rc_send_tpl_gop_stats_cb_fn_t)(
 
 
 typedef vpx_rc_status_t (*vpx_rc_get_encodeframe_decision_cb_fn_t)(
-    vpx_rc_model_t rate_ctrl_model,
-    const vpx_rc_encodeframe_info_t *encode_frame_info,
+    vpx_rc_model_t rate_ctrl_model, const int frame_gop_index,
     vpx_rc_encodeframe_decision_t *frame_decision);
 
 
@@ -474,10 +468,8 @@ typedef vpx_rc_status_t (*vpx_rc_update_encodeframe_result_cb_fn_t)(
 
 
 
-
 typedef vpx_rc_status_t (*vpx_rc_get_gop_decision_cb_fn_t)(
-    vpx_rc_model_t rate_ctrl_model, const vpx_rc_gop_info_t *gop_info,
-    vpx_rc_gop_decision_t *gop_decision);
+    vpx_rc_model_t rate_ctrl_model, vpx_rc_gop_decision_t *gop_decision);
 
 
 

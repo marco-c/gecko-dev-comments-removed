@@ -193,7 +193,7 @@ TEST_F(VP9FrameSizeTestsLarge, ValidSizes) {
 
 
 
-#if defined(_WIN32) && !defined(_WIN64) || defined(__OS2__)
+#if defined(_WIN32) && !defined(_WIN64)
   video.SetSize(4096, 3072);
 #else
   video.SetSize(4096, 4096);

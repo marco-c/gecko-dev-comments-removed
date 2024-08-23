@@ -31,7 +31,6 @@ extern "C" {
 
 #include "./vpx_codec.h"  
 #include "./vpx_ext_ratectrl.h"
-#include "./vpx_tpl.h"
 
 
 
@@ -58,9 +57,14 @@ extern "C" {
 
 
 
-#define VPX_ENCODER_ABI_VERSION                                \
-  (16 + VPX_CODEC_ABI_VERSION + VPX_EXT_RATECTRL_ABI_VERSION + \
-   VPX_TPL_ABI_VERSION) /**<\hideinitializer*/
+
+
+
+
+
+#define VPX_ENCODER_ABI_VERSION \
+  (18 + VPX_CODEC_ABI_VERSION + \
+   VPX_EXT_RATECTRL_ABI_VERSION) /**<\hideinitializer*/
 
 
 
@@ -1031,6 +1035,12 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
                                  vpx_codec_pts_t pts, unsigned long duration,
                                  vpx_enc_frame_flags_t flags,
                                  vpx_enc_deadline_t deadline);
+
+
+
+
+
+
 
 
 

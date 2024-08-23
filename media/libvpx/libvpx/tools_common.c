@@ -26,15 +26,9 @@
 
 #include "vpx/vpx_codec.h"
 
-#if defined(_WIN32) || defined(__OS2__)
+#if defined(_WIN32)
 #include <io.h>
 #include <fcntl.h>
-
-#ifdef __OS2__
-#define _setmode setmode
-#define _fileno fileno
-#define _O_BINARY O_BINARY
-#endif
 #endif
 
 #define LOG_ERROR(label)               \
@@ -58,7 +52,7 @@ static size_t wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 
 FILE *set_binary_mode(FILE *stream) {
   (void)stream;
-#if defined(_WIN32) || defined(__OS2__)
+#if defined(_WIN32)
   _setmode(_fileno(stream), _O_BINARY);
 #endif
   return stream;
@@ -229,17 +223,22 @@ int vpx_img_plane_height(const vpx_image_t *img, int plane) {
 
 void vpx_img_write(const vpx_image_t *img, FILE *file) {
   int plane;
+  const int bytespp = (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1;
 
   for (plane = 0; plane < 3; ++plane) {
     const unsigned char *buf = img->planes[plane];
     const int stride = img->stride[plane];
-    const int w = vpx_img_plane_width(img, plane) *
-                  ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
+    int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
     int y;
 
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
+
     for (y = 0; y < h; ++y) {
-      fwrite(buf, 1, w, file);
+      fwrite(buf, bytespp, w, file);
       buf += stride;
     }
   }
@@ -247,17 +246,22 @@ void vpx_img_write(const vpx_image_t *img, FILE *file) {
 
 int vpx_img_read(vpx_image_t *img, FILE *file) {
   int plane;
+  const int bytespp = (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1;
 
   for (plane = 0; plane < 3; ++plane) {
     unsigned char *buf = img->planes[plane];
     const int stride = img->stride[plane];
-    const int w = vpx_img_plane_width(img, plane) *
-                  ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
+    int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
     int y;
 
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
+
     for (y = 0; y < h; ++y) {
-      if (fread(buf, 1, w, file) != (size_t)w) return 0;
+      if (fread(buf, bytespp, w, file) != (size_t)w) return 0;
       buf += stride;
     }
   }

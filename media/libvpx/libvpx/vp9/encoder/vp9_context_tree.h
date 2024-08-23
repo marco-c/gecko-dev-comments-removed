@@ -90,7 +90,7 @@ typedef struct PC_TREE {
   union {
     struct PC_TREE *split[4];
     PICK_MODE_CONTEXT *leaf_split[4];
-  };
+  } u;
   
   
   MV mv;
