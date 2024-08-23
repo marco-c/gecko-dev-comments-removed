@@ -14,7 +14,24 @@ class Injections {
 
     this._availableInjections = availableInjections;
     this._activeInjections = new Set();
+    
+    
+    this._activeInjectionHandles = new Map();
     this._customFunctions = customFunctions;
+
+    this.shouldUseScriptingAPI =
+      browser.aboutConfigPrefs.getBoolPrefSync("useScriptingAPI");
+    
+    
+    browser.appConstants.getReleaseBranch().then(releaseBranch => {
+      if (releaseBranch !== "release_or_beta") {
+        console.debug(
+          `WebCompat Injections will be injected using ${
+            this.shouldUseScriptingAPI ? "scripting" : "contentScripts"
+          } API`
+        );
+      }
+    });
   }
 
   bindAboutCompatBroker(broker) {
@@ -83,7 +100,9 @@ class Injections {
       platformInfo.os == "android" ? "android" : "desktop",
     ];
 
-    let registeredScriptIds = await this.getPromiseRegisteredScriptIds();
+    let registeredScriptIds = this.shouldUseScriptingAPI
+      ? await this.getPromiseRegisteredScriptIds()
+      : [];
 
     for (const injection of this._availableInjections) {
       if (platformMatches.includes(injection.platform)) {
@@ -103,30 +122,33 @@ class Injections {
   buildContentScriptRegistrations(contentScripts) {
     let finalConfig = Object.assign({}, contentScripts);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    finalConfig.persistAcrossSessions = false;
-
     if (!finalConfig.runAt) {
       finalConfig.runAt = "document_start";
     }
 
-    
-    
-    
-    if (Array.isArray(finalConfig.js)) {
-      finalConfig.js = finalConfig.js.map(e => e.file);
-    }
+    if (this.shouldUseScriptingAPI) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-    if (Array.isArray(finalConfig.css)) {
-      finalConfig.css = finalConfig.css.map(e => e.file);
+      finalConfig.persistAcrossSessions = false;
+
+      
+      
+      
+      if (Array.isArray(finalConfig.js)) {
+        finalConfig.js = finalConfig.js.map(e => e.file);
+      }
+
+      if (Array.isArray(finalConfig.css)) {
+        finalConfig.css = finalConfig.css.map(e => e.file);
+      }
     }
 
     return finalConfig;
@@ -159,22 +181,31 @@ class Injections {
     let injectProps;
     try {
       const { id } = injection;
-      
-      
-      
-      
-      
-      let activeScriptIds = Array.isArray(registeredScriptIds)
-        ? registeredScriptIds
-        : await this.getPromiseRegisteredScriptIds([id]);
-      injectProps = this.buildContentScriptRegistrations(
-        injection.contentScripts
-      );
-      injectProps.id = id;
-      if (!activeScriptIds.includes(id)) {
-        await browser.scripting.registerContentScripts([injectProps]);
+      if (this.shouldUseScriptingAPI) {
+        
+        
+        
+        
+        
+        let activeScriptIds = Array.isArray(registeredScriptIds)
+          ? registeredScriptIds
+          : await this.getPromiseRegisteredScriptIds([id]);
+        injectProps = this.buildContentScriptRegistrations(
+          injection.contentScripts
+        );
+        injectProps.id = id;
+        if (!activeScriptIds.includes(id)) {
+          await browser.scripting.registerContentScripts([injectProps]);
+        }
+        this._activeInjections.add(id);
+      } else {
+        const handle = await browser.contentScripts.register(
+          this.buildContentScriptRegistrations(injection.contentScripts)
+        );
+        this._activeInjections.add(id);
+        this._activeInjectionHandles.set(id, handle);
       }
-      this._activeInjections.add(id);
+
       injection.active = true;
     } catch (ex) {
       console.error(
@@ -223,7 +254,15 @@ class Injections {
 
   async disableContentScripts(injection) {
     if (this._activeInjections.has(injection.id)) {
-      await browser.scripting.unregisterContentScripts({ ids: [injection.id] });
+      if (this.shouldUseScriptingAPI) {
+        await browser.scripting.unregisterContentScripts({
+          ids: [injection.id],
+        });
+      } else {
+        const handle = this._activeInjectionHandles.get(injection.id);
+        await handle.unregister();
+        this._activeInjectionHandles.delete(injection.id);
+      }
       this._activeInjections.delete(injection);
     }
     injection.active = false;
