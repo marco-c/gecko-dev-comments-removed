@@ -921,17 +921,17 @@ static void TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame,
     return;
   }
 
-  size_t nargs = layout->numActualArgs();
-  size_t nformals = 0;
-
   JSFunction* fun = CalleeTokenToFunction(layout->calleeToken());
+
+  size_t numFormals = fun->nargs();
+  size_t numArgs = std::max(layout->numActualArgs(), numFormals);
+  size_t firstArg = 0;
+
   if (frame.type() != FrameType::JSJitToWasm &&
       !frame.isExitFrameLayout<CalledFromJitExitFrameLayout>() &&
       !fun->nonLazyScript()->mayReadFrameArgsDirectly()) {
-    nformals = fun->nargs();
+    firstArg = numFormals;
   }
-
-  size_t newTargetOffset = std::max(nargs, fun->nargs());
 
   Value* argv = layout->thisAndActualArgs();
 
@@ -939,14 +939,14 @@ static void TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame,
   TraceRoot(trc, argv, "ion-thisv");
 
   
-  for (size_t i = nformals + 1; i < nargs + 1; i++) {
-    TraceRoot(trc, &argv[i], "ion-argv");
+  for (size_t i = firstArg; i < numArgs; i++) {
+    TraceRoot(trc, &argv[i + 1], "ion-argv");
   }
 
   
   
   if (CalleeTokenIsConstructing(layout->calleeToken())) {
-    TraceRoot(trc, &argv[1 + newTargetOffset], "ion-newTarget");
+    TraceRoot(trc, &argv[1 + numArgs], "ion-newTarget");
   }
 }
 
