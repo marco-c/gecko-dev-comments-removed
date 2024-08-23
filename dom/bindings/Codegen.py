@@ -3643,10 +3643,16 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
 
         isGlobal = self.descriptor.isGlobal() is not None
 
-        call = fill(
+        ensureCaches = fill(
             """
             JS::Heap<JSObject*>* protoCache = ${protoCache};
             JS::Heap<JSObject*>* interfaceCache = ${interfaceCache};
+            """,
+            protoCache=protoCache,
+            interfaceCache=interfaceCache,
+        )
+        call = fill(
+            """
             dom::CreateInterfaceObjects(aCx, aGlobal, ${parentProto},
                                         ${protoClass}, protoCache,
                                         ${constructorProto}, ${interfaceInfo}, ${constructArgs}, ${isConstructorChromeOnly}, ${legacyFactoryFunctions},
@@ -3660,13 +3666,11 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
             """,
             protoClass=protoClass,
             parentProto=parentProto,
-            protoCache=protoCache,
             constructorProto=constructorProto,
             interfaceInfo=interfaceInfo,
             constructArgs=constructArgs,
             isConstructorChromeOnly=toStringBool(isConstructorChromeOnly),
             legacyFactoryFunctions=legacyFactoryFunctions,
-            interfaceCache=interfaceCache,
             properties=properties,
             chromeProperties=chromeProperties,
             name=name,
@@ -3889,8 +3893,14 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
             )
         else:
             defineProtoVar = None
+
+        
+        
+        
+        
         return CGList(
             [
+                CGGeneric(ensureCaches),
                 getParentProto,
                 getConstructorProto,
                 CGGeneric(call),
