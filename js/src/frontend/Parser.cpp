@@ -8006,7 +8006,11 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
   
   TokenPos namePos = pos();
 
-  bool isInClass = pc_->sc()->inClass();
+  auto isClass = [](ParseContext::Statement* stmt) {
+    return stmt->kind() == StatementKind::Class;
+  };
+
+  bool isInClass = pc_->sc()->inClass() || pc_->findInnermostStatement(isClass);
 
   
   
