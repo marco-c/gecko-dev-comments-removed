@@ -24,6 +24,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Object.h"                
+#include "js/Prefs.h"                 
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
 #include "js/TypeDecls.h"
@@ -1768,7 +1769,7 @@ static bool InternalizeJSONProperty(
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
   RootedObject context(cx);
   Rooted<UniquePtr<ParseRecordObject::EntryMap>> entries(cx);
-  if (cx->realm()->creationOptions().getJSONParseWithSource()) {
+  if (JS::Prefs::experimental_json_parse_with_source()) {
     
     bool sameVal = false;
     Rooted<Value> parsedValue(cx, parseRecord.get().value);
@@ -1919,7 +1920,7 @@ static bool InternalizeJSONProperty(
 
   RootedValue keyVal(cx, StringValue(key));
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
-  if (cx->realm()->creationOptions().getJSONParseWithSource()) {
+  if (JS::Prefs::experimental_json_parse_with_source()) {
     RootedValue contextVal(cx, ObjectValue(*context));
     return js::Call(cx, reviver, holder, keyVal, val, contextVal, vp);
   }
@@ -1940,7 +1941,7 @@ static bool Revive(JSContext* cx, HandleValue reviver,
   }
 
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
-  MOZ_ASSERT_IF(cx->realm()->creationOptions().getJSONParseWithSource(),
+  MOZ_ASSERT_IF(JS::Prefs::experimental_json_parse_with_source(),
                 pro.get().value == vp.get());
 #endif
   Rooted<jsid> id(cx, NameToId(cx->names().empty_));
@@ -1962,8 +1963,7 @@ bool js::ParseJSONWithReviver(JSContext* cx,
   
   Rooted<ParseRecordObject> pro(cx);
 #ifdef ENABLE_JSON_PARSE_WITH_SOURCE
-  if (cx->realm()->creationOptions().getJSONParseWithSource() &&
-      IsCallable(reviver)) {
+  if (JS::Prefs::experimental_json_parse_with_source() && IsCallable(reviver)) {
     Rooted<JSONReviveParser<CharT>> parser(cx, cx, chars);
     if (!parser.get().parse(vp, &pro)) {
       return false;
