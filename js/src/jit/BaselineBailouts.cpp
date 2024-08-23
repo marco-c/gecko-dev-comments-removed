@@ -1965,14 +1965,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     UnwindEnvironment(cx, ei, bailoutInfo->tryPC);
   }
 
-  
-  
-  if (!cx->isExceptionPending()) {
-    if (!CheckForInterrupt(cx)) {
-      return false;
-    }
-  }
-
   BailoutKind bailoutKind = *bailoutInfo->bailoutKind;
   JitSpew(JitSpew_BaselineBailouts,
           "  Restored outerScript=(%s:%u:%u,%u) innerScript=(%s:%u:%u,%u) "
