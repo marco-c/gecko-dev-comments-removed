@@ -414,9 +414,7 @@ class Nursery {
   void setStartToCurrentPosition();
 
   
-  
-  [[nodiscard]] bool allocateNextChunk(unsigned chunkno,
-                                       AutoLockGCBgAlloc& lock);
+  [[nodiscard]] bool allocateNextChunk(AutoLockGCBgAlloc& lock);
 
   uintptr_t position() const { return toSpace.position_; }
   uintptr_t currentEnd() const { return toSpace.currentEnd_; }
