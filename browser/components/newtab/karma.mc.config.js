@@ -211,7 +211,7 @@ module.exports = function (config) {
       devtool: "inline-source-map",
       
       resolve: {
-        extensions: [".js", ".jsx"],
+        extensions: [".js", ".jsx", ".mjs"],
         modules: [PATHS.moduleResolveDirectory, "node_modules"],
         alias: {
           asrouter: path.join(__dirname, "../asrouter"),
@@ -260,7 +260,7 @@ module.exports = function (config) {
           },
           {
             enforce: "post",
-            test: /\.js[mx]?$/,
+            test: /\.js[x]?$/,
             loader: "@jsdevtools/coverage-istanbul-loader",
             options: { esModules: true },
             include: [

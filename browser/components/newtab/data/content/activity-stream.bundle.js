@@ -550,19 +550,19 @@ class SimpleHashRouter extends (external_React_default()).PureComponent {
     super(props);
     this.onHashChange = this.onHashChange.bind(this);
     this.state = {
-      hash: __webpack_require__.g.location.hash
+      hash: globalThis.location.hash
     };
   }
   onHashChange() {
     this.setState({
-      hash: __webpack_require__.g.location.hash
+      hash: globalThis.location.hash
     });
   }
   componentWillMount() {
-    __webpack_require__.g.addEventListener("hashchange", this.onHashChange);
+    globalThis.addEventListener("hashchange", this.onHashChange);
   }
   componentWillUnmount() {
-    __webpack_require__.g.removeEventListener("hashchange", this.onHashChange);
+    globalThis.removeEventListener("hashchange", this.onHashChange);
   }
   render() {
     const [, ...routes] = this.state.hash.split("-");
@@ -887,9 +887,9 @@ class CollapseToggle extends (external_React_default()).PureComponent {
   }
   setBodyClass() {
     if (this.renderAdmin && !this.state.collapsed) {
-      __webpack_require__.g.document.body.classList.add("no-scroll");
+      globalThis.document.body.classList.add("no-scroll");
     } else {
-      __webpack_require__.g.document.body.classList.remove("no-scroll");
+      globalThis.document.body.classList.remove("no-scroll");
     }
   }
   componentDidMount() {
@@ -899,7 +899,7 @@ class CollapseToggle extends (external_React_default()).PureComponent {
     this.setBodyClass();
   }
   componentWillUnmount() {
-    __webpack_require__.g.document.body.classList.remove("no-scroll");
+    globalThis.document.body.classList.remove("no-scroll");
   }
   render() {
     const {
@@ -1267,11 +1267,11 @@ class ContextMenu extends (external_React_default()).PureComponent {
   componentDidMount() {
     this.onShow();
     setTimeout(() => {
-      __webpack_require__.g.addEventListener("click", this.hideContext);
+      globalThis.addEventListener("click", this.hideContext);
     }, 0);
   }
   componentWillUnmount() {
-    __webpack_require__.g.removeEventListener("click", this.hideContext);
+    globalThis.removeEventListener("click", this.hideContext);
   }
   onClick(event) {
     
@@ -1403,17 +1403,15 @@ const ContextMenuItem = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 
+
 const _OpenInPrivateWindow = site => ({
   id: "newtab-menu-open-new-private-window",
   icon: "new-window-private",
   action: actionCreators.OnlyToMain({
     type: actionTypes.OPEN_PRIVATE_WINDOW,
-    data: {
-      url: site.url,
-      referrer: site.referrer
-    }
+    data: { url: site.url, referrer: site.referrer },
   }),
-  userEvent: "OPEN_PRIVATE_WINDOW"
+  userEvent: "OPEN_PRIVATE_WINDOW",
 });
 
 
@@ -1422,19 +1420,15 @@ const _OpenInPrivateWindow = site => ({
 
 
 const LinkMenuOptions = {
-  Separator: () => ({
-    type: "separator"
-  }),
-  EmptyItem: () => ({
-    type: "empty"
-  }),
+  Separator: () => ({ type: "separator" }),
+  EmptyItem: () => ({ type: "empty" }),
   ShowPrivacyInfo: () => ({
     id: "newtab-menu-show-privacy-info",
     icon: "info",
     action: {
-      type: actionTypes.SHOW_PRIVACY_INFO
+      type: actionTypes.SHOW_PRIVACY_INFO,
     },
-    userEvent: "SHOW_PRIVACY_INFO"
+    userEvent: "SHOW_PRIVACY_INFO",
   }),
   AboutSponsored: site => ({
     id: "newtab-menu-show-privacy-info",
@@ -1444,32 +1438,28 @@ const LinkMenuOptions = {
       data: {
         advertiser_name: (site.label || site.hostname).toLocaleLowerCase(),
         position: site.sponsored_position,
-        tile_id: site.sponsored_tile_id
-      }
+        tile_id: site.sponsored_tile_id,
+      },
     }),
-    userEvent: "TOPSITE_SPONSOR_INFO"
+    userEvent: "TOPSITE_SPONSOR_INFO",
   }),
   RemoveBookmark: site => ({
     id: "newtab-menu-remove-bookmark",
     icon: "bookmark-added",
     action: actionCreators.AlsoToMain({
       type: actionTypes.DELETE_BOOKMARK_BY_ID,
-      data: site.bookmarkGuid
+      data: site.bookmarkGuid,
     }),
-    userEvent: "BOOKMARK_DELETE"
+    userEvent: "BOOKMARK_DELETE",
   }),
   AddBookmark: site => ({
     id: "newtab-menu-bookmark",
     icon: "bookmark-hollow",
     action: actionCreators.AlsoToMain({
       type: actionTypes.BOOKMARK_URL,
-      data: {
-        url: site.url,
-        title: site.title,
-        type: site.type
-      }
+      data: { url: site.url, title: site.title, type: site.type },
     }),
-    userEvent: "BOOKMARK_ADD"
+    userEvent: "BOOKMARK_ADD",
   }),
   OpenInNewWindow: site => ({
     id: "newtab-menu-open-new-window",
@@ -1480,10 +1470,10 @@ const LinkMenuOptions = {
         referrer: site.referrer,
         typedBonus: site.typedBonus,
         url: site.url,
-        sponsored_tile_id: site.sponsored_tile_id
-      }
+        sponsored_tile_id: site.sponsored_tile_id,
+      },
     }),
-    userEvent: "OPEN_NEW_WINDOW"
+    userEvent: "OPEN_NEW_WINDOW",
   }),
   
   
@@ -1504,20 +1494,20 @@ const LinkMenuOptions = {
         pocket_id: site.pocket_id,
         
         isSponsoredTopSite: site.sponsored_position,
-        ...(site.flight_id ? {
-          flight_id: site.flight_id
-        } : {}),
+        ...(site.flight_id ? { flight_id: site.flight_id } : {}),
         
         
-        ...(site.sponsored_position ? {
-          advertiser_name: (site.label || site.hostname)?.toLocaleLowerCase()
-        } : {}),
+        ...(site.sponsored_position
+          ? {
+              advertiser_name: (
+                site.label || site.hostname
+              )?.toLocaleLowerCase(),
+            }
+          : {}),
         position: pos,
-        ...(site.sponsored_tile_id ? {
-          tile_id: site.sponsored_tile_id
-        } : {}),
-        is_pocket_card: site.type === "CardGrid"
-      }))
+        ...(site.sponsored_tile_id ? { tile_id: site.sponsored_tile_id } : {}),
+        is_pocket_card: site.type === "CardGrid",
+      })),
     }),
     impression: actionCreators.ImpressionStats({
       source: eventSource,
@@ -1525,13 +1515,12 @@ const LinkMenuOptions = {
       tiles: tiles.map((site, index) => ({
         id: site.guid,
         pos: pos + index,
-        ...(site.shim && site.shim.delete ? {
-          shim: site.shim.delete
-        } : {})
-      }))
+        ...(site.shim && site.shim.delete ? { shim: site.shim.delete } : {}),
+      })),
     }),
-    userEvent: "BLOCK"
+    userEvent: "BLOCK",
   }),
+
   
   
   WebExtDismiss: (site, index, eventSource) => ({
@@ -1541,8 +1530,8 @@ const LinkMenuOptions = {
     action: actionCreators.WebExtEvent(actionTypes.WEBEXT_DISMISS, {
       source: eventSource,
       url: site.url,
-      action_position: index
-    })
+      action_position: index,
+    }),
   }),
   DeleteUrl: (site, index, eventSource, isEnabled, siteInfo) => ({
     id: "newtab-menu-delete-history",
@@ -1550,77 +1539,74 @@ const LinkMenuOptions = {
     action: {
       type: actionTypes.DIALOG_OPEN,
       data: {
-        onConfirm: [actionCreators.AlsoToMain({
-          type: actionTypes.DELETE_HISTORY_URL,
-          data: {
-            url: site.url,
-            pocket_id: site.pocket_id,
-            forceBlock: site.bookmarkGuid
-          }
-        }), actionCreators.UserEvent(Object.assign({
-          event: "DELETE",
-          source: eventSource,
-          action_position: index
-        }, siteInfo))],
+        onConfirm: [
+          actionCreators.AlsoToMain({
+            type: actionTypes.DELETE_HISTORY_URL,
+            data: {
+              url: site.url,
+              pocket_id: site.pocket_id,
+              forceBlock: site.bookmarkGuid,
+            },
+          }),
+          actionCreators.UserEvent(
+            Object.assign(
+              { event: "DELETE", source: eventSource, action_position: index },
+              siteInfo
+            )
+          ),
+        ],
         eventSource,
-        body_string_id: ["newtab-confirm-delete-history-p1", "newtab-confirm-delete-history-p2"],
+        body_string_id: [
+          "newtab-confirm-delete-history-p1",
+          "newtab-confirm-delete-history-p2",
+        ],
         confirm_button_string_id: "newtab-topsites-delete-history-button",
         cancel_button_string_id: "newtab-topsites-cancel-button",
-        icon: "modal-delete"
-      }
+        icon: "modal-delete",
+      },
     },
-    userEvent: "DIALOG_OPEN"
+    userEvent: "DIALOG_OPEN",
   }),
   ShowFile: site => ({
     id: "newtab-menu-show-file",
     icon: "search",
     action: actionCreators.OnlyToMain({
       type: actionTypes.SHOW_DOWNLOAD_FILE,
-      data: {
-        url: site.url
-      }
-    })
+      data: { url: site.url },
+    }),
   }),
   OpenFile: site => ({
     id: "newtab-menu-open-file",
     icon: "open-file",
     action: actionCreators.OnlyToMain({
       type: actionTypes.OPEN_DOWNLOAD_FILE,
-      data: {
-        url: site.url
-      }
-    })
+      data: { url: site.url },
+    }),
   }),
   CopyDownloadLink: site => ({
     id: "newtab-menu-copy-download-link",
     icon: "copy",
     action: actionCreators.OnlyToMain({
       type: actionTypes.COPY_DOWNLOAD_LINK,
-      data: {
-        url: site.url
-      }
-    })
+      data: { url: site.url },
+    }),
   }),
   GoToDownloadPage: site => ({
     id: "newtab-menu-go-to-download-page",
     icon: "download",
     action: actionCreators.OnlyToMain({
       type: actionTypes.OPEN_LINK,
-      data: {
-        url: site.referrer
-      }
+      data: { url: site.referrer },
     }),
-    disabled: !site.referrer
+    disabled: !site.referrer,
   }),
   RemoveDownload: site => ({
     id: "newtab-menu-remove-download",
     icon: "delete",
     action: actionCreators.OnlyToMain({
       type: actionTypes.REMOVE_DOWNLOAD_FILE,
-      data: {
-        url: site.url
-      }
-    })
+      data: { url: site.url },
+    }),
   }),
   PinTopSite: (site, index) => ({
     id: "newtab-menu-pin",
@@ -1629,23 +1615,19 @@ const LinkMenuOptions = {
       type: actionTypes.TOP_SITES_PIN,
       data: {
         site,
-        index
-      }
+        index,
+      },
     }),
-    userEvent: "PIN"
+    userEvent: "PIN",
   }),
   UnpinTopSite: site => ({
     id: "newtab-menu-unpin",
     icon: "unpin",
     action: actionCreators.AlsoToMain({
       type: actionTypes.TOP_SITES_UNPIN,
-      data: {
-        site: {
-          url: site.url
-        }
-      }
+      data: { site: { url: site.url } },
     }),
-    userEvent: "UNPIN"
+    userEvent: "UNPIN",
   }),
   SaveToPocket: (site, index, eventSource = "CARDGRID") => ({
     id: "newtab-menu-save-to-pocket",
@@ -1653,65 +1635,76 @@ const LinkMenuOptions = {
     action: actionCreators.AlsoToMain({
       type: actionTypes.SAVE_TO_POCKET,
       data: {
-        site: {
-          url: site.url,
-          title: site.title
-        }
-      }
+        site: { url: site.url, title: site.title },
+      },
     }),
     impression: actionCreators.ImpressionStats({
       source: eventSource,
       pocket: 0,
-      tiles: [{
-        id: site.guid,
-        pos: index,
-        ...(site.shim && site.shim.save ? {
-          shim: site.shim.save
-        } : {})
-      }]
+      tiles: [
+        {
+          id: site.guid,
+          pos: index,
+          ...(site.shim && site.shim.save ? { shim: site.shim.save } : {}),
+        },
+      ],
     }),
-    userEvent: "SAVE_TO_POCKET"
+    userEvent: "SAVE_TO_POCKET",
   }),
   DeleteFromPocket: site => ({
     id: "newtab-menu-delete-pocket",
     icon: "pocket-delete",
     action: actionCreators.AlsoToMain({
       type: actionTypes.DELETE_FROM_POCKET,
-      data: {
-        pocket_id: site.pocket_id
-      }
+      data: { pocket_id: site.pocket_id },
     }),
-    userEvent: "DELETE_FROM_POCKET"
+    userEvent: "DELETE_FROM_POCKET",
   }),
   ArchiveFromPocket: site => ({
     id: "newtab-menu-archive-pocket",
     icon: "pocket-archive",
     action: actionCreators.AlsoToMain({
       type: actionTypes.ARCHIVE_FROM_POCKET,
-      data: {
-        pocket_id: site.pocket_id
-      }
+      data: { pocket_id: site.pocket_id },
     }),
-    userEvent: "ARCHIVE_FROM_POCKET"
+    userEvent: "ARCHIVE_FROM_POCKET",
   }),
   EditTopSite: (site, index) => ({
     id: "newtab-menu-edit-topsites",
     icon: "edit",
     action: {
       type: actionTypes.TOP_SITES_EDIT,
-      data: {
-        index
-      }
-    }
+      data: { index },
+    },
   }),
-  CheckBookmark: site => site.bookmarkGuid ? LinkMenuOptions.RemoveBookmark(site) : LinkMenuOptions.AddBookmark(site),
-  CheckPinTopSite: (site, index) => site.isPinned ? LinkMenuOptions.UnpinTopSite(site) : LinkMenuOptions.PinTopSite(site, index),
-  CheckSavedToPocket: (site, index, source) => site.pocket_id ? LinkMenuOptions.DeleteFromPocket(site) : LinkMenuOptions.SaveToPocket(site, index, source),
-  CheckBookmarkOrArchive: site => site.pocket_id ? LinkMenuOptions.ArchiveFromPocket(site) : LinkMenuOptions.CheckBookmark(site),
-  CheckArchiveFromPocket: site => site.pocket_id ? LinkMenuOptions.ArchiveFromPocket(site) : LinkMenuOptions.EmptyItem(),
-  CheckDeleteFromPocket: site => site.pocket_id ? LinkMenuOptions.DeleteFromPocket(site) : LinkMenuOptions.EmptyItem(),
-  OpenInPrivateWindow: (site, index, eventSource, isEnabled) => isEnabled ? _OpenInPrivateWindow(site) : LinkMenuOptions.EmptyItem()
+  CheckBookmark: site =>
+    site.bookmarkGuid
+      ? LinkMenuOptions.RemoveBookmark(site)
+      : LinkMenuOptions.AddBookmark(site),
+  CheckPinTopSite: (site, index) =>
+    site.isPinned
+      ? LinkMenuOptions.UnpinTopSite(site)
+      : LinkMenuOptions.PinTopSite(site, index),
+  CheckSavedToPocket: (site, index, source) =>
+    site.pocket_id
+      ? LinkMenuOptions.DeleteFromPocket(site)
+      : LinkMenuOptions.SaveToPocket(site, index, source),
+  CheckBookmarkOrArchive: site =>
+    site.pocket_id
+      ? LinkMenuOptions.ArchiveFromPocket(site)
+      : LinkMenuOptions.CheckBookmark(site),
+  CheckArchiveFromPocket: site =>
+    site.pocket_id
+      ? LinkMenuOptions.ArchiveFromPocket(site)
+      : LinkMenuOptions.EmptyItem(),
+  CheckDeleteFromPocket: site =>
+    site.pocket_id
+      ? LinkMenuOptions.DeleteFromPocket(site)
+      : LinkMenuOptions.EmptyItem(),
+  OpenInPrivateWindow: (site, index, eventSource, isEnabled) =>
+    isEnabled ? _OpenInPrivateWindow(site) : LinkMenuOptions.EmptyItem(),
 };
+
 ;
 
 
@@ -1938,15 +1931,41 @@ class DSLinkMenu extends (external_React_default()).PureComponent {
 
 
 const TOP_SITES_SOURCE = "TOP_SITES";
-const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
-const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "ShowPrivacyInfo"];
-const TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "AboutSponsored"];
+const TOP_SITES_CONTEXT_MENU_OPTIONS = [
+  "CheckPinTopSite",
+  "EditTopSite",
+  "Separator",
+  "OpenInNewWindow",
+  "OpenInPrivateWindow",
+  "Separator",
+  "BlockUrl",
+  "DeleteUrl",
+];
+const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = [
+  "OpenInNewWindow",
+  "OpenInPrivateWindow",
+  "Separator",
+  "BlockUrl",
+  "ShowPrivacyInfo",
+];
+const TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS = [
+  "OpenInNewWindow",
+  "OpenInPrivateWindow",
+  "Separator",
+  "BlockUrl",
+  "AboutSponsored",
+];
 
-const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"];
+const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = [
+  "CheckPinTopSite",
+  "Separator",
+  "BlockUrl",
+];
 
 const MIN_RICH_FAVICON_SIZE = 96;
 
 const MIN_SMALL_FAVICON_SIZE = 16;
+
 ;
 
 
@@ -2151,8 +2170,8 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
   }
 }
 ImpressionStats_ImpressionStats.defaultProps = {
-  IntersectionObserver: __webpack_require__.g.IntersectionObserver,
-  document: __webpack_require__.g.document,
+  IntersectionObserver: globalThis.IntersectionObserver,
+  document: globalThis.document,
   rows: [],
   source: ""
 };
@@ -2235,29 +2254,30 @@ class SafeAnchor extends (external_React_default()).PureComponent {
 const cardContextTypes = {
   history: {
     fluentID: "newtab-label-visited",
-    icon: "history-item"
+    icon: "history-item",
   },
   removedBookmark: {
     fluentID: "newtab-label-removed-bookmark",
-    icon: "bookmark-removed"
+    icon: "bookmark-removed",
   },
   bookmark: {
     fluentID: "newtab-label-bookmarked",
-    icon: "bookmark-added"
+    icon: "bookmark-added",
   },
   trending: {
     fluentID: "newtab-label-recommended",
-    icon: "trending"
+    icon: "trending",
   },
   pocket: {
     fluentID: "newtab-label-saved",
-    icon: "pocket"
+    icon: "pocket",
   },
   download: {
     fluentID: "newtab-label-download",
-    icon: "download"
-  }
+    icon: "download",
+  },
 };
+
 ;
 
 
@@ -3271,7 +3291,7 @@ function DSSubHeader({
 }
 function OnboardingExperience({
   dispatch,
-  windowObj = __webpack_require__.g
+  windowObj = globalThis
 }) {
   const [dismissed, setDismissed] = (0,external_React_namespaceObject.useState)(false);
   const [maxHeight, setMaxHeight] = (0,external_React_namespaceObject.useState)(null);
@@ -4021,7 +4041,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
   }
 }
 _CollapsibleSection.defaultProps = {
-  document: __webpack_require__.g.document || {
+  document: globalThis.document || {
     addEventListener: () => {},
     removeEventListener: () => {},
     visibilityState: "hidden"
@@ -4109,7 +4129,7 @@ class ModalOverlayWrapper extends (external_React_default()).PureComponent {
   }
 }
 ModalOverlayWrapper.defaultProps = {
-  document: __webpack_require__.g.document
+  document: globalThis.document
 };
 ;
 
@@ -4460,8 +4480,13 @@ class DSTextPromo extends (external_React_default()).PureComponent {
 
 const ScreenshotUtils = {
   isBlob(isLocal, image) {
-    return !!(image && image.path && (!isLocal && image.data || isLocal && image.url));
+    return !!(
+      image &&
+      image.path &&
+      ((!isLocal && image.data) || (isLocal && image.url))
+    );
   },
+
   
   createLocalImageObject(remoteImage) {
     if (!remoteImage) {
@@ -4469,33 +4494,36 @@ const ScreenshotUtils = {
     }
     if (this.isBlob(false, remoteImage)) {
       return {
-        url: __webpack_require__.g.URL.createObjectURL(remoteImage.data),
-        path: remoteImage.path
+        url: globalThis.URL.createObjectURL(remoteImage.data),
+        path: remoteImage.path,
       };
     }
-    return {
-      url: remoteImage
-    };
+    return { url: remoteImage };
   },
+
   
   
   maybeRevokeBlobObjectURL(localImage) {
     if (this.isBlob(true, localImage)) {
-      __webpack_require__.g.URL.revokeObjectURL(localImage.url);
+      globalThis.URL.revokeObjectURL(localImage.url);
     }
   },
+
   
   isRemoteImageLocal(localImage, remoteImage) {
     
     if (remoteImage && localImage) {
-      return this.isBlob(false, remoteImage) ? localImage.path === remoteImage.path : localImage.url === remoteImage;
+      return this.isBlob(false, remoteImage)
+        ? localImage.path === remoteImage.path
+        : localImage.url === remoteImage;
     }
 
     
     
     return !remoteImage && !localImage;
-  }
+  },
 };
+
 ;
 
 
@@ -4825,9 +4853,8 @@ const PlaceholderCard = props => external_React_default().createElement(Card, {
 
 
 
-
-
 let usablePerfObj = window.performance;
+
 function _PerfService(options) {
   
   
@@ -4837,6 +4864,7 @@ function _PerfService(options) {
     this._perf = usablePerfObj;
   }
 }
+
 _PerfService.prototype = {
   
 
@@ -4849,6 +4877,7 @@ _PerfService.prototype = {
   mark: function mark(str) {
     this._perf.mark(str);
   },
+
   
 
 
@@ -4857,9 +4886,10 @@ _PerfService.prototype = {
 
 
 
-  getEntriesByName: function getEntriesByName(name, type) {
-    return this._perf.getEntriesByName(name, type);
+  getEntriesByName: function getEntriesByName(entryName, type) {
+    return this._perf.getEntriesByName(entryName, type);
   },
+
   
 
 
@@ -4878,6 +4908,7 @@ _PerfService.prototype = {
   get timeOrigin() {
     return this._perf.timeOrigin;
   },
+
   
 
 
@@ -4888,6 +4919,7 @@ _PerfService.prototype = {
   absNow: function absNow() {
     return this.timeOrigin + this._perf.now();
   },
+
   
 
 
@@ -4906,16 +4938,20 @@ _PerfService.prototype = {
 
 
 
-  getMostRecentAbsMarkStartByName(name) {
-    let entries = this.getEntriesByName(name, "mark");
+  getMostRecentAbsMarkStartByName(entryName) {
+    let entries = this.getEntriesByName(entryName, "mark");
+
     if (!entries.length) {
-      throw new Error(`No marks with the name ${name}`);
+      throw new Error(`No marks with the name ${entryName}`);
     }
+
     let mostRecentEntry = entries[entries.length - 1];
     return this._perf.timeOrigin + mostRecentEntry.startTime;
-  }
+  },
 };
+
 const perfService = new _PerfService();
+
 ;
 
 
@@ -6446,8 +6482,8 @@ class TopSiteImpressionWrapper extends (external_React_default()).PureComponent 
   }
 }
 TopSiteImpressionWrapper.defaultProps = {
-  IntersectionObserver: __webpack_require__.g.IntersectionObserver,
-  document: __webpack_require__.g.document,
+  IntersectionObserver: globalThis.IntersectionObserver,
+  document: globalThis.document,
   actionType: null,
   tile: null
 };
@@ -7599,7 +7635,7 @@ class _TopSites extends (external_React_default()).PureComponent {
     
     let sitesPerRow = TOP_SITES_MAX_SITES_PER_ROW;
     
-    if (!__webpack_require__.g.matchMedia(`(min-width: 1072px)`).matches) {
+    if (!globalThis.matchMedia(`(min-width: 1072px)`).matches) {
       sitesPerRow -= 2;
     }
     return this.props.TopSites.rows.slice(0, this.props.TopSitesRows * sitesPerRow);
@@ -7731,7 +7767,7 @@ class Section extends (external_React_default()).PureComponent {
       props
     } = this;
     let cardsPerRow = CARDS_PER_ROW_DEFAULT;
-    if (props.compactCards && __webpack_require__.g.matchMedia(`(min-width: 1072px)`).matches) {
+    if (props.compactCards && globalThis.matchMedia(`(min-width: 1072px)`).matches) {
       
       
       
@@ -7967,7 +8003,7 @@ class Section extends (external_React_default()).PureComponent {
   }
 }
 Section.defaultProps = {
-  document: __webpack_require__.g.document,
+  document: globalThis.document,
   rows: [],
   emptyState: {},
   pref: {},
@@ -8191,15 +8227,8 @@ class SectionTitle extends (external_React_default()).PureComponent {
 
 
 
-const selectLayoutRender = ({
-  state = {},
-  prefs = {}
-}) => {
-  const {
-    layout,
-    feeds,
-    spocs
-  } = state;
+const selectLayoutRender = ({ state = {}, prefs = {} }) => {
+  const { layout, feeds, spocs } = state;
   let spocIndexPlacementMap = {};
 
   
@@ -8208,8 +8237,16 @@ const selectLayoutRender = ({
 
 
 
-  function fillSpocPositionsForPlacement(data, spocsConfig, spocsData, placementName) {
-    if (!spocIndexPlacementMap[placementName] && spocIndexPlacementMap[placementName] !== 0) {
+  function fillSpocPositionsForPlacement(
+    data,
+    spocsConfig,
+    spocsData,
+    placementName
+  ) {
+    if (
+      !spocIndexPlacementMap[placementName] &&
+      spocIndexPlacementMap[placementName] !== 0
+    ) {
       spocIndexPlacementMap[placementName] = 0;
     }
     const results = [...data];
@@ -8232,107 +8269,154 @@ const selectLayoutRender = ({
         results.splice(position.index, 0, spoc);
       }
     }
+
     return results;
   }
+
   const positions = {};
-  const DS_COMPONENTS = ["Message", "TextPromo", "SectionTitle", "Signup", "Navigation", "CardGrid", "CollectionCardGrid", "HorizontalRule", "PrivacyLink"];
+  const DS_COMPONENTS = [
+    "Message",
+    "TextPromo",
+    "SectionTitle",
+    "Signup",
+    "Navigation",
+    "CardGrid",
+    "CollectionCardGrid",
+    "HorizontalRule",
+    "PrivacyLink",
+  ];
+
   const filterArray = [];
+
   if (!prefs["feeds.topsites"]) {
     filterArray.push("TopSites");
   }
-  const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+
+  const pocketEnabled =
+    prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
   if (!pocketEnabled) {
     filterArray.push(...DS_COMPONENTS);
   }
+
   const placeholderComponent = component => {
     if (!component.feed) {
       
       return {
         ...component,
         data: {
-          spocs: []
-        }
+          spocs: [],
+        },
       };
     }
     const data = {
-      recommendations: []
+      recommendations: [],
     };
+
     let items = 0;
     if (component.properties && component.properties.items) {
       items = component.properties.items;
     }
     for (let i = 0; i < items; i++) {
-      data.recommendations.push({
-        placeholder: true
-      });
+      data.recommendations.push({ placeholder: true });
     }
-    return {
-      ...component,
-      data
-    };
+
+    return { ...component, data };
   };
 
   
   const handleSpocs = (data, component) => {
     let result = [...data];
     
-    if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
+    if (
+      component.spocs &&
+      component.spocs.positions &&
+      component.spocs.positions.length
+    ) {
       const placement = component.placement || {};
       const placementName = placement.name || "spocs";
       const spocsData = spocs.data[placementName];
       
-      if (spocs.loaded && spocsData && spocsData.items && spocsData.items.length) {
-        result = fillSpocPositionsForPlacement(result, component.spocs, spocsData.items, placementName);
+      if (
+        spocs.loaded &&
+        spocsData &&
+        spocsData.items &&
+        spocsData.items.length
+      ) {
+        result = fillSpocPositionsForPlacement(
+          result,
+          component.spocs,
+          spocsData.items,
+          placementName
+        );
       }
     }
     return result;
   };
+
   const handleComponent = component => {
-    if (component.spocs && component.spocs.positions && component.spocs.positions.length) {
+    if (
+      component.spocs &&
+      component.spocs.positions &&
+      component.spocs.positions.length
+    ) {
       const placement = component.placement || {};
       const placementName = placement.name || "spocs";
       const spocsData = spocs.data[placementName];
-      if (spocs.loaded && spocsData && spocsData.items && spocsData.items.length) {
+      if (
+        spocs.loaded &&
+        spocsData &&
+        spocsData.items &&
+        spocsData.items.length
+      ) {
         return {
           ...component,
           data: {
-            spocs: spocsData.items.filter(spoc => spoc && !spocs.blocked.includes(spoc.url)).map((spoc, index) => ({
-              ...spoc,
-              pos: index
-            }))
-          }
+            spocs: spocsData.items
+              .filter(spoc => spoc && !spocs.blocked.includes(spoc.url))
+              .map((spoc, index) => ({
+                ...spoc,
+                pos: index,
+              })),
+          },
         };
       }
     }
     return {
       ...component,
       data: {
-        spocs: []
-      }
+        spocs: [],
+      },
     };
   };
+
   const handleComponentWithFeed = component => {
     positions[component.type] = positions[component.type] || 0;
     let data = {
-      recommendations: []
+      recommendations: [],
     };
+
     const feed = feeds.data[component.feed.url];
     if (feed && feed.data) {
       data = {
         ...feed.data,
-        recommendations: [...(feed.data.recommendations || [])]
+        recommendations: [...(feed.data.recommendations || [])],
       };
     }
+
     if (component && component.properties && component.properties.offset) {
       data = {
         ...data,
-        recommendations: data.recommendations.slice(component.properties.offset)
+        recommendations: data.recommendations.slice(
+          component.properties.offset
+        ),
       };
     }
+
     data = {
       ...data,
-      recommendations: handleSpocs(data.recommendations, component)
+      recommendations: handleSpocs(data.recommendations, component),
     };
+
     let items = 0;
     if (component.properties && component.properties.items) {
       items = Math.min(component.properties.items, data.recommendations.length);
@@ -8344,27 +8428,36 @@ const selectLayoutRender = ({
     for (let i = 0; i < items; i++) {
       data.recommendations[i] = {
         ...data.recommendations[i],
-        pos: positions[component.type]++
+        pos: positions[component.type]++,
       };
     }
-    return {
-      ...component,
-      data
-    };
+
+    return { ...component, data };
   };
+
   const renderLayout = () => {
     const renderedLayoutArray = [];
-    for (const row of layout.filter(r => r.components.filter(c => !filterArray.includes(c.type)).length)) {
+    for (const row of layout.filter(
+      r => r.components.filter(c => !filterArray.includes(c.type)).length
+    )) {
       let components = [];
       renderedLayoutArray.push({
         ...row,
-        components
+        components,
       });
-      for (const component of row.components.filter(c => !filterArray.includes(c.type))) {
+      for (const component of row.components.filter(
+        c => !filterArray.includes(c.type)
+      )) {
         const spocsConfig = component.spocs;
         if (spocsConfig || component.feed) {
           
-          if (component.feed && !feeds.data[component.feed.url] || spocsConfig && spocsConfig.positions && spocsConfig.positions.length && !spocs.loaded) {
+          if (
+            (component.feed && !feeds.data[component.feed.url]) ||
+            (spocsConfig &&
+              spocsConfig.positions &&
+              spocsConfig.positions.length &&
+              !spocs.loaded)
+          ) {
             components.push(placeholderComponent(component));
             return renderedLayoutArray;
           }
@@ -8380,11 +8473,12 @@ const selectLayoutRender = ({
     }
     return renderedLayoutArray;
   };
+
   const layoutRender = renderLayout();
-  return {
-    layoutRender
-  };
+
+  return { layoutRender };
 };
+
 ;
 
 
@@ -8716,7 +8810,7 @@ const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(stat
   DiscoveryStream: state.DiscoveryStream,
   Prefs: state.Prefs,
   Sections: state.Sections,
-  document: __webpack_require__.g.document,
+  document: globalThis.document,
   App: state.App
 }))(_DiscoveryStreamBase);
 ;
@@ -9042,39 +9136,41 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
 
 
 
-const IS_NEWTAB = __webpack_require__.g.document && __webpack_require__.g.document.documentURI === "about:newtab";
+const IS_NEWTAB =
+  globalThis.document && globalThis.document.documentURI === "about:newtab";
 const NEWTAB_DARK_THEME = {
   ntp_background: {
     r: 42,
     g: 42,
     b: 46,
-    a: 1
+    a: 1,
   },
   ntp_card_background: {
     r: 66,
     g: 65,
     b: 77,
-    a: 1
+    a: 1,
   },
   ntp_text: {
     r: 249,
     g: 249,
     b: 250,
-    a: 1
+    a: 1,
   },
   sidebar: {
     r: 56,
     g: 56,
     b: 61,
-    a: 1
+    a: 1,
   },
   sidebar_text: {
     r: 249,
     g: 249,
     b: 250,
-    a: 1
-  }
+    a: 1,
+  },
 };
+
 ;
 
 
@@ -9304,7 +9400,7 @@ class _Base extends (external_React_default()).PureComponent {
     
     
     document.body.classList.contains("inline-onboarding") ? "inline-onboarding" : ""].filter(v => v).join(" ");
-    __webpack_require__.g.document.body.className = bodyClassName;
+    globalThis.document.body.className = bodyClassName;
   }
   render() {
     const {
@@ -9476,13 +9572,15 @@ const Base = (0,external_ReactRedux_namespaceObject.connect)(state => ({
 
 
 
+
 const detect_user_session_start_VISIBLE = "visible";
 const detect_user_session_start_VISIBILITY_CHANGE_EVENT = "visibilitychange";
+
 class DetectUserSessionStart {
   constructor(store, options = {}) {
     this._store = store;
     
-    this.document = options.document || __webpack_require__.g.document;
+    this.document = options.document || globalThis.document;
     this._perfService = options.perfService || perfService;
     this._onVisibilityChange = this._onVisibilityChange.bind(this);
   }
@@ -9500,7 +9598,10 @@ class DetectUserSessionStart {
       this._sendEvent();
     } else {
       
-      this.document.addEventListener(detect_user_session_start_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+      this.document.addEventListener(
+        detect_user_session_start_VISIBILITY_CHANGE_EVENT,
+        this._onVisibilityChange
+      );
     }
   }
 
@@ -9511,14 +9612,19 @@ class DetectUserSessionStart {
 
   _sendEvent() {
     this._perfService.mark("visibility_event_rcvd_ts");
+
     try {
-      let visibility_event_rcvd_ts = this._perfService.getMostRecentAbsMarkStartByName("visibility_event_rcvd_ts");
-      this._store.dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.SAVE_SESSION_PERF_DATA,
-        data: {
-          visibility_event_rcvd_ts
-        }
-      }));
+      let visibility_event_rcvd_ts =
+        this._perfService.getMostRecentAbsMarkStartByName(
+          "visibility_event_rcvd_ts"
+        );
+
+      this._store.dispatch(
+        actionCreators.AlsoToMain({
+          type: actionTypes.SAVE_SESSION_PERF_DATA,
+          data: { visibility_event_rcvd_ts },
+        })
+      );
     } catch (ex) {
       
       
@@ -9532,13 +9638,21 @@ class DetectUserSessionStart {
   _onVisibilityChange() {
     if (this.document.visibilityState === detect_user_session_start_VISIBLE) {
       this._sendEvent();
-      this.document.removeEventListener(detect_user_session_start_VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+      this.document.removeEventListener(
+        detect_user_session_start_VISIBILITY_CHANGE_EVENT,
+        this._onVisibilityChange
+      );
     }
   }
 }
+
 ;
 const external_Redux_namespaceObject = Redux;
 ;
+
+
+
+
 
 
 
@@ -9570,11 +9684,9 @@ const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";
 function mergeStateReducer(mainReducer) {
   return (prevState, action) => {
     if (action.type === MERGE_STORE_ACTION) {
-      return {
-        ...prevState,
-        ...action.data
-      };
+      return { ...prevState, ...action.data };
     }
+
     return mainReducer(prevState, action);
   };
 }
@@ -9591,9 +9703,8 @@ const messageMiddleware = () => next => action => {
     next(action);
   }
 };
-const rehydrationMiddleware = ({
-  getState
-}) => {
+
+const rehydrationMiddleware = ({ getState }) => {
   
   
   getState.didRehydrate = false;
@@ -9602,17 +9713,24 @@ const rehydrationMiddleware = ({
     if (getState.didRehydrate || window.__FROM_STARTUP_CACHE__) {
       
       
-      if (window.__FROM_STARTUP_CACHE__ && action.meta && action.meta.isStartup) {
+      if (
+        window.__FROM_STARTUP_CACHE__ &&
+        action.meta &&
+        action.meta.isStartup
+      ) {
         return null;
       }
       return next(action);
     }
+
     const isMergeStoreAction = action.type === MERGE_STORE_ACTION;
     const isRehydrationRequest = action.type === actionTypes.NEW_TAB_STATE_REQUEST;
+
     if (isRehydrationRequest) {
       getState.didRequestInitialState = true;
       return next(action);
     }
+
     if (isMergeStoreAction) {
       getState.didRehydrate = true;
       return next(action);
@@ -9620,16 +9738,20 @@ const rehydrationMiddleware = ({
 
     
     if (getState.didRequestInitialState && action.type === actionTypes.INIT) {
-      return next(actionCreators.AlsoToMain({
-        type: actionTypes.NEW_TAB_STATE_REQUEST
-      }));
+      return next(actionCreators.AlsoToMain({ type: actionTypes.NEW_TAB_STATE_REQUEST }));
     }
-    if (actionUtils.isBroadcastToContent(action) || actionUtils.isSendToOneContent(action) || actionUtils.isSendToPreloaded(action)) {
+
+    if (
+      actionUtils.isBroadcastToContent(action) ||
+      actionUtils.isSendToOneContent(action) ||
+      actionUtils.isSendToPreloaded(action)
+    ) {
       
       
       
       return null;
     }
+
     return next(action);
   };
 };
@@ -9642,19 +9764,31 @@ const rehydrationMiddleware = ({
 
 
 function initStore(reducers, initialState) {
-  const store = (0,external_Redux_namespaceObject.createStore)(mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)), initialState, __webpack_require__.g.RPMAddMessageListener && (0,external_Redux_namespaceObject.applyMiddleware)(rehydrationMiddleware, messageMiddleware));
-  if (__webpack_require__.g.RPMAddMessageListener) {
-    __webpack_require__.g.RPMAddMessageListener(INCOMING_MESSAGE_NAME, msg => {
+  const store = (0,external_Redux_namespaceObject.createStore)(
+    mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)),
+    initialState,
+    globalThis.RPMAddMessageListener &&
+      (0,external_Redux_namespaceObject.applyMiddleware)(rehydrationMiddleware, messageMiddleware)
+  );
+
+  if (globalThis.RPMAddMessageListener) {
+    globalThis.RPMAddMessageListener(INCOMING_MESSAGE_NAME, msg => {
       try {
         store.dispatch(msg.data);
       } catch (ex) {
         console.error("Content msg:", msg, "Dispatch error: ", ex);
-        dump(`Content msg: ${JSON.stringify(msg)}\nDispatch error: ${ex}\n${ex.stack}`);
+        dump(
+          `Content msg: ${JSON.stringify(msg)}\nDispatch error: ${ex}\n${
+            ex.stack
+          }`
+        );
       }
     });
   }
+
   return store;
 }
+
 ;
 const external_ReactDOM_namespaceObject = ReactDOM;
 var external_ReactDOM_default = __webpack_require__.n(external_ReactDOM_namespaceObject);

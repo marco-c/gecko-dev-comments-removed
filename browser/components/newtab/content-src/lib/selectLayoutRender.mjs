@@ -1,17 +1,17 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const { layout, feeds, spocs } = state;
   let spocIndexPlacementMap = {};
 
-  
-
-
-
-
-
+  /* This function fills spoc positions on a per placement basis with available spocs.
+   * It does this by looping through each position for a placement and replacing a rec with a spoc.
+   * If it runs out of spocs or positions, it stops.
+   * If it sees the same placement again, it remembers the previous spoc index, and continues.
+   * If it sees a blocked spoc, it skips that position leaving in a regular story.
+   */
   function fillSpocPositionsForPlacement(
     data,
     spocsConfig,
@@ -27,19 +27,19 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     const results = [...data];
     for (let position of spocsConfig.positions) {
       const spoc = spocsData[spocIndexPlacementMap[placementName]];
-      
+      // If there are no spocs left, we can stop filling positions.
       if (!spoc) {
         break;
       }
 
-      
-      
-      
+      // A placement could be used in two sections.
+      // In these cases, we want to maintain the index of the previous section.
+      // If we didn't do this, it might duplicate spocs.
       spocIndexPlacementMap[placementName]++;
 
-      
-      
-      
+      // A spoc that's blocked is removed from the source for subsequent newtab loads.
+      // If we have a spoc in the source that's blocked, it means it was *just* blocked,
+      // and in this case, we skip this position, and show a regular spoc instead.
       if (!spocs.blocked.includes(spoc.url)) {
         results.splice(position.index, 0, spoc);
       }
@@ -75,7 +75,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
   const placeholderComponent = component => {
     if (!component.feed) {
-      
+      // TODO we now need a placeholder for topsites and textPromo.
       return {
         ...component,
         data: {
@@ -98,10 +98,10 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     return { ...component, data };
   };
 
-  
+  // TODO update devtools to show placements
   const handleSpocs = (data, component) => {
     let result = [...data];
-    
+    // Do we ever expect to possibly have a spoc.
     if (
       component.spocs &&
       component.spocs.positions &&
@@ -110,7 +110,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       const placement = component.placement || {};
       const placementName = placement.name || "spocs";
       const spocsData = spocs.data[placementName];
-      
+      // We expect a spoc, spocs are loaded, and the server returned spocs.
       if (
         spocs.loaded &&
         spocsData &&
@@ -197,9 +197,9 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       items = Math.min(component.properties.items, data.recommendations.length);
     }
 
-    
-    
-    
+    // loop through a component items
+    // Store the items position sequentially for multiple components of the same type.
+    // Example: A second card grid starts pos offset from the last card grid.
     for (let i = 0; i < items; i++) {
       data.recommendations[i] = {
         ...data.recommendations[i],
@@ -225,7 +225,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       )) {
         const spocsConfig = component.spocs;
         if (spocsConfig || component.feed) {
-          
+          // TODO make sure this still works for different loading cases.
           if (
             (component.feed && !feeds.data[component.feed.url]) ||
             (spocsConfig &&

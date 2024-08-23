@@ -48,7 +48,7 @@ module.exports = (env = {}) => ({
   },
   
   resolve: {
-    extensions: [".js", ".jsx"],
+    extensions: [".js", ".jsx", ".mjs"],
     modules: ["node_modules", "."],
   },
   externals: {

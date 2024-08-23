@@ -1,8 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import {
+  actionCreators as ac,
+  actionTypes as at,
+} from "../../common/Actions.mjs";
 
 const _OpenInPrivateWindow = site => ({
   id: "newtab-menu-open-new-private-window",
@@ -14,11 +17,11 @@ const _OpenInPrivateWindow = site => ({
   userEvent: "OPEN_PRIVATE_WINDOW",
 });
 
-
-
-
-
-
+/**
+ * List of functions that return items that can be included as menu options in a
+ * LinkMenu. All functions take the site as the first parameter, and optionally
+ * the index of the site.
+ */
 export const LinkMenuOptions = {
   Separator: () => ({ type: "separator" }),
   EmptyItem: () => ({ type: "empty" }),
@@ -75,14 +78,14 @@ export const LinkMenuOptions = {
     }),
     userEvent: "OPEN_NEW_WINDOW",
   }),
-  
-  
-  
-  
+  // This blocks the url for regular stories,
+  // but also sends a message to DiscoveryStream with flight_id.
+  // If DiscoveryStream sees this message for a flight_id
+  // it also blocks it on the flight_id.
   BlockUrl: (site, index, eventSource) => {
     return LinkMenuOptions.BlockUrls([site], index, eventSource);
   },
-  
+  // Same as BlockUrl, cept can work on an array of sites.
   BlockUrls: (tiles, pos, eventSource) => ({
     id: "newtab-menu-dismiss",
     icon: "dismiss",
@@ -90,13 +93,13 @@ export const LinkMenuOptions = {
       type: at.BLOCK_URL,
       data: tiles.map(site => ({
         url: site.original_url || site.open_url || site.url,
-        
+        // pocket_id is only for pocket stories being in highlights, and then dismissed.
         pocket_id: site.pocket_id,
-        
+        // used by PlacesFeed and TopSitesFeed for sponsored top sites blocking.
         isSponsoredTopSite: site.sponsored_position,
         ...(site.flight_id ? { flight_id: site.flight_id } : {}),
-        
-        
+        // If not sponsored, hostname could be anything (Cat3 Data!).
+        // So only put in advertiser_name for sponsored topsites.
         ...(site.sponsored_position
           ? {
               advertiser_name: (
@@ -121,8 +124,8 @@ export const LinkMenuOptions = {
     userEvent: "BLOCK",
   }),
 
-  
-  
+  // This is an option for web extentions which will result in remove items from
+  // memory and notify the web extenion, rather than using the built-in block list.
   WebExtDismiss: (site, index, eventSource) => ({
     id: "menu_action_webext_dismiss",
     string_id: "newtab-menu-dismiss",

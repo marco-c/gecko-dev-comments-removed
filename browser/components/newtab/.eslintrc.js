@@ -15,11 +15,7 @@ module.exports = {
     {
       
       
-      files: [
-        "content-src/**/*.js",
-        "test/schemas/**/*.js",
-        "test/unit/**/*.js",
-      ],
+      files: ["test/schemas/**/*.js", "test/unit/**/*.js"],
       parserOptions: {
         sourceType: "module",
       },
