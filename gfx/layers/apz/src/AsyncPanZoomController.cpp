@@ -506,11 +506,6 @@ typedef PlatformSpecificStateBase
 
 
 
-
-
-
-
-
 StaticAutoPtr<StyleComputedTimingFunction> gZoomAnimationFunction;
 
 

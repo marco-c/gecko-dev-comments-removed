@@ -2290,8 +2290,7 @@ void APZCTreeManager::SetupScrollbarDrag(
 
   
   
-  if (StaticPrefs::apz_drag_initial_enabled() &&
-      
+  if (
       aScrollThumbNode->GetScrollTargetId() == aApzc->GetGuid().mScrollId &&
       !aApzc->IsScrollInfoLayer()) {
     uint64_t dragBlockId = dragBlock->GetBlockId();
