@@ -225,6 +225,18 @@ uint32_t nsScriptSecurityManager::SecurityHashURI(nsIURI* aURI) {
   return NS_SecurityHashURI(aURI);
 }
 
+bool nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(nsIURI* aUriA,
+                                                          nsIURI* aUriB) {
+  if (!aUriA || (!net::SchemeIsHTTP(aUriA) && !net::SchemeIsHTTPS(aUriA)) ||
+      !aUriB || (!net::SchemeIsHTTP(aUriB) && !net::SchemeIsHTTPS(aUriB))) {
+    return false;
+  }
+  if (!SecurityCompareURIs(aUriA, aUriB)) {
+    return true;
+  }
+  return false;
+}
+
 
 
 
