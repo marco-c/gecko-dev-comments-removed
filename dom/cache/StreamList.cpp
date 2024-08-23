@@ -85,6 +85,12 @@ void StreamList::Add(const nsID& aId, nsCOMPtr<nsIInputStream>&& aStream) {
   
   
   MOZ_DIAGNOSTIC_ASSERT(!mStreamControl);
+
+  
+  
+  MOZ_ASSERT_DEBUG_OR_FUZZING(
+      std::find_if(mList.begin(), mList.end(), MatchById(aId)) == mList.end());
+
   mList.EmplaceBack(aId, std::move(aStream));
 }
 
@@ -92,6 +98,9 @@ already_AddRefed<nsIInputStream> StreamList::Extract(const nsID& aId) {
   NS_ASSERT_OWNINGTHREAD(StreamList);
 
   const auto it = std::find_if(mList.begin(), mList.end(), MatchById(aId));
+
+  
+  
 
   return it != mList.end() ? it->mStream.forget() : nullptr;
 }
@@ -101,6 +110,7 @@ void StreamList::NoteClosed(const nsID& aId) {
 
   const auto it = std::find_if(mList.begin(), mList.end(), MatchById(aId));
   if (it != mList.end()) {
+    MOZ_ASSERT(!it->mStream, "We expect to find mStream already extracted.");
     mList.RemoveElementAt(it);
     mManager->ReleaseBodyId(aId);
   }
@@ -124,6 +134,7 @@ void StreamList::NoteClosedAll() {
 
 void StreamList::CloseAll() {
   NS_ASSERT_OWNINGTHREAD(StreamList);
+
   if (mStreamControl && mStreamControl->CanSend()) {
     auto* streamControl = std::exchange(mStreamControl, nullptr);
 
