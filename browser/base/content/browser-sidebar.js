@@ -311,7 +311,7 @@ var SidebarUI = {
   },
 
   updateShortcut({ keyId }) {
-    let menuitem = this._switcherPanel.querySelector(`[key="${keyId}"]`);
+    let menuitem = this._switcherPanel?.querySelector(`[key="${keyId}"]`);
     if (!menuitem) {
       
       
