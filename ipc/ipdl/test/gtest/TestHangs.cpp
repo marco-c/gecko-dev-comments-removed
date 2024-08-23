@@ -26,7 +26,6 @@ enum class HangMode : uint32_t {
   Hang,
   
   
-  
   HangButReceive,
   
   
@@ -50,8 +49,10 @@ class TestHangsChild : public PTestHangsChild {
     this->hangMode = (HangMode)hangMode;
 
     auto result = SendHang(hangMode, timeout->CloneHandle());
+    
     if (this->hangMode == HangMode::Hang) {
       
+      timeout->Signal();
       EXPECT_FALSE(result);
     } else {
       EXPECT_TRUE(result);
@@ -102,6 +103,13 @@ class TestHangsParent : public PTestHangsParent {
       
       
       timeout->Wait();
+
+      if (hangMode == (uint32_t)HangMode::Hang) {
+        
+        
+        
+        timeout->Wait();
+      }
     }
     return IPC_OK();
   }
