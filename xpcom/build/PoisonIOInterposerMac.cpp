@@ -21,7 +21,6 @@
 #include "nsPrintfCString.h"
 #include "mozilla/StackWalk.h"
 #include "nsTraceRefcnt.h"
-#include "plstr.h"
 #include "prio.h"
 
 #include <algorithm>
@@ -329,10 +328,17 @@ void InitPoisonIOInterposer() {
     if (!d->Function) {
       continue;
     }
+
+    
+    
 #ifndef __aarch64__
+    
+    
+#  ifdef MOZ_INTERPOSER_FORCE_MACOS_X64
     DebugOnly<mach_error_t> t =
         mach_override_ptr(d->Function, d->Wrapper, &d->Buffer);
     MOZ_ASSERT(t == err_none);
+#  endif  
 #endif
   }
 }
