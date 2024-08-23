@@ -44,6 +44,10 @@ EXCLUSIVE_COMPONENTS = [
     "windows",
     "ios",
     
+    "firefox",
+    "fenix",
+    "focus-android",
+    
     "awsy",
     "condprofile",
     "cppunittest",
