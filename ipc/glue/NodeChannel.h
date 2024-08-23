@@ -118,7 +118,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   
   void SetOtherPid(base::ProcessId aNewPid);
 
-#ifdef XP_MACOSX
+#ifdef XP_DARWIN
   
   
   void SetMachTaskPort(task_t aTask);

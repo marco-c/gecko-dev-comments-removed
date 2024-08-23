@@ -195,7 +195,7 @@ static const int kJSInitFileDescriptor = 11;
 
 void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
                         std::vector<std::string>& aExtraOpts) {
-#ifdef ANDROID
+#if defined(ANDROID) || defined(XP_IOS)
   
   return;
 #else
