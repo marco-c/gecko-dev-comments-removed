@@ -13,7 +13,7 @@ Services.scriptloader.loadSubScript(netMonitorHead, this);
 
 
 const HAR_EXAMPLE_URL =
-  "http://example.com/browser/devtools/client/netmonitor/src/har/test/";
+  "https://example.com/browser/devtools/client/netmonitor/src/har/test/";
 
 
 

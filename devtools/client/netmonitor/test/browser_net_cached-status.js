@@ -10,6 +10,9 @@
 add_task(async function () {
   
   await pushPref("network.http.rcwn.enabled", false);
+  
+  
+  await pushPref("dom.security.https_first", false);
 
   const { tab, monitor } = await initNetMonitor(STATUS_CODES_URL, {
     enableCache: true,
