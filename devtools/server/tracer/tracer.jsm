@@ -647,13 +647,26 @@ class JavaScriptTracer {
       }
 
       if (this.traceSteps) {
+        
+        
+        let { lineNumber: lastLine, columnNumber: lastColumn } =
+          frame.script.getOffsetMetadata(frame.offset);
+
         frame.onStep = () => {
           
           
-          const { isStepStart } = frame.script.getOffsetMetadata(frame.offset);
+          const { isStepStart, lineNumber, columnNumber } =
+            frame.script.getOffsetMetadata(frame.offset);
           if (!isStepStart) {
             return;
           }
+          
+          
+          if (lastLine == lineNumber && lastColumn == columnNumber) {
+            return;
+          }
+          lastLine = lineNumber;
+          lastColumn = columnNumber;
 
           shouldLogToStdout = true;
           if (listeners.size > 0) {
