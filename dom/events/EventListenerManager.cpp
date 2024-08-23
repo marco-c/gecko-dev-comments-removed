@@ -1417,10 +1417,10 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
       if (global) {
         innerWindow = global->GetAsInnerWindow();  
       }
-    } else {
+    } else if (mTarget) {
       
       
-      if (aListener && aTypeAtom == nsGkAtoms::onkeypress && mTarget &&
+      if (aListener && aTypeAtom == nsGkAtoms::onkeypress &&
           mTarget->IsRootWindow()) {
         nsPIWindowRoot* root = mTarget->AsWindowRoot();
         if (nsPIDOMWindowOuter* outerWindow = root->GetWindow()) {
@@ -1431,7 +1431,9 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
         
         
         
-        innerWindow = GetInnerWindowForTarget();  
+        if (nsIGlobalObject* global = mTarget->GetOwnerGlobal()) {
+          innerWindow = global->GetAsInnerWindow();
+        }
       }
     }
   }
