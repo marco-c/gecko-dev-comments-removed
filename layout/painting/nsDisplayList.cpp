@@ -2521,9 +2521,7 @@ struct ZSortItem {
 };
 
 struct ZOrderComparator {
-  bool operator()(const ZSortItem& aLeft, const ZSortItem& aRight) const {
-    
-    
+  bool LessThan(const ZSortItem& aLeft, const ZSortItem& aRight) const {
     return aLeft.zIndex < aRight.zIndex;
   }
 };
@@ -2536,7 +2534,7 @@ struct ContentComparator {
   explicit ContentComparator(nsIContent* aCommonAncestor)
       : mCommonAncestor(aCommonAncestor) {}
 
-  bool operator()(nsDisplayItem* aLeft, nsDisplayItem* aRight) const {
+  bool LessThan(nsDisplayItem* aLeft, nsDisplayItem* aRight) const {
     
     
     

@@ -3195,12 +3195,13 @@ class nsDisplayList {
     
     
     AutoTArray<Item, 20> items;
+    
+    items.SetCapacity(Length());
 
     for (nsDisplayItem* item : TakeItems()) {
       items.AppendElement(Item(item));
     }
-
-    std::stable_sort(items.begin(), items.end(), aComparator);
+    items.StableSort(aComparator);
 
     for (Item& item : items) {
       AppendToTop(item);
@@ -3208,6 +3209,7 @@ class nsDisplayList {
   }
 
   nsDisplayList TakeItems() {
+    
     nsDisplayList list = std::move(*this);
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     list.mAllowNonEmptyDestruction = true;
