@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -37,6 +38,7 @@
 
 #ifdef MOZ_ENABLE_FORKSERVER
 #  include "mozilla/ipc/ForkServiceChild.h"
+#  include "mozilla/Printf.h"
 #endif
 
 
@@ -195,6 +197,63 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int)) {
   }
 }
 
+#ifdef MOZ_ENABLE_FORKSERVER
+
+
+
+static bool IsZombieProcess(pid_t pid) {
+#  ifdef XP_LINUX
+  auto path = mozilla::Smprintf("/proc/%d/stat", pid);
+  int fd = open(path.get(), O_RDONLY | O_CLOEXEC);
+  if (fd < 0) {
+    int e = errno;
+    CHROMIUM_LOG(ERROR) << "failed to open " << path.get() << ": "
+                        << strerror(e);
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  char buffer[64];
+  ssize_t len = HANDLE_EINTR(read(fd, buffer, sizeof(buffer) - 1));
+  int e = errno;
+  close(fd);
+  if (len < 1) {
+    CHROMIUM_LOG(ERROR) << "failed to read " << buffer << ": " << strerror(e);
+    return true;
+  }
+
+  buffer[len] = '\0';
+  char* rparen = strrchr(buffer, ')');
+  if (!rparen || rparen[1] != ' ' || rparen[2] == '\0') {
+    DCHECK(false) << "/proc/{pid}/stat parse error";
+    CHROMIUM_LOG(ERROR) << "bad data in /proc/" << pid << "/stat";
+    return true;
+  }
+  if (rparen[2] == 'Z') {
+    CHROMIUM_LOG(ERROR) << "process " << pid << " is a zombie";
+    return true;
+  }
+  return false;
+#  else  
+  
+  
+  return false;
+#  endif
+}
+#endif  
+
 bool IsProcessDead(ProcessHandle handle, bool blocking) {
   auto handleForkServer = [handle]() -> mozilla::Maybe<bool> {
 #ifdef MOZ_ENABLE_FORKSERVER
@@ -205,10 +264,21 @@ bool IsProcessDead(ProcessHandle handle, bool blocking) {
       
       
       const int r = kill(handle, 0);
+      if (r < 0) {
+        const int e = errno;
+        if (e != ESRCH) {
+          CHROMIUM_LOG(WARNING) << "unexpected error checking for process "
+                                << handle << ": " << strerror(e);
+          
+          
+        }
+        return mozilla::Some(true);
+      }
       
       
       
-      return mozilla::Some(r < 0 && errno == ESRCH);
+      
+      return mozilla::Some(IsZombieProcess(handle));
     }
 #else
     mozilla::Unused << handle;
