@@ -19,7 +19,7 @@ function test() {
   removeFunc = BrowserTestUtils.addContentEventListener(
     tab.linkedBrowser,
     "load",
-    function onLoad(aEvent) {
+    function onLoad() {
       
       if (++loadCount < 2) {
         return;

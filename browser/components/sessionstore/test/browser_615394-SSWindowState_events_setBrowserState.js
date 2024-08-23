@@ -84,7 +84,7 @@ function test() {
   
   
   let newWindow;
-  function windowObserver(aSubject, aTopic, aData) {
+  function windowObserver(aSubject, aTopic) {
     if (aTopic == "domwindowopened") {
       Services.ww.unregisterNotification(windowObserver);
 

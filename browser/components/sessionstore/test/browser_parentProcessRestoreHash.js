@@ -12,7 +12,7 @@ const TESTURL = "about:testpageforsessionrestore#foo";
 
 let TestAboutPage = {
   QueryInterface: ChromeUtils.generateQI(["nsIAboutModule"]),
-  getURIFlags(aURI) {
+  getURIFlags() {
     
     return (
       Ci.nsIAboutModule.ALLOW_SCRIPT |
@@ -73,7 +73,7 @@ add_task(async function () {
     r => (resolveLocationChangePromise = r)
   );
   let wpl = {
-    onStateChange(listener, request, state, status) {
+    onStateChange(listener, request, state, _status) {
       let location = request.QueryInterface(Ci.nsIChannel).originalURI;
       
       let docStop =

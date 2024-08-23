@@ -98,7 +98,7 @@ add_task(async function test_frametree_dynamic() {
   is(await enumerateIndexes(browser), "0,1", "correct indexes 0 and 1");
 
   
-  await SpecialPowers.spawn(browser, [URL], async ([url]) => {
+  await SpecialPowers.spawn(browser, [URL], async () => {
     
     content.document.body.removeChild(
       content.document.getElementsByTagName("iframe")[0]

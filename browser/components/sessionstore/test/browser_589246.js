@@ -164,7 +164,7 @@ function setupForTest(aConditions) {
   ss.setBrowserState(JSON.stringify(testState));
 }
 
-function onStateRestored(aSubject, aTopic, aData) {
+function onStateRestored() {
   info("test #" + testNum + ": onStateRestored");
   Services.obs.removeObserver(
     onStateRestored,
@@ -183,7 +183,7 @@ function onStateRestored(aSubject, aTopic, aData) {
   );
   newWin.addEventListener(
     "load",
-    function (aEvent) {
+    function () {
       promiseBrowserLoaded(newWin.gBrowser.selectedBrowser).then(() => {
         
         if (shouldPinTab) {
@@ -230,7 +230,7 @@ function onStateRestored(aSubject, aTopic, aData) {
 }
 
 
-function onLastWindowClosed(aSubject, aTopic, aData) {
+function onLastWindowClosed() {
   info("test #" + testNum + ": onLastWindowClosed");
   Services.obs.removeObserver(
     onLastWindowClosed,
@@ -261,7 +261,7 @@ function onWindowUnloaded() {
   );
   newWin.addEventListener(
     "load",
-    function (aEvent) {
+    function () {
       newWin.gBrowser.selectedBrowser.addEventListener(
         "load",
         function () {
