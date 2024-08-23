@@ -22,10 +22,7 @@ module.exports = {
 
     
     
-    if (
-      threadActor.state == THREAD_STATES.DETACHED &&
-      !targetActor.targetType.endsWith("worker")
-    ) {
+    if (threadActor.state == THREAD_STATES.DETACHED) {
       await threadActor.attach();
     }
 

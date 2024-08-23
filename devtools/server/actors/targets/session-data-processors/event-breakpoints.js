@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -16,11 +16,8 @@ module.exports = {
     updateType
   ) {
     const { threadActor } = targetActor;
-    
-    if (
-      threadActor.state == THREAD_STATES.DETACHED &&
-      !targetActor.targetType.endsWith("worker")
-    ) {
+    // The thread actor has to be initialized in order to have functional breakpoints
+    if (threadActor.state == THREAD_STATES.DETACHED) {
       threadActor.attach();
     }
     if (updateType == "set") {
