@@ -378,8 +378,12 @@ PlacesController.prototype = {
 
   _isRepeatedRemoveOperation() {
     let lastRemoveOperationFingerprint = this._lastRemoveOperationFingerprint;
+    
+    
     this._lastRemoveOperationFingerprint = PlacesUtils.sha256(
-      this._view.selectedNodes.map(n => n.guid ?? n.uri).join()
+      this._view.selectedNodes
+        .map(n => n.bookmarkGuid || (n.pageGuid || n.uri) + n.time)
+        .join()
     );
     return (
       lastRemoveOperationFingerprint == this._lastRemoveOperationFingerprint
