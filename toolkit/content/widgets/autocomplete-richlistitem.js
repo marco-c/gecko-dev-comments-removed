@@ -715,6 +715,21 @@
     }
   }
 
+  
+  
+  
+  
+  class MozAutocompleteActionRichlistitem extends MozAutocompleteTwoLineRichlistitem {
+    _adjustAcItem() {
+      super._adjustAcItem();
+
+      let comment = JSON.parse(this.getAttribute("ac-label"));
+      this.querySelector(".line2-label").textContent = comment?.secondary || "";
+      this.querySelector(".ac-site-icon").collapsed =
+        this.getAttribute("ac-image") == "";
+    }
+  }
+
   class MozAutocompleteGeneratedPasswordRichlistitem extends MozAutocompleteTwoLineRichlistitem {
     constructor() {
       super();
@@ -842,6 +857,14 @@
   customElements.define(
     "autocomplete-login-richlistitem",
     MozAutocompleteLoginRichlistitem,
+    {
+      extends: "richlistitem",
+    }
+  );
+
+  customElements.define(
+    "autocomplete-action-richlistitem",
+    MozAutocompleteActionRichlistitem,
     {
       extends: "richlistitem",
     }
