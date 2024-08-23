@@ -11,7 +11,8 @@
 #include "gc/Tracer.h"
 #include "js/GCHashTable.h"
 #include "js/GCPolicyAPI.h"
-#include "js/HashTable.h"
+#include "js/GCVector.h"
+#include "js/Utility.h"
 
 namespace js {
 
@@ -81,7 +82,8 @@ class NurseryAwareHashMap {
   
   
   
-  Vector<Key, 0, AllocPolicy> nurseryEntries;
+  using KeyVector = GCVector<Key, 0, AllocPolicy>;
+  KeyVector nurseryEntries;
 
  public:
   using Lookup = typename MapType::Lookup;
@@ -127,16 +129,16 @@ class NurseryAwareHashMap {
   }
 
   void sweepAfterMinorGC(JSTracer* trc) {
-    for (auto& key : nurseryEntries) {
+    nurseryEntries.mutableEraseIf([this, trc](Key& key) {
       auto p = map.lookup(key);
       if (!p) {
-        continue;
+        return true;
       }
 
       
       if (!JS::GCPolicy<MapValue>::traceWeak(trc, &p->value())) {
         map.remove(p);
-        continue;
+        return true;
       }
 
       
@@ -147,33 +149,65 @@ class NurseryAwareHashMap {
       
       
       
-      MapKey copy(key);
-      if (!JS::GCPolicy<MapKey>::traceWeak(trc, &copy)) {
+      
+      
+      
+      Key prior = key;
+      if (!TraceManuallyBarrieredWeakEdge(trc, &key,
+                                          "NurseryAwareHashMap key")) {
         map.remove(p);
-        continue;
+        return true;
       }
 
-      if (AllowDuplicates) {
+      bool valueIsTenured = p->value().unbarrieredGet()->isTenured();
+
+      if constexpr (AllowDuplicates) {
         
         
         
         
         
-        if (key == copy) {
+        if (key == prior) {
           
-        } else if (map.has(copy)) {
+        } else if (map.has(key)) {
           
           
           map.remove(p);
+          return true;
         } else {
-          map.rekeyAs(key, copy, copy);
+          map.rekeyAs(prior, key, key);
         }
       } else {
-        MOZ_ASSERT(key == copy || !map.has(copy));
-        map.rekeyIfMoved(key, copy);
+        MOZ_ASSERT(key == prior || !map.has(key));
+        map.rekeyIfMoved(prior, key);
+      }
+
+      return key->isTenured() && valueIsTenured;
+    });
+
+    checkNurseryEntries();
+  }
+
+  void checkNurseryEntries() const {
+#ifdef DEBUG
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    HashSet<Key, DefaultHasher<Key>, SystemAllocPolicy> set;
+    for (const auto& key : nurseryEntries) {
+      if (!set.put(key)) {
+        oomUnsafe.crash("NurseryAwareHashMap::checkNurseryEntries");
       }
     }
-    nurseryEntries.clear();
+
+    for (auto i = map.iter(); !i.done(); i.next()) {
+      Key key = i.get().key().get();
+      MOZ_ASSERT(gc::IsCellPointerValid(key));
+      MOZ_ASSERT_IF(IsInsideNursery(key), set.has(key));
+
+      Value value = i.get().value().unbarrieredGet();
+      MOZ_ASSERT(gc::IsCellPointerValid(value));
+      MOZ_ASSERT_IF(IsInsideNursery(value), set.has(key));
+    }
+#endif
   }
 
   void traceWeak(JSTracer* trc) { map.traceWeak(trc); }
