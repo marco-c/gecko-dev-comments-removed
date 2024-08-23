@@ -45,12 +45,12 @@ absl::optional<AV1Profile> StringToAV1Profile(absl::string_view profile);
 
 
 RTC_EXPORT absl::optional<AV1Profile> ParseSdpForAV1Profile(
-    const SdpVideoFormat::Parameters& params);
+    const CodecParameterMap& params);
 
 
 
-bool AV1IsSameProfile(const SdpVideoFormat::Parameters& params1,
-                      const SdpVideoFormat::Parameters& params2);
+bool AV1IsSameProfile(const CodecParameterMap& params1,
+                      const CodecParameterMap& params2);
 
 }  
 

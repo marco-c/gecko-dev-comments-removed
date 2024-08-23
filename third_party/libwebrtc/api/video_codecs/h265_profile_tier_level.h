@@ -97,13 +97,12 @@ RTC_EXPORT absl::optional<H265Level> StringToH265Level(
 
 
 RTC_EXPORT absl::optional<H265ProfileTierLevel> ParseSdpForH265ProfileTierLevel(
-    const SdpVideoFormat::Parameters& params);
+    const CodecParameterMap& params);
 
 
 
-RTC_EXPORT bool H265IsSameProfileTierLevel(
-    const SdpVideoFormat::Parameters& params1,
-    const SdpVideoFormat::Parameters& params2);
+RTC_EXPORT bool H265IsSameProfileTierLevel(const CodecParameterMap& params1,
+                                           const CodecParameterMap& params2);
 
 }  
 

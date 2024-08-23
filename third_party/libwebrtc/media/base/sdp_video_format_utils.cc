@@ -36,7 +36,7 @@ constexpr char kH265TierFlag[] = "tier-flag";
 constexpr char kH265LevelId[] = "level-id";
 #endif
 
-bool IsH264LevelAsymmetryAllowed(const SdpVideoFormat::Parameters& params) {
+bool IsH264LevelAsymmetryAllowed(const CodecParameterMap& params) {
   const auto it = params.find(kH264LevelAsymmetryAllowed);
   return it != params.end() && strcmp(it->second.c_str(), "1") == 0;
 }
@@ -55,7 +55,7 @@ H264Level H264LevelMin(H264Level a, H264Level b) {
 }
 
 absl::optional<int> ParsePositiveNumberFromParams(
-    const SdpVideoFormat::Parameters& params,
+    const CodecParameterMap& params,
     const char* parameter_name) {
   const auto max_frame_rate_it = params.find(parameter_name);
   if (max_frame_rate_it == params.end())
@@ -76,7 +76,7 @@ H265Level H265LevelMin(H265Level a, H265Level b) {
 
 
 
-bool IsDefaultH265PTL(const SdpVideoFormat::Parameters& params) {
+bool IsDefaultH265PTL(const CodecParameterMap& params) {
   return !params.count(kH265ProfileId) && !params.count(kH265TierFlag) &&
          !params.count(kH265LevelId);
 }
@@ -87,9 +87,9 @@ bool IsDefaultH265PTL(const SdpVideoFormat::Parameters& params) {
 #ifdef RTC_ENABLE_H265
 
 void H265GenerateProfileTierLevelForAnswer(
-    const SdpVideoFormat::Parameters& local_supported_params,
-    const SdpVideoFormat::Parameters& remote_offered_params,
-    SdpVideoFormat::Parameters* answer_params) {
+    const CodecParameterMap& local_supported_params,
+    const CodecParameterMap& remote_offered_params,
+    CodecParameterMap* answer_params) {
   
   
   
@@ -123,9 +123,9 @@ void H265GenerateProfileTierLevelForAnswer(
 
 
 void H264GenerateProfileLevelIdForAnswer(
-    const SdpVideoFormat::Parameters& local_supported_params,
-    const SdpVideoFormat::Parameters& remote_offered_params,
-    SdpVideoFormat::Parameters* answer_params) {
+    const CodecParameterMap& local_supported_params,
+    const CodecParameterMap& remote_offered_params,
+    CodecParameterMap* answer_params) {
   
   
   
@@ -165,12 +165,12 @@ void H264GenerateProfileLevelIdForAnswer(
 }
 
 absl::optional<int> ParseSdpForVPxMaxFrameRate(
-    const SdpVideoFormat::Parameters& params) {
+    const CodecParameterMap& params) {
   return ParsePositiveNumberFromParams(params, kVPxFmtpMaxFrameRate);
 }
 
 absl::optional<int> ParseSdpForVPxMaxFrameSize(
-    const SdpVideoFormat::Parameters& params) {
+    const CodecParameterMap& params) {
   const absl::optional<int> i =
       ParsePositiveNumberFromParams(params, kVPxFmtpMaxFrameSize);
   return i ? absl::make_optional(i.value() * kVPxFmtpFrameSizeSubBlockPixels)

@@ -32,9 +32,9 @@ namespace webrtc {
 
 
 void H264GenerateProfileLevelIdForAnswer(
-    const SdpVideoFormat::Parameters& local_supported_params,
-    const SdpVideoFormat::Parameters& remote_offered_params,
-    SdpVideoFormat::Parameters* answer_params);
+    const CodecParameterMap& local_supported_params,
+    const CodecParameterMap& remote_offered_params,
+    CodecParameterMap* answer_params);
 
 #ifdef RTC_ENABLE_H265
 
@@ -43,21 +43,19 @@ void H264GenerateProfileLevelIdForAnswer(
 
 
 void H265GenerateProfileTierLevelForAnswer(
-    const SdpVideoFormat::Parameters& local_supported_params,
-    const SdpVideoFormat::Parameters& remote_offered_params,
-    SdpVideoFormat::Parameters* answer_params);
+    const CodecParameterMap& local_supported_params,
+    const CodecParameterMap& remote_offered_params,
+    CodecParameterMap* answer_params);
 #endif
 
 
 
-absl::optional<int> ParseSdpForVPxMaxFrameRate(
-    const SdpVideoFormat::Parameters& params);
+absl::optional<int> ParseSdpForVPxMaxFrameRate(const CodecParameterMap& params);
 
 
 
 
-absl::optional<int> ParseSdpForVPxMaxFrameSize(
-    const SdpVideoFormat::Parameters& params);
+absl::optional<int> ParseSdpForVPxMaxFrameSize(const CodecParameterMap& params);
 
 }  
 

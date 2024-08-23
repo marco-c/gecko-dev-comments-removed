@@ -67,7 +67,7 @@ absl::optional<H264ProfileLevelId> ParseH264ProfileLevelId(const char* str);
 
 
 RTC_EXPORT absl::optional<H264ProfileLevelId> ParseSdpForH264ProfileLevelId(
-    const SdpVideoFormat::Parameters& params);
+    const CodecParameterMap& params);
 
 
 
@@ -84,8 +84,8 @@ RTC_EXPORT absl::optional<std::string> H264ProfileLevelIdToString(
 
 
 
-RTC_EXPORT bool H264IsSameProfile(const SdpVideoFormat::Parameters& params1,
-                                  const SdpVideoFormat::Parameters& params2);
+RTC_EXPORT bool H264IsSameProfile(const CodecParameterMap& params1,
+                                  const CodecParameterMap& params2);
 
 }  
 

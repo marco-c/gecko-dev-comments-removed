@@ -42,12 +42,12 @@ absl::optional<VP9Profile> StringToVP9Profile(const std::string& str);
 
 
 RTC_EXPORT absl::optional<VP9Profile> ParseSdpForVP9Profile(
-    const SdpVideoFormat::Parameters& params);
+    const CodecParameterMap& params);
 
 
 
-bool VP9IsSameProfile(const SdpVideoFormat::Parameters& params1,
-                      const SdpVideoFormat::Parameters& params2);
+bool VP9IsSameProfile(const CodecParameterMap& params1,
+                      const CodecParameterMap& params2);
 
 }  
 

@@ -109,7 +109,7 @@ RTC_EXPORT bool ParseCandidate(absl::string_view message,
 
 
 
-bool WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
+bool WriteFmtpParameters(const webrtc::CodecParameterMap& parameters,
                          rtc::StringBuilder* os);
 
 }  

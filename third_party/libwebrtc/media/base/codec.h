@@ -27,8 +27,6 @@
 
 namespace cricket {
 
-using CodecParameterMap = std::map<std::string, std::string>;
-
 class FeedbackParam {
  public:
   FeedbackParam() = default;
@@ -103,7 +101,7 @@ struct RTC_EXPORT Codec {
 
   
   
-  CodecParameterMap params;
+  webrtc::CodecParameterMap params;
   FeedbackParams feedback_params;
 
   Codec(const Codec& c);

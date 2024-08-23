@@ -29,6 +29,8 @@
 
 namespace webrtc {
 
+using CodecParameterMap = std::map<std::string, std::string>;
+
 
 
 
