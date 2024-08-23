@@ -3025,7 +3025,18 @@ class FactoryOp
     
     
     
+    
     DirectoryOpenPending,
+
+    
+    
+    
+    DirectoryWorkOpen,
+
+    
+    
+    
+    DirectoryWorkDone,
 
     
     
@@ -3142,6 +3153,8 @@ class FactoryOp
 
   nsresult DirectoryOpen();
 
+  nsresult DirectoryWorkDone();
+
   nsresult SendToIOThread();
 
   void WaitForTransactions();
@@ -3156,6 +3169,8 @@ class FactoryOp
                                      const Maybe<uint64_t>& aNewVersion);
 
   
+  virtual nsresult DoDirectoryWork() = 0;
+
   virtual nsresult DatabaseOpen() = 0;
 
   virtual nsresult DoDatabaseWork() = 0;
@@ -3198,6 +3213,8 @@ class FactoryRequestOp : public FactoryOp,
                   aCommonParams.principalInfo(),
                   Some(aCommonParams.metadata().name()), aDeleting),
         mCommonParams(aCommonParams) {}
+
+  nsresult DoDirectoryWork() override;
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -3364,6 +3381,7 @@ class DeleteDatabaseOp::VersionChangeOp final : public DatabaseOperationBase {
 };
 
 class GetDatabasesOp final : public FactoryOp {
+  nsTHashMap<nsStringHashKey, DatabaseMetadata> mDatabaseMetadataTable;
   nsTArray<DatabaseMetadata> mDatabaseMetadataArray;
   Factory::GetDatabasesResolver mResolver;
 
@@ -3381,6 +3399,8 @@ class GetDatabasesOp final : public FactoryOp {
   ~GetDatabasesOp() override = default;
 
   nsresult DatabasesNotAvailable();
+
+  nsresult DoDirectoryWork() override;
 
   nsresult DatabaseOpen() override;
 
@@ -14758,6 +14778,14 @@ void FactoryOp::StringifyState(nsACString& aResult) const {
       aResult.AppendLiteral("DirectoryOpenPending");
       return;
 
+    case State::DirectoryWorkOpen:
+      aResult.AppendLiteral("DirectoryWorkOpen");
+      return;
+
+    case State::DirectoryWorkDone:
+      aResult.AppendLiteral("DirectoryWorkDone");
+      return;
+
     case State::DatabaseOpenPending:
       aResult.AppendLiteral("DatabaseOpenPending");
       return;
@@ -14921,6 +14949,32 @@ nsresult FactoryOp::Open() {
 nsresult FactoryOp::DirectoryOpen() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == State::DirectoryOpenPending);
+  MOZ_ASSERT(mDirectoryLock);
+
+  if (mDatabaseName.isNothing()) {
+    QuotaManager* const quotaManager = QuotaManager::Get();
+    MOZ_ASSERT(quotaManager);
+
+    
+    
+    mState = State::DirectoryWorkOpen;
+
+    QM_TRY(MOZ_TO_RESULT(
+               quotaManager->IOThread()->Dispatch(this, NS_DISPATCH_NORMAL)),
+           NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR, IDB_REPORT_INTERNAL_ERR_LAMBDA);
+
+    return NS_OK;
+  }
+
+  mState = State::DirectoryWorkDone;
+  MOZ_ALWAYS_SUCCEEDS(Run());
+
+  return NS_OK;
+}
+
+nsresult FactoryOp::DirectoryWorkDone() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == State::DirectoryWorkDone);
   MOZ_ASSERT(mDirectoryLock);
   MOZ_ASSERT(gFactoryOps);
 
@@ -15131,6 +15185,14 @@ FactoryOp::Run() {
       QM_WARNONLY_TRY(MOZ_TO_RESULT(Open()), handleError);
       break;
 
+    case State::DirectoryWorkOpen:
+      QM_WARNONLY_TRY(MOZ_TO_RESULT(DoDirectoryWork()), handleError);
+      break;
+
+    case State::DirectoryWorkDone:
+      QM_WARNONLY_TRY(MOZ_TO_RESULT(DirectoryWorkDone()), handleError);
+      break;
+
     case State::DatabaseOpenPending:
       QM_WARNONLY_TRY(MOZ_TO_RESULT(DatabaseOpen()), handleError);
       break;
@@ -15195,6 +15257,10 @@ void FactoryOp::DirectoryLockFailed() {
 
   mState = State::SendingResults;
   MOZ_ALWAYS_SUCCEEDS(Run());
+}
+
+nsresult FactoryRequestOp::DoDirectoryWork() {
+  MOZ_CRASH("Not implemented because this should be unreachable.");
 }
 
 void FactoryRequestOp::ActorDestroy(ActorDestroyReason aWhy) {
@@ -16730,6 +16796,39 @@ nsresult GetDatabasesOp::DatabasesNotAvailable() {
   return NS_OK;
 }
 
+nsresult GetDatabasesOp::DoDirectoryWork() {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(mState == State::DirectoryWorkOpen);
+
+  
+  
+  
+  
+  
+  
+  
+
+  IndexedDatabaseManager* const idm = IndexedDatabaseManager::Get();
+  MOZ_ASSERT(idm);
+
+  const auto& fileManagers =
+      idm->GetFileManagers(mPersistenceType, mOriginMetadata.mOrigin);
+
+  for (const auto& fileManager : fileManagers) {
+    auto& metadata =
+        mDatabaseMetadataTable.LookupOrInsert(fileManager->DatabaseFilePath());
+    metadata.name() = fileManager->DatabaseName();
+    metadata.version() = fileManager->DatabaseVersion();
+  }
+
+  
+  mState = State::DirectoryWorkDone;
+
+  QM_TRY(MOZ_TO_RESULT(mOwningEventTarget->Dispatch(this, NS_DISPATCH_NORMAL)));
+
+  return NS_OK;
+}
+
 nsresult GetDatabasesOp::DatabaseOpen() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == State::DatabaseOpenPending);
@@ -16818,25 +16917,29 @@ nsresult GetDatabasesOp::DoDatabaseWork() {
     nsString path;
     databaseFile->GetPath(path);
 
-    IndexedDatabaseManager* const idm = IndexedDatabaseManager::Get();
-    MOZ_ASSERT(idm);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    
-    
-    
-    
+    auto metadata = mDatabaseMetadataTable.Lookup(path);
+    if (metadata) {
+      if (metadata->version() != 0) {
+        mDatabaseMetadataArray.AppendElement(DatabaseMetadata(
+            metadata->name(), metadata->version(), mPersistenceType));
+      }
 
-    SafeRefPtr<DatabaseFileManager> fileManager =
-        idm->GetFileManagerByDatabaseFilePath(mPersistenceType,
-                                              mOriginMetadata.mOrigin, path);
-
-    if (fileManager) {
-      mDatabaseMetadataArray.AppendElement(
-          DatabaseMetadata(nsString(fileManager->DatabaseName()),
-                           fileManager->DatabaseVersion(), mPersistenceType));
       continue;
     }
 
+    
+    
     
     
     
