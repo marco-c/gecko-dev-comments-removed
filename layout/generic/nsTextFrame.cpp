@@ -1929,8 +1929,8 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
 
     
     
-    Side side1 = wm.PhysicalSide(eLogicalSideIEnd);
-    Side side2 = wm.PhysicalSide(eLogicalSideIStart);
+    Side side1 = wm.PhysicalSide(LogicalSide::IEnd);
+    Side side2 = wm.PhysicalSide(LogicalSide::IStart);
     
     
     if (aFrame1->GetEmbeddingLevel().IsRTL() == wm.IsBidiLTR()) {
@@ -5050,25 +5050,25 @@ nsRect nsTextFrame::UpdateTextEmphasis(WritingMode aWM,
           : do_AddRef(aProvider.GetFontMetrics());
   
   
-  nscoord absOffset = (side == eLogicalSideBStart) != aWM.IsLineInverted()
+  nscoord absOffset = (side == LogicalSide::BStart) != aWM.IsLineInverted()
                           ? baseFontMetrics->MaxAscent() + fm->MaxDescent()
                           : baseFontMetrics->MaxDescent() + fm->MaxAscent();
   RubyBlockLeadings leadings;
   if (nsRubyFrame* ruby = FindFurthestInlineRubyAncestor(this)) {
     leadings = ruby->GetBlockLeadings();
   }
-  if (side == eLogicalSideBStart) {
+  if (side == LogicalSide::BStart) {
     info->baselineOffset = -absOffset - leadings.mStart;
     overflowRect.BStart(aWM) = -overflowRect.BSize(aWM) - leadings.mStart;
   } else {
-    MOZ_ASSERT(side == eLogicalSideBEnd);
+    MOZ_ASSERT(side == LogicalSide::BEnd);
     info->baselineOffset = absOffset + leadings.mEnd;
     overflowRect.BStart(aWM) = frameSize.BSize(aWM) + leadings.mEnd;
   }
   
   if (isTextCombined) {
     nscoord gap = (baseFontMetrics->MaxHeight() - frameSize.BSize(aWM)) / 2;
-    overflowRect.BStart(aWM) += gap * (side == eLogicalSideBStart ? -1 : 1);
+    overflowRect.BStart(aWM) += gap * (side == LogicalSide::BStart ? -1 : 1);
   }
 
   SetProperty(EmphasisMarkProperty(), info);

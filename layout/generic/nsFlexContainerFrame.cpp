@@ -2234,7 +2234,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       
       
       
-      mozilla::Side itemBlockStartSide = mWM.PhysicalSide(eLogicalSideBStart);
+      mozilla::Side itemBlockStartSide = mWM.PhysicalSide(LogicalSide::BStart);
 
       
       
@@ -2363,7 +2363,7 @@ nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
              "Only expecting to be doing baseline computations when the "
              "cross axis is the block axis");
 
-  mozilla::Side itemBlockStartSide = mWM.PhysicalSide(eLogicalSideBStart);
+  mozilla::Side itemBlockStartSide = mWM.PhysicalSide(LogicalSide::BStart);
 
   nscoord marginBStartToBaseline = ResolvedAscent(aUseFirstLineBaseline) +
                                    PhysicalMargin().Side(itemBlockStartSide);
