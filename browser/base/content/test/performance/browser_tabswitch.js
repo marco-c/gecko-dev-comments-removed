@@ -59,6 +59,14 @@ add_task(async function () {
     getComputedStyle(gBrowser.selectedTab).paddingInlineStart
   );
   let minTabWidth = firstTabRect.width - 2 * tabPaddingStart;
+  if (AppConstants.platform == "macosx") {
+    
+    
+    
+    
+    
+    minTabWidth = 0;
+  }
   let maxTabWidth = firstTabRect.width;
   let inRange = (val, min, max) => min <= val && val <= max;
 
@@ -84,11 +92,7 @@ add_task(async function () {
                   
                   
                   
-                  inRange(
-                    r.w,
-                    minTabWidth - 1, 
-                    maxTabWidth * 2
-                  )
+                  inRange(r.w, minTabWidth, maxTabWidth * 2)
                 )
               )
           ),
