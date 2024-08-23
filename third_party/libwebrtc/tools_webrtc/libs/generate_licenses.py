@@ -77,7 +77,7 @@ LIB_TO_LICENSES_DICT = {
     'ooura': ['common_audio/third_party/ooura/LICENSE'],
     'spl_sqrt_floor': ['common_audio/third_party/spl_sqrt_floor/LICENSE'],
     'kotlin_stdlib': ['third_party/kotlin_stdlib/LICENSE'],
-
+    'jni_zero': ['third_party/jni_zero/LICENSE'],
     
     
     'android_deps': [],
