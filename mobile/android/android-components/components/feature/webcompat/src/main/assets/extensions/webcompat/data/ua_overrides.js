@@ -463,13 +463,13 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
     id: "bug1719859",
-    platform: "all",
+    platform: "android",
     domain: "saxoinvestor.fr",
     bug: "1719859",
     config: {
       matches: ["*://*.saxoinvestor.fr/*"],
       uaTransformer: originalUA => {
-        return originalUA + " Chrome/91.0.4472.114";
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -1350,6 +1350,61 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1849029",
     config: {
       matches: ["*://*.publi24.ro/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1850455",
+    platform: "android",
+    domain: "frontgate.com",
+    bug: "1850455",
+    config: {
+      matches: ["*://*.frontgate.com/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1855088",
+    platform: "all",
+    domain: "hrmis2.eghrmis.gov.my",
+    bug: "1855088",
+    config: {
+      matches: ["*://hrmis2.eghrmis.gov.my/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1855102",
+    platform: "android",
+    domain: "my.southerncross.co.nz",
+    bug: "1855102",
+    config: {
+      matches: ["*://my.southerncross.co.nz/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },

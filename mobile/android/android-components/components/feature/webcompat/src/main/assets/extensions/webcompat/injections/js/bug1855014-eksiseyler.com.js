@@ -1,0 +1,27 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+console.info(
+  "loggingEnabled been set to true for compatibility reasons. See https://webcompat.com/issues/77221 for details."
+);
+
+Object.defineProperty(window.wrappedJSObject, "loggingEnabled", {
+  get: exportFunction(function () {
+    return false;
+  }, window),
+
+  set: exportFunction(function (value = {}) {}, window),
+});
