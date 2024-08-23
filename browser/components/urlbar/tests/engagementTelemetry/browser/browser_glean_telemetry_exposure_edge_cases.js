@@ -40,6 +40,10 @@ add_setup(async function () {
 
   
   
+  
+  
+  
+  
   let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
   UrlbarView.removeStaleRowsTimeout = 30000;
 
@@ -48,6 +52,12 @@ add_setup(async function () {
     UrlbarProvidersManager.unregisterProvider(gProvider);
   });
 });
+
+
+
+
+
+
 
 
 
@@ -147,14 +157,24 @@ async function do_noExposure(showExposureResults) {
 
   
   
-  let rows = UrlbarTestUtils.getResultsContainer(window);
-  let expectedCount = MAX_RESULT_COUNT + 1;
+  let expected = [
+    {
+      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      url: bookmarkUrl,
+    },
+  ];
   if (showExposureResults) {
-    expectedCount++;
+    expected.unshift({
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      url: historyUrl,
+    });
   }
+  let rows = UrlbarTestUtils.getResultsContainer(window);
   Assert.equal(
     rows.children.length,
-    expectedCount,
+    MAX_RESULT_COUNT + expected.length,
     "The view has the expected number of rows"
   );
 
@@ -176,24 +196,15 @@ async function do_noExposure(showExposureResults) {
   }
 
   
-  let expected = [
-    { source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS, url: bookmarkUrl },
-  ];
-  if (showExposureResults) {
-    expected.unshift({
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-      url: historyUrl,
-    });
-  }
   for (let i = 0; i < expected.length; i++) {
-    let { source, url } = expected[i];
+    let { source, type, url } = expected[i];
     let row = rows.children[MAX_RESULT_COUNT + i];
     Assert.ok(row, `rows[${i}] should exist`);
     Assert.ok(BrowserTestUtils.isHidden(row), `rows[${i}] should be hidden`);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
-      `rows[${i}].result.type should be URL`
+      type,
+      `rows[${i}].result.type should be as expected`
     );
     Assert.equal(
       row.result.source,
@@ -221,6 +232,7 @@ async function do_noExposure(showExposureResults) {
   await queryPromise;
   await SpecialPowers.popPrefEnv();
   Services.fog.testResetFOG();
+  gProvider.finishQueryPromise = null;
 }
 
 
@@ -228,10 +240,16 @@ async function do_noExposure(showExposureResults) {
 
 
 
-add_task(async function exposure_append() {
+
+
+
+
+
+
+add_task(async function exposure_append_underfilled() {
   for (let showExposureResults of [true, false]) {
     for (let cancelSecondQuery of [true, false]) {
-      await do_exposure_append({
+      await do_exposure_append_underfilled({
         showExposureResults,
         cancelSecondQuery,
       });
@@ -239,7 +257,10 @@ add_task(async function exposure_append() {
   }
 });
 
-async function do_exposure_append({ showExposureResults, cancelSecondQuery }) {
+async function do_exposure_append_underfilled({
+  showExposureResults,
+  cancelSecondQuery,
+}) {
   info(
     "Starting do_exposure_append: " +
       JSON.stringify({ showExposureResults, cancelSecondQuery })
@@ -285,6 +306,7 @@ async function do_exposure_append({ showExposureResults, cancelSecondQuery }) {
     ),
   ];
 
+  
   
   
   
@@ -357,7 +379,13 @@ async function do_exposure_append({ showExposureResults, cancelSecondQuery }) {
   await queryPromise;
   await SpecialPowers.popPrefEnv();
   Services.fog.testResetFOG();
+  gProvider.finishQueryPromise = null;
 }
+
+
+
+
+
 
 
 
@@ -434,6 +462,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
   
   
   
+  
   let queryResolver = Promise.withResolvers();
   gProvider.finishQueryPromise = queryResolver.promise;
 
@@ -503,6 +532,519 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
   await queryPromise;
   await SpecialPowers.popPrefEnv();
   Services.fog.testResetFOG();
+  gProvider.finishQueryPromise = null;
+}
+
+
+
+
+
+
+
+
+
+
+add_task(async function exposure_append_full() {
+  for (let showExposureResults of [true, false]) {
+    await do_exposure_append_full(showExposureResults);
+  }
+});
+
+async function do_exposure_append_full(showExposureResults) {
+  info(
+    "Starting do_exposure_append_full: " +
+      JSON.stringify({ showExposureResults })
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.exposureResults", "history"],
+      ["browser.urlbar.showExposureResults", showExposureResults],
+    ],
+  });
+
+  
+  gProvider.results = [];
+  for (let i = 0; i < MAX_RESULT_COUNT; i++) {
+    gProvider.results.push(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        {
+          suggestion: "suggestion " + i,
+          engine: Services.search.defaultEngine.name,
+        }
+      )
+    );
+  }
+
+  
+  info("Doing first query");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test 1",
+  });
+
+  
+  
+  
+  
+  
+  
+  let historyUrl = "https://example.com/history";
+  let bookmarkUrl = "https://example.com/bookmark";
+  gProvider.results = [
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      { url: historyUrl }
+    ),
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      { url: bookmarkUrl }
+    ),
+  ];
+
+  
+  
+  
+  
+  let queryResolver = Promise.withResolvers();
+  gProvider.finishQueryPromise = queryResolver.promise;
+
+  
+  
+  
+  let lastRowPromise = promiseLastRowAppended(
+    row => row.result.payload.url == bookmarkUrl
+  );
+
+  
+  info("Starting second query");
+  let queryPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test 2",
+    reopenOnBlur: false,
+  });
+
+  
+  info("Waiting for last row");
+  let lastRow = await lastRowPromise;
+  info("Done waiting for last row");
+
+  Assert.ok(
+    BrowserTestUtils.isHidden(lastRow),
+    "The new bookmark row should be hidden since the view is full"
+  );
+
+  
+  
+  let expected = [
+    {
+      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      url: bookmarkUrl,
+    },
+  ];
+  if (showExposureResults) {
+    expected.unshift({
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      url: historyUrl,
+    });
+  }
+  let rows = UrlbarTestUtils.getResultsContainer(window);
+  Assert.equal(
+    rows.children.length,
+    MAX_RESULT_COUNT + expected.length,
+    "The view has the expected number of rows"
+  );
+
+  
+  for (let i = 0; i < MAX_RESULT_COUNT; i++) {
+    let row = rows.children[i];
+    Assert.ok(BrowserTestUtils.isVisible(row), `rows[${i}] should be visible`);
+    Assert.ok(
+      row.result.type == UrlbarUtils.RESULT_TYPE.SEARCH,
+      `rows[${i}].result.type should be SEARCH`
+    );
+    
+    if (i > 0) {
+      Assert.ok(
+        row.result.payload.suggestion,
+        `rows[${i}] should have a suggestion`
+      );
+    }
+  }
+
+  
+  for (let i = 0; i < expected.length; i++) {
+    let { source, type, url } = expected[i];
+    let row = rows.children[MAX_RESULT_COUNT + i];
+    Assert.ok(row, `rows[${i}] should exist`);
+    Assert.ok(BrowserTestUtils.isHidden(row), `rows[${i}] should be hidden`);
+    Assert.equal(
+      row.result.type,
+      type,
+      `rows[${i}].result.type should be as expected`
+    );
+    Assert.equal(
+      row.result.source,
+      source,
+      `rows[${i}].result.source should be as expected`
+    );
+    Assert.equal(
+      row.result.payload.url,
+      url,
+      `rows[${i}] URL should be as expected`
+    );
+  }
+
+  
+  queryResolver.resolve();
+  info("Waiting for second query to finish");
+  await queryPromise;
+  info("Second query finished");
+
+  rows = UrlbarTestUtils.getResultsContainer(window);
+  Assert.equal(
+    rows.children.length,
+    
+    1 + expected.length,
+    "The view has the expected number of rows"
+  );
+
+  
+  for (let i = 0; i < expected.length; i++) {
+    let { source, type, url } = expected[i];
+    let index = i + 1;
+    let row = rows.children[index];
+    Assert.ok(row, `rows[${index}] should exist`);
+    Assert.ok(
+      BrowserTestUtils.isVisible(row),
+      `rows[${index}] should be visible`
+    );
+    Assert.equal(
+      row.result.type,
+      type,
+      `rows[${index}].result.type should be as expected`
+    );
+    Assert.equal(
+      row.result.source,
+      source,
+      `rows[${index}].result.source should be as expected`
+    );
+    Assert.equal(
+      row.result.payload.url,
+      url,
+      `rows[${index}] URL should be as expected`
+    );
+  }
+
+  
+  info("Closing view and blurring");
+  await UrlbarTestUtils.promisePopupClose(window);
+  gURLBar.blur();
+
+  
+  assertExposureTelemetry([{ results: "history" }]);
+
+  
+  await SpecialPowers.popPrefEnv();
+  Services.fog.testResetFOG();
+  gProvider.finishQueryPromise = null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function exposure_append_full_twice() {
+  for (let showExposureResults of [true, false]) {
+    await do_exposure_append_full_twice(showExposureResults);
+  }
+});
+
+async function do_exposure_append_full_twice(showExposureResults) {
+  info(
+    "Starting do_exposure_append_full_twice: " +
+      JSON.stringify({ showExposureResults })
+  );
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.exposureResults", "history,tab"],
+      ["browser.urlbar.showExposureResults", showExposureResults],
+    ],
+  });
+
+  
+  gProvider.results = [];
+  for (let i = 0; i < MAX_RESULT_COUNT; i++) {
+    gProvider.results.push(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        {
+          suggestion: "suggestion " + i,
+          engine: Services.search.defaultEngine.name,
+        }
+      )
+    );
+  }
+
+  
+  info("Doing first query");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test 1",
+  });
+
+  
+  
+  
+  
+  
+  
+  let historyUrl = "https://example.com/history";
+  let tabUrl = "https://example.com/tab";
+  let bookmarkUrl = "https://example.com/bookmark";
+  gProvider.results = [
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      { url: historyUrl }
+    ),
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      UrlbarUtils.RESULT_SOURCE.TABS,
+      { url: tabUrl }
+    ),
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      { url: bookmarkUrl }
+    ),
+  ];
+
+  
+  
+  
+  
+  let secondQueryResolver = Promise.withResolvers();
+  gProvider.finishQueryPromise = secondQueryResolver.promise;
+
+  
+  
+  
+  let lastRowPromise = promiseLastRowAppended(
+    row => row.result.payload.url == bookmarkUrl
+  );
+
+  
+  info("Starting second query");
+  let secondQueryPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test 2",
+    reopenOnBlur: false,
+  });
+
+  
+  info("Waiting for last row");
+  let lastRow = await lastRowPromise;
+  info("Done waiting for last row");
+
+  Assert.ok(
+    BrowserTestUtils.isHidden(lastRow),
+    "The new bookmark row should be hidden since the view is full"
+  );
+
+  
+  
+  let expected = [
+    {
+      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      url: bookmarkUrl,
+    },
+  ];
+  if (showExposureResults) {
+    expected.unshift(
+      {
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        url: historyUrl,
+      },
+      {
+        source: UrlbarUtils.RESULT_SOURCE.TABS,
+        type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+        url: tabUrl,
+      }
+    );
+  }
+  let rows = UrlbarTestUtils.getResultsContainer(window);
+  Assert.equal(
+    rows.children.length,
+    MAX_RESULT_COUNT + expected.length,
+    "The view has the expected number of rows"
+  );
+
+  
+  for (let i = 0; i < MAX_RESULT_COUNT; i++) {
+    let row = rows.children[i];
+    Assert.ok(BrowserTestUtils.isVisible(row), `rows[${i}] should be visible`);
+    Assert.ok(
+      row.result.type == UrlbarUtils.RESULT_TYPE.SEARCH,
+      `rows[${i}].result.type should be SEARCH`
+    );
+    
+    if (i > 0) {
+      Assert.ok(
+        row.result.payload.suggestion,
+        `rows[${i}] should have a suggestion`
+      );
+    }
+  }
+
+  
+  for (let i = 0; i < expected.length; i++) {
+    let { source, type, url } = expected[i];
+    let row = rows.children[MAX_RESULT_COUNT + i];
+    Assert.ok(row, `rows[${i}] should exist`);
+    Assert.ok(BrowserTestUtils.isHidden(row), `rows[${i}] should be hidden`);
+    Assert.equal(
+      row.result.type,
+      type,
+      `rows[${i}].result.type should be as expected`
+    );
+    Assert.equal(
+      row.result.source,
+      source,
+      `rows[${i}].result.source should be as expected`
+    );
+    Assert.equal(
+      row.result.payload.url,
+      url,
+      `rows[${i}] URL should be as expected`
+    );
+  }
+
+  
+  gProvider.results = [
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      { url: historyUrl }
+    ),
+  ];
+
+  
+  
+  
+  
+  
+  
+
+  let thirdQueryStartedPromise = new Promise(resolve => {
+    let queryListener = {
+      onQueryStarted: () => {
+        gURLBar.controller.removeQueryListener(queryListener);
+        resolve();
+      },
+    };
+    gURLBar.controller.addQueryListener(queryListener);
+  });
+
+  info("Starting third query");
+  let thirdQueryPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test 3",
+    reopenOnBlur: false,
+  });
+
+  
+  
+  
+  
+  
+  info("Waiting for third query to start");
+  await thirdQueryStartedPromise;
+  info("Resolving provider's finishQueryPromise");
+  secondQueryResolver.resolve();
+
+  
+  info("Waiting for third query to finish");
+  await thirdQueryPromise;
+
+  expected = [];
+  if (showExposureResults) {
+    expected.unshift({
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      url: historyUrl,
+    });
+  }
+
+  rows = UrlbarTestUtils.getResultsContainer(window);
+  Assert.equal(
+    rows.children.length,
+    
+    1 + expected.length,
+    "The view has the expected number of rows"
+  );
+
+  
+  for (let i = 0; i < expected.length; i++) {
+    let { source, type, url } = expected[i];
+    let index = i + 1;
+    let row = rows.children[index];
+    Assert.ok(row, `rows[${index}] should exist`);
+    Assert.ok(
+      BrowserTestUtils.isVisible(row),
+      `rows[${index}] should be visible`
+    );
+    Assert.equal(
+      row.result.type,
+      type,
+      `rows[${index}].result.type should be as expected`
+    );
+    Assert.equal(
+      row.result.source,
+      source,
+      `rows[${index}].result.source should be as expected`
+    );
+    Assert.equal(
+      row.result.payload.url,
+      url,
+      `rows[${index}] URL should be as expected`
+    );
+  }
+
+  
+  info("Closing view and blurring");
+  await UrlbarTestUtils.promisePopupClose(window);
+  gURLBar.blur();
+
+  
+  
+  
+  assertExposureTelemetry([{ results: "history" }]);
+
+  
+  await secondQueryPromise;
+  await SpecialPowers.popPrefEnv();
+  Services.fog.testResetFOG();
+  gProvider.finishQueryPromise = null;
 }
 
 
