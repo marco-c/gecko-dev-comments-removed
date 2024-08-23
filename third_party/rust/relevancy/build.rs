@@ -1,0 +1,8 @@
+
+
+
+
+
+fn main() {
+    uniffi::generate_scaffolding("./src/relevancy.udl").unwrap();
+}

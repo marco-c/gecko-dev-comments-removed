@@ -1,3 +1,8 @@
+
+
+
+
+
 use serde::{Deserialize, Serialize};
 
 use crate::rs::{DownloadedGlobalConfig, DownloadedWeatherData};
