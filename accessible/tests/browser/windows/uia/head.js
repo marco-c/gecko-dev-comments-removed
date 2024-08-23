@@ -86,6 +86,17 @@ function setUpWaitForUiaEvent(eventName, id) {
 
 
 
+
+function setUpWaitForUiaPropEvent(propName, id) {
+  return definePyVar(
+    "onEvent",
+    `WaitForUiaEvent(property=UIA_${propName}PropertyId, match="${id}")`
+  );
+}
+
+
+
+
 function waitForUiaEvent() {
   return runPython(`
     onEvent.wait()
