@@ -72,6 +72,13 @@ struct ParamTraits<mozilla::dom::IDBTransaction::Mode>
           mozilla::dom::IDBTransaction::Mode::ReadOnly,
           mozilla::dom::IDBTransaction::Mode::Invalid> {};
 
+template <>
+struct ParamTraits<mozilla::dom::IDBTransaction::Durability>
+    : public ContiguousEnumSerializer<
+          mozilla::dom::IDBTransaction::Durability,
+          mozilla::dom::IDBTransaction::Durability::Default,
+          mozilla::dom::IDBTransaction::Durability::Invalid> {};
+
 }  
 
 #endif  
