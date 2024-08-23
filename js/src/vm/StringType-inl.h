@@ -19,7 +19,6 @@
 #include "vm/StaticStrings.h"
 
 #include "gc/GCContext-inl.h"
-#include "gc/Marking-inl.h"
 #include "gc/StoreBuffer-inl.h"
 #include "vm/JSContext-inl.h"
 
@@ -530,19 +529,6 @@ inline js::PropertyName* JSLinearString::toPropertyName(JSContext* cx) {
   }
   return atom->asPropertyName();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 bool JSLinearString::hasMovableChars() const {
   const JSLinearString* topBase = this;

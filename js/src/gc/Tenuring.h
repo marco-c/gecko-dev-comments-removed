@@ -106,9 +106,8 @@ class TenuringTracer final : public JSTracer {
   JSString* promoteOrForward(JSString* str);
   JS::BigInt* promoteOrForward(JS::BigInt* bip);
 
-  
   template <typename T>
-  bool traceBufferedCells(Arena* arena, ArenaCellSet* cells);
+  void traceBufferedCells(Arena* arena, ArenaCellSet* cells);
 
   class AutoPromotedAnyToNursery;
 

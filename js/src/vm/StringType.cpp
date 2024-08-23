@@ -380,13 +380,9 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         static_assert(JSString::LINEAR_IS_EXTENSIBLE_BIT ==
                       JSString::INLINE_IS_FAT_BIT);
         if (str->isLinear()) {
-          if (str->isInline()) {
-            known("FAT");
-          } else if (!str->isAtom()) {
-            known("EXTENSIBLE");
-          } else {
-            unknown(i);
-          }
+          known("EXTENSIBLE");
+        } else if (str->isInline()) {
+          known("FAT");
         } else {
           unknown(i);
         }
@@ -411,6 +407,9 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
       case JSString::INDEX_VALUE_BIT:
         known("INDEX_VALUE_BIT");
         break;
+      case JSString::NON_DEDUP_BIT:
+        known("NON_DEDUP_BIT");
+        break;
       case JSString::IN_STRING_TO_ATOM_CACHE:
         known("IN_STRING_TO_ATOM_CACHE");
         break;
@@ -418,7 +417,7 @@ void ForEachStringFlag(const JSString* str, uint32_t flags, KnownF known,
         if (str->isRope()) {
           known("FLATTEN_VISIT_RIGHT");
         } else {
-          known("NON_DEDUP_BIT");
+          unknown(i);
         }
         break;
       case JSString::FLATTEN_FINISH_NODE:
@@ -818,30 +817,15 @@ static bool UpdateNurseryBuffersOnTransfer(js::Nursery& nursery, JSString* from,
   return true;
 }
 
-static bool CanReuseLeftmostBuffer(JSRope* root, JSString* leftmostChild,
+static bool CanReuseLeftmostBuffer(JSString* leftmostChild, size_t wholeLength,
                                    bool hasTwoByteChars) {
   if (!leftmostChild->isExtensible()) {
     return false;
   }
 
   JSExtensibleString& str = leftmostChild->asExtensible();
-  if (str.capacity() < root->length() ||
-      str.hasTwoByteChars() != hasTwoByteChars) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (!root->isTenured() && leftmostChild->isTenured()) {
-    return false;
-  }
-
-  return true;
+  return str.capacity() >= wholeLength &&
+         str.hasTwoByteChars() == hasTwoByteChars;
 }
 
 JSLinearString* JSRope::flatten(JSContext* maybecx) {
@@ -931,19 +915,6 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
   const size_t wholeLength = root->length();
   size_t wholeCapacity;
   CharT* wholeChars;
@@ -960,7 +931,7 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   JSString* leftmostChild = leftmostRope->leftChild();
 
   bool reuseLeftmostBuffer = CanReuseLeftmostBuffer(
-      root, leftmostChild, std::is_same_v<CharT, char16_t>);
+      leftmostChild, wholeLength, std::is_same_v<CharT, char16_t>);
 
   if (reuseLeftmostBuffer) {
     JSExtensibleString& left = leftmostChild->asExtensible();
@@ -1484,17 +1455,15 @@ uint32_t JSAtom::getIndexSlow() const {
                           : AtomCharsToIndex(twoByteChars(nogc), len);
 }
 
-
-
-
-
-
-void PreventRootBaseDeduplication(JSLinearString* s) {
-  while (s->hasBase()) {
+static void MarkStringAndBasesNonDeduplicatable(JSLinearString* s) {
+  while (true) {
+    if (!s->isTenured()) {
+      s->setNonDeduplicatable();
+    }
+    if (!s->hasBase()) {
+      break;
+    }
     s = s->base();
-  }
-  if (!s->isTenured()) {
-    s->setNonDeduplicatable();
   }
 }
 
@@ -1523,7 +1492,7 @@ bool AutoStableStringChars::init(JSContext* cx, JSString* s) {
     twoByteChars_ = linearString->rawTwoByteChars();
   }
 
-  PreventRootBaseDeduplication(linearString);
+  MarkStringAndBasesNonDeduplicatable(linearString);
 
   s_ = linearString;
   return true;
@@ -1549,7 +1518,7 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
   state_ = TwoByte;
   twoByteChars_ = linearString->rawTwoByteChars();
 
-  PreventRootBaseDeduplication(linearString);
+  MarkStringAndBasesNonDeduplicatable(linearString);
 
   s_ = linearString;
   return true;

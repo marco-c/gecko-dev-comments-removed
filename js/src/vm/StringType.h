@@ -408,9 +408,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const uint32_t INDEX_VALUE_SHIFT = 16;
 
   
-  
-  
-  static const uint32_t NON_DEDUP_BIT = js::Bit(15);
+  static const uint32_t NON_DEDUP_BIT = js::Bit(12);
 
   
   
@@ -629,27 +627,13 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  void setNonDeduplicatable() {
-    MOZ_ASSERT(isLinear());
-    MOZ_ASSERT(!isAtom());
-    setFlagBit(NON_DEDUP_BIT);
-  }
+  void setNonDeduplicatable() { setFlagBit(NON_DEDUP_BIT); }
 
-  
-  
   MOZ_ALWAYS_INLINE
-  void clearBitsOnTenure() {
-    MOZ_ASSERT(!isAtom());
-    clearFlagBit(NON_DEDUP_BIT | IN_STRING_TO_ATOM_CACHE);
-  }
+  void clearNonDeduplicatable() { clearFlagBit(NON_DEDUP_BIT); }
 
-  
   MOZ_ALWAYS_INLINE
-  bool isDeduplicatable() {
-    MOZ_ASSERT(isLinear());
-    MOZ_ASSERT(!isAtom());
-    return !(flags() & NON_DEDUP_BIT);
-  }
+  bool isDeduplicatable() { return !(flags() & NON_DEDUP_BIT); }
 
   void setInStringToAtomCache() {
     MOZ_ASSERT(!isAtom());
@@ -797,8 +781,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 #endif
 
   void traceChildren(JSTracer* trc);
-
-  inline void traceBasePreserveNurseryEdge(JSTracer* trc);
 
   
   bool isPermanentAndMayBeShared() const { return isPermanentAtom(); }
@@ -949,7 +931,6 @@ class JSLinearString : public JSString {
   friend class JS::AutoStableStringChars;
   friend class js::gc::TenuringTracer;
   friend class js::gc::CellAllocator;
-  friend class JSDependentString;  
 
   
   JSLinearString* ensureLinear(JSContext* cx) = delete;
@@ -1157,11 +1138,6 @@ class JSDependentString : public JSLinearString {
   void relocateNonInlineChars(T chars, size_t offset) {
     setNonInlineChars(chars + offset);
   }
-
-  template <typename CharT>
-  inline void sweepTyped();
-
-  inline void sweep();
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;

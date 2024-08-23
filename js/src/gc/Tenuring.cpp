@@ -18,7 +18,6 @@
 #include "gc/Pretenuring.h"
 #include "gc/Zone.h"
 #include "jit/JitCode.h"
-#include "js/TypeDecls.h"
 #include "proxy/Proxy.h"
 #include "vm/BigIntType.h"
 #include "vm/JSScript.h"
@@ -338,29 +337,88 @@ void js::gc::StoreBuffer::SlotsEdge::trace(TenuringTracer& mover) const {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline void PreventDeduplicationOfReachableStrings(JSString* str) {
+  MOZ_ASSERT(str->isTenured());
+  MOZ_ASSERT(!str->isForwarded());
+
+  JSLinearString* baseOrRelocOverlay = str->nurseryBaseOrRelocOverlay();
+
+  
+  
+  while (true) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (baseOrRelocOverlay->isForwarded()) {
+      JSLinearString* tenuredBase = Forwarded(baseOrRelocOverlay);
+      if (!tenuredBase->hasBase()) {
+        break;
+      }
+      baseOrRelocOverlay = StringRelocationOverlay::fromCell(baseOrRelocOverlay)
+                               ->savedNurseryBaseOrRelocOverlay();
+    } else {
+      JSLinearString* base = baseOrRelocOverlay;
+      if (base->isTenured()) {
+        break;
+      }
+      if (base->isDeduplicatable()) {
+        base->setNonDeduplicatable();
+      }
+      if (!base->hasBase()) {
+        break;
+      }
+      baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
+    }
+  }
+}
+
 static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
+  MOZ_ASSERT_IF(object->storeBuffer(),
+                !object->storeBuffer()->markingNondeduplicatable);
+
   mover.traceObject(object);
 }
 
+static inline void TraceWholeCell(TenuringTracer& mover, JSString* str) {
+  MOZ_ASSERT_IF(str->storeBuffer(),
+                str->storeBuffer()->markingNondeduplicatable);
 
-static inline bool TraceWholeCell(TenuringTracer& mover, JSString* str) {
+  
+  
+  
   if (str->hasBase()) {
-    
-    
-    
-    
-    
-    
-    JSLinearString* base = str->nurseryBaseOrRelocOverlay();
-    if (IsInsideNursery(base)) {
-      str->traceBasePreserveNurseryEdge(&mover);
-      return true;
-    }
+    PreventDeduplicationOfReachableStrings(str);
   }
 
   str->traceChildren(&mover);
-
-  return false;
 }
 
 static inline void TraceWholeCell(TenuringTracer& mover, BaseScript* script) {
@@ -373,7 +431,7 @@ static inline void TraceWholeCell(TenuringTracer& mover,
 }
 
 template <typename T>
-bool TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
+void TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
   for (size_t i = 0; i < MaxArenaCellIndex; i += cells->BitsPerWord) {
     ArenaCellSet::WordT bitset = cells->getWord(i / cells->BitsPerWord);
     while (bitset) {
@@ -392,152 +450,58 @@ bool TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
       }
     }
   }
-
-  return false;
 }
 
-template <>
-bool TenuringTracer::traceBufferedCells<JSString>(Arena* arena,
-                                                  ArenaCellSet* cells) {
-  bool needsSweep = false;
-  for (size_t i = 0; i < MaxArenaCellIndex; i += cells->BitsPerWord) {
-    ArenaCellSet::WordT bitset = cells->getWord(i / cells->BitsPerWord);
-    ArenaCellSet::WordT tosweep = bitset;
-    while (bitset) {
-      size_t bit = i + js::detail::CountTrailingZeroes(bitset);
-      auto* cell = reinterpret_cast<JSString*>(uintptr_t(arena) +
-                                               ArenaCellIndexBytes * bit);
-      TenuringTracer::AutoPromotedAnyToNursery promotedToNursery(*this);
-      bool needsSweep = TraceWholeCell(*this, cell);
-      if (promotedToNursery) {
-        runtime()->gc.storeBuffer().putWholeCell(cell);
-      }
-      ArenaCellSet::WordT mask = bitset - 1;
-      bitset &= mask;
-      if (!needsSweep) {
-        tosweep &= mask;
-      }
-    }
-
-    cells->setWord(i / cells->BitsPerWord, tosweep);
-    if (tosweep) {
-      needsSweep = true;
-    }
-  }
-
-  return needsSweep;
-}
-
-ArenaCellSet* ArenaCellSet::trace(TenuringTracer& mover) {
-  ArenaCellSet* head = nullptr;
-
-  ArenaCellSet* cells = this;
-  while (cells) {
+void ArenaCellSet::trace(TenuringTracer& mover) {
+  for (ArenaCellSet* cells = this; cells; cells = cells->next) {
     cells->check();
 
     Arena* arena = cells->arena;
     arena->bufferedCells() = &ArenaCellSet::Empty;
 
     JS::TraceKind kind = MapAllocToTraceKind(arena->getAllocKind());
-    bool needsSweep;
     switch (kind) {
       case JS::TraceKind::Object:
-        needsSweep = mover.traceBufferedCells<JSObject>(arena, cells);
+        mover.traceBufferedCells<JSObject>(arena, cells);
         break;
       case JS::TraceKind::String:
-        needsSweep = mover.traceBufferedCells<JSString>(arena, cells);
+        mover.traceBufferedCells<JSString>(arena, cells);
         break;
       case JS::TraceKind::Script:
-        needsSweep = mover.traceBufferedCells<BaseScript>(arena, cells);
+        mover.traceBufferedCells<BaseScript>(arena, cells);
         break;
       case JS::TraceKind::JitCode:
-        needsSweep = mover.traceBufferedCells<jit::JitCode>(arena, cells);
+        mover.traceBufferedCells<jit::JitCode>(arena, cells);
         break;
       default:
         MOZ_CRASH("Unexpected trace kind");
     }
-
-    ArenaCellSet* next = cells->next;
-    if (needsSweep) {
-      cells->next = head;
-      head = cells;
-    }
-
-    cells = next;
   }
-
-  return head;
 }
 
 void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover,
                                                  StoreBuffer* owner) {
   MOZ_ASSERT(owner->isEnabled());
 
-  if (head_) {
-    head_ = head_->trace(mover);
+#ifdef DEBUG
+  
+  
+  MOZ_ASSERT(!owner->markingNondeduplicatable);
+  owner->markingNondeduplicatable = true;
+#endif
+  
+  
+  if (stringHead_) {
+    stringHead_->trace(mover);
   }
-}
-
-
-
-
-template <typename CharT>
-void JSDependentString::sweepTyped() {
-  MOZ_ASSERT(isTenured());
-  MOZ_ASSERT(IsInsideNursery(nurseryBaseOrRelocOverlay()));
-  JSLinearString* origBase = nurseryBaseOrRelocOverlay();
-  while (origBase->isForwarded() || origBase->hasBase()) {
-    if (!MaybeForwarded(origBase)->hasBase()) {
-      break;
-    }
-    if (origBase->isForwarded()) {
-      origBase = js::gc::StringRelocationOverlay::fromCell(origBase)
-                     ->savedNurseryBaseOrRelocOverlay();
-    } else {
-      origBase = origBase->nurseryBaseOrRelocOverlay();
-    }
+#ifdef DEBUG
+  owner->markingNondeduplicatable = false;
+#endif
+  if (nonStringHead_) {
+    nonStringHead_->trace(mover);
   }
-  JSLinearString* tenuredBase = Forwarded(origBase);
-  auto* baseOverlay = js::gc::StringRelocationOverlay::fromCell(origBase);
-  const CharT* oldBaseChars = baseOverlay->savedNurseryChars<CharT>();
-  const CharT* oldDepChars = JSString::nonInlineCharsRaw<CharT>();
-  const CharT* newBaseChars = tenuredBase->JSString::nonInlineCharsRaw<CharT>();
-  size_t offset = oldDepChars - oldBaseChars;
-  MOZ_ASSERT(offset < tenuredBase->length());
-  relocateNonInlineChars(newBaseChars, offset);
-  d.s.u3.base = tenuredBase;
-}
 
-inline void JSDependentString::sweep() {
-  if (hasTwoByteChars()) {
-    sweepTyped<char16_t>();
-  } else {
-    sweepTyped<JS::Latin1Char>();
-  }
-}
-
-static void SweepDependentStrings(Arena* arena, ArenaCellSet* cells) {
-  for (size_t i = 0; i < MaxArenaCellIndex; i += cells->BitsPerWord) {
-    ArenaCellSet::WordT bitset = cells->getWord(i / cells->BitsPerWord);
-    while (bitset) {
-      size_t bit = i + js::detail::CountTrailingZeroes(bitset);
-      auto* str = reinterpret_cast<JSString*>(uintptr_t(arena) +
-                                              ArenaCellIndexBytes * bit);
-      MOZ_ASSERT(str->isTenured());
-      str->asDependent().sweep();
-      bitset &= bitset - 1;  
-    }
-  }
-}
-
-void ArenaCellSet::sweepDependentStrings() {
-  for (ArenaCellSet* cells = this; cells; cells = cells->next) {
-    Arena* arena = cells->arena;
-    arena->bufferedCells() = &ArenaCellSet::Empty;
-    MOZ_ASSERT(MapAllocToTraceKind(arena->getAllocKind()) ==
-               JS::TraceKind::String);
-    SweepDependentStrings(arena, cells);
-  }
+  stringHead_ = nonStringHead_ = nullptr;
 }
 
 template <typename T>
@@ -913,7 +877,6 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   
   
   
-  MOZ_ASSERT(!src->isAtom());
   if (src->isLinear() && src->inStringToAtomCache() &&
       src->isDeduplicatable() && !src->hasBase()) {
     JSLinearString* linear = &src->asLinear();
@@ -957,7 +920,6 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   if (shouldTenure(zone, JS::TraceKind::String, src) &&
       src->length() < MAX_DEDUPLICATABLE_STRING_LENGTH && src->isLinear() &&
       src->isDeduplicatable() && stringDeDupSet.isSome()) {
-    src->clearBitsOnTenure();
     auto p = stringDeDupSet->lookupForAdd(src);
     if (p) {
       
@@ -982,15 +944,14 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
   } else {
     dst = allocString(src, zone, dstKind);
     if (dst->isTenured()) {
-      src->clearBitsOnTenure();
-      dst->clearBitsOnTenure();
+      dst->clearNonDeduplicatable();
     }
   }
 
   zone->stringStats.ref().noteTenured(src->allocSize());
 
   auto* overlay = StringRelocationOverlay::forwardCell(src, dst);
-  MOZ_ASSERT_IF(dst->isTenured() && dst->isLinear(), dst->isDeduplicatable());
+  MOZ_ASSERT_IF(dst->isTenured(), dst->isDeduplicatable());
 
   if (dst->hasBase() || dst->isRope()) {
     
@@ -1110,8 +1071,7 @@ void js::gc::TenuringTracer::collectToStringFixedPoint() {
     MOZ_ASSERT_IF(IsInsideNursery(str), !nursery().inCollectedRegion(str));
 
     
-    MOZ_ASSERT(!str->isAtom());
-    MOZ_ASSERT_IF(str->isTenured() && str->isLinear(), str->isDeduplicatable());
+    MOZ_ASSERT_IF(str->isTenured(), str->isDeduplicatable());
 
     
     
