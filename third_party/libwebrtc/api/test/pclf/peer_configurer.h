@@ -158,6 +158,8 @@ class PeerConfigurer {
   
   
   PeerConfigurer* SetAecDumpPath(absl::string_view path);
+  PeerConfigurer* SetPCFOptions(
+      PeerConnectionFactoryInterface::Options options);
   PeerConfigurer* SetRTCConfiguration(
       PeerConnectionInterface::RTCConfiguration configuration);
   PeerConfigurer* SetRTCOfferAnswerOptions(
