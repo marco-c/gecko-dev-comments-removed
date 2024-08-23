@@ -4,16 +4,14 @@
 
 "use strict";
 
-
-
-
-const {
-  startTracing,
-  stopTracing,
-  addTracingListener,
-  removeTracingListener,
-  NEXT_INTERACTION_MESSAGE,
-} = require("resource://devtools/server/tracer/tracer.jsm");
+const lazy = {};
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    JSTracer: "resource://devtools/server/tracer/tracer.sys.mjs",
+  },
+  { global: "contextual" }
+);
 
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const { tracerSpec } = require("resource://devtools/shared/specs/tracer.js");
@@ -136,10 +134,10 @@ class TracerActor extends Actor {
       onTracingPending: this.onTracingPending.bind(this),
       onTracingDOMMutation: this.onTracingDOMMutation.bind(this),
     };
-    addTracingListener(this.tracingListener);
+    lazy.JSTracer.addTracingListener(this.tracingListener);
     this.traceValues = !!options.traceValues;
     try {
-      startTracing({
+      lazy.JSTracer.startTracing({
         global: this.targetActor.window || this.targetActor.workerGlobal,
         prefix: options.prefix || "",
         
@@ -170,10 +168,10 @@ class TracerActor extends Actor {
       return;
     }
     
-    removeTracingListener(this.tracingListener);
+    lazy.JSTracer.removeTracingListener(this.tracingListener);
     this.tracingListener = null;
 
-    stopTracing();
+    lazy.JSTracer.stopTracing();
     this.logMethod = null;
   }
 
@@ -230,7 +228,7 @@ class TracerActor extends Actor {
       if (consoleMessageWatcher) {
         consoleMessageWatcher.emitMessages([
           {
-            arguments: [NEXT_INTERACTION_MESSAGE],
+            arguments: [lazy.JSTracer.NEXT_INTERACTION_MESSAGE],
             styles: [],
             level: "jstracer",
             chromeContext: false,

@@ -8,8 +8,11 @@ try {
   const dbg = new Debugger(global);
   const [debuggee] = dbg.getDebuggees();
 
-  
-  loadSubScript("resource://devtools/server/tracer/tracer.jsm");
+  const { JSTracer } = ChromeUtils.importESModule(
+    "resource://devtools/server/tracer/tracer.sys.mjs",
+    { global: "contextual" }
+  );
+
   const frames = [];
   const listener = {
     onTracingFrame(args) {
@@ -19,13 +22,13 @@ try {
       return true;
     },
   };
-  addTracingListener(listener);
-  startTracing({ global, prefix: "testWorkerPrefix" });
+  JSTracer.addTracingListener(listener);
+  JSTracer.startTracing({ global, prefix: "testWorkerPrefix" });
 
   debuggee.executeInGlobal("foo()");
 
-  stopTracing();
-  removeTracingListener(listener);
+  JSTracer.stopTracing();
+  JSTracer.removeTracingListener(listener);
 
   
   postMessage(JSON.stringify(frames));
