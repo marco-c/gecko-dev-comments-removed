@@ -549,26 +549,6 @@ void Location::Reload(bool aForceget, nsIPrincipal& aSubjectPrincipal,
     return aRv.Throw(NS_ERROR_FAILURE);
   }
 
-  if (StaticPrefs::dom_block_reload_from_resize_event_handler()) {
-    nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
-    if (window && window->IsHandlingResizeEvent()) {
-      
-      
-      
-      
-      
-      
-      RefPtr<Document> doc = window->GetExtantDoc();
-
-      nsPresContext* pcx;
-      if (doc && (pcx = doc->GetPresContext())) {
-        pcx->RebuildAllStyleData(NS_STYLE_HINT_REFLOW,
-                                 RestyleHint::RestyleSubtree());
-      }
-      return;
-    }
-  }
-
   RefPtr<BrowsingContext> bc = GetBrowsingContext();
   if (!bc || bc->IsDiscarded()) {
     return;
