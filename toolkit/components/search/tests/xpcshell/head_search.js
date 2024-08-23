@@ -333,11 +333,14 @@ async function getFileDataBuffer(filename) {
 
 
 
+
+
 async function mockRecordWithAttachment({
   filename,
   engineIdentifiers,
   imageSize,
   id = Services.uuid.generateUUID().toString(),
+  lastModified = Date.now(),
 }) {
   let buffer = await getFileDataBuffer(filename);
 
@@ -364,6 +367,7 @@ async function mockRecordWithAttachment({
       size: buffer.byteLength,
       mimetype: "application/json",
     },
+    last_modified: lastModified,
   };
 
   let attachment = {
@@ -382,11 +386,19 @@ async function mockRecordWithAttachment({
 
 
 
-async function insertRecordIntoCollection(client, item) {
+
+
+async function insertRecordIntoCollection(
+  client,
+  item,
+  addAttachmentToCache = true
+) {
   let { record, attachment } = await mockRecordWithAttachment(item);
   await client.db.create(record);
-  await client.attachments.cacheImpl.set(record.id, attachment);
-  await client.db.importChanges({}, Date.now());
+  if (addAttachmentToCache) {
+    await client.attachments.cacheImpl.set(record.id, attachment);
+  }
+  await client.db.importChanges({}, record.last_modified);
 }
 
 
