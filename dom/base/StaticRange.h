@@ -71,6 +71,16 @@ class StaticRange final : public AbstractRange {
 
   bool IsValid() const;
 
+  void NotifyNodeBecomesShadowHost(nsINode* aNode) {
+    if (aNode == mStart.Container()) {
+      mStart.NotifyParentBecomesShadowHost();
+    }
+
+    if (aNode == mEnd.Container()) {
+      mEnd.NotifyParentBecomesShadowHost();
+    }
+  }
+
  private:
   
   
