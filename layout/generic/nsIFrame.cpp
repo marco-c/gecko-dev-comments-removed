@@ -8568,6 +8568,12 @@ const nsFrameSelection* nsIFrame::GetConstFrameSelection() const {
 bool nsIFrame::IsFrameSelected() const {
   NS_ASSERTION(!GetContent() || GetContent()->IsMaybeSelected(),
                "use the public IsSelected() instead");
+  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
+    if (const ShadowRoot* shadowRoot =
+            GetContent()->GetShadowRootForSelection()) {
+      return shadowRoot->IsSelected(0, shadowRoot->GetChildCount());
+    }
+  }
   return GetContent()->IsSelected(0, GetContent()->GetChildCount());
 }
 
@@ -8991,6 +8997,13 @@ nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
 
   if (reachedLimit) {  
     aPos->mResultContent = frame->GetContent();
+    if (ShadowRoot* shadowRoot =
+            aPos->mResultContent->GetShadowRootForSelection()) {
+      
+      
+      
+      aPos->mResultContent = shadowRoot;
+    }
     if (aPos->mDirection == eDirPrevious) {
       aPos->mContentOffset = 0;
     } else if (aPos->mResultContent) {

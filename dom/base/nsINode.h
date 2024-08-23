@@ -1629,7 +1629,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   MOZ_CAN_RUN_SCRIPT nsIContent* GetSelectionRootContent(
-      mozilla::PresShell* aPresShell);
+      mozilla::PresShell* aPresShell, bool aAllowCrossShadowBoundary = false);
 
   nsINodeList* ChildNodes();
 
