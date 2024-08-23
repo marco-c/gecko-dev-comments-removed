@@ -1048,9 +1048,9 @@ NS_IMETHODIMP nsViewSourceChannel::GetDocumentCharacterSet(
 
 void nsViewSourceChannel::SetCorsPreflightParameters(
     const nsTArray<nsCString>& aUnsafeHeaders,
-    bool aShouldStripRequestBodyHeader) {
+    bool aShouldStripRequestBodyHeader, bool aShouldStripAuthHeader) {
   mHttpChannelInternal->SetCorsPreflightParameters(
-      aUnsafeHeaders, aShouldStripRequestBodyHeader);
+      aUnsafeHeaders, aShouldStripRequestBodyHeader, aShouldStripAuthHeader);
 }
 
 void nsViewSourceChannel::SetAltDataForChild(bool aIsForChild) {
