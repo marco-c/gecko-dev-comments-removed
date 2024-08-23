@@ -251,6 +251,8 @@ class ModuleLoaderBase : public nsISupports {
       JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
       JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise) = 0;
 
+  virtual bool IsDynamicImportSupported() { return true; }
+
   
   virtual void OnDynamicImportStarted(ModuleLoadRequest* aRequest) {}
 
