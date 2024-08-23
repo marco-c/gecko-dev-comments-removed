@@ -28,9 +28,9 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
       const LayoutDeviceIntSize& aClientSize) = 0;
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
-  virtual void DisableRendering() = 0;
-  virtual void EnableRendering(const uintptr_t aXWindow,
-                               const bool aShaped) = 0;
+  virtual void CleanupResources() = 0;
+  virtual void SetRenderingSurface(const uintptr_t aXWindow,
+                                   const bool aShaped) = 0;
 
   
 
@@ -74,10 +74,11 @@ class GtkCompositorWidget : public CompositorWidget,
 
   
   
-  void DisableRendering() override;
+  void CleanupResources() override;
 
   
-  void EnableRendering(const uintptr_t aXWindow, const bool aShaped) override;
+  void SetRenderingSurface(const uintptr_t aXWindow,
+                           const bool aShaped) override;
 
   
   

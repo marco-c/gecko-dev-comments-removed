@@ -6666,7 +6666,8 @@ void nsWindow::ResumeCompositorImpl() {
   LOG("nsWindow::ResumeCompositorImpl()\n");
 
   MOZ_DIAGNOSTIC_ASSERT(mCompositorWidgetDelegate);
-  mCompositorWidgetDelegate->EnableRendering(GetX11Window(), GetShapedState());
+  mCompositorWidgetDelegate->SetRenderingSurface(GetX11Window(),
+                                                 GetShapedState());
 
   
   
@@ -10058,7 +10059,7 @@ void nsWindow::OnUnmap() {
   
   
   if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->DisableRendering();
+    mCompositorWidgetDelegate->CleanupResources();
   }
 
   
