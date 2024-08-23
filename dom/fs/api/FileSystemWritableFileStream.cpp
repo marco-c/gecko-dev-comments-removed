@@ -180,8 +180,10 @@ class FileSystemWritableFileStream::CloseHandler {
 
 
 
-  void Open() {
+  void Open(std::function<void()>&& aCallback) {
     MOZ_ASSERT(State::Initial == mState);
+
+    mShutdownBlocker->SetCallback(std::move(aCallback));
     mShutdownBlocker->Block();
 
     mState = State::Open;
@@ -193,6 +195,7 @@ class FileSystemWritableFileStream::CloseHandler {
 
   void Close() {
     mShutdownBlocker->Unblock();
+    mShutdownBlocker = nullptr;
     mState = State::Closed;
     mClosePromiseHolder.ResolveIfExists(true, __func__);
   }
@@ -329,7 +332,17 @@ FileSystemWritableFileStream::Create(
   autoClose.release();
 
   stream->mWorkerRef = std::move(workerRef);
-  stream->mCloseHandler->Open();
+
+  
+  
+  
+  
+  stream->mCloseHandler->Open([stream]() {
+    if (stream->IsOpen()) {
+      
+      Unused << stream->BeginAbort();
+    }
+  });
 
   
   return stream;
