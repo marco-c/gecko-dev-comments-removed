@@ -167,8 +167,20 @@ void TimingDistributionMetric::StopAndAccumulate(const TimerId&& aId) const {
 
 void TimingDistributionMetric::AccumulateRawDuration(
     const TimeDuration& aDuration) const {
+  
+  
+  double durationNs = aDuration.ToMicroseconds() * 1000.0;
+  double roundedDurationNs = std::round(durationNs);
+  if (MOZ_UNLIKELY(
+          roundedDurationNs <
+              static_cast<double>(std::numeric_limits<uint64_t>::min()) ||
+          roundedDurationNs >
+              static_cast<double>(std::numeric_limits<uint64_t>::max()))) {
+    
+    return;
+  }
   fog_timing_distribution_accumulate_raw_nanos(
-      mId, uint64_t(aDuration.ToMicroseconds() * 1000.00));
+      mId, static_cast<uint64_t>(roundedDurationNs));
 }
 
 void TimingDistributionMetric::Cancel(const TimerId&& aId) const {
