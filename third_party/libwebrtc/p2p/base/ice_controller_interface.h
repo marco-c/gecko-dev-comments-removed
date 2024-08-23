@@ -19,6 +19,7 @@
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
@@ -101,7 +102,17 @@ class IceControllerInterface {
   virtual void OnConnectionDestroyed(const Connection* connection) = 0;
 
   
-  virtual rtc::ArrayView<const Connection*> connections() const = 0;
+  virtual rtc::ArrayView<const Connection* const> GetConnections() const {
+    
+    RTC_CHECK_NOTREACHED();
+    return {};
+  }
+  
+  virtual rtc::ArrayView<const Connection*> connections() const {
+    
+    RTC_CHECK_NOTREACHED();
+    return {};
+  }
 
   
   
