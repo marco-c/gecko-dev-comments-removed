@@ -20,6 +20,20 @@ console.warn(
 const GOOGLE_OAUTH_PATH_PREFIX = "https://accounts.google.com/ServiceLogin";
 
 
+async function requestGrantedAccess() {
+  const storageAccessPermission = await navigator.permissions.query({
+    name: "storage-access",
+  });
+  const hasStorageAccess = await document.hasStorageAccess();
+  if (storageAccessPermission.state === "granted" && !hasStorageAccess) {
+    await document.requestStorageAccess();
+    location.reload();
+  }
+}
+
+requestGrantedAccess();
+
+
 const origOpen = window.wrappedJSObject.open;
 Object.defineProperty(window.wrappedJSObject, "open", {
   value: exportFunction((url, ...args) => {
