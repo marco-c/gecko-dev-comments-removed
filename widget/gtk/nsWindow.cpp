@@ -10066,16 +10066,6 @@ void nsWindow::OnUnmap() {
     }
   }
 
-  
-  
-  
-  if (GdkIsX11Display()) {
-    mSurfaceProvider.CleanupResources();
-    if (mCompositorWidgetDelegate) {
-      mCompositorWidgetDelegate->DisableRendering();
-    }
-  }
-
   if (mGdkWindow) {
     if (mIMContext) {
       mIMContext->SetGdkWindow(nullptr);
@@ -10086,11 +10076,19 @@ void nsWindow::OnUnmap() {
 
   
   
+  
+  if (mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->DisableRendering();
+  }
+
+  
+  mSurfaceProvider.CleanupResources();
+
+  
+  
   if (mWindowType == WindowType::Popup) {
     DestroyLayerManager();
-    mSurfaceProvider.CleanupResources();
   } else {
-#ifdef MOZ_WAYLAND
     
     
     
@@ -10102,19 +10100,16 @@ void nsWindow::OnUnmap() {
     
     
     
-    if (moz_container_wayland_has_egl_window(mContainer) &&
-        mCompositorWidgetDelegate) {
-      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-        
-        
-        
-        mCompositorWidgetDelegate->DisableRendering();
-        remoteRenderer->SendResume();
-        mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
-                                                   GetShapedState());
-      }
+    
+    
+    
+    
+    
+    
+    
+    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+      remoteRenderer->SendResume();
     }
-#endif
   }
 }
 
