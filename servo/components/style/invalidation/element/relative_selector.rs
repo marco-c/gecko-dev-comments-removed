@@ -53,12 +53,12 @@ impl DomMutationOperation {
     fn accept<E: TElement>(&self, d: &Dependency, e: E) -> bool {
         match self {
             Self::Insert | Self::Append | Self::Remove => {
-                e.relative_selector_search_direction().is_some()
+                !e.relative_selector_search_direction().is_empty()
             },
             
             
             Self::SideEffectPrevSibling => {
-                e.relative_selector_search_direction().is_some() &&
+                !e.relative_selector_search_direction().is_empty() &&
                     d.right_combinator_is_next_sibling()
             },
             
@@ -782,11 +782,7 @@ where
 
     
     fn in_search_direction(element: &E, desired: ElementSelectorFlags) -> bool {
-        if let Some(direction) = element.relative_selector_search_direction() {
-            direction.intersects(desired)
-        } else {
-            false
-        }
+        element.relative_selector_search_direction().intersects(desired)
     }
 
     
@@ -1145,7 +1141,7 @@ where
         dep: &'a Dependency,
     ) {
         debug_assert!(dep.parent.is_some(), "Orphaned inners selector?");
-        if element.relative_selector_search_direction().is_none() {
+        if element.relative_selector_search_direction().is_empty() {
             return;
         }
         self.invalidations.push((

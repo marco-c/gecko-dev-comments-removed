@@ -906,7 +906,7 @@ pub trait TElement:
     fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
 
     
-    fn relative_selector_search_direction(&self) -> Option<ElementSelectorFlags>;
+    fn relative_selector_search_direction(&self) -> ElementSelectorFlags;
 }
 
 
