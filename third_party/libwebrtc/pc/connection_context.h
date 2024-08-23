@@ -15,7 +15,6 @@
 #include <string>
 
 #include "api/environment/environment.h"
-#include "api/field_trials_view.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/ref_counted_base.h"
@@ -79,12 +78,6 @@ class ConnectionContext final
   
   
   const Environment& env() const { return env_; }
-
-  
-  
-  
-  
-  const FieldTrialsView& field_trials() const { return env_.field_trials(); }
 
   
   rtc::NetworkManager* default_network_manager() {
