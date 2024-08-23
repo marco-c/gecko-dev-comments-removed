@@ -1104,28 +1104,36 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
     return;
   }
 
-  RefPtr<nsCaret> caret = state->mPresShell->GetCaret();
-  
-  
-  
-  state->mCaretFrame = caret->GetPaintGeometry(&mCaretRect);
+  state->mCaretFrame = [&]() -> nsIFrame* {
+    RefPtr<nsCaret> caret = state->mPresShell->GetCaret();
+    nsIFrame* currentCaret = caret->GetPaintGeometry(&mCaretRect);
 
-  
-  
-  
-  if (state->mCaretFrame &&
-      nsLayoutUtils::GetDisplayRootFrame(state->mCaretFrame) !=
-          nsLayoutUtils::GetDisplayRootFrame(aReferenceFrame)) {
-    state->mCaretFrame = nullptr;
-  }
+    if (auto* oldCaret = caret->GetLastPaintedFrame();
+        oldCaret && oldCaret != currentCaret) {
+      
+      MarkFrameForDisplay(oldCaret, aReferenceFrame);
+    }
 
-  
-  
-  
-  if (state->mCaretFrame) {
-    MOZ_ASSERT(state->mCaretFrame->PresShell() == state->mPresShell);
-    MarkFrameForDisplay(state->mCaretFrame, aReferenceFrame);
-  }
+    if (!currentCaret) {
+      return nullptr;
+    }
+
+    
+    
+    
+    if (nsLayoutUtils::GetDisplayRootFrame(currentCaret) !=
+        nsLayoutUtils::GetDisplayRootFrame(aReferenceFrame)) {
+      return nullptr;
+    }
+
+    
+    
+    
+    MOZ_ASSERT(currentCaret->PresShell() == state->mPresShell);
+    MarkFrameForDisplay(currentCaret, aReferenceFrame);
+    caret->SetLastPaintedFrame(currentCaret);
+    return currentCaret;
+  }();
 }
 
 

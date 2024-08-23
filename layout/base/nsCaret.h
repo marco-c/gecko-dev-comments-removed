@@ -14,7 +14,6 @@
 #include "nsCoord.h"
 #include "nsIFrame.h"
 #include "nsISelectionListener.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 
@@ -114,6 +113,9 @@ class nsCaret final : public nsISelectionListener {
 
   void SchedulePaint();
 
+  nsIFrame* GetLastPaintedFrame() { return mLastPaintedFrame; }
+  void SetLastPaintedFrame(nsIFrame* aFrame) { mLastPaintedFrame = aFrame; }
+
   
 
 
@@ -122,6 +124,7 @@ class nsCaret final : public nsISelectionListener {
 
 
   nsIFrame* GetPaintGeometry(nsRect* aRect);
+
   
 
 
@@ -220,6 +223,9 @@ class nsCaret final : public nsISelectionListener {
   nsCOMPtr<nsITimer> mBlinkTimer;
 
   CaretPosition mCaretPosition;
+
+  
+  WeakFrame mLastPaintedFrame;
 
   
 
