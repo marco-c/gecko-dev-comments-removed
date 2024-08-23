@@ -461,9 +461,7 @@ class OrderedHashTable {
     }
 
 #ifdef DEBUG
-    bool valid() const {
-      return  next != this;
-    }
+    bool valid() const { return  next != this; }
 #endif
 
     void onTableDestroyed() {
