@@ -74,8 +74,14 @@ static void GetDisplayInfo(const char16ptr_t aName,
   }
 }
 
+struct CollectMonitorsParam {
+  nsTArray<RefPtr<Screen>> screens;
+  nsTArray<DXGI_OUTPUT_DESC1> outputs;
+};
+
 BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
-  auto screens = reinterpret_cast<nsTArray<RefPtr<Screen>>*>(ioParam);
+  CollectMonitorsParam* cmParam =
+      reinterpret_cast<CollectMonitorsParam*>(ioParam);
   BOOL success = FALSE;
   MONITORINFOEX info;
   info.cbSize = sizeof(MONITORINFOEX);
@@ -123,6 +129,37 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
   GetDisplayInfo(info.szDevice, orientation, angle, isPseudoDisplay,
                  refreshRate);
 
+  
+  
+  
+  bool isHDR = false;
+  for (auto& output : cmParam->outputs) {
+    if (output.Monitor == aMon) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      isHDR = (output.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+      break;
+    }
+  }
+
   MOZ_LOG(sScreenLog, LogLevel::Debug,
           ("New screen [%s (%s) %d %u %f %f %f %d %d %d]",
            ToString(rect).c_str(), ToString(availRect).c_str(), pixelDepth,
@@ -131,12 +168,12 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
   auto screen = MakeRefPtr<Screen>(
       rect, availRect, pixelDepth, pixelDepth, refreshRate, contentsScaleFactor,
       defaultCssScaleFactor, dpi, Screen::IsPseudoDisplay(isPseudoDisplay),
-      orientation, angle);
+      Screen::IsHDR(isHDR), orientation, angle);
   if (info.dwFlags & MONITORINFOF_PRIMARY) {
     
-    screens->InsertElementAt(0, std::move(screen));
+    cmParam->screens.InsertElementAt(0, std::move(screen));
   } else {
-    screens->AppendElement(std::move(screen));
+    cmParam->screens.AppendElement(std::move(screen));
   }
   return TRUE;
 }
@@ -144,13 +181,17 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
 void ScreenHelperWin::RefreshScreens() {
   MOZ_LOG(sScreenLog, LogLevel::Debug, ("Refreshing screens"));
 
-  AutoTArray<RefPtr<Screen>, 4> screens;
+  CollectMonitorsParam cmParam;
+  if (DeviceManagerDx* dx = DeviceManagerDx::Get()) {
+    
+    cmParam.outputs = dx->EnumerateOutputs();
+  }
   BOOL result = ::EnumDisplayMonitors(
-      nullptr, nullptr, (MONITORENUMPROC)CollectMonitors, (LPARAM)&screens);
+      nullptr, nullptr, (MONITORENUMPROC)CollectMonitors, (LPARAM)&cmParam);
   if (!result) {
     NS_WARNING("Unable to EnumDisplayMonitors");
   }
-  ScreenManager::Refresh(std::move(screens));
+  ScreenManager::Refresh(std::move(cmParam.screens));
 }
 
 }  
