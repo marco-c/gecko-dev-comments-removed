@@ -19,6 +19,13 @@ const { MLEngineParent } = ChromeUtils.importESModule(
   "resource://gre/actors/MLEngineParent.sys.mjs"
 );
 
+const { ModelHub } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/ModelHub.sys.mjs"
+);
+
+const { IndexedDBCache } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/ModelHub.sys.mjs"
+);
 
 
 Services.scriptloader.loadSubScript(
