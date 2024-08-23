@@ -37,7 +37,7 @@ var MockWebChannelBroker = {
 
 
 add_task(function test_web_channel_listen() {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     let channel = new WebChannel(
       VALID_WEB_CHANNEL_ID,
       VALID_WEB_CHANNEL_ORIGIN,
@@ -94,7 +94,7 @@ add_task(function test_web_channel_listen() {
 
 
 add_task(function test_web_channel_listen_permission() {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     
     PermissionTestUtils.add(
       VALID_WEB_CHANNEL_ORIGIN,

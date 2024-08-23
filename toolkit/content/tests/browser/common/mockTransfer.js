@@ -51,8 +51,7 @@ MockTransfer.prototype = {
   onStatusChange: function MTFC_onStatusChange(
     aWebProgress,
     aRequest,
-    aStatus,
-    aMessage
+    aStatus
   ) {
     
     if (!Components.isSuccessCode(aStatus)) {

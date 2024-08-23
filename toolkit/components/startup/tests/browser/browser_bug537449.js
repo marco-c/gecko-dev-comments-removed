@@ -44,7 +44,7 @@ function test() {
           win2.close();
 
           
-          waitForOnBeforeUnloadDialog(browser, (btnLeave, btnStay) => {
+          waitForOnBeforeUnloadDialog(browser, btnLeave => {
             btnLeave.click();
           });
 

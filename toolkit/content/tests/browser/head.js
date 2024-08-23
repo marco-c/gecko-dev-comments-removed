@@ -177,7 +177,7 @@ function leave_icon(icon) {
 
 
 function once(target, name) {
-  var p = new Promise(function (resolve, reject) {
+  var p = new Promise(function (resolve) {
     target.addEventListener(
       name,
       function () {

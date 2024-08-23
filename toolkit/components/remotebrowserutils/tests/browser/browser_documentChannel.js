@@ -37,14 +37,14 @@ const EXTENSION_DATA = {
   async background() {
     browser.test.log("background script running");
     browser.webRequest.onAuthRequired.addListener(
-      async details => {
+      async () => {
         browser.test.log("webRequest onAuthRequired");
 
         
         
         
         
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
           setTimeout(resolve, 0);
         });
       },

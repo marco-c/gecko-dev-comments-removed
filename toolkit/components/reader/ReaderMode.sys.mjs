@@ -277,7 +277,7 @@ export var ReaderMode = {
       xhr.open("GET", url, true);
       xhr.onerror = evt => reject(evt.error);
       xhr.responseType = docContentType === "text/plain" ? "text" : "document";
-      xhr.onload = evt => {
+      xhr.onload = () => {
         if (xhr.status !== 200) {
           reject("Reader mode XHR failed with status: " + xhr.status);
           histogram.add(DOWNLOAD_ERROR_XHR);
@@ -336,7 +336,7 @@ export var ReaderMode = {
 
   /**
    * Attempts to parse a document into an article. Heavy lifting happens
-   * in readerWorker.js.
+   * in Reader.worker.js.
    *
    * @param doc The document to parse.
    * @return {Promise}

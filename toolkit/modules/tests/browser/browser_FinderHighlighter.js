@@ -33,7 +33,7 @@ add_task(async function testModalResults() {
         insertCalls: [5, 6],
         removeCalls: [4, 5],
         
-        extraTest: function (maskNode, outlineNode, rects) {
+        extraTest: function (maskNode, outlineNode) {
           Assert.equal(
             outlineNode.getElementsByTagName("div").length,
             2,

@@ -21,7 +21,7 @@ add_task(async function thumbnails_redirect() {
       gBrowser,
       url: URL,
     },
-    browser => {}
+    () => {}
   );
 
   
@@ -30,7 +30,7 @@ add_task(async function thumbnails_redirect() {
       gBrowser,
       url: URL,
     },
-    async browser => {
+    async () => {
       await captureAndCheckColor(255, 0, 0, "we have a red thumbnail");
 
       

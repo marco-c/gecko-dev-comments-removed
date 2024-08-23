@@ -23,10 +23,10 @@ var gTests = [
   {
     desc: "WebChannel generic message",
     run() {
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         let tab;
         let channel = new WebChannel("generic", Services.io.newURI(HTTP_PATH));
-        channel.listen(function (id, message, target) {
+        channel.listen(function (id, message) {
           is(id, "generic");
           is(message.something.nested, "hello");
           channel.stopListening();
@@ -44,9 +44,9 @@ var gTests = [
   {
     desc: "WebChannel generic message in a private window.",
     async run() {
-      let promiseTestDone = new Promise(function (resolve, reject) {
+      let promiseTestDone = new Promise(function (resolve) {
         let channel = new WebChannel("generic", Services.io.newURI(HTTP_PATH));
-        channel.listen(function (id, message, target) {
+        channel.listen(function (id, message) {
           is(id, "generic");
           is(message.something.nested, "hello");
           channel.stopListening();
@@ -66,7 +66,7 @@ var gTests = [
   {
     desc: "WebChannel two way communication",
     run() {
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         let tab;
         let channel = new WebChannel("twoway", Services.io.newURI(HTTP_PATH));
 
@@ -102,7 +102,7 @@ var gTests = [
         Services.io.newURI(HTTP_IFRAME_PATH)
       );
       let promiseTestDone = new Promise(function (resolve, reject) {
-        parentChannel.listen(function (id, message, sender) {
+        parentChannel.listen(function () {
           reject(new Error("WebChannel message incorrectly sent to parent"));
         });
 
@@ -218,14 +218,14 @@ var gTests = [
   {
     desc: "WebChannel multichannel",
     run() {
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         let tab;
         let channel = new WebChannel(
           "multichannel",
           Services.io.newURI(HTTP_PATH)
         );
 
-        channel.listen(function (id, message, sender) {
+        channel.listen(function (id) {
           is(id, "multichannel");
           gBrowser.removeTab(tab);
           resolve();
@@ -246,8 +246,8 @@ var gTests = [
       
       
       
-      let messagePromise = new Promise(function (resolve, reject) {
-        channel.listen(function (id, message, sender) {
+      let messagePromise = new Promise(function (resolve) {
+        channel.listen(function (id, message) {
           is(id, "echo");
           is(message.command, "unsolicited");
 
@@ -283,8 +283,8 @@ var gTests = [
       
       
       
-      let messagePromise = new Promise(function (resolve, reject) {
-        channel.listen(function (id, message, sender) {
+      let messagePromise = new Promise(function (resolve) {
+        channel.listen(function (id, message) {
           is(id, "echo");
           is(message.command, "unsolicited");
 
@@ -326,7 +326,7 @@ var gTests = [
       
       
       let messagePromise = new Promise(function (resolve, reject) {
-        channel.listen(function (id, message, sender) {
+        channel.listen(function (id, message) {
           is(id, "echo");
 
           if (message.command === "done") {
@@ -435,8 +435,8 @@ var gTests = [
 
 
       let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH));
-      let testDonePromise = new Promise((resolve, reject) => {
-        channel.listen((id, message, sender) => {
+      let testDonePromise = new Promise(resolve => {
+        channel.listen((id, message) => {
           is(id, "objects");
           is(message.type, "string");
           resolve();
@@ -466,7 +466,7 @@ var gTests = [
       let testDonePromise = new Promise((resolve, reject) => {
         let sawObject = false;
         let sawString = false;
-        channel.listen((id, message, sender) => {
+        channel.listen((id, message) => {
           is(id, "objects");
           if (message.type === "object") {
             ok(!sawObject);
@@ -509,9 +509,9 @@ var gTests = [
       
       let echoChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH));
 
-      let testDonePromise = new Promise((resolve, reject) => {
+      let testDonePromise = new Promise(resolve => {
         
-        echoChannel.listen((id, message, sender) => {
+        echoChannel.listen((id, message) => {
           is(id, "echo");
           is(message.error, "oh no");
           is(message.errno, ERRNO_UNKNOWN_ERROR);
@@ -519,7 +519,7 @@ var gTests = [
         });
 
         
-        channel.listen((id, message, sender) => {
+        channel.listen((id, message) => {
           is(id, "error");
           is(message.command, "oops");
           throw new Error("oh no");
@@ -545,9 +545,9 @@ var gTests = [
       
       let echoChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH));
 
-      let testDonePromise = new Promise((resolve, reject) => {
+      let testDonePromise = new Promise(resolve => {
         
-        echoChannel.listen((id, message, sender) => {
+        echoChannel.listen((id, message) => {
           is(id, "echo");
           is(message.error, "No Such Channel");
           is(message.errno, ERRNO_NO_SUCH_CHANNEL);

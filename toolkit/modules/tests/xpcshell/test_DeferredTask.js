@@ -389,7 +389,7 @@ add_test(function test_finalize() {
   let finalized = false;
 
   
-  replaceIdleDispatch((callback, timeout) => {
+  replaceIdleDispatch(callback => {
     Assert.ok(!idleStarted);
     idleStarted = true;
     do_timeout(T, callback);

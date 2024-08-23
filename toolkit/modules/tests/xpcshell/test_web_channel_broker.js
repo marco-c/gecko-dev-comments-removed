@@ -44,7 +44,7 @@ add_test(function test_web_channel_broker_channel_map() {
 
 
 add_task(function test_web_channel_broker_listener() {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     var channel = {
       id: VALID_WEB_CHANNEL_ID,
       _originCheckCallback: requestPrincipal => {

@@ -28,7 +28,7 @@ add_task(async function test_non_popup_from_popup() {
       gBrowser,
       url: BLANK_PAGE,
     },
-    async function (browser) {
+    async function () {
       
       const newPopupPromise = BrowserTestUtils.waitForNewWindow();
 
