@@ -106,7 +106,7 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionStart(
     uint32_t aMetricId, mozilla::glean::TimerId aTimerId) {
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
-    mozilla::glean::GetTimerIdToStartsLock().apply([&](auto& lock) {
+    mozilla::glean::GetTimerIdToStartsLock().apply([&](const auto& lock) {
       auto tuple = mozilla::glean::MetricTimerTuple{aMetricId, aTimerId};
       
       
@@ -121,7 +121,7 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionStopAndAccumulate(
     uint32_t aMetricId, mozilla::glean::TimerId aTimerId) {
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
-    mozilla::glean::GetTimerIdToStartsLock().apply([&](auto& lock) {
+    mozilla::glean::GetTimerIdToStartsLock().apply([&](const auto& lock) {
       auto tuple = mozilla::glean::MetricTimerTuple{aMetricId, aTimerId};
       auto optStart = lock.ref()->Extract(tuple);
       
@@ -147,7 +147,7 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionCancel(
     uint32_t aMetricId, mozilla::glean::TimerId aTimerId) {
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
-    mozilla::glean::GetTimerIdToStartsLock().apply([&](auto& lock) {
+    mozilla::glean::GetTimerIdToStartsLock().apply([&](const auto& lock) {
       
       
       auto tuple = mozilla::glean::MetricTimerTuple{aMetricId, aTimerId};
