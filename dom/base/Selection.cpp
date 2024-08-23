@@ -1336,7 +1336,18 @@ nsresult Selection::RemoveCollapsedRanges() {
 nsresult Selection::StyledRanges::RemoveCollapsedRanges() {
   uint32_t i = 0;
   while (i < mRanges.Length()) {
-    if (mRanges[i].mRange->Collapsed()) {
+    const AbstractRange* range = mRanges[i].mRange;
+    
+    
+    
+    const bool collapsed =
+        range->Collapsed() && !range->MayCrossShadowBoundary();
+    
+    MOZ_ASSERT_IF(
+        range->MayCrossShadowBoundary(),
+        !range->AsDynamicRange()->CrossShadowBoundaryRangeCollapsed());
+
+    if (collapsed) {
       nsresult rv = RemoveRangeAndUnregisterSelection(*mRanges[i].mRange);
       NS_ENSURE_SUCCESS(rv, rv);
     } else {
