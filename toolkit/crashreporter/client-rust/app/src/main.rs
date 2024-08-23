@@ -6,6 +6,8 @@
 
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
+#![cfg_attr(mock, allow(unused))]
+
 use crate::std::sync::Arc;
 use anyhow::Context;
 use config::Config;
@@ -36,6 +38,10 @@ mod std;
 mod thread_bound;
 mod ui;
 
+#[cfg(test)]
+mod test;
+
+#[cfg(not(mock))]
 fn main() {
     let log_target = logging::init();
 
@@ -61,6 +67,97 @@ fn main() {
             
             ui::error_dialog(&config, message);
         }
+        std::process::exit(1);
+    }
+}
+
+#[cfg(mock)]
+fn main() {
+    
+    
+
+    use crate::std::{
+        fs::{MockFS, MockFiles},
+        mock,
+        process::Command,
+    };
+    const MOCK_MINIDUMP_EXTRA: &str = r#"{
+                            "Vendor": "FooCorp",
+                            "ProductName": "Bar",
+                            "ReleaseChannel": "release",
+                            "BuildID": "1234",
+                            "StackTraces": {
+                                "status": "OK"
+                            },
+                            "Version": "100.0",
+                            "ServerURL": "https://reports.example",
+                            "TelemetryServerURL": "https://telemetry.example",
+                            "TelemetryClientId": "telemetry_client",
+                            "TelemetrySessionId": "telemetry_session",
+                            "URL": "https://url.example"
+                        }"#;
+
+    
+    const MOCK_MINIDUMP_FILE: &[u8] = &[1, 2, 3, 4];
+    const MOCK_CURRENT_TIME: &str = "2004-11-09T12:34:56Z";
+    const MOCK_PING_UUID: uuid::Uuid = uuid::Uuid::nil();
+    const MOCK_REMOTE_CRASH_ID: &str = "8cbb847c-def2-4f68-be9e-000000000000";
+
+    
+    let mock_files = MockFiles::new();
+    mock_files
+        .add_file("minidump.dmp", MOCK_MINIDUMP_FILE)
+        .add_file("minidump.extra", MOCK_MINIDUMP_EXTRA);
+
+    
+    let mut mock = mock::builder();
+    mock.set(
+        Command::mock("work_dir/minidump-analyzer"),
+        Box::new(|_| Ok(crate::std::process::success_output())),
+    )
+    .set(
+        Command::mock("work_dir/pingsender"),
+        Box::new(|_| Ok(crate::std::process::success_output())),
+    )
+    .set(
+        Command::mock("curl"),
+        Box::new(|_| {
+            let mut output = crate::std::process::success_output();
+            output.stdout = format!("CrashID={MOCK_REMOTE_CRASH_ID}").into();
+            
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            Ok(output)
+        }),
+    )
+    .set(MockFS, mock_files.clone())
+    .set(
+        crate::std::env::MockCurrentExe,
+        "work_dir/crashreporter".into(),
+    )
+    .set(
+        crate::std::time::MockCurrentTime,
+        time::OffsetDateTime::parse(
+            MOCK_CURRENT_TIME,
+            &time::format_description::well_known::Rfc3339,
+        )
+        .unwrap()
+        .into(),
+    )
+    .set(mock::MockHook::new("ping_uuid"), MOCK_PING_UUID);
+
+    let result = mock.run(|| {
+        let mut cfg = Config::new();
+        cfg.data_dir = Some("data_dir".into());
+        cfg.events_dir = Some("events_dir".into());
+        cfg.ping_dir = Some("ping_dir".into());
+        cfg.dump_file = Some("minidump.dmp".into());
+        cfg.strings = Some(lang::load().unwrap());
+        let mut cfg = Arc::new(cfg);
+        try_run(&mut cfg)
+    });
+
+    if let Err(e) = result {
+        log::error!("exiting with error: {e}");
         std::process::exit(1);
     }
 }
