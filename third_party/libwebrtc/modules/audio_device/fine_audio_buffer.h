@@ -11,6 +11,10 @@
 #ifndef MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
 #define MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
 
+#include <cstddef>
+#include <cstdint>
+
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "rtc_base/buffer.h"
 
@@ -61,7 +65,12 @@ class FineAudioBuffer {
   
   
   void DeliverRecordedData(rtc::ArrayView<const int16_t> audio_buffer,
-                           int record_delay_ms);
+                           int record_delay_ms) {
+    DeliverRecordedData(audio_buffer, record_delay_ms, absl::nullopt);
+  }
+  void DeliverRecordedData(rtc::ArrayView<const int16_t> audio_buffer,
+                           int record_delay_ms,
+                           absl::optional<int64_t> capture_time_ns);
 
  private:
   

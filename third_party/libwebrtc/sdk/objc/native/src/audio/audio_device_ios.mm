@@ -13,6 +13,7 @@
 
 #include "audio_device_ios.h"
 
+#include <mach/mach_time.h>
 #include <cmath>
 
 #include "api/array_view.h"
@@ -110,6 +111,9 @@ AudioDeviceIOS::AudioDeviceIOS(bool bypass_voice_processing)
   thread_ = rtc::Thread::Current();
 
   audio_session_observer_ = [[RTCNativeAudioSessionDelegateAdapter alloc] initWithObserver:this];
+  mach_timebase_info_data_t tinfo;
+  mach_timebase_info(&tinfo);
+  machTickUnitsToNanoseconds_ = (double)tinfo.numer / tinfo.denom;
 }
 
 AudioDeviceIOS::~AudioDeviceIOS() {
@@ -379,6 +383,11 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(AudioUnitRenderActionFlags* flags
   
   
   
+  SInt64 capture_timestamp_ns = time_stamp->mHostTime * machTickUnitsToNanoseconds_;
+
+  
+  
+  
   
   
   AudioBufferList audio_buffer_list;
@@ -404,7 +413,8 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(AudioUnitRenderActionFlags* flags
   
   
   
-  fine_audio_buffer_->DeliverRecordedData(record_audio_buffer_, kFixedRecordDelayEstimate);
+  fine_audio_buffer_->DeliverRecordedData(
+      record_audio_buffer_, kFixedRecordDelayEstimate, capture_timestamp_ns);
   return noErr;
 }
 

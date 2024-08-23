@@ -299,6 +299,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   
   rtc::scoped_refptr<PendingTaskSafetyFlag> safety_ =
       PendingTaskSafetyFlag::Create();
+
+  
+  
+  double machTickUnitsToNanoseconds_;
 };
 }  
 }  
