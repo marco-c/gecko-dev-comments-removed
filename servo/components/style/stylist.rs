@@ -3234,8 +3234,7 @@ impl CascadeData {
                 CssRule::LayerBlock(..) |
                 CssRule::LayerStatement(..) |
                 CssRule::FontPaletteValues(..) |
-                CssRule::FontFeatureValues(..) |
-                CssRule::Scope(..) => {
+                CssRule::FontFeatureValues(..) => {
                     
                     continue;
                 },
