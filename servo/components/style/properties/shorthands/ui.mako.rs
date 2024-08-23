@@ -295,6 +295,12 @@ macro_rules! try_parse_one {
 
     impl<'a> ToCss for LonghandsToSerialize<'a>  {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
+            use crate::values::specified::{
+                AnimationDirection, AnimationFillMode, AnimationPlayState,
+            };
+            use crate::Zero;
+            use style_traits::values::SequenceWriter;
+
             let len = self.animation_name.0.len();
             
             if len == 0 {
@@ -320,28 +326,67 @@ macro_rules! try_parse_one {
                     dest.write_str(", ")?;
                 }
 
-                % for name in props[2:]:
-                    self.animation_${name}.0[i].to_css(dest)?;
-                    dest.write_char(' ')?;
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let has_duration = !self.animation_duration.0[i].is_zero();
+                let has_timing_function = !self.animation_timing_function.0[i].is_ease();
+                let has_delay = !self.animation_delay.0[i].is_zero();
+                let has_iteration_count = !self.animation_iteration_count.0[i].is_one();
+                let has_direction =
+                    !matches!(self.animation_direction.0[i], AnimationDirection::Normal);
+                let has_fill_mode =
+                    !matches!(self.animation_fill_mode.0[i], AnimationFillMode::None);
+                let has_play_state =
+                    !matches!(self.animation_play_state.0[i], AnimationPlayState::Running);
+                let has_name = !self.animation_name.0[i].is_none();
+                let has_timeline = match self.animation_timeline {
+                    Some(timeline) => !timeline.0[i].is_auto(),
+                    _ => false,
+                };
+
+                let mut writer = SequenceWriter::new(dest, " ");
+
+                
+                
+                if has_duration || has_delay {
+                    writer.item(&self.animation_duration.0[i])?;
+                }
+
+                
+                
+                % for name in props[3:]:
+                if has_${name} {
+                    writer.item(&self.animation_${name}.0[i])?;
+                }
                 % endfor
 
-                self.animation_name.0[i].to_css(dest)?;
+                
+                let has_any = {
+                    has_timeline
+                % for name in props[2:]:
+                        || has_${name}
+                % endfor
+                };
+                if has_name || !has_any {
+                    writer.item(&self.animation_name.0[i])?;
+                }
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if let Some(ref timeline) = self.animation_timeline {
-                    if !timeline.0[i].is_auto() {
-                        dest.write_char(' ')?;
-                        timeline.0[i].to_css(dest)?;
-                    }
+                if has_timeline {
+                    writer.item(&self.animation_timeline.unwrap().0[i])?;
                 }
             }
             Ok(())
