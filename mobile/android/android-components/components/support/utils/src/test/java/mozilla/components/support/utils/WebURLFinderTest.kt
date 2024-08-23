@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package mozilla.components.support.utils;
 
@@ -19,16 +19,16 @@ import static org.junit.Assert.assertTrue;
 public class WebURLFinderTest {
 
     public String find(String string) {
-        
-        
-        
+        // Test with explicit unicode support. Implicit unicode support is available in Android
+        // but not on host systems where testing will take place. See the comment in WebURLFinder
+        // for additional information.
         return new WebURLFinder(string, true).bestWebURL();
     }
 
     public String find(String[] strings) {
-        
-        
-        
+        // Test with explicit unicode support. Implicit unicode support is available in Android
+        // but not on host systems where testing will take place. See the comment in WebURLFinder
+        // for additional information.
         return new WebURLFinder(Arrays.asList(strings), true).bestWebURL();
     }
 
