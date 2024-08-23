@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 
-OPEN_LOCALES = "release_locales = ["
+OPEN_LOCALES = "locales = ["
 CLOSE_LOCALES = "]"
 
 def trim_to_locale(str):
@@ -31,7 +31,7 @@ def trim_to_locale(str):
 
 
 def get_release_locales():
-    with open(r"l10n.toml") as f:
+    with open(r"l10n-release.toml") as f:
         file = f.read().splitlines()
 
     locales_opened = False
@@ -42,7 +42,7 @@ def get_release_locales():
     for line in file:
         if line == OPEN_LOCALES:
             locales_opened = True
-        elif line == CLOSE_LOCALES and locales_opened == True:
+        elif line == CLOSE_LOCALES:
             locales_closed = True
             break
         elif locales_opened:
