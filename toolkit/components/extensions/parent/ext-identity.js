@@ -12,7 +12,7 @@ var { promiseDocumentLoaded } = ExtensionUtils;
 
 const checkRedirected = (url, redirectURI) => {
   return new Promise((resolve, reject) => {
-    let xhr = new XMLHttpRequest({ mozAnon: false });
+    let xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     
     xhr.onload = () => {

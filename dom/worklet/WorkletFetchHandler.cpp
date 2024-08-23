@@ -486,16 +486,9 @@ nsresult WorkletFetchHandler::StartFetch(JSContext* aCx, nsIURI* aURI,
       do_QueryInterface(mWorklet->GetParentObject());
   MOZ_ASSERT(global);
 
-  
-  
-  
-  
-  nsIPrincipal* p = global->PrincipalOrNull();
-  CallerType callerType = (p && p->IsSystemPrincipal() ? CallerType::System
-                                                       : CallerType::NonSystem);
   IgnoredErrorResult rv;
-  SafeRefPtr<Request> request = Request::Constructor(
-      global, aCx, requestInput, requestInit, callerType, rv);
+  SafeRefPtr<Request> request =
+      Request::Constructor(global, aCx, requestInput, requestInit, rv);
   if (rv.Failed()) {
     return NS_ERROR_FAILURE;
   }
