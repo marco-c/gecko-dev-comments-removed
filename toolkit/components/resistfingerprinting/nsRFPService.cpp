@@ -2017,11 +2017,54 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
 
   
   
-  RefPtr<dom::WindowGlobalParent> topWGP =
-      bc->Top()->Canonical()->GetCurrentWindowGlobal();
+  RefPtr<dom::CanonicalBrowsingContext> topBC = bc->Top()->Canonical();
+  RefPtr<dom::WindowGlobalParent> topWGP = topBC->GetCurrentWindowGlobal();
 
   if (NS_WARN_IF(!topWGP)) {
     return Nothing();
+  }
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  DebugOnly<nsresult> rv =
+      loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  MOZ_ASSERT(cookieJarSettings);
+
+  uint64_t topWindowContextIdFromCJS =
+      net::CookieJarSettings::Cast(cookieJarSettings)
+          ->GetTopLevelWindowContextId();
+
+  
+  
+  
+  
+  
+  
+  
+  if (topWGP->InnerWindowId() != topWindowContextIdFromCJS) {
+    nsAutoString partitionKey;
+    rv = cookieJarSettings->GetPartitionKey(partitionKey);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    
+    if (partitionKey.IsEmpty()) {
+      return Nothing();
+    }
+
+    nsAutoString scheme;
+    nsAutoString domain;
+    int32_t unused;
+    if (!OriginAttributes::ParsePartitionKey(partitionKey, scheme, domain,
+                                             unused)) {
+      MOZ_ASSERT(false);
+      return Nothing();
+    }
+
+    nsCOMPtr<nsIURI> topURI;
+    rv = NS_NewURI(getter_AddRefs(topURI), scheme + u"://"_ns + domain);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    return GetOverriddenFingerprintingSettingsForURI(topURI, uri);
   }
 
   nsCOMPtr<nsIPrincipal> topPrincipal = topWGP->DocumentPrincipal();
@@ -2049,9 +2092,6 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
 
 #ifdef DEBUG
   
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-
   nsAutoString partitionKey;
   cookieJarSettings->GetPartitionKey(partitionKey);
 

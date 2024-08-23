@@ -179,6 +179,11 @@ class CookieJarSettings final : public nsICookieJarSettings {
   
   static bool IsRejectThirdPartyContexts(uint32_t aCookieBehavior);
 
+  void SetTopLevelWindowContextId(uint64_t aId) {
+    mTopLevelWindowContextId = aId;
+  }
+  uint64_t GetTopLevelWindowContextId() { return mTopLevelWindowContextId; }
+
  private:
   enum State {
     
@@ -259,6 +264,10 @@ class CookieJarSettings final : public nsICookieJarSettings {
   
   
   Maybe<nsTArray<uint8_t>> mFingerprintingRandomKey;
+
+  
+  
+  uint64_t mTopLevelWindowContextId;
 };
 
 }  
