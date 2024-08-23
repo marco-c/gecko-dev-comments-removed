@@ -9,7 +9,6 @@
 #include "mozilla/AppUnits.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StaticPrefs_print.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Segmenter.h"
 #include "gfxContext.h"
@@ -542,69 +541,6 @@ static std::tuple<uint32_t, uint32_t> GetRowAndColFromIdx(uint32_t aIdxOnSheet,
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-constexpr float kCenterPageRatioThreshold = 0.9f;
-
-
-enum {
-  kPrintCenterPageOnSheetNever = 0,
-  kPrintCenterPageOnSheetAlways = 1,
-  kPrintCenterPageOnSheetAuto = 2
-};
-
-
-
-
-
-static float OffsetToCenterPage(nscoord aContentSize, nscoord aSheetSize,
-                                float aScale, float aAppUnitsPerPixel) {
-  MOZ_ASSERT(aScale <= 1.0f && aScale > 0.0f,
-             "Scale must be in the range (0,1]");
-  const unsigned centerPagePref = StaticPrefs::print_center_page_on_sheet();
-  if (centerPagePref == kPrintCenterPageOnSheetNever) {
-    return 0.0f;
-  }
-
-  
-  const float sheetSize =
-      NSAppUnitsToFloatPixels(aSheetSize, aAppUnitsPerPixel);
-  const float scaledContentSize =
-      NSAppUnitsToFloatPixels(aContentSize, aAppUnitsPerPixel) * aScale;
-  const float ratio = scaledContentSize / sheetSize;
-
-  
-  
-  if (centerPagePref == kPrintCenterPageOnSheetAlways ||
-      ratio >= kCenterPageRatioThreshold) {
-    return (sheetSize - scaledContentSize) * 0.5f;
-  }
-  return 0.0f;
-}
-
-
 static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
     const nsIFrame* aFrame, float aAppUnitsPerPixel) {
   MOZ_ASSERT(aFrame->IsPageFrame());
@@ -625,8 +561,8 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   gfx::Matrix4x4 transform;
 
   if (ppsInfo->mNumPages == 1) {
-    const nsSize sheetSize = sheetFrame->GetSizeForChildren();
     if (rotation != 0.0) {
+      const nsSize sheetSize = sheetFrame->GetSizeForChildren();
       const bool sheetIsPortrait = sheetSize.width < sheetSize.height;
       const bool rotatingClockwise = rotation > 0.0;
 
@@ -648,21 +584,7 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
                              NSAppUnitsToFloatPixels(-y, aAppUnitsPerPixel), 0);
     }
 
-    
-    
-    const float scale =
-        pageFrame->ComputeSinglePPSPageSizeScale(contentPageSize);
-    const float centeringOffset = OffsetToCenterPage(
-        contentPageSize.width, sheetSize.width, scale, aAppUnitsPerPixel);
-
-    
-    
-    
-    
-    
-    if (centeringOffset >= 1.0f) {
-      transform.PreTranslate(centeringOffset, 0, 0);
-    }
+    float scale = pageFrame->ComputeSinglePPSPageSizeScale(contentPageSize);
     transform.PreScale(scale, scale, 1);
     return transform;
   }
