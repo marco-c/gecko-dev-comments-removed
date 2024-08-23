@@ -9,8 +9,63 @@ use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
 use crate::stylesheets::{CssRuleType, CssRuleTypes, Namespaces, Origin, UrlExtraData};
 use crate::use_counters::UseCounters;
 use cssparser::{Parser, SourceLocation, UnicodeRange};
+use selectors::parser::ParseRelative;
 use std::borrow::Cow;
 use style_traits::{OneOrMoreSeparated, ParseError, ParsingMode, Separator};
+
+
+#[derive(Clone, Copy)]
+pub struct NestingContext {
+    
+    pub rule_types: CssRuleTypes,
+    
+    pub parse_relative: ParseRelative,
+}
+
+impl NestingContext {
+    fn parse_relative_for(rule_type: CssRuleType) -> ParseRelative {
+        match rule_type {
+            CssRuleType::Scope => ParseRelative::ForScope,
+            CssRuleType::Style => ParseRelative::ForNesting,
+            _ => ParseRelative::No,
+        }
+    }
+
+    
+    pub fn new(rule_types: CssRuleTypes, parse_nested_rule_type: Option<CssRuleType>) -> Self {
+        Self {
+            rule_types,
+            parse_relative: parse_nested_rule_type
+                .map_or(ParseRelative::No, Self::parse_relative_for)
+        }
+    }
+
+    
+    pub fn new_from_rule(rule_type: Option<CssRuleType>) -> Self {
+        Self {
+            rule_types: rule_type.map(CssRuleTypes::from).unwrap_or_default(),
+            parse_relative: rule_type
+                .map(Self::parse_relative_for)
+                .unwrap_or(ParseRelative::No),
+        }
+    }
+
+    
+    pub fn save(&mut self, rule_type: CssRuleType) -> Self {
+        let old = *self;
+        self.rule_types.insert(rule_type);
+        let new_parse_relative = Self::parse_relative_for(rule_type);
+        if new_parse_relative != ParseRelative::No {
+            self.parse_relative = new_parse_relative;
+        }
+        old
+    }
+
+    
+    pub fn restore(&mut self, saved: Self) {
+        *self = saved;
+    }
+}
 
 
 pub struct ParserContext<'a> {
@@ -19,8 +74,6 @@ pub struct ParserContext<'a> {
     pub stylesheet_origin: Origin,
     
     pub url_data: &'a UrlExtraData,
-    
-    pub rule_types: CssRuleTypes,
     
     pub parsing_mode: ParsingMode,
     
@@ -31,6 +84,8 @@ pub struct ParserContext<'a> {
     pub namespaces: Cow<'a, Namespaces>,
     
     pub use_counters: Option<&'a UseCounters>,
+    
+    pub nesting_context: NestingContext,
 }
 
 impl<'a> ParserContext<'a> {
@@ -49,12 +104,12 @@ impl<'a> ParserContext<'a> {
         Self {
             stylesheet_origin,
             url_data,
-            rule_types: rule_type.map(CssRuleTypes::from).unwrap_or_default(),
             parsing_mode,
             quirks_mode,
             error_reporter,
             namespaces,
             use_counters,
+            nesting_context: NestingContext::new_from_rule(rule_type),
         }
     }
 
@@ -64,22 +119,21 @@ impl<'a> ParserContext<'a> {
         rule_type: CssRuleType,
         cb: impl FnOnce(&mut Self) -> R,
     ) -> R {
-        let old_rule_types = self.rule_types;
-        self.rule_types.insert(rule_type);
+        let old = self.nesting_context.save(rule_type);
         let r = cb(self);
-        self.rule_types = old_rule_types;
+        self.nesting_context.restore(old);
         r
     }
 
     
     #[inline]
     pub fn in_page_rule(&self) -> bool {
-        self.rule_types.contains(CssRuleType::Page)
+        self.nesting_context.rule_types.contains(CssRuleType::Page)
     }
 
     
     pub fn rule_types(&self) -> CssRuleTypes {
-        self.rule_types
+        self.nesting_context.rule_types
     }
 
     
