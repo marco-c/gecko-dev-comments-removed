@@ -186,19 +186,23 @@ class nsTableCellFrame : public nsContainerFrame,
   void SetColIndex(int32_t aColIndex);
 
   
-  inline nscoord GetPriorAvailISize();
+  nscoord GetPriorAvailISize() const { return mPriorAvailISize; }
+  void SetPriorAvailISize(nscoord aPriorAvailISize) {
+    mPriorAvailISize = aPriorAvailISize;
+  }
 
   
-  inline void SetPriorAvailISize(nscoord aPriorAvailISize);
+  mozilla::LogicalSize GetDesiredSize() const { return mDesiredSize; }
+  void SetDesiredSize(const ReflowOutput& aDesiredSize) {
+    mDesiredSize = aDesiredSize.Size(GetWritingMode());
+  }
 
-  
-  inline mozilla::LogicalSize GetDesiredSize();
-
-  
-  inline void SetDesiredSize(const ReflowOutput& aDesiredSize);
-
-  bool GetContentEmpty() const;
-  void SetContentEmpty(bool aContentEmpty);
+  bool GetContentEmpty() const {
+    return HasAnyStateBits(NS_TABLE_CELL_CONTENT_EMPTY);
+  }
+  void SetContentEmpty(bool aContentEmpty) {
+    AddOrRemoveStateBits(NS_TABLE_CELL_CONTENT_EMPTY, aContentEmpty);
+  }
 
   nsTableCellFrame* GetNextCell() const {
     nsIFrame* sibling = GetNextSibling();
@@ -252,34 +256,6 @@ class nsTableCellFrame : public nsContainerFrame,
   
   mozilla::LogicalSize mDesiredSize;
 };
-
-inline nscoord nsTableCellFrame::GetPriorAvailISize() {
-  return mPriorAvailISize;
-}
-
-inline void nsTableCellFrame::SetPriorAvailISize(nscoord aPriorAvailISize) {
-  mPriorAvailISize = aPriorAvailISize;
-}
-
-inline mozilla::LogicalSize nsTableCellFrame::GetDesiredSize() {
-  return mDesiredSize;
-}
-
-inline void nsTableCellFrame::SetDesiredSize(const ReflowOutput& aDesiredSize) {
-  mDesiredSize = aDesiredSize.Size(GetWritingMode());
-}
-
-inline bool nsTableCellFrame::GetContentEmpty() const {
-  return HasAnyStateBits(NS_TABLE_CELL_CONTENT_EMPTY);
-}
-
-inline void nsTableCellFrame::SetContentEmpty(bool aContentEmpty) {
-  if (aContentEmpty) {
-    AddStateBits(NS_TABLE_CELL_CONTENT_EMPTY);
-  } else {
-    RemoveStateBits(NS_TABLE_CELL_CONTENT_EMPTY);
-  }
-}
 
 class nsBCTableCellFrame final : public nsTableCellFrame {
  public:
