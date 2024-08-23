@@ -3165,31 +3165,23 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   LOG("  widget now has focus in SetFocus()");
 }
 
-void nsWindow::ResetScreenBounds() { mGdkWindowRootOrigin.reset(); }
-
 LayoutDeviceIntRect nsWindow::GetScreenBounds() {
   if (!mGdkWindow) {
     return mBounds;
   }
 
   const LayoutDeviceIntPoint origin = [&] {
-    GdkPoint origin;
-
-    if (mGdkWindowRootOrigin.isSome()) {
-      origin = mGdkWindowRootOrigin.value();
-    } else {
-      gdk_window_get_root_origin(mGdkWindow, &origin.x, &origin.y);
-      mGdkWindowRootOrigin = Some(origin);
-    }
+    gint x, y;
+    gdk_window_get_root_origin(mGdkWindow, &x, &y);
 
     
     
     
     if (gtk_check_version(3, 24, 35) != nullptr && GdkIsX11Display() &&
         gdk_window_get_window_type(mGdkWindow) == GDK_WINDOW_TEMP) {
-      return LayoutDeviceIntPoint(origin.x, origin.y);
+      return LayoutDeviceIntPoint(x, y);
     }
-    return GdkPointToDevicePixels(origin);
+    return GdkPointToDevicePixels({x, y});
   }();
 
   
@@ -4055,8 +4047,6 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
   if (mPendingConfigures > 0) {
     mPendingConfigures--;
   }
-
-  ResetScreenBounds();
 
   
   
