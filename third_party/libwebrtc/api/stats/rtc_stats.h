@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/stats/attribute.h"
 #include "api/stats/rtc_stats_member.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
@@ -56,8 +57,8 @@ class RTC_EXPORT RTCStats {
  public:
   RTCStats(const std::string& id, Timestamp timestamp)
       : id_(id), timestamp_(timestamp) {}
-
-  virtual ~RTCStats() {}
+  RTCStats(const RTCStats& other);
+  virtual ~RTCStats();
 
   virtual std::unique_ptr<RTCStats> copy() const = 0;
 
@@ -67,6 +68,9 @@ class RTC_EXPORT RTCStats {
 
   
   virtual const char* type() const = 0;
+  
+  
+  std::vector<Attribute> Attributes() const;
   
   
   
@@ -90,15 +94,18 @@ class RTC_EXPORT RTCStats {
   }
 
  protected:
-  
-  
-  
-  
-  virtual std::vector<const RTCStatsMemberInterface*>
-  MembersOfThisObjectAndAncestors(size_t additional_capacity) const;
+  virtual std::vector<Attribute> AttributesImpl(
+      size_t additional_capacity) const;
 
   std::string const id_;
   Timestamp timestamp_;
+
+  
+  
+  
+  
+  
+  mutable std::vector<Attribute> cached_attributes_;
 };
 
 
@@ -142,16 +149,15 @@ class RTC_EXPORT RTCStats {
 
 
 
-#define WEBRTC_RTCSTATS_DECL()                                          \
- protected:                                                             \
-  std::vector<const webrtc::RTCStatsMemberInterface*>                   \
-  MembersOfThisObjectAndAncestors(size_t local_var_additional_capacity) \
-      const override;                                                   \
-                                                                        \
- public:                                                                \
-  static const char kType[];                                            \
-                                                                        \
-  std::unique_ptr<webrtc::RTCStats> copy() const override;              \
+#define WEBRTC_RTCSTATS_DECL()                                              \
+ protected:                                                                 \
+  std::vector<webrtc::Attribute> AttributesImpl(size_t additional_capacity) \
+      const override;                                                       \
+                                                                            \
+ public:                                                                    \
+  static const char kType[];                                                \
+                                                                            \
+  std::unique_ptr<webrtc::RTCStats> copy() const override;                  \
   const char* type() const override
 
 #define WEBRTC_RTCSTATS_IMPL(this_class, parent_class, type_str, ...)          \
@@ -165,23 +171,17 @@ class RTC_EXPORT RTCStats {
     return this_class::kType;                                                  \
   }                                                                            \
                                                                                \
-  std::vector<const webrtc::RTCStatsMemberInterface*>                          \
-  this_class::MembersOfThisObjectAndAncestors(                                 \
-      size_t local_var_additional_capacity) const {                            \
-    const webrtc::RTCStatsMemberInterface* local_var_members[] = {             \
-        __VA_ARGS__};                                                          \
-    size_t local_var_members_count =                                           \
-        sizeof(local_var_members) / sizeof(local_var_members[0]);              \
-    std::vector<const webrtc::RTCStatsMemberInterface*>                        \
-        local_var_members_vec = parent_class::MembersOfThisObjectAndAncestors( \
-            local_var_members_count + local_var_additional_capacity);          \
-    RTC_DCHECK_GE(                                                             \
-        local_var_members_vec.capacity() - local_var_members_vec.size(),       \
-        local_var_members_count + local_var_additional_capacity);              \
-    local_var_members_vec.insert(local_var_members_vec.end(),                  \
-                                 &local_var_members[0],                        \
-                                 &local_var_members[local_var_members_count]); \
-    return local_var_members_vec;                                              \
+  std::vector<webrtc::Attribute> this_class::AttributesImpl(                   \
+      size_t additional_capacity) const {                                      \
+    const webrtc::RTCStatsMemberInterface* this_members[] = {__VA_ARGS__};     \
+    size_t this_members_size = sizeof(this_members) / sizeof(this_members[0]); \
+    std::vector<webrtc::Attribute> attributes =                                \
+        parent_class::AttributesImpl(this_members_size + additional_capacity); \
+    for (size_t i = 0; i < this_members_size; ++i) {                           \
+      attributes.push_back(                                                    \
+          webrtc::Attribute::FromMemberInterface(this_members[i]));            \
+    }                                                                          \
+    return attributes;                                                         \
   }
 
 
@@ -198,10 +198,9 @@ class RTC_EXPORT RTCStats {
     return this_class::kType;                                               \
   }                                                                         \
                                                                             \
-  std::vector<const webrtc::RTCStatsMemberInterface*>                       \
-  this_class::MembersOfThisObjectAndAncestors(                              \
-      size_t local_var_additional_capacity) const {                         \
-    return parent_class::MembersOfThisObjectAndAncestors(0);                \
+  std::vector<webrtc::Attribute> this_class::AttributesImpl(                \
+      size_t additional_capacity) const {                                   \
+    return parent_class::AttributesImpl(0);                                 \
   }
 
 }  
