@@ -215,9 +215,11 @@ class AnyRef {
     defined(JS_CODEGEN_RISCV64)
     
     uintptr_t wideValue = uintptr_t(int64_t((uint64_t(value) << 33)) >> 33);
-#else
+#elif !defined(JS_64BIT)
     
     uintptr_t wideValue = (uintptr_t)value;
+#else
+#  error "unknown architecture"
 #endif
 
     
@@ -357,7 +359,9 @@ class WrappedPtrOperations<wasm::AnyRef, Wrapper> {
   bool isNull() const { return value().isNull(); }
   bool isI31() const { return value().isI31(); }
   bool isJSObject() const { return value().isJSObject(); }
+  bool isJSString() const { return value().isJSString(); }
   JSObject& toJSObject() const { return value().toJSObject(); }
+  JSString* toJSString() const { return value().toJSString(); }
 };
 
 
