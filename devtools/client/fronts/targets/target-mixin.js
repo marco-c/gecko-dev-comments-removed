@@ -10,12 +10,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/protocol.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "getThreadOptions",
-  "resource://devtools/client/shared/thread-utils.js",
-  true
-);
 
 
 
@@ -420,39 +414,16 @@ function TargetMixin(parentClass) {
         return;
       }
 
-      const options = await getThreadOptions();
       
       if (this.isDestroyedOrBeingDestroyed()) {
         return;
       }
-      await this.attachThread(options);
-    }
-
-    async attachThread(options = {}) {
       if (!this.targetForm || !this.targetForm.threadActor) {
         throw new Error(
-          "TargetMixin sub class should set targetForm.threadActor before calling " +
-            "attachThread"
+          "TargetMixin sub class should set targetForm.threadActor before calling attachAndInitThread"
         );
       }
       this.threadFront = await this.getFront("thread");
-
-      
-      
-      
-      
-      
-      
-      
-      const isAttached = await this.threadFront.isAttached();
-
-      const isDestroyed =
-        this.isDestroyedOrBeingDestroyed() || this.threadFront.isDestroyed();
-      if (!isAttached && !isDestroyed) {
-        await this.threadFront.attach(options);
-      }
-
-      return this.threadFront;
     }
 
     isDestroyedOrBeingDestroyed() {

@@ -529,6 +529,13 @@ class ThreadActor extends Actor {
   }
 
   async setBreakpoint(location, options) {
+    
+    
+    if (this._state === STATES.DETACHED) {
+      this.attach({});
+      this.addAllSources();
+    }
+
     let actor = this.breakpointActorMap.get(location);
     
     if (actor && JSON.stringify(actor.options) == JSON.stringify(options)) {
