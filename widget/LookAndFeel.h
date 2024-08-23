@@ -299,6 +299,7 @@ class LookAndFeel {
 
 
     DynamicRange,
+    VideoDynamicRange,
 
     
     PanelAnimations,

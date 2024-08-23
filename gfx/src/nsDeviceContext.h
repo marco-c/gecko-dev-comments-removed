@@ -152,11 +152,6 @@ class nsDeviceContext final {
   
 
 
-  bool GetScreenIsHDR();
-
-  
-
-
 
 
 
