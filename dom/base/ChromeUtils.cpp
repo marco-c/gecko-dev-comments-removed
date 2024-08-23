@@ -9,7 +9,6 @@
 #include "JSOracleParent.h"
 #include "js/CallAndConstruct.h"  
 #include "js/ColumnNumber.h"  
-#include "js/friend/DumpFunctions.h"
 #include "js/CharacterEncoding.h"
 #include "js/Date.h"                
 #include "js/Object.h"              
@@ -634,7 +633,6 @@ static mozJSModuleLoader* GetModuleLoaderForCurrentGlobal(
   RefPtr targetModuleLoader = global->GetModuleLoader(aCx);
   if (!targetModuleLoader) {
     
-    js::DumpBacktrace(aCx);
     JS_ReportErrorASCII(aCx, "No ModuleLoader found for the current context");
     return nullptr;
   }
