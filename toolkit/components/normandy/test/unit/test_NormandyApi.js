@@ -195,7 +195,7 @@ decorate_task(
     
 
     
-    await fetch(serverUrl);
+    await fetch(serverUrl, { credentials: "same-origin" });
 
     
     const cookieExpectedDeferred = Promise.withResolvers();
@@ -218,7 +218,7 @@ decorate_task(
       cookieExpectedDeferred.resolve();
     }
     Services.obs.addObserver(cookieExpectedObserver, "http-on-modify-request");
-    await fetch(serverUrl);
+    await fetch(serverUrl, { credentials: "same-origin" });
     await cookieExpectedDeferred.promise;
 
     
