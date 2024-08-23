@@ -11,18 +11,12 @@
 #ifndef API_METRONOME_TEST_FAKE_METRONOME_H_
 #define API_METRONOME_TEST_FAKE_METRONOME_H_
 
-#include <memory>
-#include <set>
+#include <cstddef>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/metronome/metronome.h"
-#include "api/task_queue/task_queue_base.h"
-#include "api/task_queue/task_queue_factory.h"
 #include "api/units/time_delta.h"
-#include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/task_queue.h"
-#include "rtc_base/task_utils/repeating_task.h"
-#include "rtc_base/thread_annotations.h"
 
 namespace webrtc::test {
 
@@ -44,9 +38,6 @@ class ForcedTickMetronome : public Metronome {
   const TimeDelta tick_period_;
   std::vector<absl::AnyInvocable<void() &&>> callbacks_;
 };
-
-
-
 
 
 
