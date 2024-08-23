@@ -646,6 +646,11 @@ impl StylesheetInvalidationSet {
                 debug!(" > Found unsupported rule, marking the whole subtree invalid.");
                 self.invalidate_fully();
             },
+            Scope(..) => {
+                
+                
+                self.invalidate_fully();
+            },
         }
     }
 }
