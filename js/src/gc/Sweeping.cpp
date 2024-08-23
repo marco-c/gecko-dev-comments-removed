@@ -1200,18 +1200,19 @@ class ImmediateSweepWeakCacheTask : public GCParallelTask {
 };
 
 void GCRuntime::updateAtomsBitmap() {
-  DenseBitmap marked;
-  if (atomMarking.computeBitmapFromChunkMarkBits(rt, marked)) {
-    for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-      atomMarking.refineZoneBitmapForCollectedZone(zone, marked);
+  size_t collectedZones = 0;
+  size_t uncollectedZones = 0;
+  for (ZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
+    if (zone->isCollecting()) {
+      collectedZones++;
+    } else {
+      uncollectedZones++;
     }
-  } else {
-    
-    
-    
   }
 
-  atomMarking.markAtomsUsedByUncollectedZones(rt);
+  atomMarking.refineZoneBitmapsForCollectedZones(this, collectedZones);
+
+  atomMarking.markAtomsUsedByUncollectedZones(this, uncollectedZones);
 
   
   

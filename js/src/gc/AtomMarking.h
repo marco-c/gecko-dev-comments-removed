@@ -19,6 +19,7 @@ class DenseBitmap;
 namespace gc {
 
 class Arena;
+class GCRuntime;
 
 
 
@@ -44,17 +45,23 @@ class AtomMarkingRuntime {
 
   
   
+  void refineZoneBitmapsForCollectedZones(GCRuntime* gc, size_t collectedZones);
+
   
-  bool computeBitmapFromChunkMarkBits(JSRuntime* runtime, DenseBitmap& bitmap);
+  
+  void markAtomsUsedByUncollectedZones(GCRuntime* gc, size_t uncollectedZones);
+
+ private:
+  
+  
+  
+  bool computeBitmapFromChunkMarkBits(GCRuntime* gc, DenseBitmap& bitmap);
 
   
   
   void refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap);
 
-  
-  
-  void markAtomsUsedByUncollectedZones(JSRuntime* runtime);
-
+ public:
   
   template <typename T>
   void markAtom(JSContext* cx, T* thing);
