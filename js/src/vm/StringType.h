@@ -782,6 +782,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   void traceChildren(JSTracer* trc);
 
+  inline void traceBasePreserveNurseryEdge(JSTracer* trc);
+
   
   bool isPermanentAndMayBeShared() const { return isPermanentAtom(); }
 
@@ -931,6 +933,7 @@ class JSLinearString : public JSString {
   friend class JS::AutoStableStringChars;
   friend class js::gc::TenuringTracer;
   friend class js::gc::CellAllocator;
+  friend class JSDependentString;  
 
   
   JSLinearString* ensureLinear(JSContext* cx) = delete;
@@ -1138,6 +1141,11 @@ class JSDependentString : public JSLinearString {
   void relocateNonInlineChars(T chars, size_t offset) {
     setNonInlineChars(chars + offset);
   }
+
+  template <typename CharT>
+  inline void sweepTyped();
+
+  inline void sweep();
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;

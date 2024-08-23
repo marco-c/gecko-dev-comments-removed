@@ -13,6 +13,7 @@
 
 #include <tuple>
 
+#include "ds/LifoAlloc.h"
 #include "gc/GCEnum.h"
 #include "gc/GCProbes.h"
 #include "gc/Heap.h"
@@ -73,6 +74,18 @@ struct Cell;
 class GCSchedulingTunables;
 class StoreBuffer;
 class TenuringTracer;
+
+
+
+
+struct CellSweepSet {
+  UniquePtr<LifoAlloc> storage_;
+  ArenaCellSet* head_ = nullptr;
+
+  
+  void sweep();
+};
+
 }  
 
 class Nursery {
@@ -674,6 +687,8 @@ class Nursery {
   using ForwardedBufferMap =
       HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>;
   ForwardedBufferMap forwardedBuffers;
+
+  gc::CellSweepSet cellsToSweep;
 
   
   
