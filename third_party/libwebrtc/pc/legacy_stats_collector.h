@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/candidate.h"
 #include "api/field_trials_view.h"
 #include "api/legacy_stats_types.h"
 #include "api/media_stream_interface.h"
@@ -45,7 +46,7 @@ namespace webrtc {
 
 
 
-const char* IceCandidateTypeToStatsType(const std::string& candidate_type);
+const char* IceCandidateTypeToStatsType(const cricket::Candidate& candidate);
 
 
 

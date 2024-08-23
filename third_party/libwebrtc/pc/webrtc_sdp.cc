@@ -771,13 +771,13 @@ static const int kPreferenceHost = 1;
 static const int kPreferenceReflexive = 2;
 static const int kPreferenceRelayed = 3;
 
-static int GetCandidatePreferenceFromType(absl::string_view type) {
+static int GetCandidatePreferenceFromType(const Candidate& candidate) {
   int preference = kPreferenceUnknown;
-  if (type == cricket::LOCAL_PORT_TYPE) {
+  if (candidate.is_local()) {
     preference = kPreferenceHost;
-  } else if (type == cricket::STUN_PORT_TYPE) {
+  } else if (candidate.is_stun()) {
     preference = kPreferenceReflexive;
-  } else if (type == cricket::RELAY_PORT_TYPE) {
+  } else if (candidate.is_relay()) {
     preference = kPreferenceRelayed;
   } else {
     RTC_DCHECK_NOTREACHED();
@@ -810,7 +810,7 @@ static void GetDefaultDestination(const std::vector<Candidate>& candidates,
     if (candidate.protocol() != cricket::UDP_PROTOCOL_NAME) {
       continue;
     }
-    const int preference = GetCandidatePreferenceFromType(candidate.type());
+    const int preference = GetCandidatePreferenceFromType(candidate);
     const int family = candidate.address().ipaddr().family();
     
     
@@ -2005,13 +2005,13 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
     
     std::string type;
     
-    if (candidate.type() == cricket::LOCAL_PORT_TYPE) {
+    if (candidate.is_local()) {
       type = kCandidateHost;
-    } else if (candidate.type() == cricket::STUN_PORT_TYPE) {
+    } else if (candidate.is_stun()) {
       type = kCandidateSrflx;
-    } else if (candidate.type() == cricket::RELAY_PORT_TYPE) {
+    } else if (candidate.is_relay()) {
       type = kCandidateRelay;
-    } else if (candidate.type() == cricket::PRFLX_PORT_TYPE) {
+    } else if (candidate.is_prflx()) {
       type = kCandidatePrflx;
       
     } else {
