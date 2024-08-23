@@ -323,7 +323,7 @@ nsMemoryInfoDumper::DumpGCAndCCLogsToFile(
     for (uint32_t i = 0; i < children.Length(); i++) {
       ContentParent* cp = children[i];
       nsCOMPtr<nsICycleCollectorLogSink> logSink =
-          nsCycleCollector_createLogSink();
+          nsCycleCollector_createLogSink( true);
 
       logSink->SetFilenameIdentifier(identifier);
       logSink->SetProcessIdentifier(cp->Pid());
