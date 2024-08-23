@@ -20,7 +20,7 @@ namespace js {
 namespace jit {
 
 
-static const uint32_t ShadowStackSpace = 0;
+static constexpr uint32_t ShadowStackSpace = 0;
 
 
 

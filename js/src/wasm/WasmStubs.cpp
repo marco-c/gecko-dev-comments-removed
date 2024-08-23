@@ -1635,7 +1635,8 @@ static void FillArgumentArrayForInterpExit(MacroAssembler& masm,
                                            Register scratch) {
   
   
-  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithInstances);
+  const unsigned offsetFromFPToCallerStackArgs =
+      sizeof(FrameWithInstances) - jit::ShadowStackSpace;
 
   GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; arguments ",
             funcImportIndex);
@@ -1731,7 +1732,8 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
 
   
   
-  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithInstances);
+  const unsigned offsetFromFPToCallerStackArgs =
+      sizeof(FrameWithInstances) - jit::ShadowStackSpace;
 
   
   
@@ -2475,7 +2477,8 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
 
   
   
-  unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithInstances);
+  unsigned offsetFromFPToCallerStackArgs =
+      sizeof(FrameWithInstances) - jit::ShadowStackSpace;
   Register scratch = ABINonArgReturnReg0;
   for (ABIArgIter i(args); !i.done(); i++) {
     if (i->argInRegister()) {
