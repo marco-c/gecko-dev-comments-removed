@@ -243,10 +243,14 @@ class nsTableCellFrame : public nsContainerFrame,
 
   friend class nsTableRowFrame;
 
-  uint32_t mColIndex;  
+  
+  uint32_t mColIndex = 0;
 
-  nscoord mPriorAvailISize;           
-  mozilla::LogicalSize mDesiredSize;  
+  
+  nscoord mPriorAvailISize = 0;
+
+  
+  mozilla::LogicalSize mDesiredSize;
 };
 
 inline nscoord nsTableCellFrame::GetPriorAvailISize() {
