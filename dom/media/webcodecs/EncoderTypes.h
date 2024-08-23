@@ -17,7 +17,6 @@
 #include "nsStringFwd.h"
 #include "nsTLiteralString.h"
 #include "VideoDecoder.h"
-#include "PlatformEncoderModule.h"
 
 namespace mozilla {
 
@@ -33,12 +32,13 @@ class AudioEncoderConfigInternal {
   explicit AudioEncoderConfigInternal(
       const AudioEncoderConfigInternal& aConfig);
 
+  void SetSpecific(const EncoderConfig::CodecSpecific& aSpecific);
+
   nsString ToString() const;
 
   bool Equals(const AudioEncoderConfigInternal& aOther) const;
   bool CanReconfigure(const AudioEncoderConfigInternal& aOther) const;
 
-  
   
   
   EncoderConfig ToEncoderConfig() const;
@@ -51,6 +51,7 @@ class AudioEncoderConfigInternal {
   Maybe<uint32_t> mNumberOfChannels;
   Maybe<uint32_t> mBitrate;
   BitrateMode mBitrateMode;
+  Maybe<EncoderConfig::CodecSpecific> mSpecific;
 
  private:
   AudioEncoderConfigInternal(const nsAString& aCodec,
