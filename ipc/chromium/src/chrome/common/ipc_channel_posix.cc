@@ -84,7 +84,7 @@ namespace {
 
 
 static int gClientChannelFd =
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
     
     -1
 #else
@@ -135,7 +135,7 @@ static inline ssize_t corrected_sendmsg(int socket,
 }  
 
 
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
 void Channel::SetClientChannelFd(int fd) { gClientChannelFd = fd; }
 #endif  
 

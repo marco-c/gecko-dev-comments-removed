@@ -98,7 +98,7 @@ void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
   geckoargs::sPrefMapSize.Put((uintptr_t)(GetPrefMapSize()), aExtraOpts);
 }
 
-#ifdef ANDROID
+#if defined(ANDROID) || defined(XP_IOS)
 static int gPrefsFd = -1;
 static int gPrefMapFd = -1;
 
@@ -145,7 +145,7 @@ bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
     return false;
   }
 
-#ifdef ANDROID
+#if defined(ANDROID) || defined(XP_IOS)
   
   MOZ_RELEASE_ASSERT(gPrefsFd != -1);
   prefsHandle = Some(UniqueFileHandle(gPrefsFd));

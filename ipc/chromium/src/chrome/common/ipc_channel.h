@@ -142,7 +142,8 @@ class Channel {
   void StartAcceptingHandles(Mode mode);
 #endif
 
-#if defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
+  
   
   
   static void SetClientChannelFd(int fd);

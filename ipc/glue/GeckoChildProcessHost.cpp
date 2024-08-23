@@ -1247,16 +1247,13 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
   
   
   if (mProcessType != GeckoProcessType_ForkServer) {
-#  ifdef MOZ_WIDGET_ANDROID
+#  if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
     
     
-    mLaunchOptions->fds_to_remap.push_back(
-        std::pair<int, int>(mClientChannelHandle.get(), -1));
-#  else
     MOZ_ASSERT(mChannelDstFd >= 0);
+#  endif
     mLaunchOptions->fds_to_remap.push_back(
         std::pair<int, int>(mClientChannelHandle.get(), mChannelDstFd));
-#  endif
   }
 
   

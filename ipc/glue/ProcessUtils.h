@@ -71,7 +71,7 @@ class SharedPreferenceDeserializer final {
   base::SharedMemory mShmem;
 };
 
-#ifdef ANDROID
+#if defined(ANDROID) || defined(XP_IOS)
 
 
 void SetPrefsFd(int aFd);
