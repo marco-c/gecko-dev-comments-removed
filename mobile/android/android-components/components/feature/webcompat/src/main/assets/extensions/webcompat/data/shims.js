@@ -327,10 +327,7 @@ const AVAILABLE_SHIMS = [
     bug: "1773110",
     runFirst: "private-browsing-web-api-fixes.js",
     matches: [
-      "*://*.imgur.com/js/vendor.*.bundle.js",
-      "*://*.imgur.io/js/vendor.*.bundle.js",
-      "*://www.rva311.com/static/js/main.*.chunk.js",
-      "*://web-assets.toggl.com/app/assets/scripts/*.js", 
+      "*://*.imgur.io/js/vendor.*.js", 
     ],
     onlyIfPrivateBrowsing: true,
   },
