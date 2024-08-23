@@ -439,6 +439,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   enum class FuseDependencyKind {
     HasSeenObjectEmulateUndefinedFuse,
+    OptimizeGetIteratorFuse,
   };
 
   
@@ -447,6 +448,10 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   void addHasSeenObjectEmulateUndefinedFuseDependency() {
     fuseDependencies += FuseDependencyKind::HasSeenObjectEmulateUndefinedFuse;
+  }
+
+  void addOptimizeGetIteratorFuseDependency() {
+    fuseDependencies += FuseDependencyKind::OptimizeGetIteratorFuse;
   }
 
   
