@@ -53,6 +53,9 @@ class LoadContextBase : public nsISupports {
   virtual void GetProfilerLabel(nsACString& aOutString);
 
   
+  virtual bool IsPreload() const { return false; }
+
+  
   bool IsWindowContext() const { return mKind == ContextKind::Window; }
   mozilla::dom::ScriptLoadContext* AsWindowContext();
 
