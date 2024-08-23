@@ -56,6 +56,9 @@ class ExternalEngineStateMachine final
   ExternalEngineStateMachine(MediaDecoder* aDecoder,
                              MediaFormatReader* aReader);
 
+  RefPtr<MediaDecoder::SeekPromise> InvokeSeek(
+      const SeekTarget& aTarget) override;
+
   RefPtr<GenericPromise> InvokeSetSink(
       const RefPtr<AudioDeviceInfo>& aSink) override;
 
@@ -308,6 +311,11 @@ class ExternalEngineStateMachine final
   
   MozPromiseHolder<SetCDMPromise> mSetCDMProxyPromise;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMProxyRequest;
+
+  
+  
+  SeekJob mPendingSeek;
+  MozPromiseRequestHolder<MediaDecoder::SeekPromise> mPendingSeekRequest;
 
   
   gfx::IntSize mVideoDisplay;
