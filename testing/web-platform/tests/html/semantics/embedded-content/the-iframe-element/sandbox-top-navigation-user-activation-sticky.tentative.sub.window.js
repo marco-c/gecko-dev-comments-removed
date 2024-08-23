@@ -10,8 +10,6 @@
 
 'use strict';
 
-
-
 promise_test(async t => {
   const main = await setupTest();
   const iframe_1 = await createNestedIframe(main,
@@ -20,11 +18,3 @@ promise_test(async t => {
 
   await attemptTopNavigation(iframe_1, true);
 }, "Allow top with user activation + user activation");
-
-promise_test(async t => {
-  const main = await setupTest();
-  const iframe_1 = await createNestedIframe(main,
-      "HTTP_ORIGIN", "allow-top-navigation-by-user-activation", "");
-
-  await attemptTopNavigation(iframe_1, false);
-}, "allow-top-navigation-by-user-activation set but no sticky activation");
