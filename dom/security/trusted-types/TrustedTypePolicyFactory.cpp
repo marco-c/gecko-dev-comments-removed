@@ -23,7 +23,31 @@ already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
     const nsAString& aPolicyName,
     const TrustedTypePolicyOptions& aPolicyOptions) {
   
-  return MakeRefPtr<TrustedTypePolicy>(this).forget();
+
+  
+  
+  
+
+  TrustedTypePolicy::Options options;
+
+  if (aPolicyOptions.mCreateHTML.WasPassed()) {
+    options.mCreateHTMLCallback = &aPolicyOptions.mCreateHTML.Value();
+  }
+
+  if (aPolicyOptions.mCreateScript.WasPassed()) {
+    options.mCreateScriptCallback = &aPolicyOptions.mCreateScript.Value();
+  }
+
+  if (aPolicyOptions.mCreateScriptURL.WasPassed()) {
+    options.mCreateScriptURLCallback = &aPolicyOptions.mCreateScriptURL.Value();
+  }
+
+  RefPtr<TrustedTypePolicy> policy =
+      MakeRefPtr<TrustedTypePolicy>(this, aPolicyName, std::move(options));
+
+  mCreatedPolicyNames.AppendElement(aPolicyName);
+
+  return policy.forget();
 }
 
 UniquePtr<TrustedHTML> TrustedTypePolicyFactory::EmptyHTML() {

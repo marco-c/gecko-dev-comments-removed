@@ -12,16 +12,16 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/TrustedHTML.h"
 #include "mozilla/dom/TrustedScript.h"
 #include "mozilla/dom/TrustedScriptURL.h"
 #include "nsISupportsImpl.h"
-#include "nsStringFwd.h"
+#include "nsString.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 
+class DOMString;
 class TrustedTypePolicyFactory;
 
 
@@ -30,8 +30,14 @@ class TrustedTypePolicy : public nsWrapperCache {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(TrustedTypePolicy)
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(TrustedTypePolicy)
 
-  explicit TrustedTypePolicy(TrustedTypePolicyFactory* aParentObject)
-      : mParentObject{aParentObject} {}
+  struct Options {
+    RefPtr<CreateHTMLCallback> mCreateHTMLCallback;
+    RefPtr<CreateScriptCallback> mCreateScriptCallback;
+    RefPtr<CreateScriptURLCallback> mCreateScriptURLCallback;
+  };
+
+  TrustedTypePolicy(TrustedTypePolicyFactory* aParentObject,
+                    const nsAString& aName, Options&& aOptions);
 
   
   TrustedTypePolicyFactory* GetParentObject() const { return mParentObject; }
@@ -41,9 +47,7 @@ class TrustedTypePolicy : public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  void GetName(DOMString& aResult) const {
-    
-  }
+  void GetName(DOMString& aResult) const;
 
   
   UniquePtr<TrustedHTML> CreateHTML(
@@ -65,6 +69,10 @@ class TrustedTypePolicy : public nsWrapperCache {
   virtual ~TrustedTypePolicy() = default;
 
   RefPtr<TrustedTypePolicyFactory> mParentObject;
+
+  const nsString mName;
+
+  Options mOptions;
 };
 
 }  
