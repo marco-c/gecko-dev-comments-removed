@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.widget;
 
@@ -15,17 +15,17 @@ import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
 import org.mozilla.focus.R;
 
-
-
-
-
-
-
-
-
-
-
- class ResizableKeyboardViewDelegate {
+/**
+ * A helper class to implement a ViewGroup that resizes dynamically (by adding padding to the bottom)
+ * based on whether a keyboard is visible or not.
+ *
+ * Implementation based on:
+ * https://github.com/mikepenz/MaterialDrawer/blob/master/library/src/main/java/com/mikepenz/materialdrawer/util/KeyboardUtil.java
+ *
+ * A View using this delegate needs to forward the calls to onAttachedToWindow() and onDetachedFromWindow()
+ * to this class.
+ */
+/* package */ class ResizableKeyboardViewDelegate {
     private final Rect rect;
     private final View delegateView;
     private View decorView;
@@ -41,15 +41,15 @@ import org.mozilla.focus.R;
 
             int difference = calculateDifferenceBetweenHeightAndUsableArea();
 
-            
-            
+            // If difference > 0, keyboard is showing.
+            // If difference =< 0, keyboard is not showing or is in multiview mode.
             if (difference > 0) {
-                
+                // Keyboard showing -> Set difference has bottom padding.
                 if (delegateView.getPaddingBottom() != difference) {
                     updateBottomPadding(difference);
                 }
             } else {
-                
+                // Keyboard not showing -> Reset bottom padding.
                 if (delegateView.getPaddingBottom() != 0) {
                     updateBottomPadding(0);
                 }
@@ -57,7 +57,7 @@ import org.mozilla.focus.R;
         }
     };
 
-     ResizableKeyboardViewDelegate(@NonNull View view, @NonNull AttributeSet attrs) {
+    /* package */ ResizableKeyboardViewDelegate(@NonNull View view, @NonNull AttributeSet attrs) {
         this.delegateView = view;
         this.rect = new Rect();
 
@@ -73,15 +73,15 @@ import org.mozilla.focus.R;
         }
     }
 
-     void onAttachedToWindow() {
+    /* package */ void onAttachedToWindow() {
         delegateView.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
 
-     void onDetachedFromWindow() {
+    /* package */ void onDetachedFromWindow() {
         delegateView.getViewTreeObserver().removeOnGlobalLayoutListener(layoutListener);
     }
 
-     void reset() {
+    /* package */ void reset() {
         updateBottomPadding(0);
     }
 
