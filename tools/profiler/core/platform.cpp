@@ -4840,7 +4840,7 @@ void SamplerThread::SpyOnUnregisteredThreads() {
        nsTArray<WindowInfo>{},
        nsTArray<UtilityInfo>{},
        0
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
       ,
        MACH_PORT_NULL
 #endif  
