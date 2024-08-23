@@ -7683,10 +7683,6 @@ static void NotifyActivityChangedCallback(nsISupports* aSupports) {
 
 void Document::NotifyActivityChanged() {
   EnumerateActivityObservers(NotifyActivityChangedCallback);
-  
-  if (!IsActive()) {
-    UnlockAllWakeLocks(WakeLockType::Screen);
-  }
 }
 
 void Document::SetContainer(nsDocShell* aContainer) {
@@ -15694,11 +15690,6 @@ void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
     for (auto* listener : mWorkerListeners) {
       listener->OnVisible(visible);
     }
-
-    
-    if (!visible) {
-      UnlockAllWakeLocks(WakeLockType::Screen);
-    }
   }
 }
 
@@ -18348,12 +18339,9 @@ class UnlockAllWakeLockRunnable final : public Runnable {
 
 void Document::UnlockAllWakeLocks(WakeLockType aType) {
   
-  if (!ActiveWakeLocks(aType).IsEmpty()) {
-    RefPtr<UnlockAllWakeLockRunnable> runnable =
-        MakeRefPtr<UnlockAllWakeLockRunnable>(aType, this);
-    nsresult rv = NS_DispatchToMainThread(runnable);
-    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  }
+  RefPtr<UnlockAllWakeLockRunnable> runnable =
+      MakeRefPtr<UnlockAllWakeLockRunnable>(aType, this);
+  NS_DispatchToMainThread(runnable);
 }
 
 RefPtr<Document::AutomaticStorageAccessPermissionGrantPromise>
