@@ -1355,6 +1355,11 @@ extern JS_PUBLIC_API JSObject* NewMemoryInfoObject(JSContext* cx);
 
 
 
+JS_PUBLIC_API bool IsDeadNurseryObject(JSObject* obj);
+
+
+
+
 
 
 
