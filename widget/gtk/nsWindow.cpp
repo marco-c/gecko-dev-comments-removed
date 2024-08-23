@@ -9954,26 +9954,6 @@ void nsWindow::UnlockNativePointer() {
 }
 #endif
 
-bool nsWindow::GetTopLevelWindowActiveState(nsIFrame* aFrame) {
-  
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return false;
-  }
-  
-  if (gfxPlatform::IsHeadless()) {
-    return true;
-  }
-  
-  
-  nsWindow* window = static_cast<nsWindow*>(aFrame->GetNearestWidget());
-  if (!window) {
-    return false;
-  }
-  return !window->mTitlebarBackdropState;
-}
-
 static nsIFrame* FindTitlebarFrame(nsIFrame* aFrame) {
   for (nsIFrame* childFrame : aFrame->PrincipalChildList()) {
     StyleAppearance appearance =
