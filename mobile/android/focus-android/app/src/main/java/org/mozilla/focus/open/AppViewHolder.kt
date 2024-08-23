@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.open;
 
@@ -17,7 +17,7 @@ public class AppViewHolder extends RecyclerView.ViewHolder {
     private final TextView titleView;
     private final ImageView iconView;
 
-     AppViewHolder(View itemView) {
+    /* package */ AppViewHolder(View itemView) {
         super(itemView);
 
         titleView = itemView.findViewById(R.id.title);

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.focus.open;
 
@@ -88,7 +88,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         throw new IllegalStateException("Unknown view type: " + viewType);
     }
 
-     void setOnAppSelectedListener(OnAppSelectedListener listener) {
+    /* package */ void setOnAppSelectedListener(OnAppSelectedListener listener) {
         this.listener = listener;
     }
 
