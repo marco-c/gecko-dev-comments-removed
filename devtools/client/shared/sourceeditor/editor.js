@@ -825,13 +825,17 @@ class Editor extends EventEmitter {
 
 
 
+
   setLineGutterMarkers(markers) {
     const cm = editors.get(this);
 
     if (markers) {
       
       for (const marker of markers) {
-        this.#lineGutterMarkers.set(marker.gutterLineClassName, marker);
+        if (!marker.id) {
+          throw new Error("Marker has no unique identifier");
+        }
+        this.#lineGutterMarkers.set(marker.id, marker);
       }
     }
     
@@ -869,9 +873,9 @@ class Editor extends EventEmitter {
       for (let pos = from; pos <= to; ) {
         const line = cm.state.doc.lineAt(pos);
         for (const {
-          gutterLineClassName,
+          lineClassName,
           condition,
-          createGutterLineElementNode,
+          createLineElementNode,
         } of markers) {
           if (typeof condition !== "function") {
             throw new Error("The `condition` is not a valid function");
@@ -881,9 +885,9 @@ class Editor extends EventEmitter {
               line.from,
               line.to,
               new LineGutterMarker(
-                gutterLineClassName,
+                lineClassName,
                 line.number,
-                createGutterLineElementNode
+                createLineElementNode
               )
             );
           }
