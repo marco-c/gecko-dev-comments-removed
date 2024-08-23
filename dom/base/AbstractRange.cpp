@@ -341,6 +341,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
       
       
       aRange->DoSetRange(aEndBoundary, aEndBoundary, newEndRoot);
+      aRange->AsDynamicRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+          aStartBoundary, aEndBoundary);
     }
     return NS_OK;
   }
