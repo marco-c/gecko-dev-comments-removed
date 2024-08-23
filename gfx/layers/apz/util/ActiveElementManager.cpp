@@ -249,7 +249,7 @@ bool ActiveElementManager::MaybeChangeActiveState(bool aWasClick) {
     
     
     
-    if (!(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
+    if (mCanBePan && !(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
       SetActive(mTarget);
     }
   } else {
