@@ -40,9 +40,9 @@ class TenuringTracer final : public JSTracer {
   Nursery& nursery_;
 
   
-  size_t tenuredSize = 0;
+  size_t promotedSize = 0;
   
-  size_t tenuredCells = 0;
+  size_t promotedCells = 0;
 
   
   
@@ -85,8 +85,8 @@ class TenuringTracer final : public JSTracer {
   
   void collectToStringFixedPoint();
 
-  size_t getTenuredSize() const;
-  size_t getTenuredCells() const;
+  size_t getPromotedSize() const;
+  size_t getPromotedCells() const;
 
   void traverse(JS::Value* thingp);
   void traverse(wasm::AnyRef* thingp);
@@ -134,18 +134,16 @@ class TenuringTracer final : public JSTracer {
 
   bool shouldTenure(Zone* zone, JS::TraceKind traceKind, Cell* cell);
 
-  inline JSObject* movePlainObjectToTenured(PlainObject* src);
-  JSObject* moveToTenuredSlow(JSObject* src);
-  JSString* moveToTenured(JSString* src);
-  JS::BigInt* moveToTenured(JS::BigInt* src);
+  inline JSObject* promotePlainObject(PlainObject* src);
+  JSObject* promoteObjectSlow(JSObject* src);
+  JSString* promoteString(JSString* src);
+  JS::BigInt* promoteBigInt(JS::BigInt* src);
 
-  size_t moveElementsToTenured(NativeObject* dst, NativeObject* src,
-                               gc::AllocKind dstKind);
-  size_t moveSlotsToTenured(NativeObject* dst, NativeObject* src);
-  size_t moveStringToTenured(JSString* dst, JSString* src,
-                             gc::AllocKind dstKind);
-  size_t moveBigIntToTenured(JS::BigInt* dst, JS::BigInt* src,
-                             gc::AllocKind dstKind);
+  size_t moveElements(NativeObject* dst, NativeObject* src,
+                      gc::AllocKind dstKind);
+  size_t moveSlots(NativeObject* dst, NativeObject* src);
+  size_t moveString(JSString* dst, JSString* src, gc::AllocKind dstKind);
+  size_t moveBigInt(JS::BigInt* dst, JS::BigInt* src, gc::AllocKind dstKind);
 
   void traceSlots(JS::Value* vp, JS::Value* end);
 };
