@@ -4,14 +4,14 @@
 
 
 
-#if !defined(AbstractThread_h_)
-#  define AbstractThread_h_
+#ifndef XPCOM_THREADS_ABSTRACTTHREAD_H_
+#define XPCOM_THREADS_ABSTRACTTHREAD_H_
 
-#  include "mozilla/AlreadyAddRefed.h"
-#  include "mozilla/ThreadLocal.h"
-#  include "nscore.h"
-#  include "nsISerialEventTarget.h"
-#  include "nsISupports.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/ThreadLocal.h"
+#include "nscore.h"
+#include "nsISerialEventTarget.h"
+#include "nsISupports.h"
 
 class nsIEventTarget;
 class nsIRunnable;
