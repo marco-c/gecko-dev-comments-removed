@@ -461,11 +461,13 @@ Element* PointerEventHandler::GetPointerCapturingElement(
 void PointerEventHandler::ReleaseIfCaptureByDescendant(nsIContent* aContent) {
   
   
-  for (const auto& entry : *sPointerCaptureList) {
-    PointerCaptureInfo* data = entry.GetWeak();
-    if (data && data->mPendingElement &&
-        data->mPendingElement->IsInclusiveDescendantOf(aContent)) {
-      ReleasePointerCaptureById(entry.GetKey());
+  if (!sPointerCaptureList->IsEmpty()) {
+    for (const auto& entry : *sPointerCaptureList) {
+      PointerCaptureInfo* data = entry.GetWeak();
+      if (data && data->mPendingElement &&
+          data->mPendingElement->IsInclusiveDescendantOf(aContent)) {
+        ReleasePointerCaptureById(entry.GetKey());
+      }
     }
   }
 }
