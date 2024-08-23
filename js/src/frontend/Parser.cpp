@@ -811,11 +811,18 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
   AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name);
 
   DeclarationKind declKind = DeclarationKind::PrivateName;
-  ClosedOver closedOver = ClosedOver::No;
+
+  
+  
+  
+  
+  
+  ClosedOver closedOver = ClosedOver::Yes;
   PrivateNameKind kind;
   switch (propType) {
     case PropertyType::Field:
       kind = PrivateNameKind::Field;
+      closedOver = ClosedOver::No;
       break;
     case PropertyType::FieldWithAccessor:
       
@@ -831,11 +838,6 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
         
         declKind = DeclarationKind::PrivateMethod;
       }
-
-      
-      
-      
-      closedOver = ClosedOver::Yes;
       kind = PrivateNameKind::Method;
       break;
     case PropertyType::Getter:
