@@ -203,6 +203,18 @@ class BaseTargetActor extends Actor {
       ) {
         return;
       }
+      
+      
+      
+      
+      if (
+        this.sessionContext.type == "all" &&
+        this.targetType === Targets.TYPES.FRAME &&
+        this.typeName != "parentProcessTarget" &&
+        Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT
+      ) {
+        return;
+      }
       const tracerActor = this.getTargetScopedActor("tracer");
       tracerActor.startTracing(options.tracerOptions);
     } else if (this.hasTargetScopedActor("tracer")) {
