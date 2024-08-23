@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "common_video/h264/h264_common.h"
@@ -52,8 +53,11 @@ RtpPacketizerH264::RtpPacketizerH264(rtc::ArrayView<const uint8_t> payload,
     input_fragments_.push_back(
         payload.subview(nalu.payload_start_offset, nalu.payload_size));
   }
-
-  if (!GeneratePackets(packetization_mode)) {
+  bool has_empty_fragments = absl::c_any_of(
+      input_fragments_, [](const rtc::ArrayView<const uint8_t> fragment) {
+        return fragment.empty();
+      });
+  if (has_empty_fragments || !GeneratePackets(packetization_mode)) {
     
     
     
@@ -73,6 +77,7 @@ size_t RtpPacketizerH264::NumPackets() const {
 bool RtpPacketizerH264::GeneratePackets(
     H264PacketizationMode packetization_mode) {
   for (size_t i = 0; i < input_fragments_.size();) {
+    RTC_DCHECK(!input_fragments_[i].empty());
     switch (packetization_mode) {
       case H264PacketizationMode::SingleNalUnit:
         if (!PacketizeSingleNalu(i))
@@ -173,11 +178,11 @@ size_t RtpPacketizerH264::PacketizeStapA(size_t fragment_index) {
       return fragment_size;
     }
   };
-
   while (payload_size_left >= payload_size_needed()) {
     RTC_CHECK_GT(fragment.size(), 0);
-    packets_.push(PacketUnit(fragment, aggregated_fragments == 0, false, true,
-                             fragment[0]));
+
+    packets_.push(PacketUnit(fragment, aggregated_fragments == 0,
+                             false, true, fragment[0]));
     payload_size_left -= fragment.size();
     payload_size_left -= fragment_headers_length;
 
@@ -218,9 +223,9 @@ bool RtpPacketizerH264::PacketizeSingleNalu(size_t fragment_index) {
                       << limits_.max_payload_len;
     return false;
   }
-  RTC_CHECK_GT(fragment.size(), 0u);
-  packets_.push(PacketUnit(fragment, true , true ,
-                           false , fragment[0]));
+  RTC_CHECK(!fragment.empty());
+  packets_.push(PacketUnit(fragment, true, true,
+                           false, fragment[0]));
   ++num_packets_left_;
   return true;
 }
