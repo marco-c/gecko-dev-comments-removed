@@ -2449,11 +2449,10 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
         if (global.isIndirect()) {
           
-          wasm::GCPtrVal& cell = globalObjs[i]->val();
-          cell = val.get();
+          globalObjs[i]->setVal(val);
+
           
-          void* address = (void*)&cell.get().cell();
-          *(void**)globalAddr = address;
+          *(void**)globalAddr = globalObjs[i]->addressOfCell();
         } else {
           val.get().writeToHeapLocation(globalAddr);
         }

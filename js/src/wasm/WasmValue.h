@@ -224,6 +224,11 @@ class LitVal {
   Cell& cell() { return cell_; }
   const Cell& cell() const { return cell_; }
 
+  
+  
+  
+  void unsafeSetType(ValType type) { type_ = type; }
+
   uint32_t i32() const {
     MOZ_ASSERT(type_ == ValType::I32);
     return cell_.i32_;
@@ -308,11 +313,6 @@ class MOZ_NON_PARAM Val : public LitVal {
     MOZ_ASSERT(isAnyRef());
     return cell_.ref_;
   }
-
-  
-  
-  
-  void unsafeSetType(ValType type) { type_ = type; }
 
   
   void initFromRootedLocation(ValType type, const void* loc);

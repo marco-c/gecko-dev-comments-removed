@@ -3229,7 +3229,7 @@ void WasmGlobalObject::finalize(JS::GCContext* gcx, JSObject* obj) {
     
     
     global->type().Release();
-    gcx->delete_(obj, &global->val(), MemoryUse::WasmGlobalCell);
+    gcx->delete_(obj, &global->mutableVal(), MemoryUse::WasmGlobalCell);
   }
 }
 
@@ -3255,7 +3255,9 @@ WasmGlobalObject* WasmGlobalObject::create(JSContext* cx, HandleVal value,
 
   
   
-  obj->val() = value.get();
+  
+  
+  obj->mutableVal() = value.get();
   
   
   obj->type().AddRef();
@@ -3386,7 +3388,7 @@ bool WasmGlobalObject::valueSetterImpl(JSContext* cx, const CallArgs& args) {
   if (!Val::fromJSValue(cx, global->type(), args.get(0), &val)) {
     return false;
   }
-  global->val() = val.get();
+  global->setVal(val);
 
   args.rval().setUndefined();
   return true;
@@ -3419,8 +3421,21 @@ bool WasmGlobalObject::isMutable() const {
 
 ValType WasmGlobalObject::type() const { return val().get().type(); }
 
-GCPtrVal& WasmGlobalObject::val() const {
+GCPtrVal& WasmGlobalObject::mutableVal() {
   return *reinterpret_cast<GCPtrVal*>(getReservedSlot(VAL_SLOT).toPrivate());
+}
+
+const GCPtrVal& WasmGlobalObject::val() const {
+  return *reinterpret_cast<GCPtrVal*>(getReservedSlot(VAL_SLOT).toPrivate());
+}
+
+void WasmGlobalObject::setVal(wasm::HandleVal value) {
+  MOZ_ASSERT(type() == value.get().type());
+  mutableVal() = value;
+}
+
+void* WasmGlobalObject::addressOfCell() const {
+  return (void*)&val().get().cell();
 }
 
 #ifdef ENABLE_WASM_TYPE_REFLECTIONS
