@@ -165,6 +165,7 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
         
         const nsStyleDisplay* display = frame->StyleDisplay();
         if (display->IsBlockOutsideStyle() ||
+            display->mDisplay == StyleDisplay::InlineBlock ||
             display->mDisplay == StyleDisplay::TableCell) {
           isHTMLBlock = true;
           if (!aString->IsEmpty()) {
