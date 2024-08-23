@@ -90,6 +90,11 @@ class IDBTransaction final
   int64_t mNextObjectStoreId;
   int64_t mNextIndexId;
 
+  
+  
+  
+  int64_t mNextRequestId;
+
   nsresult mAbortCode;  
                         
                         
@@ -279,6 +284,9 @@ class IDBTransaction final
 
   
   int64_t NextIndexId();
+
+  
+  int64_t NextRequestId();
 
   void InvalidateCursorCaches();
   void RegisterCursor(IDBCursor& aCursor);
