@@ -2,7 +2,6 @@
 
 
 
-
 'use strict';
 
 const steps = 2, batchSize = 3, inputSize = 4, hiddenSize = 5, oneDirection = 1,

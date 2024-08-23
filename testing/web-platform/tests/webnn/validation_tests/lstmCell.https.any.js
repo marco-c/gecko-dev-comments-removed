@@ -2,7 +2,6 @@
 
 
 
-
 'use strict';
 
 const batchSize = 3, inputSize = 4, hiddenSize = 5;
