@@ -3421,9 +3421,11 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       
       
 
+      
+      
       MutexAutoLock lock(mWindowVisibilityMutex);
       void* eglWindow = nullptr;
-      if (mIsMapped) {
+      if (mIsMapped && !mIsDestroyed) {
 #ifdef MOZ_X11
         if (GdkIsX11Display()) {
           eglWindow = (void*)GDK_WINDOW_XID(mGdkWindow);
@@ -5816,7 +5818,7 @@ void nsWindow::ConfigureCompositor() {
 
     
     if (mIsDestroyed || !mIsMapped) {
-      LOG("  quit, mIsDestroyed = %d mIsMapped = %d", mIsDestroyed,
+      LOG("  quit, mIsDestroyed = %d mIsMapped = %d", !!mIsDestroyed,
           !!mIsMapped);
       return;
     }

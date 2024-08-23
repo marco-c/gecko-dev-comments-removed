@@ -641,7 +641,7 @@ class nsWindow final : public nsBaseWidget {
   
   mozilla::Atomic<bool, mozilla::Relaxed> mIsMapped;
   
-  bool mIsDestroyed : 1;
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsDestroyed;
   
   
   bool mIsShown : 1;
