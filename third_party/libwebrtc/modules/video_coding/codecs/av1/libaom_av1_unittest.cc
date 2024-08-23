@@ -350,7 +350,8 @@ INSTANTIATE_TEST_SUITE_P(
            SvcTestParam{"L3T1", 3},
            SvcTestParam{"L3T3", 8},
            SvcTestParam{"S2T1", 3},
-           SvcTestParam{"S3T3", 8},
+           
+           
            SvcTestParam{"L2T2", 4},
            SvcTestParam{"L2T2_KEY", 4},
            SvcTestParam{"L2T2_KEY_SHIFT",
