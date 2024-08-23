@@ -198,8 +198,6 @@ class nsStandardURL : public nsIFileURL,
 
   static nsresult NormalizeIPv4(const nsACString& host, nsCString& result);
 
-  static nsIIDNService* GetIDNService() { return gIDN; }
-
  protected:
   
   enum RefHandlingEnum { eIgnoreRef, eHonorRef, eReplaceRef };
