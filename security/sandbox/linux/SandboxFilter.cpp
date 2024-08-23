@@ -1842,20 +1842,24 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
                                        bool aHasArgs) const override {
     switch (aCall) {
       
+      
+      
+      
       case SYS_GETSOCKNAME:
       case SYS_GETPEERNAME:
       case SYS_SHUTDOWN:
         return Some(Allow());
 
-#ifdef MOZ_ENABLE_V4L2
       case SYS_SOCKET:
         
         
         
         
         
+        
+        
+        
         return Some(Error(EACCES));
-#endif
 
       default:
         return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
