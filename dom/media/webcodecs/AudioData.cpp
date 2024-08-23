@@ -627,6 +627,10 @@ void AudioData::Close() {
   mAudioSampleFormat = Nothing();
 }
 
+bool AudioData::IsClosed() const {
+  return !mResource;
+}
+
 
 
 JSObject* AudioData::ReadStructuredClone(JSContext* aCx,

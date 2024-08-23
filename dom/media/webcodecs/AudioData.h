@@ -90,6 +90,7 @@ class AudioData final : public nsISupports, public nsWrapperCache {
   already_AddRefed<AudioData> Clone(ErrorResult& aRv);
 
   void Close();
+  bool IsClosed() const;
 
   
   static JSObject* ReadStructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
