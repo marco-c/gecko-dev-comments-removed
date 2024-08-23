@@ -100,12 +100,6 @@ class ByteBufferWriterT {
   void WriteBytes(const uint8_t* val, size_t len) {
     WriteBytesInternal(reinterpret_cast<const value_type*>(val), len);
   }
-  
-  
-  [[deprecated("Use WriteString")]] void WriteBytes(const char* val,
-                                                    size_t len) {
-    WriteBytesInternal(reinterpret_cast<const value_type*>(val), len);
-  }
 
   
   
@@ -163,11 +157,7 @@ class ByteBufferReader {
   ByteBufferReader(const ByteBufferReader&) = delete;
   ByteBufferReader& operator=(const ByteBufferReader&) = delete;
 
-  
-  
-  const char* Data() const {
-    return reinterpret_cast<const char*>(bytes_ + start_);
-  }
+  const uint8_t* Data() const { return bytes_ + start_; }
   
   size_t Length() const { return end_ - start_; }
   
@@ -183,11 +173,8 @@ class ByteBufferReader {
   bool ReadUInt32(uint32_t* val);
   bool ReadUInt64(uint64_t* val);
   bool ReadUVarint(uint64_t* val);
+  
   bool ReadBytes(rtc::ArrayView<uint8_t> val);
-  
-  
-  [[deprecated("Read using ArrayView")]] bool ReadBytes(char* val, size_t len);
-
   
   
   bool ReadString(std::string* val, size_t len);

@@ -587,7 +587,7 @@ bool StunMessage::AddFingerprint() {
 
 bool StunMessage::Read(ByteBufferReader* buf) {
   
-  buffer_.assign(buf->Data(), buf->Length());
+  buffer_.assign(reinterpret_cast<const char*>(buf->Data()), buf->Length());
 
   if (!buf->ReadUInt16(&type_)) {
     return false;
