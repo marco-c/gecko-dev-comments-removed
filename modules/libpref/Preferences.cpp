@@ -21,6 +21,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Components.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
@@ -74,6 +75,7 @@
 #include "nsIZipReader.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
+#include "nsProxyRelease.h"
 #include "nsReadableUtils.h"
 #include "nsRefPtrHashtable.h"
 #include "nsRelativeFilePref.h"
@@ -118,6 +120,7 @@
 
 using namespace mozilla;
 
+using dom::Promise;
 using ipc::FileDescriptor;
 
 #ifdef DEBUG
@@ -3284,7 +3287,13 @@ StaticMutex PreferencesWriter::sWritingToFile;
 
 class PWRunnable : public Runnable {
  public:
-  explicit PWRunnable(nsIFile* aFile) : Runnable("PWRunnable"), mFile(aFile) {}
+  explicit PWRunnable(
+      nsIFile* aFile,
+      UniquePtr<MozPromiseHolder<Preferences::WritePrefFilePromise>>
+          aPromiseHolder)
+      : Runnable("PWRunnable"),
+        mFile(aFile),
+        mPromiseHolder(std::move(aPromiseHolder)) {}
 
   NS_IMETHOD Run() override {
     
@@ -3336,10 +3345,14 @@ class PWRunnable : public Runnable {
         nsresult rvCopy = rv;
         nsCOMPtr<nsIFile> fileCopy(mFile);
         SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-            "Preferences::WriterRunnable", [fileCopy, rvCopy] {
+            "Preferences::WriterRunnable",
+            [fileCopy, rvCopy, promiseHolder = std::move(mPromiseHolder)] {
               MOZ_RELEASE_ASSERT(NS_IsMainThread());
               if (NS_FAILED(rvCopy)) {
                 Preferences::HandleDirty();
+              }
+              if (promiseHolder) {
+                promiseHolder->ResolveIfExists(true, __func__);
               }
             }));
       }
@@ -3353,8 +3366,16 @@ class PWRunnable : public Runnable {
     return rv;
   }
 
+ private:
+  ~PWRunnable() {
+    if (mPromiseHolder) {
+      mPromiseHolder->RejectIfExists(NS_ERROR_ABORT, __func__);
+    }
+  }
+
  protected:
   nsCOMPtr<nsIFile> mFile;
+  UniquePtr<MozPromiseHolder<Preferences::WritePrefFilePromise>> mPromiseHolder;
 };
 
 
@@ -4063,6 +4084,67 @@ Preferences::SavePrefFile(nsIFile* aFile) {
   return SavePrefFileInternal(aFile, SaveMethod::Asynchronous);
 }
 
+NS_IMETHODIMP
+Preferences::BackupPrefFile(nsIFile* aFile, JSContext* aCx,
+                            Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!aFile) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (mCurrentFile) {
+    bool equalsCurrent = false;
+    nsresult rv = aFile->Equals(mCurrentFile, &equalsCurrent);
+
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (equalsCurrent) {
+      return NS_ERROR_INVALID_ARG;
+    }
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+
+  if (MOZ_UNLIKELY(result.Failed())) {
+    return result.StealNSResult();
+  }
+
+  nsMainThreadPtrHandle<Promise> domPromiseHolder(
+      new nsMainThreadPtrHolder<Promise>("Preferences::BackupPrefFile promise",
+                                         promise));
+
+  auto mozPromiseHolder = MakeUnique<MozPromiseHolder<WritePrefFilePromise>>();
+  RefPtr<WritePrefFilePromise> writePrefPromise =
+      mozPromiseHolder->Ensure(__func__);
+
+  nsresult rv = WritePrefFile(aFile, SaveMethod::Asynchronous,
+                              std::move(mozPromiseHolder));
+  if (NS_FAILED(rv)) {
+    
+    
+    return rv;
+  }
+
+  writePrefPromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [domPromiseHolder](bool) {
+        MOZ_ASSERT(NS_IsMainThread());
+        domPromiseHolder.get()->MaybeResolveWithUndefined();
+      },
+      [domPromiseHolder](nsresult rv) {
+        MOZ_ASSERT(NS_IsMainThread());
+        domPromiseHolder.get()->MaybeReject(rv);
+      });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
 
 void Preferences::SetPreference(const dom::Pref& aDomPref) {
   MOZ_ASSERT(!XRE_IsParentProcess());
@@ -4394,30 +4476,52 @@ nsresult Preferences::SavePrefFileInternal(nsIFile* aFile,
 
   } else {
     
+    
     return WritePrefFile(aFile, SaveMethod::Blocking);
   }
 }
 
-nsresult Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod) {
+nsresult Preferences::WritePrefFile(
+    nsIFile* aFile, SaveMethod aSaveMethod,
+    UniquePtr<MozPromiseHolder<WritePrefFilePromise>>
+        aPromiseHolder ) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
+#define REJECT_IF_PROMISE_HOLDER_EXISTS(rv)       \
+  if (aPromiseHolder) {                           \
+    aPromiseHolder->RejectIfExists(rv, __func__); \
+  }                                               \
+  return rv;
+
   if (!HashTable()) {
-    return NS_ERROR_NOT_INITIALIZED;
+    REJECT_IF_PROMISE_HOLDER_EXISTS(NS_ERROR_NOT_INITIALIZED);
   }
 
   AUTO_PROFILER_LABEL("Preferences::WritePrefFile", OTHER);
 
   if (AllowOffMainThreadSave()) {
-    nsresult rv = NS_OK;
     UniquePtr<PrefSaveData> prefs = MakeUnique<PrefSaveData>(pref_savePrefs());
+
+    nsresult rv = NS_OK;
+    bool writingToCurrent = false;
+
+    if (mCurrentFile) {
+      rv = mCurrentFile->Equals(aFile, &writingToCurrent);
+      if (NS_FAILED(rv)) {
+        REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
+      }
+    }
 
     
     
     prefs.reset(PreferencesWriter::sPendingWriteData.exchange(prefs.release()));
-    if (prefs) {
+    if (prefs && !writingToCurrent) {
+      MOZ_ASSERT(!aPromiseHolder,
+                 "Shouldn't be able to enter here if aPromiseHolder is set");
       
       
-      return rv;
+      
+      return NS_OK;
     }
 
     
@@ -4436,20 +4540,27 @@ nsresult Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod) {
       
       
       
+      
+      
+      
+      
       PreferencesWriter::sPendingWriteCount++;
       if (async) {
-        rv = target->Dispatch(new PWRunnable(aFile),
+        rv = target->Dispatch(new PWRunnable(aFile, std::move(aPromiseHolder)),
                               nsIEventTarget::DISPATCH_NORMAL);
       } else {
-        rv =
-            SyncRunnable::DispatchToThread(target, new PWRunnable(aFile), true);
+        rv = SyncRunnable::DispatchToThread(
+            target, new PWRunnable(aFile, std::move(aPromiseHolder)), true);
       }
       if (NS_FAILED(rv)) {
         
         
         PreferencesWriter::sPendingWriteCount--;
+        
+        
+        return rv;
       }
-      return rv;
+      return NS_OK;
     }
 
     
@@ -4461,7 +4572,26 @@ nsresult Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod) {
   
   
   PrefSaveData prefsData = pref_savePrefs();
-  return PreferencesWriter::Write(aFile, prefsData);
+
+  
+  
+  
+  
+  
+  nsresult rv = PreferencesWriter::Write(aFile, prefsData);
+  if (aPromiseHolder) {
+    NS_WARNING(
+        "Cannot write to prefs asynchronously, as AllowOffMainThreadSave() "
+        "returned false.");
+    if (NS_SUCCEEDED(rv)) {
+      aPromiseHolder->ResolveIfExists(true, __func__);
+    } else {
+      aPromiseHolder->RejectIfExists(rv, __func__);
+    }
+  }
+  return rv;
+
+#undef REJECT_IF_PROMISE_HOLDER_EXISTS
 }
 
 static nsresult openPrefFile(nsIFile* aFile, PrefValueKind aKind) {
