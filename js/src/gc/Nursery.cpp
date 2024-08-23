@@ -1909,8 +1909,9 @@ void js::Nursery::Space::clear(Nursery* nursery) {
   
   
   if (currentChunk_ >= firstClearChunk) {
-    size_t used = position_ - chunks_[currentChunk_]->start();
-    chunks_[currentChunk_]->poisonAfterEvict(used);
+    size_t usedBytes = position_ - chunks_[currentChunk_]->start();
+    chunks_[currentChunk_]->poisonAfterEvict(NurseryChunkHeaderSize +
+                                             usedBytes);
   }
 
   
