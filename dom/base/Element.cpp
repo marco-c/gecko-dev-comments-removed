@@ -1347,6 +1347,22 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
     dispatcher->PostDOMEvent();
   }
 
+  const LinkedList<AbstractRange>* ranges =
+      GetExistingClosestCommonInclusiveAncestorRanges();
+  if (ranges) {
+    for (const AbstractRange* range : *ranges) {
+      if (range->MayCrossShadowBoundary()) {
+        MOZ_ASSERT(range->IsDynamicRange());
+        StaticRange* crossBoundaryRange =
+            range->AsDynamicRange()->GetCrossShadowBoundaryRange();
+        MOZ_ASSERT(crossBoundaryRange);
+        
+        
+        
+        crossBoundaryRange->NotifyNodeBecomesShadowHost(this);
+      }
+    }
+  }
   
 
 
