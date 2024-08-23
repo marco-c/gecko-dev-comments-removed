@@ -1951,9 +1951,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   
-  if (IsHTMLElement()) {
-    SetDirOnBind(this, nsIContent::FromNode(aParent));
-  }
+  SetDirOnBind(this, nsIContent::FromNode(aParent));
 
   UpdateEditableState(false);
 
@@ -2166,9 +2164,7 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   
   
   
-  if (IsHTMLElement()) {
-    ResetDir(this);
-  }
+  ResetDir(this);
 
   for (nsIContent* child = GetFirstChild(); child;
        child = child->GetNextSibling()) {
