@@ -61,14 +61,14 @@ UniquePtr<TrustedHTML> TrustedTypePolicyFactory::EmptyHTML() {
   
   dom::PreserveWrapper(this);
 
-  return MakeUnique<TrustedHTML>();
+  return MakeUnique<TrustedHTML>(EmptyString());
 }
 
 UniquePtr<TrustedScript> TrustedTypePolicyFactory::EmptyScript() {
   
   dom::PreserveWrapper(this);
 
-  return MakeUnique<TrustedScript>();
+  return MakeUnique<TrustedScript>(EmptyString());
 }
 
 }  

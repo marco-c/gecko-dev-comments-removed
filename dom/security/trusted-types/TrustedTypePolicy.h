@@ -9,6 +9,7 @@
 
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -50,17 +51,17 @@ class TrustedTypePolicy : public nsWrapperCache {
   void GetName(DOMString& aResult) const;
 
   
-  UniquePtr<TrustedHTML> CreateHTML(
+  MOZ_CAN_RUN_SCRIPT UniquePtr<TrustedHTML> CreateHTML(
       JSContext* aJSContext, const nsAString& aInput,
       const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
 
   
-  UniquePtr<TrustedScript> CreateScript(
+  MOZ_CAN_RUN_SCRIPT UniquePtr<TrustedScript> CreateScript(
       JSContext* aJSContext, const nsAString& aInput,
       const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
 
   
-  UniquePtr<TrustedScriptURL> CreateScriptURL(
+  MOZ_CAN_RUN_SCRIPT UniquePtr<TrustedScriptURL> CreateScriptURL(
       JSContext* aJSContext, const nsAString& aInput,
       const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
 
@@ -68,6 +69,20 @@ class TrustedTypePolicy : public nsWrapperCache {
   
   virtual ~TrustedTypePolicy() = default;
 
+  
+  template <typename T, typename CallbackObject>
+  MOZ_CAN_RUN_SCRIPT UniquePtr<T> CreateTrustedType(
+      const RefPtr<CallbackObject>& aCallbackObject, const nsAString& aValue,
+      const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const;
+
+  
+  
+  
+  template <typename CallbackObject>
+  MOZ_CAN_RUN_SCRIPT void DetermineTrustedPolicyValue(
+      const RefPtr<CallbackObject>& aCallbackObject, const nsAString& aValue,
+      const Sequence<JS::Value>& aArguments, bool aThrowIfMissing,
+      ErrorResult& aErrorResult, nsAString& aResult) const;
   RefPtr<TrustedTypePolicyFactory> mParentObject;
 
   const nsString mName;

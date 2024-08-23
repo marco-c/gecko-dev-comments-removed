@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/TrustedTypePolicy.h"
 
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/TrustedTypePolicyFactory.h"
 #include "mozilla/dom/TrustedTypesBinding.h"
@@ -35,25 +34,70 @@ void TrustedTypePolicy::GetName(DOMString& aResult) const {
   aResult.SetKnownLiveString(mName);
 }
 
-UniquePtr<TrustedHTML> TrustedTypePolicy::CreateHTML(
-    JSContext* aJSContext, const nsAString& aInput,
+#define IMPL_CREATE_TRUSTED_TYPE(_trustedTypeSuffix)                         \
+  UniquePtr<Trusted##_trustedTypeSuffix>                                     \
+      TrustedTypePolicy::Create##_trustedTypeSuffix(                         \
+          JSContext* aJSContext, const nsAString& aInput,                    \
+          const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult)  \
+          const {                                                            \
+    /* Invoking the callback could delete the policy and hence the callback. \
+     * Hence keep a strong reference to it on the stack.                     \
+     */                                                                      \
+    RefPtr<Create##_trustedTypeSuffix##Callback> callbackObject =            \
+        mOptions.mCreate##_trustedTypeSuffix##Callback;                      \
+                                                                             \
+    return CreateTrustedType<Trusted##_trustedTypeSuffix>(                   \
+        callbackObject, aInput, aArguments, aErrorResult);                   \
+  }
+
+IMPL_CREATE_TRUSTED_TYPE(HTML)
+IMPL_CREATE_TRUSTED_TYPE(Script)
+IMPL_CREATE_TRUSTED_TYPE(ScriptURL)
+
+template <typename T, typename CallbackObject>
+UniquePtr<T> TrustedTypePolicy::CreateTrustedType(
+    const RefPtr<CallbackObject>& aCallbackObject, const nsAString& aValue,
     const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const {
+  nsString policyValue;
+  DetermineTrustedPolicyValue(aCallbackObject, aValue, aArguments, true,
+                              aErrorResult, policyValue);
+
+  if (aErrorResult.Failed()) {
+    return nullptr;
+  }
+
+  UniquePtr<T> trustedObject = MakeUnique<T>(std::move(policyValue));
+
   
-  return MakeUnique<TrustedHTML>();
+  
+
+  return trustedObject;
 }
 
-UniquePtr<TrustedScript> TrustedTypePolicy::CreateScript(
-    JSContext* aJSContext, const nsAString& aInput,
-    const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const {
-  
-  return MakeUnique<TrustedScript>();
-}
+template <typename CallbackObject>
+void TrustedTypePolicy::DetermineTrustedPolicyValue(
+    const RefPtr<CallbackObject>& aCallbackObject, const nsAString& aValue,
+    const Sequence<JS::Value>& aArguments, bool aThrowIfMissing,
+    ErrorResult& aErrorResult, nsAString& aResult) const {
+  if (!aCallbackObject) {
+    
+    
+    aResult = EmptyString();
 
-UniquePtr<TrustedScriptURL> TrustedTypePolicy::CreateScriptURL(
-    JSContext* aJSContext, const nsAString& aInput,
-    const Sequence<JS::Value>& aArguments, ErrorResult& aErrorResult) const {
-  
-  return MakeUnique<TrustedScriptURL>();
+    if (aThrowIfMissing) {
+      aErrorResult.ThrowTypeError("Function missing.");
+    }
+
+    return;
+  }
+
+  nsString callbackResult;
+  aCallbackObject->Call(aValue, aArguments, callbackResult, aErrorResult,
+                        nullptr, CallbackObject::eRethrowExceptions);
+
+  if (!aErrorResult.Failed()) {
+    aResult = std::move(callbackResult);
+  }
 }
 
 }  
