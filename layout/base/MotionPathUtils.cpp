@@ -695,6 +695,21 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildSVGPath(
                                 0.0);
 }
 
+static already_AddRefed<gfx::Path> BuildShape(
+    const Span<const StyleShapeCommand>& aShape, gfx::PathBuilder* aPathBuilder,
+    const nsRect& aCoordBox) {
+  if (!aPathBuilder) {
+    return nullptr;
+  }
+
+  
+  
+  const auto rect = CSSRect::FromAppUnits(aCoordBox);
+  return SVGPathData::BuildPath(aShape, aPathBuilder, StyleStrokeLinecap::Butt,
+                                0.0, rect.Size(),
+                                rect.TopLeft().ToUnknownPoint());
+}
+
 
 already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
     const StyleBasicShape& aBasicShape,
@@ -733,7 +748,10 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
       return BuildSVGPath(aBasicShape.AsPath().path, aPathBuilder);
     case StyleBasicShape::Tag::Shape:
       
-      return nullptr;
+      
+      
+      return BuildShape(aBasicShape.AsShape().commands.AsSpan(), aPathBuilder,
+                        aCoordBox);
   }
 
   return nullptr;
