@@ -297,7 +297,25 @@ int32_t NS_GetDefaultPort(const char* scheme,
 
 
 
-bool NS_StringToACE(const nsACString& idn, nsACString& result);
+
+nsresult NS_DomainToASCII(const nsACString& aHost, nsACString& aASCII);
+
+
+
+
+
+
+
+
+nsresult NS_DomainToDisplay(const nsACString& aHost, nsACString& aDisplay);
+
+
+
+
+
+
+
+nsresult NS_DomainToUnicode(const nsACString& aHost, nsACString& aUnicode);
 
 
 
