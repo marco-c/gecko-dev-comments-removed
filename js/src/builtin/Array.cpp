@@ -2028,17 +2028,10 @@ static bool FillWithUndefined(JSContext* cx, HandleObject obj, uint32_t start,
   return true;
 }
 
-static bool ArrayNativeSortImpl(JSContext* cx, Handle<JSObject*> obj,
-                                Handle<Value> fval,
-                                ComparatorMatchResult comp) {
-  uint64_t length;
-  if (!GetLengthPropertyInlined(cx, obj, &length)) {
-    return false;
-  }
-  if (length < 2) {
-    
-    return true;
-  }
+static bool ArraySortWithoutComparator(JSContext* cx, Handle<JSObject*> obj,
+                                       uint64_t length,
+                                       ComparatorMatchResult comp) {
+  MOZ_ASSERT(length > 1);
 
   if (length > UINT32_MAX) {
     ReportAllocationOverflow(cx);
@@ -2245,6 +2238,19 @@ static MOZ_ALWAYS_INLINE bool ArraySortPrologue(JSContext* cx,
   }
 
   
+  uint64_t length;
+  if (MOZ_UNLIKELY(!GetLengthPropertyInlined(cx, obj, &length))) {
+    return false;
+  }
+
+  
+  if (length <= 1) {
+    d->setReturnValue(obj);
+    *done = true;
+    return true;
+  }
+
+  
   
   do {
     ComparatorMatchResult comp = Match_None;
@@ -2258,26 +2264,13 @@ static MOZ_ALWAYS_INLINE bool ArraySortPrologue(JSContext* cx,
         break;
       }
     }
-    if (!ArrayNativeSortImpl(cx, obj, comparefn, comp)) {
+    if (!ArraySortWithoutComparator(cx, obj, length, comp)) {
       return false;
     }
     d->setReturnValue(obj);
     *done = true;
     return true;
   } while (false);
-
-  
-  uint64_t length;
-  if (MOZ_UNLIKELY(!GetLengthPropertyInlined(cx, obj, &length))) {
-    return false;
-  }
-
-  
-  if (length <= 1) {
-    d->setReturnValue(obj);
-    *done = true;
-    return true;
-  }
 
   
   if (MOZ_UNLIKELY(length > UINT32_MAX / 2)) {
