@@ -166,7 +166,6 @@ class Editor extends EventEmitter {
   #ownerDoc;
   #prefObserver;
   #win;
-  #lineGutterMarkers = new Map();
 
   #updateListener = null;
 
@@ -624,14 +623,12 @@ class Editor extends EventEmitter {
     const indentCompartment = new Compartment();
     const lineWrapCompartment = new Compartment();
     const lineNumberCompartment = new Compartment();
-    const lineNumberMarkersCompartment = new Compartment();
 
     this.#compartments = {
       tabSizeCompartment,
       indentCompartment,
       lineWrapCompartment,
       lineNumberCompartment,
-      lineNumberMarkersCompartment,
     };
 
     const indentStr = (this.config.indentWithTabs ? "\t" : " ").repeat(
@@ -660,19 +657,10 @@ class Editor extends EventEmitter {
       }),
       codemirrorLanguage.syntaxHighlighting(lezerHighlight.classHighlighter),
       EditorView.updateListener.of(v => {
-        if (v.viewportChanged || v.docChanged) {
-          
-          
-          if (this.#lineGutterMarkers.size > 0) {
-            this.setLineGutterMarkers();
-          }
-        }
-        
         if (typeof this.#updateListener == "function") {
           this.#updateListener(v);
         }
       }),
-      lineNumberMarkersCompartment.of([]),
       
       codemirror.minimalSetup,
     ];
@@ -713,95 +701,6 @@ class Editor extends EventEmitter {
     cm.dispatch({
       effects: this.#compartments.lineWrapCompartment.reconfigure(
         lineNumbers({ domEventHandlers })
-      ),
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  setLineGutterMarkers(markers) {
-    const cm = editors.get(this);
-
-    if (markers) {
-      
-      for (const marker of markers) {
-        this.#lineGutterMarkers.set(marker.gutterLineClassName, marker);
-      }
-    }
-    
-    
-    
-    else if (!this.#lineGutterMarkers.size) {
-      return;
-    }
-    markers = Array.from(this.#lineGutterMarkers.values());
-
-    const {
-      codemirrorView: { lineNumberMarkers, GutterMarker },
-      codemirrorState: { RangeSetBuilder },
-    } = this.#CodeMirror6;
-
-    
-    
-    
-    
-    class LineGutterMarker extends GutterMarker {
-      constructor(className, lineNumber, createElementNode) {
-        super();
-        this.elementClass = className || null;
-        this.toDOM = createElementNode
-          ? () => createElementNode(lineNumber)
-          : null;
-      }
-    }
-
-    
-    
-    
-    const builder = new RangeSetBuilder();
-    for (const { from, to } of cm.visibleRanges) {
-      for (let pos = from; pos <= to; ) {
-        const line = cm.state.doc.lineAt(pos);
-        for (const {
-          gutterLineClassName,
-          condition,
-          createGutterLineElementNode,
-        } of markers) {
-          if (typeof condition !== "function") {
-            throw new Error("The `condition` is not a valid function");
-          }
-          if (condition(line.number)) {
-            builder.add(
-              line.from,
-              line.to,
-              new LineGutterMarker(
-                gutterLineClassName,
-                line.number,
-                createGutterLineElementNode
-              )
-            );
-          }
-        }
-        pos = line.to + 1;
-      }
-    }
-
-    
-    
-    
-    cm.dispatch({
-      effects: this.#compartments.lineNumberMarkersCompartment.reconfigure(
-        lineNumberMarkers.of(builder.finish())
       ),
     });
   }
@@ -1800,7 +1699,6 @@ class Editor extends EventEmitter {
     this.version = null;
     this.#ownerDoc = null;
     this.#updateListener = null;
-    this.#lineGutterMarkers.clear();
 
     if (this.#prefObserver) {
       this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);
