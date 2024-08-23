@@ -32,10 +32,10 @@ class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
   nsCString GetDescriptionName() const override;
 
  protected:
- 
-  virtual MediaResult InitSpecific() override;
+  
+  virtual nsresult InitSpecific() override;
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  RefPtr<MediaDataEncoder::EncodePromise> EncodeWithModernAPIs(
+  Result<EncodedData, nsresult> EncodeInputWithModernAPIs(
       RefPtr<const MediaData> aSample) override;
 #endif
   bool ScaleInputFrame();
@@ -69,4 +69,4 @@ class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
 
 }  
 
-#endif 
+#endif  

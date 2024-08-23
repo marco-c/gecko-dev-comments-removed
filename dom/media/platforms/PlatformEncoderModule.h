@@ -166,8 +166,7 @@ class MediaDataEncoder {
     return aCodec > CodecType::_BeginAudio_ && aCodec < CodecType::_EndAudio_;
   }
 
-  using InitPromise =
-      MozPromise<TrackInfo::TrackType, MediaResult,  true>;
+  using InitPromise = MozPromise<bool, MediaResult,  true>;
   using EncodedData = nsTArray<RefPtr<MediaRawData>>;
   using EncodePromise =
       MozPromise<EncodedData, MediaResult,  true>;

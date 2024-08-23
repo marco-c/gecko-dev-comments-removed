@@ -32,8 +32,8 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
 
  public:
   FFmpegDataEncoder(const FFmpegLibWrapper* aLib, AVCodecID aCodecID,
-                     const RefPtr<TaskQueue>& aTaskQueue,
-                     const EncoderConfig& aConfig);
+                    const RefPtr<TaskQueue>& aTaskQueue,
+                    const EncoderConfig& aConfig);
 
   
   
@@ -51,11 +51,12 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   RefPtr<InitPromise> ProcessInit();
   RefPtr<EncodePromise> ProcessEncode(RefPtr<const MediaData> aSample);
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
-      const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges);
+      const RefPtr<const EncoderConfigurationChangeList>&
+          aConfigurationChanges);
   RefPtr<EncodePromise> ProcessDrain();
   RefPtr<ShutdownPromise> ProcessShutdown();
   
-  virtual MediaResult InitSpecific() = 0;
+  virtual nsresult InitSpecific() = 0;
   
   
   
@@ -68,8 +69,10 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   bool PrepareFrame();
   void DestroyFrame();
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  virtual RefPtr<EncodePromise> EncodeWithModernAPIs(RefPtr<const MediaData> aSample);
-  RefPtr<EncodePromise> DrainWithModernAPIs();
+  virtual Result<EncodedData, nsresult> EncodeInputWithModernAPIs(
+      RefPtr<const MediaData> aSample) = 0;
+  Result<EncodedData, nsresult> EncodeWithModernAPIs();
+  virtual Result<EncodedData, nsresult> DrainWithModernAPIs();
 #endif
   virtual RefPtr<MediaRawData> ToMediaRawData(AVPacket* aPacket) = 0;
   RefPtr<MediaRawData> ToMediaRawDataCommon(AVPacket* aPacket);
