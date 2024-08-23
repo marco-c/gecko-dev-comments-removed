@@ -10,7 +10,7 @@
 #include "mozilla/Assertions.h"
 #include <cfloat>
 #include <cmath>
-#include <vector>
+#include "mozilla/Vector.h"
 
 namespace skia {
 
@@ -81,11 +81,11 @@ class SkConvolutionFilter1D {
 
   
   
-  int numValues() const { return static_cast<int>(fFilters.size()); }
+  int numValues() const { return static_cast<int>(fFilters.length()); }
 
-  void reserveAdditional(int filterCount, int filterValueCount) {
-    fFilters.reserve(fFilters.size() + filterCount);
-    fFilterValues.reserve(fFilterValues.size() + filterValueCount);
+  bool reserveAdditional(int filterCount, int filterValueCount) {
+    return fFilters.reserve(fFilters.length() + filterCount) &&
+           fFilterValues.reserve(fFilterValues.length() + filterValueCount);
   }
 
   
@@ -98,7 +98,7 @@ class SkConvolutionFilter1D {
   
   
   
-  void AddFilter(int filterOffset, const ConvolutionFixed* filterValues,
+  bool AddFilter(int filterOffset, const ConvolutionFixed* filterValues,
                  int filterLength);
 
   
@@ -139,12 +139,12 @@ class SkConvolutionFilter1D {
   };
 
   
-  std::vector<FilterInstance> fFilters;
+  mozilla::Vector<FilterInstance> fFilters;
 
   
   
   
-  std::vector<ConvolutionFixed> fFilterValues;
+  mozilla::Vector<ConvolutionFixed> fFilterValues;
 
   
   int fMaxFilter;

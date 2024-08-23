@@ -5,7 +5,6 @@
 
 
 #include "SkConvolver.h"
-#include "mozilla/Vector.h"
 
 #ifdef USE_SSE2
 #  include "mozilla/SSE.h"
@@ -235,9 +234,11 @@ class CircularRowBuffer {
       : fRowByteWidth(destRowPixelWidth * 4),
         fNumRows(maxYFilterSize),
         fNextRow(0),
-        fNextRowCoordinate(firstInputRow) {
-    fBuffer.resize(fRowByteWidth * maxYFilterSize);
-    fRowAddresses.resize(fNumRows);
+        fNextRowCoordinate(firstInputRow) {}
+
+  bool AllocBuffer() {
+    return fBuffer.resize(fRowByteWidth * fNumRows) &&
+           fRowAddresses.resize(fNumRows);
   }
 
   
@@ -288,7 +289,7 @@ class CircularRowBuffer {
 
  private:
   
-  std::vector<unsigned char> fBuffer;
+  mozilla::Vector<unsigned char> fBuffer;
 
   
   int fRowByteWidth;
@@ -305,14 +306,14 @@ class CircularRowBuffer {
   int fNextRowCoordinate;
 
   
-  std::vector<unsigned char*> fRowAddresses;
+  mozilla::Vector<unsigned char*> fRowAddresses;
 };
 
 SkConvolutionFilter1D::SkConvolutionFilter1D() : fMaxFilter(0) {}
 
 SkConvolutionFilter1D::~SkConvolutionFilter1D() = default;
 
-void SkConvolutionFilter1D::AddFilter(int filterOffset,
+bool SkConvolutionFilter1D::AddFilter(int filterOffset,
                                       const ConvolutionFixed* filterValues,
                                       int filterLength) {
   
@@ -336,8 +337,9 @@ void SkConvolutionFilter1D::AddFilter(int filterOffset,
     filterLength = lastNonZero + 1 - firstNonZero;
     MOZ_ASSERT(filterLength > 0);
 
-    fFilterValues.insert(fFilterValues.end(), &filterValues[firstNonZero],
-                         &filterValues[lastNonZero + 1]);
+    if (!fFilterValues.append(&filterValues[firstNonZero], filterLength)) {
+      return false;
+    }
   } else {
     
     filterLength = 0;
@@ -345,11 +347,17 @@ void SkConvolutionFilter1D::AddFilter(int filterOffset,
 
   FilterInstance instance = {
       
-      int(fFilterValues.size()) - filterLength, filterOffset, filterLength,
+      int(fFilterValues.length()) - filterLength, filterOffset, filterLength,
       filterSize};
-  fFilters.push_back(instance);
+  if (!fFilters.append(instance)) {
+    if (filterLength > 0) {
+      fFilterValues.shrinkBy(filterLength);
+    }
+    return false;
+  }
 
   fMaxFilter = std::max(fMaxFilter, filterLength);
+  return true;
 }
 
 bool SkConvolutionFilter1D::ComputeFilterValues(
@@ -383,10 +391,13 @@ bool SkConvolutionFilter1D::ComputeFilterValues(
 
   int32_t filterValueCount = int32_t(ceilf(aDstSize * srcSupport * 2));
   if (aDstSize > maxToPassToReserveAdditional || filterValueCount < 0 ||
-      filterValueCount > maxToPassToReserveAdditional) {
+      filterValueCount > maxToPassToReserveAdditional ||
+      !reserveAdditional(aDstSize, filterValueCount)) {
     return false;
   }
-  reserveAdditional(aDstSize, filterValueCount);
+  size_t oldFiltersLength = fFilters.length();
+  size_t oldFilterValuesLength = fFilterValues.length();
+  int oldMaxFilter = fMaxFilter;
   for (int32_t destI = 0; destI < aDstSize; destI++) {
     
     
@@ -443,7 +454,12 @@ bool SkConvolutionFilter1D::ComputeFilterValues(
     ConvolutionFixed leftovers = ToFixed(1) - fixedSum;
     fixedFilterValues[filterCount / 2] += leftovers;
 
-    AddFilter(int32_t(srcBegin), fixedFilterValues.begin(), filterCount);
+    if (!AddFilter(int32_t(srcBegin), fixedFilterValues.begin(), filterCount)) {
+      fFilters.shrinkTo(oldFiltersLength);
+      fFilterValues.shrinkTo(oldFilterValuesLength);
+      fMaxFilter = oldMaxFilter;
+      return false;
+    }
   }
 
   return maxFilter() > 0 && numValues() == aDstSize;
@@ -515,6 +531,9 @@ bool BGRAConvolve2D(const unsigned char* sourceData, int sourceByteRowStride,
   }
 
   CircularRowBuffer rowBuffer(rowBufferWidth, rowBufferHeight, filterOffset);
+  if (!rowBuffer.AllocBuffer()) {
+    return false;
+  }
 
   
   
