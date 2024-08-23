@@ -138,6 +138,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "AudioDecoder", nightly: true },
   
+  { name: "AudioEncoder", nightly: true },
+  
   { name: "Blob", insecureContext: true },
   
   { name: "BroadcastChannel", insecureContext: true },
