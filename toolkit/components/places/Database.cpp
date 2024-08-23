@@ -1261,6 +1261,15 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
       
 
       
+
+      if (currentSchemaVersion < 77) {
+        rv = MigrateV77Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
+      
       
       
       
@@ -2041,7 +2050,7 @@ nsresult Database::MigrateV75Up() {
   return NS_OK;
 }
 
-nsresult Database::MigrateV76Up() {
+nsresult Database::MigrateV77Up() {
   
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = mMainConn->ExecuteSimpleSQL(
