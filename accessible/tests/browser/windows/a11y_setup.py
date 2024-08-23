@@ -245,8 +245,24 @@ def getDocUia():
     """Get the IUIAutomationElement for the document being tested."""
     
     
-    ia2 = getDocIa2()
-    return uiaClient.ElementFromIAccessible(ia2, CHILDID_SELF)
+    
+    
+    
+    hwnd = getFirefoxHwnd()
+    root = uiaClient.ElementFromHandle(hwnd)
+    doc = findUiaByDomId(root, "body")
+    if not doc:
+        
+        
+        
+        info("getUiaDoc: Falling back to IA2")  
+        ia2 = getDocIa2()
+        return uiaClient.ElementFromIAccessible(ia2, CHILDID_SELF)
+    child = uiaClient.RawViewWalker.GetFirstChildElement(doc)
+    if child and child.CurrentAutomationId == "default-iframe-id":
+        
+        doc = uiaClient.RawViewWalker.GetFirstChildElement(child)
+    return doc
 
 
 def findUiaByDomId(root, id):
