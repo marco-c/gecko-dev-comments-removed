@@ -102,6 +102,15 @@ def _filter_release_promotion(
 
         
         if (
+            shipping_phase == "ship"
+            and task.attributes.get("shipping_product") == "fennec"
+            and task.kind in ("beetmover-geckoview", "upload-symbols")
+            and parameters["release_product"] == "firefox-android"
+        ):
+            return True
+
+        
+        if (
             task.attributes.get("shipping_phase") == shipping_phase
             and task.attributes.get("shipping_product") == parameters["release_product"]
             and does_task_match_release_type(task, parameters["release_type"])
