@@ -1029,6 +1029,7 @@ pub enum PrimitiveInstanceKind {
         
         data_handle: RadialGradientDataHandle,
         visible_tiles_range: GradientTileRange,
+        cached: bool,
     },
     ConicGradient {
         
