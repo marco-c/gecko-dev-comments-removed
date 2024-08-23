@@ -2074,6 +2074,14 @@ class nsINode : public mozilla::dom::EventTarget {
     ClearBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
   }
 
+  mozilla::dom::ShadowRoot* GetShadowRoot() const;
+
+  
+  
+  
+  
+  mozilla::dom::ShadowRoot* GetShadowRootForSelection() const;
+
  protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
   void SetIsInDocument() { SetBoolFlag(IsInDocument); }

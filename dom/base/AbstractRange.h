@@ -31,10 +31,15 @@ class Document;
 class Selection;
 class StaticRange;
 
+enum class AllowRangeCrossShadowBoundary : bool { No, Yes };
+
 class AbstractRange : public nsISupports,
                       public nsWrapperCache,
                       
                       public mozilla::LinkedListElement<AbstractRange> {
+  using AllowRangeCrossShadowBoundary =
+      mozilla::dom::AllowRangeCrossShadowBoundary;
+
  protected:
   explicit AbstractRange(nsINode* aNode, bool aIsDynamicRange);
   virtual ~AbstractRange();
@@ -75,7 +80,9 @@ class AbstractRange : public nsISupports,
   
 
 
-  nsINode* GetClosestCommonInclusiveAncestor() const;
+  nsINode* GetClosestCommonInclusiveAncestor(
+      AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
+          AllowRangeCrossShadowBoundary::No) const;
 
   
 
@@ -92,6 +99,8 @@ class AbstractRange : public nsISupports,
 
   nsINode* GetEndContainer() const { return mEnd.Container(); }
   nsINode* GetMayCrossShadowBoundaryEndContainer() const;
+
+  bool MayCrossShadowBoundary() const;
 
   Document* GetComposedDocOfContainers() const {
     return mStart.Container() ? mStart.Container()->GetComposedDoc() : nullptr;
