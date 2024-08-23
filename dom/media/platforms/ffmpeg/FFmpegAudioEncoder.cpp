@@ -49,6 +49,13 @@ nsresult FFmpegAudioEncoder<LIBAV_VER>::InitSpecific() {
   
   mCodecContext->sample_rate = AssertedCast<int>(mConfig.mSampleRate);
   mCodecContext->channels = AssertedCast<int>(mConfig.mNumberOfChannels);
+
+#if LIBAVCODEC_VERSION_MAJOR >= 60
+  
+  mLib->av_channel_layout_default(&mCodecContext->ch_layout,
+                                  AssertedCast<int>(mCodecContext->channels));
+#endif
+
   switch (mConfig.mCodec) {
     case CodecType::Opus:
       
@@ -108,6 +115,17 @@ FFmpegAudioEncoder<LIBAV_VER>::EncodeOnePacket(Span<float> aSamples,
   MOZ_ASSERT(AssertedCast<int>(frameCount) <= mCodecContext->frame_size);
 
   mFrame->channels = AssertedCast<int>(aChannels);
+
+#  if LIBAVCODEC_VERSION_MAJOR >= 60
+  int rv = mLib->av_channel_layout_copy(&mFrame->ch_layout,
+                                        &mCodecContext->ch_layout);
+  if (rv < 0) {
+    FFMPEG_LOG("channel layout copy error: %s",
+                MakeErrorString(mLib, rv).get());
+    return Err(NS_ERROR_DOM_MEDIA_FATAL_ERR);
+  }
+#  endif
+
   mFrame->sample_rate = AssertedCast<int>(aRate);
   
   mFrame->nb_samples = AssertedCast<int>(frameCount);
