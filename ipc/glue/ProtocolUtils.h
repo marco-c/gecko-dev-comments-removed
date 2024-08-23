@@ -110,6 +110,9 @@ struct ActorHandle {
   int mId;
 };
 
+
+enum RacyInterruptPolicy { RIPError, RIPChildWins, RIPParentWins };
+
 enum class LinkStatus : uint8_t {
   
   
@@ -220,6 +223,8 @@ class IProtocol : public HasResultCodes {
   virtual Result OnMessageReceived(const Message& aMessage) = 0;
   virtual Result OnMessageReceived(const Message& aMessage,
                                    UniquePtr<Message>& aReply) = 0;
+  virtual Result OnCallReceived(const Message& aMessage,
+                                UniquePtr<Message>& aReply) = 0;
   bool AllocShmem(size_t aSize, Shmem* aOutMem);
   bool AllocUnsafeShmem(size_t aSize, Shmem* aOutMem);
   bool DeallocShmem(Shmem& aMem);
@@ -452,6 +457,7 @@ class IToplevelProtocol : public IRefCountedProtocol {
   bool Open(IToplevelProtocol* aTarget, nsISerialEventTarget* aEventTarget,
             mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
 
+  
   
   
   
