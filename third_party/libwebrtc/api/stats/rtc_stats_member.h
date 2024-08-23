@@ -65,13 +65,6 @@ class RTCStatsMemberInterface {
   bool operator!=(const RTCStatsMemberInterface& other) const {
     return !(*this == other);
   }
-  virtual std::string ValueToString() const = 0;
-  
-  
-  
-  
-  
-  virtual std::string ValueToJson() const = 0;
 
   virtual const RTCStatsMemberInterface* member_ptr() const { return this; }
   template <typename T>
@@ -97,8 +90,10 @@ class RTCStatsMember : public RTCStatsMemberInterface {
   Type type() const override { return StaticType(); }
   bool is_sequence() const override;
   bool is_string() const override;
-  std::string ValueToString() const override;
-  std::string ValueToJson() const override;
+  
+  
+  std::string ValueToString() const;
+  std::string ValueToJson() const;
 
   template <typename U>
   inline T value_or(U default_value) const {

@@ -74,8 +74,11 @@ class RTC_EXPORT Attribute {
 
   bool is_sequence() const;
   bool is_string() const;
-  std::string ValueToString() const;
-  std::string ValueToJson() const;
+  
+  std::string ToString() const;
+  
+  std::string ValueToString() const { return ToString(); }
+  std::string ValueToJson() const { return ToString(); }
 
   bool operator==(const Attribute& other) const;
   bool operator!=(const Attribute& other) const;
