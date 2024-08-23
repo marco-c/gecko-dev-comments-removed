@@ -333,7 +333,10 @@ impl SanitizationKind {
             
             
             CssRule::LayerStatement(..) |
-            CssRule::LayerBlock(..) => false,
+            CssRule::LayerBlock(..) |
+            
+            
+            CssRule::Scope(..) => false,
 
             CssRule::FontFace(..) | CssRule::Namespace(..) | CssRule::Style(..) => true,
 
