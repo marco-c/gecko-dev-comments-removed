@@ -13,6 +13,7 @@
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/GleanMetrics.h"
 
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -143,6 +144,9 @@ void PopulatePrefs() {
       StaticPrefs::general_smoothScroll());
   glean::characteristics::prefs_overlay_scrollbars.Set(
       StaticPrefs::widget_gtk_overlay_scrollbars_enabled());
+
+  glean::characteristics::prefs_block_popups.Set(
+      StaticPrefs::dom_disable_open_during_load());
 }
 
 
@@ -150,7 +154,7 @@ void PopulatePrefs() {
 
 
 
-const int kSubmissionSchema = 0;
+const int kSubmissionSchema = 1;
 
 
 void nsUserCharacteristics::MaybeSubmitPing() {
