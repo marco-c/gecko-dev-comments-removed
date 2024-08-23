@@ -208,11 +208,11 @@ class Nursery {
   
   void removeMallocedBuffer(void* buffer, size_t nbytes) {
     MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
-    MOZ_ASSERT(mallocedBuffers.has(buffer));
+    MOZ_ASSERT(toSpace.mallocedBuffers.has(buffer));
     MOZ_ASSERT(nbytes > 0);
-    MOZ_ASSERT(mallocedBufferBytes >= nbytes);
-    mallocedBuffers.remove(buffer);
-    mallocedBufferBytes -= nbytes;
+    MOZ_ASSERT(toSpace.mallocedBufferBytes >= nbytes);
+    toSpace.mallocedBuffers.remove(buffer);
+    toSpace.mallocedBufferBytes -= nbytes;
   }
 
   
@@ -220,8 +220,8 @@ class Nursery {
   
   void removeMallocedBufferDuringMinorGC(void* buffer) {
     MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
-    MOZ_ASSERT(prevMallocedBuffers.has(buffer));
-    prevMallocedBuffers.remove(buffer);
+    MOZ_ASSERT(prevSpace->mallocedBuffers.has(buffer));
+    prevSpace->mallocedBuffers.remove(buffer);
   }
 
   [[nodiscard]] bool addedUniqueIdToCell(gc::Cell* cell) {
@@ -528,6 +528,9 @@ class Nursery {
   mozilla::TimeStamp collectionStartTime() const;
 
  private:
+  using BufferRelocationOverlay = void*;
+  using BufferSet = HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
+
   struct Space {
     
 
@@ -552,6 +555,12 @@ class Nursery {
     uint32_t startChunk_ = 0;
     uintptr_t startPosition_ = 0;
 
+    
+    
+    
+    BufferSet mallocedBuffers;
+    size_t mallocedBufferBytes = 0;
+
     inline bool isEmpty() const;
     inline bool isInside(const void* p) const;
 
@@ -571,6 +580,7 @@ class Nursery {
 
   Space toSpace;
   Space fromSpace;
+  Space* prevSpace = nullptr;
 
   gc::GCRuntime* const gc;
 
@@ -635,15 +645,6 @@ class Nursery {
 
   bool hasRecentGrowthData;
   double smoothedTargetSize;
-
-  
-  
-  
-  using BufferRelocationOverlay = void*;
-  using BufferSet = HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
-  BufferSet mallocedBuffers;
-  BufferSet prevMallocedBuffers;
-  size_t mallocedBufferBytes = 0;
 
   
   
