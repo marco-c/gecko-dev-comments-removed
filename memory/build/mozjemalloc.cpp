@@ -354,6 +354,7 @@ struct arena_chunk_map_t {
   
   
   
+  
   size_t bits;
 
 
@@ -371,10 +372,36 @@ struct arena_chunk_map_t {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define CHUNK_MAP_FRESH ((size_t)0x80U)
 #define CHUNK_MAP_MADVISED ((size_t)0x40U)
 #define CHUNK_MAP_DECOMMITTED ((size_t)0x20U)
 #define CHUNK_MAP_MADVISED_OR_DECOMMITTED \
   (CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED)
+#define CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED \
+  (CHUNK_MAP_FRESH | CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED)
 #define CHUNK_MAP_KEY ((size_t)0x10U)
 #define CHUNK_MAP_DIRTY ((size_t)0x08U)
 #define CHUNK_MAP_ZEROED ((size_t)0x04U)
@@ -2606,19 +2633,24 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     
     
     
-    if (chunk->map[run_ind + i].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) {
+    if (chunk->map[run_ind + i].bits &
+        CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) {
       
       
       
       size_t j;
-      for (j = 0; i + j < need_pages && (chunk->map[run_ind + i + j].bits &
-                                         CHUNK_MAP_MADVISED_OR_DECOMMITTED);
+      for (j = 0;
+           i + j < need_pages && (chunk->map[run_ind + i + j].bits &
+                                  CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED);
            j++) {
         
-        MOZ_ASSERT(!(chunk->map[run_ind + i + j].bits & CHUNK_MAP_DECOMMITTED &&
-                     chunk->map[run_ind + i + j].bits & CHUNK_MAP_MADVISED));
+        size_t bits = chunk->map[run_ind + i + j].bits;
+        MOZ_ASSERT(((bits & CHUNK_MAP_DECOMMITTED ? 1 : 0) +
+                    (bits & CHUNK_MAP_MADVISED ? 1 : 0) +
+                    (bits & CHUNK_MAP_FRESH ? 1 : 0)) == 1);
 
-        chunk->map[run_ind + i + j].bits &= ~CHUNK_MAP_MADVISED_OR_DECOMMITTED;
+        chunk->map[run_ind + i + j].bits &=
+            ~CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED;
       }
 
 #ifdef MALLOC_DECOMMIT
@@ -2756,6 +2788,15 @@ arena_chunk_t* arena_t::DeallocChunk(arena_chunk_t* aChunk) {
       mStats.committed -= mSpare->ndirty;
     }
 
+#ifdef MOZ_DEBUG
+    
+    
+    for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
+      MOZ_ASSERT(mSpare->map[i].bits &
+                 (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY));
+    }
+#endif
+
 #ifdef MALLOC_DOUBLE_PURGE
     if (mChunksMAdvised.ElementProbablyInList(mSpare)) {
       mChunksMAdvised.remove(mSpare);
@@ -2866,16 +2907,16 @@ void arena_t::Purge(size_t aMaxDirty) {
 #else
         const size_t free_operation = CHUNK_MAP_MADVISED;
 #endif
-        MOZ_ASSERT((chunk->map[i].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) ==
-                   0);
+        MOZ_ASSERT((chunk->map[i].bits &
+                    CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
         chunk->map[i].bits ^= free_operation | CHUNK_MAP_DIRTY;
         
         for (npages = 1; i > gChunkHeaderNumPages &&
                          (chunk->map[i - 1].bits & CHUNK_MAP_DIRTY);
              npages++) {
           i--;
-          MOZ_ASSERT((chunk->map[i].bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) ==
-                     0);
+          MOZ_ASSERT((chunk->map[i].bits &
+                      CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
           chunk->map[i].bits ^= free_operation | CHUNK_MAP_DIRTY;
         }
         chunk->ndirty -= npages;
@@ -4839,8 +4880,8 @@ static void hard_purge_chunk(arena_chunk_t* aChunk) {
          npages++) {
       
       
-      MOZ_DIAGNOSTIC_ASSERT(
-          !(aChunk->map[i + npages].bits & CHUNK_MAP_DECOMMITTED));
+      MOZ_DIAGNOSTIC_ASSERT(!(aChunk->map[i + npages].bits &
+                              (CHUNK_MAP_FRESH | CHUNK_MAP_DECOMMITTED)));
       aChunk->map[i + npages].bits ^= CHUNK_MAP_MADVISED_OR_DECOMMITTED;
     }
 
