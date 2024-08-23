@@ -99,6 +99,10 @@ def build_browsertime_task(config, tasks):
             task["attributes"]["run-visual-metrics"] = True
 
         
+        if task.pop("chimera", False):
+            task["run"]["command"].append("--chimera")
+
+        
         
         if 'youtube-playback' in task["name"]:
             task["run"]["command"].remove("--cold")
