@@ -37,10 +37,6 @@
 #include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
-class TaskQueue;
-}  
-
 namespace webrtc {
 
 class AecDump;
@@ -634,14 +630,6 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
   
   
   
-  
-  [[deprecated]] bool CreateAndAttachAecDump(absl::string_view file_name,
-                                             int64_t max_log_size_bytes,
-                                             rtc::TaskQueue* worker_queue);
-  [[deprecated]] bool CreateAndAttachAecDump(FILE* handle,
-                                             int64_t max_log_size_bytes,
-                                             rtc::TaskQueue* worker_queue);
-
   virtual bool CreateAndAttachAecDump(
       absl::string_view file_name,
       int64_t max_log_size_bytes,
