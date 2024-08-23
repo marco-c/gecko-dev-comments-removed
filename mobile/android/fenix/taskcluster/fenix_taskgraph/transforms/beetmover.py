@@ -52,11 +52,13 @@ def make_task_description(config, tasks):
 
         
         
-        if task['build-type']['nightly']:
+        if config.params.get('level', 1) < 3:
+            bucket_scope = "project:mobile:fenix:releng:beetmover:bucket:dep"
+        elif task['attributes']['nightly']:
             bucket_scope = "project:mobile:fenix:releng:beetmover:bucket:nightly"
         else:
             bucket_scope = "project:mobile:fenix:releng:beetmover:bucket:release"
-        
+
         task = {
             "label": label,
             "description": description,
