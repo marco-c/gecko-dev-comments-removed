@@ -87,6 +87,7 @@ UNIFIED_SOURCES += [
     "Sink.cpp",
     "Snapshots.cpp",
     "Trampoline.cpp",
+    "TrampolineNatives.cpp",
     "TrialInlining.cpp",
     "TypePolicy.cpp",
     "ValueNumbering.cpp",
@@ -259,6 +260,13 @@ elif CONFIG["JS_CODEGEN_WASM32"]:
         "wasm32/MacroAssembler-wasm32.cpp",
         "wasm32/Trampoline-wasm32.cpp",
     ]
+
+
+GeneratedFile(
+    "ABIFunctionTypeGenerated.h",
+    script="GenerateABIFunctionType.py",
+    inputs=["ABIFunctionType.yaml"],
+)
 
 
 GeneratedFile(

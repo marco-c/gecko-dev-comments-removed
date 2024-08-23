@@ -40,6 +40,7 @@
 #include "gc/Marking.h"
 #include "gc/PublicIterators.h"
 #include "jit/JitSpewer.h"
+#include "jit/TrampolineNatives.h"
 #include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/ColumnNumber.h"  
@@ -49,6 +50,7 @@
 #include "js/Date.h"  
 #include "js/ErrorInterceptor.h"
 #include "js/ErrorReport.h"           
+#include "js/experimental/JitInfo.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/GlobalObject.h"
@@ -2336,8 +2338,12 @@ JS_PUBLIC_API JSFunction* JS::NewFunctionFromSpec(JSContext* cx,
     return nullptr;
   }
 
-  if (fs->call.info) {
-    fun->setJitInfo(fs->call.info);
+  if (auto* jitInfo = fs->call.info) {
+    if (jitInfo->type() == JSJitInfo::OpType::TrampolineNative) {
+      jit::SetTrampolineNativeJitEntry(cx, fun, jitInfo->trampolineNative);
+    } else {
+      fun->setJitInfo(jitInfo);
+    }
   }
   return fun;
 }

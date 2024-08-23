@@ -73,6 +73,10 @@ enum class FrameType {
   
   
   JSJitToWasm,
+
+  
+  
+  TrampolineNative,
 };
 
 enum class ReadFrameArgsBehavior {

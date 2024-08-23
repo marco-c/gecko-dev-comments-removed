@@ -431,9 +431,15 @@ struct JSFunctionSpec {
 
 
 
+
+
+
+
 #define JS_FN(name, call, nargs, flags) \
   JS_FNSPEC(name, call, nullptr, nargs, flags, nullptr)
 #define JS_INLINABLE_FN(name, call, nargs, flags, native) \
+  JS_FNSPEC(name, call, &js::jit::JitInfo_##native, nargs, flags, nullptr)
+#define JS_TRAMPOLINE_FN(name, call, nargs, flags, native) \
   JS_FNSPEC(name, call, &js::jit::JitInfo_##native, nargs, flags, nullptr)
 #define JS_SYM_FN(symbol, call, nargs, flags) \
   JS_SYM_FNSPEC(symbol, call, nullptr, nargs, flags, nullptr)

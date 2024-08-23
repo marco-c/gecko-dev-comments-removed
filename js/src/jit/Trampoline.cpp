@@ -105,11 +105,6 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   
   
   
-  
-  
-  
-  
-  
 
   Register actReg = regs.takeAny();
   masm.loadJSContext(actReg);
@@ -153,6 +148,7 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   Label handle_BaselineOrIonJS;
   Label handle_BaselineStub;
   Label handle_Rectifier;
+  Label handle_TrampolineNative;
   Label handle_BaselineInterpreterEntry;
   Label handle_IonICCall;
   Label handle_Entry;
@@ -176,6 +172,8 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
                 &handle_BaselineOrIonJS);
   masm.branch32(Assembler::Equal, scratch, Imm32(FrameType::IonICCall),
                 &handle_IonICCall);
+  masm.branch32(Assembler::Equal, scratch, Imm32(FrameType::TrampolineNative),
+                &handle_TrampolineNative);
   masm.branch32(Assembler::Equal, scratch, Imm32(FrameType::WasmToJSJit),
                 &handle_Entry);
 
@@ -237,9 +235,21 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     
     
     masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-    emitAssertPrevFrameType(fpScratch, scratch,
-                            {FrameType::IonJS, FrameType::BaselineStub,
-                             FrameType::CppToJSJit, FrameType::WasmToJSJit});
+    emitAssertPrevFrameType(
+        fpScratch, scratch,
+        {FrameType::IonJS, FrameType::BaselineStub, FrameType::TrampolineNative,
+         FrameType::CppToJSJit, FrameType::WasmToJSJit});
+    masm.jump(&again);
+  }
+
+  masm.bind(&handle_TrampolineNative);
+  {
+    
+    masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
+    emitAssertPrevFrameType(
+        fpScratch, scratch,
+        {FrameType::IonJS, FrameType::BaselineStub, FrameType::Rectifier,
+         FrameType::CppToJSJit, FrameType::WasmToJSJit});
     masm.jump(&again);
   }
 
