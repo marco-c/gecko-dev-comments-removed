@@ -243,8 +243,9 @@ where
         Self { inner, separator }
     }
 
+    
     #[inline]
-    fn write_item<F>(&mut self, f: F) -> fmt::Result
+    pub fn write_item<F>(&mut self, f: F) -> fmt::Result
     where
         F: FnOnce(&mut CssWriter<'b, W>) -> fmt::Result,
     {
