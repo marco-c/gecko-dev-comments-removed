@@ -43,10 +43,20 @@ add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
   const view = selectRuleView(inspector);
 
-  await selectNode("body", inspector);
-
-  const propertyValues = view.styleDocument.querySelectorAll(
-    ".ruleview-propertyvalue"
+  let propertyValues;
+  await waitFor(
+    async () => {
+      await selectNode("body", inspector);
+      propertyValues = view.styleDocument.querySelectorAll(
+        ".ruleview-propertyvalue"
+      );
+      return propertyValues.length == 2;
+    },
+    "Timed out while waiting for body element properties",
+    
+    10,
+    
+    50
   );
 
   is(propertyValues.length, 2, "Ruleview has 2 propertyvalue elements");
