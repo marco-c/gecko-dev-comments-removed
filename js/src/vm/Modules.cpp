@@ -359,7 +359,8 @@ static ModuleObject* HostResolveImportedModule(
 static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 Handle<JSAtom*> exportName,
                                 MutableHandle<ResolveSet> resolveSet,
-                                MutableHandle<Value> result);
+                                MutableHandle<Value> result,
+                                ModuleErrorInfo* errorInfoOut = nullptr);
 static bool SyntheticModuleResolveExport(JSContext* cx,
                                          Handle<ModuleObject*> module,
                                          Handle<JSAtom*> exportName,
@@ -577,7 +578,8 @@ static ModuleObject* HostResolveImportedModule(
 
 bool js::ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                              Handle<JSAtom*> exportName,
-                             MutableHandle<Value> result) {
+                             MutableHandle<Value> result,
+                             ModuleErrorInfo* errorInfoOut = nullptr) {
   if (module->hasSyntheticModuleFields()) {
     return ::SyntheticModuleResolveExport(cx, module, exportName, result);
   }
@@ -585,7 +587,8 @@ bool js::ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
   
   Rooted<ResolveSet> resolveSet(cx);
 
-  return ::ModuleResolveExport(cx, module, exportName, &resolveSet, result);
+  return ::ModuleResolveExport(cx, module, exportName, &resolveSet, result,
+                               errorInfoOut);
 }
 
 static bool CreateResolvedBindingObject(JSContext* cx,
@@ -605,7 +608,8 @@ static bool CreateResolvedBindingObject(JSContext* cx,
 static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 Handle<JSAtom*> exportName,
                                 MutableHandle<ResolveSet> resolveSet,
-                                MutableHandle<Value> result) {
+                                MutableHandle<Value> result,
+                                ModuleErrorInfo* errorInfoOut) {
   
   for (const auto& entry : resolveSet) {
     
@@ -614,6 +618,9 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
       
       
       result.setNull();
+      if (errorInfoOut) {
+        errorInfoOut->setCircularImport(cx, module);
+      }
       return true;
     }
   }
@@ -669,8 +676,8 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
         
         
         name = e.importName();
-        return ModuleResolveExport(cx, importedModule, name, resolveSet,
-                                   result);
+        return ModuleResolveExport(cx, importedModule, name, resolveSet, result,
+                                   errorInfoOut);
       }
     }
   }
@@ -683,6 +690,9 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
     
     
     result.setNull();
+    if (errorInfoOut) {
+      errorInfoOut->setImportedModule(cx, module);
+    }
     return true;
   }
 
@@ -705,7 +715,7 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
     
     
     if (!ModuleResolveExport(cx, importedModule, exportName, resolveSet,
-                             &resolution)) {
+                             &resolution, errorInfoOut)) {
       return false;
     }
 
@@ -744,6 +754,12 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
         if (binding->module() != starResolution->module() ||
             binding->bindingName() != starResolution->bindingName()) {
           result.set(StringValue(cx->names().ambiguous));
+
+          if (errorInfoOut) {
+            Rooted<ModuleObject*> module1(cx, starResolution->module());
+            Rooted<ModuleObject*> module2(cx, binding->module());
+            errorInfoOut->setForAmbiguousImport(cx, module, module1, module2);
+          }
           return true;
         }
       }
@@ -752,6 +768,9 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
 
   
   result.setObjectOrNull(starResolution);
+  if (!starResolution && errorInfoOut) {
+    errorInfoOut->setImportedModule(cx, module);
+  }
   return true;
 }
 
@@ -923,63 +942,93 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
   return ns;
 }
 
+void ModuleErrorInfo::setImportedModule(JSContext* cx,
+                                        ModuleObject* importedModule) {
+  imported = importedModule->filename();
+}
+
+void ModuleErrorInfo::setCircularImport(JSContext* cx,
+                                        ModuleObject* importedModule) {
+  setImportedModule(cx, importedModule);
+  isCircular = true;
+}
+
+void ModuleErrorInfo::setForAmbiguousImport(JSContext* cx,
+                                            ModuleObject* importedModule,
+                                            ModuleObject* module1,
+                                            ModuleObject* module2) {
+  setImportedModule(cx, importedModule);
+  entry1 = module1->filename();
+  entry2 = module2->filename();
+}
+
+static void CreateErrorNumberMessageUTF8(JSContext* cx, unsigned errorNumber,
+                                         JSErrorReport* reportOut, ...) {
+  va_list ap;
+  va_start(ap, reportOut);
+  AutoReportFrontendContext fc(cx);
+  if (!ExpandErrorArgumentsVA(&fc, GetErrorMessage, nullptr, errorNumber,
+                              ArgumentsAreUTF8, reportOut, ap)) {
+    ReportOutOfMemory(cx);
+    return;
+  }
+
+  va_end(ap);
+}
+
 static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
-                                 Handle<Value> resolution, bool isDirectImport,
-                                 Handle<JSAtom*> name, uint32_t line,
-                                 JS::ColumnNumberOneOrigin column) {
-  MOZ_ASSERT(line != 0);
+                                 Handle<Value> resolution, Handle<JSAtom*> name,
+                                 ModuleErrorInfo* errorInfo) {
+  MOZ_ASSERT(errorInfo);
+  auto chars = StringToNewUTF8CharsZ(cx, *name);
+  if (!chars) {
+    ReportOutOfMemory(cx);
+    return;
+  }
 
   bool isAmbiguous = resolution == StringValue(cx->names().ambiguous);
 
-  
-  
-  
-  
-  
-  static constexpr unsigned ErrorNumbers[2][2] = {
-      {JSMSG_MISSING_INDIRECT_EXPORT, JSMSG_AMBIGUOUS_INDIRECT_EXPORT},
-      {JSMSG_MISSING_IMPORT, JSMSG_AMBIGUOUS_IMPORT}};
-  unsigned errorNumber = ErrorNumbers[isDirectImport][isAmbiguous];
-
-  const JSErrorFormatString* errorString =
-      GetErrorMessage(nullptr, errorNumber);
-  MOZ_ASSERT(errorString);
-
-  MOZ_ASSERT(errorString->argCount == 0);
-  Rooted<JSString*> message(cx, JS_NewStringCopyZ(cx, errorString->format));
-  if (!message) {
-    return;
-  }
-
-  Rooted<JSString*> separator(cx, JS_NewStringCopyZ(cx, ": "));
-  if (!separator) {
-    return;
-  }
-
-  message = ConcatStrings<CanGC>(cx, message, separator);
-  if (!message) {
-    return;
-  }
-
-  message = ConcatStrings<CanGC>(cx, message, name);
-  if (!message) {
-    return;
-  }
-
-  RootedString filename(cx);
-  if (const char* chars = module->script()->filename()) {
-    filename =
-        JS_NewStringCopyUTF8Z(cx, JS::ConstUTF8CharsZ(chars, strlen(chars)));
+  unsigned errorNumber;
+  if (errorInfo->isCircular) {
+    errorNumber = JSMSG_MODULE_CIRCULAR_IMPORT;
+  } else if (isAmbiguous) {
+    errorNumber = JSMSG_MODULE_AMBIGUOUS;
   } else {
-    filename = cx->names().empty_;
+    errorNumber = JSMSG_MODULE_NO_EXPORT;
   }
+
+  JSErrorReport report;
+  report.isWarning_ = false;
+  report.errorNumber = errorNumber;
+
+  if (errorNumber == JSMSG_MODULE_AMBIGUOUS) {
+    CreateErrorNumberMessageUTF8(cx, errorNumber, &report, errorInfo->imported,
+                                 chars.get(), errorInfo->entry1,
+                                 errorInfo->entry2);
+  } else {
+    CreateErrorNumberMessageUTF8(cx, errorNumber, &report, errorInfo->imported,
+                                 chars.get());
+  }
+
+  Rooted<JSString*> message(cx, report.newMessageString(cx));
+  if (!message) {
+    ReportOutOfMemory(cx);
+    return;
+  }
+
+  const char* file = module->filename();
+  RootedString filename(
+      cx, JS_NewStringCopyUTF8Z(cx, JS::ConstUTF8CharsZ(file, strlen(file))));
   if (!filename) {
+    ReportOutOfMemory(cx);
     return;
   }
 
   RootedValue error(cx);
-  if (!JS::CreateError(cx, JSEXN_SYNTAXERR, nullptr, filename, line, column,
-                       nullptr, message, JS::NothingHandleValue, &error)) {
+  if (!JS::CreateError(cx, JSEXN_SYNTAXERR, nullptr, filename,
+                       errorInfo->lineNumber, errorInfo->columnNumber, nullptr,
+                       message, JS::NothingHandleValue, &error)) {
+    ReportOutOfMemory(cx);
     return;
   }
 
@@ -1002,15 +1051,15 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
 
     
     exportName = e.exportName();
-    if (!ModuleResolveExport(cx, module, exportName, &resolution)) {
+    ModuleErrorInfo errorInfo{e.lineNumber(), e.columnNumber()};
+    if (!ModuleResolveExport(cx, module, exportName, &resolution, &errorInfo)) {
       return false;
     }
 
     
     
     if (!IsResolvedBinding(cx, resolution)) {
-      ThrowResolutionError(cx, module, resolution, false, exportName,
-                           e.lineNumber(), e.columnNumber());
+      ThrowResolutionError(cx, module, resolution, exportName, &errorInfo);
       return false;
     }
   }
@@ -1059,15 +1108,16 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
       
       
       
-      if (!ModuleResolveExport(cx, importedModule, importName, &resolution)) {
+      ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
+      if (!ModuleResolveExport(cx, importedModule, importName, &resolution,
+                               &errorInfo)) {
         return false;
       }
 
       
       
       if (!IsResolvedBinding(cx, resolution)) {
-        ThrowResolutionError(cx, module, resolution, true, importName,
-                             in.lineNumber(), in.columnNumber());
+        ThrowResolutionError(cx, module, resolution, importName, &errorInfo);
         return false;
       }
 

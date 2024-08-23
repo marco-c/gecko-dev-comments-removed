@@ -20,9 +20,34 @@ namespace js {
 
 using ModuleVector = GCVector<ModuleObject*, 0, SystemAllocPolicy>;
 
+
+struct ModuleErrorInfo {
+  ModuleErrorInfo(uint32_t lineNumber_, JS::ColumnNumberOneOrigin columnNumber_)
+      : lineNumber(lineNumber_), columnNumber(columnNumber_) {}
+
+  void setImportedModule(JSContext* cx, ModuleObject* importedModule);
+  void setCircularImport(JSContext* cx, ModuleObject* importedModule);
+  void setForAmbiguousImport(JSContext* cx, ModuleObject* importedModule,
+                             ModuleObject* module1, ModuleObject* module2);
+
+  uint32_t lineNumber;
+  JS::ColumnNumberOneOrigin columnNumber;
+
+  
+  const char* imported;
+
+  
+  const char* entry1;
+  const char* entry2;
+
+  
+  bool isCircular = false;
+};
+
 bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                          Handle<JSAtom*> exportName,
-                         MutableHandle<Value> result);
+                         MutableHandle<Value> result,
+                         ModuleErrorInfo* errorInfoOut);
 
 ModuleNamespaceObject* GetOrCreateModuleNamespace(JSContext* cx,
                                                   Handle<ModuleObject*> module);
