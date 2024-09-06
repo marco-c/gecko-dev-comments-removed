@@ -461,6 +461,7 @@ where
 }
 
 
+#[derive(Clone, Copy, Debug)]
 pub enum NumberOrPercentage {
     
     Number {
@@ -511,6 +512,7 @@ impl ColorComponentType for NumberOrPercentage {
 }
 
 
+#[derive(Clone, Copy, Debug)]
 pub enum NumberOrAngle {
     
     Number {
