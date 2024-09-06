@@ -293,36 +293,6 @@ impl SpecifiedValueInfo for AlignContent {
 
 #[derive(
     Clone,
-    Debug,
-    Default,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(transparent)]
-#[css(comma)]
-pub struct AlignTracks(#[css(iterable, if_empty = "normal")] pub crate::OwnedSlice<AlignContent>);
-
-impl Parse for AlignTracks {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let values = input.parse_comma_separated(|input| AlignContent::parse(context, input))?;
-        Ok(AlignTracks(values.into()))
-    }
-}
-
-
-
-
-#[derive(
-    Clone,
     Copy,
     Debug,
     Eq,
@@ -353,37 +323,6 @@ impl Parse for JustifyContent {
 impl SpecifiedValueInfo for JustifyContent {
     fn collect_completion_keywords(f: KeywordsCollectFn) {
         ContentDistribution::list_keywords(f, AxisDirection::Inline);
-    }
-}
-
-
-
-#[derive(
-    Clone,
-    Debug,
-    Default,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(transparent)]
-#[css(comma)]
-pub struct JustifyTracks(
-    #[css(iterable, if_empty = "normal")] pub crate::OwnedSlice<JustifyContent>,
-);
-
-impl Parse for JustifyTracks {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let values = input.parse_comma_separated(|input| JustifyContent::parse(context, input))?;
-        Ok(JustifyTracks(values.into()))
     }
 }
 

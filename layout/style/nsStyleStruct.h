@@ -722,18 +722,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   inline mozilla::StyleContentDistribution UsedContentAlignment(
       LogicalAxis aAxis) const;
 
-  
-
-
-
-
-  inline mozilla::StyleContentDistribution UsedTracksAlignment(
-      LogicalAxis aAxis, uint32_t aIndex) const;
-
-  
-  mozilla::StyleAlignTracks mAlignTracks;
-  mozilla::StyleJustifyTracks mJustifyTracks;
-
   Position mObjectPosition;
   StyleRect<LengthPercentageOrAuto> mOffset;
   StyleSize mWidth;
