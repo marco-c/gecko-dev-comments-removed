@@ -408,12 +408,7 @@ static bool UsesCustomScrollbarMediator(nsIFrame* scrollbarBox) {
   if (nsScrollbarFrame* scrollbarFrame = do_QueryFrame(scrollbarBox)) {
     if (nsIScrollbarMediator* mediator =
             scrollbarFrame->GetScrollbarMediator()) {
-      
-      
-      
-      nsIFrame* mediatorAsFrame = do_QueryFrame(mediator);
-      ScrollContainerFrame* scrollContainerFrame =
-          do_QueryFrame(mediatorAsFrame);
+      ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(mediator);
       
       
       if (!scrollContainerFrame) {

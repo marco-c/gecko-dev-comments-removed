@@ -39,7 +39,7 @@ NS_IMPL_FRAMEARENA_HELPERS(SVGClipPathFrame)
 void SVGClipPathFrame::ApplyClipPath(gfxContext& aContext,
                                      nsIFrame* aClippedFrame,
                                      const gfxMatrix& aMatrix) {
-  nsIFrame* singleClipPathChild = nullptr;
+  ISVGDisplayableFrame* singleClipPathChild = nullptr;
   DebugOnly<bool> trivial = IsTrivial(&singleClipPathChild);
   MOZ_ASSERT(trivial, "Caller needs to use GetClipMask");
 
@@ -297,7 +297,7 @@ bool SVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
   return false;
 }
 
-bool SVGClipPathFrame::IsTrivial(nsIFrame** aSingleChild) {
+bool SVGClipPathFrame::IsTrivial(ISVGDisplayableFrame** aSingleChild) {
   
   if (SVGObserverUtils::GetAndObserveClipPath(this, nullptr) ==
       SVGObserverUtils::eHasRefsAllValid) {
@@ -308,25 +308,25 @@ bool SVGClipPathFrame::IsTrivial(nsIFrame** aSingleChild) {
     *aSingleChild = nullptr;
   }
 
-  nsIFrame* foundChild = nullptr;
+  ISVGDisplayableFrame* foundChild = nullptr;
+
   for (auto* kid : mFrames) {
     ISVGDisplayableFrame* svgChild = do_QueryFrame(kid);
-    if (!svgChild) {
-      continue;
-    }
-    
-    
-    if (foundChild || svgChild->IsDisplayContainer()) {
-      return false;
-    }
+    if (svgChild) {
+      
+      
+      if (foundChild || svgChild->IsDisplayContainer()) {
+        return false;
+      }
 
-    
-    if (SVGObserverUtils::GetAndObserveClipPath(kid, nullptr) ==
-        SVGObserverUtils::eHasRefsAllValid) {
-      return false;
-    }
+      
+      if (SVGObserverUtils::GetAndObserveClipPath(kid, nullptr) ==
+          SVGObserverUtils::eHasRefsAllValid) {
+        return false;
+      }
 
-    foundChild = kid;
+      foundChild = svgChild;
+    }
   }
   if (aSingleChild) {
     *aSingleChild = foundChild;

@@ -100,7 +100,8 @@ ScrollbarActivity::HandleEvent(dom::Event* aEvent) {
     
     nsIFrame* scrollFrame = do_QueryFrame(mScrollableFrame);
     MOZ_ASSERT(scrollFrame);
-    ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(scrollFrame);
+    ScrollContainerFrame* scrollContainerFrame =
+        do_QueryFrame(mScrollableFrame);
     nsCOMPtr<nsIContent> targetContent =
         do_QueryInterface(aEvent->GetOriginalTarget());
     nsIFrame* targetFrame =
