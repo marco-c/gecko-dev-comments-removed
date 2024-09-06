@@ -93,24 +93,14 @@ static const char* CSPStrDirectives[] = {
     "script-src-attr",            
     "style-src-elem",             
     "style-src-attr",             
+    "require-trusted-types-for",  
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir) {
   return CSPStrDirectives[static_cast<uint32_t>(aDir)];
 }
 
-inline CSPDirective CSP_StringToCSPDirective(const nsAString& aDir) {
-  nsString lowerDir = PromiseFlatString(aDir);
-  ToLowerCase(lowerDir);
-
-  uint32_t numDirs = (sizeof(CSPStrDirectives) / sizeof(CSPStrDirectives[0]));
-  for (uint32_t i = 1; i < numDirs; i++) {
-    if (lowerDir.EqualsASCII(CSPStrDirectives[i])) {
-      return static_cast<CSPDirective>(i);
-    }
-  }
-  return nsIContentSecurityPolicy::NO_DIRECTIVE;
-}
+CSPDirective CSP_StringToCSPDirective(const nsAString& aDir);
 
 #define FOR_EACH_CSP_KEYWORD(MACRO)             \
   MACRO(CSP_SELF, "'self'")                     \
@@ -394,6 +384,20 @@ class nsCSPSandboxFlags : public nsCSPBaseSrc {
 
  private:
   nsString mFlags;
+};
+
+
+
+class nsCSPRequireTrustedTypesForDirectiveValue : public nsCSPBaseSrc {
+ public:
+  explicit nsCSPRequireTrustedTypesForDirectiveValue(const nsAString& aValue);
+  virtual ~nsCSPRequireTrustedTypesForDirectiveValue() = default;
+
+  bool visit(nsCSPSrcVisitor* aVisitor) const override;
+  void toString(nsAString& aOutStr) const override;
+
+ private:
+  const nsString mValue;
 };
 
 
