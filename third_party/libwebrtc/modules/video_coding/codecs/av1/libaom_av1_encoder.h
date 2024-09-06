@@ -27,12 +27,6 @@ absl::Nonnull<std::unique_ptr<VideoEncoder>> CreateLibaomAv1Encoder(
     const Environment& env,
     LibaomAv1EncoderSettings settings = {});
 
-
-using LibaomAv1EncoderAuxConfig = LibaomAv1EncoderSettings;
-std::unique_ptr<VideoEncoder> CreateLibaomAv1Encoder();
-std::unique_ptr<VideoEncoder> CreateLibaomAv1Encoder(
-    const LibaomAv1EncoderAuxConfig& aux_config);
-
 }  
 
 #endif  
