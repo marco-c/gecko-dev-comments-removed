@@ -23,17 +23,7 @@ bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
 
   
   
-  mozilla::StringBuffer* sharedBuffer;
-  if (!XPCStringConvert::ReadableToJSVal(aCx, aArgument, &sharedBuffer,
-                                         aValue)) {
-    return false;
-  }
-
-  if (sharedBuffer) {
-    NS_ADDREF(sharedBuffer);
-  }
-
-  return true;
+  return XPCStringConvert::ReadableToJSVal(aCx, aArgument, aValue);
 }
 
 bool ToJSValue(JSContext* aCx, const nsACString& aArgument,

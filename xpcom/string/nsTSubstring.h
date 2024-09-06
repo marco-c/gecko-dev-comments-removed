@@ -1150,16 +1150,6 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
 
-  void ForgetSharedBuffer() {
-    if (this->mDataFlags & DataFlags::REFCOUNTED) {
-      SetToEmptyBuffer();
-    }
-  }
-
-  
-
-
-
   mozilla::StringBuffer* GetStringBuffer() const {
     if (this->mDataFlags & DataFlags::REFCOUNTED) {
       return mozilla::StringBuffer::FromData(this->mData);
