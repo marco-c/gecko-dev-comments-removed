@@ -3218,7 +3218,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     
     
     const bool shouldFocusTarget = [&] {
-      if (!aScroll) {
+      if (!aScroll || thereIsATextFragment) {
         return false;
       }
       nsIFrame* targetFrame = target->GetPrimaryFrame();
