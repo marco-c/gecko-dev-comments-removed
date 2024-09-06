@@ -78,7 +78,7 @@ namespace {
 
 
 
-class ClipboardGetCallback : public nsIAsyncClipboardGetCallback {
+class ClipboardGetCallback : public nsIClipboardGetDataSnapshotCallback {
  public:
   explicit ClipboardGetCallback(RefPtr<Promise>&& aPromise)
       : mPromise(std::move(aPromise)) {}
@@ -154,7 +154,8 @@ class ClipboardGetCallbackForRead final : public ClipboardGetCallback {
   nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
-NS_IMPL_ISUPPORTS(ClipboardGetCallbackForRead, nsIAsyncClipboardGetCallback)
+NS_IMPL_ISUPPORTS(ClipboardGetCallbackForRead,
+                  nsIClipboardGetDataSnapshotCallback)
 
 class ClipboardGetCallbackForReadText final
     : public ClipboardGetCallback,
@@ -232,7 +233,8 @@ class ClipboardGetCallbackForReadText final
   nsCOMPtr<nsITransferable> mTransferable;
 };
 
-NS_IMPL_ISUPPORTS(ClipboardGetCallbackForReadText, nsIAsyncClipboardGetCallback,
+NS_IMPL_ISUPPORTS(ClipboardGetCallbackForReadText,
+                  nsIClipboardGetDataSnapshotCallback,
                   nsIAsyncClipboardRequestCallback)
 
 }  

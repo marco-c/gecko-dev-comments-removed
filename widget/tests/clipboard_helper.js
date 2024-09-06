@@ -177,7 +177,7 @@ function getClipboardDataSnapshot(
         SpecialPowers.Services.scriptSecurityManager.getSystemPrincipal(),
         {
           QueryInterface: SpecialPowers.ChromeUtils.generateQI([
-            "nsIAsyncClipboardGetCallback",
+            "nsIClipboardGetDataSnapshotCallback",
           ]),
           
           onSuccess: SpecialPowers.wrapCallback(function (
