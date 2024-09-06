@@ -496,22 +496,28 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   
   
   
-  MediaKeySystemConfiguration config;
-  if (MediaKeySystemAccess::GetSupportedConfig(
-          aRequest.get(), config, isPrivateBrowsing, mWindow->GetExtantDoc())) {
-    aRequest->mSupportedConfig = Some(config);
-    
-    CheckDoesAppAllowProtectedMedia(std::move(aRequest));
-    return;
-  }
-  
-
-  
-  
-  aRequest->RejectPromiseWithNotSupportedError(
-      "Key system configuration is not supported"_ns);
-  aRequest->mDiagnostics.StoreMediaKeySystemAccess(
-      mWindow->GetExtantDoc(), aRequest->mKeySystem, false, __func__);
+  MediaKeySystemAccess::GetSupportedConfig(aRequest.get(), isPrivateBrowsing,
+                                           mWindow->GetExtantDoc())
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [self = RefPtr<MediaKeySystemAccessManager>{this}, this,
+              request = UniquePtr<PendingRequest>{std::move(aRequest)}](
+                 const KeySystemConfig::KeySystemConfigPromise::
+                     ResolveOrRejectValue& aResult) mutable {
+               if (aResult.IsResolve()) {
+                 request->mSupportedConfig = Some(aResult.ResolveValue());
+                 
+                 CheckDoesAppAllowProtectedMedia(std::move(request));
+               } else {
+                 
+                 
+                 
+                 request->RejectPromiseWithNotSupportedError(
+                     "Key system configuration is not supported"_ns);
+                 request->mDiagnostics.StoreMediaKeySystemAccess(
+                     mWindow->GetExtantDoc(), request->mKeySystem, false,
+                     __func__);
+               }
+             });
 }
 
 void MediaKeySystemAccessManager::ProvideAccess(
