@@ -410,15 +410,21 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
-  bool isUnpartitioned =
-      cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                 aDocument->CookieJarSettings()->GetPartitionForeign();
+  bool isUnpartitioned = !thirdParty || aDocument->UsingStorageAccess();
   if (isCHIPS && isUnpartitioned) {
     
+    MOZ_ASSERT(cookiePrincipal->OriginAttributesRef().mPartitionKey.IsEmpty());
     
-    MOZ_ASSERT(!thirdParty || aDocument->UsingStorageAccess());
     
-    principals.AppendElement(aDocument->PartitionedPrincipal());
+    
+    
+    if (!aDocument->PartitionedPrincipal()
+             ->OriginAttributesRef()
+             .mPartitionKey.IsEmpty()) {
+      principals.AppendElement(aDocument->PartitionedPrincipal());
+    }
   }
 
   nsTArray<RefPtr<Cookie>> cookieList;
@@ -563,22 +569,29 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
   
   
   
-  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
-  bool isUnpartitioned = storageOriginAttributes.mPartitionKey.IsEmpty();
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
+      CookieCommons::GetCookieJarSettings(aChannel);
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                 cookieJarSettings->GetPartitionForeign();
+  bool isUnpartitioned =
+      !result.contains(ThirdPartyAnalysis::IsForeign) ||
+      result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted);
   if (isCHIPS && isUnpartitioned) {
     
     
-    MOZ_ASSERT(
-        !result.contains(ThirdPartyAnalysis::IsForeign) ||
-        result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted));
+    MOZ_ASSERT(storageOriginAttributes.mPartitionKey.IsEmpty());
     
     OriginAttributes partitionedOriginAttributes;
     StoragePrincipalHelper::GetOriginAttributes(
         aChannel, partitionedOriginAttributes,
         StoragePrincipalHelper::ePartitionedPrincipal);
-    originAttributesList.AppendElement(partitionedOriginAttributes);
     
-    MOZ_ASSERT(!partitionedOriginAttributes.mPartitionKey.IsEmpty());
+    
+    
+    
+    if (!partitionedOriginAttributes.mPartitionKey.IsEmpty()) {
+      originAttributesList.AppendElement(partitionedOriginAttributes);
+    }
   }
 
   AutoTArray<RefPtr<Cookie>, 8> foundCookieList;
@@ -775,7 +788,8 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   OriginAttributes partitionedPrincipalOriginAttributes;
   bool isPartitionedPrincipal =
       !storagePrincipalOriginAttributes.mPartitionKey.IsEmpty();
-  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled();
+  bool isCHIPS = StaticPrefs::network_cookie_CHIPS_enabled() &&
+                 cookieJarSettings->GetPartitionForeign();
   
   if (isCHIPS && !isPartitionedPrincipal) {
     StoragePrincipalHelper::GetOriginAttributes(
