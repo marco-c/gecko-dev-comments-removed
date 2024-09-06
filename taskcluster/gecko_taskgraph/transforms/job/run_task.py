@@ -163,6 +163,7 @@ def generic_worker_run_task(config, job, taskdesc):
     worker = taskdesc["worker"] = job["worker"]
     is_win = worker["os"] == "windows"
     is_mac = worker["os"] == "macosx"
+    is_linux = worker["os"] == "linux"
     is_bitbar = worker["os"] == "linux-bitbar"
 
     if run["tooltool-downloads"]:
@@ -205,7 +206,7 @@ def generic_worker_run_task(config, job, taskdesc):
         )
     
     
-    if run.get("checkout") and not is_mac:
+    if run.get("checkout") and not is_mac and not is_linux:
         worker["mounts"].append(
             {
                 "content": {
