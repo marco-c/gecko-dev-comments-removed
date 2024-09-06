@@ -115,6 +115,7 @@
 #include "mozilla/Try.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/ViewportFrame.h"
 #include "mozilla/ViewportUtils.h"
 #include "nsAnimationManager.h"
 #include "nsAutoLayoutPhase.h"
@@ -1766,10 +1767,10 @@ nsresult PresShell::Initialize() {
   
   
   
-  nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  NS_ASSERTION(!rootFrame, "How did that happen, exactly?");
-
-  if (!rootFrame) {
+  MOZ_ASSERT(!mFrameConstructor->GetRootFrame(),
+             "How did that happen, exactly?");
+  ViewportFrame* rootFrame;
+  {
     nsAutoScriptBlocker scriptBlocker;
     rootFrame = mFrameConstructor->ConstructRootFrame();
     mFrameConstructor->SetRootFrame(rootFrame);
@@ -2458,8 +2459,7 @@ nsIFrame* PresShell::GetRootScrollFrame() const {
     return nullptr;
   }
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  
-  if (!rootFrame || !rootFrame->IsViewportFrame()) {
+  if (!rootFrame) {
     return nullptr;
   }
   nsIFrame* theFrame = rootFrame->PrincipalChildList().FirstChild();
