@@ -95,11 +95,12 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.201")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.203")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg, rustdoc_internals))]
+#![cfg_attr(docsrs, allow(internal_features))]
 
 
 
@@ -330,7 +331,7 @@ extern crate serde_derive;
 
 
 #[cfg(feature = "serde_derive")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "derive")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use serde_derive::{Deserialize, Serialize};
 
 #[cfg(all(not(no_serde_derive), any(feature = "std", feature = "alloc")))]

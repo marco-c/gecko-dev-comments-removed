@@ -493,10 +493,67 @@ pub trait Surface: WasmNotSendSync {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn acquire_texture(
         &self,
         timeout: Option<std::time::Duration>,
+        fence: &<Self::A as Api>::Fence,
     ) -> Result<Option<AcquiredSurfaceTexture<Self::A>>, SurfaceError>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn discard_texture(&self, texture: <Self::A as Api>::SurfaceTexture);
 }
 
@@ -528,6 +585,70 @@ pub trait Adapter: WasmNotSendSync {
     
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub trait Device: WasmNotSendSync {
     type A: Api;
@@ -738,11 +859,34 @@ pub trait Queue: WasmNotSendSync {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn submit(
         &self,
         command_buffers: &[&<Self::A as Api>::CommandBuffer],
         surface_textures: &[&<Self::A as Api>::SurfaceTexture],
-        signal_fence: Option<(&mut <Self::A as Api>::Fence, FenceValue)>,
+        signal_fence: (&mut <Self::A as Api>::Fence, FenceValue),
     ) -> Result<(), DeviceError>;
     unsafe fn present(
         &self,
@@ -1637,6 +1781,8 @@ pub struct ProgrammableStage<'a, A: Api> {
     
     
     pub zero_initialize_workgroup_memory: bool,
+    
+    pub vertex_pulling_transform: bool,
 }
 
 
@@ -1647,6 +1793,7 @@ impl<A: Api> Clone for ProgrammableStage<'_, A> {
             entry_point: self.entry_point,
             constants: self.constants,
             zero_initialize_workgroup_memory: self.zero_initialize_workgroup_memory,
+            vertex_pulling_transform: self.vertex_pulling_transform,
         }
     }
 }

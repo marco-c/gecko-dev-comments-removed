@@ -176,8 +176,14 @@ impl<T: Resource> Registry<T> {
         let guard = self.storage.read();
 
         let type_name = guard.kind();
-        match guard.get(id) {
-            Ok(res) => {
+
+        
+        
+        
+        
+        
+        match guard.try_get(id) {
+            Ok(Some(res)) => {
                 let label = res.label();
                 if label.is_empty() {
                     format!("<{}-{:?}>", type_name, id.unzip())
@@ -185,7 +191,7 @@ impl<T: Resource> Registry<T> {
                     label.to_owned()
                 }
             }
-            Err(_) => format!(
+            _ => format!(
                 "<Invalid-{} label={}>",
                 type_name,
                 guard.label_for_invalid_id(id)

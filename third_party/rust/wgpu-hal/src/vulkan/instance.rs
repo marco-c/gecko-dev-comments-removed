@@ -164,10 +164,14 @@ impl super::Swapchain {
             let _ = unsafe { device.device_wait_idle() };
         };
 
+        
         for semaphore in self.surface_semaphores.drain(..) {
-            unsafe {
-                device.destroy_semaphore(semaphore, None);
-            }
+            let arc_removed = Arc::into_inner(semaphore).expect(
+                "Trying to destroy a SurfaceSemaphores that is still in use by a SurfaceTexture",
+            );
+            let mutex_removed = arc_removed.into_inner();
+
+            unsafe { mutex_removed.destroy(device) };
         }
 
         self
@@ -966,9 +970,10 @@ impl crate::Surface for super::Surface {
     unsafe fn acquire_texture(
         &self,
         timeout: Option<std::time::Duration>,
+        fence: &super::Fence,
     ) -> Result<Option<crate::AcquiredSurfaceTexture<super::Api>>, crate::SurfaceError> {
         let mut swapchain = self.swapchain.write();
-        let sc = swapchain.as_mut().unwrap();
+        let swapchain = swapchain.as_mut().unwrap();
 
         let mut timeout_ns = match timeout {
             Some(duration) => duration.as_nanos() as u64,
@@ -988,12 +993,40 @@ impl crate::Surface for super::Surface {
             timeout_ns = u64::MAX;
         }
 
-        let wait_semaphore = sc.surface_semaphores[sc.next_surface_index];
+        let swapchain_semaphores_arc = swapchain.get_surface_semaphores();
+        
+        let locked_swapchain_semaphores = swapchain_semaphores_arc
+            .try_lock()
+            .expect("Failed to lock a SwapchainSemaphores.");
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        swapchain.device.wait_for_fence(
+            fence,
+            locked_swapchain_semaphores.previously_used_submission_index,
+            timeout_ns,
+        )?;
 
         
         let (index, suboptimal) = match unsafe {
-            sc.functor
-                .acquire_next_image(sc.raw, timeout_ns, wait_semaphore, vk::Fence::null())
+            profiling::scope!("vkAcquireNextImageKHR");
+            swapchain.functor.acquire_next_image(
+                swapchain.raw,
+                timeout_ns,
+                locked_swapchain_semaphores.acquire,
+                vk::Fence::null(),
+            )
         } {
             
             
@@ -1013,16 +1046,18 @@ impl crate::Surface for super::Surface {
             }
         };
 
-        sc.next_surface_index += 1;
-        sc.next_surface_index %= sc.surface_semaphores.len();
+        drop(locked_swapchain_semaphores);
+        
+        
+        swapchain.advance_surface_semaphores();
 
         
-        if sc.device.vendor_id == crate::auxil::db::intel::VENDOR && index > 0x100 {
+        if swapchain.device.vendor_id == crate::auxil::db::intel::VENDOR && index > 0x100 {
             return Err(crate::SurfaceError::Outdated);
         }
 
         
-        let raw_flags = if sc
+        let raw_flags = if swapchain
             .raw_flags
             .contains(vk::SwapchainCreateFlagsKHR::MUTABLE_FORMAT)
         {
@@ -1034,20 +1069,20 @@ impl crate::Surface for super::Surface {
         let texture = super::SurfaceTexture {
             index,
             texture: super::Texture {
-                raw: sc.images[index as usize],
+                raw: swapchain.images[index as usize],
                 drop_guard: None,
                 block: None,
-                usage: sc.config.usage,
-                format: sc.config.format,
+                usage: swapchain.config.usage,
+                format: swapchain.config.format,
                 raw_flags,
                 copy_size: crate::CopyExtent {
-                    width: sc.config.extent.width,
-                    height: sc.config.extent.height,
+                    width: swapchain.config.extent.width,
+                    height: swapchain.config.extent.height,
                     depth: 1,
                 },
-                view_formats: sc.view_formats.clone(),
+                view_formats: swapchain.view_formats.clone(),
             },
-            wait_semaphore,
+            surface_semaphores: swapchain_semaphores_arc,
         };
         Ok(Some(crate::AcquiredSurfaceTexture {
             texture,

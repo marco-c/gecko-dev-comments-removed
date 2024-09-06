@@ -1525,7 +1525,7 @@ pub trait Visitor<'de>: Sized {
     
     #[inline]
     #[cfg(any(feature = "std", feature = "alloc"))]
-    #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "alloc"))))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: Error,
@@ -1584,7 +1584,7 @@ pub trait Visitor<'de>: Sized {
     
     
     #[cfg(any(feature = "std", feature = "alloc"))]
-    #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "alloc"))))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
     where
         E: Error,

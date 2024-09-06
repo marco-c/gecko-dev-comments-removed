@@ -33,13 +33,11 @@ mod instance;
 
 use std::{
     borrow::Borrow,
+    collections::HashSet,
     ffi::{CStr, CString},
-    fmt,
+    fmt, mem,
     num::NonZeroU32,
-    sync::{
-        atomic::{AtomicIsize, Ordering},
-        Arc,
-    },
+    sync::Arc,
 };
 
 use arrayvec::ArrayVec;
@@ -147,6 +145,173 @@ pub struct Instance {
     shared: Arc<InstanceShared>,
 }
 
+
+#[derive(Debug)]
+struct SwapchainImageSemaphores {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    acquire: vk::Semaphore,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    should_wait_for_acquire: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    present: Vec<vk::Semaphore>,
+
+    
+    
+    
+    present_index: usize,
+
+    
+    
+    
+    
+    
+    
+    
+    previously_used_submission_index: crate::FenceValue,
+}
+
+impl SwapchainImageSemaphores {
+    fn new(device: &DeviceShared) -> Result<Self, crate::DeviceError> {
+        Ok(Self {
+            acquire: device.new_binary_semaphore()?,
+            should_wait_for_acquire: true,
+            present: Vec::new(),
+            present_index: 0,
+            previously_used_submission_index: 0,
+        })
+    }
+
+    fn set_used_fence_value(&mut self, value: crate::FenceValue) {
+        self.previously_used_submission_index = value;
+    }
+
+    
+    
+    
+    
+    fn get_acquire_wait_semaphore(&mut self) -> Option<vk::Semaphore> {
+        if self.should_wait_for_acquire {
+            self.should_wait_for_acquire = false;
+            Some(self.acquire)
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    fn get_submit_signal_semaphore(
+        &mut self,
+        device: &DeviceShared,
+    ) -> Result<vk::Semaphore, crate::DeviceError> {
+        
+        let sem = match self.present.get(self.present_index) {
+            Some(sem) => *sem,
+            None => {
+                let sem = device.new_binary_semaphore()?;
+                self.present.push(sem);
+                sem
+            }
+        };
+
+        self.present_index += 1;
+
+        Ok(sem)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_present_wait_semaphores(&mut self) -> &[vk::Semaphore] {
+        let old_index = self.present_index;
+
+        
+        
+        self.present_index = 0;
+        self.should_wait_for_acquire = true;
+
+        &self.present[0..old_index]
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device) {
+        unsafe {
+            device.destroy_semaphore(self.acquire, None);
+            for sem in &self.present {
+                device.destroy_semaphore(*sem, None);
+            }
+        }
+    }
+}
+
 struct Swapchain {
     raw: vk::SwapchainKHR,
     raw_flags: vk::SwapchainCreateFlagsKHR,
@@ -157,9 +322,25 @@ struct Swapchain {
     view_formats: Vec<wgt::TextureFormat>,
     
     
-    surface_semaphores: Vec<vk::Semaphore>,
     
-    next_surface_index: usize,
+    
+    
+    surface_semaphores: Vec<Arc<Mutex<SwapchainImageSemaphores>>>,
+    
+    
+    
+    next_semaphore_index: usize,
+}
+
+impl Swapchain {
+    fn advance_surface_semaphores(&mut self) {
+        let semaphore_count = self.surface_semaphores.len();
+        self.next_semaphore_index = (self.next_semaphore_index + 1) % semaphore_count;
+    }
+
+    fn get_surface_semaphores(&self) -> Arc<Mutex<SwapchainImageSemaphores>> {
+        self.surface_semaphores[self.next_semaphore_index].clone()
+    }
 }
 
 pub struct Surface {
@@ -173,7 +354,7 @@ pub struct Surface {
 pub struct SurfaceTexture {
     index: u32,
     texture: Texture,
-    wait_semaphore: vk::Semaphore,
+    surface_semaphores: Arc<Mutex<SwapchainImageSemaphores>>,
 }
 
 impl Borrow<Texture> for SurfaceTexture {
@@ -359,18 +540,87 @@ pub struct Device {
     render_doc: crate::auxil::renderdoc::RenderDoc,
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+struct RelaySemaphores {
+    
+    
+    
+    wait: Option<vk::Semaphore>,
+
+    
+    
+    signal: vk::Semaphore,
+}
+
+impl RelaySemaphores {
+    fn new(device: &DeviceShared) -> Result<Self, crate::DeviceError> {
+        Ok(Self {
+            wait: None,
+            signal: device.new_binary_semaphore()?,
+        })
+    }
+
+    
+    fn advance(&mut self, device: &DeviceShared) -> Result<Self, crate::DeviceError> {
+        let old = self.clone();
+
+        
+        match self.wait {
+            None => {
+                
+                
+                
+                self.wait = Some(old.signal);
+                self.signal = device.new_binary_semaphore()?;
+            }
+            Some(ref mut wait) => {
+                
+                mem::swap(wait, &mut self.signal);
+            }
+        };
+
+        Ok(old)
+    }
+
+    
+    unsafe fn destroy(&self, device: &ash::Device) {
+        unsafe {
+            if let Some(wait) = self.wait {
+                device.destroy_semaphore(wait, None);
+            }
+            device.destroy_semaphore(self.signal, None);
+        }
+    }
+}
+
 pub struct Queue {
     raw: vk::Queue,
     swapchain_fn: khr::swapchain::Device,
     device: Arc<DeviceShared>,
     family_index: u32,
-    
-    
-    
-    
-    
-    relay_semaphores: [vk::Semaphore; 2],
-    relay_index: AtomicIsize,
+    relay_semaphores: Mutex<RelaySemaphores>,
 }
 
 #[derive(Debug)]
@@ -702,58 +952,89 @@ impl crate::Queue for Queue {
         &self,
         command_buffers: &[&CommandBuffer],
         surface_textures: &[&SurfaceTexture],
-        signal_fence: Option<(&mut Fence, crate::FenceValue)>,
+        (signal_fence, signal_value): (&mut Fence, crate::FenceValue),
     ) -> Result<(), crate::DeviceError> {
         let mut fence_raw = vk::Fence::null();
 
         let mut wait_stage_masks = Vec::new();
         let mut wait_semaphores = Vec::new();
-        let mut signal_semaphores = ArrayVec::<_, 2>::new();
-        let mut signal_values = ArrayVec::<_, 2>::new();
+        let mut signal_semaphores = Vec::new();
+        let mut signal_values = Vec::new();
 
-        for &surface_texture in surface_textures {
-            wait_stage_masks.push(vk::PipelineStageFlags::TOP_OF_PIPE);
-            wait_semaphores.push(surface_texture.wait_semaphore);
+        
+        
+        debug_assert!(
+            {
+                let mut check = HashSet::with_capacity(surface_textures.len());
+                // We compare the Arcs by pointer, as Eq isn't well defined for SurfaceSemaphores.
+                for st in surface_textures {
+                    check.insert(Arc::as_ptr(&st.surface_semaphores));
+                }
+                check.len() == surface_textures.len()
+            },
+            "More than one surface texture is being used from the same swapchain. This will cause a deadlock in release."
+        );
+
+        let locked_swapchain_semaphores = surface_textures
+            .iter()
+            .map(|st| {
+                st.surface_semaphores
+                    .try_lock()
+                    .expect("Failed to lock surface semaphore.")
+            })
+            .collect::<Vec<_>>();
+
+        for mut swapchain_semaphore in locked_swapchain_semaphores {
+            swapchain_semaphore.set_used_fence_value(signal_value);
+
+            
+            
+            
+            if let Some(sem) = swapchain_semaphore.get_acquire_wait_semaphore() {
+                wait_stage_masks.push(vk::PipelineStageFlags::TOP_OF_PIPE);
+                wait_semaphores.push(sem);
+            }
+
+            
+            
+            let signal_semaphore = swapchain_semaphore.get_submit_signal_semaphore(&self.device)?;
+            signal_semaphores.push(signal_semaphore);
+            signal_values.push(!0);
         }
 
-        let old_index = self.relay_index.load(Ordering::Relaxed);
+        
+        
+        let semaphore_state = self.relay_semaphores.lock().advance(&self.device)?;
 
-        let sem_index = if old_index >= 0 {
+        if let Some(sem) = semaphore_state.wait {
             wait_stage_masks.push(vk::PipelineStageFlags::TOP_OF_PIPE);
-            wait_semaphores.push(self.relay_semaphores[old_index as usize]);
-            (old_index as usize + 1) % self.relay_semaphores.len()
-        } else {
-            0
-        };
+            wait_semaphores.push(sem);
+        }
 
-        signal_semaphores.push(self.relay_semaphores[sem_index]);
+        signal_semaphores.push(semaphore_state.signal);
+        signal_values.push(!0);
 
-        self.relay_index
-            .store(sem_index as isize, Ordering::Relaxed);
-
-        if let Some((fence, value)) = signal_fence {
-            fence.maintain(&self.device.raw)?;
-            match *fence {
-                Fence::TimelineSemaphore(raw) => {
-                    signal_semaphores.push(raw);
-                    signal_values.push(!0);
-                    signal_values.push(value);
-                }
-                Fence::FencePool {
-                    ref mut active,
-                    ref mut free,
-                    ..
-                } => {
-                    fence_raw = match free.pop() {
-                        Some(raw) => raw,
-                        None => unsafe {
-                            self.device
-                                .raw
-                                .create_fence(&vk::FenceCreateInfo::default(), None)?
-                        },
-                    };
-                    active.push((value, fence_raw));
-                }
+        
+        signal_fence.maintain(&self.device.raw)?;
+        match *signal_fence {
+            Fence::TimelineSemaphore(raw) => {
+                signal_semaphores.push(raw);
+                signal_values.push(signal_value);
+            }
+            Fence::FencePool {
+                ref mut active,
+                ref mut free,
+                ..
+            } => {
+                fence_raw = match free.pop() {
+                    Some(raw) => raw,
+                    None => unsafe {
+                        self.device
+                            .raw
+                            .create_fence(&vk::FenceCreateInfo::default(), None)?
+                    },
+                };
+                active.push((signal_value, fence_raw));
             }
         }
 
@@ -771,7 +1052,7 @@ impl crate::Queue for Queue {
 
         let mut vk_timeline_info;
 
-        if !signal_values.is_empty() {
+        if self.device.private_caps.timeline_semaphores {
             vk_timeline_info =
                 vk::TimelineSemaphoreSubmitInfo::default().signal_semaphore_values(&signal_values);
             vk_info = vk_info.push_next(&mut vk_timeline_info);
@@ -793,19 +1074,14 @@ impl crate::Queue for Queue {
     ) -> Result<(), crate::SurfaceError> {
         let mut swapchain = surface.swapchain.write();
         let ssc = swapchain.as_mut().unwrap();
+        let mut swapchain_semaphores = texture.surface_semaphores.lock();
 
         let swapchains = [ssc.raw];
         let image_indices = [texture.index];
-        let mut vk_info = vk::PresentInfoKHR::default()
+        let vk_info = vk::PresentInfoKHR::default()
             .swapchains(&swapchains)
-            .image_indices(&image_indices);
-
-        let old_index = self.relay_index.swap(-1, Ordering::Relaxed);
-        if old_index >= 0 {
-            vk_info = vk_info.wait_semaphores(
-                &self.relay_semaphores[old_index as usize..old_index as usize + 1],
-            );
-        }
+            .image_indices(&image_indices)
+            .wait_semaphores(swapchain_semaphores.get_present_wait_semaphores());
 
         let suboptimal = {
             profiling::scope!("vkQueuePresentKHR");
