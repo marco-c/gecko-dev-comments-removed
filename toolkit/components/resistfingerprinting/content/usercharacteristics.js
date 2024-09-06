@@ -88,6 +88,32 @@ function standardDeviation(array) {
 
 
 
+function decimalPlaces(num) {
+  
+  const str = num >= 0 ? num.toString() : num.toString().substr(1);
+  
+  const dashI = str.indexOf("-");
+  if (dashI !== -1) {
+    return +str.substr(dashI + 1);
+  }
+
+  
+  const dotI = str.indexOf(".");
+  if (dotI !== -1) {
+    return str.length - dotI - 1;
+  }
+
+  
+  const commaI = str.indexOf(",");
+  if (commaI !== -1) {
+    return str.length - commaI - 1;
+  }
+
+  return 0;
+}
+
+
+
 
 function populateTestCanvases() {
   const data = {};
@@ -1033,6 +1059,67 @@ async function populateICEFoundations() {
   };
 }
 
+function populateSensorInfo() {
+  const { promise, resolve } = Promise.withResolvers();
+
+  const events = {
+    devicemotion: 0,
+    deviceorientation: 0,
+    deviceorientationabsolute: 0,
+  };
+  const results = {
+    frequency: { ...events },
+    decPlaces: { ...events },
+  };
+
+  const eventCounter = { ...events };
+  const eventDecPlaces = { ...events };
+  const eventStarts = { ...events };
+
+  const processEvent = eventName => e => {
+    eventCounter[eventName] += 1;
+
+    
+    
+    const property =
+      e.acceleration?.x || e.alpha || e.accelerationIncludingGravity?.x;
+    const decPlaces = decimalPlaces(property);
+    eventDecPlaces[eventName] =
+      eventDecPlaces[eventName] > decPlaces
+        ? eventDecPlaces[eventName]
+        : decPlaces;
+  };
+  const processResult = eventName => {
+    const elapsed = (window.performance.now() - eventStarts[eventName]) / 1000;
+    results.frequency[eventName] = Math.round(
+      eventCounter[eventName] / elapsed
+    );
+    results.decPlaces[eventName] = eventDecPlaces[eventName];
+  };
+
+  for (const eventName in events) {
+    eventStarts[eventName] = window.performance.now();
+    window.addEventListener(eventName, processEvent(eventName));
+    setTimeout(() => processResult(eventName), 10 * 1000);
+  }
+
+  
+  setTimeout(
+    () =>
+      resolve({
+        motionDecimals: results.decPlaces.devicemotion,
+        orientationDecimals: results.decPlaces.deviceorientation,
+        orientationabsDecimals: results.decPlaces.deviceorientationabsolute,
+        motionFreq: results.frequency.devicemotion,
+        orientationFreq: results.frequency.deviceorientation,
+        orientationabsFreq: results.frequency.deviceorientationabsolute,
+      }),
+    11 * 1000
+  );
+
+  return promise;
+}
+
 
 
 
@@ -1060,6 +1147,7 @@ const LocalFiraSans = new FontFace(
     populateAudioFingerprint,
     populatePointerInfo,
     populateICEFoundations,
+    populateSensorInfo,
   ];
   
   
