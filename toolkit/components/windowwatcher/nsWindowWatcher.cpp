@@ -2447,6 +2447,8 @@ bool nsWindowWatcher::IsWindowOpenLocationModified(
     int32_t* aLocation) {
   
   
+  
+  
 #ifdef XP_MACOSX
   bool metaKey = aModifiers.IsMeta();
 #else
@@ -2454,11 +2456,15 @@ bool nsWindowWatcher::IsWindowOpenLocationModified(
 #endif
   bool shiftKey = aModifiers.IsShift();
   if (metaKey) {
+    bool loadInBackground = StaticPrefs::browser_tabs_loadInBackground();
     if (shiftKey) {
-      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB;
-      return true;
+      loadInBackground = !loadInBackground;
     }
-    *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_BACKGROUND;
+    if (loadInBackground) {
+      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_BACKGROUND;
+    } else {
+      *aLocation = nsIBrowserDOMWindow::OPEN_NEWTAB_FOREGROUND;
+    }
     return true;
   }
   if (shiftKey) {
