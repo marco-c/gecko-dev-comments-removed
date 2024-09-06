@@ -84,13 +84,13 @@ class GeckoAppShellTest : BaseSessionTest() {
             goHomeAndReturnWithPageLoad()
 
             
-            sessionRule.waitUntilCalled(object : GeckoSession.NavigationDelegate {
+            mainSession.waitUntilCalled(object : GeckoSession.ContentDelegate, GeckoSession.NavigationDelegate {
                 @GeckoSessionTestRule.AssertCalled(count = 2)
+                @Suppress("OVERRIDE_DEPRECATION")
                 override fun onLocationChange(
                     session: GeckoSession,
                     url: String?,
                     perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
-                    hasUserGesture: Boolean,
                 ) {
                     
                     if (onLoadRequestCount == 0) {
