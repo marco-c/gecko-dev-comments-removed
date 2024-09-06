@@ -95,6 +95,10 @@ class RTC_EXPORT Candidate {
 
   
   
+  absl::string_view type_name() const;
+
+  
+  
   
   
   void set_type(absl::string_view type ABSL_ATTRIBUTE_LIFETIME_BOUND) {

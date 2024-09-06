@@ -27,6 +27,7 @@ Candidate::Candidate()
     : id_(rtc::CreateRandomString(8)),
       component_(0),
       priority_(0),
+      type_(LOCAL_PORT_TYPE),
       network_type_(rtc::ADAPTER_TYPE_UNKNOWN),
       underlying_type_for_vpn_(rtc::ADAPTER_TYPE_UNKNOWN),
       generation_(0),
@@ -74,6 +75,17 @@ bool Candidate::is_prflx() const {
 }
 bool Candidate::is_relay() const {
   return type_ == RELAY_PORT_TYPE;
+}
+
+absl::string_view Candidate::type_name() const {
+  
+  
+  
+  if (is_local())
+    return "host";
+  if (is_stun())
+    return "srflx";
+  return type_;
 }
 
 bool Candidate::IsEquivalent(const Candidate& c) const {
