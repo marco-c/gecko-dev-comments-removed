@@ -103,3 +103,40 @@ add_task(async function test_backup() {
 
   sandbox.restore();
 });
+
+
+
+
+
+add_task(async function test_recover() {
+  let cookiesBackupResource = new CookiesBackupResource();
+  let recoveryPath = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "CookiesBackupResource-recovery-test"
+  );
+  let destProfilePath = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "CookiesBackupResource-test-profile"
+  );
+
+  const simpleCopyFiles = [{ path: "cookies.sqlite" }];
+  await createTestFiles(recoveryPath, simpleCopyFiles);
+
+  
+  let postRecoveryEntry = await cookiesBackupResource.recover(
+    null ,
+    recoveryPath,
+    destProfilePath
+  );
+  Assert.equal(
+    postRecoveryEntry,
+    null,
+    "CookiesBackupResource.recover should return null as its post " +
+      "recovery entry"
+  );
+
+  await assertFilesExist(destProfilePath, simpleCopyFiles);
+
+  await maybeRemovePath(recoveryPath);
+  await maybeRemovePath(destProfilePath);
+});
