@@ -532,6 +532,13 @@ impl<'a> Display for Expected + 'a {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        note = "for local types consider adding `#[derive(serde::Deserialize)]` to your `{Self}` type",
+        note = "for types from other crates check whether the crate offers a `serde` feature flag",
+    )
+)]
 pub trait Deserialize<'de>: Sized {
     
     

@@ -95,7 +95,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.203")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.204")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -105,7 +105,7 @@
 
 
 
-#![cfg_attr(feature = "unstable", feature(error_in_core, never_type))]
+#![cfg_attr(feature = "unstable", feature(never_type))]
 #![allow(unknown_lints, bare_trait_objects, deprecated)]
 
 #![allow(
