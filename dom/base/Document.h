@@ -3451,8 +3451,8 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<nsDOMCaretPosition> CaretPositionFromPoint(float aX,
-                                                              float aY);
+  already_AddRefed<nsDOMCaretPosition> CaretPositionFromPoint(
+      float aX, float aY, const CaretPositionFromPointOptions& aOptions);
 
   Element* GetScrollingElement();
   
