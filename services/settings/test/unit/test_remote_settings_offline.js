@@ -1,13 +1,3 @@
-const { RemoteSettingsClient } = ChromeUtils.importESModule(
-  "resource://services-settings/RemoteSettingsClient.sys.mjs"
-);
-const { RemoteSettingsWorker } = ChromeUtils.importESModule(
-  "resource://services-settings/RemoteSettingsWorker.sys.mjs"
-);
-const { SharedUtils } = ChromeUtils.importESModule(
-  "resource://services-settings/SharedUtils.sys.mjs"
-);
-
 
 
 const TEST_BUCKET = "main";
@@ -17,7 +7,7 @@ let client;
 let DUMP_RECORDS;
 let DUMP_LAST_MODIFIED;
 
-add_task(async function setup() {
+add_setup(async () => {
   
   
   
