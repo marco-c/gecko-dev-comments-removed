@@ -257,14 +257,7 @@ void Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
                            size_t* data) const {
   code_->addSizeOfMiscIfNotSeen(mallocSizeOf, seenCodeMeta,
                                 seenCodeMetaForAsmJS, seenCode, code, data);
-  *data += mallocSizeOf(
-      this);  
-              
-              
-              
-              
-              
-              
+  *data += mallocSizeOf(this);
 }
 
 

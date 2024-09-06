@@ -1363,16 +1363,13 @@ void Module::initGCMallocBytesExcludingCode() {
   
   constexpr CoderMode MODE = MODE_SIZE;
   Coder<MODE> coder(codeMeta().types.get());
+
   
+  (void)CodeModuleMetadata<MODE>(coder, moduleMeta_);
   
-  
-  
-  
-  
-  
-  
-  
-  
+  if (!code().codeMeta().isAsmJS()) {
+    (void)CodeCodeMetadata<MODE>(coder, &code().codeMeta());
+  }
 
   
   size_t serializedSize = coder.size_.isValid() ? coder.size_.value() : 0;
