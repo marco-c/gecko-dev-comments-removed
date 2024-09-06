@@ -9,6 +9,7 @@ use crate::std::ffi::{OsStr, OsString};
 use crate::std::path::{Path, PathBuf};
 use crate::{lang, logging::LogTarget, std};
 use anyhow::Context;
+use once_cell::sync::Lazy;
 
 
 const MINIDUMP_PRUNE_SAVE_COUNT: usize = 10;
@@ -81,13 +82,6 @@ impl Config {
     
     #[cfg_attr(mock, allow(unused))]
     pub fn read_from_environment(&mut self) -> anyhow::Result<()> {
-        
-        macro_rules! ekey {
-            ( $name:literal ) => {
-                concat!("MOZ_CRASHREPORTER_", $name)
-            };
-        }
-
         self.auto_submit = env_bool(ekey!("AUTO_SUBMIT"));
         self.dump_all_threads = env_bool(ekey!("DUMP_ALL_THREADS"));
         self.delete_dump = !env_bool(ekey!("NO_DELETE_DUMP"));
@@ -493,17 +487,7 @@ impl Config {
 
 pub fn sibling_path<N: AsRef<OsStr>>(file: N) -> PathBuf {
     
-    
-    
-    
-    
-    
-    let dir_path = {
-        let mut path = self_path();
-        
-        path.pop();
-        path
-    };
+    let dir_path = self_path().parent().expect("program invoked based on PATH");
 
     let mut path = dir_path.join(file.as_ref());
 
@@ -515,19 +499,28 @@ pub fn sibling_path<N: AsRef<OsStr>>(file: N) -> PathBuf {
         
         
         
-        path = dir_path;
+
         
-        for _ in 0..3 {
-            path.pop();
+        
+        if let Some(ancestor) = dir_path.ancestors().nth(3) {
+            path = ancestor.join(file.as_ref());
         }
-        path.push(file.as_ref());
     }
 
     path
 }
 
-fn self_path() -> PathBuf {
-    PathBuf::from(std::env::args_os().next().expect("failed to get argv[0]"))
+fn self_path() -> &'static Path {
+    static PATH: Lazy<PathBuf> = Lazy::new(|| {
+        
+        
+        
+        
+        
+        
+        PathBuf::from(std::env::args_os().next().expect("failed to get argv[0]"))
+    });
+    &*PATH
 }
 
 fn env_bool<K: AsRef<OsStr>>(name: K) -> bool {
