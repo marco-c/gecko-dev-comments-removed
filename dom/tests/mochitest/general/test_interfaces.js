@@ -320,6 +320,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSNamespaceRule", insecureContext: true },
   
+  { name: "CSSPageDescriptors", insecureContext: true },
+  
   { name: "CSSPageRule", insecureContext: true },
   
   { name: "CSSPropertyRule", insecureContext: true },
