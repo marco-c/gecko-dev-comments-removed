@@ -1216,15 +1216,11 @@ class TestTranslationsTelemetry {
 
 
 
-
-
-
   static async assertEvent(
     event,
     {
       expectedEventCount,
       expectNewFlowId = null,
-      expectFirstInteraction = null,
       allValuePredicates = [],
       finalValuePredicates = [],
     }
@@ -1236,14 +1232,6 @@ class TestTranslationsTelemetry {
     const eventCount = events.length;
     const name =
       eventCount > 0 ? `${events[0].category}.${events[0].name}` : null;
-
-    if (eventCount > 0 && expectFirstInteraction !== null) {
-      is(
-        events[eventCount - 1].extra.first_interaction,
-        expectFirstInteraction ? "true" : "false",
-        "The newest event should be match the given first-interaction expectation"
-      );
-    }
 
     if (eventCount > 0 && expectNewFlowId !== null) {
       const flowId = events[eventCount - 1].extra.flow_id;
