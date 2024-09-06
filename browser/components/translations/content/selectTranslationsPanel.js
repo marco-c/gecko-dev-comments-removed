@@ -308,10 +308,18 @@ var SelectTranslationsPanel = new (class {
 
 
   handlePanelPopupShownEvent(event) {
-    const { panel } = this.elements;
+    const { panel, fromMenuPopup, toMenuPopup } = this.elements;
     switch (event.target.id) {
       case panel.id: {
         this.#updatePanelUIFromState();
+        break;
+      }
+      case fromMenuPopup.id: {
+        this.#maybeTranslateOnEvents(["popuphidden"], fromMenuPopup);
+        break;
+      }
+      case toMenuPopup.id: {
+        this.#maybeTranslateOnEvents(["popuphidden"], toMenuPopup);
         break;
       }
     }
@@ -337,7 +345,8 @@ var SelectTranslationsPanel = new (class {
 
 
   onChangeFromLanguage() {
-    const { toMenuList } = this.elements;
+    const { fromMenuList, toMenuList } = this.elements;
+    this.#maybeTranslateOnEvents(["blur", "keypress"], fromMenuList);
     this.#maybeStealLanguageFrom(toMenuList);
   }
 
@@ -345,7 +354,8 @@ var SelectTranslationsPanel = new (class {
 
 
   onChangeToLanguage() {
-    const { fromMenuList } = this.elements;
+    const { toMenuList, fromMenuList } = this.elements;
+    this.#maybeTranslateOnEvents(["blur", "keypress"], toMenuList);
     this.#maybeStealLanguageFrom(fromMenuList);
   }
 
@@ -804,5 +814,61 @@ var SelectTranslationsPanel = new (class {
         }
       })
       .catch(error => this.console?.error(error));
+  }
+
+  
+
+
+
+
+
+
+  #maybeTranslateOnEvents(eventTypes, target) {
+    if (!target.translationListenerCallbacks) {
+      target.translationListenerCallbacks = [];
+    }
+    if (target.translationListenerCallbacks.length === 0) {
+      for (const eventType of eventTypes) {
+        let callback;
+        switch (eventType) {
+          case "blur":
+          case "popuphidden": {
+            callback = () => {
+              this.#maybeRequestTranslation();
+              this.#removeTranslationListeners(target);
+            };
+            break;
+          }
+          case "keypress": {
+            callback = event => {
+              if (event.key === "Enter") {
+                this.#maybeRequestTranslation();
+              }
+              this.#removeTranslationListeners(target);
+            };
+            break;
+          }
+          default: {
+            throw new Error(
+              `Invalid translation event type given: '${eventType}`
+            );
+          }
+        }
+        target.addEventListener(eventType, callback, { once: true });
+        target.translationListenerCallbacks.push({ eventType, callback });
+      }
+    }
+  }
+
+  
+
+
+
+
+  #removeTranslationListeners(target) {
+    for (const { eventType, callback } of target.translationListenerCallbacks) {
+      target.removeEventListener(eventType, callback);
+    }
+    target.translationListenerCallbacks = [];
   }
 })();
