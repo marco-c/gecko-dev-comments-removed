@@ -350,7 +350,11 @@ where
             rule_inclusion,
             PseudoElementResolution::IfApplicable,
         )
-        .resolve_primary_style(style.as_deref(), layout_parent_style.as_deref());
+        .resolve_primary_style(
+            style.as_deref(),
+            layout_parent_style.as_deref(),
+            selectors::matching::IncludeStartingStyle::No,
+        );
 
         let is_display_contents = primary_style.style().is_display_contents();
 
@@ -639,7 +643,10 @@ where
                 PseudoElementResolution::IfApplicable,
             );
 
-            resolver.cascade_styles_with_default_parents(cascade_inputs)
+            resolver.cascade_styles_with_default_parents(
+                cascade_inputs,
+                data.may_have_starting_style(),
+            )
         },
         CascadeOnly => {
             
@@ -653,7 +660,10 @@ where
                     PseudoElementResolution::IfApplicable,
                 );
 
-                resolver.cascade_styles_with_default_parents(cascade_inputs)
+                resolver.cascade_styles_with_default_parents(
+                    cascade_inputs,
+                    data.may_have_starting_style(),
+                )
             };
 
             

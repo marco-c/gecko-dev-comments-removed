@@ -21,8 +21,10 @@ use crate::properties::PropertyDeclarationBlock;
 use crate::rule_tree::{CascadeLevel, StrongRuleNode};
 use crate::selector_parser::{PseudoElement, RestyleDamage};
 use crate::shared_lock::Locked;
-use crate::style_resolver::ResolvedElementStyles;
-use crate::style_resolver::{PseudoElementResolution, StyleResolverForElement};
+use crate::style_resolver::{PseudoElementResolution, ResolvedElementStyles};
+#[cfg(feature = "gecko")]
+use crate::style_resolver::ResolvedStyle;
+use crate::style_resolver::StyleResolverForElement;
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
@@ -385,6 +387,96 @@ trait PrivateMatchMethods: TElement {
     }
 
     #[cfg(feature = "gecko")]
+    fn resolve_starting_style(
+        &self,
+        context: &mut StyleContext<Self>,
+    ) -> ResolvedStyle {
+        use selectors::matching::IncludeStartingStyle;
+
+        
+        
+        
+        let parent_el = self.inheritance_parent();
+        let parent_data = parent_el.as_ref().and_then(|e| e.borrow_data());
+        let parent_style = parent_data.as_ref().map(|d| d.styles.primary());
+        let parent_after_change_style =
+            parent_style.and_then(|s| self.after_change_style(context, s));
+        let parent_values = parent_after_change_style
+            .as_ref()
+            .or(parent_style)
+            .map(|x| &**x);
+
+        let mut layout_parent_el = parent_el.clone();
+        let layout_parent_data;
+        let layout_parent_after_change_style;
+        let layout_parent_values = if parent_style.map_or(false, |s| s.is_display_contents()) {
+            layout_parent_el = Some(layout_parent_el.unwrap().layout_parent());
+            layout_parent_data = layout_parent_el.as_ref().unwrap().borrow_data().unwrap();
+            let layout_parent_style = Some(layout_parent_data.styles.primary());
+            layout_parent_after_change_style =
+                layout_parent_style.and_then(|s| self.after_change_style(context, s));
+            layout_parent_after_change_style
+                .as_ref()
+                .or(layout_parent_style)
+                .map(|x| &**x)
+        } else {
+            parent_values
+        };
+
+        
+        
+        
+        
+        
+        let mut resolver = StyleResolverForElement::new(
+            *self,
+            context,
+            RuleInclusion::All,
+            PseudoElementResolution::IfApplicable,
+        );
+        resolver
+            .resolve_primary_style(
+                parent_values,
+                layout_parent_values,
+                IncludeStartingStyle::Yes,
+            )
+            .style
+    }
+
+    #[cfg(feature = "gecko")]
+    fn maybe_resolve_starting_style(
+        &self,
+        context: &mut StyleContext<Self>,
+        old_styles: &ElementStyles,
+        new_styles: &ResolvedElementStyles,
+    ) -> Option<Arc<ComputedValues>> {
+        
+        
+        
+        
+        if !new_styles.may_have_starting_style()
+            || !new_styles.primary_style().get_ui().specifies_transitions()
+        {
+            return None;
+        }
+
+        
+        
+        
+        
+        if old_styles.primary.is_some() {
+            return None;
+        }
+
+        let starting_style = self.resolve_starting_style(context);
+        if starting_style.style().clone_display().is_none() {
+            return None;
+        }
+
+        Some(starting_style.0)
+    }
+
+    #[cfg(feature = "gecko")]
     fn process_animations(
         &self,
         context: &mut StyleContext<Self>,
@@ -395,17 +487,20 @@ trait PrivateMatchMethods: TElement {
     ) {
         use crate::context::UpdateAnimationsTasks;
 
-        let new_values = new_styles.primary_style_mut();
         let old_values = &old_styles.primary;
         if context.shared.traversal_flags.for_animation_only() {
             self.handle_display_change_for_smil_if_needed(
                 context,
                 old_values.as_deref(),
-                new_values,
+                new_styles.primary_style(),
                 restyle_hint,
             );
             return;
         }
+
+        
+        let _starting_styles = self.maybe_resolve_starting_style(context, old_styles, new_styles);
+        let new_values = new_styles.primary_style_mut();
 
         
         
