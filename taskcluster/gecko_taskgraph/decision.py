@@ -235,8 +235,13 @@ def taskgraph_decision(options, parameters=None):
     scripts_root_dir = os.path.join(GECKO, "taskcluster/scripts")
     run_task_file_path = os.path.join(scripts_root_dir, "run-task")
     fetch_content_file_path = os.path.join(scripts_root_dir, "misc/fetch-content")
+    robustcheckout_path = os.path.join(
+        GECKO,
+        "testing/mozharness/external_tools/robustcheckout.py",
+    )
     shutil.copy2(run_task_file_path, ARTIFACTS_DIR)
     shutil.copy2(fetch_content_file_path, ARTIFACTS_DIR)
+    shutil.copy2(robustcheckout_path, ARTIFACTS_DIR)
 
     
     create_tasks(
