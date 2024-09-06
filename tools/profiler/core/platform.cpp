@@ -42,7 +42,12 @@
 #include "ProfilerIOInterposeObserver.h"
 #include "ProfilerParent.h"
 #include "ProfilerRustBindings.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
+#include "nsCOMPtr.h"
+#include "nsDebug.h"
+#include "nsXPCOM.h"
 #include "shared-libraries.h"
 #include "VTuneProfiler.h"
 #include "ETWTools.h"
@@ -95,6 +100,7 @@
 #include "nsSystemInfo.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
+#include "nsDirectoryServiceUtils.h"
 #include "Tracing.h"
 #include "prdtoa.h"
 #include "prtime.h"
@@ -107,6 +113,18 @@
 #include <sstream>
 #include <string_view>
 #include <type_traits>
+
+
+
+
+#ifndef MOZ_CODE_COVERAGE
+#  ifdef XP_WIN
+
+#  else
+#    include <signal.h>
+#    include <unistd.h>
+#  endif
+#endif
 
 #if defined(GP_OS_android)
 #  include "JavaExceptions.h"
@@ -233,6 +251,10 @@ ProfileChunkedBuffer& profiler_get_core_buffer() {
 }
 
 mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
+
+
+mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> gStopAndDumpFromSignal(
+    false);
 
 #if defined(GP_OS_android)
 class GeckoJavaSampler
@@ -647,6 +669,7 @@ class CorePS {
 
   PS_GET_AND_SET(const nsACString&, ProcessName)
   PS_GET_AND_SET(const nsACString&, ETLDplus1)
+  PS_GET_AND_SET(const Maybe<nsCOMPtr<nsIFile>>&, DownloadDirectory)
 
   static void SetBandwidthCounter(ProfilerBandwidthCounter* aBandwidthCounter) {
     MOZ_ASSERT(sInstance);
@@ -695,6 +718,9 @@ class CorePS {
   
   
   JsFrameBuffer mJsFrames;
+
+  
+  Maybe<nsCOMPtr<nsIFile>> mDownloadDirectory;
 };
 
 CorePS* CorePS::sInstance = nullptr;
@@ -2933,16 +2959,6 @@ static void StreamMetaJSCustomObject(
   ActivePS::WriteActiveConfiguration(aLock, aWriter,
                                      MakeStringSpan("configuration"));
 
-  if (!NS_IsMainThread()) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
   aWriter.DoubleProperty("interval", ActivePS::Interval(aLock));
   aWriter.IntProperty("stackwalk", ActivePS::FeatureStackWalk(aLock));
 
@@ -3018,6 +3034,16 @@ static void StreamMetaJSCustomObject(
     StreamMetaPlatformSampleUnits(aLock, aWriter);
   }
   aWriter.EndObject();
+
+  if (!NS_IsMainThread()) {
+    
+    
+    
+    
+    
+    
+    return;
+  }
 
   
   
@@ -4079,6 +4105,10 @@ static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
 
 
 
+void profiler_dump_and_stop();
+
+
+
 void SamplerThread::Run() {
   NS_SetCurrentThreadName("SamplerThread");
 
@@ -4732,6 +4762,27 @@ void SamplerThread::Run() {
       scheduledSampleStart = beforeSleep + sampleInterval;
       SleepMicro(static_cast<uint32_t>(sampleInterval.ToMicroseconds()));
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (gStopAndDumpFromSignal) {
+      
+      gStopAndDumpFromSignal = false;
+      
+      profiler_dump_and_stop();
+      
+      
+      
+      
+      return;
+    }
   }
 
   
@@ -5240,6 +5291,102 @@ static const char* get_size_suffix(const char* str) {
   return ptr;
 }
 
+#if !defined(XP_WIN) && !defined(MOZ_CODE_COVERAGE)
+static void profiler_stop_signal_handler(int signal, siginfo_t* info,
+                                         void* context) {
+  
+  
+  
+  
+  
+  
+  gStopAndDumpFromSignal = true;
+}
+#endif
+
+
+
+
+Maybe<nsAutoCString> profiler_find_dump_path() {
+  Maybe<nsCOMPtr<nsIFile>> directory = Nothing();
+  nsAutoCString path;
+
+  {
+    
+    PSAutoLock lock;
+    Maybe<nsCOMPtr<nsIFile>> downloadDir = Nothing();
+    downloadDir = CorePS::DownloadDirectory(lock);
+
+    
+    
+    
+    if (downloadDir) {
+      nsCOMPtr<nsIFile> d;
+      downloadDir.value()->Clone(getter_AddRefs(d));
+      directory = Some(d);
+    } else {
+      return Nothing();
+    }
+  }
+
+  
+  
+  if (directory) {
+    
+    path.AppendPrintf("profile_%i_%i.json", XRE_GetProcessType(), getpid());
+
+    
+    nsresult rv = directory.value()->AppendNative(path);
+    if (NS_FAILED(rv)) {
+      LOG("Failed to append path to profile file");
+      return Nothing();
+    }
+
+
+#if defined(XP_WIN)
+    rv = directory.value()->GetNativeTarget(path);
+#else
+    rv = directory.value()->GetNativePath(path);
+#endif
+    if (NS_FAILED(rv)) {
+      LOG("Failed to get native path for temp path");
+      return Nothing();
+    }
+
+    return Some(path);
+  }
+
+  return Nothing();
+}
+
+void profiler_dump_and_stop() {
+  
+  profiler_pause();
+
+  
+  if (auto path = profiler_find_dump_path()) {
+    profiler_save_profile_to_file(path.value().get());
+  } else {
+    LOG("Failed to dump profile to disk");
+  }
+
+  
+  profiler_stop();
+}
+
+void profiler_init_signal_handlers() {
+#if !defined(XP_WIN) && !defined(MOZ_CODE_COVERAGE)
+  
+  struct sigaction prof_stop_sa {};
+  memset(&prof_stop_sa, 0, sizeof(struct sigaction));
+  prof_stop_sa.sa_sigaction = profiler_stop_signal_handler;
+  prof_stop_sa.sa_flags = SA_RESTART | SA_SIGINFO;
+  sigemptyset(&prof_stop_sa.sa_mask);
+  DebugOnly<int> rstop = sigaction(SIGUSR2, &prof_stop_sa, nullptr);
+  MOZ_ASSERT(rstop == 0, "Failed to install Profiler SIGUSR2 handler");
+#endif
+}
+
 void profiler_init(void* aStackTop) {
   LOG("profiler_init");
 
@@ -5289,9 +5436,11 @@ void profiler_init(void* aStackTop) {
         locked_register_thread(lock, offThreadRef);
       }
     }
-
     
     PlatformInit(lock);
+
+    
+    profiler_init_signal_handlers();
 
 #if defined(GP_OS_android)
     if (jni::IsAvailable()) {
@@ -6307,6 +6456,32 @@ bool profiler_is_paused() {
   PSAutoLock lock;
 
   return ActivePS::AppendPostSamplingCallback(lock, std::move(aCallback));
+}
+
+
+void profiler_lookup_download_directory() {
+  LOG("profiler_lookup_download_directory");
+
+  MOZ_ASSERT(
+      NS_IsMainThread(),
+      "We can only get access to the directory service from the main thread");
+
+  
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  
+  PSAutoLock lock;
+
+  nsCOMPtr<nsIFile> tDownloadDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_DEFAULT_DOWNLOAD_DIR,
+                                       getter_AddRefs(tDownloadDir));
+  if (NS_FAILED(rv)) {
+    LOG("Failed to find download directory. Profiler signal handling will not "
+        "be able to save to disk. Error: %s",
+        GetStaticErrorName(rv));
+  } else {
+    CorePS::SetDownloadDirectory(lock, Some(tDownloadDir));
+  }
 }
 
 RefPtr<GenericPromise> profiler_pause() {
