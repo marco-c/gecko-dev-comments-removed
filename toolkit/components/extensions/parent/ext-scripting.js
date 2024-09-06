@@ -95,7 +95,7 @@ const execute = (context, details, kind, method) => {
   options.runAt = details.injectImmediately
     ? "document_start"
     : "document_idle";
-  options.matchAboutBlank = true;
+  options.matchOriginAsFallback = true; 
   options.wantReturnValue = true;
   
   
