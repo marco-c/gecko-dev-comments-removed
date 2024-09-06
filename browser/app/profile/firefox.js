@@ -3027,11 +3027,8 @@ pref("browser.mailto.dualPrompt", false);
 
 pref("browser.mailto.prompt.os", true);
 
-#if defined(NIGHTLY_BUILD)
+
 pref("browser.backup.enabled", true);
-#else
-pref("browser.backup.enabled", false);
-#endif
 
 
 pref("browser.profiles.enabled", false);
