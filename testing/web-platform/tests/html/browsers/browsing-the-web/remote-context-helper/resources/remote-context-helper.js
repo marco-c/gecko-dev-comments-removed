@@ -88,6 +88,10 @@
     return new URL(url, location).toString();
   }
 
+  async function fetchText(url) {
+    return fetch(url).then(r => r.text());
+  }
+
   
 
 
@@ -109,13 +113,21 @@
 
 
 
+
+
+
+
+
+
+
     constructor(
-        {origin, scripts = [], headers = [], startOn, status} = {}) {
+        {origin, scripts = [], headers = [], startOn, status, urlType} = {}) {
       this.origin = origin;
       this.scripts = scripts;
       this.headers = headers;
       this.startOn = startOn;
       this.status = status;
+      this.urlType = urlType;
     }
 
     
@@ -152,15 +164,59 @@
       if (extraConfig.status) {
         status = extraConfig.status;
       }
+      let urlType = this.urlType;
+      if (extraConfig.urlType) {
+        urlType = extraConfig.urlType;
+      }
       const headers = this.headers.concat(extraConfig.headers);
       const scripts = this.scripts.concat(extraConfig.scripts);
-      return new RemoteContextConfig({
-        origin,
-        headers,
-        scripts,
-        startOn,
-        status
-      });
+      return new RemoteContextConfig(
+          {origin, headers, scripts, startOn, status, urlType});
+    }
+
+    
+
+
+
+
+
+
+    async createExecutorUrl(uuid, isWorker) {
+      const origin = finalizeOrigin(this.origin);
+      const url = new URL(
+          isWorker ? WORKER_EXECUTOR_PATH : WINDOW_EXECUTOR_PATH, origin);
+
+      
+      url.searchParams.append('uuid', uuid);
+
+      if (this.headers) {
+        addHeaders(url, this.headers);
+      }
+      for (const script of this.scripts) {
+        url.searchParams.append('script', makeAbsolute(script));
+      }
+
+      if (this.startOn) {
+        url.searchParams.append('startOn', this.startOn);
+      }
+
+      if (this.status) {
+        url.searchParams.append('status', this.status);
+      }
+
+      const urlType = this.urlType || 'origin';
+      switch (urlType) {
+        case 'origin':
+        case 'blank':
+          return url.href;
+        case 'data':
+          return `data:text/html;base64,${btoa(await fetchText(url.href))}`;
+        case 'blob':
+          return URL.createObjectURL(
+              new Blob([await fetchText(url.href)], {type: 'text/html'}));
+        default:
+          throw TypeError(`Invalid urlType: ${urlType}`);
+      };
     }
   }
 
@@ -211,34 +267,19 @@
       const config =
           this.config.merged(RemoteContextConfig.ensure(extraConfig));
 
-      const origin = finalizeOrigin(config.origin);
-      const url = new URL(
-          isWorker ? WORKER_EXECUTOR_PATH : WINDOW_EXECUTOR_PATH, origin);
-
       
       const uuid = token();
-      url.searchParams.append('uuid', uuid);
-
-      if (config.headers) {
-        addHeaders(url, config.headers);
-      }
-      for (const script of config.scripts) {
-        url.searchParams.append('script', makeAbsolute(script));
-      }
-
-      if (config.startOn) {
-        url.searchParams.append('startOn', config.startOn);
-      }
-
-      if (config.status) {
-        url.searchParams.append('status', config.status);
-      }
+      const url = await config.createExecutorUrl(uuid, isWorker);
 
       if (executorCreator) {
-        await executorCreator(url.href);
+        if (config.urlType == 'blank') {
+          await executorCreator(undefined, await fetchText(url));
+        } else {
+          await executorCreator(url, undefined);
+        }
       }
 
-      return new RemoteContextWrapper(new RemoteContext(uuid), this, url.href);
+      return new RemoteContextWrapper(new RemoteContext(uuid), this, url);
     }
 
     
@@ -280,30 +321,46 @@
   }
 
   function windowExecutorCreator({target = '_blank', features} = {}) {
-    return url => {
-      window.open(url, target, features);
+    return (url, documentContent) => {
+      if (url && url.substring(0, 5) == 'data:') {
+        throw new TypeError('Windows cannot use data: URLs.');
+      }
+
+      const w = window.open(url, target, features);
+      if (documentContent) {
+        w.document.open();
+        w.document.write(documentContent);
+        w.document.close();
+      }
     };
   }
 
   function elementExecutorCreator(
       remoteContextWrapper, elementName, attributes) {
-    return url => {
+    return (url, documentContent) => {
       return remoteContextWrapper.executeScript(
-          (url, elementName, attributes) => {
+          (url, elementName, attributes, documentContent) => {
             const el = document.createElement(elementName);
             for (const attribute in attributes) {
               el.setAttribute(attribute, attributes[attribute]);
             }
-            if (elementName == 'object') {
-              el.data = url;
-            } else {
-              el.src = url;
+            if (url) {
+              if (elementName == 'object') {
+                el.data = url;
+              } else {
+                el.src = url;
+              }
             }
             const parent =
                 elementName == 'frame' ? findOrCreateFrameset() : document.body;
             parent.appendChild(el);
+            if (documentContent) {
+              el.contentDocument.open();
+              el.contentDocument.write(documentContent);
+              el.contentDocument.close();
+            }
           },
-          [url, elementName, attributes]);
+          [url, elementName, attributes, documentContent]);
     };
   }
 
@@ -312,7 +369,8 @@
       
       
       
-      attributes['srcdoc'] = await fetch(url).then(r => r.text());
+      attributes['srcdoc'] = await fetchText(url);
+
       elementExecutorCreator(
           remoteContextWrapper, 'iframe', attributes)(undefined);
     };

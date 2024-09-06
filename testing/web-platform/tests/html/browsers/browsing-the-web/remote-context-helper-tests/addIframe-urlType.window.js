@@ -1,0 +1,59 @@
+
+
+
+
+
+
+
+
+
+
+
+'use strict';
+
+
+promise_test(async t => {
+  
+  assert_equals(
+      location.origin, get_host_info()['HTTP_ORIGIN'],
+      'test window was loaded on HTTP_ORIGIN');
+  const rcHelper = new RemoteContextHelper();
+
+  const main = await rcHelper.addWindow();
+
+  const urlType = getUrlType(location);
+  const iframe = await main.addIframe(
+       {
+        scripts: ['./resources/test-script.js'],
+        urlType: urlType,
+      },
+       {id: 'test-id'},
+  );
+
+  await assertSimplestScriptRuns(iframe);
+  await assertFunctionRuns(iframe, () => testFunction(), 'testFunction exists');
+
+  const [id, src] = await main.executeScript(() => {
+    const iframe = document.getElementById('test-id');
+    return [iframe.id, iframe.src];
+  });
+  assert_equals(id, 'test-id', 'verify id');
+  switch (urlType) {
+    case 'origin':
+      const url = new URL(location);
+      const origin = url.origin;
+      assert_equals(src.substring(0, origin.length), origin, 'verify src');
+      break;
+    case 'blank':
+      assert_equals(src, '', 'verify src');
+      break;
+    case 'data':
+      assert_regexp_match(src, /^data:/, 'verify src');
+      break;
+    case 'blob':
+      assert_regexp_match(src, /^blob:/, 'verify src');
+      break;
+    default:
+      throw new Error(`Unknown urlType: ${urlType}`);
+  }
+});
