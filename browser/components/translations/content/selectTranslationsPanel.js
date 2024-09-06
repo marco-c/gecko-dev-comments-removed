@@ -238,12 +238,32 @@ var SelectTranslationsPanel = new (class {
 
     
     
-    const actor = TranslationsParent.getTranslationsActor(
-      gBrowser.selectedBrowser
-    );
-    const detectedLanguages = actor.languageState.detectedLanguages;
-    if (detectedLanguages?.isDocLangTagSupported) {
-      return detectedLanguages.docLangTag;
+    try {
+      const actor = TranslationsParent.getTranslationsActor(
+        gBrowser.selectedBrowser
+      );
+      const detectedLanguages = actor.languageState.detectedLanguages;
+      if (detectedLanguages?.isDocLangTagSupported) {
+        return detectedLanguages.docLangTag;
+      }
+    } catch (error) {
+      
+      
+      
+      
+      
+      if (
+        !TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)
+      ) {
+        
+        
+        
+        
+        this.console?.warn(
+          "Failed to retrieve the TranslationsParent actor on a page where Full Page Translations is not restricted."
+        );
+        this.console?.error(error);
+      }
     }
 
     
@@ -729,19 +749,30 @@ var SelectTranslationsPanel = new (class {
   onClickTranslateFullPageButton() {
     const { panel } = this.elements;
     const { fromLanguage, toLanguage } = this.#getSelectedLanguagePair();
-    const actor = TranslationsParent.getTranslationsActor(
-      gBrowser.selectedBrowser
-    );
-    panel.addEventListener(
-      "popuphidden",
-      () =>
-        actor.translate(
-          fromLanguage,
-          toLanguage,
-          false 
-        ),
-      { once: true }
-    );
+
+    try {
+      const actor = TranslationsParent.getTranslationsActor(
+        gBrowser.selectedBrowser
+      );
+      panel.addEventListener(
+        "popuphidden",
+        () =>
+          actor.translate(
+            fromLanguage,
+            toLanguage,
+            false 
+          ),
+        { once: true }
+      );
+    } catch (error) {
+      
+      
+      
+      
+      
+      this.console?.error(error);
+    }
+
     this.close();
   }
 
