@@ -1215,6 +1215,10 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(a));
   MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(b));
 
+  
+  
+  gc::AutoSuppressGC nogc(cx);
+
   if (!Watchtower::watchObjectSwap(cx, a, b)) {
     oomUnsafe.crash("watchObjectSwap");
   }
@@ -1305,10 +1309,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
       a->as<ProxyObject>().setInlineValueArray();
     }
   } else {
-    
-    
-    gc::AutoSuppressGC suppress(cx);
-
     
     
     
