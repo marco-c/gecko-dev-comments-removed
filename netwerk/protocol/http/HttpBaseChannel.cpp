@@ -5980,7 +5980,8 @@ HttpBaseChannel::SetNavigationStartTimeStamp(TimeStamp aTimeStamp) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult HttpBaseChannel::CheckRedirectLimit(uint32_t aRedirectFlags) const {
+nsresult HttpBaseChannel::CheckRedirectLimit(nsIURI* aNewURI,
+                                             uint32_t aRedirectFlags) const {
   if (aRedirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
     
     
@@ -6017,11 +6018,35 @@ nsresult HttpBaseChannel::CheckRedirectLimit(uint32_t aRedirectFlags) const {
   
   
   if (nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
-          mURI, mLoadInfo,
+          mURI, aNewURI, mLoadInfo,
           {nsHTTPSOnlyUtils::UpgradeDowngradeEndlessLoopOptions::
                EnforceForHTTPSOnlyMode})) {
+    
+    
+    
+    
+    
+    uint32_t httpsOnlyStatus = mLoadInfo->GetHttpsOnlyStatus();
+    if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UNINITIALIZED) {
+      httpsOnlyStatus ^= nsILoadInfo::HTTPS_ONLY_UNINITIALIZED;
+      httpsOnlyStatus |=
+          nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED;
+      mLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+    }
+
     LOG(("upgrade downgrade redirect loop!\n"));
     return NS_ERROR_REDIRECT_LOOP;
+  }
+  
+  
+  
+  if (mozilla::StaticPrefs::
+          dom_security_https_first_add_exception_on_failiure() &&
+      nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
+          mURI, aNewURI, mLoadInfo,
+          {nsHTTPSOnlyUtils::UpgradeDowngradeEndlessLoopOptions::
+               EnforceForHTTPSFirstMode})) {
+    nsHTTPSOnlyUtils::AddHTTPSFirstExceptionForSession(mURI, mLoadInfo);
   }
 
   return NS_OK;

@@ -266,7 +266,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
 
 
 bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
-    nsIURI* aURI, nsILoadInfo* aLoadInfo,
+    nsIURI* aOldURI, nsIURI* aNewURI, nsILoadInfo* aLoadInfo,
     const mozilla::EnumSet<UpgradeDowngradeEndlessLoopOptions>& aOptions) {
   
   
@@ -309,82 +309,45 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 
   
   
-  if (!aURI->SchemeIs("http")) {
-    return false;
+  
+  
+  
+  
+  if (IsHttpDowngrade(aOldURI, aNewURI)) {
+    return true;
   }
 
-  nsAutoCString uriHost;
-  aURI->GetAsciiHost(uriHost);
-
-  auto uriAndPrincipalComparator = [&](nsIPrincipal* aPrincipal) {
-    nsAutoCString principalHost;
-    aPrincipal->GetAsciiHost(principalHost);
-    bool checkPath = mozilla::StaticPrefs::
-        dom_security_https_only_check_path_upgrade_downgrade_endless_loop();
-    if (!checkPath) {
-      return uriHost.Equals(principalHost);
-    }
-
-    nsAutoCString uriPath;
-    nsresult rv = aURI->GetFilePath(uriPath);
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-    nsAutoCString principalPath;
-    aPrincipal->GetFilePath(principalPath);
-    return uriHost.Equals(principalHost) && uriPath.Equals(principalPath);
-  };
-
   
   
-  bool isLoop = false;
 
   
   
   
   
   
-  
-  if (!aLoadInfo->RedirectChain().IsEmpty()) {
-    nsCOMPtr<nsIPrincipal> redirectPrincipal;
-    for (nsIRedirectHistoryEntry* entry : aLoadInfo->RedirectChain()) {
-      entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
-      if (redirectPrincipal && redirectPrincipal->SchemeIs("https") &&
-          uriAndPrincipalComparator(redirectPrincipal)) {
-        isLoop = true;
-      }
-    }
-  } else {
-    
-    
-    
-    
+  if (aLoadInfo->RedirectChain().IsEmpty()) {
     if (aLoadInfo->GetHasValidUserGestureActivation()) {
       return false;
     }
   }
 
-  if (!isLoop) {
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> triggeringPrincipal =
-        aLoadInfo->TriggeringPrincipal();
-    if (!triggeringPrincipal->SchemeIs("https")) {
-      return false;
-    }
-    isLoop = uriAndPrincipalComparator(triggeringPrincipal);
+  
+  
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
+  if (!triggeringPrincipal->SchemeIs("https")) {
+    return false;
   }
 
-  if (isLoop && enforceForHTTPSFirstMode &&
-      mozilla::StaticPrefs::
-          dom_security_https_first_add_exception_on_failiure()) {
-    AddHTTPSFirstExceptionForSession(aURI, aLoadInfo);
+  
+  
+  if (!IsHttpDowngrade(aNewURI, aOldURI)) {
+    return false;
   }
-
+  
+  
+  bool isLoop = false;
+  nsresult rv = triggeringPrincipal->EqualsURI(aNewURI, &isLoop);
+  NS_ENSURE_SUCCESS(rv, false);
   return isLoop;
 }
 
@@ -444,12 +407,19 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   
   
   
-  bool isUpgradeDowngradeEndlessLoop = IsUpgradeDowngradeEndlessLoop(
-      aURI, aLoadInfo,
-      {UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSFirstMode});
-  if (isUpgradeDowngradeEndlessLoop) {
-    return false;
-  }
+  
+  
+
+
+
+
+
+
+
+
+
+
+
 
   
   
@@ -900,18 +870,10 @@ bool nsHTTPSOnlyUtils::LoopbackOrLocalException(nsIURI* aURI) {
 }
 
 
-bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
-                                                    nsIURI* aOtherURI,
-                                                    nsILoadInfo* aLoadInfo) {
+bool nsHTTPSOnlyUtils::ShouldUpgradeConnection(nsILoadInfo* aLoadInfo) {
   
   
-  if (!aHTTPSSchemeURI || !aOtherURI || !aLoadInfo) {
-    return false;
-  }
-
-  
-  
-  if (!mozilla::net::SchemeIsHTTP(aOtherURI)) {
+  if (!aLoadInfo) {
     return false;
   }
 
@@ -927,11 +889,32 @@ bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
   if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
     return false;
   }
+  return true;
+}
+
+
+bool nsHTTPSOnlyUtils::IsHttpDowngrade(nsIURI* aFromURI, nsIURI* aToURI) {
+  MOZ_ASSERT(aFromURI);
+  MOZ_ASSERT(aToURI);
+
+  if (!aFromURI || !aToURI) {
+    return false;
+  }
+
+  
+  if (!mozilla::net::SchemeIsHTTP(aToURI)) {
+    return false;
+  }
+
+  
+  if (!mozilla::net::SchemeIsHTTPS(aFromURI)) {
+    return false;
+  }
 
   
   
   int32_t port = 0;
-  nsresult rv = aOtherURI->GetPort(&port);
+  nsresult rv = aToURI->GetPort(&port);
   NS_ENSURE_SUCCESS(rv, false);
   
   
@@ -940,15 +923,14 @@ bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
     port = NS_GetDefaultPort("https");
   }
   nsCOMPtr<nsIURI> newHTTPSchemeURI;
-  rv = NS_MutateURI(aOtherURI)
+  rv = NS_MutateURI(aToURI)
            .SetScheme("https"_ns)
            .SetPort(port)
            .Finalize(newHTTPSchemeURI);
   NS_ENSURE_SUCCESS(rv, false);
 
   bool uriEquals = false;
-  if (NS_FAILED(
-          aHTTPSSchemeURI->EqualsExceptRef(newHTTPSchemeURI, &uriEquals))) {
+  if (NS_FAILED(aFromURI->EqualsExceptRef(newHTTPSchemeURI, &uriEquals))) {
     return false;
   }
 
