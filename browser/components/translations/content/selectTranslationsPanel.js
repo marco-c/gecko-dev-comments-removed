@@ -290,6 +290,13 @@ var SelectTranslationsPanel = new (class {
 
   async getTopSupportedDetectedLanguage(textToTranslate) {
     
+    
+    
+    const { docLangTag, isDocLangTagSupported } = this.#getLanguageInfo(
+       true
+    );
+
+    
     const { language, languages } = await LanguageDetector.detectLanguage(
       textToTranslate
     );
@@ -304,9 +311,6 @@ var SelectTranslationsPanel = new (class {
 
     
     
-    const { docLangTag, isDocLangTagSupported } = this.#getLanguageInfo(
-       true
-    );
     if (isDocLangTagSupported) {
       return docLangTag;
     }
