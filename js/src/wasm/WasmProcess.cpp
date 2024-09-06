@@ -46,7 +46,7 @@ using mozilla::BinarySearchIf;
 
 
 
-using CodeSegmentVector = Vector<const CodeSegment*, 0, SystemAllocPolicy>;
+using CodeBlockVector = Vector<const CodeBlock*, 0, SystemAllocPolicy>;
 
 Atomic<bool> wasm::CodeExists(false);
 
@@ -61,29 +61,29 @@ Atomic<bool> wasm::CodeExists(false);
 
 static Atomic<size_t> sNumActiveLookups(0);
 
-class ProcessCodeSegmentMap {
+class ThreadSafeCodeBlockMap {
   
   
 
   Mutex mutatorsMutex_ MOZ_UNANNOTATED;
 
-  CodeSegmentVector segments1_;
-  CodeSegmentVector segments2_;
+  CodeBlockVector segments1_;
+  CodeBlockVector segments2_;
 
   
   
 
-  CodeSegmentVector* mutableCodeSegments_;
-  Atomic<const CodeSegmentVector*> readonlyCodeSegments_;
+  CodeBlockVector* mutableCodeBlocks_;
+  Atomic<const CodeBlockVector*> readonlyCodeBlocks_;
 
-  struct CodeSegmentPC {
+  struct CodeBlockPC {
     const void* pc;
-    explicit CodeSegmentPC(const void* pc) : pc(pc) {}
-    int operator()(const CodeSegment* cs) const {
-      if (cs->containsCodePC(pc)) {
+    explicit CodeBlockPC(const void* pc) : pc(pc) {}
+    int operator()(const CodeBlock* cb) const {
+      if (cb->containsCodePC(pc)) {
         return 0;
       }
-      if (pc < cs->base()) {
+      if (pc < cb->base()) {
         return -1;
       }
       return 1;
@@ -100,8 +100,8 @@ class ProcessCodeSegmentMap {
     
     
 
-    mutableCodeSegments_ = const_cast<CodeSegmentVector*>(
-        readonlyCodeSegments_.exchange(mutableCodeSegments_));
+    mutableCodeBlocks_ = const_cast<CodeBlockVector*>(
+        readonlyCodeBlocks_.exchange(mutableCodeBlocks_));
 
     
     
@@ -121,12 +121,12 @@ class ProcessCodeSegmentMap {
   }
 
  public:
-  ProcessCodeSegmentMap()
-      : mutatorsMutex_(mutexid::WasmCodeSegmentMap),
-        mutableCodeSegments_(&segments1_),
-        readonlyCodeSegments_(&segments2_) {}
+  ThreadSafeCodeBlockMap()
+      : mutatorsMutex_(mutexid::WasmCodeBlockMap),
+        mutableCodeBlocks_(&segments1_),
+        readonlyCodeBlocks_(&segments2_) {}
 
-  ~ProcessCodeSegmentMap() {
+  ~ThreadSafeCodeBlockMap() {
     MOZ_RELEASE_ASSERT(sNumActiveLookups == 0);
     MOZ_ASSERT(segments1_.empty());
     MOZ_ASSERT(segments2_.empty());
@@ -134,16 +134,15 @@ class ProcessCodeSegmentMap {
     segments2_.clearAndFree();
   }
 
-  bool insert(const CodeSegment* cs) {
+  bool insert(const CodeBlock* cs) {
     LockGuard<Mutex> lock(mutatorsMutex_);
 
     size_t index;
-    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeSegments_, 0,
-                                    mutableCodeSegments_->length(),
-                                    CodeSegmentPC(cs->base()), &index));
+    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeBlocks_, 0,
+                                    mutableCodeBlocks_->length(),
+                                    CodeBlockPC(cs->base()), &index));
 
-    if (!mutableCodeSegments_->insert(mutableCodeSegments_->begin() + index,
-                                      cs)) {
+    if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
       return false;
     }
 
@@ -153,9 +152,9 @@ class ProcessCodeSegmentMap {
 
 #ifdef DEBUG
     size_t otherIndex;
-    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeSegments_, 0,
-                                    mutableCodeSegments_->length(),
-                                    CodeSegmentPC(cs->base()), &otherIndex));
+    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeBlocks_, 0,
+                                    mutableCodeBlocks_->length(),
+                                    CodeBlockPC(cs->base()), &otherIndex));
     MOZ_ASSERT(index == otherIndex);
 #endif
 
@@ -164,25 +163,24 @@ class ProcessCodeSegmentMap {
     
     
     AutoEnterOOMUnsafeRegion oom;
-    if (!mutableCodeSegments_->insert(mutableCodeSegments_->begin() + index,
-                                      cs)) {
-      oom.crash("when inserting a CodeSegment in the process-wide map");
+    if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
+      oom.crash("when inserting a CodeBlock in the process-wide map");
     }
 
     return true;
   }
 
-  void remove(const CodeSegment* cs) {
+  void remove(const CodeBlock* cs) {
     LockGuard<Mutex> lock(mutatorsMutex_);
 
     size_t index;
-    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeSegments_, 0,
-                                   mutableCodeSegments_->length(),
-                                   CodeSegmentPC(cs->base()), &index));
+    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeBlocks_, 0,
+                                   mutableCodeBlocks_->length(),
+                                   CodeBlockPC(cs->base()), &index));
 
-    mutableCodeSegments_->erase(mutableCodeSegments_->begin() + index);
+    mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
 
-    if (!mutableCodeSegments_->length()) {
+    if (!mutableCodeBlocks_->length()) {
       CodeExists = false;
     }
 
@@ -190,20 +188,20 @@ class ProcessCodeSegmentMap {
 
 #ifdef DEBUG
     size_t otherIndex;
-    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeSegments_, 0,
-                                   mutableCodeSegments_->length(),
-                                   CodeSegmentPC(cs->base()), &otherIndex));
+    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeBlocks_, 0,
+                                   mutableCodeBlocks_->length(),
+                                   CodeBlockPC(cs->base()), &otherIndex));
     MOZ_ASSERT(index == otherIndex);
 #endif
 
-    mutableCodeSegments_->erase(mutableCodeSegments_->begin() + index);
+    mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
   }
 
-  const CodeSegment* lookup(const void* pc) {
-    const CodeSegmentVector* readonly = readonlyCodeSegments_;
+  const CodeBlock* lookup(const void* pc) {
+    const CodeBlockVector* readonly = readonlyCodeBlocks_;
 
     size_t index;
-    if (!BinarySearchIf(*readonly, 0, readonly->length(), CodeSegmentPC(pc),
+    if (!BinarySearchIf(*readonly, 0, readonly->length(), CodeBlockPC(pc),
                         &index)) {
       return nullptr;
     }
@@ -220,25 +218,25 @@ class ProcessCodeSegmentMap {
 
 
 
-static Atomic<ProcessCodeSegmentMap*> sProcessCodeSegmentMap(nullptr);
+static Atomic<ThreadSafeCodeBlockMap*> sThreadSafeCodeBlockMap(nullptr);
 
-bool wasm::RegisterCodeSegment(const CodeSegment* cs) {
-  MOZ_ASSERT(cs->code().initialized());
+bool wasm::RegisterCodeBlock(const CodeBlock* cs) {
+  MOZ_ASSERT(cs->code->initialized());
 
   
-  ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+  ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
   return map->insert(cs);
 }
 
-void wasm::UnregisterCodeSegment(const CodeSegment* cs) {
+void wasm::UnregisterCodeBlock(const CodeBlock* cs) {
   
-  ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+  ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
   map->remove(cs);
 }
 
-const CodeSegment* wasm::LookupCodeSegment(
+const CodeBlock* wasm::LookupCodeBlock(
     const void* pc, const CodeRange** codeRange ) {
   
   
@@ -251,15 +249,14 @@ const CodeSegment* wasm::LookupCodeSegment(
   });
   sNumActiveLookups++;
 
-  ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+  ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   if (!map) {
     return nullptr;
   }
 
-  if (const CodeSegment* found = map->lookup(pc)) {
+  if (const CodeBlock* found = map->lookup(pc)) {
     if (codeRange) {
-      *codeRange = found->isModule() ? found->asModule()->lookupRange(pc)
-                                     : found->asLazyStub()->lookupRange(pc);
+      *codeRange = found->lookupRange(pc);
     }
     return found;
   }
@@ -273,18 +270,18 @@ const CodeSegment* wasm::LookupCodeSegment(
 
 const Code* wasm::LookupCode(const void* pc,
                              const CodeRange** codeRange ) {
-  const CodeSegment* found = LookupCodeSegment(pc, codeRange);
+  const CodeBlock* found = LookupCodeBlock(pc, codeRange);
   MOZ_ASSERT_IF(!found && codeRange, !*codeRange);
-  return found ? &found->code() : nullptr;
+  return found ? found->code : nullptr;
 }
 
 bool wasm::InCompiledCode(void* pc) {
-  if (LookupCodeSegment(pc)) {
+  if (LookupCodeBlock(pc)) {
     return true;
   }
 
   const CodeRange* codeRange;
-  uint8_t* codeBase;
+  const uint8_t* codeBase;
   return LookupBuiltinThunk(pc, &codeRange, &codeBase);
 }
 
@@ -424,7 +421,7 @@ static bool InitTagForJSValue() {
 }
 
 bool wasm::Init() {
-  MOZ_RELEASE_ASSERT(!sProcessCodeSegmentMap);
+  MOZ_RELEASE_ASSERT(!sThreadSafeCodeBlockMap);
 
   
   
@@ -435,7 +432,7 @@ bool wasm::Init() {
   ConfigureHugeMemory();
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
-  ProcessCodeSegmentMap* map = js_new<ProcessCodeSegmentMap>();
+  ThreadSafeCodeBlockMap* map = js_new<ThreadSafeCodeBlockMap>();
   if (!map) {
     oomUnsafe.crash("js::wasm::Init");
   }
@@ -449,7 +446,7 @@ bool wasm::Init() {
     oomUnsafe.crash("js::wasm::Init");
   }
 
-  sProcessCodeSegmentMap = map;
+  sThreadSafeCodeBlockMap = map;
 
   if (!InitTagForJSValue()) {
     oomUnsafe.crash("js::wasm::Init");
@@ -477,9 +474,9 @@ void wasm::ShutDown() {
 
   
   
-  ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
+  ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
-  sProcessCodeSegmentMap = nullptr;
+  sThreadSafeCodeBlockMap = nullptr;
   while (sNumActiveLookups > 0) {
   }
 
