@@ -85,6 +85,16 @@ add_task(async function testMultipleQueryParamsWithNestedStripping() {
 });
 
 
+add_task(async function testNonHTTPsPages() {
+  let validUrl = "https://www.example.com/?test_2=1234&test=about%3A%3Aconfig";
+  let shortenedUrl = "https://www.example.com/?test=about%3A%3Aconfig";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+  });
+});
+
+
 
 
 
