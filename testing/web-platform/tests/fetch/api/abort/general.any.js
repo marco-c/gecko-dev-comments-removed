@@ -4,7 +4,7 @@
 
 
 
-const BODY_METHODS = ['arrayBuffer', 'blob', 'formData', 'json', 'text'];
+const BODY_METHODS = ['arrayBuffer', 'blob', 'bytes', 'formData', 'json', 'text'];
 
 const error1 = new Error('error1');
 error1.name = 'error1';
