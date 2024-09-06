@@ -90,6 +90,9 @@ struct MediaDescriptionOptions {
   std::vector<SenderOptions> sender_options;
   std::vector<webrtc::RtpCodecCapability> codec_preferences;
   std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions;
+  
+  
+  std::vector<Codec> codecs_to_include;
 
  private:
   
