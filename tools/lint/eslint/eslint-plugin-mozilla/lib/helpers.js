@@ -794,4 +794,38 @@ module.exports = {
     }
     return null;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getScope(context, node) {
+    return context.sourceCode?.getScope
+      ? context.sourceCode.getScope(node)
+      : context.getScope();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getAncestors(context, node) {
+    return context.sourceCode?.getAncestors
+      ? context.sourceCode.getAncestors(node)
+      : context.getAncestors();
+  },
 };

@@ -19,16 +19,26 @@ function markArrayElementsAsUsed(context, node, expression) {
   }
 
   for (let element of expression.elements) {
-    context.markVariableAsUsed(element.value);
+    context.markVariableAsUsed
+      ? context.markVariableAsUsed(element.value)
+      : context.sourceCode.markVariableAsUsed(element.value);
   }
   
-  context.markVariableAsUsed("EXPORTED_SYMBOLS");
+  context.markVariableAsUsed
+    ? context.markVariableAsUsed("EXPORTED_SYMBOLS")
+    : context.sourceCode.markVariableAsUsed("EXPORTED_SYMBOLS");
 }
 
 
 
 
-function isGlobalScope(context) {
+function isGlobalScope(context, node) {
+  if (context.sourceCode?.getScope) {
+    let upper = context.sourceCode.getScope(node).upper;
+    
+    
+    return !upper || upper.type == "global";
+  }
   return !context.getScope().upper;
 }
 
@@ -55,14 +65,14 @@ module.exports = {
           node.left.type === "MemberExpression" &&
           node.left.object.type === "ThisExpression" &&
           node.left.property.name === "EXPORTED_SYMBOLS" &&
-          isGlobalScope(context)
+          isGlobalScope(context, node)
         ) {
           markArrayElementsAsUsed(context, node, node.right);
         }
       },
 
       VariableDeclaration(node) {
-        if (!isGlobalScope(context)) {
+        if (!isGlobalScope(context, node)) {
           return;
         }
 
