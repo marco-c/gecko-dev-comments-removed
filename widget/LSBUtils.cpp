@@ -45,6 +45,7 @@ bool GetOSRelease(nsACString& aDistributor, nsACString& aDescription,
   bool seen_id = false, seen_pretty_name = false, seen_version_id = false;
   std::string rawline;
   nsAutoCString name;
+  nsAutoCString build_id;
   while (std::getline(stream, rawline)) {
     std::string_view line(rawline);
     size_t pos = line.find('=');
@@ -68,6 +69,8 @@ bool GetOSRelease(nsACString& aDistributor, nsACString& aDescription,
         if (ExtractAndSetValue(aDescription, value)) seen_pretty_name = true;
       } else if (key == "VERSION_ID") {
         if (ExtractAndSetValue(aRelease, value)) seen_version_id = true;
+      } else if (key == "BUILD_ID") {
+        ExtractAndSetValue(build_id, value);
       } else if (key == "VERSION_CODENAME") {
         ExtractAndSetValue(aCodename, value);
       }
@@ -76,6 +79,11 @@ bool GetOSRelease(nsACString& aDistributor, nsACString& aDescription,
   
   if (seen_id && !name.IsEmpty() && name.EqualsIgnoreCase(aDistributor)) {
     aDistributor = name;
+  }
+  
+  if (!seen_version_id && !build_id.IsEmpty()) {
+    aRelease = build_id;
+    seen_version_id = true;
   }
   
   
