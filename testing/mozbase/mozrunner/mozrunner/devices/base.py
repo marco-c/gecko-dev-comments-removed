@@ -118,7 +118,7 @@ class Device(object):
         
         
         
-        with tempfile.NamedTemporaryFile(delete=False) as new_profiles_ini:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as new_profiles_ini:
             config.write(new_profiles_ini)
             self.backup_file(self.app_ctx.remote_profiles_ini)
             self.device.push(new_profiles_ini.name, self.app_ctx.remote_profiles_ini)
