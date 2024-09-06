@@ -810,7 +810,7 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   
   
   absl::optional<ScalabilityMode> scalability_mode =
-      stream_params.GetScalabilityMode2();
+      stream_params.GetScalabilityMode();
   
   
   
