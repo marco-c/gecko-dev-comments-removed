@@ -6,9 +6,10 @@
 
 #include <stdio.h>
 
-#include "mozpkix/test/pkixtestutil.h"
-#include "mozpkix/test/pkixtestnss.h"
 #include "TLSServer.h"
+#include "mozpkix/test/pkixtestnss.h"
+#include "mozpkix/test/pkixtestutil.h"
+#include "nss.h"
 #include "secder.h"
 #include "secerr.h"
 
@@ -39,6 +40,9 @@ SECItemArray* GetOCSPResponseForType(OCSPResponseType aORT,
   MOZ_ASSERT(aCert);
   
   
+
+  
+  NSS_OptionSet(NSS_RSA_MIN_KEY_SIZE, 512);
 
   if (aORT == ORTNone) {
     if (gDebugLevel >= DEBUG_WARNINGS) {
