@@ -583,6 +583,7 @@ impl PositionVisibility {
     Clone,
     Copy,
     Debug,
+    Default,
     Eq,
     MallocSizeOf,
     Parse,
@@ -598,6 +599,7 @@ impl PositionVisibility {
 
 
 pub enum InsetAreaKeyword {
+    #[default]
     None,
 
     
@@ -664,12 +666,6 @@ pub enum InsetAreaKeyword {
     SelfEnd,
     SpanSelfStart,
     SpanSelfEnd,
-}
-
-impl Default for InsetAreaKeyword {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 #[allow(missing_docs)]
