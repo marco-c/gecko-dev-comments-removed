@@ -656,6 +656,18 @@ CookieServiceChild::SetCookieStringFromHttp(nsIURI* aHostURI,
   if (!addonAllowsLoad) {
     mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI,
                                          &isForeignAndNotAddon);
+
+    
+    
+    if (StaticPrefs::network_cookie_sameSite_crossSiteIframeSetCheck() &&
+        !isForeignAndNotAddon &&
+        loadInfo->GetExternalContentPolicyType() ==
+            ExtContentPolicy::TYPE_SUBDOCUMENT) {
+      bool triggeringPrincipalIsThirdParty = false;
+      BasePrincipal::Cast(loadInfo->TriggeringPrincipal())
+          ->IsThirdPartyURI(finalChannelURI, &triggeringPrincipalIsThirdParty);
+      isForeignAndNotAddon |= triggeringPrincipalIsThirdParty;
+    }
   }
 
   bool mustBePartitioned =
