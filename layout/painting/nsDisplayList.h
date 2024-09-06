@@ -5475,7 +5475,7 @@ class nsDisplayOwnLayer : public nsDisplayWrapList {
   bool IsFixedPositionLayer() const;
   bool IsStickyPositionLayer() const;
   bool HasDynamicToolbar() const;
-  virtual bool ShouldGetFixedOrStickyAnimationId() { return false; }
+  virtual bool ShouldGetFixedAnimationId() { return false; }
 
   bool CreatesStackingContextHelper() override { return true; }
 
@@ -5491,6 +5491,16 @@ class nsDisplayOwnLayer : public nsDisplayWrapList {
 
   layers::ScrollbarData mScrollbarData;
   bool mForceActive;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   uint64_t mWrAnimationId;
 };
 
@@ -5550,7 +5560,8 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
       : nsDisplayOwnLayer(aBuilder, aOther),
         mContainerASR(aOther.mContainerASR),
         mClippedToDisplayPort(aOther.mClippedToDisplayPort),
-        mShouldFlatten(false) {
+        mShouldFlatten(false),
+        mWrStickyAnimationId(0) {
     MOZ_COUNT_CTOR(nsDisplayStickyPosition);
   }
 
@@ -5575,7 +5586,6 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
 
   bool UpdateScrollData(layers::WebRenderScrollData* aData,
                         layers::WebRenderLayerScrollData* aLayerData) override;
-  bool ShouldGetFixedOrStickyAnimationId() override;
 
   const ActiveScrolledRoot* GetContainerASR() const { return mContainerASR; }
 
@@ -5590,6 +5600,8 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
   bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) final {
     return mShouldFlatten;
   }
+
+  bool ShouldGetStickyAnimationId() const;
 
  private:
   NS_DISPLAY_ALLOW_CLONING()
@@ -5620,6 +5632,13 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
 
   
   bool mShouldFlatten;
+
+  
+  
+  
+  
+  
+  uint64_t mWrStickyAnimationId;
 };
 
 class nsDisplayFixedPosition : public nsDisplayOwnLayer {
@@ -5661,7 +5680,7 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
       nsDisplayListBuilder* aDisplayListBuilder) override;
   bool UpdateScrollData(layers::WebRenderScrollData* aData,
                         layers::WebRenderLayerScrollData* aLayerData) override;
-  bool ShouldGetFixedOrStickyAnimationId() override;
+  bool ShouldGetFixedAnimationId() override;
   void WriteDebugInfo(std::stringstream& aStream) override;
 
  protected:
