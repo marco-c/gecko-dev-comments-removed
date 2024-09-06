@@ -144,7 +144,7 @@ int32_t js::temporal::DurationSign(const Duration& duration) {
 
 
 
-static int32_t DurationSign(const DateDuration& duration) {
+int32_t js::temporal::DurationSign(const DateDuration& duration) {
   const auto& [years, months, weeks, days] = duration;
 
   
@@ -508,7 +508,7 @@ bool js::temporal::CombineDateAndNormalizedTimeDuration(
   MOZ_ASSERT(IsValidNormalizedTimeDuration(time));
 
   
-  int32_t dateSign = ::DurationSign(date);
+  int32_t dateSign = DurationSign(date);
 
   
   int32_t timeSign = NormalizedTimeDurationSign(time);
@@ -616,7 +616,7 @@ bool js::temporal::IsValidDuration(const DateDuration& duration) {
 bool js::temporal::IsValidDuration(const NormalizedDuration& duration) {
   return IsValidDuration(duration.date) &&
          IsValidNormalizedTimeDuration(duration.time) &&
-         (::DurationSign(duration.date) *
+         (DurationSign(duration.date) *
               NormalizedTimeDurationSign(duration.time) >=
           0);
 }
@@ -739,7 +739,7 @@ bool js::temporal::ThrowIfInvalidDuration(JSContext* cx,
   const auto& [years, months, weeks, days] = duration;
 
   
-  int32_t sign = ::DurationSign(duration);
+  int32_t sign = DurationSign(duration);
 
   auto throwIfInvalid = [&](int64_t v, const char* name) {
     

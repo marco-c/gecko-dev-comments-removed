@@ -92,6 +92,12 @@ int32_t DurationSign(const Duration& duration);
 
 
 
+int32_t DurationSign(const DateDuration& duration);
+
+
+
+
+
 bool IsValidDuration(const Duration& duration);
 
 #ifdef DEBUG
