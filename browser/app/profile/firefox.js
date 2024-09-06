@@ -2375,11 +2375,6 @@ pref("extensions.pocket.refresh.hideRecentSaves.enabled", false);
 
 pref("signon.management.page.fileImport.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-pref("signon.management.page.os-auth.enabled", true);
-#else
-pref("signon.management.page.os-auth.enabled", false);
-#endif
 
 
 
@@ -2422,8 +2417,6 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 pref("services.sync.engine.creditcards.available", true);
-
-pref("extensions.formautofill.reauth.enabled", false);
 
 
 pref("browser.sessionstore.restore_tabs_lazily", true);
