@@ -1579,27 +1579,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Tooltip,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treeheader,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treeheadercell,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treeitem,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treeline,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treetwisty,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treetwistyopen,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Treeview,
 
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]

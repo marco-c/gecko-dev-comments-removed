@@ -47,13 +47,11 @@
 #include "nsContainerFrame.h"
 #include "nsView.h"
 #include "nsViewManager.h"
-#include "nsVariant.h"
 #include "nsWidgetsCID.h"
 #include "nsIFrameInlines.h"
 #include "nsTreeContentView.h"
 #include "nsTreeUtils.h"
 #include "nsStyleConsts.h"
-#include "nsITheme.h"
 #include "imgIRequest.h"
 #include "imgIContainer.h"
 #include "mozilla/dom/NodeInfo.h"
@@ -1711,115 +1709,133 @@ void nsTreeBodyFrame::PrefillPropertyArray(int32_t aRowIndex,
   mScratchArray.Clear();
 
   
-  if (mFocused)
-    mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::focus);
-  else
-    mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::blur);
+  if (mFocused) {
+    mScratchArray.AppendElement(nsGkAtoms::focus);
+  } else {
+    mScratchArray.AppendElement(nsGkAtoms::blur);
+  }
 
   
   bool sorted = false;
   mView->IsSorted(&sorted);
-  if (sorted) mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::sorted);
+  if (sorted) {
+    mScratchArray.AppendElement(nsGkAtoms::sorted);
+  }
 
   
-  if (mSlots && mSlots->mIsDragging)
-    mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::dragSession);
+  if (mSlots && mSlots->mIsDragging) {
+    mScratchArray.AppendElement(nsGkAtoms::dragSession);
+  }
 
   if (aRowIndex != -1) {
-    if (aRowIndex == mMouseOverRow)
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::hover);
+    if (aRowIndex == mMouseOverRow) {
+      mScratchArray.AppendElement(nsGkAtoms::hover);
+    }
 
     nsCOMPtr<nsITreeSelection> selection = GetSelection();
     if (selection) {
       
       bool isSelected;
       selection->IsSelected(aRowIndex, &isSelected);
-      if (isSelected)
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::selected);
+      if (isSelected) {
+        mScratchArray.AppendElement(nsGkAtoms::selected);
+      }
 
       
       int32_t currentIndex;
       selection->GetCurrentIndex(&currentIndex);
-      if (aRowIndex == currentIndex)
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::current);
+      if (aRowIndex == currentIndex) {
+        mScratchArray.AppendElement(nsGkAtoms::current);
+      }
     }
 
     
     bool isContainer = false;
     mView->IsContainer(aRowIndex, &isContainer);
     if (isContainer) {
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::container);
+      mScratchArray.AppendElement(nsGkAtoms::container);
 
       
       bool isOpen = false;
       mView->IsContainerOpen(aRowIndex, &isOpen);
-      if (isOpen)
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::open);
-      else
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::closed);
+      if (isOpen) {
+        mScratchArray.AppendElement(nsGkAtoms::open);
+      } else {
+        mScratchArray.AppendElement(nsGkAtoms::closed);
+      }
     } else {
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::leaf);
+      mScratchArray.AppendElement(nsGkAtoms::leaf);
     }
 
     
     if (mSlots && mSlots->mDropAllowed && mSlots->mDropRow == aRowIndex) {
-      if (mSlots->mDropOrient == nsITreeView::DROP_BEFORE)
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::dropBefore);
-      else if (mSlots->mDropOrient == nsITreeView::DROP_ON)
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::dropOn);
-      else if (mSlots->mDropOrient == nsITreeView::DROP_AFTER)
-        mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::dropAfter);
+      if (mSlots->mDropOrient == nsITreeView::DROP_BEFORE) {
+        mScratchArray.AppendElement(nsGkAtoms::dropBefore);
+      } else if (mSlots->mDropOrient == nsITreeView::DROP_ON) {
+        mScratchArray.AppendElement(nsGkAtoms::dropOn);
+      } else if (mSlots->mDropOrient == nsITreeView::DROP_AFTER) {
+        mScratchArray.AppendElement(nsGkAtoms::dropAfter);
+      }
     }
 
     
-    if (aRowIndex % 2)
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::odd);
-    else
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::even);
+    if (aRowIndex % 2) {
+      mScratchArray.AppendElement(nsGkAtoms::odd);
+    } else {
+      mScratchArray.AppendElement(nsGkAtoms::even);
+    }
 
     XULTreeElement* tree = GetBaseElement();
     if (tree && tree->HasAttr(nsGkAtoms::editing)) {
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::editing);
+      mScratchArray.AppendElement(nsGkAtoms::editing);
     }
 
     
-    if (mColumns->GetColumnAt(1))
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::multicol);
+    if (mColumns->GetColumnAt(1)) {
+      mScratchArray.AppendElement(nsGkAtoms::multicol);
+    }
   }
 
   if (aCol) {
     mScratchArray.AppendElement(aCol->GetAtom());
 
-    if (aCol->IsPrimary())
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::primary);
+    if (aCol->IsPrimary()) {
+      mScratchArray.AppendElement(nsGkAtoms::primary);
+    }
 
     if (aCol->GetType() == TreeColumn_Binding::TYPE_CHECKBOX) {
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::checkbox);
+      mScratchArray.AppendElement(nsGkAtoms::checkbox);
 
       if (aRowIndex != -1) {
         nsAutoString value;
         mView->GetCellValue(aRowIndex, aCol, value);
-        if (value.EqualsLiteral("true"))
-          mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::checked);
+        if (value.EqualsLiteral("true")) {
+          mScratchArray.AppendElement(nsGkAtoms::checked);
+        }
       }
+    }
+
+    if (aCol->mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::ordinal,
+                                    u"1"_ns, eIgnoreCase)) {
+      mScratchArray.AppendElement(nsGkAtoms::firstColumn);
     }
 
     
     if (aCol->mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::insertbefore,
-                                    nsGkAtoms::_true, eCaseMatters))
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::insertbefore);
+                                    nsGkAtoms::_true, eCaseMatters)) {
+      mScratchArray.AppendElement(nsGkAtoms::insertbefore);
+    }
     if (aCol->mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::insertafter,
-                                    nsGkAtoms::_true, eCaseMatters))
-      mScratchArray.AppendElement((nsStaticAtom*)nsGkAtoms::insertafter);
+                                    nsGkAtoms::_true, eCaseMatters)) {
+      mScratchArray.AppendElement(nsGkAtoms::insertafter);
+    }
   }
 }
 
-nsITheme* nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex,
-                                         nsTreeColumn* aColumn,
-                                         nsRect& aImageRect,
-                                         nsRect& aTwistyRect,
-                                         nsPresContext* aPresContext,
-                                         ComputedStyle* aTwistyContext) {
+void nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex, nsTreeColumn* aColumn,
+                                    nsRect& aImageRect, nsRect& aTwistyRect,
+                                    nsPresContext* aPresContext,
+                                    ComputedStyle* aTwistyContext) {
   
   
   
@@ -1828,40 +1844,14 @@ nsITheme* nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex,
   
   
   aImageRect = GetImageSize(aRowIndex, aColumn, true, aTwistyContext);
-  if (aImageRect.height > aTwistyRect.height)
+  if (aImageRect.height > aTwistyRect.height) {
     aImageRect.height = aTwistyRect.height;
-  if (aImageRect.width > aTwistyRect.width)
+  }
+  if (aImageRect.width > aTwistyRect.width) {
     aImageRect.width = aTwistyRect.width;
-  else
+  } else {
     aTwistyRect.width = aImageRect.width;
-
-  bool useTheme = false;
-  nsITheme* theme = nullptr;
-  StyleAppearance appearance =
-      aTwistyContext->StyleDisplay()->EffectiveAppearance();
-  if (appearance != StyleAppearance::None) {
-    theme = aPresContext->Theme();
-    if (theme->ThemeSupportsWidget(aPresContext, nullptr, appearance))
-      useTheme = true;
   }
-
-  if (useTheme) {
-    LayoutDeviceIntSize minTwistySizePx =
-        theme->GetMinimumWidgetSize(aPresContext, this, appearance);
-
-    
-    nsSize minTwistySize;
-    minTwistySize.width =
-        aPresContext->DevPixelsToAppUnits(minTwistySizePx.width);
-    minTwistySize.height =
-        aPresContext->DevPixelsToAppUnits(minTwistySizePx.height);
-
-    if (aTwistyRect.width < minTwistySize.width) {
-      aTwistyRect.width = minTwistySize.width;
-    }
-  }
-
-  return useTheme ? theme : nullptr;
 }
 
 nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
@@ -2693,21 +2683,8 @@ ImgDrawResult nsTreeBodyFrame::PaintRow(int32_t aRowIndex,
   ImgDrawResult result = ImgDrawResult::SUCCESS;
 
   
-  nsITheme* theme = nullptr;
-  auto appearance = rowContext->StyleDisplay()->EffectiveAppearance();
-  if (appearance != StyleAppearance::None) {
-    theme = aPresContext->Theme();
-  }
-
-  if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, appearance)) {
-    nsRect dirty;
-    dirty.IntersectRect(rowRect, aDirtyRect);
-    theme->DrawWidgetBackground(&aRenderingContext, this, appearance, rowRect,
-                                dirty);
-  } else {
-    result &= PaintBackgroundLayer(rowContext, aPresContext, aRenderingContext,
-                                   rowRect, aDirtyRect);
-  }
+  result &= PaintBackgroundLayer(rowContext, aPresContext, aRenderingContext,
+                                 rowRect, aDirtyRect);
 
   
   nsRect originalRowRect = rowRect;
@@ -2820,54 +2797,32 @@ ImgDrawResult nsTreeBodyFrame::PaintSeparator(int32_t aRowIndex,
   
   ComputedStyle* separatorContext =
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeSeparator());
-  bool useTheme = false;
-  nsITheme* theme = nullptr;
-  StyleAppearance appearance =
-      separatorContext->StyleDisplay()->EffectiveAppearance();
-  if (appearance != StyleAppearance::None) {
-    theme = aPresContext->Theme();
-    if (theme->ThemeSupportsWidget(aPresContext, nullptr, appearance))
-      useTheme = true;
-  }
 
-  ImgDrawResult result = ImgDrawResult::SUCCESS;
+  const nsStylePosition* stylePosition = separatorContext->StylePosition();
 
   
-  if (useTheme) {
-    nsRect dirty;
-    dirty.IntersectRect(aSeparatorRect, aDirtyRect);
-    theme->DrawWidgetBackground(&aRenderingContext, this, appearance,
-                                aSeparatorRect, dirty);
+  nscoord height;
+  if (stylePosition->mHeight.ConvertsToLength()) {
+    height = stylePosition->mHeight.ToLength();
   } else {
-    const nsStylePosition* stylePosition = separatorContext->StylePosition();
-
     
-    nscoord height;
-    if (stylePosition->mHeight.ConvertsToLength()) {
-      height = stylePosition->mHeight.ToLength();
-    } else {
-      
-      height = nsPresContext::CSSPixelsToAppUnits(2);
-    }
-
-    
-    
-    
-    nsRect separatorRect(aSeparatorRect.x, aSeparatorRect.y,
-                         aSeparatorRect.width, height);
-    nsMargin separatorMargin;
-    separatorContext->StyleMargin()->GetMargin(separatorMargin);
-    separatorRect.Deflate(separatorMargin);
-
-    
-    separatorRect.y += (aSeparatorRect.height - height) / 2;
-
-    result &=
-        PaintBackgroundLayer(separatorContext, aPresContext, aRenderingContext,
-                             separatorRect, aDirtyRect);
+    height = nsPresContext::CSSPixelsToAppUnits(2);
   }
 
-  return result;
+  
+  
+  
+  nsRect separatorRect(aSeparatorRect.x, aSeparatorRect.y, aSeparatorRect.width,
+                       height);
+  nsMargin separatorMargin;
+  separatorContext->StyleMargin()->GetMargin(separatorMargin);
+  separatorRect.Deflate(separatorMargin);
+
+  
+  separatorRect.y += (aSeparatorRect.height - height) / 2;
+
+  return PaintBackgroundLayer(separatorContext, aPresContext, aRenderingContext,
+                              separatorRect, aDirtyRect);
 }
 
 ImgDrawResult nsTreeBodyFrame::PaintCell(
@@ -3084,68 +3039,57 @@ ImgDrawResult nsTreeBodyFrame::PaintTwisty(
   twistyRect.Deflate(twistyMargin);
 
   nsRect imageSize;
-  nsITheme* theme = GetTwistyRect(aRowIndex, aColumn, imageSize, twistyRect,
-                                  aPresContext, twistyContext);
+  GetTwistyRect(aRowIndex, aColumn, imageSize, twistyRect, aPresContext,
+                twistyContext);
 
   
   
   nsRect copyRect(twistyRect);
   copyRect.Inflate(twistyMargin);
   aRemainingWidth -= copyRect.width;
-  if (!isRTL) aCurrX += copyRect.width;
-
-  ImgDrawResult result = ImgDrawResult::SUCCESS;
-
-  if (shouldPaint) {
-    
-    result &= PaintBackgroundLayer(twistyContext, aPresContext,
-                                   aRenderingContext, twistyRect, aDirtyRect);
-
-    if (theme) {
-      if (isRTL) twistyRect.x = rightEdge - twistyRect.width;
-      
-      
-      
-      nsRect dirty;
-      dirty.IntersectRect(twistyRect, aDirtyRect);
-      theme->DrawWidgetBackground(
-          &aRenderingContext, this,
-          twistyContext->StyleDisplay()->EffectiveAppearance(), twistyRect,
-          dirty);
-    } else {
-      
-      
-      nsMargin bp(0, 0, 0, 0);
-      GetBorderPadding(twistyContext, bp);
-      twistyRect.Deflate(bp);
-      if (isRTL) twistyRect.x = rightEdge - twistyRect.width;
-      imageSize.Deflate(bp);
-
-      
-      nsCOMPtr<imgIContainer> image;
-      GetImage(aRowIndex, aColumn, true, twistyContext, getter_AddRefs(image));
-      if (image) {
-        nsPoint anchorPoint = twistyRect.TopLeft();
-
-        
-        if (imageSize.height < twistyRect.height) {
-          anchorPoint.y += (twistyRect.height - imageSize.height) / 2;
-        }
-
-        
-        SVGImageContext svgContext;
-        SVGImageContext::MaybeStoreContextPaint(svgContext, *aPresContext,
-                                                *twistyContext, image);
-
-        
-        result &= nsLayoutUtils::DrawSingleUnscaledImage(
-            aRenderingContext, aPresContext, image, SamplingFilter::POINT,
-            anchorPoint, &aDirtyRect, svgContext, imgIContainer::FLAG_NONE,
-            &imageSize);
-      }
-    }
+  if (!isRTL) {
+    aCurrX += copyRect.width;
   }
 
+  auto result = ImgDrawResult::SUCCESS;
+  if (!shouldPaint) {
+    return result;
+  }
+  
+  result &= PaintBackgroundLayer(twistyContext, aPresContext, aRenderingContext,
+                                 twistyRect, aDirtyRect);
+
+  
+  
+  nsMargin bp;
+  GetBorderPadding(twistyContext, bp);
+  twistyRect.Deflate(bp);
+  if (isRTL) twistyRect.x = rightEdge - twistyRect.width;
+  imageSize.Deflate(bp);
+
+  
+  nsCOMPtr<imgIContainer> image;
+  GetImage(aRowIndex, aColumn, true, twistyContext, getter_AddRefs(image));
+  if (!image) {
+    return result;
+  }
+  nsPoint anchorPoint = twistyRect.TopLeft();
+
+  
+  if (imageSize.height < twistyRect.height) {
+    anchorPoint.y += (twistyRect.height - imageSize.height) / 2;
+  }
+
+  
+  SVGImageContext svgContext;
+  SVGImageContext::MaybeStoreContextPaint(svgContext, *aPresContext,
+                                          *twistyContext, image);
+
+  
+  result &= nsLayoutUtils::DrawSingleUnscaledImage(
+      aRenderingContext, aPresContext, image, SamplingFilter::POINT,
+      anchorPoint, &aDirtyRect, svgContext, imgIContainer::FLAG_NONE,
+      &imageSize);
   return result;
 }
 

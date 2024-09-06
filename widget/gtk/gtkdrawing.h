@@ -213,8 +213,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_TREE_HEADER_CELL,
   
-  MOZ_GTK_TREEVIEW_EXPANDER,
-  
   MOZ_GTK_MENUPOPUP,
   
   MOZ_GTK_MENUBAR,
@@ -457,22 +455,6 @@ void moz_gtk_get_entry_min_height(gint* min_content_height,
 
 
 gint moz_gtk_get_toolbar_separator_width(gint* size);
-
-
-
-
-
-
-
-gint moz_gtk_get_expander_size(gint* size);
-
-
-
-
-
-
-
-gint moz_gtk_get_treeview_expander_size(gint* size);
 
 
 

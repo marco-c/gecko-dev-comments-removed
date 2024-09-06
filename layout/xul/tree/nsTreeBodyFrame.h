@@ -295,10 +295,10 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
                  nsCSSAnonBoxPseudoStaticAtom** aChildElt);
 
   
-  nsITheme* GetTwistyRect(int32_t aRowIndex, nsTreeColumn* aColumn,
-                          nsRect& aImageRect, nsRect& aTwistyRect,
-                          nsPresContext* aPresContext,
-                          ComputedStyle* aTwistyContext);
+  void GetTwistyRect(int32_t aRowIndex, nsTreeColumn* aColumn,
+                     nsRect& aImageRect, nsRect& aTwistyRect,
+                     nsPresContext* aPresContext,
+                     ComputedStyle* aTwistyContext);
 
   
   nsresult GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
