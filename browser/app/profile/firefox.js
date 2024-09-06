@@ -296,6 +296,9 @@ pref("browser.shell.checkDefaultPDF", true);
 
 
 pref("browser.shell.checkDefaultPDF.silencedByUser", false);
+
+
+pref("browser.shell.setDefaultGuidanceNotifications", true);
 #endif
 
 
