@@ -206,12 +206,14 @@ class EventLogger final {
     
     logging_thread_ =
         PlatformThread::SpawnJoinable([this] { Log(); }, "EventTracingThread");
-    TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Start");
+    TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Start",
+                         TRACE_EVENT_SCOPE_GLOBAL);
   }
 
   void Stop() {
     RTC_DCHECK(thread_checker_.IsCurrent());
-    TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Stop");
+    TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Stop",
+                         TRACE_EVENT_SCOPE_GLOBAL);
     
     int one = 1;
     if (g_event_logging_active.compare_exchange_strong(one, 0))

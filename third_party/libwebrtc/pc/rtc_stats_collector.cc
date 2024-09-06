@@ -1336,8 +1336,8 @@ void RTCStatsCollector::MergeNetworkReport_s() {
   
   
   
-  TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", "report",
-                       cached_report_->ToJson());
+  TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", TRACE_EVENT_SCOPE_GLOBAL,
+                       "report", cached_report_->ToJson());
 
   
   std::vector<RequestInfo> requests;

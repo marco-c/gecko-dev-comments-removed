@@ -469,8 +469,8 @@ void ZeroHertzAdapterMode::UpdateLayerQualityConvergence(
     bool quality_converged) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc"), __func__,
-                       "spatial_index", spatial_index, "converged",
-                       quality_converged);
+                       TRACE_EVENT_SCOPE_GLOBAL, "spatial_index", spatial_index,
+                       "converged", quality_converged);
   if (spatial_index >= layer_trackers_.size())
     return;
   if (layer_trackers_[spatial_index].quality_converged.has_value())
@@ -481,7 +481,8 @@ void ZeroHertzAdapterMode::UpdateLayerStatus(size_t spatial_index,
                                              bool enabled) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc"), __func__,
-                       "spatial_index", spatial_index, "enabled", enabled);
+                       TRACE_EVENT_SCOPE_GLOBAL, "spatial_index", spatial_index,
+                       "enabled", enabled);
   if (spatial_index >= layer_trackers_.size())
     return;
   if (enabled) {
@@ -546,7 +547,8 @@ void ZeroHertzAdapterMode::UpdateVideoSourceRestrictions(
     absl::optional<double> max_frame_rate) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("webrtc"), __func__,
-                       "max_frame_rate", max_frame_rate.value_or(-1));
+                       TRACE_EVENT_SCOPE_GLOBAL, "max_frame_rate",
+                       max_frame_rate.value_or(-1));
   if (max_frame_rate.value_or(0) > 0) {
     
     restricted_frame_delay_ = TimeDelta::Seconds(1) / *max_frame_rate;
@@ -558,7 +560,7 @@ void ZeroHertzAdapterMode::UpdateVideoSourceRestrictions(
 
 void ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  TRACE_EVENT_INSTANT0("webrtc", __func__);
+  TRACE_EVENT_INSTANT0("webrtc", __func__, TRACE_EVENT_SCOPE_GLOBAL);
   
   
   
