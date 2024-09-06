@@ -11,10 +11,11 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_PACKET_ARRIVAL_HISTORY_H_
 #define MODULES_AUDIO_CODING_NETEQ_PACKET_ARRIVAL_HISTORY_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <map>
 
-#include "absl/types/optional.h"
 #include "api/neteq/tick_timer.h"
 #include "rtc_base/numerics/sequence_number_unwrapper.h"
 
@@ -25,18 +26,21 @@ namespace webrtc {
 
 class PacketArrivalHistory {
  public:
-  explicit PacketArrivalHistory(int window_size_ms);
+  explicit PacketArrivalHistory(const TickTimer* tick_timer,
+                                int window_size_ms);
   virtual ~PacketArrivalHistory() = default;
 
   
-  void Insert(uint32_t rtp_timestamp, int64_t arrival_time_ms);
+  
+  
+  bool Insert(uint32_t rtp_timestamp, int packet_length_samples);
 
   
   
   
-  
-  virtual int GetDelayMs(uint32_t rtp_timestamp, int64_t time_ms) const;
+  virtual int GetDelayMs(uint32_t rtp_timestamp) const;
 
+  
   
   virtual int GetMaxDelayMs() const;
 
@@ -52,30 +56,53 @@ class PacketArrivalHistory {
 
  private:
   struct PacketArrival {
-    PacketArrival(int64_t rtp_timestamp_ms, int64_t arrival_time_ms)
-        : rtp_timestamp_ms(rtp_timestamp_ms),
-          arrival_time_ms(arrival_time_ms) {}
-    int64_t rtp_timestamp_ms;
-    int64_t arrival_time_ms;
+    PacketArrival(int64_t rtp_timestamp,
+                  int64_t arrival_timestamp,
+                  int length_samples)
+        : rtp_timestamp(rtp_timestamp),
+          arrival_timestamp(arrival_timestamp),
+          length_samples(length_samples) {}
+    PacketArrival() = default;
+    int64_t rtp_timestamp;
+    int64_t arrival_timestamp;
+    int length_samples;
+    bool operator==(const PacketArrival& other) const {
+      return rtp_timestamp == other.rtp_timestamp &&
+             arrival_timestamp == other.arrival_timestamp &&
+             length_samples == other.length_samples;
+    }
+    bool operator!=(const PacketArrival& other) const {
+      return !(*this == other);
+    }
     bool operator<=(const PacketArrival& other) const {
-      return arrival_time_ms - rtp_timestamp_ms <=
-             other.arrival_time_ms - other.rtp_timestamp_ms;
+      return arrival_timestamp - rtp_timestamp <=
+             other.arrival_timestamp - other.rtp_timestamp;
     }
     bool operator>=(const PacketArrival& other) const {
-      return arrival_time_ms - rtp_timestamp_ms >=
-             other.arrival_time_ms - other.rtp_timestamp_ms;
+      return arrival_timestamp - rtp_timestamp >=
+             other.arrival_timestamp - other.rtp_timestamp;
+    }
+    bool contains(const PacketArrival& other) const {
+      return rtp_timestamp <= other.rtp_timestamp &&
+             rtp_timestamp + length_samples >=
+                 other.rtp_timestamp + other.length_samples;
     }
   };
-  std::deque<PacketArrival> history_;
   int GetPacketArrivalDelayMs(const PacketArrival& packet_arrival) const;
   
-  void MaybeUpdateCachedArrivals(const PacketArrival& packet);
-  const PacketArrival* min_packet_arrival_ = nullptr;
-  const PacketArrival* max_packet_arrival_ = nullptr;
+  bool IsObsolete(const PacketArrival& packet_arrival) const;
+  
+  bool Contains(const PacketArrival& packet_arrival) const;
+  const TickTimer* tick_timer_;
   const int window_size_ms_;
-  RtpTimestampUnwrapper timestamp_unwrapper_;
-  absl::optional<int64_t> newest_rtp_timestamp_;
   int sample_rate_khz_ = 0;
+  RtpTimestampUnwrapper timestamp_unwrapper_;
+  
+  std::map<int64_t, PacketArrival> history_;
+  
+  
+  std::deque<PacketArrival> min_packet_arrivals_;
+  std::deque<PacketArrival> max_packet_arrivals_;
 };
 
 }  
