@@ -81,6 +81,8 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   bool WriteFrameData(RefPtr<MediaRawData>& aDest, LockBuffer& aSrc,
                       bool aIsKeyframe);
 
+  bool IsAnnexB() const;
+
   void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 
   EncoderConfig mConfig;
