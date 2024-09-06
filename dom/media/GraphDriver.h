@@ -34,12 +34,6 @@ namespace mozilla {
 
 
 
-#define CUBEB_TASK_THREAD SharedThreadPool::Get("CubebOperation"_ns, 1)
-
-
-
-
-
 
 static const int MEDIA_GRAPH_TARGET_PERIOD_MS = 10;
 

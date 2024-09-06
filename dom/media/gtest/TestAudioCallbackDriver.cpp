@@ -289,7 +289,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   
   
   
-  nsCOMPtr<nsIEventTarget> cubebOpThread = CUBEB_TASK_THREAD;
+  nsCOMPtr<nsIEventTarget> cubebOpThread =
+      CubebUtils::GetCubebOperationThread();
   MOZ_ALWAYS_SUCCEEDS(SyncRunnable::DispatchToThread(
       cubebOpThread, NS_NewRunnableFunction(__func__, [] {})));
 
@@ -421,7 +422,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   
   
   
-  nsCOMPtr<nsIEventTarget> cubebOpThread = CUBEB_TASK_THREAD;
+  nsCOMPtr<nsIEventTarget> cubebOpThread =
+      CubebUtils::GetCubebOperationThread();
   MOZ_ALWAYS_SUCCEEDS(SyncRunnable::DispatchToThread(
       cubebOpThread, NS_NewRunnableFunction(__func__, [] {})));
 

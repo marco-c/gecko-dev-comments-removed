@@ -20,6 +20,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(cubeb_stream_prefs)
 namespace mozilla {
 
 class CallbackThreadRegistry;
+class SharedThreadPool;
 
 namespace CubebUtils {
 
@@ -61,6 +62,11 @@ void InitLibrary();
 void ShutdownLibrary();
 
 bool SandboxEnabled();
+
+
+
+
+already_AddRefed<SharedThreadPool> GetCubebOperationThread();
 
 
 uint32_t MaxNumberOfChannels();
