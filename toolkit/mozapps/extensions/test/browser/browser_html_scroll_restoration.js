@@ -93,13 +93,9 @@ async function waitForStableLayout(win) {
 function isLayoutStable(win) {
   
   
-  for (let bar of win.document.querySelectorAll("moz-message-bar")) {
+  for (let bar of win.document.querySelectorAll("message-bar")) {
     
-    if (
-      !win
-        .getComputedStyle(bar)
-        .getPropertyValue("--message-bar-background-color")
-    ) {
+    if (!win.getComputedStyle(bar).getPropertyValue("--message-bar-icon-url")) {
       return false;
     }
   }
