@@ -38,12 +38,13 @@ add_task(async function () {
 
   
   let bm = await PlacesUtils.bookmarks.fetch({
-    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: 0,
   });
 
+  
   let chanTitle = AppConstants.NIGHTLY_BUILD
-    ? "Firefox Nightly Resources"
-    : "Mozilla Firefox";
-  Assert.equal(bm.title, chanTitle, "Default bookmarks folder restored.");
+    ? "Get Involved"
+    : "Getting Started";
+  Assert.equal(bm.title, chanTitle);
 });
