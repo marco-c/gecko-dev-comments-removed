@@ -51,6 +51,7 @@ CSS_PSEUDO_ELEMENT(highlight, ":highlight", 0)
 CSS_PSEUDO_ELEMENT(selection, ":selection",
                    CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS)
 
+CSS_PSEUDO_ELEMENT(targetText, ":target-text", 0)
 
 
 CSS_PSEUDO_ELEMENT(mozFocusInner, ":-moz-focus-inner", 0)
