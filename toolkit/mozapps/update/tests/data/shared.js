@@ -181,7 +181,7 @@ async function testPostUpdateProcessing() {
 }
 
 
-function initUpdateServiceStub() {
+async function initUpdateServiceStub() {
   Cc["@mozilla.org/updates/update-service-stub;1"].createInstance(
     Ci.nsISupports
   );
