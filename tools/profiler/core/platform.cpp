@@ -45,12 +45,10 @@
 #include "ProfilerStackWalk.h"
 #include "ProfilerRustBindings.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
-#include "nsISupports.h"
 #include "nsXPCOM.h"
 #include "shared-libraries.h"
 #include "VTuneProfiler.h"
@@ -117,7 +115,6 @@
 #include <sstream>
 #include <string_view>
 #include <type_traits>
-#include <pthread.h>
 
 
 
@@ -767,7 +764,6 @@ class AsyncSignalControlThread {
 };
 
 static void* AsyncSignalControlThreadEntry(void* aArg) {
-  NS_SetCurrentThreadName("AsyncSignalControlThread");
   auto* thread = static_cast<AsyncSignalControlThread*>(aArg);
   thread->Watch();
   return nullptr;
@@ -5698,13 +5694,29 @@ Maybe<nsAutoCString> profiler_find_dump_path() {
 #endif
 }
 
-void profiler_start_from_signal() {
+void profiler_dump_and_stop() {
   
   
   if (XRE_IsParentProcess()) {
     
+    profiler_pause();
+
     
+    if (auto path = profiler_find_dump_path()) {
+      profiler_save_profile_to_file(path.value().get());
+    } else {
+      LOG("Failed to dump profile to disk");
+    }
+
     
+    profiler_stop();
+  }
+}
+
+void profiler_start_from_signal() {
+  
+  
+  if (XRE_IsParentProcess()) {
     
     
     uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk |
@@ -5712,99 +5724,9 @@ void profiler_start_from_signal() {
     
     
     const char* filters[] = {"*"};
-    if (MOZ_UNLIKELY(NS_IsMainThread())) {
-      
-      
-      profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
-                     PROFILER_DEFAULT_INTERVAL, features, filters,
-                     MOZ_ARRAY_LENGTH(filters), 0);
-    } else {
-      
-      
-      
-      
-      profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
-                     PROFILER_DEFAULT_INTERVAL, features, filters,
-                     MOZ_ARRAY_LENGTH(filters), 0);
-      
-      
-      NS_DispatchToMainThread(
-          NS_NewRunnableFunction("StartProfilerInChildProcesses", [=] {
-            Unused << NotifyProfilerStarted(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
-                                            Nothing(),
-                                            PROFILER_DEFAULT_INTERVAL, features,
-                                            const_cast<const char**>(filters),
-                                            MOZ_ARRAY_LENGTH(filters), 0);
-          }));
-    }
-  }
-}
-
-void profiler_dump_and_stop() {
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  
-  profiler_pause();
-
-  
-  auto path = profiler_find_dump_path();
-
-  
-  if (!path) {
-    LOG("Failed to find a valid dump path to write profile to disk");
-    profiler_stop();
-    return;
-  }
-
-  
-  
-  profiler_save_profile_to_file(path.value().get());
-
-  
-  
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsIProfiler> nsProfiler(
-        do_GetService("@mozilla.org/tools/profiler;1"));
-    nsProfiler->DumpProfileToFileAsyncNoJs(path.value(), 0)
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [](void_t ok) {
-              LOG("Stopping profiler after dumping profile to disk");
-              profiler_stop();
-            },
-            [](nsresult aRv) {
-              LOG("Dumping to disk failed with error \"%s\", stopping "
-                  "profiler.",
-                  GetStaticErrorName(aRv));
-              profiler_stop();
-            });
-  } else {
-    
-    
-    
-    
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction("WriteProfileDataToFile", [=] {
-          nsCOMPtr<nsIProfiler> nsProfiler(
-              do_GetService("@mozilla.org/tools/profiler;1"));
-          nsProfiler->DumpProfileToFileAsyncNoJs(path.value(), 0)
-              ->Then(
-                  GetMainThreadSerialEventTarget(), __func__,
-                  [](void_t ok) {
-                    LOG("Stopping profiler after dumping profile to disk");
-                    profiler_stop();
-                  },
-                  [](nsresult aRv) {
-                    LOG("Dumping to disk failed with error \"%s\", stopping "
-                        "profiler.",
-                        GetStaticErrorName(aRv));
-                    profiler_stop();
-                  });
-        }));
+    profiler_start(PROFILER_DEFAULT_SIGHANDLE_ENTRIES,
+                   PROFILER_DEFAULT_INTERVAL, features, filters,
+                   MOZ_ARRAY_LENGTH(filters), 0);
   }
 }
 
