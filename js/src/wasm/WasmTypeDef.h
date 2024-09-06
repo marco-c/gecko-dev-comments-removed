@@ -842,11 +842,12 @@ class TypeDef {
       return true;
     }
     const SuperTypeVector* subSTV = subTypeDef->superTypeVector();
+    const SuperTypeVector* superSTV = superTypeDef->superTypeVector();
 
     
     
     
-    if (!subSTV) {
+    if (!subSTV || !superSTV) {
       while (subTypeDef) {
         if (subTypeDef == superTypeDef) {
           return true;
@@ -868,7 +869,6 @@ class TypeDef {
       return false;
     }
 
-    const SuperTypeVector* superSTV = superTypeDef->superTypeVector();
     MOZ_ASSERT(superSTV);
     MOZ_ASSERT(superSTV->typeDef() == superTypeDef);
 
