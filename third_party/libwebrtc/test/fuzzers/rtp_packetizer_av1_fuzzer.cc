@@ -34,8 +34,11 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   VideoFrameType frame_type = fuzz_input.SelectOneOf(kFrameTypes);
 
   
+  
+  
   RtpPacketizerAv1 packetizer(fuzz_input.ReadByteArray(fuzz_input.BytesLeft()),
                               limits, frame_type,
+                              true,
                               true);
 
   size_t num_packets = packetizer.NumPackets();
