@@ -8,13 +8,11 @@
 
 
 
-assert.sameValue(
-  Reflect.preventExtensions.length, 1,
-  'The value of `Reflect.preventExtensions.length` is `1`'
-);
-
-verifyNotEnumerable(Reflect.preventExtensions, 'length');
-verifyNotWritable(Reflect.preventExtensions, 'length');
-verifyConfigurable(Reflect.preventExtensions, 'length');
+verifyProperty(Reflect.preventExtensions, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

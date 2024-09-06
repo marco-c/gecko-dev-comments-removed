@@ -8,6 +8,7 @@
 
 
 
+
 var obj = {};
 
 Object.defineProperty(obj, "foo", {
@@ -25,25 +26,15 @@ Object.defineProperties(obj, {
   }
 });
 
-var verifyEnumerable = false;
-for (var p in obj) {
-  if (p === "foo") {
-    verifyEnumerable = true;
-  }
-}
-
-var verifyValue = false;
-verifyValue = (obj.foo === 20);
+assert.sameValue(obj.foo, 20);
 
 var desc = Object.getOwnPropertyDescriptor(obj, "foo");
 
-var verifyConfigurable = true;
-delete obj.foo;
-verifyConfigurable = obj.hasOwnProperty("foo");
+verifyProperty(obj, "foo", {
+  enumerable: false,
+  configurable: true,
+});
 
-assert.sameValue(verifyConfigurable, false, 'verifyConfigurable');
-assert.sameValue(verifyEnumerable, false, 'verifyEnumerable');
-assert(verifyValue, 'verifyValue !== true');
 assert.sameValue(typeof desc.set, "undefined", 'typeof desc.set');
 assert.sameValue(desc.get, get_Func, 'desc.get');
 

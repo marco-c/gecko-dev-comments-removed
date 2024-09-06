@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Object.prototype.hasOwnProperty.name, "hasOwnProperty");
-
-verifyNotEnumerable(Object.prototype.hasOwnProperty, "name");
-verifyNotWritable(Object.prototype.hasOwnProperty, "name");
-verifyConfigurable(Object.prototype.hasOwnProperty, "name");
+verifyProperty(Object.prototype.hasOwnProperty, "name", {
+  value: "hasOwnProperty",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

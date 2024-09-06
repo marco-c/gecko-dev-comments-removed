@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(6);
+var sample = new DataView(buffer, 0);
+
+$DETACHBUFFER(buffer);
+
+assert.throws(RangeError, function() {
+  sample.getFloat16(-1);
+});
+
+assert.throws(RangeError, function() {
+  sample.getFloat16(Infinity);
+}, "Infinity");
+
+reportCompare(0, 0);

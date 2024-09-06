@@ -13,13 +13,11 @@
 
 
 
-assert.sameValue(
-  Reflect.ownKeys.name, 'ownKeys',
-  'The value of `Reflect.ownKeys.name` is `"ownKeys"`'
-);
-
-verifyNotEnumerable(Reflect.ownKeys, 'name');
-verifyNotWritable(Reflect.ownKeys, 'name');
-verifyConfigurable(Reflect.ownKeys, 'name');
+verifyProperty(Reflect.ownKeys, "name", {
+  value: "ownKeys",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

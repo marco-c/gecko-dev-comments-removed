@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Math.hypot.name, "hypot");
-
-verifyNotEnumerable(Math.hypot, "name");
-verifyNotWritable(Math.hypot, "name");
-verifyConfigurable(Math.hypot, "name");
+verifyProperty(Math.hypot, "name", {
+  value: "hypot",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

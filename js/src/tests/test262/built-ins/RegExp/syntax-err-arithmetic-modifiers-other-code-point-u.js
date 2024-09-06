@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function () {
+  RegExp("(?-u:a)", "");
+}, 'RegExp("(?-u:a)", ""): ');
+
+reportCompare(0, 0);

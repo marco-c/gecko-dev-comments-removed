@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(Array.prototype.lastIndexOf.name, "lastIndexOf");
-
-verifyNotEnumerable(Array.prototype.lastIndexOf, "name");
-verifyNotWritable(Array.prototype.lastIndexOf, "name");
-verifyConfigurable(Array.prototype.lastIndexOf, "name");
+verifyProperty(Array.prototype.lastIndexOf, "name", {
+  value: "lastIndexOf",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

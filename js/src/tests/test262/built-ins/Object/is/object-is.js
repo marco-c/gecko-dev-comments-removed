@@ -10,12 +10,12 @@
 
 
 
-
 assert.sameValue(typeof Object.is, "function");
-assert.sameValue(Object.is.name, "is");
 
-verifyWritable(Object, "is");
-verifyNotEnumerable(Object, "is");
-verifyConfigurable(Object, "is");
+verifyProperty(Object, "is", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

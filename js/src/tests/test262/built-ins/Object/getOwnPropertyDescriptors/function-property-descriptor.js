@@ -8,8 +8,10 @@
 
 
 
-verifyNotEnumerable(Object, 'getOwnPropertyDescriptors');
-verifyWritable(Object, 'getOwnPropertyDescriptors');
-verifyConfigurable(Object, 'getOwnPropertyDescriptors');
+verifyProperty(Object, "getOwnPropertyDescriptors", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

@@ -1,0 +1,34 @@
+ --> a comment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+throw new Test262Error("This is not in a comment");

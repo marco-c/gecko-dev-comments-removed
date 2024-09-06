@@ -23,10 +23,11 @@
 
 
 
-assert.sameValue(Array.prototype.forEach.length, 1);
-
-verifyNotEnumerable(Array.prototype.forEach, 'length');
-verifyNotWritable(Array.prototype.forEach, 'length');
-verifyConfigurable(Array.prototype.forEach, 'length');
+verifyProperty(Array.prototype.forEach, "length", {
+  value: 1,
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

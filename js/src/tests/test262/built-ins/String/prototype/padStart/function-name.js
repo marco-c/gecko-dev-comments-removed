@@ -8,14 +8,11 @@
 
 
 
-assert.sameValue(
-  String.prototype.padStart.name,
-  'padStart',
-  'Expected String#padStart.name to be "padStart"'
-);
-
-verifyNotEnumerable(String.prototype.padStart, 'name');
-verifyNotWritable(String.prototype.padStart, 'name');
-verifyConfigurable(String.prototype.padStart, 'name');
+verifyProperty(String.prototype.padStart, "name", {
+  value: "padStart",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
 
 reportCompare(0, 0);

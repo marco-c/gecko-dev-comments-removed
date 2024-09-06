@@ -13,9 +13,10 @@ obj.foo = 10;
 
 Object.freeze(obj);
 
-verifyNotWritable(obj, "foo");
-verifyNotConfigurable(obj, "foo");
-
-assert.sameValue(obj.foo, 10);
+verifyProperty(obj, "foo", {
+  value: 10,
+  writable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

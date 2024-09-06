@@ -15,10 +15,10 @@
 
 assert.throws(TypeError, () => {
   Array.prototype.toSorted.call(null);
-}, '`Array.prototype.toSorted.call(null)` throws TypeError');
+});
 
 assert.throws(TypeError, () => {
   Array.prototype.toSorted.call(undefined);
-}, '`Array.prototype.toSorted.call(undefined)` throws TypeError');
+});
 
 reportCompare(0, 0);

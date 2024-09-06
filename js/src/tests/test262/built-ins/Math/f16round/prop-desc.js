@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "f16round");
+verifyWritable(Math, "f16round");
+verifyConfigurable(Math, "f16round");
+
+reportCompare(0, 0);

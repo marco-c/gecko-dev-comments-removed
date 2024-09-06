@@ -14,15 +14,38 @@
 
 
 
-const instance = new Temporal.Duration(0, 0, 0,  500_000_000);
-const relativeTo = new Temporal.PlainDate(2000, 1, 1);
-assert.throws(RangeError, () => instance.round({relativeTo, smallestUnit: "years"}));
-assert.throws(RangeError, () => instance.round({relativeTo, smallestUnit: "months"}));
-assert.throws(RangeError, () => instance.round({relativeTo, smallestUnit: "weeks"}));
 
-const negInstance = new Temporal.Duration(0, 0, 0,  -500_000_000);
-assert.throws(RangeError, () => negInstance.round({relativeTo, smallestUnit: "years"}));
-assert.throws(RangeError, () => negInstance.round({relativeTo, smallestUnit: "months"}));
-assert.throws(RangeError, () => negInstance.round({relativeTo, smallestUnit: "weeks"}));
+
+
+
+
+
+
+
+
+
+
+
+const relativeTo = new Temporal.PlainDate(2000, 1, 1);
+
+{
+  const instance = new Temporal.Duration(0, 0, 0,  500_000_000);
+  assert.throws(RangeError, () => instance.round({relativeTo, smallestUnit: "years"}), "days out of range, positive, smallestUnit years");
+  assert.throws(RangeError, () => instance.round({relativeTo, smallestUnit: "months"}), "days out of range, positive, smallestUnit months");
+  assert.throws(RangeError, () => instance.round({relativeTo, smallestUnit: "weeks"}), "days out of range, positive, smallestUnit weeks");
+
+  const negInstance = new Temporal.Duration(0, 0, 0,  -500_000_000);
+  assert.throws(RangeError, () => negInstance.round({relativeTo, smallestUnit: "years"}), "days out of range, negative, smallestUnit years");
+  assert.throws(RangeError, () => negInstance.round({relativeTo, smallestUnit: "months"}), "days out of range, negative, smallestUnit months");
+  assert.throws(RangeError, () => negInstance.round({relativeTo, smallestUnit: "weeks"}), "days out of range, negative, smallestUnit weeks");
+}
+
+{
+  const instance = new Temporal.Duration(0, 0,  1,  Math.trunc((2 ** 53) / 86_400));
+  assert.throws(RangeError, () => instance.round({relativeTo, largestUnit: "days"}), "weeks + days out of range, positive");
+
+  const negInstance = new Temporal.Duration(0, 0,  -1,  -Math.trunc((2 ** 53) / 86_400));
+  assert.throws(RangeError, () => instance.round({relativeTo, largestUnit: "days"}), "weeks + days out of range, negative");
+}
 
 reportCompare(0, 0);
