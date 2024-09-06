@@ -131,7 +131,7 @@ class BrowserParent final : public PBrowserParent,
 
   const TabId GetTabId() const { return mTabId; }
 
-  ContentParent* Manager() const { return mManager; }
+  ContentParent* Manager() const;
 
   CanonicalBrowsingContext* GetBrowsingContext() { return mBrowsingContext; }
 
@@ -855,10 +855,8 @@ class BrowserParent final : public PBrowserParent,
  private:
   TabId mTabId;
 
-  RefPtr<ContentParent> mManager;
   
   RefPtr<CanonicalBrowsingContext> mBrowsingContext;
-  nsCOMPtr<nsILoadContext> mLoadContext;
   RefPtr<Element> mFrameElement;
   nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
   
