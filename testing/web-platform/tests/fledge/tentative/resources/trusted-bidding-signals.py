@@ -1,3 +1,4 @@
+import collections
 import json
 from urllib.parse import unquote_plus
 
@@ -46,6 +47,7 @@ def main(request, response):
 
     response.status = (200, b"OK")
 
+    
     
     
     responseBody = {"keys": {}}
@@ -116,6 +118,22 @@ def main(request, response):
 
     if "data-version" in interestGroupNames:
         dataVersion = "4"
+
+    per_interest_group_data = collections.defaultdict(dict)
+    for name in interestGroupNames:
+      if name == "use-update-if-older-than-ms":
+        
+        per_interest_group_data[name]["updateIfOlderThanMs"] = 3_600_000
+      elif name == "use-update-if-older-than-ms-small":
+        
+        per_interest_group_data[name]["updateIfOlderThanMs"] = 1
+      elif name == "use-update-if-older-than-ms-zero":
+        per_interest_group_data[name]["updateIfOlderThanMs"] = 0
+      elif name == "use-update-if-older-than-ms-negative":
+        per_interest_group_data[name]["updateIfOlderThanMs"] = -1
+
+    if per_interest_group_data:
+      responseBody["perInterestGroupData"] = dict(per_interest_group_data)
 
     if contentType:
         response.headers.set("Content-Type", contentType)

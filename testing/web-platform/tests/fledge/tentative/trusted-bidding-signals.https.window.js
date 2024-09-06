@@ -19,6 +19,7 @@
 
 
 
+
 "use strict";
 
 
@@ -939,3 +940,43 @@ subsetTest(promise_test, async test => {
   );
   runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'Trusted bidding signals splits the request if the combined URL length exceeds the limit of small value.');
+
+
+
+
+
+
+
+
+
+subsetTest(promise_test, async test => {
+  await runTrustedBiddingSignalsTest(
+      test,
+      'true',
+      { name: 'use-update-if-older-than-ms',
+        trustedBiddingSignalsURL: TRUSTED_BIDDING_SIGNALS_URL });
+}, 'Trusted bidding signals response has updateIfOlderThanMs > 10 min.');
+
+subsetTest(promise_test, async test => {
+  await runTrustedBiddingSignalsTest(
+      test,
+      'true',
+      { name: 'use-update-if-older-than-ms-small',
+        trustedBiddingSignalsURL: TRUSTED_BIDDING_SIGNALS_URL });
+}, 'Trusted bidding signals response has updateIfOlderThanMs == 1 ms.');
+
+subsetTest(promise_test, async test => {
+  await runTrustedBiddingSignalsTest(
+      test,
+      'true',
+      { name: 'use-update-if-older-than-ms-zero',
+        trustedBiddingSignalsURL: TRUSTED_BIDDING_SIGNALS_URL });
+}, 'Trusted bidding signals response has updateIfOlderThanMs == 0 ms.');
+
+subsetTest(promise_test, async test => {
+  await runTrustedBiddingSignalsTest(
+      test,
+      'true',
+      { name: 'use-update-if-older-than-ms-negative',
+        trustedBiddingSignalsURL: TRUSTED_BIDDING_SIGNALS_URL });
+}, 'Trusted bidding signals response has updateIfOlderThanMs == -1 ms.');
