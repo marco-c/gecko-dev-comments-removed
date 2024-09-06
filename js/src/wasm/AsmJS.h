@@ -23,8 +23,8 @@
 
 #include <stdint.h>  
 
-#include "jstypes.h"      
-#include "js/CallArgs.h"  
+#include "jstypes.h"             
+#include "js/CallArgs.h"         
 #include "wasm/WasmShareable.h"  
 
 struct JS_PUBLIC_API JSContext;
