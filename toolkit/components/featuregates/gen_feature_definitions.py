@@ -25,8 +25,10 @@ feature_schema = Schema(
             Required("restart-required"): bool,
             Required("type"): "boolean",  
             Optional("preference"): Text,
-            Optional("default-value-jexl"): Text,
-            Optional("is-public-jexl"): Text,
+            Optional("default-value"): Any(
+                bool, dict
+            ),  
+            Optional("is-public"): Any(bool, dict),
             Optional("description-links"): dict,
         },
     }
@@ -148,7 +150,7 @@ def expand_feature(feature):
     if feature["type"] == "boolean":
         feature.setdefault("preference", "features.{}.enabled".format(feature["id"]))
         
-        feature.setdefault("defaultValueJexl", None)
+        feature.setdefault("defaultValue", None)
     elif "preference" not in feature:
         raise FeatureGateException(
             "Features of type {} must specify an explicit preference name".format(
@@ -156,8 +158,58 @@ def expand_feature(feature):
             )
         )
 
-    feature.setdefault("isPublicJexl", "false")
+    feature.setdefault("isPublic", False)
+
+    try:
+        for key in ["defaultValue", "isPublic"]:
+            feature[key] = process_configured_value(key, feature[key])
+    except FeatureGateException as e:
+        raise FeatureGateException(
+            "Error when processing feature {}: {}".format(feature["id"], e)
+        )
+
     return feature
+
+
+def process_configured_value(name, value):
+    if not isinstance(value, dict):
+        return {"default": value}
+
+    if "default" not in value:
+        raise FeatureGateException(
+            "Config for {} has no default: {}".format(name, value)
+        )
+
+    expected_keys = set(
+        {
+            "default",
+            "win",
+            "mac",
+            "linux",
+            "android",
+            "nightly",
+            "early_beta_or_earlier",
+            "beta",
+            "release",
+            "dev-edition",
+            "esr",
+            "thunderbird",
+        }
+    )
+
+    for key in value.keys():
+        parts = [p.strip() for p in key.split(",")]
+        for part in parts:
+            if part not in expected_keys:
+                raise FeatureGateException(
+                    "Unexpected target {}, expected any of {}".format(
+                        part, expected_keys
+                    )
+                )
+
+    
+
+    return value
 
 
 if __name__ == "__main__":
