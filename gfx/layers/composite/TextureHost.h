@@ -90,7 +90,7 @@ class TextureHostWrapperD3D11;
 class BigImageIterator {
  public:
   virtual void BeginBigImageIteration() = 0;
-  virtual void EndBigImageIteration() {};
+  virtual void EndBigImageIteration(){};
   virtual gfx::IntRect GetTileRect() = 0;
   virtual size_t GetTileCount() = 0;
   virtual bool NextTile() = 0;
@@ -501,11 +501,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
 
 
-
-
-
-  virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
-      gfx::DataSourceSurface* aSurface = nullptr) = 0;
+  virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() = 0;
 
   
 
@@ -817,8 +813,7 @@ class BufferTextureHost : public TextureHost {
 
   gfx::IntSize GetSize() const override { return mSize; }
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
-      gfx::DataSourceSurface* aSurface) override;
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override;
 
   bool NeedsDeferredDeletion() const override {
     return TextureHost::NeedsDeferredDeletion() || UseExternalTextures();

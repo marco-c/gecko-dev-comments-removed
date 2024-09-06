@@ -24,7 +24,7 @@ namespace layers {
 
 
 already_AddRefed<gfx::SourceSurface> CreateSourceSurfaceFromMacIOSurface(
-    MacIOSurface* aSurface, gfx::DataSourceSurface* aDataSurface = nullptr);
+    MacIOSurface* aSurface);
 
 nsresult CreateSurfaceDescriptorBufferFromMacIOSurface(
     MacIOSurface* aSurface, SurfaceDescriptorBuffer& aSdBuffer,
