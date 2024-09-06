@@ -31,13 +31,12 @@
 """Tests for extensions module."""
 
 from __future__ import absolute_import
+
 import unittest
 import zlib
 
 import set_sys_path  
-
-from mod_pywebsocket import common
-from mod_pywebsocket import extensions
+from pywebsocket3 import common, extensions
 
 
 class ExtensionsTest(unittest.TestCase):

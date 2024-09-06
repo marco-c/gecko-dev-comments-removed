@@ -32,18 +32,16 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+
 import os
 import random
-import sys
 import unittest
-import struct
+
+from six import int2byte, PY3
+from six.moves import range
 
 import set_sys_path  
-
-from mod_pywebsocket import util
-from six.moves import range
-from six import PY3
-from six import int2byte
+from pywebsocket3 import util
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'testdata')
 

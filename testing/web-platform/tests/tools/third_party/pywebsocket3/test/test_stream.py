@@ -31,12 +31,11 @@
 """Tests for stream module."""
 
 from __future__ import absolute_import
+
 import unittest
 
 import set_sys_path  
-
-from mod_pywebsocket import common
-from mod_pywebsocket import stream
+from pywebsocket3 import common, stream
 
 
 class StreamTest(unittest.TestCase):

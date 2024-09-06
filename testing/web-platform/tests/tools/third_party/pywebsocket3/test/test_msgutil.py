@@ -33,26 +33,26 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
-import array
-import six.moves.queue
+
 import random
 import struct
 import unittest
 import zlib
 
-import set_sys_path  
-
-from mod_pywebsocket import common
-from mod_pywebsocket.extensions import PerMessageDeflateExtensionProcessor
-from mod_pywebsocket import msgutil
-from mod_pywebsocket.stream import InvalidUTF8Exception
-from mod_pywebsocket.stream import Stream
-from mod_pywebsocket.stream import StreamOptions
-from mod_pywebsocket import util
-from test import mock
+from six import iterbytes
 from six.moves import map
 from six.moves import range
-from six import iterbytes
+import six.moves.queue
+
+import set_sys_path  
+from pywebsocket3 import common, msgutil, util
+from pywebsocket3.extensions import PerMessageDeflateExtensionProcessor
+from pywebsocket3.stream import (
+    InvalidUTF8Exception,
+    Stream,
+    StreamOptions,
+)
+from test import mock
 
 
 _MASKING_NONCE = b'ABCD'

@@ -31,12 +31,13 @@
 """Tests for mock module."""
 
 from __future__ import absolute_import
-import six.moves.queue
+
 import threading
 import unittest
 
-import set_sys_path  
+import six.moves.queue
 
+import set_sys_path  
 from test import mock
 
 

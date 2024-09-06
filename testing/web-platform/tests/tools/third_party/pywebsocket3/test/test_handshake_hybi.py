@@ -31,15 +31,17 @@
 """Tests for handshake module."""
 
 from __future__ import absolute_import
+
 import unittest
 
 import set_sys_path  
-from mod_pywebsocket import common
-from mod_pywebsocket.handshake.base import AbortedByUserException
-from mod_pywebsocket.handshake.base import HandshakeException
-from mod_pywebsocket.handshake.base import VersionException
-from mod_pywebsocket.handshake.hybi import Handshaker
-
+from pywebsocket3 import common
+from pywebsocket3.handshake.base import (
+    AbortedByUserException,
+    HandshakeException,
+    VersionException,
+)
+from pywebsocket3.handshake.hybi import Handshaker
 from test import mock
 
 

@@ -28,23 +28,23 @@
 
 
 
-"""End-to-end tests for pywebsocket. Tests standalone.py.
+"""End-to-end tests for pywebsocket3. Tests standalone.py.
 """
 
 from __future__ import absolute_import
-from six.moves import urllib
+
 import locale
 import logging
 import os
-import signal
 import socket
 import subprocess
 import sys
 import time
 import unittest
 
-import set_sys_path  
+from six.moves import urllib
 
+import set_sys_path  
 from test import client_for_testing
 
 
@@ -137,7 +137,7 @@ class EndToEndTestBase(unittest.TestCase):
         self.server_stderr = None
         self.top_dir = os.path.join(os.path.dirname(__file__), '..')
         os.putenv('PYTHONPATH', os.path.pathsep.join(sys.path))
-        self.standalone_command = os.path.join(self.top_dir, 'mod_pywebsocket',
+        self.standalone_command = os.path.join(self.top_dir, 'pywebsocket3',
                                                'standalone.py')
         self.document_root = os.path.join(self.top_dir, 'example')
         s = socket.socket()

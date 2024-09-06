@@ -31,12 +31,13 @@
 """Tests for memorizingfile module."""
 
 from __future__ import absolute_import
+
 import unittest
+
 import six
 
 import set_sys_path  
-
-from mod_pywebsocket import memorizingfile
+from pywebsocket3 import memorizingfile
 
 
 class UtilTest(unittest.TestCase):

@@ -31,15 +31,16 @@
 """Tests for dispatch module."""
 
 from __future__ import absolute_import
+
 import os
 import unittest
 
-import set_sys_path  
-
-from mod_pywebsocket import dispatch
-from mod_pywebsocket import handshake
-from test import mock
 from six.moves import zip
+
+import set_sys_path  
+from pywebsocket3 import dispatch, handshake
+from test import mock
+
 
 _TEST_HANDLERS_DIR = os.path.join(os.path.dirname(__file__), 'testdata',
                                   'handlers')

@@ -28,10 +28,11 @@
 
 """Configuration for testing.
 
-Test files should import this module before mod_pywebsocket.
+Test files should import this module before pywebsocket3.
 """
 
 from __future__ import absolute_import
+
 import os
 import sys
 

@@ -28,9 +28,9 @@
 
 
 from __future__ import absolute_import
-from mod_pywebsocket import common
-from mod_pywebsocket import util
-from mod_pywebsocket.http_header_util import quote_if_necessary
+
+from pywebsocket3 import common, util
+from pywebsocket3.http_header_util import quote_if_necessary
 
 
 _available_processors = {}
