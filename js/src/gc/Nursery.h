@@ -646,6 +646,11 @@ class Nursery {
   
   bool reportDeduplications_;
 
+#ifdef JS_GC_ZEAL
+  
+  bool reportPromotion_;
+#endif
+
   
   
   gc::AllocSiteFilter pretenuringReportFilter_;

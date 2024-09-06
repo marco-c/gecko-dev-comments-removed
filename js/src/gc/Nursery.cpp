@@ -297,6 +297,13 @@ bool js::Nursery::init(AutoLockGCBgAlloc& lock) {
       "JS_GC_REPORT_STATS=1\n"
       "\tAfter a minor GC, report how many strings were deduplicated.\n");
 
+#ifdef JS_GC_ZEAL
+  reportPromotion_ = GetBoolEnvVar(
+      "JS_GC_REPORT_PROMOTE",
+      "JS_GC_REPORT_PROMOTE=1\n"
+      "\tAfter a minor GC, report what kinds of things were promoted.\n");
+#endif
+
   ReadReportPretenureEnv(
       "JS_GC_REPORT_PRETENURE",
       "JS_GC_REPORT_PRETENURE=FILTER\n"
@@ -1508,6 +1515,11 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   
   tenuredEverything = shouldTenureEverything(reason);
   TenuringTracer mover(rt, this, tenuredEverything);
+#ifdef JS_GC_ZEAL
+  if (reportPromotion_) {
+    mover.initPromotionReport();
+  }
+#endif
 
   
   traceRoots(session, mover);
@@ -1527,6 +1539,14 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   startProfile(ProfileKey::CollectToStrFP);
   mover.collectToStringFixedPoint();
   endProfile(ProfileKey::CollectToStrFP);
+
+#ifdef JS_GC_ZEAL
+  if (reportPromotion_ && options != JS::GCOptions::Shutdown) {
+    JSContext* cx = runtime()->mainContextFromOwnThread();
+    JS::AutoAssertNoGC nogc(cx);
+    mover.printPromotionReport(cx, reason, nogc);
+  }
+#endif
 
   
   
