@@ -26,10 +26,11 @@ add_task(async function () {
   await testParagraph(inspector, view);
   await testBody(inspector, view);
   await testList(inspector, view);
-  await testBackdrop(inspector, view);
   await testCustomHighlight(inspector, view);
   await testSlider(inspector, view);
   await testUrlFragmentTextDirective(inspector, view);
+  
+  await testBackdrop(inspector, view);
 });
 
 async function testTopLeft(inspector, view) {
@@ -325,23 +326,20 @@ async function testBackdrop(inspector, view) {
   gBrowser.selectedBrowser.focus();
   await onTabFocused;
 
-  const onFullscreen = new Promise(resolve => {
-    BrowserTestUtils.addContentEventListener(
-      gBrowser.selectedBrowser,
-      "fullscreenchange",
-      resolve,
-      { once: true }
-    );
-  });
-
   info("Request fullscreen");
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+  
+  
+  let onInspectorUpdated = view.once("ruleview-refreshed");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     const canvas = content.document.querySelector("canvas");
     canvas.requestFullscreen();
-  });
 
-  await onFullscreen;
-  ok(true, "canvas is fullscreen");
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.fullscreenElement === canvas,
+      "canvas is fullscreen"
+    );
+  });
+  await onInspectorUpdated;
 
   await assertPseudoElementRulesNumbers("canvas", inspector, view, {
     elementRulesNb: 3,
@@ -350,19 +348,17 @@ async function testBackdrop(inspector, view) {
 
   assertGutters(view);
 
-  info("Exit fullscreen");
-  const onFullscreenExit = new Promise(resolve => {
-    BrowserTestUtils.addContentEventListener(
-      gBrowser.selectedBrowser,
-      "fullscreenchange",
-      resolve,
-      { once: true }
+  
+  
+  onInspectorUpdated = view.once("ruleview-refreshed");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    content.document.exitFullscreen();
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.fullscreenElement === null,
+      "canvas is no longer fullscreen"
     );
   });
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
-    content.document.exitFullscreen();
-  });
-  await onFullscreenExit;
+  await onInspectorUpdated;
 
   info(
     "Test ::backdrop rules are not displayed when elements are not fullscreen"
