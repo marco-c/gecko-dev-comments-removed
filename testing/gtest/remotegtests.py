@@ -128,7 +128,6 @@ class RemoteGTests(object):
             self.device.launch_activity(
                 self.package,
                 activity_name=activity,
-                e10s=False,  
                 moz_env=env,
                 extra_args=args,
                 wait=False,
