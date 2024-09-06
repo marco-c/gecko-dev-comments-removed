@@ -7,6 +7,7 @@
 #ifndef js_loader_ScriptLoadRequest_h
 #define js_loader_ScriptLoadRequest_h
 
+#include "js/experimental/JSStencil.h"
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
@@ -188,6 +189,10 @@ class ScriptLoadRequest : public nsISupports,
   nsIPrincipal* TriggeringPrincipal() const {
     return mFetchOptions->mTriggeringPrincipal;
   }
+
+  
+  
+  void CacheEntryFound(LoadedScript* aLoadedScript);
 
   
   
