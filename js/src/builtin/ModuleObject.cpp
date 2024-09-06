@@ -2308,7 +2308,7 @@ bool ModuleObject::topLevelCapabilityReject(JSContext* cx,
 
 static bool EvaluateDynamicImportOptions(
     JSContext* cx, HandleValue optionsArg,
-    MutableHandle<ArrayObject*> assertionArrayArg) {
+    MutableHandle<ArrayObject*> attributesArrayArg) {
   
   if (optionsArg.isUndefined()) {
     return true;
@@ -2322,114 +2322,133 @@ static bool EvaluateDynamicImportOptions(
     return false;
   }
 
-  RootedObject assertWrapperObject(cx, &optionsArg.toObject());
-  RootedValue assertValue(cx);
+  RootedObject attributesWrapperObject(cx, &optionsArg.toObject());
+  RootedValue attributesValue(cx);
 
   
   RootedId withId(cx, NameToId(cx->names().with));
-  if (!GetProperty(cx, assertWrapperObject, assertWrapperObject, withId,
-                   &assertValue)) {
+  if (!GetProperty(cx, attributesWrapperObject, attributesWrapperObject, withId,
+                   &attributesValue)) {
     return false;
   }
 
-  if (assertValue.isUndefined() &&
+  
+  
+  if (attributesValue.isUndefined() &&
       cx->options().importAttributesAssertSyntax()) {
     
     RootedId assertId(cx, NameToId(cx->names().assert_));
-    if (!GetProperty(cx, assertWrapperObject, assertWrapperObject, assertId,
-                     &assertValue)) {
+    if (!GetProperty(cx, attributesWrapperObject, attributesWrapperObject,
+                     assertId, &attributesValue)) {
       return false;
     }
   }
 
   
-  if (assertValue.isUndefined()) {
+  if (attributesValue.isUndefined()) {
     return true;
   }
 
   
-  if (!assertValue.isObject()) {
+  if (!attributesValue.isObject()) {
     JS_ReportErrorNumberASCII(
         cx, GetErrorMessage, nullptr, JSMSG_NOT_EXPECTED_TYPE, "import",
-        "object or undefined", InformalValueTypeName(assertValue));
+        "object or undefined", InformalValueTypeName(attributesValue));
     return false;
   }
 
   
-  RootedObject assertObject(cx, &assertValue.toObject());
-  RootedIdVector assertions(cx);
-  if (!GetPropertyKeys(cx, assertObject, JSITER_OWNONLY, &assertions)) {
+  
+  RootedObject attributesObject(cx, &attributesValue.toObject());
+  RootedIdVector attributes(cx);
+  if (!GetPropertyKeys(cx, attributesObject, JSITER_OWNONLY, &attributes)) {
     return false;
   }
 
-  uint32_t numberOfAssertions = assertions.length();
-  if (numberOfAssertions == 0) {
+  uint32_t numberOfAttributes = attributes.length();
+  if (numberOfAttributes == 0) {
     return true;
   }
 
   
-  Rooted<ArrayObject*> assertionArray(
-      cx, NewDenseFullyAllocatedArray(cx, numberOfAssertions));
-  if (!assertionArray) {
+  Rooted<ArrayObject*> validAttributesArray(
+      cx, NewDenseFullyAllocatedArray(cx, numberOfAttributes));
+  if (!validAttributesArray) {
     return false;
   }
-  assertionArray->ensureDenseInitializedLength(0, numberOfAssertions);
+  validAttributesArray->ensureDenseInitializedLength(0, numberOfAttributes);
 
-  
-  
-  
-  
-  
-  
-  
-  size_t numberOfValidAssertions = 0;
+  size_t numberOfValidAttributes = 0;
 
   
   RootedId key(cx);
-  for (size_t i = 0; i < numberOfAssertions; i++) {
-    key = assertions[i];
+  for (size_t i = 0; i < numberOfAttributes; i++) {
+    
+    key = attributes[i];
 
     
     RootedValue value(cx);
-    if (!GetProperty(cx, assertObject, assertObject, key, &value)) {
+    if (!GetProperty(cx, attributesObject, attributesObject, key, &value)) {
       return false;
     }
 
     
-    if (!value.isString()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_NOT_EXPECTED_TYPE, "import", "string",
-                                InformalValueTypeName(value));
-      return false;
-    }
-
-    
-    
-    
-    
-    bool supported = key.isAtom() ? key.toAtom() == cx->names().type : false;
-    if (supported) {
-      Rooted<PlainObject*> assertionObj(cx, NewPlainObject(cx));
-      if (!assertionObj) {
+    if (key.isString()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      bool supported = key.isAtom(cx->names().type);
+      if (!supported) {
+        UniqueChars printableKey = AtomToPrintableString(cx, key.toAtom());
+        if (!printableKey) {
+          return false;
+        }
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_IMPORT_ATTRIBUTES_UNSUPPORTED_ATTRIBUTE,
+                                  printableKey.get());
         return false;
       }
 
-      if (!DefineDataProperty(cx, assertionObj, key, value, JSPROP_ENUMERATE)) {
+      
+      if (!value.isString()) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_NOT_EXPECTED_TYPE, "import", "string",
+                                  InformalValueTypeName(value));
         return false;
       }
 
-      assertionArray->initDenseElement(numberOfValidAssertions,
-                                       ObjectValue(*assertionObj));
-      ++numberOfValidAssertions;
+      
+      
+      Rooted<PlainObject*> attributeObj(cx, NewPlainObject(cx));
+      if (!attributeObj) {
+        return false;
+      }
+      if (!DefineDataProperty(cx, attributeObj, key, value, JSPROP_ENUMERATE)) {
+        return false;
+      }
+      validAttributesArray->initDenseElement(numberOfValidAttributes,
+                                             ObjectValue(*attributeObj));
+      ++numberOfValidAttributes;
     }
   }
 
-  if (numberOfValidAssertions == 0) {
+  if (numberOfValidAttributes == 0) {
     return true;
   }
 
-  assertionArray->setLength(numberOfValidAssertions);
-  assertionArrayArg.set(assertionArray);
+  
+  
+  
+  
+  
+
+  validAttributesArray->setLength(numberOfValidAttributes);
+  attributesArrayArg.set(validAttributesArray);
 
   return true;
 }
