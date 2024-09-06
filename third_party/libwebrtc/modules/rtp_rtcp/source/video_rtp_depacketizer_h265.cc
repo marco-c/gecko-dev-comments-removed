@@ -134,7 +134,7 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessApOrSingleNalu(
         
         parsed_payload->video_header.frame_type =
             VideoFrameType::kVideoFrameKey;
-        ABSL_FALLTHROUGH_INTENDED;
+        break;
       case H265::NaluType::kSps: {
         
         std::unique_ptr<rtc::Buffer> output_buffer(new rtc::Buffer());
