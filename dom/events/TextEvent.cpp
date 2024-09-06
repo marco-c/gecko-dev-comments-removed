@@ -4,9 +4,13 @@
 
 
 
+#include "mozilla/BasePrincipal.h"  
+#include "mozilla/EventForwards.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/TextEvent.h"
 #include "nsGlobalWindowInner.h"
+#include "nsIPrincipal.h"
 #include "nsPresContext.h"
 
 namespace mozilla::dom {
@@ -33,9 +37,22 @@ void TextEvent::InitTextEvent(const nsAString& typeArg, bool canBubbleArg,
   static_cast<InternalLegacyTextEvent*>(mEvent)->mData = dataArg;
 }
 
-void TextEvent::GetData(nsAString& aData) const {
-  
-  aData = static_cast<InternalLegacyTextEvent*>(mEvent)->mData;
+void TextEvent::GetData(nsAString& aData,
+                        nsIPrincipal& aSubjectPrincipal) const {
+  InternalLegacyTextEvent* textEvent = mEvent->AsLegacyTextEvent();
+  MOZ_ASSERT(textEvent);
+  if (mEvent->IsTrusted() && !aSubjectPrincipal.IsSystemPrincipal() &&
+      !StaticPrefs::dom_event_clipboardevents_enabled() &&
+      ExposesClipboardDataOrDataTransfer(textEvent->mInputType)) {
+    aData.Truncate();
+    return;
+  }
+  if (!textEvent->mDataTransfer) {
+    aData = textEvent->mData;
+    return;
+  }
+  textEvent->mDataTransfer->GetData(u"text/plain"_ns, aData, aSubjectPrincipal,
+                                    IgnoreErrors());
 }
 
 }  
