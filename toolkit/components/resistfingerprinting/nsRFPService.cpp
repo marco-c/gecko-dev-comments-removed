@@ -126,21 +126,12 @@ static constexpr uint32_t kVideoDroppedRatio = 5;
 
 
 #if defined(MOZ_WIDGET_ANDROID)
-
-#  define ANDROID_DEFAULT(name) RFPTarget::name |
-#  define DESKTOP_DEFAULT(name)
-#else
-#  define ANDROID_DEFAULT(name)
-
-#  define DESKTOP_DEFAULT(name) RFPTarget::name |
-#endif
-
 const RFPTarget kDefaultFingerprintingProtections =
-#include "RFPTargetsDefault.inc"
-    static_cast<RFPTarget>(0);
-
-#undef ANDROID_DEFAULT
-#undef DESKTOP_DEFAULT
+    RFPTarget::CanvasRandomization;
+#else
+const RFPTarget kDefaultFingerprintingProtections =
+    RFPTarget::CanvasRandomization | RFPTarget::FontVisibilityLangPack;
+#endif
 
 static constexpr uint32_t kSuspiciousFingerprintingActivityThreshold = 1;
 
