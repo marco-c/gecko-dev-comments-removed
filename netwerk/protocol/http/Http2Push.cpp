@@ -132,8 +132,7 @@ Http2PushedStream::Http2PushedStream(
   }
   
   mDefaultPriorityDependency = mPriorityDependency;
-  SetPriorityDependency(aAssociatedStream->RFC7540Priority() + 1,
-                        mPriorityDependency);
+  SetPriorityDependency(aAssociatedStream->Priority() + 1, mPriorityDependency);
   
   
   

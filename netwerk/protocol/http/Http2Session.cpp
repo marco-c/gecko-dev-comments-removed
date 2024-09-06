@@ -6,8 +6,6 @@
 
 
 #include "HttpLog.h"
-#include "nsCOMPtr.h"
-#include "nsStringFwd.h"
 
 
 #undef LOG
@@ -898,6 +896,17 @@ void Http2Session::GenerateSettingsAck() {
   FlushOutputQueue();
 }
 
+void Http2Session::GeneratePriority(uint32_t aID, uint8_t aPriorityWeight) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  LOG3(("Http2Session::GeneratePriority %p %X %X\n", this, aID,
+        aPriorityWeight));
+
+  char* packet = CreatePriorityFrame(aID, 0, aPriorityWeight);
+
+  LogIO(this, nullptr, "Generate Priority", packet, kFrameHeaderBytes + 5);
+  FlushOutputQueue();
+}
+
 void Http2Session::GenerateRstStream(uint32_t aStatusCode, uint32_t aID) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
@@ -1081,12 +1090,6 @@ void Http2Session::SendHello() {
 
 void Http2Session::SendPriorityFrame(uint32_t streamID, uint32_t dependsOn,
                                      uint8_t weight) {
-  
-  
-  
-  if (!UseH2Deps()) {
-    return;
-  }
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG3(
       ("Http2Session::SendPriorityFrame %p Frame 0x%X depends on 0x%X "
@@ -1097,42 +1100,6 @@ void Http2Session::SendPriorityFrame(uint32_t streamID, uint32_t dependsOn,
 
   LogIO(this, nullptr, "SendPriorityFrame", packet, kFrameHeaderBytes + 5);
   FlushOutputQueue();
-}
-
-void Http2Session::SendPriorityUpdateFrame(uint32_t streamID, uint8_t urgency,
-                                           bool incremental) {
-  CreatePriorityUpdateFrame(streamID, urgency, incremental);
-  FlushOutputQueue();
-}
-
-char* Http2Session::CreatePriorityUpdateFrame(uint32_t streamID,
-                                              uint8_t urgency,
-                                              bool incremental) {
-  
-  nsPrintfCString priorityFieldValue(
-      "%s", urgency != 3 ? nsPrintfCString("u=%d", urgency).get() : "");
-  size_t payloadSize = 4 + priorityFieldValue.Length();
-  char* packet = EnsureOutputBuffer(kFrameHeaderBytes + payloadSize);
-  
-  
-  CreateFrameHeader(packet, payloadSize,
-                    Http2Session::FRAME_TYPE_PRIORITY_UPDATE,
-                    0,   
-                    0);  
-
-  
-  
-  MOZ_ASSERT(!(streamID & 0x80000000));
-  NetworkEndian::writeUint32(packet + kFrameHeaderBytes, streamID & 0x7FFFFFFF);
-  
-  for (size_t i = 0; i < priorityFieldValue.Length(); ++i) {
-    packet[kFrameHeaderBytes + 4 + i] = priorityFieldValue[i];
-  }
-  mOutputQueueUsed += kFrameHeaderBytes + payloadSize;
-
-  LogIO(this, nullptr, "SendPriorityUpdateFrame", packet,
-        kFrameHeaderBytes + payloadSize);
-  return packet;
 }
 
 char* Http2Session::CreatePriorityFrame(uint32_t streamID, uint32_t dependsOn,
@@ -2154,28 +2121,9 @@ nsresult Http2Session::RecvPushPromise(Http2Session* self) {
   pushedWeak->SetHTTPState(Http2StreamBase::RESERVED_BY_REMOTE);
   static_assert(Http2StreamBase::kWorstPriority >= 0,
                 "kWorstPriority out of range");
-  if (self->UseH2Deps()) {
-    uint32_t priorityDependency = pushedWeak->PriorityDependency();
-    uint8_t priorityWeight = pushedWeak->PriorityWeight();
-    self->SendPriorityFrame(promisedID, priorityDependency, priorityWeight);
-  } else {
-    nsHttpTransaction* trans = associatedStream->HttpTransaction();
-    if (trans) {
-      uint8_t urgency = nsHttpHandler::UrgencyFromCoSFlags(
-          trans->GetClassOfService().Flags());
-
-      
-      
-      
-      
-      if (urgency < 3) {
-        urgency = 4;
-      }
-
-      bool incremental = trans->GetClassOfService().Incremental();
-      self->SendPriorityUpdateFrame(promisedID, urgency, incremental);
-    }
-  }
+  uint32_t priorityDependency = pushedWeak->PriorityDependency();
+  uint8_t priorityWeight = pushedWeak->PriorityWeight();
+  self->SendPriorityFrame(promisedID, priorityDependency, priorityWeight);
   self->ResetDownstreamState();
   return NS_OK;
 }
