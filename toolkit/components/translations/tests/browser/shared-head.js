@@ -1225,8 +1225,8 @@ class TestTranslationsTelemetry {
     {
       expectedEventCount,
       expectNewFlowId = null,
-      allValuePredicates = [],
-      finalValuePredicates = [],
+      assertForAllEvents = {},
+      assertForMostRecentEvent = {},
     }
   ) {
     
@@ -1277,34 +1277,38 @@ class TestTranslationsTelemetry {
       `There should be ${expectedEventCount} telemetry events of type ${name}`
     );
 
-    if (allValuePredicates.length !== 0) {
+    if (Object.keys(assertForAllEvents).length !== 0) {
       is(
         eventCount > 0,
         true,
-        `Telemetry event ${name} should contain values if allPredicates are specified`
+        `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
-      for (const value of events) {
-        for (const predicate of allValuePredicates) {
+      for (const [key, expectedEntry] of Object.entries(
+        assertForMostRecentEvent
+      )) {
+        for (const event of events) {
           is(
-            predicate(value),
-            true,
-            `Telemetry event ${name} allPredicate { ${predicate.toString()} } should pass for each value`
+            event.extra[key],
+            String(expectedEntry),
+            `Telemetry event ${name} value for ${key} should match the expected entry`
           );
         }
       }
     }
 
-    if (finalValuePredicates.length !== 0) {
+    if (Object.keys(assertForMostRecentEvent).length !== 0) {
       is(
         eventCount > 0,
         true,
-        `Telemetry event ${name} should contain values if finalPredicates are specified`
+        `Telemetry event ${name} should contain values if assertForMostRecentEvent are specified`
       );
-      for (const predicate of finalValuePredicates) {
+      for (const [key, expectedEntry] of Object.entries(
+        assertForMostRecentEvent
+      )) {
         is(
-          predicate(events[eventCount - 1]),
-          true,
-          `Telemetry event ${name} finalPredicate { ${predicate.toString()} } should pass for final value`
+          events[eventCount - 1].extra[key],
+          String(expectedEntry),
+          `Telemetry event ${name} value for ${key} should match the expected entry`
         );
       }
     }
