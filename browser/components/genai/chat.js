@@ -77,6 +77,18 @@ async function renderProviders() {
   }
 
   
+  const providerId = lazy.GenAI.getProviderId(lazy.providerPref);
+  Glean.genaiChatbot.provider.set(providerId);
+  if (renderProviders.lastId && document.hasFocus()) {
+    Glean.genaiChatbot.providerChange.record({
+      current: providerId,
+      previous: renderProviders.lastId,
+      surface: "panel",
+    });
+  }
+  renderProviders.lastId = providerId;
+
+  
   request();
   return select;
 }
@@ -102,5 +114,19 @@ var browserPromise = new Promise((resolve, reject) => {
       console.error("Failed to render on load", ex);
       reject(ex);
     }
+
+    Glean.genaiChatbot.sidebarToggle.record({
+      opened: true,
+      provider: lazy.GenAI.getProviderId(),
+      reason: "load",
+    });
   });
 });
+
+addEventListener("unload", () =>
+  Glean.genaiChatbot.sidebarToggle.record({
+    opened: false,
+    provider: lazy.GenAI.getProviderId(),
+    reason: "unload",
+  })
+);
