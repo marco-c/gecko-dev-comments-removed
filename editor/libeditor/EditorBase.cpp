@@ -34,7 +34,6 @@
 #include "ErrorList.h"
 #include "gfxFontUtils.h"  
 #include "mozilla/Assertions.h"
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
@@ -3715,20 +3714,32 @@ nsresult EditorBase::OnCompositionChange(
     return NS_ERROR_FAILURE;
   }
 
-  AutoEditActionDataSetter editActionData(
-      *this,
-      
-      
-      
-      
-      aCompositionChangeEvent.IsFollowedByCompositionEnd()
-          ? EditAction::eUpdateCompositionToCommit
-          : EditAction::eUpdateComposition);
+  AutoEditActionDataSetter editActionData(*this,
+                                          EditAction::eUpdateComposition);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
-  MOZ_ASSERT(!aCompositionChangeEvent.mData.IsVoid());
-  editActionData.SetData(aCompositionChangeEvent.mData);
+
+  
+  
+  
+  
+  
+  if (aCompositionChangeEvent.mData.IsEmpty() &&
+      mComposition->String().IsEmpty() && !SelectionRef().IsCollapsed()) {
+    editActionData.UpdateEditAction(EditAction::eDeleteByComposition);
+  }
+
+  
+  
+  
+  if (ToInputType(editActionData.GetEditAction()) !=
+      EditorInputType::eDeleteByComposition) {
+    MOZ_ASSERT(ToInputType(editActionData.GetEditAction()) ==
+               EditorInputType::eInsertCompositionText);
+    MOZ_ASSERT(!aCompositionChangeEvent.mData.IsVoid());
+    editActionData.SetData(aCompositionChangeEvent.mData);
+  }
 
   
   
@@ -6502,13 +6513,6 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeFlushPendingNotifications()
   return NS_OK;
 }
 
-void EditorBase::AutoEditActionDataSetter::MarkEditActionCanceled() {
-  mBeforeInputEventCanceled = true;
-  if (mEditorBase.IsHTMLEditor()) {
-    mEditorBase.AsHTMLEditor()->mHasBeforeInputBeenCanceled = true;
-  }
-}
-
 nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
     nsIEditor::EDirection aDeleteDirectionAndAmount ) {
   MOZ_ASSERT(!HasTriedToDispatchBeforeInputEvent(),
@@ -6633,79 +6637,11 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
     NS_WARNING("nsContentUtils::DispatchInputEvent() failed");
     return rv;
   }
-  if (status == nsEventStatus_eConsumeNoDefault) {
-    MarkEditActionCanceled();
-    return NS_ERROR_EDITOR_ACTION_CANCELED;
+  mBeforeInputEventCanceled = status == nsEventStatus_eConsumeNoDefault;
+  if (mBeforeInputEventCanceled && mEditorBase.IsHTMLEditor()) {
+    mEditorBase.AsHTMLEditor()->mHasBeforeInputBeenCanceled = true;
   }
-
-  nsCOMPtr<nsIWidget> widget = editorBase->GetWidget();
-  if (!StaticPrefs::dom_events_textevent_enabled() ||
-      !targetElement->IsInComposedDoc() || !widget) {
-    return NS_OK;
-  }
-  nsString textInputData;
-  RefPtr<DataTransfer> textInputDataTransfer;
-  switch (inputType) {
-    case EditorInputType::eInsertCompositionText:
-      
-      
-      
-      
-      if (mEditAction == EditAction::eUpdateComposition) {
-        return NS_OK;
-      }
-      [[fallthrough]];
-    case EditorInputType::eInsertText:
-      textInputData = mData;
-      break;
-    case EditorInputType::eInsertFromDrop:
-    case EditorInputType::eInsertFromPaste:
-    case EditorInputType::eInsertFromPasteAsQuotation:
-      if (mDataTransfer) {
-        textInputDataTransfer = mDataTransfer;
-      } else {
-        textInputData = mData;
-      }
-      break;
-    case EditorInputType::eInsertLineBreak:
-    case EditorInputType::eInsertParagraph:
-      
-      
-      
-      if (mEditorBase.IsTextEditor() && mEditorBase.IsSingleLineEditor()) {
-        return NS_OK;
-      }
-      textInputData.Assign(u'\n');
-      break;
-    default:
-      return NS_OK;
-  }
-
-  InternalLegacyTextEvent textEvent(true, eLegacyTextInput, widget);
-  textEvent.mData = std::move(textInputData);
-  textEvent.mDataTransfer = std::move(textInputDataTransfer);
-  textEvent.mInputType = inputType;
-  
-  
-  
-  
-  textEvent.mFlags.mCancelable = nsContentUtils::IsSafeToRunScript();
-
-  status = nsEventStatus_eIgnore;
-  rv = AsyncEventDispatcher::RunDOMEventWhenSafe(*targetElement, textEvent,
-                                                 &status);
-  if (NS_WARN_IF(mEditorBase.Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_FAILED(rv)) {
-    NS_WARNING("AsyncEventDispatcher::RunDOMEventWhenSafe() failed");
-    return rv;
-  }
-  if (status == nsEventStatus_eConsumeNoDefault) {
-    MarkEditActionCanceled();
-    return NS_ERROR_EDITOR_ACTION_CANCELED;
-  }
-  return NS_OK;
+  return mBeforeInputEventCanceled ? NS_ERROR_EDITOR_ACTION_CANCELED : NS_OK;
 }
 
 

@@ -433,9 +433,6 @@ NS_EVENT_MESSAGE(eEditorInput)
 NS_EVENT_MESSAGE(eEditorBeforeInput)
 
 
-NS_EVENT_MESSAGE(eLegacyTextInput)
-
-
 NS_EVENT_MESSAGE(eSelectStart)
 NS_EVENT_MESSAGE(eSelectionChange)
 NS_EVENT_MESSAGE(eSlotChange)
