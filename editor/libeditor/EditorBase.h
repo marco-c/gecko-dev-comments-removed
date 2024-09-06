@@ -1754,6 +1754,19 @@ class EditorBase : public nsIEditor,
   InsertPaddingBRElementForEmptyLastLineWithTransaction(
       const EditorDOMPoint& aPointToInsert);
 
+  enum class BRElementType {
+    Normal,
+    PaddingForEmptyEditor,
+    PaddingForEmptyLastLine
+  };
+  
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  UpdateBRElementType(dom::HTMLBRElement& aBRElement, BRElementType aNewType);
+
   
 
 

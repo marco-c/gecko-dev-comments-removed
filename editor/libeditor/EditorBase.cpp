@@ -16,8 +16,9 @@
 #include "DeleteNodeTransaction.h"
 #include "DeleteRangeTransaction.h"
 #include "DeleteTextTransaction.h"
-#include "EditAction.h"           
-#include "EditorDOMPoint.h"       
+#include "EditAction.h"      
+#include "EditorDOMPoint.h"  
+#include "EditorForwards.h"
 #include "EditorUtils.h"          
 #include "EditTransactionBase.h"  
 #include "EditorEventListener.h"  
@@ -35,6 +36,7 @@
 #include "gfxFontUtils.h"  
 #include "mozilla/Assertions.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/EditorDOMPoint.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
@@ -2414,17 +2416,85 @@ EditorBase::InsertPaddingBRElementForEmptyLastLineWithTransaction(
     pointToInsert = maybePointToInsert.unwrap();
   }
 
-  RefPtr<Element> newBRElement = CreateHTMLContent(nsGkAtoms::br);
+  RefPtr<HTMLBRElement> newBRElement =
+      HTMLBRElement::FromNodeOrNull(RefPtr{CreateHTMLContent(nsGkAtoms::br)});
   if (NS_WARN_IF(!newBRElement)) {
     return Err(NS_ERROR_FAILURE);
   }
-  newBRElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+  nsresult rv = UpdateBRElementType(*newBRElement,
+                                    BRElementType::PaddingForEmptyLastLine);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::UpdateBRElementType() failed");
+    return Err(rv);
+  }
 
   Result<CreateElementResult, nsresult> insertBRElementResult =
       InsertNodeWithTransaction<Element>(*newBRElement, pointToInsert);
   NS_WARNING_ASSERTION(insertBRElementResult.isOk(),
                        "EditorBase::InsertNodeWithTransaction() failed");
   return insertBRElementResult;
+}
+
+nsresult EditorBase::UpdateBRElementType(HTMLBRElement& aBRElement,
+                                         BRElementType aNewType) {
+  const bool brElementIsHidden = aBRElement.IsPaddingForEmptyEditor() ||
+                                 aBRElement.IsPaddingForEmptyLastLine();
+  const bool brElementWillBeHidden = aNewType != BRElementType::Normal;
+  const auto SetBRElementFlags = [&]() {
+    switch (aNewType) {
+      case BRElementType::Normal:
+        if (brElementIsHidden) {
+          aBRElement.UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR |
+                                NS_PADDING_FOR_EMPTY_LAST_LINE);
+        }
+        break;
+      case BRElementType::PaddingForEmptyEditor:
+        if (brElementIsHidden) {
+          aBRElement.UnsetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+        }
+        aBRElement.SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
+        break;
+      case BRElementType::PaddingForEmptyLastLine:
+        if (brElementIsHidden) {
+          aBRElement.UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
+        }
+        aBRElement.SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+        break;
+    }
+  };
+  
+  
+  
+  
+  
+  
+  
+  if (!aBRElement.IsInComposedDoc() ||
+      brElementIsHidden == brElementWillBeHidden) {
+    SetBRElementFlags();
+    return NS_OK;
+  }
+  EditorDOMPoint pointToInsert(&aBRElement);
+  {
+    AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
+    nsresult rv = DeleteNodeWithTransaction(aBRElement);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return rv;
+    }
+  }
+  if (NS_WARN_IF(!pointToInsert.IsSetAndValid())) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+  SetBRElementFlags();
+  Result<CreateElementResult, nsresult> result =
+      InsertNodeWithTransaction<Element>(aBRElement, pointToInsert);
+  if (MOZ_UNLIKELY(result.isErr())) {
+    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+    return result.unwrapErr();
+  }
+  result.inspect().IgnoreCaretPointSuggestion();
+  return NS_OK;
 }
 
 NS_IMETHODIMP EditorBase::DeleteNode(nsINode* aNode, bool aPreserveSelection,
@@ -3654,8 +3724,12 @@ nsresult EditorBase::EnsurePaddingBRElementInMultilineEditor() {
   }
 
   
-  brElement->UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
-  brElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+  nsresult rv =
+      UpdateBRElementType(*brElement, BRElementType::PaddingForEmptyLastLine);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::UpdateBRElementType() failed");
+    return rv;
+  }
 
   return NS_OK;
 }
