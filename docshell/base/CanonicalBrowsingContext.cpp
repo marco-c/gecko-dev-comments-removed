@@ -1738,10 +1738,10 @@ void CanonicalBrowsingContext::PendingRemotenessChange::ProcessLaunched() {
     return;
   }
 
-  if (mContentParentKeepAlive) {
+  if (mContentParent) {
     
     
-    auto found = mTarget->FindUnloadingHost(mContentParentKeepAlive->ChildID());
+    auto found = mTarget->FindUnloadingHost(mContentParent->ChildID());
     if (found != mTarget->mUnloadingHosts.end()) {
       found->mCallbacks.AppendElement(
           [self = RefPtr{this}]() { self->ProcessReady(); });
@@ -1791,8 +1791,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
                         "non-remote iframes");
 
   
-  if (mContentParentKeepAlive &&
-      NS_WARN_IF(mContentParentKeepAlive->IsShuttingDown())) {
+  if (mContentParent && NS_WARN_IF(mContentParent->IsShuttingDown())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1843,14 +1842,14 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
   
   
   browserElement->SetAttr(kNameSpaceID_None, nsGkAtoms::remote,
-                          mContentParentKeepAlive ? u"true"_ns : u"false"_ns,
+                          mContentParent ? u"true"_ns : u"false"_ns,
                            true);
 
   
   
   ErrorResult error;
-  frameLoaderOwner->ChangeRemotenessToProcess(mContentParentKeepAlive.get(),
-                                              mOptions, mSpecificGroup, error);
+  frameLoaderOwner->ChangeRemotenessToProcess(mContentParent, mOptions,
+                                              mSpecificGroup, error);
   if (error.Failed()) {
     return error.StealNSResult();
   }
@@ -1866,7 +1865,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
   RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
   RefPtr<BrowserParent> newBrowser = frameLoader->GetBrowserParent();
   if (!newBrowser) {
-    if (mContentParentKeepAlive) {
+    if (mContentParent) {
       
       
       return NS_ERROR_UNEXPECTED;
@@ -1905,7 +1904,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
     return NS_ERROR_FAILURE;
   }
 
-  if (NS_WARN_IF(!mContentParentKeepAlive)) {
+  if (NS_WARN_IF(!mContentParent)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1921,8 +1920,8 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
 
   
   
-  if (mContentParentKeepAlive != embedderBrowser->Manager() &&
-      NS_WARN_IF(mContentParentKeepAlive->IsShuttingDown())) {
+  if (mContentParent != embedderBrowser->Manager() &&
+      NS_WARN_IF(mContentParent->IsShuttingDown())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1948,11 +1947,11 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
   }
 
   
-  target->SetOwnerProcessId(mContentParentKeepAlive->ChildID());
+  target->SetOwnerProcessId(mContentParent->ChildID());
 
   
   
-  if (mContentParentKeepAlive == embedderBrowser->Manager()) {
+  if (mContentParent == embedderBrowser->Manager()) {
     MOZ_DIAGNOSTIC_ASSERT(
         mPendingSwitchId,
         "We always have a PendingSwitchId, except for print-preview loads, "
@@ -1988,9 +1987,8 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
   
   TabId tabId(nsContentUtils::GenerateTabId());
   RefPtr<BrowserBridgeParent> bridge = new BrowserBridgeParent();
-  nsresult rv =
-      bridge->InitWithProcess(embedderBrowser, mContentParentKeepAlive.get(),
-                              windowInit, chromeFlags, tabId);
+  nsresult rv = bridge->InitWithProcess(embedderBrowser, mContentParent,
+                                        windowInit, chromeFlags, tabId);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
     
@@ -2056,7 +2054,10 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Clear() {
 
   
   
-  mContentParentKeepAlive = nullptr;
+  if (mContentParent) {
+    mContentParent->RemoveKeepAlive();
+    mContentParent = nullptr;
+  }
 
   
   if (mSpecificGroup) {
@@ -2077,9 +2078,8 @@ CanonicalBrowsingContext::PendingRemotenessChange::PendingRemotenessChange(
       mOptions(aOptions) {}
 
 CanonicalBrowsingContext::PendingRemotenessChange::~PendingRemotenessChange() {
-  MOZ_ASSERT(
-      !mPromise && !mTarget && !mContentParentKeepAlive && !mSpecificGroup,
-      "should've already been Cancel() or Complete()-ed");
+  MOZ_ASSERT(!mPromise && !mTarget && !mContentParent && !mSpecificGroup,
+             "should've already been Cancel() or Complete()-ed");
 }
 
 BrowserParent* CanonicalBrowsingContext::GetBrowserParent() const {
@@ -2226,8 +2226,8 @@ CanonicalBrowsingContext::ChangeRemoteness(
 
     
     
-    change->mContentParentKeepAlive =
-        embedderBrowser->Manager()->AddKeepAlive(BrowserId());
+    change->mContentParent = embedderBrowser->Manager();
+    change->mContentParent->AddKeepAlive();
     change->ProcessLaunched();
     return promise.forget();
   }
@@ -2245,8 +2245,8 @@ CanonicalBrowsingContext::ChangeRemoteness(
   if (existingProcess && !existingProcess->IsShuttingDown() &&
       aOptions.mReplaceBrowsingContext &&
       aOptions.mRemoteType == existingProcess->GetRemoteType()) {
-    change->mContentParentKeepAlive =
-        existingProcess->AddKeepAlive(BrowserId());
+    change->mContentParent = existingProcess;
+    change->mContentParent->AddKeepAlive();
     change->ProcessLaunched();
     return promise.forget();
   }
@@ -2265,28 +2265,25 @@ CanonicalBrowsingContext::ChangeRemoteness(
   bool preferUsed =
       StaticPrefs::browser_tabs_remote_subframesPreferUsed() && !IsTop();
 
-  change->mContentParentKeepAlive =
-      ContentParent::GetNewOrUsedLaunchingBrowserProcess(
-           aOptions.mRemoteType,
-           finalGroup,
-           hal::PROCESS_PRIORITY_FOREGROUND,
-           preferUsed,
-           BrowserId());
-  if (!change->mContentParentKeepAlive) {
+  change->mContentParent = ContentParent::GetNewOrUsedLaunchingBrowserProcess(
+       aOptions.mRemoteType,
+       finalGroup,
+       hal::PROCESS_PRIORITY_FOREGROUND,
+       preferUsed);
+  if (!change->mContentParent) {
     change->Cancel(NS_ERROR_FAILURE);
     return promise.forget();
   }
 
-  if (change->mContentParentKeepAlive->IsLaunching()) {
-    change->mContentParentKeepAlive
-        ->WaitForLaunchAsync( hal::PROCESS_PRIORITY_FOREGROUND,
-                              BrowserId())
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [change](UniqueContentParentKeepAlive) {
-              change->ProcessLaunched();
-            },
-            [change]() { change->Cancel(NS_ERROR_FAILURE); });
+  
+  
+  
+  change->mContentParent->AddKeepAlive();
+  if (change->mContentParent->IsLaunching()) {
+    change->mContentParent->WaitForLaunchAsync()->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [change](ContentParent*) { change->ProcessLaunched(); },
+        [change]() { change->Cancel(NS_ERROR_FAILURE); });
   } else {
     change->ProcessLaunched();
   }

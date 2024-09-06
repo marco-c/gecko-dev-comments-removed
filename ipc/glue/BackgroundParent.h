@@ -64,12 +64,6 @@ class BackgroundParent final {
   
   
   
-  static already_AddRefed<nsISerialEventTarget> GetBackgroundThread();
-
-  
-  
-  
-  
   static bool IsOtherProcessActor(PBackgroundParent* aBackgroundActor);
 
   
