@@ -1609,15 +1609,6 @@ NotificationPermission Notification::GetPermissionInternal(
     }
   }
 
-  
-  if (Preferences::GetBool("notification.prompt.testing", false)) {
-    if (Preferences::GetBool("notification.prompt.testing.allow", true)) {
-      return NotificationPermission::Granted;
-    } else {
-      return NotificationPermission::Denied;
-    }
-  }
-
   return TestPermission(aPrincipal);
 }
 
