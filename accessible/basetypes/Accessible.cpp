@@ -569,7 +569,8 @@ nsStaticAtom* Accessible::ComputedARIARole() const {
       roleMap->roleAtom != nsGkAtoms::form &&
       (roleMap->roleRule == kUseNativeRole || roleMap->IsOfType(eLandmark) ||
        roleMap->roleAtom == nsGkAtoms::alertdialog ||
-       roleMap->roleAtom == nsGkAtoms::feed)) {
+       roleMap->roleAtom == nsGkAtoms::feed ||
+       roleMap->roleAtom == nsGkAtoms::rowgroup)) {
     
     
     return roleMap->roleAtom;
@@ -581,6 +582,15 @@ nsStaticAtom* Accessible::ComputedARIARole() const {
   if (geckoRole == roles::LANDMARK) {
     
     return LandmarkRole();
+  }
+  if (geckoRole == roles::GROUPING) {
+    
+    
+    nsAtom* tag = TagName();
+    if (tag == nsGkAtoms::tbody || tag == nsGkAtoms::tfoot ||
+        tag == nsGkAtoms::thead) {
+      return nsGkAtoms::rowgroup;
+    }
   }
   
 #define ROLE(_geckoRole, stringRole, ariaRole, atkRole, macRole, macSubrole, \
