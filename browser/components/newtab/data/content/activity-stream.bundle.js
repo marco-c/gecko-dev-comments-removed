@@ -10371,6 +10371,27 @@ class _Weather extends (external_React_default()).PureComponent {
 
     
     const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(this.props.Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(this.props.Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(this.props.Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
+    const WEATHER_SOURCE_ERROR_CONTEXT_MENU_OPTIONS = [...(this.props.Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
+    const contextMenu = contextOpts => external_React_default().createElement("div", {
+      className: "weatherButtonContextMenuWrapper"
+    }, external_React_default().createElement("button", {
+      "aria-haspopup": "true",
+      onKeyDown: this.onKeyDown,
+      onClick: this.onClick,
+      "data-l10n-id": "newtab-menu-section-tooltip",
+      className: "weatherButtonContextMenu"
+    }, showContextMenu ? external_React_default().createElement(LinkMenu, {
+      dispatch: dispatch,
+      index: index,
+      source: eventSource,
+      onUpdate: this.onUpdate,
+      options: contextOpts,
+      site: {
+        url: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page"
+      },
+      link: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
+      shouldSendImpressionStats: shouldSendImpressionStats
+    }) : null));
     if (Weather.searchActive) {
       return external_React_default().createElement(LocationSearch, {
         outerClassName: outerClassName
@@ -10407,26 +10428,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherHighLowTemps"
       }, external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.high[this.props.Prefs.values["weather.temperatureUnits"]], "\xB0", this.props.Prefs.values["weather.temperatureUnits"]), external_React_default().createElement("span", null, "\u2022"), external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.low[this.props.Prefs.values["weather.temperatureUnits"]], "\xB0", this.props.Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("span", {
         className: "weatherTextSummary"
-      }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), external_React_default().createElement("div", {
-        className: "weatherButtonContextMenuWrapper"
-      }, external_React_default().createElement("button", {
-        "aria-haspopup": "true",
-        onKeyDown: this.onKeyDown,
-        onClick: this.onClick,
-        "data-l10n-id": "newtab-menu-section-tooltip",
-        className: "weatherButtonContextMenu"
-      }, showContextMenu ? external_React_default().createElement(LinkMenu, {
-        dispatch: dispatch,
-        index: index,
-        source: eventSource,
-        onUpdate: this.onUpdate,
-        options: WEATHER_SOURCE_CONTEXT_MENU_OPTIONS,
-        site: {
-          url: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page"
-        },
-        link: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
-        shouldSendImpressionStats: shouldSendImpressionStats
-      }) : null))), external_React_default().createElement("span", {
+      }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), contextMenu(WEATHER_SOURCE_CONTEXT_MENU_OPTIONS)), external_React_default().createElement("span", {
         className: "weatherSponsorText"
       }, external_React_default().createElement("span", {
         "data-l10n-id": "newtab-weather-sponsored",
@@ -10439,10 +10441,10 @@ class _Weather extends (external_React_default()).PureComponent {
     }, external_React_default().createElement("div", {
       className: "weatherNotAvailable"
     }, external_React_default().createElement("span", {
-      className: "icon icon-small-spacer icon-info-warning"
-    }), " ", external_React_default().createElement("span", {
+      className: "icon icon-info-warning"
+    }), " ", external_React_default().createElement("p", {
       "data-l10n-id": "newtab-weather-error-not-available"
-    })));
+    }), contextMenu(WEATHER_SOURCE_ERROR_CONTEXT_MENU_OPTIONS)));
   }
 }
 const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state => ({
