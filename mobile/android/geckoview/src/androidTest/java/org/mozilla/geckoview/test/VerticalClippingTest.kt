@@ -71,8 +71,6 @@ class VerticalClippingTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun verticalClippingSucceeds() {
-        
-        assumeThat(sessionRule.env.isWebrender, equalTo(false))
         sessionRule.display?.setVerticalClipping(45)
         mainSession.loadTestPath(FIXED_BOTTOM)
         sessionRule.waitUntilCalled(object : ContentDelegate {
