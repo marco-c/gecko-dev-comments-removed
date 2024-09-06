@@ -252,29 +252,19 @@ enum class TextScanDirection { Left = -1, Right = 1 };
 
 
 
-
-uint32_t IsWhitespaceAtPosition(nsString& aText, uint32_t aPos,
-                                TextScanDirection aDirection) {
-  if (aText.Length() == 0) {
+bool IsWhitespaceAtPosition(const Text* aText, uint32_t aPos) {
+  if (!aText || aText->Length() == 0 || aPos >= aText->Length()) {
     return 0;
   }
-  if (aDirection == TextScanDirection::Right) {
-    if (aText.Length() > (aPos + 5)) {
-      if (Substring(aText, aPos, 5).Equals(u"&nbsp")) {
-        return aText.Length() > (aPos + 6) && aText.CharAt(aPos + 6) == u';'
-                   ? 6
-                   : 5;
-      }
-    }
-  } else {
-    if (aPos > 6 && Substring(aText, aPos - 6, 6).Equals(u"&nbsp;")) {
-      return 6;
-    }
-    if (aPos > 5 && Substring(aText, aPos - 5, 5).Equals(u"&nbsp")) {
-      return 5;
-    }
+  const nsTextFragment& frag = aText->TextFragment();
+  const char NBSP_CHAR = char(0xA0);
+  if (frag.Is2b()) {
+    const char16_t* content = frag.Get2b();
+    return IsSpaceCharacter(content[aPos]) ||
+           content[aPos] == char16_t(NBSP_CHAR);
   }
-  return uint32_t(IsSpaceCharacter(aText.CharAt(aPos)));
+  const char* content = frag.Get1b();
+  return IsSpaceCharacter(content[aPos]) || content[aPos] == NBSP_CHAR;
 }
 
 
@@ -303,8 +293,7 @@ void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange) {
       continue;
     }
     const Text* text = Text::FromNode(node);
-    nsAutoString textData;
-    text->GetData(textData);
+    MOZ_ASSERT(text);
     
     
     
@@ -316,13 +305,11 @@ void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange) {
     
     
     
-    const uint32_t whitespace =
-        IsWhitespaceAtPosition(textData, offset, TextScanDirection::Right);
-    if (whitespace == 0) {
+    if (!IsWhitespaceAtPosition(text, offset)) {
       return;
     }
 
-    aRange.SetStart(node, offset + whitespace);
+    aRange.SetStart(node, offset + 1);
   }
 }
 
@@ -347,16 +334,16 @@ RangeBoundary MoveRangeBoundaryOneWord(const RangeBoundary& aRangeBoundary,
   const int offsetIncrement = int(aDirection);
   
   
-  nsAutoString text;
+  nsAutoString textContent;
   if (NodeIsVisibleTextNode(*curNode)) {
     const Text* textNode = Text::FromNode(curNode);
-    textNode->GetData(text);
 
     
     
-    if (!IsWhitespaceAtPosition(text, offset, aDirection)) {
+    if (!IsWhitespaceAtPosition(textNode, offset)) {
+      textNode->GetData(textContent);
       const intl::WordRange wordRange =
-          intl::WordBreaker::FindWord(text, offset);
+          intl::WordBreaker::FindWord(textContent, offset);
       if (aDirection == TextScanDirection::Right &&
           offset != wordRange.mBegin) {
         offset = wordRange.mEnd;
@@ -380,21 +367,20 @@ RangeBoundary MoveRangeBoundaryOneWord(const RangeBoundary& aRangeBoundary,
       }
       offset =
           aDirection == TextScanDirection::Left ? curNode->Length() - 1 : 0;
-      if (const Text* textNode = Text::FromNode(curNode)) {
-        textNode->GetData(text);
-      }
       continue;
     }
-    if (const uint32_t whitespace =
-            IsWhitespaceAtPosition(text, offset, aDirection)) {
-      offset += offsetIncrement * whitespace;
+    const Text* textNode = Text::FromNode(curNode);
+    if (IsWhitespaceAtPosition(textNode, offset)) {
+      offset += offsetIncrement;
       continue;
     }
 
     
     
     
-    const intl::WordRange wordRange = intl::WordBreaker::FindWord(text, offset);
+    textNode->GetData(textContent);
+    const intl::WordRange wordRange =
+        intl::WordBreaker::FindWord(textContent, offset);
     offset = aDirection == TextScanDirection::Left ? wordRange.mBegin
                                                    : wordRange.mEnd;
 
