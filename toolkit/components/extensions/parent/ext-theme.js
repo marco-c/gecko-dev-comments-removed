@@ -53,16 +53,28 @@ class Theme {
     this.darkDetails = darkDetails;
     this.windowId = windowId;
 
-    if (startupData && startupData.lwtData) {
-      Object.assign(this, startupData);
+    if (startupData?.lwtData) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.lwtData = startupData.lwtData;
+      this.lwtStyles = startupData.lwtStyles;
+      this.lwtDarkStyles = startupData.lwtDarkStyles;
+      this.experiment = startupData.experiment;
     } else {
       
+      this.lwtData = null;
+      
       this.lwtStyles = {};
-      this.lwtDarkStyles = null;
-      if (darkDetails) {
-        this.lwtDarkStyles = {};
-      }
-
+      this.lwtDarkStyles = darkDetails ? {} : null;
       this.experiment = null;
       if (experiment) {
         if (extension.canUseThemeExperiment()) {
@@ -98,6 +110,7 @@ class Theme {
 
 
   load() {
+    
     if (!this.lwtData) {
       this.loadDetails(this.details, this.lwtStyles);
       if (this.darkDetails) {
@@ -114,6 +127,10 @@ class Theme {
       }
 
       if (this.extension.type === "theme") {
+        
+        
+        
+        
         this.extension.startupData = {
           lwtData: this.lwtData,
           lwtStyles: this.lwtStyles,
