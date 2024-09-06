@@ -28,3 +28,7 @@ check(() => { return {}; });
 
 
 check(() => { return []; });
+
+
+check(() => { return new Object(); });
+check(() => { return Object(); });
