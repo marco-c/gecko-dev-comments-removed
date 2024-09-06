@@ -5006,7 +5006,7 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
 
   const bool forPreview = !StaticPrefs::print_always_print_silent();
   Print(nullptr, nullptr, nullptr, nullptr, IsPreview(forPreview),
-        IsForWindowDotPrint::Yes, nullptr, nullptr, aError);
+        IsForWindowDotPrint::Yes, nullptr, aError);
 #endif
 }
 
@@ -5028,8 +5028,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     nsIPrintSettings* aPrintSettings, RemotePrintJobChild* aRemotePrintJob,
     nsIWebProgressListener* aListener, nsIDocShell* aDocShellToCloneInto,
     IsPreview aIsPreview, IsForWindowDotPrint aForWindowDotPrint,
-    PrintPreviewResolver&& aPrintPreviewCallback,
-    RefPtr<BrowsingContext>* aCachedBrowsingContext, ErrorResult& aError) {
+    PrintPreviewResolver&& aPrintPreviewCallback, ErrorResult& aError) {
 #ifdef NS_PRINTING
   nsCOMPtr<nsIPrintSettingsService> printSettingsService =
       do_GetService("@mozilla.org/gfx/printsettings-service;1");
@@ -5065,36 +5064,16 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   nsCOMPtr<nsIDocumentViewer> viewer;
   RefPtr<BrowsingContext> bc;
   bool hasPrintCallbacks = false;
-  bool wasStaticDocument = docToPrint->IsStaticDocument();
-  bool usingCachedBrowsingContext = false;
-  if (aCachedBrowsingContext && *aCachedBrowsingContext) {
-    MOZ_ASSERT(!wasStaticDocument,
-               "Why pass in non-empty aCachedBrowsingContext if original "
-               "document is already static?");
-    if (!wasStaticDocument) {
-      
-      
-      docToPrint = (*aCachedBrowsingContext)->GetDocument();
-      MOZ_ASSERT(docToPrint);
-      MOZ_ASSERT(docToPrint->IsStaticDocument());
-      wasStaticDocument = true;
-      usingCachedBrowsingContext = true;
-    }
-  }
-  if (wasStaticDocument) {
+  if (docToPrint->IsStaticDocument()) {
     if (aForWindowDotPrint == IsForWindowDotPrint::Yes) {
       aError.ThrowNotSupportedError(
           "Calling print() from a print preview is unsupported, did you intend "
           "to call printPreview() instead?");
       return nullptr;
     }
-    if (usingCachedBrowsingContext) {
-      bc = docToPrint->GetBrowsingContext();
-    } else {
-      
-      
-      bc = sourceBC;
-    }
+    
+    
+    bc = sourceBC;
     nsCOMPtr<nsIDocShell> docShell = bc->GetDocShell();
     if (!docShell) {
       aError.ThrowNotSupportedError("No docshell");
@@ -5135,10 +5114,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
                             printKind, getter_AddRefs(bc));
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
-      }
-      if (aCachedBrowsingContext) {
-        MOZ_ASSERT(!*aCachedBrowsingContext);
-        *aCachedBrowsingContext = bc;
       }
     }
     if (!bc) {
@@ -5195,24 +5170,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         "Content viewer didn't implement nsIWebBrowserPrint");
     return nullptr;
   }
-  bool closeWindowAfterPrint;
-  if (wasStaticDocument) {
-    
-    
-    
-    
-    
-    
-    closeWindowAfterPrint = usingCachedBrowsingContext;
-  } else {
-    
-    
-    
-    
-    
-    closeWindowAfterPrint = !aCachedBrowsingContext;
-  }
-  webBrowserPrint->SetCloseWindowAfterPrint(closeWindowAfterPrint);
 
   
   

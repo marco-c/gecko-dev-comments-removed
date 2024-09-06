@@ -20,6 +20,14 @@
 #include "mozilla/dom/TransformerBinding.h"
 #include "nsWrapperCache.h"
 
+
+
+#ifdef __clang__
+#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA MOZ_CAN_RUN_SCRIPT_BOUNDARY
+#else
+#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA
+#endif
+
 namespace mozilla::dom {
 
 using namespace streams_abstract;

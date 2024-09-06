@@ -1031,12 +1031,4 @@
 #  define MOZ_EMPTY_BASES
 #endif
 
-
-
-#ifdef __clang__
-#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA MOZ_CAN_RUN_SCRIPT_BOUNDARY
-#else
-#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA
-#endif
-
 #endif 
