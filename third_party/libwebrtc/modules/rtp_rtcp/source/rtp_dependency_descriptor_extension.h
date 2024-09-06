@@ -33,6 +33,11 @@ class RtpDependencyDescriptorExtension {
                     const FrameDependencyStructure* structure,
                     DependencyDescriptor* descriptor);
 
+  
+  
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    DependencyDescriptorMandatory* descriptor);
+
   static size_t ValueSize(const FrameDependencyStructure& structure,
                           const DependencyDescriptor& descriptor) {
     return ValueSize(structure, kAllChainsAreActive, descriptor);
@@ -52,16 +57,6 @@ class RtpDependencyDescriptorExtension {
 
  private:
   static constexpr std::bitset<32> kAllChainsAreActive = ~uint32_t{0};
-};
-
-
-class RtpDependencyDescriptorExtensionMandatory {
- public:
-  static constexpr webrtc::RTPExtensionType kId =
-      webrtc::RtpDependencyDescriptorExtension::kId;
-
-  static bool Parse(rtc::ArrayView<const uint8_t> data,
-                    DependencyDescriptorMandatory* descriptor);
 };
 
 }  
