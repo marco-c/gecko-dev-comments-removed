@@ -62,8 +62,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
                      gfxFontStyle& aFontStyle) override;
   char16_t GetPasswordCharacterImpl() override;
 
-  nsresult GetKeyboardLayoutImpl(nsACString& aLayout) override;
-
  private:
   struct TitlebarColors {
     
