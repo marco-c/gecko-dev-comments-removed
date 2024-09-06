@@ -498,7 +498,7 @@ class BackgroundContextOwner {
     }
 
     
-    this.backgroundBuilder.idleManager.clearTimer();
+    this.backgroundBuilder.idleManager.clearState();
 
     const bgInstance = this.bgInstance;
     if (bgInstance) {
@@ -790,6 +790,10 @@ class BackgroundBuilder {
       });
     };
 
+    let idleWaitUntil = (_, { promise, reason }) => {
+      this.idleManager.waitUntil(promise, reason);
+    };
+
     if (!extension.persistentBackground) {
       
       extension.on("background-script-reset-idle", resetBackgroundIdle);
@@ -798,6 +802,8 @@ class BackgroundBuilder {
       extension.once("background-script-started", () => {
         this.idleManager.resetTimer();
       });
+
+      extension.on("background-script-idle-waituntil", idleWaitUntil);
     }
 
     
@@ -901,7 +907,7 @@ class BackgroundBuilder {
       }
 
       extension.backgroundState = BACKGROUND_STATE.SUSPENDING;
-      this.idleManager.clearTimer();
+      this.idleManager.clearState();
       
       await extension.emit("background-script-suspend");
       
@@ -910,6 +916,7 @@ class BackgroundBuilder {
         return;
       }
       extension.off("background-script-reset-idle", resetBackgroundIdle);
+      extension.off("background-script-idle-waituntil", idleWaitUntil);
 
       
       if (!this.isWorker) {
@@ -987,6 +994,41 @@ var IdleManager = class IdleManager {
 
   constructor(extension) {
     this.extension = extension;
+  }
+
+  waitUntil(originalPromise, reason) {
+    
+    
+    let { promise, resolve } = Promise.withResolvers();
+    originalPromise.finally(() => resolve());
+    let start = Cu.now();
+
+    this.keepAlive.set(promise, { reason, resolve });
+    promise.finally(() => {
+      if (
+        this.keepAlive.delete(promise) &&
+        !this.keepAlive.size &&
+        this.extension.backgroundState === BACKGROUND_STATE.RUNNING
+      ) {
+        this.resetTimer();
+      }
+
+      if (Cu.now() - start > backgroundIdleTimeout) {
+        ExtensionTelemetry.eventPageIdleResult.histogramAdd({
+          extension: this.extension,
+          category: reason,
+          value: Math.round((Cu.now() - start) / backgroundIdleTimeout),
+        });
+      }
+    });
+  }
+
+  clearState() {
+    for (let { resolve } of this.keepAlive.values()) {
+      resolve();
+    }
+    this.keepAlive.clear();
+    this.clearTimer();
   }
 
   clearTimer() {
