@@ -17,6 +17,14 @@ interface nsIIncrementalStreamLoaderObserver : nsISupports
 
 
 
+    void onStartRequest(in nsIRequest aRequest);
+
+    
+
+
+
+
+
 
 
 
