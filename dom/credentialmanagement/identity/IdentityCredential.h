@@ -91,6 +91,9 @@ class IdentityCredential final : public Credential {
 
   
   void GetOrigin(nsACString& aOrigin, ErrorResult& aError) const;
+  static RefPtr<GetIdentityCredentialPromise> Create(
+      nsPIDOMWindowInner* aParent, const CredentialCreationOptions& aOptions,
+      bool aSameOriginWithAncestors);
 
   
   
