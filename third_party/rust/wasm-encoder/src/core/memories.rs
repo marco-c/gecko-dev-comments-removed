@@ -22,6 +22,7 @@ use crate::{encode_section, Encode, Section, SectionId};
 
 
 
+
 #[derive(Clone, Default, Debug)]
 pub struct MemorySection {
     bytes: Vec<u8>,
@@ -75,25 +76,40 @@ pub struct MemoryType {
     pub memory64: bool,
     
     pub shared: bool,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub page_size_log2: Option<u32>,
 }
 
 impl Encode for MemoryType {
     fn encode(&self, sink: &mut Vec<u8>) {
         let mut flags = 0;
         if self.maximum.is_some() {
-            flags |= 0b001;
+            flags |= 0b0001;
         }
         if self.shared {
-            flags |= 0b010;
+            flags |= 0b0010;
         }
         if self.memory64 {
-            flags |= 0b100;
+            flags |= 0b0100;
         }
-
+        if self.page_size_log2.is_some() {
+            flags |= 0b1000;
+        }
         sink.push(flags);
         self.minimum.encode(sink);
         if let Some(max) = self.maximum {
             max.encode(sink);
+        }
+        if let Some(p) = self.page_size_log2 {
+            p.encode(sink);
         }
     }
 }
@@ -106,6 +122,7 @@ impl From<wasmparser::MemoryType> for MemoryType {
             maximum: memory_ty.maximum,
             memory64: memory_ty.memory64,
             shared: memory_ty.shared,
+            page_size_log2: memory_ty.page_size_log2,
         }
     }
 }

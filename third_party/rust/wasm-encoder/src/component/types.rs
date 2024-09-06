@@ -498,9 +498,9 @@ pub enum PrimitiveValType {
     
     U64,
     
-    Float32,
+    F32,
     
-    Float64,
+    F64,
     
     Char,
     
@@ -519,8 +519,8 @@ impl Encode for PrimitiveValType {
             Self::U32 => 0x79,
             Self::S64 => 0x78,
             Self::U64 => 0x77,
-            Self::Float32 => 0x76,
-            Self::Float64 => 0x75,
+            Self::F32 => 0x76,
+            Self::F64 => 0x75,
             Self::Char => 0x74,
             Self::String => 0x73,
         });
@@ -540,8 +540,8 @@ impl From<wasmparser::PrimitiveValType> for PrimitiveValType {
             wasmparser::PrimitiveValType::U32 => PrimitiveValType::U32,
             wasmparser::PrimitiveValType::S64 => PrimitiveValType::S64,
             wasmparser::PrimitiveValType::U64 => PrimitiveValType::U64,
-            wasmparser::PrimitiveValType::Float32 => PrimitiveValType::Float32,
-            wasmparser::PrimitiveValType::Float64 => PrimitiveValType::Float64,
+            wasmparser::PrimitiveValType::F32 => PrimitiveValType::F32,
+            wasmparser::PrimitiveValType::F64 => PrimitiveValType::F64,
             wasmparser::PrimitiveValType::Char => PrimitiveValType::Char,
             wasmparser::PrimitiveValType::String => PrimitiveValType::String,
         }

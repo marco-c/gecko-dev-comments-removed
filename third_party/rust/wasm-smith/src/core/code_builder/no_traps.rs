@@ -37,7 +37,10 @@ pub(crate) fn load<'a>(
             
             insts.push(Instruction::MemorySize(memarg.memory_index));
             
-            insts.push(int_const_inst(address_type, 65_536));
+            insts.push(int_const_inst(
+                address_type,
+                crate::page_size(memory).into(),
+            ));
             
             insts.push(int_mul_inst(address_type));
             
@@ -116,7 +119,10 @@ pub(crate) fn store<'a>(
     
     insts.push(Instruction::MemorySize(memarg.memory_index));
     
-    insts.push(int_const_inst(address_type, 65_536));
+    insts.push(int_const_inst(
+        address_type,
+        crate::page_size(memory).into(),
+    ));
     
     insts.push(int_mul_inst(address_type));
     

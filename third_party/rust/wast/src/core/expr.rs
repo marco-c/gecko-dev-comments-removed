@@ -184,7 +184,6 @@ impl<'a> ExpressionParser<'a> {
                         
                         i @ Instruction::Block(_)
                         | i @ Instruction::Loop(_)
-                        | i @ Instruction::Let(_)
                         | i @ Instruction::TryTable(_) => {
                             self.instrs.push(i);
                             self.stack.push(Level::EndWith(Instruction::End(None)));
@@ -350,7 +349,7 @@ macro_rules! instructions {
     }) => (
         /// A listing of all WebAssembly instructions that can be in a module
         /// that this crate currently parses.
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         #[allow(missing_docs)]
         pub enum Instruction<'a> {
             $(
@@ -468,8 +467,6 @@ instructions! {
         // function-references proposal
         CallRef(Index<'a>) : [0x14] : "call_ref",
         ReturnCallRef(Index<'a>) : [0x15] : "return_call_ref",
-        FuncBind(FuncBindType<'a>) : [0x16] : "func.bind",
-        Let(LetType<'a>) : [0x17] : "let",
 
         Drop : [0x1a] : "drop",
         Select(SelectTypes<'a>) : [] : "select",
@@ -574,8 +571,8 @@ instructions! {
 
         I32Const(i32) : [0x41] : "i32.const",
         I64Const(i64) : [0x42] : "i64.const",
-        F32Const(Float32) : [0x43] : "f32.const",
-        F64Const(Float64) : [0x44] : "f64.const",
+        F32Const(F32) : [0x43] : "f32.const",
+        F64Const(F64) : [0x44] : "f64.const",
 
         I32Clz : [0x67] : "i32.clz",
         I32Ctz : [0x68] : "i32.ctz",
@@ -802,6 +799,10 @@ instructions! {
         I64AtomicRmw8CmpxchgU(MemArg<1>) : [0xfe, 0x4c] : "i64.atomic.rmw8.cmpxchg_u",
         I64AtomicRmw16CmpxchgU(MemArg<2>) : [0xfe, 0x4d] : "i64.atomic.rmw16.cmpxchg_u",
         I64AtomicRmw32CmpxchgU(MemArg<4>) : [0xfe, 0x4e] : "i64.atomic.rmw32.cmpxchg_u",
+
+        // proposal: shared-everything-threads
+        GlobalAtomicGet(OrderedAccess<'a>) : [0xfe, 0x4f] : "global.atomic.get",
+        GlobalAtomicSet(OrderedAccess<'a>) : [0xfe, 0x50] : "global.atomic.set",
 
         // proposal: simd
         //
@@ -1123,7 +1124,7 @@ impl<'a> Instruction<'a> {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(missing_docs)]
 pub struct BlockType<'a> {
     pub label: Option<Id<'a>>,
@@ -1143,7 +1144,7 @@ impl<'a> Parse<'a> for BlockType<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(missing_docs)]
 pub struct TryTable<'a> {
     pub block: Box<BlockType<'a>>,
@@ -1187,7 +1188,7 @@ impl<'a> Parse<'a> for TryTable<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(missing_docs)]
 pub enum TryTableCatchKind<'a> {
     
@@ -1210,7 +1211,7 @@ impl<'a> TryTableCatchKind<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(missing_docs)]
 pub struct TryTableCatch<'a> {
     pub kind: TryTableCatchKind<'a>,
@@ -1218,42 +1219,8 @@ pub struct TryTableCatch<'a> {
 }
 
 
-#[derive(Debug)]
 #[allow(missing_docs)]
-pub struct FuncBindType<'a> {
-    pub ty: TypeUse<'a, FunctionType<'a>>,
-}
-
-impl<'a> Parse<'a> for FuncBindType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(FuncBindType {
-            ty: parser
-                .parse::<TypeUse<'a, FunctionTypeNoNames<'a>>>()?
-                .into(),
-        })
-    }
-}
-
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct LetType<'a> {
-    pub block: Box<BlockType<'a>>,
-    pub locals: Box<[Local<'a>]>,
-}
-
-impl<'a> Parse<'a> for LetType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(LetType {
-            block: parser.parse()?,
-            locals: Local::parse_remainder(parser)?.into(),
-        })
-    }
-}
-
-
-#[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BrTableIndices<'a> {
     pub labels: Vec<Index<'a>>,
     pub default: Index<'a>,
@@ -1271,7 +1238,7 @@ impl<'a> Parse<'a> for BrTableIndices<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LaneArg {
     
     pub lane: u8,
@@ -1299,7 +1266,7 @@ impl<'a> Parse<'a> for LaneArg {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemArg<'a> {
     
     
@@ -1374,7 +1341,7 @@ impl<'a> MemArg<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LoadOrStoreLane<'a> {
     
     pub memarg: MemArg<'a>,
@@ -1428,7 +1395,7 @@ impl<'a> LoadOrStoreLane<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallIndirect<'a> {
     
     pub table: Index<'a>,
@@ -1449,7 +1416,7 @@ impl<'a> Parse<'a> for CallIndirect<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableInit<'a> {
     
     pub table: Index<'a>,
@@ -1471,7 +1438,7 @@ impl<'a> Parse<'a> for TableInit<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableCopy<'a> {
     
     pub dst: Index<'a>,
@@ -1493,7 +1460,7 @@ impl<'a> Parse<'a> for TableCopy<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableArg<'a> {
     
     pub dst: Index<'a>,
@@ -1511,7 +1478,7 @@ impl<'a> Parse<'a> for TableArg<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemoryArg<'a> {
     
     pub mem: Index<'a>,
@@ -1529,7 +1496,7 @@ impl<'a> Parse<'a> for MemoryArg<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemoryInit<'a> {
     
     pub data: Index<'a>,
@@ -1551,7 +1518,7 @@ impl<'a> Parse<'a> for MemoryInit<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemoryCopy<'a> {
     
     pub src: Index<'a>,
@@ -1573,7 +1540,7 @@ impl<'a> Parse<'a> for MemoryCopy<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StructAccess<'a> {
     
     pub r#struct: Index<'a>,
@@ -1591,7 +1558,7 @@ impl<'a> Parse<'a> for StructAccess<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArrayFill<'a> {
     
     pub array: Index<'a>,
@@ -1606,7 +1573,7 @@ impl<'a> Parse<'a> for ArrayFill<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArrayCopy<'a> {
     
     pub dest_array: Index<'a>,
@@ -1624,7 +1591,7 @@ impl<'a> Parse<'a> for ArrayCopy<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArrayInit<'a> {
     
     pub array: Index<'a>,
@@ -1642,7 +1609,7 @@ impl<'a> Parse<'a> for ArrayInit<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArrayNewFixed<'a> {
     
     pub array: Index<'a>,
@@ -1660,7 +1627,7 @@ impl<'a> Parse<'a> for ArrayNewFixed<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArrayNewData<'a> {
     
     pub array: Index<'a>,
@@ -1678,7 +1645,7 @@ impl<'a> Parse<'a> for ArrayNewData<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArrayNewElem<'a> {
     
     pub array: Index<'a>,
@@ -1696,7 +1663,7 @@ impl<'a> Parse<'a> for ArrayNewElem<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RefCast<'a> {
     
     pub r#type: RefType<'a>,
@@ -1711,7 +1678,7 @@ impl<'a> Parse<'a> for RefCast<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RefTest<'a> {
     
     pub r#type: RefType<'a>,
@@ -1726,7 +1693,7 @@ impl<'a> Parse<'a> for RefTest<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BrOnCast<'a> {
     
     pub label: Index<'a>,
@@ -1747,7 +1714,7 @@ impl<'a> Parse<'a> for BrOnCast<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BrOnCastFail<'a> {
     
     pub label: Index<'a>,
@@ -1768,15 +1735,64 @@ impl<'a> Parse<'a> for BrOnCastFail<'a> {
 }
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub enum Ordering {
+    
+    
+    AcqRel,
+    
+    
+    
+    SeqCst,
+}
+
+impl<'a> Parse<'a> for Ordering {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        if parser.peek::<kw::seq_cst>()? {
+            parser.parse::<kw::seq_cst>()?;
+            Ok(Ordering::SeqCst)
+        } else if parser.peek::<kw::acq_rel>()? {
+            parser.parse::<kw::acq_rel>()?;
+            Ok(Ordering::AcqRel)
+        } else {
+            Err(parser.error("expected a memory ordering: `seq_cst` or `acq_rel`"))
+        }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct OrderedAccess<'a> {
+    
+    pub ordering: Ordering,
+    
+    pub index: Index<'a>,
+}
+
+impl<'a> Parse<'a> for OrderedAccess<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let ordering = parser.parse()?;
+        let index = parser.parse()?;
+        Ok(OrderedAccess { ordering, index })
+    }
+}
+
+
+#[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub enum V128Const {
     I8x16([i8; 16]),
     I16x8([i16; 8]),
     I32x4([i32; 4]),
     I64x2([i64; 2]),
-    F32x4([Float32; 4]),
-    F64x2([Float64; 2]),
+    F32x4([F32; 4]),
+    F64x2([F64; 2]),
 }
 
 impl V128Const {
@@ -1934,7 +1950,7 @@ impl<'a> Parse<'a> for V128Const {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct I8x16Shuffle {
     #[allow(missing_docs)]
     pub lanes: [u8; 16],
@@ -1966,7 +1982,7 @@ impl<'a> Parse<'a> for I8x16Shuffle {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SelectTypes<'a> {
     #[allow(missing_docs)]
     pub tys: Option<Vec<ValType<'a>>>,

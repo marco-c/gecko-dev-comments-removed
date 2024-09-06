@@ -111,6 +111,7 @@ impl TryFrom<wasmparser::TypeRef> for EntityType {
 
 
 
+
 #[derive(Clone, Debug, Default)]
 pub struct ImportSection {
     bytes: Vec<u8>,

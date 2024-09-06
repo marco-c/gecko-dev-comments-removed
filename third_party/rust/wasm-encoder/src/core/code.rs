@@ -275,6 +275,34 @@ impl Encode for MemArg {
 }
 
 
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum Ordering {
+    
+    
+    
+    AcqRel,
+    
+    
+    SeqCst,
+}
+
+impl Encode for Ordering {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        let flag: u8 = match self {
+            Ordering::SeqCst => 0,
+            Ordering::AcqRel => 1,
+        };
+        sink.push(flag);
+    }
+}
+
+
 pub type Lane = u8;
 
 
@@ -980,6 +1008,16 @@ pub enum Instruction<'a> {
     I64AtomicRmw8CmpxchgU(MemArg),
     I64AtomicRmw16CmpxchgU(MemArg),
     I64AtomicRmw32CmpxchgU(MemArg),
+
+    
+    GlobalAtomicGet {
+        ordering: Ordering,
+        global_index: u32,
+    },
+    GlobalAtomicSet {
+        ordering: Ordering,
+        global_index: u32,
+    },
 }
 
 impl Encode for Instruction<'_> {
@@ -3122,6 +3160,26 @@ impl Encode for Instruction<'_> {
                 sink.push(0xFE);
                 sink.push(0x4E);
                 memarg.encode(sink);
+            }
+
+            
+            Instruction::GlobalAtomicGet {
+                ordering,
+                global_index,
+            } => {
+                sink.push(0xFE);
+                sink.push(0x4F);
+                ordering.encode(sink);
+                global_index.encode(sink);
+            }
+            Instruction::GlobalAtomicSet {
+                ordering,
+                global_index,
+            } => {
+                sink.push(0xFE);
+                sink.push(0x50);
+                ordering.encode(sink);
+                global_index.encode(sink);
             }
         }
     }

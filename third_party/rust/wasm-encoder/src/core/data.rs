@@ -33,6 +33,7 @@ use crate::{encode_section, encoding_size, ConstExpr, Encode, Section, SectionId
 
 
 
+
 #[derive(Clone, Default, Debug)]
 pub struct DataSection {
     bytes: Vec<u8>,
