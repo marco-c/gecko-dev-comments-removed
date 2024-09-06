@@ -530,6 +530,9 @@ class MediaDecoderStateMachine
   
   bool mBypassingSkipToNextKeyFrameCheck = false;
 
+  
+  TimeDuration mTotalBufferingDuration;
+
  private:
   
   Mirror<nsAutoString> mStreamName;
