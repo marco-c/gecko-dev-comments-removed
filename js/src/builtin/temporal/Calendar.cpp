@@ -3195,6 +3195,193 @@ static bool CalendarDateToISO(JSContext* cx, CalendarId calendar,
 #endif
 }
 
+
+
+
+static bool CalendarMonthDayToISOReferenceDate(JSContext* cx,
+                                               CalendarId calendar,
+                                               Handle<TemporalFields> fields,
+                                               TemporalOverflow overflow,
+                                               PlainDate* result) {
+#if defined(MOZ_ICU4X)
+  MOZ_ASSERT(calendar != CalendarId::ISO8601);
+
+  EraYears eraYears;
+  if (!fields.monthCode()) {
+    if (!CalendarFieldYear(cx, calendar, fields, &eraYears)) {
+      return false;
+    }
+  }
+
+  Month month;
+  if (!CalendarFieldMonth(cx, calendar, fields, overflow, &month)) {
+    return false;
+  }
+  MOZ_ASSERT((month.code == MonthCode{}) == !fields.monthCode());
+
+  int32_t day;
+  if (!CalendarFieldDay(cx, calendar, fields, overflow, &day)) {
+    return false;
+  }
+
+  auto cal = CreateICU4XCalendar(cx, calendar);
+  if (!cal) {
+    return false;
+  }
+
+  
+  
+  
+
+  
+  auto monthCode = month.code;
+  if (monthCode == MonthCode{}) {
+    MOZ_ASSERT(month.ordinal > 0);
+
+    auto eraYear = eraYears.fromEra ? *eraYears.fromEra : *eraYears.fromEpoch;
+
+    auto date = CreateDateFrom(cx, calendar, cal.get(), eraYear, month.ordinal,
+                               day, overflow);
+    if (!date) {
+      return false;
+    }
+
+    
+    
+    
+    
+
+    
+    if (eraYears.fromEpoch && eraYears.fromEra) {
+      if (!CalendarFieldEraYearMatchesYear(cx, calendar, fields, date.get())) {
+        return false;
+      }
+    }
+
+    if (!CalendarDateMonthCode(cx, calendar, date.get(), &monthCode)) {
+      return false;
+    }
+  }
+
+  
+  
+  constexpr auto isoReferenceDate = PlainDate{1972, 12, 31};
+
+  auto fromIsoDate = CreateICU4XDate(cx, isoReferenceDate, cal.get());
+  if (!fromIsoDate) {
+    return false;
+  }
+
+  
+  int32_t calendarYear;
+  if (!CalendarDateYear(cx, calendar, fromIsoDate.get(), &calendarYear)) {
+    return false;
+  }
+
+  
+  int32_t daysInMonth = CalendarDaysInMonth(calendar, monthCode).second;
+  if (overflow == TemporalOverflow::Constrain) {
+    day = std::min(day, daysInMonth);
+  } else {
+    MOZ_ASSERT(overflow == TemporalOverflow::Reject);
+
+    if (day > daysInMonth) {
+      ReportCalendarFieldOverflow(cx, "day", day);
+      return false;
+    }
+  }
+
+  
+  
+  constexpr size_t maxIterations = 10'000;
+
+  UniqueICU4XDate date;
+  for (size_t i = 0; i < maxIterations; i++) {
+    
+    if (!CheckForInterrupt(cx)) {
+      return false;
+    }
+
+    auto candidateYear = CalendarEraYear(calendar, calendarYear);
+
+    auto result =
+        CreateDateFromCodes(calendar, cal.get(), candidateYear, monthCode, day);
+    if (result.isOk()) {
+      
+      auto plainDate = ToPlainDate(result.inspect().get());
+      if (plainDate.year > isoReferenceDate.year) {
+        calendarYear -= 1;
+        continue;
+      }
+
+      date = result.unwrap();
+      break;
+    }
+
+    switch (result.inspectErr()) {
+      case CalendarError::UnknownMonthCode: {
+        MOZ_ASSERT(CalendarHasLeapMonths(calendar));
+        MOZ_ASSERT(monthCode.isLeapMonth());
+
+        
+        
+        calendarYear -= 1;
+        continue;
+      }
+
+      case CalendarError::Overflow: {
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(day > CalendarDaysInMonth(calendar, monthCode).first);
+
+        
+        
+        calendarYear -= 1;
+        continue;
+      }
+
+      case CalendarError::OutOfRange:
+      case CalendarError::Underflow:
+      case CalendarError::UnknownEra:
+        MOZ_ASSERT(false, "unexpected calendar error");
+        break;
+
+      case CalendarError::Generic:
+        break;
+    }
+
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_CALENDAR_INTERNAL_ERROR);
+    return false;
+  }
+
+  
+  
+  if (!date) {
+    ReportCalendarFieldOverflow(cx, "day", day);
+    return false;
+  }
+
+  
+  if (month.code != MonthCode{} && month.ordinal > 0) {
+    if (!CalendarFieldMonthCodeMatchesMonth(cx, fields, date.get(),
+                                            month.ordinal)) {
+      return false;
+    }
+  }
+
+  *result = ToPlainDate(date.get());
+  return true;
+#else
+  MOZ_CRASH("ICU4X disabled");
+#endif
+}
+
 enum class FieldType { Date, YearMonth, MonthDay };
 
 
@@ -5556,9 +5743,22 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
 
   
   Rooted<TemporalFields> dateFields(cx);
-  if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
-                             {TemporalField::Day}, &dateFields)) {
-    return nullptr;
+  if (calendarId == CalendarId::ISO8601) {
+    
+    if (!PrepareTemporalFields(cx, fields, relevantFieldNames,
+                               {TemporalField::Day}, &dateFields)) {
+      return nullptr;
+    }
+  } else {
+    
+    auto calendarRelevantFieldDescriptors =
+        CalendarFieldDescriptors(calendarId, FieldType::MonthDay);
+
+    
+    if (!PrepareTemporalFields(cx, fields, relevantFieldNames, {},
+                               calendarRelevantFieldDescriptors, &dateFields)) {
+      return nullptr;
+    }
   }
 
   
@@ -5570,14 +5770,29 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
   }
 
   
-  if (!ISOResolveMonth(cx, &dateFields)) {
-    return nullptr;
-  }
-
-  
   PlainDate result;
-  if (!ISOMonthDayFromFields(cx, dateFields, overflow, &result)) {
-    return nullptr;
+  if (calendarId == CalendarId::ISO8601) {
+    
+    if (!ISOResolveMonth(cx, &dateFields)) {
+      return nullptr;
+    }
+
+    
+    if (!ISOMonthDayFromFields(cx, dateFields, overflow, &result)) {
+      return nullptr;
+    }
+  } else {
+    
+    if (!CalendarResolveFields(cx, calendarId, dateFields,
+                               FieldType::MonthDay)) {
+      return nullptr;
+    }
+
+    
+    if (!CalendarMonthDayToISOReferenceDate(cx, calendarId, dateFields,
+                                            overflow, &result)) {
+      return nullptr;
+    }
   }
 
   
