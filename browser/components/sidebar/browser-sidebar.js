@@ -262,6 +262,7 @@ var SidebarUI = {
 
 
 
+
   handleKeydown(event) {
     switch (event.key) {
       case "Enter":
@@ -367,6 +368,7 @@ var SidebarUI = {
   },
 
   
+
 
 
 
