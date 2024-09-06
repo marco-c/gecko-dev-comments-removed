@@ -213,11 +213,6 @@ interface nsIFilePicker : nsISupports
  
 
 
-  void close();
-
- 
-
-
 
   readonly attribute nsIFilePicker_Mode mode;
 
