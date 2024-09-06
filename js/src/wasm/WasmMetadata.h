@@ -123,46 +123,6 @@ enum class NameContext { Standalone, BeforeLocation };
 
 
 
-struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
-  
-  
-
-  
-  
-  ImportVector imports;
-  ExportVector exports;
-
-  
-  
-  ModuleElemSegmentVector elemSegments;
-
-  
-  
-  
-  
-  
-  
-  DataSegmentRangeVector dataSegmentRanges;
-  DataSegmentVector dataSegments;
-
-  CustomSectionVector customSections;
-
-  
-  FeatureUsage featureUsage;
-
-  explicit ModuleMetadata() = default;
-
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-};
-
-using MutableModuleMetadata = RefPtr<ModuleMetadata>;
-using SharedModuleMetadata = RefPtr<const ModuleMetadata>;
-
-
-
-
-
-
 
 
 
@@ -293,6 +253,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
 
   [[nodiscard]] bool init() {
+    MOZ_ASSERT(!types);
     types = js_new<TypeContext>(features);
     return types;
   }
@@ -439,6 +400,60 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
 
 using MutableCodeMetadata = RefPtr<CodeMetadata>;
 using SharedCodeMetadata = RefPtr<const CodeMetadata>;
+
+
+
+
+
+
+struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
+  
+  
+
+  
+  
+  MutableCodeMetadata codeMeta;
+
+  
+  
+  ImportVector imports;
+  ExportVector exports;
+
+  
+  
+  ModuleElemSegmentVector elemSegments;
+
+  
+  
+  
+  
+  
+  
+  DataSegmentRangeVector dataSegmentRanges;
+  DataSegmentVector dataSegments;
+
+  CustomSectionVector customSections;
+
+  
+  FeatureUsage featureUsage;
+
+  explicit ModuleMetadata() = default;
+
+  [[nodiscard]] bool init() {
+    codeMeta = js_new<CodeMetadata>();
+    return !!codeMeta && codeMeta->init();
+  }
+  [[nodiscard]] bool init(FeatureArgs features,
+                          ModuleKind kind = ModuleKind::Wasm) {
+    codeMeta = js_new<CodeMetadata>(features, kind);
+    return !!codeMeta && codeMeta->init();
+  }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+};
+
+using MutableModuleMetadata = RefPtr<ModuleMetadata>;
+using SharedModuleMetadata = RefPtr<const ModuleMetadata>;
 
 }  
 }  
