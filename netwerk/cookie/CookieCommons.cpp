@@ -347,6 +347,18 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
     return nullptr;
   }
 
+  
+  
+  
+  for (auto iter = aCookieString.BeginReading(),
+            end = aCookieString.EndReading();
+       iter < end; ++iter) {
+    if ((*iter >= 0x00 && *iter <= 0x08) || (*iter >= 0x0A && *iter <= 0x1F) ||
+        *iter == 0x7F) {
+      return nullptr;
+    }
+  }
+
   nsAutoCString baseDomain;
   bool requireHostMatch = false;
   nsresult rv = CookieCommons::GetBaseDomain(
