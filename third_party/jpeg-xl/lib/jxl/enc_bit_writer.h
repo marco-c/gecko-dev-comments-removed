@@ -25,6 +25,7 @@
 namespace jxl {
 
 struct AuxOut;
+enum class LayerType : uint8_t;
 
 struct BitWriter {
   
@@ -91,7 +92,7 @@ struct BitWriter {
       return histogram_bits_;
     }
 
-    void ReclaimAndCharge(BitWriter* JXL_RESTRICT writer, size_t layer,
+    void ReclaimAndCharge(BitWriter* JXL_RESTRICT writer, LayerType layer,
                           AuxOut* JXL_RESTRICT aux_out);
 
    private:

@@ -62,14 +62,6 @@
 #endif
 
 #if JXL_COMPILER_MSVC
-#define JXL_UNREACHABLE_BUILTIN __assume(false)
-#elif JXL_COMPILER_CLANG || JXL_COMPILER_GCC >= 405
-#define JXL_UNREACHABLE_BUILTIN __builtin_unreachable()
-#else
-#define JXL_UNREACHABLE_BUILTIN
-#endif
-
-#if JXL_COMPILER_MSVC
 #define JXL_MAYBE_UNUSED
 #else
 
@@ -164,5 +156,15 @@ using ssize_t = intptr_t;
 
 
 #define JXL_CXX_17 201703
+
+
+#if defined(JXL_DEBUG_BUILD)
+#undef JXL_DEBUG_BUILD
+#define JXL_DEBUG_BUILD 1
+#elif defined(NDEBUG)
+#define JXL_DEBUG_BUILD 0
+#else
+#define JXL_DEBUG_BUILD 1
+#endif
 
 #endif  

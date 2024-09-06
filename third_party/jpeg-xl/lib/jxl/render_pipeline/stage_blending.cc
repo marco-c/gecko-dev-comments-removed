@@ -105,10 +105,6 @@ class BlendingStage : public RenderPipelineStage {
           pb->mode = PatchBlendMode::kAlphaWeightedAddAbove;
           break;
         }
-        default: {
-          JXL_UNREACHABLE(
-              "Invalid blend mode");  
-        }
       }
     };
     make_blending(info_, blending_info_.data());

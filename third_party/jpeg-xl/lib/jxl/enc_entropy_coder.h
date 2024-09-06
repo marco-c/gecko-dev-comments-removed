@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "lib/jxl/ac_context.h"  
-#include "lib/jxl/ac_strategy.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/rect.h"
 #include "lib/jxl/coeff_order_fwd.h"
@@ -24,6 +23,8 @@
 
 
 namespace jxl {
+
+class AcStrategyImage;
 
 
 

@@ -25,7 +25,7 @@ Status WriteGroupOffsets(
     writer->Write(1, 1);  
     JXL_DASSERT(permutation.size() == group_codes.size());
     EncodePermutation(permutation.data(), 0, permutation.size(),
-                      writer,  0, aux_out);
+                      writer, LayerType::Header, aux_out);
 
   } else {
     writer->Write(1, 0);  
@@ -38,7 +38,7 @@ Status WriteGroupOffsets(
     JXL_RETURN_IF_ERROR(U32Coder::Write(kTocDist, group_size, writer));
   }
   writer->ZeroPadToByte();  
-  allotment.ReclaimAndCharge(writer, kLayerTOC, aux_out);
+  allotment.ReclaimAndCharge(writer, LayerType::Toc, aux_out);
   return true;
 }
 
