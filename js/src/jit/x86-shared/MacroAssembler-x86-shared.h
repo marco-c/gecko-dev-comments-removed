@@ -795,6 +795,25 @@ class MacroAssemblerX86Shared : public Assembler {
     vmovaps(src, dest);
   }
 
+  FaultingCodeOffset loadFloat16(const Address& addr, FloatRegister dest,
+                                 Register scratch) {
+    auto fco = load16ZeroExtend(addr, scratch);
+
+    
+    vmovd(scratch, dest);
+
+    return fco;
+  }
+  FaultingCodeOffset loadFloat16(const BaseIndex& src, FloatRegister dest,
+                                 Register scratch) {
+    auto fco = load16ZeroExtend(src, scratch);
+
+    
+    vmovd(scratch, dest);
+
+    return fco;
+  }
+
   
   
   

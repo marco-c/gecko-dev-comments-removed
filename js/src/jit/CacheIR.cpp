@@ -3234,11 +3234,6 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayElement(
 
   auto* tarr = &obj->as<TypedArrayObject>();
 
-  if (tarr->type() == Scalar::Float16) {
-    
-    return AttachDecision::NoAction;
-  }
-
   bool handleOOB = false;
   int64_t indexInt64;
   if (!ValueIsInt64Index(idVal_, &indexInt64) || indexInt64 < 0 ||
