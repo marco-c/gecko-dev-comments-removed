@@ -20,7 +20,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/BinarySearch.h"
-#include "mozilla/ScopeExit.h"
 
 #include "gc/Memory.h"
 #include "threading/ExclusiveData.h"
@@ -38,16 +37,6 @@ using namespace wasm;
 
 using mozilla::BinarySearchIf;
 
-
-
-
-
-
-
-
-
-using CodeBlockVector = Vector<const CodeBlock*, 0, SystemAllocPolicy>;
-
 Atomic<bool> wasm::CodeExists(false);
 
 
@@ -57,162 +46,6 @@ Atomic<bool> wasm::CodeExists(false);
 
 
 
-
-
-static Atomic<size_t> sNumActiveLookups(0);
-
-class ThreadSafeCodeBlockMap {
-  
-  
-
-  Mutex mutatorsMutex_ MOZ_UNANNOTATED;
-
-  CodeBlockVector segments1_;
-  CodeBlockVector segments2_;
-
-  
-  
-
-  CodeBlockVector* mutableCodeBlocks_;
-  Atomic<const CodeBlockVector*> readonlyCodeBlocks_;
-
-  struct CodeBlockPC {
-    const void* pc;
-    explicit CodeBlockPC(const void* pc) : pc(pc) {}
-    int operator()(const CodeBlock* cb) const {
-      if (cb->containsCodePC(pc)) {
-        return 0;
-      }
-      if (pc < cb->base()) {
-        return -1;
-      }
-      return 1;
-    }
-  };
-
-  void swapAndWait() {
-    
-    
-    
-    
-
-    
-    
-    
-
-    mutableCodeBlocks_ = const_cast<CodeBlockVector*>(
-        readonlyCodeBlocks_.exchange(mutableCodeBlocks_));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    while (sNumActiveLookups > 0) {
-    }
-  }
-
- public:
-  ThreadSafeCodeBlockMap()
-      : mutatorsMutex_(mutexid::WasmCodeBlockMap),
-        mutableCodeBlocks_(&segments1_),
-        readonlyCodeBlocks_(&segments2_) {}
-
-  ~ThreadSafeCodeBlockMap() {
-    MOZ_RELEASE_ASSERT(sNumActiveLookups == 0);
-    MOZ_ASSERT(segments1_.empty());
-    MOZ_ASSERT(segments2_.empty());
-    segments1_.clearAndFree();
-    segments2_.clearAndFree();
-  }
-
-  bool insert(const CodeBlock* cs) {
-    LockGuard<Mutex> lock(mutatorsMutex_);
-
-    size_t index;
-    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                    mutableCodeBlocks_->length(),
-                                    CodeBlockPC(cs->base()), &index));
-
-    if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
-      return false;
-    }
-
-    CodeExists = true;
-
-    swapAndWait();
-
-#ifdef DEBUG
-    size_t otherIndex;
-    MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                    mutableCodeBlocks_->length(),
-                                    CodeBlockPC(cs->base()), &otherIndex));
-    MOZ_ASSERT(index == otherIndex);
-#endif
-
-    
-    
-    
-    
-    AutoEnterOOMUnsafeRegion oom;
-    if (!mutableCodeBlocks_->insert(mutableCodeBlocks_->begin() + index, cs)) {
-      oom.crash("when inserting a CodeBlock in the process-wide map");
-    }
-
-    return true;
-  }
-
-  void remove(const CodeBlock* cs) {
-    LockGuard<Mutex> lock(mutatorsMutex_);
-
-    size_t index;
-    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                   mutableCodeBlocks_->length(),
-                                   CodeBlockPC(cs->base()), &index));
-
-    mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
-
-    if (!mutableCodeBlocks_->length()) {
-      CodeExists = false;
-    }
-
-    swapAndWait();
-
-#ifdef DEBUG
-    size_t otherIndex;
-    MOZ_ALWAYS_TRUE(BinarySearchIf(*mutableCodeBlocks_, 0,
-                                   mutableCodeBlocks_->length(),
-                                   CodeBlockPC(cs->base()), &otherIndex));
-    MOZ_ASSERT(index == otherIndex);
-#endif
-
-    mutableCodeBlocks_->erase(mutableCodeBlocks_->begin() + index);
-  }
-
-  const CodeBlock* lookup(const void* pc) {
-    const CodeBlockVector* readonly = readonlyCodeBlocks_;
-
-    size_t index;
-    if (!BinarySearchIf(*readonly, 0, readonly->length(), CodeBlockPC(pc),
-                        &index)) {
-      return nullptr;
-    }
-
-    
-    
-    
-
-    return (*readonly)[index];
-  }
-};
 
 
 
@@ -226,46 +59,31 @@ bool wasm::RegisterCodeBlock(const CodeBlock* cs) {
   
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
-  return map->insert(cs);
+  bool result = map->insert(cs);
+  if (result) {
+    CodeExists = true;
+  }
+  return result;
 }
 
 void wasm::UnregisterCodeBlock(const CodeBlock* cs) {
   
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
-  map->remove(cs);
+  size_t newCount = map->remove(cs);
+  if (newCount == 0) {
+    CodeExists = false;
+  }
 }
 
 const CodeBlock* wasm::LookupCodeBlock(
     const void* pc, const CodeRange** codeRange ) {
-  
-  
-  
-  
-
-  auto decObserver = mozilla::MakeScopeExit([&] {
-    MOZ_ASSERT(sNumActiveLookups > 0);
-    sNumActiveLookups--;
-  });
-  sNumActiveLookups++;
-
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   if (!map) {
     return nullptr;
   }
 
-  if (const CodeBlock* found = map->lookup(pc)) {
-    if (codeRange) {
-      *codeRange = found->lookupRange(pc);
-    }
-    return found;
-  }
-
-  if (codeRange) {
-    *codeRange = nullptr;
-  }
-
-  return nullptr;
+  return map->lookup(pc, codeRange);
 }
 
 const Code* wasm::LookupCode(const void* pc,
@@ -477,7 +295,7 @@ void wasm::ShutDown() {
   ThreadSafeCodeBlockMap* map = sThreadSafeCodeBlockMap;
   MOZ_RELEASE_ASSERT(map);
   sThreadSafeCodeBlockMap = nullptr;
-  while (sNumActiveLookups > 0) {
+  while (map->numActiveLookups() > 0) {
   }
 
   ReleaseBuiltinThunks();
