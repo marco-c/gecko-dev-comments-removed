@@ -2195,6 +2195,10 @@ NS_IMETHODIMP
 PermissionManager::RemoveByType(const nsACString& aType) {
   ENSURE_NOT_CHILD_PROCESS;
 
+  
+  
+  EnsureReadCompleted();
+
   int32_t typeIndex = GetTypeIndex(aType, false);
   
   
@@ -2212,6 +2216,10 @@ NS_IMETHODIMP
 PermissionManager::RemoveByTypeSince(const nsACString& aType,
                                      int64_t aModificationTime) {
   ENSURE_NOT_CHILD_PROCESS;
+
+  
+  
+  EnsureReadCompleted();
 
   int32_t typeIndex = GetTypeIndex(aType, false);
   
