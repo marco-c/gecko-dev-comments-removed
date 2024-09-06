@@ -978,6 +978,11 @@ class nsContentUtils {
   
 
 
+  static bool ContainsChar(nsAtom* aAtom, char aChar);
+
+  
+
+
   static bool IsNameWithDash(nsAtom* aName);
 
   

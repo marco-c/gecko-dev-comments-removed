@@ -3659,6 +3659,23 @@ nsresult nsContentUtils::NewURIWithDocumentCharset(nsIURI** aResult,
 }
 
 
+bool nsContentUtils::ContainsChar(nsAtom* aAtom, char aChar) {
+  const uint32_t len = aAtom->GetLength();
+  if (!len) {
+    return false;
+  }
+  const char16_t* name = aAtom->GetUTF16String();
+  uint32_t i = 0;
+  while (i < len) {
+    if (name[i] == aChar) {
+      return true;
+    }
+    i++;
+  }
+  return false;
+}
+
+
 bool nsContentUtils::IsNameWithDash(nsAtom* aName) {
   
   

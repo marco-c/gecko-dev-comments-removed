@@ -253,6 +253,21 @@ class Grid;
     ExplicitlySetAttrElement(nsGkAtoms::attr, aElement); \
   }
 
+
+
+enum class InvokeAction : uint8_t {
+  Invalid,
+  Custom,
+  Auto,
+  TogglePopover,
+  ShowPopover,
+  HidePopover,
+  ShowModal,
+  Toggle,
+  Close,
+  Open,
+};
+
 class Element : public FragmentOrElement {
  public:
 #ifdef MOZILLA_INTERNAL_API
@@ -1113,7 +1128,7 @@ class Element : public FragmentOrElement {
     return FindAttributeDependence(aAttribute, aMaps, N);
   }
 
-  MOZ_CAN_RUN_SCRIPT virtual void HandleInvokeInternal(nsAtom* aAction,
+  MOZ_CAN_RUN_SCRIPT virtual void HandleInvokeInternal(InvokeAction aAction,
                                                        ErrorResult& aRv) {}
 
  private:
