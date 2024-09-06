@@ -81,15 +81,15 @@ void WalkDescendantsResetAutoDirection(mozilla::dom::Element* aElement);
 
 
 
-void SlotStateChanged(dom::HTMLSlotElement* aSlot,
-                      bool aAllAssignedNodesChanged = true);
+void SlotAssignedNodeAdded(dom::HTMLSlotElement* aSlot,
+                           nsIContent& aAssignedNode);
 
 
 
 
 
-void SlotAssignedNodeChanged(dom::HTMLSlotElement* aSlot,
-                             nsIContent& aAssignedNode);
+void SlotAssignedNodeRemoved(dom::HTMLSlotElement* aSlot,
+                             nsIContent& aUnassignedNode);
 
 
 
