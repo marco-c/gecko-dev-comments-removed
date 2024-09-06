@@ -3,7 +3,6 @@
 
 
 use libc::size_t;
-use std::boxed::Box;
 use std::convert::TryInto;
 use std::error::Error;
 use std::ffi::CStr;
