@@ -1338,9 +1338,7 @@ static bool PlainTime_with(JSContext* cx, const CallArgs& args) {
   if (!temporalTimeLike) {
     return false;
   }
-
-  
-  if (!RejectTemporalLikeObject(cx, temporalTimeLike)) {
+  if (!ThrowIfTemporalLikeObject(cx, temporalTimeLike)) {
     return false;
   }
 

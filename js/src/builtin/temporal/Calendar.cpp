@@ -1080,9 +1080,6 @@ bool js::temporal::CalendarFields(
 
   
   MOZ_ASSERT(IsSorted(fieldNames));
-
-  
-  
   MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
              fieldNames.end());
 
@@ -1101,8 +1098,6 @@ bool js::temporal::CalendarFields(
     }
 
     if (arrayIterationSane) {
-      
-
       
       return BuiltinCalendarFields(cx, fieldNames, result.get());
 
@@ -4595,10 +4590,6 @@ static bool Calendar_mergeFields(JSContext* cx, const CallArgs& args) {
   Rooted<Value> propValue(cx);
   for (size_t i = 0; i < fieldsKeys.length(); i++) {
     Handle<PropertyKey> key = fieldsKeys[i];
-
-    
-    
-    
 
     
     if (overriddenKeys.has(key)) {

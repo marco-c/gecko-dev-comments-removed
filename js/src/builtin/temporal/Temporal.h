@@ -301,7 +301,10 @@ bool ToShowOffsetOption(JSContext* cx, JS::Handle<JSObject*> options,
 
 
 
-bool RejectTemporalLikeObject(JSContext* cx, JS::Handle<JSObject*> object);
+
+
+
+bool ThrowIfTemporalLikeObject(JSContext* cx, JS::Handle<JSObject*> object);
 
 
 

@@ -2470,9 +2470,7 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   if (!temporalDateLike) {
     return false;
   }
-
-  
-  if (!RejectTemporalLikeObject(cx, temporalDateLike)) {
+  if (!ThrowIfTemporalLikeObject(cx, temporalDateLike)) {
     return false;
   }
 

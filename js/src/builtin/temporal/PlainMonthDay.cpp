@@ -531,9 +531,7 @@ static bool PlainMonthDay_with(JSContext* cx, const CallArgs& args) {
   if (!temporalMonthDayLike) {
     return false;
   }
-
-  
-  if (!RejectTemporalLikeObject(cx, temporalMonthDayLike)) {
+  if (!ThrowIfTemporalLikeObject(cx, temporalMonthDayLike)) {
     return false;
   }
 

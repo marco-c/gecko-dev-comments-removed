@@ -161,6 +161,7 @@ bool js::temporal::ToTemporalRoundingIncrement(JSContext* cx,
     return false;
   }
 
+  
   *increment = Increment{uint32_t(number)};
   return true;
 }
@@ -1194,13 +1195,10 @@ static JSObject* MaybeUnwrapIf(JSObject* object) {
 
 
 
+bool js::temporal::ThrowIfTemporalLikeObject(JSContext* cx,
+                                             Handle<JSObject*> object) {
+  
 
-
-
-
-
-bool js::temporal::RejectTemporalLikeObject(JSContext* cx,
-                                            Handle<JSObject*> object) {
   
   if (auto* unwrapped =
           MaybeUnwrapIf<PlainDateObject, PlainDateTimeObject,

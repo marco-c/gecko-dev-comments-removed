@@ -1085,9 +1085,7 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   if (!temporalYearMonthLike) {
     return false;
   }
-
-  
-  if (!RejectTemporalLikeObject(cx, temporalYearMonthLike)) {
+  if (!ThrowIfTemporalLikeObject(cx, temporalYearMonthLike)) {
     return false;
   }
 

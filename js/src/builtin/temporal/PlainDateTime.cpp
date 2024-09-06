@@ -846,13 +846,8 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
     
     
     
-
     
-    Rooted<PlainObject*> untilOptions(cx,
-                                      SnapshotOwnProperties(cx, maybeOptions));
-    if (!untilOptions) {
-      return false;
-    }
+    auto untilOptions = maybeOptions;
 
     
     Rooted<Value> largestUnitValue(
@@ -1803,9 +1798,7 @@ static bool PlainDateTime_with(JSContext* cx, const CallArgs& args) {
   if (!temporalDateTimeLike) {
     return false;
   }
-
-  
-  if (!RejectTemporalLikeObject(cx, temporalDateTimeLike)) {
+  if (!ThrowIfTemporalLikeObject(cx, temporalDateTimeLike)) {
     return false;
   }
 

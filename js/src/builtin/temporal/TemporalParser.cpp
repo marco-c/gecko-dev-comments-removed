@@ -2265,9 +2265,6 @@ TemporalParser<CharT>::annotations() {
     }
     auto [key, value, critical] = anno.unwrap();
 
-    
-    
-
     static constexpr std::string_view ca = "u-ca";
 
     auto keySpan = reader_.substring(key);
