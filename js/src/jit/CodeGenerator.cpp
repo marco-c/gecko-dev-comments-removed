@@ -5995,7 +5995,7 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   masm.switchToObjectRealm(calleeReg, scratch);
 
   
-  masm.branchIfFunctionHasNoJitEntry(calleeReg, isConstructing, &noJitEntry);
+  masm.branchIfFunctionHasNoJitEntry(calleeReg, &noJitEntry);
 
   
   
@@ -6769,7 +6769,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
   }
 
   
-  masm.branchIfFunctionHasNoJitEntry(calleereg, constructing, &invoke);
+  masm.branchIfFunctionHasNoJitEntry(calleereg, &invoke);
 
   
   if (constructing) {

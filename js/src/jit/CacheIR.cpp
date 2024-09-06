@@ -10308,7 +10308,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
     writer.guardNotClassConstructor(thisObjId);
 
     if (isScripted) {
-      writer.guardFunctionHasJitEntry(thisObjId, false);
+      writer.guardFunctionHasJitEntry(thisObjId);
       writer.callScriptedFunction(thisObjId, argcId, targetFlags,
                                   ClampFixedArgc(argc_));
     } else {
@@ -11268,7 +11268,7 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
 
     if (isScripted) {
       
-      writer.guardFunctionHasJitEntry(thisObjId, false);
+      writer.guardFunctionHasJitEntry(thisObjId);
       writer.callScriptedFunction(thisObjId, argcId, targetFlags, fixedArgc);
     } else {
       
@@ -12034,7 +12034,7 @@ void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
   } else {
     
     writer.guardClass(calleeObjId, GuardClassKind::JSFunction);
-    writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
+    writer.guardFunctionHasJitEntry(calleeObjId);
 
     if (isConstructing) {
       
