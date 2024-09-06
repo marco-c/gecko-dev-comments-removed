@@ -11,22 +11,11 @@
 #ifndef API_VIDEO_CODECS_SPATIAL_LAYER_H_
 #define API_VIDEO_CODECS_SPATIAL_LAYER_H_
 
+#include "api/video_codecs/simulcast_stream.h"
+
 namespace webrtc {
 
-struct SpatialLayer {
-  bool operator==(const SpatialLayer& other) const;
-  bool operator!=(const SpatialLayer& other) const { return !(*this == other); }
-
-  unsigned short width;   
-  unsigned short height;  
-  float maxFramerate;     
-  unsigned char numberOfTemporalLayers;
-  unsigned int maxBitrate;     
-  unsigned int targetBitrate;  
-  unsigned int minBitrate;     
-  unsigned int qpMax;          
-  bool active;                 
-};
+typedef SimulcastStream SpatialLayer;
 
 }  
 #endif  
