@@ -41,12 +41,6 @@ class VP8Encoder {
   static std::unique_ptr<VideoEncoder> Create(Settings settings);
 };
 
-
-class VP8Decoder {
- public:
-  [[deprecated]] static std::unique_ptr<VideoDecoder> Create();
-};
-
 std::unique_ptr<VideoDecoder> CreateVp8Decoder(const Environment& env);
 
 }  

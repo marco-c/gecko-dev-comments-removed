@@ -28,9 +28,6 @@ namespace webrtc {
 
 class LibvpxVp8Decoder : public VideoDecoder {
  public:
-  
-  
-  LibvpxVp8Decoder();
   explicit LibvpxVp8Decoder(const Environment& env);
   ~LibvpxVp8Decoder() override;
 
@@ -61,7 +58,7 @@ class LibvpxVp8Decoder : public VideoDecoder {
 
  private:
   class QpSmoother;
-  explicit LibvpxVp8Decoder(const FieldTrialsView& field_trials);
+
   int ReturnFrame(const vpx_image_t* img,
                   uint32_t timeStamp,
                   int qp,
