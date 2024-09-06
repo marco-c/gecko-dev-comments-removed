@@ -5,6 +5,12 @@ const server = createHttpServer({
 });
 server.registerDirectory("/data/", do_get_file("data"));
 
+
+
+
+
+Services.prefs.setIntPref("fission.webContentIsolationStrategy", 1);
+
 add_task(async function test_process_switch_cross_origin_frame() {
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
