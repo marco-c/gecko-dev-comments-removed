@@ -9,6 +9,7 @@
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/EmitterScope.h"
 #include "frontend/ParserAtom.h"  
+#include "frontend/UsingEmitter.h"
 #include "vm/Opcodes.h"
 #include "vm/StencilEnums.h"  
 
@@ -117,10 +118,8 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
         
         
         
-        
-        
-        
-        if (!bce_->emit1(JSOp::DisposeDisposables)) {
+        UsingEmitter ue(bce_);
+        if (!ue.emitEnd()) {
           return false;
         }
       }
