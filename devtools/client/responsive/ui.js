@@ -98,7 +98,9 @@ class ResponsiveUI {
 
     this.networkFront = null;
     
-    this.inited = this.init();
+    const { promise, resolve } = Promise.withResolvers();
+    this.initialized = promise;
+    this.resolveInited = resolve;
 
     EventEmitter.decorate(this);
   }
@@ -126,7 +128,7 @@ class ResponsiveUI {
   
 
 
-  async init() {
+  async initialize() {
     debug("Init start");
 
     this.initRDMFrame();
@@ -160,6 +162,7 @@ class ResponsiveUI {
     message.post(this.toolWindow, "post-init");
 
     debug("Init done");
+    this.resolveInited();
   }
 
   
@@ -273,7 +276,7 @@ class ResponsiveUI {
 
     
     if (!isTabContentDestroying) {
-      await this.inited;
+      await this.initialized;
 
       
       await Promise.all([
@@ -355,7 +358,7 @@ class ResponsiveUI {
     this.browserStackEl = null;
     this.browserWindow = null;
     this.tab = null;
-    this.inited = null;
+    this.initialized = null;
     this.rdmFrame = null;
     this.resizeHandle = null;
     this.resizeHandleX = null;
@@ -1000,7 +1003,7 @@ class ResponsiveUI {
 
 
   async setViewportSize(size) {
-    await this.inited;
+    await this.initialized;
 
     
     let { width, height } = size;
