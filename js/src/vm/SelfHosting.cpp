@@ -2970,17 +2970,25 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructorArg,
   
   if (builtin == SUBCLASSING_DETERMINE_THROUGH_CONSTRUCTOR) {
     MOZ_ASSERT(constructor);
-    if (IsPromiseConstructor(constructor)) {
-      builtin = SUBCLASSING_PROMISE;
-    } else if (IsTypedArrayConstructor(constructor)) {
-      builtin = SUBCLASSING_TYPEDARRAY;
-    } else if (IsArrayConstructor(constructor)) {
-      builtin = SUBCLASSING_ARRAY;
-    } else {
+
+    do {
+      if (IsPromiseConstructor(constructor)) {
+        builtin = SUBCLASSING_PROMISE;
+        break;
+      }
+      if (IsTypedArrayConstructor(constructor)) {
+        builtin = SUBCLASSING_TYPEDARRAY;
+        break;
+      }
+      if (IsArrayConstructor(constructor)) {
+        builtin = SUBCLASSING_ARRAY;
+        break;
+      }
       if (IsCrossCompartmentWrapper(constructor)) {
         
         return true;
       }
+
       Rooted<GlobalObject*> global(cx, &constructor->nonCCWGlobal());
       RootedObject abConstructor(
           cx, GlobalObject::getOrCreateArrayBufferConstructor(cx, global));
@@ -2989,21 +2997,35 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructorArg,
       }
       if (constructor == abConstructor) {
         builtin = SUBCLASSING_ARRAYBUFFER;
-      } else {
-        RootedObject sabConstructor(
-            cx,
-            GlobalObject::getOrCreateSharedArrayBufferConstructor(cx, global));
-        if (!sabConstructor) {
-          return false;
-        }
-        if (constructor == sabConstructor) {
-          builtin = SUBCLASSING_SHAREDARRAYBUFFER;
-        }
+        break;
       }
-    }
+
+      RootedObject sabConstructor(
+          cx,
+          GlobalObject::getOrCreateSharedArrayBufferConstructor(cx, global));
+      if (!sabConstructor) {
+        return false;
+      }
+      if (constructor == sabConstructor) {
+        builtin = SUBCLASSING_SHAREDARRAYBUFFER;
+        break;
+      }
+
+      RootedObject regExpConstructor(
+          cx, GlobalObject::getOrCreateRegExpConstructor(cx, global));
+      if (!regExpConstructor) {
+        return false;
+      }
+      if (constructor == regExpConstructor) {
+        builtin = SUBCLASSING_REGEXP;
+        break;
+      }
+
+    } while (false);
 
     
     if (builtin == SUBCLASSING_DETERMINE_THROUGH_CONSTRUCTOR) {
+      MOZ_CRASH("Unable to determine constructor where expected.");
       return true;
     }
     
@@ -3082,6 +3104,16 @@ bool js::ReportUsageCounter(JSContext* cx, HandleObject constructorArg,
               ? JSUseCounter::SUBCLASSING_ARRAYBUFFER_TYPE_III
               : JSUseCounter::SUBCLASSING_SHAREDARRAYBUFFER_TYPE_III);
       return true;
+    }
+    case SUBCLASSING_REGEXP: {
+      switch (type) {
+        case SUBCLASSING_TYPE_III:
+          cx->runtime()->setUseCounter(
+              cx->global(), JSUseCounter::SUBCLASSING_REGEXP_TYPE_III);
+          return true;
+        default:
+          MOZ_CRASH("Unexpected RegExp Subclassing Type");
+      }
     }
     default:
       MOZ_CRASH("Unexpected builtin");
