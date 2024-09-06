@@ -14,6 +14,7 @@
 #include "wasm/WasmFeatures.h"  
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmSignalHandlers.h"  
+#include "wasm/WasmValidate.h"
 #include "wasm/WasmValType.h"
 
 using namespace js;

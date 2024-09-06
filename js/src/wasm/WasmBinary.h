@@ -26,6 +26,7 @@
 
 #include "js/WasmFeatures.h"
 
+#include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
@@ -38,8 +39,6 @@ namespace wasm {
 
 using mozilla::DebugOnly;
 using mozilla::Maybe;
-
-struct ModuleMetadata;
 
 
 
@@ -115,21 +114,6 @@ class Opcode {
   bool operator==(const Opcode& that) const { return bits_ == that.bits_; }
   bool operator!=(const Opcode& that) const { return bits_ != that.bits_; }
 };
-
-
-
-
-struct SectionRange {
-  uint32_t start;
-  uint32_t size;
-
-  uint32_t end() const { return start + size; }
-  bool operator==(const SectionRange& rhs) const {
-    return start == rhs.start && size == rhs.size;
-  }
-};
-
-using MaybeSectionRange = Maybe<SectionRange>;
 
 
 
