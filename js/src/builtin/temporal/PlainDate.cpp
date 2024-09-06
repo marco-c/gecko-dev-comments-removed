@@ -101,12 +101,7 @@ static bool IsValidISODate(T year, T month, T day) {
   int32_t daysInMonth = js::temporal::ISODaysInMonth(year, int32_t(month));
 
   
-  if (day < 1 || day > daysInMonth) {
-    return false;
-  }
-
-  
-  return true;
+  return 1 <= day && day <= daysInMonth;
 }
 
 
@@ -172,12 +167,7 @@ static bool ThrowIfInvalidISODate(JSContext* cx, T year, T month, T day) {
   int32_t daysInMonth = js::temporal::ISODaysInMonth(year, int32_t(month));
 
   
-  if (!ThrowIfInvalidDateValue(cx, "day", 1, daysInMonth, day)) {
-    return false;
-  }
-
-  
-  return true;
+  return ThrowIfInvalidDateValue(cx, "day", 1, daysInMonth, day);
 }
 
 
