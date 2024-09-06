@@ -228,35 +228,32 @@ nscoord nsListControlFrame::CalcBSizeOfARow() {
   return rowBSize;
 }
 
-nscoord nsListControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
+nscoord nsListControlFrame::IntrinsicISize(gfxContext* aRenderingContext,
+                                           IntrinsicISizeType aType) {
   
   
   
   
   WritingMode wm = GetWritingMode();
-  Maybe<nscoord> containISize = ContainIntrinsicISize();
-  nscoord result = containISize
-                       ? *containISize
-                       : GetScrolledFrame()->GetPrefISize(aRenderingContext);
+  nscoord result;
+  if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
+    result = *containISize;
+  } else if (aType == IntrinsicISizeType::MinISize) {
+    result = GetScrolledFrame()->GetMinISize(aRenderingContext);
+  } else {
+    result = GetScrolledFrame()->GetPrefISize(aRenderingContext);
+  }
   LogicalMargin scrollbarSize(wm, GetDesiredScrollbarSizes());
   result = NSCoordSaturatingAdd(result, scrollbarSize.IStartEnd(wm));
   return result;
 }
 
-nscoord nsListControlFrame::GetMinISize(gfxContext* aRenderingContext) {
-  
-  
-  
-  
-  WritingMode wm = GetWritingMode();
-  Maybe<nscoord> containISize = ContainIntrinsicISize();
-  nscoord result = containISize
-                       ? *containISize
-                       : GetScrolledFrame()->GetMinISize(aRenderingContext);
-  LogicalMargin scrollbarSize(wm, GetDesiredScrollbarSizes());
-  result += scrollbarSize.IStartEnd(wm);
+nscoord nsListControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
+  return IntrinsicISize(aRenderingContext, IntrinsicISizeType::PrefISize);
+}
 
-  return result;
+nscoord nsListControlFrame::GetMinISize(gfxContext* aRenderingContext) {
+  return IntrinsicISize(aRenderingContext, IntrinsicISizeType::MinISize);
 }
 
 void nsListControlFrame::Reflow(nsPresContext* aPresContext,

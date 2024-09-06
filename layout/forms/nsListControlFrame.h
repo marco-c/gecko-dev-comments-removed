@@ -265,6 +265,10 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   nscoord CalcIntrinsicBSize(nscoord aBSizeOfARow, int32_t aNumberOfOptions);
 
   
+  nscoord IntrinsicISize(gfxContext* aRenderingContext,
+                         mozilla::IntrinsicISizeType aType);
+
+  
   void SetComboboxItem(int32_t aIndex);
 
   

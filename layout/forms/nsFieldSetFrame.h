@@ -24,8 +24,6 @@ class nsFieldSetFrame final : public nsContainerFrame {
 
   explicit nsFieldSetFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
 
-  nscoord GetIntrinsicISize(gfxContext* aRenderingContext,
-                            mozilla::IntrinsicISizeType);
   nscoord GetMinISize(gfxContext* aRenderingContext) override;
   nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
@@ -105,6 +103,10 @@ class nsFieldSetFrame final : public nsContainerFrame {
 
 
   void EnsureChildContinuation(nsIFrame* aChild, const nsReflowStatus& aStatus);
+
+  
+  nscoord IntrinsicISize(gfxContext* aRenderingContext,
+                         mozilla::IntrinsicISizeType aType);
 
   mozilla::LogicalRect mLegendRect;
 

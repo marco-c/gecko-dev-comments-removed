@@ -88,6 +88,9 @@ class nsHTMLCanvasFrame final : public nsContainerFrame {
 
  protected:
   virtual ~nsHTMLCanvasFrame();
+
+  
+  nscoord IntrinsicISize(gfxContext* aRenderingContext);
 };
 
 #endif 

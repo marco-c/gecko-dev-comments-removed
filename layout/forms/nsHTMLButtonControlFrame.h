@@ -106,6 +106,10 @@ class nsHTMLButtonControlFrame : public nsContainerFrame,
                             const ReflowInput& aButtonReflowInput,
                             nsIFrame* aFirstKid);
 
+  
+  nscoord IntrinsicISize(gfxContext* aRenderingContext,
+                         mozilla::IntrinsicISizeType aType);
+
   BaselineSharingGroup GetDefaultBaselineSharingGroup() const override;
   nscoord SynthesizeFallbackBaseline(
       mozilla::WritingMode aWM,
