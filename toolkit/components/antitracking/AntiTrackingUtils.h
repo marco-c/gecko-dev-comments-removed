@@ -167,16 +167,6 @@ class AntiTrackingUtils final {
 
 
   static void UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel);
-
- private:
-  
-  
-  
-  
-  
-  static nsresult IsThirdPartyToPartitionKeySite(nsIChannel* aChannel,
-                                                 const nsCOMPtr<nsIURI>& aURI,
-                                                 bool* aIsThirdParty);
 };
 
 }  
