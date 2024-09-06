@@ -1975,10 +1975,7 @@ void nsLookAndFeel::PerThemeData::Init() {
     mTitlebar = GetColorPair(style, GTK_STATE_FLAG_NORMAL);
     mTitlebarInactive = GetColorPair(style, GTK_STATE_FLAG_BACKDROP);
     mTitlebarRadius = IsSolidCSDStyleUsed() ? 0 : GetBorderRadius(style);
-    
-    mTitlebarButtonSpacing = 6;
-    g_object_get(GetWidget(MOZ_GTK_HEADER_BAR), "spacing",
-                 &mTitlebarButtonSpacing, nullptr);
+    mTitlebarButtonSpacing = moz_gtk_get_titlebar_button_spacing();
   }
 
   
