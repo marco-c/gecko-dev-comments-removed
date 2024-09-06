@@ -34,13 +34,13 @@ macro_rules! trig {
             }
 
             /// A slightly faster approximation of `atan2`.
-            ///
-            /// Note that it does not deal with the case where both x and y are 0.
+            
+            
             #[inline]
             fn fast_atan2(y: $ty, x: $ty) -> $ty {
                 // This macro is used with f32 and f64 and clippy warns about the extra
                 // precision with f32.
-                #![cfg_attr(feature = "cargo-clippy", allow(excessive_precision))]
+                #![allow(clippy::excessive_precision)]
 
                 // See https://math.stackexchange.com/questions/1098487/atan2-faster-approximation#1105038
                 use core::$ty::consts;
