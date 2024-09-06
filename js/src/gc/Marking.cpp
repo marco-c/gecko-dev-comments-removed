@@ -1413,9 +1413,6 @@ void GCMarker::updateRangesAtStartOfSlice() {
       MarkStack::SlotsOrElementsRange& range = iter.slotsOrElementsRange();
       JSObject* obj = range.ptr().asRangeObject();
       if (!obj->is<NativeObject>()) {
-        
-        
-        
         range.setEmpty();
       } else if (range.kind() == SlotsOrElementsKind::Elements) {
         NativeObject* obj = &range.ptr().asRangeObject()->as<NativeObject>();
@@ -1756,10 +1753,6 @@ inline void MarkStack::SlotsOrElementsRange::setStart(size_t newStart) {
 }
 
 inline void MarkStack::SlotsOrElementsRange::setEmpty() {
-  
-  
-  
-  
   TaggedPtr entry = TaggedPtr(ObjectTag, ptr().asRangeObject());
   ptr_ = entry;
   startAndKind_ = entry.asBits();
