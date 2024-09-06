@@ -716,6 +716,56 @@ public class WebExtensionController {
 
 
 
+  @NonNull
+  @AnyThread
+  public GeckoResult<WebExtension> addOptionalPermissions(
+      final @NonNull String extensionId,
+      @NonNull final String[] permissions,
+      @NonNull final String[] origins) {
+    final GeckoBundle bundle = new GeckoBundle(3);
+    bundle.putString("extensionId", extensionId);
+    bundle.putStringArray("permissions", permissions);
+    bundle.putStringArray("origins", origins);
+
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:WebExtension:AddOptionalPermissions", bundle)
+        .map(ext -> WebExtension.fromBundle(mDelegateControllerProvider, ext))
+        .map(this::registerWebExtension);
+  }
+
+  
+
+
+
+
+
+
+
+  @NonNull
+  @AnyThread
+  public GeckoResult<WebExtension> removeOptionalPermissions(
+      final @NonNull String extensionId,
+      @NonNull final String[] permissions,
+      @NonNull final String[] origins) {
+    final GeckoBundle bundle = new GeckoBundle(3);
+    bundle.putString("extensionId", extensionId);
+    bundle.putStringArray("permissions", permissions);
+    bundle.putStringArray("origins", origins);
+
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:WebExtension:RemoveOptionalPermissions", bundle)
+        .map(ext -> WebExtension.fromBundle(mDelegateControllerProvider, ext))
+        .map(this::registerWebExtension);
+  }
+
+  
+
+
+
+
+
+
+
 
 
 
