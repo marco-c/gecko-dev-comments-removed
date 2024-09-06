@@ -225,7 +225,6 @@ var SidebarController = {
     if (!enumerator.hasMoreElements()) {
       let xulStore = Services.xulStore;
 
-      xulStore.persist(this._box, "style");
       xulStore.persist(this._title, "value");
     }
 
@@ -413,20 +412,20 @@ var SidebarController = {
     
     
     
-    let sourceUI = sourceWindow.SidebarController;
-    if (!sourceUI || !sourceUI._box) {
+    let sourceController = sourceWindow.SidebarController;
+    if (!sourceController || !sourceController._box) {
       
       return false;
     }
 
     
     
-    let commandID = sourceUI._box.getAttribute("sidebarcommand");
+    let commandID = sourceController._box.getAttribute("sidebarcommand");
     if (commandID) {
       this._box.setAttribute("sidebarcommand", commandID);
     }
 
-    if (sourceUI._box.hidden) {
+    if (sourceController._box.hidden) {
       
       return true;
     }
@@ -437,7 +436,8 @@ var SidebarController = {
       return true;
     }
 
-    this._box.style.width = sourceUI._box.getBoundingClientRect().width + "px";
+    this._box.style.width =
+      sourceController._box.getBoundingClientRect().width + "px";
     this.showInitially(commandID);
 
     return true;
