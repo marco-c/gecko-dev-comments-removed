@@ -121,7 +121,7 @@ var SelectTranslationsPanel = new (class {
         fromMenuList: "select-translations-panel-from",
         header: "select-translations-panel-header",
         multiview: "select-translations-panel-multiview",
-        translatedTextArea: "select-translations-panel-translation-area",
+        textArea: "select-translations-panel-text-area",
         toLabel: "select-translations-panel-to-label",
         toMenuList: "select-translations-panel-to",
         translateFullPageButton:
@@ -346,9 +346,9 @@ var SelectTranslationsPanel = new (class {
   
 
 
-  #indicateTranslatedTextArea() {
-    const { translatedTextArea } = this.elements;
-    translatedTextArea.focus({ focusVisible: true });
+  #indicateTranslatedTextArea({ overflow }) {
+    const { textArea } = this.elements;
+    textArea.focus({ focusVisible: true });
     requestAnimationFrame(() => {
       
       
@@ -358,8 +358,8 @@ var SelectTranslationsPanel = new (class {
       
       
       requestAnimationFrame(() => {
-        translatedTextArea.style.overflow = "auto";
-        translatedTextArea.scrollTop = 0;
+        textArea.style.overflow = overflow;
+        textArea.scrollTop = 0;
       });
     });
   }
@@ -458,12 +458,17 @@ var SelectTranslationsPanel = new (class {
 
 
   #changeStateTo(phase, retainEntries, data = null) {
+    const { textArea } = this.elements;
     switch (phase) {
+      case "translating": {
+        textArea.classList.add("translating");
+        break;
+      }
       case "closed":
       case "idle":
       case "translatable":
-      case "translating":
       case "translated": {
+        textArea.classList.remove("translating");
         break;
       }
       default: {
@@ -603,38 +608,27 @@ var SelectTranslationsPanel = new (class {
   
 
 
-
-
-  #showTranslatedTextArea(textToDisplay) {
-    const { translatedTextArea } = this.elements;
-    translatedTextArea.value = textToDisplay;
-  }
-
-  
-
-
   #displayIdlePlaceholder() {
-    this.#showTranslatedTextArea(this.#idlePlaceholderText);
+    const { textArea } = SelectTranslationsPanel.elements;
+    textArea.value = this.#idlePlaceholderText;
   }
 
   
 
 
   #displayTranslatingPlaceholder() {
-    const { translatedTextArea } = SelectTranslationsPanel.elements;
-    translatedTextArea.style.overflow = "hidden";
-    this.#showTranslatedTextArea(this.#translatingPlaceholderText);
+    const { textArea } = SelectTranslationsPanel.elements;
+    textArea.value = this.#translatingPlaceholderText;
+    this.#indicateTranslatedTextArea({ overflow: "hidden" });
   }
 
   
 
 
   #displayTranslatedText() {
-    const translatedText = this.getTranslatedText();
-    this.#showTranslatedTextArea(translatedText);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => this.#indicateTranslatedTextArea());
-    });
+    const { textArea } = SelectTranslationsPanel.elements;
+    textArea.value = this.getTranslatedText();
+    this.#indicateTranslatedTextArea({ overflow: "auto" });
   }
 
   
