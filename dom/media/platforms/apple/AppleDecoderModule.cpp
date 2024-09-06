@@ -166,7 +166,13 @@ bool AppleDecoderModule::IsVideoSupported(
       }
     }
 
-    return true;
+    if (aConfig.mExtraData && aConfig.mExtraData->Length() < 2) {
+      return true;  
+    }
+    
+    int profile = aConfig.mExtraData->ElementAt(1) >> 5;
+    
+    return profile == 0;
   }
 
   if (!VPXDecoder::IsVP9(aConfig.mMimeType) || !sCanUseVP9Decoder ||
