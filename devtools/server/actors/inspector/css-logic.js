@@ -501,18 +501,27 @@ class CssLogic {
 
 
 
-
   hasMatchedSelectors(properties) {
     if (!this._matchedRules) {
       this._buildMatchedRules();
     }
 
-    const result = {};
+    const result = new Set();
 
-    this._matchedRules.some(function (value) {
-      const rule = value[0];
-      const status = value[1];
-      properties = properties.filter(property => {
+    for (const [rule, status] of this._matchedRules) {
+      
+      let cssText;
+      const getCssText = () => {
+        if (cssText === undefined) {
+          cssText = rule.domRule.cssText;
+        }
+        return cssText;
+      };
+
+      
+      
+      for (let i = properties.length - 1; i >= 0; i--) {
+        const property = properties[i];
         
         
         if (
@@ -523,9 +532,7 @@ class CssLogic {
               
               
               
-              new RegExp(`${property}[^A-Za-z0-9_-]`).test(
-                rule.domRule.cssText
-              ))) &&
+              new RegExp(`${property}[^A-Za-z0-9_-]`).test(getCssText()))) &&
           (status == STATUS.MATCHED ||
             (status == STATUS.PARENT_MATCH &&
               InspectorUtils.isInheritedProperty(
@@ -533,14 +540,16 @@ class CssLogic {
                 property
               )))
         ) {
-          result[property] = true;
-          return false;
+          result.add(property);
+          
+          properties.splice(i, 1);
         }
-        
-        return true;
-      });
-      return !properties.length;
-    }, this);
+      }
+
+      if (!properties.length) {
+        return result;
+      }
+    }
 
     return result;
   }
