@@ -14,8 +14,10 @@
 #ifndef API_RTP_SENDER_INTERFACE_H_
 #define API_RTP_SENDER_INTERFACE_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -36,7 +38,8 @@
 
 namespace webrtc {
 
-class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface {
+class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
+                                      public FrameTransformerHost {
  public:
   
   
@@ -100,14 +103,23 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface {
   virtual rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor()
       const = 0;
 
+  
+  
   virtual void SetEncoderToPacketizerFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+    SetFrameTransformer(std::move(frame_transformer));
+  }
 
   
   
   virtual void SetEncoderSelector(
       std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
           encoder_selector) = 0;
+
+  
+  
+  void SetFrameTransformer(rtc::scoped_refptr<FrameTransformerInterface>
+                               frame_transformer) override {}
 
  protected:
   ~RtpSenderInterface() override = default;

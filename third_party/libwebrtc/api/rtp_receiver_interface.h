@@ -15,8 +15,10 @@
 #define API_RTP_RECEIVER_INTERFACE_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/dtls_transport_interface.h"
 #include "api/frame_transformer_interface.h"
@@ -44,7 +46,8 @@ class RtpReceiverObserverInterface {
   virtual ~RtpReceiverObserverInterface() {}
 };
 
-class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface {
+class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
+                                        public FrameTransformerHost {
  public:
   virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
 
@@ -111,8 +114,17 @@ class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface {
   
   
   
+  
+  
   virtual void SetDepacketizerToDecoderFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+    SetFrameTransformer(std::move(frame_transformer));
+  }
+
+  
+  
+  void SetFrameTransformer(
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) override;
 
  protected:
   ~RtpReceiverInterface() override = default;

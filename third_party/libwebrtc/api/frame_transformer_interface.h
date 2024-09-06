@@ -121,6 +121,18 @@ class FrameTransformerInterface : public rtc::RefCountInterface {
   ~FrameTransformerInterface() override = default;
 };
 
+
+
+class FrameTransformerHost {
+ public:
+  virtual ~FrameTransformerHost() {}
+  virtual void SetFrameTransformer(
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
+  
+  
+  
+};
+
 }  
 
 #endif  
