@@ -659,7 +659,7 @@ escapeAndQuote(char* dst, int dstlen, char* src, int srclen, EQMode* pEQMode)
     reqLen = cert_RFC1485_GetRequiredLen(src, srclen, &mode);
     
     
-    if (reqLen < 0 || reqLen+1 > dstlen) {
+    if (reqLen < 0 || reqLen + 1 > dstlen) {
         PORT_SetError(SEC_ERROR_OUTPUT_LEN);
         return SECFailure;
     }
