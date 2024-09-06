@@ -521,6 +521,11 @@ class H264 {
   
   
   static FrameType GetFrameType(const mozilla::MediaRawData* aSample);
+
+  
+  static Result<int, nsresult> ExtractSVCTemporalId(
+      const uint8_t* aData, size_t aLength);
+
   
   
   static already_AddRefed<mozilla::MediaByteBuffer> CreateExtraData(
@@ -534,6 +539,7 @@ class H264 {
 
  private:
   friend class SPSNAL;
+
   
 
 
