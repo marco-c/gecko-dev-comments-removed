@@ -1,18 +1,113 @@
 const workerURL =
   "http://mochi.test:8888/tests/dom/workers/test/importScripts_3rdParty_worker.js";
 
+
+
+
+
+
+function normalizeError(err) {
+  if (!err) {
+    return null;
+  }
+
+  const isDOMException = "filename" in err;
+
+  return {
+    message: err.message,
+    name: err.name,
+    isDOMException,
+    code: err.code,
+    
+    fileName: isDOMException ? err.filename : err.fileName,
+    hasFileName: !!err.fileName,
+    hasFilename: !!err.filename,
+    lineNumber: err.lineNumber,
+    columnNumber: err.columnNumber,
+    stack: err.stack,
+    stringified: err.toString(),
+  };
+}
+
+function normalizeErrorEvent(event) {
+  if (!event) {
+    return null;
+  }
+
+  return {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: normalizeError(event.error),
+    stringified: event.toString(),
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function normalizeOnError(
+  msgOrEvent,
+  fileName,
+  lineNumber,
+  columnNumber,
+  error
+) {
+  return {
+    message: msgOrEvent,
+    filename: fileName,
+    lineno: lineNumber,
+    colno: columnNumber,
+    error: normalizeError(error),
+    stringified: null,
+  };
+}
+
+
+
+
+
+
+function delayedPostMessage(data) {
+  setTimeout(() => {
+    postMessage(data);
+  }, 0);
+}
+
 onmessage = function (a) {
+  const args = a.data;
+  
+  
   if (a.data.nested) {
-    var worker = new Worker(workerURL);
+    const worker = new Worker(workerURL);
+    let firstErrorEvent;
+
+    
+
     worker.onmessage = function (event) {
-      postMessage(event.data);
+      delayedPostMessage({
+        nestedMessage: event.data,
+        errorEvent: firstErrorEvent,
+      });
     };
 
     worker.onerror = function (event) {
+      firstErrorEvent = normalizeErrorEvent(event);
       event.preventDefault();
-      postMessage({
-        error: event instanceof ErrorEvent && event.filename == workerURL,
-      });
     };
 
     a.data.nested = false;
@@ -21,68 +116,46 @@ onmessage = function (a) {
   }
 
   
-  var sameOriginURL = new URL(a.data.url);
-  var fileName1 = 42;
-
-  
-  var crossOriginURL = new URL(a.data.url);
-  crossOriginURL.host = "example.com";
-  crossOriginURL.port = 80;
-  var fileName2 = 42;
-
-  if (a.data.test == "none") {
-    importScripts(crossOriginURL.href);
-    return;
-  }
-
-  try {
-    importScripts(sameOriginURL.href);
-  } catch (e) {
-    if (!(e instanceof SyntaxError)) {
-      postMessage({ result: false });
-      return;
-    }
-
-    fileName1 = e.fileName;
-  }
-
-  if (fileName1 != sameOriginURL.href || !fileName1) {
-    postMessage({ result: false });
-    return;
-  }
-
-  if (a.data.test == "try") {
-    var exception;
+  if (a.data.mode === "catch") {
     try {
-      importScripts(crossOriginURL.href);
-    } catch (e) {
-      fileName2 = e.filename;
-      exception = e;
+      importScripts(a.data.url);
+      workerMethod();
+    } catch (ex) {
+      delayedPostMessage({
+        args,
+        error: normalizeError(ex),
+      });
     }
-
-    postMessage({
-      result:
-        fileName2 == workerURL &&
-        exception.name == "NetworkError" &&
-        exception.code == DOMException.NETWORK_ERR,
+  } else if (a.data.mode === "uncaught") {
+    const onerrorPromise = new Promise(resolve => {
+      self.onerror = (...onerrorArgs) => {
+        resolve(normalizeOnError(...onerrorArgs));
+      };
     });
-    return;
-  }
-
-  if (a.data.test == "eventListener") {
-    addEventListener("error", function (event) {
-      event.preventDefault();
-      postMessage({
-        result: event instanceof ErrorEvent && event.filename == workerURL,
+    const listenerPromise = new Promise(resolve => {
+      self.addEventListener("error", evt => {
+        resolve(normalizeErrorEvent(evt));
       });
     });
-  }
 
-  if (a.data.test == "onerror") {
-    onerror = function (...args) {
-      postMessage({ result: args[1] == workerURL });
-    };
-  }
+    Promise.all([onerrorPromise, listenerPromise]).then(
+      ([onerrorEvent, listenerEvent]) => {
+        delayedPostMessage({
+          args,
+          onerrorEvent,
+          listenerEvent,
+        });
+      }
+    );
 
-  importScripts(crossOriginURL.href);
+    importScripts(a.data.url);
+    workerMethod();
+    
+    
+    
+    
+    
+    
+    throw new Error("We expected an error and this is a failsafe for hangs.");
+  }
 };
