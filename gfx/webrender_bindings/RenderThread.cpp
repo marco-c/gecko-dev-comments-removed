@@ -127,6 +127,11 @@ void RenderThread::Start(uint32_t aNamespace) {
   if (stackSize && !gfx::gfxVars::SupportsThreadsafeGL()) {
     stackSize = std::max(stackSize, 4096U << 10);
   }
+#if !defined(__OPTIMIZE__)
+  
+  
+  stackSize = std::max(stackSize, 4 * 1024 * 1024U);
+#endif
 
   RefPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(
