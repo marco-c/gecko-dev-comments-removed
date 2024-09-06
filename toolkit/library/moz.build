@@ -86,8 +86,7 @@ def Libxul(name, output_category=None):
 
     Libxul_defines()
 
-    if CONFIG["MOZ_NEEDS_LIBATOMIC"]:
-        OS_LIBS += ["atomic"]
+    OS_LIBS += CONFIG["LIBATOMIC_LIBS"]
 
     
     
