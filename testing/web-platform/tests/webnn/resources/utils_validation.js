@@ -263,7 +263,7 @@ function validateTwoInputsOfSameDataType(operationName) {
 
 
 
-function validateOptionsAxes(operationName, inputRank) {
+function validateOptionsAxes(operationName) {
   if (navigator.ml === undefined) {
     return;
   }
@@ -279,33 +279,25 @@ function validateOptionsAxes(operationName, inputRank) {
   for (let subOperationName of operationNameArray) {
     
     promise_test(async t => {
-      if (inputRank === undefined) {
-        
-        for (let dataType of allWebNNOperandDataTypes) {
-          for (let dimensions of allWebNNDimensionsArray) {
-            const rank = getRank(dimensions);
-            if (rank >= 1) {
-              const input = builder.input(`input${++inputIndex}`, {dataType, dimensions});
-              for (let invalidAxis of invalidAxisArray) {
-                assert_throws_js(TypeError, () => builder[subOperationName](input, {axes: invalidAxis}));
-              }
-              for (let axis of notUnsignedLongAxisArray) {
-                assert_false(typeof axis === 'number' && Number.isInteger(axis), `[${subOperationName}] any of options.axes elements should be of 'unsigned long'`);
-                assert_throws_js(TypeError, () => builder[subOperationName](input, {axes: [axis]}));
-              }
+      for (let dataType of allWebNNOperandDataTypes) {
+        for (let dimensions of allWebNNDimensionsArray) {
+          const rank = getRank(dimensions);
+          if (rank >= 1) {
+            const input =
+                builder.input(`input${++inputIndex}`, {dataType, dimensions});
+            for (let invalidAxis of invalidAxisArray) {
+              assert_throws_js(
+                  TypeError,
+                  () => builder[subOperationName](input, {axes: invalidAxis}));
             }
-          }
-        }
-      } else {
-        
-        for (let dataType of allWebNNOperandDataTypes) {
-          const input = builder.input(`input${++inputIndex}`, {dataType, dimensions: allWebNNDimensionsArray[inputRank]});
-          for (let invalidAxis of invalidAxisArray) {
-            assert_throws_js(TypeError, () => builder[subOperationName](input, {axes: invalidAxis}));
-          }
-          for (let axis of notUnsignedLongAxisArray) {
-            assert_false(typeof axis === 'number' && Number.isInteger(axis), `[${subOperationName}]  any of options.axes elements should be of 'unsigned long'`);
-            assert_throws_js(TypeError, () => builder[subOperationName](input, {axes: [axis]}));
+            for (let axis of notUnsignedLongAxisArray) {
+              assert_false(
+                  typeof axis === 'number' && Number.isInteger(axis),
+                  `[${subOperationName}] any of options.axes elements should be of 'unsigned long'`);
+              assert_throws_js(
+                  TypeError,
+                  () => builder[subOperationName](input, {axes: [axis]}));
+            }
           }
         }
       }
@@ -313,52 +305,37 @@ function validateOptionsAxes(operationName, inputRank) {
 
     
     promise_test(async t => {
-      if (inputRank === undefined) {
-        
-        for (let dataType of allWebNNOperandDataTypes) {
-          for (let dimensions of allWebNNDimensionsArray) {
-            const rank = getRank(dimensions);
-            if (rank >= 1) {
-              const input = builder.input(`input${++inputIndex}`, {dataType, dimensions});
-              assert_throws_dom('DataError', () => builder[subOperationName](input, {axes: [rank]}));
-              assert_throws_dom('DataError', () => builder[subOperationName](input, {axes: [rank + 1]}));
-            }
+      for (let dataType of allWebNNOperandDataTypes) {
+        for (let dimensions of allWebNNDimensionsArray) {
+          const rank = getRank(dimensions);
+          if (rank >= 1) {
+            const input =
+                builder.input(`input${++inputIndex}`, {dataType, dimensions});
+            assert_throws_dom(
+                'DataError',
+                () => builder[subOperationName](input, {axes: [rank]}));
+            assert_throws_dom(
+                'DataError',
+                () => builder[subOperationName](input, {axes: [rank + 1]}));
           }
-        }
-      } else {
-        
-        for (let dataType of allWebNNOperandDataTypes) {
-          const input = builder.input(`input${++inputIndex}`, {dataType, dimensions: allWebNNDimensionsArray[inputRank]});
-          assert_throws_dom('DataError', () => builder[subOperationName](input, {axes: [inputRank]}));
-          assert_throws_dom('DataError', () => builder[subOperationName](input, {axes: [inputRank + 1]}));
         }
       }
     }, `[${subOperationName}] DataError is expected if any of options.axes elements is greater or equal to the size of input`);
 
     
     promise_test(async t => {
-      if (inputRank === undefined) {
-        
-        for (let dataType of allWebNNOperandDataTypes) {
-          for (let dimensions of allWebNNDimensionsArray) {
-            const rank = getRank(dimensions);
-            if (rank >= 2) {
-              const input = builder.input(`input${++inputIndex}`, {dataType, dimensions});
-              const axesArrayContainSameValues = getAxesArrayContainSameValues(dimensions);
-              for (let axes of axesArrayContainSameValues) {
-                assert_throws_dom('DataError', () => builder[subOperationName](input, {axes}));
-              }
+      for (let dataType of allWebNNOperandDataTypes) {
+        for (let dimensions of allWebNNDimensionsArray) {
+          const rank = getRank(dimensions);
+          if (rank >= 2) {
+            const input =
+                builder.input(`input${++inputIndex}`, {dataType, dimensions});
+            const axesArrayContainSameValues =
+                getAxesArrayContainSameValues(dimensions);
+            for (let axes of axesArrayContainSameValues) {
+              assert_throws_dom(
+                  'DataError', () => builder[subOperationName](input, {axes}));
             }
-          }
-        }
-      } else {
-        
-        for (let dataType of allWebNNOperandDataTypes) {
-          const dimensions = allWebNNDimensionsArray[inputRank];
-          const input = builder.input(`input${++inputIndex}`, {dataType, dimensions});
-          const axesArrayContainSameValues = getAxesArrayContainSameValues(dimensions);
-          for (let axes of axesArrayContainSameValues) {
-            assert_throws_dom('DataError', () => builder[subOperationName](input, {axes}));
           }
         }
       }
