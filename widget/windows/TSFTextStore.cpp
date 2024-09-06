@@ -2934,6 +2934,11 @@ Maybe<TSFTextStore::Selection>& TSFTextStore::SelectionForTSF() {
     mSelectionForTSF = Some(Selection(querySelectedTextEvent));
   }
 
+  if (mPendingToCreateNativeCaret) {
+    mPendingToCreateNativeCaret = false;
+    CreateNativeCaret();
+  }
+
   MOZ_LOG(gIMELog, LogLevel::Debug,
           ("0x%p   TSFTextStore::SelectionForTSF() succeeded, "
            "mSelectionForTSF=%s",
@@ -6460,13 +6465,23 @@ void TSFTextStore::CreateNativeCaret() {
   IMEHandler::MaybeDestroyNativeCaret();
 
   
+  
   if (mDestroyed) {
     return;
   }
 
   MOZ_LOG(gIMELog, LogLevel::Debug,
-          ("0x%p   TSFTextStore::CreateNativeCaret(), mComposition=%s", this,
-           ToString(mComposition).c_str()));
+          ("0x%p   TSFTextStore::CreateNativeCaret(), mComposition=%s, "
+           "mPendingToCreateNativeCaret=%s",
+           this, ToString(mComposition).c_str(),
+           GetBoolName(mPendingToCreateNativeCaret)));
+
+  
+  
+  if (mIsInitializingSelectionForTSF || mPendingToCreateNativeCaret) {
+    mPendingToCreateNativeCaret = true;
+    return;
+  }
 
   Maybe<Selection>& selectionForTSF = SelectionForTSF();
   if (MOZ_UNLIKELY(selectionForTSF.isNothing())) {
@@ -6489,6 +6504,9 @@ void TSFTextStore::CreateNativeCaret() {
   }
 
   WidgetQueryContentEvent queryCaretRectEvent(true, eQueryCaretRect, mWidget);
+  
+  
+  queryCaretRectEvent.mNeedsToFlushLayout = false;
   mWidget->InitEvent(queryCaretRectEvent);
 
   WidgetQueryContentEvent::Options options;

@@ -1075,6 +1075,9 @@ class TSFTextStore final : public ITextStoreACP,
   bool mPendingDestroy = false;
   
   
+  bool mPendingToCreateNativeCaret = false;
+  
+  
   bool mDeferClearingContentForTSF = false;
   
   
