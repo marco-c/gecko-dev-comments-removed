@@ -54,6 +54,11 @@
 
 #define PREF_DATABASE_CLONEONCORRUPTION "places.database.cloneOnCorruption"
 
+#define PREF_DATABASE_FAVICONS_LASTCORRUPTION \
+  "places.database.lastFaviconsCorruptionInDaysFromEpoch"
+#define PREF_DATABASE_PLACES_LASTCORRUPTION \
+  "places.database.lastPlacesCorruptionInDaysFromEpoch"
+
 
 #define PREF_GROWTH_INCREMENT_KIB "places.database.growthIncrementKiB"
 
@@ -101,6 +106,8 @@
 
 
 #define SYNC_PARENT_ANNO "sync/parent"
+
+#define USEC_PER_DAY 86400000000LL
 
 using namespace mozilla;
 
@@ -334,6 +341,18 @@ nsresult AttachDatabase(nsCOMPtr<mozIStorageConnection>& aDBConn,
   Unused << aDBConn->ExecuteSimpleSQL(journalSizePragma);
 
   return NS_OK;
+}
+
+PRTime GetNow() {
+  nsNavHistory* history = nsNavHistory::GetHistoryService();
+  PRTime now;
+  if (history) {
+    
+    now = history->GetNow();
+  } else {
+    now = PR_Now();
+  }
+  return now;
 }
 
 }  
@@ -574,6 +593,12 @@ nsresult Database::EnsureConnection() {
       mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CREATE;
     } else if (rv == NS_ERROR_FILE_CORRUPTED) {
       
+      CheckedInt<int32_t> daysSinceEpoch = GetNow() / USEC_PER_DAY;
+      if (daysSinceEpoch.isValid()) {
+        Preferences::SetInt(PREF_DATABASE_PLACES_LASTCORRUPTION,
+                            daysSinceEpoch.value());
+      }
+      
       rv = BackupAndReplaceDatabaseFile(storage, DATABASE_FILENAME, true, true);
       
     }
@@ -615,6 +640,16 @@ nsresult Database::EnsureConnection() {
       
       
       if (rv == NS_ERROR_FILE_CORRUPTED) {
+        
+        
+        CheckedInt<int32_t> daysSinceEpoch = GetNow() / USEC_PER_DAY;
+        if (daysSinceEpoch.isValid()) {
+          Preferences::SetInt(PREF_DATABASE_PLACES_LASTCORRUPTION,
+                              daysSinceEpoch.value());
+          Preferences::SetInt(PREF_DATABASE_FAVICONS_LASTCORRUPTION,
+                              daysSinceEpoch.value());
+        }
+
         
         rv = BackupAndReplaceDatabaseFile(storage, DATABASE_FAVICONS_FILENAME,
                                           false, false);
@@ -1061,6 +1096,14 @@ nsresult Database::SetupDatabaseConnection(
   
   rv = EnsureFaviconsDatabaseAttached(aStorage);
   if (NS_FAILED(rv)) {
+    
+    
+    CheckedInt<int32_t> daysSinceEpoch = GetNow() / USEC_PER_DAY;
+    if (daysSinceEpoch.isValid()) {
+      Preferences::SetInt(PREF_DATABASE_FAVICONS_LASTCORRUPTION,
+                          daysSinceEpoch.value());
+    }
+
     
     nsCOMPtr<nsIFile> iconsFile;
     rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,

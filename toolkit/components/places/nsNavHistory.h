@@ -354,6 +354,14 @@ class nsNavHistory final : public nsSupportsWeakReference,
       const nsTArray<mozilla::places::QueryKeyValuePair>& aTokens,
       nsNavHistoryQuery* aQuery, nsNavHistoryQueryOptions* aOptions);
 
+  
+
+
+
+
+
+  PRTime GetNow();
+
  private:
   ~nsNavHistory();
 
@@ -373,13 +381,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
   void LoadPrefs();
 
-  
-
-
-
-
-
-  PRTime GetNow();
   PRTime mCachedNow;
   nsCOMPtr<nsITimer> mExpireNowTimer;
   
