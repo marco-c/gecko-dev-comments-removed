@@ -877,11 +877,6 @@ class GitRepository(Repository):
         try:
             cmd = (
                 str(self._tool),
-                "-c",
-                
-                
-                
-                "cinnabar.data=never",
                 "push",
                 "hg::ssh://hg.mozilla.org/try",
                 "+HEAD:refs/heads/branches/default/tip",
