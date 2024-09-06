@@ -8,6 +8,7 @@
 #include <cstdint>
 #include "RangeBoundary.h"
 #include "mozilla/Assertions.h"
+#include "BasePrincipal.h"
 #include "Document.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
@@ -258,12 +259,6 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
 
   
   
-  
-  
-  const bool isUserInvolved = textDirectiveUserActivation;
-
-  
-  
   const bool isAllowedMIMEType = [doc = this->mDocument, func = __FUNCTION__] {
     nsAutoString contentType;
     doc->GetContentType(contentType);
@@ -294,13 +289,26 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   
   
   
+  
+  
+  
+  
+  auto* triggeringPrincipal =
+      loadInfo ? loadInfo->TriggeringPrincipal() : nullptr;
+  const bool isTriggeredFromBrowserUI =
+      triggeringPrincipal && triggeringPrincipal->IsSystemPrincipal();
 
+  if (isTriggeredFromBrowserUI) {
+    DBG("The load is triggered from browser UI. Scrolling allowed.");
+    return true;
+  }
+  DBG("The load is not triggered from browser UI.");
   
   
   
   
   
-  if (!isUserInvolved && !isSameDocumentNavigation) {
+  if (!textDirectiveUserActivation && !isSameDocumentNavigation) {
     DBG("User involvement is false and not same-document navigation. Scrolling "
         "not allowed.");
     return false;
@@ -319,14 +327,10 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
   }
   
   
-  const bool isSameOrigin = [loadInfo, doc = mDocument] {
-    if (!loadInfo) {
-      return false;
-    }
-    auto* triggeringPrincipal = loadInfo->TriggeringPrincipal();
+  const bool isSameOrigin = [doc = this->mDocument, triggeringPrincipal] {
     auto* docPrincipal = doc->GetPrincipal();
     return triggeringPrincipal && docPrincipal &&
-           triggeringPrincipal->Equals(docPrincipal);
+           docPrincipal->Equals(triggeringPrincipal);
   }();
 
   if (isSameOrigin) {
