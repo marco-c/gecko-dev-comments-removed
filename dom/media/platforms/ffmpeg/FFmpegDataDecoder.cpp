@@ -234,8 +234,19 @@ FFmpegDataDecoder<LIBAV_VER>::ProcessDrain() {
   
   
   
-  while (NS_SUCCEEDED(DoDecode(empty, &gotFrame, results)) && gotFrame) {
-  }
+  
+  
+  
+  
+  do {
+    MediaResult r = DoDecode(empty, &gotFrame, results);
+    if (NS_FAILED(r)) {
+      if (r.Code() == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
+        break;
+      }
+      return DecodePromise::CreateAndReject(r, __func__);
+    }
+  } while (gotFrame);
   return DecodePromise::CreateAndResolve(std::move(results), __func__);
 }
 
