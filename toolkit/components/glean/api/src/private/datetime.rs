@@ -54,7 +54,7 @@ impl DatetimeMetric {
     
     
     
-    #[cfg_attr(not(feature = "with-gecko"), allow(dead_code))]
+    #[cfg_attr(not(feature = "with_gecko"), allow(dead_code))]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn set_with_details(
         &self,
