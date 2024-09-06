@@ -142,16 +142,28 @@ pub fn rgb_to_hwb(from: &ColorComponents) -> ColorComponents {
 }
 
 
+#[inline]
+pub fn epsilon_for_range(min: f32, max: f32) -> f32 {
+    (max - min) / 1.0e5
+}
+
+
 
 
 #[inline]
-pub fn orthogonal_to_polar(from: &ColorComponents) -> ColorComponents {
+pub fn orthogonal_to_polar(from: &ColorComponents, e: f32) -> ColorComponents {
     let ColorComponents(lightness, a, b) = *from;
 
     let chroma = (a * a + b * b).sqrt();
 
-    
-    let hue = if chroma.abs() < 1.0e-6 {
+    let hue = if a.abs() < e && b.abs() < e {
+        
+        
+        
+        
+        f32::NAN
+    } else if chroma.abs() < e {
+        
         f32::NAN
     } else {
         normalize_hue(b.atan2(a).to_degrees())
@@ -794,7 +806,7 @@ impl ColorSpaceConversion for Lch {
         let lab = Lab::from_xyz(&from);
 
         
-        orthogonal_to_polar(&lab)
+        orthogonal_to_polar(&lab, epsilon_for_range(0.0, 100.0))
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
@@ -892,7 +904,7 @@ impl ColorSpaceConversion for Oklch {
         let lab = Oklab::from_xyz(&from);
 
         
-        orthogonal_to_polar(&lab)
+        orthogonal_to_polar(&lab, epsilon_for_range(0.0, 1.0))
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
