@@ -161,10 +161,8 @@ using mozilla::Span;
 
 using JS::AutoStableStringChars;
 using JS::CompileOptions;
-using JS::SliceBudget;
 using JS::SourceOwnership;
 using JS::SourceText;
-using JS::WorkBudget;
 
 
 

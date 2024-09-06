@@ -154,7 +154,7 @@ class AsyncFreeSnowWhite : public Runnable {
 
     TimeStamp start = TimeStamp::Now();
     
-    SliceBudget budget = SliceBudget(TimeBudget(2));
+    js::SliceBudget budget = js::SliceBudget(js::TimeBudget(2));
     bool hadSnowWhiteObjects =
         nsCycleCollector_doDeferredDeletionWithBudget(budget);
     Telemetry::Accumulate(
