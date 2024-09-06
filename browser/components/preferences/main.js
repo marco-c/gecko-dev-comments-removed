@@ -2549,6 +2549,9 @@ var gMainPane = {
     let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
     );
+    
+    
+    await aus.init();
     if (aus.currentState == Ci.nsIApplicationUpdateService.STATE_IDLE) {
       return;
     }
