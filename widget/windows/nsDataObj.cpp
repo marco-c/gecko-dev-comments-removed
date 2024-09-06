@@ -530,7 +530,7 @@ nsDataObj::nsDataObj(nsIURI* uri)
 
 
 nsDataObj::~nsDataObj() {
-  NS_IF_RELEASE(mTransferable);
+  mTransferable = nullptr;
 
   mDataFlavors.Clear();
 
@@ -774,7 +774,7 @@ STDMETHODIMP nsDataObj::GetData(LPFORMATETC aFormat, LPSTGMEDIUM pSTM) {
           
           return GetText(df, *aFormat, *pSTM);
       }  
-    }    
+    }  
     dfInx++;
   }  
 
@@ -1861,16 +1861,7 @@ void nsDataObj::AddDataFlavor(const char* aDataFlavor, LPFORMATETC aFE) {
 
 
 void nsDataObj::SetTransferable(nsITransferable* aTransferable) {
-  NS_IF_RELEASE(mTransferable);
-
   mTransferable = aTransferable;
-  if (nullptr == mTransferable) {
-    return;
-  }
-
-  NS_ADDREF(mTransferable);
-
-  return;
 }
 
 
