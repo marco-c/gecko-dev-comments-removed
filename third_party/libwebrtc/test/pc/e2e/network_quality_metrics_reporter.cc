@@ -27,11 +27,6 @@ using ::webrtc::test::Unit;
 
 constexpr TimeDelta kStatsWaitTimeout = TimeDelta::Seconds(1);
 
-
-
-
-constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
-
 }  
 
 NetworkQualityMetricsReporter::NetworkQualityMetricsReporter(
@@ -106,11 +101,6 @@ void NetworkQualityMetricsReporter::StopAndReportResults() {
       alice_stats.overall_incoming_stats.packets_received;
   ReportStats(alice_network_label_, alice_stats, alice_packets_loss);
   ReportStats(bob_network_label_, bob_stats, bob_packets_loss);
-
-  if (!webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
-    RTC_LOG(LS_ERROR)
-        << "Non-standard GetStats; \"payload\" counts include RTP headers";
-  }
 
   MutexLock lock(&lock_);
   for (const auto& pair : pc_stats_) {

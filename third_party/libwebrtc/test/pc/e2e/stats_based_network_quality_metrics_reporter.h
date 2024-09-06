@@ -70,9 +70,6 @@ class StatsBasedNetworkQualityMetricsReporter
 
  private:
   struct PCStats {
-    
-    
-    
     DataSize payload_received = DataSize::Zero();
     DataSize payload_sent = DataSize::Zero();
 
