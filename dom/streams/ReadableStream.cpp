@@ -367,9 +367,16 @@ class ReadableStreamFromAlgorithms final
 
     
     
+    JS::Rooted<JS::Value> reason(aCx, aReason.Value());
+    if (!JS_WrapValue(aCx, &reason)) {
+      JS_ClearPendingException(aCx);
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+
     JS::Rooted<JS::Value> returnResult(aCx);
-    if (!JS::Call(aCx, iterator, returnMethod,
-                  JS::HandleValueArray(aReason.Value()), &returnResult)) {
+    if (!JS::Call(aCx, iterator, returnMethod, JS::HandleValueArray(reason),
+                  &returnResult)) {
       
       
       aRv.StealExceptionFromJSContext(aCx);
