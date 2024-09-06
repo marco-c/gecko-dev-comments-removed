@@ -156,11 +156,15 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       break;
     case ColorID::MozMenuhover:
     case ColorID::Selecteditem:
-      
-      
-      color = NS_ComposeColors(
-          GetColorFromNSColor(NSColor.selectedContentBackgroundColor),
-          NS_RGBA(255, 255, 255, 51));
+      color = GetColorFromNSColor(NSColor.selectedContentBackgroundColor);
+      if (aID == ColorID::MozMenuhover &&
+          !LookAndFeel::GetInt(IntID::PrefersReducedTransparency)) {
+        
+        
+        color = NS_ComposeColors(
+            color,
+            NS_RGBA(255, 255, 255, aScheme == ColorScheme::Light ? 51 : 25));
+      }
       break;
     case ColorID::Accentcolortext:
     case ColorID::MozMenuhovertext:
