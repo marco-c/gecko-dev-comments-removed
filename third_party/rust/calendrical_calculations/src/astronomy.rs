@@ -38,10 +38,14 @@ fn div_euclid_f64(n: f64, d: f64) -> f64 {
 
 #[allow(clippy::exhaustive_structs)] 
 pub struct Location {
-    pub latitude: f64,  
-    pub longitude: f64, 
-    pub elevation: f64, 
-    pub zone: f64,      
+    
+    pub latitude: f64,
+    
+    pub longitude: f64,
+    
+    pub elevation: f64,
+    
+    pub zone: f64,
 }
 
 
@@ -230,6 +234,7 @@ impl Astronomical {
     pub fn ephemeris_correction(moment: Moment) -> f64 {
         
         let year = moment.inner() / 365.2425;
+        
         let year_int = (if year > 0.0 { year + 1.0 } else { year }) as i32;
         let fixed_mid_year = crate::iso::fixed_from_iso(year_int, 7, 1);
         let c = ((fixed_mid_year.to_i64_date() as f64) - 693596.0) / 36525.0;
@@ -1186,7 +1191,7 @@ impl Astronomical {
         lunar_phase: Option<f64>,
     ) -> RataDie {
         let lunar_phase =
-            lunar_phase.unwrap_or_else(|| Self::calculate_lunar_phase_at_or_before(date));
+            lunar_phase.unwrap_or_else(|| Self::calculate_new_moon_at_or_before(date));
         let age = date.to_f64_date() - lunar_phase;
         let tau = if age <= 4.0 || Self::visible_crescent((date - 1).as_moment(), location) {
             lunar_phase + 29.0 
@@ -1207,7 +1212,7 @@ impl Astronomical {
         lunar_phase: Option<f64>,
     ) -> RataDie {
         let lunar_phase =
-            lunar_phase.unwrap_or_else(|| Self::calculate_lunar_phase_at_or_before(date));
+            lunar_phase.unwrap_or_else(|| Self::calculate_new_moon_at_or_before(date));
         let age = date.to_f64_date() - lunar_phase;
         let tau = if age <= 3.0 && !Self::visible_crescent((date).as_moment(), location) {
             lunar_phase - 30.0 
@@ -1217,7 +1222,8 @@ impl Astronomical {
         next_moment(Moment::new(tau), location, Self::visible_crescent)
     }
 
-    pub fn calculate_lunar_phase_at_or_before(date: RataDie) -> f64 {
+    
+    pub fn calculate_new_moon_at_or_before(date: RataDie) -> f64 {
         Self::lunar_phase_at_or_before(0.0, date.as_moment())
             .inner()
             .floor()

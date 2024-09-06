@@ -45,6 +45,7 @@ mod error;
 pub mod ethiopian;
 
 pub mod hebrew;
+pub mod hebrew_keviyah;
 
 pub mod helpers;
 

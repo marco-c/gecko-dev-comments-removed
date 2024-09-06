@@ -45,7 +45,8 @@ use crate::any_calendar::AnyCalendarKind;
 use crate::iso::{Iso, IsoDateInner};
 use crate::provider::{EraStartDate, JapaneseErasV1Marker, JapaneseExtendedErasV1Marker};
 use crate::{
-    types, AsCalendar, Calendar, CalendarError, Date, DateDuration, DateDurationUnit, DateTime, Ref,
+    types, AsCalendar, Calendar, CalendarError, Date, DateDuration, DateDurationUnit, DateTime,
+    Ref, Time,
 };
 use icu_provider::prelude::*;
 use tinystr::{tinystr, TinyStr16};
@@ -451,7 +452,6 @@ impl Date<Japanese> {
     
     
     
-    
     pub fn try_new_japanese_date<A: AsCalendar<Calendar = Japanese>>(
         era: types::Era,
         year: i32,
@@ -467,7 +467,6 @@ impl Date<Japanese> {
 }
 
 impl Date<JapaneseExtended> {
-    
     
     
     
@@ -551,7 +550,6 @@ impl DateTime<Japanese> {
     
     
     
-    
     #[allow(clippy::too_many_arguments)] 
                                          
                                          
@@ -567,13 +565,12 @@ impl DateTime<Japanese> {
     ) -> Result<DateTime<A>, CalendarError> {
         Ok(DateTime {
             date: Date::try_new_japanese_date(era, year, month, day, japanese_calendar)?,
-            time: types::Time::try_new(hour, minute, second, 0)?,
+            time: Time::try_new(hour, minute, second, 0)?,
         })
     }
 }
 
 impl DateTime<JapaneseExtended> {
-    
     
     
     
@@ -622,7 +619,7 @@ impl DateTime<JapaneseExtended> {
     ) -> Result<DateTime<A>, CalendarError> {
         Ok(DateTime {
             date: Date::try_new_japanese_extended_date(era, year, month, day, japanext_calendar)?,
-            time: types::Time::try_new(hour, minute, second, 0)?,
+            time: Time::try_new(hour, minute, second, 0)?,
         })
     }
 }
@@ -668,7 +665,7 @@ impl Japanese {
         
         
         if date < start {
-            if date.year < 0 {
+            if date.year <= 0 {
                 (1 - date.year, tinystr!(16, "bce"))
             } else {
                 (date.year, tinystr!(16, "ce"))
@@ -829,7 +826,11 @@ mod tests {
         assert_eq!(
             date, reconstructed,
             "Failed to roundtrip with {era:?}, {year}, {month}, {day}"
-        )
+        );
+
+        
+        assert_eq!(reconstructed.year().era, era);
+        assert_eq!(reconstructed.year().number, year);
     }
 
     fn single_test_roundtrip_ext(

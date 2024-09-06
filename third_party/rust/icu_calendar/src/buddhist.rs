@@ -34,7 +34,7 @@
 use crate::any_calendar::AnyCalendarKind;
 use crate::calendar_arithmetic::ArithmeticDate;
 use crate::iso::{Iso, IsoDateInner};
-use crate::{types, Calendar, CalendarError, Date, DateDuration, DateDurationUnit, DateTime};
+use crate::{types, Calendar, CalendarError, Date, DateDuration, DateDurationUnit, DateTime, Time};
 use tinystr::tinystr;
 
 
@@ -173,7 +173,6 @@ impl Date<Buddhist> {
     
     
     
-    
     pub fn try_new_buddhist_date(
         year: i32,
         month: u8,
@@ -213,7 +212,7 @@ impl DateTime<Buddhist> {
     ) -> Result<DateTime<Buddhist>, CalendarError> {
         Ok(DateTime {
             date: Date::try_new_buddhist_date(year, month, day)?,
-            time: types::Time::try_new(hour, minute, second, 0)?,
+            time: Time::try_new(hour, minute, second, 0)?,
         })
     }
 }

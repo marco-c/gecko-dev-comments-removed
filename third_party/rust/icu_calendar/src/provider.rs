@@ -15,6 +15,11 @@
 
 #![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
 
+pub mod chinese_based;
+pub mod islamic;
+pub use chinese_based::{ChineseCacheV1Marker, DangiCacheV1Marker};
+pub use islamic::{IslamicObservationalCacheV1Marker, IslamicUmmAlQuraCacheV1Marker};
+
 use crate::types::IsoWeekday;
 use core::str::FromStr;
 use icu_provider::prelude::*;
@@ -36,19 +41,32 @@ pub struct Baked;
 const _: () = {
     pub mod icu {
         pub use crate as calendar;
+        #[allow(unused_imports)] 
         pub use icu_locid_transform as locid_transform;
     }
     icu_calendar_data::make_provider!(Baked);
+    icu_calendar_data::impl_calendar_chinesecache_v1!(Baked);
+    icu_calendar_data::impl_calendar_dangicache_v1!(Baked);
+    icu_calendar_data::impl_calendar_islamicobservationalcache_v1!(Baked);
+    icu_calendar_data::impl_calendar_islamicummalquracache_v1!(Baked);
     icu_calendar_data::impl_calendar_japanese_v1!(Baked);
     icu_calendar_data::impl_calendar_japanext_v1!(Baked);
     icu_calendar_data::impl_datetime_week_data_v1!(Baked);
+    icu_calendar_data::impl_datetime_week_data_v2!(Baked);
 };
 
 #[cfg(feature = "datagen")]
 
 pub const KEYS: &[DataKey] = &[
+    ChineseCacheV1Marker::KEY,
+    DangiCacheV1Marker::KEY,
+    IslamicObservationalCacheV1Marker::KEY,
+    IslamicUmmAlQuraCacheV1Marker::KEY,
     JapaneseErasV1Marker::KEY,
     JapaneseExtendedErasV1Marker::KEY,
+    WeekDataV2Marker::KEY,
+    
+    
     WeekDataV1Marker::KEY,
 ];
 
@@ -107,7 +125,7 @@ pub struct JapaneseErasV1<'data> {
 
 impl FromStr for EraStartDate {
     type Err = ();
-    fn from_str(mut s: &str) -> Result<Self, ()> {
+    fn from_str(mut s: &str) -> Result<Self, Self::Err> {
         let sign = if let Some(suffix) = s.strip_prefix('-') {
             s = suffix;
             -1
@@ -150,4 +168,173 @@ pub struct WeekDataV1 {
     pub first_weekday: IsoWeekday,
     
     pub min_week_days: u8,
+}
+
+
+
+
+
+
+
+
+
+#[icu_provider::data_struct(marker(
+    WeekDataV2Marker,
+    "datetime/week_data@2",
+    fallback_by = "region"
+))]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake), databake(path = icu_calendar::provider))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[allow(clippy::exhaustive_structs)] 
+pub struct WeekDataV2 {
+    
+    pub first_weekday: IsoWeekday,
+    
+    pub min_week_days: u8,
+    
+    
+    pub weekend: WeekdaySet,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WeekdaySet(u8);
+
+impl WeekdaySet {
+    
+    pub const fn contains(&self, day: IsoWeekday) -> bool {
+        self.0 & day.bit_value() != 0
+    }
+}
+
+impl WeekdaySet {
+    
+    pub const fn new(days: &[IsoWeekday]) -> Self {
+        let mut i = 0;
+        let mut w = 0;
+        #[allow(clippy::indexing_slicing)]
+        while i < days.len() {
+            w |= days[i].bit_value();
+            i += 1;
+        }
+        Self(w)
+    }
+}
+
+impl IsoWeekday {
+    
+    const fn bit_value(&self) -> u8 {
+        match self {
+            IsoWeekday::Monday => 1 << 6,
+            IsoWeekday::Tuesday => 1 << 5,
+            IsoWeekday::Wednesday => 1 << 4,
+            IsoWeekday::Thursday => 1 << 3,
+            IsoWeekday::Friday => 1 << 2,
+            IsoWeekday::Saturday => 1 << 1,
+            IsoWeekday::Sunday => 1 << 0,
+        }
+    }
+}
+
+#[cfg(feature = "datagen")]
+impl databake::Bake for WeekdaySet {
+    fn bake(&self, ctx: &databake::CrateEnv) -> databake::TokenStream {
+        ctx.insert("icu_calendar");
+        let days =
+            crate::week_of::WeekdaySetIterator::new(IsoWeekday::Monday, *self).map(|d| d.bake(ctx));
+        databake::quote! {
+            icu_calendar::provider::WeekdaySet::new(&[#(#days),*])
+        }
+    }
+}
+
+#[cfg(feature = "datagen")]
+impl serde::Serialize for WeekdaySet {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if serializer.is_human_readable() {
+            crate::week_of::WeekdaySetIterator::new(IsoWeekday::Monday, *self)
+                .collect::<alloc::vec::Vec<_>>()
+                .serialize(serializer)
+        } else {
+            self.0.serialize(serializer)
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for WeekdaySet {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            alloc::vec::Vec::<IsoWeekday>::deserialize(deserializer).map(|s| Self::new(&s))
+        } else {
+            u8::deserialize(deserializer).map(Self)
+        }
+    }
+}
+
+#[test]
+fn test_weekdayset_bake() {
+    databake::test_bake!(
+        WeekdaySet,
+        const: crate::provider::WeekdaySet::new(
+            &[crate::types::IsoWeekday::Monday, crate::types::IsoWeekday::Wednesday, crate::types::IsoWeekday::Friday]),
+        icu_calendar
+    );
+}
+
+#[test]
+fn test_weekdayset_new() {
+    use IsoWeekday::*;
+
+    let sat_sun_bitmap = Saturday.bit_value() | Sunday.bit_value();
+    let sat_sun_weekend = WeekdaySet::new(&[Saturday, Sunday]);
+    assert_eq!(sat_sun_bitmap, sat_sun_weekend.0);
+
+    let fri_sat_bitmap = Friday.bit_value() | Saturday.bit_value();
+    let fri_sat_weekend = WeekdaySet::new(&[Friday, Saturday]);
+    assert_eq!(fri_sat_bitmap, fri_sat_weekend.0);
+
+    let fri_sun_bitmap = Friday.bit_value() | Sunday.bit_value();
+    let fri_sun_weekend = WeekdaySet::new(&[Friday, Sunday]);
+    assert_eq!(fri_sun_bitmap, fri_sun_weekend.0);
+
+    let fri_bitmap = Friday.bit_value();
+    let fri_weekend = WeekdaySet::new(&[Friday, Friday]);
+    assert_eq!(fri_bitmap, fri_weekend.0);
+
+    let sun_mon_bitmap = Sunday.bit_value() | Monday.bit_value();
+    let sun_mon_weekend = WeekdaySet::new(&[Sunday, Monday]);
+    assert_eq!(sun_mon_bitmap, sun_mon_weekend.0);
+
+    let mon_sun_bitmap = Monday.bit_value() | Sunday.bit_value();
+    let mon_sun_weekend = WeekdaySet::new(&[Monday, Sunday]);
+    assert_eq!(mon_sun_bitmap, mon_sun_weekend.0);
+
+    let mon_bitmap = Monday.bit_value();
+    let mon_weekend = WeekdaySet::new(&[Monday]);
+    assert_eq!(mon_bitmap, mon_weekend.0);
 }

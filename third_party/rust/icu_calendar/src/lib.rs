@@ -121,7 +121,6 @@ mod calendar;
 mod calendar_arithmetic;
 pub mod chinese;
 mod chinese_based;
-mod chinese_data;
 pub mod coptic;
 pub mod dangi;
 mod duration;
@@ -137,6 +136,8 @@ pub mod julian;
 pub mod persian;
 pub mod provider;
 pub mod roc;
+#[cfg(test)]
+mod tests;
 pub mod types;
 mod week_of;
 
@@ -146,6 +147,8 @@ pub mod week {
     pub use week_of::RelativeUnit;
     pub use week_of::WeekCalculator;
     pub use week_of::WeekOf;
+    #[doc(hidden)]
+    pub use week_of::MIN_UNIT_DAYS;
 }
 
 #[doc(no_inline)]
@@ -160,6 +163,7 @@ pub use error::CalendarError;
 pub use gregorian::Gregorian;
 #[doc(no_inline)]
 pub use iso::Iso;
+pub use types::Time;
 
 #[doc(no_inline)]
 pub use CalendarError as Error;
