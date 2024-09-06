@@ -510,6 +510,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return offsetof(JSContext, regExpSearcherLastLimit);
   }
 
+  
+  js::ContextData<uint32_t> isEvaluatingModule;
+
  private:
   
   
