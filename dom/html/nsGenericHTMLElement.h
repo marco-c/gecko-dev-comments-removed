@@ -1142,7 +1142,8 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
   
 
 
-  virtual bool DoesReadOnlyApply() const { return false; }
+
+  virtual bool DoesReadWriteApply() const { return false; }
 
   
 
@@ -1200,7 +1201,7 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
 
   
   bool CanBeDisabled() const override;
-  bool DoesReadOnlyApply() const override;
+  bool DoesReadWriteApply() const override;
   void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
                        bool aBindToTree) override;
   mozilla::dom::HTMLFormElement* GetFormInternal() const override;
