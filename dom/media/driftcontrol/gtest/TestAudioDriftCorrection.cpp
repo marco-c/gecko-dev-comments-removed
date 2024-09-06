@@ -348,7 +348,8 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   produceSomeData(transmitterBlockSize1, 5 * sampleRate);
   EXPECT_EQ(ad.BufferSize(), 4800U);
   
-  EXPECT_EQ(ad.NumCorrectionChanges(), 0U);
+  
+  EXPECT_LE(ad.NumCorrectionChanges(), 0U);
   EXPECT_EQ(ad.NumUnderruns(), 0U);
 
   
@@ -360,7 +361,7 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   
   EXPECT_GT(ad.BufferSize(), transmitterBlockSize2);
   produceSomeData(transmitterBlockSize2, 10 * sampleRate);
-  EXPECT_EQ(ad.NumCorrectionChanges(), numCorrectionChanges);
+  EXPECT_LE(ad.NumCorrectionChanges(), numCorrectionChanges + 1);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   
@@ -369,10 +370,10 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   numCorrectionChanges = ad.NumCorrectionChanges();
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
-  
   EXPECT_EQ(ad.BufferSize(), 9600U);
+  
   produceSomeData(transmitterBlockSize1, 20 * sampleRate);
-  EXPECT_NEAR(ad.NumCorrectionChanges(), numCorrectionChanges, 1U);
+  EXPECT_LE(ad.NumCorrectionChanges(), numCorrectionChanges + 5);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   EXPECT_NEAR(inToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
@@ -382,7 +383,14 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   EXPECT_NEAR(outToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
   
   
+  
+  
+  
   EXPECT_EQ(outToneVerifier.PreSilenceSamples(), 2528U);
+  EXPECT_NEAR(outToneVerifier.PreSilenceSamples() - transmitterBlockSize1,
+              media::TimeUnit::FromSeconds(0.05).ToTicksAtRate(sampleRate) +
+                  receiverBlockSize - transmitterBlockSize1,
+              1U);
   
   
   EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 2U);
@@ -482,7 +490,7 @@ TEST(TestAudioDriftCorrection, DriftStepResponseUnderrunHighLatencyInput)
       tone.Generate(inSegment, inputInterval2);
     }
     ad.RequestFrames(inSegment, interval / 100);
-    if (i >= interval / 10 && i < interval) {
+    if (i >= interval * 8 / 10 && i < interval) {
       
       
       

@@ -109,8 +109,7 @@ AudioSegment AudioDriftCorrection::RequestFrames(const AudioSegment& aInput,
     }
   }
 
-  if (mDriftController->DurationWithinHysteresis() >
-          mLatencyReductionTimeLimit &&
+  if (mDriftController->DurationNearDesired() > mLatencyReductionTimeLimit &&
       mDriftController->DurationSinceDesiredBufferingChange() >
           mLatencyReductionTimeLimit) {
     

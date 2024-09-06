@@ -67,9 +67,8 @@ class DriftController final {
 
 
 
-  media::TimeUnit DurationWithinHysteresis() const {
-    return mDurationWithinHysteresis;
-  }
+
+  media::TimeUnit DurationNearDesired() const { return mDurationNearDesired; }
 
   
 
@@ -144,14 +143,43 @@ class DriftController final {
 
  private:
   media::TimeUnit mDesiredBuffering;
-  int32_t mPreviousError = 0;
+  float mPreviousError = 0.f;
   float mIntegral = 0.0;
   Maybe<float> mIntegralCenterForCap;
   float mCorrectedSourceRate;
   Maybe<int32_t> mLastHysteresisBoundaryCorrection;
   media::TimeUnit mDurationWithinHysteresis;
+  media::TimeUnit mDurationNearDesired;
   uint32_t mNumCorrectionChanges = 0;
-
+  
+  
+  
+  
+  
+  
+  
+  double mInputDurationAvg = 0.0;
+  double mOutputDurationAvg = 0.0;
+  
+  
+  
+  
+  double mDriftEstimate = 1.0;
+  
+  double mStage1Drift = 1.0;
+  
+  
+  
+  
+  
+  double mAvgBufferedFramesEst = 0.0;
+  
+  double mStage1Buffered = 0.0;
+  
+  bool mIsHandlingUnderrun = true;
+  
+  
+  
   
   RollingMean<media::TimeUnit, media::TimeUnit> mMeasuredSourceLatency;
   
@@ -159,6 +187,7 @@ class DriftController final {
 
   media::TimeUnit mTargetClock;
   media::TimeUnit mTotalTargetClock;
+  media::TimeUnit mTargetClockAfterLastSourcePacket;
   media::TimeUnit mLastDesiredBufferingChangeTime;
 };
 
