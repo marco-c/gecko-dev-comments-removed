@@ -68,13 +68,19 @@ interface nsIThreadPool : nsIEventTarget
   
 
 
+
+
+
+
   attribute unsigned long idleThreadLimit;
 
   
 
 
 
-  attribute unsigned long idleThreadTimeout;
+
+
+  attribute unsigned long idleThreadGraceTimeout;
 
   
 
@@ -82,7 +88,7 @@ interface nsIThreadPool : nsIEventTarget
 
 
 
-  attribute boolean idleThreadTimeoutRegressive;
+  attribute unsigned long idleThreadMaximumTimeout;
 
   
 

@@ -177,7 +177,10 @@ TEST(ThreadPoolIdleTimeout, Test)
   rv = pool->SetIdleThreadLimit(NUMBER_OF_IDLE_THREADS);
   ASSERT_NS_SUCCEEDED(rv);
 
-  rv = pool->SetIdleThreadTimeout(IDLE_THREAD_MAX_TIMEOUT);
+  rv = pool->SetIdleThreadGraceTimeout(IDLE_THREAD_GRACE_TIMEOUT);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  rv = pool->SetIdleThreadMaximumTimeout(IDLE_THREAD_MAX_TIMEOUT);
   ASSERT_NS_SUCCEEDED(rv);
 
   pool->SetName("IdleTest"_ns);
@@ -268,10 +271,10 @@ TEST(ThreadPoolIdleTimeout, Test)
     }
     EXPECT_EQ(numberOfThreads, (uint32_t)NUMBER_OF_IDLE_THREADS);
     if (deviationPerc < 10) {
-      
-      
+      EXPECT_GE(graceTime,
+                TimeDuration::FromMilliseconds(IDLE_THREAD_GRACE_TIMEOUT * .9));
       EXPECT_LE(graceTime, TimeDuration::FromMilliseconds(
-                               IDLE_THREAD_GRACE_TIMEOUT * 0.1));
+                               IDLE_THREAD_GRACE_TIMEOUT * 1.5));
     } else {
       printf(
           "Encountered flaky timers (deviation=%.2f), skipping grace timeout "
@@ -342,14 +345,10 @@ TEST(ThreadPoolIdleTimeout, Test)
 
     
     
-    
-    
-    
     printf("%u Found %u threads created.\n",
            (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
            (uint32_t)numberOfThreadsCreated);
-    EXPECT_LE(NUMBER_OF_MAX_THREADS + NUMBER_OF_IDLE_THREADS * 8,
-              (uint32_t)numberOfThreadsCreated);
+    EXPECT_EQ(NUMBER_OF_MAX_THREADS, (uint32_t)numberOfThreadsCreated);
   }
 
   
@@ -438,10 +437,13 @@ TEST(ThreadPoolIdleTimeout, Test)
       
       
       
+      
+      
       printf("%u End of low noise, found %u threads alive.\n",
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
              (uint32_t)numberOfThreads);
-      EXPECT_EQ(NUMBER_OF_IDLE_THREADS, (uint32_t)numberOfThreads);
+      EXPECT_LE(NUMBER_OF_IDLE_THREADS, (uint32_t)numberOfThreads);
+      EXPECT_GE(NUMBER_OF_IDLE_THREADS + 1, (uint32_t)numberOfThreads);
     } else {
       printf(
           "Encountered flaky timers (deviation=%.2f), skipping low noise "

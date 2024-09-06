@@ -18,6 +18,7 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/StickyTimeDuration.h"
 #include "nsThreadSyncDispatch.h"
 
 #include <mutex>
@@ -42,7 +43,8 @@ void nsThreadPool::InitTLS() { gCurrentThreadPool.infallibleInit(); }
 
 #define DEFAULT_THREAD_LIMIT 4
 #define DEFAULT_IDLE_THREAD_LIMIT 1
-#define DEFAULT_IDLE_THREAD_TIMEOUT PR_SecondsToInterval(60)
+#define DEFAULT_IDLE_THREAD_GRACE_TIMEOUT_MS 100
+#define DEFAULT_IDLE_THREAD_MAX_TIMEOUT_MS 60000
 
 NS_IMPL_ISUPPORTS_INHERITED(nsThreadPool, Runnable, nsIThreadPool,
                             nsIEventTarget)
@@ -54,15 +56,15 @@ nsThreadPool* nsThreadPool::GetCurrentThreadPool() {
 nsThreadPool::nsThreadPool()
     : Runnable("nsThreadPool"),
       mMutex("[nsThreadPool.mMutex]"),
-      mEventsAvailable(mMutex, "[nsThreadPool.mEventsAvailable]"),
       mThreadLimit(DEFAULT_THREAD_LIMIT),
       mIdleThreadLimit(DEFAULT_IDLE_THREAD_LIMIT),
-      mIdleThreadTimeout(DEFAULT_IDLE_THREAD_TIMEOUT),
-      mIdleCount(0),
+      mIdleThreadGraceTimeout(
+          TimeDuration::FromMilliseconds(DEFAULT_IDLE_THREAD_GRACE_TIMEOUT_MS)),
+      mIdleThreadMaxTimeout(
+          TimeDuration::FromMilliseconds(DEFAULT_IDLE_THREAD_MAX_TIMEOUT_MS)),
       mQoSPriority(nsIThread::QOS_PRIORITY_NORMAL),
       mStackSize(nsIThreadManager::DEFAULT_STACK_SIZE),
       mShutdown(false),
-      mRegressiveMaxIdleTime(false),
       mIsAPoolThreadFree(true) {
   LOG(("THRD-P(%p) constructor!!!\n", this));
 }
@@ -72,6 +74,68 @@ nsThreadPool::~nsThreadPool() {
   
   MOZ_ASSERT(mThreads.IsEmpty());
 }
+
+
+
+struct nsThreadPool::MRUIdleEntry
+    : public mozilla::LinkedListElement<MRUIdleEntry> {
+  
+  explicit MRUIdleEntry(mozilla::Mutex& aMutex)
+      : mEventsAvailable(aMutex,
+                         "[nsThreadPool.MRUIdleStatus.mEventsAvailable]") {}
+
+  
+  mozilla::TimeStamp mIdleSince;
+  
+  mozilla::CondVar mEventsAvailable;
+#ifdef DEBUG
+  
+  mozilla::TimeStamp mNotifiedSince;
+  
+  mozilla::TimeDuration mLastWaitDelay;
+#endif
+};
+
+#ifdef DEBUG
+
+void nsThreadPool::DebugLogPoolStatus(MutexAutoLock& aProofOfLock,
+                                      MRUIdleEntry* aWakingEntry) {
+  if (!MOZ_LOG_TEST(sThreadPoolLog, mozilla::LogLevel::Debug)) {
+    return;
+  }
+
+  LOG(
+      ("THRD-P(%p) \"%s\" (entry %p) status ---- mThreads(%u), mEvents(%u), "
+       "mThreadLimit(%u), mIdleThreadLimit(%u), mIdleCount(%zd), "
+       "mMRUIdleThreads(%u), mShutdown(%u)\n",
+       this, mName.get(), aWakingEntry, mThreads.Length(),
+       (uint32_t)mEvents.Count(aProofOfLock), mThreadLimit, mIdleThreadLimit,
+       mMRUIdleThreads.length(), (uint32_t)mMRUIdleThreads.length(),
+       (uint32_t)mShutdown));
+
+  auto logEntry = [&](MRUIdleEntry* entry, const char* msg) {
+    LOG(
+        (" - (entry %p) %s, IdleSince(%d), "
+         "NotifiedSince(%d) LastWaitDelay(%d)\n",
+         entry, msg,
+         (int)((entry->mIdleSince.IsNull())
+                   ? -1
+                   : (TimeStamp::Now() - entry->mIdleSince).ToMilliseconds()),
+         (int)((entry->mNotifiedSince.IsNull())
+                   ? -1
+                   : (TimeStamp::Now() - entry->mNotifiedSince)
+                         .ToMilliseconds()),
+         (int)entry->mLastWaitDelay.ToMilliseconds()));
+  };
+
+  if (aWakingEntry) {
+    logEntry(aWakingEntry, "woke up");
+  }
+  for (auto* idle : mMRUIdleThreads) {
+    logEntry(idle, "in idle list");
+  }
+}
+#endif
 
 nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent) {
   nsCOMPtr<nsIRunnable> event(aEvent);
@@ -91,23 +155,52 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
     if (NS_WARN_IF(mShutdown)) {
       return NS_ERROR_NOT_AVAILABLE;
     }
-    LOG(("THRD-P(%p) put [%d %d %d]\n", this, mIdleCount, mThreads.Count(),
-         mThreadLimit));
-    MOZ_ASSERT(mIdleCount <= (uint32_t)mThreads.Count(), "oops");
-
-    
-    if (mThreads.Count() < (int32_t)mThreadLimit &&
-        !(aFlags & NS_DISPATCH_AT_END) &&
-        
-        
-        mEvents.Count(lock) >= mIdleCount) {
-      spawnThread = true;
-    }
 
     nsCOMPtr<nsIRunnable> event(aEvent);
     LogRunnable::LogDispatch(event);
     mEvents.PutEvent(event.forget(), EventQueuePriority::Normal, lock);
-    mEventsAvailable.Notify();
+
+#ifdef DEBUG
+    DebugLogPoolStatus(lock, nullptr);
+#endif
+
+    
+    
+    if (aFlags & NS_DISPATCH_AT_END) {
+      
+      
+      
+      MOZ_ASSERT(IsOnCurrentThreadInfallible(),
+                 "NS_DISPATCH_AT_END can only be set when "
+                 "dispatching from on the thread pool.");
+      LOG(("THRD-P(%p) put [%zd %d %d]: NS_DISPATCH_AT_END w/out Notify.\n",
+           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
+    } else if (auto* mruThread = mMRUIdleThreads.getFirst()) {
+      
+      
+      
+      mruThread->remove();
+      mruThread->mEventsAvailable.Notify();
+#ifdef DEBUG
+      mruThread->mNotifiedSince = TimeStamp::Now();
+#endif
+      LOG(("THRD-P(%p) put [%zd %d %d]: Notify idle thread via entry(%p).\n",
+           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit,
+           mruThread));
+    } else if (mThreads.Count() < (int32_t)mThreadLimit) {
+      
+      
+      spawnThread = true;
+      LOG(("THRD-P(%p) put [%zd %d %d]: Spawn a new thread.\n", this,
+           mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
+    } else {
+      
+      
+      LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n",
+           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
+    }
+
+    MOZ_ASSERT(spawnThread || mThreads.Count() > 0);
     stackSize = mStackSize;
     name = mName;
   }
@@ -117,7 +210,6 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
     DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
   });
 
-  LOG(("THRD-P(%p) put [spawn=%d]\n", this, spawnThread));
   if (!spawnThread) {
     return NS_OK;
   }
@@ -186,6 +278,12 @@ nsThreadPool::SetQoSForThreads(nsIThread::QoSPriority aPriority) {
   return NS_OK;
 }
 
+void nsThreadPool::NotifyChangeToAllIdleThreads() {
+  for (auto* idleThread : mMRUIdleThreads) {
+    idleThread->mEventsAvailable.Notify();
+  }
+}
+
 
 
 
@@ -222,8 +320,8 @@ nsThreadPool::Run() {
 
   bool shutdownThreadOnExit = false;
   bool exitThread = false;
+  MRUIdleEntry idleEntry(mMutex);
   bool wasIdle = false;
-  TimeStamp idleSince;
   nsIThread::QoSPriority threadPriority = nsIThread::QOS_PRIORITY_NORMAL;
 
   
@@ -234,7 +332,7 @@ nsThreadPool::Run() {
   {
     MutexAutoLock lock(mMutex);
     listener = mListener;
-    LOG(("THRD-P(%p) enter %s\n", this, mName.BeginReading()));
+    LOG(("THRD-P(%p) enter %s\n", this, mName.get()));
 
     
     
@@ -253,9 +351,14 @@ nsThreadPool::Run() {
 
   do {
     nsCOMPtr<nsIRunnable> event;
-    TimeDuration delay;
+    TimeDuration lastEventDelay;
     {
       MutexAutoLock lock(mMutex);
+
+#ifdef DEBUG
+      DebugLogPoolStatus(lock, &idleEntry);
+      idleEntry.mNotifiedSince = TimeStamp();
+#endif
 
       
       if (threadPriority != mQoSPriority) {
@@ -263,41 +366,40 @@ nsThreadPool::Run() {
         threadPriority = mQoSPriority;
       }
 
-      event = mEvents.GetEvent(lock, &delay);
+      event = mEvents.GetEvent(lock, &lastEventDelay);
       if (!event) {
         TimeStamp now = TimeStamp::Now();
-        uint32_t idleTimeoutDivider =
-            (mIdleCount && mRegressiveMaxIdleTime) ? mIdleCount : 1;
-        TimeDuration timeout = TimeDuration::FromMilliseconds(
-            static_cast<double>(mIdleThreadTimeout) / idleTimeoutDivider);
+        uint32_t cnt = mMRUIdleThreads.length() + ((wasIdle) ? 0 : 1);
+        TimeDuration currentTimeout = (cnt > mIdleThreadLimit)
+                                          ? mIdleThreadGraceTimeout
+                                          : mIdleThreadMaxTimeout;
 
-        
         if (mShutdown) {
           exitThread = true;
         } else {
-          if (wasIdle) {
+          if (!wasIdle) {
             
-            if (mIdleCount > mIdleThreadLimit ||
-                (mIdleThreadTimeout != UINT32_MAX &&
-                 (now - idleSince) >= timeout)) {
-              exitThread = true;
+            MOZ_ASSERT(!idleEntry.isInList());
+            idleEntry.mIdleSince = now;
+            wasIdle = true;
+            mMRUIdleThreads.insertFront(&idleEntry);
+          } else if ((now - idleEntry.mIdleSince) < currentTimeout) {
+            
+            if (!idleEntry.isInList()) {
+              mMRUIdleThreads.insertFront(&idleEntry);
             }
           } else {
             
-            if (mIdleCount == mIdleThreadLimit) {
-              exitThread = true;
-            } else {
-              ++mIdleCount;
-              idleSince = now;
-              wasIdle = true;
-            }
+            exitThread = true;
           }
         }
 
         if (exitThread) {
-          if (wasIdle) {
-            --mIdleCount;
+          wasIdle = false;
+          if (idleEntry.isInList()) {
+            idleEntry.remove();
           }
+
           shutdownThreadOnExit = mThreads.RemoveObject(current);
 
           
@@ -307,22 +409,35 @@ nsThreadPool::Run() {
 
           AUTO_PROFILER_LABEL("nsThreadPool::Run::Wait", IDLE);
 
-          TimeDuration delta = timeout - (now - idleSince);
-          LOG(("THRD-P(%p) %s waiting [%f]\n", this, mName.BeginReading(),
+          
+          
+          
+          
+          TimeDuration delta{StickyTimeDuration{currentTimeout} -
+                             (now - idleEntry.mIdleSince)};
+          delta = TimeDuration::Max(delta, TimeDuration::FromMilliseconds(1));
+          LOG(("THRD-P(%p) %s waiting [%f]\n", this, mName.get(),
                delta.ToMilliseconds()));
-          mEventsAvailable.Wait(delta);
+#ifdef DEBUG
+          idleEntry.mLastWaitDelay = delta;
+#endif
+          idleEntry.mEventsAvailable.Wait(delta);
           LOG(("THRD-P(%p) done waiting\n", this));
         }
-      } else if (wasIdle) {
+      } else {
+        
         wasIdle = false;
-        --mIdleCount;
+        if (idleEntry.isInList()) {
+          idleEntry.remove();
+        }
       }
+      
     }
+
     if (event) {
       if (MOZ_LOG_TEST(sThreadPoolLog, mozilla::LogLevel::Debug)) {
         MutexAutoLock lock(mMutex);
-        LOG(("THRD-P(%p) %s running [%p]\n", this, mName.BeginReading(),
-             event.get()));
+        LOG(("THRD-P(%p) %s running [%p]\n", this, mName.get(), event.get()));
       }
 
       
@@ -333,7 +448,7 @@ nsThreadPool::Run() {
               ThreadProfilingFeatures::Sampling)) {
         
         
-        current->SetRunningEventDelay(delay, TimeStamp::Now());
+        current->SetRunningEventDelay(lastEventDelay, TimeStamp::Now());
       }
 
       LogRunnable::Run log(event);
@@ -424,7 +539,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
       return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
     }
     mShutdown = true;
-    mEventsAvailable.NotifyAll();
+    NotifyChangeToAllIdleThreads();
 
     threads.AppendObjects(mThreads);
     mThreads.Clear();
@@ -494,11 +609,7 @@ nsThreadPool::SetThreadLimit(uint32_t aValue) {
   if (mIdleThreadLimit > mThreadLimit) {
     mIdleThreadLimit = mThreadLimit;
   }
-
-  if (static_cast<uint32_t>(mThreads.Count()) > mThreadLimit) {
-    mEventsAvailable
-        .NotifyAll();  
-  }
+  NotifyChangeToAllIdleThreads();
   return NS_OK;
 }
 
@@ -517,53 +628,61 @@ nsThreadPool::SetIdleThreadLimit(uint32_t aValue) {
   if (mIdleThreadLimit > mThreadLimit) {
     mIdleThreadLimit = mThreadLimit;
   }
+  NotifyChangeToAllIdleThreads();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThreadPool::GetIdleThreadGraceTimeout(uint32_t* aValue) {
+  MutexAutoLock lock(mMutex);
+  *aValue = (uint32_t)mIdleThreadGraceTimeout.ToMilliseconds();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThreadPool::SetIdleThreadGraceTimeout(uint32_t aValue) {
+  
+  MOZ_ASSERT(aValue != UINT32_MAX);
+
+  MutexAutoLock lock(mMutex);
+  TimeDuration oldTimeout = mIdleThreadGraceTimeout;
+  mIdleThreadGraceTimeout = TimeDuration::FromMilliseconds(aValue);
+  
+  
+  
+  MOZ_ASSERT(mIdleThreadGraceTimeout <= mIdleThreadMaxTimeout);
 
   
-  if (mIdleCount > mIdleThreadLimit) {
-    mEventsAvailable
-        .NotifyAll();  
+  if (mIdleThreadGraceTimeout < oldTimeout) {
+    NotifyChangeToAllIdleThreads();
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::GetIdleThreadTimeout(uint32_t* aValue) {
+nsThreadPool::GetIdleThreadMaximumTimeout(uint32_t* aValue) {
   MutexAutoLock lock(mMutex);
-  *aValue = mIdleThreadTimeout;
+  *aValue = (uint32_t)mIdleThreadMaxTimeout.ToMilliseconds();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetIdleThreadTimeout(uint32_t aValue) {
+nsThreadPool::SetIdleThreadMaximumTimeout(uint32_t aValue) {
   MutexAutoLock lock(mMutex);
-  uint32_t oldTimeout = mIdleThreadTimeout;
-  mIdleThreadTimeout = aValue;
-
-  
-  if (mIdleThreadTimeout < oldTimeout && mIdleCount > 0) {
-    mEventsAvailable
-        .NotifyAll();  
+  TimeDuration oldTimeout = mIdleThreadMaxTimeout;
+  if (aValue == UINT32_MAX) {
+    mIdleThreadMaxTimeout = TimeDuration::Forever();
+  } else {
+    mIdleThreadMaxTimeout = TimeDuration::FromMilliseconds(aValue);
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsThreadPool::GetIdleThreadTimeoutRegressive(bool* aValue) {
-  MutexAutoLock lock(mMutex);
-  *aValue = mRegressiveMaxIdleTime;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsThreadPool::SetIdleThreadTimeoutRegressive(bool aValue) {
-  MutexAutoLock lock(mMutex);
-  bool oldRegressive = mRegressiveMaxIdleTime;
-  mRegressiveMaxIdleTime = aValue;
+  
+  
+  
+  MOZ_ASSERT(mIdleThreadGraceTimeout <= mIdleThreadMaxTimeout);
 
   
-  if (mRegressiveMaxIdleTime > oldRegressive && mIdleCount > 1) {
-    mEventsAvailable
-        .NotifyAll();  
+  if (mIdleThreadMaxTimeout < oldTimeout) {
+    NotifyChangeToAllIdleThreads();
   }
   return NS_OK;
 }
