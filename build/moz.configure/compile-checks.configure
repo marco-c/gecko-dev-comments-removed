@@ -403,14 +403,7 @@ def add_warning(warning, compiler=None, when=None):
 
 @dependable
 def compilation_flags():
-    return namespace(
-        cflags=[],
-        cxxflags=[],
-        host_cflags=[],
-        host_cxxflags=[],
-        cmflags=[],
-        cmmflags=[],
-    )
+    return namespace(cflags=[], cxxflags=[], host_cflags=[], host_cxxflags=[])
 
 
 
