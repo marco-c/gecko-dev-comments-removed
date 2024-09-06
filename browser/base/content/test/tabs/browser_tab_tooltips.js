@@ -31,6 +31,16 @@ function closeTooltip(node, tooltip) {
   return tooltipHiddenPromise;
 }
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.cardPreview.enabled", false]],
+  });
+});
+
+registerCleanupFunction(async function () {
+  await SpecialPowers.popPrefEnv();
+});
+
 
 
 add_task(async function () {
