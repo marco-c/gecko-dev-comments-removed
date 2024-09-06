@@ -160,7 +160,7 @@ interface nsIXPCTestUtils extends nsISupports {
   doubleWrapFunction(f: nsIXPCTestFunctionInterface): nsIXPCTestFunctionInterface;
 }
 
-interface nsIXPCTestNoScriptMembers extends nsISupports {
+interface nsIXPCTestTypeScript extends nsISupports {
   exposedProp: i32;
   exposedMethod(arg: i32): void;
 }
@@ -178,43 +178,60 @@ interface nsIXPCComponents_Interfaces {
   nsIXPCTestReturnCodeChild: nsJSIID<nsIXPCTestReturnCodeChild>;
   nsIXPCTestFunctionInterface: nsJSIID<nsIXPCTestFunctionInterface>;
   nsIXPCTestUtils: nsJSIID<nsIXPCTestUtils>;
-  nsIXPCTestNoScriptMembers: nsJSIID<nsIXPCTestNoScriptMembers>;
+  nsIXPCTestTypeScript: nsJSIID<nsIXPCTestTypeScript>;
 }
 
 }  
 
 
 type PRTime = i64;
-type char16_t = u16;
-type nsresult = u32;
 
 
 
 
+declare global {
+  
+
+
+
+  interface nsID<uuid = string> {
+    readonly number: uuid;
+  }
+
+  
 
 
 
 
+  type nsJSIID<iface, enums = {}> = nsID & Constants<iface> & enums & {
+    new (_: never): void;
+    prototype: iface;
+  }
 
-interface nsID<uuid = string> {
-  readonly number: uuid;
+  
+  type nsIID = nsIXPCComponents_Interfaces[keyof nsIXPCComponents_Interfaces];
+
+  
+  export type nsQIResult<iid> = iid extends { prototype: infer U } ? U : never;
+
+  
+  type nsresult = u32;
+
+  
+  type double = number;
+  type float = number;
+  type i16 = number;
+  type i32 = number;
+  type i64 = number;
+  type u16 = number;
+  type u32 = number;
+  type u64 = number;
+  type u8 = number;
 }
 
 
 
 
-
-
-type nsJSIID<iface, enums = {}> = nsID & Constants<iface> & enums & {
-  new (_: never): void;
-  prototype: iface;
-}
-
-
-type nsIID = nsIXPCComponents_Interfaces[keyof nsIXPCComponents_Interfaces];
-
-
-export type nsQIResult<iid> = iid extends { prototype: infer U } ? U : never;
 
 
 type InOutParam<T> = { value: T };
@@ -234,42 +251,4 @@ type Constants<T> = { [K in keyof T as IfConst<K, T[K]>]: T[K] };
 
 type IfConst<K, T> = T extends number ? (number extends T ? never : K) : never;
 
-declare global {
-  
-  interface BrowsingContext {}
-  interface ContentFrameMessageManager {}
-  interface DOMRequest {}
-  interface FrameLoader {}
-  interface JSProcessActorChild {}
-  interface JSProcessActorParent {}
-  interface TreeColumn {}
-  interface WebExtensionContentScript {}
-  interface WebExtensionPolicy {}
-  interface WindowGlobalParent {}
-  interface WindowContext {}
-  interface XULTreeElement {}
-}
-
-
-interface nsIAsyncVerifyRedirectReadyCallback {}
-interface nsICRLiteTimestamp {}
-interface nsIInputAvailableCallback {}
-interface nsIScriptElement {}
-interface nsIThreadObserver {}
-interface nsIUDPSocketSyncListener {}
-interface nsIWebAuthnRegisterArgs {}
-interface nsIWebAuthnRegisterPromise {}
-interface nsIWebAuthnSignArgs {}
-interface nsIWebAuthnSignPromise {}
-interface nsIXPCScriptable {}
-
-
-type double = number;
-type float = number;
-type i16 = number;
-type i32 = number;
-type i64 = number;
-type u16 = number;
-type u32 = number;
-type u64 = number;
-type u8 = number;
+export {};
