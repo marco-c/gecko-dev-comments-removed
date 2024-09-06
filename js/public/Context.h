@@ -102,6 +102,25 @@ using EnsureCanAddPrivateElementOp = bool (*)(JSContext* cx, HandleValue val);
 JS_PUBLIC_API void SetHostEnsureCanAddPrivateElementHook(
     JSContext* cx, EnsureCanAddPrivateElementOp op);
 
+
+
+
+
+
+
+JS_PUBLIC_API bool SetBrittleMode(JSContext* cx, bool setting);
+
+class AutoBrittleMode {
+  bool wasBrittle;
+  JSContext* cx;
+
+ public:
+  explicit AutoBrittleMode(JSContext* cx) : cx(cx) {
+    wasBrittle = SetBrittleMode(cx, true);
+  }
+  ~AutoBrittleMode() { MOZ_ALWAYS_TRUE(SetBrittleMode(cx, wasBrittle)); }
+};
+
 } 
 
 #endif  
