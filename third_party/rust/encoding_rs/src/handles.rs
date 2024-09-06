@@ -34,7 +34,7 @@ use crate::simd_funcs::*;
         all(target_endian = "little", target_feature = "neon")
     )
 ))]
-use packed_simd::u16x8;
+use core::simd::u16x8;
 
 use super::DecoderResult;
 use super::EncoderResult;
@@ -90,19 +90,23 @@ impl Endian for LittleEndian {
 
 #[derive(Debug, Copy, Clone)]
 struct UnalignedU16Slice {
+    
     ptr: *const u8,
     len: usize,
 }
 
 impl UnalignedU16Slice {
+    
     #[inline(always)]
     pub unsafe fn new(ptr: *const u8, len: usize) -> UnalignedU16Slice {
+        
         UnalignedU16Slice { ptr, len }
     }
 
     #[inline(always)]
     pub fn trim_last(&mut self) {
         assert!(self.len > 0);
+        
         self.len -= 1;
     }
 
@@ -113,7 +117,9 @@ impl UnalignedU16Slice {
         assert!(i < self.len);
         unsafe {
             let mut u: MaybeUninit<u16> = MaybeUninit::uninit();
+            
             ::core::ptr::copy_nonoverlapping(self.ptr.add(i * 2), u.as_mut_ptr() as *mut u8, 2);
+            
             u.assume_init()
         }
     }
@@ -121,8 +127,13 @@ impl UnalignedU16Slice {
     #[cfg(feature = "simd-accel")]
     #[inline(always)]
     pub fn simd_at(&self, i: usize) -> u16x8 {
+        
         assert!(i + SIMD_STRIDE_SIZE / 2 <= self.len);
         let byte_index = i * 2;
+        
+        
+        
+
         unsafe { to_u16_lanes(load16_unaligned(self.ptr.add(byte_index))) }
     }
 
@@ -136,6 +147,7 @@ impl UnalignedU16Slice {
         
         
         assert!(from <= self.len);
+        
         unsafe { UnalignedU16Slice::new(self.ptr.add(from * 2), self.len - from) }
     }
 
@@ -144,6 +156,8 @@ impl UnalignedU16Slice {
     pub fn copy_bmp_to<E: Endian>(&self, other: &mut [u16]) -> Option<(u16, usize)> {
         assert!(self.len <= other.len());
         let mut offset = 0;
+        
+        
         if SIMD_STRIDE_SIZE / 2 <= self.len {
             let len_minus_stride = self.len - SIMD_STRIDE_SIZE / 2;
             loop {
@@ -151,6 +165,7 @@ impl UnalignedU16Slice {
                 if E::OPPOSITE_ENDIAN {
                     simd = simd_byte_swap(simd);
                 }
+                
                 unsafe {
                     store8_unaligned(other.as_mut_ptr().add(offset), simd);
                 }
@@ -158,6 +173,7 @@ impl UnalignedU16Slice {
                     break;
                 }
                 offset += SIMD_STRIDE_SIZE / 2;
+                
                 if offset > len_minus_stride {
                     break;
                 }
@@ -236,6 +252,7 @@ fn copy_unaligned_basic_latin_to_ascii<E: Endian>(
 ) -> CopyAsciiResult<usize, (u16, usize)> {
     let len = ::core::cmp::min(src.len(), dst.len());
     let mut offset = 0;
+    
     if SIMD_STRIDE_SIZE <= len {
         let len_minus_stride = len - SIMD_STRIDE_SIZE;
         loop {
@@ -249,10 +266,13 @@ fn copy_unaligned_basic_latin_to_ascii<E: Endian>(
                 break;
             }
             let packed = simd_pack(first, second);
+            
             unsafe {
                 store16_unaligned(dst.as_mut_ptr().add(offset), packed);
             }
             offset += SIMD_STRIDE_SIZE;
+            
+            
             if offset > len_minus_stride {
                 break;
             }
@@ -637,7 +657,7 @@ impl<'a> Utf16Destination<'a> {
         self.write_code_unit((0xDC00 + (astral & 0x3FF)) as u16);
     }
     #[inline(always)]
-    pub fn write_surrogate_pair(&mut self, high: u16, low: u16) {
+    fn write_surrogate_pair(&mut self, high: u16, low: u16) {
         self.write_code_unit(high);
         self.write_code_unit(low);
     }
@@ -646,6 +666,7 @@ impl<'a> Utf16Destination<'a> {
         self.write_bmp_excl_ascii(combined);
         self.write_bmp_excl_ascii(combining);
     }
+    
     #[inline(always)]
     pub fn copy_ascii_from_check_space_bmp<'b>(
         &'b mut self,
@@ -659,6 +680,8 @@ impl<'a> Utf16Destination<'a> {
             } else {
                 (DecoderResult::InputEmpty, src_remaining.len())
             };
+            
+            
             match unsafe {
                 ascii_to_basic_latin(src_remaining.as_ptr(), dst_remaining.as_mut_ptr(), length)
             } {
@@ -667,16 +690,20 @@ impl<'a> Utf16Destination<'a> {
                     self.pos += length;
                     return CopyAsciiResult::Stop((pending, source.pos, self.pos));
                 }
+                
                 Some((non_ascii, consumed)) => {
                     source.pos += consumed;
                     self.pos += consumed;
                     source.pos += 1; 
+                                     
                     non_ascii
                 }
             }
         };
+        
         CopyAsciiResult::GoOn((non_ascii_ret, Utf16BmpHandle::new(self)))
     }
+    
     #[inline(always)]
     pub fn copy_ascii_from_check_space_astral<'b>(
         &'b mut self,
@@ -691,6 +718,8 @@ impl<'a> Utf16Destination<'a> {
             } else {
                 (DecoderResult::InputEmpty, src_remaining.len())
             };
+            
+            
             match unsafe {
                 ascii_to_basic_latin(src_remaining.as_ptr(), dst_remaining.as_mut_ptr(), length)
             } {
@@ -699,11 +728,13 @@ impl<'a> Utf16Destination<'a> {
                     self.pos += length;
                     return CopyAsciiResult::Stop((pending, source.pos, self.pos));
                 }
+                
                 Some((non_ascii, consumed)) => {
                     source.pos += consumed;
                     self.pos += consumed;
                     if self.pos + 1 < dst_len {
                         source.pos += 1; 
+                                         
                         non_ascii
                     } else {
                         return CopyAsciiResult::Stop((
@@ -715,6 +746,7 @@ impl<'a> Utf16Destination<'a> {
                 }
             }
         };
+        
         CopyAsciiResult::GoOn((non_ascii_ret, Utf16AstralHandle::new(self)))
     }
     #[inline(always)]
