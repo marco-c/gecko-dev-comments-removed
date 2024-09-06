@@ -74,22 +74,30 @@ Selection.prototype = {
     let attributeChange = false;
     let pseudoChange = false;
     let detached = false;
-    let parentNode = null;
+    let detachedNodeParent = null;
 
     for (const m of mutations) {
-      if (!attributeChange && m.type == "attributes") {
+      if (m.type == "attributes") {
         attributeChange = true;
-      }
-      if (m.type == "childList") {
-        if (!detached && !this.isConnected()) {
-          if (this.isNode()) {
-            parentNode = m.target;
-          }
-          detached = true;
-        }
       }
       if (m.type == "pseudoClassLock") {
         pseudoChange = true;
+      }
+      if (m.type == "childList") {
+        if (
+          
+          !this.isConnected() &&
+          
+          (m.removed.some(nodeFront => nodeFront == this.nodeFront) ||
+            
+            
+            !detachedNodeParent)
+        ) {
+          if (this.isNode()) {
+            detachedNodeParent = m.target;
+          }
+          detached = true;
+        }
       }
     }
 
@@ -101,7 +109,7 @@ Selection.prototype = {
       this.emit("pseudoclass");
     }
     if (detached) {
-      this.emit("detached-front", parentNode);
+      this.emit("detached-front", detachedNodeParent);
     }
   },
 
