@@ -495,6 +495,12 @@ class SnapshotIterator {
 
   Value read() { return allocationValue(readAllocation()); }
 
+  int32_t readInt32() {
+    Value val = read();
+    MOZ_RELEASE_ASSERT(val.isInt32());
+    return val.toInt32();
+  }
+
   
   
   
