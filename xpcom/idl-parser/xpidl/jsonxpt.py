@@ -1,9 +1,9 @@
-
-
-
-
-
-
+#!/usr/bin/env python
+# jsonxpt.py - Generate json XPT typelib files from IDL.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """Generate a json XPT typelib for an IDL file"""
 
@@ -12,11 +12,12 @@ import json
 
 from xpidl import xpidl
 
-
+# A map of xpidl.py types to xpt enum variants
 TypeMap = {
-    
+    # builtins
     "boolean": "TD_BOOL",
     "void": "TD_VOID",
+    "int8_t": "TD_INT8",
     "int16_t": "TD_INT16",
     "int32_t": "TD_INT32",
     "int64_t": "TD_INT64",
@@ -24,20 +25,15 @@ TypeMap = {
     "uint16_t": "TD_UINT16",
     "uint32_t": "TD_UINT32",
     "uint64_t": "TD_UINT64",
-    "octet": "TD_UINT8",
-    "short": "TD_INT16",
-    "long": "TD_INT32",
-    "long long": "TD_INT64",
-    "unsigned short": "TD_UINT16",
-    "unsigned long": "TD_UINT32",
-    "unsigned long long": "TD_UINT64",
+    "nsresult": "TD_UINT32",
     "float": "TD_FLOAT",
     "double": "TD_DOUBLE",
     "char": "TD_CHAR",
     "string": "TD_PSTRING",
     "wchar": "TD_WCHAR",
     "wstring": "TD_PWSTRING",
-    
+    "char16_t": "TD_UINT16",
+    # special types
     "nsid": "TD_NSID",
     "astring": "TD_ASTRING",
     "utf8string": "TD_UTF8STRING",
@@ -63,16 +59,16 @@ def get_type(type, calltype, iid_is=None, size_is=None):
         return ret
 
     if isinstance(type, xpidl.Array):
-        
-        
+        # NB: For a Array<T> we pass down the iid_is to get the type of T.
+        #     This allows Arrays of InterfaceIs types to work.
         return {
             "tag": "TD_ARRAY",
             "element": get_type(type.type, calltype, iid_is),
         }
 
     if isinstance(type, xpidl.LegacyArray):
-        
-        
+        # NB: For a Legacy [array] T we pass down iid_is to get the type of T.
+        #     This allows [array] of InterfaceIs types to work.
         return {
             "tag": "TD_LEGACY_ARRAY",
             "size_is": size_is,
@@ -107,7 +103,7 @@ def get_type(type, calltype, iid_is=None, size_is=None):
             return {"tag": "TD_VOID"}
 
     if isinstance(type, xpidl.CEnum):
-        
+        # As far as XPConnect is concerned, cenums are just unsigned integers.
         return {"tag": "TD_UINT%d" % type.width}
 
     raise Exception("Unknown type!")
@@ -127,11 +123,11 @@ def mk_param(type, in_=0, out=0, optional=0):
 def mk_method(method, params, getter=0, setter=0, optargc=0, hasretval=0, symbol=0):
     return {
         "name": method.name,
-        
-        
-        
-        
-        
+        # NOTE: We don't include any return value information here, as we'll
+        # never call the methods if they're marked notxpcom, and all xpcom
+        # methods return the same type (nsresult).
+        # XXX: If we ever use these files for other purposes than xptcodegen we
+        # may want to write that info.
         "params": params,
         "flags": flags(
             ("getter", getter),
@@ -163,7 +159,7 @@ def build_interface(iface):
         iface.attributes.scriptable
     ), "Don't generate XPT info for non-scriptable interfaces"
 
-    
+    # State used while building an interface
     consts = []
     methods = []
 
@@ -172,7 +168,7 @@ def build_interface(iface):
             {
                 "name": c.name,
                 "type": get_type(c.basetype, ""),
-                "value": c.getValue(),  
+                "value": c.getValue(),  # All of our consts are numbers
             }
         )
 
@@ -214,14 +210,14 @@ def build_interface(iface):
 
     def build_attr(a):
         assert a.realtype.name != "void"
-        
+        # Write the getter
         getter_params = []
         if not a.notxpcom:
             getter_params.append(mk_param(get_type(a.realtype, "out"), out=1))
 
         methods.append(mk_method(a, getter_params, getter=1, hasretval=1))
 
-        
+        # And maybe the setter
         if not a.readonly:
             param = mk_param(get_type(a.realtype, "in"), in_=1)
             methods.append(mk_method(a, [param], setter=1))
@@ -254,9 +250,9 @@ def build_interface(iface):
     }
 
 
-
-
-
+# These functions are the public interface of this module. They are very simple
+# functions, but are exported so that if we need to do something more
+# complex in them in the future we can.
 
 
 def build_typelib(idl):
