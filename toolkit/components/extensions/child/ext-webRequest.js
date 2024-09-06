@@ -101,6 +101,8 @@ this.webRequest = class extends ExtensionAPI {
       onAuthRequired: new EventManager({
         context,
         name: "webRequest.onAuthRequired",
+        
+        resetIdleOnEvent: false,
         register: (fire, filter, extra) => {
           const listener = details => {
             

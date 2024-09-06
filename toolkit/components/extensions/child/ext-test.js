@@ -354,6 +354,10 @@ this.test = class extends ExtensionAPI {
         onMessage: new TestEventManager({
           context,
           name: "test.onMessage",
+          
+          
+          
+          resetIdleOnEvent: true,
           register: fire => {
             let handler = (event, ...args) => {
               fire.async(...args);

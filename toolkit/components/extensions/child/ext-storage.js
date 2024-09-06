@@ -142,6 +142,8 @@ this.storage = class extends ExtensionAPI {
       return new EventManager({
         context,
         name: onChangedName,
+        
+        resetIdleOnEvent: false,
         register: fire => {
           let onChanged = (data, area) => {
             let changes = new context.cloneScope.Object();

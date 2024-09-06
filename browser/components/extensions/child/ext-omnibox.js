@@ -13,6 +13,8 @@ this.omnibox = class extends ExtensionAPI {
         onInputChanged: new EventManager({
           context,
           name: "omnibox.onInputChanged",
+          
+          resetIdleOnEvent: false,
           register: fire => {
             let listener = (text, id) => {
               fire.asyncWithoutClone(text, suggestions => {
