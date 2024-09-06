@@ -1,24 +1,44 @@
+function mainThreadBusy(ms) {
+  const target = performance.now() + ms;
+  while (performance.now() < target);
+}
 
+async function wait() {
+  return new Promise(resolve => step_timeout(resolve, 0));
+}
 
+async function raf() {
+  return new Promise(resolve => requestAnimationFrame(resolve));
+}
 
-async function clickOnElementAndDelay(id, delay, callback) {
-  const element = document.getElementById(id);
-  const pointerdownHandler = () => {
-    mainThreadBusy(delay);
-    if (callback) {
-      callback();
-    }
-    element.removeEventListener("pointerdown", pointerdownHandler);
+async function afterNextPaint() {
+  await raf();
+  await wait();
+}
+
+async function blockNextEventListener(target, eventType, duration = 120) {
+  return new Promise(resolve => {
+    target.addEventListener(eventType, () => {
+      mainThreadBusy(duration);
+      resolve();
+    }, { once: true });
+  });
+}
+
+async function clickAndBlockMain(id, options = {}) {
+  options = {
+    eventType: "pointerdown",
+    duration: 120,
+    ...options
   };
+  const element = document.getElementById(id);
 
-  element.addEventListener("pointerdown", pointerdownHandler);
-  await click(element);
+  await Promise.all([
+    blockNextEventListener(element, options.eventType, options.duration),
+    click(element),
+  ]);
 }
 
-function mainThreadBusy(duration) {
-  const now = performance.now();
-  while (performance.now() < now + duration);
-}
 
 
 
@@ -58,27 +78,7 @@ function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104, event
   verifyEvent(entry, event, targetId, isFirst, minDuration);
 }
 
-function wait() {
-  return new Promise((resolve, reject) => {
-    step_timeout(() => {
-      resolve();
-    }, 0);
-  });
-}
 
-function clickAndBlockMain(id) {
-  return new Promise((resolve, reject) => {
-    clickOnElementAndDelay(id, 120, resolve);
-  });
-}
-
-function waitForTick() {
-  return new Promise(resolve => {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(resolve);
-    });
-  });
-}
   
   
   
@@ -115,7 +115,7 @@ async function testDuration(t, id, numEntries, dur, slowDur) {
   const clicksPromise = new Promise(async resolve => {
     for (let index = 0; index < numEntries; index++) {
       
-      await clickOnElementAndDelay(id, slowDur);
+      await clickAndBlockMain(id, { duration: slowDur });
     }
     resolve();
   });
@@ -154,11 +154,11 @@ async function testDuration(t, id, numEntries, dur, slowDur) {
       
       
       
-      await clickOnElementAndDelay(id, processingDelay);
+      await clickAndBlockMain(id, { duration: processingDelay });
     }
     
     
-    await clickOnElementAndDelay(id, durThreshold);
+    await clickAndBlockMain(id, { duration: durThreshold });
     return observerPromise;
   }
 
@@ -269,7 +269,7 @@ async function testEventType(t, eventType, looseCount=false) {
   
   await applyAction(eventType, target);
   await applyAction(eventType, target);
-  await waitForTick();
+  await afterNextPaint();
   await new Promise(t.step_func(resolve => {
     testCounts(t, resolve, looseCount, eventType, initialCount + 2);
   }));
@@ -313,7 +313,7 @@ async function testEventType(t, eventType, looseCount=false) {
   
   await applyAction(eventType, target);
 
-  await waitForTick();
+  await afterNextPaint();
 
   await observerPromise;
 }
@@ -357,6 +357,13 @@ async function pointerdown(target) {
     .send();
 }
 
+async function pointerup(target) {
+  const actions = new test_driver.Actions();
+  return actions.addPointer("mousePointer", "mouse")
+    .pointerMove(0, 0, { origin: target })
+    .pointerUp()
+    .send();
+}
 async function auxPointerdown(target) {
   const actions = new test_driver.Actions();
   return actions.addPointer("mousePointer", "mouse")
@@ -441,6 +448,11 @@ async function interactAndObserve(interactionType, target, observerPromise) {
       addListeners(target,
         ['mousedown', 'pointerdown', 'contextmenu']);
       interactionPromise = Promise.all([auxPointerdown(target), pointerdown(target)]);
+      break;
+    }
+    case 'orphan-pointerup': {
+      addListeners(target, ['pointerup']);
+      interactionPromise = pointerup(target);
       break;
     }
   }
