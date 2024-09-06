@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #sectionTitle {
   float: inline-start;
@@ -13,7 +13,7 @@
 }
 
 #refreshDiv > * {
-  font-size: 2em;
+  font-size: large;
   vertical-align: middle;
 }
 
@@ -26,18 +26,18 @@
   margin-top: 0;
 }
 
-
+/** Categories **/
 
 #categories {
   display: inline-flex;
 }
 
 .category {
-  font-size: 2em;
+  font-size: larger;
   padding: 0.2em;
   text-align: center;
   cursor: pointer;
-  
+  /* Center category names */
   display: flex;
   align-items: center;
 }
@@ -50,7 +50,7 @@
   font-weight: bold;
 }
 
-
+/** Content area **/
 
 .main-content {
   flex: 1;
@@ -74,10 +74,28 @@ th, td, table {
 th {
   padding-bottom: 0.5em;
   padding-inline: 1em;
-  font-size: larger;
+  font-size: large;
   white-space: nowrap;
 }
 
 td {
   padding-bottom: 0.25em;
+  font-size: medium;
+  padding-inline: 1em;
+}
+
+label {
+  font-size: medium;
+}
+
+input {
+  font-size: medium;
+}
+
+button {
+  font-size: large;
+}
+
+#logging {
+  font-size: medium;
 }
