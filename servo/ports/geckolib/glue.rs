@@ -9286,6 +9286,8 @@ pub struct CSSToken {
     pub unit: nsCString,
     pub has_number: bool,
     pub number: f32,
+    pub has_value: bool,
+    pub value: nsCString,
     
     pub line: u32,
     pub column: u32,
@@ -9373,6 +9375,53 @@ pub unsafe extern "C" fn Servo_CSSParser_NextToken(
         Token::CloseCurlyBracket => "CloseCurlyBracket",
     };
 
+    let token_value = match *token {
+        Token::Ident(value) |
+        Token::AtKeyword(value) |
+        Token::Hash(value) |
+        Token::IDHash(value) |
+        Token::QuotedString(value) |
+        Token::UnquotedUrl(value) |
+        Token::Function(value) |
+        Token::BadUrl(value) |
+        Token::BadString(value) => {
+            let mut text = nsCString::new();
+            text.assign(value.as_bytes());
+            Some(text)
+        },
+        
+        Token::Comment(value) => {
+            let mut text = nsCString::new();
+            text.assign(value.as_bytes());
+            Some(text)
+        },
+        
+        
+        Token::Delim(_) |
+        Token::WhiteSpace(_) |
+        
+        Token::Number{..}  |
+        Token::Percentage{..}  |
+        Token::Dimension{..}  |
+        
+        Token::Colon |
+        Token::Semicolon |
+        Token::Comma |
+        Token::IncludeMatch |
+        Token::DashMatch |
+        Token::PrefixMatch |
+        Token::SuffixMatch |
+        Token::SubstringMatch |
+        Token::CDO |
+        Token::CDC |
+        Token::ParenthesisBlock |
+        Token::SquareBracketBlock |
+        Token::CurlyBracketBlock |
+        Token::CloseParenthesis |
+        Token::CloseSquareBracket |
+        Token::CloseCurlyBracket => None
+    };
+
     let token_unit = match *token {
         Token::Dimension{
             ref unit, ..
@@ -9414,6 +9463,10 @@ pub unsafe extern "C" fn Servo_CSSParser_NextToken(
 
     css_token.text = text;
     css_token.token_type = token_type.into();
+    css_token.has_value = token_value.is_some();
+    if css_token.has_value {
+        css_token.value = token_value.unwrap();
+    }
     css_token.has_unit = token_unit.is_some();
     if css_token.has_unit {
         css_token.unit = token_unit.unwrap();
