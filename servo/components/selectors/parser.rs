@@ -1599,7 +1599,7 @@ impl NthSelectorData {
     
     #[inline]
     pub fn is_simple_edge(&self) -> bool {
-        self.a == 0 && self.b == 1 && !self.ty.is_of_type()
+        self.a == 0 && self.b == 1 && !self.ty.is_of_type() && !self.ty.is_only()
     }
 
     
