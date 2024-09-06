@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "vm/DisposableRecord.h"
+
+using namespace js;
+
+const JSClass DisposableRecordObject::class_ = {
+    "DisposableRecord",
+    JSCLASS_HAS_RESERVED_SLOTS(DisposableRecordObject::RESERVED_SLOTS)};

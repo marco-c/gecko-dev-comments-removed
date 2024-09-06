@@ -64,6 +64,9 @@
 #include "vm/ThrowMsgKind.h"  
 #include "vm/Time.h"
 #include "vm/TypeofEqOperand.h"  
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#  include "vm/UsingHint.h"
+#endif
 #ifdef ENABLE_RECORD_TUPLE
 #  include "vm/RecordType.h"
 #  include "vm/TupleType.h"
@@ -72,6 +75,9 @@
 #include "builtin/Boolean-inl.h"
 #include "debugger/DebugAPI-inl.h"
 #include "vm/ArgumentsObject-inl.h"
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#  include "vm/DisposableRecord-inl.h"
+#endif
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
@@ -1637,6 +1643,88 @@ void js::ReportInNotObjectError(JSContext* cx, HandleValue lref,
 }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+
+
+
+
+bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
+                          UsingHint hint,
+                          JS::MutableHandle<JS::Value> disposeMethod) {
+  switch (hint) {
+    case UsingHint::Async:
+      MOZ_CRASH("Async hint is not yet supported");
+
+    case UsingHint::Sync: {
+      
+      
+      JS::Rooted<JS::PropertyKey> id(
+          cx, PropertyKey::Symbol(cx->wellKnownSymbols().dispose));
+      JS::Rooted<JSObject*> obj(cx, &objVal.toObject());
+
+      if (!GetProperty(cx, obj, obj, id, disposeMethod)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      if (disposeMethod.isNullOrUndefined() || !IsCallable(disposeMethod)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_NO_DISPOSE_IN_USING);
+        return false;
+      }
+
+      return true;
+    }
+    default:
+      MOZ_CRASH("Invalid UsingHint");
+  }
+}
+
+
+
+
+bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> obj,
+                                  UsingHint hint,
+                                  JS::MutableHandle<JS::Value> result) {
+  
+  
+  
+  JS::Rooted<JS::Value> method(cx);
+  JS::Rooted<JS::Value> object(cx);
+  if (obj.isNullOrUndefined()) {
+    
+    
+    object.setUndefined();
+    method.setUndefined();
+  } else {
+    
+    
+    if (!obj.isObject()) {
+      return ThrowCheckIsObject(cx, CheckIsObjectKind::Disposable);
+    }
+    
+    
+    object.set(obj);
+    if (!GetDisposeMethod(cx, object, hint, &method)) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  DisposableRecordObject* disposableRecord =
+      DisposableRecordObject::create(cx, object, method, hint);
+  if (!disposableRecord) {
+    return false;
+  }
+  result.set(ObjectValue(*disposableRecord));
+
+  return true;
+}
+
 bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
                                         JS::Handle<JSObject*> env) {
   if (!env->is<LexicalEnvironmentObject>() &&
@@ -1669,37 +1757,47 @@ bool js::DisposeDisposablesOnScopeLeave(JSContext* cx,
       --index;
       Value val = disposables->get(index);
 
-      MOZ_ASSERT(val.isObject() || val.isUndefined());
+      MOZ_ASSERT(val.isObject());
 
-      if (val.isObject()) {
-        JS::Rooted<JSObject*> obj(cx, &val.toObject());
-        JS::Rooted<JS::Value> disposeProp(cx);
-        JS::Rooted<JS::PropertyKey> id(
-            cx, PropertyKey::Symbol(cx->wellKnownSymbols().dispose));
+      JS::Rooted<JSObject*> obj(cx, &val.toObject());
+      JS::Rooted<DisposableRecordObject*> record(
+          cx, &obj->as<DisposableRecordObject>());
 
+      
+      
+      
+      
+      
+      
+      
+      
+      if (record->getObject().isUndefined()) {
+        continue;
+      }
+
+      JS::Rooted<JS::Value> disposeProp(cx, record->getMethod());
+      JS::Rooted<JSObject*> recordedObj(cx, &record->getObject().toObject());
+
+      
+      
+      
+      JS::Rooted<JS::Value> rval(cx);
+      if (!Call(cx, disposeProp, recordedObj, &rval)) {
         
         
-        if (!GetProperty(cx, obj, obj, id, &disposeProp)) {
-          return false;
-        }
         
         
-        
-        JS::Rooted<JS::Value> rval(cx);
-        if (!Call(cx, disposeProp, obj, &rval)) {
-          
-          
-          
-          
-          hadError = true;
-          if (cx->isExceptionPending()) {
-            cx->getPendingException(&latestException);
-            cx->clearPendingException();
+        hadError = true;
+        if (cx->isExceptionPending()) {
+          if (!cx->getPendingException(&latestException)) {
+            return false;
           }
+          cx->clearPendingException();
         }
       }
     }
 
+    
     
     
     if (env->is<LexicalEnvironmentObject>()) {
@@ -2070,19 +2168,22 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       ReservedRooted<JSObject*> env(&rootObject0,
                                     REGS.fp()->environmentChain());
 
-      
-      
-      
-      ReservedRooted<Value> val(&rootValue0, REGS.sp[-1].isNullOrUndefined()
-                                                 ? UndefinedValue()
-                                                 : REGS.sp[-1]);
+      ReservedRooted<Value> val(&rootValue0, REGS.sp[-1]);
+
+      ReservedRooted<Value> recordVal(&rootValue1);
+
+      if (!CreateDisposableResource(cx, val, UsingHint::Sync, &recordVal)) {
+        goto error;
+      }
 
       if (env->is<LexicalEnvironmentObject>()) {
-        if (!env->as<LexicalEnvironmentObject>().addDisposableObject(cx, val)) {
+        if (!env->as<LexicalEnvironmentObject>().addDisposableObject(
+                cx, recordVal)) {
           goto error;
         }
       } else if (env->is<ModuleEnvironmentObject>()) {
-        if (!env->as<ModuleEnvironmentObject>().addDisposableObject(cx, val)) {
+        if (!env->as<ModuleEnvironmentObject>().addDisposableObject(
+                cx, recordVal)) {
           goto error;
         }
       }
