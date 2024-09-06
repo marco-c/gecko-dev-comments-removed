@@ -489,6 +489,11 @@ class RenderThread final {
   RefPtr<nsIRunnable> mRenderTextureOpsRunnable
       MOZ_GUARDED_BY(mRenderTextureMapLock);
 
+#ifdef DEBUG
+  
+  int32_t mRenderTexturesLastTime MOZ_GUARDED_BY(mRenderTextureMapLock) = -1;
+#endif
+
   
   bool mHasShutdown;
 
