@@ -195,10 +195,10 @@ static nsresult UnescapeFragment(const nsACString& aFragment, nsIURI* aURI,
 
 
 
-static nsresult GetDownloadDirectory(nsIFile** _directory,
-                                     bool aSkipChecks = false) {
+static Result<nsCOMPtr<nsIFile>, nsresult> GetDownloadDirectory(
+    bool aSkipChecks = false) {
 #if defined(ANDROID)
-  return NS_ERROR_FAILURE;
+  return Err(NS_ERROR_FAILURE);
 #endif
 
   bool usePrefDir = !StaticPrefs::browser_download_start_downloads_in_tmp_dir();
@@ -218,8 +218,7 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
 
         
         if (aSkipChecks) {
-          dir.forget(_directory);
-          return NS_OK;
+          return dir;
         }
 
         
@@ -241,14 +240,14 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
         
         
         if (sFallbackDownloadDir) {
-          sFallbackDownloadDir->Clone(getter_AddRefs(dir));
+          MOZ_TRY(sFallbackDownloadDir->Clone(getter_AddRefs(dir)));
         } else {
-          rv = NS_GetSpecialDirectory(NS_OS_HOME_DIR, getter_AddRefs(dir));
-          NS_ENSURE_SUCCESS(rv, rv);
+          MOZ_TRY(NS_GetSpecialDirectory(NS_OS_HOME_DIR, getter_AddRefs(dir)));
 
           nsCOMPtr<nsIStringBundleService> bundleService =
               do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
-          NS_ENSURE_SUCCESS(rv, rv);
+          MOZ_TRY(rv);
+
           nsAutoString downloadLocalized;
           nsCOMPtr<nsIStringBundle> downloadBundle;
           rv = bundleService->CreateBundle(
@@ -261,8 +260,8 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
           if (NS_FAILED(rv)) {
             downloadLocalized.AssignLiteral("Downloads");
           }
-          rv = dir->Append(downloadLocalized);
-          NS_ENSURE_SUCCESS(rv, rv);
+          MOZ_TRY(dir->Append(downloadLocalized));
+
           
           nsCOMPtr<nsIFile> copy;
           dir->Clone(getter_AddRefs(copy));
@@ -270,23 +269,19 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
           ClearOnShutdown(&sFallbackDownloadDir);
         }
         if (aSkipChecks) {
-          dir.forget(_directory);
-          return NS_OK;
+          return dir;
         }
 
         
         rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
         if (rv == NS_ERROR_FILE_ALREADY_EXISTS || NS_SUCCEEDED(rv)) {
-          dir.forget(_directory);
-          rv = NS_OK;
+          return dir;
         }
-        return rv;
+        return Err(rv);
       }
-      NS_ENSURE_SUCCESS(rv, rv);
     }
   } else {
-    rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir));
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir)));
 
 #if !defined(XP_MACOSX) && defined(XP_UNIX)
     
@@ -295,8 +290,7 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
     
 
     uint32_t permissions;
-    rv = dir->GetPermissions(&permissions);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(dir->GetPermissions(&permissions));
 
     if (permissions != PR_IRWXU) {
       const char* userName = PR_GetEnv("USERNAME");
@@ -325,18 +319,15 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
         dir->Clone(getter_AddRefs(finalPath));
         finalPath->Append(countedUserDir);
 
-        rv = finalPath->Exists(&pathExists);
-        NS_ENSURE_SUCCESS(rv, rv);
+        MOZ_TRY(finalPath->Exists(&pathExists));
 
         if (pathExists) {
           
-          rv = finalPath->GetPermissions(&permissions);
-          NS_ENSURE_SUCCESS(rv, rv);
+          MOZ_TRY(finalPath->GetPermissions(&permissions));
 
           
           bool isWritable;
-          rv = finalPath->IsWritable(&isWritable);
-          NS_ENSURE_SUCCESS(rv, rv);
+          MOZ_TRY(finalPath->IsWritable(&isWritable));
 
           if (permissions == PR_IRWXU && isWritable) {
             dir = finalPath;
@@ -351,7 +342,7 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
         }
         if (rv != NS_ERROR_FILE_ALREADY_EXISTS) {
           
-          return rv;
+          return Err(rv);
         }
         counter++;
       }
@@ -361,8 +352,7 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
   }
 
   NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
-  dir.forget(_directory);
-  return NS_OK;
+  return dir;
 }
 
 
@@ -1379,14 +1369,15 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
 nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel* aChannel) {
   
   
-  nsresult rv = GetDownloadDirectory(getter_AddRefs(mTempFile));
-  NS_ENSURE_SUCCESS(rv, rv);
+  auto res = GetDownloadDirectory();
+  if (res.isErr()) return res.unwrapErr();
+  mTempFile = res.unwrap();
 
   
   
   
   nsAutoCString tempLeafName;
-  rv = GenerateRandomName(tempLeafName);
+  nsresult rv = GenerateRandomName(tempLeafName);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2361,9 +2352,9 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
   if (!mFinalFileDestination) {
     
     
-    nsCOMPtr<nsIFile> pseudoFile;
-    rv = GetDownloadDirectory(getter_AddRefs(pseudoFile), true);
-    NS_ENSURE_SUCCESS(rv, rv);
+    auto res = GetDownloadDirectory(true);
+    if (res.isErr()) return res.unwrapErr();
+    nsCOMPtr<nsIFile> pseudoFile = res.unwrap();
 
     
     
@@ -2588,7 +2579,9 @@ NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
   if (aNewFileLocation) {
     fileToUse = aNewFileLocation;
   } else {
-    (void)GetDownloadDirectory(getter_AddRefs(fileToUse));
+    auto res = GetDownloadDirectory();
+    if (res.isErr()) return res.unwrapErr();
+    fileToUse = res.unwrap();
 
     if (mSuggestedFileName.IsEmpty()) {
       
